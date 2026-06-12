@@ -135,9 +135,10 @@ export function LaunchPage() {
       <section>
         <h1 className="text-2xl font-bold tracking-tight text-fog-100">Launch a token</h1>
         <p className="mt-1 max-w-xl text-sm text-fog-300">
-          One transaction deploys your token, creates its HyperSwap V3 pool at a{' '}
-          <span className="font-mono text-mint-400">$4,000</span> market cap, and locks 100% of the supply as liquidity.
-          You earn <span className="font-mono text-mint-400">70%</span> of every trade's fee, forever.
+          Token, pool and locked liquidity in one transaction. You earn 70% of every trade's fee.{' '}
+          <a href="#/docs" className="text-mint-400 no-underline hover:text-mint-300">
+            Read the docs →
+          </a>
         </p>
 
         <div className="mt-6 space-y-4">
@@ -310,12 +311,12 @@ export function LaunchPage() {
         </section>
 
         <section className="rounded-2xl bg-ink-850/80 p-5 ring-1 ring-ink-700">
-          <h2 className="text-sm font-bold text-fog-100">The deal</h2>
+          <h2 className="text-sm font-bold text-fog-100">Terms</h2>
           <ul className="mt-3 space-y-2.5 text-[13px] leading-relaxed text-fog-300">
-            <li>• Starts at a <span className="font-mono text-fog-100">$4,000</span> market cap — same for everyone, priced via the HYPE oracle at launch.</li>
-            <li>• 100% of supply is pool liquidity. No team allocation, no presale. Want tokens? Dev buy.</li>
-            <li>• Trades on HyperSwap V3 with a 1% fee: <span className="font-mono text-mint-400">70%</span> to you, 30% to the platform.</li>
-            <li>• Claim your earnings any time in native HYPE, right from the token page.</li>
+            <li>• Fixed <span className="font-mono text-fog-100">$4,000</span> starting market cap, priced via the HYPE oracle</li>
+            <li>• 100% of supply goes into the pool — no team allocation, no presale</li>
+            <li>• 1% swap fee: <span className="font-mono text-mint-400">70%</span> creator / 30% platform</li>
+            <li>• Earnings claimable any time in native HYPE</li>
           </ul>
         </section>
       </aside>

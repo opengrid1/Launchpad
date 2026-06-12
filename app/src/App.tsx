@@ -3,12 +3,14 @@ import { Header, type Page } from './components/Header'
 import { Board } from './pages/Board'
 import { LaunchPage } from './pages/LaunchPage'
 import { TokenPage } from './pages/Token'
+import { Docs } from './pages/Docs'
 
-type Route = { page: 'board' } | { page: 'launch' } | { page: 'token'; address: string }
+type Route = { page: 'board' } | { page: 'launch' } | { page: 'docs' } | { page: 'token'; address: string }
 
 function parseHash(): Route {
   const hash = window.location.hash.replace(/^#\/?/, '')
   if (hash === 'launch') return { page: 'launch' }
+  if (hash === 'docs') return { page: 'docs' }
   const tokenMatch = /^t\/(0x[0-9a-fA-F]{40})$/.exec(hash)
   if (tokenMatch) return { page: 'token', address: tokenMatch[1] }
   return { page: 'board' }
@@ -32,11 +34,13 @@ export default function App() {
   const page: Page = route.page
 
   return (
-    <div className="mx-auto min-h-screen max-w-6xl px-4 pb-24 sm:px-6">
+    <div className="min-h-screen">
       <Header page={page} />
-      {route.page === 'board' && <Board />}
-      {route.page === 'launch' && <LaunchPage />}
-      {route.page === 'token' && <TokenPage key={route.address} token={route.address} />}
+      <div className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
+        {route.page === 'board' && <Board />}
+        {route.page === 'launch' && <LaunchPage />}
+        {route.page === 'docs' && <Docs />}
+        {route.page === 'token' && <TokenPage key={route.address} token={route.address} />}
       <footer className="mt-20 flex flex-wrap items-center justify-between gap-3 border-t border-ink-800 pt-6 font-mono text-[11px] text-fog-500">
         <span>Flatline · flaunch-style launchpad on HyperEVM</span>
         <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -62,6 +66,7 @@ export default function App() {
           </span>
         </span>
       </footer>
+      </div>
     </div>
   )
 }
