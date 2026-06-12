@@ -60,7 +60,7 @@ contract LaunchpadTest is Test {
 
     function _launch() internal returns (address token) {
         vm.prank(creator);
-        token = pad.createToken("Test Token", "TEST", "ipfs://QmMeta", SUPPLY, 0);
+        token = pad.createToken("Test Token", "TEST", "ipfs://QmMeta", SUPPLY, address(0), 0, 0);
     }
 
     /// @dev HYPE wei per 1e18 tokens implied by a $4k cap at the mocked oracle price.
@@ -186,7 +186,7 @@ contract LaunchpadTest is Test {
 
         // Second launch appends.
         vm.prank(creator);
-        pad.createToken("Two", "TWO", "u2", SUPPLY, 0);
+        pad.createToken("Two", "TWO", "u2", SUPPLY, address(0), 0, 0);
         assertEq(pad.allTokensLength(), 2);
         assertEq(pad.tokensByCreator(creator).length, 2);
     }
@@ -214,7 +214,7 @@ contract LaunchpadTest is Test {
         vm.deal(creator, 5 ether);
         vm.prank(creator);
         address token = pad.createToken{value: 2 ether}(
-            "Test Token", "TEST", "ipfs://QmMeta", SUPPLY, 1900e18
+            "Test Token", "TEST", "ipfs://QmMeta", SUPPLY, address(0), 0, 1900e18
         );
 
         assertEq(LaunchToken(token).balanceOf(creator), 2000e18);
@@ -227,12 +227,56 @@ contract LaunchpadTest is Test {
         vm.deal(creator, 1 ether);
         vm.prank(creator);
         vm.expectRevert("Too little received");
-        pad.createToken{value: 1 ether}("T", "T", "u", SUPPLY, 1001e18);
+        pad.createToken{value: 1 ether}("T", "T", "u", SUPPLY, address(0), 0, 1001e18);
+    }
+
+    function test_relayedLaunch_creditsRealCreator() public {
+        address relayer = makeAddr("relayer");
+        pad.setRelayer(relayer, true);
+
+        vm.prank(relayer);
+        address token = pad.createToken("T", "T", "u", SUPPLY, creator, 0, 0);
+
+        (address c,,,,) = _launchInfo(token);
+        assertEq(c, creator);
+        assertEq(pad.tokensByCreator(creator).length, 1);
+        assertEq(pad.tokensByCreator(relayer).length, 0);
+    }
+
+    function test_relayedLaunch_devBuyPulledFromCreatorWhype() public {
+        address relayer = makeAddr("relayer");
+        pad.setRelayer(relayer, true);
+        router.setRate(1000e18);
+
+        // Creator pre-funds + approves WHYPE (the non-custodial relayer flow).
+        vm.deal(creator, 3 ether);
+        vm.startPrank(creator);
+        MockWHYPE(payable(whype)).deposit{value: 3 ether}();
+        MockWHYPE(payable(whype)).approve(address(pad), 3 ether);
+        vm.stopPrank();
+
+        vm.prank(relayer);
+        address token = pad.createToken("T", "T", "u", SUPPLY, creator, 3 ether, 2900e18);
+
+        // Dev-buy tokens went to the creator, not the relayer.
+        assertEq(LaunchToken(token).balanceOf(creator), 3000e18);
+        assertEq(LaunchToken(token).balanceOf(relayer), 0);
+        assertEq(MockWHYPE(payable(whype)).balanceOf(creator), 0);
+    }
+
+    function test_relayedLaunch_unapprovedRelayerReverts() public {
+        vm.prank(rando);
+        vm.expectRevert("not relayer");
+        pad.createToken("T", "T", "u", SUPPLY, creator, 0, 0);
+
+        vm.prank(rando);
+        vm.expectRevert("not owner");
+        pad.setRelayer(rando, true);
     }
 
     function test_createToken_zeroSupplyReverts() public {
         vm.expectRevert("zero supply");
-        pad.createToken("T", "T", "u", 0, 0);
+        pad.createToken("T", "T", "u", 0, address(0), 0, 0);
     }
 
     // ------------------------------------------------------------------ oracle / market cap
@@ -244,7 +288,7 @@ contract LaunchpadTest is Test {
     function test_createToken_revertsWhenOracleUnavailable() public {
         vm.clearMockedCalls();
         vm.expectRevert("oracle unavailable");
-        pad.createToken("T", "T", "u", SUPPLY, 0);
+        pad.createToken("T", "T", "u", SUPPLY, address(0), 0, 0);
     }
 
     function test_manualHypeUsdOverride() public {

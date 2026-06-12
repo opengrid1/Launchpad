@@ -63,6 +63,9 @@ contract Launchpad {
 
     address public owner;
     address public treasury;
+    /// @notice Addresses allowed to launch on behalf of a different creator (big-block
+    ///         relayer wallets run by the platform).
+    mapping(address => bool) public isRelayer;
 
     /// @notice Fixed starting market cap (FDV) every launch lists at, in USD with 6
     ///         decimals. The HYPE-denominated pool price is derived from this via the
@@ -137,6 +140,7 @@ contract Launchpad {
     event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
     event StartingMarketCapUpdated(uint256 usd6);
     event ManualHypeUsdUpdated(uint256 usd6);
+    event RelayerSet(address indexed relayer, bool allowed);
 
     // ---------------------------------------------------------------------
     // Modifiers
@@ -185,19 +189,33 @@ contract Launchpad {
     /// @param symbol_          ERC20 symbol.
     /// @param tokenURI_        Metadata URI (e.g. ipfs://... JSON with image/description).
     /// @param totalSupply_     Fixed total supply, all of it pooled (18 decimals).
+    /// @param creator_         Who receives the 70% fee stream and dev-buy tokens. Pass
+    ///                         address(0) for msg.sender. A different address than
+    ///                         msg.sender is only allowed for approved relayers, so the
+    ///                         platform's big-block wallet can launch on users' behalf.
+    /// @param devBuyWhype      Optional dev-buy funding pulled from the creator's WHYPE
+    ///                         (creator must approve this contract first). Used by relayed
+    ///                         launches so the dev buy stays non-custodial.
     /// @param minDevBuyTokens  Slippage bound for the optional dev buy (ignored when
-    ///                         msg.value == 0).
-    /// @dev Send HYPE as msg.value to atomically perform the "dev buy": the creator buys
-    ///      first, through the pool at the listed price, before anyone else can. Front-running
-    ///      the pool creation is impossible because the token does not exist until this call.
+    ///                         there is no dev buy).
+    /// @dev The dev buy (msg.value and/or devBuyWhype) executes atomically right after the
+    ///      pool is seeded: the creator buys first, at the listed price, before anyone else
+    ///      can. Front-running the pool creation is impossible because the token does not
+    ///      exist until this call.
     function createToken(
         string calldata name_,
         string calldata symbol_,
         string calldata tokenURI_,
         uint256 totalSupply_,
+        address creator_,
+        uint256 devBuyWhype,
         uint256 minDevBuyTokens
     ) external payable nonReentrant returns (address token) {
         require(totalSupply_ > 0, "zero supply");
+        address creator = creator_ == address(0) ? msg.sender : creator_;
+        // Pulling another creator's WHYPE / assigning them launches is restricted to
+        // platform relayers, so a stray WHYPE approval can't be griefed by third parties.
+        if (creator != msg.sender) require(isRelayer[msg.sender], "not relayer");
 
         // $startingMarketCapUsd6 of HYPE, spread over the full supply.
         uint256 mcHypeWei = FullMath.mulDiv(startingMarketCapUsd6, 1e18, hypeUsdPrice());
@@ -240,7 +258,7 @@ contract Launchpad {
         if (dust > 0) LaunchToken(token).transfer(DEAD, dust);
 
         launches[token] = Launch({
-            creator: msg.sender,
+            creator: creator,
             createdAt: uint64(block.timestamp),
             tokenIsToken0: tokenIsToken0,
             positionWithdrawn: false,
@@ -248,19 +266,21 @@ contract Launchpad {
             positionId: positionId
         });
         allTokens.push(token);
-        _creatorTokens[msg.sender].push(token);
+        _creatorTokens[creator].push(token);
 
+        uint256 devBuyHype = msg.value + devBuyWhype;
         uint256 devBuyTokens = 0;
-        if (msg.value > 0) {
-            whype.deposit{value: msg.value}();
+        if (devBuyHype > 0) {
+            if (msg.value > 0) whype.deposit{value: msg.value}();
+            if (devBuyWhype > 0) whype.transferFrom(creator, address(this), devBuyWhype);
             devBuyTokens = swapRouter.exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
                     tokenIn: address(whype),
                     tokenOut: token,
                     fee: POOL_FEE,
-                    recipient: msg.sender,
+                    recipient: creator,
                     deadline: block.timestamp,
-                    amountIn: msg.value,
+                    amountIn: devBuyHype,
                     amountOutMinimum: minDevBuyTokens,
                     sqrtPriceLimitX96: 0
                 })
@@ -269,7 +289,7 @@ contract Launchpad {
 
         emit TokenLaunched(
             token,
-            msg.sender,
+            creator,
             pool,
             positionId,
             name_,
@@ -277,7 +297,7 @@ contract Launchpad {
             tokenURI_,
             totalSupply_,
             priceWeiPerToken,
-            msg.value,
+            devBuyHype,
             devBuyTokens
         );
     }
@@ -428,6 +448,12 @@ contract Launchpad {
         launch.positionWithdrawn = true;
         positionManager.safeTransferFrom(address(this), recipient, launch.positionId);
         emit PositionWithdrawn(token, launch.positionId, recipient);
+    }
+
+    /// @notice Allows/revokes a platform relayer wallet (may launch on users' behalf).
+    function setRelayer(address relayer, bool allowed) external onlyOwner {
+        isRelayer[relayer] = allowed;
+        emit RelayerSet(relayer, allowed);
     }
 
     /// @notice Updates the fixed USD starting market cap for future launches (6 decimals).

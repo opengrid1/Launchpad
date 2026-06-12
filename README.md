@@ -4,7 +4,7 @@ A token launchpad for [HyperEVM](https://hyperliquid.gitbook.io/hyperliquid-docs
 
 ## How a launch works
 
-1. **Create.** A creator calls `createToken(name, symbol, tokenURI, totalSupply, minDevBuyTokens)`. In one atomic transaction the launchpad:
+1. **Create.** A creator calls `createToken(name, symbol, tokenURI, totalSupply, creator, devBuyWhype, minDevBuyTokens)`. In one atomic transaction the launchpad:
    - deploys a fixed-supply ERC20 (`LaunchToken`) carrying an immutable **`tokenURI`** (e.g. `ipfs://...` JSON with image/description/socials for frontends);
    - creates and initializes the TOKEN/WHYPE pool on HyperSwap V3 (1% fee tier) at a price that makes every launch start at a **fixed $4,000 virtual market cap** (`startingMarketCapUsd6`, owner-adjustable) — the USD→HYPE conversion happens on-chain at launch time via the HyperCore oracle precompile (`0x...0807`, HYPE perp index 159), with an owner-settable manual fallback;
    - deposits **100% of the supply as single-sided liquidity** (tokens only — the range sits entirely on the token side of the starting price, so buyers swap HYPE into it);

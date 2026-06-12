@@ -25,6 +25,8 @@ contract Deploy is Script {
         address whype = vm.envOr("WHYPE", WHYPE);
         address treasury = vm.envOr("TREASURY", vm.addr(pk));
 
+        address relayer = vm.envOr("RELAYER", vm.addr(pk));
+
         vm.startBroadcast(pk);
         Launchpad pad = new Launchpad(
             INonfungiblePositionManager(positionManager),
@@ -32,6 +34,7 @@ contract Deploy is Script {
             IWHYPE(whype),
             treasury
         );
+        pad.setRelayer(relayer, true);
         vm.stopBroadcast();
 
         console.log("Launchpad deployed at:", address(pad));
