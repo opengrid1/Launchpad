@@ -1,73 +1,40 @@
-# React + TypeScript + Vite
+# Flatline — launchpad frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite frontend for the Flatline launchpad on HyperEVM mainnet,
+wired to the live `Launchpad` contract (`0xc985b4dda3ae887152ba79558ed7939fbe3a7549`).
 
-Currently, two official plugins are available:
+## Pages
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Board** (`#/`) — every launched token, live from chain: market cap (USD via the
+  HyperCore oracle), lifetime fees, search, sort by newest / mcap / top earners.
+- **Launch** (`#/launch`) — one-click token launch from the browser. Handles the
+  HyperEVM big-block dance automatically: signs the `evmUserModify` HyperCore action
+  (verified byte-identical to the official Python SDK), sends the atomic
+  `createToken` tx (token + pool + locked liquidity + optional dev buy), then offers
+  to switch the wallet back to fast blocks. Metadata (image, description, socials)
+  is stored fully on-chain as a base64 data-URI — no IPFS or backend needed.
+- **Token** (`#/t/<address>`) — price/mcap/fees stats, DEXScreener chart embed,
+  buy/sell directly through HyperSwap V3 (quotes via `eth_call` simulation with
+  balance overrides, slippage control, approval flow for sells, native HYPE
+  unwrap on exit), creator rewards panel (collect + claim).
 
-## React Compiler
+## Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Plain viem (no wagmi) + hand-rolled wallet context, multicall-batched reads,
+hash routing, Tailwind v4 with the project's ink/mint design system.
 
-## Expanding the ESLint configuration
+## Develop
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev       # local dev server
+npm run build     # typecheck + production bundle
+npm run lint
+npx tsx scripts/verify.ts   # integration checks against mainnet (16 assertions)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Deploy
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+`npm run build` and host `dist/` on any static host (Vercel, Netlify, Cloudflare
+Pages). No server-side code, no env vars — the contract address lives in
+`src/lib/contracts.ts`.

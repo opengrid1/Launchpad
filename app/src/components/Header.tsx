@@ -1,12 +1,16 @@
-import type { Route } from '../App'
+import { useState } from 'react'
+import { useWallet } from '../lib/wallet'
+import { shortAddress } from '../lib/format'
 
-export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Route) => void }) {
+export type Page = 'board' | 'launch' | 'token'
+
+export function Header({ page }: { page: Page }) {
+  const { address, connecting, connect, disconnect, onCorrectChain, ensureChain, chainId } = useWallet()
+  const [menuOpen, setMenuOpen] = useState(false)
+
   return (
     <header className="flex items-center justify-between py-5">
-      <button
-        onClick={() => onNavigate({ page: 'explore' })}
-        className="flex cursor-pointer items-center gap-2.5 bg-transparent text-left"
-      >
+      <a href="#/" className="flex items-center gap-2.5 text-left no-underline">
         {/* the logo is a flat line — the whole point */}
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-mint-500/15 ring-1 ring-mint-500/40">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -15,38 +19,79 @@ export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Ro
           </svg>
         </span>
         <span>
-          <span className="block text-[17px] font-bold leading-tight tracking-tight">Flatline</span>
+          <span className="block text-[17px] font-bold leading-tight tracking-tight text-fog-100">Flatline</span>
           <span className="block font-mono text-[10px] uppercase tracking-[0.18em] text-fog-500">HyperEVM launchpad</span>
         </span>
-      </button>
+      </a>
 
       <nav className="hidden items-center gap-1 rounded-full bg-ink-850/80 p-1 ring-1 ring-ink-700 sm:flex">
         {(
           [
-            ['Explore', 'explore'],
-            ['Create', 'create'],
+            ['Board', 'board', '#/'],
+            ['Launch', 'launch', '#/launch'],
           ] as const
-        ).map(([label, page]) => (
-          <button
-            key={page}
-            onClick={() => onNavigate({ page } as Route)}
-            className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              route.page === page ? 'bg-mint-500/15 text-mint-300' : 'text-fog-300 hover:text-fog-100'
+        ).map(([label, key, href]) => (
+          <a
+            key={key}
+            href={href}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium no-underline transition-colors ${
+              page === key ? 'bg-mint-500/15 text-mint-300' : 'text-fog-300 hover:text-fog-100'
             }`}
           >
             {label}
-          </button>
+          </a>
         ))}
       </nav>
 
       <div className="flex items-center gap-3">
-        <span className="hidden items-center gap-1.5 font-mono text-xs text-fog-500 md:flex">
-          <span className="h-1.5 w-1.5 rounded-full bg-mint-400 live-dot" />
-          HyperEVM · 999
-        </span>
-        <button className="cursor-pointer rounded-xl bg-mint-500 px-4 py-2 text-sm font-semibold text-ink-950 transition hover:bg-mint-400">
-          0x3fA8…c21D
-        </button>
+        {address && !onCorrectChain && chainId !== null && (
+          <button
+            onClick={() => void ensureChain()}
+            className="cursor-pointer rounded-xl bg-amber-glow/15 px-3 py-2 text-xs font-semibold text-amber-glow ring-1 ring-amber-glow/40 transition hover:bg-amber-glow/25"
+          >
+            Switch to HyperEVM
+          </button>
+        )}
+        {!address ? (
+          <button
+            onClick={() => void connect()}
+            disabled={connecting}
+            className="cursor-pointer rounded-xl bg-mint-500 px-4 py-2 text-sm font-semibold text-ink-950 transition hover:bg-mint-400 disabled:opacity-60"
+          >
+            {connecting ? 'Connecting…' : 'Connect wallet'}
+          </button>
+        ) : (
+          <div className="relative">
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="cursor-pointer rounded-xl bg-ink-850 px-4 py-2 font-mono text-sm font-medium text-fog-100 ring-1 ring-ink-700 transition hover:ring-mint-500/50"
+            >
+              {shortAddress(address)}
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-xl bg-ink-850 ring-1 ring-ink-700">
+                <button
+                  onClick={() => {
+                    void navigator.clipboard.writeText(address)
+                    setMenuOpen(false)
+                  }}
+                  className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm text-fog-300 hover:bg-ink-800 hover:text-fog-100"
+                >
+                  Copy address
+                </button>
+                <button
+                  onClick={() => {
+                    disconnect()
+                    setMenuOpen(false)
+                  }}
+                  className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm text-rose-soft hover:bg-ink-800"
+                >
+                  Disconnect
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   )
