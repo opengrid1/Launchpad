@@ -13,6 +13,17 @@ A token launchpad for [HyperEVM](https://hyperliquid.gitbook.io/hyperliquid-docs
 3. **Collect.** Anyone can poke `collectFees(token)`. Accrued swap fees are pulled from the position; token-denominated fees are swapped to WHYPE with a **TWAP-bounded minimum** (5-minute window, 5% max deviation) so the keeper call can't be sandwiched — if the bound fails or the pool is too young, those fees are credited in-kind instead.
 4. **Claim.** The creator claims their 70% with `claimCreatorFees` (paid in native HYPE plus any in-kind tokens). The treasury claims the platform's 30% with `claimPlatformFees` / `claimPlatformTokenFees`. The creator fee stream is transferable via `transferCreator`.
 
+## Public data for frontends
+
+- `allTokens(i)` / `allTokensLength()` — every launched token, in creation order
+- `tokensByCreator(addr)` — launches by creator (launch-time attribution)
+- `launches(token)` — creator, `createdAt` timestamp, pool, position id, flags
+- `getPrice(token)` — live spot price in HYPE wei per token; `getMarketCap(token)` — FDV in HYPE wei
+- `lifetimeFeesHype(token)` / `lifetimeFeesToken(token)` — cumulative fees ever collected (leaderboards)
+- `creatorFeesHype/Token(token)`, `platformFeesHype()`, `platformFeesToken(token)` — claimable balances
+- Pending (uncollected) fees: `eth_call`-simulate `collectFees(token)` and read its return values
+- Token metadata: `name()`, `symbol()`, `totalSupply()`, `tokenURI()` on the token itself
+
 ## Contracts
 
 | File | Purpose |
@@ -54,6 +65,8 @@ forge script script/Deploy.s.sol --rpc-url hyperevm --broadcast
 RPC endpoints are preconfigured in `foundry.toml` (mainnet chain id `999`, testnet `998`; for testnet override `POSITION_MANAGER`, `SWAP_ROUTER`, `WHYPE` via env).
 
 > **HyperEVM big blocks:** contract deployments often exceed the small-block gas limit (2M). Flip your deployer address to big blocks (30M gas, ~1 min blocks) before deploying — via the `evmUserModify` L1 action or a community toggle UI — then flip back.
+>
+> **Big blocks apply to `createToken` too:** each launch creates a full V3 pool (~4.3M gas alone, ~6M total), which doesn't fit in a 2M small block. Token creators must toggle big blocks for their launch tx, or you can front launches through a big-block relayer service. See `AUDIT.md` M-2.
 
 ## Security properties & known trade-offs
 

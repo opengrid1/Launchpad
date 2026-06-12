@@ -61,7 +61,7 @@ contract LaunchpadTest is Test {
         view
         returns (address creator_, address pool_, uint256 positionId_, bool tokenIsToken0_, bool withdrawn_)
     {
-        return pad.launches(token);
+        (creator_,, tokenIsToken0_, withdrawn_, pool_, positionId_) = pad.launches(token);
     }
 
     // ------------------------------------------------------------------ create
@@ -132,6 +132,51 @@ contract LaunchpadTest is Test {
         uint256 tokensPerHype =
             FullMath.mulDiv(FullMath.mulDiv(1e18, sqrtPriceX96, Q96), sqrtPriceX96, Q96);
         assertApproxEqRel(tokensPerHype, (1e18 * 1e18) / PRICE, 1e12);
+    }
+
+    function test_createToken_publicData() public {
+        vm.warp(1_750_000_000);
+        address token = _launch();
+
+        assertEq(pad.allTokensLength(), 1);
+        assertEq(pad.allTokens(0), token);
+        address[] memory mine = pad.tokensByCreator(creator);
+        assertEq(mine.length, 1);
+        assertEq(mine[0], token);
+        assertEq(pad.tokensByCreator(rando).length, 0);
+
+        (, uint64 createdAt,,,,) = pad.launches(token);
+        assertEq(createdAt, 1_750_000_000);
+
+        // Spot price view matches the launch price; market cap = price * supply.
+        assertApproxEqRel(pad.getPrice(token), PRICE, 1e12);
+        assertApproxEqRel(pad.getMarketCap(token), (PRICE * SUPPLY) / 1e18, 1e12);
+
+        vm.expectRevert("unknown token");
+        pad.getPrice(address(0xBEEF));
+
+        // Second launch appends.
+        vm.prank(creator);
+        pad.createToken("Two", "TWO", "u2", SUPPLY, PRICE, 0);
+        assertEq(pad.allTokensLength(), 2);
+        assertEq(pad.tokensByCreator(creator).length, 2);
+    }
+
+    function test_collectFees_lifetimeCounters() public {
+        address token = _launch();
+        _accrueFees(token, 1000e18, 10 ether);
+        pad.collectFees(token);
+        assertEq(pad.lifetimeFeesHype(token), 10 ether);
+        assertEq(pad.lifetimeFeesToken(token), 1000e18);
+
+        _accrueFees(token, 0, 5 ether);
+        pad.collectFees(token);
+        assertEq(pad.lifetimeFeesHype(token), 15 ether);
+        assertEq(pad.lifetimeFeesToken(token), 1000e18);
+        // Lifetime counters are cumulative and unaffected by claims.
+        vm.prank(creator);
+        pad.claimCreatorFees(token);
+        assertEq(pad.lifetimeFeesHype(token), 15 ether);
     }
 
     function test_createToken_devBuy() public {

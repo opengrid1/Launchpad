@@ -61,14 +61,25 @@ contract Launchpad {
 
     struct Launch {
         address creator;
-        address pool;
-        uint256 positionId;
+        uint64 createdAt;
         bool tokenIsToken0;
         bool positionWithdrawn;
+        address pool;
+        uint256 positionId;
     }
 
     /// @notice token address => launch info.
     mapping(address => Launch) public launches;
+    /// @notice Every token ever launched, in creation order. See `allTokensLength`.
+    address[] public allTokens;
+    /// @notice Tokens launched by a given creator (launch-time creator; the list does
+    ///         not move with `transferCreator`).
+    mapping(address => address[]) private _creatorTokens;
+    /// @notice Cumulative WHYPE-denominated fees ever collected for a token
+    ///         (creator + platform combined).
+    mapping(address => uint256) public lifetimeFeesHype;
+    /// @notice Cumulative in-kind token fees ever collected for a token.
+    mapping(address => uint256) public lifetimeFeesToken;
     /// @notice Creator-claimable fees per token, denominated in WHYPE.
     mapping(address => uint256) public creatorFeesHype;
     /// @notice Creator-claimable fees per token paid in-kind (only when the
@@ -207,11 +218,14 @@ contract Launchpad {
 
         launches[token] = Launch({
             creator: msg.sender,
-            pool: pool,
-            positionId: positionId,
+            createdAt: uint64(block.timestamp),
             tokenIsToken0: tokenIsToken0,
-            positionWithdrawn: false
+            positionWithdrawn: false,
+            pool: pool,
+            positionId: positionId
         });
+        allTokens.push(token);
+        _creatorTokens[msg.sender].push(token);
 
         uint256 devBuyTokens = 0;
         if (msg.value > 0) {
@@ -281,11 +295,13 @@ contract Launchpad {
             uint256 creatorCut = (hypeAmount * CREATOR_SHARE_BPS) / BPS;
             creatorFeesHype[token] += creatorCut;
             platformFeesHype += hypeAmount - creatorCut;
+            lifetimeFeesHype[token] += hypeAmount;
         }
         if (tokenAmount > 0) {
             uint256 creatorCut = (tokenAmount * CREATOR_SHARE_BPS) / BPS;
             creatorFeesToken[token] += creatorCut;
             platformFeesToken[token] += tokenAmount - creatorCut;
+            lifetimeFeesToken[token] += tokenAmount;
         }
 
         emit FeesCollected(token, hypeAmount, tokenAmount);
@@ -401,6 +417,36 @@ contract Launchpad {
         require(newOwner != address(0), "zero address");
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
+    }
+
+    // ---------------------------------------------------------------------
+    // Views (frontend helpers)
+    // ---------------------------------------------------------------------
+
+    /// @notice Number of tokens ever launched.
+    function allTokensLength() external view returns (uint256) {
+        return allTokens.length;
+    }
+
+    /// @notice All tokens launched by `creator` (launch-time attribution).
+    function tokensByCreator(address creator) external view returns (address[] memory) {
+        return _creatorTokens[creator];
+    }
+
+    /// @notice Current spot price of a launched token, in HYPE wei per 1e18 token units.
+    function getPrice(address token) public view returns (uint256 priceWeiPerToken) {
+        Launch storage launch = launches[token];
+        require(launch.creator != address(0), "unknown token");
+        (uint160 sqrtPriceX96,,,,,,) = IHyperswapV3Pool(launch.pool).slot0();
+        if (launch.tokenIsToken0) {
+            return FullMath.mulDiv(FullMath.mulDiv(1e18, sqrtPriceX96, Q96), sqrtPriceX96, Q96);
+        }
+        return FullMath.mulDiv(FullMath.mulDiv(1e18, Q96, sqrtPriceX96), Q96, sqrtPriceX96);
+    }
+
+    /// @notice Fully-diluted market cap of a launched token, in HYPE wei.
+    function getMarketCap(address token) external view returns (uint256) {
+        return FullMath.mulDiv(getPrice(token), LaunchToken(token).totalSupply(), 1e18);
     }
 
     // ---------------------------------------------------------------------
