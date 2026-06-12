@@ -37,11 +37,29 @@ export default function App() {
       {route.page === 'board' && <Board />}
       {route.page === 'launch' && <LaunchPage />}
       {route.page === 'token' && <TokenPage key={route.address} token={route.address} />}
-      <footer className="mt-20 flex flex-wrap items-center justify-between gap-2 border-t border-ink-800 pt-6 font-mono text-[11px] text-fog-500">
+      <footer className="mt-20 flex flex-wrap items-center justify-between gap-3 border-t border-ink-800 pt-6 font-mono text-[11px] text-fog-500">
         <span>Flatline · flaunch-style launchpad on HyperEVM</span>
-        <span className="flex items-center gap-1.5">
-          <span className="live-dot h-1.5 w-1.5 rounded-full bg-mint-400" />
-          chain 999 · HyperSwap V3
+        <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <a
+            href="https://hyperevmscan.io/address/0xc985b4dda3ae887152ba79558ed7939fbe3a7549"
+            target="_blank"
+            rel="noreferrer"
+            className="text-fog-500 no-underline transition-colors hover:text-mint-400"
+          >
+            contract ↗
+          </a>
+          <a
+            href="https://hyperswap.exchange"
+            target="_blank"
+            rel="noreferrer"
+            className="text-fog-500 no-underline transition-colors hover:text-mint-400"
+          >
+            HyperSwap V3 ↗
+          </a>
+          <span className="flex items-center gap-1.5">
+            <span className="live-dot h-1.5 w-1.5 rounded-full bg-mint-400" />
+            chain 999
+          </span>
         </span>
       </footer>
     </div>

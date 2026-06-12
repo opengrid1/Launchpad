@@ -222,8 +222,41 @@ export function LaunchPage() {
         {formError && (name || symbol) && <p className="mt-2 font-mono text-xs text-amber-glow">{formError}</p>}
       </section>
 
-      {/* right rail: how it works + live progress */}
+      {/* right rail: live preview + progress + the deal */}
       <aside className="space-y-4">
+        <section>
+          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-fog-500">Board preview</p>
+          <div className="rounded-2xl bg-ink-850/80 p-5 ring-1 ring-ink-700">
+            <div className="flex items-start gap-3">
+              <TokenImage src={image.trim() || undefined} symbol={symbol || '?'} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="truncate text-[15px] font-bold leading-tight text-fog-100">{name.trim() || 'Your Token'}</h3>
+                  <span className="rounded-md bg-mint-500/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-mint-400">new</span>
+                </div>
+                <p className="mt-0.5 font-mono text-xs font-medium text-fog-500">${symbol.trim().toUpperCase() || 'TOKEN'}</p>
+              </div>
+            </div>
+            <p className="mt-3 line-clamp-2 min-h-[2.1rem] text-[13px] leading-snug text-fog-300">
+              {description.trim() || 'Your description shows up here.'}
+            </p>
+            <div className="mt-4 flex items-baseline justify-between border-t border-ink-700/60 pt-3.5">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-wider text-fog-500">Market cap</p>
+                <p className="mt-0.5 font-mono text-sm font-semibold text-fog-100">$4,000.00</p>
+              </div>
+              <div className="text-right">
+                <p className="font-mono text-[10px] uppercase tracking-wider text-fog-500">Fees earned</p>
+                <p className="mt-0.5 font-mono text-sm font-semibold text-mint-400">—</p>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center justify-between font-mono text-[11px] text-fog-500">
+              <span>by you</span>
+              <span>just now</span>
+            </div>
+          </div>
+        </section>
+
         <section className="rounded-2xl bg-ink-850/80 p-5 ring-1 ring-ink-700">
           <h2 className="text-sm font-bold text-fog-100">Launch progress</h2>
           <ol className="mt-4 space-y-4">

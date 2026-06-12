@@ -56,3 +56,52 @@ body {
 .rise-in {
   animation: rise-in 0.45s ease both;
 }
+
+/* ---- polish pass ---- */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ink-950);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ink-700);
+  border-radius: 5px;
+  border: 2px solid var(--color-ink-950);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-600);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-mint-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.shimmer {
+  background: linear-gradient(110deg, var(--color-ink-850) 40%, var(--color-ink-800) 50%, var(--color-ink-850) 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+
+@keyframes ticker-flash {
+  from { color: var(--color-mint-300); }
+  to { color: inherit; }
+}
+.ticker-flash {
+  animation: ticker-flash 0.9s ease-out;
+}

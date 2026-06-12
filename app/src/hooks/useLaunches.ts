@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
 import { fetchLaunches, fetchTokenDetail, type LaunchRow, type TokenDetail } from '../lib/launchpad'
+import { publicClient } from '../lib/chain'
+import { LAUNCHPAD, launchpadAbi } from '../lib/contracts'
 
 const BOARD_POLL_MS = 15_000
 const DETAIL_POLL_MS = 10_000
@@ -59,4 +61,22 @@ function usePoll(fn: () => Promise<void>, ms: number) {
       window.clearTimeout(timer)
     }
   }, [fn, ms])
+}
+
+/** Live HYPE/USD (6dp) + the platform's configured launch market cap. */
+export function usePlatformStats() {
+  const [stats, setStats] = useState<{ hypeUsd6: bigint; startMcUsd6: bigint } | null>(null)
+  const load = useCallback(async () => {
+    try {
+      const [hypeUsd6, startMcUsd6] = await Promise.all([
+        publicClient.readContract({ address: LAUNCHPAD, abi: launchpadAbi, functionName: 'hypeUsdPrice' }),
+        publicClient.readContract({ address: LAUNCHPAD, abi: launchpadAbi, functionName: 'startingMarketCapUsd6' }),
+      ])
+      setStats({ hypeUsd6, startMcUsd6 })
+    } catch {
+      /* keep last value */
+    }
+  }, [])
+  usePoll(load, 30_000)
+  return stats
 }

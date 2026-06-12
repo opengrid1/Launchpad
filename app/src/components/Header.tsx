@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useWallet } from '../lib/wallet'
+import { usePlatformStats } from '../hooks/useLaunches'
 import { shortAddress } from '../lib/format'
 
 export type Page = 'board' | 'launch' | 'token'
 
 export function Header({ page }: { page: Page }) {
   const { address, connecting, connect, disconnect, onCorrectChain, ensureChain, chainId } = useWallet()
+  const stats = usePlatformStats()
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -24,7 +26,7 @@ export function Header({ page }: { page: Page }) {
         </span>
       </a>
 
-      <nav className="hidden items-center gap-1 rounded-full bg-ink-850/80 p-1 ring-1 ring-ink-700 sm:flex">
+      <nav className="flex items-center gap-1 rounded-full bg-ink-850/80 p-1 ring-1 ring-ink-700">
         {(
           [
             ['Board', 'board', '#/'],
@@ -34,7 +36,7 @@ export function Header({ page }: { page: Page }) {
           <a
             key={key}
             href={href}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium no-underline transition-colors ${
+            className={`rounded-full px-3 py-1.5 text-sm font-medium no-underline transition-colors sm:px-4 ${
               page === key ? 'bg-mint-500/15 text-mint-300' : 'text-fog-300 hover:text-fog-100'
             }`}
           >
@@ -44,6 +46,16 @@ export function Header({ page }: { page: Page }) {
       </nav>
 
       <div className="flex items-center gap-3">
+        {stats && (
+          <span
+            key={String(stats.hypeUsd6)}
+            className="ticker-flash hidden items-center gap-1.5 rounded-full bg-ink-850/80 px-3 py-1.5 font-mono text-xs text-fog-300 ring-1 ring-ink-700 md:flex"
+            title="HYPE/USD via HyperCore oracle"
+          >
+            <span className="live-dot h-1.5 w-1.5 rounded-full bg-mint-400" />
+            HYPE ${(Number(stats.hypeUsd6) / 1e6).toFixed(2)}
+          </span>
+        )}
         {address && !onCorrectChain && chainId !== null && (
           <button
             onClick={() => void ensureChain()}

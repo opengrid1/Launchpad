@@ -14,6 +14,7 @@ export function TokenPage({ token }: { token: string }) {
   const valid = isAddress(token)
   const { detail, error, refresh } = useTokenDetail(valid ? (token as Address) : null)
   const [meta, setMeta] = useState<TokenMetadata>({})
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!detail) return
@@ -48,11 +49,15 @@ export function TokenPage({ token }: { token: string }) {
               </h1>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-fog-500">
                 <button
-                  onClick={() => void navigator.clipboard.writeText(detail.token)}
-                  className="cursor-pointer hover:text-fog-300"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(detail.token)
+                    setCopied(true)
+                    window.setTimeout(() => setCopied(false), 1500)
+                  }}
+                  className={`cursor-pointer transition-colors ${copied ? 'text-mint-400' : 'hover:text-fog-300'}`}
                   title="Copy token address"
                 >
-                  {shortAddress(detail.token)} ⧉
+                  {copied ? 'copied ✓' : `${shortAddress(detail.token)} ⧉`}
                 </button>
                 <span>by {shortAddress(detail.creator)}</span>
                 <span>{timeAgo(detail.createdAt)}</span>
@@ -186,6 +191,27 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
     ((side === 'buy' && hypeBalance !== null && amount > hypeBalance) ||
       (side === 'sell' && tokenBalance !== null && amount > tokenBalance))
 
+  // How far the fill deviates from spot (after the 1% pool fee).
+  const priceImpact = useMemo(() => {
+    if (quote === null || amount === null || amount === 0n || detail.priceWei === 0n) return null
+    const ideal =
+      side === 'buy'
+        ? (amount * 10n ** 18n * 99n) / (detail.priceWei * 100n)
+        : (amount * detail.priceWei * 99n) / (10n ** 18n * 100n)
+    if (ideal === 0n) return null
+    return Math.max(0, 1 - Number(quote) / Number(ideal))
+  }, [quote, amount, side, detail.priceWei])
+
+  const receiveUsd = useMemo(() => {
+    if (quote === null) return null
+    const usdPerHype = Number(detail.hypeUsd6) / 1e6
+    const value =
+      side === 'buy'
+        ? Number(formatEther(quote)) * Number(formatEther(detail.priceWei)) * usdPerHype
+        : Number(formatEther(quote)) * usdPerHype
+    return value
+  }, [quote, side, detail.hypeUsd6, detail.priceWei])
+
   async function run(label: string, fn: () => Promise<`0x${string}`>) {
     if (!walletClient || !address) return
     setBusy(label)
@@ -304,16 +330,58 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
           />
           <span className="font-mono text-sm font-semibold text-fog-300">{balanceLabel}</span>
         </div>
+        {side === 'buy' && amount !== null && amount > 0n && (
+          <p className="mt-1 font-mono text-[10px] text-fog-500">
+            ≈ ${((Number(formatEther(amount)) * Number(detail.hypeUsd6)) / 1e6).toLocaleString('en-US', { maximumFractionDigits: 2 })}
+          </p>
+        )}
       </div>
 
-      <div className="mt-3 rounded-xl bg-ink-900/60 p-3.5 font-mono text-xs text-fog-500 ring-1 ring-ink-700">
+      {/* quick amounts */}
+      <div className="mt-2.5 flex gap-1.5">
+        {side === 'buy'
+          ? (['0.1', '0.5', '1', '5'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setInput(v)}
+                className={`flex-1 cursor-pointer rounded-lg py-1.5 font-mono text-[11px] transition-colors ${
+                  input === v ? 'bg-mint-500/15 text-mint-300 ring-1 ring-mint-500/40' : 'bg-ink-900 text-fog-500 ring-1 ring-ink-700 hover:text-fog-300'
+                }`}
+              >
+                {v} ♦
+              </button>
+            ))
+          : ([25, 50, 75, 100] as const).map((pct) => (
+              <button
+                key={pct}
+                onClick={() => tokenBalance !== null && setInput(formatEther((tokenBalance * BigInt(pct)) / 100n))}
+                disabled={tokenBalance === null || tokenBalance === 0n}
+                className="flex-1 cursor-pointer rounded-lg bg-ink-900 py-1.5 font-mono text-[11px] text-fog-500 ring-1 ring-ink-700 transition-colors hover:text-fog-300 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {pct}%
+              </button>
+            ))}
+      </div>
+
+      <div className="mt-3 space-y-1.5 rounded-xl bg-ink-900/60 p-3.5 font-mono text-xs text-fog-500 ring-1 ring-ink-700">
         <div className="flex justify-between">
-          <span>{side === 'buy' ? 'You receive (est.)' : 'You receive (est.)'}</span>
-          <span className="text-fog-100">
+          <span>You receive (est.)</span>
+          <span className="text-right text-fog-100">
             {quoting ? '…' : quote !== null ? `${formatUnits18(quote)} ${side === 'buy' ? detail.symbol : 'HYPE'}` : '—'}
+            {!quoting && receiveUsd !== null && (
+              <span className="ml-1.5 text-fog-500">(${receiveUsd.toLocaleString('en-US', { maximumFractionDigits: 2 })})</span>
+            )}
           </span>
         </div>
-        <div className="mt-1.5 flex items-center justify-between">
+        {priceImpact !== null && !quoting && (
+          <div className="flex justify-between">
+            <span>Price impact</span>
+            <span className={priceImpact > 0.05 ? 'text-rose-soft' : priceImpact > 0.02 ? 'text-amber-glow' : 'text-fog-100'}>
+              {priceImpact < 0.0001 ? '<0.01%' : `${(priceImpact * 100).toFixed(2)}%`}
+            </span>
+          </div>
+        )}
+        <div className="flex items-center justify-between">
           <span>Slippage</span>
           <span className="flex gap-1">
             {[50, 100, 300].map((bps) => (
@@ -326,6 +394,10 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
               </button>
             ))}
           </span>
+        </div>
+        <div className="flex justify-between border-t border-ink-700/60 pt-1.5">
+          <span>Rate</span>
+          <span className="text-fog-100">1 {detail.symbol} = {formatPriceHype(detail.priceWei)} HYPE</span>
         </div>
       </div>
 
