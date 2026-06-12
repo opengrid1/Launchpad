@@ -11,7 +11,7 @@ const CONTRACTS: ReadonlyArray<readonly [string, string]> = [
 export function Docs() {
   return (
     <main className="mx-auto mt-8 max-w-3xl">
-      <h1 className="text-2xl font-bold tracking-tight text-fog-100">Docs</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-ink">Docs</h1>
 
       <Section title="What is Flatline">
         <p>
@@ -30,9 +30,7 @@ export function Docs() {
             100% of the supply is deposited as single-sided liquidity. There is no team allocation — if the creator wants
             tokens, they use the <em>dev buy</em>, which executes in the same transaction, before anyone else can trade.
           </li>
-          <li>
-            Token metadata (image, description, links) is stored on-chain in the token contract itself as a data URI.
-          </li>
+          <li>Token metadata (image, description, links) is stored on-chain in the token contract itself as a data URI.</li>
           <li>
             Launching requires a HyperEVM <em>big block</em> (~6M gas). The Launch page handles this automatically: your
             wallet signs a free HyperCore message to switch block modes, the launch confirms in the next big block
@@ -84,19 +82,19 @@ export function Docs() {
       </Section>
 
       <Section title="Contracts (HyperEVM mainnet, chain 999)">
-        <div className="overflow-hidden rounded-xl ring-1 ring-ink-700">
+        <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-line">
           {CONTRACTS.map(([name, addr], i) => (
             <a
               key={addr}
               href={explorerAddress(addr)}
               target="_blank"
               rel="noreferrer"
-              className={`flex flex-col gap-0.5 px-4 py-3 no-underline transition-colors hover:bg-ink-800 sm:flex-row sm:items-center sm:justify-between ${
-                i > 0 ? 'border-t border-ink-700/60' : ''
+              className={`flex flex-col gap-0.5 px-4 py-3 no-underline transition-colors hover:bg-card-2 sm:flex-row sm:items-center sm:justify-between ${
+                i > 0 ? 'border-t border-line' : ''
               }`}
             >
-              <span className="text-sm font-medium text-fog-100">{name}</span>
-              <span className="font-mono text-xs text-fog-500">{addr} ↗</span>
+              <span className="text-sm font-bold text-ink">{name}</span>
+              <span className="font-mono text-xs text-sub">{addr} ↗</span>
             </a>
           ))}
         </div>
@@ -108,12 +106,12 @@ export function Docs() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-8">
-      <h2 className="text-base font-bold text-fog-100">{title}</h2>
-      <div className="mt-3 space-y-2 text-sm leading-relaxed text-fog-300">{children}</div>
+      <h2 className="text-base font-bold text-ink">{title}</h2>
+      <div className="mt-3 space-y-2 text-sm leading-relaxed text-sub">{children}</div>
     </section>
   )
 }
 
 function Mono({ children }: { children: React.ReactNode }) {
-  return <span className="rounded bg-ink-800 px-1.5 py-0.5 font-mono text-[12px] text-mint-300">{children}</span>
+  return <span className="rounded bg-brand-soft px-1.5 py-0.5 font-mono text-[12px] font-semibold text-brand-deep">{children}</span>
 }

@@ -34,8 +34,8 @@ export function TokenPage({ token }: { token: string }) {
 
   return (
     <main className="mt-2">
-      <a href="#/" className="font-mono text-xs text-fog-500 no-underline hover:text-fog-300">
-        ← all tokens
+      <a href="#/" className="font-mono text-xs font-semibold text-sub no-underline hover:text-ink">
+        ← all coins
       </a>
 
       <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
@@ -44,56 +44,54 @@ export function TokenPage({ token }: { token: string }) {
           <section className="flex flex-wrap items-start gap-4">
             <TokenImage src={meta.image} symbol={detail.symbol} size="lg" />
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold tracking-tight text-fog-100">
-                {detail.name} <span className="ml-1 font-mono text-base font-medium text-fog-500">${detail.symbol}</span>
+              <h1 className="text-2xl font-bold tracking-tight text-ink">
+                {detail.name} <span className="ml-1 font-mono text-base font-medium text-faint">${detail.symbol}</span>
               </h1>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-fog-500">
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-sub">
                 <button
                   onClick={() => {
                     void navigator.clipboard.writeText(detail.token)
                     setCopied(true)
                     window.setTimeout(() => setCopied(false), 1500)
                   }}
-                  className={`cursor-pointer transition-colors ${copied ? 'text-mint-400' : 'hover:text-fog-300'}`}
+                  className={`cursor-pointer transition-colors ${copied ? 'text-pos' : 'hover:text-ink'}`}
                   title="Copy token address"
                 >
                   {copied ? 'copied ✓' : `${shortAddress(detail.token)} ⧉`}
                 </button>
                 <span>by {shortAddress(detail.creator)}</span>
                 <span>{timeAgo(detail.createdAt)}</span>
-                <a href={explorerAddress(detail.token)} target="_blank" rel="noreferrer" className="text-fog-500 no-underline hover:text-fog-300">
+                <a href={explorerAddress(detail.token)} target="_blank" rel="noreferrer" className="text-sub no-underline hover:text-ink">
                   explorer ↗
                 </a>
               </div>
               <SocialLinks meta={meta} />
             </div>
             {detail.positionWithdrawn && (
-              <span className="rounded-lg bg-rose-soft/15 px-2.5 py-1 text-xs font-semibold text-rose-soft ring-1 ring-rose-soft/30">
-                Liquidity withdrawn by platform
-              </span>
+              <span className="rounded-full bg-neg-soft px-3 py-1 text-xs font-bold text-neg">Liquidity withdrawn by platform</span>
             )}
           </section>
 
-          {meta.description && <p className="mt-4 max-w-2xl text-sm leading-relaxed text-fog-300">{meta.description}</p>}
+          {meta.description && <p className="mt-4 max-w-2xl text-sm leading-relaxed text-sub">{meta.description}</p>}
 
           {/* stats */}
           <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat label="Price" value={`${formatPriceHype(detail.priceWei)} HYPE`} sub={`$${priceUsd.toLocaleString('en-US', { maximumSignificantDigits: 3 })}`} />
             <Stat label="Market cap" value={formatUsd6(detail.marketCapUsd6)} sub={`${formatUnits18(detail.marketCapHype)} HYPE`} />
-            <Stat label="Supply" value={compactNumber(Number(formatEther(detail.totalSupply)))} sub="fixed, 100% pooled" />
+            <Stat label="Supply" value={compactNumber(Number(formatEther(detail.totalSupply)))} sub="fixed · 100% pooled" />
             <Stat label="Fees earned" value={`${formatUnits18(detail.lifetimeFeesHype)} HYPE`} sub="70% creator / 30% platform" accent />
           </section>
 
           {/* chart */}
-          <section className="mt-6 overflow-hidden rounded-2xl ring-1 ring-ink-700">
+          <section className="mt-6 overflow-hidden rounded-2xl bg-card ring-1 ring-line">
             <iframe
               title="chart"
-              src={`https://dexscreener.com/hyperevm/${detail.pool}?embed=1&theme=dark&trades=0&info=0`}
-              className="h-[420px] w-full border-0 bg-ink-900"
+              src={`https://dexscreener.com/hyperevm/${detail.pool}?embed=1&theme=light&trades=0&info=0`}
+              className="h-[420px] w-full border-0 bg-card"
             />
-            <div className="flex items-center justify-between bg-ink-850 px-4 py-2 font-mono text-[11px] text-fog-500">
+            <div className="flex items-center justify-between border-t border-line px-4 py-2 font-mono text-[11px] text-faint">
               <span>pool {shortAddress(detail.pool)}</span>
-              <a href={`https://dexscreener.com/hyperevm/${detail.pool}`} target="_blank" rel="noreferrer" className="text-fog-500 no-underline hover:text-fog-300">
+              <a href={`https://dexscreener.com/hyperevm/${detail.pool}`} target="_blank" rel="noreferrer" className="text-faint no-underline hover:text-ink">
                 open on DEXScreener ↗ (new pools can take a few minutes to index)
               </a>
             </div>
@@ -205,11 +203,9 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
   const receiveUsd = useMemo(() => {
     if (quote === null) return null
     const usdPerHype = Number(detail.hypeUsd6) / 1e6
-    const value =
-      side === 'buy'
-        ? Number(formatEther(quote)) * Number(formatEther(detail.priceWei)) * usdPerHype
-        : Number(formatEther(quote)) * usdPerHype
-    return value
+    return side === 'buy'
+      ? Number(formatEther(quote)) * Number(formatEther(detail.priceWei)) * usdPerHype
+      : Number(formatEther(quote)) * usdPerHype
   }, [quote, side, detail.hypeUsd6, detail.priceWei])
 
   async function run(label: string, fn: () => Promise<`0x${string}`>) {
@@ -290,8 +286,8 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
   const balanceLabel = side === 'buy' ? 'HYPE' : detail.symbol
 
   return (
-    <section className="rounded-2xl bg-ink-850/80 p-5 ring-1 ring-ink-700">
-      <div className="flex gap-1 rounded-xl bg-ink-900 p-1 ring-1 ring-ink-700">
+    <section className="rounded-2xl bg-card p-5 ring-1 ring-line">
+      <div className="flex gap-1 rounded-full bg-card-2 p-1">
         {(['buy', 'sell'] as const).map((s) => (
           <button
             key={s}
@@ -299,8 +295,8 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
               setSide(s)
               setInput('')
             }}
-            className={`flex-1 cursor-pointer rounded-lg py-2 text-sm font-semibold capitalize transition-colors ${
-              side === s ? (s === 'buy' ? 'bg-mint-500 text-ink-950' : 'bg-rose-soft text-ink-950') : 'text-fog-300 hover:text-fog-100'
+            className={`flex-1 cursor-pointer rounded-full py-2 text-sm font-bold capitalize transition-colors ${
+              side === s ? (s === 'buy' ? 'bg-brand text-white' : 'bg-night text-white') : 'text-sub hover:text-ink'
             }`}
           >
             {s}
@@ -308,13 +304,13 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
         ))}
       </div>
 
-      <div className="mt-4 rounded-xl bg-ink-900 p-3.5 ring-1 ring-ink-700 focus-within:ring-mint-500/50">
-        <div className="flex items-center justify-between font-mono text-[11px] text-fog-500">
+      <div className="mt-4 rounded-2xl bg-card-2 p-3.5 ring-1 ring-transparent focus-within:ring-brand/40">
+        <div className="flex items-center justify-between font-mono text-[11px] text-sub">
           <span>{side === 'buy' ? 'You pay' : 'You sell'}</span>
           {address && balance !== null && (
             <button
               onClick={() => setInput(side === 'buy' ? trimMax(balance) : formatEther(balance))}
-              className="cursor-pointer hover:text-fog-300"
+              className="cursor-pointer hover:text-ink"
             >
               bal {formatUnits18(balance)} {balanceLabel} · max
             </button>
@@ -326,12 +322,12 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
             onChange={(e) => setInput(e.target.value)}
             placeholder="0.0"
             inputMode="decimal"
-            className="w-full bg-transparent font-mono text-xl font-semibold text-fog-100 outline-none placeholder:text-fog-500"
+            className="w-full bg-transparent font-mono text-xl font-bold text-ink outline-none placeholder:text-faint"
           />
-          <span className="font-mono text-sm font-semibold text-fog-300">{balanceLabel}</span>
+          <span className="font-mono text-sm font-bold text-sub">{balanceLabel}</span>
         </div>
         {side === 'buy' && amount !== null && amount > 0n && (
-          <p className="mt-1 font-mono text-[10px] text-fog-500">
+          <p className="mt-1 font-mono text-[10px] text-faint">
             ≈ ${((Number(formatEther(amount)) * Number(detail.hypeUsd6)) / 1e6).toLocaleString('en-US', { maximumFractionDigits: 2 })}
           </p>
         )}
@@ -344,8 +340,8 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
               <button
                 key={v}
                 onClick={() => setInput(v)}
-                className={`flex-1 cursor-pointer rounded-lg py-1.5 font-mono text-[11px] transition-colors ${
-                  input === v ? 'bg-mint-500/15 text-mint-300 ring-1 ring-mint-500/40' : 'bg-ink-900 text-fog-500 ring-1 ring-ink-700 hover:text-fog-300'
+                className={`flex-1 cursor-pointer rounded-full py-1.5 font-mono text-[11px] font-semibold transition-colors ${
+                  input === v ? 'bg-brand-soft text-brand' : 'bg-card-2 text-sub hover:text-ink'
                 }`}
               >
                 {v} ♦
@@ -356,27 +352,27 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
                 key={pct}
                 onClick={() => tokenBalance !== null && setInput(formatEther((tokenBalance * BigInt(pct)) / 100n))}
                 disabled={tokenBalance === null || tokenBalance === 0n}
-                className="flex-1 cursor-pointer rounded-lg bg-ink-900 py-1.5 font-mono text-[11px] text-fog-500 ring-1 ring-ink-700 transition-colors hover:text-fog-300 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex-1 cursor-pointer rounded-full bg-card-2 py-1.5 font-mono text-[11px] font-semibold text-sub transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {pct}%
               </button>
             ))}
       </div>
 
-      <div className="mt-3 space-y-1.5 rounded-xl bg-ink-900/60 p-3.5 font-mono text-xs text-fog-500 ring-1 ring-ink-700">
+      <div className="mt-3 space-y-1.5 rounded-2xl bg-card-2/60 p-3.5 font-mono text-xs text-sub">
         <div className="flex justify-between">
           <span>You receive (est.)</span>
-          <span className="text-right text-fog-100">
+          <span className="text-right font-semibold text-ink">
             {quoting ? '…' : quote !== null ? `${formatUnits18(quote)} ${side === 'buy' ? detail.symbol : 'HYPE'}` : '—'}
             {!quoting && receiveUsd !== null && (
-              <span className="ml-1.5 text-fog-500">(${receiveUsd.toLocaleString('en-US', { maximumFractionDigits: 2 })})</span>
+              <span className="ml-1.5 font-normal text-faint">(${receiveUsd.toLocaleString('en-US', { maximumFractionDigits: 2 })})</span>
             )}
           </span>
         </div>
         {priceImpact !== null && !quoting && (
           <div className="flex justify-between">
             <span>Price impact</span>
-            <span className={priceImpact > 0.05 ? 'text-rose-soft' : priceImpact > 0.02 ? 'text-amber-glow' : 'text-fog-100'}>
+            <span className={priceImpact > 0.05 ? 'font-semibold text-neg' : priceImpact > 0.02 ? 'font-semibold text-warn' : 'text-ink'}>
               {priceImpact < 0.0001 ? '<0.01%' : `${(priceImpact * 100).toFixed(2)}%`}
             </span>
           </div>
@@ -388,23 +384,23 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
               <button
                 key={bps}
                 onClick={() => setSlippageBps(bps)}
-                className={`cursor-pointer rounded px-1.5 py-0.5 ${slippageBps === bps ? 'bg-mint-500/15 text-mint-300' : 'hover:text-fog-300'}`}
+                className={`cursor-pointer rounded-full px-2 py-0.5 ${slippageBps === bps ? 'bg-brand-soft font-semibold text-brand' : 'hover:text-ink'}`}
               >
                 {bps / 100}%
               </button>
             ))}
           </span>
         </div>
-        <div className="flex justify-between border-t border-ink-700/60 pt-1.5">
+        <div className="flex justify-between border-t border-line pt-1.5">
           <span>Rate</span>
-          <span className="text-fog-100">1 {detail.symbol} = {formatPriceHype(detail.priceWei)} HYPE</span>
+          <span className="text-ink">1 {detail.symbol} = {formatPriceHype(detail.priceWei)} HYPE</span>
         </div>
       </div>
 
       {!address ? (
         <button
           onClick={() => void connect()}
-          className="mt-4 w-full cursor-pointer rounded-xl bg-mint-500 py-3 text-sm font-semibold text-ink-950 transition hover:bg-mint-400"
+          className="mt-4 w-full cursor-pointer rounded-full bg-night py-3 text-sm font-bold text-white transition hover:bg-night-2"
         >
           Connect wallet to trade
         </button>
@@ -412,7 +408,7 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
         <button
           onClick={() => void approve()}
           disabled={busy !== null}
-          className="mt-4 w-full cursor-pointer rounded-xl bg-amber-glow py-3 text-sm font-semibold text-ink-950 transition hover:brightness-110 disabled:opacity-60"
+          className="mt-4 w-full cursor-pointer rounded-full bg-night py-3 text-sm font-bold text-white transition hover:bg-night-2 disabled:opacity-60"
         >
           {busy === 'Approval' ? 'Approving…' : `Approve ${detail.symbol} for trading`}
         </button>
@@ -420,8 +416,8 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
         <button
           onClick={trade}
           disabled={busy !== null || amount === null || amount === 0n || quote === null || insufficient || detail.positionWithdrawn}
-          className={`mt-4 w-full cursor-pointer rounded-xl py-3 text-sm font-semibold text-ink-950 transition disabled:cursor-not-allowed disabled:opacity-50 ${
-            side === 'buy' ? 'bg-mint-500 hover:bg-mint-400' : 'bg-rose-soft hover:brightness-110'
+          className={`mt-4 w-full cursor-pointer rounded-full py-3 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            side === 'buy' ? 'bg-brand hover:bg-brand-deep' : 'bg-night hover:bg-night-2'
           }`}
         >
           {busy
@@ -435,8 +431,8 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
                   : `Sell ${detail.symbol}`}
         </button>
       )}
-      <p className="mt-2.5 text-center font-mono text-[10px] text-fog-500">
-        swaps route directly through HyperSwap V3 · 1% pool fee funds creator rewards
+      <p className="mt-2.5 text-center font-mono text-[10px] text-faint">
+        swaps route through HyperSwap V3 · 1% pool fee funds creator rewards
       </p>
     </section>
   )
@@ -488,10 +484,10 @@ function FeesPanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof 
   }
 
   return (
-    <section className="rounded-2xl bg-ink-850/80 p-5 ring-1 ring-ink-700">
-      <h2 className="text-sm font-bold text-fog-100">Creator rewards</h2>
+    <section className="rounded-2xl bg-card p-5 ring-1 ring-line">
+      <h2 className="text-sm font-bold text-ink">Creator rewards</h2>
       <dl className="mt-3 space-y-2 font-mono text-xs">
-        <Row label="Lifetime fees (HYPE)" value={`${formatUnits18(detail.lifetimeFeesHype)} HYPE`} />
+        <Row label="Lifetime fees" value={`${formatUnits18(detail.lifetimeFeesHype)} HYPE`} />
         <Row
           label="Uncollected in pool"
           value={
@@ -514,7 +510,7 @@ function FeesPanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof 
         <button
           onClick={() => void send('Collect fees', 'collectFees')}
           disabled={busy !== null || !address}
-          className="mt-4 w-full cursor-pointer rounded-xl bg-ink-700 py-2.5 text-sm font-semibold text-fog-100 ring-1 ring-ink-600 transition hover:ring-mint-500/50 disabled:opacity-50"
+          className="mt-4 w-full cursor-pointer rounded-full bg-card-2 py-2.5 text-sm font-bold text-ink ring-1 ring-line transition hover:ring-line-strong disabled:opacity-50"
         >
           {busy === 'Collect fees' ? 'Collecting…' : 'Collect fees into split (anyone can)'}
         </button>
@@ -523,14 +519,13 @@ function FeesPanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof 
         <button
           onClick={() => void send('Claim rewards', 'claimCreatorFees')}
           disabled={busy !== null}
-          className="mt-2.5 w-full cursor-pointer rounded-xl bg-mint-500 py-2.5 text-sm font-semibold text-ink-950 transition hover:bg-mint-400 disabled:opacity-60"
+          className="mt-2.5 w-full cursor-pointer rounded-full bg-brand py-2.5 text-sm font-bold text-white transition hover:bg-brand-deep disabled:opacity-60"
         >
           {busy === 'Claim rewards' ? 'Claiming…' : 'Claim my 70%'}
         </button>
       )}
-      <p className="mt-3 font-mono text-[10px] leading-relaxed text-fog-500">
-        Every swap pays a 1% pool fee. Collect moves accrued fees into the 70/30 split; the creator then claims in native
-        HYPE.
+      <p className="mt-3 font-mono text-[10px] leading-relaxed text-faint">
+        Every swap pays a 1% pool fee. Collect moves accrued fees into the 70/30 split; the creator then claims in native HYPE.
       </p>
     </section>
   )
@@ -540,10 +535,10 @@ function FeesPanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof 
 
 function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
-    <div className="rounded-xl bg-ink-850/80 p-3.5 ring-1 ring-ink-700">
-      <p className="font-mono text-[10px] uppercase tracking-wider text-fog-500">{label}</p>
-      <p className={`mt-1 truncate font-mono text-[15px] font-semibold ${accent ? 'text-mint-400' : 'text-fog-100'}`}>{value}</p>
-      {sub && <p className="mt-0.5 truncate font-mono text-[10px] text-fog-500">{sub}</p>}
+    <div className="rounded-2xl bg-card p-3.5 ring-1 ring-line">
+      <p className="font-mono text-[10px] uppercase tracking-wider text-faint">{label}</p>
+      <p className={`mt-1 truncate font-mono text-[15px] font-bold ${accent ? 'text-brand' : 'text-ink'}`}>{value}</p>
+      {sub && <p className="mt-0.5 truncate font-mono text-[10px] text-faint">{sub}</p>}
     </div>
   )
 }
@@ -551,8 +546,8 @@ function Stat({ label, value, sub, accent }: { label: string; value: string; sub
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <dt className="text-fog-500">{label}</dt>
-      <dd className="text-right text-fog-100">{value}</dd>
+      <dt className="text-sub">{label}</dt>
+      <dd className="text-right font-semibold text-ink">{value}</dd>
     </div>
   )
 }
@@ -576,7 +571,7 @@ function SocialLinks({ meta }: { meta: TokenMetadata }) {
           href={href.startsWith('http') ? href : `https://${href}`}
           target="_blank"
           rel="noreferrer"
-          className="rounded-lg bg-ink-800 px-2.5 py-1 font-mono text-[11px] text-fog-300 no-underline ring-1 ring-ink-700 transition hover:text-mint-300 hover:ring-mint-500/40"
+          className="rounded-full bg-card px-3 py-1 font-mono text-[11px] font-semibold text-sub no-underline ring-1 ring-line transition hover:text-brand hover:ring-brand/40"
         >
           {label} ↗
         </a>
@@ -588,8 +583,8 @@ function SocialLinks({ meta }: { meta: TokenMetadata }) {
 function Message({ text }: { text: string }) {
   return (
     <main className="mt-16 text-center">
-      <p className="text-fog-300">{text}</p>
-      <a href="#/" className="mt-3 inline-block font-mono text-xs text-mint-400 no-underline hover:text-mint-300">
+      <p className="text-sub">{text}</p>
+      <a href="#/" className="mt-3 inline-block font-mono text-xs font-semibold text-brand no-underline hover:text-brand-deep">
         ← back to the board
       </a>
     </main>
@@ -598,20 +593,20 @@ function Message({ text }: { text: string }) {
 
 function DetailSkeleton() {
   return (
-    <main className="mt-6 animate-pulse">
+    <main className="mt-6">
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 rounded-2xl bg-ink-700" />
+        <div className="shimmer h-16 w-16 rounded-2xl" />
         <div className="space-y-2">
-          <div className="h-5 w-48 rounded bg-ink-700" />
-          <div className="h-3 w-72 rounded bg-ink-700/70" />
+          <div className="shimmer h-5 w-48 rounded" />
+          <div className="shimmer h-3 w-72 rounded" />
         </div>
       </div>
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {Array.from({ length: 4 }, (_, i) => (
-          <div key={i} className="h-20 rounded-xl bg-ink-850/60 ring-1 ring-ink-700" />
+          <div key={i} className="shimmer h-20 rounded-2xl" />
         ))}
       </div>
-      <div className="mt-6 h-[420px] rounded-2xl bg-ink-850/60 ring-1 ring-ink-700" />
+      <div className="shimmer mt-6 h-[420px] rounded-2xl" />
     </main>
   )
 }

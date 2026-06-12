@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { resolveUri } from '../lib/metadata'
 
 const SIZES = {
-  sm: 'h-11 w-11 rounded-xl text-lg',
+  xs: 'h-8 w-8 rounded-lg text-sm',
+  sm: 'h-10 w-10 rounded-xl text-base',
   lg: 'h-16 w-16 rounded-2xl text-2xl',
 } as const
 
-/** Token avatar: remote image with a deterministic monogram fallback. */
+const FALLBACK_BG = ['bg-brand-soft text-brand', 'bg-grad-purple-a text-[#7c5cd6]', 'bg-grad-blue-a text-[#2f7fd1]', 'bg-pos-soft text-pos']
+
+/** Token avatar: remote image with a deterministic colored-monogram fallback. */
 export function TokenImage({ src, symbol, size = 'sm' }: { src?: string; symbol: string; size?: keyof typeof SIZES }) {
   const [failed, setFailed] = useState(false)
   const cls = SIZES[size]
@@ -17,38 +20,15 @@ export function TokenImage({ src, symbol, size = 'sm' }: { src?: string; symbol:
         src={resolveUri(src)}
         alt={symbol}
         onError={() => setFailed(true)}
-        className={`${cls} shrink-0 bg-ink-700 object-cover ring-1 ring-ink-600`}
+        className={`${cls} shrink-0 bg-card-2 object-cover ring-1 ring-line`}
         loading="lazy"
       />
     )
   }
+  const tone = FALLBACK_BG[(symbol.charCodeAt(0) || 0) % FALLBACK_BG.length]
   return (
-    <span className={`${cls} flex shrink-0 items-center justify-center bg-ink-700 font-bold text-mint-400 ring-1 ring-ink-600`}>
+    <span className={`${cls} flex shrink-0 items-center justify-center font-bold ring-1 ring-line ${tone}`}>
       {symbol.slice(0, 1).toUpperCase() || '?'}
     </span>
-  )
-}
-
-/** Full-bleed square cover for board cards (flaunch-style image-forward grid). */
-export function TokenCover({ src, symbol }: { src?: string; symbol: string }) {
-  const [failed, setFailed] = useState(false)
-
-  if (src && !failed) {
-    return (
-      <div className="aspect-square w-full overflow-hidden bg-ink-800">
-        <img
-          src={resolveUri(src)}
-          alt={symbol}
-          onError={() => setFailed(true)}
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-          loading="lazy"
-        />
-      </div>
-    )
-  }
-  return (
-    <div className="flex aspect-square w-full items-center justify-center bg-gradient-to-br from-ink-800 to-ink-850">
-      <span className="font-display text-5xl font-bold text-mint-500/40">{symbol.slice(0, 4).toUpperCase() || '?'}</span>
-    </div>
   )
 }

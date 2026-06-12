@@ -2,43 +2,85 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-ink-950: #060d0b;
-  --color-ink-900: #0a1512;
-  --color-ink-850: #0e1b17;
-  --color-ink-800: #12231e;
-  --color-ink-700: #1b332c;
-  --color-ink-600: #28473e;
-  --color-mint-300: #7df3d4;
-  --color-mint-400: #4be3bd;
-  --color-mint-500: #2bc7a0;
-  --color-mint-600: #1da183;
-  --color-fog-100: #eef7f3;
-  --color-fog-300: #b8cdc5;
-  --color-fog-500: #7d958c;
-  --color-amber-glow: #f5c96b;
-  --color-rose-soft: #f08a8a;
+  /* flaunch-style light palette */
+  --color-paper: #f4f5f7;
+  --color-card: #ffffff;
+  --color-card-2: #f0f1f4;
+  --color-line: #e7e9ee;
+  --color-line-strong: #d6dae1;
+
+  --color-ink: #0d0e12;
+  --color-sub: #5b6470;
+  --color-faint: #98a1ad;
+
+  --color-brand: #f53d83;
+  --color-brand-deep: #dd2a6f;
+  --color-brand-soft: #fde9f1;
+
+  --color-pos: #11a455;
+  --color-pos-soft: #e6f7ed;
+  --color-neg: #e5484d;
+  --color-neg-soft: #fdecec;
+
+  --color-night: #101114;
+  --color-night-2: #1c1d22;
+
+  --color-grad-purple-a: #ede7fd;
+  --color-grad-purple-b: #d9ccfa;
+  --color-grad-blue-a: #e2f0fe;
+  --color-grad-blue-b: #c8e2fc;
+
+  --color-warn: #c77d08;
+  --color-warn-soft: #fdf3e0;
+
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
 html {
-  background: var(--color-ink-950);
-  color: var(--color-fog-100);
+  background: var(--color-paper);
+  color: var(--color-ink);
   font-family: var(--font-display);
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(1200px 500px at 70% -10%, rgba(43, 199, 160, 0.08), transparent 60%),
-    radial-gradient(900px 400px at 0% 110%, rgba(43, 199, 160, 0.05), transparent 60%),
-    var(--color-ink-950);
 }
 
 ::selection {
-  background: var(--color-mint-500);
-  color: var(--color-ink-950);
+  background: var(--color-brand);
+  color: #fff;
+}
+
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-paper);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 5px;
+  border: 2px solid var(--color-paper);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-faint);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0.5px);
 }
 
 @keyframes pulse-dot {
@@ -50,42 +92,11 @@ body {
 }
 
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .rise-in {
-  animation: rise-in 0.45s ease both;
-}
-
-/* ---- polish pass ---- */
-.font-mono {
-  font-variant-numeric: tabular-nums;
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: var(--color-ink-950);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-ink-700);
-  border-radius: 5px;
-  border: 2px solid var(--color-ink-950);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-ink-600);
-}
-
-:focus-visible {
-  outline: 2px solid var(--color-mint-500);
-  outline-offset: 2px;
-  border-radius: 6px;
-}
-
-button:active:not(:disabled) {
-  transform: translateY(0.5px);
+  animation: rise-in 0.4s ease both;
 }
 
 @keyframes shimmer {
@@ -93,13 +104,13 @@ button:active:not(:disabled) {
   to { background-position: -200% 0; }
 }
 .shimmer {
-  background: linear-gradient(110deg, var(--color-ink-850) 40%, var(--color-ink-800) 50%, var(--color-ink-850) 60%);
+  background: linear-gradient(110deg, var(--color-card-2) 40%, #fafbfc 50%, var(--color-card-2) 60%);
   background-size: 200% 100%;
   animation: shimmer 1.8s linear infinite;
 }
 
 @keyframes ticker-flash {
-  from { color: var(--color-mint-300); }
+  from { color: var(--color-brand); }
   to { color: inherit; }
 }
 .ticker-flash {

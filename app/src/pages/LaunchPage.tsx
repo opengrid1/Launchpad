@@ -131,12 +131,12 @@ export function LaunchPage() {
   }
 
   return (
-    <main className="mt-2 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px]">
+    <main className="mt-4 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px]">
       <section>
-        <h1 className="text-2xl font-bold tracking-tight text-fog-100">Launch a token</h1>
-        <p className="mt-1 max-w-xl text-sm text-fog-300">
+        <h1 className="text-2xl font-bold tracking-tight text-ink">Launch a token</h1>
+        <p className="mt-1 max-w-xl text-sm text-sub">
           Token, pool and locked liquidity in one transaction. You earn 70% of every trade's fee.{' '}
-          <a href="#/docs" className="text-mint-400 no-underline hover:text-mint-300">
+          <a href="#/docs" className="font-semibold text-brand no-underline hover:text-brand-deep">
             Read the docs →
           </a>
         </p>
@@ -206,7 +206,7 @@ export function LaunchPage() {
         {!address ? (
           <button
             onClick={() => void connect()}
-            className="mt-6 w-full cursor-pointer rounded-xl bg-mint-500 py-3.5 text-sm font-semibold text-ink-950 transition hover:bg-mint-400 sm:w-auto sm:px-10"
+            className="mt-6 w-full cursor-pointer rounded-full bg-night py-3.5 text-sm font-bold text-white transition hover:bg-night-2 sm:w-auto sm:px-10"
           >
             Connect wallet to launch
           </button>
@@ -215,51 +215,42 @@ export function LaunchPage() {
             onClick={() => void launch()}
             disabled={launching || formError !== null}
             title={formError ?? undefined}
-            className="mt-6 w-full cursor-pointer rounded-xl bg-mint-500 py-3.5 text-sm font-semibold text-ink-950 transition hover:bg-mint-400 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-10"
+            className="mt-6 w-full cursor-pointer rounded-full bg-brand py-3.5 text-sm font-bold text-white transition hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-10"
           >
             {launching ? 'Launching…' : `Launch $${symbol.trim().toUpperCase() || 'TOKEN'}`}
           </button>
         )}
-        {formError && (name || symbol) && <p className="mt-2 font-mono text-xs text-amber-glow">{formError}</p>}
+        {formError && (name || symbol) && <p className="mt-2 font-mono text-xs font-semibold text-warn">{formError}</p>}
       </section>
 
-      {/* right rail: live preview + progress + the deal */}
+      {/* right rail: live preview + progress + terms */}
       <aside className="space-y-4">
         <section>
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-fog-500">Board preview</p>
-          <div className="rounded-2xl bg-ink-850/80 p-5 ring-1 ring-ink-700">
-            <div className="flex items-start gap-3">
+          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-faint">Board preview</p>
+          <div className="rounded-2xl bg-card p-4 ring-1 ring-line">
+            <div className="flex items-center gap-3">
               <TokenImage src={image.trim() || undefined} symbol={symbol || '?'} />
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="truncate text-[15px] font-bold leading-tight text-fog-100">{name.trim() || 'Your Token'}</h3>
-                  <span className="rounded-md bg-mint-500/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-mint-400">new</span>
-                </div>
-                <p className="mt-0.5 font-mono text-xs font-medium text-fog-500">${symbol.trim().toUpperCase() || 'TOKEN'}</p>
-              </div>
-            </div>
-            <p className="mt-3 line-clamp-2 min-h-[2.1rem] text-[13px] leading-snug text-fog-300">
-              {description.trim() || 'Your description shows up here.'}
-            </p>
-            <div className="mt-4 flex items-baseline justify-between border-t border-ink-700/60 pt-3.5">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-wider text-fog-500">Market cap</p>
-                <p className="mt-0.5 font-mono text-sm font-semibold text-fog-100">$4,000.00</p>
+                <p className="truncate text-sm font-bold text-ink">{symbol.trim().toUpperCase() || 'TOKEN'}</p>
+                <p className="truncate text-xs text-sub">{name.trim() || 'Your Token'}</p>
               </div>
               <div className="text-right">
-                <p className="font-mono text-[10px] uppercase tracking-wider text-fog-500">Fees earned</p>
-                <p className="mt-0.5 font-mono text-sm font-semibold text-mint-400">—</p>
+                <p className="font-mono text-sm font-semibold text-ink">$4,000</p>
+                <p className="font-mono text-[11px] font-semibold text-pos">↑ 0.0%</p>
               </div>
             </div>
-            <div className="mt-3 flex items-center justify-between font-mono text-[11px] text-fog-500">
+            <p className="mt-3 line-clamp-2 min-h-[2.1rem] text-[13px] leading-snug text-sub">
+              {description.trim() || 'Your description shows up here.'}
+            </p>
+            <div className="mt-3 flex items-center justify-between border-t border-line pt-3 font-mono text-[11px] text-faint">
               <span>by you</span>
               <span>just now</span>
             </div>
           </div>
         </section>
 
-        <section className="rounded-2xl bg-ink-850/80 p-5 ring-1 ring-ink-700">
-          <h2 className="text-sm font-bold text-fog-100">Launch progress</h2>
+        <section className="rounded-2xl bg-card p-5 ring-1 ring-line">
+          <h2 className="text-sm font-bold text-ink">Launch progress</h2>
           <ol className="mt-4 space-y-4">
             <Step
               n={1}
@@ -286,7 +277,7 @@ export function LaunchPage() {
               {launchedToken && (
                 <a
                   href={`#/t/${launchedToken}`}
-                  className="block w-full rounded-xl bg-mint-500 py-2.5 text-center text-sm font-semibold text-ink-950 no-underline transition hover:bg-mint-400"
+                  className="block w-full rounded-full bg-brand py-2.5 text-center text-sm font-bold text-white no-underline transition hover:bg-brand-deep"
                 >
                   Open your token page →
                 </a>
@@ -294,7 +285,7 @@ export function LaunchPage() {
               <button
                 onClick={() => void restoreBlocks()}
                 disabled={restoringBlocks}
-                className="w-full cursor-pointer rounded-xl bg-ink-700 py-2.5 text-sm font-semibold text-fog-100 ring-1 ring-ink-600 transition hover:ring-mint-500/50 disabled:opacity-60"
+                className="w-full cursor-pointer rounded-full bg-card-2 py-2.5 text-sm font-bold text-ink ring-1 ring-line transition hover:ring-line-strong disabled:opacity-60"
               >
                 {restoringBlocks ? 'Switching…' : 'Switch back to fast blocks'}
               </button>
@@ -303,19 +294,19 @@ export function LaunchPage() {
           {blocksRestored && launchedToken && (
             <a
               href={`#/t/${launchedToken}`}
-              className="mt-4 block w-full rounded-xl bg-mint-500 py-2.5 text-center text-sm font-semibold text-ink-950 no-underline transition hover:bg-mint-400"
+              className="mt-4 block w-full rounded-full bg-brand py-2.5 text-center text-sm font-bold text-white no-underline transition hover:bg-brand-deep"
             >
               Open your token page →
             </a>
           )}
         </section>
 
-        <section className="rounded-2xl bg-ink-850/80 p-5 ring-1 ring-ink-700">
-          <h2 className="text-sm font-bold text-fog-100">Terms</h2>
-          <ul className="mt-3 space-y-2.5 text-[13px] leading-relaxed text-fog-300">
-            <li>• Fixed <span className="font-mono text-fog-100">$4,000</span> starting market cap, priced via the HYPE oracle</li>
+        <section className="rounded-2xl bg-night p-5 text-white">
+          <h2 className="text-sm font-bold">Terms</h2>
+          <ul className="mt-3 space-y-2.5 text-[13px] leading-relaxed text-white/75">
+            <li>• Fixed <span className="font-mono font-semibold text-white">$4,000</span> starting market cap, priced via the HYPE oracle</li>
             <li>• 100% of supply goes into the pool — no team allocation, no presale</li>
-            <li>• 1% swap fee: <span className="font-mono text-mint-400">70%</span> creator / 30% platform</li>
+            <li>• 1% swap fee: <span className="font-mono font-semibold text-brand">70%</span> creator / 30% platform</li>
             <li>• Earnings claimable any time in native HYPE</li>
           </ul>
         </section>
@@ -325,17 +316,17 @@ export function LaunchPage() {
 }
 
 const inputCls =
-  'w-full rounded-xl bg-ink-900 px-3.5 py-2.5 text-sm text-fog-100 ring-1 ring-ink-700 outline-none transition placeholder:text-fog-500 focus:ring-mint-500/50'
+  'w-full rounded-2xl bg-card px-3.5 py-2.5 text-sm text-ink ring-1 ring-line outline-none transition placeholder:text-faint focus:ring-brand/50'
 
 function Field({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="mb-1.5 flex items-baseline justify-between">
-        <span className="text-xs font-semibold text-fog-300">
+        <span className="text-xs font-bold text-ink">
           {label}
-          {required && <span className="ml-0.5 text-mint-400">*</span>}
+          {required && <span className="ml-0.5 text-brand">*</span>}
         </span>
-        {hint && <span className="font-mono text-[10px] text-fog-500">{hint}</span>}
+        {hint && <span className="font-mono text-[10px] text-faint">{hint}</span>}
       </span>
       {children}
     </label>
@@ -345,22 +336,22 @@ function Field({ label, hint, required, children }: { label: string; hint?: stri
 function Step({ n, state, title, detail }: { n: number; state: StepState; title: string; detail: string }) {
   const badge =
     state === 'done' ? (
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-mint-500 text-xs font-bold text-ink-950">✓</span>
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-pos text-xs font-bold text-white">✓</span>
     ) : state === 'active' ? (
-      <span className="live-dot flex h-6 w-6 items-center justify-center rounded-full bg-mint-500/20 text-xs font-bold text-mint-300 ring-1 ring-mint-500/50">
+      <span className="live-dot flex h-6 w-6 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand ring-1 ring-brand/40">
         {n}
       </span>
     ) : state === 'failed' ? (
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-soft/20 text-xs font-bold text-rose-soft ring-1 ring-rose-soft/50">✕</span>
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-neg-soft text-xs font-bold text-neg ring-1 ring-neg/40">✕</span>
     ) : (
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-ink-700 text-xs font-bold text-fog-500">{n}</span>
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-card-2 text-xs font-bold text-faint">{n}</span>
     )
   return (
     <li className="flex gap-3">
       {badge}
       <div className="min-w-0 flex-1">
-        <p className={`text-[13px] font-semibold ${state === 'idle' ? 'text-fog-500' : 'text-fog-100'}`}>{title}</p>
-        <p className="mt-0.5 text-xs leading-relaxed text-fog-500">{detail}</p>
+        <p className={`text-[13px] font-bold ${state === 'idle' ? 'text-faint' : 'text-ink'}`}>{title}</p>
+        <p className="mt-0.5 text-xs leading-relaxed text-sub">{detail}</p>
       </div>
     </li>
   )
