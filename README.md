@@ -1,57 +1,65 @@
-# HyperEVM Launchpad (fixed-price, no bonding curve)
+# HyperEVM Launchpad — flaunch-style, direct trading on HyperSwap V3
 
-A token launchpad for [HyperEVM](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm) that deliberately **does not use a bonding curve**. Every buyer in a sale pays the same flat price — the first buyer gets the same rate as the last. When a sale succeeds, liquidity is automatically deployed to a UniswapV2-style DEX and the LP tokens are burned.
+A token launchpad for [HyperEVM](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm) modeled on [flaunch.gg](https://flaunch.gg): **no bonding curve, no sale phase**. Tokens are born directly inside a HyperSwap V3 pool and trade on the DEX from block one. Revenue comes from the pool's 1% swap fee tier, split **70% to the token creator / 30% to the platform**.
 
 ## How a launch works
 
-1. **Create.** A creator calls `createLaunch` with a name/symbol, a fixed price (HYPE wei per token), the token amounts for sale and for liquidity, a soft cap, hard cap window (start/end), an optional per-wallet buy cap, and the share of the raise that goes into the pool (`liquidityBps`, minimum 50%). The full supply is minted directly to the launchpad — the creator never holds unsold tokens.
-2. **Buy.** Anyone sends native HYPE to `buy` during the window. Price is flat; overpayment past the hard cap or wallet cap is refunded in the same transaction.
-3. **Finalize.** Anyone can call `finalize` once the hard cap is hit, or after the end time.
-   - **Soft cap reached:** the protocol fee (max 5%) is taken, `liquidityBps` of the raise plus a pro-rata share of the liquidity reserve is added to the DEX pool, LP tokens are sent to the dead address (liquidity locked forever), unsold/unpooled tokens are burned, and the creator receives the remaining HYPE. Buyers then `claim` their tokens.
-   - **Soft cap missed:** the launch is marked failed and every buyer can `refund` their full contribution.
-
-Because the pool's token amount scales with how much of the sale filled, the DEX listing price always equals the sale price — no instant arbitrage against buyers on partial fills.
+1. **Create.** A creator calls `createToken(name, symbol, tokenURI, totalSupply, priceWeiPerToken, minDevBuyTokens)`. In one atomic transaction the launchpad:
+   - deploys a fixed-supply ERC20 (`LaunchToken`) carrying an immutable **`tokenURI`** (e.g. `ipfs://...` JSON with image/description/socials for frontends);
+   - creates and initializes the TOKEN/WHYPE pool on HyperSwap V3 at the creator's chosen starting price (1% fee tier);
+   - deposits **100% of the supply as single-sided liquidity** (tokens only — the range sits entirely on the token side of the starting price, so buyers swap HYPE into it);
+   - optionally executes the **dev buy**: any HYPE sent as `msg.value` is swapped for tokens to the creator, making them provably the first buyer at the listed price. Front-running is impossible because the token doesn't exist until this call.
+2. **Trade.** Everyone buys/sells directly on HyperSwap V3. HYPE paid by buyers accumulates inside the LP position as principal.
+3. **Collect.** Anyone can poke `collectFees(token)`. Accrued swap fees are pulled from the position; token-denominated fees are swapped to WHYPE with a **TWAP-bounded minimum** (5-minute window, 5% max deviation) so the keeper call can't be sandwiched — if the bound fails or the pool is too young, those fees are credited in-kind instead.
+4. **Claim.** The creator claims their 70% with `claimCreatorFees` (paid in native HYPE plus any in-kind tokens). The treasury claims the platform's 30% with `claimPlatformFees` / `claimPlatformTokenFees`. The creator fee stream is transferable via `transferCreator`.
 
 ## Contracts
 
 | File | Purpose |
 | --- | --- |
-| `src/Launchpad.sol` | Factory + sale logic: create, buy, finalize, claim, refund |
-| `src/LaunchToken.sol` | Minimal fixed-supply ERC20 (no owner, no mint, no transfer hooks) |
-| `script/Deploy.s.sol` | Foundry deploy script |
-| `test/Launchpad.t.sol` | Test suite (7 tests, mock router) |
+| `src/Launchpad.sol` | Factory + LP owner + fee splitter: create, collect, claim, admin |
+| `src/LaunchToken.sol` | Minimal fixed-supply ERC20 with `tokenURI` (no owner, no mint, no hooks) |
+| `src/interfaces/IHyperswapV3.sol` | Minimal HyperSwap V3 (UniswapV3-style) interfaces |
+| `src/libraries/` | Uniswap `TickMath` / `FullMath` (vendored, 0.8 branch) |
+| `script/Deploy.s.sol` | Foundry deploy script, mainnet addresses preconfigured |
+| `test/Launchpad.t.sol` | Test suite (18 tests, mocked HyperSwap V3) |
+
+## HyperSwap V3 mainnet addresses (verified on-chain)
+
+| Contract | Address |
+| --- | --- |
+| NonfungiblePositionManager | `0x6eDA206207c09e5428F281761DdC0D300851fBC8` |
+| SwapRouter (V1-style, with deadline) | `0x4E2960a8cd19B467b82d26D83fAcb0fAE26b094D` |
+| V3 Factory | `0xB1c0fa0B789320044A6F623cFe5eBda9562602E3` |
+| WHYPE | `0x5555555555555555555555555555555555555555` |
+
+1% fee tier tick spacing: `200`.
 
 ## Build & test
 
 ```bash
-forge install foundry-rs/forge-std   # or: git clone --depth 1 https://github.com/foundry-rs/forge-std lib/forge-std
 forge test -vv
 ```
 
-## Deploy to HyperEVM
+(`lib/forge-std` is required: `git clone --depth 1 https://github.com/foundry-rs/forge-std lib/forge-std`)
+
+## Deploy to HyperEVM mainnet
 
 ```bash
 export PRIVATE_KEY=0x...
-export ROUTER=0x...            # a UniswapV2-style router (e.g. HyperSwap V2 or KittenSwap)
-export FEE_RECIPIENT=0x...     # optional, defaults to deployer
-export PROTOCOL_FEE_BPS=100    # optional, default 1%
-
+export TREASURY=0x...   # platform fee recipient, defaults to deployer
 forge script script/Deploy.s.sol --rpc-url hyperevm --broadcast
 ```
 
-RPC endpoints are preconfigured in `foundry.toml`:
+RPC endpoints are preconfigured in `foundry.toml` (mainnet chain id `999`, testnet `998`; for testnet override `POSITION_MANAGER`, `SWAP_ROUTER`, `WHYPE` via env).
 
-- **Mainnet:** chain id `999`, `https://rpc.hyperliquid.xyz/evm`
-- **Testnet:** chain id `998`, `https://rpc.hyperliquid-testnet.xyz/evm`
-
-> **HyperEVM big blocks:** contract deployments often exceed the small-block gas limit (2M). Flip your deployer address to big blocks (30M gas, ~1 min blocks) before deploying — via the `evmUserModify` L1 action or a community toggle UI — then flip back for normal usage.
-
-> **Router address:** verify the router you pass against the DEX's official docs/explorer before deploying. The launchpad pairs against native HYPE via `addLiquidityETH` (the router wraps to WHYPE, `0x5555555555555555555555555555555555555555`, internally).
+> **HyperEVM big blocks:** contract deployments often exceed the small-block gas limit (2M). Flip your deployer address to big blocks (30M gas, ~1 min blocks) before deploying — via the `evmUserModify` L1 action or a community toggle UI — then flip back.
 
 ## Security properties & known trade-offs
 
-- Reentrancy-guarded on all value-moving functions; checks-effects-interactions throughout.
-- `finalize` is permissionless, so a creator can't hold buyer funds hostage.
-- LP is burned, not time-locked — rug-by-liquidity-pull is impossible.
-- `addLiquidityETH` is called with zero mins on purpose: strict mins would let anyone brick `finalize` forever by pre-seeding the pair. The actual deposited amounts are taken from the router's return values and any unused HYPE goes to the creator. An attacker who pre-skews the pair only donates value to it.
+- **Atomic launch:** token deploy, pool creation, price init and liquidity mint happen in one tx — the pool cannot be front-run or pre-initialized at a hostile price.
+- **Fee split is immutable:** 70/30 is a constant; the owner has no power over it.
+- **Sandwich-resistant fee conversion:** the token→WHYPE fee swap is bounded by the pool's 5-min TWAP; on failure it degrades to in-kind crediting, never a bad fill.
+- **Pull payments everywhere:** creators and treasury withdraw; `collectFees` never pushes funds to arbitrary receivers.
+- ⚠️ **`withdrawPosition` (owner-only) can pull any launch's LP NFT at any time.** This was added as an explicit admin escape hatch / migration tool — but it means **liquidity is NOT trustlessly locked** and the platform owner can rug any pool. Outstanding fees are settled 70/30 before the position leaves, and `collectFees` is disabled for that token afterwards. Put the owner key behind a multisig and/or timelock, and disclose this to your users. Delete the function if you want flaunch-grade "liquidity locked forever" guarantees.
 - This is a reference implementation and has **not been audited**. Test on HyperEVM testnet (chain id 998) before putting real funds behind it.

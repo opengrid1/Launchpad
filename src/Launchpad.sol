@@ -2,101 +2,114 @@
 pragma solidity ^0.8.26;
 
 import {LaunchToken} from "./LaunchToken.sol";
+import {
+    IWHYPE,
+    IHyperswapV3Pool,
+    INonfungiblePositionManager,
+    ISwapRouter
+} from "./interfaces/IHyperswapV3.sol";
+import {TickMath} from "./libraries/TickMath.sol";
+import {FullMath} from "./libraries/FullMath.sol";
 
-interface IUniswapV2Router02 {
-    function factory() external view returns (address);
-    function addLiquidityETH(
-        address token,
-        uint256 amountTokenDesired,
-        uint256 amountTokenMin,
-        uint256 amountETHMin,
-        address to,
-        uint256 deadline
-    ) external payable returns (uint256 amountToken, uint256 amountETH, uint256 liquidity);
-}
-
-/// @title Launchpad — fixed-price token launchpad for HyperEVM (no bonding curve)
-/// @notice Creators launch a new token with a flat sale price, a soft cap and a hard cap.
-///         Buyers pay native HYPE at the fixed price for the whole sale — no curve, the
-///         first buyer pays the same as the last. When the sale succeeds, a configurable
-///         share of the raise plus reserved tokens is paired into a UniswapV2-style DEX
-///         pool (HyperSwap/KittenSwap) and the LP tokens are burned, the protocol takes
-///         its fee, and the creator receives the remainder. If the soft cap is missed,
-///         everyone refunds.
+/// @title Launchpad — flaunch-style token launcher for HyperSwap V3 on HyperEVM
+/// @notice No bonding curve and no sale phase. `createToken` deploys a fixed-supply ERC20,
+///         creates a TOKEN/WHYPE pool on HyperSwap V3 at the creator's chosen starting price,
+///         and deposits 100% of the supply as single-sided liquidity in one atomic transaction.
+///         All trading happens directly on HyperSwap V3 from block one. Swap fees from the
+///         1% pool tier are collected via `collectFees` and split 70% to the token's
+///         creator / 30% to the platform treasury.
+/// @dev TRUST NOTE: the owner can withdraw any launch's LP position via `withdrawPosition`.
+///      Liquidity is therefore NOT trustlessly locked — token buyers must trust the
+///      platform owner not to pull liquidity. Putting the owner behind a timelock or
+///      multisig is strongly recommended.
 contract Launchpad {
-    // ---------------------------------------------------------------- types
+    // ---------------------------------------------------------------------
+    // Constants
+    // ---------------------------------------------------------------------
 
-    enum Status {
-        Live, // sale running (or waiting to be finalized/failed)
-        Succeeded, // finalized: liquidity added, claims open
-        Failed // soft cap missed: refunds open
-    }
+    /// @notice Pool fee tier used for every launch (1%). This is the revenue source.
+    uint24 public constant POOL_FEE = 10_000;
+    /// @notice Tick spacing of the 1% tier on HyperSwap V3 (verified on-chain).
+    int24 public constant TICK_SPACING = 200;
+    /// @notice Creator share of collected fees, in basis points (70%). Remainder is platform's.
+    uint256 public constant CREATOR_SHARE_BPS = 7_000;
+    uint256 internal constant BPS = 10_000;
+    /// @notice TWAP window used to bound the token->WHYPE fee swap against sandwiching.
+    uint32 public constant TWAP_WINDOW = 300;
+    /// @notice Max accepted slippage vs TWAP for the fee swap, in bps.
+    uint256 public constant TWAP_SLIPPAGE_BPS = 500;
+    /// @notice Observation slots pre-paid at launch so the pool can serve TWAPs.
+    uint16 public constant OBSERVATION_CARDINALITY = 32;
+
+    uint256 internal constant Q96 = 0x1000000000000000000000000;
+    address internal constant DEAD = 0x000000000000000000000000000000000000dEaD;
+
+    // ---------------------------------------------------------------------
+    // Immutables / admin
+    // ---------------------------------------------------------------------
+
+    INonfungiblePositionManager public immutable positionManager;
+    ISwapRouter public immutable swapRouter;
+    IWHYPE public immutable whype;
+
+    address public owner;
+    address public treasury;
+
+    // ---------------------------------------------------------------------
+    // Launch state
+    // ---------------------------------------------------------------------
 
     struct Launch {
-        address token;
         address creator;
-        uint96 priceWeiPerToken; // HYPE wei per whole (1e18) token
-        uint128 tokensForSale; // tokens sold to buyers at the fixed price
-        uint128 tokensForLiquidity; // tokens reserved for the DEX pool
-        uint128 tokensSold;
-        uint128 raised; // HYPE collected from buyers
-        uint96 softCap; // min raise (in HYPE wei) for the sale to succeed
-        uint64 startTime;
-        uint64 endTime;
-        uint96 maxBuyPerWallet; // HYPE wei cap per wallet, 0 = unlimited
-        uint16 liquidityBps; // share of the raise paired into the pool
-        Status status;
+        address pool;
+        uint256 positionId;
+        bool tokenIsToken0;
+        bool positionWithdrawn;
     }
 
-    struct CreateParams {
-        string name;
-        string symbol;
-        uint128 tokensForSale;
-        uint128 tokensForLiquidity;
-        uint96 priceWeiPerToken;
-        uint96 softCap;
-        uint64 startTime;
-        uint64 endTime;
-        uint96 maxBuyPerWallet;
-        uint16 liquidityBps; // e.g. 7000 = 70% of raise into LP
-    }
-
-    // ---------------------------------------------------------------- state
-
-    uint16 public constant MAX_BPS = 10_000;
-    uint16 public constant MIN_LIQUIDITY_BPS = 5_000; // at least half the raise must back the pool
-    address public constant LP_BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-
-    IUniswapV2Router02 public immutable router;
-    address public owner;
-    uint16 public protocolFeeBps; // taken from the raise on success
-    address public feeRecipient;
-
-    Launch[] public launches;
-    // launchId => buyer => HYPE contributed
-    mapping(uint256 => mapping(address => uint256)) public contributed;
-    // launchId => buyer => tokens purchased (claimable after success)
-    mapping(uint256 => mapping(address => uint256)) public purchased;
+    /// @notice token address => launch info.
+    mapping(address => Launch) public launches;
+    /// @notice Creator-claimable fees per token, denominated in WHYPE.
+    mapping(address => uint256) public creatorFeesHype;
+    /// @notice Creator-claimable fees per token paid in-kind (only when the
+    ///         TWAP-bounded swap to WHYPE was unavailable at collection time).
+    mapping(address => uint256) public creatorFeesToken;
+    /// @notice Platform-claimable fees, denominated in WHYPE (aggregate across launches).
+    uint256 public platformFeesHype;
+    /// @notice Platform-claimable in-kind fees per token.
+    mapping(address => uint256) public platformFeesToken;
 
     uint256 private _locked = 1;
 
-    // --------------------------------------------------------------- events
+    // ---------------------------------------------------------------------
+    // Events
+    // ---------------------------------------------------------------------
 
-    event LaunchCreated(
-        uint256 indexed launchId,
+    event TokenLaunched(
         address indexed token,
         address indexed creator,
+        address pool,
+        uint256 positionId,
+        string name,
+        string symbol,
+        string tokenURI,
+        uint256 totalSupply,
         uint256 priceWeiPerToken,
-        uint256 tokensForSale,
-        uint256 hardCap
+        uint256 devBuyHype,
+        uint256 devBuyTokens
     );
-    event Bought(uint256 indexed launchId, address indexed buyer, uint256 paid, uint256 tokensOut);
-    event Finalized(uint256 indexed launchId, uint256 raised, uint256 liquidityHype, uint256 liquidityTokens);
-    event LaunchFailed(uint256 indexed launchId, uint256 raised);
-    event Claimed(uint256 indexed launchId, address indexed buyer, uint256 tokens);
-    event Refunded(uint256 indexed launchId, address indexed buyer, uint256 amount);
+    event FeesCollected(address indexed token, uint256 hypeAmount, uint256 tokenAmount);
+    event CreatorFeesClaimed(address indexed token, address indexed creator, uint256 hypeAmount, uint256 tokenAmount);
+    event PlatformFeesClaimed(address indexed treasury, uint256 hypeAmount);
+    event PlatformTokenFeesClaimed(address indexed token, address indexed treasury, uint256 tokenAmount);
+    event CreatorTransferred(address indexed token, address indexed oldCreator, address indexed newCreator);
+    event PositionWithdrawn(address indexed token, uint256 indexed positionId, address indexed recipient);
+    event TreasuryUpdated(address indexed treasury);
+    event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
 
-    // ------------------------------------------------------------ modifiers
+    // ---------------------------------------------------------------------
+    // Modifiers
+    // ---------------------------------------------------------------------
 
     modifier nonReentrant() {
         require(_locked == 1, "reentrancy");
@@ -110,210 +123,377 @@ contract Launchpad {
         _;
     }
 
-    constructor(address router_, address feeRecipient_, uint16 protocolFeeBps_) {
-        require(router_ != address(0) && feeRecipient_ != address(0), "zero address");
-        require(protocolFeeBps_ <= 500, "fee > 5%");
-        router = IUniswapV2Router02(router_);
+    constructor(
+        INonfungiblePositionManager positionManager_,
+        ISwapRouter swapRouter_,
+        IWHYPE whype_,
+        address treasury_
+    ) {
+        require(
+            address(positionManager_) != address(0) && address(swapRouter_) != address(0)
+                && address(whype_) != address(0) && treasury_ != address(0),
+            "zero address"
+        );
+        positionManager = positionManager_;
+        swapRouter = swapRouter_;
+        whype = whype_;
+        treasury = treasury_;
         owner = msg.sender;
-        feeRecipient = feeRecipient_;
-        protocolFeeBps = protocolFeeBps_;
+        // The router and position manager are trusted canonical periphery; max-approve once.
+        whype_.approve(address(swapRouter_), type(uint256).max);
     }
 
-    // ------------------------------------------------------------- creation
+    // ---------------------------------------------------------------------
+    // Launching
+    // ---------------------------------------------------------------------
 
-    /// @notice Deploy a new token and open its fixed-price sale.
-    /// @dev The full supply (sale + liquidity) is minted straight to this contract;
-    ///      the creator never holds tokens that aren't sold or pooled.
-    function createLaunch(CreateParams calldata p) external returns (uint256 launchId, address token) {
-        require(bytes(p.name).length > 0 && bytes(p.symbol).length > 0, "empty name/symbol");
-        require(p.priceWeiPerToken > 0, "zero price");
-        require(p.tokensForSale > 0 && p.tokensForLiquidity > 0, "zero allocation");
-        require(p.startTime >= block.timestamp && p.endTime > p.startTime, "bad window");
-        require(p.liquidityBps >= MIN_LIQUIDITY_BPS && p.liquidityBps <= MAX_BPS, "bad liquidityBps");
+    /// @notice Deploys a token and lists it on HyperSwap V3 in one transaction.
+    /// @param name_            ERC20 name.
+    /// @param symbol_          ERC20 symbol.
+    /// @param tokenURI_        Metadata URI (e.g. ipfs://... JSON with image/description).
+    /// @param totalSupply_     Fixed total supply, all of it pooled (18 decimals).
+    /// @param priceWeiPerToken Starting price: HYPE wei per 1e18 token units. Sets the
+    ///                         initial pool price / market cap.
+    /// @param minDevBuyTokens  Slippage bound for the optional dev buy (ignored when
+    ///                         msg.value == 0).
+    /// @dev Send HYPE as msg.value to atomically perform the "dev buy": the creator buys
+    ///      first, through the pool at the listed price, before anyone else can. Front-running
+    ///      the pool creation is impossible because the token does not exist until this call.
+    function createToken(
+        string calldata name_,
+        string calldata symbol_,
+        string calldata tokenURI_,
+        uint256 totalSupply_,
+        uint256 priceWeiPerToken,
+        uint256 minDevBuyTokens
+    ) external payable nonReentrant returns (address token) {
+        require(totalSupply_ > 0, "zero supply");
+        require(priceWeiPerToken > 0, "zero price");
 
-        uint256 hardCap = (uint256(p.tokensForSale) * p.priceWeiPerToken) / 1e18;
-        require(hardCap > 0, "hard cap rounds to zero");
-        require(p.softCap > 0 && p.softCap <= hardCap, "bad soft cap");
+        token = address(new LaunchToken(name_, symbol_, tokenURI_, totalSupply_, address(this)));
 
-        token = address(
-            new LaunchToken(p.name, p.symbol, uint256(p.tokensForSale) + p.tokensForLiquidity, address(this))
-        );
+        bool tokenIsToken0 = token < address(whype);
+        (address token0, address token1) =
+            tokenIsToken0 ? (token, address(whype)) : (address(whype), token);
 
-        launchId = launches.length;
-        launches.push(
-            Launch({
-                token: token,
-                creator: msg.sender,
-                priceWeiPerToken: p.priceWeiPerToken,
-                tokensForSale: p.tokensForSale,
-                tokensForLiquidity: p.tokensForLiquidity,
-                tokensSold: 0,
-                raised: 0,
-                softCap: p.softCap,
-                startTime: p.startTime,
-                endTime: p.endTime,
-                maxBuyPerWallet: p.maxBuyPerWallet,
-                liquidityBps: p.liquidityBps,
-                status: Status.Live
+        uint160 sqrtPriceX96 = _sqrtPriceX96(priceWeiPerToken, tokenIsToken0);
+
+        address pool = positionManager.createAndInitializePoolIfNecessary(token0, token1, POOL_FEE, sqrtPriceX96);
+        IHyperswapV3Pool(pool).increaseObservationCardinalityNext(OBSERVATION_CARDINALITY);
+
+        (int24 tickLower, int24 tickUpper) = _singleSidedRange(sqrtPriceX96, tokenIsToken0);
+
+        LaunchToken(token).approve(address(positionManager), totalSupply_);
+        (uint256 positionId,,,) = positionManager.mint(
+            INonfungiblePositionManager.MintParams({
+                token0: token0,
+                token1: token1,
+                fee: POOL_FEE,
+                tickLower: tickLower,
+                tickUpper: tickUpper,
+                amount0Desired: tokenIsToken0 ? totalSupply_ : 0,
+                amount1Desired: tokenIsToken0 ? 0 : totalSupply_,
+                amount0Min: 0,
+                amount1Min: 0,
+                recipient: address(this),
+                deadline: block.timestamp
             })
         );
 
-        emit LaunchCreated(launchId, token, msg.sender, p.priceWeiPerToken, p.tokensForSale, hardCap);
-    }
+        // Liquidity rounding can leave a few wei of tokens behind; burn them so the
+        // launchpad never holds untracked supply.
+        uint256 dust = LaunchToken(token).balanceOf(address(this));
+        if (dust > 0) LaunchToken(token).transfer(DEAD, dust);
 
-    // --------------------------------------------------------------- buying
+        launches[token] = Launch({
+            creator: msg.sender,
+            pool: pool,
+            positionId: positionId,
+            tokenIsToken0: tokenIsToken0,
+            positionWithdrawn: false
+        });
 
-    /// @notice Buy at the fixed price. Excess HYPE (over the hard cap or wallet cap) is refunded.
-    function buy(uint256 launchId) external payable nonReentrant {
-        Launch storage l = launches[launchId];
-        require(l.status == Status.Live, "not live");
-        require(block.timestamp >= l.startTime, "not started");
-        require(block.timestamp < l.endTime, "ended");
-        require(msg.value > 0, "zero value");
-
-        uint256 hardCap = (uint256(l.tokensForSale) * l.priceWeiPerToken) / 1e18;
-        uint256 accept = msg.value;
-
-        uint256 capRoom = hardCap - l.raised;
-        if (accept > capRoom) accept = capRoom;
-
-        if (l.maxBuyPerWallet > 0) {
-            uint256 walletRoom = l.maxBuyPerWallet - contributed[launchId][msg.sender];
-            if (accept > walletRoom) accept = walletRoom;
-        }
-        require(accept > 0, "cap reached");
-
-        uint256 tokensOut = (accept * 1e18) / l.priceWeiPerToken;
-        l.raised += uint128(accept);
-        l.tokensSold += uint128(tokensOut);
-        contributed[launchId][msg.sender] += accept;
-        purchased[launchId][msg.sender] += tokensOut;
-
-        emit Bought(launchId, msg.sender, accept, tokensOut);
-
-        if (msg.value > accept) {
-            (bool ok,) = msg.sender.call{value: msg.value - accept}("");
-            require(ok, "refund failed");
-        }
-    }
-
-    // ----------------------------------------------------------- settlement
-
-    /// @notice Settle a sale: succeeds once the hard cap is hit, or after the end time
-    ///         if the soft cap was reached; otherwise marks it failed and opens refunds.
-    ///         Anyone may call.
-    function finalize(uint256 launchId) external nonReentrant {
-        Launch storage l = launches[launchId];
-        require(l.status == Status.Live, "not live");
-
-        uint256 hardCap = (uint256(l.tokensForSale) * l.priceWeiPerToken) / 1e18;
-        bool soldOut = l.raised >= hardCap;
-        require(soldOut || block.timestamp >= l.endTime, "still running");
-
-        if (l.raised < l.softCap) {
-            l.status = Status.Failed;
-            emit LaunchFailed(launchId, l.raised);
-            return;
+        uint256 devBuyTokens = 0;
+        if (msg.value > 0) {
+            whype.deposit{value: msg.value}();
+            devBuyTokens = swapRouter.exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: address(whype),
+                    tokenOut: token,
+                    fee: POOL_FEE,
+                    recipient: msg.sender,
+                    deadline: block.timestamp,
+                    amountIn: msg.value,
+                    amountOutMinimum: minDevBuyTokens,
+                    sqrtPriceLimitX96: 0
+                })
+            );
         }
 
-        l.status = Status.Succeeded;
-
-        uint256 fee = (uint256(l.raised) * protocolFeeBps) / MAX_BPS;
-        uint256 liquidityHype = (uint256(l.raised) * l.liquidityBps) / MAX_BPS;
-        // Pool tokens scale with how much of the sale actually filled, so the
-        // listing price never undercuts what buyers paid.
-        uint256 liquidityTokens = (uint256(l.tokensForLiquidity) * l.raised) / hardCap;
-        uint256 creatorProceeds = uint256(l.raised) - fee - liquidityHype;
-
-        LaunchToken(l.token).approve(address(router), liquidityTokens);
-        // Mins are 0 on purpose: if someone pre-seeds the pair to skew the ratio,
-        // strict mins would brick finalize forever. The router's return values tell
-        // us what was actually deposited; anything left over is settled below.
-        (uint256 usedTokens, uint256 usedHype,) = router.addLiquidityETH{value: liquidityHype}(
-            l.token,
-            liquidityTokens,
-            0,
-            0,
-            LP_BURN_ADDRESS, // LP burned: liquidity is locked forever
-            block.timestamp
+        emit TokenLaunched(
+            token,
+            msg.sender,
+            pool,
+            positionId,
+            name_,
+            symbol_,
+            tokenURI_,
+            totalSupply_,
+            priceWeiPerToken,
+            msg.value,
+            devBuyTokens
         );
-        creatorProceeds += liquidityHype - usedHype;
+    }
 
-        // Tokens not sold and not pooled stay out of circulation for good.
-        uint256 leftover =
-            uint256(l.tokensForSale) - l.tokensSold + (uint256(l.tokensForLiquidity) - usedTokens);
-        if (leftover > 0) {
-            LaunchToken(l.token).transfer(LP_BURN_ADDRESS, leftover);
+    // ---------------------------------------------------------------------
+    // Fee collection & claiming
+    // ---------------------------------------------------------------------
+
+    /// @notice Collects accrued swap fees from a launch's position and credits them
+    ///         70/30 to creator/platform. Permissionless — anyone can poke it.
+    /// @dev Token-denominated fees are swapped to WHYPE through the pool with a
+    ///      TWAP-bounded minimum output. If the TWAP is unavailable (young pool) or the
+    ///      bound is not met (price being manipulated), the swap is skipped and those
+    ///      fees are credited in-kind instead — never lost, never sandwiched.
+    function collectFees(address token) external nonReentrant returns (uint256 hypeAmount, uint256 tokenAmount) {
+        Launch storage launch = launches[token];
+        require(launch.creator != address(0), "unknown token");
+        require(!launch.positionWithdrawn, "position withdrawn");
+
+        (uint256 amount0, uint256 amount1) = positionManager.collect(
+            INonfungiblePositionManager.CollectParams({
+                tokenId: launch.positionId,
+                recipient: address(this),
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
+            })
+        );
+        (tokenAmount, hypeAmount) = launch.tokenIsToken0 ? (amount0, amount1) : (amount1, amount0);
+
+        if (tokenAmount > 0) {
+            try this.swapTokenFeesToHype(token, tokenAmount) returns (uint256 amountOut) {
+                hypeAmount += amountOut;
+                tokenAmount = 0;
+            } catch {}
         }
 
-        if (fee > 0) {
-            (bool okFee,) = feeRecipient.call{value: fee}("");
-            require(okFee, "fee transfer failed");
+        if (hypeAmount > 0) {
+            uint256 creatorCut = (hypeAmount * CREATOR_SHARE_BPS) / BPS;
+            creatorFeesHype[token] += creatorCut;
+            platformFeesHype += hypeAmount - creatorCut;
         }
-        if (creatorProceeds > 0) {
-            (bool okCreator,) = l.creator.call{value: creatorProceeds}("");
-            require(okCreator, "creator transfer failed");
+        if (tokenAmount > 0) {
+            uint256 creatorCut = (tokenAmount * CREATOR_SHARE_BPS) / BPS;
+            creatorFeesToken[token] += creatorCut;
+            platformFeesToken[token] += tokenAmount - creatorCut;
         }
 
-        emit Finalized(launchId, l.raised, usedHype, usedTokens);
+        emit FeesCollected(token, hypeAmount, tokenAmount);
     }
 
-    /// @dev Accepts the router's dust refund during finalize.
-    receive() external payable {}
+    /// @notice Swaps collected token fees to WHYPE, bounded by the pool's TWAP.
+    /// @dev Only callable by the contract itself (from `collectFees`, via try/catch so a
+    ///      failed bound falls back to in-kind crediting).
+    function swapTokenFeesToHype(address token, uint256 amountIn) external returns (uint256 amountOut) {
+        require(msg.sender == address(this), "internal only");
+        Launch storage launch = launches[token];
 
-    /// @notice Claim purchased tokens after a successful sale.
-    function claim(uint256 launchId) external nonReentrant {
-        Launch storage l = launches[launchId];
-        require(l.status == Status.Succeeded, "not succeeded");
-        uint256 amount = purchased[launchId][msg.sender];
-        require(amount > 0, "nothing to claim");
-        purchased[launchId][msg.sender] = 0;
-        LaunchToken(l.token).transfer(msg.sender, amount);
-        emit Claimed(launchId, msg.sender, amount);
+        uint256 minOut =
+            (_twapQuote(launch.pool, launch.tokenIsToken0, amountIn) * (BPS - TWAP_SLIPPAGE_BPS)) / BPS;
+        require(minOut > 0, "twap zero");
+
+        LaunchToken(token).approve(address(swapRouter), amountIn);
+        amountOut = swapRouter.exactInputSingle(
+            ISwapRouter.ExactInputSingleParams({
+                tokenIn: token,
+                tokenOut: address(whype),
+                fee: POOL_FEE,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: amountIn,
+                amountOutMinimum: minOut,
+                sqrtPriceLimitX96: 0
+            })
+        );
     }
 
-    /// @notice Recover contributed HYPE after a failed sale.
-    function refund(uint256 launchId) external nonReentrant {
-        Launch storage l = launches[launchId];
-        require(l.status == Status.Failed, "not failed");
-        uint256 amount = contributed[launchId][msg.sender];
-        require(amount > 0, "nothing to refund");
-        contributed[launchId][msg.sender] = 0;
-        purchased[launchId][msg.sender] = 0;
-        (bool ok,) = msg.sender.call{value: amount}("");
-        require(ok, "refund failed");
-        emit Refunded(launchId, msg.sender, amount);
+    /// @notice Creator withdraws their accumulated 70% — HYPE (native) plus any in-kind tokens.
+    function claimCreatorFees(address token) external nonReentrant {
+        Launch storage launch = launches[token];
+        require(msg.sender == launch.creator, "not creator");
+
+        uint256 hypeAmount = creatorFeesHype[token];
+        uint256 tokenAmount = creatorFeesToken[token];
+        require(hypeAmount > 0 || tokenAmount > 0, "nothing to claim");
+        creatorFeesHype[token] = 0;
+        creatorFeesToken[token] = 0;
+
+        if (tokenAmount > 0) LaunchToken(token).transfer(msg.sender, tokenAmount);
+        if (hypeAmount > 0) _payNative(msg.sender, hypeAmount);
+
+        emit CreatorFeesClaimed(token, msg.sender, hypeAmount, tokenAmount);
     }
 
-    // ----------------------------------------------------------------- view
-
-    function launchCount() external view returns (uint256) {
-        return launches.length;
+    /// @notice Treasury withdraws the platform's accumulated 30% (WHYPE side, paid as native HYPE).
+    function claimPlatformFees() external nonReentrant {
+        require(msg.sender == treasury || msg.sender == owner, "not treasury");
+        uint256 hypeAmount = platformFeesHype;
+        require(hypeAmount > 0, "nothing to claim");
+        platformFeesHype = 0;
+        _payNative(treasury, hypeAmount);
+        emit PlatformFeesClaimed(treasury, hypeAmount);
     }
 
-    function tokenOf(uint256 launchId) external view returns (address) {
-        return launches[launchId].token;
+    /// @notice Treasury withdraws the platform's in-kind token fees for a given launch.
+    function claimPlatformTokenFees(address token) external nonReentrant {
+        require(msg.sender == treasury || msg.sender == owner, "not treasury");
+        uint256 tokenAmount = platformFeesToken[token];
+        require(tokenAmount > 0, "nothing to claim");
+        platformFeesToken[token] = 0;
+        LaunchToken(token).transfer(treasury, tokenAmount);
+        emit PlatformTokenFeesClaimed(token, treasury, tokenAmount);
     }
 
-    function hardCapOf(uint256 launchId) external view returns (uint256) {
-        Launch storage l = launches[launchId];
-        return (uint256(l.tokensForSale) * l.priceWeiPerToken) / 1e18;
+    /// @notice Transfers the creator fee stream of a token to a new address.
+    /// @dev Unclaimed balances move with the role — claim first if that is not intended.
+    function transferCreator(address token, address newCreator) external {
+        Launch storage launch = launches[token];
+        require(msg.sender == launch.creator, "not creator");
+        require(newCreator != address(0), "zero address");
+        launch.creator = newCreator;
+        emit CreatorTransferred(token, msg.sender, newCreator);
     }
 
-    // ---------------------------------------------------------------- admin
+    // ---------------------------------------------------------------------
+    // Admin
+    // ---------------------------------------------------------------------
 
-    function setProtocolFee(uint16 bps) external onlyOwner {
-        require(bps <= 500, "fee > 5%");
-        protocolFeeBps = bps;
-    }
-
-    function setFeeRecipient(address recipient) external onlyOwner {
+    /// @notice Owner withdraws a launch's entire LP position NFT (principal + any
+    ///         uncollected fees) to `recipient`.
+    /// @dev WARNING — this is the rug switch. It removes the "liquidity locked" guarantee
+    ///      for the token: whoever receives the NFT can burn the liquidity and take both
+    ///      sides of the pool. Accrued-but-uncollected fees go with the position, so
+    ///      `collectFees` is called first to settle the 70/30 split up to this moment.
+    ///      After withdrawal `collectFees` is disabled for this token; already-credited
+    ///      creator/platform balances remain claimable. Keep `owner` behind a
+    ///      timelock/multisig and treat this as an emergency/migration tool.
+    function withdrawPosition(address token, address recipient) external onlyOwner {
         require(recipient != address(0), "zero address");
-        feeRecipient = recipient;
+        Launch storage launch = launches[token];
+        require(launch.creator != address(0), "unknown token");
+        require(!launch.positionWithdrawn, "position withdrawn");
+
+        // Settle outstanding fees fairly before the position leaves.
+        this.collectFees(token);
+
+        launch.positionWithdrawn = true;
+        positionManager.safeTransferFrom(address(this), recipient, launch.positionId);
+        emit PositionWithdrawn(token, launch.positionId, recipient);
+    }
+
+    function setTreasury(address treasury_) external onlyOwner {
+        require(treasury_ != address(0), "zero address");
+        treasury = treasury_;
+        emit TreasuryUpdated(treasury_);
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0), "zero address");
+        emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
+    }
+
+    // ---------------------------------------------------------------------
+    // Internals
+    // ---------------------------------------------------------------------
+
+    /// @dev sqrtPriceX96 = sqrt(token1/token0) * 2^96, from a price quoted as
+    ///      HYPE wei per 1e18 token units, for either token ordering.
+    function _sqrtPriceX96(uint256 priceWeiPerToken, bool tokenIsToken0) internal pure returns (uint160) {
+        uint256 ratioX192 = tokenIsToken0
+            ? FullMath.mulDiv(priceWeiPerToken, 1 << 192, 1e18)
+            : FullMath.mulDiv(1e18, 1 << 192, priceWeiPerToken);
+        uint256 sqrtPrice = _sqrt(ratioX192);
+        require(
+            sqrtPrice > TickMath.MIN_SQRT_RATIO && sqrtPrice < TickMath.MAX_SQRT_RATIO,
+            "price out of range"
+        );
+        return uint160(sqrtPrice);
+    }
+
+    /// @dev Range strictly on the token side of the current price, so the position is
+    ///      funded with tokens only: above the price when the token is token0 (buys push
+    ///      the price up into it), below when it is token1 (buys push the price down).
+    function _singleSidedRange(uint160 sqrtPriceX96, bool tokenIsToken0)
+        internal
+        pure
+        returns (int24 tickLower, int24 tickUpper)
+    {
+        int24 tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+        int24 floorTick = _floorToSpacing(tick);
+        int24 maxTick = (TickMath.MAX_TICK / TICK_SPACING) * TICK_SPACING;
+
+        if (tokenIsToken0) {
+            tickLower = floorTick + TICK_SPACING;
+            tickUpper = maxTick;
+        } else {
+            tickLower = -maxTick;
+            tickUpper = floorTick;
+        }
+        require(tickLower < tickUpper, "price too extreme");
+    }
+
+    function _floorToSpacing(int24 tick) internal pure returns (int24) {
+        int24 compressed = tick / TICK_SPACING;
+        if (tick < 0 && tick % TICK_SPACING != 0) compressed--;
+        return compressed * TICK_SPACING;
+    }
+
+    /// @dev Expected WHYPE out for `amountIn` of the launch token at the pool's TWAP price.
+    ///      Reverts if the pool cannot serve a TWAP_WINDOW-second observation yet.
+    function _twapQuote(address pool, bool tokenIsToken0, uint256 amountIn) internal view returns (uint256) {
+        uint32[] memory secondsAgos = new uint32[](2);
+        secondsAgos[0] = TWAP_WINDOW;
+        secondsAgos[1] = 0;
+        (int56[] memory tickCumulatives,) = IHyperswapV3Pool(pool).observe(secondsAgos);
+
+        int56 delta = tickCumulatives[1] - tickCumulatives[0];
+        int24 avgTick = int24(delta / int56(uint56(TWAP_WINDOW)));
+        if (delta < 0 && (delta % int56(uint56(TWAP_WINDOW)) != 0)) avgTick--;
+
+        uint160 sqrtRatioX96 = TickMath.getSqrtRatioAtTick(avgTick);
+        if (tokenIsToken0) {
+            // token1 out = amountIn * (sqrtRatio/2^96)^2
+            return FullMath.mulDiv(FullMath.mulDiv(amountIn, sqrtRatioX96, Q96), sqrtRatioX96, Q96);
+        }
+        // token0 out = amountIn / (sqrtRatio/2^96)^2
+        return FullMath.mulDiv(FullMath.mulDiv(amountIn, Q96, sqrtRatioX96), Q96, sqrtRatioX96);
+    }
+
+    function _payNative(address to, uint256 amount) internal {
+        whype.withdraw(amount);
+        (bool ok,) = to.call{value: amount}("");
+        require(ok, "native transfer failed");
+    }
+
+    /// @dev Babylonian square root, rounded down.
+    function _sqrt(uint256 x) internal pure returns (uint256 y) {
+        if (x == 0) return 0;
+        uint256 z = (x >> 1) + 1;
+        y = x;
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
+        }
+    }
+
+    /// @dev Accept the position NFT in case the position manager uses safe minting.
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+    /// @dev Only WHYPE may send native HYPE here (during withdraw-for-claim).
+    receive() external payable {
+        require(msg.sender == address(whype), "direct HYPE not accepted");
     }
 }

@@ -4,9 +4,12 @@ pragma solidity ^0.8.26;
 /// @title LaunchToken
 /// @notice Minimal fixed-supply ERC20 minted in full to the launchpad at creation.
 ///         No owner, no mint, no blacklist, no fee-on-transfer — what you see is what you get.
+///         Carries an immutable metadata URI (e.g. ipfs://...) describing the token
+///         (image, description, socials) for frontends.
 contract LaunchToken {
     string public name;
     string public symbol;
+    string public tokenURI;
     uint8 public constant decimals = 18;
     uint256 public immutable totalSupply;
 
@@ -16,9 +19,16 @@ contract LaunchToken {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
-    constructor(string memory name_, string memory symbol_, uint256 supply_, address recipient) {
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        string memory tokenURI_,
+        uint256 supply_,
+        address recipient
+    ) {
         name = name_;
         symbol = symbol_;
+        tokenURI = tokenURI_;
         totalSupply = supply_;
         balanceOf[recipient] = supply_;
         emit Transfer(address(0), recipient, supply_);

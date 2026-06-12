@@ -2,157 +2,346 @@
 pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
-import {Launchpad, IUniswapV2Router02} from "../src/Launchpad.sol";
+import {Launchpad} from "../src/Launchpad.sol";
 import {LaunchToken} from "../src/LaunchToken.sol";
-
-/// Minimal router stub: takes the tokens + ETH at face value and reports them used.
-contract MockRouter is IUniswapV2Router02 {
-    function factory() external view returns (address) {
-        return address(this);
-    }
-
-    function addLiquidityETH(address token, uint256 amountTokenDesired, uint256, uint256, address, uint256)
-        external
-        payable
-        returns (uint256, uint256, uint256)
-    {
-        LaunchToken(token).transferFrom(msg.sender, address(this), amountTokenDesired);
-        return (amountTokenDesired, msg.value, 1);
-    }
-}
+import {
+    IWHYPE,
+    INonfungiblePositionManager,
+    ISwapRouter
+} from "../src/interfaces/IHyperswapV3.sol";
+import {FullMath} from "../src/libraries/FullMath.sol";
+import {MockWHYPE, MockPool, MockPositionManager, MockSwapRouter} from "./mocks/HyperswapV3Mocks.sol";
 
 contract LaunchpadTest is Test {
+    // Etch WHYPE at the top of the address space so freshly created tokens sort
+    // below it (token == token0). A separate test etches it low for the
+    // token == token1 ordering.
+    address constant WHYPE_HIGH = address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
+    address constant WHYPE_LOW = address(0x0000000000000000000000000000000000000100);
+
+    uint256 constant SUPPLY = 1_000_000_000e18;
+    uint256 constant PRICE = 1e15; // 0.001 HYPE per token
+    uint256 constant Q96 = 0x1000000000000000000000000;
+
+    MockPositionManager pm;
+    MockSwapRouter router;
+    address whype;
     Launchpad pad;
-    MockRouter router;
+
     address creator = makeAddr("creator");
-    address alice = makeAddr("alice");
-    address bob = makeAddr("bob");
-    address feeRecipient = makeAddr("fees");
+    address treasury = makeAddr("treasury");
+    address rando = makeAddr("rando");
 
     function setUp() public {
-        router = new MockRouter();
-        pad = new Launchpad(address(router), feeRecipient, 100); // 1% fee
-        vm.deal(alice, 1000 ether);
-        vm.deal(bob, 1000 ether);
+        _deployStack(WHYPE_HIGH);
     }
 
-    function _create() internal returns (uint256 id) {
+    function _deployStack(address whypeAddr) internal {
+        MockWHYPE impl = new MockWHYPE();
+        vm.etch(whypeAddr, address(impl).code);
+        whype = whypeAddr;
+
+        pm = new MockPositionManager();
+        router = new MockSwapRouter(pm);
+        pad = new Launchpad(
+            INonfungiblePositionManager(address(pm)),
+            ISwapRouter(address(router)),
+            IWHYPE(whype),
+            treasury
+        );
+    }
+
+    function _launch() internal returns (address token) {
         vm.prank(creator);
-        (id,) = pad.createLaunch(
-            Launchpad.CreateParams({
-                name: "Test Token",
-                symbol: "TEST",
-                tokensForSale: 1_000_000e18,
-                tokensForLiquidity: 500_000e18,
-                priceWeiPerToken: 0.0001 ether, // hard cap = 100 HYPE
-                softCap: 10 ether,
-                startTime: uint64(block.timestamp),
-                endTime: uint64(block.timestamp + 1 days),
-                maxBuyPerWallet: 0,
-                liquidityBps: 7000
-            })
-        );
+        token = pad.createToken("Test Token", "TEST", "ipfs://QmMeta", SUPPLY, PRICE, 0);
     }
 
-    function test_buyAtFixedPrice() public {
-        uint256 id = _create();
-        vm.prank(alice);
-        pad.buy{value: 1 ether}(id);
-        assertEq(pad.purchased(id, alice), 10_000e18); // 1 / 0.0001
-
-        // last buyer pays the same rate as the first — no curve
-        vm.prank(bob);
-        pad.buy{value: 50 ether}(id);
-        assertEq(pad.purchased(id, bob), 500_000e18);
+    function _launchInfo(address token)
+        internal
+        view
+        returns (address creator_, address pool_, uint256 positionId_, bool tokenIsToken0_, bool withdrawn_)
+    {
+        return pad.launches(token);
     }
 
-    function test_hardCapExcessRefunded() public {
-        uint256 id = _create();
-        uint256 before = alice.balance;
-        vm.prank(alice);
-        pad.buy{value: 150 ether}(id); // hard cap is 100
-        assertEq(before - alice.balance, 100 ether);
-        assertEq(pad.purchased(id, alice), 1_000_000e18);
+    // ------------------------------------------------------------------ create
+
+    function test_createToken_metadataAndSupply() public {
+        address token = _launch();
+        LaunchToken t = LaunchToken(token);
+
+        assertEq(t.name(), "Test Token");
+        assertEq(t.symbol(), "TEST");
+        assertEq(t.tokenURI(), "ipfs://QmMeta");
+        assertEq(t.totalSupply(), SUPPLY);
+        // Entire supply sits in the pool; creator and launchpad hold nothing.
+        assertEq(t.balanceOf(creator), 0);
+        assertEq(t.balanceOf(address(pad)), 0);
+        assertEq(t.balanceOf(pm.lastPool()), SUPPLY);
+
+        (address c, address pool, uint256 id, bool is0, bool withdrawn) = _launchInfo(token);
+        assertEq(c, creator);
+        assertEq(pool, pm.lastPool());
+        assertEq(id, 1);
+        assertTrue(is0); // WHYPE etched high -> token sorts first
+        assertFalse(withdrawn);
     }
 
-    function test_finalizeSuccessPaysEveryone() public {
-        uint256 id = _create();
-        vm.prank(alice);
-        pad.buy{value: 100 ether}(id); // sell out
+    function test_createToken_initialPriceMatches() public {
+        address token = _launch();
+        (, address pool,,,) = _launchInfo(token);
+        (uint160 sqrtPriceX96,,,,,,) = MockPool(pool).slot0();
 
-        pad.finalize(id);
-
-        assertEq(feeRecipient.balance, 1 ether); // 1% of 100
-        assertEq(address(router).balance, 70 ether); // 70% to LP
-        assertEq(creator.balance, 29 ether); // remainder
-
-        vm.prank(alice);
-        pad.claim(id);
-        assertEq(LaunchToken(pad.tokenOf(id)).balanceOf(alice), 1_000_000e18);
+        // Round-trip: (sqrtP/2^96)^2 * 1e18 should give back the HYPE price per token.
+        uint256 priceBack =
+            FullMath.mulDiv(FullMath.mulDiv(1e18, sqrtPriceX96, Q96), sqrtPriceX96, Q96);
+        assertApproxEqRel(priceBack, PRICE, 1e12); // within 0.0001%
+        assertEq(MockPool(pool).cardinalityNext(), pad.OBSERVATION_CARDINALITY());
     }
 
-    function test_softCapMissRefunds() public {
-        uint256 id = _create();
-        vm.prank(alice);
-        pad.buy{value: 5 ether}(id); // below 10 soft cap
+    function test_createToken_singleSidedAboveCurrentPrice() public {
+        _launch();
+        (,,, int24 tickLower, int24 tickUpper, uint256 amount0, uint256 amount1,) = pm.minted(1);
 
-        vm.warp(block.timestamp + 2 days);
-        pad.finalize(id);
-
-        uint256 before = alice.balance;
-        vm.prank(alice);
-        pad.refund(id);
-        assertEq(alice.balance - before, 5 ether);
-
-        vm.prank(alice);
-        vm.expectRevert("not succeeded");
-        pad.claim(id);
+        // token0-only position: tokens deposited, no HYPE, range above spot.
+        assertEq(amount0, SUPPLY);
+        assertEq(amount1, 0);
+        assertEq(tickUpper, int24(887200));
+        assertEq(tickLower % 200, 0);
+        // 0.001 HYPE/token -> tick ~ ln(0.001)/ln(1.0001) ~ -69081; floor+spacing = -69000
+        assertEq(tickLower, -69000);
     }
 
-    function test_partialFillScalesLiquidity() public {
-        uint256 id = _create();
-        vm.prank(alice);
-        pad.buy{value: 50 ether}(id); // half the hard cap
+    function test_createToken_token1Ordering() public {
+        _deployStack(WHYPE_LOW);
+        address token = _launch();
 
-        vm.warp(block.timestamp + 2 days);
-        pad.finalize(id);
+        (,, uint256 id, bool is0,) = _launchInfo(token);
+        assertFalse(is0);
 
-        address token = pad.tokenOf(id);
-        // half the liquidity reserve pooled, the rest burned with unsold tokens
-        assertEq(LaunchToken(token).balanceOf(address(router)), 250_000e18);
-        assertEq(
-            LaunchToken(token).balanceOf(pad.LP_BURN_ADDRESS()),
-            500_000e18 + 250_000e18 // unsold sale tokens + unpooled liquidity tokens
-        );
+        (,,, int24 tickLower, int24 tickUpper, uint256 amount0, uint256 amount1,) = pm.minted(id);
+        // token1-only position: range below spot, mirrored tick.
+        assertEq(amount0, 0);
+        assertEq(amount1, SUPPLY);
+        assertEq(tickLower, int24(-887200));
+        assertEq(tickUpper, 69000);
+
+        (, address pool,,,) = _launchInfo(token);
+        (uint160 sqrtPriceX96,,,,,,) = MockPool(pool).slot0();
+        // Inverted ratio: token1 per token0 is tokens-per-HYPE here.
+        uint256 tokensPerHype =
+            FullMath.mulDiv(FullMath.mulDiv(1e18, sqrtPriceX96, Q96), sqrtPriceX96, Q96);
+        assertApproxEqRel(tokensPerHype, (1e18 * 1e18) / PRICE, 1e12);
     }
 
-    function test_cannotBuyAfterEnd() public {
-        uint256 id = _create();
-        vm.warp(block.timestamp + 2 days);
-        vm.prank(alice);
-        vm.expectRevert("ended");
-        pad.buy{value: 1 ether}(id);
-    }
+    function test_createToken_devBuy() public {
+        router.setRate(1000e18); // mock: 1000 tokens out per HYPE in
 
-    function test_walletCapEnforced() public {
+        vm.deal(creator, 5 ether);
         vm.prank(creator);
-        (uint256 id,) = pad.createLaunch(
-            Launchpad.CreateParams({
-                name: "Capped",
-                symbol: "CAP",
-                tokensForSale: 1_000_000e18,
-                tokensForLiquidity: 500_000e18,
-                priceWeiPerToken: 0.0001 ether,
-                softCap: 10 ether,
-                startTime: uint64(block.timestamp),
-                endTime: uint64(block.timestamp + 1 days),
-                maxBuyPerWallet: 2 ether,
-                liquidityBps: 7000
-            })
+        address token = pad.createToken{value: 2 ether}(
+            "Test Token", "TEST", "ipfs://QmMeta", SUPPLY, PRICE, 1900e18
         );
-        uint256 before = alice.balance;
-        vm.prank(alice);
-        pad.buy{value: 5 ether}(id);
-        assertEq(before - alice.balance, 2 ether); // excess over wallet cap returned
+
+        assertEq(LaunchToken(token).balanceOf(creator), 2000e18);
+        // The dev buy's HYPE went into the pool, wrapped.
+        assertEq(MockWHYPE(payable(whype)).balanceOf(pm.lastPool()), 2 ether);
+    }
+
+    function test_createToken_devBuySlippageReverts() public {
+        router.setRate(1000e18);
+        vm.deal(creator, 1 ether);
+        vm.prank(creator);
+        vm.expectRevert("Too little received");
+        pad.createToken{value: 1 ether}("T", "T", "u", SUPPLY, PRICE, 1001e18);
+    }
+
+    function test_createToken_zeroParamsRevert() public {
+        vm.expectRevert("zero supply");
+        pad.createToken("T", "T", "u", 0, PRICE, 0);
+        vm.expectRevert("zero price");
+        pad.createToken("T", "T", "u", SUPPLY, 0, 0);
+    }
+
+    // ------------------------------------------------------------------ fees
+
+    /// @dev Accrue `tokenFees` + `hypeFees` as collectable on the launch's position and
+    ///      fund the mock position manager so collect() can pay them out.
+    function _accrueFees(address token, uint256 tokenFees, uint256 hypeFees) internal {
+        (, address pool, uint256 id, bool is0,) = _launchInfo(token);
+        if (tokenFees > 0) MockPool(pool).pay(token, address(pm), tokenFees);
+        if (hypeFees > 0) {
+            vm.deal(address(this), hypeFees);
+            MockWHYPE(payable(whype)).deposit{value: hypeFees}();
+            MockWHYPE(payable(whype)).transfer(address(pm), hypeFees);
+        }
+        if (is0) pm.setCollectable(id, tokenFees, hypeFees);
+        else pm.setCollectable(id, hypeFees, tokenFees);
+    }
+
+    function test_collectFees_inKindWhenTwapUnavailable() public {
+        address token = _launch();
+        _accrueFees(token, 1000e18, 10 ether);
+
+        vm.prank(rando); // permissionless
+        (uint256 hypeAmt, uint256 tokenAmt) = pad.collectFees(token);
+        assertEq(hypeAmt, 10 ether);
+        assertEq(tokenAmt, 1000e18);
+
+        assertEq(pad.creatorFeesHype(token), 7 ether);
+        assertEq(pad.platformFeesHype(), 3 ether);
+        assertEq(pad.creatorFeesToken(token), 700e18);
+        assertEq(pad.platformFeesToken(token), 300e18);
+    }
+
+    function test_collectFees_swapsTokenFeesUsingTwap() public {
+        address token = _launch();
+        (, address pool,,,) = _launchInfo(token);
+        _accrueFees(token, 1000e18, 10 ether);
+
+        // TWAP at tick 0 = 1 WHYPE per token; mock router fills at exactly 1:1,
+        // which clears the 5% TWAP slippage bound.
+        MockPool(pool).setTwap(0);
+        // Pool must hold WHYPE to pay the swap out.
+        vm.deal(address(this), 1000e18);
+        MockWHYPE(payable(whype)).deposit{value: 1000e18}();
+        MockWHYPE(payable(whype)).transfer(pool, 1000e18);
+
+        (uint256 hypeAmt, uint256 tokenAmt) = pad.collectFees(token);
+        assertEq(hypeAmt, 10 ether + 1000e18);
+        assertEq(tokenAmt, 0);
+
+        assertEq(pad.creatorFeesHype(token), (hypeAmt * 7000) / 10000);
+        assertEq(pad.creatorFeesToken(token), 0);
+        assertEq(pad.platformFeesHype(), hypeAmt - (hypeAmt * 7000) / 10000);
+    }
+
+    function test_collectFees_fallsBackWhenSwapUnderTwapBound() public {
+        address token = _launch();
+        (, address pool,,,) = _launchInfo(token);
+        _accrueFees(token, 1000e18, 0);
+
+        MockPool(pool).setTwap(0); // TWAP says 1:1...
+        router.setRate(0.5e18); // ...but the pool is being dumped 50% below it
+
+        pad.collectFees(token);
+        // Swap was rejected by the bound; fees credited in-kind instead.
+        assertEq(pad.creatorFeesToken(token), 700e18);
+        assertEq(pad.creatorFeesHype(token), 0);
+    }
+
+    function test_collectFees_unknownTokenReverts() public {
+        vm.expectRevert("unknown token");
+        pad.collectFees(address(0xBEEF));
+    }
+
+    // ------------------------------------------------------------------ claims
+
+    function test_claimCreatorFees() public {
+        address token = _launch();
+        _accrueFees(token, 1000e18, 10 ether);
+        pad.collectFees(token);
+
+        vm.prank(creator);
+        pad.claimCreatorFees(token);
+
+        assertEq(creator.balance, 7 ether); // paid as native HYPE
+        assertEq(LaunchToken(token).balanceOf(creator), 700e18);
+        assertEq(pad.creatorFeesHype(token), 0);
+        assertEq(pad.creatorFeesToken(token), 0);
+
+        vm.prank(creator);
+        vm.expectRevert("nothing to claim");
+        pad.claimCreatorFees(token);
+    }
+
+    function test_claimCreatorFees_onlyCreator() public {
+        address token = _launch();
+        _accrueFees(token, 0, 1 ether);
+        pad.collectFees(token);
+
+        vm.prank(rando);
+        vm.expectRevert("not creator");
+        pad.claimCreatorFees(token);
+    }
+
+    function test_claimPlatformFees() public {
+        address token = _launch();
+        _accrueFees(token, 1000e18, 10 ether);
+        pad.collectFees(token);
+
+        vm.prank(rando);
+        vm.expectRevert("not treasury");
+        pad.claimPlatformFees();
+
+        vm.prank(treasury);
+        pad.claimPlatformFees();
+        assertEq(treasury.balance, 3 ether);
+        assertEq(pad.platformFeesHype(), 0);
+
+        vm.prank(treasury);
+        pad.claimPlatformTokenFees(token);
+        assertEq(LaunchToken(token).balanceOf(treasury), 300e18);
+    }
+
+    function test_transferCreator() public {
+        address token = _launch();
+        address newCreator = makeAddr("newCreator");
+
+        vm.prank(rando);
+        vm.expectRevert("not creator");
+        pad.transferCreator(token, rando);
+
+        vm.prank(creator);
+        pad.transferCreator(token, newCreator);
+        (address c,,,,) = _launchInfo(token);
+        assertEq(c, newCreator);
+    }
+
+    // ------------------------------------------------------------------ admin
+
+    function test_withdrawPosition() public {
+        address token = _launch();
+        _accrueFees(token, 0, 10 ether);
+        address vault = makeAddr("vault");
+
+        vm.prank(rando);
+        vm.expectRevert("not owner");
+        pad.withdrawPosition(token, vault);
+
+        pad.withdrawPosition(token, vault);
+
+        (,, uint256 id,, bool withdrawn) = _launchInfo(token);
+        assertTrue(withdrawn);
+        assertEq(pm.ownerOf(id), vault);
+        // Outstanding fees were settled 70/30 before the position left.
+        assertEq(pad.creatorFeesHype(token), 7 ether);
+        assertEq(pad.platformFeesHype(), 3 ether);
+
+        vm.expectRevert("position withdrawn");
+        pad.collectFees(token);
+        vm.expectRevert("position withdrawn");
+        pad.withdrawPosition(token, vault);
+    }
+
+    function test_setTreasuryAndOwnership() public {
+        vm.prank(rando);
+        vm.expectRevert("not owner");
+        pad.setTreasury(rando);
+
+        pad.setTreasury(rando);
+        assertEq(pad.treasury(), rando);
+
+        pad.transferOwnership(rando);
+        assertEq(pad.owner(), rando);
+        vm.expectRevert("not owner");
+        pad.setTreasury(treasury);
+    }
+
+    function test_rejectsDirectHype() public {
+        vm.deal(rando, 1 ether);
+        vm.prank(rando);
+        (bool ok,) = address(pad).call{value: 1 ether}("");
+        assertFalse(ok);
     }
 }
