@@ -4,9 +4,9 @@ A token launchpad for [HyperEVM](https://hyperliquid.gitbook.io/hyperliquid-docs
 
 ## How a launch works
 
-1. **Create.** A creator calls `createToken(name, symbol, tokenURI, totalSupply, priceWeiPerToken, minDevBuyTokens)`. In one atomic transaction the launchpad:
+1. **Create.** A creator calls `createToken(name, symbol, tokenURI, totalSupply, minDevBuyTokens)`. In one atomic transaction the launchpad:
    - deploys a fixed-supply ERC20 (`LaunchToken`) carrying an immutable **`tokenURI`** (e.g. `ipfs://...` JSON with image/description/socials for frontends);
-   - creates and initializes the TOKEN/WHYPE pool on HyperSwap V3 at the creator's chosen starting price (1% fee tier);
+   - creates and initializes the TOKEN/WHYPE pool on HyperSwap V3 (1% fee tier) at a price that makes every launch start at a **fixed $4,000 virtual market cap** (`startingMarketCapUsd6`, owner-adjustable) — the USD→HYPE conversion happens on-chain at launch time via the HyperCore oracle precompile (`0x...0807`, HYPE perp index 159), with an owner-settable manual fallback;
    - deposits **100% of the supply as single-sided liquidity** (tokens only — the range sits entirely on the token side of the starting price, so buyers swap HYPE into it);
    - optionally executes the **dev buy**: any HYPE sent as `msg.value` is swapped for tokens to the creator, making them provably the first buyer at the listed price. Front-running is impossible because the token doesn't exist until this call.
 2. **Trade.** Everyone buys/sells directly on HyperSwap V3. HYPE paid by buyers accumulates inside the LP position as principal.
@@ -18,7 +18,8 @@ A token launchpad for [HyperEVM](https://hyperliquid.gitbook.io/hyperliquid-docs
 - `allTokens(i)` / `allTokensLength()` — every launched token, in creation order
 - `tokensByCreator(addr)` — launches by creator (launch-time attribution)
 - `launches(token)` — creator, `createdAt` timestamp, pool, position id, flags
-- `getPrice(token)` — live spot price in HYPE wei per token; `getMarketCap(token)` — FDV in HYPE wei
+- `getPrice(token)` — live spot price in HYPE wei per token; `getMarketCap(token)` / `getMarketCapUsd(token)` — FDV in HYPE wei / USD (6 decimals)
+- `hypeUsdPrice()` — live HYPE/USD (6 decimals) from the HyperCore oracle; `startingMarketCapUsd6()` — the launch cap
 - `lifetimeFeesHype(token)` / `lifetimeFeesToken(token)` — cumulative fees ever collected (leaderboards)
 - `creatorFeesHype/Token(token)`, `platformFeesHype()`, `platformFeesToken(token)` — claimable balances
 - Pending (uncollected) fees: `eth_call`-simulate `collectFees(token)` and read its return values

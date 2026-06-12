@@ -10,6 +10,7 @@ import {
     ISwapRouter
 } from "../src/interfaces/IHyperswapV3.sol";
 import {FullMath} from "../src/libraries/FullMath.sol";
+import {TickMath} from "../src/libraries/TickMath.sol";
 import {MockWHYPE, MockPool, MockPositionManager, MockSwapRouter} from "./mocks/HyperswapV3Mocks.sol";
 
 contract LaunchpadTest is Test {
@@ -20,8 +21,13 @@ contract LaunchpadTest is Test {
     address constant WHYPE_LOW = address(0x0000000000000000000000000000000000000100);
 
     uint256 constant SUPPLY = 1_000_000_000e18;
-    uint256 constant PRICE = 1e15; // 0.001 HYPE per token
     uint256 constant Q96 = 0x1000000000000000000000000;
+
+    // HyperCore oracle mock: HYPE at $60.569 (raw perp price, 4 decimals).
+    address constant ORACLE = 0x0000000000000000000000000000000000000807;
+    uint64 constant ORACLE_RAW = 605_690;
+    uint256 constant HYPE_USD6 = uint256(ORACLE_RAW) * 100;
+    uint256 constant MC_USD6 = 4_000e6;
 
     MockPositionManager pm;
     MockSwapRouter router;
@@ -49,11 +55,18 @@ contract LaunchpadTest is Test {
             IWHYPE(whype),
             treasury
         );
+        vm.mockCall(ORACLE, abi.encode(uint32(159)), abi.encode(ORACLE_RAW));
     }
 
     function _launch() internal returns (address token) {
         vm.prank(creator);
-        token = pad.createToken("Test Token", "TEST", "ipfs://QmMeta", SUPPLY, PRICE, 0);
+        token = pad.createToken("Test Token", "TEST", "ipfs://QmMeta", SUPPLY, 0);
+    }
+
+    /// @dev HYPE wei per 1e18 tokens implied by a $4k cap at the mocked oracle price.
+    function _expectedPrice() internal pure returns (uint256) {
+        uint256 mcHypeWei = FullMath.mulDiv(MC_USD6, 1e18, HYPE_USD6);
+        return FullMath.mulDiv(mcHypeWei, 1e18, SUPPLY);
     }
 
     function _launchInfo(address token)
@@ -95,12 +108,15 @@ contract LaunchpadTest is Test {
         // Round-trip: (sqrtP/2^96)^2 * 1e18 should give back the HYPE price per token.
         uint256 priceBack =
             FullMath.mulDiv(FullMath.mulDiv(1e18, sqrtPriceX96, Q96), sqrtPriceX96, Q96);
-        assertApproxEqRel(priceBack, PRICE, 1e12); // within 0.0001%
+        assertApproxEqRel(priceBack, _expectedPrice(), 1e12); // within 0.0001%
         assertEq(MockPool(pool).cardinalityNext(), pad.OBSERVATION_CARDINALITY());
+
+        // The launch lists at exactly the configured $4k market cap.
+        assertApproxEqRel(pad.getMarketCapUsd(token), MC_USD6, 1e12);
     }
 
     function test_createToken_singleSidedAboveCurrentPrice() public {
-        _launch();
+        address token = _launch();
         (,,, int24 tickLower, int24 tickUpper, uint256 amount0, uint256 amount1,) = pm.minted(1);
 
         // token0-only position: tokens deposited, no HYPE, range above spot.
@@ -108,8 +124,14 @@ contract LaunchpadTest is Test {
         assertEq(amount1, 0);
         assertEq(tickUpper, int24(887200));
         assertEq(tickLower % 200, 0);
-        // 0.001 HYPE/token -> tick ~ ln(0.001)/ln(1.0001) ~ -69081; floor+spacing = -69000
-        assertEq(tickLower, -69000);
+        // Range starts exactly one spacing above the floored spot tick.
+        (, address pool,,,) = _launchInfo(token);
+        (uint160 sqrtPriceX96,,,,,,) = MockPool(pool).slot0();
+        int24 spotTick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+        int24 compressed = spotTick / 200;
+        if (spotTick < 0 && spotTick % 200 != 0) compressed--;
+        assertEq(tickLower, compressed * 200 + 200);
+        assertGt(tickLower, spotTick);
     }
 
     function test_createToken_token1Ordering() public {
@@ -120,18 +142,23 @@ contract LaunchpadTest is Test {
         assertFalse(is0);
 
         (,,, int24 tickLower, int24 tickUpper, uint256 amount0, uint256 amount1,) = pm.minted(id);
-        // token1-only position: range below spot, mirrored tick.
+        // token1-only position: range below spot.
         assertEq(amount0, 0);
         assertEq(amount1, SUPPLY);
         assertEq(tickLower, int24(-887200));
-        assertEq(tickUpper, 69000);
 
         (, address pool,,,) = _launchInfo(token);
         (uint160 sqrtPriceX96,,,,,,) = MockPool(pool).slot0();
+        int24 spotTick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+        int24 compressed = spotTick / 200;
+        if (spotTick < 0 && spotTick % 200 != 0) compressed--;
+        assertEq(tickUpper, compressed * 200);
+        assertLe(tickUpper, spotTick);
+
         // Inverted ratio: token1 per token0 is tokens-per-HYPE here.
         uint256 tokensPerHype =
             FullMath.mulDiv(FullMath.mulDiv(1e18, sqrtPriceX96, Q96), sqrtPriceX96, Q96);
-        assertApproxEqRel(tokensPerHype, (1e18 * 1e18) / PRICE, 1e12);
+        assertApproxEqRel(tokensPerHype, FullMath.mulDiv(1e18, 1e18, _expectedPrice()), 1e12);
     }
 
     function test_createToken_publicData() public {
@@ -149,15 +176,17 @@ contract LaunchpadTest is Test {
         assertEq(createdAt, 1_750_000_000);
 
         // Spot price view matches the launch price; market cap = price * supply.
-        assertApproxEqRel(pad.getPrice(token), PRICE, 1e12);
-        assertApproxEqRel(pad.getMarketCap(token), (PRICE * SUPPLY) / 1e18, 1e12);
+        assertApproxEqRel(pad.getPrice(token), _expectedPrice(), 1e12);
+        assertApproxEqRel(
+            pad.getMarketCap(token), FullMath.mulDiv(_expectedPrice(), SUPPLY, 1e18), 1e12
+        );
 
         vm.expectRevert("unknown token");
         pad.getPrice(address(0xBEEF));
 
         // Second launch appends.
         vm.prank(creator);
-        pad.createToken("Two", "TWO", "u2", SUPPLY, PRICE, 0);
+        pad.createToken("Two", "TWO", "u2", SUPPLY, 0);
         assertEq(pad.allTokensLength(), 2);
         assertEq(pad.tokensByCreator(creator).length, 2);
     }
@@ -185,7 +214,7 @@ contract LaunchpadTest is Test {
         vm.deal(creator, 5 ether);
         vm.prank(creator);
         address token = pad.createToken{value: 2 ether}(
-            "Test Token", "TEST", "ipfs://QmMeta", SUPPLY, PRICE, 1900e18
+            "Test Token", "TEST", "ipfs://QmMeta", SUPPLY, 1900e18
         );
 
         assertEq(LaunchToken(token).balanceOf(creator), 2000e18);
@@ -198,14 +227,48 @@ contract LaunchpadTest is Test {
         vm.deal(creator, 1 ether);
         vm.prank(creator);
         vm.expectRevert("Too little received");
-        pad.createToken{value: 1 ether}("T", "T", "u", SUPPLY, PRICE, 1001e18);
+        pad.createToken{value: 1 ether}("T", "T", "u", SUPPLY, 1001e18);
     }
 
-    function test_createToken_zeroParamsRevert() public {
+    function test_createToken_zeroSupplyReverts() public {
         vm.expectRevert("zero supply");
-        pad.createToken("T", "T", "u", 0, PRICE, 0);
-        vm.expectRevert("zero price");
-        pad.createToken("T", "T", "u", SUPPLY, 0, 0);
+        pad.createToken("T", "T", "u", 0, 0);
+    }
+
+    // ------------------------------------------------------------------ oracle / market cap
+
+    function test_hypeUsdPrice_fromOracle() public view {
+        assertEq(pad.hypeUsdPrice(), HYPE_USD6); // $60.569 with 6 decimals
+    }
+
+    function test_createToken_revertsWhenOracleUnavailable() public {
+        vm.clearMockedCalls();
+        vm.expectRevert("oracle unavailable");
+        pad.createToken("T", "T", "u", SUPPLY, 0);
+    }
+
+    function test_manualHypeUsdOverride() public {
+        vm.clearMockedCalls(); // oracle down...
+        pad.setManualHypeUsd(50e6); // ...owner pins HYPE at $50
+
+        address token = _launch();
+        // $4000 / $50 = 80 HYPE market cap.
+        assertApproxEqRel(pad.getMarketCap(token), 80e18, 1e12);
+        assertApproxEqRel(pad.getMarketCapUsd(token), MC_USD6, 1e12);
+
+        vm.prank(rando);
+        vm.expectRevert("not owner");
+        pad.setManualHypeUsd(1);
+    }
+
+    function test_setStartingMarketCap() public {
+        vm.prank(rando);
+        vm.expectRevert("not owner");
+        pad.setStartingMarketCap(8_000e6);
+
+        pad.setStartingMarketCap(8_000e6);
+        address token = _launch();
+        assertApproxEqRel(pad.getMarketCapUsd(token), 8_000e6, 1e12);
     }
 
     // ------------------------------------------------------------------ fees

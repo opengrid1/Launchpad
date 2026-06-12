@@ -44,6 +44,15 @@ contract Launchpad {
     uint256 internal constant Q96 = 0x1000000000000000000000000;
     address internal constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
+    /// @notice HyperCore oracle-price read precompile (perp oracle prices).
+    address public constant ORACLE_PX_PRECOMPILE = 0x0000000000000000000000000000000000000807;
+    /// @notice HYPE perp asset index on HyperCore.
+    uint32 public constant HYPE_PERP_INDEX = 159;
+    /// @dev Perp oracle prices carry (6 - szDecimals) decimals; HYPE szDecimals = 2, so the
+    ///      raw uint64 has 4 decimals. Verified empirically against the independent HyperCore
+    ///      spot feed (both report the same HYPE/USD price).
+    uint256 internal constant HYPE_ORACLE_TO_USD6 = 100;
+
     // ---------------------------------------------------------------------
     // Immutables / admin
     // ---------------------------------------------------------------------
@@ -54,6 +63,15 @@ contract Launchpad {
 
     address public owner;
     address public treasury;
+
+    /// @notice Fixed starting market cap (FDV) every launch lists at, in USD with 6
+    ///         decimals. The HYPE-denominated pool price is derived from this via the
+    ///         HyperCore HYPE/USD oracle at launch time. "Virtual" cap — it is the
+    ///         listed price times supply; no HYPE backs it until people buy.
+    uint256 public startingMarketCapUsd6 = 4_000e6;
+    /// @notice Owner escape hatch: when nonzero, used as the HYPE/USD price (6 decimals)
+    ///         instead of the precompile (e.g. if HyperCore changes the oracle interface).
+    uint256 public manualHypeUsd6;
 
     // ---------------------------------------------------------------------
     // Launch state
@@ -117,6 +135,8 @@ contract Launchpad {
     event PositionWithdrawn(address indexed token, uint256 indexed positionId, address indexed recipient);
     event TreasuryUpdated(address indexed treasury);
     event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
+    event StartingMarketCapUpdated(uint256 usd6);
+    event ManualHypeUsdUpdated(uint256 usd6);
 
     // ---------------------------------------------------------------------
     // Modifiers
@@ -158,13 +178,13 @@ contract Launchpad {
     // Launching
     // ---------------------------------------------------------------------
 
-    /// @notice Deploys a token and lists it on HyperSwap V3 in one transaction.
+    /// @notice Deploys a token and lists it on HyperSwap V3 in one transaction. Every
+    ///         launch starts at the same fixed USD market cap (`startingMarketCapUsd6`,
+    ///         default $4,000), converted to HYPE via the HyperCore oracle at launch time.
     /// @param name_            ERC20 name.
     /// @param symbol_          ERC20 symbol.
     /// @param tokenURI_        Metadata URI (e.g. ipfs://... JSON with image/description).
     /// @param totalSupply_     Fixed total supply, all of it pooled (18 decimals).
-    /// @param priceWeiPerToken Starting price: HYPE wei per 1e18 token units. Sets the
-    ///                         initial pool price / market cap.
     /// @param minDevBuyTokens  Slippage bound for the optional dev buy (ignored when
     ///                         msg.value == 0).
     /// @dev Send HYPE as msg.value to atomically perform the "dev buy": the creator buys
@@ -175,11 +195,14 @@ contract Launchpad {
         string calldata symbol_,
         string calldata tokenURI_,
         uint256 totalSupply_,
-        uint256 priceWeiPerToken,
         uint256 minDevBuyTokens
     ) external payable nonReentrant returns (address token) {
         require(totalSupply_ > 0, "zero supply");
-        require(priceWeiPerToken > 0, "zero price");
+
+        // $startingMarketCapUsd6 of HYPE, spread over the full supply.
+        uint256 mcHypeWei = FullMath.mulDiv(startingMarketCapUsd6, 1e18, hypeUsdPrice());
+        uint256 priceWeiPerToken = FullMath.mulDiv(mcHypeWei, 1e18, totalSupply_);
+        require(priceWeiPerToken > 0, "supply too large");
 
         token = address(new LaunchToken(name_, symbol_, tokenURI_, totalSupply_, address(this)));
 
@@ -407,6 +430,19 @@ contract Launchpad {
         emit PositionWithdrawn(token, launch.positionId, recipient);
     }
 
+    /// @notice Updates the fixed USD starting market cap for future launches (6 decimals).
+    function setStartingMarketCap(uint256 usd6) external onlyOwner {
+        require(usd6 > 0, "zero mc");
+        startingMarketCapUsd6 = usd6;
+        emit StartingMarketCapUpdated(usd6);
+    }
+
+    /// @notice Sets a manual HYPE/USD price (6 decimals) overriding the oracle; 0 = use oracle.
+    function setManualHypeUsd(uint256 usd6) external onlyOwner {
+        manualHypeUsd6 = usd6;
+        emit ManualHypeUsdUpdated(usd6);
+    }
+
     function setTreasury(address treasury_) external onlyOwner {
         require(treasury_ != address(0), "zero address");
         treasury = treasury_;
@@ -445,8 +481,25 @@ contract Launchpad {
     }
 
     /// @notice Fully-diluted market cap of a launched token, in HYPE wei.
-    function getMarketCap(address token) external view returns (uint256) {
+    function getMarketCap(address token) public view returns (uint256) {
         return FullMath.mulDiv(getPrice(token), LaunchToken(token).totalSupply(), 1e18);
+    }
+
+    /// @notice Fully-diluted market cap of a launched token, in USD (6 decimals).
+    function getMarketCapUsd(address token) external view returns (uint256) {
+        return FullMath.mulDiv(getMarketCap(token), hypeUsdPrice(), 1e18);
+    }
+
+    /// @notice Current HYPE/USD price (6 decimals) from the HyperCore oracle precompile,
+    ///         or the owner-set manual override when active.
+    function hypeUsdPrice() public view returns (uint256 usd6) {
+        if (manualHypeUsd6 != 0) return manualHypeUsd6;
+        (bool ok, bytes memory data) =
+            ORACLE_PX_PRECOMPILE.staticcall(abi.encode(HYPE_PERP_INDEX));
+        require(ok && data.length == 32, "oracle unavailable");
+        uint256 raw = uint256(abi.decode(data, (uint64)));
+        require(raw > 0, "oracle zero");
+        return raw * HYPE_ORACLE_TO_USD6;
     }
 
     // ---------------------------------------------------------------------

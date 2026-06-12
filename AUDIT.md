@@ -86,6 +86,17 @@ level; the canonical registry is the `TokenLaunched` event from your deployment 
   directly on HyperEVM mainnet (chain id 999) via RPC. `TickMath`/`FullMath` are
   vendored unmodified from Uniswap `v3-core` branch `0.8`.
 
+### M-3 (dependency): HyperCore oracle precompile for USD-pegged launch cap
+`createToken` derives the launch price from `startingMarketCapUsd6` (default $4,000)
+using the HyperCore perp oracle precompile (`0x...0807`, HYPE index 159, raw price
+carries 4 decimals for HYPE's szDecimals=2). The scaling was verified empirically on
+mainnet against the independent HyperCore spot feed (both report ~$60.5 at review
+time). Risks: a HyperCore interface change breaks launches (fail-closed — `createToken`
+reverts, nothing mis-prices); the owner's `setManualHypeUsd` fallback lets the owner
+set an arbitrary HYPE/USD for future launches (same trust class as H-1; existing pools
+are unaffected). The perp *oracle* price is validator-sourced, not the AMM spot, so it
+is not flash-loan manipulable.
+
 ## Residual risks
 - HyperSwap V3 itself is a Uniswap V3 fork; this review did not audit HyperSwap's
   deployments for modifications.
