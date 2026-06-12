@@ -43,31 +43,26 @@ export default function App() {
         {route.page === 'launch' && <LaunchPage />}
         {route.page === 'docs' && <Docs />}
         {route.page === 'token' && <TokenPage key={route.address} token={route.address} />}
-      <footer className="mt-20 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6 font-mono text-[11px] text-faint">
-        <span>Flatline · launchpad on HyperEVM</span>
-        <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <a
-            href="https://hyperevmscan.io/address/0xc985b4dda3ae887152ba79558ed7939fbe3a7549"
-            target="_blank"
-            rel="noreferrer"
-            className="text-faint no-underline transition-colors hover:text-brand"
-          >
-            contract ↗
-          </a>
-          <a
-            href="https://hyperswap.exchange"
-            target="_blank"
-            rel="noreferrer"
-            className="text-faint no-underline transition-colors hover:text-brand"
-          >
-            HyperSwap V3 ↗
-          </a>
-          <span className="flex items-center gap-1.5">
-            <span className="live-dot h-1.5 w-1.5 rounded-full bg-pos" />
-            chain 999
+        <footer className="mt-24 flex flex-wrap items-center justify-between gap-3 border-t border-hair pt-6 font-mono text-[11px] text-ghost">
+          <span>Flatline</span>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <a
+              href="https://hyperevmscan.io/address/0xc985b4dda3ae887152ba79558ed7939fbe3a7549"
+              target="_blank"
+              rel="noreferrer"
+              className="text-ghost no-underline transition-colors hover:text-acc"
+            >
+              contract ↗
+            </a>
+            <a href="#/docs" className="text-ghost no-underline transition-colors hover:text-acc">
+              docs
+            </a>
+            <span className="flex items-center gap-1.5">
+              <span className="live-dot h-1.5 w-1.5 rounded-full bg-acc" />
+              HyperEVM
+            </span>
           </span>
-        </span>
-      </footer>
+        </footer>
       </div>
     </div>
   )

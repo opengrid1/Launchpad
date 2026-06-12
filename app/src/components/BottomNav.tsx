@@ -2,7 +2,6 @@ import { useWallet } from '../lib/wallet'
 import { shortAddress } from '../lib/format'
 import type { Page } from './Header'
 
-/** flaunch-style fixed bottom bar — the whole mobile shell lives here. */
 export function BottomNav({ page }: { page: Page }) {
   const { address, connecting, connect, onCorrectChain, ensureChain, chainId } = useWallet()
 
@@ -16,40 +15,40 @@ export function BottomNav({ page }: { page: Page }) {
   }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 backdrop-blur-md sm:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-hair bg-panel/95 backdrop-blur-md sm:hidden">
       <div className="flex items-center justify-between gap-2 px-4 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
-        <a href="#/" aria-label="Board" className={`rounded-xl p-2.5 no-underline ${page === 'board' ? 'text-ink' : 'text-faint'}`}>
+        <a href="#/" aria-label="Board" className={`rounded-xl p-2.5 no-underline ${page === 'board' ? 'text-acc' : 'text-ghost'}`}>
           <HomeIcon active={page === 'board'} />
         </a>
-        <button onClick={focusSearch} aria-label="Search" className="cursor-pointer rounded-xl p-2.5 text-faint">
+        <button onClick={focusSearch} aria-label="Search" className="cursor-pointer rounded-xl p-2.5 text-ghost">
           <SearchIcon />
         </button>
         <a
           href="#/launch"
-          aria-label="Launch a token"
+          aria-label="Launch"
           className={`flex h-10 w-10 items-center justify-center rounded-xl no-underline ${
-            page === 'launch' ? 'bg-brand text-white' : 'bg-card-2 text-ink ring-1 ring-line'
+            page === 'launch' ? 'bg-acc text-base' : 'bg-panel2 text-fg ring-1 ring-hair'
           }`}
         >
           <span className="text-xl font-bold leading-none">+</span>
         </a>
-        <a href="#/docs" aria-label="Docs" className={`rounded-xl p-2.5 no-underline ${page === 'docs' ? 'text-ink' : 'text-faint'}`}>
+        <a href="#/docs" aria-label="Docs" className={`rounded-xl p-2.5 no-underline ${page === 'docs' ? 'text-acc' : 'text-ghost'}`}>
           <BookIcon active={page === 'docs'} />
         </a>
         {!address ? (
           <button
             onClick={() => void connect()}
             disabled={connecting}
-            className="cursor-pointer rounded-full bg-night px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+            className="cursor-pointer rounded-lg bg-acc px-4 py-2.5 text-sm font-bold text-base disabled:opacity-60"
           >
-            {connecting ? '…' : 'Connect wallet'}
+            {connecting ? '…' : 'Connect'}
           </button>
         ) : !onCorrectChain && chainId !== null ? (
-          <button onClick={() => void ensureChain()} className="cursor-pointer rounded-full bg-neg-soft px-4 py-2.5 text-xs font-bold text-neg">
+          <button onClick={() => void ensureChain()} className="cursor-pointer rounded-lg bg-downsoft px-4 py-2.5 text-xs font-bold text-down">
             Wrong network
           </button>
         ) : (
-          <span className="rounded-full bg-night px-4 py-2.5 font-mono text-xs font-bold text-white">{shortAddress(address)}</span>
+          <span className="rounded-lg px-3 py-2.5 font-mono text-xs text-fg ring-1 ring-hair2">{shortAddress(address)}</span>
         )}
       </div>
     </nav>
@@ -65,7 +64,7 @@ function HomeIcon({ active }: { active: boolean }) {
         strokeWidth="1.7"
         strokeLinejoin="round"
         fill={active ? 'currentColor' : 'none'}
-        fillOpacity={active ? 0.15 : 0}
+        fillOpacity={active ? 0.2 : 0}
       />
     </svg>
   )
@@ -89,7 +88,7 @@ function BookIcon({ active }: { active: boolean }) {
         strokeWidth="1.7"
         strokeLinejoin="round"
         fill={active ? 'currentColor' : 'none'}
-        fillOpacity={active ? 0.15 : 0}
+        fillOpacity={active ? 0.2 : 0}
       />
       <path d="M4 15.5 a1.5 1.5 0 0 1 1.5 -1.5 H16" stroke="currentColor" strokeWidth="1.7" />
     </svg>
