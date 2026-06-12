@@ -48,15 +48,18 @@ export function TokenRow({ row, index, startMcUsd6, hypeUsd6 }: { row: LaunchRow
       style={{ animationDelay: `${Math.min(index, 14) * 30}ms` }}
     >
       <span className="flex min-w-0 items-center gap-3">
-        <TokenImage src={meta.image} symbol={row.symbol} />
+        <TokenImage src={meta.image} symbol={row.symbol} size="md" />
         <span className="min-w-0">
           <span className="flex items-center gap-1.5">
-            <span className="truncate text-sm font-bold text-ink">{row.symbol}</span>
+            {/* mobile mirrors flaunch: name bold over ticker; desktop: ticker bold over name */}
+            <span className="truncate text-sm font-bold text-ink sm:hidden">{row.name}</span>
+            <span className="hidden truncate text-sm font-bold text-ink sm:inline">{row.symbol}</span>
             {row.positionWithdrawn && (
               <span className="rounded bg-neg-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-neg">delisted</span>
             )}
           </span>
-          <span className="block truncate text-xs text-sub">{row.name}</span>
+          <span className="block truncate text-xs text-sub sm:hidden">{row.symbol}</span>
+          <span className="hidden truncate text-xs text-sub sm:block">{row.name}</span>
         </span>
       </span>
 

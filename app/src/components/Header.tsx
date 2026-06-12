@@ -20,10 +20,10 @@ export function Header({ page }: { page: Page }) {
                 <path d="M2 8 Q7 8 9 5.5 T16 3" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2 3" opacity="0.6" />
               </svg>
             </span>
-            <span className="hidden text-[17px] font-bold tracking-tight text-ink sm:block">Flatline</span>
+            <span className="text-[17px] font-bold tracking-tight text-ink">Flatline</span>
           </a>
 
-          <nav className="flex items-center gap-0.5">
+          <nav className="hidden items-center gap-0.5 sm:flex">
             {(
               [
                 ['Board', 'board', '#/'],
@@ -43,7 +43,7 @@ export function Header({ page }: { page: Page }) {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 sm:flex">
           {address && !onCorrectChain && chainId !== null && (
             <button
               onClick={() => void ensureChain()}

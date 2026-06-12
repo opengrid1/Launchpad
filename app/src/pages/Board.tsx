@@ -65,7 +65,7 @@ export function Board() {
 
       {/* filter pills + search */}
       <section className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:overflow-visible sm:px-0 sm:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {(
             [
               ['✦ New', 'new'],
@@ -76,7 +76,7 @@ export function Board() {
             <button
               key={key}
               onClick={() => setSort(key)}
-              className={`cursor-pointer rounded-full px-4 py-2 text-xs font-bold transition ${
+              className={`shrink-0 cursor-pointer whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold transition ${
                 sort === key ? 'bg-brand text-white' : 'bg-card text-sub ring-1 ring-line hover:text-ink'
               }`}
             >
@@ -90,6 +90,7 @@ export function Board() {
             <path d="M9.5 9.5 L13 13" stroke="var(--color-faint)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
           <input
+            id="board-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search coins, CA, creators"

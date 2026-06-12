@@ -4,6 +4,7 @@ import { resolveUri } from '../lib/metadata'
 const SIZES = {
   xs: 'h-8 w-8 rounded-lg text-sm',
   sm: 'h-10 w-10 rounded-xl text-base',
+  md: 'h-12 w-12 rounded-full text-lg sm:h-10 sm:w-10 sm:rounded-xl sm:text-base',
   lg: 'h-16 w-16 rounded-2xl text-2xl',
 } as const
 

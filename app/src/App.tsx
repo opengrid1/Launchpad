@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Header, type Page } from './components/Header'
+import { BottomNav } from './components/BottomNav'
 import { Board } from './pages/Board'
 import { LaunchPage } from './pages/LaunchPage'
 import { TokenPage } from './pages/Token'
@@ -36,7 +37,8 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <Header page={page} />
-      <div className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
+      <BottomNav page={page} />
+      <div className="mx-auto max-w-6xl px-4 pb-32 sm:px-6 sm:pb-24">
         {route.page === 'board' && <Board />}
         {route.page === 'launch' && <LaunchPage />}
         {route.page === 'docs' && <Docs />}
