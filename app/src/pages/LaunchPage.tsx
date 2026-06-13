@@ -65,23 +65,24 @@ export function LaunchPage() {
     try {
       await ensureChain()
 
-      // 1) Flip the wallet to big blocks on HyperCore — pool creation needs ~6M gas.
+      // 1) Best-effort: enable big blocks. Some wallets reject the HyperCore L1
+      //    signature (it signs under chainId 1337), and the wallet may already be in
+      //    big-block mode — so on failure we warn and continue. The launch tx itself,
+      //    sent with an explicit big-block gas limit, is the real test.
       try {
         await setBigBlocks(walletClient, { address }, true)
-      } catch (err) {
-        const msg = errorMessage(err)
-        // "does not exist" => the wallet has no HyperCore account yet.
-        throw new Error(
-          msg.includes('exist')
-            ? 'This wallet has no HyperCore account yet — receive any amount on Hyperliquid once, then retry.'
-            : msg,
-          { cause: err },
-        )
+        push({ kind: 'info', title: 'Big blocks enabled' })
+      } catch {
+        push({
+          kind: 'info',
+          title: 'Proceeding without the big-block toggle',
+          detail: 'If this wallet is already in big-block mode the launch still goes through.',
+        })
       }
       setSteps(['done', 'active', 'idle'])
 
       // Give the big-block switch a moment to take effect on the EVM RPC before sending.
-      await new Promise((r) => setTimeout(r, 5000))
+      await new Promise((r) => setTimeout(r, 4000))
 
       // 2) The launch transaction itself (atomic: token + pool + liquidity + dev buy).
       const tokenURI = buildTokenURI({
