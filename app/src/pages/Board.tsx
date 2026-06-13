@@ -104,7 +104,7 @@ export function Board() {
 
       {/* tabs + search */}
       <section className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <div className="no-scrollbar -mx-4 flex gap-0.5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           {(
             [
               ['All', 'new'],
@@ -117,8 +117,8 @@ export function Board() {
             <button
               key={key}
               onClick={() => setSort(key)}
-              className={`shrink-0 cursor-pointer rounded-lg px-3.5 py-2 text-sm font-semibold transition ${
-                sort === key ? 'text-acc' : 'text-ghost hover:text-dim'
+              className={`relative shrink-0 cursor-pointer rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors after:absolute after:inset-x-3.5 after:-bottom-px after:h-0.5 after:rounded-full after:bg-acc after:transition-opacity ${
+                sort === key ? 'text-acc after:opacity-100' : 'text-ghost after:opacity-0 hover:text-dim'
               }`}
             >
               {label}
