@@ -10,6 +10,7 @@ import { parseTokenURI, type TokenMetadata } from '../lib/metadata'
 import { formatPriceHype, formatUnits18, formatUsd6, parseAmount, shortAddress, timeAgo } from '../lib/format'
 import { TokenImage } from '../components/TokenImage'
 import { SocialIcons } from '../components/SocialIcons'
+import { TokenActivity } from '../components/TokenActivity'
 
 type Detail = NonNullable<ReturnType<typeof useTokenDetail>['detail']>
 
@@ -145,9 +146,12 @@ export function TokenPage({ token }: { token: string }) {
         </section>
 
         {/* trade — embedded, right rail on desktop / below chart on mobile */}
-        <div>
+        <div className="lg:row-span-2">
           <TradePanel detail={detail} refresh={refresh} />
         </div>
+
+        {/* transactions + holders */}
+        <TokenActivity detail={detail} />
       </div>
     </main>
   )

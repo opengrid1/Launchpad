@@ -129,6 +129,31 @@ export async function fetchPendingFees(token: Address): Promise<{ hype: bigint; 
   }
 }
 
+const DEAD_ADDR = '0x000000000000000000000000000000000000dead'
+
+export type Holder = { address: Address; balance: bigint }
+
+/**
+ * Holder list without an indexer: take the active wallets (recent traders + the
+ * creator), read their live balanceOf, drop the pool/burn/empty ones, and sort.
+ * Captures the meaningful holders of a young token; not a full historical index.
+ */
+export async function fetchHolders(token: Address, pool: Address, creator: Address, traders: string[]): Promise<Holder[]> {
+  const exclude = new Set([pool.toLowerCase(), DEAD_ADDR, '0x0000000000000000000000000000000000000000'])
+  const candidates = Array.from(new Set([creator.toLowerCase(), ...traders.map((t) => t.toLowerCase())])).filter(
+    (a) => a && !exclude.has(a),
+  ) as Address[]
+  if (candidates.length === 0) return []
+
+  const balances = await Promise.all(
+    candidates.map((a) => publicClient.readContract({ address: token, abi: launchTokenAbi, functionName: 'balanceOf', args: [a] })),
+  )
+  return candidates
+    .map((address, i) => ({ address, balance: balances[i] }))
+    .filter((h) => h.balance > 0n)
+    .sort((a, b) => (b.balance > a.balance ? 1 : -1))
+}
+
 const DEADLINE_SLACK = 600n
 
 function deadline(): bigint {
