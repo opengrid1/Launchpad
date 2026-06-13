@@ -143,50 +143,12 @@ export function TokenPage({ token }: { token: string }) {
           </div>
         </section>
 
-        {/* right rail — desktop only; mobile uses the bottom-sheet */}
-        <div className="hidden lg:block">
+        {/* trade — embedded, right rail on desktop / below chart on mobile */}
+        <div>
           <TradePanel detail={detail} refresh={refresh} />
         </div>
       </div>
-
-      {/* mobile: sticky Trade bar + bottom-sheet */}
-      <MobileTrade detail={detail} refresh={refresh} />
     </main>
-  )
-}
-
-/** Sticky bottom Trade button (mobile) that opens the trade panel as a bottom sheet. */
-function MobileTrade({ detail, refresh }: { detail: NonNullable<ReturnType<typeof useTokenDetail>['detail']>; refresh: () => Promise<void> }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="lg:hidden">
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hair bg-base/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md">
-        <button
-          onClick={() => setOpen(true)}
-          disabled={detail.positionWithdrawn}
-          className="btn-primary w-full cursor-pointer rounded-xl py-3 text-sm font-semibold disabled:opacity-40"
-        >
-          {detail.positionWithdrawn ? 'Trading disabled' : `Trade ${detail.symbol}`}
-        </button>
-      </div>
-
-      {open && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
-          <div className="rise-in relative max-h-[88vh] overflow-y-auto rounded-t-2xl bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] ring-1 ring-hair">
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-hair2" />
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute right-4 top-4 cursor-pointer text-ghost hover:text-fg"
-              aria-label="Close"
-            >
-              ✕
-            </button>
-            <TradePanel detail={detail} refresh={refresh} bare />
-          </div>
-        </div>
-      )}
-    </div>
   )
 }
 
@@ -378,7 +340,7 @@ function TradePanel({ detail, refresh, bare }: { detail: NonNullable<ReturnType<
               setInput('')
             }}
             className={`flex-1 cursor-pointer rounded-lg py-2 text-sm font-bold capitalize transition-colors ${
-              side === s ? (s === 'buy' ? 'btn-primary' : 'bg-down text-white') : 'text-ghost hover:text-dim'
+              side === s ? (s === 'buy' ? 'bg-up text-base' : 'bg-down text-base') : 'text-ghost hover:text-dim'
             }`}
           >
             {s}
@@ -481,9 +443,9 @@ function TradePanel({ detail, refresh, bare }: { detail: NonNullable<ReturnType<
       {!address ? (
         <button
           onClick={() => void connect()}
-          className="btn-primary mt-4 w-full cursor-pointer rounded-xl py-3 text-sm font-semibold"
+          className={`mt-4 w-full cursor-pointer rounded-xl py-3 text-sm font-bold text-base transition hover:brightness-110 ${side === 'buy' ? 'bg-up' : 'bg-down'}`}
         >
-          Connect
+          Connect to {side}
         </button>
       ) : needsApproval ? (
         <button
@@ -497,8 +459,8 @@ function TradePanel({ detail, refresh, bare }: { detail: NonNullable<ReturnType<
         <button
           onClick={trade}
           disabled={busy !== null || amount === null || amount === 0n || quote === null || insufficient || detail.positionWithdrawn}
-          className={`mt-4 w-full cursor-pointer rounded-xl py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-            side === 'buy' ? 'btn-primary' : 'bg-down text-white hover:brightness-110'
+          className={`mt-4 w-full cursor-pointer rounded-xl py-3 text-sm font-bold text-base transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 ${
+            side === 'buy' ? 'bg-up' : 'bg-down'
           }`}
         >
           {busy
