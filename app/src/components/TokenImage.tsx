@@ -19,13 +19,15 @@ export function TokenImage({ src, symbol, size = 'sm' }: { src?: string; symbol:
         src={resolveUri(src)}
         alt={symbol}
         onError={() => setFailed(true)}
-        className={`${cls} shrink-0 bg-panel2 object-cover ring-1 ring-hair`}
+        className={`${cls} shrink-0 bg-panel2 object-cover shadow-sm ring-1 ring-hair`}
         loading="lazy"
       />
     )
   }
   return (
-    <span className={`${cls} flex shrink-0 items-center justify-center bg-panel2 font-bold text-acc ring-1 ring-hair`}>
+    <span
+      className={`${cls} flex shrink-0 items-center justify-center bg-gradient-to-br from-panel2 to-base font-bold text-acc shadow-sm ring-1 ring-hair`}
+    >
       {symbol.slice(0, 1).toUpperCase() || '?'}
     </span>
   )

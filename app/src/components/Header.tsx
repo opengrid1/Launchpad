@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useWallet } from '../lib/wallet'
 import { shortAddress } from '../lib/format'
 
-export type Page = 'board' | 'launch' | 'docs' | 'token'
+export type Page = 'board' | 'launch' | 'docs' | 'terms' | 'privacy' | 'whitepaper' | 'token'
 
 const NAV: ReadonlyArray<readonly [string, Page, string]> = [
   ['Home', 'board', '#/'],

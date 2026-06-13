@@ -45,8 +45,8 @@ export function SocialIcons({ meta, compact, onClick }: { meta: TokenMetadata; c
           onClick={onClick}
           className={
             compact
-              ? 'flex h-5 w-5 items-center justify-center rounded text-ghost transition hover:text-fg'
-              : 'flex h-7 w-7 items-center justify-center rounded-lg text-ghost ring-1 ring-hair transition hover:text-fg hover:ring-hair2'
+              ? 'flex h-5 w-5 items-center justify-center rounded text-ghost transition hover:text-acc'
+              : 'flex h-7 w-7 items-center justify-center rounded-lg text-ghost ring-1 ring-hair transition hover:text-acc hover:ring-acc/40'
           }
         >
           {ICON[kind]}

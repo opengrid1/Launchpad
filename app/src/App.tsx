@@ -1,16 +1,28 @@
 import { useEffect, useState } from 'react'
 import { Header, type Page } from './components/Header'
+import { Footer } from './components/Footer'
 import { Board } from './pages/Board'
 import { LaunchPage } from './pages/LaunchPage'
 import { TokenPage } from './pages/Token'
 import { Docs } from './pages/Docs'
+import { Terms, Privacy, Whitepaper } from './pages/Content'
 
-type Route = { page: 'board' } | { page: 'launch' } | { page: 'docs' } | { page: 'token'; address: string }
+type Route =
+  | { page: 'board' }
+  | { page: 'launch' }
+  | { page: 'docs' }
+  | { page: 'terms' }
+  | { page: 'privacy' }
+  | { page: 'whitepaper' }
+  | { page: 'token'; address: string }
 
 function parseHash(): Route {
   const hash = window.location.hash.replace(/^#\/?/, '')
   if (hash === 'launch') return { page: 'launch' }
   if (hash === 'docs') return { page: 'docs' }
+  if (hash === 'terms') return { page: 'terms' }
+  if (hash === 'privacy') return { page: 'privacy' }
+  if (hash === 'whitepaper') return { page: 'whitepaper' }
   const tokenMatch = /^t\/(0x[0-9a-fA-F]{40})$/.exec(hash)
   if (tokenMatch) return { page: 'token', address: tokenMatch[1] }
   return { page: 'board' }
@@ -36,31 +48,15 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <Header page={page} />
-      <div className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 pb-10 sm:px-6">
         {route.page === 'board' && <Board />}
         {route.page === 'launch' && <LaunchPage />}
         {route.page === 'docs' && <Docs />}
+        {route.page === 'terms' && <Terms />}
+        {route.page === 'privacy' && <Privacy />}
+        {route.page === 'whitepaper' && <Whitepaper />}
         {route.page === 'token' && <TokenPage key={route.address} token={route.address} />}
-        <footer className="mt-24 flex flex-wrap items-center justify-between gap-3 border-t border-hair pt-6 font-mono text-[11px] text-ghost">
-          <span>Hyprpad</span>
-          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <a
-              href="https://hyperevmscan.io/address/0xc985b4dda3ae887152ba79558ed7939fbe3a7549"
-              target="_blank"
-              rel="noreferrer"
-              className="text-ghost no-underline transition-colors hover:text-acc"
-            >
-              contract ↗
-            </a>
-            <a href="#/docs" className="text-ghost no-underline transition-colors hover:text-acc">
-              docs
-            </a>
-            <span className="flex items-center gap-1.5">
-              <span className="live-dot h-1.5 w-1.5 rounded-full bg-acc" />
-              HyperEVM
-            </span>
-          </span>
-        </footer>
+        <Footer />
       </div>
     </div>
   )
