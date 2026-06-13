@@ -76,10 +76,9 @@ export function Board() {
             ))}
       </section>
 
-      {/* heading + controls */}
-      <section className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="text-xl font-semibold tracking-tight text-fg">Board</h1>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      {/* controls */}
+      <section className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
             {(
               [

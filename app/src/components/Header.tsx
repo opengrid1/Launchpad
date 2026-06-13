@@ -25,7 +25,7 @@ export function Header({ page }: { page: Page }) {
           <nav className="hidden items-center gap-1 sm:flex">
             {(
               [
-                ['Board', 'board', '#/'],
+                ['Home', 'board', '#/'],
                 ['Docs', 'docs', '#/docs'],
               ] as const
             ).map(([label, key, href]) => (

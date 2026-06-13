@@ -57,10 +57,6 @@ export function TokenPage({ token }: { token: string }) {
 
   return (
     <main className="mt-5">
-      <a href="#/" className="font-mono text-xs text-ghost no-underline transition-colors hover:text-dim">
-        ← Board
-      </a>
-
       {/* hero */}
       <section className="elev mt-4 overflow-hidden rounded-2xl ring-1 ring-hair">
         <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
@@ -589,7 +585,7 @@ function Message({ text }: { text: string }) {
     <main className="mt-20 text-center">
       <p className="font-mono text-sm text-ghost">{text}</p>
       <a href="#/" className="mt-3 inline-block font-mono text-xs text-acc no-underline hover:text-accdeep">
-        ← Board
+        ← Home
       </a>
     </main>
   )
