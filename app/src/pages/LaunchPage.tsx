@@ -142,82 +142,91 @@ export function LaunchPage() {
   return (
     <main className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_330px]">
       <section>
-        <h1 className="text-xl font-semibold tracking-tight text-fg">Launch</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">Create a token</h1>
+        <p className="mt-1.5 text-sm text-dim">
+          Deploy a live market on HyperSwap V3 in one click. You earn <span className="text-acc">70%</span> of every trade.
+        </p>
 
-        <div className="mt-6 space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_140px]">
-            <Field label="Name">
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="My Token" maxLength={48} className={inputCls} />
-            </Field>
-            <Field label="Symbol">
-              <input
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
-                placeholder="TKN"
-                maxLength={12}
-                className={`${inputCls} uppercase`}
+        <div className="elev mt-6 rounded-2xl p-5 ring-1 ring-hair sm:p-6">
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_140px]">
+              <Field label="Name">
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="My Token" maxLength={48} className={inputCls} />
+              </Field>
+              <Field label="Symbol">
+                <input
+                  value={symbol}
+                  onChange={(e) => setSymbol(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                  placeholder="TKN"
+                  maxLength={12}
+                  className={`${inputCls} uppercase`}
+                />
+              </Field>
+            </div>
+
+            <Field label="Description">
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder="What's the story?"
+                className={`${inputCls} resize-none`}
               />
             </Field>
-          </div>
 
-          <Field label="Description">
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              maxLength={500}
-              className={`${inputCls} resize-none`}
+            <div>
+              <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Image</span>
+              <ImageUpload value={image} onChange={setImage} symbol={symbol} />
+            </div>
+
+            <Socials
+              website={website}
+              twitter={twitter}
+              telegram={telegram}
+              setWebsite={setWebsite}
+              setTwitter={setTwitter}
+              setTelegram={setTelegram}
             />
-          </Field>
 
-          <div>
-            <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Image</span>
-            <ImageUpload value={image} onChange={setImage} symbol={symbol} />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Supply">
+                <input value={supply} onChange={(e) => setSupply(e.target.value.replace(/[^\d]/g, ''))} className={`${inputCls} font-mono`} />
+              </Field>
+              <Field label="Dev buy · HYPE">
+                <input
+                  value={devBuy}
+                  onChange={(e) => setDevBuy(e.target.value)}
+                  placeholder="0.0"
+                  inputMode="decimal"
+                  className={`${inputCls} font-mono`}
+                />
+              </Field>
+            </div>
           </div>
 
-          <Socials
-            website={website}
-            twitter={twitter}
-            telegram={telegram}
-            setWebsite={setWebsite}
-            setTwitter={setTwitter}
-            setTelegram={setTelegram}
-          />
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Supply">
-              <input value={supply} onChange={(e) => setSupply(e.target.value.replace(/[^\d]/g, ''))} className={`${inputCls} font-mono`} />
-            </Field>
-            <Field label="Dev buy · HYPE">
-              <input
-                value={devBuy}
-                onChange={(e) => setDevBuy(e.target.value)}
-                placeholder="0.0"
-                inputMode="decimal"
-                className={`${inputCls} font-mono`}
-              />
-            </Field>
+          <div className="mt-6 flex flex-col gap-3 border-t border-hair pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-mono text-[11px] leading-relaxed text-ghost">
+              $4,000 start · 100% supply pooled · you keep 70% of fees
+            </p>
+            {!address ? (
+              <button
+                onClick={() => void connect()}
+                className="btn-primary w-full shrink-0 cursor-pointer rounded-xl py-3 text-sm font-semibold sm:w-auto sm:px-8"
+              >
+                Connect
+              </button>
+            ) : (
+              <button
+                onClick={() => void launch()}
+                disabled={launching || formError !== null}
+                title={formError ?? undefined}
+                className="btn-primary w-full shrink-0 cursor-pointer rounded-xl py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-8"
+              >
+                {launching ? 'Launching…' : 'Launch token'}
+              </button>
+            )}
           </div>
-        </div>
-
-        <div className="mt-7 flex flex-wrap items-center gap-4">
-          {!address ? (
-            <button
-              onClick={() => void connect()}
-              className="btn-primary w-full cursor-pointer rounded-xl py-3.5 text-sm font-semibold sm:w-auto sm:px-10"
-            >
-              Connect
-            </button>
-          ) : (
-            <button
-              onClick={() => void launch()}
-              disabled={launching || formError !== null}
-              title={formError ?? undefined}
-              className="btn-primary w-full cursor-pointer rounded-xl py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-10"
-            >
-              {launching ? 'Launching…' : 'Launch'}
-            </button>
-          )}
         </div>
       </section>
 
@@ -281,7 +290,7 @@ export function LaunchPage() {
 }
 
 const inputCls =
-  'w-full rounded-xl bg-panel px-3.5 py-2.5 text-sm text-fg ring-1 ring-hair outline-none transition placeholder:text-ghost focus:ring-acc/50'
+  'w-full rounded-xl bg-base px-3.5 py-2.5 text-sm text-fg ring-1 ring-hair outline-none transition placeholder:text-ghost focus:ring-acc/50'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
