@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { parseEther, parseEventLogs, isAddress, type Address } from 'viem'
 import { useWallet } from '../lib/wallet'
 import { useToast, errorMessage } from '../lib/toast'
@@ -10,7 +10,7 @@ import { setBigBlocks } from '../lib/bigblocks'
 import { parseAmount } from '../lib/format'
 import { TokenImage } from '../components/TokenImage'
 
-const DEFAULT_SUPPLY = '1000000000'
+const SUPPLY_WEI = parseEther('1000000000') // fixed 1B supply for every launch
 
 type StepState = 'idle' | 'active' | 'done' | 'failed'
 
@@ -25,7 +25,6 @@ export function LaunchPage() {
   const [website, setWebsite] = useState('')
   const [twitter, setTwitter] = useState('')
   const [telegram, setTelegram] = useState('')
-  const [supply, setSupply] = useState(DEFAULT_SUPPLY)
   const [devBuy, setDevBuy] = useState('')
   const [payout, setPayout] = useState('')
 
@@ -35,15 +34,6 @@ export function LaunchPage() {
   const [restoringBlocks, setRestoringBlocks] = useState(false)
   const [blocksRestored, setBlocksRestored] = useState(false)
 
-  const supplyWei = useMemo(() => {
-    if (!/^\d+$/.test(supply.trim()) || supply.trim() === '') return null
-    try {
-      return parseEther(supply.trim())
-    } catch {
-      return null
-    }
-  }, [supply])
-
   const devBuyWei = devBuy.trim() === '' ? 0n : parseAmount(devBuy)
 
   const formError =
@@ -51,11 +41,9 @@ export function LaunchPage() {
       ? 'Name required'
       : symbol.trim().length === 0 || symbol.trim().length > 12
         ? 'Symbol required'
-        : supplyWei === null || supplyWei === 0n
-          ? 'Invalid supply'
-          : devBuyWei === null
-            ? 'Invalid dev buy'
-            : null
+        : devBuyWei === null
+          ? 'Invalid dev buy'
+          : null
 
   async function launch() {
     if (!walletClient || !address || formError) return
@@ -104,7 +92,7 @@ export function LaunchPage() {
         abi: launchpadAbi,
         functionName: 'createToken',
         // minDevBuyTokens 0 is safe: the dev buy is atomic with pool creation, nothing can front-run it.
-        args: [name.trim(), symbol.trim().toUpperCase(), tokenURI, supplyWei!, recipient, 0n, 0n],
+        args: [name.trim(), symbol.trim().toUpperCase(), tokenURI, SUPPLY_WEI, recipient, 0n, 0n],
         value: devBuyWei ?? 0n,
         account: address,
         chain: publicClient.chain,
@@ -195,20 +183,15 @@ export function LaunchPage() {
               setTelegram={setTelegram}
             />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Supply">
-                <input value={supply} onChange={(e) => setSupply(e.target.value.replace(/[^\d]/g, ''))} className={`${inputCls} font-mono`} />
-              </Field>
-              <Field label="Dev buy · HYPE">
-                <input
-                  value={devBuy}
-                  onChange={(e) => setDevBuy(e.target.value)}
-                  placeholder="0.0"
-                  inputMode="decimal"
-                  className={`${inputCls} font-mono`}
-                />
-              </Field>
-            </div>
+            <Field label="Dev buy · HYPE (optional)">
+              <input
+                value={devBuy}
+                onChange={(e) => setDevBuy(e.target.value)}
+                placeholder="0.0"
+                inputMode="decimal"
+                className={`${inputCls} font-mono`}
+              />
+            </Field>
 
             <div>
               <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Fees payout</span>
