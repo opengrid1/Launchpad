@@ -7,8 +7,26 @@ import { publicClient, explorerAddress } from '../lib/chain'
 import { LAUNCHPAD, SWAP_ROUTER, WHYPE, POOL_FEE, launchpadAbi, launchTokenAbi, swapRouterAbi } from '../lib/contracts'
 import { quoteBuy, quoteSell, sellCalldata, withSlippage } from '../lib/launchpad'
 import { parseTokenURI, type TokenMetadata } from '../lib/metadata'
-import { compactNumber, formatPriceHype, formatUnits18, formatUsd6, parseAmount, shortAddress, timeAgo } from '../lib/format'
+import { formatPriceHype, formatUnits18, formatUsd6, parseAmount, shortAddress, timeAgo } from '../lib/format'
 import { TokenImage } from '../components/TokenImage'
+
+type Detail = NonNullable<ReturnType<typeof useTokenDetail>['detail']>
+
+/** Creator's currently-claimable fees in HYPE: collected-but-unclaimed + 70% of what's
+ *  still uncollected in the pool (token side valued at spot). Public, shown to everyone. */
+function unclaimedFeesHype(d: Detail): bigint {
+  const hype = d.creatorFeesHype + (d.pendingFeesHype * 7000n) / 10000n
+  const token = d.creatorFeesToken + (d.pendingFeesToken * 7000n) / 10000n
+  return hype + (token * d.priceWei) / 10n ** 18n
+}
+
+/** Fee amounts to 4 decimals; dust rounds to "0". */
+function fmtHype(wei: bigint): string {
+  return formatUnits18(wei, { compact: false, digits: 4 })
+}
+
+/** Below this (0.00001 HYPE) we treat a balance as nothing to claim. */
+const DUST = 10n ** 13n
 
 export function TokenPage({ token }: { token: string }) {
   const valid = isAddress(token)
@@ -32,6 +50,8 @@ export function TokenPage({ token }: { token: string }) {
   const usdPerHype = Number(detail.hypeUsd6) / 1e6
   const priceUsd = Number(formatEther(detail.priceWei)) * usdPerHype
   const feesUsd = (detail.lifetimeFeesHype * detail.hypeUsd6) / 10n ** 18n
+  const unclaimedHype = unclaimedFeesHype(detail)
+  const unclaimedUsd6 = (unclaimedHype * detail.hypeUsd6) / 10n ** 18n
 
   return (
     <main className="mt-6">
@@ -85,8 +105,8 @@ export function TokenPage({ token }: { token: string }) {
           <section className="elev mt-7 grid grid-cols-2 overflow-hidden rounded-2xl ring-1 ring-hair sm:grid-cols-4">
             <Stat label="Price" value={`${formatPriceHype(detail.priceWei)} HYPE`} sub={`$${priceUsd.toLocaleString('en-US', { maximumSignificantDigits: 3 })}`} />
             <Stat label="Mcap" value={formatUsd6(detail.marketCapUsd6)} sub={`${formatUnits18(detail.marketCapHype)} HYPE`} divide />
-            <Stat label="Supply" value={compactNumber(Number(formatEther(detail.totalSupply)))} divideSm />
-            <Stat label="Fees" value={formatUsd6(feesUsd)} sub={`${formatUnits18(detail.lifetimeFeesHype)} HYPE`} divide accent />
+            <Stat label="Fees earned" value={formatUsd6(feesUsd)} sub={`${fmtHype(detail.lifetimeFeesHype)} HYPE`} divideSm />
+            <Stat label="Unclaimed" value={`${fmtHype(unclaimedHype)} HYPE`} sub={formatUsd6(unclaimedUsd6)} divide accent />
           </section>
 
           {/* chart */}
@@ -456,7 +476,6 @@ function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<ty
 
   const isCreator = address?.toLowerCase() === detail.creator.toLowerCase()
   const pendingTotal = detail.pendingFeesHype + detail.pendingFeesToken
-  const claimable = detail.creatorFeesHype + detail.creatorFeesToken
 
   async function write(functionName: 'collectFees' | 'claimCreatorFees') {
     const hash = await walletClient!.writeContract({
@@ -513,28 +532,20 @@ function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<ty
     }
   }
 
-  // Only the creator can claim; show them the control at all times so it is findable.
+  // Only the creator can claim; show them the button at all times so it is findable.
   if (!isCreator) return null
 
-  const nothing = claimable === 0n && pendingTotal === 0n
+  const unclaimed = unclaimedFeesHype(detail)
+  const nothing = unclaimed < DUST
 
   return (
-    <div className="flex w-full shrink-0 items-center justify-between gap-3 self-start rounded-xl bg-panel2 px-3 py-2 ring-1 ring-hair sm:w-auto">
-      <div className="leading-tight">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-ghost">Your fees</p>
-        <p className="font-mono text-sm text-fg">
-          {formatUnits18(detail.creatorFeesHype)} HYPE
-          {detail.creatorFeesToken > 0n && ` + ${formatUnits18(detail.creatorFeesToken)} ${detail.symbol}`}
-        </p>
-      </div>
-      <button
-        onClick={() => void claim()}
-        disabled={busy !== null || nothing}
-        className="btn-primary cursor-pointer rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-40"
-      >
-        {busy ?? 'Claim'}
-      </button>
-    </div>
+    <button
+      onClick={() => void claim()}
+      disabled={busy !== null || nothing}
+      className="btn-primary w-full shrink-0 cursor-pointer self-start rounded-lg px-5 py-2.5 text-sm font-semibold disabled:opacity-40 sm:w-auto"
+    >
+      {busy ?? (nothing ? 'Nothing to claim' : `Claim ${fmtHype(unclaimed)} HYPE`)}
+    </button>
   )
 }
 
