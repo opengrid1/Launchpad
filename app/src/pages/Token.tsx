@@ -128,17 +128,19 @@ export function TokenPage({ token }: { token: string }) {
       </section>
 
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
-        {/* chart */}
+        {/* chart — GeckoTerminal's TradingView Advanced charting embed */}
         <section className="elev overflow-hidden rounded-2xl ring-1 ring-hair">
           <iframe
             title="chart"
-            src={`https://dexscreener.com/hyperevm/${detail.pool}?embed=1&theme=dark&trades=0&info=0`}
+            src={`https://www.geckoterminal.com/hyperevm/pools/${detail.pool}?embed=1&info=0&swaps=0&grayscale=0&light_chart=0&chart_type=price&resolution=15m`}
             className="h-[440px] w-full border-0 sm:h-[560px]"
+            allow="clipboard-write"
+            allowFullScreen
           />
           <div className="flex items-center justify-between border-t border-hair px-4 py-2 font-mono text-[11px] text-ghost">
             <span>pool {shortAddress(detail.pool)}</span>
-            <a href={`https://dexscreener.com/hyperevm/${detail.pool}`} target="_blank" rel="noreferrer" className="text-ghost no-underline hover:text-dim">
-              DEXScreener ↗
+            <a href={`https://www.geckoterminal.com/hyperevm/pools/${detail.pool}`} target="_blank" rel="noreferrer" className="text-ghost no-underline hover:text-dim">
+              GeckoTerminal ↗
             </a>
           </div>
         </section>
