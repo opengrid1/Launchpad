@@ -93,26 +93,28 @@ export function Board() {
         </div>
       </section>
 
-      {/* ecosystem stats — inline bar with dividers */}
-      <section className="elev no-scrollbar mt-9 flex overflow-x-auto rounded-2xl ring-1 ring-hair">
-        {metrics === null
-          ? Array.from({ length: 5 }, (_, i) => (
-              <div key={i} className={`min-w-[46%] flex-1 px-5 py-4 sm:min-w-0 ${i > 0 ? 'border-l border-hair' : ''}`}>
-                <div className="shimmer h-3 w-20 rounded" />
-                <div className="shimmer mt-2 h-5 w-24 rounded" />
-              </div>
-            ))
-          : metrics.map(([label, value, live], i) => (
-              <div key={label} className={`min-w-[46%] flex-1 px-5 py-4 sm:min-w-0 ${i > 0 ? 'border-l border-hair' : ''}`}>
-                <p className="flex items-center gap-1.5 text-[11px] font-medium text-ghost">
-                  {live && <span className="live-dot h-1.5 w-1.5 rounded-full bg-acc" />}
-                  {label}
+      {/* ecosystem stats — minimal strip, no scroll */}
+      <section className="mt-8 grid grid-cols-3 gap-x-5 gap-y-3 border-y border-hair py-3.5 sm:flex sm:items-center sm:gap-0">
+        {(metrics ?? Array.from({ length: 5 }, () => null)).map((m, i) => (
+          <div key={i} className={`min-w-0 sm:flex-1 sm:px-5 ${i > 0 ? 'sm:border-l sm:border-hair' : ''}`}>
+            {m === null ? (
+              <>
+                <div className="shimmer h-2.5 w-14 rounded" />
+                <div className="shimmer mt-1.5 h-3.5 w-16 rounded" />
+              </>
+            ) : (
+              <>
+                <p className="flex items-center gap-1 truncate text-[10px] font-medium uppercase tracking-wide text-ghost">
+                  {m[2] && <span className="live-dot h-1 w-1 shrink-0 rounded-full bg-acc" />}
+                  {m[0]}
                 </p>
-                <p key={value} className="ticker-flash mt-1.5 truncate font-mono text-xl font-semibold tracking-tight text-fg">
-                  {value}
+                <p key={m[1]} className="ticker-flash mt-0.5 truncate font-mono text-sm font-semibold text-fg">
+                  {m[1]}
                 </p>
-              </div>
-            ))}
+              </>
+            )}
+          </div>
+        ))}
       </section>
 
       {/* tabs + search */}
