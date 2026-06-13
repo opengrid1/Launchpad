@@ -1,14 +1,21 @@
 import { chromium } from 'playwright'
 const browser = await chromium.launch()
-const d = await browser.newContext({ viewport: { width: 1440, height: 980 }, ignoreHTTPSErrors: true })
+const d = await browser.newContext({ viewport: { width: 1440, height: 900 }, ignoreHTTPSErrors: true })
 const p = await d.newPage()
-await p.goto('http://localhost:4183/#/launch', { waitUntil: 'domcontentloaded', timeout: 30000 })
-await p.waitForTimeout(1500)
-await p.screenshot({ path: '/tmp/lp-closed.png', clip: { x: 130, y: 80, width: 800, height: 640 } })
-// open the socials dropdown
-const btns = await p.$$('button')
-for (const b of btns) { const t = await b.innerText().catch(()=> ''); if (t.trim() === 'SOCIALS' || t.toLowerCase().includes('socials')) { await b.click(); break } }
-await p.waitForTimeout(600)
-await p.screenshot({ path: '/tmp/lp-open.png', clip: { x: 130, y: 80, width: 800, height: 720 } })
+await p.addInitScript(() => {
+  const addr = '0x9A04f5eDF3e9574c59e368c39926cC25605151F3'
+  window.localStorage.setItem('flatline.connected', '1')
+  window.ethereum = {
+    request: async ({ method }) => {
+      if (method === 'eth_accounts' || method === 'eth_requestAccounts') return [addr]
+      if (method === 'eth_chainId') return '0x3e7'
+      return null
+    },
+    on: () => {}, removeListener: () => {},
+  }
+})
+await p.goto('http://localhost:4184/#/t/0x8960bE42d9dEEb973AB6e2DCa837B3bD78c9d5bD', { waitUntil: 'domcontentloaded', timeout: 30000 })
+await p.waitForTimeout(5000)
+await p.screenshot({ path: '/tmp/claim2.png', clip: { x: 150, y: 120, width: 760, height: 200 } })
 await browser.close()
 console.log('done')

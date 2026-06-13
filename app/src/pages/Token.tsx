@@ -481,14 +481,15 @@ function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<ty
     }
   }
 
-  if (!isCreator || (claimable === 0n && pendingTotal === 0n)) return null
+  // Only the creator can claim; show them the control at all times so it is findable.
+  if (!isCreator) return null
 
   return (
     <div className="flex items-center gap-2.5 rounded-xl bg-panel2 px-3 py-2 ring-1 ring-hair">
       <div className="leading-tight">
         <p className="font-mono text-[10px] uppercase tracking-wider text-ghost">Your fees</p>
         <p className="font-mono text-sm text-fg">
-          {claimable > 0n ? `${formatUnits18(detail.creatorFeesHype)} HYPE` : 'uncollected'}
+          {formatUnits18(detail.creatorFeesHype)} HYPE
           {detail.creatorFeesToken > 0n && ` + ${formatUnits18(detail.creatorFeesToken)} ${detail.symbol}`}
         </p>
       </div>
@@ -501,15 +502,13 @@ function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<ty
           {busy === 'Collect' ? '…' : 'Collect'}
         </button>
       )}
-      {claimable > 0n && (
-        <button
-          onClick={() => void send('Claim', 'claimCreatorFees')}
-          disabled={busy !== null}
-          className="btn-primary cursor-pointer rounded-lg px-3.5 py-2 text-xs font-semibold disabled:opacity-60"
-        >
-          {busy === 'Claim' ? '…' : 'Claim'}
-        </button>
-      )}
+      <button
+        onClick={() => void send('Claim', 'claimCreatorFees')}
+        disabled={busy !== null || claimable === 0n}
+        className="btn-primary cursor-pointer rounded-lg px-3.5 py-2 text-xs font-semibold disabled:opacity-40"
+      >
+        {busy === 'Claim' ? '…' : 'Claim'}
+      </button>
     </div>
   )
 }
