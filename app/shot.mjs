@@ -1,13 +1,14 @@
 import { chromium, devices } from 'playwright'
 const browser = await chromium.launch()
+const d = await browser.newContext({ viewport: { width: 1440, height: 1000 }, ignoreHTTPSErrors: true })
+const p = await d.newPage()
+await p.goto('http://localhost:4191/#/t/0x8960bE42d9dEEb973AB6e2DCa837B3bD78c9d5bD', { waitUntil: 'domcontentloaded', timeout: 30000 })
+await p.waitForTimeout(5000)
+await p.screenshot({ path: '/tmp/ov-desk.png' })
 const m = await browser.newContext({ ...devices['iPhone 13'], ignoreHTTPSErrors: true })
-const p = await m.newPage()
-await p.goto('http://localhost:4190/#/t/0x8960bE42d9dEEb973AB6e2DCa837B3bD78c9d5bD', { waitUntil: 'domcontentloaded', timeout: 30000 })
-await p.waitForTimeout(4500)
-await p.screenshot({ path: '/tmp/new-m1.png' })
-// open trade sheet
-try { await p.getByRole('button', { name: /Trade LTEST/i }).click({ timeout: 4000 }) } catch(e){ console.log('trade',String(e).slice(0,50)) }
-await p.waitForTimeout(900)
-await p.screenshot({ path: '/tmp/new-m2.png' })
+const pm = await m.newPage()
+await pm.goto('http://localhost:4191/#/t/0x8960bE42d9dEEb973AB6e2DCa837B3bD78c9d5bD', { waitUntil: 'domcontentloaded', timeout: 30000 })
+await pm.waitForTimeout(5000)
+await pm.screenshot({ path: '/tmp/ov-mob.png' })
 await browser.close()
 console.log('done')

@@ -50,81 +50,100 @@ export function TokenPage({ token }: { token: string }) {
   const usdPerHype = Number(detail.hypeUsd6) / 1e6
   const priceUsd = Number(formatEther(detail.priceWei)) * usdPerHype
   const feesUsd = (detail.lifetimeFeesHype * detail.hypeUsd6) / 10n ** 18n
+  const liquidityUsd6 = (detail.liquidityHype * detail.hypeUsd6) / 10n ** 18n
   const unclaimedHype = unclaimedFeesHype(detail)
   const unclaimedUsd6 = (unclaimedHype * detail.hypeUsd6) / 10n ** 18n
+  const change =
+    detail.startMcUsd6 > 0n ? Number(detail.marketCapUsd6) / Number(detail.startMcUsd6) - 1 : null
 
   return (
-    <main className="mt-6">
-      <a href="#/" className="font-mono text-xs text-ghost no-underline hover:text-dim">
+    <main className="mt-5">
+      <a href="#/" className="font-mono text-xs text-ghost no-underline transition-colors hover:text-dim">
         ← Board
       </a>
 
-      <div className="mt-5 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
-        <div className="min-w-0">
-          {/* identity */}
-          <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex min-w-0 items-start gap-4">
-              <TokenImage src={meta.image} symbol={detail.symbol} size="lg" />
-              <div className="min-w-0">
-                <h1 className="text-2xl font-semibold tracking-tight text-fg">
-                  {detail.name} <span className="ml-1 font-mono text-base font-medium text-ghost">${detail.symbol}</span>
-                </h1>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-ghost">
-                  <button
-                    onClick={() => {
-                      void navigator.clipboard.writeText(detail.token)
-                      setCopied(true)
-                      window.setTimeout(() => setCopied(false), 1500)
-                    }}
-                    className={`cursor-pointer transition-colors ${copied ? 'text-up' : 'hover:text-dim'}`}
-                  >
-                    {copied ? 'copied' : `${shortAddress(detail.token)} ⧉`}
-                  </button>
-                  <span className="text-hair2">·</span>
-                  <span>by {shortAddress(detail.creator)}</span>
-                  <span className="text-hair2">·</span>
-                  <span>{timeAgo(detail.createdAt)}</span>
-                  <span className="text-hair2">·</span>
-                  <a href={explorerAddress(detail.token)} target="_blank" rel="noreferrer" className="text-ghost no-underline hover:text-dim">
-                    explorer ↗
-                  </a>
-                </div>
-                <SocialLinks meta={meta} />
+      {/* hero */}
+      <section className="elev mt-4 overflow-hidden rounded-2xl ring-1 ring-hair">
+        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="flex min-w-0 items-center gap-4">
+            <TokenImage src={meta.image} symbol={detail.symbol} size="lg" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="truncate text-xl font-semibold tracking-tight text-fg sm:text-2xl">{detail.name}</h1>
+                <span className="font-mono text-sm font-medium text-ghost">${detail.symbol}</span>
+                {detail.positionWithdrawn && (
+                  <span className="rounded-md bg-downsoft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-down">Delisted</span>
+                )}
               </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-xs text-ghost">
+                <button
+                  onClick={() => {
+                    void navigator.clipboard.writeText(detail.token)
+                    setCopied(true)
+                    window.setTimeout(() => setCopied(false), 1500)
+                  }}
+                  className={`cursor-pointer rounded bg-panel2 px-2 py-0.5 transition-colors ${copied ? 'text-up' : 'hover:text-dim'}`}
+                >
+                  {copied ? 'copied ✓' : `${shortAddress(detail.token)} ⧉`}
+                </button>
+                <span>by {shortAddress(detail.creator)}</span>
+                <span>·</span>
+                <span>{timeAgo(detail.createdAt)}</span>
+                <a href={explorerAddress(detail.token)} target="_blank" rel="noreferrer" className="text-ghost no-underline transition-colors hover:text-dim">
+                  explorer ↗
+                </a>
+              </div>
+              <SocialLinks meta={meta} />
             </div>
-            {detail.positionWithdrawn ? (
-              <span className="shrink-0 self-start rounded-lg bg-downsoft px-3 py-1.5 text-xs font-bold text-down">Delisted</span>
-            ) : (
-              <RewardsControl detail={detail} refresh={refresh} />
-            )}
-          </section>
+          </div>
 
-          {meta.description && <p className="mt-3 max-w-2xl text-sm leading-relaxed text-dim">{meta.description}</p>}
-
-          {/* compact inline stats — horizontally scrollable on small screens */}
-          <section className="no-scrollbar mt-5 flex gap-x-7 gap-y-3 overflow-x-auto whitespace-nowrap border-y border-hair py-3.5">
-            <Metric label="Price" value={`${formatPriceHype(detail.priceWei)} HYPE`} sub={`$${priceUsd.toLocaleString('en-US', { maximumSignificantDigits: 3 })}`} />
-            <Metric label="Mcap" value={formatUsd6(detail.marketCapUsd6)} />
-            <Metric label="Liquidity" value={formatUsd6((detail.liquidityHype * detail.hypeUsd6) / 10n ** 18n)} />
-            <Metric label="Fees" value={formatUsd6(feesUsd)} />
-            <Metric label="Unclaimed" value={`${fmtHype(unclaimedHype)} HYPE`} sub={formatUsd6(unclaimedUsd6)} accent />
-          </section>
-
-          {/* dominant chart */}
-          <section className="elev mt-5 overflow-hidden rounded-2xl ring-1 ring-hair">
-            <iframe
-              title="chart"
-              src={`https://dexscreener.com/hyperevm/${detail.pool}?embed=1&theme=dark&trades=0&info=0`}
-              className="h-[460px] w-full border-0 sm:h-[520px]"
-            />
-            <div className="flex items-center justify-between border-t border-hair px-4 py-2 font-mono text-[11px] text-ghost">
-              <span>pool {shortAddress(detail.pool)}</span>
-              <a href={`https://dexscreener.com/hyperevm/${detail.pool}`} target="_blank" rel="noreferrer" className="text-ghost no-underline hover:text-dim">
-                DEXScreener ↗
-              </a>
+          {/* price block */}
+          <div className="flex flex-col gap-3 sm:items-end">
+            <div className="flex items-center justify-between gap-4 sm:justify-end">
+              <div className="sm:text-right">
+                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Price</p>
+                <p className="mt-1 font-mono text-xl font-semibold text-fg sm:text-2xl">${priceUsd.toLocaleString('en-US', { maximumSignificantDigits: 4 })}</p>
+                <p className="font-mono text-[11px] text-ghost">{formatPriceHype(detail.priceWei)} HYPE</p>
+              </div>
+              {change !== null && (
+                <span
+                  className={`rounded-lg px-2.5 py-1 font-mono text-sm font-semibold ${change >= 0 ? 'bg-upsoft text-up' : 'bg-downsoft text-down'}`}
+                  title="vs launch market cap"
+                >
+                  {change >= 0 ? '▲' : '▼'} {Math.abs(change * 100).toFixed(change >= 1 ? 0 : 1)}%
+                </span>
+              )}
             </div>
-          </section>
+            {!detail.positionWithdrawn && <RewardsControl detail={detail} refresh={refresh} />}
+          </div>
         </div>
+
+        {meta.description && <p className="px-5 pb-1 text-sm leading-relaxed text-dim sm:px-6">{meta.description}</p>}
+
+        {/* stat bar — one cohesive strip, divided */}
+        <div className="grid grid-cols-2 border-t border-hair sm:grid-cols-4">
+          <Metric label="Market cap" value={formatUsd6(detail.marketCapUsd6)} sub={`${formatUnits18(detail.marketCapHype, { compact: true })} HYPE`} />
+          <Metric label="Liquidity" value={formatUsd6(liquidityUsd6)} sub={`${formatUnits18(detail.liquidityHype, { compact: true })} HYPE`} border />
+          <Metric label="Fees earned" value={formatUsd6(feesUsd)} sub={`${fmtHype(detail.lifetimeFeesHype)} HYPE`} borderSm />
+          <Metric label="Unclaimed" value={formatUsd6(unclaimedUsd6)} sub={`${fmtHype(unclaimedHype)} HYPE`} accent border borderSm />
+        </div>
+      </section>
+
+      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
+        {/* chart */}
+        <section className="elev overflow-hidden rounded-2xl ring-1 ring-hair">
+          <iframe
+            title="chart"
+            src={`https://dexscreener.com/hyperevm/${detail.pool}?embed=1&theme=dark&trades=0&info=0`}
+            className="h-[440px] w-full border-0 sm:h-[560px]"
+          />
+          <div className="flex items-center justify-between border-t border-hair px-4 py-2 font-mono text-[11px] text-ghost">
+            <span>pool {shortAddress(detail.pool)}</span>
+            <a href={`https://dexscreener.com/hyperevm/${detail.pool}`} target="_blank" rel="noreferrer" className="text-ghost no-underline hover:text-dim">
+              DEXScreener ↗
+            </a>
+          </div>
+        </section>
 
         {/* right rail — desktop only; mobile uses the bottom-sheet */}
         <div className="hidden lg:block">
@@ -590,12 +609,12 @@ function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<ty
 
 // ---------------------------------------------------------------- bits
 
-function Metric({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
+function Metric({ label, value, sub, accent, border, borderSm }: { label: string; value: string; sub?: string; accent?: boolean; border?: boolean; borderSm?: boolean }) {
   return (
-    <div className="shrink-0">
+    <div className={`p-4 sm:p-5 ${border ? 'border-l border-hair' : ''} ${borderSm ? 'border-t border-hair sm:border-t-0 sm:border-l' : ''}`}>
       <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">{label}</p>
-      <p className={`mt-1 font-mono text-sm font-semibold ${accent ? 'text-acc' : 'text-fg'}`}>{value}</p>
-      {sub && <p className="mt-0.5 font-mono text-[10px] text-ghost">{sub}</p>}
+      <p className={`mt-1.5 truncate font-mono text-[15px] font-semibold sm:text-base ${accent ? 'text-acc' : 'text-fg'}`}>{value}</p>
+      {sub && <p className="mt-0.5 truncate font-mono text-[10px] text-ghost">{sub}</p>}
     </div>
   )
 }
