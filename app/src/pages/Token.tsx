@@ -42,33 +42,38 @@ export function TokenPage({ token }: { token: string }) {
       <div className="mt-5 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
         <div className="min-w-0">
           {/* identity */}
-          <section className="flex flex-wrap items-start gap-4">
-            <TokenImage src={meta.image} symbol={detail.symbol} size="lg" />
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-semibold tracking-tight text-fg">
-                {detail.name} <span className="ml-1 font-mono text-base font-medium text-ghost">${detail.symbol}</span>
-              </h1>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-ghost">
-                <button
-                  onClick={() => {
-                    void navigator.clipboard.writeText(detail.token)
-                    setCopied(true)
-                    window.setTimeout(() => setCopied(false), 1500)
-                  }}
-                  className={`cursor-pointer transition-colors ${copied ? 'text-up' : 'hover:text-dim'}`}
-                >
-                  {copied ? 'copied' : `${shortAddress(detail.token)} ⧉`}
-                </button>
-                <span>by {shortAddress(detail.creator)}</span>
-                <span>{timeAgo(detail.createdAt)}</span>
-                <a href={explorerAddress(detail.token)} target="_blank" rel="noreferrer" className="text-ghost no-underline hover:text-dim">
-                  explorer ↗
-                </a>
+          <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 items-start gap-4">
+              <TokenImage src={meta.image} symbol={detail.symbol} size="lg" />
+              <div className="min-w-0">
+                <h1 className="text-2xl font-semibold tracking-tight text-fg">
+                  {detail.name} <span className="ml-1 font-mono text-base font-medium text-ghost">${detail.symbol}</span>
+                </h1>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-ghost">
+                  <button
+                    onClick={() => {
+                      void navigator.clipboard.writeText(detail.token)
+                      setCopied(true)
+                      window.setTimeout(() => setCopied(false), 1500)
+                    }}
+                    className={`cursor-pointer transition-colors ${copied ? 'text-up' : 'hover:text-dim'}`}
+                  >
+                    {copied ? 'copied' : `${shortAddress(detail.token)} ⧉`}
+                  </button>
+                  <span className="text-hair2">·</span>
+                  <span>by {shortAddress(detail.creator)}</span>
+                  <span className="text-hair2">·</span>
+                  <span>{timeAgo(detail.createdAt)}</span>
+                  <span className="text-hair2">·</span>
+                  <a href={explorerAddress(detail.token)} target="_blank" rel="noreferrer" className="text-ghost no-underline hover:text-dim">
+                    explorer ↗
+                  </a>
+                </div>
+                <SocialLinks meta={meta} />
               </div>
-              <SocialLinks meta={meta} />
             </div>
             {detail.positionWithdrawn ? (
-              <span className="rounded-lg bg-downsoft px-3 py-1.5 text-xs font-bold text-down">Delisted</span>
+              <span className="shrink-0 self-start rounded-lg bg-downsoft px-3 py-1.5 text-xs font-bold text-down">Delisted</span>
             ) : (
               <RewardsControl detail={detail} refresh={refresh} />
             )}
@@ -485,7 +490,7 @@ function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<ty
   if (!isCreator) return null
 
   return (
-    <div className="flex items-center gap-2.5 rounded-xl bg-panel2 px-3 py-2 ring-1 ring-hair">
+    <div className="flex w-full shrink-0 items-center justify-between gap-2.5 self-start rounded-xl bg-panel2 px-3 py-2 ring-1 ring-hair sm:w-auto">
       <div className="leading-tight">
         <p className="font-mono text-[10px] uppercase tracking-wider text-ghost">Your fees</p>
         <p className="font-mono text-sm text-fg">
