@@ -47,8 +47,6 @@ export function TokenPage({ token }: { token: string }) {
   if (error && !detail) return <Message text={error} />
   if (!detail) return <DetailSkeleton />
 
-  const usdPerHype = Number(detail.hypeUsd6) / 1e6
-  const priceUsd = Number(formatEther(detail.priceWei)) * usdPerHype
   const feesUsd = (detail.lifetimeFeesHype * detail.hypeUsd6) / 10n ** 18n
   const liquidityUsd6 = (detail.liquidityHype * detail.hypeUsd6) / 10n ** 18n
   const unclaimedHype = unclaimedFeesHype(detail)
@@ -101,9 +99,9 @@ export function TokenPage({ token }: { token: string }) {
           <div className="flex flex-col gap-3 sm:items-end">
             <div className="flex items-center justify-between gap-4 sm:justify-end">
               <div className="sm:text-right">
-                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Price</p>
-                <p className="mt-1 font-mono text-xl font-semibold text-fg sm:text-2xl">${priceUsd.toLocaleString('en-US', { maximumSignificantDigits: 4 })}</p>
-                <p className="font-mono text-[11px] text-ghost">{formatPriceHype(detail.priceWei)} HYPE</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Market cap</p>
+                <p className="mt-1 font-mono text-xl font-semibold text-fg sm:text-2xl">{formatUsd6(detail.marketCapUsd6)}</p>
+                <p className="font-mono text-[11px] text-ghost">{formatUnits18(detail.marketCapHype, { compact: true })} HYPE</p>
               </div>
               {change !== null && (
                 <span
@@ -121,11 +119,10 @@ export function TokenPage({ token }: { token: string }) {
         {meta.description && <p className="px-5 pb-1 text-sm leading-relaxed text-dim sm:px-6">{meta.description}</p>}
 
         {/* stat bar — one cohesive strip, divided */}
-        <div className="grid grid-cols-2 border-t border-hair sm:grid-cols-4">
-          <Metric label="Market cap" value={formatUsd6(detail.marketCapUsd6)} sub={`${formatUnits18(detail.marketCapHype, { compact: true })} HYPE`} />
-          <Metric label="Liquidity" value={formatUsd6(liquidityUsd6)} sub={`${formatUnits18(detail.liquidityHype, { compact: true })} HYPE`} border />
-          <Metric label="Fees earned" value={formatUsd6(feesUsd)} sub={`${fmtHype(detail.lifetimeFeesHype)} HYPE`} borderSm />
-          <Metric label="Unclaimed" value={formatUsd6(unclaimedUsd6)} sub={`${fmtHype(unclaimedHype)} HYPE`} accent border borderSm />
+        <div className="grid grid-cols-3 border-t border-hair">
+          <Metric label="Liquidity" value={formatUsd6(liquidityUsd6)} sub={`${formatUnits18(detail.liquidityHype, { compact: true })} HYPE`} />
+          <Metric label="Fees" value={formatUsd6(feesUsd)} sub={`${fmtHype(detail.lifetimeFeesHype)} HYPE`} border />
+          <Metric label="Unclaimed" value={formatUsd6(unclaimedUsd6)} sub={`${fmtHype(unclaimedHype)} HYPE`} accent border />
         </div>
       </section>
 
@@ -609,9 +606,9 @@ function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<ty
 
 // ---------------------------------------------------------------- bits
 
-function Metric({ label, value, sub, accent, border, borderSm }: { label: string; value: string; sub?: string; accent?: boolean; border?: boolean; borderSm?: boolean }) {
+function Metric({ label, value, sub, accent, border }: { label: string; value: string; sub?: string; accent?: boolean; border?: boolean }) {
   return (
-    <div className={`p-4 sm:p-5 ${border ? 'border-l border-hair' : ''} ${borderSm ? 'border-t border-hair sm:border-t-0 sm:border-l' : ''}`}>
+    <div className={`p-4 sm:p-5 ${border ? 'border-l border-hair' : ''}`}>
       <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">{label}</p>
       <p className={`mt-1.5 truncate font-mono text-[15px] font-semibold sm:text-base ${accent ? 'text-acc' : 'text-fg'}`}>{value}</p>
       {sub && <p className="mt-0.5 truncate font-mono text-[10px] text-ghost">{sub}</p>}
