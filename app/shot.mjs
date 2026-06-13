@@ -11,8 +11,8 @@ await p.addInitScript(() => {
     return null
   }, on: () => {}, removeListener: () => {} }
 })
-await p.goto('http://localhost:4185/#/t/0x8960bE42d9dEEb973AB6e2DCa837B3bD78c9d5bD', { waitUntil: 'domcontentloaded', timeout: 30000 })
+await p.goto('http://localhost:4187/#/t/0x8960bE42d9dEEb973AB6e2DCa837B3bD78c9d5bD', { waitUntil: 'domcontentloaded', timeout: 30000 })
 await p.waitForTimeout(5000)
-await p.screenshot({ path: '/tmp/m-fixed.png' })
+await p.screenshot({ path: '/tmp/onebtn.png', clip: { x: 0, y: 250, width: 1170, height: 560 } })
 await browser.close()
 console.log('done')

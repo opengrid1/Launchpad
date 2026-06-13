@@ -448,7 +448,7 @@ function trimMax(balance: bigint): string {
 
 // ---------------------------------------------------------------- fees panel
 
-/** Compact creator claim/collect control, shown inline in the token header. */
+/** Compact creator rewards control — one button that collects (if needed) then claims. */
 function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<typeof useTokenDetail>['detail']>; refresh: () => Promise<void> }) {
   const { address, walletClient, ensureChain } = useWallet()
   const { push } = useToast()
@@ -458,39 +458,68 @@ function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<ty
   const pendingTotal = detail.pendingFeesHype + detail.pendingFeesToken
   const claimable = detail.creatorFeesHype + detail.creatorFeesToken
 
-  async function send(label: string, functionName: 'collectFees' | 'claimCreatorFees') {
+  async function write(functionName: 'collectFees' | 'claimCreatorFees') {
+    const hash = await walletClient!.writeContract({
+      address: LAUNCHPAD,
+      abi: launchpadAbi,
+      functionName,
+      args: [detail.token],
+      account: address!,
+      chain: publicClient.chain,
+    })
+    const receipt = await publicClient.waitForTransactionReceipt({ hash })
+    return { hash, ok: receipt.status === 'success' }
+  }
+
+  /** One tap: realize any pool fees into the split, then send the creator's share to their wallet. */
+  async function claim() {
     if (!walletClient || !address) return
-    setBusy(label)
     try {
       await ensureChain()
-      const hash = await walletClient.writeContract({
-        address: LAUNCHPAD,
-        abi: launchpadAbi,
-        functionName,
-        args: [detail.token],
-        account: address,
-        chain: publicClient.chain,
-      })
-      push({ kind: 'info', title: `${label} submitted`, txHash: hash })
-      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+
+      // Step 1 — pull uncollected pool fees into the 70/30 split (only if there are any).
+      if (pendingTotal > 0n) {
+        setBusy('Collecting')
+        const collected = await write('collectFees')
+        push(
+          collected.ok
+            ? { kind: 'info', title: 'Fees collected', txHash: collected.hash }
+            : { kind: 'error', title: 'Collect reverted', txHash: collected.hash },
+        )
+        if (!collected.ok) return
+      }
+
+      // Step 2 — claim the creator balance (re-read it post-collect).
+      setBusy('Claiming')
+      const [feeHype, feeToken] = await Promise.all([
+        publicClient.readContract({ address: LAUNCHPAD, abi: launchpadAbi, functionName: 'creatorFeesHype', args: [detail.token] }),
+        publicClient.readContract({ address: LAUNCHPAD, abi: launchpadAbi, functionName: 'creatorFeesToken', args: [detail.token] }),
+      ])
+      if (feeHype === 0n && feeToken === 0n) {
+        push({ kind: 'info', title: 'Nothing to claim yet' })
+        return
+      }
+      const claimed = await write('claimCreatorFees')
       push(
-        receipt.status === 'success'
-          ? { kind: 'success', title: `${label} confirmed`, txHash: hash }
-          : { kind: 'error', title: `${label} reverted`, txHash: hash },
+        claimed.ok
+          ? { kind: 'success', title: 'Claimed to your wallet', txHash: claimed.hash }
+          : { kind: 'error', title: 'Claim reverted', txHash: claimed.hash },
       )
-      await refresh()
     } catch (err) {
-      push({ kind: 'error', title: `${label} failed`, detail: errorMessage(err) })
+      push({ kind: 'error', title: 'Claim failed', detail: errorMessage(err) })
     } finally {
       setBusy(null)
+      await refresh()
     }
   }
 
   // Only the creator can claim; show them the control at all times so it is findable.
   if (!isCreator) return null
 
+  const nothing = claimable === 0n && pendingTotal === 0n
+
   return (
-    <div className="flex w-full shrink-0 items-center justify-between gap-2.5 self-start rounded-xl bg-panel2 px-3 py-2 ring-1 ring-hair sm:w-auto">
+    <div className="flex w-full shrink-0 items-center justify-between gap-3 self-start rounded-xl bg-panel2 px-3 py-2 ring-1 ring-hair sm:w-auto">
       <div className="leading-tight">
         <p className="font-mono text-[10px] uppercase tracking-wider text-ghost">Your fees</p>
         <p className="font-mono text-sm text-fg">
@@ -498,21 +527,12 @@ function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<ty
           {detail.creatorFeesToken > 0n && ` + ${formatUnits18(detail.creatorFeesToken)} ${detail.symbol}`}
         </p>
       </div>
-      {pendingTotal > 0n && (
-        <button
-          onClick={() => void send('Collect', 'collectFees')}
-          disabled={busy !== null}
-          className="cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold text-fg ring-1 ring-hair2 transition hover:bg-panel disabled:opacity-50"
-        >
-          {busy === 'Collect' ? '…' : 'Collect'}
-        </button>
-      )}
       <button
-        onClick={() => void send('Claim', 'claimCreatorFees')}
-        disabled={busy !== null || claimable === 0n}
-        className="btn-primary cursor-pointer rounded-lg px-3.5 py-2 text-xs font-semibold disabled:opacity-40"
+        onClick={() => void claim()}
+        disabled={busy !== null || nothing}
+        className="btn-primary cursor-pointer rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-40"
       >
-        {busy === 'Claim' ? '…' : 'Claim'}
+        {busy ?? 'Claim'}
       </button>
     </div>
   )
