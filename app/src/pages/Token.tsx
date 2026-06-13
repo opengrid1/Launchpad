@@ -120,7 +120,7 @@ export function TokenPage({ token }: { token: string }) {
 
         {/* stat bar — one cohesive strip, divided */}
         <div className="grid grid-cols-3 border-t border-hair">
-          <Metric label="Liquidity" value={formatUsd6(liquidityUsd6)} sub={`${formatUnits18(detail.liquidityHype, { compact: true })} HYPE`} />
+          <Metric label="Liquidity" value={formatUsd6(liquidityUsd6)} sub={`${fmtHype(detail.liquidityHype)} HYPE`} />
           <Metric label="Fees" value={formatUsd6(feesUsd)} sub={`${fmtHype(detail.lifetimeFeesHype)} HYPE`} border />
           <Metric label="Unclaimed" value={formatUsd6(unclaimedUsd6)} sub={`${fmtHype(unclaimedHype)} HYPE`} accent border />
         </div>
