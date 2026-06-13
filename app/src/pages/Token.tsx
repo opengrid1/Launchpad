@@ -62,41 +62,44 @@ export function TokenPage({ token }: { token: string }) {
 
       {/* hero */}
       <section className="elev mt-4 overflow-hidden rounded-2xl ring-1 ring-hair">
-        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div className="flex min-w-0 items-center gap-4">
-            <TokenImage src={meta.image} symbol={detail.symbol} size="lg" />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="truncate text-xl font-semibold tracking-tight text-fg sm:text-2xl">{detail.name}</h1>
-                <span className="font-mono text-sm font-medium text-ghost">${detail.symbol}</span>
-                {detail.positionWithdrawn && (
-                  <span className="rounded-md bg-downsoft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-down">Delisted</span>
-                )}
+        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start gap-4">
+              <TokenImage src={meta.image} symbol={detail.symbol} size="lg" />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="truncate text-xl font-semibold tracking-tight text-fg sm:text-2xl">{detail.name}</h1>
+                  <span className="font-mono text-sm font-medium text-ghost">${detail.symbol}</span>
+                  {detail.positionWithdrawn && (
+                    <span className="rounded-md bg-downsoft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-down">Delisted</span>
+                  )}
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-xs text-ghost">
+                  <button
+                    onClick={() => {
+                      void navigator.clipboard.writeText(detail.token)
+                      setCopied(true)
+                      window.setTimeout(() => setCopied(false), 1500)
+                    }}
+                    className={`cursor-pointer rounded bg-panel2 px-2 py-0.5 transition-colors ${copied ? 'text-up' : 'hover:text-dim'}`}
+                  >
+                    {copied ? 'copied ✓' : `${shortAddress(detail.token)} ⧉`}
+                  </button>
+                  <span>by {shortAddress(detail.creator)}</span>
+                  <span>·</span>
+                  <span>{timeAgo(detail.createdAt)}</span>
+                  <a href={explorerAddress(detail.token)} target="_blank" rel="noreferrer" className="text-ghost no-underline transition-colors hover:text-dim">
+                    explorer ↗
+                  </a>
+                </div>
+                <SocialLinks meta={meta} />
               </div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-xs text-ghost">
-                <button
-                  onClick={() => {
-                    void navigator.clipboard.writeText(detail.token)
-                    setCopied(true)
-                    window.setTimeout(() => setCopied(false), 1500)
-                  }}
-                  className={`cursor-pointer rounded bg-panel2 px-2 py-0.5 transition-colors ${copied ? 'text-up' : 'hover:text-dim'}`}
-                >
-                  {copied ? 'copied ✓' : `${shortAddress(detail.token)} ⧉`}
-                </button>
-                <span>by {shortAddress(detail.creator)}</span>
-                <span>·</span>
-                <span>{timeAgo(detail.createdAt)}</span>
-                <a href={explorerAddress(detail.token)} target="_blank" rel="noreferrer" className="text-ghost no-underline transition-colors hover:text-dim">
-                  explorer ↗
-                </a>
-              </div>
-              <SocialLinks meta={meta} />
             </div>
+            {meta.description && <p className="mt-4 max-w-xl text-sm leading-relaxed text-dim">{meta.description}</p>}
           </div>
 
-          {/* price block */}
-          <div className="flex flex-col gap-3 sm:items-end">
+          {/* market cap block */}
+          <div className="flex shrink-0 flex-col gap-3 sm:items-end">
             <div className="flex items-center justify-between gap-4 sm:justify-end">
               <div className="sm:text-right">
                 <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Market cap</p>
@@ -115,8 +118,6 @@ export function TokenPage({ token }: { token: string }) {
             {!detail.positionWithdrawn && <RewardsControl detail={detail} refresh={refresh} />}
           </div>
         </div>
-
-        {meta.description && <p className="px-5 pb-1 text-sm leading-relaxed text-dim sm:px-6">{meta.description}</p>}
 
         {/* stat bar — one cohesive strip, divided */}
         <div className="grid grid-cols-3 border-t border-hair">
