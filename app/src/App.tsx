@@ -37,7 +37,7 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <Header page={page} />
-      <BottomNav page={page} />
+      {page !== 'token' && <BottomNav page={page} />}
       <div className="mx-auto max-w-6xl px-4 pb-32 sm:px-6 sm:pb-24">
         {route.page === 'board' && <Board />}
         {route.page === 'launch' && <LaunchPage />}

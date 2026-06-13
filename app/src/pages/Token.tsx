@@ -99,22 +99,23 @@ export function TokenPage({ token }: { token: string }) {
             )}
           </section>
 
-          {meta.description && <p className="mt-4 max-w-2xl text-sm leading-relaxed text-dim">{meta.description}</p>}
+          {meta.description && <p className="mt-3 max-w-2xl text-sm leading-relaxed text-dim">{meta.description}</p>}
 
-          {/* stat strip */}
-          <section className="elev mt-7 grid grid-cols-2 overflow-hidden rounded-2xl ring-1 ring-hair sm:grid-cols-4">
-            <Stat label="Price" value={`${formatPriceHype(detail.priceWei)} HYPE`} sub={`$${priceUsd.toLocaleString('en-US', { maximumSignificantDigits: 3 })}`} />
-            <Stat label="Mcap" value={formatUsd6(detail.marketCapUsd6)} sub={`${formatUnits18(detail.marketCapHype)} HYPE`} divide />
-            <Stat label="Fees earned" value={formatUsd6(feesUsd)} sub={`${fmtHype(detail.lifetimeFeesHype)} HYPE`} divideSm />
-            <Stat label="Unclaimed" value={`${fmtHype(unclaimedHype)} HYPE`} sub={formatUsd6(unclaimedUsd6)} divide accent />
+          {/* compact inline stats — horizontally scrollable on small screens */}
+          <section className="no-scrollbar mt-5 flex gap-x-7 gap-y-3 overflow-x-auto whitespace-nowrap border-y border-hair py-3.5">
+            <Metric label="Price" value={`${formatPriceHype(detail.priceWei)} HYPE`} sub={`$${priceUsd.toLocaleString('en-US', { maximumSignificantDigits: 3 })}`} />
+            <Metric label="Mcap" value={formatUsd6(detail.marketCapUsd6)} />
+            <Metric label="Liquidity" value={formatUsd6((detail.liquidityHype * detail.hypeUsd6) / 10n ** 18n)} />
+            <Metric label="Fees" value={formatUsd6(feesUsd)} />
+            <Metric label="Unclaimed" value={`${fmtHype(unclaimedHype)} HYPE`} sub={formatUsd6(unclaimedUsd6)} accent />
           </section>
 
-          {/* chart */}
+          {/* dominant chart */}
           <section className="elev mt-5 overflow-hidden rounded-2xl ring-1 ring-hair">
             <iframe
               title="chart"
               src={`https://dexscreener.com/hyperevm/${detail.pool}?embed=1&theme=dark&trades=0&info=0`}
-              className="h-[420px] w-full border-0"
+              className="h-[460px] w-full border-0 sm:h-[520px]"
             />
             <div className="flex items-center justify-between border-t border-hair px-4 py-2 font-mono text-[11px] text-ghost">
               <span>pool {shortAddress(detail.pool)}</span>
@@ -125,18 +126,56 @@ export function TokenPage({ token }: { token: string }) {
           </section>
         </div>
 
-        {/* right rail */}
-        <div>
+        {/* right rail — desktop only; mobile uses the bottom-sheet */}
+        <div className="hidden lg:block">
           <TradePanel detail={detail} refresh={refresh} />
         </div>
       </div>
+
+      {/* mobile: sticky Trade bar + bottom-sheet */}
+      <MobileTrade detail={detail} refresh={refresh} />
     </main>
+  )
+}
+
+/** Sticky bottom Trade button (mobile) that opens the trade panel as a bottom sheet. */
+function MobileTrade({ detail, refresh }: { detail: NonNullable<ReturnType<typeof useTokenDetail>['detail']>; refresh: () => Promise<void> }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hair bg-base/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md">
+        <button
+          onClick={() => setOpen(true)}
+          disabled={detail.positionWithdrawn}
+          className="btn-primary w-full cursor-pointer rounded-xl py-3 text-sm font-semibold disabled:opacity-40"
+        >
+          {detail.positionWithdrawn ? 'Trading disabled' : `Trade ${detail.symbol}`}
+        </button>
+      </div>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
+          <div className="rise-in relative max-h-[88vh] overflow-y-auto rounded-t-2xl bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] ring-1 ring-hair">
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-hair2" />
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute right-4 top-4 cursor-pointer text-ghost hover:text-fg"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <TradePanel detail={detail} refresh={refresh} bare />
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
 // ---------------------------------------------------------------- trade panel
 
-function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof useTokenDetail>['detail']>; refresh: () => Promise<void> }) {
+function TradePanel({ detail, refresh, bare }: { detail: NonNullable<ReturnType<typeof useTokenDetail>['detail']>; refresh: () => Promise<void>; bare?: boolean }) {
   const { address, walletClient, connect, ensureChain } = useWallet()
   const { push } = useToast()
   const [side, setSide] = useState<'buy' | 'sell'>('buy')
@@ -312,7 +351,7 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
   const balanceLabel = side === 'buy' ? 'HYPE' : detail.symbol
 
   return (
-    <section className="elev rounded-2xl p-5 ring-1 ring-hair">
+    <section className={bare ? '' : 'elev rounded-2xl p-5 ring-1 ring-hair'}>
       <div className="flex gap-1 rounded-xl bg-base p-1 ring-1 ring-hair">
         {(['buy', 'sell'] as const).map((s) => (
           <button
@@ -551,12 +590,12 @@ function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<ty
 
 // ---------------------------------------------------------------- bits
 
-function Stat({ label, value, sub, accent, divide, divideSm }: { label: string; value: string; sub?: string; accent?: boolean; divide?: boolean; divideSm?: boolean }) {
+function Metric({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
-    <div className={`p-4 ${divide ? 'border-l border-hair' : ''} ${divideSm ? 'border-t border-hair sm:border-l sm:border-t-0' : ''}`}>
+    <div className="shrink-0">
       <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">{label}</p>
-      <p className={`mt-1.5 truncate font-mono text-[15px] font-semibold ${accent ? 'text-acc' : 'text-fg'}`}>{value}</p>
-      {sub && <p className="mt-0.5 truncate font-mono text-[10px] text-ghost">{sub}</p>}
+      <p className={`mt-1 font-mono text-sm font-semibold ${accent ? 'text-acc' : 'text-fg'}`}>{value}</p>
+      {sub && <p className="mt-0.5 font-mono text-[10px] text-ghost">{sub}</p>}
     </div>
   )
 }
