@@ -40,6 +40,37 @@ export async function fetchTrades(pool: string): Promise<Trade[]> {
   }
 }
 
+/** Close-price series (oldest→newest) for a pool's sparkline, from GeckoTerminal OHLCV. */
+export async function fetchSparkline(pool: string): Promise<number[]> {
+  try {
+    const res = await fetch(`${GT}/pools/${pool}/ohlcv/hour?aggregate=1&limit=24`, {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(8000),
+    })
+    if (!res.ok) return []
+    const json = (await res.json()) as { data?: { attributes?: { ohlcv_list?: number[][] } } }
+    const list = json.data?.attributes?.ohlcv_list ?? []
+    return list
+      .map((c) => c[4])
+      .filter((n) => Number.isFinite(n))
+      .reverse()
+  } catch {
+    return []
+  }
+}
+
+/** Sparkline series for several pools (sequential to stay under rate limits). */
+export async function fetchSparklines(pools: string[]): Promise<Record<string, number[]>> {
+  const out: Record<string, number[]> = {}
+  await Promise.all(
+    pools.map(async (p) => {
+      const s = await fetchSparkline(p)
+      if (s.length >= 2) out[p.toLowerCase()] = s
+    }),
+  )
+  return out
+}
+
 /**
  * 24h volume per pool from GeckoTerminal's public API (they index HyperEVM swaps;
  * there's no on-chain volume to read). Batched up to 30 pools per request.

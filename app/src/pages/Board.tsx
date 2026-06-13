@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLaunches, usePlatformStats } from '../hooks/useLaunches'
 import { TokenRow, TokenRowHeader, TokenRowSkeleton, Delta } from '../components/TokenRow'
 import { ActivityFeed } from '../components/ActivityFeed'
-import { fetchVolumes } from '../lib/gecko'
+import { fetchVolumes, fetchSparklines } from '../lib/gecko'
 import { formatUsd6 } from '../lib/format'
 import type { LaunchRow } from '../lib/launchpad'
 
@@ -14,18 +14,24 @@ export function Board() {
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortKey>('new')
   const [volumes, setVolumes] = useState<Record<string, number>>({})
+  const [sparks, setSparks] = useState<Record<string, number[]>>({})
 
-  // 24h volume per pool from GeckoTerminal (no on-chain volume exists).
+  // 24h volume + sparkline series per pool from GeckoTerminal (no on-chain volume exists).
   const poolKey = rows?.map((r) => r.pool).join(',') ?? ''
   useEffect(() => {
     if (!rows || rows.length === 0) return
     let alive = true
-    const load = () => fetchVolumes(rows.map((r) => r.pool)).then((v) => alive && setVolumes(v))
-    void load()
-    const id = window.setInterval(load, 30_000)
+    const pools = rows.map((r) => r.pool)
+    const loadVol = () => fetchVolumes(pools).then((v) => alive && setVolumes(v))
+    const loadSpark = () => fetchSparklines(pools).then((s) => alive && setSparks(s))
+    void loadVol()
+    void loadSpark()
+    const vId = window.setInterval(loadVol, 30_000)
+    const sId = window.setInterval(loadSpark, 60_000)
     return () => {
       alive = false
-      window.clearInterval(id)
+      window.clearInterval(vId)
+      window.clearInterval(sId)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poolKey])
@@ -77,26 +83,39 @@ export function Board() {
   return (
     <main>
       {/* hero */}
-      <section className="mt-7">
-        <h1 className="text-2xl font-bold tracking-tight text-fg sm:text-[28px]">
+      <section className="mt-10 text-center sm:mt-14">
+        <h1 className="mx-auto max-w-2xl text-3xl font-bold leading-[1.1] tracking-tight text-fg sm:text-5xl">
           Launch &amp; trade tokens on <span className="text-acc">HyperEVM</span>
         </h1>
-        <p className="mt-1.5 max-w-xl text-sm text-dim">
-          Every launch is a live market on a single HyperSwap V3 pool. Buy and sell instantly — no curve, no presale.
+        <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-dim sm:text-base">
+          Every launch is a live market on a single HyperSwap V3 pool. Buy and sell instantly — no bonding curve, no presale.
         </p>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <a href="#/launch" className="btn-primary rounded-xl px-6 py-2.5 text-sm font-semibold no-underline">
+            Launch a token
+          </a>
+          <a href="#/docs" className="rounded-xl px-5 py-2.5 text-sm font-semibold text-dim no-underline ring-1 ring-hair transition hover:text-fg hover:ring-hair2">
+            How it works
+          </a>
+        </div>
       </section>
 
-      {/* ecosystem metrics strip */}
-      <section className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {/* ecosystem stats — inline bar with dividers */}
+      <section className="elev no-scrollbar mt-9 flex overflow-x-auto rounded-2xl ring-1 ring-hair">
         {metrics === null
-          ? Array.from({ length: 5 }, (_, i) => <div key={i} className="shimmer h-[80px] rounded-xl ring-1 ring-hair" />)
-          : metrics.map(([label, value, live]) => (
-              <div key={label} className="elev rounded-xl p-4 ring-1 ring-hair">
+          ? Array.from({ length: 5 }, (_, i) => (
+              <div key={i} className={`min-w-[46%] flex-1 px-5 py-4 sm:min-w-0 ${i > 0 ? 'border-l border-hair' : ''}`}>
+                <div className="shimmer h-3 w-20 rounded" />
+                <div className="shimmer mt-2 h-5 w-24 rounded" />
+              </div>
+            ))
+          : metrics.map(([label, value, live], i) => (
+              <div key={label} className={`min-w-[46%] flex-1 px-5 py-4 sm:min-w-0 ${i > 0 ? 'border-l border-hair' : ''}`}>
                 <p className="flex items-center gap-1.5 text-[11px] font-medium text-ghost">
                   {live && <span className="live-dot h-1.5 w-1.5 rounded-full bg-acc" />}
                   {label}
                 </p>
-                <p key={value} className="ticker-flash mt-1.5 truncate font-mono text-lg font-semibold tracking-tight text-fg">
+                <p key={value} className="ticker-flash mt-1.5 truncate font-mono text-xl font-semibold tracking-tight text-fg">
                   {value}
                 </p>
               </div>
@@ -157,6 +176,7 @@ export function Board() {
                     startMcUsd6={startMc6}
                     hypeUsd6={hypeUsd6}
                     volume={volumes[row.pool.toLowerCase()]}
+                    sparkline={sparks[row.pool.toLowerCase()]}
                   />
                 ))}
             {filtered !== null && filtered.length === 0 && (
