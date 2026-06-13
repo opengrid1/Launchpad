@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLaunches, usePlatformStats } from '../hooks/useLaunches'
 import { TokenRow, TokenRowHeader, TokenRowSkeleton } from '../components/TokenRow'
+import { HeroBanner } from '../components/HeroBanner'
 import { fetchVolumes, fetchSparklines } from '../lib/gecko'
 import { formatUsd6 } from '../lib/format'
 import type { LaunchRow } from '../lib/launchpad'
@@ -75,23 +76,7 @@ export function Board() {
 
   return (
     <main>
-      {/* hero — left aligned */}
-      <section className="mt-9">
-        <h1 className="max-w-2xl text-3xl font-bold leading-[1.1] tracking-tight text-fg sm:text-[40px]">
-          Launch &amp; trade tokens on <span className="text-acc">HyperEVM</span>
-        </h1>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-dim">
-          Every launch is a live market on a single HyperSwap V3 pool. Buy and sell instantly — no bonding curve, no presale.
-        </p>
-        <div className="mt-5 flex items-center gap-3">
-          <a href="#/launch" className="btn-primary rounded-xl px-5 py-2.5 text-sm font-semibold no-underline">
-            Launch a token
-          </a>
-          <a href="#/docs" className="rounded-xl px-4 py-2.5 text-sm font-semibold text-dim no-underline ring-1 ring-hair transition hover:text-fg hover:ring-hair2">
-            How it works
-          </a>
-        </div>
-      </section>
+      <HeroBanner />
 
       {/* ecosystem stats — minimal strip, no scroll */}
       <section className="mt-8 grid grid-cols-3 gap-x-5 gap-y-3 border-y border-hair py-3.5 sm:flex sm:items-center sm:gap-0">

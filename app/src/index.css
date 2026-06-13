@@ -157,3 +157,26 @@ button:active:not(:disabled) {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* animated perspective grid for the hero banner */
+.hero-grid {
+  position: absolute;
+  left: -25%;
+  right: -25%;
+  top: -10%;
+  bottom: -60%;
+  background-image:
+    linear-gradient(to right, rgba(63, 224, 207, 0.16) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(63, 224, 207, 0.16) 1px, transparent 1px);
+  background-size: 42px 42px;
+  transform: perspective(440px) rotateX(60deg);
+  transform-origin: 50% 0%;
+  animation: hero-grid-move 5.5s linear infinite;
+  -webkit-mask-image: radial-gradient(ellipse 60% 85% at 50% 18%, #000 28%, transparent 72%);
+  mask-image: radial-gradient(ellipse 60% 85% at 50% 18%, #000 28%, transparent 72%);
+  pointer-events: none;
+}
+@keyframes hero-grid-move {
+  from { background-position: 0 0; }
+  to { background-position: 0 42px; }
+}

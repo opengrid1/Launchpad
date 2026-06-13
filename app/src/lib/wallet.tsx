@@ -1,134 +1,103 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { createWalletClient, custom, type Address, type EIP1193Provider, type WalletClient } from 'viem'
+import { PrivyProvider, usePrivy, useWallets } from '@privy-io/react-auth'
+import { createWalletClient, custom, type Address, type WalletClient } from 'viem'
 import { hyperevm } from './chain'
 
-declare global {
-  interface Window {
-    ethereum?: EIP1193Provider
-  }
-}
+const PRIVY_APP_ID = 'cmqcelb8c003p0cjo0zn4d4l7'
 
 type WalletState = {
   address: Address | null
   chainId: number | null
   connecting: boolean
   hasProvider: boolean
-  connect: () => Promise<void>
+  connect: () => void
   disconnect: () => void
-  /** Wallet client bound to the connected account; null until connected. */
   walletClient: WalletClient | null
-  /** Prompts a switch (or add+switch) to HyperEVM. Resolves when on chain 999. */
   ensureChain: () => Promise<void>
   onCorrectChain: boolean
 }
 
 const WalletContext = createContext<WalletState | null>(null)
 
-const STORAGE_KEY = 'flatline.connected'
-
+/** Wraps the app in Privy, then exposes the same useWallet() API the app already uses. */
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const [address, setAddress] = useState<Address | null>(null)
-  const [chainId, setChainId] = useState<number | null>(null)
-  const [connecting, setConnecting] = useState(false)
-  const hasProvider = typeof window !== 'undefined' && !!window.ethereum
+  return (
+    <PrivyProvider
+      appId={PRIVY_APP_ID}
+      config={{
+        appearance: {
+          theme: 'dark',
+          accentColor: '#3fe0cf',
+          walletChainType: 'ethereum-only',
+        },
+        loginMethods: ['wallet', 'email', 'google', 'twitter'],
+        defaultChain: hyperevm,
+        supportedChains: [hyperevm],
+        embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' } },
+      }}
+    >
+      <WalletBridge>{children}</WalletBridge>
+    </PrivyProvider>
+  )
+}
 
-  const applyAccounts = useCallback((accounts: string[]) => {
-    setAddress(accounts.length > 0 ? (accounts[0] as Address) : null)
-    if (accounts.length === 0) localStorage.removeItem(STORAGE_KEY)
-  }, [])
+function WalletBridge({ children }: { children: ReactNode }) {
+  const { ready, authenticated, login, logout, user } = usePrivy()
+  const { wallets } = useWallets()
+  const [walletClient, setWalletClient] = useState<WalletClient | null>(null)
+
+  // Active wallet: prefer the one Privy marks as primary, else the first connected.
+  const wallet = useMemo(() => {
+    if (wallets.length === 0) return null
+    return wallets.find((w) => w.address === user?.wallet?.address) ?? wallets[0]
+  }, [wallets, user?.wallet?.address])
+
+  const address = (wallet?.address as Address | undefined) ?? null
+  const chainId = wallet ? Number(String(wallet.chainId).split(':').pop()) || null : null
 
   useEffect(() => {
-    const provider = window.ethereum
-    if (!provider) return
-
-    // Silent reconnect for returning users.
-    if (localStorage.getItem(STORAGE_KEY)) {
-      provider.request({ method: 'eth_accounts' }).then((a) => applyAccounts(a as string[])).catch(() => {})
-    }
-    provider.request({ method: 'eth_chainId' }).then((id) => setChainId(Number(id))).catch(() => {})
-
-    const onAccounts = (accounts: unknown) => applyAccounts(accounts as string[])
-    const onChain = (id: unknown) => setChainId(Number(id))
-    provider.on('accountsChanged', onAccounts)
-    provider.on('chainChanged', onChain)
+    let alive = true
+    void (async () => {
+      if (!wallet || !address) {
+        if (alive) setWalletClient(null)
+        return
+      }
+      const provider = await wallet.getEthereumProvider()
+      if (alive) setWalletClient(createWalletClient({ account: address, chain: hyperevm, transport: custom(provider) }))
+    })()
     return () => {
-      provider.removeListener('accountsChanged', onAccounts)
-      provider.removeListener('chainChanged', onChain)
+      alive = false
     }
-  }, [applyAccounts])
+  }, [wallet, address])
 
-  const connect = useCallback(async () => {
-    const provider = window.ethereum
-    if (!provider) {
-      window.open('https://metamask.io/download/', '_blank', 'noopener')
-      return
-    }
-    setConnecting(true)
-    try {
-      const accounts = (await provider.request({ method: 'eth_requestAccounts' })) as string[]
-      applyAccounts(accounts)
-      const id = (await provider.request({ method: 'eth_chainId' })) as string
-      setChainId(Number(id))
-      localStorage.setItem(STORAGE_KEY, '1')
-    } finally {
-      setConnecting(false)
-    }
-  }, [applyAccounts])
+  const connect = useCallback(() => {
+    if (!authenticated) login()
+  }, [authenticated, login])
 
   const disconnect = useCallback(() => {
-    setAddress(null)
-    localStorage.removeItem(STORAGE_KEY)
-  }, [])
+    void logout()
+  }, [logout])
 
   const ensureChain = useCallback(async () => {
-    const provider = window.ethereum
-    if (!provider) throw new Error('No wallet found')
-    const current = (await provider.request({ method: 'eth_chainId' })) as string
-    if (Number(current) === hyperevm.id) return
-    const hexId = `0x${hyperevm.id.toString(16)}`
-    try {
-      await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hexId }] })
-    } catch (err) {
-      // 4902: chain not added to the wallet yet
-      if ((err as { code?: number }).code === 4902) {
-        await provider.request({
-          method: 'wallet_addEthereumChain',
-          params: [
-            {
-              chainId: hexId,
-              chainName: hyperevm.name,
-              nativeCurrency: hyperevm.nativeCurrency,
-              rpcUrls: [hyperevm.rpcUrls.default.http[0]],
-              blockExplorerUrls: [hyperevm.blockExplorers.default.url],
-            },
-          ],
-        })
-      } else {
-        throw err
-      }
-    }
-    setChainId(hyperevm.id)
-  }, [])
-
-  const walletClient = useMemo(() => {
-    if (!address || !window.ethereum) return null
-    return createWalletClient({ account: address, chain: hyperevm, transport: custom(window.ethereum) })
-  }, [address])
+    if (!wallet) return
+    if (Number(String(wallet.chainId).split(':').pop()) === hyperevm.id) return
+    await wallet.switchChain(hyperevm.id)
+  }, [wallet])
 
   const value = useMemo<WalletState>(
     () => ({
       address,
       chainId,
-      connecting,
-      hasProvider,
+      connecting: !ready,
+      hasProvider: true,
       connect,
       disconnect,
       walletClient,
       ensureChain,
       onCorrectChain: chainId === hyperevm.id,
     }),
-    [address, chainId, connecting, hasProvider, connect, disconnect, walletClient, ensureChain],
+    [address, chainId, ready, connect, disconnect, walletClient, ensureChain],
   )
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>

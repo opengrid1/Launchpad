@@ -4,31 +4,44 @@ import { shortAddress } from '../lib/format'
 
 export type Page = 'board' | 'launch' | 'docs' | 'token'
 
+const NAV: ReadonlyArray<readonly [string, Page, string]> = [
+  ['Home', 'board', '#/'],
+  ['Launch', 'launch', '#/launch'],
+  ['Docs', 'docs', '#/docs'],
+]
+
 export function Header({ page }: { page: Page }) {
   const { address, connecting, connect, disconnect, onCorrectChain, ensureChain, chainId } = useWallet()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [navOpen, setNavOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-40 border-b border-hair bg-base/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-hair bg-base/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
-        <div className="flex items-center gap-7">
+        <div className="flex items-center gap-3">
+          {/* hamburger (mobile) */}
+          <button
+            onClick={() => setNavOpen((v) => !v)}
+            aria-label="Menu"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-fg ring-1 ring-hair transition hover:bg-panel2 sm:hidden"
+          >
+            <svg width="17" height="17" viewBox="0 0 18 18" fill="none">
+              <path d="M2.5 5h13M2.5 9h13M2.5 13h13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          </button>
+
           <a href="#/" className="flex items-center gap-2.5 no-underline">
             <span className="btn-primary flex h-8 w-8 items-center justify-center rounded-[10px]">
               <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                <path d="M2 13 L16 13" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
-                <path d="M2 8 Q7 8 9 5.5 T16 3" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2 3" opacity="0.55" />
+                <path d="M2 13 L16 13" stroke="#04201c" strokeWidth="2.6" strokeLinecap="round" />
+                <path d="M2 8 Q7 8 9 5.5 T16 3" stroke="#04201c" strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2 3" opacity="0.55" />
               </svg>
             </span>
             <span className="text-[15px] font-semibold tracking-tight text-fg">Flatline</span>
           </a>
 
           <nav className="hidden items-center gap-1 sm:flex">
-            {(
-              [
-                ['Home', 'board', '#/'],
-                ['Docs', 'docs', '#/docs'],
-              ] as const
-            ).map(([label, key, href]) => (
+            {NAV.map(([label, key, href]) => (
               <a
                 key={key}
                 href={href}
@@ -42,10 +55,7 @@ export function Header({ page }: { page: Page }) {
           </nav>
         </div>
 
-        <div className="hidden items-center gap-2.5 sm:flex">
-          <a href="#/launch" className="btn-primary cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold no-underline">
-            Launch
-          </a>
+        <div className="flex items-center gap-2">
           {address && !onCorrectChain && chainId !== null && (
             <button
               onClick={() => void ensureChain()}
@@ -56,11 +66,11 @@ export function Header({ page }: { page: Page }) {
           )}
           {!address ? (
             <button
-              onClick={() => void connect()}
+              onClick={() => connect()}
               disabled={connecting}
-              className="cursor-pointer rounded-lg px-3.5 py-2 text-sm font-semibold text-dim ring-1 ring-hair2 transition hover:bg-panel2 hover:text-fg disabled:opacity-60"
+              className="btn-primary cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60"
             >
-              {connecting ? 'Connecting…' : 'Connect'}
+              {connecting ? '…' : 'Connect'}
             </button>
           ) : (
             <div className="relative">
@@ -96,6 +106,24 @@ export function Header({ page }: { page: Page }) {
           )}
         </div>
       </div>
+
+      {/* mobile nav drawer */}
+      {navOpen && (
+        <nav className="border-t border-hair bg-base/95 px-4 py-2 sm:hidden">
+          {NAV.map(([label, key, href]) => (
+            <a
+              key={key}
+              href={href}
+              onClick={() => setNavOpen(false)}
+              className={`block rounded-lg px-3 py-2.5 text-sm font-medium no-underline transition-colors ${
+                page === key ? 'bg-panel2 text-acc' : 'text-dim hover:bg-panel2 hover:text-fg'
+              }`}
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+      )}
     </header>
   )
 }
