@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLaunches, usePlatformStats } from '../hooks/useLaunches'
 import { TokenRow, TokenRowHeader, TokenRowSkeleton } from '../components/TokenRow'
+import { fetchVolumes } from '../lib/gecko'
 import { formatUsd6 } from '../lib/format'
 
 type SortKey = 'new' | 'mcap' | 'fees'
@@ -10,6 +11,22 @@ export function Board() {
   const stats = usePlatformStats()
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortKey>('new')
+  const [volumes, setVolumes] = useState<Record<string, number>>({})
+
+  // 24h volume per pool from GeckoTerminal (no on-chain volume exists).
+  const poolKey = rows?.map((r) => r.pool).join(',') ?? ''
+  useEffect(() => {
+    if (!rows || rows.length === 0) return
+    let alive = true
+    const load = () => fetchVolumes(rows.map((r) => r.pool)).then((v) => alive && setVolumes(v))
+    void load()
+    const id = window.setInterval(load, 30_000)
+    return () => {
+      alive = false
+      window.clearInterval(id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poolKey])
 
   const filtered = useMemo(() => {
     if (!rows) return null
@@ -106,7 +123,14 @@ export function Board() {
         {filtered === null
           ? Array.from({ length: 6 }, (_, i) => <TokenRowSkeleton key={i} index={i} />)
           : filtered.map((row, i) => (
-              <TokenRow key={row.token} row={row} index={i} startMcUsd6={stats?.startMcUsd6 ?? null} hypeUsd6={hypeUsd6} />
+              <TokenRow
+                key={row.token}
+                row={row}
+                index={i}
+                startMcUsd6={stats?.startMcUsd6 ?? null}
+                hypeUsd6={hypeUsd6}
+                volume={volumes[row.pool.toLowerCase()]}
+              />
             ))}
         {filtered !== null && filtered.length === 0 && (
           <div className="px-4 py-16 text-center">
