@@ -42,7 +42,7 @@ export default function App() {
         {route.page === 'docs' && <Docs />}
         {route.page === 'token' && <TokenPage key={route.address} token={route.address} />}
         <footer className="mt-24 flex flex-wrap items-center justify-between gap-3 border-t border-hair pt-6 font-mono text-[11px] text-ghost">
-          <span>Flatline</span>
+          <span>Hyprpad</span>
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <a
               href="https://hyperevmscan.io/address/0xc985b4dda3ae887152ba79558ed7939fbe3a7549"

@@ -2,7 +2,7 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Flatline — layered deep-charcoal surfaces, HyperEVM cyan accent (no purple) */
+  /* Hyprpad — layered deep-charcoal surfaces, HyperEVM cyan accent (no purple) */
   --color-base: #0b0f14;
   --color-panel: #121821;
   --color-panel2: #1a222d;

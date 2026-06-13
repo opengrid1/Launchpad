@@ -37,7 +37,7 @@ export function Header({ page }: { page: Page }) {
                 <path d="M2 8 Q7 8 9 5.5 T16 3" stroke="#04201c" strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2 3" opacity="0.55" />
               </svg>
             </span>
-            <span className="text-[15px] font-semibold tracking-tight text-fg">Flatline</span>
+            <span className="text-[15px] font-semibold tracking-tight text-fg">Hyprpad</span>
           </a>
 
           <nav className="hidden items-center gap-1 sm:flex">
