@@ -67,8 +67,10 @@ export function TokenPage({ token }: { token: string }) {
               </div>
               <SocialLinks meta={meta} />
             </div>
-            {detail.positionWithdrawn && (
+            {detail.positionWithdrawn ? (
               <span className="rounded-lg bg-downsoft px-3 py-1.5 text-xs font-bold text-down">Delisted</span>
+            ) : (
+              <RewardsControl detail={detail} refresh={refresh} />
             )}
           </section>
 
@@ -99,9 +101,8 @@ export function TokenPage({ token }: { token: string }) {
         </div>
 
         {/* right rail */}
-        <div className="space-y-4">
+        <div>
           <TradePanel detail={detail} refresh={refresh} />
-          <FeesPanel detail={detail} refresh={refresh} />
         </div>
       </div>
     </main>
@@ -442,7 +443,8 @@ function trimMax(balance: bigint): string {
 
 // ---------------------------------------------------------------- fees panel
 
-function FeesPanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof useTokenDetail>['detail']>; refresh: () => Promise<void> }) {
+/** Compact creator claim/collect control, shown inline in the token header. */
+function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<typeof useTokenDetail>['detail']>; refresh: () => Promise<void> }) {
   const { address, walletClient, ensureChain } = useWallet()
   const { push } = useToast()
   const [busy, setBusy] = useState<string | null>(null)
@@ -479,48 +481,36 @@ function FeesPanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof 
     }
   }
 
-  return (
-    <section className="elev rounded-2xl p-5 ring-1 ring-hair">
-      <h2 className="text-sm font-bold text-fg">Rewards</h2>
-      <dl className="mt-3 space-y-2 font-mono text-xs">
-        <Row label="Lifetime" value={`${formatUnits18(detail.lifetimeFeesHype)} HYPE`} />
-        <Row
-          label="Uncollected"
-          value={
-            pendingTotal > 0n
-              ? `${formatUnits18(detail.pendingFeesHype)} HYPE + ${formatUnits18(detail.pendingFeesToken)} ${detail.symbol}`
-              : '—'
-          }
-        />
-        <Row
-          label="Claimable"
-          value={
-            claimable > 0n
-              ? `${formatUnits18(detail.creatorFeesHype)} HYPE + ${formatUnits18(detail.creatorFeesToken)} ${detail.symbol}`
-              : '—'
-          }
-        />
-      </dl>
+  if (!isCreator || (claimable === 0n && pendingTotal === 0n)) return null
 
-      {pendingTotal > 0n && !detail.positionWithdrawn && (
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl bg-panel2 px-3 py-2 ring-1 ring-hair">
+      <div className="leading-tight">
+        <p className="font-mono text-[10px] uppercase tracking-wider text-ghost">Your fees</p>
+        <p className="font-mono text-sm text-fg">
+          {claimable > 0n ? `${formatUnits18(detail.creatorFeesHype)} HYPE` : 'uncollected'}
+          {detail.creatorFeesToken > 0n && ` + ${formatUnits18(detail.creatorFeesToken)} ${detail.symbol}`}
+        </p>
+      </div>
+      {pendingTotal > 0n && (
         <button
           onClick={() => void send('Collect', 'collectFees')}
-          disabled={busy !== null || !address}
-          className="mt-4 w-full cursor-pointer rounded-xl py-2.5 text-sm font-bold text-fg ring-1 ring-hair2 transition hover:bg-panel2 disabled:opacity-50"
+          disabled={busy !== null}
+          className="cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold text-fg ring-1 ring-hair2 transition hover:bg-panel disabled:opacity-50"
         >
-          {busy === 'Collect' ? 'Collecting…' : 'Collect fees'}
+          {busy === 'Collect' ? '…' : 'Collect'}
         </button>
       )}
-      {isCreator && claimable > 0n && (
+      {claimable > 0n && (
         <button
           onClick={() => void send('Claim', 'claimCreatorFees')}
           disabled={busy !== null}
-          className="btn-primary mt-2.5 w-full cursor-pointer rounded-xl py-2.5 text-sm font-semibold disabled:opacity-60"
+          className="btn-primary cursor-pointer rounded-lg px-3.5 py-2 text-xs font-semibold disabled:opacity-60"
         >
-          {busy === 'Claim' ? 'Claiming…' : 'Claim'}
+          {busy === 'Claim' ? '…' : 'Claim'}
         </button>
       )}
-    </section>
+    </div>
   )
 }
 
@@ -532,15 +522,6 @@ function Stat({ label, value, sub, accent, divide, divideSm }: { label: string; 
       <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">{label}</p>
       <p className={`mt-1.5 truncate font-mono text-[15px] font-semibold ${accent ? 'text-acc' : 'text-fg'}`}>{value}</p>
       {sub && <p className="mt-0.5 truncate font-mono text-[10px] text-ghost">{sub}</p>}
-    </div>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="text-ghost">{label}</dt>
-      <dd className="text-right text-fg">{value}</dd>
     </div>
   )
 }
