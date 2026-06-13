@@ -80,6 +80,9 @@ export function LaunchPage() {
       }
       setSteps(['done', 'active', 'idle'])
 
+      // Give the big-block switch a moment to take effect on the EVM RPC before sending.
+      await new Promise((r) => setTimeout(r, 5000))
+
       // 2) The launch transaction itself (atomic: token + pool + liquidity + dev buy).
       const tokenURI = buildTokenURI({
         name: name.trim(),
@@ -98,6 +101,10 @@ export function LaunchPage() {
         value: devBuyWei ?? 0n,
         account: address,
         chain: publicClient.chain,
+        // Explicit gas: HyperEVM's eth_estimateGas caps at the small-block limit (2M),
+        // which would reject this ~6-16M launch tx. A fixed limit (well under the 30M
+        // big-block limit) skips estimation so it runs in the big block.
+        gas: 24_000_000n,
       })
       push({ kind: 'info', title: 'Launching — next big block (~1 min)', txHash: hash })
       const receipt = await publicClient.waitForTransactionReceipt({ hash, timeout: 240_000 })
