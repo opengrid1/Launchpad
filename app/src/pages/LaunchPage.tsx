@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { parseEther, parseEventLogs } from 'viem'
+import { parseEther, parseEventLogs, isAddress, type Address } from 'viem'
 import { useWallet } from '../lib/wallet'
 import { useToast, errorMessage } from '../lib/toast'
 import { publicClient } from '../lib/chain'
@@ -27,6 +27,7 @@ export function LaunchPage() {
   const [telegram, setTelegram] = useState('')
   const [supply, setSupply] = useState(DEFAULT_SUPPLY)
   const [devBuy, setDevBuy] = useState('')
+  const [payout, setPayout] = useState('')
 
   const [launching, setLaunching] = useState(false)
   const [steps, setSteps] = useState<[StepState, StepState, StepState]>(['idle', 'idle', 'idle'])
@@ -85,12 +86,17 @@ export function LaunchPage() {
       await new Promise((r) => setTimeout(r, 4000))
 
       // 2) The launch transaction itself (atomic: token + pool + liquidity + dev buy).
+      // Fee recipient: a pasted EVM address routes fees there; an @handle (or empty)
+      // routes to the connected wallet and is stored as the creator's X for display.
+      const payoutTrim = payout.trim()
+      const recipient: Address = isAddress(payoutTrim) ? (payoutTrim as Address) : '0x0000000000000000000000000000000000000000'
+      const xHandle = payoutTrim.startsWith('@') ? payoutTrim : twitter.trim()
       const tokenURI = buildTokenURI({
         name: name.trim(),
         description: description.trim(),
         image: image.trim(),
         website: website.trim(),
-        twitter: twitter.trim(),
+        twitter: xHandle,
         telegram: telegram.trim(),
       })
       const hash = await walletClient.writeContract({
@@ -98,7 +104,7 @@ export function LaunchPage() {
         abi: launchpadAbi,
         functionName: 'createToken',
         // minDevBuyTokens 0 is safe: the dev buy is atomic with pool creation, nothing can front-run it.
-        args: [name.trim(), symbol.trim().toUpperCase(), tokenURI, supplyWei!, '0x0000000000000000000000000000000000000000', 0n, 0n],
+        args: [name.trim(), symbol.trim().toUpperCase(), tokenURI, supplyWei!, recipient, 0n, 0n],
         value: devBuyWei ?? 0n,
         account: address,
         chain: publicClient.chain,
@@ -202,6 +208,23 @@ export function LaunchPage() {
                   className={`${inputCls} font-mono`}
                 />
               </Field>
+            </div>
+
+            <div>
+              <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Fees payout</span>
+              <input
+                value={payout}
+                onChange={(e) => setPayout(e.target.value)}
+                placeholder="@x_handle  ·  or paste 0x… wallet"
+                className={inputCls}
+              />
+              <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-ghost">
+                {payout.trim() === ''
+                  ? 'Default: your connected wallet. Paste an address to route the 70% there.'
+                  : isAddress(payout.trim())
+                    ? '✓ Fees route to this wallet.'
+                    : 'Fees go to your connected (X-linked) wallet; handle saved on your token.'}
+              </p>
             </div>
           </div>
 
