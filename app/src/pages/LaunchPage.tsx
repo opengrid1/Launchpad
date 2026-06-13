@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { parseEther, parseEventLogs } from 'viem'
 import { useWallet } from '../lib/wallet'
 import { useToast, errorMessage } from '../lib/toast'
 import { publicClient } from '../lib/chain'
 import { LAUNCHPAD, launchpadAbi } from '../lib/contracts'
 import { buildTokenURI } from '../lib/metadata'
+import { compressImage } from '../lib/image'
 import { setBigBlocks } from '../lib/bigblocks'
 import { parseAmount } from '../lib/format'
 import { TokenImage } from '../components/TokenImage'
@@ -161,24 +162,19 @@ export function LaunchPage() {
             />
           </Field>
 
-          <Field label="Image URL">
-            <div className="flex items-center gap-3">
-              <input value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://" className={inputCls} />
-              {image.trim() && <TokenImage src={image.trim()} symbol={symbol || '?'} />}
-            </div>
-          </Field>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Field label="Website">
-              <input value={website} onChange={(e) => setWebsite(e.target.value)} className={inputCls} />
-            </Field>
-            <Field label="X">
-              <input value={twitter} onChange={(e) => setTwitter(e.target.value)} className={inputCls} />
-            </Field>
-            <Field label="Telegram">
-              <input value={telegram} onChange={(e) => setTelegram(e.target.value)} className={inputCls} />
-            </Field>
+          <div>
+            <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Image</span>
+            <ImageUpload value={image} onChange={setImage} symbol={symbol} />
           </div>
+
+          <Socials
+            website={website}
+            twitter={twitter}
+            telegram={telegram}
+            setWebsite={setWebsite}
+            setTwitter={setTwitter}
+            setTelegram={setTelegram}
+          />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Supply">
@@ -285,6 +281,126 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">{label}</span>
       {children}
     </label>
+  )
+}
+
+function ImageUpload({ value, onChange, symbol }: { value: string; onChange: (v: string) => void; symbol: string }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [drag, setDrag] = useState(false)
+
+  async function handle(file?: File) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setErr('Not an image file')
+      return
+    }
+    setBusy(true)
+    setErr(null)
+    try {
+      onChange(await compressImage(file))
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Could not read image')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div
+      onClick={() => inputRef.current?.click()}
+      onDragOver={(e) => {
+        e.preventDefault()
+        setDrag(true)
+      }}
+      onDragLeave={() => setDrag(false)}
+      onDrop={(e) => {
+        e.preventDefault()
+        setDrag(false)
+        void handle(e.dataTransfer.files?.[0])
+      }}
+      className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed bg-panel px-3.5 py-3 transition ${
+        drag ? 'border-acc bg-accsoft' : 'border-hair2 hover:border-acc/50'
+      }`}
+    >
+      {value ? (
+        <img src={value} alt="" className="h-12 w-12 rounded-lg object-cover ring-1 ring-hair" />
+      ) : (
+        <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-panel2 text-base font-bold text-ghost ring-1 ring-hair">
+          {symbol.slice(0, 1).toUpperCase() || '?'}
+        </span>
+      )}
+      <div className="min-w-0">
+        <p className="text-sm text-fg">{busy ? 'Processing…' : value ? 'Change image' : 'Upload image'}</p>
+        <p className={`font-mono text-[11px] ${err ? 'text-down' : 'text-ghost'}`}>{err ?? 'PNG · JPG · GIF'}</p>
+      </div>
+      {value && !busy && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onChange('')
+            setErr(null)
+          }}
+          className="ml-auto cursor-pointer rounded-lg px-2 py-1 text-ghost transition hover:text-down"
+          aria-label="Remove image"
+        >
+          ✕
+        </button>
+      )}
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => void handle(e.target.files?.[0])} />
+    </div>
+  )
+}
+
+function Socials({
+  website,
+  twitter,
+  telegram,
+  setWebsite,
+  setTwitter,
+  setTelegram,
+}: {
+  website: string
+  twitter: string
+  telegram: string
+  setWebsite: (v: string) => void
+  setTwitter: (v: string) => void
+  setTelegram: (v: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const count = [website, twitter, telegram].filter((v) => v.trim() !== '').length
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full cursor-pointer items-center justify-between rounded-xl bg-panel px-3.5 py-2.5 ring-1 ring-hair transition hover:ring-hair2"
+      >
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Socials</span>
+        <span className="flex items-center gap-2 text-xs text-dim">
+          {count > 0 && <span className="font-mono text-acc">{count} added</span>}
+          <svg className={`transition-transform ${open ? 'rotate-180' : ''}`} width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2.5 4.5 L6 8 L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </button>
+      {open && (
+        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Field label="Website">
+            <input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="mysite.xyz" className={inputCls} />
+          </Field>
+          <Field label="X">
+            <input value={twitter} onChange={(e) => setTwitter(e.target.value)} placeholder="x.com/…" className={inputCls} />
+          </Field>
+          <Field label="Telegram">
+            <input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="t.me/…" className={inputCls} />
+          </Field>
+        </div>
+      )}
+    </div>
   )
 }
 
