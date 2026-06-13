@@ -1,14 +1,9 @@
-import { chromium, devices } from 'playwright'
+import { chromium } from 'playwright'
 const browser = await chromium.launch()
-const d = await browser.newContext({ viewport: { width: 1440, height: 1100 }, ignoreHTTPSErrors: true })
+const d = await browser.newContext({ viewport: { width: 1440, height: 1000 }, ignoreHTTPSErrors: true })
 const p = await d.newPage()
-await p.goto('http://localhost:4204/#/', { waitUntil: 'domcontentloaded', timeout: 30000 })
+await p.goto('http://localhost:4205/#/', { waitUntil: 'domcontentloaded', timeout: 30000 })
 await p.waitForTimeout(9000)
-await p.screenshot({ path: '/tmp/spark-d.png' })
-const m = await browser.newContext({ ...devices['iPhone 13'], ignoreHTTPSErrors: true })
-const pm = await m.newPage()
-await pm.goto('http://localhost:4204/#/', { waitUntil: 'domcontentloaded', timeout: 30000 })
-await pm.waitForTimeout(9000)
-await pm.screenshot({ path: '/tmp/spark-m.png', fullPage: true })
+await p.screenshot({ path: '/tmp/fw.png' })
 await browser.close()
 console.log('done')
