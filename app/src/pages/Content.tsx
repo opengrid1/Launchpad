@@ -105,6 +105,18 @@ export function Whitepaper() {
         Hyprpad turns a token launch into a live market. There is no bonding curve and no presale — a token and its
         HyperSwap V3 pool ship in a single transaction, and trading is open from block one.
       </p>
+      <Block heading="Purpose">
+        <p>
+          Hyprpad exists to crowdfund and support projects building in the Hyperliquid ecosystem — AI trading agents,
+          tooling, infrastructure, and other applications that grow what is possible on HyperEVM. Instead of closed
+          presales or grant committees, a project launches a token, the community funds it by trading, and the creator
+          earns an ongoing 70% of every trade to finance development.
+        </p>
+        <p>
+          The result is a transparent, market-driven way to back builders: support flows directly to teams, liquidity is
+          open from day one, and backers can enter or exit at any time.
+        </p>
+      </Block>
       <Block heading="The launch">
         <p>
           A creator supplies a name, symbol, and metadata. The launchpad mints the full supply, opens a single-sided
