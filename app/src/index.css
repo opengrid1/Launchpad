@@ -1,34 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import 'tailwindcss';
 
 @theme {
-  /* Flatline — dark editorial/terminal palette */
-  --color-base: #0b0c0e;
-  --color-panel: #121317;
-  --color-panel2: #1a1b20;
-  --color-hair: rgba(255, 255, 255, 0.08);
-  --color-hair2: rgba(255, 255, 255, 0.17);
+  /* Flatline — high-end SaaS dark (Linear/Vercel-grade) */
+  --color-base: #09090b;
+  --color-panel: #101013;
+  --color-panel2: #18181c;
+  --color-hair: rgba(255, 255, 255, 0.07);
+  --color-hair2: rgba(255, 255, 255, 0.14);
 
-  --color-fg: #f3f4f6;
-  --color-dim: #9aa1ac;
-  --color-ghost: #5d6471;
+  --color-fg: #ededf0;
+  --color-dim: #a3a3ad;
+  --color-ghost: #6b6b76;
 
-  --color-acc: #00e5a0;
-  --color-accdeep: #0bc78d;
-  --color-accsoft: rgba(0, 229, 160, 0.12);
+  --color-acc: #818cf8;
+  --color-accdeep: #6366f1;
+  --color-accsoft: rgba(99, 102, 241, 0.14);
 
-  --color-down: #ff5d5d;
-  --color-downsoft: rgba(255, 93, 93, 0.12);
-  --color-amber: #ffb454;
+  --color-up: #34d399;
+  --color-upsoft: rgba(52, 211, 153, 0.12);
+  --color-down: #f87171;
+  --color-downsoft: rgba(248, 113, 113, 0.12);
+  --color-amber: #fbbf24;
 
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 html {
   background: var(--color-base);
   color: var(--color-fg);
   font-family: var(--font-display);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
@@ -37,12 +41,34 @@ body {
 }
 
 ::selection {
-  background: var(--color-acc);
-  color: var(--color-base);
+  background: var(--color-accdeep);
+  color: #fff;
 }
 
 .font-mono {
   font-variant-numeric: tabular-nums;
+}
+
+/* primary action — gradient, inner highlight, ambient ring */
+.btn-primary {
+  background: linear-gradient(180deg, #7178f9 0%, #5a61ee 100%);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(91, 97, 239, 0.65);
+  transition: filter 150ms ease, transform 150ms ease;
+}
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* elevated surface */
+.elev {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0) 40%),
+    var(--color-panel);
+  box-shadow: 0 12px 32px -16px rgba(0, 0, 0, 0.6);
 }
 
 ::-webkit-scrollbar {
@@ -53,18 +79,18 @@ body {
   background: var(--color-base);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2c33;
+  background: #26262c;
   border-radius: 5px;
   border: 2px solid var(--color-base);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3d46;
+  background: #34343c;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-acc);
+  outline: 2px solid var(--color-accdeep);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 button:active:not(:disabled) {
@@ -84,7 +110,7 @@ button:active:not(:disabled) {
   to { opacity: 1; transform: translateY(0); }
 }
 .rise-in {
-  animation: rise-in 0.35s ease both;
+  animation: rise-in 0.35s cubic-bezier(0.21, 1, 0.32, 1) both;
 }
 
 @keyframes shimmer {

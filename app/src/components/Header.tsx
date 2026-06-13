@@ -13,20 +13,19 @@ export function Header({ page }: { page: Page }) {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
         <div className="flex items-center gap-7">
           <a href="#/" className="flex items-center gap-2.5 no-underline">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-acc">
+            <span className="btn-primary flex h-8 w-8 items-center justify-center rounded-[10px]">
               <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                <path d="M2 13 L16 13" stroke="#0b0c0e" strokeWidth="2.6" strokeLinecap="round" />
-                <path d="M2 8 Q7 8 9 5.5 T16 3" stroke="#0b0c0e" strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2 3" opacity="0.55" />
+                <path d="M2 13 L16 13" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+                <path d="M2 8 Q7 8 9 5.5 T16 3" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2 3" opacity="0.55" />
               </svg>
             </span>
-            <span className="text-[16px] font-bold tracking-tight text-fg">Flatline</span>
+            <span className="text-[15px] font-semibold tracking-tight text-fg">Flatline</span>
           </a>
 
           <nav className="hidden items-center gap-1 sm:flex">
             {(
               [
                 ['Board', 'board', '#/'],
-                ['Launch', 'launch', '#/launch'],
                 ['Docs', 'docs', '#/docs'],
               ] as const
             ).map(([label, key, href]) => (
@@ -43,7 +42,10 @@ export function Header({ page }: { page: Page }) {
           </nav>
         </div>
 
-        <div className="hidden items-center gap-2 sm:flex">
+        <div className="hidden items-center gap-2.5 sm:flex">
+          <a href="#/launch" className="btn-primary cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold no-underline">
+            Launch
+          </a>
           {address && !onCorrectChain && chainId !== null && (
             <button
               onClick={() => void ensureChain()}
@@ -56,7 +58,7 @@ export function Header({ page }: { page: Page }) {
             <button
               onClick={() => void connect()}
               disabled={connecting}
-              className="cursor-pointer rounded-lg bg-acc px-4 py-2 text-sm font-bold text-base transition hover:bg-accdeep disabled:opacity-60"
+              className="cursor-pointer rounded-lg px-3.5 py-2 text-sm font-semibold text-dim ring-1 ring-hair2 transition hover:bg-panel2 hover:text-fg disabled:opacity-60"
             >
               {connecting ? 'Connecting…' : 'Connect'}
             </button>

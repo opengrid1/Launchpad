@@ -33,34 +33,35 @@ export function Board() {
     const creatorEarningsUsd = (((totalFeesHype * 7000n) / 10000n) * hypeUsd6) / 10n ** 18n
     const combinedMcap = rows.reduce((acc, r) => acc + r.marketCapUsd6, 0n)
     return [
-      ['HYPE', `$${(Number(hypeUsd6) / 1e6).toFixed(2)}`],
-      ['Tokens', String(rows.length)],
-      ['Combined mcap', formatUsd6(combinedMcap)],
-      ['Creator earnings', formatUsd6(creatorEarningsUsd)],
-      ['Launch mcap', stats ? formatUsd6(stats.startMcUsd6) : '—'],
+      ['HYPE price', `$${(Number(hypeUsd6) / 1e6).toFixed(2)}`, true],
+      ['Tokens launched', String(rows.length), false],
+      ['Combined mcap', formatUsd6(combinedMcap), false],
+      ['Creator earnings', formatUsd6(creatorEarningsUsd), false],
     ] as const
-  }, [rows, hypeUsd6, stats])
+  }, [rows, hypeUsd6])
 
   return (
     <main>
-      {/* market tape */}
-      <section className="no-scrollbar -mx-4 mt-0 overflow-x-auto border-b border-hair px-4 sm:-mx-6 sm:px-6">
-        <div className="flex min-w-max items-center gap-8 py-3 font-mono text-xs">
-          <span className="live-dot h-1.5 w-1.5 shrink-0 rounded-full bg-acc" />
-          {tape === null
-            ? Array.from({ length: 5 }, (_, i) => <span key={i} className="shimmer h-3.5 w-28 rounded" />)
-            : tape.map(([label, value]) => (
-                <span key={label} className="flex items-baseline gap-2">
-                  <span className="uppercase tracking-[0.14em] text-ghost">{label}</span>
-                  <span key={value} className="ticker-flash text-fg">{value}</span>
-                </span>
-              ))}
-        </div>
+      {/* KPI metrics */}
+      <section className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tape === null
+          ? Array.from({ length: 4 }, (_, i) => <div key={i} className="shimmer h-[92px] rounded-2xl ring-1 ring-hair" />)
+          : tape.map(([label, value, live]) => (
+              <div key={label} className="elev rounded-2xl p-4 ring-1 ring-hair sm:p-5">
+                <p className="flex items-center gap-1.5 text-xs font-medium text-ghost">
+                  {live && <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" />}
+                  {label}
+                </p>
+                <p key={value} className="ticker-flash mt-2 truncate font-mono text-xl font-semibold tracking-tight text-fg sm:text-2xl">
+                  {value}
+                </p>
+              </div>
+            ))}
       </section>
 
       {/* heading + controls */}
-      <section className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-fg">Board</h1>
+      <section className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <h1 className="text-xl font-semibold tracking-tight text-fg">Board</h1>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
             {(
@@ -100,7 +101,7 @@ export function Board() {
       {error && <p className="mt-6 rounded-xl bg-downsoft p-4 font-mono text-xs text-down">{error}</p>}
 
       {/* table */}
-      <section className="mt-4 overflow-hidden rounded-2xl bg-panel ring-1 ring-hair">
+      <section className="elev mt-4 overflow-hidden rounded-2xl ring-1 ring-hair">
         <TokenRowHeader />
         {filtered === null
           ? Array.from({ length: 6 }, (_, i) => <TokenRowSkeleton key={i} index={i} />)
@@ -111,10 +112,7 @@ export function Board() {
           <div className="px-4 py-16 text-center">
             <p className="font-mono text-sm text-ghost">{query ? 'No results' : 'No tokens yet'}</p>
             {!query && (
-              <a
-                href="#/launch"
-                className="mt-4 inline-block rounded-lg bg-acc px-5 py-2.5 text-sm font-bold text-base no-underline transition hover:bg-accdeep"
-              >
+              <a href="#/launch" className="btn-primary mt-4 inline-block rounded-lg px-5 py-2.5 text-sm font-semibold no-underline">
                 Launch
               </a>
             )}

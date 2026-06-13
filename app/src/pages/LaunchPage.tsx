@@ -133,7 +133,7 @@ export function LaunchPage() {
   return (
     <main className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_330px]">
       <section>
-        <h1 className="text-2xl font-bold tracking-tight text-fg">Launch</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-fg">Launch</h1>
 
         <div className="mt-6 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_140px]">
@@ -200,7 +200,7 @@ export function LaunchPage() {
           {!address ? (
             <button
               onClick={() => void connect()}
-              className="w-full cursor-pointer rounded-xl bg-acc py-3.5 text-sm font-bold text-base transition hover:bg-accdeep sm:w-auto sm:px-10"
+              className="btn-primary w-full cursor-pointer rounded-xl py-3.5 text-sm font-semibold sm:w-auto sm:px-10"
             >
               Connect
             </button>
@@ -209,18 +209,17 @@ export function LaunchPage() {
               onClick={() => void launch()}
               disabled={launching || formError !== null}
               title={formError ?? undefined}
-              className="w-full cursor-pointer rounded-xl bg-acc py-3.5 text-sm font-bold text-base transition hover:bg-accdeep disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-10"
+              className="btn-primary w-full cursor-pointer rounded-xl py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-10"
             >
               {launching ? 'Launching…' : 'Launch'}
             </button>
           )}
-          <span className="font-mono text-[11px] text-ghost">$4,000 start · 70% fees to creator · 100% supply pooled</span>
         </div>
       </section>
 
       {/* right rail */}
       <aside className="space-y-4">
-        <div className="rounded-2xl bg-panel p-4 ring-1 ring-hair">
+        <div className="elev rounded-2xl p-4 ring-1 ring-hair">
           <div className="flex items-center gap-3">
             <TokenImage src={image.trim() || undefined} symbol={symbol || '?'} />
             <div className="min-w-0 flex-1">
@@ -229,17 +228,18 @@ export function LaunchPage() {
             </div>
             <div className="text-right">
               <p className="font-mono text-sm text-fg">$4.0K</p>
-              <p className="font-mono text-[11px] text-acc">+0.0%</p>
+              <p className="font-mono text-[11px] text-up">+0.0%</p>
             </div>
           </div>
           {description.trim() && <p className="mt-3 line-clamp-2 text-[13px] leading-snug text-dim">{description.trim()}</p>}
         </div>
 
-        <div className="rounded-2xl bg-panel p-5 ring-1 ring-hair">
+        {steps.some((s) => s !== 'idle') && (
+        <div className="elev rounded-2xl p-5 ring-1 ring-hair">
           <ol className="space-y-3.5">
-            <Step n={1} state={steps[0]} title="Enable big blocks" />
-            <Step n={2} state={steps[1]} title="Confirm launch" />
-            <Step n={3} state={steps[2]} title="Restore fast blocks" />
+            <Step n={1} state={steps[0]} title="Big blocks" />
+            <Step n={2} state={steps[1]} title="Launch" />
+            <Step n={3} state={steps[2]} title="Fast blocks" />
           </ol>
 
           {steps[2] === 'active' && (
@@ -247,7 +247,7 @@ export function LaunchPage() {
               {launchedToken && (
                 <a
                   href={`#/t/${launchedToken}`}
-                  className="block w-full rounded-xl bg-acc py-2.5 text-center text-sm font-bold text-base no-underline transition hover:bg-accdeep"
+                  className="btn-primary block w-full rounded-xl py-2.5 text-center text-sm font-semibold no-underline"
                 >
                   Open token →
                 </a>
@@ -264,12 +264,13 @@ export function LaunchPage() {
           {blocksRestored && launchedToken && (
             <a
               href={`#/t/${launchedToken}`}
-              className="mt-4 block w-full rounded-xl bg-acc py-2.5 text-center text-sm font-bold text-base no-underline transition hover:bg-accdeep"
+              className="btn-primary mt-4 block w-full rounded-xl py-2.5 text-center text-sm font-semibold no-underline"
             >
               Open token →
             </a>
           )}
         </div>
+        )}
       </aside>
     </main>
   )
@@ -290,7 +291,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Step({ n, state, title }: { n: number; state: StepState; title: string }) {
   const badge =
     state === 'done' ? (
-      <span className="flex h-5.5 w-5.5 items-center justify-center rounded-full bg-acc text-[10px] font-bold text-base">✓</span>
+      <span className="flex h-5.5 w-5.5 items-center justify-center rounded-full bg-up text-[10px] font-bold text-base">✓</span>
     ) : state === 'active' ? (
       <span className="live-dot flex h-5.5 w-5.5 items-center justify-center rounded-full bg-accsoft font-mono text-[10px] font-bold text-acc ring-1 ring-acc/40">
         {n}

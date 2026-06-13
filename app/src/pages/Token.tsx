@@ -45,7 +45,7 @@ export function TokenPage({ token }: { token: string }) {
           <section className="flex flex-wrap items-start gap-4">
             <TokenImage src={meta.image} symbol={detail.symbol} size="lg" />
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold tracking-tight text-fg">
+              <h1 className="text-2xl font-semibold tracking-tight text-fg">
                 {detail.name} <span className="ml-1 font-mono text-base font-medium text-ghost">${detail.symbol}</span>
               </h1>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-ghost">
@@ -55,7 +55,7 @@ export function TokenPage({ token }: { token: string }) {
                     setCopied(true)
                     window.setTimeout(() => setCopied(false), 1500)
                   }}
-                  className={`cursor-pointer transition-colors ${copied ? 'text-acc' : 'hover:text-dim'}`}
+                  className={`cursor-pointer transition-colors ${copied ? 'text-up' : 'hover:text-dim'}`}
                 >
                   {copied ? 'copied' : `${shortAddress(detail.token)} ⧉`}
                 </button>
@@ -75,7 +75,7 @@ export function TokenPage({ token }: { token: string }) {
           {meta.description && <p className="mt-4 max-w-2xl text-sm leading-relaxed text-dim">{meta.description}</p>}
 
           {/* stat strip */}
-          <section className="mt-7 grid grid-cols-2 overflow-hidden rounded-2xl bg-panel ring-1 ring-hair sm:grid-cols-4">
+          <section className="elev mt-7 grid grid-cols-2 overflow-hidden rounded-2xl ring-1 ring-hair sm:grid-cols-4">
             <Stat label="Price" value={`${formatPriceHype(detail.priceWei)} HYPE`} sub={`$${priceUsd.toLocaleString('en-US', { maximumSignificantDigits: 3 })}`} />
             <Stat label="Mcap" value={formatUsd6(detail.marketCapUsd6)} sub={`${formatUnits18(detail.marketCapHype)} HYPE`} divide />
             <Stat label="Supply" value={compactNumber(Number(formatEther(detail.totalSupply)))} divideSm />
@@ -83,7 +83,7 @@ export function TokenPage({ token }: { token: string }) {
           </section>
 
           {/* chart */}
-          <section className="mt-5 overflow-hidden rounded-2xl bg-panel ring-1 ring-hair">
+          <section className="elev mt-5 overflow-hidden rounded-2xl ring-1 ring-hair">
             <iframe
               title="chart"
               src={`https://dexscreener.com/hyperevm/${detail.pool}?embed=1&theme=dark&trades=0&info=0`}
@@ -286,7 +286,7 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
   const balanceLabel = side === 'buy' ? 'HYPE' : detail.symbol
 
   return (
-    <section className="rounded-2xl bg-panel p-5 ring-1 ring-hair">
+    <section className="elev rounded-2xl p-5 ring-1 ring-hair">
       <div className="flex gap-1 rounded-xl bg-base p-1 ring-1 ring-hair">
         {(['buy', 'sell'] as const).map((s) => (
           <button
@@ -296,7 +296,7 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
               setInput('')
             }}
             className={`flex-1 cursor-pointer rounded-lg py-2 text-sm font-bold capitalize transition-colors ${
-              side === s ? (s === 'buy' ? 'bg-acc text-base' : 'bg-down text-base') : 'text-ghost hover:text-dim'
+              side === s ? (s === 'buy' ? 'btn-primary' : 'bg-down text-white') : 'text-ghost hover:text-dim'
             }`}
           >
             {s}
@@ -399,7 +399,7 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
       {!address ? (
         <button
           onClick={() => void connect()}
-          className="mt-4 w-full cursor-pointer rounded-xl bg-acc py-3 text-sm font-bold text-base transition hover:bg-accdeep"
+          className="btn-primary mt-4 w-full cursor-pointer rounded-xl py-3 text-sm font-semibold"
         >
           Connect
         </button>
@@ -415,8 +415,8 @@ function TradePanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof
         <button
           onClick={trade}
           disabled={busy !== null || amount === null || amount === 0n || quote === null || insufficient || detail.positionWithdrawn}
-          className={`mt-4 w-full cursor-pointer rounded-xl py-3 text-sm font-bold text-base transition disabled:cursor-not-allowed disabled:opacity-50 ${
-            side === 'buy' ? 'bg-acc hover:bg-accdeep' : 'bg-down hover:brightness-110'
+          className={`mt-4 w-full cursor-pointer rounded-xl py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            side === 'buy' ? 'btn-primary' : 'bg-down text-white hover:brightness-110'
           }`}
         >
           {busy
@@ -480,7 +480,7 @@ function FeesPanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof 
   }
 
   return (
-    <section className="rounded-2xl bg-panel p-5 ring-1 ring-hair">
+    <section className="elev rounded-2xl p-5 ring-1 ring-hair">
       <h2 className="text-sm font-bold text-fg">Rewards</h2>
       <dl className="mt-3 space-y-2 font-mono text-xs">
         <Row label="Lifetime" value={`${formatUnits18(detail.lifetimeFeesHype)} HYPE`} />
@@ -515,7 +515,7 @@ function FeesPanel({ detail, refresh }: { detail: NonNullable<ReturnType<typeof 
         <button
           onClick={() => void send('Claim', 'claimCreatorFees')}
           disabled={busy !== null}
-          className="mt-2.5 w-full cursor-pointer rounded-xl bg-acc py-2.5 text-sm font-bold text-base transition hover:bg-accdeep disabled:opacity-60"
+          className="btn-primary mt-2.5 w-full cursor-pointer rounded-xl py-2.5 text-sm font-semibold disabled:opacity-60"
         >
           {busy === 'Claim' ? 'Claiming…' : 'Claim'}
         </button>

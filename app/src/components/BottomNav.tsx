@@ -27,7 +27,7 @@ export function BottomNav({ page }: { page: Page }) {
           href="#/launch"
           aria-label="Launch"
           className={`flex h-10 w-10 items-center justify-center rounded-xl no-underline ${
-            page === 'launch' ? 'bg-acc text-base' : 'bg-panel2 text-fg ring-1 ring-hair'
+            page === 'launch' ? 'btn-primary' : 'bg-panel2 text-fg ring-1 ring-hair'
           }`}
         >
           <span className="text-xl font-bold leading-none">+</span>
@@ -39,7 +39,7 @@ export function BottomNav({ page }: { page: Page }) {
           <button
             onClick={() => void connect()}
             disabled={connecting}
-            className="cursor-pointer rounded-lg bg-acc px-4 py-2.5 text-sm font-bold text-base disabled:opacity-60"
+            className="btn-primary cursor-pointer rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
           >
             {connecting ? '…' : 'Connect'}
           </button>

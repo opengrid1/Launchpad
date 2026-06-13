@@ -10,7 +10,7 @@ export function Delta({ mcapUsd6, startMcUsd6 }: { mcapUsd6: bigint; startMcUsd6
   if (!Number.isFinite(ratio)) return null
   const up = ratio >= 1
   const label = ratio >= 2 ? `${ratio.toFixed(1)}x` : `${up ? '+' : '−'}${Math.abs((ratio - 1) * 100).toFixed(1)}%`
-  return <span className={`font-mono text-[11px] ${up ? 'text-acc' : 'text-down'}`}>{label}</span>
+  return <span className={`font-mono text-[11px] ${up ? 'text-up' : 'text-down'}`}>{label}</span>
 }
 
 const GRID = 'grid grid-cols-[1fr_auto] items-center gap-3 sm:grid-cols-[2.2fr_1.3fr_1.3fr_1.5fr_0.9fr_auto]'
