@@ -34,6 +34,12 @@ export type TokenDetail = LaunchRow & {
 
 const launchpad = { address: LAUNCHPAD, abi: launchpadAbi } as const
 
+/** Test/dev tokens hidden from the board (lowercased). Direct token links still resolve. */
+const HIDDEN_TOKENS = new Set<string>([
+  '0xaf695e1f6049c2b061f1e63724e612af01ee6f28', // ESCROW (escrow test)
+  '0xdbc16586eeaaedcc3429bd6b51cd17b323eed8dd', // TEST3
+])
+
 export async function fetchTokenCount(): Promise<number> {
   return Number(await publicClient.readContract({ ...launchpad, functionName: 'allTokensLength' }))
 }
@@ -44,9 +50,10 @@ export async function fetchLaunches(max = 200): Promise<LaunchRow[]> {
   if (count === 0) return []
   const indexes = Array.from({ length: Math.min(count, max) }, (_, i) => BigInt(count - 1 - i))
 
-  const tokens = (await Promise.all(
+  const all = (await Promise.all(
     indexes.map((i) => publicClient.readContract({ ...launchpad, functionName: 'allTokens', args: [i] })),
   )) as Address[]
+  const tokens = all.filter((t) => !HIDDEN_TOKENS.has(t.toLowerCase()))
 
   const rows = await Promise.all(tokens.map((token) => fetchLaunchRow(token)))
   return rows
