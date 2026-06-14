@@ -128,7 +128,7 @@ export function Footer() {
 
       {/* bottom bar */}
       <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-hair py-6 font-mono text-[11px] text-ghost">
-        <span>© {YEAR} Hyprpad. Unaudited reference implementation.</span>
+        <span>© {YEAR} Hyprpad. Built on HyperEVM.</span>
         <span className="flex items-center gap-1.5">
           <span className="live-dot h-1.5 w-1.5 rounded-full bg-acc" />
           Live on HyperEVM

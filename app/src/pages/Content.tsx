@@ -47,10 +47,10 @@ export function Terms() {
           that apply to you. Do not impersonate others or upload infringing or unlawful content.
         </p>
       </Block>
-      <Block heading="Unaudited software">
+      <Block heading="Experimental software">
         <p>
-          The contracts are an unaudited reference implementation provided “as is,” without warranties of any kind. Smart
-          contracts can contain bugs. Interacting with them is at your own risk and may result in total loss of funds.
+          The contracts are provided “as is,” without warranties of any kind. Smart contracts can contain bugs.
+          Interacting with them is at your own risk and may result in total loss of funds.
         </p>
       </Block>
       <Block heading="Limitation of liability">
@@ -145,10 +145,6 @@ export function Whitepaper() {
           a versioned upgrade.
         </p>
       </Block>
-      <p className="rounded-xl bg-panel2/60 p-4 text-xs leading-relaxed text-ghost ring-1 ring-hair">
-        This document describes an unaudited reference implementation and is not an offer, solicitation, or promise of
-        future returns. Tokens launched on Hyprpad can lose all value.
-      </p>
     </Page>
   )
 }

@@ -32,7 +32,6 @@ const FAQ: ReadonlyArray<readonly [string, string]> = [
   ['How do creator fees work?', 'Every trade pays the 1% pool fee. Of the fees the launchpad collects, 70% accrue to the creator and 30% to the protocol. Creators claim in native HYPE.'],
   ['Can I change where fees go?', 'Yes. The creator role — the address that receives fees — is transferable, so you can route earnings to another wallet.'],
   ['Where is the token image and metadata stored?', 'Fully on-chain as a base64 data URI. There is no IPFS pin or backend that can disappear.'],
-  ['Is it audited?', 'No. The contracts are an unaudited reference implementation. Interacting with them is at your own risk.'],
 ]
 
 export function Docs() {
@@ -40,9 +39,8 @@ export function Docs() {
     <main className="mx-auto mt-10 max-w-2xl pb-10">
       <h1 className="text-2xl font-semibold tracking-tight text-fg">Documentation</h1>
       <p className="mt-3 text-sm leading-relaxed text-dim">
-        Hyprpad is a token launchpad on HyperEVM built to crowdfund projects in the Hyperliquid ecosystem — AI trading
-        agents, tooling, and infrastructure. A project launches a token, the community funds it by trading, and the
-        creator earns an ongoing 70% of every trade to finance development.
+        A practical guide to launching and trading on Hyprpad. For the vision and economic model behind the platform,
+        read the <a href="#/whitepaper" className="text-acc no-underline hover:text-accdeep">whitepaper</a>.
       </p>
 
       <Section title="How it works">
@@ -99,7 +97,7 @@ export function Docs() {
         <ul className="list-disc space-y-2 pl-5">
           <li>Connect a wallet, open a token, and buy with HYPE or sell back to HYPE directly through HyperSwap V3.</li>
           <li>Watch market cap and the live chart — every token is a real market and can move sharply.</li>
-          <li>Liquidity is locked in the launchpad position, but the owner can withdraw it via an admin call; withdrawn tokens show as <em>delisted</em>.</li>
+          <li>Set a slippage tolerance that suits the token's liquidity before you confirm a trade.</li>
         </ul>
       </Section>
 
@@ -112,15 +110,6 @@ export function Docs() {
             </div>
           ))}
         </div>
-      </Section>
-
-      <Section title="Security & risks">
-        <ul className="list-disc space-y-2 pl-5">
-          <li>The contracts are an <strong className="text-fg">unaudited</strong> reference implementation and may contain bugs.</li>
-          <li>Tokens are created by third parties, can lose all value, and may be illiquid.</li>
-          <li>The launchpad owner can withdraw a pool's liquidity, which disables trading for that token.</li>
-          <li>Always verify the token address and never trade more than you can afford to lose.</li>
-        </ul>
       </Section>
 
       <h2 className="mt-10 text-sm font-semibold text-fg">Contracts</h2>
