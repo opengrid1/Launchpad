@@ -1,7 +1,8 @@
 import { parseAbi } from 'viem'
 
-/** Launchpad deployment on HyperEVM mainnet (chain id 999). V2 — fee recipient separable from creator. */
-export const LAUNCHPAD = '0x94dE40B87aB2998B2924d61cCD17b19056E1868A' as const
+/** Launchpad deployment on HyperEVM mainnet (chain id 999). V3 — separable fee recipient +
+ *  withdrawPosition pays out native HYPE + tokens (no NFT handling needed client-side). */
+export const LAUNCHPAD = '0xB00FE2F0EB0D7871D1c858963f59F2C6463e7F32' as const
 
 /** HyperSwap V3 periphery, verified on-chain. */
 export const SWAP_ROUTER = '0x4E2960a8cd19B467b82d26D83fAcb0fAE26b094D' as const

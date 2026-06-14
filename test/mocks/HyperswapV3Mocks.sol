@@ -140,6 +140,7 @@ contract MockPositionManager {
     mapping(uint256 => address) public ownerOf;
     mapping(uint256 => uint256) public collectable0;
     mapping(uint256 => uint256) public collectable1;
+    mapping(uint256 => uint128) public liquidityOf;
     mapping(bytes32 => address) public pools;
     address public lastPool;
 
@@ -182,6 +183,41 @@ contract MockPositionManager {
         });
         ownerOf[tokenId] = params.recipient;
         liquidity = uint128(amount0 + amount1);
+        liquidityOf[tokenId] = liquidity;
+    }
+
+    function positions(uint256 tokenId)
+        external
+        view
+        returns (uint96, address, address, address, uint24, int24, int24, uint128, uint256, uint256, uint128, uint128)
+    {
+        Minted storage m = minted[tokenId];
+        return (0, address(0), m.token0, m.token1, m.fee, m.tickLower, m.tickUpper, liquidityOf[tokenId], 0, 0, 0, 0);
+    }
+
+    /// @dev Full-or-partial liquidity removal: pulls the proportional principal back from
+    ///      the pool into this manager and queues it for the next collect().
+    function decreaseLiquidity(INonfungiblePositionManager.DecreaseLiquidityParams calldata p)
+        external
+        returns (uint256 amount0, uint256 amount1)
+    {
+        Minted storage m = minted[p.tokenId];
+        uint128 liq = liquidityOf[p.tokenId];
+        require(liq > 0 && p.liquidity <= liq, "bad liquidity");
+        amount0 = (m.amount0 * p.liquidity) / liq;
+        amount1 = (m.amount1 * p.liquidity) / liq;
+        liquidityOf[p.tokenId] = liq - p.liquidity;
+        m.amount0 -= amount0;
+        m.amount1 -= amount1;
+        address pool = pools[keccak256(abi.encode(m.token0, m.token1, m.fee))];
+        if (amount0 > 0) {
+            MockPool(pool).pay(m.token0, address(this), amount0);
+            collectable0[p.tokenId] += amount0;
+        }
+        if (amount1 > 0) {
+            MockPool(pool).pay(m.token1, address(this), amount1);
+            collectable1[p.tokenId] += amount1;
+        }
     }
 
     function setCollectable(uint256 tokenId, uint256 amount0, uint256 amount1) external {

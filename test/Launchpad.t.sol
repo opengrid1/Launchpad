@@ -506,10 +506,13 @@ contract LaunchpadTest is Test {
 
         pad.withdrawPosition(token, vault);
 
-        (,, uint256 id,, bool withdrawn) = _launchInfo(token);
+        (,,,, bool withdrawn) = _launchInfo(token);
         assertTrue(withdrawn);
-        assertEq(pm.ownerOf(id), vault);
-        // Outstanding fees were settled 70/30 before the position left.
+        // Principal liquidity (the pooled token supply) was paid out to the vault; the pool
+        // held no HYPE, so no native HYPE was sent.
+        assertEq(LaunchToken(token).balanceOf(vault), SUPPLY);
+        assertEq(vault.balance, 0);
+        // Outstanding fees were settled 70/30 before the principal left.
         assertEq(pad.creatorFeesHype(token), 7 ether);
         assertEq(pad.platformFeesHype(), 3 ether);
 

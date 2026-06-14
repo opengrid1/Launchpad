@@ -418,27 +418,54 @@ contract Launchpad {
     // Admin
     // ---------------------------------------------------------------------
 
-    /// @notice Owner withdraws a launch's entire LP position NFT (principal + any
-    ///         uncollected fees) to `recipient`.
-    /// @dev WARNING — this is the rug switch. It removes the "liquidity locked" guarantee
-    ///      for the token: whoever receives the NFT can burn the liquidity and take both
-    ///      sides of the pool. Accrued-but-uncollected fees go with the position, so
-    ///      `collectFees` is called first to settle the 70/30 split up to this moment.
-    ///      After withdrawal `collectFees` is disabled for this token; already-credited
-    ///      creator/platform balances remain claimable. Keep `owner` behind a
-    ///      timelock/multisig and treat this as an emergency/migration tool.
+    /// @notice Owner pulls a launch's liquidity and sends the underlying — native HYPE plus
+    ///         the leftover tokens — to `recipient` in one transaction.
+    /// @dev WARNING — this is the rug switch. It removes the "liquidity locked" guarantee:
+    ///      it withdraws 100% of the position's liquidity and hands the assets to `recipient`.
+    ///      Accrued swap fees are settled into the 70/30 split first via `collectFees`, so
+    ///      the creator keeps their share; only the principal liquidity is paid out here.
+    ///      After this `collectFees` is disabled for the token; already-credited
+    ///      creator/platform balances remain claimable.
     function withdrawPosition(address token, address recipient) external onlyOwner {
         require(recipient != address(0), "zero address");
         Launch storage launch = launches[token];
         require(launch.creator != address(0), "unknown token");
         require(!launch.positionWithdrawn, "position withdrawn");
 
-        // Settle outstanding fees fairly before the position leaves.
+        // Settle outstanding fees fairly into the split before the principal leaves.
         this.collectFees(token);
-
         launch.positionWithdrawn = true;
-        positionManager.safeTransferFrom(address(this), recipient, launch.positionId);
-        emit PositionWithdrawn(token, launch.positionId, recipient);
+
+        // Remove all liquidity, then collect the freed principal to this contract.
+        uint256 positionId = launch.positionId;
+        (,,,,,,, uint128 liquidity,,,,) = positionManager.positions(positionId);
+        if (liquidity > 0) {
+            positionManager.decreaseLiquidity(
+                INonfungiblePositionManager.DecreaseLiquidityParams({
+                    tokenId: positionId,
+                    liquidity: liquidity,
+                    amount0Min: 0,
+                    amount1Min: 0,
+                    deadline: block.timestamp
+                })
+            );
+        }
+        (uint256 amount0, uint256 amount1) = positionManager.collect(
+            INonfungiblePositionManager.CollectParams({
+                tokenId: positionId,
+                recipient: address(this),
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
+            })
+        );
+        (uint256 tokenAmount, uint256 hypeAmount) =
+            launch.tokenIsToken0 ? (amount0, amount1) : (amount1, amount0);
+
+        // Pay out: native HYPE (unwrapped from WHYPE) + the leftover tokens.
+        if (hypeAmount > 0) _payNative(recipient, hypeAmount);
+        if (tokenAmount > 0) LaunchToken(token).transfer(recipient, tokenAmount);
+
+        emit PositionWithdrawn(token, positionId, recipient);
     }
 
     /// @notice Allows/revokes a platform relayer wallet (may launch on users' behalf).
