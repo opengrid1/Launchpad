@@ -213,15 +213,19 @@ export function LaunchPage() {
               <input
                 value={payout}
                 onChange={(e) => setPayout(e.target.value)}
-                placeholder="@x_handle  ·  or paste 0x… wallet"
+                placeholder="Paste 0x… wallet  (or @handle for display)"
                 className={inputCls}
               />
-              <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-ghost">
+              <p
+                className={`mt-1.5 font-mono text-[10px] leading-relaxed ${
+                  payout.trim() !== '' && !isAddress(payout.trim()) ? 'text-amber' : 'text-ghost'
+                }`}
+              >
                 {payout.trim() === ''
-                  ? 'Default: your connected wallet. Paste an address to route the 70% there.'
+                  ? 'Default: your connected wallet. Paste a 0x address to send the 70% there instead.'
                   : isAddress(payout.trim())
-                    ? '✓ Fees route to this wallet.'
-                    : 'Fees go to your connected (X-linked) wallet; handle saved on your token.'}
+                    ? '✓ Fees route to this wallet on-chain.'
+                    : '⚠ An @handle does not route fees yet — they go to your connected wallet (the handle is just shown on your token). Paste a 0x address to route fees.'}
               </p>
             </div>
           </div>
