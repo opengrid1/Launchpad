@@ -111,3 +111,80 @@ def make_banner(out, w=1500, h=500):
 make_pfp("/tmp/hyprpad-pfp.png")
 make_banner("/tmp/hyprpad-banner.png")
 print("saved /tmp/hyprpad-pfp.png + /tmp/hyprpad-banner.png")
+
+
+# ---------------------------------------------------------------- mesh banner (v2)
+import math
+
+
+def _wave(u, v):
+    return math.sin(u * 8 + v * 5) * 0.5 + math.sin(u * 5 - v * 7 + 1.3) * 0.34 + math.sin(u * 13 + v * 3) * 0.16
+
+
+def make_banner_mesh(out, w=1500, h=500):
+    W, H = w * SS, h * SS
+    img = vgrad(W, H, (12, 24, 21), (6, 12, 11))
+    glow(img, W * 0.8, H * 0.1, H * 0.9, color=(46, 214, 148), alpha=30)
+
+    cols, rows = 64, 36
+    horizon = H * 0.02
+    mesh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    md = ImageDraw.Draw(mesh)
+    P = [[None] * (cols + 1) for _ in range(rows + 1)]
+    for i in range(rows + 1):
+        tv = i / rows  # 0 far(top) .. 1 near(bottom)
+        ybase = horizon + (H * 1.06 - horizon) * (tv ** 1.55)
+        amp = H * 0.11 * (0.25 + tv)
+        for j in range(cols + 1):
+            tu = j / cols
+            persp = 0.5 + 0.8 * tv
+            x = W / 2 + (tu - 0.5) * W * persp * 1.2
+            y = ybase - _wave(tu, tv) * amp
+            P[i][j] = (x, y, tv, x)
+
+    def lw(x):  # fade mesh out on the left so the text stays clean
+        f = (x / W - 0.30) / 0.26
+        return max(0.0, min(1.0, f))
+
+    for i in range(rows + 1):
+        for j in range(cols + 1):
+            x, y, tv, _ = P[i][j]
+            base = 30 + 150 * (tv ** 1.3)
+            if j < cols:
+                x2, y2, _, _ = P[i][j + 1]
+                a = int(base * lw((x + x2) / 2))
+                if a > 4:
+                    md.line([(x, y), (x2, y2)], fill=(150, 246, 233, a), width=SS)
+            if i < rows:
+                x2, y2, _, _ = P[i + 1][j]
+                a = int(base * lw((x + x2) / 2))
+                if a > 4:
+                    md.line([(x, y), (x2, y2)], fill=(150, 246, 233, a), width=SS)
+    img.alpha_composite(mesh)
+
+    # subtle dark vignette behind the headline for legibility
+    vig = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(vig).ellipse([W * 0.1, H * 0.2, W * 0.85, H * 0.85], fill=(7, 13, 12, 150))
+    img.alpha_composite(vig.filter(ImageFilter.GaussianBlur(H * 0.12)))
+
+    d = ImageDraw.Draw(img)
+    fs = int(H * 0.155)
+    reg = ImageFont.truetype(FONT_REG, fs)
+    ital = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Italic.ttf", fs)
+    bold = ImageFont.truetype(FONT_BOLD, fs)
+    s1, sep, s2 = "Launch coins", "  /  ", "keep the fees"
+    w1 = d.textlength(s1, font=reg)
+    ws = d.textlength(sep, font=bold)
+    w2 = d.textlength(s2, font=ital)
+    total = w1 + ws + w2
+    x = (W - total) / 2
+    y = H * 0.42
+    d.text((x, y), s1, font=reg, fill=(238, 242, 244))
+    d.text((x + w1, y), sep, font=bold, fill=(63, 224, 207))
+    d.text((x + w1 + ws, y), s2, font=ital, fill=(225, 232, 236))
+
+    img.resize((w, h), Image.LANCZOS).save(out)
+
+
+make_banner_mesh("/tmp/hyprpad-banner2.png")
+print("saved /tmp/hyprpad-banner2.png")
