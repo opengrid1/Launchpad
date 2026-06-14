@@ -50,38 +50,69 @@ export function useToast(): ToastApi {
   return ctx
 }
 
-const KIND_STYLES: Record<Toast['kind'], string> = {
-  success: 'ring-acc/40',
-  error: 'ring-down/40',
+const KIND_RING: Record<Toast['kind'], string> = {
+  success: 'ring-up/30',
+  error: 'ring-down/30',
   info: 'ring-hair2',
+}
+const KIND_CHIP: Record<Toast['kind'], string> = {
+  success: 'bg-upsoft text-up',
+  error: 'bg-downsoft text-down',
+  info: 'bg-accsoft text-acc',
+}
+const KIND_ICON: Record<Toast['kind'], ReactNode> = {
+  success: (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <path d="M3.5 8.5 L6.5 11.5 L12.5 4.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  error: (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <path d="M4.5 4.5 L11.5 11.5 M11.5 4.5 L4.5 11.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  ),
+  info: (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <path d="M8 7.2 L8 11.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="8" cy="4.6" r="1.05" fill="currentColor" />
+    </svg>
+  ),
 }
 
 function ToastViewport({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: number) => void }) {
   return (
-    <div className="pointer-events-none fixed bottom-20 right-4 z-50 flex w-[min(380px,calc(100vw-2rem))] flex-col gap-2 sm:bottom-4">
+    <div className="pointer-events-none fixed left-1/2 top-[4.5rem] z-[60] flex w-[min(400px,calc(100vw-1.5rem))] -translate-x-1/2 flex-col gap-2.5 sm:left-auto sm:right-4 sm:translate-x-0">
       {toasts.map((t) => (
-        <div key={t.id} className={`pointer-events-auto rise-in rounded-xl bg-panel p-3.5 shadow-2xl ring-1 ${KIND_STYLES[t.kind]}`}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className={`text-sm font-bold ${t.kind === 'error' ? 'text-down' : t.kind === 'success' ? 'text-acc' : 'text-fg'}`}>
-                {t.title}
-              </p>
-              {t.detail && <p className="mt-0.5 break-words text-xs leading-relaxed text-dim">{t.detail}</p>}
-              {t.txHash && (
-                <a
-                  href={explorerTx(t.txHash)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 inline-block font-mono text-[11px] text-acc no-underline hover:text-accdeep"
-                >
-                  tx ↗
-                </a>
-              )}
-            </div>
-            <button onClick={() => dismiss(t.id)} className="cursor-pointer text-ghost hover:text-fg" aria-label="dismiss">
-              ✕
-            </button>
+        <div
+          key={t.id}
+          className={`toast-in pointer-events-auto flex items-start gap-3 rounded-xl border border-hair bg-panel/90 p-3.5 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.7)] ring-1 backdrop-blur-md ${KIND_RING[t.kind]}`}
+        >
+          <span className={`mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${KIND_CHIP[t.kind]}`}>
+            {KIND_ICON[t.kind]}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-fg">{t.title}</p>
+            {t.detail && <p className="mt-0.5 break-words text-xs leading-relaxed text-dim">{t.detail}</p>}
+            {t.txHash && (
+              <a
+                href={explorerTx(t.txHash)}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1.5 inline-flex items-center gap-1 font-mono text-[11px] text-acc no-underline hover:text-accdeep"
+              >
+                view transaction ↗
+              </a>
+            )}
           </div>
+          <button
+            onClick={() => dismiss(t.id)}
+            className="-mr-1 -mt-1 flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-ghost transition hover:bg-panel2 hover:text-fg"
+            aria-label="dismiss"
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              <path d="M3 3 L9 9 M9 3 L3 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
       ))}
     </div>
