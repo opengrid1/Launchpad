@@ -27,6 +27,15 @@ function fmtHype(wei: bigint): string {
   return formatUnits18(wei, { compact: false, digits: 4 })
 }
 
+/** Extract a clean @handle from a stored twitter URL/handle, or null. */
+function parseXHandle(twitter?: string): string | null {
+  if (!twitter) return null
+  const url = twitter.match(/(?:x\.com|twitter\.com)\/@?([A-Za-z0-9_]{1,15})/)
+  if (url) return `@${url[1]}`
+  const raw = twitter.trim().replace(/^@/, '')
+  return /^[A-Za-z0-9_]{1,15}$/.test(raw) ? `@${raw}` : null
+}
+
 /** Below this (0.00001 HYPE) we treat a balance as nothing to claim. */
 const DUST = 10n ** 13n
 
@@ -55,6 +64,8 @@ export function TokenPage({ token }: { token: string }) {
   const unclaimedUsd6 = (unclaimedHype * detail.hypeUsd6) / 10n ** 18n
   const change =
     detail.startMcUsd6 > 0n ? Number(detail.marketCapUsd6) / Number(detail.startMcUsd6) - 1 : null
+  const isDefaultRecipient = detail.feeRecipient.toLowerCase() === detail.creator.toLowerCase()
+  const feesXHandle = parseXHandle(meta.twitter)
 
   return (
     <main className="mt-5">
@@ -92,6 +103,29 @@ export function TokenPage({ token }: { token: string }) {
                 </div>
                 <div className="mt-2.5">
                   <SocialIcons meta={meta} />
+                </div>
+                <div className="mt-2.5 flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
+                  <span className="text-ghost">70% fees →</span>
+                  {isDefaultRecipient && feesXHandle && (
+                    <a
+                      href={`https://x.com/${feesXHandle.replace(/^@/, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-dim no-underline hover:text-fg"
+                    >
+                      {feesXHandle}
+                    </a>
+                  )}
+                  <a
+                    href={explorerAddress(detail.feeRecipient)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-acc no-underline hover:text-accdeep"
+                  >
+                    {shortAddress(detail.feeRecipient)} ↗
+                  </a>
+                  <span className="text-ghost">{isDefaultRecipient ? '· creator wallet' : '· custom payout'}</span>
+                  {detail.feeRecipientLocked && <span className="text-ghost" title="payout locked permanently">· locked</span>}
                 </div>
               </div>
             </div>
