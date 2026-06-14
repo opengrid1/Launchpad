@@ -4,8 +4,8 @@ import { fetchLaunches, fetchTokenDetail, type LaunchRow, type TokenDetail } fro
 import { publicClient } from '../lib/chain'
 import { LAUNCHPAD, launchpadAbi } from '../lib/contracts'
 
-const BOARD_POLL_MS = 15_000
-const DETAIL_POLL_MS = 10_000
+const BOARD_POLL_MS = 6_000
+const DETAIL_POLL_MS = 4_000
 
 export function useLaunches() {
   const [rows, setRows] = useState<LaunchRow[] | null>(null)

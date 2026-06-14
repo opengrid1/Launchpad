@@ -148,7 +148,10 @@ export function TokenPage({ token }: { token: string }) {
           <div className="flex shrink-0 flex-col gap-3 sm:items-end">
             <div className="flex items-center justify-between gap-4 sm:justify-end">
               <div className="sm:text-right">
-                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Market cap</p>
+                <p className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ghost sm:justify-end">
+                  <span className="live-dot h-1 w-1 rounded-full bg-acc" />
+                  Market cap
+                </p>
                 <p className="mt-1 font-mono text-xl font-semibold text-fg sm:text-2xl">{formatUsd6(detail.marketCapUsd6)}</p>
                 <p className="font-mono text-[11px] text-ghost">{formatUnits18(detail.marketCapHype, { compact: true })} HYPE</p>
               </div>

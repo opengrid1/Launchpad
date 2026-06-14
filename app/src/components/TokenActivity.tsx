@@ -22,7 +22,7 @@ export function TokenActivity({ detail }: { detail: TokenDetail }) {
       if (alive) setHolders(h)
     }
     void load()
-    const id = window.setInterval(load, 20_000)
+    const id = window.setInterval(load, 10_000)
     return () => {
       alive = false
       window.clearInterval(id)

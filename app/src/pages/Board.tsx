@@ -26,7 +26,7 @@ export function Board() {
     const loadSpark = () => fetchSparklines(pools).then((s) => alive && setSparks(s))
     void loadVol()
     void loadSpark()
-    const vId = window.setInterval(loadVol, 30_000)
+    const vId = window.setInterval(loadVol, 20_000)
     const sId = window.setInterval(loadSpark, 60_000)
     return () => {
       alive = false
