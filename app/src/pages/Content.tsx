@@ -121,7 +121,7 @@ export function Whitepaper() {
         <p>
           A creator supplies a name, symbol, and metadata. The launchpad mints the full supply, opens a single-sided
           concentrated-liquidity position on HyperSwap V3 (1% fee tier), and locks that liquidity in the launchpad
-          contract. The starting market cap is anchored at $4,000 using the HyperCore oracle for the HYPE price.
+          contract. The starting market cap is anchored at $4,000 using the HyperCore oracle.
         </p>
       </Block>
       <Block heading="The market">

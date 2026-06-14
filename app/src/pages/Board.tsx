@@ -69,7 +69,6 @@ export function Board() {
       ['24h volume', `$${fmt(vol24)}`, true],
       ['Combined mcap', formatUsd6(combinedMcap), false],
       ['Active tokens', String(rows.length), false],
-      ['HYPE price', `$${(Number(hypeUsd6) / 1e6).toFixed(2)}`, false],
       ['Creator earnings', formatUsd6(creatorEarningsUsd), false],
     ] as const
   }, [rows, hypeUsd6, volumes])
@@ -80,7 +79,7 @@ export function Board() {
 
       {/* ecosystem stats — minimal strip, no scroll */}
       <section className="mt-8 grid grid-cols-3 gap-x-5 gap-y-3 border-y border-hair py-3.5 sm:flex sm:items-center sm:gap-0">
-        {(metrics ?? Array.from({ length: 5 }, () => null)).map((m, i) => (
+        {(metrics ?? Array.from({ length: 4 }, () => null)).map((m, i) => (
           <div key={i} className={`min-w-0 sm:flex-1 sm:px-5 ${i > 0 ? 'sm:border-l sm:border-hair' : ''}`}>
             {m === null ? (
               <>
