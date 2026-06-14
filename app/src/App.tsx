@@ -5,12 +5,14 @@ import { Board } from './pages/Board'
 import { LaunchPage } from './pages/LaunchPage'
 import { TokenPage } from './pages/Token'
 import { Docs } from './pages/Docs'
+import { HowItWorks } from './pages/HowItWorks'
 import { Terms, Privacy, Whitepaper } from './pages/Content'
 
 type Route =
   | { page: 'board' }
   | { page: 'launch' }
   | { page: 'docs' }
+  | { page: 'how' }
   | { page: 'terms' }
   | { page: 'privacy' }
   | { page: 'whitepaper' }
@@ -20,6 +22,7 @@ function parseHash(): Route {
   const hash = window.location.hash.replace(/^#\/?/, '')
   if (hash === 'launch') return { page: 'launch' }
   if (hash === 'docs') return { page: 'docs' }
+  if (hash === 'how-it-works') return { page: 'how' }
   if (hash === 'terms') return { page: 'terms' }
   if (hash === 'privacy') return { page: 'privacy' }
   if (hash === 'whitepaper') return { page: 'whitepaper' }
@@ -51,6 +54,7 @@ export default function App() {
         {route.page === 'board' && <Board />}
         {route.page === 'launch' && <LaunchPage />}
         {route.page === 'docs' && <Docs />}
+        {route.page === 'how' && <HowItWorks />}
         {route.page === 'terms' && <Terms />}
         {route.page === 'privacy' && <Privacy />}
         {route.page === 'whitepaper' && <Whitepaper />}

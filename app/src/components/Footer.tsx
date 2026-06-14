@@ -13,7 +13,7 @@ const COLUMNS: ReadonlyArray<{ title: string; links: ReadonlyArray<Link> }> = [
     links: [
       { label: 'Launch a token', href: '#/launch' },
       { label: 'Markets', href: '#/' },
-      { label: 'How it works', href: '#/whitepaper' },
+      { label: 'How it works', href: '#/how-it-works' },
     ],
   },
   {
