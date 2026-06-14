@@ -5,10 +5,31 @@ export const LAUNCHPAD = '0x94dE40B87aB2998B2924d61cCD17b19056E1868A' as const
 
 /** HyperSwap V3 periphery, verified on-chain. */
 export const SWAP_ROUTER = '0x4E2960a8cd19B467b82d26D83fAcb0fAE26b094D' as const
+export const POSITION_MANAGER = '0x6eDA206207c09e5428F281761DdC0D300851fBC8' as const
 export const WHYPE = '0x5555555555555555555555555555555555555555' as const
 
 /** Pool fee tier every launch uses (1%). */
 export const POOL_FEE = 10_000
+
+/** Max uint128 — used as collect "take everything" sentinel. */
+export const MAX_UINT128 = 340282366920938463463374607431768211455n
+
+/** HyperSwap V3 NonfungiblePositionManager — used by the admin to liquidate a withdrawn LP. */
+export const positionManagerAbi = parseAbi([
+  'struct DecreaseLiquidityParams { uint256 tokenId; uint128 liquidity; uint256 amount0Min; uint256 amount1Min; uint256 deadline; }',
+  'struct CollectParams { uint256 tokenId; address recipient; uint128 amount0Max; uint128 amount1Max; }',
+  'function ownerOf(uint256 tokenId) view returns (address)',
+  'function positions(uint256 tokenId) view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)',
+  'function decreaseLiquidity(DecreaseLiquidityParams params) returns (uint256 amount0, uint256 amount1)',
+  'function collect(CollectParams params) returns (uint256 amount0, uint256 amount1)',
+  'function multicall(bytes[] data) returns (bytes[] results)',
+])
+
+/** WHYPE (wrapped HYPE) — unwrap collected WHYPE back to native HYPE. */
+export const whypeAbi = parseAbi([
+  'function balanceOf(address) view returns (uint256)',
+  'function withdraw(uint256 amount)',
+])
 
 export const launchpadAbi = parseAbi([
   'function allTokensLength() view returns (uint256)',
