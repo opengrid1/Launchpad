@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
-import { parseEventLogs, isAddress, zeroAddress, type Address } from 'viem'
+import { parseEventLogs, isAddress, zeroAddress, keccak256, toBytes, type Address } from 'viem'
+
+const ZERO_HASH = `0x${'0'.repeat(64)}` as const
 import { useWallet } from '../lib/wallet'
 import { useToast, errorMessage } from '../lib/toast'
 import { publicClient } from '../lib/chain'
@@ -44,23 +46,30 @@ export function LaunchPage() {
       const sym = symbol.trim().toUpperCase()
       const payoutTrim = payout.trim()
 
-      // Resolve the fee recipient: a 0x address routes directly; anything else is treated
-      // as an X handle and resolved to that account's Hyprpad wallet via Privy; empty
-      // defaults to the creator.
+      // Resolve the fee target: a 0x address routes directly; an X handle resolves to that
+      // account's Hyprpad wallet via Privy, or — if they haven't joined — is escrowed under
+      // the handle until they claim it; empty defaults to the creator.
       let recipient: Address = zeroAddress
+      let feeHandle: `0x${string}` = ZERO_HASH
       if (isAddress(payoutTrim)) {
         recipient = payoutTrim as Address
       } else if (payoutTrim !== '') {
-        const tag = payoutTrim.startsWith('@') ? payoutTrim : `@${payoutTrim}`
-        push({ kind: 'info', title: `Resolving ${tag}…` })
+        const handleClean = payoutTrim.replace(/^@/, '').trim().toLowerCase()
+        push({ kind: 'info', title: `Resolving @${handleClean}…` })
         const r = await fetch('/api/resolve', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ handle: payoutTrim }),
+          body: JSON.stringify({ handle: handleClean }),
         })
         const d = (await r.json().catch(() => ({}))) as { address?: Address; error?: string }
-        if (!r.ok || !d.address) throw new Error(d.error || 'Could not resolve that X handle')
-        recipient = d.address
+        if (r.ok && d.address) {
+          recipient = d.address // onboarded → pay their wallet directly
+        } else if (r.status === 404) {
+          feeHandle = keccak256(toBytes(handleClean)) // un-onboarded → escrow for the handle
+          push({ kind: 'info', title: `@${handleClean} hasn't joined yet — fees will be escrowed for them to claim` })
+        } else {
+          throw new Error(d.error || 'Could not resolve that X handle')
+        }
       }
 
       // X handle shown on the token: the payout handle if one was used, else a typed X, else the verified X.
@@ -79,7 +88,7 @@ export function LaunchPage() {
       // 1) Gasless authorization — the creator signs the launch params (no gas, no big
       //    blocks). The relayer needs this to prove the creator authorized the launch.
       const nonce = Date.now()
-      const message = `Hyprpad launch\nname: ${nm}\nsymbol: ${sym}\ncreator: ${address}\nfeeRecipient: ${recipient}\nnonce: ${nonce}`
+      const message = `Hyprpad launch\nname: ${nm}\nsymbol: ${sym}\ncreator: ${address}\nfeeRecipient: ${recipient}\nfeeHandle: ${feeHandle}\nnonce: ${nonce}`
       push({ kind: 'info', title: 'Sign to authorize — free, no gas' })
       const signature = await walletClient.signMessage({ account: address, message })
       setSteps(['done', 'active', 'idle'])
@@ -88,7 +97,7 @@ export function LaunchPage() {
       const resp = await fetch('/api/launch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: nm, symbol: sym, tokenURI, creator: address, feeRecipient: recipient, nonce, signature }),
+        body: JSON.stringify({ name: nm, symbol: sym, tokenURI, creator: address, feeRecipient: recipient, feeHandle, nonce, signature }),
       })
       const data = (await resp.json().catch(() => ({}))) as { hash?: `0x${string}`; error?: string }
       if (!resp.ok || !data.hash) throw new Error(data.error || 'Relayer error')

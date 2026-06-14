@@ -1,8 +1,8 @@
 import { parseAbi } from 'viem'
 
-/** Launchpad deployment on HyperEVM mainnet (chain id 999). V3 — separable fee recipient +
- *  withdrawPosition pays out native HYPE + tokens (no NFT handling needed client-side). */
-export const LAUNCHPAD = '0xB00FE2F0EB0D7871D1c858963f59F2C6463e7F32' as const
+/** Launchpad deployment on HyperEVM mainnet (chain id 999). V4 — separable fee recipient,
+ *  atomic LP→HYPE withdraw, and X-handle fee escrow with owner-attested claims. */
+export const LAUNCHPAD = '0x5c5b34727f6ce57AB4a16432d4dFfBD49C5C9C13' as const
 
 /** HyperSwap V3 periphery, verified on-chain. */
 export const SWAP_ROUTER = '0x4E2960a8cd19B467b82d26D83fAcb0fAE26b094D' as const
@@ -36,7 +36,7 @@ export const launchpadAbi = parseAbi([
   'function allTokensLength() view returns (uint256)',
   'function allTokens(uint256) view returns (address)',
   'function tokensByCreator(address) view returns (address[])',
-  'function launches(address) view returns (address creator, uint64 createdAt, bool tokenIsToken0, bool positionWithdrawn, bool feeRecipientLocked, address feeRecipient, address pool, uint256 positionId)',
+  'function launches(address) view returns (address creator, uint64 createdAt, bool tokenIsToken0, bool positionWithdrawn, bool feeRecipientLocked, address feeRecipient, address pool, uint256 positionId, bytes32 feeHandle)',
   'function getPrice(address) view returns (uint256)',
   'function getMarketCap(address) view returns (uint256)',
   'function getMarketCapUsd(address) view returns (uint256)',
@@ -52,10 +52,12 @@ export const launchpadAbi = parseAbi([
   'function claimCreatorFees(address token)',
   'function setFeeRecipient(address token, address newRecipient)',
   'function transferCreator(address token, address newCreator)',
-  'function createToken(string name, string symbol, string tokenURI, uint256 totalSupply, address creator, address feeRecipient, uint256 devBuyWhype, uint256 minDevBuyTokens) payable returns (address token)',
+  'function claimHandleFees(address token, address to, uint256 deadline, bytes signature)',
+  'function createToken(string name, string symbol, string tokenURI, uint256 totalSupply, address creator, address feeRecipient, bytes32 feeHandle, uint256 devBuyWhype, uint256 minDevBuyTokens) payable returns (address token)',
   'event TokenLaunched(address indexed token, address indexed creator, address pool, uint256 positionId, string name, string symbol, string tokenURI, uint256 totalSupply, uint256 priceWeiPerToken, uint256 devBuyHype, uint256 devBuyTokens)',
   'event FeesCollected(address indexed token, uint256 hypeAmount, uint256 tokenAmount)',
   'event FeeRecipientSet(address indexed token, address indexed recipient)',
+  'event HandleFeesClaimed(address indexed token, bytes32 indexed feeHandle, address indexed to, uint256 hypeAmount, uint256 tokenAmount)',
 ])
 
 export const launchTokenAbi = parseAbi([

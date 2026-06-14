@@ -60,7 +60,7 @@ contract LaunchpadTest is Test {
 
     function _launch() internal returns (address token) {
         vm.prank(creator);
-        token = pad.createToken("Test Token", "TEST", "ipfs://QmMeta", SUPPLY, address(0), address(0), 0, 0);
+        token = pad.createToken("Test Token", "TEST", "ipfs://QmMeta", SUPPLY, address(0), address(0), bytes32(0), 0, 0);
     }
 
     /// @dev HYPE wei per 1e18 tokens implied by a $4k cap at the mocked oracle price.
@@ -74,7 +74,7 @@ contract LaunchpadTest is Test {
         view
         returns (address creator_, address pool_, uint256 positionId_, bool tokenIsToken0_, bool withdrawn_)
     {
-        (creator_,, tokenIsToken0_, withdrawn_,,, pool_, positionId_) = pad.launches(token);
+        (creator_,, tokenIsToken0_, withdrawn_,,, pool_, positionId_,) = pad.launches(token);
     }
 
     // ------------------------------------------------------------------ create
@@ -172,7 +172,7 @@ contract LaunchpadTest is Test {
         assertEq(mine[0], token);
         assertEq(pad.tokensByCreator(rando).length, 0);
 
-        (, uint64 createdAt,,,,,,) = pad.launches(token);
+        (, uint64 createdAt,,,,,,,) = pad.launches(token);
         assertEq(createdAt, 1_750_000_000);
 
         // Spot price view matches the launch price; market cap = price * supply.
@@ -186,7 +186,7 @@ contract LaunchpadTest is Test {
 
         // Second launch appends.
         vm.prank(creator);
-        pad.createToken("Two", "TWO", "u2", SUPPLY, address(0), address(0), 0, 0);
+        pad.createToken("Two", "TWO", "u2", SUPPLY, address(0), address(0), bytes32(0), 0, 0);
         assertEq(pad.allTokensLength(), 2);
         assertEq(pad.tokensByCreator(creator).length, 2);
     }
@@ -214,7 +214,7 @@ contract LaunchpadTest is Test {
         vm.deal(creator, 5 ether);
         vm.prank(creator);
         address token = pad.createToken{value: 2 ether}(
-            "Test Token", "TEST", "ipfs://QmMeta", SUPPLY, address(0), address(0), 0, 1900e18
+            "Test Token", "TEST", "ipfs://QmMeta", SUPPLY, address(0), address(0), bytes32(0), 0, 1900e18
         );
 
         assertEq(LaunchToken(token).balanceOf(creator), 2000e18);
@@ -227,7 +227,7 @@ contract LaunchpadTest is Test {
         vm.deal(creator, 1 ether);
         vm.prank(creator);
         vm.expectRevert("Too little received");
-        pad.createToken{value: 1 ether}("T", "T", "u", SUPPLY, address(0), address(0), 0, 1001e18);
+        pad.createToken{value: 1 ether}("T", "T", "u", SUPPLY, address(0), address(0), bytes32(0), 0, 1001e18);
     }
 
     function test_relayedLaunch_creditsRealCreator() public {
@@ -235,7 +235,7 @@ contract LaunchpadTest is Test {
         pad.setRelayer(relayer, true);
 
         vm.prank(relayer);
-        address token = pad.createToken("T", "T", "u", SUPPLY, creator, address(0), 0, 0);
+        address token = pad.createToken("T", "T", "u", SUPPLY, creator, address(0), bytes32(0), 0, 0);
 
         (address c,,,,) = _launchInfo(token);
         assertEq(c, creator);
@@ -256,7 +256,7 @@ contract LaunchpadTest is Test {
         vm.stopPrank();
 
         vm.prank(relayer);
-        address token = pad.createToken("T", "T", "u", SUPPLY, creator, address(0), 3 ether, 2900e18);
+        address token = pad.createToken("T", "T", "u", SUPPLY, creator, address(0), bytes32(0), 3 ether, 2900e18);
 
         // Dev-buy tokens went to the creator, not the relayer.
         assertEq(LaunchToken(token).balanceOf(creator), 3000e18);
@@ -267,7 +267,7 @@ contract LaunchpadTest is Test {
     function test_relayedLaunch_unapprovedRelayerReverts() public {
         vm.prank(rando);
         vm.expectRevert("not relayer");
-        pad.createToken("T", "T", "u", SUPPLY, creator, address(0), 0, 0);
+        pad.createToken("T", "T", "u", SUPPLY, creator, address(0), bytes32(0), 0, 0);
 
         vm.prank(rando);
         vm.expectRevert("not owner");
@@ -276,7 +276,7 @@ contract LaunchpadTest is Test {
 
     function test_createToken_zeroSupplyReverts() public {
         vm.expectRevert("zero supply");
-        pad.createToken("T", "T", "u", 0, address(0), address(0), 0, 0);
+        pad.createToken("T", "T", "u", 0, address(0), address(0), bytes32(0), 0, 0);
     }
 
     // ------------------------------------------------------------------ oracle / market cap
@@ -288,7 +288,7 @@ contract LaunchpadTest is Test {
     function test_createToken_revertsWhenOracleUnavailable() public {
         vm.clearMockedCalls();
         vm.expectRevert("oracle unavailable");
-        pad.createToken("T", "T", "u", SUPPLY, address(0), address(0), 0, 0);
+        pad.createToken("T", "T", "u", SUPPLY, address(0), address(0), bytes32(0), 0, 0);
     }
 
     function test_manualHypeUsdOverride() public {
@@ -479,6 +479,45 @@ contract LaunchpadTest is Test {
         vm.prank(creator);
         vm.expectRevert("recipient locked");
         pad.setFeeRecipient(token, makeAddr("second"));
+    }
+
+    function test_handleEscrow_blocksNormalClaimAndPaysOnAttestation() public {
+        // Owner must be an address we hold a key for, to sign the attestation.
+        uint256 ownerPk = 0xA11CE;
+        address signer = vm.addr(ownerPk);
+        pad.transferOwnership(signer);
+
+        bytes32 handle = keccak256(bytes("jeff"));
+        vm.prank(creator);
+        address token = pad.createToken("T", "T", "u", SUPPLY, address(0), address(0), handle, 0, 0);
+
+        _accrueFees(token, 0, 10 ether);
+        pad.collectFees(token);
+
+        // Handle-routed fees can't be claimed normally.
+        vm.prank(creator);
+        vm.expectRevert("handle-escrowed");
+        pad.claimCreatorFees(token);
+
+        address to = makeAddr("jeffWallet");
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes32 inner = keccak256(abi.encode(handle, to, deadline, token, address(pad), block.chainid));
+        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", inner));
+
+        // Wrong signer is rejected.
+        (uint8 bv, bytes32 br, bytes32 bs) = vm.sign(0xBEEF, digest);
+        vm.expectRevert("bad attestation");
+        pad.claimHandleFees(token, to, deadline, abi.encodePacked(br, bs, bv));
+
+        // Owner attestation releases the escrow to the verified wallet.
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPk, digest);
+        pad.claimHandleFees(token, to, deadline, abi.encodePacked(r, s, v));
+        assertEq(to.balance, 7 ether);
+
+        // Handle is now bound: escrow cleared, recipient set, future claims go the normal way.
+        (,,,,, address feeRecipient,,, bytes32 fh) = pad.launches(token);
+        assertEq(feeRecipient, to);
+        assertEq(fh, bytes32(0));
     }
 
     function test_setFeeRecipient_onlyCreator() public {

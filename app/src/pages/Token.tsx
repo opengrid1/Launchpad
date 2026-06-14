@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { formatEther, isAddress, type Address } from 'viem'
+import { formatEther, isAddress, keccak256, toBytes, type Address } from 'viem'
+
+const ZERO_HASH = `0x${'0'.repeat(64)}`
 import { useTokenDetail } from '../hooks/useLaunches'
 import { useWallet } from '../lib/wallet'
 import { useToast, errorMessage } from '../lib/toast'
@@ -66,6 +68,7 @@ export function TokenPage({ token }: { token: string }) {
     detail.startMcUsd6 > 0n ? Number(detail.marketCapUsd6) / Number(detail.startMcUsd6) - 1 : null
   const isDefaultRecipient = detail.feeRecipient.toLowerCase() === detail.creator.toLowerCase()
   const feesXHandle = parseXHandle(meta.twitter)
+  const escrowed = !!detail.feeHandle && detail.feeHandle !== ZERO_HASH
 
   return (
     <main className="mt-5">
@@ -104,29 +107,38 @@ export function TokenPage({ token }: { token: string }) {
                 <div className="mt-2.5">
                   <SocialIcons meta={meta} />
                 </div>
-                <div className="mt-2.5 flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
-                  <span className="text-ghost">70% fees →</span>
-                  {isDefaultRecipient && feesXHandle && (
+                {escrowed ? (
+                  <div className="mt-2.5 font-mono text-[11px] leading-relaxed">
+                    <span className="text-ghost">70% fees → escrowed for </span>
+                    <span className="text-acc">{feesXHandle ?? 'an X account'}</span>
+                    <span className="text-ghost"> · claim by signing into Hyprpad with that X</span>
+                  </div>
+                ) : (
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
+                    <span className="text-ghost">70% fees →</span>
+                    {isDefaultRecipient && feesXHandle && (
+                      <a
+                        href={`https://x.com/${feesXHandle.replace(/^@/, '')}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-dim no-underline hover:text-fg"
+                      >
+                        {feesXHandle}
+                      </a>
+                    )}
                     <a
-                      href={`https://x.com/${feesXHandle.replace(/^@/, '')}`}
+                      href={explorerAddress(detail.feeRecipient)}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-dim no-underline hover:text-fg"
+                      className="text-acc no-underline hover:text-accdeep"
                     >
-                      {feesXHandle}
+                      {shortAddress(detail.feeRecipient)} ↗
                     </a>
-                  )}
-                  <a
-                    href={explorerAddress(detail.feeRecipient)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-acc no-underline hover:text-accdeep"
-                  >
-                    {shortAddress(detail.feeRecipient)} ↗
-                  </a>
-                  <span className="text-ghost">{isDefaultRecipient ? '· creator wallet' : '· custom payout'}</span>
-                  {detail.feeRecipientLocked && <span className="text-ghost" title="payout locked permanently">· locked</span>}
-                </div>
+                    <span className="text-ghost">{isDefaultRecipient ? '· creator wallet' : '· custom payout'}</span>
+                    {detail.feeRecipientLocked && <span className="text-ghost" title="payout locked permanently">· locked</span>}
+                  </div>
+                )}
+                <EscrowClaim detail={detail} />
               </div>
             </div>
             {meta.description && <p className="mt-4 max-w-xl text-sm leading-relaxed text-dim">{meta.description}</p>}
@@ -607,6 +619,55 @@ function RewardsControl({ detail, refresh }: { detail: NonNullable<ReturnType<ty
 }
 
 // ---------------------------------------------------------------- bits
+
+/** Shown when a token's fees are escrowed for an X handle and the connected user owns that
+ *  handle (verified via Privy). Calls the relayer to collect + release the escrow to them. */
+function EscrowClaim({ detail }: { detail: Detail }) {
+  const { address, xHandle, connect } = useWallet()
+  const { push } = useToast()
+  const [busy, setBusy] = useState(false)
+
+  const escrowed = !!detail.feeHandle && detail.feeHandle !== ZERO_HASH
+  if (!escrowed) return null
+  const mine = !!xHandle && keccak256(toBytes(xHandle.toLowerCase())) === detail.feeHandle
+
+  if (!xHandle) {
+    return (
+      <button onClick={() => void connect()} className="mt-3 cursor-pointer rounded-lg px-3.5 py-2 text-xs font-semibold text-acc ring-1 ring-acc/30 transition hover:bg-accsoft">
+        Sign in with X to check escrowed fees
+      </button>
+    )
+  }
+  if (!mine) return null
+
+  async function claim() {
+    if (!address || !xHandle) return
+    setBusy(true)
+    try {
+      const r = await fetch('/api/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handle: xHandle, wallet: address }),
+      })
+      const d = (await r.json().catch(() => ({}))) as { claimed?: unknown[]; message?: string; error?: string }
+      if (!r.ok) throw new Error(d.error || 'Claim failed')
+      push({
+        kind: 'success',
+        title: d.claimed && d.claimed.length > 0 ? `Releasing your escrowed fees (${d.claimed.length} token${d.claimed.length > 1 ? 's' : ''})…` : d.message || 'Nothing to claim yet',
+      })
+    } catch (e) {
+      push({ kind: 'error', title: 'Claim failed', detail: errorMessage(e) })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <button onClick={() => void claim()} disabled={busy} className="btn-primary mt-3 cursor-pointer rounded-lg px-4 py-2 text-xs font-bold disabled:opacity-60">
+      {busy ? 'Claiming…' : 'Claim your escrowed fees'}
+    </button>
+  )
+}
 
 function Metric({ label, value, sub, accent, border }: { label: string; value: string; sub?: string; accent?: boolean; border?: boolean }) {
   return (

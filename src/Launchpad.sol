@@ -89,6 +89,10 @@ contract Launchpad {
         address feeRecipient;
         address pool;
         uint256 positionId;
+        // When nonzero, the creator's fee share is escrowed for this X handle
+        // (keccak256 of the lowercased handle) until its owner claims via an
+        // owner-signed attestation. Zero = normal payout to feeRecipient.
+        bytes32 feeHandle;
     }
 
     /// @notice token address => launch info.
@@ -138,6 +142,7 @@ contract Launchpad {
     event PlatformTokenFeesClaimed(address indexed token, address indexed treasury, uint256 tokenAmount);
     event CreatorTransferred(address indexed token, address indexed oldCreator, address indexed newCreator);
     event FeeRecipientSet(address indexed token, address indexed recipient);
+    event HandleFeesClaimed(address indexed token, bytes32 indexed feeHandle, address indexed to, uint256 hypeAmount, uint256 tokenAmount);
     event PositionWithdrawn(address indexed token, uint256 indexed positionId, address indexed recipient);
     event TreasuryUpdated(address indexed treasury);
     event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
@@ -199,6 +204,10 @@ contract Launchpad {
     /// @param feeRecipient_    Where the 70% fee stream is paid. Pass address(0) to default
     ///                         to the creator. The creator can redirect this once afterwards
     ///                         via `setFeeRecipient`, after which it is locked permanently.
+    /// @param feeHandle_       Optional: keccak256 of a lowercased X handle. When nonzero,
+    ///                         the creator's fee share is escrowed for that handle until its
+    ///                         owner claims it via an owner-signed attestation (`claimHandleFees`).
+    ///                         Used to route fees to an X account that has no wallet linked yet.
     /// @param devBuyWhype      Optional dev-buy funding pulled from the creator's WHYPE
     ///                         (creator must approve this contract first). Used by relayed
     ///                         launches so the dev buy stays non-custodial.
@@ -215,6 +224,7 @@ contract Launchpad {
         uint256 totalSupply_,
         address creator_,
         address feeRecipient_,
+        bytes32 feeHandle_,
         uint256 devBuyWhype,
         uint256 minDevBuyTokens
     ) external payable nonReentrant returns (address token) {
@@ -241,7 +251,7 @@ contract Launchpad {
         uint256 dust = LaunchToken(token).balanceOf(address(this));
         if (dust > 0) LaunchToken(token).transfer(DEAD, dust);
 
-        _recordLaunch(token, creator, feeRecipient_, tokenIsToken0, pool, positionId);
+        _recordLaunch(token, creator, feeRecipient_, feeHandle_, tokenIsToken0, pool, positionId);
 
         uint256 devBuyHype = msg.value + devBuyWhype;
         uint256 devBuyTokens = 0;
@@ -355,6 +365,7 @@ contract Launchpad {
     ///         token's `feeRecipient`. Callable by the creator (controller) or the recipient.
     function claimCreatorFees(address token) external nonReentrant {
         Launch storage launch = launches[token];
+        require(launch.feeHandle == bytes32(0), "handle-escrowed");
         address recipient = launch.feeRecipient;
         require(msg.sender == launch.creator || msg.sender == recipient, "not creator");
 
@@ -382,6 +393,68 @@ contract Launchpad {
         launch.feeRecipient = newRecipient;
         launch.feeRecipientLocked = true;
         emit FeeRecipientSet(token, newRecipient);
+    }
+
+    /// @notice Claims the escrowed fee share of a handle-routed token to `to`, authorized by
+    ///         an owner-signed attestation that `to` owns the token's X handle.
+    /// @dev The platform signs the attestation only after verifying X ownership (via Privy).
+    ///      On success the token's payout binds to `to` (feeHandle cleared, feeRecipient set),
+    ///      so future fees pay `to` directly through `claimCreatorFees`. Anyone may submit the
+    ///      tx (e.g. a gasless relayer) since authorization comes from the owner's signature.
+    /// @param token     The handle-routed launch.
+    /// @param to        Wallet that owns the X handle (per the attestation) and receives funds.
+    /// @param deadline  Unix time after which the attestation is no longer valid.
+    /// @param signature owner's signature over keccak256(feeHandle, to, deadline, token, this, chainid).
+    function claimHandleFees(address token, address to, uint256 deadline, bytes calldata signature)
+        external
+        nonReentrant
+    {
+        Launch storage launch = launches[token];
+        bytes32 feeHandle = launch.feeHandle;
+        require(feeHandle != bytes32(0), "not handle-escrowed");
+        require(to != address(0), "zero address");
+        require(block.timestamp <= deadline, "expired");
+
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19Ethereum Signed Message:\n32",
+                keccak256(abi.encode(feeHandle, to, deadline, token, address(this), block.chainid)))
+        );
+        require(_recoverSigner(digest, signature) == owner, "bad attestation");
+
+        uint256 hypeAmount = creatorFeesHype[token];
+        uint256 tokenAmount = creatorFeesToken[token];
+        creatorFeesHype[token] = 0;
+        creatorFeesToken[token] = 0;
+
+        // Bind the handle to this wallet: future fees pay it directly via claimCreatorFees.
+        launch.feeHandle = bytes32(0);
+        launch.feeRecipient = to;
+        launch.feeRecipientLocked = true;
+
+        if (tokenAmount > 0) LaunchToken(token).transfer(to, tokenAmount);
+        if (hypeAmount > 0) _payNative(to, hypeAmount);
+
+        emit HandleFeesClaimed(token, feeHandle, to, hypeAmount, tokenAmount);
+    }
+
+    /// @dev Recovers the signer of a 65-byte ECDSA signature over an eth_sign digest.
+    function _recoverSigner(bytes32 digest, bytes calldata sig) internal pure returns (address) {
+        require(sig.length == 65, "bad sig len");
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        assembly {
+            r := calldataload(sig.offset)
+            s := calldataload(add(sig.offset, 32))
+            v := byte(0, calldataload(add(sig.offset, 64)))
+        }
+        if (v < 27) v += 27;
+        require(v == 27 || v == 28, "bad v");
+        // Reject the upper half of s to prevent signature malleability.
+        require(uint256(s) <= 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0, "bad s");
+        address signer = ecrecover(digest, v, r, s);
+        require(signer != address(0), "bad sig");
+        return signer;
     }
 
     /// @notice Treasury withdraws the platform's accumulated 30% (WHYPE side, paid as native HYPE).
@@ -590,6 +663,7 @@ contract Launchpad {
         address token,
         address creator,
         address feeRecipient_,
+        bytes32 feeHandle_,
         bool tokenIsToken0,
         address pool,
         uint256 positionId
@@ -602,7 +676,8 @@ contract Launchpad {
             feeRecipientLocked: false,
             feeRecipient: feeRecipient_ == address(0) ? creator : feeRecipient_,
             pool: pool,
-            positionId: positionId
+            positionId: positionId,
+            feeHandle: feeHandle_
         });
         allTokens.push(token);
         _creatorTokens[creator].push(token);

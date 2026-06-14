@@ -7,6 +7,7 @@ export type LaunchRow = {
   creator: Address
   feeRecipient: Address
   feeRecipientLocked: boolean
+  feeHandle: `0x${string}`
   createdAt: number
   pool: Address
   positionWithdrawn: boolean
@@ -62,12 +63,13 @@ export async function fetchLaunchRow(token: Address): Promise<LaunchRow> {
     publicClient.readContract({ ...launchpad, functionName: 'getMarketCapUsd', args: [token] }),
     publicClient.readContract({ ...launchpad, functionName: 'lifetimeFeesHype', args: [token] }),
   ])
-  const [creator, createdAt, , positionWithdrawn, feeRecipientLocked, feeRecipient, pool] = launch
+  const [creator, createdAt, , positionWithdrawn, feeRecipientLocked, feeRecipient, pool, , feeHandle] = launch
   return {
     token,
     creator,
     feeRecipient,
     feeRecipientLocked,
+    feeHandle,
     createdAt: Number(createdAt),
     pool,
     positionWithdrawn,
