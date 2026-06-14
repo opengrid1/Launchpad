@@ -43,10 +43,30 @@ export function LaunchPage() {
       const nm = name.trim()
       const sym = symbol.trim().toUpperCase()
       const payoutTrim = payout.trim()
-      const recipient: Address = isAddress(payoutTrim) ? (payoutTrim as Address) : zeroAddress
-      // Prefer an explicitly typed handle, then a typed X social, then the Privy-verified X.
+
+      // Resolve the fee recipient: a 0x address routes directly; anything else is treated
+      // as an X handle and resolved to that account's Hyprpad wallet via Privy; empty
+      // defaults to the creator.
+      let recipient: Address = zeroAddress
+      if (isAddress(payoutTrim)) {
+        recipient = payoutTrim as Address
+      } else if (payoutTrim !== '') {
+        const tag = payoutTrim.startsWith('@') ? payoutTrim : `@${payoutTrim}`
+        push({ kind: 'info', title: `Resolving ${tag}…` })
+        const r = await fetch('/api/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ handle: payoutTrim }),
+        })
+        const d = (await r.json().catch(() => ({}))) as { address?: Address; error?: string }
+        if (!r.ok || !d.address) throw new Error(d.error || 'Could not resolve that X handle')
+        recipient = d.address
+      }
+
+      // X handle shown on the token: the payout handle if one was used, else a typed X, else the verified X.
+      const payoutHandle = payoutTrim !== '' && !isAddress(payoutTrim) ? (payoutTrim.startsWith('@') ? payoutTrim : `@${payoutTrim}`) : ''
       const verifiedX = xHandle ? `@${xHandle}` : ''
-      const xMeta = payoutTrim.startsWith('@') ? payoutTrim : twitter.trim() || verifiedX
+      const xMeta = payoutHandle || twitter.trim() || verifiedX
       const tokenURI = buildTokenURI({
         name: nm,
         description: description.trim(),
@@ -160,7 +180,7 @@ export function LaunchPage() {
                     : 'Default: your connected wallet. Paste a 0x address to send the 70% there instead.'
                   : isAddress(payout.trim())
                     ? '✓ Fees route to this wallet on-chain.'
-                    : '⚠ An @handle does not route fees yet — they go to your connected wallet (the handle is just shown on your token). Paste a 0x address to route fees.'}
+                    : 'Fees route to this X account — they must have signed into Hyprpad with X (otherwise the launch will tell you).'}
               </p>
             </div>
           </div>
