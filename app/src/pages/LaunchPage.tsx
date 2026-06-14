@@ -54,25 +54,30 @@ export function LaunchPage() {
     try {
       await ensureChain()
 
-      // 1) Enable big blocks — REQUIRED, not best-effort. A launch uses ~6M gas, which
-      //    only fits a HyperEVM big block (30M); in small-block mode (2M) the network
-      //    rejects the tx ("Gas Limit" fail). The signature is under HyperCore's chainId
-      //    1337 domain; we retry once, then abort with a clear message rather than send a
-      //    transaction that can never be included.
+      // 1) Enable big blocks. A launch uses ~6M gas, which only fits a HyperEVM big block
+      //    (30M); in small-block mode (2M) the network rejects the tx. We try to flip the
+      //    wallet via the HyperCore L1 action (signed under chainId 1337) — but some
+      //    wallets (e.g. MetaMask) refuse to sign typed-data whose chainId differs from
+      //    the connected chain. If that signature is declined we DON'T abort: big blocks
+      //    may already be enabled for this wallet, so we warn and let the launch proceed.
       let bigBlocksOn = false
       for (let attempt = 0; attempt < 2 && !bigBlocksOn; attempt++) {
         try {
           await setBigBlocks(walletClient, { address }, true)
           bigBlocksOn = true
-        } catch (e) {
-          if (attempt === 1) {
-            throw new Error(
-              'Could not switch your wallet to HyperEVM big blocks. Approve the big-block signature prompt in your wallet and try again — a launch needs ~6M gas, more than a normal block allows.',
-            )
-          }
+        } catch {
+          /* retry once, then fall through */
         }
       }
-      push({ kind: 'info', title: 'Big blocks enabled' })
+      push(
+        bigBlocksOn
+          ? { kind: 'info', title: 'Big blocks enabled' }
+          : {
+              kind: 'info',
+              title: 'Continuing — big blocks must already be on',
+              detail: 'Your wallet declined the big-block signature. If big blocks are already enabled for this wallet the launch still goes through; otherwise it will fail with a gas-limit error.',
+            },
+      )
       setSteps(['done', 'active', 'idle'])
 
       // Give the big-block switch a moment to take effect on the EVM RPC before sending.
