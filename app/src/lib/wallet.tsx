@@ -11,6 +11,7 @@ type WalletState = {
   chainId: number | null
   connecting: boolean
   hasProvider: boolean
+  xHandle: string | null
   connect: () => void
   disconnect: () => void
   walletClient: WalletClient | null
@@ -55,6 +56,8 @@ function WalletBridge({ children }: { children: ReactNode }) {
 
   const address = (wallet?.address as Address | undefined) ?? null
   const chainId = wallet ? Number(String(wallet.chainId).split(':').pop()) || null : null
+  // Privy-verified X handle (only present when the user linked / logged in with X).
+  const xHandle = (user?.twitter?.username as string | undefined) ?? null
 
   useEffect(() => {
     let alive = true
@@ -91,13 +94,14 @@ function WalletBridge({ children }: { children: ReactNode }) {
       chainId,
       connecting: !ready,
       hasProvider: true,
+      xHandle,
       connect,
       disconnect,
       walletClient,
       ensureChain,
       onCorrectChain: chainId === hyperevm.id,
     }),
-    [address, chainId, ready, connect, disconnect, walletClient, ensureChain],
+    [address, chainId, ready, xHandle, connect, disconnect, walletClient, ensureChain],
   )
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>

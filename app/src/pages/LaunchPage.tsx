@@ -11,7 +11,7 @@ import { TokenImage } from '../components/TokenImage'
 type StepState = 'idle' | 'active' | 'done' | 'failed'
 
 export function LaunchPage() {
-  const { address, walletClient, connect } = useWallet()
+  const { address, walletClient, connect, xHandle } = useWallet()
   const { push } = useToast()
 
   const [name, setName] = useState('')
@@ -44,13 +44,15 @@ export function LaunchPage() {
       const sym = symbol.trim().toUpperCase()
       const payoutTrim = payout.trim()
       const recipient: Address = isAddress(payoutTrim) ? (payoutTrim as Address) : zeroAddress
-      const xHandle = payoutTrim.startsWith('@') ? payoutTrim : twitter.trim()
+      // Prefer an explicitly typed handle, then a typed X social, then the Privy-verified X.
+      const verifiedX = xHandle ? `@${xHandle}` : ''
+      const xMeta = payoutTrim.startsWith('@') ? payoutTrim : twitter.trim() || verifiedX
       const tokenURI = buildTokenURI({
         name: nm,
         description: description.trim(),
         image: image.trim(),
         website: website.trim(),
-        twitter: xHandle,
+        twitter: xMeta,
         telegram: telegram.trim(),
       })
 
@@ -153,7 +155,9 @@ export function LaunchPage() {
                 }`}
               >
                 {payout.trim() === ''
-                  ? 'Default: your connected wallet. Paste a 0x address to send the 70% there instead.'
+                  ? xHandle
+                    ? `Fees go to your wallet, credited to your verified X @${xHandle}. Paste a 0x address to send them elsewhere.`
+                    : 'Default: your connected wallet. Paste a 0x address to send the 70% there instead.'
                   : isAddress(payout.trim())
                     ? '✓ Fees route to this wallet on-chain.'
                     : '⚠ An @handle does not route fees yet — they go to your connected wallet (the handle is just shown on your token). Paste a 0x address to route fees.'}
