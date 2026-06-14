@@ -22,14 +22,14 @@ export function HeroBanner() {
       />
       <div className="relative px-6 py-12 text-center sm:py-16">
         <h1 className="text-[28px] font-bold leading-[1.1] tracking-tight text-fg sm:text-5xl">
-          <span className="text-gradient">Launch coins</span> <span className="text-acc">/</span> keep the fees
+          <span className="text-acc">Launch coins</span> <span className="text-acc">/</span> keep the fees
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-dim sm:text-base">
           Spin up a <span className="font-semibold text-fg">live market</span> in one click and earn{' '}
           <span className="font-semibold text-acc">70% of every trade</span> — routed to the wallet or X account you choose.
         </p>
         <div className="mt-7 flex items-center justify-center gap-3">
-          <a href="#/launch" className="btn-primary rounded-xl px-6 py-2.5 text-sm font-semibold no-underline">
+          <a href="#/launch" className="btn-primary glow-pulse rounded-xl px-6 py-2.5 text-sm font-semibold no-underline">
             Launch a token
           </a>
           <a

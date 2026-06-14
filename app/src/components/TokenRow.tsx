@@ -74,7 +74,7 @@ export function TokenRow({
   return (
     <div
       onClick={() => (window.location.hash = `#/t/${row.token}`)}
-      className={`${GRID} group relative cursor-pointer px-4 py-3 transition-colors before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-acc before:opacity-0 before:transition-opacity hover:bg-panel2/40 hover:before:opacity-100 ${
+      className={`${GRID} group relative cursor-pointer px-4 py-3 transition-colors before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-acc before:opacity-0 before:shadow-[0_0_10px_rgba(63,224,207,0.7)] before:transition-opacity hover:bg-panel2/50 hover:before:opacity-100 ${
         index > 0 ? 'border-t border-hair' : ''
       }`}
     >
