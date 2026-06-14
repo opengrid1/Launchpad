@@ -249,3 +249,22 @@ def make_banner_v3(out, w=1500, h=500):
 
 make_banner_v3("/tmp/hyprpad-banner3.png")
 print("saved /tmp/hyprpad-banner3.png")
+
+
+# ---------------------------------------------------------------- favicon (matches pfp/banner)
+def make_favicon(out, size=256):
+    W = size * SS
+    base = vgrad(W, W, (16, 26, 35), (7, 12, 17))
+    mask = Image.new("L", (W, W), 0)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, W - 1, W - 1], radius=int(W * 0.24), fill=255)
+    img = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+    img.paste(base.convert("RGBA"), (0, 0), mask)
+    glow(img, W * 0.5, W * 0.5, W * 0.42, alpha=75)
+    draw_orbit(img, W * 0.5, W * 0.5, W * 0.265)
+    clipped = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+    clipped.paste(img, (0, 0), mask)
+    clipped.resize((size, size), Image.LANCZOS).save(out)
+
+
+make_favicon("public/favicon.png")
+print("saved public/favicon.png")

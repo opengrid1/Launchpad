@@ -1,6 +1,6 @@
 /** External + social links for Hyprpad. Update these to the real handles when live. */
 export const SOCIALS = {
-  twitter: 'https://x.com/hyprpad',
+  twitter: 'https://x.com/Hyprpad',
   telegram: 'https://t.me/hyprpad',
   docs: '#/docs',
 } as const
