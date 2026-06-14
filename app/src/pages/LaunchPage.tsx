@@ -71,7 +71,7 @@ export function LaunchPage() {
       setSteps(['done', 'active', 'idle'])
 
       // Give the big-block switch a moment to take effect on the EVM RPC before sending.
-      await new Promise((r) => setTimeout(r, 4000))
+      await new Promise((r) => setTimeout(r, 7000))
 
       // 2) The launch transaction itself (atomic: token + pool + liquidity + dev buy).
       // Fee recipient: a pasted EVM address routes fees there; an @handle (or empty)
@@ -87,6 +87,9 @@ export function LaunchPage() {
         twitter: xHandle,
         telegram: telegram.trim(),
       })
+      // On mobile especially, the launch tx prompt opens in the wallet app — tell the
+      // user to go confirm it, otherwise the page just sits on "Launching…".
+      push({ kind: 'info', title: 'Confirm the launch in your wallet' })
       const hash = await walletClient.writeContract({
         address: LAUNCHPAD,
         abi: launchpadAbi,
