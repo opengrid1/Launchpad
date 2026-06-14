@@ -37,6 +37,7 @@ const launchpad = { address: LAUNCHPAD, abi: launchpadAbi } as const
 /** Test/dev tokens hidden from the board (lowercased). Direct token links still resolve. */
 const HIDDEN_TOKENS = new Set<string>([
   '0xaf695e1f6049c2b061f1e63724e612af01ee6f28', // ESCROW (escrow test)
+  '0x601103170b0fbbae7847f072b1ab2dbe7c35beaa', // CHAMELEON (test)
   '0xdbc16586eeaaedcc3429bd6b51cd17b323eed8dd', // TEST3
 ])
 
