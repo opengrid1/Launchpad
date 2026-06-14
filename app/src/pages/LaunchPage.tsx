@@ -1,21 +1,17 @@
 import { useRef, useState } from 'react'
-import { parseEther, parseEventLogs, isAddress, zeroAddress, type Address } from 'viem'
+import { parseEventLogs, isAddress, zeroAddress, type Address } from 'viem'
 import { useWallet } from '../lib/wallet'
 import { useToast, errorMessage } from '../lib/toast'
 import { publicClient } from '../lib/chain'
-import { LAUNCHPAD, launchpadAbi } from '../lib/contracts'
+import { launchpadAbi } from '../lib/contracts'
 import { buildTokenURI } from '../lib/metadata'
 import { compressImage } from '../lib/image'
-import { setBigBlocks } from '../lib/bigblocks'
-import { parseAmount } from '../lib/format'
 import { TokenImage } from '../components/TokenImage'
-
-const SUPPLY_WEI = parseEther('1000000000') // fixed 1B supply for every launch
 
 type StepState = 'idle' | 'active' | 'done' | 'failed'
 
 export function LaunchPage() {
-  const { address, walletClient, connect, ensureChain } = useWallet()
+  const { address, walletClient, connect } = useWallet()
   const { push } = useToast()
 
   const [name, setName] = useState('')
@@ -25,106 +21,66 @@ export function LaunchPage() {
   const [website, setWebsite] = useState('')
   const [twitter, setTwitter] = useState('')
   const [telegram, setTelegram] = useState('')
-  const [devBuy, setDevBuy] = useState('')
   const [payout, setPayout] = useState('')
 
   const [launching, setLaunching] = useState(false)
   const [steps, setSteps] = useState<[StepState, StepState, StepState]>(['idle', 'idle', 'idle'])
   const [launchedToken, setLaunchedToken] = useState<string | null>(null)
-  const [restoringBlocks, setRestoringBlocks] = useState(false)
-  const [blocksRestored, setBlocksRestored] = useState(false)
-
-  const devBuyWei = devBuy.trim() === '' ? 0n : parseAmount(devBuy)
 
   const formError =
     name.trim().length === 0 || name.trim().length > 48
       ? 'Name required'
       : symbol.trim().length === 0 || symbol.trim().length > 12
         ? 'Symbol required'
-        : devBuyWei === null
-          ? 'Invalid dev buy'
-          : null
+        : null
 
   async function launch() {
     if (!walletClient || !address || formError) return
     setLaunching(true)
     setLaunchedToken(null)
-    setBlocksRestored(false)
     setSteps(['active', 'idle', 'idle'])
     try {
-      await ensureChain()
-
-      // 1) Enable big blocks. A launch uses ~6M gas, which only fits a HyperEVM big block
-      //    (30M); in small-block mode (2M) the network rejects the tx. We try to flip the
-      //    wallet via the HyperCore L1 action (signed under chainId 1337) — but some
-      //    wallets (e.g. MetaMask) refuse to sign typed-data whose chainId differs from
-      //    the connected chain. If that signature is declined we DON'T abort: big blocks
-      //    may already be enabled for this wallet, so we warn and let the launch proceed.
-      let bigBlocksOn = false
-      for (let attempt = 0; attempt < 2 && !bigBlocksOn; attempt++) {
-        try {
-          await setBigBlocks(walletClient, { address }, true)
-          bigBlocksOn = true
-        } catch {
-          /* retry once, then fall through */
-        }
-      }
-      push(
-        bigBlocksOn
-          ? { kind: 'info', title: 'Big blocks enabled' }
-          : {
-              kind: 'info',
-              title: 'Continuing — big blocks must already be on',
-              detail: 'Your wallet declined the big-block signature. If big blocks are already enabled for this wallet the launch still goes through; otherwise it will fail with a gas-limit error.',
-            },
-      )
-      setSteps(['done', 'active', 'idle'])
-
-      // Give the big-block switch a moment to take effect on the EVM RPC before sending.
-      await new Promise((r) => setTimeout(r, 7000))
-
-      // 2) The launch transaction itself (atomic: token + pool + liquidity + dev buy).
-      // Fee recipient: a pasted EVM address routes fees there; an @handle (or empty)
-      // routes to the connected wallet and is stored as the creator's X for display.
+      const nm = name.trim()
+      const sym = symbol.trim().toUpperCase()
       const payoutTrim = payout.trim()
       const recipient: Address = isAddress(payoutTrim) ? (payoutTrim as Address) : zeroAddress
       const xHandle = payoutTrim.startsWith('@') ? payoutTrim : twitter.trim()
       const tokenURI = buildTokenURI({
-        name: name.trim(),
+        name: nm,
         description: description.trim(),
         image: image.trim(),
         website: website.trim(),
         twitter: xHandle,
         telegram: telegram.trim(),
       })
-      // On mobile especially, the launch tx prompt opens in the wallet app — tell the
-      // user to go confirm it, otherwise the page just sits on "Launching…".
-      push({ kind: 'info', title: 'Confirm the launch in your wallet' })
-      const hash = await walletClient.writeContract({
-        address: LAUNCHPAD,
-        abi: launchpadAbi,
-        functionName: 'createToken',
-        // creator = 0 -> the connected wallet keeps control; fees route to `recipient`
-        // (a pasted address, or 0 to default to the creator). minDevBuyTokens 0 is safe:
-        // the dev buy is atomic with pool creation, nothing can front-run it.
-        args: [name.trim(), symbol.trim().toUpperCase(), tokenURI, SUPPLY_WEI, zeroAddress, recipient, 0n, 0n],
-        value: devBuyWei ?? 0n,
-        account: address,
-        chain: publicClient.chain,
-        // Explicit gas: HyperEVM's eth_estimateGas caps at the small-block limit (2M),
-        // which would reject this ~6-16M launch tx. A fixed limit (well under the 30M
-        // big-block limit) skips estimation so it runs in the big block.
-        gas: 24_000_000n,
+
+      // 1) Gasless authorization — the creator signs the launch params (no gas, no big
+      //    blocks). The relayer needs this to prove the creator authorized the launch.
+      const nonce = Date.now()
+      const message = `Hyprpad launch\nname: ${nm}\nsymbol: ${sym}\ncreator: ${address}\nfeeRecipient: ${recipient}\nnonce: ${nonce}`
+      push({ kind: 'info', title: 'Sign to authorize — free, no gas' })
+      const signature = await walletClient.signMessage({ account: address, message })
+      setSteps(['done', 'active', 'idle'])
+
+      // 2) The relayer submits the launch on your behalf (it pays gas + handles big blocks).
+      const resp = await fetch('/api/launch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nm, symbol: sym, tokenURI, creator: address, feeRecipient: recipient, nonce, signature }),
       })
-      push({ kind: 'info', title: 'Launching — next big block (~1 min)', txHash: hash })
-      const receipt = await publicClient.waitForTransactionReceipt({ hash, timeout: 240_000 })
+      const data = (await resp.json().catch(() => ({}))) as { hash?: `0x${string}`; error?: string }
+      if (!resp.ok || !data.hash) throw new Error(data.error || 'Relayer error')
+
+      // 3) Wait for it to mine (big blocks ~1 min) and read the new token.
+      push({ kind: 'info', title: 'Launching — next big block (~1 min)', txHash: data.hash })
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: data.hash, timeout: 240_000 })
       if (receipt.status !== 'success') throw new Error('Launch transaction reverted')
 
       const [event] = parseEventLogs({ abi: launchpadAbi, logs: receipt.logs, eventName: 'TokenLaunched' })
       const token = event?.args.token ?? null
       setLaunchedToken(token)
-      setSteps(['done', 'done', 'active'])
-      push({ kind: 'success', title: `$${symbol.trim().toUpperCase()} is live`, txHash: hash })
+      setSteps(['done', 'done', 'done'])
+      push({ kind: 'success', title: `$${sym} is live`, txHash: data.hash })
     } catch (err) {
       setSteps((s) => (s[1] === 'active' ? ['done', 'failed', 'idle'] : ['failed', 'idle', 'idle']))
       push({ kind: 'error', title: 'Launch failed', detail: errorMessage(err) })
@@ -133,27 +89,12 @@ export function LaunchPage() {
     }
   }
 
-  async function restoreBlocks() {
-    if (!walletClient || !address) return
-    setRestoringBlocks(true)
-    try {
-      await setBigBlocks(walletClient, { address }, false)
-      setBlocksRestored(true)
-      setSteps(['done', 'done', 'done'])
-      push({ kind: 'success', title: 'Fast blocks restored' })
-    } catch (err) {
-      push({ kind: 'error', title: 'Switch failed', detail: errorMessage(err) })
-    } finally {
-      setRestoringBlocks(false)
-    }
-  }
-
   return (
     <main className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_330px]">
       <section>
         <h1 className="text-2xl font-semibold tracking-tight text-fg">Create a token</h1>
         <p className="mt-1.5 text-sm text-dim">
-          Deploy a live market on HyperSwap V3 in one click. You earn <span className="text-acc">70%</span> of every trade.
+          Deploy a live market on HyperSwap V3 — gasless. You earn <span className="text-acc">70%</span> of every trade.
         </p>
 
         <div className="elev mt-6 rounded-2xl p-5 ring-1 ring-hair sm:p-6">
@@ -198,16 +139,6 @@ export function LaunchPage() {
               setTelegram={setTelegram}
             />
 
-            <Field label="Dev buy · HYPE (optional)">
-              <input
-                value={devBuy}
-                onChange={(e) => setDevBuy(e.target.value)}
-                placeholder="0.0"
-                inputMode="decimal"
-                className={`${inputCls} font-mono`}
-              />
-            </Field>
-
             <div>
               <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">Fees payout</span>
               <input
@@ -232,7 +163,7 @@ export function LaunchPage() {
 
           <div className="mt-6 flex flex-col gap-3 border-t border-hair pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-mono text-[11px] leading-relaxed text-ghost">
-              $4,000 start · 100% supply pooled · you keep 70% of fees
+              $4,000 start · 100% supply pooled · you keep 70% of fees · gasless
             </p>
             {!address ? (
               <button
@@ -273,41 +204,22 @@ export function LaunchPage() {
         </div>
 
         {steps.some((s) => s !== 'idle') && (
-        <div className="elev rounded-2xl p-5 ring-1 ring-hair">
-          <ol className="space-y-3.5">
-            <Step n={1} state={steps[0]} title="Big blocks" />
-            <Step n={2} state={steps[1]} title="Launch" />
-            <Step n={3} state={steps[2]} title="Fast blocks" />
-          </ol>
+          <div className="elev rounded-2xl p-5 ring-1 ring-hair">
+            <ol className="space-y-3.5">
+              <Step n={1} state={steps[0]} title="Authorize (sign)" />
+              <Step n={2} state={steps[1]} title="Relayer launches" />
+              <Step n={3} state={steps[2]} title="Live" />
+            </ol>
 
-          {steps[2] === 'active' && (
-            <div className="mt-4 space-y-2">
-              {launchedToken && (
-                <a
-                  href={`#/t/${launchedToken}`}
-                  className="btn-primary block w-full rounded-xl py-2.5 text-center text-sm font-semibold no-underline"
-                >
-                  Open token →
-                </a>
-              )}
-              <button
-                onClick={() => void restoreBlocks()}
-                disabled={restoringBlocks}
-                className="w-full cursor-pointer rounded-xl py-2.5 text-sm font-bold text-fg ring-1 ring-hair2 transition hover:bg-panel2 disabled:opacity-60"
+            {launchedToken && steps[2] === 'done' && (
+              <a
+                href={`#/t/${launchedToken}`}
+                className="btn-primary mt-4 block w-full rounded-xl py-2.5 text-center text-sm font-semibold no-underline"
               >
-                {restoringBlocks ? 'Switching…' : 'Restore fast blocks'}
-              </button>
-            </div>
-          )}
-          {blocksRestored && launchedToken && (
-            <a
-              href={`#/t/${launchedToken}`}
-              className="btn-primary mt-4 block w-full rounded-xl py-2.5 text-center text-sm font-semibold no-underline"
-            >
-              Open token →
-            </a>
-          )}
-        </div>
+                Open token →
+              </a>
+            )}
+          </div>
         )}
       </aside>
     </main>
