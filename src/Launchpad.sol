@@ -85,6 +85,8 @@ contract Launchpad {
         uint64 createdAt;
         bool tokenIsToken0;
         bool positionWithdrawn;
+        bool feeRecipientLocked;
+        address feeRecipient;
         address pool;
         uint256 positionId;
     }
@@ -135,6 +137,7 @@ contract Launchpad {
     event PlatformFeesClaimed(address indexed treasury, uint256 hypeAmount);
     event PlatformTokenFeesClaimed(address indexed token, address indexed treasury, uint256 tokenAmount);
     event CreatorTransferred(address indexed token, address indexed oldCreator, address indexed newCreator);
+    event FeeRecipientSet(address indexed token, address indexed recipient);
     event PositionWithdrawn(address indexed token, uint256 indexed positionId, address indexed recipient);
     event TreasuryUpdated(address indexed treasury);
     event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
@@ -189,10 +192,13 @@ contract Launchpad {
     /// @param symbol_          ERC20 symbol.
     /// @param tokenURI_        Metadata URI (e.g. ipfs://... JSON with image/description).
     /// @param totalSupply_     Fixed total supply, all of it pooled (18 decimals).
-    /// @param creator_         Who receives the 70% fee stream and dev-buy tokens. Pass
-    ///                         address(0) for msg.sender. A different address than
-    ///                         msg.sender is only allowed for approved relayers, so the
-    ///                         platform's big-block wallet can launch on users' behalf.
+    /// @param creator_         Who controls the token (can redirect the fee payout once and
+    ///                         transfer control). Pass address(0) for msg.sender. A different
+    ///                         address than msg.sender is only allowed for approved relayers,
+    ///                         so the platform's big-block wallet can launch on users' behalf.
+    /// @param feeRecipient_    Where the 70% fee stream is paid. Pass address(0) to default
+    ///                         to the creator. The creator can redirect this once afterwards
+    ///                         via `setFeeRecipient`, after which it is locked permanently.
     /// @param devBuyWhype      Optional dev-buy funding pulled from the creator's WHYPE
     ///                         (creator must approve this contract first). Used by relayed
     ///                         launches so the dev buy stays non-custodial.
@@ -208,6 +214,7 @@ contract Launchpad {
         string calldata tokenURI_,
         uint256 totalSupply_,
         address creator_,
+        address feeRecipient_,
         uint256 devBuyWhype,
         uint256 minDevBuyTokens
     ) external payable nonReentrant returns (address token) {
@@ -225,48 +232,16 @@ contract Launchpad {
         token = address(new LaunchToken(name_, symbol_, tokenURI_, totalSupply_, address(this)));
 
         bool tokenIsToken0 = token < address(whype);
-        (address token0, address token1) =
-            tokenIsToken0 ? (token, address(whype)) : (address(whype), token);
-
-        uint160 sqrtPriceX96 = _sqrtPriceX96(priceWeiPerToken, tokenIsToken0);
-
-        address pool = positionManager.createAndInitializePoolIfNecessary(token0, token1, POOL_FEE, sqrtPriceX96);
-        IHyperswapV3Pool(pool).increaseObservationCardinalityNext(OBSERVATION_CARDINALITY);
-
-        (int24 tickLower, int24 tickUpper) = _singleSidedRange(sqrtPriceX96, tokenIsToken0);
-
-        LaunchToken(token).approve(address(positionManager), totalSupply_);
-        (uint256 positionId,,,) = positionManager.mint(
-            INonfungiblePositionManager.MintParams({
-                token0: token0,
-                token1: token1,
-                fee: POOL_FEE,
-                tickLower: tickLower,
-                tickUpper: tickUpper,
-                amount0Desired: tokenIsToken0 ? totalSupply_ : 0,
-                amount1Desired: tokenIsToken0 ? 0 : totalSupply_,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: address(this),
-                deadline: block.timestamp
-            })
-        );
+        // External self-call: a real call frame keeps createToken's stack within the
+        // via-IR limit (the optimizer would otherwise inline this and overflow it).
+        (address pool, uint256 positionId) = this.createPoolAndSeed(token, tokenIsToken0, totalSupply_, priceWeiPerToken);
 
         // Liquidity rounding can leave a few wei of tokens behind; burn them so the
         // launchpad never holds untracked supply.
         uint256 dust = LaunchToken(token).balanceOf(address(this));
         if (dust > 0) LaunchToken(token).transfer(DEAD, dust);
 
-        launches[token] = Launch({
-            creator: creator,
-            createdAt: uint64(block.timestamp),
-            tokenIsToken0: tokenIsToken0,
-            positionWithdrawn: false,
-            pool: pool,
-            positionId: positionId
-        });
-        allTokens.push(token);
-        _creatorTokens[creator].push(token);
+        _recordLaunch(token, creator, feeRecipient_, tokenIsToken0, pool, positionId);
 
         uint256 devBuyHype = msg.value + devBuyWhype;
         uint256 devBuyTokens = 0;
@@ -376,10 +351,12 @@ contract Launchpad {
         );
     }
 
-    /// @notice Creator withdraws their accumulated 70% — HYPE (native) plus any in-kind tokens.
+    /// @notice Withdraws the accumulated 70% — HYPE (native) plus any in-kind tokens — to the
+    ///         token's `feeRecipient`. Callable by the creator (controller) or the recipient.
     function claimCreatorFees(address token) external nonReentrant {
         Launch storage launch = launches[token];
-        require(msg.sender == launch.creator, "not creator");
+        address recipient = launch.feeRecipient;
+        require(msg.sender == launch.creator || msg.sender == recipient, "not creator");
 
         uint256 hypeAmount = creatorFeesHype[token];
         uint256 tokenAmount = creatorFeesToken[token];
@@ -387,10 +364,24 @@ contract Launchpad {
         creatorFeesHype[token] = 0;
         creatorFeesToken[token] = 0;
 
-        if (tokenAmount > 0) LaunchToken(token).transfer(msg.sender, tokenAmount);
-        if (hypeAmount > 0) _payNative(msg.sender, hypeAmount);
+        if (tokenAmount > 0) LaunchToken(token).transfer(recipient, tokenAmount);
+        if (hypeAmount > 0) _payNative(recipient, hypeAmount);
 
-        emit CreatorFeesClaimed(token, msg.sender, hypeAmount, tokenAmount);
+        emit CreatorFeesClaimed(token, recipient, hypeAmount, tokenAmount);
+    }
+
+    /// @notice Redirects the 70% fee payout to a new address. Can be called only ONCE per
+    ///         token by the creator; after that the recipient is locked permanently.
+    /// @dev Defaults to the creator at launch. This single redirect is how a builder routes
+    ///      fees to a chosen wallet (or an X-linked wallet resolved off-chain).
+    function setFeeRecipient(address token, address newRecipient) external {
+        Launch storage launch = launches[token];
+        require(msg.sender == launch.creator, "not creator");
+        require(newRecipient != address(0), "zero address");
+        require(!launch.feeRecipientLocked, "recipient locked");
+        launch.feeRecipient = newRecipient;
+        launch.feeRecipientLocked = true;
+        emit FeeRecipientSet(token, newRecipient);
     }
 
     /// @notice Treasury withdraws the platform's accumulated 30% (WHYPE side, paid as native HYPE).
@@ -531,6 +522,64 @@ contract Launchpad {
     // ---------------------------------------------------------------------
     // Internals
     // ---------------------------------------------------------------------
+
+    /// @notice Creates+initializes the TOKEN/WHYPE pool and mints the single-sided position.
+    /// @dev Self-call only (from `createToken`). External so it gets its own call frame,
+    ///      keeping `createToken` within the via-IR stack limit.
+    function createPoolAndSeed(address token, bool tokenIsToken0, uint256 totalSupply_, uint256 priceWeiPerToken)
+        external
+        returns (address pool, uint256 positionId)
+    {
+        require(msg.sender == address(this), "internal only");
+        (address token0, address token1) = tokenIsToken0 ? (token, address(whype)) : (address(whype), token);
+        uint160 sqrtPriceX96 = _sqrtPriceX96(priceWeiPerToken, tokenIsToken0);
+
+        pool = positionManager.createAndInitializePoolIfNecessary(token0, token1, POOL_FEE, sqrtPriceX96);
+        IHyperswapV3Pool(pool).increaseObservationCardinalityNext(OBSERVATION_CARDINALITY);
+
+        (int24 tickLower, int24 tickUpper) = _singleSidedRange(sqrtPriceX96, tokenIsToken0);
+
+        LaunchToken(token).approve(address(positionManager), totalSupply_);
+        (positionId,,,) = positionManager.mint(
+            INonfungiblePositionManager.MintParams({
+                token0: token0,
+                token1: token1,
+                fee: POOL_FEE,
+                tickLower: tickLower,
+                tickUpper: tickUpper,
+                amount0Desired: tokenIsToken0 ? totalSupply_ : 0,
+                amount1Desired: tokenIsToken0 ? 0 : totalSupply_,
+                amount0Min: 0,
+                amount1Min: 0,
+                recipient: address(this),
+                deadline: block.timestamp
+            })
+        );
+    }
+
+    /// @dev Writes the launch record and indexes. Split out of `createToken` to keep that
+    ///      function's stack within the via-IR limit. `feeRecipient_` of zero defaults to creator.
+    function _recordLaunch(
+        address token,
+        address creator,
+        address feeRecipient_,
+        bool tokenIsToken0,
+        address pool,
+        uint256 positionId
+    ) internal {
+        launches[token] = Launch({
+            creator: creator,
+            createdAt: uint64(block.timestamp),
+            tokenIsToken0: tokenIsToken0,
+            positionWithdrawn: false,
+            feeRecipientLocked: false,
+            feeRecipient: feeRecipient_ == address(0) ? creator : feeRecipient_,
+            pool: pool,
+            positionId: positionId
+        });
+        allTokens.push(token);
+        _creatorTokens[creator].push(token);
+    }
 
     /// @dev sqrtPriceX96 = sqrt(token1/token0) * 2^96, from a price quoted as
     ///      HYPE wei per 1e18 token units, for either token ordering.

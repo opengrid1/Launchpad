@@ -5,6 +5,8 @@ import { LAUNCHPAD, POOL_FEE, SWAP_ROUTER, WHYPE, launchTokenAbi, launchpadAbi, 
 export type LaunchRow = {
   token: Address
   creator: Address
+  feeRecipient: Address
+  feeRecipientLocked: boolean
   createdAt: number
   pool: Address
   positionWithdrawn: boolean
@@ -60,10 +62,12 @@ export async function fetchLaunchRow(token: Address): Promise<LaunchRow> {
     publicClient.readContract({ ...launchpad, functionName: 'getMarketCapUsd', args: [token] }),
     publicClient.readContract({ ...launchpad, functionName: 'lifetimeFeesHype', args: [token] }),
   ])
-  const [creator, createdAt, , positionWithdrawn, pool] = launch
+  const [creator, createdAt, , positionWithdrawn, feeRecipientLocked, feeRecipient, pool] = launch
   return {
     token,
     creator,
+    feeRecipient,
+    feeRecipientLocked,
     createdAt: Number(createdAt),
     pool,
     positionWithdrawn,

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { parseEther, parseEventLogs, isAddress, type Address } from 'viem'
+import { parseEther, parseEventLogs, isAddress, zeroAddress, type Address } from 'viem'
 import { useWallet } from '../lib/wallet'
 import { useToast, errorMessage } from '../lib/toast'
 import { publicClient } from '../lib/chain'
@@ -77,7 +77,7 @@ export function LaunchPage() {
       // Fee recipient: a pasted EVM address routes fees there; an @handle (or empty)
       // routes to the connected wallet and is stored as the creator's X for display.
       const payoutTrim = payout.trim()
-      const recipient: Address = isAddress(payoutTrim) ? (payoutTrim as Address) : '0x0000000000000000000000000000000000000000'
+      const recipient: Address = isAddress(payoutTrim) ? (payoutTrim as Address) : zeroAddress
       const xHandle = payoutTrim.startsWith('@') ? payoutTrim : twitter.trim()
       const tokenURI = buildTokenURI({
         name: name.trim(),
@@ -91,8 +91,10 @@ export function LaunchPage() {
         address: LAUNCHPAD,
         abi: launchpadAbi,
         functionName: 'createToken',
-        // minDevBuyTokens 0 is safe: the dev buy is atomic with pool creation, nothing can front-run it.
-        args: [name.trim(), symbol.trim().toUpperCase(), tokenURI, SUPPLY_WEI, recipient, 0n, 0n],
+        // creator = 0 -> the connected wallet keeps control; fees route to `recipient`
+        // (a pasted address, or 0 to default to the creator). minDevBuyTokens 0 is safe:
+        // the dev buy is atomic with pool creation, nothing can front-run it.
+        args: [name.trim(), symbol.trim().toUpperCase(), tokenURI, SUPPLY_WEI, zeroAddress, recipient, 0n, 0n],
         value: devBuyWei ?? 0n,
         account: address,
         chain: publicClient.chain,
