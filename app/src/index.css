@@ -32,10 +32,11 @@ html {
   font-family: var(--font-display);
   font-feature-settings: 'cv11', 'ss01';
   -webkit-font-smoothing: antialiased;
-  /* layered depth: charcoal base + very subtle cyan radial glows */
+  /* layered depth: charcoal base + living cyan / mint radial glows */
   background:
-    radial-gradient(1100px 620px at 50% -8%, rgba(63, 224, 207, 0.055), transparent 60%),
-    radial-gradient(1000px 700px at 100% 4%, rgba(63, 224, 207, 0.03), transparent 55%),
+    radial-gradient(1100px 640px at 50% -8%, rgba(63, 224, 207, 0.1), transparent 62%),
+    radial-gradient(900px 620px at 90% 2%, rgba(46, 214, 148, 0.06), transparent 55%),
+    radial-gradient(820px 700px at 4% 14%, rgba(63, 224, 207, 0.055), transparent 55%),
     var(--color-base);
   background-attachment: fixed;
 }
@@ -151,6 +152,39 @@ button:active:not(:disabled) {
   animation: ticker-flash 0.9s ease-out;
 }
 
+/* cyan→mint gradient text for headlines */
+.text-gradient {
+  background: linear-gradient(100deg, #7af0e2 0%, #3fe0cf 45%, #d8fff8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* slow-drifting aurora glows that give surfaces life */
+@keyframes aurora-a {
+  0%, 100% { transform: translate(-8%, -6%) scale(1); }
+  50% { transform: translate(12%, 8%) scale(1.18); }
+}
+@keyframes aurora-b {
+  0%, 100% { transform: translate(8%, 4%) scale(1.1); }
+  50% { transform: translate(-10%, -6%) scale(1); }
+}
+.aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: screen;
+}
+.aurora-a {
+  animation: aurora-a 14s ease-in-out infinite;
+}
+.aurora-b {
+  animation: aurora-b 18s ease-in-out infinite;
+}
+
 .no-scrollbar {
   scrollbar-width: none;
 }
@@ -166,8 +200,8 @@ button:active:not(:disabled) {
   top: -10%;
   bottom: -60%;
   background-image:
-    linear-gradient(to right, rgba(63, 224, 207, 0.16) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(63, 224, 207, 0.16) 1px, transparent 1px);
+    linear-gradient(to right, rgba(63, 224, 207, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(63, 224, 207, 0.22) 1px, transparent 1px);
   background-size: 42px 42px;
   transform: perspective(440px) rotateX(60deg);
   transform-origin: 50% 0%;
