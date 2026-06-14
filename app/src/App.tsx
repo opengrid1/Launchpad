@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Header, type Page } from './components/Header'
+import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import { Board } from './pages/Board'
 import { LaunchPage } from './pages/LaunchPage'
@@ -43,11 +43,10 @@ function useHashRoute(): Route {
 
 export default function App() {
   const route = useHashRoute()
-  const page: Page = route.page
 
   return (
     <div className="min-h-screen">
-      <Header page={page} />
+      <Header />
       <div className="mx-auto max-w-6xl px-4 pb-10 sm:px-6">
         {route.page === 'board' && <Board />}
         {route.page === 'launch' && <LaunchPage />}

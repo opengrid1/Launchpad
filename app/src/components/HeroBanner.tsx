@@ -22,7 +22,7 @@ export function HeroBanner() {
             Launch a token
           </a>
           <a
-            href="#/docs"
+            href="#/whitepaper"
             className="rounded-xl px-5 py-2.5 text-sm font-semibold text-dim no-underline ring-1 ring-hair2 transition hover:text-fg"
           >
             How it works

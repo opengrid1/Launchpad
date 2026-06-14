@@ -1,6 +1,7 @@
 import { LAUNCHPAD } from '../lib/contracts'
 import { explorerAddress } from '../lib/chain'
 import { SOCIALS } from '../lib/links'
+import { Logo } from './Logo'
 
 const YEAR = new Date().getFullYear()
 
@@ -12,7 +13,7 @@ const COLUMNS: ReadonlyArray<{ title: string; links: ReadonlyArray<Link> }> = [
     links: [
       { label: 'Launch a token', href: '#/launch' },
       { label: 'Markets', href: '#/' },
-      { label: 'How it works', href: '#/docs' },
+      { label: 'How it works', href: '#/whitepaper' },
     ],
   },
   {
@@ -75,15 +76,7 @@ export function Footer() {
       <div className="grid grid-cols-2 gap-8 sm:grid-cols-[1.4fr_1fr_1fr_1fr]">
         {/* brand */}
         <div className="col-span-2 sm:col-span-1">
-          <a href="#/" className="flex items-center gap-2.5 no-underline">
-            <span className="btn-primary flex h-8 w-8 items-center justify-center rounded-[10px]">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                <path d="M2 13 L16 13" stroke="#04201c" strokeWidth="2.6" strokeLinecap="round" />
-                <path d="M2 8 Q7 8 9 5.5 T16 3" stroke="#04201c" strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2 3" opacity="0.55" />
-              </svg>
-            </span>
-            <span className="text-[15px] font-semibold tracking-tight text-fg">Hyprpad</span>
-          </a>
+          <Logo />
           <p className="mt-3.5 max-w-[15rem] text-sm leading-relaxed text-ghost">
             Launch a live token market in one click on HyperEVM and keep 70% of every trade.
           </p>
