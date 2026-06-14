@@ -188,3 +188,64 @@ def make_banner_mesh(out, w=1500, h=500):
 
 make_banner_mesh("/tmp/hyprpad-banner2.png")
 print("saved /tmp/hyprpad-banner2.png")
+
+
+# ---------------------------------------------------------------- orbital banner (v3)
+import random
+
+
+def make_banner_v3(out, w=1500, h=500):
+    W, H = w * SS, h * SS
+    img = vgrad(W, H, (9, 15, 19), (5, 9, 12))
+    cx, cy = W * 0.75, H * 0.5
+    glow(img, cx, cy, H * 0.78, alpha=48)
+    glow(img, cx, cy, H * 0.34, alpha=80)
+    rad = H * 0.17
+
+    # concentric tilted rings + satellites, rotated together
+    rings = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    rd = ImageDraw.Draw(rings)
+    for mult, a, wd in [(1.75, 160, SS * 2), (2.6, 95, SS * 2), (3.5, 55, SS)]:
+        rx, ry = rad * mult, rad * mult * 0.40
+        rd.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], outline=(150, 246, 233, a), width=wd)
+    for mult, sd in [(1.75, rad * 0.20), (2.6, rad * 0.15)]:
+        rx = rad * mult
+        s = disc(int(sd * 2), (220, 255, 251), CYAN_HI)
+        rings.alpha_composite(s, (int(cx + rx - sd), int(cy - sd)))
+    rings = rings.rotate(-18, resample=Image.BICUBIC, center=(cx, cy))
+    img.alpha_composite(rings)
+
+    # glowing core planet
+    img.alpha_composite(disc(int(rad * 2), CYAN_HI, CYAN_LO), (int(cx - rad), int(cy - rad)))
+
+    # drifting particles
+    random.seed(7)
+    parts = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    pd = ImageDraw.Draw(parts)
+    for _ in range(46):
+        px, py = random.uniform(W * 0.42, W * 0.99), random.uniform(H * 0.06, H * 0.94)
+        r, a = random.uniform(SS * 0.7, SS * 2.4), random.randint(28, 130)
+        pd.ellipse([px - r, py - r, px + r, py + r], fill=(150, 246, 233, a))
+    img.alpha_composite(parts)
+
+    d = ImageDraw.Draw(img)
+    name = ImageFont.truetype(FONT_BOLD, int(H * 0.205))
+    tag = ImageFont.truetype(FONT_REG, int(H * 0.072))
+    chipf = ImageFont.truetype(FONT_BOLD, int(H * 0.052))
+    lx = W * 0.07
+    d.text((lx, H * 0.32), "Hyprpad", font=name, fill=(245, 246, 248))
+    d.text((lx + 4, H * 0.58), "Launch a token. Earn from every trade.", font=tag, fill=(152, 170, 180))
+
+    # accent pill
+    ct = "70% OF FEES TO CREATORS"
+    cw = d.textlength(ct, font=chipf)
+    px0, py0 = lx + 4, H * 0.72
+    pad = H * 0.035
+    d.rounded_rectangle([px0, py0, px0 + cw + pad * 2, py0 + H * 0.115], radius=H * 0.06, fill=(63, 224, 207, 28), outline=(63, 224, 207, 120), width=SS)
+    d.text((px0 + pad, py0 + H * 0.028), ct, font=chipf, fill=(108, 236, 220))
+
+    img.resize((w, h), Image.LANCZOS).save(out)
+
+
+make_banner_v3("/tmp/hyprpad-banner3.png")
+print("saved /tmp/hyprpad-banner3.png")
