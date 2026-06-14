@@ -6,6 +6,7 @@ import { LaunchPage } from './pages/LaunchPage'
 import { TokenPage } from './pages/Token'
 import { Docs } from './pages/Docs'
 import { HowItWorks } from './pages/HowItWorks'
+import { AdminPage } from './pages/Admin'
 import { Terms, Privacy, Whitepaper } from './pages/Content'
 
 type Route =
@@ -16,6 +17,7 @@ type Route =
   | { page: 'terms' }
   | { page: 'privacy' }
   | { page: 'whitepaper' }
+  | { page: 'admin' }
   | { page: 'token'; address: string }
 
 function parseHash(): Route {
@@ -26,6 +28,7 @@ function parseHash(): Route {
   if (hash === 'terms') return { page: 'terms' }
   if (hash === 'privacy') return { page: 'privacy' }
   if (hash === 'whitepaper') return { page: 'whitepaper' }
+  if (hash === 'admin') return { page: 'admin' }
   const tokenMatch = /^t\/(0x[0-9a-fA-F]{40})$/.exec(hash)
   if (tokenMatch) return { page: 'token', address: tokenMatch[1] }
   return { page: 'board' }
@@ -58,6 +61,7 @@ export default function App() {
         {route.page === 'terms' && <Terms />}
         {route.page === 'privacy' && <Privacy />}
         {route.page === 'whitepaper' && <Whitepaper />}
+        {route.page === 'admin' && <AdminPage />}
         {route.page === 'token' && <TokenPage key={route.address} token={route.address} />}
         <Footer />
       </div>

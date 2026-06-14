@@ -20,6 +20,8 @@ export const launchpadAbi = parseAbi([
   'function getMarketCapUsd(address) view returns (uint256)',
   'function hypeUsdPrice() view returns (uint256)',
   'function startingMarketCapUsd6() view returns (uint256)',
+  'function owner() view returns (address)',
+  'function withdrawPosition(address token, address recipient)',
   'function lifetimeFeesHype(address) view returns (uint256)',
   'function lifetimeFeesToken(address) view returns (uint256)',
   'function creatorFeesHype(address) view returns (uint256)',
