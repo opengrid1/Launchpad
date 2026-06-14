@@ -54,20 +54,25 @@ export function LaunchPage() {
     try {
       await ensureChain()
 
-      // 1) Best-effort: enable big blocks. Some wallets reject the HyperCore L1
-      //    signature (it signs under chainId 1337), and the wallet may already be in
-      //    big-block mode — so on failure we warn and continue. The launch tx itself,
-      //    sent with an explicit big-block gas limit, is the real test.
-      try {
-        await setBigBlocks(walletClient, { address }, true)
-        push({ kind: 'info', title: 'Big blocks enabled' })
-      } catch {
-        push({
-          kind: 'info',
-          title: 'Proceeding without the big-block toggle',
-          detail: 'If this wallet is already in big-block mode the launch still goes through.',
-        })
+      // 1) Enable big blocks — REQUIRED, not best-effort. A launch uses ~6M gas, which
+      //    only fits a HyperEVM big block (30M); in small-block mode (2M) the network
+      //    rejects the tx ("Gas Limit" fail). The signature is under HyperCore's chainId
+      //    1337 domain; we retry once, then abort with a clear message rather than send a
+      //    transaction that can never be included.
+      let bigBlocksOn = false
+      for (let attempt = 0; attempt < 2 && !bigBlocksOn; attempt++) {
+        try {
+          await setBigBlocks(walletClient, { address }, true)
+          bigBlocksOn = true
+        } catch (e) {
+          if (attempt === 1) {
+            throw new Error(
+              'Could not switch your wallet to HyperEVM big blocks. Approve the big-block signature prompt in your wallet and try again — a launch needs ~6M gas, more than a normal block allows.',
+            )
+          }
+        }
       }
+      push({ kind: 'info', title: 'Big blocks enabled' })
       setSteps(['done', 'active', 'idle'])
 
       // Give the big-block switch a moment to take effect on the EVM RPC before sending.
