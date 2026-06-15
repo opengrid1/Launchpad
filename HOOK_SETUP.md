@@ -23,10 +23,14 @@ cp /path/to/Launchpad/src/OFAFeeHook.sol src/
 Remappings (`@uniswap/v4-core/`, `@uniswap/v4-periphery/`) come with the template.
 
 ## 2. Mine the hook address + deploy
-The hook needs the `AFTER_SWAP | AFTER_SWAP_RETURNS_DELTA` flag bits in its address. Use
-`HookMiner` (ships with the template):
+The hook needs `BEFORE_SWAP | BEFORE_SWAP_RETURNS_DELTA | AFTER_SWAP | AFTER_SWAP_RETURNS_DELTA`
+flag bits in its address (it fees the ETH input on buys via beforeSwap, and the ETH output on
+sells via afterSwap). Use `HookMiner` (ships with the template):
 ```solidity
-uint160 flags = uint160(Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG);
+uint160 flags = uint160(
+    Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG
+        | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG
+);
 bytes memory args = abi.encode(POOL_MANAGER, OFA_TOKEN, 200); // 2%
 (address hookAddr, bytes32 salt) = HookMiner.find(CREATE2_DEPLOYER, flags, type(OFAFeeHook).creationCode, args);
 OFAFeeHook hook = new OFAFeeHook{salt: salt}(IPoolManager(POOL_MANAGER), IOFADistributor(OFA_TOKEN), 200);
@@ -65,7 +69,11 @@ Buyers' ETH fills it; you (the position-NFT holder) collect LP fees and can mana
 - Only after this passes — and ideally an audit — consider mainnet.
 
 ## Open items to validate in testing
-- Fee currency: on some swap directions the unspecified side is OFA, not ETH. Confirm the
-  intended behaviour (forward ETH; sweep/convert token-side) matches what you want.
-- Rounding / minimum fee amounts.
-- Gas cost of forwarding on every swap.
+- **Delta sign conventions** (the big one): confirm `beforeSwap` taking the ETH fee from the
+  input (BeforeSwapDelta) and `afterSwap` taking it from the ETH output both balance the
+  PoolManager books and don't revert. `test/OFAFeeHook.t.sol` asserts a holder's claimable ETH
+  rises after **both** a buy and a sell — that's the core check.
+- Exact-output swaps are intentionally **not** fee-charged (kept simple); confirm they still
+  execute fine.
+- Native-ETH `take` + forwarding inside the hook (re-entrancy safety, gas).
+- Rounding / minimum fee amounts, and behaviour when `eligibleSupply == 0` (fee held, `flushEth`).
