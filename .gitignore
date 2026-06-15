@@ -2,3 +2,6 @@ out/
 cache/
 lib/
 broadcast/
+
+# node (deploy script deps)
+node_modules/

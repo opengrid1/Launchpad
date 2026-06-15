@@ -1,0 +1,9 @@
+{
+  "name": "ofa-deploy",
+  "private": true,
+  "description": "Deps for the OFA node deploy script (script/deploy.mjs): compile + deploy OFAToken and OFABondingCurve.",
+  "dependencies": {
+    "ethers": "^6.16.0",
+    "solc": "^0.8.35"
+  }
+}
