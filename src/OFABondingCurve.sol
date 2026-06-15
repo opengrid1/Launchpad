@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 interface IERC20 {
     function transfer(address to, uint256 value) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
+    function totalSupply() external view returns (uint256);
 }
 
 interface IOFAToken {
@@ -187,5 +188,11 @@ contract OFABondingCurve {
     /// @notice Real ETH currently held by the curve (claimable via pullLiquidity).
     function ethInCurve() external view returns (uint256) {
         return address(this).balance;
+    }
+
+    /// @notice Fully-diluted valuation in wei of ETH (current price x total supply).
+    ///         Multiply by the ETH/USD price off-chain to get USD market cap.
+    function fdvInEth() external view returns (uint256) {
+        return (priceWeiPerToken() * token.totalSupply()) / 1e18;
     }
 }
