@@ -3,6 +3,8 @@
   "private": true,
   "description": "Deps for the OFA node deploy script (script/deploy.mjs): compile + deploy OFAToken and OFABondingCurve.",
   "dependencies": {
+    "@uniswap/v4-core": "^1.0.2",
+    "@uniswap/v4-periphery": "^1.0.3",
     "ethers": "^6.16.0",
     "solc": "^0.8.35"
   }
