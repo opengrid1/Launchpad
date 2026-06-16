@@ -57,6 +57,58 @@ export function Create({ onBack }: { onBack: () => void }) {
             you never hold unsold tokens, and the LP is burned on success.
           </p>
 
+          {/* How it works — explains the mechanism and why the buyers' raise becomes locked liquidity */}
+          <section className="mt-6 rounded-2xl bg-ink-900 p-5 ring-1 ring-ink-700">
+            <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-mint-400">How it works</h2>
+            <ol className="mt-4 space-y-3.5 text-[13px] leading-relaxed text-fog-300">
+              <li className="flex gap-3">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-mint-500/12 font-mono text-[11px] text-mint-300 ring-1 ring-mint-500/25">1</span>
+                <span>
+                  <span className="font-semibold text-fog-100">One flat price, no bonding curve.</span> Every buyer
+                  pays the same rate in HYPE — the first buyer and the last buyer get identical terms. Overpayment
+                  past the hard cap or your wallet cap is refunded in the same transaction.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-mint-500/12 font-mono text-[11px] text-mint-300 ring-1 ring-mint-500/25">2</span>
+                <span>
+                  <span className="font-semibold text-fog-100">Buyers fund the liquidity.</span> The HYPE raised from
+                  the sale is what seeds the pool — the share below (≥ 50%) is paired with the reserved tokens and
+                  deposited to the DEX on finalize. There's no separate LP step and the team puts up nothing: the
+                  market the buyers will trade in is built out of their own raise.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-mint-500/12 font-mono text-[11px] text-mint-300 ring-1 ring-mint-500/25">3</span>
+                <span>
+                  <span className="font-semibold text-fog-100">LP is burned, listing = sale price.</span> The pool's
+                  token side scales with how much of the sale filled, so the DEX always opens at exactly the sale
+                  price — no instant arb on partial fills. LP tokens are sent to the dead address, so liquidity is
+                  locked forever and a liquidity-pull rug is impossible.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-mint-500/12 font-mono text-[11px] text-mint-300 ring-1 ring-mint-500/25">4</span>
+                <span>
+                  <span className="font-semibold text-fog-100">Soft cap protects buyers.</span> If the soft cap is
+                  missed, the launch fails and every buyer can refund their full contribution. <code>finalize</code>{' '}
+                  is permissionless, so funds can never be held hostage.
+                </span>
+              </li>
+            </ol>
+            <p className="mt-4 text-[12px] text-fog-500">
+              Full mechanism & contracts:{' '}
+              <a
+                href="https://av4hook.xyz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-mint-300 underline-offset-2 transition hover:underline"
+              >
+                av4hook.xyz
+              </a>
+            </p>
+          </section>
+
           <section className="mt-7 space-y-7">
             <div className="rounded-2xl bg-ink-900 p-5 ring-1 ring-ink-700">
               <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-mint-400">01 · Token</h2>

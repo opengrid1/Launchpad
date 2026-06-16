@@ -40,6 +40,14 @@ export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Ro
       </nav>
 
       <div className="flex items-center gap-3">
+        <a
+          href="https://av4hook.xyz"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden font-mono text-xs text-fog-500 transition hover:text-mint-300 md:inline"
+        >
+          av4hook.xyz
+        </a>
         <span className="hidden items-center gap-1.5 font-mono text-xs text-fog-500 md:flex">
           <span className="h-1.5 w-1.5 rounded-full bg-mint-400 live-dot" />
           HyperEVM · 999
