@@ -59,6 +59,7 @@ contract MockPair {
     }
 
     function swap(uint256 a0, uint256 a1, address to, bytes calldata) external {
+        require(to != token0 && to != token1, "INVALID_TO"); // mirror UniswapV2
         if (a0 > 0) IERC20Like(token0).transfer(to, a0);
         if (a1 > 0) IERC20Like(token1).transfer(to, a1);
     }

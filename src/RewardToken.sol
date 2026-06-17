@@ -17,6 +17,38 @@ interface IWHYPE {
     function balanceOf(address) external view returns (uint256);
 }
 
+interface IRewardSwapper {
+    function flush() external returns (uint256);
+}
+
+/// @notice Receives the pair's WHYPE output during swap-back and returns native
+///         HYPE to the token. Needed because UniswapV2 forbids `swap(to=...)`
+///         from being either pair token — and the token is one of them — so the
+///         swap output must land on this separate address first.
+contract RewardSwapper {
+    address public immutable token;
+    address public immutable WHYPE;
+
+    constructor(address token_, address whype_) {
+        token = token_;
+        WHYPE = whype_;
+    }
+
+    /// @notice Unwrap any WHYPE held and forward the native HYPE to the token.
+    function flush() external returns (uint256 amount) {
+        require(msg.sender == token, "only token");
+        uint256 wbal = IWHYPE(WHYPE).balanceOf(address(this));
+        if (wbal > 0) IWHYPE(WHYPE).withdraw(wbal);
+        amount = address(this).balance;
+        if (amount > 0) {
+            (bool ok,) = token.call{value: amount}("");
+            require(ok, "forward failed");
+        }
+    }
+
+    receive() external payable {}
+}
+
 /// @title RewardToken
 /// @notice Fixed-supply reflections token (HALV-style) with a 5%/5% buy/sell tax
 ///         paid back to holders as TWO rewards, funded purely by trading volume:
@@ -67,6 +99,8 @@ contract RewardToken {
 
     // --- Tax & swap-back ---
     address public immutable WHYPE;
+    /// @notice Helper that receives the pair's WHYPE output and returns HYPE.
+    address public immutable swapper;
 
     /// @notice The pair the token swaps its tax against (TOKEN/WHYPE).
     address public pair;
@@ -135,6 +169,7 @@ contract RewardToken {
         symbol = symbol_;
         totalSupply = supply_;
         WHYPE = whype_;
+        swapper = address(new RewardSwapper(address(this), whype_));
         owner = msg.sender;
 
         swapThreshold = supply_ / 2_000; // 0.05% of supply
@@ -255,13 +290,12 @@ contract RewardToken {
         // Move the tax tokens into the pair (untaxed: this contract is exempt).
         _transfer(address(this), pair, tokenIn);
 
+        // Output must go to the swapper, not this token (UniswapV2 INVALID_TO).
         (uint256 amount0Out, uint256 amount1Out) = _isToken0 ? (uint256(0), amountOut) : (amountOut, uint256(0));
-        p.swap(amount0Out, amount1Out, address(this), "");
+        p.swap(amount0Out, amount1Out, swapper, "");
 
-        // Unwrap the WHYPE we just received into native HYPE.
-        uint256 wbal = IWHYPE(WHYPE).balanceOf(address(this));
-        IWHYPE(WHYPE).withdraw(wbal);
-        return wbal;
+        // The swapper unwraps the WHYPE and returns native HYPE to this token.
+        return IRewardSwapper(swapper).flush();
     }
 
     /// @dev UniswapV2 constant-product output (0.30% fee).
