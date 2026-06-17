@@ -6,21 +6,20 @@
 <title>HyperYield (HYLD)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,600;9..144,650&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#08110f;
-    --panel:#0c1714;
-    --ink:#e8f2ed;
-    --ink-soft:#a6bcb3;
-    --muted:#6d847c;
-    --rule:#17251f;
-    --rule-strong:#28393333;
-    --rule-2:#283b35;
-    --credit:#98fce4;
-    --debit:#f0675a;
-    --field:#0d1a17;
-    --focus:#98fce4;
+    --paper:#010006;     /* near-black, faint blue */
+    --panel:#070611;
+    --ink:#dff7ee;
+    --ink-soft:#8fb0a6;
+    --muted:#5f7b72;
+    --rule:#10171b;
+    --rule-2:#1d2a2a;
+    --credit:#00ffa3;    /* neon mint */
+    --debit:#ff5a4d;     /* burn red */
+    --field:#06090e;
+    --focus:#00ffa3;
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
@@ -28,16 +27,16 @@
     font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     font-size:15px;line-height:1.55}
   a{color:inherit}
-  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+  .mono{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
   .wrap{max-width:880px;margin:0 auto;padding:0 26px}
-  h2{font-family:"Fraunces",Georgia,serif;font-weight:600;margin:0;letter-spacing:-.01em}
+  h2{font-family:"Orbitron",sans-serif;font-weight:700;margin:0;letter-spacing:.01em}
   .lbl{font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--muted)}
 
   /* letterhead */
   header{border-bottom:1px solid var(--rule-2)}
   .lh{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 0}
-  .lh .mark{font-family:"Fraunces",serif;font-weight:650;font-size:23px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
-  .lh .mark::before{content:"";width:8px;height:8px;background:var(--credit);display:inline-block}
+  .lh .mark{font-family:"Orbitron",sans-serif;font-weight:900;font-size:22px;letter-spacing:.04em;display:flex;align-items:center;gap:10px;text-shadow:0 0 22px rgba(0,255,163,.28)}
+  .lh .mark::before{content:"";width:8px;height:8px;background:var(--credit);display:inline-block;box-shadow:0 0 10px rgba(0,255,163,.6)}
   .lh .desc{font-size:11.5px;color:var(--muted);margin-top:2px;letter-spacing:.04em}
   .lh nav{display:flex;align-items:center;gap:20px}
   .lh nav a{font-size:13px;color:var(--ink-soft);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:2px}
@@ -55,7 +54,7 @@
   .meta .m{padding:15px 18px 16px;border-right:1px solid var(--rule)}
   .meta .m:first-child{padding-left:0}
   .meta .m:last-child{border-right:0;padding-right:0}
-  .meta .mv{font-family:"IBM Plex Mono",monospace;font-size:13.5px;margin-top:8px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .meta .mv{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:13.5px;margin-top:8px;color:var(--ink);font-variant-numeric:tabular-nums}
   .meta .mv .s{color:var(--muted)}
   @media(max-width:560px){.meta{grid-template-columns:1fr;}.meta .m{border-right:0;border-bottom:1px solid var(--rule);padding:13px 0}.meta .m:last-child{border-bottom:0}}
 
@@ -67,18 +66,18 @@
   .cb-fine{margin:13px 0 0;font-size:12.5px;color:var(--muted);min-height:1em}
 
   .amts{display:flex;gap:54px;margin-top:18px;flex-wrap:wrap}
-  .amt .n{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(38px,8vw,58px);line-height:.92;letter-spacing:-.025em;color:var(--ink-soft);font-variant-numeric:tabular-nums}
-  .amt .n.live{color:var(--credit)}
-  .amt .u{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.04em;color:var(--muted);margin-top:11px;text-transform:uppercase}
+  .amt .n{font-family:"Orbitron",sans-serif;font-weight:700;font-size:clamp(36px,7.5vw,54px);line-height:.95;letter-spacing:-.01em;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .amt .n.live{color:var(--credit);text-shadow:0 0 26px rgba(0,255,163,.30)}
+  .amt .u{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:12px;letter-spacing:.04em;color:var(--muted);margin-top:11px;text-transform:uppercase}
   .claimrow{display:flex;align-items:center;gap:14px;margin-top:24px;flex-wrap:wrap}
-  .txline{font-size:12.5px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+  .txline{font-size:12.5px;color:var(--muted);font-family:"Share Tech Mono","IBM Plex Mono",monospace}
   .txline.ok{color:var(--credit)} .txline.err{color:var(--debit)}
 
   .acct{display:flex;gap:34px;flex-wrap:wrap;margin-top:26px;padding-top:16px;border-top:1px solid var(--rule)}
   .acct .f{min-width:120px}
-  .acct .fv{font-family:"IBM Plex Mono",monospace;font-size:15px;margin-top:6px;font-variant-numeric:tabular-nums}
+  .acct .fv{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:15px;margin-top:6px;font-variant-numeric:tabular-nums}
   .acct .fv .u{color:var(--muted);font-size:11.5px;margin-left:4px}
-  .acct .a{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-soft);word-break:break-all;margin-top:6px}
+  .acct .a{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:12px;color:var(--ink-soft);word-break:break-all;margin-top:6px}
   .tag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--rule-2);padding:2px 7px;color:var(--muted);margin-left:8px;white-space:nowrap}
   .tag.elig{color:var(--credit);border-color:var(--credit)} .tag.excl{color:var(--debit);border-color:var(--debit)}
 
@@ -91,9 +90,9 @@
   .be.debit .mk{background:var(--debit)}
   .be.credit .mk{background:var(--credit)}
   .be.plain .mk{background:var(--rule-2)}
-  .be .bt{font-family:"Fraunces",serif;font-size:15.5px}
+  .be .bt{font-family:"Orbitron",sans-serif;font-size:15.5px}
   .be .bd{font-size:13px;color:var(--ink-soft);margin-top:3px}
-  .be .bd .fn{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted)}
+  .be .bd .fn{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted)}
   .be.indent{padding-left:18px;border-bottom:1px dotted var(--rule)}
   .be.indent .bt{font-size:14px;color:var(--ink-soft);font-family:ui-sans-serif,system-ui,sans-serif}
 
@@ -103,7 +102,7 @@
   .figs h2{font-size:17px}
   .srow{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--rule)}
   .srow .k{font-size:13px;color:var(--ink-soft)} .srow .k .s{display:block;color:var(--muted);font-size:11px;margin-top:1px}
-  .srow .v{font-family:"IBM Plex Mono",monospace;font-size:13.5px;text-align:right;font-variant-numeric:tabular-nums}
+  .srow .v{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:13.5px;text-align:right;font-variant-numeric:tabular-nums}
   .srow .v .s{color:var(--muted);font-size:11px}
   .splitwrap{padding:13px 0 4px}
   .splitbar{height:7px;border:1px solid var(--rule-2);display:flex;overflow:hidden;margin-top:8px}
@@ -112,14 +111,15 @@
   .updated{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:12px;color:var(--muted)}
   .updated button{all:unset;cursor:pointer;color:var(--ink-soft);border-bottom:1px solid var(--rule-2);padding-bottom:1px}
   .updated button:hover{color:var(--ink)}
-  .flash{animation:flash 1.1s ease-out}@keyframes flash{0%{background:#123029}100%{background:transparent}}
+  .flash{animation:flash 1.1s ease-out}@keyframes flash{0%{background:rgba(0,255,163,.12)}100%{background:transparent}}
+  .updated #updated{font-family:"Share Tech Mono","IBM Plex Mono",monospace;letter-spacing:.02em}
 
   /* references + candor */
   .trans{padding:30px 0 10px}
   .trans h2{font-size:17px;margin-bottom:14px}
   .ref .r{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--rule)}
   .ref .rk{font-size:13px;color:var(--ink-soft)}
-  .ref .rv{display:flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+  .ref .rv{display:flex;align-items:center;gap:8px;font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:12.5px}
   .ref .rv a{border-bottom:1px solid var(--rule-2)} .ref .rv button{all:unset;cursor:pointer;color:var(--muted);display:inline-flex}
   .ref .rv button:hover{color:var(--ink)}
   .candid{margin-top:20px;font-size:12.5px;color:var(--muted);max-width:74ch}
@@ -208,7 +208,7 @@
     <div class="srow"><span class="k">HYPE reserve<span class="s">funds instant HYPE on buys</span></span><span class="v" id="buffer">…</span></div>
     <div class="srow"><span class="k">Queued tax to convert<span class="s">swapped to HYPE on the next sell</span></span><span class="v" id="pending">…</span></div>
     <div class="srow"><span class="k">Rewarded supply<span class="s">excludes the pool and treasury</span></span><span class="v" id="elig">…</span></div>
-    <div class="updated"><span id="updated">not loaded</span><button id="refresh">Refresh figures</button></div>
+    <div class="updated"><span id="updated">[ NOT LOADED ]</span><button id="refresh">Refresh figures</button></div>
   </section>
 
   <!-- REFERENCES + CANDOR -->
@@ -277,10 +277,10 @@ function setRef(key,addr){ const span=document.querySelector(`.rv[data-addr="${k
   const a=span.querySelector("a"); a.textContent=short(addr); a.href=`${CONFIG.explorer}/address/${addr}`;
   copyBtn(span.querySelector("button"),addr); }
 function flashSet(id,html){ const el=$(id); if(el.innerHTML!==html&&prev[id]!==undefined){el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash");} el.innerHTML=html; prev[id]=html; }
-function stamp(){ $("updated").textContent="updated "+new Date().toLocaleTimeString(); }
+function stamp(){ $("updated").textContent="[ HYPEREVM, READ "+new Date().toLocaleTimeString()+" ]"; }
 
 async function loadState(){
-  $("updated").textContent="reading chain…";
+  $("updated").textContent="[ READING HYPEREVM... ]";
   try{
     const [buy,sell,split,buffer,pending,elig,supply,pair,owner] = await Promise.all([
       read.buyTaxBps(),read.sellTaxBps(),read.hypeShareBps(),read.hypeBuffer(),
@@ -299,7 +299,7 @@ async function loadState(){
     setRef("token",CONFIG.token); setRef("pair",pair); setRef("owner",owner); setRef("whype",CONFIG.whype);
     stamp();
     if(connected) await loadAccount(connected);
-  }catch(e){ $("updated").textContent="RPC unavailable, try refresh"; }
+  }catch(e){ $("updated").textContent="[ RPC ERROR, REFRESH ]"; }
 }
 
 async function loadAccount(addr){
