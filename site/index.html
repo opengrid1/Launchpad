@@ -49,12 +49,15 @@
   .lh nav{display:flex;align-items:center;gap:20px}
   .lh nav a{font-size:13px;color:var(--ink-soft);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:2px}
   .lh nav a:hover{color:var(--ink);border-bottom-color:var(--rule-2)}
-  .btn{all:unset;cursor:pointer;font-size:13px;font-weight:600;padding:10px 16px;border:1px solid var(--credit);
-    background:var(--credit);color:#04100d;text-align:center;white-space:nowrap}
-  .btn:hover{background:#b6ffef;border-color:#b6ffef}
-  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule-2);font-weight:500}
-  .btn.ghost:hover{background:var(--panel)}
-  .btn[disabled]{cursor:not-allowed;opacity:.4}
+  .btn{all:unset;cursor:pointer;font-size:13.5px;font-weight:700;letter-spacing:.01em;padding:12px 20px;border-radius:11px;
+    background:linear-gradient(180deg,#4dffc8,#00ffa3);color:#04100d;text-align:center;white-space:nowrap;
+    box-shadow:0 0 0 1px rgba(0,255,163,.35), 0 12px 30px -12px rgba(0,255,163,.7);
+    transition:transform .12s ease, box-shadow .12s ease, background .12s ease}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 0 0 1px rgba(0,255,163,.6), 0 18px 38px -14px rgba(0,255,163,.9)}
+  .btn:active{transform:translateY(0)}
+  .btn.ghost{background:none;color:var(--ink-soft);box-shadow:inset 0 0 0 1px var(--rule-2);font-weight:600}
+  .btn.ghost:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--credit);transform:none}
+  .btn[disabled]{cursor:not-allowed;opacity:.4;box-shadow:0 0 0 1px rgba(0,255,163,.25);transform:none}
   @media(max-width:560px){.lh nav a{display:none}.lh .desc{display:none}}
 
   /* statement metadata band */
@@ -119,10 +122,15 @@
   .srow .k{font-size:13px;color:var(--ink-soft)} .srow .k .s{display:block;color:var(--muted);font-size:11px;margin-top:1px}
   .srow .v{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:13.5px;text-align:right;font-variant-numeric:tabular-nums}
   .srow .v .s{color:var(--muted);font-size:11px}
-  .splitwrap{padding:13px 0 4px}
-  .splitbar{height:7px;border:1px solid var(--rule-2);display:flex;overflow:hidden;margin-top:8px}
-  .splitbar i{display:block;height:100%}.splitbar .t{background:var(--ink-soft)}.splitbar .h{background:var(--credit)}
-  .splitkey{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+  .split{display:flex;align-items:center;gap:24px;padding:16px 0 18px;border-bottom:1px solid var(--rule)}
+  .pie{width:104px;height:104px;flex:none;filter:drop-shadow(0 0 10px rgba(0,255,163,.25))}
+  .pie .track{fill:none;stroke:#13211d;stroke-width:6}
+  .pie .seg{fill:none;stroke-width:6;stroke-linecap:butt;transition:stroke-dasharray .5s ease}
+  .legend{display:flex;flex-direction:column;gap:11px;font-size:13.5px;min-width:0}
+  .legend .li{display:flex;align-items:center;gap:10px;color:var(--ink-soft)}
+  .legend .dot{width:11px;height:11px;border-radius:3px;flex:none}
+  .legend .pct{font-family:"Share Tech Mono","IBM Plex Mono",monospace;color:var(--ink);margin-left:auto;padding-left:20px}
+  .legend small{color:var(--muted);font-size:11.5px;margin-top:2px}
   .updated{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:12px;color:var(--muted)}
   .updated button{all:unset;cursor:pointer;color:var(--ink-soft);border-bottom:1px solid var(--rule-2);padding-bottom:1px}
   .updated button:hover{color:var(--ink)}
@@ -153,7 +161,7 @@
   <div class="wrap lh">
     <div>
       <div class="mark"><svg class="logo" viewBox="0 0 256 256" aria-hidden="true"><defs><linearGradient id="hd" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#eafff8"/><stop offset="30%" stop-color="#3dffc0"/><stop offset="62%" stop-color="#00ffa3"/><stop offset="100%" stop-color="#007a4d"/></linearGradient><radialGradient id="hs" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff" stop-opacity=".9"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><path d="M128 40 C128 40 178 104 178 138 A50 50 0 1 1 78 138 C78 104 128 40 128 40 Z" fill="url(#hd)"/><ellipse cx="108" cy="118" rx="13" ry="25" fill="url(#hs)" transform="rotate(-24 108 118)" opacity=".8"/></svg>HYLD</div>
-      <div class="desc">HyperYield holder rewards</div>
+      <div class="desc">Earn HYPE and HYLD just by holding</div>
     </div>
     <nav>
       <a href="#how">How it is booked</a>
@@ -165,65 +173,72 @@
 
 <div class="wrap">
 
-  <!-- statement metadata, live -->
+  <!-- quick facts -->
   <div class="meta">
-    <div class="m"><div class="lbl">Instrument</div><div class="mv">HyperYield (HYLD)</div></div>
-    <div class="m"><div class="lbl">Fixed supply</div><div class="mv" id="supply">…<span class="s">HYLD</span></div></div>
-    <div class="m"><div class="lbl">Trade tax</div><div class="mv"><span id="buytax">…</span> buy <span class="s">/</span> <span id="selltax">…</span> sell <span class="s">/</span> 0% transfer</div></div>
+    <div class="m"><div class="lbl">Token</div><div class="mv">HyperYield (HYLD)</div></div>
+    <div class="m"><div class="lbl">Supply</div><div class="mv" id="supply">…<span class="s">HYLD</span></div></div>
+    <div class="m"><div class="lbl">Tax</div><div class="mv"><span id="buytax">…</span> buy, <span id="selltax">…</span> sell <span class="s">(free to send)</span></div></div>
   </div>
 
-  <!-- THE CREDIT -->
+  <!-- THE REWARDS BOX -->
   <section class="credit">
     <div class="top">
-      <span class="lbl">Creditable to your wallet</span>
+      <span class="lbl">Your rewards</span>
       <span class="tag" id="whotag" hidden>earning</span>
     </div>
 
     <div>
       <div class="amts">
-        <div class="amt"><div class="n mono" id="cl-hyld">0</div><div class="u">HYLD owed</div></div>
-        <div class="amt"><div class="n mono" id="cl-hype">0</div><div class="u">HYPE owed</div></div>
+        <div class="amt"><div class="n mono" id="cl-hyld">0</div><div class="u">HYLD to claim</div></div>
+        <div class="amt"><div class="n mono" id="cl-hype">0</div><div class="u">HYPE to claim</div></div>
       </div>
       <div class="claimrow">
         <button class="btn" id="claim">Connect wallet</button>
         <button class="btn ghost" id="acct-refresh" hidden>Refresh</button>
         <span class="txline" id="txline"></span>
       </div>
-      <p class="cb-fine" id="connecthint">Connect on HyperEVM to load your wallet and claim. The contract figures below are public, no wallet needed.</p>
+      <p class="cb-fine" id="connecthint">Connect your wallet to see what you have earned and claim it. Everything below is public, no wallet needed.</p>
       <div class="acct">
-        <div class="f"><div class="lbl">HYLD held</div><div class="fv mono" id="balance">0<span class="u">HYLD</span></div></div>
-        <div class="f"><div class="lbl">Your share of rewards</div><div class="fv mono" id="share">0<span class="u">%</span></div></div>
+        <div class="f"><div class="lbl">You hold</div><div class="fv mono" id="balance">0<span class="u">HYLD</span></div></div>
+        <div class="f"><div class="lbl">Your share</div><div class="fv mono" id="share">0<span class="u">%</span></div></div>
         <div class="f" style="flex:1;min-width:200px"><div class="lbl">Wallet</div><div class="a" id="whoaddr">not connected</div></div>
       </div>
     </div>
   </section>
 
-  <!-- DOUBLE ENTRY: how the 5% is booked -->
+  <!-- how you earn -->
   <section class="book" id="how">
-    <h2>How the tax is booked</h2>
-    <div class="be debit"><span class="mk"></span><div><div class="bt">Trade is taxed</div><div class="bd">A buy or sell through the pair is charged 5% in HYLD. Wallet to wallet transfers are never taxed. <span class="fn">_taxFor</span></div></div></div>
-    <div class="be indent credit"><span class="mk"></span><div><div class="bt">credited as a HYLD reward</div><div class="bd">Part of the tax stays as HYLD and is credited to holders at once.</div></div></div>
-    <div class="be indent credit"><span class="mk"></span><div><div class="bt">credited as a HYPE reward</div><div class="bd">The rest is paid as HYPE from the reserve, so it lands even mid buy when the pair is locked. <span class="fn">_distributeTax</span></div></div></div>
-    <div class="be plain"><span class="mk"></span><div><div class="bt">Booked to you</div><div class="bd">Both rewards accrue pro rata to the HYLD you hold, with no retroactive dilution. You withdraw both at once. <span class="fn">claim</span></div></div></div>
+    <h2>How you earn</h2>
+    <div class="be debit"><span class="mk"></span><div><div class="bt">Someone buys or sells</div><div class="bd">Every buy and sell pays a 5% fee. Sending HYLD wallet to wallet is always free.</div></div></div>
+    <div class="be indent credit"><span class="mk"></span><div><div class="bt">Half comes back as HYLD</div><div class="bd">Added straight to your wallet the second the trade happens.</div></div></div>
+    <div class="be indent credit"><span class="mk"></span><div><div class="bt">Half comes back as HYPE</div><div class="bd">Paid to you in HYPE right away, even on buys.</div></div></div>
+    <div class="be plain"><span class="mk"></span><div><div class="bt">You claim anytime</div><div class="bd">The more HYLD you hold, the bigger your share. Tap claim to take your HYLD and HYPE together.</div></div></div>
   </section>
 
-  <!-- LIVE CONTRACT FIGURES -->
+  <!-- LIVE NUMBERS -->
   <section class="figs">
-    <div class="top"><h2>Contract figures</h2></div>
-    <div class="splitwrap">
-      <div class="srow" style="border-bottom:0;padding-bottom:0"><span class="k">Reward split of each tax</span><span class="v" id="splitlabel">…</span></div>
-      <div class="splitbar"><i class="t" id="bar-t" style="width:50%"></i><i class="h" id="bar-h" style="width:50%"></i></div>
-      <div class="splitkey"><span>HYLD reward</span><span>HYPE reward</span></div>
+    <div class="top"><h2>Live numbers</h2></div>
+    <div class="split">
+      <svg class="pie" viewBox="0 0 42 42" role="img" aria-label="reward split">
+        <circle class="track" cx="21" cy="21" r="15.915"/>
+        <circle class="seg" id="seg-hyld" cx="21" cy="21" r="15.915" pathLength="100" stroke="#5f9384" stroke-dasharray="50 50" stroke-dashoffset="-25"/>
+        <circle class="seg" id="seg-hype" cx="21" cy="21" r="15.915" pathLength="100" stroke="#00ffa3" stroke-dasharray="50 50" stroke-dashoffset="25"/>
+      </svg>
+      <div class="legend">
+        <div class="li"><span class="dot" style="background:#00ffa3"></span> HYPE reward <span class="pct" id="pct-hype">50%</span></div>
+        <div class="li"><span class="dot" style="background:#5f9384"></span> HYLD reward <span class="pct" id="pct-hyld">50%</span></div>
+        <small>how each 5% fee is split between the two rewards</small>
+      </div>
     </div>
-    <div class="srow"><span class="k">HYPE reserve<span class="s">funds instant HYPE on buys</span></span><span class="v" id="buffer">…</span></div>
-    <div class="srow"><span class="k">Queued tax to convert<span class="s">swapped to HYPE on the next sell</span></span><span class="v" id="pending">…</span></div>
-    <div class="srow"><span class="k">Rewarded supply<span class="s">excludes the pool and treasury</span></span><span class="v" id="elig">…</span></div>
-    <div class="updated"><span id="updated">[ NOT LOADED ]</span><button id="refresh">Refresh figures</button></div>
+    <div class="srow"><span class="k">HYPE reward pool<span class="s">pays your HYPE instantly on buys</span></span><span class="v" id="buffer">…</span></div>
+    <div class="srow"><span class="k">Waiting to convert<span class="s">turns into HYPE on the next sell</span></span><span class="v" id="pending">…</span></div>
+    <div class="srow"><span class="k">Earning supply<span class="s">tokens that share the rewards</span></span><span class="v" id="elig">…</span></div>
+    <div class="updated"><span id="updated">loading…</span><button id="refresh">Refresh</button></div>
   </section>
 
   <!-- REFERENCES + CANDOR -->
   <section class="trans">
-    <h2>Addresses and honest limits</h2>
+    <h2>Addresses and the honest bits</h2>
     <div class="ref" id="refs">
       <div class="r"><span class="rk">Token</span><span class="rv" data-addr="token"><a target="_blank" rel="noopener" class="lk">…</a><button class="cp" title="Copy"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15"/></svg></button></span></div>
       <div class="r"><span class="rk">Pair (HYLD / WHYPE)</span><span class="rv" data-addr="pair"><a target="_blank" rel="noopener" class="lk">…</a><button class="cp" title="Copy"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15"/></svg></button></span></div>
@@ -231,17 +246,17 @@
       <div class="r"><span class="rk">WHYPE</span><span class="rv" data-addr="whype"><a target="_blank" rel="noopener" class="lk">…</a><button class="cp" title="Copy"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15"/></svg></button></span></div>
     </div>
     <div class="candid">
-      <p><b>The HYPE reserve can run dry.</b> Instant HYPE on a buy is paid from a reserve that refills when someone sells. In a run of buys with no sells the reserve can empty, and the HYPE owed from those buys is paid once the next sell refills it. The HYLD reward never depends on the reserve.</p>
-      <p><b>Tax is capped at 5% and can only go down.</b> The owner cannot raise it past 5% on either side. The pool and treasury are excluded, so they neither earn nor dilute holders.</p>
-      <p><b>Unaudited.</b> This is a reference deployment. Read the contract before sending funds. Figures here are read directly from chain, not a guarantee.</p>
+      <p><b>The HYPE pool can run low.</b> Your HYPE is paid right away from a pool that refills when people sell. If lots of people buy and nobody sells, it can run low for a bit, and the HYPE you are owed shows up once the next sell tops it back up. Your HYLD reward never has to wait.</p>
+      <p><b>The tax can never go above 5%.</b> The owner can only lower it, never raise it past 5%. The trading pool and treasury do not earn rewards, so they never eat into your share.</p>
+      <p><b>Not audited yet.</b> This is an early release. Check the contract yourself before putting in money. Every number here comes straight from the blockchain.</p>
     </div>
   </section>
 </div>
 
 <footer>
   <div class="wrap" style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;width:100%;padding:0 26px">
-    <span>Reads the contract over public RPC. Figures update when you refresh.</span>
-    <a class="mono" id="explorerc" target="_blank" rel="noopener">View token contract</a>
+    <span>Reads live from the blockchain. Tap refresh to update.</span>
+    <a class="mono" id="explorerc" target="_blank" rel="noopener">View contract</a>
   </div>
 </footer>
 
@@ -287,10 +302,17 @@ function setRef(key,addr){ const span=document.querySelector(`.rv[data-addr="${k
   const a=span.querySelector("a"); a.textContent=short(addr); a.href=`${CONFIG.explorer}/address/${addr}`;
   copyBtn(span.querySelector("button"),addr); }
 function flashSet(id,html){ const el=$(id); if(el.innerHTML!==html&&prev[id]!==undefined){el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash");} el.innerHTML=html; prev[id]=html; }
-function stamp(){ $("updated").textContent="[ HYPEREVM, READ "+new Date().toLocaleTimeString()+" ]"; }
+function stamp(){ $("updated").textContent="updated "+new Date().toLocaleTimeString(); }
+function setPie(hShare){
+  const tShare=100-hShare;
+  const h=$("seg-hype"), t=$("seg-hyld");
+  h.setAttribute("stroke-dasharray",`${hShare} ${100-hShare}`); h.setAttribute("stroke-dashoffset","25");
+  t.setAttribute("stroke-dasharray",`${tShare} ${100-tShare}`); t.setAttribute("stroke-dashoffset",`${25-hShare}`);
+  $("pct-hype").textContent=hShare.toFixed(0)+"%"; $("pct-hyld").textContent=tShare.toFixed(0)+"%";
+}
 
 async function loadState(){
-  $("updated").textContent="[ READING HYPEREVM... ]";
+  $("updated").textContent="loading…";
   try{
     const [buy,sell,split,buffer,pending,elig,supply,pair,owner] = await Promise.all([
       read.buyTaxBps(),read.sellTaxBps(),read.hypeShareBps(),read.hypeBuffer(),
@@ -300,16 +322,14 @@ async function loadState(){
     $("buytax").textContent=(Number(buy)/100).toFixed(0)+"%";
     $("selltax").textContent=(Number(sell)/100).toFixed(0)+"%";
     $("supply").innerHTML=fmt(supply)+spanU("HYLD");
-    const hShare=Number(split)/100, tShare=100-hShare;
-    $("splitlabel").textContent=`${tShare.toFixed(0)}% HYLD / ${hShare.toFixed(0)}% HYPE`;
-    $("bar-t").style.width=tShare+"%"; $("bar-h").style.width=hShare+"%";
+    setPie(Number(split)/100);
     flashSet("buffer",fmt(buffer)+spanU("HYPE"));
     flashSet("pending",fmt(pending)+spanU("HYLD"));
     $("elig").innerHTML=fmt(elig)+spanU("HYLD");
     setRef("token",CONFIG.token); setRef("pair",pair); setRef("owner",owner); setRef("whype",CONFIG.whype);
     stamp();
     if(connected) await loadAccount(connected);
-  }catch(e){ $("updated").textContent="[ RPC ERROR, REFRESH ]"; }
+  }catch(e){ $("updated").textContent="couldn't load, tap refresh"; }
 }
 
 async function loadAccount(addr){
