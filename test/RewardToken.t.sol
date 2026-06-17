@@ -4,257 +4,169 @@ pragma solidity ^0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {RewardToken} from "../src/RewardToken.sol";
 
-/// Minimal mock ERC20 for the reward-token stream.
-contract MockERC20 {
-    string public name = "Reward";
-    string public symbol = "RWD";
-    uint8 public constant decimals = 18;
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
+interface IERC20Like {
+    function transferFrom(address f, address t, uint256 v) external returns (bool);
+}
 
-    function mint(address to, uint256 v) external {
-        balanceOf[to] += v;
+/// Mock UniswapV2 router: pulls the token in and pays out native HYPE at a
+/// fixed rate (out = in * rateNum / rateDen).
+contract MockV2Router {
+    address public weth;
+    uint256 public rateNum = 1;
+    uint256 public rateDen = 10;
+
+    constructor(address weth_) {
+        weth = weth_;
     }
 
-    function approve(address s, uint256 v) external returns (bool) {
-        allowance[msg.sender][s] = v;
-        return true;
+    function WETH() external view returns (address) {
+        return weth;
     }
 
-    function transfer(address to, uint256 v) external returns (bool) {
-        balanceOf[msg.sender] -= v;
-        balanceOf[to] += v;
-        return true;
-    }
+    receive() external payable {}
 
-    function transferFrom(address f, address to, uint256 v) external returns (bool) {
-        if (allowance[f][msg.sender] != type(uint256).max) allowance[f][msg.sender] -= v;
-        balanceOf[f] -= v;
-        balanceOf[to] += v;
-        return true;
+    function swapExactTokensForETHSupportingFeeOnTransferTokens(
+        uint256 amountIn,
+        uint256,
+        address[] calldata path,
+        address to,
+        uint256
+    ) external {
+        IERC20Like(path[0]).transferFrom(msg.sender, address(this), amountIn);
+        uint256 out = (amountIn * rateNum) / rateDen;
+        (bool ok,) = to.call{value: out}("");
+        require(ok, "eth send fail");
     }
 }
 
 contract RewardTokenTest is Test {
     RewardToken token;
-    MockERC20 rwd;
+    MockV2Router router;
 
     address deployer = address(this);
     address alice = address(0xA11CE);
     address bob = address(0xB0B);
-    address pool = address(0xC0017A001);
+    address pair = address(0xDEAD01);
     address treasury = address(0x7);
 
     uint256 constant SUPPLY = 10_000 ether;
 
     function setUp() public {
-        rwd = new MockERC20();
-        // Entire 10k supply minted to the deployer, who seeds holders below.
-        token = new RewardToken("Grid", "GRID", SUPPLY, deployer, address(rwd));
-        rwd.mint(deployer, 1_000_000 ether);
-        rwd.approve(address(token), type(uint256).max);
-        vm.deal(deployer, 1_000 ether);
+        router = new MockV2Router(address(0x5555555555555555555555555555555555555555));
+        vm.deal(address(router), 10_000 ether); // router can pay out HYPE
+        token = new RewardToken("Grid", "GRID", SUPPLY, deployer, address(router));
+        token.setSwapThreshold(1); // swap-back on essentially any sell
     }
 
-    function _topUpToken(uint256 amt) internal {
-        token.depositRewardToken(amt);
+    /// Wires up alice as the sole eligible holder and `pair` as the AMM.
+    function _setupMarket() internal {
+        token.transfer(alice, 5_000 ether); // untaxed (deployer exempt)
+        token.transfer(pair, 3_000 ether); // seed liquidity, untaxed
+        token.excludeFromRewards(deployer); // drop deployer's remaining 2_000
+        token.excludeFromRewards(pair); // pair neither earns nor dilutes
+        token.excludeFromRewards(address(router)); // router holdings don't dilute
+        token.setAMM(pair, true);
     }
 
-    function _topUpHype(uint256 amt) internal {
-        token.depositHype{value: amt}();
+    function test_defaults() public view {
+        assertEq(token.buyTaxBps(), 500);
+        assertEq(token.sellTaxBps(), 500);
+        assertEq(token.hypeShareBps(), 5_000);
+        assertEq(token.WHYPE(), address(0x5555555555555555555555555555555555555555));
     }
 
-    /// Equal holders split a top-up equally; both streams accrue.
-    function test_equalSplit_bothStreams() public {
-        token.transfer(alice, 5_000 ether);
-        token.transfer(bob, 5_000 ether);
+    /// Wallet-to-wallet transfers are untaxed (transfer tax = 0%).
+    function test_noTaxWalletToWallet() public {
+        token.transfer(alice, 1_000 ether);
+        vm.prank(alice);
+        token.transfer(bob, 400 ether);
+        assertEq(token.balanceOf(bob), 400 ether);
+    }
 
-        _topUpToken(100 ether);
-        _topUpHype(10 ether);
+    /// A buy from the AMM is taxed 5%.
+    function test_buyTax() public {
+        _setupMarket();
+        // Buy: pair -> bob, 1_000 in. 5% = 50 tax, bob receives 950.
+        vm.prank(pair);
+        token.transfer(bob, 1_000 ether);
+        assertEq(token.balanceOf(bob), 950 ether);
+        assertEq(token.pendingTax(), 50 ether);
+    }
 
-        assertApproxEqAbs(token.withdrawableRewardToken(alice), 50 ether, 100);
-        assertApproxEqAbs(token.withdrawableRewardToken(bob), 50 ether, 100);
-        assertApproxEqAbs(token.withdrawableHype(alice), 5 ether, 100);
-        assertApproxEqAbs(token.withdrawableHype(bob), 5 ether, 100);
+    /// A sell into the AMM is taxed 5% and, once tax has accumulated, swap-back
+    /// splits it into a GRID reward and a HYPE reward (50/50 by default).
+    function test_sellTaxSplitsIntoGridAndHype() public {
+        _setupMarket();
 
-        uint256 rwdBefore = rwd.balanceOf(alice);
+        // First sell accumulates tax (swap-back sees pendingTax == 0, no-op).
+        vm.prank(alice);
+        token.transfer(pair, 1_000 ether); // tax 50 -> pendingTax 50
+        assertEq(token.pendingTax(), 50 ether);
+
+        // Second sell triggers swap-back of the 50 collected: 25 -> GRID reward,
+        // 25 -> swapped to HYPE (rate 1/10 => 2.5 HYPE).
+        vm.prank(alice);
+        token.transfer(pair, 1_000 ether);
+
+        // alice is the only eligible holder, so she gets ~all of both rewards.
+        assertApproxEqAbs(token.withdrawableGrid(alice), 25 ether, 1e6);
+        assertApproxEqAbs(token.withdrawableHype(alice), 2.5 ether, 1e6);
+
+        // Claim pays both.
+        uint256 gridBefore = token.balanceOf(alice);
         uint256 hypeBefore = alice.balance;
         vm.prank(alice);
         token.claim();
-        assertApproxEqAbs(rwd.balanceOf(alice) - rwdBefore, 50 ether, 100);
-        assertApproxEqAbs(alice.balance - hypeBefore, 5 ether, 100);
-        assertEq(token.withdrawableRewardToken(alice), 0);
-        assertEq(token.withdrawableHype(alice), 0);
-    }
-
-    /// A buyer who arrives AFTER a top-up cannot claim it (no retroactive rewards).
-    function test_noRetroactive() public {
-        token.transfer(alice, 5_000 ether);
-        // deployer still holds the other 5_000.
-        _topUpToken(100 ether); // split between deployer(5k) and alice(5k)
-
-        assertApproxEqAbs(token.withdrawableRewardToken(alice), 50 ether, 100);
-
-        // Bob buys from the deployer AFTER the top-up.
-        token.transfer(bob, 5_000 ether);
-        assertEq(token.withdrawableRewardToken(bob), 0, "bob must not claim past rewards");
-
-        // Next top-up: alice(5k) + bob(5k) split it; deployer now holds 0.
-        _topUpToken(100 ether);
-        assertApproxEqAbs(token.withdrawableRewardToken(bob), 50 ether, 100);
-        assertApproxEqAbs(token.withdrawableRewardToken(alice), 100 ether, 100);
+        assertApproxEqAbs(token.balanceOf(alice) - gridBefore, 25 ether, 1e6);
+        assertApproxEqAbs(alice.balance - hypeBefore, 2.5 ether, 1e6);
     }
 
     /// Earned rewards survive selling all your tokens.
     function test_earnedSurvivesSale() public {
-        token.transfer(alice, 5_000 ether);
-        token.transfer(bob, 5_000 ether);
-        _topUpToken(100 ether);
-
-        // Alice sells everything to bob.
+        _setupMarket();
+        // Generate two sells worth of tax so a distribution lands for alice.
         vm.prank(alice);
-        token.transfer(bob, 5_000 ether);
+        token.transfer(pair, 1_000 ether);
+        vm.prank(alice);
+        token.transfer(pair, 1_000 ether);
+
+        uint256 owedGrid = token.withdrawableGrid(alice);
+        assertGt(owedGrid, 0);
+
+        // Alice dumps her entire remaining balance.
+        uint256 remaining = token.balanceOf(alice);
+        vm.prank(alice);
+        token.transfer(bob, remaining); // wallet transfer, untaxed
 
         assertEq(token.balanceOf(alice), 0);
-        assertApproxEqAbs(token.withdrawableRewardToken(alice), 50 ether, 100, "earned stays after sale");
+        assertApproxEqAbs(token.withdrawableGrid(alice), owedGrid, 1e6, "earned stays after sale");
+    }
+
+    /// Excluded accounts (pair) neither earn nor dilute.
+    function test_excludedDoesNotEarn() public {
+        _setupMarket();
+        vm.prank(alice);
+        token.transfer(pair, 1_000 ether);
+        vm.prank(alice);
+        token.transfer(pair, 1_000 ether);
+        assertEq(token.withdrawableGrid(pair), 0);
+        assertEq(token.withdrawableHype(pair), 0);
+    }
+
+    /// Tax never makes a trade revert even if the swap fails (no HYPE in router).
+    function test_swapFailureDoesNotBrickTrades() public {
+        _setupMarket();
+        vm.deal(address(router), 0); // router can't pay HYPE -> swap reverts internally
 
         vm.prank(alice);
-        token.claim();
-        assertApproxEqAbs(rwd.balanceOf(alice), 50 ether, 100);
-    }
-
-    /// Excluded accounts neither earn nor dilute.
-    function test_exclusion() public {
-        token.transfer(pool, 5_000 ether);
-        token.transfer(alice, 5_000 ether);
-        token.excludeFromRewards(pool); // eligibleSupply now 5_000 (alice only)
-
-        assertEq(token.eligibleSupply(), 5_000 ether);
-
-        _topUpToken(100 ether);
-        assertEq(token.withdrawableRewardToken(pool), 0, "pool earns nothing");
-        assertApproxEqAbs(token.withdrawableRewardToken(alice), 100 ether, 100, "alice gets it all");
-    }
-
-    /// Re-including an account starts it earning from the next top-up only.
-    function test_includeNoRetroactive() public {
-        token.transfer(treasury, 4_000 ether);
-        token.transfer(alice, 6_000 ether);
-        token.excludeFromRewards(treasury);
-
-        _topUpToken(100 ether); // all to alice
-        assertApproxEqAbs(token.withdrawableRewardToken(alice), 100 ether, 100);
-
-        token.includeInRewards(treasury); // eligibleSupply back to 10_000
-        assertEq(token.eligibleSupply(), 10_000 ether);
-        assertEq(token.withdrawableRewardToken(treasury), 0, "no retroactive on include");
-
-        _topUpToken(100 ether); // alice 6k, treasury 4k
-        assertApproxEqAbs(token.withdrawableRewardToken(treasury), 40 ether, 100);
-        assertApproxEqAbs(token.withdrawableRewardToken(alice), 160 ether, 100);
-    }
-
-    /// Excluding an account auto-claims its pending rewards so nothing is stranded.
-    function test_excludeAutoClaims() public {
-        token.transfer(alice, 5_000 ether);
-        token.transfer(bob, 5_000 ether);
-        _topUpToken(100 ether); // alice & bob each owed 50
-
-        token.excludeFromRewards(bob); // should pay bob his 50 first
-        assertApproxEqAbs(rwd.balanceOf(bob), 50 ether, 100, "bob auto-claimed on exclude");
-        assertEq(token.withdrawableRewardToken(bob), 0);
-    }
-
-    function test_depositRevertsWithNoEligibleHolders() public {
-        // Move all supply into an excluded account.
-        token.excludeFromRewards(deployer);
-        assertEq(token.eligibleSupply(), 0);
-        vm.expectRevert(bytes("no eligible holders"));
-        token.depositRewardToken(1 ether);
-    }
-
-    function test_claimRevertsWhenNothing() public {
-        token.transfer(alice, 1_000 ether);
+        token.transfer(pair, 1_000 ether);
         vm.prank(alice);
-        vm.expectRevert(bytes("nothing to claim"));
-        token.claim();
-    }
+        token.transfer(pair, 1_000 ether); // triggers swap-back; must NOT revert
 
-    function test_onlyOwnerExclude() public {
-        vm.prank(alice);
-        vm.expectRevert(bytes("not owner"));
-        token.excludeFromRewards(pool);
-    }
-
-    // ------------------------------------------------------------------
-    // Buy/sell tax -> GRID dividend
-    // ------------------------------------------------------------------
-
-    /// Default tax is 5%/5%.
-    function test_defaultTaxes() public view {
-        assertEq(token.buyTaxBps(), 500);
-        assertEq(token.sellTaxBps(), 500);
-    }
-
-    /// A buy from the AMM pool is taxed 5%, and the tax is paid back to holders
-    /// as a GRID dividend.
-    function test_buyTaxDistributesAsGrid() public {
-        // alice is the sole eligible holder; pool is the AMM (excluded).
-        token.transfer(alice, 5_000 ether); // untaxed (deployer is exempt)
-        token.transfer(pool, 3_000 ether); // seed pool liquidity, untaxed
-        token.excludeFromRewards(deployer); // drop deployer's remaining 2_000
-        token.excludeFromRewards(pool); // pool neither earns nor dilutes
-        token.setAMM(pool, true);
-
-        assertEq(token.eligibleSupply(), 5_000 ether); // alice only
-
-        // Buy: pool -> alice, 1_000 in. 5% = 50 tax, alice receives 950.
-        vm.prank(pool);
-        token.transfer(alice, 1_000 ether);
-
-        assertEq(token.balanceOf(alice), 5_950 ether, "alice got amount minus tax");
-        // alice is the only eligible holder, so the whole 50 GRID tax is hers.
-        assertApproxEqAbs(token.withdrawableGrid(alice), 50 ether, 1000);
-
-        // She can claim it as GRID.
-        uint256 balBefore = token.balanceOf(alice);
-        vm.prank(alice);
-        token.claim();
-        assertApproxEqAbs(token.balanceOf(alice) - balBefore, 50 ether, 1000);
-    }
-
-    /// A sell into the AMM pool is taxed 5%.
-    function test_sellTax() public {
-        token.transfer(alice, 5_000 ether);
-        token.excludeFromRewards(deployer);
-        token.setAMM(pool, true);
-        token.excludeFromRewards(pool);
-
-        // Sell: alice -> pool, 1_000. 5% = 50 tax, pool receives 950.
-        vm.prank(alice);
-        token.transfer(pool, 1_000 ether);
-
-        assertEq(token.balanceOf(alice), 4_000 ether);
-        assertEq(token.balanceOf(pool), 950 ether, "pool received amount minus tax");
-        // alice is the only remaining eligible holder; the 50 tax comes back to her.
-        assertApproxEqAbs(token.withdrawableGrid(alice), 50 ether, 1000);
-    }
-
-    /// Tax-exempt accounts (and plain wallet-to-wallet transfers) pay no tax.
-    function test_noTaxForExemptOrWalletTransfers() public {
-        token.setAMM(pool, true);
-        // Wallet-to-wallet (neither side is an AMM): no tax.
-        token.transfer(alice, 1_000 ether);
-        vm.prank(alice);
-        token.transfer(bob, 1_000 ether);
-        assertEq(token.balanceOf(bob), 1_000 ether, "no tax on wallet transfer");
-
-        // Exempt buyer: pool -> deployer (exempt) is untaxed.
-        token.transfer(pool, 1_000 ether);
-        uint256 before = token.balanceOf(deployer);
-        vm.prank(pool);
-        token.transfer(deployer, 500 ether);
-        assertEq(token.balanceOf(deployer) - before, 500 ether, "exempt buy untaxed");
+        // GRID reward still booked; HYPE portion returned to pending for retry.
+        assertApproxEqAbs(token.withdrawableGrid(alice), 25 ether, 1e6);
+        assertEq(token.withdrawableHype(alice), 0);
+        assertGt(token.pendingTax(), 0);
     }
 
     function test_setTaxesCapAndOwner() public {
@@ -268,5 +180,19 @@ contract RewardTokenTest is Test {
         vm.prank(alice);
         vm.expectRevert(bytes("not owner"));
         token.setTaxes(0, 0);
+    }
+
+    function test_setRewardSplit() public {
+        token.setRewardSplit(7_000); // 70% HYPE / 30% GRID
+        assertEq(token.hypeShareBps(), 7_000);
+        vm.expectRevert(bytes("bad split"));
+        token.setRewardSplit(10_001);
+    }
+
+    function test_claimRevertsWhenNothing() public {
+        token.transfer(alice, 1_000 ether);
+        vm.prank(alice);
+        vm.expectRevert(bytes("nothing to claim"));
+        token.claim();
     }
 }
