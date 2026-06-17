@@ -202,8 +202,6 @@
     <nav>
       <a href="#how">How you earn</a>
       <a href="/whitepaper.html">Whitepaper</a>
-      <a class="xlink" id="tgtop" target="_blank" rel="noopener" aria-label="Telegram"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 4.2 2.6 11.7c-.85.33-.83 1.55.03 1.85l4.9 1.6 1.86 5.3c.26.73 1.2.9 1.7.27l2.5-3.16 4.86 3.56c.6.44 1.46.1 1.6-.64L23.5 5.4c.18-.9-.72-1.55-1.5-1.2Z"/></svg></a>
-      <a class="xlink" id="xtop" target="_blank" rel="noopener" aria-label="X"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25H8.08l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.12H5.12l11.96 15.65Z"/></svg></a>
       <button class="btn" id="connect">Connect wallet</button>
     </nav>
   </div>
@@ -377,8 +375,8 @@ const spanU = (u)=>`<span class="s">${u}</span>`;
 let META=null, connected=null, signer=null, prev={};
 
 $("explorerc").href = `${CONFIG.explorer}/address/${CONFIG.token}`;
-$("xtop").href = CONFIG.x; $("xfoot").href = CONFIG.x;
-$("tgtop").href = CONFIG.tg; $("tgfoot").href = CONFIG.tg;
+$("xfoot").href = CONFIG.x;
+$("tgfoot").href = CONFIG.tg;
 
 function copyBtn(el,text){ el.addEventListener("click",async()=>{ try{await navigator.clipboard.writeText(text);
   el.classList.add("copied");setTimeout(()=>el.classList.remove("copied"),900);}catch(e){} }); }
