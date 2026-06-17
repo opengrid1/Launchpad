@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+
+/*
+  Par — fixed-price token offerings on Ethereum.
+  Identity: a securities issuance venue, not a crypto dashboard. The page
+  reads like a printed term sheet / issuance board. Cool bone paper, near
+  black ink, a single oxblood accent for the brand and the "par line".
+  Two working colors carry state: green = the offering will settle,
+  red = it failed and funds are returned. Every figure is monospaced so
+  numbers stack in columns like a ledger. No gradients, no glow, no glass.
+*/
+
+@theme {
+  --color-paper: #ece8de;   /* page */
+  --color-paper-2: #e2dccd; /* recessed insets / zebra */
+  --color-surface: #faf8f2; /* raised cards */
+  --color-ink: #17140d;     /* primary text + primary buttons */
+  --color-ink-2: #5d5648;   /* secondary text */
+  --color-ink-3: #938a75;   /* tertiary text / placeholders */
+  --color-rule: #d6cdb9;    /* hairlines */
+  --color-rule-2: #c4b89d;  /* stronger hairlines */
+  --color-accent: #7a2018;  /* oxblood: brand, the par line, active marks */
+  --color-pos: #1f5a3a;     /* offering will settle (soft cap met / funded) */
+  --color-neg: #a8401f;     /* failed / refunding */
+
+  --font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Spline Sans Mono', ui-monospace, 'SF Mono', monospace;
+}
+
+html {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-paper);
+}
+
+/* tabular figures everywhere numbers appear, so columns align */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* the only motion in the app: a subscription meter advancing toward its cap.
+   it tracks a real value, it is not decoration. */
+.meter-fill {
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* native range slider, restyled to the ink/accent system */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  background: var(--color-rule-2);
+  border-radius: 2px;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--color-ink);
+  cursor: pointer;
+}
+input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 2px;
+  background: var(--color-ink);
+  cursor: pointer;
+}
