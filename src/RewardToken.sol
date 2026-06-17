@@ -2,16 +2,14 @@
 pragma solidity ^0.8.26;
 
 /// @notice Minimal UniswapV2 pair surface (the token swaps directly against its
-///         own pair, so it needs no router and can't be broken by a router with
-///         a non-standard swap interface).
+///         own pair, so it needs no router).
 interface IUniswapV2Pair {
     function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
     function token0() external view returns (address);
     function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external;
 }
 
-/// @notice Wrapped HYPE (WHYPE) surface — the pair pays out WHYPE, which the
-///         token unwraps to native HYPE before distributing.
+/// @notice Wrapped HYPE surface.
 interface IWHYPE {
     function withdraw(uint256) external;
     function balanceOf(address) external view returns (uint256);
@@ -21,10 +19,10 @@ interface IRewardSwapper {
     function flush() external returns (uint256);
 }
 
-/// @notice Receives the pair's WHYPE output during swap-back and returns native
-///         HYPE to the token. Needed because UniswapV2 forbids `swap(to=...)`
-///         from being either pair token — and the token is one of them — so the
-///         swap output must land on this separate address first.
+/// @notice Receives the pair's WHYPE output during a buffer refill and returns
+///         native HYPE to the token. Needed because UniswapV2 forbids
+///         `swap(to=...)` from being a pair token — and the token is one — so
+///         the swap output must land on this separate address first.
 contract RewardSwapper {
     address public immutable token;
     address public immutable WHYPE;
@@ -34,7 +32,6 @@ contract RewardSwapper {
         WHYPE = whype_;
     }
 
-    /// @notice Unwrap any WHYPE held and forward the native HYPE to the token.
     function flush() external returns (uint256 amount) {
         require(msg.sender == token, "only token");
         uint256 wbal = IWHYPE(WHYPE).balanceOf(address(this));
@@ -51,21 +48,24 @@ contract RewardSwapper {
 
 /// @title RewardToken
 /// @notice Fixed-supply reflections token (HALV-style) with a 5%/5% buy/sell tax
-///         paid back to holders as TWO rewards, funded purely by trading volume:
+///         that pays holders TWO rewards INSTANTLY on every buy AND sell:
 ///
-///           1. TOKEN — a portion of the tax is kept and distributed as the
-///                      token itself.
-///           2. HYPE  — the rest is swapped to native HYPE (directly against the
-///                      token's own pair) and distributed.
+///           1. TOKEN (the token itself) — distributed instantly from the tax.
+///           2. HYPE  — distributed instantly from a native-HYPE buffer.
+///
+///         How the HYPE stays instant even on buys: UniswapV2 locks the pair
+///         during a swap, so a token cannot swap to HYPE in the middle of a buy.
+///         Instead the contract keeps a HYPE buffer and pays the HYPE reward
+///         from it on every trade (no swap needed). The buffer is refilled by
+///         swapping the accumulated tax to HYPE on sells (when the pair is free)
+///         and can be topped up via seedHypeBuffer / sending HYPE.
 ///
 ///         Distribution uses O(1) "magnified reward-per-share + corrections"
-///         accounting (no per-holder loops). Corrections snapshot on every
-///         balance change, so rewards are never retroactive and what you earned
-///         stays yours after you sell. Excluded addresses (the pool, treasury)
-///         are removed from the denominator: they neither earn nor dilute.
+///         accounting; rewards are never retroactive and survive selling.
+///         Excluded addresses (pool, treasury) neither earn nor dilute.
 ///
-///         FEE-ON-TRANSFER: pair this on a UniswapV2-style DEX (Hyperswap V2 /
-///         KittenSwap). V3 rejects fee-on-transfer tokens.
+///         FEE-ON-TRANSFER: pair on a UniswapV2-style DEX (Hyperswap V2 /
+///         KittenSwap), NOT V3.
 contract RewardToken {
     // --- ERC20 ---
     string public name;
@@ -97,34 +97,37 @@ contract RewardToken {
     Stream[N_STREAMS] private _streams;
     uint256[N_STREAMS] private _backlog;
 
-    // --- Tax & swap-back ---
+    // --- Tax, buffer & swap ---
     address public immutable WHYPE;
-    /// @notice Helper that receives the pair's WHYPE output and returns HYPE.
     address public immutable swapper;
 
-    /// @notice The pair the token swaps its tax against (TOKEN/WHYPE).
     address public pair;
-    /// @dev True if this token is token0 of the pair (set in setPair).
     bool private _isToken0;
 
     uint16 public constant MAX_TAX_BPS = 500; // 5% cap
     uint16 public buyTaxBps = 500;
     uint16 public sellTaxBps = 500;
 
-    /// @notice Portion of tax (bps) swapped to HYPE; the rest stays as a token reward.
+    /// @notice Portion of tax (bps) paid as the HYPE reward; the rest is the token reward.
     uint16 public hypeShareBps = 5_000;
 
+    /// @notice Native HYPE available to pay instant HYPE rewards (refilled by sells / seeding).
+    uint256 public hypeBuffer;
+    /// @notice Tax tokens (this token) accumulated, to be swapped to HYPE to refill the buffer.
+    uint256 public pendingSwapTokens;
+    /// @notice Min accumulated tax tokens before a sell refills the buffer.
     uint256 public swapThreshold;
-    uint256 public pendingTax;
+
     bool private _inSwap;
 
     mapping(address => bool) public isAMM;
     mapping(address => bool) public isTaxExempt;
 
     event TaxCollected(address indexed from, address indexed to, uint256 amount);
-    event SwapBack(uint256 tokenReward, uint256 tokenSwapped, uint256 hypeReceived);
+    event RewardsDistributed(uint256 tokenReward, uint256 hypeReward);
+    event BufferRefilled(uint256 tokensSwapped, uint256 hypeReceived);
+    event BufferSeeded(address indexed from, uint256 amount);
     event Claimed(address indexed account, uint256 tokenAmount, uint256 hypeAmount);
-    event HypeDeposited(address indexed from, uint256 amount);
     event ExclusionSet(address indexed account, bool excluded);
     event AMMSet(address indexed amm, bool isAMM);
     event PairSet(address indexed pair, bool tokenIsToken0);
@@ -155,11 +158,6 @@ contract RewardToken {
         _;
     }
 
-    /// @param name_     Token name.
-    /// @param symbol_   Token symbol.
-    /// @param supply_   Total fixed supply (wei, 18 decimals).
-    /// @param recipient Address that receives the entire supply at deploy.
-    /// @param whype_    Wrapped-HYPE address (0x5555..5555 on HyperEVM).
     constructor(string memory name_, string memory symbol_, uint256 supply_, address recipient, address whype_) {
         require(recipient != address(0), "zero recipient");
         require(whype_ != address(0), "zero WHYPE");
@@ -215,8 +213,13 @@ contract RewardToken {
         uint256 bal = balanceOf[from];
         require(bal >= value, "ERC20: insufficient balance");
 
-        if (!_inSwap && isAMM[to] && !isTaxExempt[from] && pendingTax >= swapThreshold && swapThreshold > 0) {
-            _swapBack();
+        // On a sell (pair not locked), refill the HYPE buffer by swapping the
+        // tax tokens accumulated so far.
+        if (
+            !_inSwap && isAMM[to] && !isTaxExempt[from] && pair != address(0) && swapThreshold > 0
+                && pendingSwapTokens >= swapThreshold
+        ) {
+            _refillBuffer();
         }
 
         uint256 tax = _inSwap ? 0 : _taxFor(from, to, value);
@@ -233,7 +236,7 @@ contract RewardToken {
                 balanceOf[address(this)] += tax;
             }
             _moveShares(from, address(this), tax);
-            pendingTax += tax;
+            _distributeTax(tax);
             emit Transfer(from, address(this), tax);
             emit TaxCollected(from, to, tax);
         }
@@ -248,37 +251,61 @@ contract RewardToken {
     }
 
     // ----------------------------------------------------------------------
-    // Swap-back: split tax into a token reward + a HYPE reward
+    // Instant reward distribution (runs on every buy AND sell)
     // ----------------------------------------------------------------------
 
-    function _swapBack() internal lockSwap {
-        uint256 amount = pendingTax;
-        if (amount == 0) return;
-        pendingTax = 0;
+    function _distributeTax(uint256 tax) internal {
+        uint256 hypePart = (tax * hypeShareBps) / 10_000;
+        uint256 tokenPart = tax - hypePart;
 
-        uint256 hypePart = (amount * hypeShareBps) / 10_000;
-        uint256 tokenPart = amount - hypePart;
-
+        // 1) Instant TOKEN reward — no swap needed.
         if (tokenPart > 0) _accrue(S_TOKEN, tokenPart);
 
-        if (hypePart > 0 && pair != address(0)) {
-            // Swap directly against the pair, tolerating failure so a thin pool
-            // can never brick trading (unsold tax returns to pending for retry).
-            try this.swapTokenForHype(hypePart) returns (uint256 received) {
-                if (received > 0) _accrue(S_HYPE, received);
-                emit SwapBack(tokenPart, hypePart, received);
-            } catch {
-                pendingTax += hypePart;
-                emit SwapBack(tokenPart, 0, 0);
+        // 2) Instant HYPE reward — paid from the buffer (no swap, works on buys);
+        //    the tax tokens earmarked for HYPE are queued to refill the buffer
+        //    on the next sell.
+        uint256 hypeReward;
+        if (hypePart > 0) {
+            pendingSwapTokens += hypePart;
+            uint256 owed = _hypeValueOf(hypePart);
+            hypeReward = owed <= hypeBuffer ? owed : hypeBuffer;
+            if (hypeReward > 0) {
+                hypeBuffer -= hypeReward;
+                _accrue(S_HYPE, hypeReward);
             }
-        } else {
-            if (hypePart > 0) pendingTax += hypePart; // no pair set yet; keep for later
-            emit SwapBack(tokenPart, 0, 0);
+        }
+        emit RewardsDistributed(tokenPart, hypeReward);
+    }
+
+    /// @dev Value `tokenAmount` of this token in HYPE at the current pair price.
+    function _hypeValueOf(uint256 tokenAmount) internal view returns (uint256) {
+        if (pair == address(0) || tokenAmount == 0) return 0;
+        (uint112 r0, uint112 r1,) = IUniswapV2Pair(pair).getReserves();
+        (uint256 reserveToken, uint256 reserveHype) = _isToken0 ? (uint256(r0), uint256(r1)) : (uint256(r1), uint256(r0));
+        return _getAmountOut(tokenAmount, reserveToken, reserveHype);
+    }
+
+    // ----------------------------------------------------------------------
+    // Buffer refill: swap accumulated tax tokens -> HYPE (sells only)
+    // ----------------------------------------------------------------------
+
+    function _refillBuffer() internal lockSwap {
+        uint256 amt = pendingSwapTokens;
+        if (amt == 0) return;
+        pendingSwapTokens = 0;
+        // Tolerate swap failure so a thin pool can never brick trading.
+        try this.swapTokenForHype(amt) returns (uint256 got) {
+            hypeBuffer += got;
+            emit BufferRefilled(amt, got);
+        } catch {
+            pendingSwapTokens = amt;
+            emit BufferRefilled(0, 0);
         }
     }
 
-    /// @dev Swaps `tokenIn` of this token for native HYPE via the pair. External
-    ///      only so `_swapBack` can wrap it in try/catch; restricted to self.
+    /// @dev Swaps `tokenIn` of this token for native HYPE via the pair, routing
+    ///      the output through the swapper helper (UniswapV2 INVALID_TO). External
+    ///      only so `_refillBuffer` can wrap it in try/catch; restricted to self.
     function swapTokenForHype(uint256 tokenIn) external returns (uint256 hypeReceived) {
         require(msg.sender == address(this), "self only");
         IUniswapV2Pair p = IUniswapV2Pair(pair);
@@ -287,18 +314,13 @@ contract RewardToken {
         uint256 amountOut = _getAmountOut(tokenIn, reserveIn, reserveOut);
         if (amountOut == 0) return 0;
 
-        // Move the tax tokens into the pair (untaxed: this contract is exempt).
-        _transfer(address(this), pair, tokenIn);
+        _transfer(address(this), pair, tokenIn); // untaxed (this is exempt)
 
-        // Output must go to the swapper, not this token (UniswapV2 INVALID_TO).
         (uint256 amount0Out, uint256 amount1Out) = _isToken0 ? (uint256(0), amountOut) : (amountOut, uint256(0));
         p.swap(amount0Out, amount1Out, swapper, "");
-
-        // The swapper unwraps the WHYPE and returns native HYPE to this token.
         return IRewardSwapper(swapper).flush();
     }
 
-    /// @dev UniswapV2 constant-product output (0.30% fee).
     function _getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut) internal pure returns (uint256) {
         if (amountIn == 0 || reserveIn == 0 || reserveOut == 0) return 0;
         uint256 amountInWithFee = amountIn * 997;
@@ -333,16 +355,16 @@ contract RewardToken {
         }
     }
 
-    /// @notice Optional: top up the HYPE reward stream directly (bonus rewards).
-    function depositHype() external payable {
-        _accrue(S_HYPE, msg.value);
-        emit HypeDeposited(msg.sender, msg.value);
+    /// @notice Top up the HYPE buffer that backs instant HYPE rewards.
+    function seedHypeBuffer() external payable {
+        hypeBuffer += msg.value;
+        emit BufferSeeded(msg.sender, msg.value);
     }
 
     receive() external payable {
-        if (_inSwap) return; // WHYPE unwrap during swap-back
-        _accrue(S_HYPE, msg.value);
-        emit HypeDeposited(msg.sender, msg.value);
+        if (_inSwap) return; // HYPE returned by the swapper during a refill
+        hypeBuffer += msg.value;
+        emit BufferSeeded(msg.sender, msg.value);
     }
 
     // ----------------------------------------------------------------------
@@ -386,7 +408,7 @@ contract RewardToken {
 
         if (tokenAmt > 0) {
             _streams[S_TOKEN].withdrawn[account] += tokenAmt;
-            _transfer(address(this), to, tokenAmt); // untaxed (this is exempt), no swap-back
+            _transfer(address(this), to, tokenAmt); // untaxed
         }
         if (hypeAmt > 0) {
             _streams[S_HYPE].withdrawn[account] += hypeAmt;
@@ -399,11 +421,9 @@ contract RewardToken {
     }
 
     // ----------------------------------------------------------------------
-    // Owner: tax / swap configuration
+    // Owner: configuration
     // ----------------------------------------------------------------------
 
-    /// @notice Set the pair used both as an AMM (for tax) and as the swap target
-    ///         for the HYPE reward. Determines token ordering automatically.
     function setPair(address pair_) external onlyOwner {
         require(pair_ != address(0), "zero address");
         pair = pair_;
