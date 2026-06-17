@@ -54,7 +54,7 @@ contract RewardTokenTest is Test {
     function setUp() public {
         router = new MockV2Router(address(0x5555555555555555555555555555555555555555));
         vm.deal(address(router), 10_000 ether); // router can pay out HYPE
-        token = new RewardToken("Grid", "GRID", SUPPLY, deployer, address(router));
+        token = new RewardToken("HyperYield", "HYLD", SUPPLY, deployer, address(router));
         token.setSwapThreshold(1); // swap-back on essentially any sell
     }
 
@@ -94,8 +94,8 @@ contract RewardTokenTest is Test {
     }
 
     /// A sell into the AMM is taxed 5% and, once tax has accumulated, swap-back
-    /// splits it into a GRID reward and a HYPE reward (50/50 by default).
-    function test_sellTaxSplitsIntoGridAndHype() public {
+    /// splits it into a HYLD reward and a HYPE reward (50/50 by default).
+    function test_sellTaxSplitsIntoTokenAndHype() public {
         _setupMarket();
 
         // First sell accumulates tax (swap-back sees pendingTax == 0, no-op).
@@ -103,21 +103,21 @@ contract RewardTokenTest is Test {
         token.transfer(pair, 1_000 ether); // tax 50 -> pendingTax 50
         assertEq(token.pendingTax(), 50 ether);
 
-        // Second sell triggers swap-back of the 50 collected: 25 -> GRID reward,
+        // Second sell triggers swap-back of the 50 collected: 25 -> HYLD reward,
         // 25 -> swapped to HYPE (rate 1/10 => 2.5 HYPE).
         vm.prank(alice);
         token.transfer(pair, 1_000 ether);
 
         // alice is the only eligible holder, so she gets ~all of both rewards.
-        assertApproxEqAbs(token.withdrawableGrid(alice), 25 ether, 1e6);
+        assertApproxEqAbs(token.withdrawableToken(alice), 25 ether, 1e6);
         assertApproxEqAbs(token.withdrawableHype(alice), 2.5 ether, 1e6);
 
         // Claim pays both.
-        uint256 gridBefore = token.balanceOf(alice);
+        uint256 tokenBefore = token.balanceOf(alice);
         uint256 hypeBefore = alice.balance;
         vm.prank(alice);
         token.claim();
-        assertApproxEqAbs(token.balanceOf(alice) - gridBefore, 25 ether, 1e6);
+        assertApproxEqAbs(token.balanceOf(alice) - tokenBefore, 25 ether, 1e6);
         assertApproxEqAbs(alice.balance - hypeBefore, 2.5 ether, 1e6);
     }
 
@@ -130,8 +130,8 @@ contract RewardTokenTest is Test {
         vm.prank(alice);
         token.transfer(pair, 1_000 ether);
 
-        uint256 owedGrid = token.withdrawableGrid(alice);
-        assertGt(owedGrid, 0);
+        uint256 owedToken = token.withdrawableToken(alice);
+        assertGt(owedToken, 0);
 
         // Alice dumps her entire remaining balance.
         uint256 remaining = token.balanceOf(alice);
@@ -139,7 +139,7 @@ contract RewardTokenTest is Test {
         token.transfer(bob, remaining); // wallet transfer, untaxed
 
         assertEq(token.balanceOf(alice), 0);
-        assertApproxEqAbs(token.withdrawableGrid(alice), owedGrid, 1e6, "earned stays after sale");
+        assertApproxEqAbs(token.withdrawableToken(alice), owedToken, 1e6, "earned stays after sale");
     }
 
     /// Excluded accounts (pair) neither earn nor dilute.
@@ -149,7 +149,7 @@ contract RewardTokenTest is Test {
         token.transfer(pair, 1_000 ether);
         vm.prank(alice);
         token.transfer(pair, 1_000 ether);
-        assertEq(token.withdrawableGrid(pair), 0);
+        assertEq(token.withdrawableToken(pair), 0);
         assertEq(token.withdrawableHype(pair), 0);
     }
 
@@ -163,8 +163,8 @@ contract RewardTokenTest is Test {
         vm.prank(alice);
         token.transfer(pair, 1_000 ether); // triggers swap-back; must NOT revert
 
-        // GRID reward still booked; HYPE portion returned to pending for retry.
-        assertApproxEqAbs(token.withdrawableGrid(alice), 25 ether, 1e6);
+        // HYLD reward still booked; HYPE portion returned to pending for retry.
+        assertApproxEqAbs(token.withdrawableToken(alice), 25 ether, 1e6);
         assertEq(token.withdrawableHype(alice), 0);
         assertGt(token.pendingTax(), 0);
     }
@@ -183,7 +183,7 @@ contract RewardTokenTest is Test {
     }
 
     function test_setRewardSplit() public {
-        token.setRewardSplit(7_000); // 70% HYPE / 30% GRID
+        token.setRewardSplit(7_000); // 70% HYPE / 30% HYLD
         assertEq(token.hypeShareBps(), 7_000);
         vm.expectRevert(bytes("bad split"));
         token.setRewardSplit(10_001);

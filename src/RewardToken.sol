@@ -18,7 +18,7 @@ interface IUniswapV2Router02 {
 ///         buy/sell tax and pays it back to holders as TWO rewards, both funded
 ///         purely by trading volume — no manual top-ups required:
 ///
-///           1. GRID  — the token itself (a portion of the tax is kept and
+///           1. HYLD  — the token itself (a portion of the tax is kept and
 ///                      distributed directly to holders).
 ///           2. HYPE  — the remaining portion of the tax is auto-swapped to
 ///                      native HYPE on a UniswapV2-style DEX and distributed.
@@ -53,7 +53,7 @@ contract RewardToken {
     /// @dev Fixed-point scaling factor for per-share accounting (Roger Wu's 2**128).
     uint256 internal constant MAGNITUDE = 2 ** 128;
 
-    uint256 internal constant S_GRID = 0; // reward in the token itself
+    uint256 internal constant S_TOKEN = 0; // reward in the token itself
     uint256 internal constant S_HYPE = 1; // reward in native HYPE (swapped from tax)
     uint256 internal constant N_STREAMS = 2;
 
@@ -82,13 +82,13 @@ contract RewardToken {
     uint16 public sellTaxBps = 500;
 
     /// @notice Portion of collected tax (in bps) swapped to HYPE; the rest stays
-    ///         as a GRID reward. Default 50% HYPE / 50% GRID.
+    ///         as a HYLD reward. Default 50% HYPE / 50% HYLD.
     uint16 public hypeShareBps = 5_000;
 
-    /// @notice Minimum GRID tax accumulated before a sell triggers a swap-back.
+    /// @notice Minimum HYLD tax accumulated before a sell triggers a swap-back.
     uint256 public swapThreshold;
 
-    /// @dev GRID collected from tax that hasn't been processed (split + swapped) yet.
+    /// @dev HYLD collected from tax that hasn't been processed (split + swapped) yet.
     uint256 public pendingTax;
 
     bool private _inSwap;
@@ -99,8 +99,8 @@ contract RewardToken {
     mapping(address => bool) public isTaxExempt;
 
     event TaxCollected(address indexed from, address indexed to, uint256 amount);
-    event SwapBack(uint256 gridReward, uint256 gridSwapped, uint256 hypeReceived);
-    event Claimed(address indexed account, uint256 gridAmount, uint256 hypeAmount);
+    event SwapBack(uint256 tokenReward, uint256 tokenSwapped, uint256 hypeReceived);
+    event Claimed(address indexed account, uint256 tokenAmount, uint256 hypeAmount);
     event HypeDeposited(address indexed from, uint256 amount);
     event ExclusionSet(address indexed account, bool excluded);
     event AMMSet(address indexed pair, bool isAMM);
@@ -236,7 +236,7 @@ contract RewardToken {
     }
 
     // ----------------------------------------------------------------------
-    // Swap-back: split accumulated tax into a GRID reward + a HYPE reward
+    // Swap-back: split accumulated tax into a HYLD reward + a HYPE reward
     // ----------------------------------------------------------------------
 
     function _swapBack() internal lockSwap {
@@ -245,11 +245,11 @@ contract RewardToken {
         pendingTax = 0;
 
         uint256 hypePart = (amount * hypeShareBps) / 10_000;
-        uint256 gridPart = amount - hypePart;
+        uint256 tokenPart = amount - hypePart;
 
-        // GRID reward: these tokens are already held by the contract; just book
-        // them into the GRID stream so holders can claim them.
-        if (gridPart > 0) _accrue(S_GRID, gridPart);
+        // HYLD reward: these tokens are already held by the contract; just book
+        // them into the HYLD stream so holders can claim them.
+        if (tokenPart > 0) _accrue(S_TOKEN, tokenPart);
 
         // HYPE reward: sell the rest for native HYPE and book the proceeds.
         if (hypePart > 0) {
@@ -263,13 +263,13 @@ contract RewardToken {
             {
                 uint256 received = address(this).balance - balBefore;
                 if (received > 0) _accrue(S_HYPE, received);
-                emit SwapBack(gridPart, hypePart, received);
+                emit SwapBack(tokenPart, hypePart, received);
             } catch {
                 pendingTax += hypePart;
-                emit SwapBack(gridPart, 0, 0);
+                emit SwapBack(tokenPart, 0, 0);
             }
         } else {
-            emit SwapBack(gridPart, 0, 0);
+            emit SwapBack(tokenPart, 0, 0);
         }
     }
 
@@ -340,9 +340,9 @@ contract RewardToken {
         return _accumulative(id, account) - _streams[id].withdrawn[account];
     }
 
-    /// @notice GRID (token) reward currently claimable by `account`.
-    function withdrawableGrid(address account) external view returns (uint256) {
-        return _withdrawable(S_GRID, account);
+    /// @notice HYLD (token) reward currently claimable by `account`.
+    function withdrawableToken(address account) external view returns (uint256) {
+        return _withdrawable(S_TOKEN, account);
     }
 
     /// @notice HYPE reward currently claimable by `account`.
@@ -354,32 +354,32 @@ contract RewardToken {
     // Claiming
     // ----------------------------------------------------------------------
 
-    /// @notice Claim both rewards (GRID + HYPE) to the caller.
+    /// @notice Claim both rewards (HYLD + HYPE) to the caller.
     function claim() external nonReentrant {
         (uint256 g, uint256 h) = _claim(msg.sender, msg.sender);
         require(g > 0 || h > 0, "nothing to claim");
     }
 
-    function _claim(address account, address to) internal returns (uint256 gridAmt, uint256 hypeAmt) {
+    function _claim(address account, address to) internal returns (uint256 tokenAmt, uint256 hypeAmt) {
         if (!isExcluded[account]) {
-            gridAmt = _accumulative(S_GRID, account) - _streams[S_GRID].withdrawn[account];
+            tokenAmt = _accumulative(S_TOKEN, account) - _streams[S_TOKEN].withdrawn[account];
             hypeAmt = _accumulative(S_HYPE, account) - _streams[S_HYPE].withdrawn[account];
         }
 
-        if (gridAmt > 0) {
-            _streams[S_GRID].withdrawn[account] += gridAmt;
-            // Pay the GRID reward out of the contract's holdings. `from` is
+        if (tokenAmt > 0) {
+            _streams[S_TOKEN].withdrawn[account] += tokenAmt;
+            // Pay the HYLD reward out of the contract's holdings. `from` is
             // tax-exempt and `to` is not an AMM, so this is untaxed and triggers
             // no swap-back.
-            _transfer(address(this), to, gridAmt);
+            _transfer(address(this), to, tokenAmt);
         }
         if (hypeAmt > 0) {
             _streams[S_HYPE].withdrawn[account] += hypeAmt;
             (bool ok,) = payable(to).call{value: hypeAmt}("");
             require(ok, "HYPE transfer failed");
         }
-        if (gridAmt > 0 || hypeAmt > 0) {
-            emit Claimed(account, gridAmt, hypeAmt);
+        if (tokenAmt > 0 || hypeAmt > 0) {
+            emit Claimed(account, tokenAmt, hypeAmt);
         }
     }
 
@@ -408,7 +408,7 @@ contract RewardToken {
     }
 
     /// @notice Set the share of collected tax (bps) that is swapped to HYPE; the
-    ///         remainder is distributed as a GRID reward.
+    ///         remainder is distributed as a HYLD reward.
     function setRewardSplit(uint16 hypeShareBps_) external onlyOwner {
         require(hypeShareBps_ <= 10_000, "bad split");
         hypeShareBps = hypeShareBps_;
