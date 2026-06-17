@@ -239,7 +239,7 @@
         <div class="splitkey"><span>HYLD reward</span><span>HYPE reward</span></div>
       </div>
 
-      <div class="srow" style="margin-top:8px"><span class="k">HYPE buffer<br><span class="s">funds instant HYPE on buys</span></span><span class="v" id="buffer">…</span></div>
+      <div class="srow" style="margin-top:8px"><span class="k">HYPE reserve<br><span class="s">funds instant HYPE on buys</span></span><span class="v" id="buffer">…</span></div>
       <div class="srow"><span class="k">Queued tax to convert<br><span class="s">swapped to HYPE on next sell</span></span><span class="v" id="pending">…</span></div>
       <div class="srow"><span class="k">Rewarded supply<br><span class="s">excludes pool and treasury</span></span><span class="v" id="elig">…</span></div>
       <div class="srow"><span class="k">Total supply</span><span class="v" id="supply">…</span></div>
@@ -270,7 +270,7 @@
       <div class="st">
         <div class="n">03</div>
         <div class="t">Credited instantly</div>
-        <div class="d">HYLD is credited at once. HYPE is paid from the buffer, so it lands even mid buy when the pair is locked.</div>
+        <div class="d">HYLD is credited at once. HYPE is paid from the reserve, so it lands even mid buy when the pair is locked.</div>
         <div class="fn">_accrue()</div>
       </div>
       <div class="st">
@@ -291,7 +291,7 @@
       <div class="r"><span class="rk">WHYPE</span><span class="rv" data-addr="whype"><a target="_blank" rel="noopener" class="lk">…</a><button class="cp" title="Copy"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15"/></svg></button></span></div>
     </div>
     <div class="candid">
-      <p><b>The HYPE buffer can run dry.</b> Instant HYPE on a buy is paid from a buffer that refills when someone sells. In a stretch of buys with no sells the buffer can empty, and the HYPE owed from those buys is paid once the next sell refills it. The HYLD reward never depends on the buffer.</p>
+      <p><b>The HYPE reserve can run dry.</b> Instant HYPE on a buy is paid from a reserve that refills when someone sells. In a stretch of buys with no sells the reserve can empty, and the HYPE owed from those buys is paid once the next sell refills it. The HYLD reward never depends on the reserve.</p>
       <p><b>Tax is capped at 5% and can only go down.</b> The owner cannot raise it past 5% on either side, and the pool and treasury are excluded so they neither earn nor dilute holders.</p>
       <p><b>Unaudited.</b> This is a reference deployment. Read the contract before sending funds, and treat balances shown here as read directly from chain, not a guarantee.</p>
     </div>
