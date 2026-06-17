@@ -185,4 +185,88 @@ contract RewardTokenTest is Test {
         vm.expectRevert(bytes("not owner"));
         token.excludeFromRewards(pool);
     }
+
+    // ------------------------------------------------------------------
+    // Buy/sell tax -> GRID dividend
+    // ------------------------------------------------------------------
+
+    /// Default tax is 5%/5%.
+    function test_defaultTaxes() public view {
+        assertEq(token.buyTaxBps(), 500);
+        assertEq(token.sellTaxBps(), 500);
+    }
+
+    /// A buy from the AMM pool is taxed 5%, and the tax is paid back to holders
+    /// as a GRID dividend.
+    function test_buyTaxDistributesAsGrid() public {
+        // alice is the sole eligible holder; pool is the AMM (excluded).
+        token.transfer(alice, 5_000 ether); // untaxed (deployer is exempt)
+        token.transfer(pool, 3_000 ether); // seed pool liquidity, untaxed
+        token.excludeFromRewards(deployer); // drop deployer's remaining 2_000
+        token.excludeFromRewards(pool); // pool neither earns nor dilutes
+        token.setAMM(pool, true);
+
+        assertEq(token.eligibleSupply(), 5_000 ether); // alice only
+
+        // Buy: pool -> alice, 1_000 in. 5% = 50 tax, alice receives 950.
+        vm.prank(pool);
+        token.transfer(alice, 1_000 ether);
+
+        assertEq(token.balanceOf(alice), 5_950 ether, "alice got amount minus tax");
+        // alice is the only eligible holder, so the whole 50 GRID tax is hers.
+        assertApproxEqAbs(token.withdrawableGrid(alice), 50 ether, 1000);
+
+        // She can claim it as GRID.
+        uint256 balBefore = token.balanceOf(alice);
+        vm.prank(alice);
+        token.claim();
+        assertApproxEqAbs(token.balanceOf(alice) - balBefore, 50 ether, 1000);
+    }
+
+    /// A sell into the AMM pool is taxed 5%.
+    function test_sellTax() public {
+        token.transfer(alice, 5_000 ether);
+        token.excludeFromRewards(deployer);
+        token.setAMM(pool, true);
+        token.excludeFromRewards(pool);
+
+        // Sell: alice -> pool, 1_000. 5% = 50 tax, pool receives 950.
+        vm.prank(alice);
+        token.transfer(pool, 1_000 ether);
+
+        assertEq(token.balanceOf(alice), 4_000 ether);
+        assertEq(token.balanceOf(pool), 950 ether, "pool received amount minus tax");
+        // alice is the only remaining eligible holder; the 50 tax comes back to her.
+        assertApproxEqAbs(token.withdrawableGrid(alice), 50 ether, 1000);
+    }
+
+    /// Tax-exempt accounts (and plain wallet-to-wallet transfers) pay no tax.
+    function test_noTaxForExemptOrWalletTransfers() public {
+        token.setAMM(pool, true);
+        // Wallet-to-wallet (neither side is an AMM): no tax.
+        token.transfer(alice, 1_000 ether);
+        vm.prank(alice);
+        token.transfer(bob, 1_000 ether);
+        assertEq(token.balanceOf(bob), 1_000 ether, "no tax on wallet transfer");
+
+        // Exempt buyer: pool -> deployer (exempt) is untaxed.
+        token.transfer(pool, 1_000 ether);
+        uint256 before = token.balanceOf(deployer);
+        vm.prank(pool);
+        token.transfer(deployer, 500 ether);
+        assertEq(token.balanceOf(deployer) - before, 500 ether, "exempt buy untaxed");
+    }
+
+    function test_setTaxesCapAndOwner() public {
+        token.setTaxes(300, 200);
+        assertEq(token.buyTaxBps(), 300);
+        assertEq(token.sellTaxBps(), 200);
+
+        vm.expectRevert(bytes("tax > 5%"));
+        token.setTaxes(600, 100);
+
+        vm.prank(alice);
+        vm.expectRevert(bytes("not owner"));
+        token.setTaxes(0, 0);
+    }
 }

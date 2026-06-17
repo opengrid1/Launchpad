@@ -13,8 +13,15 @@ import {RewardToken} from "../src/RewardToken.sol";
 ///   export RECIPIENT=0x...             # optional, defaults to deployer
 ///   forge script script/DeployRewardToken.s.sol --rpc-url hyperevm --broadcast
 ///
-/// After deploy, create the Hyperswap V3 pool, then exclude the pool (and the
-/// treasury) via excludeFromRewards so they neither earn nor dilute holders.
+/// The token charges a 5%/5% buy/sell tax (fee-on-transfer), so pair it on a
+/// UniswapV2-style DEX (Hyperswap V2 / KittenSwap) — NOT V3, which rejects
+/// fee-on-transfer tokens. After deploy:
+///   1. Add liquidity to create the V2 pair (the deployer is tax-exempt, so
+///      seeding liquidity is untaxed).
+///   2. token.setAMM(pair, true)            // tax trades through the pair
+///   3. token.excludeFromRewards(pair)      // pair neither earns nor dilutes
+///   4. token.excludeFromRewards(treasury)  // optional, same for the treasury
+/// The 5% tax then accrues to holders as a claimable GRID dividend.
 contract DeployRewardToken is Script {
     function run() external {
         uint256 pk = vm.envUint("PRIVATE_KEY");
