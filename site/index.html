@@ -49,6 +49,9 @@
   .lh nav{display:flex;align-items:center;gap:20px}
   .lh nav a{font-size:13px;color:var(--ink-soft);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:2px}
   .lh nav a:hover{color:var(--ink);border-bottom-color:var(--rule-2)}
+  .xlink{display:inline-flex;align-items:center;border-bottom:0!important;color:var(--ink-soft)}
+  .xlink:hover{color:var(--credit)}
+  .xi{width:17px;height:17px;fill:currentColor}
   .btn{all:unset;cursor:pointer;font-size:13.5px;font-weight:700;letter-spacing:.01em;padding:12px 20px;border-radius:11px;
     background:linear-gradient(180deg,#4dffc8,#00ffa3);color:#04100d;text-align:center;white-space:nowrap;
     box-shadow:0 0 0 1px rgba(0,255,163,.35), 0 12px 30px -12px rgba(0,255,163,.7);
@@ -58,7 +61,7 @@
   .btn.ghost{background:none;color:var(--ink-soft);box-shadow:inset 0 0 0 1px var(--rule-2);font-weight:600}
   .btn.ghost:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--credit);transform:none}
   .btn[disabled]{cursor:not-allowed;opacity:.4;box-shadow:0 0 0 1px rgba(0,255,163,.25);transform:none}
-  @media(max-width:560px){.lh nav a{display:none}.lh .desc{display:none}}
+  @media(max-width:560px){.lh nav a:not(.xlink){display:none}.lh .desc{display:none}}
 
   /* statement metadata band */
   .meta{display:grid;grid-template-columns:1.4fr 1fr 1.4fr;border-bottom:2px solid var(--ink)}
@@ -149,9 +152,13 @@
   .candid p{margin:0 0 9px;padding-left:14px;border-left:2px solid var(--rule-2)}
   .candid b{color:var(--ink-soft)}
 
-  footer{border-top:2px solid var(--ink);margin-top:30px;padding:15px 0 42px;font-size:12px;color:var(--muted);
-    display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
-  footer a{border-bottom:1px solid var(--rule-2)}
+  footer{border-top:2px solid var(--ink);margin-top:30px;padding:16px 0 44px;font-size:12.5px;color:var(--muted)}
+  .footrow{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;width:100%;padding:0 26px}
+  .fbrand{font-family:"Orbitron",sans-serif;font-size:12px;letter-spacing:.04em;color:var(--ink-soft)}
+  .fnav{display:flex;align-items:center;gap:20px}
+  .fnav a{color:var(--ink-soft);text-decoration:none}
+  .fnav a:not(.xlink){border-bottom:1px solid var(--rule-2);padding-bottom:1px}
+  .fnav a:hover{color:var(--ink)}
   svg.i{width:13px;height:13px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
   .copied{color:var(--credit)!important}
 </style>
@@ -164,8 +171,9 @@
       <div class="desc">Earn HYPE and HYLD just by holding</div>
     </div>
     <nav>
-      <a href="#how">How it is booked</a>
-      <a href="#refs">Contract</a>
+      <a href="#how">How you earn</a>
+      <a href="/whitepaper.html">Whitepaper</a>
+      <a class="xlink" id="xtop" target="_blank" rel="noopener" aria-label="X"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25H8.08l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.12H5.12l11.96 15.65Z"/></svg></a>
       <button class="btn" id="connect">Connect wallet</button>
     </nav>
   </div>
@@ -194,7 +202,6 @@
       </div>
       <div class="claimrow">
         <button class="btn" id="claim">Connect wallet</button>
-        <button class="btn ghost" id="acct-refresh" hidden>Refresh</button>
         <span class="txline" id="txline"></span>
       </div>
       <p class="cb-fine" id="connecthint">Connect your wallet to see what you have earned and claim it. Everything below is public, no wallet needed.</p>
@@ -217,7 +224,7 @@
 
   <!-- LIVE NUMBERS -->
   <section class="figs">
-    <div class="top"><h2>Live numbers</h2></div>
+    <div class="top"><h2>Token stats</h2></div>
     <div class="split">
       <svg class="pie" viewBox="0 0 42 42" role="img" aria-label="reward split">
         <circle class="track" cx="21" cy="21" r="15.915"/>
@@ -233,7 +240,7 @@
     <div class="srow"><span class="k">HYPE reward pool<span class="s">pays your HYPE instantly on buys</span></span><span class="v" id="buffer">…</span></div>
     <div class="srow"><span class="k">Waiting to convert<span class="s">turns into HYPE on the next sell</span></span><span class="v" id="pending">…</span></div>
     <div class="srow"><span class="k">Earning supply<span class="s">tokens that share the rewards</span></span><span class="v" id="elig">…</span></div>
-    <div class="updated"><span id="updated">loading…</span><button id="refresh">Refresh</button></div>
+    <div class="updated"><span id="updated">loading…</span></div>
   </section>
 
   <!-- REFERENCES + CANDOR -->
@@ -248,15 +255,18 @@
     <div class="candid">
       <p><b>The HYPE pool can run low.</b> Your HYPE is paid right away from a pool that refills when people sell. If lots of people buy and nobody sells, it can run low for a bit, and the HYPE you are owed shows up once the next sell tops it back up. Your HYLD reward never has to wait.</p>
       <p><b>The tax can never go above 5%.</b> The owner can only lower it, never raise it past 5%. The trading pool and treasury do not earn rewards, so they never eat into your share.</p>
-      <p><b>Not audited yet.</b> This is an early release. Check the contract yourself before putting in money. Every number here comes straight from the blockchain.</p>
     </div>
   </section>
 </div>
 
 <footer>
-  <div class="wrap" style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;width:100%;padding:0 26px">
-    <span>Reads live from the blockchain. Tap refresh to update.</span>
-    <a class="mono" id="explorerc" target="_blank" rel="noopener">View contract</a>
+  <div class="wrap footrow">
+    <span class="fbrand">HyperYield (HYLD)</span>
+    <nav class="fnav">
+      <a href="/whitepaper.html">Whitepaper</a>
+      <a id="explorerc" target="_blank" rel="noopener">Contract</a>
+      <a class="xlink" id="xfoot" target="_blank" rel="noopener" aria-label="X"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25H8.08l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.12H5.12l11.96 15.65Z"/></svg></a>
+    </nav>
   </div>
 </footer>
 
@@ -270,6 +280,7 @@ const CONFIG = {
   chainHex: "0x3e7",
   explorer: "https://hyperevmscan.io",
   whype: "0x5555555555555555555555555555555555555555",
+  x: "https://x.com/HyperYield",
 };
 
 const ABI = [
@@ -295,6 +306,7 @@ const spanU = (u)=>`<span class="s">${u}</span>`;
 let META=null, connected=null, signer=null, prev={};
 
 $("explorerc").href = `${CONFIG.explorer}/address/${CONFIG.token}`;
+$("xtop").href = CONFIG.x; $("xfoot").href = CONFIG.x;
 
 function copyBtn(el,text){ el.addEventListener("click",async()=>{ try{await navigator.clipboard.writeText(text);
   el.classList.add("copied");setTimeout(()=>el.classList.remove("copied"),900);}catch(e){} }); }
@@ -351,8 +363,6 @@ async function loadAccount(addr){
 }
 
 $("connect").addEventListener("click",connect);
-$("acct-refresh").addEventListener("click",loadState);
-$("refresh").addEventListener("click",loadState);
 
 async function connect(){
   if(!window.ethereum){ $("connecthint").textContent="No wallet detected. Install a HyperEVM compatible wallet, then reload."; return; }
@@ -363,7 +373,6 @@ async function connect(){
     await bp.send("eth_requestAccounts",[]);
     signer=await bp.getSigner(); connected=await signer.getAddress();
     $("connect").textContent=short(connected);
-    $("acct-refresh").hidden=false;
     $("connecthint").textContent="";
     await loadAccount(connected);
   }catch(e){ $("connecthint").textContent=(e&&e.code===4001)?"connection rejected":"could not connect, try again"; }
