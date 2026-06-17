@@ -1,14 +1,63 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512" role="img" aria-label="HYLD logo">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="HYLD">
   <defs>
-    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="5" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <radialGradient id="bg" cx="50%" cy="36%" r="62%">
+      <stop offset="0%" stop-color="#04140e"/>
+      <stop offset="60%" stop-color="#010705"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <linearGradient id="tube" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#d6fff1"/>
+      <stop offset="42%" stop-color="#00ffa3"/>
+      <stop offset="100%" stop-color="#00945f"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="20"/>
+    </filter>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6"/>
     </filter>
   </defs>
-  <rect x="5" y="5" width="246" height="246" rx="56" fill="#010006"/>
-  <rect x="8" y="8" width="240" height="240" rx="53" fill="none" stroke="#00ffa3" stroke-width="6"/>
-  <g filter="url(#glow)" fill="none" stroke="#00ffa3" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M128 206 L128 140"/>
-    <path d="M70 58 L128 140 L186 58"/>
+
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+
+  <!-- crystal particles accreting inward (yield accumulates) -->
+  <g fill="#00ffa3" filter="url(#soft)">
+    <rect x="676" y="218" width="36" height="36" rx="5" transform="rotate(45 694 236)" opacity=".95"/>
+    <rect x="730" y="188" width="27" height="27" rx="4" transform="rotate(45 743 201)" opacity=".8"/>
+    <rect x="744" y="256" width="22" height="22" rx="4" transform="rotate(45 755 267)" opacity=".66"/>
+    <rect x="784" y="170" width="19" height="19" rx="3" transform="rotate(45 793 179)" opacity=".55"/>
+    <rect x="820" y="206" width="15" height="15" rx="3" transform="rotate(45 827 213)" opacity=".42"/>
+    <rect x="800" y="262" width="14" height="14" rx="3" transform="rotate(45 807 269)" opacity=".4"/>
+    <rect x="858" y="180" width="11" height="11" rx="2" transform="rotate(45 863 185)" opacity=".3"/>
+    <rect x="852" y="244" width="10" height="10" rx="2" transform="rotate(45 857 249)" opacity=".26"/>
+  </g>
+
+  <!-- emblem: a glossy neon-tube Y (one stem forking into two streams) -->
+  <g transform="translate(0,-12)">
+    <g fill="none" stroke="#00ffa3" stroke-width="52" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" opacity=".6">
+      <path d="M512 648 L512 470"/>
+      <path d="M384 258 L512 470 L640 258"/>
+    </g>
+    <g fill="none" stroke="url(#tube)" stroke-width="50" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M512 648 L512 470"/>
+      <path d="M384 258 L512 470 L640 258"/>
+    </g>
+    <!-- specular sheen -->
+    <g fill="none" stroke="#eafff7" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" opacity=".5" transform="translate(0,-7)">
+      <path d="M512 636 L512 474"/>
+      <path d="M392 266 L512 474 L632 266"/>
+    </g>
+  </g>
+
+  <!-- wordmark: thin, wide tracking -->
+  <g fill="none" stroke="#00ffa3" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" filter="url(#soft)">
+    <!-- H -->
+    <path d="M300 802 L300 906 M372 802 L372 906 M300 854 L372 854"/>
+    <!-- Y -->
+    <path d="M430 802 L466 856 L502 802 M466 856 L466 906"/>
+    <!-- L -->
+    <path d="M560 802 L560 906 L628 906"/>
+    <!-- D -->
+    <path d="M690 802 L690 906 M690 802 C 766 802 766 906 690 906"/>
   </g>
 </svg>

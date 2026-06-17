@@ -1,8 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="HYLD">
-  <rect x="5" y="5" width="246" height="246" rx="56" fill="#010006"/>
-  <rect x="8" y="8" width="240" height="240" rx="53" fill="none" stroke="#00ffa3" stroke-width="6"/>
-  <g fill="none" stroke="#00ffa3" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M128 206 L128 140"/>
-    <path d="M70 58 L128 140 L186 58"/>
+  <defs>
+    <linearGradient id="ftube" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d6fff1"/>
+      <stop offset="42%" stop-color="#00ffa3"/>
+      <stop offset="100%" stop-color="#00945f"/>
+    </linearGradient>
+    <filter id="fglow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+  <rect x="4" y="4" width="248" height="248" rx="58" fill="#010006"/>
+  <g fill="#00ffa3" filter="url(#fglow)">
+    <rect x="172" y="58" width="18" height="18" rx="3" transform="rotate(45 181 67)" opacity=".9"/>
+    <rect x="198" y="44" width="12" height="12" rx="2" transform="rotate(45 204 50)" opacity=".55"/>
+  </g>
+  <g fill="none" stroke="#00ffa3" stroke-width="27" stroke-linecap="round" stroke-linejoin="round" filter="url(#fglow)" opacity=".6">
+    <path d="M128 196 L128 132"/><path d="M80 78 L128 132 L176 78"/>
+  </g>
+  <g fill="none" stroke="url(#ftube)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M128 196 L128 132"/><path d="M80 78 L128 132 L176 78"/>
+  </g>
+  <g fill="none" stroke="#eafff7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity=".5" transform="translate(0,-4)">
+    <path d="M128 190 L128 135"/><path d="M84 84 L128 135 L172 84"/>
   </g>
 </svg>
