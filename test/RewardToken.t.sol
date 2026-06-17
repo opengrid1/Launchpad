@@ -5,77 +5,102 @@ import {Test} from "forge-std/Test.sol";
 import {RewardToken} from "../src/RewardToken.sol";
 
 interface IERC20Like {
-    function transferFrom(address f, address t, uint256 v) external returns (bool);
+    function transfer(address to, uint256 v) external returns (bool);
 }
 
-/// Mock UniswapV2 router: pulls the token in and pays out native HYPE at a
-/// fixed rate (out = in * rateNum / rateDen).
-contract MockV2Router {
-    address public weth;
-    uint256 public rateNum = 1;
-    uint256 public rateDen = 10;
+/// WETH9-style mock for WHYPE.
+contract MockWHYPE {
+    mapping(address => uint256) public balanceOf;
 
-    constructor(address weth_) {
-        weth = weth_;
+    function deposit() external payable {
+        balanceOf[msg.sender] += msg.value;
     }
 
-    function WETH() external view returns (address) {
-        return weth;
+    function mint(address to, uint256 a) external {
+        balanceOf[to] += a;
     }
 
-    receive() external payable {}
+    function withdraw(uint256 a) external {
+        balanceOf[msg.sender] -= a;
+        (bool ok,) = msg.sender.call{value: a}("");
+        require(ok, "withdraw fail");
+    }
 
-    function swapExactTokensForETHSupportingFeeOnTransferTokens(
-        uint256 amountIn,
-        uint256,
-        address[] calldata path,
-        address to,
-        uint256
-    ) external {
-        IERC20Like(path[0]).transferFrom(msg.sender, address(this), amountIn);
-        uint256 out = (amountIn * rateNum) / rateDen;
-        (bool ok,) = to.call{value: out}("");
-        require(ok, "eth send fail");
+    function transfer(address to, uint256 a) external returns (bool) {
+        balanceOf[msg.sender] -= a;
+        balanceOf[to] += a;
+        return true;
+    }
+
+    receive() external payable {
+        balanceOf[msg.sender] += msg.value;
+    }
+}
+
+/// Minimal UniswapV2-pair mock: pays out the requested token on swap.
+contract MockPair {
+    address public token0;
+    address public token1;
+    uint112 private r0;
+    uint112 private r1;
+
+    constructor(address t0, address t1) {
+        token0 = t0;
+        token1 = t1;
+    }
+
+    function setReserves(uint112 a, uint112 b) external {
+        r0 = a;
+        r1 = b;
+    }
+
+    function getReserves() external view returns (uint112, uint112, uint32) {
+        return (r0, r1, 0);
+    }
+
+    function swap(uint256 a0, uint256 a1, address to, bytes calldata) external {
+        if (a0 > 0) IERC20Like(token0).transfer(to, a0);
+        if (a1 > 0) IERC20Like(token1).transfer(to, a1);
     }
 }
 
 contract RewardTokenTest is Test {
     RewardToken token;
-    MockV2Router router;
+    MockWHYPE whype;
+    MockPair pair;
 
     address deployer = address(this);
     address alice = address(0xA11CE);
     address bob = address(0xB0B);
-    address pair = address(0xDEAD01);
-    address treasury = address(0x7);
 
     uint256 constant SUPPLY = 10_000 ether;
 
     function setUp() public {
-        router = new MockV2Router(address(0x5555555555555555555555555555555555555555));
-        vm.deal(address(router), 10_000 ether); // router can pay out HYPE
-        token = new RewardToken("HyperYield", "HYLD", SUPPLY, deployer, address(router));
-        token.setSwapThreshold(1); // swap-back on essentially any sell
+        whype = new MockWHYPE();
+        vm.deal(address(whype), 1_000 ether); // back WHYPE with native for withdraw
+        token = new RewardToken("HyperYield", "HYLD", SUPPLY, deployer, address(whype));
+        pair = new MockPair(address(token), address(whype)); // token = token0
+        whype.mint(address(pair), 500 ether); // pair holds WHYPE to pay out
+        pair.setReserves(uint112(2_000 ether), uint112(100 ether)); // 2000 HYLD : 100 WHYPE
+        token.setSwapThreshold(1);
     }
 
-    /// Wires up alice as the sole eligible holder and `pair` as the AMM.
     function _setupMarket() internal {
         token.transfer(alice, 5_000 ether); // untaxed (deployer exempt)
-        token.transfer(pair, 3_000 ether); // seed liquidity, untaxed
-        token.excludeFromRewards(deployer); // drop deployer's remaining 2_000
-        token.excludeFromRewards(pair); // pair neither earns nor dilutes
-        token.excludeFromRewards(address(router)); // router holdings don't dilute
-        token.setAMM(pair, true);
+        token.transfer(address(pair), 2_000 ether); // liquidity tokens held by the pair
+        token.excludeFromRewards(deployer); // remaining 3_000 out of denominator
+        token.setPair(address(pair)); // marks AMM + token ordering
+        token.excludeFromRewards(address(pair)); // pool neither earns nor dilutes
+        // eligible = alice 5_000
     }
 
     function test_defaults() public view {
         assertEq(token.buyTaxBps(), 500);
         assertEq(token.sellTaxBps(), 500);
         assertEq(token.hypeShareBps(), 5_000);
-        assertEq(token.WHYPE(), address(0x5555555555555555555555555555555555555555));
+        assertEq(token.WHYPE(), address(whype));
     }
 
-    /// Wallet-to-wallet transfers are untaxed (transfer tax = 0%).
     function test_noTaxWalletToWallet() public {
         token.transfer(alice, 1_000 ether);
         vm.prank(alice);
@@ -83,88 +108,83 @@ contract RewardTokenTest is Test {
         assertEq(token.balanceOf(bob), 400 ether);
     }
 
-    /// A buy from the AMM is taxed 5%.
     function test_buyTax() public {
         _setupMarket();
-        // Buy: pair -> bob, 1_000 in. 5% = 50 tax, bob receives 950.
-        vm.prank(pair);
-        token.transfer(bob, 1_000 ether);
+        vm.prank(address(pair));
+        token.transfer(bob, 1_000 ether); // buy: pair -> bob
         assertEq(token.balanceOf(bob), 950 ether);
         assertEq(token.pendingTax(), 50 ether);
     }
 
-    /// A sell into the AMM is taxed 5% and, once tax has accumulated, swap-back
-    /// splits it into a HYLD reward and a HYPE reward (50/50 by default).
-    function test_sellTaxSplitsIntoTokenAndHype() public {
+    /// A sell triggers swap-back: tax splits into a TOKEN reward + a HYPE reward,
+    /// both claimable by a passive holder.
+    function test_sellSwapsToBothRewards() public {
         _setupMarket();
 
-        // First sell accumulates tax (swap-back sees pendingTax == 0, no-op).
         vm.prank(alice);
-        token.transfer(pair, 1_000 ether); // tax 50 -> pendingTax 50
+        token.transfer(address(pair), 1_000 ether); // sell #1: tax 50 -> pending
         assertEq(token.pendingTax(), 50 ether);
 
-        // Second sell triggers swap-back of the 50 collected: 25 -> HYLD reward,
-        // 25 -> swapped to HYPE (rate 1/10 => 2.5 HYPE).
         vm.prank(alice);
-        token.transfer(pair, 1_000 ether);
+        token.transfer(address(pair), 1_000 ether); // sell #2: triggers swap-back of 50
 
-        // alice is the only eligible holder, so she gets ~all of both rewards.
-        assertApproxEqAbs(token.withdrawableToken(alice), 25 ether, 1e6);
-        assertApproxEqAbs(token.withdrawableHype(alice), 2.5 ether, 1e6);
+        // 25 -> TOKEN reward, 25 -> swapped to HYPE. alice is the only eligible holder.
+        assertApproxEqAbs(token.withdrawableToken(alice), 25 ether, 1e9);
+        uint256 owedHype = token.withdrawableHype(alice);
+        assertGt(owedHype, 0, "HYPE reward distributed");
 
         // Claim pays both.
-        uint256 tokenBefore = token.balanceOf(alice);
-        uint256 hypeBefore = alice.balance;
+        uint256 tBefore = token.balanceOf(alice);
+        uint256 hBefore = alice.balance;
         vm.prank(alice);
         token.claim();
-        assertApproxEqAbs(token.balanceOf(alice) - tokenBefore, 25 ether, 1e6);
-        assertApproxEqAbs(alice.balance - hypeBefore, 2.5 ether, 1e6);
+        assertApproxEqAbs(token.balanceOf(alice) - tBefore, 25 ether, 1e9);
+        assertEq(alice.balance - hBefore, owedHype);
     }
 
-    /// Earned rewards survive selling all your tokens.
     function test_earnedSurvivesSale() public {
         _setupMarket();
-        // Generate two sells worth of tax so a distribution lands for alice.
         vm.prank(alice);
-        token.transfer(pair, 1_000 ether);
+        token.transfer(address(pair), 1_000 ether);
         vm.prank(alice);
-        token.transfer(pair, 1_000 ether);
+        token.transfer(address(pair), 1_000 ether);
 
-        uint256 owedToken = token.withdrawableToken(alice);
-        assertGt(owedToken, 0);
+        uint256 owed = token.withdrawableToken(alice);
+        assertGt(owed, 0);
 
-        // Alice dumps her entire remaining balance.
         uint256 remaining = token.balanceOf(alice);
         vm.prank(alice);
-        token.transfer(bob, remaining); // wallet transfer, untaxed
-
+        token.transfer(bob, remaining); // wallet move, untaxed
         assertEq(token.balanceOf(alice), 0);
-        assertApproxEqAbs(token.withdrawableToken(alice), owedToken, 1e6, "earned stays after sale");
+        assertApproxEqAbs(token.withdrawableToken(alice), owed, 1e9, "earned stays after sale");
     }
 
-    /// Excluded accounts (pair) neither earn nor dilute.
     function test_excludedDoesNotEarn() public {
         _setupMarket();
         vm.prank(alice);
-        token.transfer(pair, 1_000 ether);
+        token.transfer(address(pair), 1_000 ether);
         vm.prank(alice);
-        token.transfer(pair, 1_000 ether);
-        assertEq(token.withdrawableToken(pair), 0);
-        assertEq(token.withdrawableHype(pair), 0);
+        token.transfer(address(pair), 1_000 ether);
+        assertEq(token.withdrawableToken(address(pair)), 0);
+        assertEq(token.withdrawableHype(address(pair)), 0);
     }
 
-    /// Tax never makes a trade revert even if the swap fails (no HYPE in router).
+    /// If the swap fails (pair can't pay WHYPE), trades still succeed; the HYPE
+    /// portion returns to pending and the TOKEN reward is still booked.
     function test_swapFailureDoesNotBrickTrades() public {
         _setupMarket();
-        vm.deal(address(router), 0); // router can't pay HYPE -> swap reverts internally
+        // drain the pair's WHYPE so the swap reverts (compute balance first so
+        // the vm.prank applies to the transfer, not the balanceOf call)
+        uint256 pairWhype = whype.balanceOf(address(pair));
+        vm.prank(address(pair));
+        whype.transfer(address(0xdead), pairWhype);
 
         vm.prank(alice);
-        token.transfer(pair, 1_000 ether);
+        token.transfer(address(pair), 1_000 ether);
         vm.prank(alice);
-        token.transfer(pair, 1_000 ether); // triggers swap-back; must NOT revert
+        token.transfer(address(pair), 1_000 ether); // swap-back attempted; must NOT revert
 
-        // HYLD reward still booked; HYPE portion returned to pending for retry.
-        assertApproxEqAbs(token.withdrawableToken(alice), 25 ether, 1e6);
+        assertApproxEqAbs(token.withdrawableToken(alice), 25 ether, 1e9);
         assertEq(token.withdrawableHype(alice), 0);
         assertGt(token.pendingTax(), 0);
     }
@@ -173,17 +193,15 @@ contract RewardTokenTest is Test {
         token.setTaxes(300, 200);
         assertEq(token.buyTaxBps(), 300);
         assertEq(token.sellTaxBps(), 200);
-
         vm.expectRevert(bytes("tax > 5%"));
         token.setTaxes(600, 100);
-
         vm.prank(alice);
         vm.expectRevert(bytes("not owner"));
         token.setTaxes(0, 0);
     }
 
     function test_setRewardSplit() public {
-        token.setRewardSplit(7_000); // 70% HYPE / 30% HYLD
+        token.setRewardSplit(7_000);
         assertEq(token.hypeShareBps(), 7_000);
         vm.expectRevert(bytes("bad split"));
         token.setRewardSplit(10_001);
