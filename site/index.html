@@ -169,26 +169,21 @@
       <span class="tag" id="whotag" hidden>earning</span>
     </div>
 
-    <div id="disconnected">
-      <p class="cb-lead">Your HYLD and HYPE accrue to your wallet on every trade, the moment it lands. Connect on HyperEVM to read what is owed to you and claim it in one transaction.</p>
-      <button class="btn" id="connect2">Connect wallet</button>
-      <p class="cb-fine" id="connecthint"></p>
-    </div>
-
-    <div id="connected" hidden>
+    <div>
       <div class="amts">
-        <div class="amt"><div class="n mono" id="cl-hyld">…</div><div class="u">HYLD owed</div></div>
-        <div class="amt"><div class="n mono" id="cl-hype">…</div><div class="u">HYPE owed</div></div>
+        <div class="amt"><div class="n mono" id="cl-hyld">0</div><div class="u">HYLD owed</div></div>
+        <div class="amt"><div class="n mono" id="cl-hype">0</div><div class="u">HYPE owed</div></div>
       </div>
       <div class="claimrow">
-        <button class="btn" id="claim" disabled>Claim both</button>
-        <button class="btn ghost" id="acct-refresh">Refresh</button>
+        <button class="btn" id="claim">Connect wallet</button>
+        <button class="btn ghost" id="acct-refresh" hidden>Refresh</button>
         <span class="txline" id="txline"></span>
       </div>
+      <p class="cb-fine" id="connecthint">Connect on HyperEVM to load your wallet and claim. The contract figures below are public, no wallet needed.</p>
       <div class="acct">
-        <div class="f"><div class="lbl">HYLD held</div><div class="fv mono" id="balance">…<span class="u">HYLD</span></div></div>
-        <div class="f"><div class="lbl">Your share of rewards</div><div class="fv mono" id="share">…<span class="u">%</span></div></div>
-        <div class="f" style="flex:1;min-width:200px"><div class="lbl">Wallet</div><div class="a" id="whoaddr"></div></div>
+        <div class="f"><div class="lbl">HYLD held</div><div class="fv mono" id="balance">0<span class="u">HYLD</span></div></div>
+        <div class="f"><div class="lbl">Your share of rewards</div><div class="fv mono" id="share">0<span class="u">%</span></div></div>
+        <div class="f" style="flex:1;min-width:200px"><div class="lbl">Wallet</div><div class="a" id="whoaddr">not connected</div></div>
       </div>
     </div>
   </section>
@@ -326,7 +321,6 @@ async function loadAccount(addr){
 }
 
 $("connect").addEventListener("click",connect);
-$("connect2").addEventListener("click",connect);
 $("acct-refresh").addEventListener("click",loadState);
 $("refresh").addEventListener("click",loadState);
 
@@ -339,7 +333,8 @@ async function connect(){
     await bp.send("eth_requestAccounts",[]);
     signer=await bp.getSigner(); connected=await signer.getAddress();
     $("connect").textContent=short(connected);
-    $("disconnected").hidden=true; $("connected").hidden=false;
+    $("acct-refresh").hidden=false;
+    $("connecthint").textContent="";
     await loadAccount(connected);
   }catch(e){ $("connecthint").textContent=(e&&e.code===4001)?"connection rejected":"could not connect, try again"; }
 }
@@ -353,7 +348,8 @@ async function ensureChain(){
 }
 
 $("claim").addEventListener("click",async()=>{
-  if(!signer||!connected) return;
+  if(!connected){ connect(); return; }   // box is public; button connects first
+  if(!signer) return;
   const btn=$("claim"),tx=$("txline"); btn.disabled=true; const label=btn.textContent; btn.textContent="Claiming…";
   tx.className="txline"; tx.textContent="awaiting signature";
   try{
