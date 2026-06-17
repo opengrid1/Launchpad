@@ -152,6 +152,35 @@
   .candid p{margin:0 0 9px;padding-left:14px;border-left:2px solid var(--rule-2)}
   .candid b{color:var(--ink-soft)}
 
+  /* hero (proclamation + facts + shields) */
+  .hero{padding:30px 0 6px}
+  .proclaim{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.3em;color:var(--credit);text-transform:uppercase;opacity:.9}
+  .htitle{font-family:"Orbitron",sans-serif;font-weight:700;font-size:clamp(26px,6vw,40px);line-height:1.1;margin:13px 0 12px;max-width:17ch}
+  .hsub{color:var(--ink-soft);font-size:15px;max-width:56ch;margin:0 0 22px}
+  .facts4{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--rule-2);border-radius:16px;overflow:hidden;background:#060d0c}
+  .facts4 .f{padding:17px 18px 15px;border-right:1px solid var(--rule)}
+  .facts4 .f:last-child{border-right:0}
+  .facts4 .fk{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .facts4 .fn{font-family:"Orbitron",sans-serif;font-weight:700;font-size:clamp(18px,3.2vw,26px);margin:10px 0 5px;color:var(--credit);text-shadow:0 0 18px rgba(0,255,163,.25);font-variant-numeric:tabular-nums;line-height:1}
+  .facts4 .fn .u{font-size:11px;color:var(--muted);text-shadow:none;margin-left:3px}
+  .facts4 .fs{font-size:11px;color:var(--muted)}
+  @media(max-width:620px){.facts4{grid-template-columns:1fr 1fr}.facts4 .f:nth-child(2){border-right:0}.facts4 .f:nth-child(1),.facts4 .f:nth-child(2){border-bottom:1px solid var(--rule)}}
+  .shields{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+  .shield{padding:17px 18px;border:1px solid var(--rule-2);border-radius:14px;background:linear-gradient(180deg,rgba(0,255,163,.045),transparent)}
+  .shield .si{width:22px;height:22px;stroke:var(--credit);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px rgba(0,255,163,.5))}
+  .shield .st{font-family:"Orbitron",sans-serif;font-weight:700;font-size:13.5px;margin:11px 0 6px}
+  .shield .sd{font-size:12.5px;color:var(--ink-soft);line-height:1.55}
+  @media(max-width:620px){.shields{grid-template-columns:1fr}}
+  /* FAQ */
+  .faq{padding:30px 0 6px;border-bottom:1px solid var(--rule)}
+  .faq h2{font-size:19px;margin-bottom:3px}
+  .faq .fsub{color:var(--muted);font-size:13px;margin-bottom:12px}
+  .faq details{border-bottom:1px solid var(--rule);padding:13px 0}
+  .faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14.5px;color:var(--ink);font-weight:600}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";color:var(--credit);font-family:"Share Tech Mono",monospace;font-size:19px;line-height:1}
+  .faq details[open] summary::after{content:"\2013"}
+  .faq .fa{margin:11px 0 2px;font-size:13.5px;color:var(--ink-soft);line-height:1.62;max-width:70ch}
   footer{border-top:2px solid var(--ink);margin-top:30px;padding:16px 0 44px;font-size:12.5px;color:var(--muted)}
   .footrow{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;width:100%;padding:0 26px}
   .fbrand{font-family:"Orbitron",sans-serif;font-size:12px;letter-spacing:.04em;color:var(--ink-soft)}
@@ -173,6 +202,7 @@
     <nav>
       <a href="#how">How you earn</a>
       <a href="/whitepaper.html">Whitepaper</a>
+      <a class="xlink" id="tgtop" target="_blank" rel="noopener" aria-label="Telegram"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 4.2 2.6 11.7c-.85.33-.83 1.55.03 1.85l4.9 1.6 1.86 5.3c.26.73 1.2.9 1.7.27l2.5-3.16 4.86 3.56c.6.44 1.46.1 1.6-.64L23.5 5.4c.18-.9-.72-1.55-1.5-1.2Z"/></svg></a>
       <a class="xlink" id="xtop" target="_blank" rel="noopener" aria-label="X"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25H8.08l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.12H5.12l11.96 15.65Z"/></svg></a>
       <button class="btn" id="connect">Connect wallet</button>
     </nav>
@@ -181,12 +211,37 @@
 
 <div class="wrap">
 
-  <!-- quick facts -->
-  <div class="meta">
-    <div class="m"><div class="lbl">Token</div><div class="mv">HyperYield (HYLD)</div></div>
-    <div class="m"><div class="lbl">Supply</div><div class="mv" id="supply">…<span class="s">HYLD</span></div></div>
-    <div class="m"><div class="lbl">Tax</div><div class="mv"><span id="buytax">…</span> buy, <span id="selltax">…</span> sell</div></div>
-  </div>
+  <!-- hero -->
+  <section class="hero">
+    <div class="proclaim">Hear ye, holders of HyperEVM</div>
+    <h1 class="htitle">Hold HYLD. Get paid on every trade.</h1>
+    <p class="hsub">A 5% fee on each buy and sell goes straight back to holders, in HYLD and in HYPE, the moment the trade lands. No staking, no lockups.</p>
+
+    <div class="facts4">
+      <div class="f"><div class="fk">Total supply</div><div class="fn mono" id="supply">…<span class="u">HYLD</span></div><div class="fs">Fixed, no minting</div></div>
+      <div class="f"><div class="fk">Trade tax</div><div class="fn mono"><span id="buytax">…</span> <span class="u">/</span> <span id="selltax">…</span></div><div class="fs">Buy / sell, free to send</div></div>
+      <div class="f"><div class="fk">Rewards</div><div class="fn">HYLD<span class="u">+</span>HYPE</div><div class="fs">Paid every trade</div></div>
+      <div class="f"><div class="fk">Network</div><div class="fn">HyperEVM</div><div class="fs">Hyperswap V2 pair</div></div>
+    </div>
+
+    <div class="shields">
+      <div class="shield">
+        <svg class="si" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-3Z"/><path d="M9.2 12.2l2 2 3.6-3.8"/></svg>
+        <div class="st">Tax capped at 5%</div>
+        <div class="sd">The owner can only lower the tax, never raise it past 5% on either side. No mint, no blacklist.</div>
+      </div>
+      <div class="shield">
+        <svg class="si" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M7.7 10.3h8.6M7.7 13.7h8.6"/></svg>
+        <div class="st">Two rewards, instant</div>
+        <div class="sd">Every buy and sell pays holders in HYLD and in HYPE the moment it lands, even on buys.</div>
+      </div>
+      <div class="shield">
+        <svg class="si" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
+        <div class="st">Your earnings are yours</div>
+        <div class="sd">Rewards accrue to the HYLD you hold, with no retroactive dilution. What you earn stays yours after you sell.</div>
+      </div>
+    </div>
+  </section>
 
   <!-- THE REWARDS BOX -->
   <section class="credit">
@@ -243,6 +298,20 @@
     <div class="updated"><span id="updated">loading…</span></div>
   </section>
 
+  <!-- FAQ -->
+  <section class="faq" id="faq">
+    <h2>The HYLD Decrees</h2>
+    <div class="fsub">Answers for holders.</div>
+    <details><summary>Why two rewards instead of one?</summary>
+      <div class="fa">More HYLD grows your bag without you buying more, and HYPE pays you in the chain's own coin you can use anywhere. You get both from the same 5% fee, so every trade rewards you two ways at once.</div></details>
+    <details><summary>How can HYPE be paid instantly, even on a buy?</summary>
+      <div class="fa">The token keeps a small pool of HYPE and pays your HYPE reward from it right away. The pool refills automatically by converting collected fees to HYPE whenever someone sells. If buys outpace sells for a while the pool can run low, and the HYPE you are owed arrives once the next sell tops it up. Your HYLD reward never waits.</div></details>
+    <details><summary>Is there a team tax or hidden cut?</summary>
+      <div class="fa">No separate team tax. The whole 5% on each trade is split between holders as HYLD and HYPE. The pool and treasury are excluded from rewards, so they never eat into your share.</div></details>
+    <details><summary>What chain and exchange is this on?</summary>
+      <div class="fa">HyperEVM, chain 999. HYLD is paired against WHYPE on a Hyperswap V2 pool. Because the token has a trade fee it lives on a V2-style pool, not V3.</div></details>
+  </section>
+
   <!-- REFERENCES + CANDOR -->
   <section class="trans">
     <h2>Addresses and the honest bits</h2>
@@ -265,6 +334,7 @@
     <nav class="fnav">
       <a href="/whitepaper.html">Whitepaper</a>
       <a id="explorerc" target="_blank" rel="noopener">Contract</a>
+      <a class="xlink" id="tgfoot" target="_blank" rel="noopener" aria-label="Telegram"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 4.2 2.6 11.7c-.85.33-.83 1.55.03 1.85l4.9 1.6 1.86 5.3c.26.73 1.2.9 1.7.27l2.5-3.16 4.86 3.56c.6.44 1.46.1 1.6-.64L23.5 5.4c.18-.9-.72-1.55-1.5-1.2Z"/></svg></a>
       <a class="xlink" id="xfoot" target="_blank" rel="noopener" aria-label="X"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25H8.08l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.12H5.12l11.96 15.65Z"/></svg></a>
     </nav>
   </div>
@@ -281,6 +351,7 @@ const CONFIG = {
   explorer: "https://hyperevmscan.io",
   whype: "0x5555555555555555555555555555555555555555",
   x: "https://x.com/HyperYield",
+  tg: "https://t.me/HyperYield",
 };
 
 const ABI = [
@@ -307,6 +378,7 @@ let META=null, connected=null, signer=null, prev={};
 
 $("explorerc").href = `${CONFIG.explorer}/address/${CONFIG.token}`;
 $("xtop").href = CONFIG.x; $("xfoot").href = CONFIG.x;
+$("tgtop").href = CONFIG.tg; $("tgfoot").href = CONFIG.tg;
 
 function copyBtn(el,text){ el.addEventListener("click",async()=>{ try{await navigator.clipboard.writeText(text);
   el.classList.add("copied");setTimeout(()=>el.classList.remove("copied"),900);}catch(e){} }); }
