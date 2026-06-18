@@ -3,6 +3,10 @@ pragma solidity ^0.8.26;
 
 import {ApexToken} from "./ApexToken.sol";
 
+interface IApexBond {
+    function bond(uint256 tokenAmount) external payable;
+}
+
 /// @title ApexCurve — stepped bonding-curve sale for APEX (Phase 1, pre-bond).
 /// @notice ETH in -> APEX out along an 8-tier stepped curve. Selling back charges a 5% fee
 ///         that is paid out to current holders as ETH dividends. The raised ETH is held by
@@ -23,6 +27,9 @@ contract ApexCurve {
     uint256 public immutable lpReserve; // APEX reserved for the pool at bond (e.g. 2000e18)
     uint256 public immutable sellFeeBps; // sell fee, to ETH dividends (e.g. 500 = 5%)
     uint256 public immutable minBondRaise; // floor for manual bondNow()
+
+    address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
+    address public hook; // ApexHook (v4) that holds the bonded pool; set before bonding
 
     uint256 public sold; // APEX sold on the curve so far
     uint256 public raised; // ETH currently held for the curve (== integral up to `sold`)
@@ -174,11 +181,28 @@ contract ApexCurve {
         _bond();
     }
 
-    /// @dev Finalize the curve. Phase 2 (pool creation + jackpot seed) plugs in here; the
-    ///      contract holds `lpReserve` APEX + `raised` ETH, ready to deploy as liquidity.
+    /// @notice Wire the v4 hook that will receive the liquidity at bond. Owner, pre-bond only.
+    function setHook(address h) external {
+        require(msg.sender == owner, "not owner");
+        require(!bonded, "bonded");
+        require(h != address(0), "zero");
+        hook = h;
+    }
+
+    /// @dev Finalize the curve. When a hook is set, seed the v4 pool with `lpReserve` APEX +
+    ///      `raised` ETH and burn any unsold curve tokens so they can't be dumped later.
     function _bond() internal {
         bonded = true;
-        emit Bonded(raised, lpReserve);
+        uint256 ethForLp = raised;
+        emit Bonded(ethForLp, lpReserve);
+
+        if (hook != address(0)) {
+            uint256 unsold = curveSupply() - sold;
+            if (unsold > 0) token.transfer(DEAD, unsold);
+            raised = 0;
+            token.transfer(hook, lpReserve);
+            IApexBond(hook).bond{value: ethForLp}(lpReserve);
+        }
     }
 
     function transferOwnership(address next) external {
