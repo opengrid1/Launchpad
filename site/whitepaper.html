@@ -37,7 +37,6 @@
   .facts .k{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
   .facts .v{font-family:"Share Tech Mono",monospace;font-size:15px;margin-top:6px}
   .addr{font-family:"Share Tech Mono",monospace;font-size:12.5px;color:var(--ink-soft);word-break:break-all}
-  code{font-family:"Share Tech Mono",monospace;color:var(--credit);font-size:.92em}
   footer{border-top:1px solid var(--rule-2);margin-top:40px;padding:18px 0 50px;font-size:12.5px;color:var(--muted)}
   footer a{border-bottom:1px solid var(--rule-2);text-decoration:none}
 </style>
@@ -53,39 +52,41 @@
 <div class="wrap">
   <h1>HyperYield</h1>
   <div class="sub mono">HYLD whitepaper</div>
-  <p>HyperYield (HYLD) is a token on HyperEVM that pays its holders to hold. Every trade pays a small fee, and that fee goes straight back to holders as two rewards: more HYLD, and HYPE. There is no staking, no lockup, and no forms to fill in. Hold the token, earn on every trade, claim whenever you want.</p>
+  <p>HyperYield (HYLD) is a fair-launch token on HyperEVM. There is no tax, no presale, and no team allocation. The entire supply is placed into the trading pool as single-sided liquidity, the liquidity is locked, ownership is renounced, and the pool's 1% trading fee flows to holders.</p>
 
   <div class="facts">
     <div class="f"><div class="k">Name</div><div class="v">HyperYield (HYLD)</div></div>
-    <div class="f"><div class="k">Supply</div><div class="v">10,000 HYLD, fixed</div></div>
-    <div class="f"><div class="k">Buy / sell tax</div><div class="v">5% / 5%</div></div>
-    <div class="f"><div class="k">Reward split</div><div class="v">50% HYLD / 50% HYPE</div></div>
+    <div class="f"><div class="k">Supply</div><div class="v">1,000,000,000, fixed</div></div>
+    <div class="f"><div class="k">Tax</div><div class="v">0% buy, 0% sell</div></div>
+    <div class="f"><div class="k">Pool fee</div><div class="v">1%, to holders</div></div>
+    <div class="f"><div class="k">Starting mcap</div><div class="v">~$5,000</div></div>
+    <div class="f"><div class="k">Exchange</div><div class="v">Hyperswap V3</div></div>
   </div>
 
-  <h2>How rewards work</h2>
-  <p>Every buy and sell through the pool pays a <b>5% fee</b>, taken in HYLD. Sending HYLD wallet to wallet is always free. That fee is split in two and handed back to holders the moment the trade happens:</p>
-  <ul>
-    <li><b>Half as HYLD.</b> Added straight to holders, in proportion to how much HYLD they hold.</li>
-    <li><b>Half as HYPE.</b> Paid out in HYPE right away, even on buys, from a HYPE pool the token keeps topped up.</li>
-  </ul>
-  <p>Rewards are tracked per token held, with no retroactive dilution: buying in later does not let you claim rewards from trades that happened before you held. What you earned stays yours even after you sell. You take both rewards together whenever you like by tapping <b>claim</b>.</p>
+  <h2>The fair launch</h2>
+  <p>At launch, <b>100% of the supply</b> is seeded into a Hyperswap V3 pool as <b>single-sided liquidity</b>, in a price range starting near a $5k valuation. The team adds <b>no HYPE</b> of its own. Because the liquidity is one token only, there is no insider entry: everyone buys from the same pool at the same starting price.</p>
+  <p>As people buy, HYPE flows into the pool and HYLD flows out, so the pool's HYPE comes entirely from buyers. The price starts low and rises as more join.</p>
 
-  <h2>The HYPE pool</h2>
-  <p>HYPE cannot be created in the middle of a buy, so the token keeps a pool of HYPE to pay buy rewards instantly. The pool refills automatically by converting collected fees to HYPE whenever someone sells. If there is a long run of buys with no sells, the pool can run low for a while; the HYPE you are owed simply lands once the next sell tops it back up. The HYLD half of every reward never depends on the pool.</p>
+  <h2>Rewards from the 1% fee</h2>
+  <p>Every buy and sell pays a <b>1% pool fee</b>, the highest fee tier Hyperswap V3 offers. The locked liquidity position keeps earning that fee in both HYPE and HYLD, even though the liquidity itself can never be withdrawn.</p>
+  <p>The LP position is held by an immutable locker that exposes only a collect function. Anyone can trigger it, and the collected 1% fees are forwarded to holders. No tax on transfers, no team cut, no discretion.</p>
 
-  <h2>Fair by design</h2>
+  <h2>Locked and renounced</h2>
   <ul>
-    <li><b>Fixed 10,000 supply.</b> No minting, ever.</li>
-    <li><b>Tax capped at 5%.</b> The owner can only lower it, never raise it past 5% on either side.</li>
-    <li><b>Pool and treasury excluded.</b> They do not earn rewards, so they never eat into holders' share.</li>
-    <li><b>No lockups.</b> Rewards accrue automatically; claim or sell anytime.</li>
+    <li><b>Liquidity locked.</b> The whole supply is seeded as single-sided liquidity, then the LP is delivered to an immutable locker. The key is destroyed, so the liquidity can never be pulled.</li>
+    <li><b>Ownership renounced.</b> Ownership is renounced in the same transaction the pool is created. No mint, no pause, no blacklist lives in the bytecode.</li>
+    <li><b>Fixed supply.</b> 1,000,000,000 HYLD, all in the pool. None held back.</li>
   </ul>
+
+  <h2>What to know</h2>
+  <p>A single-sided launch starts with HYLD only, so the early price is low and volatile and then settles as buyers add HYPE. Understand the mechanics and the contract before taking part. Nothing here is financial advice.</p>
 
   <h2>Addresses</h2>
-  <p>HyperEVM, chain 999.</p>
+  <p>HyperEVM, chain 999. Published at launch.</p>
   <ul style="list-style:none;padding-left:0">
-    <li><b>Token</b><br><span class="addr">0x70A5390574E1E2e086fa2E6F61D9973D9B5ECa14</span></li>
-    <li><b>Pair (HYLD / WHYPE)</b><br><span class="addr">0x2D00994604D440e6B25A4497E227f228cC2c7aAD</span></li>
+    <li><b>Token</b><br><span class="addr">published at launch</span></li>
+    <li><b>Pool (HYLD / WHYPE), 1% fee</b><br><span class="addr">published at launch</span></li>
+    <li><b>LP locker</b><br><span class="addr">published at launch</span></li>
     <li><b>WHYPE</b><br><span class="addr">0x5555555555555555555555555555555555555555</span></li>
   </ul>
 </div>

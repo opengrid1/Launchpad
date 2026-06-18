@@ -197,131 +197,100 @@
   <div class="wrap lh">
     <div>
       <div class="mark"><svg class="logo" viewBox="0 0 256 256" aria-hidden="true"><defs><linearGradient id="hd" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#eafff8"/><stop offset="30%" stop-color="#3dffc0"/><stop offset="62%" stop-color="#00ffa3"/><stop offset="100%" stop-color="#007a4d"/></linearGradient><radialGradient id="hs" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff" stop-opacity=".9"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><path d="M128 40 C128 40 178 104 178 138 A50 50 0 1 1 78 138 C78 104 128 40 128 40 Z" fill="url(#hd)"/><ellipse cx="108" cy="118" rx="13" ry="25" fill="url(#hs)" transform="rotate(-24 108 118)" opacity=".8"/></svg>HYLD</div>
-      <div class="desc">Earn HYPE and HYLD just by holding</div>
+      <div class="desc">A fair launch on HyperEVM</div>
     </div>
     <nav>
-      <a href="#how">How you earn</a>
+      <a href="#how">How it works</a>
       <a href="/whitepaper.html">Whitepaper</a>
-      <button class="btn" id="connect">Connect wallet</button>
+      <a class="btn" id="buybtn" target="_blank" rel="noopener">Buy HYLD</a>
     </nav>
   </div>
 </header>
 
 <div class="wrap">
-
-  <!-- hero -->
   <section class="hero">
-    <div class="proclaim">Hear ye, holders of HyperEVM</div>
-    <h1 class="htitle">Hold HYLD. Get paid on every trade.</h1>
-    <p class="hsub">A 5% fee on each buy and sell goes straight back to holders, in HYLD and in HYPE, the moment the trade lands. No staking, no lockups.</p>
+    <div class="proclaim">Fair launch on HyperEVM</div>
+    <h1 class="htitle">The whole supply is the liquidity.</h1>
+    <p class="hsub">No tax, no presale, no team tokens. Every HYLD is seeded into the pool single-sided at a starting valuation near $5k. As people buy, the pool fills with HYPE, and 1% of every trade flows back to holders.</p>
 
     <div class="facts4">
-      <div class="f"><div class="fk">Total supply</div><div class="fn mono" id="supply">…<span class="u">HYLD</span></div><div class="fs">Fixed, no minting</div></div>
-      <div class="f"><div class="fk">Trade tax</div><div class="fn mono"><span id="buytax">…</span> <span class="u">/</span> <span id="selltax">…</span></div><div class="fs">Buy / sell, free to send</div></div>
-      <div class="f"><div class="fk">Rewards</div><div class="fn">HYLD<span class="u">+</span>HYPE</div><div class="fs">Paid every trade</div></div>
-      <div class="f"><div class="fk">Network</div><div class="fn">HyperEVM</div><div class="fs">Hyperswap V2 pair</div></div>
+      <div class="f"><div class="fk">Total supply</div><div class="fn">1B<span class="u">HYLD</span></div><div class="fs">Fixed, all in the pool</div></div>
+      <div class="f"><div class="fk">Starting mcap</div><div class="fn">~$5k</div><div class="fs">Single-sided seed</div></div>
+      <div class="f"><div class="fk">Tax</div><div class="fn">0<span class="u">/</span>0</div><div class="fs">No buy or sell tax</div></div>
+      <div class="f"><div class="fk">Pool fee</div><div class="fn">1%</div><div class="fs">V3 fee, to holders</div></div>
     </div>
 
     <div class="shields">
       <div class="shield">
         <svg class="si" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-3Z"/><path d="M9.2 12.2l2 2 3.6-3.8"/></svg>
-        <div class="st">Tax capped at 5%</div>
-        <div class="sd">The owner can only lower the tax, never raise it past 5% on either side. No mint, no blacklist.</div>
-      </div>
-      <div class="shield">
-        <svg class="si" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M7.7 10.3h8.6M7.7 13.7h8.6"/></svg>
-        <div class="st">Two rewards, instant</div>
-        <div class="sd">Every buy and sell pays holders in HYLD and in HYPE the moment it lands, even on buys.</div>
+        <div class="st">Ownership renounced</div>
+        <div class="sd">Renounced in the same transaction the pool is created. No mint, no pause, no blacklist in the bytecode.</div>
       </div>
       <div class="shield">
         <svg class="si" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
-        <div class="st">Your earnings are yours</div>
-        <div class="sd">Rewards accrue to the HYLD you hold, with no retroactive dilution. What you earn stays yours after you sell.</div>
+        <div class="st">Liquidity locked</div>
+        <div class="sd">The whole supply is seeded single-sided, then the LP is locked in an immutable locker. The key is destroyed.</div>
+      </div>
+      <div class="shield">
+        <svg class="si" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M7.7 10.3h8.6M7.7 13.7h8.6"/></svg>
+        <div class="st">1% to holders</div>
+        <div class="sd">The locker forwards the 1% trading fee from the official pool to holders. Trustless and permissionless.</div>
       </div>
     </div>
   </section>
 
-  <!-- THE REWARDS BOX -->
   <section class="credit">
-    <div class="top">
-      <span class="lbl">Your rewards</span>
-      <span class="tag" id="whotag" hidden>earning</span>
-    </div>
-
+    <div class="top"><span class="lbl">Join the fair launch</span></div>
     <div>
-      <div class="amts">
-        <div class="amt"><div class="n mono" id="cl-hyld">0</div><div class="u">HYLD to claim</div></div>
-        <div class="amt"><div class="n mono" id="cl-hype">0</div><div class="u">HYPE to claim</div></div>
-      </div>
+      <p class="cb-lead" style="margin:14px 0 18px;color:var(--ink-soft);max-width:56ch;line-height:1.6">Everyone buys from the same pool at the same starting price. No allowlist, no presale. The earlier you buy the lower your entry, and the price rises as the pool fills with HYPE.</p>
       <div class="claimrow">
-        <button class="btn" id="claim">Connect wallet</button>
-        <span class="txline" id="txline"></span>
+        <a class="btn" id="buybtn2" target="_blank" rel="noopener">Buy on Hyperswap</a>
+        <a class="btn ghost" href="/whitepaper.html">Read the whitepaper</a>
       </div>
-      <p class="cb-fine" id="connecthint">Connect your wallet to see what you have earned and claim it. Everything below is public, no wallet needed.</p>
-      <div class="acct">
-        <div class="f"><div class="lbl">You hold</div><div class="fv mono" id="balance">0<span class="u">HYLD</span></div></div>
-        <div class="f"><div class="lbl">Your share</div><div class="fv mono" id="share">0<span class="u">%</span></div></div>
-        <div class="f" style="flex:1;min-width:200px"><div class="lbl">Wallet</div><div class="a" id="whoaddr">not connected</div></div>
-      </div>
+      <p class="cb-fine">Trading goes live the moment the pool is created. The token and pool addresses appear below at launch.</p>
     </div>
   </section>
 
-  <!-- how you earn -->
   <section class="book" id="how">
-    <h2>How you earn</h2>
-    <div class="be debit"><span class="mk"></span><div><div class="bt">Someone buys or sells</div><div class="bd">Every buy and sell pays a 5% fee. Sending HYLD wallet to wallet is always free.</div></div></div>
-    <div class="be indent credit"><span class="mk"></span><div><div class="bt">Half comes back as HYLD</div><div class="bd">Added straight to your wallet the second the trade happens.</div></div></div>
-    <div class="be indent credit"><span class="mk"></span><div><div class="bt">Half comes back as HYPE</div><div class="bd">Paid to you in HYPE right away, even on buys.</div></div></div>
-    <div class="be plain"><span class="mk"></span><div><div class="bt">You claim anytime</div><div class="bd">The more HYLD you hold, the bigger your share. Tap claim to take your HYLD and HYPE together.</div></div></div>
+    <h2>How the launch works</h2>
+    <div class="be credit"><span class="mk"></span><div><div class="bt">Single-sided seed</div><div class="bd">All 1,000,000,000 HYLD goes into the pool at a starting valuation near $5k. The team adds zero HYPE. The price starts low and is set only by the pool.</div></div></div>
+    <div class="be credit"><span class="mk"></span><div><div class="bt">People buy in</div><div class="bd">Each buy sends HYPE into the pool and takes HYLD out, so the pool fills with HYPE from buyers, not the team. The price rises as more join.</div></div></div>
+    <div class="be credit"><span class="mk"></span><div><div class="bt">1% fee on every trade</div><div class="bd">Each buy and sell pays a 1% pool fee. Because the LP is locked, the position keeps earning that fee in HYPE and HYLD.</div></div></div>
+    <div class="be plain"><span class="mk"></span><div><div class="bt">Forwarded to holders</div><div class="bd">Anyone can trigger the locker to collect the fees, which are forwarded to holders. No tax, no team cut, no key to pull the liquidity.</div></div></div>
   </section>
 
-  <!-- LIVE NUMBERS -->
   <section class="figs">
-    <div class="top"><h2>Token stats</h2></div>
-    <div class="split">
-      <svg class="pie" viewBox="0 0 42 42" role="img" aria-label="reward split">
-        <circle class="track" cx="21" cy="21" r="15.915"/>
-        <circle class="seg" id="seg-hyld" cx="21" cy="21" r="15.915" pathLength="100" stroke="#5f9384" stroke-dasharray="50 50" stroke-dashoffset="-25"/>
-        <circle class="seg" id="seg-hype" cx="21" cy="21" r="15.915" pathLength="100" stroke="#00ffa3" stroke-dasharray="50 50" stroke-dashoffset="25"/>
-      </svg>
-      <div class="legend">
-        <div class="li"><span class="dot" style="background:#00ffa3"></span> HYPE reward <span class="pct" id="pct-hype">50%</span></div>
-        <div class="li"><span class="dot" style="background:#5f9384"></span> HYLD reward <span class="pct" id="pct-hyld">50%</span></div>
-        <small>how each 5% fee is split between the two rewards</small>
-      </div>
-    </div>
-    <div class="srow"><span class="k">HYPE reward pool<span class="s">pays your HYPE instantly on buys</span></span><span class="v" id="buffer">…</span></div>
-    <div class="srow"><span class="k">Waiting to convert<span class="s">turns into HYPE on the next sell</span></span><span class="v" id="pending">…</span></div>
-    <div class="srow"><span class="k">Earning supply<span class="s">tokens that share the rewards</span></span><span class="v" id="elig">…</span></div>
-    <div class="updated"><span id="updated">loading…</span></div>
+    <div class="top"><h2>At launch</h2></div>
+    <div class="srow"><span class="k">Supply seeded<span class="s">single-sided, 100% in the pool</span></span><span class="v">1,000,000,000 HYLD</span></div>
+    <div class="srow"><span class="k">Starting valuation</span><span class="v">~$5,000</span></div>
+    <div class="srow"><span class="k">Pool<span class="s">Hyperswap V3, 1% fee tier</span></span><span class="v">HYLD / WHYPE</span></div>
+    <div class="srow"><span class="k">Liquidity<span class="s">LP NFT in an immutable locker</span></span><span class="v">Locked for good</span></div>
+    <div class="srow"><span class="k">Ownership</span><span class="v">Renounced</span></div>
   </section>
 
-  <!-- FAQ -->
   <section class="faq" id="faq">
     <h2>The HYLD Decrees</h2>
     <div class="fsub">Answers for holders.</div>
-    <details><summary>Why two rewards instead of one?</summary>
-      <div class="fa">More HYLD grows your bag without you buying more, and HYPE pays you in the chain's own coin you can use anywhere. You get both from the same 5% fee, so every trade rewards you two ways at once.</div></details>
-    <details><summary>How can HYPE be paid instantly, even on a buy?</summary>
-      <div class="fa">The token keeps a small pool of HYPE and pays your HYPE reward from it right away. The pool refills automatically by converting collected fees to HYPE whenever someone sells. If buys outpace sells for a while the pool can run low, and the HYPE you are owed arrives once the next sell tops it up. Your HYLD reward never waits.</div></details>
-    <details><summary>Is there a team tax or hidden cut?</summary>
-      <div class="fa">No separate team tax. The whole 5% on each trade is split between holders as HYLD and HYPE. The pool and treasury are excluded from rewards, so they never eat into your share.</div></details>
+    <details><summary>Why a single-sided liquidity pool?</summary>
+      <div class="fa">It makes the launch genuinely fair. The team puts in zero HYPE, so there is no insider entry and no presale. Everyone buys from the same pool at the same starting price, and the pool's HYPE comes entirely from buyers.</div></details>
+    <details><summary>If the LP is locked, how does it earn fees?</summary>
+      <div class="fa">A Uniswap-style V3 position keeps earning its 1% trading fee even while the LP is locked. The locker exposes only a collect function that forwards those fees to holders. The liquidity itself can never be pulled.</div></details>
+    <details><summary>Is there a tax, presale, or team allocation?</summary>
+      <div class="fa">None. 0% tax on buys and sells, no presale, no team tokens. The only ongoing flow is the 1% pool fee, and that goes to holders.</div></details>
     <details><summary>What chain and exchange is this on?</summary>
-      <div class="fa">HyperEVM, chain 999. HYLD is paired against WHYPE on a Hyperswap V2 pool. Because the token has a trade fee it lives on a V2-style pool, not V3.</div></details>
+      <div class="fa">HyperEVM, chain 999, on a Hyperswap V3 pool at the 1% fee tier, paired against WHYPE.</div></details>
   </section>
 
-  <!-- REFERENCES + CANDOR -->
   <section class="trans">
-    <h2>Addresses and the honest bits</h2>
-    <div class="ref" id="refs">
-      <div class="r"><span class="rk">Token</span><span class="rv" data-addr="token"><a target="_blank" rel="noopener" class="lk">…</a><button class="cp" title="Copy"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15"/></svg></button></span></div>
-      <div class="r"><span class="rk">Pair (HYLD / WHYPE)</span><span class="rv" data-addr="pair"><a target="_blank" rel="noopener" class="lk">…</a><button class="cp" title="Copy"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15"/></svg></button></span></div>
-      <div class="r"><span class="rk">Owner</span><span class="rv" data-addr="owner"><a target="_blank" rel="noopener" class="lk">…</a><button class="cp" title="Copy"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15"/></svg></button></span></div>
-      <div class="r"><span class="rk">WHYPE</span><span class="rv" data-addr="whype"><a target="_blank" rel="noopener" class="lk">…</a><button class="cp" title="Copy"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15"/></svg></button></span></div>
+    <h2>Addresses</h2>
+    <div class="ref">
+      <div class="r"><span class="rk">Token</span><span class="rv">published at launch</span></div>
+      <div class="r"><span class="rk">Pool (HYLD / WHYPE)</span><span class="rv">published at launch</span></div>
+      <div class="r"><span class="rk">LP locker</span><span class="rv">published at launch</span></div>
+      <div class="r"><span class="rk">WHYPE</span><span class="rv">0x5555…5555</span></div>
     </div>
     <div class="candid">
-      <p><b>The HYPE pool can run low.</b> Your HYPE is paid right away from a pool that refills when people sell. If lots of people buy and nobody sells, it can run low for a bit, and the HYPE you are owed shows up once the next sell tops it back up. Your HYLD reward never has to wait.</p>
-      <p><b>The tax can never go above 5%.</b> The owner can only lower it, never raise it past 5%. The trading pool and treasury do not earn rewards, so they never eat into your share.</p>
+      <p><b>Single-sided means an early, volatile price.</b> The pool starts with HYLD only, so the price is low and moves fast at first, then settles as more HYPE comes in from buyers. Buy with that in mind.</p>
     </div>
   </section>
 </div>
@@ -331,151 +300,19 @@
     <span class="fbrand">HyperYield (HYLD)</span>
     <nav class="fnav">
       <a href="/whitepaper.html">Whitepaper</a>
-      <a id="explorerc" target="_blank" rel="noopener">Contract</a>
       <a class="xlink" id="tgfoot" target="_blank" rel="noopener" aria-label="Telegram"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 4.2 2.6 11.7c-.85.33-.83 1.55.03 1.85l4.9 1.6 1.86 5.3c.26.73 1.2.9 1.7.27l2.5-3.16 4.86 3.56c.6.44 1.46.1 1.6-.64L23.5 5.4c.18-.9-.72-1.55-1.5-1.2Z"/></svg></a>
       <a class="xlink" id="xfoot" target="_blank" rel="noopener" aria-label="X"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25H8.08l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.12H5.12l11.96 15.65Z"/></svg></a>
     </nav>
   </div>
 </footer>
 
-<script type="module">
-import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6.13.4/+esm";
-
-const CONFIG = {
-  token: "0x70A5390574E1E2e086fa2E6F61D9973D9B5ECa14",
-  rpc:   "https://rpc.hyperliquid.xyz/evm",
-  chainId: 999,
-  chainHex: "0x3e7",
-  explorer: "https://hyperevmscan.io",
-  whype: "0x5555555555555555555555555555555555555555",
-  x: "https://x.com/HyperYield",
-  tg: "https://t.me/HyperYield",
-};
-
-const ABI = [
-  "function totalSupply() view returns (uint256)",
-  "function balanceOf(address) view returns (uint256)",
-  "function withdrawableToken(address) view returns (uint256)",
-  "function withdrawableHype(address) view returns (uint256)",
-  "function buyTaxBps() view returns (uint16)","function sellTaxBps() view returns (uint16)",
-  "function hypeShareBps() view returns (uint16)","function hypeBuffer() view returns (uint256)",
-  "function pendingSwapTokens() view returns (uint256)","function eligibleSupply() view returns (uint256)",
-  "function isExcluded(address) view returns (bool)","function pair() view returns (address)",
-  "function owner() view returns (address)","function claim()",
-];
-
-const provider = new ethers.JsonRpcProvider(CONFIG.rpc, CONFIG.chainId);
-const read = new ethers.Contract(CONFIG.token, ABI, provider);
-
-const $ = (id)=>document.getElementById(id);
-const short = (a)=>a ? a.slice(0,6)+"…"+a.slice(-4) : "";
-const fmt = (v)=>{ const n=Number(ethers.formatUnits(v,18)); if(n===0) return "0";
-  const max = n>=1000?2:(n>=1?4:6); return n.toLocaleString(undefined,{maximumFractionDigits:Math.min(max,6)}); };
-const spanU = (u)=>`<span class="s">${u}</span>`;
-let META=null, connected=null, signer=null, prev={};
-
-$("explorerc").href = `${CONFIG.explorer}/address/${CONFIG.token}`;
-$("xfoot").href = CONFIG.x;
-$("tgfoot").href = CONFIG.tg;
-
-function copyBtn(el,text){ el.addEventListener("click",async()=>{ try{await navigator.clipboard.writeText(text);
-  el.classList.add("copied");setTimeout(()=>el.classList.remove("copied"),900);}catch(e){} }); }
-function setRef(key,addr){ const span=document.querySelector(`.rv[data-addr="${key}"]`); if(!span||!addr)return;
-  const a=span.querySelector("a"); a.textContent=short(addr); a.href=`${CONFIG.explorer}/address/${addr}`;
-  copyBtn(span.querySelector("button"),addr); }
-function flashSet(id,html){ const el=$(id); if(el.innerHTML!==html&&prev[id]!==undefined){el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash");} el.innerHTML=html; prev[id]=html; }
-function stamp(){ $("updated").textContent="updated "+new Date().toLocaleTimeString(); }
-function setPie(hShare){
-  const tShare=100-hShare;
-  const h=$("seg-hype"), t=$("seg-hyld");
-  h.setAttribute("stroke-dasharray",`${hShare} ${100-hShare}`); h.setAttribute("stroke-dashoffset","25");
-  t.setAttribute("stroke-dasharray",`${tShare} ${100-tShare}`); t.setAttribute("stroke-dashoffset",`${25-hShare}`);
-  $("pct-hype").textContent=hShare.toFixed(0)+"%"; $("pct-hyld").textContent=tShare.toFixed(0)+"%";
-}
-
-async function loadState(){
-  $("updated").textContent="loading…";
-  try{
-    const [buy,sell,split,buffer,pending,elig,supply,pair,owner] = await Promise.all([
-      read.buyTaxBps(),read.sellTaxBps(),read.hypeShareBps(),read.hypeBuffer(),
-      read.pendingSwapTokens(),read.eligibleSupply(),read.totalSupply(),read.pair(),read.owner()
-    ]);
-    META={supply,elig};
-    $("buytax").textContent=(Number(buy)/100).toFixed(0)+"%";
-    $("selltax").textContent=(Number(sell)/100).toFixed(0)+"%";
-    $("supply").innerHTML=fmt(supply)+spanU("HYLD");
-    setPie(Number(split)/100);
-    flashSet("buffer",fmt(buffer)+spanU("HYPE"));
-    flashSet("pending",fmt(pending)+spanU("HYLD"));
-    $("elig").innerHTML=fmt(elig)+spanU("HYLD");
-    setRef("token",CONFIG.token); setRef("pair",pair); setRef("owner",owner); setRef("whype",CONFIG.whype);
-    stamp();
-    if(connected) await loadAccount(connected);
-  }catch(e){ $("updated").textContent="couldn't load, tap refresh"; }
-}
-
-async function loadAccount(addr){
-  $("whoaddr").textContent=addr;
-  try{
-    const [bal,wt,wh,excl]=await Promise.all([
-      read.balanceOf(addr),read.withdrawableToken(addr),read.withdrawableHype(addr),read.isExcluded(addr)
-    ]);
-    const tag=$("whotag"); tag.hidden=false;
-    if(excl){tag.textContent="excluded";tag.className="tag excl";}else{tag.textContent="earning";tag.className="tag elig";}
-    $("balance").innerHTML=fmt(bal)+'<span class="u">HYLD</span>';
-    const share=META&&META.elig>0n?(Number(bal)*100/Number(META.elig)):0;
-    $("share").innerHTML=(excl?"0":share.toLocaleString(undefined,{maximumFractionDigits:3}))+'<span class="u">%</span>';
-    const clh=$("cl-hyld"),clp=$("cl-hype"); clh.textContent=fmt(wt); clp.textContent=fmt(wh);
-    clh.classList.toggle("live",wt>0n); clp.classList.toggle("live",wh>0n);
-    const hasClaim=(wt>0n||wh>0n)&&!excl; const b=$("claim");
-    b.disabled=!hasClaim; b.textContent=hasClaim?"Claim both":"Nothing to claim yet";
-  }catch(e){ $("txline").textContent="could not read your account, refresh"; $("txline").className="txline err"; }
-}
-
-$("connect").addEventListener("click",connect);
-
-async function connect(){
-  if(!window.ethereum){ $("connecthint").textContent="No wallet detected. Install a HyperEVM compatible wallet, then reload."; return; }
-  $("connecthint").textContent="check your wallet…";
-  try{
-    const bp=new ethers.BrowserProvider(window.ethereum);
-    await ensureChain();
-    await bp.send("eth_requestAccounts",[]);
-    signer=await bp.getSigner(); connected=await signer.getAddress();
-    $("connect").textContent=short(connected);
-    $("connecthint").textContent="";
-    await loadAccount(connected);
-  }catch(e){ $("connecthint").textContent=(e&&e.code===4001)?"connection rejected":"could not connect, try again"; }
-}
-async function ensureChain(){
-  const cid=await window.ethereum.request({method:"eth_chainId"});
-  if(cid===CONFIG.chainHex) return;
-  try{ await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:CONFIG.chainHex}]}); }
-  catch(e){ await window.ethereum.request({method:"wallet_addEthereumChain",params:[{
-    chainId:CONFIG.chainHex,chainName:"HyperEVM",nativeCurrency:{name:"HYPE",symbol:"HYPE",decimals:18},
-    rpcUrls:[CONFIG.rpc],blockExplorerUrls:[CONFIG.explorer]}]}); }
-}
-
-$("claim").addEventListener("click",async()=>{
-  if(!connected){ connect(); return; }   // box is public; button connects first
-  if(!signer) return;
-  const btn=$("claim"),tx=$("txline"); btn.disabled=true; const label=btn.textContent; btn.textContent="Claiming…";
-  tx.className="txline"; tx.textContent="awaiting signature";
-  try{
-    const c=new ethers.Contract(CONFIG.token,ABI,signer);
-    const sent=await c.claim();
-    tx.textContent="sent "+short(sent.hash)+", confirming";
-    await sent.wait();
-    tx.className="txline ok"; tx.innerHTML="claimed. "+`<a href="${CONFIG.explorer}/tx/${sent.hash}" target="_blank" rel="noopener" style="border-bottom:1px solid var(--credit)">receipt</a>`;
-    await loadState();
-  }catch(e){ tx.className="txline err"; tx.textContent=(e&&e.shortMessage)?e.shortMessage:"transaction failed or rejected"; btn.disabled=false; btn.textContent=label; }
-});
-
-if(window.ethereum){
-  window.ethereum.on?.("accountsChanged",()=>location.reload());
-  window.ethereum.on?.("chainChanged",()=>location.reload());
-}
-loadState();
+<script>
+  var BUY="https://app.hyperswap.exchange/#/swap";
+  var X="https://x.com/HyperYield", TG="https://t.me/HyperYield";
+  document.getElementById('buybtn').href=BUY;
+  document.getElementById('buybtn2').href=BUY;
+  document.getElementById('xfoot').href=X;
+  document.getElementById('tgfoot').href=TG;
 </script>
 </body>
 </html>
