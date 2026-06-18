@@ -69,11 +69,11 @@
 
   <h2>Rewards from the 1% fee</h2>
   <p>Every buy and sell pays a <b>1% pool fee</b>, which is the highest tier Hyperswap V3 offers. The locked position keeps earning that fee in both HYPE and HYLD, even though the liquidity behind it can't be pulled out.</p>
-  <p>A locker we can't modify holds the LP position, and the only thing it can do is collect. Anyone can call it, and whatever it collects goes to holders. Transfers aren't taxed, we take no cut, and there's no switch for us to flip.</p>
+  <p>The LP is locked, and the lock only lets you collect the fees, not withdraw the liquidity. Anyone can call collect, and whatever comes out goes to holders. Transfers aren't taxed and we take no cut.</p>
 
   <h2>Locked and renounced</h2>
   <ul>
-    <li><b>Liquidity locked.</b> The supply is seeded as single-sided liquidity, then the LP is handed to a locker we can't open. With the key gone, the liquidity stays in place for good.</li>
+    <li><b>Liquidity locked.</b> The supply is seeded as single-sided liquidity, then the LP is locked. It stays in the pool and can't be withdrawn.</li>
     <li><b>Ownership renounced.</b> The owner is dropped in the same transaction that opens the pool. After that nobody can mint new tokens, pause trading, or freeze a wallet.</li>
     <li><b>Fixed supply.</b> 10,000 HYLD, all of it in the pool, with none set aside for us.</li>
   </ul>
