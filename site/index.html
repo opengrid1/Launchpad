@@ -199,7 +199,7 @@
     <nav>
       <a href="#how">How it works</a>
       <a href="/whitepaper.html">Whitepaper</a>
-      <a class="btn" id="buybtn" target="_blank" rel="noopener">Buy HYLD</a>
+      <button class="btn" id="connect">Connect wallet</button>
     </nav>
   </div>
 </header>
@@ -309,10 +309,26 @@
 <script>
   var BUY="https://app.hyperswap.exchange/#/swap";
   var X="https://x.com/HyperYield", TG="https://t.me/HyperYield";
-  document.getElementById('buybtn').href=BUY;
   document.getElementById('buybtn2').href=BUY;
   document.getElementById('xfoot').href=X;
   document.getElementById('tgfoot').href=TG;
+
+  var connectBtn=document.getElementById('connect');
+  connectBtn.addEventListener('click', async function(){
+    if(!window.ethereum){ connectBtn.textContent="No wallet found"; return; }
+    var hex="0x3e7";
+    try{
+      var cid=await window.ethereum.request({method:"eth_chainId"});
+      if(cid!==hex){
+        try{ await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:hex}]}); }
+        catch(e){ await window.ethereum.request({method:"wallet_addEthereumChain",params:[{chainId:hex,chainName:"HyperEVM",nativeCurrency:{name:"HYPE",symbol:"HYPE",decimals:18},rpcUrls:["https://rpc.hyperliquid.xyz/evm"],blockExplorerUrls:["https://hyperevmscan.io"]}]}); }
+      }
+      var a=await window.ethereum.request({method:"eth_requestAccounts"});
+      var ad=a[0];
+      connectBtn.textContent=ad.slice(0,6)+"…"+ad.slice(-4);
+    }catch(e){}
+  });
+  if(window.ethereum){ window.ethereum.on && window.ethereum.on("accountsChanged",function(){location.reload();}); }
 </script>
 </body>
 </html>
