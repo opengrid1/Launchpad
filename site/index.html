@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="theme-color" content="#010006">
 <meta property="og:title" content="HyperYield (HYLD)">
-<meta property="og:description" content="A 5% buy/sell tax paid back to holders in HYLD and HYPE, the moment each trade lands.">
+<meta property="og:description" content="A fair launch on HyperEVM. The whole supply seeded single-sided, no tax, and 1% of every trade paid to holders in HYLD and HYPE.">
 <meta property="og:image" content="/logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -104,12 +104,9 @@
   /* double-entry booking (replaces step cards) */
   .book{padding:30px 0;border-bottom:1px solid var(--rule)}
   .book h2{font-size:19px;margin-bottom:18px}
-  .be{display:grid;grid-template-columns:14px 1fr;gap:0 14px;padding:12px 0;border-bottom:1px solid var(--rule);align-items:start}
+  .be{padding:13px 0;border-bottom:1px solid var(--rule)}
   .be:last-child{border-bottom:0}
-  .be .mk{margin-top:5px;width:8px;height:8px}
-  .be.debit .mk{background:var(--debit)}
-  .be.credit .mk{background:var(--credit)}
-  .be.plain .mk{background:var(--rule-2)}
+  .be .mk{display:none}
   .be .bt{font-family:"Orbitron",sans-serif;font-size:15.5px}
   .be .bd{font-size:13px;color:var(--ink-soft);margin-top:3px}
   .be .bd .fn{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted)}
@@ -214,7 +211,7 @@
     <p class="hsub">Every HYLD that will ever exist is already sitting in the pool, seeded one-sided at about a $5k start. We hold none of it. The pool only fills with HYPE when people buy in, and 1% of each trade is paid out to whoever is holding.</p>
 
     <div class="facts4">
-      <div class="f"><div class="fk">Total supply</div><div class="fn">1B<span class="u">HYLD</span></div><div class="fs">Fixed, all in the pool</div></div>
+      <div class="f"><div class="fk">Total supply</div><div class="fn">10,000<span class="u">HYLD</span></div><div class="fs">Fixed, all in the pool</div></div>
       <div class="f"><div class="fk">Starting mcap</div><div class="fn">~$5k</div><div class="fs">Single-sided seed</div></div>
       <div class="f"><div class="fk">Tax</div><div class="fn">0<span class="u">/</span>0</div><div class="fs">No buy or sell tax</div></div>
       <div class="f"><div class="fk">Pool fee</div><div class="fn">1%</div><div class="fs">V3 fee, to holders</div></div>
@@ -256,7 +253,7 @@
 
   <section class="book" id="how">
     <h2>How the launch works</h2>
-    <div class="be credit"><span class="mk"></span><div><div class="bt">Single-sided seed</div><div class="bd">All 1,000,000,000 HYLD goes into the pool at a starting valuation near $5k. The team adds zero HYPE. The price starts low and is set only by the pool.</div></div></div>
+    <div class="be credit"><span class="mk"></span><div><div class="bt">Single-sided seed</div><div class="bd">All 10,000 HYLD goes into the pool at a starting valuation near $5k. The team adds zero HYPE. The price starts low and is set only by the pool.</div></div></div>
     <div class="be credit"><span class="mk"></span><div><div class="bt">People buy in</div><div class="bd">Each buy sends HYPE into the pool and takes HYLD out, so the pool fills with HYPE from buyers, not the team. The price rises as more join.</div></div></div>
     <div class="be credit"><span class="mk"></span><div><div class="bt">1% fee on every trade</div><div class="bd">Each buy and sell pays a 1% pool fee. Because the LP is locked, the position keeps earning that fee in HYPE and HYLD.</div></div></div>
     <div class="be plain"><span class="mk"></span><div><div class="bt">Forwarded to holders</div><div class="bd">Anyone can trigger the locker to collect the fees, which are forwarded to holders. No tax, no team cut, no key to pull the liquidity.</div></div></div>
@@ -264,7 +261,7 @@
 
   <section class="figs">
     <div class="top"><h2>At launch</h2></div>
-    <div class="srow"><span class="k">Supply seeded<span class="s">single-sided, 100% in the pool</span></span><span class="v">1,000,000,000 HYLD</span></div>
+    <div class="srow"><span class="k">Supply seeded<span class="s">single-sided, 100% in the pool</span></span><span class="v">10,000 HYLD</span></div>
     <div class="srow"><span class="k">Starting valuation</span><span class="v">~$5,000</span></div>
     <div class="srow"><span class="k">Pool<span class="s">Hyperswap V3, 1% fee tier</span></span><span class="v">HYLD / WHYPE</span></div>
     <div class="srow"><span class="k">Liquidity<span class="s">LP NFT in an immutable locker</span></span><span class="v">Locked for good</span></div>
