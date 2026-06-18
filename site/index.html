@@ -223,7 +223,7 @@
   <section class="hero">
     <div class="proclaim">Fair launch on HyperEVM</div>
     <h1 class="htitle">The whole supply is the liquidity.</h1>
-    <p class="hsub">Every HYLD that will ever exist is already sitting in the pool, seeded one-sided at about a $5k start. We hold none of it. The pool only fills with HYPE when people buy in, and 1% of each trade is paid out to whoever is holding.</p>
+    <p class="hsub">All 10,000 HYLD is already in the pool, seeded on one side at roughly a $5k start. We kept nothing back. HYPE only enters the pool when someone buys, and holders take 1% of every trade.</p>
 
     <div class="facts4">
       <div class="f"><div class="fk">Total supply</div><div class="fn">10,000<span class="u">HYLD</span></div><div class="fs">Fixed, all in the pool</div></div>
@@ -236,17 +236,17 @@
       <div class="shield">
         <svg class="si" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-3Z"/><path d="M9.2 12.2l2 2 3.6-3.8"/></svg>
         <div class="st">Ownership renounced</div>
-        <div class="sd">Renounced in the same transaction the pool is created. No mint, no pause, no blacklist in the bytecode.</div>
+        <div class="sd">Owner is dropped in the same transaction that opens the pool. After that nobody can mint, pause, or freeze wallets.</div>
       </div>
       <div class="shield">
         <svg class="si" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
         <div class="st">Liquidity locked</div>
-        <div class="sd">The whole supply is seeded single-sided, then the LP is locked in an immutable locker. The key is destroyed.</div>
+        <div class="sd">Once the supply is seeded, the LP position is handed to a locker we can't open. We threw away the key, so the liquidity stays put.</div>
       </div>
       <div class="shield">
         <svg class="si" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M7.7 10.3h8.6M7.7 13.7h8.6"/></svg>
         <div class="st">1% to holders</div>
-        <div class="sd">The locker can only do one thing: collect the 1% pool fee and send it to holders. Anyone can trigger it, and no one can point it elsewhere.</div>
+        <div class="sd">The only thing the locker can do is collect the 1% pool fee and pass it to holders. Anybody can press the button, and the destination is fixed.</div>
       </div>
     </div>
   </section>
@@ -256,7 +256,7 @@
     <div class="swaprow"><div class="l">You pay</div><div class="swapin"><input id="payamt" inputmode="decimal" placeholder="0.0" /><span class="cur" id="paycur">HYPE</span></div></div>
     <div class="swaprow"><div class="l">You receive</div><div class="swapin"><input id="getamt" placeholder="0.0" disabled /><span class="cur" id="getcur">HYLD</span></div></div>
     <button class="btn" id="swapbtn" disabled>Trading opens at launch</button>
-    <div class="swapnote">Buy and sell here, straight against the pool. Goes live the moment the pool is created.</div>
+    <div class="swapnote">Trade straight against the pool from here. Turns on once the pool is live.</div>
   </section>
 
   <section class="credit">
@@ -269,16 +269,16 @@
       <div class="claimrow">
         <button class="btn ghost" disabled>Claim opens at launch</button>
       </div>
-      <p class="cb-fine">Holders split the 1% pool fee, paid in HYLD and HYPE. Buy at launch and your share starts adding up here. Claiming opens the moment the pool goes live.</p>
+      <p class="cb-fine">The 1% pool fee gets split across holders in both HYLD and HYPE. Once you're holding, your share builds up here. Claiming turns on when the pool is live.</p>
     </div>
   </section>
 
   <section class="book" id="how">
     <h2>How the launch works</h2>
-    <div class="be credit"><span class="mk"></span><div><div class="bt">Single-sided seed</div><div class="bd">All 10,000 HYLD goes into the pool at a starting valuation near $5k. The team adds zero HYPE. The price starts low and is set only by the pool.</div></div></div>
-    <div class="be credit"><span class="mk"></span><div><div class="bt">People buy in</div><div class="bd">Each buy sends HYPE into the pool and takes HYLD out, so the pool fills with HYPE from buyers, not the team. The price rises as more join.</div></div></div>
-    <div class="be credit"><span class="mk"></span><div><div class="bt">1% fee on every trade</div><div class="bd">Each buy and sell pays a 1% pool fee. Because the LP is locked, the position keeps earning that fee in HYPE and HYLD.</div></div></div>
-    <div class="be plain"><span class="mk"></span><div><div class="bt">Forwarded to holders</div><div class="bd">Anyone can trigger the locker to collect the fees, which are forwarded to holders. No tax, no team cut, no key to pull the liquidity.</div></div></div>
+    <div class="be credit"><span class="mk"></span><div><div class="bt">Single-sided seed</div><div class="bd">All 10,000 HYLD goes in at about a $5k valuation, with no HYPE from us. The price starts low and the pool sets it from there.</div></div></div>
+    <div class="be credit"><span class="mk"></span><div><div class="bt">People buy in</div><div class="bd">A buy puts HYPE into the pool and pulls HYLD out, so the HYPE side fills up from buyers rather than from us. More buyers, higher price.</div></div></div>
+    <div class="be credit"><span class="mk"></span><div><div class="bt">1% fee on every trade</div><div class="bd">Buys and sells both pay a 1% pool fee. Since the LP is locked in place, it keeps earning that fee in HYPE and HYLD the whole time.</div></div></div>
+    <div class="be plain"><span class="mk"></span><div><div class="bt">Paid to holders</div><div class="bd">Anyone can poke the locker to collect those fees, and they go straight to holders. We can't redirect them or pull the liquidity out.</div></div></div>
   </section>
 
   <section class="figs">
@@ -294,11 +294,11 @@
     <h2>The HYLD Decrees</h2>
     <div class="fsub">Answers for holders.</div>
     <details><summary>Why a single-sided liquidity pool?</summary>
-      <div class="fa">It makes the launch genuinely fair. The team puts in zero HYPE, so there is no insider entry and no presale. Everyone buys from the same pool at the same starting price, and the pool's HYPE comes entirely from buyers.</div></details>
+      <div class="fa">Because we don't put in any HYPE, there's no early entry for us and no presale to get into ahead of you. Everyone buys off the same pool at the same starting price, and all the HYPE in it comes from buyers.</div></details>
     <details><summary>If the LP is locked, how does it earn fees?</summary>
-      <div class="fa">A Uniswap-style V3 position keeps earning its 1% trading fee even while the LP is locked. The locker exposes only a collect function that forwards those fees to holders. The liquidity itself can never be pulled.</div></details>
+      <div class="fa">A Uniswap-style V3 position keeps collecting its 1% trading fee even when the LP can't be moved. The locker only knows how to grab that fee and pass it to holders. The liquidity behind it stays where it is.</div></details>
     <details><summary>Is there a tax, presale, or team allocation?</summary>
-      <div class="fa">None. 0% tax on buys and sells, no presale, no team tokens. The only ongoing flow is the 1% pool fee, and that goes to holders.</div></details>
+      <div class="fa">No to all three. Buys and sells aren't taxed, there was no presale, and we hold no tokens. The 1% pool fee is the only thing moving, and it lands with holders.</div></details>
     <details><summary>What chain and exchange is this on?</summary>
       <div class="fa">HyperEVM, chain 999, on a Hyperswap V3 pool at the 1% fee tier, paired against WHYPE.</div></details>
   </section>
