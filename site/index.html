@@ -53,14 +53,13 @@
   .xlink:hover{color:var(--credit)}
   .xi{width:17px;height:17px;fill:currentColor}
   .btn{all:unset;cursor:pointer;font-size:13.5px;font-weight:700;letter-spacing:.01em;padding:12px 20px;border-radius:11px;
-    background:linear-gradient(180deg,#4dffc8,#00ffa3);color:#04100d;text-align:center;white-space:nowrap;
-    box-shadow:0 0 0 1px rgba(0,255,163,.35), 0 12px 30px -12px rgba(0,255,163,.7);
-    transition:transform .12s ease, box-shadow .12s ease, background .12s ease}
-  .btn:hover{transform:translateY(-1px);box-shadow:0 0 0 1px rgba(0,255,163,.6), 0 18px 38px -14px rgba(0,255,163,.9)}
-  .btn:active{transform:translateY(0)}
+    background:#00ffa3;color:#04100d;text-align:center;white-space:nowrap;
+    transition:background .12s ease}
+  .btn:hover{background:#27ffb4}
+  .btn:active{background:#00e592}
   .btn.ghost{background:none;color:var(--ink-soft);box-shadow:inset 0 0 0 1px var(--rule-2);font-weight:600}
   .btn.ghost:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--credit);transform:none}
-  .btn[disabled]{cursor:not-allowed;opacity:.4;box-shadow:0 0 0 1px rgba(0,255,163,.25);transform:none}
+  .btn[disabled]{cursor:not-allowed;opacity:.4;background:#00ffa3}
   @media(max-width:560px){.lh nav a:not(.xlink){display:none}.lh .desc{display:none}}
 
   /* statement metadata band */
