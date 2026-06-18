@@ -90,6 +90,21 @@
   .amt .u{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.05em;color:var(--muted);margin-top:10px;text-transform:uppercase}
   .claimrow{display:flex;align-items:center;gap:12px;margin-top:20px;flex-wrap:wrap}
   .credit #claim{padding:12px 24px;font-size:14px}
+
+  /* buy/sell swap card */
+  .swap{margin:24px 0 30px;border:1px solid var(--rule-2);border-radius:18px;background:linear-gradient(180deg,#0a1715,#040f0c);
+    box-shadow:0 26px 64px -42px rgba(0,255,163,.4);padding:18px;max-width:430px}
+  .swaptabs{display:flex;gap:6px;background:#0a1411;border:1px solid var(--rule-2);border-radius:11px;padding:4px;margin-bottom:14px}
+  .swaptabs button{all:unset;flex:1;text-align:center;cursor:pointer;padding:9px;border-radius:8px;font-size:13.5px;font-weight:700;color:var(--ink-soft)}
+  .swaptabs button.on{background:var(--credit);color:#04100d}
+  .swaprow{margin-bottom:10px}
+  .swaprow .l{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .swapin{display:flex;align-items:center;gap:10px;border:1px solid var(--rule-2);border-radius:12px;background:var(--field);padding:12px 14px}
+  .swapin input{all:unset;flex:1;min-width:0;font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:18px;color:var(--ink)}
+  .swapin input::placeholder{color:#3c5048}
+  .swapin .cur{font-family:"Orbitron",sans-serif;font-weight:700;font-size:13px;color:var(--credit);white-space:nowrap}
+  .swap .btn{width:100%;margin-top:8px;box-sizing:border-box}
+  .swapnote{font-size:11.5px;color:var(--muted);margin-top:11px;text-align:center}
   .txline{font-size:12.5px;color:var(--muted);font-family:"Share Tech Mono","IBM Plex Mono",monospace}
   .txline.ok{color:var(--credit)} .txline.err{color:var(--debit)}
 
@@ -236,6 +251,14 @@
     </div>
   </section>
 
+  <section class="swap" id="trade">
+    <div class="swaptabs"><button class="on" id="tab-buy">Buy</button><button id="tab-sell">Sell</button></div>
+    <div class="swaprow"><div class="l">You pay</div><div class="swapin"><input id="payamt" inputmode="decimal" placeholder="0.0" /><span class="cur" id="paycur">HYPE</span></div></div>
+    <div class="swaprow"><div class="l">You receive</div><div class="swapin"><input id="getamt" placeholder="0.0" disabled /><span class="cur" id="getcur">HYLD</span></div></div>
+    <button class="btn" id="swapbtn" disabled>Trading opens at launch</button>
+    <div class="swapnote">Buy and sell here, straight against the pool. Goes live the moment the pool is created.</div>
+  </section>
+
   <section class="credit">
     <div class="top"><span class="lbl">Your rewards</span></div>
     <div>
@@ -244,7 +267,6 @@
         <div class="amt"><div class="n mono">0</div><div class="u">HYPE to claim</div></div>
       </div>
       <div class="claimrow">
-        <a class="btn" id="buybtn2" target="_blank" rel="noopener">Buy on Hyperswap</a>
         <button class="btn ghost" disabled>Claim opens at launch</button>
       </div>
       <p class="cb-fine">Holders split the 1% pool fee, paid in HYLD and HYPE. Buy at launch and your share starts adding up here. Claiming opens the moment the pool goes live.</p>
@@ -289,9 +311,6 @@
       <div class="r"><span class="rk">LP locker</span><span class="rv">published at launch</span></div>
       <div class="r"><span class="rk">WHYPE</span><span class="rv">0x5555…5555</span></div>
     </div>
-    <div class="candid">
-      <p><b>Single-sided means an early, volatile price.</b> The pool starts with HYLD only, so the price is low and moves fast at first, then settles as more HYPE comes in from buyers. Buy with that in mind.</p>
-    </div>
   </section>
 </div>
 
@@ -300,18 +319,23 @@
     <span class="fbrand">HyperYield (HYLD)</span>
     <nav class="fnav">
       <a href="/whitepaper.html">Whitepaper</a>
-      <a class="xlink" id="tgfoot" target="_blank" rel="noopener" aria-label="Telegram"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 4.2 2.6 11.7c-.85.33-.83 1.55.03 1.85l4.9 1.6 1.86 5.3c.26.73 1.2.9 1.7.27l2.5-3.16 4.86 3.56c.6.44 1.46.1 1.6-.64L23.5 5.4c.18-.9-.72-1.55-1.5-1.2Z"/></svg></a>
       <a class="xlink" id="xfoot" target="_blank" rel="noopener" aria-label="X"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25H8.08l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.12H5.12l11.96 15.65Z"/></svg></a>
     </nav>
   </div>
 </footer>
 
 <script>
-  var BUY="https://app.hyperswap.exchange/#/swap";
-  var X="https://x.com/HyperYield", TG="https://t.me/HyperYield";
-  document.getElementById('buybtn2').href=BUY;
-  document.getElementById('xfoot').href=X;
-  document.getElementById('tgfoot').href=TG;
+  document.getElementById('xfoot').href="https://x.com/HyperYield";
+
+  // Buy/Sell tab toggle (swap activates against the pool at launch)
+  var tb=document.getElementById('tab-buy'), ts=document.getElementById('tab-sell');
+  function setSide(buy){
+    tb.classList.toggle('on',buy); ts.classList.toggle('on',!buy);
+    document.getElementById('paycur').textContent=buy?'HYPE':'HYLD';
+    document.getElementById('getcur').textContent=buy?'HYLD':'HYPE';
+  }
+  tb.addEventListener('click',function(){setSide(true)});
+  ts.addEventListener('click',function(){setSide(false)});
 
   var connectBtn=document.getElementById('connect');
   connectBtn.addEventListener('click', async function(){
