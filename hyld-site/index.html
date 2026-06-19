@@ -168,7 +168,7 @@
   /* hero (proclamation + facts + shields) */
   .hero{padding:30px 0 6px}
   .proclaim{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.3em;color:var(--credit);text-transform:uppercase;opacity:.9}
-  .cachip{all:unset;display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap;max-width:100%;margin:18px 0 4px;padding:9px 14px;border:1px solid var(--rule-2);border-radius:10px;background:#070d0c;cursor:pointer;font-size:13px;color:var(--ink-soft);transition:border-color .12s,color .12s}
+  .cachip{all:unset;display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap;max-width:100%;margin:0 0 20px;padding:9px 14px;border:1px solid var(--rule-2);border-radius:10px;background:#070d0c;cursor:pointer;font-size:13px;color:var(--ink-soft);transition:border-color .12s,color .12s}
   .cachip:hover{border-color:var(--credit);color:var(--ink)}
   .cachip .cl{font-size:10px;letter-spacing:.14em;color:var(--muted)}
   .cachip .cv{font-family:"Share Tech Mono","IBM Plex Mono",monospace;color:var(--ink);word-break:break-all}
@@ -232,12 +232,6 @@
     <h1 class="htitle">The whole supply is the liquidity.</h1>
     <p class="hsub">All 10,000 HYLD is already in the pool, seeded on one side at roughly a $5k start. We kept nothing back. HYPE only enters the pool when someone buys, and holders take 1% of every trade.</p>
 
-    <button class="cachip" id="caChip" title="Copy contract address" aria-label="Copy contract address">
-      <span class="cl">CA</span>
-      <span class="cv" id="caText">0xF7D43573E69544baC64d2B5f0653422c928f75A3</span>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-    </button>
-
     <div class="facts4">
       <div class="f"><div class="fk">Total supply</div><div class="fn">10,000<span class="u">HYLD</span></div><div class="fs">Fixed, all in the pool</div></div>
       <div class="f"><div class="fk">Market cap</div><div class="fn" id="mcapLive">~$5k</div><div class="fs">Live from the pool</div></div>
@@ -291,6 +285,11 @@
 
   <section class="book" id="how">
     <h2>How the launch works</h2>
+    <button class="cachip" id="caChip" title="Copy contract address" aria-label="Copy contract address">
+      <span class="cl">CA</span>
+      <span class="cv" id="caText">0xF7D43573E69544baC64d2B5f0653422c928f75A3</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+    </button>
     <div class="be credit"><span class="mk"></span><div><div class="bt">Single-sided seed</div><div class="bd">All 10,000 HYLD goes in at about a $5k valuation, with no HYPE from us. The price starts low and the pool sets it from there.</div></div></div>
     <div class="be credit"><span class="mk"></span><div><div class="bt">People buy in</div><div class="bd">A buy puts HYPE into the pool and pulls HYLD out, so the HYPE side fills up from buyers rather than from us. More buyers, higher price.</div></div></div>
     <div class="be credit"><span class="mk"></span><div><div class="bt">1% fee on every trade</div><div class="bd">Buys and sells both pay a 1% pool fee. The position keeps earning that fee in HYPE and HYLD the whole time.</div></div></div>
