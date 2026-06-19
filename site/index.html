@@ -12,6 +12,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script type="importmap">
+{"imports":{
+  "react":"https://esm.sh/react@18.3.1",
+  "react/":"https://esm.sh/react@18.3.1/",
+  "react-dom":"https://esm.sh/react-dom@18.3.1",
+  "react-dom/":"https://esm.sh/react-dom@18.3.1/"
+}}
+</script>
 <style>
   :root{
     --paper:#010006;     /* near-black, faint blue */
@@ -482,7 +490,7 @@
     estimate();
   });
   $('connect').addEventListener('click',connect);
-  // Reown AppKit -> app bridge: fired when the modal connects/disconnects an account.
+  // Privy -> app bridge: fired when login connects/disconnects an account.
   window.addEventListener('hyld:account', function(ev){
     var acc=ev.detail;
     if(acc && acc.address && acc.isConnected){
@@ -508,32 +516,57 @@
 })();
 </script>
 <script type="module">
-  // Reown AppKit (WalletConnect): opens a multi-wallet modal incl. mobile QR.
+  // Privy login + embedded wallets, bridged to the app via window.openWalletModal / hyld:account.
   try{
-    const { createAppKit } = await import('https://esm.sh/@reown/appkit?bundle');
-    const { EthersAdapter } = await import('https://esm.sh/@reown/appkit-adapter-ethers?bundle');
-    const { defineChain } = await import('https://esm.sh/@reown/appkit/networks?bundle');
-    const hyperevm = defineChain({
-      id:999, caipNetworkId:'eip155:999', chainNamespace:'eip155', name:'HyperEVM',
+    const React = (await import('react')).default;
+    const { useEffect } = await import('react');
+    const { createRoot } = await import('react-dom/client');
+    const { PrivyProvider, usePrivy, useWallets } = await import('https://esm.sh/@privy-io/react-auth@2?external=react,react-dom');
+    const h = React.createElement;
+
+    const hyperevm = {
+      id:999, name:'HyperEVM', network:'hyperevm',
       nativeCurrency:{name:'HYPE',symbol:'HYPE',decimals:18},
-      rpcUrls:{default:{http:['https://rpc.hyperliquid.xyz/evm']}},
+      rpcUrls:{default:{http:['https://rpc.hyperliquid.xyz/evm']},public:{http:['https://rpc.hyperliquid.xyz/evm']}},
       blockExplorers:{default:{name:'HyperEVMScan',url:'https://hyperevmscan.io'}}
-    });
-    const modal = createAppKit({
-      adapters:[new EthersAdapter()],
-      networks:[hyperevm],
-      defaultNetwork:hyperevm,
-      projectId:'e1bda672d5deb56579fe084dddfb9174',
-      metadata:{name:'HyperYield (HYLD)',description:'Fair launch on HyperEVM. 1% of every trade paid to holders.',url:'https://hyld.vercel.app',icons:['https://hyld.vercel.app/logo.svg']},
-      features:{analytics:false,email:false,socials:[]},
-      themeMode:'dark',
-      themeVariables:{'--w3m-accent':'#00ffa3'}
-    });
-    window.__appkit = modal;
-    window.openWalletModal = () => modal.open();
-    window.getWalletProvider = () => { try{ return modal.getWalletProvider('eip155'); }catch(e){ try{ return modal.getWalletProvider(); }catch(e2){ return window.ethereum; } } };
-    modal.subscribeAccount(acc => window.dispatchEvent(new CustomEvent('hyld:account',{detail:acc})));
-  }catch(e){ console.warn('Reown AppKit unavailable, using injected wallet fallback', e); }
+    };
+
+    function Bridge(){
+      const p = usePrivy();
+      const { wallets } = useWallets();
+      useEffect(function(){
+        window.openWalletModal = function(){ p.authenticated ? p.logout() : p.login(); };
+      },[p.authenticated]);
+      useEffect(function(){
+        const w = wallets && wallets[0];
+        if(p.authenticated && w){
+          w.getEthereumProvider().then(function(provider){
+            window.getWalletProvider = function(){ return provider; };
+            provider.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x3e7'}]}).catch(function(){});
+            window.dispatchEvent(new CustomEvent('hyld:account',{detail:{address:w.address,isConnected:true}}));
+          }).catch(function(e){ console.warn(e); });
+        } else if(p.ready){
+          window.getWalletProvider = function(){ return window.ethereum; };
+          window.dispatchEvent(new CustomEvent('hyld:account',{detail:{isConnected:false}}));
+        }
+      },[p.authenticated, p.ready, wallets]);
+      return null;
+    }
+
+    const mount = document.createElement('div'); mount.style.display='none'; document.body.appendChild(mount);
+    createRoot(mount).render(
+      h(PrivyProvider,{
+        appId:'cmql09qap00o40cl4a3ttacrn',
+        config:{
+          appearance:{theme:'dark',accentColor:'#00ffa3',logo:'https://hyld.vercel.app/logo.svg'},
+          defaultChain:hyperevm,
+          supportedChains:[hyperevm],
+          embeddedWallets:{createOnLogin:'users-without-wallets'}
+        }
+      }, h(Bridge))
+    );
+    window.__privy = true;
+  }catch(e){ console.warn('Privy unavailable, using injected wallet fallback', e); }
 </script>
 </body>
 </html>
