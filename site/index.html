@@ -97,7 +97,9 @@
   .swaptabs button{all:unset;flex:1;text-align:center;cursor:pointer;padding:9px;border-radius:8px;font-size:13.5px;font-weight:700;color:var(--ink-soft)}
   .swaptabs button.on{background:var(--credit);color:#04100d}
   .swaprow{margin-bottom:10px}
-  .swaprow .l{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .swaprow .l{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .swaprow .bal{color:var(--ink-soft);text-transform:none;letter-spacing:0;cursor:pointer}
+  .swaprow .bal:hover{color:var(--credit)}
   .swapin{display:flex;align-items:center;gap:10px;border:1px solid var(--rule-2);border-radius:12px;background:var(--field);padding:12px 14px}
   .swapin input{all:unset;flex:1;min-width:0;font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:18px;color:var(--ink)}
   .swapin input::placeholder{color:#3c5048}
@@ -131,7 +133,7 @@
   .figs{margin:0 0 30px;padding:18px 24px 8px;border:1px solid var(--rule-2);border-radius:16px;background:#060d0c}
   .figs .top{display:flex;justify-content:space-between;align-items:baseline}
   .figs h2{font-size:17px}
-  .book h2::before,.figs h2::before,.trans h2::before{content:"";display:inline-block;width:7px;height:7px;background:var(--credit);margin-right:11px;vertical-align:middle;box-shadow:0 0 9px rgba(0,255,163,.55)}
+  .book h2::before,.figs h2::before,.trans h2::before{content:none}
   .srow{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--rule)}
   .srow .k{font-size:13px;color:var(--ink-soft)} .srow .k .s{display:block;color:var(--muted);font-size:11px;margin-top:1px}
   .srow .v{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:13.5px;text-align:right;font-variant-numeric:tabular-nums}
@@ -166,6 +168,12 @@
   /* hero (proclamation + facts + shields) */
   .hero{padding:30px 0 6px}
   .proclaim{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.3em;color:var(--credit);text-transform:uppercase;opacity:.9}
+  .cachip{all:unset;display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap;max-width:100%;margin:0 0 20px;padding:9px 14px;border:1px solid var(--rule-2);border-radius:10px;background:#070d0c;cursor:pointer;font-size:13px;color:var(--ink-soft);transition:border-color .12s,color .12s}
+  .cachip:hover{border-color:var(--credit);color:var(--ink)}
+  .cachip .cl{font-size:10px;letter-spacing:.14em;color:var(--muted)}
+  .cachip .cv{font-family:"Share Tech Mono","IBM Plex Mono",monospace;color:var(--ink);word-break:break-all}
+  .cachip svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .cachip.copied{border-color:var(--credit);color:var(--credit)} .cachip.copied .cv{color:var(--credit)}
   .htitle{font-family:"Orbitron",sans-serif;font-weight:700;font-size:clamp(26px,6vw,40px);line-height:1.1;margin:13px 0 12px;max-width:17ch}
   .hsub{color:var(--ink-soft);font-size:15px;max-width:56ch;margin:0 0 22px}
   .facts4{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--rule-2);border-radius:16px;overflow:hidden;background:#060d0c}
@@ -220,13 +228,12 @@
 
 <div class="wrap">
   <section class="hero">
-    <div class="proclaim">Fair launch on HyperEVM</div>
     <h1 class="htitle">The whole supply is the liquidity.</h1>
     <p class="hsub">All 10,000 HYLD is already in the pool, seeded on one side at roughly a $5k start. We kept nothing back. HYPE only enters the pool when someone buys, and holders take 1% of every trade.</p>
 
     <div class="facts4">
       <div class="f"><div class="fk">Total supply</div><div class="fn">10,000<span class="u">HYLD</span></div><div class="fs">Fixed, all in the pool</div></div>
-      <div class="f"><div class="fk">Starting mcap</div><div class="fn">~$5k</div><div class="fs">Single-sided seed</div></div>
+      <div class="f"><div class="fk">Market cap</div><div class="fn" id="mcapLive">~$5k</div><div class="fs">Live from the pool</div></div>
       <div class="f"><div class="fk">Tax</div><div class="fn">0<span class="u">/</span>0</div><div class="fs">No buy or sell tax</div></div>
       <div class="f"><div class="fk">Pool fee</div><div class="fn">1%</div><div class="fs">V3 fee, to holders</div></div>
     </div>
@@ -234,59 +241,68 @@
     <div class="shields">
       <div class="shield">
         <svg class="si" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-3Z"/><path d="M9.2 12.2l2 2 3.6-3.8"/></svg>
-        <div class="st">Ownership renounced</div>
-        <div class="sd">Owner is dropped in the same transaction that opens the pool. After that nobody can mint, pause, or freeze wallets.</div>
+        <div class="st">Token ownership renounced</div>
+        <div class="sd">Ownership is renounced. No mint, pause, or freeze, ever. The deployer still holds the LP and can withdraw the liquidity (below).</div>
       </div>
       <div class="shield">
-        <svg class="si" viewBox="0 0 24 24" style="stroke:var(--debit)"><path d="M12 4 21 19 3 19 Z"/><path d="M12 10v4M12 17h.01"/></svg>
-        <div class="st">Liquidity NOT locked</div>
-        <div class="sd">The deployer holds the LP and can withdraw it (the HYPE buyers put in, plus HYLD) at any time. Trust required.</div>
+        <svg class="si" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
+        <div class="st">100% LP burnt</div>
+        <div class="sd">The entire LP is burned to a dead address. The liquidity can never be withdrawn — not by us, not by anyone.</div>
       </div>
       <div class="shield">
         <svg class="si" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M7.7 10.3h8.6M7.7 13.7h8.6"/></svg>
         <div class="st">1% to holders</div>
-        <div class="sd">The only thing the locker can do is collect the 1% pool fee and pass it to holders. Anybody can press the button, and the destination is fixed.</div>
+        <div class="sd">Anyone can collect the 1% pool fee; 100% goes to holders pro-rata, in HYPE and HYLD. The deployer can also withdraw the liquidity.</div>
       </div>
     </div>
   </section>
 
   <section class="swap" id="trade">
     <div class="swaptabs"><button class="on" id="tab-buy">Buy</button><button id="tab-sell">Sell</button></div>
-    <div class="swaprow"><div class="l">You pay</div><div class="swapin"><input id="payamt" inputmode="decimal" placeholder="0.0" /><span class="cur" id="paycur">HYPE</span></div></div>
-    <div class="swaprow"><div class="l">You receive</div><div class="swapin"><input id="getamt" placeholder="0.0" disabled /><span class="cur" id="getcur">HYLD</span></div></div>
-    <button class="btn" id="swapbtn" disabled>Trading opens at launch</button>
-    <div class="swapnote">Trade straight against the pool from here. Turns on once the pool is live.</div>
+    <div class="swaprow"><div class="l"><span>You pay</span><span class="bal" id="paybal"></span></div><div class="swapin"><input id="payamt" inputmode="decimal" placeholder="0.0" /><span class="cur" id="paycur">HYPE</span></div></div>
+    <div class="swaprow"><div class="l"><span>You receive</span><span class="bal" id="getbal" style="cursor:default"></span></div><div class="swapin"><input id="getamt" placeholder="0.0" disabled /><span class="cur" id="getcur">HYLD</span></div></div>
+    <button class="btn" id="swapbtn">Connect wallet to trade</button>
+    <div class="txline" id="txline" style="margin-top:10px;text-align:center"></div>
+    <div class="swapnote" id="swapnote">Trade straight against the pool. Slippage is unprotected on a fresh pool, so start small.</div>
   </section>
 
   <section class="credit">
     <div class="top"><span class="lbl">Your rewards</span></div>
     <div>
       <div class="amts">
-        <div class="amt"><div class="n mono">0</div><div class="u">HYLD to claim</div></div>
-        <div class="amt"><div class="n mono">0</div><div class="u">HYPE to claim</div></div>
+        <div class="amt"><div class="n mono" id="rwdHyld">0</div><div class="u">HYLD to claim</div></div>
+        <div class="amt"><div class="n mono" id="rwdHype">0</div><div class="u">HYPE to claim</div></div>
       </div>
       <div class="claimrow">
-        <button class="btn ghost" disabled>Claim opens at launch</button>
+        <button class="btn" id="claimTok">Claim HYLD</button>
+        <button class="btn" id="claimHypeBtn">Claim HYPE</button>
+        <button class="btn ghost" id="collectBtn">Collect fees</button>
       </div>
-      <p class="cb-fine">The 1% pool fee gets split across holders in both HYLD and HYPE. Once you're holding, your share builds up here. Claiming turns on when the pool is live.</p>
+      <p class="cb-fine" id="rwdFine">The 1% pool fee is split across holders in both HYLD and HYPE. Connect your wallet to see and claim your share. Anyone can press &ldquo;Collect fees&rdquo; to push pending pool fees out to holders.</p>
     </div>
   </section>
 
   <section class="book" id="how">
+    <button class="cachip" id="caChip" title="Copy contract address" aria-label="Copy contract address">
+      <span class="cl">CA</span>
+      <span class="cv" id="caText">0xF7D43573E69544baC64d2B5f0653422c928f75A3</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+    </button>
     <h2>How the launch works</h2>
     <div class="be credit"><span class="mk"></span><div><div class="bt">Single-sided seed</div><div class="bd">All 10,000 HYLD goes in at about a $5k valuation, with no HYPE from us. The price starts low and the pool sets it from there.</div></div></div>
     <div class="be credit"><span class="mk"></span><div><div class="bt">People buy in</div><div class="bd">A buy puts HYPE into the pool and pulls HYLD out, so the HYPE side fills up from buyers rather than from us. More buyers, higher price.</div></div></div>
-    <div class="be credit"><span class="mk"></span><div><div class="bt">1% fee on every trade</div><div class="bd">Buys and sells both pay a 1% pool fee. Since the LP is locked in place, it keeps earning that fee in HYPE and HYLD the whole time.</div></div></div>
-    <div class="be plain"><span class="mk"></span><div><div class="bt">Paid to holders</div><div class="bd">Anyone can collect those fees from the locked LP, and they go straight to holders. The LP stays locked, so it can't be pulled out.</div></div></div>
+    <div class="be credit"><span class="mk"></span><div><div class="bt">1% fee on every trade</div><div class="bd">Buys and sells both pay a 1% pool fee. The position keeps earning that fee in HYPE and HYLD the whole time.</div></div></div>
+    <div class="be plain"><span class="mk"></span><div><div class="bt">Paid to holders</div><div class="bd">Anyone can collect those fees, and 100% go straight to holders pro-rata. Note: the deployer can withdraw the underlying liquidity at any time.</div></div></div>
   </section>
 
   <section class="figs">
-    <div class="top"><h2>At launch</h2></div>
+    <div class="top"><h2>The setup</h2></div>
     <div class="srow"><span class="k">Supply seeded<span class="s">single-sided, 100% in the pool</span></span><span class="v">10,000 HYLD</span></div>
     <div class="srow"><span class="k">Starting valuation</span><span class="v">~$5,000</span></div>
     <div class="srow"><span class="k">Pool<span class="s">Hyperswap V3, 1% fee tier</span></span><span class="v">HYLD / WHYPE</span></div>
-    <div class="srow"><span class="k">Liquidity<span class="s">LP NFT in an immutable locker</span></span><span class="v">Locked for good</span></div>
-    <div class="srow"><span class="k">Ownership</span><span class="v">Renounced</span></div>
+    <div class="srow"><span class="k">Liquidity<span class="s">LP NFT held by the deployer</span></span><span class="v">Withdrawable</span></div>
+    <div class="srow"><span class="k">Token ownership</span><span class="v">Renounced</span></div>
+    <div class="srow"><span class="k">Contracts<span class="s">source verified on hyperevmscan</span></span><span class="v">Verified</span></div>
   </section>
 
   <section class="faq" id="faq">
@@ -294,8 +310,8 @@
     <div class="fsub">Answers for holders.</div>
     <details><summary>Why a single-sided liquidity pool?</summary>
       <div class="fa">Because we don't put in any HYPE, there's no early entry for us and no presale to get into ahead of you. Everyone buys off the same pool at the same starting price, and all the HYPE in it comes from buyers.</div></details>
-    <details><summary>If the LP is locked, how does it earn fees?</summary>
-      <div class="fa">A Uniswap-style V3 position keeps collecting its 1% trading fee even when the LP can't be moved. The locker only knows how to grab that fee and pass it to holders. The liquidity behind it stays where it is.</div></details>
+    <details><summary>How does the LP earn fees, and can it be withdrawn?</summary>
+      <div class="fa">A Uniswap-style V3 position collects its 1% trading fee continuously; anyone can harvest it and 100% goes to holders pro-rata. The position is held by the deployer, who can withdraw the underlying liquidity (the buyers' HYPE plus HYLD) at any time. It is not locked.</div></details>
     <details><summary>Is there a tax, presale, or team allocation?</summary>
       <div class="fa">No to all three. Buys and sells aren't taxed, there was no presale, and we hold no tokens. The 1% pool fee is the only thing moving, and it lands with holders.</div></details>
     <details><summary>What chain and exchange is this on?</summary>
@@ -305,9 +321,9 @@
   <section class="trans">
     <h2>Addresses</h2>
     <div class="ref">
-      <div class="r"><span class="rk">Token</span><span class="rv">published at launch</span></div>
-      <div class="r"><span class="rk">Pool (HYLD / WHYPE)</span><span class="rv">published at launch</span></div>
-      <div class="r"><span class="rk">LP locker</span><span class="rv">published at launch</span></div>
+      <div class="r"><span class="rk">Token</span><span class="rv"><a href="https://hyperevmscan.io/address/0xF7D43573E69544baC64d2B5f0653422c928f75A3#code" target="_blank" rel="noopener">0xF7D43573E69544baC64d2B5f0653422c928f75A3</a></span></div>
+      <div class="r"><span class="rk">Manager (LP)</span><span class="rv"><a href="https://hyperevmscan.io/address/0x662D9e1E100acA34e872E79aFE9A63d7FcC0f674#code" target="_blank" rel="noopener">0x662D9e1E100acA34e872E79aFE9A63d7FcC0f674</a></span></div>
+      <div class="r"><span class="rk">Pool (HYLD / WHYPE)</span><span class="rv"><a href="https://hyperevmscan.io/address/0x06F20FAF789a644E6C208de2A0490b1EFF853E1F" target="_blank" rel="noopener">0x06F20FAF789a644E6C208de2A0490b1EFF853E1F</a></span></div>
       <div class="r"><span class="rk">WHYPE</span><span class="rv">0x5555…5555</span></div>
     </div>
   </section>
@@ -323,35 +339,201 @@
   </div>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <script>
-  document.getElementById('xfoot').href="https://x.com/HyperYield";
+(function(){
+  if(typeof ethers==="undefined"){ console.error("ethers failed to load"); return; }
+  var X=ethers;
+  var RPC="https://rpc.hyperliquid.xyz/evm", HEX="0x3e7", FEE=10000;
+  var TOKEN="0xF7D43573E69544baC64d2B5f0653422c928f75A3";
+  var POOL="0x06F20FAF789a644E6C208de2A0490b1EFF853E1F";
+  var MANAGER="0x662D9e1E100acA34e872E79aFE9A63d7FcC0f674";
+  var WHYPE="0x5555555555555555555555555555555555555555";
+  var ROUTER="0x4E2960a8cd19B467b82d26D83fAcb0fAE26b094D";
+  var TOKEN_ABI=[
+    "function balanceOf(address) view returns (uint256)",
+    "function allowance(address,address) view returns (uint256)",
+    "function approve(address,uint256) returns (bool)",
+    "function withdrawableHype(address) view returns (uint256)",
+    "function withdrawableTokens(address) view returns (uint256)",
+    "function claimHype()","function claimTokens()"
+  ];
+  var POOL_ABI=["function slot0() view returns (uint160 sqrtPriceX96,int24 t,uint16 a,uint16 b,uint16 c,uint8 d,bool e)"];
+  var MANAGER_ABI=["function collect() returns (uint256,uint256)"];
+  var ROUTER_ABI=[
+    "function exactInputSingle((address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 deadline,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96)) payable returns (uint256)",
+    "function unwrapWETH9(uint256 amountMinimum,address recipient) payable",
+    "function multicall(bytes[] data) payable returns (bytes[])"
+  ];
 
-  // Buy/Sell tab toggle (swap activates against the pool at launch)
-  var tb=document.getElementById('tab-buy'), ts=document.getElementById('tab-sell');
-  function setSide(buy){
-    tb.classList.toggle('on',buy); ts.classList.toggle('on',!buy);
-    document.getElementById('paycur').textContent=buy?'HYPE':'HYLD';
-    document.getElementById('getcur').textContent=buy?'HYLD':'HYPE';
+  var ro=new X.providers.JsonRpcProvider(RPC);
+  var signer=null, account=null, side=true, hypeUsd=0, hypePerHyld=0;
+  var hypeBalRaw=X.constants.Zero, hyldBalRaw=X.constants.Zero;
+  function updateBal(){
+    if(!account){ $('paybal').textContent=""; $('getbal').textContent=""; return; }
+    var payRaw=side?hypeBalRaw:hyldBalRaw, getRaw=side?hyldBalRaw:hypeBalRaw;
+    $('paybal').textContent="Balance "+fmt(payRaw)+" "+(side?"HYPE":"HYLD")+" · Max";
+    $('getbal').textContent="Balance "+fmt(getRaw)+" "+(side?"HYLD":"HYPE");
   }
-  tb.addEventListener('click',function(){setSide(true)});
-  ts.addEventListener('click',function(){setSide(false)});
+  var $=function(id){return document.getElementById(id);};
+  function fmt(bn,d){ try{ var n=parseFloat(X.utils.formatUnits(bn,18)); if(!n)return "0"; if(n<0.0001)return n.toExponential(2); return n.toLocaleString(undefined,{maximumFractionDigits:d||4}); }catch(e){return "0";} }
+  function tx(m,c){ var t=$('txline'); if(t){ t.textContent=m||""; t.className="txline"+(c?(" "+c):""); } }
+  function err(e){ return ((e&&(e.reason||(e.data&&e.data.message)||e.message))||"failed").toString().slice(0,90); }
 
-  var connectBtn=document.getElementById('connect');
-  connectBtn.addEventListener('click', async function(){
-    if(!window.ethereum){ connectBtn.textContent="No wallet found"; return; }
-    var hex="0x3e7";
+  async function loadStats(){
+    try{
+      var s0=await (new X.Contract(POOL,POOL_ABI,ro)).slot0();
+      var sp=Number(s0.sqrtPriceX96.toString())/Math.pow(2,96);
+      var P=sp*sp;            // token1/token0 = HYLD per WHYPE
+      hypePerHyld=1/P;        // WHYPE per HYLD
+      try{ var r=await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"allMids"})}); var j=await r.json(); hypeUsd=parseFloat(j.HYPE)||0; }catch(e){}
+      var mcapHype=10000*hypePerHyld;
+      if($('mcapLive')) $('mcapLive').textContent = hypeUsd? ("$"+Math.round(mcapHype*hypeUsd).toLocaleString()) : (mcapHype.toFixed(2)+" HYPE");
+      if($('swapnote')) $('swapnote').textContent="1 HYPE ≈ "+(1/hypePerHyld).toLocaleString(undefined,{maximumFractionDigits:2})+" HYLD spot · slippage unprotected, start small";
+      estimate();
+    }catch(e){}
+  }
+  async function loadAccount(){
+    if(!account) return;
+    try{
+      var token=new X.Contract(TOKEN,TOKEN_ABI,ro);
+      var res=await Promise.all([token.withdrawableTokens(account),token.withdrawableHype(account),token.balanceOf(account),ro.getBalance(account)]);
+      $('rwdHyld').textContent=fmt(res[0]); $('rwdHype').textContent=fmt(res[1]);
+      $('rwdHyld').classList.add('live'); $('rwdHype').classList.add('live');
+      hyldBalRaw=res[2]; hypeBalRaw=res[3]; updateBal();
+      if($('rwdFine')) $('rwdFine').textContent="You hold "+fmt(res[2])+" HYLD. Rewards build up as people trade; claim anytime. Anyone can Collect fees to push pending pool fees to holders.";
+    }catch(e){}
+  }
+  function estimate(){
+    var v=parseFloat(($('payamt').value||"0")); if(!v||!hypePerHyld){ $('getamt').value=""; return; }
+    var out=side?(v/hypePerHyld):(v*hypePerHyld);
+    $('getamt').value=out.toLocaleString(undefined,{maximumFractionDigits:6});
+  }
+  async function connect(){
+    if(window.openWalletModal){ try{ window.openWalletModal(); return; }catch(e){} }
+    if(!window.ethereum){ $('connect').textContent="No wallet found"; return; }
     try{
       var cid=await window.ethereum.request({method:"eth_chainId"});
-      if(cid!==hex){
-        try{ await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:hex}]}); }
-        catch(e){ await window.ethereum.request({method:"wallet_addEthereumChain",params:[{chainId:hex,chainName:"HyperEVM",nativeCurrency:{name:"HYPE",symbol:"HYPE",decimals:18},rpcUrls:["https://rpc.hyperliquid.xyz/evm"],blockExplorerUrls:["https://hyperevmscan.io"]}]}); }
+      if(cid!==HEX){
+        try{ await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:HEX}]}); }
+        catch(e){ await window.ethereum.request({method:"wallet_addEthereumChain",params:[{chainId:HEX,chainName:"HyperEVM",nativeCurrency:{name:"HYPE",symbol:"HYPE",decimals:18},rpcUrls:[RPC],blockExplorerUrls:["https://hyperevmscan.io"]}]}); }
       }
-      var a=await window.ethereum.request({method:"eth_requestAccounts"});
-      var ad=a[0];
-      connectBtn.textContent=ad.slice(0,6)+"…"+ad.slice(-4);
-    }catch(e){}
+      var acc=await window.ethereum.request({method:"eth_requestAccounts"}); account=acc[0];
+      signer=(new X.providers.Web3Provider(window.ethereum)).getSigner();
+      $('connect').textContent=account.slice(0,6)+"…"+account.slice(-4);
+      $('swapbtn').textContent=side?"Buy HYLD":"Sell HYLD";
+      loadAccount();
+    }catch(e){ tx(err(e),"err"); }
+  }
+  async function doSwap(){
+    if(!signer){ return connect(); }
+    var v=parseFloat(($('payamt').value||"0")); if(!v){ tx("Enter an amount","err"); return; }
+    var router=new X.Contract(ROUTER,ROUTER_ABI,signer), dl=Math.floor(Date.now()/1000)+1200;
+    try{
+      if(side){
+        var amt=X.utils.parseUnits(String(v),18);
+        tx("Confirm in wallet…");
+        var t=await router.exactInputSingle({tokenIn:WHYPE,tokenOut:TOKEN,fee:FEE,recipient:account,deadline:dl,amountIn:amt,amountOutMinimum:0,sqrtPriceLimitX96:0},{value:amt});
+        tx("Buying… "+t.hash.slice(0,12)); await t.wait(); tx("Bought HYLD ✓","ok");
+      }else{
+        var amt2=X.utils.parseUnits(String(v),18), token=new X.Contract(TOKEN,TOKEN_ABI,signer);
+        if((await token.allowance(account,ROUTER)).lt(amt2)){ tx("Approve HYLD…"); await (await token.approve(ROUTER,X.constants.MaxUint256)).wait(); }
+        var d0=router.interface.encodeFunctionData("exactInputSingle",[{tokenIn:TOKEN,tokenOut:WHYPE,fee:FEE,recipient:X.constants.AddressZero,deadline:dl,amountIn:amt2,amountOutMinimum:0,sqrtPriceLimitX96:0}]);
+        var d1=router.interface.encodeFunctionData("unwrapWETH9",[0,account]);
+        tx("Confirm in wallet…");
+        var t2=await router.multicall([d0,d1]); tx("Selling… "+t2.hash.slice(0,12)); await t2.wait(); tx("Sold HYLD ✓","ok");
+      }
+      $('payamt').value=""; estimate(); loadAccount(); loadStats();
+    }catch(e){ tx(err(e),"err"); }
+  }
+  async function claim(which){
+    if(!signer){ return connect(); }
+    try{ var token=new X.Contract(TOKEN,TOKEN_ABI,signer); tx("Confirm in wallet…");
+      var t=which==="hype"?await token.claimHype():await token.claimTokens();
+      tx("Claiming… "+t.hash.slice(0,12)); await t.wait(); tx("Claimed ✓","ok"); loadAccount();
+    }catch(e){ tx(err(e),"err"); }
+  }
+  async function collect(){
+    if(!signer){ return connect(); }
+    try{ var m=new X.Contract(MANAGER,MANAGER_ABI,signer); tx("Confirm in wallet…");
+      var t=await m.collect(); tx("Collecting fees… "+t.hash.slice(0,12)); await t.wait(); tx("Fees pushed to holders ✓","ok"); loadAccount();
+    }catch(e){ tx(err(e),"err"); }
+  }
+
+  $('xfoot').href="https://x.com/hyperyieldX";
+  var caChip=$('caChip');
+  if(caChip){ caChip.addEventListener('click',function(){
+    try{ navigator.clipboard.writeText(TOKEN); }catch(e){}
+    caChip.classList.add('copied'); $('caText').textContent="Copied";
+    setTimeout(function(){ caChip.classList.remove('copied'); $('caText').textContent=TOKEN; },1300);
+  }); }
+  var tb=$('tab-buy'), ts=$('tab-sell');
+  function setSide(buy){ side=buy; tb.classList.toggle('on',buy); ts.classList.toggle('on',!buy);
+    $('paycur').textContent=buy?'HYPE':'HYLD'; $('getcur').textContent=buy?'HYLD':'HYPE';
+    if(signer)$('swapbtn').textContent=buy?"Buy HYLD":"Sell HYLD"; estimate(); updateBal(); }
+  tb.addEventListener('click',function(){setSide(true)});
+  ts.addEventListener('click',function(){setSide(false)});
+  $('payamt').addEventListener('input',estimate);
+  $('paybal').addEventListener('click',function(){
+    if(!account) return;
+    var raw=side?hypeBalRaw:hyldBalRaw, v=parseFloat(X.utils.formatUnits(raw,18));
+    if(side) v=Math.max(0,v-0.02); // keep a little HYPE for gas
+    $('payamt').value = v>0 ? String(Math.floor(v*1e6)/1e6) : "0";
+    estimate();
   });
-  if(window.ethereum){ window.ethereum.on && window.ethereum.on("accountsChanged",function(){location.reload();}); }
+  $('connect').addEventListener('click',connect);
+  // Reown AppKit -> app bridge: fired when the modal connects/disconnects an account.
+  window.addEventListener('hyld:account', function(ev){
+    var acc=ev.detail;
+    if(acc && acc.address && acc.isConnected){
+      account=acc.address;
+      var wp = window.getWalletProvider && window.getWalletProvider();
+      try{ signer=(new X.providers.Web3Provider(wp||window.ethereum)).getSigner(); }catch(e){ signer=null; }
+      $('connect').textContent=account.slice(0,6)+"…"+account.slice(-4);
+      $('swapbtn').textContent=side?"Buy HYLD":"Sell HYLD";
+      loadAccount();
+    }else{
+      account=null; signer=null;
+      $('connect').textContent="Connect wallet"; $('swapbtn').textContent="Connect wallet to trade";
+      $('paybal').textContent=""; $('getbal').textContent="";
+    }
+  });
+  $('swapbtn').addEventListener('click',doSwap);
+  $('claimHypeBtn').addEventListener('click',function(){claim("hype")});
+  $('claimTok').addEventListener('click',function(){claim("tok")});
+  $('collectBtn').addEventListener('click',collect);
+  if(window.ethereum && window.ethereum.on){ window.ethereum.on("accountsChanged",function(){location.reload();}); window.ethereum.on("chainChanged",function(){location.reload();}); }
+
+  loadStats(); setInterval(loadStats,30000);
+})();
+</script>
+<script type="module">
+  // Reown AppKit (WalletConnect) — opens a multi-wallet modal incl. mobile QR.
+  try{
+    const { createAppKit } = await import('https://esm.sh/@reown/appkit?bundle');
+    const { EthersAdapter } = await import('https://esm.sh/@reown/appkit-adapter-ethers?bundle');
+    const { defineChain } = await import('https://esm.sh/@reown/appkit/networks?bundle');
+    const hyperevm = defineChain({
+      id:999, caipNetworkId:'eip155:999', chainNamespace:'eip155', name:'HyperEVM',
+      nativeCurrency:{name:'HYPE',symbol:'HYPE',decimals:18},
+      rpcUrls:{default:{http:['https://rpc.hyperliquid.xyz/evm']}},
+      blockExplorers:{default:{name:'HyperEVMScan',url:'https://hyperevmscan.io'}}
+    });
+    const modal = createAppKit({
+      adapters:[new EthersAdapter()],
+      networks:[hyperevm],
+      defaultNetwork:hyperevm,
+      projectId:'e1bda672d5deb56579fe084dddfb9174',
+      metadata:{name:'HyperYield (HYLD)',description:'Fair launch on HyperEVM. 1% of every trade paid to holders.',url:'https://hyld.vercel.app',icons:['https://hyld.vercel.app/logo.svg']},
+      features:{analytics:false,email:false,socials:[]},
+      themeMode:'dark',
+      themeVariables:{'--w3m-accent':'#00ffa3'}
+    });
+    window.__appkit = modal;
+    window.openWalletModal = () => modal.open();
+    window.getWalletProvider = () => { try{ return modal.getWalletProvider('eip155'); }catch(e){ try{ return modal.getWalletProvider(); }catch(e2){ return window.ethereum; } } };
+    modal.subscribeAccount(acc => window.dispatchEvent(new CustomEvent('hyld:account',{detail:acc})));
+  }catch(e){ console.warn('Reown AppKit unavailable, using injected wallet fallback', e); }
 </script>
 </body>
 </html>

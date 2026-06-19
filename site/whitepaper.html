@@ -26,7 +26,7 @@
   h1{font-family:"Orbitron",sans-serif;font-weight:700;font-size:clamp(28px,6vw,40px);letter-spacing:.01em;margin:36px 0 6px}
   .sub{color:var(--muted);font-size:14px;margin-bottom:8px}
   h2{font-family:"Orbitron",sans-serif;font-weight:700;font-size:17px;margin:34px 0 10px;display:flex;align-items:center;gap:11px}
-  h2::before{content:"";width:7px;height:7px;background:var(--credit);box-shadow:0 0 9px rgba(0,255,163,.55)}
+  h2::before{content:none}
   p{margin:0 0 12px;color:var(--ink-soft)}
   ul{margin:0 0 12px;padding-left:18px;color:var(--ink-soft)}
   li{margin:6px 0}
@@ -52,7 +52,7 @@
 <div class="wrap">
   <h1>HyperYield</h1>
   <div class="sub mono">HYLD whitepaper</div>
-  <p>HyperYield (HYLD) is a fair-launch token on HyperEVM. We don't tax trades, we didn't run a presale, and we hold no tokens ourselves. The whole supply goes into the trading pool as single-sided liquidity, that liquidity is locked, the owner is dropped, and the pool's 1% trading fee goes to holders.</p>
+  <p>HyperYield (HYLD) is a fair-launch token on HyperEVM. We don't tax trades, we didn't run a presale, and we hold no tokens ourselves. The whole supply goes into the trading pool as single-sided liquidity and the pool's 1% trading fee goes to holders. <b>The liquidity is NOT locked: the deployer holds the LP and can withdraw it (the underlying HYPE and HYLD) at any time.</b> Buyers must trust the deployer not to.</p>
 
   <div class="facts">
     <div class="f"><div class="k">Name</div><div class="v">HyperYield (HYLD)</div></div>
@@ -68,25 +68,25 @@
   <p>When people buy, HYPE goes into the pool and HYLD comes out, so the HYPE side fills up entirely from buyers. The price starts low and climbs as more people join.</p>
 
   <h2>Rewards from the 1% fee</h2>
-  <p>Every buy and sell pays a <b>1% pool fee</b>, which is the highest tier Hyperswap V3 offers. The locked position keeps earning that fee in both HYPE and HYLD, even though the liquidity behind it can't be pulled out.</p>
-  <p>The LP is locked, and the lock only lets you collect the fees, not withdraw the liquidity. Anyone can call collect, and whatever comes out goes to holders. Transfers aren't taxed and we take no cut.</p>
+  <p>Every buy and sell pays a <b>1% pool fee</b>, which is the highest tier Hyperswap V3 offers. The position keeps earning that fee in both HYPE and HYLD. <b>Anyone</b> can call collect, and 100% of whatever comes out goes to holders, pro-rata to their balance, paid in both HYPE and HYLD. Transfers aren't taxed and we take no cut.</p>
 
-  <h2>Locked and renounced</h2>
+  <h2>Withdrawable liquidity (read this)</h2>
   <ul>
-    <li><b>Liquidity locked.</b> The supply is seeded as single-sided liquidity, then the LP is locked. It stays in the pool and can't be withdrawn.</li>
-    <li><b>Ownership renounced.</b> The owner is dropped in the same transaction that opens the pool. After that nobody can mint new tokens, pause trading, or freeze a wallet.</li>
-    <li><b>Fixed supply.</b> 10,000 HYLD, all of it in the pool, with none set aside for us.</li>
+    <li><b>Liquidity is NOT locked.</b> The supply is seeded as single-sided liquidity, but the deployer holds the LP and can withdraw 100% of it (the underlying HYPE put in by buyers, plus the HYLD) to any address, at any time. This is the single biggest risk: buyers must trust the deployer not to pull the pool. There is no timelock and no lock contract.</li>
+    <li><b>Token ownership renounced.</b> The HYLD token contract can't mint new supply, pause trading, or freeze wallets, and ownership has been renounced (owner is the zero address). The deployer still holds the LP and keeps the liquidity-withdraw control described above.</li>
+    <li><b>Source verified.</b> The token and manager contracts are source-verified on hyperevmscan. Read them before taking part.</li>
+    <li><b>Fixed supply.</b> 10,000 HYLD, all of it seeded into the pool, with none set aside for us.</li>
   </ul>
 
   <h2>What to know</h2>
   <p>Since the pool starts with HYLD only, the early price is low and jumpy until enough buyers add HYPE to settle it. Read the contract and understand how this works before you take part. None of this is financial advice.</p>
 
   <h2>Addresses</h2>
-  <p>HyperEVM, chain 999. Published at launch.</p>
+  <p>HyperEVM, chain 999. Live. Contracts source-verified on hyperevmscan.</p>
   <ul style="list-style:none;padding-left:0">
-    <li><b>Token</b><br><span class="addr">published at launch</span></li>
-    <li><b>Pool (HYLD / WHYPE), 1% fee</b><br><span class="addr">published at launch</span></li>
-    <li><b>LP locker</b><br><span class="addr">published at launch</span></li>
+    <li><b>Token (HYLD)</b><br><a class="addr" href="https://hyperevmscan.io/address/0xF7D43573E69544baC64d2B5f0653422c928f75A3#code" target="_blank" rel="noopener">0xF7D43573E69544baC64d2B5f0653422c928f75A3</a></li>
+    <li><b>Manager (holds LP, can withdraw)</b><br><a class="addr" href="https://hyperevmscan.io/address/0x662D9e1E100acA34e872E79aFE9A63d7FcC0f674#code" target="_blank" rel="noopener">0x662D9e1E100acA34e872E79aFE9A63d7FcC0f674</a></li>
+    <li><b>Pool (HYLD / WHYPE), 1% fee</b><br><a class="addr" href="https://hyperevmscan.io/address/0x06F20FAF789a644E6C208de2A0490b1EFF853E1F" target="_blank" rel="noopener">0x06F20FAF789a644E6C208de2A0490b1EFF853E1F</a></li>
     <li><b>WHYPE</b><br><span class="addr">0x5555555555555555555555555555555555555555</span></li>
   </ul>
 </div>
