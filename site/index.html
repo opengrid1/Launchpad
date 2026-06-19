@@ -242,17 +242,17 @@
       <div class="shield">
         <svg class="si" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-3Z"/><path d="M9.2 12.2l2 2 3.6-3.8"/></svg>
         <div class="st">Token ownership renounced</div>
-        <div class="sd">Ownership is renounced. No mint, pause, or freeze, ever. The deployer still holds the LP and can withdraw the liquidity (below).</div>
+        <div class="sd">Ownership is renounced. No mint, pause, or freeze, ever. The LP is burned, so the liquidity can never be withdrawn.</div>
       </div>
       <div class="shield">
         <svg class="si" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
         <div class="st">100% LP burnt</div>
-        <div class="sd">The entire LP is burned to a dead address. The liquidity can never be withdrawn — not by us, not by anyone.</div>
+        <div class="sd">The entire LP is burned to a dead address. The liquidity can never be withdrawn by us or anyone.</div>
       </div>
       <div class="shield">
         <svg class="si" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M7.7 10.3h8.6M7.7 13.7h8.6"/></svg>
         <div class="st">1% to holders</div>
-        <div class="sd">Anyone can collect the 1% pool fee; 100% goes to holders pro-rata, in HYPE and HYLD. The deployer can also withdraw the liquidity.</div>
+        <div class="sd">Anyone can collect the 1% pool fee; 100% goes to holders pro-rata, in HYPE and HYLD. The LP is burned, so the liquidity can never be withdrawn.</div>
       </div>
     </div>
   </section>
@@ -292,7 +292,7 @@
     <div class="be credit"><span class="mk"></span><div><div class="bt">Single-sided seed</div><div class="bd">All 10,000 HYLD goes in at about a $5k valuation, with no HYPE from us. The price starts low and the pool sets it from there.</div></div></div>
     <div class="be credit"><span class="mk"></span><div><div class="bt">People buy in</div><div class="bd">A buy puts HYPE into the pool and pulls HYLD out, so the HYPE side fills up from buyers rather than from us. More buyers, higher price.</div></div></div>
     <div class="be credit"><span class="mk"></span><div><div class="bt">1% fee on every trade</div><div class="bd">Buys and sells both pay a 1% pool fee. The position keeps earning that fee in HYPE and HYLD the whole time.</div></div></div>
-    <div class="be plain"><span class="mk"></span><div><div class="bt">Paid to holders</div><div class="bd">Anyone can collect those fees, and 100% go straight to holders pro-rata. Note: the deployer can withdraw the underlying liquidity at any time.</div></div></div>
+    <div class="be plain"><span class="mk"></span><div><div class="bt">Paid to holders</div><div class="bd">Anyone can collect those fees, and 100% go straight to holders pro-rata. The LP is burned, so the liquidity can never be withdrawn.</div></div></div>
   </section>
 
   <section class="figs">
@@ -300,7 +300,7 @@
     <div class="srow"><span class="k">Supply seeded<span class="s">single-sided, 100% in the pool</span></span><span class="v">10,000 HYLD</span></div>
     <div class="srow"><span class="k">Starting valuation</span><span class="v">~$5,000</span></div>
     <div class="srow"><span class="k">Pool<span class="s">Hyperswap V3, 1% fee tier</span></span><span class="v">HYLD / WHYPE</span></div>
-    <div class="srow"><span class="k">Liquidity<span class="s">LP NFT held by the deployer</span></span><span class="v">Withdrawable</span></div>
+    <div class="srow"><span class="k">Liquidity<span class="s">LP NFT burned to a dead address</span></span><span class="v">Permanent</span></div>
     <div class="srow"><span class="k">Token ownership</span><span class="v">Renounced</span></div>
     <div class="srow"><span class="k">Contracts<span class="s">source verified on hyperevmscan</span></span><span class="v">Verified</span></div>
   </section>
@@ -310,8 +310,8 @@
     <div class="fsub">Answers for holders.</div>
     <details><summary>Why a single-sided liquidity pool?</summary>
       <div class="fa">Because we don't put in any HYPE, there's no early entry for us and no presale to get into ahead of you. Everyone buys off the same pool at the same starting price, and all the HYPE in it comes from buyers.</div></details>
-    <details><summary>How does the LP earn fees, and can it be withdrawn?</summary>
-      <div class="fa">A Uniswap-style V3 position collects its 1% trading fee continuously; anyone can harvest it and 100% goes to holders pro-rata. The position is held by the deployer, who can withdraw the underlying liquidity (the buyers' HYPE plus HYLD) at any time. It is not locked.</div></details>
+    <details><summary>How does the LP earn fees if it's burned?</summary>
+      <div class="fa">A Uniswap-style V3 position collects its 1% trading fee continuously; anyone can harvest it and 100% goes to holders pro-rata. The LP is burned, so the underlying liquidity (the buyers' HYPE plus HYLD) can never be withdrawn by anyone, including the deployer.</div></details>
     <details><summary>Is there a tax, presale, or team allocation?</summary>
       <div class="fa">No to all three. Buys and sells aren't taxed, there was no presale, and we hold no tokens. The 1% pool fee is the only thing moving, and it lands with holders.</div></details>
     <details><summary>What chain and exchange is this on?</summary>
@@ -508,7 +508,7 @@
 })();
 </script>
 <script type="module">
-  // Reown AppKit (WalletConnect) — opens a multi-wallet modal incl. mobile QR.
+  // Reown AppKit (WalletConnect): opens a multi-wallet modal incl. mobile QR.
   try{
     const { createAppKit } = await import('https://esm.sh/@reown/appkit?bundle');
     const { EthersAdapter } = await import('https://esm.sh/@reown/appkit-adapter-ethers?bundle');
