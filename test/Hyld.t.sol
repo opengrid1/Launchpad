@@ -160,6 +160,65 @@ contract HyldTest is Test {
         m.collect();
     }
 
+    // A holder who buys AFTER a distribution must NOT receive any of that earlier reward.
+    function test_lateJoinerGetsNoPriorDividends() public {
+        _buy(alice, 1_000e18);
+        _stageFees(1 ether, 0);
+        manager.collect();
+        assertApproxEqAbs(token.withdrawableHype(alice), 1 ether, 2);
+
+        _buy(bob, 1_000e18); // joins now
+        assertEq(token.withdrawableHype(bob), 0, "bob earns nothing from the past");
+
+        _stageFees(1 ether, 0);
+        manager.collect(); // now split 50/50
+        assertApproxEqAbs(token.withdrawableHype(alice), 1.5 ether, 2);
+        assertApproxEqAbs(token.withdrawableHype(bob), 0.5 ether, 2);
+    }
+
+    // Moving tokens preserves already-accrued rewards and re-splits future ones by new balances.
+    function test_balanceChangePreservesAccruedAndReweights() public {
+        _buy(alice, 1_000e18);
+        _buy(bob, 1_000e18);
+        _stageFees(1 ether, 0);
+        manager.collect(); // alice 0.5, bob 0.5
+        assertApproxEqAbs(token.withdrawableHype(alice), 0.5 ether, 2);
+
+        vm.prank(alice);
+        token.transfer(carol, 1_000e18); // alice -> 0, carol -> 1000
+        // accrued is preserved across the move
+        assertApproxEqAbs(token.withdrawableHype(alice), 0.5 ether, 2, "alice keeps accrued");
+        assertEq(token.withdrawableHype(carol), 0, "carol starts fresh");
+
+        _stageFees(1 ether, 0);
+        manager.collect(); // now split bob/carol 50/50
+        assertApproxEqAbs(token.withdrawableHype(alice), 0.5 ether, 2, "alice unchanged");
+        assertApproxEqAbs(token.withdrawableHype(bob), 1.0 ether, 2);
+        assertApproxEqAbs(token.withdrawableHype(carol), 0.5 ether, 2);
+    }
+
+    // Every distributed wei is accounted to holders (no dust drain), and you can't claim twice.
+    function test_conservationAndNoDoubleClaim() public {
+        _buy(alice, 1_337e18);
+        _buy(bob, 4_201e18);
+        _buy(carol, 462e18);
+        uint256 dist = 3.21 ether;
+        _stageFees(dist, 0);
+        manager.collect();
+
+        uint256 sum =
+            token.withdrawableHype(alice) + token.withdrawableHype(bob) + token.withdrawableHype(carol);
+        assertApproxEqAbs(sum, dist, 3, "all rewards accounted, only rounding dust lost");
+
+        uint256 b = alice.balance;
+        vm.startPrank(alice);
+        token.claimHype();
+        assertEq(alice.balance - b, token.withdrawnHype(alice));
+        vm.expectRevert("nothing");
+        token.claimHype(); // second claim pays nothing
+        vm.stopPrank();
+    }
+
     function test_onlyOwnerCanWithdraw() public {
         vm.prank(alice);
         vm.expectRevert("not owner");
