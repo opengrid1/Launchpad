@@ -168,6 +168,12 @@
   /* hero (proclamation + facts + shields) */
   .hero{padding:30px 0 6px}
   .proclaim{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.3em;color:var(--credit);text-transform:uppercase;opacity:.9}
+  .cachip{all:unset;display:inline-flex;align-items:center;gap:9px;margin:14px 0 2px;padding:8px 13px;border:1px solid var(--rule-2);border-radius:10px;background:#070d0c;cursor:pointer;font-size:13px;color:var(--ink-soft);transition:border-color .12s,color .12s}
+  .cachip:hover{border-color:var(--credit);color:var(--ink)}
+  .cachip .cl{font-size:10px;letter-spacing:.14em;color:var(--muted)}
+  .cachip .cv{font-family:"Share Tech Mono","IBM Plex Mono",monospace;color:var(--ink)}
+  .cachip svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .cachip.copied{border-color:var(--credit);color:var(--credit)} .cachip.copied .cv{color:var(--credit)}
   .htitle{font-family:"Orbitron",sans-serif;font-weight:700;font-size:clamp(26px,6vw,40px);line-height:1.1;margin:13px 0 12px;max-width:17ch}
   .hsub{color:var(--ink-soft);font-size:15px;max-width:56ch;margin:0 0 22px}
   .facts4{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--rule-2);border-radius:16px;overflow:hidden;background:#060d0c}
@@ -223,6 +229,11 @@
 <div class="wrap">
   <section class="hero">
     <div class="proclaim">Fair launch on HyperEVM</div>
+    <button class="cachip" id="caChip" title="Copy contract address" aria-label="Copy contract address">
+      <span class="cl">CA</span>
+      <span class="cv" id="caText">0xF7D4…75A3</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+    </button>
     <h1 class="htitle">The whole supply is the liquidity.</h1>
     <p class="hsub">All 10,000 HYLD is already in the pool, seeded on one side at roughly a $5k start. We kept nothing back. HYPE only enters the pool when someone buys, and holders take 1% of every trade.</p>
 
@@ -451,6 +462,12 @@
   }
 
   $('xfoot').href="https://x.com/hyperyieldX";
+  var caChip=$('caChip');
+  if(caChip){ caChip.addEventListener('click',function(){
+    try{ navigator.clipboard.writeText(TOKEN); }catch(e){}
+    caChip.classList.add('copied'); $('caText').textContent="Copied";
+    setTimeout(function(){ caChip.classList.remove('copied'); $('caText').textContent="0xF7D4…75A3"; },1300);
+  }); }
   var tb=$('tab-buy'), ts=$('tab-sell');
   function setSide(buy){ side=buy; tb.classList.toggle('on',buy); ts.classList.toggle('on',!buy);
     $('paycur').textContent=buy?'HYPE':'HYLD'; $('getcur').textContent=buy?'HYLD':'HYPE';
