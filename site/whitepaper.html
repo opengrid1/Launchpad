@@ -52,13 +52,13 @@
 <div class="wrap">
   <h1>HyperYield</h1>
   <div class="sub mono">HYLD whitepaper</div>
-  <p>HyperYield (HYLD) is a fair-launch token on HyperEVM. We don't tax trades, we didn't run a presale, and we hold no tokens ourselves. The whole supply goes into the trading pool as single-sided liquidity, that liquidity is locked, the owner is dropped, and the pool's 1% trading fee goes to holders.</p>
+  <p>HyperYield (HYLD) is a fair-launch token on HyperEVM. We don't tax trades, we didn't run a presale, and we hold no tokens ourselves. The whole supply goes into the trading pool as single-sided liquidity. After the pool is opened the LP is burned — sent to a dead address — and the owner is dropped, so the liquidity is permanent and no one, including us, can ever pull it.</p>
 
   <div class="facts">
     <div class="f"><div class="k">Name</div><div class="v">HyperYield (HYLD)</div></div>
     <div class="f"><div class="k">Supply</div><div class="v">10,000, fixed</div></div>
     <div class="f"><div class="k">Tax</div><div class="v">0% buy, 0% sell</div></div>
-    <div class="f"><div class="k">Pool fee</div><div class="v">1%, to holders</div></div>
+    <div class="f"><div class="k">Liquidity</div><div class="v">Burned at launch</div></div>
     <div class="f"><div class="k">Starting mcap</div><div class="v">~$5,000</div></div>
     <div class="f"><div class="k">Exchange</div><div class="v">Hyperswap V3</div></div>
   </div>
@@ -67,26 +67,35 @@
   <p>At launch, <b>the full supply</b> is seeded into a Hyperswap V3 pool as <b>single-sided liquidity</b>, in a price range that starts near a $5k valuation. We add <b>no HYPE</b> of our own. With only one token in the pool, there's no head start for anyone: everyone buys off the same pool at the same starting price.</p>
   <p>When people buy, HYPE goes into the pool and HYLD comes out, so the HYPE side fills up entirely from buyers. The price starts low and climbs as more people join.</p>
 
-  <h2>Rewards from the 1% fee</h2>
-  <p>Every buy and sell pays a <b>1% pool fee</b>, which is the highest tier Hyperswap V3 offers. The locked position keeps earning that fee in both HYPE and HYLD, even though the liquidity behind it can't be pulled out.</p>
-  <p>The LP is locked, and the lock only lets you collect the fees, not withdraw the liquidity. Anyone can call collect, and whatever comes out goes to holders. Transfers aren't taxed and we take no cut.</p>
+  <h2>Permanent liquidity</h2>
+  <p>Once the pool is open, the LP position is <b>burned</b> — sent to a dead address that no one controls. From that point the liquidity can never be withdrawn, by us or anyone else. There is no locker with a key and no timed unlock; the position is simply gone from anyone's control.</p>
+  <p>Because there is no tax on transfers and the LP is burned rather than held, the token has <b>no built-in reward stream at launch</b>. Any holder-reward or yield mechanism is a separate, future step — see the roadmap. We won't claim a reward the contract can't actually pay.</p>
 
-  <h2>Locked and renounced</h2>
+  <h2>Burned and renounced</h2>
   <ul>
-    <li><b>Liquidity locked.</b> The supply is seeded as single-sided liquidity, then the LP is locked. It stays in the pool and can't be withdrawn.</li>
-    <li><b>Ownership renounced.</b> The owner is dropped in the same transaction that opens the pool. After that nobody can mint new tokens, pause trading, or freeze a wallet.</li>
+    <li><b>Liquidity burned.</b> The supply is seeded as single-sided liquidity, then the LP is burned to a dead address. It can never be withdrawn — not by us, not by anyone.</li>
+    <li><b>Ownership renounced.</b> The owner is dropped after the pool opens. After that nobody can mint new tokens, pause trading, or freeze a wallet.</li>
     <li><b>Fixed supply.</b> 10,000 HYLD, all of it in the pool, with none set aside for us.</li>
   </ul>
 
   <h2>What to know</h2>
   <p>Since the pool starts with HYLD only, the early price is low and jumpy until enough buyers add HYPE to settle it. Read the contract and understand how this works before you take part. None of this is financial advice.</p>
 
+  <h2>Roadmap</h2>
+  <ul>
+    <li><b>Phase 1 — Launch.</b> Deploy HYLD, seed the full supply as single-sided liquidity, burn the LP, and renounce ownership. Publish every address.</li>
+    <li><b>Phase 2 — Listings &amp; tracking.</b> Get the pool indexed on price/chart tools and the contract verified on the explorer.</li>
+    <li><b>Phase 3 — Holder rewards (under review).</b> Design an honest reward or yield stream for holders that works <i>without</i> reopening the liquidity. Options on the table: a small optional transfer fee that pays holders, or routing external revenue in. Nothing here is promised until it is shipped and verifiable on-chain.</li>
+    <li><b>Phase 4 — Community.</b> Hand tooling and decisions to holders.</li>
+  </ul>
+  <p class="sub mono" style="margin-top:6px">This roadmap is a plan, not a guarantee. Phases can change or be dropped.</p>
+
   <h2>Addresses</h2>
   <p>HyperEVM, chain 999. Published at launch.</p>
   <ul style="list-style:none;padding-left:0">
     <li><b>Token</b><br><span class="addr">published at launch</span></li>
-    <li><b>Pool (HYLD / WHYPE), 1% fee</b><br><span class="addr">published at launch</span></li>
-    <li><b>LP locker</b><br><span class="addr">published at launch</span></li>
+    <li><b>Pool (HYLD / WHYPE)</b><br><span class="addr">published at launch</span></li>
+    <li><b>LP burn (dead address)</b><br><span class="addr">0x000000000000000000000000000000000000dEaD</span></li>
     <li><b>WHYPE</b><br><span class="addr">0x5555555555555555555555555555555555555555</span></li>
   </ul>
 </div>
