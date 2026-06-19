@@ -535,8 +535,14 @@
       const p = usePrivy();
       const { wallets } = useWallets();
       useEffect(function(){
-        window.openWalletModal = function(){ p.authenticated ? p.logout() : p.login(); };
-      },[p.authenticated]);
+        window.__privyState = {ready:p.ready, authenticated:p.authenticated};
+        window.openWalletModal = function(){
+          try{
+            if(!p.ready){ console.warn('PRIVY not ready (check appId / allowed origins in dashboard)'); }
+            p.authenticated ? p.logout() : p.login();
+          }catch(e){ console.error('PRIVY login error', e); }
+        };
+      },[p.ready, p.authenticated]);
       useEffect(function(){
         const w = wallets && wallets[0];
         if(p.authenticated && w){
@@ -553,7 +559,7 @@
       return null;
     }
 
-    const mount = document.createElement('div'); mount.style.display='none'; document.body.appendChild(mount);
+    const mount = document.createElement('div'); document.body.appendChild(mount);
     createRoot(mount).render(
       h(PrivyProvider,{
         appId:'cmql09qap00o40cl4a3ttacrn',
