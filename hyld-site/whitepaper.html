@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HyperYield (HYLD) Whitepaper</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#010006">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#010006;--ink:#dff7ee;--ink-soft:#a4c0b6;--muted:#5f7b72;--rule:#16241f;--rule-2:#1d2a2a;--credit:#00ffa3}
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);background:radial-gradient(1000px 460px at 50% -160px,rgba(0,255,163,.10),transparent 68%),var(--paper);
+    background-attachment:fixed;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15.5px;line-height:1.65}
+  a{color:inherit}
+  .mono{font-family:"Share Tech Mono","IBM Plex Mono",monospace}
+  .wrap{max-width:760px;margin:0 auto;padding:0 26px}
+  header{border-bottom:1px solid var(--rule-2)}
+  .lh{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
+  .mark{font-family:"Orbitron",sans-serif;font-weight:900;font-size:21px;letter-spacing:.04em;display:flex;align-items:center;gap:10px;text-shadow:0 0 22px rgba(0,255,163,.28)}
+  .mark svg{width:28px;height:28px;filter:drop-shadow(0 0 7px rgba(0,255,163,.55))}
+  .back{font-size:13px;color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--rule-2);padding-bottom:2px}
+  .back:hover{color:var(--ink)}
+  h1{font-family:"Orbitron",sans-serif;font-weight:700;font-size:clamp(28px,6vw,40px);letter-spacing:.01em;margin:36px 0 6px}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:8px}
+  h2{font-family:"Orbitron",sans-serif;font-weight:700;font-size:17px;margin:34px 0 10px;display:flex;align-items:center;gap:11px}
+  h2::before{content:none}
+  p{margin:0 0 12px;color:var(--ink-soft)}
+  ul{margin:0 0 12px;padding-left:18px;color:var(--ink-soft)}
+  li{margin:6px 0}
+  b{color:var(--ink)}
+  .facts{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border:1px solid var(--rule-2);border-radius:14px;overflow:hidden;margin:18px 0 8px}
+  .facts .f{padding:14px 16px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+  .facts .f:nth-child(2n){border-right:0}
+  .facts .k{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .facts .v{font-family:"Share Tech Mono",monospace;font-size:15px;margin-top:6px}
+  .addr{font-family:"Share Tech Mono",monospace;font-size:12.5px;color:var(--ink-soft);word-break:break-all}
+  footer{border-top:1px solid var(--rule-2);margin-top:40px;padding:18px 0 50px;font-size:12.5px;color:var(--muted)}
+  footer a{border-bottom:1px solid var(--rule-2);text-decoration:none}
+</style>
+</head>
+<body>
+<header><div class="wrap lh">
+  <div class="mark">
+    <svg viewBox="0 0 256 256" aria-hidden="true"><defs><linearGradient id="d" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#eafff8"/><stop offset="30%" stop-color="#3dffc0"/><stop offset="62%" stop-color="#00ffa3"/><stop offset="100%" stop-color="#007a4d"/></linearGradient></defs><path d="M128 40 C128 40 178 104 178 138 A50 50 0 1 1 78 138 C78 104 128 40 128 40 Z" fill="url(#d)"/></svg>HYLD
+  </div>
+  <a class="back" href="/">Back to app</a>
+</div></header>
+
+<div class="wrap">
+  <h1>HyperYield</h1>
+  <div class="sub mono">HYLD whitepaper</div>
+  <p>HyperYield (HYLD) is a fair-launch token on HyperEVM. We don't tax trades, we didn't run a presale, and we hold no tokens ourselves. The whole supply goes into the trading pool as single-sided liquidity and the pool's 1% trading fee goes to holders. <b>The liquidity is NOT locked: the deployer holds the LP and can withdraw it (the underlying HYPE and HYLD) at any time.</b> Buyers must trust the deployer not to.</p>
+
+  <div class="facts">
+    <div class="f"><div class="k">Name</div><div class="v">HyperYield (HYLD)</div></div>
+    <div class="f"><div class="k">Supply</div><div class="v">10,000, fixed</div></div>
+    <div class="f"><div class="k">Tax</div><div class="v">0% buy, 0% sell</div></div>
+    <div class="f"><div class="k">Pool fee</div><div class="v">1%, to holders</div></div>
+    <div class="f"><div class="k">Starting mcap</div><div class="v">~$5,000</div></div>
+    <div class="f"><div class="k">Exchange</div><div class="v">Hyperswap V3</div></div>
+  </div>
+
+  <h2>The fair launch</h2>
+  <p>At launch, <b>the full supply</b> is seeded into a Hyperswap V3 pool as <b>single-sided liquidity</b>, in a price range that starts near a $5k valuation. We add <b>no HYPE</b> of our own. With only one token in the pool, there's no head start for anyone: everyone buys off the same pool at the same starting price.</p>
+  <p>When people buy, HYPE goes into the pool and HYLD comes out, so the HYPE side fills up entirely from buyers. The price starts low and climbs as more people join.</p>
+
+  <h2>Rewards from the 1% fee</h2>
+  <p>Every buy and sell pays a <b>1% pool fee</b>, which is the highest tier Hyperswap V3 offers. The position keeps earning that fee in both HYPE and HYLD. <b>Anyone</b> can call collect, and 100% of whatever comes out goes to holders, pro-rata to their balance, paid in both HYPE and HYLD. Transfers aren't taxed and we take no cut.</p>
+
+  <h2>Withdrawable liquidity (read this)</h2>
+  <ul>
+    <li><b>Liquidity is NOT locked.</b> The supply is seeded as single-sided liquidity, but the deployer holds the LP and can withdraw 100% of it (the underlying HYPE put in by buyers, plus the HYLD) to any address, at any time. This is the single biggest risk: buyers must trust the deployer not to pull the pool. There is no timelock and no lock contract.</li>
+    <li><b>Token ownership renounced.</b> The HYLD token contract can't mint new supply, pause trading, or freeze wallets, and ownership has been renounced (owner is the zero address). The deployer still holds the LP and keeps the liquidity-withdraw control described above.</li>
+    <li><b>Source verified.</b> The token and manager contracts are source-verified on hyperevmscan. Read them before taking part.</li>
+    <li><b>Fixed supply.</b> 10,000 HYLD, all of it seeded into the pool, with none set aside for us.</li>
+  </ul>
+
+  <h2>What to know</h2>
+  <p>Since the pool starts with HYLD only, the early price is low and jumpy until enough buyers add HYPE to settle it. Read the contract and understand how this works before you take part. None of this is financial advice.</p>
+
+  <h2>Addresses</h2>
+  <p>HyperEVM, chain 999. Live. Contracts source-verified on hyperevmscan.</p>
+  <ul style="list-style:none;padding-left:0">
+    <li><b>Token (HYLD)</b><br><a class="addr" href="https://hyperevmscan.io/address/0xF7D43573E69544baC64d2B5f0653422c928f75A3#code" target="_blank" rel="noopener">0xF7D43573E69544baC64d2B5f0653422c928f75A3</a></li>
+    <li><b>Manager (holds LP, can withdraw)</b><br><a class="addr" href="https://hyperevmscan.io/address/0x662D9e1E100acA34e872E79aFE9A63d7FcC0f674#code" target="_blank" rel="noopener">0x662D9e1E100acA34e872E79aFE9A63d7FcC0f674</a></li>
+    <li><b>Pool (HYLD / WHYPE), 1% fee</b><br><a class="addr" href="https://hyperevmscan.io/address/0x06F20FAF789a644E6C208de2A0490b1EFF853E1F" target="_blank" rel="noopener">0x06F20FAF789a644E6C208de2A0490b1EFF853E1F</a></li>
+    <li><b>WHYPE</b><br><span class="addr">0x5555555555555555555555555555555555555555</span></li>
+  </ul>
+</div>
+
+<footer><div class="wrap"><a href="/">Back to app</a></div></footer>
+</body>
+</html>

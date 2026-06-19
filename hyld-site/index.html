@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HyperYield (HYLD)</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#010006">
+<meta property="og:title" content="HyperYield (HYLD)">
+<meta property="og:description" content="A fair launch on HyperEVM. The whole supply seeded single-sided, no tax, and 1% of every trade paid to holders in HYLD and HYPE.">
+<meta property="og:image" content="/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#010006;     /* near-black, faint blue */
+    --panel:#070611;
+    --ink:#dff7ee;
+    --ink-soft:#8fb0a6;
+    --muted:#5f7b72;
+    --rule:#10171b;
+    --rule-2:#1d2a2a;
+    --credit:#00ffa3;    /* neon mint */
+    --debit:#ff5a4d;     /* burn red */
+    --field:#06090e;
+    --focus:#00ffa3;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;color:var(--ink);
+    background:radial-gradient(1000px 460px at 50% -160px, rgba(0,255,163,.10), transparent 68%), var(--paper);
+    background-attachment:fixed;
+    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.55}
+  a{color:inherit}
+  .mono{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+  .wrap{max-width:880px;margin:0 auto;padding:0 26px}
+  h2{font-family:"Orbitron",sans-serif;font-weight:700;margin:0;letter-spacing:.01em}
+  .lbl{font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--muted)}
+
+  /* letterhead */
+  header{border-bottom:1px solid var(--rule-2)}
+  .lh{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:16px;padding-bottom:16px}
+  .lh .mark{font-family:"Orbitron",sans-serif;font-weight:900;font-size:22px;letter-spacing:.04em;display:flex;align-items:center;gap:11px;text-shadow:0 0 22px rgba(0,255,163,.28)}
+  .lh .mark .logo{width:30px;height:30px;display:block;flex:none;filter:drop-shadow(0 0 7px rgba(0,255,163,.55))}
+  .lh .desc{font-size:11.5px;color:var(--muted);margin-top:2px;letter-spacing:.04em}
+  .lh nav{display:flex;align-items:center;gap:20px}
+  .lh nav a{font-size:13px;color:var(--ink-soft);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:2px}
+  .lh nav a:hover{color:var(--ink);border-bottom-color:var(--rule-2)}
+  .xlink{display:inline-flex;align-items:center;border-bottom:0!important;color:var(--ink-soft)}
+  .xlink:hover{color:var(--credit)}
+  .xi{width:17px;height:17px;fill:currentColor}
+  .btn{all:unset;cursor:pointer;font-size:13.5px;font-weight:700;letter-spacing:.01em;padding:12px 20px;border-radius:11px;
+    background:#00ffa3;color:#04100d;text-align:center;white-space:nowrap;
+    transition:background .12s ease}
+  .btn:hover{background:#27ffb4}
+  .btn:active{background:#00e592}
+  .btn.ghost{background:none;color:var(--ink-soft);box-shadow:inset 0 0 0 1px var(--rule-2);font-weight:600}
+  .btn.ghost:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--credit);transform:none}
+  .btn[disabled]{cursor:not-allowed;opacity:.4;background:#00ffa3}
+  @media(max-width:560px){.lh nav a:not(.xlink){display:none}.lh .desc{display:none}}
+
+  /* statement metadata band */
+  .meta{display:grid;grid-template-columns:1.4fr 1fr 1.4fr;border-bottom:2px solid var(--ink)}
+  .meta .m{padding:15px 18px 16px;border-right:1px solid var(--rule)}
+  .meta .m:first-child{padding-left:0}
+  .meta .m:last-child{border-right:0;padding-right:0}
+  .meta .mv{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:13.5px;margin-top:8px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .meta .mv .s{color:var(--muted)}
+  @media(max-width:560px){.meta{grid-template-columns:1fr;}.meta .m{border-right:0;border-bottom:1px solid var(--rule);padding:13px 0}.meta .m:last-child{border-bottom:0}}
+
+  /* the credit: focal panel */
+  .credit{position:relative;margin:28px 0 30px;padding:22px 24px 20px;
+    border:1px solid rgba(0,255,163,.18);border-radius:18px;
+    background:linear-gradient(180deg,#0a1715,#040f0c);
+    box-shadow:0 26px 64px -42px rgba(0,255,163,.45), inset 0 1px 0 rgba(214,255,241,.05)}
+  .credit .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .credit .top .lbl{color:var(--credit);opacity:.85}
+  .cb-fine{margin:14px 0 0;font-size:12.5px;color:var(--muted);min-height:1em}
+
+  .amts{display:flex;gap:16px;margin-top:18px;flex-wrap:wrap}
+  .amt{flex:1;min-width:168px;padding:17px 20px 15px;border:1px solid var(--rule-2);border-radius:13px;
+    background:linear-gradient(180deg,rgba(0,255,163,.06),rgba(0,255,163,0));position:relative;overflow:hidden}
+  .amt::before{content:"";position:absolute;left:20px;top:0;height:2px;width:34px;background:var(--credit);opacity:.7}
+  .amt .n{font-family:"Orbitron",sans-serif;font-weight:700;font-size:clamp(34px,7vw,50px);line-height:.95;letter-spacing:-.01em;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .amt .n.live{color:var(--credit);text-shadow:0 0 26px rgba(0,255,163,.35)}
+  .amt .u{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.05em;color:var(--muted);margin-top:10px;text-transform:uppercase}
+  .claimrow{display:flex;align-items:center;gap:12px;margin-top:20px;flex-wrap:wrap}
+  .credit #claim{padding:12px 24px;font-size:14px}
+
+  /* buy/sell swap card */
+  .swap{margin:24px 0 30px;border:1px solid var(--rule-2);border-radius:18px;background:linear-gradient(180deg,#0a1715,#040f0c);
+    box-shadow:0 26px 64px -42px rgba(0,255,163,.4);padding:18px;max-width:430px}
+  .swaptabs{display:flex;gap:6px;background:#0a1411;border:1px solid var(--rule-2);border-radius:11px;padding:4px;margin-bottom:14px}
+  .swaptabs button{all:unset;flex:1;text-align:center;cursor:pointer;padding:9px;border-radius:8px;font-size:13.5px;font-weight:700;color:var(--ink-soft)}
+  .swaptabs button.on{background:var(--credit);color:#04100d}
+  .swaprow{margin-bottom:10px}
+  .swaprow .l{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .swaprow .bal{color:var(--ink-soft);text-transform:none;letter-spacing:0;cursor:pointer}
+  .swaprow .bal:hover{color:var(--credit)}
+  .swapin{display:flex;align-items:center;gap:10px;border:1px solid var(--rule-2);border-radius:12px;background:var(--field);padding:12px 14px}
+  .swapin input{all:unset;flex:1;min-width:0;font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:18px;color:var(--ink)}
+  .swapin input::placeholder{color:#3c5048}
+  .swapin .cur{font-family:"Orbitron",sans-serif;font-weight:700;font-size:13px;color:var(--credit);white-space:nowrap}
+  .swap .btn{width:100%;margin-top:8px;box-sizing:border-box}
+  .swapnote{font-size:11.5px;color:var(--muted);margin-top:11px;text-align:center}
+  .txline{font-size:12.5px;color:var(--muted);font-family:"Share Tech Mono","IBM Plex Mono",monospace}
+  .txline.ok{color:var(--credit)} .txline.err{color:var(--debit)}
+
+  .acct{display:flex;gap:34px;flex-wrap:wrap;margin-top:22px;padding-top:16px;border-top:1px solid var(--rule-2)}
+  .acct .f{min-width:120px}
+  .acct .fv{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:15px;margin-top:6px;font-variant-numeric:tabular-nums}
+  .acct .fv .u{color:var(--muted);font-size:11.5px;margin-left:4px}
+  .acct .a{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:12px;color:var(--ink-soft);word-break:break-all;margin-top:6px}
+  .tag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--rule-2);padding:2px 7px;color:var(--muted);margin-left:8px;white-space:nowrap}
+  .tag.elig{color:var(--credit);border-color:var(--credit)} .tag.excl{color:var(--debit);border-color:var(--debit)}
+
+  /* double-entry booking (replaces step cards) */
+  .book{padding:30px 0;border-bottom:1px solid var(--rule)}
+  .book h2{font-size:19px;margin-bottom:18px}
+  .be{padding:13px 0;border-bottom:1px solid var(--rule)}
+  .be:last-child{border-bottom:0}
+  .be .mk{display:none}
+  .be .bt{font-family:"Orbitron",sans-serif;font-size:15.5px}
+  .be .bd{font-size:13px;color:var(--ink-soft);margin-top:3px}
+  .be .bd .fn{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted)}
+  .be.indent{padding-left:18px;border-bottom:1px dotted var(--rule)}
+  .be.indent .bt{font-size:14px;color:var(--ink-soft);font-family:ui-sans-serif,system-ui,sans-serif}
+
+  /* contract figures panel */
+  .figs{margin:0 0 30px;padding:18px 24px 8px;border:1px solid var(--rule-2);border-radius:16px;background:#060d0c}
+  .figs .top{display:flex;justify-content:space-between;align-items:baseline}
+  .figs h2{font-size:17px}
+  .book h2::before,.figs h2::before,.trans h2::before{content:none}
+  .srow{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--rule)}
+  .srow .k{font-size:13px;color:var(--ink-soft)} .srow .k .s{display:block;color:var(--muted);font-size:11px;margin-top:1px}
+  .srow .v{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:13.5px;text-align:right;font-variant-numeric:tabular-nums}
+  .srow .v .s{color:var(--muted);font-size:11px}
+  .split{display:flex;align-items:center;gap:24px;padding:16px 0 18px;border-bottom:1px solid var(--rule)}
+  .pie{width:104px;height:104px;flex:none;filter:drop-shadow(0 0 10px rgba(0,255,163,.25))}
+  .pie .track{fill:none;stroke:#13211d;stroke-width:6}
+  .pie .seg{fill:none;stroke-width:6;stroke-linecap:butt;transition:stroke-dasharray .5s ease}
+  .legend{display:flex;flex-direction:column;gap:11px;font-size:13.5px;min-width:0}
+  .legend .li{display:flex;align-items:center;gap:10px;color:var(--ink-soft)}
+  .legend .dot{width:11px;height:11px;border-radius:3px;flex:none}
+  .legend .pct{font-family:"Share Tech Mono","IBM Plex Mono",monospace;color:var(--ink);margin-left:auto;padding-left:20px}
+  .legend small{color:var(--muted);font-size:11.5px;margin-top:2px}
+  .updated{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:12px;color:var(--muted)}
+  .updated button{all:unset;cursor:pointer;color:var(--ink-soft);border-bottom:1px solid var(--rule-2);padding-bottom:1px}
+  .updated button:hover{color:var(--ink)}
+  .flash{animation:flash 1.1s ease-out}@keyframes flash{0%{background:rgba(0,255,163,.12)}100%{background:transparent}}
+  .updated #updated{font-family:"Share Tech Mono","IBM Plex Mono",monospace;letter-spacing:.02em}
+
+  /* references + candor */
+  .trans{padding:30px 0 10px}
+  .trans h2{font-size:17px;margin-bottom:14px}
+  .ref .r{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--rule)}
+  .ref .rk{font-size:13px;color:var(--ink-soft)}
+  .ref .rv{display:flex;align-items:center;gap:8px;font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:12.5px}
+  .ref .rv a{border-bottom:1px solid var(--rule-2)} .ref .rv button{all:unset;cursor:pointer;color:var(--muted);display:inline-flex}
+  .ref .rv button:hover{color:var(--ink)}
+  .candid{margin-top:20px;font-size:12.5px;color:var(--muted);max-width:74ch}
+  .candid p{margin:0 0 9px;padding-left:14px;border-left:2px solid var(--rule-2)}
+  .candid b{color:var(--ink-soft)}
+
+  /* hero (proclamation + facts + shields) */
+  .hero{padding:30px 0 6px}
+  .proclaim{font-family:"Share Tech Mono","IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.3em;color:var(--credit);text-transform:uppercase;opacity:.9}
+  .htitle{font-family:"Orbitron",sans-serif;font-weight:700;font-size:clamp(26px,6vw,40px);line-height:1.1;margin:13px 0 12px;max-width:17ch}
+  .hsub{color:var(--ink-soft);font-size:15px;max-width:56ch;margin:0 0 22px}
+  .facts4{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--rule-2);border-radius:16px;overflow:hidden;background:#060d0c}
+  .facts4 .f{padding:17px 18px 15px;border-right:1px solid var(--rule)}
+  .facts4 .f:last-child{border-right:0}
+  .facts4 .fk{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .facts4 .fn{font-family:"Orbitron",sans-serif;font-weight:700;font-size:clamp(18px,3.2vw,26px);margin:10px 0 5px;color:var(--credit);text-shadow:0 0 18px rgba(0,255,163,.25);font-variant-numeric:tabular-nums;line-height:1}
+  .facts4 .fn .u{font-size:11px;color:var(--muted);text-shadow:none;margin-left:3px}
+  .facts4 .fs{font-size:11px;color:var(--muted)}
+  @media(max-width:620px){.facts4{grid-template-columns:1fr 1fr}.facts4 .f:nth-child(2){border-right:0}.facts4 .f:nth-child(1),.facts4 .f:nth-child(2){border-bottom:1px solid var(--rule)}}
+  .shields{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+  .shield{padding:17px 18px;border:1px solid var(--rule-2);border-radius:14px;background:linear-gradient(180deg,rgba(0,255,163,.045),transparent)}
+  .shield .si{width:22px;height:22px;stroke:var(--credit);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px rgba(0,255,163,.5))}
+  .shield .st{font-family:"Orbitron",sans-serif;font-weight:700;font-size:13.5px;margin:11px 0 6px}
+  .shield .sd{font-size:12.5px;color:var(--ink-soft);line-height:1.55}
+  @media(max-width:620px){.shields{grid-template-columns:1fr}}
+  /* FAQ */
+  .faq{padding:30px 0 6px;border-bottom:1px solid var(--rule)}
+  .faq h2{font-size:19px;margin-bottom:3px}
+  .faq .fsub{color:var(--muted);font-size:13px;margin-bottom:12px}
+  .faq details{border-bottom:1px solid var(--rule);padding:13px 0}
+  .faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14.5px;color:var(--ink);font-weight:600}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";color:var(--credit);font-family:"Share Tech Mono",monospace;font-size:19px;line-height:1}
+  .faq details[open] summary::after{content:"\2013"}
+  .faq .fa{margin:11px 0 2px;font-size:13.5px;color:var(--ink-soft);line-height:1.62;max-width:70ch}
+  footer{border-top:2px solid var(--ink);margin-top:30px;padding:16px 0 44px;font-size:12.5px;color:var(--muted)}
+  .footrow{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;width:100%;padding:0 26px}
+  .fbrand{font-family:"Orbitron",sans-serif;font-size:12px;letter-spacing:.04em;color:var(--ink-soft)}
+  .fnav{display:flex;align-items:center;gap:20px}
+  .fnav a{color:var(--ink-soft);text-decoration:none}
+  .fnav a:not(.xlink){border-bottom:1px solid var(--rule-2);padding-bottom:1px}
+  .fnav a:hover{color:var(--ink)}
+  svg.i{width:13px;height:13px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .copied{color:var(--credit)!important}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap lh">
+    <div>
+      <div class="mark"><svg class="logo" viewBox="0 0 256 256" aria-hidden="true"><defs><linearGradient id="hd" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#eafff8"/><stop offset="30%" stop-color="#3dffc0"/><stop offset="62%" stop-color="#00ffa3"/><stop offset="100%" stop-color="#007a4d"/></linearGradient><radialGradient id="hs" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff" stop-opacity=".9"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><path d="M128 40 C128 40 178 104 178 138 A50 50 0 1 1 78 138 C78 104 128 40 128 40 Z" fill="url(#hd)"/><ellipse cx="108" cy="118" rx="13" ry="25" fill="url(#hs)" transform="rotate(-24 108 118)" opacity=".8"/></svg>HYLD</div>
+      <div class="desc">A fair launch on HyperEVM</div>
+    </div>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="/whitepaper.html">Whitepaper</a>
+      <button class="btn" id="connect">Connect wallet</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="proclaim">Fair launch on HyperEVM</div>
+    <h1 class="htitle">The whole supply is the liquidity.</h1>
+    <p class="hsub">All 10,000 HYLD is already in the pool, seeded on one side at roughly a $5k start. We kept nothing back. HYPE only enters the pool when someone buys, and holders take 1% of every trade.</p>
+
+    <div class="facts4">
+      <div class="f"><div class="fk">Total supply</div><div class="fn">10,000<span class="u">HYLD</span></div><div class="fs">Fixed, all in the pool</div></div>
+      <div class="f"><div class="fk">Market cap</div><div class="fn" id="mcapLive">~$5k</div><div class="fs">Live from the pool</div></div>
+      <div class="f"><div class="fk">Tax</div><div class="fn">0<span class="u">/</span>0</div><div class="fs">No buy or sell tax</div></div>
+      <div class="f"><div class="fk">Pool fee</div><div class="fn">1%</div><div class="fs">V3 fee, to holders</div></div>
+    </div>
+
+    <div class="shields">
+      <div class="shield">
+        <svg class="si" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-3Z"/><path d="M9.2 12.2l2 2 3.6-3.8"/></svg>
+        <div class="st">Token ownership renounced</div>
+        <div class="sd">Ownership is renounced. No mint, pause, or freeze, ever. The deployer still holds the LP and can withdraw the liquidity (below).</div>
+      </div>
+      <div class="shield">
+        <svg class="si" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
+        <div class="st">Liquidity NOT locked</div>
+        <div class="sd">The deployer holds the LP and can withdraw it (the HYPE buyers put in, plus HYLD) at any time. Trust required.</div>
+      </div>
+      <div class="shield">
+        <svg class="si" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M7.7 10.3h8.6M7.7 13.7h8.6"/></svg>
+        <div class="st">1% to holders</div>
+        <div class="sd">Anyone can collect the 1% pool fee; 100% goes to holders pro-rata, in HYPE and HYLD. The deployer can also withdraw the liquidity.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="swap" id="trade">
+    <div class="swaptabs"><button class="on" id="tab-buy">Buy</button><button id="tab-sell">Sell</button></div>
+    <div class="swaprow"><div class="l"><span>You pay</span><span class="bal" id="paybal"></span></div><div class="swapin"><input id="payamt" inputmode="decimal" placeholder="0.0" /><span class="cur" id="paycur">HYPE</span></div></div>
+    <div class="swaprow"><div class="l"><span>You receive</span><span class="bal" id="getbal" style="cursor:default"></span></div><div class="swapin"><input id="getamt" placeholder="0.0" disabled /><span class="cur" id="getcur">HYLD</span></div></div>
+    <button class="btn" id="swapbtn">Connect wallet to trade</button>
+    <div class="txline" id="txline" style="margin-top:10px;text-align:center"></div>
+    <div class="swapnote" id="swapnote">Trade straight against the pool. Slippage is unprotected on a fresh pool, so start small.</div>
+  </section>
+
+  <section class="credit">
+    <div class="top"><span class="lbl">Your rewards</span></div>
+    <div>
+      <div class="amts">
+        <div class="amt"><div class="n mono" id="rwdHyld">0</div><div class="u">HYLD to claim</div></div>
+        <div class="amt"><div class="n mono" id="rwdHype">0</div><div class="u">HYPE to claim</div></div>
+      </div>
+      <div class="claimrow">
+        <button class="btn" id="claimTok">Claim HYLD</button>
+        <button class="btn" id="claimHypeBtn">Claim HYPE</button>
+        <button class="btn ghost" id="collectBtn">Collect fees</button>
+      </div>
+      <p class="cb-fine" id="rwdFine">The 1% pool fee is split across holders in both HYLD and HYPE. Connect your wallet to see and claim your share. Anyone can press &ldquo;Collect fees&rdquo; to push pending pool fees out to holders.</p>
+    </div>
+  </section>
+
+  <section class="book" id="how">
+    <h2>How the launch works</h2>
+    <div class="be credit"><span class="mk"></span><div><div class="bt">Single-sided seed</div><div class="bd">All 10,000 HYLD goes in at about a $5k valuation, with no HYPE from us. The price starts low and the pool sets it from there.</div></div></div>
+    <div class="be credit"><span class="mk"></span><div><div class="bt">People buy in</div><div class="bd">A buy puts HYPE into the pool and pulls HYLD out, so the HYPE side fills up from buyers rather than from us. More buyers, higher price.</div></div></div>
+    <div class="be credit"><span class="mk"></span><div><div class="bt">1% fee on every trade</div><div class="bd">Buys and sells both pay a 1% pool fee. The position keeps earning that fee in HYPE and HYLD the whole time.</div></div></div>
+    <div class="be plain"><span class="mk"></span><div><div class="bt">Paid to holders</div><div class="bd">Anyone can collect those fees, and 100% go straight to holders pro-rata. Note: the deployer can withdraw the underlying liquidity at any time.</div></div></div>
+  </section>
+
+  <section class="figs">
+    <div class="top"><h2>The setup</h2></div>
+    <div class="srow"><span class="k">Supply seeded<span class="s">single-sided, 100% in the pool</span></span><span class="v">10,000 HYLD</span></div>
+    <div class="srow"><span class="k">Starting valuation</span><span class="v">~$5,000</span></div>
+    <div class="srow"><span class="k">Pool<span class="s">Hyperswap V3, 1% fee tier</span></span><span class="v">HYLD / WHYPE</span></div>
+    <div class="srow"><span class="k">Liquidity<span class="s">LP NFT held by the deployer</span></span><span class="v">Withdrawable</span></div>
+    <div class="srow"><span class="k">Token ownership</span><span class="v">Renounced</span></div>
+    <div class="srow"><span class="k">Contracts<span class="s">source verified on hyperevmscan</span></span><span class="v">Verified</span></div>
+  </section>
+
+  <section class="faq" id="faq">
+    <h2>The HYLD Decrees</h2>
+    <div class="fsub">Answers for holders.</div>
+    <details><summary>Why a single-sided liquidity pool?</summary>
+      <div class="fa">Because we don't put in any HYPE, there's no early entry for us and no presale to get into ahead of you. Everyone buys off the same pool at the same starting price, and all the HYPE in it comes from buyers.</div></details>
+    <details><summary>How does the LP earn fees, and can it be withdrawn?</summary>
+      <div class="fa">A Uniswap-style V3 position collects its 1% trading fee continuously; anyone can harvest it and 100% goes to holders pro-rata. The position is held by the deployer, who can withdraw the underlying liquidity (the buyers' HYPE plus HYLD) at any time. It is not locked.</div></details>
+    <details><summary>Is there a tax, presale, or team allocation?</summary>
+      <div class="fa">No to all three. Buys and sells aren't taxed, there was no presale, and we hold no tokens. The 1% pool fee is the only thing moving, and it lands with holders.</div></details>
+    <details><summary>What chain and exchange is this on?</summary>
+      <div class="fa">HyperEVM, chain 999, on a Hyperswap V3 pool at the 1% fee tier, paired against WHYPE.</div></details>
+  </section>
+
+  <section class="trans">
+    <h2>Addresses</h2>
+    <div class="ref">
+      <div class="r"><span class="rk">Token</span><span class="rv"><a href="https://hyperevmscan.io/address/0xF7D43573E69544baC64d2B5f0653422c928f75A3#code" target="_blank" rel="noopener">0xF7D43573E69544baC64d2B5f0653422c928f75A3</a></span></div>
+      <div class="r"><span class="rk">Manager (LP)</span><span class="rv"><a href="https://hyperevmscan.io/address/0x662D9e1E100acA34e872E79aFE9A63d7FcC0f674#code" target="_blank" rel="noopener">0x662D9e1E100acA34e872E79aFE9A63d7FcC0f674</a></span></div>
+      <div class="r"><span class="rk">Pool (HYLD / WHYPE)</span><span class="rv"><a href="https://hyperevmscan.io/address/0x06F20FAF789a644E6C208de2A0490b1EFF853E1F" target="_blank" rel="noopener">0x06F20FAF789a644E6C208de2A0490b1EFF853E1F</a></span></div>
+      <div class="r"><span class="rk">WHYPE</span><span class="rv">0x5555…5555</span></div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap footrow">
+    <span class="fbrand">HyperYield (HYLD)</span>
+    <nav class="fnav">
+      <a href="/whitepaper.html">Whitepaper</a>
+      <a class="xlink" id="xfoot" target="_blank" rel="noopener" aria-label="X"><svg class="xi" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25H8.08l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.12H5.12l11.96 15.65Z"/></svg></a>
+    </nav>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+<script>
+(function(){
+  if(typeof ethers==="undefined"){ console.error("ethers failed to load"); return; }
+  var X=ethers;
+  var RPC="https://rpc.hyperliquid.xyz/evm", HEX="0x3e7", FEE=10000;
+  var TOKEN="0xF7D43573E69544baC64d2B5f0653422c928f75A3";
+  var POOL="0x06F20FAF789a644E6C208de2A0490b1EFF853E1F";
+  var MANAGER="0x662D9e1E100acA34e872E79aFE9A63d7FcC0f674";
+  var WHYPE="0x5555555555555555555555555555555555555555";
+  var ROUTER="0x4E2960a8cd19B467b82d26D83fAcb0fAE26b094D";
+  var TOKEN_ABI=[
+    "function balanceOf(address) view returns (uint256)",
+    "function allowance(address,address) view returns (uint256)",
+    "function approve(address,uint256) returns (bool)",
+    "function withdrawableHype(address) view returns (uint256)",
+    "function withdrawableTokens(address) view returns (uint256)",
+    "function claimHype()","function claimTokens()"
+  ];
+  var POOL_ABI=["function slot0() view returns (uint160 sqrtPriceX96,int24 t,uint16 a,uint16 b,uint16 c,uint8 d,bool e)"];
+  var MANAGER_ABI=["function collect() returns (uint256,uint256)"];
+  var ROUTER_ABI=[
+    "function exactInputSingle((address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 deadline,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96)) payable returns (uint256)",
+    "function unwrapWETH9(uint256 amountMinimum,address recipient) payable",
+    "function multicall(bytes[] data) payable returns (bytes[])"
+  ];
+
+  var ro=new X.providers.JsonRpcProvider(RPC);
+  var signer=null, account=null, side=true, hypeUsd=0, hypePerHyld=0;
+  var hypeBalRaw=X.constants.Zero, hyldBalRaw=X.constants.Zero;
+  function updateBal(){
+    if(!account){ $('paybal').textContent=""; $('getbal').textContent=""; return; }
+    var payRaw=side?hypeBalRaw:hyldBalRaw, getRaw=side?hyldBalRaw:hypeBalRaw;
+    $('paybal').textContent="Balance "+fmt(payRaw)+" "+(side?"HYPE":"HYLD")+" · Max";
+    $('getbal').textContent="Balance "+fmt(getRaw)+" "+(side?"HYLD":"HYPE");
+  }
+  var $=function(id){return document.getElementById(id);};
+  function fmt(bn,d){ try{ var n=parseFloat(X.utils.formatUnits(bn,18)); if(!n)return "0"; if(n<0.0001)return n.toExponential(2); return n.toLocaleString(undefined,{maximumFractionDigits:d||4}); }catch(e){return "0";} }
+  function tx(m,c){ var t=$('txline'); if(t){ t.textContent=m||""; t.className="txline"+(c?(" "+c):""); } }
+  function err(e){ return ((e&&(e.reason||(e.data&&e.data.message)||e.message))||"failed").toString().slice(0,90); }
+
+  async function loadStats(){
+    try{
+      var s0=await (new X.Contract(POOL,POOL_ABI,ro)).slot0();
+      var sp=Number(s0.sqrtPriceX96.toString())/Math.pow(2,96);
+      var P=sp*sp;            // token1/token0 = HYLD per WHYPE
+      hypePerHyld=1/P;        // WHYPE per HYLD
+      try{ var r=await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"allMids"})}); var j=await r.json(); hypeUsd=parseFloat(j.HYPE)||0; }catch(e){}
+      var mcapHype=10000*hypePerHyld;
+      if($('mcapLive')) $('mcapLive').textContent = hypeUsd? ("$"+Math.round(mcapHype*hypeUsd).toLocaleString()) : (mcapHype.toFixed(2)+" HYPE");
+      if($('swapnote')) $('swapnote').textContent="1 HYPE ≈ "+(1/hypePerHyld).toLocaleString(undefined,{maximumFractionDigits:2})+" HYLD spot · slippage unprotected, start small";
+      estimate();
+    }catch(e){}
+  }
+  async function loadAccount(){
+    if(!account) return;
+    try{
+      var token=new X.Contract(TOKEN,TOKEN_ABI,ro);
+      var res=await Promise.all([token.withdrawableTokens(account),token.withdrawableHype(account),token.balanceOf(account),ro.getBalance(account)]);
+      $('rwdHyld').textContent=fmt(res[0]); $('rwdHype').textContent=fmt(res[1]);
+      $('rwdHyld').classList.add('live'); $('rwdHype').classList.add('live');
+      hyldBalRaw=res[2]; hypeBalRaw=res[3]; updateBal();
+      if($('rwdFine')) $('rwdFine').textContent="You hold "+fmt(res[2])+" HYLD. Rewards build up as people trade; claim anytime. Anyone can Collect fees to push pending pool fees to holders.";
+    }catch(e){}
+  }
+  function estimate(){
+    var v=parseFloat(($('payamt').value||"0")); if(!v||!hypePerHyld){ $('getamt').value=""; return; }
+    var out=side?(v/hypePerHyld):(v*hypePerHyld);
+    $('getamt').value=out.toLocaleString(undefined,{maximumFractionDigits:6});
+  }
+  async function connect(){
+    if(window.openWalletModal){ try{ window.openWalletModal(); return; }catch(e){} }
+    if(!window.ethereum){ $('connect').textContent="No wallet found"; return; }
+    try{
+      var cid=await window.ethereum.request({method:"eth_chainId"});
+      if(cid!==HEX){
+        try{ await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:HEX}]}); }
+        catch(e){ await window.ethereum.request({method:"wallet_addEthereumChain",params:[{chainId:HEX,chainName:"HyperEVM",nativeCurrency:{name:"HYPE",symbol:"HYPE",decimals:18},rpcUrls:[RPC],blockExplorerUrls:["https://hyperevmscan.io"]}]}); }
+      }
+      var acc=await window.ethereum.request({method:"eth_requestAccounts"}); account=acc[0];
+      signer=(new X.providers.Web3Provider(window.ethereum)).getSigner();
+      $('connect').textContent=account.slice(0,6)+"…"+account.slice(-4);
+      $('swapbtn').textContent=side?"Buy HYLD":"Sell HYLD";
+      loadAccount();
+    }catch(e){ tx(err(e),"err"); }
+  }
+  async function doSwap(){
+    if(!signer){ return connect(); }
+    var v=parseFloat(($('payamt').value||"0")); if(!v){ tx("Enter an amount","err"); return; }
+    var router=new X.Contract(ROUTER,ROUTER_ABI,signer), dl=Math.floor(Date.now()/1000)+1200;
+    try{
+      if(side){
+        var amt=X.utils.parseUnits(String(v),18);
+        tx("Confirm in wallet…");
+        var t=await router.exactInputSingle({tokenIn:WHYPE,tokenOut:TOKEN,fee:FEE,recipient:account,deadline:dl,amountIn:amt,amountOutMinimum:0,sqrtPriceLimitX96:0},{value:amt});
+        tx("Buying… "+t.hash.slice(0,12)); await t.wait(); tx("Bought HYLD ✓","ok");
+      }else{
+        var amt2=X.utils.parseUnits(String(v),18), token=new X.Contract(TOKEN,TOKEN_ABI,signer);
+        if((await token.allowance(account,ROUTER)).lt(amt2)){ tx("Approve HYLD…"); await (await token.approve(ROUTER,X.constants.MaxUint256)).wait(); }
+        var d0=router.interface.encodeFunctionData("exactInputSingle",[{tokenIn:TOKEN,tokenOut:WHYPE,fee:FEE,recipient:X.constants.AddressZero,deadline:dl,amountIn:amt2,amountOutMinimum:0,sqrtPriceLimitX96:0}]);
+        var d1=router.interface.encodeFunctionData("unwrapWETH9",[0,account]);
+        tx("Confirm in wallet…");
+        var t2=await router.multicall([d0,d1]); tx("Selling… "+t2.hash.slice(0,12)); await t2.wait(); tx("Sold HYLD ✓","ok");
+      }
+      $('payamt').value=""; estimate(); loadAccount(); loadStats();
+    }catch(e){ tx(err(e),"err"); }
+  }
+  async function claim(which){
+    if(!signer){ return connect(); }
+    try{ var token=new X.Contract(TOKEN,TOKEN_ABI,signer); tx("Confirm in wallet…");
+      var t=which==="hype"?await token.claimHype():await token.claimTokens();
+      tx("Claiming… "+t.hash.slice(0,12)); await t.wait(); tx("Claimed ✓","ok"); loadAccount();
+    }catch(e){ tx(err(e),"err"); }
+  }
+  async function collect(){
+    if(!signer){ return connect(); }
+    try{ var m=new X.Contract(MANAGER,MANAGER_ABI,signer); tx("Confirm in wallet…");
+      var t=await m.collect(); tx("Collecting fees… "+t.hash.slice(0,12)); await t.wait(); tx("Fees pushed to holders ✓","ok"); loadAccount();
+    }catch(e){ tx(err(e),"err"); }
+  }
+
+  $('xfoot').href="https://x.com/HyperYield";
+  var tb=$('tab-buy'), ts=$('tab-sell');
+  function setSide(buy){ side=buy; tb.classList.toggle('on',buy); ts.classList.toggle('on',!buy);
+    $('paycur').textContent=buy?'HYPE':'HYLD'; $('getcur').textContent=buy?'HYLD':'HYPE';
+    if(signer)$('swapbtn').textContent=buy?"Buy HYLD":"Sell HYLD"; estimate(); updateBal(); }
+  tb.addEventListener('click',function(){setSide(true)});
+  ts.addEventListener('click',function(){setSide(false)});
+  $('payamt').addEventListener('input',estimate);
+  $('paybal').addEventListener('click',function(){
+    if(!account) return;
+    var raw=side?hypeBalRaw:hyldBalRaw, v=parseFloat(X.utils.formatUnits(raw,18));
+    if(side) v=Math.max(0,v-0.02); // keep a little HYPE for gas
+    $('payamt').value = v>0 ? String(Math.floor(v*1e6)/1e6) : "0";
+    estimate();
+  });
+  $('connect').addEventListener('click',connect);
+  // Reown AppKit -> app bridge: fired when the modal connects/disconnects an account.
+  window.addEventListener('hyld:account', function(ev){
+    var acc=ev.detail;
+    if(acc && acc.address && acc.isConnected){
+      account=acc.address;
+      var wp = window.getWalletProvider && window.getWalletProvider();
+      try{ signer=(new X.providers.Web3Provider(wp||window.ethereum)).getSigner(); }catch(e){ signer=null; }
+      $('connect').textContent=account.slice(0,6)+"…"+account.slice(-4);
+      $('swapbtn').textContent=side?"Buy HYLD":"Sell HYLD";
+      loadAccount();
+    }else{
+      account=null; signer=null;
+      $('connect').textContent="Connect wallet"; $('swapbtn').textContent="Connect wallet to trade";
+      $('paybal').textContent=""; $('getbal').textContent="";
+    }
+  });
+  $('swapbtn').addEventListener('click',doSwap);
+  $('claimHypeBtn').addEventListener('click',function(){claim("hype")});
+  $('claimTok').addEventListener('click',function(){claim("tok")});
+  $('collectBtn').addEventListener('click',collect);
+  if(window.ethereum && window.ethereum.on){ window.ethereum.on("accountsChanged",function(){location.reload();}); window.ethereum.on("chainChanged",function(){location.reload();}); }
+
+  loadStats(); setInterval(loadStats,30000);
+})();
+</script>
+<script type="module">
+  // Reown AppKit (WalletConnect) — opens a multi-wallet modal incl. mobile QR.
+  try{
+    const { createAppKit } = await import('https://esm.sh/@reown/appkit?bundle');
+    const { EthersAdapter } = await import('https://esm.sh/@reown/appkit-adapter-ethers?bundle');
+    const { defineChain } = await import('https://esm.sh/@reown/appkit/networks?bundle');
+    const hyperevm = defineChain({
+      id:999, caipNetworkId:'eip155:999', chainNamespace:'eip155', name:'HyperEVM',
+      nativeCurrency:{name:'HYPE',symbol:'HYPE',decimals:18},
+      rpcUrls:{default:{http:['https://rpc.hyperliquid.xyz/evm']}},
+      blockExplorers:{default:{name:'HyperEVMScan',url:'https://hyperevmscan.io'}}
+    });
+    const modal = createAppKit({
+      adapters:[new EthersAdapter()],
+      networks:[hyperevm],
+      defaultNetwork:hyperevm,
+      projectId:'e1bda672d5deb56579fe084dddfb9174',
+      metadata:{name:'HyperYield (HYLD)',description:'Fair launch on HyperEVM. 1% of every trade paid to holders.',url:'https://hyld.vercel.app',icons:['https://hyld.vercel.app/logo.svg']},
+      features:{analytics:false,email:false,socials:[]},
+      themeMode:'dark',
+      themeVariables:{'--w3m-accent':'#00ffa3'}
+    });
+    window.__appkit = modal;
+    window.openWalletModal = () => modal.open();
+    window.getWalletProvider = () => { try{ return modal.getWalletProvider('eip155'); }catch(e){ try{ return modal.getWalletProvider(); }catch(e2){ return window.ethereum; } } };
+    modal.subscribeAccount(acc => window.dispatchEvent(new CustomEvent('hyld:account',{detail:acc})));
+  }catch(e){ console.warn('Reown AppKit unavailable, using injected wallet fallback', e); }
+</script>
+</body>
+</html>

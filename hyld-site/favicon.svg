@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="HYLD">
+  <defs>
+    <linearGradient id="fd" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#eafff8"/><stop offset="30%" stop-color="#3dffc0"/>
+      <stop offset="62%" stop-color="#00ffa3"/><stop offset="100%" stop-color="#007a4d"/>
+    </linearGradient>
+    <radialGradient id="fs" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff" stop-opacity=".9"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <filter id="fg" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+  <rect x="4" y="4" width="248" height="248" rx="58" fill="#010006"/>
+  <g fill="#00ffa3" filter="url(#fg)">
+    <rect x="170" y="70" width="17" height="17" rx="3" transform="rotate(45 178 78)" opacity=".85"/>
+    <rect x="196" y="56" width="11" height="11" rx="2" transform="rotate(45 201 61)" opacity=".5"/>
+  </g>
+  <path d="M128 52 C128 52 172 108 172 138 A44 44 0 1 1 84 138 C84 108 128 52 128 52 Z" fill="#00ffa3" opacity=".5" filter="url(#fg)"/>
+  <path d="M128 52 C128 52 172 108 172 138 A44 44 0 1 1 84 138 C84 108 128 52 128 52 Z" fill="url(#fd)"/>
+  <ellipse cx="111" cy="120" rx="12" ry="22" fill="url(#fs)" transform="rotate(-24 111 120)" opacity=".8"/>
+</svg>

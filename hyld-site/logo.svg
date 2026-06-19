@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="HYLD">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="36%" r="62%">
+      <stop offset="0%" stop-color="#04140e"/><stop offset="60%" stop-color="#010705"/><stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#eafff8"/><stop offset="30%" stop-color="#3dffc0"/>
+      <stop offset="62%" stop-color="#00ffa3"/><stop offset="100%" stop-color="#007a4d"/>
+    </linearGradient>
+    <radialGradient id="spec" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity=".9"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+
+  <g fill="#00ffa3" filter="url(#soft)">
+    <rect x="690" y="250" width="30" height="30" rx="5" transform="rotate(45 705 265)" opacity=".9"/>
+    <rect x="738" y="220" width="22" height="22" rx="4" transform="rotate(45 749 231)" opacity=".7"/>
+    <rect x="780" y="198" width="16" height="16" rx="3" transform="rotate(45 788 206)" opacity=".5"/>
+    <rect x="820" y="232" width="12" height="12" rx="2" transform="rotate(45 826 238)" opacity=".36"/>
+  </g>
+
+  <path d="M512 168 C512 168 686 392 686 512 A174 174 0 1 1 338 512 C338 392 512 168 512 168 Z"
+        fill="#00ffa3" opacity=".55" filter="url(#glow)"/>
+  <path d="M512 168 C512 168 686 392 686 512 A174 174 0 1 1 338 512 C338 392 512 168 512 168 Z" fill="url(#drop)"/>
+  <path d="M512 168 C512 168 686 392 686 512 A174 174 0 1 1 338 512 C338 392 512 168 512 168 Z"
+        fill="none" stroke="#00351f" stroke-width="6" opacity=".35"/>
+  <ellipse cx="452" cy="372" rx="46" ry="86" fill="url(#spec)" transform="rotate(-24 452 372)" opacity=".8"/>
+  <circle cx="566" cy="560" r="30" fill="#ffffff" opacity=".18"/>
+
+  <g fill="none" stroke="#00ffa3" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" filter="url(#soft)">
+    <path d="M300 808 L300 912 M372 808 L372 912 M300 860 L372 860"/>
+    <path d="M430 808 L466 862 L502 808 M466 862 L466 912"/>
+    <path d="M560 808 L560 912 L628 912"/>
+    <path d="M690 808 L690 912 M690 808 C 766 808 766 912 690 912"/>
+  </g>
+</svg>

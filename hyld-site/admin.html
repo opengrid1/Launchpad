@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow">
+<title>HYLD · admin</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root{--paper:#010006;--ink:#dff7ee;--ink-soft:#8fb0a6;--muted:#5f7b72;--rule:#16241f;--rule-2:#1d2a2a;--credit:#00ffa3;--danger:#ff5a4d;--field:#06090e}
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);background:radial-gradient(900px 420px at 50% -150px,rgba(255,90,77,.08),transparent 70%),var(--paper);
+    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.6}
+  .wrap{max-width:620px;margin:0 auto;padding:40px 22px 80px}
+  .mono{font-family:"Share Tech Mono",ui-monospace,monospace}
+  h1{font-size:20px;margin:0 0 4px;letter-spacing:.02em}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:24px}
+  .card{border:1px solid var(--rule-2);border-radius:14px;background:#070b10;padding:18px 20px;margin-bottom:18px}
+  .card.danger{border-color:rgba(255,90,77,.4);background:linear-gradient(180deg,#170a09,#0a0605)}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule)}
+  .row:last-child{border-bottom:0}
+  .k{color:var(--ink-soft);font-size:13px}
+  .v{font-family:"Share Tech Mono",monospace;font-size:13px;text-align:right;word-break:break-all}
+  .v.ok{color:var(--credit)} .v.bad{color:var(--danger)}
+  label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+  input{width:100%;font-family:"Share Tech Mono",monospace;font-size:14px;color:var(--ink);background:var(--field);
+    border:1px solid var(--rule-2);border-radius:10px;padding:12px 14px}
+  .btn{all:unset;cursor:pointer;display:inline-block;text-align:center;font-size:14px;font-weight:700;padding:13px 18px;border-radius:11px;margin-top:14px}
+  .btn.primary{background:var(--credit);color:#04100d;width:100%}
+  .btn.kill{background:var(--danger);color:#1a0503;width:100%}
+  .btn.ghost{background:none;color:var(--ink-soft);box-shadow:inset 0 0 0 1px var(--rule-2);width:100%}
+  .btn[disabled]{opacity:.4;cursor:not-allowed}
+  .warn{font-size:12.5px;color:#ffb3ab;margin:12px 0 0;line-height:1.55}
+  .status{font-family:"Share Tech Mono",monospace;font-size:12.5px;margin-top:12px;min-height:1.2em;word-break:break-all}
+  .status.ok{color:var(--credit)} .status.err{color:var(--danger)}
+  a{color:var(--ink-soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>HyperYield · admin</h1>
+  <div class="sub mono">LP withdraw &amp; fee collection · owner only</div>
+
+  <div class="card">
+    <button class="btn primary" id="connect">Connect wallet</button>
+    <div class="row" style="margin-top:14px"><span class="k">Connected</span><span class="v" id="acct">—</span></div>
+    <div class="row"><span class="k">You are owner</span><span class="v" id="isOwner">—</span></div>
+    <div class="row"><span class="k">Manager owner</span><span class="v" id="mowner">—</span></div>
+    <div class="row"><span class="k">Position withdrawn</span><span class="v" id="withdrawn">—</span></div>
+    <div class="row"><span class="k">HYLD in pool</span><span class="v" id="poolHyld">—</span></div>
+    <div class="row"><span class="k">WHYPE in pool</span><span class="v" id="poolHype">—</span></div>
+    <div class="row"><span class="k">Lifetime fees → holders</span><span class="v" id="fees">—</span></div>
+  </div>
+
+  <div class="card">
+    <button class="btn ghost" id="collectBtn">Collect fees → holders</button>
+    <div class="sub" style="margin:10px 0 0">Permissionless. Pushes accrued 1% pool fees to holders (HYPE + HYLD).</div>
+  </div>
+
+  <div class="card danger">
+    <strong style="color:#ffd9d4">Withdraw all liquidity</strong>
+    <label for="to">Recipient</label>
+    <input id="to" placeholder="0x… (defaults to your wallet)" />
+    <button class="btn kill" id="withdrawBtn" disabled>Withdraw 100% of the pool</button>
+    <p class="warn">This removes <b>all</b> liquidity from the HYLD/WHYPE pool and sends the underlying native HYPE (the funds buyers put in) plus HYLD to the recipient. Accrued fees are settled to holders first. This is irreversible for the pool and ends trading depth. Owner only.</p>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="sub"><a href="/">← back to app</a></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+<script>
+(function(){
+  if(typeof ethers==="undefined"){ document.getElementById('status').textContent="ethers failed to load"; return; }
+  var X=ethers, RPC="https://rpc.hyperliquid.xyz/evm", HEX="0x3e7";
+  var TOKEN="0xF7D43573E69544baC64d2B5f0653422c928f75A3";
+  var POOL="0x06F20FAF789a644E6C208de2A0490b1EFF853E1F";
+  var MANAGER="0x662D9e1E100acA34e872E79aFE9A63d7FcC0f674";
+  var WHYPE="0x5555555555555555555555555555555555555555";
+  var MGR=["function owner() view returns (address)","function positionWithdrawn() view returns (bool)",
+    "function lifetimeFeesHype() view returns (uint256)","function lifetimeFeesToken() view returns (uint256)",
+    "function collect() returns (uint256,uint256)","function withdrawLiquidity(address to)"];
+  var ERC=["function balanceOf(address) view returns (uint256)"];
+  var ro=new X.providers.JsonRpcProvider(RPC), signer=null, account=null, owner=null;
+  var $=function(i){return document.getElementById(i);};
+  function f(bn){try{var n=parseFloat(X.utils.formatUnits(bn,18));return n.toLocaleString(undefined,{maximumFractionDigits:4});}catch(e){return "0";}}
+  function st(m,c){var s=$('status');s.textContent=m||"";s.className="status"+(c?(" "+c):"");}
+  function er(e){return ((e&&(e.reason||(e.data&&e.data.message)||e.message))||"failed").toString().slice(0,120);}
+
+  async function load(){
+    try{
+      var m=new X.Contract(MANAGER,MGR,ro), tk=new X.Contract(TOKEN,ERC,ro), wh=new X.Contract(WHYPE,ERC,ro);
+      var r=await Promise.all([m.owner(),m.positionWithdrawn(),tk.balanceOf(POOL),wh.balanceOf(POOL),m.lifetimeFeesHype(),m.lifetimeFeesToken()]);
+      owner=r[0];
+      $('mowner').textContent=r[0].slice(0,8)+"…"+r[0].slice(-6);
+      $('withdrawn').textContent=r[1]?"YES":"no"; $('withdrawn').className="v "+(r[1]?"bad":"ok");
+      $('poolHyld').textContent=f(r[2])+" HYLD"; $('poolHype').textContent=f(r[3])+" WHYPE";
+      $('fees').textContent=f(r[4])+" HYPE · "+f(r[5])+" HYLD";
+      refreshOwner();
+    }catch(e){ st(er(e),"err"); }
+  }
+  function refreshOwner(){
+    var isOwner = account && owner && account.toLowerCase()===owner.toLowerCase();
+    $('isOwner').textContent = account ? (isOwner?"YES":"no") : "—";
+    $('isOwner').className="v "+(account?(isOwner?"ok":"bad"):"");
+    $('withdrawBtn').disabled = !isOwner;
+  }
+  async function connect(){
+    if(!window.ethereum){ $('connect').textContent="No wallet found"; return; }
+    try{
+      var cid=await window.ethereum.request({method:"eth_chainId"});
+      if(cid!==HEX){ try{ await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:HEX}]}); }
+        catch(e){ await window.ethereum.request({method:"wallet_addEthereumChain",params:[{chainId:HEX,chainName:"HyperEVM",nativeCurrency:{name:"HYPE",symbol:"HYPE",decimals:18},rpcUrls:[RPC],blockExplorerUrls:["https://hyperevmscan.io"]}]}); } }
+      var a=await window.ethereum.request({method:"eth_requestAccounts"}); account=a[0];
+      signer=(new X.providers.Web3Provider(window.ethereum)).getSigner();
+      $('connect').textContent=account.slice(0,6)+"…"+account.slice(-4); $('acct').textContent=account;
+      refreshOwner();
+    }catch(e){ st(er(e),"err"); }
+  }
+  async function collect(){
+    if(!signer) return connect();
+    try{ var m=new X.Contract(MANAGER,MGR,signer); st("Confirm in wallet…");
+      var t=await m.collect(); st("Collecting… "+t.hash.slice(0,14)); await t.wait(); st("Fees pushed to holders ✓","ok"); load();
+    }catch(e){ st(er(e),"err"); }
+  }
+  async function withdraw(){
+    if(!signer) return connect();
+    var to=($('to').value||"").trim() || account;
+    if(!X.utils.isAddress(to)){ st("Invalid recipient address","err"); return; }
+    if(!confirm("Withdraw 100% of the HYLD/WHYPE liquidity to "+to+" ? This is irreversible.")) return;
+    try{ var m=new X.Contract(MANAGER,MGR,signer); st("Confirm in wallet…");
+      var t=await m.withdrawLiquidity(to); st("Withdrawing… "+t.hash.slice(0,14)); await t.wait(); st("Liquidity withdrawn ✓","ok"); load();
+    }catch(e){ st(er(e),"err"); }
+  }
+  $('connect').addEventListener('click',connect);
+  $('collectBtn').addEventListener('click',collect);
+  $('withdrawBtn').addEventListener('click',withdraw);
+  if(window.ethereum && window.ethereum.on){ window.ethereum.on("accountsChanged",function(){location.reload();}); }
+  load();
+})();
+</script>
+</body>
+</html>
