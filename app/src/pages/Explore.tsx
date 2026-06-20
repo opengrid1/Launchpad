@@ -39,13 +39,13 @@ export function Explore({ onOpen, onCreate }: { onOpen: (id: number) => void; on
           >
             Launch a token
           </button>
-          <div className="flex items-center gap-5 rounded-xl bg-ink-850 px-4 py-2.5 font-mono text-xs text-fog-500 ring-1 ring-ink-700">
+          <div className="flex items-center gap-5 rounded-xl bg-ink-850 px-4 py-2.5 font-mono text-xs text-fog-100 ring-1 ring-ink-700">
             <span>
-              <span className="font-semibold text-fog-100">{compact(totalRaised)}</span> HYPE raised
+              <span className="font-semibold">{compact(totalRaised)}</span> HYPE raised
             </span>
             <span className="h-3 w-px bg-ink-600" />
             <span>
-              <span className="font-semibold text-fog-100">{liveCount}</span> live now
+              <span className="font-semibold">{liveCount}</span> live now
             </span>
           </div>
         </div>
