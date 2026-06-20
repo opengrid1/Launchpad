@@ -68,6 +68,49 @@ export async function buy(token: Address, ethAmountStr: string): Promise<SwapRes
 }
 
 /**
+ * Snipe buy: buy `token` with native ETH using a known `fee` tier, without a
+ * price lookup (a fresh pool may have no readable price yet). `minOut` defaults
+ * to 0 — snipes accept any output and rely on `ethAmount` as the risk cap.
+ */
+export async function snipeBuy(
+  token: Address,
+  fee: number,
+  ethAmountStr: string,
+  minOut: bigint = 0n,
+): Promise<SwapResult> {
+  const amountIn = parseEther(ethAmountStr);
+  const params = {
+    tokenIn: ADDRESSES.weth as Address,
+    tokenOut: token,
+    fee,
+    recipient: WALLET_ADDRESS,
+    amountIn,
+    amountOutMinimum: minOut,
+    sqrtPriceLimitX96: 0n,
+  };
+  const base = {
+    address: ADDRESSES.swapRouter02 as Address,
+    abi: swapRouter02Abi,
+    functionName: "exactInputSingle",
+    args: [params],
+    value: amountIn,
+    account,
+  } as const;
+
+  if (config.dryRun) {
+    await publicClient.simulateContract({
+      ...base,
+      stateOverride: [{ address: WALLET_ADDRESS, balance: amountIn + parseEther("1") }],
+    });
+    return { dryRun: true, amountIn, minOut, expectedOut: 0n, fee, symbolIn: "ETH", symbolOut: "TOKEN" };
+  }
+  const { request } = await publicClient.simulateContract(base);
+  const hash = await walletClient.writeContract(request);
+  await publicClient.waitForTransactionReceipt({ hash });
+  return { dryRun: false, hash, amountIn, minOut, expectedOut: 0n, fee, symbolIn: "ETH", symbolOut: "TOKEN" };
+}
+
+/**
  * Sell `token` for ETH. `amount` is a token amount, or "100%"/"50%" of balance.
  * Approves the router if needed, swaps token->WETH, then unwraps WETH to ETH.
  */

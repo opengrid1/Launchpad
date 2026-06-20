@@ -66,6 +66,29 @@ npm run info -- --check 0xAddr  # honeypot / safety check
 | `/price [token]` | quick price in ETH |
 | `/buy <eth> [token]` | buy token with native ETH |
 | `/sell <amount\|%> [token]` | sell token for ETH |
+| `/snipe <eth> [token] [safe]` | snipe a new launch (`safe` = honeypot-check first) |
+| `/unsnipe` | stop the active sniper |
+
+## Sniper
+
+```bash
+npm run snipe -- 0.05 0xTokenAddr   # wait for that token's pool, then buy
+npm run snipe -- 0.05               # snipe the FIRST new token paired with WETH
+npm run snipe -- 0.05 --safe        # honeypot-check before buying
+```
+
+**How it works** (`src/sniper.ts`): watches the V3 Factory's `PoolCreated`
+events (and, for a known target, any pre-existing pool), then fires a pre-built
+ETH→token buy the moment the pool has liquidity, retrying each block until it
+lands or `maxBlocks` passes. Snipe buys use `amountOutMinimum = 0`, so the ETH
+amount is your risk cap — size it accordingly.
+
+**"0-block" reality on Robinhood L2:** this is an Arbitrum-Nitro chain with **no
+public mempool** (`eth_newPendingTransactionFilter` is disabled), so you cannot
+see or front-run pending transactions. The earliest achievable entry is reacting
+to the confirmed `PoolCreated`/liquidity event and landing in the next block.
+Speed levers: pre-fund the wallet, keep `DRY_RUN=false` only when ready, lower
+`pollMs`, and run near a fast RPC. Honeypot checks add latency — off by default.
 
 ## How token data is fetched
 

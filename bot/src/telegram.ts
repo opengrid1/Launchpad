@@ -6,12 +6,15 @@ import { buildTokenReport } from "./report.js";
 import { buy, sell, type SwapResult } from "./dex.js";
 import { fmt } from "./token.js";
 import { checkToken } from "./safety.js";
+import { armSniper, formatSnipeEvent, type SniperHandle } from "./sniper.js";
 
 export function createBot() {
   if (!config.telegramToken) throw new Error("TELEGRAM_BOT_TOKEN is not set");
   const bot = new Bot(config.telegramToken);
 
   const isAllowed = (id?: number) => !!id && config.allowedIds.includes(String(id));
+
+  let sniper: SniperHandle | null = null;
 
   const guard = async (ctx: any): Promise<boolean> => {
     if (isAllowed(ctx.from?.id)) return true;
@@ -59,6 +62,8 @@ export function createBot() {
         "/price [token] — quick price",
         "/buy <eth> [token] — buy with ETH",
         "/sell <amount|%> [token] — sell for ETH",
+        "/snipe <eth> [token] — snipe new launch (add 'safe' to honeypot-check)",
+        "/unsnipe — stop the active sniper",
         "/help — this message",
       ].join("\n"),
       { parse_mode: "Markdown", link_preview_options: { is_disabled: true } },
@@ -152,6 +157,36 @@ export function createBot() {
     } catch (e: any) {
       await ctx.reply(`❌ ${e.shortMessage || e.message}`);
     }
+  });
+
+  bot.command("snipe", async (ctx) => {
+    if (!(await guard(ctx))) return;
+    if (sniper) return void ctx.reply("A sniper is already running. /unsnipe first.");
+    const parts = (ctx.match || "").trim().split(/\s+/).filter(Boolean);
+    const ethAmount = parts.find((p) => !p.startsWith("0x") && p !== "safe");
+    const target = parts.find((p) => isAddress(p));
+    const safetyCheck = parts.includes("safe");
+    if (!ethAmount || isNaN(Number(ethAmount)))
+      return void ctx.reply("Usage: /snipe <ethAmount> [tokenAddress] [safe]");
+
+    const chatId = ctx.chat.id;
+    sniper = armSniper({ targetToken: target, ethAmount, safetyCheck }, (e) => {
+      bot.api
+        .sendMessage(chatId, formatSnipeEvent(e), { parse_mode: "Markdown", link_preview_options: { is_disabled: true } })
+        .catch(() => {});
+      if (e.kind === "bought" || (e.kind === "failed" && target)) sniper = null;
+    });
+    await ctx.reply(
+      `🎯 Sniper started — ${config.dryRun ? "DRY RUN" : "🔴 LIVE"}, spend ${ethAmount} ETH on ${target || "the next new WETH pair"}${safetyCheck ? " (safety-checked)" : ""}.`,
+    );
+  });
+
+  bot.command("unsnipe", async (ctx) => {
+    if (!(await guard(ctx))) return;
+    if (!sniper) return void ctx.reply("No sniper running.");
+    sniper.stop();
+    sniper = null;
+    await ctx.reply("🛑 Sniper stopped.");
   });
 
   bot.catch((err) => console.error("[bot] error", err));

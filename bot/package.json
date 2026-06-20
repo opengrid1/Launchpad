@@ -8,6 +8,7 @@
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
     "info": "tsx src/cli.ts",
+    "snipe": "tsx src/snipe-cli.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
