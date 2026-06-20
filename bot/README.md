@@ -24,6 +24,7 @@ Uniswap-V3-fork DEX.
 | WETH9            | `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73` |
 | V3 Factory       | `0x1f7d7550b1b028f7571e69a784071f0205fd2efa` |
 | SwapRouter02     | `0xCaf681a66D020601342297493863E78C959E5cb2` |
+| PositionManager  | `0x73991a25c818bF1F1128DEaab1492d45638De0d3` |
 | $MARIAN (default)| `0x01637b14B7378B99dE75A64d50656d98488D9a4d` |
 | MARIAN/WETH pool | `0xFE331fD29b54bCE09D52988FA691e3B18B0A4081` (1% fee) |
 
@@ -85,10 +86,35 @@ amount is your risk cap — size it accordingly.
 
 **"0-block" reality on Robinhood L2:** this is an Arbitrum-Nitro chain with **no
 public mempool** (`eth_newPendingTransactionFilter` is disabled), so you cannot
-see or front-run pending transactions. The earliest achievable entry is reacting
-to the confirmed `PoolCreated`/liquidity event and landing in the next block.
-Speed levers: pre-fund the wallet, keep `DRY_RUN=false` only when ready, lower
-`pollMs`, and run near a fast RPC. Honeypot checks add latency — off by default.
+see or front-run pending transactions. For **someone else's** launch the earliest
+achievable entry is reacting to the confirmed `PoolCreated`/liquidity event and
+landing in the next block. Speed levers: pre-fund the wallet, keep
+`DRY_RUN=false` only when ready, lower `pollMs`, run near a fast RPC. Honeypot
+checks add latency — off by default.
+
+## True block-0: atomic launch + dev-buy
+
+If **you** are the one launching the token, you don't need to race anyone — put
+the liquidity-add and your buy in the **same transaction**. The buy then executes
+in the same block as liquidity and is guaranteed the first trade. That's
+`src/LaunchSnipe.sol` (a Foundry contract in the repo root).
+
+```bash
+# 1. Deploy the helper (once) — uses PRIVATE_KEY from env
+forge script script/DeployLaunchSnipe.s.sol --rpc-url robinhood --broadcast
+#    -> note the deployed address, put it in bot/.env as LAUNCH_SNIPE_ADDRESS
+
+# 2. Launch + snipe atomically: seed 100M tokens + 1 ETH liquidity, dev-buy 0.2 ETH
+cd bot
+npm run launch -- 0xYourToken 100000000 1 0.2 10000
+```
+
+`src/launch.ts` derives the pool's initial `sqrtPriceX96` from your LP amounts
+(for a full-range position `amount1/amount0 == price`), picks full-range ticks,
+approves the token, and calls `launchAndSnipe` in one tx. Pass several addresses
+in `buyers[]`/`buyWethAmounts[]` (edit `launch.ts`) to spread the snipe across
+wallets so it looks organic. The LP NFT goes to you; bought tokens go to each
+buyer. Run `forge build` once before deploying (this repo uses Foundry).
 
 ## How token data is fetched
 

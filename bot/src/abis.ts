@@ -48,6 +48,37 @@ export const poolAbi = [
   },
 ] as const;
 
+/** LaunchSnipe.launchAndSnipe — atomic block-0 launch + dev-buy. */
+export const launchSnipeAbi = [
+  {
+    type: "function",
+    name: "launchAndSnipe",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "p",
+        type: "tuple",
+        components: [
+          { name: "token", type: "address" },
+          { name: "fee", type: "uint24" },
+          { name: "sqrtPriceX96", type: "uint160" },
+          { name: "tickLower", type: "int24" },
+          { name: "tickUpper", type: "int24" },
+          { name: "liqTokenAmount", type: "uint256" },
+          { name: "liqWethAmount", type: "uint256" },
+          { name: "buyers", type: "address[]" },
+          { name: "buyWethAmounts", type: "uint256[]" },
+          { name: "minTokenOutTotal", type: "uint256" },
+        ],
+      },
+    ],
+    outputs: [
+      { name: "lpTokenId", type: "uint256" },
+      { name: "totalBought", type: "uint256" },
+    ],
+  },
+] as const;
+
 /** SwapRouter02 (Uniswap swap-router-contracts) — no deadline in the struct. */
 export const swapRouter02Abi = [
   {

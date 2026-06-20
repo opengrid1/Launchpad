@@ -22,7 +22,16 @@ export const ADDRESSES = {
   weth: "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
   factory: "0x1f7d7550b1b028f7571e69a784071f0205fd2efa",
   swapRouter02: "0xCaf681a66D020601342297493863E78C959E5cb2",
+  positionManager: "0x73991a25c818bF1F1128DEaab1492d45638De0d3",
 } as const;
+
+/** Full-range V3 ticks per fee tier (nearest multiple of the tier's spacing). */
+export const FULL_RANGE_TICKS: Record<number, [number, number]> = {
+  100: [-887272, 887272],
+  500: [-887270, 887270],
+  3000: [-887220, 887220],
+  10000: [-887200, 887200],
+};
 
 /** $MARIAN — "ye first meme of Robinhood Chain". Used as the default token. */
 export const DEFAULT_TOKEN = "0x01637b14B7378B99dE75A64d50656d98488D9a4d";

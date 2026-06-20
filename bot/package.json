@@ -9,6 +9,7 @@
     "dev": "tsx watch src/index.ts",
     "info": "tsx src/cli.ts",
     "snipe": "tsx src/snipe-cli.ts",
+    "launch": "tsx src/launch.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
