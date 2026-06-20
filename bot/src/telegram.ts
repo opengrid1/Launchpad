@@ -116,11 +116,13 @@ export function createBot() {
     await ctx.replyWithChatAction("typing");
     try {
       const { getTokenMeta, findPool } = await import("./token.js");
+      const { getEthUsd, usd } = await import("./usd.js");
       const meta = await getTokenMeta(token);
-      const pool = await findPool(token, meta.decimals);
+      const [pool, ethUsd] = await Promise.all([findPool(token, meta.decimals), getEthUsd()]);
       if (!pool) return void ctx.reply(`No pool for ${meta.symbol}`);
       const p = pool.priceInEth < 1e-6 ? pool.priceInEth.toExponential(4) : pool.priceInEth.toPrecision(6);
-      await ctx.reply(`💲 $${meta.symbol}: ${p} ETH (fee ${pool.fee / 10000}%)`);
+      const priceUsd = ethUsd ? usd(pool.priceInEth * ethUsd) : "n/a";
+      await ctx.reply(`💲 $${meta.symbol}: ${priceUsd}  (${p} ETH, fee ${pool.fee / 10000}%)`);
     } catch (e: any) {
       await ctx.reply(`Error: ${e.message}`);
     }
