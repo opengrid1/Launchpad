@@ -13,34 +13,31 @@ interface IERC20Full {
     function balanceOf(address) external view returns (uint256);
 }
 
-/// @title SpcxdManager — seeds the launch pool and turns its 1% fee into SPCXD rewards.
-/// @notice Pipeline (each step is its own call: the HyperCore parts are ASYNC and can fail when
-///         the dStock market is closed, so steps are independently retryable, never atomic):
-///   1. harvest()        collect 1% pool fee -> swap to USDC -> bridge USDC EVM->Core
-///   2. buySpcxd(px,sz)   IOC buy SPCXD on the Core order book with the bridged USDC
-///   3. pullSpcxdToEvm()  bridge the bought SPCXD Core->EVM (arrives as the SPCXD ERC20)
-///   4. distribute()      hand the SPCXD ERC20 to the token and book it to holders
+/// @title SpcxdManager — turns the launch token's 1% fee into SPCXD rewards, delivered on HyperCore.
+/// @notice Each step is its own call (the HyperCore parts are ASYNC and can fail when the dStock
+///         market is closed, so nothing is atomic and every step is retryable):
+///   1. harvest()         collect 1% fee -> swap to USDC -> bridge USDC EVM->Core
+///   2. buySpcxd(px,sz)    IOC buy SPCXD on the Core order book with the bridged USDC
+///   3. deliverToToken()   spot-send the bought SPCXD to the token's Core account + book it
+///                         Holders then claimSpcxd() and the SPCXD lands in their own Core account,
+///                         ready to sell on the order book (no bridging needed).
 /// @dev TRUST: there is no function to withdraw USDC/SPCXD/HYPE to the owner; collected value can
-///      only become SPCXD rewards for holders. The owner only sequences the steps and prices the
-///      order book buy (which needs off-chain market data). The LP is seeded and held here.
+///      only become SPCXD rewards for holders. The owner sequences the steps and prices the buy.
 contract SpcxdManager {
-    // ---- launch pool ----
     uint24 public constant POOL_FEE = 10_000; // 1%
     int24 public constant TICK_SPACING = 200;
     uint16 public constant OBS_CARD = 32;
 
-    // ---- HyperCore SPCXD identifiers (mainnet) ----
-    uint64 public constant USDC_CORE = 0; // core token id
-    uint64 public constant SPCXD_CORE = 610; // core token id
-    uint32 public constant SPCXD_ASSET = 10465; // spot order asset (= 10000 + pair index 465)
+    uint64 public constant USDC_CORE = 0;
+    uint64 public constant SPCXD_CORE = 610; // SPCXD HyperCore token id
+    uint32 public constant SPCXD_ASSET = 10465; // SPCXD/USDC spot order asset (10000 + pair 465)
 
     SpcxdToken public immutable token;
     INonfungiblePositionManager public immutable positionManager;
     ISwapRouter public immutable swapRouter;
     IWHYPE public immutable whype;
-    IERC20Full public immutable usdc; // EVM USDC ERC20 (6 dec)
-    IERC20Full public immutable spcxd; // EVM SPCXD ERC20 (18 dec)
-    uint24 public immutable whypeUsdcFee; // Hyperswap fee tier for WHYPE/USDC
+    IERC20Full public immutable usdc;
+    uint24 public immutable whypeUsdcFee;
 
     address public owner;
     bool public tokenIsToken0;
@@ -49,13 +46,12 @@ contract SpcxdManager {
     uint256 public positionId;
 
     uint256 public lifetimeUsdcBridged;
-    uint256 public lifetimeSpcxdDistributed;
+    uint64 public lifetimeSpcxdDelivered;
 
     event Seeded(address pool, uint256 positionId);
     event Harvested(uint256 usdcBridged);
     event BuyPlaced(uint64 px1e8, uint64 sz1e8);
-    event PulledToEvm(uint64 spcxdCoreAmount);
-    event Distributed(uint256 spcxdAmount);
+    event Delivered(uint64 spcxdCoreAmount);
 
     uint256 private _locked = 1;
 
@@ -77,7 +73,6 @@ contract SpcxdManager {
         ISwapRouter router_,
         IWHYPE whype_,
         IERC20Full usdc_,
-        IERC20Full spcxd_,
         uint24 whypeUsdcFee_,
         address owner_
     ) {
@@ -87,7 +82,6 @@ contract SpcxdManager {
         swapRouter = router_;
         whype = whype_;
         usdc = usdc_;
-        spcxd = spcxd_;
         whypeUsdcFee = whypeUsdcFee_;
         owner = owner_;
     }
@@ -130,8 +124,6 @@ contract SpcxdManager {
     }
 
     // ------------------------------------------------------------ step 1: harvest -> USDC -> Core
-    /// @notice Collect the 1% fee, convert everything to USDC, and bridge it to this contract's
-    ///         HyperCore spot account. Permissionless.
     function harvest() external nonReentrant returns (uint256 usdcBridged) {
         require(seeded, "not seeded");
         (uint256 a0, uint256 a1) = positionManager.collect(
@@ -144,19 +136,17 @@ contract SpcxdManager {
         );
         (uint256 tokAmt, uint256 hypeAmt) = tokenIsToken0 ? (a0, a1) : (a1, a0);
 
-        // launch-token fees -> WHYPE (through the launch pool)
         if (tokAmt > 0) {
             IERC20Full(address(token)).approve(address(swapRouter), tokAmt);
             hypeAmt += _swap(address(token), address(whype), POOL_FEE, tokAmt);
         }
-        // all WHYPE -> USDC
         uint256 usdcOut;
         if (hypeAmt > 0) {
             IERC20Full(address(whype)).approve(address(swapRouter), hypeAmt);
             usdcOut = _swap(address(whype), address(usdc), whypeUsdcFee, hypeAmt);
         }
-        // bridge USDC EVM -> Core: transfer to the USDC system address
         if (usdcOut > 0) {
+            // bridge USDC EVM -> Core (this contract's Core account)
             usdc.transfer(HyperCore.systemAddress(USDC_CORE), usdcOut);
             lifetimeUsdcBridged += usdcOut;
             usdcBridged = usdcOut;
@@ -165,34 +155,23 @@ contract SpcxdManager {
     }
 
     // ------------------------------------------------------------ step 2: buy SPCXD on Core
-    /// @notice Place an IOC buy of SPCXD against the bridged USDC. `px1e8`/`sz1e8` are priced
-    ///         off-chain (order-book aware) and capped by the USDC on Core. Owner/keeper only,
-    ///         since the dStock book needs live market data and is closed off-hours.
+    /// @notice IOC buy SPCXD with the bridged USDC. px/sz priced off-chain (order-book aware).
     function buySpcxd(uint64 px1e8, uint64 sz1e8) external onlyOwner {
         require(HyperCore.spotBalance(address(this), USDC_CORE) > 0, "no usdc on core");
         HyperCore.limitOrder(SPCXD_ASSET, true, px1e8, sz1e8);
         emit BuyPlaced(px1e8, sz1e8);
     }
 
-    // ------------------------------------------------------------ step 3: bridge SPCXD Core -> EVM
-    /// @notice Bridge all SPCXD currently on this contract's Core account back to HyperEVM, where
-    ///         it lands as the SPCXD ERC20 here. Permissionless.
-    function pullSpcxdToEvm() external nonReentrant returns (uint64 amount) {
+    // ------------------------------------------------------------ step 3: deliver to the token + book
+    /// @notice Spot-send all SPCXD the manager bought to the token's HyperCore account, then book
+    ///         it to holders. Permissionless.
+    function deliverToToken() external nonReentrant returns (uint64 amount) {
         amount = HyperCore.spotBalance(address(this), SPCXD_CORE);
         require(amount > 0, "no spcxd on core");
-        HyperCore.spotSend(HyperCore.systemAddress(SPCXD_CORE), SPCXD_CORE, amount);
-        emit PulledToEvm(amount);
-    }
-
-    // ------------------------------------------------------------ step 4: distribute to holders
-    /// @notice Hand the SPCXD ERC20 now held here to the token and book it to holders. Permissionless.
-    function distribute() external nonReentrant returns (uint256 amount) {
-        amount = spcxd.balanceOf(address(this));
-        require(amount > 0, "no spcxd");
-        spcxd.transfer(address(token), amount);
+        HyperCore.spotSend(address(token), SPCXD_CORE, amount); // manager Core -> token Core
         token.notifyReward(amount);
-        lifetimeSpcxdDistributed += amount;
-        emit Distributed(amount);
+        lifetimeSpcxdDelivered += amount;
+        emit Delivered(amount);
     }
 
     // ------------------------------------------------------------ views

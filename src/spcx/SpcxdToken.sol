@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-interface IERC20Min {
-    function transfer(address to, uint256 value) external returns (bool);
-    function balanceOf(address) external view returns (uint256);
-}
+import {HyperCore} from "./HyperCore.sol";
 
-/// @title SpcxdToken — a fixed-supply ERC20 whose holders earn SPCXD (SpaceX dStock) as rewards.
-/// @notice 0% transfer tax. The 1% Hyperswap pool fee on this token is harvested by the manager,
-///         used to buy SPCXD on the HyperCore order book, bridged back to HyperEVM as the SPCXD
-///         ERC20, and booked here via `notifyReward`. Holders then `claimReward()` to receive the
-///         SPCXD ERC20 pro-rata. Distribution is EVM-native (normal ERC20 claim), O(1), no holder
-///         enumeration. Excluded addresses (pool, manager, this reserve) do not earn.
-/// @dev Single-stream magnified-dividend-per-share accumulator denominated in SPCXD (18-dec ERC20).
+/// @title SpcxdToken — fixed-supply ERC20 whose holders earn SPCXD (SpaceX dStock) on HyperCore.
+/// @notice 0% transfer tax. The 1% pool fee is harvested by the manager, used to buy SPCXD on the
+///         HyperCore order book, and booked here. Holders `claimSpcxd()` and the SPCXD is sent
+///         straight to their HyperCore spot account (EVM address == Core address) via a CoreWriter
+///         spot-send, so they can sell it on the order book immediately — no bridging.
+/// @dev Magnified-dividend-per-share accumulator denominated in SPCXD core units (8 decimals).
+///      Core-native: the SPCXD reward reserve lives on THIS contract's HyperCore spot account.
 contract SpcxdToken {
     string public name;
     string public symbol;
@@ -27,20 +24,20 @@ contract SpcxdToken {
 
     address public owner;
     address public manager;
-    IERC20Min public immutable spcxd; // the SPCXD ERC20 reward token (held here as reserve)
+    uint64 public immutable spcxdCoreId; // SPCXD HyperCore token id (610)
     mapping(address => bool) public isExcluded;
 
     uint256 internal constant MAGNITUDE = 2 ** 128;
-    uint256 public magRewardPerShare;
+    uint256 public magSpcxdPerShare; // per share, in SPCXD core units (8-dec)
     uint256 public totalShares;
-    uint256 internal buffered; // booked while totalShares == 0, flushed later
+    uint256 internal buffered;
 
     mapping(address => uint256) public shares;
     mapping(address => int256) internal correction;
-    mapping(address => uint256) public withdrawnReward;
+    mapping(address => uint256) public withdrawnSpcxd;
 
-    event RewardBooked(uint256 spcxdAmount);
-    event RewardClaimed(address indexed account, uint256 spcxdAmount);
+    event RewardBooked(uint64 spcxdCoreAmount);
+    event SpcxdClaimed(address indexed account, uint64 spcxdCoreAmount);
     event ExcludedSet(address indexed account, bool excluded);
 
     uint256 private _locked = 1;
@@ -52,12 +49,12 @@ contract SpcxdToken {
         _locked = 1;
     }
 
-    constructor(string memory name_, string memory symbol_, uint256 supply_, IERC20Min spcxd_, address mintTo) {
+    constructor(string memory n, string memory s, uint256 supply_, uint64 spcxdCoreId_, address mintTo) {
         require(supply_ > 0 && mintTo != address(0), "bad init");
-        name = name_;
-        symbol = symbol_;
+        name = n;
+        symbol = s;
         totalSupply = supply_;
-        spcxd = spcxd_;
+        spcxdCoreId = spcxdCoreId_;
         owner = msg.sender;
         _setExcluded(address(this), true);
         _setExcluded(mintTo, true);
@@ -66,9 +63,9 @@ contract SpcxdToken {
     }
 
     // ------------------------------------------------------------ ERC20
-    function approve(address s, uint256 v) external returns (bool) {
-        allowance[msg.sender][s] = v;
-        emit Approval(msg.sender, s, v);
+    function approve(address sp, uint256 v) external returns (bool) {
+        allowance[msg.sender][sp] = v;
+        emit Approval(msg.sender, sp, v);
         return true;
     }
 
@@ -104,43 +101,53 @@ contract SpcxdToken {
         if (ns == old) return;
         if (ns > old) {
             uint256 d = ns - old;
-            correction[a] -= int256(magRewardPerShare * d);
+            correction[a] -= int256(magSpcxdPerShare * d);
             totalShares += d;
         } else {
             uint256 d = old - ns;
-            correction[a] += int256(magRewardPerShare * d);
+            correction[a] += int256(magSpcxdPerShare * d);
             totalShares -= d;
         }
         shares[a] = ns;
     }
 
     // ------------------------------------------------------------ rewards
-    /// @notice Book `spcxdAmount` of SPCXD (already transferred into this contract) to holders.
-    function notifyReward(uint256 spcxdAmount) external {
+    /// @notice Book `amount` SPCXD (core units, already credited to this contract's Core account
+    ///         by the manager) to holders. Manager only.
+    function notifyReward(uint64 amount) external {
         require(msg.sender == manager, "not manager");
         if (totalShares == 0) {
-            buffered += spcxdAmount;
-            emit RewardBooked(spcxdAmount);
+            buffered += amount;
+            emit RewardBooked(amount);
             return;
         }
-        uint256 amt = spcxdAmount + buffered;
+        uint256 a = uint256(amount) + buffered;
         buffered = 0;
-        magRewardPerShare += (amt * MAGNITUDE) / totalShares;
-        emit RewardBooked(spcxdAmount);
+        magSpcxdPerShare += (a * MAGNITUDE) / totalShares;
+        emit RewardBooked(amount);
     }
 
-    function withdrawableReward(address a) public view returns (uint256) {
-        int256 t = int256(magRewardPerShare * shares[a]) + correction[a];
+    function withdrawableSpcxd(address a) public view returns (uint256) {
+        int256 t = int256(magSpcxdPerShare * shares[a]) + correction[a];
         if (t < 0) t = 0;
-        return uint256(t) / MAGNITUDE - withdrawnReward[a];
+        return uint256(t) / MAGNITUDE - withdrawnSpcxd[a];
     }
 
-    function claimReward() external nonReentrant returns (uint256 amount) {
-        amount = withdrawableReward(msg.sender);
-        require(amount > 0, "nothing");
-        withdrawnReward[msg.sender] += amount;
-        require(spcxd.transfer(msg.sender, amount), "spcxd send");
-        emit RewardClaimed(msg.sender, amount);
+    /// @notice Claim accrued SPCXD straight to your HyperCore spot account (async; lands a block
+    ///         or two later). From there, sell it on the order book.
+    function claimSpcxd() external nonReentrant returns (uint64 amount) {
+        uint256 owed = withdrawableSpcxd(msg.sender);
+        require(owed > 0, "nothing");
+        require(owed <= type(uint64).max, "overflow");
+        withdrawnSpcxd[msg.sender] += owed;
+        amount = uint64(owed);
+        HyperCore.spotSend(msg.sender, spcxdCoreId, amount);
+        emit SpcxdClaimed(msg.sender, amount);
+    }
+
+    /// @notice This contract's SPCXD balance on HyperCore (backs unclaimed rewards).
+    function spcxdOnCore() external view returns (uint64) {
+        return HyperCore.spotBalance(address(this), spcxdCoreId);
     }
 
     // ------------------------------------------------------------ admin

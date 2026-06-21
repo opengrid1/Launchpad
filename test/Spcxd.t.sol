@@ -2,24 +2,14 @@
 pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
-import {SpcxdToken, IERC20Min} from "../src/spcx/SpcxdToken.sol";
+import {SpcxdToken} from "../src/spcx/SpcxdToken.sol";
 import {SpcxdManager, IERC20Full} from "../src/spcx/SpcxdManager.sol";
 import {HyperCore} from "../src/spcx/HyperCore.sol";
 import {INonfungiblePositionManager, ISwapRouter, IWHYPE} from "../src/interfaces/IHyperswapV3.sol";
-import {MockWHYPE, MockPool, MockPositionManager, MockSwapRouter} from "./mocks/HyperswapV3Mocks.sol";
 
 contract MockERC20 {
-    string public name;
-    string public symbol;
-    uint8 public decimals;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
-
-    constructor(string memory n, string memory s, uint8 d) {
-        name = n;
-        symbol = s;
-        decimals = d;
-    }
 
     function mint(address to, uint256 v) external {
         balanceOf[to] += v;
@@ -31,18 +21,8 @@ contract MockERC20 {
     }
 
     function transfer(address to, uint256 v) external returns (bool) {
-        return _t(msg.sender, to, v);
-    }
-
-    function transferFrom(address f, address to, uint256 v) external returns (bool) {
-        uint256 a = allowance[f][msg.sender];
-        if (a != type(uint256).max) allowance[f][msg.sender] = a - v;
-        return _t(f, to, v);
-    }
-
-    function _t(address f, address to, uint256 v) internal returns (bool) {
-        require(balanceOf[f] >= v, "bal");
-        balanceOf[f] -= v;
+        require(balanceOf[msg.sender] >= v, "bal");
+        balanceOf[msg.sender] -= v;
         balanceOf[to] += v;
         return true;
     }
@@ -72,39 +52,30 @@ contract MockSpot {
 contract SpcxdTest is Test {
     SpcxdToken token;
     SpcxdManager mgr;
-    MockWHYPE whype;
-    MockPositionManager pm;
-    MockSwapRouter router;
     MockERC20 usdc;
-    MockERC20 spcxd;
     MockSpot spot;
 
+    uint64 constant SPCXD_ID = 610;
     uint256 constant SUPPLY = 10_000e18;
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
+    address carol = makeAddr("carol");
 
     function setUp() public {
-        whype = new MockWHYPE();
-        pm = new MockPositionManager();
-        router = new MockSwapRouter(pm);
-        usdc = new MockERC20("USD Coin", "USDC", 6);
-        spcxd = new MockERC20("SpaceX dStock", "SPCXd", 18);
-
-        token = new SpcxdToken("Spcx Yield", "SPCXY", SUPPLY, IERC20Min(address(spcxd)), address(this));
+        usdc = new MockERC20();
+        token = new SpcxdToken("Spcx Yield", "SPCXY", SUPPLY, SPCXD_ID, address(this));
         mgr = new SpcxdManager(
             token,
-            INonfungiblePositionManager(address(pm)),
-            ISwapRouter(address(router)),
-            IWHYPE(address(whype)),
+            INonfungiblePositionManager(address(1)),
+            ISwapRouter(address(2)),
+            IWHYPE(address(3)),
             IERC20Full(address(usdc)),
-            IERC20Full(address(spcxd)),
             500,
             address(this)
         );
         token.setManager(address(mgr));
         token.setExcluded(address(mgr), true);
 
-        // install HyperCore mocks
         vm.etch(HyperCore.CORE_WRITER, address(new MockCoreWriter()).code);
         spot = new MockSpot();
         vm.etch(HyperCore.SPOT_BALANCE, address(spot).code);
@@ -126,51 +97,59 @@ contract SpcxdTest is Test {
         }
     }
 
-    // ---- distribution accounting (the core) ----
+    // ---- distribution: SPCXD split pro-rata, claimed straight to Core ----
     function test_rewardProRataAndClaim() public {
         token.transfer(alice, 1_000e18);
         token.transfer(bob, 3_000e18);
 
-        // simulate SPCXD already delivered to the token, then booked
-        spcxd.mint(address(token), 4e18);
         vm.prank(address(mgr));
-        token.notifyReward(4e18);
+        token.notifyReward(400_000_000); // 4 SPCXD (8-dec)
+        assertApproxEqAbs(token.withdrawableSpcxd(alice), 100_000_000, 1);
+        assertApproxEqAbs(token.withdrawableSpcxd(bob), 300_000_000, 1);
 
-        assertApproxEqAbs(token.withdrawableReward(alice), 1e18, 2); // 1/4
-        assertApproxEqAbs(token.withdrawableReward(bob), 3e18, 2); // 3/4
-
+        uint256 owed = token.withdrawableSpcxd(alice);
         vm.prank(alice);
-        uint256 got = token.claimReward();
-        assertApproxEqAbs(got, 1e18, 2);
-        assertApproxEqAbs(spcxd.balanceOf(alice), 1e18, 2, "alice received SPCXD ERC20");
+        uint64 sent = token.claimSpcxd();
+        assertEq(sent, uint64(owed));
+
+        (uint24 act, bytes memory p) = _split(_action());
+        assertEq(uint256(act), uint256(HyperCore.ACT_SPOT_SEND));
+        (address dest, uint64 tok, uint64 amt) = abi.decode(p, (address, uint64, uint64));
+        assertEq(dest, alice, "SPCXD sent to claimer's Core account");
+        assertEq(tok, SPCXD_ID);
+        assertEq(amt, uint64(owed));
+        assertEq(token.withdrawableSpcxd(alice), 0);
     }
 
     function test_bufferThenFlush() public {
-        spcxd.mint(address(token), 1e18);
         vm.prank(address(mgr));
-        token.notifyReward(1e18); // no holders -> buffer
+        token.notifyReward(50_000_000); // no holders -> buffer
         token.transfer(alice, 1_000e18);
-        assertEq(token.withdrawableReward(alice), 0);
-
-        spcxd.mint(address(token), 1e18);
+        assertEq(token.withdrawableSpcxd(alice), 0);
         vm.prank(address(mgr));
-        token.notifyReward(1e18); // flush buffer + new
-        assertApproxEqAbs(token.withdrawableReward(alice), 2e18, 2);
+        token.notifyReward(50_000_000);
+        assertApproxEqAbs(token.withdrawableSpcxd(alice), 100_000_000, 1);
     }
 
-    // ---- manager step 2: buy emits a correct IOC limit order ----
+    function test_onlyManagerBooks() public {
+        vm.prank(alice);
+        vm.expectRevert("not manager");
+        token.notifyReward(1);
+    }
+
+    // ---- manager step 2: buy emits an IOC limit order for SPCXD ----
     function test_buySpcxdEmitsOrder() public {
-        _spotSet(address(mgr), mgr.USDC_CORE(), 200_000_000); // $2 on core
-        mgr.buySpcxd(18_500_000_000, 1_000_000); // max $185, 0.01 SPCXD
+        _spotSet(address(mgr), mgr.USDC_CORE(), 200_000_000);
+        mgr.buySpcxd(17_900_000_000, 1_000_000); // max $179, 0.01 SPCXD
         (uint24 act, bytes memory p) = _split(_action());
         assertEq(uint256(act), uint256(HyperCore.ACT_LIMIT_ORDER));
         (uint32 asset, bool isBuy, uint64 px, uint64 sz,, uint8 tif,) =
             abi.decode(p, (uint32, bool, uint64, uint64, bool, uint8, uint128));
         assertEq(asset, mgr.SPCXD_ASSET()); // 10465
         assertTrue(isBuy);
-        assertEq(px, 18_500_000_000);
+        assertEq(px, 17_900_000_000);
         assertEq(sz, 1_000_000);
-        assertEq(tif, 3); // IOC
+        assertEq(tif, 3);
     }
 
     function test_buyRevertsWithoutUsdc() public {
@@ -178,27 +157,23 @@ contract SpcxdTest is Test {
         mgr.buySpcxd(1, 1);
     }
 
-    // ---- manager step 3: pull emits a spot-send to the SPCXD system address ----
-    function test_pullEmitsSpotSendToSystemAddr() public {
-        _spotSet(address(mgr), mgr.SPCXD_CORE(), 50_000_000); // 0.5 SPCXD on core
-        uint64 amt = mgr.pullSpcxdToEvm();
-        assertEq(amt, 50_000_000);
+    // ---- manager step 3: deliver spot-sends SPCXD to the token + books it ----
+    function test_deliverToTokenAndBook() public {
+        token.transfer(alice, 1_000e18);
+        _spotSet(address(mgr), mgr.SPCXD_CORE(), 250_000_000); // 2.5 SPCXD bought, on manager Core
+
+        uint64 amt = mgr.deliverToToken();
+        assertEq(amt, 250_000_000);
+
         (uint24 act, bytes memory p) = _split(_action());
         assertEq(uint256(act), uint256(HyperCore.ACT_SPOT_SEND));
         (address dest, uint64 tok, uint64 a) = abi.decode(p, (address, uint64, uint64));
-        assertEq(dest, HyperCore.systemAddress(610), "bridge to SPCXD system address");
-        assertEq(tok, 610);
-        assertEq(a, 50_000_000);
-    }
+        assertEq(dest, address(token), "SPCXD moved manager Core -> token Core");
+        assertEq(tok, SPCXD_ID);
+        assertEq(a, 250_000_000);
 
-    // ---- manager step 4: distribute hands SPCXD to the token and books it ----
-    function test_distributeBooksToHolders() public {
-        token.transfer(alice, 1_000e18);
-        spcxd.mint(address(mgr), 2e18); // SPCXD arrived on EVM after the bridge
-        uint256 amt = mgr.distribute();
-        assertEq(amt, 2e18);
-        assertEq(spcxd.balanceOf(address(token)), 2e18, "token holds the reward reserve");
-        assertApproxEqAbs(token.withdrawableReward(alice), 2e18, 2);
+        // booked to the sole holder
+        assertApproxEqAbs(token.withdrawableSpcxd(alice), 250_000_000, 1);
     }
 
     function test_systemAddressDerivation() public pure {
