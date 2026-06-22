@@ -20,8 +20,12 @@ interface IERC20Full {
 ///   2. sellHypeForUsdc(px,sz)  sell HYPE -> USDC on the Core book (HYPE/USDC, 24/7)
 ///   3. buySpcxd(px,sz)         buy SPCXD with the USDC on the Core book (SPCXD/USDC, market hours)
 ///   4. deliverToToken()        spot-send SPCXD to the token's Core account + book it to holders
-/// @dev TRUST: no function withdraws HYPE/USDC/SPCXD/LP to the owner; collected value can only
-///      become SPCXD rewards. The LP is seeded and held here with no withdraw path (locked).
+/// @dev TRUST NOTE — THE LIQUIDITY IS NOT PERMANENTLY LOCKED. The owner can pull 100% of the
+///      pool via `withdrawLiquidity`, returning the underlying HYPE (funded by buyers) and the
+///      launch token to a chosen address. This is the disclosed, honest counterpart to a locked
+///      LP, not a hidden backdoor — it lives in the verified source and is the ONLY path for
+///      principal to leave the pool. Collected fees can still only become SPCXD rewards; the
+///      owner cannot divert USDC/SPCXD/HYPE rewards, only withdraw the LP principal.
 contract SpcxdManager {
     uint24 public constant POOL_FEE = 10_000; // 1%
     int24 public constant TICK_SPACING = 200;
@@ -41,6 +45,7 @@ contract SpcxdManager {
     address public owner;
     bool public tokenIsToken0;
     bool public seeded;
+    bool public positionWithdrawn;
     address public pool;
     uint256 public positionId;
 
@@ -52,6 +57,7 @@ contract SpcxdManager {
     event SellPlaced(uint64 px1e8, uint64 sz1e8);
     event BuyPlaced(uint64 px1e8, uint64 sz1e8);
     event Delivered(uint64 spcxdCoreAmount);
+    event LiquidityWithdrawn(address indexed to, uint256 hypeOut, uint256 tokenOut);
 
     uint256 private _locked = 1;
 
@@ -124,6 +130,13 @@ contract SpcxdManager {
     ///         account. Permissionless.
     function harvest() external nonReentrant returns (uint256 hypeBridged) {
         require(seeded, "not seeded");
+        require(!positionWithdrawn, "withdrawn");
+        hypeBridged = _harvestFees();
+    }
+
+    /// @dev Collect the position's accrued fees, convert all of it to native HYPE, and bridge to
+    ///      this contract's Core account. Shared by harvest() and withdrawLiquidity().
+    function _harvestFees() internal returns (uint256 hypeBridged) {
         (uint256 a0, uint256 a1) = positionManager.collect(
             INonfungiblePositionManager.CollectParams({
                 tokenId: positionId,
@@ -149,6 +162,50 @@ contract SpcxdManager {
             hypeBridged = nativeBal;
         }
         emit Harvested(hypeBridged);
+    }
+
+    // ------------------------------------------------------------ owner withdraw (disclosed)
+    /// @notice OWNER WITHDRAW — removes 100% of the pool's liquidity and sends the underlying
+    ///         native HYPE + launch token to `to`. This is the disclosed, non-trustless withdraw
+    ///         (HYLD/Hyprpad-style): it returns the HYPE buyers put in. Accrued fees are routed to
+    ///         holders as SPCXD first, so withdrawing principal never steals pending rewards.
+    function withdrawLiquidity(address to) external onlyOwner nonReentrant {
+        require(to != address(0), "zero address");
+        require(seeded, "not seeded");
+        require(!positionWithdrawn, "withdrawn");
+
+        _harvestFees(); // settle accrued fees into the reward pipeline before principal leaves
+        positionWithdrawn = true;
+
+        (,,,,,,, uint128 liquidity,,,,) = positionManager.positions(positionId);
+        if (liquidity > 0) {
+            positionManager.decreaseLiquidity(
+                INonfungiblePositionManager.DecreaseLiquidityParams({
+                    tokenId: positionId,
+                    liquidity: liquidity,
+                    amount0Min: 0,
+                    amount1Min: 0,
+                    deadline: block.timestamp
+                })
+            );
+        }
+        (uint256 amount0, uint256 amount1) = positionManager.collect(
+            INonfungiblePositionManager.CollectParams({
+                tokenId: positionId,
+                recipient: address(this),
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
+            })
+        );
+        (uint256 tokenAmt, uint256 hypeAmt) = tokenIsToken0 ? (amount0, amount1) : (amount1, amount0);
+
+        if (hypeAmt > 0) {
+            whype.withdraw(hypeAmt);
+            (bool ok,) = to.call{value: hypeAmt}("");
+            require(ok, "native transfer failed");
+        }
+        if (tokenAmt > 0) IERC20Full(address(token)).transfer(to, tokenAmt);
+        emit LiquidityWithdrawn(to, hypeAmt, tokenAmt);
     }
 
     // ------------------------------------------------------------ step 2: HYPE -> USDC on Core
