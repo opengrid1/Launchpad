@@ -44,6 +44,13 @@ library HyperCore {
         _send(ACT_SPOT_SEND, abi.encode(dest, token, amount));
     }
 
+    /// @notice Bridge native HYPE (EVM) -> the caller's HyperCore spot account by sending value
+    ///         to the HYPE system address. Works from a contract.
+    function bridgeHypeToCore(uint256 amount) internal {
+        (bool ok,) = HYPE_SYSTEM.call{value: amount}("");
+        require(ok, "bridge hype");
+    }
+
     /// @notice Read `user`'s total spot balance for core `token` (8-dec core wei).
     function spotBalance(address user, uint64 token) internal view returns (uint64 total) {
         (bool ok, bytes memory ret) = SPOT_BALANCE.staticcall(abi.encode(user, token));

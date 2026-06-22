@@ -52,7 +52,6 @@ contract MockSpot {
 contract SpcxdTest is Test {
     SpcxdToken token;
     SpcxdManager mgr;
-    MockERC20 usdc;
     MockSpot spot;
 
     uint64 constant SPCXD_ID = 610;
@@ -62,15 +61,12 @@ contract SpcxdTest is Test {
     address carol = makeAddr("carol");
 
     function setUp() public {
-        usdc = new MockERC20();
         token = new SpcxdToken("Spcx Yield", "SPCXY", SUPPLY, SPCXD_ID, address(this));
         mgr = new SpcxdManager(
             token,
             INonfungiblePositionManager(address(1)),
             ISwapRouter(address(2)),
             IWHYPE(address(3)),
-            IERC20Full(address(usdc)),
-            500,
             address(this)
         );
         token.setManager(address(mgr));
@@ -137,7 +133,25 @@ contract SpcxdTest is Test {
         token.notifyReward(1);
     }
 
-    // ---- manager step 2: buy emits an IOC limit order for SPCXD ----
+    // ---- manager step 2: sell HYPE -> USDC on the Core book ----
+    function test_sellHypeEmitsOrder() public {
+        _spotSet(address(mgr), mgr.HYPE_CORE(), 5_000_000); // 0.05 HYPE on core
+        mgr.sellHypeForUsdc(6_000_000_000, 5_000_000); // min $60, 0.05 HYPE
+        (uint24 act, bytes memory p) = _split(_action());
+        assertEq(uint256(act), uint256(HyperCore.ACT_LIMIT_ORDER));
+        (uint32 asset, bool isBuy,,,, uint8 tif,) =
+            abi.decode(p, (uint32, bool, uint64, uint64, bool, uint8, uint128));
+        assertEq(asset, mgr.HYPE_USDC_ASSET()); // 10107
+        assertFalse(isBuy); // selling HYPE
+        assertEq(tif, 3);
+    }
+
+    function test_sellRevertsWithoutHype() public {
+        vm.expectRevert("no hype on core");
+        mgr.sellHypeForUsdc(1, 1);
+    }
+
+    // ---- manager step 3: buy SPCXD with USDC ----
     function test_buySpcxdEmitsOrder() public {
         _spotSet(address(mgr), mgr.USDC_CORE(), 200_000_000);
         mgr.buySpcxd(17_900_000_000, 1_000_000); // max $179, 0.01 SPCXD
