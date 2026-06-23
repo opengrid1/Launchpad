@@ -9,7 +9,7 @@ const FIELD_SIZE =
 // ZERO_VALUE must match ShieldedPool's ZERO_VALUE constant exactly.
 // = uint256(keccak256("launchpad-privacy")) % FIELD_SIZE, precomputed below.
 const ZERO_VALUE =
-  9123881091438353867878555927752183878157879509547893498604969101631242382044n;
+  21246759419405332465520188860141733587548810565578933042550028263297341952858n;
 
 let _poseidon = null;
 async function getPoseidon() {
