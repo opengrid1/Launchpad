@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Umbra, a fixed-denomination ETH privacy pool</title>
   <meta name="description" content="Umbra is a fixed-denomination shielded pool for ETH. Deposit, wait for the crowd, withdraw to a fresh address. Public chain, private link." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.js" } }
+  </script>
 </head>
 <body>
   <header class="nav">
@@ -28,6 +30,7 @@
 
   <main id="top">
     <section class="hero">
+      <canvas id="robot-canvas" aria-hidden="true"></canvas>
       <p class="kicker">zk shielded pool / ethereum</p>
       <h1>Private ETH transfers that don't pretend to be magic.</h1>
       <p class="lede">
@@ -279,5 +282,6 @@ pool.withdraw(proof, root, nullifierHash, newAddress)
   </footer>
 
   <script src="app.js"></script>
+  <script type="module" src="vendor/robot.js"></script>
 </body>
 </html>

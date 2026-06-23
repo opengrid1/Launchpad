@@ -75,7 +75,27 @@ h1, h2, h3 { font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
 .nav-links a.ghost:hover { border-color: var(--mut); }
 
 /* hero */
-.hero { padding-top: 86px; padding-bottom: 84px; }
+.hero { padding-top: 86px; padding-bottom: 84px; position: relative; overflow: hidden; }
+#robot-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+}
+/* keep the copy readable over the robot: darken the left, fade out to the right */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, var(--bg) 0%, var(--bg) 26%, rgba(18, 19, 17, 0.55) 52%, rgba(18, 19, 17, 0) 78%),
+    linear-gradient(0deg, var(--bg) 0%, rgba(18, 19, 17, 0) 24%);
+}
+.hero > *:not(#robot-canvas) { position: relative; z-index: 2; }
 .kicker {
   font-family: var(--mono);
   font-size: 12.5px;
