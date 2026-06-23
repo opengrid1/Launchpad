@@ -1,12 +1,40 @@
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import { formatEther } from "viem";
-import { usePresale } from "../hooks/usePresale";
+import { usePresale, type SaleState } from "../hooks/usePresale";
+import { useDemoPresale } from "../hooks/useDemoPresale";
+import { ADDRESSES, isAddress } from "../lib/config";
 import { ProgressBar } from "../components/ProgressBar";
 
+// Static per build: when a real presale address is set we render the chain
+// version, otherwise a clearly-labelled, fully clickable demo. Choosing at this
+// level keeps hook order stable.
+const CONFIGURED = isAddress(ADDRESSES.presale);
+
+export function Presale() {
+  return CONFIGURED ? <LivePresale /> : <DemoPresale />;
+}
+
+function LivePresale() {
+  const r = usePresale();
+  return <PresaleView sale={r.sale} mine={r.mine} actions={r.actions} tx={r.tx} demo={false} />;
+}
+
+function DemoPresale() {
+  const r = useDemoPresale();
+  return <PresaleView sale={r.sale} mine={r.mine} actions={r.actions} tx={r.tx} demo />;
+}
+
+type ViewProps = {
+  sale: SaleState | null;
+  mine: { contributed: bigint; owed: bigint };
+  actions: { buy: (eth: string) => void; claim: () => void; refund: () => void; finalize: () => void };
+  tx: { isPending: boolean; mining: boolean; confirmed: boolean; error: unknown };
+  demo: boolean;
+};
+
 function eth(v: bigint, dp = 4) {
-  const n = Number(formatEther(v));
-  return n.toLocaleString("en-US", { maximumFractionDigits: dp });
+  return Number(formatEther(v)).toLocaleString("en-US", { maximumFractionDigits: dp });
 }
 
 function phaseOf(s: { startTime: bigint; endTime: bigint; finalized: boolean }) {
@@ -28,40 +56,29 @@ function countdown(target: bigint) {
   return `${m}m`;
 }
 
-export function Presale() {
+function PresaleView({ sale, mine, actions, tx, demo }: ViewProps) {
   const { isConnected } = useAccount();
-  const { configured, sale, mine, actions, tx } = usePresale();
   const [amount, setAmount] = useState("");
 
-  if (!configured) {
-    return (
-      <section className="panel notice">
-        <h2>Presale not live yet</h2>
-        <p>
-          The token sale contract is not deployed on this network. Once it ships to the testnet,
-          drop its address into <code>src/lib/config.ts</code> and this page goes live with no other
-          changes.
-        </p>
-      </section>
-    );
-  }
-
-  if (!sale) {
-    return <section className="panel">Loading sale…</section>;
-  }
+  if (!sale) return <section className="panel">Loading sale…</section>;
 
   const phase = phaseOf(sale);
-  const raised = Number(sale.totalRaised);
-  const hard = Number(sale.hardCap);
-  const progress = hard > 0 ? raised / hard : 0;
-  const softFrac = hard > 0 ? Number(sale.softCap) / hard : 0;
-  const canBuy = phase === "live" && isConnected;
+  const progress = sale.hardCap > 0n ? Number(sale.totalRaised) / Number(sale.hardCap) : 0;
+  const softFrac = sale.hardCap > 0n ? Number(sale.softCap) / Number(sale.hardCap) : 0;
+  const canBuy = phase === "live" && (isConnected || demo);
   const canClaim = sale.finalized && sale.succeeded && mine.owed > 0n;
   const canRefund = sale.finalized && !sale.succeeded && mine.contributed > 0n;
   const canFinalize = !sale.finalized && (phase === "ended" || sale.totalRaised >= sale.hardCap);
 
   return (
     <div className="presale">
+      {demo && (
+        <div className="banner">
+          Demo mode with sample data. The buttons work locally so you can feel the flow. Deploy the
+          contracts to a testnet and paste the address in <code>src/lib/config.ts</code> to make it real.
+        </div>
+      )}
+
       <section className="panel hero-panel">
         <div className="row between">
           <div>
@@ -109,7 +126,7 @@ export function Presale() {
             {tx.isPending || tx.mining ? "confirming" : "Buy"}
           </button>
         </div>
-        {!isConnected && <p className="hint">Connect a wallet to take part.</p>}
+        {!isConnected && !demo && <p className="hint">Connect a wallet to take part.</p>}
         {phase === "upcoming" && <p className="hint">The sale has not started yet.</p>}
         {phase === "ended" && <p className="hint">The buy window has closed.</p>}
 
@@ -133,7 +150,7 @@ export function Presale() {
           </div>
         )}
 
-        {tx.error && <p className="error">{(tx.error as Error).message.split("\n")[0]}</p>}
+        {tx.error ? <p className="error">{(tx.error as Error).message.split("\n")[0]}</p> : null}
         {tx.confirmed && <p className="ok">Confirmed.</p>}
       </section>
     </div>
