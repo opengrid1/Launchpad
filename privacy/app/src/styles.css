@@ -91,6 +91,7 @@ button { font-family: var(--mono); }
 .btn.primary:hover:not(:disabled) { background: #fff; border-color: #fff; }
 .btn.accent { background: var(--blue); border-color: var(--blue); color: #04080d; }
 .btn.accent:hover:not(:disabled) { background: var(--blue-2); border-color: var(--blue-2); }
+.btn.pill { border-radius: 999px; padding-left: 20px; padding-right: 20px; }
 .btn.connected { letter-spacing: 0.02em; text-transform: none; font-weight: 500; color: var(--ink-2); }
 .full { width: 100%; }
 

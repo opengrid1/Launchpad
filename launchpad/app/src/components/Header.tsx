@@ -28,7 +28,10 @@ export function Header({
         </span>
       </nav>
       <span className="spacer" />
-      <button className="btn sm">Connect Wallet</button>
+      <button className="wallet-btn">
+        <span className="wdot" />
+        Connect Wallet
+      </button>
     </header>
   );
 }

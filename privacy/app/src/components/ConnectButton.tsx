@@ -13,7 +13,7 @@ export function ConnectButton() {
   if (isConnected && address) {
     const wrongChain = chainId !== CHAIN.id;
     return (
-      <button className="btn connected" onClick={() => disconnect()} title="Disconnect">
+      <button className="btn connected pill" onClick={() => disconnect()} title="Disconnect">
         {wrongChain ? "wrong network" : short(address)}
       </button>
     );
@@ -22,7 +22,7 @@ export function ConnectButton() {
   const injected = connectors[0];
   return (
     <button
-      className="btn primary"
+      className="btn primary pill"
       disabled={isPending || !injected}
       onClick={() => injected && connect({ connector: injected })}
     >
