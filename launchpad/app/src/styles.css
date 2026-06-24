@@ -80,7 +80,7 @@ button { font-family: var(--mono); }
 .full { width: 100%; }
 
 /* ---- layout ----------------------------------------------------------- */
-.page { padding: var(--s6) 0 var(--s7); }
+.page { padding-top: var(--s6); padding-bottom: var(--s7); }
 .panel { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--panel); }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); padding: var(--s4) var(--s4) var(--s3); border-bottom: 1px solid var(--line); }
 .panel-body { padding: var(--s4); }
@@ -289,7 +289,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .callout { border: 1px solid var(--line); border-left: 2px solid var(--amber); background: var(--panel); padding: 12px 14px; border-radius: var(--r-sm); color: var(--ink-2); font-size: 12px; line-height: 1.6; margin: 0 0 14px; }
 
 /* ---- footer (rebuilt) ------------------------------------------------- */
-.foot { border-top: 1px solid var(--line); margin-top: var(--s6); padding: var(--s6) 0 var(--s5); }
+.foot { border-top: 1px solid var(--line); margin-top: var(--s6); padding-top: var(--s6); padding-bottom: var(--s5); }
 .foot-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px 16px; }
 @media (min-width: 720px) { .foot-cols { grid-template-columns: 1.8fr 1fr 1fr 1fr; gap: 24px; } }
 .foot-brand .word { font-family: var(--pixel); font-size: 14px; }
