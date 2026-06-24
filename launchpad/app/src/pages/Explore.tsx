@@ -32,10 +32,10 @@ export function Explore({ open, create }: { open: (l: Launch) => void; create: (
       <div className="explore-head">
         <div>
           <span className="idx">B20 // BASE MAINNET</span>
-          <h1>Launch a token. Trade it instantly.</h1>
+          <h1>Bonding-curve launches on Base</h1>
           <p className="tagline">
-            Every token is live on a bonding curve the moment it launches. Buy and sell instantly,
-            no presale. It graduates to a DEX once it fills the curve.
+            New coins trade from their first block, no presale. They graduate to a DEX when the
+            curve fills.
           </p>
         </div>
         <button className="btn primary" onClick={create}>+ Create launch</button>
