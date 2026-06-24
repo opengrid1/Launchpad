@@ -9,7 +9,7 @@ const FILTERS: { k: "all" | Status; label: string }[] = [
   { k: "graduated", label: "Graduated" },
 ];
 
-export function Explore({ open, create }: { open: (l: Launch) => void; create: () => void }) {
+export function Explore({ open }: { open: (l: Launch) => void }) {
   const [filter, setFilter] = useState<"all" | Status>("all");
   const list = filter === "all" ? LAUNCHES : LAUNCHES.filter((l) => l.status === filter);
 
@@ -32,13 +32,12 @@ export function Explore({ open, create }: { open: (l: Launch) => void; create: (
       <div className="explore-head">
         <div>
           <span className="idx">B20 // BASE MAINNET</span>
-          <h1>Bonding-curve launches on Base</h1>
+          <h1>Launch B20 tokens on Base</h1>
           <p className="tagline">
-            New coins trade from their first block, no presale. They graduate to a DEX when the
-            curve fills.
+            Every coin is a native B20 token, live on a bonding curve from the first block. It
+            graduates to a DEX once the curve fills.
           </p>
         </div>
-        <button className="btn primary" onClick={create}>+ Create launch</button>
       </div>
 
       {filter === "all" && featured && <Featured launch={featured} onOpen={() => open(featured)} />}

@@ -24,7 +24,7 @@ export function App() {
     <>
       <Header view={view} go={go} />
       {view === "explore" && (
-        <Explore open={(l) => { setActive(l); setView("detail"); window.scrollTo(0, 0); }} create={() => go("create")} />
+        <Explore open={(l) => { setActive(l); setView("detail"); window.scrollTo(0, 0); }} />
       )}
       {view === "detail" && active && <LaunchDetail launch={active} back={() => go("explore")} />}
       {view === "create" && <Create back={() => go("explore")} />}
