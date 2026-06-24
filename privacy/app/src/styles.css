@@ -203,3 +203,12 @@ button { font-family: var(--mono); }
 .foot { border-top: 1px solid var(--line); margin-top: var(--s5); padding: var(--s5) 0 var(--s6); color: var(--mut); font-size: 10.5px; letter-spacing: 0.06em; line-height: 1.7; }
 .foot .row-links { display: flex; gap: var(--s4); margin-bottom: var(--s2); }
 .foot .row-links span { color: var(--ink-2); }
+
+/* ---- mobile guards ---------------------------------------------------- */
+html, body { max-width: 100%; overflow-x: hidden; }
+.btn { white-space: nowrap; }
+@media (max-width: 480px) {
+  .nav { gap: 10px; }
+  .tabs { margin-left: 14px; gap: 14px; }
+  .btn.primary.pill, .btn.connected.pill { padding: 9px 14px; font-size: 10.5px; }
+}

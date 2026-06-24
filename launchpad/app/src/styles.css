@@ -207,3 +207,23 @@ button { font-family: var(--mono); }
 .card:hover .spark-line { stroke: var(--blue); }
 .spark-area { fill: var(--blue-dim); opacity: 0; transition: opacity .14s ease; }
 .card:hover .spark-area { opacity: 1; }
+
+/* ---- mobile fixes ----------------------------------------------------- */
+html, body { max-width: 100%; overflow-x: hidden; }
+.btn, .wallet-btn { white-space: nowrap; }
+
+@media (max-width: 620px) {
+  .nav { gap: 10px; height: 58px; }
+  .nav nav { display: none; }              /* compact: brand -> explore, Create button in body */
+  .brand .word { font-size: 13px; }
+  .wallet-btn { padding: 8px 13px; font-size: 9.5px; letter-spacing: 0.05em; }
+  .explore-head { margin-bottom: 18px; }
+  .explore-head h1 { font-size: 20px; }
+  .explore-head .tagline { font-size: 11.5px; }
+  .featured { padding: var(--s4); }
+  .featured h2 { font-size: 22px; }
+  .ticker-cell { padding: 10px 14px; }
+  .ticker-cell .tv { font-size: 11.5px; }
+  .grid { grid-template-columns: 1fr; }
+  .detail-hero h1 { font-size: 20px; }
+}
