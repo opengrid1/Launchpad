@@ -49,7 +49,7 @@ export function LaunchDetail({ launch, back }: { launch: Launch; back: () => voi
                 </div>
               </>
             ) : (
-              <p className="note" style={{ marginTop: 14 }}>◆ Graduated — trading on a Base DEX with locked liquidity.</p>
+              <p className="note" style={{ marginTop: 14 }}>◆ Graduated. Trading on a Base DEX with locked liquidity.</p>
             )}
 
             <div className="stats section-gap">
@@ -116,7 +116,7 @@ export function LaunchDetail({ launch, back }: { launch: Launch; back: () => voi
             </div>
             <div className="fee-line">
               <span>Price impact</span>
-              <span>{amt > 0 ? "~" + impact.toFixed(2) + "%" : "—"}</span>
+              <span>{amt > 0 ? "~" + impact.toFixed(2) + "%" : "·"}</span>
             </div>
             <button className={"btn full " + (mode === "buy" ? "primary" : "")} disabled={!amount}>
               {mode === "buy" ? "Buy " : "Sell "}{launch.symbol}

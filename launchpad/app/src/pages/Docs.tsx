@@ -61,7 +61,7 @@ export function Docs({ anchor, back }: { anchor?: string; back: () => void }) {
             <h2>Overview</h2>
             <p>
               Umbra Launchpad is a fair-launch token platform on <strong>Base</strong>. Anyone can create a
-              token that is tradable the instant it launches — no presale, no whitelist, no insider
+              token that is tradable the instant it launches. No presale, no whitelist, no insider
               allocation. Every token is issued with the native <strong>B20</strong> standard and trades on a
               <strong> bonding curve</strong> until it graduates to a decentralized exchange.
             </p>
@@ -84,12 +84,12 @@ export function Docs({ anchor, back }: { anchor?: string; back: () => void }) {
               A bonding curve is a smart contract that prices a token as a function of its circulating
               supply. Buying mints tokens from the curve and pushes the price <strong>up</strong>; selling
               returns tokens to the curve and pushes the price <strong>down</strong>. The curve always holds
-              the ETH, so there is <strong>always liquidity</strong> — you can buy or sell at any time, with
+              the ETH, so there is <strong>always liquidity</strong>. You can buy or sell at any time, with
               no order book and no counterparty.
             </p>
             <ul>
               <li>Price starts near zero and rises along the curve as more is bought.</li>
-              <li>Large orders move the price more — shown as <strong>price impact</strong> before you confirm.</li>
+              <li>Large orders move the price more, shown as <strong>price impact</strong> before you confirm.</li>
               <li>There is no presale and no team pre-allocation; everyone trades the same curve.</li>
             </ul>
           </section>
@@ -109,11 +109,11 @@ export function Docs({ anchor, back }: { anchor?: string; back: () => void }) {
             <h2>Creating a token</h2>
             <p>Creation is a single transaction with three groups of settings:</p>
             <ul>
-              <li><strong>Token:</strong> name, symbol, supply, and variant (Standard or Asset/RWA).</li>
+              <li><strong>Token:</strong> name, symbol, decimals, and variant. B20 has two variants: <strong>Asset</strong> (general tokens, 6-18 decimals) and <strong>Stablecoin</strong> (fiat-pegged, 6 decimals, ISO currency code).</li>
               <li><strong>Listing:</strong> logo, description and links (Website / X / Telegram / Discord). These are pinned to IPFS and written into the token's ERC-7572 <code>contractURI</code>.</li>
               <li><strong>Launch:</strong> graduation target and an optional initial dev buy that seeds the first position in the same tx.</li>
             </ul>
-            <p>Advanced B20 controls — roles, supply cap, pause policy and compliance — are configured in the same flow (see below).</p>
+            <p>Advanced B20 controls (roles, supply cap, pause policy and compliance) are configured in the same flow (see below).</p>
           </section>
 
           <section className="doc-section" id="trade">
@@ -130,7 +130,7 @@ export function Docs({ anchor, back }: { anchor?: string; back: () => void }) {
             <h2>The B20 standard</h2>
             <p>
               B20 is Base's native token standard, implemented in the node software as precompiles rather than
-              an EVM contract. It is a superset of ERC-20 — compatible with existing wallets and DEXs — and is
+              an EVM contract. It is a superset of ERC-20, compatible with existing wallets and DEXs, and is
               cheaper and higher-throughput than contract tokens. It ships with role-based access control,
               chain-level compliance policies, an optional supply cap, granular pausing, transfer memos, and
               built-in <code>permit</code> (ERC-2612) and <code>contractURI</code> (ERC-7572).
@@ -152,7 +152,7 @@ export function Docs({ anchor, back }: { anchor?: string; back: () => void }) {
             <h2>Fees</h2>
             <ul>
               <li><strong>Trading fee:</strong> a small percentage on each buy and sell on the curve.</li>
-              <li><strong>Creation:</strong> only Base gas — issuing a B20 has no contract deployment cost.</li>
+              <li><strong>Creation:</strong> only Base gas. Issuing a B20 has no contract deployment cost.</li>
               <li><strong>Graduation:</strong> a one-time fee when liquidity migrates to the DEX.</li>
             </ul>
             <p className="muted small">Exact rates are set per deployment and shown in the app before you confirm.</p>

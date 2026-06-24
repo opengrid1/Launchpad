@@ -20,8 +20,10 @@ export function Create({ back }: { back: () => void }) {
   // token
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
-  const [supply, setSupply] = useState("100000000");
-  const [variant, setVariant] = useState<"standard" | "asset">("standard");
+  const [supply, setSupply] = useState("1000000000");
+  const [variant, setVariant] = useState<"asset" | "stablecoin">("asset");
+  const [decimals, setDecimals] = useState("18");
+  const [currency, setCurrency] = useState("USD");
   // listing
   const [logo, setLogo] = useState("");
   const [description, setDescription] = useState("");
@@ -68,14 +70,14 @@ export function Create({ back }: { back: () => void }) {
       <div className="idx">B20 // BASE MAINNET</div>
       <h1 style={{ fontSize: 26, letterSpacing: "-0.02em", margin: "8px 0 22px" }}>Create a launch</h1>
 
-      {/* 01 — token */}
+      {/* 01 token */}
       <div className="panel">
         <div className="panel-head"><span className="lbl">Token</span><span className="idx">01</span></div>
         <div className="panel-body">
           <label className="field-label">Variant</label>
           <div className="seg" style={{ marginBottom: 16 }}>
-            <button className={variant === "standard" ? "active" : ""} onClick={() => setVariant("standard")}>Standard</button>
-            <button className={variant === "asset" ? "active" : ""} onClick={() => setVariant("asset")}>Asset (RWA)</button>
+            <button className={variant === "asset" ? "active" : ""} onClick={() => setVariant("asset")}>Asset</button>
+            <button className={variant === "stablecoin" ? "active" : ""} onClick={() => setVariant("stablecoin")}>Stablecoin</button>
           </div>
           <div className="field-row">
             <div className="field">
@@ -87,15 +89,32 @@ export function Create({ back }: { back: () => void }) {
               <input className="input" placeholder="VEIL" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} />
             </div>
           </div>
-          <div className="field" style={{ marginBottom: 0 }}>
-            <label className="field-label">Initial supply</label>
-            <input className="input" inputMode="numeric" value={supply} onChange={(e) => setSupply(e.target.value.replace(/[^0-9]/g, ""))} />
+          <div className="field-row">
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="field-label">Total supply</label>
+              <input className="input" inputMode="numeric" value={supply} onChange={(e) => setSupply(e.target.value.replace(/[^0-9]/g, ""))} />
+            </div>
+            {variant === "asset" ? (
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="field-label">Decimals (6 to 18)</label>
+                <input className="input" inputMode="numeric" value={decimals} onChange={(e) => setDecimals(e.target.value.replace(/[^0-9]/g, ""))} />
+              </div>
+            ) : (
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="field-label">Currency (ISO code)</label>
+                <input className="input" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))} />
+              </div>
+            )}
           </div>
-          {variant === "asset" && <p className="hint">Asset variant adds an OPERATOR_ROLE, for regulated / real-world-asset issuers.</p>}
+          <p className="hint">
+            {variant === "asset"
+              ? "Asset: general tokens (memes, utility, RWA). 6 to 18 decimals, supports rebase and OPERATOR_ROLE."
+              : "Stablecoin: fiat-pegged. Decimals fixed at 6, tagged with an ISO currency code."}
+          </p>
         </div>
       </div>
 
-      {/* 02 — listing */}
+      {/* 02 listing */}
       <div className="panel section-gap">
         <div className="panel-head"><span className="lbl">Listing</span><span className="idx">02</span></div>
         <div className="panel-body">
@@ -135,12 +154,12 @@ export function Create({ back }: { back: () => void }) {
         </div>
       </div>
 
-      {/* 03 — launch (bonding curve) */}
+      {/* 03 launch (bonding curve) */}
       <div className="panel section-gap">
         <div className="panel-head"><span className="lbl">Launch</span><span className="idx">03</span></div>
         <div className="panel-body">
           <p className="hint" style={{ marginTop: 0, marginBottom: 14 }}>
-            No presale. The token is tradable on a bonding curve the instant it launches — anyone can
+            No presale. The token is tradable on a bonding curve the instant it launches. Anyone can
             buy and sell immediately. It graduates to a Base DEX (LP burned) once it fills the curve.
           </p>
           <div className="field-row">
@@ -149,7 +168,7 @@ export function Create({ back }: { back: () => void }) {
               <input className="input" value={graduateAt} onChange={(e) => setGraduateAt(e.target.value.replace(/[^0-9.]/g, ""))} />
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="field-label">Initial dev buy (ETH) — optional</label>
+              <label className="field-label">Initial dev buy in ETH (optional)</label>
               <input className="input" placeholder="0.0" value={initialBuy} onChange={(e) => setInitialBuy(e.target.value.replace(/[^0-9.]/g, ""))} />
             </div>
           </div>
@@ -157,11 +176,11 @@ export function Create({ back }: { back: () => void }) {
         </div>
       </div>
 
-      {/* 03 — roles & admin */}
+      {/* 03 roles & admin */}
       <div className="panel section-gap">
         <div className="panel-head"><span className="lbl">Roles &amp; admin</span><span className="idx">04</span></div>
         <div className="panel-body">
-          <ToggleRow name="Permanently admin-less" desc="Renounce DEFAULT_ADMIN at launch. Roles can never be changed again — fully trustless." on={adminless} set={() => setAdminless((v) => !v)} />
+          <ToggleRow name="Permanently admin-less" desc="Renounce DEFAULT_ADMIN at launch. Roles can never be changed again. Fully trustless." on={adminless} set={() => setAdminless((v) => !v)} />
           <ToggleRow name="MINT_ROLE" desc="Issue new supply after launch (e.g. rewards)." on={mint} set={() => setMint((v) => !v)} />
           <ToggleRow name="BURN_ROLE" desc="Destroy supply held by the role holder." on={burn} set={() => setBurn((v) => !v)} />
           <ToggleRow name="METADATA_ROLE" desc="Update token metadata / contractURI after launch." on={metadata} set={() => setMetadata((v) => !v)} />
@@ -169,7 +188,7 @@ export function Create({ back }: { back: () => void }) {
         </div>
       </div>
 
-      {/* 04 — supply cap */}
+      {/* 04 supply cap */}
       <div className="panel section-gap">
         <div className="panel-head"><span className="lbl">Supply cap</span><span className="idx">05</span></div>
         <div className="panel-body">
@@ -183,7 +202,7 @@ export function Create({ back }: { back: () => void }) {
         </div>
       </div>
 
-      {/* 05 — pause policy */}
+      {/* 05 pause policy */}
       <div className="panel section-gap">
         <div className="panel-head"><span className="lbl">Pause policy</span><span className="idx">06</span></div>
         <div className="panel-body">
@@ -194,7 +213,7 @@ export function Create({ back }: { back: () => void }) {
         </div>
       </div>
 
-      {/* 06 — compliance / transfer policy */}
+      {/* 06 compliance / transfer policy */}
       <div className="panel section-gap">
         <div className="panel-head"><span className="lbl">Compliance</span><span className="idx">07</span></div>
         <div className="panel-body">
@@ -205,7 +224,7 @@ export function Create({ back }: { back: () => void }) {
             <button className={policy === "blocklist" ? "active" : ""} onClick={() => setPolicy("blocklist")}>Blocklist</button>
           </div>
           {policy === "open" ? (
-            <p className="hint" style={{ marginTop: 8 }}>ALWAYS_ALLOW — anyone can hold and transfer. Default, fully permissionless.</p>
+            <p className="hint" style={{ marginTop: 8 }}>ALWAYS_ALLOW. Anyone can hold and transfer. Default, fully permissionless.</p>
           ) : (
             <>
               <p className="hint" style={{ marginTop: 8, marginBottom: 6 }}>Apply the {policy} policy to these scopes:</p>
@@ -215,11 +234,11 @@ export function Create({ back }: { back: () => void }) {
             </>
           )}
           <div style={{ height: 8 }} />
-          <ToggleRow name="Freeze &amp; seize" desc="BURN_BLOCKED_ROLE — burn from blocked accounts. For regulated issuers only." on={freezeSeize} set={() => setFreezeSeize((v) => !v)} />
+          <ToggleRow name="Freeze &amp; seize" desc="BURN_BLOCKED_ROLE. Burn from blocked accounts. For regulated issuers only." on={freezeSeize} set={() => setFreezeSeize((v) => !v)} />
         </div>
       </div>
 
-      {/* 07 — standards */}
+      {/* 07 standards */}
       <div className="panel section-gap">
         <div className="panel-head"><span className="lbl">Standards &amp; advanced</span><span className="idx">08</span></div>
         <div className="panel-body">
@@ -239,7 +258,7 @@ export function Create({ back }: { back: () => void }) {
       {/* summary */}
       <div className="panel section-gap">
         <div className="panel-body">
-          <div className="kv"><span className="k">Issues as</span><span className="v">{symbol || "—"} · B20 {variant === "asset" ? "Asset" : ""} · Base</span></div>
+          <div className="kv"><span className="k">Issues as</span><span className="v">{symbol || "TBA"} · B20 {variant === "asset" ? "Asset" : "Stablecoin"} · Base</span></div>
           <div className="kv"><span className="k">Configuration</span><span className="v">{summary}</span></div>
           <div className="kv"><span className="k">Trading</span><span className="v">Instant · bonding curve</span></div>
           <div className="kv"><span className="k">Graduates at</span><span className="v">{graduateAt || 0} ETH mcap</span></div>

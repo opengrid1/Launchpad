@@ -34,7 +34,7 @@ export function Explore({ open, create }: { open: (l: Launch) => void; create: (
           <span className="idx">B20 // BASE MAINNET</span>
           <h1>Launch a token. Trade it instantly.</h1>
           <p className="tagline">
-            Every token is live on a bonding curve the moment it launches — buy and sell instantly,
+            Every token is live on a bonding curve the moment it launches. Buy and sell instantly,
             no presale. It graduates to a DEX once it fills the curve.
           </p>
         </div>
