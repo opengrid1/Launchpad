@@ -40,24 +40,36 @@ export function Explore({ open }: { open: (l: Launch) => void }) {
         </div>
       </div>
 
-      {filter === "all" && featured && <Featured launch={featured} onOpen={() => open(featured)} />}
-
-      <div className="row between" style={{ margin: "22px 0 18px", flexWrap: "wrap", gap: 12 }}>
-        <div className="filters">
-          {FILTERS.map((f) => (
-            <button key={f.k} className={filter === f.k ? "active" : ""} onClick={() => setFilter(f.k)}>
-              {f.label}
-            </button>
-          ))}
+      {LAUNCHES.length === 0 ? (
+        <div className="empty">
+          <span className="idx">Awaiting launches</span>
+          <p>
+            No tokens have launched yet. New B20 coins show up here once the launchpad contracts
+            are live on Base.
+          </p>
         </div>
-        <span className="lbl">{list.length} tokens</span>
-      </div>
+      ) : (
+        <>
+          {filter === "all" && featured && <Featured launch={featured} onOpen={() => open(featured)} />}
 
-      <div className="grid">
-        {list.map((l) => (
-          <LaunchCard key={l.id} launch={l} onOpen={() => open(l)} />
-        ))}
-      </div>
+          <div className="row between" style={{ margin: "22px 0 18px", flexWrap: "wrap", gap: 12 }}>
+            <div className="filters">
+              {FILTERS.map((f) => (
+                <button key={f.k} className={filter === f.k ? "active" : ""} onClick={() => setFilter(f.k)}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <span className="lbl">{list.length} tokens</span>
+          </div>
+
+          <div className="grid">
+            {list.map((l) => (
+              <LaunchCard key={l.id} launch={l} onOpen={() => open(l)} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

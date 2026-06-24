@@ -328,3 +328,8 @@ body { font-size: 13px; }
 
 /* prevent mobile browser font auto-boosting (text looked zoomed on phones) */
 html { -webkit-text-size-adjust: 100%; -moz-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* ---- empty state ------------------------------------------------------ */
+.empty { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--panel); padding: 56px 24px; text-align: center; }
+.empty .idx { display: block; margin-bottom: 10px; }
+.empty p { color: var(--ink-2); font-size: 13px; max-width: 44ch; margin: 0 auto; line-height: 1.65; }
