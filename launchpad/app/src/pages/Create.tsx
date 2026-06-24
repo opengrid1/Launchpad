@@ -22,6 +22,13 @@ export function Create({ back }: { back: () => void }) {
   const [symbol, setSymbol] = useState("");
   const [supply, setSupply] = useState("100000000");
   const [variant, setVariant] = useState<"standard" | "asset">("standard");
+  // listing
+  const [logo, setLogo] = useState("");
+  const [description, setDescription] = useState("");
+  const [website, setWebsite] = useState("");
+  const [x, setX] = useState("");
+  const [telegram, setTelegram] = useState("");
+  const [discord, setDiscord] = useState("");
   // sale
   const [price, setPrice] = useState("0.0001");
   const [soft, setSoft] = useState("10");
@@ -93,9 +100,49 @@ export function Create({ back }: { back: () => void }) {
         </div>
       </div>
 
-      {/* 02 — sale */}
+      {/* 02 — listing */}
       <div className="panel section-gap">
-        <div className="panel-head"><span className="lbl">Sale</span><span className="idx">02</span></div>
+        <div className="panel-head"><span className="lbl">Listing</span><span className="idx">02</span></div>
+        <div className="panel-body">
+          <label className="field-label">Logo</label>
+          <div className="logo-upload" style={{ marginBottom: 16 }}>
+            <label className="logo-box">
+              {logo ? <img src={logo} alt="logo" /> : "+"}
+              <input
+                type="file"
+                accept="image/png,image/svg+xml,image/jpeg,image/webp"
+                hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) setLogo(URL.createObjectURL(f));
+                }}
+              />
+            </label>
+            <div>
+              <div className="t-name">Upload token logo</div>
+              <div className="t-desc">PNG / SVG, square. Pinned to IPFS on launch.</div>
+            </div>
+          </div>
+
+          <div className="field">
+            <label className="field-label">Description</label>
+            <textarea className="input" rows={3} placeholder="What is this token and who is it for?" value={description} onChange={(e) => setDescription(e.target.value)} style={{ resize: "vertical" }} />
+          </div>
+
+          <label className="field-label">Links</label>
+          <div className="social-grid">
+            <div className="input-icon"><span className="pfx">WEB</span><input placeholder="https://" value={website} onChange={(e) => setWebsite(e.target.value)} /></div>
+            <div className="input-icon"><span className="pfx">X</span><input placeholder="x.com/handle" value={x} onChange={(e) => setX(e.target.value)} /></div>
+            <div className="input-icon"><span className="pfx">TG</span><input placeholder="t.me/group" value={telegram} onChange={(e) => setTelegram(e.target.value)} /></div>
+            <div className="input-icon"><span className="pfx">DC</span><input placeholder="discord.gg/invite" value={discord} onChange={(e) => setDiscord(e.target.value)} /></div>
+          </div>
+          <p className="hint">Logo, description and links are pinned to IPFS and written into the token's ERC-7572 <code>contractURI</code> metadata, then indexed by the launchpad for its listing.</p>
+        </div>
+      </div>
+
+      {/* 03 — sale */}
+      <div className="panel section-gap">
+        <div className="panel-head"><span className="lbl">Sale</span><span className="idx">03</span></div>
         <div className="panel-body">
           <div className="field-row">
             <div className="field"><label className="field-label">Price (ETH / token)</label>
@@ -118,7 +165,7 @@ export function Create({ back }: { back: () => void }) {
 
       {/* 03 — roles & admin */}
       <div className="panel section-gap">
-        <div className="panel-head"><span className="lbl">Roles &amp; admin</span><span className="idx">03</span></div>
+        <div className="panel-head"><span className="lbl">Roles &amp; admin</span><span className="idx">04</span></div>
         <div className="panel-body">
           <ToggleRow name="Permanently admin-less" desc="Renounce DEFAULT_ADMIN at launch. Roles can never be changed again — fully trustless." on={adminless} set={() => setAdminless((v) => !v)} />
           <ToggleRow name="MINT_ROLE" desc="Issue new supply after launch (e.g. rewards)." on={mint} set={() => setMint((v) => !v)} />
@@ -130,7 +177,7 @@ export function Create({ back }: { back: () => void }) {
 
       {/* 04 — supply cap */}
       <div className="panel section-gap">
-        <div className="panel-head"><span className="lbl">Supply cap</span><span className="idx">04</span></div>
+        <div className="panel-head"><span className="lbl">Supply cap</span><span className="idx">05</span></div>
         <div className="panel-body">
           <ToggleRow name="Cap total supply" desc="Enforce a hard ceiling on every mint operation." on={capOn} set={() => setCapOn((v) => !v)} />
           {capOn && (
@@ -144,7 +191,7 @@ export function Create({ back }: { back: () => void }) {
 
       {/* 05 — pause policy */}
       <div className="panel section-gap">
-        <div className="panel-head"><span className="lbl">Pause policy</span><span className="idx">05</span></div>
+        <div className="panel-head"><span className="lbl">Pause policy</span><span className="idx">06</span></div>
         <div className="panel-body">
           <p className="hint" style={{ marginTop: 0, marginBottom: 8 }}>B20 pauses each operation independently, each with its own pause / unpause role.</p>
           <ToggleRow name="Pausable transfers" desc="Halt all transfers in an emergency." on={pauseTransfer} set={() => setPauseTransfer((v) => !v)} />
@@ -155,7 +202,7 @@ export function Create({ back }: { back: () => void }) {
 
       {/* 06 — compliance / transfer policy */}
       <div className="panel section-gap">
-        <div className="panel-head"><span className="lbl">Compliance</span><span className="idx">06</span></div>
+        <div className="panel-head"><span className="lbl">Compliance</span><span className="idx">07</span></div>
         <div className="panel-body">
           <label className="field-label">Transfer policy</label>
           <div className="seg" style={{ marginBottom: 8 }}>
@@ -180,7 +227,7 @@ export function Create({ back }: { back: () => void }) {
 
       {/* 07 — standards */}
       <div className="panel section-gap">
-        <div className="panel-head"><span className="lbl">Standards &amp; advanced</span><span className="idx">07</span></div>
+        <div className="panel-head"><span className="lbl">Standards &amp; advanced</span><span className="idx">08</span></div>
         <div className="panel-body">
           <div className="toggle-row">
             <div><div className="t-name">ERC-2612 permit</div><div className="t-desc">Gasless approvals via signature.</div></div>
@@ -188,8 +235,9 @@ export function Create({ back }: { back: () => void }) {
           </div>
           <ToggleRow name="Transfer memos" desc="Attach bytes32 references to transfers / mints / burns for off-chain reconciliation." on={memos} set={() => setMemos((v) => !v)} />
           <div className="field" style={{ margin: "14px 0 0" }}>
-            <label className="field-label">contractURI (ERC-7572) — optional</label>
-            <input className="input" placeholder="ipfs://… or https://…" value={contractURI} onChange={(e) => setContractURI(e.target.value)} />
+            <label className="field-label">contractURI override (advanced)</label>
+            <input className="input" placeholder="ipfs://… (auto-built from Listing if blank)" value={contractURI} onChange={(e) => setContractURI(e.target.value)} />
+            <p className="hint">Leave blank to use the metadata built from your Listing. Paste a URI to host your own.</p>
           </div>
         </div>
       </div>

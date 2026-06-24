@@ -232,3 +232,28 @@ html, body { max-width: 100%; overflow-x: hidden; }
   .grid { grid-template-columns: 1fr; }
   .detail-hero h1 { font-size: 20px; }
 }
+
+/* ---- listing: logo upload + socials ---------------------------------- */
+.logo-upload { display: flex; align-items: center; gap: 14px; }
+.logo-box { width: 64px; height: 64px; border: 1px dashed var(--line-2); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; flex: none; background: var(--sunk); color: var(--mut); font-size: 22px; transition: border-color .12s ease, color .12s ease; }
+.logo-box:hover { border-color: var(--line-3); color: var(--ink-2); }
+.logo-box img { width: 100%; height: 100%; object-fit: cover; }
+.social-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 480px) { .social-grid { grid-template-columns: 1fr; } }
+.input-icon { display: flex; align-items: center; gap: 8px; background: var(--sunk); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 0 12px; transition: border-color .12s ease; }
+.input-icon:focus-within { border-color: var(--blue); }
+.input-icon .pfx { color: var(--mut); font-size: 10px; letter-spacing: 0.1em; min-width: 30px; }
+.input-icon input { flex: 1; background: none; border: none; color: var(--ink); padding: 11px 0; font-family: var(--mono); font-size: 12.5px; min-width: 0; }
+.input-icon input:focus { outline: none; }
+.input-icon input::placeholder { color: var(--mut); }
+/* socials row on detail */
+.socials { display: flex; gap: 8px; flex-wrap: wrap; }
+.social-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); border-radius: 999px; padding: 6px 12px; font-size: 11px; color: var(--ink-2); cursor: pointer; transition: border-color .12s ease, color .12s ease; }
+.social-chip:hover { border-color: var(--line-3); color: var(--ink); }
+
+/* ---- segmented control (variant / policy) ---------------------------- */
+.seg { display: flex; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+.seg button { flex: 1; background: none; border: none; border-right: 1px solid var(--line); color: var(--mut); padding: 11px 8px; cursor: pointer; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; transition: color .12s ease, background .12s ease; }
+.seg button:last-child { border-right: none; }
+.seg button:hover { color: var(--ink-2); }
+.seg button.active { color: var(--ink); background: var(--blue-dim); box-shadow: inset 0 -2px 0 var(--blue); }

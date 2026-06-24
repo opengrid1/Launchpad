@@ -15,6 +15,7 @@ export type Launch = {
   endsIn: string;
   about: string;
   roles: { mint: boolean; burn: boolean; pause: boolean; freeze: boolean };
+  links?: { website?: string; x?: string; telegram?: string; discord?: string };
 };
 
 // Sample data for the UI. Replace with on-chain B20 reads when wiring.
@@ -34,6 +35,7 @@ export const LAUNCHES: Launch[] = [
     endsIn: "2d 4h",
     about: "Compliance-aware privacy credits, issued natively on Base via B20.",
     roles: { mint: true, burn: true, pause: true, freeze: false },
+    links: { website: "https://veil.cash", x: "x.com/veilcash", telegram: "t.me/veilcash" },
   },
   {
     id: "basis",
@@ -50,6 +52,7 @@ export const LAUNCHES: Launch[] = [
     endsIn: "11h",
     about: "A fully-reserved stablecoin using B20 chain-level mint/burn and freeze controls.",
     roles: { mint: true, burn: true, pause: true, freeze: true },
+    links: { website: "https://basis.example", x: "x.com/basisdollar", discord: "discord.gg/basis" },
   },
   {
     id: "ferro",

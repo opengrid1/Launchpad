@@ -63,7 +63,17 @@ export function LaunchDetail({ launch, back }: { launch: Launch; back: () => voi
 
           <div className="panel">
             <div className="panel-head"><span className="lbl">About</span></div>
-            <div className="panel-body"><p className="note">{launch.about}</p></div>
+            <div className="panel-body">
+              <p className="note" style={{ marginBottom: launch.links ? 16 : 0 }}>{launch.about}</p>
+              {launch.links && (
+                <div className="socials">
+                  {launch.links.website && <a className="social-chip" href={"https://" + launch.links.website.replace(/^https?:\/\//, "")} target="_blank" rel="noreferrer">↗ Website</a>}
+                  {launch.links.x && <a className="social-chip" href={"https://" + launch.links.x} target="_blank" rel="noreferrer">𝕏 Twitter</a>}
+                  {launch.links.telegram && <a className="social-chip" href={"https://" + launch.links.telegram} target="_blank" rel="noreferrer">✈ Telegram</a>}
+                  {launch.links.discord && <a className="social-chip" href={"https://" + launch.links.discord} target="_blank" rel="noreferrer">◎ Discord</a>}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
