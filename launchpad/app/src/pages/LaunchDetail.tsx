@@ -7,7 +7,7 @@ const STATUS_LABEL: Record<Launch["status"], string> = {
   bonding: "Bonding", graduated: "Graduated",
 };
 
-export function LaunchDetail({ launch, back }: { launch: Launch; back: () => void }) {
+export function LaunchDetail({ launch }: { launch: Launch }) {
   const [mode, setMode] = useState<"buy" | "sell">("buy");
   const [amount, setAmount] = useState("");
 
@@ -23,7 +23,6 @@ export function LaunchDetail({ launch, back }: { launch: Launch; back: () => voi
 
   return (
     <div className="wrap page">
-      <span className="back" onClick={back}>← All launches</span>
 
       <div className="detail">
         {/* left */}

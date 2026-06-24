@@ -26,10 +26,10 @@ export function App() {
       {view === "explore" && (
         <Explore open={(l) => { setActive(l); setView("detail"); window.scrollTo(0, 0); }} />
       )}
-      {view === "detail" && active && <LaunchDetail launch={active} back={() => go("explore")} />}
-      {view === "create" && <Create back={() => go("explore")} />}
-      {view === "docs" && <Docs anchor={anchor} back={() => go("explore")} />}
-      {view === "terms" && <Terms anchor={anchor} back={() => go("explore")} />}
+      {view === "detail" && active && <LaunchDetail launch={active} />}
+      {view === "create" && <Create />}
+      {view === "docs" && <Docs anchor={anchor} />}
+      {view === "terms" && <Terms anchor={anchor} />}
       <Footer go={go} />
     </>
   );

@@ -1,12 +1,11 @@
 import { useEffect } from "react";
 
-export function Terms({ anchor, back }: { anchor?: string; back: () => void }) {
+export function Terms({ anchor }: { anchor?: string }) {
   useEffect(() => {
     if (anchor) document.getElementById(anchor)?.scrollIntoView({ block: "start" });
   }, [anchor]);
   return (
     <div className="wrap page">
-      <span className="back" onClick={back}>← Back to launchpad</span>
       <div className="idx">LEGAL</div>
       <h1 className="doc-h1">Terms &amp; disclaimer</h1>
       <p className="doc-sub">Last updated 2026. Reference implementation, testnet only.</p>

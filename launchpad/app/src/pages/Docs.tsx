@@ -14,7 +14,7 @@ const SECTIONS: { id: string; label: string }[] = [
   { id: "risks", label: "Risks" },
 ];
 
-export function Docs({ anchor, back }: { anchor?: string; back: () => void }) {
+export function Docs({ anchor }: { anchor?: string }) {
   const [active, setActive] = useState(anchor || "overview");
   const ref = useRef<HTMLDivElement>(null);
 
@@ -44,7 +44,6 @@ export function Docs({ anchor, back }: { anchor?: string; back: () => void }) {
 
   return (
     <div className="wrap page">
-      <span className="back" onClick={back}>← Back to launchpad</span>
       <div className="idx">DOCUMENTATION</div>
       <h1 className="doc-h1">Umbra Launchpad docs</h1>
       <p className="doc-sub">How instant bonding-curve launches work on Base, end to end.</p>

@@ -16,7 +16,7 @@ function ToggleRow({ name, desc, on, set }: { name: string; desc: string; on: bo
   );
 }
 
-export function Create({ back }: { back: () => void }) {
+export function Create() {
   // token
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
@@ -66,7 +66,6 @@ export function Create({ back }: { back: () => void }) {
 
   return (
     <div className="wrap page" style={{ maxWidth: 720 }}>
-      <span className="back" onClick={back}>← All launches</span>
       <div className="idx">B20 // BASE MAINNET</div>
       <h1 style={{ fontSize: 26, letterSpacing: "-0.02em", margin: "8px 0 22px" }}>Create a launch</h1>
 
