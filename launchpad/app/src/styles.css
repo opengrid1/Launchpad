@@ -215,7 +215,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 @media (max-width: 620px) {
   /* header wraps: row 1 = brand + connect, row 2 = nav links */
-  .nav { flex-wrap: wrap; height: auto; padding: 12px 0; gap: 10px; }
+  .nav { flex-wrap: wrap; height: auto; padding-top: 12px; padding-bottom: 12px; gap: 10px; }
   .brand { margin-right: auto; }
   .nav .spacer { display: none; }
   .top-nav { order: 3; width: 100%; margin-left: 0; gap: 26px; border-top: 1px solid var(--line); padding-top: 11px; }
