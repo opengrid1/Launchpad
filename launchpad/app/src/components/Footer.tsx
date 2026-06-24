@@ -47,11 +47,6 @@ export function Footer({ go }: { go: (v: View, anchor?: string) => void }) {
           <a onClick={() => go("terms", "disclaimer")}>Disclaimer</a>
         </div>
       </div>
-
-      <div className="foot-bottom">
-        <span>© 2026 Umbra Launchpad · B20 · Base</span>
-        <span>Unaudited reference implementation · testnet only</span>
-      </div>
     </footer>
   );
 }
