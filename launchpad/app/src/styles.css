@@ -303,3 +303,25 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .foot-col a:hover { color: var(--ink); }
 .foot-bottom { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; border-top: 1px solid var(--line); margin-top: 28px; padding-top: 18px; color: var(--mut); font-size: 10.5px; letter-spacing: 0.05em; }
 .foot-bottom a { color: var(--ink-2); }
+
+/* ---- tighter type + mobile docs nav + icons -------------------------- */
+body { font-size: 13px; }
+.doc-h1 { font-size: 24px; }
+.foot-soc a svg, .social-chip svg { display: block; }
+
+@media (max-width: 860px) {
+  .docs { grid-template-columns: 1fr; }
+  .docs-nav { flex-direction: row; overflow-x: auto; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 8px; scrollbar-width: none; }
+  .docs-nav::-webkit-scrollbar { display: none; }
+  .docs-nav button { white-space: nowrap; flex: none; border-left: none; border-bottom: 2px solid transparent; border-radius: var(--r-xs); padding: 8px 12px; }
+  .docs-nav button.active { border-left: none; border-bottom-color: var(--blue); }
+}
+@media (max-width: 620px) {
+  .doc-h1 { font-size: 19px; }
+  .doc-sub { font-size: 12px; }
+  .doc-section h2 { font-size: 16px; }
+  .doc-section p, .doc-section li { font-size: 12.5px; }
+  .explore-head h1 { font-size: 19px; }
+  .detail-hero h1 { font-size: 19px; }
+  .panel h2, .headline { font-size: 18px; }
+}

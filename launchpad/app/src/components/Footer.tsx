@@ -1,4 +1,5 @@
 import type { View } from "./Header";
+import { IconX, IconTelegram, IconDiscord, IconGithub } from "./Icons";
 
 export function Footer({ go }: { go: (v: View, anchor?: string) => void }) {
   return (
@@ -17,10 +18,10 @@ export function Footer({ go }: { go: (v: View, anchor?: string) => void }) {
           </div>
           <p className="foot-tag">Instant fair-launch tokens on Base. Buy and sell on a bonding curve the moment a token goes live.</p>
           <div className="foot-soc">
-            <a href="https://x.com" target="_blank" rel="noreferrer" title="X">𝕏</a>
-            <a href="https://t.me" target="_blank" rel="noreferrer" title="Telegram">✈</a>
-            <a href="https://discord.com" target="_blank" rel="noreferrer" title="Discord">◎</a>
-            <a href="https://github.com/opengrid1/Launchpad" target="_blank" rel="noreferrer" title="GitHub">⌥</a>
+            <a href="https://x.com" target="_blank" rel="noreferrer" title="X"><IconX /></a>
+            <a href="https://t.me" target="_blank" rel="noreferrer" title="Telegram"><IconTelegram /></a>
+            <a href="https://discord.com" target="_blank" rel="noreferrer" title="Discord"><IconDiscord /></a>
+            <a href="https://github.com/opengrid1/Launchpad" target="_blank" rel="noreferrer" title="GitHub"><IconGithub /></a>
           </div>
         </div>
 

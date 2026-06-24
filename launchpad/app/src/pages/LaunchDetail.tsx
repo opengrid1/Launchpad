@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Launch } from "../data/launches";
 import { fmt } from "../data/launches";
+import { IconGlobe, IconX, IconTelegram, IconDiscord } from "../components/Icons";
 
 const STATUS_LABEL: Record<Launch["status"], string> = {
   bonding: "Bonding", graduated: "Graduated",
@@ -82,10 +83,10 @@ export function LaunchDetail({ launch, back }: { launch: Launch; back: () => voi
               <p className="note" style={{ marginBottom: launch.links ? 16 : 0 }}>{launch.about}</p>
               {launch.links && (
                 <div className="socials">
-                  {launch.links.website && <a className="social-chip" href={"https://" + launch.links.website.replace(/^https?:\/\//, "")} target="_blank" rel="noreferrer">↗ Website</a>}
-                  {launch.links.x && <a className="social-chip" href={"https://" + launch.links.x} target="_blank" rel="noreferrer">𝕏 Twitter</a>}
-                  {launch.links.telegram && <a className="social-chip" href={"https://" + launch.links.telegram} target="_blank" rel="noreferrer">✈ Telegram</a>}
-                  {launch.links.discord && <a className="social-chip" href={"https://" + launch.links.discord} target="_blank" rel="noreferrer">◎ Discord</a>}
+                  {launch.links.website && <a className="social-chip" href={"https://" + launch.links.website.replace(/^https?:\/\//, "")} target="_blank" rel="noreferrer"><IconGlobe size={13} /> Website</a>}
+                  {launch.links.x && <a className="social-chip" href={"https://" + launch.links.x} target="_blank" rel="noreferrer"><IconX size={13} /> Twitter</a>}
+                  {launch.links.telegram && <a className="social-chip" href={"https://" + launch.links.telegram} target="_blank" rel="noreferrer"><IconTelegram size={13} /> Telegram</a>}
+                  {launch.links.discord && <a className="social-chip" href={"https://" + launch.links.discord} target="_blank" rel="noreferrer"><IconDiscord size={13} /> Discord</a>}
                 </div>
               )}
             </div>
