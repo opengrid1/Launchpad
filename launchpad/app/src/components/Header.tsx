@@ -1,4 +1,4 @@
-export type View = "explore" | "detail" | "create";
+export type View = "explore" | "detail" | "create" | "docs" | "terms";
 
 export function Header({
   view,
@@ -20,11 +20,14 @@ export function Header({
         </div>
       </div>
       <nav className="top-nav">
-        <span className={"nav-link" + (view !== "create" ? " active" : "")} onClick={() => go("explore")}>
+        <span className={"nav-link" + (view === "explore" || view === "detail" ? " active" : "")} onClick={() => go("explore")}>
           Explore
         </span>
         <span className={"nav-link" + (view === "create" ? " active" : "")} onClick={() => go("create")}>
           Create
+        </span>
+        <span className={"nav-link" + (view === "docs" ? " active" : "")} onClick={() => go("docs")}>
+          Docs
         </span>
       </nav>
       <span className="spacer" />
