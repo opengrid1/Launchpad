@@ -16,7 +16,6 @@ export function Footer({ go }: { go: (v: View, anchor?: string) => void }) {
               <div className="sub">LAUNCHPAD</div>
             </div>
           </div>
-          <p className="foot-tag">Instant fair-launch tokens on Base. Buy and sell on a bonding curve the moment a token goes live.</p>
           <div className="foot-soc">
             <a href="https://x.com" target="_blank" rel="noreferrer" title="X"><IconX /></a>
             <a href="https://t.me" target="_blank" rel="noreferrer" title="Telegram"><IconTelegram /></a>
