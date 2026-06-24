@@ -61,7 +61,7 @@ export function Docs({ anchor, back }: { anchor?: string; back: () => void }) {
             <h2>Overview</h2>
             <p>
               Umbra Launchpad is a fair-launch token platform on <strong>Base</strong>. Anyone can create a
-              token that is tradable the instant it launches. No presale, no whitelist, no insider
+              token that is tradable from its first block, with no whitelist or insider
               allocation. Every token is issued with the native <strong>B20</strong> standard and trades on a
               <strong> bonding curve</strong> until it graduates to a decentralized exchange.
             </p>
@@ -90,7 +90,7 @@ export function Docs({ anchor, back }: { anchor?: string; back: () => void }) {
             <ul>
               <li>Price starts near zero and rises along the curve as more is bought.</li>
               <li>Large orders move the price more, shown as <strong>price impact</strong> before you confirm.</li>
-              <li>There is no presale and no team pre-allocation; everyone trades the same curve.</li>
+              <li>There is no team pre-allocation; everyone trades the same curve from the start.</li>
             </ul>
           </section>
 
@@ -160,7 +160,7 @@ export function Docs({ anchor, back }: { anchor?: string; back: () => void }) {
 
           <section className="doc-section" id="faq">
             <h2>FAQ</h2>
-            <p><strong>Do I have to wait for a presale to sell?</strong> No. Buying and selling are instant from the moment a token launches.</p>
+            <p><strong>Can I sell right after a token launches?</strong> Yes. Buying and selling are live from the first block.</p>
             <p><strong>Where does the liquidity come from?</strong> The bonding curve itself holds the ETH, so there is always a price to trade at.</p>
             <p><strong>Can the team rug the liquidity?</strong> At graduation the LP is burned, so DEX liquidity can't be pulled.</p>
             <p><strong>What is the token logo stored as?</strong> It is pinned to IPFS and referenced by the token's ERC-7572 <code>contractURI</code>.</p>

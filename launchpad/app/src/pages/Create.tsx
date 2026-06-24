@@ -159,7 +159,7 @@ export function Create({ back }: { back: () => void }) {
         <div className="panel-head"><span className="lbl">Launch</span><span className="idx">03</span></div>
         <div className="panel-body">
           <p className="hint" style={{ marginTop: 0, marginBottom: 14 }}>
-            No presale. The token is tradable on a bonding curve the instant it launches. Anyone can
+            The token is tradable on a bonding curve from the first block. Anyone can
             buy and sell immediately. It graduates to a Base DEX (LP burned) once it fills the curve.
           </p>
           <div className="field-row">
