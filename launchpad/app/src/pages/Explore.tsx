@@ -5,28 +5,25 @@ import { Featured } from "../components/Featured";
 
 const FILTERS: { k: "all" | Status; label: string }[] = [
   { k: "all", label: "All" },
-  { k: "live", label: "Live" },
-  { k: "upcoming", label: "Upcoming" },
-  { k: "success", label: "Funded" },
-  { k: "ended", label: "Ended" },
+  { k: "bonding", label: "Bonding" },
+  { k: "graduated", label: "Graduated" },
 ];
 
 export function Explore({ open, create }: { open: (l: Launch) => void; create: () => void }) {
   const [filter, setFilter] = useState<"all" | Status>("all");
   const list = filter === "all" ? LAUNCHES : LAUNCHES.filter((l) => l.status === filter);
 
-  const totalRaised = LAUNCHES.reduce((s, l) => s + l.raised, 0);
+  const totalMc = LAUNCHES.reduce((s, l) => s + l.marketCap, 0);
   const totalHolders = LAUNCHES.reduce((s, l) => s + l.holders, 0);
-  const liveCount = LAUNCHES.filter((l) => l.status === "live").length;
-  const featured = LAUNCHES.filter((l) => l.status === "live").sort((a, b) => b.raised - a.raised)[0];
+  const graduated = LAUNCHES.filter((l) => l.status === "graduated").length;
+  const featured = [...LAUNCHES].filter((l) => l.status === "bonding").sort((a, b) => b.marketCap - a.marketCap)[0];
 
   return (
     <div className="wrap page">
-      {/* terminal data strip */}
       <div className="ticker" style={{ borderTop: "1px solid var(--line)", marginBottom: 26 }}>
-        <Cell k="Total raised" v={`${fmt(totalRaised)} ETH`} accent />
-        <Cell k="Live now" v={String(liveCount)} />
-        <Cell k="Launches" v={String(LAUNCHES.length)} />
+        <Cell k="Total mcap" v={`${fmt(totalMc)} ETH`} accent />
+        <Cell k="Tokens" v={String(LAUNCHES.length)} />
+        <Cell k="Graduated" v={String(graduated)} />
         <Cell k="Holders" v={fmt(totalHolders, 0)} />
         <Cell k="Network" v="Base Mainnet" />
         <Cell k="Standard" v="B20 native" />
@@ -35,10 +32,10 @@ export function Explore({ open, create }: { open: (l: Launch) => void; create: (
       <div className="explore-head">
         <div>
           <span className="idx">B20 // BASE MAINNET</span>
-          <h1>Launch a token. Same price for everyone.</h1>
+          <h1>Launch a token. Trade it instantly.</h1>
           <p className="tagline">
-            Fixed-price fair launches issued natively on Base with B20. No bonding curve, no
-            insiders, chain-level compliance.
+            Every token is live on a bonding curve the moment it launches — buy and sell instantly,
+            no presale. It graduates to a DEX once it fills the curve.
           </p>
         </div>
         <button className="btn primary" onClick={create}>+ Create launch</button>
@@ -54,7 +51,7 @@ export function Explore({ open, create }: { open: (l: Launch) => void; create: (
             </button>
           ))}
         </div>
-        <span className="lbl">{list.length} launches</span>
+        <span className="lbl">{list.length} tokens</span>
       </div>
 
       <div className="grid">

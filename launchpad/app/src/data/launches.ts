@@ -1,122 +1,69 @@
-export type Status = "live" | "upcoming" | "success" | "ended";
+export type Status = "bonding" | "graduated";
 
 export type Launch = {
   id: string;
   name: string;
   symbol: string;
-  status: Status;
-  priceEth: number;        // ETH per token
-  raised: number;          // ETH
-  softCap: number;         // ETH
-  hardCap: number;         // ETH
-  supply: number;          // total token supply
-  forSale: number;         // tokens offered
+  status: Status;          // bonding = trading on the curve, graduated = on a DEX
+  priceEth: number;        // current price per token
+  marketCap: number;       // ETH
+  liquidity: number;       // ETH held in the curve / pool
+  graduateAt: number;      // market cap (ETH) at which it migrates to a DEX
+  change24h: number;       // %
   holders: number;
-  endsIn: string;
+  supply: number;          // total token supply
+  createdAgo: string;
   about: string;
   roles: { mint: boolean; burn: boolean; pause: boolean; freeze: boolean };
   links?: { website?: string; x?: string; telegram?: string; discord?: string };
 };
 
-// Sample data for the UI. Replace with on-chain B20 reads when wiring.
+// Sample data. In production these come from on-chain curve state + the token's
+// B20 / ERC-7572 metadata.
 export const LAUNCHES: Launch[] = [
   {
-    id: "veilcoin",
-    name: "Veilcoin",
-    symbol: "VEIL",
-    status: "live",
-    priceEth: 0.00008,
-    raised: 41.2,
-    softCap: 10,
-    hardCap: 80,
-    supply: 100_000_000,
-    forSale: 20_000_000,
-    holders: 612,
-    endsIn: "2d 4h",
-    about: "Compliance-aware privacy credits, issued natively on Base via B20.",
+    id: "veilcoin", name: "Veilcoin", symbol: "VEIL", status: "bonding",
+    priceEth: 0.0000041, marketCap: 41, liquidity: 41, graduateAt: 80, change24h: 12.4,
+    holders: 612, supply: 1_000_000_000, createdAgo: "2m ago",
+    about: "Compliance-aware privacy credits, issued natively on Base via B20. Instant trade on a bonding curve.",
     roles: { mint: true, burn: true, pause: true, freeze: false },
     links: { website: "https://veil.cash", x: "x.com/veilcash", telegram: "t.me/veilcash" },
   },
   {
-    id: "basis",
-    name: "Basis Dollar",
-    symbol: "bUSD",
-    status: "live",
-    priceEth: 0.0004,
-    raised: 122.5,
-    softCap: 50,
-    hardCap: 150,
-    supply: 50_000_000,
-    forSale: 12_000_000,
-    holders: 1843,
-    endsIn: "11h",
-    about: "A fully-reserved stablecoin using B20 chain-level mint/burn and freeze controls.",
-    roles: { mint: true, burn: true, pause: true, freeze: true },
-    links: { website: "https://basis.example", x: "x.com/basisdollar", discord: "discord.gg/basis" },
+    id: "solace", name: "Solace", symbol: "SOL8", status: "bonding",
+    priceEth: 0.0000002, marketCap: 2.1, liquidity: 2.1, graduateAt: 70, change24h: 31.8,
+    holders: 23, supply: 1_000_000_000, createdAgo: "5m ago",
+    about: "Treasury-backed utility token for a privacy relayer network.",
+    roles: { mint: true, burn: true, pause: false, freeze: false },
   },
   {
-    id: "ferro",
-    name: "Ferro RWA",
-    symbol: "FERRO",
-    status: "upcoming",
-    priceEth: 0.0012,
-    raised: 0,
-    softCap: 30,
-    hardCap: 120,
-    supply: 10_000_000,
-    forSale: 3_000_000,
-    holders: 0,
-    endsIn: "starts 1d 6h",
+    id: "ferro", name: "Ferro RWA", symbol: "FERRO", status: "bonding",
+    priceEth: 0.0000061, marketCap: 6.1, liquidity: 6.1, graduateAt: 120, change24h: -4.2,
+    holders: 88, supply: 10_000_000, createdAgo: "18m ago",
     about: "Tokenized industrial-metal inventory. RWA issuance with on-chain compliance roles.",
     roles: { mint: true, burn: true, pause: true, freeze: true },
   },
   {
-    id: "pixl",
-    name: "Pixl",
-    symbol: "PIXL",
-    status: "success",
-    priceEth: 0.00002,
-    raised: 35,
-    softCap: 5,
-    hardCap: 35,
-    supply: 1_000_000_000,
-    forSale: 300_000_000,
-    holders: 2210,
-    endsIn: "closed",
-    about: "Long-tail community token. Fair launch, LP burned, no team allocation.",
-    roles: { mint: false, burn: true, pause: false, freeze: false },
-  },
-  {
-    id: "meridian",
-    name: "Meridian",
-    symbol: "MRD",
-    status: "ended",
-    priceEth: 0.0003,
-    raised: 8.4,
-    softCap: 20,
-    hardCap: 60,
-    supply: 25_000_000,
-    forSale: 8_000_000,
-    holders: 0,
-    endsIn: "refundable",
-    about: "Soft cap missed. Contributions are fully refundable.",
+    id: "meridian", name: "Meridian", symbol: "MRD", status: "bonding",
+    priceEth: 0.0000009, marketCap: 9.0, liquidity: 9.0, graduateAt: 60, change24h: -8.1,
+    holders: 140, supply: 25_000_000, createdAgo: "1h ago",
+    about: "Community treasury token. Fair launch, no team allocation.",
     roles: { mint: true, burn: false, pause: true, freeze: false },
   },
   {
-    id: "solace",
-    name: "Solace",
-    symbol: "SOL8",
-    status: "upcoming",
-    priceEth: 0.00015,
-    raised: 0,
-    softCap: 15,
-    hardCap: 70,
-    supply: 40_000_000,
-    forSale: 9_000_000,
-    holders: 0,
-    endsIn: "starts 3d",
-    about: "Treasury-backed utility token for a privacy relayer network.",
-    roles: { mint: true, burn: true, pause: false, freeze: false },
+    id: "basis", name: "Basis Dollar", symbol: "bUSD", status: "graduated",
+    priceEth: 0.0004, marketCap: 220, liquidity: 80, graduateAt: 80, change24h: 2.6,
+    holders: 1843, supply: 50_000_000, createdAgo: "3d ago",
+    about: "A fully-reserved stablecoin using B20 chain-level mint/burn and freeze controls. Graduated to a Base DEX.",
+    roles: { mint: true, burn: true, pause: true, freeze: true },
+    links: { website: "https://basis.example", x: "x.com/basisdollar", discord: "discord.gg/basis" },
+  },
+  {
+    id: "pixl", name: "Pixl", symbol: "PIXL", status: "graduated",
+    priceEth: 0.00002, marketCap: 140, liquidity: 35, graduateAt: 35, change24h: -6.8,
+    holders: 2210, supply: 1_000_000_000, createdAgo: "5d ago",
+    about: "Long-tail community token. Fair launch, LP burned, no team allocation.",
+    roles: { mint: false, burn: true, pause: false, freeze: false },
   },
 ];
 

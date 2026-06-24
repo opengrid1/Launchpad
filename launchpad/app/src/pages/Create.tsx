@@ -29,12 +29,9 @@ export function Create({ back }: { back: () => void }) {
   const [x, setX] = useState("");
   const [telegram, setTelegram] = useState("");
   const [discord, setDiscord] = useState("");
-  // sale
-  const [price, setPrice] = useState("0.0001");
-  const [soft, setSoft] = useState("10");
-  const [hard, setHard] = useState("80");
-  const [duration, setDuration] = useState("3");
-  const [liq, setLiq] = useState("60");
+  // launch (bonding curve)
+  const [graduateAt, setGraduateAt] = useState("80");
+  const [initialBuy, setInitialBuy] = useState("");
   // roles & admin
   const [adminless, setAdminless] = useState(false);
   const [mint, setMint] = useState(true);
@@ -56,8 +53,6 @@ export function Create({ back }: { back: () => void }) {
   // standards
   const [memos, setMemos] = useState(false);
   const [contractURI, setContractURI] = useState("");
-
-  const maxTokens = price && Number(price) > 0 ? Number(hard) / Number(price) : 0;
 
   const summary = [
     policy === "open" ? "Open transfers" : policy === "allowlist" ? "Allowlist" : "Blocklist",
@@ -140,26 +135,25 @@ export function Create({ back }: { back: () => void }) {
         </div>
       </div>
 
-      {/* 03 — sale */}
+      {/* 03 — launch (bonding curve) */}
       <div className="panel section-gap">
-        <div className="panel-head"><span className="lbl">Sale</span><span className="idx">03</span></div>
+        <div className="panel-head"><span className="lbl">Launch</span><span className="idx">03</span></div>
         <div className="panel-body">
+          <p className="hint" style={{ marginTop: 0, marginBottom: 14 }}>
+            No presale. The token is tradable on a bonding curve the instant it launches — anyone can
+            buy and sell immediately. It graduates to a Base DEX (LP burned) once it fills the curve.
+          </p>
           <div className="field-row">
-            <div className="field"><label className="field-label">Price (ETH / token)</label>
-              <input className="input" value={price} onChange={(e) => setPrice(e.target.value.replace(/[^0-9.]/g, ""))} /></div>
-            <div className="field"><label className="field-label">Duration (days)</label>
-              <input className="input" inputMode="numeric" value={duration} onChange={(e) => setDuration(e.target.value.replace(/[^0-9]/g, ""))} /></div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="field-label">Graduate at (ETH market cap)</label>
+              <input className="input" value={graduateAt} onChange={(e) => setGraduateAt(e.target.value.replace(/[^0-9.]/g, ""))} />
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="field-label">Initial dev buy (ETH) — optional</label>
+              <input className="input" placeholder="0.0" value={initialBuy} onChange={(e) => setInitialBuy(e.target.value.replace(/[^0-9.]/g, ""))} />
+            </div>
           </div>
-          <div className="field-row">
-            <div className="field"><label className="field-label">Soft cap (ETH)</label>
-              <input className="input" value={soft} onChange={(e) => setSoft(e.target.value.replace(/[^0-9.]/g, ""))} /></div>
-            <div className="field"><label className="field-label">Hard cap (ETH)</label>
-              <input className="input" value={hard} onChange={(e) => setHard(e.target.value.replace(/[^0-9.]/g, ""))} /></div>
-          </div>
-          <div className="field" style={{ marginBottom: 0 }}>
-            <label className="field-label">Liquidity to pool ({liq}%)</label>
-            <input className="input" type="range" min={50} max={100} value={liq} onChange={(e) => setLiq(e.target.value)} style={{ padding: 0, accentColor: "#5f8fc4" }} />
-          </div>
+          <p className="hint">Curve price starts near zero and rises as people buy. An initial dev buy seeds the first position in the same launch tx.</p>
         </div>
       </div>
 
@@ -247,12 +241,13 @@ export function Create({ back }: { back: () => void }) {
         <div className="panel-body">
           <div className="kv"><span className="k">Issues as</span><span className="v">{symbol || "—"} · B20 {variant === "asset" ? "Asset" : ""} · Base</span></div>
           <div className="kv"><span className="k">Configuration</span><span className="v">{summary}</span></div>
-          <div className="kv"><span className="k">Max raise (hard cap)</span><span className="v">{hard || 0} ETH</span></div>
-          <div className="kv"><span className="k">Tokens at hard cap</span><span className="v">{maxTokens.toLocaleString("en-US", { maximumFractionDigits: 0 })} {symbol || ""}</span></div>
+          <div className="kv"><span className="k">Trading</span><span className="v">Instant · bonding curve</span></div>
+          <div className="kv"><span className="k">Graduates at</span><span className="v">{graduateAt || 0} ETH mcap</span></div>
+          <div className="kv"><span className="k">Initial dev buy</span><span className="v">{initialBuy || "0"} ETH</span></div>
           <button className="btn primary full" style={{ marginTop: 16 }} disabled={!name || !symbol}>
             Launch {symbol ? "$" + symbol : "token"}
           </button>
-          <p className="hint">Preview only. One createB20() tx issues the token with these settings; the presale deploys alongside it.</p>
+          <p className="hint">Preview only. One createB20() tx issues the token and opens its bonding curve for instant trading.</p>
         </div>
       </div>
     </div>

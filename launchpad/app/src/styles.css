@@ -257,3 +257,12 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .seg button:last-child { border-right: none; }
 .seg button:hover { color: var(--ink-2); }
 .seg button.active { color: var(--ink); background: var(--blue-dim); box-shadow: inset 0 -2px 0 var(--blue); }
+
+/* ---- bonding-curve model bits ---------------------------------------- */
+.status.bonding { color: var(--blue-2); border-color: var(--line-3); }
+.status.bonding::before { background: var(--blue); }
+.status.graduated { color: var(--green); }
+.status.graduated::before { background: var(--green); }
+.ch-up { color: var(--green); font-weight: 700; }
+.ch-down { color: var(--red); font-weight: 700; }
+.grad-tag { color: var(--blue-2); }
