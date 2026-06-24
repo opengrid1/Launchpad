@@ -212,3 +212,6 @@ html, body { max-width: 100%; overflow-x: hidden; }
   .tabs { margin-left: 14px; gap: 14px; }
   .btn.primary.pill, .btn.connected.pill { padding: 9px 14px; font-size: 10.5px; }
 }
+
+/* prevent mobile browser font auto-boosting (text looked zoomed on phones) */
+html { -webkit-text-size-adjust: 100%; -moz-text-size-adjust: 100%; text-size-adjust: 100%; }

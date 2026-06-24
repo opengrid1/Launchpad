@@ -325,3 +325,6 @@ body { font-size: 13px; }
   .detail-hero h1 { font-size: 19px; }
   .panel h2, .headline { font-size: 18px; }
 }
+
+/* prevent mobile browser font auto-boosting (text looked zoomed on phones) */
+html { -webkit-text-size-adjust: 100%; -moz-text-size-adjust: 100%; text-size-adjust: 100%; }

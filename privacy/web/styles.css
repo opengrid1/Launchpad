@@ -407,3 +407,6 @@ input[type="range"]::-moz-range-thumb {
   .nav-links a:not(.ghost) { display: none; }
   .aset-verdict { text-align: left; }
 }
+
+/* prevent mobile browser font auto-boosting (text looked zoomed on phones) */
+html { -webkit-text-size-adjust: 100%; -moz-text-size-adjust: 100%; text-size-adjust: 100%; }
