@@ -15,8 +15,8 @@ export function Header({
           <path d="M10 6.4 L10 15.6 M6 8.7 L14 13.3 M14 8.7 L6 13.3" stroke="currentColor" strokeWidth="0.9" opacity="0.5" />
         </svg>
         <div>
-          <div className="word">UMBRA</div>
-          <div className="sub">LAUNCHPAD</div>
+          <div className="word">COINWORKS</div>
+          <div className="sub">B20 · BASE</div>
         </div>
       </div>
       <nav className="top-nav">

@@ -45,7 +45,7 @@ export function Docs({ anchor }: { anchor?: string }) {
   return (
     <div className="wrap page">
       <div className="idx">DOCUMENTATION</div>
-      <h1 className="doc-h1">Umbra Launchpad docs</h1>
+      <h1 className="doc-h1">Coinworks docs</h1>
       <p className="doc-sub">How instant bonding-curve launches work on Base, end to end.</p>
 
       <div className="docs">
@@ -59,7 +59,7 @@ export function Docs({ anchor }: { anchor?: string }) {
           <section className="doc-section" id="overview">
             <h2>Overview</h2>
             <p>
-              Umbra Launchpad is a fair-launch token platform on <strong>Base</strong>. Anyone can create a
+              Coinworks is a fair-launch token platform on <strong>Base</strong>. Anyone can create a
               token that is tradable from its first block, with no whitelist or insider
               allocation. Every token is issued with the native <strong>B20</strong> standard and trades on a
               <strong> bonding curve</strong> until it graduates to a decentralized exchange.
@@ -170,8 +170,8 @@ export function Docs({ anchor }: { anchor?: string }) {
             <p>
               Token launches are high-risk. Prices are volatile, most tokens go to zero, and this is a
               reference implementation that is <strong>unaudited</strong>. Never spend more than you can
-              afford to lose, verify every token yourself, and understand your local regulations. Umbra
-              Launchpad is provided as-is with no warranty.
+              afford to lose, verify every token yourself, and understand your local regulations. Coinworks
+              is provided as-is with no warranty.
             </p>
           </section>
         </div>

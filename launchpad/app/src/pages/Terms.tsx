@@ -14,7 +14,7 @@ export function Terms({ anchor }: { anchor?: string }) {
         <section className="doc-section" id="terms">
           <h2>Terms of use</h2>
           <p>
-            Umbra Launchpad is a non-custodial interface to smart contracts on Base. By using it you
+            Coinworks is a non-custodial interface to smart contracts on Base. By using it you
             interact with those contracts directly from your own wallet; we never take custody of your
             funds and cannot reverse, freeze or recover transactions on your behalf. You are solely
             responsible for the tokens you create, buy, sell and hold.
