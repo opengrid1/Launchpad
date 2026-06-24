@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { useReadContract } from "wagmi";
-import { formatEther } from "viem";
 import { ADDRESSES, isAddress, POOLS } from "../lib/config";
 import { poolAbi } from "../lib/abis";
 import { randomNote, encodeNote, type Note } from "../lib/note";
 
+type Mode = "deposit" | "withdraw";
+
 export function Pool() {
   const configured = isAddress(ADDRESSES.shieldedPool);
+  const [mode, setMode] = useState<Mode>("deposit");
   const [pool, setPool] = useState(POOLS[1].value);
   const [note, setNote] = useState<{ note: Note; backup: string } | null>(null);
 
-  const denom = useReadContract({
+  useReadContract({
     address: ADDRESSES.shieldedPool as `0x${string}`,
     abi: poolAbi,
     functionName: "denomination",
@@ -22,79 +24,90 @@ export function Pool() {
     setNote({ note: n, backup: encodeNote(n) });
   }
 
+  const fee = (Number(pool) * 0.003).toFixed(4);
+
   return (
     <div className="pool">
       <section className="panel">
-        <p className="kicker">shielded pool</p>
-        <h2>Deposit one note, withdraw as a stranger.</h2>
-        <p className="muted">
-          Privacy comes from the anonymity set, not the proof alone. Use a fresh recipient address
-          and wait for other deposits before you withdraw.
+        <p className="kicker">Shielded pool</p>
+        <h2 style={{ marginBottom: 6 }}>Deposit one note, leave as a stranger.</h2>
+        <p className="muted small" style={{ marginTop: 8 }}>
+          Privacy comes from the anonymity set, not the proof alone. Use a fresh recipient and wait
+          for the pool to fill before withdrawing.
         </p>
-
-        <div className="denoms">
-          {POOLS.map((p) => (
-            <button
-              key={p.value}
-              className={"denom " + (pool === p.value ? "active" : "")}
-              onClick={() => setPool(p.value)}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-        {configured && denom.data !== undefined && (
-          <p className="hint">On-chain denomination: {formatEther(denom.data as bigint)} ETH</p>
-        )}
       </section>
 
       <section className="panel">
-        <div className="row between">
-          <h3>Deposit</h3>
-          <span className="tag pending">prover wiring pending</span>
+        <div className="seg" style={{ marginBottom: 20 }}>
+          <button className={mode === "deposit" ? "active" : ""} onClick={() => setMode("deposit")}>
+            Deposit
+          </button>
+          <button className={mode === "withdraw" ? "active" : ""} onClick={() => setMode("withdraw")}>
+            Withdraw
+          </button>
         </div>
-        <p className="muted">
-          Step one generates a secret note in your browser. Save the backup string somewhere safe:
-          it is the only way to withdraw, and it never leaves your machine.
-        </p>
-        <button className="btn" onClick={generate}>
-          Generate note
-        </button>
 
-        {note && (
-          <div className="note-box">
-            <span className="stat-k">Your note backup</span>
-            <code className="note-string">{note.backup}</code>
-            <p className="warn">
-              Anyone with this string can spend the deposit. Lose it and the funds are gone. Save it
-              before depositing.
-            </p>
-            <button className="btn primary" disabled title="Wired once the in-browser prover lands">
-              Deposit {pool} ETH
+        {mode === "deposit" ? (
+          <>
+            <label className="field-label">Select pool</label>
+            <div className="denoms">
+              {POOLS.map((p) => (
+                <button
+                  key={p.value}
+                  className={"denom " + (pool === p.value ? "active" : "")}
+                  onClick={() => setPool(p.value)}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            <label className="field-label">You deposit</label>
+            <div className="amount-box">
+              <span className="amt">{pool}</span>
+              <span className="unit">ETH</span>
+            </div>
+            <p className="fee-line">Relayer fee (0.3%) on withdraw: {fee} ETH</p>
+
+            {!note ? (
+              <button className="btn full" onClick={generate}>
+                Generate note
+              </button>
+            ) : (
+              <div className="note-box">
+                <span className="kicker">Your note backup</span>
+                <code className="note-string">{note.backup}</code>
+                <p className="warn">
+                  Anyone with this string can spend the deposit. Save it before depositing. It never
+                  leaves your browser.
+                </p>
+                <button className="btn primary full" disabled title="Enabled once the in-browser prover lands">
+                  Deposit {pool} ETH
+                </button>
+                <div className="row between">
+                  <span className="tag">prover wiring pending</span>
+                  <span className="hint" style={{ margin: 0 }}>
+                    contract call wired: <code>deposit(commitment)</code>
+                  </span>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <label className="field-label">Note</label>
+            <textarea className="note-input" placeholder="umbra-v1-…" rows={2} disabled />
+            <label className="field-label">Recipient</label>
+            <input className="addr-input" placeholder="0x…" disabled />
+            <p className="fee-line">A relayer can post this so the fresh address needs no gas.</p>
+            <button className="btn primary full" disabled>
+              Generate proof and withdraw
             </button>
-            <p className="hint">
-              Deposit is disabled until the prover module computes the commitment
-              (Poseidon) and the withdraw proof (Groth16). The contract call is already wired:
-              <code> pool.deposit(commitment)</code>.
-            </p>
-          </div>
+            <div className="row between" style={{ marginTop: 12 }}>
+              <span className="tag">prover wiring pending</span>
+            </div>
+          </>
         )}
-      </section>
-
-      <section className="panel">
-        <div className="row between">
-          <h3>Withdraw</h3>
-          <span className="tag pending">prover wiring pending</span>
-        </div>
-        <p className="muted">
-          Paste a saved note and a fresh recipient address. The browser builds a zero-knowledge proof
-          that you own a leaf in the tree, then the relayer (or you) posts it.
-        </p>
-        <textarea className="note-input" placeholder="umbra-v1-…" rows={2} disabled />
-        <input className="addr-input" placeholder="recipient 0x…" disabled />
-        <button className="btn primary" disabled>
-          Generate proof and withdraw
-        </button>
       </section>
     </div>
   );
