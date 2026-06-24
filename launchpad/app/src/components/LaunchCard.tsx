@@ -9,8 +9,27 @@ const STATUS_LABEL: Record<Launch["status"], string> = {
   ended: "Ended",
 };
 
+// Deterministic funding-curve sparkline from the launch id + progress.
+function sparkPaths(seed: string, progress: number) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const n = 18, w = 100, ht = 30;
+  const pts: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    h = (h * 1103515245 + 12345) >>> 0;
+    const jitter = ((h % 1000) / 1000 - 0.5) * 0.12;
+    const base = Math.pow(i / (n - 1), 1.5) * Math.max(progress, 0.04);
+    const y = Math.min(1, Math.max(0, base + jitter * (i / n)));
+    pts.push([(i / (n - 1)) * w, ht - y * (ht - 3) - 1.5]);
+  }
+  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const area = `${line} L${w} ${ht} L0 ${ht} Z`;
+  return { line, area };
+}
+
 export function LaunchCard({ launch, onOpen }: { launch: Launch; onOpen: () => void }) {
   const progress = launch.hardCap > 0 ? launch.raised / launch.hardCap : 0;
+  const { line, area } = sparkPaths(launch.id, progress);
   return (
     <div className="card" onClick={onOpen}>
       <div className="card-top">
@@ -21,6 +40,11 @@ export function LaunchCard({ launch, onOpen }: { launch: Launch; onOpen: () => v
         </div>
         <span className={"status " + launch.status}>{STATUS_LABEL[launch.status]}</span>
       </div>
+
+      <svg className="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
+        <path className="spark-area" d={area} />
+        <path className="spark-line" d={line} />
+      </svg>
 
       <ProgressBar value={progress} />
       <div className="card-meta">
