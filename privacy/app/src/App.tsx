@@ -12,7 +12,13 @@ export function App() {
       <Header tab={tab} setTab={setTab} />
       <main className="page">{tab === "presale" ? <Presale /> : <Pool />}</main>
       <footer className="foot">
-        Umbra is a reference implementation. Unaudited, testnet only. Read the code before you trust it.
+        <div className="row-links">
+          <span>UMBRA</span>
+          <span>v0.1.0</span>
+          <span>SEPOLIA</span>
+        </div>
+        Reference implementation. Unaudited, single-party trusted setup, testnet only.
+        Read the code before you trust it.
       </footer>
     </div>
   );

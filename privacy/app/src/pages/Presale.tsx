@@ -6,9 +6,6 @@ import { useDemoPresale } from "../hooks/useDemoPresale";
 import { ADDRESSES, isAddress } from "../lib/config";
 import { ProgressBar } from "../components/ProgressBar";
 
-// Static per build: when a real presale address is set we render the chain
-// version, otherwise a clearly-labelled, fully clickable demo. Choosing at this
-// level keeps hook order stable.
 const CONFIGURED = isAddress(ADDRESSES.presale);
 
 export function Presale() {
@@ -60,7 +57,7 @@ function PresaleView({ sale, mine, actions, tx, demo }: ViewProps) {
   const { isConnected } = useAccount();
   const [amount, setAmount] = useState("");
 
-  if (!sale) return <section className="panel">Loading sale…</section>;
+  if (!sale) return <section className="panel panel-pad muted">Loading sale…</section>;
 
   const phase = phaseOf(sale);
   const progress = sale.hardCap > 0n ? Number(sale.totalRaised) / Number(sale.hardCap) : 0;
@@ -74,84 +71,78 @@ function PresaleView({ sale, mine, actions, tx, demo }: ViewProps) {
     <div className="presale">
       {demo && (
         <div className="banner">
-          Demo mode with sample data. The buttons work locally so you can feel the flow. Deploy the
-          contracts to a testnet and paste the address in <code>src/lib/config.ts</code> to make it real.
+          PREVIEW // sample data, buttons act locally. Deploy the sale contract and set its address in{" "}
+          <code>src/lib/config.ts</code> to go live.
         </div>
       )}
 
-      <section className="panel hero-panel">
-        <div className="row between">
-          <div>
-            <p className="kicker">$UMBRA presale</p>
-            <h2>One flat price. Same rate for everyone.</h2>
-          </div>
+      <section className="panel">
+        <div className="panel-head">
+          <span className="lbl">Presale</span>
           <span className={"phase " + phase}>{phase}</span>
         </div>
+        <div className="panel-body">
+          <span className="idx">$UMBRA // FIXED PRICE</span>
+          <h2 className="headline">One flat price.<br />Same rate for everyone.</h2>
 
-        <ProgressBar value={progress} soft={softFrac} />
-        <div className="row between small muted">
-          <span>{eth(sale.totalRaised)} ETH raised</span>
-          <span>
-            soft {eth(sale.softCap, 0)} / hard {eth(sale.hardCap, 0)} ETH
-          </span>
-        </div>
+          <ProgressBar value={progress} soft={softFrac} />
+          <div className="row between small muted">
+            <span>{eth(sale.totalRaised)} ETH raised</span>
+            <span>soft {eth(sale.softCap, 0)} / hard {eth(sale.hardCap, 0)}</span>
+          </div>
 
-        <div className="stats">
-          <Stat k="Price" v={`${eth(sale.price, 6)} ETH`} sub="per UMBRA" />
-          <Stat
-            k={phase === "upcoming" ? "Starts in" : phase === "live" ? "Ends in" : "Window"}
-            v={phase === "upcoming" ? countdown(sale.startTime) : phase === "live" ? countdown(sale.endTime) : "closed"}
-          />
-          <Stat k="Your contribution" v={`${eth(mine.contributed)} ETH`} />
-          <Stat k="Your tokens" v={`${eth(mine.owed, 2)} UMBRA`} sub={sale.finalized ? "" : "pending sale"} />
+          <div className="stats">
+            <Stat k="Price" v={`${eth(sale.price, 6)}`} sub="ETH / UMBRA" />
+            <Stat
+              k={phase === "upcoming" ? "Starts in" : phase === "live" ? "Ends in" : "Window"}
+              v={phase === "upcoming" ? countdown(sale.startTime) : phase === "live" ? countdown(sale.endTime) : "closed"}
+            />
+            <Stat k="Your in" v={`${eth(mine.contributed)}`} sub="ETH" />
+            <Stat k="Your tokens" v={`${eth(mine.owed, 0)}`} sub={sale.finalized ? "UMBRA" : "UMBRA · pending"} />
+          </div>
         </div>
       </section>
 
       <section className="panel">
-        <h3>Buy</h3>
-        <div className="buy-row">
-          <input
-            inputMode="decimal"
-            placeholder="0.0"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-            disabled={!canBuy}
-          />
-          <span className="unit">ETH</span>
+        <div className="panel-head">
+          <span className="lbl">Buy</span>
+          <span className="idx">{phase === "live" ? "OPEN" : "CLOSED"}</span>
+        </div>
+        <div className="panel-body">
+          <div className="term-input">
+            <input
+              inputMode="decimal"
+              placeholder="0.0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+              disabled={!canBuy}
+            />
+            <span className="unit">ETH</span>
+          </div>
           <button
-            className="btn primary"
+            className="btn primary full"
+            style={{ marginTop: "var(--s3)" }}
             disabled={!canBuy || !amount || Number(amount) <= 0 || tx.isPending || tx.mining}
             onClick={() => actions.buy(amount)}
           >
-            {tx.isPending || tx.mining ? "confirming" : "Buy"}
+            {tx.isPending || tx.mining ? "Confirming" : "Buy $UMBRA"}
           </button>
+
+          {!isConnected && !demo && <p className="hint">Connect a wallet to take part.</p>}
+          {phase === "upcoming" && <p className="hint">The sale has not started yet.</p>}
+          {phase === "ended" && <p className="hint">The buy window has closed.</p>}
+
+          {(canClaim || canRefund || canFinalize) && (
+            <div className="actions">
+              {canFinalize && <button className="btn" onClick={() => actions.finalize()} disabled={tx.isPending}>Finalize</button>}
+              {canClaim && <button className="btn accent" onClick={() => actions.claim()} disabled={tx.isPending}>Claim {eth(mine.owed, 0)}</button>}
+              {canRefund && <button className="btn" onClick={() => actions.refund()} disabled={tx.isPending}>Refund {eth(mine.contributed)}</button>}
+            </div>
+          )}
+
+          {tx.error ? <p className="error">{(tx.error as Error).message.split("\n")[0]}</p> : null}
+          {tx.confirmed && <p className="ok">// confirmed</p>}
         </div>
-        {!isConnected && !demo && <p className="hint">Connect a wallet to take part.</p>}
-        {phase === "upcoming" && <p className="hint">The sale has not started yet.</p>}
-        {phase === "ended" && <p className="hint">The buy window has closed.</p>}
-
-        {(canClaim || canRefund || canFinalize) && (
-          <div className="actions">
-            {canFinalize && (
-              <button className="btn" onClick={() => actions.finalize()} disabled={tx.isPending}>
-                Finalize sale
-              </button>
-            )}
-            {canClaim && (
-              <button className="btn primary" onClick={() => actions.claim()} disabled={tx.isPending}>
-                Claim {eth(mine.owed, 2)} UMBRA
-              </button>
-            )}
-            {canRefund && (
-              <button className="btn" onClick={() => actions.refund()} disabled={tx.isPending}>
-                Refund {eth(mine.contributed)} ETH
-              </button>
-            )}
-          </div>
-        )}
-
-        {tx.error ? <p className="error">{(tx.error as Error).message.split("\n")[0]}</p> : null}
-        {tx.confirmed && <p className="ok">Confirmed.</p>}
       </section>
     </div>
   );
