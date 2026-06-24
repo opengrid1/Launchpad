@@ -19,7 +19,7 @@ export function Header({
           <div className="sub">LAUNCHPAD</div>
         </div>
       </div>
-      <nav className="row" style={{ marginLeft: 26, gap: 22 }}>
+      <nav className="top-nav">
         <span className={"nav-link" + (view !== "create" ? " active" : "")} onClick={() => go("explore")}>
           Explore
         </span>

@@ -54,6 +54,7 @@ button { font-family: var(--mono); }
 .brand .word { font-family: var(--pixel); font-size: 14px; letter-spacing: 0.04em; }
 .brand .sub { font-family: var(--pixel); font-size: 8px; color: var(--blue); letter-spacing: 0.08em; }
 .nav .spacer { margin-left: auto; }
+.top-nav { display: flex; align-items: center; gap: 22px; margin-left: 26px; }
 .nav-link { font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mut); cursor: pointer; padding: 4px 0; }
 .nav-link:hover, .nav-link.active { color: var(--ink); }
 
@@ -213,10 +214,14 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .btn, .wallet-btn { white-space: nowrap; }
 
 @media (max-width: 620px) {
-  .nav { gap: 10px; height: 58px; }
-  .nav nav { display: none; }              /* compact: brand -> explore, Create button in body */
+  /* header wraps: row 1 = brand + connect, row 2 = nav links */
+  .nav { flex-wrap: wrap; height: auto; padding: 12px 0; gap: 10px; }
+  .brand { margin-right: auto; }
+  .nav .spacer { display: none; }
+  .top-nav { order: 3; width: 100%; margin-left: 0; gap: 26px; border-top: 1px solid var(--line); padding-top: 11px; }
+  .nav-link { font-size: 12px; padding: 2px 0; }
   .brand .word { font-size: 13px; }
-  .wallet-btn { padding: 8px 13px; font-size: 9.5px; letter-spacing: 0.05em; }
+  .wallet-btn { padding: 9px 14px; font-size: 10px; letter-spacing: 0.05em; }
   .explore-head { margin-bottom: 18px; }
   .explore-head h1 { font-size: 20px; }
   .explore-head .tagline { font-size: 11.5px; }
