@@ -1,6 +1,16 @@
 // Proper brand/utility icons as inline SVG (no unicode glyphs).
 type P = { size?: number };
 
+// Coinworks coin mark: reeded coin ring with a faceted hexagon die.
+export const CoinMark = ({ size = 24, className }: { size?: number; className?: string }) => (
+  <svg className={className} width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true">
+    <circle cx="50" cy="50" r="46" stroke="#3a4654" strokeWidth="3" />
+    <circle cx="50" cy="50" r="39.5" stroke="#5f8fc4" strokeWidth="1.6" opacity="0.5" />
+    <polygon points="50,23 73,36.5 73,63.5 50,77 27,63.5 27,36.5" fill="rgba(95,143,196,0.10)" stroke="#86abd8" strokeWidth="4.6" strokeLinejoin="round" />
+    <path d="M50 31 L50 69 M35 41.5 L65 58.5 M65 41.5 L35 58.5" stroke="#86abd8" strokeWidth="2.3" opacity="0.5" />
+  </svg>
+);
+
 export const IconGlobe = ({ size = 15 }: P) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
     <circle cx="12" cy="12" r="9" />

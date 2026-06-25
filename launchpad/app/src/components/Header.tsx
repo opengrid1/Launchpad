@@ -1,5 +1,6 @@
 import { useAccount } from "wagmi";
 import { useAppKit } from "@reown/appkit/react";
+import { CoinMark } from "./Icons";
 
 export type View = "explore" | "detail" | "create" | "presale" | "docs" | "terms";
 
@@ -17,10 +18,7 @@ export function Header({
   return (
     <header className="nav wrap">
       <div className="brand" onClick={() => go("explore")}>
-        <svg className="mark" width="20" height="22" viewBox="0 0 20 22" aria-hidden="true">
-          <path d="M10 1.5 L18.2 6.2 L18.2 15.8 L10 20.5 L1.8 15.8 L1.8 6.2 Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
-          <path d="M10 6.4 L10 15.6 M6 8.7 L14 13.3 M14 8.7 L6 13.3" stroke="currentColor" strokeWidth="0.9" opacity="0.5" />
-        </svg>
+        <CoinMark className="mark" size={26} />
         <div>
           <div className="word">COINWORKS</div>
           <div className="sub">B20 · BASE</div>

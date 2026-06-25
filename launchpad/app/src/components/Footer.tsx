@@ -1,5 +1,5 @@
 import type { View } from "./Header";
-import { IconX, IconTelegram, IconDiscord, IconGithub } from "./Icons";
+import { CoinMark, IconX, IconTelegram, IconDiscord, IconGithub } from "./Icons";
 
 export function Footer({ go }: { go: (v: View, anchor?: string) => void }) {
   return (
@@ -7,10 +7,7 @@ export function Footer({ go }: { go: (v: View, anchor?: string) => void }) {
       <div className="foot-cols">
         <div className="foot-brand">
           <div className="brand">
-            <svg className="mark" width="18" height="20" viewBox="0 0 20 22" aria-hidden="true">
-              <path d="M10 1.5 L18.2 6.2 L18.2 15.8 L10 20.5 L1.8 15.8 L1.8 6.2 Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              <path d="M10 6.4 L10 15.6 M6 8.7 L14 13.3 M14 8.7 L6 13.3" stroke="currentColor" strokeWidth="0.9" opacity="0.5" />
-            </svg>
+            <CoinMark className="mark" size={24} />
             <div>
               <div className="word">COINWORKS</div>
               <div className="sub">B20 · BASE</div>
