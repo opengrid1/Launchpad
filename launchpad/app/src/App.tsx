@@ -4,6 +4,7 @@ import { Footer } from "./components/Footer";
 import { Explore } from "./pages/Explore";
 import { LaunchDetail } from "./pages/LaunchDetail";
 import { Create } from "./pages/Create";
+import { Presale } from "./pages/Presale";
 import { Docs } from "./pages/Docs";
 import { Terms } from "./pages/Terms";
 import type { Launch } from "./data/launches";
@@ -28,6 +29,7 @@ export function App() {
       )}
       {view === "detail" && active && <LaunchDetail launch={active} />}
       {view === "create" && <Create />}
+      {view === "presale" && <Presale />}
       {view === "docs" && <Docs anchor={anchor} />}
       {view === "terms" && <Terms anchor={anchor} />}
       <Footer go={go} />

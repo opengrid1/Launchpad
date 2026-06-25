@@ -28,6 +28,7 @@ export function Footer({ go }: { go: (v: View, anchor?: string) => void }) {
           <h4>Product</h4>
           <a onClick={() => go("explore")}>Explore</a>
           <a onClick={() => go("create")}>Create</a>
+          <a onClick={() => go("presale")}>Presale</a>
           <a onClick={() => go("docs")}>Docs</a>
         </div>
 
