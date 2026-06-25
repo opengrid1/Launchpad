@@ -31,8 +31,7 @@ export function Create() {
   const [x, setX] = useState("");
   const [telegram, setTelegram] = useState("");
   const [discord, setDiscord] = useState("");
-  // launch (bonding curve)
-  const [graduateAt, setGraduateAt] = useState("80");
+  // launch (uniswap v4 single-sided)
   const [initialBuy, setInitialBuy] = useState("");
   // roles & admin
   const [adminless, setAdminless] = useState(false);
@@ -153,25 +152,25 @@ export function Create() {
         </div>
       </div>
 
-      {/* 03 launch (bonding curve) */}
+      {/* 03 launch (uniswap v4 single-sided) */}
       <div className="panel section-gap">
         <div className="panel-head"><span className="lbl">Launch</span><span className="idx">03</span></div>
         <div className="panel-body">
           <p className="hint" style={{ marginTop: 0, marginBottom: 14 }}>
-            The token is tradable on a bonding curve from the first block. Anyone can
-            buy and sell immediately. It graduates to a Base DEX (LP burned) once it fills the curve.
+            The token launches straight into a Uniswap v4 pool and is tradable from the first block.
+            Liquidity is added single-sided so it opens at a fixed market cap.
           </p>
           <div className="field-row">
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="field-label">Graduate at (ETH market cap)</label>
-              <input className="input" value={graduateAt} onChange={(e) => setGraduateAt(e.target.value.replace(/[^0-9.]/g, ""))} />
+              <label className="field-label">Starting market cap</label>
+              <input className="input" value="$15,000 (fixed)" readOnly style={{ color: "var(--ink-2)" }} />
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
               <label className="field-label">Initial dev buy in ETH (optional)</label>
               <input className="input" placeholder="0.0" value={initialBuy} onChange={(e) => setInitialBuy(e.target.value.replace(/[^0-9.]/g, ""))} />
             </div>
           </div>
-          <p className="hint">Curve price starts near zero and rises as people buy. An initial dev buy seeds the first position in the same launch tx.</p>
+          <p className="hint">Every token opens at a $15,000 market cap, priced in USD via a Chainlink oracle. An initial dev buy takes the first position in the same launch tx.</p>
         </div>
       </div>
 
@@ -259,13 +258,13 @@ export function Create() {
         <div className="panel-body">
           <div className="kv"><span className="k">Issues as</span><span className="v">{symbol || "TBA"} · B20 {variant === "asset" ? "Asset" : "Stablecoin"} · Base</span></div>
           <div className="kv"><span className="k">Configuration</span><span className="v">{summary}</span></div>
-          <div className="kv"><span className="k">Trading</span><span className="v">Instant · bonding curve</span></div>
-          <div className="kv"><span className="k">Graduates at</span><span className="v">{graduateAt || 0} ETH mcap</span></div>
+          <div className="kv"><span className="k">Trading</span><span className="v">Uniswap v4 · single-sided</span></div>
+          <div className="kv"><span className="k">Starts at</span><span className="v">$15,000 market cap</span></div>
           <div className="kv"><span className="k">Initial dev buy</span><span className="v">{initialBuy || "0"} ETH</span></div>
           <button className="btn primary full" style={{ marginTop: 16 }} disabled={!name || !symbol}>
             Launch {symbol ? "$" + symbol : "token"}
           </button>
-          <p className="hint">Preview only. One createB20() tx issues the token and opens its bonding curve for instant trading.</p>
+          <p className="hint">Preview only. One transaction issues the B20 token and opens its Uniswap v4 pool for instant trading.</p>
         </div>
       </div>
     </div>

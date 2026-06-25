@@ -28,8 +28,8 @@ export function Footer({ go }: { go: (v: View, anchor?: string) => void }) {
 
         <div className="foot-col">
           <h4>Learn</h4>
-          <a onClick={() => go("docs", "bonding")}>How it works</a>
-          <a onClick={() => go("docs", "graduation")}>Graduation</a>
+          <a onClick={() => go("docs", "launch")}>How it works</a>
+          <a onClick={() => go("docs", "liquidity")}>Liquidity</a>
           <a onClick={() => go("docs", "b20")}>B20 standard</a>
           <a onClick={() => go("docs", "fees")}>Fees</a>
           <a onClick={() => go("docs", "faq")}>FAQ</a>

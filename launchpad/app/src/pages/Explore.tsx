@@ -34,8 +34,8 @@ export function Explore({ open }: { open: (l: Launch) => void }) {
           <span className="idx">B20 // BASE MAINNET</span>
           <h1>Launch B20 tokens on Base</h1>
           <p className="tagline">
-            Every coin is a native B20 token, live on a bonding curve from the first block. It
-            graduates to a DEX once the curve fills.
+            Every coin is a native B20 token that launches straight into a Uniswap v4 pool at a
+            $15,000 market cap, tradable from the first block.
           </p>
         </div>
       </div>

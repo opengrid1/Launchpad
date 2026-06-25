@@ -48,7 +48,7 @@ export function LaunchDetail({ launch }: { launch: Launch }) {
                 </div>
               </>
             ) : (
-              <p className="note" style={{ marginTop: 14 }}>◆ Graduated. Trading on a Base DEX with locked liquidity.</p>
+              <p className="note" style={{ marginTop: 14 }}>◆ Live and trading on a Uniswap v4 pool.</p>
             )}
 
             <div className="stats section-gap">
@@ -64,7 +64,7 @@ export function LaunchDetail({ launch }: { launch: Launch }) {
             <div className="panel-body">
               <div className="kv"><span className="k">Total supply</span><span className="v">{fmt(launch.supply, 0)}</span></div>
               <div className="kv"><span className="k">Standard</span><span className="v">B20 (native)</span></div>
-              <div className="kv"><span className="k">Liquidity</span><span className="v">{fmt(launch.liquidity)} ETH {launch.status === "graduated" ? "· locked" : "· in curve"}</span></div>
+              <div className="kv"><span className="k">Liquidity</span><span className="v">{fmt(launch.liquidity)} ETH · Uniswap v4</span></div>
               <div className="kv">
                 <span className="k">Compliance roles</span>
                 <span className="roles">
@@ -96,7 +96,7 @@ export function LaunchDetail({ launch }: { launch: Launch }) {
         <div className="panel" style={{ position: "sticky", top: 16 }}>
           <div className="panel-head">
             <span className="lbl">Trade</span>
-            <span className="idx">{bonding ? "BONDING CURVE" : "DEX"}</span>
+            <span className="idx">UNISWAP V4</span>
           </div>
           <div className="panel-body">
             <div className="seg" style={{ marginBottom: 16 }}>
@@ -121,9 +121,7 @@ export function LaunchDetail({ launch }: { launch: Launch }) {
               {mode === "buy" ? "Buy " : "Sell "}{launch.symbol}
             </button>
             <p className="hint">
-              {bonding
-                ? "Instant buy and sell against the bonding curve. The token graduates to a DEX and burns LP once it fills the curve."
-                : "Trades against the locked DEX liquidity at market price."}
+              Instant buy and sell on the token's Uniswap v4 pool. Liquidity is managed by the project.
             </p>
           </div>
         </div>

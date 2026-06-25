@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 const SECTIONS: { id: string; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "quickstart", label: "Quickstart" },
-  { id: "bonding", label: "Bonding curve" },
-  { id: "graduation", label: "Graduation" },
+  { id: "launch", label: "How a launch works" },
+  { id: "liquidity", label: "Liquidity" },
   { id: "create", label: "Creating a token" },
   { id: "trade", label: "Trading" },
   { id: "b20", label: "B20 standard" },
@@ -46,7 +46,7 @@ export function Docs({ anchor }: { anchor?: string }) {
     <div className="wrap page">
       <div className="idx">DOCUMENTATION</div>
       <h1 className="doc-h1">Coinworks docs</h1>
-      <p className="doc-sub">How instant bonding-curve launches work on Base, end to end.</p>
+      <p className="doc-sub">How instant token launches work on Base, end to end.</p>
 
       <div className="docs">
         <nav className="docs-nav">
@@ -59,49 +59,52 @@ export function Docs({ anchor }: { anchor?: string }) {
           <section className="doc-section" id="overview">
             <h2>Overview</h2>
             <p>
-              Coinworks is a fair-launch token platform on <strong>Base</strong>. Anyone can create a
-              token that is tradable from its first block, with no whitelist or insider
-              allocation. Every token is issued with the native <strong>B20</strong> standard and trades on a
-              <strong> bonding curve</strong> until it graduates to a decentralized exchange.
+              Coinworks is a token launchpad on <strong>Base</strong>. Anyone can create a native{" "}
+              <strong>B20</strong> token that goes live in a single transaction. Each token launches straight
+              into a <strong>Uniswap v4</strong> pool at a fixed <strong>$15,000 starting market cap</strong>,
+              so every launch begins on the same footing and trades on the open market from its first block.
             </p>
-            <p>The platform is built around three actions: <strong>create</strong>, <strong>trade</strong> (buy and sell), and <strong>graduate</strong>.</p>
-            <div className="callout">Reference implementation. Unaudited and testnet-only for now. Nothing here is financial advice.</div>
+            <p>The platform is built around two actions: <strong>create</strong> and <strong>trade</strong> (buy and sell).</p>
+            <div className="callout">Reference implementation. Unaudited. Nothing here is financial advice.</div>
           </section>
 
           <section className="doc-section" id="quickstart">
             <h2>Quickstart</h2>
             <ul>
-              <li><strong>Trade:</strong> open any token, connect a wallet, enter an amount, and Buy or Sell. It settles instantly against the curve.</li>
+              <li><strong>Trade:</strong> open any token, connect a wallet, enter an amount, and Buy or Sell. It settles instantly on the token's Uniswap v4 pool.</li>
               <li><strong>Create:</strong> go to <code>Create</code>, fill in the token, listing (logo + socials) and launch settings, then submit one transaction.</li>
-              <li><strong>Track:</strong> watch a token's market cap climb toward its graduation target on the Explore grid.</li>
+              <li><strong>Track:</strong> watch a token's market cap on the Explore grid.</li>
             </ul>
           </section>
 
-          <section className="doc-section" id="bonding">
-            <h2>How the bonding curve works</h2>
+          <section className="doc-section" id="launch">
+            <h2>How a launch works</h2>
             <p>
-              A bonding curve is a smart contract that prices a token as a function of its circulating
-              supply. Buying mints tokens from the curve and pushes the price <strong>up</strong>; selling
-              returns tokens to the curve and pushes the price <strong>down</strong>. The curve always holds
-              the ETH, so there is <strong>always liquidity</strong>. You can buy or sell at any time, with
-              no order book and no counterparty.
+              Creating a token issues a native B20 and opens a <strong>Uniswap v4</strong> pool for it against
+              ETH. Liquidity is added <strong>single-sided</strong> (the token only), placed so the token starts
+              at a <strong>$15,000 market cap</strong>. The starting price is derived from a{" "}
+              <strong>Chainlink ETH/USD oracle</strong>, so the $15k is in real dollars regardless of the ETH
+              price at launch. From there the price is discovered by the market: buys push it up, sells push it
+              down, against the pool.
             </p>
             <ul>
-              <li>Price starts near zero and rises along the curve as more is bought.</li>
-              <li>Large orders move the price more, shown as <strong>price impact</strong> before you confirm.</li>
-              <li>There is no team pre-allocation; everyone trades the same curve from the start.</li>
+              <li>Every token starts at a <strong>$15,000 market cap</strong>, priced in USD via a Chainlink oracle.</li>
+              <li>Single-sided: the pool is seeded with the token, and ETH enters as people buy.</li>
+              <li>Tradable instantly on Uniswap v4 from the first block, no waiting.</li>
             </ul>
           </section>
 
-          <section className="doc-section" id="graduation">
-            <h2>Graduation</h2>
+          <section className="doc-section" id="liquidity">
+            <h2>Liquidity</h2>
             <p>
-              When a token's market cap reaches its <strong>graduation target</strong>, it automatically
-              migrates from the bonding curve to a Base DEX. The accumulated ETH and a matching token amount
-              are deposited as liquidity, and the <strong>LP is burned</strong> so the liquidity can never be
-              pulled. After graduation the token trades on the open market at the DEX price.
+              The launch seeds a single-sided liquidity position into the token's Uniswap v4 pool. That position
+              is held by the launch contract and <strong>managed by the project</strong>: the project can collect
+              the pool's trading fees and can withdraw the liquidity.
             </p>
-            <div className="callout">Graduated tokens are marked <strong>Graduated</strong> on Explore and trade against locked DEX liquidity instead of the curve.</div>
+            <div className="callout">
+              Liquidity is <strong>not locked or burned</strong>. Treat each token's liquidity as
+              project-controlled and do your own research before trading.
+            </div>
           </section>
 
           <section className="doc-section" id="create">
@@ -110,7 +113,7 @@ export function Docs({ anchor }: { anchor?: string }) {
             <ul>
               <li><strong>Token:</strong> name, symbol, decimals, and variant. B20 has two variants: <strong>Asset</strong> (general tokens, 6-18 decimals) and <strong>Stablecoin</strong> (fiat-pegged, 6 decimals, ISO currency code).</li>
               <li><strong>Listing:</strong> logo, description and links (Website / X / Telegram / Discord). These are pinned to IPFS and written into the token's ERC-7572 <code>contractURI</code>.</li>
-              <li><strong>Launch:</strong> graduation target and an optional initial dev buy that seeds the first position in the same tx.</li>
+              <li><strong>Launch:</strong> every token opens at a fixed <strong>$15,000 market cap</strong> on a Uniswap v4 pool, with an optional initial dev buy in the same transaction.</li>
             </ul>
             <p>Advanced B20 controls (roles, supply cap, pause policy and compliance) are configured in the same flow (see below).</p>
           </section>
@@ -119,9 +122,9 @@ export function Docs({ anchor }: { anchor?: string }) {
             <h2>Trading: buy &amp; sell</h2>
             <p>
               Open a token and use the <strong>Trade</strong> panel. Switch between <strong>Buy</strong> (pay
-              ETH, receive tokens) and <strong>Sell</strong> (sell tokens, receive ETH). The panel shows the
-              amount you will receive and the price impact before you confirm. Trades on a bonding token
-              settle against the curve; graduated tokens settle against the DEX pool.
+              ETH, receive tokens) and <strong>Sell</strong> (sell tokens, receive ETH). Trades route to the
+              token's <strong>Uniswap v4</strong> pool and settle instantly. The panel shows the amount you will
+              receive and the price impact before you confirm.
             </p>
           </section>
 
@@ -132,7 +135,8 @@ export function Docs({ anchor }: { anchor?: string }) {
               an EVM contract. It is a superset of ERC-20, compatible with existing wallets and DEXs, and is
               cheaper and higher-throughput than contract tokens. It ships with role-based access control,
               chain-level compliance policies, an optional supply cap, granular pausing, transfer memos, and
-              built-in <code>permit</code> (ERC-2612) and <code>contractURI</code> (ERC-7572).
+              built-in <code>permit</code> (ERC-2612) and <code>contractURI</code> (ERC-7572). Every B20 address
+              starts with <code>0xB200</code>.
             </p>
           </section>
 
@@ -150,9 +154,8 @@ export function Docs({ anchor }: { anchor?: string }) {
           <section className="doc-section" id="fees">
             <h2>Fees</h2>
             <ul>
-              <li><strong>Trading fee:</strong> a small percentage on each buy and sell on the curve.</li>
+              <li><strong>Trading fee:</strong> a small fee on each swap in the token's pool. <strong>70%</strong> of platform fees are paid to <code>$WORK</code> holders in ETH.</li>
               <li><strong>Creation:</strong> only Base gas. Issuing a B20 has no contract deployment cost.</li>
-              <li><strong>Graduation:</strong> a one-time fee when liquidity migrates to the DEX.</li>
             </ul>
             <p className="muted small">Exact rates are set per deployment and shown in the app before you confirm.</p>
           </section>
@@ -160,8 +163,8 @@ export function Docs({ anchor }: { anchor?: string }) {
           <section className="doc-section" id="faq">
             <h2>FAQ</h2>
             <p><strong>Can I sell right after a token launches?</strong> Yes. Buying and selling are live from the first block.</p>
-            <p><strong>Where does the liquidity come from?</strong> The bonding curve itself holds the ETH, so there is always a price to trade at.</p>
-            <p><strong>Can the team rug the liquidity?</strong> At graduation the LP is burned, so DEX liquidity can't be pulled.</p>
+            <p><strong>What does a token start at?</strong> Every token opens at a $15,000 market cap on its Uniswap v4 pool, priced in USD via a Chainlink oracle.</p>
+            <p><strong>Is the liquidity locked?</strong> No. Liquidity is provided and managed by the project, which can withdraw it. Do your own research on each token before trading.</p>
             <p><strong>What is the token logo stored as?</strong> It is pinned to IPFS and referenced by the token's ERC-7572 <code>contractURI</code>.</p>
           </section>
 
