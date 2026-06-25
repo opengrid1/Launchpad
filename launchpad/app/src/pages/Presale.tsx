@@ -5,11 +5,11 @@ import { fmt } from "../data/launches";
 const TOKEN = "Coinworks";
 const SYMBOL = "WORK";
 const SUPPLY = 1_000_000_000;
-const PRICE = 0.000002; // ETH per WORK
-const HARD_CAP = 500; // ETH
-const SOFT_CAP = 100; // ETH
+const PRICE = 0.00000004; // ETH per WORK (10 ETH hard cap / 250M presale supply)
+const HARD_CAP = 10; // ETH
+const SOFT_CAP = 5; // ETH
 const MIN = 0.05; // ETH per wallet
-const MAX = 5; // ETH per wallet
+const MAX = 0.5; // ETH per wallet
 const RAISED = 0; // no contributions yet
 
 const ALLOC = [
@@ -75,7 +75,7 @@ export function Presale() {
             </div>
 
             <div className="stats section-gap">
-              <Stat k="Price" v={PRICE.toFixed(7)} sub={`ETH per ${SYMBOL}`} />
+              <Stat k="Price" v={PRICE.toFixed(8)} sub={`ETH per ${SYMBOL}`} />
               <Stat k="Hard cap" v={fmt(HARD_CAP, 0) + " ETH"} />
               <Stat k="Per wallet" v={`${MIN} – ${MAX}`} sub="ETH" />
               <Stat k="Presale supply" v={fmt(SUPPLY * 0.25, 0)} sub={`${SYMBOL} (25%)`} />
@@ -152,7 +152,7 @@ export function Presale() {
               <span className="unit">ETH</span>
             </div>
             <div className="quick">
-              {[MIN, 0.5, 1, MAX].map((q) => (
+              {[MIN, 0.1, 0.25, MAX].map((q) => (
                 <button key={q} onClick={() => setAmount(String(q))}>{q}</button>
               ))}
             </div>
@@ -167,7 +167,7 @@ export function Presale() {
             </div>
             <div className="fee-line">
               <span>Price</span>
-              <span>{PRICE.toFixed(7)} ETH</span>
+              <span>{PRICE.toFixed(8)} ETH</span>
             </div>
 
             {tooLow && <p className="warn">Minimum is {MIN} ETH per wallet.</p>}
