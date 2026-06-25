@@ -134,7 +134,10 @@ button { font-family: var(--mono); }
 .stat-k { font-size: 9.5px; letter-spacing: 0.14em; color: var(--mut); text-transform: uppercase; }
 .stat-v { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 .stat-sub { font-size: 10px; color: var(--mut); }
-.kv { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.kv { display: flex; justify-content: space-between; gap: var(--s4); padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.kv.stack { flex-direction: column; align-items: stretch; gap: 5px; }
+.kv.stack .k { color: var(--mut); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; }
+.kv.stack .v { text-align: left; max-width: 100%; color: var(--ink-2); line-height: 1.55; }
 .kv:last-child { border-bottom: none; }
 .kv .k { color: var(--ink-2); }
 .kv .v { color: var(--ink); }

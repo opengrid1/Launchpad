@@ -125,11 +125,11 @@ export function Presale() {
           <div className="panel">
             <div className="panel-head"><span className="lbl">How the sale settles</span></div>
             <div className="panel-body">
-              <div className="kv"><span className="k">Sale type</span><span className="v">Fixed price, first come first served</span></div>
-              <div className="kv"><span className="k">If soft cap is met</span><span className="v">Sale closes, {SYMBOL} claimable, liquidity seeded on a Base DEX</span></div>
-              <div className="kv"><span className="k">If soft cap is missed</span><span className="v">Sale voids, every contributor withdraws their full ETH</span></div>
-              <div className="kv"><span className="k">Vesting</span><span className="v">Presale unlocks in full at claim. Team vests over 12 months</span></div>
-              <div className="kv"><span className="k">Settlement</span><span className="v">Non-custodial. The sale contract holds ETH in escrow until it resolves</span></div>
+              <div className="kv stack"><span className="k">Sale type</span><span className="v">Fixed price, first come first served</span></div>
+              <div className="kv stack"><span className="k">If soft cap is met</span><span className="v">Sale closes, {SYMBOL} claimable, liquidity seeded on a Base DEX</span></div>
+              <div className="kv stack"><span className="k">If soft cap is missed</span><span className="v">Sale voids, every contributor withdraws their full ETH</span></div>
+              <div className="kv stack"><span className="k">Vesting</span><span className="v">Presale unlocks in full at claim. Team vests over 12 months</span></div>
+              <div className="kv stack"><span className="k">Settlement</span><span className="v">Non-custodial. The sale contract holds ETH in escrow until it resolves</span></div>
             </div>
           </div>
         </div>
