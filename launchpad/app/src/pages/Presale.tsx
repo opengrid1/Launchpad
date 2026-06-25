@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useAccount, useBalance, useConnect, useSendTransaction, useSwitchChain } from "wagmi";
+import { useAccount, useBalance, useSendTransaction, useSwitchChain } from "wagmi";
+import { useAppKit } from "@reown/appkit/react";
 import { base } from "wagmi/chains";
 import { parseEther, formatEther } from "viem";
 import { fmt } from "../data/launches";
@@ -31,7 +32,7 @@ export function Presale() {
   const [amount, setAmount] = useState("");
 
   const { isConnected, chainId } = useAccount();
-  const { connect, connectors } = useConnect();
+  const { open } = useAppKit();
   const { switchChain } = useSwitchChain();
   const { data: bal } = useBalance({
     address: PROCEEDS,
@@ -50,7 +51,7 @@ export function Presale() {
   const valid = amt > 0;
 
   function contribute() {
-    if (!isConnected) { if (connectors[0]) connect({ connector: connectors[0] }); return; }
+    if (!isConnected) { open(); return; }
     if (!onBase) { switchChain({ chainId: base.id }); return; }
     if (!valid) return;
     reset();

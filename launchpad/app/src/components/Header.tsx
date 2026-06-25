@@ -1,4 +1,5 @@
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useAccount } from "wagmi";
+import { useAppKit } from "@reown/appkit/react";
 
 export type View = "explore" | "detail" | "create" | "presale" | "docs" | "terms";
 
@@ -10,14 +11,8 @@ export function Header({
   go: (v: View) => void;
 }) {
   const { address, isConnected } = useAccount();
-  const { connect, connectors, isPending } = useConnect();
-  const { disconnect } = useDisconnect();
+  const { open } = useAppKit();
   const short = address ? address.slice(0, 6) + "…" + address.slice(-4) : "";
-
-  function onWallet() {
-    if (isConnected) disconnect();
-    else if (connectors[0]) connect({ connector: connectors[0] });
-  }
 
   return (
     <header className="nav wrap">
@@ -46,8 +41,8 @@ export function Header({
         </span>
       </nav>
       <span className="spacer" />
-      <button className={"wallet-btn" + (isConnected ? " connected" : "")} onClick={onWallet} title={isConnected ? "Disconnect" : "Connect"}>
-        {isConnected ? short : isPending ? "Connecting…" : "Connect Wallet"}
+      <button className={"wallet-btn" + (isConnected ? " connected" : "")} onClick={() => open()} title={isConnected ? "Account" : "Connect"}>
+        {isConnected ? short : "Connect Wallet"}
       </button>
     </header>
   );
