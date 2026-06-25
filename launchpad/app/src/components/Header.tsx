@@ -1,3 +1,5 @@
+import { useAccount, useConnect, useDisconnect } from "wagmi";
+
 export type View = "explore" | "detail" | "create" | "presale" | "docs" | "terms";
 
 export function Header({
@@ -7,6 +9,16 @@ export function Header({
   view: View;
   go: (v: View) => void;
 }) {
+  const { address, isConnected } = useAccount();
+  const { connect, connectors, isPending } = useConnect();
+  const { disconnect } = useDisconnect();
+  const short = address ? address.slice(0, 6) + "…" + address.slice(-4) : "";
+
+  function onWallet() {
+    if (isConnected) disconnect();
+    else if (connectors[0]) connect({ connector: connectors[0] });
+  }
+
   return (
     <header className="nav wrap">
       <div className="brand" onClick={() => go("explore")}>
@@ -34,7 +46,9 @@ export function Header({
         </span>
       </nav>
       <span className="spacer" />
-      <button className="wallet-btn">Connect Wallet</button>
+      <button className={"wallet-btn" + (isConnected ? " connected" : "")} onClick={onWallet} title={isConnected ? "Disconnect" : "Connect"}>
+        {isConnected ? short : isPending ? "Connecting…" : "Connect Wallet"}
+      </button>
     </header>
   );
 }

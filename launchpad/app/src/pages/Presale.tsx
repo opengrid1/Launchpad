@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useAccount, useBalance, useConnect, useSendTransaction, useSwitchChain } from "wagmi";
+import { base } from "wagmi/chains";
+import { parseEther, formatEther } from "viem";
 import { fmt } from "../data/launches";
 
 // Reference parameters for the Coinworks token presale.
@@ -8,8 +11,7 @@ const SUPPLY = 1_000_000_000;
 const PRICE = 0.00000004; // ETH per WORK (10 ETH hard cap / 250M presale supply)
 const HARD_CAP = 10; // ETH
 const SOFT_CAP = 5; // ETH
-const RAISED = 0; // no contributions yet
-const PROCEEDS = "0x14c8905f188a8012a5a10122bf257d0ba5d418a6"; // destination for raised ETH
+const PROCEEDS = "0x14c8905f188a8012a5a10122bf257d0ba5d418a6" as `0x${string}`; // destination for raised ETH
 
 const ALLOC = [
   { k: "Presale", pct: 25, color: "var(--blue)", note: "This round" },
@@ -28,12 +30,39 @@ const UTILITY = [
 export function Presale() {
   const [amount, setAmount] = useState("");
 
+  const { isConnected, chainId } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { switchChain } = useSwitchChain();
+  const { data: bal } = useBalance({
+    address: PROCEEDS,
+    chainId: base.id,
+    query: { refetchInterval: 12_000 },
+  });
+  const { sendTransaction, isPending: sending, data: txHash, error: txError, reset } = useSendTransaction();
+
   const amt = amount && Number(amount) > 0 ? Number(amount) : 0;
   const tokens = amt / PRICE;
   const ofSupply = (tokens / SUPPLY) * 100;
-  const progress = RAISED / HARD_CAP;
+  const raised = bal ? Number(formatEther(bal.value)) : 0;
+  const progress = raised / HARD_CAP;
   const softPct = (SOFT_CAP / HARD_CAP) * 100;
+  const onBase = chainId === base.id;
   const valid = amt > 0;
+
+  function contribute() {
+    if (!isConnected) { if (connectors[0]) connect({ connector: connectors[0] }); return; }
+    if (!onBase) { switchChain({ chainId: base.id }); return; }
+    if (!valid) return;
+    reset();
+    sendTransaction({ to: PROCEEDS, value: parseEther(amount) });
+  }
+
+  const btnLabel = !isConnected ? "Connect wallet"
+    : !onBase ? "Switch to Base"
+    : sending ? "Confirm in wallet…"
+    : valid ? `Contribute ${amt} ETH`
+    : "Enter an amount";
+  const btnDisabled = isConnected && onBase && (!valid || sending);
 
   return (
     <div className="wrap page">
@@ -58,7 +87,7 @@ export function Presale() {
                 <h1>{TOKEN}</h1>
                 <div className="card-sym">${SYMBOL} · B20 Asset · Base</div>
               </div>
-              <span className="status upcoming">Upcoming</span>
+              <span className="status live">Live</span>
             </div>
 
             <div className="progress" style={{ marginTop: 18 }}>
@@ -66,8 +95,8 @@ export function Presale() {
               <div className="soft-mark" style={{ left: softPct + "%" }} title="Soft cap" />
             </div>
             <div className="card-meta" style={{ marginTop: 8 }}>
-              <span><b>{fmt(RAISED, 0)}</b> / {fmt(HARD_CAP, 0)} ETH raised</span>
-              <span>Soft cap {fmt(SOFT_CAP, 0)} ETH</span>
+              <span><b>{fmt(raised, 4)}</b> / {fmt(HARD_CAP, 0)} ETH raised</span>
+              <span>{Math.round(progress * 100)}% of hard cap</span>
             </div>
 
             <div className="stats section-gap">
@@ -167,13 +196,21 @@ export function Presale() {
               <span>{PRICE.toFixed(8)} ETH</span>
             </div>
 
-            <button className="btn primary full" style={{ marginTop: 14 }} disabled={!valid}>
-              Contribute {valid ? amt + " ETH" : ""}
+            <button className="btn primary full" style={{ marginTop: 14 }} onClick={contribute} disabled={btnDisabled}>
+              {btnLabel}
             </button>
+            {txHash && (
+              <p className="ok">
+                Contribution sent.{" "}
+                <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noreferrer">View on Basescan</a>
+              </p>
+            )}
+            {txError && (
+              <p className="warn">{(txError as { shortMessage?: string }).shortMessage || "Transaction failed or was rejected."}</p>
+            )}
             <p className="hint">
-              Preview only. The presale is not open yet. When it goes live, contributing sends ETH
-              straight to the project wallet. ${SYMBOL} is distributed to your wallet automatically
-              once the token launches.
+              Contributing sends ETH straight to the project wallet on Base. ${SYMBOL} is distributed
+              to your wallet automatically when the token launches. All contributions are final.
             </p>
           </div>
         </div>
