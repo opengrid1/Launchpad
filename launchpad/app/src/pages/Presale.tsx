@@ -8,8 +8,6 @@ const SUPPLY = 1_000_000_000;
 const PRICE = 0.00000004; // ETH per WORK (10 ETH hard cap / 250M presale supply)
 const HARD_CAP = 10; // ETH
 const SOFT_CAP = 5; // ETH
-const MIN = 0.05; // ETH per wallet
-const MAX = 0.5; // ETH per wallet
 const RAISED = 0; // no contributions yet
 const PROCEEDS = "0x14c8905f188a8012a5a10122bf257d0ba5d418a6"; // destination for raised ETH
 
@@ -35,9 +33,7 @@ export function Presale() {
   const ofSupply = (tokens / SUPPLY) * 100;
   const progress = RAISED / HARD_CAP;
   const softPct = (SOFT_CAP / HARD_CAP) * 100;
-  const tooLow = amt > 0 && amt < MIN;
-  const tooHigh = amt > MAX;
-  const valid = amt >= MIN && amt <= MAX;
+  const valid = amt > 0;
 
   return (
     <div className="wrap page">
@@ -77,7 +73,7 @@ export function Presale() {
             <div className="stats section-gap">
               <Stat k="Price" v={PRICE.toFixed(8)} sub={`ETH per ${SYMBOL}`} />
               <Stat k="Hard cap" v={fmt(HARD_CAP, 0) + " ETH"} />
-              <Stat k="Per wallet" v={`${MIN} – ${MAX}`} sub="ETH" />
+              <Stat k="Soft cap" v={fmt(SOFT_CAP, 0) + " ETH"} />
               <Stat k="Presale supply" v={fmt(SUPPLY * 0.25, 0)} sub={`${SYMBOL} (25%)`} />
             </div>
           </div>
@@ -153,7 +149,7 @@ export function Presale() {
               <span className="unit">ETH</span>
             </div>
             <div className="quick">
-              {[MIN, 0.1, 0.25, MAX].map((q) => (
+              {[0.1, 0.5, 1, 5].map((q) => (
                 <button key={q} onClick={() => setAmount(String(q))}>{q}</button>
               ))}
             </div>
@@ -170,9 +166,6 @@ export function Presale() {
               <span>Price</span>
               <span>{PRICE.toFixed(8)} ETH</span>
             </div>
-
-            {tooLow && <p className="warn">Minimum is {MIN} ETH per wallet.</p>}
-            {tooHigh && <p className="warn">Maximum is {MAX} ETH per wallet.</p>}
 
             <button className="btn primary full" style={{ marginTop: 14 }} disabled={!valid}>
               Contribute {valid ? amt + " ETH" : ""}
