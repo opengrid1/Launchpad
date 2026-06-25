@@ -11,6 +11,7 @@ const SOFT_CAP = 5; // ETH
 const MIN = 0.05; // ETH per wallet
 const MAX = 0.5; // ETH per wallet
 const RAISED = 0; // no contributions yet
+const PROCEEDS = "0x14c8905f188a8012a5a10122bf257d0ba5d418a6"; // destination for raised ETH
 
 const ALLOC = [
   { k: "Presale", pct: 25, color: "var(--blue)", note: "This round" },
@@ -125,10 +126,11 @@ export function Presale() {
             <div className="panel-head"><span className="lbl">How the sale settles</span></div>
             <div className="panel-body">
               <div className="kv stack"><span className="k">Sale type</span><span className="v">Fixed price, first come first served</span></div>
-              <div className="kv stack"><span className="k">If soft cap is met</span><span className="v">Sale closes, {SYMBOL} claimable, liquidity seeded on a Base DEX</span></div>
-              <div className="kv stack"><span className="k">If soft cap is missed</span><span className="v">Sale voids, every contributor withdraws their full ETH</span></div>
-              <div className="kv stack"><span className="k">Vesting</span><span className="v">Presale unlocks in full at claim. Team vests over 12 months</span></div>
-              <div className="kv stack"><span className="k">Settlement</span><span className="v">Non-custodial. The sale contract holds ETH in escrow until it resolves</span></div>
+              <div className="kv stack"><span className="k">Proceeds wallet</span><span className="v" style={{ wordBreak: "break-all" }}>{PROCEEDS}</span></div>
+              <div className="kv stack"><span className="k">When the token goes live</span><span className="v">{SYMBOL} is distributed automatically to every contributor, pro-rata to their contribution. No manual claim step.</span></div>
+              <div className="kv stack"><span className="k">If soft cap is met</span><span className="v">The raised ETH is released to the proceeds wallet and liquidity is seeded on a Base DEX.</span></div>
+              <div className="kv stack"><span className="k">If soft cap is missed</span><span className="v">The sale voids and every contributor is refunded their full ETH.</span></div>
+              <div className="kv stack"><span className="k">Vesting</span><span className="v">Presale unlocks in full at distribution. Team vests over 12 months.</span></div>
             </div>
           </div>
         </div>
@@ -177,7 +179,8 @@ export function Presale() {
             </button>
             <p className="hint">
               Preview only. The presale is not open yet. When it goes live, contributing sends ETH
-              to the escrow contract and {SYMBOL} becomes claimable once the sale resolves.
+              to the sale contract. Once it resolves, the ETH goes to the proceeds wallet and ${SYMBOL}
+              is distributed to your wallet automatically.
             </p>
           </div>
         </div>
