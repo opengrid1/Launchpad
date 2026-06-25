@@ -1,5 +1,5 @@
 import type { View } from "./Header";
-import { CoinMark, IconX, IconTelegram, IconDiscord, IconGithub } from "./Icons";
+import { CoinMark, IconX } from "./Icons";
 
 export function Footer({ go }: { go: (v: View, anchor?: string) => void }) {
   return (
@@ -14,10 +14,7 @@ export function Footer({ go }: { go: (v: View, anchor?: string) => void }) {
             </div>
           </div>
           <div className="foot-soc">
-            <a href="https://x.com" target="_blank" rel="noreferrer" title="X"><IconX /></a>
-            <a href="https://t.me" target="_blank" rel="noreferrer" title="Telegram"><IconTelegram /></a>
-            <a href="https://discord.com" target="_blank" rel="noreferrer" title="Discord"><IconDiscord /></a>
-            <a href="https://github.com/opengrid1/Launchpad" target="_blank" rel="noreferrer" title="GitHub"><IconGithub /></a>
+            <a href="https://x.com/Coinworks_" target="_blank" rel="noreferrer" title="X"><IconX /></a>
           </div>
         </div>
 
