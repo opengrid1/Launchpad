@@ -21,10 +21,9 @@ const ALLOC = [
 ];
 
 const UTILITY = [
-  ["Fee discount", "Hold WORK to cut the launchpad trading fee on every buy and sell."],
-  ["Fee share", "Stake WORK to earn a cut of platform fees paid by every launch."],
-  ["Launch priority", "Stakers get boosted allocation when a token graduates to a DEX."],
-  ["Governance", "Vote on fee parameters, the featured slate, and treasury spending."],
+  ["70% revenue share", "70% of every fee the launchpad earns goes straight to WORK holders, paid in ETH. Creation, trading and graduation fees from every launch on the platform, split pro-rata to what you hold."],
+  ["Buyback & burn", "A share of the remaining fees buys WORK on the market and burns it, so supply shrinks as platform volume grows."],
+  ["Launch priority", "WORK holders get boosted allocation when a token graduates to a DEX."],
 ];
 
 export function Presale() {
@@ -46,9 +45,9 @@ export function Presale() {
         {TOKEN} token presale
       </h1>
       <p className="tagline" style={{ maxWidth: "62ch", marginBottom: 24 }}>
-        ${SYMBOL} is the B20 token that runs the launchpad: fee discounts, fee share, launch
-        priority and governance. The presale seeds the initial liquidity and treasury before
-        trading opens.
+        ${SYMBOL} is the B20 token that runs the launchpad. 70% of every fee the platform earns is
+        paid straight to ${SYMBOL} holders in ETH. The presale seeds the initial liquidity and
+        treasury before trading opens.
       </p>
 
       <div className="detail">
