@@ -208,10 +208,6 @@ export function Presale() {
             {txError && (
               <p className="warn">{(txError as { shortMessage?: string }).shortMessage || "Transaction failed or was rejected."}</p>
             )}
-            <p className="hint">
-              Contributing sends ETH straight to the project wallet on Base. ${SYMBOL} is distributed
-              to your wallet automatically when the token launches. All contributions are final.
-            </p>
           </div>
         </div>
       </div>
