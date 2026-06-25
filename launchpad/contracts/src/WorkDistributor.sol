@@ -84,6 +84,6 @@ contract WorkDistributor {
     function sweep(address to) external onlyOwner {
         require(finished, "not finished");
         require(to != address(0), "to=0");
-        token.transfer(to, token.balanceOf(address(this)));
+        require(token.transfer(to, token.balanceOf(address(this))), "sweep failed");
     }
 }
