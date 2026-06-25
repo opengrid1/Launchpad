@@ -3,6 +3,7 @@ import { useAccount, useBalance, useSendTransaction, useSwitchChain } from "wagm
 import { useAppKit } from "@reown/appkit/react";
 import { base } from "wagmi/chains";
 import { parseEther, formatEther } from "viem";
+import { CoinMark } from "../components/Icons";
 import { fmt } from "../data/launches";
 
 // Reference parameters for the Coinworks token presale.
@@ -83,7 +84,7 @@ export function Presale() {
           {/* round status */}
           <div className="panel panel-body">
             <div className="detail-hero">
-              <div className="token-glyph">WO</div>
+              <div className="token-glyph"><CoinMark size={40} /></div>
               <div style={{ flex: 1 }}>
                 <h1>{TOKEN}</h1>
                 <div className="card-sym">${SYMBOL} · B20 Asset · Base</div>
