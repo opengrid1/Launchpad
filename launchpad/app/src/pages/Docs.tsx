@@ -101,10 +101,6 @@ export function Docs({ anchor }: { anchor?: string }) {
               is held by the launch contract and <strong>managed by the project</strong>: the project can collect
               the pool's trading fees and can withdraw the liquidity.
             </p>
-            <div className="callout">
-              Liquidity is <strong>not locked or burned</strong>. Treat each token's liquidity as
-              project-controlled and do your own research before trading.
-            </div>
           </section>
 
           <section className="doc-section" id="create">
@@ -164,7 +160,6 @@ export function Docs({ anchor }: { anchor?: string }) {
             <h2>FAQ</h2>
             <p><strong>Can I sell right after a token launches?</strong> Yes. Buying and selling are live from the first block.</p>
             <p><strong>What does a token start at?</strong> Every token opens at a $15,000 market cap on its Uniswap v4 pool, priced in USD via a Chainlink oracle.</p>
-            <p><strong>Is the liquidity locked?</strong> No. Liquidity is provided and managed by the project, which can withdraw it. Do your own research on each token before trading.</p>
             <p><strong>What is the token logo stored as?</strong> It is pinned to IPFS and referenced by the token's ERC-7572 <code>contractURI</code>.</p>
           </section>
 
