@@ -123,9 +123,9 @@ export function Presale() {
             <div className="panel-body">
               <div className="kv stack"><span className="k">Sale type</span><span className="v">Fixed price, first come first served</span></div>
               <div className="kv stack"><span className="k">Proceeds wallet</span><span className="v" style={{ wordBreak: "break-all" }}>{PROCEEDS}</span></div>
+              <div className="kv stack"><span className="k">Where the ETH goes</span><span className="v">Every contribution is sent straight to the proceeds wallet. No escrow, no middle contract holding funds.</span></div>
               <div className="kv stack"><span className="k">When the token goes live</span><span className="v">{SYMBOL} is distributed automatically to every contributor, pro-rata to their contribution. No manual claim step.</span></div>
-              <div className="kv stack"><span className="k">If soft cap is met</span><span className="v">The raised ETH is released to the proceeds wallet and liquidity is seeded on a Base DEX.</span></div>
-              <div className="kv stack"><span className="k">If soft cap is missed</span><span className="v">The sale voids and every contributor is refunded their full ETH.</span></div>
+              <div className="kv stack"><span className="k">Refunds</span><span className="v">All contributions are final and non-refundable.</span></div>
               <div className="kv stack"><span className="k">Vesting</span><span className="v">Presale unlocks in full at distribution. Team vests over 12 months.</span></div>
             </div>
           </div>
@@ -135,7 +135,7 @@ export function Presale() {
         <div className="panel" style={{ position: "sticky", top: 16 }}>
           <div className="panel-head">
             <span className="lbl">Contribute</span>
-            <span className="idx">ESCROW</span>
+            <span className="idx">DIRECT</span>
           </div>
           <div className="panel-body">
             <label className="field-label">You contribute</label>
@@ -172,8 +172,8 @@ export function Presale() {
             </button>
             <p className="hint">
               Preview only. The presale is not open yet. When it goes live, contributing sends ETH
-              to the sale contract. Once it resolves, the ETH goes to the proceeds wallet and ${SYMBOL}
-              is distributed to your wallet automatically.
+              straight to the project wallet. ${SYMBOL} is distributed to your wallet automatically
+              once the token launches.
             </p>
           </div>
         </div>
