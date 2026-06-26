@@ -1,6 +1,6 @@
 import { createAppKit } from '@reown/appkit/react'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
-import { mainnet as ethMainnet, type AppKitNetwork } from '@reown/appkit/networks'
+import { mainnet as ethMainnet, base as baseMainnet, type AppKitNetwork } from '@reown/appkit/networks'
 
 export const arcMainnet: AppKitNetwork = {
   id: 5042,
@@ -22,7 +22,7 @@ export const USDC_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' as `0x$
 
 const projectId = 'e1bda672d5deb56579fe084dddfb9174'
 
-const networks: [AppKitNetwork, ...AppKitNetwork[]] = [ethMainnet, arcMainnet]
+const networks: [AppKitNetwork, ...AppKitNetwork[]] = [ethMainnet, baseMainnet, arcMainnet]
 
 export const wagmiAdapter = new WagmiAdapter({ networks, projectId })
 
