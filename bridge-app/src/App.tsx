@@ -179,8 +179,8 @@ export default function App() {
             style={{
               display: 'flex', alignItems: 'center', gap: 7,
               padding: '7px 14px', borderRadius: 8, border: 'none',
-              background: isConnected ? 'rgba(255,255,255,0.05)' : '#7b8fff',
-              color: isConnected ? '#9da3b4' : '#0c0f1a',
+              background: 'transparent',
+              color: '#9da3b4',
               fontSize: 13, fontWeight: 600,
               cursor: 'pointer', fontFamily: 'inherit',
               boxShadow: 'none',
@@ -297,7 +297,7 @@ export default function App() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                  <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-1.5px', color: parsed > 0 ? '#7b8fff' : '#2a2e42', lineHeight: 1 }}>
+                  <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-1.5px', color: parsed > 0 ? '#e8eaf0' : '#2a2e42', lineHeight: 1 }}>
                     {parsed > 0 ? parsed.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                   </div>
                   <span style={{ fontSize: 15, fontWeight: 600, color: '#42475e', paddingBottom: 3 }}>USDC</span>
