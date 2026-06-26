@@ -290,7 +290,6 @@ export default function App() {
                     <img src="/logo-1.png" width={32} height={32} style={{ borderRadius: 9, objectFit: 'cover', flexShrink: 0 }} alt="Arc Network" />
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 600, color: '#e8eaf0', letterSpacing: '-0.2px' }}>Arc Network</div>
-                      <div style={{ fontSize: 11, color: '#42475e', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>Chain 5042</div>
                     </div>
                   </div>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#42475e', textTransform: 'uppercase' }}>To</div>
