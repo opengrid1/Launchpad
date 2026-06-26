@@ -8,21 +8,17 @@ import { injected } from 'wagmi/connectors'
 import { formatUnits, parseUnits, pad } from 'viem'
 import { mainnet, USDC_ADDRESS } from './wagmiConfig'
 
-/* ── CCTP contract on Ethereum mainnet ───────────────────────────── */
 const TOKEN_MESSENGER = '0xBd3fa81B58Ba92a82136038B25aDec7066af3155' as `0x${string}`
-// ARC Mainnet CCTP domain (contact ARC team for official value; 7 used here)
 const ARC_DOMAIN = 7
 
 const ERC20_ABI = [
-  { name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
-  { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
-  { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'value', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
+  { name: 'balanceOf',  type: 'function', stateMutability: 'view',  inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
+  { name: 'allowance', type: 'function', stateMutability: 'view',        inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
+  { name: 'approve',   type: 'function', stateMutability: 'nonpayable',  inputs: [{ name: 'spender', type: 'address' }, { name: 'value', type: 'uint256' }],  outputs: [{ name: '', type: 'bool' }] },
 ] as const
 
 const MESSENGER_ABI = [{
-  name: 'depositForBurn',
-  type: 'function',
-  stateMutability: 'nonpayable',
+  name: 'depositForBurn', type: 'function', stateMutability: 'nonpayable',
   inputs: [
     { name: 'amount',            type: 'uint256' },
     { name: 'destinationDomain', type: 'uint32'  },
@@ -32,48 +28,31 @@ const MESSENGER_ABI = [{
   outputs: [{ name: 'nonce', type: 'uint64' }],
 }] as const
 
-const C = {
-  bg:       '#09090b',
-  surface:  '#0f0f12',
-  surfaceHi:'#141418',
-  border:   '#1c1c22',
-  borderHi: '#26262e',
-  text1:    '#fafafa',
-  text2:    '#a1a1aa',
-  text3:    '#52525b',
-  green:    '#4ade80',
-  red:      '#f87171',
-  amber:    '#fbbf24',
-} as const
-
 const CSS = `
-  @keyframes spin  { to { transform: rotate(360deg); } }
-  @keyframes pulse { 0%,100% { opacity:.4 } 50% { opacity:1 } }
-  @keyframes up    { from { opacity:0; transform:translateY(5px) } to { opacity:1; transform:translateY(0) } }
-  * { box-sizing:border-box }
+  @keyframes spin  { to { transform: rotate(360deg) } }
+  @keyframes pulse { 0%,100%{opacity:.35} 50%{opacity:.9} }
+  @keyframes up    { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+  * { box-sizing: border-box; margin: 0; padding: 0 }
   input[type=number]::-webkit-outer-spin-button,
-  input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none }
-  input[type=number] { -moz-appearance:textfield }
-  input:focus { outline:none }
-  a { color:inherit }
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none }
+  input[type=number] { -moz-appearance: textfield }
+  input:focus { outline: none }
+  html, body { height: 100% }
 `
 
-/* ── ETH logo as embedded SVG (no external fetch) ────────────────── */
-function EthLogo({ size }: { size: number }) {
+function EthLogo({ s = 32 }: { s?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" style={{ borderRadius: '50%', background: '#1a1aff', flexShrink: 0 }}>
-      <path d="M16 6L9.5 16.4 16 20.1 22.5 16.4z" fill="white"/>
-      <path d="M16 20.1L9.5 16.4 16 26 22.5 16.4z" fill="rgba(255,255,255,0.6)"/>
-      <path d="M16 6L9.5 16.4 16 13.7z" fill="rgba(255,255,255,0.7)"/>
-      <path d="M16 6L22.5 16.4 16 13.7z" fill="white"/>
+    <svg width={s} height={s} viewBox="0 0 32 32" style={{ borderRadius: '50%', background: '#627EEA', flexShrink: 0, display: 'block' }}>
+      <path d="M16 5l-6.5 11.2L16 19.6l6.5-3.4z" fill="white" fillOpacity=".9"/>
+      <path d="M16 19.6l-6.5-3.4L16 27l6.5-7.8z" fill="white" fillOpacity=".6"/>
     </svg>
   )
 }
 
 export default function App() {
-  const [amount, setAmount]   = useState('')
+  const [amount, setAmount] = useState('')
   const [focused, setFocused] = useState(false)
-  const [step, setStep]       = useState<'idle'|'approving'|'bridging'|'done'>('idle')
+  const [step, setStep] = useState<'idle'|'approving'|'bridging'|'done'>('idle')
 
   const { address, isConnected } = useAccount()
   const { connect }    = useConnect()
@@ -86,255 +65,305 @@ export default function App() {
     args: address ? [address] : undefined,
     chainId: mainnet.id, query: { enabled: !!address },
   })
-  const { data: allowanceRaw, refetch: refetchAllowance } = useReadContract({
+  const { data: allowRaw, refetch: refetchAllow } = useReadContract({
     address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'allowance',
     args: address ? [address, TOKEN_MESSENGER] : undefined,
     chainId: mainnet.id, query: { enabled: !!address },
   })
 
-  const balance   = balRaw       != null ? +formatUnits(balRaw as bigint,       6) : null
-  const allowance = allowanceRaw != null ? +formatUnits(allowanceRaw as bigint,  6) : 0
+  const balance   = balRaw   != null ? +formatUnits(balRaw   as bigint, 6) : null
+  const allowance = allowRaw != null ? +formatUnits(allowRaw as bigint, 6) : 0
   const parsed    = parseFloat(amount) || 0
   const onMainnet = chainId === mainnet.id
   const tooMuch   = balance != null && parsed > balance
   const needsApproval = parsed > 0 && parsed > allowance
   const canSubmit = isConnected && onMainnet && parsed > 0 && !tooMuch && step === 'idle'
+  const inFlight  = step === 'approving' || step === 'bridging'
 
-  /* ── write: approve ── */
-  const { writeContract: approve, data: approveTx } = useWriteContract()
-  const { isSuccess: approveConfirmed, isLoading: approveWaiting } =
-    useWaitForTransactionReceipt({ hash: approveTx, chainId: mainnet.id })
+  const { writeContract: doApprove, data: approveTx } = useWriteContract()
+  const { isSuccess: approveOk } = useWaitForTransactionReceipt({ hash: approveTx, chainId: mainnet.id })
 
-  /* ── write: depositForBurn ── */
-  const { writeContract: bridge, data: bridgeTx } = useWriteContract()
-  const { isSuccess: bridgeConfirmed, isLoading: bridgeWaiting } =
-    useWaitForTransactionReceipt({ hash: bridgeTx, chainId: mainnet.id })
-
-  /* ── state machine ── */
-  useEffect(() => {
-    if (approveConfirmed && step === 'approving') {
-      refetchAllowance()
-      setStep('bridging')
-      if (!address) return
-      bridge({
-        address: TOKEN_MESSENGER,
-        abi: MESSENGER_ABI,
-        functionName: 'depositForBurn',
-        args: [
-          parseUnits(amount, 6),
-          ARC_DOMAIN,
-          pad(address, { size: 32 }),
-          USDC_ADDRESS,
-        ],
-        chainId: mainnet.id,
-      })
-    }
-  }, [approveConfirmed])
+  const { writeContract: doBridge, data: bridgeTx } = useWriteContract()
+  const { isSuccess: bridgeOk }   = useWaitForTransactionReceipt({ hash: bridgeTx,  chainId: mainnet.id })
 
   useEffect(() => {
-    if (bridgeConfirmed && step === 'bridging') {
-      refetchBal()
-      setStep('done')
-    }
-  }, [bridgeConfirmed])
+    if (!approveOk || step !== 'approving' || !address) return
+    refetchAllow()
+    setStep('bridging')
+    doBridge({ address: TOKEN_MESSENGER, abi: MESSENGER_ABI, functionName: 'depositForBurn',
+      args: [parseUnits(amount, 6), ARC_DOMAIN, pad(address, { size: 32 }), USDC_ADDRESS],
+      chainId: mainnet.id })
+  }, [approveOk])
+
+  useEffect(() => {
+    if (!bridgeOk || step !== 'bridging') return
+    refetchBal(); setStep('done')
+  }, [bridgeOk])
 
   function submit() {
     if (!canSubmit || !address) return
     const amt = parseUnits(amount, 6)
     if (needsApproval) {
       setStep('approving')
-      approve({ address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'approve', args: [TOKEN_MESSENGER, amt], chainId: mainnet.id })
+      doApprove({ address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'approve', args: [TOKEN_MESSENGER, amt], chainId: mainnet.id })
     } else {
       setStep('bridging')
-      bridge({ address: TOKEN_MESSENGER, abi: MESSENGER_ABI, functionName: 'depositForBurn', args: [amt, ARC_DOMAIN, pad(address, { size: 32 }), USDC_ADDRESS], chainId: mainnet.id })
+      doBridge({ address: TOKEN_MESSENGER, abi: MESSENGER_ABI, functionName: 'depositForBurn',
+        args: [amt, ARC_DOMAIN, pad(address, { size: 32 }), USDC_ADDRESS], chainId: mainnet.id })
     }
   }
 
-  function reset() { setStep('idle'); setAmount('') }
+  function handleCta() {
+    if (!isConnected)        return connect({ connector: injected() })
+    if (!onMainnet)          return switchChain({ chainId: mainnet.id })
+    if (step === 'done')     return () => { setStep('idle'); setAmount('') }
+    submit()
+  }
 
-  const balFmt = balance != null ? balance.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : null
-  const inFlight = step === 'approving' || step === 'bridging'
-
-  const ctaLabel = () => {
-    if (!isConnected) return 'Connect wallet'
-    if (!onMainnet)   return switching ? 'Switching…' : 'Switch to Ethereum'
-    if (step === 'done') return 'Bridge again'
-    if (step === 'approving') return approveWaiting ? 'Approving USDC…' : 'Confirm in wallet'
-    if (step === 'bridging')  return bridgeWaiting  ? 'Sending to Arc…'  : 'Confirm in wallet'
-    if (tooMuch) return 'Insufficient balance'
-    if (!parsed)  return 'Enter amount'
-    if (needsApproval) return `Approve & Bridge ${parsed.toLocaleString('en', { maximumFractionDigits: 2 })} USDC`
+  const ctaLabel = (): string => {
+    if (!isConnected)               return 'Connect wallet'
+    if (!onMainnet)                 return switching ? 'Switching…' : 'Switch to Ethereum'
+    if (step === 'done')            return 'Bridge again'
+    if (step === 'approving')       return 'Confirm approval in wallet'
+    if (step === 'bridging')        return 'Confirm transaction in wallet'
+    if (!parsed)                    return 'Enter an amount'
+    if (tooMuch)                    return 'Insufficient balance'
+    if (needsApproval)              return `Approve & Bridge ${parsed.toLocaleString('en', { maximumFractionDigits: 2 })} USDC`
     return `Bridge ${parsed.toLocaleString('en', { maximumFractionDigits: 2 })} USDC`
   }
 
-  const ctaActive = () => {
-    if (step === 'done') return true
-    if (inFlight) return false
+  const ctaEnabled = (): boolean => {
+    if (step === 'done')  return true
+    if (inFlight)         return false
+    if (!isConnected)     return true
+    if (!onMainnet)       return true
     return canSubmit
   }
 
-  function handleCta() {
-    if (!isConnected) return connect({ connector: injected() })
-    if (!onMainnet)   return switchChain({ chainId: mainnet.id })
-    if (step === 'done') return reset()
-    return submit()
-  }
+  const balFmt = balance != null
+    ? balance.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : null
 
   return (
     <>
       <style>{CSS}</style>
-      <div style={{ minHeight: '100vh', background: C.bg, color: C.text1, fontFamily: "'Inter', system-ui, sans-serif", WebkitFontSmoothing: 'antialiased' }}>
+      <div style={{
+        minHeight: '100vh',
+        background: '#060914',
+        backgroundImage: `
+          radial-gradient(ellipse 80% 50% at 50% -10%, rgba(41,55,143,0.45) 0%, transparent 70%),
+          radial-gradient(ellipse 50% 30% at 80% 80%, rgba(20,35,90,0.3) 0%, transparent 60%)
+        `,
+        color: '#e8eaf0',
+        fontFamily: "'Inter', system-ui, sans-serif",
+        WebkitFontSmoothing: 'antialiased',
+      }}>
 
-        {/* ── Nav ── */}
-        <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', height: 54, borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, background: C.bg, zIndex: 100 }}>
+        {/* Nav */}
+        <nav style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 20px', height: 56,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          backdropFilter: 'blur(12px)',
+          background: 'rgba(6,9,20,0.7)',
+          position: 'sticky', top: 0, zIndex: 100,
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 2L14 13H2L8 2Z" fill={C.text1}/>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M9 2L16.5 15H1.5L9 2Z" fill="#7b8fff"/>
             </svg>
-            <span style={{ fontSize: 14, fontWeight: 650, letterSpacing: '-0.3px' }}>ArcBridge</span>
+            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.4px', color: '#e8eaf0' }}>ArcBridge</span>
           </div>
           <button
             onClick={isConnected ? () => disconnect() : () => connect({ connector: injected() })}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.text2, fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.1px' }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '7px 14px', borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.04)',
+              color: '#9da3b4', fontSize: 13, fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
           >
-            {isConnected && <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.green, display: 'block' }} />}
-            <span style={{ fontFamily: isConnected ? "'JetBrains Mono', monospace" : 'inherit', fontSize: isConnected ? 11 : 12 }}>
+            {isConnected && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'block', flexShrink: 0 }} />}
+            <span style={{ fontFamily: isConnected ? "'JetBrains Mono', monospace" : 'inherit', fontSize: isConnected ? 11 : 13 }}>
               {isConnected ? `${address?.slice(0,6)}…${address?.slice(-4)}` : 'Connect wallet'}
             </span>
           </button>
         </nav>
 
-        {/* ── Layout ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 460px 1fr', gap: 40, maxWidth: 1100, margin: '0 auto', padding: '56px 24px 80px', alignItems: 'start' }}>
+        {/* Page */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 16px 80px' }}>
+          <div style={{ width: '100%', maxWidth: 460 }}>
 
-          {/* Left: route info */}
-          <div style={{ paddingTop: 8 }}>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: C.text3, textTransform: 'uppercase', marginBottom: 24 }}>Route</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-              <RouteStep icon={<EthLogo size={28} />} name="Ethereum" sub="Mainnet" connector />
-              <RouteStep icon={<img src="/logo-1.png" width={28} height={28} style={{ borderRadius: 7, objectFit: 'cover' }} alt="" />} name="Arc Network" sub="Chain 5042" />
-            </div>
-            <div style={{ marginTop: 32, padding: '14px 0', borderTop: `1px solid ${C.border}` }}>
-              {[
-                ['Protocol',   'Circle CCTP'],
-                ['Token',      'USDC (native)'],
-                ['Finality',   '~15 min'],
-                ['Fee',        '0.00 USDC'],
-              ].map(([k, v]) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, color: C.text3 }}>{k}</span>
-                  <span style={{ fontSize: 12, color: C.text2, fontFamily: "'JetBrains Mono', monospace" }}>{v}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Center: card */}
-          <div>
-            {/* FROM */}
-            <Section label="From" border focused={focused}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <EthLogo size={30} />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: C.text1, letterSpacing: '-0.2px' }}>Ethereum</div>
-                    <div style={{ fontSize: 11, color: C.text3, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>Mainnet</div>
-                  </div>
-                </div>
-                {balFmt && (
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 11, color: C.text3, marginBottom: 3 }}>Balance</div>
-                    <button
-                      onClick={() => balance && setAmount(balance.toFixed(2))}
-                      style={{ fontSize: 13, fontWeight: 600, color: tooMuch ? C.red : C.text2, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'JetBrains Mono', monospace", padding: 0 }}
-                    >
-                      {balFmt}
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={e => setAmount(e.target.value)}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                  style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 36, fontWeight: 700, letterSpacing: '-1.5px', color: tooMuch ? C.red : C.text1, fontFamily: 'inherit', minWidth: 0, lineHeight: 1 }}
-                />
-                <span style={{ fontSize: 14, fontWeight: 600, color: C.text3, letterSpacing: '-0.2px', paddingBottom: 3 }}>USDC</span>
-                {balance != null && parsed > 0 && (
-                  <button
-                    onClick={() => balance && setAmount(balance.toFixed(2))}
-                    style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: C.text3, background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 4, padding: '3px 6px', cursor: 'pointer', fontFamily: 'inherit', textTransform: 'uppercase' }}
-                  >
-                    Max
-                  </button>
-                )}
-              </div>
-            </Section>
-
-            {/* Arrow */}
-            <div style={{ display: 'flex', justifyContent: 'center', margin: '2px 0', position: 'relative' }}>
-              <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 1, background: C.border }} />
-              <div style={{ position: 'relative', zIndex: 1, width: 28, height: 28, borderRadius: '50%', background: C.bg, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                  <path d="M5.5 1.5v8M2 7l3.5 3.5L9 7" stroke={C.text3} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.8px', color: '#e8eaf0', lineHeight: 1.15 }}>
+                Bridge USDC
+              </h1>
+              <p style={{ marginTop: 6, fontSize: 13, color: '#525870', letterSpacing: '-0.1px' }}>
+                Ethereum → Arc Network via Circle CCTP
+              </p>
             </div>
 
-            {/* TO */}
-            <Section label="To">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <img src="/logo-1.png" width={30} height={30} style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} alt="Arc Network" />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: C.text1, letterSpacing: '-0.2px' }}>Arc Network</div>
-                    <div style={{ fontSize: 11, color: C.text3, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>Chain 5042</div>
+            {/* Card */}
+            <div style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 16,
+              overflow: 'hidden',
+            }}>
+
+              {/* FROM */}
+              <div style={{
+                padding: '18px 20px 16px',
+                borderBottom: `1px solid ${focused ? 'rgba(123,143,255,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                transition: 'border-color 0.15s',
+                cursor: 'text',
+              }} onClick={() => document.getElementById('amount-input')?.focus()}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <EthLogo s={32} />
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#e8eaf0', letterSpacing: '-0.2px' }}>Ethereum</div>
+                      <div style={{ fontSize: 11, color: '#42475e', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>Mainnet</div>
+                    </div>
                   </div>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#42475e', textTransform: 'uppercase' }}>From</div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-1.2px', color: parsed > 0 ? C.text2 : C.text3, fontFamily: 'inherit', lineHeight: 1 }}>
-                    {parsed > 0 ? parsed.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
-                  </div>
-                  <div style={{ fontSize: 11, color: C.text3, marginTop: 3, fontFamily: "'JetBrains Mono', monospace" }}>USDC</div>
+
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                  <input
+                    id="amount-input"
+                    type="number"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={e => setAmount(e.target.value)}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    style={{
+                      flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                      fontSize: 38, fontWeight: 700, letterSpacing: '-1.5px',
+                      color: tooMuch ? '#f87171' : '#e8eaf0',
+                      fontFamily: 'inherit', minWidth: 0, lineHeight: 1,
+                    }}
+                  />
+                  <span style={{ fontSize: 15, fontWeight: 600, color: '#42475e', paddingBottom: 3, flexShrink: 0 }}>USDC</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, gap: 8, alignItems: 'center' }}>
+                  {balFmt && (
+                    <>
+                      <span style={{ fontSize: 12, color: tooMuch ? '#f87171' : '#525870' }}>
+                        Balance: <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>{balFmt}</span>
+                      </span>
+                      <button
+                        onClick={() => balance && setAmount(balance.toFixed(2))}
+                        style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: '#7b8fff', background: 'rgba(123,143,255,0.1)', border: '1px solid rgba(123,143,255,0.2)', borderRadius: 4, padding: '2px 7px', cursor: 'pointer', fontFamily: 'inherit', textTransform: 'uppercase' }}
+                      >
+                        Max
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
-            </Section>
 
-            {/* Approval / bridge progress */}
+              {/* Arrow divider */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 32, background: 'rgba(0,0,0,0.15)', position: 'relative' }}>
+                <div style={{ position: 'absolute', left: 0, right: 0, height: '50%', borderBottom: '1px solid rgba(255,255,255,0.04)' }} />
+                <div style={{
+                  position: 'relative', zIndex: 1, width: 26, height: 26, borderRadius: '50%',
+                  background: '#0c1020', border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M5 1.5v7M2 6l3 3.5 3-3.5" stroke="#42475e" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+
+              {/* TO */}
+              <div style={{ padding: '16px 20px 18px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <img src="/logo-1.png" width={32} height={32} style={{ borderRadius: 9, objectFit: 'cover', flexShrink: 0 }} alt="Arc Network" />
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#e8eaf0', letterSpacing: '-0.2px' }}>Arc Network</div>
+                      <div style={{ fontSize: 11, color: '#42475e', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>Chain 5042</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#42475e', textTransform: 'uppercase' }}>To</div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-1.5px', color: parsed > 0 ? '#7b8fff' : '#2a2e42', lineHeight: 1 }}>
+                    {parsed > 0 ? parsed.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                  </div>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: '#42475e', paddingBottom: 3 }}>USDC</span>
+                </div>
+              </div>
+
+              {/* Details strip */}
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)', padding: '0 20px' }}>
+                {[
+                  ['Network fee',  '0.00 USDC', '#4ade80'],
+                  ['Est. time',    '~15 min',   '#9da3b4'],
+                  ['Router',       'Circle CCTP','#7b8fff'],
+                ].map(([k, v, c], i, a) => (
+                  <div key={k} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '10px 0',
+                    borderBottom: i < a.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                  }}>
+                    <span style={{ fontSize: 12, color: '#42475e' }}>{k}</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: c as string }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Progress */}
             {step !== 'idle' && (
-              <div style={{ marginTop: 2, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 16px', animation: 'up 0.18s ease' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: step === 'done' ? C.green : C.text1 }}>
-                    {step === 'done' ? 'Submitted to Circle CCTP' : 'Transaction in progress'}
+              <div style={{
+                marginTop: 10, padding: '16px 20px',
+                background: 'rgba(255,255,255,0.025)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 14, animation: 'up 0.2s ease',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: step === 'done' ? '#4ade80' : '#e8eaf0' }}>
+                    {step === 'done' ? '✓ Submitted to CCTP' : 'Bridging in progress'}
                   </span>
                   {step === 'done' && (
-                    <button onClick={reset} style={{ fontSize: 11, color: C.text3, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Reset</button>
+                    <button onClick={() => { setStep('idle'); setAmount('') }} style={{ fontSize: 11, color: '#525870', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      New transfer
+                    </button>
                   )}
                 </div>
                 {[
-                  { label: 'Approve USDC',       active: step === 'approving', done: ['bridging','done'].includes(step) },
-                  { label: 'Deposit via CCTP',   active: step === 'bridging',  done: step === 'done' },
-                  { label: 'Relay to Arc',        active: false,                done: step === 'done' },
+                  { label: 'Approve USDC',      done: ['bridging','done'].includes(step), active: step === 'approving' },
+                  { label: 'Deposit via CCTP',  done: step === 'done',                    active: step === 'bridging' },
+                  { label: 'Relay to Arc',       done: false,                              active: false, pending: step === 'done' },
                 ].map((s, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: i < 2 ? 8 : 0 }}>
-                    <div style={{ width: 16, height: 16, borderRadius: '50%', border: `1px solid ${s.done ? C.green : s.active ? C.borderHi : C.border}`, background: s.done ? C.green : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}>
-                      {s.done   && <svg width="7" height="6" viewBox="0 0 7 6"><path d="M1 3l2 2 3-4" stroke={C.bg} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>}
-                      {s.active && <div style={{ width: 5, height: 5, border: `1.5px solid ${C.text3}`, borderTopColor: C.text1, borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />}
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < 2 ? 10 : 0 }}>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                      border: `1.5px solid ${s.done ? '#4ade80' : s.active ? '#7b8fff' : 'rgba(255,255,255,0.08)'}`,
+                      background: s.done ? '#4ade80' : 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s',
+                    }}>
+                      {s.done   && <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#060914" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      {s.active && <div style={{ width: 5, height: 5, border: '1.5px solid #525870', borderTopColor: '#7b8fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />}
+                      {s.pending && !s.done && <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', animation: 'pulse 1.5s ease infinite' }} />}
                     </div>
-                    <span style={{ fontSize: 12, color: s.done ? C.text3 : s.active ? C.text1 : C.text3, fontWeight: s.active ? 500 : 400 }}>{s.label}</span>
-                    {s.active && !s.done && <span style={{ fontSize: 11, color: C.text3, marginLeft: 'auto', animation: 'pulse 1.5s ease infinite' }}>waiting…</span>}
+                    <span style={{ fontSize: 13, color: s.done ? '#42475e' : s.active ? '#e8eaf0' : '#42475e', fontWeight: s.active ? 500 : 400 }}>{s.label}</span>
                   </div>
                 ))}
                 {bridgeTx && (
-                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 11, color: C.text3, fontFamily: "'JetBrains Mono', monospace" }}>{bridgeTx.slice(0,18)}…</span>
-                    <a href={`https://etherscan.io/tx/${bridgeTx}`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.text2, display: 'flex', alignItems: 'center', gap: 3 }}>
-                      Etherscan
-                      <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 7.5L7.5 1.5M4 1.5h3.5V5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, color: '#42475e', fontFamily: "'JetBrains Mono', monospace" }}>{bridgeTx.slice(0,18)}…</span>
+                    <a href={`https://etherscan.io/tx/${bridgeTx}`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: '#7b8fff', display: 'flex', gap: 4 }}>
+                      Etherscan ↗
                     </a>
                   </div>
                 )}
@@ -342,78 +371,32 @@ export default function App() {
             )}
 
             {/* CTA */}
-            <div style={{ marginTop: 8 }}>
-              <Btn label={ctaLabel()} active={ctaActive()} loading={inFlight && !bridgeConfirmed && !approveConfirmed} onClick={handleCta} />
-            </div>
+            <button
+              onClick={ctaEnabled() ? handleCta : undefined}
+              style={{
+                marginTop: 10, width: '100%', padding: '14px',
+                borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 700,
+                letterSpacing: '-0.3px', cursor: ctaEnabled() ? 'pointer' : 'default',
+                fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                background: ctaEnabled()
+                  ? 'linear-gradient(135deg, #3d52d5 0%, #5b6ef5 100%)'
+                  : 'rgba(255,255,255,0.04)',
+                color: ctaEnabled() ? '#fff' : '#42475e',
+                boxShadow: ctaEnabled() ? '0 4px 20px rgba(61,82,213,0.4)' : 'none',
+                transition: 'all 0.15s',
+              }}
+            >
+              {inFlight && <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
+              {ctaLabel()}
+            </button>
 
-            <p style={{ textAlign: 'center', fontSize: 11, color: C.text3, marginTop: 12, letterSpacing: '0.01em' }}>
-              Non-custodial · Secured by{' '}
-              <a href="https://www.circle.com/cctp" target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', textDecorationColor: C.border }}>Circle CCTP</a>
+            <p style={{ textAlign: 'center', fontSize: 11, color: '#2a2e42', marginTop: 14 }}>
+              Non-custodial · <a href="https://www.circle.com/cctp" target="_blank" rel="noreferrer" style={{ color: '#2a2e42', textDecoration: 'underline' }}>Circle CCTP</a>
             </p>
-          </div>
 
-          {/* Right: stats */}
-          <div style={{ paddingTop: 8 }}>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: C.text3, textTransform: 'uppercase', marginBottom: 24 }}>Stats</p>
-            {[
-              { label: 'Total bridged',   value: '$24.8M', sub: 'all time' },
-              { label: 'Transactions',    value: '18,402', sub: 'all time' },
-              { label: 'Avg. bridge time',value: '14 min', sub: 'last 24h' },
-            ].map(s => (
-              <div key={s.label} style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.8px', color: C.text1, lineHeight: 1 }}>{s.value}</div>
-                <div style={{ fontSize: 12, color: C.text3, marginTop: 4 }}>{s.label} <span style={{ color: C.text3, opacity: 0.5 }}>· {s.sub}</span></div>
-              </div>
-            ))}
-            <div style={{ marginTop: 12, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: C.text3, textTransform: 'uppercase', marginBottom: 12 }}>Allowance</div>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: allowance > 0 ? C.green : C.text3 }}>
-                {allowance > 0 ? `${allowance.toLocaleString('en', { maximumFractionDigits: 2 })} USDC` : 'Not approved'}
-              </div>
-            </div>
           </div>
-
         </div>
       </div>
     </>
-  )
-}
-
-/* ── helpers ──────────────────────────────────────────────────────── */
-
-function Section({ label, children, border, focused }: { label: string; children: React.ReactNode; border?: boolean; focused?: boolean }) {
-  return (
-    <div style={{ background: C.surface, border: `1px solid ${focused && border ? C.borderHi : C.border}`, borderRadius: 10, padding: '16px', transition: 'border-color 0.15s', marginBottom: 2 }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: C.text3, textTransform: 'uppercase', marginBottom: 12 }}>{label}</div>
-      {children}
-    </div>
-  )
-}
-
-function RouteStep({ icon, name, sub, connector }: { icon: React.ReactNode; name: string; sub: string; connector?: boolean }) {
-  return (
-    <div style={{ display: 'flex', gap: 10, paddingBottom: connector ? 16 : 0, position: 'relative' }}>
-      {connector && <div style={{ position: 'absolute', left: 14, top: 30, width: 1, height: 'calc(100% - 14px)', background: C.border }} />}
-      <div style={{ flexShrink: 0, zIndex: 1 }}>{icon}</div>
-      <div style={{ paddingTop: 2 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: C.text1, letterSpacing: '-0.2px' }}>{name}</div>
-        <div style={{ fontSize: 11, color: C.text3, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>{sub}</div>
-      </div>
-    </div>
-  )
-}
-
-function Btn({ onClick, label, active, loading }: { onClick?: () => void; label: string; active: boolean; loading?: boolean }) {
-  const [hover, setHover] = useState(false)
-  return (
-    <button
-      onClick={active ? onClick : undefined}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: 'none', background: active ? (hover ? '#e4e4e7' : C.text1) : C.surfaceHi, color: active ? C.bg : C.text3, fontSize: 13, fontWeight: 650, letterSpacing: '-0.2px', cursor: active ? 'pointer' : 'default', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.1s' }}
-    >
-      {loading && <span style={{ width: 12, height: 12, border: `1.5px solid ${active ? 'rgba(0,0,0,0.25)' : C.text3}`, borderTopColor: active ? C.bg : C.text2, borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
-      {label}
-    </button>
   )
 }
