@@ -168,11 +168,20 @@ export default function App() {
           background: 'rgba(6,9,20,0.7)',
           position: 'sticky', top: 0, zIndex: 100,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M9 2L16.5 15H1.5L9 2Z" fill="#7b8fff"/>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            {/* Arcanebridge logo: bridge arch over two pillars inside a rounded square */}
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect width="28" height="28" rx="7" fill="#7b8fff"/>
+              {/* left pillar */}
+              <rect x="5" y="15" width="3.5" height="8" rx="1" fill="#0c0f1a"/>
+              {/* right pillar */}
+              <rect x="19.5" y="15" width="3.5" height="8" rx="1" fill="#0c0f1a"/>
+              {/* arch */}
+              <path d="M5 17 Q5 7 14 7 Q23 7 23 17" stroke="#0c0f1a" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+              {/* keystone dot */}
+              <circle cx="14" cy="7" r="1.5" fill="#0c0f1a"/>
             </svg>
-            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.4px', color: '#e8eaf0' }}>ArcBridge</span>
+            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.4px', color: '#e8eaf0' }}>Arcanebridge</span>
           </div>
           <button
             onClick={isConnected ? () => disconnect() : () => connect({ connector: injected() })}
