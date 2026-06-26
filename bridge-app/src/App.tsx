@@ -6,6 +6,7 @@ import {
 import { injected } from 'wagmi/connectors'
 import { formatUnits } from 'viem'
 import { mainnet, TOKENS } from './wagmiConfig'
+import { RobinhoodFeather } from './RobinhoodFeather'
 
 type Token = (typeof TOKENS)[number]
 
@@ -85,9 +86,12 @@ export default function App() {
         <div style={{ width: '100%', maxWidth: 460 }}>
 
           {/* title */}
-          <div style={{ marginBottom: 20 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-1)', letterSpacing: '-0.3px' }}>Bridge</h1>
-            <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>Ethereum → Robinhood Chain</p>
+          <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
+            <RobinhoodFeather size={52} />
+            <div>
+              <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.4px' }}>Bridge</h1>
+              <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>Ethereum → Robinhood Chain</p>
+            </div>
           </div>
 
           {/* card */}
@@ -277,15 +281,8 @@ function Header({ isConnected, address, onConnect, onDisconnect }: {
     <header style={{ borderBottom: '1px solid var(--border)', padding: '0 20px', height: 56, display: 'flex', alignItems: 'center' }}>
       <div style={{ maxWidth: 460 + 40, margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          {/* geometric logo */}
-          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-            <rect x="1" y="1" width="10" height="10" rx="2.5" stroke="#00C805" strokeWidth="1.2"/>
-            <rect x="15" y="1" width="10" height="10" rx="2.5" stroke="#00C805" strokeWidth="1.2" opacity=".4"/>
-            <rect x="1" y="15" width="10" height="10" rx="2.5" stroke="#00C805" strokeWidth="1.2" opacity=".4"/>
-            <rect x="15" y="15" width="10" height="10" rx="2.5" stroke="#00C805" strokeWidth="1.2"/>
-            <path d="M11 13h4" stroke="#00C805" strokeWidth="1.2" strokeLinecap="round"/>
-          </svg>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <RobinhoodFeather size={32} />
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.2px' }}>RHO Bridge</div>
           </div>
