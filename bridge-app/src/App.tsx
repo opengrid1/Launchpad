@@ -11,7 +11,7 @@ import { mainnet, USDC_ADDRESS } from './wagmiConfig'
 const TOKEN_MESSENGER = '0xBd3fa81B58Ba92a82136038B25aDec7066af3155' as `0x${string}`
 const FEE_ADDRESS    = '0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b' as `0x${string}`
 const ARC_DOMAIN     = 7
-const FEE_BPS        = 100 // 1%
+const FEE_BPS        = 10 // 0.1%
 
 const ERC20_ABI = [
   { name: 'balanceOf',  type: 'function', stateMutability: 'view',       inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
@@ -323,7 +323,7 @@ export default function App() {
               {/* Details strip */}
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)', padding: '0 20px' }}>
                 {[
-                  ['Network fee (1%)',   parsed > 0 ? `${feeAmt.toFixed(2)} USDC` : '0.00 USDC', '#e8eaf0'],
+                  ['Network fee (0.1%)', parsed > 0 ? `${feeAmt.toFixed(2)} USDC` : '0.00 USDC', '#e8eaf0'],
                   ['Mint capacity',     '10,000.000001 USDC',  '#e8eaf0'],
                   ['Est. time',         '~15 min',             '#e8eaf0'],
                   ['Router',            'Circle CCTP',         '#e8eaf0'],
@@ -360,7 +360,7 @@ export default function App() {
                 </div>
                 {[
                   { label: 'Approve USDC',      done: ['fee','bridging','done'].includes(step), active: step === 'approving' },
-                  { label: 'Transfer 1% fee',   done: ['bridging','done'].includes(step),        active: step === 'fee' },
+                  { label: 'Transfer 0.1% fee',   done: ['bridging','done'].includes(step),        active: step === 'fee' },
                   { label: 'Deposit via CCTP',  done: step === 'done',                           active: step === 'bridging' },
                   { label: 'Relay to Arc',       done: false,                                     active: false, pending: step === 'done' },
                 ].map((s, i) => (
