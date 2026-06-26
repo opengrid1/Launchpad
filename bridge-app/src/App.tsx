@@ -308,7 +308,7 @@ export default function App() {
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)', padding: '0 20px' }}>
                 {[
                   ['Network fee',       '0.00 USDC',          '#4ade80'],
-                  ['Mint capacity',     '1,000.000001 USDC',  '#e8eaf0'],
+                  ['Mint capacity',     '10,000.000001 USDC',  '#e8eaf0'],
                   ['Est. time',         '~15 min',             '#9da3b4'],
                   ['Router',            'Circle CCTP',         '#7b8fff'],
                 ].map(([k, v, c], i, a) => (
