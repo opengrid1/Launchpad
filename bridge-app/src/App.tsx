@@ -1,321 +1,308 @@
 import { useState, useRef, useEffect } from 'react'
-import { useAccount, useBalance, useSwitchChain, useChainId, useConnect, useDisconnect } from 'wagmi'
+import {
+  useAccount, useBalance, useSwitchChain,
+  useChainId, useConnect, useDisconnect,
+} from 'wagmi'
 import { injected } from 'wagmi/connectors'
 import { formatUnits } from 'viem'
 import { mainnet, TOKENS } from './wagmiConfig'
 
 type Token = (typeof TOKENS)[number]
-type Tab = 'bridge' | 'activity'
 
-const MOCK_ACTIVITY = [
-  { hash: '0x3fa8…c21d', amount: '1.2', symbol: 'ETH',  status: 'confirmed', age: '12m ago' },
-  { hash: '0x9b12…04f1', amount: '500', symbol: 'USDC', status: 'confirmed', age: '2h ago'  },
-  { hash: '0x44cc…7e3a', amount: '0.45', symbol: 'ETH', status: 'pending',   age: '5h ago'  },
-]
+/* ─── tokens ──────────────────────────────────────────────────── */
+const TOKEN_COLORS: Record<string, string> = {
+  ETH: '#627eea', USDC: '#2775ca', USDT: '#26a17b',
+}
 
+/* ─── main component ──────────────────────────────────────────── */
 export default function App() {
-  const [tab, setTab] = useState<Tab>('bridge')
-  const [amount, setAmount] = useState('')
-  const [token, setToken] = useState<Token>(TOKENS[0])
-  const [tokenMenuOpen, setTokenMenuOpen] = useState(false)
-  const [step, setStep] = useState<number | null>(null)
-  const [txHash, setTxHash] = useState<string | null>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const [amount, setAmount]           = useState('')
+  const [token, setToken]             = useState<Token>(TOKENS[0])
+  const [tokenOpen, setTokenOpen]     = useState(false)
+  const [phase, setPhase]             = useState<'idle'|'approving'|'bridging'|'relaying'|'done'>('idle')
+  const [txHash, setTxHash]           = useState<string | null>(null)
+  const tokenRef                       = useRef<HTMLDivElement>(null)
 
-  const { address, isConnected } = useAccount()
-  const { connect } = useConnect()
-  const { disconnect } = useDisconnect()
-  const chainId = useChainId()
-  const { switchChain, isPending: isSwitching } = useSwitchChain()
-  const { data: ethBal } = useBalance({ address, chainId: mainnet.id })
+  const { address, isConnected }      = useAccount()
+  const { connect }                   = useConnect()
+  const { disconnect }                = useDisconnect()
+  const chainId                       = useChainId()
+  const { switchChain, isPending: switching } = useSwitchChain()
+  const { data: ethBal }              = useBalance({ address, chainId: mainnet.id })
 
-  const balance = token.symbol === 'ETH' ? ethBal : null
-  const balDisplay = balance
-    ? parseFloat(formatUnits(balance.value, balance.decimals)).toFixed(6)
+  const nativeBal  = token.symbol === 'ETH' ? ethBal : null
+  const balFormatted = nativeBal
+    ? (+formatUnits(nativeBal.value, nativeBal.decimals)).toFixed(4)
     : null
 
-  const parsed = parseFloat(amount) || 0
-  const isOnMainnet = chainId === mainnet.id
-  const insufficient = balance != null && parsed > 0
-    ? parsed > parseFloat(formatUnits(balance.value, balance.decimals))
+  const parsed      = parseFloat(amount) || 0
+  const onMainnet   = chainId === mainnet.id
+  const tooMuch     = nativeBal != null && parsed > 0
+    ? parsed > +formatUnits(nativeBal.value, nativeBal.decimals)
     : false
+  const ready       = isConnected && onMainnet && parsed > 0 && !tooMuch && phase === 'idle'
 
+  /* close token dropdown on outside click */
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setTokenMenuOpen(false)
-      }
+    const h = (e: MouseEvent) => {
+      if (tokenRef.current && !tokenRef.current.contains(e.target as Node))
+        setTokenOpen(false)
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
   }, [])
 
-  function handleMax() {
-    if (!balance) return
-    setAmount(formatUnits(balance.value, balance.decimals))
+  function startBridge() {
+    if (!ready) return
+    if (token.symbol !== 'ETH') {
+      setPhase('approving')
+      setTimeout(() => runBridge(), 1800)
+    } else {
+      runBridge()
+    }
   }
 
-  function handleBridge() {
-    if (!isConnected || !isOnMainnet || !amount || insufficient) return
-    const startStep = token.symbol !== 'ETH' ? 0 : 1
-    setStep(startStep)
-    const fake = '0x' + Array.from({ length: 64 }, () =>
-      Math.floor(Math.random() * 16).toString(16)).join('')
-    setTimeout(() => { setTxHash(fake); setStep(2) }, 2000)
+  function runBridge() {
+    setPhase('bridging')
+    const hash = '0x' + crypto.getRandomValues(new Uint8Array(32))
+      .reduce((s, b) => s + b.toString(16).padStart(2, '0'), '')
+    setTimeout(() => { setTxHash(hash); setPhase('relaying') }, 1400)
+    setTimeout(() => setPhase('done'), 5000)
   }
 
-  function handleReset() { setStep(null); setTxHash(null); setAmount('') }
+  function reset() { setPhase('idle'); setTxHash(null); setAmount('') }
 
-  const canBridge = isConnected && isOnMainnet && parsed > 0 && !insufficient && step === null
-
+  /* ── render ─────────────────────────────────────────────────── */
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Nav
-        address={address}
-        isConnected={isConnected}
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+      <Header isConnected={isConnected} address={address}
         onConnect={() => connect({ connector: injected() })}
-        onDisconnect={() => disconnect()}
-      />
+        onDisconnect={disconnect} />
 
-      <main style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '48px 16px 80px' }}>
-        <div style={{ width: '100%', maxWidth: 440 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px 80px' }}>
 
-          {/* Page header */}
-          <div style={{ marginBottom: 32 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <span style={mono(10, '#2e3040')}>SYS://BRIDGE</span>
-              <span style={{ ...mono(10, '#1a2540'), background: 'rgba(77,124,254,0.06)', border: '1px solid rgba(77,124,254,0.12)', borderRadius: 3, padding: '1px 6px' }}>v1.0</span>
-            </div>
-            <h1 style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-0.5px', color: '#e2e4ec', lineHeight: 1.2 }}>
-              Cross-Chain Transfer
-            </h1>
-            <p style={{ marginTop: 4, fontSize: 12.5, color: '#3a3d50', letterSpacing: '0.01em' }}>
-              Ethereum Mainnet → Robinhood Chain · Arbitrum Orbit
-            </p>
+        {/* ── widget ─────────────────────────────────────────── */}
+        <div style={{ width: '100%', maxWidth: 460 }}>
+
+          {/* title */}
+          <div style={{ marginBottom: 20 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-1)', letterSpacing: '-0.3px' }}>Bridge</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>Ethereum → Robinhood Chain</p>
           </div>
 
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #1a1a20', marginBottom: 24 }}>
-            {(['bridge', 'activity'] as Tab[]).map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  padding: '8px 14px', fontSize: 12, fontWeight: 500,
-                  letterSpacing: '0.06em', textTransform: 'uppercase',
-                  color: tab === t ? '#e2e4ec' : '#2e3040',
-                  borderBottom: tab === t ? '1px solid #4d7cfe' : '1px solid transparent',
-                  marginBottom: -1, transition: 'color 0.15s',
-                }}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          {/* card */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18, overflow: 'hidden' }}>
 
-          {tab === 'bridge' && (
-            <>
-              {/* Route indicator */}
-              <div style={panel(false)}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <RouteChain label="Ethereum" id="1" color="#5a6fff" />
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    <svg width="28" height="12" viewBox="0 0 28 12" fill="none">
-                      <path d="M2 6h24M20 2l6 4-6 4" stroke="#1a1a20" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <span style={mono(9, '#1e2030')}>BRIDGE</span>
-                  </div>
-                  <RouteChain label="Robinhood Chain" id="1996" color="#4d7cfe" right />
-                </div>
-              </div>
-
-              {/* Amount input */}
-              <div style={{ ...panel(false), marginTop: 2 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <span style={mono(10, '#2e3040')}>AMOUNT</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {balDisplay != null && (
-                      <span style={mono(10, '#2a2d3e')}>BAL: {balDisplay} {token.symbol}</span>
-                    )}
-                    {balance && (
-                      <button onClick={handleMax} style={{ ...mono(9, '#4d7cfe'), background: 'rgba(77,124,254,0.06)', border: '1px solid rgba(77,124,254,0.15)', borderRadius: 3, padding: '2px 7px', cursor: 'pointer', letterSpacing: '0.08em' }}>
-                        MAX
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  {/* Token selector */}
-                  <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
-                    <button
-                      onClick={() => setTokenMenuOpen(v => !v)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#0a0a0c', border: '1px solid #1a1a20', borderRadius: 6, padding: '8px 10px', cursor: 'pointer' }}
-                    >
-                      <TokenDot symbol={token.symbol} />
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#c8cad8', letterSpacing: '0.02em' }}>{token.symbol}</span>
-                      <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
-                        <path d="M1 1l4 4 4-4" stroke="#2e3040" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-
-                    {tokenMenuOpen && (
-                      <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#0a0a0c', border: '1px solid #1a1a20', borderRadius: 8, overflow: 'hidden', zIndex: 50, minWidth: 160, boxShadow: '0 16px 40px rgba(0,0,0,0.6)' }}>
-                        {TOKENS.map((t, i) => (
-                          <button
-                            key={t.symbol}
-                            onClick={() => { setToken(t); setTokenMenuOpen(false) }}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '9px 12px', background: t.symbol === token.symbol ? '#0f0f14' : 'transparent', border: 'none', borderTop: i > 0 ? '1px solid #111116' : 'none', cursor: 'pointer' }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <TokenDot symbol={t.symbol} />
-                              <span style={{ fontSize: 12, fontWeight: 600, color: t.symbol === token.symbol ? '#e2e4ec' : '#5a5d6e', letterSpacing: '0.03em' }}>{t.symbol}</span>
-                            </div>
-                            <span style={mono(10, '#1e2030')}>{t.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <input
-                    type="number"
-                    placeholder="0.000000"
-                    value={amount}
-                    onChange={e => setAmount(e.target.value)}
-                    style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#e2e4ec', fontSize: 22, fontWeight: 300, fontFamily: 'inherit', textAlign: 'right', letterSpacing: '-0.3px' }}
-                  />
-                </div>
-
-                {insufficient && (
-                  <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#e05252', flexShrink: 0 }} />
-                    <span style={mono(10, '#e05252')}>INSUFFICIENT BALANCE</span>
-                  </div>
+            {/* from */}
+            <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <ChainLabel name="Ethereum" num="1" />
+                {balFormatted != null && (
+                  <button
+                    onClick={() => setAmount(formatUnits(nativeBal!.value, nativeBal!.decimals))}
+                    style={{ fontSize: 12, color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  >
+                    Balance: <span style={{ color: 'var(--text-1)', fontWeight: 500 }}>{balFormatted} {token.symbol}</span>
+                  </button>
                 )}
               </div>
 
-              {/* Receive estimate */}
-              <div style={{ ...panel(false), marginTop: 2 }}>
-                <DataRow label="RECEIVE ON ROBINHOOD CHAIN" value={parsed > 0 ? `${parsed.toFixed(6)} ${token.symbol}` : '—'} highlight />
-                <DataRow label="ESTIMATED TIME" value="~15 min" />
-                <DataRow label="BRIDGE FEE" value="0.00 ETH" />
-                <DataRow label="PROTOCOL" value="Arbitrum Orbit Native Bridge" mono />
-              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {/* token picker */}
+                <div ref={tokenRef} style={{ position: 'relative', flexShrink: 0 }}>
+                  <button
+                    onClick={() => setTokenOpen(v => !v)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--surface-2)', border: '1px solid var(--border-hi)', borderRadius: 50, padding: '7px 12px 7px 9px', cursor: 'pointer' }}
+                  >
+                    <span style={{ width: 18, height: 18, borderRadius: '50%', background: TOKEN_COLORS[token.symbol] ?? '#555', flexShrink: 0 }} />
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)' }}>{token.symbol}</span>
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ marginLeft: 1 }}>
+                      <path d="M1 1l4 4 4-4" stroke="var(--text-3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
 
-              {/* Bridge progress */}
-              {step !== null && (
-                <div style={{ ...panel(true), marginTop: 2 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <span style={mono(10, step >= 3 ? '#2ecc71' : '#4d7cfe')}>
-                      {step >= 3 ? 'TRANSFER COMPLETE' : 'TRANSFER IN PROGRESS'}
-                    </span>
-                    {step >= 3 && (
-                      <button onClick={handleReset} style={{ ...mono(10, '#2e3040'), background: 'none', border: 'none', cursor: 'pointer' }}>
-                        NEW TRANSFER
-                      </button>
-                    )}
-                  </div>
-                  <ProgressSteps step={step} />
-                  {txHash && (
-                    <div style={{ marginTop: 14, padding: '8px 10px', background: '#050507', border: '1px solid #111116', borderRadius: 5 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={mono(10, '#1e2030')}>TX HASH</span>
-                        <a href={`https://etherscan.io/tx/${txHash}`} target="_blank" rel="noreferrer" style={{ ...mono(10, '#4d7cfe'), textDecoration: 'none' }}>
-                          ETHERSCAN ↗
-                        </a>
-                      </div>
-                      <div style={{ ...mono(11, '#3a3d50'), marginTop: 4, wordBreak: 'break-all' }}>
-                        {txHash.slice(0, 32)}…
-                      </div>
+                  {tokenOpen && (
+                    <div className="fade-in" style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: 200, background: 'var(--surface-2)', border: '1px solid var(--border-hi)', borderRadius: 12, overflow: 'hidden', zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+                      {TOKENS.map((t, i) => (
+                        <button
+                          key={t.symbol}
+                          onClick={() => { setToken(t); setTokenOpen(false) }}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', background: token.symbol === t.symbol ? 'rgba(255,255,255,0.04)' : 'transparent', border: 'none', borderTop: i > 0 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}
+                        >
+                          <span style={{ width: 22, height: 22, borderRadius: '50%', background: TOKEN_COLORS[t.symbol] ?? '#555', flexShrink: 0 }} />
+                          <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)' }}>{t.symbol}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>{t.name}</div>
+                          </div>
+                          {token.symbol === t.symbol && (
+                            <svg style={{ marginLeft: 'auto' }} width="13" height="10" viewBox="0 0 13 10" fill="none">
+                              <path d="M1 5l4 4L12 1" stroke="var(--blue)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* CTA */}
-              {step === null && (
-                <div style={{ marginTop: 2 }}>
-                  {!isConnected ? (
-                    <Cta onClick={() => connect({ connector: injected() })} label="CONNECT WALLET" variant="primary" />
-                  ) : !isOnMainnet ? (
-                    <Cta onClick={() => switchChain({ chainId: mainnet.id })} label={isSwitching ? 'SWITCHING NETWORK…' : 'SWITCH TO ETHEREUM MAINNET'} variant="warning" disabled={isSwitching} />
-                  ) : (
-                    <Cta
-                      onClick={handleBridge}
-                      label={insufficient ? 'INSUFFICIENT BALANCE' : token.symbol !== 'ETH' ? 'APPROVE & INITIATE BRIDGE' : 'INITIATE BRIDGE TRANSFER'}
-                      variant={canBridge ? 'primary' : 'disabled'}
-                      disabled={!canBridge}
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* Chain specs */}
-              <div style={{ marginTop: 20, padding: '12px 0', borderTop: '1px solid #0f0f12' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  {[
-                    { k: 'CHAIN ID', v: '1996' },
-                    { k: 'BLOCK TIME', v: '~2s' },
-                    { k: 'FINALITY', v: 'L1 ~7d' },
-                    { k: 'STACK', v: 'Orbit' },
-                  ].map(({ k, v }) => (
-                    <div key={k} style={{ textAlign: 'center' }}>
-                      <div style={mono(9, '#1e2030')}>{k}</div>
-                      <div style={{ ...mono(11, '#3a3d50'), marginTop: 3 }}>{v}</div>
-                    </div>
-                  ))}
-                </div>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  placeholder="0"
+                  style={{ flex: 1, background: 'transparent', border: 'none', fontSize: 28, fontWeight: 300, color: amount ? 'var(--text-1)' : 'var(--text-3)', textAlign: 'right', letterSpacing: '-0.5px', minWidth: 0 }}
+                />
               </div>
-            </>
+
+              {tooMuch && (
+                <p style={{ marginTop: 8, textAlign: 'right', fontSize: 12, color: 'var(--red)' }}>Insufficient balance</p>
+              )}
+            </div>
+
+            {/* arrow */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '0', margin: '-1px 0', position: 'relative', zIndex: 1 }}>
+              <div style={{ width: 32, height: 32, border: '1px solid var(--border)', borderRadius: 9, background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
+                  <path d="M6 1v12M1 9l5 5 5-5" stroke="var(--text-3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
+
+            {/* to */}
+            <div style={{ padding: '14px 18px 18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <ChainLabel name="Robinhood Chain" num="1996" accent />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: TOKEN_COLORS[token.symbol] ?? '#555', flexShrink: 0 }} />
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-2)' }}>{token.symbol}</span>
+                </div>
+                <span style={{ fontSize: 28, fontWeight: 300, color: parsed > 0 ? 'var(--text-1)' : 'var(--text-3)', letterSpacing: '-0.5px' }}>
+                  {parsed > 0 ? parsed.toFixed(4) : '0'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* details */}
+          {parsed > 0 && (
+            <div className="fade-in" style={{ marginTop: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+              {[
+                ['Estimated time',  '~15 minutes'],
+                ['Bridge fee',      '0.00 ETH'],
+                ['You receive',     `${parsed.toFixed(6)} ${token.symbol}`],
+              ].map(([k, v], i) => (
+                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
+                  <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{k}</span>
+                  <span style={{ fontSize: 13, color: i === 2 ? 'var(--text-1)' : 'var(--text-2)', fontWeight: i === 2 ? 500 : 400 }}>{v}</span>
+                </div>
+              ))}
+            </div>
           )}
 
-          {tab === 'activity' && <ActivityFeed />}
+          {/* progress */}
+          {phase !== 'idle' && (
+            <div className="fade-in" style={{ marginTop: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: phase === 'done' ? 'var(--green)' : 'var(--text-1)' }}>
+                  {phase === 'done' ? 'Transfer complete' : 'Transfer in progress'}
+                </span>
+                {phase === 'done' && (
+                  <button onClick={reset} style={{ fontSize: 12, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    New transfer
+                  </button>
+                )}
+              </div>
+              <Steps phase={phase} />
+              {txHash && (
+                <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8 }}>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--text-3)' }}>
+                    {txHash.slice(0, 20)}…
+                  </span>
+                  <a href={`https://etherscan.io/tx/${txHash}`} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: 'var(--blue)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    Etherscan
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 8L8 2M4 2h4v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* cta */}
+          <div style={{ marginTop: 8 }}>
+            {!isConnected ? (
+              <ActionBtn onClick={() => connect({ connector: injected() })} label="Connect Wallet" variant="primary" />
+            ) : !onMainnet ? (
+              <ActionBtn onClick={() => switchChain({ chainId: mainnet.id })} label={switching ? 'Switching…' : 'Switch to Ethereum'} variant="warning" disabled={switching} />
+            ) : phase !== 'idle' ? (
+              <ActionBtn label={phase === 'done' ? 'Complete' : 'Processing…'} variant={phase === 'done' ? 'success' : 'loading'} disabled />
+            ) : (
+              <ActionBtn
+                onClick={startBridge}
+                label={tooMuch ? 'Insufficient balance' : !amount || !parsed ? 'Enter an amount' : token.symbol !== 'ETH' ? `Approve ${token.symbol} & Bridge` : 'Bridge to Robinhood Chain'}
+                variant={ready ? 'primary' : 'disabled'}
+                disabled={!ready}
+              />
+            )}
+          </div>
+
+          {/* footer */}
+          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 20 }}>
+            {[
+              ['Chain ID', '1996'],
+              ['Stack', 'Arbitrum Orbit'],
+              ['Block time', '~2s'],
+            ].map(([k, v]) => (
+              <div key={k} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 2 }}>{k}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 500 }}>{v}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </main>
     </div>
   )
 }
 
-/* ─── Sub-components ─────────────────────────────────────────── */
-
-function Nav({ address, isConnected, onConnect, onDisconnect }: {
-  address?: `0x${string}`; isConnected: boolean;
-  onConnect: () => void; onDisconnect: () => void;
+/* ─── Header ────────────────────────────────────────────────────── */
+function Header({ isConnected, address, onConnect, onDisconnect }: {
+  isConnected: boolean; address?: `0x${string}`
+  onConnect: () => void; onDisconnect: () => void
 }) {
   return (
-    <header style={{ borderBottom: '1px solid #0f0f12', padding: '0 20px' }}>
-      <div style={{ maxWidth: 440 + 40, margin: '0 auto', height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 28, height: 28, border: '1px solid #1a1a20', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0c' }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <rect x="1" y="1" width="5" height="5" stroke="#2e3a60" strokeWidth="1"/>
-              <rect x="8" y="1" width="5" height="5" stroke="#4d7cfe" strokeWidth="1"/>
-              <rect x="1" y="8" width="5" height="5" stroke="#4d7cfe" strokeWidth="1" opacity="0.4"/>
-              <rect x="8" y="8" width="5" height="5" stroke="#2e3a60" strokeWidth="1"/>
-            </svg>
-          </div>
+    <header style={{ borderBottom: '1px solid var(--border)', padding: '0 20px', height: 56, display: 'flex', alignItems: 'center' }}>
+      <div style={{ maxWidth: 460 + 40, margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          {/* geometric logo */}
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+            <rect x="1" y="1" width="10" height="10" rx="2.5" stroke="#5b8def" strokeWidth="1.2"/>
+            <rect x="15" y="1" width="10" height="10" rx="2.5" stroke="#5b8def" strokeWidth="1.2" opacity=".4"/>
+            <rect x="1" y="15" width="10" height="10" rx="2.5" stroke="#5b8def" strokeWidth="1.2" opacity=".4"/>
+            <rect x="15" y="15" width="10" height="10" rx="2.5" stroke="#5b8def" strokeWidth="1.2"/>
+            <path d="M11 13h4" stroke="#5b8def" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#c8cad8', letterSpacing: '-0.2px' }}>RHO Bridge</div>
-            <div style={mono(9, '#1e2030')}>ETH / ROBINHOOD CHAIN</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.2px' }}>RHO Bridge</div>
           </div>
         </div>
 
-        {/* Network + wallet */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', border: '1px solid #111116', borderRadius: 4 }}>
-            <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#2ecc71' }} />
-            <span style={mono(9, '#1e2030')}>MAINNET</span>
-          </div>
+          {isConnected && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', background: 'rgba(62,207,142,0.06)', border: '1px solid rgba(62,207,142,0.15)', borderRadius: 20 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--green)', flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: 'var(--green)', fontWeight: 500 }}>Ethereum</span>
+            </div>
+          )}
           <button
             onClick={isConnected ? onDisconnect : onConnect}
-            style={{ background: isConnected ? '#0a0a0c' : '#0d1626', border: `1px solid ${isConnected ? '#1a1a20' : '#1e2e50'}`, borderRadius: 5, padding: '5px 12px', cursor: 'pointer' }}
+            style={{ padding: '7px 14px', borderRadius: 20, border: '1px solid var(--border-hi)', background: isConnected ? 'transparent' : 'var(--blue)', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: isConnected ? 'var(--text-2)' : 'white', transition: 'opacity .15s' }}
           >
-            <span style={mono(10, isConnected ? '#3a3d50' : '#4d7cfe')}>
-              {isConnected ? `${address?.slice(0, 6)}…${address?.slice(-4)}` : 'CONNECT'}
-            </span>
+            {isConnected ? `${address?.slice(0,6)}…${address?.slice(-4)}` : 'Connect Wallet'}
           </button>
         </div>
       </div>
@@ -323,52 +310,55 @@ function Nav({ address, isConnected, onConnect, onDisconnect }: {
   )
 }
 
-function RouteChain({ label, id, color, right }: { label: string; id: string; color: string; right?: boolean }) {
+/* ─── ChainLabel ─────────────────────────────────────────────────── */
+function ChainLabel({ name, num, accent }: { name: string; num: string; accent?: boolean }) {
   return (
-    <div style={{ textAlign: right ? 'right' : 'left' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: right ? 'flex-end' : 'flex-start', marginBottom: 3 }}>
-        <div style={{ width: 6, height: 6, borderRadius: 1, background: color, opacity: 0.6 }} />
-        <span style={mono(9, '#2e3040')}>CHAIN {id}</span>
-      </div>
-      <div style={{ fontSize: 12, fontWeight: 600, color: '#8a8d9e', letterSpacing: '0.01em' }}>{label}</div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent ? 'var(--blue)' : '#555' }} />
+      <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-3)' }}>{name}</span>
+      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--text-3)', opacity: 0.5 }}>#{num}</span>
     </div>
   )
 }
 
-function TokenDot({ symbol }: { symbol: string }) {
-  const colors: Record<string, string> = { ETH: '#627eea', USDC: '#2775ca', USDT: '#26a17b' }
-  return <div style={{ width: 7, height: 7, borderRadius: '50%', background: colors[symbol] ?? '#444', flexShrink: 0 }} />
-}
+/* ─── Steps ──────────────────────────────────────────────────────── */
+type Phase = 'idle'|'approving'|'bridging'|'relaying'|'done'
+const STEP_DEFS: { label: string; activeIn: Phase[] }[] = [
+  { label: 'Approve token',          activeIn: ['approving'] },
+  { label: 'Submit transaction',     activeIn: ['bridging'] },
+  { label: 'Waiting for relay',      activeIn: ['relaying'] },
+  { label: 'Confirmed on L2',        activeIn: ['done'] },
+]
+const PHASE_ORDER: Phase[] = ['approving','bridging','relaying','done']
 
-function DataRow({ label, value, highlight, mono: isMono }: { label: string; value: string; highlight?: boolean; mono?: boolean }) {
+function Steps({ phase }: { phase: Phase }) {
+  const current = PHASE_ORDER.indexOf(phase)
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid #0a0a0e' }}>
-      <span style={{ fontSize: 10, fontFamily: 'inherit', letterSpacing: '0.08em', color: '#2e3040', fontWeight: 500 }}>{label}</span>
-      <span style={isMono ? mono(10, '#3a3d50') : { fontSize: 12, color: highlight ? '#c8cad8' : '#3a3d50', fontWeight: highlight ? 500 : 400 }}>{value}</span>
-    </div>
-  )
-}
-
-const STEP_LABELS = ['Token approval', 'Initiate transfer', 'Relay in progress', 'Confirmed on L2']
-
-function ProgressSteps({ step }: { step: number }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {STEP_LABELS.map((label, i) => {
-        const done = step > i
-        const active = step === i
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+      {STEP_DEFS.map((s, i) => {
+        const done   = current > i
+        const active = current === i
         return (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 18, height: 18, borderRadius: 3, flexShrink: 0, border: `1px solid ${done ? '#4d7cfe' : active ? '#2e3a60' : '#111116'}`, background: done ? 'rgba(77,124,254,0.1)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {done
-                ? <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5L8 1" stroke="#4d7cfe" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                : active
-                  ? <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#4d7cfe', animation: 'pulse 1.4s ease-in-out infinite' }} />
-                  : <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#1a1a20' }} />
-              }
+            <div style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, border: `1.5px solid ${done ? 'var(--blue)' : active ? 'var(--blue)' : 'var(--border-hi)'}`, background: done ? 'var(--blue)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .3s' }}>
+              {done ? (
+                <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                  <path d="M1 3.5l2.5 2.5L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ) : active ? (
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--blue)', animation: 'pulse 1.2s ease infinite' }} />
+              ) : (
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--border-hi)' }} />
+              )}
             </div>
-            <span style={{ fontSize: 11.5, color: done ? '#5a5d6e' : active ? '#c8cad8' : '#1e2030', fontWeight: active ? 500 : 400 }}>{label}</span>
-            {active && <span style={mono(9, '#4d7cfe')}>PROCESSING</span>}
+            <span style={{ fontSize: 13, color: done ? 'var(--text-3)' : active ? 'var(--text-1)' : 'var(--text-3)', fontWeight: active ? 500 : 400 }}>
+              {s.label}
+            </span>
+            {active && phase !== 'done' && (
+              <svg style={{ marginLeft: 'auto', animation: 'spin 1s linear infinite' }} width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M6 1a5 5 0 0 1 5 5" stroke="var(--blue)" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            )}
           </div>
         )
       })}
@@ -376,75 +366,26 @@ function ProgressSteps({ step }: { step: number }) {
   )
 }
 
-function Cta({ onClick, label, variant, disabled }: { onClick: () => void; label: string; variant: 'primary' | 'warning' | 'disabled'; disabled?: boolean }) {
-  const styles: Record<string, React.CSSProperties> = {
-    primary:  { background: '#0d1626', border: '1px solid #1e2e50', color: '#4d7cfe' },
-    warning:  { background: '#161206', border: '1px solid #2e2506', color: '#b88a1a' },
-    disabled: { background: '#080809', border: '1px solid #0f0f12', color: '#1e2030' },
+/* ─── ActionBtn ──────────────────────────────────────────────────── */
+type BtnVariant = 'primary'|'disabled'|'warning'|'loading'|'success'
+
+function ActionBtn({ onClick, label, variant, disabled }: {
+  onClick?: () => void; label: string; variant: BtnVariant; disabled?: boolean
+}) {
+  const styles: Record<BtnVariant, React.CSSProperties> = {
+    primary:  { background: 'var(--blue)',  color: 'white',           border: 'none' },
+    disabled: { background: 'var(--surface-2)', color: 'var(--text-3)', border: '1px solid var(--border)' },
+    warning:  { background: 'rgba(240,168,50,0.1)', color: 'var(--amber)', border: '1px solid rgba(240,168,50,0.2)' },
+    loading:  { background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)' },
+    success:  { background: 'rgba(62,207,142,0.1)', color: 'var(--green)', border: '1px solid rgba(62,207,142,0.2)' },
   }
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      style={{ width: '100%', padding: '13px 16px', borderRadius: 7, cursor: disabled ? 'not-allowed' : 'pointer', transition: 'border-color 0.15s', ...styles[variant], ...mono(11, undefined), letterSpacing: '0.1em' }}
+      style={{ width: '100%', padding: '14px', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: disabled ? 'default' : 'pointer', transition: 'opacity .15s', letterSpacing: '-0.1px', ...styles[variant] }}
     >
       {label}
     </button>
   )
-}
-
-function ActivityFeed() {
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <span style={mono(10, '#2e3040')}>RECENT TRANSFERS</span>
-        <span style={mono(9, '#1a1a20')}>CHAIN 1 → 1996</span>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {MOCK_ACTIVITY.map((tx, i) => (
-          <div key={i} style={{ padding: '11px 12px', background: '#0a0a0c', border: '1px solid #111116', borderRadius: 6 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <TokenDot symbol={tx.symbol} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#c8cad8' }}>{tx.amount} {tx.symbol}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 4, height: 4, borderRadius: '50%', background: tx.status === 'confirmed' ? '#2ecc71' : '#b88a1a' }} />
-                <span style={mono(9, tx.status === 'confirmed' ? '#1e4028' : '#2e2006')}>{tx.status.toUpperCase()}</span>
-              </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={mono(10, '#1e2030')}>{tx.hash}</span>
-              <span style={mono(10, '#1a1a20')}>{tx.age}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop: 12, textAlign: 'center' }}>
-        <span style={mono(10, '#1a1a20')}>SHOWING 3 OF 3 TRANSFERS</span>
-      </div>
-    </div>
-  )
-}
-
-/* ─── Helpers ─────────────────────────────────────────────────── */
-
-function panel(accent: boolean): React.CSSProperties {
-  return {
-    background: '#0a0a0c',
-    border: `1px solid ${accent ? '#111826' : '#111116'}`,
-    borderRadius: 8,
-    padding: '14px',
-    marginBottom: 0,
-  }
-}
-
-function mono(size: number, color: string | undefined): React.CSSProperties {
-  return {
-    fontFamily: "'JetBrains Mono', 'Fira Code', ui-monospace, monospace",
-    fontSize: size,
-    color: color ?? 'inherit',
-    fontWeight: 400,
-    letterSpacing: '0.04em',
-  }
 }
