@@ -11,9 +11,9 @@
   --text-1:    #f0f1f5;
   --text-2:    #8a8fa8;
   --text-3:    #3e4258;
-  --blue:      #00C805;
-  --blue-glow: rgba(0,200,5,0.15);
-  --green:     #00C805;
+  --blue:      #6c63ff;
+  --blue-glow: rgba(108,99,255,0.15);
+  --green:     #3ecf8e;
   --red:       #ef5b5b;
   --amber:     #f0a832;
 }

@@ -6,7 +6,7 @@ import {
 import { injected } from 'wagmi/connectors'
 import { formatUnits } from 'viem'
 import { mainnet, TOKENS } from './wagmiConfig'
-import { RobinhoodFeather } from './RobinhoodFeather'
+import { ARCFeather } from './ArcLogo'
 
 type Token = (typeof TOKENS)[number]
 
@@ -87,10 +87,10 @@ export default function App() {
 
           {/* title */}
           <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
-            <RobinhoodFeather size={52} />
+            <ARCFeather size={52} />
             <div>
               <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.4px' }}>Bridge</h1>
-              <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>Ethereum → Robinhood Chain</p>
+              <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>Ethereum → ARC Mainnet</p>
             </div>
           </div>
 
@@ -175,7 +175,7 @@ export default function App() {
             {/* to */}
             <div style={{ padding: '14px 18px 18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <ChainLabel name="Robinhood Chain" num="1996" accent />
+                <ChainLabel name="ARC Mainnet" num="5042" accent />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -246,7 +246,7 @@ export default function App() {
             ) : (
               <ActionBtn
                 onClick={startBridge}
-                label={tooMuch ? 'Insufficient balance' : !amount || !parsed ? 'Enter an amount' : token.symbol !== 'ETH' ? `Approve ${token.symbol} & Bridge` : 'Bridge to Robinhood Chain'}
+                label={tooMuch ? 'Insufficient balance' : !amount || !parsed ? 'Enter an amount' : token.symbol !== 'ETH' ? `Approve ${token.symbol} & Bridge` : 'Bridge to ARC Mainnet'}
                 variant={ready ? 'primary' : 'disabled'}
                 disabled={!ready}
               />
@@ -256,8 +256,8 @@ export default function App() {
           {/* footer */}
           <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 20 }}>
             {[
-              ['Chain ID', '1996'],
-              ['Stack', 'Arbitrum Orbit'],
+              ['Chain ID', '5042'],
+              ['Stack', 'Thirdweb RPC'],
               ['Block time', '~2s'],
             ].map(([k, v]) => (
               <div key={k} style={{ textAlign: 'center' }}>
@@ -282,9 +282,9 @@ function Header({ isConnected, address, onConnect, onDisconnect }: {
       <div style={{ maxWidth: 460 + 40, margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <RobinhoodFeather size={32} />
+          <ARCFeather size={32} />
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.2px' }}>RHO Bridge</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.2px' }}>ARC Bridge</div>
           </div>
         </div>
 

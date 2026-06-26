@@ -2,16 +2,16 @@ import { createConfig, http } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
 import type { Chain } from 'viem'
 
-export const robinhoodChain: Chain = {
-  id: 1996,
-  name: 'Robinhood Chain',
-  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+export const arcMainnet: Chain = {
+  id: 5042,
+  name: 'ARC Mainnet',
+  nativeCurrency: { name: 'USD Coin', symbol: 'USDC', decimals: 6 },
   rpcUrls: {
-    default: { http: ['https://rpc.robinhood.com'] },
-    public: { http: ['https://rpc.robinhood.com'] },
+    default: { http: ['https://5042.rpc.thirdweb.com/'] },
+    public:  { http: ['https://5042.rpc.thirdweb.com/'] },
   },
   blockExplorers: {
-    default: { name: 'Robinhood Explorer', url: 'https://explorer.robinhood.com' },
+    default: { name: 'ARC Explorer', url: 'https://explorer.arc.io' },
   },
 }
 
@@ -24,9 +24,9 @@ export const TOKENS = [
 export { mainnet }
 
 export const wagmiConfig = createConfig({
-  chains: [mainnet, robinhoodChain],
+  chains: [mainnet, arcMainnet],
   transports: {
     [mainnet.id]: http(),
-    [robinhoodChain.id]: http('https://rpc.robinhood.com'),
+    [arcMainnet.id]: http('https://5042.rpc.thirdweb.com/'),
   },
 })
