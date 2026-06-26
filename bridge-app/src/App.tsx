@@ -178,11 +178,12 @@ export default function App() {
             onClick={isConnected ? () => disconnect() : () => connect({ connector: injected() })}
             style={{
               display: 'flex', alignItems: 'center', gap: 7,
-              padding: '7px 14px', borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.04)',
-              color: '#9da3b4', fontSize: 13, fontWeight: 500,
+              padding: '7px 14px', borderRadius: 8, border: 'none',
+              background: isConnected ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #3d52d5 0%, #5b6ef5 100%)',
+              color: isConnected ? '#9da3b4' : '#fff',
+              fontSize: 13, fontWeight: 600,
               cursor: 'pointer', fontFamily: 'inherit',
+              boxShadow: isConnected ? 'none' : '0 2px 12px rgba(61,82,213,0.35)',
             }}
           >
             {isConnected && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'block', flexShrink: 0 }} />}
