@@ -169,7 +169,9 @@ export default function App() {
           position: 'sticky', top: 0, zIndex: 100,
         }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.4px', color: '#e8eaf0' }}>Arcanebridge</span>
+            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.4px' }}>
+              <span style={{ color: '#e8eaf0' }}>Arcane</span><span style={{ color: '#7b8fff' }}>bridge</span>
+            </span>
           </div>
           <button
             onClick={isConnected ? () => disconnect() : () => connect({ connector: injected() })}
