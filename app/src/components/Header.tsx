@@ -24,6 +24,7 @@ export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Ro
         {(
           [
             ['Explore', 'explore'],
+            ['Bridge', 'bridge'],
             ['Create', 'create'],
           ] as const
         ).map(([label, page]) => (
