@@ -273,7 +273,7 @@ export default function App() {
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)', padding: '0 20px' }}>
                 {[
                   ['Network fee (0.1%)', parsed > 0 ? `${(parsed * FEE_BPS / 10000).toFixed(2)} USDC` : '0.00 USDC', '#e8eaf0'],
-                  ['Mint capacity',     '8,455.00 USDC',  '#e8eaf0'],
+                  ['Mint capacity',     '8,423.26 USDC',  '#e8eaf0'],
                   ['Est. time',         '~15 min',             '#e8eaf0'],
                   ['Router',            'Circle CCTP',         '#e8eaf0'],
                 ].map(([k, v, c], i, a) => (
