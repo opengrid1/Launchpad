@@ -280,11 +280,11 @@ function Header({ isConnected, address, onConnect, onDisconnect }: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           {/* geometric logo */}
           <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-            <rect x="1" y="1" width="10" height="10" rx="2.5" stroke="#5b8def" strokeWidth="1.2"/>
-            <rect x="15" y="1" width="10" height="10" rx="2.5" stroke="#5b8def" strokeWidth="1.2" opacity=".4"/>
-            <rect x="1" y="15" width="10" height="10" rx="2.5" stroke="#5b8def" strokeWidth="1.2" opacity=".4"/>
-            <rect x="15" y="15" width="10" height="10" rx="2.5" stroke="#5b8def" strokeWidth="1.2"/>
-            <path d="M11 13h4" stroke="#5b8def" strokeWidth="1.2" strokeLinecap="round"/>
+            <rect x="1" y="1" width="10" height="10" rx="2.5" stroke="#00C805" strokeWidth="1.2"/>
+            <rect x="15" y="1" width="10" height="10" rx="2.5" stroke="#00C805" strokeWidth="1.2" opacity=".4"/>
+            <rect x="1" y="15" width="10" height="10" rx="2.5" stroke="#00C805" strokeWidth="1.2" opacity=".4"/>
+            <rect x="15" y="15" width="10" height="10" rx="2.5" stroke="#00C805" strokeWidth="1.2"/>
+            <path d="M11 13h4" stroke="#00C805" strokeWidth="1.2" strokeLinecap="round"/>
           </svg>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.2px' }}>RHO Bridge</div>
