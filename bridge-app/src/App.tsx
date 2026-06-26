@@ -179,11 +179,11 @@ export default function App() {
             style={{
               display: 'flex', alignItems: 'center', gap: 7,
               padding: '7px 14px', borderRadius: 8, border: 'none',
-              background: isConnected ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #3d52d5 0%, #5b6ef5 100%)',
-              color: isConnected ? '#9da3b4' : '#fff',
+              background: isConnected ? 'rgba(255,255,255,0.05)' : '#f4f4f5',
+              color: isConnected ? '#9da3b4' : '#0c0f1a',
               fontSize: 13, fontWeight: 600,
               cursor: 'pointer', fontFamily: 'inherit',
-              boxShadow: isConnected ? 'none' : '0 2px 12px rgba(61,82,213,0.35)',
+              boxShadow: 'none',
             }}
           >
             {isConnected && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'block', flexShrink: 0 }} />}
@@ -380,14 +380,14 @@ export default function App() {
                 letterSpacing: '-0.3px', cursor: ctaEnabled() ? 'pointer' : 'default',
                 fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 background: ctaEnabled()
-                  ? 'linear-gradient(135deg, #3d52d5 0%, #5b6ef5 100%)'
+                  ? '#f4f4f5'
                   : 'rgba(255,255,255,0.04)',
-                color: ctaEnabled() ? '#fff' : '#42475e',
-                boxShadow: ctaEnabled() ? '0 4px 20px rgba(61,82,213,0.4)' : 'none',
+                color: ctaEnabled() ? '#0c0f1a' : '#42475e',
+                boxShadow: 'none',
                 transition: 'all 0.15s',
               }}
             >
-              {inFlight && <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
+              {inFlight && <span style={{ width: 14, height: 14, border: '2px solid rgba(0,0,0,0.15)', borderTopColor: '#0c0f1a', borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
               {ctaLabel()}
             </button>
 
