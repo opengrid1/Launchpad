@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   useAccount, useReadContract, useSwitchChain,
   useChainId, useConnect, useDisconnect,
@@ -216,41 +216,25 @@ export default function App() {
 
 /* ── Chain icons ─────────────────────────────────────────────────── */
 function EthIcon({ size }: { size: number }) {
-  const ref = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const c = ref.current; if (!c) return
-    const ctx = c.getContext('2d'); if (!ctx) return
-    const d = window.devicePixelRatio || 1
-    c.width = size * d; c.height = size * d; ctx.scale(d, d)
-    const cx = size / 2, cy = size / 2, r = size / 2 - 1
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2)
-    ctx.fillStyle = '#1a1aff'; ctx.fill()
-    ctx.fillStyle = '#fff'
-    ctx.beginPath(); ctx.moveTo(cx, cy - r * 0.52); ctx.lineTo(cx - r * 0.36, cy + r * 0.02); ctx.lineTo(cx, cy + r * 0.18); ctx.lineTo(cx + r * 0.36, cy + r * 0.02); ctx.closePath(); ctx.fill()
-    ctx.fillStyle = 'rgba(255,255,255,0.55)'
-    ctx.beginPath(); ctx.moveTo(cx, cy + r * 0.18); ctx.lineTo(cx - r * 0.36, cy + r * 0.02); ctx.lineTo(cx, cy + r * 0.52); ctx.closePath(); ctx.fill()
-    ctx.fillStyle = '#fff'
-    ctx.beginPath(); ctx.moveTo(cx, cy + r * 0.18); ctx.lineTo(cx + r * 0.36, cy + r * 0.02); ctx.lineTo(cx, cy + r * 0.52); ctx.closePath(); ctx.fill()
-  }, [size])
-  return <canvas ref={ref} width={size} height={size} style={{ width: size, height: size, borderRadius: '50%' }} />
+  return (
+    <img
+      src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png"
+      width={size} height={size}
+      style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover' }}
+      alt="Ethereum"
+    />
+  )
 }
 
 function ArcIcon({ size }: { size: number }) {
-  const ref = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const c = ref.current; if (!c) return
-    const ctx = c.getContext('2d'); if (!ctx) return
-    const d = window.devicePixelRatio || 1
-    c.width = size * d; c.height = size * d; ctx.scale(d, d)
-    ctx.beginPath(); ctx.roundRect(1, 1, size - 2, size - 2, size * 0.22)
-    ctx.fillStyle = '#1c2a3a'; ctx.fill(); ctx.strokeStyle = '#2a3f55'; ctx.lineWidth = 1; ctx.stroke()
-    const cx = size / 2, cy = size / 2, ar = size * 0.28
-    ctx.beginPath(); ctx.arc(cx, cy + size * 0.06, ar, Math.PI * 1.18, Math.PI * 1.82)
-    ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = size * 0.1; ctx.lineCap = 'round'; ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(cx - ar * 0.5, cy + size * 0.16); ctx.lineTo(cx + ar * 0.5, cy + size * 0.16)
-    ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = size * 0.08; ctx.stroke()
-  }, [size])
-  return <canvas ref={ref} width={size} height={size} style={{ width: size, height: size, borderRadius: size * 0.22 }} />
+  return (
+    <img
+      src="/logo-1.png"
+      width={size} height={size}
+      style={{ width: size, height: size, borderRadius: size * 0.22, objectFit: 'cover' }}
+      alt="Arc Network"
+    />
+  )
 }
 
 /* ── Button ──────────────────────────────────────────────────────── */
