@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import {
   useAccount, useReadContract, useWriteContract,
-  useWaitForTransactionReceipt, useSwitchChain,
-  useChainId, useConnect, useDisconnect,
+  useWaitForTransactionReceipt, useSwitchChain, useChainId,
 } from 'wagmi'
-import { injected } from 'wagmi/connectors'
+import { useAppKit } from '@reown/appkit/react'
 import { formatUnits, parseUnits } from 'viem'
 import { mainnet, USDC_ADDRESS } from './wagmiConfig'
 
@@ -46,9 +45,8 @@ export default function App() {
   const [step, setStep] = useState<'idle'|'approving'|'fee'|'bridging'|'done'>('idle')
 
   const { address, isConnected } = useAccount()
-  const { connect }    = useConnect()
-  const { disconnect } = useDisconnect()
-  const chainId        = useChainId()
+  const { open }  = useAppKit()
+  const chainId   = useChainId()
   const { switchChain, isPending: switching } = useSwitchChain()
 
   const { data: balRaw, refetch: refetchBal } = useReadContract({
@@ -85,7 +83,7 @@ export default function App() {
   }
 
   function handleCta() {
-    if (!isConnected)        return connect({ connector: injected() })
+    if (!isConnected)        return open()
     if (!onMainnet)          return switchChain({ chainId: mainnet.id })
     if (step === 'done')     return () => { setStep('idle'); setAmount('') }
     submit()
@@ -143,7 +141,7 @@ export default function App() {
             </span>
           </div>
           <button
-            onClick={isConnected ? () => disconnect() : () => connect({ connector: injected() })}
+            onClick={() => open()}
             style={{
               display: 'flex', alignItems: 'center', gap: 7,
               padding: '7px 14px', borderRadius: 8,
