@@ -179,8 +179,8 @@ export default function App() {
             style={{
               display: 'flex', alignItems: 'center', gap: 7,
               padding: '7px 14px', borderRadius: 8, border: 'none',
-              background: isConnected ? 'rgba(255,255,255,0.05)' : '#2563eb',
-              color: isConnected ? '#9da3b4' : '#fff',
+              background: isConnected ? 'rgba(255,255,255,0.05)' : '#7b8fff',
+              color: isConnected ? '#9da3b4' : '#0c0f1a',
               fontSize: 13, fontWeight: 600,
               cursor: 'pointer', fontFamily: 'inherit',
               boxShadow: 'none',
@@ -381,14 +381,14 @@ export default function App() {
                 letterSpacing: '-0.3px', cursor: ctaEnabled() ? 'pointer' : 'default',
                 fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 background: ctaEnabled()
-                  ? '#2563eb'
+                  ? '#7b8fff'
                   : 'rgba(255,255,255,0.04)',
-                color: ctaEnabled() ? '#fff' : '#42475e',
+                color: ctaEnabled() ? '#0c0f1a' : '#42475e',
                 boxShadow: 'none',
                 transition: 'all 0.15s',
               }}
             >
-              {inFlight && <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
+              {inFlight && <span style={{ width: 14, height: 14, border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#0c0f1a', borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
               {ctaLabel()}
             </button>
 
