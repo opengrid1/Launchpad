@@ -5,7 +5,6 @@ import {
 } from 'wagmi'
 import { useAppKit } from '@reown/appkit/react'
 import { formatUnits, parseUnits } from 'viem'
-import { mainnet } from './wagmiConfig'
 
 const ROUTER_ADDRESS = '0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b' as `0x${string}`
 const FEE_BPS        = 10 // 0.1%
@@ -121,7 +120,7 @@ export default function App() {
     submit()
   }
 
-  const switchLabel = src.id === mainnet.id ? 'Switch to Ethereum' : 'Switch to Base'
+  const switchLabel = `Switch to ${src.name}`
 
   const ctaLabel = (): string => {
     if (!isConnected)        return 'Connect wallet'
@@ -245,7 +244,7 @@ export default function App() {
                           <div
                             key={c.id}
                             className="chain-opt"
-                            onClick={() => { setSrcIdx(i); setDropdown(false) }}
+                            onClick={() => { setSrcIdx(i); setDropdown(false); if (isConnected) switchChain({ chainId: CHAINS[i].id }) }}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 10,
                               padding: '11px 14px', cursor: 'pointer',
