@@ -153,20 +153,33 @@ export default function App() {
       <style>{CSS}</style>
       <div style={s.page}>
         {/* Header */}
-        <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <img src="/rh-logo.png" alt="RH Bridge" style={{ width: 28, height: 28, borderRadius: 8 }} />
-            <span style={{ fontWeight: 700, fontSize: 16, color: '#fff', letterSpacing: '-0.3px' }}>RH Bridge</span>
+        <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/rh-logo.png" alt="RobinBridge" style={{ width: 44, height: 44, borderRadius: 10 }} />
+            <span style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.5px' }}>
+              <span style={{ color: '#fff' }}>Robin</span><span style={{ color: ACCENT }}>Bridge</span>
+            </span>
           </div>
           <button
             onClick={() => open()}
-            style={{ background: isConnected ? '#1e2018' : ACCENT, border: isConnected ? '1px solid #2a2c1e' : 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: 13, color: isConnected ? '#aaa' : '#0e0f0a' }}
+            style={{ background: ACCENT, border: 'none', borderRadius: 50, padding: '12px 22px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 15, color: '#0e0f0a', whiteSpace: 'nowrap' }}
           >
             {isConnected && address ? `${address.slice(0,6)}…${address.slice(-4)}` : 'Connect Wallet'}
           </button>
         </div>
 
         <div style={s.wrap}>
+
+          {/* Hero banner */}
+          <div style={{ borderRadius: 16, overflow: 'hidden', marginBottom: 12 }}>
+            <img src="/rh-hero.png" alt="Robinbridge" style={{ width: '100%', display: 'block' }} />
+          </div>
+
+          {/* Tagline */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingLeft: 4 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: ACCENT }} />
+            <span style={{ fontSize: 13, color: '#888' }}>Powered by Relay · settles in seconds · no allowlist</span>
+          </div>
 
           {/* Tab switcher */}
           <div style={s.card}>
