@@ -152,6 +152,24 @@ export default function App() {
     <>
       <style>{CSS}</style>
       <div style={s.page}>
+        {/* Header */}
+        <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 2L2 6v8h4v-4h4v4h4V6L8 2z" fill="#0e0f0a"/>
+              </svg>
+            </div>
+            <span style={{ fontWeight: 700, fontSize: 16, color: '#fff', letterSpacing: '-0.3px' }}>RH Bridge</span>
+          </div>
+          <button
+            onClick={() => open()}
+            style={{ background: isConnected ? '#1e2018' : ACCENT, border: isConnected ? '1px solid #2a2c1e' : 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: 13, color: isConnected ? '#aaa' : '#0e0f0a' }}
+          >
+            {isConnected && address ? `${address.slice(0,6)}…${address.slice(-4)}` : 'Connect Wallet'}
+          </button>
+        </div>
+
         <div style={s.wrap}>
 
           {/* Tab switcher */}
