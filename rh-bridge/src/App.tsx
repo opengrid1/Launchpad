@@ -154,8 +154,8 @@ export default function App() {
         {/* Header — full width */}
         <div style={{ position: 'sticky', top: 0, zIndex: 100, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: '#0e0f0a', marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/rh-logo.png" alt="RobinBridge" style={{ width: 48, height: 48, borderRadius: 10 }} />
-            <span style={{ fontWeight: 800, fontSize: 22, letterSpacing: '-0.5px' }}>
+            <img src="/rh-logo.png" alt="RobinBridge" style={{ width: 32, height: 32, borderRadius: 7 }} />
+            <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>
               <span style={{ color: '#fff' }}>Robin</span><span style={{ color: ACCENT }}>Bridge</span>
             </span>
           </div>
