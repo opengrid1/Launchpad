@@ -162,7 +162,7 @@ export default function App() {
           </div>
           <button
             onClick={() => open()}
-            style={{ background: isConnected ? '#1e2018' : ACCENT, border: isConnected ? '1px solid #2a2c1e' : 'none', borderRadius: 999, padding: '14px 28px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 800, fontSize: 16, color: isConnected ? '#ccc' : '#0e0f0a', whiteSpace: 'nowrap' }}
+            style={{ background: isConnected ? '#1e2018' : ACCENT, border: isConnected ? '1px solid #2a2c1e' : 'none', borderRadius: 999, padding: '10px 18px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 14, color: isConnected ? '#ccc' : '#0e0f0a', whiteSpace: 'nowrap' }}
           >
             {isConnected && address ? `${address.slice(0,6)}…${address.slice(-4)}` : 'Connect Wallet'}
           </button>
