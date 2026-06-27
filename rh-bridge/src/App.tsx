@@ -153,7 +153,7 @@ export default function App() {
       <style>{CSS}</style>
       <div style={s.page}>
         {/* Header */}
-        <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ position: 'sticky', top: 0, zIndex: 100, width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, background: '#0e0f0a', paddingTop: 12, paddingBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src="/rh-logo.png" alt="RobinBridge" style={{ width: 44, height: 44, borderRadius: 10 }} />
             <span style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.5px' }}>
