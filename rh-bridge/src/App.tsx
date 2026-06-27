@@ -12,7 +12,7 @@ const BRIDGE_ADDRESS = '0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b' as `0x${stri
 const LIQUIDITY_DEPOSIT  = 50
 const LIQUIDITY_WITHDRAW = 550
 const MAX_PER_TX         = 0
-const STATUS       = 'Paused'
+const STATUS: string = 'Active'
 const ACCENT       = '#CAFF00'
 
 const CSS = `
