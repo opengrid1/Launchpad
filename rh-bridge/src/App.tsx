@@ -9,8 +9,9 @@ import { mainnet } from './wagmiConfig'
 
 const RH_CHAIN_ID = 4663
 const BRIDGE_ADDRESS = '0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b' as `0x${string}`
-const LIQUIDITY    = 0
-const MAX_PER_TX   = 0
+const LIQUIDITY_DEPOSIT  = 50
+const LIQUIDITY_WITHDRAW = 550
+const MAX_PER_TX         = 0
 const STATUS       = 'Paused'
 const ACCENT       = '#CAFF00'
 
@@ -249,7 +250,7 @@ export default function App() {
               <div style={STATUS === 'Paused' ? s.dotRed : s.dotGreen} />
               <span style={{ fontSize: 13, fontWeight: 600, color: ACCENT }}>Available Bridge Liquidity</span>
             </div>
-            <div style={s.liqNum}>{LIQUIDITY} <span style={{ fontSize: 24, color: ACCENT }}>ETH</span></div>
+            <div style={s.liqNum}>{tab === 'deposit' ? LIQUIDITY_DEPOSIT : LIQUIDITY_WITHDRAW} <span style={{ fontSize: 24, color: ACCENT }}>ETH</span></div>
             <div style={s.liqSub}>on Robinhood Chain</div>
             <div style={s.infoRow}>
               <div>
