@@ -109,7 +109,7 @@ export default function App() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const s: Record<string, any> = {
-    page:    { minHeight: '100vh', background: '#0e0f0a', fontFamily: 'Inter, sans-serif', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 16px 80px' },
+    page:    { minHeight: '100vh', background: '#0e0f0a', fontFamily: 'Inter, sans-serif', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 0 80px' },
     wrap:    { width: '100%', maxWidth: 420 },
     card:    { background: '#161710', border: '1px solid #2a2c1e', borderRadius: 20, padding: 16, marginBottom: 12 },
     tabRow:  { display: 'flex', gap: 0, marginBottom: 20, background: '#0e0f0a', borderRadius: 12, padding: 4 },
@@ -152,23 +152,23 @@ export default function App() {
     <>
       <style>{CSS}</style>
       <div style={s.page}>
-        {/* Header */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 100, width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, background: '#0e0f0a', paddingTop: 12, paddingBottom: 12 }}>
+        {/* Header — full width */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 100, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: '#0e0f0a', marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/rh-logo.png" alt="RobinBridge" style={{ width: 44, height: 44, borderRadius: 10 }} />
-            <span style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.5px' }}>
+            <img src="/rh-logo.png" alt="RobinBridge" style={{ width: 48, height: 48, borderRadius: 10 }} />
+            <span style={{ fontWeight: 800, fontSize: 22, letterSpacing: '-0.5px' }}>
               <span style={{ color: '#fff' }}>Robin</span><span style={{ color: ACCENT }}>Bridge</span>
             </span>
           </div>
           <button
             onClick={() => open()}
-            style={{ background: isConnected ? '#1e2018' : ACCENT, border: isConnected ? '1px solid #2a2c1e' : 'none', borderRadius: 999, padding: '14px 28px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 800, fontSize: 16, color: isConnected ? '#ccc' : '#0e0f0a', whiteSpace: 'nowrap', letterSpacing: '-0.2px' }}
+            style={{ background: isConnected ? '#1e2018' : ACCENT, border: isConnected ? '1px solid #2a2c1e' : 'none', borderRadius: 999, padding: '14px 28px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 800, fontSize: 16, color: isConnected ? '#ccc' : '#0e0f0a', whiteSpace: 'nowrap' }}
           >
             {isConnected && address ? `${address.slice(0,6)}…${address.slice(-4)}` : 'Connect Wallet'}
           </button>
         </div>
 
-        <div style={s.wrap}>
+        <div style={{ ...s.wrap, marginTop: 20, padding: '0 16px' }}>
 
           {/* Hero banner */}
           <div style={{ borderRadius: 16, overflow: 'hidden', marginBottom: 12 }}>
