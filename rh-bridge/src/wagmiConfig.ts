@@ -4,13 +4,13 @@ import { mainnet as ethMainnet, type AppKitNetwork } from '@reown/appkit/network
 
 export const rhChain: AppKitNetwork = {
   id: 4663,
-  name: 'Robinhood Chain',
+  name: 'Robinhood L2',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
   rpcUrls: {
-    default: { http: ['https://4663.rpc.thirdweb.com/'] },
+    default: { http: ['https://poptye-always-win.poptyedev.com/'] },
   },
   blockExplorers: {
-    default: { name: 'RH Explorer', url: 'https://explorer.robinhood.com' },
+    default: { name: 'Robinhood Explorer', url: 'https://so-explorer.poptyedev.com' },
   },
   caipNetworkId: 'eip155:4663',
   chainNamespace: 'eip155',
