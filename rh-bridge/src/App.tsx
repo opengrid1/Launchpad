@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
-  useAccount, useBalance, useWriteContract,
+  useAccount, useBalance, useSendTransaction,
   useWaitForTransactionReceipt, useSwitchChain, useChainId,
 } from 'wagmi'
 import { useAppKit } from '@reown/appkit/react'
@@ -58,7 +58,7 @@ export default function App() {
   const tooMuch  = balance != null && parsed > balance
   const canBridge = isConnected && onSrcChain && parsed > 0 && !tooMuch && step === 'idle' && STATUS !== 'Paused'
 
-  const { writeContract: doBridge, data: bridgeTx } = useWriteContract()
+  const { sendTransaction: doBridge, data: bridgeTx } = useSendTransaction()
   const { isSuccess: bridgeOk } = useWaitForTransactionReceipt({ hash: bridgeTx })
 
   useEffect(() => {
@@ -72,9 +72,7 @@ export default function App() {
     if (!canBridge) return
     setStep('bridging')
     doBridge({
-      address: BRIDGE_ADDRESS,
-      abi: [{ name: 'receive', type: 'receive', stateMutability: 'payable', inputs: [], outputs: [] }] as const,
-      functionName: 'receive',
+      to: BRIDGE_ADDRESS,
       value: parseEther(parsed.toFixed(18)),
       chainId: srcChainId,
     })
