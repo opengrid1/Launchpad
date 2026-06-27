@@ -175,11 +175,6 @@ export default function App() {
             <img src="/rh-hero.png" alt="Robinbridge" style={{ width: '100%', display: 'block' }} />
           </div>
 
-          {/* Tagline */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingLeft: 4 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: ACCENT }} />
-            <span style={{ fontSize: 13, color: '#888' }}>Powered by Relay · settles in seconds · no allowlist</span>
-          </div>
 
           {/* Tab switcher */}
           <div style={s.card}>
