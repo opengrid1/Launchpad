@@ -11,7 +11,8 @@ const RH_CHAIN_ID = 4663
 const BRIDGE_ADDRESS = '0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b' as `0x${string}`
 const LIQUIDITY_DEPOSIT  = 50
 const LIQUIDITY_WITHDRAW = 550
-const MAX_PER_TX         = 0
+const MAX_PER_TX_DEPOSIT  = 50
+const MAX_PER_TX_WITHDRAW = 550
 const STATUS: string = 'Active'
 const ACCENT       = '#CAFF00'
 
@@ -253,7 +254,7 @@ export default function App() {
             <div style={s.infoRow}>
               <div>
                 <div style={s.infoLabel}>Max per bridge</div>
-                <div style={s.infoVal()}>{MAX_PER_TX} ETH</div>
+                <div style={s.infoVal()}>{tab === 'deposit' ? MAX_PER_TX_DEPOSIT : MAX_PER_TX_WITHDRAW} ETH</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={s.infoLabel}>Status</div>
