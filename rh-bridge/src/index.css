@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; background: #100201; color: #f8eac6; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type="number"] { -moz-appearance: textfield; }
+input:focus { outline: none; }
+button { font-family: inherit; cursor: pointer; }
+@keyframes spin { to { transform: rotate(360deg); } }

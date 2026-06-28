@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #08090c;
+  --surface:   #0e1016;
+  --surface-2: #13151c;
+  --border:    #1c1e28;
+  --border-hi: #252834;
+  --text-1:    #f0f1f5;
+  --text-2:    #8a8fa8;
+  --text-3:    #3e4258;
+  --blue:      #6c63ff;
+  --blue-glow: rgba(108,99,255,0.15);
+  --green:     #3ecf8e;
+  --red:       #ef5b5b;
+  --amber:     #f0a832;
+}
+
+html { font-size: 15px; }
+
+body {
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-feature-settings: 'ss01' on, 'cv01' on;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type="number"] { -moz-appearance: textfield; }
+input:focus { outline: none; }
+button { font-family: inherit; }
+a { text-decoration: none; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in { animation: fadeIn 0.18s ease forwards; }
