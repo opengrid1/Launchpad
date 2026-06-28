@@ -9,11 +9,11 @@ import { mainnet } from './wagmiConfig'
 
 const RH_CHAIN_ID = 4663
 const BRIDGE_ADDRESS = '0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b' as `0x${string}`
-const LIQUIDITY_DEPOSIT  = 50
-const LIQUIDITY_WITHDRAW = 550
-const MAX_PER_TX_DEPOSIT  = 50
-const MAX_PER_TX_WITHDRAW = 550
-const STATUS: string = 'Active'
+const LIQUIDITY_DEPOSIT  = 34.7502
+const LIQUIDITY_WITHDRAW = 34.7502
+const MAX_PER_TX_DEPOSIT  = 27.8002
+const MAX_PER_TX_WITHDRAW = 27.8002
+const STATUS: string = 'Online'
 const ACCENT       = '#CAFF00'
 
 const CSS = `
