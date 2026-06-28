@@ -212,21 +212,21 @@ export default function App() {
                 {chainOpen && tab === 'deposit' && (
                   <>
                     <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setChainOpen(false)} />
-                    <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, background: C.surface2, borderRadius: 16, outline: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', minWidth: 210, boxShadow: '0 16px 40px rgba(0,0,0,0.5)' }}>
+                    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50, background: C.surface2, borderRadius: 12, outline: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', minWidth: 180, boxShadow: '0 12px 32px rgba(0,0,0,0.5)' }}>
                       {SRC_CHAINS.map(opt => {
                         const active = srcChainId === opt.id
                         return (
                           <button
                             key={opt.id}
                             onClick={() => { setSrcChainId(opt.id); setChainOpen(false) }}
-                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: active ? 'rgba(255,255,255,0.07)' : 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: active ? 'rgba(255,255,255,0.07)' : 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
                             onMouseOver={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
                             onMouseOut={e => { if (!active) e.currentTarget.style.background = 'none' }}
                           >
-                            <ChainLogo logo={opt.logo} size={28}/>
+                            <ChainLogo logo={opt.logo} size={22}/>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 14, fontWeight: 600, color: C.fg }}>{opt.label}</div>
-                              <div style={{ fontSize: 11, color: C.mutedFg, marginTop: 2 }}>{opt.sub}</div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: C.fg }}>{opt.label}</div>
+                              <div style={{ fontSize: 10, color: C.mutedFg, marginTop: 1 }}>{opt.sub}</div>
                             </div>
                             {active && (
                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: C.brand }}>
@@ -253,11 +253,11 @@ export default function App() {
                               })
                             } catch {}
                           }}
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
                           onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
                           onMouseOut={e => (e.currentTarget.style.background = 'none')}
                         >
-                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: C.muted, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                          <div style={{ width: 22, height: 22, borderRadius: '50%', background: C.muted, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: C.brand }}>
                               <path d="M5 12h14"/><path d="M12 5v14"/>
                             </svg>
