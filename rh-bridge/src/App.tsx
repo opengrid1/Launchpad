@@ -5,8 +5,9 @@ import {
 } from 'wagmi'
 import { useAppKit } from '@reown/appkit/react'
 import { parseEther, formatEther } from 'viem'
-import { mainnet } from './wagmiConfig'
+import {} from './wagmiConfig'
 
+const BASE_CHAIN_ID  = 8453
 const RH_CHAIN_ID    = 4663
 const BRIDGE_ADDRESS = '0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b' as `0x${string}`
 const LIQUIDITY_DEPOSIT   = 34.7502
@@ -50,14 +51,14 @@ export default function App() {
   const chainId    = useChainId()
   const { switchChain, isPending: switching } = useSwitchChain()
 
-  const srcChainId = tab === 'deposit' ? mainnet.id : RH_CHAIN_ID
+  const srcChainId = tab === 'deposit' ? BASE_CHAIN_ID : RH_CHAIN_ID
   const onSrcChain = chainId === srcChainId
 
   const { data: balData, refetch: refetchBal } = useBalance({
     address, chainId: srcChainId, query: { enabled: !!address },
   })
   const { data: dstBalData } = useBalance({
-    address, chainId: tab === 'deposit' ? RH_CHAIN_ID : mainnet.id, query: { enabled: !!address },
+    address, chainId: tab === 'deposit' ? RH_CHAIN_ID : BASE_CHAIN_ID, query: { enabled: !!address },
   })
 
   const balance    = balData    ? +formatEther(balData.value)    : null
