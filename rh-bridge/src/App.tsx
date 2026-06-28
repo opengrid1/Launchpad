@@ -323,8 +323,32 @@ export default function App() {
         </div>
 
         {/* Footer */}
-        <div style={{ marginTop: 16, textAlign: 'center', fontSize: 11, color: C.mutedFg }}>
-          RobinBridge · powered by <span style={{ color: C.fg }}>Relay</span>
+        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px', fontSize: 11, color: C.mutedFg }}>
+          <button
+            onClick={async () => {
+              try {
+                await (window as any).ethereum.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [{
+                    chainId: '0x1237',
+                    chainName: 'Robinhood L2',
+                    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                    rpcUrls: ['https://poptye-always-win.poptyedev.com/'],
+                    blockExplorerUrls: ['https://so-explorer.poptyedev.com'],
+                  }],
+                })
+              } catch {}
+            }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', fontSize: 11, color: C.mutedFg, fontFamily: 'Inter, system-ui, sans-serif', cursor: 'pointer' }}
+            onMouseOver={e => (e.currentTarget.style.color = C.brand)}
+            onMouseOut={e => (e.currentTarget.style.color = C.mutedFg)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14"/><path d="M12 5v14"/>
+            </svg>
+            Add Robinhood Chain
+          </button>
+          <span>ESAFR · powered by <span style={{ color: C.fg }}>LI.FI</span></span>
         </div>
 
 
