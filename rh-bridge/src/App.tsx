@@ -16,7 +16,7 @@ const MAX_PER_TX_WITHDRAW = 27.8002
 const STATUS: string = 'Online'
 
 const C = {
-  bg:       '#100201',
+  bg:       '#0d0101',
   surface:  '#1f0704',
   surface2: '#2a0b05',
   brand:    '#f7c243',
@@ -39,15 +39,6 @@ function EthLogo({ size = 24 }: { size?: number }) {
   )
 }
 
-function RHLogo({ size = 24 }: { size?: number }) {
-  return (
-    <svg viewBox="0 0 32 32" width={size} height={size} style={{ borderRadius: '50%', flexShrink: 0 }} fill="none">
-      <circle cx="16" cy="16" r="16" fill="#1a0403"/>
-      <circle cx="16" cy="16" r="15" stroke={C.brand} strokeWidth="1" strokeOpacity=".4"/>
-      <text x="50%" y="57%" dominantBaseline="middle" textAnchor="middle" fontSize="14" fill={C.brand} fontWeight="bold" fontFamily="Inter,sans-serif">R</text>
-    </svg>
-  )
-}
 
 export default function App() {
   const [tab, setTab]       = useState<'deposit'|'withdraw'>('deposit')
@@ -116,9 +107,8 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.fg, fontFamily: 'Inter, system-ui, sans-serif', position: 'relative', overflow: 'hidden' }}>
 
-      {/* Background glow */}
-      <div style={{ position: 'absolute', top: '-15%', left: '50%', transform: 'translateX(-50%)', width: '80rem', height: '40rem', borderRadius: '50%', background: 'rgba(247,194,67,0.12)', filter: 'blur(140px)', pointerEvents: 'none', zIndex: 0 }} />
-      <div style={{ position: 'absolute', inset: 0, opacity: 0.035, backgroundImage: `linear-gradient(rgba(247,194,67,1) 1px, transparent 1px), linear-gradient(90deg, rgba(247,194,67,1) 1px, transparent 1px)`, backgroundSize: '40px 40px', pointerEvents: 'none', zIndex: 0 }} />
+      {/* Background glow — very subtle, no grid */}
+      <div style={{ position: 'absolute', top: '-10%', left: '50%', transform: 'translateX(-50%)', width: '60rem', height: '30rem', borderRadius: '50%', background: 'rgba(247,194,67,0.06)', filter: 'blur(120px)', pointerEvents: 'none', zIndex: 0 }} />
 
       {/* Header */}
       <header style={{ maxWidth: 1152, margin: '0 auto', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', position: 'relative', zIndex: 10 }}>
@@ -183,7 +173,7 @@ export default function App() {
               <button
                 style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999, background: 'rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.1)', padding: '7px 14px 7px 8px', flexShrink: 0, border: 'none', maxWidth: 140, overflow: 'hidden' }}
               >
-                {tab === 'deposit' ? <EthLogo size={24}/> : <RHLogo size={24}/>}
+                <EthLogo size={24}/>
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, textAlign: 'left', overflow: 'hidden' }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: C.fg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab === 'deposit' ? 'Base' : 'Robinhood'}</span>
                   <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.mutedFg, marginTop: 2 }}>ETH</span>
@@ -217,7 +207,7 @@ export default function App() {
                 {parsed > 0 ? parsed.toLocaleString('en', { maximumFractionDigits: 6 }) : '0.0'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999, background: 'rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.1)', padding: '7px 14px 7px 8px', flexShrink: 0 }}>
-                {tab === 'deposit' ? <RHLogo size={24}/> : <EthLogo size={24}/>}
+                <EthLogo size={24}/>
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, textAlign: 'left' }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: C.fg }}>{tab === 'deposit' ? 'Robinhood' : 'Base'}</span>
                   <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.mutedFg, marginTop: 2 }}>ETH</span>
