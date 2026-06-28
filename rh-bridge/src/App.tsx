@@ -236,38 +236,6 @@ export default function App() {
                           </button>
                         )
                       })}
-                      <div style={{ borderTop: `1px solid ${C.muted}`, padding: '4px 0' }}>
-                        <button
-                          onClick={async () => {
-                            setChainOpen(false)
-                            try {
-                              await (window as any).ethereum.request({
-                                method: 'wallet_addEthereumChain',
-                                params: [{
-                                  chainId: '0x1237',
-                                  chainName: 'Robinhood L2',
-                                  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                                  rpcUrls: ['https://poptye-always-win.poptyedev.com/'],
-                                  blockExplorerUrls: ['https://so-explorer.poptyedev.com'],
-                                }],
-                              })
-                            } catch {}
-                          }}
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
-                          onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
-                          onMouseOut={e => (e.currentTarget.style.background = 'none')}
-                        >
-                          <div style={{ width: 22, height: 22, borderRadius: '50%', background: C.muted, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: C.brand }}>
-                              <path d="M5 12h14"/><path d="M12 5v14"/>
-                            </svg>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: C.brand }}>Add Robinhood Chain</div>
-                            <div style={{ fontSize: 11, color: C.mutedFg, marginTop: 2 }}>Chain ID: 4663</div>
-                          </div>
-                        </button>
-                      </div>
                     </div>
                   </>
                 )}
