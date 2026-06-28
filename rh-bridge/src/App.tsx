@@ -87,7 +87,7 @@ export default function App() {
 
   const ctaLabel = (): string => {
     if (!isConnected)        return 'Connect wallet'
-    if (!onSrcChain)         return switching ? 'Switching…' : `Switch to ${tab === 'deposit' ? 'Ethereum' : 'Robinhood Chain'}`
+    if (!onSrcChain)         return switching ? 'Switching…' : `Switch to ${tab === 'deposit' ? 'Base' : 'Robinhood Chain'}`
     if (step === 'done')     return 'Bridge again'
     if (step === 'bridging') return 'Confirm in wallet…'
     if (!parsed)             return 'Enter an amount'
@@ -228,7 +228,20 @@ export default function App() {
         {/* Footer links */}
         <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px', fontSize: 11, color: C.mutedFg }}>
           <button
-            onClick={() => switchChain({ chainId: RH_CHAIN_ID })}
+            onClick={async () => {
+              try {
+                await (window as any).ethereum.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [{
+                    chainId: '0x1237',
+                    chainName: 'Robinhood L2',
+                    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                    rpcUrls: ['https://poptye-always-win.poptyedev.com/'],
+                    blockExplorerUrls: ['https://so-explorer.poptyedev.com'],
+                  }],
+                })
+              } catch {}
+            }}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', fontSize: 11, color: C.mutedFg, fontFamily: 'Inter, system-ui, sans-serif' }}
             onMouseOver={e => (e.currentTarget.style.color = C.brand)}
             onMouseOut={e => (e.currentTarget.style.color = C.mutedFg)}
