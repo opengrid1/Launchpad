@@ -15,9 +15,20 @@ const MAX_PER_TX_DEPOSIT  = 27.8002
 const MAX_PER_TX_WITHDRAW = 27.8002
 const STATUS: string = 'Online'
 
-function EthLogo({ cls = 'w-6 h-6' }: { cls?: string }) {
+const C = {
+  bg:       '#100201',
+  surface:  '#1f0704',
+  surface2: '#2a0b05',
+  brand:    '#f7c243',
+  brandFg:  '#1a0000',
+  fg:       '#f8eac6',
+  muted:    '#331511',
+  mutedFg:  '#a08070',
+}
+
+function EthLogo({ size = 24 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 32 32" className={`${cls} shrink-0 rounded-full`} fill="none">
+    <svg viewBox="0 0 32 32" width={size} height={size} style={{ borderRadius: '50%', flexShrink: 0 }} fill="none">
       <circle cx="16" cy="16" r="16" fill="#627EEA"/>
       <path d="M16.5 4v8.87l7.5 3.35-7.5-12.22z" fill="white" fillOpacity=".6"/>
       <path d="M16.5 4L9 16.22l7.5-3.35V4z" fill="white"/>
@@ -28,11 +39,12 @@ function EthLogo({ cls = 'w-6 h-6' }: { cls?: string }) {
   )
 }
 
-function RHLogo({ cls = 'w-6 h-6' }: { cls?: string }) {
+function RHLogo({ size = 24 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 32 32" className={`${cls} shrink-0 rounded-full`} fill="none">
+    <svg viewBox="0 0 32 32" width={size} height={size} style={{ borderRadius: '50%', flexShrink: 0 }} fill="none">
       <circle cx="16" cy="16" r="16" fill="#1a0403"/>
-      <text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fontSize="15" fill="#f7c243" fontWeight="bold" fontFamily="Inter,sans-serif">R</text>
+      <circle cx="16" cy="16" r="15" stroke={C.brand} strokeWidth="1" strokeOpacity=".4"/>
+      <text x="50%" y="57%" dominantBaseline="middle" textAnchor="middle" fontSize="14" fill={C.brand} fontWeight="bold" fontFamily="Inter,sans-serif">R</text>
     </svg>
   )
 }
@@ -99,29 +111,24 @@ export default function App() {
   }
 
   const ctaEnabled = step !== 'bridging' && (!isConnected || !onSrcChain || step === 'done' || canBridge)
-
-  const fmtBal = (b: number | null) =>
-    b != null ? b.toLocaleString('en', { maximumFractionDigits: 4 }) : '0'
-
-  const srcName = tab === 'deposit' ? 'Base' : 'Robinhood'
-  const dstName = tab === 'deposit' ? 'Robinhood' : 'Base'
+  const fmtBal = (b: number | null) => b != null ? b.toLocaleString('en', { maximumFractionDigits: 4 }) : '0'
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.fg, fontFamily: 'Inter, system-ui, sans-serif', position: 'relative', overflow: 'hidden' }}>
 
-      {/* Background glow + grid */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[80rem] h-[40rem] rounded-full bg-brand/15 blur-[140px]" />
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(var(--color-brand) 1px, transparent 1px), linear-gradient(90deg, var(--color-brand) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-      </div>
+      {/* Background glow */}
+      <div style={{ position: 'absolute', top: '-15%', left: '50%', transform: 'translateX(-50%)', width: '80rem', height: '40rem', borderRadius: '50%', background: 'rgba(247,194,67,0.12)', filter: 'blur(140px)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.035, backgroundImage: `linear-gradient(rgba(247,194,67,1) 1px, transparent 1px), linear-gradient(90deg, rgba(247,194,67,1) 1px, transparent 1px)`, backgroundSize: '40px 40px', pointerEvents: 'none', zIndex: 0 }} />
 
       {/* Header */}
-      <header className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-end gap-4">
+      <header style={{ maxWidth: 1152, margin: '0 auto', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', position: 'relative', zIndex: 10 }}>
         <button
           onClick={() => open()}
-          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand text-brand-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 999, background: C.brand, color: C.brandFg, padding: '8px 16px', fontSize: 14, fontWeight: 600, border: 'none', transition: 'opacity .15s' }}
+          onMouseOver={e => (e.currentTarget.style.opacity = '0.9')}
+          onMouseOut={e => (e.currentTarget.style.opacity = '1')}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
             <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
           </svg>
@@ -130,163 +137,158 @@ export default function App() {
       </header>
 
       {/* Main */}
-      <main className="max-w-md mx-auto px-4 pt-2 pb-16">
+      <main style={{ maxWidth: 448, margin: '0 auto', padding: '8px 16px 64px', position: 'relative', zIndex: 10 }}>
 
         {/* Logo */}
         <img
           src="/esafr-logo.png"
-          alt="ESAFR Bridge"
-          className="mx-auto mb-4 w-full max-w-sm select-none drop-shadow-[0_10px_40px_rgba(0,0,0,0.6)]"
+          alt="Bridge Logo"
           draggable={false}
+          style={{ display: 'block', margin: '0 auto 16px', width: '100%', maxWidth: 384, userSelect: 'none', filter: 'drop-shadow(0 10px 40px rgba(0,0,0,0.6))' }}
         />
 
         {/* Bridge card */}
-        <div className="rounded-3xl bg-surface-2 ring-1 ring-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] p-4 space-y-3 backdrop-blur">
+        <div style={{ borderRadius: 24, background: C.surface2, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6)', outline: '1px solid rgba(255,255,255,0.08)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {/* Card header */}
-          <div className="flex items-center justify-between px-2 pt-1">
-            <h1 className="text-base font-semibold">Bridge</h1>
-            <button className="p-1.5 rounded-md transition text-muted-foreground hover:text-foreground" aria-label="Advanced">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M14 17H5"/><path d="M19 7h-9"/>
-                <circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>
+          {/* Card title */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 0' }}>
+            <h1 style={{ fontSize: 15, fontWeight: 600, color: C.fg }}>Bridge</h1>
+            <button style={{ background: 'none', border: 'none', padding: 6, borderRadius: 6, color: C.mutedFg }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>
               </svg>
             </button>
           </div>
 
           {/* YOU PAY */}
-          <div className="rounded-2xl bg-surface ring-1 ring-white/5 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">You pay</span>
+          <div style={{ borderRadius: 16, background: C.surface, outline: '1px solid rgba(255,255,255,0.05)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: C.mutedFg }}>You pay</span>
               <button
-                type="button"
+                style={{ fontSize: 12, color: C.mutedFg, background: 'none', border: 'none' }}
                 onClick={() => balance && setAmount(balance.toFixed(6))}
-                className="text-xs text-muted-foreground hover:text-brand transition"
               >
-                Balance: <span className="font-mono text-foreground">{fmtBal(balance)}</span>
+                Balance: <span style={{ fontFamily: 'monospace', color: C.fg }}>{fmtBal(balance)}</span>
               </button>
             </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 12 }}>
               <input
                 type="number"
                 inputMode="decimal"
                 placeholder="0.0"
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
-                className="block w-full min-w-0 bg-transparent border-0 outline-none text-3xl font-semibold tabular-nums text-foreground placeholder:text-white/20"
+                style={{ background: 'none', border: 'none', fontSize: 30, fontWeight: 600, color: C.fg, width: '100%', fontFamily: 'Inter, system-ui, sans-serif' }}
               />
               <button
-                type="button"
-                className="flex items-center gap-2 shrink-0 rounded-full bg-white/5 ring-1 ring-white/10 pl-2 pr-4 py-1.5 hover:bg-white/10 transition"
+                style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999, background: 'rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.1)', padding: '7px 14px 7px 8px', flexShrink: 0, border: 'none', maxWidth: 140, overflow: 'hidden' }}
               >
-                {tab === 'deposit' ? <EthLogo/> : <RHLogo/>}
-                <div className="flex flex-col leading-tight text-left">
-                  <span className="text-sm font-semibold text-foreground">{srcName}</span>
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">ETH</span>
+                {tab === 'deposit' ? <EthLogo size={24}/> : <RHLogo size={24}/>}
+                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, textAlign: 'left', overflow: 'hidden' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: C.fg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab === 'deposit' ? 'Base' : 'Robinhood'}</span>
+                  <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.mutedFg, marginTop: 2 }}>ETH</span>
                 </div>
               </button>
             </div>
           </div>
 
-          {/* Arrow */}
-          <div className="relative h-0">
+          {/* Arrow between fields */}
+          <div style={{ position: 'relative', height: 0, display: 'flex', justifyContent: 'center' }}>
             <button
-              type="button"
-              aria-label="Flip direction"
-              onClick={() => setTab(tab === 'deposit' ? 'withdraw' : 'deposit')}
-              className="absolute left-1/2 -translate-x-1/2 -top-5 z-10 w-10 h-10 rounded-xl bg-surface-2 ring-4 ring-background grid place-items-center hover:bg-surface transition group"
+              onClick={() => setTab(t => t === 'deposit' ? 'withdraw' : 'deposit')}
+              style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', width: 40, height: 40, borderRadius: 12, background: C.surface2, outline: `4px solid ${C.bg}`, border: 'none', display: 'grid', placeItems: 'center', color: C.mutedFg, zIndex: 1 }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground group-hover:text-brand transition" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>
               </svg>
             </button>
           </div>
 
           {/* YOU RECEIVE */}
-          <div className="rounded-2xl bg-surface ring-1 ring-white/5 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">You receive</span>
-              <span className="text-xs text-muted-foreground">
-                Balance: <span className="font-mono text-foreground">{fmtBal(dstBalance)}</span>
+          <div style={{ borderRadius: 16, background: C.surface, outline: '1px solid rgba(255,255,255,0.05)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: C.mutedFg }}>You receive</span>
+              <span style={{ fontSize: 12, color: C.mutedFg }}>
+                Balance: <span style={{ fontFamily: 'monospace', color: C.fg }}>{fmtBal(dstBalance)}</span>
               </span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 min-w-0 text-3xl font-semibold tabular-nums truncate">
-                <span className={parsed > 0 ? 'text-foreground' : 'text-white/20'}>
-                  {parsed > 0 ? parsed.toLocaleString('en', { maximumFractionDigits: 6 }) : '0.0'}
-                </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, fontSize: 30, fontWeight: 600, color: parsed > 0 ? C.fg : 'rgba(255,255,255,0.2)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                {parsed > 0 ? parsed.toLocaleString('en', { maximumFractionDigits: 6 }) : '0.0'}
               </div>
-              <div className="flex shrink-0 items-center gap-2 rounded-full bg-white/5 ring-1 ring-white/10 pl-2 pr-3 py-1.5">
-                {tab === 'deposit' ? <RHLogo/> : <EthLogo/>}
-                <div className="flex flex-col leading-tight text-left">
-                  <span className="text-sm font-semibold text-foreground">{dstName}</span>
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">ETH</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999, background: 'rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.1)', padding: '7px 14px 7px 8px', flexShrink: 0 }}>
+                {tab === 'deposit' ? <RHLogo size={24}/> : <EthLogo size={24}/>}
+                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, textAlign: 'left' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: C.fg }}>{tab === 'deposit' ? 'Robinhood' : 'Base'}</span>
+                  <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.mutedFg, marginTop: 2 }}>ETH</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* CTA */}
+          {/* CTA button */}
           <button
             onClick={handleCta}
             disabled={!ctaEnabled}
-            className="w-full h-14 rounded-2xl bg-brand text-brand-foreground font-semibold text-base hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            style={{ width: '100%', height: 56, borderRadius: 16, border: 'none', fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 600, fontSize: 16, background: ctaEnabled ? C.brand : 'rgba(247,194,67,0.4)', color: C.brandFg, opacity: ctaEnabled ? 1 : 0.6, cursor: ctaEnabled ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'opacity .15s' }}
           >
             {step === 'bridging' && (
-              <span className="w-4 h-4 border-2 border-brand-foreground border-t-transparent rounded-full" style={{ animation: 'spin 0.7s linear infinite' }} />
+              <span style={{ width: 16, height: 16, border: `2px solid ${C.brandFg}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
             )}
             {ctaLabel()}
           </button>
         </div>
 
         {/* Footer links */}
-        <div className="mt-4 flex items-center justify-between px-2 text-[11px] text-muted-foreground">
+        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px', fontSize: 11, color: C.mutedFg }}>
           <button
             onClick={() => switchChain({ chainId: RH_CHAIN_ID })}
-            className="inline-flex items-center gap-1 hover:text-brand transition"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', fontSize: 11, color: C.mutedFg, fontFamily: 'Inter, system-ui, sans-serif' }}
+            onMouseOver={e => (e.currentTarget.style.color = C.brand)}
+            onMouseOut={e => (e.currentTarget.style.color = C.mutedFg)}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14"/><path d="M12 5v14"/>
             </svg>
             Add Robinhood Chain
           </button>
-          <span>RobinBridge · powered by <span className="text-foreground">Relay</span></span>
+          <span>RobinBridge · powered by <span style={{ color: C.fg }}>Relay</span></span>
         </div>
 
         {/* Liquidity card */}
-        <div className="mt-4 rounded-2xl bg-surface-2 ring-1 ring-white/10 p-4 space-y-1">
-          <div className="flex items-center gap-2 mb-2">
-            <div className={`w-2 h-2 rounded-full shrink-0 ${STATUS === 'Online' ? 'bg-green-400' : 'bg-red-500'}`} />
-            <span className="text-sm font-semibold text-brand">Available Bridge Liquidity</span>
+        <div style={{ marginTop: 16, borderRadius: 16, background: C.surface2, outline: '1px solid rgba(255,255,255,0.07)', padding: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS === 'Online' ? '#4ade80' : '#ef4444', flexShrink: 0 }} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: C.brand }}>Available Bridge Liquidity</span>
           </div>
-          <div className="text-4xl font-bold text-foreground">
+          <div style={{ fontSize: 40, fontWeight: 700, color: C.fg }}>
             {tab === 'deposit' ? LIQUIDITY_DEPOSIT : LIQUIDITY_WITHDRAW}{' '}
-            <span className="text-2xl text-brand">ETH</span>
+            <span style={{ fontSize: 24, color: C.brand }}>ETH</span>
           </div>
-          <div className="text-sm text-muted-foreground">on Robinhood Chain</div>
-          <div className="flex justify-between pt-4 mt-4 border-t border-white/5">
+          <div style={{ fontSize: 13, color: C.mutedFg, marginTop: 2 }}>on Robinhood Chain</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.muted}` }}>
             <div>
-              <div className="text-sm text-muted-foreground">Max per bridge</div>
-              <div className="text-sm font-semibold text-foreground mt-0.5">{tab === 'deposit' ? MAX_PER_TX_DEPOSIT : MAX_PER_TX_WITHDRAW} ETH</div>
+              <div style={{ fontSize: 13, color: C.mutedFg }}>Max per bridge</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.fg, marginTop: 2 }}>{tab === 'deposit' ? MAX_PER_TX_DEPOSIT : MAX_PER_TX_WITHDRAW} ETH</div>
             </div>
-            <div className="text-right">
-              <div className="text-sm text-muted-foreground">Status</div>
-              <div className={`text-sm font-semibold mt-0.5 ${STATUS === 'Online' ? 'text-green-400' : 'text-red-400'}`}>{STATUS}</div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 13, color: C.mutedFg }}>Status</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: STATUS === 'Online' ? '#4ade80' : '#ef4444', marginTop: 2 }}>{STATUS}</div>
             </div>
           </div>
         </div>
 
         {/* How it works */}
-        <div className="mt-3 rounded-2xl bg-surface-2 ring-1 ring-white/10 p-4">
-          <div className="font-bold text-[15px] mb-3 text-foreground">How it works</div>
+        <div style={{ marginTop: 12, borderRadius: 16, background: C.surface2, outline: '1px solid rgba(255,255,255,0.07)', padding: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14, color: C.fg }}>How it works</div>
           {[
             'Enter the amount of ETH to bridge.',
             'A liquidity solver delivers ETH on the other side.',
             'Funds arrive in seconds — no 7-day wait.',
           ].map((text, i) => (
-            <div key={i} className={`flex gap-3 items-start ${i < 2 ? 'mb-3' : ''}`}>
-              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-brand shrink-0">{i + 1}</div>
-              <div className="text-sm text-muted-foreground leading-relaxed pt-0.5">{text}</div>
+            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: i < 2 ? 12 : 0 }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', background: C.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: C.brand, flexShrink: 0 }}>{i + 1}</div>
+              <div style={{ fontSize: 13, color: C.mutedFg, lineHeight: 1.6, paddingTop: 3 }}>{text}</div>
             </div>
           ))}
         </div>
