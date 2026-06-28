@@ -10,11 +10,6 @@ import {} from './wagmiConfig'
 const BASE_CHAIN_ID  = 8453
 const RH_CHAIN_ID    = 4663
 const BRIDGE_ADDRESS = '0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b' as `0x${string}`
-const LIQUIDITY_DEPOSIT   = 34.7502
-const LIQUIDITY_WITHDRAW  = 34.7502
-const MAX_PER_TX_DEPOSIT  = 27.8002
-const MAX_PER_TX_WITHDRAW = 27.8002
-const STATUS: string = 'Online'
 
 const C = {
   bg:       '#0d0101',
@@ -246,43 +241,6 @@ export default function App() {
           <span>RobinBridge · powered by <span style={{ color: C.fg }}>Relay</span></span>
         </div>
 
-        {/* Liquidity card */}
-        <div style={{ marginTop: 16, borderRadius: 16, background: C.surface2, outline: '1px solid rgba(255,255,255,0.07)', padding: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS === 'Online' ? '#4ade80' : '#ef4444', flexShrink: 0 }} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: C.brand }}>Available Bridge Liquidity</span>
-          </div>
-          <div style={{ fontSize: 40, fontWeight: 700, color: C.fg }}>
-            {tab === 'deposit' ? LIQUIDITY_DEPOSIT : LIQUIDITY_WITHDRAW}{' '}
-            <span style={{ fontSize: 24, color: C.brand }}>ETH</span>
-          </div>
-          <div style={{ fontSize: 13, color: C.mutedFg, marginTop: 2 }}>on Robinhood Chain</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.muted}` }}>
-            <div>
-              <div style={{ fontSize: 13, color: C.mutedFg }}>Max per bridge</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: C.fg, marginTop: 2 }}>{tab === 'deposit' ? MAX_PER_TX_DEPOSIT : MAX_PER_TX_WITHDRAW} ETH</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 13, color: C.mutedFg }}>Status</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: STATUS === 'Online' ? '#4ade80' : '#ef4444', marginTop: 2 }}>{STATUS}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* How it works */}
-        <div style={{ marginTop: 12, borderRadius: 16, background: C.surface2, outline: '1px solid rgba(255,255,255,0.07)', padding: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14, color: C.fg }}>How it works</div>
-          {[
-            'Enter the amount of ETH to bridge.',
-            'A liquidity solver delivers ETH on the other side.',
-            'Funds arrive in seconds — no 7-day wait.',
-          ].map((text, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: i < 2 ? 12 : 0 }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', background: C.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: C.brand, flexShrink: 0 }}>{i + 1}</div>
-              <div style={{ fontSize: 13, color: C.mutedFg, lineHeight: 1.6, paddingTop: 3 }}>{text}</div>
-            </div>
-          ))}
-        </div>
 
       </main>
     </div>
