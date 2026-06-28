@@ -7,9 +7,16 @@ import { useAppKit } from '@reown/appkit/react'
 import { parseEther, formatEther } from 'viem'
 import {} from './wagmiConfig'
 
-const BASE_CHAIN_ID  = 8453
 const RH_CHAIN_ID    = 4663
 const BRIDGE_ADDRESS = '0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b' as `0x${string}`
+
+const SRC_CHAINS = [
+  { id: 1,     label: 'Ethereum', sub: 'ETH',  logo: 'eth' },
+  { id: 8453,  label: 'Base',     sub: 'ETH',  logo: 'eth' },
+  { id: 42161, label: 'Arbitrum', sub: 'ETH',  logo: 'eth' },
+  { id: 10,    label: 'Optimism', sub: 'ETH',  logo: 'eth' },
+  { id: 137,   label: 'Polygon',  sub: 'POL',  logo: 'pol' },
+] as const
 
 const C = {
   bg:       '#0d0101',
@@ -35,26 +42,44 @@ function EthLogo({ size = 24 }: { size?: number }) {
   )
 }
 
+function PolLogo({ size = 24 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} style={{ borderRadius: '50%', flexShrink: 0 }} fill="none">
+      <circle cx="16" cy="16" r="16" fill="#8247E5"/>
+      <text x="16" y="21" textAnchor="middle" fontSize="14" fontWeight="700" fill="white" fontFamily="Inter,system-ui,sans-serif">P</text>
+    </svg>
+  )
+}
+
+function ChainLogo({ logo, size = 24 }: { logo: string; size?: number }) {
+  if (logo === 'pol') return <PolLogo size={size}/>
+  return <EthLogo size={size}/>
+}
+
 
 export default function App() {
-  const [tab, setTab]           = useState<'deposit'|'withdraw'>('deposit')
-  const [amount, setAmount]     = useState('')
-  const [step, setStep]         = useState<'idle'|'bridging'|'done'>('idle')
+  const [tab, setTab]             = useState<'deposit'|'withdraw'>('deposit')
+  const [srcChainId, setSrcChainId] = useState<number>(8453)
+  const [amount, setAmount]       = useState('')
+  const [step, setStep]           = useState<'idle'|'bridging'|'done'>('idle')
   const [chainOpen, setChainOpen] = useState(false)
+
+  const srcChain = SRC_CHAINS.find(c => c.id === srcChainId) ?? SRC_CHAINS[1]
 
   const { address, isConnected } = useAccount()
   const { open }   = useAppKit()
   const chainId    = useChainId()
   const { switchChain, isPending: switching } = useSwitchChain()
 
-  const srcChainId = tab === 'deposit' ? BASE_CHAIN_ID : RH_CHAIN_ID
-  const onSrcChain = chainId === srcChainId
+  const effectiveSrcChainId = tab === 'deposit' ? srcChainId : RH_CHAIN_ID
+  const dstChainId = tab === 'deposit' ? RH_CHAIN_ID : srcChainId
+  const onSrcChain = chainId === effectiveSrcChainId
 
   const { data: balData, refetch: refetchBal } = useBalance({
-    address, chainId: srcChainId, query: { enabled: !!address },
+    address, chainId: effectiveSrcChainId, query: { enabled: !!address },
   })
   const { data: dstBalData } = useBalance({
-    address, chainId: tab === 'deposit' ? RH_CHAIN_ID : BASE_CHAIN_ID, query: { enabled: !!address },
+    address, chainId: dstChainId, query: { enabled: !!address },
   })
 
   const balance    = balData    ? +formatEther(balData.value)    : null
@@ -76,19 +101,19 @@ export default function App() {
   function submit() {
     if (!canBridge) return
     setStep('bridging')
-    doBridge({ to: BRIDGE_ADDRESS, value: parseEther(parsed.toFixed(18)), chainId: srcChainId })
+    doBridge({ to: BRIDGE_ADDRESS, value: parseEther(parsed.toFixed(18)), chainId: effectiveSrcChainId })
   }
 
   function handleCta() {
     if (!isConnected)    return open()
-    if (!onSrcChain)     return switchChain({ chainId: srcChainId })
+    if (!onSrcChain)     return switchChain({ chainId: effectiveSrcChainId })
     if (step === 'done') { setStep('idle'); setAmount(''); return }
     submit()
   }
 
   const ctaLabel = (): string => {
     if (!isConnected)        return 'Connect wallet'
-    if (!onSrcChain)         return switching ? 'Switching…' : `Switch to ${tab === 'deposit' ? 'Base' : 'Robinhood Chain'}`
+    if (!onSrcChain)         return switching ? 'Switching…' : `Switch to ${tab === 'deposit' ? srcChain.label : 'Robinhood Chain'}`
     if (step === 'done')     return 'Bridge again'
     if (step === 'bridging') return 'Confirm in wallet…'
     if (!parsed)             return 'Enter an amount'
@@ -169,37 +194,36 @@ export default function App() {
               />
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <button
-                  onClick={() => setChainOpen(o => !o)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999, background: 'rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.1)', padding: '7px 10px 7px 8px', border: 'none', maxWidth: 150, overflow: 'hidden', cursor: 'pointer' }}
+                  onClick={() => tab === 'deposit' && setChainOpen(o => !o)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999, background: 'rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.1)', padding: '7px 10px 7px 8px', border: 'none', maxWidth: 160, overflow: 'hidden', cursor: tab === 'deposit' ? 'pointer' : 'default' }}
                 >
-                  <EthLogo size={24}/>
+                  <ChainLogo logo={tab === 'deposit' ? srcChain.logo : 'eth'} size={24}/>
                   <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, textAlign: 'left', overflow: 'hidden' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: C.fg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab === 'deposit' ? 'Base' : 'Robinhood'}</span>
-                    <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.mutedFg, marginTop: 2 }}>ETH</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: C.fg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab === 'deposit' ? srcChain.label : 'Robinhood'}</span>
+                    <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.mutedFg, marginTop: 2 }}>{tab === 'deposit' ? srcChain.sub : 'ETH'}</span>
                   </div>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: C.mutedFg, flexShrink: 0, transform: chainOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
-                    <path d="m6 9 6 6 6-6"/>
-                  </svg>
+                  {tab === 'deposit' && (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: C.mutedFg, flexShrink: 0, transform: chainOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                  )}
                 </button>
 
-                {chainOpen && (
+                {chainOpen && tab === 'deposit' && (
                   <>
                     <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setChainOpen(false)} />
-                    <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, background: C.surface2, borderRadius: 16, outline: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', minWidth: 200, boxShadow: '0 16px 40px rgba(0,0,0,0.5)' }}>
-                      {[
-                        { label: 'Base', sub: 'ETH', tab: 'deposit' as const },
-                        { label: 'Robinhood', sub: 'ETH', tab: 'withdraw' as const },
-                      ].map(opt => {
-                        const active = tab === opt.tab
+                    <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, background: C.surface2, borderRadius: 16, outline: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', minWidth: 210, boxShadow: '0 16px 40px rgba(0,0,0,0.5)' }}>
+                      {SRC_CHAINS.map(opt => {
+                        const active = srcChainId === opt.id
                         return (
                           <button
-                            key={opt.tab}
-                            onClick={() => { setTab(opt.tab); setChainOpen(false) }}
+                            key={opt.id}
+                            onClick={() => { setSrcChainId(opt.id); setChainOpen(false) }}
                             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: active ? 'rgba(255,255,255,0.07)' : 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
                             onMouseOver={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
                             onMouseOut={e => { if (!active) e.currentTarget.style.background = 'none' }}
                           >
-                            <EthLogo size={28}/>
+                            <ChainLogo logo={opt.logo} size={28}/>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 14, fontWeight: 600, color: C.fg }}>{opt.label}</div>
                               <div style={{ fontSize: 11, color: C.mutedFg, marginTop: 2 }}>{opt.sub}</div>
