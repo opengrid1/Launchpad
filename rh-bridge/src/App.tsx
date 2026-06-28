@@ -15,29 +15,9 @@ const MAX_PER_TX_DEPOSIT  = 27.8002
 const MAX_PER_TX_WITHDRAW = 27.8002
 const STATUS: string = 'Online'
 
-const BG       = '#100201'
-const SURFACE  = '#1f0704'
-const SURFACE2 = '#2a0a06'
-const BRAND    = '#f7c243'
-const FG       = '#f8eac6'
-const MUTED    = '#331511'
-const MUTED_FG = '#a08070'
-
-const CSS = `
-  @keyframes spin { to { transform: rotate(360deg) } }
-  * { box-sizing: border-box; margin: 0; padding: 0 }
-  html, body { height: 100%; background: ${BG}; }
-  input[type=number]::-webkit-outer-spin-button,
-  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none }
-  input[type=number] { -moz-appearance: textfield }
-  input:focus { outline: none }
-  .hover-brand:hover { color: ${BRAND} !important }
-  .hover-op:hover { opacity: .85 }
-`
-
-function EthLogo({ size = 24 }: { size?: number }) {
+function EthLogo({ cls = 'w-6 h-6' }: { cls?: string }) {
   return (
-    <svg viewBox="0 0 32 32" width={size} height={size} style={{ borderRadius: '50%', flexShrink: 0 }} fill="none">
+    <svg viewBox="0 0 32 32" className={`${cls} shrink-0 rounded-full`} fill="none">
       <circle cx="16" cy="16" r="16" fill="#627EEA"/>
       <path d="M16.5 4v8.87l7.5 3.35-7.5-12.22z" fill="white" fillOpacity=".6"/>
       <path d="M16.5 4L9 16.22l7.5-3.35V4z" fill="white"/>
@@ -48,19 +28,19 @@ function EthLogo({ size = 24 }: { size?: number }) {
   )
 }
 
-function RHLogo({ size = 24 }: { size?: number }) {
+function RHLogo({ cls = 'w-6 h-6' }: { cls?: string }) {
   return (
-    <svg viewBox="0 0 32 32" width={size} height={size} style={{ borderRadius: '50%', flexShrink: 0 }} fill="none">
+    <svg viewBox="0 0 32 32" className={`${cls} shrink-0 rounded-full`} fill="none">
       <circle cx="16" cy="16" r="16" fill="#1a0403"/>
-      <text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fontSize="15" fill={BRAND} fontWeight="bold" fontFamily="Inter,sans-serif">R</text>
+      <text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fontSize="15" fill="#f7c243" fontWeight="bold" fontFamily="Inter,sans-serif">R</text>
     </svg>
   )
 }
 
 export default function App() {
-  const [tab, setTab]   = useState<'deposit'|'withdraw'>('deposit')
+  const [tab, setTab]       = useState<'deposit'|'withdraw'>('deposit')
   const [amount, setAmount] = useState('')
-  const [step, setStep] = useState<'idle'|'bridging'|'done'>('idle')
+  const [step, setStep]     = useState<'idle'|'bridging'|'done'>('idle')
 
   const { address, isConnected } = useAccount()
   const { open }   = useAppKit()
@@ -118,9 +98,7 @@ export default function App() {
       : `Withdraw ${parsed.toLocaleString('en', { maximumFractionDigits: 6 })} ETH`
   }
 
-  const ctaEnabled = step !== 'bridging' && (
-    !isConnected || !onSrcChain || step === 'done' || canBridge
-  )
+  const ctaEnabled = step !== 'bridging' && (!isConnected || !onSrcChain || step === 'done' || canBridge)
 
   const fmtBal = (b: number | null) =>
     b != null ? b.toLocaleString('en', { maximumFractionDigits: 4 }) : '0'
@@ -129,184 +107,191 @@ export default function App() {
   const dstName = tab === 'deposit' ? 'Robinhood' : 'Base'
 
   return (
-    <>
-      <style>{CSS}</style>
-      <div style={{ minHeight: '100vh', background: BG, color: FG, fontFamily: 'Inter, sans-serif', position: 'relative', overflow: 'hidden' }}>
+    <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
 
-        {/* Background glow */}
-        <div style={{ position: 'absolute', top: '-15%', left: '50%', transform: 'translateX(-50%)', width: '80rem', height: '40rem', borderRadius: '50%', background: `${BRAND}26`, filter: 'blur(140px)', pointerEvents: 'none', zIndex: 0 }} />
-        <div style={{ position: 'absolute', inset: 0, opacity: 0.04, backgroundImage: `linear-gradient(${BRAND} 1px, transparent 1px), linear-gradient(90deg, ${BRAND} 1px, transparent 1px)`, backgroundSize: '40px 40px', pointerEvents: 'none', zIndex: 0 }} />
+      {/* Background glow + grid */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[80rem] h-[40rem] rounded-full bg-brand/15 blur-[140px]" />
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(var(--color-brand) 1px, transparent 1px), linear-gradient(90deg, var(--color-brand) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      </div>
 
-        {/* Header */}
-        <header style={{ maxWidth: 1152, margin: '0 auto', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16, position: 'relative', zIndex: 10 }}>
-          <button
-            className="hover-op"
-            onClick={() => open()}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 999, background: BRAND, color: '#1a0000', padding: '8px 16px', fontSize: 14, fontWeight: 600, fontFamily: 'Inter, sans-serif', border: 'none', cursor: 'pointer' }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
-              <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
-            </svg>
-            {isConnected && address ? `${address.slice(0,6)}…${address.slice(-4)}` : 'Connect'}
-          </button>
-        </header>
+      {/* Header */}
+      <header className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-end gap-4">
+        <button
+          onClick={() => open()}
+          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand text-brand-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+            <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+          </svg>
+          {isConnected && address ? `${address.slice(0,6)}…${address.slice(-4)}` : 'Connect'}
+        </button>
+      </header>
 
-        {/* Main */}
-        <main style={{ maxWidth: 448, margin: '0 auto', padding: '8px 16px 64px', position: 'relative', zIndex: 10 }}>
+      {/* Main */}
+      <main className="max-w-md mx-auto px-4 pt-2 pb-16">
 
-          {/* Logo */}
-          <img
-            src="/esafr-logo.png"
-            alt="ESAFR Bridge"
-            style={{ display: 'block', margin: '0 auto 16px', width: '100%', maxWidth: 384, userSelect: 'none', filter: 'drop-shadow(0 10px 40px rgba(0,0,0,0.6))' }}
-            draggable={false}
-          />
+        {/* Logo */}
+        <img
+          src="/esafr-logo.png"
+          alt="ESAFR Bridge"
+          className="mx-auto mb-4 w-full max-w-sm select-none drop-shadow-[0_10px_40px_rgba(0,0,0,0.6)]"
+          draggable={false}
+        />
 
-          {/* Bridge card */}
-          <div style={{ borderRadius: 24, background: SURFACE2, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6)', outline: '1px solid rgba(255,255,255,0.08)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Bridge card */}
+        <div className="rounded-3xl bg-surface-2 ring-1 ring-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] p-4 space-y-3 backdrop-blur">
 
-            {/* Card title row */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 0' }}>
-              <h1 style={{ fontSize: 15, fontWeight: 600, color: FG }}>Bridge</h1>
-              <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: MUTED_FG }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>
-                </svg>
-              </button>
-            </div>
+          {/* Card header */}
+          <div className="flex items-center justify-between px-2 pt-1">
+            <h1 className="text-base font-semibold">Bridge</h1>
+            <button className="p-1.5 rounded-md transition text-muted-foreground hover:text-foreground" aria-label="Advanced">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M14 17H5"/><path d="M19 7h-9"/>
+                <circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>
+              </svg>
+            </button>
+          </div>
 
-            {/* YOU PAY */}
-            <div style={{ borderRadius: 16, background: SURFACE, outline: '1px solid rgba(255,255,255,0.05)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: MUTED_FG }}>You pay</span>
-                <button
-                  style={{ fontSize: 12, color: MUTED_FG, background: 'none', border: 'none', cursor: balance != null ? 'pointer' : 'default', fontFamily: 'Inter, sans-serif' }}
-                  onClick={() => balance && setAmount(balance.toFixed(6))}
-                >
-                  Balance: <span style={{ fontFamily: 'monospace', color: FG }}>{fmtBal(balance)}</span>
-                </button>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 12 }}>
-                <input
-                  type="number"
-                  placeholder="0.0"
-                  value={amount}
-                  onChange={e => setAmount(e.target.value)}
-                  style={{ background: 'none', border: 'none', fontSize: 30, fontWeight: 600, color: FG, width: '100%', fontFamily: 'Inter, sans-serif' }}
-                />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999, background: 'rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.1)', padding: '6px 14px 6px 8px', cursor: 'pointer', flexShrink: 0 }}>
-                  {tab === 'deposit' ? <EthLogo size={24}/> : <RHLogo size={24}/>}
-                  <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{srcName}</span>
-                    <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: MUTED_FG, marginTop: 2 }}>ETH</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Arrow */}
-            <div style={{ position: 'relative', height: 0, display: 'flex', justifyContent: 'center' }}>
+          {/* YOU PAY */}
+          <div className="rounded-2xl bg-surface ring-1 ring-white/5 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">You pay</span>
               <button
-                onClick={() => setTab(tab === 'deposit' ? 'withdraw' : 'deposit')}
-                style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', width: 40, height: 40, borderRadius: 12, background: SURFACE2, outline: `4px solid ${BG}`, border: 'none', cursor: 'pointer', display: 'grid', placeItems: 'center', color: MUTED_FG }}
+                type="button"
+                onClick={() => balance && setAmount(balance.toFixed(6))}
+                className="text-xs text-muted-foreground hover:text-brand transition"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>
-                </svg>
+                Balance: <span className="font-mono text-foreground">{fmtBal(balance)}</span>
               </button>
             </div>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="0.0"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                className="block w-full min-w-0 bg-transparent border-0 outline-none text-3xl font-semibold tabular-nums text-foreground placeholder:text-white/20"
+              />
+              <button
+                type="button"
+                className="flex items-center gap-2 shrink-0 rounded-full bg-white/5 ring-1 ring-white/10 pl-2 pr-4 py-1.5 hover:bg-white/10 transition"
+              >
+                {tab === 'deposit' ? <EthLogo/> : <RHLogo/>}
+                <div className="flex flex-col leading-tight text-left">
+                  <span className="text-sm font-semibold text-foreground">{srcName}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">ETH</span>
+                </div>
+              </button>
+            </div>
+          </div>
 
-            {/* YOU RECEIVE */}
-            <div style={{ borderRadius: 16, background: SURFACE, outline: '1px solid rgba(255,255,255,0.05)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: MUTED_FG }}>You receive</span>
-                <span style={{ fontSize: 12, color: MUTED_FG }}>
-                  Balance: <span style={{ fontFamily: 'monospace', color: FG }}>{fmtBal(dstBalance)}</span>
+          {/* Arrow */}
+          <div className="relative h-0">
+            <button
+              type="button"
+              aria-label="Flip direction"
+              onClick={() => setTab(tab === 'deposit' ? 'withdraw' : 'deposit')}
+              className="absolute left-1/2 -translate-x-1/2 -top-5 z-10 w-10 h-10 rounded-xl bg-surface-2 ring-4 ring-background grid place-items-center hover:bg-surface transition group"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground group-hover:text-brand transition" aria-hidden="true">
+                <path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* YOU RECEIVE */}
+          <div className="rounded-2xl bg-surface ring-1 ring-white/5 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">You receive</span>
+              <span className="text-xs text-muted-foreground">
+                Balance: <span className="font-mono text-foreground">{fmtBal(dstBalance)}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0 text-3xl font-semibold tabular-nums truncate">
+                <span className={parsed > 0 ? 'text-foreground' : 'text-white/20'}>
+                  {parsed > 0 ? parsed.toLocaleString('en', { maximumFractionDigits: 6 }) : '0.0'}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1, minWidth: 0, fontSize: 30, fontWeight: 600, color: parsed > 0 ? FG : 'rgba(255,255,255,0.2)' }}>
-                  {parsed > 0 ? parsed.toLocaleString('en', { maximumFractionDigits: 6 }) : '0.0'}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999, background: 'rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.1)', padding: '6px 14px 6px 8px', flexShrink: 0 }}>
-                  {tab === 'deposit' ? <RHLogo size={24}/> : <EthLogo size={24}/>}
-                  <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{dstName}</span>
-                    <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: MUTED_FG, marginTop: 2 }}>ETH</span>
-                  </div>
+              <div className="flex shrink-0 items-center gap-2 rounded-full bg-white/5 ring-1 ring-white/10 pl-2 pr-3 py-1.5">
+                {tab === 'deposit' ? <RHLogo/> : <EthLogo/>}
+                <div className="flex flex-col leading-tight text-left">
+                  <span className="text-sm font-semibold text-foreground">{dstName}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">ETH</span>
                 </div>
               </div>
             </div>
-
-            {/* CTA */}
-            <button
-              onClick={handleCta}
-              disabled={!ctaEnabled}
-              style={{ width: '100%', height: 56, borderRadius: 16, border: 'none', cursor: ctaEnabled ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: 16, background: ctaEnabled ? BRAND : `${BRAND}66`, color: '#1a0000', opacity: ctaEnabled ? 1 : 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'opacity .15s' }}
-            >
-              {step === 'bridging' && (
-                <span style={{ width: 16, height: 16, border: '2px solid #1a0000', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }}/>
-              )}
-              {ctaLabel()}
-            </button>
           </div>
 
-          {/* Footer links */}
-          <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px', fontSize: 11, color: MUTED_FG }}>
-            <button
-              className="hover-brand"
-              onClick={() => switchChain({ chainId: RH_CHAIN_ID })}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 11, color: MUTED_FG }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14"/><path d="M12 5v14"/>
-              </svg>
-              Add Robinhood Chain
-            </button>
-            <span>RobinBridge · powered by <span style={{ color: FG }}>Relay</span></span>
-          </div>
+          {/* CTA */}
+          <button
+            onClick={handleCta}
+            disabled={!ctaEnabled}
+            className="w-full h-14 rounded-2xl bg-brand text-brand-foreground font-semibold text-base hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {step === 'bridging' && (
+              <span className="w-4 h-4 border-2 border-brand-foreground border-t-transparent rounded-full" style={{ animation: 'spin 0.7s linear infinite' }} />
+            )}
+            {ctaLabel()}
+          </button>
+        </div>
 
-          {/* Liquidity card */}
-          <div style={{ marginTop: 16, borderRadius: 20, background: SURFACE2, outline: '1px solid rgba(255,255,255,0.06)', padding: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS === 'Online' ? '#4ade80' : '#ef4444', flexShrink: 0 }} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: BRAND }}>Available Bridge Liquidity</span>
+        {/* Footer links */}
+        <div className="mt-4 flex items-center justify-between px-2 text-[11px] text-muted-foreground">
+          <button
+            onClick={() => switchChain({ chainId: RH_CHAIN_ID })}
+            className="inline-flex items-center gap-1 hover:text-brand transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12h14"/><path d="M12 5v14"/>
+            </svg>
+            Add Robinhood Chain
+          </button>
+          <span>RobinBridge · powered by <span className="text-foreground">Relay</span></span>
+        </div>
+
+        {/* Liquidity card */}
+        <div className="mt-4 rounded-2xl bg-surface-2 ring-1 ring-white/10 p-4 space-y-1">
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`w-2 h-2 rounded-full shrink-0 ${STATUS === 'Online' ? 'bg-green-400' : 'bg-red-500'}`} />
+            <span className="text-sm font-semibold text-brand">Available Bridge Liquidity</span>
+          </div>
+          <div className="text-4xl font-bold text-foreground">
+            {tab === 'deposit' ? LIQUIDITY_DEPOSIT : LIQUIDITY_WITHDRAW}{' '}
+            <span className="text-2xl text-brand">ETH</span>
+          </div>
+          <div className="text-sm text-muted-foreground">on Robinhood Chain</div>
+          <div className="flex justify-between pt-4 mt-4 border-t border-white/5">
+            <div>
+              <div className="text-sm text-muted-foreground">Max per bridge</div>
+              <div className="text-sm font-semibold text-foreground mt-0.5">{tab === 'deposit' ? MAX_PER_TX_DEPOSIT : MAX_PER_TX_WITHDRAW} ETH</div>
             </div>
-            <div style={{ fontSize: 40, fontWeight: 700, color: FG }}>
-              {tab === 'deposit' ? LIQUIDITY_DEPOSIT : LIQUIDITY_WITHDRAW}{' '}
-              <span style={{ fontSize: 24, color: BRAND }}>ETH</span>
-            </div>
-            <div style={{ fontSize: 13, color: MUTED_FG, marginTop: 2 }}>on Robinhood Chain</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16, paddingTop: 16, borderTop: `1px solid ${MUTED}` }}>
-              <div>
-                <div style={{ fontSize: 13, color: MUTED_FG }}>Max per bridge</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: FG, marginTop: 2 }}>{tab === 'deposit' ? MAX_PER_TX_DEPOSIT : MAX_PER_TX_WITHDRAW} ETH</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 13, color: MUTED_FG }}>Status</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: STATUS === 'Online' ? '#4ade80' : '#ef4444', marginTop: 2 }}>{STATUS}</div>
-              </div>
+            <div className="text-right">
+              <div className="text-sm text-muted-foreground">Status</div>
+              <div className={`text-sm font-semibold mt-0.5 ${STATUS === 'Online' ? 'text-green-400' : 'text-red-400'}`}>{STATUS}</div>
             </div>
           </div>
+        </div>
 
-          {/* How it works */}
-          <div style={{ marginTop: 12, borderRadius: 20, background: SURFACE2, outline: '1px solid rgba(255,255,255,0.06)', padding: 16 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14, color: FG }}>How it works</div>
-            {[
-              'Enter the amount of ETH to bridge.',
-              'A liquidity solver delivers ETH on the other side.',
-              'Funds arrive in seconds — no 7-day wait.',
-            ].map((text, i) => (
-              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: i < 2 ? 12 : 0 }}>
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: MUTED, border: `1px solid ${MUTED}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: BRAND, flexShrink: 0 }}>{i + 1}</div>
-                <div style={{ fontSize: 13, color: MUTED_FG, lineHeight: 1.5, paddingTop: 3 }}>{text}</div>
-              </div>
-            ))}
-          </div>
+        {/* How it works */}
+        <div className="mt-3 rounded-2xl bg-surface-2 ring-1 ring-white/10 p-4">
+          <div className="font-bold text-[15px] mb-3 text-foreground">How it works</div>
+          {[
+            'Enter the amount of ETH to bridge.',
+            'A liquidity solver delivers ETH on the other side.',
+            'Funds arrive in seconds — no 7-day wait.',
+          ].map((text, i) => (
+            <div key={i} className={`flex gap-3 items-start ${i < 2 ? 'mb-3' : ''}`}>
+              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-brand shrink-0">{i + 1}</div>
+              <div className="text-sm text-muted-foreground leading-relaxed pt-0.5">{text}</div>
+            </div>
+          ))}
+        </div>
 
-        </main>
-      </div>
-    </>
+      </main>
+    </div>
   )
 }
