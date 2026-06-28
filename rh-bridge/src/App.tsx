@@ -37,9 +37,10 @@ function EthLogo({ size = 24 }: { size?: number }) {
 
 
 export default function App() {
-  const [tab, setTab]       = useState<'deposit'|'withdraw'>('deposit')
-  const [amount, setAmount] = useState('')
-  const [step, setStep]     = useState<'idle'|'bridging'|'done'>('idle')
+  const [tab, setTab]           = useState<'deposit'|'withdraw'>('deposit')
+  const [amount, setAmount]     = useState('')
+  const [step, setStep]         = useState<'idle'|'bridging'|'done'>('idle')
+  const [chainOpen, setChainOpen] = useState(false)
 
   const { address, isConnected } = useAccount()
   const { open }   = useAppKit()
@@ -166,15 +167,87 @@ export default function App() {
                 onChange={e => setAmount(e.target.value)}
                 style={{ background: 'none', border: 'none', fontSize: 30, fontWeight: 600, color: C.fg, width: '100%', fontFamily: 'Inter, system-ui, sans-serif' }}
               />
-              <button
-                style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999, background: 'rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.1)', padding: '7px 14px 7px 8px', flexShrink: 0, border: 'none', maxWidth: 140, overflow: 'hidden' }}
-              >
-                <EthLogo size={24}/>
-                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, textAlign: 'left', overflow: 'hidden' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: C.fg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab === 'deposit' ? 'Base' : 'Robinhood'}</span>
-                  <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.mutedFg, marginTop: 2 }}>ETH</span>
-                </div>
-              </button>
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <button
+                  onClick={() => setChainOpen(o => !o)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999, background: 'rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.1)', padding: '7px 10px 7px 8px', border: 'none', maxWidth: 150, overflow: 'hidden', cursor: 'pointer' }}
+                >
+                  <EthLogo size={24}/>
+                  <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, textAlign: 'left', overflow: 'hidden' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: C.fg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab === 'deposit' ? 'Base' : 'Robinhood'}</span>
+                    <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.mutedFg, marginTop: 2 }}>ETH</span>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: C.mutedFg, flexShrink: 0, transform: chainOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+
+                {chainOpen && (
+                  <>
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setChainOpen(false)} />
+                    <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, background: C.surface2, borderRadius: 16, outline: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', minWidth: 200, boxShadow: '0 16px 40px rgba(0,0,0,0.5)' }}>
+                      {[
+                        { label: 'Base', sub: 'ETH', tab: 'deposit' as const },
+                        { label: 'Robinhood', sub: 'ETH', tab: 'withdraw' as const },
+                      ].map(opt => {
+                        const active = tab === opt.tab
+                        return (
+                          <button
+                            key={opt.tab}
+                            onClick={() => { setTab(opt.tab); setChainOpen(false) }}
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: active ? 'rgba(255,255,255,0.07)' : 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
+                            onMouseOver={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                            onMouseOut={e => { if (!active) e.currentTarget.style.background = 'none' }}
+                          >
+                            <EthLogo size={28}/>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 14, fontWeight: 600, color: C.fg }}>{opt.label}</div>
+                              <div style={{ fontSize: 11, color: C.mutedFg, marginTop: 2 }}>{opt.sub}</div>
+                            </div>
+                            {active && (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: C.brand }}>
+                                <path d="M20 6 9 17l-5-5"/>
+                              </svg>
+                            )}
+                          </button>
+                        )
+                      })}
+                      <div style={{ borderTop: `1px solid ${C.muted}`, padding: '4px 0' }}>
+                        <button
+                          onClick={async () => {
+                            setChainOpen(false)
+                            try {
+                              await (window as any).ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [{
+                                  chainId: '0x1237',
+                                  chainName: 'Robinhood L2',
+                                  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                                  rpcUrls: ['https://poptye-always-win.poptyedev.com/'],
+                                  blockExplorerUrls: ['https://so-explorer.poptyedev.com'],
+                                }],
+                              })
+                            } catch {}
+                          }}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
+                          onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
+                          onMouseOut={e => (e.currentTarget.style.background = 'none')}
+                        >
+                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: C.muted, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: C.brand }}>
+                              <path d="M5 12h14"/><path d="M12 5v14"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: C.brand }}>Add Robinhood Chain</div>
+                            <div style={{ fontSize: 11, color: C.mutedFg, marginTop: 2 }}>Chain ID: 4663</div>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -225,33 +298,9 @@ export default function App() {
           </button>
         </div>
 
-        {/* Footer links */}
-        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px', fontSize: 11, color: C.mutedFg }}>
-          <button
-            onClick={async () => {
-              try {
-                await (window as any).ethereum.request({
-                  method: 'wallet_addEthereumChain',
-                  params: [{
-                    chainId: '0x1237',
-                    chainName: 'Robinhood L2',
-                    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                    rpcUrls: ['https://poptye-always-win.poptyedev.com/'],
-                    blockExplorerUrls: ['https://so-explorer.poptyedev.com'],
-                  }],
-                })
-              } catch {}
-            }}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', fontSize: 11, color: C.mutedFg, fontFamily: 'Inter, system-ui, sans-serif' }}
-            onMouseOver={e => (e.currentTarget.style.color = C.brand)}
-            onMouseOut={e => (e.currentTarget.style.color = C.mutedFg)}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14"/><path d="M12 5v14"/>
-            </svg>
-            Add Robinhood Chain
-          </button>
-          <span>RobinBridge · powered by <span style={{ color: C.fg }}>Relay</span></span>
+        {/* Footer */}
+        <div style={{ marginTop: 16, textAlign: 'center', fontSize: 11, color: C.mutedFg }}>
+          RobinBridge · powered by <span style={{ color: C.fg }}>Relay</span>
         </div>
 
 
