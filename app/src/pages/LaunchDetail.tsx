@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { compact, eth, mcapUsd, price, rewardSplit, supplyOf, topHolders, usd, type Launch } from '../data/launches'
 import { SplitMeter } from '../components/SplitMeter'
 import { Monogram } from '../components/Monogram'
-import { CandleChart } from '../components/LiveChart'
+import { TVChart } from '../components/TVChart'
 import { useLiveMarket, useLiveTrades } from '../components/useLiveMarket'
 
 function CopyRow({ label, value }: { label: string; value: string }) {
@@ -102,8 +102,8 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
                 ))}
               </div>
             </div>
-            <div className="px-3 py-3">
-              <CandleChart points={points} height={320} />
+            <div className="px-2 py-2">
+              <TVChart points={points} height={320} />
             </div>
             {/* stat strip under the chart */}
             <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-4 sm:divide-y-0">
