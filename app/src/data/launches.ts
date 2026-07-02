@@ -289,6 +289,55 @@ export function eth(n: number): string {
   return n.toLocaleString('en-US', { maximumSignificantDigits: 2 })
 }
 
+/** Default token image when the creator doesn't upload one: a real PNG drawn
+ *  on a canvas — a deterministic gradient with the ticker painted on top.
+ *  No SVG, no emoji; returns a raster data URI. */
+export function defaultTokenImage(symbol: string): string {
+  const t = symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase() || 'COIN'
+  let h = 0
+  for (const c of symbol) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  const h1 = h % 360
+  const h2 = (h1 + 55) % 360
+
+  const S = 240
+  const canvas = document.createElement('canvas')
+  canvas.width = S
+  canvas.height = S
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return ''
+
+  // diagonal gradient backdrop
+  const g = ctx.createLinearGradient(0, 0, S, S)
+  g.addColorStop(0, `hsl(${h1}, 68%, 52%)`)
+  g.addColorStop(1, `hsl(${h2}, 72%, 40%)`)
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, S, S)
+
+  // soft highlight bloom in the upper-left
+  const bloom = ctx.createRadialGradient(S * 0.28, S * 0.24, 0, S * 0.28, S * 0.24, S * 0.7)
+  bloom.addColorStop(0, 'rgba(255,255,255,0.28)')
+  bloom.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = bloom
+  ctx.fillRect(0, 0, S, S)
+
+  // ticker, auto-sized to fit
+  ctx.fillStyle = 'rgba(255,255,255,0.96)'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  let size = t.length <= 3 ? 96 : t.length === 4 ? 76 : 60
+  ctx.font = `800 ${size}px Inter, Arial, sans-serif`
+  while (ctx.measureText(t).width > S * 0.82 && size > 24) {
+    size -= 4
+    ctx.font = `800 ${size}px Inter, Arial, sans-serif`
+  }
+  ctx.shadowColor = 'rgba(0,0,0,0.22)'
+  ctx.shadowBlur = 10
+  ctx.shadowOffsetY = 3
+  ctx.fillText(t, S / 2, S / 2 + 4)
+
+  return canvas.toDataURL('image/png')
+}
+
 /** Reference ETH price used to show fiat values (market cap, etc.) in USD. */
 export const ETH_USD = 3200
 

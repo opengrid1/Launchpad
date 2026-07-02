@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { compact, ETH_USD, usd, type Launch } from '../data/launches'
+import { compact, defaultTokenImage, ETH_USD, usd, type Launch } from '../data/launches'
 
 const hex4 = () => Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0')
 
@@ -44,7 +44,7 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
       name,
       symbol,
       glyph: '🪙',
-      image: image || undefined,
+      image: image || defaultTokenImage(symbol),
       tagline: description ? description.slice(0, 90) : `${name} on Sherwood.`,
       description: description || undefined,
       tokenAddress: `0x${hex4()}…${hex4()}`,
@@ -83,6 +83,13 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
             <label className="group relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-panel ring-1 ring-line transition hover:ring-emerald/50">
               {image ? (
                 <img src={image} alt="token" className="h-full w-full object-cover" />
+              ) : symbol ? (
+                <>
+                  <img src={defaultTokenImage(symbol)} alt="token" className="h-full w-full object-cover" />
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-[11px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+                    ＋ change
+                  </span>
+                </>
               ) : (
                 <span className="text-center text-[11px] leading-tight text-ink-3">
                   <span className="block text-[22px]">＋</span>
@@ -143,7 +150,13 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
         <aside className="h-fit rounded-2xl bg-surface p-5 ring-1 ring-line lg:sticky lg:top-24">
           <div className="flex items-center gap-3">
             <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-panel ring-1 ring-line">
-              {image ? <img src={image} alt="token" className="h-full w-full object-cover" /> : <span className="text-[20px]">🪙</span>}
+              {image ? (
+                <img src={image} alt="token" className="h-full w-full object-cover" />
+              ) : symbol ? (
+                <img src={defaultTokenImage(symbol)} alt="token" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-[11px] text-ink-3">img</span>
+              )}
             </span>
             <div className="min-w-0">
               <p className="font-display truncate text-[15px] font-bold text-ink">{name || 'Your coin'}</p>
