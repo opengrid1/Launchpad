@@ -55,14 +55,10 @@ export function LaunchCard({
       <CoinImage launch={launch} ticker={ticker} className={featured ? 'h-28 w-28' : 'h-24 w-24'} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
           <h3 className={`truncate font-display font-bold leading-tight tracking-tight text-ink group-hover:text-emerald-strong ${featured ? 'text-[19px]' : 'text-[16px]'}`}>
             {launch.name} <span className="tnum text-[12px] font-medium text-ink-3">${ticker}</span>
           </h3>
-          <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-emerald-strong">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald live-dot" />
-            live
-          </span>
         </div>
 
         <p className="tnum mt-1 text-[11px] text-ink-3">

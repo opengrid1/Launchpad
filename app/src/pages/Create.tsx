@@ -75,10 +75,6 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
       </button>
 
       <h1 className="font-display mt-5 text-[30px] font-extrabold leading-none tracking-tight">Create a coin</h1>
-      <p className="mt-2 max-w-lg text-[14px] leading-relaxed text-ink-2">
-        It lists into a single-sided Uniswap v3 pool and trades instantly. Every trade's ETH tax splits 50/50:
-        half to holders, half to you.
-      </p>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_300px]">
         {/* one form */}
@@ -141,13 +137,6 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
               <input className={inputCls} placeholder="0.0" value={devBuy} onChange={(e) => setDevBuy(e.target.value)} inputMode="decimal" />
             </Field>
           </div>
-
-          <div className="mt-4 rounded-lg bg-panel p-3 text-[12px] leading-relaxed text-ink-3 ring-1 ring-line">
-            <span className="text-ink-2">Fixed terms.</span> Every coin launches at a{' '}
-            <span className="text-ink">$2.5K</span> virtual market cap with a <span className="text-ink">1B</span> supply
-            seeded single-sided into a Uniswap v3 pool (LP burned). Every trade pays a flat{' '}
-            <span className="text-ink">1% tax</span>, split 50/50 in ETH between holders and the creator.
-          </div>
         </div>
 
         {/* preview + launch */}
@@ -166,8 +155,7 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
             {[
               ['Start mcap', usd(START_MCAP_USD)],
               ['Supply', compact(SUPPLY)],
-              ['Pool', 'v3 · single-sided'],
-              ['Trade tax', '1% · 50/50'],
+              ['Trade tax', '1%'],
               ['Dev buy', dev ? `${dev} ETH` : 'none'],
             ].map(([k, v]) => (
               <div key={k} className="flex items-baseline justify-between gap-3">
@@ -184,7 +172,6 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
           >
             Launch coin
           </button>
-          <p className="eyebrow mt-3 text-center">One transaction · live instantly</p>
         </aside>
       </div>
     </main>

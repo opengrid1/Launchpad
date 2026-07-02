@@ -44,8 +44,7 @@ export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Ro
             <span className="hidden sm:inline">Create coin</span>
             <span className="sm:hidden">Create</span>
           </button>
-          <button className="flex cursor-pointer items-center gap-2 rounded-full bg-surface px-3 py-2 text-[13px] text-ink ring-1 ring-line transition hover:ring-line-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald live-dot" />
+          <button className="flex cursor-pointer items-center gap-2 rounded-full bg-surface px-3.5 py-2 text-[13px] text-ink ring-1 ring-line transition hover:ring-line-2">
             <span className="tnum">0x71b3…9F02</span>
           </button>
         </div>

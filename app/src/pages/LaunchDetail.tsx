@@ -157,9 +157,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
         <div className="min-w-0">
           <div className="overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
             <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-              <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-ink-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald live-dot" /> Live · single-sided v3
-              </span>
+              <span className="text-[12px] font-medium text-ink-2">single-sided v3</span>
               <div className="flex items-center gap-1">
                 {TF.map((t) => (
                   <button
@@ -204,14 +202,8 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
                   {feed === t && <span className="mt-2 block h-0.5 rounded-full bg-emerald" />}
                 </button>
               ))}
-              <span className="ml-auto inline-flex items-center gap-1.5 pb-3 text-[11px] text-ink-3">
-                {feed === 'trades' ? (
-                  <>
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald live-dot" /> streaming
-                  </>
-                ) : (
-                  `${launch.holders.toLocaleString()} total`
-                )}
+              <span className="ml-auto pb-3 text-[11px] text-ink-3">
+                {feed === 'trades' ? 'latest' : `${launch.holders.toLocaleString()} total`}
               </span>
             </div>
 
@@ -318,7 +310,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             </button>
             <div className="tnum mt-3 flex items-center justify-between text-[11px] text-ink-3">
               <span>≈ {side === 'buy' ? `${out ? compact(out) : '0'} ${ticker}` : `${eth(out)} ETH`}</span>
-              <span>{launch.tradeFeeBps / 100}% tax · 50/50</span>
+              <span>{launch.tradeFeeBps / 100}% tax</span>
             </div>
           </div>
 
@@ -326,7 +318,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
           <div className="rounded-2xl bg-surface p-4 ring-1 ring-line">
             <div className="flex items-baseline justify-between">
               <h2 className="text-[13px] font-semibold text-ink">ETH tax rewards</h2>
-              <span className="eyebrow">{launch.tradeFeeBps / 100}% · 50/50</span>
+              <span className="eyebrow">{launch.tradeFeeBps / 100}% tax</span>
             </div>
             <div className="mt-3">
               <SplitMeter toHolders={toHolders} toCreator={toCreator} unit="ETH" compactMode />
@@ -362,11 +354,11 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             >
               {claimed ? 'Claimed ✓' : claimable > 0 ? `Claim ${eth(claimable)} ETH` : 'Nothing to claim'}
             </button>
-            <p className="mt-2 text-[11px] leading-relaxed text-ink-3">
-              {claimable > 0
-                ? 'Paid straight to your wallet in ETH. No lockup.'
-                : `Hold ${ticker} to earn a share of every trade's ETH tax.`}
-            </p>
+            {claimable <= 0 && (
+              <p className="mt-2 text-[11px] leading-relaxed text-ink-3">
+                Hold {ticker} to earn a share of every trade's ETH tax.
+              </p>
+            )}
           </div>
 
           {/* token info */}
@@ -381,9 +373,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
               <CopyRow label="Creator" value={launch.creator} />
               <InfoRow label="Supply" value={compact(supplyOf(launch))} />
               <InfoRow label="Dev buy" value={launch.devBuy ? `${eth(launch.devBuy)} ETH` : 'None'} />
-              <InfoRow label="Pool" value="Uniswap v3 · single-sided" />
               <InfoRow label="Created" value={launch.createdAgo} />
-              <InfoRow label="Chain" value="Robinhood · 4663" />
             </div>
           </div>
         </aside>
