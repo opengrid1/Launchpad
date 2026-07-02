@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { compact, ETH_USD, eth, mcapUsd, price, rewardSplit, supplyOf, topHolders, usd, type Launch } from '../data/launches'
 import { Monogram } from '../components/Monogram'
 import { TVChart } from '../components/TVChart'
-import { useLiveMarket, useLiveTrades } from '../components/useLiveMarket'
+import { useMarket } from '../realtime/hooks'
 
 function CopyIcon() {
   return (
@@ -110,8 +110,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
   const tfGroup = TF.find((t) => t.label === tf)?.group ?? 2
 
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
-  const { price: live, points, changePct } = useLiveMarket(ticker, launch.priceEth, 90, 1000)
-  const trades = useLiveTrades(ticker)
+  const { price: live, points, changePct, trades } = useMarket(launch.id)
   const up = changePct >= 0
   const mcap = mcapUsd(live, launch)
   const mcapMult = supplyOf(launch) * ETH_USD // price(ETH) -> market cap (USD)
