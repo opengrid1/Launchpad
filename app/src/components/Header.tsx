@@ -2,26 +2,25 @@ import type { Route } from '../App'
 
 export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Route) => void }) {
   return (
-    <header className="flex items-center justify-between py-5">
+    <header className="flex items-center justify-between border-b border-line py-5">
       <button
         onClick={() => onNavigate({ page: 'explore' })}
-        className="flex cursor-pointer items-center gap-2.5 bg-transparent text-left"
+        className="flex cursor-pointer items-center gap-3 bg-transparent text-left"
       >
-        {/* logo — an arrow crossing a level line: the shot, and the split it makes */}
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-moss-500/15 ring-1 ring-moss-500/40">
-          <svg width="19" height="19" viewBox="0 0 19 19" fill="none">
-            <path d="M2 9.5 L17 9.5" stroke="var(--color-moss-400)" strokeWidth="1.7" strokeLinecap="round" />
-            <path d="M12 4.5 L17 9.5 L12 14.5" stroke="var(--color-gold-400)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            <path d="M4 6 Q6 9.5 4 13" stroke="var(--color-sage-500)" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.8" />
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M3 9 L15 9" stroke="var(--color-paper)" strokeWidth="1.6" strokeLinecap="round" />
+            <path d="M9 3 L9 15" stroke="var(--color-paper)" strokeWidth="1.6" strokeLinecap="round" opacity="0.5" />
+            <circle cx="9" cy="9" r="2.4" fill="none" stroke="var(--color-paper)" strokeWidth="1.6" />
           </svg>
         </span>
         <span>
-          <span className="block font-display text-[19px] font-semibold leading-tight tracking-tight">Sherwood</span>
-          <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-sage-500">launchpad · robinhood chain</span>
+          <span className="block font-display text-[18px] font-semibold leading-none tracking-tight">Sherwood</span>
+          <span className="mt-1 block text-[11px] font-medium tracking-tight text-ink-3">Launchpad · Robinhood Chain</span>
         </span>
       </button>
 
-      <nav className="hidden items-center gap-1 rounded-full bg-pine-850/80 p-1 ring-1 ring-pine-700 sm:flex">
+      <nav className="hidden items-center gap-6 sm:flex">
         {(
           [
             ['Explore', 'explore'],
@@ -31,8 +30,8 @@ export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Ro
           <button
             key={page}
             onClick={() => onNavigate({ page } as Route)}
-            className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              route.page === page ? 'bg-moss-500/15 text-moss-300' : 'text-sage-300 hover:text-parch-100'
+            className={`cursor-pointer text-sm font-medium transition-colors ${
+              route.page === page ? 'text-ink' : 'text-ink-3 hover:text-ink'
             }`}
           >
             {label}
@@ -40,12 +39,12 @@ export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Ro
         ))}
       </nav>
 
-      <div className="flex items-center gap-3">
-        <span className="hidden items-center gap-1.5 font-mono text-xs text-sage-500 md:flex">
-          <span className="h-1.5 w-1.5 rounded-full bg-moss-400 live-dot" />
+      <div className="flex items-center gap-4">
+        <span className="hidden items-center gap-2 text-xs font-medium text-ink-3 md:flex">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald live-dot" />
           Robinhood · 4663
         </span>
-        <button className="cursor-pointer rounded-xl bg-moss-500 px-4 py-2 text-sm font-semibold text-pine-950 transition hover:bg-moss-400">
+        <button className="tnum cursor-pointer rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink transition hover:border-line-2">
           0x71b3…9F02
         </button>
       </div>

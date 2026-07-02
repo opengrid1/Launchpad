@@ -9,14 +9,14 @@ export function ProgressBar({ launch, tall = false }: { launch: Launch; tall?: b
   const refunding = launch.status === 'refunding'
 
   return (
-    <div className={`relative w-full overflow-hidden rounded-full bg-pine-700 ${tall ? 'h-3' : 'h-2'}`}>
+    <div className={`relative w-full overflow-hidden rounded-full bg-panel ${tall ? 'h-2' : 'h-1.5'}`}>
       <div
-        className={`h-full rounded-full transition-all ${refunding ? 'bg-clay-400/70' : 'bg-gradient-to-r from-moss-600 to-moss-400'}`}
+        className={`h-full rounded-full transition-all ${refunding ? 'bg-clay' : 'bg-emerald'}`}
         style={{ width: `${pct}%` }}
       />
       <div
         title="soft cap"
-        className={`absolute top-0 h-full w-0.5 ${softMet && !refunding ? 'bg-moss-300' : 'bg-sage-500'}`}
+        className={`absolute top-0 h-full w-px ${softMet && !refunding ? 'bg-emerald-strong' : 'bg-line-2'}`}
         style={{ left: `${softPct}%` }}
       />
     </div>
