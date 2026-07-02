@@ -1,8 +1,9 @@
 import { compact } from '../data/launches'
 
 /**
- * The 50/50, drawn as one bar cut exactly in half — emerald left (holders),
- * ink-hatched right (the trader). Clean and literal; the whole product in a line.
+ * The 50/50 as a metered readout: one 1px-framed bar cut dead center, blue
+ * accent for the holders' half, monochrome slate for the trader's. Tick marks
+ * at the quartiles so it reads like an instrument, not a chart.
  */
 export function SplitMeter({
   toHolders,
@@ -19,27 +20,31 @@ export function SplitMeter({
     <div className="w-full">
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-emerald">Holders · 50%</p>
-          {!compactMode && <p className="mt-0.5 text-xs text-ink-3">shared out pro-rata</p>}
+          <p className="label text-emerald">HOLDERS · 50%</p>
+          {!compactMode && <p className="mt-1 text-[11px] text-ink-3">shared out pro-rata</p>}
         </div>
         <div className="text-right">
-          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-gold">The trader · 50%</p>
-          {!compactMode && <p className="mt-0.5 text-xs text-ink-3">rebated to the swapper</p>}
+          <p className="label" style={{ color: 'var(--color-gold)' }}>TRADER · 50%</p>
+          {!compactMode && <p className="mt-1 text-[11px] text-ink-3">rebated to the swapper</p>}
         </div>
       </div>
 
-      <div className="mt-2 flex h-9 w-full overflow-hidden rounded-lg border border-line">
-        <div className="flex w-1/2 items-center justify-start bg-emerald-tint pl-3">
-          <span className="tnum text-[13px] font-semibold text-emerald-strong">{compact(toHolders)} {unit}</span>
+      <div className="relative mt-2 flex h-8 w-full border border-line-2">
+        <div className="flex w-1/2 items-center justify-start bg-emerald-tint pl-2.5">
+          <span className="tnum text-[12px] font-medium text-emerald-strong">{compact(toHolders)} {unit}</span>
         </div>
-        <div className="flex w-1/2 items-center justify-end border-l border-line-2 bg-gold-tint pr-3">
-          <span className="tnum text-[13px] font-semibold text-gold">{compact(toTraders)} {unit}</span>
+        <div className="flex w-1/2 items-center justify-end bg-gold-tint pr-2.5">
+          <span className="tnum text-[12px] font-medium text-ink-2">{compact(toTraders)} {unit}</span>
         </div>
+        {/* center seam + quartile ticks */}
+        <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-line-2" />
+        <div className="absolute top-0 left-1/4 h-1.5 w-px bg-line-2" />
+        <div className="absolute bottom-0 left-3/4 h-1.5 w-px bg-line-2" />
       </div>
 
       {!compactMode && (
-        <p className="mt-2 text-center text-[11px] text-ink-3">
-          Split in the same transaction as the trade — no treasury in between.
+        <p className="mt-2 text-[10px] tracking-[0.1em] text-ink-3">
+          &gt; SPLIT EXECUTED IN-BLOCK · NO TREASURY IN PATH
         </p>
       )}
     </div>

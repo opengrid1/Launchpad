@@ -5,11 +5,11 @@ import { LaunchCard } from '../components/LaunchCard'
 type Filter = 'all' | LaunchStatus
 
 const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'live', label: 'Live' },
-  { key: 'upcoming', label: 'Opens soon' },
-  { key: 'graduated', label: 'Graduated' },
-  { key: 'refunding', label: 'Refunding' },
+  { key: 'all', label: 'ALL' },
+  { key: 'live', label: 'LIVE' },
+  { key: 'upcoming', label: 'QUEUED' },
+  { key: 'graduated', label: 'GRAD' },
+  { key: 'refunding', label: 'REFUND' },
 ]
 
 export function Explore({ onOpen, onCreate }: { onOpen: (id: number) => void; onCreate: () => void }) {
@@ -21,72 +21,74 @@ export function Explore({ onOpen, onCreate }: { onOpen: (id: number) => void; on
 
   return (
     <main>
-      {/* hero — editorial, left-weighted, one accent */}
-      <section className="rise-in grid gap-10 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-20">
+      {/* hero — restrained, left-weighted, terminal */}
+      <section className="rise-in grid gap-10 border-b border-line py-12 lg:grid-cols-[1.15fr_0.85fr] lg:py-16">
         <div className="max-w-xl">
-          <p className="text-[13px] font-medium tracking-tight text-emerald">A launchpad that pays the room</p>
-          <h1 className="mt-4 font-display text-[44px] font-semibold leading-[0.98] tracking-tight sm:text-[56px]">
+          <p className="label text-emerald">// FEE REDISTRIBUTION PROTOCOL</p>
+          <h1 className="font-display mt-4 text-[38px] font-semibold leading-[1.02] tracking-tight sm:text-[46px]">
             Half to the holders.
             <br />
-            Half back to you.
+            Half back to you.<span className="blink text-emerald">_</span>
           </h1>
-          <p className="mt-5 max-w-md text-[15px] leading-relaxed text-ink-2">
-            Fixed-price token launches on Robinhood Chain. Once a token graduates, every trade pays a small
-            fee — and it splits down the middle: half to everyone holding, half rebated to the trader who
-            made the swap.
+          <p className="mt-5 max-w-md text-[13px] leading-relaxed text-ink-2">
+            Fixed-price token launches on Robinhood Chain. On graduation, every trade pays a fee that is
+            split in-block — half to holders pro-rata, half rebated to the trader. No treasury, no curve.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center gap-2.5">
             <button
               onClick={onCreate}
-              className="cursor-pointer rounded-lg bg-ink px-5 py-2.5 text-sm font-medium text-paper transition hover:bg-emerald-strong"
+              className="cursor-pointer border border-emerald/40 bg-emerald-tint px-4 py-2 text-[13px] text-emerald-strong transition-colors hover:border-emerald/70"
             >
-              Launch a token
+              [ deploy a launch ]
             </button>
             <button
               onClick={() => setFilter('live')}
-              className="cursor-pointer rounded-lg border border-line px-5 py-2.5 text-sm font-medium text-ink transition hover:border-line-2"
+              className="cursor-pointer border border-line-2 px-4 py-2 text-[13px] text-ink-2 transition-colors hover:text-ink"
             >
-              Browse live sales
+              browse live
             </button>
           </div>
         </div>
 
-        {/* a small, precise fact panel instead of a decorative graphic */}
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line lg:self-center">
+        {/* stats readout — a register block, not a card grid */}
+        <div className="self-center border border-line">
+          <div className="border-b border-line px-4 py-2">
+            <span className="label">// NETWORK READOUT</span>
+          </div>
           {[
-            ['Paid out to date', `${compact(totalPaid)} RBH`],
-            ['To holders', `${compact(toHolders)} RBH`],
-            ['Live sales', String(liveCount)],
-            ['The split', '50 / 50'],
-          ].map(([k, v]) => (
-            <div key={k} className="bg-surface p-5">
-              <p className="tnum text-2xl font-semibold tracking-tight text-ink">{v}</p>
-              <p className="mt-1 text-[13px] text-ink-3">{k}</p>
+            ['PAID OUT / TOTAL', `${compact(totalPaid)} RBH`],
+            ['→ TO HOLDERS', `${compact(toHolders)} RBH`],
+            ['LIVE SALES', String(liveCount).padStart(2, '0')],
+            ['SPLIT RATIO', '50 / 50'],
+          ].map(([k, v], i) => (
+            <div key={k} className={`flex items-baseline justify-between px-4 py-3 ${i < 3 ? 'border-b border-line' : ''}`}>
+              <span className="label">{k}</span>
+              <span className="tnum text-[15px] font-medium text-ink">{v}</span>
             </div>
           ))}
         </div>
       </section>
 
       {/* filters */}
-      <div className="flex items-center justify-between border-b border-line pb-4">
-        <div className="flex items-center gap-5 overflow-x-auto">
+      <div className="flex items-center justify-between py-4">
+        <div className="flex items-center gap-4 overflow-x-auto">
           {FILTERS.map((f) => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`cursor-pointer whitespace-nowrap text-[13px] font-medium transition ${
-                filter === f.key ? 'text-ink' : 'text-ink-3 hover:text-ink'
+              className={`cursor-pointer whitespace-nowrap text-[11px] tracking-[0.12em] transition-colors ${
+                filter === f.key ? 'text-emerald' : 'text-ink-3 hover:text-ink-2'
               }`}
             >
+              {filter === f.key ? '● ' : '○ '}
               {f.label}
-              {filter === f.key && <span className="mt-1 block h-px bg-ink" />}
             </button>
           ))}
         </div>
-        <span className="hidden text-[13px] text-ink-3 sm:block">{shown.length} launches</span>
+        <span className="label hidden sm:block">{String(shown.length).padStart(2, '0')} MARKETS</span>
       </div>
 
-      <div className="mt-6 grid gap-5 pb-24 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 pb-24 sm:grid-cols-2 lg:grid-cols-3">
         {shown.map((l, i) => (
           <LaunchCard key={l.id} launch={l} index={i} onOpen={() => onOpen(l.id)} />
         ))}

@@ -1,6 +1,6 @@
 import { hardCapOf, type Launch } from '../data/launches'
 
-/** Raise progress with a tick marking the soft cap. */
+/** Raise progress: a 1px-framed track, hard fill, soft-cap tick. No rounding. */
 export function ProgressBar({ launch, tall = false }: { launch: Launch; tall?: boolean }) {
   const hardCap = hardCapOf(launch)
   const pct = Math.min(100, (launch.raised / hardCap) * 100)
@@ -9,9 +9,9 @@ export function ProgressBar({ launch, tall = false }: { launch: Launch; tall?: b
   const refunding = launch.status === 'refunding'
 
   return (
-    <div className={`relative w-full overflow-hidden rounded-full bg-panel ${tall ? 'h-2' : 'h-1.5'}`}>
+    <div className={`relative w-full overflow-hidden border border-line bg-paper ${tall ? 'h-2.5' : 'h-2'}`}>
       <div
-        className={`h-full rounded-full transition-all ${refunding ? 'bg-clay' : 'bg-emerald'}`}
+        className={`h-full transition-all duration-200 ${refunding ? 'bg-clay/70' : 'bg-emerald'}`}
         style={{ width: `${pct}%` }}
       />
       <div
