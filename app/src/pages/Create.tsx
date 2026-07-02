@@ -26,8 +26,9 @@ function Chevron({ open }: { open: boolean }) {
   )
 }
 
-// pool tax is fixed at 1% and the entire supply seeds the single-sided v3 pool
+// fixed terms: 1B supply, 1% tax, whole supply single-sided in the v3 pool
 const FEE_PCT = 1
+const SUPPLY = 1_000_000_000
 
 export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (coin: Launch) => void }) {
   const [name, setName] = useState('')
@@ -38,13 +39,12 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
   const [telegram, setTelegram] = useState('')
   const [website, setWebsite] = useState('')
   const [priceEth, setPriceEth] = useState('0.0000005')
-  const [supply, setSupply] = useState('1000000000')
   const [devBuy, setDevBuy] = useState('')
   const [showSocials, setShowSocials] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   const p = parseFloat(priceEth) || 0
-  const sup = parseFloat(supply) || 0
+  const sup = SUPPLY
   const startMcap = p * sup * ETH_USD
   const dev = parseFloat(devBuy) || 0
   const ready = Boolean(name && symbol && p && sup)
@@ -176,14 +176,9 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
             </button>
             {showAdvanced && (
               <div className="space-y-5 px-5 pb-5">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Total supply">
-                    <input className={inputCls} value={supply} onChange={(e) => setSupply(e.target.value)} inputMode="numeric" />
-                  </Field>
-                  <Field label="Launch price" hint="ETH per token">
-                    <input className={inputCls} value={priceEth} onChange={(e) => setPriceEth(e.target.value)} inputMode="decimal" />
-                  </Field>
-                </div>
+                <Field label="Launch price" hint="ETH per token · 1B fixed supply">
+                  <input className={inputCls} value={priceEth} onChange={(e) => setPriceEth(e.target.value)} inputMode="decimal" />
+                </Field>
                 <div className="rounded-lg bg-panel p-3 text-[12px] leading-relaxed text-ink-3 ring-1 ring-line">
                   <span className="text-ink-2">Fixed terms.</span> The whole supply seeds a single-sided
                   Uniswap v3 pool (LP burned), and every trade pays a flat <span className="text-ink">1% tax</span>{' '}
