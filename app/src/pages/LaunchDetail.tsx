@@ -218,23 +218,6 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             )}
           </div>
 
-          {/* how it works */}
-          <div className="mt-5 rounded-2xl bg-surface p-5 ring-1 ring-line">
-            <h2 className="font-display text-[19px] font-bold tracking-tight">How {ticker} works</h2>
-            <ol className="mt-4 space-y-4">
-              {[
-                `${launch.name} launches straight into a single-sided Uniswap v3 pool and trades from block one.`,
-                `Buy or sell any time at the live price. No presale, no graduation, no waiting.`,
-                `Every trade pays a ${launch.tradeFeeBps / 100}% tax in ETH. It splits 50/50 in-block: half to holders pro-rata, half to the coin's creator.`,
-                `The v3 position is locked and the LP burned, so liquidity can't be pulled.`,
-              ].map((t, i) => (
-                <li key={i} className="flex gap-4 text-[13px] leading-relaxed text-ink-2">
-                  <span className="font-display shrink-0 text-[17px] font-bold leading-none text-emerald-strong">{i + 1}</span>
-                  <span className="pt-0.5">{t}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
         </div>
 
         {/* trade rail */}
