@@ -44,7 +44,7 @@ function SocialLinks({ socials }: { socials: NonNullable<Launch['socials']> }) {
       href: socials.x,
       label: 'X',
       icon: (
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M9.5 7 14 2h-1.3L8.9 6.2 5.8 2H2l4.7 6.6L2 14h1.3l4.1-4.5L10.7 14H14L9.5 7Zm-1.5 1.6-.5-.7L3.6 3h1.6l3 4.2.5.7 4 5.6h-1.6L8 8.6Z" /></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" /></svg>
       ),
     },
     {
@@ -52,7 +52,7 @@ function SocialLinks({ socials }: { socials: NonNullable<Launch['socials']> }) {
       href: socials.telegram,
       label: 'Telegram',
       icon: (
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.7 2.6 1.9 7.2c-.7.3-.7 1.3 0 1.5l3 .9 1.1 3.4c.2.5.8.6 1.1.2l1.6-1.6 3 2.2c.4.3 1 .1 1.1-.4l2.1-9.8c.2-.7-.5-1.3-1.3-1Zm-1.9 2.2L6.4 9.6l-.2 2-.9-2.9 6.5-3.9Z" /></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0Zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635Z" /></svg>
       ),
     },
     {
@@ -60,7 +60,7 @@ function SocialLinks({ socials }: { socials: NonNullable<Launch['socials']> }) {
       href: socials.website,
       label: 'Website',
       icon: (
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" /><path d="M2 8h12M8 2c1.8 1.6 2.8 3.8 2.8 6S9.8 12.4 8 14C6.2 12.4 5.2 10.2 5.2 8S6.2 3.6 8 2Z" stroke="currentColor" strokeWidth="1.3" /></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden><circle cx="12" cy="12" r="9.25" stroke="currentColor" strokeWidth="1.6" /><path d="M2.75 12h18.5M12 2.75c2.4 2.3 3.75 5.7 3.75 9.25S14.4 18.95 12 21.25c-2.4-2.3-3.75-5.7-3.75-9.25S9.6 5.05 12 2.75Z" stroke="currentColor" strokeWidth="1.6" /></svg>
       ),
     },
   ].filter((i) => i.href)
