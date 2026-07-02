@@ -5,9 +5,9 @@
    Image-forward card grid, dense and playful. Near-black canvas, one vivid
    lime accent, bold grotesque display type, rounded cards. Numbers in mono. */
 @theme {
-  --color-paper: #0b0c0a;
-  --color-surface: #141612;
-  --color-panel: #1c1f18;
+  --color-paper: #000000;
+  --color-surface: #0e0f0d;
+  --color-panel: #171815;
   --color-ink: #f3f4ee;
   --color-ink-2: #9ea294;
   --color-ink-3: #64685c;
