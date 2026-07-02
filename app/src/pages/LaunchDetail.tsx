@@ -74,10 +74,11 @@ function SocialLinks({ socials }: { socials: NonNullable<Launch['socials']> }) {
           href={i.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-panel px-3 py-1.5 text-[12px] font-medium text-ink-2 ring-1 ring-line transition hover:text-ink hover:ring-line-2"
+          title={i.label}
+          aria-label={i.label}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-panel text-ink-2 ring-1 ring-line transition hover:text-ink hover:ring-line-2"
         >
           {i.icon}
-          {i.label}
         </a>
       ))}
     </div>
