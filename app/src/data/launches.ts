@@ -16,6 +16,9 @@ export interface Launch {
   glyph: string // emoji logo, used as the token image when no URI is set
   image?: string // token URI (uploaded image); falls back to the glyph
   tagline: string
+  description?: string
+  tokenAddress: string // the deployed ERC20 contract
+  devBuy?: number // creator's initial buy at launch, in ETH
   priceEth: number // ETH per token (tiny, memecoin-style)
   tokensForSale: number
   tokensForLiquidity: number
@@ -111,6 +114,10 @@ export const LAUNCHES: Launch[] = [
     buyers: 2610,
     status: 'live',
     creator: '0x71b3…9F02',
+    tokenAddress: '0x9c4e…3a71',
+    description:
+      'Greenwood is the reserve currency of the forest. Hold it and a share of the ETH tax from every trade flows to you, block after block. No team allocation, liquidity locked in a single-sided v3 pool.',
+    devBuy: 0.5,
     yourTokens: 3_200_000,
     yourHolderRewards: 0.112,
     yourRebate: 0.031,
@@ -133,6 +140,10 @@ export const LAUNCHES: Launch[] = [
     buyers: 540,
     status: 'live',
     creator: '0x08aF…b3c2',
+    tokenAddress: '0x2f7d…b190',
+    description:
+      'Longbow rewards the shooters. Half the ETH tax from every trade is split across holders, the other half goes to the creator who strung the bow.',
+    devBuy: 0.2,
     yourTokens: 0,
     yourHolderRewards: 0,
     yourRebate: 0,
@@ -155,6 +166,10 @@ export const LAUNCHES: Launch[] = [
     buyers: 128,
     status: 'live',
     creator: '0xDd02…4f19',
+    tokenAddress: '0x8ab1…c4e0',
+    description:
+      'Almsbox skims the volume and hands it to the holders. A meme with redistribution baked into the pool tax.',
+    devBuy: 0.0,
     yourTokens: 0,
     yourHolderRewards: 0,
     yourRebate: 0,
@@ -177,6 +192,10 @@ export const LAUNCHES: Launch[] = [
     buyers: 0,
     status: 'upcoming',
     creator: '0x77Cc…09bE',
+    tokenAddress: '0x5e93…af22',
+    description:
+      'Merrymint is a fair-launch meme with a conscience. Opens soon into a single-sided Uniswap v3 pool.',
+    devBuy: 0.3,
     yourTokens: 0,
     yourHolderRewards: 0,
     yourRebate: 0,
@@ -199,6 +218,10 @@ export const LAUNCHES: Launch[] = [
     buyers: 3120,
     status: 'live',
     creator: '0x3fA8…c21D',
+    tokenAddress: '0x1d64…7f0c',
+    description:
+      'Tuck runs deep liquidity and steady volume. The ETH tax keeps flowing to a loyal holder base.',
+    devBuy: 1.0,
     yourTokens: 1_250_000,
     yourHolderRewards: 0.845,
     yourRebate: 0.242,
@@ -221,6 +244,10 @@ export const LAUNCHES: Launch[] = [
     buyers: 214,
     status: 'live',
     creator: '0xB00d…5e77',
+    tokenAddress: '0x74c2…9e18',
+    description:
+      'Nottingham is a small-cap with loyal holders. Thin float, but the sheriff keeps paying the ETH tax out.',
+    devBuy: 0.0,
     yourTokens: 0,
     yourHolderRewards: 0,
     yourRebate: 0,

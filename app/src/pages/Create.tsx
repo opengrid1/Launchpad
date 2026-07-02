@@ -33,6 +33,7 @@ export function Create({ onBack }: { onBack: () => void }) {
   const [name, setName] = useState('')
   const [symbol, setSymbol] = useState('')
   const [image, setImage] = useState('') // token URI (object URL of the upload)
+  const [description, setDescription] = useState('')
   const [priceEth, setPriceEth] = useState('0.0000005')
   const [supply, setSupply] = useState('1000000000')
   const [liquidityPct, setLiquidityPct] = useState(70)
@@ -92,6 +93,19 @@ export function Create({ onBack }: { onBack: () => void }) {
               <p className="mt-3 text-[11px] text-ink-3">
                 The image is pinned and set as the token URI on-chain. PNG or GIF, square works best.
               </p>
+              <div className="mt-4">
+                <Field label="Description" hint="shown on the coin page">
+                  <textarea
+                    className={`${inputCls} h-20 resize-none`}
+                    placeholder="What is this coin about?"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </Field>
+              </div>
+              <p className="mt-3 text-[11px] text-ink-3">
+                Token address and creator address are assigned when you launch.
+              </p>
             </Section>
 
             <Section n="02" title="Supply & price">
@@ -123,7 +137,7 @@ export function Create({ onBack }: { onBack: () => void }) {
                 <span>40% floor</span>
                 <span>100% fair-launch</span>
               </div>
-              <Field label="Your first buy" hint="optional, in ETH">
+              <Field label="Initial dev buy" hint="optional, in ETH">
                 <input className={inputCls} placeholder="0.0" value={devBuy} onChange={(e) => setDevBuy(e.target.value)} inputMode="decimal" />
               </Field>
             </Section>
@@ -175,7 +189,7 @@ export function Create({ onBack }: { onBack: () => void }) {
               ['Supply', sup ? compact(sup) : '·'],
               ['Liquidity', `${liquidityPct}%`],
               ['Trade tax', `${feePct}% · 50/50`],
-              ['First buy', devBuy ? `${devBuy} ETH` : 'none'],
+              ['Dev buy', devBuy ? `${devBuy} ETH` : 'none'],
               ['Chain', 'Robinhood'],
             ].map(([k, v]) => (
               <div key={k} className="flex items-baseline justify-between gap-3">

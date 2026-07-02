@@ -5,6 +5,36 @@ import { Monogram } from '../components/Monogram'
 import { LiveChart } from '../components/LiveChart'
 import { useLiveMarket, useLiveTrades } from '../components/useLiveMarket'
 
+function CopyRow({ label, value, mono = true }: { label: string; value: string; mono?: boolean }) {
+  const [done, setDone] = useState(false)
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-2">
+      <span className="eyebrow shrink-0">{label}</span>
+      <button
+        onClick={() => {
+          navigator.clipboard?.writeText(value)
+          setDone(true)
+          setTimeout(() => setDone(false), 1200)
+        }}
+        className={`group inline-flex cursor-pointer items-center gap-1.5 text-[13px] text-ink transition-colors hover:text-emerald-strong ${mono ? 'tnum' : ''}`}
+        title="Copy"
+      >
+        {value}
+        <span className="text-ink-3 group-hover:text-emerald-strong">{done ? '✓' : '⧉'}</span>
+      </button>
+    </div>
+  )
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-2">
+      <span className="eyebrow shrink-0">{label}</span>
+      <span className="tnum text-[13px] text-ink">{value}</span>
+    </div>
+  )
+}
+
 function Figure({ label, value, tone }: { label: string; value: string; tone?: 'up' | 'down' }) {
   return (
     <div className="min-w-[110px] flex-1">
@@ -91,6 +121,24 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             <Figure label="24h change" value={`${up ? '+' : ''}${changePct.toFixed(2)}%`} tone={up ? 'up' : 'down'} />
             <Figure label="24h volume" value={`${compact(launch.volume)} ETH`} />
             <Figure label="Holders" value={launch.holders.toLocaleString()} />
+          </div>
+
+          {/* about + token info */}
+          <div className="mt-5 rounded-2xl bg-surface p-5 ring-1 ring-line">
+            <h2 className="font-display text-[19px] font-bold tracking-tight">About {launch.name}</h2>
+            {launch.description && (
+              <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-ink-2">{launch.description}</p>
+            )}
+            <div className="mt-4 grid gap-x-10 border-t border-line pt-2 sm:grid-cols-2">
+              <CopyRow label="Token address" value={launch.tokenAddress} />
+              <CopyRow label="Creator" value={launch.creator} />
+              <InfoRow label="Total supply" value={compact(supplyOf(launch))} />
+              <InfoRow label="Initial dev buy" value={launch.devBuy ? `${eth(launch.devBuy)} ETH` : 'None'} />
+              <InfoRow label="Trade tax" value={`${launch.tradeFeeBps / 100}% · 50/50`} />
+              <InfoRow label="Pool" value="Uniswap v3 · single-sided" />
+              <InfoRow label={launch.status === 'live' ? 'Created' : 'Opens in'} value={(launch.createdAgo ?? launch.startsIn) ?? '·'} />
+              <InfoRow label="Chain" value="Robinhood · 4663" />
+            </div>
           </div>
 
           {/* the split */}
