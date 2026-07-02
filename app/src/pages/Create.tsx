@@ -36,6 +36,9 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
   const [symbol, setSymbol] = useState('')
   const [image, setImage] = useState('') // token URI (object URL of the upload)
   const [description, setDescription] = useState('')
+  const [x, setX] = useState('')
+  const [telegram, setTelegram] = useState('')
+  const [website, setWebsite] = useState('')
   const [priceEth, setPriceEth] = useState('0.0000005')
   const [supply, setSupply] = useState('1000000000')
   const [liquidityPct, setLiquidityPct] = useState(70)
@@ -60,6 +63,7 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
       description: description || undefined,
       tokenAddress: `0x${hex4()}…${hex4()}`,
       devBuy: dev || undefined,
+      socials: x || telegram || website ? { x: x || undefined, telegram: telegram || undefined, website: website || undefined } : undefined,
       priceEth: p,
       tokensForLiquidity: Math.round((sup * liquidityPct) / 100),
       tokensForSale: sup - Math.round((sup * liquidityPct) / 100),
@@ -136,6 +140,17 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   />
+                </Field>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                <Field label="X" hint="optional">
+                  <input className={inputCls} placeholder="x.com/…" value={x} onChange={(e) => setX(e.target.value)} />
+                </Field>
+                <Field label="Telegram" hint="optional">
+                  <input className={inputCls} placeholder="t.me/…" value={telegram} onChange={(e) => setTelegram(e.target.value)} />
+                </Field>
+                <Field label="Website" hint="optional">
+                  <input className={inputCls} placeholder="https://…" value={website} onChange={(e) => setWebsite(e.target.value)} />
                 </Field>
               </div>
               <p className="mt-3 text-[11px] text-ink-3">

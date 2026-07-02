@@ -19,6 +19,7 @@ export interface Launch {
   description?: string
   tokenAddress: string // the deployed ERC20 contract
   devBuy?: number // creator's initial buy at launch, in ETH
+  socials?: { x?: string; telegram?: string; website?: string }
   priceEth: number // ETH per token (tiny, memecoin-style)
   tokensForSale: number
   tokensForLiquidity: number
@@ -123,6 +124,7 @@ export const LAUNCHES: Launch[] = [
     status: 'live',
     creator: '0x71b3…9F02',
     tokenAddress: '0x9c4e…3a71',
+    socials: { x: 'https://x.com/greenwood', telegram: 'https://t.me/greenwood', website: 'https://greenwood.fun' },
     description:
       'Greenwood is the reserve currency of the forest. Hold it and a share of the ETH tax from every trade flows to you, block after block. No team allocation, liquidity locked in a single-sided v3 pool.',
     devBuy: 0.5,
@@ -149,6 +151,7 @@ export const LAUNCHES: Launch[] = [
     status: 'live',
     creator: '0x08aF…b3c2',
     tokenAddress: '0x2f7d…b190',
+    socials: { x: 'https://x.com/longbow_eth', website: 'https://longbow.gg' },
     description:
       'Longbow rewards the shooters. Half the ETH tax from every trade is split across holders, the other half goes to the creator who strung the bow.',
     devBuy: 0.2,
@@ -175,6 +178,7 @@ export const LAUNCHES: Launch[] = [
     status: 'live',
     creator: '0xDd02…4f19',
     tokenAddress: '0x8ab1…c4e0',
+    socials: { website: 'https://almsbox.xyz' },
     description:
       'Almsbox skims the volume and hands it to the holders. A meme with redistribution baked into the pool tax.',
     devBuy: 0.0,
@@ -201,6 +205,7 @@ export const LAUNCHES: Launch[] = [
     status: 'live',
     creator: '0x77Cc…09bE',
     tokenAddress: '0x5e93…af22',
+    socials: { x: 'https://x.com/merrymint', telegram: 'https://t.me/merrymint' },
     description:
       'Merrymint is a fair-launch meme with a conscience. Opens soon into a single-sided Uniswap v3 pool.',
     devBuy: 0.3,
@@ -227,6 +232,7 @@ export const LAUNCHES: Launch[] = [
     status: 'live',
     creator: '0x3fA8…c21D',
     tokenAddress: '0x1d64…7f0c',
+    socials: { x: 'https://x.com/tuckcoin', telegram: 'https://t.me/tuck', website: 'https://tuck.beer' },
     description:
       'Tuck runs deep liquidity and steady volume. The ETH tax keeps flowing to a loyal holder base.',
     devBuy: 1.0,

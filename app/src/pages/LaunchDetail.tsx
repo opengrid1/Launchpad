@@ -5,10 +5,19 @@ import { Monogram } from '../components/Monogram'
 import { TVChart } from '../components/TVChart'
 import { useLiveMarket, useLiveTrades } from '../components/useLiveMarket'
 
+function CopyIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M10.5 5.5 V3.5 A1.5 1.5 0 0 0 9 2 H3.5 A1.5 1.5 0 0 0 2 3.5 V9 A1.5 1.5 0 0 0 3.5 10.5 H5.5" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  )
+}
+
 function CopyRow({ label, value }: { label: string; value: string }) {
   const [done, setDone] = useState(false)
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1.5">
+    <div className="flex items-center justify-between gap-3 py-1.5">
       <span className="eyebrow shrink-0">{label}</span>
       <button
         onClick={() => {
@@ -16,12 +25,61 @@ function CopyRow({ label, value }: { label: string; value: string }) {
           setDone(true)
           setTimeout(() => setDone(false), 1200)
         }}
-        className="tnum group inline-flex cursor-pointer items-center gap-1.5 text-[12px] text-ink transition-colors hover:text-emerald-strong"
-        title="Copy"
+        className={`tnum inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-[12px] ring-1 transition ${
+          done ? 'bg-emerald-tint text-emerald-strong ring-emerald/40' : 'bg-panel text-ink ring-line hover:ring-line-2'
+        }`}
+        title="Copy to clipboard"
       >
         {value}
-        <span className="text-ink-3 group-hover:text-emerald-strong">{done ? '✓' : '⧉'}</span>
+        <span className={done ? 'text-emerald-strong' : 'text-ink-3'}>{done ? '✓' : <CopyIcon />}</span>
       </button>
+    </div>
+  )
+}
+
+function SocialLinks({ socials }: { socials: NonNullable<Launch['socials']> }) {
+  const items: { key: string; href?: string; label: string; icon: React.ReactNode }[] = [
+    {
+      key: 'x',
+      href: socials.x,
+      label: 'X',
+      icon: (
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M9.5 7 14 2h-1.3L8.9 6.2 5.8 2H2l4.7 6.6L2 14h1.3l4.1-4.5L10.7 14H14L9.5 7Zm-1.5 1.6-.5-.7L3.6 3h1.6l3 4.2.5.7 4 5.6h-1.6L8 8.6Z" /></svg>
+      ),
+    },
+    {
+      key: 'tg',
+      href: socials.telegram,
+      label: 'Telegram',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.7 2.6 1.9 7.2c-.7.3-.7 1.3 0 1.5l3 .9 1.1 3.4c.2.5.8.6 1.1.2l1.6-1.6 3 2.2c.4.3 1 .1 1.1-.4l2.1-9.8c.2-.7-.5-1.3-1.3-1Zm-1.9 2.2L6.4 9.6l-.2 2-.9-2.9 6.5-3.9Z" /></svg>
+      ),
+    },
+    {
+      key: 'web',
+      href: socials.website,
+      label: 'Website',
+      icon: (
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" /><path d="M2 8h12M8 2c1.8 1.6 2.8 3.8 2.8 6S9.8 12.4 8 14C6.2 12.4 5.2 10.2 5.2 8S6.2 3.6 8 2Z" stroke="currentColor" strokeWidth="1.3" /></svg>
+      ),
+    },
+  ].filter((i) => i.href)
+
+  if (items.length === 0) return null
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {items.map((i) => (
+        <a
+          key={i.key}
+          href={i.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-panel px-3 py-1.5 text-[12px] font-medium text-ink-2 ring-1 ring-line transition hover:text-ink hover:ring-line-2"
+        >
+          {i.icon}
+          {i.label}
+        </a>
+      ))}
     </div>
   )
 }
@@ -279,6 +337,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             {launch.description && (
               <p className="mt-2 text-[12px] leading-relaxed text-ink-2">{launch.description}</p>
             )}
+            {launch.socials && <SocialLinks socials={launch.socials} />}
             <div className="mt-3 border-t border-line pt-1">
               <CopyRow label="Token" value={launch.tokenAddress} />
               <CopyRow label="Creator" value={launch.creator} />
