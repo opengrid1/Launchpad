@@ -16,7 +16,6 @@ function coinArt(symbol: string) {
 const STATUS: Record<Launch['status'], { label: string; live?: boolean; cls: string }> = {
   live: { label: 'Live', live: true, cls: 'text-paper bg-emerald' },
   upcoming: { label: 'Soon', cls: 'text-gold bg-gold-tint' },
-  graduated: { label: 'Graduated', cls: 'text-ink bg-panel' },
 }
 
 export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: () => void; index: number }) {

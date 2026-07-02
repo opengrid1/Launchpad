@@ -1,12 +1,13 @@
-export type LaunchStatus = 'live' | 'upcoming' | 'graduated'
+export type LaunchStatus = 'live' | 'upcoming'
 
 /**
- * A Sherwood coin. It trades against ETH from the moment it launches (bankr
- * style — no presale, no refunds). Every buy and sell pays a tax (the trade
- * fee) collected from the pool in ETH and split down the middle:
+ * A Sherwood coin. It launches straight into a single-sided Uniswap v3 pool
+ * and trades against ETH from block one (bankr style: no presale, no
+ * graduation, no refunds). Every buy and sell pays a tax collected from the
+ * pool in ETH and split down the middle:
  *   • half is redistributed in ETH to everyone holding the token, and
  *   • half goes in ETH to the coin's creator.
- * All rewards are ETH — RBH is only the chain. Prices are ETH per token.
+ * All rewards are ETH; RBH is only the chain. Prices are ETH per token.
  */
 export interface Launch {
   id: number
@@ -25,9 +26,8 @@ export interface Launch {
   rewardsPaid: number // total ETH tax already handed out (both halves)
   holders: number
 
-  startsIn?: string
-  endsIn?: string
-  endedAgo?: string
+  startsIn?: string // only for upcoming coins
+  createdAgo?: string // age since launch, for live coins
   buyers: number
   status: LaunchStatus
   creator: string
@@ -106,7 +106,7 @@ export const LAUNCHES: Launch[] = [
     volume: 3_100,
     rewardsPaid: 41.2,
     holders: 2610,
-    endsIn: '11h 40m',
+    createdAgo: '5h ago',
     buyers: 2610,
     status: 'live',
     creator: '0x71b3…9F02',
@@ -128,7 +128,7 @@ export const LAUNCHES: Launch[] = [
     volume: 620,
     rewardsPaid: 9.3,
     holders: 540,
-    endsIn: '2d 3h',
+    createdAgo: '1d ago',
     buyers: 540,
     status: 'live',
     creator: '0x08aF…b3c2',
@@ -150,7 +150,7 @@ export const LAUNCHES: Launch[] = [
     volume: 210,
     rewardsPaid: 5.25,
     holders: 128,
-    endsIn: '8h 12m',
+    createdAgo: '3h ago',
     buyers: 128,
     status: 'live',
     creator: '0xDd02…4f19',
@@ -185,7 +185,7 @@ export const LAUNCHES: Launch[] = [
     name: 'Tuck',
     symbol: 'TUCK',
     glyph: '🍺',
-    tagline: 'Graduated last week. The ETH rewards are already flowing.',
+    tagline: 'Deep liquidity, steady volume. The ETH keeps flowing to holders.',
     priceEth: 0.0000101,
     tokensForSale: 35_000_000,
     tokensForLiquidity: 28_000_000,
@@ -194,9 +194,9 @@ export const LAUNCHES: Launch[] = [
     volume: 4_310,
     rewardsPaid: 86.2,
     holders: 3120,
-    endedAgo: '6d ago',
+    createdAgo: '6d ago',
     buyers: 3120,
-    status: 'graduated',
+    status: 'live',
     creator: '0x3fA8…c21D',
     yourTokens: 1_250_000,
     yourHolderRewards: 0.845,
@@ -216,9 +216,9 @@ export const LAUNCHES: Launch[] = [
     volume: 260,
     rewardsPaid: 5.2,
     holders: 214,
-    endedAgo: '1w ago',
+    createdAgo: '1w ago',
     buyers: 214,
-    status: 'graduated',
+    status: 'live',
     creator: '0xB00d…5e77',
     yourTokens: 0,
     yourHolderRewards: 0,

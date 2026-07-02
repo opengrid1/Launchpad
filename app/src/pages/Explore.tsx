@@ -8,7 +8,6 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'Trending' },
   { key: 'live', label: 'Live' },
   { key: 'upcoming', label: 'Opening' },
-  { key: 'graduated', label: 'Graduated' },
 ]
 
 export function Explore({ onOpen, onCreate }: { onOpen: (id: number) => void; onCreate: () => void }) {
