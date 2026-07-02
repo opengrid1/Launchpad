@@ -29,11 +29,11 @@ export function Explore({ onOpen, onCreate }: { onOpen: (id: number) => void; on
               Robinhood Chain
             </span>
             <h1 className="font-display mt-3 text-[30px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">
-              Launch a coin. Every trade pays the room.
+              Launch a coin. Trade it the second it's live.
             </h1>
             <p className="mt-2 max-w-md text-[13px] leading-relaxed text-ink-2">
-              One flat price for the whole sale. No bonding curve, no early-buyer edge. After a coin
-              graduates, its trade fee splits 50/50: half to holders, half rebated to the trader.
+              Buy and sell instantly, right from launch. Every trade pays a small fee that splits 50/50:
+              half to everyone holding, half rebated to the trader who made the swap.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <button

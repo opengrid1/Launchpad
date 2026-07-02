@@ -1,4 +1,6 @@
-import { compact, hardCapOf, price, type Launch } from '../data/launches'
+import { compact, price, type Launch } from '../data/launches'
+import { useLiveMarket } from './useLiveMarket'
+import { Sparkline } from './LiveChart'
 
 /** Deterministic two-hue gradient from the ticker — stands in for coin art. */
 function coinArt(symbol: string) {
@@ -19,13 +21,12 @@ const STATUS: Record<Launch['status'], { label: string; live?: boolean; cls: str
 }
 
 export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: () => void; index: number }) {
-  const hardCap = hardCapOf(launch)
-  const pct = Math.min(100, (launch.raised / hardCap) * 100)
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase()
   const s = STATUS[launch.status]
-  const age = launch.startsIn ? `opens ${launch.startsIn}` : launch.endsIn ? `${launch.endsIn} left` : (launch.endedAgo ?? '')
-  // fixed-price: no trading, no fees, no rewards until the sale graduates
-  const graduated = launch.status === 'graduated'
+  const supply = launch.tokensForSale + launch.tokensForLiquidity
+  const { price: live, points, changePct } = useLiveMarket(ticker, launch.priceRbh, 40)
+  const up = changePct >= 0
+  const mcap = live * supply
 
   return (
     <button
@@ -34,16 +35,13 @@ export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: 
       style={{ animationDelay: `${index * 35}ms` }}
     >
       {/* coin art */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden" style={coinArt(ticker)}>
-        <span className="font-display absolute inset-0 flex items-center justify-center text-[40px] font-extrabold tracking-tight text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
+      <div className="relative aspect-[16/9] w-full overflow-hidden" style={coinArt(ticker)}>
+        <span className="font-display absolute inset-0 flex items-center justify-center text-[38px] font-extrabold tracking-tight text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
           {ticker}
         </span>
         <span className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${s.cls}`}>
           {s.live && <span className="h-1.5 w-1.5 rounded-full bg-paper live-dot" />}
           {s.label}
-        </span>
-        <span className="tnum absolute right-3 top-3 rounded-full bg-black/35 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-          Fixed price
         </span>
       </div>
 
@@ -55,32 +53,25 @@ export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: 
           </h3>
           <span className="tnum shrink-0 text-[12px] text-ink-3">${ticker}</span>
         </div>
-        <p className="mt-1.5 line-clamp-1 text-[12px] text-ink-2">{launch.tagline}</p>
 
-        <div className="mt-4 flex items-end justify-between">
+        <div className="mt-3 flex items-end justify-between">
           <div>
-            <p className="eyebrow">Raised</p>
-            <p className="tnum mt-1 text-[15px] font-semibold text-ink">{compact(launch.raised)} RBH</p>
+            <p className="eyebrow">Market cap</p>
+            <p className="tnum mt-1 text-[16px] font-semibold text-ink">{compact(mcap)} RBH</p>
           </div>
-          <div className="text-right">
-            {/* rewards only exist after graduation; before that show the flat price */}
-            <p className="eyebrow">{graduated ? 'Paid out' : 'Price'}</p>
-            <p className={`tnum mt-1 text-[15px] font-semibold ${graduated ? 'text-emerald-strong' : 'text-ink'}`}>
-              {graduated ? `${compact(launch.rewardsPaid)} RBH` : `${price(launch.priceRbh)} RBH`}
-            </p>
-          </div>
+          <span className={`tnum rounded-md px-1.5 py-0.5 text-[12px] font-semibold ${up ? 'bg-emerald-tint text-emerald-strong' : 'bg-clay-tint text-clay'}`}>
+            {up ? '+' : ''}{changePct.toFixed(1)}%
+          </span>
         </div>
 
-        {/* progress */}
-        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-line-2">
-          <div
-            className={`h-full rounded-full ${launch.status === 'refunding' ? 'bg-clay' : 'bg-emerald'}`}
-            style={{ width: `${pct}%` }}
-          />
+        {/* live sparkline */}
+        <div className="mt-3">
+          <Sparkline points={points} up={up} />
         </div>
+
         <div className="tnum mt-2 flex items-center justify-between text-[11px] text-ink-3">
-          <span>{pct.toFixed(0)}% of cap</span>
-          <span>{age}</span>
+          <span>{price(live)} RBH</span>
+          <span>vol {compact(launch.volume)}</span>
         </div>
       </div>
     </button>
