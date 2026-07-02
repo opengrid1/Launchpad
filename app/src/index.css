@@ -1,58 +1,115 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import 'tailwindcss';
 
+/* Sherwood — a token launchpad on Robinhood Chain.
+   Palette is a Sherwood-forest thing: pine dark, a Lincoln-green accent for
+   the archer, and a gold "loot" tone for anything that pays out. Warm off-white
+   parchment for type so nothing feels like cold default-black-on-white. */
 @theme {
-  --color-ink-950: #060d0b;
-  --color-ink-900: #0a1512;
-  --color-ink-850: #0e1b17;
-  --color-ink-800: #12231e;
-  --color-ink-700: #1b332c;
-  --color-ink-600: #28473e;
-  --color-mint-300: #7df3d4;
-  --color-mint-400: #4be3bd;
-  --color-mint-500: #2bc7a0;
-  --color-mint-600: #1da183;
-  --color-fog-100: #eef7f3;
-  --color-fog-300: #b8cdc5;
-  --color-fog-500: #7d958c;
-  --color-amber-glow: #f5c96b;
-  --color-rose-soft: #f08a8a;
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --color-pine-950: #0a130f;
+  --color-pine-900: #0f1d17;
+  --color-pine-850: #14261e;
+  --color-pine-800: #193026;
+  --color-pine-700: #244035;
+  --color-pine-600: #345849;
+
+  --color-moss-300: #8fe6a3;
+  --color-moss-400: #57c26a;
+  --color-moss-500: #3ba354;
+  --color-moss-600: #2c8342;
+
+  --color-gold-300: #f5d78c;
+  --color-gold-400: #e8b64b;
+  --color-gold-500: #cf9a2e;
+
+  --color-parch-100: #f3eee2;
+  --color-sage-300: #b6c9bd;
+  --color-sage-500: #7d9287;
+  --color-clay-400: #e08a6a;
+
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
 html {
-  background: var(--color-ink-950);
-  color: var(--color-fog-100);
-  font-family: var(--font-display);
+  background: var(--color-pine-950);
+  color: var(--color-parch-100);
+  font-family: var(--font-body);
+  /* a touch warmer than pure white text; kills the "AI default" glare */
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(1200px 500px at 70% -10%, rgba(43, 199, 160, 0.08), transparent 60%),
-    radial-gradient(900px 400px at 0% 110%, rgba(43, 199, 160, 0.05), transparent 60%),
-    var(--color-ink-950);
+    radial-gradient(1100px 480px at 78% -12%, rgba(87, 194, 106, 0.10), transparent 60%),
+    radial-gradient(820px 420px at 4% 108%, rgba(232, 182, 75, 0.06), transparent 62%),
+    var(--color-pine-950);
+  position: relative;
+}
+
+/* Paper grain — a faint hand-pressed texture over everything so the flats read
+   like inked card stock, not flat vector fills. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 ::selection {
-  background: var(--color-mint-500);
-  color: var(--color-ink-950);
+  background: var(--color-gold-400);
+  color: var(--color-pine-950);
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+}
+
+/* Hand-inked underline — a slightly wobbly stroke drawn under a heading, the
+   way you'd underline a word twice with a felt pen. */
+.ink-underline {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8' viewBox='0 0 120 8'%3E%3Cpath d='M2 5 C24 2 40 7 62 4 S104 2 118 5' fill='none' stroke='%23e8b64b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 100% 7px;
+  padding-bottom: 9px;
+}
+
+/* Wax-seal stamp — rotated a hair off true so it looks pressed by hand. */
+.stamp {
+  transform: rotate(-6deg);
+}
+.stamp-r {
+  transform: rotate(4deg);
 }
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  50% { opacity: 0.3; }
 }
-.live-dot {
-  animation: pulse-dot 1.6s ease-in-out infinite;
-}
+.live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
 
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.rise-in {
-  animation: rise-in 0.45s ease both;
+.rise-in { animation: rise-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+/* the arrow on the hero drifts a little, like it's mid-flight */
+@keyframes drift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
 }
+.drift { animation: drift 3.2s ease-in-out infinite; }
