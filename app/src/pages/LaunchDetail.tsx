@@ -237,57 +237,42 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
                   ))}
                 </div>
 
-                <label className="mt-4 block rounded-xl bg-panel p-3">
-                  <span className="flex items-baseline justify-between">
-                    <span className="eyebrow">You pay</span>
-                    <span className="tnum text-[11px] text-ink-3">
-                      {side === 'buy' ? 'balance 3.42 ETH' : `balance ${compact(launch.yourTokens)} ${ticker}`}
-                    </span>
-                  </span>
-                  <span className="mt-2 flex items-center gap-2">
-                    <input
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="0.0"
-                      inputMode="decimal"
-                      className="tnum w-full bg-transparent text-[24px] font-semibold text-ink outline-none placeholder:text-ink-3/40"
-                    />
-                    <span className="tnum shrink-0 rounded-md bg-surface px-2 py-1 text-[12px] font-semibold text-ink-2">
-                      {side === 'buy' ? 'ETH' : ticker}
-                    </span>
-                  </span>
-                </label>
+                {/* amount */}
+                <div className="mt-3 flex items-center gap-2 border-b border-line-2 pb-2 focus-within:border-emerald/60">
+                  <input
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.0"
+                    inputMode="decimal"
+                    className="tnum w-full bg-transparent text-[26px] font-semibold text-ink outline-none placeholder:text-ink-3/40"
+                  />
+                  <span className="tnum shrink-0 text-[13px] font-semibold text-ink-2">{side === 'buy' ? 'ETH' : ticker}</span>
+                </div>
+                <p className="tnum mt-1.5 text-[11px] text-ink-3">
+                  balance {side === 'buy' ? '3.42 ETH' : `${compact(launch.yourTokens)} ${ticker}`}
+                </p>
 
                 {/* quick amounts */}
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="mt-3 flex flex-wrap gap-1.5">
                   {side === 'buy'
-                    ? ([['reset', ''], ['0.1', '0.1'], ['0.5', '0.5'], ['1', '1']] as const).map(([lbl, val]) => (
+                    ? ([['0.1', '0.1'], ['0.5', '0.5'], ['1', '1'], ['max', '3.42']] as const).map(([lbl, val]) => (
                         <button
                           key={lbl}
                           onClick={() => setAmount(val)}
-                          className="tnum cursor-pointer rounded-lg bg-panel px-2.5 py-1 text-[12px] text-ink-2 ring-1 ring-line transition hover:text-ink hover:ring-line-2"
+                          className="tnum flex-1 cursor-pointer rounded-lg bg-panel py-1.5 text-[12px] text-ink-2 transition hover:text-ink"
                         >
-                          {lbl === 'reset' ? 'reset' : `${lbl} ETH`}
+                          {lbl}
                         </button>
                       ))
                     : ([['25%', 0.25], ['50%', 0.5], ['100%', 1]] as const).map(([lbl, frac]) => (
                         <button
                           key={lbl}
                           onClick={() => setAmount(String(Math.floor(launch.yourTokens * frac)))}
-                          className="tnum cursor-pointer rounded-lg bg-panel px-2.5 py-1 text-[12px] text-ink-2 ring-1 ring-line transition hover:text-ink hover:ring-line-2"
+                          className="tnum flex-1 cursor-pointer rounded-lg bg-panel py-1.5 text-[12px] text-ink-2 transition hover:text-ink"
                         >
                           {lbl}
                         </button>
                       ))}
-                </div>
-
-                <div className="mt-2 flex items-center justify-center text-ink-3">↓</div>
-
-                <div className="rounded-xl bg-panel p-3">
-                  <span className="eyebrow">You receive</span>
-                  <p className="tnum mt-1.5 text-[22px] font-semibold text-ink">
-                    {side === 'buy' ? (out ? compact(out) : '0') : eth(out)} <span className="text-[13px] text-ink-3">{side === 'buy' ? ticker : 'ETH'}</span>
-                  </p>
                 </div>
 
                 <button
@@ -298,10 +283,13 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
                 >
                   {amt ? `${side === 'buy' ? 'Buy' : 'Sell'} ${ticker}` : 'Enter an amount'}
                 </button>
-                <p className="tnum mt-3 flex items-center justify-between text-[11px] text-ink-3">
-                  <span>Price {price(live)} ETH</span>
-                  <span>Tax {launch.tradeFeeBps / 100}% · 50/50 ETH</span>
-                </p>
+
+                <div className="tnum mt-3 flex items-center justify-between text-[11px] text-ink-3">
+                  <span>
+                    ≈ {side === 'buy' ? `${out ? compact(out) : '0'} ${ticker}` : `${eth(out)} ETH`}
+                  </span>
+                  <span>{launch.tradeFeeBps / 100}% tax · 50/50</span>
+                </div>
             </div>
           </div>
         </aside>
