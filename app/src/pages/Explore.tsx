@@ -5,11 +5,11 @@ import { LaunchCard } from '../components/LaunchCard'
 type Filter = 'all' | LaunchStatus
 
 const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'all', label: 'ALL' },
-  { key: 'live', label: 'LIVE' },
-  { key: 'upcoming', label: 'QUEUED' },
-  { key: 'graduated', label: 'GRAD' },
-  { key: 'refunding', label: 'REFUND' },
+  { key: 'all', label: 'All' },
+  { key: 'live', label: 'Live' },
+  { key: 'upcoming', label: 'Opening' },
+  { key: 'graduated', label: 'Graduated' },
+  { key: 'refunding', label: 'Refunding' },
 ]
 
 export function Explore({ onOpen, onCreate }: { onOpen: (id: number) => void; onCreate: () => void }) {
@@ -21,78 +21,75 @@ export function Explore({ onOpen, onCreate }: { onOpen: (id: number) => void; on
 
   return (
     <main>
-      {/* hero — restrained, left-weighted, terminal */}
-      <section className="rise-in grid gap-10 border-b border-line py-12 lg:grid-cols-[1.15fr_0.85fr] lg:py-16">
-        <div className="max-w-xl">
-          <p className="label text-emerald">// FEE REDISTRIBUTION PROTOCOL</p>
-          <h1 className="font-display mt-4 text-[38px] font-semibold leading-[1.02] tracking-tight sm:text-[46px]">
-            Half to the holders.
-            <br />
-            Half back to you.<span className="blink text-emerald">_</span>
-          </h1>
-          <p className="mt-5 max-w-md text-[13px] leading-relaxed text-ink-2">
-            Fixed-price token launches on Robinhood Chain. On graduation, every trade pays a fee that is
-            split in-block — half to holders pro-rata, half rebated to the trader. No treasury, no curve.
-          </p>
-          <div className="mt-7 flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={onCreate}
-              className="cursor-pointer border border-emerald/40 bg-emerald-tint px-4 py-2 text-[13px] text-emerald-strong transition-colors hover:border-emerald/70"
-            >
-              [ deploy a launch ]
-            </button>
-            <button
-              onClick={() => setFilter('live')}
-              className="cursor-pointer border border-line-2 px-4 py-2 text-[13px] text-ink-2 transition-colors hover:text-ink"
-            >
-              browse live
-            </button>
-          </div>
-        </div>
-
-        {/* stats readout — a register block, not a card grid */}
-        <div className="self-center border border-line">
-          <div className="border-b border-line px-4 py-2">
-            <span className="label">// NETWORK READOUT</span>
-          </div>
-          {[
-            ['PAID OUT / TOTAL', `${compact(totalPaid)} RBH`],
-            ['→ TO HOLDERS', `${compact(toHolders)} RBH`],
-            ['LIVE SALES', String(liveCount).padStart(2, '0')],
-            ['SPLIT RATIO', '50 / 50'],
-          ].map(([k, v], i) => (
-            <div key={k} className={`flex items-baseline justify-between px-4 py-3 ${i < 3 ? 'border-b border-line' : ''}`}>
-              <span className="label">{k}</span>
-              <span className="tnum text-[15px] font-medium text-ink">{v}</span>
-            </div>
-          ))}
+      {/* hero — editorial, asymmetric, serif-led */}
+      <section className="rise-in max-w-3xl py-10 sm:py-16">
+        <p className="eyebrow">A launchpad on Robinhood Chain</p>
+        <h1 className="font-display mt-5 text-[46px] font-normal leading-[1.02] tracking-tight sm:text-[68px]">
+          Half to the holders.
+          <br />
+          Half back to <span className="italic text-emerald-strong">you</span>.
+        </h1>
+        <p className="mt-6 max-w-xl text-[16px] leading-relaxed text-ink-2">
+          Tokens launch at one flat price — no curve, no early-buyer edge. When a sale graduates, every
+          trade after it pays a small fee that splits down the middle: half shared out to everyone holding,
+          half rebated to the trader who made the swap.
+        </p>
+        <div className="mt-8 flex flex-wrap items-center gap-6">
+          <button
+            onClick={onCreate}
+            className="cursor-pointer rounded-full bg-ink px-6 py-2.5 text-[14px] font-medium text-paper transition hover:bg-emerald-strong"
+          >
+            Start a launch
+          </button>
+          <button
+            onClick={() => setFilter('live')}
+            className="cursor-pointer text-[14px] text-ink-2 underline decoration-line-2 underline-offset-4 transition-colors hover:text-ink hover:decoration-emerald"
+          >
+            or browse what's live
+          </button>
         </div>
       </section>
 
-      {/* filters */}
-      <div className="flex items-center justify-between py-4">
-        <div className="flex items-center gap-4 overflow-x-auto">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`cursor-pointer whitespace-nowrap text-[11px] tracking-[0.12em] transition-colors ${
-                filter === f.key ? 'text-emerald' : 'text-ink-3 hover:text-ink-2'
-              }`}
-            >
-              {filter === f.key ? '● ' : '○ '}
-              {f.label}
-            </button>
+      {/* three figures, divided by hairlines — not tiles */}
+      <section className="rule-t flex flex-wrap gap-y-6 py-8">
+        {[
+          ['Paid out so far', `${compact(totalPaid)}`, 'RBH across every graduated launch'],
+          ['Of that, to holders', `${compact(toHolders)}`, 'the top half of every split'],
+          ['Live right now', String(liveCount), liveCount === 1 ? 'sale taking buys' : 'sales taking buys'],
+        ].map(([label, value, sub], i) => (
+          <div key={label} className={`min-w-[180px] flex-1 ${i > 0 ? 'sm:border-l sm:border-line sm:pl-8' : ''}`}>
+            <p className="eyebrow">{label}</p>
+            <p className="font-display tnum mt-2 text-[34px] font-medium leading-none text-ink">{value}</p>
+            <p className="mt-2 text-[12px] text-ink-3">{sub}</p>
+          </div>
+        ))}
+      </section>
+
+      {/* filters + list */}
+      <section className="rule-t pt-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-5 overflow-x-auto">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`cursor-pointer whitespace-nowrap text-[14px] transition-colors ${
+                  filter === f.key ? 'text-ink' : 'text-ink-3 hover:text-ink-2'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <span className="eyebrow hidden sm:block">{shown.length} shown</span>
+        </div>
+
+        <div className="mt-4 grid gap-x-10 gap-y-1 divide-y divide-line pb-24 sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-2">
+          {shown.map((l, i) => (
+            <LaunchCard key={l.id} launch={l} index={i} onOpen={() => onOpen(l.id)} />
           ))}
         </div>
-        <span className="label hidden sm:block">{String(shown.length).padStart(2, '0')} MARKETS</span>
-      </div>
-
-      <div className="grid gap-3 pb-24 sm:grid-cols-2 lg:grid-cols-3">
-        {shown.map((l, i) => (
-          <LaunchCard key={l.id} launch={l} index={i} onOpen={() => onOpen(l.id)} />
-        ))}
-      </div>
+      </section>
     </main>
   )
 }

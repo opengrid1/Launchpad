@@ -2,44 +2,39 @@ import type { Route } from '../App'
 
 export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Route) => void }) {
   return (
-    <header className="flex items-center justify-between border-b border-line py-4">
+    <header className="flex items-center justify-between py-6">
       <button
         onClick={() => onNavigate({ page: 'explore' })}
-        className="flex cursor-pointer items-center gap-2.5 bg-transparent text-left"
+        className="flex cursor-pointer items-baseline gap-2.5 bg-transparent text-left"
       >
-        {/* geometric mark — a plus in a hairline square, drawn 1px */}
-        <span className="flex h-8 w-8 items-center justify-center border border-line-2">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 3 L8 13 M3 8 L13 8" stroke="var(--color-emerald)" strokeWidth="1" />
-          </svg>
-        </span>
-        <span className="leading-none">
-          <span className="font-pixel block text-[13px] tracking-tight text-ink">SHERWOOD</span>
-          <span className="label mt-1 block">Robinhood · 4663</span>
-        </span>
+        {/* a leaf, drawn once — the concept, not a logo generator */}
+        <svg width="16" height="18" viewBox="0 0 20 22" fill="none" className="translate-y-0.5">
+          <path d="M10 2 C6 7 6 14 10 20 C14 14 14 7 10 2 Z" fill="none" stroke="var(--color-emerald)" strokeWidth="1.4" />
+          <path d="M10 3 L10 19" stroke="var(--color-emerald)" strokeWidth="1.1" />
+        </svg>
+        <span className="font-display text-[21px] font-medium leading-none tracking-tight text-ink">Sherwood</span>
       </button>
 
-      <nav className="hidden items-center gap-6 sm:flex">
+      <nav className="hidden items-center gap-7 sm:flex">
         {(
           [
-            ['Markets', 'explore'],
-            ['Launch', 'create'],
+            ['Launches', 'explore'],
+            ['Start one', 'create'],
           ] as const
         ).map(([label, page]) => (
           <button
             key={page}
             onClick={() => onNavigate({ page } as Route)}
-            className={`cursor-pointer text-[13px] tracking-tight transition-colors ${
-              route.page === page ? 'text-ink' : 'text-ink-3 hover:text-ink-2'
+            className={`cursor-pointer text-[14px] transition-colors ${
+              route.page === page ? 'text-ink' : 'text-ink-2 hover:text-ink'
             }`}
           >
-            <span className="text-ink-3">/</span>
-            {label.toLowerCase()}
+            {label}
           </button>
         ))}
       </nav>
 
-      <button className="flex cursor-pointer items-center gap-2.5 border border-line-2 px-3.5 py-2 text-[13px] text-ink transition-colors hover:border-emerald/50">
+      <button className="flex cursor-pointer items-center gap-2 text-[13px] text-ink-2 transition-colors hover:text-ink">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald live-dot" />
         <span className="tnum">0x71b3…9F02</span>
       </button>
