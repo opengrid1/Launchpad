@@ -46,6 +46,7 @@ export const supplyOf = (l: Launch) => l.tokensForSale + l.tokensForLiquidity
 
 /** Rough age in hours from a "12m ago" / "5h ago" / "6d ago" / "1w ago" string. */
 export function ageHours(s: string): number {
+  if (/now/i.test(s)) return 0
   const m = s.match(/(\d+)\s*([mhdw])/)
   if (!m) return 1e9
   const n = Number(m[1])

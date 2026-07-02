@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { compact } from '../data/launches'
+import { compact, type Launch } from '../data/launches'
 import { SplitMeter } from '../components/SplitMeter'
+
+const hex4 = () => Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0')
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -29,7 +31,7 @@ function Section({ n, title, children }: { n: string; title: string; children: R
   )
 }
 
-export function Create({ onBack }: { onBack: () => void }) {
+export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (coin: Launch) => void }) {
   const [name, setName] = useState('')
   const [symbol, setSymbol] = useState('')
   const [image, setImage] = useState('') // token URI (object URL of the upload)
@@ -43,6 +45,39 @@ export function Create({ onBack }: { onBack: () => void }) {
   const p = parseFloat(priceEth) || 0
   const sup = parseFloat(supply) || 0
   const startMcap = p * sup
+  const dev = parseFloat(devBuy) || 0
+  const ready = Boolean(name && symbol && p && sup)
+
+  function launch() {
+    if (!ready) return
+    const coin: Launch = {
+      id: Date.now(),
+      name,
+      symbol,
+      glyph: '🪙',
+      image: image || undefined,
+      tagline: description ? description.slice(0, 90) : `${name} on Sherwood.`,
+      description: description || undefined,
+      tokenAddress: `0x${hex4()}…${hex4()}`,
+      devBuy: dev || undefined,
+      priceEth: p,
+      tokensForLiquidity: Math.round((sup * liquidityPct) / 100),
+      tokensForSale: sup - Math.round((sup * liquidityPct) / 100),
+      liquidityBps: liquidityPct * 100,
+      tradeFeeBps: Math.round(feePct * 100),
+      volume: dev,
+      rewardsPaid: 0,
+      holders: dev > 0 ? 1 : 0,
+      createdAgo: 'just now',
+      buyers: dev > 0 ? 1 : 0,
+      status: 'live',
+      creator: '0x71b3…9F02',
+      yourTokens: dev > 0 ? Math.floor(dev / p) : 0,
+      yourHolderRewards: 0,
+      yourRebate: 0,
+    }
+    onLaunch(coin)
+  }
 
   return (
     <main className="rise-in mx-auto max-w-5xl py-8">
@@ -203,7 +238,8 @@ export function Create({ onBack }: { onBack: () => void }) {
             their half of the ETH tax, no matter what.
           </p>
           <button
-            disabled={!name || !symbol || !p || !sup}
+            onClick={launch}
+            disabled={!ready}
             className="mt-4 w-full cursor-pointer rounded-full bg-emerald py-3 text-[14px] font-semibold text-paper transition hover:bg-emerald-strong disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3"
           >
             Launch coin

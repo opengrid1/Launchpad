@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LAUNCHES, ageHours, supplyOf } from '../data/launches'
+import { ageHours, supplyOf, type Launch } from '../data/launches'
 import { LaunchCard } from '../components/LaunchCard'
 
 type Sort = 'trending' | 'top' | 'new'
@@ -10,17 +10,17 @@ const SORTS: { key: Sort; label: string }[] = [
   { key: 'new', label: 'New' },
 ]
 
-export function Explore({ onOpen }: { onOpen: (id: number) => void }) {
+export function Explore({ coins: all, onOpen }: { coins: Launch[]; onOpen: (id: number) => void }) {
   const [sort, setSort] = useState<Sort>('trending')
 
-  const coins = [...LAUNCHES].sort((a, b) => {
+  const coins = [...all].sort((a, b) => {
     if (sort === 'top') return b.priceEth * supplyOf(b) - a.priceEth * supplyOf(a)
     if (sort === 'new') return ageHours(a.createdAgo) - ageHours(b.createdAgo)
     return b.volume - a.volume // trending
   })
 
   // king of the hill: the coin with the most volume
-  const king = [...LAUNCHES].sort((a, b) => b.volume - a.volume)[0]
+  const king = [...all].sort((a, b) => b.volume - a.volume)[0]
 
   return (
     <main className="pb-24">
