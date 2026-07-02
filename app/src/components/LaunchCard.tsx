@@ -1,6 +1,5 @@
 import { compact, price, supplyOf, type Launch } from '../data/launches'
 import { useLiveMarket } from './useLiveMarket'
-import { Sparkline } from './LiveChart'
 
 /** Deterministic two-hue gradient from the ticker — stands in for coin art. */
 function coinArt(symbol: string) {
@@ -14,66 +13,83 @@ function coinArt(symbol: string) {
 }
 
 const STATUS: Record<Launch['status'], { label: string; live?: boolean; cls: string }> = {
-  live: { label: 'Live', live: true, cls: 'text-paper bg-emerald' },
-  upcoming: { label: 'Soon', cls: 'text-gold bg-gold-tint' },
+  live: { label: 'live', live: true, cls: 'text-emerald-strong' },
+  upcoming: { label: 'soon', cls: 'text-gold' },
 }
 
-export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: () => void; index: number }) {
-  const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase()
+function CoinImage({ launch, ticker, className }: { launch: Launch; ticker: string; className: string }) {
+  return (
+    <div className={`relative shrink-0 overflow-hidden rounded-xl ${className}`} style={coinArt(ticker)}>
+      {launch.image ? (
+        <img src={launch.image} alt={launch.name} className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <span className="absolute inset-0 flex items-center justify-center text-[34px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
+          {launch.glyph}
+        </span>
+      )}
+    </div>
+  )
+}
+
+/** pump.fun-style board card: image left, meta right, market cap in green. */
+export function LaunchCard({
+  launch,
+  onOpen,
+  index,
+  featured = false,
+}: {
+  launch: Launch
+  onOpen: () => void
+  index: number
+  featured?: boolean
+}) {
+  const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
   const s = STATUS[launch.status]
-  const { price: live, points, changePct } = useLiveMarket(ticker, launch.priceEth, 40)
+  const { price: live, changePct } = useLiveMarket(ticker, launch.priceEth, 24)
   const up = changePct >= 0
   const mcap = live * supplyOf(launch)
+  const age = launch.startsIn ? `opens in ${launch.startsIn}` : launch.createdAgo
 
   return (
     <button
       onClick={onOpen}
-      className="rise-in group flex cursor-pointer flex-col overflow-hidden rounded-2xl bg-surface text-left ring-1 ring-line transition duration-150 hover:-translate-y-1 hover:ring-line-2"
-      style={{ animationDelay: `${index * 35}ms` }}
+      className={`rise-in group flex cursor-pointer gap-3 rounded-2xl bg-surface p-3 text-left ring-1 transition hover:ring-line-2 ${
+        featured ? 'ring-gold/50 hover:ring-gold' : 'ring-line'
+      }`}
+      style={{ animationDelay: `${index * 30}ms` }}
     >
-      {/* coin image (token URI, or the emoji logo) */}
-      <div className="relative aspect-[16/9] w-full overflow-hidden" style={coinArt(ticker)}>
-        {launch.image ? (
-          <img src={launch.image} alt={launch.name} className="absolute inset-0 h-full w-full object-cover" />
-        ) : (
-          <span className="absolute inset-0 flex items-center justify-center text-[52px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
-            {launch.glyph}
-          </span>
-        )}
-        <span className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${s.cls}`}>
-          {s.live && <span className="h-1.5 w-1.5 rounded-full bg-paper live-dot" />}
-          {s.label}
-        </span>
-      </div>
+      <CoinImage launch={launch} ticker={ticker} className={featured ? 'h-28 w-28' : 'h-24 w-24'} />
 
-      {/* meta */}
-      <div className="flex flex-1 flex-col p-4">
-        <div className="flex items-baseline justify-between gap-2">
-          <h3 className="font-display truncate text-[17px] font-bold leading-none tracking-tight text-ink group-hover:text-emerald-strong">
-            {launch.name}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className={`truncate font-display font-bold leading-tight tracking-tight text-ink group-hover:text-emerald-strong ${featured ? 'text-[19px]' : 'text-[16px]'}`}>
+            {launch.name} <span className="tnum text-[12px] font-medium text-ink-3">${ticker}</span>
           </h3>
-          <span className="tnum shrink-0 text-[12px] text-ink-3">${ticker}</span>
+          <span className={`inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold ${s.cls}`}>
+            {s.live && <span className="h-1.5 w-1.5 rounded-full bg-emerald live-dot" />}
+            {s.label}
+          </span>
         </div>
 
-        <div className="mt-3 flex items-end justify-between">
-          <div>
-            <p className="eyebrow">Market cap</p>
-            <p className="tnum mt-1 text-[16px] font-semibold text-ink">{compact(mcap)} ETH</p>
-          </div>
-          <span className={`tnum rounded-md px-1.5 py-0.5 text-[12px] font-semibold ${up ? 'bg-emerald-tint text-emerald-strong' : 'bg-clay-tint text-clay'}`}>
+        <p className="tnum mt-1 text-[11px] text-ink-3">
+          by {launch.creator} · {age}
+        </p>
+
+        <p className="mt-1.5 text-[13px]">
+          <span className="text-ink-3">mcap </span>
+          <span className="tnum font-semibold text-emerald-strong">{compact(mcap)} ETH</span>
+          <span className={`tnum ml-2 text-[12px] ${up ? 'text-emerald' : 'text-clay'}`}>
             {up ? '+' : ''}{changePct.toFixed(1)}%
           </span>
-        </div>
+        </p>
 
-        {/* live sparkline */}
-        <div className="mt-3">
-          <Sparkline points={points} up={up} />
-        </div>
+        <p className={`mt-1.5 text-[12px] leading-snug text-ink-2 ${featured ? 'line-clamp-2' : 'line-clamp-2'}`}>
+          {launch.tagline}
+        </p>
 
-        <div className="tnum mt-2 flex items-center justify-between text-[11px] text-ink-3">
-          <span>{price(live)} ETH</span>
-          <span>vol {compact(launch.volume)} ETH</span>
-        </div>
+        <p className="tnum mt-auto pt-1.5 text-[11px] text-ink-3">
+          {price(live)} ETH · vol {compact(launch.volume)} · {launch.buyers.toLocaleString()} holders
+        </p>
       </div>
     </button>
   )

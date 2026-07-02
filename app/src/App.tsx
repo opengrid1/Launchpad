@@ -20,7 +20,7 @@ export default function App() {
       </div>
 
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        {route.page === 'explore' && <Explore onOpen={(id) => setRoute({ page: 'launch', id })} onCreate={() => setRoute({ page: 'create' })} />}
+        {route.page === 'explore' && <Explore onOpen={(id) => setRoute({ page: 'launch', id })} />}
         {route.page === 'create' && <Create onBack={() => setRoute({ page: 'explore' })} />}
         {route.page === 'launch' && (
           <LaunchDetail

@@ -260,6 +260,29 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
                   </span>
                 </label>
 
+                {/* quick amounts */}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {side === 'buy'
+                    ? ([['reset', ''], ['0.1', '0.1'], ['0.5', '0.5'], ['1', '1']] as const).map(([lbl, val]) => (
+                        <button
+                          key={lbl}
+                          onClick={() => setAmount(val)}
+                          className="tnum cursor-pointer rounded-lg bg-panel px-2.5 py-1 text-[12px] text-ink-2 ring-1 ring-line transition hover:text-ink hover:ring-line-2"
+                        >
+                          {lbl === 'reset' ? 'reset' : `${lbl} ETH`}
+                        </button>
+                      ))
+                    : ([['25%', 0.25], ['50%', 0.5], ['100%', 1]] as const).map(([lbl, frac]) => (
+                        <button
+                          key={lbl}
+                          onClick={() => setAmount(String(Math.floor(launch.yourTokens * frac)))}
+                          className="tnum cursor-pointer rounded-lg bg-panel px-2.5 py-1 text-[12px] text-ink-2 ring-1 ring-line transition hover:text-ink hover:ring-line-2"
+                        >
+                          {lbl}
+                        </button>
+                      ))}
+                </div>
+
                 <div className="mt-2 flex items-center justify-center text-ink-3">↓</div>
 
                 <div className="rounded-xl bg-panel p-3">
