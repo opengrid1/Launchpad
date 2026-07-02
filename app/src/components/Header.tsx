@@ -19,7 +19,7 @@ export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Ro
         {(
           [
             ['Launches', 'explore'],
-            ['Start one', 'create'],
+            ['Create', 'create'],
           ] as const
         ).map(([label, page]) => (
           <button

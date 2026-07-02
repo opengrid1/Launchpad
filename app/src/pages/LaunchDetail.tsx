@@ -90,12 +90,12 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             </div>
           </div>
 
-          {/* the split — the argument of the whole thing */}
+          {/* the split, the argument of the whole thing */}
           <div className="rule-t mt-10 pt-8">
             <h2 className="font-display text-[24px] font-medium tracking-tight">Where the fees go</h2>
             <p className="mt-2 max-w-xl text-[14px] leading-relaxed text-ink-2">
-              Once {launch.symbol} graduates, every swap pays a {launch.tradeFeeBps / 100}% fee. It forks in half
-              the same block — never a treasury in between.
+              Once {launch.symbol} graduates, every swap pays a {launch.tradeFeeBps / 100}% fee. It splits in half
+              the same block it settles. No treasury sits in between.
             </p>
             <div className="mt-6 max-w-xl">
               <SplitMeter toHolders={toHolders} toTraders={toTraders} />
@@ -103,7 +103,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             <div className="mt-8 flex flex-wrap gap-y-5">
               <Figure label="Lifetime volume" value={`${compact(launch.volume)} RBH`} />
               <Figure label="Fee pool" value={`${compact(pool)} RBH`} sub={`${launch.tradeFeeBps / 100}% of volume`} />
-              <Figure label="Holders" value={launch.holders ? launch.holders.toLocaleString() : '—'} sub="sharing the top half" />
+              <Figure label="Holders" value={launch.holders ? launch.holders.toLocaleString() : 'None yet'} sub="sharing the top half" />
             </div>
           </div>
 
@@ -120,13 +120,13 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             <h2 className="font-display text-[24px] font-medium tracking-tight">How this launch works</h2>
             <ol className="mt-5 space-y-5">
               {[
-                `Everyone buys at ${price(launch.priceRbh)} RBH — one flat price, no curve, no early-buyer edge.`,
-                `Soft cap reached → ${launch.liquidityBps / 100}% of the raise pairs into the DEX pool and the LP is burned. The token graduates.`,
-                `From then on, each trade's ${launch.tradeFeeBps / 100}% fee splits 50/50 — half to holders, half rebated to the trader.`,
-                `Soft cap missed → every buyer refunds in full. Nobody is left holding the bag.`,
+                `Everyone buys at ${price(launch.priceRbh)} RBH. One flat price, no curve, no early-buyer edge.`,
+                `Soft cap reached. ${launch.liquidityBps / 100}% of the raise pairs into the DEX pool and the LP is burned. The token graduates.`,
+                `From then on, each trade's ${launch.tradeFeeBps / 100}% fee splits 50/50. Half to holders, half rebated to the trader.`,
+                `Soft cap missed. Every buyer refunds in full. Nobody is left holding the bag.`,
               ].map((t, i) => (
                 <li key={i} className="flex gap-5 text-[14px] leading-relaxed text-ink-2">
-                  <span className="font-display shrink-0 text-[20px] leading-none text-emerald-strong">{i < 3 ? i + 1 : '—'}</span>
+                  <span className="font-display shrink-0 text-[20px] leading-none text-emerald-strong">{i < 3 ? i + 1 : '·'}</span>
                   <span className="pt-0.5">{t}</span>
                 </li>
               ))}
@@ -181,7 +181,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
                 </p>
                 {launch.yourContribution > 0 && (
                   <p className="tnum mt-4 border-t border-line pt-3 text-[12px] text-ink-2">
-                    Your position — {compact(launch.yourContribution)} RBH in, {compact(launch.yourTokens)} {launch.symbol}
+                    Your position: {compact(launch.yourContribution)} RBH in, {compact(launch.yourTokens)} {launch.symbol}
                   </p>
                 )}
               </>
@@ -202,7 +202,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
               <div className="text-center">
                 <p className="eyebrow text-emerald">Graduated</p>
                 <p className="mt-3 text-[13px] leading-relaxed text-ink-2">
-                  Trading has moved on-chain. Rewards accrue on every swap — check the rewards tab.
+                  Trading has moved on-chain. Rewards accrue on every swap. Check the rewards tab.
                 </p>
                 <button onClick={() => setTab('rewards')} className={`mt-5 ${primaryBtn}`}>See rewards</button>
               </div>
@@ -236,7 +236,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
                   {claimable > 0 ? `Claim ${compact(claimable)} RBH` : 'Nothing to claim yet'}
                 </button>
                 <p className="mt-3 text-[12px] leading-relaxed text-ink-3">
-                  Accrues on every {launch.symbol} trade. Claim whenever — there's no lockup.
+                  Accrues on every {launch.symbol} trade. Claim whenever you like. There is no lockup.
                 </p>
               </>
             )}

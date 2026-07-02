@@ -88,7 +88,7 @@ export function Create({ onBack }: { onBack: () => void }) {
                 </Field>
               </div>
               <p className="tnum mt-4 text-[13px] text-ink-3">
-                Hard cap — {compact(sale)} × {p || '…'} = <span className="text-ink">{compact(hardCap)} RBH</span>
+                Hard cap: {compact(sale)} × {p || '…'} = <span className="text-ink">{compact(hardCap)} RBH</span>
               </p>
             </Section>
 
@@ -127,7 +127,7 @@ export function Create({ onBack }: { onBack: () => void }) {
             </Section>
 
             <Section n="4" title="Liquidity">
-              <Field label={`Share of raise into the pool — ${liquidityPct}%`} hint="minimum 50% · LP burned">
+              <Field label={`Share of raise into the pool · ${liquidityPct}%`} hint="minimum 50% · LP burned">
                 <input
                   type="range"
                   min={50}
@@ -144,7 +144,7 @@ export function Create({ onBack }: { onBack: () => void }) {
             </Section>
 
             <Section n="5" title="The split">
-              <Field label={`Trade fee — ${feePct}%`} hint="charged on every swap after graduation">
+              <Field label={`Trade fee · ${feePct}%`} hint="charged on every swap after graduation">
                 <input
                   type="range"
                   min={0.5}
@@ -160,7 +160,7 @@ export function Create({ onBack }: { onBack: () => void }) {
                 <span>5% max</span>
               </div>
               <p className="mt-5 max-w-lg text-[14px] leading-relaxed text-ink-2">
-                The 50/50 is fixed — you set the size of the fee, not who gets it. On a sample 1M RBH of volume,
+                The 50/50 is fixed. You set the size of the fee, not who gets it. On a sample 1M RBH of volume,
                 a {feePct}% fee splits like this:
               </p>
               <div className="mt-5 max-w-md">
@@ -175,11 +175,11 @@ export function Create({ onBack }: { onBack: () => void }) {
           <p className="eyebrow">Your launch, so far</p>
           <dl className="mt-4 space-y-3">
             {[
-              ['Token', name && symbol ? symbol : '—'],
-              ['Price', p ? `${p} RBH` : '—'],
-              ['Hard cap', hardCap ? `${compact(hardCap)} RBH` : '—'],
-              ['Soft cap', soft ? `${compact(soft)} RBH` : '—'],
-              ['Supply', sale + liq ? compact(sale + liq) : '—'],
+              ['Token', name && symbol ? symbol : '·'],
+              ['Price', p ? `${p} RBH` : '·'],
+              ['Hard cap', hardCap ? `${compact(hardCap)} RBH` : '·'],
+              ['Soft cap', soft ? `${compact(soft)} RBH` : '·'],
+              ['Supply', sale + liq ? compact(sale + liq) : '·'],
               ['Liquidity', `${liquidityPct}%`],
               ['Fee', `${feePct}% · 50/50`],
             ].map(([k, v]) => (
@@ -191,7 +191,7 @@ export function Create({ onBack }: { onBack: () => void }) {
           </dl>
           <p className="mt-6 border-t border-line pt-4 text-[12px] leading-relaxed text-ink-3">
             The 50/50 is hard-coded and can't change after launch. Holders and traders each keep their half
-            no matter what — that's what makes it worth trusting.
+            no matter what. That is what makes it worth trusting.
           </p>
           <button
             disabled={!name || !symbol || !p || !softOk}
