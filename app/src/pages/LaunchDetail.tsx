@@ -106,6 +106,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
   const [amount, setAmount] = useState('')
   const [tf, setTf] = useState('1h')
   const [feed, setFeed] = useState<'trades' | 'holders'>('trades')
+  const [claimed, setClaimed] = useState(false)
   const tfGroup = TF.find((t) => t.label === tf)?.group ?? 2
 
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
@@ -116,6 +117,9 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
   const { toHolders, toCreator } = rewardSplit(launch)
   const holders = topHolders(launch)
   const youAreCreator = launch.creator === '0x71b3…9F02'
+
+  const creatorEarnings = youAreCreator ? toCreator : 0
+  const claimable = claimed ? 0 : launch.yourHolderRewards + creatorEarnings
 
   const amt = parseFloat(amount) || 0
   const out = side === 'buy' ? amt / live : amt * live
@@ -328,6 +332,39 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             </div>
             <p className="mt-2 text-[11px] leading-relaxed text-ink-3">
               Half to holders, half to the creator{youAreCreator ? ' (you)' : ''}. Paid every trade.
+            </p>
+          </div>
+
+          {/* your rewards */}
+          <div className="rounded-2xl bg-surface p-4 ring-1 ring-line">
+            <h2 className="text-[13px] font-semibold text-ink">Your rewards</h2>
+            <div className="mt-3 space-y-2">
+              <div className="tnum flex items-baseline justify-between text-[13px]">
+                <span className="text-ink-2">As a holder</span>
+                <span className="text-ink">{eth(claimed ? 0 : launch.yourHolderRewards)} ETH</span>
+              </div>
+              {youAreCreator && (
+                <div className="tnum flex items-baseline justify-between text-[13px]">
+                  <span className="text-ink-2">As the creator</span>
+                  <span className="text-ink">{eth(claimed ? 0 : creatorEarnings)} ETH</span>
+                </div>
+              )}
+              <div className="tnum flex items-baseline justify-between border-t border-line pt-2 text-[13px]">
+                <span className="font-semibold text-ink">Claimable</span>
+                <span className="font-semibold text-emerald-strong">{eth(claimable)} ETH</span>
+              </div>
+            </div>
+            <button
+              onClick={() => claimable > 0 && setClaimed(true)}
+              disabled={claimable <= 0}
+              className="mt-4 w-full cursor-pointer rounded-full bg-emerald py-2.5 text-[14px] font-semibold text-paper transition hover:bg-emerald-strong disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3"
+            >
+              {claimed ? 'Claimed ✓' : claimable > 0 ? `Claim ${eth(claimable)} ETH` : 'Nothing to claim'}
+            </button>
+            <p className="mt-2 text-[11px] leading-relaxed text-ink-3">
+              {claimable > 0
+                ? 'Paid straight to your wallet in ETH. No lockup.'
+                : `Hold ${ticker} to earn a share of every trade's ETH tax.`}
             </p>
           </div>
 
