@@ -32,6 +32,7 @@ function Section({ n, title, children }: { n: string; title: string; children: R
 export function Create({ onBack }: { onBack: () => void }) {
   const [name, setName] = useState('')
   const [symbol, setSymbol] = useState('')
+  const [image, setImage] = useState('') // token URI (object URL of the upload)
   const [priceEth, setPriceEth] = useState('0.0000005')
   const [supply, setSupply] = useState('1000000000')
   const [liquidityPct, setLiquidityPct] = useState(70)
@@ -58,14 +59,39 @@ export function Create({ onBack }: { onBack: () => void }) {
 
           <div className="mt-6 space-y-4">
             <Section n="01" title="Coin">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Name">
-                  <input className={inputCls} placeholder="Greenwood" value={name} onChange={(e) => setName(e.target.value)} />
-                </Field>
-                <Field label="Ticker">
-                  <input className={inputCls} placeholder="GWD" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} />
-                </Field>
+              <div className="flex gap-4">
+                {/* token image (URI) upload */}
+                <label className="group relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-panel ring-1 ring-line transition hover:ring-emerald/50">
+                  {image ? (
+                    <img src={image} alt="token" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-center text-[11px] leading-tight text-ink-3">
+                      <span className="block text-[20px]">＋</span>
+                      image
+                    </span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) setImage(URL.createObjectURL(f))
+                    }}
+                  />
+                </label>
+                <div className="grid flex-1 content-start gap-4">
+                  <Field label="Name">
+                    <input className={inputCls} placeholder="Greenwood" value={name} onChange={(e) => setName(e.target.value)} />
+                  </Field>
+                  <Field label="Ticker">
+                    <input className={inputCls} placeholder="GWD" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} />
+                  </Field>
+                </div>
               </div>
+              <p className="mt-3 text-[11px] text-ink-3">
+                The image is pinned and set as the token URI on-chain. PNG or GIF, square works best.
+              </p>
             </Section>
 
             <Section n="02" title="Supply & price">
@@ -131,7 +157,16 @@ export function Create({ onBack }: { onBack: () => void }) {
 
         {/* manifest */}
         <aside className="h-fit rounded-2xl bg-surface p-5 ring-1 ring-line lg:sticky lg:top-24">
-          <p className="eyebrow">Your coin, so far</p>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-panel ring-1 ring-line">
+              {image ? <img src={image} alt="token" className="h-full w-full object-cover" /> : <span className="text-[18px] text-ink-3">?</span>}
+            </span>
+            <div className="min-w-0">
+              <p className="font-display truncate text-[15px] font-bold text-ink">{name || 'Your coin'}</p>
+              <p className="tnum text-[12px] text-ink-3">${symbol || '···'}</p>
+            </div>
+          </div>
+          <p className="eyebrow mt-5">Your coin, so far</p>
           <dl className="mt-4 space-y-3">
             {[
               ['Ticker', name && symbol ? `$${symbol}` : '·'],

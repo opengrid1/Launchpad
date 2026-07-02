@@ -44,7 +44,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
       {/* market header */}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Monogram symbol={launch.symbol} size="lg" />
+          <Monogram symbol={launch.symbol} glyph={launch.glyph} image={launch.image} size="lg" />
           <div>
             <h1 className="font-display text-[26px] font-extrabold leading-none tracking-tight">
               {launch.name} <span className="text-[15px] font-semibold text-ink-3">${ticker}</span>

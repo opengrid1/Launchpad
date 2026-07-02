@@ -13,7 +13,8 @@ export interface Launch {
   id: number
   name: string
   symbol: string
-  glyph: string
+  glyph: string // emoji logo, used as the token image when no URI is set
+  image?: string // token URI (uploaded image); falls back to the glyph
   tagline: string
   priceEth: number // ETH per token (tiny, memecoin-style)
   tokensForSale: number

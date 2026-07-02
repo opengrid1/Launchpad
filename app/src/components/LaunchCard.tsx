@@ -31,11 +31,15 @@ export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: 
       className="rise-in group flex cursor-pointer flex-col overflow-hidden rounded-2xl bg-surface text-left ring-1 ring-line transition duration-150 hover:-translate-y-1 hover:ring-line-2"
       style={{ animationDelay: `${index * 35}ms` }}
     >
-      {/* coin art */}
+      {/* coin image (token URI, or the emoji logo) */}
       <div className="relative aspect-[16/9] w-full overflow-hidden" style={coinArt(ticker)}>
-        <span className="font-display absolute inset-0 flex items-center justify-center text-[38px] font-extrabold tracking-tight text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
-          {ticker}
-        </span>
+        {launch.image ? (
+          <img src={launch.image} alt={launch.name} className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center text-[52px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
+            {launch.glyph}
+          </span>
+        )}
         <span className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${s.cls}`}>
           {s.live && <span className="h-1.5 w-1.5 rounded-full bg-paper live-dot" />}
           {s.label}
