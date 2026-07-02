@@ -26,8 +26,8 @@ function Chevron({ open }: { open: boolean }) {
   )
 }
 
-const TAX = [0.5, 1, 2, 3, 5]
-const LIQ = [50, 70, 90, 100]
+// pool tax is fixed at 1% and the entire supply seeds the single-sided v3 pool
+const FEE_PCT = 1
 
 export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (coin: Launch) => void }) {
   const [name, setName] = useState('')
@@ -39,8 +39,6 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
   const [website, setWebsite] = useState('')
   const [priceEth, setPriceEth] = useState('0.0000005')
   const [supply, setSupply] = useState('1000000000')
-  const [liquidityPct, setLiquidityPct] = useState(70)
-  const [feePct, setFeePct] = useState(2)
   const [devBuy, setDevBuy] = useState('')
   const [showSocials, setShowSocials] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -65,10 +63,10 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
       devBuy: dev || undefined,
       socials: x || telegram || website ? { x: x || undefined, telegram: telegram || undefined, website: website || undefined } : undefined,
       priceEth: p,
-      tokensForLiquidity: Math.round((sup * liquidityPct) / 100),
-      tokensForSale: sup - Math.round((sup * liquidityPct) / 100),
-      liquidityBps: liquidityPct * 100,
-      tradeFeeBps: Math.round(feePct * 100),
+      tokensForLiquidity: sup, // single-sided: the whole supply seeds the pool
+      tokensForSale: 0,
+      liquidityBps: 10_000,
+      tradeFeeBps: FEE_PCT * 100, // fixed 1%
       volume: dev,
       rewardsPaid: 0,
       holders: dev > 0 ? 1 : 0,
@@ -186,36 +184,11 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
                     <input className={inputCls} value={priceEth} onChange={(e) => setPriceEth(e.target.value)} inputMode="decimal" />
                   </Field>
                 </div>
-                <Field label="Liquidity into the pool" hint="LP burned">
-                  <div className="flex gap-2">
-                    {LIQ.map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setLiquidityPct(v)}
-                        className={`tnum flex-1 cursor-pointer rounded-lg py-2 text-[13px] font-medium transition ${
-                          liquidityPct === v ? 'bg-emerald text-paper' : 'bg-panel text-ink-2 ring-1 ring-line hover:text-ink'
-                        }`}
-                      >
-                        {v}%
-                      </button>
-                    ))}
-                  </div>
-                </Field>
-                <Field label="Trade tax" hint="split 50/50 in ETH">
-                  <div className="flex gap-2">
-                    {TAX.map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setFeePct(v)}
-                        className={`tnum flex-1 cursor-pointer rounded-lg py-2 text-[13px] font-medium transition ${
-                          feePct === v ? 'bg-emerald text-paper' : 'bg-panel text-ink-2 ring-1 ring-line hover:text-ink'
-                        }`}
-                      >
-                        {v}%
-                      </button>
-                    ))}
-                  </div>
-                </Field>
+                <div className="rounded-lg bg-panel p-3 text-[12px] leading-relaxed text-ink-3 ring-1 ring-line">
+                  <span className="text-ink-2">Fixed terms.</span> The whole supply seeds a single-sided
+                  Uniswap v3 pool (LP burned), and every trade pays a flat <span className="text-ink">1% tax</span>{' '}
+                  split 50/50 in ETH between holders and the creator.
+                </div>
                 <Field label="Initial dev buy" hint="optional, in ETH">
                   <input className={inputCls} placeholder="0.0" value={devBuy} onChange={(e) => setDevBuy(e.target.value)} inputMode="decimal" />
                 </Field>
@@ -240,8 +213,8 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
             {[
               ['Start mcap', startMcap ? usd(startMcap) : '·'],
               ['Supply', sup ? compact(sup) : '·'],
-              ['Liquidity', `${liquidityPct}%`],
-              ['Trade tax', `${feePct}% · 50/50`],
+              ['Pool', 'v3 · single-sided'],
+              ['Trade tax', '1% · 50/50'],
               ['Dev buy', dev ? `${dev} ETH` : 'none'],
             ].map(([k, v]) => (
               <div key={k} className="flex items-baseline justify-between gap-3">
