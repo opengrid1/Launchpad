@@ -32,8 +32,8 @@ export function Explore({ onOpen, onCreate }: { onOpen: (id: number) => void; on
               Launch a coin. Every trade pays the room.
             </h1>
             <p className="mt-2 max-w-md text-[13px] leading-relaxed text-ink-2">
-              Fixed-price fair launch. After a coin graduates, its trade fee splits 50/50: half to holders,
-              half rebated to the trader.
+              One flat price for the whole sale. No bonding curve, no early-buyer edge. After a coin
+              graduates, its trade fee splits 50/50: half to holders, half rebated to the trader.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <button

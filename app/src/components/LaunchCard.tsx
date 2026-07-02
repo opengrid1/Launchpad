@@ -1,4 +1,4 @@
-import { compact, hardCapOf, type Launch } from '../data/launches'
+import { compact, hardCapOf, price, type Launch } from '../data/launches'
 
 /** Deterministic two-hue gradient from the ticker — stands in for coin art. */
 function coinArt(symbol: string) {
@@ -24,6 +24,8 @@ export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: 
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase()
   const s = STATUS[launch.status]
   const age = launch.startsIn ? `opens ${launch.startsIn}` : launch.endsIn ? `${launch.endsIn} left` : (launch.endedAgo ?? '')
+  // fixed-price: no trading, no fees, no rewards until the sale graduates
+  const graduated = launch.status === 'graduated'
 
   return (
     <button
@@ -41,7 +43,7 @@ export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: 
           {s.label}
         </span>
         <span className="tnum absolute right-3 top-3 rounded-full bg-black/35 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-          {launch.tradeFeeBps / 100}% · 50/50
+          Fixed price
         </span>
       </div>
 
@@ -61,9 +63,10 @@ export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: 
             <p className="tnum mt-1 text-[15px] font-semibold text-ink">{compact(launch.raised)} RBH</p>
           </div>
           <div className="text-right">
-            <p className="eyebrow">Paid out</p>
-            <p className="tnum mt-1 text-[15px] font-semibold text-emerald-strong">
-              {launch.rewardsPaid > 0 ? compact(launch.rewardsPaid) : '0'}
+            {/* rewards only exist after graduation; before that show the flat price */}
+            <p className="eyebrow">{graduated ? 'Paid out' : 'Price'}</p>
+            <p className={`tnum mt-1 text-[15px] font-semibold ${graduated ? 'text-emerald-strong' : 'text-ink'}`}>
+              {graduated ? `${compact(launch.rewardsPaid)} RBH` : `${price(launch.priceRbh)} RBH`}
             </p>
           </div>
         </div>
