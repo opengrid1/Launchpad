@@ -156,8 +156,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
         {/* main: chart + stats + trades */}
         <div className="min-w-0">
           <div className="overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
-            <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-              <span className="text-[12px] font-medium text-ink-2">single-sided v3</span>
+            <div className="flex items-center justify-end border-b border-line px-4 py-2.5">
               <div className="flex items-center gap-1">
                 {TF.map((t) => (
                   <button
