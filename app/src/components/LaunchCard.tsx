@@ -1,4 +1,4 @@
-import { compact, mcapUsd, price, usd, type Launch } from '../data/launches'
+import { mcapUsd, usd, type Launch } from '../data/launches'
 import { useLiveMarket } from './useLiveMarket'
 
 /** Deterministic two-hue gradient from the ticker — stands in for coin art. */
@@ -55,31 +55,21 @@ export function LaunchCard({
       <CoinImage launch={launch} ticker={ticker} className={featured ? 'h-28 w-28' : 'h-24 w-24'} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-2">
+        <div className="flex items-baseline justify-between gap-2">
           <h3 className={`truncate font-display font-bold leading-tight tracking-tight text-ink group-hover:text-emerald-strong ${featured ? 'text-[19px]' : 'text-[16px]'}`}>
             {launch.name} <span className="tnum text-[12px] font-medium text-ink-3">${ticker}</span>
           </h3>
+          <span className="tnum shrink-0 text-[11px] text-ink-3">{launch.createdAgo}</span>
         </div>
 
-        <p className="tnum mt-1 text-[11px] text-ink-3">
-          by {launch.creator} · {launch.createdAgo}
-        </p>
-
-        <p className="mt-1.5 text-[13px]">
-          <span className="text-ink-3">mcap </span>
-          <span className="tnum font-semibold text-emerald-strong">{usd(mcap)}</span>
-          <span className={`tnum ml-2 text-[12px] ${up ? 'text-emerald' : 'text-clay'}`}>
+        <p className="mt-2 flex items-baseline gap-2">
+          <span className="tnum text-[16px] font-semibold text-emerald-strong">{usd(mcap)}</span>
+          <span className={`tnum text-[12px] ${up ? 'text-emerald' : 'text-clay'}`}>
             {up ? '+' : ''}{changePct.toFixed(1)}%
           </span>
         </p>
 
-        <p className={`mt-1.5 text-[12px] leading-snug text-ink-2 ${featured ? 'line-clamp-2' : 'line-clamp-2'}`}>
-          {launch.tagline}
-        </p>
-
-        <p className="tnum mt-auto pt-1.5 text-[11px] text-ink-3">
-          {price(live)} ETH · vol {compact(launch.volume)} · {launch.buyers.toLocaleString()} holders
-        </p>
+        <p className="mt-1.5 line-clamp-2 text-[12px] leading-snug text-ink-2">{launch.tagline}</p>
       </div>
     </button>
   )
