@@ -9,8 +9,18 @@ const C = {
   clay: '#e2704a',
 }
 
-/** TradingView Lightweight Charts candlestick, fed by the live price feed. */
-export function TVChart({ points, group = 3, height = 320 }: { points: number[]; group?: number; height?: number }) {
+/** TradingView Lightweight Charts candlestick, fed by the live feed. */
+export function TVChart({
+  points,
+  group = 3,
+  height = 320,
+  formatter,
+}: {
+  points: number[]
+  group?: number
+  height?: number
+  formatter?: (v: number) => string
+}) {
   const elRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
@@ -42,7 +52,11 @@ export function TVChart({ points, group = 3, height = 320 }: { points: number[];
       borderVisible: false,
       wickUpColor: C.emerald,
       wickDownColor: C.clay,
-      priceFormat: { type: 'custom', formatter: (p: number) => Number(p).toPrecision(3), minMove: 1e-10 },
+      priceFormat: {
+        type: 'custom',
+        formatter: (p: number) => (formatter ? formatter(p) : Number(p).toPrecision(3)),
+        minMove: formatter ? 1 : 1e-10,
+      },
     })
     chartRef.current = chart
     seriesRef.current = series

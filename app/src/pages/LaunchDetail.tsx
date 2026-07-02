@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { compact, eth, mcapUsd, price, rewardSplit, supplyOf, topHolders, usd, type Launch } from '../data/launches'
-import { SplitMeter } from '../components/SplitMeter'
+import { compact, ETH_USD, eth, mcapUsd, price, rewardSplit, supplyOf, topHolders, usd, type Launch } from '../data/launches'
 import { Monogram } from '../components/Monogram'
 import { TVChart } from '../components/TVChart'
 import { useLiveMarket, useLiveTrades } from '../components/useLiveMarket'
@@ -115,7 +114,8 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
   const trades = useLiveTrades(ticker)
   const up = changePct >= 0
   const mcap = mcapUsd(live, launch)
-  const { toHolders, toCreator } = rewardSplit(launch)
+  const mcapMult = supplyOf(launch) * ETH_USD // price(ETH) -> market cap (USD)
+  const { toCreator } = rewardSplit(launch)
   const holders = topHolders(launch)
   const youAreCreator = launch.creator === '0x71b3…9F02'
 
@@ -170,7 +170,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
               </div>
             </div>
             <div className="px-2 py-2">
-              <TVChart points={points} group={tfGroup} height={320} />
+              <TVChart points={points.map((p) => p * mcapMult)} group={tfGroup} height={320} formatter={(v) => '$' + compact(v)} />
             </div>
             {/* stat strip under the chart */}
             <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-4 sm:divide-y-0">
@@ -311,20 +311,6 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
               <span>≈ {side === 'buy' ? `${out ? compact(out) : '0'} ${ticker}` : `${eth(out)} ETH`}</span>
               <span>{launch.tradeFeeBps / 100}% tax</span>
             </div>
-          </div>
-
-          {/* the split */}
-          <div className="rounded-2xl bg-surface p-4 ring-1 ring-line">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-[13px] font-semibold text-ink">ETH tax rewards</h2>
-              <span className="eyebrow">{launch.tradeFeeBps / 100}% tax</span>
-            </div>
-            <div className="mt-3">
-              <SplitMeter toHolders={toHolders} toCreator={toCreator} unit="ETH" compactMode />
-            </div>
-            <p className="mt-2 text-[11px] leading-relaxed text-ink-3">
-              Half to holders, half to the creator{youAreCreator ? ' (you)' : ''}. Paid every trade.
-            </p>
           </div>
 
           {/* your rewards */}
