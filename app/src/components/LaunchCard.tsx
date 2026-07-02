@@ -1,4 +1,4 @@
-import { compact, price, supplyOf, type Launch } from '../data/launches'
+import { compact, mcapUsd, price, usd, type Launch } from '../data/launches'
 import { useLiveMarket } from './useLiveMarket'
 
 /** Deterministic two-hue gradient from the ticker — stands in for coin art. */
@@ -42,7 +42,7 @@ export function LaunchCard({
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
   const { price: live, changePct } = useLiveMarket(ticker, launch.priceEth, 24)
   const up = changePct >= 0
-  const mcap = live * supplyOf(launch)
+  const mcap = mcapUsd(live, launch)
 
   return (
     <button
@@ -71,7 +71,7 @@ export function LaunchCard({
 
         <p className="mt-1.5 text-[13px]">
           <span className="text-ink-3">mcap </span>
-          <span className="tnum font-semibold text-emerald-strong">{compact(mcap)} ETH</span>
+          <span className="tnum font-semibold text-emerald-strong">{usd(mcap)}</span>
           <span className={`tnum ml-2 text-[12px] ${up ? 'text-emerald' : 'text-clay'}`}>
             {up ? '+' : ''}{changePct.toFixed(1)}%
           </span>

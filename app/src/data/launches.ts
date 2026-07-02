@@ -282,3 +282,14 @@ export function eth(n: number): string {
   if (n === 0) return '0'
   return n.toLocaleString('en-US', { maximumSignificantDigits: 2 })
 }
+
+/** Reference ETH price used to show fiat values (market cap, etc.) in USD. */
+export const ETH_USD = 3200
+
+/** A USD amount, compacted with a leading $. */
+export function usd(n: number): string {
+  return '$' + compact(n)
+}
+
+/** Market cap of a coin in USD, given a live per-token ETH price. */
+export const mcapUsd = (priceEth: number, l: Launch) => priceEth * supplyOf(l) * ETH_USD

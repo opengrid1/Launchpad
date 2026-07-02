@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { compact, eth, price, rewardSplit, supplyOf, topHolders, type Launch } from '../data/launches'
+import { compact, eth, mcapUsd, price, rewardSplit, supplyOf, topHolders, usd, type Launch } from '../data/launches'
 import { SplitMeter } from '../components/SplitMeter'
 import { Monogram } from '../components/Monogram'
 import { LiveChart } from '../components/LiveChart'
@@ -56,7 +56,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
   const { price: live, points, changePct } = useLiveMarket(ticker, launch.priceEth, 72, 1000)
   const trades = useLiveTrades(ticker)
   const up = changePct >= 0
-  const mcap = live * supplyOf(launch)
+  const mcap = mcapUsd(live, launch)
   const { toHolders, toCreator } = rewardSplit(launch)
   const holders = topHolders(launch)
   const youAreCreator = launch.creator === '0x71b3…9F02'
@@ -116,7 +116,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
 
           {/* market stats */}
           <div className="mt-5 flex flex-wrap gap-y-5 rounded-2xl bg-surface px-5 py-4 ring-1 ring-line">
-            <Figure label="Market cap" value={`${compact(mcap)} ETH`} />
+            <Figure label="Market cap" value={usd(mcap)} />
             <Figure label="24h change" value={`${up ? '+' : ''}${changePct.toFixed(2)}%`} tone={up ? 'up' : 'down'} />
             <Figure label="24h volume" value={`${compact(launch.volume)} ETH`} />
             <Figure label="Holders" value={launch.holders.toLocaleString()} />

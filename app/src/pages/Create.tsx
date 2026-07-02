@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { compact, type Launch } from '../data/launches'
+import { compact, ETH_USD, usd, type Launch } from '../data/launches'
 import { SplitMeter } from '../components/SplitMeter'
 
 const hex4 = () => Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0')
@@ -44,7 +44,7 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
 
   const p = parseFloat(priceEth) || 0
   const sup = parseFloat(supply) || 0
-  const startMcap = p * sup
+  const startMcap = p * sup * ETH_USD
   const dev = parseFloat(devBuy) || 0
   const ready = Boolean(name && symbol && p && sup)
 
@@ -153,7 +153,7 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
                 </Field>
               </div>
               <p className="tnum mt-3 text-[12px] text-ink-3">
-                Starting market cap ≈ <span className="text-ink">{compact(startMcap)} ETH</span>
+                Starting market cap ≈ <span className="text-ink">{usd(startMcap)}</span>
               </p>
             </Section>
 
@@ -220,7 +220,7 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
             {[
               ['Ticker', name && symbol ? `$${symbol}` : '·'],
               ['Launch price', p ? `${p} ETH` : '·'],
-              ['Start mcap', startMcap ? `${compact(startMcap)} ETH` : '·'],
+              ['Start mcap', startMcap ? usd(startMcap) : '·'],
               ['Supply', sup ? compact(sup) : '·'],
               ['Liquidity', `${liquidityPct}%`],
               ['Trade tax', `${feePct}% · 50/50`],
