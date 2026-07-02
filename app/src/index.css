@@ -1,37 +1,40 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
 @import 'tailwindcss';
 
-/* SHERWOOD
-   Concept-first, not template-first: a launchpad named for Sherwood, themed
-   Lincoln-green and cream, set like an editorial page. A high-contrast serif
-   display voice (Fraunces) carries the hierarchy; mono is reserved strictly
-   for figures; body is a quiet neutral. Separation comes from whitespace and
-   the occasional hairline rule — not from wrapping every block in a box.
-   No terminal cosplay, no glass, no glow. */
+/* SHERWOOD — coin-marketplace layout (Flaunch-style)
+   Image-forward card grid, dense and playful. Near-black canvas, one vivid
+   lime accent, bold grotesque display type, rounded cards. Numbers in mono. */
 @theme {
-  --color-paper: #10120d;   /* warm green-black */
-  --color-surface: #171a12;
-  --color-panel: #1e2118;
-  --color-ink: #ece7d8;     /* cream */
-  --color-ink-2: #a7a493;
-  --color-ink-3: #6d6c5d;
-  --color-line: #26291d;
-  --color-line-2: #383c2c;
+  --color-paper: #0b0c0a;
+  --color-surface: #141612;
+  --color-panel: #1c1f18;
+  --color-ink: #f3f4ee;
+  --color-ink-2: #9ea294;
+  --color-ink-3: #64685c;
+  --color-line: #23261e;
+  --color-line-2: #33372b;
 
-  /* Lincoln green — the accent, used sparingly and never neon */
-  --color-emerald: #8aa86a;
-  --color-emerald-strong: #a8c489;
-  --color-emerald-tint: #1a2113;
+  /* lime — the loud accent, used on CTAs and live states */
+  --color-emerald: #b6f23c;
+  --color-emerald-strong: #c8ff5b;
+  --color-emerald-tint: #1b2610;
 
-  --color-gold: #c7a34e;
-  --color-gold-tint: #23200f;
+  --color-gold: #e6b34a;
+  --color-gold-tint: #241d0d;
 
-  --color-clay: #c06a45;
-  --color-clay-tint: #241410;
+  --color-clay: #e2704a;
+  --color-clay-tint: #271510;
 
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 13px;
+  --radius-2xl: 16px;
+  --radius-3xl: 22px;
 }
 
 html {
@@ -40,55 +43,34 @@ html {
   font-family: var(--font-body);
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
 }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-}
+body { margin: 0; min-height: 100vh; }
 
-::selection {
-  background: var(--color-emerald);
-  color: var(--color-paper);
-}
+::selection { background: var(--color-emerald); color: var(--color-paper); }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-line-2) transparent;
-}
+* { scrollbar-width: thin; scrollbar-color: var(--color-line-2) transparent; }
 
 .font-display {
   font-family: var(--font-display);
   font-optical-sizing: auto;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
 }
 .tnum {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
-/* small caps label — set in the body face, spaced, quiet */
 .eyebrow {
   font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-ink-3);
 }
 
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.25; }
-}
-.live-dot { animation: pulse-dot 2s ease-in-out infinite; }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
 
-/* motion: a quiet settle, nothing that travels or bounces */
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.rise-in { animation: fade-in 0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-
-/* a hand-drawn-feeling hairline that isn't a full box */
-.rule-t { border-top: 1px solid var(--color-line); }
+@keyframes pop-in { from { opacity: 0; transform: translateY(6px) scale(0.99); } to { opacity: 1; transform: none; } }
+.rise-in { animation: pop-in 0.24s cubic-bezier(0.22,0.61,0.36,1) both; }

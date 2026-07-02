@@ -44,9 +44,9 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
     'w-full cursor-pointer rounded-full bg-ink py-3 text-[14px] font-medium text-paper transition hover:bg-emerald-strong disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3'
 
   return (
-    <main className="rise-in py-8">
+    <main className="rise-in mx-auto max-w-5xl py-8">
       <button onClick={onBack} className="text-[13px] text-ink-2 transition-colors hover:text-ink">
-        ← All launches
+        ← All coins
       </button>
 
       <div className="mt-8 grid gap-x-14 gap-y-10 lg:grid-cols-[1fr_340px]">

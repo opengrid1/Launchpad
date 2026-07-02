@@ -2,42 +2,45 @@ import type { Route } from '../App'
 
 export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Route) => void }) {
   return (
-    <header className="flex items-center justify-between py-6">
+    <header className="flex items-center gap-4 py-4">
       <button
         onClick={() => onNavigate({ page: 'explore' })}
-        className="flex cursor-pointer items-baseline gap-2.5 bg-transparent text-left"
+        className="flex cursor-pointer items-center gap-2 bg-transparent"
       >
-        {/* a leaf, drawn once — the concept, not a logo generator */}
-        <svg width="16" height="18" viewBox="0 0 20 22" fill="none" className="translate-y-0.5">
-          <path d="M10 2 C6 7 6 14 10 20 C14 14 14 7 10 2 Z" fill="none" stroke="var(--color-emerald)" strokeWidth="1.4" />
-          <path d="M10 3 L10 19" stroke="var(--color-emerald)" strokeWidth="1.1" />
+        <svg width="18" height="20" viewBox="0 0 20 22" fill="none">
+          <path d="M10 2 C6 7 6 14 10 20 C14 14 14 7 10 2 Z" fill="var(--color-emerald)" opacity="0.15" />
+          <path d="M10 2 C6 7 6 14 10 20 C14 14 14 7 10 2 Z" fill="none" stroke="var(--color-emerald)" strokeWidth="1.5" />
+          <path d="M10 3 L10 19" stroke="var(--color-emerald)" strokeWidth="1.2" />
         </svg>
-        <span className="font-display text-[21px] font-medium leading-none tracking-tight text-ink">Sherwood</span>
+        <span className="font-display text-[20px] font-extrabold tracking-tight text-ink">sherwood</span>
       </button>
 
-      <nav className="hidden items-center gap-7 sm:flex">
-        {(
-          [
-            ['Launches', 'explore'],
-            ['Create', 'create'],
-          ] as const
-        ).map(([label, page]) => (
-          <button
-            key={page}
-            onClick={() => onNavigate({ page } as Route)}
-            className={`cursor-pointer text-[14px] transition-colors ${
-              route.page === page ? 'text-ink' : 'text-ink-2 hover:text-ink'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
+      {/* search */}
+      <label className="ml-2 hidden flex-1 items-center gap-2 rounded-full bg-surface px-4 py-2 ring-1 ring-line focus-within:ring-line-2 sm:flex md:max-w-md">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="shrink-0">
+          <circle cx="7" cy="7" r="4.5" stroke="var(--color-ink-3)" strokeWidth="1.4" />
+          <path d="M10.5 10.5 L14 14" stroke="var(--color-ink-3)" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+        <input
+          placeholder="Search coins"
+          className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+        />
+      </label>
 
-      <button className="flex cursor-pointer items-center gap-2 text-[13px] text-ink-2 transition-colors hover:text-ink">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald live-dot" />
-        <span className="tnum">0x71b3…9F02</span>
-      </button>
+      <div className="ml-auto flex items-center gap-2.5">
+        <button
+          onClick={() => onNavigate({ page: 'create' })}
+          className={`hidden cursor-pointer rounded-full px-4 py-2 text-[13px] font-semibold transition sm:block ${
+            route.page === 'create' ? 'bg-emerald-strong text-paper' : 'bg-emerald text-paper hover:bg-emerald-strong'
+          }`}
+        >
+          Create coin
+        </button>
+        <button className="flex cursor-pointer items-center gap-2 rounded-full bg-surface px-3.5 py-2 text-[13px] text-ink ring-1 ring-line transition hover:ring-line-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald live-dot" />
+          <span className="tnum">0x71b3…9F02</span>
+        </button>
+      </div>
     </header>
   )
 }

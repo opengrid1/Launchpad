@@ -50,9 +50,9 @@ export function Create({ onBack }: { onBack: () => void }) {
   const samplePool = (1_000_000 * feePct) / 100
 
   return (
-    <main className="rise-in py-8">
+    <main className="rise-in mx-auto max-w-5xl py-8">
       <button onClick={onBack} className="text-[13px] text-ink-2 transition-colors hover:text-ink">
-        ← All launches
+        ← All coins
       </button>
 
       <div className="mt-8 grid gap-x-14 gap-y-10 lg:grid-cols-[1fr_320px]">

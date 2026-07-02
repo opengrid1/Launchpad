@@ -1,51 +1,84 @@
-import { compact, hardCapOf, price, type Launch } from '../data/launches'
-import { ProgressBar } from './ProgressBar'
-import { StatusBadge } from './StatusBadge'
-import { Monogram } from './Monogram'
+import { compact, hardCapOf, type Launch } from '../data/launches'
+
+/** Deterministic two-hue gradient from the ticker — stands in for coin art. */
+function coinArt(symbol: string) {
+  let h = 0
+  for (const c of symbol) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  const h1 = h % 360
+  const h2 = (h1 + 45) % 360
+  return {
+    backgroundImage: `radial-gradient(circle at 28% 22%, rgba(255,255,255,0.35), transparent 55%), linear-gradient(140deg, hsl(${h1} 68% 52%), hsl(${h2} 72% 42%))`,
+  }
+}
+
+const STATUS: Record<Launch['status'], { label: string; live?: boolean; cls: string }> = {
+  live: { label: 'Live', live: true, cls: 'text-paper bg-emerald' },
+  upcoming: { label: 'Soon', cls: 'text-gold bg-gold-tint' },
+  graduated: { label: 'Graduated', cls: 'text-ink bg-panel' },
+  refunding: { label: 'Refunding', cls: 'text-clay bg-clay-tint' },
+}
 
 export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: () => void; index: number }) {
   const hardCap = hardCapOf(launch)
   const pct = Math.min(100, (launch.raised / hardCap) * 100)
-  const timeLabel = launch.startsIn
-    ? `opens in ${launch.startsIn}`
-    : launch.endsIn
-      ? `${launch.endsIn} left`
-      : (launch.endedAgo ?? '')
+  const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase()
+  const s = STATUS[launch.status]
+  const age = launch.startsIn ? `opens ${launch.startsIn}` : launch.endsIn ? `${launch.endsIn} left` : (launch.endedAgo ?? '')
 
   return (
     <button
       onClick={onOpen}
-      className="rise-in group -mx-3 flex cursor-pointer flex-col rounded-lg px-3 py-5 text-left transition-colors hover:bg-surface"
-      style={{ animationDelay: `${index * 45}ms` }}
+      className="rise-in group flex cursor-pointer flex-col overflow-hidden rounded-2xl bg-surface text-left ring-1 ring-line transition duration-150 hover:-translate-y-1 hover:ring-line-2"
+      style={{ animationDelay: `${index * 35}ms` }}
     >
-      <div className="flex items-start gap-4">
-        <Monogram symbol={launch.symbol} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="font-display text-[19px] font-medium leading-tight tracking-tight text-ink transition-colors group-hover:text-emerald-strong">
-              {launch.name}
-            </h3>
-            <StatusBadge status={launch.status} />
-          </div>
-          <p className="mt-1 line-clamp-1 text-[13px] leading-snug text-ink-2">{launch.tagline}</p>
+      {/* coin art */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden" style={coinArt(ticker)}>
+        <span className="font-display absolute inset-0 flex items-center justify-center text-[40px] font-extrabold tracking-tight text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
+          {ticker}
+        </span>
+        <span className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${s.cls}`}>
+          {s.live && <span className="h-1.5 w-1.5 rounded-full bg-paper live-dot" />}
+          {s.label}
+        </span>
+        <span className="tnum absolute right-3 top-3 rounded-full bg-black/35 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+          {launch.tradeFeeBps / 100}% · 50/50
+        </span>
+      </div>
+
+      {/* meta */}
+      <div className="flex flex-1 flex-col p-4">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="font-display truncate text-[17px] font-bold leading-none tracking-tight text-ink group-hover:text-emerald-strong">
+            {launch.name}
+          </h3>
+          <span className="tnum shrink-0 text-[12px] text-ink-3">${ticker}</span>
         </div>
-      </div>
+        <p className="mt-1.5 line-clamp-1 text-[12px] text-ink-2">{launch.tagline}</p>
 
-      <div className="mt-5 flex items-baseline justify-between">
-        <span className="tnum text-[13px] text-ink-2">
-          <span className="text-ink">{compact(launch.raised)}</span> of {compact(hardCap)} RBH
-        </span>
-        <span className={`tnum text-[13px] ${pct >= 100 ? 'text-emerald-strong' : 'text-ink-3'}`}>{pct.toFixed(0)}%</span>
-      </div>
-      <div className="mt-2.5">
-        <ProgressBar launch={launch} />
-      </div>
+        <div className="mt-4 flex items-end justify-between">
+          <div>
+            <p className="eyebrow">Raised</p>
+            <p className="tnum mt-1 text-[15px] font-semibold text-ink">{compact(launch.raised)} RBH</p>
+          </div>
+          <div className="text-right">
+            <p className="eyebrow">Paid out</p>
+            <p className="tnum mt-1 text-[15px] font-semibold text-emerald-strong">
+              {launch.rewardsPaid > 0 ? compact(launch.rewardsPaid) : '0'}
+            </p>
+          </div>
+        </div>
 
-      <div className="mt-4 flex items-baseline justify-between text-[12px] text-ink-3">
-        <span className="tnum">
-          {price(launch.priceRbh)} RBH · {launch.tradeFeeBps / 100}% fee, split
-        </span>
-        <span>{timeLabel}</span>
+        {/* progress */}
+        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-line-2">
+          <div
+            className={`h-full rounded-full ${launch.status === 'refunding' ? 'bg-clay' : 'bg-emerald'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="tnum mt-2 flex items-center justify-between text-[11px] text-ink-3">
+          <span>{pct.toFixed(0)}% of cap</span>
+          <span>{age}</span>
+        </div>
       </div>
     </button>
   )
