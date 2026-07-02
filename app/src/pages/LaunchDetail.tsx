@@ -188,61 +188,6 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             </div>
           </div>
 
-          {/* trades / holders */}
-          <div className="mt-5 overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
-            <div className="flex items-center gap-5 border-b border-line px-4 pt-3">
-              {(['trades', 'holders'] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setFeed(t)}
-                  className={`cursor-pointer pb-3 text-[13px] font-medium transition-colors ${feed === t ? 'text-ink' : 'text-ink-3 hover:text-ink-2'}`}
-                >
-                  {t === 'trades' ? 'Live trades' : 'Holders'}
-                  {feed === t && <span className="mt-2 block h-0.5 rounded-full bg-emerald" />}
-                </button>
-              ))}
-              <span className="ml-auto pb-3 text-[11px] text-ink-3">
-                {feed === 'trades' ? 'latest' : `${launch.holders.toLocaleString()} total`}
-              </span>
-            </div>
-
-            {feed === 'trades' ? (
-              <ul className="divide-y divide-line">
-                {trades.map((t) => (
-                  <li key={t.id} className="tnum flex items-center gap-3 px-4 py-2.5 text-[13px]">
-                    <span className={`w-10 font-semibold ${t.side === 'buy' ? 'text-emerald-strong' : 'text-clay'}`}>
-                      {t.side === 'buy' ? 'BUY' : 'SELL'}
-                    </span>
-                    <span className="text-ink-3">{t.who}</span>
-                    <span className="ml-auto text-ink">{t.amount}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <ul className="divide-y divide-line">
-                <li className="grid grid-cols-[1.5rem_1fr_auto_auto] gap-3 px-4 py-2">
-                  <span className="eyebrow">#</span>
-                  <span className="eyebrow">Wallet</span>
-                  <span className="eyebrow text-right">Share</span>
-                  <span className="eyebrow text-right">ETH earned</span>
-                </li>
-                {holders.map((h) => (
-                  <li
-                    key={h.rank}
-                    className={`grid grid-cols-[1.5rem_1fr_auto_auto] items-center gap-3 px-4 py-2.5 text-[13px] ${h.you ? 'bg-emerald-tint/40' : ''}`}
-                  >
-                    <span className="tnum text-ink-3">{h.rank}</span>
-                    <span className="tnum flex items-center gap-2 text-ink">
-                      {h.address}
-                      {h.you && <span className="rounded bg-emerald px-1.5 py-0.5 text-[10px] font-semibold text-paper">you</span>}
-                    </span>
-                    <span className="tnum text-right text-ink-2">{h.pct.toFixed(2)}%</span>
-                    <span className="tnum text-right font-semibold text-emerald-strong">{eth(h.rewardsEth)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
         </div>
 
         {/* right rail: trade + split + token info */}
@@ -366,6 +311,62 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             </div>
           </div>
         </aside>
+      </div>
+
+      {/* trades / holders — full width at the bottom */}
+      <div className="mt-5 overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
+        <div className="flex items-center gap-5 border-b border-line px-4 pt-3">
+          {(['trades', 'holders'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setFeed(t)}
+              className={`cursor-pointer pb-3 text-[13px] font-medium transition-colors ${feed === t ? 'text-ink' : 'text-ink-3 hover:text-ink-2'}`}
+            >
+              {t === 'trades' ? 'Live trades' : 'Holders'}
+              {feed === t && <span className="mt-2 block h-0.5 rounded-full bg-emerald" />}
+            </button>
+          ))}
+          <span className="ml-auto pb-3 text-[11px] text-ink-3">
+            {feed === 'trades' ? 'latest' : `${launch.holders.toLocaleString()} total`}
+          </span>
+        </div>
+
+        {feed === 'trades' ? (
+          <ul className="divide-y divide-line">
+            {trades.map((t) => (
+              <li key={t.id} className="tnum flex items-center gap-3 px-4 py-2.5 text-[13px]">
+                <span className={`w-10 font-semibold ${t.side === 'buy' ? 'text-emerald-strong' : 'text-clay'}`}>
+                  {t.side === 'buy' ? 'BUY' : 'SELL'}
+                </span>
+                <span className="text-ink-3">{t.who}</span>
+                <span className="ml-auto text-ink">{t.amount}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ul className="divide-y divide-line">
+            <li className="grid grid-cols-[1.5rem_1fr_auto_auto] gap-3 px-4 py-2">
+              <span className="eyebrow">#</span>
+              <span className="eyebrow">Wallet</span>
+              <span className="eyebrow text-right">Share</span>
+              <span className="eyebrow text-right">ETH earned</span>
+            </li>
+            {holders.map((h) => (
+              <li
+                key={h.rank}
+                className={`grid grid-cols-[1.5rem_1fr_auto_auto] items-center gap-3 px-4 py-2.5 text-[13px] ${h.you ? 'bg-emerald-tint/40' : ''}`}
+              >
+                <span className="tnum text-ink-3">{h.rank}</span>
+                <span className="tnum flex items-center gap-2 text-ink">
+                  {h.address}
+                  {h.you && <span className="rounded bg-emerald px-1.5 py-0.5 text-[10px] font-semibold text-paper">you</span>}
+                </span>
+                <span className="tnum text-right text-ink-2">{h.pct.toFixed(2)}%</span>
+                <span className="tnum text-right font-semibold text-emerald-strong">{eth(h.rewardsEth)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </main>
   )
