@@ -1,4 +1,4 @@
-export type LaunchStatus = 'live' | 'upcoming'
+export type LaunchStatus = 'live'
 
 /**
  * A Sherwood coin. It launches straight into a single-sided Uniswap v3 pool
@@ -30,8 +30,7 @@ export interface Launch {
   rewardsPaid: number // total ETH tax already handed out (both halves)
   holders: number
 
-  startsIn?: string // only for upcoming coins
-  createdAgo?: string // age since launch, for live coins
+  createdAgo: string // age since launch
   buyers: number
   status: LaunchStatus
   creator: string
@@ -44,6 +43,14 @@ export interface Launch {
 
 /** Total supply of a coin. */
 export const supplyOf = (l: Launch) => l.tokensForSale + l.tokensForLiquidity
+
+/** Rough age in hours from a "12m ago" / "5h ago" / "6d ago" / "1w ago" string. */
+export function ageHours(s: string): number {
+  const m = s.match(/(\d+)\s*([mhdw])/)
+  if (!m) return 1e9
+  const n = Number(m[1])
+  return m[2] === 'm' ? n / 60 : m[2] === 'h' ? n : m[2] === 'd' ? n * 24 : n * 168
+}
 
 /** The ETH tax a coin has thrown off, and how it halves. */
 export function rewardSplit(l: Launch) {
@@ -179,18 +186,18 @@ export const LAUNCHES: Launch[] = [
     name: 'Merrymint',
     symbol: 'MERRY',
     glyph: '🍃',
-    tagline: 'A fair-launch meme with a conscience. Opens soon.',
+    tagline: 'A fresh fair-launch meme with a conscience. Just deployed.',
     priceEth: 0.0000008,
     tokensForSale: 14_000_000,
     tokensForLiquidity: 10_000_000,
     liquidityBps: 7500,
     tradeFeeBps: 200,
-    volume: 0,
-    rewardsPaid: 0,
-    holders: 0,
-    startsIn: '1d 06h',
-    buyers: 0,
-    status: 'upcoming',
+    volume: 38,
+    rewardsPaid: 0.76,
+    holders: 62,
+    createdAgo: '12m ago',
+    buyers: 62,
+    status: 'live',
     creator: '0x77Cc…09bE',
     tokenAddress: '0x5e93…af22',
     description:

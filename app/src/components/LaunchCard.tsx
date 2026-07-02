@@ -12,10 +12,6 @@ function coinArt(symbol: string) {
   }
 }
 
-const STATUS: Record<Launch['status'], { label: string; live?: boolean; cls: string }> = {
-  live: { label: 'live', live: true, cls: 'text-emerald-strong' },
-  upcoming: { label: 'soon', cls: 'text-gold' },
-}
 
 function CoinImage({ launch, ticker, className }: { launch: Launch; ticker: string; className: string }) {
   return (
@@ -44,11 +40,9 @@ export function LaunchCard({
   featured?: boolean
 }) {
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
-  const s = STATUS[launch.status]
   const { price: live, changePct } = useLiveMarket(ticker, launch.priceEth, 24)
   const up = changePct >= 0
   const mcap = live * supplyOf(launch)
-  const age = launch.startsIn ? `opens in ${launch.startsIn}` : launch.createdAgo
 
   return (
     <button
@@ -65,14 +59,14 @@ export function LaunchCard({
           <h3 className={`truncate font-display font-bold leading-tight tracking-tight text-ink group-hover:text-emerald-strong ${featured ? 'text-[19px]' : 'text-[16px]'}`}>
             {launch.name} <span className="tnum text-[12px] font-medium text-ink-3">${ticker}</span>
           </h3>
-          <span className={`inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold ${s.cls}`}>
-            {s.live && <span className="h-1.5 w-1.5 rounded-full bg-emerald live-dot" />}
-            {s.label}
+          <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-emerald-strong">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald live-dot" />
+            live
           </span>
         </div>
 
         <p className="tnum mt-1 text-[11px] text-ink-3">
-          by {launch.creator} · {age}
+          by {launch.creator} · {launch.createdAgo}
         </p>
 
         <p className="mt-1.5 text-[13px]">

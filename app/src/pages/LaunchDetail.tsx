@@ -60,7 +60,6 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
   const { toHolders, toCreator } = rewardSplit(launch)
   const holders = topHolders(launch)
   const youAreCreator = launch.creator === '0x71b3…9F02'
-  const open = launch.status === 'live'
 
   const amt = parseFloat(amount) || 0
   const out = side === 'buy' ? amt / live : amt * live
@@ -136,7 +135,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
               <InfoRow label="Initial dev buy" value={launch.devBuy ? `${eth(launch.devBuy)} ETH` : 'None'} />
               <InfoRow label="Trade tax" value={`${launch.tradeFeeBps / 100}% · 50/50`} />
               <InfoRow label="Pool" value="Uniswap v3 · single-sided" />
-              <InfoRow label={launch.status === 'live' ? 'Created' : 'Opens in'} value={(launch.createdAgo ?? launch.startsIn) ?? '·'} />
+              <InfoRow label="Created" value={launch.createdAgo} />
               <InfoRow label="Chain" value="Robinhood · 4663" />
             </div>
           </div>
@@ -223,8 +222,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
         {/* trade rail */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-2xl bg-surface p-4 ring-1 ring-line">
-            {open ? (
-              <>
+            <div>
                 <div className="grid grid-cols-2 gap-1 rounded-xl bg-panel p-1">
                   {(['buy', 'sell'] as const).map((sd) => (
                     <button
@@ -304,20 +302,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
                   <span>Price {price(live)} ETH</span>
                   <span>Tax {launch.tradeFeeBps / 100}% · 50/50 ETH</span>
                 </p>
-              </>
-            ) : (
-              <div className="py-4 text-center">
-                <p className="eyebrow text-emerald">Opens in</p>
-                <p className="tnum mt-2 text-[30px] font-bold leading-none">{launch.startsIn}</p>
-                <p className="mt-3 text-[12px] leading-relaxed text-ink-3">
-                  {launch.name} lists into its single-sided v3 pool when the timer hits zero. Trading and the
-                  50/50 ETH tax start the same block.
-                </p>
-                <button className="mt-4 w-full cursor-pointer rounded-full bg-emerald py-3 text-[14px] font-semibold text-paper transition hover:bg-emerald-strong">
-                  Remind me
-                </button>
-              </div>
-            )}
+            </div>
           </div>
         </aside>
       </div>
