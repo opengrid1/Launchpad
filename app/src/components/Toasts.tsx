@@ -25,7 +25,7 @@ export function Toasts({ onOpen }: { onOpen: (symbol: string) => void }) {
 
   if (!toasts.length) return null
   return (
-    <div className="fixed bottom-5 right-5 z-[60] flex flex-col gap-2">
+    <div className="fixed left-1/2 top-20 z-[60] flex -translate-x-1/2 flex-col items-center gap-2">
       {toasts.map((a) => (
         <button
           key={a.id}
