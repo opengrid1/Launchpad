@@ -15,6 +15,7 @@ export function TVChart({ points, group = 3, height = 320 }: { points: number[];
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const fitRef = useRef(false)
+  const groupRef = useRef(group)
 
   useEffect(() => {
     const el = elRef.current
@@ -70,9 +71,10 @@ export function TVChart({ points, group = 3, height = 320 }: { points: number[];
       })
     }
     series.setData(candles)
-    if (!fitRef.current) {
+    if (!fitRef.current || groupRef.current !== group) {
       chartRef.current?.timeScale().fitContent()
       fitRef.current = true
+      groupRef.current = group
     }
   }, [points, group])
 

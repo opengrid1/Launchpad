@@ -35,13 +35,20 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-const TF = ['5m', '1h', '24h', 'All']
+// each timeframe = a different candle interval (points aggregated per candle)
+const TF: { label: string; group: number }[] = [
+  { label: '5m', group: 1 },
+  { label: '1h', group: 2 },
+  { label: '6h', group: 3 },
+  { label: '24h', group: 5 },
+]
 
 export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () => void }) {
   const [side, setSide] = useState<'buy' | 'sell'>('buy')
   const [amount, setAmount] = useState('')
-  const [tf, setTf] = useState('24h')
+  const [tf, setTf] = useState('1h')
   const [feed, setFeed] = useState<'trades' | 'holders'>('trades')
+  const tfGroup = TF.find((t) => t.label === tf)?.group ?? 2
 
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
   const { price: live, points, changePct } = useLiveMarket(ticker, launch.priceEth, 90, 1000)
@@ -93,17 +100,17 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
               <div className="flex items-center gap-1">
                 {TF.map((t) => (
                   <button
-                    key={t}
-                    onClick={() => setTf(t)}
-                    className={`tnum cursor-pointer rounded-md px-2 py-1 text-[11px] transition ${tf === t ? 'bg-panel text-ink' : 'text-ink-3 hover:text-ink-2'}`}
+                    key={t.label}
+                    onClick={() => setTf(t.label)}
+                    className={`tnum cursor-pointer rounded-md px-2 py-1 text-[11px] transition ${tf === t.label ? 'bg-panel text-ink' : 'text-ink-3 hover:text-ink-2'}`}
                   >
-                    {t}
+                    {t.label}
                   </button>
                 ))}
               </div>
             </div>
             <div className="px-2 py-2">
-              <TVChart points={points} height={320} />
+              <TVChart points={points} group={tfGroup} height={320} />
             </div>
             {/* stat strip under the chart */}
             <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-4 sm:divide-y-0">
