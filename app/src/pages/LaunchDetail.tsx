@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { compact, price, rewardSplit, type Launch } from '../data/launches'
+import { compact, eth, price, rewardSplit, supplyOf, topHolders, type Launch } from '../data/launches'
 import { SplitMeter } from '../components/SplitMeter'
 import { Monogram } from '../components/Monogram'
 import { LiveChart } from '../components/LiveChart'
@@ -22,12 +22,13 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
   const [tf, setTf] = useState('24h')
 
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
-  const supply = launch.tokensForSale + launch.tokensForLiquidity
-  const { price: live, points, changePct } = useLiveMarket(ticker, launch.priceRbh, 72, 1000)
+  const { price: live, points, changePct } = useLiveMarket(ticker, launch.priceEth, 72, 1000)
   const trades = useLiveTrades(ticker)
   const up = changePct >= 0
-  const mcap = live * supply
-  const { toHolders, toTraders } = rewardSplit(launch)
+  const mcap = live * supplyOf(launch)
+  const { toHolders, toCreator } = rewardSplit(launch)
+  const holders = topHolders(launch)
+  const youAreCreator = launch.creator === '0x71b3…9F02'
 
   const amt = parseFloat(amount) || 0
   const out = side === 'buy' ? amt / live : amt * live
@@ -50,7 +51,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
           </div>
         </div>
         <div className="text-right">
-          <p className="tnum text-[26px] font-bold leading-none text-ink">{price(live)} <span className="text-[13px] text-ink-3">RBH</span></p>
+          <p className="tnum text-[26px] font-bold leading-none text-ink">{price(live)} <span className="text-[13px] text-ink-3">ETH</span></p>
           <p className={`tnum mt-1.5 text-[13px] font-semibold ${up ? 'text-emerald-strong' : 'text-clay'}`}>
             {up ? '▲' : '▼'} {Math.abs(changePct).toFixed(2)}% · 24h
           </p>
@@ -84,22 +85,59 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
 
           {/* market stats */}
           <div className="mt-5 flex flex-wrap gap-y-5 rounded-2xl bg-surface px-5 py-4 ring-1 ring-line">
-            <Figure label="Market cap" value={`${compact(mcap)} RBH`} />
+            <Figure label="Market cap" value={`${compact(mcap)} ETH`} />
             <Figure label="24h change" value={`${up ? '+' : ''}${changePct.toFixed(2)}%`} tone={up ? 'up' : 'down'} />
-            <Figure label="24h volume" value={`${compact(launch.volume)} RBH`} />
-            <Figure label="Holders" value={launch.holders ? launch.holders.toLocaleString() : '—'} />
+            <Figure label="24h volume" value={`${compact(launch.volume)} ETH`} />
+            <Figure label="Holders" value={launch.holders.toLocaleString()} />
           </div>
 
           {/* the split */}
           <div className="mt-5 rounded-2xl bg-surface p-5 ring-1 ring-line">
-            <h2 className="font-display text-[19px] font-bold tracking-tight">Where the fees go</h2>
+            <h2 className="font-display text-[19px] font-bold tracking-tight">Where the ETH tax goes</h2>
             <p className="mt-1.5 max-w-xl text-[13px] leading-relaxed text-ink-2">
-              Every buy and sell pays a {launch.tradeFeeBps / 100}% fee. It splits in half the same block:
-              half to everyone holding {ticker}, half rebated to the trader who made the swap.
+              Every buy and sell pays a {launch.tradeFeeBps / 100}% tax, taken from the pool in ETH. It splits
+              in half the same block: half to everyone holding {ticker}, half to the coin's creator
+              {youAreCreator ? ' (that’s you).' : '.'}
             </p>
             <div className="mt-5 max-w-xl">
-              <SplitMeter toHolders={toHolders} toTraders={toTraders} />
+              <SplitMeter toHolders={toHolders} toCreator={toCreator} unit="ETH" />
             </div>
+          </div>
+
+          {/* top holders */}
+          <div className="mt-5 overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
+            <div className="flex items-center justify-between border-b border-line px-5 py-3">
+              <h2 className="font-display text-[17px] font-bold tracking-tight">Top holders</h2>
+              <span className="tnum text-[12px] text-ink-3">{launch.holders ? launch.holders.toLocaleString() : 0} total</span>
+            </div>
+            {holders.length === 0 ? (
+              <p className="px-5 py-6 text-[13px] text-ink-3">No holders yet. This coin hasn't opened for trading.</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-[2rem_1fr_auto_auto] gap-3 px-5 py-2 text-ink-3">
+                  <span className="eyebrow">#</span>
+                  <span className="eyebrow">Wallet</span>
+                  <span className="eyebrow text-right">Share</span>
+                  <span className="eyebrow text-right">ETH earned</span>
+                </div>
+                <ul>
+                  {holders.map((h) => (
+                    <li
+                      key={h.rank}
+                      className={`grid grid-cols-[2rem_1fr_auto_auto] items-center gap-3 border-t border-line px-5 py-2.5 text-[13px] ${h.you ? 'bg-emerald-tint/40' : ''}`}
+                    >
+                      <span className="tnum text-ink-3">{h.rank}</span>
+                      <span className="tnum flex items-center gap-2 text-ink">
+                        {h.address}
+                        {h.you && <span className="rounded bg-emerald px-1.5 py-0.5 text-[10px] font-semibold text-paper">you</span>}
+                      </span>
+                      <span className="tnum text-right text-ink-2">{h.pct.toFixed(2)}%</span>
+                      <span className="tnum text-right font-semibold text-emerald-strong">{eth(h.rewardsEth)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </div>
 
           {/* how it works */}
@@ -108,8 +146,8 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             <ol className="mt-4 space-y-4">
               {[
                 `${launch.name} trades the moment it launches. Buy or sell any time at the live price.`,
-                `Every trade pays a ${launch.tradeFeeBps / 100}% fee. No fee on holding.`,
-                `That fee splits 50/50 in-block: half to holders, half rebated to the trader.`,
+                `Every trade pays a ${launch.tradeFeeBps / 100}% tax, collected from the pool in ETH. Holding is free.`,
+                `That ETH tax splits 50/50 in-block: half to holders pro-rata, half to the coin's creator.`,
                 `Liquidity is locked and the LP is burned, so it can't be pulled.`,
               ].map((t, i) => (
                 <li key={i} className="flex gap-4 text-[13px] leading-relaxed text-ink-2">
@@ -145,7 +183,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
               <span className="flex items-baseline justify-between">
                 <span className="eyebrow">You pay</span>
                 <span className="tnum text-[11px] text-ink-3">
-                  {side === 'buy' ? 'balance 1,204 RBH' : `balance ${compact(launch.yourTokens)} ${ticker}`}
+                  {side === 'buy' ? 'balance 3.42 ETH' : `balance ${compact(launch.yourTokens)} ${ticker}`}
                 </span>
               </span>
               <span className="mt-2 flex items-center gap-2">
@@ -157,7 +195,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
                   className="tnum w-full bg-transparent text-[24px] font-semibold text-ink outline-none placeholder:text-ink-3/40"
                 />
                 <span className="tnum shrink-0 rounded-md bg-surface px-2 py-1 text-[12px] font-semibold text-ink-2">
-                  {side === 'buy' ? 'RBH' : ticker}
+                  {side === 'buy' ? 'ETH' : ticker}
                 </span>
               </span>
             </label>
@@ -167,7 +205,7 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             <div className="rounded-xl bg-panel p-3">
               <span className="eyebrow">You receive</span>
               <p className="tnum mt-1.5 text-[22px] font-semibold text-ink">
-                {out ? compact(out) : '0'} <span className="text-[13px] text-ink-3">{side === 'buy' ? ticker : 'RBH'}</span>
+                {side === 'buy' ? (out ? compact(out) : '0') : eth(out)} <span className="text-[13px] text-ink-3">{side === 'buy' ? ticker : 'ETH'}</span>
               </p>
             </div>
 
@@ -180,8 +218,8 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
               {amt ? `${side === 'buy' ? 'Buy' : 'Sell'} ${ticker}` : 'Enter an amount'}
             </button>
             <p className="tnum mt-3 flex items-center justify-between text-[11px] text-ink-3">
-              <span>Price {price(live)} RBH</span>
-              <span>Fee {launch.tradeFeeBps / 100}% · 50/50</span>
+              <span>Price {price(live)} ETH</span>
+              <span>Tax {launch.tradeFeeBps / 100}% · 50/50 ETH</span>
             </p>
           </div>
 

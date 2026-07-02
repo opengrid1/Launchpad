@@ -9,7 +9,6 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'live', label: 'Live' },
   { key: 'upcoming', label: 'Opening' },
   { key: 'graduated', label: 'Graduated' },
-  { key: 'refunding', label: 'Refunding' },
 ]
 
 export function Explore({ onOpen, onCreate }: { onOpen: (id: number) => void; onCreate: () => void }) {
@@ -32,8 +31,8 @@ export function Explore({ onOpen, onCreate }: { onOpen: (id: number) => void; on
               Launch a coin. Trade it the second it's live.
             </h1>
             <p className="mt-2 max-w-md text-[13px] leading-relaxed text-ink-2">
-              Buy and sell instantly, right from launch. Every trade pays a small fee that splits 50/50:
-              half to everyone holding, half rebated to the trader who made the swap.
+              Buy and sell instantly, right from launch. Every trade pays a small ETH tax that splits 50/50:
+              half to everyone holding, half to the coin's creator.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <button
@@ -53,8 +52,8 @@ export function Explore({ onOpen, onCreate }: { onOpen: (id: number) => void; on
 
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-1 sm:gap-0 sm:divide-y sm:divide-line">
             {[
-              ['Paid out', `${compact(totalPaid)} RBH`],
-              ['To holders', `${compact(toHolders)} RBH`],
+              ['Paid out', `${compact(totalPaid)} ETH`],
+              ['To holders', `${compact(toHolders)} ETH`],
               ['Live now', String(liveCount)],
             ].map(([k, v], i) => (
               <div key={k} className={`sm:flex sm:items-center sm:justify-between ${i > 0 ? 'sm:pt-3' : 'sm:pb-3'}`}>

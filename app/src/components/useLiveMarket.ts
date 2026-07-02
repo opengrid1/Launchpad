@@ -79,12 +79,12 @@ export function useLiveTrades(seed: string, max = 14): Trade[] {
     }
     const make = (): Trade => {
       const side = rand() > 0.48 ? 'buy' : 'sell'
-      const amt = Math.floor(rand() * 4000) + 40
+      const amt = rand() * 1.8 + 0.01 // ETH size per trade
       return {
         id: nextId.current++,
         side,
         who: ADDRS[Math.floor(rand() * ADDRS.length)],
-        amount: `${amt.toLocaleString()} RBH`,
+        amount: `${amt.toFixed(amt < 0.1 ? 3 : 2)} ETH`,
         when: Date.now(),
       }
     }

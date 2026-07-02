@@ -15,16 +15,16 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 const inputCls =
-  'tnum w-full border-b border-line-2 bg-transparent pb-2 text-[15px] text-ink outline-none transition-colors placeholder:text-ink-3/40 focus:border-emerald'
+  'tnum w-full rounded-lg bg-panel px-3.5 py-2.5 text-[14px] text-ink outline-none ring-1 ring-line transition placeholder:text-ink-3/40 focus:ring-emerald/50'
 
 function Section({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
   return (
-    <div className="rule-t pt-7">
-      <div className="flex items-baseline gap-3">
-        <span className="font-display text-[18px] leading-none text-emerald-strong">{n}</span>
-        <h2 className="font-display text-[20px] font-medium tracking-tight">{title}</h2>
+    <div className="rounded-2xl bg-surface p-5 ring-1 ring-line">
+      <div className="flex items-baseline gap-2.5">
+        <span className="tnum text-[12px] font-semibold text-emerald-strong">{n}</span>
+        <h2 className="font-display text-[17px] font-bold tracking-tight">{title}</h2>
       </div>
-      <div className="mt-5">{children}</div>
+      <div className="mt-4">{children}</div>
     </div>
   )
 }
@@ -32,22 +32,15 @@ function Section({ n, title, children }: { n: string; title: string; children: R
 export function Create({ onBack }: { onBack: () => void }) {
   const [name, setName] = useState('')
   const [symbol, setSymbol] = useState('')
-  const [priceRbh, setPriceRbh] = useState('0.001')
-  const [forSale, setForSale] = useState('100000000')
-  const [forLiquidity, setForLiquidity] = useState('80000000')
-  const [softCap, setSoftCap] = useState('40000')
+  const [priceEth, setPriceEth] = useState('0.0000005')
+  const [supply, setSupply] = useState('1000000000')
   const [liquidityPct, setLiquidityPct] = useState(70)
-  const [walletCap, setWalletCap] = useState('')
-  const [days, setDays] = useState(3)
   const [feePct, setFeePct] = useState(2)
+  const [devBuy, setDevBuy] = useState('')
 
-  const p = parseFloat(priceRbh) || 0
-  const sale = parseFloat(forSale) || 0
-  const liq = parseFloat(forLiquidity) || 0
-  const soft = parseFloat(softCap) || 0
-  const hardCap = p * sale
-  const softOk = soft > 0 && soft <= hardCap
-  const samplePool = (1_000_000 * feePct) / 100
+  const p = parseFloat(priceEth) || 0
+  const sup = parseFloat(supply) || 0
+  const startMcap = p * sup
 
   return (
     <main className="rise-in mx-auto max-w-5xl py-8">
@@ -55,82 +48,45 @@ export function Create({ onBack }: { onBack: () => void }) {
         ← All coins
       </button>
 
-      <div className="mt-8 grid gap-x-14 gap-y-10 lg:grid-cols-[1fr_320px]">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
         <div>
-          <h1 className="font-display text-[40px] font-medium leading-none tracking-tight">Start a launch</h1>
-          <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-ink-2">
-            One flat price for the whole sale. The full supply mints to the launchpad, the LP burns on
-            graduation, and the trade fee splits 50/50 forever after. You never hold unsold tokens.
+          <h1 className="font-display text-[30px] font-extrabold leading-none tracking-tight">Create a coin</h1>
+          <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-ink-2">
+            It goes live and starts trading against ETH right away. Liquidity locks, the LP burns, and every
+            trade's tax splits 50/50 in ETH: half to holders, half to you, the creator.
           </p>
 
-          <div className="mt-10 space-y-9">
-            <Section n="1" title="The token">
-              <div className="grid gap-6 sm:grid-cols-2">
+          <div className="mt-6 space-y-4">
+            <Section n="01" title="Coin">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Name">
                   <input className={inputCls} placeholder="Greenwood" value={name} onChange={(e) => setName(e.target.value)} />
                 </Field>
-                <Field label="Symbol">
+                <Field label="Ticker">
                   <input className={inputCls} placeholder="GWD" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} />
                 </Field>
               </div>
             </Section>
 
-            <Section n="2" title="Price & supply">
-              <div className="grid gap-6 sm:grid-cols-3">
-                <Field label="Price" hint="RBH per token">
-                  <input className={inputCls} value={priceRbh} onChange={(e) => setPriceRbh(e.target.value)} inputMode="decimal" />
+            <Section n="02" title="Supply & price">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Total supply">
+                  <input className={inputCls} value={supply} onChange={(e) => setSupply(e.target.value)} inputMode="numeric" />
                 </Field>
-                <Field label="Tokens for sale">
-                  <input className={inputCls} value={forSale} onChange={(e) => setForSale(e.target.value)} inputMode="numeric" />
-                </Field>
-                <Field label="Tokens for liquidity">
-                  <input className={inputCls} value={forLiquidity} onChange={(e) => setForLiquidity(e.target.value)} inputMode="numeric" />
+                <Field label="Launch price" hint="ETH per token">
+                  <input className={inputCls} value={priceEth} onChange={(e) => setPriceEth(e.target.value)} inputMode="decimal" />
                 </Field>
               </div>
-              <p className="tnum mt-4 text-[13px] text-ink-3">
-                Hard cap: {compact(sale)} × {p || '…'} = <span className="text-ink">{compact(hardCap)} RBH</span>
+              <p className="tnum mt-3 text-[12px] text-ink-3">
+                Starting market cap ≈ <span className="text-ink">{compact(startMcap)} ETH</span>
               </p>
             </Section>
 
-            <Section n="3" title="Caps & window">
-              <div className="grid gap-6 sm:grid-cols-3">
-                <Field label="Soft cap" hint="RBH">
-                  <input
-                    className={`${inputCls} ${soft && !softOk ? 'border-clay' : ''}`}
-                    value={softCap}
-                    onChange={(e) => setSoftCap(e.target.value)}
-                    inputMode="numeric"
-                  />
-                </Field>
-                <Field label="Wallet cap" hint="blank = none">
-                  <input className={inputCls} placeholder="unlimited" value={walletCap} onChange={(e) => setWalletCap(e.target.value)} inputMode="numeric" />
-                </Field>
-                <Field label="Duration">
-                  <span className="flex items-center gap-4 pb-1">
-                    {[1, 3, 7].map((d) => (
-                      <button
-                        key={d}
-                        onClick={() => setDays(d)}
-                        className={`tnum cursor-pointer text-[15px] transition-colors ${
-                          days === d ? 'text-emerald-strong underline decoration-emerald underline-offset-4' : 'text-ink-3 hover:text-ink'
-                        }`}
-                      >
-                        {d}d
-                      </button>
-                    ))}
-                  </span>
-                </Field>
-              </div>
-              {soft > 0 && !softOk && (
-                <p className="mt-4 text-[12px] text-clay">Soft cap must be at most the hard cap ({compact(hardCap)} RBH).</p>
-              )}
-            </Section>
-
-            <Section n="4" title="Liquidity">
-              <Field label={`Share of raise into the pool · ${liquidityPct}%`} hint="minimum 50% · LP burned">
+            <Section n="03" title="Liquidity">
+              <Field label={`Share of supply into the pool · ${liquidityPct}%`} hint="LP burned, locked forever">
                 <input
                   type="range"
-                  min={50}
+                  min={40}
                   max={100}
                   value={liquidityPct}
                   onChange={(e) => setLiquidityPct(parseInt(e.target.value))}
@@ -138,13 +94,16 @@ export function Create({ onBack }: { onBack: () => void }) {
                 />
               </Field>
               <div className="tnum mt-2 flex justify-between text-[11px] text-ink-3">
-                <span>50% floor</span>
+                <span>40% floor</span>
                 <span>100% fair-launch</span>
               </div>
+              <Field label="Your first buy" hint="optional, in ETH">
+                <input className={inputCls} placeholder="0.0" value={devBuy} onChange={(e) => setDevBuy(e.target.value)} inputMode="decimal" />
+              </Field>
             </Section>
 
-            <Section n="5" title="The split">
-              <Field label={`Trade fee · ${feePct}%`} hint="charged on every swap after graduation">
+            <Section n="04" title="Trade tax">
+              <Field label={`Tax on every trade · ${feePct}%`} hint="collected in ETH from the pool">
                 <input
                   type="range"
                   min={0.5}
@@ -159,29 +118,30 @@ export function Create({ onBack }: { onBack: () => void }) {
                 <span>0.5% light</span>
                 <span>5% max</span>
               </div>
-              <p className="mt-5 max-w-lg text-[14px] leading-relaxed text-ink-2">
-                The 50/50 is fixed. You set the size of the fee, not who gets it. On a sample 1M RBH of volume,
-                a {feePct}% fee splits like this:
+              <p className="mt-4 text-[13px] leading-relaxed text-ink-2">
+                The 50/50 is fixed. You set the size of the tax, not who gets it. On a sample 1,000 ETH of
+                volume, a {feePct}% tax throws off {((1000 * feePct) / 100).toFixed(1)} ETH, split like this:
               </p>
-              <div className="mt-5 max-w-md">
-                <SplitMeter toHolders={samplePool / 2} toTraders={samplePool / 2} compactMode />
+              <div className="mt-4 max-w-md">
+                <SplitMeter toHolders={(1000 * feePct) / 200} toCreator={(1000 * feePct) / 200} unit="ETH" compactMode />
               </div>
             </Section>
           </div>
         </div>
 
         {/* manifest */}
-        <aside className="h-fit rounded-2xl bg-surface p-6 lg:sticky lg:top-6">
-          <p className="eyebrow">Your launch, so far</p>
+        <aside className="h-fit rounded-2xl bg-surface p-5 ring-1 ring-line lg:sticky lg:top-24">
+          <p className="eyebrow">Your coin, so far</p>
           <dl className="mt-4 space-y-3">
             {[
-              ['Token', name && symbol ? symbol : '·'],
-              ['Price', p ? `${p} RBH` : '·'],
-              ['Hard cap', hardCap ? `${compact(hardCap)} RBH` : '·'],
-              ['Soft cap', soft ? `${compact(soft)} RBH` : '·'],
-              ['Supply', sale + liq ? compact(sale + liq) : '·'],
+              ['Ticker', name && symbol ? `$${symbol}` : '·'],
+              ['Launch price', p ? `${p} ETH` : '·'],
+              ['Start mcap', startMcap ? `${compact(startMcap)} ETH` : '·'],
+              ['Supply', sup ? compact(sup) : '·'],
               ['Liquidity', `${liquidityPct}%`],
-              ['Fee', `${feePct}% · 50/50`],
+              ['Trade tax', `${feePct}% · 50/50`],
+              ['First buy', devBuy ? `${devBuy} ETH` : 'none'],
+              ['Chain', 'Robinhood'],
             ].map(([k, v]) => (
               <div key={k} className="flex items-baseline justify-between gap-3">
                 <dt className="text-[13px] text-ink-2">{k}</dt>
@@ -189,17 +149,17 @@ export function Create({ onBack }: { onBack: () => void }) {
               </div>
             ))}
           </dl>
-          <p className="mt-6 border-t border-line pt-4 text-[12px] leading-relaxed text-ink-3">
-            The 50/50 is hard-coded and can't change after launch. Holders and traders each keep their half
-            no matter what. That is what makes it worth trusting.
+          <p className="mt-5 border-t border-line pt-4 text-[12px] leading-relaxed text-ink-3">
+            The 50/50 split is hard-coded and can't change after launch. Holders and the creator each keep
+            their half of the ETH tax, no matter what.
           </p>
           <button
-            disabled={!name || !symbol || !p || !softOk}
-            className="mt-5 w-full cursor-pointer rounded-full bg-ink py-3 text-[14px] font-medium text-paper transition hover:bg-emerald-strong disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3"
+            disabled={!name || !symbol || !p || !sup}
+            className="mt-4 w-full cursor-pointer rounded-full bg-emerald py-3 text-[14px] font-semibold text-paper transition hover:bg-emerald-strong disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3"
           >
-            Deploy launch
+            Launch coin
           </button>
-          <p className="eyebrow mt-3 text-center">One transaction · token + sale</p>
+          <p className="eyebrow mt-3 text-center">One transaction · live instantly</p>
         </aside>
       </div>
     </main>

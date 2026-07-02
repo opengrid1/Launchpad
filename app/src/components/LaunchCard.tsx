@@ -1,4 +1,4 @@
-import { compact, price, type Launch } from '../data/launches'
+import { compact, price, supplyOf, type Launch } from '../data/launches'
 import { useLiveMarket } from './useLiveMarket'
 import { Sparkline } from './LiveChart'
 
@@ -17,16 +17,14 @@ const STATUS: Record<Launch['status'], { label: string; live?: boolean; cls: str
   live: { label: 'Live', live: true, cls: 'text-paper bg-emerald' },
   upcoming: { label: 'Soon', cls: 'text-gold bg-gold-tint' },
   graduated: { label: 'Graduated', cls: 'text-ink bg-panel' },
-  refunding: { label: 'Refunding', cls: 'text-clay bg-clay-tint' },
 }
 
 export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: () => void; index: number }) {
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase()
   const s = STATUS[launch.status]
-  const supply = launch.tokensForSale + launch.tokensForLiquidity
-  const { price: live, points, changePct } = useLiveMarket(ticker, launch.priceRbh, 40)
+  const { price: live, points, changePct } = useLiveMarket(ticker, launch.priceEth, 40)
   const up = changePct >= 0
-  const mcap = live * supply
+  const mcap = live * supplyOf(launch)
 
   return (
     <button
@@ -57,7 +55,7 @@ export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: 
         <div className="mt-3 flex items-end justify-between">
           <div>
             <p className="eyebrow">Market cap</p>
-            <p className="tnum mt-1 text-[16px] font-semibold text-ink">{compact(mcap)} RBH</p>
+            <p className="tnum mt-1 text-[16px] font-semibold text-ink">{compact(mcap)} ETH</p>
           </div>
           <span className={`tnum rounded-md px-1.5 py-0.5 text-[12px] font-semibold ${up ? 'bg-emerald-tint text-emerald-strong' : 'bg-clay-tint text-clay'}`}>
             {up ? '+' : ''}{changePct.toFixed(1)}%
@@ -70,8 +68,8 @@ export function LaunchCard({ launch, onOpen, index }: { launch: Launch; onOpen: 
         </div>
 
         <div className="tnum mt-2 flex items-center justify-between text-[11px] text-ink-3">
-          <span>{price(live)} RBH</span>
-          <span>vol {compact(launch.volume)}</span>
+          <span>{price(live)} ETH</span>
+          <span>vol {compact(launch.volume)} ETH</span>
         </div>
       </div>
     </button>

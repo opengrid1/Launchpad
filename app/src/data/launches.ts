@@ -1,11 +1,12 @@
-export type LaunchStatus = 'live' | 'upcoming' | 'graduated' | 'refunding'
+export type LaunchStatus = 'live' | 'upcoming' | 'graduated'
 
 /**
- * A Sherwood launch. Same fixed-price sale as before, but every token that
- * graduates carries a standing trade fee that gets split down the middle:
- *   • half is redistributed to everyone holding the token (the many), and
- *   • half is rebated straight back to whoever made the trade (you).
- * That 50/50 is the whole point — hence the `feeBps` + reward fields below.
+ * A Sherwood coin. It trades against ETH from the moment it launches (bankr
+ * style — no presale, no refunds). Every buy and sell pays a tax (the trade
+ * fee) collected from the pool in ETH and split down the middle:
+ *   • half is redistributed in ETH to everyone holding the token, and
+ *   • half goes in ETH to the coin's creator.
+ * All rewards are ETH — RBH is only the chain. Prices are ETH per token.
  */
 export interface Launch {
   id: number
@@ -13,40 +14,81 @@ export interface Launch {
   symbol: string
   glyph: string
   tagline: string
-  priceRbh: number // RBH per token — flat, first buyer to last
+  priceEth: number // ETH per token (tiny, memecoin-style)
   tokensForSale: number
   tokensForLiquidity: number
-  raised: number // RBH
-  softCap: number // RBH
+  liquidityBps: number
+
+  // the reward engine (all ETH, from the pool tax)
+  tradeFeeBps: number // tax taken on every trade, split 50/50
+  volume: number // lifetime traded volume in ETH
+  rewardsPaid: number // total ETH tax already handed out (both halves)
+  holders: number
+
   startsIn?: string
   endsIn?: string
   endedAgo?: string
-  liquidityBps: number
-  maxBuyPerWallet: number // RBH, 0 = unlimited
-
-  // the reward engine
-  tradeFeeBps: number // fee taken on every trade once graduated (split 50/50)
-  volume: number // lifetime traded volume in RBH (drives rewards)
-  rewardsPaid: number // total RBH already handed out (both halves)
-  holders: number
-
   buyers: number
   status: LaunchStatus
   creator: string
 
-  // what the connected demo wallet holds / can claim
-  yourContribution: number
+  // what the connected demo wallet holds / can claim (ETH rewards)
   yourTokens: number
-  yourHolderRewards: number // claimable, from the holders' half
-  yourRebate: number // claimable, from your own trades' half
+  yourHolderRewards: number // claimable ETH, from the holders' half
+  yourRebate: number // claimable ETH, from your own trades' half
 }
 
-export const hardCapOf = (l: Launch) => l.priceRbh * l.tokensForSale
+/** Total supply of a coin. */
+export const supplyOf = (l: Launch) => l.tokensForSale + l.tokensForLiquidity
 
-/** The reward pool a launch has thrown off, and how it halves. */
+/** The ETH tax a coin has thrown off, and how it halves. */
 export function rewardSplit(l: Launch) {
   const pool = (l.volume * l.tradeFeeBps) / 10_000
-  return { pool, toHolders: pool / 2, toTraders: pool / 2 }
+  return { pool, toHolders: pool / 2, toCreator: pool / 2 }
+}
+
+function hash(str: string): number {
+  let h = 0
+  for (const c of str) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  return h || 1
+}
+
+export interface Holder {
+  rank: number
+  address: string
+  pct: number // share of total supply
+  rewardsEth: number // their cut of the holders' half
+  you?: boolean
+}
+
+/** Deterministic top-holder table for a coin (with the connected wallet slotted in). */
+export function topHolders(l: Launch, n = 8): Holder[] {
+  if (!l.holders) return []
+  let s = hash(l.symbol)
+  const rand = () => {
+    s = (s * 1664525 + 1013904223) >>> 0
+    return s / 4294967296
+  }
+  const holderPool = rewardSplit(l).toHolders
+  const addr = () =>
+    '0x' + Math.floor(rand() * 0xffff).toString(16).padStart(4, '0') + '…' + Math.floor(rand() * 0xffff).toString(16).padStart(4, '0')
+
+  // top holders hold ~38% combined, on a decreasing curve
+  const weights = Array.from({ length: n }, (_, i) => (1 / (i + 1.5)) * (0.7 + rand() * 0.6))
+  const sum = weights.reduce((a, b) => a + b, 0)
+  let rows: Holder[] = weights.map((w) => {
+    const pct = (w / sum) * 38
+    return { rank: 0, address: addr(), pct, rewardsEth: (pct / 100) * holderPool }
+  })
+
+  // slot the connected wallet in by its real position
+  if (l.yourTokens > 0) {
+    const pct = (l.yourTokens / supplyOf(l)) * 100
+    rows.push({ rank: 0, address: '0x71b3…9F02', pct, rewardsEth: l.yourHolderRewards, you: true })
+  }
+
+  rows.sort((a, b) => b.pct - a.pct)
+  return rows.slice(0, n).map((r, i) => ({ ...r, rank: i + 1 }))
 }
 
 export const LAUNCHES: Launch[] = [
@@ -55,49 +97,41 @@ export const LAUNCHES: Launch[] = [
     name: 'Greenwood',
     symbol: 'GWD',
     glyph: '🌲',
-    tagline: 'The reserve currency of the forest. Hold it, get paid to.',
-    priceRbh: 0.0006,
+    tagline: 'The reserve currency of the forest. Hold it, get paid in ETH.',
+    priceEth: 0.00000046,
     tokensForSale: 500_000_000,
     tokensForLiquidity: 400_000_000,
-    raised: 214_800,
-    softCap: 80_000,
-    endsIn: '11h 40m',
     liquidityBps: 7000,
-    maxBuyPerWallet: 3_000,
     tradeFeeBps: 200,
-    volume: 1_920_000,
-    rewardsPaid: 38_400,
+    volume: 3_100,
+    rewardsPaid: 41.2,
     holders: 2610,
+    endsIn: '11h 40m',
     buyers: 2610,
     status: 'live',
     creator: '0x71b3…9F02',
-    yourContribution: 300,
-    yourTokens: 500_000,
-    yourHolderRewards: 46.2,
-    yourRebate: 12.8,
+    yourTokens: 3_200_000,
+    yourHolderRewards: 0.112,
+    yourRebate: 0.031,
   },
   {
     id: 13,
     name: 'Longbow',
     symbol: 'BOW',
     glyph: '🏹',
-    tagline: 'Range on every trade. Traders get half their fee straight back.',
-    priceRbh: 0.011,
+    tagline: 'Range on every trade. Traders get half the ETH tax straight back.',
+    priceEth: 0.0000061,
     tokensForSale: 9_000_000,
     tokensForLiquidity: 7_000_000,
-    raised: 52_300,
-    softCap: 35_000,
-    endsIn: '2d 3h',
     liquidityBps: 8000,
-    maxBuyPerWallet: 800,
     tradeFeeBps: 150,
-    volume: 640_000,
-    rewardsPaid: 9_600,
+    volume: 620,
+    rewardsPaid: 9.3,
     holders: 540,
+    endsIn: '2d 3h',
     buyers: 540,
     status: 'live',
     creator: '0x08aF…b3c2',
-    yourContribution: 0,
     yourTokens: 0,
     yourHolderRewards: 0,
     yourRebate: 0,
@@ -107,23 +141,19 @@ export const LAUNCHES: Launch[] = [
     name: 'Almsbox',
     symbol: 'ALMS',
     glyph: '🪙',
-    tagline: 'Take from the volume, give to the holders. That is the entire pitch.',
-    priceRbh: 0.0025,
+    tagline: 'Take from the volume, give ETH to the holders. That is the whole pitch.',
+    priceEth: 0.00000025,
     tokensForSale: 60_000_000,
     tokensForLiquidity: 60_000_000,
-    raised: 19_400,
-    softCap: 45_000,
-    endsIn: '8h 12m',
     liquidityBps: 9000,
-    maxBuyPerWallet: 0,
     tradeFeeBps: 250,
-    volume: 210_000,
-    rewardsPaid: 5_250,
+    volume: 210,
+    rewardsPaid: 5.25,
     holders: 128,
+    endsIn: '8h 12m',
     buyers: 128,
     status: 'live',
     creator: '0xDd02…4f19',
-    yourContribution: 0,
     yourTokens: 0,
     yourHolderRewards: 0,
     yourRebate: 0,
@@ -134,22 +164,18 @@ export const LAUNCHES: Launch[] = [
     symbol: 'MERRY',
     glyph: '🍃',
     tagline: 'A fair-launch meme with a conscience. Opens soon.',
-    priceRbh: 0.008,
+    priceEth: 0.0000008,
     tokensForSale: 14_000_000,
     tokensForLiquidity: 10_000_000,
-    raised: 0,
-    softCap: 30_000,
-    startsIn: '1d 06h',
     liquidityBps: 7500,
-    maxBuyPerWallet: 600,
     tradeFeeBps: 200,
     volume: 0,
     rewardsPaid: 0,
     holders: 0,
+    startsIn: '1d 06h',
     buyers: 0,
     status: 'upcoming',
     creator: '0x77Cc…09bE',
-    yourContribution: 0,
     yourTokens: 0,
     yourHolderRewards: 0,
     yourRebate: 0,
@@ -159,49 +185,41 @@ export const LAUNCHES: Launch[] = [
     name: 'Tuck',
     symbol: 'TUCK',
     glyph: '🍺',
-    tagline: 'Graduated last week. The rewards are already flowing.',
-    priceRbh: 0.004,
+    tagline: 'Graduated last week. The ETH rewards are already flowing.',
+    priceEth: 0.0000101,
     tokensForSale: 35_000_000,
     tokensForLiquidity: 28_000_000,
-    raised: 140_000,
-    softCap: 60_000,
-    endedAgo: '6d ago',
     liquidityBps: 7000,
-    maxBuyPerWallet: 1_200,
     tradeFeeBps: 200,
-    volume: 4_310_000,
-    rewardsPaid: 86_200,
+    volume: 4_310,
+    rewardsPaid: 86.2,
     holders: 3120,
+    endedAgo: '6d ago',
     buyers: 3120,
     status: 'graduated',
     creator: '0x3fA8…c21D',
-    yourContribution: 500,
-    yourTokens: 125_000,
-    yourHolderRewards: 214.5,
-    yourRebate: 61.0,
+    yourTokens: 1_250_000,
+    yourHolderRewards: 0.845,
+    yourRebate: 0.242,
   },
   {
     id: 6,
     name: 'Nottingham',
     symbol: 'SHRF',
     glyph: '🛡️',
-    tagline: 'Never made soft cap. The sheriff always loses here.',
-    priceRbh: 0.01,
+    tagline: 'Small cap, loyal holders. The sheriff keeps paying out.',
+    priceEth: 0.00000009,
     tokensForSale: 10_000_000,
     tokensForLiquidity: 10_000_000,
-    raised: 21_100,
-    softCap: 60_000,
-    endedAgo: '1w ago',
     liquidityBps: 5000,
-    maxBuyPerWallet: 0,
     tradeFeeBps: 200,
-    volume: 0,
-    rewardsPaid: 0,
-    holders: 0,
-    buyers: 84,
-    status: 'refunding',
+    volume: 260,
+    rewardsPaid: 5.2,
+    holders: 214,
+    endedAgo: '1w ago',
+    buyers: 214,
+    status: 'graduated',
     creator: '0xB00d…5e77',
-    yourContribution: 140,
     yourTokens: 0,
     yourHolderRewards: 0,
     yourRebate: 0,
@@ -216,6 +234,15 @@ export function compact(n: number): string {
   return fmt.format(n)
 }
 
+/** Per-token price (very small) — keep the significant digits. */
 export function price(n: number): string {
   return n.toLocaleString('en-US', { maximumSignificantDigits: 3 })
+}
+
+/** An ETH amount: compact when large, precise when small. */
+export function eth(n: number): string {
+  if (n >= 1000) return compact(n)
+  if (n >= 1) return n.toLocaleString('en-US', { maximumFractionDigits: 2 })
+  if (n === 0) return '0'
+  return n.toLocaleString('en-US', { maximumSignificantDigits: 2 })
 }
