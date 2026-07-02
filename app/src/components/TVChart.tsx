@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react'
 import { createChart, CandlestickSeries, ColorType, type IChartApi, type ISeriesApi, type UTCTimestamp } from 'lightweight-charts'
 
 const C = {
-  line: '#23261e',
-  line2: '#33372b',
+  line: '#2a2c32',
+  line2: '#3a3d45',
   ink3: '#64685c',
   emerald: '#b6f23c',
   clay: '#e2704a',

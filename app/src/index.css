@@ -5,14 +5,14 @@
    Image-forward card grid, dense and playful. Near-black canvas, one vivid
    lime accent, bold grotesque display type, rounded cards. Numbers in mono. */
 @theme {
-  --color-paper: #000000;
-  --color-surface: #0e0f0d;
-  --color-panel: #171815;
+  --color-paper: #15161a;
+  --color-surface: #1e2025;
+  --color-panel: #292b31;
   --color-ink: #f3f4ee;
   --color-ink-2: #9ea294;
   --color-ink-3: #64685c;
-  --color-line: #23261e;
-  --color-line-2: #33372b;
+  --color-line: #2a2c32;
+  --color-line-2: #3a3d45;
 
   /* lime — the loud accent, used on CTAs and live states */
   --color-emerald: #b6f23c;
