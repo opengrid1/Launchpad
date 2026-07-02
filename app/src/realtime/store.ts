@@ -173,14 +173,7 @@ class RealtimeClient {
       this.emit(`market:${c.id}`)
     }
 
-    // stream a buy/sell notification at a controlled rate (not every trade)
-    if (Math.random() < 0.4) {
-      const c = this.coins[Math.floor(Math.random() * this.coins.length)]
-      const t = this.makeTrade()
-      this.pushActivity({ kind: t.side, symbol: c.symbol, name: c.name, amount: t.amount, href: `${EXPLORER}/tx/${txHash()}` })
-    }
-
-    // simulate other users launching new coins from time to time
+    // other users launching still streams onto the board (no toast for those)
     if (Math.random() < 0.03) this.autoLaunch()
   }
 
@@ -201,7 +194,10 @@ class RealtimeClient {
     this.emit('activity')
   }
 
-  /** User claimed rewards (REST-shaped action) — broadcast a notification. */
+  /** Notifications are only for the connected user's own actions. */
+  notifyTrade(coin: Launch, side: 'buy' | 'sell', amount: string) {
+    this.pushActivity({ kind: side, symbol: coin.symbol, name: coin.name, amount, href: `${EXPLORER}/tx/${txHash()}` })
+  }
   notifyClaim(coin: Launch, amount: string) {
     this.pushActivity({ kind: 'claim', symbol: coin.symbol, name: coin.name, amount, href: `${EXPLORER}/tx/${txHash()}` })
   }
@@ -214,10 +210,9 @@ class RealtimeClient {
     return { points, price, changePct, trades }
   }
 
-  private addCoin(coin: Launch) {
+  private insertCoin(coin: Launch) {
     this.coins = [coin, ...this.coins]
     this.market.set(coin.id, this.seedMarket(coin))
-    this.pushActivity({ kind: 'launch', symbol: coin.symbol, name: coin.name, href: `${EXPLORER}/address/${coin.tokenAddress}` })
     this.emit('board')
   }
 
@@ -226,7 +221,7 @@ class RealtimeClient {
     const uniq = symbol + Math.floor(Math.random() * 90 + 10)
     const startMcapUsd = 2500
     const price = startMcapUsd / (1_000_000_000 * 3200)
-    this.addCoin({
+    this.insertCoin({
       id: Date.now() + Math.floor(Math.random() * 1000),
       name,
       symbol: uniq,
@@ -256,7 +251,8 @@ class RealtimeClient {
   /** Create a coin. In production this is a REST POST; the server then pushes
    *  the new coin over the socket. Here we add it locally and broadcast. */
   createCoin(coin: Launch): Launch {
-    this.addCoin(coin)
+    this.insertCoin(coin)
+    this.pushActivity({ kind: 'launch', symbol: coin.symbol, name: coin.name, href: `${EXPLORER}/address/${coin.tokenAddress}` })
     return coin
   }
 }

@@ -245,6 +245,11 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             </div>
 
             <button
+              onClick={() => {
+                if (!amt) return
+                realtime.notifyTrade(launch, side, `${eth(side === 'buy' ? amt : out)} ETH`)
+                setAmount('')
+              }}
               disabled={!amt}
               className={`mt-4 w-full cursor-pointer rounded-full py-3 text-[14px] font-semibold text-paper transition disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3 ${
                 side === 'buy' ? 'bg-emerald hover:bg-emerald-strong' : 'bg-clay hover:opacity-90'
