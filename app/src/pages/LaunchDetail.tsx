@@ -3,6 +3,7 @@ import { compact, ETH_USD, eth, mcapUsd, price, rewardSplit, supplyOf, topHolder
 import { Monogram } from '../components/Monogram'
 import { TVChart } from '../components/TVChart'
 import { useMarket } from '../realtime/hooks'
+import { realtime } from '../realtime/store'
 
 function CopyIcon() {
   return (
@@ -332,7 +333,11 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
               </div>
             </div>
             <button
-              onClick={() => claimable > 0 && setClaimed(true)}
+              onClick={() => {
+                if (claimable <= 0) return
+                realtime.notifyClaim(launch, `${eth(claimable)} ETH`)
+                setClaimed(true)
+              }}
               disabled={claimable <= 0}
               className="mt-4 w-full cursor-pointer rounded-full bg-emerald py-2.5 text-[14px] font-semibold text-paper transition hover:bg-emerald-strong disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3"
             >

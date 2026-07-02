@@ -32,12 +32,17 @@ export interface Market {
 
 export interface Activity {
   id: number
-  kind: 'launch' | 'buy' | 'sell'
+  kind: 'launch' | 'buy' | 'sell' | 'claim'
   symbol: string
   name: string
-  text: string
+  amount?: string
+  href: string // Robinhood Chain explorer link
   when: number
 }
+
+/** Robinhood Chain block explorer (chain 4663). */
+export const EXPLORER = 'https://8crv4vmq6tiu1yqr.blockscout.com'
+const txHash = () => '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
 
 const ADDRS = ['0x9f…2a1d', '0x3c…88fe', '0x71…9F02', '0xaa…04c1', '0x5d…4a0b', '0x08…b3c2', '0xdd…4f19', '0xc0…7b31']
 const GLYPHS = ['🐸', '🐕', '🌙', '🔥', '🦊', '🐐', '💎', '🍄', '👑', '🚀', '🥷', '🪵']
@@ -161,21 +166,22 @@ class RealtimeClient {
 
       let trades = m.trades
       if (Math.random() < 0.55) {
-        const t = this.makeTrade()
-        trades = [t, ...m.trades].slice(0, 30)
-        if (Math.random() < 0.15) {
-          this.pushActivity({ kind: t.side, symbol: c.symbol, name: c.name, text: `${t.side === 'buy' ? 'Bought' : 'Sold'} ${t.amount} of ${c.symbol}` }, false)
-        }
+        trades = [this.makeTrade(), ...m.trades].slice(0, 30)
       }
 
       this.market.set(c.id, { points, price: next, changePct, trades })
       this.emit(`market:${c.id}`)
     }
 
+    // stream a buy/sell notification at a controlled rate (not every trade)
+    if (Math.random() < 0.4) {
+      const c = this.coins[Math.floor(Math.random() * this.coins.length)]
+      const t = this.makeTrade()
+      this.pushActivity({ kind: t.side, symbol: c.symbol, name: c.name, amount: t.amount, href: `${EXPLORER}/tx/${txHash()}` })
+    }
+
     // simulate other users launching new coins from time to time
     if (Math.random() < 0.03) this.autoLaunch()
-
-    this.emit('activity')
   }
 
   private makeTrade(): Trade {
@@ -190,9 +196,14 @@ class RealtimeClient {
     }
   }
 
-  private pushActivity(a: Omit<Activity, 'id' | 'when'>, emit = true) {
+  private pushActivity(a: Omit<Activity, 'id' | 'when'>) {
     this.activity = [{ ...a, id: ++this.aid, when: Date.now() }, ...this.activity].slice(0, 40)
-    if (emit) this.emit('activity')
+    this.emit('activity')
+  }
+
+  /** User claimed rewards (REST-shaped action) — broadcast a notification. */
+  notifyClaim(coin: Launch, amount: string) {
+    this.pushActivity({ kind: 'claim', symbol: coin.symbol, name: coin.name, amount, href: `${EXPLORER}/tx/${txHash()}` })
   }
 
   private seedMarket(c: Pick<Launch, 'symbol' | 'priceEth'>): Market {
@@ -206,9 +217,8 @@ class RealtimeClient {
   private addCoin(coin: Launch) {
     this.coins = [coin, ...this.coins]
     this.market.set(coin.id, this.seedMarket(coin))
-    this.pushActivity({ kind: 'launch', symbol: coin.symbol, name: coin.name, text: `${coin.name} just launched` }, false)
+    this.pushActivity({ kind: 'launch', symbol: coin.symbol, name: coin.name, href: `${EXPLORER}/address/${coin.tokenAddress}` })
     this.emit('board')
-    this.emit('activity')
   }
 
   private autoLaunch() {
