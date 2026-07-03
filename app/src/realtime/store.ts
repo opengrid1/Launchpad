@@ -226,7 +226,7 @@ class RealtimeClient {
       name,
       symbol: uniq,
       glyph: GLYPHS[Math.floor(Math.random() * GLYPHS.length)],
-      tagline: 'A fresh Sherwood launch. Just deployed.',
+      tagline: 'A fresh Loxley launch. Just deployed.',
       tokenAddress: '0x' + Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0') + '…' + Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0'),
       priceEth: price,
       tokensForSale: 0,

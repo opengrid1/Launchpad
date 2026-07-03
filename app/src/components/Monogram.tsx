@@ -1,7 +1,7 @@
 import { defaultTokenImage } from '../data/launches'
 
 /**
- * Coin mark. Shows the token image (URI) if set, else the Sherwood feather
+ * Coin mark. Shows the token image (URI) if set, else the Loxley feather
  * default — drawn in a rounded tile with a hairline ring.
  */
 export function Monogram({

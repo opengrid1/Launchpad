@@ -45,7 +45,7 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
       symbol,
       glyph: '🪙',
       image: image || defaultTokenImage(symbol),
-      tagline: description ? description.slice(0, 90) : `${name} on Sherwood.`,
+      tagline: description ? description.slice(0, 90) : `${name} on Loxley.`,
       description: description || undefined,
       tokenAddress: `0x${hex4()}…${hex4()}`,
       devBuy: dev || undefined,

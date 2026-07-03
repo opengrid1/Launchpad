@@ -23,7 +23,9 @@ export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Ro
           onClick={() => onNavigate({ page: 'explore' })}
           className="flex shrink-0 cursor-pointer items-center bg-transparent"
         >
-          <span className="font-display text-[20px] font-extrabold tracking-tight text-ink">sherwood</span>
+          <span className="font-display text-[22px] font-extrabold lowercase leading-none tracking-[-0.03em] text-ink">
+            loxley<span className="text-emerald">.</span>
+          </span>
         </button>
 
         {/* desktop search */}

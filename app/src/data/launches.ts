@@ -3,7 +3,7 @@ import featherDefault from '../assets/feather-default.png'
 export type LaunchStatus = 'live'
 
 /**
- * A Sherwood coin. It launches straight into a single-sided Uniswap v3 pool
+ * A Loxley coin. It launches straight into a single-sided Uniswap v3 pool
  * and trades against ETH from block one (bankr style: no presale, no
  * graduation, no refunds). Every buy and sell pays a tax collected from the
  * pool in ETH and split down the middle:
@@ -291,7 +291,7 @@ export function eth(n: number): string {
   return n.toLocaleString('en-US', { maximumSignificantDigits: 2 })
 }
 
-/** Default token image when the creator doesn't upload one: the Sherwood
+/** Default token image when the creator doesn't upload one: the Loxley
  *  feather emblem — a lime quill on a dark charcoal badge — bundled as a PNG. */
 export function defaultTokenImage(_symbol?: string): string {
   return featherDefault
