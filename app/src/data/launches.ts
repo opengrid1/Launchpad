@@ -1,3 +1,5 @@
+import featherDefault from '../assets/feather-default.png'
+
 export type LaunchStatus = 'live'
 
 /**
@@ -289,101 +291,10 @@ export function eth(n: number): string {
   return n.toLocaleString('en-US', { maximumSignificantDigits: 2 })
 }
 
-/** Default token image when the creator doesn't upload one: a feather (the
- *  Sherwood emblem) drawn on a canvas over a deterministic gradient, exported
- *  as a PNG. No SVG, no emoji; returns a raster data URI. */
-export function defaultTokenImage(symbol: string): string {
-  let h = 0
-  for (const c of symbol) h = (h * 31 + c.charCodeAt(0)) >>> 0
-  const h1 = h % 360
-  const h2 = (h1 + 55) % 360
-
-  const S = 240
-  const canvas = document.createElement('canvas')
-  canvas.width = S
-  canvas.height = S
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return ''
-
-  // diagonal gradient backdrop
-  const g = ctx.createLinearGradient(0, 0, S, S)
-  g.addColorStop(0, `hsl(${h1}, 66%, 50%)`)
-  g.addColorStop(1, `hsl(${h2}, 70%, 38%)`)
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, S, S)
-
-  // soft highlight bloom in the upper-left
-  const bloom = ctx.createRadialGradient(S * 0.28, S * 0.24, 0, S * 0.28, S * 0.24, S * 0.7)
-  bloom.addColorStop(0, 'rgba(255,255,255,0.26)')
-  bloom.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.fillStyle = bloom
-  ctx.fillRect(0, 0, S, S)
-
-  // --- feather, centred and tilted ---
-  ctx.translate(S / 2, S / 2)
-  ctx.rotate(-0.42)
-
-  const len = 172 // tip → base length of the vane
-  const wid = 40 // half-width at the widest point
-  const bend = 12 // sideways curve of the shaft
-  const tipY = -len / 2
-  const baseY = len / 2
-  // vane half-width along the shaft (0 at tip, fat in the middle, tapering to base)
-  const halfW = (t: number) => Math.pow(Math.sin(t * Math.PI), 0.72) * wid * (1 - t * 0.28)
-  const shaftX = (t: number) => bend * Math.sin(t * Math.PI)
-  const y = (t: number) => tipY + t * (baseY - tipY)
-
-  // filled vane
-  ctx.beginPath()
-  const N = 40
-  for (let i = 0; i <= N; i++) {
-    const t = i / N
-    const px = shaftX(t) + halfW(t)
-    if (i === 0) ctx.moveTo(px, y(t))
-    else ctx.lineTo(px, y(t))
-  }
-  for (let i = N; i >= 0; i--) {
-    const t = i / N
-    ctx.lineTo(shaftX(t) - halfW(t), y(t))
-  }
-  ctx.closePath()
-  ctx.fillStyle = 'rgba(255,255,255,0.96)'
-  ctx.shadowColor = 'rgba(0,0,0,0.22)'
-  ctx.shadowBlur = 12
-  ctx.shadowOffsetY = 4
-  ctx.fill()
-  ctx.shadowColor = 'transparent'
-
-  // barb separations — thin lines fanning from the shaft toward the tip
-  ctx.strokeStyle = `hsla(${h1}, 45%, 42%, 0.5)`
-  ctx.lineWidth = 2
-  ctx.lineCap = 'round'
-  for (let i = 1; i < 15; i++) {
-    const t = 0.08 + (i / 15) * 0.84
-    const sx = shaftX(t)
-    const sy = y(t)
-    const w = halfW(t) * 0.9
-    ctx.beginPath()
-    ctx.moveTo(sx, sy)
-    ctx.lineTo(sx + w, sy + w * 0.55)
-    ctx.moveTo(sx, sy)
-    ctx.lineTo(sx - w, sy + w * 0.55)
-    ctx.stroke()
-  }
-
-  // central shaft + a bare quill extending past the base
-  ctx.strokeStyle = `hsl(${h1}, 55%, 34%)`
-  ctx.lineWidth = 4
-  ctx.beginPath()
-  ctx.moveTo(shaftX(0), tipY)
-  for (let i = 1; i <= N; i++) {
-    const t = i / N
-    ctx.lineTo(shaftX(t), y(t))
-  }
-  ctx.quadraticCurveTo(shaftX(1) - 6, baseY + 20, shaftX(1) - 14, baseY + 34)
-  ctx.stroke()
-
-  return canvas.toDataURL('image/png')
+/** Default token image when the creator doesn't upload one: the Sherwood
+ *  feather emblem — a lime quill on a dark charcoal badge — bundled as a PNG. */
+export function defaultTokenImage(_symbol?: string): string {
+  return featherDefault
 }
 
 /** Reference ETH price used to show fiat values (market cap, etc.) in USD. */

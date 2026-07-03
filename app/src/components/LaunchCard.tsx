@@ -1,4 +1,4 @@
-import { mcapUsd, usd, type Launch } from '../data/launches'
+import { defaultTokenImage, mcapUsd, usd, type Launch } from '../data/launches'
 import { useMarket } from '../realtime/hooks'
 
 /** Deterministic two-hue gradient from the ticker — stands in for coin art. */
@@ -21,13 +21,11 @@ const ICONS: Record<string, React.ReactNode> = {
 function CoinImage({ launch, ticker, className }: { launch: Launch; ticker: string; className: string }) {
   return (
     <div className={`relative shrink-0 overflow-hidden rounded-xl ${className}`} style={coinArt(ticker)}>
-      {launch.image ? (
-        <img src={launch.image} alt={launch.name} className="absolute inset-0 h-full w-full object-cover" />
-      ) : (
-        <span className="absolute inset-0 flex items-center justify-center text-[34px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
-          {launch.glyph}
-        </span>
-      )}
+      <img
+        src={launch.image || defaultTokenImage()}
+        alt={launch.name}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
     </div>
   )
 }
