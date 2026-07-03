@@ -21,13 +21,8 @@ export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Ro
       <div className="flex items-center gap-3">
         <button
           onClick={() => onNavigate({ page: 'explore' })}
-          className="flex shrink-0 cursor-pointer items-center gap-2 bg-transparent"
+          className="flex shrink-0 cursor-pointer items-center bg-transparent"
         >
-          <svg width="18" height="20" viewBox="0 0 20 22" fill="none">
-            <path d="M10 2 C6 7 6 14 10 20 C14 14 14 7 10 2 Z" fill="var(--color-emerald)" opacity="0.15" />
-            <path d="M10 2 C6 7 6 14 10 20 C14 14 14 7 10 2 Z" fill="none" stroke="var(--color-emerald)" strokeWidth="1.5" />
-            <path d="M10 3 L10 19" stroke="var(--color-emerald)" strokeWidth="1.2" />
-          </svg>
           <span className="font-display text-[20px] font-extrabold tracking-tight text-ink">sherwood</span>
         </button>
 
