@@ -23,7 +23,12 @@ export function Header({ route, onNavigate }: { route: Route; onNavigate: (r: Ro
           onClick={() => onNavigate({ page: 'explore' })}
           className="flex shrink-0 cursor-pointer items-center bg-transparent"
         >
-          <span className="text-[21px] font-bold leading-none tracking-tight text-ink">Loxley</span>
+          <span
+            className="text-[21px] font-bold leading-none tracking-[-0.02em] text-ink"
+            style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+          >
+            Loxley
+          </span>
         </button>
 
         {/* desktop search */}
