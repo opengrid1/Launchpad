@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { compact, defaultTokenImage, ETH_USD, usd, type Launch } from '../data/launches'
-
-const hex4 = () => Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0')
+import { compact, defaultTokenImage, usd } from '../data/launches'
+import * as loxley from '../loxley'
+import type { Wallet } from '../web3/useWallet'
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -18,13 +18,12 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 const inputCls =
   'tnum w-full rounded-lg bg-panel px-3.5 py-2.5 text-[14px] text-ink outline-none ring-1 ring-line transition placeholder:text-ink-3/40 focus:ring-emerald/50'
 
-// fixed terms: 1B supply, 1% tax, whole supply single-sided in the v3 pool,
-// and every coin starts at a $2.5K virtual market cap (so price is derived).
+// fixed terms enforced by the launchpad contract: 1B supply, 1% tax, whole
+// supply single-sided in the v4 pool, price derived from the virtual mcap.
 const SUPPLY = 1_000_000_000
-const START_MCAP_USD = 2500
-const PRICE_ETH = START_MCAP_USD / (SUPPLY * ETH_USD)
+const START_MCAP_USD = 2000 // matches the deployed launchpad's startingMarketCapUsd6
 
-export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (coin: Launch) => void }) {
+export function Create({ onBack, onLaunched, wallet }: { onBack: () => void; onLaunched: () => void | Promise<void>; wallet: Wallet }) {
   const [name, setName] = useState('')
   const [symbol, setSymbol] = useState('')
   const [image, setImage] = useState('')
@@ -33,39 +32,45 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
   const [telegram, setTelegram] = useState('')
   const [website, setWebsite] = useState('')
   const [devBuy, setDevBuy] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
 
   const dev = parseFloat(devBuy) || 0
-  const ready = Boolean(name && symbol)
+  const ready = Boolean(name && symbol) && !busy
 
-  function launch() {
+  async function launch() {
     if (!ready) return
-    onLaunch({
-      id: Date.now(),
-      name,
-      symbol,
-      glyph: '🪙',
-      image: image || defaultTokenImage(symbol),
-      tagline: description ? description.slice(0, 90) : `${name} on Loxley.`,
-      description: description || undefined,
-      tokenAddress: `0x${hex4()}…${hex4()}`,
-      devBuy: dev || undefined,
-      socials: x || telegram || website ? { x: x || undefined, telegram: telegram || undefined, website: website || undefined } : undefined,
-      priceEth: PRICE_ETH,
-      tokensForLiquidity: SUPPLY, // single-sided: the whole supply seeds the pool
-      tokensForSale: 0,
-      liquidityBps: 10_000,
-      tradeFeeBps: 100, // fixed 1%
-      volume: dev,
-      rewardsPaid: 0,
-      holders: dev > 0 ? 1 : 0,
-      createdAgo: 'just now',
-      buyers: dev > 0 ? 1 : 0,
-      status: 'live',
-      creator: '0x71b3…9F02',
-      yourTokens: dev > 0 ? Math.floor(dev / PRICE_ETH) : 0,
-      yourHolderRewards: 0,
-      yourRebate: 0,
-    })
+    setErr(null)
+    setBusy(true)
+    try {
+      // get a live signer (connect on the fly if needed)
+      let signer = wallet.signer
+      let account = wallet.account
+      if (!signer) {
+        const c = await loxley.connectWallet()
+        signer = c.signer
+        account = c.account
+      }
+      await loxley.createToken(signer, {
+        name,
+        symbol,
+        supply: SUPPLY,
+        creator: account ?? undefined,
+        meta: {
+          image: image || undefined,
+          description: description || undefined,
+          twitter: x || undefined,
+          telegram: telegram || undefined,
+          website: website || undefined,
+        },
+        devBuyEth: devBuy || '0',
+      })
+      await onLaunched()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Launch failed')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -183,8 +188,12 @@ export function Create({ onBack, onLaunch }: { onBack: () => void; onLaunch: (co
             disabled={!ready}
             className="mt-5 w-full cursor-pointer rounded-full bg-emerald py-3 text-[14px] font-semibold text-paper transition hover:bg-emerald-strong disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3"
           >
-            Launch coin
+            {busy ? 'Launching…' : wallet.account ? 'Launch coin' : 'Connect & launch'}
           </button>
+          {err && <p className="mt-3 break-words text-[12px] text-clay">{err}</p>}
+          <p className="mt-3 text-[11px] leading-relaxed text-ink-3">
+            Deploys on Robinhood Chain. 1B supply, 1% trade tax split 50/50 to holders and you.
+          </p>
         </aside>
       </div>
     </main>

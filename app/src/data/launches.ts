@@ -297,8 +297,13 @@ export function defaultTokenImage(_symbol?: string): string {
   return featherDefault
 }
 
-/** Reference ETH price used to show fiat values (market cap, etc.) in USD. */
-export const ETH_USD = 3200
+/** Reference ETH price used to show fiat values (market cap, etc.) in USD.
+ *  Seeded at a sane default, then overwritten from the launchpad's on-chain
+ *  `ethUsdPrice()` at load. ESM live-binding means consumers see the update. */
+export let ETH_USD = 3200
+export function setEthUsd(v: number) {
+  if (v > 0) ETH_USD = v
+}
 
 /** A USD amount, compacted with a leading $. */
 export function usd(n: number): string {

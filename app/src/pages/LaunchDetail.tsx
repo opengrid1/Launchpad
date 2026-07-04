@@ -1,9 +1,11 @@
-import { useState } from 'react'
-import { compact, ETH_USD, eth, mcapUsd, price, rewardSplit, supplyOf, topHolders, usd, type Launch } from '../data/launches'
+import { useEffect, useState } from 'react'
+import { compact, ETH_USD, eth, mcapUsd, price, supplyOf, topHolders, usd, type Launch } from '../data/launches'
 import { Monogram } from '../components/Monogram'
 import { TVChart } from '../components/TVChart'
 import { useMarket } from '../realtime/hooks'
 import { realtime } from '../realtime/store'
+import * as loxley from '../loxley'
+import type { Wallet } from '../web3/useWallet'
 
 function CopyIcon() {
   return (
@@ -102,25 +104,61 @@ const TF: { label: string; group: number }[] = [
   { label: '24h', group: 5 },
 ]
 
-export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () => void }) {
+export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBack: () => void; wallet: Wallet }) {
   const [side, setSide] = useState<'buy' | 'sell'>('buy')
   const [amount, setAmount] = useState('')
   const [tf, setTf] = useState('1h')
   const [feed, setFeed] = useState<'trades' | 'holders'>('trades')
-  const [claimed, setClaimed] = useState(false)
+  const [claiming, setClaiming] = useState(false)
+  const [claimErr, setClaimErr] = useState<string | null>(null)
+  const [claimableHolder, setClaimableHolder] = useState(0)
+  const [creatorFees, setCreatorFees] = useState(0)
   const tfGroup = TF.find((t) => t.label === tf)?.group ?? 2
 
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
   const { price: live, points, changePct, trades } = useMarket(launch.id)
   const up = changePct >= 0
-  const mcap = mcapUsd(live, launch)
+  const mcap = mcapUsd(launch.priceEth, launch) // real price → USD market cap
   const mcapMult = supplyOf(launch) * ETH_USD // price(ETH) -> market cap (USD)
-  const { toCreator } = rewardSplit(launch)
   const holders = topHolders(launch)
-  const youAreCreator = launch.creator === '0x71b3…9F02'
+  const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
+  const youAreCreator = !!wallet.account && launch.creator.toLowerCase() === short(wallet.account).toLowerCase()
 
-  const creatorEarnings = youAreCreator ? toCreator : 0
-  const claimable = claimed ? 0 : launch.yourHolderRewards + creatorEarnings
+  // pull the connected wallet's real claimable ETH (holder dividends + creator fees)
+  const isRealToken = launch.tokenAddress.startsWith('0x') && launch.tokenAddress.length === 42
+  useEffect(() => {
+    let alive = true
+    setClaimableHolder(0)
+    setCreatorFees(0)
+    if (wallet.account && isRealToken) {
+      loxley.claimableEth(launch.tokenAddress, wallet.account).then((v) => { if (alive) setClaimableHolder(v) }).catch(() => {})
+      loxley.creatorFees(launch.tokenAddress).then((v) => { if (alive) setCreatorFees(v) }).catch(() => {})
+    }
+    return () => { alive = false }
+  }, [wallet.account, launch.tokenAddress, isRealToken])
+
+  const creatorEarnings = youAreCreator ? creatorFees : 0
+  const claimable = claimableHolder + creatorEarnings
+
+  async function doClaim() {
+    if (claimable <= 0 || claiming) return
+    setClaimErr(null)
+    setClaiming(true)
+    try {
+      let signer = wallet.signer
+      if (!signer) signer = (await loxley.connectWallet()).signer
+      if (claimableHolder > 0) await loxley.claimEthDividends(signer, launch.tokenAddress)
+      if (youAreCreator && creatorFees > 0) await loxley.claimCreatorFees(signer, launch.tokenAddress)
+      if (wallet.account) {
+        setClaimableHolder(await loxley.claimableEth(launch.tokenAddress, wallet.account).catch(() => 0))
+        setCreatorFees(await loxley.creatorFees(launch.tokenAddress).catch(() => 0))
+      }
+    } catch (e) {
+      setClaimErr(e instanceof Error ? e.message : 'Claim failed')
+    } finally {
+      setClaiming(false)
+    }
+  }
 
   const amt = parseFloat(amount) || 0
   const out = side === 'buy' ? amt / live : amt * live
@@ -269,12 +307,12 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
             <div className="mt-3 space-y-2">
               <div className="tnum flex items-baseline justify-between text-[13px]">
                 <span className="text-ink-2">As a holder</span>
-                <span className="text-ink">{eth(claimed ? 0 : launch.yourHolderRewards)} ETH</span>
+                <span className="text-ink">{eth(claimableHolder)} ETH</span>
               </div>
               {youAreCreator && (
                 <div className="tnum flex items-baseline justify-between text-[13px]">
                   <span className="text-ink-2">As the creator</span>
-                  <span className="text-ink">{eth(claimed ? 0 : creatorEarnings)} ETH</span>
+                  <span className="text-ink">{eth(creatorEarnings)} ETH</span>
                 </div>
               )}
               <div className="tnum flex items-baseline justify-between border-t border-line pt-2 text-[13px]">
@@ -283,17 +321,14 @@ export function LaunchDetail({ launch, onBack }: { launch: Launch; onBack: () =>
               </div>
             </div>
             <button
-              onClick={() => {
-                if (claimable <= 0) return
-                realtime.notifyClaim(launch, `${eth(claimable)} ETH`)
-                setClaimed(true)
-              }}
-              disabled={claimable <= 0}
+              onClick={doClaim}
+              disabled={claimable <= 0 || claiming}
               className="mt-4 w-full cursor-pointer rounded-full bg-emerald py-2.5 text-[14px] font-semibold text-paper transition hover:bg-emerald-strong disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3"
             >
-              {claimed ? 'Claimed ✓' : claimable > 0 ? `Claim ${eth(claimable)} ETH` : 'Nothing to claim'}
+              {claiming ? 'Claiming…' : claimable > 0 ? `Claim ${eth(claimable)} ETH` : !wallet.account ? 'Connect to claim' : 'Nothing to claim'}
             </button>
-            {claimable <= 0 && (
+            {claimErr && <p className="mt-2 break-words text-[11px] text-clay">{claimErr}</p>}
+            {claimable <= 0 && !claimErr && (
               <p className="mt-2 text-[11px] leading-relaxed text-ink-3">
                 Hold {ticker} to earn a share of every trade's ETH tax.
               </p>

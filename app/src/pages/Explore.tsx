@@ -22,6 +22,21 @@ export function Explore({ coins: all, onOpen }: { coins: Launch[]; onOpen: (id: 
   // king of the hill: the coin with the most volume
   const king = [...all].sort((a, b) => b.volume - a.volume)[0]
 
+  if (all.length === 0) {
+    return (
+      <main className="pb-24">
+        <div className="rise-in flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center">
+          <span className="text-[28px]">🪶</span>
+          <p className="font-display text-[18px] font-bold text-ink">Loading live coins…</p>
+          <p className="max-w-sm text-[13px] leading-relaxed text-ink-3">
+            Reading launches from the Loxley launchpad on Robinhood Chain. If nothing appears,
+            no coins have launched yet — be the first with “Create coin”.
+          </p>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="pb-24">
       {/* king of the hill */}

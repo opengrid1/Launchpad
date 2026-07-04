@@ -1,4 +1,4 @@
-import { LAUNCHES, supplyOf, type Launch } from '../data/launches'
+import { supplyOf, type Launch } from '../data/launches'
 
 /**
  * Realtime client. A single source of truth that streams every live value
@@ -45,11 +45,6 @@ export const EXPLORER = 'https://8crv4vmq6tiu1yqr.blockscout.com'
 const txHash = () => '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
 
 const ADDRS = ['0x9f…2a1d', '0x3c…88fe', '0x71…9F02', '0xaa…04c1', '0x5d…4a0b', '0x08…b3c2', '0xdd…4f19', '0xc0…7b31']
-const GLYPHS = ['🐸', '🐕', '🌙', '🔥', '🦊', '🐐', '💎', '🍄', '👑', '🚀', '🥷', '🪵']
-const NAMES: [string, string][] = [
-  ['Fletcher', 'FLET'], ['Oakenshield', 'OAK'], ['Wren', 'WREN'], ['Thornbush', 'THORN'],
-  ['Marian', 'MRN'], ['Yeoman', 'YMN'], ['Quiver', 'QVR'], ['Bramble', 'BRMB'], ['Hood', 'HOOD'],
-]
 
 function hash(str: string): number {
   let h = 0
@@ -75,7 +70,7 @@ function seedSeries(seed: string, base: number, n: number): number[] {
 type Channel = string
 
 class RealtimeClient {
-  private coins: Launch[] = [...LAUNCHES]
+  private coins: Launch[] = []
   private market = new Map<number, Market>()
   private activity: Activity[] = []
   private listeners = new Map<Channel, Set<() => void>>()
@@ -173,8 +168,6 @@ class RealtimeClient {
       this.emit(`market:${c.id}`)
     }
 
-    // other users launching still streams onto the board (no toast for those)
-    if (Math.random() < 0.03) this.autoLaunch()
   }
 
   private makeTrade(): Trade {
@@ -216,34 +209,19 @@ class RealtimeClient {
     this.emit('board')
   }
 
-  private autoLaunch() {
-    const [name, symbol] = NAMES[Math.floor(Math.random() * NAMES.length)]
-    const uniq = symbol + Math.floor(Math.random() * 90 + 10)
-    const startMcapUsd = 2500
-    const price = startMcapUsd / (1_000_000_000 * 3200)
-    this.insertCoin({
-      id: Date.now() + Math.floor(Math.random() * 1000),
-      name,
-      symbol: uniq,
-      glyph: GLYPHS[Math.floor(Math.random() * GLYPHS.length)],
-      tagline: 'A fresh Loxley launch. Just deployed.',
-      tokenAddress: '0x' + Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0') + '…' + Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0'),
-      priceEth: price,
-      tokensForSale: 0,
-      tokensForLiquidity: 1_000_000_000,
-      liquidityBps: 10_000,
-      tradeFeeBps: 100,
-      volume: 0,
-      rewardsPaid: 0,
-      holders: 1,
-      createdAgo: 'just now',
-      buyers: 1,
-      status: 'live',
-      creator: ADDRS[Math.floor(Math.random() * ADDRS.length)],
-      yourTokens: 0,
-      yourHolderRewards: 0,
-      yourRebate: 0,
-    })
+  /** Load the live on-chain launches. Merges by id so existing coins keep
+   *  their running chart/tape; new coins get a fresh market seeded at the
+   *  real price. */
+  loadCoins(list: Launch[]) {
+    const byId = new Map(this.coins.map((c) => [c.id, c]))
+    for (const c of list) {
+      if (!this.market.has(c.id)) this.market.set(c.id, this.seedMarket(c))
+      byId.set(c.id, { ...byId.get(c.id), ...c })
+    }
+    // newest first (list already sorted newest→oldest on-chain)
+    const order = list.map((c) => c.id)
+    this.coins = [...order.map((id) => byId.get(id)!), ...this.coins.filter((c) => !order.includes(c.id))]
+    this.emit('board')
   }
 
   // ---- user action (REST-shaped) -------------------------------------------

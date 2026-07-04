@@ -6,6 +6,8 @@ import { Create } from './pages/Create'
 import { Toasts } from './components/Toasts'
 import { realtime } from './realtime/store'
 import { useCoins } from './realtime/hooks'
+import { loadChain } from './web3/loadChain'
+import { useWallet } from './web3/useWallet'
 
 export type Route = { page: 'explore' } | { page: 'create' } | { page: 'launch'; id: number }
 
@@ -25,10 +27,15 @@ function pathToRoute(path: string): Route {
 export default function App() {
   const [route, setRoute] = useState<Route>(() => pathToRoute(window.location.pathname))
   const coins = useCoins()
+  const wallet = useWallet()
 
-  // start the realtime stream (WebSocket seam) once
+  // start the market stream + load the live on-chain launches
   useEffect(() => {
     realtime.connect()
+    loadChain().catch((e) => console.error('loadChain failed', e))
+    const onFocus = () => loadChain().catch(() => {})
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [])
 
   // real client-side routing via the History API — no full-page reloads
@@ -52,7 +59,7 @@ export default function App() {
     <div className="min-h-screen">
       <div className="sticky top-0 z-50 border-b border-line bg-paper/80 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <Header route={route} onNavigate={navigate} />
+          <Header route={route} onNavigate={navigate} wallet={wallet} />
         </div>
       </div>
 
@@ -60,15 +67,20 @@ export default function App() {
         {route.page === 'explore' && <Explore coins={coins} onOpen={(id) => navigate({ page: 'launch', id })} />}
         {route.page === 'create' && (
           <Create
+            wallet={wallet}
             onBack={() => navigate({ page: 'explore' })}
-            onLaunch={(coin) => {
-              realtime.createCoin(coin)
-              navigate({ page: 'launch', id: coin.id })
+            onLaunched={async () => {
+              await loadChain().catch(() => {})
+              navigate({ page: 'explore' })
             }}
           />
         )}
-        {route.page === 'launch' && (
-          <LaunchDetail launch={coins.find((l) => l.id === route.id) ?? coins[0]} onBack={() => navigate({ page: 'explore' })} />
+        {route.page === 'launch' && coins.length > 0 && (
+          <LaunchDetail
+            launch={coins.find((l) => l.id === route.id) ?? coins[0]}
+            wallet={wallet}
+            onBack={() => navigate({ page: 'explore' })}
+          />
         )}
       </div>
 
