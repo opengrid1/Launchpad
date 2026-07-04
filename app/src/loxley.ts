@@ -18,6 +18,7 @@ export const LAUNCHPAD = '0xeae2b170c9c0a765887c285808e32d4eec3c4687'
 export const POOL_MANAGER = '0x8366a39CC670B4001A1121B8F6A443A643e40951'
 export const UNIVERSAL_ROUTER = '0x8876789976dEcBfCbBbe364623C63652db8C0904'
 export const PERMIT2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3'
+export const V4_QUOTER = '0x8dc178efb8111bb0973dd9d722ebeff267c98f94'
 
 export const LAUNCHPAD_ABI = [
   'function createToken(string name, string symbol, uint256 totalSupply, address creator, uint256 minDevBuyTokens, (string image, string description, string twitter, string telegram, string website) meta) payable returns (address)',
@@ -423,14 +424,41 @@ function encodeV4SwapInput(info: PoolInfo, zeroForOne: boolean, amountIn: bigint
 
 const bpsOf = (slippagePct: number) => BigInt(Math.max(0, Math.round((100 - slippagePct) * 100)))
 
+const QUOTER_ABI = [
+  'function quoteExactInputSingle((tuple(address,address,uint24,int24,address) poolKey, bool zeroForOne, uint128 exactAmount, bytes hookData) params) returns (uint256 amountOut, uint256 gasEstimate)',
+]
+
+/** Real expected output for an exact-input swap, from the v4 Quoter. This is
+ *  what makes slippage correct — spot price ignores the single-sided pool's
+ *  price impact, which is what was reverting swaps. */
+async function quoteExactIn(info: PoolInfo, zeroForOne: boolean, amountIn: bigint): Promise<bigint> {
+  const q = new ethers.Contract(V4_QUOTER, QUOTER_ABI, readProvider())
+  const poolKey = [info.currency0, info.currency1, info.fee, info.tickSpacing, info.hooks]
+  const [amountOut] = await q.quoteExactInputSingle.staticCall([poolKey, zeroForOne, amountIn, '0x'])
+  return amountOut as bigint
+}
+
+/** Public quote helpers for the UI (floats). */
+export async function quoteBuy(tokenAddr: string, ethIn: string): Promise<number> {
+  const info = await poolInfo(tokenAddr)
+  if (!info || !ethIn || Number(ethIn) <= 0) return 0
+  const out = await quoteExactIn(info, true, ethers.parseEther(ethIn))
+  return Number(ethers.formatUnits(out, 18))
+}
+export async function quoteSell(tokenAddr: string, tokenIn: string): Promise<number> {
+  const info = await poolInfo(tokenAddr)
+  if (!info || !tokenIn || Number(tokenIn) <= 0) return 0
+  const out = await quoteExactIn(info, false, ethers.parseUnits(tokenIn, 18))
+  return Number(ethers.formatEther(out))
+}
+
 /** Buy a token with ETH. `ethIn` is a string amount (e.g. "0.05"). */
 export async function buy(signer: ethers.Signer, tokenAddr: string, ethIn: string, slippagePct = 1) {
   const info = await poolInfo(tokenAddr)
   if (!info) throw new Error('Pool not found for this token')
   const amountIn = ethers.parseEther(ethIn)
-  const price = await priceWei(tokenAddr) // ETH wei per 1 whole token
-  const expectedRaw = price > 0n ? (amountIn * 10n ** 18n) / price : 0n
-  const minOut = (expectedRaw * bpsOf(slippagePct)) / 10000n
+  const quotedOut = await quoteExactIn(info, true, amountIn) // real output (with price impact)
+  const minOut = (quotedOut * bpsOf(slippagePct)) / 10000n
   const input = encodeV4SwapInput(info, true, amountIn, minOut) // ETH(0) → token(1)
   const ur = new ethers.Contract(UNIVERSAL_ROUTER, UR_ABI, signer)
   const tx = await ur.execute(CMD_V4_SWAP, [input], Math.floor(Date.now() / 1000) + 1200, { value: amountIn })
@@ -442,9 +470,8 @@ export async function sell(signer: ethers.Signer, tokenAddr: string, tokenIn: st
   const info = await poolInfo(tokenAddr)
   if (!info) throw new Error('Pool not found for this token')
   const amountIn = ethers.parseUnits(tokenIn, 18)
-  const price = await priceWei(tokenAddr)
-  const expectedEth = (amountIn * price) / 10n ** 18n
-  const minOut = (expectedEth * bpsOf(slippagePct)) / 10000n
+  const quotedEth = await quoteExactIn(info, false, amountIn) // real ETH out (with price impact)
+  const minOut = (quotedEth * bpsOf(slippagePct)) / 10000n
 
   // Permit2 flow: token → Permit2 (once), then Permit2 → Universal Router.
   const owner = await signer.getAddress()

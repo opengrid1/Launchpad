@@ -118,6 +118,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   const [ethBal, setEthBal] = useState(0)
   const [tokBal, setTokBal] = useState(0)
   const [livePrice, setLivePrice] = useState(0)
+  const [quotedOut, setQuotedOut] = useState<number | null>(null)
   const [claimableHolder, setClaimableHolder] = useState(0)
   const [creatorFees, setCreatorFees] = useState(0)
   const [activity, setActivity] = useState<loxley.PoolActivity | null>(null)
@@ -212,7 +213,20 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
 
   const amt = parseFloat(amount) || 0
   const px = priceEthNow || live // real ETH-per-token
-  const out = side === 'buy' ? amt / px : amt * px
+  const spotOut = side === 'buy' ? amt / px : amt * px
+
+  // real quote from the v4 Quoter (accounts for price impact), debounced
+  useEffect(() => {
+    if (!isRealToken || !amt) { setQuotedOut(null); return }
+    let alive = true
+    const t = setTimeout(() => {
+      const q = side === 'buy' ? loxley.quoteBuy(launch.tokenAddress, amount) : loxley.quoteSell(launch.tokenAddress, amount)
+      q.then((v) => { if (alive) setQuotedOut(v) }).catch(() => { if (alive) setQuotedOut(null) })
+    }, 400)
+    return () => { alive = false; clearTimeout(t) }
+  }, [amount, side, launch.tokenAddress, isRealToken, amt])
+
+  const out = quotedOut ?? spotOut
 
   async function doTrade() {
     if (!amt || trading) return
