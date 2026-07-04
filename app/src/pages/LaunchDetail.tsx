@@ -117,6 +117,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   const [tradeOk, setTradeOk] = useState(false)
   const [ethBal, setEthBal] = useState(0)
   const [tokBal, setTokBal] = useState(0)
+  const [livePrice, setLivePrice] = useState(0)
   const [claimableHolder, setClaimableHolder] = useState(0)
   const [creatorFees, setCreatorFees] = useState(0)
   const [activity, setActivity] = useState<loxley.PoolActivity | null>(null)
@@ -124,7 +125,8 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
 
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
   const { price: live, points, changePct: simChange, trades: simTrades } = useMarket(launch.id)
-  const mcap = mcapUsd(launch.priceEth, launch) // real price → USD market cap
+  const priceEthNow = livePrice || launch.priceEth // live-polled ETH per token
+  const mcap = mcapUsd(priceEthNow, launch) // real price → USD market cap
   const mcapMult = supplyOf(launch) * ETH_USD // price(ETH) -> market cap (USD)
   const holderRows =
     activity && activity.holderList.length
@@ -146,18 +148,20 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
     return () => { alive = false }
   }, [wallet.account, launch.tokenAddress, isRealToken])
 
-  // real on-chain activity: price series, trade tape, volume, change, holders —
-  // all reconstructed from the pool's v4 Swap + the token's Transfer events.
+  // real on-chain activity, polled live: price series, trade tape, volume,
+  // change, holders — reconstructed from the pool's v4 Swap + Transfer events.
+  // Re-fetched on an interval so trades by anyone show up without a refresh.
   useEffect(() => {
+    if (!isRealToken) { setActivity(null); return }
     let alive = true
     setActivity(null)
-    if (isRealToken) {
-      loxley
-        .fetchPoolActivity(launch.tokenAddress, supplyOf(launch), ETH_USD, wallet.account)
-        .then((a) => { if (alive) setActivity(a) })
-        .catch(() => {})
+    const poll = () => {
+      loxley.fetchPoolActivity(launch.tokenAddress, supplyOf(launch), ETH_USD, wallet.account).then((a) => { if (alive) setActivity(a) }).catch(() => {})
+      loxley.priceEthOf(launch.tokenAddress).then((p) => { if (alive && p > 0) setLivePrice(p) }).catch(() => {})
     }
-    return () => { alive = false }
+    poll()
+    const id = setInterval(() => { if (!document.hidden) poll() }, 12000)
+    return () => { alive = false; clearInterval(id) }
   }, [launch.tokenAddress, isRealToken, wallet.account])
 
   // connected wallet's real balances (ETH + this token)
@@ -207,7 +211,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   }
 
   const amt = parseFloat(amount) || 0
-  const px = launch.priceEth || live // real ETH-per-token
+  const px = priceEthNow || live // real ETH-per-token
   const out = side === 'buy' ? amt / px : amt * px
 
   async function doTrade() {
@@ -252,12 +256,12 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
               {launch.name} <span className="text-[14px] font-semibold text-ink-3">${ticker}</span>
             </h1>
             <p className="tnum mt-1.5 text-[12px] text-ink-3">
-              {usd(mcap)} mcap · {price(launch.priceEth)} ETH
+              {usd(mcap)} mcap · {price(priceEthNow)} ETH
             </p>
           </div>
         </div>
         <div className="text-right">
-          <p className="tnum text-[22px] font-bold leading-none text-ink">{price(launch.priceEth)} <span className="text-[12px] text-ink-3">ETH</span></p>
+          <p className="tnum text-[22px] font-bold leading-none text-ink">{price(priceEthNow)} <span className="text-[12px] text-ink-3">ETH</span></p>
           <p className={`tnum mt-1.5 text-[13px] font-semibold ${up ? 'text-emerald-strong' : 'text-clay'}`}>
             {up ? '▲' : '▼'} {Math.abs(changePct).toFixed(2)}%
           </p>

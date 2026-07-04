@@ -35,7 +35,12 @@ export default function App() {
     loadChain().catch((e) => console.error('loadChain failed', e))
     const onFocus = () => loadChain().catch(() => {})
     window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
+    // live board: re-read launches/prices so cards update without a refresh
+    const id = setInterval(() => { if (!document.hidden) loadChain().catch(() => {}) }, 20000)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      clearInterval(id)
+    }
   }, [])
 
   // real client-side routing via the History API — no full-page reloads
