@@ -3,7 +3,6 @@ import { compact, ETH_USD, eth, mcapUsd, price, supplyOf, topHolders, usd, type 
 import { Monogram } from '../components/Monogram'
 import { TVChart } from '../components/TVChart'
 import { useMarket } from '../realtime/hooks'
-import { realtime } from '../realtime/store'
 import * as loxley from '../loxley'
 import type { Wallet } from '../web3/useWallet'
 
@@ -112,6 +111,10 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   const [feed, setFeed] = useState<'trades' | 'holders'>('trades')
   const [claiming, setClaiming] = useState(false)
   const [claimErr, setClaimErr] = useState<string | null>(null)
+  const [slippage, setSlippage] = useState(1)
+  const [trading, setTrading] = useState(false)
+  const [tradeErr, setTradeErr] = useState<string | null>(null)
+  const [tradeOk, setTradeOk] = useState(false)
   const [claimableHolder, setClaimableHolder] = useState(0)
   const [creatorFees, setCreatorFees] = useState(0)
   const [activity, setActivity] = useState<loxley.PoolActivity | null>(null)
@@ -190,6 +193,32 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
 
   const amt = parseFloat(amount) || 0
   const out = side === 'buy' ? amt / live : amt * live
+
+  async function doTrade() {
+    if (!amt || trading) return
+    if (!isRealToken) {
+      setTradeErr('This is a demo coin — trading is only live for on-chain tokens.')
+      return
+    }
+    setTradeErr(null)
+    setTradeOk(false)
+    setTrading(true)
+    try {
+      let signer = wallet.signer
+      if (!signer) signer = (await loxley.connectWallet()).signer
+      if (side === 'buy') await loxley.buy(signer, launch.tokenAddress, amount, slippage)
+      else await loxley.sell(signer, launch.tokenAddress, amount, slippage)
+      setTradeOk(true)
+      setAmount('')
+      // refresh the tape / price shortly after
+      loxley.fetchPoolActivity(launch.tokenAddress, supplyOf(launch), ETH_USD, wallet.account).then(setActivity).catch(() => {})
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Trade failed'
+      setTradeErr(msg.length > 140 ? msg.slice(0, 140) + '…' : msg)
+    } finally {
+      setTrading(false)
+    }
+  }
 
   return (
     <main className="rise-in py-5">
@@ -310,19 +339,45 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
                   ))}
             </div>
 
+            {/* slippage */}
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-[11px] text-ink-3">Max slippage</span>
+              <div className="flex items-center gap-1">
+                {[0.5, 1, 3].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSlippage(s)}
+                    className={`tnum cursor-pointer rounded-md px-2 py-1 text-[11px] transition ${
+                      slippage === s ? 'bg-panel text-ink ring-1 ring-line-2' : 'text-ink-3 hover:text-ink-2'
+                    }`}
+                  >
+                    {s}%
+                  </button>
+                ))}
+                <input
+                  value={slippage}
+                  onChange={(e) => setSlippage(Math.min(50, Math.max(0.1, parseFloat(e.target.value) || 1)))}
+                  inputMode="decimal"
+                  className="tnum w-12 rounded-md bg-panel px-2 py-1 text-right text-[11px] text-ink outline-none ring-1 ring-line focus:ring-emerald/50"
+                />
+              </div>
+            </div>
+
             <button
-              onClick={() => {
-                if (!amt) return
-                realtime.notifyTrade(launch, side, `${eth(side === 'buy' ? amt : out)} ETH`)
-                setAmount('')
-              }}
-              disabled={!amt}
-              className={`mt-4 w-full cursor-pointer rounded-full py-3 text-[14px] font-semibold text-paper transition disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3 ${
+              onClick={doTrade}
+              disabled={!amt || trading}
+              className={`mt-3 w-full cursor-pointer rounded-full py-3 text-[14px] font-semibold text-paper transition disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3 ${
                 side === 'buy' ? 'bg-emerald hover:bg-emerald-strong' : 'bg-clay hover:opacity-90'
               }`}
             >
-              {amt ? `${side === 'buy' ? 'Buy' : 'Sell'} ${ticker}` : 'Enter an amount'}
+              {trading
+                ? side === 'buy' ? 'Buying…' : 'Selling…'
+                : !amt ? 'Enter an amount'
+                : !wallet.account ? `Connect & ${side}`
+                : `${side === 'buy' ? 'Buy' : 'Sell'} ${ticker}`}
             </button>
+            {tradeErr && <p className="mt-2 break-words text-[11px] text-clay">{tradeErr}</p>}
+            {tradeOk && <p className="mt-2 text-[11px] text-emerald-strong">Trade submitted ✓</p>}
             <div className="tnum mt-3 flex items-center justify-between text-[11px] text-ink-3">
               <span>≈ {side === 'buy' ? `${out ? compact(out) : '0'} ${ticker}` : `${eth(out)} ETH`}</span>
               <span>{launch.tradeFeeBps / 100}% tax</span>

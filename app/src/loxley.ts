@@ -16,7 +16,8 @@ export const CHAIN = {
 
 export const LAUNCHPAD = '0xeae2b170c9c0a765887c285808e32d4eec3c4687'
 export const POOL_MANAGER = '0x8366a39CC670B4001A1121B8F6A443A643e40951'
-export const UNIVERSAL_ROUTER = '0x8876789976DEcBFcBBBE364623C63652dB8C0904'
+export const UNIVERSAL_ROUTER = '0x8876789976dEcBfCbBbe364623C63652db8C0904'
+export const PERMIT2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3'
 
 export const LAUNCHPAD_ABI = [
   'function createToken(string name, string symbol, uint256 totalSupply, address creator, uint256 minDevBuyTokens, (string image, string description, string twitter, string telegram, string website) meta) payable returns (address)',
@@ -164,15 +165,35 @@ function sqrtToEthPerToken(sqrtPriceX96: bigint): number {
   return r * r // (2^96/sqrtP)^2 = 1 / (tokens per ETH) = ETH per token
 }
 
-const poolCache: Record<string, { id: string; initBlock: number; initSqrt: bigint } | null> = {}
+interface PoolInfo {
+  id: string
+  initBlock: number
+  initSqrt: bigint
+  fee: number
+  tickSpacing: number
+  hooks: string
+  currency0: string
+  currency1: string
+}
+const poolCache: Record<string, PoolInfo | null> = {}
 
-async function poolInfo(tokenAddr: string) {
+async function poolInfo(tokenAddr: string): Promise<PoolInfo | null> {
   const key = tokenAddr.toLowerCase()
   if (key in poolCache) return poolCache[key]
   const pm = new ethers.Contract(POOL_MANAGER, POOL_MANAGER_ABI, readProvider())
   const inits = (await pm.queryFilter(pm.filters.Initialize(null, null, tokenAddr), 0)) as ethers.EventLog[]
-  const info = inits[0]
-    ? { id: inits[0].args.id as string, initBlock: inits[0].blockNumber, initSqrt: inits[0].args.sqrtPriceX96 as bigint }
+  const e = inits[0]
+  const info: PoolInfo | null = e
+    ? {
+        id: e.args.id as string,
+        initBlock: e.blockNumber,
+        initSqrt: e.args.sqrtPriceX96 as bigint,
+        fee: Number(e.args.fee),
+        tickSpacing: Number(e.args.tickSpacing),
+        hooks: e.args.hooks as string,
+        currency0: e.args.currency0 as string,
+        currency1: e.args.currency1 as string,
+      }
     : null
   poolCache[key] = info
   return info
@@ -360,6 +381,73 @@ export async function claimCreatorFees(signer: ethers.Signer, tokenAddr: string)
 /** Holder claims their ETH dividends. */
 export async function claimEthDividends(signer: ethers.Signer, tokenAddr: string) {
   return (await token(tokenAddr, signer).claimEth()).wait()
+}
+
+// ---- trading: real Uniswap v4 swaps via the Universal Router --------------
+// NOTE: this path is best-effort and unverified end-to-end (no wallet in the
+// build env to sign with). amountOutMinimum enforces slippage, so a wrong quote
+// reverts rather than losing funds — test with a small amount first.
+const UR_ABI = ['function execute(bytes commands, bytes[] inputs, uint256 deadline) payable']
+const CMD_V4_SWAP = '0x10'
+// v4 Actions: SWAP_EXACT_IN_SINGLE=0x06, SETTLE_ALL=0x0c, TAKE_ALL=0x0f
+const V4_ACTIONS = '0x060c0f'
+const coder = ethers.AbiCoder.defaultAbiCoder()
+
+function encodeV4SwapInput(info: PoolInfo, zeroForOne: boolean, amountIn: bigint, minOut: bigint): string {
+  const poolKey = [info.currency0, info.currency1, info.fee, info.tickSpacing, info.hooks]
+  const inCur = zeroForOne ? info.currency0 : info.currency1
+  const outCur = zeroForOne ? info.currency1 : info.currency0
+  const swapParams = coder.encode(
+    ['tuple(tuple(address,address,uint24,int24,address),bool,uint128,uint128,bytes)'],
+    [[poolKey, zeroForOne, amountIn, minOut, '0x']],
+  )
+  const settleAll = coder.encode(['address', 'uint256'], [inCur, amountIn])
+  const takeAll = coder.encode(['address', 'uint256'], [outCur, minOut])
+  return coder.encode(['bytes', 'bytes[]'], [V4_ACTIONS, [swapParams, settleAll, takeAll]])
+}
+
+const bpsOf = (slippagePct: number) => BigInt(Math.max(0, Math.round((100 - slippagePct) * 100)))
+
+/** Buy a token with ETH. `ethIn` is a string amount (e.g. "0.05"). */
+export async function buy(signer: ethers.Signer, tokenAddr: string, ethIn: string, slippagePct = 1) {
+  const info = await poolInfo(tokenAddr)
+  if (!info) throw new Error('Pool not found for this token')
+  const amountIn = ethers.parseEther(ethIn)
+  const price = await priceWei(tokenAddr) // ETH wei per 1 whole token
+  const expectedRaw = price > 0n ? (amountIn * 10n ** 18n) / price : 0n
+  const minOut = (expectedRaw * bpsOf(slippagePct)) / 10000n
+  const input = encodeV4SwapInput(info, true, amountIn, minOut) // ETH(0) → token(1)
+  const ur = new ethers.Contract(UNIVERSAL_ROUTER, UR_ABI, signer)
+  const tx = await ur.execute(CMD_V4_SWAP, [input], Math.floor(Date.now() / 1000) + 1200, { value: amountIn })
+  return tx.wait()
+}
+
+/** Sell a token for ETH. `tokenIn` is a string amount of whole tokens. */
+export async function sell(signer: ethers.Signer, tokenAddr: string, tokenIn: string, slippagePct = 1) {
+  const info = await poolInfo(tokenAddr)
+  if (!info) throw new Error('Pool not found for this token')
+  const amountIn = ethers.parseUnits(tokenIn, 18)
+  const price = await priceWei(tokenAddr)
+  const expectedEth = (amountIn * price) / 10n ** 18n
+  const minOut = (expectedEth * bpsOf(slippagePct)) / 10000n
+
+  // Permit2 flow: token → Permit2 (once), then Permit2 → Universal Router.
+  const owner = await signer.getAddress()
+  const erc = new ethers.Contract(
+    tokenAddr,
+    ['function allowance(address,address) view returns (uint256)', 'function approve(address,uint256) returns (bool)'],
+    signer,
+  )
+  if ((await erc.allowance(owner, PERMIT2)) < amountIn) {
+    await (await erc.approve(PERMIT2, ethers.MaxUint256)).wait()
+  }
+  const permit2 = new ethers.Contract(PERMIT2, ['function approve(address token, address spender, uint160 amount, uint48 expiration)'], signer)
+  await (await permit2.approve(tokenAddr, UNIVERSAL_ROUTER, amountIn, Math.floor(Date.now() / 1000) + 3600)).wait()
+
+  const input = encodeV4SwapInput(info, false, amountIn, minOut) // token(1) → ETH(0)
+  const ur = new ethers.Contract(UNIVERSAL_ROUTER, UR_ABI, signer)
+  const tx = await ur.execute(CMD_V4_SWAP, [input], Math.floor(Date.now() / 1000) + 1200)
+  return tx.wait()
 }
 
 // ---- mapping to the UI's Launch shape ------------------------------------

@@ -50,6 +50,14 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
+  // old/numeric links (e.g. /coin/1682536824) self-correct to the real address
+  useEffect(() => {
+    if (route.page === 'launch' && coins.length) {
+      const c = coins.find((l) => l.tokenAddress.toLowerCase() === route.address.toLowerCase())
+      if (!c && coins[0]) window.history.replaceState({}, '', `/coin/${coins[0].tokenAddress}`)
+    }
+  }, [route, coins])
+
   const openBySymbol = (symbol: string) => {
     const c = coins.find((l) => l.symbol === symbol)
     if (c) navigate({ page: 'launch', address: c.tokenAddress })
