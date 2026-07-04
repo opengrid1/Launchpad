@@ -306,6 +306,12 @@ export async function fetchSwapStats(tokenAddr: string, supplyTokens: number, et
   const tsByBlock: Record<number, number> = {}
   await Promise.all(blocks.map(async (b) => { tsByBlock[b] = (await prov.getBlock(b))?.timestamp ?? 0 }))
 
+  // The Swap event's `sender` is the router/launchpad, not the trader. Resolve
+  // the real trader from each transaction's `from` (deduped by tx hash).
+  const txHashes = [...new Set(swaps.map((s) => s.transactionHash))]
+  const traderByTx: Record<string, string> = {}
+  await Promise.all(txHashes.map(async (h) => { traderByTx[h] = (await prov.getTransaction(h))?.from ?? '' }))
+
   const mcap = (sqrt: bigint) => sqrtToEthPerToken(sqrt) * supplyTokens * ethUsdPrice
   const series = [mcap(info.initSqrt)]
   const pts = [{ t: tsByBlock[info.initBlock] || 0, v: series[0] }]
@@ -320,7 +326,8 @@ export async function fetchSwapStats(tokenAddr: string, supplyTokens: number, et
     series.push(m)
     const t = tsByBlock[s.blockNumber] || 0
     pts.push({ t, v: m })
-    trades.push({ id: ++id, side: a0 < 0n ? 'buy' : 'sell', who: short(s.args.sender as string), amount: `${fmtEth(ethAbs)} ETH`, when: t * 1000 })
+    const trader = traderByTx[s.transactionHash] || (s.args.sender as string)
+    trades.push({ id: ++id, side: a0 < 0n ? 'buy' : 'sell', who: short(trader), amount: `${fmtEth(ethAbs)} ETH`, when: t * 1000 })
   }
   trades.reverse()
   const changePct = series.length >= 2 ? ((series[series.length - 1] - series[0]) / series[0]) * 100 : 0
