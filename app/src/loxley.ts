@@ -94,6 +94,16 @@ export async function priceWei(tokenAddr: string): Promise<bigint> {
   return launchpad(readProvider()).getPrice(tokenAddr)
 }
 
+/** Connected wallet's native ETH balance (float). */
+export async function ethBalance(account: string): Promise<number> {
+  return Number(ethers.formatEther(await readProvider().getBalance(account)))
+}
+
+/** Connected wallet's token balance (float, whole tokens). */
+export async function tokenBalance(tokenAddr: string, account: string): Promise<number> {
+  return Number(ethers.formatUnits(await token(tokenAddr, readProvider()).balanceOf(account), 18))
+}
+
 export async function claimableEth(tokenAddr: string, account: string): Promise<number> {
   const w = await token(tokenAddr, readProvider()).withdrawableEth(account)
   return Number(w) / 1e18

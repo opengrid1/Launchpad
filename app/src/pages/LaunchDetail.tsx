@@ -115,6 +115,8 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   const [trading, setTrading] = useState(false)
   const [tradeErr, setTradeErr] = useState<string | null>(null)
   const [tradeOk, setTradeOk] = useState(false)
+  const [ethBal, setEthBal] = useState(0)
+  const [tokBal, setTokBal] = useState(0)
   const [claimableHolder, setClaimableHolder] = useState(0)
   const [creatorFees, setCreatorFees] = useState(0)
   const [activity, setActivity] = useState<loxley.PoolActivity | null>(null)
@@ -158,6 +160,19 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
     return () => { alive = false }
   }, [launch.tokenAddress, isRealToken, wallet.account])
 
+  // connected wallet's real balances (ETH + this token)
+  const refreshBalances = () => {
+    if (!wallet.account || !isRealToken) return
+    loxley.ethBalance(wallet.account).then(setEthBal).catch(() => {})
+    loxley.tokenBalance(launch.tokenAddress, wallet.account).then(setTokBal).catch(() => {})
+  }
+  useEffect(() => {
+    setEthBal(0)
+    setTokBal(0)
+    refreshBalances()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet.account, launch.tokenAddress, isRealToken])
+
   // prefer real data; fall back to the live feed only until it loads
   const chartPoints = points.map((p) => p * mcapMult)
   const realCandles = activity && activity.candles.length ? activity.candles : undefined
@@ -192,7 +207,8 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   }
 
   const amt = parseFloat(amount) || 0
-  const out = side === 'buy' ? amt / live : amt * live
+  const px = launch.priceEth || live // real ETH-per-token
+  const out = side === 'buy' ? amt / px : amt * px
 
   async function doTrade() {
     if (!amt || trading) return
@@ -210,8 +226,9 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
       else await loxley.sell(signer, launch.tokenAddress, amount, slippage)
       setTradeOk(true)
       setAmount('')
-      // refresh the tape / price shortly after
+      // refresh the tape / price / balances shortly after
       loxley.fetchPoolActivity(launch.tokenAddress, supplyOf(launch), ETH_USD, wallet.account).then(setActivity).catch(() => {})
+      refreshBalances()
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Trade failed'
       setTradeErr(msg.length > 140 ? msg.slice(0, 140) + '…' : msg)
@@ -314,15 +331,15 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
               <span className="tnum shrink-0 text-[13px] font-semibold text-ink-2">{side === 'buy' ? 'ETH' : ticker}</span>
             </div>
             <p className="tnum mt-1.5 text-[11px] text-ink-3">
-              balance {side === 'buy' ? '3.42 ETH' : `${compact(launch.yourTokens)} ${ticker}`}
+              balance {side === 'buy' ? `${eth(ethBal)} ETH` : `${compact(tokBal)} ${ticker}`}
             </p>
 
             <div className="mt-3 flex flex-wrap gap-1.5">
               {side === 'buy'
-                ? ([['0.1', '0.1'], ['0.5', '0.5'], ['1', '1'], ['max', '3.42']] as const).map(([lbl, val]) => (
+                ? ([['0.01', 0.01], ['0.1', 0.1], ['0.5', 0.5], ['max', Math.max(0, ethBal - 0.001)]] as const).map(([lbl, val]) => (
                     <button
                       key={lbl}
-                      onClick={() => setAmount(val)}
+                      onClick={() => setAmount(String(val))}
                       className="tnum flex-1 cursor-pointer rounded-lg bg-panel py-1.5 text-[12px] text-ink-2 transition hover:text-ink"
                     >
                       {lbl}
@@ -331,7 +348,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
                 : ([['25%', 0.25], ['50%', 0.5], ['100%', 1]] as const).map(([lbl, frac]) => (
                     <button
                       key={lbl}
-                      onClick={() => setAmount(String(Math.floor(launch.yourTokens * frac)))}
+                      onClick={() => setAmount(String(Math.floor(tokBal * frac)))}
                       className="tnum flex-1 cursor-pointer rounded-lg bg-panel py-1.5 text-[12px] text-ink-2 transition hover:text-ink"
                     >
                       {lbl}
