@@ -6,19 +6,19 @@ import { realtime } from '../realtime/store'
  *  Safe to call repeatedly (it merges). Returns the count loaded. */
 export async function loadChain(): Promise<number> {
   const prov = readProvider()
-  const [usd, blockNow, launches] = await Promise.all([
+  const [usd, launches] = await Promise.all([
     ethUsd().catch(() => 0),
-    prov.getBlockNumber().catch(() => 0),
     fetchLaunches(),
   ])
   if (usd > 0) setEthUsd(usd)
   const ethUsdNow = usd > 0 ? usd : 0
 
-  // current price per token (live), in parallel
-  const prices = await Promise.all(
-    launches.map((l) => priceWei(l.token).catch(() => l.priceWeiPerToken)),
-  )
-  const coins = launches.map((l, i) => toLaunch(l, prices[i], blockNow))
+  // current price + real launch timestamp per token, in parallel
+  const [prices, launchTimes] = await Promise.all([
+    Promise.all(launches.map((l) => priceWei(l.token).catch(() => l.priceWeiPerToken))),
+    Promise.all(launches.map((l) => prov.getBlock(l.block).then((b) => b?.timestamp ?? 0).catch(() => 0))),
+  ])
+  const coins = launches.map((l, i) => toLaunch(l, prices[i], launchTimes[i]))
 
   // enrich each card with real change % and volume from its swaps
   await Promise.all(

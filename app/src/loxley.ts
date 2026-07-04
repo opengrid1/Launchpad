@@ -369,9 +369,8 @@ function idFromAddress(addr: string): number {
   return h % 2_000_000_000
 }
 
-function ago(blockNow: number, blockThen: number): string {
-  // Robinhood Chain ~2s blocks; rough age for display.
-  const secs = Math.max(0, (blockNow - blockThen) * 2)
+function ago(secs: number): string {
+  if (secs <= 0) return 'recently'
   if (secs < 90) return 'just now'
   const m = Math.round(secs / 60)
   if (m < 60) return `${m}m ago`
@@ -395,7 +394,7 @@ function normalizeImage(uri?: string): string | undefined {
   return undefined
 }
 
-export function toLaunch(o: OnchainLaunch, currentPriceWei: bigint, blockNow: number): Launch {
+export function toLaunch(o: OnchainLaunch, currentPriceWei: bigint, launchTsSec: number): Launch {
   const supply = Number(ethers.formatUnits(o.totalSupply, 18))
   const priceEth = Number(ethers.formatEther(currentPriceWei || o.priceWeiPerToken))
   const img = normalizeImage(o.image)
@@ -420,7 +419,7 @@ export function toLaunch(o: OnchainLaunch, currentPriceWei: bigint, blockNow: nu
     volume: 0,
     rewardsPaid: 0,
     holders: 0,
-    createdAgo: ago(blockNow, o.block),
+    createdAgo: ago(launchTsSec > 0 ? Math.floor(Date.now() / 1000) - launchTsSec : 0),
     buyers: 0,
     status: 'live',
     creator: short(o.creator),
