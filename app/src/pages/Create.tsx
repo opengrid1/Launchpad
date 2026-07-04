@@ -18,6 +18,31 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 const inputCls =
   'tnum w-full rounded-lg bg-panel px-3.5 py-2.5 text-[14px] text-ink outline-none ring-1 ring-line transition placeholder:text-ink-3/40 focus:ring-emerald/50'
 
+// Uploaded images must live on-chain (no IPFS/host wired), so a blob: URL
+// won't survive. Resize to a small JPEG data-URI that can be stored in the
+// token metadata and rendered by anyone.
+async function fileToDataUri(file: File, max = 160, quality = 0.72): Promise<string> {
+  const url = URL.createObjectURL(file)
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new Image()
+      i.onload = () => res(i)
+      i.onerror = rej
+      i.src = url
+    })
+    const scale = Math.min(1, max / Math.max(img.width, img.height))
+    const w = Math.max(1, Math.round(img.width * scale))
+    const h = Math.max(1, Math.round(img.height * scale))
+    const c = document.createElement('canvas')
+    c.width = w
+    c.height = h
+    c.getContext('2d')!.drawImage(img, 0, 0, w, h)
+    return c.toDataURL('image/jpeg', quality)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 // fixed terms enforced by the launchpad contract: 1B supply, 1% tax, whole
 // supply single-sided in the v4 pool, price derived from the virtual mcap.
 const SUPPLY = 1_000_000_000
@@ -105,9 +130,14 @@ export function Create({ onBack, onLaunched, wallet }: { onBack: () => void; onL
                 type="file"
                 accept="image/*"
                 className="absolute inset-0 cursor-pointer opacity-0"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const f = e.target.files?.[0]
-                  if (f) setImage(URL.createObjectURL(f))
+                  if (!f) return
+                  try {
+                    setImage(await fileToDataUri(f))
+                  } catch {
+                    setImage('')
+                  }
                 }}
               />
             </label>
