@@ -18,6 +18,7 @@ function CopyIcon() {
 
 function CopyRow({ label, value }: { label: string; value: string }) {
   const [done, setDone] = useState(false)
+  const display = value.length > 20 ? `${value.slice(0, 10)}…${value.slice(-8)}` : value
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
       <span className="eyebrow shrink-0">{label}</span>
@@ -27,13 +28,13 @@ function CopyRow({ label, value }: { label: string; value: string }) {
           setDone(true)
           setTimeout(() => setDone(false), 1200)
         }}
-        className={`tnum inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-[12px] ring-1 transition ${
+        className={`tnum inline-flex max-w-full shrink cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-[12px] ring-1 transition ${
           done ? 'bg-emerald-tint text-emerald-strong ring-emerald/40' : 'bg-panel text-ink ring-line hover:ring-line-2'
         }`}
-        title="Copy to clipboard"
+        title={`Copy ${value}`}
       >
-        {value}
-        <span className={done ? 'text-emerald-strong' : 'text-ink-3'}>{done ? '✓' : <CopyIcon />}</span>
+        <span className="truncate">{display}</span>
+        <span className={`shrink-0 ${done ? 'text-emerald-strong' : 'text-ink-3'}`}>{done ? '✓' : <CopyIcon />}</span>
       </button>
     </div>
   )
@@ -113,12 +114,11 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   const [claimErr, setClaimErr] = useState<string | null>(null)
   const [claimableHolder, setClaimableHolder] = useState(0)
   const [creatorFees, setCreatorFees] = useState(0)
-  const [realPoints, setRealPoints] = useState<number[] | null>(null)
+  const [activity, setActivity] = useState<loxley.PoolActivity | null>(null)
   const tfGroup = TF.find((t) => t.label === tf)?.group ?? 2
 
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
-  const { price: live, points, changePct, trades } = useMarket(launch.id)
-  const up = changePct >= 0
+  const { price: live, points, changePct: simChange, trades: simTrades } = useMarket(launch.id)
   const mcap = mcapUsd(launch.priceEth, launch) // real price → USD market cap
   const mcapMult = supplyOf(launch) * ETH_USD // price(ETH) -> market cap (USD)
   const holders = topHolders(launch)
@@ -138,22 +138,29 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
     return () => { alive = false }
   }, [wallet.account, launch.tokenAddress, isRealToken])
 
-  // real candlestick data: reconstruct the USD market-cap series from the
-  // pool's v4 Swap events (+ the launch price). Falls back to the live feed
-  // only if the token has no on-chain history yet.
+  // real on-chain activity: price series, trade tape, volume, change, holders —
+  // all reconstructed from the pool's v4 Swap + the token's Transfer events.
   useEffect(() => {
     let alive = true
-    setRealPoints(null)
+    setActivity(null)
     if (isRealToken) {
       loxley
-        .fetchMcapSeries(launch.tokenAddress, supplyOf(launch), ETH_USD)
-        .then((s) => { if (alive && s.length) setRealPoints(s.length === 1 ? [s[0], s[0]] : s) })
+        .fetchPoolActivity(launch.tokenAddress, supplyOf(launch), ETH_USD)
+        .then((a) => { if (alive) setActivity(a) })
         .catch(() => {})
     }
     return () => { alive = false }
   }, [launch.tokenAddress, isRealToken])
 
-  const chartPoints = realPoints ?? points.map((p) => p * mcapMult)
+  // prefer real data; fall back to the live feed only until it loads
+  const realSeries = activity && activity.series.length ? activity.series : null
+  const chartPoints = realSeries ?? points.map((p) => p * mcapMult)
+  const chartVariant: 'candle' | 'area' = realSeries && realSeries.length >= 8 ? 'candle' : realSeries ? 'area' : 'candle'
+  const changePct = activity ? activity.changePct : simChange
+  const up = changePct >= 0
+  const volumeEth = activity ? activity.volumeEth : launch.volume
+  const holderCount = activity ? activity.holders : launch.holders
+  const trades = activity ? activity.trades : simTrades
 
   const creatorEarnings = youAreCreator ? creatorFees : 0
   const claimable = claimableHolder + creatorEarnings
@@ -196,14 +203,14 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
               {launch.name} <span className="text-[14px] font-semibold text-ink-3">${ticker}</span>
             </h1>
             <p className="tnum mt-1.5 text-[12px] text-ink-3">
-              {usd(mcap)} mcap · {price(live)} ETH
+              {usd(mcap)} mcap · {price(launch.priceEth)} ETH
             </p>
           </div>
         </div>
         <div className="text-right">
-          <p className="tnum text-[22px] font-bold leading-none text-ink">{price(live)} <span className="text-[12px] text-ink-3">ETH</span></p>
+          <p className="tnum text-[22px] font-bold leading-none text-ink">{price(launch.priceEth)} <span className="text-[12px] text-ink-3">ETH</span></p>
           <p className={`tnum mt-1.5 text-[13px] font-semibold ${up ? 'text-emerald-strong' : 'text-clay'}`}>
-            {up ? '▲' : '▼'} {Math.abs(changePct).toFixed(2)}% · 24h
+            {up ? '▲' : '▼'} {Math.abs(changePct).toFixed(2)}% · since launch
           </p>
         </div>
       </div>
@@ -226,15 +233,15 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
               </div>
             </div>
             <div className="px-2 py-2">
-              <TVChart points={chartPoints} group={tfGroup} height={320} formatter={(v) => '$' + compact(v)} />
+              <TVChart points={chartPoints} group={tfGroup} height={320} variant={chartVariant} formatter={(v) => '$' + compact(v)} />
             </div>
             {/* stat strip under the chart */}
             <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-4 sm:divide-y-0">
               {[
                 ['Market cap', usd(mcap)],
-                ['24h', `${up ? '+' : ''}${changePct.toFixed(2)}%`],
-                ['24h volume', `${compact(launch.volume)} ETH`],
-                ['Holders', launch.holders.toLocaleString()],
+                ['Change', `${up ? '+' : ''}${changePct.toFixed(2)}%`],
+                ['Volume', `${volumeEth < 0.001 ? volumeEth.toExponential(1) : compact(volumeEth)} ETH`],
+                ['Holders', holderCount.toLocaleString()],
               ].map(([k, v], i) => (
                 <div key={k} className="px-4 py-2.5">
                   <p className="eyebrow">{k}</p>
@@ -385,22 +392,26 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
             </button>
           ))}
           <span className="ml-auto pb-3 text-[11px] text-ink-3">
-            {feed === 'trades' ? 'latest' : `${launch.holders.toLocaleString()} total`}
+            {feed === 'trades' ? `${trades.length} trades` : `${holderCount.toLocaleString()} total`}
           </span>
         </div>
 
         {feed === 'trades' ? (
-          <ul className="divide-y divide-line">
-            {trades.map((t) => (
-              <li key={t.id} className="tnum flex items-center gap-3 px-4 py-2.5 text-[13px]">
-                <span className={`w-10 font-semibold ${t.side === 'buy' ? 'text-emerald-strong' : 'text-clay'}`}>
-                  {t.side === 'buy' ? 'BUY' : 'SELL'}
-                </span>
-                <span className="text-ink-3">{t.who}</span>
-                <span className="ml-auto text-ink">{t.amount}</span>
-              </li>
-            ))}
-          </ul>
+          trades.length === 0 ? (
+            <p className="px-4 py-8 text-center text-[13px] text-ink-3">No trades yet — be the first.</p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {trades.map((t) => (
+                <li key={t.id} className="tnum flex items-center gap-3 px-4 py-2.5 text-[13px]">
+                  <span className={`w-10 shrink-0 font-semibold ${t.side === 'buy' ? 'text-emerald-strong' : 'text-clay'}`}>
+                    {t.side === 'buy' ? 'BUY' : 'SELL'}
+                  </span>
+                  <span className="truncate text-ink-3">{t.who}</span>
+                  <span className="ml-auto shrink-0 text-ink">{t.amount}</span>
+                </li>
+              ))}
+            </ul>
+          )
         ) : (
           <ul className="divide-y divide-line">
             <li className="grid grid-cols-[1.5rem_1fr_auto_auto] gap-3 px-4 py-2">

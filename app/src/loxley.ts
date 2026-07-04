@@ -191,6 +191,78 @@ export async function fetchMcapSeries(tokenAddr: string, supplyTokens: number, e
   return series
 }
 
+export interface PoolTrade {
+  id: number
+  side: 'buy' | 'sell'
+  who: string
+  amount: string
+  when: number
+}
+export interface PoolActivity {
+  series: number[] // USD market cap over time (oldest → newest)
+  trades: PoolTrade[] // newest first
+  volumeEth: number // total ETH traded
+  changePct: number // first → last of the series
+  holders: number
+}
+
+const INFRA = new Set([POOL_MANAGER.toLowerCase(), LAUNCHPAD.toLowerCase(), ethers.ZeroAddress.toLowerCase()])
+
+/** Everything the detail page needs, reconstructed from real on-chain events:
+ *  the price series, the trade tape, volume, 24h-style change, and holder count. */
+export async function fetchPoolActivity(tokenAddr: string, supplyTokens: number, ethUsdPrice: number): Promise<PoolActivity> {
+  const empty: PoolActivity = { series: [], trades: [], volumeEth: 0, changePct: 0, holders: 0 }
+  const info = await poolInfo(tokenAddr)
+  if (!info) return empty
+  const prov = readProvider()
+  const pm = new ethers.Contract(POOL_MANAGER, POOL_MANAGER_ABI, prov)
+  const tok = new ethers.Contract(tokenAddr, ['event Transfer(address indexed from, address indexed to, uint256 value)'], prov)
+
+  const [swaps, xfers] = await Promise.all([
+    pm.queryFilter(pm.filters.Swap(info.id), info.initBlock) as Promise<ethers.EventLog[]>,
+    tok.queryFilter(tok.filters.Transfer(), 0) as Promise<ethers.EventLog[]>,
+  ])
+
+  // block timestamps (dedup)
+  const blocks = [...new Set(swaps.map((s) => s.blockNumber))]
+  const tsByBlock: Record<number, number> = {}
+  await Promise.all(blocks.map(async (b) => { tsByBlock[b] = (await prov.getBlock(b))?.timestamp ?? 0 }))
+
+  const mcap = (sqrt: bigint) => sqrtToEthPerToken(sqrt) * supplyTokens * ethUsdPrice
+  const series = [mcap(info.initSqrt)]
+  const trades: PoolTrade[] = []
+  let volumeEth = 0
+  let id = 0
+  for (const s of swaps) {
+    const a0 = s.args.amount0 as bigint // trader's ETH delta: negative = ETH spent = buy
+    const ethAbs = Number(ethers.formatEther(a0 < 0n ? -a0 : a0))
+    volumeEth += ethAbs
+    series.push(mcap(s.args.sqrtPriceX96 as bigint))
+    trades.push({
+      id: ++id,
+      side: a0 < 0n ? 'buy' : 'sell',
+      who: short(s.args.sender as string),
+      amount: `${ethAbs < 0.001 ? ethAbs.toExponential(1) : ethAbs.toFixed(ethAbs < 0.1 ? 4 : 3)} ETH`,
+      when: (tsByBlock[s.blockNumber] || 0) * 1000,
+    })
+  }
+  trades.reverse() // newest first
+
+  // holders: net balances from Transfer events, excluding infra addresses
+  const bal: Record<string, bigint> = {}
+  for (const e of xfers) {
+    const from = (e.args.from as string).toLowerCase()
+    const to = (e.args.to as string).toLowerCase()
+    const v = e.args.value as bigint
+    if (from !== ethers.ZeroAddress) bal[from] = (bal[from] || 0n) - v
+    bal[to] = (bal[to] || 0n) + v
+  }
+  const holders = Object.entries(bal).filter(([a, v]) => v > 0n && !INFRA.has(a)).length
+
+  const changePct = series.length >= 2 ? ((series[series.length - 1] - series[0]) / series[0]) * 100 : 0
+  return { series, trades, volumeEth, changePct, holders }
+}
+
 // ---- writes --------------------------------------------------------------
 export async function createToken(
   signer: ethers.Signer,

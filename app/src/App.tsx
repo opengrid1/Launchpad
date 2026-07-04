@@ -56,7 +56,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       <div className="sticky top-0 z-50 border-b border-line bg-paper/80 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <Header route={route} onNavigate={navigate} wallet={wallet} />
