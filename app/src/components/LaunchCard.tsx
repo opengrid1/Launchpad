@@ -1,5 +1,4 @@
 import { defaultTokenImage, mcapUsd, usd, type Launch } from '../data/launches'
-import { useMarket } from '../realtime/hooks'
 
 /** Deterministic two-hue gradient from the ticker — stands in for coin art. */
 function coinArt(symbol: string) {
@@ -49,9 +48,9 @@ export function LaunchCard({
   featured?: boolean
 }) {
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
-  const { price: live, changePct } = useMarket(launch.id)
+  const changePct = launch.change24h ?? 0
   const up = changePct >= 0
-  const mcap = mcapUsd(live, launch)
+  const mcap = mcapUsd(launch.priceEth, launch) // real price → USD market cap
   const socials = launch.socials
     ? (['x', 'telegram', 'website'] as const).map((k) => ({ k, href: launch.socials![k] })).filter((s) => s.href)
     : []

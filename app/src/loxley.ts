@@ -178,25 +178,19 @@ async function poolInfo(tokenAddr: string) {
   return info
 }
 
-/** Real USD market-cap series for a token, reconstructed from v4 Swap events
- *  (plus the pool's launch price). Oldest → newest. */
-export async function fetchMcapSeries(tokenAddr: string, supplyTokens: number, ethUsdPrice: number): Promise<number[]> {
-  const info = await poolInfo(tokenAddr)
-  if (!info) return []
-  const pm = new ethers.Contract(POOL_MANAGER, POOL_MANAGER_ABI, readProvider())
-  const swaps = (await pm.queryFilter(pm.filters.Swap(info.id), info.initBlock)) as ethers.EventLog[]
-  const mcap = (sqrt: bigint) => sqrtToEthPerToken(sqrt) * supplyTokens * ethUsdPrice
-  const series = [mcap(info.initSqrt)] // launch price as the first point
-  for (const s of swaps) series.push(mcap(s.args.sqrtPriceX96 as bigint))
-  return series
-}
-
 export interface PoolTrade {
   id: number
   side: 'buy' | 'sell'
   who: string
   amount: string
   when: number
+}
+export interface Candle {
+  time: number
+  open: number
+  high: number
+  low: number
+  close: number
 }
 export interface Holder {
   address: string // shortened
@@ -205,11 +199,14 @@ export interface Holder {
   earnedEth: number // ETH dividends withdrawable
   isYou: boolean
 }
-export interface PoolActivity {
+export interface SwapStats {
   series: number[] // USD market cap over time (oldest → newest)
+  candles: Candle[] // time-bucketed USD market-cap candles
   trades: PoolTrade[] // newest first
   volumeEth: number // total ETH traded
   changePct: number // first → last of the series
+}
+export interface PoolActivity extends SwapStats {
   holders: number
   holderList: Holder[] // largest first
 }
@@ -223,28 +220,58 @@ function fmtEth(n: number): string {
 
 const INFRA = new Set([POOL_MANAGER.toLowerCase(), LAUNCHPAD.toLowerCase(), ethers.ZeroAddress.toLowerCase()])
 
-/** Everything the detail page needs, reconstructed from real on-chain events:
- *  the price series, the trade tape, volume, 24h-style change, and holder count. */
-export async function fetchPoolActivity(tokenAddr: string, supplyTokens: number, ethUsdPrice: number, you?: string | null): Promise<PoolActivity> {
-  const empty: PoolActivity = { series: [], trades: [], volumeEth: 0, changePct: 0, holders: 0, holderList: [] }
+/** Bucket (timestamp, value) points into candles over time, carrying the last
+ *  price forward through quiet periods — so a real but low-activity token shows
+ *  a proper flat candlestick series instead of one giant bar. */
+function buildCandles(pts: { t: number; v: number }[], nowSec: number, n = 50): Candle[] {
+  if (!pts.length) return []
+  const start = pts[0].t
+  const end = Math.max(nowSec, pts[pts.length - 1].t, start + n)
+  const step = Math.max((end - start) / n, 1)
+  const out: Candle[] = []
+  let pi = 0
+  let last = pts[0].v
+  let prevTime = -1
+  for (let i = 0; i < n; i++) {
+    const t0 = start + i * step
+    const t1 = t0 + step
+    let open = last
+    let high = last
+    let low = last
+    let close = last
+    while (pi < pts.length && pts[pi].t <= t1) {
+      const v = pts[pi].v
+      high = Math.max(high, v)
+      low = Math.min(low, v)
+      close = v
+      last = v
+      pi++
+    }
+    let time = Math.floor(t0)
+    if (time <= prevTime) time = prevTime + 1
+    prevTime = time
+    out.push({ time, open, high, low, close })
+  }
+  return out
+}
+
+/** Swap-derived stats (price series, candles, trade tape, volume, change).
+ *  Lighter than fetchPoolActivity — used for board cards. */
+export async function fetchSwapStats(tokenAddr: string, supplyTokens: number, ethUsdPrice: number): Promise<SwapStats> {
+  const empty: SwapStats = { series: [], candles: [], trades: [], volumeEth: 0, changePct: 0 }
   const info = await poolInfo(tokenAddr)
   if (!info) return empty
   const prov = readProvider()
   const pm = new ethers.Contract(POOL_MANAGER, POOL_MANAGER_ABI, prov)
-  const tok = new ethers.Contract(tokenAddr, ['event Transfer(address indexed from, address indexed to, uint256 value)'], prov)
+  const swaps = (await pm.queryFilter(pm.filters.Swap(info.id), info.initBlock)) as ethers.EventLog[]
 
-  const [swaps, xfers] = await Promise.all([
-    pm.queryFilter(pm.filters.Swap(info.id), info.initBlock) as Promise<ethers.EventLog[]>,
-    tok.queryFilter(tok.filters.Transfer(), 0) as Promise<ethers.EventLog[]>,
-  ])
-
-  // block timestamps (dedup)
-  const blocks = [...new Set(swaps.map((s) => s.blockNumber))]
+  const blocks = [...new Set([info.initBlock, ...swaps.map((s) => s.blockNumber)])]
   const tsByBlock: Record<number, number> = {}
   await Promise.all(blocks.map(async (b) => { tsByBlock[b] = (await prov.getBlock(b))?.timestamp ?? 0 }))
 
   const mcap = (sqrt: bigint) => sqrtToEthPerToken(sqrt) * supplyTokens * ethUsdPrice
   const series = [mcap(info.initSqrt)]
+  const pts = [{ t: tsByBlock[info.initBlock] || 0, v: series[0] }]
   const trades: PoolTrade[] = []
   let volumeEth = 0
   let id = 0
@@ -252,18 +279,26 @@ export async function fetchPoolActivity(tokenAddr: string, supplyTokens: number,
     const a0 = s.args.amount0 as bigint // trader's ETH delta: negative = ETH spent = buy
     const ethAbs = Number(ethers.formatEther(a0 < 0n ? -a0 : a0))
     volumeEth += ethAbs
-    series.push(mcap(s.args.sqrtPriceX96 as bigint))
-    trades.push({
-      id: ++id,
-      side: a0 < 0n ? 'buy' : 'sell',
-      who: short(s.args.sender as string),
-      amount: `${fmtEth(ethAbs)} ETH`,
-      when: (tsByBlock[s.blockNumber] || 0) * 1000,
-    })
+    const m = mcap(s.args.sqrtPriceX96 as bigint)
+    series.push(m)
+    const t = tsByBlock[s.blockNumber] || 0
+    pts.push({ t, v: m })
+    trades.push({ id: ++id, side: a0 < 0n ? 'buy' : 'sell', who: short(s.args.sender as string), amount: `${fmtEth(ethAbs)} ETH`, when: t * 1000 })
   }
-  trades.reverse() // newest first
+  trades.reverse()
+  const changePct = series.length >= 2 ? ((series[series.length - 1] - series[0]) / series[0]) * 100 : 0
+  const candles = buildCandles(pts, Math.floor(Date.now() / 1000))
+  return { series, candles, trades, volumeEth, changePct }
+}
 
-  // holders: net balances from Transfer events, excluding infra addresses
+async function fetchHolders(tokenAddr: string, supplyTokens: number, you?: string | null): Promise<{ holders: number; holderList: Holder[] }> {
+  const prov = readProvider()
+  const tok = new ethers.Contract(
+    tokenAddr,
+    ['event Transfer(address indexed from, address indexed to, uint256 value)', 'function withdrawableEth(address) view returns (uint256)'],
+    prov,
+  )
+  const xfers = (await tok.queryFilter(tok.filters.Transfer(), 0)) as ethers.EventLog[]
   const bal: Record<string, bigint> = {}
   for (const e of xfers) {
     const from = (e.args.from as string).toLowerCase()
@@ -276,10 +311,7 @@ export async function fetchPoolActivity(tokenAddr: string, supplyTokens: number,
     .filter(([a, v]) => v > 0n && !INFRA.has(a))
     .sort((x, y) => (y[1] > x[1] ? 1 : -1))
     .slice(0, 25)
-
-  const prov2 = readProvider()
-  const tokC = new ethers.Contract(tokenAddr, ['function withdrawableEth(address) view returns (uint256)'], prov2)
-  const earned = await Promise.all(owners.map(([a]) => tokC.withdrawableEth(a).then((w: bigint) => Number(w) / 1e18).catch(() => 0)))
+  const earned = await Promise.all(owners.map(([a]) => tok.withdrawableEth(a).then((w: bigint) => Number(w) / 1e18).catch(() => 0)))
   const youLc = you?.toLowerCase()
   const holderList: Holder[] = owners.map(([a, v], i) => ({
     address: short(a),
@@ -288,9 +320,16 @@ export async function fetchPoolActivity(tokenAddr: string, supplyTokens: number,
     earnedEth: earned[i],
     isYou: !!youLc && a === youLc,
   }))
+  return { holders: holderList.length, holderList }
+}
 
-  const changePct = series.length >= 2 ? ((series[series.length - 1] - series[0]) / series[0]) * 100 : 0
-  return { series, trades, volumeEth, changePct, holders: holderList.length, holderList }
+/** Everything the detail page needs, from real on-chain events. */
+export async function fetchPoolActivity(tokenAddr: string, supplyTokens: number, ethUsdPrice: number, you?: string | null): Promise<PoolActivity> {
+  const [stats, holders] = await Promise.all([
+    fetchSwapStats(tokenAddr, supplyTokens, ethUsdPrice),
+    fetchHolders(tokenAddr, supplyTokens, you),
+  ])
+  return { ...stats, ...holders }
 }
 
 // ---- writes --------------------------------------------------------------

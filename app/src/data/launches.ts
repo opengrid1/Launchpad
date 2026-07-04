@@ -30,6 +30,7 @@ export interface Launch {
   // the reward engine (all ETH, from the pool tax)
   tradeFeeBps: number // tax taken on every trade, split 50/50
   volume: number // lifetime traded volume in ETH
+  change24h?: number // real % change since launch (from on-chain swaps)
   rewardsPaid: number // total ETH tax already handed out (both halves)
   holders: number
 

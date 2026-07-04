@@ -156,12 +156,12 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   }, [launch.tokenAddress, isRealToken, wallet.account])
 
   // prefer real data; fall back to the live feed only until it loads
-  const realSeries = activity && activity.series.length ? activity.series : null
-  const chartPoints = realSeries ?? points.map((p) => p * mcapMult)
-  const chartVariant: 'candle' | 'area' = realSeries && realSeries.length >= 8 ? 'candle' : realSeries ? 'area' : 'candle'
+  const chartPoints = points.map((p) => p * mcapMult)
+  const realCandles = activity && activity.candles.length ? activity.candles : undefined
   const changePct = activity ? activity.changePct : simChange
   const up = changePct >= 0
   const volumeEth = activity ? activity.volumeEth : launch.volume
+  const volumeUsd = volumeEth * ETH_USD
   const holderCount = activity ? activity.holders : launch.holders
   const trades = activity ? activity.trades : simTrades
 
@@ -236,14 +236,14 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
               </div>
             </div>
             <div className="px-2 py-2">
-              <TVChart points={chartPoints} group={tfGroup} height={320} variant={chartVariant} formatter={(v) => '$' + compact(v)} />
+              <TVChart points={chartPoints} candles={realCandles} group={tfGroup} height={320} variant="candle" formatter={(v) => '$' + compact(v)} />
             </div>
             {/* stat strip under the chart */}
             <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-4 sm:divide-y-0">
               {[
                 ['Market cap', usd(mcap)],
                 ['Change', `${up ? '+' : ''}${changePct.toFixed(2)}%`],
-                ['Volume', `${eth(volumeEth)} ETH`],
+                ['Volume', usd(volumeUsd)],
                 ['Holders', holderCount.toLocaleString()],
               ].map(([k, v], i) => (
                 <div key={k} className="px-4 py-2.5">

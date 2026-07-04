@@ -11,14 +11,18 @@ const C = {
 
 /** TradingView Lightweight Charts, fed by on-chain history. Uses candles when
  *  there's enough history, an area line when the data is still sparse. */
+type OHLC = { time: number; open: number; high: number; low: number; close: number }
+
 export function TVChart({
   points,
+  candles,
   group = 3,
   height = 320,
   formatter,
   variant = 'candle',
 }: {
   points: number[]
+  candles?: OHLC[]
   group?: number
   height?: number
   formatter?: (v: number) => string
@@ -90,27 +94,30 @@ export function TVChart({
     if (variant === 'area') {
       const data = points.map((v, i) => ({ time: (base + i * 60) as UTCTimestamp, value: v }))
       ;(series as ISeriesApi<'Area'>).setData(data)
+    } else if (candles && candles.length) {
+      // real, time-bucketed OHLC from on-chain swaps
+      ;(series as ISeriesApi<'Candlestick'>).setData(candles.map((c) => ({ ...c, time: c.time as UTCTimestamp })))
     } else {
-      const candles = []
+      const built = []
       for (let i = 0; i < points.length; i += group) {
         const slice = points.slice(i, i + group)
         if (!slice.length) continue
-        candles.push({
-          time: (base + candles.length * 60) as UTCTimestamp,
+        built.push({
+          time: (base + built.length * 60) as UTCTimestamp,
           open: slice[0],
           high: Math.max(...slice),
           low: Math.min(...slice),
           close: slice[slice.length - 1],
         })
       }
-      ;(series as ISeriesApi<'Candlestick'>).setData(candles)
+      ;(series as ISeriesApi<'Candlestick'>).setData(built)
     }
     if (!fitRef.current || groupRef.current !== group) {
       chartRef.current?.timeScale().fitContent()
       fitRef.current = true
       groupRef.current = group
     }
-  }, [points, group, variant])
+  }, [points, candles, group, variant])
 
   return <div ref={elRef} style={{ width: '100%', height }} />
 }
