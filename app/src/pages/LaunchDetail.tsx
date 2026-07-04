@@ -119,6 +119,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   const [tf, setTf] = useState('1h')
   const [feed, setFeed] = useState<'trades' | 'holders'>('trades')
   const [claiming, setClaiming] = useState(false)
+  const [claimStage, setClaimStage] = useState<'collect' | 'claim' | null>(null)
   const [claimErr, setClaimErr] = useState<string | null>(null)
   const [slippage, setSlippage] = useState(1)
   const [trading, setTrading] = useState(false)
@@ -201,22 +202,36 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   const claimable = claimableHolder + creatorEarnings
 
   async function doClaim() {
-    if (claimable <= 0 || claiming) return
+    if (claiming || !isRealToken) return
     setClaimErr(null)
     setClaiming(true)
     try {
       let signer = wallet.signer
       if (!signer) signer = (await loxley.connectWallet()).signer
-      if (claimableHolder > 0) await loxley.claimEthDividends(signer, launch.tokenAddress)
-      if (youAreCreator && creatorFees > 0) await loxley.claimCreatorFees(signer, launch.tokenAddress)
-      if (wallet.account) {
-        setClaimableHolder(await loxley.claimableEth(launch.tokenAddress, wallet.account).catch(() => 0))
-        setCreatorFees(await loxley.creatorFees(launch.tokenAddress).catch(() => 0))
-      }
+      const acct = wallet.account ?? (await signer.getAddress())
+      // 1. sync: pull the pool's LP fees into the holder/creator reward pools
+      setClaimStage('collect')
+      await loxley.collectFees(signer, launch.tokenAddress).catch(() => {})
+      // 2. re-read what's now claimable
+      const [hold, cf] = await Promise.all([
+        loxley.claimableEth(launch.tokenAddress, acct).catch(() => 0),
+        loxley.creatorFees(launch.tokenAddress).catch(() => 0),
+      ])
+      // 3. claim whatever is owed
+      setClaimStage('claim')
+      let did = false
+      if (hold > 0) { await loxley.claimEthDividends(signer, launch.tokenAddress); did = true }
+      if (youAreCreator && cf > 0) { await loxley.claimCreatorFees(signer, launch.tokenAddress); did = true }
+      if (!did) setClaimErr('No rewards to claim yet — they accrue from trading fees.')
+      setClaimableHolder(await loxley.claimableEth(launch.tokenAddress, acct).catch(() => 0))
+      setCreatorFees(await loxley.creatorFees(launch.tokenAddress).catch(() => 0))
+      refreshBalances()
     } catch (e) {
-      setClaimErr(e instanceof Error ? e.message : 'Claim failed')
+      const m = e instanceof Error ? e.message : 'Claim failed'
+      setClaimErr(m.length > 140 ? m.slice(0, 140) + '…' : m)
     } finally {
       setClaiming(false)
+      setClaimStage(null)
     }
   }
 
@@ -449,15 +464,19 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
             </div>
             <button
               onClick={doClaim}
-              disabled={claimable <= 0 || claiming}
+              disabled={claiming || !isRealToken}
               className="mt-4 w-full cursor-pointer rounded-full bg-emerald py-2.5 text-[14px] font-semibold text-paper transition hover:bg-emerald-strong disabled:cursor-not-allowed disabled:bg-panel disabled:text-ink-3"
             >
-              {claiming ? 'Claiming…' : claimable > 0 ? `Claim ${eth(claimable)} ETH` : !wallet.account ? 'Connect to claim' : 'Nothing to claim'}
+              {claiming
+                ? claimStage === 'collect' ? 'Collecting fees…' : 'Claiming…'
+                : !wallet.account ? 'Connect to claim'
+                : claimable > 0 ? `Claim ${eth(claimable)} ETH`
+                : 'Collect & claim'}
             </button>
             {claimErr && <p className="mt-2 break-words text-[11px] text-clay">{claimErr}</p>}
             {claimable <= 0 && !claimErr && (
               <p className="mt-2 text-[11px] leading-relaxed text-ink-3">
-                Hold {ticker} to earn a share of every trade's ETH tax.
+                Rewards accrue from every trade's fees. Tap collect to pull them from the pool, then claim.
               </p>
             )}
           </div>
