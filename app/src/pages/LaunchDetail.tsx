@@ -96,6 +96,15 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+// chart axis / crosshair USD formatter — keeps ~4 significant figures so
+// nearby values (e.g. $2.03K vs $2.04K) don't all collapse to "$2K".
+function usdTick(v: number): string {
+  if (v >= 1e9) return '$' + (v / 1e9).toLocaleString('en-US', { maximumSignificantDigits: 4 }) + 'B'
+  if (v >= 1e6) return '$' + (v / 1e6).toLocaleString('en-US', { maximumSignificantDigits: 4 }) + 'M'
+  if (v >= 1e3) return '$' + (v / 1e3).toLocaleString('en-US', { maximumSignificantDigits: 4 }) + 'K'
+  return '$' + v.toLocaleString('en-US', { maximumFractionDigits: 2 })
+}
+
 // each timeframe = a different candle interval (points aggregated per candle)
 const TF: { label: string; group: number }[] = [
   { label: '5m', group: 1 },
@@ -300,7 +309,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
               </div>
             </div>
             <div className="px-2 py-2">
-              <TVChart points={chartPoints} candles={realCandles} group={tfGroup} height={320} variant="candle" formatter={(v) => '$' + compact(v)} />
+              <TVChart points={chartPoints} candles={realCandles} group={tfGroup} height={320} variant="candle" formatter={usdTick} />
             </div>
             {/* stat strip under the chart */}
             <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-4 sm:divide-y-0">
