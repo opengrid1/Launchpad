@@ -152,6 +152,45 @@ export async function fetchLaunches(fromBlock = 0): Promise<OnchainLaunch[]> {
     .sort((a, b) => b.block - a.block)
 }
 
+// ---- real price history (from Uniswap v4 PoolManager events) -------------
+const POOL_MANAGER_ABI = [
+  'event Initialize(bytes32 indexed id, address indexed currency0, address indexed currency1, uint24 fee, int24 tickSpacing, address hooks, uint160 sqrtPriceX96, int24 tick)',
+  'event Swap(bytes32 indexed id, address indexed sender, int128 amount0, int128 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick, uint24 fee)',
+]
+
+/** sqrtPriceX96 (token=currency1 per ETH=currency0) → ETH per 1 token. */
+function sqrtToEthPerToken(sqrtPriceX96: bigint): number {
+  const r = Number(2n ** 96n) / Number(sqrtPriceX96) // = 2^96 / sqrtP
+  return r * r // (2^96/sqrtP)^2 = 1 / (tokens per ETH) = ETH per token
+}
+
+const poolCache: Record<string, { id: string; initBlock: number; initSqrt: bigint } | null> = {}
+
+async function poolInfo(tokenAddr: string) {
+  const key = tokenAddr.toLowerCase()
+  if (key in poolCache) return poolCache[key]
+  const pm = new ethers.Contract(POOL_MANAGER, POOL_MANAGER_ABI, readProvider())
+  const inits = (await pm.queryFilter(pm.filters.Initialize(null, null, tokenAddr), 0)) as ethers.EventLog[]
+  const info = inits[0]
+    ? { id: inits[0].args.id as string, initBlock: inits[0].blockNumber, initSqrt: inits[0].args.sqrtPriceX96 as bigint }
+    : null
+  poolCache[key] = info
+  return info
+}
+
+/** Real USD market-cap series for a token, reconstructed from v4 Swap events
+ *  (plus the pool's launch price). Oldest → newest. */
+export async function fetchMcapSeries(tokenAddr: string, supplyTokens: number, ethUsdPrice: number): Promise<number[]> {
+  const info = await poolInfo(tokenAddr)
+  if (!info) return []
+  const pm = new ethers.Contract(POOL_MANAGER, POOL_MANAGER_ABI, readProvider())
+  const swaps = (await pm.queryFilter(pm.filters.Swap(info.id), info.initBlock)) as ethers.EventLog[]
+  const mcap = (sqrt: bigint) => sqrtToEthPerToken(sqrt) * supplyTokens * ethUsdPrice
+  const series = [mcap(info.initSqrt)] // launch price as the first point
+  for (const s of swaps) series.push(mcap(s.args.sqrtPriceX96 as bigint))
+  return series
+}
+
 // ---- writes --------------------------------------------------------------
 export async function createToken(
   signer: ethers.Signer,

@@ -113,6 +113,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   const [claimErr, setClaimErr] = useState<string | null>(null)
   const [claimableHolder, setClaimableHolder] = useState(0)
   const [creatorFees, setCreatorFees] = useState(0)
+  const [realPoints, setRealPoints] = useState<number[] | null>(null)
   const tfGroup = TF.find((t) => t.label === tf)?.group ?? 2
 
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
@@ -136,6 +137,23 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
     }
     return () => { alive = false }
   }, [wallet.account, launch.tokenAddress, isRealToken])
+
+  // real candlestick data: reconstruct the USD market-cap series from the
+  // pool's v4 Swap events (+ the launch price). Falls back to the live feed
+  // only if the token has no on-chain history yet.
+  useEffect(() => {
+    let alive = true
+    setRealPoints(null)
+    if (isRealToken) {
+      loxley
+        .fetchMcapSeries(launch.tokenAddress, supplyOf(launch), ETH_USD)
+        .then((s) => { if (alive && s.length) setRealPoints(s.length === 1 ? [s[0], s[0]] : s) })
+        .catch(() => {})
+    }
+    return () => { alive = false }
+  }, [launch.tokenAddress, isRealToken])
+
+  const chartPoints = realPoints ?? points.map((p) => p * mcapMult)
 
   const creatorEarnings = youAreCreator ? creatorFees : 0
   const claimable = claimableHolder + creatorEarnings
@@ -208,7 +226,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
               </div>
             </div>
             <div className="px-2 py-2">
-              <TVChart points={points.map((p) => p * mcapMult)} group={tfGroup} height={320} formatter={(v) => '$' + compact(v)} />
+              <TVChart points={chartPoints} group={tfGroup} height={320} formatter={(v) => '$' + compact(v)} />
             </div>
             {/* stat strip under the chart */}
             <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-4 sm:divide-y-0">
