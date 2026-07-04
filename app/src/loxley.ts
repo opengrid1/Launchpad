@@ -473,7 +473,8 @@ export async function sell(signer: ethers.Signer, tokenAddr: string, tokenIn: st
   const quotedEth = await quoteExactIn(info, false, amountIn) // real ETH out (with price impact)
   const minOut = (quotedEth * bpsOf(slippagePct)) / 10000n
 
-  // Permit2 flow: token → Permit2 (once), then Permit2 → Universal Router.
+  // Permit2 flow: token → Permit2 (once, max), then Permit2 → Universal Router
+  // (approve max with a long expiry so later sells are a single swap tx).
   const owner = await signer.getAddress()
   const erc = new ethers.Contract(
     tokenAddr,
@@ -483,8 +484,20 @@ export async function sell(signer: ethers.Signer, tokenAddr: string, tokenIn: st
   if ((await erc.allowance(owner, PERMIT2)) < amountIn) {
     await (await erc.approve(PERMIT2, ethers.MaxUint256)).wait()
   }
-  const permit2 = new ethers.Contract(PERMIT2, ['function approve(address token, address spender, uint160 amount, uint48 expiration)'], signer)
-  await (await permit2.approve(tokenAddr, UNIVERSAL_ROUTER, amountIn, Math.floor(Date.now() / 1000) + 3600)).wait()
+  const permit2 = new ethers.Contract(
+    PERMIT2,
+    [
+      'function approve(address token, address spender, uint160 amount, uint48 expiration)',
+      'function allowance(address user, address token, address spender) view returns (uint160 amount, uint48 expiration, uint48 nonce)',
+    ],
+    signer,
+  )
+  const MAX_160 = (1n << 160n) - 1n
+  const now = Math.floor(Date.now() / 1000)
+  const [p2amt, p2exp] = await permit2.allowance(owner, tokenAddr, UNIVERSAL_ROUTER)
+  if ((p2amt as bigint) < amountIn || Number(p2exp) < now + 120) {
+    await (await permit2.approve(tokenAddr, UNIVERSAL_ROUTER, MAX_160, now + 30 * 86400)).wait()
+  }
 
   const input = encodeV4SwapInput(info, false, amountIn, minOut) // token(1) → ETH(0)
   const ur = new ethers.Contract(UNIVERSAL_ROUTER, UR_ABI, signer)
