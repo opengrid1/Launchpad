@@ -24,6 +24,12 @@ function CoinImage({ launch, ticker, className }: { launch: Launch; ticker: stri
       <img
         src={launch.image || defaultTokenImage()}
         alt={launch.name}
+        onError={(e) => {
+          if (e.currentTarget.src !== defaultTokenImage()) {
+            e.currentTarget.onerror = null
+            e.currentTarget.src = defaultTokenImage()
+          }
+        }}
         className="absolute inset-0 h-full w-full object-cover"
       />
     </div>

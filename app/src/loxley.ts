@@ -2,7 +2,7 @@
 // Robinhood Chain mainnet (chainId 4663). TypeScript port of the deployment
 // module, plus a mapper to the UI's `Launch` shape.
 import { ethers } from 'ethers'
-import type { Launch } from './data/launches'
+import { compact, type Launch } from './data/launches'
 
 // ---- chain + contracts ---------------------------------------------------
 export const CHAIN = {
@@ -198,20 +198,35 @@ export interface PoolTrade {
   amount: string
   when: number
 }
+export interface Holder {
+  address: string // shortened
+  full: string
+  pct: number // share of total supply
+  earnedEth: number // ETH dividends withdrawable
+  isYou: boolean
+}
 export interface PoolActivity {
   series: number[] // USD market cap over time (oldest → newest)
   trades: PoolTrade[] // newest first
   volumeEth: number // total ETH traded
   changePct: number // first → last of the series
   holders: number
+  holderList: Holder[] // largest first
+}
+
+/** Human-readable ETH amount — never scientific notation. */
+function fmtEth(n: number): string {
+  if (n === 0) return '0'
+  if (n >= 1000) return compact(n)
+  return n.toLocaleString('en-US', { maximumFractionDigits: 6, maximumSignificantDigits: 4 })
 }
 
 const INFRA = new Set([POOL_MANAGER.toLowerCase(), LAUNCHPAD.toLowerCase(), ethers.ZeroAddress.toLowerCase()])
 
 /** Everything the detail page needs, reconstructed from real on-chain events:
  *  the price series, the trade tape, volume, 24h-style change, and holder count. */
-export async function fetchPoolActivity(tokenAddr: string, supplyTokens: number, ethUsdPrice: number): Promise<PoolActivity> {
-  const empty: PoolActivity = { series: [], trades: [], volumeEth: 0, changePct: 0, holders: 0 }
+export async function fetchPoolActivity(tokenAddr: string, supplyTokens: number, ethUsdPrice: number, you?: string | null): Promise<PoolActivity> {
+  const empty: PoolActivity = { series: [], trades: [], volumeEth: 0, changePct: 0, holders: 0, holderList: [] }
   const info = await poolInfo(tokenAddr)
   if (!info) return empty
   const prov = readProvider()
@@ -242,7 +257,7 @@ export async function fetchPoolActivity(tokenAddr: string, supplyTokens: number,
       id: ++id,
       side: a0 < 0n ? 'buy' : 'sell',
       who: short(s.args.sender as string),
-      amount: `${ethAbs < 0.001 ? ethAbs.toExponential(1) : ethAbs.toFixed(ethAbs < 0.1 ? 4 : 3)} ETH`,
+      amount: `${fmtEth(ethAbs)} ETH`,
       when: (tsByBlock[s.blockNumber] || 0) * 1000,
     })
   }
@@ -257,10 +272,25 @@ export async function fetchPoolActivity(tokenAddr: string, supplyTokens: number,
     if (from !== ethers.ZeroAddress) bal[from] = (bal[from] || 0n) - v
     bal[to] = (bal[to] || 0n) + v
   }
-  const holders = Object.entries(bal).filter(([a, v]) => v > 0n && !INFRA.has(a)).length
+  const owners = Object.entries(bal)
+    .filter(([a, v]) => v > 0n && !INFRA.has(a))
+    .sort((x, y) => (y[1] > x[1] ? 1 : -1))
+    .slice(0, 25)
+
+  const prov2 = readProvider()
+  const tokC = new ethers.Contract(tokenAddr, ['function withdrawableEth(address) view returns (uint256)'], prov2)
+  const earned = await Promise.all(owners.map(([a]) => tokC.withdrawableEth(a).then((w: bigint) => Number(w) / 1e18).catch(() => 0)))
+  const youLc = you?.toLowerCase()
+  const holderList: Holder[] = owners.map(([a, v], i) => ({
+    address: short(a),
+    full: a,
+    pct: (Number(ethers.formatUnits(v, 18)) / supplyTokens) * 100,
+    earnedEth: earned[i],
+    isYou: !!youLc && a === youLc,
+  }))
 
   const changePct = series.length >= 2 ? ((series[series.length - 1] - series[0]) / series[0]) * 100 : 0
-  return { series, trades, volumeEth, changePct, holders }
+  return { series, trades, volumeEth, changePct, holders: holderList.length, holderList }
 }
 
 // ---- writes --------------------------------------------------------------
@@ -314,10 +344,22 @@ function ago(blockNow: number, blockThen: number): string {
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
 
 /** Convert an on-chain launch (+ its current price) into a UI Launch. */
+function normalizeImage(uri?: string): string | undefined {
+  if (!uri) return undefined
+  if (uri.startsWith('http://') || uri.startsWith('https://')) return uri
+  if (uri.startsWith('ipfs://')) {
+    const cid = uri.slice(7).replace(/^ipfs\//, '')
+    return cid.length >= 20 ? `https://ipfs.io/ipfs/${cid}` : undefined // ignore junk like "img"
+  }
+  if (/^(Qm|baf)[a-zA-Z0-9]{20,}/.test(uri)) return `https://ipfs.io/ipfs/${uri}`
+  if (uri.startsWith('data:image/')) return uri
+  return undefined
+}
+
 export function toLaunch(o: OnchainLaunch, currentPriceWei: bigint, blockNow: number): Launch {
   const supply = Number(ethers.formatUnits(o.totalSupply, 18))
   const priceEth = Number(ethers.formatEther(currentPriceWei || o.priceWeiPerToken))
-  const img = o.image && o.image.startsWith('ipfs://') ? o.image.replace('ipfs://', 'https://ipfs.io/ipfs/') : o.image
+  const img = normalizeImage(o.image)
   return {
     id: idFromAddress(o.token),
     name: o.name,

@@ -19,6 +19,13 @@ export function Monogram({
     <img
       src={image || defaultTokenImage()}
       alt={symbol}
+      onError={(e) => {
+        // broken/unreachable token image → fall back to the feather default
+        if (e.currentTarget.src !== defaultTokenImage()) {
+          e.currentTarget.onerror = null
+          e.currentTarget.src = defaultTokenImage()
+        }
+      }}
       className={`${box} shrink-0 object-cover ring-1 ring-line-2`}
     />
   )

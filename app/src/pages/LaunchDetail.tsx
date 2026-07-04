@@ -121,7 +121,10 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   const { price: live, points, changePct: simChange, trades: simTrades } = useMarket(launch.id)
   const mcap = mcapUsd(launch.priceEth, launch) // real price → USD market cap
   const mcapMult = supplyOf(launch) * ETH_USD // price(ETH) -> market cap (USD)
-  const holders = topHolders(launch)
+  const holderRows =
+    activity && activity.holderList.length
+      ? activity.holderList.map((h, i) => ({ rank: i + 1, address: h.address, pct: h.pct, earnedEth: h.earnedEth, you: h.isYou }))
+      : topHolders(launch).map((h) => ({ rank: h.rank, address: h.address, pct: h.pct, earnedEth: h.rewardsEth, you: h.you }))
   const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
   const youAreCreator = !!wallet.account && launch.creator.toLowerCase() === short(wallet.account).toLowerCase()
 
@@ -145,12 +148,12 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
     setActivity(null)
     if (isRealToken) {
       loxley
-        .fetchPoolActivity(launch.tokenAddress, supplyOf(launch), ETH_USD)
+        .fetchPoolActivity(launch.tokenAddress, supplyOf(launch), ETH_USD, wallet.account)
         .then((a) => { if (alive) setActivity(a) })
         .catch(() => {})
     }
     return () => { alive = false }
-  }, [launch.tokenAddress, isRealToken])
+  }, [launch.tokenAddress, isRealToken, wallet.account])
 
   // prefer real data; fall back to the live feed only until it loads
   const realSeries = activity && activity.series.length ? activity.series : null
@@ -210,7 +213,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
         <div className="text-right">
           <p className="tnum text-[22px] font-bold leading-none text-ink">{price(launch.priceEth)} <span className="text-[12px] text-ink-3">ETH</span></p>
           <p className={`tnum mt-1.5 text-[13px] font-semibold ${up ? 'text-emerald-strong' : 'text-clay'}`}>
-            {up ? '▲' : '▼'} {Math.abs(changePct).toFixed(2)}% · since launch
+            {up ? '▲' : '▼'} {Math.abs(changePct).toFixed(2)}%
           </p>
         </div>
       </div>
@@ -240,7 +243,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
               {[
                 ['Market cap', usd(mcap)],
                 ['Change', `${up ? '+' : ''}${changePct.toFixed(2)}%`],
-                ['Volume', `${volumeEth < 0.001 ? volumeEth.toExponential(1) : compact(volumeEth)} ETH`],
+                ['Volume', `${eth(volumeEth)} ETH`],
                 ['Holders', holderCount.toLocaleString()],
               ].map(([k, v], i) => (
                 <div key={k} className="px-4 py-2.5">
@@ -420,20 +423,24 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
               <span className="eyebrow text-right">Share</span>
               <span className="eyebrow text-right">ETH earned</span>
             </li>
-            {holders.map((h) => (
-              <li
-                key={h.rank}
-                className={`grid grid-cols-[1.5rem_1fr_auto_auto] items-center gap-3 px-4 py-2.5 text-[13px] ${h.you ? 'bg-emerald-tint/40' : ''}`}
-              >
-                <span className="tnum text-ink-3">{h.rank}</span>
-                <span className="tnum flex items-center gap-2 text-ink">
-                  {h.address}
-                  {h.you && <span className="rounded bg-emerald px-1.5 py-0.5 text-[10px] font-semibold text-paper">you</span>}
-                </span>
-                <span className="tnum text-right text-ink-2">{h.pct.toFixed(2)}%</span>
-                <span className="tnum text-right font-semibold text-emerald-strong">{eth(h.rewardsEth)}</span>
-              </li>
-            ))}
+            {holderRows.length === 0 ? (
+              <li className="px-4 py-8 text-center text-[13px] text-ink-3">No holders yet.</li>
+            ) : (
+              holderRows.map((h) => (
+                <li
+                  key={h.rank}
+                  className={`grid grid-cols-[1.5rem_1fr_auto_auto] items-center gap-3 px-4 py-2.5 text-[13px] ${h.you ? 'bg-emerald-tint/40' : ''}`}
+                >
+                  <span className="tnum text-ink-3">{h.rank}</span>
+                  <span className="tnum flex min-w-0 items-center gap-2 text-ink">
+                    <span className="truncate">{h.address}</span>
+                    {h.you && <span className="shrink-0 rounded bg-emerald px-1.5 py-0.5 text-[10px] font-semibold text-paper">you</span>}
+                  </span>
+                  <span className="tnum text-right text-ink-2">{h.pct.toFixed(2)}%</span>
+                  <span className="tnum text-right font-semibold text-emerald-strong">{eth(h.earnedEth)}</span>
+                </li>
+              ))
+            )}
           </ul>
         )}
       </div>
