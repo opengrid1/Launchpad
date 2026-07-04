@@ -11,27 +11,26 @@ interface IERC20Balance {
 
 /// @title RewardsDistributor
 /// @notice Receives the 1% ETH tax (from the v4 hook) and splits every deposit
-///         three ways:
-///           • holders  — pro-rata, via an O(1) accumulator (no loops, no rebase)
-///           • creator  — claimable ETH
-///           • protocol — sent to the Treasury, which funds hyped-token buybacks
-///                        and loyalty airdrops. The protocol NEVER touches any
-///                        coin's liquidity; it only spends its own fee slice.
+///         exactly 50/50:
+///           • 50% to holders — pro-rata, via an O(1) accumulator (no loops,
+///             no rebase, no per-holder iteration)
+///           • 50% to the creator — claimable ETH
 ///
-///         All ETH is pull-based. Excluded accounts (the pool manager, this
-///         contract, the treasury, the airdrop escrow) never accrue holder
-///         rewards and are removed from the eligible supply.
+///         There is NO protocol cut, NO treasury, and NO admin. The split is a
+///         hardcoded constant with no setter, and this contract has no owner and
+///         no path that can move a holder's principal. All ETH is pull-based.
+///
+///         Excluded accounts (the pool manager, which holds the pool reserves,
+///         and this contract) never accrue holder rewards and are removed from
+///         the eligible supply, so rewards only reach real holders.
 contract RewardsDistributor is IRewardsDistributor {
-    // ── split (basis points, sum = 10_000) ───────────────────────────────────
-    uint256 public constant HOLDER_BPS   = 4500; // 45%
-    uint256 public constant CREATOR_BPS  = 4500; // 45%
-    uint256 public constant PROTOCOL_BPS = 1000; // 10%
-    uint256 private constant ACC = 1e18;         // accumulator scaling
+    uint256 public constant HOLDER_BPS  = 5000; // 50%
+    uint256 public constant CREATOR_BPS = 5000; // 50%
+    uint256 private constant ACC = 1e18;        // accumulator scaling
 
     address public immutable factory;
     address public immutable hook;
     address public immutable poolManager; // holds pool reserves → excluded
-    address public immutable treasury;    // receives the protocol slice
 
     struct Coin {
         address token;
@@ -45,7 +44,7 @@ contract RewardsDistributor is IRewardsDistributor {
     mapping(address => Coin) private coins;      // token => rewards state
     mapping(address => bool) public excluded;    // never accrues holder rewards
 
-    event Deposited(address indexed token, uint256 toHolders, uint256 toCreator, uint256 toProtocol);
+    event Deposited(address indexed token, uint256 toHolders, uint256 toCreator);
     event Claimed(address indexed token, address indexed user, uint256 amount);
     event CreatorClaimed(address indexed token, address indexed creator, uint256 amount);
 
@@ -54,14 +53,12 @@ contract RewardsDistributor is IRewardsDistributor {
     error OnlyToken();
     error NotRegistered();
 
-    constructor(address _factory, address _hook, address _poolManager, address _treasury) {
+    constructor(address _factory, address _hook, address _poolManager) {
         factory = _factory;
         hook = _hook;
         poolManager = _poolManager;
-        treasury = _treasury;
         excluded[_poolManager] = true;
         excluded[address(this)] = true;
-        excluded[_treasury] = true;
         excluded[address(0)] = true;
     }
 
@@ -74,41 +71,27 @@ contract RewardsDistributor is IRewardsDistributor {
         c.registered = true;
     }
 
-    /// Owner-free infra exclusion: the factory can mark protocol escrow addresses
-    /// (e.g. the loyalty-airdrop contract) as excluded at wiring time.
-    function setExcluded(address account, bool isExcluded) external {
-        if (msg.sender != factory) revert OnlyFactory();
-        excluded[account] = isExcluded;
-    }
-
-    // ── deposit (hook only): split 45/45/10 ───────────────────────────────────
+    // ── deposit (hook only): split 50/50 ──────────────────────────────────────
     function deposit(address token) external payable {
         if (msg.sender != hook) revert OnlyHook();
         Coin storage c = coins[token];
         if (!c.registered) revert NotRegistered();
 
         uint256 amount = msg.value;
-        uint256 toProtocol = (amount * PROTOCOL_BPS) / 10_000;
-        uint256 toCreator  = (amount * CREATOR_BPS) / 10_000;
-        uint256 toHolders  = amount - toProtocol - toCreator; // remainder → no dust loss
+        uint256 toCreator = (amount * CREATOR_BPS) / 10_000;
+        uint256 toHolders = amount - toCreator; // remainder → no dust loss
 
         c.creatorOwed += toCreator;
 
         uint256 supply = _eligibleSupply(token);
         if (supply == 0) {
-            // nobody eligible yet (all supply still in the pool) — route the
-            // holder slice to the protocol treasury instead of stranding it.
-            toProtocol += toHolders;
-            toHolders = 0;
+            // no eligible holders yet (all supply still in the pool): fold the
+            // holder slice into the creator's owed so no ETH is stranded.
+            c.creatorOwed += toHolders;
         } else {
             c.accRewardPerToken += (toHolders * ACC) / supply;
         }
-
-        if (toProtocol > 0) {
-            (bool ok,) = treasury.call{value: toProtocol}("");
-            require(ok, "treasury xfer");
-        }
-        emit Deposited(token, toHolders, toCreator, toProtocol);
+        emit Deposited(token, toHolders, toCreator);
     }
 
     // ── settlement hook (token only), called before every balance change ──────
@@ -166,12 +149,11 @@ contract RewardsDistributor is IRewardsDistributor {
         return coins[token].creatorOwed;
     }
 
-    /// eligible = totalSupply − reserves held by the pool − protocol escrows.
+    /// eligible = totalSupply − reserves held by the pool − this contract.
     function _eligibleSupply(address token) internal view returns (uint256) {
         uint256 supply = IERC20Balance(token).totalSupply();
         supply -= IERC20Balance(token).balanceOf(poolManager);
         supply -= IERC20Balance(token).balanceOf(address(this));
-        supply -= IERC20Balance(token).balanceOf(treasury);
         return supply;
     }
 
