@@ -9,18 +9,18 @@ import { useCoins } from './realtime/hooks'
 import { loadChain } from './web3/loadChain'
 import { useWallet } from './web3/useWallet'
 
-export type Route = { page: 'explore' } | { page: 'create' } | { page: 'launch'; id: number }
+export type Route = { page: 'explore' } | { page: 'create' } | { page: 'launch'; address: string }
 
 function routeToPath(r: Route): string {
   if (r.page === 'create') return '/create'
-  if (r.page === 'launch') return `/coin/${r.id}`
+  if (r.page === 'launch') return `/coin/${r.address}`
   return '/'
 }
 
 function pathToRoute(path: string): Route {
   if (path.startsWith('/create')) return { page: 'create' }
-  const m = path.match(/^\/coin\/(\d+)/)
-  if (m) return { page: 'launch', id: Number(m[1]) }
+  const m = path.match(/^\/coin\/([^/?#]+)/)
+  if (m) return { page: 'launch', address: decodeURIComponent(m[1]) }
   return { page: 'explore' }
 }
 
@@ -52,7 +52,7 @@ export default function App() {
 
   const openBySymbol = (symbol: string) => {
     const c = coins.find((l) => l.symbol === symbol)
-    if (c) navigate({ page: 'launch', id: c.id })
+    if (c) navigate({ page: 'launch', address: c.tokenAddress })
   }
 
   return (
@@ -64,7 +64,7 @@ export default function App() {
       </div>
 
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        {route.page === 'explore' && <Explore coins={coins} onOpen={(id) => navigate({ page: 'launch', id })} />}
+        {route.page === 'explore' && <Explore coins={coins} onOpen={(address) => navigate({ page: 'launch', address })} />}
         {route.page === 'create' && (
           <Create
             wallet={wallet}
@@ -77,7 +77,7 @@ export default function App() {
         )}
         {route.page === 'launch' && coins.length > 0 && (
           <LaunchDetail
-            launch={coins.find((l) => l.id === route.id) ?? coins[0]}
+            launch={coins.find((l) => l.tokenAddress.toLowerCase() === route.address.toLowerCase()) ?? coins[0]}
             wallet={wallet}
             onBack={() => navigate({ page: 'explore' })}
           />

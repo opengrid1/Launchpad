@@ -10,7 +10,7 @@ const SORTS: { key: Sort; label: string }[] = [
   { key: 'new', label: 'New' },
 ]
 
-export function Explore({ coins: all, onOpen }: { coins: Launch[]; onOpen: (id: number) => void }) {
+export function Explore({ coins: all, onOpen }: { coins: Launch[]; onOpen: (address: string) => void }) {
   const [sort, setSort] = useState<Sort>('trending')
 
   const coins = [...all].sort((a, b) => {
@@ -46,7 +46,7 @@ export function Explore({ coins: all, onOpen }: { coins: Launch[]; onOpen: (id: 
           <span className="eyebrow text-gold">King of the hill</span>
         </div>
         <div className="sm:max-w-2xl">
-          <LaunchCard launch={king} index={0} featured onOpen={() => onOpen(king.id)} />
+          <LaunchCard launch={king} index={0} featured onOpen={() => onOpen(king.tokenAddress)} />
         </div>
       </section>
 
@@ -71,7 +71,7 @@ export function Explore({ coins: all, onOpen }: { coins: Launch[]; onOpen: (id: 
       {/* board */}
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {coins.map((l, i) => (
-          <LaunchCard key={l.id} launch={l} index={i} onOpen={() => onOpen(l.id)} />
+          <LaunchCard key={l.id} launch={l} index={i} onOpen={() => onOpen(l.tokenAddress)} />
         ))}
       </div>
     </main>
