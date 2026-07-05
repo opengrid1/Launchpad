@@ -117,9 +117,9 @@ export function TVChart({
     }
     const ts = chartRef.current?.timeScale()
     if (candleCount > 0) {
-      // show the most recent ~70 candles at a comfortable width; scroll for more
+      // anchor newest candle to the right; show ~70 recent bars, scroll for more
       const visible = Math.min(candleCount, 70)
-      ts?.setVisibleLogicalRange({ from: candleCount - visible, to: candleCount + 1 })
+      ts?.setVisibleLogicalRange({ from: candleCount - visible, to: candleCount })
       groupRef.current = group
     } else if (!fitRef.current || groupRef.current !== group) {
       ts?.fitContent()
