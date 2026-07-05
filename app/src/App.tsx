@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Header } from './components/Header'
+import { Footer } from './components/Footer'
 import { Explore } from './pages/Explore'
 import { LaunchDetail } from './pages/LaunchDetail'
 import { Create } from './pages/Create'
@@ -103,6 +104,8 @@ export default function App() {
           />
         )}
       </div>
+
+      <Footer />
 
       <Toasts onOpen={openBySymbol} />
     </div>

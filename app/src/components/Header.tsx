@@ -45,6 +45,17 @@ export function Header({ route, onNavigate, wallet, query, onQuery }: { route: R
         <Search className="ml-2 hidden flex-1 sm:flex md:max-w-md" value={query} onChange={onQuery} />
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
+          <a
+            href="https://x.com/Loxley_xyz"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Loxley on X"
+            className="hidden h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-surface text-ink-2 ring-1 ring-line transition hover:text-ink hover:ring-line-2 sm:flex"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817-5.966 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
+            </svg>
+          </a>
           <button
             onClick={() => onNavigate({ page: 'create' })}
             className={`cursor-pointer rounded-full px-3 py-2 text-[13px] font-semibold transition sm:px-4 ${
