@@ -130,7 +130,7 @@ const TF: { label: string; secs: number }[] = [
 export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBack: () => void; wallet: Wallet }) {
   const [side, setSide] = useState<'buy' | 'sell'>('buy')
   const [amount, setAmount] = useState('')
-  const [tf, setTf] = useState('1h')
+  const [tf, setTf] = useState('5m')
   const [feed, setFeed] = useState<'trades' | 'holders'>('trades')
   const [claiming, setClaiming] = useState(false)
   const [claimStage, setClaimStage] = useState<'collect' | 'claim' | null>(null)
@@ -209,14 +209,17 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
 
   // prefer real data; fall back to the live feed only until it loads
   const chartPoints = points.map((p) => p * mcapMult)
-  // real candles, re-bucketed for the selected lookback window
+  // real candles, bucketed at the selected interval (1m/5m/1h… per candle)
   const realCandles = useMemo(() => {
     const pts = activity?.pricePoints
     if (!pts || pts.length === 0) return undefined
     const now = Math.floor(Date.now() / 1000)
-    let windowed = tfSecs > 0 ? pts.filter((p) => p.t >= now - tfSecs) : pts
-    if (windowed.length < 2) windowed = pts // not enough in-window → show full history
-    return loxley.buildCandles(windowed, now)
+    const start = pts[0].t
+    const end = Math.max(now, pts[pts.length - 1].t)
+    const span = Math.max(end - start, tfSecs)
+    // one candle per `tfSecs` of time, capped so the chart stays readable
+    const n = Math.min(400, Math.max(2, Math.ceil(span / tfSecs)))
+    return loxley.buildCandles(pts, now, n)
   }, [activity, tfSecs])
   const changePct = activity ? activity.changePct : simChange
   const up = changePct >= 0
