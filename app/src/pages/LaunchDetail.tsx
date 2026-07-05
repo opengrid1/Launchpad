@@ -120,10 +120,11 @@ function usdTick(v: number): string {
 
 // each timeframe = a lookback window over the real price history
 const TF: { label: string; secs: number }[] = [
+  { label: '1m', secs: 60 },
+  { label: '5m', secs: 300 },
   { label: '1h', secs: 3600 },
   { label: '6h', secs: 21600 },
   { label: '24h', secs: 86400 },
-  { label: 'All', secs: 0 },
 ]
 
 export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBack: () => void; wallet: Wallet }) {
