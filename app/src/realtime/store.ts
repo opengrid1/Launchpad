@@ -41,8 +41,7 @@ export interface Activity {
 }
 
 /** Robinhood Chain block explorer (chain 4663). */
-export const EXPLORER = 'https://8crv4vmq6tiu1yqr.blockscout.com'
-const txHash = () => '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
+export const EXPLORER = 'https://explorer.mainnet.chain.robinhood.com'
 
 const ADDRS = ['0x9f…2a1d', '0x3c…88fe', '0x71…9F02', '0xaa…04c1', '0x5d…4a0b', '0x08…b3c2', '0xdd…4f19', '0xc0…7b31']
 
@@ -187,12 +186,16 @@ class RealtimeClient {
     this.emit('activity')
   }
 
-  /** Notifications are only for the connected user's own actions. */
-  notifyTrade(coin: Launch, side: 'buy' | 'sell', amount: string) {
-    this.pushActivity({ kind: side, symbol: coin.symbol, name: coin.name, amount, href: `${EXPLORER}/tx/${txHash()}` })
+  /** Notifications are only for the connected user's own actions, and link to
+   *  the real transaction on the explorer. */
+  notifyTrade(coin: Launch, side: 'buy' | 'sell', amount: string, txHash: string) {
+    this.pushActivity({ kind: side, symbol: coin.symbol, name: coin.name, amount, href: `${EXPLORER}/tx/${txHash}` })
   }
-  notifyClaim(coin: Launch, amount: string) {
-    this.pushActivity({ kind: 'claim', symbol: coin.symbol, name: coin.name, amount, href: `${EXPLORER}/tx/${txHash()}` })
+  notifyClaim(coin: Launch, amount: string, txHash: string) {
+    this.pushActivity({ kind: 'claim', symbol: coin.symbol, name: coin.name, amount, href: `${EXPLORER}/tx/${txHash}` })
+  }
+  notifyLaunch(name: string, symbol: string, txHash: string) {
+    this.pushActivity({ kind: 'launch', symbol, name, href: `${EXPLORER}/tx/${txHash}` })
   }
 
   private seedMarket(c: Pick<Launch, 'symbol' | 'priceEth'>): Market {

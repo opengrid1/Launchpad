@@ -1,10 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { compact, ETH_USD, eth, mcapUsd, price, supplyOf, topHolders, usd, type Launch } from '../data/launches'
 import { Monogram } from '../components/Monogram'
 import { TVChart } from '../components/TVChart'
 import { useMarket } from '../realtime/hooks'
+import { realtime } from '../realtime/store'
 import * as loxley from '../loxley'
 import type { Wallet } from '../web3/useWallet'
+
+/** Compact "2m ago" style relative time. */
+function relTime(ms: number): string {
+  if (!ms) return ''
+  const s = Math.max(0, Math.floor((Date.now() - ms) / 1000))
+  if (s < 60) return `${s}s`
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h`
+  return `${Math.floor(h / 24)}d`
+}
 
 function CopyIcon() {
   return (
@@ -105,12 +118,12 @@ function usdTick(v: number): string {
   return '$' + v.toLocaleString('en-US', { maximumFractionDigits: 2 })
 }
 
-// each timeframe = a different candle interval (points aggregated per candle)
-const TF: { label: string; group: number }[] = [
-  { label: '5m', group: 1 },
-  { label: '1h', group: 2 },
-  { label: '6h', group: 3 },
-  { label: '24h', group: 5 },
+// each timeframe = a lookback window over the real price history
+const TF: { label: string; secs: number }[] = [
+  { label: '1h', secs: 3600 },
+  { label: '6h', secs: 21600 },
+  { label: '24h', secs: 86400 },
+  { label: 'All', secs: 0 },
 ]
 
 export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBack: () => void; wallet: Wallet }) {
@@ -125,6 +138,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   const [trading, setTrading] = useState(false)
   const [tradeErr, setTradeErr] = useState<string | null>(null)
   const [tradeOk, setTradeOk] = useState(false)
+  const [tradeHash, setTradeHash] = useState('')
   const [ethBal, setEthBal] = useState(0)
   const [tokBal, setTokBal] = useState(0)
   const [livePrice, setLivePrice] = useState(0)
@@ -132,7 +146,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   const [claimableHolder, setClaimableHolder] = useState(0)
   const [creatorFees, setCreatorFees] = useState(0)
   const [activity, setActivity] = useState<loxley.PoolActivity | null>(null)
-  const tfGroup = TF.find((t) => t.label === tf)?.group ?? 2
+  const tfSecs = TF.find((t) => t.label === tf)?.secs ?? 0
 
   const ticker = launch.symbol.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase()
   const { price: live, points, changePct: simChange, trades: simTrades } = useMarket(launch.id)
@@ -144,7 +158,11 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
       ? activity.holderList.map((h, i) => ({ rank: i + 1, address: h.address, pct: h.pct, earnedEth: h.earnedEth, you: h.isYou }))
       : topHolders(launch).map((h) => ({ rank: h.rank, address: h.address, pct: h.pct, earnedEth: h.rewardsEth, you: h.you }))
   const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
-  const youAreCreator = !!wallet.account && launch.creator.toLowerCase() === short(wallet.account).toLowerCase()
+  const youAreCreator =
+    !!wallet.account &&
+    (launch.creatorAddress
+      ? launch.creatorAddress.toLowerCase() === wallet.account.toLowerCase()
+      : launch.creator.toLowerCase() === short(wallet.account).toLowerCase())
 
   // pull the connected wallet's real claimable ETH (holder dividends + creator fees)
   const isRealToken = launch.tokenAddress.startsWith('0x') && launch.tokenAddress.length === 42
@@ -190,7 +208,15 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
 
   // prefer real data; fall back to the live feed only until it loads
   const chartPoints = points.map((p) => p * mcapMult)
-  const realCandles = activity && activity.candles.length ? activity.candles : undefined
+  // real candles, re-bucketed for the selected lookback window
+  const realCandles = useMemo(() => {
+    const pts = activity?.pricePoints
+    if (!pts || pts.length === 0) return undefined
+    const now = Math.floor(Date.now() / 1000)
+    let windowed = tfSecs > 0 ? pts.filter((p) => p.t >= now - tfSecs) : pts
+    if (windowed.length < 2) windowed = pts // not enough in-window → show full history
+    return loxley.buildCandles(windowed, now)
+  }, [activity, tfSecs])
   const changePct = activity ? activity.changePct : simChange
   const up = changePct >= 0
   const volumeEth = activity ? activity.volumeEth : launch.volume
@@ -220,8 +246,10 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
       // 3. claim whatever is owed
       setClaimStage('claim')
       let did = false
-      if (hold > 0) { await loxley.claimEthDividends(signer, launch.tokenAddress); did = true }
-      if (youAreCreator && cf > 0) { await loxley.claimCreatorFees(signer, launch.tokenAddress); did = true }
+      let hash = ''
+      if (hold > 0) { hash = await loxley.claimEthDividends(signer, launch.tokenAddress); did = true }
+      if (youAreCreator && cf > 0) { hash = await loxley.claimCreatorFees(signer, launch.tokenAddress); did = true }
+      if (did) realtime.notifyClaim(launch, `${eth(hold + (youAreCreator ? cf : 0))} ETH`, hash)
       if (!did) setClaimErr('No rewards to claim yet — they accrue from trading fees.')
       setClaimableHolder(await loxley.claimableEth(launch.tokenAddress, acct).catch(() => 0))
       setCreatorFees(await loxley.creatorFees(launch.tokenAddress).catch(() => 0))
@@ -251,6 +279,7 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
   }, [amount, side, launch.tokenAddress, isRealToken, amt])
 
   const out = quotedOut ?? spotOut
+  const priceImpact = quotedOut != null && spotOut > 0 ? Math.max(0, 1 - quotedOut / spotOut) : 0
 
   async function doTrade() {
     if (!amt || trading) return
@@ -264,9 +293,13 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
     try {
       let signer = wallet.signer
       if (!signer) signer = (await loxley.connectWallet()).signer
-      if (side === 'buy') await loxley.buy(signer, launch.tokenAddress, amount, slippage)
-      else await loxley.sell(signer, launch.tokenAddress, amount, slippage)
+      const hash =
+        side === 'buy'
+          ? await loxley.buy(signer, launch.tokenAddress, amount, slippage)
+          : await loxley.sell(signer, launch.tokenAddress, amount, slippage)
       setTradeOk(true)
+      setTradeHash(hash)
+      realtime.notifyTrade(launch, side, `${eth(side === 'buy' ? amt : out)} ETH`, hash)
       setAmount('')
       // refresh the tape / price / balances shortly after
       loxley.fetchPoolActivity(launch.tokenAddress, supplyOf(launch), ETH_USD, wallet.account).then(setActivity).catch(() => {})
@@ -324,7 +357,13 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
               </div>
             </div>
             <div className="px-2 py-2">
-              <TVChart points={chartPoints} candles={realCandles} group={tfGroup} height={320} variant="candle" formatter={usdTick} />
+              {isRealToken && !activity ? (
+                <div className="flex items-center justify-center text-[12px] text-ink-3" style={{ height: 320 }}>
+                  Loading price history…
+                </div>
+              ) : (
+                <TVChart points={chartPoints} candles={realCandles} height={320} variant="candle" formatter={usdTick} />
+              )}
             </div>
             {/* stat strip under the chart */}
             <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-4 sm:divide-y-0">
@@ -436,7 +475,21 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
                 : `${side === 'buy' ? 'Buy' : 'Sell'} ${ticker}`}
             </button>
             {tradeErr && <p className="mt-2 break-words text-[11px] text-clay">{tradeErr}</p>}
-            {tradeOk && <p className="mt-2 text-[11px] text-emerald-strong">Trade submitted ✓</p>}
+            {tradeOk && (
+              <p className="mt-2 text-[11px] text-emerald-strong">
+                Trade submitted ✓{' '}
+                {tradeHash && (
+                  <a href={loxley.txUrl(tradeHash)} target="_blank" rel="noopener noreferrer" className="underline hover:text-emerald">
+                    view tx ↗
+                  </a>
+                )}
+              </p>
+            )}
+            {amt > 0 && priceImpact >= 0.05 && (
+              <p className={`mt-2 text-[11px] ${priceImpact >= 0.15 ? 'text-clay' : 'text-gold'}`}>
+                ⚠ High price impact: {(priceImpact * 100).toFixed(1)}% — you may want a higher slippage.
+              </p>
+            )}
             <div className="tnum mt-3 flex items-center justify-between text-[11px] text-ink-3">
               <span>≈ {side === 'buy' ? `${out ? compact(out) : '0'} ${ticker}` : `${eth(out)} ETH`}</span>
               <span>{launch.tradeFeeBps / 100}% tax</span>
@@ -527,8 +580,17 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
                   <span className={`w-10 shrink-0 font-semibold ${t.side === 'buy' ? 'text-emerald-strong' : 'text-clay'}`}>
                     {t.side === 'buy' ? 'BUY' : 'SELL'}
                   </span>
-                  <span className="truncate text-ink-3">{t.who}</span>
+                  <a
+                    href={`${loxley.CHAIN.explorer}/address/${t.who}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="truncate text-ink-3 transition hover:text-ink hover:underline"
+                  >
+                    {t.who}
+                  </a>
                   <span className="ml-auto shrink-0 text-ink">{t.amount}</span>
+                  {t.when > 0 && <span className="w-10 shrink-0 text-right text-[11px] text-ink-3">{relTime(t.when)}</span>}
                 </li>
               ))}
             </ul>

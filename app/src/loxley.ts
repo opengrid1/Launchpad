@@ -55,6 +55,9 @@ export function readProvider() {
   return new ethers.JsonRpcProvider(CHAIN.rpc, CHAIN.id)
 }
 
+/** Block-explorer link for a transaction hash. */
+export const txUrl = (hash: string) => `${CHAIN.explorer}/tx/${hash}`
+
 export async function connectWallet(): Promise<{ account: string; signer: ethers.Signer }> {
   const provider = eth()
   if (!provider) throw new Error('No wallet found. Install a Robinhood Chain-compatible wallet.')
@@ -236,9 +239,14 @@ export interface Holder {
   earnedEth: number // ETH dividends withdrawable
   isYou: boolean
 }
+export interface PricePoint {
+  t: number // unix seconds
+  v: number // USD market cap
+}
 export interface SwapStats {
   series: number[] // USD market cap over time (oldest → newest)
   candles: Candle[] // time-bucketed USD market-cap candles
+  pricePoints: PricePoint[] // raw (timestamp, mcap) points for client-side re-bucketing
   trades: PoolTrade[] // newest first
   volumeEth: number // total ETH traded
   changePct: number // first → last of the series
@@ -260,7 +268,7 @@ const INFRA = new Set([POOL_MANAGER.toLowerCase(), LAUNCHPAD.toLowerCase(), ethe
 /** Bucket (timestamp, value) points into candles over time, carrying the last
  *  price forward through quiet periods — so a real but low-activity token shows
  *  a proper flat candlestick series instead of one giant bar. */
-function buildCandles(pts: { t: number; v: number }[], nowSec: number, n = 50): Candle[] {
+export function buildCandles(pts: { t: number; v: number }[], nowSec: number, n = 50): Candle[] {
   if (!pts.length) return []
   const start = pts[0].t
   const end = Math.max(nowSec, pts[pts.length - 1].t, start + n)
@@ -295,7 +303,7 @@ function buildCandles(pts: { t: number; v: number }[], nowSec: number, n = 50): 
 /** Swap-derived stats (price series, candles, trade tape, volume, change).
  *  Lighter than fetchPoolActivity — used for board cards. */
 export async function fetchSwapStats(tokenAddr: string, supplyTokens: number, ethUsdPrice: number): Promise<SwapStats> {
-  const empty: SwapStats = { series: [], candles: [], trades: [], volumeEth: 0, changePct: 0 }
+  const empty: SwapStats = { series: [], candles: [], pricePoints: [], trades: [], volumeEth: 0, changePct: 0 }
   const info = await poolInfo(tokenAddr)
   if (!info) return empty
   const prov = readProvider()
@@ -332,7 +340,7 @@ export async function fetchSwapStats(tokenAddr: string, supplyTokens: number, et
   trades.reverse()
   const changePct = series.length >= 2 ? ((series[series.length - 1] - series[0]) / series[0]) * 100 : 0
   const candles = buildCandles(pts, Math.floor(Date.now() / 1000))
-  return { series, candles, trades, volumeEth, changePct }
+  return { series, candles, pricePoints: pts, trades, volumeEth, changePct }
 }
 
 async function fetchHolders(tokenAddr: string, supplyTokens: number, you?: string | null): Promise<{ holders: number; holderList: Holder[] }> {
@@ -393,17 +401,23 @@ export async function createToken(
   return { hash: tx.hash, token: ev ? ev.args.token : null }
 }
 
+async function sendAndHash(txPromise: Promise<ethers.TransactionResponse>): Promise<string> {
+  const tx = await txPromise
+  await tx.wait()
+  return tx.hash
+}
+
 /** Anyone can poke fee collection (routes 50% holders / 50% creator). */
 export async function collectFees(signer: ethers.Signer, tokenAddr: string) {
-  return (await launchpad(signer).collectFees(tokenAddr)).wait()
+  return sendAndHash(launchpad(signer).collectFees(tokenAddr))
 }
 /** Creator claims their 50% (native ETH). */
 export async function claimCreatorFees(signer: ethers.Signer, tokenAddr: string) {
-  return (await launchpad(signer).claimCreatorFees(tokenAddr)).wait()
+  return sendAndHash(launchpad(signer).claimCreatorFees(tokenAddr))
 }
 /** Holder claims their ETH dividends. */
 export async function claimEthDividends(signer: ethers.Signer, tokenAddr: string) {
-  return (await token(tokenAddr, signer).claimEth()).wait()
+  return sendAndHash(token(tokenAddr, signer).claimEth())
 }
 
 // ---- trading: real Uniswap v4 swaps via the Universal Router --------------
@@ -468,8 +482,7 @@ export async function buy(signer: ethers.Signer, tokenAddr: string, ethIn: strin
   const minOut = (quotedOut * bpsOf(slippagePct)) / 10000n
   const input = encodeV4SwapInput(info, true, amountIn, minOut) // ETH(0) → token(1)
   const ur = new ethers.Contract(UNIVERSAL_ROUTER, UR_ABI, signer)
-  const tx = await ur.execute(CMD_V4_SWAP, [input], Math.floor(Date.now() / 1000) + 1200, { value: amountIn })
-  return tx.wait()
+  return sendAndHash(ur.execute(CMD_V4_SWAP, [input], Math.floor(Date.now() / 1000) + 1200, { value: amountIn }))
 }
 
 /** Sell a token for ETH. `tokenIn` is a string amount of whole tokens. */
@@ -508,8 +521,7 @@ export async function sell(signer: ethers.Signer, tokenAddr: string, tokenIn: st
 
   const input = encodeV4SwapInput(info, false, amountIn, minOut) // token(1) → ETH(0)
   const ur = new ethers.Contract(UNIVERSAL_ROUTER, UR_ABI, signer)
-  const tx = await ur.execute(CMD_V4_SWAP, [input], Math.floor(Date.now() / 1000) + 1200)
-  return tx.wait()
+  return sendAndHash(ur.execute(CMD_V4_SWAP, [input], Math.floor(Date.now() / 1000) + 1200))
 }
 
 // ---- mapping to the UI's Launch shape ------------------------------------
@@ -573,6 +585,7 @@ export function toLaunch(o: OnchainLaunch, currentPriceWei: bigint, launchTsSec:
     buyers: 0,
     status: 'live',
     creator: short(o.creator),
+    creatorAddress: o.creator,
     yourTokens: 0,
     yourHolderRewards: 0,
     yourRebate: 0,

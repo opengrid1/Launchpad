@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { compact, defaultTokenImage, usd } from '../data/launches'
 import * as loxley from '../loxley'
+import { realtime } from '../realtime/store'
 import type { Wallet } from '../web3/useWallet'
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
@@ -76,7 +77,7 @@ export function Create({ onBack, onLaunched, wallet }: { onBack: () => void; onL
         signer = c.signer
         account = c.account
       }
-      await loxley.createToken(signer, {
+      const res = await loxley.createToken(signer, {
         name,
         symbol,
         supply: SUPPLY,
@@ -90,6 +91,7 @@ export function Create({ onBack, onLaunched, wallet }: { onBack: () => void; onL
         },
         devBuyEth: devBuy || '0',
       })
+      realtime.notifyLaunch(name, symbol, res.hash)
       await onLaunched()
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Launch failed')

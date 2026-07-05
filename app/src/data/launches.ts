@@ -37,7 +37,8 @@ export interface Launch {
   createdAgo: string // age since launch
   buyers: number
   status: LaunchStatus
-  creator: string
+  creator: string // shortened, for display
+  creatorAddress?: string // full address, for owner checks
 
   // what the connected demo wallet holds / can claim (ETH rewards)
   yourTokens: number
