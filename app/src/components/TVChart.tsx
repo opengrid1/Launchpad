@@ -91,12 +91,15 @@ export function TVChart({
     if (!series) return
     const base = 1_700_000_000
 
+    let candleCount = 0
+
     if (variant === 'area') {
       const data = points.map((v, i) => ({ time: (base + i * 60) as UTCTimestamp, value: v }))
       ;(series as ISeriesApi<'Area'>).setData(data)
     } else if (candles && candles.length) {
       // real, time-bucketed OHLC from on-chain swaps
       ;(series as ISeriesApi<'Candlestick'>).setData(candles.map((c) => ({ ...c, time: c.time as UTCTimestamp })))
+      candleCount = candles.length
     } else {
       const built = []
       for (let i = 0; i < points.length; i += group) {
@@ -112,8 +115,14 @@ export function TVChart({
       }
       ;(series as ISeriesApi<'Candlestick'>).setData(built)
     }
-    if (!fitRef.current || groupRef.current !== group) {
-      chartRef.current?.timeScale().fitContent()
+    const ts = chartRef.current?.timeScale()
+    if (candleCount > 0) {
+      // show the most recent ~70 candles at a comfortable width; scroll for more
+      const visible = Math.min(candleCount, 70)
+      ts?.setVisibleLogicalRange({ from: candleCount - visible, to: candleCount + 1 })
+      groupRef.current = group
+    } else if (!fitRef.current || groupRef.current !== group) {
+      ts?.fitContent()
       fitRef.current = true
       groupRef.current = group
     }
