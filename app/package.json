@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reown/appkit": "^1.8.21",
+    "@reown/appkit-adapter-ethers": "^1.8.21",
     "@tailwindcss/vite": "^4.3.0",
     "ethers": "^6.17.0",
     "lightweight-charts": "^5.2.0",

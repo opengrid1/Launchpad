@@ -233,11 +233,14 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
 
   async function doClaim() {
     if (claiming || !isRealToken) return
+    if (!wallet.signer) {
+      wallet.connect()
+      return
+    }
     setClaimErr(null)
     setClaiming(true)
     try {
-      let signer = wallet.signer
-      if (!signer) signer = (await loxley.connectWallet()).signer
+      const signer = wallet.signer
       const acct = wallet.account ?? (await signer.getAddress())
       // 1. sync: pull the pool's LP fees into the holder/creator reward pools
       setClaimStage('collect')
@@ -291,12 +294,15 @@ export function LaunchDetail({ launch, onBack, wallet }: { launch: Launch; onBac
       setTradeErr('This is a demo coin — trading is only live for on-chain tokens.')
       return
     }
+    if (!wallet.signer) {
+      wallet.connect()
+      return
+    }
     setTradeErr(null)
     setTradeOk(false)
     setTrading(true)
     try {
-      let signer = wallet.signer
-      if (!signer) signer = (await loxley.connectWallet()).signer
+      const signer = wallet.signer
       const hash =
         side === 'buy'
           ? await loxley.buy(signer, launch.tokenAddress, amount, slippage)

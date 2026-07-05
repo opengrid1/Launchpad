@@ -66,17 +66,15 @@ export function Create({ onBack, onLaunched, wallet }: { onBack: () => void; onL
 
   async function launch() {
     if (!ready) return
+    if (!wallet.signer) {
+      wallet.connect()
+      return
+    }
     setErr(null)
     setBusy(true)
     try {
-      // get a live signer (connect on the fly if needed)
-      let signer = wallet.signer
-      let account = wallet.account
-      if (!signer) {
-        const c = await loxley.connectWallet()
-        signer = c.signer
-        account = c.account
-      }
+      const signer = wallet.signer
+      const account = wallet.account
       const res = await loxley.createToken(signer, {
         name,
         symbol,

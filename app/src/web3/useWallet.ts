@@ -1,49 +1,36 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { Signer } from 'ethers'
-import { connectWallet } from '../loxley'
+import { useEffect, useState } from 'react'
+import { ethers, type Signer } from 'ethers'
+import { useAppKit, useAppKitAccount, useAppKitProvider } from '@reown/appkit/react'
+import type { Provider } from '@reown/appkit/react'
+import './appkit' // ensure AppKit is initialised once
 
-type Eip1193 = {
-  request: (a: { method: string; params?: unknown[] }) => Promise<unknown>
-  on?: (event: string, cb: (...a: unknown[]) => void) => void
-  removeListener?: (event: string, cb: (...a: unknown[]) => void) => void
-}
-const eth = (): Eip1193 | undefined => (window as unknown as { ethereum?: Eip1193 }).ethereum
-
-/** Wallet connection state for the connected user. */
+/** Wallet connection state, backed by Reown AppKit (WalletConnect). */
 export function useWallet() {
-  const [account, setAccount] = useState<string | null>(null)
+  const { open } = useAppKit()
+  const { address, isConnected } = useAppKitAccount()
+  const { walletProvider } = useAppKitProvider<Provider>('eip155')
   const [signer, setSigner] = useState<Signer | null>(null)
-  const [connecting, setConnecting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const connect = useCallback(async () => {
-    setConnecting(true)
-    setError(null)
-    try {
-      const { account, signer } = await connectWallet()
-      setAccount(account)
-      setSigner(signer)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to connect')
-    } finally {
-      setConnecting(false)
-    }
-  }, [])
-
-  // reflect account changes from the wallet
   useEffect(() => {
-    const provider = eth()
-    if (!provider?.on) return
-    const onAccounts = (...a: unknown[]) => {
-      const accts = a[0] as string[]
-      setAccount(accts?.[0] ?? null)
-      if (!accts?.length) setSigner(null)
+    let alive = true
+    if (isConnected && walletProvider) {
+      new ethers.BrowserProvider(walletProvider as ethers.Eip1193Provider)
+        .getSigner()
+        .then((s) => { if (alive) setSigner(s) })
+        .catch(() => { if (alive) setSigner(null) })
+    } else {
+      setSigner(null)
     }
-    provider.on('accountsChanged', onAccounts)
-    return () => provider.removeListener?.('accountsChanged', onAccounts)
-  }, [])
+    return () => { alive = false }
+  }, [isConnected, walletProvider])
 
-  return { account, signer, connecting, error, connect }
+  return {
+    account: isConnected ? (address ?? null) : null,
+    signer,
+    connecting: false,
+    error: null as string | null,
+    connect: () => open(),
+  }
 }
 
 export type Wallet = ReturnType<typeof useWallet>

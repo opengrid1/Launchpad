@@ -55,14 +55,11 @@ export function Header({ route, onNavigate, wallet, query, onQuery }: { route: R
             <span className="sm:hidden">Create</span>
           </button>
           <button
-            onClick={() => !wallet.account && wallet.connect()}
-            disabled={wallet.connecting}
-            title={wallet.error ?? undefined}
-            className="flex cursor-pointer items-center gap-2 rounded-full bg-surface px-3.5 py-2 text-[13px] text-ink ring-1 ring-line transition hover:ring-line-2 disabled:opacity-60"
+            onClick={() => wallet.connect()}
+            className="flex cursor-pointer items-center gap-2 rounded-full bg-surface px-3.5 py-2 text-[13px] text-ink ring-1 ring-line transition hover:ring-line-2"
           >
-            <span className="tnum">
-              {wallet.account ? shortAddr(wallet.account) : wallet.connecting ? 'Connecting…' : 'Connect wallet'}
-            </span>
+            {wallet.account && <span className="h-2 w-2 shrink-0 rounded-full bg-emerald" />}
+            <span className="tnum">{wallet.account ? shortAddr(wallet.account) : 'Connect wallet'}</span>
           </button>
         </div>
       </div>
