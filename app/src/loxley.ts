@@ -15,6 +15,16 @@ export const CHAIN = {
 }
 
 export const LAUNCHPAD = '0xeae2b170c9c0a765887c285808e32d4eec3c4687'
+
+// Test tokens launched while building — hidden from every list in the UI.
+// Add a token address (any case) here to keep it off the frontend.
+export const HIDDEN_TOKENS = new Set(
+  [
+    '0xEd87BEBF0010B68A0a364D237e9076FB238aaD74', // GEN — "Loxley Genesis"
+    '0x25fA504D2aBD366cb3485702A93a5F95faC2d41c', // TEST — "Test"
+    '0xa7CAEEDE1c482F6F939aAfF1FfaC440578120E43', // TEST — "Last test"
+  ].map((a) => a.toLowerCase()),
+)
 export const POOL_MANAGER = '0x8366a39CC670B4001A1121B8F6A443A643e40951'
 export const UNIVERSAL_ROUTER = '0x8876789976dEcBfCbBbe364623C63652db8C0904'
 export const PERMIT2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3'
@@ -157,6 +167,7 @@ export async function fetchLaunches(fromBlock = 0): Promise<OnchainLaunch[]> {
     }
   }
   return (launched as ethers.EventLog[])
+    .filter((e) => !HIDDEN_TOKENS.has((e.args.token as string).toLowerCase()))
     .map((e) => ({
       token: e.args.token,
       creator: e.args.creator,
