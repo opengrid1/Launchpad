@@ -23,6 +23,7 @@ export const HIDDEN_TOKENS = new Set(
     '0xEd87BEBF0010B68A0a364D237e9076FB238aaD74', // GEN — "Loxley Genesis"
     '0x25fA504D2aBD366cb3485702A93a5F95faC2d41c', // TEST — "Test"
     '0xa7CAEEDE1c482F6F939aAfF1FfaC440578120E43', // TEST — "Last test"
+    '0x014f93D6dB39131E263b38f3BFB3454965DB87e4', // wrong ticker — hidden
   ].map((a) => a.toLowerCase()),
 )
 export const POOL_MANAGER = '0x8366a39CC670B4001A1121B8F6A443A643e40951'
