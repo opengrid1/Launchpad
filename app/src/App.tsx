@@ -26,6 +26,7 @@ function pathToRoute(path: string): Route {
 
 export default function App() {
   const [route, setRoute] = useState<Route>(() => pathToRoute(window.location.pathname))
+  const [query, setQuery] = useState('')
   const coins = useCoins()
   const wallet = useWallet()
 
@@ -63,6 +64,12 @@ export default function App() {
     }
   }, [route, coins])
 
+  // typing in search jumps to the board so results are visible
+  const onQuery = (v: string) => {
+    setQuery(v)
+    if (v && route.page !== 'explore') navigate({ page: 'explore' })
+  }
+
   const openBySymbol = (symbol: string) => {
     const c = coins.find((l) => l.symbol === symbol)
     if (c) navigate({ page: 'launch', address: c.tokenAddress })
@@ -72,12 +79,12 @@ export default function App() {
     <div className="min-h-screen overflow-x-hidden">
       <div className="sticky top-0 z-50 border-b border-line bg-paper/80 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <Header route={route} onNavigate={navigate} wallet={wallet} />
+          <Header route={route} onNavigate={navigate} wallet={wallet} query={query} onQuery={onQuery} />
         </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        {route.page === 'explore' && <Explore coins={coins} onOpen={(address) => navigate({ page: 'launch', address })} />}
+        {route.page === 'explore' && <Explore coins={coins} query={query} onOpen={(address) => navigate({ page: 'launch', address })} />}
         {route.page === 'create' && (
           <Create
             wallet={wallet}

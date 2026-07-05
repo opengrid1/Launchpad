@@ -3,7 +3,7 @@ import type { Wallet } from '../web3/useWallet'
 
 const shortAddr = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
 
-function Search({ className }: { className: string }) {
+function Search({ className, value, onChange }: { className: string; value: string; onChange: (v: string) => void }) {
   return (
     <label className={`flex items-center gap-2 rounded-full bg-surface px-4 py-2 ring-1 ring-line focus-within:ring-line-2 ${className}`}>
       <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="shrink-0">
@@ -11,14 +11,21 @@ function Search({ className }: { className: string }) {
         <path d="M10.5 10.5 L14 14" stroke="var(--color-ink-3)" strokeWidth="1.4" strokeLinecap="round" />
       </svg>
       <input
-        placeholder="Search coins"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Search name, ticker, or address"
         className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
       />
+      {value && (
+        <button type="button" onClick={() => onChange('')} className="shrink-0 text-ink-3 transition hover:text-ink" aria-label="Clear">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+        </button>
+      )}
     </label>
   )
 }
 
-export function Header({ route, onNavigate, wallet }: { route: Route; onNavigate: (r: Route) => void; wallet: Wallet }) {
+export function Header({ route, onNavigate, wallet, query, onQuery }: { route: Route; onNavigate: (r: Route) => void; wallet: Wallet; query: string; onQuery: (v: string) => void }) {
   return (
     <header className="py-3">
       <div className="flex items-center gap-3">
@@ -35,7 +42,7 @@ export function Header({ route, onNavigate, wallet }: { route: Route; onNavigate
         </button>
 
         {/* desktop search */}
-        <Search className="ml-2 hidden flex-1 sm:flex md:max-w-md" />
+        <Search className="ml-2 hidden flex-1 sm:flex md:max-w-md" value={query} onChange={onQuery} />
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <button
@@ -61,7 +68,7 @@ export function Header({ route, onNavigate, wallet }: { route: Route; onNavigate
       </div>
 
       {/* mobile search row */}
-      <Search className="mt-3 flex sm:hidden" />
+      <Search className="mt-3 flex sm:hidden" value={query} onChange={onQuery} />
     </header>
   )
 }

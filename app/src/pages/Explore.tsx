@@ -10,10 +10,20 @@ const SORTS: { key: Sort; label: string }[] = [
   { key: 'new', label: 'New' },
 ]
 
-export function Explore({ coins: all, onOpen }: { coins: Launch[]; onOpen: (address: string) => void }) {
+export function Explore({ coins: all, query = '', onOpen }: { coins: Launch[]; query?: string; onOpen: (address: string) => void }) {
   const [sort, setSort] = useState<Sort>('trending')
 
-  const coins = [...all].sort((a, b) => {
+  const q = query.trim().toLowerCase()
+  const filtered = q
+    ? all.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.symbol.toLowerCase().includes(q) ||
+          c.tokenAddress.toLowerCase().includes(q),
+      )
+    : all
+
+  const coins = [...filtered].sort((a, b) => {
     if (sort === 'top') return b.priceEth * supplyOf(b) - a.priceEth * supplyOf(a)
     if (sort === 'new') return ageHours(a.createdAgo) - ageHours(b.createdAgo)
     return b.volume - a.volume // trending
@@ -39,19 +49,21 @@ export function Explore({ coins: all, onOpen }: { coins: Launch[]; onOpen: (addr
 
   return (
     <main className="pb-24">
-      {/* king of the hill */}
-      <section className="rise-in pt-6">
-        <div className="mb-2 flex items-center gap-2">
-          <span className="text-[15px]">👑</span>
-          <span className="eyebrow text-gold">King of the hill</span>
-        </div>
-        <div className="sm:max-w-2xl">
-          <LaunchCard launch={king} index={0} featured onOpen={() => onOpen(king.tokenAddress)} />
-        </div>
-      </section>
+      {/* king of the hill — hidden while searching */}
+      {!q && king && (
+        <section className="rise-in pt-6">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-[15px]">👑</span>
+            <span className="eyebrow text-gold">King of the hill</span>
+          </div>
+          <div className="sm:max-w-2xl">
+            <LaunchCard launch={king} index={0} featured onOpen={() => onOpen(king.tokenAddress)} />
+          </div>
+        </section>
+      )}
 
       {/* sort tabs */}
-      <div className="mt-8 flex items-center justify-between gap-3">
+      <div className={`flex items-center justify-between gap-3 ${q ? 'pt-6' : 'mt-8'}`}>
         <div className="flex items-center gap-2 overflow-x-auto">
           {SORTS.map((f) => (
             <button
@@ -69,11 +81,17 @@ export function Explore({ coins: all, onOpen }: { coins: Launch[]; onOpen: (addr
       </div>
 
       {/* board */}
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {coins.map((l, i) => (
-          <LaunchCard key={l.id} launch={l} index={i} onOpen={() => onOpen(l.tokenAddress)} />
-        ))}
-      </div>
+      {coins.length === 0 ? (
+        <p className="mt-10 text-center text-[13px] text-ink-3">
+          No coins match “{query.trim()}”.
+        </p>
+      ) : (
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {coins.map((l, i) => (
+            <LaunchCard key={l.id} launch={l} index={i} onOpen={() => onOpen(l.tokenAddress)} />
+          ))}
+        </div>
+      )}
     </main>
   )
 }
