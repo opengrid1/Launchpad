@@ -79,6 +79,15 @@ contract LoxleyFactoryV2 is IUnlockCallback {
     IStockRegistry public immutable registry;
     IEthUsdOracle public immutable oracle;
 
+    // ── admin (forked from v1) ────────────────────────────────────────────────
+    // The owner sets the DEFAULT starting market cap used when a creator launches
+    // without specifying one (startMcapUsd == 0). This is the only admin power on
+    // the factory and it is funds-safe: it changes the price of FUTURE launches
+    // only — it can never touch an existing pool, its LP, its fees, or any
+    // holder's balance. Ownership can be transferred to a multisig or renounced.
+    address public owner;
+    uint256 public startingMarketCapUsd; // owner-set default, whole USD
+
     struct Coin {
         address token;
         address creator;
@@ -108,22 +117,52 @@ contract LoxleyFactoryV2 is IUnlockCallback {
         uint256 devBuyAmount; // creator's optional first buy, in the quote currency
     }
 
+    event OwnerChanged(address indexed from, address indexed to);
+    event StartingMarketCapChanged(uint256 usd);
+
     error OnlyManager();
+    error OnlyOwner();
     error BadQuote();
     error BadMcap();
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert OnlyOwner();
+        _;
+    }
 
     constructor(
         IPoolManager _manager,
         IHooks _hook,
         IRewardsDistributorV2Reg _distributor,
         IStockRegistry _registry,
-        IEthUsdOracle _oracle
+        IEthUsdOracle _oracle,
+        address _owner,
+        uint256 _startingMarketCapUsd
     ) {
         manager = _manager;
         hook = _hook;
         distributor = _distributor;
         registry = _registry;
         oracle = _oracle;
+        owner = _owner;
+        if (_startingMarketCapUsd < MIN_MCAP_USD || _startingMarketCapUsd > MAX_MCAP_USD) revert BadMcap();
+        startingMarketCapUsd = _startingMarketCapUsd;
+        emit OwnerChanged(address(0), _owner);
+        emit StartingMarketCapChanged(_startingMarketCapUsd);
+    }
+
+    // ── admin: set the default starting market cap (funds-safe) ───────────────
+    /// Forked from v1. Affects only launches that don't pass their own mcap.
+    /// Cannot change any existing coin's price, LP, fees, or holder balances.
+    function setStartingMarketCap(uint256 usd) external onlyOwner {
+        if (usd < MIN_MCAP_USD || usd > MAX_MCAP_USD) revert BadMcap();
+        startingMarketCapUsd = usd;
+        emit StartingMarketCapChanged(usd);
+    }
+
+    function transferOwnership(address to) external onlyOwner {
+        emit OwnerChanged(owner, to);
+        owner = to; // pass to a multisig, or to address(0) to renounce.
     }
 
     // ── launch ───────────────────────────────────────────────────────────────
@@ -144,7 +183,10 @@ contract LoxleyFactoryV2 is IUnlockCallback {
         uint256 devBuyQuote
     ) external payable returns (address token, PoolId poolId) {
         if (!registry.isAllowedQuote(quote)) revert BadQuote();
-        if (startMcapUsd < MIN_MCAP_USD || startMcapUsd > MAX_MCAP_USD) revert BadMcap();
+        // 0 = use the owner-set default; otherwise the creator's own choice,
+        // clamped to the safety band.
+        uint256 mcap = startMcapUsd == 0 ? startingMarketCapUsd : startMcapUsd;
+        if (mcap < MIN_MCAP_USD || mcap > MAX_MCAP_USD) revert BadMcap();
 
         // 1. deploy the coin; whole supply to this factory to seed the pool.
         LoxleyTokenV2 t = new LoxleyTokenV2(name, symbol, uri, SUPPLY, address(distributor));
@@ -162,7 +204,7 @@ contract LoxleyFactoryV2 is IUnlockCallback {
 
         // 3. derive the launch price from the chosen mcap and the quote's USD
         //    price, then open the pool.
-        uint160 sqrtPriceX96 = _launchSqrtPrice(token, quote, startMcapUsd, coinIsZero);
+        uint160 sqrtPriceX96 = _launchSqrtPrice(token, quote, mcap, coinIsZero);
         manager.initialize(key, sqrtPriceX96);
 
         // 4. register everywhere BEFORE any swap can run.
@@ -179,7 +221,7 @@ contract LoxleyFactoryV2 is IUnlockCallback {
         manager.unlock(abi.encode(LaunchState(key, sqrtPriceX96, token, msg.sender, quote, coinIsZero, devBuy)));
 
         coins.push(Coin(token, msg.sender, quote, poolId));
-        emit Launched(token, msg.sender, quote, poolId, startMcapUsd, buybackOn, sqrtPriceX96);
+        emit Launched(token, msg.sender, quote, poolId, mcap, buybackOn, sqrtPriceX96);
     }
 
     // ── v4 unlock callback ────────────────────────────────────────────────────
