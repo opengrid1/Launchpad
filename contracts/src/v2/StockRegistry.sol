@@ -1,31 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-interface IUsdOracle {
-    /// @return price of 1 whole unit of the asset in USD, 8 decimals (Chainlink-style).
-    function usd1e8() external view returns (uint256);
+interface IERC20Decimals {
+    function decimals() external view returns (uint8);
 }
 
 /// @title StockRegistry
 /// @notice The allowlist of *quote* currencies a coin may pair against.
 ///
-///         Native ETH is always allowed. Every other quote (a tokenized stock)
-///         must be listed here with a USD price oracle, so the factory can derive
-///         a launch price from the creator's chosen starting market cap.
+///         Native ETH is always allowed. Every other quote must be a real,
+///         on-chain tokenized stock (e.g. Robinhood's AAPL/NVDA/TSLA tokens) that
+///         has been listed here. There is NO price oracle: a coin's starting
+///         price is denominated directly in the quote at launch, so this registry
+///         is a pure, fully on-chain allowlist with no external dependency.
 ///
-///         Governance here is deliberately minimal and *funds-safe*: the owner
-///         can ADD a stock (and swap in a better oracle for one it already
-///         listed) and can pause *new* listings, but there is NO function that
-///         removes a listed stock, moves anyone's tokens, or touches fees/LP.
-///         So the gatekeeping stops fake/scam "stocks" from being paired without
-///         ever giving governance power over user funds. Ownership can be
-///         renounced once the desired set of stocks is listed.
+///         Governance is minimal and *funds-safe*: the owner can ADD a stock and
+///         freeze listings, but there is NO function that removes a listed stock,
+///         moves anyone's tokens, or touches fees/LP. The gatekeeping only stops
+///         fake/scam "stocks" from being paired; it never gives governance power
+///         over user funds. Ownership can be renounced once the set is final.
 contract StockRegistry {
     struct Quote {
         bool listed;
-        address oracle; // IUsdOracle for this stock's USD price
-        uint8 decimals; // token decimals (for price math)
-        string symbol; // e.g. "AAPLx"
+        uint8 decimals; // cached token decimals (read on-chain at listing)
+        string symbol; // display only, e.g. "AAPL"
     }
 
     address public owner;
@@ -35,8 +33,7 @@ contract StockRegistry {
     address[] public listed; // enumeration
 
     event OwnerChanged(address indexed from, address indexed to);
-    event StockListed(address indexed token, address oracle, uint8 decimals, string symbol);
-    event OracleUpdated(address indexed token, address oracle);
+    event StockListed(address indexed token, uint8 decimals, string symbol);
     event ListingFrozen();
 
     error OnlyOwner();
@@ -56,23 +53,16 @@ contract StockRegistry {
     }
 
     // ── governance: add-only, funds-safe ─────────────────────────────────────
-    /// List a tokenized stock as an allowed quote currency.
-    function listStock(address token, address oracle, uint8 decimals, string calldata symbol) external onlyOwner {
+    /// List a real tokenized stock as an allowed quote currency. `decimals` is
+    /// read from the token itself so it can't be spoofed by the owner.
+    function listStock(address token, string calldata symbol) external onlyOwner {
         if (listingFrozen) revert Frozen();
-        if (token == address(0) || oracle == address(0)) revert ZeroAddress();
+        if (token == address(0)) revert ZeroAddress();
         if (quotes[token].listed) revert AlreadyListed();
-        quotes[token] = Quote({listed: true, oracle: oracle, decimals: decimals, symbol: symbol});
+        uint8 dec = IERC20Decimals(token).decimals();
+        quotes[token] = Quote({listed: true, decimals: dec, symbol: symbol});
         listed.push(token);
-        emit StockListed(token, oracle, decimals, symbol);
-    }
-
-    /// Point an already-listed stock at a new/better oracle. Cannot list or
-    /// delist — only swaps the price source for a stock that is already allowed.
-    function updateOracle(address token, address oracle) external onlyOwner {
-        if (!quotes[token].listed) revert NotListed();
-        if (oracle == address(0)) revert ZeroAddress();
-        quotes[token].oracle = oracle;
-        emit OracleUpdated(token, oracle);
+        emit StockListed(token, dec, symbol);
     }
 
     /// Permanently stop new listings (the set becomes immutable).
@@ -92,12 +82,12 @@ contract StockRegistry {
         return quote == address(0) || quotes[quote].listed;
     }
 
-    /// USD price (1e8) of 1 whole unit of the quote. For ETH, callers use the
-    /// ETH/USD oracle directly; this reverts for ETH so misuse is caught.
-    function quoteUsd1e8(address quote) external view returns (uint256) {
+    /// Decimals of a listed quote (18 for ETH). Used for display / price scaling.
+    function quoteDecimals(address quote) external view returns (uint8) {
+        if (quote == address(0)) return 18;
         Quote storage q = quotes[quote];
         if (!q.listed) revert NotListed();
-        return IUsdOracle(q.oracle).usd1e8();
+        return q.decimals;
     }
 
     function listedCount() external view returns (uint256) {

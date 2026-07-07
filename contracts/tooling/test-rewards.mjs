@@ -16,7 +16,7 @@ const files = {
 const input = {
   language: 'Solidity',
   sources: Object.fromEntries(Object.entries(files).map(([k, v]) => [k, { content: v }])),
-  settings: { optimizer: { enabled: true, runs: 800 }, outputSelection: { '*': { '*': ['abi', 'evm.bytecode.object'] } } },
+  settings: { optimizer: { enabled: true, runs: 800 }, evmVersion: 'shanghai', outputSelection: { '*': { '*': ['abi', 'evm.bytecode.object'] } } },
 }
 const out = JSON.parse(solc.compile(JSON.stringify(input)))
 const errs = (out.errors || []).filter((e) => e.severity === 'error')
@@ -37,7 +37,7 @@ const Exec = C('test/mocks/Mocks.sol', 'MockExecutor')
 
 // ---- boot local EVM ----
 const provider = new ethers.BrowserProvider(
-  Ganache.provider({ logging: { quiet: true }, wallet: { totalAccounts: 6, defaultBalance: 1000 } }),
+  Ganache.provider({ logging: { quiet: true }, chain: { hardfork: 'shanghai' }, wallet: { totalAccounts: 6, defaultBalance: 1000 } }),
 )
 const [deployer, hook, creator, alice, bob, keeper] = await Promise.all(
   (await provider.send('eth_accounts', [])).map((a) => provider.getSigner(a)),
@@ -77,7 +77,8 @@ const POOL_MANAGER = '0x00000000000000000000000000000000000000A1' // dummy exclu
 // ============ TEST 1: ETH-quote, 50/50 split, pro-rata, single-step claim ============
 console.log('\nTEST 1 — ETH quote: 50/50 split + pro-rata holders + one-step claim')
 {
-  const dist = await deploy(Dist, deployer, [await addr(deployer), await addr(hook), POOL_MANAGER])
+  const exec0 = await deploy(Exec, deployer, [2n])
+  const dist = await deploy(Dist, deployer, [await addr(deployer), await addr(hook), POOL_MANAGER, await exec0.getAddress()])
   // coin minted to deployer (acts as the "pool"/seed holder)
   const coin = await deploy(Coin, deployer, [E(1000), await dist.getAddress()])
   await dist.register(await coin.getAddress(), await addr(creator), ethers.ZeroAddress, false)
@@ -114,7 +115,8 @@ console.log('\nTEST 1 — ETH quote: 50/50 split + pro-rata holders + one-step c
 // ============ TEST 2: creator buyback (burn) toggle ============
 console.log('\nTEST 2 — creator buyback: 50% funds buyback, executor buys, coins burned')
 {
-  const dist = await deploy(Dist, deployer, [await addr(deployer), await addr(hook), POOL_MANAGER])
+  const exec0 = await deploy(Exec, deployer, [2n])
+  const dist = await deploy(Dist, deployer, [await addr(deployer), await addr(hook), POOL_MANAGER, await exec0.getAddress()])
   const coin = await deploy(Coin, deployer, [E(1000), await dist.getAddress()])
   await dist.register(await coin.getAddress(), await addr(creator), ethers.ZeroAddress, false)
   await (await coin.connect(deployer).transfer(await addr(alice), E(500))).wait()
@@ -129,13 +131,12 @@ console.log('\nTEST 2 — creator buyback: 50% funds buyback, executor buys, coi
   eq('creator owed stays 0 (buyback on)', await dist.creatorOwed(await coin.getAddress()), 0n)
   eq('buyback fund = 0.5', await dist.buybackFund(await coin.getAddress()), E(0.5))
 
-  // executor: give it a stash of coins to sell, rate = 2 coins per wei
-  const exec = await deploy(Exec, deployer, [await coin.getAddress(), 2n, ethers.ZeroAddress])
-  await (await coin.connect(deployer).transfer(await exec.getAddress(), E(400))).wait()
+  // stash coins into the trusted executor the distributor was built with, rate 2
+  await (await coin.connect(deployer).transfer(await exec0.getAddress(), E(400))).wait()
 
   const supplyBefore = await coin.totalSupply()
   // anyone (keeper) can trigger buyback; fund 0.5 ETH * rate 2 = 1.0 coin burned
-  await (await dist.connect(keeper).executeBuyback(await coin.getAddress(), await exec.getAddress())).wait()
+  await (await dist.connect(keeper).executeBuyback(await coin.getAddress())).wait()
   eq('buyback fund drained to 0', await dist.buybackFund(await coin.getAddress()), 0n)
   eq('supply reduced by 1.0 coin (burned)', supplyBefore - (await coin.totalSupply()), E(1))
   eq('distributor holds 0 coins after burn', await coin.balanceOf(await dist.getAddress()), 0n)
@@ -144,7 +145,8 @@ console.log('\nTEST 2 — creator buyback: 50% funds buyback, executor buys, coi
 // ============ TEST 3: stock-quote rewards (ERC20) ============
 console.log('\nTEST 3 — stock quote: rewards paid in a stock ERC20')
 {
-  const dist = await deploy(Dist, deployer, [await addr(deployer), await addr(hook), POOL_MANAGER])
+  const exec0 = await deploy(Exec, deployer, [2n])
+  const dist = await deploy(Dist, deployer, [await addr(deployer), await addr(hook), POOL_MANAGER, await exec0.getAddress()])
   const coin = await deploy(Coin, deployer, [E(1000), await dist.getAddress()])
   const stock = await deploy(Stock, deployer, [E(1_000_000)])
   await dist.register(await coin.getAddress(), await addr(creator), await stock.getAddress(), false)
@@ -165,13 +167,22 @@ console.log('\nTEST 3 — stock quote: rewards paid in a stock ERC20')
 // ============ TEST 4: access control ============
 console.log('\nTEST 4 — access control')
 {
-  const dist = await deploy(Dist, deployer, [await addr(deployer), await addr(hook), POOL_MANAGER])
+  const exec0 = await deploy(Exec, deployer, [2n])
+  const dist = await deploy(Dist, deployer, [await addr(deployer), await addr(hook), POOL_MANAGER, await exec0.getAddress()])
   const coin = await deploy(Coin, deployer, [E(1000), await dist.getAddress()])
   await dist.register(await coin.getAddress(), await addr(creator), ethers.ZeroAddress, false)
   await reverts('non-hook depositETH reverts', dist.connect(alice).depositETH(await coin.getAddress(), { value: E(1) }))
   await reverts('non-creator setBuyback reverts', dist.connect(alice).setBuyback(await coin.getAddress(), true))
   await reverts('non-creator claimCreator reverts', dist.connect(alice).claimCreator(await coin.getAddress()))
   await reverts('non-factory register reverts', dist.connect(alice).register(await coin.getAddress(), await addr(alice), ethers.ZeroAddress, false))
+}
+
+// ============ TEST 5: C-1 regression — no caller-supplied executor ============
+console.log('\nTEST 5 — C-1: buyback fund can only go to the trusted, immutable executor')
+{
+  const fn = Dist.abi.find((e) => e.type === 'function' && e.name === 'executeBuyback')
+  eq('executeBuyback takes only (token) — no attacker executor param', fn.inputs.length, 1)
+  eq('buybackExecutor is a constructor-set immutable getter', Dist.abi.some((e) => e.name === 'buybackExecutor' && e.stateMutability === 'view'), true)
 }
 
 console.log(`\n──────────\n${pass} passed, ${fail} failed`)

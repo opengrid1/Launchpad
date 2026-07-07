@@ -50,6 +50,21 @@ contract RewardsDistributorV2 {
     address public immutable factory;
     address public immutable hook;
     address public immutable poolManager; // holds pool reserves → excluded from holder rewards
+    // Trusted, fixed contract that performs the buyback swap (quote -> coin) and
+    // returns the bought coins here to be burned. Set once at construction — it
+    // is NOT a caller-supplied parameter, so the buyback fund can never be routed
+    // to an arbitrary address (fixes the fund-theft where anyone could pass their
+    // own "executor" and keep the fund).
+    IBuybackExecutor public immutable buybackExecutor;
+
+    // ── reentrancy guard ──────────────────────────────────────────────────────
+    uint256 private _locked = 1;
+    modifier nonReentrant() {
+        require(_locked == 1, "reentrant");
+        _locked = 2;
+        _;
+        _locked = 1;
+    }
 
     struct Coin {
         address token;
@@ -83,10 +98,11 @@ contract RewardsDistributorV2 {
     error Nothing();
     error EthXfer();
 
-    constructor(address _factory, address _hook, address _poolManager) {
+    constructor(address _factory, address _hook, address _poolManager, address _buybackExecutor) {
         factory = _factory;
         hook = _hook;
         poolManager = _poolManager;
+        buybackExecutor = IBuybackExecutor(_buybackExecutor);
         excluded[_poolManager] = true;
         excluded[address(this)] = true;
         excluded[address(0)] = true;
@@ -167,7 +183,7 @@ contract RewardsDistributorV2 {
     }
 
     // ── holder claim (single step, pull) ──────────────────────────────────────
-    function claim(address token) external {
+    function claim(address token) external nonReentrant {
         Coin storage c = coins[token];
         _settle(c, token, msg.sender);
         uint256 amt = c.pending[msg.sender];
@@ -178,7 +194,7 @@ contract RewardsDistributorV2 {
     }
 
     // ── creator claim (only when buyback is off) ──────────────────────────────
-    function claimCreator(address token) external {
+    function claimCreator(address token) external nonReentrant {
         Coin storage c = coins[token];
         if (msg.sender != c.creator) revert OnlyCreator();
         uint256 amt = c.creatorOwed;
@@ -197,21 +213,22 @@ contract RewardsDistributorV2 {
     }
 
     // ── execute a buyback: spend the fund to buy the coin, then burn it ───────
-    //    Permissionless: the fund can only ever be spent on buying + burning the
-    //    coin, so there's nothing to steal by calling this.
-    function executeBuyback(address token, IBuybackExecutor executor) external returns (uint256 burned) {
+    //    Permissionless to *trigger*, but the fund is always handed to the fixed,
+    //    trusted `buybackExecutor` (set at construction) and whatever coin it
+    //    delivers is burned. There is no caller-supplied executor, so the fund can
+    //    never be routed to an arbitrary address.
+    function executeBuyback(address token) external nonReentrant returns (uint256 burned) {
         Coin storage c = coins[token];
         if (!c.registered) revert NotRegistered();
         uint256 fund = c.buybackFund;
         if (fund == 0) revert Nothing();
         c.buybackFund = 0;
 
-        uint256 bought;
         if (c.quote == address(0)) {
-            bought = executor.buyback{value: fund}(token, c.quote, fund, address(this));
+            buybackExecutor.buyback{value: fund}(token, c.quote, fund, address(this));
         } else {
-            IERC20Min(c.quote).approve(address(executor), fund);
-            bought = executor.buyback(token, c.quote, fund, address(this));
+            _safeApprove(c.quote, address(buybackExecutor), fund);
+            buybackExecutor.buyback(token, c.quote, fund, address(this));
         }
         // burn everything the executor delivered.
         burned = IERC20Min(token).balanceOf(address(this));
@@ -258,8 +275,19 @@ contract RewardsDistributorV2 {
             (bool ok,) = to.call{value: amount}("");
             if (!ok) revert EthXfer();
         } else {
-            IERC20Min(quote).transfer(to, amount);
+            _safeTransfer(quote, to, amount);
         }
+    }
+
+    // ── minimal SafeERC20: tolerate tokens that return nothing, revert on false ─
+    function _safeTransfer(address token, address to, uint256 amount) internal {
+        (bool ok, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, amount)); // transfer
+        require(ok && (data.length == 0 || abi.decode(data, (bool))), "transfer failed");
+    }
+
+    function _safeApprove(address token, address spender, uint256 amount) internal {
+        (bool ok, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, spender, amount)); // approve
+        require(ok && (data.length == 0 || abi.decode(data, (bool))), "approve failed");
     }
 
     receive() external payable {}

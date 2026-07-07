@@ -96,20 +96,17 @@ contract MockStock {
     }
 }
 
-/// Stand-in for the v4 buyback swap. Holds a stash of coins; on buyback it
+/// Stand-in for the v4 buyback swap. Coin-agnostic (like the real executor,
+/// which looks the pool up by token): holds a stash of the coin and, on buyback,
 /// consumes the quote and delivers `amountIn * rate` coins to the recipient.
 contract MockExecutor {
-    MockCoin public coin;
     uint256 public rate; // coins delivered per 1 wei of quote
-    address public quote; // address(0) = ETH
 
-    constructor(MockCoin _coin, uint256 _rate, address _quote) {
-        coin = _coin;
+    constructor(uint256 _rate) {
         rate = _rate;
-        quote = _quote;
     }
 
-    function buyback(address, address _quote, uint256 amountIn, address recipient)
+    function buyback(address token, address _quote, uint256 amountIn, address recipient)
         external
         payable
         returns (uint256 bought)
@@ -121,7 +118,7 @@ contract MockExecutor {
             MockStock(_quote).transferFrom(msg.sender, address(this), amountIn);
         }
         bought = amountIn * rate;
-        coin.transfer(recipient, bought);
+        MockCoin(token).transfer(recipient, bought);
     }
 
     receive() external payable {}
