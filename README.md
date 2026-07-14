@@ -4,7 +4,7 @@ A production-grade token launchpad that launches tokens **directly into Uniswap 
 
 ## How a launch works
 
-1. The creator fills in name, symbol, description, logo, website, X, Telegram and optional links, picks supply, fee tier, anti-whale settings and initial liquidity.
+1. The creator fills in name, symbol, description, logo, website, X, Telegram and optional links, and chooses the initial liquidity. Everything else is a fixed protocol rule.
 2. `Launchpad.createToken` (single transaction, fixed protocol rules: 1B supply, 0.3% pool tier, 1% trading fee, 1% max transaction and 2% max wallet until the 40,000 USD market cap):
    - deploys the ERC-20 through the `TokenFactory` (full supply, 18 decimals)
    - wraps the creator's native currency into WETH
@@ -18,7 +18,7 @@ A production-grade token launchpad that launches tokens **directly into Uniswap 
 
 | Package | What it is |
 | --- | --- |
-| `contracts/` | Solidity 0.8.26 + Hardhat. `Launchpad`, `LaunchToken`, `TokenFactory`, `FeeDistributor`, `Treasury`, Uniswap V3 interfaces, 25 integration tests that run against the real Uniswap V3 factory/router/position manager bytecode, deploy + Blockscout verify scripts |
+| `contracts/` | Solidity 0.8.26 + Hardhat. `Launchpad`, `LaunchToken`, `TokenFactory`, `FeeDistributor`, `Treasury`, Uniswap V3 interfaces, 24 integration tests that run against the real Uniswap V3 factory/router/position manager bytecode, deploy + Blockscout verify scripts |
 | `backend/` | Blockchain indexer (viem), SQLite storage, OHLC candle aggregation (1m/5m/15m/1h/4h/1d), Express REST API, WebSocket streaming (`candle:update`, `trade:update`, `price:update`, `token:launched`) |
 | `sdk/` | TypeScript SDK: `createToken`, `buyToken`, `sellToken`, all read functions, WebSocket subscriptions, React hooks (`@launchpad/sdk/react`) |
 | `web/` | React + TypeScript + Tailwind + TradingView Lightweight Charts + TanStack Query + Zustand + wagmi. Explore feed, live trading page with real OHLC candles, single-step launch flow, hidden role-gated admin console |
