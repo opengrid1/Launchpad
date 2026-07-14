@@ -68,14 +68,6 @@ export function DocsPage() {
         />
       </Section>
 
-      <Section title="Liquidity">
-        <p>
-          Liquidity is protocol-managed. Each token's Uniswap V3 position is held by the Launchpad
-          contract under role-based access control, and protocol proceeds settle to the Treasury
-          contract, never to a personal wallet.
-        </p>
-      </Section>
-
       <Section title="Contracts">
         <p>All protocol contracts are source-verified on Blockscout.</p>
         <div className="mt-3 space-y-2">
