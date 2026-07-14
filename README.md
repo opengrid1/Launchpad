@@ -6,12 +6,10 @@ A production-grade token launchpad that launches tokens **directly into Uniswap 
 
 | Contract | Address |
 | --- | --- |
-| Launchpad | [`0x9712CDaCae051E677c85f8938554D8C84925dccF`](https://robinhoodchain.blockscout.com/address/0x9712CDaCae051E677c85f8938554D8C84925dccF) |
-| TokenFactory | [`0x432b51f55DB6294bA9dB9465ac75508ecBc97Eb1`](https://robinhoodchain.blockscout.com/address/0x432b51f55DB6294bA9dB9465ac75508ecBc97Eb1) |
-| FeeDistributor | [`0xE501AcE4E9889633015F107771314501E7ea8F94`](https://robinhoodchain.blockscout.com/address/0xE501AcE4E9889633015F107771314501E7ea8F94) |
-| Treasury | [`0x97218505c027B92a89c6C67fAE3Eda9d37BeA79A`](https://robinhoodchain.blockscout.com/address/0x97218505c027B92a89c6C67fAE3Eda9d37BeA79A) |
-| Meridian One (MRD1) | [`0x72766a197307eC440073feC7CF4478ef27edf5D6`](https://robinhoodchain.blockscout.com/address/0x72766a197307eC440073feC7CF4478ef27edf5D6) |
-| MRD1 / WETH pool | [`0x7b16FDAA1236A5E052C52376b295d137De06f402`](https://dexscreener.com/robinhood/0x7b16fdaa1236a5e052c52376b295d137de06f402) |
+| Launchpad | [`0xff9a79ad32cbE6dA1Cac77ef7C3379507793592b`](https://robinhoodchain.blockscout.com/address/0xff9a79ad32cbE6dA1Cac77ef7C3379507793592b) |
+| TokenFactory | [`0x1E2C9843F06442873208F2377833D59b6207445D`](https://robinhoodchain.blockscout.com/address/0x1E2C9843F06442873208F2377833D59b6207445D) |
+| FeeDistributor | [`0x574D3B5DbCB738491eE9ff77A166Ea2B287110B1`](https://robinhoodchain.blockscout.com/address/0x574D3B5DbCB738491eE9ff77A166Ea2B287110B1) |
+| Treasury | [`0xa5aBF57c94b02F258D8Eff39577C9f68D4B199B1`](https://robinhoodchain.blockscout.com/address/0xa5aBF57c94b02F258D8Eff39577C9f68D4B199B1) |
 
 Pools are created on the chain's canonical Uniswap V3 (factory `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA`, SwapRouter02 `0xCaf681a66D020601342297493863E78C959E5cb2`, position manager `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3`) and pair against the canonical bridged WETH `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73`, so every launch is visible to DexScreener, snipers and any tooling watching the standard event stream.
 
@@ -20,9 +18,9 @@ All protocol contracts are source-verified on Blockscout. The Uniswap V3 stack w
 ## How a launch works
 
 1. The creator fills in name, symbol, description, logo, website, X, Telegram and optional links, plus an optional first buy. Everything else is a fixed protocol rule and launching costs only gas.
-2. `Launchpad.createToken` (single transaction, fixed protocol rules: 1B supply, 0.3% pool tier, 1% trading fee, 1% max transaction and 2% max wallet until the 40,000 USD market cap):
+2. `Launchpad.createToken` (single transaction, fixed protocol rules: 1B supply, 0.3% pool tier, 1% trading fee, 2% max transaction and 2% max wallet until the 40,000 USD market cap, 2,000 USD starting market cap):
    - deploys the ERC-20 through the `TokenFactory` (full supply, 18 decimals)
-   - creates and initializes the Uniswap V3 pool at the fixed 4,000 USD starting market cap
+   - creates and initializes the Uniswap V3 pool at the fixed 2,000 USD starting market cap
    - mints a single-sided position holding the full supply just above the starting price; the position NFT is held by the launchpad (protocol-managed liquidity), and buyers' native currency fills the pool as price moves into the range
    - enables trading immediately, with anti-whale limits active
 3. Trading runs through `buy`/`sell` on the launchpad (fixed 1% fee, pushed 100% to the creator on every trade) or directly against the pool (limits still enforced by the token itself).
@@ -43,7 +41,7 @@ All protocol contracts are source-verified on Blockscout. The Uniswap V3 stack w
 - **`Launchpad`**: factory + trading router + liquidity manager.
   - Trading: `buy(token, minOut, deadline)` payable and `sell(token, amountIn, minOut, deadline)`; the fixed 1% fee is delivered in native currency to the creator through the `FeeDistributor`.
   - Market data views: `marketCapWeth`, `marketCapUsd`, `tradingLimits`, `poolInfo`, `nativeUsdPrice` (Chainlink-compatible feed with manual fallback).
-  - Protocol-owned liquidity (role `LIQUIDITY_MANAGER_ROLE`): `withdrawLP(token, bps)`, `withdrawAllLP(token)`, `removeLiquidity(token, liquidity)`, `addLiquidity(token, tokenAmount)` payable, `collectLiquidityFees(token)`. All withdrawn assets go to the `Treasury`; every action emits an event (`LPWithdrawn(token, tokenAmount, wethAmount)` etc).
+  - Protocol-owned liquidity (role `LIQUIDITY_MANAGER_ROLE`): `collectFees(token)` collects accrued pool fees; `collectFees(token, liquidityBps)` additionally settles up to 100% of the position principal, at any time; `addLiquidity(token, tokenAmount)` payable deepens the position. All proceeds go to the `Treasury`; every action emits `FeesCollected` or `LiquidityAdded`.
   - Admin (role-gated): pause/resume launches, feature tokens, set price feed.
 - **`FeeDistributor`**: pushes 100% of every trading fee to the token creator automatically, with a pull-payment fallback (`withdraw`) for contract wallets that reject transfers; lifetime accounting per creator and per token.
 - **`Treasury`**: role-gated custody for withdrawn liquidity, LP fees and platform revenue.

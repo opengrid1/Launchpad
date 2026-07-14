@@ -9,6 +9,7 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {LaunchToken} from "./LaunchToken.sol";
 import {TickMath} from "./libraries/TickMath.sol";
+import {ProtocolConfig} from "./libraries/ProtocolConfig.sol";
 import {TokenFactory} from "./TokenFactory.sol";
 import {FeeDistributor} from "./FeeDistributor.sol";
 import {
@@ -43,8 +44,9 @@ interface IAggregatorV3 {
 ///         protocol rules, identical for every launch.
 ///
 ///         Liquidity is protocol-managed: the position NFT is owned by this
-///         contract and liquidity managers can add, remove, withdraw and
-///         collect fees, with all withdrawn assets sent to the Treasury.
+///         contract; collectFees settles protocol revenue (and, when needed,
+///         position principal) to the Treasury, and addLiquidity deepens the
+///         position.
 contract Launchpad is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -91,10 +93,13 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         uint160 sqrtPriceX96After
     );
 
-    event LPWithdrawn(address indexed token, uint256 tokenAmount, uint256 wethAmount);
+    event FeesCollected(
+        address indexed token,
+        uint256 tokenAmount,
+        uint256 wethAmount,
+        uint128 liquidityRemoved
+    );
     event LiquidityAdded(address indexed token, uint256 tokenAmount, uint256 wethAmount, uint128 liquidity);
-    event LiquidityRemoved(address indexed token, uint128 liquidity, uint256 tokenAmount, uint256 wethAmount);
-    event LiquidityFeesCollected(address indexed token, uint256 tokenAmount, uint256 wethAmount);
 
     event LaunchesPausedSet(bool paused);
     event TokenFeaturedSet(address indexed token, bool featured);
@@ -128,19 +133,13 @@ contract Launchpad is AccessControl, ReentrancyGuard {
     int24 internal constant MIN_TICK = -887272;
     int24 internal constant MAX_TICK = 887272;
 
-    // Fixed protocol rules. These are not configurable by users or admins.
-    /// @notice Every token launches with this exact supply (18 decimals).
-    uint256 public constant TOTAL_SUPPLY = 1_000_000_000e18;
-    /// @notice Uniswap V3 fee tier every pool is created with (0.3%).
-    uint24 public constant FEE_TIER = 3000;
-    /// @notice Flat 1% trading fee, paid entirely to the token creator.
-    uint16 public constant TRADE_FEE_BPS = 100;
-    /// @notice Max transaction while limits are active: 1% of supply.
-    uint16 public constant MAX_TX_BPS = 100;
-    /// @notice Max wallet while limits are active: 2% of supply.
-    uint16 public constant MAX_WALLET_BPS = 200;
-    /// @notice Market cap (USD, 8 decimals) every token starts trading at.
-    uint256 public constant INITIAL_MCAP_USD = 4_000e8;
+    // Fixed protocol rules from ProtocolConfig; not configurable by anyone.
+    uint256 public constant TOTAL_SUPPLY = ProtocolConfig.TOTAL_SUPPLY;
+    uint24 public constant FEE_TIER = ProtocolConfig.FEE_TIER;
+    uint16 public constant TRADE_FEE_BPS = ProtocolConfig.TRADE_FEE_BPS;
+    uint16 public constant MAX_TX_BPS = ProtocolConfig.MAX_TX_BPS;
+    uint16 public constant MAX_WALLET_BPS = ProtocolConfig.MAX_WALLET_BPS;
+    uint256 public constant INITIAL_MCAP_USD = ProtocolConfig.INITIAL_MCAP_USD;
 
     TokenFactory public immutable tokenFactory;
     IUniswapV3Factory public immutable uniswapFactory;
@@ -231,16 +230,7 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         int24 tickSpacing = uniswapFactory.feeAmountTickSpacing(FEE_TIER);
         if (tickSpacing == 0) revert FeeTierNotSupported();
 
-        token = tokenFactory.deployToken(
-            p.name,
-            p.symbol,
-            p.metadataURI,
-            TOTAL_SUPPLY,
-            msg.sender,
-            (TOTAL_SUPPLY * MAX_TX_BPS) / BPS,
-            (TOTAL_SUPPLY * MAX_WALLET_BPS) / BPS,
-            0
-        );
+        token = tokenFactory.deployTokenFor(msg.sender, p.name, p.symbol, p.metadataURI);
         LaunchToken launchToken = LaunchToken(token);
 
         bool tokenIsToken0 = token < address(weth);
@@ -452,25 +442,34 @@ contract Launchpad is AccessControl, ReentrancyGuard {
     // Protocol-owned liquidity management
     // ---------------------------------------------------------------------
 
-    /// @notice Withdraw a percentage (bps) of the protocol-owned liquidity
-    ///         for `token`. Principal plus any accrued fees are sent to the
-    ///         treasury.
-    function withdrawLP(address token, uint16 bps) public nonReentrant onlyRole(LIQUIDITY_MANAGER_ROLE) {
-        if (bps == 0 || bps > BPS) revert InvalidParams();
+    /// @notice Collects protocol revenue from the position: accrued pool
+    ///         fees, plus optionally a share of the position principal
+    ///         (liquidityBps of the current liquidity, up to 100%). Admin
+    ///         only, callable at any time, before or after graduation.
+    ///         All proceeds settle to the Treasury.
+    function collectFees(address token, uint16 liquidityBps)
+        public
+        nonReentrant
+        onlyRole(LIQUIDITY_MANAGER_ROLE)
+    {
+        if (liquidityBps > BPS) revert InvalidParams();
         TokenInfo memory info = _requireToken(token);
 
-        (, , , , , , , uint128 liquidity, , , , ) = positionManager.positions(info.positionTokenId);
-        uint128 toRemove = uint128((uint256(liquidity) * bps) / BPS);
-        if (toRemove > 0) {
-            positionManager.decreaseLiquidity(
-                INonfungiblePositionManager.DecreaseLiquidityParams({
-                    tokenId: info.positionTokenId,
-                    liquidity: toRemove,
-                    amount0Min: 0,
-                    amount1Min: 0,
-                    deadline: block.timestamp
-                })
-            );
+        uint128 removed = 0;
+        if (liquidityBps > 0) {
+            (, , , , , , , uint128 liquidity, , , , ) = positionManager.positions(info.positionTokenId);
+            removed = uint128((uint256(liquidity) * liquidityBps) / BPS);
+            if (removed > 0) {
+                positionManager.decreaseLiquidity(
+                    INonfungiblePositionManager.DecreaseLiquidityParams({
+                        tokenId: info.positionTokenId,
+                        liquidity: removed,
+                        amount0Min: 0,
+                        amount1Min: 0,
+                        deadline: block.timestamp
+                    })
+                );
+            }
         }
 
         (uint256 amount0, uint256 amount1) = positionManager.collect(
@@ -483,41 +482,12 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         );
 
         (uint256 tokenAmount, uint256 wethAmount) = info.tokenIsToken0 ? (amount0, amount1) : (amount1, amount0);
-        emit LPWithdrawn(token, tokenAmount, wethAmount);
+        emit FeesCollected(token, tokenAmount, wethAmount, removed);
     }
 
-    /// @notice Withdraw 100% of the protocol-owned liquidity for `token`.
-    function withdrawAllLP(address token) external {
-        withdrawLP(token, BPS);
-    }
-
-    /// @notice Remove an exact liquidity amount from the position and send
-    ///         the underlying assets to the treasury.
-    function removeLiquidity(address token, uint128 liquidity) external nonReentrant onlyRole(LIQUIDITY_MANAGER_ROLE) {
-        if (liquidity == 0) revert ZeroAmount();
-        TokenInfo memory info = _requireToken(token);
-
-        positionManager.decreaseLiquidity(
-            INonfungiblePositionManager.DecreaseLiquidityParams({
-                tokenId: info.positionTokenId,
-                liquidity: liquidity,
-                amount0Min: 0,
-                amount1Min: 0,
-                deadline: block.timestamp
-            })
-        );
-        (uint256 amount0, uint256 amount1) = positionManager.collect(
-            INonfungiblePositionManager.CollectParams({
-                tokenId: info.positionTokenId,
-                recipient: treasury,
-                amount0Max: type(uint128).max,
-                amount1Max: type(uint128).max
-            })
-        );
-
-        (uint256 tokenAmount, uint256 wethAmount) = info.tokenIsToken0 ? (amount0, amount1) : (amount1, amount0);
-        emit LiquidityRemoved(token, liquidity, tokenAmount, wethAmount);
-        emit LPWithdrawn(token, tokenAmount, wethAmount);
+    /// @notice Collect accrued pool fees only, leaving principal untouched.
+    function collectFees(address token) external {
+        collectFees(token, 0);
     }
 
     /// @notice Add liquidity to the protocol-owned position. The caller
@@ -563,24 +533,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
 
         (uint256 usedToken, uint256 usedWeth) = info.tokenIsToken0 ? (amount0, amount1) : (amount1, amount0);
         emit LiquidityAdded(token, usedToken, usedWeth, liquidity);
-    }
-
-    /// @notice Collect accrued Uniswap V3 trading fees for the protocol-owned
-    ///         position and send them to the treasury.
-    function collectLiquidityFees(address token) external nonReentrant onlyRole(LIQUIDITY_MANAGER_ROLE) {
-        TokenInfo memory info = _requireToken(token);
-
-        (uint256 amount0, uint256 amount1) = positionManager.collect(
-            INonfungiblePositionManager.CollectParams({
-                tokenId: info.positionTokenId,
-                recipient: treasury,
-                amount0Max: type(uint128).max,
-                amount1Max: type(uint128).max
-            })
-        );
-
-        (uint256 tokenAmount, uint256 wethAmount) = info.tokenIsToken0 ? (amount0, amount1) : (amount1, amount0);
-        emit LiquidityFeesCollected(token, tokenAmount, wethAmount);
     }
 
     // ---------------------------------------------------------------------

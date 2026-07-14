@@ -202,28 +202,18 @@ export const launchpadAbi = [
   },
   {
     type: "function",
-    name: "withdrawLP",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "token", type: "address" },
-      { name: "bps", type: "uint16" },
-    ],
-    outputs: [],
-  },
-  {
-    type: "function",
-    name: "withdrawAllLP",
+    name: "collectFees",
     stateMutability: "nonpayable",
     inputs: [{ name: "token", type: "address" }],
     outputs: [],
   },
   {
     type: "function",
-    name: "removeLiquidity",
+    name: "collectFees",
     stateMutability: "nonpayable",
     inputs: [
       { name: "token", type: "address" },
-      { name: "liquidity", type: "uint128" },
+      { name: "liquidityBps", type: "uint16" },
     ],
     outputs: [],
   },
@@ -235,13 +225,6 @@ export const launchpadAbi = [
       { name: "token", type: "address" },
       { name: "tokenAmount", type: "uint256" },
     ],
-    outputs: [],
-  },
-  {
-    type: "function",
-    name: "collectLiquidityFees",
-    stateMutability: "nonpayable",
-    inputs: [{ name: "token", type: "address" }],
     outputs: [],
   },
   {
@@ -278,11 +261,12 @@ export const launchpadAbi = [
   },
   {
     type: "event",
-    name: "LPWithdrawn",
+    name: "FeesCollected",
     inputs: [
       { name: "token", type: "address", indexed: true },
       { name: "tokenAmount", type: "uint256", indexed: false },
       { name: "wethAmount", type: "uint256", indexed: false },
+      { name: "liquidityRemoved", type: "uint128", indexed: false },
     ],
   },
   {
@@ -293,25 +277,6 @@ export const launchpadAbi = [
       { name: "tokenAmount", type: "uint256", indexed: false },
       { name: "wethAmount", type: "uint256", indexed: false },
       { name: "liquidity", type: "uint128", indexed: false },
-    ],
-  },
-  {
-    type: "event",
-    name: "LiquidityRemoved",
-    inputs: [
-      { name: "token", type: "address", indexed: true },
-      { name: "liquidity", type: "uint128", indexed: false },
-      { name: "tokenAmount", type: "uint256", indexed: false },
-      { name: "wethAmount", type: "uint256", indexed: false },
-    ],
-  },
-  {
-    type: "event",
-    name: "LiquidityFeesCollected",
-    inputs: [
-      { name: "token", type: "address", indexed: true },
-      { name: "tokenAmount", type: "uint256", indexed: false },
-      { name: "wethAmount", type: "uint256", indexed: false },
     ],
   },
   {

@@ -57,6 +57,7 @@ async function main() {
     2_000n * 10n ** 8n // 2,000 USD per native token
   );
   await feeDistributor.setLaunchpad(await launchpad.getAddress());
+  await tokenFactory.setLaunchpad(await launchpad.getAddress());
 
   console.log(`Launchpad: ${await launchpad.getAddress()}`);
 

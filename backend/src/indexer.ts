@@ -203,10 +203,8 @@ export class Indexer {
             ts
           );
         break;
-      case "LPWithdrawn":
-      case "LiquidityAdded":
-      case "LiquidityRemoved":
-      case "LiquidityFeesCollected": {
+      case "FeesCollected":
+      case "LiquidityAdded": {
         const token = (log.args.token as string).toLowerCase();
         this.db
           .prepare(

@@ -5,15 +5,15 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 interface ILaunchpadGraduation {
     /// @notice True once the token's market cap has crossed the graduation
-    ///         threshold (40,000 USD by default). Read live from the pool.
+    ///         threshold (40,000 USD). Read live from the pool.
     function shouldGraduate(address token) external view returns (bool);
 }
 
 /// @title LaunchToken
 /// @notice Fixed-supply ERC-20 launched through the Launchpad. While the
-///         token is below the graduation market cap, anti-whale limits are
-///         enforced on every transfer: a maximum transaction size, a maximum
-///         wallet holding, and an optional buy cooldown. The limits lift
+///         token is below the graduation market cap, protocol limits are
+///         enforced on every transfer: a maximum transaction size and a
+///         maximum wallet holding (both 2% of supply). The limits lift
 ///         automatically, permanently and without any admin action the first
 ///         time a transfer observes the market cap above the threshold.
 contract LaunchToken is ERC20 {
@@ -21,29 +21,26 @@ contract LaunchToken is ERC20 {
     error PoolAlreadySet();
     error MaxTransactionExceeded(uint256 amount, uint256 maxTx);
     error MaxWalletExceeded(uint256 resultingBalance, uint256 maxWallet);
-    error BuyCooldownActive(uint256 availableAt);
 
     event LimitsRemoved(uint256 timestamp);
     event ExemptionSet(address indexed account, bool exempt);
 
-    /// @notice The launchpad that deployed this token.
+    /// @notice The launchpad this token is bound to.
     address public immutable launchpad;
     /// @notice The Uniswap V3 pool for this token (set once at launch).
     address public pool;
-    /// @notice The wallet that created the token through the launchpad.
+    /// @notice The wallet that created the token. Never spoofable: set by
+    ///         the factory from the caller, or forwarded by the launchpad.
     address public immutable creator;
 
     /// @notice Max tokens per transaction while limits are active.
     uint256 public immutable maxTxAmount;
     /// @notice Max tokens a single wallet can hold while limits are active.
     uint256 public immutable maxWalletAmount;
-    /// @notice Seconds a wallet must wait between buys (0 disables).
-    uint256 public immutable buyCooldown;
     /// @notice True until the graduation market cap is reached.
     bool public limitsActive = true;
 
     mapping(address => bool) public isExempt;
-    mapping(address => uint256) public lastBuyAt;
 
     string private _metadataURI;
 
@@ -55,14 +52,12 @@ contract LaunchToken is ERC20 {
         uint256 totalSupply_,
         address creator_,
         uint256 maxTxAmount_,
-        uint256 maxWalletAmount_,
-        uint256 buyCooldown_
+        uint256 maxWalletAmount_
     ) ERC20(name_, symbol_) {
         launchpad = launchpad_;
         creator = creator_;
         maxTxAmount = maxTxAmount_;
         maxWalletAmount = maxWalletAmount_;
-        buyCooldown = buyCooldown_;
         _metadataURI = metadataURI_;
 
         isExempt[launchpad_] = true;
@@ -72,6 +67,12 @@ contract LaunchToken is ERC20 {
     /// @notice Off-chain metadata (description, logo, website, socials).
     function metadataURI() external view returns (string memory) {
         return _metadataURI;
+    }
+
+    /// @notice Buy cooldowns are not part of the protocol. Kept for ABI
+    ///         compatibility with integrators reading trading limits.
+    function buyCooldown() external pure returns (uint256) {
+        return 0;
     }
 
     modifier onlyLaunchpad() {
@@ -117,11 +118,6 @@ contract LaunchToken is ERC20 {
             if (!toExempt) {
                 uint256 resulting = balanceOf(to) + value;
                 if (resulting > maxWalletAmount) revert MaxWalletExceeded(resulting, maxWalletAmount);
-            }
-            if (buyCooldown != 0 && from == pool && !toExempt) {
-                uint256 availableAt = lastBuyAt[to] + buyCooldown;
-                if (block.timestamp < availableAt) revert BuyCooldownActive(availableAt);
-                lastBuyAt[to] = block.timestamp;
             }
         }
 

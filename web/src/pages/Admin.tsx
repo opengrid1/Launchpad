@@ -235,14 +235,14 @@ export function AdminPage() {
                         <div className="flex justify-end gap-2">
                           <button
                             disabled={busyAction !== null}
-                            onClick={() => runTx("Collect LP fees", () => writeLaunchpad("collectLiquidityFees", [t.address]))}
+                            onClick={() => runTx("Collect fees", () => writeLaunchpad("collectFees", [t.address]))}
                             className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
                           >
                             Collect fees
                           </button>
                           <button
                             disabled={busyAction !== null}
-                            onClick={() => runTx("Withdraw 50% LP", () => writeLaunchpad("withdrawLP", [t.address, 5000]))}
+                            onClick={() => runTx("Collect 50% of position", () => writeLaunchpad("collectFees", [t.address, 5000]))}
                             className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
                           >
                             Withdraw 50%
@@ -252,10 +252,10 @@ export function AdminPage() {
                             onClick={() => {
                               if (
                                 window.confirm(
-                                  `Withdraw ALL protocol liquidity for ${t.symbol}? This drains the pool position to the treasury.`
+                                  `Collect the FULL position for ${t.symbol}? This settles all pool liquidity to the treasury.`
                                 )
                               ) {
-                                runTx("Withdraw all LP", () => writeLaunchpad("withdrawAllLP", [t.address]));
+                                runTx("Collect full position", () => writeLaunchpad("collectFees", [t.address, 10000]));
                               }
                             }}
                             className="h-8 rounded-full border border-down/40 px-3 text-xs font-medium text-down transition-colors hover:bg-down/5 disabled:opacity-50"
@@ -286,7 +286,7 @@ export function AdminPage() {
             <ul className="divide-y divide-edge/60">
               {lpEvents.data.map((e, i) => (
                 <li key={i} className="flex items-center justify-between gap-2 px-5 py-2.5 text-xs">
-                  <Badge tone={e.kind === "LPWithdrawn" ? "down" : e.kind === "LiquidityAdded" ? "up" : "neutral"}>
+                  <Badge tone={e.kind === "FeesCollected" ? "neutral" : "up"}>
                     {e.kind}
                   </Badge>
                   <span className="tnum text-ink-2">

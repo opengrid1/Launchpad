@@ -97,6 +97,7 @@ async function main() {
   console.log(`Launchpad:       ${await launchpad.getAddress()}`);
 
   await (await feeDistributor.setLaunchpad(await launchpad.getAddress())).wait();
+  await (await tokenFactory.setLaunchpad(await launchpad.getAddress())).wait();
   console.log("FeeDistributor wired to Launchpad");
 
   if (process.env.PRICE_FEED) {

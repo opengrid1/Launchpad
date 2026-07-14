@@ -60,6 +60,7 @@ async function deployFixture() {
     ETH_USD_8
   );
   await feeDistributor.setLaunchpad(await launchpad.getAddress());
+  await tokenFactory.setLaunchpad(await launchpad.getAddress());
 
   return { admin, creator, alice, bob, weth, uniFactory, swapRouter, positionManager, tokenFactory, treasury, feeDistributor, launchpad };
 }
@@ -138,7 +139,7 @@ describe("Launchpad", () => {
       const { token, event } = await launchToken(f);
       expect(event.totalSupply).to.equal(SUPPLY);
       expect(event.feeTier).to.equal(3000);
-      expect(await token.maxTxAmount()).to.equal(SUPPLY / 100n); // 1%
+      expect(await token.maxTxAmount()).to.equal((SUPPLY * 2n) / 100n); // 2%
       expect(await token.maxWalletAmount()).to.equal((SUPPLY * 2n) / 100n); // 2%
       expect(await token.buyCooldown()).to.equal(0n);
       expect(await f.launchpad.TRADE_FEE_BPS()).to.equal(100);
@@ -146,13 +147,13 @@ describe("Launchpad", () => {
 
     it("starts every token at the fixed initial market cap with no upfront liquidity", async () => {
       const { tokenAddress } = await launchToken(f);
-      // INITIAL_MCAP_USD is 4,000 USD; tick-spacing snapping allows ~1% drift.
+      // INITIAL_MCAP_USD is 2,000 USD; tick-spacing snapping allows ~1% drift.
       const mcapUsd = await f.launchpad.marketCapUsd(tokenAddress);
-      expect(mcapUsd).to.be.closeTo(4_000n * 10n ** 8n, 8n * 10n ** 9n);
+      expect(mcapUsd).to.be.closeTo(2_000n * 10n ** 8n, 4n * 10n ** 9n);
 
-      // At 2,000 USD per native token that is about 2 native of market cap.
+      // At 2,000 USD per native token that is about 1 native of market cap.
       const mcapWeth = await f.launchpad.marketCapWeth(tokenAddress);
-      expect(mcapWeth).to.be.closeTo(ethers.parseEther("2"), ethers.parseEther("0.04"));
+      expect(mcapWeth).to.be.closeTo(ethers.parseEther("1"), ethers.parseEther("0.02"));
     });
 
     it("executes an optional first buy for the creator in the launch transaction", async () => {
@@ -175,6 +176,36 @@ describe("Launchpad", () => {
       );
     });
 
+    it("factory: direct deployToken attributes msg.sender as creator, fixed rules applied", async () => {
+      const tx = await f.tokenFactory.connect(f.bob).deployToken("Direct", "DIR", "{}");
+      const receipt = await tx.wait();
+      const log = receipt!.logs
+        .map((l: any) => {
+          try {
+            return f.tokenFactory.interface.parseLog(l);
+          } catch {
+            return null;
+          }
+        })
+        .find((l: any) => l && l.name === "TokenDeployed");
+      expect(log!.args.creator).to.equal(f.bob.address);
+      expect(log!.args.initialMarketCapUsd).to.equal(2_000n * 10n ** 8n);
+
+      const token = await ethers.getContractAt("LaunchToken", log!.args.token);
+      expect(await token.creator()).to.equal(f.bob.address);
+      expect(await token.totalSupply()).to.equal(SUPPLY);
+      expect(await token.maxTxAmount()).to.equal((SUPPLY * 2n) / 100n);
+    });
+
+    it("factory: deployTokenFor is launchpad-only and setLaunchpad is one-time", async () => {
+      await expect(
+        f.tokenFactory.connect(f.bob).deployTokenFor(f.bob.address, "X", "X", "{}")
+      ).to.be.revertedWithCustomError(f.tokenFactory, "NotLaunchpad");
+      await expect(
+        f.tokenFactory.setLaunchpad(f.bob.address)
+      ).to.be.revertedWithCustomError(f.tokenFactory, "LaunchpadAlreadySet");
+    });
+
     it("respects the launch pause switch", async () => {
       await f.launchpad.setLaunchesPaused(true);
       await expect(launchToken(f)).to.be.revertedWithCustomError(f.launchpad, "LaunchesArePaused");
@@ -184,23 +215,16 @@ describe("Launchpad", () => {
   });
 
   describe("anti-whale limits", () => {
-    it("blocks transfers above the 1% max transaction", async () => {
-      const { token, tokenAddress } = await launchToken(f);
-      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: NEAR_MAX_BUY });
-      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: NEAR_MAX_BUY });
-
-      const over = (SUPPLY * 101n) / 10000n; // 1.01% of supply
-      await expect(token.connect(f.alice).transfer(f.bob.address, over)).to.be.revertedWithCustomError(
-        token,
-        "MaxTransactionExceeded"
-      );
+    it("blocks buys above the 2% max transaction", async () => {
+      const { tokenAddress } = await launchToken(f);
+      // ~4.5% of supply in one buy is far over the 2% per-transaction cap.
+      await expect(
+        f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: ethers.parseEther("0.05") })
+      ).to.be.reverted;
     });
 
     it("blocks buys that exceed the 2% max wallet", async () => {
       const { tokenAddress } = await launchToken(f);
-
-      // Each buy is just under 1% of supply; the third pushes the wallet over 2%.
-      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: NEAR_MAX_BUY });
       await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: NEAR_MAX_BUY });
       await expect(
         f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: NEAR_MAX_BUY })
@@ -216,7 +240,7 @@ describe("Launchpad", () => {
 
       // The native price rises so the pool's market cap crosses the
       // threshold; the very next transfer observes it and lifts limits.
-      await f.launchpad.setEthUsdPrice(25_000n * 10n ** 8n);
+      await f.launchpad.setEthUsdPrice(45_000n * 10n ** 8n);
       expect(await f.launchpad.shouldGraduate(tokenAddress)).to.equal(true);
 
       await f.launchpad.connect(f.bob).buy(tokenAddress, 0, DEADLINE, { value: SMALL_BUY });
@@ -247,7 +271,7 @@ describe("Launchpad", () => {
       const before = await f.launchpad.tradingLimits(tokenAddress);
       expect(before.active).to.equal(true);
       expect(before.remainingUsd).to.be.gt(0n);
-      expect(before.maxTxAmount).to.equal(SUPPLY / 100n);
+      expect(before.maxTxAmount).to.equal((SUPPLY * 2n) / 100n);
       expect(before.maxWalletAmount).to.equal((SUPPLY * 2n) / 100n);
 
       await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: SMALL_BUY });
@@ -310,26 +334,29 @@ describe("Launchpad", () => {
   });
 
   describe("protocol-owned liquidity", () => {
-    it("collects Uniswap V3 LP fees to the treasury", async () => {
+    it("collects pool fees to the treasury", async () => {
       const { tokenAddress } = await launchToken(f);
       await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: SMALL_BUY });
 
       const treasuryAddress = await f.treasury.getAddress();
       const wethBefore = await f.weth.balanceOf(treasuryAddress);
 
-      await expect(f.launchpad.collectLiquidityFees(tokenAddress)).to.emit(
+      await expect(f.launchpad.getFunction("collectFees(address)")(tokenAddress)).to.emit(
         f.launchpad,
-        "LiquidityFeesCollected"
+        "FeesCollected"
       );
       expect(await f.weth.balanceOf(treasuryAddress)).to.be.gt(wethBefore);
     });
 
-    it("withdraws 100% of protocol liquidity to the treasury", async () => {
+    it("collectFees can settle 100% of the position to the treasury, before graduation", async () => {
       const { token, tokenAddress } = await launchToken(f);
       await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: SMALL_BUY });
 
       const treasuryAddress = await f.treasury.getAddress();
-      await expect(f.launchpad.withdrawAllLP(tokenAddress)).to.emit(f.launchpad, "LPWithdrawn");
+      await expect(f.launchpad.getFunction("collectFees(address,uint16)")(tokenAddress, 10000)).to.emit(
+        f.launchpad,
+        "FeesCollected"
+      );
 
       const info = await f.launchpad.poolInfo(tokenAddress);
       expect(info.positionLiquidity).to.equal(0n);
@@ -337,11 +364,11 @@ describe("Launchpad", () => {
       expect(await f.weth.balanceOf(treasuryAddress)).to.be.gt(0n);
     });
 
-    it("withdraws a partial share of liquidity", async () => {
+    it("collectFees can settle a partial share of the position", async () => {
       const { tokenAddress } = await launchToken(f);
       const before = await f.launchpad.poolInfo(tokenAddress);
 
-      await f.launchpad.withdrawLP(tokenAddress, 5000);
+      await f.launchpad.getFunction("collectFees(address,uint16)")(tokenAddress, 5000);
 
       const after = await f.launchpad.poolInfo(tokenAddress);
       expect(after.positionLiquidity).to.be.closeTo(before.positionLiquidity / 2n, 2n);
@@ -364,9 +391,9 @@ describe("Launchpad", () => {
 
     it("restricts liquidity management to the liquidity manager role", async () => {
       const { tokenAddress } = await launchToken(f);
-      await expect(f.launchpad.connect(f.alice).withdrawLP(tokenAddress, 10000)).to.be.reverted;
-      await expect(f.launchpad.connect(f.alice).collectLiquidityFees(tokenAddress)).to.be.reverted;
-      await expect(f.launchpad.connect(f.alice).removeLiquidity(tokenAddress, 1n)).to.be.reverted;
+      await expect(f.launchpad.connect(f.alice).getFunction("collectFees(address,uint16)")(tokenAddress, 10000)).to.be
+        .reverted;
+      await expect(f.launchpad.connect(f.alice).getFunction("collectFees(address)")(tokenAddress)).to.be.reverted;
       await expect(f.launchpad.connect(f.alice).addLiquidity(tokenAddress, 0, { value: 1n })).to.be
         .reverted;
     });
@@ -387,10 +414,10 @@ describe("Launchpad", () => {
       const feed = await (await ethers.getContractFactory("MockAggregator")).deploy(4_000n * 10n ** 8n, 8);
       await f.launchpad.setPriceFeed(await feed.getAddress());
 
-      // Market cap was 2 native at launch; doubling the native price to
-      // 4,000 USD doubles the USD market cap to about 8,000 USD.
+      // Market cap was 1 native at launch; doubling the native price to
+      // 4,000 USD doubles the USD market cap to about 4,000 USD.
       const mcapUsd = await f.launchpad.marketCapUsd(tokenAddress);
-      expect(mcapUsd).to.be.closeTo(8_000n * 10n ** 8n, 16n * 10n ** 9n);
+      expect(mcapUsd).to.be.closeTo(4_000n * 10n ** 8n, 8n * 10n ** 9n);
     });
 
     it("exposes pool info", async () => {

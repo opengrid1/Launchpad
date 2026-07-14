@@ -133,7 +133,7 @@ export function LaunchPage() {
           </Field>
         </div>
 
-        <Field label="First Buy (optional)" hint={env.nativeSymbol}>
+        <Field label="Initial Liquidity (optional)" hint={`${env.nativeSymbol}, executes your first buy`}>
           <input
             className={`${inputClass} tnum`}
             value={form.firstBuy}
@@ -144,6 +144,10 @@ export function LaunchPage() {
         </Field>
 
         <dl className="space-y-3 border-y border-edge py-4">
+          <div className="flex items-baseline justify-between">
+            <dt className="text-sm text-ink-2">Starting Market Cap</dt>
+            <dd className="text-sm font-semibold text-ink">$2,000</dd>
+          </div>
           <div className="flex items-baseline justify-between">
             <dt className="text-sm text-ink-2">Trading Fee</dt>
             <dd className="text-sm font-semibold text-ink">1% Fixed</dd>
