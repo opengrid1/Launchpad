@@ -63,7 +63,7 @@ export function TokenPage() {
               t.priceChange24hPct == null ? "text-ink-3" : t.priceChange24hPct >= 0 ? "text-up" : "text-down"
             }`}
           >
-            {fmtPct(t.priceChange24hPct)} today
+            {fmtPct(t.priceChange24hPct)}
           </p>
         </div>
       </section>

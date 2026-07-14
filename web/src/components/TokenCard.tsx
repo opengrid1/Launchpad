@@ -1,8 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
-import type { Address, TokenSummary } from "@launchpad/sdk";
+import type { TokenSummary } from "@launchpad/sdk";
 
 import { compact, fmtPct, fmtUsd, fmtWeiUsd, shortAddr, usdRateOf } from "../lib/format";
-import { MiniChart } from "./MiniChart";
 import { TokenLogo } from "./TokenLogo";
 
 /**
@@ -50,34 +49,33 @@ export function TokenCard({ token }: { token: TokenSummary }) {
         </div>
       </div>
 
-      {/* Chart + stats, visible on all screens */}
-      <div className="mt-4 flex items-end gap-5">
-        <MiniChart token={token.address as Address} />
-        <dl className="flex flex-1 flex-wrap items-end justify-end gap-x-6 gap-y-2">
-          <div className="text-right">
-            <dd className="tnum text-sm font-semibold text-ink">
-              {fmtWeiUsd(token.volume24hWei, usdRate)}
-            </dd>
-            <dt className="text-[11px] text-ink-3">Volume 24h</dt>
-          </div>
-          <div className="text-right">
-            <dd className="tnum text-sm font-semibold text-ink">{compact(token.holderCount)}</dd>
-            <dt className="text-[11px] text-ink-3">Holders</dt>
-          </div>
-          {token.priceChange24hPct != null ? (
-            <div className="text-right">
-              <dd
-                className={`tnum text-sm font-semibold ${
-                  token.priceChange24hPct >= 0 ? "text-up" : "text-down"
-                }`}
-              >
-                {fmtPct(token.priceChange24hPct)}
-              </dd>
-              <dt className="text-[11px] text-ink-3">24h</dt>
-            </div>
-          ) : null}
-        </dl>
-      </div>
+      {/* Stats, one aligned row */}
+      <dl className="mt-4 grid grid-cols-3 gap-4">
+        <div>
+          <dd className="tnum text-sm font-semibold text-ink">
+            {fmtWeiUsd(token.volume24hWei, usdRate)}
+          </dd>
+          <dt className="mt-0.5 text-[11px] text-ink-3">Volume 24h</dt>
+        </div>
+        <div>
+          <dd className="tnum text-sm font-semibold text-ink">{compact(token.holderCount)}</dd>
+          <dt className="mt-0.5 text-[11px] text-ink-3">Holders</dt>
+        </div>
+        <div>
+          <dd
+            className={`tnum text-sm font-semibold ${
+              token.priceChange24hPct == null
+                ? "text-ink-3"
+                : token.priceChange24hPct >= 0
+                  ? "text-up"
+                  : "text-down"
+            }`}
+          >
+            {token.priceChange24hPct == null ? "-" : fmtPct(token.priceChange24hPct)}
+          </dd>
+          <dt className="mt-0.5 text-[11px] text-ink-3">24h</dt>
+        </div>
+      </dl>
 
       {/* Graduation progress */}
       {token.limitsActive ? (
