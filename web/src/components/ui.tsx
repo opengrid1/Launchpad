@@ -5,7 +5,7 @@ import { useUi } from "../store";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-xl border border-edge bg-panel ${className}`}>{children}</div>
+    <div className={`rounded-2xl border border-edge bg-panel ${className}`}>{children}</div>
   );
 }
 
@@ -58,19 +58,19 @@ export function Button({
 }) {
   const variants: Record<string, string> = {
     primary:
-      "bg-accent text-white hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
+      "bg-accent text-black hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
     ghost:
-      "bg-transparent border border-edge-2 text-ink-2 hover:text-ink hover:border-ink-3 disabled:text-ink-3",
-    buy: "bg-up text-white hover:brightness-110 disabled:bg-panel-2 disabled:text-ink-3",
+      "bg-panel-2 border border-edge text-ink hover:border-edge-2 disabled:text-ink-3",
+    buy: "bg-up text-black hover:bg-up-2 disabled:bg-panel-2 disabled:text-ink-3",
     sell: "bg-down text-white hover:brightness-110 disabled:bg-panel-2 disabled:text-ink-3",
-    danger: "bg-down/15 border border-down/40 text-down hover:bg-down/25 disabled:opacity-50",
+    danger: "bg-down text-white hover:brightness-110 disabled:opacity-50",
   };
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${variants[variant]} ${className}`}
+      className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${variants[variant]} ${className}`}
     >
       {children}
     </button>
@@ -100,7 +100,7 @@ export function Field({
 }
 
 export const inputClass =
-  "w-full rounded-lg border border-edge-2 bg-panel-2 px-3 py-2 text-sm text-ink placeholder:text-ink-3 outline-none focus:border-accent transition-colors";
+  "w-full rounded-xl border border-edge bg-panel-2 px-3 py-2 text-sm text-ink placeholder:text-ink-3 outline-none focus:border-accent transition-colors";
 
 export function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-md bg-panel-2 ${className}`} />;
@@ -123,7 +123,7 @@ export function Toasts() {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`toast-enter rounded-xl border p-3 shadow-xl backdrop-blur ${
+          className={`toast-enter rounded-2xl border p-3 shadow-xl backdrop-blur ${
             t.kind === "error"
               ? "border-down/40 bg-panel/95"
               : t.kind === "success"

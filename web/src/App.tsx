@@ -6,8 +6,9 @@ import { WagmiProvider } from "wagmi";
 import { Header } from "./components/Header";
 import { Skeleton, Toasts } from "./components/ui";
 import { wagmiConfig } from "./lib/wagmi";
-import { Explore } from "./pages/Explore";
+import { Landing } from "./pages/Landing";
 
+const Explore = lazy(() => import("./pages/Explore").then((m) => ({ default: m.Explore })));
 const TokenPage = lazy(() => import("./pages/Token").then((m) => ({ default: m.TokenPage })));
 const CreatePage = lazy(() => import("./pages/Create").then((m) => ({ default: m.CreatePage })));
 const DashboardPage = lazy(() => import("./pages/Dashboard").then((m) => ({ default: m.DashboardPage })));
@@ -38,7 +39,8 @@ export default function App() {
             <main>
               <Suspense fallback={<PageFallback />}>
                 <Routes>
-                  <Route path="/" element={<Explore />} />
+                  <Route path="/" element={<Landing />} />
+                  <Route path="/markets" element={<Explore />} />
                   <Route path="/t/:address" element={<TokenPage />} />
                   <Route path="/create" element={<CreatePage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />

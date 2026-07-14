@@ -114,7 +114,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
             className={`rounded-md py-1.5 text-sm font-semibold capitalize transition-colors ${
               side === s
                 ? s === "buy"
-                  ? "bg-up text-white"
+                  ? "bg-up text-black"
                   : "bg-down text-white"
                 : "text-ink-2 hover:text-ink"
             }`}
