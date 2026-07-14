@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { parseEther } from "viem";
 
@@ -18,7 +18,6 @@ export function LaunchPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    logo: "",
     name: "",
     symbol: "",
     description: "",
@@ -34,13 +33,43 @@ export function LaunchPage() {
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const logoPreview = useMemo(() => {
-    const v = form.logo.trim();
-    if (!v) return null;
-    if (v.startsWith("ipfs://")) return `https://ipfs.io/ipfs/${v.slice(7)}`;
-    if (/^https?:\/\//.test(v)) return v;
-    return null;
-  }, [form.logo]);
+  const [logoData, setLogoData] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Compress the picked image client-side into a small data URI that is
+  // stored inside the token's on-chain metadata. 96px cover crop, quality
+  // stepped down until it fits comfortably in calldata.
+  const onLogoFile = async (file: File) => {
+    try {
+      const bitmap = await createImageBitmap(file);
+      const render = (size: number, quality: number) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+        const side = Math.min(bitmap.width, bitmap.height);
+        ctx.drawImage(
+          bitmap,
+          (bitmap.width - side) / 2,
+          (bitmap.height - side) / 2,
+          side,
+          side,
+          0,
+          0,
+          size,
+          size
+        );
+        const webp = canvas.toDataURL("image/webp", quality);
+        return webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", quality);
+      };
+      let out = render(96, 0.8);
+      if (out.length > 12_000) out = render(96, 0.55);
+      if (out.length > 12_000) out = render(64, 0.55);
+      setLogoData(out);
+    } catch {
+      pushToast({ kind: "error", title: "Could not read that image", body: "Try a PNG or JPG file." });
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +80,7 @@ export function LaunchPage() {
         name: form.name.trim(),
         symbol: form.symbol.trim().toUpperCase(),
         description: form.description.trim(),
-        logo: form.logo.trim(),
+        logo: logoData,
         website: form.website.trim(),
         twitter: form.twitter.trim(),
         telegram: form.telegram.trim(),
@@ -85,20 +114,41 @@ export function LaunchPage() {
 
       <form onSubmit={submit} className="mt-8 space-y-5">
         <div className="flex items-center gap-4">
-          <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border border-edge bg-panel">
-            {logoPreview ? (
-              <img src={logoPreview} alt="" className="h-full w-full object-cover" />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onLogoFile(f);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="group relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border border-edge bg-panel transition-colors hover:border-edge-2"
+            aria-label="Upload logo"
+          >
+            {logoData ? (
+              <img src={logoData} alt="" className="h-full w-full object-cover" />
             ) : (
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" className="text-ink-3" aria-hidden>
-                <rect x="2" y="2" width="18" height="18" rx="9" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M11 7v8M7 11h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-ink-3" aria-hidden>
+                <path d="M12 16V5m0 0l-4 4m4-4l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M4 17.5V19a1.5 1.5 0 001.5 1.5h13A1.5 1.5 0 0020 19v-1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
               </svg>
             )}
-          </div>
-          <div className="flex-1">
-            <Field label="Logo" hint="image URL or ipfs://">
-              <input className={inputClass} value={form.logo} onChange={set("logo")} placeholder="https://..." />
-            </Field>
+          </button>
+          <div>
+            <p className="text-[13px] font-medium text-ink">Upload Logo</p>
+            <p className="mt-0.5 text-xs text-ink-3">
+              PNG or JPG. Stored on-chain with your token.{" "}
+              {logoData ? (
+                <button type="button" className="underline underline-offset-2" onClick={() => setLogoData("")}>
+                  Remove
+                </button>
+              ) : null}
+            </p>
           </div>
         </div>
 

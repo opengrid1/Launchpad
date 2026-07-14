@@ -12,6 +12,9 @@ type Side = "buy" | "sell";
 
 const FEE = 0.01; // fixed 1%, paid to the creator
 
+// Quick-buy amounts in native currency, launchpad style.
+const BUY_PRESETS = ["0.01", "0.05", "0.1", "0.5"];
+
 export function TradePanel({ token }: { token: TokenSummary }) {
   const { address, isConnected, connectFirst } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
@@ -111,7 +114,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
               setAmount("");
             }}
             className={`h-9 rounded-full text-sm font-semibold capitalize transition-colors ${
-              side === s ? (s === "buy" ? "bg-accent text-ink" : "bg-ink text-white") : "text-ink-2 hover:text-ink"
+              side === s ? (s === "buy" ? "bg-accent text-ink" : "bg-down text-white") : "text-ink-2 hover:text-ink"
             }`}
           >
             {s}
@@ -143,15 +146,25 @@ export function TradePanel({ token }: { token: TokenSummary }) {
           className="tnum w-full rounded-xl border border-edge bg-panel px-3.5 py-3 text-lg text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-ink"
         />
         <div className="mt-2 grid grid-cols-4 gap-1.5">
-          {[25, 50, 75, 100].map((pct) => (
-            <button
-              key={pct}
-              onClick={() => setPct(pct)}
-              className="h-8 rounded-full border border-edge text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
-            >
-              {pct === 100 ? "Max" : `${pct}%`}
-            </button>
-          ))}
+          {side === "buy"
+            ? BUY_PRESETS.map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setAmount(v)}
+                  className="tnum h-8 rounded-full border border-edge text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
+                >
+                  {v}
+                </button>
+              ))
+            : [25, 50, 75, 100].map((pct) => (
+                <button
+                  key={pct}
+                  onClick={() => setPct(pct)}
+                  className="h-8 rounded-full border border-edge text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
+                >
+                  {pct === 100 ? "Max" : `${pct}%`}
+                </button>
+              ))}
         </div>
       </div>
 
@@ -165,7 +178,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
           onClick={submit}
           disabled={busy || !parsedAmount || parsedAmount === 0n || Boolean(insufficientFunds)}
           className={`h-12 rounded-full text-[15px] font-semibold transition-colors disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 ${
-            side === "buy" ? "bg-accent text-ink hover:bg-accent-2" : "bg-ink text-white hover:bg-black"
+            side === "buy" ? "bg-accent text-ink hover:bg-accent-2" : "bg-down text-white hover:brightness-105"
           }`}
         >
           {busy

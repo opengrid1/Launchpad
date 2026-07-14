@@ -61,7 +61,7 @@ export function Button({
     ghost:
       "bg-panel border border-edge text-ink hover:border-edge-2 hover:bg-panel-2/60 disabled:text-ink-3",
     buy: "bg-accent text-ink hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
-    sell: "bg-ink text-white hover:bg-black disabled:bg-panel-2 disabled:text-ink-3",
+    sell: "bg-down text-white hover:brightness-105 disabled:bg-panel-2 disabled:text-ink-3",
     danger: "bg-down text-white hover:brightness-105 disabled:opacity-50",
   };
   return (

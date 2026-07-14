@@ -63,7 +63,7 @@ export function Header() {
               disabled={isPending}
               className="h-10 rounded-full bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:opacity-60"
             >
-              {isPending ? "Connecting" : "Connect Wallet"}
+              {isPending ? "Connecting" : "Connect"}
             </button>
           )}
         </div>

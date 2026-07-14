@@ -128,6 +128,25 @@ function Figure({ label, value }: { label: string; value: string }) {
   );
 }
 
+const socialIcons: Record<string, JSX.Element> = {
+  Website: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M1.75 8h12.5M8 1.75c1.8 1.7 2.7 3.9 2.7 6.25S9.8 12.55 8 14.25c-1.8-1.7-2.7-3.9-2.7-6.25S6.2 3.45 8 1.75z" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  ),
+  X: (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+      <path d="M9.5 6.8L15 .5h-1.5L8.9 5.9 5.2.5H0l5.9 8.6L0 15.5h1.5l5.1-5.9 4 5.9H16L9.5 6.8zm-1.8 2.1l-.6-.85L2 1.6h2.2l3.8 5.45.6.85 5 7.1h-2.2L7.7 8.9z" />
+    </svg>
+  ),
+  Telegram: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+      <path d="M14.7 1.6L1.3 6.8c-.9.35-.9 1.2 0 1.5l3.4 1.05 1.3 4.1c.25.7.9.85 1.45.35l1.9-1.8 3.5 2.6c.6.35 1.25.1 1.4-.65l2.3-11.1c.2-.95-.55-1.6-1.85-1.25zM5.6 9.1l7.2-4.55c.35-.2.65.05.4.3L7.3 10.4l-.25 2.5-1.45-3.8z" />
+    </svg>
+  ),
+};
+
 function InfoTab({ t, meta }: { t: any; meta: any }) {
   const links: { label: string; url?: string }[] = [
     { label: "Website", url: meta.website },
@@ -150,9 +169,11 @@ function InfoTab({ t, meta }: { t: any; meta: any }) {
               href={String(l.url)}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border border-edge bg-panel px-3.5 py-1.5 text-xs font-medium text-ink transition-colors hover:border-edge-2"
+              aria-label={l.label}
+              title={l.label}
+              className="grid h-9 w-9 place-items-center rounded-full border border-edge bg-panel text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
             >
-              {l.label}
+              {socialIcons[l.label] ?? socialIcons.Website}
             </a>
           ))}
         </div>
