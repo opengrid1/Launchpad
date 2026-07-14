@@ -61,17 +61,12 @@ async function main() {
       name: "Demo Rocket",
       symbol: "RKT",
       metadataURI: JSON.stringify({
-        description: "Demo token for local development",
+        description: "Community token for local development and testing",
         logo: "",
         website: "https://example.com",
         twitter: "https://x.com/example",
         telegram: "https://t.me/example",
       }),
-      totalSupply: ethers.parseEther("1000000000"),
-      feeTier: 3000,
-      maxTxBps: 2000,
-      maxWalletBps: 10000,
-      buyCooldown: 0,
     },
     { value: ethers.parseEther("1") }
   );
@@ -89,8 +84,8 @@ async function main() {
   console.log(`Demo token: ${token}`);
 
   const deadline = 4_000_000_000n;
-  await (await launchpad.connect(alice).buy(token, 0, deadline, { value: ethers.parseEther("0.15") })).wait();
-  await (await launchpad.connect(bob).buy(token, 0, deadline, { value: ethers.parseEther("0.08") })).wait();
+  await (await launchpad.connect(alice).buy(token, 0, deadline, { value: ethers.parseEther("0.008") })).wait();
+  await (await launchpad.connect(bob).buy(token, 0, deadline, { value: ethers.parseEther("0.006") })).wait();
 
   const tokenContract = await ethers.getContractAt("LaunchToken", token);
   const bal = await tokenContract.balanceOf(alice.address);

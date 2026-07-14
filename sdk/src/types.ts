@@ -121,6 +121,11 @@ export interface CreatorStats {
   tokens: TokenSummary[];
 }
 
+/**
+ * Launch parameters. Supply (1B), pool fee tier (0.3%), the 1% trading fee
+ * and the anti-whale limits (1% max transaction, 2% max wallet until the
+ * 40,000 USD market cap) are fixed protocol rules and cannot be configured.
+ */
 export interface CreateTokenParams {
   name: string;
   symbol: string;
@@ -130,16 +135,6 @@ export interface CreateTokenParams {
   twitter?: string;
   telegram?: string;
   links?: { label: string; url: string }[];
-  /** Whole tokens (18 decimals applied internally). Default 1,000,000,000. */
-  totalSupply?: bigint;
-  /** Uniswap V3 fee tier. Default 3000 (0.3%). */
-  feeTier?: 500 | 3000 | 10000;
-  /** Max transaction size in bps of supply while limits are active. Default 100 (1%). */
-  maxTxBps?: number;
-  /** Max wallet holding in bps of supply while limits are active. Default 200 (2%). */
-  maxWalletBps?: number;
-  /** Seconds between buys per wallet while limits are active. Default 0. */
-  buyCooldownSeconds?: number;
   /** Initial liquidity in native wei, paired against the full supply. */
   initialLiquidityWei: bigint;
 }

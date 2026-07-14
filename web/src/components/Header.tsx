@@ -1,84 +1,73 @@
 import { Link, NavLink } from "react-router-dom";
 
-import { env } from "../lib/env";
 import { shortAddr } from "../lib/format";
 import { useWallet } from "../lib/useWallet";
-import { Button } from "./ui";
 
 const navItems = [
-  { to: "/markets", label: "Markets" },
-  { to: "/create", label: "Launch" },
-  { to: "/dashboard", label: "Creator" },
-  { to: "/admin", label: "Admin" },
+  { to: "/", label: "Explore" },
+  { to: "/launch", label: "Launch" },
 ];
 
 export function Header() {
   const { address, isConnected, connectFirst, disconnect, isPending } = useWallet();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-edge bg-bg/90 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4">
+    <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-5xl items-center gap-8 px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-sm font-bold text-black">
+          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-ink text-[15px] font-bold text-accent">
             M
           </span>
-          <span className="text-[15px] font-semibold tracking-tight text-ink">Meridian</span>
-          <span className="mt-0.5 hidden rounded border border-edge px-1.5 py-px text-[10px] font-medium uppercase tracking-wider text-ink-3 sm:block">
-            {env.chainName}
-          </span>
+          <span className="text-[17px] font-semibold tracking-tight text-ink">Meridian</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="flex items-center gap-6">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === "/"}
               className={({ isActive }) =>
-                `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                  isActive ? "bg-panel-2 text-ink" : "text-ink-2 hover:text-ink"
+                `relative py-1 text-sm font-medium transition-colors ${
+                  isActive ? "text-ink" : "text-ink-2 hover:text-ink"
                 }`
               }
             >
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  {item.label}
+                  {isActive ? (
+                    <span className="absolute -bottom-[3px] left-0 right-0 mx-auto h-[3px] w-5 rounded-full bg-accent" />
+                  ) : null}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto">
           {isConnected && address ? (
             <button
               onClick={() => disconnect()}
-              className="group flex items-center gap-2 rounded-xl border border-edge px-3 py-1.5 text-sm text-ink-2 transition-colors hover:border-down/50 hover:text-down"
+              className="tnum flex h-10 items-center gap-1.5 rounded-full bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black"
               title="Disconnect"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-up" />
-              <span className="tnum">{shortAddr(address)}</span>
+              {shortAddr(address)}
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
+                <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           ) : (
-            <Button onClick={connectFirst} disabled={isPending} className="py-1.5">
-              {isPending ? "Connecting" : "Connect wallet"}
-            </Button>
+            <button
+              onClick={connectFirst}
+              disabled={isPending}
+              className="h-10 rounded-full bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:opacity-60"
+            >
+              {isPending ? "Connecting" : "Connect Wallet"}
+            </button>
           )}
         </div>
       </div>
-
-      <nav className="flex items-center gap-1 overflow-x-auto border-t border-edge px-3 py-1.5 md:hidden">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === "/"}
-            className={({ isActive }) =>
-              `whitespace-nowrap rounded-lg px-3 py-1 text-sm font-medium ${
-                isActive ? "bg-panel-2 text-ink" : "text-ink-2"
-              }`
-            }
-          >
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
     </header>
   );
 }

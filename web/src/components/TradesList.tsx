@@ -54,7 +54,7 @@ export function TradesList({ token, symbol }: { token: Address; symbol: string }
                     href={explorerTx(t.txHash)!}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-accent-2 hover:underline"
+                    className="font-medium text-ink underline underline-offset-2"
                   >
                     View
                   </a>

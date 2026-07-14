@@ -5,13 +5,13 @@ A production-grade token launchpad that launches tokens **directly into Uniswap 
 ## How a launch works
 
 1. The creator fills in name, symbol, description, logo, website, X, Telegram and optional links, picks supply, fee tier, anti-whale settings and initial liquidity.
-2. `Launchpad.createToken` (single transaction):
+2. `Launchpad.createToken` (single transaction, fixed protocol rules: 1B supply, 0.3% pool tier, 1% trading fee, 1% max transaction and 2% max wallet until the 40,000 USD market cap):
    - deploys the ERC-20 through the `TokenFactory` (full supply, 18 decimals)
    - wraps the creator's native currency into WETH
    - creates and initializes the Uniswap V3 pool at the implied price
    - mints a full-range liquidity position; the position NFT is held by the launchpad (protocol-managed liquidity)
    - enables trading immediately, with anti-whale limits active
-3. Trading runs through `buy`/`sell` on the launchpad (3% fee, split 80% creator / 20% platform) or directly against the pool (limits still enforced by the token itself).
+3. Trading runs through `buy`/`sell` on the launchpad (fixed 1% fee, pushed 100% to the creator on every trade) or directly against the pool (limits still enforced by the token itself).
 4. The moment any trade pushes the market cap over the graduation threshold, the token contract permanently removes the max transaction limit, max wallet limit and buy cooldown. No admin involvement, no keeper: the check runs inside the token's own transfer path.
 
 ## Repository layout
@@ -21,17 +21,17 @@ A production-grade token launchpad that launches tokens **directly into Uniswap 
 | `contracts/` | Solidity 0.8.26 + Hardhat. `Launchpad`, `LaunchToken`, `TokenFactory`, `FeeDistributor`, `Treasury`, Uniswap V3 interfaces, 25 integration tests that run against the real Uniswap V3 factory/router/position manager bytecode, deploy + Blockscout verify scripts |
 | `backend/` | Blockchain indexer (viem), SQLite storage, OHLC candle aggregation (1m/5m/15m/1h/4h/1d), Express REST API, WebSocket streaming (`candle:update`, `trade:update`, `price:update`, `token:launched`) |
 | `sdk/` | TypeScript SDK: `createToken`, `buyToken`, `sellToken`, all read functions, WebSocket subscriptions, React hooks (`@launchpad/sdk/react`) |
-| `web/` | React + TypeScript + Tailwind + TradingView Lightweight Charts + TanStack Query + Zustand + wagmi. Markets, live trading page with real OHLC candles, launch form, creator dashboard, admin console |
+| `web/` | React + TypeScript + Tailwind + TradingView Lightweight Charts + TanStack Query + Zustand + wagmi. Explore feed, live trading page with real OHLC candles, single-step launch flow, hidden role-gated admin console |
 
 ## Contracts
 
 - **`LaunchToken`**: fixed-supply ERC-20. While `limitsActive`, every transfer enforces `maxTxAmount`, `maxWalletAmount` and the optional per-wallet buy cooldown (infrastructure addresses are exempt). Each transfer also checks the live pool market cap through the launchpad and flips limits off permanently once the graduation cap is crossed. `checkGraduation()` is public so anyone can trigger the check too.
 - **`Launchpad`**: factory + trading router + liquidity manager.
-  - Trading: `buy(token, minOut, deadline)` payable and `sell(token, amountIn, minOut, deadline)`; fee accrues in native currency to the `FeeDistributor` with the token's creator attributed.
+  - Trading: `buy(token, minOut, deadline)` payable and `sell(token, amountIn, minOut, deadline)`; the fixed 1% fee is delivered in native currency to the creator through the `FeeDistributor`.
   - Market data views: `marketCapWeth`, `marketCapUsd`, `tradingLimits`, `poolInfo`, `nativeUsdPrice` (Chainlink-compatible feed with manual fallback).
   - Protocol-owned liquidity (role `LIQUIDITY_MANAGER_ROLE`): `withdrawLP(token, bps)`, `withdrawAllLP(token)`, `removeLiquidity(token, liquidity)`, `addLiquidity(token, tokenAmount)` payable, `collectLiquidityFees(token)`. All withdrawn assets go to the `Treasury`; every action emits an event (`LPWithdrawn(token, tokenAmount, wethAmount)` etc).
-  - Admin (role-gated): pause/resume launches, feature tokens, set trade fee (hard-capped at 5%), set price feed.
-- **`FeeDistributor`**: 80/20 creator/platform split, pull-payment withdrawals (`withdrawCreator`, `withdrawPlatform`), lifetime accounting per creator and per token.
+  - Admin (role-gated): pause/resume launches, feature tokens, set price feed.
+- **`FeeDistributor`**: pushes 100% of every trading fee to the token creator automatically, with a pull-payment fallback (`withdraw`) for contract wallets that reject transfers; lifetime accounting per creator and per token.
 - **`Treasury`**: role-gated custody for withdrawn liquidity, LP fees and platform revenue.
 
 Security: OpenZeppelin AccessControl + ReentrancyGuard, custom errors, checks-effects-interactions, no upgradeable proxies, no owner mint. **Disclosure shown in the UI: liquidity is protocol-managed, not locked or burned.** The graduation check reads the live pool spot price, which is manipulable within a block; it only gates anti-whale limits, never funds.
@@ -41,7 +41,7 @@ Security: OpenZeppelin AccessControl + ReentrancyGuard, custom errors, checks-ef
 ```bash
 npm install
 npm run compile          # hardhat compile
-npm test                 # 25 integration tests against real Uniswap V3 bytecode
+npm test                 # 24 integration tests against real Uniswap V3 bytecode
 ```
 
 ### Deploy to Robinhood Chain

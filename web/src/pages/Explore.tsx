@@ -1,94 +1,93 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useTokens } from "@launchpad/sdk/react";
+import type { TokenSummary } from "@launchpad/sdk";
 
+import { TokenCard } from "../components/TokenCard";
+import { Skeleton } from "../components/ui";
 import { client } from "../lib/client";
-import { env } from "../lib/env";
-import { fmtWei, compact } from "../lib/format";
-import { TokenTable } from "../components/TokenTable";
-import { Button, Card, CardHeader } from "../components/ui";
-
-type Sort = "new" | "volume" | "marketCap" | "featured";
-
-const sortTabs: { key: Sort; label: string }[] = [
-  { key: "new", label: "Newest" },
-  { key: "volume", label: "Top volume" },
-  { key: "marketCap", label: "Market cap" },
-  { key: "featured", label: "Featured" },
-];
 
 export function Explore() {
-  const [sort, setSort] = useState<Sort>("new");
-  const { data: tokens, loading } = useTokens(client, { sort, limit: 100 });
-  const { data: stats } = useQuery({
-    queryKey: ["platform-stats"],
-    queryFn: () => client.getPlatformStats(),
-    refetchInterval: 30_000,
-  });
+  const [query, setQuery] = useState("");
+  const { data: byVolume, loading: loadingVolume } = useTokens(client, { sort: "volume", limit: 50 });
+  const { data: byNew, loading: loadingNew } = useTokens(client, { sort: "new", limit: 50 });
 
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
-      <section className="mb-8 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">Markets</h1>
-          <p className="mt-1 max-w-xl text-sm leading-6 text-ink-2">
-            Every token here trades in a real Uniswap V3 pool from the moment it launches. New
-            tokens carry anti-whale limits until they reach a 40,000 USD market cap, then trade
-            without restriction.
-          </p>
-        </div>
-        <Link to="/create">
-          <Button className="whitespace-nowrap">Launch a token</Button>
-        </Link>
-      </section>
+  const q = query.trim().toLowerCase();
+  const matches = (t: TokenSummary) =>
+    !q ||
+    t.name.toLowerCase().includes(q) ||
+    t.symbol.toLowerCase().includes(q) ||
+    t.address.toLowerCase() === q;
 
-      <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Tokens launched" value={stats ? compact(stats.totalLaunches) : "-"} />
-        <Stat
-          label="Total volume"
-          value={stats ? `${fmtWei(stats.totalVolumeWei)} ${env.nativeSymbol}` : "-"}
-        />
-        <Stat
-          label="24h volume"
-          value={stats ? `${fmtWei(stats.volume24hWei)} ${env.nativeSymbol}` : "-"}
-        />
-        <Stat
-          label="Paid to creators"
-          value={stats ? `${fmtWei(stats.creatorPayoutsWei)} ${env.nativeSymbol}` : "-"}
-        />
-      </section>
-
-      <Card>
-        <CardHeader
-          title="All markets"
-          right={
-            <div className="flex items-center gap-1">
-              {sortTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setSort(tab.key)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
-                    sort === tab.key ? "bg-panel-2 text-ink" : "text-ink-3 hover:text-ink-2"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          }
-        />
-        <TokenTable tokens={tokens} loading={loading} />
-      </Card>
-    </div>
+  const trending = useMemo(() => (byVolume ?? []).filter(matches).slice(0, 6), [byVolume, q]);
+  const trendingSet = useMemo(() => new Set(trending.map((t) => t.address)), [trending]);
+  const fresh = useMemo(
+    () => (byNew ?? []).filter((t) => matches(t) && !trendingSet.has(t.address)).slice(0, 30),
+    [byNew, q, trendingSet]
   );
-}
 
-function Stat({ label, value }: { label: string; value: string }) {
+  const loading = loadingVolume || loadingNew;
+  const nothing = !loading && trending.length === 0 && fresh.length === 0;
+
   return (
-    <div className="rounded-xl border border-edge bg-panel px-4 py-3">
-      <p className="text-[10px] font-medium uppercase tracking-wider text-ink-3">{label}</p>
-      <p className="tnum mt-1 text-lg font-semibold text-ink">{value}</p>
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+      <h1 className="text-[28px] font-semibold tracking-tight text-ink">Explore</h1>
+
+      <div className="relative mt-5">
+        <svg
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-3"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden
+        >
+          <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search tokens..."
+          className="h-12 w-full rounded-full border border-edge bg-panel pl-11 pr-4 text-[15px] text-ink shadow-[var(--shadow-card)] outline-none transition-colors placeholder:text-ink-3 focus:border-ink"
+          type="search"
+        />
+      </div>
+
+      {loading ? (
+        <div className="mt-8 space-y-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-40 rounded-2xl" />
+          ))}
+        </div>
+      ) : nothing ? (
+        <p className="mt-16 text-center text-sm text-ink-2">
+          {q ? "No tokens match your search." : "No tokens yet. Launch the first one."}
+        </p>
+      ) : (
+        <>
+          {trending.length > 0 ? (
+            <section className="mt-8">
+              <h2 className="mb-3 text-[15px] font-semibold text-ink">Trending</h2>
+              <div className="space-y-4">
+                {trending.map((t) => (
+                  <TokenCard key={t.address} token={t} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {fresh.length > 0 ? (
+            <section className="mt-10 pb-4">
+              <h2 className="mb-3 text-[15px] font-semibold text-ink">New Launches</h2>
+              <div className="space-y-4">
+                {fresh.map((t) => (
+                  <TokenCard key={t.address} token={t} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

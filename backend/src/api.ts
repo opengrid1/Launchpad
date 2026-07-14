@@ -168,23 +168,18 @@ export function createApi(db: Database.Database, client: PublicClient): Express 
         }
       ).v;
 
-      const [totalVolume, totalFees, creatorPayouts, platformRevenue] = await Promise.all([
+      const [totalVolume, totalFees] = await Promise.all([
         client.readContract({ address: config.launchpad, abi: launchpadAbi, functionName: "totalTradeVolumeWei" }),
         client.readContract({ address: config.launchpad, abi: launchpadAbi, functionName: "totalFeesWei" }),
-        sumColumn(db, "fee_events", "creator_wei"),
-        client.readContract({
-          address: config.feeDistributor,
-          abi: feeDistributorAbi,
-          functionName: "platformLifetimeEarned",
-        }),
       ]);
+      const creatorPayouts = sumColumn(db, "fee_events", "creator_wei");
 
       res.json({
         totalLaunches: tokens,
         totalVolumeWei: totalVolume.toString(),
         totalFeesWei: totalFees.toString(),
         creatorPayoutsWei: creatorPayouts.toString(),
-        platformRevenueWei: platformRevenue.toString(),
+        platformRevenueWei: "0",
         tokens24h,
         volume24hWei: (BigInt(Math.round(vol24 * 1e6)) * 10n ** 12n).toString(),
       });

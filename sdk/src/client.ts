@@ -43,8 +43,6 @@ export interface LaunchpadClientConfig {
   fetchFn?: typeof fetch;
 }
 
-const DEFAULT_SUPPLY = 1_000_000_000n * 10n ** 18n;
-
 /**
  * Launchpad SDK. On-chain writes go through a viem WalletClient (real
  * transaction signing, no custodied keys); reads come from the chain and the
@@ -122,11 +120,6 @@ export class LaunchpadClient {
           name: params.name,
           symbol: params.symbol,
           metadataURI,
-          totalSupply: params.totalSupply ?? DEFAULT_SUPPLY,
-          feeTier: params.feeTier ?? 3000,
-          maxTxBps: params.maxTxBps ?? 100,
-          maxWalletBps: params.maxWalletBps ?? 200,
-          buyCooldown: params.buyCooldownSeconds ?? 0,
         },
       ],
       value: params.initialLiquidityWei,
@@ -185,7 +178,10 @@ export class LaunchpadClient {
     return wallet.writeContract(request);
   }
 
-  /** Withdraw pending creator earnings (one click). */
+  /**
+   * Fees are pushed to creators automatically on every trade. This pulls any
+   * balance that could not be delivered (contract wallets that reject ETH).
+   */
   async withdrawCreatorEarnings(): Promise<Hash> {
     const wallet = this.requireWallet();
     const [account] = await wallet.getAddresses();
@@ -193,7 +189,7 @@ export class LaunchpadClient {
       account,
       address: this.addresses.feeDistributor,
       abi: feeDistributorAbi,
-      functionName: "withdrawCreator",
+      functionName: "withdraw",
       args: [],
     });
     return wallet.writeContract(request);

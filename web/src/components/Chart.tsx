@@ -18,8 +18,8 @@ import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtSmall, compact } from "../lib/format";
 
-const UP = "#00C805";
-const DOWN = "#FF4D4F";
+const UP = "#0E9F4E";
+const DOWN = "#E5484D";
 
 const intervalLabels: Record<CandleInterval, string> = {
   "1m": "1m",
@@ -45,7 +45,7 @@ function toVolumeData(c: Candle): HistogramData<UTCTimestamp> {
   return {
     time: c.time as UTCTimestamp,
     value: Number(c.volume),
-    color: up ? "rgba(0, 200, 5, 0.45)" : "rgba(255, 77, 79, 0.45)",
+    color: up ? "rgba(14, 159, 78, 0.4)" : "rgba(229, 72, 77, 0.4)",
   };
 }
 
@@ -71,24 +71,24 @@ export function PriceChart({ token }: { token: Address }) {
     const chart = createChart(container, {
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
-        textColor: "#94A3B8",
+        textColor: "#9CA3AF",
         fontFamily:
           "Inter, 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         fontSize: 11,
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: "rgba(255, 255, 255, 0.05)" },
-        horzLines: { color: "rgba(255, 255, 255, 0.05)" },
+        vertLines: { color: "rgba(17, 17, 17, 0.05)" },
+        horzLines: { color: "rgba(17, 17, 17, 0.05)" },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
-        vertLine: { color: "#64748B", labelBackgroundColor: "#17212B" },
-        horzLine: { color: "#64748B", labelBackgroundColor: "#17212B" },
+        vertLine: { color: "#9CA3AF", labelBackgroundColor: "#111111" },
+        horzLine: { color: "#9CA3AF", labelBackgroundColor: "#111111" },
       },
-      rightPriceScale: { borderColor: "rgba(255, 255, 255, 0.06)" },
+      rightPriceScale: { borderColor: "#E8E8E2" },
       timeScale: {
-        borderColor: "rgba(255, 255, 255, 0.06)",
+        borderColor: "#E8E8E2",
         timeVisible: true,
         secondsVisible: false,
         rightOffset: 4,
@@ -138,11 +138,11 @@ export function PriceChart({ token }: { token: Address }) {
       }
       const dir = data.close >= data.open ? UP : DOWN;
       legend.innerHTML =
-        `<span style="color:#64748B">O</span> <span style="color:${dir}">${fmtSmall(data.open)}</span>  ` +
-        `<span style="color:#64748B">H</span> <span style="color:${dir}">${fmtSmall(data.high)}</span>  ` +
-        `<span style="color:#64748B">L</span> <span style="color:${dir}">${fmtSmall(data.low)}</span>  ` +
-        `<span style="color:#64748B">C</span> <span style="color:${dir}">${fmtSmall(data.close)}</span>` +
-        (vol ? `  <span style="color:#64748B">Vol</span> <span style="color:#94A3B8">${compact(vol.value ?? 0)} ${env.nativeSymbol}</span>` : "");
+        `<span style="color:#9CA3AF">O</span> <span style="color:${dir}">${fmtSmall(data.open)}</span>  ` +
+        `<span style="color:#9CA3AF">H</span> <span style="color:${dir}">${fmtSmall(data.high)}</span>  ` +
+        `<span style="color:#9CA3AF">L</span> <span style="color:${dir}">${fmtSmall(data.low)}</span>  ` +
+        `<span style="color:#9CA3AF">C</span> <span style="color:${dir}">${fmtSmall(data.close)}</span>` +
+        (vol ? `  <span style="color:#9CA3AF">Vol</span> <span style="color:#6B7280">${compact(vol.value ?? 0)} ${env.nativeSymbol}</span>` : "");
     });
 
     const observer = new ResizeObserver((entries) => {
@@ -206,7 +206,7 @@ export function PriceChart({ token }: { token: Address }) {
               key={iv}
               onClick={() => setInterval(iv)}
               className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
-                interval === iv ? "bg-panel-2 text-ink" : "text-ink-3 hover:text-ink-2"
+                interval === iv ? "bg-ink text-white" : "text-ink-3 hover:text-ink"
               }`}
             >
               {intervalLabels[iv]}

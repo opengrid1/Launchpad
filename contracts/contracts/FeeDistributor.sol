@@ -5,44 +5,27 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title FeeDistributor
-/// @notice Receives trading fees (native currency) from the Launchpad and
-///         splits them 80% to the token creator and 20% to the platform.
-///         Creators withdraw with a single pull-payment call; the platform
-///         share is withdrawable to the treasury by an admin.
+/// @notice Routes 100% of trading fees to the token creator, automatically.
+///         Fees are pushed to the creator on every trade; if the push fails
+///         (for example a contract wallet that rejects transfers), the amount
+///         accrues and the creator can pull it at any time with withdraw().
 contract FeeDistributor is AccessControl, ReentrancyGuard {
     error NotLaunchpad();
     error NothingToWithdraw();
     error TransferFailed();
     error ZeroAddress();
 
-    event FeeAccrued(
-        address indexed token,
-        address indexed creator,
-        uint256 creatorAmount,
-        uint256 platformAmount
-    );
+    event FeeAccrued(address indexed token, address indexed creator, uint256 amount, bool pushed);
     event CreatorWithdrawal(address indexed creator, uint256 amount);
-    event PlatformWithdrawal(address indexed to, uint256 amount);
-
-    /// @notice Creator share of every fee, in basis points (80%).
-    uint16 public constant CREATOR_SHARE_BPS = 8000;
-    uint16 public constant BPS = 10_000;
 
     address public launchpad;
 
-    /// @notice Claimable balance per creator.
+    /// @notice Claimable fallback balance per creator (failed pushes only).
     mapping(address => uint256) public creatorPending;
-    /// @notice Lifetime fees earned per creator (claimed + pending).
+    /// @notice Lifetime fees earned per creator (pushed + pending).
     mapping(address => uint256) public creatorLifetimeEarned;
-    /// @notice Lifetime creator fees attributed to each token.
-    mapping(address => uint256) public tokenCreatorFees;
-    /// @notice Lifetime platform fees attributed to each token.
-    mapping(address => uint256) public tokenPlatformFees;
-
-    /// @notice Claimable platform balance.
-    uint256 public platformPending;
-    /// @notice Lifetime platform revenue (claimed + pending).
-    uint256 public platformLifetimeEarned;
+    /// @notice Lifetime fees attributed to each token.
+    mapping(address => uint256) public tokenFees;
 
     constructor(address admin) {
         if (admin == address(0)) revert ZeroAddress();
@@ -55,40 +38,29 @@ contract FeeDistributor is AccessControl, ReentrancyGuard {
         launchpad = launchpad_;
     }
 
-    /// @notice Called by the launchpad on every fee-bearing trade.
+    /// @notice Called by the launchpad on every fee-bearing trade. The entire
+    ///         fee belongs to the creator; a gas-capped push keeps a hostile
+    ///         creator contract from ever blocking trading.
     function accrue(address token, address creator) external payable {
         if (msg.sender != launchpad) revert NotLaunchpad();
-        uint256 creatorAmount = (msg.value * CREATOR_SHARE_BPS) / BPS;
-        uint256 platformAmount = msg.value - creatorAmount;
 
-        creatorPending[creator] += creatorAmount;
-        creatorLifetimeEarned[creator] += creatorAmount;
-        tokenCreatorFees[token] += creatorAmount;
-        tokenPlatformFees[token] += platformAmount;
-        platformPending += platformAmount;
-        platformLifetimeEarned += platformAmount;
+        creatorLifetimeEarned[creator] += msg.value;
+        tokenFees[token] += msg.value;
 
-        emit FeeAccrued(token, creator, creatorAmount, platformAmount);
+        (bool pushed, ) = creator.call{value: msg.value, gas: 50_000}("");
+        if (!pushed) {
+            creatorPending[creator] += msg.value;
+        }
+        emit FeeAccrued(token, creator, msg.value, pushed);
     }
 
-    /// @notice One-click creator earnings withdrawal.
-    function withdrawCreator() external nonReentrant {
+    /// @notice Pull any fees that could not be pushed automatically.
+    function withdraw() external nonReentrant {
         uint256 amount = creatorPending[msg.sender];
         if (amount == 0) revert NothingToWithdraw();
         creatorPending[msg.sender] = 0;
         (bool ok, ) = msg.sender.call{value: amount}("");
         if (!ok) revert TransferFailed();
         emit CreatorWithdrawal(msg.sender, amount);
-    }
-
-    /// @notice Withdraw the platform share, normally to the treasury.
-    function withdrawPlatform(address to) external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (to == address(0)) revert ZeroAddress();
-        uint256 amount = platformPending;
-        if (amount == 0) revert NothingToWithdraw();
-        platformPending = 0;
-        (bool ok, ) = to.call{value: amount}("");
-        if (!ok) revert TransferFailed();
-        emit PlatformWithdrawal(to, amount);
     }
 }

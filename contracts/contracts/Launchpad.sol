@@ -36,9 +36,10 @@ interface IAggregatorV3 {
 ///         the token's market cap reaches the graduation threshold
 ///         (40,000 USD), at which point they lift automatically on-chain.
 ///
-///         Trading routed through buy/sell takes a fee in the native
-///         currency, split 80/20 between the token creator and the platform
-///         by the FeeDistributor.
+///         Trading routed through buy/sell takes a flat 1% fee in the native
+///         currency, delivered entirely to the token creator by the
+///         FeeDistributor. Supply, fee tier and anti-whale limits are fixed
+///         protocol rules, identical for every launch.
 ///
 ///         Liquidity is protocol-managed: the position NFT is owned by this
 ///         contract and liquidity managers can add, remove, withdraw and
@@ -95,7 +96,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
 
     event LaunchesPausedSet(bool paused);
     event TokenFeaturedSet(address indexed token, bool featured);
-    event TradeFeeSet(uint16 feeBps);
     event EthUsdPriceSet(uint256 price8);
     event PriceFeedSet(address feed);
     event MinInitialLiquiditySet(uint256 weiAmount);
@@ -108,11 +108,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         string symbol;
         // JSON metadata: description, logo, website, twitter, telegram, extra links.
         string metadataURI;
-        uint256 totalSupply; // 18 decimals
-        uint24 feeTier; // 500 / 3000 / 10000
-        uint16 maxTxBps; // of total supply, while limits active
-        uint16 maxWalletBps; // of total supply, while limits active
-        uint32 buyCooldown; // seconds between buys per wallet, 0 disables
     }
 
     struct TokenInfo {
@@ -129,9 +124,20 @@ contract Launchpad is AccessControl, ReentrancyGuard {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     uint16 public constant BPS = 10_000;
-    uint16 public constant MAX_TRADE_FEE_BPS = 500; // 5%
     int24 internal constant MIN_TICK = -887272;
     int24 internal constant MAX_TICK = 887272;
+
+    // Fixed protocol rules. These are not configurable by users or admins.
+    /// @notice Every token launches with this exact supply (18 decimals).
+    uint256 public constant TOTAL_SUPPLY = 1_000_000_000e18;
+    /// @notice Uniswap V3 fee tier every pool is created with (0.3%).
+    uint24 public constant FEE_TIER = 3000;
+    /// @notice Flat 1% trading fee, paid entirely to the token creator.
+    uint16 public constant TRADE_FEE_BPS = 100;
+    /// @notice Max transaction while limits are active: 1% of supply.
+    uint16 public constant MAX_TX_BPS = 100;
+    /// @notice Max wallet while limits are active: 2% of supply.
+    uint16 public constant MAX_WALLET_BPS = 200;
 
     TokenFactory public immutable tokenFactory;
     IUniswapV3Factory public immutable uniswapFactory;
@@ -144,7 +150,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
     /// @notice Market cap (USD, 8 decimals) at which anti-whale limits lift.
     uint256 public immutable graduationCapUsd;
 
-    uint16 public tradeFeeBps = 300; // 3%
     bool public launchesPaused;
     uint256 public minInitialLiquidity = 0.05 ether;
 
@@ -217,30 +222,20 @@ contract Launchpad is AccessControl, ReentrancyGuard {
     {
         if (launchesPaused) revert LaunchesArePaused();
         if (msg.value < minInitialLiquidity) revert InsufficientLiquidity();
-        if (
-            bytes(p.name).length == 0 ||
-            bytes(p.symbol).length == 0 ||
-            p.totalSupply < 1_000e18 ||
-            p.totalSupply > 1e15 * 1e18 ||
-            p.maxTxBps < 10 || // never below 0.1% of supply, so trading cannot brick
-            p.maxTxBps > BPS ||
-            p.maxWalletBps < p.maxTxBps ||
-            p.maxWalletBps > BPS ||
-            p.buyCooldown > 1 hours
-        ) revert InvalidParams();
+        if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
 
-        int24 tickSpacing = uniswapFactory.feeAmountTickSpacing(p.feeTier);
+        int24 tickSpacing = uniswapFactory.feeAmountTickSpacing(FEE_TIER);
         if (tickSpacing == 0) revert FeeTierNotSupported();
 
         token = tokenFactory.deployToken(
             p.name,
             p.symbol,
             p.metadataURI,
-            p.totalSupply,
+            TOTAL_SUPPLY,
             msg.sender,
-            (p.totalSupply * p.maxTxBps) / BPS,
-            (p.totalSupply * p.maxWalletBps) / BPS,
-            p.buyCooldown
+            (TOTAL_SUPPLY * MAX_TX_BPS) / BPS,
+            (TOTAL_SUPPLY * MAX_WALLET_BPS) / BPS,
+            0
         );
         LaunchToken launchToken = LaunchToken(token);
 
@@ -251,25 +246,25 @@ contract Launchpad is AccessControl, ReentrancyGuard {
             ? (token, address(weth))
             : (address(weth), token);
         (uint256 amount0, uint256 amount1) = tokenIsToken0
-            ? (p.totalSupply, msg.value)
-            : (msg.value, p.totalSupply);
+            ? (TOTAL_SUPPLY, msg.value)
+            : (msg.value, TOTAL_SUPPLY);
 
         uint160 sqrtPriceX96 = _sqrtPriceX96(amount0, amount1);
-        pool = positionManager.createAndInitializePoolIfNecessary(token0, token1, p.feeTier, sqrtPriceX96);
+        pool = positionManager.createAndInitializePoolIfNecessary(token0, token1, FEE_TIER, sqrtPriceX96);
 
         launchToken.setPool(pool);
         launchToken.setExempt(address(positionManager), true);
         launchToken.setExempt(address(swapRouter), true);
         launchToken.setExempt(treasury, true);
 
-        IERC20(token).forceApprove(address(positionManager), p.totalSupply);
+        IERC20(token).forceApprove(address(positionManager), TOTAL_SUPPLY);
         weth.approve(address(positionManager), msg.value);
 
         (positionTokenId, , , ) = positionManager.mint(
             INonfungiblePositionManager.MintParams({
                 token0: token0,
                 token1: token1,
-                fee: p.feeTier,
+                fee: FEE_TIER,
                 tickLower: _minUsableTick(tickSpacing),
                 tickUpper: _maxUsableTick(tickSpacing),
                 amount0Desired: amount0,
@@ -291,7 +286,7 @@ contract Launchpad is AccessControl, ReentrancyGuard {
             creator: msg.sender,
             pool: pool,
             positionTokenId: positionTokenId,
-            feeTier: p.feeTier,
+            feeTier: FEE_TIER,
             createdAt: uint64(block.timestamp),
             featured: false,
             tokenIsToken0: tokenIsToken0
@@ -308,11 +303,11 @@ contract Launchpad is AccessControl, ReentrancyGuard {
             p.name,
             p.symbol,
             p.metadataURI,
-            p.totalSupply,
-            p.feeTier,
-            (p.totalSupply * p.maxTxBps) / BPS,
-            (p.totalSupply * p.maxWalletBps) / BPS,
-            p.buyCooldown,
+            TOTAL_SUPPLY,
+            FEE_TIER,
+            (TOTAL_SUPPLY * MAX_TX_BPS) / BPS,
+            (TOTAL_SUPPLY * MAX_WALLET_BPS) / BPS,
+            0,
             msg.value
         );
     }
@@ -321,8 +316,8 @@ contract Launchpad is AccessControl, ReentrancyGuard {
     // Trading
     // ---------------------------------------------------------------------
 
-    /// @notice Buy `token` with native currency. A tradeFeeBps fee is taken
-    ///         from msg.value and split 80/20 creator/platform.
+    /// @notice Buy `token` with native currency. The flat 1% fee is taken
+    ///         from msg.value and goes entirely to the token creator.
     function buy(address token, uint256 minTokensOut, uint256 deadline)
         external
         payable
@@ -333,7 +328,7 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         if (info.pool == address(0)) revert UnknownToken();
         if (msg.value == 0) revert ZeroAmount();
 
-        uint256 fee = (msg.value * tradeFeeBps) / BPS;
+        uint256 fee = (msg.value * TRADE_FEE_BPS) / BPS;
         feeDistributor.accrue{value: fee}(token, info.creator);
 
         uint256 amountIn = msg.value - fee;
@@ -357,8 +352,8 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         emit Trade(token, msg.sender, true, msg.value, tokensOut, fee, sqrtPriceX96);
     }
 
-    /// @notice Sell `token` for native currency. The fee is taken from the
-    ///         native proceeds and split 80/20 creator/platform.
+    /// @notice Sell `token` for native currency. The flat 1% fee is taken
+    ///         from the native proceeds and goes entirely to the creator.
     function sell(address token, uint256 amountIn, uint256 minNativeOut, uint256 deadline)
         external
         nonReentrant
@@ -385,7 +380,7 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         );
 
         weth.withdraw(wethOut);
-        uint256 fee = (wethOut * tradeFeeBps) / BPS;
+        uint256 fee = (wethOut * TRADE_FEE_BPS) / BPS;
         feeDistributor.accrue{value: fee}(token, info.creator);
 
         nativeOut = wethOut - fee;
@@ -548,12 +543,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         _requireToken(token);
         tokenInfo[token].featured = featured;
         emit TokenFeaturedSet(token, featured);
-    }
-
-    function setTradeFeeBps(uint16 feeBps) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (feeBps > MAX_TRADE_FEE_BPS) revert InvalidParams();
-        tradeFeeBps = feeBps;
-        emit TradeFeeSet(feeBps);
     }
 
     function setEthUsdPrice(uint256 price8) external onlyRole(OPERATOR_ROLE) {

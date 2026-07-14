@@ -49,7 +49,7 @@ export function HoldersList({ token }: { token: TokenSummary }) {
                       href={explorerAddr(h.address)!}
                       target="_blank"
                       rel="noreferrer"
-                      className="tnum text-ink-2 hover:text-accent-2"
+                      className="tnum text-ink underline-offset-2 hover:underline"
                     >
                       {shortAddr(h.address)}
                     </a>
@@ -64,7 +64,7 @@ export function HoldersList({ token }: { token: TokenSummary }) {
                 <div className="flex items-center justify-end gap-2">
                   <div className="h-1 w-16 overflow-hidden rounded-full bg-panel-2">
                     <div
-                      className="h-full rounded-full bg-accent"
+                      className="h-full rounded-full bg-ink/70"
                       style={{ width: `${Math.min(h.pct, 100)}%` }}
                     />
                   </div>

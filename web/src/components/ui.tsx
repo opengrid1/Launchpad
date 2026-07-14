@@ -5,15 +5,10 @@ import { useUi } from "../store";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-edge bg-panel ${className}`}>{children}</div>
-  );
-}
-
-export function CardHeader({ title, right }: { title: ReactNode; right?: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between border-b border-edge px-4 py-3">
-      <h3 className="text-sm font-semibold tracking-wide text-ink">{title}</h3>
-      {right}
+    <div
+      className={`rounded-2xl border border-edge bg-panel shadow-[var(--shadow-card)] ${className}`}
+    >
+      {children}
     </div>
   );
 }
@@ -26,21 +21,25 @@ export function Badge({
   tone?: "neutral" | "up" | "down" | "accent" | "amber";
 }) {
   const tones: Record<string, string> = {
-    neutral: "bg-panel-2 text-ink-2 border-edge",
-    up: "bg-up/10 text-up border-up/30",
-    down: "bg-down/10 text-down border-down/30",
-    accent: "bg-accent/10 text-accent-2 border-accent/30",
-    amber: "bg-amber/10 text-amber border-amber/30",
+    neutral: "bg-panel-2 text-ink-2",
+    up: "bg-up/10 text-up",
+    down: "bg-down/10 text-down",
+    accent: "bg-accent/60 text-ink",
+    amber: "bg-panel-2 text-ink-2",
   };
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium leading-4 ${tones[tone]}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium leading-4 ${tones[tone]}`}
     >
       {children}
     </span>
   );
 }
 
+/**
+ * Action buttons are pills. Lime is reserved for the primary product actions
+ * (Launch, Buy, Trade); the wallet and neutral actions are ink or white.
+ */
 export function Button({
   children,
   onClick,
@@ -52,25 +51,25 @@ export function Button({
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-  variant?: "primary" | "ghost" | "buy" | "sell" | "danger";
+  variant?: "primary" | "dark" | "ghost" | "buy" | "sell" | "danger";
   className?: string;
   type?: "button" | "submit";
 }) {
   const variants: Record<string, string> = {
-    primary:
-      "bg-accent text-black hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
+    primary: "bg-accent text-ink hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
+    dark: "bg-ink text-white hover:bg-black disabled:bg-panel-2 disabled:text-ink-3",
     ghost:
-      "bg-panel-2 border border-edge text-ink hover:border-edge-2 disabled:text-ink-3",
-    buy: "bg-up text-black hover:bg-up-2 disabled:bg-panel-2 disabled:text-ink-3",
-    sell: "bg-down text-white hover:brightness-110 disabled:bg-panel-2 disabled:text-ink-3",
-    danger: "bg-down text-white hover:brightness-110 disabled:opacity-50",
+      "bg-panel border border-edge text-ink hover:border-edge-2 hover:bg-panel-2/60 disabled:text-ink-3",
+    buy: "bg-accent text-ink hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
+    sell: "bg-ink text-white hover:bg-black disabled:bg-panel-2 disabled:text-ink-3",
+    danger: "bg-down text-white hover:brightness-105 disabled:opacity-50",
   };
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${variants[variant]} ${className}`}
+      className={`h-11 rounded-full px-5 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed ${variants[variant]} ${className}`}
     >
       {children}
     </button>
@@ -89,9 +88,7 @@ export function Field({
   return (
     <label className="block">
       <div className="mb-1.5 flex items-baseline justify-between gap-3">
-        <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wider text-ink-2">
-          {label}
-        </span>
+        <span className="whitespace-nowrap text-[13px] font-medium text-ink">{label}</span>
         {hint ? <span className="truncate text-xs text-ink-3">{hint}</span> : null}
       </div>
       {children}
@@ -100,10 +97,10 @@ export function Field({
 }
 
 export const inputClass =
-  "w-full rounded-xl border border-edge bg-panel-2 px-3 py-2 text-sm text-ink placeholder:text-ink-3 outline-none focus:border-accent transition-colors";
+  "w-full rounded-xl border border-edge bg-panel px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-3 outline-none transition-colors focus:border-ink";
 
 export function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-panel-2 ${className}`} />;
+  return <div className={`animate-pulse rounded-xl bg-panel-2 ${className}`} />;
 }
 
 export function EmptyState({ title, body }: { title: string; body?: string }) {
@@ -123,12 +120,8 @@ export function Toasts() {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`toast-enter rounded-2xl border p-3 shadow-xl backdrop-blur ${
-            t.kind === "error"
-              ? "border-down/40 bg-panel/95"
-              : t.kind === "success"
-                ? "border-up/40 bg-panel/95"
-                : "border-edge-2 bg-panel/95"
+          className={`toast-enter rounded-2xl border bg-panel p-3 shadow-[var(--shadow-card-hover)] ${
+            t.kind === "error" ? "border-down/40" : t.kind === "success" ? "border-up/40" : "border-edge"
           }`}
         >
           <div className="flex items-start justify-between gap-2">
@@ -147,7 +140,7 @@ export function Toasts() {
               href={explorerTx(t.txHash)!}
               target="_blank"
               rel="noreferrer"
-              className="mt-1 inline-block text-xs text-accent-2 hover:underline"
+              className="mt-1 inline-block text-xs font-medium text-ink underline underline-offset-2"
             >
               View transaction
             </a>
