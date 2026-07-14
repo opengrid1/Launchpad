@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0e1013;
+  --color-panel: #14171c;
+  --color-panel-2: #191d23;
+  --color-edge: #232830;
+  --color-edge-2: #2e3440;
+  --color-ink: #e8eaee;
+  --color-ink-2: #9aa3b2;
+  --color-ink-3: #626b7a;
+  --color-accent: #3987e5;
+  --color-accent-2: #62a4ee;
+  --color-up: #1fa971;
+  --color-down: #f6465d;
+  --color-amber: #c98500;
+
+  --font-sans: "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+html {
+  background: var(--color-bg);
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Numbers line up in tables and tickers. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: rgba(57, 135, 229, 0.35);
+}
+
+/* Recessive scrollbars, exchange style. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2e3440 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2e3440;
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.toast-enter {
+  animation: toast-in 160ms ease-out;
+}
+
+@keyframes flash-up {
+  0% {
+    background: rgba(31, 169, 113, 0.18);
+  }
+  100% {
+    background: transparent;
+  }
+}
+@keyframes flash-down {
+  0% {
+    background: rgba(246, 70, 93, 0.18);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.flash-up {
+  animation: flash-up 700ms ease-out;
+}
+.flash-down {
+  animation: flash-down 700ms ease-out;
+}

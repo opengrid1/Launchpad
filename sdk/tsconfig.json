@@ -1,16 +1,10 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "es2022",
-    "lib": ["es2022", "dom"],
     "module": "commonjs",
     "moduleResolution": "node",
+    "outDir": "dist/cjs",
     "declaration": true,
-    "outDir": "dist",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "jsx": "react-jsx"
-  },
-  "include": ["src"]
+    "declarationDir": "dist/types"
+  }
 }

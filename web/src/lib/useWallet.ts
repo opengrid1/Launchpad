@@ -1,0 +1,41 @@
+import { useEffect } from "react";
+import { useAccount, useConnect, useDisconnect, useWalletClient } from "wagmi";
+
+import { client } from "./client";
+import { useUi } from "../store";
+
+/** Connection state plus automatic SDK wallet attachment. */
+export function useWallet() {
+  const { address, isConnected, chainId } = useAccount();
+  const { connect, connectors, isPending } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { data: walletClient } = useWalletClient();
+  const pushToast = useUi((s) => s.pushToast);
+
+  useEffect(() => {
+    if (walletClient) client.connectWallet(walletClient);
+  }, [walletClient]);
+
+  const connectFirst = () => {
+    const preferred =
+      connectors.find((c) => c.id === "injected") ?? connectors[0];
+    if (!preferred) {
+      pushToast({ kind: "error", title: "No wallet found", body: "Install MetaMask or a Robinhood Chain compatible wallet." });
+      return;
+    }
+    connect({ connector: preferred });
+  };
+
+  return { address, isConnected, chainId, connectors, connect, connectFirst, disconnect, isPending };
+}
+
+/** Compact error text from viem/wagmi exceptions for toasts. */
+export function errorText(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  const short = raw.split("\n")[0];
+  if (/user rejected/i.test(raw)) return "Transaction rejected in wallet.";
+  if (/MaxTransactionExceeded/.test(raw)) return "Trade exceeds the max transaction limit for this token.";
+  if (/MaxWalletExceeded/.test(raw)) return "This buy would exceed the max wallet limit for this token.";
+  if (/BuyCooldownActive/.test(raw)) return "Buy cooldown is active for your wallet. Wait a moment and retry.";
+  return short.length > 200 ? short.slice(0, 200) + "..." : short;
+}
