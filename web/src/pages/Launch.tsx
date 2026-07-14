@@ -5,7 +5,7 @@ import { parseEther } from "viem";
 import { Field, inputClass } from "../components/ui";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { errorText, useWallet } from "../lib/useWallet";
+import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
 /**
@@ -76,6 +76,9 @@ export function LaunchPage() {
     if (!isConnected) return connectFirst();
     setBusy(true);
     try {
+      if (!(await ensureSdkWallet())) {
+        throw new Error("Wallet session expired. Reconnect your wallet and try again.");
+      }
       const hash = await client.createToken({
         name: form.name.trim(),
         symbol: form.symbol.trim().toUpperCase(),

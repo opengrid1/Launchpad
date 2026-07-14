@@ -116,35 +116,66 @@ export function Toasts() {
   const { toasts, dismissToast } = useUi();
   if (toasts.length === 0) return null;
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
+    <div
+      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-sm flex-col gap-2 sm:inset-x-auto sm:right-4 sm:mx-0 sm:w-80"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`toast-enter rounded-2xl border bg-panel p-3 shadow-[var(--shadow-card-hover)] ${
+          role="status"
+          className={`toast-enter flex items-start gap-3 rounded-2xl border bg-panel p-3.5 shadow-[var(--shadow-card-hover)] ${
             t.kind === "error" ? "border-down/40" : t.kind === "success" ? "border-up/40" : "border-edge"
           }`}
         >
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-semibold text-ink">{t.title}</p>
-            <button
-              onClick={() => dismissToast(t.id)}
-              className="text-ink-3 hover:text-ink"
-              aria-label="Dismiss"
-            >
-              &times;
-            </button>
+          <span
+            className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full ${
+              t.kind === "error"
+                ? "bg-down/10 text-down"
+                : t.kind === "success"
+                  ? "bg-up/10 text-up"
+                  : "bg-panel-2 text-ink-2"
+            }`}
+            aria-hidden
+          >
+            {t.kind === "error" ? (
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2.5 2.5l7 7m0-7l-7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            ) : t.kind === "success" ? (
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6.5l2.6 2.6L10 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M6 5.6v2.6M6 3.9v.1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+            )}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold leading-5 text-ink">{t.title}</p>
+            {t.body ? <p className="mt-0.5 break-words text-xs leading-4 text-ink-2">{t.body}</p> : null}
+            {t.txHash && explorerTx(t.txHash) ? (
+              <a
+                href={explorerTx(t.txHash)!}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 inline-block text-xs font-medium text-ink underline underline-offset-2"
+              >
+                View transaction
+              </a>
+            ) : null}
           </div>
-          {t.body ? <p className="mt-1 break-words text-xs text-ink-2">{t.body}</p> : null}
-          {t.txHash && explorerTx(t.txHash) ? (
-            <a
-              href={explorerTx(t.txHash)!}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-1 inline-block text-xs font-medium text-ink underline underline-offset-2"
-            >
-              View transaction
-            </a>
-          ) : null}
+          <button
+            onClick={() => dismissToast(t.id)}
+            className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-ink-3 transition-colors hover:bg-panel-2 hover:text-ink"
+            aria-label="Dismiss"
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
+              <path d="M2.5 2.5l7 7m0-7l-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
       ))}
     </div>

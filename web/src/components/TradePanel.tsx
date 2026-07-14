@@ -5,7 +5,7 @@ import { launchTokenAbi, type Address, type TokenSummary } from "@launchpad/sdk"
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtWei, compact } from "../lib/format";
-import { errorText, useWallet } from "../lib/useWallet";
+import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
 type Side = "buy" | "sell";
@@ -82,6 +82,9 @@ export function TradePanel({ token }: { token: TokenSummary }) {
     if (!parsedAmount || parsedAmount === 0n) return;
     setBusy(true);
     try {
+      if (!(await ensureSdkWallet())) {
+        throw new Error("Wallet session expired. Reconnect your wallet and try again.");
+      }
       const hash =
         side === "buy"
           ? await client.buyToken(token.address as Address, parsedAmount)

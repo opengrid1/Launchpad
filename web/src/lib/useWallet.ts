@@ -1,8 +1,25 @@
 import { useEffect } from "react";
 import { useAccount, useConnect, useDisconnect, useWalletClient } from "wagmi";
+import { getWalletClient } from "wagmi/actions";
 
 import { client } from "./client";
+import { wagmiConfig } from "./wagmi";
 import { useUi } from "../store";
+
+/**
+ * Attach the connected wallet to the SDK right now. Used at transaction
+ * time so a submit can never race the useWalletClient query.
+ */
+export async function ensureSdkWallet(): Promise<boolean> {
+  try {
+    const wc = await getWalletClient(wagmiConfig);
+    if (!wc) return false;
+    client.connectWallet(wc);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /** Connection state plus automatic SDK wallet attachment. */
 export function useWallet() {
@@ -34,6 +51,7 @@ export function errorText(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err);
   const short = raw.split("\n")[0];
   if (/user rejected/i.test(raw)) return "Transaction rejected in wallet.";
+  if (/No wallet connected/i.test(raw)) return "Wallet session expired. Reconnect your wallet and try again.";
   if (/MaxTransactionExceeded/.test(raw)) return "Trade exceeds the max transaction limit for this token.";
   if (/MaxWalletExceeded/.test(raw)) return "This buy would exceed the max wallet limit for this token.";
   if (/BuyCooldownActive/.test(raw)) return "Buy cooldown is active for your wallet. Wait a moment and retry.";
