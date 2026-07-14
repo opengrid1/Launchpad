@@ -145,18 +145,6 @@ function Figure({ label, value }: { label: string; value: string }) {
 }
 
 function InfoTab({ t, meta }: { t: any; meta: any }) {
-  const [pool, setPool] = useState<Awaited<ReturnType<typeof client.getPoolInfo>> | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    client
-      .getPoolInfo(t.address)
-      .then((p) => !cancelled && setPool(p))
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [t.address]);
-
   const links: { label: string; url?: string }[] = [
     { label: "Website", url: meta.website },
     { label: "X", url: meta.twitter },
@@ -186,30 +174,35 @@ function InfoTab({ t, meta }: { t: any; meta: any }) {
         </div>
       ) : null}
 
-      <dl className="mt-6 grid grid-cols-[140px_1fr] gap-y-2 text-sm">
-        <dt className="text-ink-3">Contract</dt>
-        <dd className="tnum text-ink">
-          {explorerAddr(t.address) ? (
-            <a className="underline underline-offset-2" href={explorerAddr(t.address)!} target="_blank" rel="noreferrer">
-              {shortAddr(t.address)}
-            </a>
-          ) : (
-            shortAddr(t.address)
-          )}
-        </dd>
-        <dt className="text-ink-3">Pool</dt>
-        <dd className="tnum text-ink">{shortAddr(t.pool)}</dd>
-        <dt className="text-ink-3">Trading fee</dt>
-        <dd className="text-ink">1%, paid to the creator</dd>
-        <dt className="text-ink-3">Liquidity</dt>
-        <dd className="text-ink">Protocol-managed Uniswap V3 position{pool ? ` (NFT #${pool.positionTokenId})` : ""}</dd>
-        <dt className="text-ink-3">Protection</dt>
-        <dd className="text-ink">
-          {t.limitsActive
-            ? "Max transaction active until the 40,000 USD market cap, removed automatically"
-            : "Graduated, trading is unrestricted"}
-        </dd>
-      </dl>
+      <div className="mt-6 space-y-3">
+        <CopyRow label="Contract" value={t.address} />
+        <CopyRow label="Creator" value={t.creator} />
+      </div>
+    </div>
+  );
+}
+
+function CopyRow({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-3.5 py-2.5">
+      <div className="min-w-0">
+        <p className="text-[11px] text-ink-3">{label}</p>
+        <p className="tnum truncate text-sm text-ink">{value}</p>
+      </div>
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(value).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          });
+        }}
+        className={`h-8 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition-colors ${
+          copied ? "border-up/40 bg-up/10 text-up" : "border-edge text-ink hover:border-edge-2"
+        }`}
+      >
+        {copied ? "Copied" : "Copy"}
+      </button>
     </div>
   );
 }
