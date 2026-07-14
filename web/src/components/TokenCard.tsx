@@ -31,7 +31,7 @@ export function TokenCard({ token }: { token: TokenSummary }) {
             <h3 className="truncate text-[17px] font-semibold tracking-tight text-ink">
               {token.name}
             </h3>
-            <span className="text-sm font-medium text-ink-3">{token.symbol}</span>
+            <span className="tnum text-sm font-medium text-ink-3">${token.symbol}</span>
             <span className="hidden shrink-0 rounded-full bg-panel-2 px-2 py-0.5 text-[10px] font-medium text-ink-2 sm:inline-block">
               Uniswap V3
             </span>

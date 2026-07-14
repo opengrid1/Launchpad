@@ -47,7 +47,7 @@ export function TokenPage() {
           <TokenLogo token={t} size={48} />
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-ink">
-              {t.name} <span className="font-medium text-ink-3">{t.symbol}</span>
+              {t.name} <span className="tnum font-medium text-ink-3">${t.symbol}</span>
             </h1>
             <p className="mt-0.5 text-xs text-ink-3">
               Launched {timeAgo(t.createdAt)} by <span className="tnum">{shortAddr(t.creator)}</span>
