@@ -2,6 +2,21 @@
 
 A production-grade token launchpad that launches tokens **directly into Uniswap V3**. No bonding curve, no simulation: one transaction deploys a real ERC-20, creates and initializes a real Uniswap V3 pool, seeds full-range liquidity, and opens trading immediately. Anti-whale limits protect the market until the token reaches a 40,000 USD market cap, then lift automatically on-chain.
 
+## Live deployment (Robinhood Chain mainnet, chain id 4663)
+
+| Contract | Address |
+| --- | --- |
+| Launchpad | [`0xf805c4FB71Abc66FD9042694E0d9Bd8c78d58647`](https://robinhoodchain.blockscout.com/address/0xf805c4FB71Abc66FD9042694E0d9Bd8c78d58647) |
+| TokenFactory | [`0xA8940962C4A771A7Ad630f0383E0321a8af09f0F`](https://robinhoodchain.blockscout.com/address/0xA8940962C4A771A7Ad630f0383E0321a8af09f0F) |
+| FeeDistributor | [`0x81C7f04B94Fe5eE0C31215B1a96616337442B1aC`](https://robinhoodchain.blockscout.com/address/0x81C7f04B94Fe5eE0C31215B1a96616337442B1aC) |
+| Treasury | [`0x5DDd922A7dB1Ebba96e2fd59C3e15674c3428f68`](https://robinhoodchain.blockscout.com/address/0x5DDd922A7dB1Ebba96e2fd59C3e15674c3428f68) |
+| WETH9 | [`0xa9A2619dF7F241629fD768e353B14B84F1DC7001`](https://robinhoodchain.blockscout.com/address/0xa9A2619dF7F241629fD768e353B14B84F1DC7001) |
+| UniswapV3Factory | `0xc6104E5fcFEf77dF39d80df8c2cf6A30E6dE7bE4` |
+| SwapRouter | `0xa87C6792Cb989E621171c2c1497375E6C76147e8` |
+| NonfungiblePositionManager | `0xA8800647124F0a986d329e5Aedd672C7B97b46D4` |
+
+All protocol contracts are source-verified on Blockscout. The Uniswap V3 stack was deployed from the canonical build artifacts because no adopted canonical deployment existed on the chain. Every admin role is held by the platform admin wallet; the deployer retains zero privileges. Web app: https://meridian-launchpad.vercel.app (the indexer backend still needs hosting for feed/chart data; launching and trading work directly against the chain).
+
 ## How a launch works
 
 1. The creator fills in name, symbol, description, logo, website, X, Telegram and optional links, and chooses the initial liquidity. Everything else is a fixed protocol rule.
