@@ -6,12 +6,15 @@ A production-grade token launchpad that launches tokens **directly into Uniswap 
 
 | Contract | Address |
 | --- | --- |
-| Launchpad | [`0xff9a79ad32cbE6dA1Cac77ef7C3379507793592b`](https://robinhoodchain.blockscout.com/address/0xff9a79ad32cbE6dA1Cac77ef7C3379507793592b) |
-| TokenFactory | [`0x1E2C9843F06442873208F2377833D59b6207445D`](https://robinhoodchain.blockscout.com/address/0x1E2C9843F06442873208F2377833D59b6207445D) |
-| FeeDistributor | [`0x574D3B5DbCB738491eE9ff77A166Ea2B287110B1`](https://robinhoodchain.blockscout.com/address/0x574D3B5DbCB738491eE9ff77A166Ea2B287110B1) |
-| Treasury | [`0xa5aBF57c94b02F258D8Eff39577C9f68D4B199B1`](https://robinhoodchain.blockscout.com/address/0xa5aBF57c94b02F258D8Eff39577C9f68D4B199B1) |
+| Launchpad | [`0xe893ca05D3F1235de22630504DcEa9e029294900`](https://robinhoodchain.blockscout.com/address/0xe893ca05D3F1235de22630504DcEa9e029294900) |
+| TokenFactory | [`0x5Cf777e19a6CD4B10c3Aa317a2B8E8bCC5F46364`](https://robinhoodchain.blockscout.com/address/0x5Cf777e19a6CD4B10c3Aa317a2B8E8bCC5F46364) |
+| FeeDistributor | [`0x8E0b175a36ee0854Cc2dC7AeC4B3f90857A059ca`](https://robinhoodchain.blockscout.com/address/0x8E0b175a36ee0854Cc2dC7AeC4B3f90857A059ca) |
+| Treasury | [`0xD401Ed3C128eaE756323e7EAE27B40407c7d499B`](https://robinhoodchain.blockscout.com/address/0xD401Ed3C128eaE756323e7EAE27B40407c7d499B) |
 
-Pools are created on the chain's canonical Uniswap V3 (factory `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA`, SwapRouter02 `0xCaf681a66D020601342297493863E78C959E5cb2`, position manager `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3`) and pair against the canonical bridged WETH `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73`, so every launch is visible to DexScreener, snipers and any tooling watching the standard event stream.
+| Meridian One (MRD1) | [`0x5e64880D20d6b827096611C3C06D9BA38e2C2DAD`](https://robinhoodchain.blockscout.com/address/0x5e64880D20d6b827096611C3C06D9BA38e2C2DAD) |
+| MRD1 / WETH pool (1% tier) | `0x8795eeB0cc2203d01140F9340B9402b69b4eE077` |
+
+Pools are created on the chain's canonical Uniswap V3 at the 1% fee tier (factory `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA`, SwapRouter02 `0xCaf681a66D020601342297493863E78C959E5cb2`, position manager `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3`) and pair against the canonical bridged WETH `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73`, so every launch is visible to DexScreener, snipers and any tooling watching the standard event stream.
 
 All protocol contracts are source-verified on Blockscout. The Uniswap V3 stack was deployed from the canonical build artifacts because no adopted canonical deployment existed on the chain. Every admin role is held by the platform admin wallet; the deployer retains zero privileges. Web app: https://meridian-launchpad.vercel.app (the indexer backend still needs hosting for feed/chart data; launching and trading work directly against the chain).
 

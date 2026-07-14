@@ -69,6 +69,7 @@ export function AdminPage() {
   const lpEvents = useQuery({
     queryKey: ["lp-events"],
     queryFn: async () => {
+      if (!env.apiUrl) return [];
       const res = await fetch(`${env.apiUrl}/api/lp-events?limit=30`);
       if (!res.ok) throw new Error("failed");
       return (await res.json()) as {

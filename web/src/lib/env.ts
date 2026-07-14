@@ -13,8 +13,11 @@ export const env = {
   rpcUrl: req("VITE_RPC_URL"),
   explorerUrl: String(import.meta.env.VITE_EXPLORER_URL ?? ""),
   nativeSymbol: String(import.meta.env.VITE_NATIVE_SYMBOL ?? "ETH"),
-  apiUrl: String(import.meta.env.VITE_API_URL ?? "http://localhost:8080"),
-  wsUrl: String(import.meta.env.VITE_WS_URL ?? "ws://localhost:8080/ws"),
+  // Empty API URL enables backend-free mode: all data comes straight from
+  // the chain over RPC with live event watching.
+  apiUrl: String(import.meta.env.VITE_API_URL ?? ""),
+  wsUrl: String(import.meta.env.VITE_WS_URL ?? ""),
+  startBlock: String(import.meta.env.VITE_START_BLOCK ?? "0"),
   walletConnectProjectId: String(import.meta.env.VITE_WALLETCONNECT_PROJECT_ID ?? ""),
 };
 

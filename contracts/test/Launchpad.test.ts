@@ -121,7 +121,7 @@ describe("Launchpad", () => {
       const pool = await f.uniFactory.getFunction("getPool")(
         tokenAddress,
         await f.weth.getAddress(),
-        3000
+        10000
       );
       expect(pool).to.equal(event.pool);
       expect(pool).to.not.equal(ethers.ZeroAddress);
@@ -138,7 +138,7 @@ describe("Launchpad", () => {
     it("applies the fixed protocol rules to every launch", async () => {
       const { token, event } = await launchToken(f);
       expect(event.totalSupply).to.equal(SUPPLY);
-      expect(event.feeTier).to.equal(3000);
+      expect(event.feeTier).to.equal(10000);
       expect(await token.maxTxAmount()).to.equal((SUPPLY * 2n) / 100n); // 2%
       expect(await token.maxWalletAmount()).to.equal((SUPPLY * 2n) / 100n); // 2%
       expect(await token.buyCooldown()).to.equal(0n);
@@ -149,11 +149,11 @@ describe("Launchpad", () => {
       const { tokenAddress } = await launchToken(f);
       // INITIAL_MCAP_USD is 2,000 USD; tick-spacing snapping allows ~1% drift.
       const mcapUsd = await f.launchpad.marketCapUsd(tokenAddress);
-      expect(mcapUsd).to.be.closeTo(2_000n * 10n ** 8n, 4n * 10n ** 9n);
+      expect(mcapUsd).to.be.closeTo(2_000n * 10n ** 8n, 5n * 10n ** 9n);
 
       // At 2,000 USD per native token that is about 1 native of market cap.
       const mcapWeth = await f.launchpad.marketCapWeth(tokenAddress);
-      expect(mcapWeth).to.be.closeTo(ethers.parseEther("1"), ethers.parseEther("0.02"));
+      expect(mcapWeth).to.be.closeTo(ethers.parseEther("1"), ethers.parseEther("0.025"));
     });
 
     it("executes an optional first buy for the creator in the launch transaction", async () => {
@@ -417,14 +417,14 @@ describe("Launchpad", () => {
       // Market cap was 1 native at launch; doubling the native price to
       // 4,000 USD doubles the USD market cap to about 4,000 USD.
       const mcapUsd = await f.launchpad.marketCapUsd(tokenAddress);
-      expect(mcapUsd).to.be.closeTo(4_000n * 10n ** 8n, 8n * 10n ** 9n);
+      expect(mcapUsd).to.be.closeTo(4_000n * 10n ** 8n, 10n * 10n ** 9n);
     });
 
     it("exposes pool info", async () => {
       const { tokenAddress } = await launchToken(f);
       let info = await f.launchpad.poolInfo(tokenAddress);
       expect(info.pool).to.not.equal(ethers.ZeroAddress);
-      expect(info.feeTier).to.equal(3000);
+      expect(info.feeTier).to.equal(10000);
       // Single-sided seeding: the range sits above the price, so in-range
       // liquidity is zero until the first buy moves price into it.
       expect(info.positionLiquidity).to.be.gt(0n);

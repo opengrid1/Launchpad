@@ -9,6 +9,7 @@ import {
 } from "viem";
 
 import { launchpadAbi, launchTokenAbi, feeDistributorAbi } from "./abi";
+import { ChainDataSource } from "./chain-data";
 import { LaunchpadSocket } from "./ws";
 import type {
   Address,
@@ -36,8 +37,12 @@ export interface LaunchpadClientConfig {
   /** Bring your own viem clients if you already have them. */
   publicClient?: PublicClient;
   walletClient?: WalletClient;
-  /** Backend REST base URL, e.g. https://api.yourlaunchpad.xyz */
-  apiUrl: string;
+  /** Backend REST base URL. Leave empty to read everything directly from
+   *  the chain (backend-free mode): tokens, trades, candles and holders come
+   *  from RPC and live updates from event watching. */
+  apiUrl?: string;
+  /** First block to scan in backend-free mode (the launchpad deploy block). */
+  startBlock?: bigint;
   /** Backend WebSocket URL, e.g. wss://api.yourlaunchpad.xyz/ws */
   wsUrl?: string;
   fetchFn?: typeof fetch;
@@ -54,11 +59,12 @@ export class LaunchpadClient {
   private walletClient?: WalletClient;
   private apiUrl: string;
   private socket?: LaunchpadSocket;
+  private chainData?: ChainDataSource;
   private fetchFn: typeof fetch;
 
   constructor(config: LaunchpadClientConfig) {
     this.addresses = config.addresses;
-    this.apiUrl = config.apiUrl.replace(/\/$/, "");
+    this.apiUrl = (config.apiUrl ?? "").replace(/\/$/, "");
     this.fetchFn = config.fetchFn ?? fetch.bind(globalThis);
 
     if (config.publicClient) {
@@ -74,6 +80,9 @@ export class LaunchpadClient {
 
     this.walletClient = config.walletClient;
     if (config.wsUrl) this.socket = new LaunchpadSocket(config.wsUrl);
+    if (!this.apiUrl) {
+      this.chainData = new ChainDataSource(this.publicClient, this.addresses, config.startBlock);
+    }
   }
 
   /** Attach or replace the signing wallet (e.g. after the user connects). */
@@ -200,10 +209,12 @@ export class LaunchpadClient {
   // -------------------------------------------------------------------
 
   async getToken(token: Address): Promise<TokenSummary> {
+    if (this.chainData) return this.chainData.getToken(token);
     return this.api<TokenSummary>(`/api/tokens/${token.toLowerCase()}`);
   }
 
   async getTokens(opts?: { sort?: "new" | "volume" | "marketCap" | "featured"; limit?: number; offset?: number }): Promise<TokenSummary[]> {
+    if (this.chainData) return this.chainData.getTokens(opts?.sort ?? "new", opts?.limit ?? 50);
     const q = new URLSearchParams();
     if (opts?.sort) q.set("sort", opts.sort);
     if (opts?.limit) q.set("limit", String(opts.limit));
@@ -262,6 +273,7 @@ export class LaunchpadClient {
   }
 
   async getTrades(token: Address, opts?: { limit?: number; before?: number }): Promise<TradeRecord[]> {
+    if (this.chainData) return this.chainData.getTrades(token, opts?.limit ?? 50);
     const q = new URLSearchParams({ token: token.toLowerCase() });
     if (opts?.limit) q.set("limit", String(opts.limit));
     if (opts?.before) q.set("before", String(opts.before));
@@ -269,12 +281,14 @@ export class LaunchpadClient {
   }
 
   async getHolders(token: Address, opts?: { limit?: number }): Promise<HolderRecord[]> {
+    if (this.chainData) return this.chainData.getHolders(token, opts?.limit ?? 50);
     const q = new URLSearchParams({ token: token.toLowerCase() });
     if (opts?.limit) q.set("limit", String(opts.limit));
     return this.api<HolderRecord[]>(`/api/holders?${q}`);
   }
 
   async getCandles(token: Address, interval: CandleInterval, opts?: { from?: number; to?: number; limit?: number }): Promise<Candle[]> {
+    if (this.chainData) return this.chainData.getCandles(token, interval, opts?.limit ?? 500);
     const q = new URLSearchParams({ token: token.toLowerCase(), interval });
     if (opts?.from) q.set("from", String(opts.from));
     if (opts?.to) q.set("to", String(opts.to));
@@ -351,37 +365,39 @@ export class LaunchpadClient {
   // Live subscriptions
   // -------------------------------------------------------------------
 
-  private requireSocket(): LaunchpadSocket {
+  private requireStream(): { subscribe: (channel: any, params: any, fn: any) => () => void } {
+    if (this.chainData) return this.chainData as any;
     if (!this.socket) throw new Error("No wsUrl configured for LaunchpadClient");
-    return this.socket;
+    return this.socket as any;
   }
 
   subscribeToPrice(token: Address, onUpdate: (update: PriceUpdate) => void): () => void {
-    return this.requireSocket().subscribe("price:update", { token }, (msg) => {
+    return this.requireStream().subscribe("price:update", { token }, (msg: any) => {
       if (msg.channel === "price:update") onUpdate(msg.data);
     });
   }
 
   subscribeToTrades(token: Address, onTrade: (trade: TradeRecord) => void): () => void {
-    return this.requireSocket().subscribe("trade:update", { token }, (msg) => {
+    return this.requireStream().subscribe("trade:update", { token }, (msg: any) => {
       if (msg.channel === "trade:update") onTrade(msg.data);
     });
   }
 
   subscribeToCandles(token: Address, interval: CandleInterval, onCandle: (update: CandleUpdate) => void): () => void {
-    return this.requireSocket().subscribe("candle:update", { token, interval }, (msg) => {
+    return this.requireStream().subscribe("candle:update", { token, interval }, (msg: any) => {
       if (msg.channel === "candle:update" && msg.data.interval === interval) onCandle(msg.data);
     });
   }
 
   subscribeToLaunches(onLaunch: (token: TokenSummary) => void): () => void {
-    return this.requireSocket().subscribe("token:launched", {}, (msg) => {
+    return this.requireStream().subscribe("token:launched", {}, (msg: any) => {
       if (msg.channel === "token:launched") onLaunch(msg.data);
     });
   }
 
   disconnect() {
     this.socket?.close();
+    this.chainData?.close();
   }
 }
 

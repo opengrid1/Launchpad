@@ -13,6 +13,7 @@ interface ImportMetaEnv {
   readonly VITE_WETH_ADDRESS: string;
   readonly VITE_API_URL?: string;
   readonly VITE_WS_URL?: string;
+  readonly VITE_START_BLOCK?: string;
   readonly VITE_WALLETCONNECT_PROJECT_ID?: string;
 }
 

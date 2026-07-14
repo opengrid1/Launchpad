@@ -8,5 +8,6 @@ export const client = new LaunchpadClient({
   rpcUrl: env.rpcUrl,
   addresses,
   apiUrl: env.apiUrl,
-  wsUrl: env.wsUrl,
+  wsUrl: env.wsUrl || undefined,
+  startBlock: BigInt(env.startBlock || "0"),
 });

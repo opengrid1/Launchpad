@@ -10,8 +10,9 @@ library ProtocolConfig {
 
     /// @notice Every token launches with this exact supply (18 decimals).
     uint256 internal constant TOTAL_SUPPLY = 1_000_000_000e18;
-    /// @notice Uniswap V3 fee tier every pool is created with (0.3%).
-    uint24 internal constant FEE_TIER = 3000;
+    /// @notice Uniswap V3 fee tier every pool is created with (1%), so the
+    ///         pool tax bots and aggregators pay matches the platform's 1%.
+    uint24 internal constant FEE_TIER = 10000;
     /// @notice Flat 1% trading fee, paid entirely to the token creator.
     uint16 internal constant TRADE_FEE_BPS = 100;
     /// @notice Max transaction while limits are active: 2% of supply.
