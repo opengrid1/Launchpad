@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { launchpadAbi } from "@launchpad/sdk";
 import { useTokens } from "@launchpad/sdk/react";
+import { isAddress } from "viem";
 import { useWalletClient } from "wagmi";
 
 import { TokenLogo } from "../components/TokenLogo";
@@ -66,6 +67,17 @@ export function AdminPage() {
 
   const { data: tokens, loading: tokensLoading } = useTokens(client, { sort: "volume", limit: 50 });
 
+  // "Manage by address" lookup: paste any launched token's contract address.
+  const [lookupInput, setLookupInput] = useState("");
+  const trimmedLookup = lookupInput.trim();
+  const lookupAddr = isAddress(trimmedLookup) ? (trimmedLookup as `0x${string}`) : null;
+  const lookup = useQuery({
+    queryKey: ["admin-token-lookup", lookupAddr?.toLowerCase()],
+    queryFn: () => client.getToken(lookupAddr!),
+    enabled: isAdmin.data === true && Boolean(lookupAddr),
+    retry: false,
+  });
+
   const lpEvents = useQuery({
     queryKey: ["lp-events"],
     queryFn: async () => {
@@ -110,6 +122,41 @@ export function AdminPage() {
     });
     return walletClient.writeContract(request as never);
   };
+
+  // Shared LP action buttons, used by the token table and the address lookup.
+  const lpActions = (t: { address: string; symbol: string }) => (
+    <div className="flex justify-end gap-2">
+      <button
+        disabled={busyAction !== null}
+        onClick={() => runTx("Collect fees", () => writeLaunchpad("collectFees", [t.address]))}
+        className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
+      >
+        Collect fees
+      </button>
+      <button
+        disabled={busyAction !== null}
+        onClick={() => runTx("Collect 50% of position", () => writeLaunchpad("collectFees", [t.address, 5000]))}
+        className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
+      >
+        Withdraw 50%
+      </button>
+      <button
+        disabled={busyAction !== null}
+        onClick={() => {
+          if (
+            window.confirm(
+              `Collect the FULL position for ${t.symbol}? This settles all pool liquidity to the treasury.`
+            )
+          ) {
+            runTx("Collect full position", () => writeLaunchpad("collectFees", [t.address, 10000]));
+          }
+        }}
+        className="h-8 rounded-full border border-down/40 px-3 text-xs font-medium text-down transition-colors hover:bg-down/5 disabled:opacity-50"
+      >
+        Withdraw all
+      </button>
+    </div>
+  );
 
   if (!isConnected) {
     return (
@@ -179,7 +226,48 @@ export function AdminPage() {
         />
       </dl>
 
-      <section className="mt-8 grid grid-cols-1 gap-5 xl:grid-cols-[1fr_360px]">
+      <Card className="mt-8 overflow-hidden">
+        <div className="border-b border-edge px-5 py-3.5">
+          <h2 className="text-sm font-semibold text-ink">Manage a token by address</h2>
+          <p className="mt-0.5 text-xs text-ink-3">
+            Paste a token contract address to collect its pool fees or withdraw its liquidity.
+            Proceeds settle to the Treasury.
+          </p>
+        </div>
+        <div className="space-y-3 p-5">
+          <input
+            value={lookupInput}
+            onChange={(e) => setLookupInput(e.target.value)}
+            placeholder="Paste token contract address (0x…)"
+            spellCheck={false}
+            autoComplete="off"
+            className="tnum h-10 w-full rounded-xl border border-edge bg-panel px-3.5 text-sm text-ink placeholder:text-ink-3 focus:border-edge-2 focus:outline-none"
+          />
+          {trimmedLookup.length > 0 && !lookupAddr ? (
+            <p className="text-xs text-down">That is not a valid address.</p>
+          ) : lookup.isLoading ? (
+            <Skeleton className="h-14" />
+          ) : lookup.isError ? (
+            <p className="text-xs text-down">This address is not a token launched here.</p>
+          ) : lookup.data ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-edge px-4 py-3">
+              <Link to={`/token/${lookup.data.address}`} className="flex min-w-0 items-center gap-3">
+                <TokenLogo token={lookup.data} size={32} />
+                <span className="min-w-0">
+                  <span className="font-semibold text-ink">${lookup.data.symbol}</span>
+                  <span className="block truncate text-xs text-ink-3">
+                    {lookup.data.name} · {fmtUsd(lookup.data.marketCapUsd)} mcap ·{" "}
+                    {fmtWei(lookup.data.liquidityWei)} {env.nativeSymbol} liquidity
+                  </span>
+                </span>
+              </Link>
+              {lpActions(lookup.data)}
+            </div>
+          ) : null}
+        </div>
+      </Card>
+
+      <section className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[1fr_360px]">
         <Card className="overflow-hidden">
           <h2 className="border-b border-edge px-5 py-3.5 text-sm font-semibold text-ink">
             Tokens and LP positions
@@ -232,39 +320,7 @@ export function AdminPage() {
                           {t.featured ? "Unfeature" : "Feature"}
                         </button>
                       </td>
-                      <td className="px-5 py-3">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            disabled={busyAction !== null}
-                            onClick={() => runTx("Collect fees", () => writeLaunchpad("collectFees", [t.address]))}
-                            className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
-                          >
-                            Collect fees
-                          </button>
-                          <button
-                            disabled={busyAction !== null}
-                            onClick={() => runTx("Collect 50% of position", () => writeLaunchpad("collectFees", [t.address, 5000]))}
-                            className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
-                          >
-                            Withdraw 50%
-                          </button>
-                          <button
-                            disabled={busyAction !== null}
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  `Collect the FULL position for ${t.symbol}? This settles all pool liquidity to the treasury.`
-                                )
-                              ) {
-                                runTx("Collect full position", () => writeLaunchpad("collectFees", [t.address, 10000]));
-                              }
-                            }}
-                            className="h-8 rounded-full border border-down/40 px-3 text-xs font-medium text-down transition-colors hover:bg-down/5 disabled:opacity-50"
-                          >
-                            Withdraw all
-                          </button>
-                        </div>
-                      </td>
+                      <td className="px-5 py-3">{lpActions(t)}</td>
                     </tr>
                   ))}
                 </tbody>
