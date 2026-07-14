@@ -50,7 +50,7 @@ export default function App() {
             </main>
             <footer className="border-t border-edge py-5">
               <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 text-xs sm:px-6">
-                <p className="text-ink-3">Meridian. Real markets on Robinhood Chain.</p>
+                <p className="text-ink-3">Safehood. Real markets on Robinhood Chain.</p>
                 <nav className="flex items-center gap-5">
                   <Link to="/docs" className="font-medium text-ink-2 transition-colors hover:text-ink">
                     Docs

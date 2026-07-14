@@ -1,4 +1,4 @@
-# Meridian: Token Launchpad for Robinhood Chain
+# Safehood: Token Launchpad for Robinhood Chain
 
 A production-grade token launchpad that launches tokens **directly into Uniswap V3**. No bonding curve, no simulation: one transaction deploys a real ERC-20, creates and initializes a real Uniswap V3 pool, seeds it single-sided with the full supply (launching is free, no upfront liquidity), and opens trading immediately. Anti-whale limits protect the market until the token reaches a 40,000 USD market cap, then lift automatically on-chain.
 
@@ -16,7 +16,7 @@ A production-grade token launchpad that launches tokens **directly into Uniswap 
 
 Pools are created on the chain's canonical Uniswap V3 at the 1% fee tier (factory `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA`, SwapRouter02 `0xCaf681a66D020601342297493863E78C959E5cb2`, position manager `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3`) and pair against the canonical bridged WETH `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73`, so every launch is visible to DexScreener, snipers and any tooling watching the standard event stream.
 
-All protocol contracts are source-verified on Blockscout. The Uniswap V3 stack was deployed from the canonical build artifacts because no adopted canonical deployment existed on the chain. Every admin role is held by the platform admin wallet; the deployer retains zero privileges. Web app: https://meridian-launchpad.vercel.app (the indexer backend still needs hosting for feed/chart data; launching and trading work directly against the chain).
+All protocol contracts are source-verified on Blockscout. The Uniswap V3 stack was deployed from the canonical build artifacts because no adopted canonical deployment existed on the chain. Every admin role is held by the platform admin wallet; the deployer retains zero privileges. Web app: https://safehood-app.vercel.app (the indexer backend still needs hosting for feed/chart data; launching and trading work directly against the chain).
 
 ## How a launch works
 

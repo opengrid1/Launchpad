@@ -15,10 +15,18 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:gap-8 sm:px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-ink text-[15px] font-bold text-accent">
-            M
+          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-ink text-accent">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+              <path
+                d="M8 1.5l5.5 2v4.2c0 3.1-2.2 5.6-5.5 6.8-3.3-1.2-5.5-3.7-5.5-6.8V3.5l5.5-2z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+              <path d="M5.6 7.9l1.7 1.7 3.1-3.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </span>
-          <span className="hidden text-[17px] font-semibold tracking-tight text-ink min-[400px]:block">Meridian</span>
+          <span className="hidden text-[17px] font-semibold tracking-tight text-ink min-[400px]:block">Safehood</span>
         </Link>
 
         <nav className="flex items-center gap-4 sm:gap-6">

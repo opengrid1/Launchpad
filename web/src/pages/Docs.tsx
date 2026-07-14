@@ -17,7 +17,7 @@ export function DocsPage() {
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
       <h1 className="text-[28px] font-semibold tracking-tight text-ink">Docs</h1>
       <p className="mt-1.5 text-sm text-ink-2">
-        Everything on Meridian runs on-chain on {env.chainName}. This page explains the fixed
+        Everything on Safehood runs on-chain on {env.chainName}. This page explains the fixed
         protocol rules.
       </p>
 
@@ -38,7 +38,7 @@ export function DocsPage() {
 
       <Section title="Trading and fees">
         <p>
-          Every buy and sell through Meridian pays a flat 1% fee, delivered automatically and
+          Every buy and sell through Safehood pays a flat 1% fee, delivered automatically and
           entirely to the token creator on each trade. The platform takes 0%. Trades executed
           directly against the pool (bots, aggregators) pay the pool's 1% Uniswap fee instead.
         </p>
