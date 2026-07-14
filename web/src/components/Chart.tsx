@@ -14,10 +14,10 @@ import {
 import type { Address, Candle, CandleInterval } from "@launchpad/sdk";
 import { CANDLE_INTERVALS } from "@launchpad/sdk";
 
-import { launchpadAbi } from "@launchpad/sdk";
+import { launchpadAbi, launchTokenAbi } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
-import { fmtSmall, compact } from "../lib/format";
+import { compact } from "../lib/format";
 
 const UP = "#0E9F4E";
 const DOWN = "#E5484D";
@@ -31,16 +31,26 @@ const intervalLabels: Record<CandleInterval, string> = {
   "1d": "1D",
 };
 
-// Candles are aggregated in native price; the chart renders USD using the
-// live native/USD rate so every axis and readout is in dollars.
-function toCandleData(c: Candle, usdRate: number): CandlestickData<UTCTimestamp> {
+// Candles are aggregated in native price per token; the chart renders
+// MARKET CAP in USD (price x supply x native/USD rate), so the axis reads
+// like $2,000 instead of a micro per-token price.
+function toCandleData(c: Candle, scale: number): CandlestickData<UTCTimestamp> {
   return {
     time: c.time as UTCTimestamp,
-    open: Number(c.open) * usdRate,
-    high: Number(c.high) * usdRate,
-    low: Number(c.low) * usdRate,
-    close: Number(c.close) * usdRate,
+    open: Number(c.open) * scale,
+    high: Number(c.high) * scale,
+    low: Number(c.low) * scale,
+    close: Number(c.close) * scale,
   };
+}
+
+function fmtMcap(v: number): string {
+  if (!isFinite(v) || v <= 0) return "$0";
+  if (v >= 1e9) return `$${(v / 1e9).toFixed(2)}B`;
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(2)}M`;
+  if (v >= 100_000) return `$${(v / 1e3).toFixed(0)}K`;
+  if (v >= 100) return `$${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  return `$${v.toFixed(2)}`;
 }
 
 function toVolumeData(c: Candle, usdRate: number): HistogramData<UTCTimestamp> {
@@ -52,15 +62,25 @@ function toVolumeData(c: Candle, usdRate: number): HistogramData<UTCTimestamp> {
   };
 }
 
-async function fetchUsdRate(): Promise<number> {
+/** USD market cap per unit of native token price: usdRate x whole supply. */
+async function fetchMcapScale(token: Address): Promise<number> {
   try {
-    const price8 = await client.publicClient.readContract({
-      address: client.addresses.launchpad,
-      abi: launchpadAbi,
-      functionName: "nativeUsdPrice",
-    });
+    const [price8, supply] = await Promise.all([
+      client.publicClient.readContract({
+        address: client.addresses.launchpad,
+        abi: launchpadAbi,
+        functionName: "nativeUsdPrice",
+      }),
+      client.publicClient.readContract({
+        address: token,
+        abi: launchTokenAbi,
+        functionName: "totalSupply",
+      }),
+    ]);
     const rate = Number(price8) / 1e8;
-    return rate > 0 ? rate : 1;
+    const supplyWhole = Number(supply) / 1e18;
+    const scale = rate * supplyWhole;
+    return scale > 0 ? scale : 1;
   } catch {
     return 1;
   }
@@ -126,7 +146,7 @@ export function PriceChart({ token }: { token: Address }) {
       wickDownColor: DOWN,
       priceFormat: {
         type: "custom",
-        formatter: (p: number) => `$${fmtSmall(p)}`,
+        formatter: (p: number) => fmtMcap(p),
         minMove: 1e-12,
       },
     });
@@ -155,10 +175,10 @@ export function PriceChart({ token }: { token: Address }) {
       }
       const dir = data.close >= data.open ? UP : DOWN;
       legend.innerHTML =
-        `<span style="color:#9CA3AF">O</span> <span style="color:${dir}">$${fmtSmall(data.open)}</span>  ` +
-        `<span style="color:#9CA3AF">H</span> <span style="color:${dir}">$${fmtSmall(data.high)}</span>  ` +
-        `<span style="color:#9CA3AF">L</span> <span style="color:${dir}">$${fmtSmall(data.low)}</span>  ` +
-        `<span style="color:#9CA3AF">C</span> <span style="color:${dir}">$${fmtSmall(data.close)}</span>` +
+        `<span style="color:#9CA3AF">O</span> <span style="color:${dir}">${fmtMcap(data.open)}</span>  ` +
+        `<span style="color:#9CA3AF">H</span> <span style="color:${dir}">${fmtMcap(data.high)}</span>  ` +
+        `<span style="color:#9CA3AF">L</span> <span style="color:${dir}">${fmtMcap(data.low)}</span>  ` +
+        `<span style="color:#9CA3AF">C</span> <span style="color:${dir}">${fmtMcap(data.close)}</span>` +
         (vol ? `  <span style="color:#9CA3AF">Vol</span> <span style="color:#6B7280">$${compact(vol.value ?? 0)}</span>` : "");
     });
 
@@ -188,12 +208,17 @@ export function PriceChart({ token }: { token: Address }) {
     const volumeSeries = volumeSeriesRef.current;
     if (!candleSeries || !volumeSeries) return;
 
+    let mcapScale = 1;
     let usdRate = 1;
     const load = async () => {
-      usdRate = await fetchUsdRate();
+      mcapScale = await fetchMcapScale(token);
+      const price8 = await client.publicClient
+        .readContract({ address: client.addresses.launchpad, abi: launchpadAbi, functionName: "nativeUsdPrice" })
+        .catch(() => 0n);
+      usdRate = Number(price8) / 1e8 || 1;
       const candles = await client.getCandles(token, interval, { limit: 500 });
       if (cancelled || !candleSeriesRef.current) return;
-      candleSeries.setData(candles.map((x) => toCandleData(x, usdRate)));
+      candleSeries.setData(candles.map((x) => toCandleData(x, mcapScale)));
       volumeSeries.setData(candles.map((x) => toVolumeData(x, usdRate)));
       chartRef.current?.timeScale().fitContent();
       setEmpty(candles.length === 0);
@@ -204,7 +229,7 @@ export function PriceChart({ token }: { token: Address }) {
       if (cancelled || !candleSeriesRef.current) return;
       // In-place update of the active candle; appends automatically when a
       // new bucket opens. The chart object itself is untouched.
-      candleSeriesRef.current.update(toCandleData(candle, usdRate));
+      candleSeriesRef.current.update(toCandleData(candle, mcapScale));
       volumeSeriesRef.current?.update(toVolumeData(candle, usdRate));
       setEmpty(false);
     });
