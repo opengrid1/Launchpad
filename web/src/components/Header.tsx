@@ -15,15 +15,19 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:gap-8 sm:px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-ink text-accent">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-ink">
+            <svg width="22" height="22" viewBox="12 8 40 48" fill="none" aria-hidden>
               <path
-                d="M8 1.5l5.5 2v4.2c0 3.1-2.2 5.6-5.5 6.8-3.3-1.2-5.5-3.7-5.5-6.8V3.5l5.5-2z"
-                stroke="currentColor"
-                strokeWidth="1.5"
+                d="M32 10 C36.8 12.2 42.6 13.85 48 14.75 V30 C48 41.4 41.6 49.55 32 53.5 C22.4 49.55 16 41.4 16 30 V14.75 C21.4 13.85 27.2 12.2 32 10 Z"
+                fill="#B6FF00"
+              />
+              <path
+                d="M24.6 31.2 L30.1 36.7 L39.6 26.4"
+                stroke="#111111"
+                strokeWidth="4.6"
+                strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              <path d="M5.6 7.9l1.7 1.7 3.1-3.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
           <span className="hidden text-[17px] font-semibold tracking-tight text-ink min-[400px]:block">Safehood</span>
