@@ -54,23 +54,25 @@ export function TokenPage() {
             </p>
           </div>
         </div>
-        <div>
+        <div className="text-right">
           <p className="tnum text-[32px] font-semibold leading-none tracking-tight text-ink">
-            {fmtUsd(t.priceUsd)}
+            {fmtUsd(t.marketCapUsd)}
           </p>
-          <p
-            className={`tnum mt-1.5 text-sm font-medium ${
-              t.priceChange24hPct == null ? "text-ink-3" : t.priceChange24hPct >= 0 ? "text-up" : "text-down"
-            }`}
-          >
-            {fmtPct(t.priceChange24hPct)}
+          <p className="mt-1.5 flex items-center justify-end gap-2 text-sm">
+            <span className="text-ink-3">Market cap</span>
+            <span
+              className={`tnum font-medium ${
+                t.priceChange24hPct == null ? "text-ink-3" : t.priceChange24hPct >= 0 ? "text-up" : "text-down"
+              }`}
+            >
+              {fmtPct(t.priceChange24hPct)}
+            </span>
           </p>
         </div>
       </section>
 
       {/* Key figures, plain typography */}
       <dl className="mt-6 flex flex-wrap gap-x-10 gap-y-3 border-y border-edge py-4">
-        <Figure label="Market cap" value={fmtUsd(t.marketCapUsd)} />
         <Figure label="Volume 24h" value={fmtWeiUsd(t.volume24hWei, usdRate)} />
         <Figure label="Liquidity" value={fmtWeiUsd(t.liquidityWei, usdRate)} />
         <Figure label="Holders" value={compact(t.holderCount)} />
@@ -145,6 +147,12 @@ const socialIcons: Record<string, JSX.Element> = {
       <path d="M14.7 1.6L1.3 6.8c-.9.35-.9 1.2 0 1.5l3.4 1.05 1.3 4.1c.25.7.9.85 1.45.35l1.9-1.8 3.5 2.6c.6.35 1.25.1 1.4-.65l2.3-11.1c.2-.95-.55-1.6-1.85-1.25zM5.6 9.1l7.2-4.55c.35-.2.65.05.4.3L7.3 10.4l-.25 2.5-1.45-3.8z" />
     </svg>
   ),
+  DexScreener: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <rect x="1.75" y="1.75" width="12.5" height="12.5" rx="3" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5 6v4M8 4.5v7M11 7.5V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
 };
 
 function InfoTab({ t, meta }: { t: any; meta: any }) {
@@ -153,6 +161,8 @@ function InfoTab({ t, meta }: { t: any; meta: any }) {
     { label: "X", url: meta.twitter },
     { label: "Telegram", url: meta.telegram },
     ...(meta.links ?? []),
+    // Every token gets a DexScreener link automatically via its pool.
+    { label: "DexScreener", url: `https://dexscreener.com/robinhood/${t.pool}` },
   ].filter((l) => l.url);
 
   return (
