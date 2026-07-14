@@ -45,14 +45,15 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="ml-auto">
+        <div className="ml-auto shrink-0">
           {isConnected && address ? (
             <button
               onClick={() => disconnect()}
               className="tnum flex h-9 items-center gap-1.5 rounded-full bg-ink px-3 text-xs font-medium text-white transition-colors hover:bg-black sm:h-10 sm:px-4 sm:text-sm"
               title="Disconnect"
             >
-              {shortAddr(address)}
+              <span className="sm:hidden">{`${address.slice(0, 4)}...${address.slice(-4)}`}</span>
+              <span className="hidden sm:inline">{shortAddr(address)}</span>
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
                 <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>

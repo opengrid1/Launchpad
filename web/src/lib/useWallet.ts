@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { useAccount, useConnect, useDisconnect, useWalletClient } from "wagmi";
-import { getWalletClient } from "wagmi/actions";
+import { getChainId, getWalletClient, switchChain } from "wagmi/actions";
 
 import { client } from "./client";
+import { chain } from "./env";
 import { wagmiConfig } from "./wagmi";
 import { useUi } from "../store";
 
@@ -12,7 +13,12 @@ import { useUi } from "../store";
  */
 export async function ensureSdkWallet(): Promise<boolean> {
   try {
-    const wc = await getWalletClient(wagmiConfig);
+    // Auto-switch (and add, if missing) Robinhood Chain in the wallet, so
+    // users never have to configure the network manually.
+    if (getChainId(wagmiConfig) !== chain.id) {
+      await switchChain(wagmiConfig, { chainId: chain.id });
+    }
+    const wc = await getWalletClient(wagmiConfig, { chainId: chain.id });
     if (!wc) return false;
     client.connectWallet(wc);
     return true;
