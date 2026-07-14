@@ -63,14 +63,6 @@ export default function App() {
                   >
                     Explorer
                   </a>
-                  <a
-                    href="https://dexscreener.com/robinhood"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-medium text-ink-2 transition-colors hover:text-ink"
-                  >
-                    DexScreener
-                  </a>
                 </nav>
               </div>
             </footer>
