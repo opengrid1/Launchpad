@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 
@@ -11,6 +11,7 @@ import { Explore } from "./pages/Explore";
 const TokenPage = lazy(() => import("./pages/Token").then((m) => ({ default: m.TokenPage })));
 const LaunchPage = lazy(() => import("./pages/Launch").then((m) => ({ default: m.LaunchPage })));
 const AdminPage = lazy(() => import("./pages/Admin").then((m) => ({ default: m.AdminPage })));
+const DocsPage = lazy(() => import("./pages/Docs").then((m) => ({ default: m.DocsPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ export default function App() {
                   <Route path="/" element={<Explore />} />
                   <Route path="/launch" element={<LaunchPage />} />
                   <Route path="/token/:address" element={<TokenPage />} />
+                  <Route path="/docs" element={<DocsPage />} />
                   {/* Hidden operations console; access enforced on-chain by role. */}
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
@@ -47,9 +49,30 @@ export default function App() {
               </Suspense>
             </main>
             <footer className="border-t border-edge py-5">
-              <p className="mx-auto max-w-5xl px-4 text-xs text-ink-3 sm:px-6">
-                Meridian. Real markets on Robinhood Chain.
-              </p>
+              <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 text-xs sm:px-6">
+                <p className="text-ink-3">Meridian. Real markets on Robinhood Chain.</p>
+                <nav className="flex items-center gap-5">
+                  <Link to="/docs" className="font-medium text-ink-2 transition-colors hover:text-ink">
+                    Docs
+                  </Link>
+                  <a
+                    href="https://robinhoodchain.blockscout.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-ink-2 transition-colors hover:text-ink"
+                  >
+                    Explorer
+                  </a>
+                  <a
+                    href="https://dexscreener.com/robinhood"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-ink-2 transition-colors hover:text-ink"
+                  >
+                    DexScreener
+                  </a>
+                </nav>
+              </div>
             </footer>
             <Toasts />
           </div>
