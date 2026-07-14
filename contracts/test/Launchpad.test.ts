@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 
 import UniswapV3FactoryArtifact from "@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json";
-import SwapRouterArtifact from "@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json";
+import SwapRouterArtifact from "@uniswap/swap-router-contracts/artifacts/contracts/SwapRouter02.sol/SwapRouter02.json";
 import PositionManagerArtifact from "@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json";
 
 const DEADLINE = 4_000_000_000n;
@@ -22,17 +22,22 @@ async function deployFixture() {
     admin
   ).deploy();
 
-  const swapRouter = await new ethers.ContractFactory(
-    SwapRouterArtifact.abi,
-    SwapRouterArtifact.bytecode,
-    admin
-  ).deploy(await uniFactory.getAddress(), await weth.getAddress());
-
   const positionManager = await new ethers.ContractFactory(
     PositionManagerArtifact.abi,
     PositionManagerArtifact.bytecode,
     admin
   ).deploy(await uniFactory.getAddress(), await weth.getAddress(), ethers.ZeroAddress);
+
+  const swapRouter = await new ethers.ContractFactory(
+    SwapRouterArtifact.abi,
+    SwapRouterArtifact.bytecode,
+    admin
+  ).deploy(
+    ethers.ZeroAddress,
+    await uniFactory.getAddress(),
+    await positionManager.getAddress(),
+    await weth.getAddress()
+  );
 
   const tokenFactory = await (await ethers.getContractFactory("TokenFactory")).deploy();
   const treasury = await (await ethers.getContractFactory("Treasury")).deploy(admin.address);

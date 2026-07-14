@@ -114,13 +114,14 @@ interface INonfungiblePositionManager {
         );
 }
 
+/// @dev SwapRouter02 interface: no deadline inside the params struct; the
+///      launchpad enforces deadlines itself before calling.
 interface ISwapRouter {
     struct ExactInputSingleParams {
         address tokenIn;
         address tokenOut;
         uint24 fee;
         address recipient;
-        uint256 deadline;
         uint256 amountIn;
         uint256 amountOutMinimum;
         uint160 sqrtPriceLimitX96;

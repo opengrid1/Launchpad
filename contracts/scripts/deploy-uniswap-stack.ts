@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import UniswapV3FactoryArtifact from "@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json";
-import SwapRouterArtifact from "@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json";
+import SwapRouterArtifact from "@uniswap/swap-router-contracts/artifacts/contracts/SwapRouter02.sol/SwapRouter02.json";
 import PositionManagerArtifact from "@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json";
 
 /**
@@ -30,14 +30,6 @@ async function main() {
   await factory.waitForDeployment();
   console.log(`UniswapV3Factory:           ${await factory.getAddress()}`);
 
-  const swapRouter = await new ethers.ContractFactory(
-    SwapRouterArtifact.abi,
-    SwapRouterArtifact.bytecode,
-    deployer
-  ).deploy(await factory.getAddress(), await weth.getAddress());
-  await swapRouter.waitForDeployment();
-  console.log(`SwapRouter:                 ${await swapRouter.getAddress()}`);
-
   const positionManager = await new ethers.ContractFactory(
     PositionManagerArtifact.abi,
     PositionManagerArtifact.bytecode,
@@ -45,6 +37,19 @@ async function main() {
   ).deploy(await factory.getAddress(), await weth.getAddress(), ethers.ZeroAddress);
   await positionManager.waitForDeployment();
   console.log(`NonfungiblePositionManager: ${await positionManager.getAddress()}`);
+
+  const swapRouter = await new ethers.ContractFactory(
+    SwapRouterArtifact.abi,
+    SwapRouterArtifact.bytecode,
+    deployer
+  ).deploy(
+    ethers.ZeroAddress,
+    await factory.getAddress(),
+    await positionManager.getAddress(),
+    await weth.getAddress()
+  );
+  await swapRouter.waitForDeployment();
+  console.log(`SwapRouter02:               ${await swapRouter.getAddress()}`);
 
   const remaining = await ethers.provider.getBalance(deployer.address);
   console.log(`Remaining balance: ${ethers.formatEther(remaining)} ETH`);

@@ -60,6 +60,7 @@ contract Launchpad is AccessControl, ReentrancyGuard {
     error TransferFailed();
     error PriceUnavailable();
     error ZeroAddress();
+    error Expired();
 
     // ---------------------------------------------------------------------
     // Events
@@ -380,6 +381,7 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         internal
         returns (uint256 tokensOut)
     {
+        if (block.timestamp > deadline) revert Expired();
         uint256 fee = (value * TRADE_FEE_BPS) / BPS;
         feeDistributor.accrue{value: fee}(token, info.creator);
 
@@ -390,7 +392,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
                 tokenOut: token,
                 fee: info.feeTier,
                 recipient: msg.sender,
-                deadline: deadline,
                 amountIn: amountIn,
                 amountOutMinimum: minTokensOut,
                 sqrtPriceLimitX96: 0
@@ -415,6 +416,7 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         if (info.pool == address(0)) revert UnknownToken();
         if (amountIn == 0) revert ZeroAmount();
 
+        if (block.timestamp > deadline) revert Expired();
         IERC20(token).safeTransferFrom(msg.sender, address(this), amountIn);
         IERC20(token).forceApprove(address(swapRouter), amountIn);
 
@@ -424,7 +426,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
                 tokenOut: address(weth),
                 fee: info.feeTier,
                 recipient: address(this),
-                deadline: deadline,
                 amountIn: amountIn,
                 amountOutMinimum: 0,
                 sqrtPriceLimitX96: 0
