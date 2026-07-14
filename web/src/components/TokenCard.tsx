@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import type { TokenSummary } from "@launchpad/sdk";
 
 import { compact, fmtPct, fmtUsd, fmtWeiUsd, shortAddr, usdRateOf } from "../lib/format";
@@ -10,7 +10,6 @@ import { TokenLogo } from "./TokenLogo";
  * progress stay visible on every screen size, one action.
  */
 export function TokenCard({ token }: { token: TokenSummary }) {
-  const navigate = useNavigate();
   const description = String(token.metadata?.description ?? "").trim();
 
   const usdRate = usdRateOf(token);
@@ -102,15 +101,6 @@ export function TokenCard({ token }: { token: TokenSummary }) {
             Uniswap V3
           </span>
         </p>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            navigate(`/token/${token.address}`);
-          }}
-          className="h-10 rounded-full bg-accent px-6 text-sm font-semibold text-ink transition-colors hover:bg-accent-2"
-        >
-          Trade
-        </button>
       </div>
     </Link>
   );
