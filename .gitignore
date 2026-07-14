@@ -7,6 +7,7 @@ typechain-types/
 coverage/
 .env
 .env.local
+.env.deployer
 *.log
 data/*.db
 data/*.db-journal

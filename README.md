@@ -44,17 +44,32 @@ npm run compile          # hardhat compile
 npm test                 # 24 integration tests against real Uniswap V3 bytecode
 ```
 
+### Wallet architecture
+
+The protocol owns its infrastructure; no individual wallet can hold it hostage. Four concerns, each rotatable independently:
+
+| Concern | Holder | Rotation |
+| --- | --- | --- |
+| Deployments | Dedicated platform deployer wallet (`scripts/generate-deployer.ts`, key in gitignored `.env.deployer`) | Generate a new one any time; it has zero on-chain privileges after deployment |
+| Protocol admin | `PLATFORM_ADMIN` (team multisig) holds DEFAULT_ADMIN, liquidity manager, operator and treasurer roles | `scripts/transfer-admin.ts` grants to a new holder and revokes the old, grant-before-revoke |
+| Protocol assets | `Treasury` contract (LP withdrawals, collected pool fees) | Treasurer role moves with the admin rotation |
+| Trading fees | Pushed 100% to token creators by `FeeDistributor` | Never touch the deployer or the admin |
+
+The deploy script deploys with the deployer as a temporary admin purely for wiring, then grants every role to `PLATFORM_ADMIN` and renounces the deployer's roles, verifying each step on-chain. If the deployer key leaks or is lost afterwards, nothing about the running protocol is affected.
+
 ### Deploy to Robinhood Chain
 
 Robinhood Chain is an Arbitrum Orbit chain; set the official RPC endpoint and chain id for the environment you target, plus the canonical Uniswap V3 deployment addresses on that chain:
 
 ```bash
 cd contracts
-cp .env.example .env     # fill in RPC, chain id, keys, Uniswap V3 addresses
+npx hardhat run scripts/generate-deployer.ts   # one-time: platform deployer wallet
+cp .env.example .env     # fill in RPC, chain id, Uniswap V3 addresses, PLATFORM_ADMIN
+# fund the deployer address printed above, then:
 npx hardhat run scripts/deploy.ts --network robinhood
 ```
 
-The script deploys TokenFactory, Treasury, FeeDistributor and Launchpad, wires them together, and writes `deployments/robinhood.json`.
+The script deploys TokenFactory, Treasury, FeeDistributor and Launchpad, wires them together, hands all roles to `PLATFORM_ADMIN`, strips the deployer, and writes `deployments/robinhood.json`.
 
 ### Verify on Blockscout
 
