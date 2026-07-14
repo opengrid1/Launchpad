@@ -3,18 +3,52 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { launchpadAbi } from "@launchpad/sdk";
 import { useTokens } from "@launchpad/sdk/react";
-import { isAddress } from "viem";
+import { erc20Abi, isAddress } from "viem";
 import { useWalletClient } from "wagmi";
 
 import { TokenLogo } from "../components/TokenLogo";
 import { Badge, Button, Card, EmptyState, Skeleton } from "../components/ui";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { compact, fmtUsd, fmtWei, timeAgo } from "../lib/format";
+import { compact, fmtUsd, fmtWei, shortAddr, timeAgo } from "../lib/format";
 import { errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
 const ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
+
+const treasuryAbi = [
+  {
+    type: "function",
+    name: "withdrawNative",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "withdrawToken",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "token", type: "address" },
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [],
+  },
+] as const;
+
+const wethWithdrawAbi = [
+  {
+    type: "function",
+    name: "withdraw",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "wad", type: "uint256" }],
+    outputs: [],
+  },
+] as const;
 
 /**
  * Hidden operations console. Not linked from anywhere; access is enforced
@@ -65,6 +99,32 @@ export function AdminPage() {
     enabled: isAdmin.data === true,
   });
 
+  const treasuryWeth = useQuery({
+    queryKey: ["treasury-weth"],
+    queryFn: () =>
+      client.publicClient.readContract({
+        address: client.addresses.weth,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [client.addresses.treasury],
+      }),
+    refetchInterval: 15_000,
+    enabled: isAdmin.data === true,
+  });
+
+  const walletWeth = useQuery({
+    queryKey: ["wallet-weth", address],
+    queryFn: () =>
+      client.publicClient.readContract({
+        address: client.addresses.weth,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [address!],
+      }),
+    refetchInterval: 15_000,
+    enabled: isAdmin.data === true && Boolean(address),
+  });
+
   const { data: tokens, loading: tokensLoading } = useTokens(client, { sort: "volume", limit: 50 });
 
   // "Manage by address" lookup: paste any launched token's contract address.
@@ -77,6 +137,40 @@ export function AdminPage() {
     enabled: isAdmin.data === true && Boolean(lookupAddr),
     retry: false,
   });
+
+  // Treasury + admin balances of the looked-up token (the token side of
+  // withdrawn LP). The wallet balance is needed to respect max-wallet caps.
+  const treasuryTokenBal = useQuery({
+    queryKey: ["treasury-token-bal", lookupAddr?.toLowerCase(), address],
+    queryFn: async () => {
+      const balanceOf = (holder: `0x${string}`) =>
+        client.publicClient.readContract({
+          address: lookupAddr!,
+          abi: erc20Abi,
+          functionName: "balanceOf",
+          args: [holder],
+        });
+      const [inTreasury, inWallet, limits] = await Promise.all([
+        balanceOf(client.addresses.treasury),
+        balanceOf(address!),
+        client.getTradingLimits(lookupAddr!),
+      ]);
+      return { inTreasury, inWallet, limits };
+    },
+    refetchInterval: 15_000,
+    enabled: isAdmin.data === true && Boolean(lookupAddr) && Boolean(address) && lookup.isSuccess,
+  });
+
+  // While anti-whale limits are active the token itself caps any transfer out
+  // of the Treasury (max tx, and max wallet on the recipient).
+  const min = (...xs: bigint[]) => xs.reduce((a, b) => (b < a ? b : a));
+  const tokenWithdrawable = (() => {
+    const d = treasuryTokenBal.data;
+    if (!d) return 0n;
+    if (!d.limits.active) return d.inTreasury;
+    const walletRoom = BigInt(d.limits.maxWalletAmount) - d.inWallet;
+    return min(d.inTreasury, BigInt(d.limits.maxTxAmount), walletRoom > 0n ? walletRoom : 0n);
+  })();
 
   const lpEvents = useQuery({
     queryKey: ["lp-events"],
@@ -117,6 +211,23 @@ export function AdminPage() {
       account: address,
       address: client.addresses.launchpad,
       abi: launchpadAbi,
+      functionName: functionName as never,
+      args: args as never,
+    });
+    return walletClient.writeContract(request as never);
+  };
+
+  const writeContractAt = async (
+    contract: `0x${string}`,
+    abi: unknown,
+    functionName: string,
+    args: unknown[]
+  ) => {
+    if (!walletClient) throw new Error("Connect a wallet first");
+    const { request } = await client.publicClient.simulateContract({
+      account: address,
+      address: contract,
+      abi: abi as never,
       functionName: functionName as never,
       args: args as never,
     });
@@ -231,7 +342,7 @@ export function AdminPage() {
           <h2 className="text-sm font-semibold text-ink">Manage a token by address</h2>
           <p className="mt-0.5 text-xs text-ink-3">
             Paste a token contract address to collect its pool fees or withdraw its liquidity.
-            Proceeds settle to the Treasury.
+            Proceeds settle to the Treasury below; withdraw them to your wallet from there.
           </p>
         </div>
         <div className="space-y-3 p-5">
@@ -265,6 +376,122 @@ export function AdminPage() {
             </div>
           ) : null}
         </div>
+      </Card>
+
+      <Card className="mt-5 overflow-hidden">
+        <div className="border-b border-edge px-5 py-3.5">
+          <h2 className="text-sm font-semibold text-ink">Treasury</h2>
+          <p className="mt-0.5 text-xs text-ink-3">
+            Withdrawn liquidity and collected fees land here first. Send them on to your connected
+            wallet ({shortAddr(address ?? "")}).
+          </p>
+        </div>
+        <ul className="divide-y divide-edge/60">
+          <li className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+            <div>
+              <p className="text-sm font-medium text-ink">{env.nativeSymbol} (native)</p>
+              <p className="tnum text-xs text-ink-3">
+                {treasuryBalance.data != null ? fmtWei(treasuryBalance.data) : "-"} {env.nativeSymbol}
+              </p>
+            </div>
+            <button
+              disabled={busyAction !== null || !treasuryBalance.data}
+              onClick={() =>
+                runTx(
+                  "Withdraw treasury ETH",
+                  () =>
+                    writeContractAt(client.addresses.treasury, treasuryAbi, "withdrawNative", [
+                      address,
+                      treasuryBalance.data,
+                    ]),
+                  () => treasuryBalance.refetch()
+                )
+              }
+              className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
+            >
+              Withdraw to my wallet
+            </button>
+          </li>
+          <li className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+            <div>
+              <p className="text-sm font-medium text-ink">WETH</p>
+              <p className="tnum text-xs text-ink-3">
+                {treasuryWeth.data != null ? fmtWei(treasuryWeth.data) : "-"} WETH
+                {walletWeth.data ? ` · you hold ${fmtWei(walletWeth.data)} WETH` : ""}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                disabled={busyAction !== null || !treasuryWeth.data}
+                onClick={() =>
+                  runTx(
+                    "Withdraw treasury WETH",
+                    () =>
+                      writeContractAt(client.addresses.treasury, treasuryAbi, "withdrawToken", [
+                        client.addresses.weth,
+                        address,
+                        treasuryWeth.data,
+                      ]),
+                    () => {
+                      treasuryWeth.refetch();
+                      walletWeth.refetch();
+                    }
+                  )
+                }
+                className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
+              >
+                Withdraw to my wallet
+              </button>
+              <button
+                disabled={busyAction !== null || !walletWeth.data}
+                onClick={() =>
+                  runTx(
+                    "Unwrap WETH",
+                    () =>
+                      writeContractAt(client.addresses.weth, wethWithdrawAbi, "withdraw", [
+                        walletWeth.data,
+                      ]),
+                    () => walletWeth.refetch()
+                  )
+                }
+                className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
+              >
+                Unwrap to {env.nativeSymbol}
+              </button>
+            </div>
+          </li>
+          {lookup.data && treasuryTokenBal.data && treasuryTokenBal.data.inTreasury > 0n ? (
+            <li className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+              <div>
+                <p className="text-sm font-medium text-ink">${lookup.data.symbol}</p>
+                <p className="tnum text-xs text-ink-3">
+                  {fmtWei(treasuryTokenBal.data.inTreasury)} in treasury
+                  {lookup.data.limitsActive
+                    ? ` · limits active, max ${fmtWei(tokenWithdrawable)} per withdrawal`
+                    : ""}
+                </p>
+              </div>
+              <button
+                disabled={busyAction !== null || tokenWithdrawable === 0n}
+                onClick={() =>
+                  runTx(
+                    `Withdraw treasury ${lookup.data!.symbol}`,
+                    () =>
+                      writeContractAt(client.addresses.treasury, treasuryAbi, "withdrawToken", [
+                        lookup.data!.address,
+                        address,
+                        tokenWithdrawable,
+                      ]),
+                    () => treasuryTokenBal.refetch()
+                  )
+                }
+                className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
+              >
+                Withdraw to my wallet
+              </button>
+            </li>
+          ) : null}
+        </ul>
       </Card>
 
       <section className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[1fr_360px]">
