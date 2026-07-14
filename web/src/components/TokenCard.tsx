@@ -43,14 +43,14 @@ export function TokenCard({ token }: { token: TokenSummary }) {
             <p className="mt-0.5 text-sm text-ink-3">No description</p>
           )}
         </div>
-        <div className="text-right">
-          <p className="tnum text-[17px] font-semibold text-ink">{fmtUsd(token.marketCapUsd)}</p>
-          <p className="text-xs text-ink-3">Market cap</p>
-        </div>
       </div>
 
       {/* Stats, one aligned row */}
-      <dl className="mt-4 grid grid-cols-3 gap-4">
+      <dl className="mt-4 grid grid-cols-4 gap-3">
+        <div>
+          <dd className="tnum text-sm font-semibold text-ink">{fmtUsd(token.marketCapUsd)}</dd>
+          <dt className="mt-0.5 text-[11px] text-ink-3">Market cap</dt>
+        </div>
         <div>
           <dd className="tnum text-sm font-semibold text-ink">
             {fmtWeiUsd(token.volume24hWei, usdRate)}
