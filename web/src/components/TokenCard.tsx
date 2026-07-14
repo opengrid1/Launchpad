@@ -34,6 +34,9 @@ export function TokenCard({ token }: { token: TokenSummary }) {
               {token.name}
             </h3>
             <span className="text-sm font-medium text-ink-3">{token.symbol}</span>
+            <span className="hidden shrink-0 rounded-full bg-panel-2 px-2 py-0.5 text-[10px] font-medium text-ink-2 sm:inline-block">
+              Uniswap V3
+            </span>
           </div>
           {description ? (
             <p className="mt-0.5 line-clamp-1 text-sm text-ink-2">{description}</p>
@@ -95,8 +98,11 @@ export function TokenCard({ token }: { token: TokenSummary }) {
 
       {/* Creator + action */}
       <div className="mt-3 flex items-center justify-between border-t border-edge pt-3.5">
-        <p className="text-xs text-ink-3">
+        <p className="flex items-center gap-2 text-xs text-ink-3">
           by <span className="tnum text-ink-2">{shortAddr(token.creator)}</span>
+          <span className="rounded-full bg-panel-2 px-2 py-0.5 text-[10px] font-medium text-ink-2 sm:hidden">
+            Uniswap V3
+          </span>
         </p>
         <button
           onClick={(e) => {

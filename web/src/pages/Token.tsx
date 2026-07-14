@@ -38,10 +38,6 @@ export function TokenPage() {
   const meta = t.metadata ?? {};
 
   const usdRate = usdRateOf(t);
-  const mcap = Number(t.marketCapUsd);
-  const remaining = Number(t.remainingToGraduationUsd);
-  const cap = mcap + remaining;
-  const progress = cap > 0 ? Math.min((mcap / cap) * 100, 100) : 0;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -79,18 +75,6 @@ export function TokenPage() {
         <Figure label="Liquidity" value={fmtWeiUsd(t.liquidityWei, usdRate)} />
         <Figure label="Holders" value={compact(t.holderCount)} />
       </dl>
-
-      {t.limitsActive ? (
-        <div className="mt-4 flex items-center gap-3 text-xs text-ink-2">
-          <div className="h-1 w-28 overflow-hidden rounded-full bg-panel-2">
-            <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${progress}%` }} />
-          </div>
-          <span>
-            Protected market: max transaction limits until {fmtUsd(cap)} market cap.{" "}
-            <span className="tnum">{fmtUsd(remaining)}</span> to go, lifted automatically on-chain.
-          </span>
-        </div>
-      ) : null}
 
       {/* Chart + trade */}
       <section className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
