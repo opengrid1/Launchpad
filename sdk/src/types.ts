@@ -122,9 +122,11 @@ export interface CreatorStats {
 }
 
 /**
- * Launch parameters. Supply (1B), pool fee tier (0.3%), the 1% trading fee
- * and the anti-whale limits (1% max transaction, 2% max wallet until the
- * 40,000 USD market cap) are fixed protocol rules and cannot be configured.
+ * Launch parameters. Supply (1B), pool fee tier (0.3%), the 1% trading fee,
+ * the starting market cap and the anti-whale limits (1% max transaction,
+ * 2% max wallet until the 40,000 USD market cap) are fixed protocol rules.
+ * Launching is free: the pool is seeded single-sided with the full supply
+ * and needs no upfront liquidity.
  */
 export interface CreateTokenParams {
   name: string;
@@ -135,8 +137,8 @@ export interface CreateTokenParams {
   twitter?: string;
   telegram?: string;
   links?: { label: string; url: string }[];
-  /** Initial liquidity in native wei, paired against the full supply. */
-  initialLiquidityWei: bigint;
+  /** Optional first buy for the creator, in native wei, same transaction. */
+  firstBuyWei?: bigint;
 }
 
 export interface LaunchpadAddresses {

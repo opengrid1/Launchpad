@@ -1,15 +1,17 @@
 # Meridian: Token Launchpad for Robinhood Chain
 
-A production-grade token launchpad that launches tokens **directly into Uniswap V3**. No bonding curve, no simulation: one transaction deploys a real ERC-20, creates and initializes a real Uniswap V3 pool, seeds full-range liquidity, and opens trading immediately. Anti-whale limits protect the market until the token reaches a 40,000 USD market cap, then lift automatically on-chain.
+A production-grade token launchpad that launches tokens **directly into Uniswap V3**. No bonding curve, no simulation: one transaction deploys a real ERC-20, creates and initializes a real Uniswap V3 pool, seeds it single-sided with the full supply (launching is free, no upfront liquidity), and opens trading immediately. Anti-whale limits protect the market until the token reaches a 40,000 USD market cap, then lift automatically on-chain.
 
 ## Live deployment (Robinhood Chain mainnet, chain id 4663)
 
 | Contract | Address |
 | --- | --- |
-| Launchpad | [`0xf805c4FB71Abc66FD9042694E0d9Bd8c78d58647`](https://robinhoodchain.blockscout.com/address/0xf805c4FB71Abc66FD9042694E0d9Bd8c78d58647) |
-| TokenFactory | [`0xA8940962C4A771A7Ad630f0383E0321a8af09f0F`](https://robinhoodchain.blockscout.com/address/0xA8940962C4A771A7Ad630f0383E0321a8af09f0F) |
-| FeeDistributor | [`0x81C7f04B94Fe5eE0C31215B1a96616337442B1aC`](https://robinhoodchain.blockscout.com/address/0x81C7f04B94Fe5eE0C31215B1a96616337442B1aC) |
-| Treasury | [`0x5DDd922A7dB1Ebba96e2fd59C3e15674c3428f68`](https://robinhoodchain.blockscout.com/address/0x5DDd922A7dB1Ebba96e2fd59C3e15674c3428f68) |
+| Launchpad | [`0x35D3e7aeEB6FE8e71c1aEEc26fbc06D88A5b5F71`](https://robinhoodchain.blockscout.com/address/0x35D3e7aeEB6FE8e71c1aEEc26fbc06D88A5b5F71) |
+| TokenFactory | [`0xD3F35B8E50816cCE3EdAf9fDC7B124b962e598Fe`](https://robinhoodchain.blockscout.com/address/0xD3F35B8E50816cCE3EdAf9fDC7B124b962e598Fe) |
+| FeeDistributor | [`0x942C830AAD92165B70D254f5A17266B4cC438FE8`](https://robinhoodchain.blockscout.com/address/0x942C830AAD92165B70D254f5A17266B4cC438FE8) |
+| Treasury | [`0xBe3c174ed1930c8b9A4089A1F4b09D6250745e70`](https://robinhoodchain.blockscout.com/address/0xBe3c174ed1930c8b9A4089A1F4b09D6250745e70) |
+| Meridian One (MRD1) | [`0x3351Ad8Fc45c7936ea6053d4b781A532028186FB`](https://robinhoodchain.blockscout.com/address/0x3351Ad8Fc45c7936ea6053d4b781A532028186FB) |
+| MRD1 / WETH pool | `0x819599b9DB5dabfbc2F08c98838eEEfaf5cb2239` |
 | WETH9 | [`0xa9A2619dF7F241629fD768e353B14B84F1DC7001`](https://robinhoodchain.blockscout.com/address/0xa9A2619dF7F241629fD768e353B14B84F1DC7001) |
 | UniswapV3Factory | `0xc6104E5fcFEf77dF39d80df8c2cf6A30E6dE7bE4` |
 | SwapRouter | `0xa87C6792Cb989E621171c2c1497375E6C76147e8` |
@@ -19,12 +21,11 @@ All protocol contracts are source-verified on Blockscout. The Uniswap V3 stack w
 
 ## How a launch works
 
-1. The creator fills in name, symbol, description, logo, website, X, Telegram and optional links, and chooses the initial liquidity. Everything else is a fixed protocol rule.
+1. The creator fills in name, symbol, description, logo, website, X, Telegram and optional links, plus an optional first buy. Everything else is a fixed protocol rule and launching costs only gas.
 2. `Launchpad.createToken` (single transaction, fixed protocol rules: 1B supply, 0.3% pool tier, 1% trading fee, 1% max transaction and 2% max wallet until the 40,000 USD market cap):
    - deploys the ERC-20 through the `TokenFactory` (full supply, 18 decimals)
-   - wraps the creator's native currency into WETH
-   - creates and initializes the Uniswap V3 pool at the implied price
-   - mints a full-range liquidity position; the position NFT is held by the launchpad (protocol-managed liquidity)
+   - creates and initializes the Uniswap V3 pool at the fixed 4,000 USD starting market cap
+   - mints a single-sided position holding the full supply just above the starting price; the position NFT is held by the launchpad (protocol-managed liquidity), and buyers' native currency fills the pool as price moves into the range
    - enables trading immediately, with anti-whale limits active
 3. Trading runs through `buy`/`sell` on the launchpad (fixed 1% fee, pushed 100% to the creator on every trade) or directly against the pool (limits still enforced by the token itself).
 4. The moment any trade pushes the market cap over the graduation threshold, the token contract permanently removes the max transaction limit, max wallet limit and buy cooldown. No admin involvement, no keeper: the check runs inside the token's own transfer path.

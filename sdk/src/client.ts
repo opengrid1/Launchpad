@@ -122,7 +122,7 @@ export class LaunchpadClient {
           metadataURI,
         },
       ],
-      value: params.initialLiquidityWei,
+      value: params.firstBuyWei ?? 0n,
     });
     return wallet.writeContract(request);
   }

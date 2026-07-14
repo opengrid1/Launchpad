@@ -73,7 +73,7 @@ const BASE_PARAMS = {
   }),
 };
 
-async function launchToken(f: Fixture, overrides: Partial<typeof BASE_PARAMS> = {}, valueEth = "1") {
+async function launchToken(f: Fixture, overrides: Partial<typeof BASE_PARAMS> = {}, valueEth = "0") {
   const params = { ...BASE_PARAMS, ...overrides };
   const tx = await f.launchpad
     .connect(f.creator)
@@ -95,6 +95,7 @@ async function launchToken(f: Fixture, overrides: Partial<typeof BASE_PARAMS> = 
 
 // All buys in these tests stay under the fixed 1% of supply max transaction.
 const SMALL_BUY = ethers.parseEther("0.008");
+const NEAR_MAX_BUY = ethers.parseEther("0.019");
 
 describe("Launchpad", () => {
   let f: Fixture;
@@ -104,7 +105,7 @@ describe("Launchpad", () => {
   });
 
   describe("createToken", () => {
-    it("deploys token, creates a real V3 pool, seeds full-range liquidity and enables trading immediately", async () => {
+    it("deploys token, creates a real V3 pool, seeds it single-sided and enables trading immediately", async () => {
       const { token, tokenAddress, event } = await launchToken(f);
 
       expect(await token.totalSupply()).to.equal(SUPPLY);
@@ -138,19 +139,23 @@ describe("Launchpad", () => {
       expect(await f.launchpad.TRADE_FEE_BPS()).to.equal(100);
     });
 
-    it("prices the pool from initial liquidity: 1 ETH against 1B tokens gives a market cap near 1 ETH", async () => {
+    it("starts every token at the fixed initial market cap with no upfront liquidity", async () => {
       const { tokenAddress } = await launchToken(f);
-      const mcapWeth = await f.launchpad.marketCapWeth(tokenAddress);
-      expect(mcapWeth).to.be.closeTo(ethers.parseEther("1"), ethers.parseEther("0.001"));
-
+      // INITIAL_MCAP_USD is 4,000 USD; tick-spacing snapping allows ~1% drift.
       const mcapUsd = await f.launchpad.marketCapUsd(tokenAddress);
-      expect(mcapUsd).to.be.closeTo(2_000n * 10n ** 8n, 10n ** 7n);
+      expect(mcapUsd).to.be.closeTo(4_000n * 10n ** 8n, 8n * 10n ** 9n);
+
+      // At 2,000 USD per native token that is about 2 native of market cap.
+      const mcapWeth = await f.launchpad.marketCapWeth(tokenAddress);
+      expect(mcapWeth).to.be.closeTo(ethers.parseEther("2"), ethers.parseEther("0.04"));
     });
 
-    it("rejects launches below the minimum initial liquidity", async () => {
-      await expect(launchToken(f, {}, "0.001")).to.be.revertedWithCustomError(
-        f.launchpad,
-        "InsufficientLiquidity"
+    it("executes an optional first buy for the creator in the launch transaction", async () => {
+      const { token } = await launchToken(f, {}, "0.01");
+      expect(await token.balanceOf(f.creator.address)).to.be.gt(0n);
+      // The 1% fee on the first buy went back to the creator automatically.
+      expect(await f.feeDistributor.creatorLifetimeEarned(f.creator.address)).to.equal(
+        ethers.parseEther("0.01") / 100n
       );
     });
 
@@ -176,8 +181,8 @@ describe("Launchpad", () => {
   describe("anti-whale limits", () => {
     it("blocks transfers above the 1% max transaction", async () => {
       const { token, tokenAddress } = await launchToken(f);
-      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: SMALL_BUY });
-      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: SMALL_BUY });
+      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: NEAR_MAX_BUY });
+      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: NEAR_MAX_BUY });
 
       const over = (SUPPLY * 101n) / 10000n; // 1.01% of supply
       await expect(token.connect(f.alice).transfer(f.bob.address, over)).to.be.revertedWithCustomError(
@@ -189,11 +194,11 @@ describe("Launchpad", () => {
     it("blocks buys that exceed the 2% max wallet", async () => {
       const { tokenAddress } = await launchToken(f);
 
-      // Each buy is ~0.8% of supply; the third pushes the wallet over 2%.
-      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: ethers.parseEther("0.009") });
-      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: ethers.parseEther("0.009") });
+      // Each buy is just under 1% of supply; the third pushes the wallet over 2%.
+      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: NEAR_MAX_BUY });
+      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: NEAR_MAX_BUY });
       await expect(
-        f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: ethers.parseEther("0.009") })
+        f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: NEAR_MAX_BUY })
       ).to.be.reverted;
     });
 
@@ -206,7 +211,7 @@ describe("Launchpad", () => {
 
       // The native price rises so the pool's market cap crosses the
       // threshold; the very next transfer observes it and lifts limits.
-      await f.launchpad.setEthUsdPrice(41_000n * 10n ** 8n);
+      await f.launchpad.setEthUsdPrice(25_000n * 10n ** 8n);
       expect(await f.launchpad.shouldGraduate(tokenAddress)).to.equal(true);
 
       await f.launchpad.connect(f.bob).buy(tokenAddress, 0, DEADLINE, { value: SMALL_BUY });
@@ -377,17 +382,25 @@ describe("Launchpad", () => {
       const feed = await (await ethers.getContractFactory("MockAggregator")).deploy(4_000n * 10n ** 8n, 8);
       await f.launchpad.setPriceFeed(await feed.getAddress());
 
+      // Market cap was 2 native at launch; doubling the native price to
+      // 4,000 USD doubles the USD market cap to about 8,000 USD.
       const mcapUsd = await f.launchpad.marketCapUsd(tokenAddress);
-      expect(mcapUsd).to.be.closeTo(4_000n * 10n ** 8n, 10n ** 7n);
+      expect(mcapUsd).to.be.closeTo(8_000n * 10n ** 8n, 16n * 10n ** 9n);
     });
 
     it("exposes pool info", async () => {
       const { tokenAddress } = await launchToken(f);
-      const info = await f.launchpad.poolInfo(tokenAddress);
+      let info = await f.launchpad.poolInfo(tokenAddress);
       expect(info.pool).to.not.equal(ethers.ZeroAddress);
       expect(info.feeTier).to.equal(3000);
-      expect(info.poolLiquidity).to.be.gt(0n);
-      expect(info.positionLiquidity).to.equal(info.poolLiquidity);
+      // Single-sided seeding: the range sits above the price, so in-range
+      // liquidity is zero until the first buy moves price into it.
+      expect(info.positionLiquidity).to.be.gt(0n);
+      expect(info.poolLiquidity).to.equal(0n);
+
+      await f.launchpad.connect(f.alice).buy(tokenAddress, 0, DEADLINE, { value: SMALL_BUY });
+      info = await f.launchpad.poolInfo(tokenAddress);
+      expect(info.poolLiquidity).to.equal(info.positionLiquidity);
     });
 
     it("tracks per-creator token lists and protocol totals", async () => {

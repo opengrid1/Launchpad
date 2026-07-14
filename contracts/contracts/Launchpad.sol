@@ -8,6 +8,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {LaunchToken} from "./LaunchToken.sol";
+import {TickMath} from "./libraries/TickMath.sol";
 import {TokenFactory} from "./TokenFactory.sol";
 import {FeeDistributor} from "./FeeDistributor.sol";
 import {
@@ -98,7 +99,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
     event TokenFeaturedSet(address indexed token, bool featured);
     event EthUsdPriceSet(uint256 price8);
     event PriceFeedSet(address feed);
-    event MinInitialLiquiditySet(uint256 weiAmount);
 
     // ---------------------------------------------------------------------
     // Types and storage
@@ -138,6 +138,8 @@ contract Launchpad is AccessControl, ReentrancyGuard {
     uint16 public constant MAX_TX_BPS = 100;
     /// @notice Max wallet while limits are active: 2% of supply.
     uint16 public constant MAX_WALLET_BPS = 200;
+    /// @notice Market cap (USD, 8 decimals) every token starts trading at.
+    uint256 public constant INITIAL_MCAP_USD = 4_000e8;
 
     TokenFactory public immutable tokenFactory;
     IUniswapV3Factory public immutable uniswapFactory;
@@ -151,7 +153,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
     uint256 public immutable graduationCapUsd;
 
     bool public launchesPaused;
-    uint256 public minInitialLiquidity = 0.05 ether;
 
     /// @notice Fallback native/USD price with 8 decimals, used when no feed is set.
     uint256 public ethUsdPrice8;
@@ -211,9 +212,12 @@ contract Launchpad is AccessControl, ReentrancyGuard {
     // Launch
     // ---------------------------------------------------------------------
 
-    /// @notice Deploys the ERC-20, creates and seeds the Uniswap V3 pool and
-    ///         enables trading in a single transaction. msg.value is the
-    ///         initial liquidity paired against the full token supply.
+    /// @notice Deploys the ERC-20, creates the Uniswap V3 pool and seeds it
+    ///         single-sided with the full token supply in a range just above
+    ///         the starting price. Launching requires no upfront liquidity:
+    ///         buyers' native currency fills the pool as the price moves into
+    ///         the range. An optional msg.value executes a first buy for the
+    ///         creator in the same transaction.
     function createToken(CreateParams calldata p)
         external
         payable
@@ -221,7 +225,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         returns (address token, address pool, uint256 positionTokenId)
     {
         if (launchesPaused) revert LaunchesArePaused();
-        if (msg.value < minInitialLiquidity) revert InsufficientLiquidity();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
 
         int24 tickSpacing = uniswapFactory.feeAmountTickSpacing(FEE_TIER);
@@ -239,17 +242,18 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         );
         LaunchToken launchToken = LaunchToken(token);
 
-        weth.deposit{value: msg.value}();
-
         bool tokenIsToken0 = token < address(weth);
         (address token0, address token1) = tokenIsToken0
             ? (token, address(weth))
             : (address(weth), token);
-        (uint256 amount0, uint256 amount1) = tokenIsToken0
-            ? (TOTAL_SUPPLY, msg.value)
-            : (msg.value, TOTAL_SUPPLY);
 
-        uint160 sqrtPriceX96 = _sqrtPriceX96(amount0, amount1);
+        // Starting price implies INITIAL_MCAP_USD for the full supply, then
+        // snaps to a tick spacing boundary so the whole supply fits in a
+        // token-only range adjacent to the current tick.
+        (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper) = _initialPosition(
+            tokenIsToken0,
+            tickSpacing
+        );
         pool = positionManager.createAndInitializePoolIfNecessary(token0, token1, FEE_TIER, sqrtPriceX96);
 
         launchToken.setPool(pool);
@@ -258,17 +262,16 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         launchToken.setExempt(treasury, true);
 
         IERC20(token).forceApprove(address(positionManager), TOTAL_SUPPLY);
-        weth.approve(address(positionManager), msg.value);
 
         (positionTokenId, , , ) = positionManager.mint(
             INonfungiblePositionManager.MintParams({
                 token0: token0,
                 token1: token1,
                 fee: FEE_TIER,
-                tickLower: _minUsableTick(tickSpacing),
-                tickUpper: _maxUsableTick(tickSpacing),
-                amount0Desired: amount0,
-                amount1Desired: amount1,
+                tickLower: tickLower,
+                tickUpper: tickUpper,
+                amount0Desired: tokenIsToken0 ? TOTAL_SUPPLY : 0,
+                amount1Desired: tokenIsToken0 ? 0 : TOTAL_SUPPLY,
                 amount0Min: 0,
                 amount1Min: 0,
                 recipient: address(this),
@@ -276,11 +279,9 @@ contract Launchpad is AccessControl, ReentrancyGuard {
             })
         );
 
-        // Full-range mints leave at most rounding dust; sweep it to treasury.
+        // Single-sided mints leave at most rounding dust; sweep it to treasury.
         uint256 tokenDust = IERC20(token).balanceOf(address(this));
         if (tokenDust > 0) IERC20(token).safeTransfer(treasury, tokenDust);
-        uint256 wethDust = weth.balanceOf(address(this));
-        if (wethDust > 0) IERC20(address(weth)).safeTransfer(treasury, wethDust);
 
         tokenInfo[token] = TokenInfo({
             creator: msg.sender,
@@ -310,6 +311,51 @@ contract Launchpad is AccessControl, ReentrancyGuard {
             0,
             msg.value
         );
+
+        // Optional first buy for the creator, in the same transaction.
+        if (msg.value > 0) {
+            _buy(token, tokenInfo[token], msg.value, 0, block.timestamp);
+        }
+    }
+
+    /// @dev Computes the initial pool price (snapped to a tick boundary) and
+    ///      the token-only range directly adjacent to it.
+    function _initialPosition(bool tokenIsToken0, int24 tickSpacing)
+        internal
+        view
+        returns (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper)
+    {
+        // Native value of the full supply at the starting market cap.
+        uint256 mcapWeth = Math.mulDiv(INITIAL_MCAP_USD, 1e18, nativeUsdPrice());
+        // priceWei: wei of native per whole token (1e18 base units).
+        uint256 priceWei = Math.mulDiv(mcapWeth, 1e18, TOTAL_SUPPLY);
+        if (priceWei == 0) revert InvalidParams();
+
+        uint160 target;
+        if (tokenIsToken0) {
+            // ratio token1/token0 = priceWei / 1e18
+            target = uint160(Math.sqrt(Math.mulDiv(priceWei, 1 << 192, 1e18)));
+        } else {
+            // ratio token1/token0 = 1e18 / priceWei
+            target = uint160(Math.sqrt(Math.mulDiv(1e18, 1 << 192, priceWei)));
+        }
+
+        int24 tick = TickMath.getTickAtSqrtRatio(target);
+        // Floor-align to the spacing (solidity division truncates toward zero).
+        int24 aligned = (tick / tickSpacing) * tickSpacing;
+        if (tick < 0 && tick % tickSpacing != 0) aligned -= tickSpacing;
+
+        if (tokenIsToken0) {
+            // All token0: the range sits entirely above the current tick.
+            sqrtPriceX96 = TickMath.getSqrtRatioAtTick(aligned);
+            tickLower = aligned + tickSpacing;
+            tickUpper = _maxUsableTick(tickSpacing);
+        } else {
+            // All token1: the range sits at or below the current tick.
+            sqrtPriceX96 = TickMath.getSqrtRatioAtTick(aligned + tickSpacing);
+            tickLower = _minUsableTick(tickSpacing);
+            tickUpper = aligned + tickSpacing;
+        }
     }
 
     // ---------------------------------------------------------------------
@@ -327,11 +373,17 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         TokenInfo memory info = tokenInfo[token];
         if (info.pool == address(0)) revert UnknownToken();
         if (msg.value == 0) revert ZeroAmount();
+        tokensOut = _buy(token, info, msg.value, minTokensOut, deadline);
+    }
 
-        uint256 fee = (msg.value * TRADE_FEE_BPS) / BPS;
+    function _buy(address token, TokenInfo memory info, uint256 value, uint256 minTokensOut, uint256 deadline)
+        internal
+        returns (uint256 tokensOut)
+    {
+        uint256 fee = (value * TRADE_FEE_BPS) / BPS;
         feeDistributor.accrue{value: fee}(token, info.creator);
 
-        uint256 amountIn = msg.value - fee;
+        uint256 amountIn = value - fee;
         tokensOut = swapRouter.exactInputSingle{value: amountIn}(
             ISwapRouter.ExactInputSingleParams({
                 tokenIn: address(weth),
@@ -345,11 +397,11 @@ contract Launchpad is AccessControl, ReentrancyGuard {
             })
         );
 
-        totalTradeVolumeWei += msg.value;
+        totalTradeVolumeWei += value;
         totalFeesWei += fee;
 
         (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(info.pool).slot0();
-        emit Trade(token, msg.sender, true, msg.value, tokensOut, fee, sqrtPriceX96);
+        emit Trade(token, msg.sender, true, value, tokensOut, fee, sqrtPriceX96);
     }
 
     /// @notice Sell `token` for native currency. The flat 1% fee is taken
@@ -556,11 +608,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
         emit PriceFeedSet(feed);
     }
 
-    function setMinInitialLiquidity(uint256 weiAmount) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        minInitialLiquidity = weiAmount;
-        emit MinInitialLiquiditySet(weiAmount);
-    }
-
     // ---------------------------------------------------------------------
     // Views
     // ---------------------------------------------------------------------
@@ -680,16 +727,6 @@ contract Launchpad is AccessControl, ReentrancyGuard {
 
     function _maxUsableTick(int24 tickSpacing) internal pure returns (int24) {
         return (MAX_TICK / tickSpacing) * tickSpacing;
-    }
-
-    /// @dev sqrt(amount1 / amount0) in Q64.96. Computed as
-    ///      sqrt(amount1) * 2^96 / sqrt(amount0); ample precision for launch
-    ///      amounts and always within the pool's usable price range.
-    function _sqrtPriceX96(uint256 amount0, uint256 amount1) internal pure returns (uint160) {
-        if (amount0 == 0 || amount1 == 0) revert InvalidParams();
-        uint256 ratio = (Math.sqrt(amount1) << 96) / Math.sqrt(amount0);
-        if (ratio == 0 || ratio > type(uint160).max) revert InvalidParams();
-        return uint160(ratio);
     }
 
     /// @notice ERC-721 receiver so the position manager can mint to this contract.

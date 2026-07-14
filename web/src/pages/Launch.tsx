@@ -25,7 +25,7 @@ export function LaunchPage() {
     twitter: "",
     telegram: "",
     website: "",
-    liquidity: "0.5",
+    firstBuy: "",
   });
   const [busy, setBusy] = useState(false);
 
@@ -55,7 +55,7 @@ export function LaunchPage() {
         website: form.website.trim(),
         twitter: form.twitter.trim(),
         telegram: form.telegram.trim(),
-        initialLiquidityWei: parseEther(form.liquidity as `${number}`),
+        firstBuyWei: form.firstBuy ? parseEther(form.firstBuy as `${number}`) : 0n,
       });
       pushToast({ kind: "info", title: "Launch submitted", txHash: hash });
       const receipt = await client.publicClient.waitForTransactionReceipt({ hash });
@@ -79,7 +79,8 @@ export function LaunchPage() {
     <div className="mx-auto max-w-xl px-4 py-8 sm:px-6">
       <h1 className="text-[28px] font-semibold tracking-tight text-ink">Launch Token</h1>
       <p className="mt-1.5 text-sm text-ink-2">
-        One transaction creates your token and a live Uniswap V3 market.
+        Launching is free. One transaction creates your token and a live Uniswap V3 market
+        seeded with the full supply. Optionally make the first buy in the same transaction.
       </p>
 
       <form onSubmit={submit} className="mt-8 space-y-5">
@@ -132,13 +133,13 @@ export function LaunchPage() {
           </Field>
         </div>
 
-        <Field label="Initial Liquidity" hint={env.nativeSymbol}>
+        <Field label="First Buy (optional)" hint={env.nativeSymbol}>
           <input
             className={`${inputClass} tnum`}
-            value={form.liquidity}
-            onChange={set("liquidity")}
+            value={form.firstBuy}
+            onChange={set("firstBuy")}
             inputMode="decimal"
-            required
+            placeholder="0.0"
           />
         </Field>
 

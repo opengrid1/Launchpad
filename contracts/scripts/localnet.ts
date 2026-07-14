@@ -68,7 +68,7 @@ async function main() {
         telegram: "https://t.me/example",
       }),
     },
-    { value: ethers.parseEther("1") }
+    { value: 0n }
   );
   const receipt = await tx.wait();
   const launched = receipt!.logs

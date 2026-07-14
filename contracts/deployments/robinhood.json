@@ -3,12 +3,12 @@
   "chainId": 4663,
   "deployer": "0x7817F4e44a658410C4ADA6a9226ef3d51e5Ea846",
   "platformAdmin": "0x0315eCb53F64b7A4bA56bb8A4DAB0D96F0856b60",
-  "timestamp": "2026-07-14T14:12:54.957Z",
+  "timestamp": "2026-07-14T14:38:27.649Z",
   "contracts": {
-    "tokenFactory": "0xA8940962C4A771A7Ad630f0383E0321a8af09f0F",
-    "treasury": "0x5DDd922A7dB1Ebba96e2fd59C3e15674c3428f68",
-    "feeDistributor": "0x81C7f04B94Fe5eE0C31215B1a96616337442B1aC",
-    "launchpad": "0xf805c4FB71Abc66FD9042694E0d9Bd8c78d58647"
+    "tokenFactory": "0xD3F35B8E50816cCE3EdAf9fDC7B124b962e598Fe",
+    "treasury": "0xBe3c174ed1930c8b9A4089A1F4b09D6250745e70",
+    "feeDistributor": "0x942C830AAD92165B70D254f5A17266B4cC438FE8",
+    "launchpad": "0x35D3e7aeEB6FE8e71c1aEEc26fbc06D88A5b5F71"
   },
   "uniswap": {
     "factory": "0xc6104E5fcFEf77dF39d80df8c2cf6A30E6dE7bE4",
