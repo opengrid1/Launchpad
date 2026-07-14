@@ -14,8 +14,9 @@ import {
 import type { Address, Candle, CandleInterval } from "@launchpad/sdk";
 import { CANDLE_INTERVALS } from "@launchpad/sdk";
 
+import { launchpadAbi } from "@launchpad/sdk";
+
 import { client } from "../lib/client";
-import { env } from "../lib/env";
 import { fmtSmall, compact } from "../lib/format";
 
 const UP = "#0E9F4E";
@@ -30,23 +31,39 @@ const intervalLabels: Record<CandleInterval, string> = {
   "1d": "1D",
 };
 
-function toCandleData(c: Candle): CandlestickData<UTCTimestamp> {
+// Candles are aggregated in native price; the chart renders USD using the
+// live native/USD rate so every axis and readout is in dollars.
+function toCandleData(c: Candle, usdRate: number): CandlestickData<UTCTimestamp> {
   return {
     time: c.time as UTCTimestamp,
-    open: Number(c.open),
-    high: Number(c.high),
-    low: Number(c.low),
-    close: Number(c.close),
+    open: Number(c.open) * usdRate,
+    high: Number(c.high) * usdRate,
+    low: Number(c.low) * usdRate,
+    close: Number(c.close) * usdRate,
   };
 }
 
-function toVolumeData(c: Candle): HistogramData<UTCTimestamp> {
+function toVolumeData(c: Candle, usdRate: number): HistogramData<UTCTimestamp> {
   const up = Number(c.close) >= Number(c.open);
   return {
     time: c.time as UTCTimestamp,
-    value: Number(c.volume),
+    value: Number(c.volume) * usdRate,
     color: up ? "rgba(14, 159, 78, 0.4)" : "rgba(229, 72, 77, 0.4)",
   };
+}
+
+async function fetchUsdRate(): Promise<number> {
+  try {
+    const price8 = await client.publicClient.readContract({
+      address: client.addresses.launchpad,
+      abi: launchpadAbi,
+      functionName: "nativeUsdPrice",
+    });
+    const rate = Number(price8) / 1e8;
+    return rate > 0 ? rate : 1;
+  } catch {
+    return 1;
+  }
 }
 
 /**
@@ -109,7 +126,7 @@ export function PriceChart({ token }: { token: Address }) {
       wickDownColor: DOWN,
       priceFormat: {
         type: "custom",
-        formatter: (p: number) => fmtSmall(p),
+        formatter: (p: number) => `$${fmtSmall(p)}`,
         minMove: 1e-12,
       },
     });
@@ -138,11 +155,11 @@ export function PriceChart({ token }: { token: Address }) {
       }
       const dir = data.close >= data.open ? UP : DOWN;
       legend.innerHTML =
-        `<span style="color:#9CA3AF">O</span> <span style="color:${dir}">${fmtSmall(data.open)}</span>  ` +
-        `<span style="color:#9CA3AF">H</span> <span style="color:${dir}">${fmtSmall(data.high)}</span>  ` +
-        `<span style="color:#9CA3AF">L</span> <span style="color:${dir}">${fmtSmall(data.low)}</span>  ` +
-        `<span style="color:#9CA3AF">C</span> <span style="color:${dir}">${fmtSmall(data.close)}</span>` +
-        (vol ? `  <span style="color:#9CA3AF">Vol</span> <span style="color:#6B7280">${compact(vol.value ?? 0)} ${env.nativeSymbol}</span>` : "");
+        `<span style="color:#9CA3AF">O</span> <span style="color:${dir}">$${fmtSmall(data.open)}</span>  ` +
+        `<span style="color:#9CA3AF">H</span> <span style="color:${dir}">$${fmtSmall(data.high)}</span>  ` +
+        `<span style="color:#9CA3AF">L</span> <span style="color:${dir}">$${fmtSmall(data.low)}</span>  ` +
+        `<span style="color:#9CA3AF">C</span> <span style="color:${dir}">$${fmtSmall(data.close)}</span>` +
+        (vol ? `  <span style="color:#9CA3AF">Vol</span> <span style="color:#6B7280">$${compact(vol.value ?? 0)}</span>` : "");
     });
 
     const observer = new ResizeObserver((entries) => {
@@ -164,30 +181,31 @@ export function PriceChart({ token }: { token: Address }) {
     };
   }, []);
 
-  // Data load + live stream per token/interval.
+  // Data load + live stream per token/interval, all rendered in USD.
   useEffect(() => {
     let cancelled = false;
     const candleSeries = candleSeriesRef.current;
     const volumeSeries = volumeSeriesRef.current;
     if (!candleSeries || !volumeSeries) return;
 
-    client
-      .getCandles(token, interval, { limit: 500 })
-      .then((candles) => {
-        if (cancelled || !candleSeriesRef.current) return;
-        candleSeries.setData(candles.map(toCandleData));
-        volumeSeries.setData(candles.map(toVolumeData));
-        chartRef.current?.timeScale().fitContent();
-        setEmpty(candles.length === 0);
-      })
-      .catch(() => setEmpty(true));
+    let usdRate = 1;
+    const load = async () => {
+      usdRate = await fetchUsdRate();
+      const candles = await client.getCandles(token, interval, { limit: 500 });
+      if (cancelled || !candleSeriesRef.current) return;
+      candleSeries.setData(candles.map((x) => toCandleData(x, usdRate)));
+      volumeSeries.setData(candles.map((x) => toVolumeData(x, usdRate)));
+      chartRef.current?.timeScale().fitContent();
+      setEmpty(candles.length === 0);
+    };
+    load().catch(() => setEmpty(true));
 
     const unsub = client.subscribeToCandles(token, interval, ({ candle }) => {
       if (cancelled || !candleSeriesRef.current) return;
       // In-place update of the active candle; appends automatically when a
       // new bucket opens. The chart object itself is untouched.
-      candleSeriesRef.current.update(toCandleData(candle));
-      volumeSeriesRef.current?.update(toVolumeData(candle));
+      candleSeriesRef.current.update(toCandleData(candle, usdRate));
+      volumeSeriesRef.current?.update(toVolumeData(candle, usdRate));
       setEmpty(false);
     });
 

@@ -1,8 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import type { Address, TokenSummary } from "@launchpad/sdk";
 
-import { compact, fmtPct, fmtUsd, fmtWei, shortAddr } from "../lib/format";
-import { env } from "../lib/env";
+import { compact, fmtPct, fmtUsd, fmtWeiUsd, shortAddr, usdRateOf } from "../lib/format";
 import { MiniChart } from "./MiniChart";
 import { TokenLogo } from "./TokenLogo";
 
@@ -15,6 +14,7 @@ export function TokenCard({ token }: { token: TokenSummary }) {
   const navigate = useNavigate();
   const description = String(token.metadata?.description ?? "").trim();
 
+  const usdRate = usdRateOf(token);
   const mcap = Number(token.marketCapUsd);
   const remaining = Number(token.remainingToGraduationUsd);
   const cap = mcap + remaining;
@@ -53,7 +53,7 @@ export function TokenCard({ token }: { token: TokenSummary }) {
         <dl className="flex flex-1 flex-wrap items-end justify-end gap-x-6 gap-y-2">
           <div className="text-right">
             <dd className="tnum text-sm font-semibold text-ink">
-              {fmtWei(token.volume24hWei)} {env.nativeSymbol}
+              {fmtWeiUsd(token.volume24hWei, usdRate)}
             </dd>
             <dt className="text-[11px] text-ink-3">Volume 24h</dt>
           </div>

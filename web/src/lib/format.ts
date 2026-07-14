@@ -78,3 +78,17 @@ export function explorerTx(hash: string): string | null {
 export function explorerAddr(addr: string): string | null {
   return env.explorerUrl ? `${env.explorerUrl.replace(/\/$/, "")}/address/${addr}` : null;
 }
+
+/** USD per 1 native token derived from a token summary (priceUsd/priceWei). */
+export function usdRateOf(t: { priceUsd: string; priceWei: string }): number {
+  const wei = Number(t.priceWei);
+  const usd = Number(t.priceUsd);
+  if (!isFinite(wei) || !isFinite(usd) || wei <= 0 || usd <= 0) return 0;
+  return usd / (wei / 1e18);
+}
+
+/** Format a native wei amount as USD using the given native/USD rate. */
+export function fmtWeiUsd(wei: string | bigint | undefined, rate: number): string {
+  if (wei == null || rate <= 0) return "-";
+  return fmtUsd((Number(wei) / 1e18) * rate);
+}

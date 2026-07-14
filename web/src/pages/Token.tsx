@@ -10,8 +10,7 @@ import { TradePanel } from "../components/TradePanel";
 import { TradesList } from "../components/TradesList";
 import { Card, EmptyState, Skeleton } from "../components/ui";
 import { client } from "../lib/client";
-import { env } from "../lib/env";
-import { compact, explorerAddr, fmtPct, fmtUsd, fmtWei, shortAddr, timeAgo } from "../lib/format";
+import { compact, fmtPct, fmtUsd, fmtWeiUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
 
 type Tab = "trades" | "holders" | "info";
 
@@ -38,6 +37,7 @@ export function TokenPage() {
   const t = token.data;
   const meta = t.metadata ?? {};
 
+  const usdRate = usdRateOf(t);
   const mcap = Number(t.marketCapUsd);
   const remaining = Number(t.remainingToGraduationUsd);
   const cap = mcap + remaining;
@@ -75,8 +75,8 @@ export function TokenPage() {
       {/* Key figures, plain typography */}
       <dl className="mt-6 flex flex-wrap gap-x-10 gap-y-3 border-y border-edge py-4">
         <Figure label="Market cap" value={fmtUsd(t.marketCapUsd)} />
-        <Figure label="Volume 24h" value={`${fmtWei(t.volume24hWei)} ${env.nativeSymbol}`} />
-        <Figure label="Liquidity" value={`${fmtWei(t.liquidityWei)} ${env.nativeSymbol}`} />
+        <Figure label="Volume 24h" value={fmtWeiUsd(t.volume24hWei, usdRate)} />
+        <Figure label="Liquidity" value={fmtWeiUsd(t.liquidityWei, usdRate)} />
         <Figure label="Holders" value={compact(t.holderCount)} />
       </dl>
 
@@ -197,11 +197,22 @@ function CopyRow({ label, value }: { label: string; value: string }) {
             setTimeout(() => setCopied(false), 1500);
           });
         }}
-        className={`h-8 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition-colors ${
-          copied ? "border-up/40 bg-up/10 text-up" : "border-edge text-ink hover:border-edge-2"
+        aria-label={`Copy ${label}`}
+        title={copied ? "Copied" : "Copy"}
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border transition-colors ${
+          copied ? "border-up/40 bg-up/10 text-up" : "border-edge text-ink-2 hover:border-edge-2 hover:text-ink"
         }`}
       >
-        {copied ? "Copied" : "Copy"}
+        {copied ? (
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
+            <path d="M3 8.5l3.2 3.2L13 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : (
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
+            <rect x="5.5" y="5.5" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M10.5 3.5v-.25A1.75 1.75 0 008.75 1.5h-5A1.75 1.75 0 002 3.25v5c0 .97.78 1.75 1.75 1.75h.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        )}
       </button>
     </div>
   );
