@@ -38,6 +38,10 @@ export function serializeToken(db: Database.Database, row: TokenRow) {
     )
     .get(row.address, dayAgo) as { vol: number; cnt: number };
 
+  const feesRow = db
+    .prepare("SELECT COALESCE(SUM(CAST(creator_wei AS TEXT)), '0') AS f FROM fee_events WHERE token = ?")
+    .get(row.address) as { f: string };
+
   const holderCount = (
     db.prepare("SELECT COUNT(*) AS c FROM holders WHERE token = ?").get(row.address) as { c: number }
   ).c;
@@ -83,6 +87,7 @@ export function serializeToken(db: Database.Database, row: TokenRow) {
     limitsActive: Boolean(row.limits_active),
     remainingToGraduationUsd: row.remaining_usd,
     priceChange24hPct,
+    creatorFeesWei: String(feesRow.f ?? "0"),
     maxTxAmount: row.max_tx,
     maxWalletAmount: row.max_wallet,
     buyCooldownSeconds: row.buy_cooldown,

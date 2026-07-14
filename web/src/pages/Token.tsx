@@ -41,45 +41,44 @@ export function TokenPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      {/* Identity and price */}
-      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
-        <div className="flex items-center gap-3.5">
-          <TokenLogo token={t} size={48} />
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-ink">
+      {/* Identity and market cap, one compact row on every screen */}
+      <section className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <TokenLogo token={t} size={44} />
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-semibold tracking-tight text-ink sm:text-xl">
               {t.name} <span className="tnum font-medium text-ink-3">${t.symbol}</span>
             </h1>
-            <p className="mt-0.5 text-xs text-ink-3">
+            <p className="mt-0.5 truncate text-xs text-ink-3">
               Launched {timeAgo(t.createdAt)} by <span className="tnum">{shortAddr(t.creator)}</span>
             </p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="tnum text-[32px] font-semibold leading-none tracking-tight text-ink">
+        <div className="shrink-0 text-right">
+          <p className="tnum text-[26px] font-semibold leading-none tracking-tight text-ink sm:text-[32px]">
             {fmtUsd(t.marketCapUsd)}
           </p>
-          <p className="mt-1.5 flex items-center justify-end gap-2 text-sm">
+          <p className="mt-1 flex items-center justify-end gap-2 text-xs sm:text-sm">
             <span className="text-ink-3">Market cap</span>
-            <span
-              className={`tnum font-medium ${
-                t.priceChange24hPct == null ? "text-ink-3" : t.priceChange24hPct >= 0 ? "text-up" : "text-down"
-              }`}
-            >
-              {fmtPct(t.priceChange24hPct)}
-            </span>
+            {t.priceChange24hPct != null ? (
+              <span className={`tnum font-medium ${t.priceChange24hPct >= 0 ? "text-up" : "text-down"}`}>
+                {fmtPct(t.priceChange24hPct)}
+              </span>
+            ) : null}
           </p>
         </div>
       </section>
 
       {/* Key figures, plain typography */}
-      <dl className="mt-6 flex flex-wrap gap-x-10 gap-y-3 border-y border-edge py-4">
+      <dl className="mt-4 grid grid-cols-2 gap-3 border-y border-edge py-3.5 sm:flex sm:gap-x-10">
         <Figure label="Volume 24h" value={fmtWeiUsd(t.volume24hWei, usdRate)} />
         <Figure label="Liquidity" value={fmtWeiUsd(t.liquidityWei, usdRate)} />
         <Figure label="Holders" value={compact(t.holderCount)} />
+        <Figure label="Creator fees" value={fmtWeiUsd(t.creatorFeesWei ?? "0", usdRate)} />
       </dl>
 
       {/* Chart + trade */}
-      <section className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
+      <section className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         <Card className="h-[420px] overflow-hidden lg:h-[480px]">
           <PriceChart token={t.address as Address} />
         </Card>
@@ -87,7 +86,7 @@ export function TokenPage() {
       </section>
 
       {/* Detail sections */}
-      <section className="mt-10">
+      <section className="mt-8">
         <div className="flex items-center gap-6 border-b border-edge">
           {(
             [

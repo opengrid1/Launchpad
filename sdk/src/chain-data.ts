@@ -1,6 +1,6 @@
 import type { PublicClient } from "viem";
 
-import { launchpadAbi, launchTokenAbi } from "./abi";
+import { launchpadAbi, launchTokenAbi, feeDistributorAbi } from "./abi";
 import {
   INTERVAL_SECONDS,
   type Address,
@@ -186,7 +186,7 @@ export class ChainDataSource {
   }
 
   private async summarize(core: TokenCore): Promise<TokenSummary> {
-    const [limits, wethInPool, trades] = await Promise.all([
+    const [limits, wethInPool, trades, creatorFees] = await Promise.all([
       this.client.readContract({
         address: this.addresses.launchpad,
         abi: launchpadAbi,
@@ -200,6 +200,12 @@ export class ChainDataSource {
         args: [core.pool],
       }),
       this.loadTrades(core.address),
+      this.client.readContract({
+        address: this.addresses.feeDistributor,
+        abi: feeDistributorAbi,
+        functionName: "tokenFees",
+        args: [core.address],
+      }),
     ]);
     const [active, , , , mcapUsd, remainingUsd] = limits as any;
 
@@ -241,6 +247,7 @@ export class ChainDataSource {
       limitsActive: Boolean(active),
       remainingToGraduationUsd: usd8(remainingUsd as bigint),
       priceChange24hPct,
+      creatorFeesWei: (creatorFees as bigint).toString(),
     };
   }
 

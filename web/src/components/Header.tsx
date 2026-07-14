@@ -13,15 +13,15 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-5xl items-center gap-8 px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:gap-8 sm:px-6">
         <Link to="/" className="flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-ink text-[15px] font-bold text-accent">
             M
           </span>
-          <span className="text-[17px] font-semibold tracking-tight text-ink">Meridian</span>
+          <span className="hidden text-[17px] font-semibold tracking-tight text-ink min-[400px]:block">Meridian</span>
         </Link>
 
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-4 sm:gap-6">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -49,7 +49,7 @@ export function Header() {
           {isConnected && address ? (
             <button
               onClick={() => disconnect()}
-              className="tnum flex h-10 items-center gap-1.5 rounded-full bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black"
+              className="tnum flex h-9 items-center gap-1.5 rounded-full bg-ink px-3 text-xs font-medium text-white transition-colors hover:bg-black sm:h-10 sm:px-4 sm:text-sm"
               title="Disconnect"
             >
               {shortAddr(address)}

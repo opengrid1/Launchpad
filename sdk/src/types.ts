@@ -59,6 +59,8 @@ export interface TokenSummary {
   /** USD (8 decimals) remaining until limits lift. "0" when graduated. */
   remainingToGraduationUsd: string;
   priceChange24hPct: number | null;
+  /** Lifetime trading fees paid to the creator, native wei. */
+  creatorFeesWei?: string;
 }
 
 export interface TradeRecord {
