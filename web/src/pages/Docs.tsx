@@ -10,7 +10,6 @@ export function DocsPage() {
     { name: "Launchpad", address: addresses.launchpad, note: "Launching and trading" },
     { name: "TokenFactory", address: addresses.tokenFactory, note: "Deploys every token with fixed rules" },
     { name: "FeeDistributor", address: addresses.feeDistributor, note: "Routes 100% of trading fees to creators" },
-    { name: "Treasury", address: addresses.treasury, note: "Protocol-owned assets" },
     { name: "WETH", address: addresses.weth, note: "Canonical wrapped native token" },
   ];
 
