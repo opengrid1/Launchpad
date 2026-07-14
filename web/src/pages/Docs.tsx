@@ -7,7 +7,7 @@ import { explorerAddr, shortAddr } from "../lib/format";
  */
 export function DocsPage() {
   const contracts: { name: string; address: string; note: string }[] = [
-    { name: "Launchpad", address: addresses.launchpad, note: "Launching, trading, protocol liquidity" },
+    { name: "Launchpad", address: addresses.launchpad, note: "Launching and trading" },
     { name: "TokenFactory", address: addresses.tokenFactory, note: "Deploys every token with fixed rules" },
     { name: "FeeDistributor", address: addresses.feeDistributor, note: "Routes 100% of trading fees to creators" },
     { name: "Treasury", address: addresses.treasury, note: "Protocol-owned assets" },
