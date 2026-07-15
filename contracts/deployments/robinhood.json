@@ -2,13 +2,11 @@
   "network": "robinhood",
   "chainId": 4663,
   "deployer": "0x7817F4e44a658410C4ADA6a9226ef3d51e5Ea846",
-  "platformAdmin": "0x0315eCb53F64b7A4bA56bb8A4DAB0D96F0856b60",
-  "timestamp": "2026-07-14T16:41:02.584Z",
+  "protocolAdmin": "0x0315eCb53F64b7A4bA56bb8A4DAB0D96F0856b60",
+  "timestamp": "2026-07-15T16:31:23.428Z",
   "contracts": {
-    "tokenFactory": "0x5Cf777e19a6CD4B10c3Aa317a2B8E8bCC5F46364",
-    "treasury": "0xD401Ed3C128eaE756323e7EAE27B40407c7d499B",
-    "feeDistributor": "0x8E0b175a36ee0854Cc2dC7AeC4B3f90857A059ca",
-    "launchpad": "0xe893ca05D3F1235de22630504DcEa9e029294900"
+    "tokenDeployer": "0xeADD8E92B6706583A955b076E394eA5c68F39cD4",
+    "factory": "0x475c9219e17cdB25324C12206200B24be681b929"
   },
   "uniswap": {
     "factory": "0x1f7d7550B1b028f7571E69A784071F0205FD2EfA",
