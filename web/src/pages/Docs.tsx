@@ -7,9 +7,8 @@ import { explorerAddr, shortAddr } from "../lib/format";
  */
 export function DocsPage() {
   const contracts: { name: string; address: string; note: string }[] = [
-    { name: "Launchpad", address: addresses.launchpad, note: "Launching and trading" },
-    { name: "TokenFactory", address: addresses.tokenFactory, note: "Deploys every token with fixed rules" },
-    { name: "FeeDistributor", address: addresses.feeDistributor, note: "Routes 100% of trading fees to creators" },
+    { name: "LaunchpadFactory", address: addresses.factory, note: "Launches, trading, fee accounting, and owns every V3 position" },
+    { name: "TokenDeployer", address: addresses.tokenDeployer, note: "Deploys every token with fixed rules" },
     { name: "WETH", address: addresses.weth, note: "Canonical wrapped native token" },
   ];
 

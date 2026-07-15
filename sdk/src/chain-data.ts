@@ -1,6 +1,6 @@
 import type { PublicClient } from "viem";
 
-import { launchpadAbi, launchTokenAbi, feeDistributorAbi } from "./abi";
+import { launchpadAbi, launchTokenAbi } from "./abi";
 import {
   INTERVAL_SECONDS,
   type Address,
@@ -42,8 +42,6 @@ interface TokenCore {
   featured: boolean;
   totalSupply: bigint;
   launchBlock: bigint;
-  maxTxAmount: bigint;
-  maxWalletAmount: bigint;
 }
 
 type Listener = (msg: WsServerMessage) => void;
@@ -94,7 +92,7 @@ export class ChainDataSource {
     const latest = await this.client.getBlockNumber();
     if (this.coresLoadedUpTo === 0n || latest > this.coresLoadedUpTo) {
       const logs = await this.client.getLogs({
-        address: this.addresses.launchpad,
+        address: this.addresses.factory,
         event: launchpadAbi.find((x: any) => x.type === "event" && x.name === "TokenLaunched") as any,
         fromBlock: this.coresLoadedUpTo === 0n ? this.startBlock : this.coresLoadedUpTo + 1n,
         toBlock: latest,
@@ -121,8 +119,6 @@ export class ChainDataSource {
           featured: false,
           totalSupply: log.args.totalSupply as bigint,
           launchBlock: log.blockNumber as bigint,
-          maxTxAmount: log.args.maxTxAmount as bigint,
-          maxWalletAmount: log.args.maxWalletAmount as bigint,
         });
       }
       this.coresLoadedUpTo = latest;
@@ -250,11 +246,11 @@ export class ChainDataSource {
   }
 
   private async summarize(core: TokenCore): Promise<TokenSummary> {
-    const [limits, wethInPool, trades, pushedFees] = await Promise.all([
+    const [mcapUsd, wethInPool, trades, creatorFees] = await Promise.all([
       this.client.readContract({
-        address: this.addresses.launchpad,
+        address: this.addresses.factory,
         abi: launchpadAbi,
-        functionName: "tradingLimits",
+        functionName: "marketCapUsd",
         args: [core.address],
       }),
       this.client.readContract({
@@ -265,24 +261,21 @@ export class ChainDataSource {
       }),
       this.loadTrades(core.address),
       this.client.readContract({
-        address: this.addresses.feeDistributor,
-        abi: feeDistributorAbi,
-        functionName: "tokenFees",
+        address: this.addresses.factory,
+        abi: launchpadAbi,
+        functionName: "creatorFeesAccrued",
         args: [core.address],
       }),
     ]);
-    const [active, , , , mcapUsd, remainingUsd] = limits as any;
 
     const dayAgo = Math.floor(Date.now() / 1000) - 86400;
     const dayTrades = trades.filter((t) => t.timestamp >= dayAgo);
     const volume24h = dayTrades.reduce((acc, t) => acc + BigInt(t.nativeAmountWei), 0n);
     const volumeTotal = trades.reduce((acc, t) => acc + BigInt(t.nativeAmountWei), 0n);
 
-    // Total fees the market has generated: the 1% pool fee on every swap
-    // (paid by bots and site trades alike) plus any site fee already pushed
-    // to the creator. This matches ~1% of volume, unlike the push-only figure.
-    const poolFees = trades.reduce((acc, t) => acc + BigInt(t.feeWei), 0n);
-    const totalFees = poolFees + (pushedFees as bigint);
+    // Creator's currently-claimable 80% share of the app-routed trading fee,
+    // read straight from the factory's per-token accrual.
+    const totalFees = creatorFees as bigint;
 
     const last = trades[trades.length - 1];
     const ref = [...trades].reverse().find((t) => t.timestamp <= dayAgo);
@@ -314,8 +307,9 @@ export class ChainDataSource {
       volumeTotalWei: volumeTotal.toString(),
       txCount24h: dayTrades.length,
       holderCount: holders.size,
-      limitsActive: Boolean(active),
-      remainingToGraduationUsd: usd8(remainingUsd as bigint),
+      // Trading is unrestricted from launch: no limits, no graduation gate.
+      limitsActive: false,
+      remainingToGraduationUsd: "0",
       priceChange24hPct,
       creatorFeesWei: totalFees.toString(),
     };
@@ -482,7 +476,7 @@ export class ChainDataSource {
     // Per-token trade streaming is handled by watchPool(); here we only watch
     // for brand-new token launches so the Explore feed updates live.
     const unwatchLaunches = this.client.watchContractEvent({
-      address: this.addresses.launchpad,
+      address: this.addresses.factory,
       abi: launchpadAbi,
       eventName: "TokenLaunched",
       pollingInterval: 6000,

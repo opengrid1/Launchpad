@@ -155,10 +155,10 @@ export interface CreateTokenParams {
 }
 
 export interface LaunchpadAddresses {
-  launchpad: Address;
-  feeDistributor: Address;
-  treasury: Address;
-  tokenFactory: Address;
+  /** The LaunchpadFactory: launches, trades, fee accounting, held positions. */
+  factory: Address;
+  /** The TokenDeployer the factory mints tokens through. */
+  tokenDeployer: Address;
   weth: Address;
 }
 

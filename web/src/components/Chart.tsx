@@ -69,7 +69,7 @@ async function fetchMcapScale(token: Address): Promise<number> {
   try {
     const [price8, supply] = await Promise.all([
       client.publicClient.readContract({
-        address: client.addresses.launchpad,
+        address: client.addresses.factory,
         abi: launchpadAbi,
         functionName: "nativeUsdPrice",
       }),
@@ -215,7 +215,7 @@ export function PriceChart({ token }: { token: Address }) {
     const load = async () => {
       mcapScale = await fetchMcapScale(token);
       const price8 = await client.publicClient
-        .readContract({ address: client.addresses.launchpad, abi: launchpadAbi, functionName: "nativeUsdPrice" })
+        .readContract({ address: client.addresses.factory, abi: launchpadAbi, functionName: "nativeUsdPrice" })
         .catch(() => 0n);
       usdRate = Number(price8) / 1e8 || 1;
       const candles = await client.getCandles(token, interval, { limit: 500 });

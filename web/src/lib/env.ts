@@ -22,10 +22,8 @@ export const env = {
 };
 
 export const addresses: LaunchpadAddresses = {
-  launchpad: req("VITE_LAUNCHPAD_ADDRESS") as `0x${string}`,
-  feeDistributor: req("VITE_FEE_DISTRIBUTOR_ADDRESS") as `0x${string}`,
-  treasury: req("VITE_TREASURY_ADDRESS") as `0x${string}`,
-  tokenFactory: req("VITE_TOKEN_FACTORY_ADDRESS") as `0x${string}`,
+  factory: req("VITE_FACTORY_ADDRESS") as `0x${string}`,
+  tokenDeployer: req("VITE_TOKEN_DEPLOYER_ADDRESS") as `0x${string}`,
   weth: req("VITE_WETH_ADDRESS") as `0x${string}`,
 };
 

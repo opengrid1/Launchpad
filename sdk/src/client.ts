@@ -8,7 +8,7 @@ import {
   type Hash,
 } from "viem";
 
-import { launchpadAbi, launchTokenAbi, feeDistributorAbi } from "./abi";
+import { launchpadAbi, launchTokenAbi } from "./abi";
 import { ChainDataSource } from "./chain-data";
 import { LaunchpadSocket } from "./ws";
 import type {
@@ -128,9 +128,9 @@ export class LaunchpadClient {
 
     const { request } = await this.publicClient.simulateContract({
       account,
-      address: this.addresses.launchpad,
+      address: this.addresses.factory,
       abi: launchpadAbi,
-      functionName: "createToken",
+      functionName: "launch",
       args: [
         {
           name: params.name,
@@ -151,7 +151,7 @@ export class LaunchpadClient {
 
     const { request } = await this.publicClient.simulateContract({
       account,
-      address: this.addresses.launchpad,
+      address: this.addresses.factory,
       abi: launchpadAbi,
       functionName: "buy",
       args: [token, opts?.minTokensOut ?? 0n, deadline],
@@ -169,7 +169,7 @@ export class LaunchpadClient {
       address: token,
       abi: launchTokenAbi,
       functionName: "allowance",
-      args: [account, this.addresses.launchpad],
+      args: [account, this.addresses.factory],
     });
     if (allowance < amount) {
       const { request: approveReq } = await this.publicClient.simulateContract({
@@ -177,7 +177,7 @@ export class LaunchpadClient {
         address: token,
         abi: launchTokenAbi,
         functionName: "approve",
-        args: [this.addresses.launchpad, amount],
+        args: [this.addresses.factory, amount],
       });
       const approveHash = await wallet.writeContract(approveReq);
       await this.publicClient.waitForTransactionReceipt({ hash: approveHash });
@@ -186,7 +186,7 @@ export class LaunchpadClient {
     const deadline = BigInt(Math.floor(Date.now() / 1000) + (opts?.deadlineSeconds ?? 300));
     const { request } = await this.publicClient.simulateContract({
       account,
-      address: this.addresses.launchpad,
+      address: this.addresses.factory,
       abi: launchpadAbi,
       functionName: "sell",
       args: [token, amount, opts?.minNativeOut ?? 0n, deadline],
@@ -195,18 +195,18 @@ export class LaunchpadClient {
   }
 
   /**
-   * Fees are pushed to creators automatically on every trade. This pulls any
-   * balance that could not be delivered (contract wallets that reject ETH).
+   * Claim the trading fees accrued to a token you created. Fees are not pushed
+   * per trade; the creator pulls their 80% share per token with this call.
    */
-  async withdrawCreatorEarnings(): Promise<Hash> {
+  async claimCreatorFees(token: Address): Promise<Hash> {
     const wallet = this.requireWallet();
     const [account] = await wallet.getAddresses();
     const { request } = await this.publicClient.simulateContract({
       account,
-      address: this.addresses.feeDistributor,
-      abi: feeDistributorAbi,
-      functionName: "withdraw",
-      args: [],
+      address: this.addresses.factory,
+      abi: launchpadAbi,
+      functionName: "claimCreatorFees",
+      args: [token],
     });
     return wallet.writeContract(request);
   }
@@ -233,13 +233,13 @@ export class LaunchpadClient {
   async getPrice(token: Address): Promise<{ priceWei: bigint; priceUsd: string }> {
     const [mcapWeth, mcapUsd, supply] = await Promise.all([
       this.publicClient.readContract({
-        address: this.addresses.launchpad,
+        address: this.addresses.factory,
         abi: launchpadAbi,
         functionName: "marketCapWeth",
         args: [token],
       }),
       this.publicClient.readContract({
-        address: this.addresses.launchpad,
+        address: this.addresses.factory,
         abi: launchpadAbi,
         functionName: "marketCapUsd",
         args: [token],
@@ -254,13 +254,13 @@ export class LaunchpadClient {
   async getMarketCap(token: Address): Promise<{ marketCapWeth: bigint; marketCapUsd: string }> {
     const [mcapWeth, mcapUsd] = await Promise.all([
       this.publicClient.readContract({
-        address: this.addresses.launchpad,
+        address: this.addresses.factory,
         abi: launchpadAbi,
         functionName: "marketCapWeth",
         args: [token],
       }),
       this.publicClient.readContract({
-        address: this.addresses.launchpad,
+        address: this.addresses.factory,
         abi: launchpadAbi,
         functionName: "marketCapUsd",
         args: [token],
@@ -306,7 +306,7 @@ export class LaunchpadClient {
   async getPoolInfoRaw(token: Address): Promise<PoolInfo> {
     const [pool, feeTier, sqrtPriceX96, tick, poolLiquidity, positionTokenId, positionLiquidity] =
       await this.publicClient.readContract({
-        address: this.addresses.launchpad,
+        address: this.addresses.factory,
         abi: launchpadAbi,
         functionName: "poolInfo",
         args: [token],
@@ -326,28 +326,26 @@ export class LaunchpadClient {
     return this.getPoolInfoRaw(token);
   }
 
+  /**
+   * Trading is unrestricted from launch in this protocol: no max transaction,
+   * max wallet, cooldown or graduation gate exists on-chain. Returned for API
+   * compatibility with a constant "no limits, current market cap" shape.
+   */
   async getTradingLimits(token: Address): Promise<TradingLimits> {
-    const [[active, maxTx, maxWallet, cooldown, mcapUsd, remainingUsd], capUsd] = await Promise.all([
-      this.publicClient.readContract({
-        address: this.addresses.launchpad,
-        abi: launchpadAbi,
-        functionName: "tradingLimits",
-        args: [token],
-      }),
-      this.publicClient.readContract({
-        address: this.addresses.launchpad,
-        abi: launchpadAbi,
-        functionName: "graduationCapUsd",
-      }),
-    ]);
+    const mcapUsd = await this.publicClient.readContract({
+      address: this.addresses.factory,
+      abi: launchpadAbi,
+      functionName: "marketCapUsd",
+      args: [token],
+    });
     return {
-      active,
-      maxTxAmount: maxTx.toString(),
-      maxWalletAmount: maxWallet.toString(),
-      buyCooldownSeconds: Number(cooldown),
+      active: false,
+      maxTxAmount: "0",
+      maxWalletAmount: "0",
+      buyCooldownSeconds: 0,
       marketCapUsd: formatUsd8(mcapUsd),
-      remainingUsd: formatUsd8(remainingUsd),
-      graduationCapUsd: formatUsd8(capUsd),
+      remainingUsd: "0",
+      graduationCapUsd: "0",
     };
   }
 
@@ -359,12 +357,13 @@ export class LaunchpadClient {
     return this.api<CreatorStats>(`/api/creators/${creator.toLowerCase()}`);
   }
 
-  async getCreatorPending(creator: Address): Promise<bigint> {
+  /** Unclaimed creator fees for a single token (native wei). */
+  async getCreatorPending(token: Address): Promise<bigint> {
     return this.publicClient.readContract({
-      address: this.addresses.feeDistributor,
-      abi: feeDistributorAbi,
-      functionName: "creatorPending",
-      args: [creator],
+      address: this.addresses.factory,
+      abi: launchpadAbi,
+      functionName: "creatorFeesAccrued",
+      args: [token],
     });
   }
 

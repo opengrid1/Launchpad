@@ -92,7 +92,7 @@ export function LaunchPage() {
       pushToast({ kind: "info", title: "Launch submitted", txHash: hash });
       const receipt = await client.publicClient.waitForTransactionReceipt({ hash });
       const launchedLog = receipt.logs.find(
-        (l) => l.address.toLowerCase() === client.addresses.launchpad.toLowerCase()
+        (l) => l.address.toLowerCase() === client.addresses.factory.toLowerCase()
       );
       pushToast({ kind: "success", title: "Token is live", body: "Pool created, trading open.", txHash: hash });
       if (launchedLog?.topics[1]) {
