@@ -62,6 +62,7 @@ export function useToken(client: LaunchpadClient, token: Address | undefined) {
         liquidityWei: update.liquidityWei,
         limitsActive: update.limitsActive,
         remainingToGraduationUsd: update.remainingToGraduationUsd,
+        creatorFeesWei: update.creatorFeesWei,
       });
     });
     return unsub;

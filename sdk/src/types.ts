@@ -170,6 +170,8 @@ export type PriceUpdate = {
   liquidityWei: string;
   limitsActive: boolean;
   remainingToGraduationUsd: string;
+  /** Creator's currently-claimable fees, native wei. Updates live per trade. */
+  creatorFeesWei: string;
 };
 
 export type CandleUpdate = {

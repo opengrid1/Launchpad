@@ -451,6 +451,7 @@ export class ChainDataSource {
               liquidityWei: summary.liquidityWei,
               limitsActive: summary.limitsActive,
               remainingToGraduationUsd: summary.remainingToGraduationUsd,
+              creatorFeesWei: summary.creatorFeesWei ?? "0",
             });
           } catch {
             // Ignore individual log failures; the next poll retries.
