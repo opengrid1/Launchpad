@@ -811,6 +811,13 @@
       /* activity states, readable on dark */
       .tx-state { color: #d9a24c; }
       .tx-state.done { color: #9db8e6; }
+      .tx-empty {
+        text-align: center;
+        color: var(--ink-soft);
+        font-size: 14px;
+        padding: 18px 0 4px;
+        margin: 0;
+      }
       /* twinkling night stars */
       .star {
         position: fixed;
@@ -1058,53 +1065,8 @@
           <h2>Recent activity</h2>
           <span class="rule"></span>
         </div>
-        <div id="txList">
-          <div class="tx">
-            <div class="tx-route">
-              <span class="coin-ic" data-chain="ethereum"></span>
-              <svg class="arrow" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h9M9 4l4 4-4 4" stroke="#dfe8f5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="coin-ic" data-chain="arc"></span>
-              <span style="margin-left:4px">
-                <span class="tx-main">Ethereum → Arc</span><br />
-                <span class="tx-sub">USDC · 3 min ago</span>
-              </span>
-            </div>
-            <div class="tx-amt">
-              <div class="n tnum">1,500.00</div>
-              <div class="tx-state done"><span class="dot"></span>Settled</div>
-            </div>
-          </div>
-          <div class="tx">
-            <div class="tx-route">
-              <span class="coin-ic" data-chain="ethereum"></span>
-              <svg class="arrow" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h9M9 4l4 4-4 4" stroke="#dfe8f5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="coin-ic" data-chain="arc"></span>
-              <span style="margin-left:4px">
-                <span class="tx-main">Ethereum → Arc</span><br />
-                <span class="tx-sub">USDC · 1 hr ago</span>
-              </span>
-            </div>
-            <div class="tx-amt">
-              <div class="n tnum">850.00</div>
-              <div class="tx-state done"><span class="dot"></span>Settled</div>
-            </div>
-          </div>
-          <div class="tx">
-            <div class="tx-route">
-              <span class="coin-ic" data-chain="ethereum"></span>
-              <svg class="arrow" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h9M9 4l4 4-4 4" stroke="#dfe8f5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="coin-ic" data-chain="arc"></span>
-              <span style="margin-left:4px">
-                <span class="tx-main">Ethereum → Arc</span><br />
-                <span class="tx-sub">USDC · yesterday</span>
-              </span>
-            </div>
-            <div class="tx-amt">
-              <div class="n tnum">4,200.00</div>
-              <div class="tx-state done"><span class="dot"></span>Settled</div>
-            </div>
-          </div>
-        </div>
+        <div id="txList"></div>
+        <p id="txEmpty" class="tx-empty">No bridges yet. Your transfers will appear here.</p>
       </section>
 
       <footer>
@@ -1335,18 +1297,38 @@
         blockExplorerUrls: ["https://explorer.arc.io"],
       };
 
+      var USDC_ETH = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
       var connected = false;
+      var walletAddr = null;
+
+      // Read the connected wallet's real USDC balance (Ethereum mainnet).
+      async function refreshBalance() {
+        if (!walletAddr || !window.ethereum) return;
+        try {
+          var data = "0x70a08231" + walletAddr.replace(/^0x/, "").toLowerCase().padStart(64, "0");
+          var res = await window.ethereum.request({
+            method: "eth_call",
+            params: [{ to: USDC_ETH, data: data }, "latest"],
+          });
+          var bal = Number(BigInt(res)) / 1e6;
+          document.getElementById("balFrom").textContent = fmt(bal, 2);
+        } catch (e) {
+          /* leave the last known balance */
+        }
+      }
+
       document.getElementById("connect").addEventListener("click", async function () {
         var btn = this;
         if (connected) {
           connected = false;
+          walletAddr = null;
           btn.textContent = "Connect Wallet";
           return;
         }
-        // Real wallet: add + switch to Arc Mainnet, then show the address.
         if (window.ethereum && window.ethereum.request) {
           try {
             var accts = await window.ethereum.request({ method: "eth_requestAccounts" });
+            // Make Arc available in the wallet for receiving...
             try {
               await window.ethereum.request({
                 method: "wallet_addEthereumChain",
@@ -1355,14 +1337,21 @@
             } catch (e) {
               /* already added */
             }
-            await window.ethereum.request({
-              method: "wallet_switchEthereumChain",
-              params: [{ chainId: ARC_MAINNET.chainId }],
-            });
-            var a = accts && accts[0] ? accts[0] : "";
+            // ...but bridge FROM Ethereum, so settle the wallet on mainnet.
+            try {
+              await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: "0x1" }],
+              });
+            } catch (e) {}
+            walletAddr = accts && accts[0] ? accts[0] : null;
             connected = true;
-            btn.textContent = a ? a.slice(0, 6) + "…" + a.slice(-4) : "Connected";
-            showToast("Connected · Arc Mainnet");
+            btn.textContent = walletAddr
+              ? walletAddr.slice(0, 6) + "…" + walletAddr.slice(-4)
+              : "Connected";
+            await refreshBalance();
+            renderHistory();
+            showToast("Wallet connected");
           } catch (err) {
             showToast("Connection cancelled");
           }
@@ -1437,17 +1426,39 @@
         );
       }
 
-      function addActivity(v, opts) {
-        opts = opts || {};
-        var fromName = floatState.from === "ethereum" ? "Ethereum" : "Arc";
-        var toName = floatState.to === "ethereum" ? "Ethereum" : "Arc";
+      // ---- history, persisted per connected wallet ----------------------
+      function histKey() {
+        return "sherwood.tx." + (walletAddr ? walletAddr.toLowerCase() : "anon");
+      }
+      function loadHist() {
+        try {
+          return JSON.parse(localStorage.getItem(histKey()) || "[]");
+        } catch (e) {
+          return [];
+        }
+      }
+      function saveHist(arr) {
+        try {
+          localStorage.setItem(histKey(), JSON.stringify(arr.slice(0, 50)));
+        } catch (e) {}
+      }
+      function timeAgo(ts) {
+        var s = (Date.now() - ts) / 1000;
+        if (s < 60) return "just now";
+        if (s < 3600) return Math.floor(s / 60) + " min ago";
+        if (s < 86400) return Math.floor(s / 3600) + " hr ago";
+        return Math.floor(s / 86400) + "d ago";
+      }
+      function buildRow(item, animate) {
+        var fromName = item.from === "ethereum" ? "Ethereum" : "Arc";
+        var toName = item.to === "ethereum" ? "Ethereum" : "Arc";
+        var stateTxt = item.settled ? "Settled" : item.real ? "Relaying" : "Pending";
         var el = document.createElement("div");
         el.className = "tx";
-        el.style.opacity = 0;
-        if (opts.hash) {
+        if (item.hash) {
           el.style.cursor = "pointer";
           el.addEventListener("click", function () {
-            window.open("https://etherscan.io/tx/" + opts.hash, "_blank", "noopener");
+            window.open("https://etherscan.io/tx/" + item.hash, "_blank", "noopener");
           });
         }
         el.innerHTML =
@@ -1455,23 +1466,55 @@
           '<svg class="arrow" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h9M9 4l4 4-4 4" stroke="#dfe8f5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
           '<span class="coin-ic"></span>' +
           '<span style="margin-left:4px"><span class="tx-main">' + fromName + " → " + toName + "</span><br>" +
-          '<span class="tx-sub">USDC · just now</span></span></div>' +
-          '<div class="tx-amt"><div class="n tnum">' + fmt(v, 2) + "</div>" +
-          '<div class="tx-state"><span class="dot"></span>' + (opts.real ? "Relaying" : "Pending") + "</div></div>";
-        el.querySelectorAll(".coin-ic")[0].innerHTML = coinSVG(floatState.from, 30);
-        el.querySelectorAll(".coin-ic")[1].innerHTML = coinSVG(floatState.to, 30);
+          '<span class="tx-sub">USDC · ' + timeAgo(item.ts) + "</span></span></div>" +
+          '<div class="tx-amt"><div class="n tnum">' + fmt(item.amount, 2) + "</div>" +
+          '<div class="tx-state' + (item.settled ? " done" : "") + '"><span class="dot"></span>' + stateTxt + "</div></div>";
+        el.querySelectorAll(".coin-ic")[0].innerHTML = coinSVG(item.from, 30);
+        el.querySelectorAll(".coin-ic")[1].innerHTML = coinSVG(item.to, 30);
+        if (animate) {
+          el.style.opacity = 0;
+          el.animate(
+            [
+              { opacity: 0, transform: "translateY(-8px)" },
+              { opacity: 1, transform: "translateY(0)" },
+            ],
+            { duration: 320, easing: "ease", fill: "forwards" }
+          );
+        }
+        return el;
+      }
+      function renderHistory() {
         var list = document.getElementById("txList");
+        list.innerHTML = "";
+        var arr = walletAddr ? loadHist() : [];
+        arr.forEach(function (it) {
+          list.appendChild(buildRow(it, false));
+        });
+        document.getElementById("txEmpty").style.display = arr.length ? "none" : "block";
+      }
+
+      function addActivity(v, opts) {
+        opts = opts || {};
+        var item = {
+          amount: v,
+          hash: opts.hash || null,
+          real: !!opts.real,
+          settled: false,
+          ts: Date.now(),
+          from: floatState.from,
+          to: floatState.to,
+        };
+        document.getElementById("txEmpty").style.display = "none";
+        var list = document.getElementById("txList");
+        var el = buildRow(item, true);
         list.insertBefore(el, list.firstChild);
-        el.animate(
-          [
-            { opacity: 0, transform: "translateY(-8px)" },
-            { opacity: 1, transform: "translateY(0)" },
-          ],
-          { duration: 320, easing: "ease", fill: "forwards" }
-        );
-        // Demo rows settle themselves; real deposits stay "Relaying" until the
-        // off-chain relayer credits the destination on Arc.
-        if (!opts.real) {
+        // Real deposits persist and stay "Relaying" until the relayer settles.
+        if (opts.real && walletAddr) {
+          var arr = loadHist();
+          arr.unshift(item);
+          saveHist(arr);
+        } else if (!opts.real) {
+          // Demo rows settle themselves for the preview.
           var stateEl = el.querySelector(".tx-state");
           setTimeout(function () {
             stateEl.classList.add("done");
@@ -1498,7 +1541,6 @@
       // Real ETH -> Arc deposit leg: transfer USDC (Ethereum mainnet) to the
       // relayer, which credits the same wallet on Arc. Falls back to a demo
       // when no injected wallet is present.
-      var USDC_ETH = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
       var RELAYER = "0xe5b498a00596ab2fa0e8a86cdde15502b2552208";
 
       bridgeBtn.addEventListener("click", async function () {
