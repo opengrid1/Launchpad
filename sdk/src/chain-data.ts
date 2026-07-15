@@ -351,7 +351,27 @@ export class ChainDataSource {
         b.volume = String(Number(b.volume) + vol);
       }
     }
-    return [...buckets.values()].sort((a, b) => a.time - b.time).slice(-limit);
+
+    const filled = [...buckets.values()].sort((a, b) => a.time - b.time);
+    if (filled.length < 2) return filled.slice(-limit);
+
+    // Fill empty periods (no trades) with flat candles at the prior close and
+    // zero volume, so the timeline is continuous — standard candle behavior.
+    const out: Candle[] = [];
+    for (let i = 0; i < filled.length; i++) {
+      out.push(filled[i]);
+      const next = filled[i + 1];
+      if (!next) break;
+      let t = filled[i].time + seconds;
+      const prevClose = filled[i].close;
+      let guard = 0;
+      while (t < next.time && guard < 5000) {
+        out.push({ time: t, open: prevClose, high: prevClose, low: prevClose, close: prevClose, volume: "0" });
+        t += seconds;
+        guard++;
+      }
+    }
+    return out.slice(-limit);
   }
 
   async getHolders(token: Address, limit = 50): Promise<HolderRecord[]> {

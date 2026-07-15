@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "react-router-dom";
 import type { TokenSummary } from "@launchpad/sdk";
 
@@ -5,11 +6,11 @@ import { compact, fmtPct, fmtUsd, fmtWeiUsd, shortAddr, usdRateOf } from "../lib
 import { TokenLogo } from "./TokenLogo";
 
 /**
- * Premium asset preview card for the discovery feed. Market cap leads, a
- * real mini candle chart shows the market's shape, key stats and graduation
- * progress stay visible on every screen size, one action.
+ * Premium asset preview card for the discovery feed. Market cap leads, key
+ * stats stay visible on every screen size, one action. Memoized so a feed
+ * refresh only repaints the cards whose live numbers actually changed.
  */
-export function TokenCard({ token }: { token: TokenSummary }) {
+function TokenCardBase({ token }: { token: TokenSummary }) {
   const description = String(token.metadata?.description ?? "").trim();
 
   const usdRate = usdRateOf(token);
@@ -105,3 +106,25 @@ export function TokenCard({ token }: { token: TokenSummary }) {
     </Link>
   );
 }
+
+/**
+ * A feed refresh replaces the token array on every poll, but most cards carry
+ * identical live numbers tick to tick. Repaint only when a field this card
+ * actually renders has changed, so scrolling stays at 60 FPS.
+ */
+export const TokenCard = memo(
+  TokenCardBase,
+  (a, b) =>
+    a.token.address === b.token.address &&
+    a.token.name === b.token.name &&
+    a.token.symbol === b.token.symbol &&
+    a.token.marketCapUsd === b.token.marketCapUsd &&
+    a.token.volume24hWei === b.token.volume24hWei &&
+    a.token.holderCount === b.token.holderCount &&
+    a.token.priceChange24hPct === b.token.priceChange24hPct &&
+    a.token.remainingToGraduationUsd === b.token.remainingToGraduationUsd &&
+    a.token.limitsActive === b.token.limitsActive &&
+    a.token.featured === b.token.featured &&
+    a.token.metadata?.description === b.token.metadata?.description &&
+    a.token.metadata?.logo === b.token.metadata?.logo,
+);

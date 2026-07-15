@@ -70,9 +70,16 @@ export class LaunchpadClient {
     if (config.publicClient) {
       this.publicClient = config.publicClient;
     } else if (config.chain) {
+      // Batch concurrent JSON-RPC calls, and fold concurrent eth_calls into a
+      // single Multicall3 request, so a screen full of tokens costs one round
+      // trip instead of dozens. Short caches dedupe repeated static reads.
       this.publicClient = createPublicClient({
         chain: config.chain,
-        transport: http(config.rpcUrl ?? config.chain.rpcUrls.default.http[0]),
+        transport: http(config.rpcUrl ?? config.chain.rpcUrls.default.http[0], {
+          batch: { wait: 16 },
+        }),
+        batch: { multicall: { wait: 16 } },
+        cacheTime: 4_000,
       });
     } else {
       throw new Error("Provide either publicClient or chain in LaunchpadClientConfig");

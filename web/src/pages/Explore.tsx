@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
@@ -8,10 +8,18 @@ import { client } from "../lib/client";
 
 export function Explore() {
   const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
   const { data: byVolume, loading: loadingVolume } = useTokens(client, { sort: "volume", limit: 50 });
   const { data: byNew, loading: loadingNew } = useTokens(client, { sort: "new", limit: 50 });
 
-  const q = query.trim().toLowerCase();
+  // Keep the input instant while the filter work runs on a settled value, so
+  // typing never re-filters the whole list on every keystroke.
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebounced(query), 150);
+    return () => window.clearTimeout(id);
+  }, [query]);
+
+  const q = debounced.trim().toLowerCase();
   const matches = (t: TokenSummary) =>
     !q ||
     t.name.toLowerCase().includes(q) ||

@@ -37,4 +37,9 @@ export const chain: Chain = defineChain({
   blockExplorers: env.explorerUrl
     ? { default: { name: "Explorer", url: env.explorerUrl } }
     : undefined,
+  // Canonical Multicall3 (verified deployed) so viem folds concurrent reads
+  // into a single request.
+  contracts: {
+    multicall3: { address: "0xcA11bde05977b3631167028862bE2a173976CA11" },
+  },
 });

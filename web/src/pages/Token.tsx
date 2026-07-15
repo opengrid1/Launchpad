@@ -1,9 +1,14 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useToken } from "@launchpad/sdk/react";
 import type { Address } from "@launchpad/sdk";
 
-import { PriceChart } from "../components/Chart";
+// The candlestick engine (lightweight-charts) is the heaviest dependency on
+// the page. Split it into its own chunk so the token header, stats and trade
+// panel paint immediately and the chart streams in a beat later.
+const PriceChart = lazy(() =>
+  import("../components/Chart").then((m) => ({ default: m.PriceChart })),
+);
 import { HoldersList } from "../components/HoldersList";
 import { TokenLogo } from "../components/TokenLogo";
 import { TradePanel } from "../components/TradePanel";
@@ -80,7 +85,9 @@ export function TokenPage() {
       {/* Chart + trade */}
       <section className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         <Card className="h-[420px] overflow-hidden lg:h-[480px]">
-          <PriceChart token={t.address as Address} />
+          <Suspense fallback={<Skeleton className="h-full w-full rounded-2xl" />}>
+            <PriceChart token={t.address as Address} />
+          </Suspense>
         </Card>
         <TradePanel token={t} />
       </section>
