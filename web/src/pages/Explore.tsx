@@ -5,6 +5,7 @@ import type { TokenSummary } from "@launchpad/sdk";
 import { TokenCard } from "../components/TokenCard";
 import { Skeleton } from "../components/ui";
 import { client } from "../lib/client";
+import { env } from "../lib/env";
 
 export function Explore() {
   const [query, setQuery] = useState("");
@@ -26,14 +27,20 @@ export function Explore() {
     t.symbol.toLowerCase().includes(q) ||
     t.address.toLowerCase() === q;
 
-  const trending = useMemo(() => (byVolume ?? []).filter(matches).slice(0, 6), [byVolume, q]);
+  // Private/pre-launch mode: the public feed shows nothing at all.
+  const hidden = env.hideTokens;
+
+  const trending = useMemo(
+    () => (hidden ? [] : (byVolume ?? []).filter(matches).slice(0, 6)),
+    [byVolume, q, hidden]
+  );
   const trendingSet = useMemo(() => new Set(trending.map((t) => t.address)), [trending]);
   const fresh = useMemo(
-    () => (byNew ?? []).filter((t) => matches(t) && !trendingSet.has(t.address)).slice(0, 30),
-    [byNew, q, trendingSet]
+    () => (hidden ? [] : (byNew ?? []).filter((t) => matches(t) && !trendingSet.has(t.address)).slice(0, 30)),
+    [byNew, q, trendingSet, hidden]
   );
 
-  const loading = loadingVolume || loadingNew;
+  const loading = !hidden && (loadingVolume || loadingNew);
   const nothing = !loading && trending.length === 0 && fresh.length === 0;
 
   return (

@@ -13,6 +13,7 @@ interface ImportMetaEnv {
   readonly VITE_WS_URL?: string;
   readonly VITE_START_BLOCK?: string;
   readonly VITE_WALLETCONNECT_PROJECT_ID?: string;
+  readonly VITE_HIDE_TOKENS?: string;
 }
 
 interface ImportMeta {

@@ -19,6 +19,9 @@ export const env = {
   wsUrl: String(import.meta.env.VITE_WS_URL ?? ""),
   startBlock: String(import.meta.env.VITE_START_BLOCK ?? "0"),
   walletConnectProjectId: String(import.meta.env.VITE_WALLETCONNECT_PROJECT_ID ?? ""),
+  // When true, the public Explore feed shows nothing (pre-launch / private
+  // mode). Token pages by direct address and the admin console still work.
+  hideTokens: String(import.meta.env.VITE_HIDE_TOKENS ?? "") === "true",
 };
 
 export const addresses: LaunchpadAddresses = {
