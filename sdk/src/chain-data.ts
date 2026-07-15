@@ -61,8 +61,10 @@ export class ChainDataSource {
 
   private cores = new Map<string, TokenCore>();
   private coresLoadedUpTo = 0n;
+  private coresInflight: Promise<TokenCore[]> | null = null;
   private trades = new Map<string, TradeRecord[]>();
   private tradesLoaded = new Set<string>();
+  private tradesInflight = new Map<string, Promise<TradeRecord[]>>();
   private blockTs = new Map<string, number>();
   private listeners = new Set<{ channel: string; token?: string; fn: Listener }>();
   private watching = false;
@@ -80,6 +82,15 @@ export class ChainDataSource {
   // ------------------------------------------------------------------
 
   private async loadCores(): Promise<TokenCore[]> {
+    // Dedupe concurrent callers (e.g. the two Explore feeds) onto one load.
+    if (this.coresInflight) return this.coresInflight;
+    this.coresInflight = this.loadCoresInner().finally(() => {
+      this.coresInflight = null;
+    });
+    return this.coresInflight;
+  }
+
+  private async loadCoresInner(): Promise<TokenCore[]> {
     const latest = await this.client.getBlockNumber();
     if (this.coresLoadedUpTo === 0n || latest > this.coresLoadedUpTo) {
       const logs = await this.client.getLogs({
@@ -135,7 +146,17 @@ export class ChainDataSource {
 
   private async loadTrades(token: Address): Promise<TradeRecord[]> {
     const key = token.toLowerCase();
-    if (!this.tradesLoaded.has(key)) {
+    if (this.tradesLoaded.has(key)) return this.trades.get(key) ?? [];
+    // Dedupe concurrent loads for the same token onto one request.
+    const existing = this.tradesInflight.get(key);
+    if (existing) return existing;
+    const p = this.loadTradesInner(key).finally(() => this.tradesInflight.delete(key));
+    this.tradesInflight.set(key, p);
+    return p;
+  }
+
+  private async loadTradesInner(key: string): Promise<TradeRecord[]> {
+    {
       await this.loadCores();
       const core = this.cores.get(key);
       if (!core) {
@@ -153,10 +174,12 @@ export class ChainDataSource {
         fromBlock: core.launchBlock ?? this.startBlock,
         toBlock: "latest",
       });
-      const records: TradeRecord[] = [];
-      for (const log of logs as any[]) {
-        records.push(await this.tradeFromSwap(log, core));
-      }
+      // Prefetch block timestamps for all swaps in parallel (deduped), rather
+      // than one getBlock per swap in sequence, which stalls the feed and can
+      // trip public-RPC rate limits on mobile.
+      const uniqueBlocks = [...new Set((logs as any[]).map((l) => l.blockNumber as bigint))];
+      await Promise.all(uniqueBlocks.map((bn) => this.getBlockTs(bn)));
+      const records = (logs as any[]).map((log) => this.tradeFromSwap(log, core));
       this.trades.set(key, records);
       this.tradesLoaded.add(key);
     }
@@ -171,8 +194,9 @@ export class ChainDataSource {
       : (Q96 * Q96 * 10n ** 18n) / (sqrtP * sqrtP);
   }
 
-  /** Build a TradeRecord from a Uniswap V3 pool Swap log. */
-  private async tradeFromSwap(log: any, core: TokenCore): Promise<TradeRecord> {
+  /** Build a TradeRecord from a Uniswap V3 pool Swap log. Timestamp must be
+   *  cached already (via getBlockTs) so this stays synchronous. */
+  private tradeFromSwap(log: any, core: TokenCore): TradeRecord {
     const tokenIsToken0 = core.address < this.addresses.weth.toLowerCase();
     const amount0 = log.args.amount0 as bigint;
     const amount1 = log.args.amount1 as bigint;
@@ -196,7 +220,7 @@ export class ChainDataSource {
       priceWei: this.priceWeiFromSqrt(sqrtP, tokenIsToken0).toString(),
       blockNumber: Number(log.blockNumber),
       txHash: log.transactionHash,
-      timestamp: await this.getBlockTs(log.blockNumber),
+      timestamp: this.blockTs.get(log.blockNumber.toString()) ?? 0,
     };
   }
 
@@ -206,7 +230,11 @@ export class ChainDataSource {
 
   async getTokens(sort: "new" | "volume" | "marketCap" | "featured" = "new", limit = 50): Promise<TokenSummary[]> {
     const cores = await this.loadCores();
-    const summaries = await Promise.all(cores.map((c) => this.summarize(c)));
+    // Never let one token's failed read blank the whole feed.
+    const settled = await Promise.allSettled(cores.map((c) => this.summarize(c)));
+    const summaries = settled
+      .filter((r): r is PromiseFulfilledResult<TokenSummary> => r.status === "fulfilled")
+      .map((r) => r.value);
     const bySort = [...summaries];
     if (sort === "volume") bySort.sort((a, b) => Number(b.volume24hWei) - Number(a.volume24hWei));
     else if (sort === "marketCap") bySort.sort((a, b) => Number(b.marketCapUsd) - Number(a.marketCapUsd));
@@ -387,7 +415,8 @@ export class ChainDataSource {
       onLogs: async (logs) => {
         for (const log of logs as any[]) {
           try {
-            const trade = await this.tradeFromSwap(log, core);
+            await this.getBlockTs(log.blockNumber);
+            const trade = this.tradeFromSwap(log, core);
             const list = this.trades.get(token);
             if (list && !list.some((t) => t.id === trade.id)) list.push(trade);
 
