@@ -6,6 +6,7 @@ import { TokenCard } from "../components/TokenCard";
 import { Skeleton } from "../components/ui";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
+import { isHidden } from "../lib/hiddenTokens";
 
 export function Explore() {
   const [query, setQuery] = useState("");
@@ -22,10 +23,11 @@ export function Explore() {
 
   const q = debounced.trim().toLowerCase();
   const matches = (t: TokenSummary) =>
-    !q ||
-    t.name.toLowerCase().includes(q) ||
-    t.symbol.toLowerCase().includes(q) ||
-    t.address.toLowerCase() === q;
+    !isHidden(t.address) &&
+    (!q ||
+      t.name.toLowerCase().includes(q) ||
+      t.symbol.toLowerCase().includes(q) ||
+      t.address.toLowerCase() === q);
 
   // Private/pre-launch mode: the public feed shows nothing at all.
   const hidden = env.hideTokens;
