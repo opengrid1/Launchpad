@@ -4,7 +4,7 @@ import { getChainId, getWalletClient, switchChain } from "wagmi/actions";
 
 import { client } from "./client";
 import { chain } from "./env";
-import { wagmiConfig } from "./wagmi";
+import { appKit, wagmiConfig } from "./wagmi";
 import { useUi } from "../store";
 
 /**
@@ -40,6 +40,11 @@ export function useWallet() {
   }, [walletClient]);
 
   const connectFirst = () => {
+    // Reown AppKit modal: full wallet list, QR and mobile deep links.
+    if (appKit) {
+      void appKit.open();
+      return;
+    }
     const preferred =
       connectors.find((c) => c.id === "injected") ?? connectors[0];
     if (!preferred) {
