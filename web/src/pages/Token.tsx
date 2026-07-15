@@ -74,7 +74,7 @@ export function TokenPage() {
         <Figure label="Volume 24h" value={fmtWeiUsd(t.volume24hWei, usdRate)} />
         <Figure label="Liquidity" value={fmtWeiUsd(t.liquidityWei, usdRate)} />
         <Figure label="Holders" value={compact(t.holderCount)} />
-        <Figure label="Creator fees" value={fmtWeiUsd(t.creatorFeesWei ?? "0", usdRate)} />
+        <Figure label="Fees earned" value={fmtWeiUsd(t.creatorFeesWei ?? "0", usdRate)} />
       </dl>
 
       {/* Chart + trade */}

@@ -127,6 +127,16 @@ export function AdminPage() {
 
   const { data: tokens, loading: tokensLoading } = useTokens(client, { sort: "volume", limit: 50 });
 
+  // Treasury withdrawals: destination address. Defaults to the connected
+  // wallet, but can be any address (e.g. a token's creator wallet).
+  const [destInput, setDestInput] = useState("");
+  const trimmedDest = destInput.trim();
+  const destAddr: `0x${string}` | null = trimmedDest
+    ? isAddress(trimmedDest)
+      ? (trimmedDest as `0x${string}`)
+      : null
+    : (address ?? null);
+
   // "Manage by address" lookup: paste any launched token's contract address.
   const [lookupInput, setLookupInput] = useState("");
   const trimmedLookup = lookupInput.trim();
@@ -379,12 +389,32 @@ export function AdminPage() {
       </Card>
 
       <Card className="mt-5 overflow-hidden">
-        <div className="border-b border-edge px-5 py-3.5">
-          <h2 className="text-sm font-semibold text-ink">Treasury</h2>
-          <p className="mt-0.5 text-xs text-ink-3">
-            Withdrawn liquidity and collected fees land here first. Send them on to your connected
-            wallet ({shortAddr(address ?? "")}).
-          </p>
+        <div className="space-y-3 border-b border-edge px-5 py-3.5">
+          <div>
+            <h2 className="text-sm font-semibold text-ink">Treasury</h2>
+            <p className="mt-0.5 text-xs text-ink-3">
+              Withdrawn liquidity and collected fees land here first. Send them on to any address.
+            </p>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-ink-2">Send withdrawals to</label>
+            <input
+              value={destInput}
+              onChange={(e) => setDestInput(e.target.value)}
+              placeholder={address ? `${address} (your wallet)` : "Paste destination address (0x…)"}
+              spellCheck={false}
+              autoComplete="off"
+              className="tnum mt-1 h-10 w-full rounded-xl border border-edge bg-panel px-3.5 text-sm text-ink placeholder:text-ink-3 focus:border-edge-2 focus:outline-none"
+            />
+            {trimmedDest.length > 0 && !destAddr ? (
+              <p className="mt-1 text-xs text-down">That is not a valid address.</p>
+            ) : (
+              <p className="mt-1 text-xs text-ink-3">
+                Destination: <span className="tnum">{shortAddr(destAddr ?? "")}</span>
+                {!trimmedDest ? " (your connected wallet)" : ""}
+              </p>
+            )}
+          </div>
         </div>
         <ul className="divide-y divide-edge/60">
           <li className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
@@ -395,13 +425,13 @@ export function AdminPage() {
               </p>
             </div>
             <button
-              disabled={busyAction !== null || !treasuryBalance.data}
+              disabled={busyAction !== null || !treasuryBalance.data || !destAddr}
               onClick={() =>
                 runTx(
                   "Withdraw treasury ETH",
                   () =>
                     writeContractAt(client.addresses.treasury, treasuryAbi, "withdrawNative", [
-                      address,
+                      destAddr,
                       treasuryBalance.data,
                     ]),
                   () => treasuryBalance.refetch()
@@ -409,7 +439,7 @@ export function AdminPage() {
               }
               className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
             >
-              Withdraw to my wallet
+              Withdraw
             </button>
           </li>
           <li className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
@@ -422,14 +452,14 @@ export function AdminPage() {
             </div>
             <div className="flex gap-2">
               <button
-                disabled={busyAction !== null || !treasuryWeth.data}
+                disabled={busyAction !== null || !treasuryWeth.data || !destAddr}
                 onClick={() =>
                   runTx(
                     "Withdraw treasury WETH",
                     () =>
                       writeContractAt(client.addresses.treasury, treasuryAbi, "withdrawToken", [
                         client.addresses.weth,
-                        address,
+                        destAddr,
                         treasuryWeth.data,
                       ]),
                     () => {
@@ -440,7 +470,7 @@ export function AdminPage() {
                 }
                 className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
               >
-                Withdraw to my wallet
+                Withdraw
               </button>
               <button
                 disabled={busyAction !== null || !walletWeth.data}
@@ -472,14 +502,14 @@ export function AdminPage() {
                 </p>
               </div>
               <button
-                disabled={busyAction !== null || tokenWithdrawable === 0n}
+                disabled={busyAction !== null || tokenWithdrawable === 0n || !destAddr}
                 onClick={() =>
                   runTx(
                     `Withdraw treasury ${lookup.data!.symbol}`,
                     () =>
                       writeContractAt(client.addresses.treasury, treasuryAbi, "withdrawToken", [
                         lookup.data!.address,
-                        address,
+                        destAddr,
                         tokenWithdrawable,
                       ]),
                     () => treasuryTokenBal.refetch()
@@ -487,7 +517,7 @@ export function AdminPage() {
                 }
                 className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
               >
-                Withdraw to my wallet
+                Withdraw
               </button>
             </li>
           ) : null}

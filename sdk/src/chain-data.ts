@@ -222,7 +222,7 @@ export class ChainDataSource {
   }
 
   private async summarize(core: TokenCore): Promise<TokenSummary> {
-    const [limits, wethInPool, trades, creatorFees] = await Promise.all([
+    const [limits, wethInPool, trades, pushedFees] = await Promise.all([
       this.client.readContract({
         address: this.addresses.launchpad,
         abi: launchpadAbi,
@@ -249,6 +249,12 @@ export class ChainDataSource {
     const dayTrades = trades.filter((t) => t.timestamp >= dayAgo);
     const volume24h = dayTrades.reduce((acc, t) => acc + BigInt(t.nativeAmountWei), 0n);
     const volumeTotal = trades.reduce((acc, t) => acc + BigInt(t.nativeAmountWei), 0n);
+
+    // Total fees the market has generated: the 1% pool fee on every swap
+    // (paid by bots and site trades alike) plus any site fee already pushed
+    // to the creator. This matches ~1% of volume, unlike the push-only figure.
+    const poolFees = trades.reduce((acc, t) => acc + BigInt(t.feeWei), 0n);
+    const totalFees = poolFees + (pushedFees as bigint);
 
     const last = trades[trades.length - 1];
     const ref = [...trades].reverse().find((t) => t.timestamp <= dayAgo);
@@ -283,7 +289,7 @@ export class ChainDataSource {
       limitsActive: Boolean(active),
       remainingToGraduationUsd: usd8(remainingUsd as bigint),
       priceChange24hPct,
-      creatorFeesWei: (creatorFees as bigint).toString(),
+      creatorFeesWei: totalFees.toString(),
     };
   }
 
