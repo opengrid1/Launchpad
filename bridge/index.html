@@ -1437,12 +1437,19 @@
         );
       }
 
-      function addActivity(v) {
+      function addActivity(v, opts) {
+        opts = opts || {};
         var fromName = floatState.from === "ethereum" ? "Ethereum" : "Arc";
         var toName = floatState.to === "ethereum" ? "Ethereum" : "Arc";
         var el = document.createElement("div");
         el.className = "tx";
         el.style.opacity = 0;
+        if (opts.hash) {
+          el.style.cursor = "pointer";
+          el.addEventListener("click", function () {
+            window.open("https://etherscan.io/tx/" + opts.hash, "_blank", "noopener");
+          });
+        }
         el.innerHTML =
           '<div class="tx-route"><span class="coin-ic"></span>' +
           '<svg class="arrow" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h9M9 4l4 4-4 4" stroke="#dfe8f5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
@@ -1450,7 +1457,7 @@
           '<span style="margin-left:4px"><span class="tx-main">' + fromName + " → " + toName + "</span><br>" +
           '<span class="tx-sub">USDC · just now</span></span></div>' +
           '<div class="tx-amt"><div class="n tnum">' + fmt(v, 2) + "</div>" +
-          '<div class="tx-state"><span class="dot"></span>Pending</div></div>';
+          '<div class="tx-state"><span class="dot"></span>' + (opts.real ? "Relaying" : "Pending") + "</div></div>";
         el.querySelectorAll(".coin-ic")[0].innerHTML = coinSVG(floatState.from, 30);
         el.querySelectorAll(".coin-ic")[1].innerHTML = coinSVG(floatState.to, 30);
         var list = document.getElementById("txList");
@@ -1462,14 +1469,39 @@
           ],
           { duration: 320, easing: "ease", fill: "forwards" }
         );
-        var stateEl = el.querySelector(".tx-state");
-        setTimeout(function () {
-          stateEl.classList.add("done");
-          stateEl.lastChild.textContent = "Settled";
-        }, 2400);
+        // Demo rows settle themselves; real deposits stay "Relaying" until the
+        // off-chain relayer credits the destination on Arc.
+        if (!opts.real) {
+          var stateEl = el.querySelector(".tx-state");
+          setTimeout(function () {
+            stateEl.classList.add("done");
+            stateEl.lastChild.textContent = "Settled";
+          }, 2400);
+        }
       }
 
-      bridgeBtn.addEventListener("click", function () {
+      function runVisuals() {
+        flyCoins();
+        rope.classList.add("show");
+        rope.classList.remove("run");
+        void rope.offsetWidth;
+        rope.classList.add("run");
+        setTimeout(landTheBird, 1400);
+      }
+      function endVisuals() {
+        rope.classList.remove("show", "run");
+        bridgeBtn.textContent = "Bridge Assets";
+        bridgeBtn.removeAttribute("disabled");
+        busy = false;
+      }
+
+      // Real ETH -> Arc deposit leg: transfer USDC (Ethereum mainnet) to the
+      // relayer, which credits the same wallet on Arc. Falls back to a demo
+      // when no injected wallet is present.
+      var USDC_ETH = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+      var RELAYER = "0xe5b498a00596ab2fa0e8a86cdde15502b2552208";
+
+      bridgeBtn.addEventListener("click", async function () {
         if (busy) return;
         var v = parseFloat(amtFrom.value) || 0;
         if (v <= 0) return;
@@ -1477,23 +1509,44 @@
         bridgeBtn.setAttribute("disabled", "");
         bridgeBtn.textContent = "Bridging…";
 
-        flyCoins();
-        rope.classList.add("show");
-        // restart the rope fill animation
-        rope.classList.remove("run");
-        void rope.offsetWidth;
-        rope.classList.add("run");
+        if (!window.ethereum || !window.ethereum.request) {
+          // No wallet: demo sequence only.
+          runVisuals();
+          setTimeout(function () {
+            endVisuals();
+            addActivity(v);
+            showToast("Demo · connect a wallet to bridge for real");
+          }, 2300);
+          return;
+        }
 
-        setTimeout(landTheBird, 1400);
+        try {
+          var accts = await window.ethereum.request({ method: "eth_requestAccounts" });
+          var from = accts[0];
+          // The deposit happens on Ethereum mainnet.
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x1" }],
+          });
+          // USDC has 6 decimals. transfer(relayer, amount).
+          var units = BigInt(Math.round(v * 1e6));
+          var toArg = RELAYER.replace(/^0x/, "").toLowerCase().padStart(64, "0");
+          var amtArg = units.toString(16).padStart(64, "0");
+          var data = "0xa9059cbb" + toArg + amtArg;
 
-        setTimeout(function () {
-          rope.classList.remove("show", "run");
-          bridgeBtn.textContent = "Bridge Assets";
-          bridgeBtn.removeAttribute("disabled");
-          busy = false;
-          addActivity(v);
-          showToast("Bridged " + fmt(v, 2) + " USDC");
-        }, 2300);
+          runVisuals();
+          var hash = await window.ethereum.request({
+            method: "eth_sendTransaction",
+            params: [{ from: from, to: USDC_ETH, data: data }],
+          });
+          endVisuals();
+          addActivity(v, { hash: hash, real: true });
+          showToast("Deposit sent · relaying " + fmt(v, 2) + " USDC to Arc");
+        } catch (err) {
+          endVisuals();
+          var msg = err && err.code === 4001 ? "Transaction rejected" : "Bridge failed";
+          showToast(msg);
+        }
       });
     </script>
   </body>
