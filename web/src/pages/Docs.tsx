@@ -52,23 +52,6 @@ export function DocsPage() {
         />
       </Section>
 
-      <Section title="Ownership and limits">
-        <p>
-          Trading is unrestricted from the first block: no maximum transaction, no maximum wallet,
-          no cooldown, and no graduation gate. Every token renounces ownership the moment it is
-          deployed, so it is ownerless — no one can mint more, pause it, blacklist wallets, or
-          change its rules. The Uniswap V3 liquidity position is held by the factory and can only
-          be managed by the protocol's immutable admin, never by the token or its creator.
-        </p>
-        <Facts
-          rows={[
-            ["Trading limits", "None"],
-            ["Token owner", "Renounced at launch"],
-            ["Liquidity", "Held by protocol, admin-managed"],
-          ]}
-        />
-      </Section>
-
       <Section title="Contracts">
         <p>All protocol contracts are source-verified on Blockscout.</p>
         <div className="mt-3 space-y-2">
