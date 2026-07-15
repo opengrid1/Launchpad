@@ -1326,10 +1326,51 @@
       });
 
       // ---- connect wallet (mock) ----------------------------------------
+      // ---- Arc Mainnet network config -----------------------------------
+      var ARC_MAINNET = {
+        chainId: "0x13b2", // 5042
+        chainName: "Arc Mainnet",
+        nativeCurrency: { name: "USD Coin", symbol: "USDC", decimals: 6 },
+        rpcUrls: ["https://soon-trust-me-bro-again.poptyedev.com"],
+        blockExplorerUrls: ["https://explorer.arc.io"],
+      };
+
       var connected = false;
-      document.getElementById("connect").addEventListener("click", function () {
-        connected = !connected;
-        this.textContent = connected ? "0x8f…3aB2" : "Connect Wallet";
+      document.getElementById("connect").addEventListener("click", async function () {
+        var btn = this;
+        if (connected) {
+          connected = false;
+          btn.textContent = "Connect Wallet";
+          return;
+        }
+        // Real wallet: add + switch to Arc Mainnet, then show the address.
+        if (window.ethereum && window.ethereum.request) {
+          try {
+            var accts = await window.ethereum.request({ method: "eth_requestAccounts" });
+            try {
+              await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [ARC_MAINNET],
+              });
+            } catch (e) {
+              /* already added */
+            }
+            await window.ethereum.request({
+              method: "wallet_switchEthereumChain",
+              params: [{ chainId: ARC_MAINNET.chainId }],
+            });
+            var a = accts && accts[0] ? accts[0] : "";
+            connected = true;
+            btn.textContent = a ? a.slice(0, 6) + "…" + a.slice(-4) : "Connected";
+            showToast("Connected · Arc Mainnet");
+          } catch (err) {
+            showToast("Connection cancelled");
+          }
+          return;
+        }
+        // No injected wallet: prototype fallback.
+        connected = true;
+        btn.textContent = "0x8f…3aB2";
       });
 
       // ---- toast ---------------------------------------------------------
