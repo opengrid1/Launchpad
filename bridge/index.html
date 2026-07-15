@@ -1439,11 +1439,13 @@
       // ---- public activity feed (on-chain, anyone can see) --------------
       // Reads every USDC deposit into the relayer on Ethereum, so the feed is
       // the same for all visitors, no wallet required.
+      // mevblocker serves keyless eth_getLogs (40k range) with CORS; the
+      // others cover eth_blockNumber / eth_getBlockByNumber as fallbacks.
       var ETH_RPCS = [
-        "https://eth.llamarpc.com",
+        "https://rpc.mevblocker.io",
         "https://ethereum-rpc.publicnode.com",
-        "https://rpc.ankr.com/eth",
-        "https://cloudflare-eth.com",
+        "https://eth.drpc.org",
+        "https://eth.llamarpc.com",
       ];
       var TRANSFER_TOPIC =
         "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
@@ -1468,7 +1470,7 @@
 
       async function fetchFeed() {
         var latest = parseInt(await ethRpc("eth_blockNumber", []), 16);
-        var fromHex = "0x" + Math.max(0, latest - 45000).toString(16);
+        var fromHex = "0x" + Math.max(0, latest - 40000).toString(16);
         var toTopic = "0x000000000000000000000000" + RELAYER.slice(2).toLowerCase();
         var logs = await ethRpc("eth_getLogs", [
           {
