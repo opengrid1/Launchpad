@@ -1245,9 +1245,15 @@
 
       // ---- quote maths (mock) -------------------------------------------
       var PRICE = 1; // USDC is dollar-pegged
-      var FEE_RATE = 0.0013;
+      var FEE_RATE = 0.001; // 0.1% bridge fee, kept by the relayer on Arc
       function fmt(n, dp) {
         return n.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
+      }
+      // Fee never rounds away: show more precision below a cent.
+      function fmtFee(n) {
+        if (n === 0) return "0.00";
+        if (n >= 0.01) return fmt(n, 2);
+        return n.toLocaleString("en-US", { maximumFractionDigits: 6 });
       }
       function recompute() {
         var v = parseFloat(amtFrom.value) || 0;
@@ -1256,7 +1262,7 @@
         document.getElementById("amtTo").textContent = fmt(recv, 2);
         document.getElementById("usdFrom").textContent = "$" + fmt(v * PRICE, 0);
         document.getElementById("usdTo").textContent = "$" + fmt(recv * PRICE, 0);
-        document.getElementById("feeVal").textContent = fmt(fee, 2) + " USDC";
+        document.getElementById("feeVal").textContent = fmtFee(fee) + " USDC";
         document.getElementById("bridgeBtn").toggleAttribute("disabled", v <= 0);
       }
       amtFrom.addEventListener("input", recompute);
@@ -1492,9 +1498,41 @@
         list.innerHTML = "";
         var arr = walletAddr ? loadHist() : [];
         arr.forEach(function (it) {
-          list.appendChild(buildRow(it, false));
+          var el = buildRow(it, false);
+          list.appendChild(el);
+          // Resume the 30s relay clock across reloads.
+          if (it.real && !it.settled) scheduleSettle(el, it, SETTLE_MS - (Date.now() - it.ts));
         });
         document.getElementById("txEmpty").style.display = arr.length ? "none" : "block";
+      }
+
+      // A real deposit relays for 30s, then settles on Arc.
+      var SETTLE_MS = 30000;
+      function settleRow(el) {
+        var st = el.querySelector(".tx-state");
+        if (st && !st.classList.contains("done")) {
+          st.classList.add("done");
+          st.lastChild.textContent = "Settled";
+        }
+      }
+      function markSettled(item) {
+        var arr = loadHist();
+        var changed = false;
+        for (var i = 0; i < arr.length; i++) {
+          var m = item.hash ? arr[i].hash === item.hash : arr[i].ts === item.ts;
+          if (m && !arr[i].settled) {
+            arr[i].settled = true;
+            changed = true;
+          }
+        }
+        if (changed) saveHist(arr);
+      }
+      function scheduleSettle(el, item, delay) {
+        setTimeout(function () {
+          settleRow(el);
+          item.settled = true;
+          markSettled(item);
+        }, Math.max(0, delay));
       }
 
       function addActivity(v, opts) {
@@ -1512,13 +1550,13 @@
         var list = document.getElementById("txList");
         var el = buildRow(item, true);
         list.insertBefore(el, list.firstChild);
-        // Real deposits persist and stay "Relaying" until the relayer settles.
         if (opts.real && walletAddr) {
           var arr = loadHist();
           arr.unshift(item);
           saveHist(arr);
+          // Relaying -> Settled after 30 seconds.
+          scheduleSettle(el, item, SETTLE_MS);
         } else if (!opts.real) {
-          // Demo rows settle themselves for the preview.
           var stateEl = el.querySelector(".tx-state");
           setTimeout(function () {
             stateEl.classList.add("done");
