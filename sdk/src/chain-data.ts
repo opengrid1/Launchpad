@@ -15,6 +15,21 @@ import {
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 
+/** Uniswap V3 pool Swap event, the source of truth for all trades. */
+const SWAP_EVENT = {
+  type: "event",
+  name: "Swap",
+  inputs: [
+    { indexed: true, name: "sender", type: "address" },
+    { indexed: true, name: "recipient", type: "address" },
+    { indexed: false, name: "amount0", type: "int256" },
+    { indexed: false, name: "amount1", type: "int256" },
+    { indexed: false, name: "sqrtPriceX96", type: "uint160" },
+    { indexed: false, name: "liquidity", type: "uint128" },
+    { indexed: false, name: "tick", type: "int24" },
+  ],
+} as const;
+
 interface TokenCore {
   address: Address;
   name: string;
@@ -52,6 +67,7 @@ export class ChainDataSource {
   private listeners = new Set<{ channel: string; token?: string; fn: Listener }>();
   private watching = false;
   private stopWatch: (() => void) | null = null;
+  private poolWatchers = new Map<string, () => void>();
 
   constructor(client: PublicClient, addresses: LaunchpadAddresses, startBlock?: bigint) {
     this.client = client;
@@ -122,16 +138,24 @@ export class ChainDataSource {
     if (!this.tradesLoaded.has(key)) {
       await this.loadCores();
       const core = this.cores.get(key);
+      if (!core) {
+        this.trades.set(key, []);
+        this.tradesLoaded.add(key);
+        return [];
+      }
+      // Read the pool's Swap events, not just Launchpad trades: this captures
+      // every trade against the market, including direct pool swaps from bots
+      // and aggregators (which never emit a Launchpad Trade). Site buys route
+      // through the same pool, so they are included too.
       const logs = await this.client.getLogs({
-        address: this.addresses.launchpad,
-        event: launchpadAbi.find((x: any) => x.type === "event" && x.name === "Trade") as any,
-        args: { token: token as `0x${string}` } as any,
-        fromBlock: core?.launchBlock ?? this.startBlock,
+        address: core.pool as `0x${string}`,
+        event: SWAP_EVENT,
+        fromBlock: core.launchBlock ?? this.startBlock,
         toBlock: "latest",
       });
       const records: TradeRecord[] = [];
       for (const log of logs as any[]) {
-        records.push(await this.tradeFromLog(log));
+        records.push(await this.tradeFromSwap(log, core));
       }
       this.trades.set(key, records);
       this.tradesLoaded.add(key);
@@ -139,25 +163,37 @@ export class ChainDataSource {
     return this.trades.get(key) ?? [];
   }
 
-  private async tradeFromLog(log: any): Promise<TradeRecord> {
-    const core = this.cores.get((log.args.token as string).toLowerCase());
-    const tokenIsToken0 = core
-      ? core.address < this.addresses.weth.toLowerCase()
-      : (log.args.token as string).toLowerCase() < this.addresses.weth.toLowerCase();
-    const sqrtP = log.args.sqrtPriceX96After as bigint;
+  private priceWeiFromSqrt(sqrtP: bigint, tokenIsToken0: boolean): bigint {
     const Q96 = 2n ** 96n;
-    const priceWei = tokenIsToken0
+    if (sqrtP === 0n) return 0n;
+    return tokenIsToken0
       ? (((sqrtP * sqrtP) / Q96) * 10n ** 18n) / Q96
       : (Q96 * Q96 * 10n ** 18n) / (sqrtP * sqrtP);
+  }
+
+  /** Build a TradeRecord from a Uniswap V3 pool Swap log. */
+  private async tradeFromSwap(log: any, core: TokenCore): Promise<TradeRecord> {
+    const tokenIsToken0 = core.address < this.addresses.weth.toLowerCase();
+    const amount0 = log.args.amount0 as bigint;
+    const amount1 = log.args.amount1 as bigint;
+    const tokenDelta = tokenIsToken0 ? amount0 : amount1;
+    const wethDelta = tokenIsToken0 ? amount1 : amount0;
+    // Pool-perspective deltas: positive means the asset flowed into the pool.
+    // WETH into the pool => the trader paid WETH => this is a buy.
+    const isBuy = wethDelta > 0n;
+    const abs = (v: bigint) => (v < 0n ? -v : v);
+    const nativeAmount = abs(wethDelta);
+    const feeWei = (nativeAmount * BigInt(core.feeTier)) / 1_000_000n;
+    const sqrtP = log.args.sqrtPriceX96 as bigint;
     return {
       id: `${log.transactionHash}-${log.logIndex}`,
-      token: (log.args.token as string).toLowerCase() as Address,
-      trader: (log.args.trader as string).toLowerCase() as Address,
-      isBuy: Boolean(log.args.isBuy),
-      nativeAmountWei: (log.args.nativeAmount as bigint).toString(),
-      tokenAmount: (log.args.tokenAmount as bigint).toString(),
-      feeWei: (log.args.feeAmount as bigint).toString(),
-      priceWei: priceWei.toString(),
+      token: core.address,
+      trader: (log.args.recipient as string).toLowerCase() as Address,
+      isBuy,
+      nativeAmountWei: nativeAmount.toString(),
+      tokenAmount: abs(tokenDelta).toString(),
+      feeWei: feeWei.toString(),
+      priceWei: this.priceWeiFromSqrt(sqrtP, tokenIsToken0).toString(),
       blockNumber: Number(log.blockNumber),
       txHash: log.transactionHash,
       timestamp: await this.getBlockTs(log.blockNumber),
@@ -321,9 +357,59 @@ export class ChainDataSource {
     const entry = { channel, token: params.token?.toLowerCase(), fn };
     this.listeners.add(entry);
     this.ensureWatching();
+    if (params.token) void this.watchPool(params.token.toLowerCase() as Address);
     return () => {
       this.listeners.delete(entry);
     };
+  }
+
+  /** Watch a single token's pool for new swaps and stream chart/price updates. */
+  private async watchPool(token: Address) {
+    if (this.poolWatchers.has(token)) return;
+    this.poolWatchers.set(token, () => {}); // reserve slot against races
+    await this.loadCores();
+    const core = this.cores.get(token);
+    if (!core) {
+      this.poolWatchers.delete(token);
+      return;
+    }
+    const unwatch = this.client.watchContractEvent({
+      address: core.pool as `0x${string}`,
+      abi: [SWAP_EVENT],
+      eventName: "Swap",
+      pollingInterval: 4000,
+      onLogs: async (logs) => {
+        for (const log of logs as any[]) {
+          try {
+            const trade = await this.tradeFromSwap(log, core);
+            const list = this.trades.get(token);
+            if (list && !list.some((t) => t.id === trade.id)) list.push(trade);
+
+            this.emit("trade:update", token, trade);
+
+            for (const interval of Object.keys(INTERVAL_SECONDS) as CandleInterval[]) {
+              const candles = await this.getCandles(token, interval, 2);
+              const candle = candles[candles.length - 1];
+              if (candle) this.emit("candle:update", token, { token, interval, candle });
+            }
+
+            const summary = await this.summarize(core);
+            this.emit("price:update", token, {
+              token,
+              priceWei: summary.priceWei,
+              priceUsd: summary.priceUsd,
+              marketCapUsd: summary.marketCapUsd,
+              liquidityWei: summary.liquidityWei,
+              limitsActive: summary.limitsActive,
+              remainingToGraduationUsd: summary.remainingToGraduationUsd,
+            });
+          } catch {
+            // Ignore individual log failures; the next poll retries.
+          }
+        }
+      },
+    });
+    this.poolWatchers.set(token, unwatch);
   }
 
   private emit(channel: string, token: string, data: unknown) {
@@ -338,47 +424,8 @@ export class ChainDataSource {
     if (this.watching) return;
     this.watching = true;
 
-    const unwatchTrades = this.client.watchContractEvent({
-      address: this.addresses.launchpad,
-      abi: launchpadAbi,
-      eventName: "Trade",
-      pollingInterval: 4000,
-      onLogs: async (logs) => {
-        for (const log of logs as any[]) {
-          try {
-            const trade = await this.tradeFromLog(log);
-            const key = trade.token;
-            const list = this.trades.get(key);
-            if (list && !list.some((t) => t.id === trade.id)) list.push(trade);
-
-            this.emit("trade:update", key, trade);
-
-            for (const interval of Object.keys(INTERVAL_SECONDS) as CandleInterval[]) {
-              const candles = await this.getCandles(trade.token, interval, 2);
-              const candle = candles[candles.length - 1];
-              if (candle) this.emit("candle:update", key, { token: key, interval, candle });
-            }
-
-            const core = this.cores.get(key);
-            if (core) {
-              const summary = await this.summarize(core);
-              this.emit("price:update", key, {
-                token: key,
-                priceWei: summary.priceWei,
-                priceUsd: summary.priceUsd,
-                marketCapUsd: summary.marketCapUsd,
-                liquidityWei: summary.liquidityWei,
-                limitsActive: summary.limitsActive,
-                remainingToGraduationUsd: summary.remainingToGraduationUsd,
-              });
-            }
-          } catch {
-            // Ignore individual log failures; the next poll retries.
-          }
-        }
-      },
-    });
-
+    // Per-token trade streaming is handled by watchPool(); here we only watch
+    // for brand-new token launches so the Explore feed updates live.
     const unwatchLaunches = this.client.watchContractEvent({
       address: this.addresses.launchpad,
       abi: launchpadAbi,
@@ -400,13 +447,14 @@ export class ChainDataSource {
     });
 
     this.stopWatch = () => {
-      unwatchTrades();
       unwatchLaunches();
     };
   }
 
   close() {
     this.stopWatch?.();
+    for (const unwatch of this.poolWatchers.values()) unwatch();
+    this.poolWatchers.clear();
     this.watching = false;
     this.listeners.clear();
   }
