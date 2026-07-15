@@ -37,31 +37,34 @@ export function DocsPage() {
 
       <Section title="Trading and fees">
         <p>
-          Every buy and sell through Safehood pays a flat 1% fee, delivered automatically and
-          entirely to the token creator on each trade. The platform takes 0%. Trades executed
-          directly against the pool (bots, aggregators) pay the pool's 1% Uniswap fee instead.
+          Every buy and sell through Safehood pays a flat 1% fee. It is not pushed on each trade;
+          it accrues inside the protocol and splits 80% to the token creator and 20% to the
+          platform. The creator claims their share anytime from their token's page, straight to
+          their wallet. Trades executed directly against the pool (bots, aggregators) pay the
+          pool's 1% Uniswap fee instead.
         </p>
         <Facts
           rows={[
             ["Trading fee", "1% fixed"],
-            ["Creator receives", "100%, automatic"],
-            ["Platform receives", "0%"],
+            ["Creator share", "80%, claimable"],
+            ["Platform share", "20%"],
           ]}
         />
       </Section>
 
-      <Section title="Protection">
+      <Section title="Ownership and limits">
         <p>
-          Until a token reaches a $40,000 market cap, the token contract enforces a maximum
-          transaction and a maximum wallet of 2% of supply each. The moment any trade pushes the
-          market cap past the threshold, the token removes its own limits permanently. No admin,
-          no keeper; the check runs inside the token's transfer path.
+          Trading is unrestricted from the first block: no maximum transaction, no maximum wallet,
+          no cooldown, and no graduation gate. Every token renounces ownership the moment it is
+          deployed, so it is ownerless — no one can mint more, pause it, blacklist wallets, or
+          change its rules. The Uniswap V3 liquidity position is held by the factory and can only
+          be managed by the protocol's immutable admin, never by the token or its creator.
         </p>
         <Facts
           rows={[
-            ["Max transaction", "2% of supply"],
-            ["Max wallet", "2% of supply"],
-            ["Removed at", "$40,000 market cap, automatic"],
+            ["Trading limits", "None"],
+            ["Token owner", "Renounced at launch"],
+            ["Liquidity", "Held by protocol, admin-managed"],
           ]}
         />
       </Section>

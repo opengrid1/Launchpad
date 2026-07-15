@@ -1,7 +1,10 @@
 import type { TokenSummary } from "@launchpad/sdk";
 
+import { OFFICIAL_LOGOS } from "../lib/officialLogos";
+
 export function TokenLogo({ token, size = 40 }: { token: TokenSummary; size?: number }) {
-  const logo = token.metadata?.logo;
+  // Official tokens carry a curated mark that wins over on-chain metadata.
+  const logo = OFFICIAL_LOGOS[token.address?.toLowerCase()] ?? token.metadata?.logo;
   if (logo && /^(https?:|ipfs:|data:)/.test(String(logo))) {
     const src = String(logo).startsWith("ipfs://")
       ? `https://ipfs.io/ipfs/${String(logo).slice(7)}`

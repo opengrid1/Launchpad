@@ -14,10 +14,6 @@ function TokenCardBase({ token }: { token: TokenSummary }) {
   const description = String(token.metadata?.description ?? "").trim();
 
   const usdRate = usdRateOf(token);
-  const mcap = Number(token.marketCapUsd);
-  const remaining = Number(token.remainingToGraduationUsd);
-  const cap = mcap + remaining;
-  const progress = cap > 0 ? Math.min((mcap / cap) * 100, 100) : 0;
 
   return (
     <Link
@@ -77,25 +73,8 @@ function TokenCardBase({ token }: { token: TokenSummary }) {
         </div>
       </dl>
 
-      {/* Graduation progress */}
-      {token.limitsActive ? (
-        <div className="mt-4">
-          <div className="h-1.5 overflow-hidden rounded-full bg-panel-2">
-            <div
-              className="h-full rounded-full bg-accent transition-[width] duration-500"
-              style={{ width: `${Math.max(progress, 1.5)}%` }}
-            />
-          </div>
-          <p className="tnum mt-1.5 text-[11px] text-ink-3">
-            {progress.toFixed(1)}% to open trading at {fmtUsd(cap)}
-          </p>
-        </div>
-      ) : (
-        <p className="mt-4 text-[11px] font-medium text-up">Graduated, trading is unrestricted</p>
-      )}
-
       {/* Creator + action */}
-      <div className="mt-3 flex items-center justify-between border-t border-edge pt-3.5">
+      <div className="mt-4 flex items-center justify-between border-t border-edge pt-3.5">
         <p className="flex items-center gap-2 text-xs text-ink-3">
           by <span className="tnum text-ink-2">{shortAddr(token.creator)}</span>
           <span className="rounded-full bg-panel-2 px-2 py-0.5 text-[10px] font-medium text-ink-2 sm:hidden">

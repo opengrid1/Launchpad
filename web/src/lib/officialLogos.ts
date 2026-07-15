@@ -1,0 +1,9 @@
+// Curated logos for the protocol's own official tokens. On-chain metadata is
+// immutable at launch, so this registry lets the app render the official brand
+// mark for a known token address without re-deploying it. Keyed by lowercased
+// token address.
+export const OFFICIAL_LOGOS: Record<string, string> = {
+  // Safehood.fun (SAFEHOOD) — flagship
+  "0x16ae26dfd4fe18e8f3f0756dca165493b5523a53":
+    "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgODAwIj4KICA8cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjgwMCIgZmlsbD0iIzE0MTQxNCIvPgogIDxwYXRoIGQ9Ik0zMDIgNjM0IEMyNTUgNTY2IDI0OCA0NzAgMjYyIDM5NiBDMjc2IDMyMiAzMDYgMjYwIDM1OCAyMTggQzM4MCAyMDAgMzk4IDE3NiA0MjIgMTcyIEM0NTYgMTY2IDQ4MCAxODQgNDcyIDIxNiBDNDY4IDIzNCA0NTYgMjUwIDQ1NiAyNTAgQzUxNCAzMDAgNTU2IDM2OCA1NjYgNDQwIEM1ODAgNTQ4IDUwNiA2MDggNDUyIDYzNCBaIiBmaWxsPSIjQTJGMjEwIi8+CiAgPHBhdGggZD0iTTQwMCAzMzAgQzQ2MCAzMzAgNTA4IDM3OCA1MDggNDM4IEM1MDggNTEwIDQzNiA1NjggNDAwIDU5NCBDMzY0IDU2OCAyOTIgNTEwIDI5MiA0MzggQzI5MiAzNzggMzQwIDMzMCA0MDAgMzMwIFoiIGZpbGw9IiMxNDE0MTQiLz4KICA8cGF0aCBkPSJNMzUwIDQ1MiBMMzkwIDQ5MCBMNDU2IDQxNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjQTJGMjEwIiBzdHJva2Utd2lkdGg9IjM4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==",
+};

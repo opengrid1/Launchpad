@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useToken } from "@launchpad/sdk/react";
-import type { Address } from "@launchpad/sdk";
+import type { Address, TokenSummary } from "@launchpad/sdk";
 
 // The candlestick engine (lightweight-charts) is the heaviest dependency on
 // the page. Split it into its own chunk so the token header, stats and trade
@@ -13,9 +13,12 @@ import { HoldersList } from "../components/HoldersList";
 import { TokenLogo } from "../components/TokenLogo";
 import { TradePanel } from "../components/TradePanel";
 import { TradesList } from "../components/TradesList";
-import { Card, EmptyState, Skeleton } from "../components/ui";
+import { Button, Card, EmptyState, Skeleton } from "../components/ui";
 import { client } from "../lib/client";
-import { compact, fmtPct, fmtUsd, fmtWeiUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
+import { env } from "../lib/env";
+import { compact, fmtPct, fmtUsd, fmtWei, fmtWeiUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
+import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
+import { useUi } from "../store";
 
 type Tab = "trades" | "holders" | "info";
 
@@ -82,6 +85,8 @@ export function TokenPage() {
         <Figure label="Fees earned" value={fmtWeiUsd(t.creatorFeesWei ?? "0", usdRate)} />
       </dl>
 
+      <CreatorClaim token={t} />
+
       {/* Chart + trade */}
       <section className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         <Card className="h-[420px] overflow-hidden lg:h-[480px]">
@@ -123,6 +128,60 @@ export function TokenPage() {
           {tab === "info" ? <InfoTab t={t} meta={meta} /> : null}
         </div>
       </section>
+    </div>
+  );
+}
+
+/**
+ * Creator's own fee console. Shown only to the wallet that launched the token:
+ * it surfaces the claimable 80% share and a one-tap claim. Everyone else never
+ * sees it, so the control is public to the creator without cluttering the page.
+ */
+function CreatorClaim({ token }: { token: TokenSummary }) {
+  const { address, isConnected } = useWallet();
+  const pushToast = useUi((s) => s.pushToast);
+  const [busy, setBusy] = useState(false);
+
+  const isCreator = isConnected && address?.toLowerCase() === token.creator.toLowerCase();
+  if (!isCreator) return null;
+
+  const claimable = BigInt(token.creatorFeesWei ?? "0");
+  const usdRate = usdRateOf(token);
+
+  const claim = async () => {
+    setBusy(true);
+    try {
+      if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+      const hash = await client.claimCreatorFees(token.address as Address);
+      pushToast({ kind: "info", title: "Claim submitted", txHash: hash });
+      await client.publicClient.waitForTransactionReceipt({ hash });
+      pushToast({ kind: "success", title: "Fees claimed", body: "Sent to your wallet.", txHash: hash });
+    } catch (err) {
+      pushToast({ kind: "error", title: "Claim failed", body: errorText(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-edge bg-panel px-5 py-4">
+      <div>
+        <p className="text-sm font-semibold text-ink">Your creator fees</p>
+        <p className="mt-0.5 text-xs text-ink-3">
+          You earn 80% of this token's 1% trading fee. Claim anytime, straight to your wallet.
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="text-right">
+          <p className="tnum text-[15px] font-semibold text-ink">
+            {fmtWei(claimable)} {env.nativeSymbol}
+          </p>
+          <p className="tnum text-[11px] text-ink-3">{fmtWeiUsd(claimable.toString(), usdRate)}</p>
+        </div>
+        <Button variant="dark" disabled={busy || claimable === 0n} onClick={claim}>
+          {busy ? "Claiming" : "Claim fees"}
+        </Button>
+      </div>
     </div>
   );
 }
