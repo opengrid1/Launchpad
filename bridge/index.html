@@ -761,6 +761,85 @@
           display: none;
         }
       }
+
+      /* ---- Arc navy theme: comic panels on a night ground ---------------- */
+      body {
+        background: radial-gradient(125% 95% at 50% -12%, #1c3e70 0%, #0e2549 44%, #081634 100%)
+          fixed;
+      }
+      header {
+        background: color-mix(in srgb, #0e2549 80%, transparent);
+        border-bottom-color: #294a7c;
+      }
+      .brand {
+        color: #eef3fb;
+      }
+      .nav-links a {
+        color: #9fb2ce;
+      }
+      .nav-links a:hover,
+      .nav-links a.active {
+        color: #eef3fb;
+      }
+      .hero h1,
+      .hero h1 em {
+        color: #f2f6fc;
+      }
+      .hero p {
+        color: #a9bad6;
+      }
+      /* the landscape lives in its own cream comic panel */
+      .hero-scene {
+        background: var(--paper);
+        border: var(--line) solid var(--ink);
+        border-radius: 22px;
+        box-shadow: 0 6px 0 #050f26;
+        padding: 12px 12px 0;
+        overflow: hidden;
+      }
+      .card,
+      .tx {
+        box-shadow: 0 6px 0 #050f26;
+      }
+      .tx:hover {
+        box-shadow: 0 9px 0 #050f26;
+      }
+      .section-head h2 {
+        color: #f2f6fc;
+      }
+      .section-head .rule {
+        background: #8397b8;
+        opacity: 0.45;
+      }
+      footer {
+        color: #8ea3c2;
+      }
+      footer .seed {
+        color: #cdd9ec;
+      }
+      /* twinkling night stars */
+      .star {
+        position: fixed;
+        border-radius: 50%;
+        background: #eaf1fb;
+        z-index: 0;
+        animation: twinkle 4s ease-in-out infinite;
+      }
+      @keyframes twinkle {
+        0%,
+        100% {
+          opacity: 0.25;
+        }
+        50% {
+          opacity: 0.9;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .star {
+          animation: none;
+          opacity: 0.6;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1143,13 +1222,34 @@
           'fill="#fffdf8" stroke="#171310" stroke-width="3" stroke-linejoin="round"/></svg>'
         );
       }
-      sky.insertAdjacentHTML("beforeend", cloud("c1", 54, 1));
-      sky.insertAdjacentHTML("beforeend", cloud("c2", 128, 0.72));
-      sky.insertAdjacentHTML("beforeend", cloud("c3", 92, 0.55));
+      // a calm crescent moon, upper right
+      sky.insertAdjacentHTML(
+        "beforeend",
+        '<svg style="position:fixed;top:30px;right:26px;z-index:0" width="58" height="58" viewBox="0 0 58 58">' +
+          '<path d="M40 6 A24 24 0 1 0 40 52 A19 19 0 1 1 40 6 Z" fill="#f2eecb" stroke="#0a1a38" stroke-width="2.5" stroke-linejoin="round"/>' +
+          '<circle cx="22" cy="24" r="2.4" fill="#dcd6a8"/><circle cx="17" cy="34" r="1.6" fill="#dcd6a8"/>' +
+          '<circle cx="27" cy="36" r="1.9" fill="#dcd6a8"/></svg>'
+      );
+      // scattered twinkling stars
+      (function () {
+        var stars = "";
+        for (var i = 0; i < 16; i++) {
+          var sz = 1.5 + Math.random() * 2.5;
+          var top = Math.random() * 44;
+          var left = Math.random() * 96 + 2;
+          stars +=
+            '<span class="star" style="width:' + sz + "px;height:" + sz + "px;top:" + top +
+            "vh;left:" + left + "vw;animation-delay:" + (-Math.random() * 4).toFixed(2) + 's"></span>';
+        }
+        sky.insertAdjacentHTML("beforeend", stars);
+      })();
+      sky.insertAdjacentHTML("beforeend", cloud("c1", 74, 1));
+      sky.insertAdjacentHTML("beforeend", cloud("c2", 138, 0.72));
+      sky.insertAdjacentHTML("beforeend", cloud("c3", 106, 0.55));
       sky.insertAdjacentHTML(
         "beforeend",
         '<div class="flyby"><svg width="30" height="18" viewBox="0 0 30 18">' +
-          '<path class="flap" d="M2 12 Q9 3 15 11 Q21 3 28 12" fill="none" stroke="#171310" stroke-width="2.6" stroke-linecap="round"/></svg></div>'
+          '<path class="flap" d="M2 12 Q9 3 15 11 Q21 3 28 12" fill="none" stroke="#c6d4ea" stroke-width="2.6" stroke-linecap="round"/></svg></div>'
       );
 
       // ---- drifting leaves ----------------------------------------------
