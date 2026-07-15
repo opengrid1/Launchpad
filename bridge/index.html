@@ -937,7 +937,7 @@
           </svg>
           <div class="leg-head">
             <span class="leg-tag">From</span>
-            <span class="balance">Balance <b class="tnum" id="balFrom">5,000.00</b> USDC</span>
+            <span class="balance">Balance <b class="tnum" id="balFrom">—</b> USDC</span>
           </div>
           <div class="leg-body">
             <div class="selectors">
@@ -953,7 +953,7 @@
                 id="amtFrom"
                 inputmode="decimal"
                 placeholder="0.0"
-                value="1000"
+                value=""
                 aria-label="Amount to send"
               />
               <div class="amount-sub">
@@ -964,7 +964,7 @@
                 >
                   MAX
                 </button>
-                · USDC · ≈ <span class="tnum" id="usdFrom">$1,000</span>
+                · USDC · ≈ <span class="tnum" id="usdFrom">$0</span>
               </div>
             </div>
           </div>
@@ -1034,8 +1034,8 @@
               </button>
             </div>
             <div class="amount-wrap">
-              <div class="amount-input tnum" id="amtTo" style="pointer-events:none">998.70</div>
-              <div class="amount-sub">est. received · USDC · ≈ <span class="tnum" id="usdTo">$999</span></div>
+              <div class="amount-input tnum" id="amtTo" style="pointer-events:none">0.00</div>
+              <div class="amount-sub">est. received · USDC · ≈ <span class="tnum" id="usdTo">$0</span></div>
             </div>
           </div>
         </div>
@@ -1043,7 +1043,7 @@
         <!-- route facts -->
         <dl class="facts">
           <div class="fact"><dt>Route</dt><dd>Native</dd></div>
-          <div class="fact"><dt>Fee</dt><dd class="tnum" id="feeVal">1.30 USDC</dd></div>
+          <div class="fact"><dt>Fee</dt><dd class="tnum" id="feeVal">0.00 USDC</dd></div>
           <div class="fact"><dt>ETA</dt><dd class="tnum">~2 min</dd></div>
           <div class="fact"><dt>Slippage</dt><dd class="tnum">0.5%</dd></div>
         </dl>
@@ -1261,7 +1261,13 @@
       }
       amtFrom.addEventListener("input", recompute);
       document.getElementById("maxBtn").addEventListener("click", function () {
-        amtFrom.value = document.getElementById("balFrom").textContent.replace(/,/g, "");
+        var raw = document.getElementById("balFrom").textContent.replace(/,/g, "");
+        var n = parseFloat(raw);
+        if (!isFinite(n)) {
+          showToast("Connect your wallet first");
+          return;
+        }
+        amtFrom.value = raw;
         recompute();
       });
       recompute();
@@ -1357,9 +1363,7 @@
           }
           return;
         }
-        // No injected wallet: prototype fallback.
-        connected = true;
-        btn.textContent = "0x8f…3aB2";
+        showToast("No wallet found");
       });
 
       // ---- toast ---------------------------------------------------------
@@ -1552,13 +1556,17 @@
         bridgeBtn.textContent = "Bridging…";
 
         if (!window.ethereum || !window.ethereum.request) {
-          // No wallet: demo sequence only.
-          runVisuals();
-          setTimeout(function () {
-            endVisuals();
-            addActivity(v);
-            showToast("Demo · connect a wallet to bridge for real");
-          }, 2300);
+          busy = false;
+          bridgeBtn.removeAttribute("disabled");
+          bridgeBtn.textContent = "Bridge Assets";
+          showToast("No wallet found");
+          return;
+        }
+        if (!connected || !walletAddr) {
+          busy = false;
+          bridgeBtn.removeAttribute("disabled");
+          bridgeBtn.textContent = "Bridge Assets";
+          showToast("Connect your wallet first");
           return;
         }
 
