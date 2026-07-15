@@ -1362,7 +1362,7 @@
               ? walletAddr.slice(0, 6) + "…" + walletAddr.slice(-4)
               : "Connected";
             await refreshBalance();
-            renderHistory();
+            renderFeed();
             showToast("Wallet connected");
           } catch (err) {
             showToast("Connection cancelled");
@@ -1436,22 +1436,105 @@
         );
       }
 
-      // ---- history, persisted per connected wallet ----------------------
-      function histKey() {
-        return "sherwood.tx." + (walletAddr ? walletAddr.toLowerCase() : "anon");
-      }
-      function loadHist() {
-        try {
-          return JSON.parse(localStorage.getItem(histKey()) || "[]");
-        } catch (e) {
-          return [];
+      // ---- public activity feed (on-chain, anyone can see) --------------
+      // Reads every USDC deposit into the relayer on Ethereum, so the feed is
+      // the same for all visitors, no wallet required.
+      var ETH_RPCS = [
+        "https://eth.llamarpc.com",
+        "https://ethereum-rpc.publicnode.com",
+        "https://rpc.ankr.com/eth",
+        "https://cloudflare-eth.com",
+      ];
+      var TRANSFER_TOPIC =
+        "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+      var pending = {}; // hash -> optimistic item not yet on-chain
+
+      async function ethRpc(method, params) {
+        for (var i = 0; i < ETH_RPCS.length; i++) {
+          try {
+            var res = await fetch(ETH_RPCS[i], {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: method, params: params }),
+            });
+            var j = await res.json();
+            if (j && j.result !== undefined && j.result !== null) return j.result;
+          } catch (e) {
+            /* try next endpoint */
+          }
         }
+        throw new Error("rpc unavailable");
       }
-      function saveHist(arr) {
+
+      async function fetchFeed() {
+        var latest = parseInt(await ethRpc("eth_blockNumber", []), 16);
+        var fromHex = "0x" + Math.max(0, latest - 45000).toString(16);
+        var toTopic = "0x000000000000000000000000" + RELAYER.slice(2).toLowerCase();
+        var logs = await ethRpc("eth_getLogs", [
+          {
+            address: USDC_ETH,
+            topics: [TRANSFER_TOPIC, null, toTopic],
+            fromBlock: fromHex,
+            toBlock: "latest",
+          },
+        ]);
+        logs = logs.slice(-25).reverse();
+        var blocks = {};
+        await Promise.all(
+          logs.map(async function (l) {
+            if (blocks[l.blockNumber] === undefined) {
+              try {
+                var blk = await ethRpc("eth_getBlockByNumber", [l.blockNumber, false]);
+                blocks[l.blockNumber] = parseInt(blk.timestamp, 16);
+              } catch (e) {
+                blocks[l.blockNumber] = Math.floor(Date.now() / 1000);
+              }
+            }
+          })
+        );
+        return logs.map(function (l) {
+          return {
+            amount: Number(BigInt(l.data)) / 1e6,
+            hash: l.transactionHash,
+            from: "ethereum",
+            to: "arc",
+            real: true,
+            settled: true, // an on-chain deposit is a confirmed crossing
+            ts: (blocks[l.blockNumber] || 0) * 1000,
+          };
+        });
+      }
+
+      async function renderFeed() {
+        var list = document.getElementById("txList");
+        var empty = document.getElementById("txEmpty");
+        var items = [];
         try {
-          localStorage.setItem(histKey(), JSON.stringify(arr.slice(0, 50)));
-        } catch (e) {}
+          items = await fetchFeed();
+        } catch (e) {
+          /* offline / rate-limited: keep any optimistic rows */
+        }
+        // Drop optimistic rows that now appear on-chain.
+        items.forEach(function (it) {
+          if (pending[it.hash]) delete pending[it.hash];
+        });
+        var pend = Object.keys(pending)
+          .map(function (h) {
+            return pending[h];
+          })
+          .sort(function (a, b) {
+            return b.ts - a.ts;
+          });
+        var all = pend.concat(items).slice(0, 25);
+        list.innerHTML = "";
+        all.forEach(function (it) {
+          var el = buildRow(it, false);
+          list.appendChild(el);
+          if (it.real && !it.settled) scheduleSettle(el, it, SETTLE_MS - (Date.now() - it.ts));
+        });
+        empty.style.display = all.length ? "none" : "block";
       }
+
       function timeAgo(ts) {
         var s = (Date.now() - ts) / 1000;
         if (s < 60) return "just now";
@@ -1493,19 +1576,6 @@
         }
         return el;
       }
-      function renderHistory() {
-        var list = document.getElementById("txList");
-        list.innerHTML = "";
-        var arr = walletAddr ? loadHist() : [];
-        arr.forEach(function (it) {
-          var el = buildRow(it, false);
-          list.appendChild(el);
-          // Resume the 30s relay clock across reloads.
-          if (it.real && !it.settled) scheduleSettle(el, it, SETTLE_MS - (Date.now() - it.ts));
-        });
-        document.getElementById("txEmpty").style.display = arr.length ? "none" : "block";
-      }
-
       // A real deposit relays for 30s, then settles on Arc.
       var SETTLE_MS = 30000;
       function settleRow(el) {
@@ -1515,26 +1585,15 @@
           st.lastChild.textContent = "Settled";
         }
       }
-      function markSettled(item) {
-        var arr = loadHist();
-        var changed = false;
-        for (var i = 0; i < arr.length; i++) {
-          var m = item.hash ? arr[i].hash === item.hash : arr[i].ts === item.ts;
-          if (m && !arr[i].settled) {
-            arr[i].settled = true;
-            changed = true;
-          }
-        }
-        if (changed) saveHist(arr);
-      }
       function scheduleSettle(el, item, delay) {
         setTimeout(function () {
           settleRow(el);
           item.settled = true;
-          markSettled(item);
         }, Math.max(0, delay));
       }
 
+      // Optimistic row for the user's own just-sent deposit; it also shows up
+      // in everyone's on-chain feed once mined.
       function addActivity(v, opts) {
         opts = opts || {};
         var item = {
@@ -1550,13 +1609,13 @@
         var list = document.getElementById("txList");
         var el = buildRow(item, true);
         list.insertBefore(el, list.firstChild);
-        if (opts.real && walletAddr) {
-          var arr = loadHist();
-          arr.unshift(item);
-          saveHist(arr);
-          // Relaying -> Settled after 30 seconds.
+        if (opts.real) {
+          if (item.hash) pending[item.hash] = item;
           scheduleSettle(el, item, SETTLE_MS);
-        } else if (!opts.real) {
+          // Pull the freshly mined deposit into the shared feed.
+          setTimeout(renderFeed, 15000);
+          setTimeout(renderFeed, 45000);
+        } else {
           var stateEl = el.querySelector(".tx-state");
           setTimeout(function () {
             stateEl.classList.add("done");
@@ -1636,6 +1695,10 @@
           showToast(msg);
         }
       });
+
+      // Public feed: load for everyone on open, then refresh periodically.
+      renderFeed();
+      setInterval(renderFeed, 30000);
     </script>
   </body>
 </html>
