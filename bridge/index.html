@@ -870,8 +870,8 @@
           <div class="leg-body">
             <div class="selectors">
               <button class="chip" type="button" data-role="chain-from">
-                <span class="coin-ic" data-chain="arc"></span>
-                Arc
+                <span class="coin-ic" data-chain="ethereum"></span>
+                Ethereum
                 <svg class="caret" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#171310" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>
@@ -930,8 +930,8 @@
               </g>
             </g>
             <!-- chain markers that gently float -->
-            <g id="floatFrom"><g class="coin-marker" data-chain="arc" transform="translate(37 8)"></g></g>
-            <g id="floatTo"><g class="coin-marker" data-chain="ethereum" transform="translate(443 8)"></g></g>
+            <g id="floatFrom"><g class="coin-marker" data-chain="ethereum" transform="translate(37 8)"></g></g>
+            <g id="floatTo"><g class="coin-marker" data-chain="arc" transform="translate(443 8)"></g></g>
             <!-- landing bird (success) -->
             <g class="land-bird" id="landBird">
               <path d="M2 12 Q10 2 17 12 Q24 2 32 12" fill="none" stroke="#171310" stroke-width="3" stroke-linecap="round" />
@@ -956,8 +956,8 @@
           <div class="leg-body">
             <div class="selectors">
               <button class="chip" type="button" data-role="chain-to">
-                <span class="coin-ic" data-chain="ethereum"></span>
-                Ethereum
+                <span class="coin-ic" data-chain="arc"></span>
+                Arc
                 <svg class="caret" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#171310" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>
@@ -996,11 +996,11 @@
         <div id="txList">
           <div class="tx">
             <div class="tx-route">
-              <span class="coin-ic" data-chain="arc"></span>
-              <svg class="arrow" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h9M9 4l4 4-4 4" stroke="#171310" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span class="coin-ic" data-chain="ethereum"></span>
+              <svg class="arrow" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h9M9 4l4 4-4 4" stroke="#171310" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="coin-ic" data-chain="arc"></span>
               <span style="margin-left:4px">
-                <span class="tx-main">Arc → Ethereum</span><br />
+                <span class="tx-main">Ethereum → Arc</span><br />
                 <span class="tx-sub">USDC · 3 min ago</span>
               </span>
             </div>
@@ -1026,11 +1026,11 @@
           </div>
           <div class="tx">
             <div class="tx-route">
-              <span class="coin-ic" data-chain="arc"></span>
-              <svg class="arrow" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h9M9 4l4 4-4 4" stroke="#171310" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span class="coin-ic" data-chain="ethereum"></span>
+              <svg class="arrow" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h9M9 4l4 4-4 4" stroke="#171310" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="coin-ic" data-chain="arc"></span>
               <span style="margin-left:4px">
-                <span class="tx-main">Arc → Ethereum</span><br />
+                <span class="tx-main">Ethereum → Arc</span><br />
                 <span class="tx-sub">USDC · yesterday</span>
               </span>
             </div>
@@ -1084,14 +1084,14 @@
             "</svg>"
           );
         }
-        // arc — the official Arc mark inside a hand-inked coin frame
+        // arc — the official Arc mark: silver-white arch on a deep navy coin
         var id = "ag" + ++gradN;
         return (
           '<svg width="' + s + '" height="' + s + '" viewBox="0 0 34 34">' +
-          '<defs><linearGradient id="' + id + '" x1="5" y1="5" x2="21" y2="21" gradientUnits="userSpaceOnUse">' +
-          '<stop stop-color="#182680"/><stop offset="1" stop-color="#842D56"/></linearGradient></defs>' +
-          '<circle cx="17" cy="17" r="15" fill="#fffdf8" stroke="#171310" stroke-width="3"/>' +
-          '<g transform="translate(17 17) scale(0.82) translate(-12.05 -12)"><path d="' + ARC_D + '" fill="url(#' + id + ')"/></g>' +
+          '<defs><linearGradient id="' + id + '" x1="6" y1="3" x2="26" y2="31" gradientUnits="userSpaceOnUse">' +
+          '<stop stop-color="#1c447f"/><stop offset="1" stop-color="#0a1a33"/></linearGradient></defs>' +
+          '<circle cx="17" cy="17" r="15" fill="url(#' + id + ')" stroke="#171310" stroke-width="3"/>' +
+          '<g transform="translate(17 17) scale(0.82) translate(-12.05 -12)"><path d="' + ARC_D + '" fill="#f4f7fb"/></g>' +
           "</svg>"
         );
       }
@@ -1104,8 +1104,8 @@
           );
         }
         return (
-          '<circle cx="0" cy="0" r="15" fill="#fffdf8" stroke="#171310" stroke-width="3"/>' +
-          '<g transform="scale(0.74) translate(-12.05 -12)"><path d="' + ARC_D + '" fill="#842D56"/></g>'
+          '<circle cx="0" cy="0" r="15" fill="#12294f" stroke="#171310" stroke-width="3"/>' +
+          '<g transform="scale(0.74) translate(-12.05 -12)"><path d="' + ARC_D + '" fill="#f4f7fb"/></g>'
         );
       }
 
@@ -1114,7 +1114,7 @@
       });
 
       // place floating chain markers on the posts
-      var floatState = { from: "arc", to: "ethereum" };
+      var floatState = { from: "ethereum", to: "arc" };
       function renderMarkers() {
         document.querySelectorAll(".coin-marker").forEach(function (g) {
           g.innerHTML = markerSVG(g.dataset.chain);
