@@ -30,7 +30,7 @@ export function HoldersList({ token }: { token: TokenSummary }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-xs">
-        <thead>
+        <thead className="sticky top-0 z-10 bg-panel">
           <tr className="border-b border-edge text-[10px] uppercase tracking-wider text-ink-3">
             <th className="px-4 py-2 font-medium">#</th>
             <th className="px-2 py-2 font-medium">Holder</th>

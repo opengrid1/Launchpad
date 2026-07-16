@@ -192,6 +192,23 @@ function Ticker({ rows }: { rows: TokenSummary[] }) {
   );
 }
 
+function SortCaret({ dir }: { dir?: Dir }) {
+  return (
+    <svg width="8" height="10" viewBox="0 0 8 10" fill="none" aria-hidden className="shrink-0">
+      <path
+        d="M4 0.5 L6.5 3.2 L1.5 3.2 Z"
+        fill="currentColor"
+        opacity={dir === undefined ? 0.35 : dir === "asc" ? 1 : 0.25}
+      />
+      <path
+        d="M4 9.5 L1.5 6.8 L6.5 6.8 Z"
+        fill="currentColor"
+        opacity={dir === undefined ? 0.35 : dir === "desc" ? 1 : 0.25}
+      />
+    </svg>
+  );
+}
+
 function Th({
   children,
   className = "",
@@ -216,7 +233,7 @@ function Th({
           }`}
         >
           {children}
-          <span className="text-[9px]">{active ? (sort!.dir === "desc" ? "▼" : "▲") : "↕"}</span>
+          <SortCaret dir={active ? sort!.dir : undefined} />
         </button>
       ) : (
         children
@@ -254,9 +271,14 @@ function Row({ t, rank }: { t: TokenSummary; rank: number }) {
             <span className="block truncate text-[13px] font-semibold leading-tight text-ink group-hover:text-accent">
               {t.name}
             </span>
-            <span className="mono block truncate text-[11px] leading-tight text-ink-3">
+            <span className="mono flex items-center gap-1.5 truncate text-[11px] leading-tight text-ink-3">
               ${t.symbol}
-              {t.limitsActive ? <span className="ml-1.5 text-accent-2">•live</span> : null}
+              {t.limitsActive ? (
+                <span className="inline-flex items-center gap-1 rounded-sm bg-accent/15 px-1 text-[9px] font-bold uppercase tracking-wide text-accent-2">
+                  <span className="pulse-dot h-1 w-1 rounded-full bg-accent-2" />
+                  Live
+                </span>
+              ) : null}
             </span>
           </span>
         </Link>

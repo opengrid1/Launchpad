@@ -50,79 +50,87 @@ export function TokenPage() {
   const change = t.priceChange24hPct;
 
   return (
-    <div className="rise mx-auto max-w-[1400px] px-3 py-4 sm:px-4">
+    <div className="rise mx-auto flex max-w-[1500px] flex-col gap-2.5 px-3 py-2.5 sm:px-4 lg:h-[calc(100vh-3rem)] lg:overflow-hidden">
       {/* Identity + live price bar */}
-      <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-edge bg-panel px-4 py-3">
+      <section className="flex shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-xl border border-edge bg-panel px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-3">
-          <TokenLogo token={t} size={42} />
+          <TokenLogo token={t} size={38} />
           <div className="min-w-0">
-            <h1 className="flex items-center gap-2 text-[17px] font-bold tracking-tight text-ink">
+            <h1 className="flex items-center gap-2 text-[16px] font-bold leading-tight tracking-tight text-ink">
               <span className="truncate">{t.name}</span>
               <span className="mono shrink-0 rounded bg-panel-2 px-1.5 py-0.5 text-[11px] font-semibold text-ink-2">${t.symbol}</span>
             </h1>
             <p className="mono mt-0.5 truncate text-[11px] text-ink-3">
-              {shortAddr(t.creator)} · {timeAgo(t.createdAt)}
+              by {shortAddr(t.creator)} · {timeAgo(t.createdAt)}
             </p>
           </div>
         </div>
 
         {/* Inline market readout */}
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-x-5 gap-y-2">
           <Readout label="Market Cap" value={fmtUsd(t.marketCapUsd)} big />
           <Readout
             label="24h"
-            value={change == null ? "—" : fmtPct(change)}
+            value={change == null ? "–" : fmtPct(change)}
             tone={change == null ? undefined : change >= 0 ? "up" : "down"}
           />
           <div className="hidden sm:block"><Readout label="Vol 24h" value={fmtWeiUsd(t.volume24hWei, usdRate)} /></div>
           <div className="hidden md:block"><Readout label="Liquidity" value={fmtWeiUsd(t.liquidityWei, usdRate)} /></div>
-          <div className="hidden lg:block"><Readout label="Holders" value={compact(t.holderCount)} /></div>
+          <div className="hidden xl:block"><Readout label="Holders" value={compact(t.holderCount)} /></div>
+          <div className="hidden xl:block"><Readout label="Fees" value={fmtWeiUsd(t.creatorFeesWei ?? "0", usdRate)} /></div>
           <SocialRow t={t} meta={meta} />
         </div>
       </section>
 
       <CreatorClaim token={t} />
 
-      {/* Chart (dominant) + order panel */}
-      <section className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_300px]">
-        <div className="h-[440px] overflow-hidden rounded-xl border border-edge bg-panel lg:h-[560px]">
+      {/* Trading zone — chart fills, right rail holds order + live detail.
+          On desktop this fills the viewport so the page itself never scrolls;
+          only the detail panel scrolls internally. */}
+      <section className="grid min-h-0 flex-1 grid-cols-1 gap-2.5 lg:grid-cols-[1fr_340px]">
+        {/* Chart */}
+        <div className="h-[380px] overflow-hidden rounded-xl border border-edge bg-panel lg:h-auto lg:min-h-0">
           <Suspense fallback={<Skeleton className="h-full w-full" />}>
             <PriceChart token={t.address as Address} />
           </Suspense>
         </div>
-        <TradePanel token={t} />
-      </section>
 
-      {/* Detail sections */}
-      <section className="mt-3 rounded-xl border border-edge bg-panel">
-        <div className="flex items-center gap-1 border-b border-edge px-2">
-          {(
-            [
-              ["trades", "Trades", "transactions"],
-              ["holders", "Holders", "holders"],
-              ["info", "Info", "contract"],
-            ] as [Tab, string, IconName][]
-          ).map(([key, label, icon]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`relative flex items-center gap-1.5 px-3 py-2.5 text-[13px] font-semibold transition-colors ${
-                tab === key ? "text-ink" : "text-ink-3 hover:text-ink-2"
-              }`}
-            >
-              <Icon name={icon} size={14} />
-              {label}
-              {tab === key ? (
-                <span className="absolute inset-x-3 -bottom-px h-[2px] rounded-full bg-accent" />
-              ) : null}
-            </button>
-          ))}
-        </div>
+        {/* Right rail */}
+        <div className="flex min-h-0 flex-col gap-2.5">
+          <TradePanel token={t} />
 
-        <div className="px-2">
-          {tab === "trades" ? <TradesList token={t.address as Address} symbol={t.symbol} /> : null}
-          {tab === "holders" ? <HoldersList token={t} /> : null}
-          {tab === "info" ? <InfoTab t={t} meta={meta} /> : null}
+          {/* Detail panel with internal scroll */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-edge bg-panel">
+            <div className="flex shrink-0 items-center gap-1 border-b border-edge px-1.5">
+              {(
+                [
+                  ["trades", "Trades", "transactions"],
+                  ["holders", "Holders", "holders"],
+                  ["info", "Info", "contract"],
+                ] as [Tab, string, IconName][]
+              ).map(([key, label, icon]) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  className={`relative flex items-center gap-1.5 px-2.5 py-2 text-[12px] font-semibold transition-colors ${
+                    tab === key ? "text-ink" : "text-ink-3 hover:text-ink-2"
+                  }`}
+                >
+                  <Icon name={icon} size={13} />
+                  {label}
+                  {tab === key ? (
+                    <span className="absolute inset-x-2.5 -bottom-px h-[2px] rounded-full bg-accent" />
+                  ) : null}
+                </button>
+              ))}
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {tab === "trades" ? <TradesList token={t.address as Address} symbol={t.symbol} /> : null}
+              {tab === "holders" ? <HoldersList token={t} /> : null}
+              {tab === "info" ? <InfoTab t={t} meta={meta} /> : null}
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -186,7 +194,7 @@ function CreatorClaim({ token }: { token: TokenSummary }) {
   };
 
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/25 bg-accent/[0.04] px-4 py-3">
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/25 bg-accent/[0.04] px-4 py-2.5">
       <div>
         <p className="text-sm font-semibold text-ink">Your creator fees</p>
         <p className="mt-0.5 text-xs text-ink-3">
@@ -292,51 +300,45 @@ function InfoTab({ t, meta }: { t: any; meta: any }) {
   ];
 
   return (
-    <div className="py-4">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
-        {/* About + facts */}
-        <div className="min-w-0">
-          {meta.description ? (
-            <p className="text-[13px] leading-6 text-ink-2">{meta.description}</p>
-          ) : (
-            <p className="text-[13px] italic leading-6 text-ink-3">No description provided.</p>
-          )}
+    <div className="space-y-4 p-3">
+      {meta.description ? (
+        <p className="text-[13px] leading-6 text-ink-2">{meta.description}</p>
+      ) : (
+        <p className="text-[13px] italic leading-6 text-ink-3">No description provided.</p>
+      )}
 
-          <dl className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-edge bg-edge sm:grid-cols-4">
-            {facts.map((f) => (
-              <div key={f.label} className="bg-panel-2/40 px-3 py-2.5">
-                <dt className="text-[10px] uppercase tracking-wide text-ink-3">{f.label}</dt>
-                <dd className="mono mt-0.5 text-[13px] font-semibold text-ink">{f.value}</dd>
-              </div>
-            ))}
-          </dl>
+      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-edge bg-edge">
+        {facts.map((f) => (
+          <div key={f.label} className="bg-panel-2/40 px-3 py-2.5">
+            <dt className="text-[10px] uppercase tracking-wide text-ink-3">{f.label}</dt>
+            <dd className="mono mt-0.5 text-[13px] font-semibold text-ink">{f.value}</dd>
+          </div>
+        ))}
+      </dl>
 
-          {links.length > 0 ? (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {links.map((l) => (
-                <a
-                  key={l.label + l.url}
-                  href={String(l.url)}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={l.label}
-                  className="flex items-center gap-2 rounded-md border border-edge bg-panel px-2.5 py-1.5 text-[12px] font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
-                >
-                  <span className="grid h-4 w-4 place-items-center text-ink-2">
-                    {socialIcons[l.label] ?? socialIcons.Website}
-                  </span>
-                  {l.label}
-                </a>
-              ))}
-            </div>
-          ) : null}
+      {links.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {links.map((l) => (
+            <a
+              key={l.label + l.url}
+              href={String(l.url)}
+              target="_blank"
+              rel="noreferrer"
+              title={l.label}
+              className="flex items-center gap-2 rounded-md border border-edge bg-panel px-2.5 py-1.5 text-[12px] font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
+            >
+              <span className="grid h-4 w-4 place-items-center text-ink-2">
+                {socialIcons[l.label] ?? socialIcons.Website}
+              </span>
+              {l.label}
+            </a>
+          ))}
         </div>
+      ) : null}
 
-        {/* Addresses */}
-        <div className="space-y-2">
-          <CopyRow label="Creator" value={t.creator} />
-          <CopyRow label="Liquidity pool" value={t.pool} />
-        </div>
+      <div className="space-y-2">
+        <CopyRow label="Creator" value={t.creator} />
+        <CopyRow label="Liquidity pool" value={t.pool} />
       </div>
     </div>
   );
