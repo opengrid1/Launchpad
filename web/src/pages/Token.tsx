@@ -99,28 +99,32 @@ export function TokenPage() {
         </div>
       </section>
 
-      {/* Stats */}
-      <div className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-edge bg-edge">
-        <Stat label="Market cap" accent node={<AnimatedNumber value={Number(t.marketCapUsd)} format={(n) => fmtUsd(n)} className="tnum" />} />
-        <Stat label="Volume" node={<span className="tnum">{fmtWeiUsd(t.volumeTotalWei, usdRate)}</span>} />
-        <Stat label="Holders" node={<span className="tnum">{compact(t.holderCount)}</span>} />
-      </div>
-
       <div className="mt-3 space-y-2.5">
         <RewardsStrip token={t} extra={extra} />
         <CreatorClaim token={t} extra={extra} onClaimed={() => v4Client.tokenExtra(t.address as Address).then(setExtra).catch(() => undefined)} />
       </div>
 
-      {/* Chart (hero) + order ticket */}
-      <div className="mt-6 flex items-center gap-2">
-        <span className="dot-live h-2 w-2 rounded-full bg-accent" />
-        <h2 className="text-[14px] font-bold tracking-tight text-ink">Market cap</h2>
-      </div>
-      <section className="mt-2 grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_340px]">
-        <div className="h-[440px] overflow-hidden rounded-2xl border border-edge bg-panel">
-          <Suspense fallback={<Skeleton className="h-full w-full" />}>
-            <TVChart token={t.address as Address} symbol={t.symbol} />
-          </Suspense>
+      {/* Chart (with an info header on top) + order ticket */}
+      <section className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_340px]">
+        <div className="overflow-hidden rounded-2xl border border-edge bg-panel">
+          {/* Info header */}
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1.5 border-b border-edge px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <span className="dot-live h-2 w-2 rounded-full bg-accent" />
+              <span className="text-[13px] font-bold tracking-tight text-ink">Market cap</span>
+            </div>
+            <div className="flex items-center gap-x-5">
+              <HeadStat label="Mcap" accent node={<AnimatedNumber value={Number(t.marketCapUsd)} format={(n) => fmtUsd(n)} className="tnum" />} />
+              <HeadStat label="Volume" node={<span className="tnum">{fmtWeiUsd(t.volumeTotalWei, usdRate)}</span>} />
+              <HeadStat label="Holders" node={<span className="tnum">{compact(t.holderCount)}</span>} />
+            </div>
+          </div>
+          {/* Chart */}
+          <div className="h-[420px]">
+            <Suspense fallback={<Skeleton className="h-full w-full" />}>
+              <TVChart token={t.address as Address} symbol={t.symbol} />
+            </Suspense>
+          </div>
         </div>
         <div>
           <TradePanel token={t} />
@@ -185,12 +189,12 @@ function CaChip({ address }: { address: string }) {
   );
 }
 
-/** A stat cell: small uppercase label above a bold value. */
-function Stat({ label, node, accent }: { label: string; node: React.ReactNode; accent?: boolean }) {
+/** Compact inline stat for the chart header: tiny label, bold value beside it. */
+function HeadStat({ label, node, accent }: { label: string; node: React.ReactNode; accent?: boolean }) {
   return (
-    <div className="bg-panel px-3 py-2.5">
-      <p className="text-[9.5px] uppercase tracking-wide text-ink-3">{label}</p>
-      <p className={`mono mt-0.5 text-[14px] font-bold tracking-tight ${accent ? "text-accent" : "text-ink"}`}>{node}</p>
+    <div className="text-right">
+      <p className="text-[9px] uppercase tracking-wide text-ink-3">{label}</p>
+      <p className={`mono text-[13px] font-bold leading-tight ${accent ? "text-accent" : "text-ink"}`}>{node}</p>
     </div>
   );
 }
