@@ -129,36 +129,6 @@ export function Explore() {
           </label>
         </div>
 
-        {/* Sort control — mobile only (the table headers handle it on desktop) */}
-        {feed.length > 0 ? (
-          <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-0.5 md:hidden no-scrollbar">
-            <span className="mono shrink-0 pr-0.5 text-[10px] uppercase tracking-wide text-ink-3">Sort</span>
-            {(
-              [
-                ["marketCap", "MCap"],
-                ["volume", "Vol"],
-                ["change", "24h"],
-                ["price", "Price"],
-                ["holders", "Holders"],
-              ] as [SortKey, string][]
-            ).map(([key, label]) => {
-              const on = sort?.key === key;
-              return (
-                <button
-                  key={key}
-                  onClick={() => toggleSort(key)}
-                  className={`mono flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition-colors ${
-                    on ? "border-accent/50 bg-accent/10 text-accent" : "border-edge text-ink-3"
-                  }`}
-                >
-                  {label}
-                  {on ? <SortCaret dir={sort!.dir} /> : null}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-
         {/* Desktop table */}
         <div className="mt-3 hidden overflow-x-auto rounded-xl border border-edge bg-panel md:block">
           <table className="w-full min-w-[720px] border-collapse">
