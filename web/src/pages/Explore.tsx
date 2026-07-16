@@ -4,12 +4,10 @@ import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
 import { Icon } from "../components/Icon";
-import { MiniChart } from "../components/MiniChart";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { fmtPct, fmtUsd, fmtWeiUsd, timeAgo, usdRateOf } from "../lib/format";
+import { fmtPct, fmtUsd } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
-import { stockOf } from "../lib/v4/stocks";
 
 type Sort = "new" | "recent" | "mcap" | "oldest";
 
@@ -130,9 +128,7 @@ export function Explore() {
 }
 
 function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
-  const rate = usdRateOf(t);
   const change = t.priceChange24hPct;
-  const stock = stockOf((t.metadata as any)?.rewardStock);
   const logo = t.metadata?.logo;
   const ok = logo && /^(https?:|ipfs:|data:)/.test(String(logo));
   const src = ok
@@ -152,12 +148,7 @@ function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[14px] font-bold leading-tight text-ink">{t.name}</p>
-          <p className="mono truncate text-[11px] text-ink-3">
-            {t.symbol}{stock ? ` · earns ${stock.symbol}` : ""}
-          </p>
-        </div>
-        <div className="hidden h-8 w-20 sm:block">
-          <MiniChart token={t.address} width={80} height={32} />
+          <p className="mono truncate text-[11px] text-ink-3">{t.symbol}</p>
         </div>
         <div className="shrink-0 text-right">
           <p className="mono text-[14px] font-bold leading-tight text-ink">{fmtUsd(t.marketCapUsd)}</p>
@@ -193,21 +184,9 @@ function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
         </span>
       </div>
 
-      <div className="mt-2 h-8 overflow-hidden rounded-md bg-panel-2/40">
-        <MiniChart token={t.address} width={520} height={32} />
-      </div>
-
-      <div className="mt-2 flex items-end justify-between gap-1">
-        <div className="min-w-0">
-          <p className="text-[9.5px] uppercase tracking-wide text-ink-3">Mcap</p>
-          <p className="mono truncate text-[15px] font-bold leading-tight text-ink">{fmtUsd(t.marketCapUsd)}</p>
-        </div>
-        {stock ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded border border-edge bg-panel-2 px-1.5 py-0.5 text-[10px] font-semibold text-ink-2">
-            <span className="h-1 w-1 rounded-full bg-accent" />
-            {stock.symbol}
-          </span>
-        ) : null}
+      <div className="mt-2.5">
+        <p className="text-[9.5px] uppercase tracking-wide text-ink-3">Mcap</p>
+        <p className="mono truncate text-[15px] font-bold leading-tight text-ink">{fmtUsd(t.marketCapUsd)}</p>
       </div>
     </Link>
   );
