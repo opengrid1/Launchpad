@@ -135,9 +135,9 @@ export function Explore() {
             <thead>
               <tr className="border-b border-edge text-[11px] uppercase tracking-wide text-ink-3">
                 <Th className="pl-4 text-left">Market</Th>
-                <Th sortKey="price" sort={sort} onSort={toggleSort} className="text-right">Price</Th>
-                <Th sortKey="change" sort={sort} onSort={toggleSort} className="text-right">24h</Th>
                 <Th sortKey="marketCap" sort={sort} onSort={toggleSort} className="text-right">MCap</Th>
+                <Th sortKey="change" sort={sort} onSort={toggleSort} className="text-right">24h</Th>
+                <Th sortKey="price" sort={sort} onSort={toggleSort} className="hidden text-right sm:table-cell">Price</Th>
                 <Th sortKey="liquidity" sort={sort} onSort={toggleSort} className="hidden text-right lg:table-cell">Liquidity</Th>
                 <Th sortKey="volume" sort={sort} onSort={toggleSort} className="text-right">Vol 24h</Th>
                 <Th sortKey="txns" sort={sort} onSort={toggleSort} className="hidden text-right lg:table-cell">Txns</Th>
@@ -191,9 +191,9 @@ function Ticker({ rows }: { rows: TokenSummary[] }) {
               className="mono flex items-center gap-2 px-4 text-[12px] transition-opacity hover:opacity-80"
             >
               <span className="font-bold text-ink">{t.symbol}</span>
-              <span className="text-ink-2">{fmtUsd(Number(t.priceUsd))}</span>
+              <span className="text-ink-2">{fmtUsd(Number(t.marketCapUsd))}</span>
               <span className={c == null ? "text-ink-3" : c >= 0 ? "text-up" : "text-down"}>
-                {c == null ? "—" : fmtPct(c)}
+                {c == null ? "–" : fmtPct(c)}
               </span>
             </Link>
           );
@@ -295,18 +295,18 @@ function Row({ t, rank }: { t: TokenSummary; rank: number }) {
         </Link>
       </td>
 
-      {/* Price */}
-      <td className="mono px-3 py-2.5 text-right text-[12px] text-ink">
-        {rate > 0 ? (Number(t.priceUsd) < 0.01 ? `$${fmtSmall(Number(t.priceUsd))}` : fmtUsd(Number(t.priceUsd))) : "—"}
-      </td>
+      {/* MCap — headline metric */}
+      <td className="mono px-3 py-2.5 text-right text-[13px] font-semibold text-ink">{fmtUsd(Number(t.marketCapUsd))}</td>
 
       {/* 24h */}
       <td className={`mono px-3 py-2.5 text-right text-[12px] font-medium ${change == null ? "text-ink-3" : change >= 0 ? "text-up" : "text-down"}`}>
-        {change == null ? "—" : fmtPct(change)}
+        {change == null ? "–" : fmtPct(change)}
       </td>
 
-      {/* MCap */}
-      <td className="mono px-3 py-2.5 text-right text-[12px] text-ink">{fmtUsd(Number(t.marketCapUsd))}</td>
+      {/* Price per token */}
+      <td className="mono hidden px-3 py-2.5 text-right text-[12px] text-ink-2 sm:table-cell">
+        {rate > 0 ? (Number(t.priceUsd) < 0.01 ? `$${fmtSmall(Number(t.priceUsd))}` : fmtUsd(Number(t.priceUsd))) : "–"}
+      </td>
 
       {/* Liquidity */}
       <td className="mono hidden px-3 py-2.5 text-right text-[12px] text-ink-2 md:table-cell">
@@ -373,8 +373,6 @@ function MobileRow({ t, rank }: { t: TokenSummary; rank: number }) {
       ? `https://ipfs.io/ipfs/${String(logo).slice(7)}`
       : String(logo)
     : null;
-  const price =
-    rate > 0 ? (Number(t.priceUsd) < 0.01 ? `$${fmtSmall(Number(t.priceUsd))}` : fmtUsd(Number(t.priceUsd))) : "—";
 
   return (
     <Link
@@ -403,13 +401,13 @@ function MobileRow({ t, rank }: { t: TokenSummary; rank: number }) {
         </p>
         <p className="mono mt-0.5 flex items-center gap-2 truncate text-[11px] text-ink-3">
           <span>${t.symbol}</span>
-          <span className="text-ink-2">MC {fmtUsd(Number(t.marketCapUsd))}</span>
           <span>Vol {fmtWeiUsd(t.volume24hWei, rate)}</span>
         </p>
       </div>
 
       <div className="shrink-0 text-right">
-        <p className="mono text-[13px] font-semibold leading-tight text-ink">{price}</p>
+        <p className="mono text-[10px] uppercase leading-none tracking-wide text-ink-3">MCap</p>
+        <p className="mono mt-0.5 text-[14px] font-bold leading-tight text-ink">{fmtUsd(Number(t.marketCapUsd))}</p>
         <p className={`mono mt-0.5 text-[12px] font-medium leading-tight ${change == null ? "text-ink-3" : change >= 0 ? "text-up" : "text-down"}`}>
           {change == null ? "–" : fmtPct(change)}
         </p>
