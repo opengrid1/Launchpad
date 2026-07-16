@@ -13,9 +13,9 @@
   --color-ink-2: #8b948a;
   --color-ink-3: #5b645a;
 
-  /* Lime accent — chartreuse, dialed back from full neon */
-  --color-accent: #a6e600;
-  --color-accent-2: #b8f52e;
+  /* Robinhood green accent — clean spring green, not chartreuse lime */
+  --color-accent: #00c805;
+  --color-accent-2: #2ade3a;
 
   /* Trading colors on dark */
   --color-up: #33e07a;
@@ -64,7 +64,7 @@ body {
 }
 
 ::selection {
-  background: rgba(182, 255, 0, 0.35);
+  background: rgba(0, 200, 5, 0.32);
   color: #e8ede6;
 }
 
