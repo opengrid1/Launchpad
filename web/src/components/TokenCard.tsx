@@ -2,70 +2,87 @@ import { memo } from "react";
 import { Link } from "react-router-dom";
 import type { TokenSummary } from "@launchpad/sdk";
 
-import { fmtPct, fmtUsd, shortAddr, timeAgo } from "../lib/format";
+import { fmtPct, fmtUsd, fmtWeiUsd, usdRateOf } from "../lib/format";
+import { MiniChart } from "./MiniChart";
 
-/**
- * Token tile for the discovery grid: a square artwork, the identity, the
- * market cap that leads, and a 24h badge. Memoized so a feed refresh only
- * repaints tiles whose live numbers actually changed.
- */
-function TokenCardBase({ token }: { token: TokenSummary }) {
+function Artwork({ token, size = 48 }: { token: TokenSummary; size?: number }) {
   const logo = token.metadata?.logo;
-  const hasLogo = logo && /^(https?:|ipfs:|data:)/.test(String(logo));
-  const src = hasLogo
+  const ok = logo && /^(https?:|ipfs:|data:)/.test(String(logo));
+  const src = ok
     ? String(logo).startsWith("ipfs://")
       ? `https://ipfs.io/ipfs/${String(logo).slice(7)}`
       : String(logo)
     : null;
+  return (
+    <div
+      className="grid shrink-0 place-items-center overflow-hidden rounded-2xl bg-panel-2 text-sm font-bold text-ink-3"
+      style={{ width: size, height: size }}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          className="h-full w-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
+        />
+      ) : (
+        token.symbol.slice(0, 3).toUpperCase()
+      )}
+    </div>
+  );
+}
+
+/**
+ * Discovery card. One glance gives the identity, the market cap, the shape of
+ * the market and the day's volume, with a single clear action. The whole card
+ * is the link; the Trade pill is the visual affordance. Memoized so a live
+ * feed refresh only repaints cards whose numbers moved.
+ */
+function TokenCardBase({ token }: { token: TokenSummary }) {
+  const rate = usdRateOf(token);
   const change = token.priceChange24hPct;
 
   return (
     <Link
       to={`/token/${token.address}`}
-      className="group block rounded-2xl border border-edge bg-panel p-3 transition-all hover:border-edge-2 hover:shadow-[var(--shadow-card-hover)]"
+      className="group flex flex-col rounded-[26px] border border-edge bg-panel p-5 shadow-[var(--shadow-card)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-panel-2">
-        {src ? (
-          <img
-            src={src}
-            alt=""
-            loading="lazy"
-            className="h-full w-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
-          />
-        ) : (
-          <div className="grid h-full w-full place-items-center text-3xl font-bold text-ink-3">
-            {token.symbol.slice(0, 3).toUpperCase()}
-          </div>
-        )}
-        {change != null ? (
-          <span
-            className={`tnum absolute left-2 top-2 rounded-full px-2 py-0.5 text-[11px] font-semibold backdrop-blur ${
-              change >= 0 ? "bg-up/15 text-up" : "bg-down/15 text-down"
-            }`}
-          >
-            {fmtPct(change)}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="mt-3">
-        <p className="truncate text-[15px] font-semibold text-ink">{token.name}</p>
-        <p className="tnum text-xs text-ink-3">${token.symbol}</p>
-      </div>
-
-      <div className="mt-2 flex items-baseline gap-1.5">
-        <span className="tnum text-[17px] font-bold tracking-tight text-ink">
-          {fmtUsd(token.marketCapUsd)}
+      <div className="flex items-center gap-3.5">
+        <Artwork token={token} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[16px] font-semibold leading-tight text-ink">{token.name}</p>
+          <p className="tnum text-[13px] text-ink-3">${token.symbol}</p>
+        </div>
+        <span
+          className={`tnum shrink-0 rounded-full px-2.5 py-1 text-[12px] font-semibold ${
+            change == null ? "bg-panel-2 text-ink-3" : change >= 0 ? "bg-up/10 text-up" : "bg-down/10 text-down"
+          }`}
+        >
+          {change == null ? "—" : fmtPct(change)}
         </span>
-        <span className="font-mono text-[10px] uppercase tracking-wide text-ink-3">MC</span>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between border-t border-edge pt-2.5 font-mono text-[11px] text-ink-3">
-        <span className="tnum">{shortAddr(token.creator)}</span>
-        <span>{timeAgo(token.createdAt)}</span>
+      <div className="mt-5 flex items-end justify-between gap-3">
+        <div>
+          <p className="tnum text-[26px] font-semibold leading-none tracking-tight text-ink">
+            {fmtUsd(token.marketCapUsd)}
+          </p>
+          <p className="mt-1.5 text-[12px] text-ink-3">Market cap</p>
+        </div>
+        <MiniChart token={token.address} />
+      </div>
+
+      <div className="mt-5 flex items-center justify-between border-t border-edge pt-4">
+        <div>
+          <p className="tnum text-[14px] font-semibold text-ink">{fmtWeiUsd(token.volume24hWei, rate)}</p>
+          <p className="text-[11px] text-ink-3">Volume 24h</p>
+        </div>
+        <span className="rounded-full bg-accent px-5 py-2 text-[13px] font-bold text-black shadow-[var(--shadow-btn)] transition-transform group-hover:scale-[1.03]">
+          Trade
+        </span>
       </div>
     </Link>
   );
@@ -78,7 +95,7 @@ export const TokenCard = memo(
     a.token.name === b.token.name &&
     a.token.symbol === b.token.symbol &&
     a.token.marketCapUsd === b.token.marketCapUsd &&
+    a.token.volume24hWei === b.token.volume24hWei &&
     a.token.priceChange24hPct === b.token.priceChange24hPct &&
-    a.token.createdAt === b.token.createdAt &&
     a.token.metadata?.logo === b.token.metadata?.logo,
 );

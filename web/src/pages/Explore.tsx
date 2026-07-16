@@ -7,31 +7,21 @@ import { TokenCard } from "../components/TokenCard";
 import { Skeleton } from "../components/ui";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
+import { fmtPct, fmtUsd } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
-
-type Sort = "trending" | "new" | "top";
-
-const sortLabels: Record<Sort, string> = {
-  trending: "Trending",
-  new: "New",
-  top: "Top",
-};
 
 export function Explore() {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [sort, setSort] = useState<Sort>("trending");
   const { data: byVolume, loading: loadingVolume } = useTokens(client, { sort: "volume", limit: 50 });
   const { data: byNew, loading: loadingNew } = useTokens(client, { sort: "new", limit: 50 });
 
   useEffect(() => {
-    const id = window.setTimeout(() => setDebounced(query), 150);
+    const id = window.setTimeout(() => setDebounced(query.trim().toLowerCase()), 150);
     return () => window.clearTimeout(id);
   }, [query]);
 
-  const q = debounced.trim().toLowerCase();
   const hidden = env.hideTokens;
-
   const all = useMemo(() => {
     if (hidden) return [] as TokenSummary[];
     const seen = new Map<string, TokenSummary>();
@@ -41,107 +31,168 @@ export function Explore() {
     return [...seen.values()];
   }, [byVolume, byNew, hidden]);
 
-  const rows = useMemo(() => {
-    const filtered = all.filter(
-      (t) =>
-        !q ||
-        t.name.toLowerCase().includes(q) ||
-        t.symbol.toLowerCase().includes(q) ||
-        t.address.toLowerCase() === q,
-    );
-    const s = [...filtered];
-    if (sort === "new") s.sort((a, b) => b.createdAt - a.createdAt);
-    else if (sort === "top") s.sort((a, b) => Number(b.marketCapUsd) - Number(a.marketCapUsd));
-    else s.sort((a, b) => Number(b.volume24hWei) - Number(a.volume24hWei));
-    return s.slice(0, 60);
-  }, [all, q, sort]);
+  const q = debounced;
+  const results = useMemo(
+    () =>
+      q
+        ? all.filter(
+            (t) =>
+              t.name.toLowerCase().includes(q) ||
+              t.symbol.toLowerCase().includes(q) ||
+              t.address.toLowerCase() === q,
+          )
+        : [],
+    [all, q],
+  );
+
+  const trending = useMemo(
+    () => [...all].sort((a, b) => Number(b.volume24hWei) - Number(a.volume24hWei)).slice(0, 8),
+    [all],
+  );
+  const fresh = useMemo(() => [...all].sort((a, b) => b.createdAt - a.createdAt).slice(0, 8), [all]);
+  const active = useMemo(
+    () =>
+      [...all]
+        .filter((t) => t.txCount24h > 0)
+        .sort((a, b) => b.txCount24h - a.txCount24h)
+        .slice(0, 6),
+    [all],
+  );
 
   const loading = !hidden && (loadingVolume || loadingNew);
+  const empty = !loading && all.length === 0;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-14 pt-1 sm:px-6">
-      {/* Search + create */}
-      <div className="flex items-center gap-3">
-        <label className="relative flex-1">
-          <svg
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-3"
-            width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden
-          >
-            <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search tokens"
-            className="h-[52px] w-full rounded-full border border-edge bg-panel pl-11 pr-4 text-[15px] text-ink shadow-[var(--shadow-card)] outline-none transition-colors placeholder:text-ink-3 focus:border-accent"
-            type="search"
-          />
-        </label>
-        <Link
-          to="/launch"
-          className="flex h-[52px] shrink-0 items-center gap-2 rounded-full bg-accent px-5 text-[15px] font-bold text-black shadow-[var(--shadow-card)] transition-colors hover:bg-accent-2"
+    <div className="mx-auto max-w-6xl px-4 pb-16 pt-2 sm:px-6">
+      {/* Search */}
+      <label className="relative mx-auto block max-w-2xl">
+        <svg
+          className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-ink-3"
+          width="19" height="19" viewBox="0 0 16 16" fill="none" aria-hidden
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          <span className="hidden sm:inline">Create</span>
-        </Link>
-      </div>
+          <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search tokens"
+          type="search"
+          className="h-[58px] w-full rounded-full border border-edge bg-panel pl-14 pr-5 text-[16px] text-ink shadow-[var(--shadow-card)] outline-none transition-colors placeholder:text-ink-3 focus:border-ink"
+        />
+      </label>
 
-      {/* Sort pills */}
-      <div className="mt-5 flex items-center gap-1.5">
-        {(Object.keys(sortLabels) as Sort[]).map((key) => (
-          <button
-            key={key}
-            onClick={() => setSort(key)}
-            className={`h-9 rounded-full px-4 text-[13px] font-semibold transition-colors ${
-              sort === key
-                ? "bg-accent text-black"
-                : "border border-edge bg-panel text-ink-2 hover:text-ink"
-            }`}
-          >
-            {sortLabels[key]}
-          </button>
-        ))}
-      </div>
-
-      {/* Tinted section card */}
-      <section className="mt-4 rounded-3xl border border-tint-2 bg-tint p-4 sm:p-6">
-        <div className="mb-1 flex items-center gap-2.5">
-          <h2 className="text-[22px] font-bold tracking-tight text-ink">{sortLabels[sort]}</h2>
-          {!loading ? (
-            <span className="tnum rounded-full bg-accent px-2.5 py-0.5 text-[13px] font-bold text-black">
-              {rows.length}
-            </span>
-          ) : null}
+      {loading ? (
+        <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-52 rounded-[26px]" />
+          ))}
         </div>
-        <p className="mb-5 text-sm text-ink-2">
-          {sort === "new"
-            ? "The latest tokens to launch a live market."
-            : sort === "top"
-              ? "The largest markets by market cap."
-              : "The most actively traded markets right now."}
-        </p>
+      ) : empty ? (
+        <p className="mt-24 text-center text-[15px] text-ink-2">No tokens yet. Launch the first one.</p>
+      ) : q ? (
+        <section className="mt-10">
+          <SectionHead title={`Results`} sub={`${results.length} match${results.length === 1 ? "" : "es"}`} />
+          {results.length === 0 ? (
+            <p className="mt-8 text-center text-[15px] text-ink-2">No tokens match your search.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {results.map((t) => (
+                <TokenCard key={t.address} token={t} />
+              ))}
+            </div>
+          )}
+        </section>
+      ) : (
+        <>
+          {/* Trending — horizontal rail */}
+          {trending.length > 0 ? (
+            <section className="mt-10">
+              <SectionHead title="Trending" sub="Most traded right now" />
+              <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+                {trending.map((t) => (
+                  <div key={t.address} className="w-[290px] shrink-0 snap-start sm:w-[320px]">
+                    <TokenCard token={t} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
-        {loading ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {[...Array(8)].map((_, i) => (
-              <Skeleton key={i} className="h-64 rounded-2xl" />
-            ))}
-          </div>
-        ) : rows.length === 0 ? (
-          <p className="py-16 text-center text-sm text-ink-2">
-            {q ? "No tokens match your search." : "No tokens yet. Create the first one."}
-          </p>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {rows.map((t) => (
-              <TokenCard key={t.address} token={t} />
-            ))}
-          </div>
-        )}
-      </section>
+          {/* New Launches — grid */}
+          {fresh.length > 0 ? (
+            <section className="mt-12">
+              <SectionHead title="New Launches" sub="Fresh markets, just opened" />
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {fresh.map((t) => (
+                  <TokenCard key={t.address} token={t} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {/* Recently Active — compact list */}
+          {active.length > 0 ? (
+            <section className="mt-12">
+              <SectionHead title="Recently Active" sub="Where the trades are landing" />
+              <div className="overflow-hidden rounded-[26px] border border-edge bg-panel shadow-[var(--shadow-card)]">
+                {active.map((t) => (
+                  <ActiveRow key={t.address} token={t} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </>
+      )}
     </div>
+  );
+}
+
+function SectionHead({ title, sub }: { title: string; sub: string }) {
+  return (
+    <div className="mb-4 flex items-baseline justify-between gap-3">
+      <h2 className="text-[22px] font-semibold tracking-tight text-ink">{title}</h2>
+      <span className="text-[13px] text-ink-3">{sub}</span>
+    </div>
+  );
+}
+
+function ActiveRow({ token }: { token: TokenSummary }) {
+  const logo = token.metadata?.logo;
+  const ok = logo && /^(https?:|ipfs:|data:)/.test(String(logo));
+  const src = ok
+    ? String(logo).startsWith("ipfs://")
+      ? `https://ipfs.io/ipfs/${String(logo).slice(7)}`
+      : String(logo)
+    : null;
+  const change = token.priceChange24hPct;
+  return (
+    <Link
+      to={`/token/${token.address}`}
+      className="flex items-center gap-3.5 border-b border-edge px-4 py-3.5 transition-colors last:border-0 hover:bg-panel-2 sm:px-5"
+    >
+      <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-panel-2 text-xs font-bold text-ink-3">
+        {src ? (
+          <img src={src} alt="" loading="lazy" className="h-full w-full object-cover"
+            onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
+        ) : (
+          token.symbol.slice(0, 3).toUpperCase()
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[15px] font-semibold text-ink">{token.name}</p>
+        <p className="tnum text-[12px] text-ink-3">${token.symbol}</p>
+      </div>
+      <div className="text-right">
+        <p className="tnum text-[15px] font-semibold text-ink">{fmtUsd(token.marketCapUsd)}</p>
+        <p
+          className={`tnum text-[12px] font-medium ${
+            change == null ? "text-ink-3" : change >= 0 ? "text-up" : "text-down"
+          }`}
+        >
+          {change == null ? "—" : fmtPct(change)}
+        </p>
+      </div>
+    </Link>
   );
 }
