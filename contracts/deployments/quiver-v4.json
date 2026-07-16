@@ -13,7 +13,8 @@
   "contracts": {
     "create2Deployer": "0x60067d39d974b01f0D3426014cbf0AF4B2fDC069",
     "hook": "0x453a4E9fF4956Cd1a86b6e3e3c4Ffc41B7b30044",
-    "factory": "0x24854c69020efE89fc2a50CBc487c0bb78334663"
+    "factory": "0x24854c69020efE89fc2a50CBc487c0bb78334663",
+    "router": "0xaB223922520236f97F86D6110B7469Ac5AA410b4"
   },
   "stocks": [
     {
