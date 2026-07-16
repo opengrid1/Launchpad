@@ -10,6 +10,7 @@ const PriceChart = lazy(() =>
   import("../components/Chart").then((m) => ({ default: m.PriceChart })),
 );
 import { HoldersList } from "../components/HoldersList";
+import { Icon, type IconName } from "../components/Icon";
 import { TokenLogo } from "../components/TokenLogo";
 import { TradePanel } from "../components/TradePanel";
 import { TradesList } from "../components/TradesList";
@@ -48,28 +49,30 @@ export function TokenPage() {
   const usdRate = usdRateOf(t);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      {/* Identity and market cap, one compact row on every screen */}
+    <div className="rise mx-auto max-w-4xl px-4 py-6 sm:px-6">
+      {/* Identity + market cap */}
       <section className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <TokenLogo token={t} size={44} />
+        <div className="flex min-w-0 items-start gap-3">
+          <TokenLogo token={t} size={48} />
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold tracking-tight text-ink sm:text-xl">
-              {t.name} <span className="tnum font-medium text-ink-3">${t.symbol}</span>
+            <h1 className="flex items-center gap-2 text-[19px] font-semibold tracking-tight text-ink sm:text-[22px]">
+              <span className="truncate">{t.name}</span>
+              <span className="tnum shrink-0 text-[15px] font-medium text-ink-3">${t.symbol}</span>
             </h1>
             <p className="mt-0.5 truncate text-xs text-ink-3">
               Launched {timeAgo(t.createdAt)} by <span className="tnum">{shortAddr(t.creator)}</span>
             </p>
+            <SocialRow t={t} meta={meta} />
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <p className="tnum text-[26px] font-semibold leading-none tracking-tight text-ink sm:text-[32px]">
+          <p className="tnum text-[28px] font-semibold leading-none tracking-tight text-ink sm:text-[34px]">
             {fmtUsd(t.marketCapUsd)}
           </p>
-          <p className="mt-1 flex items-center justify-end gap-2 text-xs sm:text-sm">
+          <p className="mt-1.5 flex items-center justify-end gap-2 text-xs sm:text-sm">
             <span className="text-ink-3">Market cap</span>
             {t.priceChange24hPct != null ? (
-              <span className={`tnum font-medium ${t.priceChange24hPct >= 0 ? "text-up" : "text-down"}`}>
+              <span className={`tnum font-semibold ${t.priceChange24hPct >= 0 ? "text-up" : "text-down"}`}>
                 {fmtPct(t.priceChange24hPct)}
               </span>
             ) : null}
@@ -77,23 +80,23 @@ export function TokenPage() {
         </div>
       </section>
 
-      {/* Key figures, plain typography */}
-      <dl className="mt-4 grid grid-cols-2 gap-3 border-y border-edge py-3.5 sm:flex sm:gap-x-10">
-        <Figure label="Volume 24h" value={fmtWeiUsd(t.volume24hWei, usdRate)} />
-        <Figure label="Liquidity" value={fmtWeiUsd(t.liquidityWei, usdRate)} />
-        <Figure label="Holders" value={compact(t.holderCount)} />
-        <Figure label="Fees earned" value={fmtWeiUsd(t.creatorFeesWei ?? "0", usdRate)} />
+      {/* Dense stat strip with icons */}
+      <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-y border-edge py-4 sm:grid-cols-4">
+        <Stat icon="volume" label="Volume 24h" value={fmtWeiUsd(t.volume24hWei, usdRate)} />
+        <Stat icon="liquidity" label="Liquidity" value={fmtWeiUsd(t.liquidityWei, usdRate)} />
+        <Stat icon="holders" label="Holders" value={compact(t.holderCount)} />
+        <Stat icon="marketcap" label="Fees earned" value={fmtWeiUsd(t.creatorFeesWei ?? "0", usdRate)} />
       </dl>
 
       <CreatorClaim token={t} />
 
       {/* Chart + trade */}
-      <section className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
-        <Card className="h-[420px] overflow-hidden lg:h-[480px]">
-          <Suspense fallback={<Skeleton className="h-full w-full rounded-2xl" />}>
+      <section className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="h-[400px] overflow-hidden rounded-2xl border border-edge bg-panel lg:h-[460px]">
+          <Suspense fallback={<Skeleton className="h-full w-full" />}>
             <PriceChart token={t.address as Address} />
           </Suspense>
-        </Card>
+        </div>
         <TradePanel token={t} />
       </section>
 
@@ -102,18 +105,19 @@ export function TokenPage() {
         <div className="flex items-center gap-6 border-b border-edge">
           {(
             [
-              ["trades", "Recent Trades"],
-              ["holders", "Holders"],
-              ["info", "Info"],
-            ] as [Tab, string][]
-          ).map(([key, label]) => (
+              ["trades", "Recent Trades", "transactions"],
+              ["holders", "Holders", "holders"],
+              ["info", "Info", "contract"],
+            ] as [Tab, string, IconName][]
+          ).map(([key, label, icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`relative pb-2.5 text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-1.5 pb-2.5 text-sm font-medium transition-colors ${
                 tab === key ? "text-ink" : "text-ink-3 hover:text-ink-2"
               }`}
             >
+              <Icon name={icon} size={15} />
               {label}
               {tab === key ? (
                 <span className="absolute bottom-0 left-0 right-0 h-[3px] rounded-full bg-accent" />
@@ -186,11 +190,45 @@ function CreatorClaim({ token }: { token: TokenSummary }) {
   );
 }
 
-function Figure({ label, value }: { label: string; value: string }) {
+function Stat({ icon, label, value }: { icon: IconName; label: string; value: string }) {
   return (
-    <div>
-      <dd className="tnum text-[15px] font-semibold text-ink">{value}</dd>
-      <dt className="mt-0.5 text-xs text-ink-3">{label}</dt>
+    <div className="flex items-center gap-2.5">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-panel-2 text-ink-2">
+        <Icon name={icon} size={16} />
+      </span>
+      <div className="min-w-0">
+        <dd className="tnum text-[15px] font-semibold leading-tight text-ink">{value}</dd>
+        <dt className="text-[11px] text-ink-3">{label}</dt>
+      </div>
+    </div>
+  );
+}
+
+function SocialRow({ t, meta }: { t: TokenSummary; meta: TokenSummary["metadata"] }) {
+  const explorer = env.explorerUrl?.replace(/\/$/, "");
+  const links = [
+    meta.website ? { icon: "website" as IconName, url: String(meta.website), label: "Website" } : null,
+    meta.twitter ? { icon: "twitter" as IconName, url: String(meta.twitter), label: "X" } : null,
+    meta.telegram ? { icon: "telegram" as IconName, url: String(meta.telegram), label: "Telegram" } : null,
+    { icon: "trending" as IconName, url: `https://dexscreener.com/robinhood/${t.pool}`, label: "DexScreener" },
+    explorer ? { icon: "external" as IconName, url: `${explorer}/token/${t.address}`, label: "Explorer" } : null,
+  ].filter((l): l is { icon: IconName; url: string; label: string } => Boolean(l));
+  if (links.length === 0) return null;
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      {links.map((l) => (
+        <a
+          key={l.label}
+          href={l.url}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={l.label}
+          title={l.label}
+          className="grid h-7 w-7 place-items-center rounded-full border border-edge text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
+        >
+          <Icon name={l.icon} size={14} />
+        </a>
+      ))}
     </div>
   );
 }
@@ -294,16 +332,7 @@ function CopyRow({ label, value }: { label: string; value: string }) {
           copied ? "border-up/40 bg-up/10 text-up" : "border-edge text-ink-2 hover:border-edge-2 hover:text-ink"
         }`}
       >
-        {copied ? (
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-            <path d="M3 8.5l3.2 3.2L13 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        ) : (
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-            <rect x="5.5" y="5.5" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M10.5 3.5v-.25A1.75 1.75 0 008.75 1.5h-5A1.75 1.75 0 002 3.25v5c0 .97.78 1.75 1.75 1.75h.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        )}
+        <Icon name={copied ? "verified" : "copy"} size={16} />
       </button>
     </div>
   );
