@@ -62,7 +62,7 @@ export function Explore() {
   const loading = !hidden && (loadingVolume || loadingNew);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-7 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 pb-12 pt-4 sm:px-6">
       {/* Masthead */}
       <section className="flex flex-col gap-5 border-b border-edge pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
