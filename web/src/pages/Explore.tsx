@@ -28,6 +28,7 @@ export function Explore() {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [sort, setSort] = useState<Sort>("new");
+  const [view, setView] = useState<"one" | "two">("two");
   const { data: byVolume, loading: lv } = useTokens(client, { sort: "volume", limit: 60 });
   const { data: byNew, loading: ln } = useTokens(client, { sort: "new", limit: 60 });
 
@@ -63,6 +64,10 @@ export function Explore() {
   }, [all, debounced, sort]);
 
   const loading = !hidden && (lv || ln) && all.length === 0;
+  const gridCls =
+    view === "one"
+      ? "grid grid-cols-1 gap-2"
+      : "grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4";
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-4 sm:px-5">
@@ -80,32 +85,43 @@ export function Explore() {
         />
       </label>
 
-      {/* Sort tabs */}
-      <div className="mt-3 inline-flex items-center gap-0.5 rounded-lg border border-edge bg-panel p-0.5">
-        {SORTS.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setSort(s.id)}
-            className={`rounded-md px-3 py-1 text-[12.5px] font-medium transition-colors ${
-              sort === s.id ? "bg-accent text-white" : "text-ink-2 hover:text-ink"
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
+      {/* Sort tabs + view toggle */}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="inline-flex items-center gap-0.5 rounded-lg border border-edge bg-panel p-0.5">
+          {SORTS.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setSort(s.id)}
+              className={`rounded-md px-3 py-1 text-[12.5px] font-medium transition-colors ${
+                sort === s.id ? "bg-accent text-white" : "text-ink-2 hover:text-ink"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <div className="inline-flex items-center gap-0.5 rounded-lg border border-edge bg-panel p-0.5">
+          <ViewButton active={view === "one"} onClick={() => setView("one")} label="One per row">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </ViewButton>
+          <ViewButton active={view === "two"} onClick={() => setView("two")} label="Two per row">
+            <rect x="4" y="4.5" width="7" height="7" rx="1.4" /><rect x="13" y="4.5" width="7" height="7" rx="1.4" />
+            <rect x="4" y="12.5" width="7" height="7" rx="1.4" /><rect x="13" y="12.5" width="7" height="7" rx="1.4" />
+          </ViewButton>
+        </div>
       </div>
 
       {/* Grid — inside a container box */}
-      <div className="mt-4 rounded-2xl border border-edge bg-panel/40 p-2.5 sm:p-3">
+      <div className="mt-3 rounded-2xl border border-edge bg-panel/40 p-2.5 sm:p-3">
         {loading ? (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+          <div className={gridCls}>
             {[...Array(8)].map((_, i) => <CardSkeleton key={i} />)}
           </div>
         ) : feed.length === 0 ? (
           <Empty q={debounced} />
         ) : (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-            {feed.map((t) => <TokenCard key={t.address} t={t} />)}
+          <div className={gridCls}>
+            {feed.map((t) => <TokenCard key={t.address} t={t} row={view === "one"} />)}
           </div>
         )}
       </div>
@@ -113,7 +129,7 @@ export function Explore() {
   );
 }
 
-function TokenCard({ t }: { t: TokenSummary }) {
+function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
   const rate = usdRateOf(t);
   const change = t.priceChange24hPct;
   const stock = stockOf((t.metadata as any)?.rewardStock);
@@ -122,6 +138,36 @@ function TokenCard({ t }: { t: TokenSummary }) {
   const src = ok
     ? String(logo).startsWith("ipfs://") ? `https://ipfs.io/ipfs/${String(logo).slice(7)}` : String(logo)
     : null;
+
+  if (row) {
+    return (
+      <Link to={`/token/${t.address}`} className="card-hover flex items-center gap-3 rounded-xl border border-edge bg-panel px-3 py-2.5">
+        <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-edge bg-panel-2 text-[11px] font-bold text-ink-3">
+          {src ? (
+            <img src={src} alt="" loading="lazy" className="h-full w-full object-cover"
+              onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
+          ) : (
+            t.symbol.slice(0, 2).toUpperCase()
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-bold leading-tight text-ink">{t.name}</p>
+          <p className="mono truncate text-[11px] text-ink-3">
+            {t.symbol}{stock ? ` · earns ${stock.symbol}` : ""}
+          </p>
+        </div>
+        <div className="hidden h-8 w-20 sm:block">
+          <MiniChart token={t.address} width={80} height={32} />
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="mono text-[14px] font-bold leading-tight text-ink">{fmtUsd(t.marketCapUsd)}</p>
+          <p className={`mono text-[11px] font-semibold ${change == null ? "text-ink-3" : change >= 0 ? "text-up" : "text-down"}`}>
+            {change == null ? "—" : fmtPct(change)}
+          </p>
+        </div>
+      </Link>
+    );
+  }
 
   return (
     <Link to={`/token/${t.address}`} className="card-hover block rounded-xl border border-edge bg-panel p-2.5">
@@ -164,6 +210,21 @@ function TokenCard({ t }: { t: TokenSummary }) {
         ) : null}
       </div>
     </Link>
+  );
+}
+
+function ViewButton({ active, onClick, label, children }: { active: boolean; onClick: () => void; label: string; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={`grid h-7 w-7 place-items-center rounded-md transition-colors ${active ? "bg-accent text-white" : "text-ink-3 hover:text-ink"}`}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6">
+        {children}
+      </svg>
+    </button>
   );
 }
 
