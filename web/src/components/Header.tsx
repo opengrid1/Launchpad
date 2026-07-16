@@ -22,6 +22,7 @@ export function Header() {
         <nav className="hidden items-center gap-6 sm:flex">
           <Tab to="/" end>Discover</Tab>
           <Tab to="/launch">Launch</Tab>
+          <Tab to="/mine">My Coins</Tab>
         </nav>
 
         {/* Right actions */}
