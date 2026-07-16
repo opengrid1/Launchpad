@@ -183,16 +183,30 @@ export class ChainDataSource {
       // old token vs. a public RPC's getLogs cap) never fails the whole read.
       const from = core.launchBlock ?? this.startBlock;
       const latest = await this.client.getBlockNumber();
-      const logs = await this.getLogsChunked(core.pool as `0x${string}`, from, latest);
-      // Prefetch block timestamps for all swaps in parallel (deduped), rather
-      // than one getBlock per swap in sequence, which stalls the feed and can
-      // trip public-RPC rate limits on mobile.
-      const uniqueBlocks = [...new Set((logs as any[]).map((l) => l.blockNumber as bigint))];
-      // Resolve timestamps in small concurrent batches, not all at once: a
-      // busy market can have hundreds of swap blocks and firing that many
-      // getBlock calls in one burst rate-limits public/mobile RPCs.
-      for (let i = 0; i < uniqueBlocks.length; i += 8) {
-        await Promise.all(uniqueBlocks.slice(i, i + 8).map((bn) => this.getBlockTs(bn)));
+      let logs: any[];
+      try {
+        logs = (await this.client.getLogs({
+          address: core.pool as `0x${string}`,
+          event: SWAP_EVENT,
+          fromBlock: from,
+          toBlock: latest,
+        })) as any[];
+      } catch {
+        // Some public RPCs cap the block range; fall back to bounded windows.
+        logs = (await this.getLogsChunked(core.pool as `0x${string}`, from, latest)) as any[];
+      }
+      // Estimate each swap's timestamp from its block number using the chain's
+      // average block time, anchored on the launch block and head. A busy
+      // market can have hundreds of swaps; fetching a block per swap fires a
+      // getBlock burst that rate-limits mobile/public RPCs and hangs the feed.
+      const headTs = await this.getBlockTs(latest);
+      const span = Number(latest - from) || 1;
+      const perBlock = (headTs - core.createdAt) / span;
+      for (const l of logs as any[]) {
+        const bn = (l.blockNumber as bigint).toString();
+        if (!this.blockTs.has(bn)) {
+          this.blockTs.set(bn, Math.round(core.createdAt + Number((l.blockNumber as bigint) - from) * perBlock));
+        }
       }
       const records = (logs as any[]).map((log) => this.tradeFromSwap(log, core));
       this.trades.set(key, records);
