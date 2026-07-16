@@ -89,10 +89,10 @@ export function MyCoinsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 pb-20 pt-5 sm:px-5">
       <div className="flex items-end justify-between">
-        <h1 className="text-[20px] font-bold tracking-tight text-ink">My Coins</h1>
+        <h1 className="text-[16px] font-bold tracking-tight text-ink">My Coins</h1>
         <div className="text-right">
-          <p className="text-[11px] text-ink-3">Portfolio value</p>
-          <p className="mono text-[18px] font-bold text-ink">{fmtUsd(total)}</p>
+          <p className="text-[10.5px] text-ink-3">Portfolio value</p>
+          <p className="mono text-[15px] font-bold text-ink">{fmtUsd(total)}</p>
         </div>
       </div>
 

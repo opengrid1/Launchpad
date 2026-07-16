@@ -94,7 +94,7 @@ export function TokenPage() {
               <p className="kicker text-[12px] text-accent-2">Market</p>
               {rewardStock ? <RewardPill stock={extra!.stock} /> : null}
             </div>
-            <h1 className="mt-0.5 truncate text-[24px] font-bold leading-tight tracking-tight text-ink sm:text-[30px]">{t.name}</h1>
+            <h1 className="mt-0.5 truncate text-[19px] font-bold leading-tight tracking-tight text-ink sm:text-[23px]">{t.name}</h1>
             <div className="mt-1.5 flex items-center gap-2.5">
               <span className="text-[15px] text-ink-2">{t.symbol}</span>
               <CaChip address={t.address as Address} />

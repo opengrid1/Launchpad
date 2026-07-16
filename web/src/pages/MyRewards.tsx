@@ -77,8 +77,8 @@ export function MyRewardsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-20 pt-5 sm:px-5">
-      <h1 className="text-[20px] font-bold tracking-tight text-ink">My Rewards</h1>
-      <p className="mt-1 text-[13.5px] text-ink-2">Tokenized stocks you’ve earned from holding — claim any time.</p>
+      <h1 className="text-[16px] font-bold tracking-tight text-ink">My Rewards</h1>
+      <p className="mt-1 text-[12.5px] text-ink-2">Tokenized stocks you’ve earned from holding — claim any time.</p>
 
       <div className="mt-4 overflow-hidden rounded-2xl border border-edge bg-panel/40">
         {rewards == null ? (
