@@ -85,7 +85,14 @@ export function useTokens(
 
   useEffect(() => {
     const unsub = client.subscribeToLaunches(() => result.reload());
-    return unsub;
+    // Poll on an interval so new launches appear without a reload and a
+    // transient RPC failure (mobile rate-limits) self-heals instead of
+    // leaving the feed stuck empty.
+    const id = setInterval(() => result.reload(), 20_000);
+    return () => {
+      unsub();
+      clearInterval(id);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client]);
 

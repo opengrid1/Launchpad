@@ -188,7 +188,12 @@ export class ChainDataSource {
       // than one getBlock per swap in sequence, which stalls the feed and can
       // trip public-RPC rate limits on mobile.
       const uniqueBlocks = [...new Set((logs as any[]).map((l) => l.blockNumber as bigint))];
-      await Promise.all(uniqueBlocks.map((bn) => this.getBlockTs(bn)));
+      // Resolve timestamps in small concurrent batches, not all at once: a
+      // busy market can have hundreds of swap blocks and firing that many
+      // getBlock calls in one burst rate-limits public/mobile RPCs.
+      for (let i = 0; i < uniqueBlocks.length; i += 8) {
+        await Promise.all(uniqueBlocks.slice(i, i + 8).map((bn) => this.getBlockTs(bn)));
+      }
       const records = (logs as any[]).map((log) => this.tradeFromSwap(log, core));
       this.trades.set(key, records);
       this.tradesLoaded.add(key);
