@@ -4,20 +4,19 @@ import { Icon, type IconName } from "./Icon";
 
 /**
  * The Quiverpad nav dock — a floating pill that hovers over the page, thumb
- * reachable. Each item pairs a custom Quiverpad icon with its label; the
- * active section fills with a lime capsule and its icon lifts. Not a bar, not
- * a menu: the navigation is a single object that belongs to this product.
+ * reachable. Icon-only, two destinations; the active one fills with a lime
+ * capsule and its glyph lifts. Not a bar, not a menu: the navigation is a
+ * single object that belongs to this product.
  */
 const items: { to: string; label: string; end: boolean; icon: IconName }[] = [
   { to: "/", label: "Explore", end: true, icon: "explore" },
-  { to: "/launch", label: "Launch", end: false, icon: "launch" },
-  { to: "/docs", label: "Docs", end: false, icon: "docs" },
+  { to: "/launch", label: "Launch a token", end: false, icon: "launch" },
 ];
 
 export function NavDock() {
   return (
     <nav
-      className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2"
+      className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Primary"
     >
@@ -27,23 +26,22 @@ export function NavDock() {
             key={item.to}
             to={item.to}
             end={item.end}
+            aria-label={item.label}
+            title={item.label}
             className={({ isActive }) =>
-              `group flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors duration-200 ${
+              `group grid h-12 w-12 place-items-center rounded-full transition-colors duration-200 ${
                 isActive ? "bg-accent text-black" : "text-ink-2 hover:bg-panel-2 hover:text-ink"
               }`
             }
           >
             {({ isActive }) => (
-              <>
-                <Icon
-                  name={item.icon}
-                  size={19}
-                  className={`transition-transform duration-150 ease-out ${
-                    isActive ? "scale-110" : "scale-100 group-hover:scale-105"
-                  }`}
-                />
-                <span>{item.label}</span>
-              </>
+              <Icon
+                name={item.icon}
+                size={23}
+                className={`transition-transform duration-150 ease-out ${
+                  isActive ? "scale-110" : "scale-100 group-hover:scale-105"
+                }`}
+              />
             )}
           </NavLink>
         ))}

@@ -53,8 +53,11 @@ const glyphs: Record<IconName, ReactNode> = {
   ),
   launch: (
     <>
-      <path d="M12 20 V6" />
-      <path d="M6.5 11.5 L12 6 L17.5 11.5" />
+      <path d="M12 3.2 C14.9 6.1 16.2 9.6 16.2 13 L15.2 15 H8.8 L7.8 13 C7.8 9.6 9.1 6.1 12 3.2 Z" />
+      <circle cx="12" cy="9.8" r="1.7" />
+      <path d="M8.8 15 L6.9 18.4" />
+      <path d="M15.2 15 L17.1 18.4" />
+      <path d="M12 15 V19.5" />
     </>
   ),
   search: (
