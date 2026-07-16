@@ -29,8 +29,8 @@ export function TradesList({ token, symbol }: { token: Address; symbol: string }
           <tr className="border-b border-edge text-[10px] uppercase tracking-wider text-ink-3">
             <th className="px-4 py-2 font-medium">Time</th>
             <th className="px-2 py-2 font-medium">Side</th>
-            <th className="tnum px-2 py-2 text-right font-medium">{env.nativeSymbol}</th>
-            <th className="tnum px-2 py-2 text-right font-medium">{symbol}</th>
+            <th className="mono px-2 py-2 text-right font-medium">{env.nativeSymbol}</th>
+            <th className="mono px-2 py-2 text-right font-medium">{symbol}</th>
             <th className="px-2 py-2 font-medium">Trader</th>
             <th className="px-4 py-2 text-right font-medium">Tx</th>
           </tr>
@@ -45,9 +45,9 @@ export function TradesList({ token, symbol }: { token: Address; symbol: string }
               <td className={`px-2 py-2 font-semibold ${t.isBuy ? "text-up" : "text-down"}`}>
                 {t.isBuy ? "Buy" : "Sell"}
               </td>
-              <td className="tnum px-2 py-2 text-right text-ink-2">{fmtWei(t.nativeAmountWei)}</td>
-              <td className="tnum px-2 py-2 text-right text-ink-2">{fmtTokens(t.tokenAmount)}</td>
-              <td className="tnum px-2 py-2 text-ink-3">{shortAddr(t.trader)}</td>
+              <td className="mono px-2 py-2 text-right text-ink-2">{fmtWei(t.nativeAmountWei)}</td>
+              <td className="mono px-2 py-2 text-right text-ink-2">{fmtTokens(t.tokenAmount)}</td>
+              <td className="mono px-2 py-2 text-ink-3">{shortAddr(t.trader)}</td>
               <td className="px-4 py-2 text-right">
                 {explorerTx(t.txHash) ? (
                   <a
@@ -59,7 +59,7 @@ export function TradesList({ token, symbol }: { token: Address; symbol: string }
                     View
                   </a>
                 ) : (
-                  <span className="tnum text-ink-3">{shortAddr(t.txHash)}</span>
+                  <span className="mono text-ink-3">{shortAddr(t.txHash)}</span>
                 )}
               </td>
             </tr>

@@ -1,57 +1,92 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 import { BRAND } from "../lib/brand";
-import { shortAddr } from "../lib/format";
 import { useWallet } from "../lib/useWallet";
 
 /**
- * Not a navbar — a quiet brand line. The wordmark is home (Explore); the two
- * actions that matter, Launch and the wallet, sit opposite it. Borderless and
- * airy, it reads as the top of a product, not a dashboard chrome bar.
+ * Terminal top bar — thin, full-bleed, monospace-forward. A brand mark and a
+ * couple of route tabs on the left; a live network readout and the wallet on
+ * the right. Reads like the chrome of a trading terminal, not a marketing nav.
  */
 export function Header() {
   const { address, isConnected, connectFirst, disconnect, isPending } = useWallet();
 
   return (
-    <div className="mx-auto flex max-w-2xl items-center justify-between px-5 pb-1 pt-6">
-      <Link to="/" aria-label="Explore" className="flex items-center gap-2">
-        <span className="grid h-8 w-8 place-items-center rounded-[11px] bg-ink">
-          <svg width="17" height="17" viewBox="0 0 64 64" fill="none" aria-hidden>
-            <path d="M32 54 L32 13" stroke="#B6FF00" strokeWidth="5" strokeLinecap="round" />
-            <path d="M22 22 L32 12 L42 22" stroke="#B6FF00" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M25 47 L32 41 L39 47" stroke="#B6FF00" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M25 40 L32 34 L39 40" stroke="#B6FF00" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-        <span className="text-[18px] font-semibold tracking-tight text-ink">{BRAND.name}</span>
-      </Link>
-
-      <div className="flex items-center gap-2">
-        <Link
-          to="/launch"
-          className="rounded-full bg-accent px-4 py-2 text-[13px] font-bold text-black transition-transform hover:scale-[1.03]"
-        >
-          Launch
+    <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-xl">
+      <div className="flex h-12 items-center gap-1 px-3 sm:px-4">
+        {/* Brand */}
+        <Link to="/" aria-label="Explore" className="mr-2 flex shrink-0 items-center gap-2">
+          <span className="grid h-6 w-6 place-items-center rounded-md bg-accent">
+            <svg width="13" height="13" viewBox="0 0 64 64" fill="none" aria-hidden>
+              <path d="M32 54 L32 13" stroke="#0a0b0a" strokeWidth="6" strokeLinecap="round" />
+              <path d="M22 22 L32 12 L42 22" stroke="#0a0b0a" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M25 46 L32 40 L39 46" stroke="#0a0b0a" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <span className="hidden text-[14px] font-bold tracking-tight text-ink sm:block">
+            {BRAND.name}
+          </span>
         </Link>
+
+        {/* Route tabs */}
+        <nav className="flex items-center">
+          <Tab to="/" end>
+            Markets
+          </Tab>
+          <Tab to="/launch">Launch</Tab>
+        </nav>
+
+        <div className="flex-1" />
+
+        {/* Network readout */}
+        <div className="mono mr-1 hidden items-center gap-1.5 rounded-md border border-edge bg-panel px-2.5 py-1 text-[11px] text-ink-2 md:flex">
+          <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-up" />
+          <span className="uppercase tracking-wide">Robinhood Chain</span>
+        </div>
+
+        {/* Wallet */}
         {isConnected && address ? (
           <button
             onClick={() => disconnect()}
-            className="tnum flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+            className="mono flex items-center gap-1.5 rounded-md border border-edge-2 bg-panel px-2.5 py-1.5 text-[12px] font-medium text-ink transition-colors hover:border-accent/50"
             title="Disconnect"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            {`${address.slice(0, 4)}··${address.slice(-3)}`}
+            {`${address.slice(0, 4)}…${address.slice(-4)}`}
           </button>
         ) : (
           <button
             onClick={connectFirst}
             disabled={isPending}
-            className="rounded-full bg-ink px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="rounded-md bg-accent px-3 py-1.5 text-[12px] font-bold uppercase tracking-wide text-black transition-opacity hover:opacity-90 disabled:opacity-60"
           >
-            {isPending ? "Connecting" : "Connect"}
+            {isPending ? "…" : "Connect"}
           </button>
         )}
       </div>
-    </div>
+    </header>
+  );
+}
+
+function Tab({ to, end, children }: { to: string; end?: boolean; children: React.ReactNode }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        `relative px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+          isActive ? "text-ink" : "text-ink-3 hover:text-ink-2"
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {children}
+          {isActive ? (
+            <span className="absolute inset-x-3 -bottom-[9px] h-[2px] rounded-full bg-accent" />
+          ) : null}
+        </>
+      )}
+    </NavLink>
   );
 }

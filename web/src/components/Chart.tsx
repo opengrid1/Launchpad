@@ -19,8 +19,12 @@ import { launchpadAbi, launchTokenAbi } from "@launchpad/sdk";
 import { client } from "../lib/client";
 import { compact } from "../lib/format";
 
-const UP = "#0E9F4E";
-const DOWN = "#E5484D";
+const UP = "#33E07A";
+const DOWN = "#FF5257";
+const AXIS_TEXT = "#8b948a";
+const GRID = "rgba(232, 237, 230, 0.05)";
+const EDGE = "#1f241f";
+const LABEL_BG = "#171b17";
 
 const intervalLabels: Record<CandleInterval, string> = {
   "1m": "1m",
@@ -60,7 +64,7 @@ function toVolumeData(c: Candle, usdRate: number): HistogramData<UTCTimestamp> {
   return {
     time: c.time as UTCTimestamp,
     value: Number(c.volume) * usdRate,
-    color: up ? "rgba(14, 159, 78, 0.4)" : "rgba(229, 72, 77, 0.4)",
+    color: up ? "rgba(51, 224, 122, 0.4)" : "rgba(255, 82, 87, 0.4)",
   };
 }
 
@@ -110,24 +114,24 @@ export function PriceChart({ token }: { token: Address }) {
     const chart = createChart(container, {
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
-        textColor: "#9CA3AF",
+        textColor: AXIS_TEXT,
         fontFamily:
-          "Inter, 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          "'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace",
         fontSize: 11,
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: "rgba(17, 17, 17, 0.05)" },
-        horzLines: { color: "rgba(17, 17, 17, 0.05)" },
+        vertLines: { color: GRID },
+        horzLines: { color: GRID },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
-        vertLine: { color: "#9CA3AF", labelBackgroundColor: "#111111" },
-        horzLine: { color: "#9CA3AF", labelBackgroundColor: "#111111" },
+        vertLine: { color: AXIS_TEXT, labelBackgroundColor: LABEL_BG },
+        horzLine: { color: AXIS_TEXT, labelBackgroundColor: LABEL_BG },
       },
-      rightPriceScale: { borderColor: "#E8E8E2" },
+      rightPriceScale: { borderColor: EDGE },
       timeScale: {
-        borderColor: "#E8E8E2",
+        borderColor: EDGE,
         timeVisible: true,
         secondsVisible: false,
         rightOffset: 4,
@@ -177,11 +181,11 @@ export function PriceChart({ token }: { token: Address }) {
       }
       const dir = data.close >= data.open ? UP : DOWN;
       legend.innerHTML =
-        `<span style="color:#9CA3AF">O</span> <span style="color:${dir}">${fmtMcap(data.open)}</span>  ` +
-        `<span style="color:#9CA3AF">H</span> <span style="color:${dir}">${fmtMcap(data.high)}</span>  ` +
-        `<span style="color:#9CA3AF">L</span> <span style="color:${dir}">${fmtMcap(data.low)}</span>  ` +
-        `<span style="color:#9CA3AF">C</span> <span style="color:${dir}">${fmtMcap(data.close)}</span>` +
-        (vol ? `  <span style="color:#9CA3AF">Vol</span> <span style="color:#6B7280">$${compact(vol.value ?? 0)}</span>` : "");
+        `<span style="color:${AXIS_TEXT}">O</span> <span style="color:${dir}">${fmtMcap(data.open)}</span>  ` +
+        `<span style="color:${AXIS_TEXT}">H</span> <span style="color:${dir}">${fmtMcap(data.high)}</span>  ` +
+        `<span style="color:${AXIS_TEXT}">L</span> <span style="color:${dir}">${fmtMcap(data.low)}</span>  ` +
+        `<span style="color:${AXIS_TEXT}">C</span> <span style="color:${dir}">${fmtMcap(data.close)}</span>` +
+        (vol ? `  <span style="color:${AXIS_TEXT}">Vol</span> <span style="color:#c9ff4d">$${compact(vol.value ?? 0)}</span>` : "");
     });
 
     const observer = new ResizeObserver((entries) => {

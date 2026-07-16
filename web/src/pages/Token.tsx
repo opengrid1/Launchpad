@@ -30,15 +30,15 @@ export function TokenPage() {
 
   if (token.loading) {
     return (
-      <div className="mx-auto max-w-5xl space-y-4 px-4 py-8 sm:px-6">
-        <Skeleton className="h-16" />
-        <Skeleton className="h-[420px] rounded-2xl" />
+      <div className="mx-auto max-w-[1400px] space-y-3 px-3 py-4 sm:px-4">
+        <Skeleton className="h-14" />
+        <Skeleton className="h-[460px] rounded-xl" />
       </div>
     );
   }
   if (token.error || !token.data) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mx-auto max-w-[1400px] px-4 py-8">
         <EmptyState title="Token not found" body="Check the address, or the indexer may still be catching up." />
       </div>
     );
@@ -47,52 +47,45 @@ export function TokenPage() {
   const meta = t.metadata ?? {};
 
   const usdRate = usdRateOf(t);
+  const change = t.priceChange24hPct;
 
   return (
-    <div className="rise mx-auto max-w-4xl px-4 py-6 sm:px-6">
-      {/* Identity + market cap */}
-      <section className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-3">
-          <TokenLogo token={t} size={48} />
+    <div className="rise mx-auto max-w-[1400px] px-3 py-4 sm:px-4">
+      {/* Identity + live price bar */}
+      <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-edge bg-panel px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <TokenLogo token={t} size={42} />
           <div className="min-w-0">
-            <h1 className="flex items-center gap-2 text-[19px] font-semibold tracking-tight text-ink sm:text-[22px]">
+            <h1 className="flex items-center gap-2 text-[17px] font-bold tracking-tight text-ink">
               <span className="truncate">{t.name}</span>
-              <span className="tnum shrink-0 text-[15px] font-medium text-ink-3">${t.symbol}</span>
+              <span className="mono shrink-0 rounded bg-panel-2 px-1.5 py-0.5 text-[11px] font-semibold text-ink-2">${t.symbol}</span>
             </h1>
-            <p className="mt-0.5 truncate text-xs text-ink-3">
-              Launched {timeAgo(t.createdAt)} by <span className="tnum">{shortAddr(t.creator)}</span>
+            <p className="mono mt-0.5 truncate text-[11px] text-ink-3">
+              {shortAddr(t.creator)} · {timeAgo(t.createdAt)}
             </p>
-            <SocialRow t={t} meta={meta} />
           </div>
         </div>
-        <div className="shrink-0 text-right">
-          <p className="tnum text-[28px] font-semibold leading-none tracking-tight text-ink sm:text-[34px]">
-            {fmtUsd(t.marketCapUsd)}
-          </p>
-          <p className="mt-1.5 flex items-center justify-end gap-2 text-xs sm:text-sm">
-            <span className="text-ink-3">Market cap</span>
-            {t.priceChange24hPct != null ? (
-              <span className={`tnum font-semibold ${t.priceChange24hPct >= 0 ? "text-up" : "text-down"}`}>
-                {fmtPct(t.priceChange24hPct)}
-              </span>
-            ) : null}
-          </p>
+
+        {/* Inline market readout */}
+        <div className="flex items-center gap-5">
+          <Readout label="Market Cap" value={fmtUsd(t.marketCapUsd)} big />
+          <Readout
+            label="24h"
+            value={change == null ? "—" : fmtPct(change)}
+            tone={change == null ? undefined : change >= 0 ? "up" : "down"}
+          />
+          <div className="hidden sm:block"><Readout label="Vol 24h" value={fmtWeiUsd(t.volume24hWei, usdRate)} /></div>
+          <div className="hidden md:block"><Readout label="Liquidity" value={fmtWeiUsd(t.liquidityWei, usdRate)} /></div>
+          <div className="hidden lg:block"><Readout label="Holders" value={compact(t.holderCount)} /></div>
+          <SocialRow t={t} meta={meta} />
         </div>
       </section>
 
-      {/* Dense stat strip with icons */}
-      <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-y border-edge py-4 sm:grid-cols-4">
-        <Stat icon="volume" label="Volume 24h" value={fmtWeiUsd(t.volume24hWei, usdRate)} />
-        <Stat icon="liquidity" label="Liquidity" value={fmtWeiUsd(t.liquidityWei, usdRate)} />
-        <Stat icon="holders" label="Holders" value={compact(t.holderCount)} />
-        <Stat icon="marketcap" label="Fees earned" value={fmtWeiUsd(t.creatorFeesWei ?? "0", usdRate)} />
-      </dl>
-
       <CreatorClaim token={t} />
 
-      {/* Chart + trade */}
-      <section className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="h-[400px] overflow-hidden rounded-2xl border border-edge bg-panel lg:h-[460px]">
+      {/* Chart (dominant) + order panel */}
+      <section className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_300px]">
+        <div className="h-[440px] overflow-hidden rounded-xl border border-edge bg-panel lg:h-[560px]">
           <Suspense fallback={<Skeleton className="h-full w-full" />}>
             <PriceChart token={t.address as Address} />
           </Suspense>
@@ -101,11 +94,11 @@ export function TokenPage() {
       </section>
 
       {/* Detail sections */}
-      <section className="mt-8">
-        <div className="flex items-center gap-6 border-b border-edge">
+      <section className="mt-3 rounded-xl border border-edge bg-panel">
+        <div className="flex items-center gap-1 border-b border-edge px-2">
           {(
             [
-              ["trades", "Recent Trades", "transactions"],
+              ["trades", "Trades", "transactions"],
               ["holders", "Holders", "holders"],
               ["info", "Info", "contract"],
             ] as [Tab, string, IconName][]
@@ -113,25 +106,50 @@ export function TokenPage() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`relative flex items-center gap-1.5 pb-2.5 text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-1.5 px-3 py-2.5 text-[13px] font-semibold transition-colors ${
                 tab === key ? "text-ink" : "text-ink-3 hover:text-ink-2"
               }`}
             >
-              <Icon name={icon} size={15} />
+              <Icon name={icon} size={14} />
               {label}
               {tab === key ? (
-                <span className="absolute bottom-0 left-0 right-0 h-[3px] rounded-full bg-accent" />
+                <span className="absolute inset-x-3 -bottom-px h-[2px] rounded-full bg-accent" />
               ) : null}
             </button>
           ))}
         </div>
 
-        <div className="mt-2">
+        <div className="px-2">
           {tab === "trades" ? <TradesList token={t.address as Address} symbol={t.symbol} /> : null}
           {tab === "holders" ? <HoldersList token={t} /> : null}
           {tab === "info" ? <InfoTab t={t} meta={meta} /> : null}
         </div>
       </section>
+    </div>
+  );
+}
+
+function Readout({
+  label,
+  value,
+  tone,
+  big,
+}: {
+  label: string;
+  value: string;
+  tone?: "up" | "down";
+  big?: boolean;
+}) {
+  return (
+    <div className="text-right">
+      <p className="text-[10px] uppercase tracking-wide text-ink-3">{label}</p>
+      <p
+        className={`mono font-bold leading-tight ${big ? "text-[18px]" : "text-[14px]"} ${
+          tone === "up" ? "text-up" : tone === "down" ? "text-down" : "text-ink"
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -168,7 +186,7 @@ function CreatorClaim({ token }: { token: TokenSummary }) {
   };
 
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-edge bg-panel px-5 py-4">
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/25 bg-accent/[0.04] px-4 py-3">
       <div>
         <p className="text-sm font-semibold text-ink">Your creator fees</p>
         <p className="mt-0.5 text-xs text-ink-3">
@@ -185,20 +203,6 @@ function CreatorClaim({ token }: { token: TokenSummary }) {
         <Button variant="dark" disabled={busy || claimable === 0n} onClick={claim}>
           {busy ? "Claiming" : "Claim fees"}
         </Button>
-      </div>
-    </div>
-  );
-}
-
-function Stat({ icon, label, value }: { icon: IconName; label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-panel-2 text-ink-2">
-        <Icon name={icon} size={16} />
-      </span>
-      <div className="min-w-0">
-        <dd className="tnum text-[15px] font-semibold leading-tight text-ink">{value}</dd>
-        <dt className="text-[11px] text-ink-3">{label}</dt>
       </div>
     </div>
   );
@@ -224,7 +228,7 @@ function SocialRow({ t, meta }: { t: TokenSummary; meta: TokenSummary["metadata"
           rel="noreferrer"
           aria-label={l.label}
           title={l.label}
-          className="grid h-7 w-7 place-items-center rounded-full border border-edge text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
+          className="grid h-7 w-7 place-items-center rounded-md border border-edge text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
         >
           <Icon name={l.icon} size={14} />
         </a>
@@ -295,7 +299,7 @@ function InfoTab({ t, meta }: { t: any; meta: any }) {
               rel="noreferrer"
               aria-label={l.label}
               title={l.label}
-              className="grid h-9 w-9 place-items-center rounded-full border border-edge bg-panel text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
+              className="grid h-9 w-9 place-items-center rounded-md border border-edge bg-panel text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
             >
               {socialIcons[l.label] ?? socialIcons.Website}
             </a>
@@ -314,10 +318,10 @@ function InfoTab({ t, meta }: { t: any; meta: any }) {
 function CopyRow({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-3.5 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-edge bg-panel-2/40 px-3.5 py-2.5">
       <div className="min-w-0">
-        <p className="text-[11px] text-ink-3">{label}</p>
-        <p className="tnum truncate text-sm text-ink">{value}</p>
+        <p className="text-[11px] uppercase tracking-wide text-ink-3">{label}</p>
+        <p className="mono truncate text-[13px] text-ink">{value}</p>
       </div>
       <button
         onClick={() => {
@@ -328,7 +332,7 @@ function CopyRow({ label, value }: { label: string; value: string }) {
         }}
         aria-label={`Copy ${label}`}
         title={copied ? "Copied" : "Copy"}
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border transition-colors ${
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded-md border transition-colors ${
           copied ? "border-up/40 bg-up/10 text-up" : "border-edge text-ink-2 hover:border-edge-2 hover:text-ink"
         }`}
       >

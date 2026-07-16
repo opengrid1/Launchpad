@@ -109,13 +109,17 @@ export function LaunchPage() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-8 sm:px-6">
-      <h1 className="text-[28px] font-semibold tracking-tight text-ink">Launch Token</h1>
+      <div className="mono mb-1 flex items-center gap-2 text-[11px] uppercase tracking-wide text-accent">
+        <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-accent" />
+        New market
+      </div>
+      <h1 className="text-[26px] font-bold tracking-tight text-ink">Launch Token</h1>
       <p className="mt-1.5 text-sm text-ink-2">
         Launching is free. One transaction creates your token and a live Uniswap V3 market
         seeded with the full supply. Optionally make the first buy in the same transaction.
       </p>
 
-      <form onSubmit={submit} className="mt-8 space-y-5">
+      <form onSubmit={submit} className="mt-7 space-y-5 rounded-xl border border-edge bg-panel p-5">
         <div className="flex items-center gap-4">
           <input
             ref={fileRef}
@@ -188,7 +192,7 @@ export function LaunchPage() {
 
         <Field label="Initial Liquidity (optional)" hint={`${env.nativeSymbol}, executes your first buy`}>
           <input
-            className={`${inputClass} tnum`}
+            className={`${inputClass} mono`}
             value={form.firstBuy}
             onChange={set("firstBuy")}
             inputMode="decimal"
@@ -217,7 +221,7 @@ export function LaunchPage() {
         <button
           type="submit"
           disabled={busy}
-          className="h-12 w-full rounded-full bg-accent text-[15px] font-semibold text-ink transition-colors hover:bg-accent-2 disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3"
+          className="h-12 w-full rounded-lg bg-accent text-[15px] font-bold text-black transition-colors hover:bg-accent-2 disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3"
         >
           {busy ? "Confirm in wallet" : isConnected ? "Launch Token" : "Connect Wallet to Launch"}
         </button>

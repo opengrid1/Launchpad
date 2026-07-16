@@ -107,7 +107,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
       (side === "sell" && tokenBalance != null && parsedAmount > tokenBalance));
 
   return (
-    <div className="flex h-fit flex-col gap-4 rounded-2xl border border-edge bg-panel p-5 shadow-[var(--shadow-card)]">
+    <div className="flex h-fit flex-col gap-4 rounded-xl border border-edge bg-panel p-4 shadow-[var(--shadow-card)]">
       <div className="grid grid-cols-2 rounded-full bg-panel-2 p-1">
         {(["buy", "sell"] as Side[]).map((s) => (
           <button
@@ -146,7 +146,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
           onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
           placeholder="0.0"
           inputMode="decimal"
-          className="tnum w-full rounded-xl border border-edge bg-panel px-3.5 py-3 text-lg text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-ink"
+          className="mono w-full rounded-lg border border-edge bg-panel px-3.5 py-3 text-lg text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-edge-2"
         />
         <div className="mt-2 grid grid-cols-4 gap-1.5">
           {side === "buy"

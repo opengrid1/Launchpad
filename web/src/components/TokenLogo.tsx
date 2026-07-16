@@ -16,7 +16,7 @@ export function TokenLogo({ token, size = 40 }: { token: TokenSummary; size?: nu
         width={size}
         height={size}
         loading="lazy"
-        className="shrink-0 rounded-full bg-panel-2 object-cover"
+        className="shrink-0 rounded-lg bg-panel-2 object-cover ring-1 ring-edge"
         style={{ width: size, height: size }}
         onError={(e) => {
           (e.target as HTMLImageElement).style.display = "none";
@@ -26,8 +26,8 @@ export function TokenLogo({ token, size = 40 }: { token: TokenSummary; size?: nu
   }
   return (
     <span
-      className="grid shrink-0 place-items-center rounded-full bg-ink font-semibold text-accent"
-      style={{ width: size, height: size, fontSize: size * 0.34 }}
+      className="mono grid shrink-0 place-items-center rounded-lg bg-panel-2 font-bold text-accent ring-1 ring-edge"
+      style={{ width: size, height: size, fontSize: size * 0.32 }}
     >
       {token.symbol.slice(0, 2).toUpperCase()}
     </span>

@@ -6,7 +6,7 @@ import { useUi } from "../store";
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-2xl border border-edge bg-panel shadow-[var(--shadow-card)] ${className}`}
+      className={`rounded-xl border border-edge bg-panel shadow-[var(--shadow-card)] ${className}`}
     >
       {children}
     </div>
@@ -56,20 +56,20 @@ export function Button({
   type?: "button" | "submit";
 }) {
   const variants: Record<string, string> = {
-    primary: "bg-accent text-ink hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
+    primary: "bg-accent text-black hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
     dark: "bg-accent text-black hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
     ghost:
       "bg-panel border border-edge text-ink hover:border-edge-2 hover:bg-panel-2/60 disabled:text-ink-3",
-    buy: "bg-accent text-ink hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
-    sell: "bg-down text-white hover:brightness-105 disabled:bg-panel-2 disabled:text-ink-3",
-    danger: "bg-down text-white hover:brightness-105 disabled:opacity-50",
+    buy: "bg-accent text-black hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
+    sell: "bg-down text-black hover:brightness-105 disabled:bg-panel-2 disabled:text-ink-3",
+    danger: "bg-down text-black hover:brightness-105 disabled:opacity-50",
   };
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`h-11 rounded-full px-5 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed ${variants[variant]} ${className}`}
+      className={`h-11 rounded-lg px-5 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed ${variants[variant]} ${className}`}
     >
       {children}
     </button>
@@ -97,7 +97,7 @@ export function Field({
 }
 
 export const inputClass =
-  "w-full rounded-xl border border-edge bg-panel px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-3 outline-none transition-colors focus:border-ink";
+  "w-full rounded-lg border border-edge bg-panel px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-3 outline-none transition-colors focus:border-edge-2";
 
 export function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-xl bg-panel-2 ${className}`} />;

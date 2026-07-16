@@ -1,39 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-  /* Warm off-white ground, white surfaces */
-  --color-bg: #f7f7f2;
-  --color-panel: #ffffff;
-  --color-panel-2: #f2f2ec;
-  --color-edge: #e8e8e2;
-  --color-edge-2: #ddddd4;
+  /* Terminal — near-black ground, layered graphite panels */
+  --color-bg: #0a0b0a;
+  --color-panel: #101310;
+  --color-panel-2: #171b17;
+  --color-edge: #1f241f;
+  --color-edge-2: #2a312a;
 
-  /* Ink */
-  --color-ink: #111111;
-  --color-ink-2: #6b7280;
-  --color-ink-3: #9ca3af;
+  /* Ink — bright on black */
+  --color-ink: #e8ede6;
+  --color-ink-2: #8b948a;
+  --color-ink-3: #5b645a;
 
   /* Lime accent */
   --color-accent: #b6ff00;
-  --color-accent-2: #a8ef00;
+  --color-accent-2: #c9ff4d;
 
-  /* Trading colors on the warm light surface */
-  --color-up: #0e9f4e;
-  --color-down: #e5484d;
+  /* Trading colors on dark */
+  --color-up: #33e07a;
+  --color-down: #ff5257;
 
   --font-sans: "Inter", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-serif: "Instrument Serif", "Times New Roman", Georgia, serif;
-  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
 
-  --shadow-card: 0 1px 2px rgba(17, 17, 17, 0.03), 0 6px 20px -12px rgba(17, 17, 17, 0.1);
-  --shadow-card-hover: 0 2px 4px rgba(17, 17, 17, 0.04), 0 18px 40px -18px rgba(17, 17, 17, 0.16);
-  --shadow-btn: 0 1px 2px rgba(17, 17, 17, 0.08);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -14px rgba(0, 0, 0, 0.6);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.5), 0 20px 44px -20px rgba(0, 0, 0, 0.7);
+  --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 html {
   background: var(--color-bg);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
@@ -64,20 +64,20 @@ body {
 }
 
 ::selection {
-  background: rgba(182, 255, 0, 0.5);
-  color: #111111;
+  background: rgba(182, 255, 0, 0.35);
+  color: #e8ede6;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #ddddd4 transparent;
+  scrollbar-color: #2a312a transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #ddddd4;
+  background: #2a312a;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-track {
@@ -114,7 +114,7 @@ body {
 
 @keyframes flash-up {
   0% {
-    background: rgba(14, 159, 78, 0.1);
+    background: rgba(51, 224, 122, 0.14);
   }
   100% {
     background: transparent;
@@ -122,7 +122,7 @@ body {
 }
 @keyframes flash-down {
   0% {
-    background: rgba(229, 72, 77, 0.09);
+    background: rgba(255, 82, 87, 0.13);
   }
   100% {
     background: transparent;
@@ -135,9 +135,47 @@ body {
   animation: flash-down 700ms ease-out;
 }
 
+/* Ticker strip — continuous horizontal scroll */
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker-track {
+  animation: ticker 40s linear infinite;
+}
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* Live pulse dot */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rise,
-  .toast-enter {
+  .toast-enter,
+  .ticker-track,
+  .pulse-dot {
     animation: none;
   }
 }
