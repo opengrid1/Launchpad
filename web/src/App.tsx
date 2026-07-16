@@ -50,7 +50,7 @@ export default function App() {
               </Suspense>
             </main>
             <footer className="border-t border-edge py-5">
-              <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 text-xs sm:px-6">
+              <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 text-xs sm:px-6">
                 <p className="text-ink-3">{BRAND.name}. {BRAND.tagline}</p>
                 <nav className="flex items-center gap-5">
                   <Link to="/docs" className="font-medium text-ink-2 transition-colors hover:text-ink">
