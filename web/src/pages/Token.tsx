@@ -59,9 +59,10 @@ export function TokenPage() {
               <span className="truncate">{t.name}</span>
               <span className="mono shrink-0 rounded bg-panel-2 px-1.5 py-0.5 text-[11px] font-semibold text-ink-2">${t.symbol}</span>
             </h1>
-            <p className="mono mt-0.5 truncate text-[11px] text-ink-3">
-              by {shortAddr(t.creator)} · {timeAgo(t.createdAt)}
-            </p>
+            <div className="mt-1 flex items-center gap-2">
+              <CaChip address={t.address as Address} />
+              <span className="mono truncate text-[11px] text-ink-3">{timeAgo(t.createdAt)}</span>
+            </div>
           </div>
         </div>
 
@@ -133,6 +134,30 @@ export function TokenPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+/** Small copyable contract-address chip for the token identity bar. */
+function CaChip({ address }: { address: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(address).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1400);
+        });
+      }}
+      title={copied ? "Copied" : "Copy contract address"}
+      className={`mono flex shrink-0 items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] transition-colors ${
+        copied
+          ? "border-up/40 bg-up/10 text-up"
+          : "border-edge bg-panel-2/50 text-ink-3 hover:border-edge-2 hover:text-ink-2"
+      }`}
+    >
+      <span>{shortAddr(address)}</span>
+      <Icon name={copied ? "verified" : "copy"} size={11} />
+    </button>
   );
 }
 

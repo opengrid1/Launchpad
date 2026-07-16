@@ -13,9 +13,9 @@
   --color-ink-2: #8b948a;
   --color-ink-3: #5b645a;
 
-  /* Lime accent */
-  --color-accent: #b6ff00;
-  --color-accent-2: #c9ff4d;
+  /* Lime accent — chartreuse, dialed back from full neon */
+  --color-accent: #a6e600;
+  --color-accent-2: #b8f52e;
 
   /* Trading colors on dark */
   --color-up: #33e07a;
@@ -151,18 +151,18 @@ body {
   animation-play-state: paused;
 }
 
-/* Live pulse dot */
+/* Live pulse dot — gentle breathe, not a blink */
 @keyframes pulse-dot {
   0%,
   100% {
-    opacity: 1;
+    opacity: 0.9;
   }
   50% {
-    opacity: 0.25;
+    opacity: 0.5;
   }
 }
 .pulse-dot {
-  animation: pulse-dot 1.8s ease-in-out infinite;
+  animation: pulse-dot 2.6s ease-in-out infinite;
 }
 
 .mono {

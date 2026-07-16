@@ -3,7 +3,6 @@ import type { Address, Candle, CandleInterval } from "@launchpad/sdk";
 import { CANDLE_INTERVALS, INTERVAL_SECONDS, launchpadAbi, launchTokenAbi } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
-import { shortAddr } from "../lib/format";
 
 const UP = "#33E07A";
 const DOWN = "#FF5257";
@@ -62,40 +61,6 @@ async function fetchMcapScale(token: Address): Promise<number> {
   } catch {
     return 1;
   }
-}
-
-/** Compact contract-address chip with copy, docked in the chart toolbar. */
-function CaChip({ address }: { address: Address }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      onClick={() => {
-        navigator.clipboard.writeText(address).then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1400);
-        });
-      }}
-      title={copied ? "Copied" : "Copy contract address"}
-      className={`mono flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition-colors ${
-        copied
-          ? "border-up/40 bg-up/10 text-up"
-          : "border-edge bg-panel-2/50 text-ink-2 hover:border-edge-2 hover:text-ink"
-      }`}
-    >
-      <span className="text-ink-3">CA</span>
-      <span>{shortAddr(address)}</span>
-      {copied ? (
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-          <path d="M2 6.5l2.6 2.6L10 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ) : (
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <rect x="9" y="9" width="11" height="11" rx="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-      )}
-    </button>
-  );
 }
 
 /**
@@ -225,21 +190,18 @@ export function PriceChart({ token }: { token: Address }) {
   return (
     <div className="flex h-full flex-col">
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-3 border-b border-edge px-3 py-2">
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-          {CANDLE_INTERVALS.map((iv) => (
-            <button
-              key={iv}
-              onClick={() => setInterval(iv)}
-              className={`shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
-                interval === iv ? "bg-accent text-black" : "text-ink-3 hover:text-ink"
-              }`}
-            >
-              {intervalLabels[iv]}
-            </button>
-          ))}
-        </div>
-        <CaChip address={token} />
+      <div className="flex items-center gap-1 overflow-x-auto border-b border-edge px-3 py-2 no-scrollbar">
+        {CANDLE_INTERVALS.map((iv) => (
+          <button
+            key={iv}
+            onClick={() => setInterval(iv)}
+            className={`shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
+              interval === iv ? "bg-accent text-black" : "text-ink-3 hover:text-ink"
+            }`}
+          >
+            {intervalLabels[iv]}
+          </button>
+        ))}
       </div>
 
       {/* Plot */}
@@ -256,17 +218,10 @@ export function PriceChart({ token }: { token: Address }) {
           >
             <defs>
               <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={color} stopOpacity="0.38" />
-                <stop offset="42%" stopColor={color} stopOpacity="0.14" />
+                <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+                <stop offset="55%" stopColor={color} stopOpacity="0.07" />
                 <stop offset="100%" stopColor={color} stopOpacity="0" />
               </linearGradient>
-              <filter id={`${gid}-glow`} x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3" result="b" />
-                <feMerge>
-                  <feMergeNode in="b" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
             </defs>
 
             {/* Grid + right-axis price labels */}
@@ -294,7 +249,6 @@ export function PriceChart({ token }: { token: Address }) {
               strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
-              filter={`url(#${gid}-glow)`}
             />
 
             {/* Current-price line */}
