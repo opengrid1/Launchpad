@@ -7,7 +7,7 @@ import { isAddress } from "viem";
 import { useWalletClient } from "wagmi";
 
 import { TokenLogo } from "../components/TokenLogo";
-import { Button, Card, EmptyState, Skeleton } from "../components/ui";
+import { Button, EmptyState, Skeleton } from "../components/ui";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { compact, fmtUsd, fmtWei, shortAddr } from "../lib/format";
@@ -124,18 +124,18 @@ export function AdminPage() {
 
   // LP actions: proceeds settle straight to the chosen recipient (no treasury).
   const lpActions = (t: { address: string; symbol: string }) => (
-    <div className="flex justify-end gap-2">
+    <div className="flex justify-end gap-1.5">
       <button
         disabled={busyAction !== null || !destAddr}
         onClick={() => runTx("Collect fees", () => writeFactory("collectPositionFees", [t.address, destAddr]))}
-        className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
+        className="rounded-md border border-edge bg-panel px-2.5 py-1 text-[11px] font-semibold text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
       >
         Collect fees
       </button>
       <button
         disabled={busyAction !== null || !destAddr}
         onClick={() => runTx("Withdraw 50% of position", () => writeFactory("unwindPosition", [t.address, 5000, destAddr]))}
-        className="h-8 rounded-full border border-edge px-3 text-xs font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
+        className="rounded-md border border-edge bg-panel px-2.5 py-1 text-[11px] font-semibold text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
       >
         Withdraw 50%
       </button>
@@ -150,7 +150,7 @@ export function AdminPage() {
             runTx("Unwind full position", () => writeFactory("unwindPosition", [t.address, 10000, destAddr]));
           }
         }}
-        className="h-8 rounded-full border border-down/40 px-3 text-xs font-medium text-down transition-colors hover:bg-down/5 disabled:opacity-50"
+        className="rounded-md border border-down/40 bg-down/5 px-2.5 py-1 text-[11px] font-semibold text-down transition-colors hover:bg-down/10 disabled:opacity-50"
       >
         Withdraw all
       </button>
@@ -160,7 +160,8 @@ export function AdminPage() {
   if (!isConnected) {
     return (
       <div className="mx-auto max-w-md px-4 py-24 text-center">
-        <h1 className="text-xl font-semibold text-ink">Restricted area</h1>
+        <p className="mono text-[11px] uppercase tracking-wide text-ink-3">Operations console</p>
+        <h1 className="mt-2 text-xl font-bold text-ink">Restricted area</h1>
         <p className="mt-2 text-sm text-ink-2">Connect the protocol admin wallet to continue.</p>
         <div className="mt-6">
           <Button variant="dark" onClick={connectFirst}>
@@ -173,7 +174,7 @@ export function AdminPage() {
 
   if (protocolAdmin.isLoading) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mx-auto max-w-[1100px] px-4 py-6">
         <Skeleton className="h-24" />
       </div>
     );
@@ -182,13 +183,13 @@ export function AdminPage() {
   if (!isAdmin) {
     return (
       <div className="mx-auto max-w-md px-4 py-24 text-center">
-        <p className="tnum text-5xl font-semibold text-ink-3">403</p>
-        <h1 className="mt-3 text-xl font-semibold text-ink">Unauthorized</h1>
+        <p className="mono text-5xl font-bold text-down">403</p>
+        <h1 className="mt-3 text-xl font-bold text-ink">Unauthorized</h1>
         <p className="mt-2 text-sm text-ink-2">
           This wallet is not the protocol admin. Only the immutable admin can manage the protocol.
         </p>
-        <Link to="/" className="mt-6 inline-block text-sm font-medium text-ink underline underline-offset-2">
-          Back to Explore
+        <Link to="/" className="mono mt-6 inline-block text-sm font-medium text-accent underline underline-offset-2">
+          Back to Markets
         </Link>
       </div>
     );
@@ -197,77 +198,78 @@ export function AdminPage() {
   const s = stats.data;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-ink">Operations</h1>
-          <p className="mt-1 text-sm text-ink-2">Protocol admin controls. Every action is an on-chain transaction.</p>
+    <div className="mx-auto max-w-[1100px] px-3 py-4 sm:px-4">
+      {/* Header bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-accent" />
+          <h1 className="text-[15px] font-bold tracking-tight text-ink">Operations</h1>
+          <span className="mono rounded bg-panel-2 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-ink-3">admin</span>
         </div>
-        <Button
-          variant={paused.data ? "primary" : "danger"}
+        <button
           disabled={busyAction !== null}
           onClick={() =>
             runTx(paused.data ? "Resume launches" : "Pause launches", () =>
               writeFactory("setLaunchesPaused", [!paused.data]), () => paused.refetch())
           }
+          className={`rounded-md px-3 py-1.5 text-[12px] font-bold uppercase tracking-wide transition-colors disabled:opacity-50 ${
+            paused.data ? "bg-accent text-black hover:bg-accent-2" : "bg-down/10 text-down hover:bg-down/20"
+          }`}
         >
           {paused.data ? "Resume launches" : "Pause launches"}
-        </Button>
+        </button>
       </div>
 
-      <dl className="mt-6 flex flex-wrap gap-x-10 gap-y-3 border-y border-edge py-4">
-        <Figure label="Launches" value={s ? compact(s.totalLaunches) : "-"} />
-        <Figure label="Total volume" value={s ? `${fmtWei(s.totalVolumeWei)} ${env.nativeSymbol}` : "-"} />
-        <Figure label="Fees generated" value={s ? `${fmtWei(s.totalFeesWei)} ${env.nativeSymbol}` : "-"} />
-        <Figure
-          label="Protocol fees claimable"
-          value={s ? `${fmtWei(s.protocolFeesWei)} ${env.nativeSymbol}` : "-"}
-        />
-      </dl>
+      {/* Figures strip */}
+      <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-edge bg-edge sm:grid-cols-4">
+        <Figure label="Launches" value={s ? compact(s.totalLaunches) : "—"} />
+        <Figure label="Total volume" value={s ? `${fmtWei(s.totalVolumeWei)} ${env.nativeSymbol}` : "—"} />
+        <Figure label="Fees generated" value={s ? `${fmtWei(s.totalFeesWei)} ${env.nativeSymbol}` : "—"} />
+        <Figure label="Protocol claimable" value={s ? `${fmtWei(s.protocolFeesWei)} ${env.nativeSymbol}` : "—"} accent />
+      </div>
 
-      <Card className="mt-8 overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-edge px-5 py-3.5">
-          <div>
-            <h2 className="text-sm font-semibold text-ink">Protocol fees</h2>
-            <p className="mt-0.5 text-xs text-ink-3">
-              The protocol's 20% share of trading fees. Claiming sends the full balance to the admin wallet.
-            </p>
-          </div>
-          <button
-            disabled={busyAction !== null || !s || s.protocolFeesWei === 0n}
-            onClick={() => runTx("Claim protocol fees", () => writeFactory("claimPlatformFees", []), () => stats.refetch())}
-            className="h-9 rounded-full bg-accent px-4 text-sm font-semibold text-black transition-colors hover:bg-accent-2 disabled:opacity-40"
-          >
-            Claim {s ? `${fmtWei(s.protocolFeesWei)} ${env.nativeSymbol}` : ""}
-          </button>
-        </div>
-      </Card>
-
-      <Card className="mt-5 overflow-hidden">
-        <div className="border-b border-edge px-5 py-3.5">
-          <h2 className="text-sm font-semibold text-ink">Manage a token's liquidity by address</h2>
-          <p className="mt-0.5 text-xs text-ink-3">
-            Paste a token contract address to collect its pool fees or withdraw its liquidity.
-            Proceeds go straight to the recipient below.
+      {/* Protocol fees claim */}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-4 py-3">
+        <div>
+          <h2 className="text-[13px] font-semibold text-ink">Protocol fees</h2>
+          <p className="mt-0.5 text-[11px] text-ink-3">
+            The protocol's share of trading fees. Claiming sends the full balance to the admin wallet.
           </p>
         </div>
-        <div className="space-y-3 p-5">
+        <button
+          disabled={busyAction !== null || !s || s.protocolFeesWei === 0n}
+          onClick={() => runTx("Claim protocol fees", () => writeFactory("claimPlatformFees", []), () => stats.refetch())}
+          className="mono rounded-md bg-accent px-3 py-1.5 text-[12px] font-bold text-black transition-colors hover:bg-accent-2 disabled:opacity-40"
+        >
+          Claim {s ? `${fmtWei(s.protocolFeesWei)} ${env.nativeSymbol}` : ""}
+        </button>
+      </div>
+
+      {/* Manage by address */}
+      <div className="mt-3 overflow-hidden rounded-xl border border-edge bg-panel">
+        <div className="border-b border-edge px-4 py-3">
+          <h2 className="text-[13px] font-semibold text-ink">Manage a token's liquidity by address</h2>
+          <p className="mt-0.5 text-[11px] text-ink-3">
+            Paste a token contract address to collect its pool fees or withdraw its liquidity. Proceeds go to the recipient below.
+          </p>
+        </div>
+        <div className="space-y-3 p-4">
           <div>
-            <label className="text-xs font-medium text-ink-2">Send proceeds to</label>
+            <label className="text-[11px] font-medium uppercase tracking-wide text-ink-3">Send proceeds to</label>
             <input
               value={destInput}
               onChange={(e) => setDestInput(e.target.value)}
               placeholder={address ? `${address} (your wallet)` : "Paste recipient address (0x…)"}
               spellCheck={false}
               autoComplete="off"
-              className="tnum mt-1 h-10 w-full rounded-xl border border-edge bg-panel px-3.5 text-sm text-ink placeholder:text-ink-3 focus:border-edge-2 focus:outline-none"
+              className="mono mt-1 h-10 w-full rounded-lg border border-edge bg-panel-2/40 px-3 text-[12px] text-ink placeholder:text-ink-3 focus:border-edge-2 focus:outline-none"
             />
             {trimmedDest.length > 0 && !destAddr ? (
-              <p className="mt-1 text-xs text-down">That is not a valid address.</p>
+              <p className="mt-1 text-[11px] text-down">That is not a valid address.</p>
             ) : (
-              <p className="mt-1 text-xs text-ink-3">
-                Recipient: <span className="tnum">{shortAddr(destAddr ?? "")}</span>
-                {!trimmedDest ? " (your connected wallet)" : ""}
+              <p className="mono mt-1 text-[11px] text-ink-3">
+                Recipient: {shortAddr(destAddr ?? "")}
+                {!trimmedDest ? " (your wallet)" : ""}
               </p>
             )}
           </div>
@@ -277,23 +279,22 @@ export function AdminPage() {
             placeholder="Paste token contract address (0x…)"
             spellCheck={false}
             autoComplete="off"
-            className="tnum h-10 w-full rounded-xl border border-edge bg-panel px-3.5 text-sm text-ink placeholder:text-ink-3 focus:border-edge-2 focus:outline-none"
+            className="mono h-10 w-full rounded-lg border border-edge bg-panel-2/40 px-3 text-[12px] text-ink placeholder:text-ink-3 focus:border-edge-2 focus:outline-none"
           />
           {trimmedLookup.length > 0 && !lookupAddr ? (
-            <p className="text-xs text-down">That is not a valid address.</p>
+            <p className="text-[11px] text-down">That is not a valid address.</p>
           ) : lookup.isLoading ? (
             <Skeleton className="h-14" />
           ) : lookup.isError ? (
-            <p className="text-xs text-down">This address is not a token launched here.</p>
+            <p className="text-[11px] text-down">This address is not a token launched here.</p>
           ) : lookup.data ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-edge px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-edge bg-panel-2/40 px-3 py-2.5">
               <Link to={`/token/${lookup.data.address}`} className="flex min-w-0 items-center gap-3">
-                <TokenLogo token={lookup.data} size={32} />
+                <TokenLogo token={lookup.data} size={30} />
                 <span className="min-w-0">
-                  <span className="font-semibold text-ink">${lookup.data.symbol}</span>
-                  <span className="block truncate text-xs text-ink-3">
-                    {lookup.data.name} · {fmtUsd(lookup.data.marketCapUsd)} mcap ·{" "}
-                    {fmtWei(lookup.data.liquidityWei)} {env.nativeSymbol} liquidity
+                  <span className="text-[13px] font-semibold text-ink">${lookup.data.symbol}</span>
+                  <span className="mono block truncate text-[11px] text-ink-3">
+                    {lookup.data.name} · {fmtUsd(lookup.data.marketCapUsd)} · {fmtWei(lookup.data.liquidityWei)} {env.nativeSymbol} liq
                   </span>
                 </span>
               </Link>
@@ -301,12 +302,11 @@ export function AdminPage() {
             </div>
           ) : null}
         </div>
-      </Card>
+      </div>
 
-      <Card className="mt-5 overflow-hidden">
-        <h2 className="border-b border-edge px-5 py-3.5 text-sm font-semibold text-ink">
-          Tokens and LP positions
-        </h2>
+      {/* Token table */}
+      <div className="mt-3 overflow-hidden rounded-xl border border-edge bg-panel">
+        <h2 className="border-b border-edge px-4 py-3 text-[13px] font-semibold text-ink">Tokens &amp; LP positions</h2>
         {tokensLoading ? (
           <div className="space-y-2 p-4">
             {[...Array(4)].map((_, i) => (
@@ -317,61 +317,61 @@ export function AdminPage() {
           <EmptyState title="No tokens yet" />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] text-left text-sm">
+            <table className="w-full min-w-[680px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-edge text-xs text-ink-3">
-                  <th className="px-5 py-2 font-medium">Token</th>
-                  <th className="tnum px-2 py-2 text-right font-medium">Market cap</th>
-                  <th className="tnum px-2 py-2 text-right font-medium">Liquidity</th>
-                  <th className="px-2 py-2 text-right font-medium">Featured</th>
-                  <th className="px-5 py-2 text-right font-medium">LP actions</th>
+                <tr className="border-b border-edge text-[10px] uppercase tracking-wide text-ink-3">
+                  <th className="px-4 py-2 font-semibold">Token</th>
+                  <th className="px-2 py-2 text-right font-semibold">MCap</th>
+                  <th className="px-2 py-2 text-right font-semibold">Liquidity</th>
+                  <th className="px-2 py-2 text-right font-semibold">Featured</th>
+                  <th className="px-4 py-2 text-right font-semibold">LP actions</th>
                 </tr>
               </thead>
               <tbody>
                 {tokens.map((t) => (
-                  <tr key={t.address} className="border-b border-edge/60">
-                    <td className="px-5 py-3">
-                      <Link to={`/token/${t.address}`} className="flex items-center gap-3">
-                        <TokenLogo token={t} size={28} />
+                  <tr key={t.address} className="border-b border-edge/60 transition-colors last:border-0 hover:bg-panel-2">
+                    <td className="px-4 py-2.5">
+                      <Link to={`/token/${t.address}`} className="flex items-center gap-2.5">
+                        <TokenLogo token={t} size={26} />
                         <span>
-                          <span className="font-semibold text-ink">{t.symbol}</span>
-                          <span className="block text-xs text-ink-3">{t.name}</span>
+                          <span className="text-[13px] font-semibold text-ink">{t.symbol}</span>
+                          <span className="block text-[11px] text-ink-3">{t.name}</span>
                         </span>
                       </Link>
                     </td>
-                    <td className="tnum px-2 py-3 text-right text-ink-2">{fmtUsd(t.marketCapUsd)}</td>
-                    <td className="tnum px-2 py-3 text-right text-ink-2">
+                    <td className="mono px-2 py-2.5 text-right text-[12px] text-ink-2">{fmtUsd(t.marketCapUsd)}</td>
+                    <td className="mono px-2 py-2.5 text-right text-[12px] text-ink-2">
                       {fmtWei(t.liquidityWei)} {env.nativeSymbol}
                     </td>
-                    <td className="px-2 py-3 text-right">
+                    <td className="px-2 py-2.5 text-right">
                       <button
                         disabled={busyAction !== null}
                         onClick={() =>
                           runTx(t.featured ? "Unfeature token" : "Feature token", () =>
                             writeFactory("setFeatured", [t.address, !t.featured]))
                         }
-                        className="text-xs font-medium text-ink underline underline-offset-2 disabled:opacity-50"
+                        className="text-[11px] font-semibold text-accent underline underline-offset-2 disabled:opacity-50"
                       >
                         {t.featured ? "Unfeature" : "Feature"}
                       </button>
                     </td>
-                    <td className="px-5 py-3">{lpActions(t)}</td>
+                    <td className="px-4 py-2.5">{lpActions(t)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }
 
-function Figure({ label, value }: { label: string; value: string }) {
+function Figure({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div>
-      <dd className="tnum text-[15px] font-semibold text-ink">{value}</dd>
-      <dt className="mt-0.5 text-xs text-ink-3">{label}</dt>
+    <div className="bg-panel px-3 py-2.5">
+      <dt className="text-[10px] uppercase tracking-wide text-ink-3">{label}</dt>
+      <dd className={`mono mt-0.5 text-[14px] font-bold ${accent ? "text-accent" : "text-ink"}`}>{value}</dd>
     </div>
   );
 }
