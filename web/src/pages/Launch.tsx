@@ -98,7 +98,7 @@ export function LaunchPage() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-10 sm:px-6">
-      <h1 className="font-display text-[40px] leading-tight text-ink">Launch a token</h1>
+      <h1 className="text-[32px] font-bold leading-tight tracking-tight text-ink">Launch a token</h1>
       <p className="mt-2 text-[15px] text-ink-2">
         Free to launch. One transaction mints your token, opens a live Uniswap V4 market, and seeds
         the full supply. Every trade rewards holders with the stock you choose.

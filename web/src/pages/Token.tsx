@@ -94,7 +94,7 @@ export function TokenPage() {
               <p className="kicker text-[12px] text-accent-2">Market</p>
               {rewardStock ? <RewardPill stock={extra!.stock} /> : null}
             </div>
-            <h1 className="font-display mt-0.5 truncate text-[40px] leading-[1.02] text-ink sm:text-[48px]">{t.name}</h1>
+            <h1 className="mt-0.5 truncate text-[32px] font-bold leading-tight tracking-tight text-ink sm:text-[40px]">{t.name}</h1>
             <div className="mt-1.5 flex items-center gap-2.5">
               <span className="text-[15px] text-ink-2">{t.symbol}</span>
               <CaChip address={t.address as Address} />
@@ -151,8 +151,8 @@ export function TokenPage() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`relative -mb-px pb-3 text-[16px] transition-colors ${
-                tab === key ? "font-display text-ink" : "text-ink-2 hover:text-ink"
+              className={`relative -mb-px pb-3 text-[15px] transition-colors ${
+                tab === key ? "font-semibold text-ink" : "text-ink-2 hover:text-ink"
               }`}
             >
               {label}
@@ -200,7 +200,7 @@ function Figure({ label, node }: { label: string; node: React.ReactNode }) {
   return (
     <div className="bg-panel px-4 py-3.5">
       <p className="text-[12px] text-ink-2">{label}</p>
-      <p className="font-display mt-1 text-[21px] leading-tight text-ink">{node}</p>
+      <p className="mt-1 text-[19px] font-bold tracking-tight text-ink">{node}</p>
     </div>
   );
 }
