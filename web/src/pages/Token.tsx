@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useToken } from "@launchpad/sdk/react";
 import type { Address, TokenSummary } from "@launchpad/sdk";
 
@@ -8,6 +8,7 @@ import type { Address, TokenSummary } from "@launchpad/sdk";
 const PriceChart = lazy(() =>
   import("../components/Chart").then((m) => ({ default: m.PriceChart })),
 );
+import { AnimatedNumber } from "../components/AnimatedNumber";
 import { HoldersList } from "../components/HoldersList";
 import { Icon, type IconName } from "../components/Icon";
 import { TokenLogo } from "../components/TokenLogo";
@@ -74,91 +75,96 @@ export function TokenPage() {
   const usdRate = usdRateOf(t);
   const change = t.priceChange24hPct;
 
+  const rewardStock = extra ? stockOf(extra.stock) : undefined;
+
   return (
-    <div className="rise mx-auto flex max-w-[1500px] flex-col gap-2.5 px-3 py-2.5 sm:px-4 lg:h-[calc(100vh-3rem)] lg:overflow-hidden">
-      {/* Identity + live price bar */}
-      <section className="flex shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-xl border border-edge bg-panel px-4 py-2.5">
-        <div className="flex min-w-0 items-center gap-3">
-          <TokenLogo token={t} size={38} />
+    <div className="rise mx-auto max-w-6xl px-4 pb-24 sm:px-8">
+      {/* Masthead */}
+      <div className="flex items-center justify-between border-b border-ink/80 pb-3 pt-8">
+        <Link to="/" className="kicker text-[13px] text-ink-2 transition-colors hover:text-ink">← Markets</Link>
+        <span className="text-[13px] text-ink-3">{timeAgo(t.createdAt)}</span>
+      </div>
+
+      {/* Identity */}
+      <section className="flex flex-wrap items-start justify-between gap-6 pt-7">
+        <div className="flex min-w-0 items-center gap-4">
+          <TokenLogo token={t} size={58} />
           <div className="min-w-0">
-            <h1 className="flex items-center gap-2 text-[16px] font-bold leading-tight tracking-tight text-ink">
-              <span className="truncate">{t.name}</span>
-              <span className="mono shrink-0 rounded bg-panel-2 px-1.5 py-0.5 text-[11px] font-semibold text-ink-2">${t.symbol}</span>
-            </h1>
-            <div className="mt-1 flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
+              <p className="kicker text-[12px] text-accent-2">Market</p>
+              {rewardStock ? <RewardPill stock={extra!.stock} /> : null}
+            </div>
+            <h1 className="font-display mt-0.5 truncate text-[40px] leading-[1.02] text-ink sm:text-[48px]">{t.name}</h1>
+            <div className="mt-1.5 flex items-center gap-2.5">
+              <span className="text-[15px] text-ink-2">{t.symbol}</span>
               <CaChip address={t.address as Address} />
-              <span className="mono truncate text-[11px] text-ink-3">{timeAgo(t.createdAt)}</span>
-              {extra ? <RewardPill stock={extra.stock} /> : null}
             </div>
           </div>
         </div>
-
-        {/* Inline market readout */}
-        <div className="flex items-center gap-x-5 gap-y-2">
-          <Readout label="Market Cap" value={fmtUsd(t.marketCapUsd)} big />
-          <Readout
-            label="24h"
-            value={change == null ? "–" : fmtPct(change)}
-            tone={change == null ? undefined : change >= 0 ? "up" : "down"}
-          />
-          <div className="hidden sm:block"><Readout label="Vol 24h" value={fmtWeiUsd(t.volume24hWei, usdRate)} /></div>
-          <div className="hidden md:block"><Readout label="Liquidity" value={fmtWeiUsd(t.liquidityWei, usdRate)} /></div>
-          <div className="hidden xl:block"><Readout label="Holders" value={compact(t.holderCount)} /></div>
-          <div className="hidden xl:block"><Readout label="Fees" value={fmtWeiUsd(t.creatorFeesWei ?? "0", usdRate)} /></div>
-          <SocialRow t={t} meta={meta} />
-        </div>
+        <SocialRow t={t} meta={meta} />
       </section>
 
-      <RewardsStrip token={t} extra={extra} />
-      <CreatorClaim token={t} extra={extra} onClaimed={() => v4Client.tokenExtra(t.address as Address).then(setExtra).catch(() => undefined)} />
+      {/* Figures */}
+      <div className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-edge bg-edge sm:grid-cols-3 lg:grid-cols-6">
+        <Figure label="Price" node={<span className="tnum">{fmtUsd(t.priceUsd)}</span>} />
+        <Figure
+          label="Market cap"
+          node={<AnimatedNumber value={Number(t.marketCapUsd)} format={(n) => fmtUsd(n)} className="tnum" />}
+        />
+        <Figure
+          label="24-hour"
+          node={<span className={`tnum ${change == null ? "" : change >= 0 ? "text-up" : "text-down"}`}>{change == null ? "—" : fmtPct(change)}</span>}
+        />
+        <Figure label="24h volume" node={<span className="tnum">{fmtWeiUsd(t.volume24hWei, usdRate)}</span>} />
+        <Figure label="Liquidity" node={<span className="tnum">{fmtWeiUsd(t.liquidityWei, usdRate)}</span>} />
+        <Figure label="Holders" node={<span className="tnum">{compact(t.holderCount)}</span>} />
+      </div>
 
-      {/* Trading zone — chart fills, right rail holds order + live detail.
-          On desktop this fills the viewport so the page itself never scrolls;
-          only the detail panel scrolls internally. */}
-      <section className="grid min-h-0 flex-1 grid-cols-1 gap-2.5 lg:grid-cols-[1fr_340px]">
-        {/* Chart */}
-        <div className="h-[380px] overflow-hidden rounded-xl border border-edge bg-panel lg:h-auto lg:min-h-0">
+      <div className="mt-4 space-y-2.5">
+        <RewardsStrip token={t} extra={extra} />
+        <CreatorClaim token={t} extra={extra} onClaimed={() => v4Client.tokenExtra(t.address as Address).then(setExtra).catch(() => undefined)} />
+      </div>
+
+      {/* Chart (hero) + order ticket */}
+      <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_360px]">
+        <div className="h-[440px] overflow-hidden rounded-2xl border border-edge bg-panel">
           <Suspense fallback={<Skeleton className="h-full w-full" />}>
             <PriceChart token={t.address as Address} />
           </Suspense>
         </div>
-
-        {/* Right rail */}
-        <div className="flex min-h-0 flex-col gap-2.5">
+        <div>
           <TradePanel token={t} />
+        </div>
+      </section>
 
-          {/* Detail panel with internal scroll */}
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-edge bg-panel">
-            <div className="flex shrink-0 items-center gap-1 border-b border-edge px-1.5">
-              {(
-                [
-                  ["trades", "Trades", "transactions"],
-                  ["holders", "Holders", "holders"],
-                  ["info", "Info", "contract"],
-                ] as [Tab, string, IconName][]
-              ).map(([key, label, icon]) => (
-                <button
-                  key={key}
-                  onClick={() => setTab(key)}
-                  className={`relative flex items-center gap-1.5 px-2.5 py-2 text-[12px] font-semibold transition-colors ${
-                    tab === key ? "text-ink" : "text-ink-3 hover:text-ink-2"
-                  }`}
-                >
-                  <Icon name={icon} size={13} />
-                  {label}
-                  {tab === key ? (
-                    <span className="absolute inset-x-2.5 -bottom-px h-[2px] rounded-full bg-accent" />
-                  ) : null}
-                </button>
-              ))}
-            </div>
+      {/* Detail — trades / holders / information */}
+      <section className="mt-12">
+        <div className="rule mb-5" />
+        <div className="flex items-center gap-7 border-b border-edge">
+          {(
+            [
+              ["trades", "Trades", "transactions"],
+              ["holders", "Holders", "holders"],
+              ["info", "Information", "contract"],
+            ] as [Tab, string, IconName][]
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`relative -mb-px pb-3 text-[16px] transition-colors ${
+                tab === key ? "font-display text-ink" : "text-ink-2 hover:text-ink"
+              }`}
+            >
+              {label}
+              {tab === key ? <span className="absolute inset-x-0 -bottom-px h-[2px] bg-accent" /> : null}
+            </button>
+          ))}
+        </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              {tab === "trades" ? <TradesList token={t.address as Address} symbol={t.symbol} /> : null}
-              {tab === "holders" ? <HoldersList token={t} /> : null}
-              {tab === "info" ? <InfoTab t={t} meta={meta} extra={extra} /> : null}
-            </div>
-          </div>
+        <div className="mt-2 overflow-hidden rounded-2xl border border-edge bg-panel">
+          {tab === "trades" ? <TradesList token={t.address as Address} symbol={t.symbol} /> : null}
+          {tab === "holders" ? <HoldersList token={t} /> : null}
+          {tab === "info" ? <InfoTab t={t} meta={meta} extra={extra} /> : null}
         </div>
       </section>
     </div>
@@ -189,27 +195,12 @@ function CaChip({ address }: { address: string }) {
   );
 }
 
-function Readout({
-  label,
-  value,
-  tone,
-  big,
-}: {
-  label: string;
-  value: string;
-  tone?: "up" | "down";
-  big?: boolean;
-}) {
+/** Editorial figure cell: quiet grey label above a serif value, on white. */
+function Figure({ label, node }: { label: string; node: React.ReactNode }) {
   return (
-    <div className="text-right">
-      <p className="text-[10px] uppercase tracking-wide text-ink-3">{label}</p>
-      <p
-        className={`mono font-bold leading-tight ${big ? "text-[18px]" : "text-[14px]"} ${
-          tone === "up" ? "text-up" : tone === "down" ? "text-down" : "text-ink"
-        }`}
-      >
-        {value}
-      </p>
+    <div className="bg-panel px-4 py-3.5">
+      <p className="text-[12px] text-ink-2">{label}</p>
+      <p className="font-display mt-1 text-[21px] leading-tight text-ink">{node}</p>
     </div>
   );
 }

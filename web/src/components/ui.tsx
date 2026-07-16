@@ -5,11 +5,7 @@ import { useUi } from "../store";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div
-      className={`rounded-3xl border border-edge bg-panel shadow-[var(--shadow-card)] ${className}`}
-    >
-      {children}
-    </div>
+    <div className={`rounded-2xl border border-edge bg-panel ${className}`}>{children}</div>
   );
 }
 
@@ -37,8 +33,8 @@ export function Badge({
 }
 
 /**
- * Action buttons are pills. Lime is reserved for the primary product actions
- * (Launch, Buy, Trade); the wallet and neutral actions are ink or white.
+ * Buttons are quiet pills. Ink is the primary voice (wallet, launch, trade);
+ * lime is reserved for Buy, where black text keeps it readable, not neon.
  */
 export function Button({
   children,
@@ -56,12 +52,12 @@ export function Button({
   type?: "button" | "submit";
 }) {
   const variants: Record<string, string> = {
-    primary: "bg-accent text-white hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
-    dark: "bg-ink text-white hover:bg-ink/90 disabled:bg-panel-2 disabled:text-ink-3",
+    primary: "bg-ink text-white hover:opacity-90 disabled:bg-panel-2 disabled:text-ink-3",
+    dark: "bg-ink text-white hover:opacity-90 disabled:bg-panel-2 disabled:text-ink-3",
     ghost:
       "bg-panel border border-edge text-ink hover:border-edge-2 hover:bg-panel-2/60 disabled:text-ink-3",
-    buy: "bg-accent text-white hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
-    sell: "bg-down text-white hover:brightness-105 disabled:bg-panel-2 disabled:text-ink-3",
+    buy: "bg-accent text-ink hover:brightness-[0.97] disabled:bg-panel-2 disabled:text-ink-3",
+    sell: "bg-panel border border-ink/15 text-ink hover:border-ink/30 disabled:text-ink-3",
     danger: "bg-down text-white hover:brightness-105 disabled:opacity-50",
   };
   return (
@@ -69,7 +65,7 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`h-12 rounded-full px-6 text-sm font-bold transition-all duration-150 disabled:cursor-not-allowed ${variants[variant]} ${className}`}
+      className={`h-12 rounded-full px-6 text-[14px] font-semibold transition-all duration-150 disabled:cursor-not-allowed ${variants[variant]} ${className}`}
     >
       {children}
     </button>
@@ -97,7 +93,7 @@ export function Field({
 }
 
 export const inputClass =
-  "w-full rounded-2xl border border-edge bg-panel px-4 py-3 text-sm text-ink placeholder:text-ink-3 outline-none transition-colors focus:border-accent/40";
+  "w-full rounded-xl border border-edge bg-panel px-4 py-3 text-sm text-ink placeholder:text-ink-3 outline-none transition-colors focus:border-ink/30";
 
 export function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-xl bg-panel-2 ${className}`} />;

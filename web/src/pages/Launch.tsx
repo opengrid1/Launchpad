@@ -98,7 +98,7 @@ export function LaunchPage() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-10 sm:px-6">
-      <h1 className="text-[32px] font-bold tracking-tight text-ink">Launch a token</h1>
+      <h1 className="font-display text-[40px] leading-tight text-ink">Launch a token</h1>
       <p className="mt-2 text-[15px] text-ink-2">
         Free to launch. One transaction mints your token, opens a live Uniswap V4 market, and seeds
         the full supply. Every trade rewards holders with the stock you choose.
@@ -197,7 +197,7 @@ export function LaunchPage() {
         </dl>
 
         <button type="submit" disabled={busy}
-          className="w-full rounded-full bg-accent py-4 text-[16px] font-bold text-white shadow-[0_10px_26px_-8px_rgba(0,200,5,0.55)] transition-all hover:bg-accent-2 disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 disabled:shadow-none">
+          className="w-full rounded-full bg-ink py-4 text-[16px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3">
           {busy ? "Confirm in wallet…" : isConnected ? "Launch token" : "Connect wallet to launch"}
         </button>
       </form>
