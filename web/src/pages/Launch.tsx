@@ -1,16 +1,19 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { parseEther } from "viem";
+import { keccak256, toHex } from "viem";
 
 import { Field, inputClass } from "../components/ui";
 import { client } from "../lib/client";
-import { env } from "../lib/env";
+import { STOCKS } from "../lib/v4/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
+const LAUNCHED_TOPIC = keccak256(toHex("Launched(address,address,address,uint16,bytes32)"));
+
 /**
- * Single-step launch flow. Supply, trading fee, fee routing and anti-whale
- * protection are fixed protocol rules and never surface as options.
+ * One-step V4 launch. The creator picks the tokenized stock holders will earn
+ * and the trade tax (0-10%); supply, the WETH pool, the anti-whale caps and
+ * the 25/25/25/25 fee split are fixed protocol rules.
  */
 export function LaunchPage() {
   const { isConnected, connectFirst } = useWallet();
@@ -21,24 +24,21 @@ export function LaunchPage() {
     name: "",
     symbol: "",
     description: "",
+    website: "",
     twitter: "",
     telegram: "",
-    website: "",
-    firstBuy: "",
   });
+  const [stock, setStock] = useState(STOCKS[0].address);
+  const [taxPct, setTaxPct] = useState(3);
   const [busy, setBusy] = useState(false);
+  const [logoData, setLogoData] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const set =
     (key: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const [logoData, setLogoData] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  // Compress the picked image client-side into a small data URI that is
-  // stored inside the token's on-chain metadata. 96px cover crop, quality
-  // stepped down until it fits comfortably in calldata.
   const onLogoFile = async (file: File) => {
     try {
       const bitmap = await createImageBitmap(file);
@@ -48,17 +48,7 @@ export function LaunchPage() {
         canvas.height = size;
         const ctx = canvas.getContext("2d")!;
         const side = Math.min(bitmap.width, bitmap.height);
-        ctx.drawImage(
-          bitmap,
-          (bitmap.width - side) / 2,
-          (bitmap.height - side) / 2,
-          side,
-          side,
-          0,
-          0,
-          size,
-          size
-        );
+        ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, size, size);
         const webp = canvas.toDataURL("image/webp", quality);
         return webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", quality);
       };
@@ -76,30 +66,27 @@ export function LaunchPage() {
     if (!isConnected) return connectFirst();
     setBusy(true);
     try {
-      if (!(await ensureSdkWallet())) {
-        throw new Error("Wallet session expired. Reconnect your wallet and try again.");
-      }
-      const hash = await client.createToken({
-        name: form.name.trim(),
-        symbol: form.symbol.trim().toUpperCase(),
+      if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+      const metadata = JSON.stringify({
         description: form.description.trim(),
         logo: logoData,
         website: form.website.trim(),
         twitter: form.twitter.trim(),
         telegram: form.telegram.trim(),
-        firstBuyWei: form.firstBuy ? parseEther(form.firstBuy as `${number}`) : 0n,
+      });
+      const hash = await (client as any).createToken({
+        name: form.name.trim(),
+        symbol: form.symbol.trim().toUpperCase(),
+        metadataURI: metadata,
+        stock,
+        taxBps: Math.round(taxPct * 100),
       });
       pushToast({ kind: "info", title: "Launch submitted", txHash: hash });
       const receipt = await client.publicClient.waitForTransactionReceipt({ hash });
-      const launchedLog = receipt.logs.find(
-        (l) => l.address.toLowerCase() === client.addresses.factory.toLowerCase()
-      );
-      pushToast({ kind: "success", title: "Token is live", body: "Pool created, trading open.", txHash: hash });
-      if (launchedLog?.topics[1]) {
-        navigate(`/token/0x${launchedLog.topics[1].slice(26)}`);
-      } else {
-        navigate("/");
-      }
+      const log = receipt.logs.find((l) => l.topics[0] === LAUNCHED_TOPIC);
+      pushToast({ kind: "success", title: "Token is live", body: "Pool open, trading enabled.", txHash: hash });
+      if (log?.topics[1]) navigate(`/token/0x${log.topics[1].slice(26)}`);
+      else navigate("/");
     } catch (err) {
       pushToast({ kind: "error", title: "Launch failed", body: errorText(err) });
     } finally {
@@ -107,60 +94,46 @@ export function LaunchPage() {
     }
   };
 
+  const selectedStock = STOCKS.find((s) => s.address === stock)!;
+
   return (
-    <div className="mx-auto max-w-xl px-4 py-8 sm:px-6">
-      <div className="mono mb-1 flex items-center gap-2 text-[11px] uppercase tracking-wide text-accent">
-        <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-accent" />
-        New market
-      </div>
-      <h1 className="text-[26px] font-bold tracking-tight text-ink">Launch Token</h1>
-      <p className="mt-1.5 text-sm text-ink-2">
-        Launching is free. One transaction creates your token and a live Uniswap V3 market
-        seeded with the full supply. Optionally make the first buy in the same transaction.
+    <div className="mx-auto max-w-xl px-4 py-10 sm:px-6">
+      <h1 className="text-[32px] font-bold tracking-tight text-ink">Launch a token</h1>
+      <p className="mt-2 text-[15px] text-ink-2">
+        Free to launch. One transaction mints your token, opens a live Uniswap V4 market, and seeds
+        the full supply. Every trade rewards holders with the stock you choose.
       </p>
 
-      <form onSubmit={submit} className="mt-7 space-y-5 rounded-xl border border-edge bg-panel p-5">
+      <form onSubmit={submit} className="mt-8 space-y-6 rounded-3xl border border-edge bg-panel p-6 shadow-[var(--shadow-card)]">
+        {/* Logo + identity */}
         <div className="flex items-center gap-4">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onLogoFile(f);
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="group relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border border-edge bg-panel transition-colors hover:border-edge-2"
-            aria-label="Upload logo"
-          >
+          <input ref={fileRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) onLogoFile(f); }} />
+          <button type="button" onClick={() => fileRef.current?.click()}
+            className="group grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border border-edge bg-panel-2 transition-colors hover:border-edge-2"
+            aria-label="Upload logo">
             {logoData ? (
               <img src={logoData} alt="" className="h-full w-full object-cover" />
             ) : (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-ink-3" aria-hidden>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" className="text-ink-3" aria-hidden>
                 <path d="M12 16V5m0 0l-4 4m4-4l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M4 17.5V19a1.5 1.5 0 001.5 1.5h13A1.5 1.5 0 0020 19v-1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
               </svg>
             )}
           </button>
           <div>
-            <p className="text-[13px] font-medium text-ink">Upload Logo</p>
-            <p className="mt-0.5 text-xs text-ink-3">
-              PNG or JPG. Stored on-chain with your token.{" "}
+            <p className="text-[14px] font-semibold text-ink">Token logo</p>
+            <p className="mt-0.5 text-[13px] text-ink-3">
+              PNG or JPG, stored on-chain.{" "}
               {logoData ? (
-                <button type="button" className="underline underline-offset-2" onClick={() => setLogoData("")}>
-                  Remove
-                </button>
+                <button type="button" className="font-medium text-accent-2 underline underline-offset-2" onClick={() => setLogoData("")}>Remove</button>
               ) : null}
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-[1fr_140px]">
-          <Field label="Token Name">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-[1fr_150px]">
+          <Field label="Token name">
             <input className={inputClass} value={form.name} onChange={set("name")} placeholder="My Token" required maxLength={48} />
           </Field>
           <Field label="Symbol">
@@ -169,63 +142,74 @@ export function LaunchPage() {
         </div>
 
         <Field label="Description">
-          <textarea
-            className={`${inputClass} min-h-24 resize-y`}
-            value={form.description}
-            onChange={set("description")}
-            placeholder="What is this token about?"
-            maxLength={500}
-          />
+          <textarea className={`${inputClass} min-h-24 resize-y`} value={form.description} onChange={set("description")}
+            placeholder="What is this token about?" maxLength={500} />
         </Field>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <Field label="Twitter / X">
-            <input className={inputClass} value={form.twitter} onChange={set("twitter")} placeholder="x.com/..." />
-          </Field>
-          <Field label="Telegram">
-            <input className={inputClass} value={form.telegram} onChange={set("telegram")} placeholder="t.me/..." />
-          </Field>
-          <Field label="Website">
-            <input className={inputClass} value={form.website} onChange={set("website")} placeholder="https://" />
-          </Field>
+        {/* Reward stock picker */}
+        <div>
+          <label className="mb-1.5 block text-[13px] font-semibold text-ink">Holders earn</label>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {STOCKS.map((s) => (
+              <button
+                type="button"
+                key={s.address}
+                onClick={() => setStock(s.address)}
+                className={`rounded-xl border px-2 py-2.5 text-center transition-all ${
+                  stock === s.address
+                    ? "border-accent bg-accent/[0.06] ring-1 ring-accent/40"
+                    : "border-edge bg-panel hover:border-edge-2"
+                }`}
+              >
+                <span className="block text-[13px] font-bold text-ink">{s.symbol}</span>
+                <span className="block truncate text-[10px] text-ink-3">{s.name}</span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[12px] text-ink-3">
+            Holders of your token auto-earn <span className="font-semibold text-ink-2">{selectedStock.name} ({selectedStock.symbol})</span> from every trade, by how much they hold.
+          </p>
         </div>
 
-        <Field label="Initial Liquidity (optional)" hint={`${env.nativeSymbol}, executes your first buy`}>
-          <input
-            className={`${inputClass} mono`}
-            value={form.firstBuy}
-            onChange={set("firstBuy")}
-            inputMode="decimal"
-            placeholder="0.0"
-          />
-        </Field>
+        {/* Tax slider */}
+        <div>
+          <div className="mb-2 flex items-baseline justify-between">
+            <label className="text-[13px] font-semibold text-ink">Trade tax</label>
+            <span className="tnum text-[15px] font-bold text-accent-2">{taxPct}%</span>
+          </div>
+          <input type="range" min={0} max={10} step={1} value={taxPct} onChange={(e) => setTaxPct(Number(e.target.value))}
+            className="w-full accent-[color:var(--color-accent)]" />
+          <p className="mt-2 text-[12px] text-ink-3">
+            Split 4 ways: creator, holder stock rewards, buyback &amp; burn, protocol.
+          </p>
+        </div>
 
-        <dl className="space-y-3 border-y border-edge py-4">
-          <div className="flex items-baseline justify-between">
-            <dt className="text-sm text-ink-2">Starting Market Cap</dt>
-            <dd className="text-sm font-semibold text-ink">$2,000</dd>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <dt className="text-sm text-ink-2">Trading Fee</dt>
-            <dd className="text-sm font-semibold text-ink">1% Fixed</dd>
-          </div>
-          <div className="flex items-baseline justify-between gap-6">
-            <dt className="shrink-0 text-sm text-ink-2">Protection</dt>
-            <dd className="text-right text-sm font-medium text-ink">
-              Max transaction enabled
-              <span className="block text-xs font-normal text-ink-3">Until $40,000 market cap</span>
-            </dd>
-          </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <Field label="Twitter / X"><input className={inputClass} value={form.twitter} onChange={set("twitter")} placeholder="x.com/…" /></Field>
+          <Field label="Telegram"><input className={inputClass} value={form.telegram} onChange={set("telegram")} placeholder="t.me/…" /></Field>
+          <Field label="Website"><input className={inputClass} value={form.website} onChange={set("website")} placeholder="https://" /></Field>
+        </div>
+
+        <dl className="space-y-2.5 border-t border-edge pt-5 text-[14px]">
+          <Row label="Starting market cap" value="$5,000" />
+          <Row label="Supply" value="1,000,000,000" />
+          <Row label="Anti-whale" value="2% max wallet · 2% max tx" />
         </dl>
 
-        <button
-          type="submit"
-          disabled={busy}
-          className="h-12 w-full rounded-lg bg-accent text-[15px] font-bold text-black transition-colors hover:bg-accent-2 disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3"
-        >
-          {busy ? "Confirm in wallet" : isConnected ? "Launch Token" : "Connect Wallet to Launch"}
+        <button type="submit" disabled={busy}
+          className="w-full rounded-full bg-accent py-4 text-[16px] font-bold text-white shadow-[0_10px_26px_-8px_rgba(0,200,5,0.55)] transition-all hover:bg-accent-2 disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 disabled:shadow-none">
+          {busy ? "Confirm in wallet…" : isConnected ? "Launch token" : "Connect wallet to launch"}
         </button>
       </form>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between">
+      <dt className="text-ink-2">{label}</dt>
+      <dd className="font-semibold text-ink">{value}</dd>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Address, Candle, CandleInterval } from "@launchpad/sdk";
-import { CANDLE_INTERVALS, INTERVAL_SECONDS, launchpadAbi, launchTokenAbi } from "@launchpad/sdk";
+import { CANDLE_INTERVALS, INTERVAL_SECONDS } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
+import { v4Client } from "../lib/client";
 
 const UP = "#0EA54E";
 const DOWN = "#E5484D";
@@ -39,25 +40,10 @@ function fmtTime(sec: number, interval: CandleInterval): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-/** USD market cap per unit of native token price: usdRate x whole supply. */
+/** USD market cap per unit of WETH-per-token price: WETH/USD x whole supply. */
 async function fetchMcapScale(token: Address): Promise<number> {
   try {
-    const [price8, supply] = await Promise.all([
-      client.publicClient.readContract({
-        address: client.addresses.factory,
-        abi: launchpadAbi,
-        functionName: "nativeUsdPrice",
-      }),
-      client.publicClient.readContract({
-        address: token,
-        abi: launchTokenAbi,
-        functionName: "totalSupply",
-      }),
-    ]);
-    const rate = Number(price8) / 1e8;
-    const supplyWhole = Number(supply) / 1e18;
-    const scale = rate * supplyWhole;
-    return scale > 0 ? scale : 1;
+    return await v4Client.mcapScale(token);
   } catch {
     return 1;
   }
