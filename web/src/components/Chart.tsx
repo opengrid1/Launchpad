@@ -19,8 +19,8 @@ import { launchpadAbi, launchTokenAbi } from "@launchpad/sdk";
 import { client } from "../lib/client";
 import { compact } from "../lib/format";
 
-const UP = "#0E9F4E";
-const DOWN = "#E5484D";
+const UP = "#2FD98A";
+const DOWN = "#FF5C61";
 
 const intervalLabels: Record<CandleInterval, string> = {
   "1m": "1m",
@@ -117,17 +117,17 @@ export function PriceChart({ token }: { token: Address }) {
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: "rgba(17, 17, 17, 0.05)" },
-        horzLines: { color: "rgba(17, 17, 17, 0.05)" },
+        vertLines: { color: "rgba(255, 255, 255, 0.04)" },
+        horzLines: { color: "rgba(255, 255, 255, 0.04)" },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
-        vertLine: { color: "#9CA3AF", labelBackgroundColor: "#111111" },
-        horzLine: { color: "#9CA3AF", labelBackgroundColor: "#111111" },
+        vertLine: { color: "#6a766a", labelBackgroundColor: "#191f16" },
+        horzLine: { color: "#6a766a", labelBackgroundColor: "#191f16" },
       },
-      rightPriceScale: { borderColor: "#E8E8E2" },
+      rightPriceScale: { borderColor: "#242c21" },
       timeScale: {
-        borderColor: "#E8E8E2",
+        borderColor: "#242c21",
         timeVisible: true,
         secondsVisible: false,
         rightOffset: 4,
@@ -251,7 +251,7 @@ export function PriceChart({ token }: { token: Address }) {
               key={iv}
               onClick={() => setInterval(iv)}
               className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
-                interval === iv ? "bg-ink text-white" : "text-ink-3 hover:text-ink"
+                interval === iv ? "bg-accent text-black" : "text-ink-3 hover:text-ink"
               }`}
             >
               {intervalLabels[iv]}

@@ -1,37 +1,37 @@
 @import "tailwindcss";
 
 @theme {
-  /* Surfaces */
-  --color-bg: #f7f7f2;
-  --color-panel: #ffffff;
-  --color-panel-2: #f1f1ea;
-  --color-edge: #e8e8e2;
-  --color-edge-2: #d9d9d0;
+  /* Surfaces — near-black with a faint green bias, a bold trading-terminal ground */
+  --color-bg: #090c09;
+  --color-panel: #11150f;
+  --color-panel-2: #191f16;
+  --color-edge: #242c21;
+  --color-edge-2: #323b2d;
 
-  /* Ink */
-  --color-ink: #111111;
-  --color-ink-2: #6b7280;
-  --color-ink-3: #9ca3af;
+  /* Ink — near-white with a faint warm-green bias */
+  --color-ink: #eaf2e4;
+  --color-ink-2: #9ba895;
+  --color-ink-3: #6a766a;
 
-  /* Lime accent: reserved for primary actions and active states */
+  /* Electric lime: the archery accent, glows on the dark ground */
   --color-accent: #b6ff00;
-  --color-accent-2: #a3e800;
+  --color-accent-2: #cbff4d;
 
-  /* Trading colors, contrast-checked for the light surface */
-  --color-up: #0e9f4e;
-  --color-down: #e5484d;
+  /* Trading colors, tuned for the dark surface */
+  --color-up: #2fd98a;
+  --color-down: #ff5c61;
 
   --font-sans: "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
 
-  --shadow-card: 0 1px 2px rgba(17, 17, 17, 0.04), 0 4px 16px rgba(17, 17, 17, 0.05);
-  --shadow-card-hover: 0 1px 2px rgba(17, 17, 17, 0.05), 0 8px 28px rgba(17, 17, 17, 0.09);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.02) inset, 0 10px 28px -16px rgba(0, 0, 0, 0.7);
+  --shadow-card-hover: 0 0 0 1px rgba(182, 255, 0, 0.16), 0 16px 40px -18px rgba(0, 0, 0, 0.8);
 }
 
 html {
   background: var(--color-bg);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
@@ -48,19 +48,20 @@ body {
 }
 
 ::selection {
-  background: rgba(182, 255, 0, 0.5);
+  background: rgba(182, 255, 0, 0.28);
+  color: #eaf2e4;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #d9d9d0 transparent;
+  scrollbar-color: #323b2d transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #d9d9d0;
+  background: #323b2d;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-track {
@@ -83,7 +84,7 @@ body {
 
 @keyframes flash-up {
   0% {
-    background: rgba(14, 159, 78, 0.1);
+    background: rgba(47, 217, 138, 0.14);
   }
   100% {
     background: transparent;
@@ -91,7 +92,7 @@ body {
 }
 @keyframes flash-down {
   0% {
-    background: rgba(229, 72, 77, 0.09);
+    background: rgba(255, 92, 97, 0.12);
   }
   100% {
     background: transparent;

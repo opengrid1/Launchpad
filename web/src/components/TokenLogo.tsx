@@ -26,7 +26,7 @@ export function TokenLogo({ token, size = 40 }: { token: TokenSummary; size?: nu
   }
   return (
     <span
-      className="grid shrink-0 place-items-center rounded-full bg-ink font-semibold text-accent"
+      className="grid shrink-0 place-items-center rounded-full bg-panel-2 font-semibold text-accent ring-1 ring-inset ring-edge-2"
       style={{ width: size, height: size, fontSize: size * 0.34 }}
     >
       {token.symbol.slice(0, 2).toUpperCase()}

@@ -236,7 +236,7 @@ export function AdminPage() {
           <button
             disabled={busyAction !== null || !s || s.protocolFeesWei === 0n}
             onClick={() => runTx("Claim protocol fees", () => writeFactory("claimPlatformFees", []), () => stats.refetch())}
-            className="h-9 rounded-full bg-ink px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="h-9 rounded-full bg-accent px-4 text-sm font-semibold text-black transition-colors hover:bg-accent-2 disabled:opacity-40"
           >
             Claim {s ? `${fmtWei(s.protocolFeesWei)} ${env.nativeSymbol}` : ""}
           </button>

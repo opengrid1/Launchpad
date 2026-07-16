@@ -57,7 +57,7 @@ export function Button({
 }) {
   const variants: Record<string, string> = {
     primary: "bg-accent text-ink hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
-    dark: "bg-ink text-white hover:bg-black disabled:bg-panel-2 disabled:text-ink-3",
+    dark: "bg-accent text-black hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
     ghost:
       "bg-panel border border-edge text-ink hover:border-edge-2 hover:bg-panel-2/60 disabled:text-ink-3",
     buy: "bg-accent text-ink hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
