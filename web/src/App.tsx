@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 
 import { Header } from "./components/Header";
+import { NavDock } from "./components/NavDock";
 import { Skeleton, Toasts } from "./components/ui";
 import { BRAND } from "./lib/brand";
 import { wagmiConfig } from "./lib/wagmi";
@@ -36,7 +37,7 @@ export default function App() {
         <BrowserRouter>
           <div className="flex min-h-screen flex-col bg-bg">
             <Header />
-            <main className="flex-1">
+            <main className="flex-1 pb-28">
               <Suspense fallback={<PageFallback />}>
                 <Routes>
                   <Route path="/" element={<Explore />} />
@@ -49,7 +50,8 @@ export default function App() {
                 </Routes>
               </Suspense>
             </main>
-            <footer className="border-t border-edge py-5">
+            <NavDock />
+            <footer className="border-t border-edge py-5 pb-24">
               <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 text-xs sm:px-6">
                 <p className="text-ink-3">{BRAND.name}. {BRAND.tagline}</p>
                 <nav className="flex items-center gap-5">
