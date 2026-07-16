@@ -4,9 +4,9 @@ import { useToken } from "@launchpad/sdk/react";
 import type { Address, TokenSummary } from "@launchpad/sdk";
 
 // The chart is lazy-loaded so the token header, stats and trade panel paint
-// immediately and the price line streams in a beat later.
-const PriceChart = lazy(() =>
-  import("../components/Chart").then((m) => ({ default: m.PriceChart })),
+// immediately and the TradingView chart streams in a beat later.
+const TVChart = lazy(() =>
+  import("../components/TVChart").then((m) => ({ default: m.TVChart })),
 );
 import { AnimatedNumber } from "../components/AnimatedNumber";
 import { HoldersList } from "../components/HoldersList";
@@ -117,9 +117,9 @@ export function TokenPage() {
         <h2 className="text-[14px] font-bold tracking-tight text-ink">Market cap</h2>
       </div>
       <section className="mt-2 grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_340px]">
-        <div className="h-[420px] overflow-hidden rounded-2xl border border-edge bg-panel">
+        <div className="h-[440px] overflow-hidden rounded-2xl border border-edge bg-panel">
           <Suspense fallback={<Skeleton className="h-full w-full" />}>
-            <PriceChart token={t.address as Address} />
+            <TVChart token={t.address as Address} symbol={t.symbol} />
           </Suspense>
         </div>
         <div>
