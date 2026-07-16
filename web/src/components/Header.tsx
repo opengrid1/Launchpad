@@ -1,5 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
 
+import { BRAND } from "../lib/brand";
 import { shortAddr } from "../lib/format";
 import { useWallet } from "../lib/useWallet";
 
@@ -16,22 +17,14 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:gap-8 sm:px-6">
         <Link to="/" className="flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-ink">
-            <svg width="16" height="22" viewBox="12.5 1.5 39 54" fill="none" aria-hidden>
-              <path
-                d="M31 5.5 C34.5 3.4 39.5 3 43 4.6 C41 6.2 39.8 8.2 39.5 10.5 C45.5 14.5 49.5 21.5 49.5 30 C49.5 39.5 47 47.5 43.5 54 H20.5 C17 47.5 14.5 39.5 14.5 30 C14.5 17 21 8.5 31 5.5 Z M32 21.5 C26 21.5 22.5 26.2 22.5 32.8 C22.5 39.8 26.2 45.6 32 47.6 C37.8 45.6 41.5 39.8 41.5 32.8 C41.5 26.2 38 21.5 32 21.5 Z"
-                fill="#B6FF00"
-                fillRule="evenodd"
-              />
-              <path
-                d="M26.9 33 L30.7 36.8 L37.3 29.6"
-                stroke="#B6FF00"
-                strokeWidth="3.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg width="18" height="18" viewBox="0 0 64 64" fill="none" aria-hidden>
+              <path d="M32 54 L32 13" stroke="#B6FF00" strokeWidth="5" strokeLinecap="round" />
+              <path d="M22 22 L32 12 L42 22" stroke="#B6FF00" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M25 47 L32 41 L39 47" stroke="#B6FF00" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M25 40 L32 34 L39 40" stroke="#B6FF00" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          <span className="hidden text-[17px] font-semibold tracking-tight text-ink min-[400px]:block">Safehood</span>
+          <span className="hidden text-[17px] font-semibold tracking-tight text-ink min-[400px]:block">{BRAND.name}</span>
         </Link>
 
         <nav className="flex items-center gap-4 sm:gap-6">

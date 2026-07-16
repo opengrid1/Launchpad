@@ -1,3 +1,4 @@
+import { BRAND } from "../lib/brand";
 import { addresses, env } from "../lib/env";
 import { explorerAddr, shortAddr } from "../lib/format";
 
@@ -16,7 +17,7 @@ export function DocsPage() {
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
       <h1 className="text-[28px] font-semibold tracking-tight text-ink">Docs</h1>
       <p className="mt-1.5 text-sm text-ink-2">
-        Everything on Safehood runs on-chain on {env.chainName}. This page explains the fixed
+        Everything on {BRAND.name} runs on-chain on {env.chainName}. This page explains the fixed
         protocol rules.
       </p>
 
@@ -37,7 +38,7 @@ export function DocsPage() {
 
       <Section title="Trading and fees">
         <p>
-          Every buy and sell through Safehood pays a flat 1% fee. It is not pushed on each trade;
+          Every buy and sell through {BRAND.name} pays a flat 1% fee. It is not pushed on each trade;
           it accrues inside the protocol and splits 80% to the token creator and 20% to the
           platform. The creator claims their share anytime from their token's page, straight to
           their wallet. Trades executed directly against the pool (bots, aggregators) pay the

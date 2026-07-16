@@ -1,6 +1,7 @@
 import { createConfig, http, type Config } from "wagmi";
 import { injected, walletConnect } from "wagmi/connectors";
 
+import { BRAND } from "./brand";
 import { chain, env } from "./env";
 
 const projectId = env.walletConnectProjectId;
@@ -23,11 +24,10 @@ const connectors = [
           projectId,
           showQrModal: true,
           metadata: {
-            name: "Safehood",
-            description:
-              "Launch tokens on Robinhood Chain. Real Uniswap V3 pools, fees to creators.",
-            url: "https://www.safehood.fun",
-            icons: ["https://www.safehood.fun/icon.png"],
+            name: BRAND.name,
+            description: BRAND.description,
+            url: BRAND.url,
+            icons: [`${BRAND.url}/icon.png`],
           },
         }),
       ]

@@ -5,6 +5,7 @@ import { WagmiProvider } from "wagmi";
 
 import { Header } from "./components/Header";
 import { Skeleton, Toasts } from "./components/ui";
+import { BRAND } from "./lib/brand";
 import { wagmiConfig } from "./lib/wagmi";
 import { Explore } from "./pages/Explore";
 
@@ -50,7 +51,7 @@ export default function App() {
             </main>
             <footer className="border-t border-edge py-5">
               <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 text-xs sm:px-6">
-                <p className="text-ink-3">Safehood. Real markets on Robinhood Chain.</p>
+                <p className="text-ink-3">{BRAND.name}. {BRAND.tagline}</p>
                 <nav className="flex items-center gap-5">
                   <Link to="/docs" className="font-medium text-ink-2 transition-colors hover:text-ink">
                     Docs
@@ -64,10 +65,10 @@ export default function App() {
                     Explorer
                   </a>
                   <a
-                    href="https://x.com/_safehood"
+                    href={BRAND.twitter}
                     target="_blank"
                     rel="noreferrer"
-                    aria-label="Safehood on X"
+                    aria-label={`${BRAND.name} on X`}
                     className="text-ink-2 transition-colors hover:text-ink"
                   >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
