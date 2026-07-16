@@ -36,7 +36,7 @@ export default function App() {
         <BrowserRouter>
           <div className="flex min-h-screen flex-col bg-bg">
             <Header />
-            <main className="flex-1 pt-6">
+            <main className="flex-1">
               <Suspense fallback={<PageFallback />}>
                 <Routes>
                   <Route path="/" element={<Explore />} />
