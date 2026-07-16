@@ -80,7 +80,7 @@ export function TokenPage() {
   return (
     <div className="rise mx-auto max-w-6xl px-4 pb-24 sm:px-8">
       {/* Masthead */}
-      <div className="flex items-center justify-between border-b border-ink/80 pb-3 pt-8">
+      <div className="flex items-center justify-between border-b border-edge pb-3 pt-8">
         <Link to="/" className="kicker text-[13px] text-ink-2 transition-colors hover:text-ink">← Markets</Link>
         <span className="text-[13px] text-ink-3">{timeAgo(t.createdAt)}</span>
       </div>

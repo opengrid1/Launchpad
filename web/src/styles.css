@@ -1,38 +1,38 @@
 @import "tailwindcss";
 
 @theme {
-  /* Super-cream — a warm paper ground, lighter cream surfaces, hairline rules */
-  --color-bg: #f4edda;
-  --color-panel: #fdfaf1;
-  --color-panel-2: #ece4cf;
-  --color-edge: #e4dbc3;
-  --color-edge-2: #d6cbac;
+  /* Stackr dark — near-black blue-tinted ground, dark cards, hairline borders.
+     Values converted from Stackr's own HSL theme tokens. */
+  --color-bg: #0b0d10;
+  --color-panel: #14161a;
+  --color-panel-2: #1c1f25;
+  --color-edge: #262a31;
+  --color-edge-2: #333842;
 
-  /* Warm ink */
-  --color-ink: #191712;
-  --color-ink-2: #6d675a;
-  --color-ink-3: #a59d88;
+  --color-ink: #eceef1;
+  --color-ink-2: #9298a2;
+  --color-ink-3: #646a74;
 
-  /* Accent — a deep, calm green (money / rewards). Primary actions stay ink. */
-  --color-accent: #0c6b3f;
-  --color-accent-2: #0a5733;
+  /* Red/coral primary (Stackr's --primary 4 84% 58%) */
+  --color-accent: #ee463a;
+  --color-accent-2: #d83b30;
 
   /* Gains / losses */
-  --color-up: #12925a;
-  --color-down: #c8402c;
+  --color-up: #21c45d;
+  --color-down: #ef584d;
 
   --font-sans: "Inter", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
 
-  --shadow-card: 0 1px 2px rgba(25, 23, 18, 0.03);
-  --shadow-card-hover: 0 6px 20px -10px rgba(25, 23, 18, 0.16);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
   --shadow-btn: none;
 }
 
 html {
   background: var(--color-bg);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
@@ -55,13 +55,11 @@ body {
   font-feature-settings: "tnum" 1;
 }
 
-/* Kept for the odd bold headline; a tight sans, not a serif. */
 .font-display {
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
-/* Hairline rule */
 .rule {
   border-top: 1px solid var(--color-edge);
 }
@@ -74,20 +72,20 @@ body {
 }
 
 ::selection {
-  background: rgba(12, 107, 63, 0.18);
-  color: #191712;
+  background: rgba(238, 70, 58, 0.28);
+  color: #ffffff;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #d8ceb3 transparent;
+  scrollbar-color: #2c313a transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #d8ceb3;
+  background: #2c313a;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-track {
@@ -101,6 +99,7 @@ body {
 .card-hover:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-edge-2);
 }
 
 /* Ticker tape */
@@ -108,21 +107,15 @@ body {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
-.tape {
-  animation: tape 48s linear infinite;
-}
-.tape:hover {
-  animation-play-state: paused;
-}
+.tape { animation: tape 48s linear infinite; }
+.tape:hover { animation-play-state: paused; }
 
 /* Live pulse dot */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
 }
-.dot-live {
-  animation: pulse-dot 2.2s ease-in-out infinite;
-}
+.dot-live { animation: pulse-dot 2.2s ease-in-out infinite; }
 
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(6px); }
@@ -143,11 +136,11 @@ body {
 .fade-in { animation: fade-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 @keyframes flash-up {
-  0% { background: rgba(18, 146, 90, 0.12); }
+  0% { background: rgba(33, 196, 93, 0.14); }
   100% { background: transparent; }
 }
 @keyframes flash-down {
-  0% { background: rgba(200, 64, 44, 0.10); }
+  0% { background: rgba(239, 88, 77, 0.14); }
   100% { background: transparent; }
 }
 .flash-up { animation: flash-up 700ms ease-out; }

@@ -41,7 +41,7 @@ export function MiniChart({
           y1={height / 2}
           x2={width}
           y2={height / 2}
-          stroke="#e0e0d8"
+          stroke="#333842"
           strokeWidth="1.5"
           strokeDasharray="2 5"
           strokeLinecap="round"

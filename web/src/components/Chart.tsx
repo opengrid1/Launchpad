@@ -8,7 +8,7 @@ import { v4Client } from "../lib/client";
 const UP = "#0EA54E";
 const DOWN = "#E5484D";
 const AXIS = "#9aa0a8";
-const GRID = "rgba(17, 17, 17, 0.05)";
+const GRID = "rgba(255, 255, 255, 0.06)";
 
 const intervalLabels: Record<CandleInterval, string> = {
   "1m": "1m",
@@ -182,7 +182,7 @@ export function PriceChart({ token }: { token: Address }) {
             key={iv}
             onClick={() => setInterval(iv)}
             className={`shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
-              interval === iv ? "bg-accent text-black" : "text-ink-3 hover:text-ink"
+              interval === iv ? "bg-accent text-white" : "text-ink-3 hover:text-ink"
             }`}
           >
             {intervalLabels[iv]}

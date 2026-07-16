@@ -16,15 +16,8 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         {/* Brand */}
-        <Link to="/" aria-label={BRAND.name} className="flex shrink-0 items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-ink">
-            <svg width="15" height="15" viewBox="0 0 64 64" fill="none" aria-hidden>
-              <path d="M32 51 L32 15" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" />
-              <path d="M22 25 L32 15 L42 25" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M25 43 L32 37 L39 43" stroke="#2fe08a" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <span className="text-[19px] font-bold tracking-tight text-ink">{BRAND.name}</span>
+        <Link to="/" aria-label={BRAND.name} className="shrink-0">
+          <span className="text-[20px] font-extrabold uppercase tracking-tight text-ink">{BRAND.name}</span>
         </Link>
 
         {/* Desktop nav */}
@@ -48,7 +41,7 @@ export function Header() {
             <button
               onClick={connectFirst}
               disabled={isPending}
-              className="rounded-full bg-ink px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+              className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-accent-2 disabled:opacity-60"
             >
               {isPending ? "Connecting…" : "Connect"}
             </button>

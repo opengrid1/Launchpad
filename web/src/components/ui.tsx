@@ -52,12 +52,12 @@ export function Button({
   type?: "button" | "submit";
 }) {
   const variants: Record<string, string> = {
-    primary: "bg-ink text-white hover:opacity-90 disabled:bg-panel-2 disabled:text-ink-3",
-    dark: "bg-ink text-white hover:opacity-90 disabled:bg-panel-2 disabled:text-ink-3",
+    primary: "bg-accent text-white hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
+    dark: "bg-ink text-bg hover:opacity-90 disabled:bg-panel-2 disabled:text-ink-3",
     ghost:
       "bg-panel border border-edge text-ink hover:border-edge-2 hover:bg-panel-2/60 disabled:text-ink-3",
-    buy: "bg-accent text-white hover:bg-accent-2 disabled:bg-panel-2 disabled:text-ink-3",
-    sell: "bg-panel border border-ink/15 text-ink hover:border-ink/30 disabled:text-ink-3",
+    buy: "bg-up text-white hover:brightness-110 disabled:bg-panel-2 disabled:text-ink-3",
+    sell: "bg-down text-white hover:brightness-110 disabled:bg-panel-2 disabled:text-ink-3",
     danger: "bg-down text-white hover:brightness-105 disabled:opacity-50",
   };
   return (
