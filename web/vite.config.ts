@@ -8,7 +8,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          charts: ["lightweight-charts"],
           wallet: ["wagmi", "viem"],
         },
       },

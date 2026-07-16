@@ -3,9 +3,8 @@ import { useParams } from "react-router-dom";
 import { useToken } from "@launchpad/sdk/react";
 import type { Address, TokenSummary } from "@launchpad/sdk";
 
-// The candlestick engine (lightweight-charts) is the heaviest dependency on
-// the page. Split it into its own chunk so the token header, stats and trade
-// panel paint immediately and the chart streams in a beat later.
+// The chart is lazy-loaded so the token header, stats and trade panel paint
+// immediately and the price line streams in a beat later.
 const PriceChart = lazy(() =>
   import("../components/Chart").then((m) => ({ default: m.PriceChart })),
 );

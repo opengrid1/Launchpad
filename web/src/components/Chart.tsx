@@ -1,30 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  CandlestickSeries,
-  ColorType,
-  createChart,
-  CrosshairMode,
-  HistogramSeries,
-  type CandlestickData,
-  type HistogramData,
-  type IChartApi,
-  type ISeriesApi,
-  type UTCTimestamp,
-} from "lightweight-charts";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Address, Candle, CandleInterval } from "@launchpad/sdk";
-import { CANDLE_INTERVALS } from "@launchpad/sdk";
-
-import { launchpadAbi, launchTokenAbi } from "@launchpad/sdk";
+import { CANDLE_INTERVALS, INTERVAL_SECONDS, launchpadAbi, launchTokenAbi } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
-import { compact, shortAddr } from "../lib/format";
+import { shortAddr } from "../lib/format";
 
 const UP = "#33E07A";
 const DOWN = "#FF5257";
-const AXIS_TEXT = "#8b948a";
-const GRID = "rgba(232, 237, 230, 0.05)";
-const EDGE = "#1f241f";
-const LABEL_BG = "#171b17";
+const AXIS = "#8b948a";
+const GRID = "rgba(232, 237, 230, 0.06)";
 
 const intervalLabels: Record<CandleInterval, string> = {
   "1m": "1m",
@@ -37,35 +21,23 @@ const intervalLabels: Record<CandleInterval, string> = {
   "1w": "1W",
 };
 
-// Candles are aggregated in native price per token; the chart renders
-// MARKET CAP in USD (price x supply x native/USD rate), so the axis reads
-// like $2,000 instead of a micro per-token price.
-function toCandleData(c: Candle, scale: number): CandlestickData<UTCTimestamp> {
-  return {
-    time: c.time as UTCTimestamp,
-    open: Number(c.open) * scale,
-    high: Number(c.high) * scale,
-    low: Number(c.low) * scale,
-    close: Number(c.close) * scale,
-  };
-}
-
 function fmtMcap(v: number): string {
   if (!isFinite(v) || v <= 0) return "$0";
   if (v >= 1e9) return `$${(v / 1e9).toFixed(2)}B`;
   if (v >= 1e6) return `$${(v / 1e6).toFixed(2)}M`;
   if (v >= 100_000) return `$${(v / 1e3).toFixed(0)}K`;
-  if (v >= 100) return `$${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-  return `$${v.toFixed(2)}`;
+  if (v >= 1_000) return `$${(v / 1e3).toFixed(1)}K`;
+  if (v >= 1) return `$${v.toFixed(2)}`;
+  return `$${v.toPrecision(2)}`;
 }
 
-function toVolumeData(c: Candle, usdRate: number): HistogramData<UTCTimestamp> {
-  const up = Number(c.close) >= Number(c.open);
-  return {
-    time: c.time as UTCTimestamp,
-    value: Number(c.volume) * usdRate,
-    color: up ? "rgba(51, 224, 122, 0.4)" : "rgba(255, 82, 87, 0.4)",
-  };
+function fmtTime(sec: number, interval: CandleInterval): string {
+  const d = new Date(sec * 1000);
+  const intraday = INTERVAL_SECONDS[interval] < 86400;
+  if (intraday) {
+    return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+  }
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 /** USD market cap per unit of native token price: usdRate x whole supply. */
@@ -127,151 +99,63 @@ function CaChip({ address }: { address: Address }) {
 }
 
 /**
- * TradingView Lightweight Charts candlestick + volume panel. The initial
- * series loads over REST; afterwards the active candle updates in place from
- * the WebSocket stream (series.update), so the chart is never recreated.
+ * Custom SVG price-line chart. Renders the market cap over time as a single
+ * line with a heatmap-style glow fill beneath it, a live current-price line,
+ * a hover crosshair and a light price/time grid. No third-party charting
+ * engine — the series loads over REST and the active bucket updates in place
+ * from the candle stream.
  */
 export function PriceChart({ token }: { token: Address }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const legendRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const [interval, setInterval] = useState<CandleInterval>("1m");
-  const [empty, setEmpty] = useState(false);
+  const [candles, setCandles] = useState<Candle[]>([]);
+  const [scale, setScale] = useState(1);
+  const [dims, setDims] = useState({ w: 0, h: 0 });
+  const [hover, setHover] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const gid = useMemo(() => `heat-${token.slice(2, 8)}`, [token]);
 
-  // Chart construction, once per mount.
+  // Track container size.
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const chart = createChart(container, {
-      layout: {
-        background: { type: ColorType.Solid, color: "transparent" },
-        textColor: AXIS_TEXT,
-        fontFamily:
-          "'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace",
-        fontSize: 11,
-        attributionLogo: false,
-      },
-      grid: {
-        vertLines: { color: GRID },
-        horzLines: { color: GRID },
-      },
-      crosshair: {
-        mode: CrosshairMode.Normal,
-        vertLine: { color: AXIS_TEXT, labelBackgroundColor: LABEL_BG },
-        horzLine: { color: AXIS_TEXT, labelBackgroundColor: LABEL_BG },
-      },
-      rightPriceScale: { borderColor: EDGE },
-      timeScale: {
-        borderColor: EDGE,
-        timeVisible: true,
-        secondsVisible: false,
-        rightOffset: 4,
-      },
-      handleScroll: true,
-      handleScale: true,
-      autoSize: false,
-      width: container.clientWidth,
-      height: container.clientHeight,
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0].contentRect;
+      setDims({ w: r.width, h: r.height });
     });
-
-    const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: UP,
-      downColor: DOWN,
-      borderUpColor: UP,
-      borderDownColor: DOWN,
-      wickUpColor: UP,
-      wickDownColor: DOWN,
-      priceFormat: {
-        type: "custom",
-        formatter: (p: number) => fmtMcap(p),
-        minMove: 1e-12,
-      },
-    });
-
-    const volumeSeries = chart.addSeries(HistogramSeries, {
-      priceFormat: { type: "volume" },
-      priceScaleId: "volume",
-      lastValueVisible: false,
-      priceLineVisible: false,
-    });
-    chart.priceScale("volume").applyOptions({
-      scaleMargins: { top: 0.82, bottom: 0 },
-      visible: false,
-    });
-    candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.22 } });
-
-    // OHLC readout on hover, written straight to the DOM.
-    chart.subscribeCrosshairMove((param) => {
-      const legend = legendRef.current;
-      if (!legend) return;
-      const data = param.seriesData.get(candleSeries) as CandlestickData | undefined;
-      const vol = param.seriesData.get(volumeSeries) as HistogramData | undefined;
-      if (!data) {
-        legend.textContent = "";
-        return;
-      }
-      const dir = data.close >= data.open ? UP : DOWN;
-      legend.innerHTML =
-        `<span style="color:${AXIS_TEXT}">O</span> <span style="color:${dir}">${fmtMcap(data.open)}</span>  ` +
-        `<span style="color:${AXIS_TEXT}">H</span> <span style="color:${dir}">${fmtMcap(data.high)}</span>  ` +
-        `<span style="color:${AXIS_TEXT}">L</span> <span style="color:${dir}">${fmtMcap(data.low)}</span>  ` +
-        `<span style="color:${AXIS_TEXT}">C</span> <span style="color:${dir}">${fmtMcap(data.close)}</span>` +
-        (vol ? `  <span style="color:${AXIS_TEXT}">Vol</span> <span style="color:#c9ff4d">$${compact(vol.value ?? 0)}</span>` : "");
-    });
-
-    const observer = new ResizeObserver((entries) => {
-      const rect = entries[0].contentRect;
-      chart.applyOptions({ width: rect.width, height: rect.height });
-    });
-    observer.observe(container);
-
-    chartRef.current = chart;
-    candleSeriesRef.current = candleSeries;
-    volumeSeriesRef.current = volumeSeries;
-
-    return () => {
-      observer.disconnect();
-      chart.remove();
-      chartRef.current = null;
-      candleSeriesRef.current = null;
-      volumeSeriesRef.current = null;
-    };
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
-  // Data load + live stream per token/interval, all rendered in USD.
+  // Data load + live stream per token/interval.
   useEffect(() => {
     let cancelled = false;
-    const candleSeries = candleSeriesRef.current;
-    const volumeSeries = volumeSeriesRef.current;
-    if (!candleSeries || !volumeSeries) return;
-
-    let mcapScale = 1;
-    let usdRate = 1;
+    setCandles([]);
+    setLoaded(false);
     const load = async () => {
-      mcapScale = await fetchMcapScale(token);
-      const price8 = await client.publicClient
-        .readContract({ address: client.addresses.factory, abi: launchpadAbi, functionName: "nativeUsdPrice" })
-        .catch(() => 0n);
-      usdRate = Number(price8) / 1e8 || 1;
-      const candles = await client.getCandles(token, interval, { limit: 500 });
-      if (cancelled || !candleSeriesRef.current) return;
-      candleSeries.setData(candles.map((x) => toCandleData(x, mcapScale)));
-      volumeSeries.setData(candles.map((x) => toVolumeData(x, usdRate)));
-      chartRef.current?.timeScale().fitContent();
-      setEmpty(candles.length === 0);
+      const s = await fetchMcapScale(token);
+      if (cancelled) return;
+      setScale(s);
+      const c = await client.getCandles(token, interval, { limit: 300 });
+      if (cancelled) return;
+      setCandles(c);
+      setLoaded(true);
     };
-    load().catch(() => setEmpty(true));
+    load().catch(() => setLoaded(true));
 
     const unsub = client.subscribeToCandles(token, interval, ({ candle }) => {
-      if (cancelled || !candleSeriesRef.current) return;
-      // In-place update of the active candle; appends automatically when a
-      // new bucket opens. The chart object itself is untouched.
-      candleSeriesRef.current.update(toCandleData(candle, mcapScale));
-      volumeSeriesRef.current?.update(toVolumeData(candle, usdRate));
-      setEmpty(false);
+      if (cancelled) return;
+      setCandles((prev) => {
+        if (prev.length === 0) return [candle];
+        const last = prev[prev.length - 1];
+        if (last.time === candle.time) {
+          const next = prev.slice();
+          next[next.length - 1] = candle;
+          return next;
+        }
+        if (candle.time > last.time) return [...prev, candle].slice(-300);
+        return prev;
+      });
     });
 
     return () => {
@@ -280,15 +164,74 @@ export function PriceChart({ token }: { token: Address }) {
     };
   }, [token, interval]);
 
+  const series = useMemo(
+    () => candles.map((c) => ({ t: c.time, v: Number(c.close) * scale })).filter((p) => p.v > 0),
+    [candles, scale],
+  );
+
+  const geo = useMemo(() => {
+    const { w, h } = dims;
+    const padR = 58;
+    const padB = 20;
+    const padT = 10;
+    const padL = 8;
+    const plotW = Math.max(0, w - padL - padR);
+    const plotH = Math.max(0, h - padT - padB);
+    if (series.length < 2 || plotW <= 0 || plotH <= 0) return null;
+
+    let min = Infinity;
+    let max = -Infinity;
+    for (const p of series) {
+      if (p.v < min) min = p.v;
+      if (p.v > max) max = p.v;
+    }
+    const pad = (max - min) * 0.12 || max * 0.12 || 1;
+    min -= pad;
+    max += pad;
+    const span = max - min || 1;
+
+    const n = series.length;
+    const x = (i: number) => padL + (plotW * i) / (n - 1);
+    const y = (v: number) => padT + plotH * (1 - (v - min) / span);
+
+    const pts = series.map((p, i) => [x(i), y(p.v)] as const);
+    const line = pts.map(([px, py], i) => `${i === 0 ? "M" : "L"}${px.toFixed(1)} ${py.toFixed(1)}`).join(" ");
+    const area = `${line} L${(padL + plotW).toFixed(1)} ${(padT + plotH).toFixed(1)} L${padL.toFixed(1)} ${(padT + plotH).toFixed(1)} Z`;
+
+    // Horizontal price gridlines.
+    const ticks: { y: number; label: string }[] = [];
+    const steps = 4;
+    for (let i = 0; i <= steps; i++) {
+      const v = min + (span * i) / steps;
+      ticks.push({ y: y(v), label: fmtMcap(v) });
+    }
+
+    return { padL, padR, padT, padB, plotW, plotH, x, y, pts, line, area, min, max, ticks, n };
+  }, [dims, series]);
+
+  const up = series.length >= 2 ? series[series.length - 1].v >= series[0].v : true;
+  const color = up ? UP : DOWN;
+  const last = series.length ? series[series.length - 1] : null;
+
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (!geo) return;
+    const rect = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const rel = (px - geo.padL) / geo.plotW;
+    const idx = Math.round(rel * (geo.n - 1));
+    setHover(Math.max(0, Math.min(geo.n - 1, idx)));
+  };
+
   return (
     <div className="flex h-full flex-col">
+      {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 border-b border-edge px-3 py-2">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
           {CANDLE_INTERVALS.map((iv) => (
             <button
               key={iv}
               onClick={() => setInterval(iv)}
-              className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
+              className={`shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
                 interval === iv ? "bg-accent text-black" : "text-ink-3 hover:text-ink"
               }`}
             >
@@ -296,23 +239,166 @@ export function PriceChart({ token }: { token: Address }) {
             </button>
           ))}
         </div>
-        <div className="flex min-w-0 items-center gap-3">
-          <div
-            ref={legendRef}
-            className="mono hidden whitespace-pre text-[11px] lg:block"
-            aria-live="off"
-          />
-          <CaChip address={token} />
-        </div>
+        <CaChip address={token} />
       </div>
-      <div className="relative min-h-0 flex-1">
-        <div ref={containerRef} className="absolute inset-0 touch-pan-x touch-pan-y" />
-        {empty ? (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <p className="text-sm text-ink-3">No trades yet. The first trade starts the chart.</p>
+
+      {/* Plot */}
+      <div ref={wrapRef} className="relative min-h-0 flex-1">
+        {geo && last ? (
+          <svg
+            width={dims.w}
+            height={dims.h}
+            className="absolute inset-0 touch-pan-y"
+            onPointerMove={onMove}
+            onPointerLeave={() => setHover(null)}
+            role="img"
+            aria-label="Market cap chart"
+          >
+            <defs>
+              <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity="0.38" />
+                <stop offset="42%" stopColor={color} stopOpacity="0.14" />
+                <stop offset="100%" stopColor={color} stopOpacity="0" />
+              </linearGradient>
+              <filter id={`${gid}-glow`} x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="b" />
+                <feMerge>
+                  <feMergeNode in="b" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Grid + right-axis price labels */}
+            {geo.ticks.map((tk, i) => (
+              <g key={i}>
+                <line x1={geo.padL} y1={tk.y} x2={geo.padL + geo.plotW} y2={tk.y} stroke={GRID} strokeWidth="1" />
+                <text
+                  x={geo.padL + geo.plotW + 6}
+                  y={tk.y + 3}
+                  fill={AXIS}
+                  fontSize="10"
+                  fontFamily="'JetBrains Mono', ui-monospace, monospace"
+                >
+                  {tk.label}
+                </text>
+              </g>
+            ))}
+
+            {/* Heatmap fill + line */}
+            <path d={geo.area} fill={`url(#${gid})`} />
+            <path
+              d={geo.line}
+              fill="none"
+              stroke={color}
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter={`url(#${gid}-glow)`}
+            />
+
+            {/* Current-price line */}
+            <line
+              x1={geo.padL}
+              y1={geo.y(last.v)}
+              x2={geo.padL + geo.plotW}
+              y2={geo.y(last.v)}
+              stroke={color}
+              strokeWidth="1"
+              strokeDasharray="3 3"
+              opacity="0.5"
+            />
+            <g>
+              <rect
+                x={geo.padL + geo.plotW + 2}
+                y={geo.y(last.v) - 8}
+                width={geo.padR - 4}
+                height="16"
+                rx="3"
+                fill={color}
+              />
+              <text
+                x={geo.padL + geo.plotW + 2 + (geo.padR - 4) / 2}
+                y={geo.y(last.v) + 3}
+                fill="#0a0b0a"
+                fontSize="10"
+                fontWeight="700"
+                textAnchor="middle"
+                fontFamily="'JetBrains Mono', ui-monospace, monospace"
+              >
+                {fmtMcap(last.v)}
+              </text>
+            </g>
+
+            {/* Live endpoint dot */}
+            <circle cx={geo.pts[geo.n - 1][0]} cy={geo.pts[geo.n - 1][1]} r="3" fill={color} />
+
+            {/* Crosshair */}
+            {hover != null && geo.pts[hover] ? (
+              <g>
+                <line
+                  x1={geo.pts[hover][0]}
+                  y1={geo.padT}
+                  x2={geo.pts[hover][0]}
+                  y2={geo.padT + geo.plotH}
+                  stroke={AXIS}
+                  strokeWidth="1"
+                  strokeDasharray="3 3"
+                  opacity="0.5"
+                />
+                <circle cx={geo.pts[hover][0]} cy={geo.pts[hover][1]} r="3.5" fill={color} stroke="#0a0b0a" strokeWidth="1.5" />
+                <HoverTag
+                  x={geo.pts[hover][0]}
+                  plotL={geo.padL}
+                  plotR={geo.padL + geo.plotW}
+                  top={geo.padT}
+                  value={fmtMcap(series[hover].v)}
+                  time={fmtTime(series[hover].t, interval)}
+                />
+              </g>
+            ) : null}
+          </svg>
+        ) : (
+          <div className="absolute inset-0 grid place-items-center">
+            <p className="text-sm text-ink-3">
+              {loaded ? "No trades yet. The first trade starts the chart." : "Loading market…"}
+            </p>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
+  );
+}
+
+function HoverTag({
+  x,
+  plotL,
+  plotR,
+  top,
+  value,
+  time,
+}: {
+  x: number;
+  plotL: number;
+  plotR: number;
+  top: number;
+  value: string;
+  time: string;
+}) {
+  const w = 92;
+  const h = 30;
+  let tx = x - w / 2;
+  if (tx < plotL) tx = plotL;
+  if (tx + w > plotR) tx = plotR - w;
+  return (
+    <g>
+      <rect x={tx} y={top + 2} width={w} height={h} rx="5" fill="#171b17" stroke="#2a312a" />
+      <text x={tx + w / 2} y={top + 15} fill="#e8ede6" fontSize="11" fontWeight="700" textAnchor="middle" fontFamily="'JetBrains Mono', ui-monospace, monospace">
+        {value}
+      </text>
+      <text x={tx + w / 2} y={top + 26} fill="#8b948a" fontSize="9" textAnchor="middle" fontFamily="'JetBrains Mono', ui-monospace, monospace">
+        {time}
+      </text>
+    </g>
   );
 }
