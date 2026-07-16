@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
+import { Icon } from "../components/Icon";
 import { TokenCard } from "../components/TokenCard";
 import { Skeleton } from "../components/ui";
 import { client } from "../lib/client";
@@ -66,13 +67,9 @@ export function Explore() {
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-2 sm:px-6">
       {/* Search */}
       <label className="relative mx-auto block max-w-2xl">
-        <svg
-          className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-ink-3"
-          width="19" height="19" viewBox="0 0 16 16" fill="none" aria-hidden
-        >
-          <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
+        <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-ink-3">
+          <Icon name="search" size={20} />
+        </span>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
