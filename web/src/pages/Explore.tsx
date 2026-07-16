@@ -155,28 +155,28 @@ function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
           </Link>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <Link to={to} className="truncate text-[15px] font-bold leading-tight text-ink">{t.name}</Link>
+              <Link to={to} className="truncate text-[12.5px] font-bold leading-tight text-ink">{t.name}</Link>
               <span className="mono text-[12px] font-semibold text-accent/75">${t.symbol}</span>
               <span className="rounded bg-panel-2 px-1.5 py-0.5 text-[10px] font-medium text-ink-3">{age}</span>
             </div>
-            <p className="mono mt-1 truncate text-[11.5px] text-ink-3">{shortAddr(t.creator)}</p>
+            <p className="mono mt-1 truncate text-[10.5px] text-ink-3">{shortAddr(t.creator)}</p>
           </div>
         </div>
 
         <div className="mt-3">
           <p className="text-[9.5px] uppercase tracking-wide text-ink-3">Market cap</p>
-          <p className="mono text-[17px] font-bold leading-tight text-accent">{fmtUsd(t.marketCapUsd)}</p>
+          <p className="mono text-[13.5px] font-bold leading-tight text-accent">{fmtUsd(t.marketCapUsd)}</p>
         </div>
         <div className="mt-2.5">
           <p className="text-[9.5px] uppercase tracking-wide text-ink-3">Volume</p>
-          <p className="mono text-[17px] font-bold leading-tight text-ink">{fmtNative(t.volumeTotalWei, 3)}</p>
+          <p className="mono text-[13.5px] font-bold leading-tight text-ink">{fmtNative(t.volumeTotalWei, 3)}</p>
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
           {x ? <PillLink href={x}>X</PillLink> : null}
           {web ? <PillLink href={web}>Web</PillLink> : null}
           {scan ? <PillLink href={scan}>Scan</PillLink> : null}
-          <Link to={to} className="rounded-full border border-accent/50 px-4 py-1.5 text-[11.5px] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">
+          <Link to={to} className="rounded-full border border-accent/50 px-4 py-1.5 text-[10.5px] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">
             Trade
           </Link>
         </div>
@@ -192,7 +192,7 @@ function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
           <img src={src} alt="" loading="lazy" className="h-full w-full object-cover"
             onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
         ) : (
-          <span className="grid h-full w-full place-items-center text-[34px] font-extrabold text-ink-3">
+          <span className="grid h-full w-full place-items-center text-[24px] font-extrabold text-ink-3">
             {t.symbol.slice(0, 3).toUpperCase()}
           </span>
         )}
@@ -203,8 +203,8 @@ function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
 
       <div className="p-2.5">
         <div className="flex items-baseline gap-1.5">
-          <p className="min-w-0 truncate text-[13.5px] font-bold leading-tight text-ink">{t.name}</p>
-          <span className="mono shrink-0 text-[11.5px] font-semibold text-accent/75">${t.symbol}</span>
+          <p className="min-w-0 truncate text-[12px] font-bold leading-tight text-ink">{t.name}</p>
+          <span className="mono shrink-0 text-[10.5px] font-semibold text-accent/75">${t.symbol}</span>
         </div>
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <span className="text-[9.5px] uppercase tracking-wide text-ink-3">Market cap</span>
@@ -224,7 +224,7 @@ function PillLink({ href, children }: { href: string; children: React.ReactNode 
       target="_blank"
       rel="noreferrer"
       onClick={(e) => e.stopPropagation()}
-      className="rounded-full border border-edge px-4 py-1.5 text-[11.5px] font-semibold text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
+      className="rounded-full border border-edge px-4 py-1.5 text-[10.5px] font-semibold text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
     >
       {children}
     </a>

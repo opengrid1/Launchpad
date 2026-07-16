@@ -22,12 +22,12 @@ export function NavBar() {
             to={t.to}
             end={t.end}
             className={({ isActive }) =>
-              `flex flex-1 flex-col items-center gap-0.5 border-b-2 py-2 text-[11px] font-medium transition-colors sm:flex-none sm:flex-row sm:gap-1.5 sm:py-2.5 sm:text-[12.5px] ${
+              `flex flex-1 flex-col items-center gap-0.5 border-b-2 py-2 text-[10px] font-medium transition-colors sm:flex-none sm:flex-row sm:gap-1.5 sm:py-2.5 sm:text-[11.5px] ${
                 isActive ? "border-accent text-accent" : "border-transparent text-ink-2 hover:text-ink"
               }`
             }
           >
-            <Icon name={t.icon} size={15} />
+            <Icon name={t.icon} size={13} />
             {t.label}
           </NavLink>
         ))}
