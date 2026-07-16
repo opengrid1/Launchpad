@@ -1,39 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-  /* Terminal — near-black ground, layered graphite panels */
-  --color-bg: #0a0b0a;
-  --color-panel: #101310;
-  --color-panel-2: #171b17;
-  --color-edge: #1f241f;
-  --color-edge-2: #2a312a;
+  /* Premium light — warm off-white ground, clean white surfaces */
+  --color-bg: #f7f7f2;
+  --color-panel: #ffffff;
+  --color-panel-2: #f3f3ee;
+  --color-edge: #ecece6;
+  --color-edge-2: #e0e0d8;
 
-  /* Ink — bright on black */
-  --color-ink: #e8ede6;
-  --color-ink-2: #8b948a;
-  --color-ink-3: #5b645a;
+  /* Ink — near-black on warm white */
+  --color-ink: #111111;
+  --color-ink-2: #5f6670;
+  --color-ink-3: #9aa0a8;
 
-  /* Robinhood green accent — clean spring green, not chartreuse lime */
+  /* Robinhood green accent */
   --color-accent: #00c805;
-  --color-accent-2: #2ade3a;
+  --color-accent-2: #05b04a;
 
-  /* Trading colors on dark */
-  --color-up: #33e07a;
-  --color-down: #ff5257;
+  /* Trading colors on light */
+  --color-up: #0ea54e;
+  --color-down: #e5484d;
 
   --font-sans: "Inter", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-serif: "Instrument Serif", "Times New Roman", Georgia, serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -14px rgba(0, 0, 0, 0.6);
-  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.5), 0 20px 44px -20px rgba(0, 0, 0, 0.7);
-  --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 1px 2px rgba(17, 17, 17, 0.04), 0 8px 24px -14px rgba(17, 17, 17, 0.10);
+  --shadow-card-hover: 0 2px 6px rgba(17, 17, 17, 0.06), 0 22px 44px -20px rgba(17, 17, 17, 0.16);
+  --shadow-btn: 0 1px 2px rgba(17, 17, 17, 0.08);
 }
 
 html {
   background: var(--color-bg);
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -64,20 +64,20 @@ body {
 }
 
 ::selection {
-  background: rgba(0, 200, 5, 0.32);
-  color: #e8ede6;
+  background: rgba(0, 200, 5, 0.22);
+  color: #111111;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2a312a transparent;
+  scrollbar-color: #dcdcd4 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #2a312a;
+  background: #dcdcd4;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-track {
@@ -114,7 +114,7 @@ body {
 
 @keyframes flash-up {
   0% {
-    background: rgba(51, 224, 122, 0.14);
+    background: rgba(14, 165, 78, 0.10);
   }
   100% {
     background: transparent;
@@ -122,7 +122,7 @@ body {
 }
 @keyframes flash-down {
   0% {
-    background: rgba(255, 82, 87, 0.13);
+    background: rgba(229, 72, 77, 0.09);
   }
   100% {
     background: transparent;

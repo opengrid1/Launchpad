@@ -4,10 +4,10 @@ import { CANDLE_INTERVALS, INTERVAL_SECONDS, launchpadAbi, launchTokenAbi } from
 
 import { client } from "../lib/client";
 
-const UP = "#33E07A";
-const DOWN = "#FF5257";
-const AXIS = "#8b948a";
-const GRID = "rgba(232, 237, 230, 0.06)";
+const UP = "#0EA54E";
+const DOWN = "#E5484D";
+const AXIS = "#9aa0a8";
+const GRID = "rgba(17, 17, 17, 0.05)";
 
 const intervalLabels: Record<CandleInterval, string> = {
   "1m": "1m",
@@ -274,7 +274,7 @@ export function PriceChart({ token }: { token: Address }) {
               <text
                 x={geo.padL + geo.plotW + 2 + (geo.padR - 4) / 2}
                 y={geo.y(last.v) + 3}
-                fill="#0a0b0a"
+                fill="#ffffff"
                 fontSize="10"
                 fontWeight="700"
                 textAnchor="middle"
@@ -300,7 +300,7 @@ export function PriceChart({ token }: { token: Address }) {
                   strokeDasharray="3 3"
                   opacity="0.5"
                 />
-                <circle cx={geo.pts[hover][0]} cy={geo.pts[hover][1]} r="3.5" fill={color} stroke="#0a0b0a" strokeWidth="1.5" />
+                <circle cx={geo.pts[hover][0]} cy={geo.pts[hover][1]} r="3.5" fill={color} stroke="#ffffff" strokeWidth="1.5" />
                 <HoverTag
                   x={geo.pts[hover][0]}
                   plotL={geo.padL}
@@ -346,11 +346,11 @@ function HoverTag({
   if (tx + w > plotR) tx = plotR - w;
   return (
     <g>
-      <rect x={tx} y={top + 2} width={w} height={h} rx="5" fill="#171b17" stroke="#2a312a" />
-      <text x={tx + w / 2} y={top + 15} fill="#e8ede6" fontSize="11" fontWeight="700" textAnchor="middle" fontFamily="'JetBrains Mono', ui-monospace, monospace">
+      <rect x={tx} y={top + 2} width={w} height={h} rx="5" fill="#111111" stroke="#111111" />
+      <text x={tx + w / 2} y={top + 15} fill="#ffffff" fontSize="11" fontWeight="700" textAnchor="middle" fontFamily="'JetBrains Mono', ui-monospace, monospace">
         {value}
       </text>
-      <text x={tx + w / 2} y={top + 26} fill="#8b948a" fontSize="9" textAnchor="middle" fontFamily="'JetBrains Mono', ui-monospace, monospace">
+      <text x={tx + w / 2} y={top + 26} fill="#b8bcc4" fontSize="9" textAnchor="middle" fontFamily="'JetBrains Mono', ui-monospace, monospace">
         {time}
       </text>
     </g>

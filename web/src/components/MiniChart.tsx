@@ -4,8 +4,8 @@ import type { Address } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
 
-const UP = "#33E07A";
-const DOWN = "#FF5257";
+const UP = "#0EA54E";
+const DOWN = "#E5484D";
 
 /**
  * Minimal line sparkline of the market since launch, drawn from real 15m
@@ -41,7 +41,7 @@ export function MiniChart({
           y1={height / 2}
           x2={width}
           y2={height / 2}
-          stroke="#2a312a"
+          stroke="#e0e0d8"
           strokeWidth="1.5"
           strokeDasharray="2 5"
           strokeLinecap="round"

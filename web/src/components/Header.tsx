@@ -4,63 +4,53 @@ import { BRAND } from "../lib/brand";
 import { useWallet } from "../lib/useWallet";
 
 /**
- * Terminal top bar — thin, full-bleed, monospace-forward. A brand mark and a
- * couple of route tabs on the left; a live network readout and the wallet on
- * the right. Reads like the chrome of a trading terminal, not a marketing nav.
+ * Premium top bar — airy and centered, not a dense chrome strip. A soft brand
+ * wordmark on the left, two quiet route links, and a rounded green wallet
+ * action on the right. Reads as a polished fintech product.
  */
 export function Header() {
   const { address, isConnected, connectFirst, disconnect, isPending } = useWallet();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-xl">
-      <div className="flex h-12 items-center gap-1 px-3 sm:px-4">
+    <header className="sticky top-0 z-40 border-b border-edge/70 bg-bg/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:px-6">
         {/* Brand */}
-        <Link to="/" aria-label="Explore" className="mr-2 flex shrink-0 items-center gap-2">
-          <span className="grid h-6 w-6 place-items-center rounded-md bg-accent">
-            <svg width="13" height="13" viewBox="0 0 64 64" fill="none" aria-hidden>
-              <path d="M32 54 L32 13" stroke="#0a0b0a" strokeWidth="6" strokeLinecap="round" />
-              <path d="M22 22 L32 12 L42 22" stroke="#0a0b0a" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M25 46 L32 40 L39 46" stroke="#0a0b0a" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
+        <Link to="/" aria-label={BRAND.name} className="mr-3 flex shrink-0 items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-[13px] bg-accent shadow-[0_4px_14px_-4px_rgba(0,200,5,0.5)]">
+            <svg width="18" height="18" viewBox="0 0 64 64" fill="none" aria-hidden>
+              <path d="M32 52 L32 14" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" />
+              <path d="M22 24 L32 14 L42 24" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M25 44 L32 38 L39 44" stroke="#ffffff" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          <span className="hidden text-[14px] font-bold tracking-tight text-ink sm:block">
-            {BRAND.name}
-          </span>
+          <span className="text-[19px] font-bold tracking-tight text-ink">{BRAND.name}</span>
         </Link>
 
-        {/* Route tabs */}
-        <nav className="flex items-center">
-          <Tab to="/" end>
-            Markets
-          </Tab>
+        {/* Route links */}
+        <nav className="hidden items-center gap-1 sm:flex">
+          <Tab to="/" end>Explore</Tab>
           <Tab to="/launch">Launch</Tab>
         </nav>
 
         <div className="flex-1" />
 
-        {/* Network readout */}
-        <div className="mono mr-1 hidden items-center gap-1.5 rounded-md border border-edge bg-panel px-2.5 py-1 text-[11px] text-ink-2 md:flex">
-          <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-up" />
-          <span className="uppercase tracking-wide">Robinhood Chain</span>
-        </div>
-
         {/* Wallet */}
         {isConnected && address ? (
           <button
             onClick={() => disconnect()}
-            className="mono flex items-center gap-1.5 rounded-md border border-edge-2 bg-panel px-2.5 py-1.5 text-[12px] font-medium text-ink transition-colors hover:border-accent/50"
+            className="flex items-center gap-2 rounded-full border border-edge bg-panel px-4 py-2 text-[14px] font-semibold text-ink shadow-[var(--shadow-btn)] transition-colors hover:border-edge-2"
             title="Disconnect"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            {`${address.slice(0, 4)}…${address.slice(-4)}`}
+            <span className="h-2 w-2 rounded-full bg-accent" />
+            {`${address.slice(0, 5)}…${address.slice(-4)}`}
           </button>
         ) : (
           <button
             onClick={connectFirst}
             disabled={isPending}
-            className="rounded-md bg-accent px-3 py-1.5 text-[12px] font-bold uppercase tracking-wide text-black transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="rounded-full bg-accent px-5 py-2.5 text-[14px] font-bold text-white shadow-[0_6px_18px_-6px_rgba(0,200,5,0.55)] transition-all hover:scale-[1.02] hover:bg-accent-2 disabled:opacity-60"
           >
-            {isPending ? "…" : "Connect"}
+            {isPending ? "Connecting…" : "Connect"}
           </button>
         )}
       </div>
@@ -74,19 +64,12 @@ function Tab({ to, end, children }: { to: string; end?: boolean; children: React
       to={to}
       end={end}
       className={({ isActive }) =>
-        `relative px-3 py-1.5 text-[13px] font-semibold transition-colors ${
-          isActive ? "text-ink" : "text-ink-3 hover:text-ink-2"
+        `rounded-full px-4 py-2 text-[15px] font-semibold transition-colors ${
+          isActive ? "bg-panel-2 text-ink" : "text-ink-2 hover:text-ink"
         }`
       }
     >
-      {({ isActive }) => (
-        <>
-          {children}
-          {isActive ? (
-            <span className="absolute inset-x-3 -bottom-[9px] h-[2px] rounded-full bg-accent" />
-          ) : null}
-        </>
-      )}
+      {children}
     </NavLink>
   );
 }
