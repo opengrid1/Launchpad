@@ -22,27 +22,30 @@ import {IQuiverToken} from "./interfaces/IQuiverToken.sol";
 /// @title QuiverHook
 /// @notice Singleton Uniswap V4 hook and fee vault for the Quiver launchpad.
 ///
+///         Launched tokens pair with WETH (the Robinhood Chain convention).
 ///         Every swap through a Quiver pool pays a per-token tax (0-10%, fixed
 ///         at launch) that the hook skims in `afterSwap` — so the fee is
 ///         collected on ALL trades through the pool, not just those routed via
 ///         the app. Skimmed fees accrue per token; anyone can then call
-///         `harvest`, which normalises everything to native and splits it
-///         four ways (25/25/25/25):
+///         `harvest`, which normalises everything to WETH and splits it four
+///         ways (25/25/25/25):
 ///
-///           1. creator  — claimable native, withdrawn on demand
-///           2. holders  — buys the creator's chosen stock and distributes it
-///                         to holders in proportion to their holdings
+///           1. creator  — claimable WETH, withdrawn on demand
+///           2. holders  — buys the creator's chosen stock (WETH -> USDG ->
+///                         stock) and distributes it to holders by holdings
 ///           3. buyback  — buys the launched token and burns it
-///           4. protocol — sent to the protocol treasury
+///           4. protocol — WETH sent to the protocol treasury
 ///
-///         All swaps the hook performs (token->native normalisation, the stock
-///         buy, and the buyback) run through the PoolManager's own `unlock`,
-///         so the hook is its own router and depends on no external one.
+///         All swaps the hook performs run through the PoolManager's own
+///         `unlock`, so the hook is its own router and needs no external one.
 contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
 
     uint16 internal constant BPS = 10_000;
+
+    /// @notice The WETH the launchpad pools are quoted in.
+    address public immutable WETH;
 
     struct PoolConfig {
         address token; // the launched QuiverToken
@@ -51,28 +54,28 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
         uint16 taxBps;
         bool tokenIsCurrency0; // orientation of the launched token in the pool
         bool registered;
-        PoolKey poolKey; // the launched token's own native pool
-        PoolKey stockKey; // native/stock pool used to buy the reward
+        PoolKey poolKey; // the launched token's own WETH pool
+        PoolKey stockKey; // quote/stock pool used to buy the reward
     }
 
     /// @notice Factory allowed to register pools. Set once by the owner.
     address public factory;
-    /// @notice Where the protocol's 25% share is sent.
+    /// @notice Where the protocol's 25% share (WETH) is sent.
     address public protocolTreasury;
     /// @notice Quote token stocks are priced in (USDG). Stock rewards are
-    ///         bought native -> quote -> stock, matching on-chain liquidity.
+    ///         bought WETH -> quote -> stock, matching on-chain liquidity.
     address public quote;
-    PoolKey internal _quoteKey; // native/quote pool used for the first hop
+    PoolKey internal _quoteKey; // WETH/quote pool used for the first hop
 
     mapping(PoolId => PoolConfig) internal _config;
-    /// @notice token => native fees awaiting harvest (from sells).
-    mapping(address => uint256) public nativeFees;
+    /// @notice token => WETH fees awaiting harvest (from sells).
+    mapping(address => uint256) public wethFees;
     /// @notice token => launched-token fees awaiting harvest (from buys).
     mapping(address => uint256) public tokenFees;
-    /// @notice token => native claimable by its creator.
+    /// @notice token => WETH claimable by its creator.
     mapping(address => uint256) public creatorClaimable;
+    mapping(address => PoolId) internal _poolOf;
 
-    // Transient marker so _unlockCallback only serves our own harvest swaps.
     struct SwapAction {
         PoolKey key;
         bool zeroForOne;
@@ -80,14 +83,8 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     }
 
     event PoolRegistered(address indexed token, PoolId indexed id, address stock, uint16 taxBps);
-    event FeeAccrued(address indexed token, bool native, uint256 amount);
-    event Harvested(
-        address indexed token,
-        uint256 toCreator,
-        uint256 toHolders,
-        uint256 toBuyback,
-        uint256 toProtocol
-    );
+    event FeeAccrued(address indexed token, bool weth, uint256 amount);
+    event Harvested(address indexed token, uint256 toCreator, uint256 toHolders, uint256 toBuyback, uint256 toProtocol);
     event CreatorClaimed(address indexed token, address indexed creator, uint256 amount);
     event ProtocolTreasurySet(address indexed treasury);
     event QuoteRouteSet(address indexed quote);
@@ -98,12 +95,13 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     error NotRegistered();
     error NotCreator();
 
-    constructor(IPoolManager pm, address owner_, address treasury_)
+    constructor(IPoolManager pm, address owner_, address treasury_, address weth_)
         BaseHook(pm)
         Ownable(owner_)
     {
-        require(treasury_ != address(0), "treasury=0");
+        require(treasury_ != address(0) && weth_ != address(0), "zero");
         protocolTreasury = treasury_;
+        WETH = weth_;
     }
 
     // ---------------------------------------------------------------------
@@ -123,7 +121,7 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
         emit ProtocolTreasurySet(treasury_);
     }
 
-    /// @notice Configure the native->quote hop used to buy stock rewards.
+    /// @notice Configure the WETH->quote hop used to buy stock rewards.
     function setQuoteRoute(address quote_, PoolKey calldata quoteKey_) external onlyOwner {
         quote = quote_;
         _quoteKey = quoteKey_;
@@ -147,8 +145,6 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     // Registration (factory only)
     // ---------------------------------------------------------------------
 
-    /// @notice Register a launched pool so the hook taxes it and knows how to
-    ///         buy the reward stock. Called once by the factory at launch.
     function registerPool(
         PoolKey calldata key,
         address token,
@@ -191,12 +187,8 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     ) internal override returns (bytes4, int128) {
         PoolConfig storage c = _config[key.toId()];
         if (!c.registered || c.taxBps == 0) return (BaseHook.afterSwap.selector, int128(0));
-
-        // Only skim exact-input swaps (the common case); the unspecified
-        // currency is the output the trader receives.
         if (params.amountSpecified >= 0) return (BaseHook.afterSwap.selector, int128(0));
 
-        // Output currency + amount (positive side of the swapper's delta).
         Currency outputCurrency = params.zeroForOne ? key.currency1 : key.currency0;
         int128 outAmount = params.zeroForOne ? delta.amount1() : delta.amount0();
         if (outAmount <= 0) return (BaseHook.afterSwap.selector, int128(0));
@@ -204,15 +196,13 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
         uint256 fee = (uint256(uint128(outAmount)) * c.taxBps) / BPS;
         if (fee == 0) return (BaseHook.afterSwap.selector, int128(0));
 
-        // Take the fee out of the pool into the hook, and report it so the
-        // PoolManager charges it to the swapper (books stay balanced).
         poolManager.take(outputCurrency, address(this), fee);
 
         bool outIsToken = Currency.unwrap(outputCurrency) == c.token;
         if (outIsToken) {
             tokenFees[c.token] += fee;
         } else {
-            nativeFees[c.token] += fee;
+            wethFees[c.token] += fee;
         }
         emit FeeAccrued(c.token, !outIsToken, fee);
 
@@ -220,41 +210,37 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     }
 
     // ---------------------------------------------------------------------
-    // harvest: normalise to native, split 25/25/25/25, act
+    // harvest: normalise to WETH, split 25/25/25/25, act
     // ---------------------------------------------------------------------
 
-    /// @notice Permissionless. Converts a token's accrued fees to native, then
-    ///         routes the four quarters: creator (claimable), holders (stock
-    ///         dividend), buyback&burn, and protocol.
     function harvest(address token) external nonReentrant {
-        PoolConfig storage c = _config[_idOfToken(token)];
+        PoolConfig storage c = _config[_poolOf[token]];
         if (!c.registered) revert NotRegistered();
 
-        // 1. Convert launched-token fees (from buys) into native.
+        // 1. Convert launched-token fees (from buys) into WETH.
         uint256 tf = tokenFees[token];
         if (tf > 0) {
             tokenFees[token] = 0;
             Currency tokenCurrency = c.tokenIsCurrency0 ? c.poolKey.currency0 : c.poolKey.currency1;
-            uint256 gotNative = _swap(c.poolKey, tokenCurrency, tf);
-            nativeFees[token] += gotNative;
+            wethFees[token] += _swap(c.poolKey, tokenCurrency, tf);
         }
 
-        uint256 total = nativeFees[token];
+        uint256 total = wethFees[token];
         if (total == 0) {
             emit Harvested(token, 0, 0, 0, 0);
             return;
         }
-        nativeFees[token] = 0;
+        wethFees[token] = 0;
 
         uint256 q = total / 4;
         uint256 toProtocol = total - (q * 3); // dust rounds into protocol
 
-        // 2. creator — claimable native
+        // 2. creator — claimable WETH
         creatorClaimable[token] += q;
 
-        // 3. holders — buy the stock (native -> USDG -> stock) and distribute
+        // 3. holders — buy stock (WETH -> USDG -> stock) and distribute
         if (q > 0 && c.stock != address(0) && quote != address(0)) {
-            uint256 usdgOut = _swap(_quoteKey, _nativeSide(_quoteKey), q);
+            uint256 usdgOut = _swap(_quoteKey, _wethSide(_quoteKey), q);
             if (usdgOut > 0) {
                 uint256 stockOut = _swap(c.stockKey, Currency.wrap(quote), usdgOut);
                 if (stockOut > 0) {
@@ -264,34 +250,29 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
             }
         }
 
-        // 4. buyback&burn — buy the launched token and burn it
+        // 4. buyback&burn — buy the launched token with WETH and burn it
         if (q > 0) {
-            Currency nativeCur = _nativeSide(c.poolKey);
-            uint256 tokenOut = _swap(c.poolKey, nativeCur, q);
-            if (tokenOut > 0) {
-                IQuiverToken(token).burn(tokenOut);
-            }
+            uint256 tokenOut = _swap(c.poolKey, _wethSide(c.poolKey), q);
+            if (tokenOut > 0) IQuiverToken(token).burn(tokenOut);
         }
 
-        // 5. protocol — native to treasury
+        // 5. protocol — WETH to treasury
         if (toProtocol > 0) {
-            (bool ok, ) = payable(protocolTreasury).call{value: toProtocol}("");
-            require(ok, "protocol xfer");
+            IERC20(WETH).safeTransfer(protocolTreasury, toProtocol);
         }
 
         emit Harvested(token, q, q, q, toProtocol);
     }
 
-    /// @notice Creator withdraws their accrued native fees.
+    /// @notice Creator withdraws their accrued WETH fees.
     function claimCreatorFees(address token) external nonReentrant returns (uint256 amount) {
-        PoolConfig storage c = _config[_idOfToken(token)];
+        PoolConfig storage c = _config[_poolOf[token]];
         if (!c.registered) revert NotRegistered();
         if (msg.sender != c.creator) revert NotCreator();
         amount = creatorClaimable[token];
         if (amount == 0) return 0;
         creatorClaimable[token] = 0;
-        (bool ok, ) = payable(msg.sender).call{value: amount}("");
-        require(ok, "creator xfer");
+        IERC20(WETH).safeTransfer(msg.sender, amount);
         emit CreatorClaimed(token, msg.sender, amount);
     }
 
@@ -299,7 +280,6 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     // Swap plumbing (our own router, via PoolManager.unlock)
     // ---------------------------------------------------------------------
 
-    /// @dev Exact-input swap of `amountIn` of `currencyIn` through `key`.
     function _swap(PoolKey memory key, Currency currencyIn, uint256 amountIn)
         internal
         returns (uint256 amountOut)
@@ -335,33 +315,19 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     function _resolve(Currency currency, int128 amount) internal {
         if (amount < 0) {
             uint256 owed = uint256(uint128(-amount));
-            if (currency.isAddressZero()) {
-                poolManager.settle{value: owed}();
-            } else {
-                poolManager.sync(currency);
-                IERC20(Currency.unwrap(currency)).safeTransfer(address(poolManager), owed);
-                poolManager.settle();
-            }
+            poolManager.sync(currency);
+            IERC20(Currency.unwrap(currency)).safeTransfer(address(poolManager), owed);
+            poolManager.settle();
         } else if (amount > 0) {
             poolManager.take(currency, address(this), uint256(uint128(amount)));
         }
     }
 
     // ---------------------------------------------------------------------
-    // Views / helpers
+    // Helpers
     // ---------------------------------------------------------------------
 
-    function _nativeSide(PoolKey memory key) internal pure returns (Currency) {
-        return key.currency0.isAddressZero() ? key.currency0 : key.currency1;
+    function _wethSide(PoolKey memory key) internal view returns (Currency) {
+        return Currency.unwrap(key.currency0) == WETH ? key.currency0 : key.currency1;
     }
-
-    // Token->PoolId lookup. The factory registers by PoolId; we also index by
-    // token for the harvest/claim entrypoints.
-    mapping(address => PoolId) internal _poolOf;
-
-    function _idOfToken(address token) internal view returns (PoolId) {
-        return _poolOf[token];
-    }
-
-    receive() external payable {}
 }

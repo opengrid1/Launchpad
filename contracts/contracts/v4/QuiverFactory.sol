@@ -41,6 +41,8 @@ contract QuiverFactory is Ownable, ReentrancyGuard, IUnlockCallback {
 
     IPoolManager public immutable poolManager;
     QuiverHook public immutable hook;
+    /// @notice WETH the launched tokens pair against (Robinhood Chain convention).
+    address public immutable weth;
 
     /// @notice Native/USD price, 8 decimals, used to size the initial pool.
     uint256 public nativeUsdPrice8;
@@ -87,12 +89,18 @@ contract QuiverFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     error InvalidParams();
     error StockNotListed();
 
-    constructor(address admin_, IPoolManager poolManager_, QuiverHook hook_, uint256 nativeUsdPrice8_)
-        Ownable(admin_)
-    {
+    constructor(
+        address admin_,
+        IPoolManager poolManager_,
+        QuiverHook hook_,
+        address weth_,
+        uint256 nativeUsdPrice8_
+    ) Ownable(admin_) {
         require(nativeUsdPrice8_ > 0, "price=0");
+        require(weth_ != address(0), "weth=0");
         poolManager = poolManager_;
         hook = hook_;
+        weth = weth_;
         nativeUsdPrice8 = nativeUsdPrice8_;
     }
 
@@ -159,10 +167,11 @@ contract QuiverFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         );
         token = address(qt);
 
-        // 2. Native is currency0 (address(0) sorts first); token is currency1.
+        // 2. Pair with WETH; currencies sort by address.
+        bool tokenIsCurrency0 = token < weth;
         PoolKey memory key = PoolKey({
-            currency0: Currency.wrap(address(0)),
-            currency1: Currency.wrap(token),
+            currency0: Currency.wrap(tokenIsCurrency0 ? token : weth),
+            currency1: Currency.wrap(tokenIsCurrency0 ? weth : token),
             fee: LP_FEE,
             tickSpacing: TICK_SPACING,
             hooks: IHooks(address(hook))
@@ -174,20 +183,27 @@ contract QuiverFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         ex[1] = address(this);
         qt.initHook(address(hook), ex);
 
-        // 4. Price the pool at the $5,000 start cap and seed the full supply.
-        (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper) = _initialPosition();
+        // 4. Price the pool at the $5,000 start cap and seed the full supply
+        //    single-sided (token only) in the range adjacent to spot.
+        (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper) = _initialPosition(tokenIsCurrency0);
         poolManager.initialize(key, sqrtPriceX96);
 
-        uint128 liquidity = LiquidityAmounts.getLiquidityForAmount1(
-            TickMath.getSqrtPriceAtTick(tickLower),
-            TickMath.getSqrtPriceAtTick(tickUpper),
-            TOTAL_SUPPLY
-        );
-        poolManager.unlock(abi.encode(key, tickLower, tickUpper, liquidity));
+        uint128 liquidity = tokenIsCurrency0
+            ? LiquidityAmounts.getLiquidityForAmount0(
+                TickMath.getSqrtPriceAtTick(tickLower),
+                TickMath.getSqrtPriceAtTick(tickUpper),
+                TOTAL_SUPPLY
+            )
+            : LiquidityAmounts.getLiquidityForAmount1(
+                TickMath.getSqrtPriceAtTick(tickLower),
+                TickMath.getSqrtPriceAtTick(tickUpper),
+                TOTAL_SUPPLY
+            );
+        poolManager.unlock(abi.encode(key, tickLower, tickUpper, liquidity, tokenIsCurrency0));
 
         // 5. Register the pool with the hook so trades are taxed and rewarded.
         poolId = PoolId.unwrap(key.toId());
-        hook.registerPool(key, token, p.stock, msg.sender, p.taxBps, false, _stockPool[p.stock]);
+        hook.registerPool(key, token, p.stock, msg.sender, p.taxBps, tokenIsCurrency0, _stockPool[p.stock]);
 
         listings[token] = Listing({
             creator: msg.sender,
@@ -208,8 +224,8 @@ contract QuiverFactory is Ownable, ReentrancyGuard, IUnlockCallback {
 
     function unlockCallback(bytes calldata data) external override returns (bytes memory) {
         require(msg.sender == address(poolManager), "not pool manager");
-        (PoolKey memory key, int24 tickLower, int24 tickUpper, uint128 liquidity) =
-            abi.decode(data, (PoolKey, int24, int24, uint128));
+        (PoolKey memory key, int24 tickLower, int24 tickUpper, uint128 liquidity, bool tokenIsCurrency0) =
+            abi.decode(data, (PoolKey, int24, int24, uint128, bool));
 
         (BalanceDelta delta, ) = poolManager.modifyLiquidity(
             key,
@@ -222,14 +238,16 @@ contract QuiverFactory is Ownable, ReentrancyGuard, IUnlockCallback {
             ""
         );
 
-        // Single-sided token position: only currency1 (token) should be owed.
-        int128 owed0 = delta.amount0();
-        int128 owed1 = delta.amount1();
-        require(owed0 >= 0, "native owed"); // never expect to owe native
-        if (owed1 < 0) {
-            uint256 amt = uint256(uint128(-owed1));
-            poolManager.sync(key.currency1);
-            IERC20(Currency.unwrap(key.currency1)).safeTransfer(address(poolManager), amt);
+        // Single-sided token position: only the token side should be owed; the
+        // WETH side must net to zero (we deposit no WETH).
+        int128 tokenOwed = tokenIsCurrency0 ? delta.amount0() : delta.amount1();
+        int128 wethOwed = tokenIsCurrency0 ? delta.amount1() : delta.amount0();
+        require(wethOwed >= 0, "weth owed");
+        if (tokenOwed < 0) {
+            Currency tokenCurrency = tokenIsCurrency0 ? key.currency0 : key.currency1;
+            uint256 amt = uint256(uint128(-tokenOwed));
+            poolManager.sync(tokenCurrency);
+            IERC20(Currency.unwrap(tokenCurrency)).safeTransfer(address(poolManager), amt);
             poolManager.settle();
         }
         return "";
@@ -242,24 +260,37 @@ contract QuiverFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     /// @dev Initial pool price snapped to a tick, plus the token-only range
     ///      directly below it, so the whole supply seeds one side. Native is
     ///      currency0 and the token is currency1, mirroring the v3 launchpad.
-    function _initialPosition()
+    function _initialPosition(bool tokenIsCurrency0)
         internal
         view
         returns (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper)
     {
         uint256 mcapWei = Math.mulDiv(INITIAL_MARKET_CAP_USD_8, 1e18, nativeUsdPrice8);
-        uint256 priceWei = Math.mulDiv(mcapWei, 1e18, TOTAL_SUPPLY);
+        uint256 priceWei = Math.mulDiv(mcapWei, 1e18, TOTAL_SUPPLY); // WETH per token
         if (priceWei == 0) revert InvalidParams();
 
-        // token is currency1: sqrt(token0/token1) basis.
-        uint160 target = uint160(Math.sqrt(Math.mulDiv(1e18, 1 << 192, priceWei)));
+        // sqrtPrice = sqrt(price(token1/token0)) * 2^96.
+        uint160 target = tokenIsCurrency0
+            ? uint160(Math.sqrt(Math.mulDiv(priceWei, 1 << 192, 1e18)))
+            : uint160(Math.sqrt(Math.mulDiv(1e18, 1 << 192, priceWei)));
+
         int24 tick = TickMath.getTickAtSqrtPrice(target);
         int24 aligned = (tick / TICK_SPACING) * TICK_SPACING;
         if (tick < 0 && tick % TICK_SPACING != 0) aligned -= TICK_SPACING;
 
-        sqrtPriceX96 = TickMath.getSqrtPriceAtTick(aligned + TICK_SPACING);
-        tickLower = (TickMath.MIN_TICK / TICK_SPACING) * TICK_SPACING;
-        tickUpper = aligned + TICK_SPACING;
+        int24 minTick = (TickMath.MIN_TICK / TICK_SPACING) * TICK_SPACING;
+        int24 maxTick = (TickMath.MAX_TICK / TICK_SPACING) * TICK_SPACING;
+        if (tokenIsCurrency0) {
+            // Token is currency0: seed the range above spot (token-only).
+            sqrtPriceX96 = TickMath.getSqrtPriceAtTick(aligned);
+            tickLower = aligned + TICK_SPACING;
+            tickUpper = maxTick;
+        } else {
+            // Token is currency1: seed the range below spot (token-only).
+            sqrtPriceX96 = TickMath.getSqrtPriceAtTick(aligned + TICK_SPACING);
+            tickLower = minTick;
+            tickUpper = aligned + TICK_SPACING;
+        }
     }
 
     // ---------------------------------------------------------------------
