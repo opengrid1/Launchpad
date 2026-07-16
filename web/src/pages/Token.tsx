@@ -94,7 +94,7 @@ export function TokenPage() {
               <p className="kicker text-[12px] text-accent-2">Market</p>
               {rewardStock ? <RewardPill stock={extra!.stock} /> : null}
             </div>
-            <h1 className="mt-0.5 truncate text-[32px] font-bold leading-tight tracking-tight text-ink sm:text-[40px]">{t.name}</h1>
+            <h1 className="mt-0.5 truncate text-[24px] font-bold leading-tight tracking-tight text-ink sm:text-[30px]">{t.name}</h1>
             <div className="mt-1.5 flex items-center gap-2.5">
               <span className="text-[15px] text-ink-2">{t.symbol}</span>
               <CaChip address={t.address as Address} />
@@ -198,9 +198,9 @@ function CaChip({ address }: { address: string }) {
 /** Editorial figure cell: quiet grey label above a serif value, on white. */
 function Figure({ label, node }: { label: string; node: React.ReactNode }) {
   return (
-    <div className="bg-panel px-4 py-3.5">
-      <p className="text-[12px] text-ink-2">{label}</p>
-      <p className="mt-1 text-[19px] font-bold tracking-tight text-ink">{node}</p>
+    <div className="bg-panel px-3 py-2.5">
+      <p className="text-[11px] text-ink-2">{label}</p>
+      <p className="mono mt-0.5 text-[15px] font-bold tracking-tight text-ink">{node}</p>
     </div>
   );
 }

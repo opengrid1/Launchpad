@@ -65,39 +65,39 @@ export function Explore() {
   const loading = !hidden && (lv || ln) && all.length === 0;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-24 pt-5 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 pb-20 pt-4 sm:px-5">
       {/* New + search */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <Link
           to="/launch"
-          className="flex shrink-0 items-center gap-2 rounded-xl bg-accent px-4 py-3 text-[14.5px] font-semibold text-white transition-colors hover:bg-accent-2"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-2"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
           </svg>
           New
         </Link>
         <label className="relative block flex-1">
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-3">
-            <Icon name="search" size={18} />
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3">
+            <Icon name="search" size={16} />
           </span>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search tokens…"
             type="search"
-            className="h-12 w-full rounded-xl border border-edge bg-panel pl-11 pr-4 text-[15px] text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-ink/30"
+            className="h-9 w-full rounded-lg border border-edge bg-panel pl-9 pr-3 text-[13.5px] text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-edge-2"
           />
         </label>
       </div>
 
       {/* Sort tabs */}
-      <div className="mt-4 inline-flex items-center gap-1 rounded-xl border border-edge bg-panel p-1">
+      <div className="mt-3 inline-flex items-center gap-0.5 rounded-lg border border-edge bg-panel p-0.5">
         {SORTS.map((s) => (
           <button
             key={s.id}
             onClick={() => setSort(s.id)}
-            className={`rounded-lg px-4 py-1.5 text-[13.5px] font-medium transition-colors ${
+            className={`rounded-md px-3 py-1 text-[12.5px] font-medium transition-colors ${
               sort === s.id ? "bg-accent text-white" : "text-ink-2 hover:text-ink"
             }`}
           >
@@ -108,13 +108,13 @@ export function Explore() {
 
       {/* Grid */}
       {loading ? (
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => <CardSkeleton key={i} />)}
+        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+          {[...Array(8)].map((_, i) => <CardSkeleton key={i} />)}
         </div>
       ) : feed.length === 0 ? (
         <Empty q={debounced} />
       ) : (
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
           {feed.map((t) => <TokenCard key={t.address} t={t} />)}
         </div>
       )}
@@ -133,9 +133,9 @@ function TokenCard({ t }: { t: TokenSummary }) {
     : null;
 
   return (
-    <Link to={`/token/${t.address}`} className="card-hover block rounded-2xl border border-edge bg-panel p-4">
-      <div className="flex items-center gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border border-edge bg-panel-2 text-[13px] font-bold text-ink-3">
+    <Link to={`/token/${t.address}`} className="card-hover block rounded-xl border border-edge bg-panel p-2.5">
+      <div className="flex items-center gap-2">
+        <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border border-edge bg-panel-2 text-[10px] font-bold text-ink-3">
           {src ? (
             <img src={src} alt="" loading="lazy" className="h-full w-full object-cover"
               onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
@@ -144,11 +144,11 @@ function TokenCard({ t }: { t: TokenSummary }) {
           )}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15.5px] font-bold leading-tight text-ink">{t.name}</p>
-          <p className="mono truncate text-[12px] text-ink-3">{t.symbol} · {timeAgo(t.createdAt)}</p>
+          <p className="truncate text-[13px] font-bold leading-tight text-ink">{t.name}</p>
+          <p className="mono truncate text-[10.5px] text-ink-3">{t.symbol}</p>
         </div>
         <span
-          className={`mono shrink-0 rounded-md px-2 py-1 text-[12px] font-semibold ${
+          className={`mono shrink-0 rounded px-1.5 py-0.5 text-[10.5px] font-semibold ${
             change == null ? "bg-panel-2 text-ink-3" : change >= 0 ? "bg-up/10 text-up" : "bg-down/10 text-down"
           }`}
         >
@@ -156,26 +156,21 @@ function TokenCard({ t }: { t: TokenSummary }) {
         </span>
       </div>
 
-      <div className="mt-3 h-11 overflow-hidden rounded-lg bg-panel-2/50">
-        <MiniChart token={t.address} width={520} height={44} />
+      <div className="mt-2 h-8 overflow-hidden rounded-md bg-panel-2/40">
+        <MiniChart token={t.address} width={520} height={32} />
       </div>
 
-      <div className="mt-3 flex items-end justify-between">
-        <div>
-          <p className="text-[11px] text-ink-3">Market cap</p>
-          <p className="mono text-[20px] font-bold leading-tight text-ink">{fmtUsd(t.marketCapUsd)}</p>
+      <div className="mt-2 flex items-end justify-between gap-1">
+        <div className="min-w-0">
+          <p className="text-[9.5px] uppercase tracking-wide text-ink-3">Mcap</p>
+          <p className="mono truncate text-[15px] font-bold leading-tight text-ink">{fmtUsd(t.marketCapUsd)}</p>
         </div>
         {stock ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-panel-2 px-2.5 py-1 text-[12px] font-semibold text-ink-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            Earns {stock.symbol}
+          <span className="inline-flex shrink-0 items-center gap-1 rounded border border-edge bg-panel-2 px-1.5 py-0.5 text-[10px] font-semibold text-ink-2">
+            <span className="h-1 w-1 rounded-full bg-accent" />
+            {stock.symbol}
           </span>
         ) : null}
-      </div>
-
-      <div className="mt-3 flex items-center justify-between border-t border-edge pt-2.5 text-[12px]">
-        <span className="text-ink-3">Vol <span className="mono font-medium text-ink-2">{fmtWeiUsd(t.volume24hWei, rate)}</span></span>
-        <span className="font-semibold text-accent-2">Trade →</span>
       </div>
     </Link>
   );
@@ -183,16 +178,16 @@ function TokenCard({ t }: { t: TokenSummary }) {
 
 function CardSkeleton() {
   return (
-    <div className="rounded-2xl border border-edge bg-panel p-4">
-      <div className="flex items-center gap-3">
-        <div className="h-11 w-11 animate-pulse rounded-full bg-panel-2" />
-        <div className="flex-1 space-y-2">
-          <div className="h-4 w-28 animate-pulse rounded bg-panel-2" />
-          <div className="h-3 w-16 animate-pulse rounded bg-panel-2" />
+    <div className="rounded-xl border border-edge bg-panel p-2.5">
+      <div className="flex items-center gap-2">
+        <div className="h-8 w-8 animate-pulse rounded-full bg-panel-2" />
+        <div className="flex-1 space-y-1.5">
+          <div className="h-3 w-20 animate-pulse rounded bg-panel-2" />
+          <div className="h-2 w-12 animate-pulse rounded bg-panel-2" />
         </div>
       </div>
-      <div className="mt-3 h-11 animate-pulse rounded-lg bg-panel-2" />
-      <div className="mt-3 h-7 w-24 animate-pulse rounded bg-panel-2" />
+      <div className="mt-2 h-8 animate-pulse rounded-md bg-panel-2" />
+      <div className="mt-2 h-5 w-16 animate-pulse rounded bg-panel-2" />
     </div>
   );
 }

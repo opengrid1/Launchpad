@@ -20,7 +20,7 @@ export function Ticker() {
 
   return (
     <div className="overflow-hidden border-b border-edge bg-panel/60">
-      <div className="tape flex w-max items-center gap-8 py-2 pl-4 will-change-transform">
+      <div className="tape flex w-max items-center gap-6 py-1.5 pl-4 will-change-transform">
         {row.map((t, i) => {
           const change = t.priceChange24hPct;
           const stock = stockOf((t.metadata as any)?.rewardStock);
@@ -28,7 +28,7 @@ export function Ticker() {
             <Link
               key={`${t.address}-${i}`}
               to={`/token/${t.address}`}
-              className="flex shrink-0 items-center gap-2 text-[12.5px]"
+              className="flex shrink-0 items-center gap-1.5 text-[11.5px]"
             >
               <span className="font-semibold text-ink">{t.symbol}</span>
               <span className="mono text-ink-2">{fmtUsd(t.marketCapUsd)}</span>
