@@ -129,16 +129,46 @@ export function Explore() {
           </label>
         </div>
 
-        {/* Table */}
-        <div className="mt-3 overflow-x-auto rounded-xl border border-edge bg-panel">
-          <table className="w-full min-w-[880px] border-collapse">
+        {/* Sort control — mobile only (the table headers handle it on desktop) */}
+        {feed.length > 0 ? (
+          <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-0.5 md:hidden no-scrollbar">
+            <span className="mono shrink-0 pr-0.5 text-[10px] uppercase tracking-wide text-ink-3">Sort</span>
+            {(
+              [
+                ["marketCap", "MCap"],
+                ["volume", "Vol"],
+                ["change", "24h"],
+                ["price", "Price"],
+                ["holders", "Holders"],
+              ] as [SortKey, string][]
+            ).map(([key, label]) => {
+              const on = sort?.key === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => toggleSort(key)}
+                  className={`mono flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition-colors ${
+                    on ? "border-accent/50 bg-accent/10 text-accent" : "border-edge text-ink-3"
+                  }`}
+                >
+                  {label}
+                  {on ? <SortCaret dir={sort!.dir} /> : null}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {/* Desktop table */}
+        <div className="mt-3 hidden overflow-x-auto rounded-xl border border-edge bg-panel md:block">
+          <table className="w-full min-w-[720px] border-collapse">
             <thead>
               <tr className="border-b border-edge text-[11px] uppercase tracking-wide text-ink-3">
                 <Th className="pl-4 text-left">Market</Th>
                 <Th sortKey="price" sort={sort} onSort={toggleSort} className="text-right">Price</Th>
                 <Th sortKey="change" sort={sort} onSort={toggleSort} className="text-right">24h</Th>
                 <Th sortKey="marketCap" sort={sort} onSort={toggleSort} className="text-right">MCap</Th>
-                <Th sortKey="liquidity" sort={sort} onSort={toggleSort} className="hidden text-right md:table-cell">Liquidity</Th>
+                <Th sortKey="liquidity" sort={sort} onSort={toggleSort} className="hidden text-right lg:table-cell">Liquidity</Th>
                 <Th sortKey="volume" sort={sort} onSort={toggleSort} className="text-right">Vol 24h</Th>
                 <Th sortKey="txns" sort={sort} onSort={toggleSort} className="hidden text-right lg:table-cell">Txns</Th>
                 <Th sortKey="holders" sort={sort} onSort={toggleSort} className="hidden text-right lg:table-cell">Holders</Th>
@@ -160,6 +190,17 @@ export function Explore() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile card list */}
+        <div className="mt-3 space-y-2 md:hidden">
+          {loading ? (
+            [...Array(6)].map((_, i) => <MobileSkeleton key={i} />)
+          ) : feed.length === 0 ? (
+            <Empty q={query} />
+          ) : (
+            feed.map((t, i) => <MobileRow key={t.address} t={t} rank={i + 1} />)
+          )}
         </div>
       </div>
     </div>
@@ -349,6 +390,77 @@ function RowSkeleton() {
         </td>
       ))}
     </tr>
+  );
+}
+
+function MobileRow({ t, rank }: { t: TokenSummary; rank: number }) {
+  const rate = usdRateOf(t);
+  const change = t.priceChange24hPct;
+  const logo = t.metadata?.logo;
+  const ok = logo && /^(https?:|ipfs:|data:)/.test(String(logo));
+  const src = ok
+    ? String(logo).startsWith("ipfs://")
+      ? `https://ipfs.io/ipfs/${String(logo).slice(7)}`
+      : String(logo)
+    : null;
+  const price =
+    rate > 0 ? (Number(t.priceUsd) < 0.01 ? `$${fmtSmall(Number(t.priceUsd))}` : fmtUsd(Number(t.priceUsd))) : "—";
+
+  return (
+    <Link
+      to={`/token/${t.address}`}
+      className="flex items-center gap-3 rounded-xl border border-edge bg-panel px-3 py-2.5 transition-colors active:bg-panel-2"
+    >
+      <span className="mono w-4 shrink-0 text-center text-[11px] text-ink-3">{rank}</span>
+      <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-panel-2 text-[10px] font-bold text-ink-3 ring-1 ring-edge">
+        {src ? (
+          <img src={src} alt="" loading="lazy" className="h-full w-full object-cover"
+            onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
+        ) : (
+          t.symbol.slice(0, 3).toUpperCase()
+        )}
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-1.5 truncate text-[14px] font-semibold leading-tight text-ink">
+          {t.name}
+          {t.limitsActive ? (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-sm bg-accent/15 px-1 text-[9px] font-bold uppercase tracking-wide text-accent-2">
+              <span className="pulse-dot h-1 w-1 rounded-full bg-accent-2" />
+              Live
+            </span>
+          ) : null}
+        </p>
+        <p className="mono mt-0.5 flex items-center gap-2 truncate text-[11px] text-ink-3">
+          <span>${t.symbol}</span>
+          <span className="text-ink-2">MC {fmtUsd(Number(t.marketCapUsd))}</span>
+          <span>Vol {fmtWeiUsd(t.volume24hWei, rate)}</span>
+        </p>
+      </div>
+
+      <div className="shrink-0 text-right">
+        <p className="mono text-[13px] font-semibold leading-tight text-ink">{price}</p>
+        <p className={`mono mt-0.5 text-[12px] font-medium leading-tight ${change == null ? "text-ink-3" : change >= 0 ? "text-up" : "text-down"}`}>
+          {change == null ? "–" : fmtPct(change)}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+function MobileSkeleton() {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-edge bg-panel px-3 py-2.5">
+      <div className="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-panel-2" />
+      <div className="flex-1 space-y-1.5">
+        <div className="h-3.5 w-28 animate-pulse rounded bg-panel-2" />
+        <div className="h-2.5 w-40 animate-pulse rounded bg-panel-2" />
+      </div>
+      <div className="space-y-1.5">
+        <div className="ml-auto h-3.5 w-14 animate-pulse rounded bg-panel-2" />
+        <div className="ml-auto h-2.5 w-10 animate-pulse rounded bg-panel-2" />
+      </div>
+    </div>
   );
 }
 
