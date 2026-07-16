@@ -210,7 +210,7 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="bg-panel px-4 py-3.5">
       <p className="text-[12px] text-ink-2">{label}</p>
-      <p className="tnum mt-1 text-[22px] font-bold tracking-tight text-ink">{value}</p>
+      <p className="mono mt-1 text-[22px] font-bold tracking-tight text-ink">{value}</p>
     </div>
   );
 }
@@ -277,7 +277,7 @@ function MarketRow({ t, rank }: { t: TokenSummary; rank: number }) {
 
   return (
     <div className="group flex items-center gap-4 px-4 py-3 transition-colors hover:bg-panel-2/50 sm:px-5">
-      <span className="tnum hidden w-6 text-[13px] text-ink-3 sm:block">{rank}</span>
+      <span className="mono hidden w-6 text-[13px] text-ink-3 sm:block">{rank}</span>
 
       <Link to={`/token/${t.address}`} className="flex min-w-0 flex-1 items-center gap-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-edge bg-panel-2 text-[11px] font-bold text-ink-3">
@@ -308,18 +308,18 @@ function MarketRow({ t, rank }: { t: TokenSummary; rank: number }) {
       </Link>
 
       <div className={`w-[64px] text-right sm:w-[80px] ${change == null ? "text-ink-3" : change >= 0 ? "text-up" : "text-down"}`}>
-        <span className="tnum text-[13.5px] font-medium">{change == null ? "—" : fmtPct(change)}</span>
+        <span className="mono text-[13.5px] font-medium">{change == null ? "—" : fmtPct(change)}</span>
       </div>
 
       <Link to={`/token/${t.address}`} className="w-[96px] text-right sm:w-[120px]">
-        <span className="tnum block text-[14.5px] font-semibold text-ink">{fmtUsd(t.marketCapUsd)}</span>
-        <span className="tnum block text-[11px] text-ink-3">{fmtWeiUsd(t.volume24hWei, rate)} vol</span>
+        <span className="mono block text-[14px] font-semibold text-ink">{fmtUsd(t.marketCapUsd)}</span>
+        <span className="mono block text-[11px] text-ink-3">{fmtWeiUsd(t.volume24hWei, rate)} vol</span>
       </Link>
 
       <div className="hidden w-[92px] justify-end sm:flex">
         <Link
           to={`/token/${t.address}`}
-          className="rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-ink transition-[filter] hover:brightness-[0.97]"
+          className="rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-2"
         >
           Trade
         </Link>
