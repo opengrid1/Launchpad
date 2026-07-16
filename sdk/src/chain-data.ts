@@ -89,15 +89,26 @@ export class ChainDataSource {
   }
 
   private async loadCoresInner(): Promise<TokenCore[]> {
-    const latest = await this.client.getBlockNumber();
+    let latest: bigint;
+    try {
+      latest = await this.client.getBlockNumber();
+    } catch {
+      return [...this.cores.values()];
+    }
     if (this.coresLoadedUpTo === 0n || latest > this.coresLoadedUpTo) {
-      const logs = await this.client.getLogs({
-        address: this.addresses.factory,
-        event: launchpadAbi.find((x: any) => x.type === "event" && x.name === "TokenLaunched") as any,
-        fromBlock: this.coresLoadedUpTo === 0n ? this.startBlock : this.coresLoadedUpTo + 1n,
-        toBlock: latest,
-      });
-      for (const log of logs as any[]) {
+      let logs: any[];
+      try {
+        logs = (await this.client.getLogs({
+          address: this.addresses.factory,
+          event: launchpadAbi.find((x: any) => x.type === "event" && x.name === "TokenLaunched") as any,
+          fromBlock: this.coresLoadedUpTo === 0n ? this.startBlock : this.coresLoadedUpTo + 1n,
+          toBlock: latest,
+        })) as any[];
+      } catch {
+        // Keep whatever we already discovered rather than emptying the feed.
+        return [...this.cores.values()];
+      }
+      for (const log of logs) {
         const address = (log.args.token as string).toLowerCase() as Address;
         if (this.cores.has(address)) continue;
         let metadata: Record<string, unknown> = {};
@@ -130,10 +141,16 @@ export class ChainDataSource {
     const key = blockNumber.toString();
     const hit = this.blockTs.get(key);
     if (hit !== undefined) return hit;
-    const block = await this.client.getBlock({ blockNumber });
-    const ts = Number(block.timestamp);
-    this.blockTs.set(key, ts);
-    return ts;
+    try {
+      const block = await this.client.getBlock({ blockNumber });
+      const ts = Number(block.timestamp);
+      this.blockTs.set(key, ts);
+      return ts;
+    } catch {
+      // A single failed getBlock must never blank the whole feed; fall back to
+      // "now" without caching so a later call can still resolve the real time.
+      return Math.floor(Date.now() / 1000);
+    }
   }
 
   // ------------------------------------------------------------------
@@ -152,24 +169,21 @@ export class ChainDataSource {
   }
 
   private async loadTradesInner(key: string): Promise<TradeRecord[]> {
-    {
-      await this.loadCores();
-      const core = this.cores.get(key);
-      if (!core) {
-        this.trades.set(key, []);
-        this.tradesLoaded.add(key);
-        return [];
-      }
+    await this.loadCores();
+    const core = this.cores.get(key);
+    if (!core) {
+      this.trades.set(key, []);
+      this.tradesLoaded.add(key);
+      return [];
+    }
+    try {
       // Read the pool's Swap events, not just Launchpad trades: this captures
       // every trade against the market, including direct pool swaps from bots
-      // and aggregators (which never emit a Launchpad Trade). Site buys route
-      // through the same pool, so they are included too.
-      const logs = await this.client.getLogs({
-        address: core.pool as `0x${string}`,
-        event: SWAP_EVENT,
-        fromBlock: core.launchBlock ?? this.startBlock,
-        toBlock: "latest",
-      });
+      // and aggregators. Query in bounded block windows so a wide range (an
+      // old token vs. a public RPC's getLogs cap) never fails the whole read.
+      const from = core.launchBlock ?? this.startBlock;
+      const latest = await this.client.getBlockNumber();
+      const logs = await this.getLogsChunked(core.pool as `0x${string}`, from, latest);
       // Prefetch block timestamps for all swaps in parallel (deduped), rather
       // than one getBlock per swap in sequence, which stalls the feed and can
       // trip public-RPC rate limits on mobile.
@@ -178,8 +192,30 @@ export class ChainDataSource {
       const records = (logs as any[]).map((log) => this.tradeFromSwap(log, core));
       this.trades.set(key, records);
       this.tradesLoaded.add(key);
+    } catch {
+      // Never let a trade-read failure drop the token from the feed; it simply
+      // shows with no trade-derived stats until the next successful load.
+      if (!this.trades.has(key)) this.trades.set(key, []);
     }
     return this.trades.get(key) ?? [];
+  }
+
+  /** getLogs for the pool's Swap events in bounded windows, tolerating a
+   *  public RPC that caps the block range or log count per request. */
+  private async getLogsChunked(pool: `0x${string}`, from: bigint, to: bigint): Promise<unknown[]> {
+    const SPAN = 45_000n;
+    const out: unknown[] = [];
+    for (let start = from; start <= to; start += SPAN + 1n) {
+      const end = start + SPAN < to ? start + SPAN : to;
+      const logs = await this.client.getLogs({
+        address: pool,
+        event: SWAP_EVENT,
+        fromBlock: start,
+        toBlock: end,
+      });
+      out.push(...(logs as unknown[]));
+    }
+    return out;
   }
 
   private priceWeiFromSqrt(sqrtP: bigint, tokenIsToken0: boolean): bigint {
