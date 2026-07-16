@@ -46,7 +46,7 @@ contract QuiverToken is ERC20 {
     uint256 public totalRewardsDistributed;
 
     // --- Anti-whale limits (active until the factory lifts them) ---
-    /// @notice Max tokens per transfer while limits are active (1% of supply).
+    /// @notice Max tokens per transfer while limits are active (2% of supply).
     uint256 public immutable maxTxAmount;
     /// @notice Max tokens a non-exempt wallet may hold (2% of supply).
     uint256 public immutable maxWalletAmount;
@@ -85,8 +85,8 @@ contract QuiverToken is ERC20 {
         rewardToken = rewardToken_;
         _metadataURI = metadataURI_;
 
-        // Anti-whale caps: 1% max transaction, 2% max wallet, active at launch.
-        maxTxAmount = supply_ / 100;
+        // Anti-whale caps: 2% max transaction, 2% max wallet, active at launch.
+        maxTxAmount = (supply_ * 2) / 100;
         maxWalletAmount = (supply_ * 2) / 100;
         limitsActive = true;
 

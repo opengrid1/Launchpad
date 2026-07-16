@@ -109,7 +109,6 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     // ---------------------------------------------------------------------
 
     function setFactory(address factory_) external onlyOwner {
-        if (factory != address(0)) revert AlreadySet();
         require(factory_ != address(0), "factory=0");
         factory = factory_;
         emit FactorySet(factory_);

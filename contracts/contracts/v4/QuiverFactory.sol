@@ -88,6 +88,7 @@ contract QuiverFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     error LaunchesPaused();
     error InvalidParams();
     error StockNotListed();
+    error BadVanity();
 
     constructor(
         address admin_,
@@ -144,7 +145,9 @@ contract QuiverFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     // Launch
     // ---------------------------------------------------------------------
 
-    function launch(LaunchParams calldata p)
+    /// @param salt CREATE2 salt, mined off-chain so the token address ends in
+    ///        0x4663. Deterministic from the launch params + this factory.
+    function launch(LaunchParams calldata p, bytes32 salt)
         external
         nonReentrant
         returns (address token, bytes32 poolId)
@@ -154,8 +157,9 @@ contract QuiverFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         if (p.taxBps > MAX_TAX_BPS) revert InvalidParams();
         if (!stockListed[p.stock]) revert StockNotListed();
 
-        // 1. Mint the token; the factory holds the whole supply to seed with.
-        QuiverToken qt = new QuiverToken(
+        // 1. Mint the token via CREATE2 so its address carries the 4663 vanity.
+        //    The factory holds the whole supply to seed with.
+        QuiverToken qt = new QuiverToken{salt: salt}(
             p.name,
             p.symbol,
             p.metadataURI,
@@ -166,6 +170,7 @@ contract QuiverFactory is Ownable, ReentrancyGuard, IUnlockCallback {
             p.stock
         );
         token = address(qt);
+        if (uint160(token) & 0xffff != 0x4663) revert BadVanity();
 
         // 2. Pair with WETH; currencies sort by address.
         bool tokenIsCurrency0 = token < weth;

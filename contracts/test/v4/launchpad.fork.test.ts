@@ -73,6 +73,31 @@ async function deploy(adminAddr: string, treasury: string) {
   return { hook, factory, router, hookAddr };
 }
 
+async function launchToken(
+  factory: any,
+  signer: any,
+  params: { name: string; symbol: string; metadataURI: string; stock: string; taxBps: number },
+) {
+  const Token = await ethers.getContractFactory("QuiverToken");
+  const factoryAddr = await factory.getAddress();
+  const args = ethers.AbiCoder.defaultAbiCoder().encode(
+    ["string", "string", "string", "uint256", "address", "address", "uint16", "address"],
+    [params.name, params.symbol, params.metadataURI, 10n ** 27n, signer.address, factoryAddr, params.taxBps, params.stock],
+  );
+  const initCodeHash = ethers.keccak256(ethers.concat([Token.bytecode, args]));
+  let salt = "";
+  for (let i = 0n; i < 2_000_000n; i++) {
+    const s = ethers.zeroPadValue(ethers.toBeHex(i), 32);
+    const a = ethers.getCreate2Address(factoryAddr, s, initCodeHash);
+    if ((BigInt(a) & 0xffffn) === 0x4663n) {
+      salt = s;
+      break;
+    }
+  }
+  if (!salt) throw new Error("no token vanity salt");
+  return factory.connect(signer).launch(params, salt);
+}
+
 function poolKeyFor(token: string, hookAddr: string) {
   const tokenIsC0 = BigInt(token) < BigInt(WETH);
   return {
@@ -100,7 +125,7 @@ describe("Quiver V4 launchpad (fork)", function () {
     const { hook, factory, router, hookAddr } = await deploy(admin.address, admin.address);
 
     await (await factory.listStock(NVDA, usdgNvdaKey)).wait();
-    await (await factory.launch({ name: "Fork Test", symbol: "FORK", metadataURI: "", stock: NVDA, taxBps: 500 })).wait();
+    await (await launchToken(factory, admin, { name: "Fork Test", symbol: "FORK", metadataURI: "", stock: NVDA, taxBps: 500 })).wait();
     const token = await factory.allTokens(0);
     const erc20 = await ethers.getContractAt("QuiverToken", token);
     expect(await erc20.totalSupply()).to.equal(10n ** 27n);
@@ -128,6 +153,35 @@ describe("Quiver V4 launchpad (fork)", function () {
     expect(await erc20.totalSupply()).to.be.lessThan(supplyBefore);
   });
 
+  it("trades via QuiverRouter with native ETH (buy and sell)", async () => {
+    const [admin, trader] = await ethers.getSigners();
+    const { factory, hookAddr } = await deploy(admin.address, admin.address);
+    await (await factory.listStock(NVDA, usdgNvdaKey)).wait();
+    await (await launchToken(factory, admin, { name: "Router Test", symbol: "RT", metadataURI: "", stock: NVDA, taxBps: 500 })).wait();
+    const token = await factory.allTokens(0);
+    const erc20 = await ethers.getContractAt("QuiverToken", token);
+
+    const Router = await ethers.getContractFactory("QuiverRouter");
+    const router = await Router.deploy(POOL_MANAGER, WETH, hookAddr);
+    await router.waitForDeployment();
+
+    // Buy with native ETH.
+    await (await router.connect(trader).buy(token, 0, { value: ethers.parseEther("0.003") })).wait();
+    const bought = await erc20.balanceOf(trader.address);
+    expect(bought, "received tokens for ETH").to.be.greaterThan(0n);
+    expect(bought).to.be.lessThanOrEqual(await erc20.maxWalletAmount());
+
+    // Sell half back for ETH.
+    await (await erc20.connect(trader).approve(await router.getAddress(), ethers.MaxUint256)).wait();
+    const ethBefore = await ethers.provider.getBalance(trader.address);
+    const sellAmt = bought / 2n;
+    const rc = await (await router.connect(trader).sell(token, sellAmt, 0)).wait();
+    const ethAfter = await ethers.provider.getBalance(trader.address);
+    // Net ETH should rise despite gas (small pool, small trade).
+    expect(await erc20.balanceOf(trader.address)).to.equal(bought - sellAmt);
+    expect(ethAfter, "received ETH from sell").to.be.greaterThan(ethBefore - ethers.parseEther("0.001"));
+  });
+
   it("pays holders their chosen stock (NVDA) as a dividend", async () => {
     const [admin, trader] = await ethers.getSigners();
     const { hook, factory, router, hookAddr } = await deploy(admin.address, admin.address);
@@ -136,7 +190,7 @@ describe("Quiver V4 launchpad (fork)", function () {
     await (await hook.setQuoteRoute(USDG, wethUsdgKey)).wait();
     await (await factory.listStock(NVDA, usdgNvdaKey)).wait();
 
-    await (await factory.launch({ name: "Div Test", symbol: "DIV", metadataURI: "", stock: NVDA, taxBps: 500 })).wait();
+    await (await launchToken(factory, admin, { name: "Div Test", symbol: "DIV", metadataURI: "", stock: NVDA, taxBps: 500 })).wait();
     const token = await factory.allTokens(0);
     const erc20 = await ethers.getContractAt("QuiverToken", token);
 
