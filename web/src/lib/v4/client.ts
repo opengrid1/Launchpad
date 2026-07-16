@@ -257,6 +257,11 @@ export class V4Client {
   }
 
   private async summarize(core: Core): Promise<TokenSummary> {
+    // Surface the reward stock on the metadata so lists can badge it without a
+    // second read (the shared TokenSummary type has no dedicated field).
+    if (core.metadata && (core.metadata as any).rewardStock === undefined) {
+      (core.metadata as any).rewardStock = core.stock;
+    }
     const trades = await this.loadTrades(core.address);
     const last = trades[trades.length - 1];
     const priceWei = last ? BigInt(last.priceWei) : await this.initPrice(core);
@@ -300,7 +305,8 @@ export class V4Client {
       totalSupply: core.totalSupply.toString(),
       priceWei: priceWei.toString(),
       priceUsd: String(priceWethPerToken * this.nativeUsd),
-      marketCapUsd: String(Math.round(mcapUsd * 1e8)),
+      // Plain-dollar string, matching the SDK's usd8() convention (fmtUsd expects dollars).
+      marketCapUsd: String(mcapUsd),
       liquidityWei: wethInPool.toString(),
       volume24hWei: vol24.toString(),
       volumeTotalWei: volTotal.toString(),
