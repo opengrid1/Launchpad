@@ -17,7 +17,7 @@ import { TradesList } from "../components/TradesList";
 import { Button, EmptyState, Skeleton } from "../components/ui";
 import { client, v4Client } from "../lib/client";
 import { env } from "../lib/env";
-import { compact, fmtPct, fmtTokens, fmtUsd, fmtWei, fmtWeiUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
+import { compact, fmtTokens, fmtUsd, fmtWei, fmtWeiUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { stockOf } from "../lib/v4/stocks";
 import { useUi } from "../store";
@@ -73,61 +73,51 @@ export function TokenPage() {
   const meta = t.metadata ?? {};
 
   const usdRate = usdRateOf(t);
-  const change = t.priceChange24hPct;
 
   const rewardStock = extra ? stockOf(extra.stock) : undefined;
 
   return (
     <div className="rise mx-auto max-w-6xl px-4 pb-24 sm:px-8">
-      {/* Masthead */}
-      <div className="flex items-center justify-between border-b border-edge pb-3 pt-8">
-        <Link to="/" className="kicker text-[13px] text-ink-2 transition-colors hover:text-ink">← Markets</Link>
-        <span className="text-[13px] text-ink-3">{timeAgo(t.createdAt)}</span>
-      </div>
+      {/* Back */}
+      <Link to="/" className="inline-flex items-center gap-1 pt-6 text-[12.5px] font-medium text-ink-2 transition-colors hover:text-ink">← Back</Link>
 
       {/* Identity */}
-      <section className="flex flex-wrap items-start justify-between gap-6 pt-7">
-        <div className="flex min-w-0 items-center gap-4">
-          <TokenLogo token={t} size={58} />
-          <div className="min-w-0">
-            <div className="flex items-center gap-2.5">
-              <p className="kicker text-[12px] text-accent-2">Market</p>
-              {rewardStock ? <RewardPill stock={extra!.stock} /> : null}
-            </div>
-            <h1 className="mt-0.5 truncate text-[16px] font-bold leading-tight tracking-tight text-ink sm:text-[19px]">{t.name}</h1>
-            <div className="mt-1.5 flex items-center gap-2.5">
-              <span className="text-[15px] text-ink-2">{t.symbol}</span>
-              <CaChip address={t.address as Address} />
-            </div>
+      <section className="mt-3 flex items-start gap-3">
+        <TokenLogo token={t} size={48} />
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-[20px] font-extrabold leading-tight tracking-tight text-ink sm:text-[24px]">{t.name}</h1>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="mono rounded-md bg-panel-2 px-2 py-0.5 text-[11px] font-semibold text-accent/80">${t.symbol}</span>
+            <CaChip address={t.address as Address} />
+            {rewardStock ? <RewardPill stock={extra!.stock} /> : null}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {meta.website ? <LinkPill href={String(meta.website)}>Website</LinkPill> : null}
+            {env.explorerUrl ? <LinkPill href={`${env.explorerUrl.replace(/\/$/, "")}/token/${t.address}`}>Scan</LinkPill> : null}
+            <LinkPill href={`https://dexscreener.com/search?q=${t.address}`}>DexScreener</LinkPill>
           </div>
         </div>
-        <SocialRow t={t} meta={meta} />
       </section>
 
-      {/* Figures */}
-      <div className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-edge bg-edge sm:grid-cols-3 lg:grid-cols-6">
-        <Figure label="Price" node={<span className="tnum">{fmtUsd(t.priceUsd)}</span>} />
-        <Figure
-          label="Market cap"
-          node={<AnimatedNumber value={Number(t.marketCapUsd)} format={(n) => fmtUsd(n)} className="tnum" />}
-        />
-        <Figure
-          label="24-hour"
-          node={<span className={`tnum ${change == null ? "" : change >= 0 ? "text-up" : "text-down"}`}>{change == null ? "—" : fmtPct(change)}</span>}
-        />
-        <Figure label="24h volume" node={<span className="tnum">{fmtWeiUsd(t.volume24hWei, usdRate)}</span>} />
-        <Figure label="Liquidity" node={<span className="tnum">{fmtWeiUsd(t.liquidityWei, usdRate)}</span>} />
-        <Figure label="Holders" node={<span className="tnum">{compact(t.holderCount)}</span>} />
+      {/* Stats */}
+      <div className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-edge bg-edge">
+        <Stat label="Market cap" accent node={<AnimatedNumber value={Number(t.marketCapUsd)} format={(n) => fmtUsd(n)} className="tnum" />} />
+        <Stat label="Volume" node={<span className="tnum">{fmtWeiUsd(t.volumeTotalWei, usdRate)}</span>} />
+        <Stat label="Holders" node={<span className="tnum">{compact(t.holderCount)}</span>} />
       </div>
 
-      <div className="mt-4 space-y-2.5">
+      <div className="mt-3 space-y-2.5">
         <RewardsStrip token={t} extra={extra} />
         <CreatorClaim token={t} extra={extra} onClaimed={() => v4Client.tokenExtra(t.address as Address).then(setExtra).catch(() => undefined)} />
       </div>
 
       {/* Chart (hero) + order ticket */}
-      <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_360px]">
-        <div className="h-[440px] overflow-hidden rounded-2xl border border-edge bg-panel">
+      <div className="mt-6 flex items-center gap-2">
+        <span className="dot-live h-2 w-2 rounded-full bg-accent" />
+        <h2 className="text-[14px] font-bold tracking-tight text-ink">Market cap</h2>
+      </div>
+      <section className="mt-2 grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_340px]">
+        <div className="h-[420px] overflow-hidden rounded-2xl border border-edge bg-panel">
           <Suspense fallback={<Skeleton className="h-full w-full" />}>
             <PriceChart token={t.address as Address} />
           </Suspense>
@@ -195,13 +185,28 @@ function CaChip({ address }: { address: string }) {
   );
 }
 
-/** Editorial figure cell: quiet grey label above a serif value, on white. */
-function Figure({ label, node }: { label: string; node: React.ReactNode }) {
+/** A stat cell: small uppercase label above a bold value. */
+function Stat({ label, node, accent }: { label: string; node: React.ReactNode; accent?: boolean }) {
   return (
     <div className="bg-panel px-3 py-2.5">
-      <p className="text-[10px] text-ink-2">{label}</p>
-      <p className="mono mt-0.5 text-[13px] font-bold tracking-tight text-ink">{node}</p>
+      <p className="text-[9.5px] uppercase tracking-wide text-ink-3">{label}</p>
+      <p className={`mono mt-0.5 text-[14px] font-bold tracking-tight ${accent ? "text-accent" : "text-ink"}`}>{node}</p>
     </div>
+  );
+}
+
+/** A small outlined link pill (Website / Scan / DexScreener). */
+function LinkPill({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1 rounded-md border border-edge bg-panel-2 px-2 py-0.5 text-[11px] font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
+    >
+      {children}
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M7 17L17 7M9 7h8v8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </a>
   );
 }
 
@@ -357,35 +362,6 @@ function CreatorClaim({
           {busy ? "Claiming" : "Claim fees"}
         </Button>
       </div>
-    </div>
-  );
-}
-
-function SocialRow({ t, meta }: { t: TokenSummary; meta: TokenSummary["metadata"] }) {
-  const explorer = env.explorerUrl?.replace(/\/$/, "");
-  const links = [
-    meta.website ? { icon: "website" as IconName, url: String(meta.website), label: "Website" } : null,
-    meta.twitter ? { icon: "twitter" as IconName, url: String(meta.twitter), label: "X" } : null,
-    meta.telegram ? { icon: "telegram" as IconName, url: String(meta.telegram), label: "Telegram" } : null,
-    { icon: "trending" as IconName, url: `https://dexscreener.com/robinhood/${t.pool}`, label: "DexScreener" },
-    explorer ? { icon: "external" as IconName, url: `${explorer}/token/${t.address}`, label: "Explorer" } : null,
-  ].filter((l): l is { icon: IconName; url: string; label: string } => Boolean(l));
-  if (links.length === 0) return null;
-  return (
-    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-      {links.map((l) => (
-        <a
-          key={l.label}
-          href={l.url}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={l.label}
-          title={l.label}
-          className="grid h-7 w-7 place-items-center rounded-md border border-edge text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
-        >
-          <Icon name={l.icon} size={14} />
-        </a>
-      ))}
     </div>
   );
 }
