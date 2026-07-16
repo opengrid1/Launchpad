@@ -234,11 +234,15 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
 
         uint256 q = total / 4;
         uint256 toProtocol = total - (q * 3); // dust rounds into protocol
+        uint256 toHolders = q;
 
         // 2. creator — claimable WETH
         creatorClaimable[token] += q;
 
-        // 3. holders — buy stock (WETH -> USDG -> stock) and distribute
+        // 3. holders — buy stock (WETH -> USDG -> stock) and distribute. If the
+        //    stock route isn't configured/liquid, fold this quarter into the
+        //    protocol share so no WETH is stranded.
+        bool holderPaid;
         if (q > 0 && c.stock != address(0) && quote != address(0)) {
             uint256 usdgOut = _swap(_quoteKey, _wethSide(_quoteKey), q);
             if (usdgOut > 0) {
@@ -246,8 +250,13 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
                 if (stockOut > 0) {
                     IERC20(c.stock).safeTransfer(token, stockOut);
                     IQuiverToken(token).distributeRewards(stockOut);
+                    holderPaid = true;
                 }
             }
+        }
+        if (!holderPaid) {
+            toHolders = 0;
+            toProtocol += q;
         }
 
         // 4. buyback&burn — buy the launched token with WETH and burn it
@@ -261,7 +270,7 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
             IERC20(WETH).safeTransfer(protocolTreasury, toProtocol);
         }
 
-        emit Harvested(token, q, q, q, toProtocol);
+        emit Harvested(token, q, toHolders, q, toProtocol);
     }
 
     /// @notice Creator withdraws their accrued WETH fees.

@@ -27,6 +27,12 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: false,
+      ...(process.env.FORK === "1" && ROBINHOOD_RPC_URL
+        ? {
+            forking: { url: ROBINHOOD_RPC_URL },
+            chainId: ROBINHOOD_CHAIN_ID || undefined,
+          }
+        : {}),
     },
     ...(ROBINHOOD_RPC_URL
       ? {
