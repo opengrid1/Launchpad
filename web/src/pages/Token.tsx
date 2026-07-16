@@ -17,7 +17,7 @@ import { TradesList } from "../components/TradesList";
 import { Button, Card, EmptyState, Skeleton } from "../components/ui";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { compact, fmtPct, fmtUsd, fmtWei, fmtWeiUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
+import { compact, fmtPct, fmtTokens, fmtUsd, fmtWei, fmtWeiUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
@@ -283,33 +283,60 @@ function InfoTab({ t, meta }: { t: any; meta: any }) {
     { label: "DexScreener", url: `https://dexscreener.com/robinhood/${t.pool}` },
   ].filter((l) => l.url && !isSelfLink(l.url));
 
+  const feePct = Number(t.feeTier) / 10000;
+  const facts: { label: string; value: string }[] = [
+    { label: "Total supply", value: fmtTokens(t.totalSupply) },
+    { label: "Fee tier", value: isFinite(feePct) ? `${feePct.toFixed(2)}%` : "—" },
+    { label: "Trading fee", value: "1.00%" },
+    { label: "Launched", value: timeAgo(t.createdAt) },
+  ];
+
   return (
-    <div className="max-w-2xl py-5">
-      {meta.description ? (
-        <p className="text-sm leading-6 text-ink-2">{meta.description}</p>
-      ) : null}
+    <div className="py-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
+        {/* About + facts */}
+        <div className="min-w-0">
+          {meta.description ? (
+            <p className="text-[13px] leading-6 text-ink-2">{meta.description}</p>
+          ) : (
+            <p className="text-[13px] italic leading-6 text-ink-3">No description provided.</p>
+          )}
 
-      {links.length > 0 ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {links.map((l) => (
-            <a
-              key={l.label + l.url}
-              href={String(l.url)}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={l.label}
-              title={l.label}
-              className="grid h-9 w-9 place-items-center rounded-md border border-edge bg-panel text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
-            >
-              {socialIcons[l.label] ?? socialIcons.Website}
-            </a>
-          ))}
+          <dl className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-edge bg-edge sm:grid-cols-4">
+            {facts.map((f) => (
+              <div key={f.label} className="bg-panel-2/40 px-3 py-2.5">
+                <dt className="text-[10px] uppercase tracking-wide text-ink-3">{f.label}</dt>
+                <dd className="mono mt-0.5 text-[13px] font-semibold text-ink">{f.value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          {links.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {links.map((l) => (
+                <a
+                  key={l.label + l.url}
+                  href={String(l.url)}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={l.label}
+                  className="flex items-center gap-2 rounded-md border border-edge bg-panel px-2.5 py-1.5 text-[12px] font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
+                >
+                  <span className="grid h-4 w-4 place-items-center text-ink-2">
+                    {socialIcons[l.label] ?? socialIcons.Website}
+                  </span>
+                  {l.label}
+                </a>
+              ))}
+            </div>
+          ) : null}
         </div>
-      ) : null}
 
-      <div className="mt-6 space-y-3">
-        <CopyRow label="Contract" value={t.address} />
-        <CopyRow label="Creator" value={t.creator} />
+        {/* Addresses */}
+        <div className="space-y-2">
+          <CopyRow label="Creator" value={t.creator} />
+          <CopyRow label="Liquidity pool" value={t.pool} />
+        </div>
       </div>
     </div>
   );
@@ -320,7 +347,7 @@ function CopyRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-edge bg-panel-2/40 px-3.5 py-2.5">
       <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-wide text-ink-3">{label}</p>
+        <p className="text-[10px] uppercase tracking-wide text-ink-3">{label}</p>
         <p className="mono truncate text-[13px] text-ink">{value}</p>
       </div>
       <button
@@ -332,11 +359,11 @@ function CopyRow({ label, value }: { label: string; value: string }) {
         }}
         aria-label={`Copy ${label}`}
         title={copied ? "Copied" : "Copy"}
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-md border transition-colors ${
+        className={`grid h-8 w-8 shrink-0 place-items-center rounded-md border transition-colors ${
           copied ? "border-up/40 bg-up/10 text-up" : "border-edge text-ink-2 hover:border-edge-2 hover:text-ink"
         }`}
       >
-        <Icon name={copied ? "verified" : "copy"} size={16} />
+        <Icon name={copied ? "verified" : "copy"} size={15} />
       </button>
     </div>
   );

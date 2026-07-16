@@ -10,7 +10,7 @@ import { env } from "../lib/env";
 import { compact, fmtPct, fmtSmall, fmtUsd, fmtWeiUsd, usdRateOf } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
 
-type Lens = "trending" | "new" | "active" | "graduating";
+type Lens = "trending" | "new" | "active";
 type SortKey = "marketCap" | "price" | "change" | "volume" | "liquidity" | "txns" | "holders" | "age";
 type Dir = "asc" | "desc";
 
@@ -18,7 +18,6 @@ const lenses: { id: Lens; label: string }[] = [
   { id: "trending", label: "Trending" },
   { id: "new", label: "New" },
   { id: "active", label: "Active" },
-  { id: "graduating", label: "Graduating" },
 ];
 
 export function Explore() {
@@ -58,10 +57,6 @@ export function Explore() {
       list = [...all].sort((a, b) => b.createdAt - a.createdAt);
     } else if (lens === "active") {
       list = [...all].sort((a, b) => b.txCount24h - a.txCount24h);
-    } else if (lens === "graduating") {
-      list = [...all]
-        .filter((t) => t.limitsActive)
-        .sort((a, b) => Number(a.remainingToGraduationUsd) - Number(b.remainingToGraduationUsd));
     } else {
       list = [...all].sort((a, b) => Number(b.volume24hWei) - Number(a.volume24hWei));
     }
