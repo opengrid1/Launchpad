@@ -66,30 +66,19 @@ export function Explore() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-4 sm:px-5">
-      {/* New + search */}
-      <div className="flex items-center gap-2">
-        <Link
-          to="/launch"
-          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-2"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          </svg>
-          New
-        </Link>
-        <label className="relative block flex-1">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3">
-            <Icon name="search" size={16} />
-          </span>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search tokens…"
-            type="search"
-            className="h-9 w-full rounded-lg border border-edge bg-panel pl-9 pr-3 text-[13.5px] text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-edge-2"
-          />
-        </label>
-      </div>
+      {/* Search */}
+      <label className="relative block">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3">
+          <Icon name="search" size={16} />
+        </span>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search tokens…"
+          type="search"
+          className="h-9 w-full rounded-lg border border-edge bg-panel pl-9 pr-3 text-[13.5px] text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-edge-2"
+        />
+      </label>
 
       {/* Sort tabs */}
       <div className="mt-3 inline-flex items-center gap-0.5 rounded-lg border border-edge bg-panel p-0.5">
