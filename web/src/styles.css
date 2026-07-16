@@ -1,32 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  /* Surfaces — near-black with a faint green bias, a bold trading-terminal ground */
-  --color-bg: #090c09;
-  --color-panel: #11150f;
-  --color-panel-2: #191f16;
-  --color-edge: #242c21;
-  --color-edge-2: #323b2d;
+  /* Surfaces — neutral layered near-blacks */
+  --color-bg: #0a0a0a;
+  --color-panel: #131313;
+  --color-panel-2: #1b1b1b;
+  --color-edge: #262626;
+  --color-edge-2: #333333;
 
-  /* Ink — near-white with a faint warm-green bias */
-  --color-ink: #eaf2e4;
-  --color-ink-2: #9ba895;
-  --color-ink-3: #6a766a;
+  /* Ink */
+  --color-ink: #ffffff;
+  --color-ink-2: #b3b3b3;
+  --color-ink-3: #707070;
 
-  /* Electric lime: the archery accent, glows on the dark ground */
-  --color-accent: #b6ff00;
-  --color-accent-2: #cbff4d;
+  /* Soft lime-yellow accent */
+  --color-accent: #d4fc50;
+  --color-accent-2: #e4ff85;
 
-  /* Trading colors, tuned for the dark surface */
-  --color-up: #2fd98a;
-  --color-down: #ff5c61;
+  /* Apple-system trading colors on the dark surface */
+  --color-up: #30d158;
+  --color-down: #ff453a;
 
-  --font-sans: "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  --font-sans: "Inter", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Instrument Serif", "Times New Roman", Georgia, serif;
   --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
 
   --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.02) inset, 0 10px 28px -16px rgba(0, 0, 0, 0.7);
-  --shadow-card-hover: 0 0 0 1px rgba(182, 255, 0, 0.16), 0 16px 40px -18px rgba(0, 0, 0, 0.8);
+  --shadow-card-hover: 0 0 0 1px rgba(212, 252, 80, 0.16), 0 16px 40px -18px rgba(0, 0, 0, 0.8);
 }
 
 html {
@@ -47,21 +48,28 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Editorial serif display, used for headlines */
+.font-display {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
 ::selection {
-  background: rgba(182, 255, 0, 0.28);
-  color: #eaf2e4;
+  background: rgba(212, 252, 80, 0.3);
+  color: #ffffff;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #323b2d transparent;
+  scrollbar-color: #333333 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #323b2d;
+  background: #333333;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-track {
@@ -84,7 +92,7 @@ body {
 
 @keyframes flash-up {
   0% {
-    background: rgba(47, 217, 138, 0.14);
+    background: rgba(48, 209, 88, 0.14);
   }
   100% {
     background: transparent;
@@ -92,7 +100,7 @@ body {
 }
 @keyframes flash-down {
   0% {
-    background: rgba(255, 92, 97, 0.12);
+    background: rgba(255, 69, 58, 0.12);
   }
   100% {
     background: transparent;

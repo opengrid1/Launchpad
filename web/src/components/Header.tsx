@@ -22,10 +22,10 @@ export function Header() {
         <Link to="/" className="flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-panel-2 ring-1 ring-inset ring-edge-2">
             <svg width="18" height="18" viewBox="0 0 64 64" fill="none" aria-hidden>
-              <path d="M32 54 L32 13" stroke="#B6FF00" strokeWidth="5" strokeLinecap="round" />
-              <path d="M22 22 L32 12 L42 22" stroke="#B6FF00" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M25 47 L32 41 L39 47" stroke="#B6FF00" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M25 40 L32 34 L39 40" stroke="#B6FF00" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M32 54 L32 13" stroke="#D4FC50" strokeWidth="5" strokeLinecap="round" />
+              <path d="M22 22 L32 12 L42 22" stroke="#D4FC50" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M25 47 L32 41 L39 47" stroke="#D4FC50" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M25 40 L32 34 L39 40" stroke="#D4FC50" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
           <span className="hidden text-[16px] font-semibold tracking-tight text-ink min-[380px]:block">

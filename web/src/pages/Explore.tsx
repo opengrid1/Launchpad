@@ -69,10 +69,10 @@ export function Explore() {
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
             Live on {env.chainName}
           </p>
-          <h1 className="mt-2 max-w-xl text-[30px] font-semibold leading-[1.05] tracking-tight text-ink sm:text-[38px]">
+          <h1 className="font-display mt-3 max-w-2xl text-[40px] font-normal leading-[1.0] tracking-[-0.005em] text-ink sm:text-[56px]">
             Launch a token into a real market in one transaction.
           </h1>
-          <p className="mt-2.5 max-w-md text-[15px] text-ink-2">
+          <p className="mt-3 max-w-md text-[15px] text-ink-2">
             {BRAND.name} seeds a live Uniswap pool with the full supply. Every trade routes through
             the market, and the fee flows straight back to the people holding.
           </p>

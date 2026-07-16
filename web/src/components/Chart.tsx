@@ -19,8 +19,8 @@ import { launchpadAbi, launchTokenAbi } from "@launchpad/sdk";
 import { client } from "../lib/client";
 import { compact } from "../lib/format";
 
-const UP = "#2FD98A";
-const DOWN = "#FF5C61";
+const UP = "#30D158";
+const DOWN = "#FF453A";
 
 const intervalLabels: Record<CandleInterval, string> = {
   "1m": "1m",
@@ -60,7 +60,7 @@ function toVolumeData(c: Candle, usdRate: number): HistogramData<UTCTimestamp> {
   return {
     time: c.time as UTCTimestamp,
     value: Number(c.volume) * usdRate,
-    color: up ? "rgba(14, 159, 78, 0.4)" : "rgba(229, 72, 77, 0.4)",
+    color: up ? "rgba(48, 209, 88, 0.4)" : "rgba(255, 69, 58, 0.4)",
   };
 }
 
@@ -122,12 +122,12 @@ export function PriceChart({ token }: { token: Address }) {
       },
       crosshair: {
         mode: CrosshairMode.Normal,
-        vertLine: { color: "#6a766a", labelBackgroundColor: "#191f16" },
-        horzLine: { color: "#6a766a", labelBackgroundColor: "#191f16" },
+        vertLine: { color: "#707070", labelBackgroundColor: "#1b1b1b" },
+        horzLine: { color: "#707070", labelBackgroundColor: "#1b1b1b" },
       },
-      rightPriceScale: { borderColor: "#242c21" },
+      rightPriceScale: { borderColor: "#262626" },
       timeScale: {
-        borderColor: "#242c21",
+        borderColor: "#262626",
         timeVisible: true,
         secondsVisible: false,
         rightOffset: 4,
