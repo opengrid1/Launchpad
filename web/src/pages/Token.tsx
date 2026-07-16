@@ -10,7 +10,7 @@ const TVChart = lazy(() =>
 );
 import { AnimatedNumber } from "../components/AnimatedNumber";
 import { HoldersList } from "../components/HoldersList";
-import { Icon, type IconName } from "../components/Icon";
+import { Icon } from "../components/Icon";
 import { TokenLogo } from "../components/TokenLogo";
 import { TradePanel } from "../components/TradePanel";
 import { TradesList } from "../components/TradesList";
@@ -22,7 +22,7 @@ import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { stockOf } from "../lib/v4/stocks";
 import { useUi } from "../store";
 
-type Tab = "trades" | "holders" | "info";
+type Tab = "trades" | "holders";
 
 /** V4 reward/fee facts for a token, read from the hook + token in one pass. */
 interface Extra {
@@ -131,21 +131,24 @@ export function TokenPage() {
         </div>
       </section>
 
-      {/* Detail — trades / holders / information */}
-      <section className="mt-12">
-        <div className="rule mb-5" />
+      {/* About — always visible, its own container */}
+      <section className="mt-6 overflow-hidden rounded-2xl border border-edge bg-panel">
+        <InfoTab t={t} meta={meta} extra={extra} />
+      </section>
+
+      {/* Detail — trades / holders */}
+      <section className="mt-6">
         <div className="flex items-center gap-7 border-b border-edge">
           {(
             [
-              ["trades", "Trades", "transactions"],
-              ["holders", "Holders", "holders"],
-              ["info", "Information", "contract"],
-            ] as [Tab, string, IconName][]
+              ["trades", "Trades"],
+              ["holders", "Holders"],
+            ] as [Tab, string][]
           ).map(([key, label]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`relative -mb-px pb-3 text-[15px] transition-colors ${
+              className={`relative -mb-px pb-3 text-[14px] transition-colors ${
                 tab === key ? "font-semibold text-ink" : "text-ink-2 hover:text-ink"
               }`}
             >
@@ -158,7 +161,6 @@ export function TokenPage() {
         <div className="mt-2 overflow-hidden rounded-2xl border border-edge bg-panel">
           {tab === "trades" ? <TradesList token={t.address as Address} symbol={t.symbol} /> : null}
           {tab === "holders" ? <HoldersList token={t} /> : null}
-          {tab === "info" ? <InfoTab t={t} meta={meta} extra={extra} /> : null}
         </div>
       </section>
     </div>
