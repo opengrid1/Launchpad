@@ -496,6 +496,20 @@ export class V4Client {
     });
   }
 
+  /** Realize accrued tax into creator fees, holder stock rewards, buyback and
+   *  protocol. Permissionless — anyone can trigger it for a token. */
+  async harvest(token: Address): Promise<`0x${string}`> {
+    const wc = this.requireWallet();
+    return wc.writeContract({
+      account: this.account(),
+      chain: wc.chain,
+      address: this.v4.hook,
+      abi: hookAbi,
+      functionName: "harvest",
+      args: [token],
+    });
+  }
+
   /** Launch a token. Mines a CREATE2 salt so its address ends in 4663. */
   async createToken(params: {
     name: string;

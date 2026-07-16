@@ -13,19 +13,45 @@ import { Icon, type IconName } from "../components/Icon";
 import { TokenLogo } from "../components/TokenLogo";
 import { TradePanel } from "../components/TradePanel";
 import { TradesList } from "../components/TradesList";
-import { Button, Card, EmptyState, Skeleton } from "../components/ui";
-import { client } from "../lib/client";
+import { Button, EmptyState, Skeleton } from "../components/ui";
+import { client, v4Client } from "../lib/client";
 import { env } from "../lib/env";
 import { compact, fmtPct, fmtTokens, fmtUsd, fmtWei, fmtWeiUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
+import { stockOf } from "../lib/v4/stocks";
 import { useUi } from "../store";
 
 type Tab = "trades" | "holders" | "info";
+
+/** V4 reward/fee facts for a token, read from the hook + token in one pass. */
+interface Extra {
+  stock: Address;
+  taxBps: number;
+  totalRewards: bigint;
+  creatorFees: bigint;
+}
 
 export function TokenPage() {
   const { address } = useParams<{ address: string }>();
   const token = useToken(client, address as Address | undefined);
   const [tab, setTab] = useState<Tab>("trades");
+  const [extra, setExtra] = useState<Extra | null>(null);
+
+  useEffect(() => {
+    if (!address) return;
+    let live = true;
+    const load = () =>
+      v4Client
+        .tokenExtra(address as Address)
+        .then((e) => live && setExtra(e))
+        .catch(() => undefined);
+    load();
+    const id = setInterval(load, 20_000);
+    return () => {
+      live = false;
+      clearInterval(id);
+    };
+  }, [address]);
 
   if (token.loading) {
     return (
@@ -62,6 +88,7 @@ export function TokenPage() {
             <div className="mt-1 flex items-center gap-2">
               <CaChip address={t.address as Address} />
               <span className="mono truncate text-[11px] text-ink-3">{timeAgo(t.createdAt)}</span>
+              {extra ? <RewardPill stock={extra.stock} /> : null}
             </div>
           </div>
         </div>
@@ -82,7 +109,8 @@ export function TokenPage() {
         </div>
       </section>
 
-      <CreatorClaim token={t} />
+      <RewardsStrip token={t} extra={extra} />
+      <CreatorClaim token={t} extra={extra} onClaimed={() => v4Client.tokenExtra(t.address as Address).then(setExtra).catch(() => undefined)} />
 
       {/* Trading zone — chart fills, right rail holds order + live detail.
           On desktop this fills the viewport so the page itself never scrolls;
@@ -128,7 +156,7 @@ export function TokenPage() {
             <div className="min-h-0 flex-1 overflow-y-auto">
               {tab === "trades" ? <TradesList token={t.address as Address} symbol={t.symbol} /> : null}
               {tab === "holders" ? <HoldersList token={t} /> : null}
-              {tab === "info" ? <InfoTab t={t} meta={meta} /> : null}
+              {tab === "info" ? <InfoTab t={t} meta={meta} extra={extra} /> : null}
             </div>
           </div>
         </div>
@@ -186,20 +214,123 @@ function Readout({
   );
 }
 
+/** A small "Holders earn {STOCK}" pill for the token identity bar. */
+function RewardPill({ stock }: { stock: Address }) {
+  const s = stockOf(stock);
+  if (!s || /^0x0+$/.test(stock)) return null;
+  return (
+    <span
+      title={`Holders earn ${s.name} (${s.symbol})`}
+      className="flex shrink-0 items-center gap-1 rounded-full border border-accent/30 bg-accent/[0.07] px-2 py-0.5 text-[11px] font-semibold text-accent-2"
+    >
+      Earns {s.symbol}
+    </span>
+  );
+}
+
+/**
+ * Holder reward console: the stock every holder earns from trades, how much has
+ * been paid out lifetime, and the connected wallet's claimable balance. Anyone
+ * can trigger a distribution, which realizes accrued tax into stock rewards.
+ */
+function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | null }) {
+  const { address, isConnected } = useWallet();
+  const pushToast = useUi((s) => s.pushToast);
+  const [pending, setPending] = useState(0n);
+  const [busy, setBusy] = useState<"claim" | "harvest" | null>(null);
+
+  const stock = extra ? stockOf(extra.stock) : undefined;
+
+  const refresh = () => {
+    if (isConnected && address)
+      v4Client
+        .pendingDividends(token.address as Address, address)
+        .then(setPending)
+        .catch(() => undefined);
+  };
+  useEffect(refresh, [isConnected, address, token.address, extra?.totalRewards]);
+
+  if (!extra || !stock || /^0x0+$/.test(extra.stock)) return null;
+
+  const run = async (kind: "claim" | "harvest") => {
+    setBusy(kind);
+    try {
+      if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+      const hash =
+        kind === "claim"
+          ? await v4Client.claimDividends(token.address as Address)
+          : await v4Client.harvest(token.address as Address);
+      pushToast({ kind: "info", title: kind === "claim" ? "Claim submitted" : "Distributing rewards", txHash: hash });
+      await client.publicClient.waitForTransactionReceipt({ hash });
+      pushToast({
+        kind: "success",
+        title: kind === "claim" ? `${stock.symbol} claimed` : "Rewards distributed",
+        body: kind === "claim" ? "Sent to your wallet." : "Holder rewards are now claimable.",
+        txHash: hash,
+      });
+      refresh();
+    } catch (err) {
+      pushToast({ kind: "error", title: kind === "claim" ? "Claim failed" : "Distribution failed", body: errorText(err) });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-4 py-2.5">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-ink">
+          Holders earn {stock.name} <span className="text-ink-3">({stock.symbol})</span>
+        </p>
+        <p className="mt-0.5 text-xs text-ink-3">
+          Every trade pays holders {stock.symbol}, split by how much you hold. {fmtTokens(extra.totalRewards.toString())} {stock.symbol} paid out so far.
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        {isConnected ? (
+          <div className="text-right">
+            <p className="tnum text-[15px] font-semibold text-ink">
+              {fmtWei(pending)} {stock.symbol}
+            </p>
+            <p className="text-[11px] text-ink-3">claimable</p>
+          </div>
+        ) : null}
+        {isConnected && pending > 0n ? (
+          <Button variant="primary" disabled={busy !== null} onClick={() => run("claim")}>
+            {busy === "claim" ? "Claiming" : `Claim ${stock.symbol}`}
+          </Button>
+        ) : (
+          <Button variant="ghost" disabled={busy !== null} onClick={() => run("harvest")}>
+            {busy === "harvest" ? "Distributing" : "Distribute"}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Creator's own fee console. Shown only to the wallet that launched the token:
- * it surfaces the claimable 80% share and a one-tap claim. Everyone else never
- * sees it, so the control is public to the creator without cluttering the page.
+ * it surfaces the claimable creator share (25% of every trade's tax, in WETH)
+ * and a one-tap claim. Everyone else never sees it.
  */
-function CreatorClaim({ token }: { token: TokenSummary }) {
+function CreatorClaim({
+  token,
+  extra,
+  onClaimed,
+}: {
+  token: TokenSummary;
+  extra: Extra | null;
+  onClaimed: () => void;
+}) {
   const { address, isConnected } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
   const [busy, setBusy] = useState(false);
 
   const isCreator = isConnected && address?.toLowerCase() === token.creator.toLowerCase();
-  if (!isCreator) return null;
+  if (!isCreator || !extra) return null;
 
-  const claimable = BigInt(token.creatorFeesWei ?? "0");
+  const claimable = extra.creatorFees;
   const usdRate = usdRateOf(token);
 
   const claim = async () => {
@@ -210,6 +341,7 @@ function CreatorClaim({ token }: { token: TokenSummary }) {
       pushToast({ kind: "info", title: "Claim submitted", txHash: hash });
       await client.publicClient.waitForTransactionReceipt({ hash });
       pushToast({ kind: "success", title: "Fees claimed", body: "Sent to your wallet.", txHash: hash });
+      onClaimed();
     } catch (err) {
       pushToast({ kind: "error", title: "Claim failed", body: errorText(err) });
     } finally {
@@ -222,14 +354,12 @@ function CreatorClaim({ token }: { token: TokenSummary }) {
       <div>
         <p className="text-sm font-semibold text-ink">Your creator fees</p>
         <p className="mt-0.5 text-xs text-ink-3">
-          You earn 80% of this token's 1% trading fee. Claim anytime, straight to your wallet.
+          You earn 25% of every trade's tax, paid in WETH. Claim anytime, straight to your wallet.
         </p>
       </div>
       <div className="flex items-center gap-3">
         <div className="text-right">
-          <p className="tnum text-[15px] font-semibold text-ink">
-            {fmtWei(claimable)} {env.nativeSymbol}
-          </p>
+          <p className="tnum text-[15px] font-semibold text-ink">{fmtWei(claimable)} WETH</p>
           <p className="tnum text-[11px] text-ink-3">{fmtWeiUsd(claimable.toString(), usdRate)}</p>
         </div>
         <Button variant="dark" disabled={busy || claimable === 0n} onClick={claim}>
@@ -297,7 +427,7 @@ const socialIcons: Record<string, JSX.Element> = {
   ),
 };
 
-function InfoTab({ t, meta }: { t: any; meta: any }) {
+function InfoTab({ t, meta, extra }: { t: any; meta: any; extra: Extra | null }) {
   const isSelfLink = (url?: string) => {
     if (!url) return false;
     try {
@@ -315,11 +445,12 @@ function InfoTab({ t, meta }: { t: any; meta: any }) {
     { label: "DexScreener", url: `https://dexscreener.com/robinhood/${t.pool}` },
   ].filter((l) => l.url && !isSelfLink(l.url));
 
-  const feePct = Number(t.feeTier) / 10000;
+  const taxBps = extra?.taxBps ?? Number(t.feeTier);
+  const rewardStock = extra ? stockOf(extra.stock) : undefined;
   const facts: { label: string; value: string }[] = [
     { label: "Total supply", value: fmtTokens(t.totalSupply) },
-    { label: "Fee tier", value: isFinite(feePct) ? `${feePct.toFixed(2)}%` : "—" },
-    { label: "Trading fee", value: "1.00%" },
+    { label: "Trade tax", value: isFinite(taxBps) ? `${(taxBps / 100).toFixed(taxBps % 100 ? 1 : 0)}%` : "—" },
+    { label: "Holders earn", value: rewardStock ? rewardStock.symbol : "—" },
     { label: "Launched", value: timeAgo(t.createdAt) },
   ];
 
