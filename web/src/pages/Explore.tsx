@@ -106,18 +106,20 @@ export function Explore() {
         ))}
       </div>
 
-      {/* Grid */}
-      {loading ? (
-        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-          {[...Array(8)].map((_, i) => <CardSkeleton key={i} />)}
-        </div>
-      ) : feed.length === 0 ? (
-        <Empty q={debounced} />
-      ) : (
-        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-          {feed.map((t) => <TokenCard key={t.address} t={t} />)}
-        </div>
-      )}
+      {/* Grid — inside a container box */}
+      <div className="mt-4 rounded-2xl border border-edge bg-panel/40 p-2.5 sm:p-3">
+        {loading ? (
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+            {[...Array(8)].map((_, i) => <CardSkeleton key={i} />)}
+          </div>
+        ) : feed.length === 0 ? (
+          <Empty q={debounced} />
+        ) : (
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+            {feed.map((t) => <TokenCard key={t.address} t={t} />)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
