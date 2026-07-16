@@ -59,6 +59,10 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     address public factory;
     /// @notice Where the protocol's 25% share is sent.
     address public protocolTreasury;
+    /// @notice Quote token stocks are priced in (USDG). Stock rewards are
+    ///         bought native -> quote -> stock, matching on-chain liquidity.
+    address public quote;
+    PoolKey internal _quoteKey; // native/quote pool used for the first hop
 
     mapping(PoolId => PoolConfig) internal _config;
     /// @notice token => native fees awaiting harvest (from sells).
@@ -86,6 +90,7 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     );
     event CreatorClaimed(address indexed token, address indexed creator, uint256 amount);
     event ProtocolTreasurySet(address indexed treasury);
+    event QuoteRouteSet(address indexed quote);
     event FactorySet(address indexed factory);
 
     error NotFactory();
@@ -116,6 +121,17 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
         require(treasury_ != address(0), "treasury=0");
         protocolTreasury = treasury_;
         emit ProtocolTreasurySet(treasury_);
+    }
+
+    /// @notice Configure the native->quote hop used to buy stock rewards.
+    function setQuoteRoute(address quote_, PoolKey calldata quoteKey_) external onlyOwner {
+        quote = quote_;
+        _quoteKey = quoteKey_;
+        emit QuoteRouteSet(quote_);
+    }
+
+    function quoteKey() external view returns (PoolKey memory) {
+        return _quoteKey;
     }
 
     // ---------------------------------------------------------------------
@@ -236,12 +252,15 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
         // 2. creator — claimable native
         creatorClaimable[token] += q;
 
-        // 3. holders — buy the stock and distribute by holdings
-        if (q > 0 && c.stock != address(0)) {
-            uint256 stockOut = _swap(c.stockKey, _nativeSide(c.stockKey), q);
-            if (stockOut > 0) {
-                IERC20(c.stock).safeTransfer(token, stockOut);
-                IQuiverToken(token).distributeRewards(stockOut);
+        // 3. holders — buy the stock (native -> USDG -> stock) and distribute
+        if (q > 0 && c.stock != address(0) && quote != address(0)) {
+            uint256 usdgOut = _swap(_quoteKey, _nativeSide(_quoteKey), q);
+            if (usdgOut > 0) {
+                uint256 stockOut = _swap(c.stockKey, Currency.wrap(quote), usdgOut);
+                if (stockOut > 0) {
+                    IERC20(c.stock).safeTransfer(token, stockOut);
+                    IQuiverToken(token).distributeRewards(stockOut);
+                }
             }
         }
 

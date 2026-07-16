@@ -91,8 +91,11 @@ contract QuiverToken is ERC20 {
         limitsActive = true;
 
         // Exclude system endpoints from dividends (and from the caps) up front.
+        // The supply recipient (the factory) must be excluded before it is
+        // minted the whole supply, or the max-wallet cap would block the mint.
         excluded[address(0)] = true;
         excluded[address(this)] = true;
+        excluded[supplyRecipient_] = true;
 
         _mint(supplyRecipient_, supply_);
     }
