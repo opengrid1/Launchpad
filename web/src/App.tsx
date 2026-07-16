@@ -14,7 +14,6 @@ import { Explore } from "./pages/Explore";
 const TokenPage = lazy(() => import("./pages/Token").then((m) => ({ default: m.TokenPage })));
 const LaunchPage = lazy(() => import("./pages/Launch").then((m) => ({ default: m.LaunchPage })));
 const MyCoinsPage = lazy(() => import("./pages/MyCoins").then((m) => ({ default: m.MyCoinsPage })));
-const MyRewardsPage = lazy(() => import("./pages/MyRewards").then((m) => ({ default: m.MyRewardsPage })));
 const AdminPage = lazy(() => import("./pages/Admin").then((m) => ({ default: m.AdminPage })));
 const DocsPage = lazy(() => import("./pages/Docs").then((m) => ({ default: m.DocsPage })));
 
@@ -48,7 +47,6 @@ export default function App() {
                   <Route path="/" element={<Explore />} />
                   <Route path="/launch" element={<LaunchPage />} />
                   <Route path="/mine" element={<MyCoinsPage />} />
-                  <Route path="/rewards" element={<MyRewardsPage />} />
                   <Route path="/token/:address" element={<TokenPage />} />
                   <Route path="/docs" element={<DocsPage />} />
                   {/* Hidden operations console; access enforced on-chain by role. */}

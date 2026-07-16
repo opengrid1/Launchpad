@@ -9,9 +9,7 @@ import { Icon, type IconName } from "./Icon";
 const TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
   { to: "/", end: true, icon: "explore", label: "Discover" },
   { to: "/launch", icon: "launch", label: "Launch" },
-  { to: "/mine", icon: "wallet", label: "Coins" },
-  { to: "/rewards", icon: "favorite", label: "Rewards" },
-  { to: "/docs", icon: "docs", label: "Docs" },
+  { to: "/mine", icon: "wallet", label: "My Coins" },
 ];
 
 export function NavBar() {
