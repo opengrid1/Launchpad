@@ -1,0 +1,348 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.26;
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+import {BaseHook} from "@uniswap/v4-periphery/src/utils/BaseHook.sol";
+import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
+import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import {IUnlockCallback} from "@uniswap/v4-core/src/interfaces/callback/IUnlockCallback.sol";
+import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
+import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
+import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
+import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
+import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
+import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
+
+import {IQuiverToken} from "./interfaces/IQuiverToken.sol";
+
+/// @title QuiverHook
+/// @notice Singleton Uniswap V4 hook and fee vault for the Quiver launchpad.
+///
+///         Every swap through a Quiver pool pays a per-token tax (0-10%, fixed
+///         at launch) that the hook skims in `afterSwap` — so the fee is
+///         collected on ALL trades through the pool, not just those routed via
+///         the app. Skimmed fees accrue per token; anyone can then call
+///         `harvest`, which normalises everything to native and splits it
+///         four ways (25/25/25/25):
+///
+///           1. creator  — claimable native, withdrawn on demand
+///           2. holders  — buys the creator's chosen stock and distributes it
+///                         to holders in proportion to their holdings
+///           3. buyback  — buys the launched token and burns it
+///           4. protocol — sent to the protocol treasury
+///
+///         All swaps the hook performs (token->native normalisation, the stock
+///         buy, and the buyback) run through the PoolManager's own `unlock`,
+///         so the hook is its own router and depends on no external one.
+contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
+    using SafeERC20 for IERC20;
+    using PoolIdLibrary for PoolKey;
+
+    uint16 internal constant BPS = 10_000;
+
+    struct PoolConfig {
+        address token; // the launched QuiverToken
+        address stock; // reward token holders receive (an ERC-20)
+        address creator;
+        uint16 taxBps;
+        bool tokenIsCurrency0; // orientation of the launched token in the pool
+        bool registered;
+        PoolKey poolKey; // the launched token's own native pool
+        PoolKey stockKey; // native/stock pool used to buy the reward
+    }
+
+    /// @notice Factory allowed to register pools. Set once by the owner.
+    address public factory;
+    /// @notice Where the protocol's 25% share is sent.
+    address public protocolTreasury;
+
+    mapping(PoolId => PoolConfig) internal _config;
+    /// @notice token => native fees awaiting harvest (from sells).
+    mapping(address => uint256) public nativeFees;
+    /// @notice token => launched-token fees awaiting harvest (from buys).
+    mapping(address => uint256) public tokenFees;
+    /// @notice token => native claimable by its creator.
+    mapping(address => uint256) public creatorClaimable;
+
+    // Transient marker so _unlockCallback only serves our own harvest swaps.
+    struct SwapAction {
+        PoolKey key;
+        bool zeroForOne;
+        uint256 amountIn;
+    }
+
+    event PoolRegistered(address indexed token, PoolId indexed id, address stock, uint16 taxBps);
+    event FeeAccrued(address indexed token, bool native, uint256 amount);
+    event Harvested(
+        address indexed token,
+        uint256 toCreator,
+        uint256 toHolders,
+        uint256 toBuyback,
+        uint256 toProtocol
+    );
+    event CreatorClaimed(address indexed token, address indexed creator, uint256 amount);
+    event ProtocolTreasurySet(address indexed treasury);
+    event FactorySet(address indexed factory);
+
+    error NotFactory();
+    error AlreadySet();
+    error NotRegistered();
+    error NotCreator();
+
+    constructor(IPoolManager pm, address owner_, address treasury_)
+        BaseHook(pm)
+        Ownable(owner_)
+    {
+        require(treasury_ != address(0), "treasury=0");
+        protocolTreasury = treasury_;
+    }
+
+    // ---------------------------------------------------------------------
+    // Admin
+    // ---------------------------------------------------------------------
+
+    function setFactory(address factory_) external onlyOwner {
+        if (factory != address(0)) revert AlreadySet();
+        require(factory_ != address(0), "factory=0");
+        factory = factory_;
+        emit FactorySet(factory_);
+    }
+
+    function setProtocolTreasury(address treasury_) external onlyOwner {
+        require(treasury_ != address(0), "treasury=0");
+        protocolTreasury = treasury_;
+        emit ProtocolTreasurySet(treasury_);
+    }
+
+    // ---------------------------------------------------------------------
+    // Hook permissions
+    // ---------------------------------------------------------------------
+
+    function getHookPermissions() public pure override returns (Hooks.Permissions memory p) {
+        p.afterSwap = true;
+        p.afterSwapReturnDelta = true;
+    }
+
+    // ---------------------------------------------------------------------
+    // Registration (factory only)
+    // ---------------------------------------------------------------------
+
+    /// @notice Register a launched pool so the hook taxes it and knows how to
+    ///         buy the reward stock. Called once by the factory at launch.
+    function registerPool(
+        PoolKey calldata key,
+        address token,
+        address stock,
+        address creator,
+        uint16 taxBps,
+        bool tokenIsCurrency0,
+        PoolKey calldata stockKey
+    ) external {
+        if (msg.sender != factory) revert NotFactory();
+        PoolId id = key.toId();
+        PoolConfig storage c = _config[id];
+        if (c.registered) revert AlreadySet();
+        c.token = token;
+        c.stock = stock;
+        c.creator = creator;
+        c.taxBps = taxBps;
+        c.tokenIsCurrency0 = tokenIsCurrency0;
+        c.registered = true;
+        c.poolKey = key;
+        c.stockKey = stockKey;
+        _poolOf[token] = id;
+        emit PoolRegistered(token, id, stock, taxBps);
+    }
+
+    function config(PoolId id) external view returns (PoolConfig memory) {
+        return _config[id];
+    }
+
+    // ---------------------------------------------------------------------
+    // afterSwap: skim the tax on every trade
+    // ---------------------------------------------------------------------
+
+    function _afterSwap(
+        address,
+        PoolKey calldata key,
+        SwapParams calldata params,
+        BalanceDelta delta,
+        bytes calldata
+    ) internal override returns (bytes4, int128) {
+        PoolConfig storage c = _config[key.toId()];
+        if (!c.registered || c.taxBps == 0) return (BaseHook.afterSwap.selector, int128(0));
+
+        // Only skim exact-input swaps (the common case); the unspecified
+        // currency is the output the trader receives.
+        if (params.amountSpecified >= 0) return (BaseHook.afterSwap.selector, int128(0));
+
+        // Output currency + amount (positive side of the swapper's delta).
+        Currency outputCurrency = params.zeroForOne ? key.currency1 : key.currency0;
+        int128 outAmount = params.zeroForOne ? delta.amount1() : delta.amount0();
+        if (outAmount <= 0) return (BaseHook.afterSwap.selector, int128(0));
+
+        uint256 fee = (uint256(uint128(outAmount)) * c.taxBps) / BPS;
+        if (fee == 0) return (BaseHook.afterSwap.selector, int128(0));
+
+        // Take the fee out of the pool into the hook, and report it so the
+        // PoolManager charges it to the swapper (books stay balanced).
+        poolManager.take(outputCurrency, address(this), fee);
+
+        bool outIsToken = Currency.unwrap(outputCurrency) == c.token;
+        if (outIsToken) {
+            tokenFees[c.token] += fee;
+        } else {
+            nativeFees[c.token] += fee;
+        }
+        emit FeeAccrued(c.token, !outIsToken, fee);
+
+        return (BaseHook.afterSwap.selector, int128(int256(fee)));
+    }
+
+    // ---------------------------------------------------------------------
+    // harvest: normalise to native, split 25/25/25/25, act
+    // ---------------------------------------------------------------------
+
+    /// @notice Permissionless. Converts a token's accrued fees to native, then
+    ///         routes the four quarters: creator (claimable), holders (stock
+    ///         dividend), buyback&burn, and protocol.
+    function harvest(address token) external nonReentrant {
+        PoolConfig storage c = _config[_idOfToken(token)];
+        if (!c.registered) revert NotRegistered();
+
+        // 1. Convert launched-token fees (from buys) into native.
+        uint256 tf = tokenFees[token];
+        if (tf > 0) {
+            tokenFees[token] = 0;
+            Currency tokenCurrency = c.tokenIsCurrency0 ? c.poolKey.currency0 : c.poolKey.currency1;
+            uint256 gotNative = _swap(c.poolKey, tokenCurrency, tf);
+            nativeFees[token] += gotNative;
+        }
+
+        uint256 total = nativeFees[token];
+        if (total == 0) {
+            emit Harvested(token, 0, 0, 0, 0);
+            return;
+        }
+        nativeFees[token] = 0;
+
+        uint256 q = total / 4;
+        uint256 toProtocol = total - (q * 3); // dust rounds into protocol
+
+        // 2. creator — claimable native
+        creatorClaimable[token] += q;
+
+        // 3. holders — buy the stock and distribute by holdings
+        if (q > 0 && c.stock != address(0)) {
+            uint256 stockOut = _swap(c.stockKey, _nativeSide(c.stockKey), q);
+            if (stockOut > 0) {
+                IERC20(c.stock).safeTransfer(token, stockOut);
+                IQuiverToken(token).distributeRewards(stockOut);
+            }
+        }
+
+        // 4. buyback&burn — buy the launched token and burn it
+        if (q > 0) {
+            Currency nativeCur = _nativeSide(c.poolKey);
+            uint256 tokenOut = _swap(c.poolKey, nativeCur, q);
+            if (tokenOut > 0) {
+                IQuiverToken(token).burn(tokenOut);
+            }
+        }
+
+        // 5. protocol — native to treasury
+        if (toProtocol > 0) {
+            (bool ok, ) = payable(protocolTreasury).call{value: toProtocol}("");
+            require(ok, "protocol xfer");
+        }
+
+        emit Harvested(token, q, q, q, toProtocol);
+    }
+
+    /// @notice Creator withdraws their accrued native fees.
+    function claimCreatorFees(address token) external nonReentrant returns (uint256 amount) {
+        PoolConfig storage c = _config[_idOfToken(token)];
+        if (!c.registered) revert NotRegistered();
+        if (msg.sender != c.creator) revert NotCreator();
+        amount = creatorClaimable[token];
+        if (amount == 0) return 0;
+        creatorClaimable[token] = 0;
+        (bool ok, ) = payable(msg.sender).call{value: amount}("");
+        require(ok, "creator xfer");
+        emit CreatorClaimed(token, msg.sender, amount);
+    }
+
+    // ---------------------------------------------------------------------
+    // Swap plumbing (our own router, via PoolManager.unlock)
+    // ---------------------------------------------------------------------
+
+    /// @dev Exact-input swap of `amountIn` of `currencyIn` through `key`.
+    function _swap(PoolKey memory key, Currency currencyIn, uint256 amountIn)
+        internal
+        returns (uint256 amountOut)
+    {
+        if (amountIn == 0) return 0;
+        bool zeroForOne = Currency.unwrap(currencyIn) == Currency.unwrap(key.currency0);
+        bytes memory res = poolManager.unlock(abi.encode(SwapAction(key, zeroForOne, amountIn)));
+        amountOut = abi.decode(res, (uint256));
+    }
+
+    function unlockCallback(bytes calldata data) external override returns (bytes memory) {
+        require(msg.sender == address(poolManager), "not pool manager");
+        SwapAction memory a = abi.decode(data, (SwapAction));
+
+        BalanceDelta delta = poolManager.swap(
+            a.key,
+            SwapParams({
+                zeroForOne: a.zeroForOne,
+                amountSpecified: -int256(a.amountIn),
+                sqrtPriceLimitX96: a.zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1
+            }),
+            ""
+        );
+
+        _resolve(a.key.currency0, delta.amount0());
+        _resolve(a.key.currency1, delta.amount1());
+
+        uint256 out = a.zeroForOne ? uint256(uint128(delta.amount1())) : uint256(uint128(delta.amount0()));
+        return abi.encode(out);
+    }
+
+    /// @dev Settle what we owe / take what we're owed for one currency.
+    function _resolve(Currency currency, int128 amount) internal {
+        if (amount < 0) {
+            uint256 owed = uint256(uint128(-amount));
+            if (currency.isAddressZero()) {
+                poolManager.settle{value: owed}();
+            } else {
+                poolManager.sync(currency);
+                IERC20(Currency.unwrap(currency)).safeTransfer(address(poolManager), owed);
+                poolManager.settle();
+            }
+        } else if (amount > 0) {
+            poolManager.take(currency, address(this), uint256(uint128(amount)));
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Views / helpers
+    // ---------------------------------------------------------------------
+
+    function _nativeSide(PoolKey memory key) internal pure returns (Currency) {
+        return key.currency0.isAddressZero() ? key.currency0 : key.currency1;
+    }
+
+    // Token->PoolId lookup. The factory registers by PoolId; we also index by
+    // token for the harvest/claim entrypoints.
+    mapping(address => PoolId) internal _poolOf;
+
+    function _idOfToken(address token) internal view returns (PoolId) {
+        return _poolOf[token];
+    }
+
+    receive() external payable {}
+}
