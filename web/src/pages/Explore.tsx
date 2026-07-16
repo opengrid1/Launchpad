@@ -6,7 +6,7 @@ import type { TokenSummary } from "@launchpad/sdk";
 import { Icon } from "../components/Icon";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { fmtNative, fmtPct, fmtUsd, timeAgo } from "../lib/format";
+import { fmtNative, fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
 
 type Sort = "new" | "recent" | "mcap" | "oldest";
@@ -128,39 +128,61 @@ export function Explore() {
 }
 
 function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
-  const change = t.priceChange24hPct;
   const logo = t.metadata?.logo;
   const ok = logo && /^(https?:|ipfs:|data:)/.test(String(logo));
   const src = ok
     ? String(logo).startsWith("ipfs://") ? `https://ipfs.io/ipfs/${String(logo).slice(7)}` : String(logo)
     : null;
+  const age = timeAgo(t.createdAt).replace(" ago", "");
+  const to = `/token/${t.address}`;
 
   if (row) {
+    const web = (t.metadata as any)?.website as string | undefined;
+    const x = (t.metadata as any)?.twitter as string | undefined;
+    const scan = env.explorerUrl ? `${env.explorerUrl.replace(/\/$/, "")}/token/${t.address}` : null;
     return (
-      <Link to={`/token/${t.address}`} className="card-hover flex items-center gap-3 rounded-xl border border-edge bg-panel px-3 py-2.5">
-        <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-edge bg-panel-2 text-[11px] font-bold text-ink-3">
-          {src ? (
-            <img src={src} alt="" loading="lazy" className="h-full w-full object-cover"
-              onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
-          ) : (
-            t.symbol.slice(0, 2).toUpperCase()
-          )}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-bold leading-tight text-ink">{t.name}</p>
-          <p className="mono truncate text-[11px] text-ink-3">{t.symbol}</p>
+      <div className="rounded-xl border border-edge bg-panel p-3.5">
+        <div className="flex gap-3">
+          <Link to={to} className="shrink-0">
+            <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-lg border border-edge bg-panel-2 text-[12px] font-bold text-ink-3">
+              {src ? (
+                <img src={src} alt="" loading="lazy" className="h-full w-full object-cover"
+                  onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
+              ) : (
+                t.symbol.slice(0, 3).toUpperCase()
+              )}
+            </span>
+          </Link>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <Link to={to} className="truncate text-[15px] font-bold leading-tight text-ink">{t.name}</Link>
+              <span className="mono text-[12px] font-semibold text-accent/75">${t.symbol}</span>
+              <span className="rounded bg-panel-2 px-1.5 py-0.5 text-[10px] font-medium text-ink-3">{age}</span>
+            </div>
+            <p className="mono mt-1 truncate text-[11.5px] text-ink-3">{shortAddr(t.creator)}</p>
+          </div>
         </div>
-        <div className="shrink-0 text-right">
-          <p className="mono text-[14px] font-bold leading-tight text-ink">{fmtUsd(t.marketCapUsd)}</p>
-          <p className={`mono text-[11px] font-semibold ${change == null ? "text-ink-3" : change >= 0 ? "text-up" : "text-down"}`}>
-            {change == null ? "—" : fmtPct(change)}
-          </p>
+
+        <div className="mt-3">
+          <p className="text-[9.5px] uppercase tracking-wide text-ink-3">Market cap</p>
+          <p className="mono text-[17px] font-bold leading-tight text-accent">{fmtUsd(t.marketCapUsd)}</p>
         </div>
-      </Link>
+        <div className="mt-2.5">
+          <p className="text-[9.5px] uppercase tracking-wide text-ink-3">Volume</p>
+          <p className="mono text-[17px] font-bold leading-tight text-ink">{fmtNative(t.volumeTotalWei, 3)}</p>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {x ? <PillLink href={x}>X</PillLink> : null}
+          {web ? <PillLink href={web}>Web</PillLink> : null}
+          {scan ? <PillLink href={scan}>Scan</PillLink> : null}
+          <Link to={to} className="rounded-full border border-accent/50 px-4 py-1.5 text-[11.5px] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">
+            Trade
+          </Link>
+        </div>
+      </div>
     );
   }
-
-  const age = timeAgo(t.createdAt).replace(" ago", "");
 
   return (
     <Link to={`/token/${t.address}`} className="card-hover block overflow-hidden rounded-xl border border-edge bg-panel">
@@ -191,6 +213,21 @@ function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
         <p className="mono mt-1 truncate text-[10.5px] text-ink-3">{fmtNative(t.volumeTotalWei, 3)} vol</p>
       </div>
     </Link>
+  );
+}
+
+function PillLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const url = /^https?:/.test(href) ? href : `https://${href}`;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="rounded-full border border-edge px-4 py-1.5 text-[11.5px] font-semibold text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
+    >
+      {children}
+    </a>
   );
 }
 
