@@ -6,7 +6,7 @@ import type { TokenSummary } from "@launchpad/sdk";
 import { Icon } from "../components/Icon";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { fmtPct, fmtUsd } from "../lib/format";
+import { fmtNative, fmtPct, fmtUsd, timeAgo } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
 
 type Sort = "new" | "recent" | "mcap" | "oldest";
@@ -160,33 +160,35 @@ function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
     );
   }
 
+  const age = timeAgo(t.createdAt).replace(" ago", "");
+
   return (
-    <Link to={`/token/${t.address}`} className="card-hover block rounded-xl border border-edge bg-panel p-2.5">
-      <div className="flex items-center gap-2">
-        <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border border-edge bg-panel-2 text-[10px] font-bold text-ink-3">
-          {src ? (
-            <img src={src} alt="" loading="lazy" className="h-full w-full object-cover"
-              onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
-          ) : (
-            t.symbol.slice(0, 2).toUpperCase()
-          )}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-bold leading-tight text-ink">{t.name}</p>
-          <p className="mono truncate text-[10.5px] text-ink-3">{t.symbol}</p>
-        </div>
-        <span
-          className={`mono shrink-0 rounded px-1.5 py-0.5 text-[10.5px] font-semibold ${
-            change == null ? "bg-panel-2 text-ink-3" : change >= 0 ? "bg-up/10 text-up" : "bg-down/10 text-down"
-          }`}
-        >
-          {change == null ? "—" : fmtPct(change)}
+    <Link to={`/token/${t.address}`} className="card-hover block overflow-hidden rounded-xl border border-edge bg-panel">
+      {/* Full logo */}
+      <div className="relative aspect-square w-full bg-panel-2">
+        {src ? (
+          <img src={src} alt="" loading="lazy" className="h-full w-full object-cover"
+            onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
+        ) : (
+          <span className="grid h-full w-full place-items-center text-[34px] font-extrabold text-ink-3">
+            {t.symbol.slice(0, 3).toUpperCase()}
+          </span>
+        )}
+        <span className="absolute right-1.5 top-1.5 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+          {age}
         </span>
       </div>
 
-      <div className="mt-2.5">
-        <p className="text-[9.5px] uppercase tracking-wide text-ink-3">Mcap</p>
-        <p className="mono truncate text-[15px] font-bold leading-tight text-ink">{fmtUsd(t.marketCapUsd)}</p>
+      <div className="p-2.5">
+        <div className="flex items-baseline gap-1.5">
+          <p className="min-w-0 truncate text-[13.5px] font-bold leading-tight text-ink">{t.name}</p>
+          <span className="mono shrink-0 text-[11.5px] font-semibold text-accent/75">${t.symbol}</span>
+        </div>
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <span className="text-[9.5px] uppercase tracking-wide text-ink-3">Market cap</span>
+          <span className="mono text-[13.5px] font-bold text-accent">{fmtUsd(t.marketCapUsd)}</span>
+        </div>
+        <p className="mono mt-1 truncate text-[10.5px] text-ink-3">{fmtNative(t.volumeTotalWei, 3)} vol</p>
       </div>
     </Link>
   );
