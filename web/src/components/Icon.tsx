@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /**
- * Quiverpad icon set. One design language across every glyph: a 24px grid,
+ * Stockprintr icon set. One design language across every glyph: a 24px grid,
  * 2px strokes, round caps and joins, currentColor. Hand-built for this
  * product — no icon-pack imports. Brand marks (X, Telegram) are the only
  * intentional filled exceptions, since they must stay recognizable.

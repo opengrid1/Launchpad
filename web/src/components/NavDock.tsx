@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { Icon, type IconName } from "./Icon";
 
 /**
- * The Quiverpad nav dock — a floating pill that hovers over the page, thumb
+ * The Stockprintr nav dock — a floating pill that hovers over the page, thumb
  * reachable. Icon-only, two destinations; the active one fills with a lime
  * capsule and its glyph lifts. Not a bar, not a menu: the navigation is a
  * single object that belongs to this product.

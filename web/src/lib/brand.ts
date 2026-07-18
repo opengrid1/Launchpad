@@ -3,12 +3,12 @@
  * everywhere — header, footer, wallet metadata, docs, and page meta.
  */
 export const BRAND = {
-  name: "Quiverpad",
-  domain: "quiverpad.xyz",
-  url: "https://quiverpad.xyz",
-  twitter: "https://x.com/quiverpad",
-  twitterHandle: "quiverpad",
-  tagline: "Launch real markets. Holders earn stocks.",
+  name: "Stockprintr",
+  domain: "stockprintr.xyz",
+  url: "https://stockprintr.xyz",
+  twitter: "https://x.com/stockprintr",
+  twitterHandle: "stockprintr",
+  tagline: "The printer that prints real stock.",
   description:
-    "Quiverpad. Launch tokens into real Uniswap V4 markets on Robinhood Chain. Every trade rewards holders with real tokenized stocks.",
+    "Stockprintr. Print memecoins into real Uniswap V4 markets on Robinhood Chain. Every trade pays holders real tokenized stock, delivered straight to their wallets.",
 } as const;

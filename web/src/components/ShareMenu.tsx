@@ -7,7 +7,7 @@ import { Icon } from "./Icon";
 /**
  * Share a token: post it to X with its cashtag, copy its page link, or jump
  * straight to the Uniswap pool or the block explorer. Uniswap is the venue —
- * every Quiverpad token trades in a live Uniswap V4 WETH pool.
+ * every Stockprintr token trades in a live Uniswap V4 WETH pool.
  */
 export function ShareMenu({ address, symbol, name }: { address: Address; symbol: string; name: string }) {
   const [open, setOpen] = useState(false);
@@ -35,7 +35,7 @@ export function ShareMenu({ address, symbol, name }: { address: Address; symbol:
   const uniswapUrl = `https://app.uniswap.org/swap?chain=${env.chainId}&outputCurrency=${address}`;
   const tweet =
     `https://twitter.com/intent/tweet?` +
-    `text=${encodeURIComponent(`$${symbol} — ${name}\nTrading live on Quiverpad, holders earn real stock rewards.`)}` +
+    `text=${encodeURIComponent(`$${symbol} — ${name}\nFresh off the printer on Stockprintr, holders earn real stock rewards.`)}` +
     `&url=${encodeURIComponent(pageUrl)}`;
 
   const copyLink = () => {
