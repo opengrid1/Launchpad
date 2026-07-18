@@ -76,14 +76,53 @@ h1, h2, h3, .font-display {
   font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
-/* Lime CTAs read as painted, carved wood: gradient face + pressed edge. */
+/* Primary CTAs are wooden planks — grain, bevel, and a sprig of leaves
+   growing off the corner. Text is parchment (readable on wood), so the
+   utility's dark accent-fg is overridden here. */
 button.bg-accent, a.bg-accent {
-  background-image: linear-gradient(180deg, #b9ee55, #a3e635 45%, #7fb322);
-  box-shadow: inset 0 1px 0 #d8f795, 0 2px 0 #4c690f;
+  position: relative;
+  color: #f5ead2 !important;
+  border: 1px solid #2e1e0d;
+  background-color: #5a3d1f;
+  background-image:
+    repeating-linear-gradient(94deg, rgba(0, 0, 0, 0.09) 0 2px, transparent 2px 7px, rgba(255, 255, 255, 0.035) 7px 8px, transparent 8px 18px),
+    linear-gradient(180deg, #7a5730, #5a3d1f 55%, #462f16);
+  box-shadow: inset 0 1px 0 rgba(163, 124, 74, 0.45), inset 0 -2px 0 rgba(0, 0, 0, 0.3), 0 2px 0 #241505;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+button.bg-accent:hover, a.bg-accent:hover {
+  background-color: #6b4a26;
+  background-image:
+    repeating-linear-gradient(94deg, rgba(0, 0, 0, 0.09) 0 2px, transparent 2px 7px, rgba(255, 255, 255, 0.04) 7px 8px, transparent 8px 18px),
+    linear-gradient(180deg, #8a6438, #6b4a26 55%, #523719);
 }
 button.bg-accent:active, a.bg-accent:active {
   transform: translateY(1px);
-  box-shadow: inset 0 1px 0 #d8f795, 0 1px 0 #4c690f;
+  box-shadow: inset 0 1px 0 rgba(163, 124, 74, 0.45), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 1px 0 #241505;
+}
+/* The leaf sprig — two lime leaves on a twig, peeking off the top-right. */
+button.bg-accent::after, a.bg-accent::after {
+  content: "";
+  position: absolute;
+  top: -9px;
+  right: -4px;
+  width: 26px;
+  height: 22px;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 22'%3E%3Cpath d='M3 20 Q10 15 22 5' stroke='%236b8f22' stroke-width='1.7' fill='none' stroke-linecap='round'/%3E%3Cpath d='M11 13 Q4 12 1 18 Q8 20 12 14 Z' fill='%23a3e635'/%3E%3Cpath d='M17 8 Q17 1 10 0 Q10 7 16 9 Z' fill='%2384cc16'/%3E%3Cpath d='M22 5 Q26 0 21 0 Q19 3 22 5 Z' fill='%23b9ee55'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
+}
+/* Disabled buttons go back to a plain board — no plank face, no leaves. */
+button.bg-accent:disabled {
+  background-image: none;
+  color: var(--color-ink-3) !important;
+  border-color: var(--color-edge);
+  box-shadow: none;
+  text-shadow: none;
+}
+button.bg-accent:disabled::after {
+  display: none;
 }
 
 .tnum {
