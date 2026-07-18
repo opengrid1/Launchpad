@@ -167,7 +167,8 @@ export function useTrades(client: LaunchpadClient, token: Address | undefined, l
     });
     const unsub = client.subscribeToTrades(token, (trade) => {
       if (cancelled) return;
-      setTrades((prev) => [trade, ...prev].slice(0, limit));
+      // Streams can re-deliver a trade already in the snapshot; keep the list unique.
+      setTrades((prev) => (prev.some((t) => t.id === trade.id) ? prev : [trade, ...prev].slice(0, limit)));
     });
     return () => {
       cancelled = true;

@@ -635,18 +635,41 @@ export class V4Client {
   // Live updates (polling)
   // ---------------------------------------------------------------------
 
+  private static visible(): boolean {
+    return typeof document === "undefined" || !document.hidden;
+  }
+
   subscribeToLaunches(cb: () => void): () => void {
-    const id = setInterval(() => {
-      this.coresUpTo = 0n; // force re-scan
-      cb();
-    }, 20_000);
+    // loadCores scans incrementally past the last seen block on every read, so
+    // new launches surface on the next poll — never re-scan history (the old
+    // full reset made every page progressively hammer the RPC).
+    const id = setInterval(() => V4Client.visible() && cb(), 30_000);
     return () => clearInterval(id);
   }
   subscribeToTrades(token: Address, cb: (t: TradeRecord) => void): () => void {
-    const id = setInterval(() => {
-      this.tradesCache.delete(token.toLowerCase());
-      this.loadTrades(token).then((tr) => tr.length && cb(tr[tr.length - 1])).catch(() => undefined);
-    }, 12_000);
+    // Poll the (edge-cached in prod) trades read and emit only unseen trades.
+    // The first fetch primes the seen-set so the hook's initial load isn't
+    // duplicated.
+    const seen = new Set<string>();
+    let primed = false;
+    const tick = () =>
+      this.getTrades(token, { limit: 50 })
+        .then((recent) => {
+          if (!primed) {
+            recent.forEach((t) => seen.add(t.id));
+            primed = true;
+            return;
+          }
+          [...recent].reverse().forEach((t) => {
+            if (!seen.has(t.id)) {
+              seen.add(t.id);
+              cb(t);
+            }
+          });
+        })
+        .catch(() => undefined);
+    tick();
+    const id = setInterval(() => V4Client.visible() && tick(), 10_000);
     return () => clearInterval(id);
   }
   subscribeToPrice(_token: Address, _cb: (u: unknown) => void): () => void {
@@ -654,9 +677,11 @@ export class V4Client {
   }
   subscribeToCandles(token: Address, interval: CandleInterval, cb: (u: { candle: Candle }) => void): () => void {
     const id = setInterval(() => {
-      this.tradesCache.delete(token.toLowerCase());
-      this.getCandles(token, interval, { limit: 1 }).then((c) => c.length && cb({ candle: c[c.length - 1] })).catch(() => undefined);
-    }, 15_000);
+      if (!V4Client.visible()) return;
+      this.getCandles(token, interval, { limit: 2 })
+        .then((c) => c.length && cb({ candle: c[c.length - 1] }))
+        .catch(() => undefined);
+    }, 10_000);
     return () => clearInterval(id);
   }
 
