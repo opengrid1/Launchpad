@@ -15,7 +15,7 @@ export function Header() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-5">
         {/* Brand */}
         <Link to="/" aria-label={BRAND.name} className="shrink-0">
-          <span className="text-[15px] font-extrabold lowercase tracking-tight text-ink">{BRAND.name}</span>
+          <span className="text-[15px] font-extrabold lowercase tracking-tight text-ink">{BRAND.name}<span className="text-accent-ink">.fun</span></span>
         </Link>
 
         {/* Right actions */}
