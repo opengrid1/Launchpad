@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="46%" r="46%">
+      <stop offset="0%" stop-color="#a3e635" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#a3e635" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="400" fill="#1e140d"/>
+  <g opacity="0.5">
+    <path d="M60 0 L48 400 M140 0 L132 400 M260 0 L268 400 M340 0 L352 400" stroke="#000" stroke-opacity="0.25" stroke-width="3"/>
+  </g>
+  <circle cx="200" cy="190" r="175" fill="url(#glow)"/>
+
+  <!-- horns: curve out then tips up-in (bull style) -->
+  <g>
+    <polygon points="154,150 146,168 112,150 122,132" fill="#7fb322"/>
+    <polygon points="122,132 112,150 92,118 106,108"  fill="#a3e635"/>
+    <polygon points="106,108 92,118 100,84 114,92"    fill="#b9ee55"/>
+    <polygon points="246,150 254,168 288,150 278,132" fill="#8cc22c"/>
+    <polygon points="278,132 288,150 308,118 294,108" fill="#a3e635"/>
+    <polygon points="294,108 308,118 300,84 286,92"   fill="#d8f795"/>
+  </g>
+
+  <!-- feather tucked behind right ear, angled down-out -->
+  <g transform="translate(285,208) rotate(128)">
+    <path d="M0 58 C-14 38 -12 12 2 -2 C14 12 12 40 0 58 Z" fill="#a3e635"/>
+    <path d="M2 -2 C-10 12 -13 38 0 58 L1 56 C-9 38 -7 14 2 -2 Z" fill="#7fb322"/>
+    <line x1="1" y1="4" x2="0" y2="72" stroke="#f0e4cb" stroke-width="4" stroke-linecap="round"/>
+    <path d="M1 12 L-9 7 M1 24 L-11 18 M1 36 L-10 30 M1 12 L10 7 M1 24 L12 18 M1 36 L11 30" stroke="#3f6212" stroke-width="2.2"/>
+  </g>
+
+  <!-- ears -->
+  <polygon points="152,162 118,176 144,194" fill="#462f16"/>
+  <polygon points="248,162 282,176 256,194" fill="#3a2712"/>
+
+  <!-- head facets (wood) -->
+  <polygon points="200,118 152,150 200,200"  fill="#8a6438"/>
+  <polygon points="200,118 248,150 200,200"  fill="#7a5730"/>
+  <polygon points="152,150 170,192 200,200"  fill="#6b4a26"/>
+  <polygon points="248,150 230,192 200,200"  fill="#5f4222"/>
+  <polygon points="152,150 146,212 170,192"  fill="#5a3d1f"/>
+  <polygon points="248,150 254,212 230,192"  fill="#4f351b"/>
+  <polygon points="146,212 165,260 170,192"  fill="#6b4a26"/>
+  <polygon points="254,212 235,260 230,192"  fill="#5a3d1f"/>
+  <polygon points="170,192 165,260 200,254"  fill="#7a5730"/>
+  <polygon points="230,192 235,260 200,254"  fill="#684626"/>
+  <polygon points="170,192 200,200 200,254"  fill="#8a6438"/>
+  <polygon points="230,192 200,200 200,254"  fill="#75512c"/>
+  <!-- muzzle -->
+  <polygon points="165,260 180,296 200,254"  fill="#9b7440"/>
+  <polygon points="235,260 220,296 200,254"  fill="#8a6438"/>
+  <polygon points="180,296 200,310 200,254"  fill="#a67e48"/>
+  <polygon points="220,296 200,310 200,254"  fill="#96703c"/>
+  <!-- nostrils -->
+  <polygon points="186,288 193,293 186,298 179,293" fill="#2c1c0c"/>
+  <polygon points="214,288 221,293 214,298 207,293" fill="#2c1c0c"/>
+
+  <!-- lime eyes -->
+  <polygon points="172,208 181,214 172,220 163,214" fill="#a3e635"/>
+  <polygon points="228,208 237,214 228,220 219,214" fill="#a3e635"/>
+</svg>
