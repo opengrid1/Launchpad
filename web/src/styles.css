@@ -60,7 +60,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Every oak-board card picks up a faint grain on top of its base color. */
+/* Every oak-board surface picks up a faint grain on top of its base color. */
 .bg-panel {
   background-image: repeating-linear-gradient(
     94deg,
@@ -69,6 +69,25 @@ body {
     rgba(255, 255, 255, 0.022) 11px 12px,
     transparent 12px 26px
   );
+}
+
+/* Cards read as carved oak boards: a lit top face falling to shadow, a
+   heavier grain, a bevel (highlight above, depth below), and a drop shadow
+   that lifts the board off the walnut ground. */
+.rounded-xl.bg-panel, .rounded-2xl.bg-panel {
+  background-image:
+    repeating-linear-gradient(
+      94deg,
+      rgba(0, 0, 0, 0.065) 0 3px,
+      transparent 3px 11px,
+      rgba(255, 255, 255, 0.03) 11px 12px,
+      transparent 12px 26px
+    ),
+    linear-gradient(180deg, #3b2a19, #2f2114);
+  box-shadow:
+    inset 0 1px 0 rgba(92, 69, 43, 0.42),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+    0 6px 14px rgba(0, 0, 0, 0.42);
 }
 
 /* Craft serif for headings and token names — the lodge signage face. */
