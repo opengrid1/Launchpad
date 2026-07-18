@@ -187,7 +187,7 @@ export function LaunchPage() {
         </div>
 
         <dl className="space-y-1.5 border-t border-edge pt-3 text-[12px]">
-          <Row label="Starting market cap" value="$5,000" />
+          <Row label="Starting market cap" value="≈$3K (fixed in WETH, floats with ETH)" />
           <Row label="Supply" value="1,000,000,000" />
         </dl>
 

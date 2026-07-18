@@ -30,7 +30,7 @@ export function DocsPage() {
         <Facts
           rows={[
             ["Total supply", "1,000,000,000 (fixed)"],
-            ["Starting market cap", "$5,000 (fixed)"],
+            ["Starting market cap", "≈$3K (fixed in WETH, floats with ETH)"],
             ["Upfront liquidity", "None required"],
           ]}
         />

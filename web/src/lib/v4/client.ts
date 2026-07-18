@@ -96,6 +96,46 @@ export class V4Client {
     return this.coresInflight;
   }
 
+  /**
+   * Live WETH/USD from the on-chain WETH/USDG pool (USDG ≈ $1). The factory's
+   * nativeUsdPrice8 was frozen at deploy (ownership renounced), so USD figures
+   * — market caps, prices, volumes — track the real market via this spot read
+   * instead of the stale constant.
+   */
+  private nativeUsdInflight = false;
+  private refreshNativeUsd(): void {
+    if (this.nativeUsdInflight) return;
+    this.nativeUsdInflight = true;
+    (async () => {
+      const wethIs0 = BigInt(this.v4.weth) < BigInt(this.v4.usdg);
+      const [c0, c1] = wethIs0 ? [this.v4.weth, this.v4.usdg] : [this.v4.usdg, this.v4.weth];
+      // Canonical WETH/USDG route pool: 0.05% fee, tick spacing 10, no hooks.
+      const poolId = keccak256(
+        encodeAbiParameters(
+          [{ type: "address" }, { type: "address" }, { type: "uint24" }, { type: "int24" }, { type: "address" }],
+          [c0, c1, 500, 10, "0x0000000000000000000000000000000000000000"],
+        ),
+      );
+      const stateSlot = keccak256(
+        encodeAbiParameters([{ type: "bytes32" }, { type: "uint256" }], [poolId, 6n]),
+      );
+      const raw = (await this.publicClient.readContract({
+        address: this.v4.poolManager,
+        abi: [{ type: "function", name: "extsload", stateMutability: "view", inputs: [{ type: "bytes32" }], outputs: [{ type: "bytes32" }] }],
+        functionName: "extsload",
+        args: [stateSlot],
+      })) as `0x${string}`;
+      const sqrtP = BigInt(raw) & ((1n << 160n) - 1n);
+      if (sqrtP === 0n) return;
+      const ratio = Number(sqrtP) / 2 ** 96;
+      // currency1-per-currency0 in raw units; USDG has 6 decimals vs WETH's 18.
+      const usd = wethIs0 ? ratio * ratio * 1e12 : (1 / (ratio * ratio)) * 1e12;
+      if (Number.isFinite(usd) && usd > 0) this.nativeUsd = usd;
+    })()
+      .catch(() => undefined)
+      .finally(() => (this.nativeUsdInflight = false));
+  }
+
   private async loadCoresInner(): Promise<Core[]> {
     let latest: bigint;
     try {
@@ -103,11 +143,8 @@ export class V4Client {
     } catch {
       return [...this.cores.values()];
     }
-    // Refresh the WETH/USD rate opportunistically.
-    this.publicClient
-      .readContract({ address: this.v4.factory, abi: factoryAbi, functionName: "nativeUsdPrice8" })
-      .then((p) => (this.nativeUsd = Number(p) / 1e8 || this.nativeUsd))
-      .catch(() => undefined);
+    // Refresh the WETH/USD rate opportunistically from the live market.
+    this.refreshNativeUsd();
 
     if (this.coresUpTo !== 0n && latest <= this.coresUpTo) return [...this.cores.values()];
     let logs: any[];
