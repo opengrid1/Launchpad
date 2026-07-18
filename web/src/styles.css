@@ -1,36 +1,37 @@
 @import "tailwindcss";
 
 @theme {
-  /* Dark theme with a lime accent — near-black ground, dark cards, hairline
-     borders, and a bright lime for buttons/CTAs and emphasis. */
-  --color-bg: #0b0d10;
-  --color-panel: #14161a;
-  --color-panel-2: #1c1f25;
-  --color-edge: #262a31;
-  --color-edge-2: #333842;
+  /* "Timber" — carved-wood lodge theme for the archery brand. Deep walnut
+     ground, oak-board cards with a bevel, parchment ink, and the lime kept as
+     the fletching-green accent. */
+  --color-bg: #1e140d;        /* deep walnut */
+  --color-panel: #2f2114;     /* oak board */
+  --color-panel-2: #3b2a19;   /* lighter board */
+  --color-edge: #453019;      /* carved edge */
+  --color-edge-2: #5c452b;    /* bevel highlight */
 
-  --color-ink: #eceef1;
-  --color-ink-2: #9298a2;
-  --color-ink-3: #646a74;
+  --color-ink: #f0e4cb;       /* parchment */
+  --color-ink-2: #c8b593;     /* faded parchment */
+  --color-ink-3: #97846a;     /* burnt umber labels */
 
   /* Lime primary. `accent` is the bright button/CTA fill (use `accent-fg` — a
      near-black — as text ON it); `accent-ink` is lime used for text/emphasis,
-     which reads bright and clear on the dark ground. */
-  --color-accent: #a3e635;    /* bright lime — button backgrounds */
+     which reads bright and clear on the warm dark ground. */
+  --color-accent: #a3e635;    /* fletching green — button fill */
   --color-accent-2: #84cc16;  /* darker lime — hover */
-  --color-accent-ink: #a3e635;/* lime — text/emphasis on dark */
-  --color-accent-fg: #0d1206; /* near-black — text on lime buttons */
+  --color-accent-ink: #b3e94f;/* lime — text/emphasis on walnut */
+  --color-accent-fg: #1d1305; /* near-black bark — text on lime */
 
-  /* Gains / losses */
-  --color-up: #21c45d;
-  --color-down: #ef584d;
+  /* Gains / losses — warmed to sit on wood */
+  --color-up: #8fd05a;
+  --color-down: #e0704f;
 
   --font-sans: "Inter", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-card-hover: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  --shadow-card: inset 0 1px 0 rgba(92, 69, 43, 0.35), 0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-card-hover: inset 0 1px 0 rgba(92, 69, 43, 0.5), 0 10px 24px -12px rgba(0, 0, 0, 0.7);
   --shadow-btn: none;
 }
 
@@ -43,10 +44,46 @@ body {
   margin: 0;
   font-family: var(--font-sans);
   color: var(--color-ink);
-  background: var(--color-bg);
+  /* Walnut ground with a soft top vignette and a subtle vertical grain. */
+  background:
+    radial-gradient(1200px 500px at 50% -10%, rgba(51, 34, 18, 0.4), transparent 70%),
+    repeating-linear-gradient(
+      92deg,
+      rgba(0, 0, 0, 0.08) 0 2px,
+      transparent 2px 9px,
+      rgba(255, 255, 255, 0.02) 9px 10px,
+      transparent 10px 23px
+    ),
+    var(--color-bg);
   font-feature-settings: "ss01", "cv05";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Every oak-board card picks up a faint grain on top of its base color. */
+.bg-panel {
+  background-image: repeating-linear-gradient(
+    94deg,
+    rgba(0, 0, 0, 0.05) 0 3px,
+    transparent 3px 11px,
+    rgba(255, 255, 255, 0.022) 11px 12px,
+    transparent 12px 26px
+  );
+}
+
+/* Craft serif for headings and token names — the lodge signage face. */
+h1, h2, h3, .font-display {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+/* Lime CTAs read as painted, carved wood: gradient face + pressed edge. */
+button.bg-accent, a.bg-accent {
+  background-image: linear-gradient(180deg, #b9ee55, #a3e635 45%, #7fb322);
+  box-shadow: inset 0 1px 0 #d8f795, 0 2px 0 #4c690f;
+}
+button.bg-accent:active, a.bg-accent:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 0 #d8f795, 0 1px 0 #4c690f;
 }
 
 .tnum {
@@ -77,19 +114,19 @@ body {
 
 ::selection {
   background: rgba(163, 230, 53, 0.28);
-  color: #eceef1;
+  color: #f0e4cb;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2c313a transparent;
+  scrollbar-color: #4a3620 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #2c313a;
+  background: #4a3620;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-track {
