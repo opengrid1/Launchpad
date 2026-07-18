@@ -62,6 +62,8 @@ export class V4Client {
   // so each call fetches only new swaps and appends. Never a permanent snapshot
   // (a stale cache is what pinned mcap to the launch price and hid new trades).
   private tradesCache = new Map<string, { records: TradeRecord[]; upTo: bigint }>();
+  /** Exact block timestamps, fetched once per block (candle bucketing). */
+  private blockTs = new Map<number, number>();
   private blockTsAnchor?: { block: bigint; ts: number; perBlock: number };
 
   constructor(publicClient: PublicClient, v4: V4Addresses, startBlock: bigint) {
@@ -233,9 +235,21 @@ export class V4Client {
           timestamp: 0,
         };
       });
-      // Estimate timestamps from block numbers.
+      // Exact block timestamps (fetched once per block, cached). Estimated
+      // times drifted between refreshes, shuffling trades across candle
+      // buckets and breaking TradingView's ascending-time requirement.
       if (fresh.length) {
-        for (const r of fresh) r.timestamp = await this.estTs(BigInt(r.blockNumber), latest);
+        const uniq = [...new Set(fresh.map((r) => r.blockNumber))].filter((b) => !this.blockTs.has(b));
+        for (let i = 0; i < uniq.length; i += 10) {
+          const chunk = uniq.slice(i, i + 10);
+          const blocks = await Promise.all(
+            chunk.map((b) => this.publicClient.getBlock({ blockNumber: BigInt(b) }).catch(() => null)),
+          );
+          blocks.forEach((blk, j) => blk && this.blockTs.set(chunk[j], Number(blk.timestamp)));
+        }
+        for (const r of fresh) {
+          r.timestamp = this.blockTs.get(r.blockNumber) ?? (await this.estTs(BigInt(r.blockNumber), latest));
+        }
       }
       const records = cached ? cached.records.concat(fresh) : fresh;
       this.tradesCache.set(key, { records, upTo: latest });
@@ -385,6 +399,16 @@ export class V4Client {
       }
     }
     const arr = [...buckets.values()].sort((a, b) => a.time - b.time);
+    // Continuity: each candle opens at the previous close (sparse on-chain
+    // trades otherwise leave gapped, broken-looking bars), with high/low
+    // widened to keep the bar self-consistent.
+    for (let i = 1; i < arr.length; i++) {
+      const prevClose = arr[i - 1].close;
+      const c = arr[i];
+      c.open = prevClose;
+      if (Number(c.high) < Number(prevClose)) c.high = prevClose;
+      if (Number(c.low) > Number(prevClose)) c.low = prevClose;
+    }
     return arr.slice(-(opts?.limit ?? 500));
   }
 
