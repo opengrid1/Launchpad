@@ -14,15 +14,15 @@ const TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
 export function NavBar() {
   return (
     <div className="border-b border-edge">
-      <nav className="mx-auto -mb-px flex max-w-6xl items-stretch px-2 sm:justify-start sm:gap-6 sm:px-5">
+      <nav className="mx-auto flex max-w-6xl items-stretch gap-2 px-2 py-2 sm:justify-start sm:gap-3 sm:px-5">
         {TABS.map((t) => (
           <NavLink
             key={t.to}
             to={t.to}
             end={t.end}
             className={({ isActive }) =>
-              `flex flex-1 flex-col items-center gap-0.5 border-b-2 py-2 text-[10px] font-medium transition-colors sm:flex-none sm:flex-row sm:gap-1.5 sm:py-2.5 sm:text-[11.5px] ${
-                isActive ? "border-accent text-accent-ink" : "border-transparent text-ink-2 hover:text-ink"
+              `nav-sign flex flex-1 flex-col items-center gap-0.5 rounded-lg px-3 py-2 text-[10px] font-semibold transition-colors sm:flex-none sm:flex-row sm:gap-1.5 sm:px-5 sm:text-[12px] ${
+                isActive ? "nav-sign-on" : "text-ink-2 hover:text-ink"
               }`
             }
           >
