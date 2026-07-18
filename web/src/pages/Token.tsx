@@ -191,11 +191,11 @@ function RewardPill({ stock }: { stock: Address }) {
   if (!s || /^0x0+$/.test(stock)) return null;
   return (
     <span
-      title={`Holders earn ${s.name} (${s.symbol})`}
+      title={`Prints ${s.name} (${s.symbol}) to holders`}
       className="flex shrink-0 items-center gap-1.5 rounded-full border border-accent/30 bg-accent/[0.07] py-0.5 pl-0.5 pr-2 text-[11px] font-semibold text-accent-ink"
     >
       <StockLogo address={s.address} symbol={s.symbol} size={16} />
-      Earns {s.symbol}
+      Prints {s.symbol}
     </span>
   );
 }
@@ -252,7 +252,7 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
     <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-4 py-2.5">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-ink">
-          Holders earn {stock.name} <span className="text-ink-3">({stock.symbol})</span>
+          This coin prints {stock.name} <span className="text-ink-3">({stock.symbol})</span>
         </p>
         <p className="mt-0.5 text-xs text-ink-3">
           Every trade pays holders {stock.symbol}, split by how much you hold — delivered to wallets

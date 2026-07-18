@@ -150,7 +150,7 @@ export function LaunchPage() {
         {/* Reward stock picker */}
         <div>
           <label className="mb-1.5 block text-[12.5px] font-medium text-ink">
-            Holders earn <span className="text-ink-3">· {selectedStock.symbol}</span>
+            Prints <span className="text-ink-3">· {selectedStock.symbol}</span>
           </label>
           <div className="grid grid-cols-5 gap-1.5">
             {STOCKS.map((s) => (

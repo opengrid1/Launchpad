@@ -272,7 +272,7 @@ function Empty({ q }: { q: string }) {
         {q ? `No token for “${q}”` : "No tokens launched yet"}
       </p>
       <p className="mt-1.5 max-w-sm text-[14.5px] leading-relaxed text-ink-2">
-        {q ? "Try another name, symbol or address." : "Be the first to open a market — holders earn a real tokenized stock on every trade."}
+        {q ? "Try another name, symbol or address." : "Be the first to fire up the printer — every trade prints real tokenized stock to holders."}
       </p>
       {!q ? (
         <Link to="/launch" className="mt-6 flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-[14.5px] font-semibold text-accent-fg transition-colors hover:bg-accent-2">

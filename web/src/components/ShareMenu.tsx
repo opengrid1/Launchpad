@@ -35,7 +35,7 @@ export function ShareMenu({ address, symbol, name }: { address: Address; symbol:
   const uniswapUrl = `https://app.uniswap.org/swap?chain=${env.chainId}&outputCurrency=${address}`;
   const tweet =
     `https://twitter.com/intent/tweet?` +
-    `text=${encodeURIComponent(`$${symbol} — ${name}\nFresh off the printer on Stockprintr, holders earn real stock rewards.`)}` +
+    `text=${encodeURIComponent(`$${symbol} — ${name}\nFresh off the printer on stockprintr, it prints real stock to holders.`)}` +
     `&url=${encodeURIComponent(pageUrl)}`;
 
   const copyLink = () => {
