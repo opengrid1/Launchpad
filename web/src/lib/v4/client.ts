@@ -136,6 +136,52 @@ export class V4Client {
       .finally(() => (this.nativeUsdInflight = false));
   }
 
+  /** Live USD price of a reward stock from its stock/USDG pool (USDG ≈ $1,
+   *  6 decimals vs the stock's 18). Cached for a minute per stock. */
+  private stockUsdCache = new Map<string, { price: number; at: number }>();
+  async stockUsdPrice(stock: Address): Promise<number> {
+    const key = stock.toLowerCase();
+    const hit = this.stockUsdCache.get(key);
+    if (hit && Date.now() - hit.at < 60_000) return hit.price;
+    try {
+      const k = (await this.publicClient.readContract({
+        address: this.v4.factory,
+        abi: factoryAbi,
+        functionName: "stockPool",
+        args: [stock],
+      })) as { currency0: Address; currency1: Address; fee: number; tickSpacing: number; hooks: Address };
+      const poolId = keccak256(
+        encodeAbiParameters(
+          [{ type: "address" }, { type: "address" }, { type: "uint24" }, { type: "int24" }, { type: "address" }],
+          [k.currency0, k.currency1, k.fee, k.tickSpacing, k.hooks],
+        ),
+      );
+      const stateSlot = keccak256(
+        encodeAbiParameters([{ type: "bytes32" }, { type: "uint256" }], [poolId, 6n]),
+      );
+      const raw = (await this.publicClient.readContract({
+        address: this.v4.poolManager,
+        abi: [{ type: "function", name: "extsload", stateMutability: "view", inputs: [{ type: "bytes32" }], outputs: [{ type: "bytes32" }] }],
+        functionName: "extsload",
+        args: [stateSlot],
+      })) as `0x${string}`;
+      const sqrtP = BigInt(raw) & ((1n << 160n) - 1n);
+      if (sqrtP === 0n) return hit?.price ?? 0;
+      const ratio = Number(sqrtP) / 2 ** 96;
+      const c1PerC0 = ratio * ratio;
+      const stockIs0 = k.currency0.toLowerCase() === key;
+      // price_human(c1 per c0) = raw * 10^(dec0-dec1); USDG 6dp, stock 18dp.
+      const usd = stockIs0 ? c1PerC0 * 1e12 : (1 / c1PerC0) * 1e12;
+      if (Number.isFinite(usd) && usd > 0) {
+        this.stockUsdCache.set(key, { price: usd, at: Date.now() });
+        return usd;
+      }
+      return hit?.price ?? 0;
+    } catch {
+      return hit?.price ?? 0;
+    }
+  }
+
   private async loadCoresInner(): Promise<Core[]> {
     let latest: bigint;
     try {

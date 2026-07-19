@@ -36,6 +36,7 @@ export function TokenPage() {
   const { address } = useParams<{ address: string }>();
   const token = useToken(client, address as Address | undefined);
   const [extra, setExtra] = useState<Extra | null>(null);
+  const [stockUsd, setStockUsd] = useState(0);
 
   useEffect(() => {
     if (!address) return;
@@ -43,7 +44,11 @@ export function TokenPage() {
     const load = () =>
       v4Client
         .tokenExtra(address as Address)
-        .then((e) => live && setExtra(e))
+        .then((e) => {
+          if (!live) return;
+          setExtra(e);
+          v4Client.stockUsdPrice(e.stock).then((p) => live && setStockUsd(p)).catch(() => undefined);
+        })
         .catch(() => undefined);
     load();
     // Skip refreshes while the tab is backgrounded — no point spending RPC on a
@@ -101,7 +106,7 @@ export function TokenPage() {
       </section>
 
       <div className="mt-3 space-y-2.5">
-        <RewardsStrip token={t} extra={extra} />
+        <RewardsStrip token={t} extra={extra} stockUsd={stockUsd} />
         <CreatorClaim token={t} extra={extra} onClaimed={() => v4Client.tokenExtra(t.address as Address).then(setExtra).catch(() => undefined)} />
       </div>
 
@@ -121,7 +126,12 @@ export function TokenPage() {
                 <HeadStat
                   label={`${rewardStock.symbol} to holders`}
                   accent
-                  node={<span className="tnum">{fmtTokens(extra.totalRewards.toString())}</span>}
+                  node={
+                    <span className="tnum">
+                      {fmtTokens(extra.totalRewards.toString())}
+                      {stockUsd > 0 ? ` (${fmtUsd((Number(extra.totalRewards) / 1e18) * stockUsd)})` : ""}
+                    </span>
+                  }
                 />
               ) : null}
             </div>
@@ -205,7 +215,7 @@ function RewardPill({ stock }: { stock: Address }) {
  * been paid out lifetime, and the connected wallet's claimable balance. Anyone
  * can trigger a distribution, which realizes accrued tax into stock rewards.
  */
-function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | null }) {
+function RewardsStrip({ token, extra, stockUsd }: { token: TokenSummary; extra: Extra | null; stockUsd: number }) {
   const { address, isConnected } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
   const [pending, setPending] = useState(0n);
@@ -256,7 +266,8 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
         </p>
         <p className="mt-0.5 text-xs text-ink-3">
           Every trade pays holders {stock.symbol}, split by how much you hold — delivered to wallets
-          automatically, no claiming needed. {fmtTokens(extra.totalRewards.toString())} {stock.symbol} paid out so far.
+          automatically, no claiming needed. {fmtTokens(extra.totalRewards.toString())} {stock.symbol}
+          {stockUsd > 0 ? ` (${fmtUsd((Number(extra.totalRewards) / 1e18) * stockUsd)})` : ""} paid out so far.
         </p>
       </div>
       <div className="flex items-center gap-3">
@@ -265,7 +276,9 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
             <p className="tnum text-[15px] font-semibold text-ink">
               {fmtWei(pending)} {stock.symbol}
             </p>
-            <p className="text-[11px] text-ink-3">claimable</p>
+            <p className="text-[11px] text-ink-3">
+              claimable{stockUsd > 0 && pending > 0n ? ` · ${fmtUsd((Number(pending) / 1e18) * stockUsd)}` : ""}
+            </p>
           </div>
         ) : null}
         {isConnected && pending > 0n ? (

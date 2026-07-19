@@ -47,6 +47,24 @@ export const factoryAbi = [
   { type: "function", name: "setNativeUsdPrice", stateMutability: "nonpayable", inputs: [{ type: "uint256" }], outputs: [] },
   { type: "function", name: "nativeUsdPrice8", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "protocolAdmin", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+  {
+    type: "function",
+    name: "stockPool",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "currency0", type: "address" },
+          { name: "currency1", type: "address" },
+          { name: "fee", type: "uint24" },
+          { name: "tickSpacing", type: "int24" },
+          { name: "hooks", type: "address" },
+        ],
+      },
+    ],
+  },
   { type: "function", name: "unwindPosition", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint16" }, { type: "address" }], outputs: [{ type: "uint256" }, { type: "uint256" }] },
 ] as const;
 
