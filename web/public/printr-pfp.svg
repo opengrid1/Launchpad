@@ -1,36 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
   <defs>
-    <radialGradient id="glow" cx="50%" cy="50%" r="46%">
-      <stop offset="0%" stop-color="#a3e635" stop-opacity="0.15"/>
+    <radialGradient id="glow" cx="50%" cy="46%" r="46%">
+      <stop offset="0%" stop-color="#a3e635" stop-opacity="0.16"/>
       <stop offset="100%" stop-color="#a3e635" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7e5a33"/>
+      <stop offset="55%" stop-color="#5e402100"/>
+    </linearGradient>
+    <linearGradient id="woodBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7e5a33"/>
+      <stop offset="60%" stop-color="#5e4021"/>
+      <stop offset="100%" stop-color="#463018"/>
+    </linearGradient>
   </defs>
   <rect width="400" height="400" fill="#1e140d"/>
   <g opacity="0.5">
     <path d="M60 0 L48 400 M140 0 L132 400 M260 0 L268 400 M340 0 L352 400" stroke="#000" stroke-opacity="0.25" stroke-width="3"/>
   </g>
-  <circle cx="200" cy="200" r="180" fill="url(#glow)"/>
+  <circle cx="200" cy="190" r="175" fill="url(#glow)"/>
 
-  <!-- crown: faceted lime bycocket, tip forward-left; nudged left para may room ang feather -->
-  <g transform="translate(-14,6)">
-    <polygon points="104,232 132,100 178,232" fill="#d8f795"/>
-    <polygon points="132,100 178,232 244,232" fill="#a3e635"/>
-    <polygon points="132,100 244,232 296,212" fill="#7fb322"/>
-    <polygon points="132,100 296,212 268,152" fill="#8cc22c"/>
+  <!-- lime feather rising from the slot, tilted -->
+  <g transform="translate(200,196) rotate(-14)">
+    <path d="M4 -172 C34 -130 32 -58 0 0 C-30 -58 -28 -130 4 -172 Z" fill="#a3e635"/>
+    <path d="M4 -172 C-20 -130 -24 -58 0 0 L2 -6 C-16 -58 -14 -128 4 -172 Z" fill="#7fb322"/>
+    <line x1="2" y1="-160" x2="-1" y2="6" stroke="#f0e4cb" stroke-width="7" stroke-linecap="round"/>
+    <path d="M2 -34 L-17 -45 M2 -64 L-20 -76 M2 -94 L-18 -105 M2 -124 L-12 -132
+             M2 -34 L20 -45 M2 -64 L23 -76 M2 -94 L21 -105 M2 -124 L15 -132"
+          stroke="#3f6212" stroke-width="4" stroke-linecap="round"/>
   </g>
 
-  <!-- feather: parchment quill tucked sa band, sweeping up-right, kita nang buo -->
-  <g transform="translate(296,232) rotate(30)">
-    <path d="M4 -128 C28 -96 26 -40 0 4 C-24 -40 -22 -96 4 -128 Z" fill="#f0e4cb"/>
-    <path d="M4 -128 C-16 -96 -19 -40 0 4 L2 -2 C-13 -40 -11 -94 4 -128 Z" fill="#d6c19a"/>
-    <line x1="2" y1="-10" x2="-2" y2="26" stroke="#f0e4cb" stroke-width="6" stroke-linecap="round"/>
-    <path d="M2 -26 L-18 -36 M2 -50 L-20 -60 M2 -74 L-18 -84 M2 -98 L-14 -106 M2 -26 L21 -36 M2 -50 L23 -60 M2 -74 L21 -84 M2 -98 L17 -106" stroke="#a08a60" stroke-width="3"/>
+  <!-- printer body: wooden plank -->
+  <g>
+    <rect x="96" y="196" width="208" height="96" rx="22" fill="url(#woodBody)"/>
+    <g stroke="#000" stroke-opacity="0.16" stroke-width="3">
+      <line x1="128" y1="198" x2="124" y2="290"/>
+      <line x1="168" y1="198" x2="166" y2="290"/>
+      <line x1="232" y1="198" x2="236" y2="290"/>
+      <line x1="272" y1="198" x2="278" y2="290"/>
+    </g>
+    <g stroke="#fff" stroke-opacity="0.06" stroke-width="2">
+      <line x1="134" y1="198" x2="130" y2="290"/><line x1="240" y1="198" x2="244" y2="290"/>
+    </g>
+    <rect x="96" y="196" width="208" height="8" rx="4" fill="#a37c4a" opacity="0.6"/>
+    <rect x="96" y="278" width="208" height="14" rx="7" fill="#000" opacity="0.28"/>
+    <rect x="96.5" y="196.5" width="207" height="95" rx="21.5" fill="none" stroke="#2c1c0c" stroke-width="3"/>
   </g>
 
-  <!-- band -->
-  <path d="M86 238 L300 218 L304 238 L86 252 Z" fill="#3f6212"/>
+  <!-- slot with lime trim -->
+  <rect x="136" y="188" width="128" height="20" rx="8" fill="#140d04"/>
+  <rect x="136" y="200" width="128" height="6" rx="3" fill="#a3e635"/>
 
-  <!-- brim: curved, upturned -->
-  <path d="M70 258 Q200 280 322 250 L312 230 Q200 256 80 236 Z" fill="#65a30d"/>
-  <path d="M70 258 Q200 280 322 250 L318 242 Q200 268 74 250 Z" fill="#4d7c0f"/>
+  <!-- status light -->
+  <circle cx="278" cy="262" r="9" fill="#a3e635"/>
+  <circle cx="278" cy="262" r="12.5" fill="none" stroke="#a3e635" stroke-opacity="0.35" stroke-width="3"/>
 </svg>
