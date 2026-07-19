@@ -12,6 +12,8 @@ export const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   "0xc031a2e1925c4d6ccfbfc9248ea98d7c798f4663", // MOON
   "0x809b86baa7f7323a9d4cdfa2b1d197cfe42b4663", // GREEN
   "0xa4690fcd485d9c00b6f49592454eaa5d32ed4663", // DIAM
+  // v2-factory smoke-test token — hidden until the real launch.
+  "0xf898dfbb47b0938f94d3f57120d8fb85e72d4663", // QVR (test)
 ]);
 
 export function isHidden(address: string): boolean {
