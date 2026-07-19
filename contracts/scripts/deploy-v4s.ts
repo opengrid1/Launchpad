@@ -93,13 +93,20 @@ async function main() {
   await (await c2.deploy(rSalt, rInit)).wait();
   console.log("routerS:", routerAddr);
 
-  // 5. Wire + list stocks (factory verifies each pricing pool is alive).
+  // 5. Wire + list stocks (factory verifies each pricing pool is alive; a
+  //    stock whose pool died since the scan is skipped, not fatal).
   await (await hook.setFactory(facAddr)).wait();
+  const listed: Stock[] = [];
   for (const s of cfg.stocks) {
     const key = sortedKey(cfg.usdg, s.address, s.fee, s.tickSpacing);
-    await (await factory.listStock(s.address, key)).wait();
-    const usd8 = await factory.stockUsd8(s.address);
-    console.log(`listed ${s.symbol} @ $${(Number(usd8) / 1e8).toFixed(2)}`);
+    try {
+      await (await factory.listStock(s.address, key)).wait();
+      const usd8 = await factory.stockUsd8(s.address);
+      console.log(`listed ${s.symbol} @ $${(Number(usd8) / 1e8).toFixed(2)}`);
+      listed.push(s);
+    } catch (e: any) {
+      console.log(`SKIPPED ${s.symbol}: ${e.shortMessage ?? e.message}`);
+    }
   }
 
   // 6. Renounce.
@@ -121,7 +128,7 @@ async function main() {
     renounced: renounce,
     v4: { poolManager: POOL_MANAGER, weth: cfg.weth, usdg: cfg.usdg },
     contracts: { create2Deployer: c2Addr, hook: hookAddr, factory: facAddr, router: routerAddr },
-    stocks: cfg.stocks.map((s) => ({ symbol: s.symbol, address: s.address, fee: s.fee, tickSpacing: s.tickSpacing })),
+    stocks: listed.map((s) => ({ symbol: s.symbol, name: s.name, address: s.address, fee: s.fee, tickSpacing: s.tickSpacing })),
   };
   const path = join(__dirname, "../deployments/quiver-v4s.json");
   writeFileSync(path, JSON.stringify(out, null, 2));
