@@ -31,6 +31,10 @@ const config: HardhatUserConfig = {
         ? {
             forking: { url: ROBINHOOD_RPC_URL },
             chainId: ROBINHOOD_CHAIN_ID || undefined,
+            // EDR needs a hardfork map for chains it doesn't know natively.
+            chains: {
+              [ROBINHOOD_CHAIN_ID || 4663]: { hardforkHistory: { cancun: 0 } },
+            },
           }
         : {}),
     },
