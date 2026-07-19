@@ -9,6 +9,49 @@ import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtNative, fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
+import { isOfficial } from "../lib/officialTokens";
+import { StockLogo } from "../components/StockLogo";
+import { stockOf } from "../lib/v4/stocks";
+import { stockSOf } from "../lib/v4s/stocks";
+
+function OfficialBadge({ small }: { small?: boolean }) {
+  return (
+    <span
+      title="Launched by the stockprintr team"
+      className={`flex shrink-0 items-center gap-0.5 rounded-full bg-accent font-extrabold uppercase tracking-wide text-black ${
+        small ? "px-1.5 py-[1px] text-[8.5px]" : "px-1.5 py-[1px] text-[9.5px]"
+      }`}
+    >
+      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      Official
+    </span>
+  );
+}
+
+/** Chips for every stock a token prints (v4s basket or single v4 stock). */
+function RewardChips({ t, small }: { t: TokenSummary; small?: boolean }) {
+  const meta = t.metadata as any;
+  const addrs: string[] = Array.isArray(meta?.rewardBasket)
+    ? meta.rewardBasket
+    : meta?.rewardStock
+      ? [meta.rewardStock]
+      : [];
+  const stocks = addrs.map((a) => stockOf(a) ?? stockSOf(a)).filter((s): s is NonNullable<typeof s> => !!s);
+  if (!stocks.length) return null;
+  return (
+    <div className={`flex flex-wrap items-center gap-1 ${small ? "mt-1" : "mt-1.5"}`}>
+      {stocks.map((s) => (
+        <span key={s.address} title={`Prints ${s.name}`}
+          className="flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/[0.07] py-[1px] pl-0.5 pr-1 text-[9px] font-bold text-accent-ink">
+          <StockLogo address={s.address} symbol={s.symbol} size={11} />
+          {s.symbol}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 type Sort = "new" | "recent" | "mcap" | "oldest";
 
@@ -159,9 +202,11 @@ function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <Link to={to} className="truncate text-[12.5px] font-bold leading-tight text-ink">{t.name}</Link>
               <span className="mono text-[12px] font-semibold text-accent-ink/75">${t.symbol}</span>
+              {isOfficial(t.address) && <OfficialBadge />}
               <span className="rounded bg-panel-2 px-1.5 py-0.5 text-[10px] font-medium text-ink-3">{age}</span>
             </div>
             <p className="mono mt-1 truncate text-[10.5px] text-ink-3">{shortAddr(t.creator)}</p>
+            <RewardChips t={t} />
           </div>
         </div>
 
@@ -202,10 +247,12 @@ function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
       </div>
 
       <div className="p-2.5">
-        <div className="flex items-baseline gap-1.5">
+        <div className="flex items-center gap-1.5">
           <p className="min-w-0 truncate text-[12px] font-bold leading-tight text-ink">{t.name}</p>
           <span className="mono shrink-0 text-[10.5px] font-semibold text-accent-ink/75">${t.symbol}</span>
+          {isOfficial(t.address) && <OfficialBadge small />}
         </div>
+        <RewardChips t={t} small />
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <span className="text-[9.5px] uppercase tracking-wide text-ink-3">Market cap</span>
           <span className="mono text-[13.5px] font-bold text-accent-ink">{fmtUsd(t.marketCapUsd)}</span>
