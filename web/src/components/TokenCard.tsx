@@ -4,6 +4,38 @@ import type { TokenSummary } from "@launchpad/sdk";
 
 import { fmtPct, fmtUsd, fmtWeiUsd, usdRateOf } from "../lib/format";
 import { MiniChart } from "./MiniChart";
+import { StockLogo } from "./StockLogo";
+import { stockOf } from "../lib/v4/stocks";
+import { stockSOf } from "../lib/v4s/stocks";
+
+/** Reward stocks the token prints — the v4s basket, or the single v4 stock. */
+function RewardChips({ token }: { token: TokenSummary }) {
+  const meta = token.metadata as any;
+  const addrs: string[] = Array.isArray(meta?.rewardBasket)
+    ? meta.rewardBasket
+    : meta?.rewardStock
+      ? [meta.rewardStock]
+      : [];
+  const stocks = addrs
+    .map((a) => stockOf(a) ?? stockSOf(a))
+    .filter((s): s is NonNullable<typeof s> => !!s);
+  if (!stocks.length) return null;
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+      <span className="text-[11px] font-medium text-ink-3">Prints</span>
+      {stocks.map((s) => (
+        <span
+          key={s.address}
+          title={s.name}
+          className="flex items-center gap-1 rounded-full border border-accent/30 bg-accent/[0.07] py-0.5 pl-0.5 pr-1.5 text-[10.5px] font-bold text-accent-ink"
+        >
+          <StockLogo address={s.address} symbol={s.symbol} size={14} />
+          {s.symbol}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 function Artwork({ token, size = 48 }: { token: TokenSummary; size?: number }) {
   const logo = token.metadata?.logo;
@@ -65,6 +97,8 @@ function TokenCardBase({ token }: { token: TokenSummary }) {
         </span>
       </div>
 
+      <RewardChips token={token} />
+
       <div className="mt-5 flex items-end justify-between gap-3">
         <div>
           <p className="tnum text-[26px] font-semibold leading-none tracking-tight text-ink">
@@ -97,5 +131,7 @@ export const TokenCard = memo(
     a.token.marketCapUsd === b.token.marketCapUsd &&
     a.token.volume24hWei === b.token.volume24hWei &&
     a.token.priceChange24hPct === b.token.priceChange24hPct &&
-    a.token.metadata?.logo === b.token.metadata?.logo,
+    a.token.metadata?.logo === b.token.metadata?.logo &&
+    JSON.stringify((a.token.metadata as any)?.rewardBasket ?? (a.token.metadata as any)?.rewardStock) ===
+      JSON.stringify((b.token.metadata as any)?.rewardBasket ?? (b.token.metadata as any)?.rewardStock),
 );

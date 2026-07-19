@@ -63,6 +63,16 @@ export class V4SClient extends V4Client {
         if (usd > 0) this.quoteUsdCache.set(s.toLowerCase(), usd);
       }),
     );
+    // Attach each token's reward basket to its metadata once (immutable after
+    // launch), so discovery cards and the API can show the full basket.
+    await Promise.all(
+      [...this.cores.values()]
+        .filter((c) => !(c.metadata as any).rewardBasket)
+        .map(async (c) => {
+          const b = await this.rewardBasket(c.address).catch(() => [] as Address[]);
+          if (b.length) (c.metadata as any).rewardBasket = b.map((a) => a.toLowerCase());
+        }),
+    );
     return super.getTokens(opts);
   }
 

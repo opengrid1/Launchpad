@@ -1,6 +1,8 @@
 import { createPublicClient, defineChain, fallback, http, type PublicClient } from "viem";
 
 import { V4Client, type V4Addresses } from "../src/lib/v4/client";
+import { V4SClient } from "../src/lib/v4s/client";
+import { V4S } from "../src/lib/v4s/addresses";
 
 /**
  * Server-side singleton of the same pure-viem V4 reader the browser uses, run
@@ -41,6 +43,13 @@ const publicClient = createPublicClient({
 }) as PublicClient;
 
 export const reader = new V4Client(publicClient, V4, V4_START_BLOCK);
+
+/** Stock-paired launchpad reader (v4s). */
+export const readerS = new V4SClient(
+  publicClient,
+  { factory: V4S.factory, hook: V4S.hook, router: V4S.router, poolManager: V4.poolManager, weth: V4.weth, usdg: V4.usdg },
+  V4S.startBlock,
+);
 
 /** JSON with BigInt values coerced to strings, so any stray bigint is safe. */
 export function sendJson(res: any, data: unknown, sMaxAge: number, swr: number): void {
