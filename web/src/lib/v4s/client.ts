@@ -173,6 +173,28 @@ export class V4SClient extends V4Client {
     });
   }
 
+  /** Lifetime distribution per basket stock, with USD value. */
+  async basketTotals(
+    token: Address,
+  ): Promise<{ stock: Address; amount: bigint; usd: number }[]> {
+    const rewardsAbi = [
+      { type: "function", name: "rewardTokens", stateMutability: "view", inputs: [], outputs: [{ type: "address[]" }] },
+      { type: "function", name: "totalRewardsDistributedAt", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "uint256" }] },
+    ] as const;
+    const stocks = (await this.publicClient.readContract({
+      address: token, abi: rewardsAbi, functionName: "rewardTokens",
+    })) as Address[];
+    return Promise.all(
+      stocks.map(async (stock, i) => {
+        const amount = (await this.publicClient.readContract({
+          address: token, abi: rewardsAbi, functionName: "totalRewardsDistributedAt", args: [BigInt(i)],
+        })) as bigint;
+        const px = await this.stockUsdPrice(stock).catch(() => 0);
+        return { stock, amount, usd: (Number(amount) / 1e18) * px };
+      }),
+    );
+  }
+
   /** Reward basket of a launched token (1..5 stock addresses). */
   async rewardBasket(token: Address): Promise<Address[]> {
     return (await this.publicClient.readContract({

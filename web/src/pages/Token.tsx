@@ -122,7 +122,7 @@ export function TokenPage() {
       </section>
 
       <div className="mt-3 space-y-2.5">
-        <RewardsStrip token={t} extra={extra} stockUsd={stockUsd} />
+        <RewardsStrip token={t} extra={extra} stockUsd={stockUsd} basket={basket} />
         <CreatorClaim token={t} extra={extra} onClaimed={() => v4Client.tokenExtra(t.address as Address).then(setExtra).catch(() => undefined)} />
       </div>
 
@@ -138,7 +138,19 @@ export function TokenPage() {
               <HeadStat label="Mcap" accent node={<AnimatedNumber value={Number(t.marketCapUsd)} format={(n) => fmtUsd(n)} className="tnum" />} />
               <HeadStat label="Volume" node={<span className="tnum">{fmtWeiUsd(t.volumeTotalWei, usdRate)}</span>} />
               <HeadStat label="Holders" node={<span className="tnum">{compact(t.holderCount)}</span>} />
-              {extra && rewardStock ? (
+              {basket ? (
+                <HeadStat
+                  label="Prints to holders"
+                  accent
+                  node={
+                    <span className="tnum">
+                      {basket
+                        .map((b) => (stockOf(b) ?? stockSOf(b))?.symbol ?? "?")
+                        .join(" + ")}
+                    </span>
+                  }
+                />
+              ) : extra && rewardStock ? (
                 <HeadStat
                   label={`${rewardStock.symbol} to holders`}
                   accent
@@ -231,7 +243,14 @@ function RewardPill({ stock }: { stock: Address }) {
  * been paid out lifetime, and the connected wallet's claimable balance. Anyone
  * can trigger a distribution, which realizes accrued tax into stock rewards.
  */
-function RewardsStrip({ token, extra, stockUsd }: { token: TokenSummary; extra: Extra | null; stockUsd: number }) {
+function RewardsStrip({ token, extra, stockUsd, basket }: { token: TokenSummary; extra: Extra | null; stockUsd: number; basket: Address[] | null }) {
+  // v4s basket: lifetime totals per reward stock (amount + USD).
+  const [totals, setTotals] = useState<{ stock: Address; amount: bigint; usd: number }[] | null>(null);
+  useEffect(() => {
+    setTotals(null);
+    if (!basket) return;
+    v4sClient.basketTotals(token.address as Address).then(setTotals).catch(() => setTotals(null));
+  }, [token.address, basket, extra?.totalRewards]);
   const { address, isConnected } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
   const [pending, setPending] = useState(0n);
@@ -277,14 +296,37 @@ function RewardsStrip({ token, extra, stockUsd }: { token: TokenSummary; extra: 
   return (
     <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-4 py-2.5">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-ink">
-          This coin prints {stock.name} <span className="text-ink-3">({stock.symbol})</span>
-        </p>
-        <p className="mt-0.5 text-xs text-ink-3">
-          Every trade pays holders {stock.symbol}, split by how much you hold — delivered to wallets
-          automatically, no claiming needed. {fmtTokens(extra.totalRewards.toString())} {stock.symbol}
-          {stockUsd > 0 ? ` (${fmtUsd((Number(extra.totalRewards) / 1e18) * stockUsd)})` : ""} paid out so far.
-        </p>
+        {basket && basket.length > 0 ? (
+          <>
+            <p className="text-sm font-semibold text-ink">
+              This coin prints{" "}
+              {basket
+                .map((b) => (stockOf(b) ?? stockSOf(b))?.symbol ?? "?")
+                .join(" + ")}
+            </p>
+            <p className="mt-0.5 text-xs text-ink-3">
+              Every trade pays holders the whole basket, split by how much you hold — delivered to
+              wallets automatically, no claiming needed.{" "}
+              {totals
+                ? `${totals
+                    .filter((t2) => t2.amount > 0n)
+                    .map((t2) => `${fmtTokens(t2.amount.toString())} ${(stockOf(t2.stock) ?? stockSOf(t2.stock))?.symbol ?? ""}`)
+                    .join(" + ") || "Nothing"} (${fmtUsd(totals.reduce((a, t2) => a + t2.usd, 0))}) paid out so far.`
+                : "Loading payout totals…"}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-semibold text-ink">
+              This coin prints {stock.name} <span className="text-ink-3">({stock.symbol})</span>
+            </p>
+            <p className="mt-0.5 text-xs text-ink-3">
+              Every trade pays holders {stock.symbol}, split by how much you hold — delivered to wallets
+              automatically, no claiming needed. {fmtTokens(extra.totalRewards.toString())} {stock.symbol}
+              {stockUsd > 0 ? ` (${fmtUsd((Number(extra.totalRewards) / 1e18) * stockUsd)})` : ""} paid out so far.
+            </p>
+          </>
+        )}
       </div>
       <div className="flex items-center gap-3">
         {isConnected ? (
