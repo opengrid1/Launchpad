@@ -52,6 +52,20 @@ export class V4SClient extends V4Client {
   /** pair-stock USD prices, refreshed opportunistically for sync use. */
   private quoteUsdCache = new Map<string, number>();
 
+  /** Summaries need the pair stock's USD price synchronously — prefetch it
+   *  for every launched pair before building token summaries. */
+  override async getTokens(opts?: Parameters<V4Client["getTokens"]>[0]): ReturnType<V4Client["getTokens"]> {
+    await this.loadCores();
+    const pairs = [...new Set([...this.cores.values()].map((c) => c.stock))];
+    await Promise.all(
+      pairs.map(async (s) => {
+        const usd = await this.stockUsdPrice(s).catch(() => 0);
+        if (usd > 0) this.quoteUsdCache.set(s.toLowerCase(), usd);
+      }),
+    );
+    return super.getTokens(opts);
+  }
+
   protected override quoteUsd(core: Core): number {
     const key = core.stock.toLowerCase();
     const cached = this.quoteUsdCache.get(key);

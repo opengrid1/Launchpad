@@ -16,11 +16,12 @@ import { TokenLogo } from "../components/TokenLogo";
 import { TradePanel } from "../components/TradePanel";
 import { TradesList } from "../components/TradesList";
 import { Button, EmptyState, Skeleton } from "../components/ui";
-import { client, v4Client } from "../lib/client";
+import { client, v4Client, v4sClient } from "../lib/client";
 import { env } from "../lib/env";
 import { compact, fmtTokens, fmtUsd, fmtWei, fmtWeiUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { stockOf } from "../lib/v4/stocks";
+import { stockSOf } from "../lib/v4s/stocks";
 import { useUi } from "../store";
 
 
@@ -62,6 +63,17 @@ export function TokenPage() {
     };
   }, [address]);
 
+  // v4s reward basket (1..5 stocks); v4 tokens have none and resolve null.
+  const [basket, setBasket] = useState<Address[] | null>(null);
+  useEffect(() => {
+    setBasket(null);
+    if (!address) return;
+    v4sClient
+      .rewardBasket(address as Address)
+      .then((b) => setBasket(b.length ? b : null))
+      .catch(() => setBasket(null));
+  }, [address]);
+
   if (token.loading) {
     return (
       <div className="mx-auto max-w-[1400px] space-y-3 px-3 py-4 sm:px-4">
@@ -82,7 +94,7 @@ export function TokenPage() {
 
   const usdRate = usdRateOf(t);
 
-  const rewardStock = extra ? stockOf(extra.stock) : undefined;
+  const rewardStock = extra ? (stockOf(extra.stock) ?? stockSOf(extra.stock)) : undefined;
 
   return (
     <div className="rise mx-auto max-w-6xl px-4 pb-24 sm:px-8">
@@ -94,7 +106,11 @@ export function TokenPage() {
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <span className="mono rounded-md bg-panel-2 px-2 py-0.5 text-[11px] font-semibold text-accent-ink/80">${t.symbol}</span>
             <CaChip address={t.address as Address} />
-            {rewardStock ? <RewardPill stock={extra!.stock} /> : null}
+            {basket ? (
+              basket.map((b) => <RewardPill key={b} stock={b.toLowerCase() as Address} />)
+            ) : rewardStock ? (
+              <RewardPill stock={extra!.stock} />
+            ) : null}
           </div>
         </div>
         <ShareMenu address={t.address as Address} symbol={t.symbol} name={t.name} />
@@ -197,7 +213,7 @@ function HeadStat({ label, node, accent }: { label: string; node: React.ReactNod
 
 /** A small "Holders earn {STOCK}" pill for the token identity bar. */
 function RewardPill({ stock }: { stock: Address }) {
-  const s = stockOf(stock);
+  const s = stockOf(stock) ?? stockSOf(stock);
   if (!s || /^0x0+$/.test(stock)) return null;
   return (
     <span
@@ -221,7 +237,7 @@ function RewardsStrip({ token, extra, stockUsd }: { token: TokenSummary; extra: 
   const [pending, setPending] = useState(0n);
   const [busy, setBusy] = useState<"claim" | "harvest" | null>(null);
 
-  const stock = extra ? stockOf(extra.stock) : undefined;
+  const stock = extra ? (stockOf(extra.stock) ?? stockSOf(extra.stock)) : undefined;
 
   const refresh = () => {
     if (isConnected && address)
