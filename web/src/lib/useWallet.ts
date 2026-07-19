@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useAccount, useConnect, useDisconnect, useWalletClient } from "wagmi";
 import { getChainId, getWalletClient, switchChain } from "wagmi/actions";
 
-import { client } from "./client";
+import { client, v4sClient } from "./client";
 import { chain } from "./env";
 import { openWalletModal, wagmiConfig } from "./wagmi";
 import { useUi } from "../store";
@@ -21,6 +21,7 @@ export async function ensureSdkWallet(): Promise<boolean> {
     const wc = await getWalletClient(wagmiConfig, { chainId: chain.id });
     if (!wc) return false;
     client.connectWallet(wc);
+    v4sClient.connectWallet(wc);
     return true;
   } catch {
     return false;
@@ -36,7 +37,10 @@ export function useWallet() {
   const pushToast = useUi((s) => s.pushToast);
 
   useEffect(() => {
-    if (walletClient) client.connectWallet(walletClient);
+    if (walletClient) {
+      client.connectWallet(walletClient);
+      v4sClient.connectWallet(walletClient);
+    }
   }, [walletClient]);
 
   const connectFirst = async () => {

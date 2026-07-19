@@ -26,7 +26,7 @@ export interface V4Addresses {
   usdg: Address;
 }
 
-interface Core {
+export interface Core {
   address: Address;
   creator: Address;
   stock: Address;
@@ -54,10 +54,10 @@ export class V4Client {
   private walletClient?: WalletClient;
   private startBlock: bigint;
 
-  private cores = new Map<string, Core>();
+  protected cores = new Map<string, Core>();
   private coresUpTo = 0n;
   private coresInflight: Promise<Core[]> | null = null;
-  private nativeUsd = 3000; // USD per WETH, refreshed from the factory
+  protected nativeUsd = 3000; // USD per WETH, refreshed from the factory
   // Per-token trade log, kept incrementally: `upTo` is the last block scanned,
   // so each call fetches only new swaps and appends. Never a permanent snapshot
   // (a stale cache is what pinned mcap to the launch price and hid new trades).
@@ -76,11 +76,17 @@ export class V4Client {
   connectWallet(wc: WalletClient) {
     this.walletClient = wc;
   }
-  private requireWallet(): WalletClient {
+
+  /** USD per unit of the token's QUOTE currency. The base client quotes in
+   *  WETH; the v4s stock-paired subclass returns the pair stock's USD price. */
+  protected quoteUsd(_core: Core): number {
+    return this.nativeUsd;
+  }
+  protected requireWallet(): WalletClient {
     if (!this.walletClient) throw new Error("No wallet connected.");
     return this.walletClient;
   }
-  private account(): Address {
+  protected account(): Address {
     const a = this.walletClient?.account?.address;
     if (!a) throw new Error("No wallet connected.");
     return a;
@@ -90,7 +96,7 @@ export class V4Client {
   // Discovery
   // ---------------------------------------------------------------------
 
-  private async loadCores(): Promise<Core[]> {
+  protected async loadCores(): Promise<Core[]> {
     if (this.coresInflight) return this.coresInflight;
     this.coresInflight = this.loadCoresInner().finally(() => (this.coresInflight = null));
     return this.coresInflight;
@@ -376,7 +382,7 @@ export class V4Client {
     const priceWei = last ? BigInt(last.priceWei) : await this.initPrice(core);
     const priceWethPerToken = Number(priceWei) / 1e18;
     const supplyWhole = Number(core.totalSupply) / 1e18;
-    const mcapUsd = priceWethPerToken * supplyWhole * this.nativeUsd;
+    const mcapUsd = priceWethPerToken * supplyWhole * this.quoteUsd(core);
 
     const dayAgo = Math.floor(Date.now() / 1000) - 86400;
     const dayTrades = trades.filter((t) => t.timestamp >= dayAgo);
@@ -413,7 +419,7 @@ export class V4Client {
       metadata: core.metadata as any,
       totalSupply: core.totalSupply.toString(),
       priceWei: priceWei.toString(),
-      priceUsd: String(priceWethPerToken * this.nativeUsd),
+      priceUsd: String(priceWethPerToken * this.quoteUsd(core)),
       // Plain-dollar string, matching the SDK's usd8() convention (fmtUsd expects dollars).
       marketCapUsd: String(mcapUsd),
       liquidityWei: wethInPool.toString(),
@@ -537,7 +543,7 @@ export class V4Client {
     await this.loadCores();
     const core = this.cores.get(token.toLowerCase());
     const supplyWhole = core ? Number(core.totalSupply) / 1e18 : 1e9;
-    const scale = this.nativeUsd * supplyWhole;
+    const scale = (core ? this.quoteUsd(core) : this.nativeUsd) * supplyWhole;
     return scale > 0 ? scale : 1;
   }
 

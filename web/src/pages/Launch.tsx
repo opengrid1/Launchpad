@@ -4,8 +4,9 @@ import { keccak256, toHex } from "viem";
 
 import { StockLogo } from "../components/StockLogo";
 import { Field, inputClass } from "../components/ui";
-import { client } from "../lib/client";
+import { client, v4sClient } from "../lib/client";
 import { STOCKS } from "../lib/v4/stocks";
+import { STOCKS_S } from "../lib/v4s/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
@@ -31,6 +32,11 @@ export function LaunchPage() {
   });
   const [stock, setStock] = useState(STOCKS[0].address);
   const [taxPct, setTaxPct] = useState(3);
+  // Stock-paired mode: pool quotes in a stock; rewards are a basket of 1..5.
+  const [mode, setMode] = useState<"stock" | "eth">("stock");
+  const [pairStock, setPairStock] = useState<string>(STOCKS_S[0].address);
+  const [basket, setBasket] = useState<string[]>([STOCKS_S[0].address]);
+  const [stockQuery, setStockQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [logoData, setLogoData] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -75,13 +81,23 @@ export function LaunchPage() {
         twitter: form.twitter.trim(),
         telegram: form.telegram.trim(),
       });
-      const hash = await (client as any).createToken({
-        name: form.name.trim(),
-        symbol: form.symbol.trim().toUpperCase(),
-        metadataURI: metadata,
-        stock,
-        taxBps: Math.round(taxPct * 100),
-      });
+      const hash =
+        mode === "stock"
+          ? await v4sClient.createTokenS({
+              name: form.name.trim(),
+              symbol: form.symbol.trim().toUpperCase(),
+              metadataURI: metadata,
+              pairStock: pairStock as `0x${string}`,
+              taxBps: Math.round(taxPct * 100),
+              rewardStocks: basket as `0x${string}`[],
+            })
+          : await (client as any).createToken({
+              name: form.name.trim(),
+              symbol: form.symbol.trim().toUpperCase(),
+              metadataURI: metadata,
+              stock,
+              taxBps: Math.round(taxPct * 100),
+            });
       pushToast({ kind: "info", title: "Launch submitted", txHash: hash });
       const receipt = await client.publicClient.waitForTransactionReceipt({ hash });
       const log = receipt.logs.find((l) => l.topics[0] === LAUNCHED_TOPIC);
@@ -147,7 +163,19 @@ export function LaunchPage() {
             placeholder="What is this token about?" maxLength={500} />
         </Field>
 
-        {/* Reward stock picker */}
+        {/* Pair mode */}
+        <div className="flex gap-1.5">
+          {([["stock", "Stock-paired (new)"], ["eth", "ETH-paired (classic)"]] as const).map(([m, label]) => (
+            <button key={m} type="button" onClick={() => setMode(m)}
+              className={`h-9 flex-1 rounded-lg border text-[12.5px] font-semibold transition-colors ${
+                mode === m ? "border-accent bg-accent/10 text-accent-ink" : "border-edge text-ink-2 hover:border-edge-2"
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {mode === "eth" ? (
         <div>
           <label className="mb-1.5 block text-[12.5px] font-medium text-ink">
             Prints <span className="text-ink-3">· {selectedStock.symbol}</span>
@@ -169,6 +197,52 @@ export function LaunchPage() {
             ))}
           </div>
         </div>
+        ) : (
+        <div className="space-y-3">
+          <input className={inputClass} value={stockQuery} onChange={(e) => setStockQuery(e.target.value)}
+            placeholder={`Search ${STOCKS_S.length} stocks (NVDA, SPY, TSLA…)`} />
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium text-ink">
+              Pairs with <span className="text-ink-3">· pool liquidity IS this stock</span>
+            </label>
+            <div className="grid max-h-40 grid-cols-4 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-5">
+              {STOCKS_S.filter((s) => !stockQuery || s.symbol.toLowerCase().includes(stockQuery.toLowerCase()) || s.name.toLowerCase().includes(stockQuery.toLowerCase())).slice(0, 30).map((s) => (
+                <button type="button" key={s.address} title={s.name}
+                  onClick={() => { setPairStock(s.address); if (!basket.includes(s.address) && basket.length < 5) setBasket([...basket, s.address]); }}
+                  className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[11px] font-bold transition-colors ${
+                    pairStock === s.address ? "border-accent bg-accent/10 text-accent-ink" : "border-edge text-ink-2 hover:border-edge-2 hover:text-ink"
+                  }`}>
+                  <StockLogo address={s.address} symbol={s.symbol} size={22} />
+                  {s.symbol}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium text-ink">
+              Prints <span className="text-ink-3">· pick up to 5 reward stocks ({basket.length}/5)</span>
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {basket.map((a) => {
+                const s = STOCKS_S.find((x) => x.address === a)!;
+                return (
+                  <button key={a} type="button"
+                    onClick={() => basket.length > 1 && setBasket(basket.filter((x) => x !== a))}
+                    title={basket.length > 1 ? "Remove" : "At least one reward stock"}
+                    className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-[11.5px] font-bold text-accent-ink">
+                    <StockLogo address={s.address} symbol={s.symbol} size={16} />
+                    {s.symbol}
+                    {basket.length > 1 && <span className="text-ink-3">×</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-1.5 text-[11px] text-ink-3">
+              Tap stocks above to add them to the basket. Every harvest splits holder rewards equally across the basket, delivered straight to wallets.
+            </p>
+          </div>
+        </div>
+        )}
 
         {/* Tax slider */}
         <div>
@@ -187,7 +261,7 @@ export function LaunchPage() {
         </div>
 
         <dl className="space-y-1.5 border-t border-edge pt-3 text-[12px]">
-          <Row label="Starting market cap" value="≈$3K (fixed in WETH, floats with ETH)" />
+          <Row label="Starting market cap" value={mode === "stock" ? "≈$3K (denominated in the pair stock)" : "≈$3K (fixed in WETH, floats with ETH)"} />
           <Row label="Supply" value="1,000,000,000" />
         </dl>
 
