@@ -7,6 +7,7 @@ import { MiniChart } from "./MiniChart";
 import { StockLogo } from "./StockLogo";
 import { stockOf } from "../lib/v4/stocks";
 import { stockSOf } from "../lib/v4s/stocks";
+import { isOfficial } from "../lib/officialTokens";
 
 /** Reward stocks the token prints — the v4s basket, or the single v4 stock. */
 function RewardChips({ token }: { token: TokenSummary }) {
@@ -73,6 +74,20 @@ function Artwork({ token, size = 48 }: { token: TokenSummary; size?: number }) {
  * is the link; the Trade pill is the visual affordance. Memoized so a live
  * feed refresh only repaints cards whose numbers moved.
  */
+function OfficialBadge() {
+  return (
+    <span
+      title="Launched by the stockprintr team"
+      className="flex shrink-0 items-center gap-0.5 rounded-full bg-accent px-1.5 py-[1px] text-[9.5px] font-extrabold uppercase tracking-wide text-black"
+    >
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      Official
+    </span>
+  );
+}
+
 function TokenCardBase({ token }: { token: TokenSummary }) {
   const rate = usdRateOf(token);
   const change = token.priceChange24hPct;
@@ -85,7 +100,10 @@ function TokenCardBase({ token }: { token: TokenSummary }) {
       <div className="flex items-center gap-3.5">
         <Artwork token={token} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[16px] font-semibold leading-tight text-ink">{token.name}</p>
+          <p className="flex items-center gap-1.5 truncate text-[16px] font-semibold leading-tight text-ink">
+            <span className="truncate">{token.name}</span>
+            {isOfficial(token.address) && <OfficialBadge />}
+          </p>
           <p className="tnum text-[13px] text-ink-3">${token.symbol}</p>
         </div>
         <span

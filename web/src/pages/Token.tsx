@@ -22,6 +22,7 @@ import { compact, fmtTokens, fmtUsd, fmtWei, fmtWeiUsd, shortAddr, timeAgo, usdR
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { stockOf } from "../lib/v4/stocks";
 import { stockSOf } from "../lib/v4s/stocks";
+import { isOfficial } from "../lib/officialTokens";
 import { useUi } from "../store";
 
 
@@ -102,7 +103,20 @@ export function TokenPage() {
       <section className="mt-6 flex items-start gap-3">
         <TokenLogo token={t} size={48} />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[20px] font-extrabold leading-tight tracking-tight text-ink sm:text-[24px]">{t.name}</h1>
+          <h1 className="flex items-center gap-2 truncate text-[20px] font-extrabold leading-tight tracking-tight text-ink sm:text-[24px]">
+            <span className="truncate">{t.name}</span>
+            {isOfficial(t.address) && (
+              <span
+                title="Launched by the stockprintr team"
+                className="flex shrink-0 items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10.5px] font-extrabold uppercase tracking-wide text-black"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Official
+              </span>
+            )}
+          </h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <span className="mono rounded-md bg-panel-2 px-2 py-0.5 text-[11px] font-semibold text-accent-ink/80">${t.symbol}</span>
             <CaChip address={t.address as Address} />
