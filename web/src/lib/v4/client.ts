@@ -79,6 +79,12 @@ export class V4Client {
 
   /** USD per unit of the token's QUOTE currency. The base client quotes in
    *  WETH; the v4s stock-paired subclass returns the pair stock's USD price. */
+  /** The currency a launched token's pool is quoted in — WETH here; the
+   *  stock-paired subclass quotes in the pair stock itself. */
+  protected quoteCurrencyFor(_stock: string): string {
+    return this.v4.weth;
+  }
+
   protected quoteUsd(_core: Core): number {
     return this.nativeUsd;
   }
@@ -242,7 +248,7 @@ export class V4Client {
           symbol,
           totalSupply: supply,
           metadata,
-          tokenIsCurrency0: BigInt(token) < BigInt(this.v4.weth),
+          tokenIsCurrency0: BigInt(token) < BigInt(this.quoteCurrencyFor(log.args.stock as string)),
         });
       } catch {
         // Skip a token that can't be read this pass; picked up next refresh.

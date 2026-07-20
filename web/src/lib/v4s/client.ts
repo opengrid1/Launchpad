@@ -76,6 +76,10 @@ export class V4SClient extends V4Client {
     return super.getTokens(opts);
   }
 
+  protected override quoteCurrencyFor(stock: string): string {
+    return stock; // pools are quoted in the pair stock, not WETH
+  }
+
   protected override quoteUsd(core: Core): number {
     const key = core.stock.toLowerCase();
     const cached = this.quoteUsdCache.get(key);
