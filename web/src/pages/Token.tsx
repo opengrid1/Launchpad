@@ -185,7 +185,7 @@ export function TokenPage() {
             </Suspense>
           </div>
         </div>
-        <div>
+        <div className="lg:sticky lg:top-4 lg:self-start">
           <TradePanel token={t} />
         </div>
       </section>

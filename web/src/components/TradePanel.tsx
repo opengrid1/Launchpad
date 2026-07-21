@@ -123,21 +123,23 @@ export function TradePanel({ token }: { token: TokenSummary }) {
 
   return (
     <div className="flex h-fit flex-col gap-3 rounded-xl border border-edge bg-panel p-3">
-      {/* Buy / Sell toggle */}
-      <div className="grid grid-cols-2 gap-1">
-        {(["buy", "sell"] as Side[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => { setSide(s); setAmount(""); }}
-            className={`h-8 rounded-lg text-[13px] font-semibold capitalize transition-colors ${
-              side === s
-                ? s === "buy" ? "bg-up text-white" : "bg-down text-white"
-                : "bg-panel-2 text-ink-2 hover:text-ink"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
+      {/* Buy / Sell toggle — a console switch split by a glowing energy blade */}
+      <div className="blade-switch" data-side={side}>
+        <button
+          type="button"
+          onClick={() => { setSide("buy"); setAmount(""); }}
+          className={`blade-half ${side === "buy" ? "is-buy" : ""}`}
+        >
+          Buy
+        </button>
+        <span className="blade" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={() => { setSide("sell"); setAmount(""); }}
+          className={`blade-half ${side === "sell" ? "is-sell" : ""}`}
+        >
+          Sell
+        </button>
       </div>
 
       {/* Amount */}

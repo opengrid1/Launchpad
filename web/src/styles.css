@@ -1,38 +1,40 @@
 @import "tailwindcss";
 
 @theme {
-  /* "Timber" — carved-wood lodge theme for the archery brand. Deep walnut
-     ground, oak-board cards with a bevel, parchment ink, and the lime kept as
-     the fletching-green accent. */
-  --color-bg: #1e140d;        /* deep walnut */
-  --color-panel: #2f2114;     /* oak board */
-  --color-panel-2: #3b2a19;   /* lighter board */
-  --color-edge: #453019;      /* carved edge */
-  --color-edge-2: #5c452b;    /* bevel highlight */
+  /* "Orbital Terminal" — a premium space/mission-control console. Deep void
+     ground, hull panels with a cyan hairline, cool-white ink, a warm beacon
+     amber as the primary accent and ion cyan for data. */
+  --color-bg: #060910;        /* void */
+  --color-panel: #0e1422;     /* hull */
+  --color-panel-2: #141d30;   /* raised hull */
+  --color-edge: #223049;      /* panel seam */
+  --color-edge-2: #33456a;    /* lit seam */
 
-  --color-ink: #f0e4cb;       /* parchment */
-  --color-ink-2: #c8b593;     /* faded parchment */
-  --color-ink-3: #97846a;     /* burnt umber labels */
+  --color-ink: #d6deee;       /* cool white */
+  --color-ink-2: #8593b0;     /* dim readout */
+  --color-ink-3: #55628a;     /* faint label */
 
-  /* Lime primary. `accent` is the bright button/CTA fill (use `accent-fg` — a
-     near-black — as text ON it); `accent-ink` is lime used for text/emphasis,
-     which reads bright and clear on the warm dark ground. */
-  --color-accent: #a3e635;    /* fletching green — button fill */
-  --color-accent-2: #84cc16;  /* darker lime — hover */
-  --color-accent-ink: #b3e94f;/* lime — text/emphasis on walnut */
-  --color-accent-fg: #1d1305; /* near-black bark — text on lime */
+  /* Beacon amber is the CTA fill (use `accent-fg`, a near-black, as text ON
+     it). `accent-ink` is the amber used for text/emphasis on the void. */
+  --color-accent: #ffb765;    /* beacon amber — button fill */
+  --color-accent-2: #ffce97;  /* lit amber — hover */
+  --color-accent-ink: #ffc078;/* amber — text/emphasis on void */
+  --color-accent-fg: #2a1600; /* near-black — text on amber */
 
-  /* Gains / losses — warmed to sit on wood */
-  --color-up: #8fd05a;
-  --color-down: #e0704f;
+  /* Ion cyan — the secondary data accent (chips, links, live readouts). */
+  --color-ion: #5cd5ff;
+
+  /* Gains / losses tuned for the void ground */
+  --color-up: #57e39a;
+  --color-down: #ff6b7a;
 
   --font-sans: "Inter", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
 
-  --shadow-card: inset 0 1px 0 rgba(92, 69, 43, 0.35), 0 2px 6px rgba(0, 0, 0, 0.45);
-  --shadow-card-hover: inset 0 1px 0 rgba(92, 69, 43, 0.5), 0 10px 24px -12px rgba(0, 0, 0, 0.7);
-  --shadow-btn: none;
+  --shadow-card: inset 0 1px 0 rgba(51, 69, 106, 0.28), 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-card-hover: inset 0 1px 0 rgba(51, 69, 106, 0.4), 0 14px 34px -14px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(92, 213, 255, 0.12);
+  --shadow-btn: 0 0 0 1px rgba(255, 183, 101, 0.35), 0 10px 30px -12px rgba(255, 183, 101, 0.55);
 }
 
 html {
@@ -44,161 +46,106 @@ body {
   margin: 0;
   font-family: var(--font-sans);
   color: var(--color-ink);
-  /* Walnut ground with a soft top vignette and a subtle vertical grain. */
+  /* Void ground with a warm beacon glow overhead and a faint starfield haze,
+     drawn purely with layered gradients so it stays cheap and crisp. */
   background:
-    radial-gradient(1200px 500px at 50% -10%, rgba(51, 34, 18, 0.4), transparent 70%),
-    repeating-linear-gradient(
-      92deg,
-      rgba(0, 0, 0, 0.08) 0 2px,
-      transparent 2px 9px,
-      rgba(255, 255, 255, 0.02) 9px 10px,
-      transparent 10px 23px
-    ),
+    radial-gradient(1100px 480px at 50% -12%, rgba(255, 183, 101, 0.08), transparent 62%),
+    radial-gradient(900px 500px at 82% 8%, rgba(92, 213, 255, 0.05), transparent 60%),
+    radial-gradient(1px 1px at 20% 30%, rgba(214, 222, 238, 0.5), transparent),
+    radial-gradient(1px 1px at 70% 20%, rgba(214, 222, 238, 0.35), transparent),
+    radial-gradient(1px 1px at 45% 60%, rgba(255, 214, 160, 0.4), transparent),
+    radial-gradient(1px 1px at 85% 70%, rgba(214, 222, 238, 0.3), transparent),
+    radial-gradient(1px 1px at 12% 80%, rgba(214, 222, 238, 0.28), transparent),
     var(--color-bg);
-  font-feature-settings: "ss01", "cv05";
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Every oak-board surface picks up a faint grain on top of its base color. */
+/* Panels are hull plates: a faint top-lit gradient over the void. */
 .bg-panel {
-  background-image: repeating-linear-gradient(
-    94deg,
-    rgba(0, 0, 0, 0.05) 0 3px,
-    transparent 3px 11px,
-    rgba(255, 255, 255, 0.022) 11px 12px,
-    transparent 12px 26px
-  );
+  background-image: linear-gradient(180deg, rgba(51, 69, 106, 0.06), transparent 40%);
 }
 
-/* Cards read as carved oak boards: a lit top face falling to shadow, a
-   heavier grain, a bevel (highlight above, depth below), and a drop shadow
-   that lifts the board off the walnut ground. */
+/* Cards read as instrument panels: raised hull, a lit top seam, depth below,
+   and a drop shadow lifting them off the void. */
 .rounded-xl.bg-panel, .rounded-2xl.bg-panel {
   position: relative;
-  background-image:
-    repeating-linear-gradient(
-      94deg,
-      rgba(0, 0, 0, 0.065) 0 3px,
-      transparent 3px 11px,
-      rgba(255, 255, 255, 0.03) 11px 12px,
-      transparent 12px 26px
-    ),
-    linear-gradient(180deg, #3b2a19, #2f2114);
+  background-image: linear-gradient(180deg, #141d30, #0e1422);
   box-shadow:
-    inset 0 1px 0 rgba(92, 69, 43, 0.42),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
-    0 6px 14px rgba(0, 0, 0, 0.42);
+    inset 0 1px 0 rgba(51, 69, 106, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+    0 6px 16px rgba(0, 0, 0, 0.45);
 }
 
-/* Vine-and-leaf ornaments in all four corners of every board. One overlay
-   pseudo-element, four pre-rotated copies of the same corner sprig. */
+/* A cyan hairline traces the top edge of every panel — the HUD frame glow. */
 .rounded-xl.bg-panel::before, .rounded-2xl.bg-panel::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.7;
   border-radius: inherit;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M1 21 Q1 1 21 1' stroke='%234d7c0f' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M6 8 Q1 6 1 1 Q7 2 8 7 Z' fill='%23a3e635'/%3E%3Cpath d='M14 4 Q10 -1 4 1 Q8 5 14 4 Z' fill='%2365a30d'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cg transform='rotate(90 11 11)'%3E%3Cpath d='M1 21 Q1 1 21 1' stroke='%234d7c0f' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M6 8 Q1 6 1 1 Q7 2 8 7 Z' fill='%23a3e635'/%3E%3Cpath d='M14 4 Q10 -1 4 1 Q8 5 14 4 Z' fill='%2365a30d'/%3E%3C/g%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cg transform='rotate(180 11 11)'%3E%3Cpath d='M1 21 Q1 1 21 1' stroke='%234d7c0f' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M6 8 Q1 6 1 1 Q7 2 8 7 Z' fill='%23a3e635'/%3E%3Cpath d='M14 4 Q10 -1 4 1 Q8 5 14 4 Z' fill='%2365a30d'/%3E%3C/g%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cg transform='rotate(270 11 11)'%3E%3Cpath d='M1 21 Q1 1 21 1' stroke='%234d7c0f' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M6 8 Q1 6 1 1 Q7 2 8 7 Z' fill='%23a3e635'/%3E%3Cpath d='M14 4 Q10 -1 4 1 Q8 5 14 4 Z' fill='%2365a30d'/%3E%3C/g%3E%3C/svg%3E");
-  background-position:
-    2px 2px,
-    calc(100% - 2px) 2px,
-    calc(100% - 2px) calc(100% - 2px),
-    2px calc(100% - 2px);
-  background-repeat: no-repeat;
-  background-size: 20px 20px;
+  padding: 1px;
+  background: linear-gradient(180deg, rgba(92, 213, 255, 0.22), transparent 42%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0.7;
 }
 
-/* Primary nav tabs are hanging wooden signs; the active one is lit lime with
-   a leaf sprig on its corner. */
+/* Primary nav tabs are console keys; the active one lights amber. */
 .nav-sign {
   position: relative;
   border: 1px solid var(--color-edge);
-  background-image:
-    repeating-linear-gradient(94deg, rgba(0, 0, 0, 0.06) 0 2px, transparent 2px 8px, rgba(255, 255, 255, 0.03) 8px 9px, transparent 9px 20px),
-    linear-gradient(180deg, #3b2a19, #2f2114);
-  box-shadow: inset 0 1px 0 rgba(92, 69, 43, 0.4), 0 2px 0 rgba(0, 0, 0, 0.35);
+  background-image: linear-gradient(180deg, #141d30, #0e1422);
+  box-shadow: inset 0 1px 0 rgba(51, 69, 106, 0.35), 0 1px 0 rgba(0, 0, 0, 0.4);
 }
 .nav-sign:active {
   transform: translateY(1px);
-  box-shadow: inset 0 1px 0 rgba(92, 69, 43, 0.4), 0 1px 0 rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 1px 0 rgba(51, 69, 106, 0.35);
 }
 .nav-sign-on {
   color: var(--color-accent-ink);
-  border-color: #5c8317;
+  border-color: rgba(255, 183, 101, 0.5);
   box-shadow:
-    inset 0 1px 0 rgba(92, 69, 43, 0.4),
-    inset 0 0 16px rgba(163, 230, 53, 0.12),
-    0 2px 0 rgba(0, 0, 0, 0.35);
-}
-.nav-sign-on::after {
-  content: "";
-  position: absolute;
-  top: -8px;
-  right: -4px;
-  width: 20px;
-  height: 17px;
-  pointer-events: none;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 22'%3E%3Cpath d='M3 20 Q10 15 22 5' stroke='%233f6212' stroke-width='1.7' fill='none' stroke-linecap='round'/%3E%3Cpath d='M11 13 Q4 12 1 18 Q8 20 12 14 Z' fill='%23a3e635'/%3E%3Cpath d='M17 8 Q17 1 10 0 Q10 7 16 9 Z' fill='%2365a30d'/%3E%3C/svg%3E")
-    no-repeat center / contain;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
+    inset 0 1px 0 rgba(51, 69, 106, 0.35),
+    inset 0 0 18px rgba(255, 183, 101, 0.12),
+    0 0 20px -8px rgba(255, 183, 101, 0.6);
 }
 
-/* Craft serif for headings and token names — the lodge signage face. */
+/* Technical geometric face for headings and token names — the console label. */
 h1, h2, h3, .font-display {
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", var(--font-sans);
+  letter-spacing: -0.02em;
 }
 
-/* Primary CTAs are lime-painted wooden planks — the brand green face with a
-   wood grain, carved bevel, and a sprig of leaves off the corner. */
+/* Primary CTAs are beacon-lit console buttons: an amber fill with a soft top
+   sheen, a crisp ring, and an amber glow that lifts on hover. */
 button.bg-accent, a.bg-accent {
   position: relative;
-  border: 1px solid #5c8317;
-  background-color: #a3e635;
-  background-image:
-    repeating-linear-gradient(94deg, rgba(0, 0, 0, 0.05) 0 2px, transparent 2px 7px, rgba(255, 255, 255, 0.09) 7px 8px, transparent 8px 18px),
-    linear-gradient(180deg, #b9ee55, #a3e635 55%, #7fb322);
-  box-shadow: inset 0 1px 0 #d8f795, inset 0 -2px 0 rgba(0, 0, 0, 0.18), 0 2px 0 #4c690f;
+  border: 1px solid rgba(255, 183, 101, 0.55);
+  background-color: #ffb765;
+  background-image: linear-gradient(180deg, #ffce97, #ffb765 55%, #f59c40);
+  color: var(--color-accent-fg);
+  box-shadow: inset 0 1px 0 rgba(255, 235, 210, 0.6), 0 0 0 1px rgba(255, 183, 101, 0.28), 0 10px 30px -12px rgba(255, 183, 101, 0.6);
 }
 button.bg-accent:hover, a.bg-accent:hover {
-  background-color: #b1ea48;
-  background-image:
-    repeating-linear-gradient(94deg, rgba(0, 0, 0, 0.05) 0 2px, transparent 2px 7px, rgba(255, 255, 255, 0.1) 7px 8px, transparent 8px 18px),
-    linear-gradient(180deg, #c4f166, #b1ea48 55%, #8cc22c);
+  background-image: linear-gradient(180deg, #ffdcb0, #ffc078 55%, #ffab55);
+  box-shadow: inset 0 1px 0 rgba(255, 235, 210, 0.7), 0 0 0 1px rgba(255, 183, 101, 0.4), 0 14px 36px -12px rgba(255, 183, 101, 0.75);
 }
 button.bg-accent:active, a.bg-accent:active {
   transform: translateY(1px);
-  box-shadow: inset 0 1px 0 #d8f795, inset 0 -1px 0 rgba(0, 0, 0, 0.18), 0 1px 0 #4c690f;
+  box-shadow: inset 0 1px 0 rgba(255, 235, 210, 0.6), 0 0 0 1px rgba(255, 183, 101, 0.35);
 }
-/* The leaf sprig — two lime leaves on a twig, peeking off the top-right. */
-button.bg-accent::after, a.bg-accent::after {
-  content: "";
-  position: absolute;
-  top: -9px;
-  right: -4px;
-  width: 26px;
-  height: 22px;
-  pointer-events: none;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 22'%3E%3Cpath d='M3 20 Q10 15 22 5' stroke='%233f6212' stroke-width='1.7' fill='none' stroke-linecap='round'/%3E%3Cpath d='M11 13 Q4 12 1 18 Q8 20 12 14 Z' fill='%234d7c0f'/%3E%3Cpath d='M17 8 Q17 1 10 0 Q10 7 16 9 Z' fill='%233f6212'/%3E%3Cpath d='M22 5 Q26 0 21 0 Q19 3 22 5 Z' fill='%2365a30d'/%3E%3C/svg%3E")
-    no-repeat center / contain;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
-}
-/* Disabled buttons go back to a plain board — no plank face, no leaves. */
+/* Disabled buttons fall back to a dark hull key — no glow. */
 button.bg-accent:disabled {
   background-image: none;
+  background-color: var(--color-panel-2);
   color: var(--color-ink-3) !important;
   border-color: var(--color-edge);
   box-shadow: none;
   text-shadow: none;
-}
-button.bg-accent:disabled::after {
-  display: none;
 }
 
 .tnum {
@@ -228,27 +175,27 @@ button.bg-accent:disabled::after {
 }
 
 ::selection {
-  background: rgba(163, 230, 53, 0.28);
-  color: #f0e4cb;
+  background: rgba(255, 183, 101, 0.28);
+  color: #ffffff;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #4a3620 transparent;
+  scrollbar-color: #223049 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #4a3620;
+  background: #223049;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* Card hover — the quiet lift from Stackr */
+/* Card hover — a quiet lift with a cyan edge */
 .card-hover {
   transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
 }
@@ -292,11 +239,11 @@ button.bg-accent:disabled::after {
 .fade-in { animation: fade-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 @keyframes flash-up {
-  0% { background: rgba(33, 196, 93, 0.14); }
+  0% { background: rgba(87, 227, 154, 0.14); }
   100% { background: transparent; }
 }
 @keyframes flash-down {
-  0% { background: rgba(239, 88, 77, 0.14); }
+  0% { background: rgba(255, 107, 122, 0.14); }
   100% { background: transparent; }
 }
 .flash-up { animation: flash-up 700ms ease-out; }
@@ -304,4 +251,73 @@ button.bg-accent:disabled::after {
 
 @media (prefers-reduced-motion: reduce) {
   .rise, .toast-enter, .fade-in, .tape, .dot-live, .card-hover { animation: none; transition: none; }
+}
+
+/* ---- Buy/Sell "energy blade" switch (TradePanel) ---- */
+.blade-switch {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 2px 1fr;
+  align-items: stretch;
+  height: 40px;
+  border: 1px solid var(--color-edge);
+  border-radius: 11px;
+  background: linear-gradient(180deg, #0e1422, #0a0f1a);
+  overflow: hidden;
+}
+.blade-half {
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-2);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease, text-shadow 0.18s ease;
+}
+.blade-half:hover { color: var(--color-ink); }
+.blade-half.is-buy {
+  color: #eafff5;
+  background: radial-gradient(120% 100% at 0% 50%, rgba(87, 227, 154, 0.22), transparent 70%);
+  text-shadow: 0 0 14px rgba(87, 227, 154, 0.7);
+}
+.blade-half.is-sell {
+  color: #ffeef0;
+  background: radial-gradient(120% 100% at 100% 50%, rgba(255, 107, 122, 0.22), transparent 70%);
+  text-shadow: 0 0 14px rgba(255, 107, 122, 0.7);
+}
+/* The blade: a thin bright core with a soft bloom; its hue follows the side. */
+.blade {
+  position: relative;
+  width: 2px;
+  align-self: center;
+  height: 62%;
+  border-radius: 2px;
+  background: var(--color-ion);
+  box-shadow: 0 0 6px var(--color-ion), 0 0 14px rgba(92, 213, 255, 0.7);
+  transition: background 0.2s ease, box-shadow 0.2s ease, height 0.2s ease;
+}
+.blade::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 3px;
+  background: #ffffff;
+  opacity: 0.85;
+  filter: blur(0.5px);
+}
+.blade-switch[data-side="buy"] .blade {
+  background: var(--color-up);
+  box-shadow: 0 0 7px var(--color-up), 0 0 18px rgba(87, 227, 154, 0.8);
+}
+.blade-switch[data-side="sell"] .blade {
+  background: var(--color-down);
+  box-shadow: 0 0 7px var(--color-down), 0 0 18px rgba(255, 107, 122, 0.8);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .blade { animation: blade-hum 2.6s ease-in-out infinite; }
+}
+@keyframes blade-hum {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.82; }
 }
