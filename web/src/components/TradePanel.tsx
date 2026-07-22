@@ -13,11 +13,11 @@ type Side = "buy" | "sell";
 // Quick-buy amounts in native currency, launchpad style.
 const BUY_PRESETS = ["0.01", "0.05", "0.1", "0.5"];
 
-export function TradePanel({ token }: { token: TokenSummary }) {
+export function TradePanel({ token, initialSide = "buy" }: { token: TokenSummary; initialSide?: Side }) {
   const { address, isConnected, connectFirst } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
 
-  const [side, setSide] = useState<Side>("buy");
+  const [side, setSide] = useState<Side>(initialSide);
   const [amount, setAmount] = useState("");
   const [slip, setSlip] = useState(5); // % slippage tolerance
   const [busy, setBusy] = useState(false);
