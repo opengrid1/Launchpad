@@ -178,8 +178,8 @@ export function TokenPage() {
               ) : null}
             </div>
           </div>
-          {/* Chart */}
-          <div className="h-[420px]">
+          {/* Chart — framed as a HUD viewport */}
+          <div className="hud-viewport h-[420px] overflow-hidden p-1.5">
             <Suspense fallback={<Skeleton className="h-full w-full" />}>
               <TVChart token={t.address as Address} symbol={t.symbol} />
             </Suspense>

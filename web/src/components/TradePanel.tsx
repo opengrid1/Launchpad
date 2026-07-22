@@ -210,8 +210,10 @@ export function TradePanel({ token }: { token: TokenSummary }) {
         <button
           onClick={submit}
           disabled={busy || !parsedAmount || parsedAmount === 0n || Boolean(insufficientFunds)}
-          className={`h-11 rounded-lg text-[14px] font-semibold transition-colors disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 ${
-            side === "buy" ? "bg-up text-white hover:brightness-110" : "bg-down text-white hover:brightness-105"
+          className={`hud-cut h-11 text-[14px] font-bold uppercase tracking-wide transition-[filter] disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 ${
+            side === "buy"
+              ? "bg-up text-black shadow-[0_0_22px_-6px_var(--color-up)] hover:brightness-110"
+              : "bg-down text-black shadow-[0_0_22px_-6px_var(--color-down)] hover:brightness-105"
           }`}
         >
           {busy
@@ -225,7 +227,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
       ) : (
         <button
           onClick={connectFirst}
-          className="h-11 rounded-lg bg-accent text-[14px] font-semibold text-accent-fg transition-colors hover:bg-accent-2"
+          className="hud-cut h-11 bg-accent text-[14px] font-bold uppercase tracking-wide text-accent-fg transition-[filter] hover:brightness-105"
         >
           Connect Wallet
         </button>

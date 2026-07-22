@@ -1,29 +1,68 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 import { BRAND } from "../lib/brand";
+import { Icon, type IconName } from "./Icon";
 import { useWallet } from "../lib/useWallet";
 
 /**
- * Top bar — wordmark left, inline links on desktop, a single Connect action on
- * the right. On mobile the navigation lives in a bottom tab bar instead.
+ * Mission-control command bar — brand at the left, inline console tabs on
+ * desktop, a live chain readout, and the wallet action at the right. On mobile
+ * the tabs move to a bottom bar (NavBar), so this stays a clean two-end strip.
  */
+const TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
+  { to: "/", end: true, icon: "explore", label: "Discover" },
+  { to: "/launch", icon: "launch", label: "Launch" },
+];
+
 export function Header() {
   const { address, isConnected, connectFirst, disconnect, isPending } = useWallet();
 
   return (
     <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-5">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-5">
         {/* Brand */}
-        <Link to="/" aria-label={BRAND.name} className="shrink-0">
-          <span className="text-[15px] font-extrabold lowercase tracking-tight text-ink">{BRAND.name}<span className="text-accent-ink">.fun</span></span>
+        <Link to="/" aria-label={BRAND.name} className="flex shrink-0 items-center gap-2">
+          <span className="dot-live h-2 w-2 rounded-full bg-up shadow-[0_0_8px_var(--color-up)]" />
+          <span className="text-[15px] font-extrabold lowercase tracking-tight text-ink">
+            {BRAND.name}
+            <span className="text-accent-ink">.fun</span>
+          </span>
         </Link>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-1.5">
+        {/* Desktop console tabs */}
+        <nav className="hidden items-center gap-1.5 sm:flex">
+          {TABS.map((t) => (
+            <NavLink
+              key={t.to}
+              to={t.to}
+              end={t.end}
+              className={({ isActive }) =>
+                `hud-tab flex items-center gap-1.5 px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
+                  isActive ? "hud-tab-on text-accent-ink" : "text-ink-2 hover:text-ink"
+                }`
+              }
+            >
+              <Icon name={t.icon} size={13} />
+              {t.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="flex-1" />
+
+        {/* Live readout — desktop only */}
+        <div className="hidden items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 md:flex">
+          <span>Robinhood Chain</span>
+          <span className="text-ion">·</span>
+          <span className="text-ion">4663</span>
+        </div>
+
+        {/* Wallet action */}
+        <div className="flex shrink-0 items-center">
           {isConnected && address ? (
             <button
               onClick={() => disconnect()}
-              className="flex items-center gap-1.5 rounded-lg border border-edge bg-panel px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:border-edge-2"
+              className="hud-cut flex items-center gap-1.5 border border-edge bg-panel px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:border-edge-2"
               title="Disconnect"
             >
               <span className="dot-live h-1.5 w-1.5 rounded-full bg-up" />
@@ -33,7 +72,7 @@ export function Header() {
             <button
               onClick={connectFirst}
               disabled={isPending}
-              className="rounded-lg bg-accent px-3.5 py-1.5 text-[12.5px] font-semibold text-accent-fg transition-colors hover:bg-accent-2 disabled:opacity-60"
+              className="hud-cut bg-accent px-4 py-1.5 text-[12.5px] font-semibold text-accent-fg transition-colors disabled:opacity-60"
             >
               {isPending ? "Connecting…" : "Connect"}
             </button>
@@ -43,5 +82,3 @@ export function Header() {
     </header>
   );
 }
-
-
