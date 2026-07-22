@@ -13,7 +13,7 @@ import { Icon } from "../components/Icon";
 import { ShareMenu } from "../components/ShareMenu";
 import { StockLogo } from "../components/StockLogo";
 import { TokenLogo } from "../components/TokenLogo";
-import { TradePanel } from "../components/TradePanel";
+import { StickyTrade } from "../components/StickyTrade";
 import { TradesList } from "../components/TradesList";
 import { Button, EmptyState, Skeleton } from "../components/ui";
 import { client, v4Client, v4sClient } from "../lib/client";
@@ -98,7 +98,7 @@ export function TokenPage() {
   const rewardStock = extra ? (stockOf(extra.stock) ?? stockSOf(extra.stock)) : undefined;
 
   return (
-    <div className="rise mx-auto max-w-6xl px-4 pb-24 sm:px-8">
+    <div className="rise mx-auto max-w-6xl px-4 pb-[148px] sm:px-8 lg:pb-24">
       {/* Identity */}
       <section className="mt-6 flex items-start gap-3">
         <TokenLogo token={t} size={48} />
@@ -186,7 +186,7 @@ export function TokenPage() {
           </div>
         </div>
         <div className="lg:sticky lg:top-4 lg:self-start">
-          <TradePanel token={t} />
+          <StickyTrade token={t} />
         </div>
       </section>
 
