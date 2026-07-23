@@ -1,14 +1,12 @@
 import { useEffect } from "react";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AppProvider } from "./lib/store";
 import { NavBar } from "./components/NavBar";
 import { ToastStack } from "./components/ui";
-import { Landing } from "./pages/Landing";
-import { Dashboard } from "./pages/Dashboard";
-import { Markets } from "./pages/Markets";
+import { Explore } from "./pages/Explore";
 import { TokenDetail } from "./pages/TokenDetail";
-import { Activity } from "./pages/Activity";
-import { Settings } from "./pages/Settings";
+import { Create } from "./pages/Create";
+import { Portfolio } from "./pages/Portfolio";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -23,13 +21,11 @@ function AnimatedRoutes() {
   return (
     <div key={location.pathname} className="route-fade">
       <Routes location={location}>
-        <Route path="/" element={<Landing />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/markets" element={<Markets />} />
-        <Route path="/token/:symbol" element={<TokenDetail />} />
-        <Route path="/activity" element={<Activity />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="*" element={<Landing />} />
+        <Route path="/" element={<Explore />} />
+        <Route path="/token/:ticker" element={<TokenDetail />} />
+        <Route path="/create" element={<Create />} />
+        <Route path="/portfolio" element={<Portfolio />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
   );

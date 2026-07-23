@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useApp } from "../lib/store";
 import { useInView } from "../lib/hooks";
 import { Icon } from "./Icon";
@@ -16,7 +17,9 @@ export function Modal({
   width?: number;
 }) {
   if (!open) return null;
-  return (
+  // Portal to body: fixed positioning breaks inside ancestors with
+  // backdrop-filter (they become the containing block), e.g. the nav.
+  return createPortal(
     <div
       className="modal-overlay"
       onMouseDown={(e) => {
@@ -28,7 +31,8 @@ export function Modal({
       <div className="modal" style={width ? { maxWidth: width } : undefined}>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

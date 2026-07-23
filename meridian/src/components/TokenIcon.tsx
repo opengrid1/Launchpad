@@ -1,18 +1,25 @@
-import type { Token } from "../lib/data";
-
-export function TokenIcon({ token, size = 38 }: { token: Token; size?: number }) {
+export function TokenIcon({
+  ticker,
+  color,
+  size = 38,
+}: {
+  ticker: string;
+  color: string;
+  size?: number;
+}) {
   return (
     <span
       className="token-icon"
       style={{
         width: size,
         height: size,
-        fontSize: size * 0.32,
-        background: `linear-gradient(135deg, ${token.color}, ${token.colorB})`,
-        boxShadow: `0 4px 14px -4px ${token.color}66`,
+        borderRadius: Math.round(size * 0.3),
+        fontSize: size * 0.3,
+        background: color,
+        color: "#090B10",
       }}
     >
-      {token.symbol.slice(0, 3)}
+      {ticker.slice(0, 2)}
     </span>
   );
 }

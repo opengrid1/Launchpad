@@ -1,38 +1,59 @@
-/* Deterministic demo data. A seeded PRNG keeps every render identical so the
-   UI feels like a stable product, not a dice roll. */
+/* Deterministic demo data for the launchpad. A seeded PRNG keeps every render
+   identical so the UI feels like a stable product, not a dice roll. */
 
-export interface Token {
-  symbol: string;
-  name: string;
-  price: number;
-  change24h: number;
-  marketCap: number;
-  volume24h: number;
-  color: string;
-  colorB: string;
-  series: number[];
-  holding: number; // demo portfolio balance in units
-}
-
-export interface Tx {
-  id: string;
-  kind: "swap" | "send" | "receive" | "approve";
-  title: string;
-  detail: string;
-  amountUsd: number;
-  direction: "in" | "out" | "none";
-  status: "confirmed" | "pending" | "failed";
-  ts: number;
-  hash: string;
-  symbol: string;
-}
+export type ChainId = "robinhood" | "ethereum" | "base" | "monad";
 
 export interface Chain {
-  id: string;
+  id: ChainId;
   name: string;
   short: string;
   color: string;
-  latency: string;
+}
+
+export type LaunchStatus = "new" | "live" | "graduated";
+
+export interface LaunchToken {
+  ticker: string;
+  name: string;
+  description: string;
+  chain: ChainId;
+  price: number;
+  change24h: number;
+  marketCap: number;
+  liquidity: number;
+  volume24h: number;
+  progress: number; // % of the graduation cap
+  status: LaunchStatus;
+  fairLaunch: boolean;
+  creator: string;
+  createdAt: number;
+  holders: number;
+  color: string;
+  series: number[];
+  website?: string;
+  twitter?: string;
+  telegram?: string;
+  contract: string;
+}
+
+export interface Trade {
+  id: string;
+  side: "buy" | "sell";
+  amountUsd: number;
+  tokens: number;
+  wallet: string;
+  ts: number;
+}
+
+export const CHAINS: Chain[] = [
+  { id: "robinhood", name: "Robinhood Chain", short: "RH", color: "#22C55E" },
+  { id: "ethereum", name: "Ethereum", short: "ETH", color: "#8A9BF5" },
+  { id: "base", name: "Base", short: "BASE", color: "#4C7DF0" },
+  { id: "monad", name: "Monad", short: "MON", color: "#8B6EF3" },
+];
+
+export function chainById(id: ChainId): Chain {
+  return CHAINS.find((c) => c.id === id) ?? CHAINS[0];
 }
 
 function mulberry32(seed: number) {
@@ -51,192 +72,137 @@ function series(seed: number, n: number, start: number, drift: number, vol: numb
   const out: number[] = [];
   let v = start;
   for (let i = 0; i < n; i++) {
-    v = Math.max(start * 0.4, v * (1 + drift + (rnd() - 0.5) * vol));
+    v = Math.max(start * 0.35, v * (1 + drift + (rnd() - 0.5) * vol));
     out.push(v);
   }
   return out;
 }
 
-export const CHAINS: Chain[] = [
-  { id: "meridian", name: "Meridian One", short: "MR1", color: "#3DE8B0", latency: "0.4s" },
-  { id: "ethereum", name: "Ethereum", short: "ETH", color: "#8A9BF5", latency: "12s" },
-  { id: "arbitrum", name: "Arbitrum One", short: "ARB", color: "#4DD6E8", latency: "0.3s" },
-  { id: "base", name: "Base", short: "BASE", color: "#5B8DEF", latency: "2s" },
+function addr(seed: number): string {
+  const rnd = mulberry32(seed);
+  const hex = "0123456789abcdef";
+  let s = "0x";
+  for (let i = 0; i < 40; i++) s += hex[Math.floor(rnd() * 16)];
+  return s;
+}
+
+const HOUR = 3600 * 1000;
+const NOW = Date.now();
+
+interface Def {
+  ticker: string;
+  name: string;
+  description: string;
+  chain: ChainId;
+  mcapK: number; // market cap in $K
+  change: number;
+  status: LaunchStatus;
+  fair: boolean;
+  ageH: number; // hours since launch
+  seed: number;
+  color: string;
+  socials?: boolean;
+}
+
+const defs: Def[] = [
+  { ticker: "NORTH", name: "North Star", description: "Community index of the strongest launches on Robinhood Chain, rebalanced on-chain every epoch.", chain: "robinhood", mcapK: 38.2, change: 12.4, status: "live", fair: true, ageH: 26, seed: 21, color: "#22C55E", socials: true },
+  { ticker: "PULSE", name: "Pulse Protocol", description: "Real-time on-chain heartbeat oracle. Streams block-level activity metrics to any contract.", chain: "base", mcapK: 31.6, change: 8.1, status: "live", fair: true, ageH: 41, seed: 22, color: "#4C7DF0", socials: true },
+  { ticker: "QUARTZ", name: "Quartz", description: "Hard-money store of value with a fixed supply and zero taxes. No team allocation.", chain: "ethereum", mcapK: 52.4, change: 3.6, status: "graduated", fair: true, ageH: 190, seed: 23, color: "#9BA6C9", socials: true },
+  { ticker: "DRIFT", name: "Drift Labs", description: "Automated LP rebalancer for concentrated liquidity positions across launch pools.", chain: "monad", mcapK: 12.8, change: -4.2, status: "live", fair: false, ageH: 9, seed: 24, color: "#8B6EF3" },
+  { ticker: "EMBER", name: "Ember", description: "Deflationary burn token — 1% of every trade is burned forever. Fully renounced.", chain: "robinhood", mcapK: 24.5, change: 31.7, status: "live", fair: true, ageH: 5, seed: 25, color: "#F59E0B", socials: true },
+  { ticker: "LEDGE", name: "Ledgeline", description: "Perps-adjacent index that tracks the top ten launchpad graduates by volume.", chain: "ethereum", mcapK: 44.9, change: 5.9, status: "graduated", fair: false, ageH: 260, seed: 26, color: "#5FA8F5", socials: true },
+  { ticker: "MOSS", name: "Moss", description: "Slow-growth community token. Anti-whale limits stay on until full graduation.", chain: "base", mcapK: 8.7, change: 2.2, status: "new", fair: true, ageH: 1.4, seed: 27, color: "#34D399" },
+  { ticker: "VOLT", name: "Voltage", description: "Gaming utility token powering an on-chain arcade. Fees fund the prize pool.", chain: "monad", mcapK: 17.3, change: -8.8, status: "live", fair: false, ageH: 58, seed: 28, color: "#C9B44B" },
+  { ticker: "HALO", name: "Halo Network", description: "Reputation ring for launch creators — stake to vouch, slash on rugs.", chain: "robinhood", mcapK: 29.1, change: 15.2, status: "live", fair: true, ageH: 14, seed: 29, color: "#E879F9", socials: true },
+  { ticker: "ANCHOR", name: "Anchor", description: "Protocol-managed liquidity with published on-chain proofs every hour.", chain: "ethereum", mcapK: 49.8, change: 1.1, status: "graduated", fair: true, ageH: 340, seed: 30, color: "#60A5FA", socials: true },
+  { ticker: "FERN", name: "Fern", description: "Regenerative treasury token. 2% of volume streams to public-goods funding.", chain: "base", mcapK: 6.2, change: 44.5, status: "new", fair: true, ageH: 0.6, seed: 31, color: "#4ADE80" },
+  { ticker: "ONYX", name: "Onyx", description: "Dark-pool style batch auctions for large exits without price impact.", chain: "monad", mcapK: 21.7, change: -2.4, status: "live", fair: false, ageH: 96, seed: 32, color: "#94A3B8" },
 ];
 
-const defs: Array<
-  [string, string, number, number, number, number, string, string, number, number]
-> = [
-  // symbol, name, price, change, mcap(B), vol(M), colorA, colorB, seed, holding
-  ["MRD", "Meridian", 4.82, 6.34, 4.82, 312.4, "#3DE8B0", "#14B98C", 11, 1240],
-  ["ETH", "Ether", 4318.2, 2.18, 519.6, 18240.0, "#8A9BF5", "#5B6BD6", 12, 2.4482],
-  ["BTC", "Bitcoin", 118432.0, 1.42, 2334.1, 41520.0, "#F7B84B", "#E09B2D", 13, 0.0871],
-  ["USDM", "Meridian Dollar", 1.0, 0.01, 8.91, 5230.0, "#4DD6E8", "#2BA8C9", 14, 5120.5],
-  ["SOL", "Solana", 216.4, -1.86, 104.2, 6120.0, "#B98AF5", "#8A5BD6", 15, 18.2],
-  ["LINK", "Chainlink", 24.61, 4.07, 15.7, 942.0, "#6B8DEF", "#4B6DD0", 16, 96.0],
-  ["ARB", "Arbitrum", 1.28, -2.94, 5.4, 486.0, "#4DD6E8", "#3BAAC0", 17, 820.0],
-  ["UNI", "Uniswap", 12.84, 3.12, 9.7, 512.0, "#F58AB9", "#D65B92", 18, 44.6],
-  ["AAVE", "Aave", 302.7, 5.61, 4.6, 618.0, "#8AE8D6", "#5BC9B2", 19, 3.1],
-  ["OP", "Optimism", 2.14, -0.73, 3.5, 271.0, "#FF8A9B", "#E06376", 20, 410.0],
-];
+const GRAD_CAP_K = 40; // $40K market cap graduates a token
 
-export const TOKENS: Token[] = defs.map(
-  ([symbol, name, price, change24h, mcapB, volM, color, colorB, seed, holding]) => ({
-    symbol,
-    name,
+export const TOKENS: LaunchToken[] = defs.map((d, i) => {
+  const price = (d.mcapK * 1000) / 1e9;
+  return {
+    ticker: d.ticker,
+    name: d.name,
+    description: d.description,
+    chain: d.chain,
     price,
-    change24h,
-    marketCap: mcapB * 1e9,
-    volume24h: volM * 1e6,
-    color,
-    colorB,
-    series: series(seed, 48, price, change24h / 4800, 0.02),
-    holding,
-  })
-);
-
-export function tokenBySymbol(symbol: string): Token | undefined {
-  return TOKENS.find((t) => t.symbol.toLowerCase() === symbol.toLowerCase());
-}
-
-export function portfolioValue(): number {
-  return TOKENS.reduce((sum, t) => sum + t.holding * t.price, 0);
-}
-
-/* Portfolio history for the dashboard chart, per range. */
-export function portfolioSeries(range: string): number[] {
-  const total = portfolioValue();
-  const cfg: Record<string, [number, number, number]> = {
-    "1D": [48, 0.0006, 0.006],
-    "1W": [56, 0.001, 0.012],
-    "1M": [60, 0.0016, 0.02],
-    "1Y": [72, 0.003, 0.032],
+    change24h: d.change,
+    marketCap: d.mcapK * 1000,
+    liquidity: d.mcapK * 1000 * (0.32 + (i % 4) * 0.06),
+    volume24h: d.mcapK * 1000 * (0.4 + ((i * 7) % 10) * 0.18),
+    progress: d.status === "graduated" ? 100 : Math.min(99, (d.mcapK / GRAD_CAP_K) * 100),
+    status: d.status,
+    fairLaunch: d.fair,
+    creator: addr(d.seed * 3 + 1),
+    createdAt: NOW - d.ageH * HOUR,
+    holders: Math.floor(40 + d.mcapK * (14 + (i % 5) * 3)),
+    color: d.color,
+    series: series(d.seed, 48, price, d.change / 4800, 0.03),
+    website: d.socials ? `https://${d.ticker.toLowerCase()}.xyz` : undefined,
+    twitter: d.socials ? `@${d.ticker.toLowerCase()}` : undefined,
+    telegram: d.socials ? `t.me/${d.ticker.toLowerCase()}` : undefined,
+    contract: addr(d.seed * 7 + 5),
   };
-  const [n, drift, vol] = cfg[range] ?? cfg["1M"];
-  const s = series(40 + range.charCodeAt(0), n, total * 0.86, drift, vol);
-  // Anchor the last point at the live total so the number and chart agree.
-  const scale = total / s[s.length - 1];
-  return s.map((v) => v * scale);
+});
+
+export function tokenByTicker(ticker: string): LaunchToken | undefined {
+  return TOKENS.find((t) => t.ticker.toLowerCase() === ticker.toLowerCase());
 }
 
-const WALLETS = [
-  "0x7A3f9c41E52b8D06a1F4C9e83B75D2a4C1e6F09B",
-  "0x912dC08A4b6E37F1c25a9D80E4b3F6C7D2A1B845",
-  "0x3E5a7B92C1d4F8060B9c2E71A5d3C4B6E8F90A12",
-];
-
-function makeTxs(): Tx[] {
-  const rnd = mulberry32(777);
-  const now = Date.now();
-  const out: Tx[] = [];
-  const templates: Array<() => Omit<Tx, "id" | "ts" | "hash">> = [
-    () => {
-      const a = TOKENS[Math.floor(rnd() * TOKENS.length)];
-      let b = TOKENS[Math.floor(rnd() * TOKENS.length)];
-      if (b.symbol === a.symbol) b = TOKENS[(TOKENS.indexOf(a) + 1) % TOKENS.length];
-      const usd = 40 + rnd() * 5200;
-      return {
-        kind: "swap",
-        title: `Swap ${a.symbol} → ${b.symbol}`,
-        detail: `${(usd / a.price).toFixed(4)} ${a.symbol} for ${(usd / b.price).toFixed(4)} ${b.symbol}`,
-        amountUsd: usd,
-        direction: "none",
-        status: "confirmed",
-        symbol: b.symbol,
-      };
-    },
-    () => {
-      const a = TOKENS[Math.floor(rnd() * TOKENS.length)];
-      const usd = 25 + rnd() * 3800;
-      return {
-        kind: "send",
-        title: `Sent ${a.symbol}`,
-        detail: `To ${WALLETS[Math.floor(rnd() * WALLETS.length)].slice(0, 6)}…`,
-        amountUsd: usd,
-        direction: "out",
-        status: "confirmed",
-        symbol: a.symbol,
-      };
-    },
-    () => {
-      const a = TOKENS[Math.floor(rnd() * TOKENS.length)];
-      const usd = 25 + rnd() * 4600;
-      return {
-        kind: "receive",
-        title: `Received ${a.symbol}`,
-        detail: `From ${WALLETS[Math.floor(rnd() * WALLETS.length)].slice(0, 6)}…`,
-        amountUsd: usd,
-        direction: "in",
-        status: "confirmed",
-        symbol: a.symbol,
-      };
-    },
-    () => {
-      const a = TOKENS[Math.floor(rnd() * TOKENS.length)];
-      return {
-        kind: "approve",
-        title: `Approved ${a.symbol}`,
-        detail: "Meridian Router",
-        amountUsd: 0,
-        direction: "none",
-        status: "confirmed",
-        symbol: a.symbol,
-      };
-    },
-  ];
-
-  let ts = now - 4 * 60 * 1000;
-  for (let i = 0; i < 32; i++) {
-    const t = templates[Math.floor(rnd() * templates.length)]();
-    const hash = `0x${Array.from({ length: 12 }, () =>
-      Math.floor(rnd() * 16).toString(16)
-    ).join("")}…`;
-    out.push({ ...t, id: `tx-${i}`, ts, hash });
-    ts -= (0.4 + rnd() * 16) * 60 * 60 * 1000;
+export function tradesFor(ticker: string): Trade[] {
+  const t = tokenByTicker(ticker);
+  if (!t) return [];
+  const rnd = mulberry32(t.createdAt % 100000);
+  const out: Trade[] = [];
+  let ts = NOW - 2 * 60 * 1000;
+  for (let i = 0; i < 14; i++) {
+    const usd = 15 + rnd() * 900;
+    out.push({
+      id: `${ticker}-${i}`,
+      side: rnd() > 0.42 ? "buy" : "sell",
+      amountUsd: usd,
+      tokens: usd / t.price,
+      wallet: addr(i * 13 + 7),
+      ts,
+    });
+    ts -= (2 + rnd() * 40) * 60 * 1000;
   }
-  out[0].status = "pending";
-  out[5].status = "failed";
   return out;
 }
 
-export const TRANSACTIONS: Tx[] = makeTxs();
-
+/* Platform statistics ------------------------------------------------------ */
 export const STATS = {
-  totalValueSettled: 84.6e9,
-  transactions: 412.8e6,
-  networks: 24,
-  medianFee: 0.0041,
+  liveTokens: TOKENS.filter((t) => t.status !== "graduated").length + 133,
+  totalVolume: 96.4e6,
+  tokensCreated: 3481,
+  volume24h: 2.94e6,
 };
 
-export const FEATURES = [
-  {
-    icon: "zap",
-    title: "Instant settlement",
-    body: "Transactions finalize in under a second across every supported network. No waiting, no guessing — value moves the moment you send it.",
-  },
-  {
-    icon: "shield",
-    title: "Security first",
-    body: "Every route is verified end-to-end, keys never leave your device, and every contract in the path is audited and open source.",
-  },
-  {
-    icon: "layers",
-    title: "One balance, every chain",
-    body: "Meridian abstracts networks away. Hold one portfolio and spend it anywhere — routing, bridging and gas are handled for you.",
-  },
-  {
-    icon: "chart",
-    title: "Live market depth",
-    body: "Institutional-grade pricing sourced from aggregated on-chain liquidity, streamed to your dashboard in real time.",
-  },
-  {
-    icon: "droplet",
-    title: "Deep native liquidity",
-    body: "Orders route through concentrated liquidity pools with minimal slippage, even at size. Best execution is the default.",
-  },
-  {
-    icon: "globe",
-    title: "Borderless by design",
-    body: "Send to any address, any network, any hour. Meridian settles globally with the same fee whether it's $5 or $5 million.",
-  },
+/* Demo portfolio ----------------------------------------------------------- */
+export interface Position {
+  ticker: string;
+  amount: number; // token units
+  costUsd: number;
+}
+
+export const POSITIONS: Position[] = [
+  { ticker: "NORTH", amount: 5.4e6, costUsd: 148 },
+  { ticker: "EMBER", amount: 12.1e6, costUsd: 210 },
+  { ticker: "QUARTZ", amount: 2.2e6, costUsd: 96 },
+  { ticker: "HALO", amount: 7.8e6, costUsd: 195 },
+  { ticker: "FERN", amount: 30.5e6, costUsd: 120 },
 ];
+
+export const CREATED_TICKERS = ["HALO", "FERN"];
+
+export function positionValue(p: Position): number {
+  const t = tokenByTicker(p.ticker);
+  return t ? p.amount * t.price : 0;
+}
+
+export function portfolioValue(): number {
+  return POSITIONS.reduce((sum, p) => sum + positionValue(p), 0);
+}

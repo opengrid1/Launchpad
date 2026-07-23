@@ -80,7 +80,7 @@ export function AreaChart({
   const line = useMemo(() => smoothPath(pts), [pts]);
   const area = `${line} L ${W - pad} ${height} L ${pad} ${height} Z`;
   const rising = data[data.length - 1] >= data[0];
-  const color = rising ? "#3DE8B0" : "#FF6B81";
+  const color = rising ? "#22C55E" : "#EF4444";
 
   const onMove = (e: React.MouseEvent) => {
     const rect = wrapRef.current?.getBoundingClientRect();

@@ -17,7 +17,17 @@ export function fmtUsd(v: number, opts: { compact?: boolean } = {}): string {
       currency: "USD",
       maximumFractionDigits: 2,
     });
-  return `$${v.toFixed(4)}`;
+  if (v === 0) return "$0.00";
+  // Sub-$1 prices: keep 3 significant digits so micro-cap prices don't
+  // collapse to $0.0000.
+  const decimals = Math.min(10, 2 - Math.floor(Math.log10(Math.abs(v))));
+  let s = Math.abs(v).toFixed(decimals);
+  if (s.includes(".")) {
+    s = s.replace(/0+$/, "").replace(/\.$/, "");
+    const frac = s.split(".")[1] ?? "";
+    if (frac.length < 2) s = Number(s).toFixed(2);
+  }
+  return `${v < 0 ? "-" : ""}$${s}`;
 }
 
 export function fmtNum(v: number, digits = 2): string {

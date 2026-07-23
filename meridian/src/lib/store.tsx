@@ -22,25 +22,17 @@ export interface Wallet {
   label: string;
 }
 
-interface Settings {
-  currency: "USD" | "EUR" | "GBP";
-  hideBalances: boolean;
-  txAlerts: boolean;
-  priceAlerts: boolean;
-  testnets: boolean;
-}
-
 interface AppState {
   wallet: Wallet | null;
   connecting: string | null;
   chain: Chain;
-  settings: Settings;
+  favorites: string[];
   toasts: Toast[];
   connect: (walletId: string, label: string) => Promise<void>;
   disconnect: () => void;
   setChain: (id: string) => void;
+  toggleFavorite: (ticker: string) => void;
   toast: (t: Omit<Toast, "id">) => void;
-  updateSettings: (patch: Partial<Settings>) => void;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -50,7 +42,7 @@ const DEMO_ADDRESS = "0xA4c8E19f37D25b60C41e8F93B7a5D20C64E1F98b";
 function load<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(`meridian:${key}`);
-    return raw ? { ...fallback, ...JSON.parse(raw) } : fallback;
+    return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
     return fallback;
   }
@@ -66,38 +58,23 @@ function save(key: string, value: unknown) {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [wallet, setWallet] = useState<Wallet | null>(() =>
-    load<Wallet | null>("wallet", null)
-  );
+  const [wallet, setWallet] = useState<Wallet | null>(() => load<Wallet | null>("wallet", null));
   const [connecting, setConnecting] = useState<string | null>(null);
   const [chain, setChainState] = useState<Chain>(() => {
     const saved = load<{ id: string } | null>("chain", null);
     return CHAINS.find((c) => c.id === saved?.id) ?? CHAINS[0];
   });
+  const [favorites, setFavorites] = useState<string[]>(() => load<string[]>("favorites", []));
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [settings, setSettings] = useState<Settings>(() =>
-    load<Settings>("settings", {
-      currency: "USD",
-      hideBalances: false,
-      txAlerts: true,
-      priceAlerts: false,
-      testnets: false,
-    })
-  );
   const idRef = useRef(0);
 
   const toast = useCallback((t: Omit<Toast, "id">) => {
     const id = ++idRef.current;
     setToasts((prev) => [...prev.slice(-3), { ...t, id }]);
     setTimeout(() => {
-      setToasts((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, leaving: true } : x))
-      );
-      setTimeout(
-        () => setToasts((prev) => prev.filter((x) => x.id !== id)),
-        300
-      );
-    }, 4600);
+      setToasts((prev) => prev.map((x) => (x.id === id ? { ...x, leaving: true } : x)));
+      setTimeout(() => setToasts((prev) => prev.filter((x) => x.id !== id)), 260);
+    }, 4200);
   }, []);
 
   const connect = useCallback(
@@ -129,15 +106,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!next) return;
       setChainState(next);
       save("chain", { id: next.id });
-      toast({ kind: "info", title: `Switched to ${next.name}` });
+      toast({ kind: "info", title: `Network set to ${next.name}` });
     },
     [toast]
   );
 
-  const updateSettings = useCallback((patch: Partial<Settings>) => {
-    setSettings((s) => {
-      const next = { ...s, ...patch };
-      save("settings", next);
+  const toggleFavorite = useCallback((ticker: string) => {
+    setFavorites((prev) => {
+      const next = prev.includes(ticker) ? prev.filter((t) => t !== ticker) : [...prev, ticker];
+      save("favorites", next);
       return next;
     });
   }, []);
@@ -147,15 +124,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       wallet,
       connecting,
       chain,
-      settings,
+      favorites,
       toasts,
       connect,
       disconnect,
       setChain,
+      toggleFavorite,
       toast,
-      updateSettings,
     }),
-    [wallet, connecting, chain, settings, toasts, connect, disconnect, setChain, toast, updateSettings]
+    [wallet, connecting, chain, favorites, toasts, connect, disconnect, setChain, toggleFavorite, toast]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
