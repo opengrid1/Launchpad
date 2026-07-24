@@ -1,5 +1,7 @@
 import type { Address, CandleInterval } from "@launchpad/sdk";
 
+import { BRAND } from "./brand";
+
 import { v4Client } from "./client";
 
 /**
@@ -45,8 +47,8 @@ export function makeDatafeed(token: Address, symbol: string) {
             type: "crypto",
             session: "24x7",
             timezone: "Etc/UTC",
-            exchange: "Quiverpad",
-            listed_exchange: "Quiverpad",
+            exchange: BRAND.name,
+            listed_exchange: BRAND.name,
             format: "price",
             minmov: 1,
             pricescale: 100,
