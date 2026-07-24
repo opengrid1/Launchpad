@@ -4,17 +4,27 @@ import type { LaunchpadClient } from "@launchpad/sdk";
 import { chain, env } from "./env";
 import { V4Client, type V4Addresses } from "./v4/client";
 
-/** Deployed Quiver V4 launchpad on Robinhood Chain (immutable). */
-const V4: V4Addresses = {
-  factory: "0x7684E116F10DD7B6634E17cba9A3767CD7B84663",
-  hook: "0x1E8fd8f01C44084E514d872AD27455De5c994044",
-  router: "0xA5CED4a472586B79c8d744F1b50b8D5a703b1b5d",
-  poolManager: "0x8366a39cc670b4001a1121b8f6a443a643e40951",
-  weth: "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
-  usdg: "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+/**
+ * Deployed Quiver V4 launchpad addresses. Defaults are the immutable
+ * Robinhood Chain deployment; each is overridable via env so the same
+ * codebase can target another chain's deployment (e.g. Steadypads on
+ * Stable) with a pure env change.
+ */
+const addr = (key: string, fallback: `0x${string}`): `0x${string}` => {
+  const v = import.meta.env[key];
+  return (v ? String(v) : fallback) as `0x${string}`;
 };
 
-const V4_START_BLOCK = 12744439n;
+const V4: V4Addresses = {
+  factory: addr("VITE_V4_FACTORY", "0x7684E116F10DD7B6634E17cba9A3767CD7B84663"),
+  hook: addr("VITE_V4_HOOK", "0x1E8fd8f01C44084E514d872AD27455De5c994044"),
+  router: addr("VITE_V4_ROUTER", "0xA5CED4a472586B79c8d744F1b50b8D5a703b1b5d"),
+  poolManager: addr("VITE_V4_POOL_MANAGER", "0x8366a39cc670b4001a1121b8f6a443a643e40951"),
+  weth: addr("VITE_V4_WETH", "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"),
+  usdg: addr("VITE_V4_USDG", "0x5fc5360d0400a0fd4f2af552add042d716f1d168"),
+};
+
+const V4_START_BLOCK = BigInt(String(import.meta.env.VITE_V4_START_BLOCK ?? "12744439"));
 
 // One or more RPC endpoints (comma-separated in VITE_RPC_URL). Each is retried
 // on transient failures (429 rate-limits, 5xx) with backoff, and viem's
