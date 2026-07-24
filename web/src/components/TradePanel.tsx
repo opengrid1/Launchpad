@@ -123,21 +123,21 @@ export function TradePanel({ token }: { token: TokenSummary }) {
 
   return (
     <div className="flex h-fit flex-col gap-3 rounded-xl border border-edge bg-panel p-3">
-      {/* Buy / Sell toggle */}
-      <div className="grid grid-cols-2 gap-1">
-        {(["buy", "sell"] as Side[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => { setSide(s); setAmount(""); }}
-            className={`h-8 rounded-lg text-[13px] font-semibold capitalize transition-colors ${
-              side === s
-                ? s === "buy" ? "bg-up text-white" : "bg-down text-white"
-                : "bg-panel-2 text-ink-2 hover:text-ink"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
+      {/* Buy / Sell blade switch */}
+      <div className="blade-switch" data-side={side}>
+        <button
+          onClick={() => { setSide("buy"); setAmount(""); }}
+          className={`blade-half ${side === "buy" ? "is-buy" : ""}`}
+        >
+          Buy
+        </button>
+        <span className="blade" aria-hidden />
+        <button
+          onClick={() => { setSide("sell"); setAmount(""); }}
+          className={`blade-half ${side === "sell" ? "is-sell" : ""}`}
+        >
+          Sell
+        </button>
       </div>
 
       {/* Amount */}
@@ -208,8 +208,10 @@ export function TradePanel({ token }: { token: TokenSummary }) {
         <button
           onClick={submit}
           disabled={busy || !parsedAmount || parsedAmount === 0n || Boolean(insufficientFunds)}
-          className={`h-11 rounded-lg text-[14px] font-semibold transition-colors disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 ${
-            side === "buy" ? "bg-up text-white hover:brightness-110" : "bg-down text-white hover:brightness-105"
+          className={`hud-cut h-11 text-[14px] font-bold uppercase tracking-wide text-black transition-[filter] disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 disabled:shadow-none ${
+            side === "buy"
+              ? "bg-up shadow-[0_0_22px_-8px_var(--color-up)] hover:brightness-110"
+              : "bg-down shadow-[0_0_22px_-8px_var(--color-down)] hover:brightness-105"
           }`}
         >
           {busy
@@ -223,7 +225,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
       ) : (
         <button
           onClick={connectFirst}
-          className="h-11 rounded-lg bg-accent text-[14px] font-semibold text-accent-fg transition-colors hover:bg-accent-2"
+          className="hud-cut h-11 bg-accent text-[14px] font-bold uppercase tracking-wide text-accent-fg transition-[filter] hover:brightness-105"
         >
           Connect Wallet
         </button>

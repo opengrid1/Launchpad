@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 
 import { Header } from "./components/Header";
-import { NavBar } from "./components/NavBar";
 import { Skeleton, Toasts } from "./components/ui";
 import { wagmiConfig } from "./lib/wagmi";
 import { Explore } from "./pages/Explore";
@@ -38,8 +37,7 @@ export default function App() {
         <BrowserRouter>
           <div className="flex min-h-screen flex-col bg-bg">
             <Header />
-            <NavBar />
-            <main className="flex-1">
+            <main className="flex-1 pb-14 sm:pb-0">
               <Suspense fallback={<PageFallback />}>
                 <Routes>
                   <Route path="/" element={<Explore />} />

@@ -1,37 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-  /* Dark theme with a lime accent — near-black ground, dark cards, hairline
-     borders, and a bright lime for buttons/CTAs and emphasis. */
-  --color-bg: #0b0d10;
-  --color-panel: #14161a;
-  --color-panel-2: #1c1f25;
-  --color-edge: #262a31;
-  --color-edge-2: #333842;
+  /* Deep-space HUD theme — near-black blue ground, navy panels, amber accent,
+     ion-cyan highlights. Starfield background, angled "hud" corners. */
+  --color-bg: #060910;
+  --color-panel: #0e1422;
+  --color-panel-2: #141d30;
+  --color-edge: #223049;
+  --color-edge-2: #33456a;
 
-  --color-ink: #eceef1;
-  --color-ink-2: #9298a2;
-  --color-ink-3: #646a74;
+  --color-ink: #d6deee;
+  --color-ink-2: #8593b0;
+  --color-ink-3: #55628a;
 
-  /* Lime primary. `accent` is the bright button/CTA fill (use `accent-fg` — a
-     near-black — as text ON it); `accent-ink` is lime used for text/emphasis,
-     which reads bright and clear on the dark ground. */
-  --color-accent: #a3e635;    /* bright lime — button backgrounds */
-  --color-accent-2: #84cc16;  /* darker lime — hover */
-  --color-accent-ink: #a3e635;/* lime — text/emphasis on dark */
-  --color-accent-fg: #0d1206; /* near-black — text on lime buttons */
+  /* Amber primary. `accent` is the button/CTA fill (use `accent-fg` — a deep
+     brown-black — as text ON it); `accent-ink` is amber used for text/emphasis. */
+  --color-accent: #ffb765;
+  --color-accent-2: #ffce97;
+  --color-accent-ink: #ffc078;
+  --color-accent-fg: #2a1600;
+
+  /* Ion cyan — scanline/indicator highlights */
+  --color-ion: #5cd5ff;
 
   /* Gains / losses */
-  --color-up: #21c45d;
-  --color-down: #ef584d;
+  --color-up: #57e39a;
+  --color-down: #ff6b7a;
 
   --font-sans: "Inter", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-card-hover: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
-  --shadow-btn: none;
+  --shadow-card: inset 0 1px 0 #33456a47, 0 2px 8px #00000080;
+  --shadow-card-hover: inset 0 1px 0 #33456a66, 0 14px 34px -14px #000c, 0 0 0 1px #5cd5ff1f;
+  --shadow-btn: 0 0 0 1px #ffb76559, 0 10px 30px -12px #ffb7658c;
 }
 
 html {
@@ -43,10 +45,29 @@ body {
   margin: 0;
   font-family: var(--font-sans);
   color: var(--color-ink);
-  background: var(--color-bg);
-  font-feature-settings: "ss01", "cv05";
+  /* Amber+ion nebulae over a fixed starfield. */
+  background:
+    radial-gradient(1100px 480px at 50% -12%, #ffb76514, transparent 62%),
+    radial-gradient(900px 500px at 82% 8%, #5cd5ff0d, transparent 60%),
+    radial-gradient(1px 1px at 20% 30%, #d6deee80, transparent),
+    radial-gradient(1px 1px at 70% 20%, #d6deee59, transparent),
+    radial-gradient(1px 1px at 45% 60%, #ffd6a066, transparent),
+    radial-gradient(1px 1px at 85% 70%, #d6deee4d, transparent),
+    radial-gradient(1px 1px at 12% 80%, #d6deee47, transparent),
+    var(--color-bg);
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, .font-display {
+  font-family: "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", var(--font-sans);
+  letter-spacing: -0.02em;
+}
+
+.font-display {
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .tnum {
@@ -57,11 +78,6 @@ body {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
-}
-
-.font-display {
-  font-weight: 700;
-  letter-spacing: -0.02em;
 }
 
 .rule {
@@ -76,29 +92,193 @@ body {
 }
 
 ::selection {
-  background: rgba(163, 230, 53, 0.28);
-  color: #eceef1;
+  background: #ffb76547;
+  color: #fff;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2c313a transparent;
+  scrollbar-color: #223049 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #2c313a;
+  background: #223049;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* Card hover — the quiet lift from Stackr */
+/* Amber CTA buttons — gradient fill, hairline ring, warm glow. Applied to any
+   button/a with bg-accent so every CTA gets the treatment for free. */
+button.bg-accent,
+a.bg-accent {
+  color: var(--color-accent-fg);
+  background-color: #ffb765;
+  background-image: linear-gradient(#ffce97, #ffb765 55%, #f59c40);
+  border: 1px solid #ffb7658c;
+  position: relative;
+  box-shadow: inset 0 1px #ffebd299, 0 0 0 1px #ffb76547, 0 10px 30px -12px #ffb76599;
+}
+button.bg-accent:hover,
+a.bg-accent:hover {
+  background-image: linear-gradient(#ffdcb0, #ffc078 55%, #ffab55);
+  box-shadow: inset 0 1px #ffebd2b3, 0 0 0 1px #ffb76566, 0 14px 36px -12px #ffb765bf;
+}
+button.bg-accent:active,
+a.bg-accent:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px #ffebd299, 0 0 0 1px #ffb76559;
+}
+button.bg-accent:disabled {
+  background-image: none;
+  background-color: var(--color-panel-2);
+  border-color: var(--color-edge);
+  box-shadow: none;
+  text-shadow: none;
+  color: var(--color-ink-3) !important;
+}
+
+/* Physical nav plate — pressed-metal look for header controls. */
+.nav-sign {
+  border: 1px solid var(--color-edge);
+  background-image: linear-gradient(#141d30, #0e1422);
+  position: relative;
+  box-shadow: inset 0 1px #33456a59, 0 1px #0006;
+}
+.nav-sign:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px #33456a59;
+}
+.nav-sign-on {
+  color: var(--color-accent-ink);
+  border-color: #ffb76580;
+  box-shadow: inset 0 1px #33456a59, inset 0 0 18px #ffb7651f, 0 0 20px -8px #ffb76599;
+}
+
+/* HUD cuts — angled clip-path corners in three sizes plus tab + viewport. */
+.hud-cut {
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+}
+.hud-cut-lg {
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+}
+.hud-tab {
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  border: 1px solid #0000;
+  transition: color 0.16s, background 0.16s, border-color 0.16s;
+  position: relative;
+}
+.hud-tab:hover {
+  background: #33456a24;
+}
+.hud-tab-on {
+  background: radial-gradient(120% 140% at 50% 0, #ffb76524, #0000 70%);
+  border-color: #ffb76573;
+  box-shadow: inset 0 0 16px #ffb7651a, 0 0 18px -8px #ffb7658c;
+}
+.hud-viewport {
+  border: 1px solid var(--color-edge);
+  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+  background: linear-gradient(#5cd5ff0a, #0000 30%), #0a0f1a;
+  position: relative;
+  box-shadow: inset 0 0 0 1px #5cd5ff0f, inset 0 1px #33456a4d;
+}
+.hud-viewport:before,
+.hud-viewport:after {
+  content: "";
+  border-color: var(--color-accent);
+  opacity: 0.55;
+  pointer-events: none;
+  width: 14px;
+  height: 14px;
+  position: absolute;
+}
+.hud-viewport:before {
+  border-top: 1.5px solid;
+  border-left: 1.5px solid;
+  top: 6px;
+  left: 6px;
+}
+.hud-viewport:after {
+  border-bottom: 1.5px solid;
+  border-right: 1.5px solid;
+  bottom: 6px;
+  right: 6px;
+}
+
+/* Buy/Sell blade switch — a light-blade divider that leans to the active side. */
+.blade-switch {
+  border: 1px solid var(--color-edge);
+  background: linear-gradient(#0e1422, #0a0f1a);
+  border-radius: 11px;
+  grid-template-columns: 1fr 2px 1fr;
+  align-items: stretch;
+  height: 40px;
+  display: grid;
+  position: relative;
+  overflow: hidden;
+}
+.blade-half {
+  color: var(--color-ink-2);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  transition: color 0.18s, background 0.18s, text-shadow 0.18s;
+}
+.blade-half:hover {
+  color: var(--color-ink);
+}
+.blade-half.is-buy {
+  color: #eafff5;
+  text-shadow: 0 0 14px #57e39ab3;
+  background: radial-gradient(120% 100% at 0%, #57e39a38, #0000 70%);
+}
+.blade-half.is-sell {
+  color: #ffeef0;
+  text-shadow: 0 0 14px #ff6b7ab3;
+  background: radial-gradient(120% 100% at 100%, #ff6b7a38, #0000 70%);
+}
+.blade {
+  background: var(--color-ion);
+  width: 2px;
+  height: 62%;
+  box-shadow: 0 0 6px var(--color-ion), 0 0 14px #5cd5ffb3;
+  border-radius: 2px;
+  align-self: center;
+  transition: background 0.2s, box-shadow 0.2s, height 0.2s;
+  position: relative;
+}
+.blade:before {
+  content: "";
+  opacity: 0.85;
+  filter: blur(0.5px);
+  background: #fff;
+  border-radius: 3px;
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  bottom: -1px;
+  left: -1px;
+}
+.blade-switch[data-side="buy"] .blade {
+  background: var(--color-up);
+  box-shadow: 0 0 7px var(--color-up), 0 0 18px #57e39acc;
+}
+.blade-switch[data-side="sell"] .blade {
+  background: var(--color-down);
+  box-shadow: 0 0 7px var(--color-down), 0 0 18px #ff6b7acc;
+}
+
+/* Card hover — the quiet lift */
 .card-hover {
-  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  transition: transform 0.16s, box-shadow 0.16s, border-color 0.16s;
 }
 .card-hover:hover {
   transform: translateY(-1px);
@@ -127,6 +307,12 @@ body {
 }
 .toast-enter { animation: toast-in 160ms ease-out; }
 
+@keyframes sheet-in {
+  from { transform: translateY(24px); opacity: 0.6; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.sheet-in { animation: sheet-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
 @keyframes rise {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -140,16 +326,16 @@ body {
 .fade-in { animation: fade-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 @keyframes flash-up {
-  0% { background: rgba(33, 196, 93, 0.14); }
+  0% { background: rgba(87, 227, 154, 0.14); }
   100% { background: transparent; }
 }
 @keyframes flash-down {
-  0% { background: rgba(239, 88, 77, 0.14); }
+  0% { background: rgba(255, 107, 122, 0.14); }
   100% { background: transparent; }
 }
 .flash-up { animation: flash-up 700ms ease-out; }
 .flash-down { animation: flash-down 700ms ease-out; }
 
 @media (prefers-reduced-motion: reduce) {
-  .rise, .toast-enter, .fade-in, .tape, .dot-live, .card-hover { animation: none; transition: none; }
+  .rise, .toast-enter, .fade-in, .tape, .dot-live, .card-hover, .sheet-in { animation: none; transition: none; }
 }

@@ -127,13 +127,13 @@ export function TokenPage() {
             </div>
           </div>
           {/* Chart */}
-          <div className="h-[420px]">
+          <div className="hud-viewport h-[420px] overflow-hidden p-1.5">
             <Suspense fallback={<Skeleton className="h-full w-full" />}>
               <TVChart token={t.address as Address} symbol={t.symbol} />
             </Suspense>
           </div>
         </div>
-        <div>
+        <div className="lg:sticky lg:top-4 lg:self-start">
           <TradePanel token={t} />
         </div>
       </section>
