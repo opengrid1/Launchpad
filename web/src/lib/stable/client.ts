@@ -79,6 +79,10 @@ export class StableV3Client {
   private walletClient?: WalletClient;
   private cores = new Map<string, Core>();
   private coreCount = 0;
+  private coresInflight: Promise<Core[]> | null = null;
+  private priceCache = new Map<string, { at: number; price: bigint }>();
+  private tradesCache = new Map<string, { at: number; trades: TradeRecord[] }>();
+  private tradesInflight = new Map<string, Promise<TradeRecord[]>>();
 
   constructor(publicClient: PublicClient, addresses: StableAddresses) {
     this.publicClient = publicClient;
@@ -95,7 +99,17 @@ export class StableV3Client {
 
   // -- reads ------------------------------------------------------------
 
-  private async loadCores(): Promise<Core[]> {
+  private loadCores(): Promise<Core[]> {
+    // Single-flight: Explore fires two token queries at mount; share one scan.
+    if (!this.coresInflight) {
+      this.coresInflight = this._loadCores().finally(() => {
+        this.coresInflight = null;
+      });
+    }
+    return this.coresInflight;
+  }
+
+  private async _loadCores(): Promise<Core[]> {
     const count = Number(
       await this.publicClient.readContract({
         address: this.addresses.factory,
@@ -139,8 +153,18 @@ export class StableV3Client {
     return [...this.cores.values()];
   }
 
-  /** Price in native wei (18d) per whole token, from the live pool. */
+  /** Price in native wei (18d) per whole token, from the live pool. Cached
+   *  briefly so list + detail views don't refetch slot0 per render. */
   private async priceWei(core: Core): Promise<bigint> {
+    const key = core.address.toLowerCase();
+    const hit = this.priceCache.get(key);
+    if (hit && Date.now() - hit.at < 8_000) return hit.price;
+    const price = await this.readPriceWei(core);
+    this.priceCache.set(key, { at: Date.now(), price });
+    return price;
+  }
+
+  private async readPriceWei(core: Core): Promise<bigint> {
     const [sqrtPriceX96] = (await this.publicClient.readContract({
       address: core.pool, abi: POOL_ABI, functionName: "slot0",
     })) as unknown as [bigint];
@@ -203,21 +227,51 @@ export class StableV3Client {
   }
 
   /** Recent trades from pool Swap events. The public RPC caps getLogs at 500
-   *  blocks, so this scans a bounded window of recent history. */
+   *  blocks, so a bounded window of recent history is scanned — all windows in
+   *  parallel, results cached briefly and shared with the candle builder.
+   *  Timestamps are estimated from the head block and Stable's ~0.7s block
+   *  time instead of a per-block lookup. */
   async getTrades(token: string, opts?: { limit?: number }): Promise<TradeRecord[]> {
+    const key = token.toLowerCase();
+    const hit = this.tradesCache.get(key);
+    if (hit && Date.now() - hit.at < 10_000) return hit.trades.slice(0, opts?.limit ?? 50);
+    let inflight = this.tradesInflight.get(key);
+    if (!inflight) {
+      inflight = this.scanTrades(key).finally(() => this.tradesInflight.delete(key));
+      this.tradesInflight.set(key, inflight);
+    }
+    const trades = await inflight;
+    return trades.slice(0, opts?.limit ?? 50);
+  }
+
+  private async scanTrades(key: string): Promise<TradeRecord[]> {
     await this.loadCores();
-    const core = this.cores.get(token.toLowerCase());
+    const core = this.cores.get(key);
     if (!core) return [];
-    const head = await this.publicClient.getBlockNumber();
-    const out: TradeRecord[] = [];
-    for (let w = 0; w < TRADE_SCAN_WINDOWS && out.length < (opts?.limit ?? 50); w++) {
+    const [head, headBlock] = await Promise.all([
+      this.publicClient.getBlockNumber(),
+      this.publicClient.getBlock().catch(() => null),
+    ]);
+    const headTs = headBlock ? Number(headBlock.timestamp) : Math.floor(Date.now() / 1000);
+
+    const windows = Array.from({ length: TRADE_SCAN_WINDOWS }, (_, w) => {
       const to = head - BigInt(w * 500);
-      if (to <= 0n) break;
+      if (to <= 0n) return null;
       const from = to - 499n > 0n ? to - 499n : 0n;
-      const logs = await this.publicClient
-        .getLogs({ address: core.pool, event: POOL_ABI[2], fromBlock: from, toBlock: to })
-        .catch(() => []);
-      for (const log of logs.reverse()) {
+      return { from, to };
+    }).filter(Boolean) as Array<{ from: bigint; to: bigint }>;
+
+    const results = await Promise.all(
+      windows.map((w) =>
+        this.publicClient
+          .getLogs({ address: core.pool, event: POOL_ABI[2], fromBlock: w.from, toBlock: w.to })
+          .catch(() => []),
+      ),
+    );
+
+    const out: TradeRecord[] = [];
+    for (const logs of results) {
+      for (const log of logs) {
         const { amount0, amount1, sqrtPriceX96 } = log.args as { amount0: bigint; amount1: bigint; sqrtPriceX96: bigint };
         const tokenDelta = core.tokenIsToken0 ? amount0 : amount1;
         const quoteDelta = core.tokenIsToken0 ? amount1 : amount0;
@@ -225,6 +279,7 @@ export class StableV3Client {
         const price = core.tokenIsToken0
           ? (((sqrtPriceX96 * sqrtPriceX96) / Q96) * 10n ** 18n * DEC_GAP) / Q96
           : (Q96 * Q96 * 10n ** 18n * DEC_GAP) / (sqrtPriceX96 * sqrtPriceX96);
+        const blockNumber = Number(log.blockNumber);
         out.push({
           id: `${log.transactionHash}-${log.logIndex}`,
           token: core.address,
@@ -234,29 +289,23 @@ export class StableV3Client {
           tokenAmount: (tokenDelta < 0n ? -tokenDelta : tokenDelta).toString(),
           feeWei: "0",
           priceWei: price.toString(),
-          blockNumber: Number(log.blockNumber),
+          blockNumber,
           txHash: log.transactionHash!,
-          timestamp: 0,
+          // ~0.7s block time on Stable — estimate, no per-block lookups.
+          timestamp: Math.max(0, headTs - Math.round(Number(head - log.blockNumber!) * 0.7)),
         });
       }
     }
-    // Stamp timestamps for the blocks we actually surfaced (bounded set).
-    const blocks = [...new Set(out.slice(0, opts?.limit ?? 50).map((t) => t.blockNumber))];
-    const times = new Map<number, number>();
-    await Promise.all(
-      blocks.map(async (b) => {
-        const blk = await this.publicClient.getBlock({ blockNumber: BigInt(b) }).catch(() => null);
-        if (blk) times.set(b, Number(blk.timestamp));
-      }),
-    );
-    for (const t of out) t.timestamp = times.get(t.blockNumber) ?? Math.floor(Date.now() / 1000);
-    return out.slice(0, opts?.limit ?? 50);
+    out.sort((a, b) => b.blockNumber - a.blockNumber);
+    this.tradesCache.set(key, { at: Date.now(), trades: out });
+    return out;
   }
 
   /** Candles from the recent-trade window plus a live closing candle. */
   async getCandles(token: string, interval: CandleInterval, opts?: { limit?: number }): Promise<Candle[]> {
     const secs = INTERVAL_SECONDS[interval] ?? 60;
-    const trades = await this.getTrades(token, { limit: 200 });
+    // Shares the cached trade scan with the trades list — no duplicate work.
+    const trades = await this.getTrades(token, { limit: 500 });
     const core = this.cores.get(token.toLowerCase());
     const live = core ? await this.priceWei(core).catch(() => 0n) : 0n;
     const buckets = new Map<number, Candle>();

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Address } from "@launchpad/sdk";
 
+import { BRAND } from "../lib/brand";
 import { env } from "../lib/env";
 import { Icon } from "./Icon";
 
@@ -35,7 +36,11 @@ export function ShareMenu({ address, symbol, name }: { address: Address; symbol:
   const uniswapUrl = `https://app.uniswap.org/swap?chain=${env.chainId}&outputCurrency=${address}`;
   const tweet =
     `https://twitter.com/intent/tweet?` +
-    `text=${encodeURIComponent(`$${symbol} — ${name}\nTrading live on Quiverpad, holders earn real stock rewards.`)}` +
+    `text=${encodeURIComponent(
+      `$${symbol} — ${name}\nTrading live on ${BRAND.name}, holders earn real ${
+        env.rewardMode === "dollar" ? "dollars" : "stock rewards"
+      }.`,
+    )}` +
     `&url=${encodeURIComponent(pageUrl)}`;
 
   const copyLink = () => {
