@@ -348,7 +348,9 @@ export class StableV3Client {
   // -- V4-only surface, degraded gracefully -----------------------------
 
   async tokenExtra(): Promise<null> { return null; }
-  async mcapScale(): Promise<number> { return 1; }
+  /** Chart scale: candle prices are native wei per whole token (18d) and the
+   *  chart plots market cap in USD. mcap = priceWei/1e18 × 1e9 supply × $1. */
+  async mcapScale(): Promise<number> { return 1e-9; }
   async harvest(): Promise<never> { throw new Error("Not available on Stable."); }
   async claimDividends(): Promise<never> { throw new Error("Not available on Stable."); }
 
