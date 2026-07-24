@@ -268,8 +268,15 @@ contract QuiverHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
         //    stock route isn't configured/liquid, or there are no eligible holders
         //    to receive it, fold this share into the protocol share so no WETH is
         //    stranded.
+        //    Dollar mode: when the chosen reward IS the wrapped native (e.g.
+        //    WUSDT0 on Stable, where the native currency is a dollar), skip both
+        //    swap hops and distribute the holder share directly.
         bool holderPaid;
-        if (toHolders > 0 && c.stock != address(0) && quote != address(0) && IQuiverToken(token).eligibleSupply() > 0) {
+        if (toHolders > 0 && c.stock == WETH && IQuiverToken(token).eligibleSupply() > 0) {
+            IERC20(WETH).safeTransfer(token, toHolders);
+            IQuiverToken(token).distributeRewards(toHolders);
+            holderPaid = true;
+        } else if (toHolders > 0 && c.stock != address(0) && quote != address(0) && IQuiverToken(token).eligibleSupply() > 0) {
             uint256 usdgOut = _swap(_quoteKey, _wethSide(_quoteKey), toHolders, 0);
             if (usdgOut > 0) {
                 uint256 stockOut = _swap(c.stockKey, Currency.wrap(quote), usdgOut, minStock);

@@ -5,6 +5,7 @@ import { keccak256, toHex } from "viem";
 import { StockLogo } from "../components/StockLogo";
 import { Field, inputClass } from "../components/ui";
 import { client } from "../lib/client";
+import { addresses, env } from "../lib/env";
 import { STOCKS } from "../lib/v4/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
@@ -29,7 +30,9 @@ export function LaunchPage() {
     twitter: "",
     telegram: "",
   });
-  const [stock, setStock] = useState(STOCKS[0].address);
+  const dollarMode = env.rewardMode === "dollar";
+  // Dollar mode: the reward is the wrapped native itself; no picker.
+  const [stock, setStock] = useState(dollarMode ? addresses.weth : STOCKS[0].address);
   const [taxPct, setTaxPct] = useState(3);
   const [busy, setBusy] = useState(false);
   const [logoData, setLogoData] = useState("");
@@ -95,14 +98,14 @@ export function LaunchPage() {
     }
   };
 
-  const selectedStock = STOCKS.find((s) => s.address === stock)!;
+  const selectedStock = STOCKS.find((s) => s.address === stock);
 
   return (
     <div className="mx-auto max-w-lg px-4 pb-16 pt-5 sm:px-5">
       <h1 className="text-[18px] font-bold tracking-tight text-ink">Launch a token</h1>
       <p className="mt-1 text-[12.5px] leading-relaxed text-ink-2">
         One transaction mints your token, opens a live market and seeds the full supply. Every trade
-        rewards holders with the stock you pick.
+        {dollarMode ? " pays holders real dollars." : " rewards holders with the stock you pick."}
       </p>
 
       <form onSubmit={submit} className="mt-4 space-y-4 rounded-xl border border-edge bg-panel p-4">
@@ -147,28 +150,40 @@ export function LaunchPage() {
             placeholder="What is this token about?" maxLength={500} />
         </Field>
 
-        {/* Reward stock picker */}
-        <div>
-          <label className="mb-1.5 block text-[12.5px] font-medium text-ink">
-            Holders earn <span className="text-ink-3">· {selectedStock.symbol}</span>
-          </label>
-          <div className="grid grid-cols-5 gap-1.5">
-            {STOCKS.map((s) => (
-              <button
-                type="button"
-                key={s.address}
-                onClick={() => setStock(s.address)}
-                title={s.name}
-                className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[11px] font-bold transition-colors ${
-                  stock === s.address ? "border-accent bg-accent/10 text-accent-ink" : "border-edge text-ink-2 hover:border-edge-2 hover:text-ink"
-                }`}
-              >
-                <StockLogo address={s.address} symbol={s.symbol} size={22} />
-                {s.symbol}
-              </button>
-            ))}
+        {/* Reward — stock picker, or a fixed dollar note in dollar mode */}
+        {dollarMode ? (
+          <div className="rounded-lg border border-accent/25 bg-accent/[0.04] px-3 py-2.5">
+            <p className="text-[12.5px] font-medium text-ink">
+              Holders earn <span className="text-accent-ink">· dollars</span>
+            </p>
+            <p className="mt-0.5 text-[11.5px] leading-relaxed text-ink-3">
+              The trade tax is harvested and paid out to holders in {env.nativeSymbol}, straight to
+              their wallets. No stock picking — every launch pays dollars.
+            </p>
           </div>
-        </div>
+        ) : (
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium text-ink">
+              Holders earn <span className="text-ink-3">· {selectedStock?.symbol}</span>
+            </label>
+            <div className="grid grid-cols-5 gap-1.5">
+              {STOCKS.map((s) => (
+                <button
+                  type="button"
+                  key={s.address}
+                  onClick={() => setStock(s.address)}
+                  title={s.name}
+                  className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[11px] font-bold transition-colors ${
+                    stock === s.address ? "border-accent bg-accent/10 text-accent-ink" : "border-edge text-ink-2 hover:border-edge-2 hover:text-ink"
+                  }`}
+                >
+                  <StockLogo address={s.address} symbol={s.symbol} size={22} />
+                  {s.symbol}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tax slider */}
         <div>
