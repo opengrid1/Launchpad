@@ -223,7 +223,11 @@ export class StableV3Client {
   async getToken(token: string): Promise<TokenSummary | null> {
     await this.loadCores();
     const core = this.cores.get(token.toLowerCase());
-    return core ? this.summary(core) : null;
+    if (!core) return null;
+    // Warm the trade scan now — the trades list and chart mount right after
+    // this resolves, and by then the scan is in flight or already cached.
+    this.getTrades(token, { limit: 50 }).catch(() => {});
+    return this.summary(core);
   }
 
   /** Recent trades from pool Swap events. The public RPC caps getLogs at 500
@@ -233,15 +237,31 @@ export class StableV3Client {
    *  time instead of a per-block lookup. */
   async getTrades(token: string, opts?: { limit?: number }): Promise<TradeRecord[]> {
     const key = token.toLowerCase();
-    const hit = this.tradesCache.get(key);
-    if (hit && Date.now() - hit.at < 10_000) return hit.trades.slice(0, opts?.limit ?? 50);
+    const hit = this.tradesCache.get(key) ?? this.loadPersistedTrades(key);
+    const age = hit ? Date.now() - hit.at : Infinity;
+    if (hit && age < 15_000) return hit.trades.slice(0, opts?.limit ?? 50);
     let inflight = this.tradesInflight.get(key);
     if (!inflight) {
       inflight = this.scanTrades(key).finally(() => this.tradesInflight.delete(key));
       this.tradesInflight.set(key, inflight);
     }
+    // Stale-while-revalidate: a recent-enough cached list renders instantly
+    // while the fresh scan replaces it for the next read.
+    if (hit && age < 120_000) return hit.trades.slice(0, opts?.limit ?? 50);
     const trades = await inflight;
     return trades.slice(0, opts?.limit ?? 50);
+  }
+
+  private loadPersistedTrades(key: string): { at: number; trades: TradeRecord[] } | null {
+    try {
+      const raw = sessionStorage.getItem(`steady:trades:${key}`);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { at: number; trades: TradeRecord[] };
+      this.tradesCache.set(key, parsed);
+      return parsed;
+    } catch {
+      return null;
+    }
   }
 
   private async scanTrades(key: string): Promise<TradeRecord[]> {
@@ -297,7 +317,11 @@ export class StableV3Client {
       }
     }
     out.sort((a, b) => b.blockNumber - a.blockNumber);
-    this.tradesCache.set(key, { at: Date.now(), trades: out });
+    const entry = { at: Date.now(), trades: out };
+    this.tradesCache.set(key, entry);
+    try {
+      sessionStorage.setItem(`steady:trades:${key}`, JSON.stringify({ ...entry, trades: out.slice(0, 100) }));
+    } catch { /* storage full — in-memory cache still works */ }
     return out;
   }
 
