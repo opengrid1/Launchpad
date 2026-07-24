@@ -1,7 +1,8 @@
 import { createPublicClient, fallback, http, type PublicClient } from "viem";
 import type { LaunchpadClient } from "@launchpad/sdk";
 
-import { chain, env } from "./env";
+import { addresses as envAddresses, chain, env } from "./env";
+import { StableV3Client } from "./stable/client";
 import { V4Client, type V4Addresses } from "./v4/client";
 
 /**
@@ -49,6 +50,18 @@ const publicClient = createPublicClient({
   batch: { multicall: { wait: 24 } },
 }) as PublicClient;
 
+/** Protocol switch: "stable-v3" targets StableLaunchpadFactory on Stable
+ *  Mainnet (official Uniswap V3); anything else is the Quiver V4 launchpad. */
+const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
+
+const stable = IS_STABLE
+  ? new StableV3Client(publicClient, {
+      factory: envAddresses.factory,
+      swapRouter: String(import.meta.env.VITE_SWAP_ROUTER ?? "") as `0x${string}`,
+      quote: String(import.meta.env.VITE_QUOTE_ASSET ?? "") as `0x${string}`,
+    })
+  : null;
+
 const v4 = new V4Client(publicClient, V4, V4_START_BLOCK);
 
 /**
@@ -60,7 +73,7 @@ const v4 = new V4Client(publicClient, V4, V4_START_BLOCK);
  * falls back to reading straight from the chain, and live event watchers still
  * stream updates over RPC as before. Disabled in dev, where there is no /api.
  */
-if (import.meta.env.PROD) {
+if (import.meta.env.PROD && !IS_STABLE) {
   const apiGet = async <T>(path: string): Promise<T> => {
     const r = await fetch(`/api${path}`);
     if (!r.ok) throw new Error(`api ${r.status}`);
@@ -103,7 +116,8 @@ if (import.meta.env.PROD) {
  * App-wide client singleton. It is the V4 launchpad client, cast to the v3
  * SDK's client type so the existing React hooks and pages consume it unchanged.
  */
-export const client = v4 as unknown as LaunchpadClient;
+export const client = (stable ?? v4) as unknown as LaunchpadClient;
 
-/** Typed access to V4-only methods (dividends, stock, mcap scale). */
-export const v4Client = v4;
+/** Typed access to V4-only methods (dividends, stock, mcap scale). On the
+ *  Stable protocol these degrade gracefully inside StableV3Client. */
+export const v4Client = (stable ?? v4) as unknown as V4Client;

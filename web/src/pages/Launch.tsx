@@ -11,6 +11,10 @@ import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
 const LAUNCHED_TOPIC = keccak256(toHex("Launched(address,address,address,uint16,bytes32)"));
+const TOKEN_CREATED_TOPIC = keccak256(
+  toHex("TokenCreated(address,address,string,string,string,uint256)"),
+);
+const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
 
 /**
  * One-step V4 launch. The creator picks the tokenized stock holders will earn
@@ -87,7 +91,9 @@ export function LaunchPage() {
       });
       pushToast({ kind: "info", title: "Launch submitted", txHash: hash });
       const receipt = await client.publicClient.waitForTransactionReceipt({ hash });
-      const log = receipt.logs.find((l) => l.topics[0] === LAUNCHED_TOPIC);
+      const log = receipt.logs.find(
+        (l) => l.topics[0] === LAUNCHED_TOPIC || l.topics[0] === TOKEN_CREATED_TOPIC,
+      );
       pushToast({ kind: "success", title: "Token is live", body: "Pool open, trading enabled.", txHash: hash });
       if (log?.topics[1]) navigate(`/token/0x${log.topics[1].slice(26)}`);
       else navigate("/");
@@ -185,15 +191,18 @@ export function LaunchPage() {
           </div>
         )}
 
-        {/* Tax slider */}
-        <div>
-          <div className="mb-2 flex items-baseline justify-between">
-            <label className="text-[12.5px] font-medium text-ink">Trade tax</label>
-            <span className="tnum text-[13px] font-bold text-accent-ink">{taxPct}%</span>
+        {/* Tax slider — hidden on Stable: the only trading cost is the fixed
+            1% pool fee, split 80% to the creator / 20% to the platform. */}
+        {!IS_STABLE && (
+          <div>
+            <div className="mb-2 flex items-baseline justify-between">
+              <label className="text-[12.5px] font-medium text-ink">Trade tax</label>
+              <span className="tnum text-[13px] font-bold text-accent-ink">{taxPct}%</span>
+            </div>
+            <input type="range" min={0} max={10} step={1} value={taxPct} onChange={(e) => setTaxPct(Number(e.target.value))}
+              className="w-full accent-[color:var(--color-accent)]" />
           </div>
-          <input type="range" min={0} max={10} step={1} value={taxPct} onChange={(e) => setTaxPct(Number(e.target.value))}
-            className="w-full accent-[color:var(--color-accent)]" />
-        </div>
+        )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field label="X"><input className={inputClass} value={form.twitter} onChange={set("twitter")} placeholder="x.com/…" /></Field>
@@ -202,8 +211,9 @@ export function LaunchPage() {
         </div>
 
         <dl className="space-y-1.5 border-t border-edge pt-3 text-[12px]">
-          <Row label="Starting market cap" value="$5,000" />
+          <Row label="Starting market cap" value={IS_STABLE ? "$3,000" : "$5,000"} />
           <Row label="Supply" value="1,000,000,000" />
+          {IS_STABLE && <Row label="Pool fee" value="1% — 80% to you, 20% platform" />}
         </dl>
 
         <button type="submit" disabled={busy}

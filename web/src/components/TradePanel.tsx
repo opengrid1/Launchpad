@@ -10,8 +10,12 @@ import { useUi } from "../store";
 
 type Side = "buy" | "sell";
 
-// Quick-buy amounts in native currency, launchpad style.
-const BUY_PRESETS = ["0.01", "0.05", "0.1", "0.5"];
+// Quick-buy amounts in native currency, launchpad style. On Stable the
+// native currency is a dollar, so the presets read as dollar amounts.
+const BUY_PRESETS =
+  String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3"
+    ? ["1", "5", "10", "25"]
+    : ["0.01", "0.05", "0.1", "0.5"];
 
 export function TradePanel({ token }: { token: TokenSummary }) {
   const { address, isConnected, connectFirst } = useWallet();
