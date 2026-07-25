@@ -24,7 +24,9 @@ function brandHtml(): Plugin {
     transformIndexHtml(html) {
       if (!meta) return html;
       let out = html
+        .replace(/<html lang="en">/, `<html lang="en" data-brand="${process.env.VITE_BRAND}">`)
         .replace(/<title>[^<]*<\/title>/, `<title>${meta.title}</title>`)
+        .replace(/(<meta name="theme-color" content=")[^"]*(")/, `$1#060a09$2`)
         .replace(/(<meta\s+name="description"\s+content=")[^"]*(")/, `$1${meta.description}$2`);
       if (meta.icon) {
         out = out

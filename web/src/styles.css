@@ -339,3 +339,99 @@ button.bg-accent:disabled {
 @media (prefers-reduced-motion: reduce) {
   .rise, .toast-enter, .fade-in, .tape, .dot-live, .card-hover, .sheet-in { animation: none; transition: none; }
 }
+
+/* -------------------------------------------------------------------------
+   Steadypads flavor — "Digital Dollar" theme. Same HUD design language,
+   USDT-green color story for the Stable chain. Scoped by the data-brand
+   attribute stamped on <html> at build (vite plugin) and runtime (main.tsx).
+-------------------------------------------------------------------------- */
+:root[data-brand="steadypads"] {
+  --color-bg: #060a09;
+  --color-panel: #0c1512;
+  --color-panel-2: #12241c;
+  --color-edge: #1d332a;
+  --color-edge-2: #2c4d3e;
+
+  --color-ink: #d9eee5;
+  --color-ink-2: #85b0a0;
+  --color-ink-3: #557a6a;
+
+  --color-accent: #00b98a;
+  --color-accent-2: #43e6ae;
+  --color-accent-ink: #43e6ae;
+  --color-accent-fg: #03170f;
+
+  --color-ion: #5cffc9;
+
+  --shadow-card: inset 0 1px 0 #2c4d3e47, 0 2px 8px #00000080;
+  --shadow-card-hover: inset 0 1px 0 #2c4d3e66, 0 14px 34px -14px #000c, 0 0 0 1px #5cffc91f;
+  --shadow-btn: 0 0 0 1px #00b98a59, 0 10px 30px -12px #00b98a8c;
+}
+
+:root[data-brand="steadypads"] body {
+  background:
+    radial-gradient(1100px 480px at 50% -12%, #00b98a14, transparent 62%),
+    radial-gradient(900px 500px at 82% 8%, #5cffc90d, transparent 60%),
+    radial-gradient(1px 1px at 20% 30%, #d9eee580, transparent),
+    radial-gradient(1px 1px at 70% 20%, #d9eee559, transparent),
+    radial-gradient(1px 1px at 45% 60%, #a0ffdc66, transparent),
+    radial-gradient(1px 1px at 85% 70%, #d9eee54d, transparent),
+    radial-gradient(1px 1px at 12% 80%, #d9eee547, transparent),
+    var(--color-bg);
+  background-attachment: fixed;
+}
+
+:root[data-brand="steadypads"] ::selection {
+  background: #00b98a47;
+}
+
+:root[data-brand="steadypads"] * {
+  scrollbar-color: #1d332a transparent;
+}
+:root[data-brand="steadypads"] *::-webkit-scrollbar-thumb {
+  background: #1d332a;
+}
+
+:root[data-brand="steadypads"] button.bg-accent,
+:root[data-brand="steadypads"] a.bg-accent {
+  background-color: #00b98a;
+  background-image: linear-gradient(#43e6ae, #00b98a 55%, #009b73);
+  border-color: #00b98a8c;
+  box-shadow: inset 0 1px #b8ffe699, 0 0 0 1px #00b98a47, 0 10px 30px -12px #00b98a99;
+}
+:root[data-brand="steadypads"] button.bg-accent:hover,
+:root[data-brand="steadypads"] a.bg-accent:hover {
+  background-image: linear-gradient(#7cf0c6, #43e6ae 55%, #00b98a);
+  box-shadow: inset 0 1px #b8ffe6b3, 0 0 0 1px #00b98a66, 0 14px 36px -12px #00b98abf;
+}
+:root[data-brand="steadypads"] button.bg-accent:active,
+:root[data-brand="steadypads"] a.bg-accent:active {
+  box-shadow: inset 0 1px #b8ffe699, 0 0 0 1px #00b98a59;
+}
+
+:root[data-brand="steadypads"] .nav-sign {
+  background-image: linear-gradient(#12241c, #0c1512);
+  box-shadow: inset 0 1px #2c4d3e59, 0 1px #0006;
+}
+:root[data-brand="steadypads"] .nav-sign-on {
+  border-color: #00b98a80;
+  box-shadow: inset 0 1px #2c4d3e59, inset 0 0 18px #00b98a1f, 0 0 20px -8px #00b98a99;
+}
+
+:root[data-brand="steadypads"] .hud-tab:hover {
+  background: #2c4d3e24;
+}
+:root[data-brand="steadypads"] .hud-tab-on {
+  background: radial-gradient(120% 140% at 50% 0, #00b98a24, #0000 70%);
+  border-color: #00b98a73;
+  box-shadow: inset 0 0 16px #00b98a1a, 0 0 18px -8px #00b98a8c;
+}
+
+:root[data-brand="steadypads"] .hud-viewport {
+  background: linear-gradient(#5cffc90a, #0000 30%), #08110d;
+  box-shadow: inset 0 0 0 1px #5cffc90f, inset 0 1px #2c4d3e4d;
+}
+
+:root[data-brand="steadypads"] .blade-switch {
+  background: linear-gradient(#0c1512, #08110d);
+}

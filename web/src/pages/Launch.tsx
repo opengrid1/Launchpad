@@ -111,7 +111,11 @@ export function LaunchPage() {
       <h1 className="text-[18px] font-bold tracking-tight text-ink">Launch a token</h1>
       <p className="mt-1 text-[12.5px] leading-relaxed text-ink-2">
         One transaction mints your token, opens a live market and seeds the full supply. Every trade
-        {dollarMode ? " pays holders real dollars." : " rewards holders with the stock you pick."}
+        {IS_STABLE
+          ? " pays you 80% of the pool fee."
+          : dollarMode
+            ? " pays holders real dollars."
+            : " rewards holders with the stock you pick."}
       </p>
 
       <form onSubmit={submit} className="mt-4 space-y-4 rounded-xl border border-edge bg-panel p-4">
