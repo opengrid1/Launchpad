@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import type { TokenSummary } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
 import { StableV3Client } from "../lib/stable/client";
-import { shortAddr } from "../lib/format";
+import { fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
@@ -17,13 +18,17 @@ export function AdminStable() {
   const pushToast = useUi((s) => s.pushToast);
 
   const [info, setInfo] = useState<Awaited<ReturnType<StableV3Client["adminInfo"]>> | null>(null);
+  const [tokens, setTokens] = useState<TokenSummary[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [newRecipient, setNewRecipient] = useState("");
   const [tokenAddr, setTokenAddr] = useState("");
   const [recoverAsset, setRecoverAsset] = useState("");
   const [recoverAmount, setRecoverAmount] = useState("");
 
-  const refresh = () => stable.adminInfo().then(setInfo).catch(() => setInfo(null));
+  const refresh = () => {
+    stable.adminInfo().then(setInfo).catch(() => setInfo(null));
+    stable.getTokens({ sort: "new", limit: 100 }).then(setTokens).catch(() => setTokens([]));
+  };
   useEffect(() => {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,24 +109,70 @@ export function AdminStable() {
         </div>
       </Section>
 
-      {/* Token operations */}
-      <Section title="Token position" hint="harvestFees splits accrued pool fees 80/20 creator/platform. collectFees unwinds the entire position to the owner — irreversible for that market's liquidity.">
-        <input value={tokenAddr} onChange={(e) => setTokenAddr(e.target.value)} placeholder="Token address 0x…"
-          className="mono h-10 w-full rounded-lg border border-edge bg-panel-2/40 px-3 text-[13px] text-ink outline-none placeholder:text-ink-3 focus:border-edge-2" />
-        <div className="mt-2 flex gap-2">
+      {/* Launched tokens with per-row actions */}
+      <Section
+        title={`Launched tokens${tokens.length ? ` · ${tokens.length}` : ""}`}
+        hint="Harvest splits accrued pool fees 80/20 creator/platform. Collect unwinds the entire position to the owner — irreversible for that market's liquidity."
+      >
+        {tokens.length === 0 ? (
+          <p className="text-[12.5px] text-ink-3">Loading tokens…</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-left text-[12.5px]">
+              <thead>
+                <tr className="border-b border-edge text-[9.5px] uppercase tracking-wider text-ink-3">
+                  <th className="py-2 pr-3 font-medium">Token</th>
+                  <th className="py-2 pr-3 font-medium">Mcap</th>
+                  <th className="py-2 pr-3 font-medium">Age</th>
+                  <th className="py-2 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tokens.map((t) => (
+                  <tr key={t.address} className="border-b border-edge/50 last:border-0">
+                    <td className="py-2.5 pr-3">
+                      <span className="font-bold text-ink">{t.symbol}</span>
+                      <span className="ml-2 text-ink-3">{t.name}</span>
+                      <button
+                        className="mono ml-2 text-[11px] text-ink-3 underline underline-offset-2 hover:text-ink"
+                        onClick={() => { navigator.clipboard?.writeText(t.address); pushToast({ kind: "info", title: "Address copied" }); }}
+                        title={t.address}
+                      >
+                        {shortAddr(t.address)}
+                      </button>
+                    </td>
+                    <td className="mono py-2.5 pr-3 text-accent-ink">{fmtUsd(t.marketCapUsd)}</td>
+                    <td className="py-2.5 pr-3 text-ink-3">{timeAgo(t.createdAt)}</td>
+                    <td className="py-2.5 text-right">
+                      <button disabled={busy !== null}
+                        onClick={() => run(`Harvest ${t.symbol}`, () => stable.adminCall("harvestFees", [t.address]))}
+                        className="rounded-md bg-accent px-3 py-1.5 text-[11.5px] font-semibold text-accent-fg disabled:opacity-40">
+                        Harvest
+                      </button>
+                      <button disabled={busy !== null}
+                        onClick={() => {
+                          if (window.confirm(`Unwind ALL liquidity of ${t.symbol} to the owner wallet? This empties the market's position.`)) {
+                            run(`Collect ${t.symbol}`, () => stable.adminCall("collectFees", [t.address]));
+                          }
+                        }}
+                        className="ml-1.5 rounded-md border border-down/40 bg-down/10 px-3 py-1.5 text-[11.5px] font-semibold text-down disabled:opacity-40">
+                        Collect
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {/* Manual fallback for tokens not in the list */}
+        <div className="mt-3 flex gap-2">
+          <input value={tokenAddr} onChange={(e) => setTokenAddr(e.target.value)} placeholder="Or paste a token address 0x…"
+            className="mono h-9 flex-1 rounded-lg border border-edge bg-panel-2/40 px-3 text-[12px] text-ink outline-none placeholder:text-ink-3 focus:border-edge-2" />
           <button disabled={busy !== null || !/^0x[0-9a-fA-F]{40}$/.test(tokenAddr)}
             onClick={() => run("Harvest fees", () => stable.adminCall("harvestFees", [tokenAddr]))}
-            className="rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-accent-fg disabled:opacity-40">
-            Harvest fees (80/20)
-          </button>
-          <button disabled={busy !== null || !/^0x[0-9a-fA-F]{40}$/.test(tokenAddr)}
-            onClick={() => {
-              if (window.confirm("Unwind ALL liquidity for this token to the owner wallet? This empties the market's position.")) {
-                run("Collect position", () => stable.adminCall("collectFees", [tokenAddr]));
-              }
-            }}
-            className="rounded-lg border border-down/40 bg-down/10 px-4 py-2 text-[13px] font-semibold text-down disabled:opacity-40">
-            Collect position → owner
+            className="rounded-lg bg-accent px-3 py-1.5 text-[11.5px] font-semibold text-accent-fg disabled:opacity-40">
+            Harvest
           </button>
         </div>
       </Section>
