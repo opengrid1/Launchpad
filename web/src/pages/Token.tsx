@@ -19,6 +19,7 @@ import { Button, EmptyState, Skeleton } from "../components/ui";
 import { client, v4Client } from "../lib/client";
 import { env } from "../lib/env";
 import { compact, fmtTokens, fmtUsd, fmtWei, fmtWeiUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
+import { normalizeSocial } from "../lib/links";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { stockOf } from "../lib/v4/stocks";
 import { useUi } from "../store";
@@ -418,23 +419,15 @@ const socialIcons: Record<string, JSX.Element> = {
 };
 
 function InfoTab({ t, meta, extra }: { t: any; meta: any; extra: Extra | null }) {
-  const isSelfLink = (url?: string) => {
-    if (!url) return false;
-    try {
-      return new URL(String(url), window.location.origin).host === window.location.host;
-    } catch {
-      return false;
-    }
-  };
   const explorer = env.explorerUrl ? env.explorerUrl.replace(/\/$/, "") : "";
   const links: { label: string; url?: string }[] = [
-    { label: "Website", url: meta.website },
-    { label: "X", url: meta.twitter },
-    { label: "Telegram", url: meta.telegram },
-    ...(meta.links ?? []),
+    { label: "Website", url: normalizeSocial(meta.website) },
+    { label: "X", url: normalizeSocial(meta.twitter, "x") },
+    { label: "Telegram", url: normalizeSocial(meta.telegram, "telegram") },
+    ...(meta.links ?? []).map((l: { label: string; url?: string }) => ({ ...l, url: normalizeSocial(l.url) })),
     explorer ? { label: "Scan", url: `${explorer}/token/${t.address}` } : { label: "Scan" },
     { label: "DexScreener", url: `https://dexscreener.com/search?q=${t.address}` },
-  ].filter((l) => l.url && !isSelfLink(l.url));
+  ].filter((l) => l.url);
 
   return (
     <div className="space-y-4">

@@ -75,12 +75,22 @@ export function LaunchPage() {
     setBusy(true);
     try {
       if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+      // Store canonical URLs on-chain: "@handle" becomes the platform link and
+      // a bare "x.com/…" gets https:// so it renders as a working link.
+      const url = (raw: string, platform?: "x" | "telegram") => {
+        const s = raw.trim();
+        if (!s) return "";
+        if (s.startsWith("@") && platform) {
+          return platform === "x" ? `https://x.com/${s.slice(1)}` : `https://t.me/${s.slice(1)}`;
+        }
+        return /^https?:\/\//i.test(s) ? s : `https://${s}`;
+      };
       const metadata = JSON.stringify({
         description: form.description.trim(),
         logo: logoData,
-        website: form.website.trim(),
-        twitter: form.twitter.trim(),
-        telegram: form.telegram.trim(),
+        website: url(form.website),
+        twitter: url(form.twitter, "x"),
+        telegram: url(form.telegram, "telegram"),
       });
       const hash = await (client as any).createToken({
         name: form.name.trim(),

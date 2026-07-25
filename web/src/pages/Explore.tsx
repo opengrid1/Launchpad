@@ -9,6 +9,7 @@ import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtNative, fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
+import { normalizeSocial } from "../lib/links";
 
 type Sort = "new" | "recent" | "mcap" | "oldest";
 
@@ -139,8 +140,8 @@ function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
   const to = `/token/${t.address}`;
 
   if (row) {
-    const web = (t.metadata as any)?.website as string | undefined;
-    const x = (t.metadata as any)?.twitter as string | undefined;
+    const web = normalizeSocial((t.metadata as any)?.website);
+    const x = normalizeSocial((t.metadata as any)?.twitter, "x");
     const scan = env.explorerUrl ? `${env.explorerUrl.replace(/\/$/, "")}/token/${t.address}` : null;
     return (
       <div className="rounded-xl border border-edge bg-panel p-3.5">
