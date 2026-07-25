@@ -1,6 +1,6 @@
 import { NavLink, Link } from "react-router-dom";
 
-import { BRAND } from "../lib/brand";
+import { BRAND, BRAND_FLAVOR } from "../lib/brand";
 import { env } from "../lib/env";
 import { useWallet } from "../lib/useWallet";
 import { Icon, type IconName } from "./Icon";
@@ -22,9 +22,17 @@ export function Header() {
     <>
       <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-5">
-          {/* Brand */}
+          {/* Brand — steadypads leads with the S-coin mark, others with the live dot */}
           <Link to="/" aria-label={BRAND.name} className="flex shrink-0 items-center gap-2">
-            <span className="dot-live h-2 w-2 rounded-full bg-up shadow-[0_0_8px_var(--color-up)]" />
+            {BRAND_FLAVOR === "steadypads" ? (
+              <img
+                src="/steadypads-mark.png"
+                alt=""
+                className="h-6 w-6 rounded-full shadow-[0_0_10px_-2px_var(--color-accent)]"
+              />
+            ) : (
+              <span className="dot-live h-2 w-2 rounded-full bg-up shadow-[0_0_8px_var(--color-up)]" />
+            )}
             <span className="text-[15px] font-extrabold lowercase tracking-tight text-ink">
               {BRAND.name}
               <span className="text-accent-ink">{BRAND.tld}</span>

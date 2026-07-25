@@ -12,8 +12,8 @@ const FLAVOR_META: Record<string, { title: string; description: string; icon?: s
   steadypads: {
     title: "steadypads | the stable launchpad",
     description:
-      "steadypads. launch tokens into real markets on Stable. Every trade pays holders real dollars.",
-    icon: "/steadypads-icon.svg",
+      "steadypads. launch tokens into real markets on Stable. Creators earn 80% of every trade's pool fee.",
+    icon: "/steadypads-mark.png",
   },
 };
 
@@ -29,12 +29,14 @@ function brandHtml(): Plugin {
         .replace(/(<meta name="theme-color" content=")[^"]*(")/, `$1#060a09$2`)
         .replace(/(<meta\s+name="description"\s+content=")[^"]*(")/, `$1${meta.description}$2`);
       if (meta.icon) {
+        const type = meta.icon.endsWith(".svg") ? "image/svg+xml" : "image/png";
         out = out
           .replace(/<link rel="icon"[^>]*>/g, "")
           .replace(/<link rel="apple-touch-icon"[^>]*>/g, "")
           .replace(
             "</head>",
-            `  <link rel="icon" type="image/svg+xml" href="${meta.icon}" />\n  </head>`,
+            `  <link rel="icon" type="${type}" href="${meta.icon}" />\n` +
+              `  <link rel="apple-touch-icon" href="${meta.icon}" />\n  </head>`,
           );
       }
       return out;
