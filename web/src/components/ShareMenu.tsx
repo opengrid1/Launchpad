@@ -37,9 +37,11 @@ export function ShareMenu({ address, symbol, name }: { address: Address; symbol:
   const tweet =
     `https://twitter.com/intent/tweet?` +
     `text=${encodeURIComponent(
-      `$${symbol} — ${name}\nTrading live on ${BRAND.name}, holders earn real ${
-        env.rewardMode === "dollar" ? "dollars" : "stock rewards"
-      }.`,
+      String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3"
+        ? `$${symbol} — ${name}\nTrading live on ${BRAND.name}, the stable launchpad.`
+        : `$${symbol} — ${name}\nTrading live on ${BRAND.name}, holders earn real ${
+            env.rewardMode === "dollar" ? "dollars" : "stock rewards"
+          }.`,
     )}` +
     `&url=${encodeURIComponent(pageUrl)}`;
 

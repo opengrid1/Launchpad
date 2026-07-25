@@ -156,8 +156,19 @@ export function LaunchPage() {
             placeholder="What is this token about?" maxLength={500} />
         </Field>
 
-        {/* Reward — stock picker, or a fixed dollar note in dollar mode */}
-        {dollarMode ? (
+        {/* Reward — creator-fee note on Stable, stock picker elsewhere */}
+        {IS_STABLE ? (
+          <div className="rounded-lg border border-accent/25 bg-accent/[0.04] px-3 py-2.5">
+            <p className="text-[12.5px] font-medium text-ink">
+              You earn <span className="text-accent-ink">· 80% of trading fees</span>
+            </p>
+            <p className="mt-0.5 text-[11.5px] leading-relaxed text-ink-3">
+              Every trade pays the fixed 1% Uniswap pool fee. Harvest it anytime — 80% goes
+              straight to you in {env.nativeSymbol}, 20% to the platform. No taxes on the token
+              itself.
+            </p>
+          </div>
+        ) : dollarMode ? (
           <div className="rounded-lg border border-accent/25 bg-accent/[0.04] px-3 py-2.5">
             <p className="text-[12.5px] font-medium text-ink">
               Holders earn <span className="text-accent-ink">· dollars</span>
