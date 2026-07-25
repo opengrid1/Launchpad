@@ -397,7 +397,9 @@ export class StableV3Client {
 
   private loadPersistedTrades(key: string): { at: number; trades: TradeRecord[] } | null {
     try {
-      const raw = sessionStorage.getItem(`steady:trades:${key}`);
+      // localStorage (not session) so backfilled history — and the volume
+      // stats derived from it — survives across visits.
+      const raw = localStorage.getItem(`steady:trades:${key}`) ?? sessionStorage.getItem(`steady:trades:${key}`);
       if (!raw) return null;
       const parsed = JSON.parse(raw) as { at: number; trades: TradeRecord[] };
       this.tradesCache.set(key, parsed);
@@ -457,7 +459,7 @@ export class StableV3Client {
 
   private persistTrades(key: string, entry: { at: number; trades: TradeRecord[] }) {
     try {
-      sessionStorage.setItem(`steady:trades:${key}`, JSON.stringify({ at: entry.at, trades: entry.trades.slice(0, 100) }));
+      localStorage.setItem(`steady:trades:${key}`, JSON.stringify({ at: entry.at, trades: entry.trades.slice(0, 100) }));
     } catch { /* storage full — in-memory cache still works */ }
   }
 
