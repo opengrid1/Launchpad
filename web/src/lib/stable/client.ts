@@ -527,20 +527,53 @@ export class StableV3Client {
     }
     const now = Math.floor(Date.now() / 1000);
     const nowBucket = Math.floor(now / secs) * secs;
-    if (live > 0n) {
-      const p = Number(live) / 1e18;
-      const c = buckets.get(nowBucket);
-      if (!c) {
-        buckets.set(nowBucket, { time: nowBucket, open: String(p), high: String(p), low: String(p), close: String(p), volume: "0" });
+
+    // Proper OHLCV needs a continuous series: flat candles for intervals with
+    // no trades, and each open chained to the previous close. Walk from the
+    // series start (token creation, or as far back as the requested limit
+    // reaches) to now, carrying the last close forward.
+    const limit = opts?.limit ?? 500;
+    const times = [...buckets.keys()].sort((a, b) => a - b);
+    const createdBucket = core ? Math.floor(core.createdAt / secs) * secs : nowBucket;
+    const seriesStart = Math.min(createdBucket, times[0] ?? nowBucket);
+    const start = Math.max(seriesStart, nowBucket - (limit - 1) * secs);
+    // Last close before the window, else the first trade's open (≈ launch
+    // price), else the live price for a token with no trades at all.
+    let prevClose: string | null = null;
+    for (const t of times) {
+      if (t < start) prevClose = buckets.get(t)!.close;
+      else break;
+    }
+    const firstVal =
+      prevClose ??
+      (times.length ? buckets.get(times[0])!.open : live > 0n ? String(Number(live) / 1e18) : null);
+    if (firstVal === null) return [];
+
+    const out: Candle[] = [];
+    let carry = prevClose ?? firstVal;
+    for (let t = start; t <= nowBucket; t += secs) {
+      const c = buckets.get(t);
+      if (c) {
+        // Chain the open to the previous close so bodies connect.
+        c.open = carry;
+        c.high = String(Math.max(Number(c.high), Number(carry)));
+        c.low = String(Math.min(Number(c.low), Number(carry)));
+        out.push(c);
+        carry = c.close;
       } else {
-        // Tick the in-progress candle with the live pool price so the chart
-        // moves between trades, not only when a swap lands.
-        c.close = String(p);
-        c.high = String(Math.max(Number(c.high), p));
-        c.low = String(Math.min(Number(c.low), p));
+        out.push({ time: t, open: carry, high: carry, low: carry, close: carry, volume: "0" });
       }
     }
-    return [...buckets.values()].sort((a, b) => a.time - b.time).slice(-(opts?.limit ?? 500));
+    if (live > 0n && out.length > 0) {
+      // Tick the in-progress candle with the live pool price so the chart
+      // moves between trades, not only when a swap lands.
+      const last = out[out.length - 1];
+      const p = Number(live) / 1e18;
+      last.close = String(p);
+      last.high = String(Math.max(Number(last.high), p));
+      last.low = String(Math.min(Number(last.low), p));
+    }
+    return out.slice(-limit);
   }
 
   // -- writes -----------------------------------------------------------
