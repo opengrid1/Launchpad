@@ -263,6 +263,8 @@ function CardSkeleton() {
   );
 }
 
+const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
+
 function Empty({ q }: { q: string }) {
   return (
     <div className="flex flex-col items-center px-6 py-24 text-center">
@@ -273,7 +275,11 @@ function Empty({ q }: { q: string }) {
         {q ? `No token for “${q}”` : "No tokens launched yet"}
       </p>
       <p className="mt-1.5 max-w-sm text-[14.5px] leading-relaxed text-ink-2">
-        {q ? "Try another name, symbol or address." : "Be the first to open a market. Holders earn a real tokenized stock on every trade."}
+        {q
+          ? "Try another name, symbol or address."
+          : IS_STABLE
+            ? "Be the first to open a market. Creators earn 80% of every trading fee, paid in dollars."
+            : "Be the first to open a market. Holders earn a real tokenized stock on every trade."}
       </p>
       {!q ? (
         <Link to="/launch" className="mt-6 flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-[14.5px] font-semibold text-accent-fg transition-colors hover:bg-accent-2">
