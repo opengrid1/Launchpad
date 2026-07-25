@@ -21,7 +21,7 @@ const SORTS: { id: Sort; label: string }[] = [
 ];
 
 /**
- * Discover — the market list, laid out like Stackr: a New button beside a
+ * Discover; the market list, laid out like Stackr: a New button beside a
  * search field, a row of sort tabs, then a grid of token cards. Cream theme.
  */
 export function Explore() {
@@ -111,7 +111,7 @@ export function Explore() {
         </div>
       </div>
 
-      {/* Grid — inside a container box */}
+      {/* Grid; inside a container box */}
       <div className="mt-3 rounded-2xl border border-edge bg-panel/40 p-2.5 sm:p-3">
         {loading ? (
           <div className={gridCls}>
@@ -273,7 +273,7 @@ function Empty({ q }: { q: string }) {
         {q ? `No token for “${q}”` : "No tokens launched yet"}
       </p>
       <p className="mt-1.5 max-w-sm text-[14.5px] leading-relaxed text-ink-2">
-        {q ? "Try another name, symbol or address." : "Be the first to open a market — holders earn a real tokenized stock on every trade."}
+        {q ? "Try another name, symbol or address." : "Be the first to open a market. Holders earn a real tokenized stock on every trade."}
       </p>
       {!q ? (
         <Link to="/launch" className="mt-6 flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-[14.5px] font-semibold text-accent-fg transition-colors hover:bg-accent-2">

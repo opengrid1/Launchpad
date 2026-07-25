@@ -1,4 +1,4 @@
-// QuiverToken creation bytecode — for CREATE2 vanity salt mining at launch.
+// QuiverToken creation bytecode; for CREATE2 vanity salt mining at launch.
 // Must match the deployed factory's QuiverToken bytecode exactly, or mined
 // launch addresses will not match on-chain and the vanity check will revert.
 export const QUIVER_TOKEN_BYTECODE =

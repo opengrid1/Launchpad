@@ -12,7 +12,7 @@ import { chain, env } from "./env";
  * the injected, WalletConnect and Coinbase connectors from a single project id.
  *
  * The AppKit modal UI (its web components) is heavy, so `createAppKit` is called
- * lazily by `openWalletModal()` the first time a visitor connects — none of that
+ * lazily by `openWalletModal()` the first time a visitor connects; none of that
  * UI weight touches the first paint. Account/session reads go through the normal
  * wagmi hooks, which work off `wagmiConfig` whether or not the modal is open yet.
  */

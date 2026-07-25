@@ -69,7 +69,7 @@ export function AdminStable() {
         <p className="text-[15px] font-bold text-ink">403</p>
         <p className="mt-1 text-[13px] text-ink-2">
           This console is restricted to the factory owner ({shortAddr(info.owner)}). Connected:{" "}
-          {address ? shortAddr(address) : "—"}.
+          {address ? shortAddr(address) : "–"}.
         </p>
       </Shell>
     );
@@ -112,7 +112,7 @@ export function AdminStable() {
       {/* Launched tokens with per-row actions */}
       <Section
         title={`Launched tokens${tokens.length ? ` · ${tokens.length}` : ""}`}
-        hint="Harvest splits accrued pool fees 80/20 creator/platform. Collect unwinds the entire position to the owner — irreversible for that market's liquidity."
+        hint="Harvest splits accrued pool fees 80/20 creator/platform. Collect unwinds the entire position to the owner. Irreversible for that market's liquidity."
       >
         {tokens.length === 0 ? (
           <p className="text-[12.5px] text-ink-3">Loading tokens…</p>
@@ -204,7 +204,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-5">
       <h1 className="text-[18px] font-bold tracking-tight text-ink">Operations</h1>
-      <p className="mt-1 text-[12.5px] text-ink-2">StableLaunchpadFactory owner console — Stable Mainnet.</p>
+      <p className="mt-1 text-[12.5px] text-ink-2">StableLaunchpadFactory owner console · Stable Mainnet.</p>
       <div className="mt-5 space-y-5">{children}</div>
     </div>
   );

@@ -1,7 +1,7 @@
 /**
- * Single source of truth for brand identity. The app ships in flavors —
+ * Single source of truth for brand identity. The app ships in flavors -
  * select one at build time with VITE_BRAND (default: stockprintr). Rename here
- * and it changes everywhere — header, footer, wallet metadata, docs, and
+ * and it changes everywhere; header, footer, wallet metadata, docs, and
  * page meta.
  */
 export interface Brand {

@@ -1,7 +1,7 @@
 import { BRAND_FLAVOR } from "../lib/brand";
 
 /**
- * Default token image — a full-bleed branded tile shown for any token without
+ * Default token image; a full-bleed branded tile shown for any token without
  * its own logo (or whose logo fails to load). A designed raster mark exported
  * at 512px so it stays sharp from a 12px list avatar up to a full card, served
  * from web/public as a plain <img> with no bundle cost.

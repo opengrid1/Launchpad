@@ -191,7 +191,7 @@ export class V4Client {
   }
 
   private async loadTrades(token: Address): Promise<TradeRecord[]> {
-    // Ensure the token's core is loaded — a caller may reach trades/candles
+    // Ensure the token's core is loaded; a caller may reach trades/candles
     // without having listed tokens first (e.g. a serverless endpoint hit cold,
     // or a deep link straight to a token page).
     await this.loadCores();
@@ -201,7 +201,7 @@ export class V4Client {
     const cached = this.tradesCache.get(key);
     try {
       const latest = await this.publicClient.getBlockNumber();
-      // Only scan blocks we haven't seen yet, then append — keeps every read
+      // Only scan blocks we haven't seen yet, then append; keeps every read
       // cheap while staying live. First read starts at the launch block.
       const fromBlock = cached ? cached.upTo + 1n : core.launchBlock;
       if (cached && fromBlock > latest) return cached.records;
@@ -515,7 +515,7 @@ export class V4Client {
   }
 
   /** Realize accrued tax into holder stock rewards, creator fees and protocol
-   *  (50/25/25). Permissionless — anyone can trigger it for a token. */
+   *  (50/25/25). Permissionless; anyone can trigger it for a token. */
   async harvest(token: Address): Promise<`0x${string}`> {
     const wc = this.requireWallet();
     return wc.writeContract({

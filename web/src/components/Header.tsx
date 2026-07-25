@@ -11,7 +11,7 @@ const TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
 ];
 
 /**
- * Top bar — live wordmark left, HUD nav tabs inline on desktop, chain
+ * Top bar; live wordmark left, HUD nav tabs inline on desktop, chain
  * indicator + Connect on the right. On mobile the tabs repeat in a fixed
  * bottom bar, thumb reachable.
  */
@@ -22,7 +22,7 @@ export function Header() {
     <>
       <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-5">
-          {/* Brand — steadypads leads with the S-coin mark, others with the live dot */}
+          {/* Brand; steadypads leads with the S-coin mark, others with the live dot */}
           <Link to="/" aria-label={BRAND.name} className="flex shrink-0 items-center gap-2">
             {BRAND_FLAVOR === "steadypads" ? (
               <img

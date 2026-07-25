@@ -13,7 +13,7 @@ document.documentElement.dataset.brand = BRAND_FLAVOR;
 
 // After a redeploy, a stale tab can request lazy chunks that no longer exist
 // (hashed filenames changed) and blank out. Vite signals that as
-// vite:preloadError — reload once to pick up the fresh build.
+// vite:preloadError; reload once to pick up the fresh build.
 window.addEventListener("vite:preloadError", (e) => {
   e.preventDefault();
   const KEY = "steady:reloaded-for-chunk";

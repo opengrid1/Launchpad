@@ -28,7 +28,7 @@ import { useUi } from "../store";
 const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
 
 /** Stable: permissionless harvest strip. The 1% pool fee accrues inside the
- *  held position; anyone can trigger the split — 80% is pushed straight to
+ *  held position; anyone can trigger the split; 80% is pushed straight to
  *  the creator's wallet, 20% to the platform. No claim balance to manage. */
 function HarvestStrip({ token, creator }: { token: Address; creator: string }) {
   const { address, isConnected, connectFirst } = useWallet();
@@ -44,7 +44,7 @@ function HarvestStrip({ token, creator }: { token: Address; creator: string }) {
       const hash = await (client as any).claimCreatorFees(token);
       pushToast({ kind: "info", title: "Harvest submitted", txHash: hash });
       await client.publicClient.waitForTransactionReceipt({ hash });
-      pushToast({ kind: "success", title: "Fees distributed — 80% creator, 20% platform", txHash: hash });
+      pushToast({ kind: "success", title: "Fees distributed: 80% creator, 20% platform", txHash: hash });
     } catch (err) {
       pushToast({ kind: "error", title: "Harvest failed", body: errorText(err) });
     } finally {
@@ -59,7 +59,7 @@ function HarvestStrip({ token, creator }: { token: Address; creator: string }) {
           {isCreator ? "Your creator fees" : "Creator fees"}
         </p>
         <p className="mt-0.5 text-xs text-ink-3">
-          Every trade's 1% pool fee accrues here. Harvest anytime — 80% goes straight to the
+          Every trade's 1% pool fee accrues here. Harvest anytime: 80% goes straight to the
           creator's wallet, 20% to the platform.
         </p>
       </div>
@@ -96,7 +96,7 @@ export function TokenPage() {
         .then((e) => live && setExtra(e))
         .catch(() => undefined);
     load();
-    // Skip refreshes while the tab is backgrounded — no point spending RPC on a
+    // Skip refreshes while the tab is backgrounded; no point spending RPC on a
     // page nobody is looking at, and it keeps idle tabs off the endpoint.
     const id = setInterval(() => {
       if (!document.hidden) load();
@@ -145,7 +145,7 @@ export function TokenPage() {
         <ShareMenu address={t.address as Address} symbol={t.symbol} name={t.name} />
       </section>
 
-      {/* About — description, links, facts, creator & pool (no container) */}
+      {/* About; description, links, facts, creator & pool (no container) */}
       <section className="mt-4">
         <InfoTab t={t} meta={meta} extra={extra} />
       </section>
@@ -306,7 +306,7 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
           Holders earn {stock.name} <span className="text-ink-3">({stock.symbol})</span>
         </p>
         <p className="mt-0.5 text-xs text-ink-3">
-          Every trade pays holders {stock.symbol}, split by how much you hold — delivered to wallets
+          Every trade pays holders {stock.symbol}, split by how much you hold, delivered to wallets
           automatically, no claiming needed. {fmtTokens(extra.totalRewards.toString())} {stock.symbol} paid out so far.
         </p>
       </div>
@@ -432,7 +432,9 @@ function InfoTab({ t, meta, extra }: { t: any; meta: any; extra: Extra | null })
   return (
     <div className="space-y-4">
       {meta.description ? (
-        <p className="text-[13px] leading-6 text-ink-2">{meta.description}</p>
+        // Em dashes in stored metadata are normalized at display time (the
+        // on-chain string itself can't be edited).
+        <p className="text-[13px] leading-6 text-ink-2">{String(meta.description).replace(/\s*—\s*/g, " - ")}</p>
       ) : null}
 
       {links.length > 0 ? (

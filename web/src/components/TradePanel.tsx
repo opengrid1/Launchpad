@@ -177,7 +177,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
       {/* Estimate */}
       <div className="flex items-center justify-between text-[11px]">
         <span className="text-ink-3">You receive</span>
-        <span className="tnum font-semibold text-ink">{estimate ?? "—"}</span>
+        <span className="tnum font-semibold text-ink">{estimate ?? "–"}</span>
       </div>
 
       {/* Slippage */}

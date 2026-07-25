@@ -74,7 +74,7 @@ export function TradesList({ token, symbol }: { token: Address; symbol: string }
               const d = new Date(t.timestamp * 1000);
               const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
               const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-              const mcap = scale ? fmtUsd((Number(t.priceWei) / 1e18) * scale) : "—";
+              const mcap = scale ? fmtUsd((Number(t.priceWei) / 1e18) * scale) : "–";
               const wallet = wallets[t.txHash] ?? t.trader;
               const explorer = explorerAddr(wallet);
               return (

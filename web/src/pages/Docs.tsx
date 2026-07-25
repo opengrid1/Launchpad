@@ -38,7 +38,7 @@ export function DocsPage() {
 
       <Section title="Trading and fees">
         <p>
-          Every buy and sell through a {BRAND.name} pool pays the token's trade tax — a rate the
+          Every buy and sell through a {BRAND.name} pool pays the token's trade tax, a rate the
           creator picks at launch, from 0% to 10%. The tax is skimmed on the pool itself, so it
           applies to every trade, including ones routed directly by bots or aggregators. Accrued
           tax is realised on each distribution and split three ways.
@@ -46,9 +46,9 @@ export function DocsPage() {
         <Facts
           rows={[
             ["Trade tax", "0–10%, set by creator"],
-            ["Holders", "50% — paid as the creator's chosen stock"],
-            ["Creator", "25% — WETH, claimable"],
-            ["Protocol", "25% — WETH"],
+            ["Holders", "50% · paid as the creator's chosen stock"],
+            ["Creator", "25% · WETH, claimable"],
+            ["Protocol", "25% · WETH"],
           ]}
         />
       </Section>

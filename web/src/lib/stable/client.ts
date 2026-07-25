@@ -16,7 +16,7 @@ import { INTERVAL_SECONDS } from "@launchpad/sdk";
  * work unchanged; V4-only mechanics (dividends, stock rewards) return null.
  *
  * Decimals: the quote asset (ERC-20 USDT0) has 6 decimals while the UI works
- * in 18-decimal native units (USDT0 native gas is 18-dec — same balance).
+ * in 18-decimal native units (USDT0 native gas is 18-dec; same balance).
  * This client converts at the router boundary.
  */
 
@@ -204,7 +204,7 @@ export class StableV3Client {
   }
 
   /** Volume/tx stats from the cached trade window plus the last holder count.
-   *  Cheap — pure array math over what the scan/watcher already fetched. */
+   *  Cheap; pure array math over what the scan/watcher already fetched. */
   private statsFromCache(key: string) {
     const trades = (this.tradesCache.get(key) ?? this.loadPersistedTrades(key))?.trades ?? [];
     const dayAgo = Math.floor(Date.now() / 1000) - 86_400;
@@ -239,7 +239,7 @@ export class StableV3Client {
     const storeKey = `steady:holdercands:${key}`;
     try {
       for (const a of JSON.parse(localStorage.getItem(storeKey) ?? "[]") as string[]) candidates.add(a);
-    } catch { /* corrupt entry — rebuild from trades */ }
+    } catch { /* corrupt entry; rebuild from trades */ }
     try {
       localStorage.setItem(storeKey, JSON.stringify([...candidates].slice(0, 200)));
     } catch { /* storage full */ }
@@ -362,7 +362,7 @@ export class StableV3Client {
     this.tradesCache.set(key, entry);
     this.persistTrades(key, entry);
     // A mounted trades list only hears about trades through its subscription,
-    // so push the backfill through it too (oldest first — the list prepends).
+    // so push the backfill through it too (oldest first; the list prepends).
     const w = this.watchers.get(key);
     if (w) {
       for (const t of [...fresh].sort((a, b) => a.blockNumber - b.blockNumber)) {
@@ -374,7 +374,7 @@ export class StableV3Client {
   }
 
   /** Recent trades from pool Swap events. The public RPC caps getLogs at 500
-   *  blocks, so a bounded window of recent history is scanned — all windows in
+   *  blocks, so a bounded window of recent history is scanned; all windows in
    *  parallel, results cached briefly and shared with the candle builder.
    *  Timestamps are estimated from the head block and Stable's ~0.7s block
    *  time instead of a per-block lookup. */
@@ -397,8 +397,8 @@ export class StableV3Client {
 
   private loadPersistedTrades(key: string): { at: number; trades: TradeRecord[] } | null {
     try {
-      // localStorage (not session) so backfilled history — and the volume
-      // stats derived from it — survives across visits.
+      // localStorage (not session) so backfilled history; and the volume
+      // stats derived from it; survives across visits.
       const raw = localStorage.getItem(`steady:trades:${key}`) ?? sessionStorage.getItem(`steady:trades:${key}`);
       if (!raw) return null;
       const parsed = JSON.parse(raw) as { at: number; trades: TradeRecord[] };
@@ -460,7 +460,7 @@ export class StableV3Client {
   private persistTrades(key: string, entry: { at: number; trades: TradeRecord[] }) {
     try {
       localStorage.setItem(`steady:trades:${key}`, JSON.stringify({ at: entry.at, trades: entry.trades.slice(0, 100) }));
-    } catch { /* storage full — in-memory cache still works */ }
+    } catch { /* storage full; in-memory cache still works */ }
   }
 
   private logToTrade(
@@ -506,7 +506,7 @@ export class StableV3Client {
   /** Candles from the recent-trade window plus a live closing candle. */
   async getCandles(token: string, interval: CandleInterval, opts?: { limit?: number }): Promise<Candle[]> {
     const secs = INTERVAL_SECONDS[interval] ?? 60;
-    // Shares the cached trade scan with the trades list — no duplicate work.
+    // Shares the cached trade scan with the trades list; no duplicate work.
     const trades = await this.getTrades(token, { limit: 500 });
     const core = this.cores.get(token.toLowerCase());
     const live = core ? await this.priceWei(core).catch(() => 0n) : 0n;
@@ -530,7 +530,7 @@ export class StableV3Client {
     const now = Math.floor(Date.now() / 1000);
     const nowBucket = Math.floor(now / secs) * secs;
 
-    // Only real trade candles — no synthetic filler bars. For readability,
+    // Only real trade candles; no synthetic filler bars. For readability,
     // chain each candle's open to the previous close so a price move between
     // trades renders as a body instead of a zero-height dash.
     const ordered = [...buckets.values()].sort((a, b) => a.time - b.time);
@@ -552,7 +552,7 @@ export class StableV3Client {
         last.high = String(Math.max(Number(last.high), p));
         last.low = String(Math.min(Number(last.low), p));
       } else {
-        // Current-price candle opening at the last close — live data, not filler.
+        // Current-price candle opening at the last close; live data, not filler.
         const open = last ? last.close : String(p);
         ordered.push({
           time: nowBucket,
@@ -687,7 +687,7 @@ export class StableV3Client {
 
   /** One watcher per token while anything on the page listens: each 4s tick is
    *  a getBlockNumber, an incremental getLogs over just the new blocks, and a
-   *  slot0 read — cheap enough to run continuously against the public RPC. */
+   *  slot0 read; cheap enough to run continuously against the public RPC. */
   private ensureWatcher(key: string) {
     let w = this.watchers.get(key);
     if (!w) {
@@ -740,7 +740,7 @@ export class StableV3Client {
         if (fresh.length) {
           entry.trades = [...fresh].reverse().concat(entry.trades).slice(0, 500);
         }
-        // Mark the cache fresh either way — the chart's poll reads through
+        // Mark the cache fresh either way; the chart's poll reads through
         // getCandles/getTrades and should trust this verified-current data.
         entry.at = Date.now();
         this.tradesCache.set(key, entry);

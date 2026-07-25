@@ -29,7 +29,7 @@ const V4_START_BLOCK = BigInt(String(import.meta.env.VITE_V4_START_BLOCK ?? "127
 
 // One or more RPC endpoints (comma-separated in VITE_RPC_URL). Each is retried
 // on transient failures (429 rate-limits, 5xx) with backoff, and viem's
-// fallback rotates to the next endpoint if one keeps failing — so a single
+// fallback rotates to the next endpoint if one keeps failing; so a single
 // overloaded RPC under heavy traffic degrades gracefully instead of blanking
 // the app. Adding a backup RPC is a pure env change, no code.
 const rpcUrls = env.rpcUrl
@@ -69,7 +69,7 @@ const v4 = new V4Client(publicClient, V4, V4_START_BLOCK);
  * candles) through our edge-cached serverless API instead of hitting the RPC
  * from every visitor's browser. Vercel serves these from its CDN, so the chain
  * is read at most once per short cache window no matter how many people are on
- * the site — turning O(users) RPC load into O(1). Any API hiccup transparently
+ * the site; turning O(users) RPC load into O(1). Any API hiccup transparently
  * falls back to reading straight from the chain, and live event watchers still
  * stream updates over RPC as before. Disabled in dev, where there is no /api.
  */

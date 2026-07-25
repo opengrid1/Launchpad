@@ -23,7 +23,7 @@ export const env = {
   // mode). Token pages by direct address and the admin console still work.
   hideTokens: String(import.meta.env.VITE_HIDE_TOKENS ?? "") === "true",
   // "stock" (default): creators pick a tokenized stock holders earn.
-  // "dollar": no picker — every launch rewards the wrapped native (a dollar
+  // "dollar": no picker; every launch rewards the wrapped native (a dollar
   // on Stable), via the hook's dollar mode.
   rewardMode: String(import.meta.env.VITE_REWARD_MODE ?? "stock") as "stock" | "dollar",
 };
