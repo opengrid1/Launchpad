@@ -5,7 +5,7 @@ import {
   parseAbi,
   zeroAddress,
 } from "viem";
-import type { Candle, CandleInterval, TokenSummary, TradeRecord } from "@launchpad/sdk";
+import type { Candle, CandleInterval, PriceUpdate, TokenSummary, TradeRecord } from "@launchpad/sdk";
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
 
 /**
@@ -44,6 +44,7 @@ const ERC20_ABI = parseAbi([
   "function name() view returns (string)",
   "function symbol() view returns (string)",
   "function totalSupply() view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
   "function metadataURI() view returns (string)",
   "function approve(address, uint256) returns (bool)",
   "function allowance(address, address) view returns (uint256)",
@@ -94,6 +95,20 @@ export class StableV3Client {
   private priceCache = new Map<string, { at: number; price: bigint }>();
   private tradesCache = new Map<string, { at: number; trades: TradeRecord[] }>();
   private tradesInflight = new Map<string, Promise<TradeRecord[]>>();
+  /** Per-token live watcher: one incremental getLogs + slot0 per tick while
+   *  any subscriber (trades list, price header) is mounted. */
+  private watchers = new Map<
+    string,
+    {
+      timer: ReturnType<typeof setInterval>;
+      lastBlock: bigint;
+      busy: boolean;
+      tradeCbs: Set<(t: TradeRecord) => void>;
+      priceCbs: Set<(u: PriceUpdate) => void>;
+    }
+  >();
+  private holdersCache = new Map<string, { at: number; count: number }>();
+  private deepScanned = new Set<string>();
 
   constructor(publicClient: PublicClient, addresses: StableAddresses) {
     this.publicClient = publicClient;
@@ -188,11 +203,67 @@ export class StableV3Client {
     return num / (sqrtPriceX96 * sqrtPriceX96);
   }
 
+  /** Volume/tx stats from the cached trade window plus the last holder count.
+   *  Cheap — pure array math over what the scan/watcher already fetched. */
+  private statsFromCache(key: string) {
+    const trades = (this.tradesCache.get(key) ?? this.loadPersistedTrades(key))?.trades ?? [];
+    const dayAgo = Math.floor(Date.now() / 1000) - 86_400;
+    let volTotal = 0n;
+    let vol24 = 0n;
+    let tx24 = 0;
+    for (const t of trades) {
+      const v = BigInt(t.nativeAmountWei);
+      volTotal += v;
+      if (t.timestamp >= dayAgo) {
+        vol24 += v;
+        tx24 += 1;
+      }
+    }
+    return { volTotal, vol24, tx24, holders: this.holdersCache.get(key)?.count };
+  }
+
+  /** Count holders among addresses we've seen trade (Swap `recipient`), the
+   *  creator, and the pool. The RPC's 500-block getLogs cap rules out a full
+   *  Transfer-history scan, so this converges as trading is observed; traders
+   *  seen once are remembered in localStorage so the count doesn't shrink when
+   *  the scan window slides past their trades. */
+  private async refreshHolders(core: Core): Promise<number> {
+    const key = core.address.toLowerCase();
+    const hit = this.holdersCache.get(key);
+    if (hit && Date.now() - hit.at < 60_000) return hit.count;
+    const trades = (this.tradesCache.get(key) ?? this.loadPersistedTrades(key))?.trades ?? [];
+    const candidates = new Set<string>();
+    for (const t of trades) {
+      if (t.trader && t.trader !== zeroAddress) candidates.add(t.trader.toLowerCase());
+    }
+    const storeKey = `steady:holdercands:${key}`;
+    try {
+      for (const a of JSON.parse(localStorage.getItem(storeKey) ?? "[]") as string[]) candidates.add(a);
+    } catch { /* corrupt entry — rebuild from trades */ }
+    try {
+      localStorage.setItem(storeKey, JSON.stringify([...candidates].slice(0, 200)));
+    } catch { /* storage full */ }
+    candidates.add(core.creator.toLowerCase());
+    const addrs = [...candidates].slice(0, 60) as Address[];
+    const balances = await Promise.all(
+      addrs.map((a) =>
+        this.publicClient
+          .readContract({ address: core.address, abi: ERC20_ABI, functionName: "balanceOf", args: [a] })
+          .catch(() => 0n),
+      ),
+    );
+    let count = 1; // the pool always holds the curve's supply
+    for (const b of balances) if ((b as bigint) > 0n) count += 1;
+    this.holdersCache.set(key, { at: Date.now(), count });
+    return count;
+  }
+
   private async summary(core: Core): Promise<TokenSummary> {
     const price = await this.priceWei(core).catch(() => 0n);
     const supply = 1_000_000_000n * 10n ** 18n;
     const mcapWei = (price * supply) / 10n ** 18n;
     const usd = Number(mcapWei) / 1e18; // USDT0 = $1
+    const stats = this.statsFromCache(core.address.toLowerCase());
     let metadata: Record<string, unknown> = {};
     try { metadata = JSON.parse(core.metadataURI || "{}"); } catch { /* opaque URI */ }
     return {
@@ -211,10 +282,10 @@ export class StableV3Client {
       priceUsd: String(Number(price) / 1e18),
       marketCapUsd: String(usd),
       liquidityWei: "0",
-      volume24hWei: "0",
-      volumeTotalWei: "0",
-      txCount24h: 0,
-      holderCount: 0,
+      volume24hWei: stats.vol24.toString(),
+      volumeTotalWei: stats.volTotal.toString(),
+      txCount24h: stats.tx24,
+      holderCount: stats.holders ?? 0,
       limitsActive: false,
       remainingToGraduationUsd: "0",
       priceChange24hPct: null,
@@ -228,17 +299,78 @@ export class StableV3Client {
     const sort = opts?.sort ?? "new";
     if (sort === "mcap" || sort === "marketCap") list.sort((a, b) => Number(b.marketCapUsd) - Number(a.marketCapUsd));
     else list.sort((a, b) => b.createdAt - a.createdAt);
-    return list.slice(0, opts?.limit ?? 60);
+    const out = list.slice(0, opts?.limit ?? 60);
+    // Warm trade scans for the visible tokens so volume fills in on the list's
+    // next poll without blocking this render. Bounded to stay well inside the
+    // RPC rate budget.
+    for (const t of out.slice(0, 12)) this.getTrades(t.address, { limit: 50 }).catch(() => {});
+    return out;
   }
 
   async getToken(token: string): Promise<TokenSummary | null> {
     await this.loadCores();
     const core = this.cores.get(token.toLowerCase());
     if (!core) return null;
-    // Warm the trade scan now — the trades list and chart mount right after
-    // this resolves, and by then the scan is in flight or already cached.
-    this.getTrades(token, { limit: 50 }).catch(() => {});
+    // Volume and holders are derived from the trade window and live balances,
+    // so resolve those before shaping the summary.
+    await this.getTrades(token, { limit: 50 }).catch(() => {});
+    await this.refreshHolders(core).catch(() => {});
+    // History beyond the recent window backfills in the background; the
+    // watcher's next price tick carries the corrected stats to the page.
+    this.deepScan(core).catch(() => {});
     return this.summary(core);
+  }
+
+  /** One-time-per-session backfill past the recent window, back toward the
+   *  token's creation (capped). Quiet tokens whose trades predate the live
+   *  window would otherwise read $0 volume and no holders. */
+  private async deepScan(core: Core) {
+    const key = core.address.toLowerCase();
+    if (this.deepScanned.has(key)) return;
+    this.deepScanned.add(key);
+    const head = await this.publicClient.getBlockNumber();
+    const ageBlocks = Math.ceil((Date.now() / 1000 - core.createdAt) / 0.7) + 500;
+    const totalWindows = Math.min(Math.ceil(ageBlocks / 500), 200);
+    if (totalWindows <= TRADE_SCAN_WINDOWS) return;
+    const headTs = Math.floor(Date.now() / 1000);
+    const found: TradeRecord[] = [];
+    // Sequential batches keep this well under the RPC's rate budget.
+    for (let start = TRADE_SCAN_WINDOWS; start < totalWindows; start += 25) {
+      const batch = [];
+      for (let w = start; w < Math.min(start + 25, totalWindows); w += 1) {
+        const to = head - BigInt(w * 500);
+        if (to <= 0n) break;
+        const from = to - 499n > 0n ? to - 499n : 0n;
+        batch.push(
+          this.publicClient
+            .getLogs({ address: core.pool, event: POOL_ABI[2], fromBlock: from, toBlock: to })
+            .catch(() => []),
+        );
+      }
+      for (const logs of await Promise.all(batch)) {
+        for (const log of logs) found.push(this.logToTrade(core, log, head, headTs));
+      }
+    }
+    if (found.length === 0) return;
+    const entry = this.tradesCache.get(key) ?? this.loadPersistedTrades(key) ?? { at: 0, trades: [] };
+    const seen = new Set(entry.trades.map((t) => t.id));
+    const fresh = found.filter((t) => !seen.has(t.id));
+    if (fresh.length === 0) return;
+    entry.trades = [...entry.trades, ...fresh]
+      .sort((a, b) => b.blockNumber - a.blockNumber)
+      .slice(0, 500);
+    this.tradesCache.set(key, entry);
+    this.persistTrades(key, entry);
+    // A mounted trades list only hears about trades through its subscription,
+    // so push the backfill through it too (oldest first — the list prepends).
+    const w = this.watchers.get(key);
+    if (w) {
+      for (const t of [...fresh].sort((a, b) => a.blockNumber - b.blockNumber)) {
+        for (const cb of w.tradeCbs) cb(t);
+      }
+    }
+    this.holdersCache.delete(key);
+    await this.refreshHolders(core).catch(() => {});
   }
 
   /** Recent trades from pool Swap events. The public RPC caps getLogs at 500
@@ -300,40 +432,73 @@ export class StableV3Client {
       ),
     );
 
+    // Estimated timestamps drift between scans (they're derived from the
+    // moving head block), which would shift candle buckets backwards and make
+    // the chart reject "out of order" updates. Keep the first timestamp a
+    // trade was ever assigned, and keep trades that slid out of the window.
+    const prev = (this.tradesCache.get(key) ?? this.loadPersistedTrades(key))?.trades ?? [];
+    const prevById = new Map(prev.map((t) => [t.id, t]));
     const out: TradeRecord[] = [];
     for (const logs of results) {
       for (const log of logs) {
-        const { amount0, amount1, sqrtPriceX96 } = log.args as { amount0: bigint; amount1: bigint; sqrtPriceX96: bigint };
-        const tokenDelta = core.tokenIsToken0 ? amount0 : amount1;
-        const quoteDelta = core.tokenIsToken0 ? amount1 : amount0;
-        const isBuy = tokenDelta < 0n; // pool pays tokens out on a buy
-        const price = core.tokenIsToken0
-          ? (((sqrtPriceX96 * sqrtPriceX96) / Q96) * 10n ** 18n * DEC_GAP) / Q96
-          : (Q96 * Q96 * 10n ** 18n * DEC_GAP) / (sqrtPriceX96 * sqrtPriceX96);
-        const blockNumber = Number(log.blockNumber);
-        out.push({
-          id: `${log.transactionHash}-${log.logIndex}`,
-          token: core.address,
-          trader: zeroAddress,
-          isBuy,
-          nativeAmountWei: ((quoteDelta < 0n ? -quoteDelta : quoteDelta) * DEC_GAP).toString(),
-          tokenAmount: (tokenDelta < 0n ? -tokenDelta : tokenDelta).toString(),
-          feeWei: "0",
-          priceWei: price.toString(),
-          blockNumber,
-          txHash: log.transactionHash!,
-          // ~0.7s block time on Stable — estimate, no per-block lookups.
-          timestamp: Math.max(0, headTs - Math.round(Number(head - log.blockNumber!) * 0.7)),
-        });
+        const t = this.logToTrade(core, log, head, headTs);
+        const old = prevById.get(t.id);
+        out.push(old ? { ...t, timestamp: old.timestamp } : t);
       }
     }
+    const ids = new Set(out.map((t) => t.id));
+    for (const t of prev) if (!ids.has(t.id)) out.push(t);
     out.sort((a, b) => b.blockNumber - a.blockNumber);
-    const entry = { at: Date.now(), trades: out };
+    const entry = { at: Date.now(), trades: out.slice(0, 500) };
     this.tradesCache.set(key, entry);
+    this.persistTrades(key, entry);
+    return entry.trades;
+  }
+
+  private persistTrades(key: string, entry: { at: number; trades: TradeRecord[] }) {
     try {
-      sessionStorage.setItem(`steady:trades:${key}`, JSON.stringify({ ...entry, trades: out.slice(0, 100) }));
+      sessionStorage.setItem(`steady:trades:${key}`, JSON.stringify({ at: entry.at, trades: entry.trades.slice(0, 100) }));
     } catch { /* storage full — in-memory cache still works */ }
-    return out;
+  }
+
+  private logToTrade(
+    core: Core,
+    log: {
+      args: unknown;
+      blockNumber: bigint | null;
+      transactionHash: `0x${string}` | null;
+      logIndex: number | null;
+    },
+    head: bigint,
+    headTs: number,
+  ): TradeRecord {
+    const { recipient, amount0, amount1, sqrtPriceX96 } = log.args as {
+      recipient: Address;
+      amount0: bigint;
+      amount1: bigint;
+      sqrtPriceX96: bigint;
+    };
+    const tokenDelta = core.tokenIsToken0 ? amount0 : amount1;
+    const quoteDelta = core.tokenIsToken0 ? amount1 : amount0;
+    const isBuy = tokenDelta < 0n; // pool pays tokens out on a buy
+    const price = core.tokenIsToken0
+      ? (((sqrtPriceX96 * sqrtPriceX96) / Q96) * 10n ** 18n * DEC_GAP) / Q96
+      : (Q96 * Q96 * 10n ** 18n * DEC_GAP) / (sqrtPriceX96 * sqrtPriceX96);
+    const blockNumber = log.blockNumber ?? head;
+    return {
+      id: `${log.transactionHash}-${log.logIndex}`,
+      token: core.address,
+      // SwapRouter02 sets recipient to the trader's wallet.
+      trader: recipient ?? zeroAddress,
+      isBuy,
+      nativeAmountWei: ((quoteDelta < 0n ? -quoteDelta : quoteDelta) * DEC_GAP).toString(),
+      tokenAmount: (tokenDelta < 0n ? -tokenDelta : tokenDelta).toString(),
+      feeWei: "0",
+      priceWei: price.toString(),
+      blockNumber: Number(blockNumber),
+      txHash: log.transactionHash ?? "0x",
+      timestamp: Math.max(0, headTs - Math.round(Number(head - blockNumber) * 0.7)),
+    };
   }
 
   /** Candles from the recent-trade window plus a live closing candle. */
@@ -343,24 +508,37 @@ export class StableV3Client {
     const trades = await this.getTrades(token, { limit: 500 });
     const core = this.cores.get(token.toLowerCase());
     const live = core ? await this.priceWei(core).catch(() => 0n) : 0n;
+    // Candle prices/volumes are whole units (native per token, native volume),
+    // matching the V4 client so mcapScale means the same thing for both.
     const buckets = new Map<number, Candle>();
     for (const t of [...trades].sort((a, b) => a.timestamp - b.timestamp)) {
       const bucket = Math.floor(t.timestamp / secs) * secs;
+      const price = Number(t.priceWei) / 1e18;
+      const vol = Number(t.nativeAmountWei) / 1e18;
       const c = buckets.get(bucket);
       if (!c) {
-        buckets.set(bucket, { time: bucket, open: t.priceWei, high: t.priceWei, low: t.priceWei, close: t.priceWei, volume: t.nativeAmountWei });
+        buckets.set(bucket, { time: bucket, open: String(price), high: String(price), low: String(price), close: String(price), volume: String(vol) });
       } else {
-        if (BigInt(t.priceWei) > BigInt(c.high)) c.high = t.priceWei;
-        if (BigInt(t.priceWei) < BigInt(c.low)) c.low = t.priceWei;
-        c.close = t.priceWei;
-        c.volume = (BigInt(c.volume) + BigInt(t.nativeAmountWei)).toString();
+        c.high = String(Math.max(Number(c.high), price));
+        c.low = String(Math.min(Number(c.low), price));
+        c.close = String(price);
+        c.volume = String(Number(c.volume) + vol);
       }
     }
     const now = Math.floor(Date.now() / 1000);
     const nowBucket = Math.floor(now / secs) * secs;
-    if (live > 0n && !buckets.has(nowBucket)) {
-      const p = live.toString();
-      buckets.set(nowBucket, { time: nowBucket, open: p, high: p, low: p, close: p, volume: "0" });
+    if (live > 0n) {
+      const p = Number(live) / 1e18;
+      const c = buckets.get(nowBucket);
+      if (!c) {
+        buckets.set(nowBucket, { time: nowBucket, open: String(p), high: String(p), low: String(p), close: String(p), volume: "0" });
+      } else {
+        // Tick the in-progress candle with the live pool price so the chart
+        // moves between trades, not only when a swap lands.
+        c.close = String(p);
+        c.high = String(Math.max(Number(c.high), p));
+        c.low = String(Math.min(Number(c.low), p));
+      }
     }
     return [...buckets.values()].sort((a, b) => a.time - b.time).slice(-(opts?.limit ?? 500));
   }
@@ -475,14 +653,138 @@ export class StableV3Client {
   // -- V4-only surface, degraded gracefully -----------------------------
 
   async tokenExtra(): Promise<null> { return null; }
-  /** Chart scale: candle prices are native wei per whole token (18d) and the
-   *  chart plots market cap in USD. mcap = priceWei/1e18 × 1e9 supply × $1. */
-  async mcapScale(): Promise<number> { return 1e-9; }
+  /** USD market cap per whole-unit price, same contract as the V4 client:
+   *  mcap = (priceWei/1e18) × scale. Supply is 1e9 whole tokens at $1 USDT0. */
+  async mcapScale(): Promise<number> { return 1e9; }
   async harvest(): Promise<never> { throw new Error("Not available on Stable."); }
   async claimDividends(): Promise<never> { throw new Error("Not available on Stable."); }
 
+  // -- live updates ------------------------------------------------------
+
+  /** One watcher per token while anything on the page listens: each 4s tick is
+   *  a getBlockNumber, an incremental getLogs over just the new blocks, and a
+   *  slot0 read — cheap enough to run continuously against the public RPC. */
+  private ensureWatcher(key: string) {
+    let w = this.watchers.get(key);
+    if (!w) {
+      w = {
+        timer: setInterval(() => void this.pollToken(key), 4_000),
+        lastBlock: 0n,
+        busy: false,
+        tradeCbs: new Set(),
+        priceCbs: new Set(),
+      };
+      this.watchers.set(key, w);
+      this.loadCores()
+        .then(() => this.pollToken(key))
+        .catch(() => {});
+    }
+    return w;
+  }
+
+  private stopWatcherIfIdle(key: string) {
+    const w = this.watchers.get(key);
+    if (w && w.tradeCbs.size === 0 && w.priceCbs.size === 0) {
+      clearInterval(w.timer);
+      this.watchers.delete(key);
+    }
+  }
+
+  private async pollToken(key: string) {
+    const w = this.watchers.get(key);
+    const core = this.cores.get(key);
+    if (!w || !core || w.busy) return;
+    w.busy = true;
+    try {
+      const head = await this.publicClient.getBlockNumber();
+      let fresh: TradeRecord[] = [];
+      if (w.lastBlock === 0n) {
+        w.lastBlock = head; // baseline; history came from the initial scan
+      } else if (head > w.lastBlock) {
+        const from = head - w.lastBlock > 499n ? head - 499n : w.lastBlock + 1n;
+        const logs = await this.publicClient
+          .getLogs({ address: core.pool, event: POOL_ABI[2], fromBlock: from, toBlock: head })
+          .catch(() => []);
+        w.lastBlock = head;
+        const nowTs = Math.floor(Date.now() / 1000);
+        const entry = this.tradesCache.get(key) ?? this.loadPersistedTrades(key) ?? { at: 0, trades: [] };
+        const seen = new Set(entry.trades.map((t) => t.id));
+        fresh = logs
+          .map((l) => this.logToTrade(core, l, head, nowTs))
+          .filter((t) => !seen.has(t.id))
+          .sort((a, b) => a.blockNumber - b.blockNumber);
+        if (fresh.length) {
+          entry.trades = [...fresh].reverse().concat(entry.trades).slice(0, 500);
+        }
+        // Mark the cache fresh either way — the chart's poll reads through
+        // getCandles/getTrades and should trust this verified-current data.
+        entry.at = Date.now();
+        this.tradesCache.set(key, entry);
+        this.persistTrades(key, entry);
+        for (const t of fresh) for (const cb of w.tradeCbs) cb(t);
+      } else {
+        const entry = this.tradesCache.get(key);
+        if (entry) entry.at = Date.now();
+      }
+      if (fresh.length) {
+        this.holdersCache.delete(key);
+        await this.refreshHolders(core).catch(() => {});
+      }
+      if (w.priceCbs.size > 0) {
+        this.priceCache.delete(key);
+        const price = await this.priceWei(core).catch(() => null);
+        if (price !== null) {
+          const update = this.buildPriceUpdate(core, price);
+          for (const cb of w.priceCbs) cb(update);
+        }
+      }
+    } finally {
+      w.busy = false;
+    }
+  }
+
+  private buildPriceUpdate(core: Core, price: bigint): PriceUpdate {
+    const key = core.address.toLowerCase();
+    const supply = 1_000_000_000n * 10n ** 18n;
+    const mcapWei = (price * supply) / 10n ** 18n;
+    const stats = this.statsFromCache(key);
+    return {
+      token: core.address,
+      priceWei: price.toString(),
+      priceUsd: String(Number(price) / 1e18),
+      marketCapUsd: String(Number(mcapWei) / 1e18),
+      liquidityWei: "0",
+      limitsActive: false,
+      remainingToGraduationUsd: "0",
+      creatorFeesWei: "0",
+      volume24hWei: stats.vol24.toString(),
+      volumeTotalWei: stats.volTotal.toString(),
+      txCount24h: stats.tx24,
+      ...(stats.holders !== undefined ? { holderCount: stats.holders } : {}),
+    };
+  }
+
   subscribeToCandles(): () => void { return () => {}; }
-  subscribeToTrades(): () => void { return () => {}; }
-  subscribeToPrice(): () => void { return () => {}; }
+
+  subscribeToTrades(token: string, cb: (t: TradeRecord) => void): () => void {
+    const key = token.toLowerCase();
+    const w = this.ensureWatcher(key);
+    w.tradeCbs.add(cb);
+    return () => {
+      w.tradeCbs.delete(cb);
+      this.stopWatcherIfIdle(key);
+    };
+  }
+
+  subscribeToPrice(token: string, cb: (u: PriceUpdate) => void): () => void {
+    const key = token.toLowerCase();
+    const w = this.ensureWatcher(key);
+    w.priceCbs.add(cb);
+    return () => {
+      w.priceCbs.delete(cb);
+      this.stopWatcherIfIdle(key);
+    };
+  }
+
   subscribeToLaunches(): () => void { return () => {}; }
 }

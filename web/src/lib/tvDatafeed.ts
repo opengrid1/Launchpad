@@ -88,15 +88,25 @@ export function makeDatafeed(token: Address, symbol: string) {
       uid: string,
     ) {
       const interval = RES_TO_INTERVAL[resolution] ?? "1m";
+      // The chart throws away the subscription if it ever receives a bar older
+      // than the last one it was fed, so updates must be monotonic. Feed the
+      // last two candles (the previous bucket's final shape, then the live
+      // one), skipping anything that would go backwards.
+      let lastTime = 0;
       const id = setInterval(async () => {
         try {
           const candles = await v4Client.getCandles(token, interval, { limit: 2 });
-          const c = candles[candles.length - 1];
-          if (c) onTick(toBar(c));
+          for (const c of candles.slice(-2)) {
+            const bar = toBar(c);
+            if (bar.time >= lastTime) {
+              onTick(bar);
+              lastTime = bar.time;
+            }
+          }
         } catch {
           /* ignore */
         }
-      }, 10_000);
+      }, 5_000);
       subs.set(uid, id);
     },
     unsubscribeBars(uid: string) {
