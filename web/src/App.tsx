@@ -10,7 +10,10 @@ import { Explore } from "./pages/Explore";
 
 const TokenPage = lazy(() => import("./pages/Token").then((m) => ({ default: m.TokenPage })));
 const LaunchPage = lazy(() => import("./pages/Launch").then((m) => ({ default: m.LaunchPage })));
-const AdminPage = lazy(() => import("./pages/Admin").then((m) => ({ default: m.AdminPage })));
+const AdminPage =
+  String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3"
+    ? lazy(() => import("./pages/AdminStable").then((m) => ({ default: m.AdminStable })))
+    : lazy(() => import("./pages/Admin").then((m) => ({ default: m.AdminPage })));
 const DocsPage = lazy(() => import("./pages/Docs").then((m) => ({ default: m.DocsPage })));
 
 const queryClient = new QueryClient({

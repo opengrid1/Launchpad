@@ -27,6 +27,17 @@ const FACTORY_ABI = parseAbi([
   "function tokenCount() view returns (uint256)",
   "function allTokens(uint256) view returns (address)",
   "function listings(address) view returns (address creator, address quote, address pool, uint256 positionId, uint64 createdAt, bool tokenIsToken0)",
+  // Owner console
+  "function owner() view returns (address)",
+  "function feeRecipient() view returns (address)",
+  "function launchesPaused() view returns (bool)",
+  "function pause()",
+  "function resume()",
+  "function setFeeRecipient(address newRecipient)",
+  "function setQuoteAsset(address quote, bool approved, uint64 usdPrice8)",
+  "function collectFees(address token) returns (uint256, uint256)",
+  "function recoverERC20(address asset, uint256 amount)",
+  "function recoverNative()",
 ]);
 
 const ERC20_ABI = parseAbi([
@@ -415,6 +426,49 @@ export class StableV3Client {
     return wc.writeContract({
       address: this.addresses.factory, abi: FACTORY_ABI, functionName: "harvestFees",
       args: [token], chain: wc.chain, account: wc.account!,
+    });
+  }
+
+  // -- Owner console ----------------------------------------------------
+
+  /** Factory owner-console snapshot. */
+  async adminInfo(): Promise<{ owner: Address; feeRecipient: Address; paused: boolean; tokenCount: number }> {
+    const F = this.addresses.factory;
+    const [owner, feeRecipient, paused, count] = await Promise.all([
+      this.publicClient.readContract({ address: F, abi: FACTORY_ABI, functionName: "owner" }),
+      this.publicClient.readContract({ address: F, abi: FACTORY_ABI, functionName: "feeRecipient" }),
+      this.publicClient.readContract({ address: F, abi: FACTORY_ABI, functionName: "launchesPaused" }),
+      this.publicClient.readContract({ address: F, abi: FACTORY_ABI, functionName: "tokenCount" }),
+    ]);
+    return {
+      owner: owner as Address,
+      feeRecipient: feeRecipient as Address,
+      paused: paused as boolean,
+      tokenCount: Number(count),
+    };
+  }
+
+  /** Owner-gated (and harvest) factory calls from the connected wallet. */
+  async adminCall(
+    functionName:
+      | "pause"
+      | "resume"
+      | "setFeeRecipient"
+      | "setQuoteAsset"
+      | "collectFees"
+      | "recoverERC20"
+      | "recoverNative"
+      | "harvestFees",
+    args: unknown[] = [],
+  ): Promise<`0x${string}`> {
+    const wc = this.wallet();
+    return wc.writeContract({
+      address: this.addresses.factory,
+      abi: FACTORY_ABI,
+      functionName,
+      args: args as never,
+      chain: wc.chain,
+      account: wc.account!,
     });
   }
 
