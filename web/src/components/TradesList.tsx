@@ -8,6 +8,8 @@ import { explorerAddr, fmtUsd, fmtWei, fmtTokens, shortAddr } from "../lib/forma
 import { EmptyState, Skeleton } from "./ui";
 
 const PER_PAGE = 12;
+/** Venue badge: Uniswap v3 on the Stable protocol, the V4 launchpad elsewhere. */
+const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
 
 export function TradesList({ token, symbol }: { token: Address; symbol: string }) {
   const { trades, loading } = useTrades(client, token, 120);
@@ -84,7 +86,7 @@ export function TradesList({ token, symbol }: { token: Address; symbol: string }
                       <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.isBuy ? "bg-up/15 text-up" : "bg-down/15 text-down"}`}>
                         {t.isBuy ? "BUY" : "SELL"}
                       </span>
-                      <span className="text-[9.5px] font-semibold text-ink-3">V4</span>
+                      <span className="text-[9.5px] font-semibold text-ink-3">{IS_STABLE ? "V3" : "V4"}</span>
                     </span>
                   </td>
                   <td className="mono px-2 py-2.5 text-[12px] text-ink">{fmtWei(t.nativeAmountWei)}</td>
