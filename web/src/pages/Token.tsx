@@ -24,6 +24,55 @@ import { stockOf } from "../lib/v4/stocks";
 import { useUi } from "../store";
 
 
+const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
+
+/** Stable: permissionless harvest strip. The 1% pool fee accrues inside the
+ *  held position; anyone can trigger the split — 80% is pushed straight to
+ *  the creator's wallet, 20% to the platform. No claim balance to manage. */
+function HarvestStrip({ token, creator }: { token: Address; creator: string }) {
+  const { address, isConnected, connectFirst } = useWallet();
+  const pushToast = useUi((s) => s.pushToast);
+  const [busy, setBusy] = useState(false);
+  const isCreator = address && creator && address.toLowerCase() === creator.toLowerCase();
+
+  const harvest = async () => {
+    if (!isConnected) return connectFirst();
+    setBusy(true);
+    try {
+      if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+      const hash = await (client as any).claimCreatorFees(token);
+      pushToast({ kind: "info", title: "Harvest submitted", txHash: hash });
+      await client.publicClient.waitForTransactionReceipt({ hash });
+      pushToast({ kind: "success", title: "Fees distributed — 80% creator, 20% platform", txHash: hash });
+    } catch (err) {
+      pushToast({ kind: "error", title: "Harvest failed", body: errorText(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/25 bg-accent/[0.04] px-4 py-2.5">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-ink">
+          {isCreator ? "Your creator fees" : "Creator fees"}
+        </p>
+        <p className="mt-0.5 text-xs text-ink-3">
+          Every trade's 1% pool fee accrues here. Harvest anytime — 80% goes straight to the
+          creator's wallet, 20% to the platform.
+        </p>
+      </div>
+      <button
+        onClick={harvest}
+        disabled={busy}
+        className="rounded-lg bg-accent px-4 py-2 text-[12.5px] font-semibold text-accent-fg disabled:opacity-50"
+      >
+        {busy ? "Harvesting…" : "Harvest fees"}
+      </button>
+    </div>
+  );
+}
+
 /** V4 reward/fee facts for a token, read from the hook + token in one pass. */
 interface Extra {
   stock: Address;
@@ -101,6 +150,7 @@ export function TokenPage() {
       </section>
 
       <div className="mt-3 space-y-2.5">
+        {IS_STABLE && <HarvestStrip token={t.address as Address} creator={t.creator} />}
         <RewardsStrip token={t} extra={extra} />
         <CreatorClaim token={t} extra={extra} onClaimed={() => v4Client.tokenExtra(t.address as Address).then(setExtra).catch(() => undefined)} />
       </div>
