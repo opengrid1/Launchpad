@@ -8,6 +8,7 @@ export const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   "0x55dfcf83135fa4f5d0c3f19311e3d5c103f892c5", // TEST
   "0x854088037076ec7d3c41c1737513ebab3b46521f", // TEST (Stable test launch)
   "0x785c693d9efe13d88a5e566515258f4d2b093f11", // STEADY (Stable validation launch)
+  "0xb90f8bd06c9d935173b50f95e807ed6572e906e3", // STEADY (official relaunch, hidden pre-announcement)
   // Pre-launch demo markets; hidden from public discovery until launch.
   "0x2a2b39e3b645adee02af780be42ffc5741404663", // CHIP
   "0xb44549a596819fd688c5855fede16bee96a24663", // APE
