@@ -1,9 +1,9 @@
 {
   "network": "robinhood",
   "chainId": 4663,
-  "startBlock": 22137130,
+  "startBlock": 22166802,
   "deployer": "0xd6F0e8943421E19f3d800542A2aC056bA929c8ac",
-  "owner": "0xd6F0e8943421E19f3d800542A2aC056bA929c8ac",
+  "owner": "0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b",
   "feeRecipient": "0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b",
   "uniswapV3": {
     "factory": "0x1f7d7550B1b028f7571E69A784071F0205FD2EfA",
@@ -12,8 +12,8 @@
     "wrappedNative": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"
   },
   "contracts": {
-    "tokenDeployer": "0x79Fb68b0bFCd335f27E2dAF95716Fb49f38452C3",
-    "factory": "0x95472BE7fEE74fc819Ba762cd4F254301ba497D7"
+    "tokenDeployer": "0xf2B2d33Ef72FaDCf0e8CDaE0cd348E2fADF2F24a",
+    "factory": "0x8b57E56964486A1eDB8d83bc2ef5ac93497a73b9"
   },
   "config": {
     "totalSupply": "1000000000e18",
@@ -21,5 +21,6 @@
     "creatorFeeBps": 8000,
     "platformFeeBps": 2000,
     "defaultMarketCapUsd": 3000
-  }
+  },
+  "note": "Second deployment; first (0x95472BE7...) was retired because its deterministic addresses collided with the Stable deployment and confused cross-chain indexers."
 }
