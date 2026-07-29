@@ -418,6 +418,12 @@ const socialIcons: Record<string, JSX.Element> = {
   ),
 };
 
+/** DexScreener chain slug for this deployment, empty when the chain isn't
+ *  indexed there. Address search is NOT a fallback: token addresses repeat
+ *  across chains (deterministic deploys), so a search can land on a
+ *  same-address token from a different chain. */
+const DEXSCREENER_CHAIN = String(import.meta.env.VITE_DEXSCREENER_CHAIN ?? "");
+
 function InfoTab({ t, meta, extra }: { t: any; meta: any; extra: Extra | null }) {
   const explorer = env.explorerUrl ? env.explorerUrl.replace(/\/$/, "") : "";
   const links: { label: string; url?: string }[] = [
@@ -426,7 +432,11 @@ function InfoTab({ t, meta, extra }: { t: any; meta: any; extra: Extra | null })
     { label: "Telegram", url: normalizeSocial(meta.telegram, "telegram") },
     ...(meta.links ?? []).map((l: { label: string; url?: string }) => ({ ...l, url: normalizeSocial(l.url) })),
     explorer ? { label: "Scan", url: `${explorer}/token/${t.address}` } : { label: "Scan" },
-    { label: "DexScreener", url: `https://dexscreener.com/search?q=${t.address}` },
+    DEXSCREENER_CHAIN && t.pool
+      ? { label: "DexScreener", url: `https://dexscreener.com/${DEXSCREENER_CHAIN}/${t.pool}` }
+      : explorer && t.pool
+        ? { label: "Pool", url: `${explorer}/address/${t.pool}` }
+        : { label: "Pool" },
   ].filter((l) => l.url);
 
   return (
