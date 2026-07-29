@@ -2,6 +2,7 @@ import {
   type Address,
   type PublicClient,
   type WalletClient,
+  encodeFunctionData,
   parseAbi,
   zeroAddress,
 } from "viem";
@@ -27,6 +28,7 @@ const FACTORY_ABI = parseAbi([
   "function tokenCount() view returns (uint256)",
   "function allTokens(uint256) view returns (address)",
   "function listings(address) view returns (address creator, address quote, address pool, uint256 positionId, uint64 createdAt, bool tokenIsToken0)",
+  "function quoteAssets(address) view returns (bool approved, uint64 usdPrice8, uint8 decimals)",
   // Owner console
   "function owner() view returns (address)",
   "function feeRecipient() view returns (address)",
@@ -59,18 +61,29 @@ const POOL_ABI = parseAbi([
 const ROUTER_ABI = parseAbi([
   "struct ExactInputSingleParams { address tokenIn; address tokenOut; uint24 fee; address recipient; uint256 amountIn; uint256 amountOutMinimum; uint160 sqrtPriceLimitX96; }",
   "function exactInputSingle(ExactInputSingleParams params) payable returns (uint256 amountOut)",
+  "function multicall(bytes[] data) payable returns (bytes[] results)",
+  "function unwrapWETH9(uint256 amountMinimum, address recipient) payable",
 ]);
 
 const Q96 = 2n ** 96n;
-/** 6-dec quote-wei → 18-dec native-wei. */
-const DEC_GAP = 10n ** 12n;
-/** Max 500-block getLogs windows scanned for recent trades. */
-const TRADE_SCAN_WINDOWS = 20;
+/** SwapRouter02 sentinel: send swap output to the router for a follow-up step. */
+const ADDRESS_THIS = "0x0000000000000000000000000000000000000002" as Address;
+/** Quote-wei → 18-dec native-wei gap (10^(18 - quote decimals)). */
+const DEC_GAP = 10n ** BigInt(18 - Number(import.meta.env.VITE_QUOTE_DECIMALS ?? 6));
+/** True when the quote asset is the chain's wrapped native (e.g. WETH on
+ *  Robinhood): buys pay native value and sells unwrap back to native. */
+const QUOTE_IS_WNATIVE = String(import.meta.env.VITE_QUOTE_IS_WNATIVE ?? "") === "true";
+/** Max block span of one getLogs request (RPC-dependent; Stable caps at 500,
+ *  Robinhood accepts millions). */
+const LOGS_WINDOW = Number(import.meta.env.VITE_LOGS_WINDOW ?? 500);
+/** Total recent-trade span scanned up front, in blocks. */
+const SCAN_SPAN = Number(import.meta.env.VITE_SCAN_SPAN ?? 10_000);
+const TRADE_SCAN_WINDOWS = Math.max(1, Math.ceil(SCAN_SPAN / LOGS_WINDOW));
 
 export interface StableAddresses {
   factory: Address;
   swapRouter: Address;
-  quote: Address; // ERC-20 USDT0 (6 decimals)
+  quote: Address; // quote ERC-20 (USDT0 on Stable, WETH on Robinhood)
 }
 
 interface Core {
@@ -109,6 +122,13 @@ export class StableV3Client {
   >();
   private holdersCache = new Map<string, { at: number; count: number }>();
   private deepScanned = new Set<string>();
+  /** USD per whole quote token, read from the factory's quote registry ($1 on
+   *  Stable, live ETH price on Robinhood). */
+  private quoteUsd = 1;
+  private quoteUsdLoaded = false;
+  /** Observed seconds per block, refreshed by each trade scan. Stable is a
+   *  steady 0.7s; Orbit chains mint blocks on demand so this varies. */
+  private avgBlockTime = 0.7;
 
   constructor(publicClient: PublicClient, addresses: StableAddresses) {
     this.publicClient = publicClient;
@@ -136,6 +156,19 @@ export class StableV3Client {
   }
 
   private async _loadCores(): Promise<Core[]> {
+    if (!this.quoteUsdLoaded) {
+      // One-time: the factory knows the quote's USD price (8 decimals).
+      this.publicClient
+        .readContract({ address: this.addresses.factory, abi: FACTORY_ABI, functionName: "quoteAssets", args: [this.addresses.quote] })
+        .then((q) => {
+          const [, usdPrice8] = q as unknown as [boolean, bigint, number];
+          if (usdPrice8 > 0n) {
+            this.quoteUsd = Number(usdPrice8) / 1e8;
+            this.quoteUsdLoaded = true;
+          }
+        })
+        .catch(() => {});
+    }
     const count = Number(
       await this.publicClient.readContract({
         address: this.addresses.factory,
@@ -262,7 +295,7 @@ export class StableV3Client {
     const price = await this.priceWei(core).catch(() => 0n);
     const supply = 1_000_000_000n * 10n ** 18n;
     const mcapWei = (price * supply) / 10n ** 18n;
-    const usd = Number(mcapWei) / 1e18; // USDT0 = $1
+    const usd = (Number(mcapWei) / 1e18) * this.quoteUsd;
     const stats = this.statsFromCache(core.address.toLowerCase());
     let metadata: Record<string, unknown> = {};
     try { metadata = JSON.parse(core.metadataURI || "{}"); } catch { /* opaque URI */ }
@@ -279,7 +312,7 @@ export class StableV3Client {
       metadata: metadata as TokenSummary["metadata"],
       totalSupply: supply.toString(),
       priceWei: price.toString(),
-      priceUsd: String(Number(price) / 1e18),
+      priceUsd: String((Number(price) / 1e18) * this.quoteUsd),
       marketCapUsd: String(usd),
       liquidityWei: "0",
       volume24hWei: stats.vol24.toString(),
@@ -329,18 +362,19 @@ export class StableV3Client {
     if (this.deepScanned.has(key)) return;
     this.deepScanned.add(key);
     const head = await this.publicClient.getBlockNumber();
-    const ageBlocks = Math.ceil((Date.now() / 1000 - core.createdAt) / 0.7) + 500;
-    const totalWindows = Math.min(Math.ceil(ageBlocks / 500), 200);
+    const ageBlocks = Math.ceil((Date.now() / 1000 - core.createdAt) / this.avgBlockTime) + LOGS_WINDOW;
+    const totalWindows = Math.min(Math.ceil(ageBlocks / LOGS_WINDOW), 200);
     if (totalWindows <= TRADE_SCAN_WINDOWS) return;
     const headTs = Math.floor(Date.now() / 1000);
+    const W = BigInt(LOGS_WINDOW);
     const found: TradeRecord[] = [];
     // Sequential batches keep this well under the RPC's rate budget.
     for (let start = TRADE_SCAN_WINDOWS; start < totalWindows; start += 25) {
       const batch = [];
       for (let w = start; w < Math.min(start + 25, totalWindows); w += 1) {
-        const to = head - BigInt(w * 500);
+        const to = head - BigInt(w) * W;
         if (to <= 0n) break;
-        const from = to - 499n > 0n ? to - 499n : 0n;
+        const from = to - W + 1n > 0n ? to - W + 1n : 0n;
         batch.push(
           this.publicClient
             .getLogs({ address: core.pool, event: POOL_ABI[2], fromBlock: from, toBlock: to })
@@ -419,12 +453,27 @@ export class StableV3Client {
     ]);
     const headTs = headBlock ? Number(headBlock.timestamp) : Math.floor(Date.now() / 1000);
 
+    const W = BigInt(LOGS_WINDOW);
     const windows = Array.from({ length: TRADE_SCAN_WINDOWS }, (_, w) => {
-      const to = head - BigInt(w * 500);
+      const to = head - BigInt(w) * W;
       if (to <= 0n) return null;
-      const from = to - 499n > 0n ? to - 499n : 0n;
+      const from = to - W + 1n > 0n ? to - W + 1n : 0n;
       return { from, to };
     }).filter(Boolean) as Array<{ from: bigint; to: bigint }>;
+
+    // Calibrate seconds-per-block from the span's oldest block so trade
+    // timestamps interpolate correctly on chains without a fixed cadence.
+    const spanStart = windows[windows.length - 1]?.from ?? 0n;
+    if (head > spanStart) {
+      await this.publicClient
+        .getBlock({ blockNumber: spanStart })
+        .then((b) => {
+          const dt = headTs - Number(b.timestamp);
+          const db = Number(head - spanStart);
+          if (dt > 0 && db > 0) this.avgBlockTime = Math.min(60, Math.max(0.05, dt / db));
+        })
+        .catch(() => {});
+    }
 
     const results = await Promise.all(
       windows.map((w) =>
@@ -499,7 +548,7 @@ export class StableV3Client {
       priceWei: price.toString(),
       blockNumber: Number(blockNumber),
       txHash: log.transactionHash ?? "0x",
-      timestamp: Math.max(0, headTs - Math.round(Number(head - blockNumber) * 0.7)),
+      timestamp: Math.max(0, headTs - Math.round(Number(head - blockNumber) * this.avgBlockTime)),
     };
   }
 
@@ -596,28 +645,48 @@ export class StableV3Client {
     }
   }
 
-  /** Buy `token` spending `nativeWei` (18d) of USDT0 on the official router. */
+  /** Buy `token` spending `nativeWei` (18d) of the quote on the router. When
+   *  the quote is the wrapped native, the trade pays plain native value and
+   *  SwapRouter02 wraps it internally; no approval needed. */
   async buyToken(token: Address, nativeWei: bigint, minOut: bigint): Promise<`0x${string}`> {
     const wc = this.wallet();
     const me = wc.account!.address as Address;
-    const amountIn6 = nativeWei / DEC_GAP;
-    if (amountIn6 === 0n) throw new Error("Amount too small.");
-    await this.ensureAllowance(me, this.addresses.quote, amountIn6);
+    const amountIn = nativeWei / DEC_GAP;
+    if (amountIn === 0n) throw new Error("Amount too small.");
+    if (!QUOTE_IS_WNATIVE) await this.ensureAllowance(me, this.addresses.quote, amountIn);
     return wc.writeContract({
       address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
-      args: [{ tokenIn: this.addresses.quote, tokenOut: token, fee: 10_000, recipient: me, amountIn: amountIn6, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
+      args: [{ tokenIn: this.addresses.quote, tokenOut: token, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
+      value: QUOTE_IS_WNATIVE ? nativeWei : undefined,
       chain: wc.chain, account: wc.account!,
     });
   }
 
-  /** Sell `amountIn` token wei for USDT0; `minOut` is native wei (18d). */
+  /** Sell `amountIn` token wei for the quote; `minOut` is native wei (18d).
+   *  When the quote is the wrapped native, the swap lands in the router and a
+   *  second multicall step unwraps it straight to the seller as native. */
   async sellToken(token: Address, amountIn: bigint, minOut: bigint): Promise<`0x${string}`> {
     const wc = this.wallet();
     const me = wc.account!.address as Address;
     await this.ensureAllowance(me, token, amountIn);
+    if (!QUOTE_IS_WNATIVE) {
+      return wc.writeContract({
+        address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
+        args: [{ tokenIn: token, tokenOut: this.addresses.quote, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut / DEC_GAP, sqrtPriceLimitX96: 0n }],
+        chain: wc.chain, account: wc.account!,
+      });
+    }
+    const swap = encodeFunctionData({
+      abi: ROUTER_ABI, functionName: "exactInputSingle",
+      args: [{ tokenIn: token, tokenOut: this.addresses.quote, fee: 10_000, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
+    });
+    const unwrap = encodeFunctionData({
+      abi: ROUTER_ABI, functionName: "unwrapWETH9",
+      args: [minOut, me],
+    });
     return wc.writeContract({
-      address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
-      args: [{ tokenIn: token, tokenOut: this.addresses.quote, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut / DEC_GAP, sqrtPriceLimitX96: 0n }],
+      address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "multicall",
+      args: [[swap, unwrap]],
       chain: wc.chain, account: wc.account!,
     });
   }
@@ -679,7 +748,11 @@ export class StableV3Client {
   async tokenExtra(): Promise<null> { return null; }
   /** USD market cap per whole-unit price, same contract as the V4 client:
    *  mcap = (priceWei/1e18) × scale. Supply is 1e9 whole tokens at $1 USDT0. */
-  async mcapScale(): Promise<number> { return 1e9; }
+  async mcapScale(): Promise<number> {
+    // Ensure the quote's USD price is loaded (kicked off by loadCores).
+    await this.loadCores().catch(() => {});
+    return 1e9 * this.quoteUsd;
+  }
   async harvest(): Promise<never> { throw new Error("Not available on Stable."); }
   async claimDividends(): Promise<never> { throw new Error("Not available on Stable."); }
 
@@ -725,7 +798,8 @@ export class StableV3Client {
       if (w.lastBlock === 0n) {
         w.lastBlock = head; // baseline; history came from the initial scan
       } else if (head > w.lastBlock) {
-        const from = head - w.lastBlock > 499n ? head - 499n : w.lastBlock + 1n;
+        const W = BigInt(LOGS_WINDOW);
+        const from = head - w.lastBlock > W - 1n ? head - W + 1n : w.lastBlock + 1n;
         const logs = await this.publicClient
           .getLogs({ address: core.pool, event: POOL_ABI[2], fromBlock: from, toBlock: head })
           .catch(() => []);
@@ -775,8 +849,8 @@ export class StableV3Client {
     return {
       token: core.address,
       priceWei: price.toString(),
-      priceUsd: String(Number(price) / 1e18),
-      marketCapUsd: String(Number(mcapWei) / 1e18),
+      priceUsd: String((Number(price) / 1e18) * this.quoteUsd),
+      marketCapUsd: String((Number(mcapWei) / 1e18) * this.quoteUsd),
       liquidityWei: "0",
       limitsActive: false,
       remainingToGraduationUsd: "0",

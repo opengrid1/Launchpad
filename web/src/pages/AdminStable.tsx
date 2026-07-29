@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { TokenSummary } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
+import { env } from "../lib/env";
 import { StableV3Client } from "../lib/stable/client";
 import { fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
@@ -204,7 +205,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-5">
       <h1 className="text-[18px] font-bold tracking-tight text-ink">Operations</h1>
-      <p className="mt-1 text-[12.5px] text-ink-2">StableLaunchpadFactory owner console · Stable Mainnet.</p>
+      <p className="mt-1 text-[12.5px] text-ink-2">StableLaunchpadFactory owner console · {env.chainName}.</p>
       <div className="mt-5 space-y-5">{children}</div>
     </div>
   );

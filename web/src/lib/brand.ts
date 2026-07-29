@@ -41,7 +41,7 @@ const FLAVORS: Record<string, Brand> = {
     twitterHandle: "steadypads",
     tagline: "the stable launchpad",
     description:
-      "steadypads. launch tokens into real markets on Stable. Every trade pays holders real dollars.",
+      "steadypads. launch tokens into real Uniswap markets. Every trade pays its creator, forever.",
     title: "steadypads | the stable launchpad",
   },
 };
