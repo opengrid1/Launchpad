@@ -40,6 +40,11 @@ export const chain: Chain = defineChain({
   nativeCurrency: { name: env.nativeSymbol, symbol: env.nativeSymbol, decimals: 18 },
   // Single primary endpoint for wallet metadata; app reads use the full list.
   rpcUrls: { default: { http: [env.rpcUrl.split(",")[0].trim()] } },
+  // Multicall3, when the chain has one; viem batches reads through it and the
+  // V4 client's explicit multicall() calls require it.
+  ...(import.meta.env.VITE_MULTICALL3
+    ? { contracts: { multicall3: { address: String(import.meta.env.VITE_MULTICALL3) as `0x${string}` } } }
+    : {}),
   blockExplorers: env.explorerUrl
     ? { default: { name: "Explorer", url: env.explorerUrl } }
     : undefined,
