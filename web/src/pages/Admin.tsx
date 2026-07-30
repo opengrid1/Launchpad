@@ -20,6 +20,12 @@ import { useUi } from "../store";
  * Actions here are direct transactions to the factory (pause launches, lift a
  * launches) and the hook (distribute a token's accrued fees).
  */
+// Creator-fee deployments (Arc) split harvests 80/20 and quote in the chain's
+// native dollar; legacy deployments keep the 25% WETH wording.
+const CREATOR_MODE = String(import.meta.env.VITE_FEE_MODE ?? "") === "creator";
+const NATIVE = env.nativeSymbol;
+const WRAPPED = `W${NATIVE}`;
+
 export function AdminPage() {
   const { address, isConnected, connectFirst } = useWallet();
   const { data: walletClient } = useWalletClient();
@@ -222,7 +228,7 @@ export function AdminPage() {
       {/* Figures strip */}
       <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-edge bg-edge">
         <Figure label="Tokens launched" value={s ? compact(s.totalTokens) : "–"} />
-        <Figure label="Treasury balance" value={s ? `${fmtWei(s.treasuryWeth)} WETH` : "–"} accent />
+        <Figure label="Treasury balance" value={s ? `${fmtWei(s.treasuryWeth)} ${WRAPPED}` : "–"} accent />
       </div>
 
       {/* Protocol treasury */}
@@ -231,15 +237,16 @@ export function AdminPage() {
           <div className="min-w-0">
             <h2 className="text-[13px] font-semibold text-ink">Protocol treasury</h2>
             <p className="mt-0.5 text-[11px] text-ink-3">
-              The protocol's 25% share of every trade's tax is sent here as WETH on each distribution.
-              Unwrap converts it to native ETH in this wallet.
+              {CREATOR_MODE
+                ? `The protocol's 20% share of every harvest is pushed here as native ${NATIVE}. If a push ever falls back to wrapped ${NATIVE}, unwrap converts it in this wallet.`
+                : `The protocol's 25% share of every trade's tax is sent here as ${WRAPPED} on each distribution. Unwrap converts it to native ${NATIVE} in this wallet.`}
             </p>
             <p className="mt-1.5 font-mono text-[12px] text-ink-2">{s ? s.treasury : "–"}</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="tnum text-[15px] font-semibold text-accent-ink">
-                {myWeth.data !== undefined ? `${fmtWei(myWeth.data)} WETH` : "–"}
+                {myWeth.data !== undefined ? `${fmtWei(myWeth.data)} ${WRAPPED}` : "–"}
               </p>
               <p className="text-[11px] text-ink-3">in your wallet</p>
             </div>
@@ -248,7 +255,7 @@ export function AdminPage() {
               disabled={busyAction !== null || !myWeth.data || myWeth.data === 0n}
               onClick={unwrapWeth}
             >
-              {busyAction === "Unwrap WETH" ? "Unwrapping" : "Unwrap to ETH"}
+              {busyAction === "Unwrap WETH" ? "Unwrapping" : `Unwrap to ${NATIVE}`}
             </Button>
           </div>
         </div>
@@ -343,7 +350,7 @@ export function AdminPage() {
           <div className="w-full max-w-sm rounded-2xl border border-edge bg-panel p-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-[14px] font-bold text-ink">Unwind {unwind.symbol} liquidity</h3>
             <p className="mt-1 text-[11.5px] leading-relaxed text-ink-3">
-              Pulls pooled liquidity (token + WETH) to a recipient. This is not reversible and lowers the pool's liquidity.
+              Pulls pooled liquidity (token + {WRAPPED}) to a recipient. This is not reversible and lowers the pool's liquidity.
             </p>
             <label className="mt-3 block text-[11px] font-medium text-ink-2">Percent to remove (1–100)</label>
             <input
