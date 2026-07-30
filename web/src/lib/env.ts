@@ -38,7 +38,8 @@ export const chain: Chain = defineChain({
   id: env.chainId,
   name: env.chainName,
   nativeCurrency: { name: env.nativeSymbol, symbol: env.nativeSymbol, decimals: 18 },
-  rpcUrls: { default: { http: [env.rpcUrl] } },
+  // Single primary endpoint for wallet metadata; app reads use the full list.
+  rpcUrls: { default: { http: [env.rpcUrl.split(",")[0].trim()] } },
   blockExplorers: env.explorerUrl
     ? { default: { name: "Explorer", url: env.explorerUrl } }
     : undefined,

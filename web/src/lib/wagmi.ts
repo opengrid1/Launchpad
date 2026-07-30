@@ -16,13 +16,17 @@ import { chain, env } from "./env";
  * UI weight touches the first paint. Account/session reads go through the normal
  * wagmi hooks, which work off `wagmiConfig` whether or not the modal is open yet.
  */
+// Wallets accept a single RPC endpoint; the app's own reads use the full
+// comma-separated fallback list (see lib/client.ts).
+const primaryRpc = env.rpcUrl.split(",")[0].trim();
+
 const appKitNetwork = defineChain({
   id: chain.id,
   caipNetworkId: `eip155:${chain.id}`,
   chainNamespace: "eip155",
   name: chain.name,
   nativeCurrency: chain.nativeCurrency,
-  rpcUrls: { default: { http: [env.rpcUrl] } },
+  rpcUrls: { default: { http: [primaryRpc] } },
   ...(env.explorerUrl
     ? { blockExplorers: { default: { name: "Explorer", url: env.explorerUrl } } }
     : {}),
@@ -31,7 +35,7 @@ const appKitNetwork = defineChain({
 const wagmiAdapter = new WagmiAdapter({
   networks: [appKitNetwork],
   projectId: env.walletConnectProjectId,
-  transports: { [chain.id]: http(env.rpcUrl, { batch: { wait: 16 } }) },
+  transports: { [chain.id]: http(primaryRpc, { batch: { wait: 16 } }) },
 });
 
 export const wagmiConfig = wagmiAdapter.wagmiConfig as Config;
