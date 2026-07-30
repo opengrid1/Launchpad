@@ -3,10 +3,12 @@ import {
   type PublicClient,
   type WalletClient,
   concatHex,
+  decodeEventLog,
   encodeAbiParameters,
   getContractAddress,
   keccak256,
   parseEther,
+  toEventSelector,
 } from "viem";
 import type { Candle, CandleInterval, HolderRecord, TokenSummary, TradeRecord } from "@launchpad/sdk";
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
@@ -16,6 +18,13 @@ import { QUIVER_TOKEN_BYTECODE } from "./tokenBytecode";
 
 const Q96 = 2n ** 96n;
 const TOTAL_SUPPLY = 1_000_000_000n * 10n ** 18n;
+
+const SWAP_TOPIC = toEventSelector(poolSwapEvent as any);
+// Receipt-scanner window: how far back the first scan reaches, and the most
+// blocks any single catch-up will walk (Arc blocks are ~0.5s).
+const RECEIPT_BACKFILL = 240n;
+const RECEIPT_MAX_CATCHUP = 900n;
+const RECEIPT_CHUNK = 25;
 
 export interface V4Addresses {
   factory: Address;
@@ -65,6 +74,11 @@ export class V4Client {
   // (a stale cache is what pinned mcap to the launch price and hid new trades).
   private tradesCache = new Map<string, { records: TradeRecord[]; upTo: bigint }>();
   private blockTsAnchor?: { block: bigint; ts: number; perBlock: number };
+  // Shared receipt scanner, the swap-log source when eth_getLogs is disabled:
+  // one incremental walk over new blocks feeds every pool's trade feed.
+  private receiptUpTo = 0n;
+  private receiptLogsByPool = new Map<string, any[]>();
+  private receiptInflight: Promise<void> | null = null;
 
   constructor(publicClient: PublicClient, v4: V4Addresses, startBlock: bigint) {
     this.publicClient = publicClient;
@@ -279,13 +293,7 @@ export class V4Client {
       // cheap while staying live. First read starts at the launch block.
       const fromBlock = cached ? cached.upTo + 1n : core.launchBlock;
       if (cached && fromBlock > latest) return cached.records;
-      const logs = (await this.publicClient.getLogs({
-        address: this.v4.poolManager,
-        event: poolSwapEvent as any,
-        args: { id: core.poolId },
-        fromBlock,
-        toBlock: latest,
-      })) as any[];
+      const logs = await this.swapLogs(core, fromBlock, latest);
       const fresh: TradeRecord[] = logs.map((log) => {
         const amount0 = log.args.amount0 as bigint;
         const amount1 = log.args.amount1 as bigint;
@@ -317,6 +325,81 @@ export class V4Client {
     } catch {
       return this.tradesCache.get(key)?.records ?? [];
     }
+  }
+
+  /** Swap logs for one pool. Prefers eth_getLogs; when the RPC has it disabled,
+   *  falls back to the shared receipt scanner (recent blocks only, so history
+   *  starts from the visit rather than the launch). A getLogs failure parks the
+   *  method for five minutes so every poll isn't taxed with doomed retries. */
+  private logsBrokenUntil = 0;
+  private async swapLogs(core: Core, fromBlock: bigint, latest: bigint): Promise<any[]> {
+    if (Date.now() >= this.logsBrokenUntil) {
+      try {
+        return (await this.publicClient.getLogs({
+          address: this.v4.poolManager,
+          event: poolSwapEvent as any,
+          args: { id: core.poolId },
+          fromBlock,
+          toBlock: latest,
+        })) as any[];
+      } catch {
+        this.logsBrokenUntil = Date.now() + 300_000;
+      }
+    }
+    await this.scanReceiptsTo(latest);
+    return (this.receiptLogsByPool.get(core.poolId) ?? [])
+      .filter((lg) => BigInt(lg.blockNumber) >= fromBlock && BigInt(lg.blockNumber) <= latest)
+      .map((lg) => {
+        const d = decodeEventLog({ abi: [poolSwapEvent] as any, data: lg.data, topics: lg.topics }) as any;
+        return {
+          args: d.args,
+          blockNumber: BigInt(lg.blockNumber),
+          transactionHash: lg.transactionHash,
+          logIndex: Number(lg.logIndex),
+        };
+      });
+  }
+
+  /** Walk block receipts from the last scanned block to `latest` and collect
+   *  PoolManager Swap logs per pool. Shared across all tokens; each block is
+   *  fetched once no matter how many pools are on screen. */
+  private async scanReceiptsTo(latest: bigint): Promise<void> {
+    while (this.receiptInflight) await this.receiptInflight;
+    if (this.receiptUpTo >= latest) return;
+    this.receiptInflight = (async () => {
+      let from = this.receiptUpTo === 0n ? latest - RECEIPT_BACKFILL : this.receiptUpTo + 1n;
+      if (from < 1n) from = 1n;
+      if (latest - from > RECEIPT_MAX_CATCHUP) from = latest - RECEIPT_MAX_CATCHUP;
+      const blocks: bigint[] = [];
+      for (let b = from; b <= latest; b++) blocks.push(b);
+      const pm = this.v4.poolManager.toLowerCase();
+      for (let i = 0; i < blocks.length; i += RECEIPT_CHUNK) {
+        const chunk = blocks.slice(i, i + RECEIPT_CHUNK);
+        const settled = await Promise.allSettled(
+          chunk.map(
+            (b) =>
+              this.publicClient.request({
+                method: "eth_getBlockReceipts" as any,
+                params: [`0x${b.toString(16)}`] as any,
+              }) as Promise<any[]>,
+          ),
+        );
+        for (const r of settled) {
+          if (r.status !== "fulfilled" || !Array.isArray(r.value)) continue;
+          for (const rec of r.value) {
+            for (const lg of rec?.logs ?? []) {
+              if ((lg.address ?? "").toLowerCase() !== pm) continue;
+              if (lg.topics?.[0] !== SWAP_TOPIC || !lg.topics[1]) continue;
+              const arr = this.receiptLogsByPool.get(lg.topics[1]) ?? [];
+              arr.push(lg);
+              this.receiptLogsByPool.set(lg.topics[1], arr);
+            }
+          }
+        }
+      }
+      this.receiptUpTo = latest;
+    })().finally(() => (this.receiptInflight = null));
+    await this.receiptInflight;
   }
 
   private initPriceCache = new Map<string, bigint>();
