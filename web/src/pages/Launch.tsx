@@ -60,9 +60,13 @@ export function LaunchPage() {
         const webp = canvas.toDataURL("image/webp", quality);
         return webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", quality);
       };
-      let out = render(96, 0.8);
-      if (out.length > 12_000) out = render(96, 0.55);
-      if (out.length > 12_000) out = render(64, 0.55);
+      // 256px keeps cards and the token page sharp. The budget bounds the
+      // on-chain string so the launch transaction stays well inside the block
+      // gas limit; quality and size step down only if a busy image needs it.
+      let out = render(256, 0.8);
+      if (out.length > 24_000) out = render(256, 0.62);
+      if (out.length > 24_000) out = render(192, 0.62);
+      if (out.length > 24_000) out = render(128, 0.6);
       setLogoData(out);
     } catch {
       pushToast({ kind: "error", title: "Could not read that image", body: "Try a PNG or JPG file." });
