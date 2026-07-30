@@ -2,8 +2,10 @@ import {
   type Address,
   type PublicClient,
   type WalletClient,
+  decodeEventLog,
   encodeFunctionData,
   parseAbi,
+  toEventSelector,
   zeroAddress,
 } from "viem";
 import type { Candle, CandleInterval, PriceUpdate, TokenSummary, TradeRecord } from "@launchpad/sdk";
@@ -63,6 +65,22 @@ const ROUTER_ABI = parseAbi([
   "function exactInputSingle(ExactInputSingleParams params) payable returns (uint256 amountOut)",
   "function multicall(bytes[] data) payable returns (bytes[] results)",
   "function unwrapWETH9(uint256 amountMinimum, address recipient) payable",
+]);
+
+/** Arc flavor: ArcLaunchpadFactory + ArcSwapRouter on DyorSwap V3 pools with
+ *  the native-USDC quote. Differs from Stable in the listings shape, the count
+ *  view's name, and the router's native buy/sell entry points. */
+const ARC_V3 = String(import.meta.env.VITE_V3_FLAVOR ?? "") === "arc";
+
+const ARC_FACTORY_ABI = parseAbi([
+  "function totalTokens() view returns (uint256)",
+  "function listings(address) view returns (address creator, address quote, address pool, int24 tickLower, int24 tickUpper, uint64 createdAt, bool tokenIsToken0)",
+  "function emergencyRecover(address asset, uint256 amount, address to)",
+]);
+
+const ARC_ROUTER_ABI = parseAbi([
+  "function buy(address token, uint256 minOut) payable returns (uint256)",
+  "function sell(address token, uint256 amountIn, uint256 minOut) returns (uint256)",
 ]);
 
 const Q96 = 2n ** 96n;
@@ -135,6 +153,103 @@ export class StableV3Client {
     this.addresses = addresses;
   }
 
+  // -- swap-log source with receipt fallback -----------------------------
+  //
+  // Some Arc RPCs ship with eth_getLogs disabled. When a log scan fails, the
+  // method is parked (persisted across reloads) and swap logs come from an
+  // incremental walk over recent block receipts instead: one shared walk
+  // feeds every pool's trade feed. History older than the walk's backfill
+  // window is unavailable in that mode.
+
+  private static SWAP_TOPIC = toEventSelector(POOL_ABI[2] as any);
+  private logsBrokenUntil = (() => {
+    try {
+      return Number(globalThis.localStorage?.getItem("lp.logsBrokenUntil") ?? 0) || 0;
+    } catch {
+      return 0;
+    }
+  })();
+  private parkLogs() {
+    this.logsBrokenUntil = Date.now() + 300_000;
+    try {
+      globalThis.localStorage?.setItem("lp.logsBrokenUntil", String(this.logsBrokenUntil));
+    } catch { /* private mode */ }
+  }
+  private logsParked(): boolean {
+    return Date.now() < this.logsBrokenUntil;
+  }
+  private receiptUpTo = 0n;
+  private receiptLogsByPool = new Map<string, any[]>();
+  private receiptInflight: Promise<void> | null = null;
+
+  private async scanReceiptsTo(latest: bigint): Promise<void> {
+    while (this.receiptInflight) await this.receiptInflight;
+    if (this.receiptUpTo >= latest) return;
+    this.receiptInflight = (async () => {
+      let from = this.receiptUpTo === 0n ? latest - 240n : this.receiptUpTo + 1n;
+      if (from < 1n) from = 1n;
+      if (latest - from > 900n) from = latest - 900n;
+      const blocks: bigint[] = [];
+      for (let b = from; b <= latest; b++) blocks.push(b);
+      for (let i = 0; i < blocks.length; i += 25) {
+        const chunk = blocks.slice(i, i + 25);
+        const settled = await Promise.allSettled(
+          chunk.map(
+            (b) =>
+              this.publicClient.request({
+                method: "eth_getBlockReceipts" as any,
+                params: [`0x${b.toString(16)}`] as any,
+              }) as Promise<any[]>,
+          ),
+        );
+        for (const r of settled) {
+          if (r.status !== "fulfilled" || !Array.isArray(r.value)) continue;
+          for (const rec of r.value) {
+            for (const lg of rec?.logs ?? []) {
+              if (lg.topics?.[0] !== StableV3Client.SWAP_TOPIC) continue;
+              const poolKey = (lg.address ?? "").toLowerCase();
+              const arr = this.receiptLogsByPool.get(poolKey) ?? [];
+              arr.push(lg);
+              this.receiptLogsByPool.set(poolKey, arr);
+            }
+          }
+        }
+      }
+      this.receiptUpTo = latest;
+    })().finally(() => (this.receiptInflight = null));
+    await this.receiptInflight;
+  }
+
+  /** Swap logs for one pool over [fromBlock, toBlock], shaped like viem
+   *  getLogs output. Uses getLogs when healthy; receipts otherwise. */
+  private async poolSwapLogs(pool: Address, fromBlock: bigint, toBlock: bigint): Promise<any[]> {
+    if (!this.logsParked()) {
+      try {
+        return (await this.publicClient.getLogs({
+          address: pool,
+          event: POOL_ABI[2] as any,
+          fromBlock,
+          toBlock,
+        })) as any[];
+      } catch {
+        this.parkLogs();
+      }
+    }
+    void this.scanReceiptsTo(toBlock).catch(() => undefined);
+    const upTo = this.receiptUpTo;
+    return (this.receiptLogsByPool.get(pool.toLowerCase()) ?? [])
+      .filter((lg) => BigInt(lg.blockNumber) >= fromBlock && BigInt(lg.blockNumber) <= (toBlock < upTo ? toBlock : upTo))
+      .map((lg) => {
+        const d = decodeEventLog({ abi: [POOL_ABI[2]] as any, data: lg.data, topics: lg.topics }) as any;
+        return {
+          args: d.args,
+          blockNumber: BigInt(lg.blockNumber),
+          transactionHash: lg.transactionHash,
+          logIndex: Number(lg.logIndex),
+        };
+      });
+  }
+
   connectWallet(wc: WalletClient) {
     this.walletClient = wc;
   }
@@ -170,11 +285,17 @@ export class StableV3Client {
         .catch(() => {});
     }
     const count = Number(
-      await this.publicClient.readContract({
-        address: this.addresses.factory,
-        abi: FACTORY_ABI,
-        functionName: "tokenCount",
-      }),
+      ARC_V3
+        ? await this.publicClient.readContract({
+            address: this.addresses.factory,
+            abi: ARC_FACTORY_ABI,
+            functionName: "totalTokens",
+          })
+        : await this.publicClient.readContract({
+            address: this.addresses.factory,
+            abi: FACTORY_ABI,
+            functionName: "tokenCount",
+          }),
     );
     if (count > this.coreCount) {
       const idxs = Array.from({ length: count - this.coreCount }, (_, i) => this.coreCount + i);
@@ -192,14 +313,28 @@ export class StableV3Client {
         addrs.map(async (addr) => {
           const a = addr as Address;
           const [listing, name, symbol, metadataURI] = await Promise.all([
-            this.publicClient.readContract({ address: this.addresses.factory, abi: FACTORY_ABI, functionName: "listings", args: [a] }),
+            this.publicClient.readContract({
+              address: this.addresses.factory,
+              abi: ARC_V3 ? ARC_FACTORY_ABI : FACTORY_ABI,
+              functionName: "listings",
+              args: [a],
+            }),
             this.publicClient.readContract({ address: a, abi: ERC20_ABI, functionName: "name" }),
             this.publicClient.readContract({ address: a, abi: ERC20_ABI, functionName: "symbol" }),
             this.publicClient.readContract({ address: a, abi: ERC20_ABI, functionName: "metadataURI" }).catch(() => ""),
           ]);
-          const [creator, , pool, positionId, createdAt, tokenIsToken0] = listing as unknown as [
-            Address, Address, Address, bigint, bigint, boolean,
-          ];
+          // Arc listings identify the position by tick range, Stable by NFT id;
+          // the client only needs the shared fields.
+          let creator: Address, pool: Address, positionId: bigint, createdAt: bigint, tokenIsToken0: boolean;
+          if (ARC_V3) {
+            const l = listing as unknown as [Address, Address, Address, number, number, bigint, boolean];
+            [creator, , pool, , , createdAt, tokenIsToken0] = l;
+            positionId = 0n;
+          } else {
+            [creator, , pool, positionId, createdAt, tokenIsToken0] = listing as unknown as [
+              Address, Address, Address, bigint, bigint, boolean,
+            ];
+          }
           this.cores.set(a.toLowerCase(), {
             address: a, creator, pool, positionId,
             createdAt: Number(createdAt), tokenIsToken0,
@@ -360,6 +495,8 @@ export class StableV3Client {
   private async deepScan(core: Core) {
     const key = core.address.toLowerCase();
     if (this.deepScanned.has(key)) return;
+    // Receipts mode has no deep history to scan; retry if logs recover.
+    if (this.logsParked()) return;
     this.deepScanned.add(key);
     const head = await this.publicClient.getBlockNumber();
     const ageBlocks = Math.ceil((Date.now() / 1000 - core.createdAt) / this.avgBlockTime) + LOGS_WINDOW;
@@ -375,11 +512,7 @@ export class StableV3Client {
         const to = head - BigInt(w) * W;
         if (to <= 0n) break;
         const from = to - W + 1n > 0n ? to - W + 1n : 0n;
-        batch.push(
-          this.publicClient
-            .getLogs({ address: core.pool, event: POOL_ABI[2], fromBlock: from, toBlock: to })
-            .catch(() => []),
-        );
+        batch.push(this.poolSwapLogs(core.pool, from, to).catch(() => []));
       }
       for (const logs of await Promise.all(batch)) {
         for (const log of logs) found.push(this.logToTrade(core, log, head, headTs));
@@ -475,13 +608,9 @@ export class StableV3Client {
         .catch(() => {});
     }
 
-    const results = await Promise.all(
-      windows.map((w) =>
-        this.publicClient
-          .getLogs({ address: core.pool, event: POOL_ABI[2], fromBlock: w.from, toBlock: w.to })
-          .catch(() => []),
-      ),
-    );
+    const results = this.logsParked()
+      ? [await this.poolSwapLogs(core.pool, windows[windows.length - 1]?.from ?? 0n, head).catch(() => [])]
+      : await Promise.all(windows.map((w) => this.poolSwapLogs(core.pool, w.from, w.to).catch(() => [])));
 
     // Estimated timestamps drift between scans (they're derived from the
     // moving head block), which would shift candle buckets backwards and make
@@ -651,6 +780,14 @@ export class StableV3Client {
   async buyToken(token: Address, nativeWei: bigint, minOut: bigint): Promise<`0x${string}`> {
     const wc = this.wallet();
     const me = wc.account!.address as Address;
+    if (ARC_V3) {
+      // ArcSwapRouter takes plain native value; no quote approval at all.
+      if (nativeWei / DEC_GAP === 0n) throw new Error("Amount too small.");
+      return wc.writeContract({
+        address: this.addresses.swapRouter, abi: ARC_ROUTER_ABI, functionName: "buy",
+        args: [token, minOut], value: nativeWei, chain: wc.chain, account: wc.account!,
+      });
+    }
     const amountIn = nativeWei / DEC_GAP;
     if (amountIn === 0n) throw new Error("Amount too small.");
     if (!QUOTE_IS_WNATIVE) await this.ensureAllowance(me, this.addresses.quote, amountIn);
@@ -669,6 +806,13 @@ export class StableV3Client {
     const wc = this.wallet();
     const me = wc.account!.address as Address;
     await this.ensureAllowance(me, token, amountIn);
+    if (ARC_V3) {
+      // ArcSwapRouter pays the seller in plain native; minOut is native wei.
+      return wc.writeContract({
+        address: this.addresses.swapRouter, abi: ARC_ROUTER_ABI, functionName: "sell",
+        args: [token, amountIn, minOut], chain: wc.chain, account: wc.account!,
+      });
+    }
     if (!QUOTE_IS_WNATIVE) {
       return wc.writeContract({
         address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
@@ -709,7 +853,9 @@ export class StableV3Client {
       this.publicClient.readContract({ address: F, abi: FACTORY_ABI, functionName: "owner" }),
       this.publicClient.readContract({ address: F, abi: FACTORY_ABI, functionName: "feeRecipient" }),
       this.publicClient.readContract({ address: F, abi: FACTORY_ABI, functionName: "launchesPaused" }),
-      this.publicClient.readContract({ address: F, abi: FACTORY_ABI, functionName: "tokenCount" }),
+      ARC_V3
+        ? this.publicClient.readContract({ address: F, abi: ARC_FACTORY_ABI, functionName: "totalTokens" })
+        : this.publicClient.readContract({ address: F, abi: FACTORY_ABI, functionName: "tokenCount" }),
     ]);
     return {
       owner: owner as Address,
@@ -733,6 +879,21 @@ export class StableV3Client {
     args: unknown[] = [],
   ): Promise<`0x${string}`> {
     const wc = this.wallet();
+    // The Arc factory folds the recover pair into emergencyRecover(asset,
+    // amount, to); recovered assets go to the connected owner wallet.
+    if (ARC_V3 && (functionName === "recoverERC20" || functionName === "recoverNative")) {
+      const me = wc.account!.address as Address;
+      const [asset, amount] =
+        functionName === "recoverERC20" ? (args as [Address, bigint]) : [zeroAddress as Address, 0n];
+      return wc.writeContract({
+        address: this.addresses.factory,
+        abi: ARC_FACTORY_ABI,
+        functionName: "emergencyRecover",
+        args: [asset, amount, me],
+        chain: wc.chain,
+        account: wc.account!,
+      });
+    }
     return wc.writeContract({
       address: this.addresses.factory,
       abi: FACTORY_ABI,
@@ -800,10 +961,10 @@ export class StableV3Client {
       } else if (head > w.lastBlock) {
         const W = BigInt(LOGS_WINDOW);
         const from = head - w.lastBlock > W - 1n ? head - W + 1n : w.lastBlock + 1n;
-        const logs = await this.publicClient
-          .getLogs({ address: core.pool, event: POOL_ABI[2], fromBlock: from, toBlock: head })
-          .catch(() => []);
-        w.lastBlock = head;
+        const logs = await this.poolSwapLogs(core.pool, from, head).catch(() => []);
+        // In receipts mode results are only complete up to the walk's height;
+        // don't advance past it or late-scanned blocks would be skipped.
+        w.lastBlock = this.logsParked() && this.receiptUpTo < head ? (this.receiptUpTo > w.lastBlock ? this.receiptUpTo : w.lastBlock) : head;
         const nowTs = Math.floor(Date.now() / 1000);
         const entry = this.tradesCache.get(key) ?? this.loadPersistedTrades(key) ?? { at: 0, trades: [] };
         const seen = new Set(entry.trades.map((t) => t.id));
