@@ -11,7 +11,7 @@ import {
 import type { Candle, CandleInterval, HolderRecord, TokenSummary, TradeRecord } from "@launchpad/sdk";
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
 
-import { erc20Abi, factoryAbi, hookAbi, poolInitEvent, poolSwapEvent, routerAbi, tokenAbi } from "./abis";
+import { erc20Abi, factoryAbi, hookAbi, poolInitEvent, poolSwapEvent, routerAbi, stateViewAbi, tokenAbi } from "./abis";
 import { QUIVER_TOKEN_BYTECODE } from "./tokenBytecode";
 
 const Q96 = 2n ** 96n;
@@ -24,6 +24,8 @@ export interface V4Addresses {
   poolManager: Address;
   weth: Address;
   usdg: Address;
+  /** Uniswap V4 StateView; enables pool-price reads when logs are unavailable. */
+  stateView?: Address;
 }
 
 interface Core {
@@ -117,7 +119,9 @@ export class V4Client {
         toBlock: latest,
       })) as any[];
     } catch {
-      return [...this.cores.values()];
+      // Some Arc RPCs ship with eth_getLogs disabled; the factory's own
+      // listings expose the same data through plain view calls.
+      return this.loadCoresFromViews(latest);
     }
 
     for (const log of logs) {
@@ -158,6 +162,76 @@ export class V4Client {
       }
     }
     this.coresUpTo = latest;
+    return [...this.cores.values()];
+  }
+
+  /** Log-free discovery: enumerate the factory's `allTokens`/`listings` views.
+   *  Same data as the Launched event except the launch block, which only seeds
+   *  the trades scan and safely falls back to the deployment start block. */
+  private async loadCoresFromViews(latest: bigint): Promise<Core[]> {
+    try {
+      const total = Number(
+        (await this.publicClient.readContract({
+          address: this.v4.factory,
+          abi: factoryAbi,
+          functionName: "totalTokens",
+        })) as bigint,
+      );
+      if (total <= this.cores.size) {
+        this.coresUpTo = latest;
+        return [...this.cores.values()];
+      }
+      const addrs = (await this.publicClient.multicall({
+        allowFailure: false,
+        contracts: Array.from({ length: total }, (_, i) => ({
+          address: this.v4.factory,
+          abi: factoryAbi as any,
+          functionName: "allTokens",
+          args: [BigInt(i)],
+        })),
+      })) as Address[];
+      for (const raw of addrs) {
+        const token = raw.toLowerCase() as Address;
+        if (this.cores.has(token)) continue;
+        try {
+          const [listing, name, symbol, supply, metaURI] = (await this.publicClient.multicall({
+            allowFailure: false,
+            contracts: [
+              { address: this.v4.factory, abi: factoryAbi, functionName: "listings", args: [token] },
+              { address: token, abi: tokenAbi, functionName: "name" },
+              { address: token, abi: tokenAbi, functionName: "symbol" },
+              { address: token, abi: tokenAbi, functionName: "totalSupply" },
+              { address: token, abi: tokenAbi, functionName: "metadataURI" },
+            ],
+          })) as [[Address, Address, number, bigint, `0x${string}`], string, string, bigint, string];
+          let metadata: Record<string, unknown> = {};
+          try {
+            metadata = JSON.parse(metaURI);
+          } catch {
+            metadata = { description: metaURI };
+          }
+          this.cores.set(token, {
+            address: token,
+            creator: listing[0].toLowerCase() as Address,
+            stock: listing[1].toLowerCase() as Address,
+            taxBps: Number(listing[2]),
+            poolId: listing[4],
+            launchBlock: this.startBlock,
+            createdAt: Number(listing[3]),
+            name,
+            symbol,
+            totalSupply: supply,
+            metadata,
+            tokenIsCurrency0: BigInt(token) < BigInt(this.v4.weth),
+          });
+        } catch {
+          // Skip a token that can't be read this pass; picked up next refresh.
+        }
+      }
+      this.coresUpTo = latest;
+    } catch {
+      // Keep whatever we already have; retried on the next refresh.
+    }
     return [...this.cores.values()];
   }
 
@@ -268,6 +342,25 @@ export class V4Client {
     }
   }
 
+  /** Current pool price straight from slot0 (StateView), so tokens keep a real
+   *  price and market cap even when swap logs are unavailable. */
+  private async poolPriceNow(core: Core): Promise<bigint> {
+    if (this.v4.stateView) {
+      try {
+        const [sqrtP] = (await this.publicClient.readContract({
+          address: this.v4.stateView,
+          abi: stateViewAbi,
+          functionName: "getSlot0",
+          args: [core.poolId],
+        })) as [bigint, number, number, number];
+        if (sqrtP !== 0n) return this.priceWeiFromSqrt(sqrtP, core.tokenIsCurrency0);
+      } catch {
+        /* fall through to the Initialize-event price */
+      }
+    }
+    return this.initPrice(core);
+  }
+
   private async summarize(core: Core): Promise<TokenSummary> {
     // Surface the reward stock on the metadata so lists can badge it without a
     // second read (the shared TokenSummary type has no dedicated field).
@@ -276,7 +369,7 @@ export class V4Client {
     }
     const trades = await this.loadTrades(core.address);
     const last = trades[trades.length - 1];
-    const priceWei = last ? BigInt(last.priceWei) : await this.initPrice(core);
+    const priceWei = last ? BigInt(last.priceWei) : await this.poolPriceNow(core);
     const priceWethPerToken = Number(priceWei) / 1e18;
     const supplyWhole = Number(core.totalSupply) / 1e18;
     const mcapUsd = priceWethPerToken * supplyWhole * this.nativeUsd;

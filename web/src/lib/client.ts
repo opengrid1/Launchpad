@@ -23,6 +23,8 @@ const V4: V4Addresses = {
   poolManager: addr("VITE_V4_POOL_MANAGER", "0x8366a39cc670b4001a1121b8f6a443a643e40951"),
   weth: addr("VITE_V4_WETH", "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"),
   usdg: addr("VITE_V4_USDG", "0x5fc5360d0400a0fd4f2af552add042d716f1d168"),
+  // Official Uniswap V4 periphery StateView (same address on Robinhood and Arc).
+  stateView: addr("VITE_V4_STATE_VIEW", "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b"),
 };
 
 const V4_START_BLOCK = BigInt(String(import.meta.env.VITE_V4_START_BLOCK ?? "12744439"));

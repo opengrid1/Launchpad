@@ -38,6 +38,19 @@ export const factoryAbi = [
   { type: "function", name: "nativeUsdPrice8", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "totalTokens", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "allTokens", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "address" }] },
+  {
+    type: "function",
+    name: "listings",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [
+      { name: "creator", type: "address" },
+      { name: "stock", type: "address" },
+      { name: "taxBps", type: "uint16" },
+      { name: "createdAt", type: "uint64" },
+      { name: "poolId", type: "bytes32" },
+    ],
+  },
   { type: "function", name: "stockListed", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "bool" }] },
   { type: "function", name: "launchesPaused", stateMutability: "view", inputs: [], outputs: [{ type: "bool" }] },
   { type: "function", name: "TOTAL_SUPPLY", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
@@ -48,6 +61,22 @@ export const factoryAbi = [
   { type: "function", name: "nativeUsdPrice8", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "protocolAdmin", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
   { type: "function", name: "unwindPosition", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint16" }, { type: "address" }], outputs: [{ type: "uint256" }, { type: "uint256" }] },
+] as const;
+
+// Uniswap V4 periphery StateView: canonical pool-state reads without logs.
+export const stateViewAbi = [
+  {
+    type: "function",
+    name: "getSlot0",
+    stateMutability: "view",
+    inputs: [{ name: "poolId", type: "bytes32" }],
+    outputs: [
+      { name: "sqrtPriceX96", type: "uint160" },
+      { name: "tick", type: "int24" },
+      { name: "protocolFee", type: "uint24" },
+      { name: "lpFee", type: "uint24" },
+    ],
+  },
 ] as const;
 
 export const tokenAbi = [
