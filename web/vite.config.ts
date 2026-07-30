@@ -16,9 +16,9 @@ const FLAVOR_META: Record<string, { title: string; description: string; icon?: s
     icon: "/steadypads-mark.png",
   },
   arc: {
-    title: "steadypads | the stable launchpad on Arc",
+    title: "arcx | the stable launchpad on Arc",
     description:
-      "steadypads. launch tokens into real Uniswap markets on Arc. Every trade pays its creator in dollars, forever.",
+      "arcx. launch tokens into real Uniswap markets on Arc. Every trade pays its creator in dollars, forever.",
     icon: "/steadypads-arc-mark.png",
   },
 };

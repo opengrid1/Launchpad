@@ -46,16 +46,16 @@ const FLAVORS: Record<string, Brand> = {
   },
   // Arc mainnet flavor: same product, USDC-blue theme for Circle's Arc chain.
   arc: {
-    name: "steadypads",
+    name: "arcx",
     tld: ".fun",
-    domain: "steadypads.fun",
-    url: "https://www.steadypads.fun",
+    domain: "arcx.fun",
+    url: "https://arcx.fun",
     twitter: "https://x.com/steadypads",
     twitterHandle: "steadypads",
     tagline: "the stable launchpad on Arc",
     description:
-      "steadypads. launch tokens into real Uniswap markets on Arc. Every trade pays its creator in dollars, forever.",
-    title: "steadypads | the stable launchpad on Arc",
+      "arcx. launch tokens into real Uniswap markets on Arc. Every trade pays its creator in dollars, forever.",
+    title: "arcx | the stable launchpad on Arc",
   },
 };
 
