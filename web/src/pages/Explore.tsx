@@ -10,6 +10,7 @@ import { env } from "../lib/env";
 import { fmtNative, fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
 import { normalizeSocial } from "../lib/links";
+import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 
 type Sort = "new" | "recent" | "mcap" | "oldest";
 
@@ -131,7 +132,7 @@ export function Explore() {
 
 function TokenCard({ t, row }: { t: TokenSummary; row?: boolean }) {
   const [imgFailed, setImgFailed] = useState(false);
-  const logo = t.metadata?.logo;
+  const logo = OFFICIAL_LOGOS[t.address.toLowerCase()] ?? t.metadata?.logo;
   const ok = !imgFailed && logo && /^(https?:|ipfs:|data:)/.test(String(logo));
   const src = ok
     ? String(logo).startsWith("ipfs://") ? `https://ipfs.io/ipfs/${String(logo).slice(7)}` : String(logo)
