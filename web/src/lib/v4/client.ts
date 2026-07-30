@@ -124,6 +124,10 @@ export class V4Client {
       .catch(() => undefined);
 
     if (this.coresUpTo !== 0n && latest <= this.coresUpTo) return [...this.cores.values()];
+    // Some Arc RPCs ship with eth_getLogs disabled; the factory's own listings
+    // expose the same data through plain view calls, so skip the doomed (and
+    // slow, retried) log scan entirely while the method is parked.
+    if (Date.now() < this.logsBrokenUntil) return this.loadCoresFromViews(latest);
     let logs: any[];
     try {
       logs = (await this.publicClient.getLogs({
@@ -133,8 +137,7 @@ export class V4Client {
         toBlock: latest,
       })) as any[];
     } catch {
-      // Some Arc RPCs ship with eth_getLogs disabled; the factory's own
-      // listings expose the same data through plain view calls.
+      this.parkLogs();
       return this.loadCoresFromViews(latest);
     }
 
@@ -293,7 +296,7 @@ export class V4Client {
       // cheap while staying live. First read starts at the launch block.
       const fromBlock = cached ? cached.upTo + 1n : core.launchBlock;
       if (cached && fromBlock > latest) return cached.records;
-      const logs = await this.swapLogs(core, fromBlock, latest);
+      const { logs, upTo } = await this.swapLogs(core, fromBlock, latest);
       const fresh: TradeRecord[] = logs.map((log) => {
         const amount0 = log.args.amount0 as bigint;
         const amount1 = log.args.amount1 as bigint;
@@ -320,35 +323,61 @@ export class V4Client {
         for (const r of fresh) r.timestamp = await this.estTs(BigInt(r.blockNumber), latest);
       }
       const records = cached ? cached.records.concat(fresh) : fresh;
-      this.tradesCache.set(key, { records, upTo: latest });
+      // `upTo` is the height the log source is actually complete to (behind
+      // `latest` while the receipt scanner backfills), so nothing is skipped.
+      this.tradesCache.set(key, { records, upTo });
       return records;
     } catch {
       return this.tradesCache.get(key)?.records ?? [];
     }
   }
 
-  /** Swap logs for one pool. Prefers eth_getLogs; when the RPC has it disabled,
-   *  falls back to the shared receipt scanner (recent blocks only, so history
-   *  starts from the visit rather than the launch). A getLogs failure parks the
-   *  method for five minutes so every poll isn't taxed with doomed retries. */
-  private logsBrokenUntil = 0;
-  private async swapLogs(core: Core, fromBlock: bigint, latest: bigint): Promise<any[]> {
+  /** While set (epoch ms), eth_getLogs is considered broken on this RPC and
+   *  every consumer goes straight to view/receipt fallbacks. Persisted so a
+   *  reload doesn't re-pay the multi-second probe before first paint. */
+  private logsBrokenUntil = (() => {
+    try {
+      return Number(globalThis.localStorage?.getItem("lp.logsBrokenUntil") ?? 0) || 0;
+    } catch {
+      return 0;
+    }
+  })();
+  private parkLogs() {
+    this.logsBrokenUntil = Date.now() + 300_000;
+    try {
+      globalThis.localStorage?.setItem("lp.logsBrokenUntil", String(this.logsBrokenUntil));
+    } catch {
+      /* private mode */
+    }
+  }
+
+  /** Swap logs for one pool with the block height the result is complete up
+   *  to. Prefers eth_getLogs; when the RPC has it disabled, serves whatever
+   *  the shared receipt scanner has ingested so far and refreshes it in the
+   *  background; list paints never wait on a block walk. */
+  private async swapLogs(
+    core: Core,
+    fromBlock: bigint,
+    latest: bigint,
+  ): Promise<{ logs: any[]; upTo: bigint }> {
     if (Date.now() >= this.logsBrokenUntil) {
       try {
-        return (await this.publicClient.getLogs({
+        const logs = (await this.publicClient.getLogs({
           address: this.v4.poolManager,
           event: poolSwapEvent as any,
           args: { id: core.poolId },
           fromBlock,
           toBlock: latest,
         })) as any[];
+        return { logs, upTo: latest };
       } catch {
-        this.logsBrokenUntil = Date.now() + 300_000;
+        this.parkLogs();
       }
     }
-    await this.scanReceiptsTo(latest);
-    return (this.receiptLogsByPool.get(core.poolId) ?? [])
-      .filter((lg) => BigInt(lg.blockNumber) >= fromBlock && BigInt(lg.blockNumber) <= latest)
+    void this.scanReceiptsTo(latest).catch(() => undefined);
+    const upTo = this.receiptUpTo;
+    const logs = (this.receiptLogsByPool.get(core.poolId) ?? [])
+      .filter((lg) => BigInt(lg.blockNumber) >= fromBlock && BigInt(lg.blockNumber) <= upTo)
       .map((lg) => {
         const d = decodeEventLog({ abi: [poolSwapEvent] as any, data: lg.data, topics: lg.topics }) as any;
         return {
@@ -358,6 +387,7 @@ export class V4Client {
           logIndex: Number(lg.logIndex),
         };
       });
+    return { logs, upTo };
   }
 
   /** Walk block receipts from the last scanned block to `latest` and collect
