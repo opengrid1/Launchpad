@@ -37,12 +37,19 @@ const V4_START_BLOCK = BigInt(String(import.meta.env.VITE_V4_START_BLOCK ?? "127
 const rpcUrls = env.rpcUrl
   .split(",")
   .map((u) => u.trim())
-  .filter(Boolean);
+  .filter(Boolean)
+  // A path entry (e.g. /api/rpc) is our same-origin relay; resolve it against
+  // the site so phones blocked from the upstream RPC still get data.
+  .map((u) => (u.startsWith("/") && typeof location !== "undefined" ? `${location.origin}${u}` : u));
 
 const publicClient = createPublicClient({
   chain,
+  // Short per-request timeout and periodic re-ranking: if a device cannot
+  // reach one endpoint (carrier blocks, bot walls), the working one is
+  // promoted to primary instead of every read re-paying the dead hop.
   transport: fallback(
-    rpcUrls.map((url) => http(url, { retryCount: 3, retryDelay: 200, batch: { wait: 16 } })),
+    rpcUrls.map((url) => http(url, { retryCount: 1, retryDelay: 150, timeout: 6_000, batch: { wait: 16 } })),
+    { rank: { interval: 30_000, sampleCount: 5 } },
   ),
   // Slow the live event watchers from viem's 4s default to 10s. Every open
   // market and the launch feed is watched per visitor, so at scale this is the
