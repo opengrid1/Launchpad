@@ -44,6 +44,19 @@ const FLAVORS: Record<string, Brand> = {
       "steadypads. launch tokens into real Uniswap markets. Every trade pays its creator, forever.",
     title: "steadypads | the stable launchpad",
   },
+  // Arc mainnet flavor: same product, USDC-blue theme for Circle's Arc chain.
+  arc: {
+    name: "steadypads",
+    tld: ".fun",
+    domain: "steadypads.fun",
+    url: "https://www.steadypads.fun",
+    twitter: "https://x.com/steadypads",
+    twitterHandle: "steadypads",
+    tagline: "the stable launchpad on Arc",
+    description:
+      "steadypads. launch tokens into real Uniswap markets on Arc. Every trade pays its creator in dollars, forever.",
+    title: "steadypads | the stable launchpad on Arc",
+  },
 };
 
 export const BRAND_FLAVOR = String(import.meta.env.VITE_BRAND ?? "stockprintr");

@@ -22,9 +22,9 @@ export function Header() {
     <>
       <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-5">
-          {/* Brand; steadypads is wordmark-only, others lead with the live dot */}
+          {/* Brand; steadypads and arc are wordmark-only, others lead with the live dot */}
           <Link to="/" aria-label={BRAND.name} className="flex shrink-0 items-center gap-2">
-            {BRAND_FLAVOR !== "steadypads" && (
+            {BRAND_FLAVOR !== "steadypads" && BRAND_FLAVOR !== "arc" && (
               <span className="dot-live h-2 w-2 rounded-full bg-up shadow-[0_0_8px_var(--color-up)]" />
             )}
             <span className="text-[15px] font-extrabold lowercase tracking-tight text-ink">

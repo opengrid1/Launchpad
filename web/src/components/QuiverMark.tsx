@@ -10,7 +10,12 @@ import { BRAND_FLAVOR } from "../lib/brand";
  * language (cream disc sliced by an S on deep forest green); other flavors
  * keep the quiver tile.
  */
-const SRC = BRAND_FLAVOR === "steadypads" ? "/steadypads-default.png" : "/quiver-default.png";
+const SRC =
+  BRAND_FLAVOR === "steadypads"
+    ? "/steadypads-default.png"
+    : BRAND_FLAVOR === "arc"
+      ? "/steadypads-arc-default.png"
+      : "/quiver-default.png";
 
 export function QuiverMark({ className = "" }: { className?: string }) {
   return (

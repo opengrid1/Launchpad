@@ -15,6 +15,12 @@ const FLAVOR_META: Record<string, { title: string; description: string; icon?: s
       "steadypads. launch tokens into real markets on Stable. Creators earn 80% of every trade's pool fee.",
     icon: "/steadypads-mark.png",
   },
+  arc: {
+    title: "steadypads | the stable launchpad on Arc",
+    description:
+      "steadypads. launch tokens into real Uniswap markets on Arc. Every trade pays its creator in dollars, forever.",
+    icon: "/steadypads-arc-mark.png",
+  },
 };
 
 function brandHtml(): Plugin {

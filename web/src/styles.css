@@ -435,3 +435,97 @@ button.bg-accent:disabled {
 :root[data-brand="steadypads"] .blade-switch {
   background: linear-gradient(#0c1512, #08110d);
 }
+
+/* ---------------------------------------------------------------------------
+   Arc flavor: Circle's Arc mainnet. Deep navy-black with USDC blue accents;
+   same HUD system as the steadypads green theme. */
+:root[data-brand="arc"] {
+  --color-bg: #05070c;
+  --color-panel: #0b111c;
+  --color-panel-2: #101b2c;
+  --color-edge: #1b2a40;
+  --color-edge-2: #2a4160;
+
+  --color-ink: #dbe7f5;
+  --color-ink-2: #8aa5c4;
+  --color-ink-3: #56718f;
+
+  --color-accent: #2775ca;
+  --color-accent-2: #5b9ff0;
+  --color-accent-ink: #7db8ff;
+  --color-accent-fg: #04101f;
+
+  --color-ion: #8fd0ff;
+
+  --shadow-card: inset 0 1px 0 #2a416047, 0 2px 8px #00000080;
+  --shadow-card-hover: inset 0 1px 0 #2a416066, 0 14px 34px -14px #000c, 0 0 0 1px #8fd0ff1f;
+  --shadow-btn: 0 0 0 1px #2775ca59, 0 10px 30px -12px #2775ca8c;
+}
+
+:root[data-brand="arc"] body {
+  background:
+    radial-gradient(1100px 480px at 50% -12%, #2775ca17, transparent 62%),
+    radial-gradient(900px 500px at 82% 8%, #8fd0ff0d, transparent 60%),
+    radial-gradient(1px 1px at 20% 30%, #dbe7f580, transparent),
+    radial-gradient(1px 1px at 70% 20%, #dbe7f559, transparent),
+    radial-gradient(1px 1px at 45% 60%, #a8d4ff66, transparent),
+    radial-gradient(1px 1px at 85% 70%, #dbe7f54d, transparent),
+    radial-gradient(1px 1px at 12% 80%, #dbe7f547, transparent),
+    var(--color-bg);
+  background-attachment: fixed;
+}
+
+:root[data-brand="arc"] ::selection {
+  background: #2775ca47;
+}
+
+:root[data-brand="arc"] * {
+  scrollbar-color: #1b2a40 transparent;
+}
+:root[data-brand="arc"] *::-webkit-scrollbar-thumb {
+  background: #1b2a40;
+}
+
+:root[data-brand="arc"] button.bg-accent,
+:root[data-brand="arc"] a.bg-accent {
+  background-color: #2775ca;
+  background-image: linear-gradient(#5b9ff0, #2775ca 55%, #1d5da6);
+  border-color: #2775ca8c;
+  box-shadow: inset 0 1px #b9dcff99, 0 0 0 1px #2775ca47, 0 10px 30px -12px #2775ca99;
+}
+:root[data-brand="arc"] button.bg-accent:hover,
+:root[data-brand="arc"] a.bg-accent:hover {
+  background-image: linear-gradient(#83b9f6, #5b9ff0 55%, #2775ca);
+  box-shadow: inset 0 1px #b9dcffb3, 0 0 0 1px #2775ca66, 0 14px 36px -12px #2775cabf;
+}
+:root[data-brand="arc"] button.bg-accent:active,
+:root[data-brand="arc"] a.bg-accent:active {
+  box-shadow: inset 0 1px #b9dcff99, 0 0 0 1px #2775ca59;
+}
+
+:root[data-brand="arc"] .nav-sign {
+  background-image: linear-gradient(#101b2c, #0b111c);
+  box-shadow: inset 0 1px #2a416059, 0 1px #0006;
+}
+:root[data-brand="arc"] .nav-sign-on {
+  border-color: #2775ca80;
+  box-shadow: inset 0 1px #2a416059, inset 0 0 18px #2775ca1f, 0 0 20px -8px #2775ca99;
+}
+
+:root[data-brand="arc"] .hud-tab:hover {
+  background: #2a416024;
+}
+:root[data-brand="arc"] .hud-tab-on {
+  background: radial-gradient(120% 140% at 50% 0, #2775ca24, #0000 70%);
+  border-color: #2775ca73;
+  box-shadow: inset 0 0 16px #2775ca1a, 0 0 18px -8px #2775ca8c;
+}
+
+:root[data-brand="arc"] .hud-viewport {
+  background: linear-gradient(#8fd0ff0a, #0000 30%), #080f18;
+  box-shadow: inset 0 0 0 1px #8fd0ff0f, inset 0 1px #2a41604d;
+}
+
+:root[data-brand="arc"] .blade-switch {
+  background: linear-gradient(#0b111c, #080f18);
+}
