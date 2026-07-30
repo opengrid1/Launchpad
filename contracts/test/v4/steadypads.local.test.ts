@@ -114,37 +114,43 @@ describe("Steadypads dollar rewards (local)", function () {
     return ev!.args.token as string;
   }
 
-  it("launches, trades and pays holders wrapped dollars on harvest", async () => {
+  it("launches, trades and pushes the 80/20 creator split on harvest", async () => {
     const { admin, trader, wnative, WNATIVE, hook, factory, router } = await deployStack();
 
-    const token = await launchToken(factory, admin, WNATIVE);
+    // Launch from the trader wallet so the creator is distinct from the
+    // treasury (admin) and both splits are observable.
+    const token = await launchToken(factory, trader, WNATIVE);
     const erc20 = await ethers.getContractAt("QuiverToken", token);
-    expect(await erc20.rewardToken()).to.equal(WNATIVE);
 
-    // Trader buys with native (a dollar), then sells a slice to accrue
-    // wrapped-native fees for harvest.
-    await (await router.connect(trader).buy(token, 0, { value: ethers.parseEther("0.05") })).wait();
-    const held = await erc20.balanceOf(trader.address);
+    // A second account buys, then sells a slice to accrue quote-asset fees.
+    await (await router.connect(admin).buy(token, 0, { value: ethers.parseEther("0.05") })).wait();
+    const held = await erc20.balanceOf(admin.address);
     expect(held).to.be.greaterThan(0n);
 
-    await (await erc20.connect(trader).approve(await router.getAddress(), held)).wait();
-    await (await router.connect(trader).sell(token, held / 4n, 0)).wait();
+    await (await erc20.connect(admin).approve(await router.getAddress(), held)).wait();
+    await (await router.connect(admin).sell(token, held / 4n, 0)).wait();
 
     const pending = await hook.wethFees(token);
-    expect(pending, "sell tax accrued in WUSDT0").to.be.greaterThan(0n);
+    expect(pending, "sell tax accrued in the quote asset").to.be.greaterThan(0n);
 
-    // Harvest — dollar mode: holder share arrives as WUSDT0, no swap hops.
-    await (await hook.harvest(token)).wait();
+    // Harvest: 80% pushed straight to the creator, 20% to the treasury, both
+    // delivered as NATIVE quote (unwrapped), nothing left accrued or claimable.
+    const treasury = await hook.protocolTreasury();
+    const creatorBefore = await ethers.provider.getBalance(trader.address);
+    const treasuryBefore = await ethers.provider.getBalance(treasury);
 
-    const distributed = await erc20.totalRewardsDistributed();
-    expect(distributed, "WUSDT0 distributed to holders").to.be.greaterThan(0n);
-    expect(await wnative.balanceOf(token)).to.be.greaterThanOrEqual(distributed);
+    // Harvest from a third account so gas does not skew the measured deltas.
+    const [, , keeper] = await ethers.getSigners();
+    await (await hook.connect(keeper).harvest(token)).wait();
 
-    // The trader can claim their dollar rewards to their wallet.
-    const before = await wnative.balanceOf(trader.address);
-    const claimable = await erc20.pendingRewards(trader.address);
-    expect(claimable).to.be.greaterThan(0n);
-    await (await erc20.connect(trader).claim()).wait();
-    expect(await wnative.balanceOf(trader.address)).to.equal(before + claimable);
+    const creatorGain = (await ethers.provider.getBalance(trader.address)) - creatorBefore;
+    const treasuryGain = (await ethers.provider.getBalance(treasury)) - treasuryBefore;
+    expect(creatorGain, "creator received 80%").to.be.greaterThan(0n);
+    expect(treasuryGain, "treasury received 20%").to.be.greaterThan(0n);
+    // 80/20 within rounding dust of the harvested total.
+    const total = creatorGain + treasuryGain;
+    expect(creatorGain).to.equal((total * 8000n) / 10000n);
+    expect(await hook.wethFees(token)).to.equal(0n);
+    expect(await hook.creatorClaimable(token)).to.equal(0n);
   });
 });

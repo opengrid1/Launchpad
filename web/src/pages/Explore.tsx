@@ -265,6 +265,7 @@ function CardSkeleton() {
 }
 
 const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
+const CREATOR_MODE = IS_STABLE || String(import.meta.env.VITE_FEE_MODE ?? "") === "creator";
 
 function Empty({ q }: { q: string }) {
   return (
@@ -278,7 +279,7 @@ function Empty({ q }: { q: string }) {
       <p className="mt-1.5 max-w-sm text-[14.5px] leading-relaxed text-ink-2">
         {q
           ? "Try another name, symbol or address."
-          : IS_STABLE
+          : CREATOR_MODE
             ? "Be the first to open a market. Creators earn 80% of every trading fee, paid in dollars."
             : "Be the first to open a market. Holders earn a real tokenized stock on every trade."}
       </p>

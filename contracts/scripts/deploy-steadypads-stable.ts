@@ -50,7 +50,7 @@ async function main() {
   let wnative = process.env.WRAPPED_NATIVE ?? "";
   if (!wnative) {
     const W = await ethers.getContractFactory("WrappedNative");
-    const w = await W.deploy("Wrapped USDT0", "WUSDT0");
+    const w = await W.deploy(process.env.WRAP_NAME ?? "Wrapped USDT0", process.env.WRAP_SYMBOL ?? "WUSDT0");
     await w.waitForDeployment();
     wnative = await w.getAddress();
     console.log("WrappedNative (WUSDT0):", wnative);
@@ -128,17 +128,22 @@ async function main() {
   const routerAddr = await router.getAddress();
   console.log("router:", routerAddr);
 
+  const newOwner = process.env.NEW_OWNER ?? "";
   if (renounce) {
     await (await hook.renounceOwnership()).wait();
     await (await factory.renounceOwnership()).wait();
     console.log("ownership renounced — protocolAdmin retains only LP unwind");
+  } else if (newOwner) {
+    await (await hook.transferOwnership(newOwner)).wait();
+    await (await factory.transferOwnership(newOwner)).wait();
+    console.log("ownership ->", newOwner);
   } else {
-    console.log("ownership NOT renounced (owner =", signer.address, "); set RENOUNCE=1 to renounce");
+    console.log("ownership NOT transferred (owner =", signer.address, ")");
   }
 
   const out = {
     network: network.name,
-    chainId: 988,
+    chainId: Number((await ethers.provider.getNetwork()).chainId),
     startBlock: await ethers.provider.getBlockNumber(),
     deployer: signer.address,
     protocolAdmin,

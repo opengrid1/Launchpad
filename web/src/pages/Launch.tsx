@@ -15,6 +15,10 @@ const TOKEN_CREATED_TOPIC = keccak256(
   toHex("TokenCreated(address,address,string,string,string,uint256)"),
 );
 const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
+/** Creator-fee product: fixed 1% trade fee split 80/20 creator/platform.
+ *  True on the Stable V3 protocol and on V4 deployments with fee mode
+ *  "creator" (Arc). */
+const CREATOR_MODE = IS_STABLE || String(import.meta.env.VITE_FEE_MODE ?? "") === "creator";
 
 /**
  * One-step V4 launch. The creator picks the tokenized stock holders will earn
@@ -37,7 +41,7 @@ export function LaunchPage() {
   const dollarMode = env.rewardMode === "dollar";
   // Dollar mode: the reward is the wrapped native itself; no picker.
   const [stock, setStock] = useState(dollarMode ? addresses.weth : STOCKS[0].address);
-  const [taxPct, setTaxPct] = useState(3);
+  const [taxPct, setTaxPct] = useState(CREATOR_MODE ? 1 : 3);
   const [busy, setBusy] = useState(false);
   const [logoData, setLogoData] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -125,7 +129,7 @@ export function LaunchPage() {
       <h1 className="text-[18px] font-bold tracking-tight text-ink">Launch a token</h1>
       <p className="mt-1 text-[12.5px] leading-relaxed text-ink-2">
         One transaction mints your token, opens a live market and seeds the full supply. Every trade
-        {IS_STABLE
+        {CREATOR_MODE
           ? " pays you 80% of the pool fee."
           : dollarMode
             ? " pays holders real dollars."
@@ -175,7 +179,7 @@ export function LaunchPage() {
         </Field>
 
         {/* Reward; creator-fee note on Stable, stock picker elsewhere */}
-        {IS_STABLE ? (
+        {CREATOR_MODE ? (
           <div className="rounded-lg border border-accent/25 bg-accent/[0.04] px-3 py-2.5">
             <p className="text-[12.5px] font-medium text-ink">
               You earn <span className="text-accent-ink">· 80% of trading fees</span>
@@ -222,7 +226,7 @@ export function LaunchPage() {
 
         {/* Tax slider; hidden on Stable: the only trading cost is the fixed
             1% pool fee, split 80% to the creator / 20% to the platform. */}
-        {!IS_STABLE && (
+        {!CREATOR_MODE && (
           <div>
             <div className="mb-2 flex items-baseline justify-between">
               <label className="text-[12.5px] font-medium text-ink">Trade tax</label>
@@ -240,9 +244,9 @@ export function LaunchPage() {
         </div>
 
         <dl className="space-y-1.5 border-t border-edge pt-3 text-[12px]">
-          <Row label="Starting market cap" value={IS_STABLE ? "$3,000" : "$5,000"} />
+          <Row label="Starting market cap" value={CREATOR_MODE ? "$3,000" : "$5,000"} />
           <Row label="Supply" value="1,000,000,000" />
-          {IS_STABLE && <Row label="Pool fee" value="1% · 80% to you, 20% platform" />}
+          {CREATOR_MODE && <Row label="Pool fee" value="1% · 80% to you, 20% platform" />}
         </dl>
 
         <button type="submit" disabled={busy}

@@ -26,6 +26,7 @@ import { useUi } from "../store";
 
 
 const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
+const CREATOR_MODE = IS_STABLE || String(import.meta.env.VITE_FEE_MODE ?? "") === "creator";
 
 /** Stable: permissionless harvest strip. The 1% pool fee accrues inside the
  *  held position; anyone can trigger the split; 80% is pushed straight to
@@ -41,7 +42,9 @@ function HarvestStrip({ token, creator }: { token: Address; creator: string }) {
     setBusy(true);
     try {
       if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
-      const hash = await (client as any).claimCreatorFees(token);
+      // Stable V3 routes the split through the factory; the V4 hook does it
+      // in `harvest`. Both push 80% to the creator in the same transaction.
+      const hash = await (client as any)[IS_STABLE ? "claimCreatorFees" : "harvest"](token);
       pushToast({ kind: "info", title: "Harvest submitted", txHash: hash });
       await client.publicClient.waitForTransactionReceipt({ hash });
       pushToast({ kind: "success", title: "Fees distributed: 80% creator, 20% platform", txHash: hash });
@@ -151,9 +154,11 @@ export function TokenPage() {
       </section>
 
       <div className="mt-3 space-y-2.5">
-        {IS_STABLE && <HarvestStrip token={t.address as Address} creator={t.creator} />}
-        <RewardsStrip token={t} extra={extra} />
-        <CreatorClaim token={t} extra={extra} onClaimed={() => v4Client.tokenExtra(t.address as Address).then(setExtra).catch(() => undefined)} />
+        {CREATOR_MODE && <HarvestStrip token={t.address as Address} creator={t.creator} />}
+        {!CREATOR_MODE && <RewardsStrip token={t} extra={extra} />}
+        {!CREATOR_MODE && (
+          <CreatorClaim token={t} extra={extra} onClaimed={() => v4Client.tokenExtra(t.address as Address).then(setExtra).catch(() => undefined)} />
+        )}
       </div>
 
       {/* Chart (with an info header on top) + order ticket */}
