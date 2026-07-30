@@ -28,7 +28,7 @@ export function Explore() {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [sort, setSort] = useState<Sort>("new");
-  const [view, setView] = useState<"one" | "two">("two");
+  const [view, setView] = useState<"one" | "two">("one");
   const { data: byVolume, loading: lv } = useTokens(client, { sort: "volume", limit: 60 });
   const { data: byNew, loading: ln } = useTokens(client, { sort: "new", limit: 60 });
 
