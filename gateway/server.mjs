@@ -43,11 +43,40 @@ function cors(res) {
   res.setHeader("access-control-allow-methods", "POST, GET, OPTIONS");
 }
 
+// Lightweight usage stats: total requests, a rolling 60s rate, cache hits, and
+// distinct client IPs seen in the last 10 minutes (a rough "active users").
+const stats = { total: 0, cacheHits: 0, startedAt: Date.now() };
+const recentReqs = []; // timestamps, last 60s
+const ipsSeen = new Map(); // ip -> last-seen ms
+function noteRequest(req) {
+  const now = Date.now();
+  stats.total++;
+  recentReqs.push(now);
+  while (recentReqs.length && now - recentReqs[0] > 60_000) recentReqs.shift();
+  const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket.remoteAddress || "?";
+  ipsSeen.set(ip, now);
+  for (const [k, t] of ipsSeen) if (now - t > 600_000) ipsSeen.delete(k);
+}
+
 const server = http.createServer((req, res) => {
   cors(res);
   const url = new URL(req.url, "http://localhost");
 
   if (req.method === "OPTIONS") return res.writeHead(204).end();
+
+  // Usage snapshot (no key required; read-only counts, no user data).
+  if (req.method === "GET" && url.pathname === "/__stats") {
+    res.writeHead(200, { "content-type": "application/json" });
+    return res.end(
+      JSON.stringify({
+        totalRequests: stats.total,
+        requestsLast60s: recentReqs.length,
+        activeUsers10m: ipsSeen.size,
+        cacheHits: stats.cacheHits,
+        uptimeMin: Math.round((Date.now() - stats.startedAt) / 60_000),
+      }),
+    );
+  }
 
   // Liveness: GET / returns 200 immediately (no Tor) so platform health checks
   // pass the moment the process binds, even while Tor is still bootstrapping.
@@ -82,10 +111,12 @@ const server = http.createServer((req, res) => {
   });
   req.on("end", () => {
     if (tooBig) return;
+    noteRequest(req);
     const cacheable = body.length < 64_000 && !NO_CACHE.test(body);
     if (cacheable) {
       const hit = cacheGet(body);
       if (hit) {
+        stats.cacheHits++;
         res.writeHead(hit.status, { "content-type": "application/json", "x-cache": "hit" });
         return res.end(hit.text);
       }
