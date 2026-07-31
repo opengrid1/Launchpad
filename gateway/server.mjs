@@ -23,17 +23,32 @@ const agent = new SocksProxyAgent(SOCKS, { keepAlive: true, maxSockets: 32, time
 // Tiny read-through cache: identical read calls (the token list, prices,
 // receipts every visitor fetches) collapse into one Tor round trip within the
 // TTL. Never caches writes or gas estimation.
-const CACHE_TTL_MS = 4_000;
+const CACHE_TTL_MS = 6_000;
+// How long a last-good response may be served when the onion 429s / errors,
+// so a rate-limit storm degrades to slightly-stale data instead of failures.
+const STALE_TTL_MS = 60_000;
 const cache = new Map(); // bodyKey -> { at, status, text }
+const inflight = new Map(); // bodyKey -> Promise<{status,text}>
 const NO_CACHE = /"method"\s*:\s*"eth_(sendRawTransaction|sendTransaction|estimateGas)"/;
 function cacheGet(key) {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit;
-  if (hit) cache.delete(key);
+  return null;
+}
+function cacheGetStale(key) {
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.at < STALE_TTL_MS) return hit;
   return null;
 }
 function cacheSet(key, status, text) {
-  if (cache.size > 500) cache.clear();
+  if (cache.size > 2000) {
+    // Drop the oldest ~half by insertion order.
+    let n = 0;
+    for (const k of cache.keys()) {
+      cache.delete(k);
+      if (++n > 1000) break;
+    }
+  }
   cache.set(key, { at: Date.now(), status, text });
 }
 
@@ -87,7 +102,15 @@ const server = http.createServer((req, res) => {
 
   // Deep check: GET /health does a real chain read over Tor.
   if (req.method === "GET" && url.pathname === "/health") {
-    forward('{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}', res, 20_000);
+    fetchUpstream('{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}', false)
+      .then(({ status, text }) => {
+        res.writeHead(status, { "content-type": "application/json" });
+        res.end(text);
+      })
+      .catch((e) => {
+        res.writeHead(502, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: String(e?.message || e) }));
+      });
     return;
   }
 
@@ -109,7 +132,7 @@ const server = http.createServer((req, res) => {
       req.destroy();
     }
   });
-  req.on("end", () => {
+  req.on("end", async () => {
     if (tooBig) return;
     noteRequest(req);
     const cacheable = body.length < 64_000 && !NO_CACHE.test(body);
@@ -121,47 +144,71 @@ const server = http.createServer((req, res) => {
         return res.end(hit.text);
       }
     }
-    forward(body, res, 30_000, cacheable ? body : null);
+    try {
+      const { status, text } = await fetchUpstream(body, cacheable);
+      res.writeHead(status, { "content-type": "application/json" });
+      res.end(text);
+    } catch (e) {
+      // On upstream failure (incl. 429), serve a slightly-stale cached answer
+      // if we have one, rather than an error.
+      if (cacheable) {
+        const stale = cacheGetStale(body);
+        if (stale) {
+          stats.cacheHits++;
+          res.writeHead(stale.status, { "content-type": "application/json", "x-cache": "stale" });
+          return res.end(stale.text);
+        }
+      }
+      res.writeHead(502, { "content-type": "application/json" });
+      res.end(JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32000, message: "tor upstream: " + (e?.message || e) } }));
+    }
   });
 });
 
-function forward(body, res, timeoutMs, cacheKey) {
-  const upstream = http.request(
-    {
-      protocol: onion.protocol,
-      host: onion.hostname,
-      port: onion.port || 80,
-      path: onion.pathname,
-      method: "POST",
-      agent,
-      headers: { "content-type": "application/json", "content-length": Buffer.byteLength(body) },
-      timeout: timeoutMs,
-    },
-    (up) => {
-      const status = up.statusCode ?? 502;
-      if (cacheKey && status === 200) {
-        // Buffer so the response can be cached, then send.
+// Fetch from the onion with in-flight coalescing: concurrent identical
+// requests share a single Tor round trip. Throws on 429/5xx/errors so the
+// caller can fall back to stale cache.
+function fetchUpstream(body, cacheable) {
+  if (cacheable) {
+    const dup = inflight.get(body);
+    if (dup) return dup;
+  }
+  const p = new Promise((resolve, reject) => {
+    const upstream = http.request(
+      {
+        protocol: onion.protocol,
+        host: onion.hostname,
+        port: onion.port || 80,
+        path: onion.pathname,
+        method: "POST",
+        agent,
+        headers: { "content-type": "application/json", "content-length": Buffer.byteLength(body) },
+        timeout: 30_000,
+      },
+      (up) => {
+        const status = up.statusCode ?? 502;
         let text = "";
         up.setEncoding("utf8");
         up.on("data", (c) => (text += c));
         up.on("end", () => {
-          cacheSet(cacheKey, status, text);
-          res.writeHead(status, { "content-type": "application/json" });
-          res.end(text);
+          if (status === 200 && text.startsWith("{") ) {
+            if (cacheable) cacheSet(body, status, text);
+            resolve({ status, text });
+          } else {
+            // 429 / html error / non-JSON: treat as failure for stale fallback.
+            reject(new Error("upstream status " + status));
+          }
         });
-        return;
-      }
-      res.writeHead(status, { "content-type": "application/json" });
-      up.pipe(res);
-    },
-  );
-  upstream.on("timeout", () => upstream.destroy(new Error("tor upstream timeout")));
-  upstream.on("error", (e) => {
-    if (res.headersSent) return res.end();
-    res.writeHead(502, { "content-type": "application/json" });
-    res.end(JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32000, message: "tor upstream: " + e.message } }));
+      },
+    );
+    upstream.on("timeout", () => upstream.destroy(new Error("tor upstream timeout")));
+    upstream.on("error", reject);
+    upstream.end(body);
+  }).finally(() => {
+    if (cacheable) inflight.delete(body);
   });
-  upstream.end(body);
+  if (cacheable) inflight.set(body, p);
+  return p;
 }
 
 server.listen(PORT, () => console.log(`arc tor gateway on :${PORT} -> ${onion.hostname} via ${SOCKS}`));
