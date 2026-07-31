@@ -30,10 +30,16 @@ const server = http.createServer((req, res) => {
 
   if (req.method === "OPTIONS") return res.writeHead(204).end();
 
-  // Health check: GET / returns the current block over Tor so uptime monitors
-  // see a real chain read, not just a static 200.
+  // Liveness: GET / returns 200 immediately (no Tor) so platform health checks
+  // pass the moment the process binds, even while Tor is still bootstrapping.
   if (req.method === "GET" && url.pathname === "/") {
-    forward('{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}', res, 15_000);
+    res.writeHead(200, { "content-type": "application/json" });
+    return res.end('{"status":"ok"}');
+  }
+
+  // Deep check: GET /health does a real chain read over Tor.
+  if (req.method === "GET" && url.pathname === "/health") {
+    forward('{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}', res, 20_000);
     return;
   }
 
