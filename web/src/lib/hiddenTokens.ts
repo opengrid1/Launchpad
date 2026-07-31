@@ -25,6 +25,7 @@ const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   // Arc mainnet (5042)
   "5042:0x133fb521fc1d1ba8968b7b92b918f3060cc48d51", // TEST (V3-era launch)
   "5042:0x13c8eaea033391f1e824a8550772c85054014663", // CHECK (V4 launch verification)
+  "5042:0xbd3d33c36ba010871b4362b43ecf5b1fe39cb0b2", // CHECKV3 (Dyor V3 launch verification)
 ]);
 
 export function isHidden(address: string): boolean {
