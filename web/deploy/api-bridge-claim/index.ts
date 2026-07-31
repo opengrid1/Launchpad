@@ -137,11 +137,24 @@ export default async function handler(req: any, res: any) {
         });
         await basePub.waitForTransactionReceipt({ hash: a });
       }
-      const d = await baseWallet.writeContract({
-        address: GATEWAY_WALLET, abi: walletAbi, functionName: "deposit",
-        args: [BASE_USDC, relayerUsdc], chain: base, account,
-      });
-      await basePub.waitForTransactionReceipt({ hash: d });
+      // Public RPCs are load balanced; a lagging replica may not see the fresh
+      // approval yet, failing gas estimation. Retry briefly instead of erroring.
+      let deposited = false;
+      let lastErr: unknown;
+      for (let i = 0; i < 4 && !deposited; i++) {
+        try {
+          const d = await baseWallet.writeContract({
+            address: GATEWAY_WALLET, abi: walletAbi, functionName: "deposit",
+            args: [BASE_USDC, relayerUsdc], chain: base, account,
+          });
+          await basePub.waitForTransactionReceipt({ hash: d });
+          deposited = true;
+        } catch (e) {
+          lastErr = e;
+          await new Promise((r) => setTimeout(r, 2_500));
+        }
+      }
+      if (!deposited) throw lastErr;
     }
 
     // 3. Mint leg: pay the original sender on Arc from the relayer's unified
