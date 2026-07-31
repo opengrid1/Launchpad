@@ -15,7 +15,6 @@ import {
   GATEWAY_MINTER,
   GATEWAY_WALLET,
   USDC_DECIMALS,
-  arcGatewayDomain,
   buildBurnIntent,
   burnIntentJson,
   erc20Abi,
@@ -57,7 +56,6 @@ export function BridgePage() {
   const [baseUsdc, setBaseUsdc] = useState<bigint | null>(null);
   const [unified, setUnified] = useState<bigint | null>(null);
   const [arcUsdc, setArcUsdc] = useState<bigint | null>(null);
-  const [arcLive, setArcLive] = useState<boolean | null>(null);
 
   const refresh = useCallback(async () => {
     if (!address) return;
@@ -82,20 +80,6 @@ export function BridgePage() {
     }, 30_000);
     return () => clearInterval(id);
   }, [refresh]);
-
-  useEffect(() => {
-    let on = true;
-    const check = () =>
-      arcGatewayDomain()
-        .then((d) => on && setArcLive(Boolean(d)))
-        .catch(() => on && setArcLive(null));
-    check();
-    const id = setInterval(check, 60_000);
-    return () => {
-      on = false;
-      clearInterval(id);
-    };
-  }, []);
 
   const run = async (label: string, fn: () => Promise<void>) => {
     setBusy(label);
@@ -270,13 +254,6 @@ export function BridgePage() {
         </p>
       </div>
 
-      {arcLive === false && (
-        <div className="rounded-xl border border-yellow-600/40 bg-yellow-500/10 px-4 py-3 text-[13px] text-yellow-200">
-          Arc minting is temporarily paused on Circle Gateway. Deposits still work and are held in your
-          Gateway balance; minting resumes automatically when Circle re-enables Arc.
-        </div>
-      )}
-
       {!isConnected ? (
         <div className="rounded-xl border border-edge bg-panel px-4 py-8 text-center">
           <p className="text-sm text-ink-2">Connect your wallet to bridge.</p>
@@ -355,7 +332,7 @@ export function BridgePage() {
               >
                 Max
               </Button>
-              <Button variant="primary" disabled={busy !== null || arcLive === false} onClick={mint}>
+              <Button variant="primary" disabled={busy !== null} onClick={mint}>
                 {busy === "Mint" ? "Minting" : "Mint on Arc"}
               </Button>
             </div>
