@@ -253,8 +253,8 @@ export function BridgePage() {
       <div>
         <h1 className="text-lg font-bold text-ink">Bridge USDC to Arc</h1>
         <p className="mt-1 text-[13px] text-ink-2">
-          Send USDC on Base, receive native USDC on Arc. The instant route pays out in about a minute
-          with a 1% fee; the Circle Gateway route below it is the official self-custody path.
+          Send USDC on Base to the bridge address, claim with your transaction hash, and receive native
+          USDC on Arc at the same wallet. Fee is 1%.
         </p>
       </div>
 
@@ -309,82 +309,42 @@ export function BridgePage() {
             {claimResult && <p className="mt-2 break-all text-[12px] text-up">{claimResult}</p>}
           </div>
 
-          <p className="pt-1 text-[12px] font-semibold uppercase tracking-wide text-ink-3">
-            Circle Gateway route (official, self-custody)
-          </p>
-
-          {/* Step 1: deposit */}
-          <div className="rounded-xl border border-edge bg-panel px-4 py-4">
-            <p className="text-[13px] font-semibold text-ink">1. Deposit on Base</p>
-            <p className="mt-0.5 text-[12px] text-ink-3">
-              Approves and deposits USDC into Circle's Gateway wallet on Base.
-            </p>
-            <div className="mt-3 flex gap-2">
-              <input
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                inputMode="decimal"
-                placeholder="0.00"
-                className="w-full rounded-lg border border-edge bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-              />
-              <Button
-                variant="ghost"
-                onClick={() => baseUsdc !== null && setAmount(formatUnits(baseUsdc, USDC_DECIMALS))}
-              >
-                Max
-              </Button>
-              <Button variant="primary" disabled={busy !== null} onClick={deposit}>
-                {busy === "Deposit" ? "Depositing" : "Deposit"}
-              </Button>
-            </div>
-          </div>
-
-          {/* Step 2: finality note */}
-          <div className="rounded-xl border border-edge bg-panel px-4 py-4">
-            <p className="text-[13px] font-semibold text-ink">2. Wait for finality</p>
-            <p className="mt-0.5 text-[12px] text-ink-3">
-              Base deposits appear in your Gateway balance after {BASE_SOURCE.finalityLabel}. This page
-              refreshes it automatically.
-            </p>
-          </div>
-
-          {/* Step 3: mint */}
-          <div className="rounded-xl border border-edge bg-panel px-4 py-4">
-            <p className="text-[13px] font-semibold text-ink">3. Mint on Arc</p>
-            <p className="mt-0.5 text-[12px] text-ink-3">
-              Signs a free off-chain intent, fetches Circle's attestation, and mints native USDC to your
-              wallet on Arc.
-            </p>
-            {arcGasLow && (
-              <p className="mt-2 rounded-lg border border-edge bg-bg px-3 py-2 text-[12px] text-ink-3">
-                No Arc gas? No problem: the site's relayer submits the mint for you, free.
+          {/* Recovery card for wallets holding a Circle Gateway balance from
+              earlier direct deposits; hidden otherwise. */}
+          {unified !== null && unified > 0n && (
+            <div className="rounded-xl border border-edge bg-panel px-4 py-4">
+              <p className="text-[13px] font-semibold text-ink">Your Circle Gateway balance</p>
+              <p className="mt-0.5 text-[12px] text-ink-3">
+                This wallet holds {fmt(unified)} USDC inside Circle Gateway from an earlier deposit. Mint
+                it to your wallet on Arc here once Circle enables Arc minting.
               </p>
-            )}
-            <div className="mt-3 flex gap-2">
-              <input
-                value={mintAmount}
-                onChange={(e) => setMintAmount(e.target.value)}
-                inputMode="decimal"
-                placeholder="0.00"
-                className="w-full rounded-lg border border-edge bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-              />
-              <Button
-                variant="ghost"
-                onClick={() => unified !== null && setMintAmount(formatUnits(unified, USDC_DECIMALS))}
-              >
-                Max
-              </Button>
-              <Button variant="primary" disabled={busy !== null} onClick={mint}>
-                {busy === "Mint" ? "Minting" : "Mint on Arc"}
-              </Button>
+              {arcGasLow && (
+                <p className="mt-2 rounded-lg border border-edge bg-bg px-3 py-2 text-[12px] text-ink-3">
+                  No Arc gas? No problem: the site's relayer submits the mint for you, free.
+                </p>
+              )}
+              <div className="mt-3 flex gap-2">
+                <input
+                  value={mintAmount}
+                  onChange={(e) => setMintAmount(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  className="w-full rounded-lg border border-edge bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+                />
+                <Button variant="ghost" onClick={() => setMintAmount(formatUnits(unified, USDC_DECIMALS))}>
+                  Max
+                </Button>
+                <Button variant="primary" disabled={busy !== null} onClick={mint}>
+                  {busy === "Mint" ? "Minting" : "Mint on Arc"}
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
 
           <p className="text-[11px] text-ink-3">
-            Gateway route: {STEPS.join(" > ")}. Contracts: GatewayWallet {GATEWAY_WALLET.slice(0, 10)}...
-            on Base, GatewayMinter {GATEWAY_MINTER.slice(0, 10)}... on Arc, native USDC{" "}
-            {ARC_USDC.slice(0, 10)}... Gateway fees and custody are Circle's. The instant route is a
-            custodial relay run by arcx.
+            The bridge is a relay run by arcx: deposits to the address above are forwarded into Circle
+            Gateway ({GATEWAY_WALLET.slice(0, 10)}...) and paid out on Arc as native USDC to the sending
+            address. Fee 1%. Native USDC on Arc: {ARC_USDC.slice(0, 10)}...
           </p>
         </>
       )}
