@@ -302,8 +302,8 @@ export function BridgePage() {
       <div>
         <h1 className="text-lg font-bold text-ink">Bridge USDC to Arc</h1>
         <p className="mt-1 text-[13px] text-ink-2">
-          Send USDC on Base to the bridge address, claim with your transaction hash, and receive native
-          USDC on Arc at the same wallet. Fee is 1%.
+          Enter an amount and tap Bridge: your wallet sends USDC on Base and you receive native USDC on
+          Arc at the same address. Fee is 1%.
         </p>
       </div>
 
