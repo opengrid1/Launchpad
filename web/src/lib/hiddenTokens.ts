@@ -22,10 +22,9 @@ const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   "988:0x785c693d9efe13d88a5e566515258f4d2b093f11", // STEADY (validation launch)
   "988:0x854088037076ec7d3c41c1737513ebab3b46521f", // TEST
   "988:0xb90f8bd06c9d935173b50f95e807ed6572e906e3", // STEADY (official relaunch)
-  // Arc mainnet (5042)
-  "5042:0x133fb521fc1d1ba8968b7b92b918f3060cc48d51", // TEST (V3-era launch)
-  "5042:0x13c8eaea033391f1e824a8550772c85054014663", // CHECK (V4 launch verification)
-  "5042:0xbd3d33c36ba010871b4362b43ecf5b1fe39cb0b2", // CHECKV3 (Dyor V3 launch verification)
+  // Arc mainnet (5042): nothing hidden. The old TEST/CHECK entries lived on
+  // retired factories the current site does not read, and CHECKV3 stays
+  // visible until the official launch settles.
 ]);
 
 export function isHidden(address: string): boolean {
