@@ -229,6 +229,11 @@ export function BridgePage() {
         body: JSON.stringify({ txHash: tx }),
       });
       const j = await r.json().catch(() => ({}));
+      if (r.status === 202 && j.queued) {
+        setClaimResult(j.message);
+        pushToast({ kind: "info", title: "Deposit secured", body: j.message });
+        return;
+      }
       if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
       setClaimResult(`Sent ${j.amountUsdc} USDC on Arc to ${j.to}. Tx: ${j.hash}`);
       pushToast({ kind: "success", title: "Bridge payout sent on Arc", txHash: j.hash });
