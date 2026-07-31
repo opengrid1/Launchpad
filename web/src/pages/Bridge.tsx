@@ -191,6 +191,26 @@ export function BridgePage() {
         att = await sign(h);
       }
 
+      // Gasless path first: the site's relayer submits the mint so first-time
+      // bridgers with no Arc gas still receive their USDC. Falls back to the
+      // user's own wallet when the relay is unavailable.
+      try {
+        const r = await fetch("/api/bridge-mint", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ attestation: att.attestation, signature: att.signature }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok && j.hash) {
+          pushToast({ kind: "success", title: "USDC minted on Arc (gasless)", txHash: j.hash });
+          setMintAmount("");
+          refresh();
+          return;
+        }
+      } catch {
+        /* relay unreachable; fall through to self-mint */
+      }
+
       await ensureChain(env.chainId);
       const hash = await walletClient.writeContract({
         address: GATEWAY_MINTER,
@@ -294,9 +314,7 @@ export function BridgePage() {
             </p>
             {arcGasLow && (
               <p className="mt-2 rounded-lg border border-edge bg-bg px-3 py-2 text-[12px] text-ink-3">
-                The mint transaction needs a little USDC on Arc for gas (well under a cent). If this is
-                your first bridge, ask a friend to send a few cents to your address, or keep this tab open
-                and retry once you have gas.
+                No Arc gas? No problem: the site's relayer submits the mint for you, free.
               </p>
             )}
             <div className="mt-3 flex gap-2">
