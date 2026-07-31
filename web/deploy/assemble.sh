@@ -5,10 +5,12 @@ cd "$(dirname "$0")/.."
 rm -rf .vercel/output
 mkdir -p .vercel/output/functions/api/rpc.func .vercel/output/functions/api/bridge-mint.func
 cp -r dist .vercel/output/static
-# Bundle the bridge-mint relay (viem inlined; Vercel functions ship no deps).
-npx esbuild deploy/api-bridge-mint/index.ts --bundle --platform=node --format=esm \
-  --outfile=.vercel/output/functions/api/bridge-mint.func/index.mjs --log-level=warning
-cat > .vercel/output/functions/api/bridge-mint.func/.vc-config.json <<'JSON'
+# Bundle the relay functions (viem inlined; Vercel functions ship no deps).
+for FN in bridge-mint bridge-claim; do
+  mkdir -p ".vercel/output/functions/api/${FN}.func"
+  npx esbuild "deploy/api-${FN}/index.ts" --bundle --platform=node --format=esm \
+    --outfile=".vercel/output/functions/api/${FN}.func/index.mjs" --log-level=warning
+  cat > ".vercel/output/functions/api/${FN}.func/.vc-config.json" <<'JSON'
 {
   "runtime": "nodejs22.x",
   "handler": "index.mjs",
@@ -16,6 +18,7 @@ cat > .vercel/output/functions/api/bridge-mint.func/.vc-config.json <<'JSON'
   "shouldAddHelpers": true
 }
 JSON
+done
 # Stamp the deploy so /debug can prove which build a device is seeing.
 BUNDLE=$(ls .vercel/output/static/assets/index-*.js | head -1 | xargs basename)
 printf '{"builtAt":"%s","bundle":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$BUNDLE" > .vercel/output/static/version.json
@@ -26,6 +29,7 @@ cat > .vercel/output/config.json <<'JSON'
   "routes": [
     { "src": "^/api/rpc$", "dest": "/api/rpc" },
     { "src": "^/api/bridge-mint$", "dest": "/api/bridge-mint" },
+    { "src": "^/api/bridge-claim$", "dest": "/api/bridge-claim" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]

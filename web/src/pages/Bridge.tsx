@@ -228,6 +228,30 @@ export function BridgePage() {
 
   const arcGasLow = arcUsdc !== null && arcUsdc < 10_000n; // under 0.01 USDC
 
+  // Instant bridge (custodial relay): send USDC on Base to the relayer
+  // address, then claim with the tx hash; the payout goes to the same
+  // address that sent the deposit, minus a 1% fee.
+  const RELAYER_DEPOSIT = "0xe5b498a00596ab2fa0e8a86cdde15502b2552208";
+  const [claimTx, setClaimTx] = useState("");
+  const [claimResult, setClaimResult] = useState<string | null>(null);
+  const claim = () =>
+    run("Claim", async () => {
+      setClaimResult(null);
+      const tx = claimTx.trim();
+      if (!/^0x[0-9a-fA-F]{64}$/.test(tx)) throw new Error("Paste the full Base transaction hash (0x...).");
+      const r = await fetch("/api/bridge-claim", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ txHash: tx }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+      setClaimResult(`Sent ${j.amountUsdc} USDC on Arc to ${j.to}. Tx: ${j.hash}`);
+      pushToast({ kind: "success", title: "Bridge payout sent on Arc", txHash: j.hash });
+      setClaimTx("");
+      refresh();
+    });
+
   const stat = (label: string, value: string) => (
     <div className="rounded-xl border border-edge bg-panel px-4 py-3">
       <p className="text-[11px] uppercase tracking-wide text-ink-3">{label}</p>
@@ -337,10 +361,46 @@ export function BridgePage() {
             </div>
           </div>
 
+          {/* Instant bridge: custodial relay path that works regardless of
+              Circle's Arc Gateway flag. */}
+          <div className="rounded-xl border border-accent/30 bg-panel px-4 py-4">
+            <p className="text-[13px] font-semibold text-ink">Instant bridge</p>
+            <p className="mt-0.5 text-[12px] text-ink-3">
+              Faster route run by the arcx relayer. Send USDC on Base to the address below from your own
+              wallet, then paste the transaction hash here. You receive native USDC on Arc at the same
+              address you sent from, minus a 1% fee. Per-transaction cap applies.
+            </p>
+            <div className="mt-2 flex items-center gap-2 rounded-lg border border-edge bg-bg px-3 py-2">
+              <code className="min-w-0 flex-1 break-all font-mono text-[12px] text-ink">{RELAYER_DEPOSIT}</code>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  navigator.clipboard?.writeText(RELAYER_DEPOSIT);
+                  pushToast({ kind: "info", title: "Address copied" });
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+            <div className="mt-2 flex gap-2">
+              <input
+                value={claimTx}
+                onChange={(e) => setClaimTx(e.target.value)}
+                placeholder="Base tx hash (0x...)"
+                className="w-full rounded-lg border border-edge bg-bg px-3 py-2 font-mono text-[12px] text-ink outline-none focus:border-accent"
+              />
+              <Button variant="primary" disabled={busy !== null} onClick={claim}>
+                {busy === "Claim" ? "Claiming" : "Claim"}
+              </Button>
+            </div>
+            {claimResult && <p className="mt-2 break-all text-[12px] text-up">{claimResult}</p>}
+          </div>
+
           <p className="text-[11px] text-ink-3">
-            Steps: {STEPS.join(" > ")}. Contracts: GatewayWallet {GATEWAY_WALLET.slice(0, 10)}... on Base,
-            GatewayMinter {GATEWAY_MINTER.slice(0, 10)}... on Arc, native USDC {ARC_USDC.slice(0, 10)}...
-            Fees and custody are Circle's; this page only builds the transactions.
+            Gateway route: {STEPS.join(" > ")}. Contracts: GatewayWallet {GATEWAY_WALLET.slice(0, 10)}...
+            on Base, GatewayMinter {GATEWAY_MINTER.slice(0, 10)}... on Arc, native USDC{" "}
+            {ARC_USDC.slice(0, 10)}... Gateway fees and custody are Circle's. The instant route is a
+            custodial relay run by arcx.
           </p>
         </>
       )}
