@@ -191,8 +191,8 @@ export class StableV3Client {
       if (latest - from > 900n) from = latest - 900n;
       const blocks: bigint[] = [];
       for (let b = from; b <= latest; b++) blocks.push(b);
-      for (let i = 0; i < blocks.length; i += 25) {
-        const chunk = blocks.slice(i, i + 25);
+      for (let i = 0; i < blocks.length; i += 50) {
+        const chunk = blocks.slice(i, i + 50);
         const settled = await Promise.allSettled(
           chunk.map(
             (b) =>
@@ -235,7 +235,11 @@ export class StableV3Client {
         this.parkLogs();
       }
     }
-    void this.scanReceiptsTo(toBlock).catch(() => undefined);
+    // Await the walk so the first trades/candles response already carries the
+    // recent history instead of arriving empty and filling in a poll later.
+    // (Explore never fetches per-token trades on this client, so nothing
+    // user-blocking waits on this except the chart that needs the data.)
+    await this.scanReceiptsTo(toBlock).catch(() => undefined);
     const upTo = this.receiptUpTo;
     return (this.receiptLogsByPool.get(pool.toLowerCase()) ?? [])
       .filter((lg) => BigInt(lg.blockNumber) >= fromBlock && BigInt(lg.blockNumber) <= (toBlock < upTo ? toBlock : upTo))
