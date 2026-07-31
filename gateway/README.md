@@ -28,7 +28,25 @@ curl -s -X POST "http://localhost:8080/?key=$ACCESS_KEY" \
 # -> {"jsonrpc":"2.0","id":1,"result":"0x13b2"}   (0x13b2 = 5042)
 ```
 
-## Put it behind HTTPS
+## Deploy from GitHub (no VPS, free)
+
+GitHub cannot run the server itself, but these hosts build it straight from this
+repo and give you an HTTPS URL with auto-redeploy on every push:
+
+**Koyeb (recommended, free tier stays always-on)**
+1. https://app.koyeb.com -> Create Service -> GitHub -> pick this repo.
+2. Work directory: `gateway`. Builder: Dockerfile. Port: `8080`.
+3. Add env var `ACCESS_KEY` (any random string). Deploy.
+4. You get `https://<name>.koyeb.app`.
+
+**Render (free, but sleeps when idle)**
+1. https://render.com -> New + -> Blueprint -> pick this repo (it reads
+   `gateway/render.yaml`).
+2. Set `ACCESS_KEY` when prompted. Deploy -> `https://arc-tor-rpc.onrender.com`.
+
+Both already serve HTTPS, so you can skip the reverse-proxy step below.
+
+## Put it behind HTTPS (self-hosted only)
 
 Wallets require https. Terminate TLS with Caddy (simplest) or any reverse proxy:
 
