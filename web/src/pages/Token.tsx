@@ -118,7 +118,24 @@ export function TokenPage() {
       </div>
     );
   }
-  if (token.error || !token.data) {
+  if (token.error) {
+    // A failed read is a network problem, not a missing token; say so instead
+    // of a misleading not-found, and let the user retry in place.
+    return (
+      <div className="mx-auto max-w-[1400px] px-4 py-8">
+        <EmptyState
+          title="Network hiccup"
+          body="The RPC endpoint is not responding right now. The token is safe onchain; pull to refresh or try again in a moment."
+        />
+        <div className="flex justify-center">
+          <Button variant="primary" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  if (!token.data) {
     return (
       <div className="mx-auto max-w-[1400px] px-4 py-8">
         <EmptyState title="Token not found" body="Check the address, or the indexer may still be catching up." />
