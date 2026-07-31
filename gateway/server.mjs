@@ -23,7 +23,7 @@ const agent = new SocksProxyAgent(SOCKS, { keepAlive: true, maxSockets: 32, time
 // Tiny read-through cache: identical read calls (the token list, prices,
 // receipts every visitor fetches) collapse into one Tor round trip within the
 // TTL. Never caches writes or gas estimation.
-const CACHE_TTL_MS = 2_500;
+const CACHE_TTL_MS = 4_000;
 const cache = new Map(); // bodyKey -> { at, status, text }
 const NO_CACHE = /"method"\s*:\s*"eth_(sendRawTransaction|sendTransaction|estimateGas)"/;
 function cacheGet(key) {

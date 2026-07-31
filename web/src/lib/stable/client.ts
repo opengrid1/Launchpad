@@ -930,7 +930,10 @@ export class StableV3Client {
     let w = this.watchers.get(key);
     if (!w) {
       w = {
-        timer: setInterval(() => void this.pollToken(key), 4_000),
+        // 12s per-token poll (was 4s): through the Tor RPC the 4s cadence made
+        // the site very chatty (~50 req/user/min). 12s still feels live and
+        // cuts per-user RPC load roughly threefold.
+        timer: setInterval(() => void this.pollToken(key), 12_000),
         lastBlock: 0n,
         busy: false,
         tradeCbs: new Set(),
