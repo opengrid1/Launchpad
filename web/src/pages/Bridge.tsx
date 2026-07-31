@@ -248,9 +248,8 @@ export function BridgePage() {
       <div>
         <h1 className="text-lg font-bold text-ink">Bridge USDC to Arc</h1>
         <p className="mt-1 text-[13px] text-ink-2">
-          Moves USDC from Base to Arc over Circle Gateway, the official Circle bridge. Deposits finalize
-          in {BASE_SOURCE.finalityLabel}, then mint on Arc as native USDC. Total cost is about $
-          {BASE_SOURCE.feeUsdc.toFixed(2)} plus gas.
+          Send USDC on Base, receive native USDC on Arc. The instant route pays out in about a minute
+          with a 1% fee; the Circle Gateway route below it is the official self-custody path.
         </p>
       </div>
 
@@ -270,6 +269,44 @@ export function BridgePage() {
             {stat("In Gateway", unified === null ? "-" : fmt(unified))}
             {stat("USDC on Arc", arcUsdc === null ? "-" : fmt(arcUsdc))}
           </div>
+
+          {/* Instant bridge: the primary route. */}
+          <div className="rounded-xl border border-accent/30 bg-panel px-4 py-4">
+            <p className="text-[13px] font-semibold text-ink">Instant bridge</p>
+            <p className="mt-0.5 text-[12px] text-ink-3">
+              Send USDC on Base to the address below from your own wallet, then paste the transaction
+              hash and claim. You receive native USDC on Arc at the same address you sent from, minus a
+              1% fee. Per-transaction cap applies.
+            </p>
+            <div className="mt-2 flex items-center gap-2 rounded-lg border border-edge bg-bg px-3 py-2">
+              <code className="min-w-0 flex-1 break-all font-mono text-[12px] text-ink">{RELAYER_DEPOSIT}</code>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  navigator.clipboard?.writeText(RELAYER_DEPOSIT);
+                  pushToast({ kind: "info", title: "Address copied" });
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+            <div className="mt-2 flex gap-2">
+              <input
+                value={claimTx}
+                onChange={(e) => setClaimTx(e.target.value)}
+                placeholder="Base tx hash (0x...)"
+                className="w-full rounded-lg border border-edge bg-bg px-3 py-2 font-mono text-[12px] text-ink outline-none focus:border-accent"
+              />
+              <Button variant="primary" disabled={busy !== null} onClick={claim}>
+                {busy === "Claim" ? "Claiming" : "Claim"}
+              </Button>
+            </div>
+            {claimResult && <p className="mt-2 break-all text-[12px] text-up">{claimResult}</p>}
+          </div>
+
+          <p className="pt-1 text-[12px] font-semibold uppercase tracking-wide text-ink-3">
+            Circle Gateway route (official, self-custody)
+          </p>
 
           {/* Step 1: deposit */}
           <div className="rounded-xl border border-edge bg-panel px-4 py-4">
@@ -336,41 +373,6 @@ export function BridgePage() {
                 {busy === "Mint" ? "Minting" : "Mint on Arc"}
               </Button>
             </div>
-          </div>
-
-          {/* Instant bridge: custodial relay path that works regardless of
-              Circle's Arc Gateway flag. */}
-          <div className="rounded-xl border border-accent/30 bg-panel px-4 py-4">
-            <p className="text-[13px] font-semibold text-ink">Instant bridge</p>
-            <p className="mt-0.5 text-[12px] text-ink-3">
-              Faster route run by the arcx relayer. Send USDC on Base to the address below from your own
-              wallet, then paste the transaction hash here. You receive native USDC on Arc at the same
-              address you sent from, minus a 1% fee. Per-transaction cap applies.
-            </p>
-            <div className="mt-2 flex items-center gap-2 rounded-lg border border-edge bg-bg px-3 py-2">
-              <code className="min-w-0 flex-1 break-all font-mono text-[12px] text-ink">{RELAYER_DEPOSIT}</code>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  navigator.clipboard?.writeText(RELAYER_DEPOSIT);
-                  pushToast({ kind: "info", title: "Address copied" });
-                }}
-              >
-                Copy
-              </Button>
-            </div>
-            <div className="mt-2 flex gap-2">
-              <input
-                value={claimTx}
-                onChange={(e) => setClaimTx(e.target.value)}
-                placeholder="Base tx hash (0x...)"
-                className="w-full rounded-lg border border-edge bg-bg px-3 py-2 font-mono text-[12px] text-ink outline-none focus:border-accent"
-              />
-              <Button variant="primary" disabled={busy !== null} onClick={claim}>
-                {busy === "Claim" ? "Claiming" : "Claim"}
-              </Button>
-            </div>
-            {claimResult && <p className="mt-2 break-all text-[12px] text-up">{claimResult}</p>}
           </div>
 
           <p className="text-[11px] text-ink-3">
