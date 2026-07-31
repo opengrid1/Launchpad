@@ -212,33 +212,82 @@ export function BridgePage() {
 
   const arcGasLow = arcUsdc !== null && arcUsdc < 10_000n; // under 0.01 USDC
 
-  // Instant bridge (custodial relay): send USDC on Base to the relayer
-  // address, then claim with the tx hash; the payout goes to the same
-  // address that sent the deposit, minus a 1% fee.
+  // Instant bridge (custodial relay): the UI sends USDC on Base to the
+  // relayer from the connected wallet, then auto-claims; the payout goes to
+  // the same address that sent the deposit, minus a 1% fee.
   const RELAYER_DEPOSIT = "0xe5b498a00596ab2fa0e8a86cdde15502b2552208";
+  const [bridgeAmount, setBridgeAmount] = useState("");
   const [claimTx, setClaimTx] = useState("");
   const [claimResult, setClaimResult] = useState<string | null>(null);
+  const [bridgeStage, setBridgeStage] = useState<string | null>(null);
+
+  const submitClaim = async (tx: string): Promise<{ done: boolean; message: string }> => {
+    const r = await fetch("/api/bridge-claim", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ txHash: tx }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 425) return { done: false, message: j.error ?? "Waiting for confirmations" };
+    if (r.status === 202 && j.queued) return { done: true, message: j.message };
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    return { done: true, message: `Sent ${j.amountUsdc} USDC on Arc to ${j.to}. Tx: ${j.hash}` };
+  };
+
+  const bridge = () =>
+    run("Bridge", async () => {
+      if (!walletClient?.account) throw new Error("Connect a wallet first.");
+      setClaimResult(null);
+      const value = parseUnits(bridgeAmount || "0", USDC_DECIMALS);
+      if (value <= 0n) throw new Error("Enter an amount.");
+      if (baseUsdc !== null && value > baseUsdc) throw new Error("Amount exceeds your Base USDC balance.");
+
+      setBridgeStage("Sending USDC on Base...");
+      await ensureChain(BASE_SOURCE.chainId);
+      const hash = await walletClient.writeContract({
+        address: BASE_SOURCE.usdc,
+        abi: erc20Abi,
+        functionName: "transfer",
+        args: [RELAYER_DEPOSIT as Address, value],
+        chain: walletClient.chain,
+        account: walletClient.account,
+      });
+      await basePublic.waitForTransactionReceipt({ hash });
+      setClaimTx(hash);
+
+      // Auto-claim: the relay wants ~10 Base confirmations (~20s); poll until
+      // it accepts, then surface the outcome.
+      setBridgeStage("Confirming on Base (about half a minute)...");
+      for (let i = 0; i < 24; i++) {
+        try {
+          const out = await submitClaim(hash);
+          if (out.done) {
+            setClaimResult(out.message);
+            pushToast({ kind: "success", title: "Bridge submitted", body: out.message });
+            setBridgeAmount("");
+            setBridgeStage(null);
+            refresh();
+            return;
+          }
+          setBridgeStage(out.message + "...");
+        } catch (err) {
+          setBridgeStage(null);
+          throw err;
+        }
+        await new Promise((r) => setTimeout(r, 8_000));
+      }
+      setBridgeStage(null);
+      setClaimResult("Deposit sent. Claim below with the transaction hash once Base confirms.");
+    });
   const claim = () =>
     run("Claim", async () => {
       setClaimResult(null);
       const tx = claimTx.trim();
       if (!/^0x[0-9a-fA-F]{64}$/.test(tx)) throw new Error("Paste the full Base transaction hash (0x...).");
-      const r = await fetch("/api/bridge-claim", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ txHash: tx }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (r.status === 202 && j.queued) {
-        setClaimResult(j.message);
-        pushToast({ kind: "info", title: "Deposit secured", body: j.message });
-        return;
-      }
-      if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
-      setClaimResult(`Sent ${j.amountUsdc} USDC on Arc to ${j.to}. Tx: ${j.hash}`);
-      pushToast({ kind: "success", title: "Bridge payout sent on Arc", txHash: j.hash });
-      setClaimTx("");
-      refresh();
+      const out = await submitClaim(tx);
+      setClaimResult(out.message);
+      pushToast({ kind: out.done ? "success" : "info", title: out.done ? "Claim processed" : "Not ready yet", body: out.message });
+      if (out.done) refresh();
     });
 
   const stat = (label: string, value: string) => (
@@ -275,38 +324,67 @@ export function BridgePage() {
             {stat("USDC on Arc", arcUsdc === null ? "-" : fmt(arcUsdc))}
           </div>
 
-          {/* Instant bridge: the primary route. */}
+          {/* One-click bridge from the connected wallet. */}
           <div className="rounded-xl border border-accent/30 bg-panel px-4 py-4">
-            <p className="text-[13px] font-semibold text-ink">Instant bridge</p>
+            <p className="text-[13px] font-semibold text-ink">Bridge from Base</p>
             <p className="mt-0.5 text-[12px] text-ink-3">
-              Send USDC on Base to the address below from your own wallet, then paste the transaction
-              hash and claim. You receive native USDC on Arc at the same address you sent from, minus a
-              1% fee. Per-transaction cap applies.
+              One tap: your wallet sends USDC on Base and the payout lands as native USDC on Arc at the
+              same address, minus a 1% fee.
             </p>
-            <div className="mt-2 flex items-center gap-2 rounded-lg border border-edge bg-bg px-3 py-2">
-              <code className="min-w-0 flex-1 break-all font-mono text-[12px] text-ink">{RELAYER_DEPOSIT}</code>
+            <div className="mt-3 flex gap-2">
+              <input
+                value={bridgeAmount}
+                onChange={(e) => setBridgeAmount(e.target.value)}
+                inputMode="decimal"
+                placeholder="0.00"
+                className="w-full rounded-lg border border-edge bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+              />
               <Button
                 variant="ghost"
-                onClick={() => {
-                  navigator.clipboard?.writeText(RELAYER_DEPOSIT);
-                  pushToast({ kind: "info", title: "Address copied" });
-                }}
+                onClick={() => baseUsdc !== null && setBridgeAmount(formatUnits(baseUsdc, USDC_DECIMALS))}
               >
-                Copy
+                Max
+              </Button>
+              <Button variant="primary" disabled={busy !== null} onClick={bridge}>
+                {busy === "Bridge" ? "Bridging" : "Bridge"}
               </Button>
             </div>
-            <div className="mt-2 flex gap-2">
-              <input
-                value={claimTx}
-                onChange={(e) => setClaimTx(e.target.value)}
-                placeholder="Base tx hash (0x...)"
-                className="w-full rounded-lg border border-edge bg-bg px-3 py-2 font-mono text-[12px] text-ink outline-none focus:border-accent"
-              />
-              <Button variant="primary" disabled={busy !== null} onClick={claim}>
-                {busy === "Claim" ? "Claiming" : "Claim"}
-              </Button>
-            </div>
+            {bridgeStage && <p className="mt-2 text-[12px] text-ink-2">{bridgeStage}</p>}
             {claimResult && <p className="mt-2 break-all text-[12px] text-up">{claimResult}</p>}
+
+            <details className="mt-3">
+              <summary className="cursor-pointer text-[12px] text-ink-3">
+                Manual: send from an exchange or re-claim a deposit
+              </summary>
+              <p className="mt-2 text-[12px] text-ink-3">
+                Send USDC on Base to the bridge address below from any wallet you control (not from an
+                exchange account, since payouts return to the sending address), then claim with the
+                transaction hash.
+              </p>
+              <div className="mt-2 flex items-center gap-2 rounded-lg border border-edge bg-bg px-3 py-2">
+                <code className="min-w-0 flex-1 break-all font-mono text-[12px] text-ink">{RELAYER_DEPOSIT}</code>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(RELAYER_DEPOSIT);
+                    pushToast({ kind: "info", title: "Address copied" });
+                  }}
+                >
+                  Copy
+                </Button>
+              </div>
+              <div className="mt-2 flex gap-2">
+                <input
+                  value={claimTx}
+                  onChange={(e) => setClaimTx(e.target.value)}
+                  placeholder="Base tx hash (0x...)"
+                  className="w-full rounded-lg border border-edge bg-bg px-3 py-2 font-mono text-[12px] text-ink outline-none focus:border-accent"
+                />
+                <Button variant="primary" disabled={busy !== null} onClick={claim}>
+                  {busy === "Claim" ? "Claiming" : "Claim"}
+                </Button>
+              </div>
+            </details>
           </div>
 
           {/* Recovery card for wallets holding a Circle Gateway balance from

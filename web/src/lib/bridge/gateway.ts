@@ -48,6 +48,7 @@ export const erc20Abi = parseAbi([
   "function balanceOf(address) view returns (uint256)",
   "function allowance(address, address) view returns (uint256)",
   "function approve(address, uint256) returns (bool)",
+  "function transfer(address, uint256) returns (bool)",
 ]);
 
 export const gatewayWalletAbi = parseAbi(["function deposit(address token, uint256 amount)"]);
