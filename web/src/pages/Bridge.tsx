@@ -206,6 +206,58 @@ export function BridgePage() {
 
   const arcGasLow = arcUsdc !== null && arcUsdc < 10_000n; // under 0.01 USDC
 
+  // Bridge out (Arc -> Base): the wallet sends native USDC on Arc to the arcx
+  // relayer, then the site auto-claims the Base payout to the same address.
+  const RELAYER = "0xe5b498a00596ab2fa0e8a86cdde15502b2552208" as Address;
+  const [outAmount, setOutAmount] = useState("");
+  const [outStage, setOutStage] = useState<string | null>(null);
+  const [outResult, setOutResult] = useState<string | null>(null);
+
+  const bridgeOut = () =>
+    run("BridgeOut", async () => {
+      if (!walletClient?.account) throw new Error("Connect a wallet first.");
+      setOutResult(null);
+      const value = parseUnits(outAmount || "0", 18); // native USDC is 18d on Arc
+      if (value <= 0n) throw new Error("Enter an amount.");
+      if (arcUsdc !== null && value > arcUsdc) throw new Error("Amount exceeds your Arc USDC balance.");
+
+      setOutStage("Sending USDC on Arc...");
+      await ensureChain(env.chainId);
+      const hash = await walletClient.sendTransaction({
+        account: walletClient.account,
+        chain: walletClient.chain,
+        to: RELAYER,
+        value,
+      });
+      await v4Client.publicClient.waitForTransactionReceipt({ hash });
+
+      setOutStage("Paying out on Base...");
+      for (let i = 0; i < 20; i++) {
+        const r = await fetch("/api/bridge-out", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ txHash: hash }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok && j.hash) {
+          const msg = `Received ${j.amountUsdc} USDC on Base. Tx: ${j.hash}`;
+          setOutResult(msg);
+          pushToast({ kind: "success", title: "Bridged out to Base", body: msg });
+          setOutAmount("");
+          setOutStage(null);
+          refresh();
+          return;
+        }
+        if (r.status !== 425) {
+          setOutStage(null);
+          throw new Error(j.error || `HTTP ${r.status}`);
+        }
+        await new Promise((res) => setTimeout(res, 6_000));
+      }
+      setOutStage(null);
+      setOutResult("Deposit sent on Arc. Payout is processing; it will complete shortly.");
+    });
+
   const stat = (label: string, value: string) => (
     <div className="rounded-xl border border-edge bg-panel px-4 py-3">
       <p className="text-[11px] uppercase tracking-wide text-ink-3">{label}</p>
@@ -312,11 +364,38 @@ export function BridgePage() {
           </div>
 
           <p className="text-[11px] text-ink-3">
-            Steps: deposit on Base &gt; wait for finality &gt; mint on Arc. Contracts are Circle's
-            official Gateway: wallet {GATEWAY_WALLET.slice(0, 10)}... on Base, minter{" "}
-            {GATEWAY_MINTER.slice(0, 10)}... on Arc, native USDC {ARC_USDC.slice(0, 10)}... arcx does not
-            hold or route your funds.
+            Bridge in (above) uses Circle's official Gateway, self-custody: wallet{" "}
+            {GATEWAY_WALLET.slice(0, 10)}... on Base, minter {GATEWAY_MINTER.slice(0, 10)}... on Arc.
           </p>
+
+          {/* Bridge out: Arc -> Base, one tap, via the arcx relayer. */}
+          <div className="mt-2 rounded-xl border border-accent/30 bg-panel px-4 py-4">
+            <p className="text-[13px] font-semibold text-ink">Bridge out: Arc to Base</p>
+            <p className="mt-0.5 text-[12px] text-ink-3">
+              Send native USDC on Arc and receive USDC on Base at the same address, minus a 1% fee. One
+              tap; the payout lands in about a minute. Per-transaction cap applies.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <input
+                value={outAmount}
+                onChange={(e) => setOutAmount(e.target.value)}
+                inputMode="decimal"
+                placeholder="0.00"
+                className="w-full rounded-lg border border-edge bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+              />
+              <Button
+                variant="ghost"
+                onClick={() => arcUsdc !== null && setOutAmount(formatUnits(arcUsdc, 18))}
+              >
+                Max
+              </Button>
+              <Button variant="primary" disabled={busy !== null} onClick={bridgeOut}>
+                {busy === "BridgeOut" ? "Bridging" : "Bridge to Base"}
+              </Button>
+            </div>
+            {outStage && <p className="mt-2 text-[12px] text-ink-2">{outStage}</p>}
+            {outResult && <p className="mt-2 break-all text-[12px] text-up">{outResult}</p>}
+          </div>
         </>
       )}
     </div>
