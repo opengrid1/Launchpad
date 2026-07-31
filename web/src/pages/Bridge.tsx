@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPublicClient, formatUnits, http, parseUnits, type Address, type Hex } from "viem";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 
@@ -15,6 +15,7 @@ import {
   GATEWAY_MINTER,
   GATEWAY_WALLET,
   USDC_DECIMALS,
+  arcGatewayDomain,
   buildBurnIntent,
   burnIntentJson,
   erc20Abi,
@@ -27,24 +28,23 @@ import {
 } from "../lib/bridge/gateway";
 
 /**
- * Base -> Arc USDC bridge over Circle Gateway. Deposit USDC into Circle's
- * GatewayWallet on Base; once the deposit finalizes it becomes a unified
- * balance that mints on Arc as native USDC via a signed burn intent.
+ * Base -> Arc USDC bridge over Circle Gateway, fully self-custody. The user's
+ * own wallet deposits USDC into Circle's GatewayWallet on Base; once the
+ * deposit finalizes it becomes a unified balance the same wallet mints on Arc
+ * as native USDC via a Circle-attested burn intent. No relayer, no custody:
+ * every step is the user's own transaction to Circle's contracts.
  */
 
 const basePublic = createPublicClient({
   transport: http("https://mainnet.base.org", { batch: { wait: 16 } }),
 });
 
-const fmt = (v: bigint) => {
-  const s = Number(formatUnits(v, USDC_DECIMALS));
-  return s.toLocaleString("en-US", { maximumFractionDigits: 2 });
-};
-
-const STEPS = ["Deposit on Base", "Wait for finality", "Mint on Arc"];
+const fmt = (v: bigint) =>
+  Number(formatUnits(v, USDC_DECIMALS)).toLocaleString("en-US", { maximumFractionDigits: 2 });
 
 export function BridgePage() {
-  const { address, isConnected, connectFirst } = useWallet();
+  const { isConnected, connectFirst } = useWallet();
+  const { address } = useWallet();
   const { data: walletClient } = useWalletClient();
   const { switchChainAsync } = useSwitchChain();
   const { chain: connectedChain } = useAccount();
@@ -56,6 +56,8 @@ export function BridgePage() {
   const [baseUsdc, setBaseUsdc] = useState<bigint | null>(null);
   const [unified, setUnified] = useState<bigint | null>(null);
   const [arcUsdc, setArcUsdc] = useState<bigint | null>(null);
+  // null = still checking, false = Circle has not enabled Arc minting yet.
+  const [arcMintLive, setArcMintLive] = useState<boolean | null>(null);
 
   const refresh = useCallback(async () => {
     if (!address) return;
@@ -64,9 +66,7 @@ export function BridgePage() {
       .readContract({ address: BASE_SOURCE.usdc, abi: erc20Abi, functionName: "balanceOf", args: [a] })
       .then((v) => setBaseUsdc(v as bigint))
       .catch(() => {});
-    void unifiedBalance(BASE_SOURCE.domain, a)
-      .then(setUnified)
-      .catch(() => {});
+    void unifiedBalance(BASE_SOURCE.domain, a).then(setUnified).catch(() => {});
     void v4Client.publicClient
       .getBalance({ address: a })
       .then((wei) => setArcUsdc(wei / 10n ** 12n))
@@ -80,6 +80,20 @@ export function BridgePage() {
     }, 30_000);
     return () => clearInterval(id);
   }, [refresh]);
+
+  useEffect(() => {
+    let on = true;
+    const check = () =>
+      arcGatewayDomain()
+        .then((d) => on && setArcMintLive(Boolean(d)))
+        .catch(() => on && setArcMintLive(null));
+    check();
+    const id = setInterval(check, 60_000);
+    return () => {
+      on = false;
+      clearInterval(id);
+    };
+  }, []);
 
   const run = async (label: string, fn: () => Promise<void>) => {
     setBusy(label);
@@ -149,7 +163,7 @@ export function BridgePage() {
 
       const domains = await gatewayDomains();
       if (!domains.some((d) => d.domain === 26)) {
-        throw new Error("Arc minting is temporarily paused on Circle Gateway. Your deposit is safe; try again later.");
+        throw new Error("Arc minting is not yet enabled on Circle Gateway. Your deposit is safe; try again once Circle turns it on.");
       }
       const src = domains.find((d) => d.domain === BASE_SOURCE.domain);
       if (!src) throw new Error("Base is unavailable on Circle Gateway right now.");
@@ -175,26 +189,6 @@ export function BridgePage() {
         att = await sign(h);
       }
 
-      // Gasless path first: the site's relayer submits the mint so first-time
-      // bridgers with no Arc gas still receive their USDC. Falls back to the
-      // user's own wallet when the relay is unavailable.
-      try {
-        const r = await fetch("/api/bridge-mint", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ attestation: att.attestation, signature: att.signature }),
-        });
-        const j = await r.json().catch(() => ({}));
-        if (r.ok && j.hash) {
-          pushToast({ kind: "success", title: "USDC minted on Arc (gasless)", txHash: j.hash });
-          setMintAmount("");
-          refresh();
-          return;
-        }
-      } catch {
-        /* relay unreachable; fall through to self-mint */
-      }
-
       await ensureChain(env.chainId);
       const hash = await walletClient.writeContract({
         address: GATEWAY_MINTER,
@@ -212,84 +206,6 @@ export function BridgePage() {
 
   const arcGasLow = arcUsdc !== null && arcUsdc < 10_000n; // under 0.01 USDC
 
-  // Instant bridge (custodial relay): the UI sends USDC on Base to the
-  // relayer from the connected wallet, then auto-claims; the payout goes to
-  // the same address that sent the deposit, minus a 1% fee.
-  const RELAYER_DEPOSIT = "0xe5b498a00596ab2fa0e8a86cdde15502b2552208";
-  const [bridgeAmount, setBridgeAmount] = useState("");
-  const [claimTx, setClaimTx] = useState("");
-  const [claimResult, setClaimResult] = useState<string | null>(null);
-  const [bridgeStage, setBridgeStage] = useState<string | null>(null);
-
-  const submitClaim = async (tx: string): Promise<{ done: boolean; message: string }> => {
-    const r = await fetch("/api/bridge-claim", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ txHash: tx }),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (r.status === 425) return { done: false, message: j.error ?? "Waiting for confirmations" };
-    if (r.status === 202 && j.queued) return { done: true, message: j.message };
-    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
-    return { done: true, message: `Sent ${j.amountUsdc} USDC on Arc to ${j.to}. Tx: ${j.hash}` };
-  };
-
-  const bridge = () =>
-    run("Bridge", async () => {
-      if (!walletClient?.account) throw new Error("Connect a wallet first.");
-      setClaimResult(null);
-      const value = parseUnits(bridgeAmount || "0", USDC_DECIMALS);
-      if (value <= 0n) throw new Error("Enter an amount.");
-      if (baseUsdc !== null && value > baseUsdc) throw new Error("Amount exceeds your Base USDC balance.");
-
-      setBridgeStage("Sending USDC on Base...");
-      await ensureChain(BASE_SOURCE.chainId);
-      const hash = await walletClient.writeContract({
-        address: BASE_SOURCE.usdc,
-        abi: erc20Abi,
-        functionName: "transfer",
-        args: [RELAYER_DEPOSIT as Address, value],
-        chain: walletClient.chain,
-        account: walletClient.account,
-      });
-      await basePublic.waitForTransactionReceipt({ hash });
-      setClaimTx(hash);
-
-      // Auto-claim: the relay wants ~10 Base confirmations (~20s); poll until
-      // it accepts, then surface the outcome.
-      setBridgeStage("Confirming on Base (about half a minute)...");
-      for (let i = 0; i < 24; i++) {
-        try {
-          const out = await submitClaim(hash);
-          if (out.done) {
-            setClaimResult(out.message);
-            pushToast({ kind: "success", title: "Bridge submitted", body: out.message });
-            setBridgeAmount("");
-            setBridgeStage(null);
-            refresh();
-            return;
-          }
-          setBridgeStage(out.message + "...");
-        } catch (err) {
-          setBridgeStage(null);
-          throw err;
-        }
-        await new Promise((r) => setTimeout(r, 8_000));
-      }
-      setBridgeStage(null);
-      setClaimResult("Deposit sent. Claim below with the transaction hash once Base confirms.");
-    });
-  const claim = () =>
-    run("Claim", async () => {
-      setClaimResult(null);
-      const tx = claimTx.trim();
-      if (!/^0x[0-9a-fA-F]{64}$/.test(tx)) throw new Error("Paste the full Base transaction hash (0x...).");
-      const out = await submitClaim(tx);
-      setClaimResult(out.message);
-      pushToast({ kind: out.done ? "success" : "info", title: out.done ? "Claim processed" : "Not ready yet", body: out.message });
-      if (out.done) refresh();
-    });
-
   const stat = (label: string, value: string) => (
     <div className="rounded-xl border border-edge bg-panel px-4 py-3">
       <p className="text-[11px] uppercase tracking-wide text-ink-3">{label}</p>
@@ -302,10 +218,19 @@ export function BridgePage() {
       <div>
         <h1 className="text-lg font-bold text-ink">Bridge USDC to Arc</h1>
         <p className="mt-1 text-[13px] text-ink-2">
-          Enter an amount and tap Bridge: your wallet sends USDC on Base and you receive native USDC on
-          Arc at the same address. Fee is 1%.
+          Move USDC from Base to Arc over Circle Gateway, the official Circle bridge. Your own wallet
+          deposits and mints; nobody custodies your funds. Deposits finalize in {BASE_SOURCE.finalityLabel},
+          then you mint native USDC on Arc.
         </p>
       </div>
+
+      {arcMintLive === false && (
+        <div className="rounded-xl border border-yellow-600/40 bg-yellow-500/10 px-4 py-3 text-[13px] text-yellow-200">
+          <span className="font-semibold">Minting to Arc is not live yet.</span> Circle has not enabled
+          Arc on Gateway. You can deposit now and it is held safely in your Circle balance, but the final
+          mint step will only work once Circle turns Arc on. Best to wait before bridging large amounts.
+        </div>
+      )}
 
       {!isConnected ? (
         <div className="rounded-xl border border-edge bg-panel px-4 py-8 text-center">
@@ -324,105 +249,73 @@ export function BridgePage() {
             {stat("USDC on Arc", arcUsdc === null ? "-" : fmt(arcUsdc))}
           </div>
 
-          {/* One-click bridge from the connected wallet. */}
-          <div className="rounded-xl border border-accent/30 bg-panel px-4 py-4">
-            <p className="text-[13px] font-semibold text-ink">Bridge from Base</p>
+          {/* Step 1: deposit */}
+          <div className="rounded-xl border border-edge bg-panel px-4 py-4">
+            <p className="text-[13px] font-semibold text-ink">1. Deposit on Base</p>
             <p className="mt-0.5 text-[12px] text-ink-3">
-              One tap: your wallet sends USDC on Base and the payout lands as native USDC on Arc at the
-              same address, minus a 1% fee.
+              Approves and deposits USDC into Circle's Gateway wallet on Base.
             </p>
             <div className="mt-3 flex gap-2">
               <input
-                value={bridgeAmount}
-                onChange={(e) => setBridgeAmount(e.target.value)}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
                 inputMode="decimal"
                 placeholder="0.00"
                 className="w-full rounded-lg border border-edge bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent"
               />
-              <Button
-                variant="ghost"
-                onClick={() => baseUsdc !== null && setBridgeAmount(formatUnits(baseUsdc, USDC_DECIMALS))}
-              >
+              <Button variant="ghost" onClick={() => baseUsdc !== null && setAmount(formatUnits(baseUsdc, USDC_DECIMALS))}>
                 Max
               </Button>
-              <Button variant="primary" disabled={busy !== null} onClick={bridge}>
-                {busy === "Bridge" ? "Bridging" : "Bridge"}
+              <Button variant="primary" disabled={busy !== null} onClick={deposit}>
+                {busy === "Deposit" ? "Depositing" : "Deposit"}
               </Button>
             </div>
-            {bridgeStage && <p className="mt-2 text-[12px] text-ink-2">{bridgeStage}</p>}
-            {claimResult && <p className="mt-2 break-all text-[12px] text-up">{claimResult}</p>}
-
-            <details className="mt-3">
-              <summary className="cursor-pointer text-[12px] text-ink-3">
-                Manual: send from an exchange or re-claim a deposit
-              </summary>
-              <p className="mt-2 text-[12px] text-ink-3">
-                Send USDC on Base to the bridge address below from any wallet you control (not from an
-                exchange account, since payouts return to the sending address), then claim with the
-                transaction hash.
-              </p>
-              <div className="mt-2 flex items-center gap-2 rounded-lg border border-edge bg-bg px-3 py-2">
-                <code className="min-w-0 flex-1 break-all font-mono text-[12px] text-ink">{RELAYER_DEPOSIT}</code>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(RELAYER_DEPOSIT);
-                    pushToast({ kind: "info", title: "Address copied" });
-                  }}
-                >
-                  Copy
-                </Button>
-              </div>
-              <div className="mt-2 flex gap-2">
-                <input
-                  value={claimTx}
-                  onChange={(e) => setClaimTx(e.target.value)}
-                  placeholder="Base tx hash (0x...)"
-                  className="w-full rounded-lg border border-edge bg-bg px-3 py-2 font-mono text-[12px] text-ink outline-none focus:border-accent"
-                />
-                <Button variant="primary" disabled={busy !== null} onClick={claim}>
-                  {busy === "Claim" ? "Claiming" : "Claim"}
-                </Button>
-              </div>
-            </details>
           </div>
 
-          {/* Recovery card for wallets holding a Circle Gateway balance from
-              earlier direct deposits; hidden otherwise. */}
-          {unified !== null && unified > 0n && (
-            <div className="rounded-xl border border-edge bg-panel px-4 py-4">
-              <p className="text-[13px] font-semibold text-ink">Your Circle Gateway balance</p>
-              <p className="mt-0.5 text-[12px] text-ink-3">
-                This wallet holds {fmt(unified)} USDC inside Circle Gateway from an earlier deposit. Mint
-                it to your wallet on Arc here once Circle enables Arc minting.
+          {/* Step 2: finality */}
+          <div className="rounded-xl border border-edge bg-panel px-4 py-4">
+            <p className="text-[13px] font-semibold text-ink">2. Wait for finality</p>
+            <p className="mt-0.5 text-[12px] text-ink-3">
+              Base deposits appear in your Gateway balance after {BASE_SOURCE.finalityLabel}. This page
+              refreshes it automatically.
+            </p>
+          </div>
+
+          {/* Step 3: mint */}
+          <div className="rounded-xl border border-edge bg-panel px-4 py-4">
+            <p className="text-[13px] font-semibold text-ink">3. Mint on Arc</p>
+            <p className="mt-0.5 text-[12px] text-ink-3">
+              Signs a free off-chain intent, fetches Circle's attestation, and mints native USDC to your
+              wallet on Arc.
+            </p>
+            {arcGasLow && (
+              <p className="mt-2 rounded-lg border border-edge bg-bg px-3 py-2 text-[12px] text-ink-3">
+                The mint transaction needs a little USDC on Arc for gas (well under a cent). Keep a small
+                amount on Arc, or bridge once, then future mints pay their own gas.
               </p>
-              {arcGasLow && (
-                <p className="mt-2 rounded-lg border border-edge bg-bg px-3 py-2 text-[12px] text-ink-3">
-                  No Arc gas? No problem: the site's relayer submits the mint for you, free.
-                </p>
-              )}
-              <div className="mt-3 flex gap-2">
-                <input
-                  value={mintAmount}
-                  onChange={(e) => setMintAmount(e.target.value)}
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  className="w-full rounded-lg border border-edge bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-                />
-                <Button variant="ghost" onClick={() => setMintAmount(formatUnits(unified, USDC_DECIMALS))}>
-                  Max
-                </Button>
-                <Button variant="primary" disabled={busy !== null} onClick={mint}>
-                  {busy === "Mint" ? "Minting" : "Mint on Arc"}
-                </Button>
-              </div>
+            )}
+            <div className="mt-3 flex gap-2">
+              <input
+                value={mintAmount}
+                onChange={(e) => setMintAmount(e.target.value)}
+                inputMode="decimal"
+                placeholder="0.00"
+                className="w-full rounded-lg border border-edge bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+              />
+              <Button variant="ghost" onClick={() => unified !== null && setMintAmount(formatUnits(unified, USDC_DECIMALS))}>
+                Max
+              </Button>
+              <Button variant="primary" disabled={busy !== null || arcMintLive === false} onClick={mint}>
+                {busy === "Mint" ? "Minting" : arcMintLive === false ? "Not live yet" : "Mint on Arc"}
+              </Button>
             </div>
-          )}
+          </div>
 
           <p className="text-[11px] text-ink-3">
-            The bridge is a relay run by arcx: deposits to the address above are forwarded into Circle
-            Gateway ({GATEWAY_WALLET.slice(0, 10)}...) and paid out on Arc as native USDC to the sending
-            address. Fee 1%. Native USDC on Arc: {ARC_USDC.slice(0, 10)}...
+            Steps: deposit on Base &gt; wait for finality &gt; mint on Arc. Contracts are Circle's
+            official Gateway: wallet {GATEWAY_WALLET.slice(0, 10)}... on Base, minter{" "}
+            {GATEWAY_MINTER.slice(0, 10)}... on Arc, native USDC {ARC_USDC.slice(0, 10)}... arcx does not
+            hold or route your funds.
           </p>
         </>
       )}
