@@ -6,9 +6,11 @@ import { StockLogo } from "../components/StockLogo";
 import { Field, inputClass } from "../components/ui";
 import { client } from "../lib/client";
 import { addresses, env } from "../lib/env";
+import { BRAND_FLAVOR } from "../lib/brand";
 import { STOCKS } from "../lib/v4/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
+import { LaunchBoard } from "./LaunchBoard";
 
 const LAUNCHED_TOPIC = keccak256(toHex("Launched(address,address,address,uint16,bytes32)"));
 const TOKEN_CREATED_TOPIC = keccak256(
@@ -26,6 +28,13 @@ const CREATOR_MODE = IS_STABLE || String(import.meta.env.VITE_FEE_MODE ?? "") ==
  * are fixed protocol rules.
  */
 export function LaunchPage() {
+  // The Robinhood-chain board brand pairs against any onchain token and pays
+  // holders 80% of fees in it; that flow has its own launch screen.
+  if (BRAND_FLAVOR === "stockprintr") return <LaunchBoard />;
+  return <LaunchDefault />;
+}
+
+function LaunchDefault() {
   const { isConnected, connectFirst } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
   const navigate = useNavigate();

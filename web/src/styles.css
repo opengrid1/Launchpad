@@ -605,6 +605,15 @@ button.bg-accent:disabled {
 .board-tabs { display: inline-flex; gap: 3px; border: 1px solid var(--color-edge); background: var(--color-panel); border-radius: 10px; padding: 3px; }
 .board-tabs button { border-radius: 7px; padding: 5px 12px; font-size: 12px; font-weight: 700; color: var(--color-ink-2); transition: all 0.15s ease; }
 .board-tabs button.on { background: var(--color-accent); color: var(--color-accent-fg); box-shadow: 0 0 14px -2px #00e67699; }
+.board-tabs-sm button { padding: 3px 10px; font-size: 11px; }
+
+/* Launch form card */
+.board-form {
+  border: 1px solid var(--color-edge); border-radius: 18px;
+  background: linear-gradient(180deg, #0b1119, var(--color-panel));
+  padding: 16px;
+}
+.board-launch { justify-content: center; }
 
 /* Spotlight on newest launch */
 .board-spotlight {
