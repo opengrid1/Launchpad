@@ -529,3 +529,117 @@ button.bg-accent:disabled {
 :root[data-brand="arc"] .blade-switch {
   background: linear-gradient(#0b111c, #080f18);
 }
+
+/* ============================================================
+   Robinhood chain (stockprintr): pump.fun-style dark neon board.
+   A distinct layout theme, not a recolor of the default grid.
+   ============================================================ */
+:root[data-brand="stockprintr"] {
+  --color-bg: #05070a;
+  --color-panel: #0b0f16;
+  --color-panel-2: #131a25;
+  --color-edge: #1c2634;
+  --color-edge-2: #2b3a4f;
+  --color-ink: #eafff4;
+  --color-ink-2: #8aa79b;
+  --color-ink-3: #556b62;
+  --color-accent: #00e676;
+  --color-accent-2: #34ff9b;
+  --color-accent-ink: #34ff9b;
+  --color-accent-fg: #00160b;
+  --shadow-card: inset 0 1px 0 #2b3a4f33, 0 2px 10px #00000099;
+  --shadow-card-hover: 0 0 0 1px #00e67640, 0 16px 40px -18px #00e6763a;
+}
+:root[data-brand="stockprintr"] body {
+  background:
+    radial-gradient(900px 500px at 50% -8%, #00e6761a, transparent 60%),
+    var(--color-bg);
+}
+:root[data-brand="stockprintr"] ::selection { background: #00e67640; }
+:root[data-brand="stockprintr"] button.bg-accent,
+:root[data-brand="stockprintr"] a.bg-accent {
+  box-shadow: 0 0 0 1px #00e67666, 0 10px 30px -12px #00e676aa;
+}
+
+/* Live activity ticker */
+.board-ticker {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--color-edge);
+  border-radius: 12px;
+  background: linear-gradient(#0b0f16, #090c12);
+  padding: 8px 10px; overflow: hidden;
+}
+.board-ticker-label {
+  flex-shrink: 0; font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em;
+  color: var(--color-accent-ink);
+  border: 1px solid #00e67640; border-radius: 999px; padding: 3px 8px;
+  text-shadow: 0 0 10px #00e67680;
+}
+.board-ticker-track { flex: 1; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.board-ticker-run { display: inline-flex; gap: 22px; white-space: nowrap; animation: board-marquee 34s linear infinite; }
+.board-ticker:hover .board-ticker-run { animation-play-state: paused; }
+.board-ticker-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+@keyframes board-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.board-dot {
+  width: 8px; height: 8px; border-radius: 999px; background: var(--color-accent);
+  box-shadow: 0 0 10px var(--color-accent); animation: board-pulse 1.6s ease-in-out infinite;
+}
+@keyframes board-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+.board-launch {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--color-accent); color: var(--color-accent-fg);
+  font-weight: 800; font-size: 13px; padding: 7px 14px; border-radius: 10px;
+  box-shadow: 0 0 0 1px #00e67666, 0 10px 26px -12px #00e676aa;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.board-launch:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px #00e676, 0 14px 32px -12px #00e676cc; }
+
+.board-input {
+  border-radius: 10px; border: 1px solid var(--color-edge);
+  background: var(--color-panel); color: var(--color-ink);
+}
+.board-input:focus { border-color: #00e67666; box-shadow: 0 0 0 3px #00e6761f; }
+
+.board-tabs { display: inline-flex; gap: 3px; border: 1px solid var(--color-edge); background: var(--color-panel); border-radius: 10px; padding: 3px; }
+.board-tabs button { border-radius: 7px; padding: 5px 12px; font-size: 12px; font-weight: 700; color: var(--color-ink-2); transition: all 0.15s ease; }
+.board-tabs button.on { background: var(--color-accent); color: var(--color-accent-fg); box-shadow: 0 0 14px -2px #00e67699; }
+
+/* Spotlight on newest launch */
+.board-spotlight {
+  position: relative; display: block; overflow: hidden;
+  border: 1px solid #00e67633; border-radius: 18px;
+  background: linear-gradient(120deg, #0c1420, #0a0e15);
+  padding: 16px;
+}
+.board-spotlight-glow {
+  position: absolute; inset: -40% -10% auto auto; width: 300px; height: 300px;
+  background: radial-gradient(circle, #00e6763a, transparent 60%); filter: blur(20px); pointer-events: none;
+}
+.board-spotlight-art { display: grid; place-items: center; width: 68px; height: 68px; flex-shrink: 0; overflow: hidden; border-radius: 16px; border: 1px solid #00e67640; background: var(--color-panel-2); box-shadow: 0 0 24px -6px #00e67666; }
+
+.board-fresh {
+  font-size: 9px; font-weight: 900; letter-spacing: 0.1em; color: var(--color-accent-fg);
+  background: var(--color-accent); border-radius: 999px; padding: 2px 7px;
+  box-shadow: 0 0 12px -1px #00e676cc;
+}
+.board-fresh-abs { position: absolute; left: 6px; top: 6px; }
+
+/* Board cards */
+.board-card {
+  display: block; overflow: hidden; border-radius: 14px;
+  border: 1px solid var(--color-edge); background: var(--color-panel);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+.board-card:hover { transform: translateY(-2px); border-color: #00e67666; box-shadow: var(--shadow-card-hover); }
+.board-card.is-fresh { border-color: #00e67655; animation: board-fresh-glow 2.4s ease-in-out infinite; }
+@keyframes board-fresh-glow {
+  0%,100% { box-shadow: 0 0 0 1px #00e67633, 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 1px #00e67688, 0 0 22px -6px #00e67699; }
+}
+.board-age {
+  position: absolute; right: 6px; top: 6px; font-size: 10px; font-weight: 600; color: #eafff4;
+  background: rgba(0,0,0,0.55); border-radius: 6px; padding: 2px 6px; backdrop-filter: blur(4px);
+}

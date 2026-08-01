@@ -5,6 +5,8 @@ import type { TokenSummary } from "@launchpad/sdk";
 
 import { Icon } from "../components/Icon";
 import { QuiverMark } from "../components/QuiverMark";
+import { BRAND_FLAVOR } from "../lib/brand";
+import { ExploreBoard } from "./ExploreBoard";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtNative, fmtUsd, shortAddr, timeAgo } from "../lib/format";
@@ -26,6 +28,13 @@ const SORTS: { id: Sort; label: string }[] = [
  * search field, a row of sort tabs, then a grid of token cards. Cream theme.
  */
 export function Explore() {
+  // The Robinhood-chain brand uses a distinct pump.fun-style live board rather
+  // than the default card grid.
+  if (BRAND_FLAVOR === "stockprintr") return <ExploreBoard />;
+  return <ExploreGrid />;
+}
+
+function ExploreGrid() {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [sort, setSort] = useState<Sort>("new");
