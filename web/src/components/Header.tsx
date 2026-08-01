@@ -69,8 +69,7 @@ function BoardHeader() {
   return (
     <header className="board-header sticky top-0 z-40">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:gap-3 sm:px-5">
-        <Link to="/" aria-label={BRAND.name} className="flex shrink-0 items-center gap-1.5">
-          <span className="board-logo-dot" />
+        <Link to="/" aria-label={BRAND.name} className="flex shrink-0 items-center">
           <span className="text-[13.5px] font-extrabold lowercase tracking-tight text-ink sm:text-[15px]">
             {BRAND.name}
             <span className="text-accent-ink">{BRAND.tld}</span>
