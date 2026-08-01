@@ -16,6 +16,15 @@ const TOKEN_CREATED_TOPIC = keccak256(
 
 type PairMode = "stock" | "custom";
 
+/** Clamp a typed fee to the 0-10% protocol range, rounded to whole basis
+ *  points (taxBps = pct * 100), so an empty or out-of-range entry is safe. */
+function clampTax(raw: string): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 0;
+  const clamped = Math.min(10, Math.max(0, n));
+  return Math.round(clamped * 100) / 100;
+}
+
 interface ResolvedToken {
   address: Address;
   symbol: string;
@@ -281,14 +290,28 @@ export function LaunchBoard() {
           </ul>
         </div>
 
-        {/* Trade tax */}
+        {/* Trade fee: slider for quick set, plus a custom exact-percent field.
+            Both feed the same value, clamped to the 0-10% protocol max. */}
         <div>
-          <div className="mb-2 flex items-baseline justify-between">
+          <div className="mb-2 flex items-center justify-between gap-3">
             <label className="text-[12.5px] font-semibold text-ink">Trade fee</label>
-            <span className="mono text-[13px] font-bold text-accent-ink">{taxPct}%</span>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number"
+                min={0}
+                max={10}
+                step={0.1}
+                value={taxPct}
+                onChange={(e) => setTaxPct(clampTax(e.target.value))}
+                aria-label="Custom trade fee percent"
+                className="board-input mono h-8 w-16 px-2 text-right text-[13px] font-bold text-accent-ink outline-none"
+              />
+              <span className="mono text-[13px] font-bold text-ink-3">%</span>
+            </div>
           </div>
-          <input type="range" min={0} max={10} step={1} value={taxPct} onChange={(e) => setTaxPct(Number(e.target.value))}
+          <input type="range" min={0} max={10} step={0.5} value={taxPct} onChange={(e) => setTaxPct(Number(e.target.value))}
             className="w-full accent-[color:var(--color-accent)]" />
+          <p className="mt-1 text-[11px] text-ink-3">Set any fee from 0% to 10%. This is what every trade pays.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
