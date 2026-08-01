@@ -680,3 +680,11 @@ button.bg-accent:disabled {
 
 .board-bottomnav { border-top: 1px solid var(--color-edge); background: rgba(5, 7, 10, 0.92); backdrop-filter: blur(12px); }
 .board-bottom-on { background: #00e6761a; box-shadow: inset 0 0 0 1px #00e67633; }
+
+/* Board stats strip + section labels + responsive pill labels */
+.board-stat {
+  border: 1px solid var(--color-edge); border-radius: 12px;
+  background: linear-gradient(#0b0f16, #090c12); padding: 9px 12px; overflow: hidden;
+}
+.board-hair { flex: 1; height: 1px; background: linear-gradient(90deg, var(--color-edge), transparent); }
+@media (max-width: 420px) { .board-pill-label { display: none; } .board-pillnav a { padding: 6px 10px; } }

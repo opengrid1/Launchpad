@@ -63,6 +63,7 @@ export function ExploreBoard() {
   }, [all, debounced, sort]);
 
   const newest = useMemo(() => [...all].sort((a, b) => b.createdAt - a.createdAt).slice(0, 14), [all]);
+  const dayVolume = useMemo(() => all.reduce((a, t) => a + BigInt(t.volume24hWei || "0"), 0n), [all]);
   const loading = !env.hideTokens && (lv || ln) && all.length === 0;
   const spotlight = newest[0];
 
@@ -71,19 +72,11 @@ export function ExploreBoard() {
       {/* Live activity ticker */}
       {newest.length > 0 && <Ticker tokens={newest} />}
 
-      {/* Header row: title + launch CTA */}
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="board-dot" />
-          <h1 className="text-[15px] font-extrabold tracking-tight text-ink">Live board</h1>
-          <span className="text-[12px] text-ink-3">{all.length} markets</span>
-        </div>
-        <Link to="/launch" className="board-launch">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          </svg>
-          Launch
-        </Link>
+      {/* Stats strip */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <BoardStat label="Markets" value={String(all.length)} live />
+        <BoardStat label="24h volume" value={fmtNative(dayVolume, 2)} />
+        <BoardStat label="Latest" value={spotlight ? `$${spotlight.symbol}` : "—"} accent />
       </div>
 
       {/* Spotlight on the newest launch */}
@@ -112,6 +105,17 @@ export function ExploreBoard() {
         </div>
       </div>
 
+      {/* Section label */}
+      {!loading && feed.length > 0 && (
+        <div className="mt-4 flex items-center gap-2">
+          <span className="board-dot" />
+          <h2 className="text-[12px] font-bold uppercase tracking-wide text-ink-2">
+            {debounced ? "Results" : sort === "new" ? "Fresh prints" : sort === "volume" ? "Most traded" : "Top market cap"}
+          </h2>
+          <span className="board-hair" />
+        </div>
+      )}
+
       {/* Board grid */}
       <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
         {loading
@@ -122,6 +126,20 @@ export function ExploreBoard() {
       </div>
 
       {!loading && feed.length === 0 && <BoardEmpty q={debounced} />}
+    </div>
+  );
+}
+
+function BoardStat({ label, value, live, accent }: { label: string; value: string; live?: boolean; accent?: boolean }) {
+  return (
+    <div className="board-stat">
+      <div className="flex items-center gap-1.5">
+        {live && <span className="board-dot" />}
+        <span className="text-[9.5px] uppercase tracking-wide text-ink-3">{label}</span>
+      </div>
+      <p className={`mono mt-0.5 truncate text-[16px] font-extrabold leading-tight ${accent ? "text-accent-ink" : "text-ink"}`}>
+        {value}
+      </p>
     </div>
   );
 }
