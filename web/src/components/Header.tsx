@@ -11,19 +11,131 @@ const TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
   { to: "/bridge", icon: "trade", label: "Bridge" },
 ];
 
+// The Robinhood-chain board brand has its own navigation and no bridge.
+const BOARD_TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
+  { to: "/", end: true, icon: "explore", label: "Board" },
+  { to: "/launch", icon: "launch", label: "Create" },
+];
+
+const IS_BOARD = BRAND_FLAVOR === "stockprintr";
+
 /**
  * Top bar; live wordmark left, HUD nav tabs inline on desktop, chain
  * indicator + Connect on the right. On mobile the tabs repeat in a fixed
- * bottom bar, thumb reachable.
+ * bottom bar, thumb reachable. The Robinhood board brand uses a distinct
+ * pump.fun-style nav instead (see BoardHeader).
  */
 export function Header() {
-  const { address, isConnected, connectFirst, disconnect, isPending } = useWallet();
+  if (IS_BOARD) return <BoardHeader />;
+  return <DefaultHeader />;
+}
 
+function Wallet({ board }: { board?: boolean }) {
+  const { address, isConnected, connectFirst, disconnect, isPending } = useWallet();
+  if (isConnected && address) {
+    return (
+      <button
+        onClick={() => disconnect()}
+        className={
+          board
+            ? "board-connect-ghost flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-semibold"
+            : "hud-cut flex items-center gap-1.5 border border-edge bg-panel px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:border-edge-2"
+        }
+        title="Disconnect"
+      >
+        <span className="dot-live h-1.5 w-1.5 rounded-full bg-up" />
+        {`${address.slice(0, 4)}…${address.slice(-4)}`}
+      </button>
+    );
+  }
+  return (
+    <button
+      onClick={connectFirst}
+      disabled={isPending}
+      className={
+        board
+          ? "board-connect px-4 py-1.5 text-[12.5px] font-extrabold disabled:opacity-60"
+          : "hud-cut bg-accent px-4 py-1.5 text-[12.5px] font-semibold text-accent-fg transition-colors disabled:opacity-60"
+      }
+    >
+      {isPending ? "Connecting…" : "Connect"}
+    </button>
+  );
+}
+
+/** Robinhood-chain pump.fun-style navigation: pill nav, neon Create CTA. */
+function BoardHeader() {
+  return (
+    <>
+      <header className="board-header sticky top-0 z-40">
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-5">
+          <Link to="/" aria-label={BRAND.name} className="flex shrink-0 items-center gap-2">
+            <span className="board-logo-dot" />
+            <span className="text-[15px] font-extrabold lowercase tracking-tight text-ink">
+              {BRAND.name}
+              <span className="text-accent-ink">{BRAND.tld}</span>
+            </span>
+          </Link>
+
+          {/* Pill nav */}
+          <nav className="board-pillnav ml-1 hidden sm:flex" aria-label="Primary">
+            {BOARD_TABS.map((t) => (
+              <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? "on" : "")}>
+                <Icon name={t.icon} size={14} />
+                {t.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="flex-1" />
+
+          {/* Live chain chip */}
+          <div className="board-chip hidden md:flex">
+            <span className="board-logo-dot !h-1.5 !w-1.5" />
+            {env.chainName}
+          </div>
+
+          {/* Create CTA (desktop) */}
+          <Link to="/launch" className="board-create hidden sm:inline-flex">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+            </svg>
+            Create
+          </Link>
+
+          <Wallet board />
+        </div>
+      </header>
+
+      {/* Mobile bottom tabs */}
+      <nav className="board-bottomnav fixed inset-x-0 bottom-0 z-40 sm:hidden" aria-label="Primary mobile">
+        <div className="mx-auto flex max-w-6xl items-stretch gap-2 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+          {BOARD_TABS.map((t) => (
+            <NavLink
+              key={t.to}
+              to={t.to}
+              end={t.end}
+              className={({ isActive }) =>
+                `flex flex-1 flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 text-[10px] font-bold transition-colors ${
+                  isActive ? "board-bottom-on text-accent-ink" : "text-ink-2"
+                }`
+              }
+            >
+              <Icon name={t.icon} size={18} />
+              {t.label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+    </>
+  );
+}
+
+function DefaultHeader() {
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-edge bg-bg/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-5">
-          {/* Brand; steadypads and arc are wordmark-only, others lead with the live dot */}
           <Link to="/" aria-label={BRAND.name} className="flex shrink-0 items-center gap-2">
             {BRAND_FLAVOR !== "steadypads" && BRAND_FLAVOR !== "arc" && (
               <span className="dot-live h-2 w-2 rounded-full bg-up shadow-[0_0_8px_var(--color-up)]" />
@@ -34,7 +146,6 @@ export function Header() {
             </span>
           </Link>
 
-          {/* Desktop nav */}
           <nav className="hidden items-center gap-1.5 sm:flex" aria-label="Primary">
             {TABS.map((t) => (
               <NavLink
@@ -55,38 +166,18 @@ export function Header() {
 
           <div className="flex-1" />
 
-          {/* Chain indicator */}
           <div className="hidden items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 md:flex">
             {env.chainName}
             <span aria-hidden>·</span>
             <span className="text-ion">{env.chainId}</span>
           </div>
 
-          {/* Wallet */}
           <div className="flex shrink-0 items-center">
-            {isConnected && address ? (
-              <button
-                onClick={() => disconnect()}
-                className="hud-cut flex items-center gap-1.5 border border-edge bg-panel px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:border-edge-2"
-                title="Disconnect"
-              >
-                <span className="dot-live h-1.5 w-1.5 rounded-full bg-up" />
-                {`${address.slice(0, 4)}…${address.slice(-4)}`}
-              </button>
-            ) : (
-              <button
-                onClick={connectFirst}
-                disabled={isPending}
-                className="hud-cut bg-accent px-4 py-1.5 text-[12.5px] font-semibold text-accent-fg transition-colors disabled:opacity-60"
-              >
-                {isPending ? "Connecting…" : "Connect"}
-              </button>
-            )}
+            <Wallet />
           </div>
         </div>
       </header>
 
-      {/* Mobile bottom tabs */}
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-edge bg-bg/90 backdrop-blur-md sm:hidden"
         aria-label="Primary mobile"
