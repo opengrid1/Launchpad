@@ -26,6 +26,9 @@ export const env = {
   // "dollar": no picker; every launch rewards the wrapped native (a dollar
   // on Stable), via the hook's dollar mode.
   rewardMode: String(import.meta.env.VITE_REWARD_MODE ?? "stock") as "stock" | "dollar",
+  // "buyback": fees split 50% creator / 40% official-token buyback-burn / 10%
+  // platform (no holder rewards). Anything else keeps the older reward modes.
+  feeMode: String(import.meta.env.VITE_FEE_MODE ?? "") as "" | "creator" | "buyback",
 };
 
 export const addresses: LaunchpadAddresses = {

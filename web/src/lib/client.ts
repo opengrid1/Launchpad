@@ -69,15 +69,15 @@ const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
 const IS_RH = String(import.meta.env.VITE_PROTOCOL ?? "") === "rh-v4";
 
 const RH: V4Addresses = {
-  factory: addr("VITE_RH_FACTORY", "0x6dE8C12324Cd13E40E813B390F8Eea38DBA299b0"),
-  hook: addr("VITE_RH_HOOK", "0x6D262ccc039D8E599522E6f455401B23C23Dc044"),
-  router: addr("VITE_RH_ROUTER", "0x24dAa4CAb5067DF5de45c08c255f05F8BB9cB9AD"),
+  factory: addr("VITE_RH_FACTORY", "0xC257a2e24af4CEA1320808070333b52bA9A4928A"),
+  hook: addr("VITE_RH_HOOK", "0x22B5ce4AD93c128FdE0A00d84E4b06Da11f48044"),
+  router: addr("VITE_RH_ROUTER", "0xEA3dC62EbB16CAEB848c316a89D54a90Fc348301"),
   poolManager: addr("VITE_V4_POOL_MANAGER", "0x8366a39cc670b4001a1121b8f6a443a643e40951"),
   weth: addr("VITE_V4_WETH", "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"),
   usdg: addr("VITE_V4_USDG", "0x5fc5360d0400a0fd4f2af552add042d716f1d168"),
   stateView: addr("VITE_V4_STATE_VIEW", "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b"),
 };
-const RH_START_BLOCK = BigInt(String(import.meta.env.VITE_RH_START_BLOCK ?? "25738395"));
+const RH_START_BLOCK = BigInt(String(import.meta.env.VITE_RH_START_BLOCK ?? "25787705"));
 const rh = IS_RH ? new RhClient(publicClient, RH, RH_START_BLOCK) : null;
 
 const stable = IS_STABLE

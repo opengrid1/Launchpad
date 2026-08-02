@@ -193,7 +193,7 @@ export function TokenPage() {
               <HeadStat label="Mcap" accent node={<AnimatedNumber value={Number(t.marketCapUsd)} format={(n) => fmtUsd(n)} className="tnum" />} />
               <HeadStat label="Volume" node={<span className="tnum">{fmtWeiUsd(t.volumeTotalWei, usdRate)}</span>} />
               <HeadStat label="Holders" node={<span className="tnum">{compact(t.holderCount)}</span>} />
-              {extra && rewardSym ? (
+              {extra && rewardSym && env.feeMode !== "buyback" ? (
                 <HeadStat
                   label={`${rewardSym} to holders`}
                   accent
@@ -308,6 +308,41 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
 
   if (!extra || /^0x0+$/.test(extra.stock)) return null;
   const stock = { symbol: sym, name: nm };
+
+  // Buyback model: no holder rewards. Show the split and a permissionless
+  // Harvest that realizes fees (50% creator / 40% buyback-burn / 10% platform).
+  if (env.feeMode === "buyback") {
+    const harvest = async () => {
+      setBusy("harvest");
+      try {
+        if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+        const hash = await v4Client.harvest(token.address as Address);
+        pushToast({ kind: "info", title: "Harvesting fees", txHash: hash });
+        await client.publicClient.waitForTransactionReceipt({ hash });
+        pushToast({ kind: "success", title: "Fees distributed", body: "Creator paid, buyback funded.", txHash: hash });
+      } catch (err) {
+        pushToast({ kind: "error", title: "Harvest failed", body: errorText(err) });
+      } finally {
+        setBusy(null);
+      }
+    };
+    return (
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-4 py-2.5">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-ink">
+            Trades against {stock.name} <span className="text-ink-3">({stock.symbol})</span>
+          </p>
+          <p className="mt-0.5 text-xs text-ink-3">
+            Every trade fee: <span className="text-accent-ink">50% to the creator</span> in {stock.symbol},
+            40% buys back and burns the official token, 10% to the platform.
+          </p>
+        </div>
+        <Button variant="ghost" disabled={busy !== null} onClick={harvest}>
+          {busy === "harvest" ? "Harvesting" : "Harvest fees"}
+        </Button>
+      </div>
+    );
+  }
 
   const run = async (kind: "claim" | "harvest") => {
     setBusy(kind);
