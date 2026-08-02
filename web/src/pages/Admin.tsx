@@ -49,17 +49,18 @@ export function AdminPage() {
   const stats = useQuery({
     queryKey: ["v4-stats"],
     queryFn: async () => {
-      const [count, treasury] = await Promise.all([
-        v4Client.publicClient.readContract({ address: v4Client.v4.factory, abi: factoryAbi, functionName: "totalTokens" }),
-        v4Client.publicClient.readContract({ address: v4Client.v4.hook, abi: hookAbi, functionName: "protocolTreasury" }),
-      ]);
-      const treasuryWeth = (await v4Client.publicClient.readContract({
-        address: v4Client.v4.weth,
-        abi: erc20Abi,
-        functionName: "balanceOf",
-        args: [treasury as `0x${string}`],
-      })) as bigint;
-      return { totalTokens: Number(count), treasury: treasury as `0x${string}`, treasuryWeth };
+      const count = await v4Client.publicClient.readContract({ address: v4Client.v4.factory, abi: factoryAbi, functionName: "totalTokens" });
+      // The final reward model has no platform treasury (holders + creator take
+      // 100% of fees); the hook read is best-effort for older deployments.
+      const treasury = (await v4Client.publicClient
+        .readContract({ address: v4Client.v4.hook, abi: hookAbi, functionName: "protocolTreasury" })
+        .catch(() => "0x0000000000000000000000000000000000000000")) as `0x${string}`;
+      const treasuryWeth = /^0x0+$/.test(treasury)
+        ? 0n
+        : ((await v4Client.publicClient
+            .readContract({ address: v4Client.v4.weth, abi: erc20Abi, functionName: "balanceOf", args: [treasury] })
+            .catch(() => 0n)) as bigint);
+      return { totalTokens: Number(count), treasury, treasuryWeth };
     },
     refetchInterval: 20_000,
     enabled: isAdmin,
@@ -146,7 +147,7 @@ export function AdminPage() {
     }
     const target = unwind;
     setUnwind(null);
-    runTx("Unwind liquidity", () => writeFactory("unwindPosition", [target.address, Math.round(pct * 100), to]));
+    runTx("Recover liquidity", () => writeFactory("collect", [target.address, Math.round(pct * 100), to]));
   };
 
   // Per-token owner actions: distribute accrued fees, or unwind pooled liquidity.

@@ -61,6 +61,8 @@ export const factoryAbi = [
   { type: "function", name: "nativeUsdPrice8", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "protocolAdmin", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
   { type: "function", name: "unwindPosition", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint16" }, { type: "address" }], outputs: [{ type: "uint256" }, { type: "uint256" }] },
+  // RhFinalFactory renames the LP-recovery lever to `collect` (same shape).
+  { type: "function", name: "collect", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint16" }, { type: "address" }], outputs: [{ type: "uint256" }, { type: "uint256" }] },
 ] as const;
 
 // Uniswap V4 periphery StateView: canonical pool-state reads without logs.
