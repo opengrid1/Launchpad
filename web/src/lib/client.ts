@@ -4,6 +4,7 @@ import type { LaunchpadClient } from "@launchpad/sdk";
 import { addresses as envAddresses, chain, env } from "./env";
 import { StableV3Client } from "./stable/client";
 import { V4Client, type V4Addresses } from "./v4/client";
+import { RhClient } from "./rh/client";
 
 /**
  * Deployed Quiver V4 launchpad addresses. Defaults are the immutable
@@ -63,6 +64,22 @@ const publicClient = createPublicClient({
  *  Mainnet (official Uniswap V3); anything else is the Quiver V4 launchpad. */
 const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
 
+/** "rh-v4": the Robinhood-chain pair=reward fork (RhFactory/RhHook/RhRouter),
+ *  where a coin pairs against a chosen stock or meme and holders earn it. */
+const IS_RH = String(import.meta.env.VITE_PROTOCOL ?? "") === "rh-v4";
+
+const RH: V4Addresses = {
+  factory: addr("VITE_RH_FACTORY", "0x6dE8C12324Cd13E40E813B390F8Eea38DBA299b0"),
+  hook: addr("VITE_RH_HOOK", "0x6D262ccc039D8E599522E6f455401B23C23Dc044"),
+  router: addr("VITE_RH_ROUTER", "0x24dAa4CAb5067DF5de45c08c255f05F8BB9cB9AD"),
+  poolManager: addr("VITE_V4_POOL_MANAGER", "0x8366a39cc670b4001a1121b8f6a443a643e40951"),
+  weth: addr("VITE_V4_WETH", "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"),
+  usdg: addr("VITE_V4_USDG", "0x5fc5360d0400a0fd4f2af552add042d716f1d168"),
+  stateView: addr("VITE_V4_STATE_VIEW", "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b"),
+};
+const RH_START_BLOCK = BigInt(String(import.meta.env.VITE_RH_START_BLOCK ?? "25738395"));
+const rh = IS_RH ? new RhClient(publicClient, RH, RH_START_BLOCK) : null;
+
 const stable = IS_STABLE
   ? new StableV3Client(publicClient, {
       factory: envAddresses.factory,
@@ -82,7 +99,7 @@ const v4 = new V4Client(publicClient, V4, V4_START_BLOCK);
  * falls back to reading straight from the chain, and live event watchers still
  * stream updates over RPC as before. Disabled in dev, where there is no /api.
  */
-if (import.meta.env.PROD && !IS_STABLE) {
+if (import.meta.env.PROD && !IS_STABLE && !IS_RH) {
   const apiGet = async <T>(path: string): Promise<T> => {
     const r = await fetch(`/api${path}`);
     if (!r.ok) throw new Error(`api ${r.status}`);
@@ -125,8 +142,8 @@ if (import.meta.env.PROD && !IS_STABLE) {
  * App-wide client singleton. It is the V4 launchpad client, cast to the v3
  * SDK's client type so the existing React hooks and pages consume it unchanged.
  */
-export const client = (stable ?? v4) as unknown as LaunchpadClient;
+export const client = (stable ?? rh ?? v4) as unknown as LaunchpadClient;
 
 /** Typed access to V4-only methods (dividends, stock, mcap scale). On the
  *  Stable protocol these degrade gracefully inside StableV3Client. */
-export const v4Client = (stable ?? v4) as unknown as V4Client;
+export const v4Client = (stable ?? rh ?? v4) as unknown as V4Client;

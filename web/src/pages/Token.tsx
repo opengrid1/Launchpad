@@ -148,6 +148,9 @@ export function TokenPage() {
   const usdRate = usdRateOf(t);
 
   const rewardStock = extra ? stockOf(extra.stock) : undefined;
+  const metaPair = (meta as any)?.pair as { symbol?: string } | undefined;
+  const rewardSym = rewardStock?.symbol ?? metaPair?.symbol;
+  const hasReward = !!extra && !/^0x0+$/.test(extra.stock);
 
   return (
     <div className="rise mx-auto max-w-6xl px-4 pb-24 sm:px-8">
@@ -159,7 +162,7 @@ export function TokenPage() {
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <span className="mono rounded-md bg-panel-2 px-2 py-0.5 text-[11px] font-semibold text-accent-ink/80">${t.symbol}</span>
             <CaChip address={t.address as Address} />
-            {rewardStock ? <RewardPill stock={extra!.stock} /> : null}
+            {hasReward ? <RewardPill stock={extra!.stock} fallbackSymbol={metaPair?.symbol} /> : null}
           </div>
         </div>
         <ShareMenu address={t.address as Address} symbol={t.symbol} name={t.name} />
@@ -190,9 +193,9 @@ export function TokenPage() {
               <HeadStat label="Mcap" accent node={<AnimatedNumber value={Number(t.marketCapUsd)} format={(n) => fmtUsd(n)} className="tnum" />} />
               <HeadStat label="Volume" node={<span className="tnum">{fmtWeiUsd(t.volumeTotalWei, usdRate)}</span>} />
               <HeadStat label="Holders" node={<span className="tnum">{compact(t.holderCount)}</span>} />
-              {extra && rewardStock ? (
+              {extra && rewardSym ? (
                 <HeadStat
-                  label={`${rewardStock.symbol} to holders`}
+                  label={`${rewardSym} to holders`}
                   accent
                   node={<span className="tnum">{fmtTokens(extra.totalRewards.toString())}</span>}
                 />
@@ -259,16 +262,19 @@ function HeadStat({ label, node, accent }: { label: string; node: React.ReactNod
 }
 
 /** A small "Holders earn {STOCK}" pill for the token identity bar. */
-function RewardPill({ stock }: { stock: Address }) {
+function RewardPill({ stock, fallbackSymbol }: { stock: Address; fallbackSymbol?: string }) {
   const s = stockOf(stock);
-  if (!s || /^0x0+$/.test(stock)) return null;
+  if (/^0x0+$/.test(stock)) return null;
+  const symbol = s?.symbol ?? fallbackSymbol;
+  if (!symbol) return null;
+  const name = s?.name ?? symbol;
   return (
     <span
-      title={`Holders earn ${s.name} (${s.symbol})`}
+      title={`Holders earn ${name} (${symbol})`}
       className="flex shrink-0 items-center gap-1.5 rounded-full border border-accent/30 bg-accent/[0.07] py-0.5 pl-0.5 pr-2 text-[11px] font-semibold text-accent-ink"
     >
-      <StockLogo address={s.address} symbol={s.symbol} size={16} />
-      Earns {s.symbol}
+      <StockLogo address={stock} symbol={symbol} size={16} />
+      Earns {symbol}
     </span>
   );
 }
@@ -284,7 +290,12 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
   const [pending, setPending] = useState(0n);
   const [busy, setBusy] = useState<"claim" | "harvest" | null>(null);
 
-  const stock = extra ? stockOf(extra.stock) : undefined;
+  // The reward = the coin's pair token (a stock or a meme). Prefer the curated
+  // stock name; fall back to the pair symbol recorded in the token metadata.
+  const stockRow = extra ? stockOf(extra.stock) : undefined;
+  const metaPair = (token.metadata as any)?.pair as { symbol?: string } | undefined;
+  const sym = stockRow?.symbol ?? metaPair?.symbol ?? token.symbol + "-pair";
+  const nm = stockRow?.name ?? metaPair?.symbol ?? "the paired token";
 
   const refresh = () => {
     if (isConnected && address)
@@ -295,7 +306,8 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
   };
   useEffect(refresh, [isConnected, address, token.address, extra?.totalRewards]);
 
-  if (!extra || !stock || /^0x0+$/.test(extra.stock)) return null;
+  if (!extra || /^0x0+$/.test(extra.stock)) return null;
+  const stock = { symbol: sym, name: nm };
 
   const run = async (kind: "claim" | "harvest") => {
     setBusy(kind);
@@ -328,8 +340,8 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
           Holders earn {stock.name} <span className="text-ink-3">({stock.symbol})</span>
         </p>
         <p className="mt-0.5 text-xs text-ink-3">
-          Every trade pays holders {stock.symbol}, split by how much you hold, delivered to wallets
-          automatically, no claiming needed. {fmtTokens(extra.totalRewards.toString())} {stock.symbol} paid out so far.
+          80% of every trade fee goes to holders in {stock.symbol}, split by how much you hold.
+          Auto-paid once you're owed $4, or claim anytime. {fmtTokens(extra.totalRewards.toString())} {stock.symbol} paid out so far.
         </p>
       </div>
       <div className="flex items-center gap-3">
