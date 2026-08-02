@@ -18,15 +18,22 @@ const BUY_PRESETS =
     ? ["1", "5", "10", "25"]
     : ["0.01", "0.05", "0.1", "0.5"];
 
-/** A small native-ETH badge, matched to the coin logo's size/shape. */
+/** The official Ethereum diamond mark, in a white coin badge. */
 function EthBadge({ size = 22 }: { size?: number }) {
   return (
     <span
-      className="grid shrink-0 place-items-center rounded-full bg-gradient-to-b from-[#8a92b2] to-[#454a75] text-white ring-1 ring-edge"
-      style={{ width: size, height: size, fontSize: size * 0.5 }}
-      aria-hidden
+      className="grid shrink-0 place-items-center overflow-hidden rounded-full bg-white ring-1 ring-edge"
+      style={{ width: size, height: size }}
+      aria-label="Ethereum"
     >
-      Ξ
+      <svg width={size * 0.56} height={size * 0.56} viewBox="0 0 256 417" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+        <path fill="#343434" d="M127.961 0l-2.795 9.5v275.668l2.795 2.79 127.962-75.638z" />
+        <path fill="#8C8C8C" d="M127.962 0L0 212.32l127.962 75.639V154.158z" />
+        <path fill="#3C3C3B" d="M127.961 312.187l-1.575 1.92v98.199l1.575 4.601L256 236.587z" />
+        <path fill="#8C8C8C" d="M127.962 416.905v-104.72L0 236.585z" />
+        <path fill="#141414" d="M127.961 287.958l127.96-75.637-127.96-58.162z" />
+        <path fill="#393939" d="M0 212.32l127.96 75.638v-133.8z" />
+      </svg>
     </span>
   );
 }
@@ -164,19 +171,19 @@ export function TradePanel({ token }: { token: TokenSummary }) {
   return (
     <div className="flex h-fit flex-col gap-2.5 rounded-2xl border border-edge bg-panel p-3.5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.6)]">
       {/* Buy / Sell segmented control */}
-      <div className="grid grid-cols-2 gap-1 rounded-xl bg-panel-2/60 p-1">
+      <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-edge bg-panel-2/50 p-1.5">
         <button
           onClick={() => { setSide("buy"); setAmount(""); }}
-          className={`h-9 rounded-lg text-[13px] font-bold transition-all ${
-            side === "buy" ? "bg-up text-black shadow-[0_0_20px_-6px_var(--color-up)]" : "text-ink-2 hover:text-ink"
+          className={`h-10 rounded-xl text-[14px] font-extrabold tracking-wide transition-all ${
+            side === "buy" ? "bg-[#16c784] text-black shadow-[0_6px_20px_-6px_#16c784]" : "text-ink-2 hover:text-ink"
           }`}
         >
           Buy
         </button>
         <button
           onClick={() => { setSide("sell"); setAmount(""); }}
-          className={`h-9 rounded-lg text-[13px] font-bold transition-all ${
-            side === "sell" ? "bg-down text-white shadow-[0_0_20px_-6px_var(--color-down)]" : "text-ink-2 hover:text-ink"
+          className={`h-10 rounded-xl text-[14px] font-extrabold tracking-wide transition-all ${
+            side === "sell" ? "bg-[#f6465d] text-white shadow-[0_6px_20px_-6px_#f6465d]" : "text-ink-2 hover:text-ink"
           }`}
         >
           Sell
@@ -274,10 +281,10 @@ export function TradePanel({ token }: { token: TokenSummary }) {
         <button
           onClick={submit}
           disabled={busy || !parsedAmount || parsedAmount === 0n || Boolean(insufficientFunds)}
-          className={`h-12 rounded-xl text-[15px] font-extrabold uppercase tracking-wide text-black transition-[filter] disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 disabled:shadow-none ${
+          className={`h-12 rounded-2xl text-[15px] font-extrabold uppercase tracking-wide transition-[filter] disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 disabled:shadow-none ${
             side === "buy"
-              ? "bg-up shadow-[0_0_26px_-8px_var(--color-up)] hover:brightness-110"
-              : "bg-down text-white shadow-[0_0_26px_-8px_var(--color-down)] hover:brightness-105"
+              ? "bg-[#16c784] text-black shadow-[0_10px_30px_-10px_#16c784] hover:brightness-110"
+              : "bg-[#f6465d] text-white shadow-[0_10px_30px_-10px_#f6465d] hover:brightness-105"
           }`}
         >
           {busy
