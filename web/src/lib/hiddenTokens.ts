@@ -18,6 +18,10 @@ const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   "4663:0xc031a2e1925c4d6ccfbfc9248ea98d7c798f4663", // MOON (pre-launch demo)
   "4663:0x809b86baa7f7323a9d4cdfa2b1d197cfe42b4663", // GREEN (pre-launch demo)
   "4663:0xa4690fcd485d9c00b6f49592454eaa5d32ed4663", // DIAM (pre-launch demo)
+  // RhFactory fork: early test launches mis-sized to a $1 pair price (replaced
+  // by correctly-priced relaunches PPRINT2/CCPRINT2).
+  "4663:0x78238f1d6cb47f9d1fa6cc51c9a6dcabb6ea4663", // PPRINT (wrong start price)
+  "4663:0xf6dfe56d943dc4001600896130b6ee76fb304663", // CCPRINT (wrong start price)
   // Stable Mainnet (988), steadypads validation launches
   "988:0x785c693d9efe13d88a5e566515258f4d2b093f11", // STEADY (validation launch)
   "988:0x854088037076ec7d3c41c1737513ebab3b46521f", // TEST

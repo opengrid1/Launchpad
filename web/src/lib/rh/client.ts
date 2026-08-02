@@ -768,8 +768,14 @@ export class RhClient {
     const wc = this.requireWallet();
     const creator = this.account();
     const metadataURI = params.metadataURI ?? "";
-    const pairUsdPrice8 =
-      params.pairUsdPrice8 ?? BigInt(Math.max(1, Math.round((await pairUsd(params.stock)) * 1e8)));
+    // Size the $3k start from the pair token's live USD price. Never launch on
+    // a bad price (it would mis-size the starting market cap), so require > 0.
+    let pairUsdPrice8 = params.pairUsdPrice8 ?? 0n;
+    if (pairUsdPrice8 <= 0n) {
+      const usd = await pairUsd(params.stock);
+      if (!(usd > 0)) throw new Error("Could not read the pair token price. Try again in a moment.");
+      pairUsdPrice8 = BigInt(Math.round(usd * 1e8));
+    }
     const args = encodeAbiParameters(
       [
         { type: "string" }, { type: "string" }, { type: "string" }, { type: "uint256" },
