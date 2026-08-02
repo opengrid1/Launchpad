@@ -1,0 +1,20 @@
+{
+  "network": "robinhood",
+  "chainId": 4663,
+  "startBlock": 25856657,
+  "deployer": "0xd6F0e8943421E19f3d800542A2aC056bA929c8ac",
+  "admin": "0xd6F0e8943421E19f3d800542A2aC056bA929c8ac",
+  "renounced": true,
+  "note": "Final reward model: coin pairs against a chosen stock/meme/ETH; that token is the holder reward. 80% holders / 20% creator. Ownership renounced; immutable admin keeps pause/collect/setFactory.",
+  "v4": {
+    "poolManager": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+    "weth": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+    "v3Router": "0xCaf681a66D020601342297493863E78C959E5cb2"
+  },
+  "contracts": {
+    "hookDeployer": "0x154B31f895DbBaDB47Cb2bc865Fa29f5109B7634",
+    "hook": "0x7292F6675968B3ffa1a65a4f71C9444EC7714044",
+    "factory": "0x531Db56e6461261F03b8fCebc4A9BFbCBD17683d",
+    "router": "0xf4FDB26dfC07D8ce13C44E31f0185D5e2B3D687B"
+  }
+}
