@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { erc20Abi, getAddress, isAddress, keccak256, toHex, type Address } from "viem";
 
@@ -56,6 +56,7 @@ export function LaunchBoard() {
   });
   const [pairMode, setPairMode] = useState<PairMode>("stock");
   const [stock, setStock] = useState<Address>(STOCKS[0].address);
+  const [stockQuery, setStockQuery] = useState("");
   const [customInput, setCustomInput] = useState("");
   const [custom, setCustom] = useState<ResolvedToken | null>(null);
   const [customState, setCustomState] = useState<"idle" | "loading" | "bad">("idle");
@@ -72,6 +73,13 @@ export function LaunchBoard() {
           const s = STOCKS.find((x) => x.address === stock)!;
           return { address: s.address, symbol: s.symbol, name: s.name, decimals: 18 };
         })();
+
+  // Filter the full stock list (94 tokens) by ticker or company name.
+  const stockList = useMemo(() => {
+    const q = stockQuery.trim().toLowerCase();
+    if (!q) return STOCKS;
+    return STOCKS.filter((s) => s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
+  }, [stockQuery]);
 
   const set =
     (key: keyof typeof form) =>
@@ -239,21 +247,33 @@ export function LaunchBoard() {
           </div>
 
           {pairMode === "stock" ? (
-            <div className="grid grid-cols-5 gap-1.5">
-              {STOCKS.map((s) => (
-                <button
-                  type="button"
-                  key={s.address}
-                  onClick={() => setStock(s.address)}
-                  title={s.name}
-                  className={`flex flex-col items-center gap-1 rounded-xl border py-2 text-[11px] font-bold transition-colors ${
-                    stock === s.address ? "border-accent bg-accent/10 text-accent-ink" : "border-edge text-ink-2 hover:border-accent/50 hover:text-ink"
-                  }`}
-                >
-                  <StockLogo address={s.address} symbol={s.symbol} size={22} />
-                  {s.symbol}
-                </button>
-              ))}
+            <div>
+              <input
+                value={stockQuery}
+                onChange={(e) => setStockQuery(e.target.value)}
+                placeholder={`Search ${STOCKS.length} stocks by ticker or name`}
+                type="search"
+                className="board-input mb-2 h-9 w-full px-3 text-[12.5px] outline-none"
+              />
+              <div className="grid max-h-56 grid-cols-4 gap-1.5 overflow-y-auto pr-0.5 sm:grid-cols-5">
+                {stockList.map((s) => (
+                  <button
+                    type="button"
+                    key={s.address}
+                    onClick={() => setStock(s.address)}
+                    title={`${s.name} · $${s.usd}`}
+                    className={`flex flex-col items-center gap-1 rounded-xl border py-2 text-[11px] font-bold transition-colors ${
+                      stock === s.address ? "border-accent bg-accent/10 text-accent-ink" : "border-edge text-ink-2 hover:border-accent/50 hover:text-ink"
+                    }`}
+                  >
+                    <StockLogo address={s.address} symbol={s.symbol} size={22} />
+                    {s.symbol}
+                  </button>
+                ))}
+                {stockList.length === 0 && (
+                  <p className="col-span-full py-6 text-center text-[12px] text-ink-3">No stock matches "{stockQuery}".</p>
+                )}
+              </div>
             </div>
           ) : (
             <div>

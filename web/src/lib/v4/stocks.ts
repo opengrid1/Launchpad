@@ -1,30 +1,143 @@
 import type { Address } from "viem";
 
-/** Tokenized stocks holders can earn, curated on the factory. */
+/** A Robinhood tokenized stock usable as a launch pair + holder reward. The
+ *  full set of official Robinhood Chain stock tokens (icon + "Robinhood Token"
+ *  verified onchain via Blockscout). `usd` is a snapshot price used only as a
+ *  fallback; launches read the live price with `fetchStockUsd`. */
 export interface Stock {
   symbol: string;
   name: string;
   address: Address;
+  /** Snapshot USD price (fallback for the live fetch). */
+  usd: number;
 }
 
+/** All 94 official Robinhood tokenized stocks, most-held first. Every
+ *  entry is 18 decimals and has a live USD price on Robinhood Chain. */
 export const STOCKS: Stock[] = [
-  { symbol: "NVDA", name: "NVIDIA", address: "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC" },
-  { symbol: "AAPL", name: "Apple", address: "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9" },
-  { symbol: "TSLA", name: "Tesla", address: "0x322F0929c4625eD5bAd873c95208D54E1c003b2d" },
-  { symbol: "GOOGL", name: "Alphabet", address: "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3" },
-  { symbol: "AMZN", name: "Amazon", address: "0x12f190a9F9d7D37a250758b26824B97CE941bF54" },
-  { symbol: "AMD", name: "AMD", address: "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC" },
-  { symbol: "MU", name: "Micron", address: "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD" },
-  { symbol: "SNDK", name: "Sandisk", address: "0xB90A19fF0Af67f7779afF50A882A9CfF42446400" },
-  { symbol: "SPCX", name: "SpaceX", address: "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa" },
-  { symbol: "USO", name: "US Oil Fund", address: "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344" },
+  { symbol: "NVDA", name: "NVIDIA", address: "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC", usd: 200.24 },
+  { symbol: "AAPL", name: "Apple", address: "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9", usd: 310.36 },
+  { symbol: "SPCX", name: "Space Exploration Technologies Corp", address: "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa", usd: 108.83 },
+  { symbol: "GOOGL", name: "Alphabet Class A", address: "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3", usd: 355.49 },
+  { symbol: "TSLA", name: "Tesla", address: "0x322F0929c4625eD5bAd873c95208D54E1c003b2d", usd: 312.22 },
+  { symbol: "AMD", name: "AMD", address: "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC", usd: 481.32 },
+  { symbol: "AMZN", name: "Amazon", address: "0x12f190a9F9d7D37a250758b26824B97CE941bF54", usd: 271.29 },
+  { symbol: "MSFT", name: "Microsoft", address: "0xe93237C50D904957Cf27E7B1133b510C669c2e74", usd: 461.39 },
+  { symbol: "PLTR", name: "Palantir Technologies", address: "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A", usd: 123.47 },
+  { symbol: "META", name: "Meta Platforms", address: "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35", usd: 556.03 },
+  { symbol: "MU", name: "Micron Technology", address: "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD", usd: 837.86 },
+  { symbol: "COIN", name: "Coinbase", address: "0x6330D8C3178a418788dF01a47479c0ce7CCF450b", usd: 146.73 },
+  { symbol: "INTC", name: "Intel", address: "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681", usd: 92.07 },
+  { symbol: "ORCL", name: "Oracle", address: "0xb0992820E760d836549ba69BC7598b4af75dEE03", usd: 130.16 },
+  { symbol: "CRWV", name: "CoreWeave", address: "0x5f10A1C971B69e47e059e1dC91901B59b3fB49C3", usd: 71.3 },
+  { symbol: "SPY", name: "SPDR S&P 500 ETF Trust", address: "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C", usd: 749.08 },
+  { symbol: "SNDK", name: "Sandisk Corporation", address: "0xB90A19fF0Af67f7779afF50A882A9CfF42446400", usd: 1244.15 },
+  { symbol: "USAR", name: "USA Rare Earth", address: "0xd917B029C761D264c6A312BBbcDA868658eF86a6", usd: 15.09 },
+  { symbol: "BE", name: "Bloom Energy", address: "0x822CC93fFD030293E9842c30BBD678F530701867", usd: 211.77 },
+  { symbol: "GME", name: "GameStop", address: "0x1b0E319c6A659F002271B69dB8A7df2F911c153E", usd: 21.72 },
+  { symbol: "QQQ", name: "Invesco QQQ", address: "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68", usd: 692.2 },
+  { symbol: "COST", name: "Costco", address: "0x4EA005168D7F09a7A0Ba9D1DEf21a479950E44C2", usd: 954.83 },
+  { symbol: "SLV", name: "iShares Silver Trust", address: "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f", usd: 52.54 },
+  { symbol: "NFLX", name: "Netflix", address: "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8", usd: 73.21 },
+  { symbol: "AMAT", name: "Applied Materials", address: "0x36046893810a7E7fCE501229d57dc3FC8c8716d0", usd: 497.43 },
+  { symbol: "RDDT", name: "Reddit", address: "0x05b37Fb53A299a1b874A619e1c4C404D52C36F4C", usd: 138.58 },
+  { symbol: "USO", name: "United States Oil Fund", address: "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344", usd: 124.77 },
+  { symbol: "LLY", name: "Eli Lilly", address: "0x8005d266423c7ea827372c9c864491e5786600ea", usd: 1158.07 },
+  { symbol: "DELL", name: "Dell", address: "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd", usd: 401.13 },
+  { symbol: "XOM", name: "ExxonMobil Holdings Corporation", address: "0xf9B46d3D1B22199D4D1025a9cEDB540A33F1a2d5", usd: 152.61 },
+  { symbol: "AVGO", name: "Broadcom", address: "0x156E175DD063a8cE274C50654eF40e0032b3fbcF", usd: 376.24 },
+  { symbol: "QCOM", name: "Qualcomm", address: "0x0f17206447090e464C277571124dD2688E48AEA9", usd: 150.05 },
+  { symbol: "MRVL", name: "Marvell Technology", address: "0x62fd0668e10D8B72339BE2DCF7643001688ff13B", usd: 189.68 },
+  { symbol: "CRCL", name: "Circle Internet Group", address: "0xdF0992E440dD0be65BD8439b609d6D4366bf1CB5", usd: 61.38 },
+  { symbol: "TSM", name: "Taiwan Semiconductor Manufacturing", address: "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA", usd: 408.78 },
+  { symbol: "MSTR", name: "Strategy Inc.", address: "0xec262a75e413fAfD0dF80480274532C79D42da09", usd: 93.05 },
+  { symbol: "SGOV", name: "iShares 0-3 Month Treasury Bond ETF", address: "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5", usd: 100.8 },
+  { symbol: "RBLX", name: "Roblox", address: "0xF0C4BF4C582cb3836e98394b1d4e7B7281101bE8", usd: 35.71 },
+  { symbol: "BABA", name: "Alibaba", address: "0xad25Ac6C84D497db898fa1E8387bf6Af3532a1c4", usd: 118.34 },
+  { symbol: "ASML", name: "ASML Holding NV", address: "0x47F93d52cBeC7C6D2CfC080e154002370a60dAEA", usd: 1662.92 },
+  { symbol: "TTWO", name: "Take-Two Interactive Software", address: "0x5e81213613b6B86EaB4c6c50d718d34359459786", usd: 248.52 },
+  { symbol: "RKLB", name: "Rocket Lab Corporation", address: "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2", usd: 67.03 },
+  { symbol: "PENG", name: "Penguin Solutions", address: "0x9b23573b156B52565012F5cE02CDF60AFBaa70Be", usd: 48.55 },
+  { symbol: "NBIS", name: "Nebius Group", address: "0x9D9c6684F596F66a64C030B93A886D51Fd4D7931", usd: 205.34 },
+  { symbol: "APLD", name: "Applied Digital", address: "0xb8DBf92F9741c9ac1c32115E78581f23509916FD", usd: 27.03 },
+  { symbol: "NU", name: "Nu", address: "0x408c14038a04f7bD235329E26d2bf569ee20e250", usd: 14.25 },
+  { symbol: "NNE", name: "Nano Nuclear Energy", address: "0xBEF75684C43c4ea7BD18Dd532a2244674Ee8b926", usd: 14.77 },
+  { symbol: "SMCI", name: "Super Micro Computer", address: "0xc01aA1fECeC0605b13bc84874ff7256C0f5F562a", usd: 27.03 },
+  { symbol: "AAOI", name: "Applied Optoelectronics", address: "0x521Cf887E6531c6F667b5BC4D896E5d9bfE8EB2E", usd: 121.82 },
+  { symbol: "QUBT", name: "Quantum Computing", address: "0x59818904ab4cE163b3cE4FfB64f2D6Ca02c434B4", usd: 8.52 },
+  { symbol: "EWY", name: "iShares MSCI South Korea fund", address: "0x7f0aBeF0C07280F82c6a08ead09dEd6BAE2C13Fc", usd: 161.82 },
+  { symbol: "IONQ", name: "IonQ", address: "0x558378E000D634A36593E338eBacdd6207640EfE", usd: 35.35 },
+  { symbol: "IREN", name: "IREN Limited", address: "0xF0AB0c93bE6F41369d302e55db1A96b3c430212D", usd: 36.49 },
+  { symbol: "SOFI", name: "SoFi Technologies", address: "0x98E75885157C80992A8D41b696D8c9C6Fb30A926", usd: 16.81 },
+  { symbol: "SPMO", name: "Invesco S&P 500 Momentum ETF", address: "0xAd622320e520de39e72d41EF07438C3Fd3354875", usd: 143.28 },
+  { symbol: "ASTS", name: "AST SpaceMobile", address: "0x1AF6446f07eb1d97c546AFC8c9544cBDF3AD5137", usd: 58.28 },
+  { symbol: "RGTI", name: "Rigetti Computing", address: "0x284358abc07F9359f19f4b5b4aC91901Be2597Ba", usd: 17.5 },
+  { symbol: "UPS", name: "UPS", address: "0xf23250dac154D05Bb671CB0d0eBEf3c635c79CE2", usd: 106.1 },
+  { symbol: "RDW", name: "Redwire", address: "0x92Ef19E82bD8fF36661DE838D5eaE7e5CEF0EfFE", usd: 9.42 },
+  { symbol: "LITE", name: "Lumentum", address: "0x8eF20885F94e3D9bc7eB3080279188Bd5ED7c08C", usd: 766.79 },
+  { symbol: "SHOP", name: "Shopify", address: "0xF53F66751B1Eff985311b693531E3290F600c410", usd: 115.26 },
+  { symbol: "SOXX", name: "iShares Semiconductor ETF", address: "0x75742c18BC1f1C5c5f448f4C9D9C6F66dafAAa38", usd: 569.82 },
+  { symbol: "CLSK", name: "CleanSpark", address: "0xcBB95BBF36099d34dA091dc6Fa6F49EfA257Cee3", usd: 13.65 },
+  { symbol: "XLK", name: "State Street Technology Select Sector SPDR ETF", address: "0x15Cd20759CE7F3285c29A319dE2D1A2e098c6f43", usd: 173.86 },
+  { symbol: "DDOG", name: "Datadog", address: "0x27c99fBde9D0d2AA4f4Bfb4943f237843DdF6958", usd: 269.07 },
+  { symbol: "F", name: "Ford Motor", address: "0x25C288E6D899b9BC30160965aD9644c67e73bE0C", usd: 15.33 },
+  { symbol: "QBTS", name: "D-Wave Quantum", address: "0xC583c60aeF9Dc401Da72cEC1B404743a93cea1Cc", usd: 20.76 },
+  { symbol: "CCL", name: "Carnival Corporation", address: "0x9651342CeA770aE9a2969Ba2A52611523146aef9", usd: 27.83 },
+  { symbol: "POET", name: "POET Technologies", address: "0xcf6B2D875361be807EAfa57458c80f28521F9333", usd: 7.18 },
+  { symbol: "LULU", name: "Lululemon", address: "0x4e62068525Ab11FE768e29dfD00ef909B9803016", usd: 118.82 },
+  { symbol: "LUNR", name: "Intuitive Machines", address: "0xa5D4968421bA94814Be3B136b15cf422101aC1a3", usd: 12.26 },
+  { symbol: "MXL", name: "MaxLinear", address: "0x48961813349333209994750ffA89b3c5C22eC969", usd: 64.65 },
+  { symbol: "XNDU", name: "Xanadu Quantum", address: "0xA8eB3BCcbf2017eE7CBfb652eB51CF2E1B153289", usd: 10.84 },
+  { symbol: "NOW", name: "ServiceNow", address: "0x0C3260aF4B8f13a69c4c2dFb84fD667890CDFa14", usd: 110.26 },
+  { symbol: "TSEM", name: "Tower Semiconductor", address: "0x89776d4Cd68193597A2fC132cfaC1fDe36CCeA8a", usd: 250.4 },
+  { symbol: "GLW", name: "Corning", address: "0x7c04E6A3368F2A1DE3874f0e80d2e0A1a9915da6", usd: 126.51 },
+  { symbol: "BA", name: "Boeing", address: "0x4D21483a44Bf67a86b77E3dA301411880797D452", usd: 213.98 },
+  { symbol: "FLNC", name: "Fluence Energy", address: "0x282e87451E10fA6679BC7D76C69BE44cD3fC777C", usd: 13.17 },
+  { symbol: "WDAY", name: "Workday", address: "0x82DA4646242e1D962e96e932269Dc644c94a9CaA", usd: 165.54 },
+  { symbol: "ELF", name: "e.l.f. Beauty", address: "0x39EC44Bee4F6A116c6F9B8De566848a985C53C60", usd: 81.36 },
+  { symbol: "INOD", name: "Innodata", address: "0xf1953DAB6FaD537488d5A022361FfAa8B4c95eC6", usd: 61.61 },
+  { symbol: "RIVN", name: "Rivian Automotive", address: "0xB1BF26c1D20ff267A4f93550d1E0d06ac40a114B", usd: 17.29 },
+  { symbol: "CELH", name: "Celsius", address: "0x8cF07C5A878945185d327aAa6e33FAa95F95e7bF", usd: 27.71 },
+  { symbol: "NVTS", name: "Navitas Semiconductor", address: "0xbE6702d7b70315376dC48a3293f24f0982F86386", usd: 10.84 },
+  { symbol: "CBRS", name: "Cerebras Systems", address: "0x5c90450Bbb4273D7b2f17CF6917AEB237A569679", usd: 194.84 },
+  { symbol: "PR", name: "Permian Resources", address: "0x4189F0c66EBBB0bfeF1C31f763131361EF32f77C", usd: 20.66 },
+  { symbol: "UMC", name: "United Microelectronics", address: "0x0E6e67Ba88e7b5d9B67636A215c76779B948dE79", usd: 24.6 },
+  { symbol: "ZS", name: "Zscaler", address: "0x7dc013eB55e436f30d7ED1AFE4E36d6e45e3c3f7", usd: 154.14 },
+  { symbol: "INTU", name: "Intuit", address: "0x56d23beE5f41A7120170b0c603Dae30128e460e9", usd: 313.12 },
+  { symbol: "FUTU", name: "Futu Holdings", address: "0xeB30663bDFf0622Ef4e4E5cBb4E975F19f33f51D", usd: 102.47 },
+  { symbol: "MDB", name: "MongoDB", address: "0xDdf2266b79abf0B48898959B0ed6E6adf512be74", usd: 293.63 },
+  { symbol: "ZM", name: "Zoom", address: "0x44c4F142009036cF477eD2d09932051843137CF1", usd: 94.29 },
+  { symbol: "P", name: "Everpure", address: "0x1Cdad396DB64BDa184d5182A97Dd9B3C62100b7D", usd: 72.38 },
+  { symbol: "SATS", name: "EchoStar", address: "0x95052ddcd5DC25641657424A8Cf04834997E1730", usd: 99.71 },
 ];
 
+const BY_ADDR = new Map(STOCKS.map((s) => [s.address.toLowerCase(), s]));
+
 export function stockOf(address: string): Stock | undefined {
-  return STOCKS.find((s) => s.address.toLowerCase() === address.toLowerCase());
+  return BY_ADDR.get(address.toLowerCase());
 }
 
 /** Official Robinhood on-chain logo for a stock token, by its contract address. */
 export function stockLogo(address: string): string {
   return `https://cdn.robinhood.com/ncw_assets/logos/${address.toLowerCase()}.png`;
+}
+
+/** Live USD price of a Robinhood stock token from Blockscout, falling back to
+ *  the bundled snapshot (then 0) if the explorer is unreachable. Used to size
+ *  the $3,000 launch market cap accurately at launch time. */
+export async function fetchStockUsd(address: string): Promise<number> {
+  try {
+    const r = await fetch(
+      `https://robinhoodchain.blockscout.com/api/v2/tokens/${address}`,
+      { headers: { accept: "application/json" } },
+    );
+    if (r.ok) {
+      const j = await r.json();
+      const v = Number(j?.exchange_rate);
+      if (Number.isFinite(v) && v > 0) return v;
+    }
+  } catch {
+    // fall through to snapshot
+  }
+  return stockOf(address)?.usd ?? 0;
 }
