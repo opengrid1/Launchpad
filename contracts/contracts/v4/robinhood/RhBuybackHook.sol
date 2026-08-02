@@ -71,6 +71,17 @@ contract RhBuybackHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     /// @notice Uniswap V3 router for the pair -> mainPair buyback hop.
     ISwapRouterV3 public immutable v3Router;
 
+    /// @notice Immutable admin that keeps its powers after `renounceOwnership()`.
+    ///         Gates the admin setters below so ownership can be renounced (the
+    ///         explorer shows owner() == 0) while this hardcoded, source-visible
+    ///         address still administers the hook.
+    address public immutable admin;
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "not admin");
+        _;
+    }
+
     mapping(PoolId => PoolConfig) internal _config;
     mapping(address => PoolId) internal _poolOf;
     /// @notice token => launched-coin fees awaiting harvest (from buys).
@@ -99,11 +110,12 @@ contract RhBuybackHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     error NotRegistered();
     error NoMainToken();
 
-    constructor(IPoolManager pm, address owner_, address feeRecipient_, ISwapRouterV3 v3Router_)
+    constructor(IPoolManager pm, address owner_, address admin_, address feeRecipient_, ISwapRouterV3 v3Router_)
         BaseHook(pm)
         Ownable(owner_)
     {
-        require(feeRecipient_ != address(0), "fee=0");
+        require(feeRecipient_ != address(0) && admin_ != address(0), "zero");
+        admin = admin_;
         feeRecipient = feeRecipient_;
         v3Router = v3Router_;
     }
@@ -112,13 +124,13 @@ contract RhBuybackHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     // Admin
     // ---------------------------------------------------------------------
 
-    function setFactory(address factory_) external onlyOwner {
+    function setFactory(address factory_) external onlyAdmin {
         require(factory_ != address(0), "factory=0");
         factory = factory_;
         emit FactorySet(factory_);
     }
 
-    function setFeeRecipient(address recipient) external onlyOwner {
+    function setFeeRecipient(address recipient) external onlyAdmin {
         require(recipient != address(0), "fee=0");
         feeRecipient = recipient;
         emit FeeRecipientSet(recipient);
@@ -126,7 +138,7 @@ contract RhBuybackHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
 
     /// @notice Set the official token bought back and burned. Intended to be the
     ///         first coin launched on the factory.
-    function setMainToken(address token) external onlyOwner {
+    function setMainToken(address token) external onlyAdmin {
         require(token != address(0), "main=0");
         mainToken = token;
         emit MainTokenSet(token);

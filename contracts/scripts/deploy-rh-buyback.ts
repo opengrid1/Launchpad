@@ -20,8 +20,11 @@ function mineFlags(deployer: string, initCodeHash: string) {
 async function main() {
   const [signer] = await ethers.getSigners();
   const treasury = process.env.TREASURY ?? "0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b";
-  const protocolAdmin = process.env.PROTOCOL_ADMIN ?? treasury;
-  console.log("deployer:", signer.address, "| feeRecipient:", treasury, "| protocolAdmin:", protocolAdmin);
+  // The hardcoded immutable admin that survives renounceOwnership(). Defaults to
+  // the deployer so the platform keeps operational control post-renounce.
+  const admin = process.env.ADMIN ?? signer.address;
+  const renounce = process.env.RENOUNCE !== "0";
+  console.log("deployer:", signer.address, "| feeRecipient:", treasury, "| admin:", admin, "| renounce:", renounce);
   console.log("balance:", ethers.formatEther(await ethers.provider.getBalance(signer.address)), "ETH");
 
   const c2 = await (await ethers.getContractFactory("HookDeployer")).deploy();
@@ -30,8 +33,8 @@ async function main() {
 
   const Hook = await ethers.getContractFactory("RhBuybackHook");
   const hookArgs = ethers.AbiCoder.defaultAbiCoder().encode(
-    ["address", "address", "address", "address"],
-    [POOL_MANAGER, signer.address, treasury, V3_ROUTER],
+    ["address", "address", "address", "address", "address"],
+    [POOL_MANAGER, signer.address, admin, treasury, V3_ROUTER],
   );
   const hookInit = ethers.concat([Hook.bytecode, hookArgs]);
   console.log("mining hook flags…");
@@ -40,7 +43,7 @@ async function main() {
   console.log("RhBuybackHook:", hookAddr);
   const hook = await ethers.getContractAt("RhBuybackHook", hookAddr);
 
-  const factory = await (await ethers.getContractFactory("RhBuybackFactory")).deploy(signer.address, protocolAdmin, POOL_MANAGER, hookAddr);
+  const factory = await (await ethers.getContractFactory("RhBuybackFactory")).deploy(signer.address, admin, POOL_MANAGER, hookAddr);
   await factory.waitForDeployment();
   const factoryAddr = await factory.getAddress();
   console.log("RhBuybackFactory:", factoryAddr);
@@ -53,14 +56,23 @@ async function main() {
   const routerAddr = await router.getAddress();
   console.log("RhRouter:", routerAddr);
 
+  // Renounce Ownable ownership on both: owner() becomes 0x0 (reads as renounced)
+  // while the immutable `admin` keeps every admin power.
+  if (renounce) {
+    await (await hook.renounceOwnership()).wait();
+    await (await factory.renounceOwnership()).wait();
+    console.log("ownership renounced (owner=0x0); admin retains control:", admin);
+  }
+
   const out = {
     network: "robinhood",
     chainId: 4663,
     startBlock: await ethers.provider.getBlockNumber(),
     deployer: signer.address,
     feeRecipient: treasury,
-    protocolAdmin,
-    note: "Buyback model: 50% creator / 40% official-token buyback-burn / 10% platform. Coin pairs against a stock or meme. First launch = official token (set via hook.setMainToken).",
+    admin,
+    renounced: renounce,
+    note: "Buyback model: 50% creator / 40% official-token buyback-burn / 10% platform. Ownership renounced; immutable admin retains control. First launch = official token (set via hook.setMainToken).",
     v4: { poolManager: POOL_MANAGER, weth: WETH, v3Router: V3_ROUTER },
     contracts: { hookDeployer: c2Addr, hook: hookAddr, factory: factoryAddr, router: routerAddr },
   };

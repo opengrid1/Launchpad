@@ -19,8 +19,8 @@ async function deployAll(admin: any, feeRecipient: string) {
 
   const Hook = await ethers.getContractFactory("RhBuybackHook");
   const hookArgs = ethers.AbiCoder.defaultAbiCoder().encode(
-    ["address", "address", "address", "address"],
-    [POOL_MANAGER, admin.address, feeRecipient, V3_ROUTER],
+    ["address", "address", "address", "address", "address"],
+    [POOL_MANAGER, admin.address, admin.address, feeRecipient, V3_ROUTER],
   );
   const hookInit = ethers.concat([Hook.bytecode, hookArgs]);
   const hookHash = ethers.keccak256(hookInit);
@@ -101,5 +101,26 @@ describe("RhBuyback 50/40/10 + buyback-burn (fork)", function () {
     await (await hook.buybackBurn(NVDA, "0x", 0)).wait();
     expect(await hook.pairBuyback(NVDA), "pot spent").to.equal(0n);
     expect(await officialErc.totalSupply(), "official supply burned down").to.be.lessThan(supplyBefore);
+  });
+
+  it("keeps the hardcoded admin after ownership is renounced", async () => {
+    const [admin, , platform, outsider] = await ethers.getSigners();
+    const { hook, factory } = await deployAll(admin, platform.address);
+
+    // Renounce Ownable on both; owner() reads as 0x0.
+    await (await hook.renounceOwnership()).wait();
+    await (await factory.renounceOwnership()).wait();
+    expect(await hook.owner()).to.equal(ethers.ZeroAddress);
+    expect(await factory.owner()).to.equal(ethers.ZeroAddress);
+
+    // The immutable admin still administers both, post-renounce.
+    await (await hook.connect(admin).setFeeRecipient(outsider.address)).wait();
+    expect(await hook.feeRecipient()).to.equal(outsider.address);
+    await (await factory.connect(admin).pause()).wait();
+    expect(await factory.launchesPaused()).to.equal(true);
+
+    // A non-admin cannot.
+    await expect(hook.connect(outsider).setFeeRecipient(outsider.address)).to.be.revertedWith("not admin");
+    await expect(factory.connect(outsider).pause()).to.be.revertedWithCustomError(factory, "NotProtocolAdmin");
   });
 });

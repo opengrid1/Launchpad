@@ -110,28 +110,28 @@ contract RhBuybackFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     // Admin (V3-style)
     // ---------------------------------------------------------------------
 
-    function listPair(address pair) external onlyOwner {
+    function listPair(address pair) external onlyProtocolAdmin {
         require(pair != address(0), "pair=0");
         pairListed[pair] = true;
         emit PairListed(pair);
     }
 
-    function delistPair(address pair) external onlyOwner {
+    function delistPair(address pair) external onlyProtocolAdmin {
         pairListed[pair] = false;
         emit PairDelisted(pair);
     }
 
-    function setAnyPairEnabled(bool enabled) external onlyOwner {
+    function setAnyPairEnabled(bool enabled) external onlyProtocolAdmin {
         anyPairEnabled = enabled;
         emit AnyPairSet(enabled);
     }
 
-    function pause() external onlyOwner {
+    function pause() external onlyProtocolAdmin {
         launchesPaused = true;
         emit LaunchesPausedSet(true);
     }
 
-    function resume() external onlyOwner {
+    function resume() external onlyProtocolAdmin {
         launchesPaused = false;
         emit LaunchesPausedSet(false);
     }
