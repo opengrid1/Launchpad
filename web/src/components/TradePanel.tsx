@@ -4,9 +4,10 @@ import { launchTokenAbi, type Address, type TokenSummary } from "@launchpad/sdk"
 
 import { client, v4Client } from "../lib/client";
 import { env } from "../lib/env";
-import { fmtWei, compact } from "../lib/format";
+import { fmtWei, fmtUsd, compact } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
+import { TokenLogo } from "./TokenLogo";
 
 type Side = "buy" | "sell";
 
@@ -17,6 +18,29 @@ const BUY_PRESETS =
     ? ["1", "5", "10", "25"]
     : ["0.01", "0.05", "0.1", "0.5"];
 
+/** A small native-ETH badge, matched to the coin logo's size/shape. */
+function EthBadge({ size = 22 }: { size?: number }) {
+  return (
+    <span
+      className="grid shrink-0 place-items-center rounded-full bg-gradient-to-b from-[#8a92b2] to-[#454a75] text-white ring-1 ring-edge"
+      style={{ width: size, height: size, fontSize: size * 0.5 }}
+      aria-hidden
+    >
+      Ξ
+    </span>
+  );
+}
+
+/** Token chip shown inside the pay/receive fields: logo + ticker. */
+function AssetChip({ token, native }: { token: TokenSummary; native?: boolean }) {
+  return (
+    <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-edge bg-panel px-2 py-1">
+      {native ? <EthBadge size={20} /> : <TokenLogo token={token} size={20} />}
+      <span className="text-[13px] font-bold text-ink">{native ? env.nativeSymbol : token.symbol}</span>
+    </span>
+  );
+}
+
 export function TradePanel({ token }: { token: TokenSummary }) {
   const { address, isConnected, connectFirst } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
@@ -24,6 +48,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
   const [side, setSide] = useState<Side>("buy");
   const [amount, setAmount] = useState("");
   const [slip, setSlip] = useState(5); // % slippage tolerance
+  const [showSettings, setShowSettings] = useState(false);
   const [busy, setBusy] = useState(false);
   const [nativeBalance, setNativeBalance] = useState<bigint | null>(null);
   const [tokenBalance, setTokenBalance] = useState<bigint | null>(null);
@@ -62,18 +87,29 @@ export function TradePanel({ token }: { token: TokenSummary }) {
 
   const taxBps = Number(token.feeTier) || 0;
   const feeRate = taxBps / 10000;
+  const priceUsd = Number(token.priceUsd) || 0;
 
-  const estimate = useMemo(() => {
+  // Estimated output amount (in the receive token's units) and its USD value.
+  const est = useMemo(() => {
     if (!parsedAmount || parsedAmount === 0n) return null;
     const price = Number(token.priceWei) / 1e18;
     if (price <= 0) return null;
     if (side === "buy") {
       const nativeIn = Number(parsedAmount) / 1e18;
-      return `~ ${compact((nativeIn * (1 - feeRate)) / price)} ${token.symbol}`;
+      const out = (nativeIn * (1 - feeRate)) / price; // coins out
+      return { amount: out, symbol: token.symbol, usd: out * priceUsd };
     }
     const tokensIn = Number(parsedAmount) / 1e18;
-    return `~ ${(tokensIn * price * (1 - feeRate)).toFixed(6)} ${env.nativeSymbol}`;
-  }, [parsedAmount, side, token.priceWei, token.symbol, feeRate]);
+    const out = tokensIn * price * (1 - feeRate); // native out
+    return { amount: out, symbol: env.nativeSymbol, usd: tokensIn * priceUsd };
+  }, [parsedAmount, side, token.priceWei, token.symbol, feeRate, priceUsd]);
+
+  // USD value of the amount being paid (best-effort; only the coin side is exact).
+  const payUsd = useMemo(() => {
+    if (!parsedAmount || parsedAmount === 0n) return null;
+    if (side === "sell") return (Number(parsedAmount) / 1e18) * priceUsd;
+    return est ? est.usd / (1 - feeRate) : null; // buy: mirror the receive USD
+  }, [parsedAmount, side, priceUsd, est, feeRate]);
 
   const setPct = (pct: number) => {
     if (side === "sell" && tokenBalance != null) {
@@ -91,15 +127,14 @@ export function TradePanel({ token }: { token: TokenSummary }) {
       if (!(await ensureSdkWallet())) {
         throw new Error("Wallet session expired. Reconnect your wallet and try again.");
       }
-      // Min output from the current-price estimate, less fee and slippage.
       const price = Number(token.priceWei);
       const slipMul = Math.max(0, 1 - slip / 100) * (1 - feeRate);
       let minOut = 0n;
       if (price > 0) {
         const out =
           side === "buy"
-            ? (Number(parsedAmount) * 1e18) / price // token wei
-            : (Number(parsedAmount) * price) / 1e18; // weth wei
+            ? (Number(parsedAmount) * 1e18) / price
+            : (Number(parsedAmount) * price) / 1e18;
         minOut = BigInt(Math.max(0, Math.floor(out * slipMul)));
       }
       const hash =
@@ -124,87 +159,114 @@ export function TradePanel({ token }: { token: TokenSummary }) {
       (side === "sell" && tokenBalance != null && parsedAmount > tokenBalance));
 
   const balance = side === "buy" ? nativeBalance : tokenBalance;
+  const minReceived = est ? est.amount * Math.max(0, 1 - slip / 100) : 0;
 
   return (
-    <div className="flex h-fit flex-col gap-3 rounded-xl border border-edge bg-panel p-3">
-      {/* Buy / Sell blade switch */}
-      <div className="blade-switch" data-side={side}>
+    <div className="flex h-fit flex-col gap-2.5 rounded-2xl border border-edge bg-panel p-3.5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.6)]">
+      {/* Buy / Sell segmented control */}
+      <div className="grid grid-cols-2 gap-1 rounded-xl bg-panel-2/60 p-1">
         <button
           onClick={() => { setSide("buy"); setAmount(""); }}
-          className={`blade-half ${side === "buy" ? "is-buy" : ""}`}
+          className={`h-9 rounded-lg text-[13px] font-bold transition-all ${
+            side === "buy" ? "bg-up text-black shadow-[0_0_20px_-6px_var(--color-up)]" : "text-ink-2 hover:text-ink"
+          }`}
         >
           Buy
         </button>
-        <span className="blade" aria-hidden />
         <button
           onClick={() => { setSide("sell"); setAmount(""); }}
-          className={`blade-half ${side === "sell" ? "is-sell" : ""}`}
+          className={`h-9 rounded-lg text-[13px] font-bold transition-all ${
+            side === "sell" ? "bg-down text-white shadow-[0_0_20px_-6px_var(--color-down)]" : "text-ink-2 hover:text-ink"
+          }`}
         >
           Sell
         </button>
       </div>
 
-      {/* Amount */}
-      <div className="rounded-lg border border-edge bg-panel-2/40 px-3 py-2.5">
-        <div className="mb-1 flex items-baseline justify-between text-[10.5px]">
-          <span className="text-ink-3">{side === "buy" ? env.nativeSymbol : token.symbol}</span>
+      {/* Pay field */}
+      <div className="rounded-xl border border-edge bg-panel-2/40 px-3 py-2.5 transition-colors focus-within:border-edge-2">
+        <div className="mb-1.5 flex items-baseline justify-between text-[10.5px]">
+          <span className="uppercase tracking-wide text-ink-3">You pay</span>
           <button className="tnum text-ink-3 transition-colors hover:text-ink" onClick={() => setPct(100)}>
-            Bal {balance != null ? fmtWei(balance) : "0"}
+            Balance {balance != null ? fmtWei(balance) : "0"}
           </button>
         </div>
-        <input
-          value={amount}
-          onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-          placeholder="0.0"
-          inputMode="decimal"
-          className="mono w-full bg-transparent text-[18px] text-ink outline-none placeholder:text-ink-3"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+            placeholder="0.0"
+            inputMode="decimal"
+            className="mono min-w-0 flex-1 bg-transparent text-[22px] font-semibold text-ink outline-none placeholder:text-ink-3/60"
+          />
+          <AssetChip token={token} native={side === "buy"} />
+        </div>
+        <div className="mono mt-1 h-3.5 text-[11px] text-ink-3">{payUsd ? `≈ ${fmtUsd(payUsd)}` : ""}</div>
       </div>
 
       {/* Presets */}
-      <div className="grid grid-cols-4 gap-1">
-        {(side === "buy" ? BUY_PRESETS : ["25", "50", "75", "Max"]).map((v, i) => (
+      <div className="grid grid-cols-4 gap-1.5">
+        {(side === "buy" ? BUY_PRESETS : ["25%", "50%", "75%", "Max"]).map((v, i) => (
           <button
             key={v}
-            onClick={() => (side === "buy" ? setAmount(v) : setPct([25, 50, 75, 100][i]))}
-            className="tnum h-7 rounded-md border border-edge text-[11px] font-medium text-ink-2 transition-colors hover:border-edge-2 hover:text-ink"
+            onClick={() => (side === "buy" ? setAmount(BUY_PRESETS[i]) : setPct([25, 50, 75, 100][i]))}
+            className="tnum h-7 rounded-lg border border-edge text-[11px] font-semibold text-ink-2 transition-colors hover:border-accent/50 hover:text-ink"
           >
-            {v}
+            {side === "buy" ? `${v} ${env.nativeSymbol}` : v}
           </button>
         ))}
       </div>
 
-      {/* Estimate */}
-      <div className="flex items-center justify-between text-[11px]">
-        <span className="text-ink-3">You receive</span>
-        <span className="tnum font-semibold text-ink">{estimate ?? "–"}</span>
+      {/* Receive field */}
+      <div className="rounded-xl border border-edge bg-panel-2/40 px-3 py-2.5">
+        <div className="mb-1.5 text-[10.5px] uppercase tracking-wide text-ink-3">You receive (est.)</div>
+        <div className="flex items-center gap-2">
+          <span className="mono min-w-0 flex-1 truncate text-[22px] font-semibold text-ink">
+            {est ? compact(est.amount) : "0.0"}
+          </span>
+          <AssetChip token={token} native={side === "sell"} />
+        </div>
+        <div className="mono mt-1 h-3.5 text-[11px] text-ink-3">{est && est.usd > 0 ? `≈ ${fmtUsd(est.usd)}` : ""}</div>
       </div>
 
-      {/* Slippage */}
-      <div className="flex items-center justify-between text-[11px]">
-        <span className="text-ink-3">Slippage</span>
-        <div className="flex items-center gap-1">
-          {[1, 5, 10].map((p) => (
-            <button
-              key={p}
-              onClick={() => setSlip(p)}
-              className={`tnum rounded px-1.5 py-0.5 transition-colors ${slip === p ? "bg-accent/15 font-semibold text-accent-ink" : "text-ink-3 hover:text-ink"}`}
-            >
-              {p}%
-            </button>
-          ))}
-          <span className="flex items-center rounded bg-panel-2 pr-1">
-            <input
-              value={String(slip)}
-              onChange={(e) => {
-                const v = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                if (!isNaN(v)) setSlip(Math.min(50, v));
-              }}
-              inputMode="decimal"
-              className="mono w-7 bg-transparent py-0.5 text-right text-ink outline-none"
-            />
-            <span className="text-ink-3">%</span>
-          </span>
+      {/* Details: price, min received, fee, slippage */}
+      <div className="rounded-xl border border-edge bg-panel-2/20 px-3 py-2 text-[11px]">
+        <Row label="Price" value={priceUsd > 0 ? `${fmtUsd(priceUsd)} / ${token.symbol}` : "–"} />
+        <Row label="Min. received" value={est ? `${compact(minReceived)} ${est.symbol}` : "–"} />
+        <Row label="Trade fee" value={`${(feeRate * 100).toFixed(taxBps % 100 ? 1 : 0)}%`} />
+        <div className="flex items-center justify-between pt-0.5">
+          <button
+            onClick={() => setShowSettings((s) => !s)}
+            className="flex items-center gap-1 text-ink-3 transition-colors hover:text-ink"
+          >
+            Slippage <span className="tnum font-semibold text-ink-2">{slip}%</span>
+            <span className={`transition-transform ${showSettings ? "rotate-180" : ""}`}>▾</span>
+          </button>
+          <div className={showSettings ? "flex items-center gap-1" : "hidden"}>
+            {[1, 5, 10].map((p) => (
+              <button
+                key={p}
+                onClick={() => setSlip(p)}
+                className={`tnum rounded px-1.5 py-0.5 transition-colors ${
+                  slip === p ? "bg-accent/15 font-semibold text-accent-ink" : "text-ink-3 hover:text-ink"
+                }`}
+              >
+                {p}%
+              </button>
+            ))}
+            <span className="flex items-center rounded bg-panel-2 pr-1">
+              <input
+                value={String(slip)}
+                onChange={(e) => {
+                  const v = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                  if (!isNaN(v)) setSlip(Math.min(50, v));
+                }}
+                inputMode="decimal"
+                className="mono w-7 bg-transparent py-0.5 text-right text-ink outline-none"
+              />
+              <span className="text-ink-3">%</span>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -212,10 +274,10 @@ export function TradePanel({ token }: { token: TokenSummary }) {
         <button
           onClick={submit}
           disabled={busy || !parsedAmount || parsedAmount === 0n || Boolean(insufficientFunds)}
-          className={`hud-cut h-11 text-[14px] font-bold uppercase tracking-wide text-black transition-[filter] disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 disabled:shadow-none ${
+          className={`h-12 rounded-xl text-[15px] font-extrabold uppercase tracking-wide text-black transition-[filter] disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 disabled:shadow-none ${
             side === "buy"
-              ? "bg-up shadow-[0_0_22px_-8px_var(--color-up)] hover:brightness-110"
-              : "bg-down shadow-[0_0_22px_-8px_var(--color-down)] hover:brightness-105"
+              ? "bg-up shadow-[0_0_26px_-8px_var(--color-up)] hover:brightness-110"
+              : "bg-down text-white shadow-[0_0_26px_-8px_var(--color-down)] hover:brightness-105"
           }`}
         >
           {busy
@@ -229,12 +291,20 @@ export function TradePanel({ token }: { token: TokenSummary }) {
       ) : (
         <button
           onClick={connectFirst}
-          className="hud-cut h-11 bg-accent text-[14px] font-bold uppercase tracking-wide text-accent-fg transition-[filter] hover:brightness-105"
+          className="h-12 rounded-xl bg-accent text-[15px] font-extrabold uppercase tracking-wide text-accent-fg transition-[filter] hover:brightness-105"
         >
           Connect Wallet
         </button>
       )}
+    </div>
+  );
+}
 
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between py-0.5">
+      <span className="text-ink-3">{label}</span>
+      <span className="mono font-medium text-ink-2">{value}</span>
     </div>
   );
 }
