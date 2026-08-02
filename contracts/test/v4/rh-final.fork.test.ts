@@ -19,7 +19,7 @@ async function deployAll(admin: any) {
   const c2Addr = await c2.getAddress();
 
   const Hook = await ethers.getContractFactory("RhFinalHook");
-  const hookArgs = ethers.AbiCoder.defaultAbiCoder().encode(["address", "address", "address"], [POOL_MANAGER, admin.address, admin.address]);
+  const hookArgs = ethers.AbiCoder.defaultAbiCoder().encode(["address", "address"], [POOL_MANAGER, admin.address]);
   const hookInit = ethers.concat([Hook.bytecode, hookArgs]);
   const hookHash = ethers.keccak256(hookInit);
   let hookAddr = "", salt = "";

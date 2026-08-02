@@ -38,14 +38,6 @@ contract RhFinalHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     uint16 internal constant BPS = 10_000;
     uint16 public constant HOLDER_FEE_BPS = 8_000; // 80% holders, 20% creator
 
-    /// @notice Immutable admin that survives `renounceOwnership()`.
-    address public immutable admin;
-
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "not admin");
-        _;
-    }
-
     struct PoolConfig {
         address token; // launched coin
         address pair; // pair + reward token
@@ -79,12 +71,12 @@ contract RhFinalHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     error AlreadySet();
     error NotRegistered();
 
-    constructor(IPoolManager pm, address owner_, address admin_) BaseHook(pm) Ownable(owner_) {
-        require(admin_ != address(0), "admin=0");
-        admin = admin_;
-    }
+    constructor(IPoolManager pm, address owner_) BaseHook(pm) Ownable(owner_) {}
 
-    function setFactory(address factory_) external onlyAdmin {
+    /// @notice One-time wiring by the owner during setup; ownership is renounced
+    ///         right after, so this can never change again. The fee split, pair
+    ///         and rewards are fully autonomous once set.
+    function setFactory(address factory_) external onlyOwner {
         require(factory_ != address(0), "factory=0");
         factory = factory_;
         emit FactorySet(factory_);

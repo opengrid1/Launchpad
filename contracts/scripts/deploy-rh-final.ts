@@ -29,7 +29,7 @@ async function main() {
   const c2Addr = await c2.getAddress();
 
   const Hook = await ethers.getContractFactory("RhFinalHook");
-  const hookArgs = ethers.AbiCoder.defaultAbiCoder().encode(["address", "address", "address"], [POOL_MANAGER, signer.address, admin]);
+  const hookArgs = ethers.AbiCoder.defaultAbiCoder().encode(["address", "address"], [POOL_MANAGER, signer.address]);
   const hookInit = ethers.concat([Hook.bytecode, hookArgs]);
   console.log("mining hook flags…");
   const { addr: hookAddr, salt } = mineFlags(c2Addr, ethers.keccak256(hookInit));
