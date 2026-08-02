@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00D45A"/>
+      <stop offset="100%" stop-color="#00A344"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FBFDF7"/>
+      <stop offset="100%" stop-color="#E9EEE2"/>
+    </linearGradient>
+    <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#003d17" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <!-- money-green ground -->
+  <rect width="400" height="400" fill="url(#bg)"/>
+  <!-- faint ticker lines for texture -->
+  <g stroke="#ffffff" stroke-opacity="0.08" stroke-width="6">
+    <line x1="40" y1="0" x2="40" y2="400"/><line x1="120" y1="0" x2="120" y2="400"/>
+    <line x1="280" y1="0" x2="280" y2="400"/><line x1="360" y1="0" x2="360" y2="400"/>
+  </g>
+  <g stroke="#003d17" stroke-opacity="0.10" stroke-width="4">
+    <line x1="80" y1="0" x2="80" y2="400"/><line x1="320" y1="0" x2="320" y2="400"/>
+  </g>
+
+  <!-- receipt slip, tilted; perforated tear at the bottom -->
+  <g transform="translate(200 202) rotate(-7)" filter="url(#sh)">
+    <path d="M-92 -118 H92 V96
+             l-11.5 12 -11.5 -12 -11.5 12 -11.5 -12 -11.5 12 -11.5 -12
+             -11.5 12 -11.5 -12 -11.5 12 -11.5 -12 -11.5 12 -11.5 -12
+             -11.5 12 -11.5 -12 -11.5 12 -11.5 -12 Z"
+          fill="url(#paper)"/>
+    <!-- header rule -->
+    <rect x="-64" y="-96" width="128" height="9" rx="4.5" fill="#0A7A3F"/>
+    <!-- ticker / total lines -->
+    <g fill="#98A491">
+      <rect x="-64" y="-70" width="86" height="8" rx="4"/>
+      <rect x="34" y="-70" width="30" height="8" rx="4"/>
+      <rect x="-64" y="-50" width="60" height="8" rx="4"/>
+      <rect x="18" y="-50" width="46" height="8" rx="4"/>
+    </g>
+    <!-- up-trend line through the receipt -->
+    <path d="M-60 8 L-20 -14 L14 2 L60 -42" fill="none" stroke="#00B24A" stroke-width="12"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M42 -42 H60 V-24" fill="none" stroke="#00B24A" stroke-width="12"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- 'cashd' total mark -->
+    <text x="0" y="66" text-anchor="middle" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace"
+          font-size="34" font-weight="800" letter-spacing="-2" fill="#0B120C">cashd</text>
+  </g>
+
+  <!-- PAID / cashd check stamp -->
+  <g transform="translate(300 300) rotate(-12)">
+    <circle r="46" fill="#0B120C"/>
+    <circle r="46" fill="none" stroke="#00E25C" stroke-width="3" stroke-opacity="0.5"/>
+    <path d="M-20 2 L-6 16 L22 -16" fill="none" stroke="#00E25C" stroke-width="10"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
