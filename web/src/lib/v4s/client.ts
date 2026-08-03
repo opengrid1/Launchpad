@@ -80,6 +80,31 @@ export class V4SClient extends V4Client {
     return stock; // pools are quoted in the pair stock, not WETH
   }
 
+  /** Market-cap scale in USD per unit price — priced off the PAIR STOCK's live
+   *  USD, not WETH (the base client's default). Fixes the chart axis and the
+   *  trade list's market-cap column for stock-paired markets. */
+  override async mcapScale(token: Address): Promise<number> {
+    await this.loadCores();
+    const core = this.cores.get(token.toLowerCase());
+    if (!core) return 1;
+    const usd = await this.stockUsdPrice(core.stock).catch(() => 0);
+    const supplyWhole = Number(core.totalSupply) / 1e18;
+    const scale = usd * supplyWhole;
+    return scale > 0 ? scale : 1;
+  }
+
+  /** Trade history for a stock-paired market, minus the hook's own
+   *  fee-conversion swaps (token -> stock during harvest), which are internal
+   *  protocol actions, not user trades. */
+  override async getTrades(
+    token: Address,
+    opts?: Parameters<V4Client["getTrades"]>[1],
+  ): ReturnType<V4Client["getTrades"]> {
+    const all = await super.getTrades(token, opts);
+    const hook = this.v4.hook.toLowerCase();
+    return all.filter((t) => t.trader.toLowerCase() !== hook);
+  }
+
   protected override quoteUsd(core: Core): number {
     const key = core.stock.toLowerCase();
     const cached = this.quoteUsdCache.get(key);

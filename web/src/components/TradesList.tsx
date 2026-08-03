@@ -62,7 +62,7 @@ export function TradesList({ token, symbol }: { token: Address; symbol: string }
           <thead>
             <tr className="border-b border-edge text-[9.5px] uppercase tracking-wider text-ink-3">
               <th className="px-3 py-2 font-medium">Side</th>
-              <th className="px-2 py-2 font-medium">{env.nativeSymbol}</th>
+              <th className="px-2 py-2 font-medium">Quote</th>
               <th className="px-2 py-2 font-medium">{symbol}</th>
               <th className="px-2 py-2 font-medium">Market cap</th>
               <th className="px-2 py-2 font-medium">Wallet</th>
@@ -80,11 +80,8 @@ export function TradesList({ token, symbol }: { token: Address; symbol: string }
               return (
                 <tr key={t.id} className="border-b border-edge/50 last:border-0">
                   <td className="whitespace-nowrap px-3 py-2.5">
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.isBuy ? "bg-up/15 text-up" : "bg-down/15 text-down"}`}>
-                        {t.isBuy ? "BUY" : "SELL"}
-                      </span>
-                      <span className="text-[9.5px] font-semibold text-ink-3">V4</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.isBuy ? "bg-up/15 text-up" : "bg-down/15 text-down"}`}>
+                      {t.isBuy ? "BUY" : "SELL"}
                     </span>
                   </td>
                   <td className="mono px-2 py-2.5 text-[12px] text-ink">{fmtWei(t.nativeAmountWei)}</td>
