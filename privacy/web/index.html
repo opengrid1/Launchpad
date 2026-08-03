@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Umbra, a fixed-denomination ETH privacy pool</title>
+  <meta name="description" content="Umbra is a fixed-denomination shielded pool for ETH. Deposit, wait for the crowd, withdraw to a fresh address. Public chain, private link." />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.js" } }
+  </script>
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="#top" aria-label="Umbra home">
+      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+        <circle cx="8" cy="11" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <circle cx="14" cy="11" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      </svg>
+      <span>umbra</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#privacy">What it hides</a>
+      <a href="#pools">Pools</a>
+      <a href="#faq">FAQ</a>
+      <a class="ghost" href="https://github.com/opengrid1/Launchpad/tree/main/privacy">Source</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <canvas id="robot-canvas" aria-hidden="true"></canvas>
+      <p class="kicker">zk shielded pool / ethereum</p>
+      <h1>Private ETH transfers that don't pretend to be magic.</h1>
+      <p class="lede">
+        Umbra is a fixed-denomination shielded pool. You deposit one ETH against a
+        secret, wait for other deposits to pile up, then withdraw to a brand new
+        address. The blockchain stays fully public. The link between the address
+        that paid in and the one that pulled out does not.
+      </p>
+      <div class="cta-row">
+        <a class="btn primary" href="#how">See how a deposit works</a>
+        <a class="btn" href="https://github.com/opengrid1/Launchpad/tree/main/privacy">Read the contracts</a>
+      </div>
+
+      <div class="term" aria-hidden="true">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <pre><code><span class="c">// deposit: the chain only ever sees a hash</span>
+commitment = Poseidon(nullifier, secret)
+pool.deposit{value: 1 ether}(commitment)
+
+<span class="c">// withdraw: prove you own a leaf, never say which one</span>
+proof = prove(secret, merklePath)
+pool.withdraw(proof, root, nullifierHash, newAddress)
+<span class="ok">// 1 ETH lands at newAddress. no trail back.</span></code></pre>
+      </div>
+    </section>
+
+    <section id="privacy" class="band">
+      <div class="band-head">
+        <h2>The part most privacy sites skip</h2>
+        <p>
+          Zero-knowledge proofs do not invent a crowd for you. Every deposit and
+          every withdrawal is visible on Etherscan. What the proof hides is which
+          deposit a withdrawal came from. So your privacy is exactly as large as
+          the number of other people who deposited the same amount. No more.
+        </p>
+      </div>
+
+      <div class="aset">
+        <label for="aset-range">Deposits sharing your denomination</label>
+        <input id="aset-range" type="range" min="1" max="100000" value="1" step="1" />
+        <div class="aset-out">
+          <div>
+            <span class="aset-n" id="aset-count">1</span>
+            <span class="aset-sub">in the pool with you</span>
+          </div>
+          <div class="aset-verdict" id="aset-verdict">No cover. With one depositor, the withdrawal can only be you.</div>
+        </div>
+        <div class="aset-bar"><div id="aset-fill"></div></div>
+      </div>
+
+      <p class="band-foot">
+        Practical rule: use a fresh recipient address, and do not withdraw seconds
+        after you deposit. Timing links you even inside a large pool.
+      </p>
+    </section>
+
+    <section id="how" class="how">
+      <h2>How a transfer goes through</h2>
+      <ol class="steps">
+        <li>
+          <span class="step-n">01</span>
+          <h3>Deposit against a secret</h3>
+          <p>
+            Your wallet picks two random numbers, a nullifier and a secret. It
+            hashes them into a commitment and sends one ETH plus that commitment
+            to the pool. The chain stores the commitment as a leaf in a Merkle
+            tree. The two random numbers never leave your machine.
+          </p>
+        </li>
+        <li>
+          <span class="step-n">02</span>
+          <h3>Wait for company</h3>
+          <p>
+            Nothing forces you to withdraw right away, and you should not. Every
+            new deposit of the same size grows the set you can hide inside.
+            Withdraw into a thin pool and the math protects nothing.
+          </p>
+        </li>
+        <li>
+          <span class="step-n">03</span>
+          <h3>Withdraw as a stranger</h3>
+          <p>
+            From a fresh address, you produce a proof that you know the secret
+            behind one of the leaves, without revealing which. The contract checks
+            the proof, records the nullifier so the note cannot be spent twice,
+            and releases the ETH. A relayer can post the transaction so the new
+            address never needs gas.
+          </p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="compliant" class="band alt">
+      <div class="two-col">
+        <div>
+          <h2>Privacy without being a laundromat</h2>
+          <p>
+            A pool that takes anyone's coins becomes a magnet for stolen ones, and
+            then it gets sanctioned and everyone honest loses access. Umbra ships
+            with a screening hook at the deposit door. Point it at an allowlist, an
+            attestation reader, or an association-set provider. Funds that fail
+            screening never enter.
+          </p>
+          <p>
+            The hook is one interface. Set it to the zero address and the pool runs
+            with no screening at all. That is a deliberate choice you make at
+            deploy time, in the open, not a switch hidden in the code.
+          </p>
+        </div>
+        <div class="card">
+          <p class="card-label">IComplianceGate</p>
+          <pre><code>function isAllowed(address who)
+    external view returns (bool);</code></pre>
+          <ul class="ticks">
+            <li>Coinbase or Binance attestations</li>
+            <li>0xbow style association sets</li>
+            <li>Plain owner allowlist (shipped)</li>
+            <li>Nothing at all (set gate to 0x0)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="pools" class="pools">
+      <h2>Pools</h2>
+      <p class="pools-note">
+        One pool per denomination. Uniform amounts keep the anonymity set from
+        splintering, so a deposit of 1 ETH looks the same as every other.
+      </p>
+      <table class="pools-table">
+        <thead>
+          <tr><th>Denomination</th><th>Tree depth</th><th>Status</th><th>Address</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0.1 ETH</td><td>20</td><td><span class="tag">testnet</span></td><td class="mono">not deployed</td></tr>
+          <tr><td>1 ETH</td><td>20</td><td><span class="tag">testnet</span></td><td class="mono">not deployed</td></tr>
+          <tr><td>10 ETH</td><td>20</td><td><span class="tag">planned</span></td><td class="mono">not deployed</td></tr>
+        </tbody>
+      </table>
+      <p class="pools-foot">
+        Nothing is live on mainnet yet. The trusted setup in this repo is a single
+        party dev ceremony, and the contracts are unaudited. Both get replaced
+        before a pool holds real money.
+      </p>
+    </section>
+
+    <section id="stack" class="stack">
+      <h2>Under the hood</h2>
+      <div class="stack-grid">
+        <div>
+          <p class="stack-k">Proof system</p>
+          <p class="stack-v">Groth16 over BN254, one circuit, six public signals.</p>
+        </div>
+        <div>
+          <p class="stack-k">Hashing</p>
+          <p class="stack-v">Poseidon, in the circuit and on chain, so the roots agree.</p>
+        </div>
+        <div>
+          <p class="stack-k">Tree</p>
+          <p class="stack-v">Depth 20 incremental Merkle tree, last 30 roots kept.</p>
+        </div>
+        <div>
+          <p class="stack-k">Double spend</p>
+          <p class="stack-v">Each note reveals a nullifier hash, stored once, checked forever.</p>
+        </div>
+        <div>
+          <p class="stack-k">Front running</p>
+          <p class="stack-v">Recipient, relayer and fee are bound inside the proof.</p>
+        </div>
+        <div>
+          <p class="stack-k">Contracts</p>
+          <p class="stack-v">Solidity 0.8, Foundry tests run a real proof end to end.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="faq">
+      <h2>Questions people actually ask</h2>
+
+      <details>
+        <summary>If I am the only one in the pool, am I private?</summary>
+        <p>
+          No. One deposit and one withdrawal of the same size, hours apart, is a
+          straight line anyone can draw. The proof hides which leaf you spent, but
+          there is only one leaf. Wait for others, or use a pool that already has
+          depositors.
+        </p>
+      </details>
+
+      <details>
+        <summary>Can someone tell how much is in the pool?</summary>
+        <p>
+          Yes, exactly. The pool balance and the number of deposits are on chain
+          for anyone to read. You cannot fake a crowd. That is the whole reason
+          the size of the crowd matters.
+        </p>
+      </details>
+
+      <details>
+        <summary>Why fixed amounts instead of any value?</summary>
+        <p>
+          Amounts are a fingerprint. Deposit 3.7184 ETH and a matching withdrawal
+          of 3.7184 ETH gives the link away even with a perfect proof. Uniform
+          denominations remove that signal, so a thousand deposits actually act
+          like a thousand.
+        </p>
+      </details>
+
+      <details>
+        <summary>Do I need ETH in my new address to withdraw?</summary>
+        <p>
+          No. A relayer can submit the withdrawal and take a small fee out of the
+          amount. That avoids funding the fresh address from somewhere traceable,
+          which would undo the privacy you just paid for.
+        </p>
+      </details>
+
+      <details>
+        <summary>Is this legal?</summary>
+        <p>
+          Privacy tooling is lawful in many places and restricted in others, and
+          mixers on mainnet carry real regulatory weight. The screening hook
+          exists for that reason. Talk to a lawyer who knows crypto before you run
+          a pool that holds other people's funds.
+        </p>
+      </details>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-top">
+      <a class="brand" href="#top">
+        <svg width="20" height="20" viewBox="0 0 22 22" aria-hidden="true">
+          <circle cx="8" cy="11" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="14" cy="11" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        <span>umbra</span>
+      </a>
+      <nav>
+        <a href="https://github.com/opengrid1/Launchpad/tree/main/privacy">Source</a>
+        <a href="#how">How it works</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+    </div>
+    <p class="foot-fine">
+      Unaudited, single party trusted setup, nothing live on mainnet. Built as a
+      reference, not a product. Read the code before you trust it.
+    </p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script type="module" src="vendor/robot.js"></script>
+</body>
+</html>

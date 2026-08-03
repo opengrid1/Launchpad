@@ -1,0 +1,10 @@
+# JS tooling
+js/node_modules/
+js/package-lock.json
+
+# Regenerable circuit artifacts (rebuild with js/build-circuit.sh)
+build/
+out/
+cache/
+lib/
+broadcast/
