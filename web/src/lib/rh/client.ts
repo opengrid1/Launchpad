@@ -278,7 +278,21 @@ export class RhClient {
       : (Q96 * Q96 * 10n ** 18n) / (sqrtP * sqrtP); // token=1 -> weth/token = 1/price
   }
 
-  private async loadTrades(token: Address): Promise<TradeRecord[]> {
+  /** Per-token inflight guard: the chart, trades list and summary all read
+   *  trades concurrently, and two overlapping incremental scans would append
+   *  the same logs twice. */
+  private tradesInflight = new Map<string, Promise<TradeRecord[]>>();
+
+  private loadTrades(token: Address): Promise<TradeRecord[]> {
+    const key = token.toLowerCase();
+    const inflight = this.tradesInflight.get(key);
+    if (inflight) return inflight;
+    const p = this.loadTradesInner(token).finally(() => this.tradesInflight.delete(key));
+    this.tradesInflight.set(key, p);
+    return p;
+  }
+
+  private async loadTradesInner(token: Address): Promise<TradeRecord[]> {
     // Ensure the token's core is loaded; a caller may reach trades/candles
     // without having listed tokens first (e.g. a serverless endpoint hit cold,
     // or a deep link straight to a token page).
@@ -333,10 +347,20 @@ export class RhClient {
         });
         for (const r of fresh) r.trader = fromByHash.get(r.txHash) ?? r.trader;
       }
-      const records = cached ? cached.records.concat(fresh) : fresh;
+      // Merge by id (txHash-logIndex): a log source may re-serve blocks near
+      // the boundary, and a duplicate row must never reach the feed.
+      let records: TradeRecord[];
+      if (cached) {
+        const seen = new Set(cached.records.map((r) => r.id));
+        records = cached.records.concat(fresh.filter((r) => !seen.has(r.id)));
+      } else {
+        records = fresh;
+      }
       // `upTo` is the height the log source is actually complete to (behind
       // `latest` while the receipt scanner backfills), so nothing is skipped.
-      this.tradesCache.set(key, { records, upTo });
+      // Never let it regress (e.g. getLogs -> receipt-scan fallback), or the
+      // next pass would re-fetch blocks it already served.
+      this.tradesCache.set(key, { records, upTo: cached && cached.upTo > upTo ? cached.upTo : upTo });
       return records;
     } catch {
       return this.tradesCache.get(key)?.records ?? [];
