@@ -635,6 +635,14 @@ button.bg-accent:disabled {
 }
 .board-fresh-abs { position: absolute; left: 6px; top: 6px; }
 
+/* Platform-official token badge: gold, unmistakable next to the green NEW. */
+.board-official {
+  font-size: 9px; font-weight: 900; letter-spacing: 0.1em; color: #1a1200;
+  background: linear-gradient(135deg, #ffd34d, #f0a819); border-radius: 999px; padding: 2px 7px;
+  box-shadow: 0 0 12px -1px #f0a819cc;
+}
+.board-official-abs { position: absolute; right: 6px; top: 6px; }
+
 /* Board cards */
 .board-card {
   display: block; overflow: hidden; border-radius: 14px;

@@ -9,6 +9,7 @@ import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
+import { isOfficial } from "../lib/official";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 
 type Sort = "new" | "volume" | "mcap";
@@ -209,6 +210,7 @@ function Spotlight({ t }: { t: TokenSummary }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="board-fresh">NEW</span>
+            {isOfficial(t.address) && <span className="board-official">OFFICIAL</span>}
             <span className="text-[11px] text-ink-3">{age}</span>
           </div>
           <p className="mt-1 truncate text-[18px] font-extrabold leading-tight text-ink">
@@ -240,6 +242,7 @@ function BoardCard({ t, fresh }: { t: TokenSummary; fresh?: boolean }) {
         )}
         <span className="board-age">{age}</span>
         {fresh && <span className="board-fresh board-fresh-abs">NEW</span>}
+        {isOfficial(t.address) && <span className="board-official board-official-abs">OFFICIAL</span>}
       </div>
       <div className="p-2.5">
         <div className="flex items-baseline gap-1.5">

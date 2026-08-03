@@ -20,6 +20,7 @@ import { client, v4Client } from "../lib/client";
 import { env } from "../lib/env";
 import { compact, fmtTokens, fmtUsd, fmtWei, fmtWeiUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
 import { normalizeSocial } from "../lib/links";
+import { isOfficial } from "../lib/official";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { stockOf } from "../lib/v4/stocks";
 import { useUi } from "../store";
@@ -161,6 +162,7 @@ export function TokenPage() {
           <h1 className="truncate text-[20px] font-extrabold leading-tight tracking-tight text-ink sm:text-[24px]">{t.name}</h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <span className="mono rounded-md bg-panel-2 px-2 py-0.5 text-[11px] font-semibold text-accent-ink/80">${t.symbol}</span>
+            {isOfficial(t.address) && <span className="board-official">OFFICIAL</span>}
             <CaChip address={t.address as Address} />
             {hasReward ? <RewardPill stock={extra!.stock} fallbackSymbol={metaPair?.symbol} /> : null}
           </div>
