@@ -319,6 +319,20 @@ export class RhClient {
       if (fresh.length) {
         for (const r of fresh) r.timestamp = await this.estTs(BigInt(r.blockNumber), latest);
       }
+      // The Swap event's sender is our router for every trade; resolve the
+      // real wallet from each transaction's `from` so holder stats and the
+      // trades feed attribute activity to actual traders.
+      if (fresh.length) {
+        const hashes = [...new Set(fresh.map((r) => r.txHash))];
+        const txs = await Promise.allSettled(
+          hashes.map((h) => this.publicClient.getTransaction({ hash: h as `0x${string}` })),
+        );
+        const fromByHash = new Map<string, Address>();
+        txs.forEach((r, i) => {
+          if (r.status === "fulfilled" && r.value?.from) fromByHash.set(hashes[i], r.value.from.toLowerCase() as Address);
+        });
+        for (const r of fresh) r.trader = fromByHash.get(r.txHash) ?? r.trader;
+      }
       const records = cached ? cached.records.concat(fresh) : fresh;
       // `upTo` is the height the log source is actually complete to (behind
       // `latest` while the receipt scanner backfills), so nothing is skipped.
@@ -477,7 +491,7 @@ export class RhClient {
     const key = pair.toLowerCase();
     const cached = this.pairUsdCache.get(key);
     // Kick a background refresh; return the cached value immediately if present.
-    const refresh = pairUsd(pair)
+    const refresh = pairUsd(pair, this.publicClient)
       .then((v) => {
         if (v > 0) this.pairUsdCache.set(key, v);
         return v;
@@ -660,7 +674,9 @@ export class RhClient {
     const supplyWhole = core ? Number(core.totalSupply) / 1e18 : 1e9;
     const usd = core ? await this.pairUsdOf(core.stock) : 0;
     const scale = usd * supplyWhole;
-    return scale > 0 ? scale : 1;
+    // 0 (not 1) when the pair has no USD price, so consumers render a dash
+    // instead of passing raw pair-units off as dollars.
+    return scale > 0 ? scale : 0;
   }
 
   async pendingDividends(token: Address, holder: Address): Promise<bigint> {
@@ -779,7 +795,7 @@ export class RhClient {
     // a bad price (it would mis-size the starting market cap), so require > 0.
     let pairUsdPrice8 = params.pairUsdPrice8 ?? 0n;
     if (pairUsdPrice8 <= 0n) {
-      const usd = await pairUsd(params.stock);
+      const usd = await pairUsd(params.stock, this.publicClient);
       if (!(usd > 0)) throw new Error("Could not read the pair token price. Try again in a moment.");
       pairUsdPrice8 = BigInt(Math.round(usd * 1e8));
     }

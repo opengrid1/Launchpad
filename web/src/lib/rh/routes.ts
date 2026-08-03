@@ -91,9 +91,30 @@ async function bestFee(pc: PublicClient, a: Address, b: Address): Promise<number
   return null;
 }
 
+const v3PoolAbi = [
+  {
+    type: "function",
+    name: "slot0",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "sqrtPriceX96", type: "uint160" },
+      { name: "tick", type: "int24" },
+      { name: "observationIndex", type: "uint16" },
+      { name: "observationCardinality", type: "uint16" },
+      { name: "observationCardinalityNext", type: "uint16" },
+      { name: "feeProtocol", type: "uint8" },
+      { name: "unlocked", type: "bool" },
+    ],
+  },
+] as const;
+
 /** Live USD price of a pair token (stock or meme) from Blockscout, cached 60s.
- *  Falls back to a bundled stock snapshot, then 0. */
-export async function pairUsd(pair: Address): Promise<number> {
+ *  Small memes have no Blockscout exchange rate, so when a client is given we
+ *  fall back to pricing through the token's V3 WETH pool (both 18 decimals):
+ *  usd = WETH usd x WETH-per-token from slot0. Then a bundled stock snapshot,
+ *  then 0. */
+export async function pairUsd(pair: Address, pc?: PublicClient): Promise<number> {
   const key = pair.toLowerCase();
   const hit = usdCache.get(key);
   if (hit && Date.now() - hit.at < 60_000) return hit.usd;
@@ -111,6 +132,31 @@ export async function pairUsd(pair: Address): Promise<number> {
     /* fall through */
   }
   if (usd === 0) usd = stockOf(pair)?.usd ?? 0;
+  if (usd === 0 && pc && key !== WETH.toLowerCase()) {
+    try {
+      const wethUsd = await pairUsd(WETH);
+      const fee = await bestFee(pc, pair, WETH);
+      if (wethUsd > 0 && fee) {
+        const pool = (await pc.readContract({
+          address: V3_FACTORY,
+          abi: v3FactoryAbi,
+          functionName: "getPool",
+          args: [pair, WETH, fee],
+        })) as Address;
+        const slot0 = await pc.readContract({ address: pool, abi: v3PoolAbi, functionName: "slot0" });
+        const sqrtP = slot0[0] as bigint;
+        // price = token1 per 1 token0, both sides 18 decimals here.
+        const p = (Number(sqrtP) / 2 ** 96) ** 2;
+        if (p > 0) {
+          const wethIs0 = WETH.toLowerCase() < key;
+          const wethPerToken = wethIs0 ? 1 / p : p;
+          usd = wethUsd * wethPerToken;
+        }
+      }
+    } catch {
+      /* keep 0 */
+    }
+  }
   usdCache.set(key, { at: Date.now(), usd });
   return usd;
 }

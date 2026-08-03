@@ -7,7 +7,7 @@ import { Icon } from "../components/Icon";
 import { QuiverMark } from "../components/QuiverMark";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { fmtNative, fmtUsd, shortAddr, timeAgo } from "../lib/format";
+import { fmtUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 
@@ -63,7 +63,12 @@ export function ExploreBoard() {
   }, [all, debounced, sort]);
 
   const newest = useMemo(() => [...all].sort((a, b) => b.createdAt - a.createdAt).slice(0, 14), [all]);
-  const dayVolume = useMemo(() => all.reduce((a, t) => a + BigInt(t.volume24hWei || "0"), 0n), [all]);
+  // Volumes are recorded in each coin's pair token, so convert per token to
+  // dollars before summing; a raw sum would mix NVDA with PONS with ETH.
+  const dayVolumeUsd = useMemo(
+    () => all.reduce((a, t) => a + (Number(t.volume24hWei || "0") / 1e18) * usdRateOf(t), 0),
+    [all],
+  );
   const loading = !env.hideTokens && (lv || ln) && all.length === 0;
   const spotlight = newest[0];
 
@@ -75,7 +80,7 @@ export function ExploreBoard() {
       {/* Stats strip */}
       <div className="mt-3 grid grid-cols-3 gap-2">
         <BoardStat label="Markets" value={String(all.length)} live />
-        <BoardStat label="24h volume" value={fmtNative(dayVolume, 2)} />
+        <BoardStat label="24h volume" value={fmtUsd(dayVolumeUsd)} />
         <BoardStat label="Latest" value={spotlight ? `$${spotlight.symbol}` : "-"} accent />
       </div>
 
@@ -214,7 +219,7 @@ function Spotlight({ t }: { t: TokenSummary }) {
         <div className="hidden text-right sm:block">
           <p className="text-[9.5px] uppercase tracking-wide text-ink-3">Market cap</p>
           <p className="mono text-[20px] font-extrabold leading-tight text-accent-ink">{fmtUsd(t.marketCapUsd)}</p>
-          <p className="mono mt-0.5 text-[11px] text-ink-2">{fmtNative(t.volumeTotalWei, 2)} vol</p>
+          <p className="mono mt-0.5 text-[11px] text-ink-2">{fmtUsd((Number(t.volumeTotalWei) / 1e18) * usdRateOf(t))} vol</p>
         </div>
       </div>
     </Link>
@@ -247,7 +252,7 @@ function BoardCard({ t, fresh }: { t: TokenSummary; fresh?: boolean }) {
         </div>
         <div className="mt-1 flex items-center justify-between">
           <span className="text-[9px] uppercase tracking-wide text-ink-3">Vol</span>
-          <span className="mono text-[11px] font-semibold text-ink-2">{fmtNative(t.volumeTotalWei, 2)}</span>
+          <span className="mono text-[11px] font-semibold text-ink-2">{fmtUsd((Number(t.volumeTotalWei) / 1e18) * usdRateOf(t))}</span>
         </div>
       </div>
     </Link>

@@ -220,7 +220,7 @@ export function TokenPage() {
           <h2 className="text-[14px] font-bold tracking-tight text-ink">Recent trades</h2>
         </div>
         <div className="overflow-hidden rounded-2xl border border-edge bg-panel">
-          <TradesList token={t.address as Address} symbol={t.symbol} />
+          <TradesList token={t.address as Address} symbol={t.symbol} usdRate={usdRate} />
         </div>
       </section>
     </div>
@@ -291,11 +291,32 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
   const [busy, setBusy] = useState<"claim" | "harvest" | null>(null);
 
   // The reward = the coin's pair token (a stock or a meme). Prefer the curated
-  // stock name; fall back to the pair symbol recorded in the token metadata.
+  // stock name, then the pair symbol recorded in the token metadata, then the
+  // pair contract's own symbol() (memes like PONS are neither curated nor in
+  // metadata).
   const stockRow = extra ? stockOf(extra.stock) : undefined;
   const metaPair = (token.metadata as any)?.pair as { symbol?: string } | undefined;
-  const sym = stockRow?.symbol ?? metaPair?.symbol ?? token.symbol + "-pair";
-  const nm = stockRow?.name ?? metaPair?.symbol ?? "the paired token";
+  const [chainSym, setChainSym] = useState<string | null>(null);
+  useEffect(() => {
+    setChainSym(null);
+    const pair = extra?.stock;
+    if (!pair || /^0x0+$/.test(pair) || stockRow || metaPair?.symbol) return;
+    let live = true;
+    client.publicClient
+      .readContract({
+        address: pair as Address,
+        abi: [{ type: "function", name: "symbol", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] }],
+        functionName: "symbol",
+      })
+      .then((s) => live && setChainSym(String(s)))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extra?.stock]);
+  const sym = stockRow?.symbol ?? metaPair?.symbol ?? chainSym ?? token.symbol + "-pair";
+  const nm = stockRow?.name ?? metaPair?.symbol ?? chainSym ?? "the paired token";
 
   const refresh = () => {
     if (isConnected && address)
@@ -376,7 +397,7 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
         </p>
         <p className="mt-0.5 text-xs text-ink-3">
           80% of every trade fee goes to holders in {stock.symbol}, split by how much you hold.
-          Auto-paid once you're owed $4, or claim anytime. {fmtTokens(extra.totalRewards.toString())} {stock.symbol} paid out so far.
+          Claim anytime, straight to your wallet. {fmtTokens(extra.totalRewards.toString())} {stock.symbol} paid out so far.
         </p>
       </div>
       <div className="flex items-center gap-3">
