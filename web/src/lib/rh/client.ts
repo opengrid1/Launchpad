@@ -866,18 +866,38 @@ export class RhClient {
     return () => clearInterval(id);
   }
   subscribeToTrades(token: Address, cb: (t: TradeRecord) => void): () => void {
-    const id = setInterval(() => {
-      this.tradesCache.delete(token.toLowerCase());
-      this.loadTrades(token).then((tr) => tr.length && cb(tr[tr.length - 1])).catch(() => undefined);
-    }, 12_000);
+    // Emit each trade exactly once. The first tick seeds the seen-set with
+    // whatever the initial getTrades already rendered; later ticks ride the
+    // incremental scan (no cache wipe) and surface only genuinely new rows.
+    const seen = new Set<string>();
+    let seeded = false;
+    const tick = () =>
+      this.loadTrades(token)
+        .then((tr) => {
+          if (!seeded) {
+            for (const r of tr) seen.add(r.id);
+            seeded = true;
+            return;
+          }
+          for (const r of tr) {
+            if (!seen.has(r.id)) {
+              seen.add(r.id);
+              cb(r);
+            }
+          }
+        })
+        .catch(() => undefined);
+    void tick();
+    const id = setInterval(tick, 12_000);
     return () => clearInterval(id);
   }
   subscribeToPrice(_token: Address, _cb: (u: unknown) => void): () => void {
     return () => undefined;
   }
   subscribeToCandles(token: Address, interval: CandleInterval, cb: (u: { candle: Candle }) => void): () => void {
+    // The incremental trade scan already picks up new blocks; re-bucketing the
+    // last candle is idempotent by time key, so no cache wipe is needed.
     const id = setInterval(() => {
-      this.tradesCache.delete(token.toLowerCase());
       this.getCandles(token, interval, { limit: 1 }).then((c) => c.length && cb({ candle: c[c.length - 1] })).catch(() => undefined);
     }, 15_000);
     return () => clearInterval(id);
