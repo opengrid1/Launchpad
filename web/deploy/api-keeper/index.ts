@@ -55,6 +55,7 @@ const hookAbi = [
 const tokenAbi = [
   { type: "function", name: "pendingRewards", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
   { type: "function", name: "claimForMany", stateMutability: "nonpayable", inputs: [{ type: "address[]" }], outputs: [] },
+  { type: "function", name: "claimFor", stateMutability: "nonpayable", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
   {
     type: "event",
     name: "Transfer",
@@ -218,6 +219,24 @@ export default async function handler(req: any, res: any) {
           const hash = await wallet.writeContract(request);
           await pc.waitForTransactionReceipt({ hash });
           out.payouts.push({ coin, holders: chunk.length, tx: hash });
+        }
+        // claimForMany swallows individual failures (try/catch inside the
+        // token), so re-check and deliver stragglers one by one.
+        if (due.length) {
+          const still = await Promise.all(
+            due.map((h) => pc.readContract({ address: coin, abi: tokenAbi, functionName: "pendingRewards", args: [h] }).catch(() => 0n) as Promise<bigint>),
+          );
+          for (let j = 0; j < due.length && j < 120; j++) {
+            if ((Number(still[j]) / 1e18) * pairUsd < PAYOUT_MIN_USD) continue;
+            try {
+              const { request } = await pc.simulateContract({ account, address: coin, abi: tokenAbi, functionName: "claimFor", args: [due[j]] });
+              const hash = await wallet.writeContract(request);
+              await pc.waitForTransactionReceipt({ hash });
+              out.payouts.push({ coin, holder: due[j], retried: true, tx: hash });
+            } catch (err: any) {
+              out.errors.push({ coin, holder: due[j], error: String(err?.shortMessage ?? err?.message ?? err).slice(0, 120) });
+            }
+          }
         }
       } catch (err: any) {
         out.errors.push({ coin, error: String(err?.shortMessage ?? err?.message ?? err).slice(0, 200) });
