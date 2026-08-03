@@ -1,11 +1,11 @@
 /**
  * Single source of truth for brand identity. The app ships in flavors -
- * select one at build time with VITE_BRAND (default: stockprintr). Rename here
+ * select one at build time with VITE_BRAND (default: wingman). Rename here
  * and it changes everywhere; header, footer, wallet metadata, docs, and
  * page meta.
  */
 export interface Brand {
-  /** Lowercase wordmark base, e.g. "stockprintr". */
+  /** Lowercase wordmark base, e.g. "wingman". */
   name: string;
   /** Accented wordmark suffix rendered after the name, e.g. ".fun". */
   tld: string;
@@ -20,17 +20,17 @@ export interface Brand {
 }
 
 const FLAVORS: Record<string, Brand> = {
-  stockprintr: {
-    name: "stockprintr",
+  wingman: {
+    name: "wingman",
     tld: ".fun",
-    domain: "stockprintr.fun",
-    url: "https://stockprintr.fun",
-    twitter: "https://x.com/stockprintr",
-    twitterHandle: "stockprintr",
-    tagline: "the printer that prints real stock",
+    domain: "wingman.fun",
+    url: "https://wingman.fun",
+    twitter: "https://x.com/wingmandotfun",
+    twitterHandle: "wingmandotfun",
+    tagline: "every coin flies with a wingman",
     description:
-      "stockprintr. print memecoins into real Uniswap markets on Robinhood Chain. Every trade pays holders real tokenized stock.",
-    title: "stockprintr | the printer that prints real stock",
+      "wingman. launch a coin paired with any stock, meme, or ETH on Robinhood Chain. Every trade pays holders the token it flies with.",
+    title: "wingman | every coin flies with a wingman",
   },
   steadypads: {
     name: "steadypads",
@@ -59,6 +59,6 @@ const FLAVORS: Record<string, Brand> = {
   },
 };
 
-export const BRAND_FLAVOR = String(import.meta.env.VITE_BRAND ?? "stockprintr");
+export const BRAND_FLAVOR = String(import.meta.env.VITE_BRAND ?? "wingman");
 
-export const BRAND: Brand = FLAVORS[BRAND_FLAVOR] ?? FLAVORS.stockprintr;
+export const BRAND: Brand = FLAVORS[BRAND_FLAVOR] ?? FLAVORS.wingman;

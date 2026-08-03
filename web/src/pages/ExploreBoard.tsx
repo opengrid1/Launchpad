@@ -110,7 +110,7 @@ export function ExploreBoard() {
         <div className="mt-4 flex items-center gap-2">
           <span className="board-dot" />
           <h2 className="text-[12px] font-bold uppercase tracking-wide text-ink-2">
-            {debounced ? "Results" : sort === "new" ? "Fresh prints" : sort === "volume" ? "Most traded" : "Top market cap"}
+            {debounced ? "Results" : sort === "new" ? "Fresh launches" : sort === "volume" ? "Most traded" : "Top market cap"}
           </h2>
           <span className="board-hair" />
         </div>
@@ -276,7 +276,7 @@ function BoardEmpty({ q }: { q: string }) {
         {q ? `No token for "${q}"` : "No launches yet"}
       </p>
       <p className="mt-1.5 max-w-sm text-[13.5px] leading-relaxed text-ink-2">
-        {q ? "Try another name, ticker or address." : "Be the first to print. Creators earn 80% of every trade fee, forever."}
+        {q ? "Try another name, ticker or address." : "Be the first to launch. Holders earn 80% of every trade fee in the paired token, forever."}
       </p>
       {!q && (
         <Link to="/launch" className="board-launch mt-5 !px-5 !py-2.5 !text-[14px]">

@@ -348,7 +348,7 @@ export function LaunchBoard() {
 
         <button type="submit" disabled={busy || (pairMode === "custom" && !custom)}
           className="board-launch h-11 w-full !text-[14px] disabled:cursor-not-allowed disabled:opacity-50">
-          {busy ? "Confirm in wallet…" : isConnected ? "Print token" : "Connect wallet to print"}
+          {busy ? "Confirm in wallet…" : isConnected ? "Launch token" : "Connect wallet to launch"}
         </button>
       </form>
     </div>
