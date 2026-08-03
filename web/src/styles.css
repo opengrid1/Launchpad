@@ -381,3 +381,18 @@ button.bg-accent:disabled {
 }
 .sheet-in { animation: sheet-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 @media (prefers-reduced-motion: reduce) { .sheet-in { animation: none; } }
+
+/* Chart HUD frame — corner ticks drawn as an overlay so the charting widget
+   keeps a clean, unclipped, full-size box (clip-path on the sizing container
+   breaks TradingView's autosize). */
+.hud-frame::before, .hud-frame::after {
+  content: "";
+  position: absolute;
+  width: 13px; height: 13px;
+  border-color: var(--color-accent);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 2;
+}
+.hud-frame::before { top: 6px; left: 6px; border-top: 1.5px solid; border-left: 1.5px solid; }
+.hud-frame::after { bottom: 6px; right: 6px; border-bottom: 1.5px solid; border-right: 1.5px solid; }

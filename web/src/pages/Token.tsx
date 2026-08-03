@@ -178,8 +178,9 @@ export function TokenPage() {
               ) : null}
             </div>
           </div>
-          {/* Chart — framed as a HUD viewport */}
-          <div className="hud-viewport h-[420px] overflow-hidden p-1.5">
+          {/* Chart — HUD frame drawn as an overlay so the widget keeps a clean,
+              full-size box (clip-path/padding on the container breaks its sizing). */}
+          <div className="hud-frame relative h-[420px] overflow-hidden rounded-lg border border-edge">
             <Suspense fallback={<Skeleton className="h-full w-full" />}>
               <TVChart token={t.address as Address} symbol={t.symbol} />
             </Suspense>
