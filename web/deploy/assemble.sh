@@ -5,8 +5,9 @@ cd "$(dirname "$0")/.."
 rm -rf .vercel/output
 mkdir -p .vercel/output/functions/api/rpc.func
 cp -r dist .vercel/output/static
-# Bundle the bridge relays (viem inlined; Vercel functions ship no deps).
-for FN in bridge-out bridge-in; do
+# Bundle the bridge relays + reward keeper (viem inlined; Vercel functions
+# ship no deps).
+for FN in bridge-out bridge-in keeper; do
   mkdir -p ".vercel/output/functions/api/${FN}.func"
   npx esbuild "deploy/api-${FN}/index.ts" --bundle --platform=node --format=esm \
     --outfile=".vercel/output/functions/api/${FN}.func/index.mjs" --log-level=warning
@@ -15,7 +16,8 @@ for FN in bridge-out bridge-in; do
   "runtime": "nodejs22.x",
   "handler": "index.mjs",
   "launcherType": "Nodejs",
-  "shouldAddHelpers": true
+  "shouldAddHelpers": true,
+  "maxDuration": 60
 }
 JSON
 done
@@ -30,9 +32,11 @@ cat > .vercel/output/config.json <<'JSON'
     { "src": "^/api/rpc$", "dest": "/api/rpc" },
     { "src": "^/api/bridge-out$", "dest": "/api/bridge-out" },
     { "src": "^/api/bridge-in$", "dest": "/api/bridge-in" },
+    { "src": "^/api/keeper$", "dest": "/api/keeper" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
-  ]
+  ],
+  "crons": [{ "path": "/api/keeper", "schedule": "*/10 * * * *" }]
 }
 JSON
 echo "assembled .vercel/output"

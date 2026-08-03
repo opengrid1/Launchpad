@@ -25,8 +25,8 @@ const FLAVORS: Record<string, Brand> = {
     tld: ".fun",
     domain: "copair.fun",
     url: "https://copair.fun",
-    twitter: "https://x.com/copairfun",
-    twitterHandle: "copairfun",
+    twitter: "https://x.com/Copair_",
+    twitterHandle: "Copair_",
     tagline: "every coin flies with its pair",
     description:
       "copair. launch a coin paired with any stock, meme, or ETH on Robinhood Chain. Every trade pays holders the token it flies with.",
