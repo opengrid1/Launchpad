@@ -95,11 +95,15 @@ export function TradePanel({ token }: { token: TokenSummary }) {
   const taxBps = Number(token.feeTier) || 0;
   const feeRate = taxBps / 10000;
   const priceUsd = Number(token.priceUsd) || 0;
+  // Native (ETH) per whole coin. On the pair=reward fork priceWei is
+  // pair-token units, so the client ships priceEthWei alongside; older
+  // protocols quote priceWei in native already.
+  const priceNativeWei = Number((token as { priceEthWei?: string }).priceEthWei ?? token.priceWei);
 
   // Estimated output amount (in the receive token's units) and its USD value.
   const est = useMemo(() => {
     if (!parsedAmount || parsedAmount === 0n) return null;
-    const price = Number(token.priceWei) / 1e18;
+    const price = priceNativeWei / 1e18;
     if (price <= 0) return null;
     if (side === "buy") {
       const nativeIn = Number(parsedAmount) / 1e18;
@@ -109,7 +113,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
     const tokensIn = Number(parsedAmount) / 1e18;
     const out = tokensIn * price * (1 - feeRate); // native out
     return { amount: out, symbol: env.nativeSymbol, usd: tokensIn * priceUsd };
-  }, [parsedAmount, side, token.priceWei, token.symbol, feeRate, priceUsd]);
+  }, [parsedAmount, side, priceNativeWei, token.symbol, feeRate, priceUsd]);
 
   // USD value of the amount being paid (best-effort; only the coin side is exact).
   const payUsd = useMemo(() => {
@@ -134,7 +138,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
       if (!(await ensureSdkWallet())) {
         throw new Error("Wallet session expired. Reconnect your wallet and try again.");
       }
-      const price = Number(token.priceWei);
+      const price = priceNativeWei;
       const slipMul = Math.max(0, 1 - slip / 100) * (1 - feeRate);
       let minOut = 0n;
       if (price > 0) {

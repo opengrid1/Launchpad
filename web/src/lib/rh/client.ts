@@ -486,7 +486,7 @@ export class RhClient {
     return cached ?? (await refresh);
   }
 
-  private async summarize(core: Core): Promise<TokenSummary> {
+  private async summarize(core: Core): Promise<TokenSummary & { priceEthWei: string }> {
     // Surface the reward stock on the metadata so lists can badge it without a
     // second read (the shared TokenSummary type has no dedicated field).
     if (core.metadata && (core.metadata as any).rewardStock === undefined) {
@@ -502,6 +502,11 @@ export class RhClient {
     const usd = await this.pairUsdOf(core.stock);
     const priceUsdPerToken = pricePairPerToken * usd;
     const mcapUsd = priceUsdPerToken * supplyWhole;
+    // ETH-per-coin equivalent for the trade ticket: buys pay ETH and sells
+    // receive ETH (the router auto-routes through the pair), so quotes and
+    // minOut must be in native units, not pair units.
+    const ethUsd = core.stock.toLowerCase() === this.v4.weth.toLowerCase() ? usd : await this.pairUsdOf(this.v4.weth);
+    const priceEthPerToken = usd > 0 && ethUsd > 0 ? (pricePairPerToken * usd) / ethUsd : 0;
 
     const dayAgo = Math.floor(Date.now() / 1000) - 86400;
     const dayTrades = trades.filter((t) => t.timestamp >= dayAgo);
@@ -539,6 +544,8 @@ export class RhClient {
       totalSupply: core.totalSupply.toString(),
       priceWei: priceWei.toString(),
       priceUsd: String(priceUsdPerToken),
+      // Native-denominated price (wei per whole coin) for buy/sell estimates.
+      priceEthWei: BigInt(Math.round(priceEthPerToken * 1e18)).toString(),
       // Plain-dollar string, matching the SDK's usd8() convention (fmtUsd expects dollars).
       marketCapUsd: String(mcapUsd),
       liquidityWei: wethInPool.toString(),
@@ -560,7 +567,7 @@ export class RhClient {
     const cores = await this.loadCores();
     const settled = await Promise.allSettled(cores.map((c) => this.summarize(c)));
     const list = settled
-      .filter((r): r is PromiseFulfilledResult<TokenSummary> => r.status === "fulfilled")
+      .filter((r): r is PromiseFulfilledResult<TokenSummary & { priceEthWei: string }> => r.status === "fulfilled")
       .map((r) => r.value);
     const sort = opts?.sort ?? "new";
     if (sort === "volume") list.sort((a, b) => Number(b.volume24hWei) - Number(a.volume24hWei));
