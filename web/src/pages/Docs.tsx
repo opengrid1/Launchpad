@@ -34,14 +34,14 @@ function WingmanDocs() {
 
       <Section title="The wingman model">
         <p>
-          Every coin launches paired with a <em>wingman</em>: any token you choose — a tokenized
-          stock (NVDA, TSLA, …), another meme coin, or ETH. The pair token is the market your coin
+          Every coin launches paired with a <em>wingman</em>: any token you choose. A tokenized
+          stock (NVDA, TSLA, and more), another meme coin, or ETH. The pair token is the market your coin
           trades against <b>and</b> the money its holders earn. Hold the coin, and every trade pays
           you in its wingman.
         </p>
         <Facts
           rows={[
-            ["Pair token", "any stock · meme · ETH — creator's choice"],
+            ["Pair token", "any stock · meme · ETH, creator's choice"],
             ["Holder rewards", "paid in the pair token"],
             ["Rewards start", "from the very first trade"],
           ]}
@@ -67,7 +67,7 @@ function WingmanDocs() {
       <Section title="Trading">
         <p>
           Buys and sells are one tap in plain ETH. The router wraps your ETH and routes it through
-          official Uniswap pools into the pair token, then into your coin — and back out again on
+          official Uniswap pools into the pair token, then into your coin, and back out again on
           sells. You never need to hold the pair token to trade.
         </p>
       </Section>
@@ -76,7 +76,7 @@ function WingmanDocs() {
         <p>
           The trade tax is skimmed by the pool's hook on every swap, so it applies to every trade,
           including ones routed directly by bots or aggregators. Accrued fees are normalized into
-          the pair token on each harvest and split two ways — there is no protocol cut.
+          the pair token on each harvest and split two ways. There is no protocol cut.
         </p>
         <Facts
           rows={[

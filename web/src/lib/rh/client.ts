@@ -732,7 +732,7 @@ export class RhClient {
   /** The pair=reward fork has no creator fee; harvest sends 80% to holders and
    *  20% to the platform. Present only so callers that probe for it don't crash. */
   async claimCreatorFees(_token: Address): Promise<`0x${string}`> {
-    throw new Error("No creator fees in this launchpad — holders earn the pair token.");
+    throw new Error("No creator fees in this launchpad; holders earn the pair token.");
   }
 
   async claimDividends(token: Address): Promise<`0x${string}`> {

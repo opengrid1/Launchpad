@@ -304,7 +304,7 @@ export function LaunchBoard() {
             {pair ? <> in <span className="text-accent-ink">${pair.symbol}</span></> : null}
           </p>
           <ul className="mt-1.5 space-y-1 text-[11.5px] leading-relaxed text-ink-2">
-            <li>· Your token trades against {pair ? `$${pair.symbol}` : "the token you pick"} — buys and sells settle in it.</li>
+            <li>· Your token trades against {pair ? `$${pair.symbol}` : "the token you pick"}; buys and sells settle in it.</li>
             <li>· 80% of every fee goes to holders in {pair ? `$${pair.symbol}` : "that token"}, split by how much they hold.</li>
             <li>· You (the creator) keep the other 20%. No tax on the token itself.</li>
           </ul>

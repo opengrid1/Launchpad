@@ -76,7 +76,7 @@ export function ExploreBoard() {
       <div className="mt-3 grid grid-cols-3 gap-2">
         <BoardStat label="Markets" value={String(all.length)} live />
         <BoardStat label="24h volume" value={fmtNative(dayVolume, 2)} />
-        <BoardStat label="Latest" value={spotlight ? `$${spotlight.symbol}` : "—"} accent />
+        <BoardStat label="Latest" value={spotlight ? `$${spotlight.symbol}` : "-"} accent />
       </div>
 
       {/* Spotlight on the newest launch */}
