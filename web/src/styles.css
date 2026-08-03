@@ -531,10 +531,10 @@ button.bg-accent:disabled {
 }
 
 /* ============================================================
-   Robinhood chain (wingman): pump.fun-style dark neon board.
+   Robinhood chain (copair): pump.fun-style dark neon board.
    A distinct layout theme, not a recolor of the default grid.
    ============================================================ */
-:root[data-brand="wingman"] {
+:root[data-brand="copair"] {
   --color-bg: #05070a;
   --color-panel: #0b0f16;
   --color-panel-2: #131a25;
@@ -550,14 +550,14 @@ button.bg-accent:disabled {
   --shadow-card: inset 0 1px 0 #2b3a4f33, 0 2px 10px #00000099;
   --shadow-card-hover: 0 0 0 1px #00e67640, 0 16px 40px -18px #00e6763a;
 }
-:root[data-brand="wingman"] body {
+:root[data-brand="copair"] body {
   background:
     radial-gradient(900px 500px at 50% -8%, #00e6761a, transparent 60%),
     var(--color-bg);
 }
-:root[data-brand="wingman"] ::selection { background: #00e67640; }
-:root[data-brand="wingman"] button.bg-accent,
-:root[data-brand="wingman"] a.bg-accent {
+:root[data-brand="copair"] ::selection { background: #00e67640; }
+:root[data-brand="copair"] button.bg-accent,
+:root[data-brand="copair"] a.bg-accent {
   box-shadow: 0 0 0 1px #00e67666, 0 10px 30px -12px #00e676aa;
 }
 

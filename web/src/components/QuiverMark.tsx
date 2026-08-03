@@ -7,7 +7,7 @@ import { BRAND_FLAVOR } from "../lib/brand";
  * from web/public as a plain <img> with no bundle cost.
  *
  * Flavor-aware: steadypads ships an S-coin mark in the Stable chain's visual
- * language (cream disc sliced by an S on deep forest green); wingman ships
+ * language (cream disc sliced by an S on deep forest green); copair ships
  * the faceted feather tile; other flavors keep the quiver tile.
  */
 const SRC =
@@ -15,8 +15,8 @@ const SRC =
     ? "/steadypads-default.png"
     : BRAND_FLAVOR === "arc"
       ? "/steadypads-arc-default.png"
-      : BRAND_FLAVOR === "wingman"
-        ? "/wingman-default.png"
+      : BRAND_FLAVOR === "copair"
+        ? "/copair-default.png"
         : "/quiver-default.png";
 
 export function QuiverMark({ className = "" }: { className?: string }) {

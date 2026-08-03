@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 /**
- * Build-time flavor meta. index.html ships the default (wingman) title,
+ * Build-time flavor meta. index.html ships the default (copair) title,
  * description and icons; when VITE_BRAND selects another flavor this plugin
  * rewrites them in the emitted HTML so crawlers and the first paint carry the
  * right brand, not just the runtime override in main.tsx.

@@ -11,11 +11,11 @@ const IS_RH = String(import.meta.env.VITE_PROTOCOL ?? "") === "rh-v4";
  * plus the protocol contracts. Typography-first, no dashboard.
  */
 export function DocsPage() {
-  return IS_RH ? <WingmanDocs /> : <LegacyDocs />;
+  return IS_RH ? <CopairDocs /> : <LegacyDocs />;
 }
 
 /** Pair=reward launchpad docs (Robinhood Chain). */
-function WingmanDocs() {
+function CopairDocs() {
   const rh = v4Client.v4;
   const contracts: { name: string; address: string; note: string }[] = [
     { name: "Factory", address: rh.factory, note: "Launches, pools, and the $3k single-sided seed" },
@@ -32,12 +32,12 @@ function WingmanDocs() {
         protocol rules.
       </p>
 
-      <Section title="The wingman model">
+      <Section title="The copair model">
         <p>
-          Every coin launches paired with a <em>wingman</em>: any token you choose. A tokenized
+          Every coin launches paired with a partner token, its <em>copair</em>: any token you choose. A tokenized
           stock (NVDA, TSLA, and more), another meme coin, or ETH. The pair token is the market your coin
           trades against <b>and</b> the money its holders earn. Hold the coin, and every trade pays
-          you in its wingman.
+          you in its copair.
         </p>
         <Facts
           rows={[

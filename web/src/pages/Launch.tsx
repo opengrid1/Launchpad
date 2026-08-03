@@ -30,7 +30,7 @@ const CREATOR_MODE = IS_STABLE || String(import.meta.env.VITE_FEE_MODE ?? "") ==
 export function LaunchPage() {
   // The Robinhood-chain board brand pairs against any onchain token and pays
   // holders 80% of fees in it; that flow has its own launch screen.
-  if (BRAND_FLAVOR === "wingman") return <LaunchBoard />;
+  if (BRAND_FLAVOR === "copair") return <LaunchBoard />;
   return <LaunchDefault />;
 }
 

@@ -1,11 +1,11 @@
 /**
  * Single source of truth for brand identity. The app ships in flavors -
- * select one at build time with VITE_BRAND (default: wingman). Rename here
+ * select one at build time with VITE_BRAND (default: copair). Rename here
  * and it changes everywhere; header, footer, wallet metadata, docs, and
  * page meta.
  */
 export interface Brand {
-  /** Lowercase wordmark base, e.g. "wingman". */
+  /** Lowercase wordmark base, e.g. "copair". */
   name: string;
   /** Accented wordmark suffix rendered after the name, e.g. ".fun". */
   tld: string;
@@ -20,17 +20,17 @@ export interface Brand {
 }
 
 const FLAVORS: Record<string, Brand> = {
-  wingman: {
-    name: "wingman",
+  copair: {
+    name: "copair",
     tld: ".fun",
-    domain: "wingman.fun",
-    url: "https://wingman.fun",
-    twitter: "https://x.com/wingmandotfun",
-    twitterHandle: "wingmandotfun",
-    tagline: "every coin flies with a wingman",
+    domain: "copair.fun",
+    url: "https://copair.fun",
+    twitter: "https://x.com/copairfun",
+    twitterHandle: "copairfun",
+    tagline: "every coin flies with its pair",
     description:
-      "wingman. launch a coin paired with any stock, meme, or ETH on Robinhood Chain. Every trade pays holders the token it flies with.",
-    title: "wingman | every coin flies with a wingman",
+      "copair. launch a coin paired with any stock, meme, or ETH on Robinhood Chain. Every trade pays holders the token it flies with.",
+    title: "copair | every coin flies with its pair",
   },
   steadypads: {
     name: "steadypads",
@@ -59,6 +59,6 @@ const FLAVORS: Record<string, Brand> = {
   },
 };
 
-export const BRAND_FLAVOR = String(import.meta.env.VITE_BRAND ?? "wingman");
+export const BRAND_FLAVOR = String(import.meta.env.VITE_BRAND ?? "copair");
 
-export const BRAND: Brand = FLAVORS[BRAND_FLAVOR] ?? FLAVORS.wingman;
+export const BRAND: Brand = FLAVORS[BRAND_FLAVOR] ?? FLAVORS.copair;

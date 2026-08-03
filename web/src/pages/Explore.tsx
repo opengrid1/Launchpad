@@ -30,7 +30,7 @@ const SORTS: { id: Sort; label: string }[] = [
 export function Explore() {
   // The Robinhood-chain brand uses a distinct pump.fun-style live board rather
   // than the default card grid.
-  if (BRAND_FLAVOR === "wingman") return <ExploreBoard />;
+  if (BRAND_FLAVOR === "copair") return <ExploreBoard />;
   return <ExploreGrid />;
 }
 

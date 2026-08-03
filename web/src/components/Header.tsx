@@ -17,7 +17,7 @@ const BOARD_TABS: { to: string; end?: boolean; icon: IconName; label: string }[]
   { to: "/launch", icon: "launch", label: "Create" },
 ];
 
-const IS_BOARD = BRAND_FLAVOR === "wingman";
+const IS_BOARD = BRAND_FLAVOR === "copair";
 
 /**
  * Top bar; live wordmark left, HUD nav tabs inline on desktop, chain
