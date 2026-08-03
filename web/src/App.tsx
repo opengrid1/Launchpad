@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 
+import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { Skeleton, Toasts } from "./components/ui";
 import { wagmiConfig } from "./lib/wagmi";
@@ -55,6 +56,7 @@ export default function App() {
                 </Routes>
               </Suspense>
             </main>
+            <Footer />
             <Toasts />
           </div>
         </BrowserRouter>
