@@ -1,6 +1,6 @@
 import type { CandleInterval } from "@launchpad/sdk";
 
-import { fail, reader, sendJson } from "./_reader";
+import { fail, readerFor, sendJson } from "./_reader";
 
 /** GET /api/candles?token=0x…&interval=5m&limit=500 — OHLCV bars. */
 export default async function handler(req: any, res: any): Promise<void> {
@@ -15,7 +15,7 @@ export default async function handler(req: any, res: any): Promise<void> {
     }
     const interval = (url.searchParams.get("interval") ?? "5m") as CandleInterval;
     const limit = Math.min(Number(url.searchParams.get("limit")) || 500, 1000);
-    const candles = await reader.getCandles(token as `0x${string}`, interval, { limit });
+    const candles = await (await readerFor(token)).getCandles(token as `0x${string}`, interval, { limit });
     sendJson(res, candles, 5, 30);
   } catch (err) {
     fail(res, err);

@@ -1,4 +1,4 @@
-import { fail, reader, sendJson } from "./_reader";
+import { fail, readerFor, sendJson } from "./_reader";
 
 /** GET /api/trades?token=0x…&limit=50 — recent trades for a market. */
 export default async function handler(req: any, res: any): Promise<void> {
@@ -12,7 +12,7 @@ export default async function handler(req: any, res: any): Promise<void> {
       return;
     }
     const limit = Math.min(Number(url.searchParams.get("limit")) || 50, 200);
-    const trades = await reader.getTrades(token as `0x${string}`, { limit });
+    const trades = await (await readerFor(token)).getTrades(token as `0x${string}`, { limit });
     // Shorter window: trades change more often than the token list.
     sendJson(res, trades, 5, 30);
   } catch (err) {

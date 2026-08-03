@@ -51,6 +51,17 @@ export const readerS = new V4SClient(
   V4S.startBlock,
 );
 
+/** Pick the reader whose factory launched `token` (v4s stock-paired, else v4).
+ *  Powers per-token endpoints (trades, candles) so both launchpads work. */
+export async function readerFor(token: string) {
+  try {
+    if (await readerS.knows(token as `0x${string}`)) return readerS;
+  } catch {
+    /* fall through to the v4 reader */
+  }
+  return reader;
+}
+
 /** JSON with BigInt values coerced to strings, so any stray bigint is safe. */
 export function sendJson(res: any, data: unknown, sMaxAge: number, swr: number): void {
   res.setHeader("content-type", "application/json; charset=utf-8");

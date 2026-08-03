@@ -108,6 +108,13 @@ export class V4Client {
     return this.coresInflight;
   }
 
+  /** True if this client's factory launched `token` — used to route a token to
+   *  the right reader (v4 vs the v4s stock-paired subclass). */
+  async knows(token: Address): Promise<boolean> {
+    await this.loadCores();
+    return this.cores.has(token.toLowerCase());
+  }
+
   /**
    * Live WETH/USD from the on-chain WETH/USDG pool (USDG ≈ $1). The factory's
    * nativeUsdPrice8 was frozen at deploy (ownership renounced), so USD figures
