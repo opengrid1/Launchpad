@@ -6,6 +6,8 @@ import { WagmiProvider } from "wagmi";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { Skeleton, Toasts } from "./components/ui";
+import { BRAND_FLAVOR } from "./lib/brand";
+import { HammrApp } from "./hammr/HammrApp";
 import { wagmiConfig } from "./lib/wagmi";
 import { Explore } from "./pages/Explore";
 
@@ -36,6 +38,16 @@ function PageFallback() {
 }
 
 export default function App() {
+  // The hammr flavor is a self-contained auction app with its own chrome.
+  if (BRAND_FLAVOR === "hammr") {
+    return (
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+          <HammrApp />
+        </QueryClientProvider>
+      </WagmiProvider>
+    );
+  }
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>

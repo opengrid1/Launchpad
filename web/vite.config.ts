@@ -9,6 +9,11 @@ import tailwindcss from "@tailwindcss/vite";
  * right brand, not just the runtime override in main.tsx.
  */
 const FLAVOR_META: Record<string, { title: string; description: string; icon?: string }> = {
+  hammr: {
+    title: "hammr | every coin goes under the hammer",
+    description:
+      "hammr. dutch-auction launchpad on Robinhood Chain: coins start at 10x and fall for one hour, then the hammer drops, liquidity locks, and holders earn the pair token on every trade.",
+  },
   steadypads: {
     title: "steadypads | the stable launchpad",
     description:

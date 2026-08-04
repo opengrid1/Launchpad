@@ -20,6 +20,18 @@ export interface Brand {
 }
 
 const FLAVORS: Record<string, Brand> = {
+  hammr: {
+    name: "hammr",
+    tld: ".fun",
+    domain: "hammr.fun",
+    url: "https://hammr.fun",
+    twitter: "https://x.com/hammrfun",
+    twitterHandle: "hammrfun",
+    tagline: "every coin goes under the hammer",
+    description:
+      "hammr. dutch-auction launchpad on Robinhood Chain: coins start at 10x and fall for one hour, then the hammer drops, liquidity locks, and holders earn the pair token on every trade.",
+    title: "hammr | every coin goes under the hammer",
+  },
   copair: {
     name: "copair",
     tld: ".fun",
