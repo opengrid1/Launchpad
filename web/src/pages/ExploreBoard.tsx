@@ -76,34 +76,43 @@ export function ExploreBoard() {
     <div className="board mx-auto max-w-6xl px-4 pb-24 pt-4 sm:px-6">
       {/* HERO: editorial copy + the freshest market as a boarding card */}
       {!debounced && (
-        <section className="cp-hero">
-          <div className="cp-hero-copy">
-            <p className="cp-eyebrow">
-              <span className="board-dot" /> live on {env.chainName}
-            </p>
-            <h1 className="cp-headline">
-              Launch a coin that
-              <br />
-              <em>pays its holders.</em>
-            </h1>
-            <p className="cp-sub">
-              Pair a coin with any tokenized stock, meme, or ETH. Every trade pays holders 80% of
-              the fee in that pair token, delivered automatically. You keep 20% as the creator.
-            </p>
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <Link to="/launch" className="cp-cta">Launch a coin</Link>
-              <Link to="/docs" className="cp-cta-ghost">How it works</Link>
+        <>
+          <section className="cp-hero">
+            <div className="cp-hero-copy">
+              <p className="cp-eyebrow">
+                <span className="board-dot" /> live on {env.chainName} · pair &amp; earn
+              </p>
+              <h1 className="cp-headline">
+                Every trade.
+                <br />
+                <em>Holders get paid.</em>
+              </h1>
+              <p className="cp-sub">
+                Pair a coin with any tokenized stock, meme, or ETH. 80% of every trade fee is paid
+                to holders in that pair token, delivered automatically. Creators keep 20%.
+              </p>
+              <div className="cp-chips">
+                <span><b>80%</b> to holders</span>
+                <span>pair <b>any token</b></span>
+                <span><b>auto</b> payouts</span>
+                <span>liquidity <b>locked</b></span>
+              </div>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <Link to="/launch" className="cp-cta">Launch a coin</Link>
+                <Link to="/docs" className="cp-cta-ghost">How it works</Link>
+              </div>
+              <div className="cp-stats">
+                <div><b>{all.length}</b><span>markets</span></div>
+                <i />
+                <div><b>{fmtUsd(dayVolumeUsd)}</b><span>24h volume</span></div>
+                <i />
+                <div><b>{spotlight ? `$${spotlight.symbol}` : "-"}</b><span>latest launch</span></div>
+              </div>
             </div>
-            <div className="cp-stats">
-              <div><b>{all.length}</b><span>markets</span></div>
-              <i />
-              <div><b>{fmtUsd(dayVolumeUsd)}</b><span>24h volume</span></div>
-              <i />
-              <div><b>{spotlight ? `$${spotlight.symbol}` : "-"}</b><span>latest launch</span></div>
-            </div>
-          </div>
-          {spotlight ? <HeroCard t={spotlight} /> : loading ? <div className="cp-herocard cp-skel" /> : null}
-        </section>
+            {spotlight ? <HeroCard t={spotlight} /> : loading ? <div className="cp-herocard cp-skel" /> : null}
+          </section>
+          <ContractStrip />
+        </>
       )}
 
       {/* Live activity ticker */}
@@ -176,7 +185,8 @@ function HeroCard({ t }: { t: TokenSummary }) {
   const vol = fmtUsd((Number(t.volumeTotalWei) / 1e18) * usdRateOf(t));
   const pairSym = pairSymOf(t);
   return (
-    <Link to={`/token/${t.address}`} className="cp-herocard">
+    <Link to={`/token/${t.address}`} className="cp-herocard cp-frame">
+      <i className="cp-corners" aria-hidden />
       <div className="cp-herocard-art">
         {src && !bad ? <img src={src} alt="" onError={() => setBad(true)} /> : <QuiverMark />}
         <span className="cp-herocard-badges">
@@ -210,6 +220,29 @@ function HeroCard({ t }: { t: TokenSummary }) {
         <span className="cp-cta mt-1 w-full text-center">Trade {`$${t.symbol}`}</span>
       </div>
     </Link>
+  );
+}
+
+/** The official $COPAIR contract, framed like a target card. */
+function ContractStrip() {
+  const [copied, setCopied] = useState(false);
+  const addr = "0xB9B9BfcABA4A1dc55724AD8958bCE3D36c104663";
+  const copy = () => {
+    navigator.clipboard?.writeText(addr).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    });
+  };
+  return (
+    <div className="cp-contract cp-frame">
+      <i className="cp-corners" aria-hidden />
+      <span className="lbl">$COPAIR contract</span>
+      <span className="addr flex-1">{addr}</span>
+      <button onClick={copy}>{copied ? "Copied" : "Copy"}</button>
+      <Link to={`/token/${addr}`} className="cp-cta" style={{ padding: "8px 18px", fontSize: 13 }}>
+        Trade
+      </Link>
+    </div>
   );
 }
 
