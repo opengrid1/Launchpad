@@ -552,123 +552,107 @@ button.bg-accent:disabled {
   --shadow-card-hover: 0 0 0 1px #cdff0045, 0 16px 40px -18px #cdff003a;
 }
 :root[data-brand="copair"] body {
-  background:
-    radial-gradient(1100px 560px at 18% -12%, #cdff0012, transparent 62%),
-    radial-gradient(800px 420px at 92% 4%, #cdff000a, transparent 60%),
-    var(--color-bg);
+  background: var(--color-bg);
 }
 
-/* ---- copair tactical HUD: stencil display, bracket frames, acid lime ---- */
-.cp-hero {
-  display: grid; gap: 22px; align-items: stretch; margin-top: 18px;
+/* ---- copair minimalist terminal: type, hairlines, one accent ---- */
+.cpm { max-width: 880px; margin: 0 auto; padding: 0 20px 96px; }
+.cpm-hero { padding: 64px 0 36px; }
+.cpm-eyebrow {
+  font-family: var(--font-mono, ui-monospace); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.26em; text-transform: uppercase; color: var(--color-ink-3);
 }
-@media (min-width: 880px) { .cp-hero { grid-template-columns: 1.25fr 1fr; gap: 28px; } }
-.cp-hero-copy { display: flex; flex-direction: column; justify-content: center; padding: 8px 2px; }
-.cp-eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--font-mono, ui-monospace); font-size: 10.5px; font-weight: 700;
-  letter-spacing: 0.24em; text-transform: uppercase; color: var(--color-accent-ink);
-}
-.cp-headline {
-  margin-top: 12px; font-family: "Anton", Impact, sans-serif; font-weight: 400;
-  font-size: clamp(38px, 6.4vw, 64px); letter-spacing: 0.01em; line-height: 0.98;
+.cpm-headline {
+  margin-top: 16px; font-family: "Anton", Impact, sans-serif; font-weight: 400;
+  font-size: clamp(40px, 7.4vw, 76px); letter-spacing: 0.005em; line-height: 0.97;
   text-transform: uppercase; color: var(--color-ink);
 }
-.cp-headline em { font-style: normal; color: var(--color-accent); text-shadow: 0 0 40px #cdff0055; }
-.cp-sub { margin-top: 14px; max-width: 46ch; font-size: 14px; line-height: 1.65; color: var(--color-ink-2); }
+.cpm-headline em { font-style: normal; color: var(--color-accent); }
+.cpm-sub { margin-top: 18px; max-width: 52ch; font-size: 14.5px; line-height: 1.7; color: var(--color-ink-2); }
+.cpm-ctas { display: flex; align-items: center; gap: 22px; margin-top: 26px; }
+.cpm-cta {
+  display: inline-block; padding: 12px 26px; border-radius: 3px;
+  font-family: "Anton", Impact, sans-serif; font-size: 14px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--color-accent-fg); background: var(--color-accent);
+  transition: filter .15s;
+}
+.cpm-cta:hover { filter: brightness(1.08); }
+.cpm-link { font-size: 13px; font-weight: 600; color: var(--color-ink-2); transition: color .15s; }
+.cpm-link:hover { color: var(--color-ink); }
+.cpm-statline {
+  margin-top: 30px; font-family: var(--font-mono, ui-monospace); font-size: 12px;
+  color: var(--color-ink-3); font-variant-numeric: tabular-nums;
+}
 
-/* HUD corner brackets: one wrapper, four corners. */
-.cp-frame { position: relative; border: 1px solid #cdff0038; background: var(--color-panel); }
-.cp-frame::before, .cp-frame::after,
-.cp-frame > .cp-corners::before, .cp-frame > .cp-corners::after {
-  content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none;
-  border-color: var(--color-accent); border-style: solid;
+.cpm-contract {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 13px 0; border-top: 1px solid #ffffff0f; border-bottom: 1px solid #ffffff0f;
+  font-family: var(--font-mono, ui-monospace); font-size: 12px;
 }
-.cp-frame::before { left: -1px; top: -1px; border-width: 2px 0 0 2px; }
-.cp-frame::after { right: -1px; top: -1px; border-width: 2px 2px 0 0; }
-.cp-frame > .cp-corners::before { left: -1px; bottom: -1px; border-width: 0 0 2px 2px; }
-.cp-frame > .cp-corners::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; }
+.cpm-contract .k { color: var(--color-accent); font-weight: 700; }
+.cpm-contract .a { color: var(--color-ink-3); overflow-wrap: anywhere; flex: 1; min-width: 200px; }
+.cpm-contract button, .cpm-contract a {
+  background: none; border: none; cursor: pointer; padding: 0;
+  font-family: inherit; font-size: 12px; color: var(--color-ink-2); font-weight: 600;
+}
+.cpm-contract button:hover, .cpm-contract a:hover { color: var(--color-ink); }
 
-.cp-cta {
-  display: inline-block; border-radius: 4px; padding: 12px 26px;
-  font-family: "Anton", Impact, sans-serif; font-weight: 400; letter-spacing: 0.06em;
-  text-transform: uppercase; font-size: 15px; color: var(--color-accent-fg);
-  background: var(--color-accent);
-  box-shadow: 0 0 0 1px #cdff0066, 0 12px 34px -12px #cdff00aa;
-  transition: filter .15s, transform .08s;
+.cpm-list { margin-top: 44px; }
+.cpm-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cpm-tabs { display: flex; gap: 18px; }
+.cpm-tabs button {
+  background: none; border: none; cursor: pointer; padding: 0 0 6px;
+  font-size: 13px; font-weight: 600; color: var(--color-ink-3);
+  border-bottom: 2px solid transparent; transition: color .15s;
 }
-.cp-cta:hover { filter: brightness(1.08); }
-.cp-cta:active { transform: translateY(1px); }
-.cp-cta-ghost {
-  display: inline-block; border-radius: 4px; padding: 12px 22px;
-  font-family: "Anton", Impact, sans-serif; letter-spacing: 0.06em; text-transform: uppercase;
-  font-size: 14px; font-weight: 400; color: var(--color-accent-ink);
-  border: 1px solid #cdff0055; transition: background .15s;
+.cpm-tabs button:hover { color: var(--color-ink-2); }
+.cpm-tabs button.on { color: var(--color-ink); border-bottom-color: var(--color-accent); }
+.cpm-search {
+  width: 190px; background: none; border: none; outline: none;
+  border-bottom: 1px solid #ffffff1a; padding: 4px 2px 6px;
+  font-size: 13px; color: var(--color-ink); transition: border-color .15s;
 }
-.cp-cta-ghost:hover { background: #cdff0012; }
+.cpm-search::placeholder { color: var(--color-ink-3); }
+.cpm-search:focus { border-bottom-color: var(--color-accent); }
 
-/* Feature chips: framed HUD tags under the headline. */
-.cp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-.cp-chips span {
-  border: 1px solid #cdff0033; background: var(--color-panel);
-  padding: 7px 12px; font-family: var(--font-mono, ui-monospace);
-  font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--color-ink-2);
+.cpm-head, .cpm-row {
+  display: grid; align-items: center; gap: 14px;
+  grid-template-columns: 26px 1fr 72px 96px;
 }
-.cp-chips span b { color: var(--color-accent-ink); font-weight: 800; }
+@media (min-width: 640px) { .cpm-head, .cpm-row { grid-template-columns: 26px 1fr 88px 100px 100px; } }
+@media (min-width: 820px) { .cpm-head, .cpm-row { grid-template-columns: 26px 1fr 96px 108px 108px 64px; } }
+.cpm-head {
+  margin-top: 22px; padding-bottom: 10px; border-bottom: 1px solid #ffffff14;
+  font-family: var(--font-mono, ui-monospace); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-ink-3);
+}
+.cpm-head .hide-sm { display: none; }
+.cpm-head .hide-md { display: none; }
+.cpm-row .hide-sm { display: none; }
+.cpm-row .hide-md { display: none; }
+@media (min-width: 640px) { .cpm-head .hide-sm, .cpm-row .hide-sm { display: block; } }
+@media (min-width: 820px) { .cpm-head .hide-md, .cpm-row .hide-md { display: block; } }
+.cpm-head .r, .cpm-row .r { text-align: right; }
+.cpm-head .n { color: var(--color-ink-3); }
 
-.cp-stats { display: flex; align-items: center; gap: 18px; margin-top: 24px; }
-.cp-stats > div { display: flex; flex-direction: column; gap: 2px; }
-.cp-stats b {
-  font-family: var(--font-mono, ui-monospace); font-size: 17px; font-weight: 800;
-  color: var(--color-ink); font-variant-numeric: tabular-nums;
+.cpm-row {
+  padding: 14px 0; border-bottom: 1px solid #ffffff0a;
+  transition: background .12s; border-radius: 2px;
 }
-.cp-stats span { font-size: 9.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink-3); }
-.cp-stats i { width: 1px; height: 26px; background: var(--color-edge); }
+.cpm-row:hover { background: #ffffff05; }
+.cpm-row .n { font-family: var(--font-mono, ui-monospace); font-size: 11.5px; color: var(--color-ink-3); }
+.cpm-row .m { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cpm-row .logo { width: 34px; height: 34px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: var(--color-panel-2); }
+.cpm-row .logo img { width: 100%; height: 100%; object-fit: cover; }
+.cpm-row .nm { display: flex; flex-direction: column; min-width: 0; }
+.cpm-row .nm b { font-size: 13.5px; font-weight: 700; color: var(--color-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cpm-row .nm i { font-style: normal; font-family: var(--font-mono, ui-monospace); font-size: 10.5px; color: var(--color-ink-3); }
+.cpm-row .nm i em { font-style: normal; color: #f0b429; }
+.cpm-row .muted { font-family: var(--font-mono, ui-monospace); font-size: 12px; color: var(--color-ink-2); font-variant-numeric: tabular-nums; }
+.cpm-row .acc { font-family: var(--font-mono, ui-monospace); font-size: 13px; font-weight: 700; color: var(--color-accent); font-variant-numeric: tabular-nums; }
+.cpm-skel { height: 52px; animation: pulse 1.6s ease-in-out infinite; background: #ffffff06; border-bottom: 1px solid #ffffff0a; }
+.cpm-empty { padding: 44px 0; text-align: center; font-size: 13.5px; color: var(--color-ink-2); }
 
-.cp-herocard {
-  display: flex; flex-direction: column; overflow: visible; border-radius: 0;
-  transition: transform .15s, box-shadow .2s;
-}
-.cp-herocard:hover { transform: translateY(-3px); box-shadow: 0 24px 60px -28px #cdff0044; }
-.cp-herocard-art { position: relative; aspect-ratio: 16/8.4; overflow: hidden; background: var(--color-panel-2); }
-.cp-herocard-art img { width: 100%; height: 100%; object-fit: cover; }
-.cp-herocard-badges { position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; z-index: 2; }
-.cp-herocard-body { display: flex; flex-direction: column; gap: 12px; padding: 16px 18px 18px; }
-.cp-herocard-figures { display: flex; gap: 0; border-top: 1px solid var(--color-edge); border-bottom: 1px solid var(--color-edge); }
-.cp-herocard-figures > div { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 10px 0; }
-.cp-herocard-figures > div + div { border-left: 1px solid var(--color-edge); padding-left: 14px; }
-.cp-herocard-figures span { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink-3); }
-.cp-herocard-figures b { font-size: 15px; font-weight: 800; color: var(--color-accent-ink); font-variant-numeric: tabular-nums; }
-.cp-skel { min-height: 320px; animation: pulse 1.6s ease-in-out infinite; background: var(--color-panel); }
-
-/* Contract card strip: address + copy, snipurr-style. */
-.cp-contract {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
-  margin-top: 18px; padding: 12px 16px;
-}
-.cp-contract .lbl {
-  font-family: var(--font-mono, ui-monospace); font-size: 10px; font-weight: 800;
-  letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-accent-ink);
-}
-.cp-contract .addr {
-  font-family: var(--font-mono, ui-monospace); font-size: 12px; color: var(--color-ink-2);
-  overflow-wrap: anywhere;
-}
-.cp-contract button {
-  border: 1px solid #cdff0055; color: var(--color-accent-ink); background: none;
-  font-family: var(--font-mono, ui-monospace); font-size: 10.5px; font-weight: 700;
-  letter-spacing: 0.1em; padding: 5px 12px; cursor: pointer; text-transform: uppercase;
-}
-.cp-contract button:hover { background: #cdff0012; }
-
-.cp-rail { width: 3px; height: 16px; background: var(--color-accent); box-shadow: 0 0 10px #cdff0088; }
-.cp-earns {
-  position: absolute; right: 6px; bottom: 6px;
-  font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--color-accent-ink); background: #060704cc; border: 1px solid #cdff0040;
-  padding: 3px 8px; backdrop-filter: blur(4px);
-}
 :root[data-brand="copair"] ::selection { background: #00e67640; }
 :root[data-brand="copair"] button.bg-accent,
 :root[data-brand="copair"] a.bg-accent {

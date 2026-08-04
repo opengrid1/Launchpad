@@ -3,26 +3,26 @@ import { Link } from "react-router-dom";
 import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
-import { Icon } from "../components/Icon";
 import { QuiverMark } from "../components/QuiverMark";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { fmtUsd, shortAddr, timeAgo, usdRateOf } from "../lib/format";
+import { fmtUsd, timeAgo, usdRateOf } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
 import { isOfficial } from "../lib/official";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 
 type Sort = "new" | "volume" | "mcap";
 const SORTS: { id: Sort; label: string }[] = [
-  { id: "new", label: "Newest" },
+  { id: "new", label: "New" },
   { id: "volume", label: "Volume" },
-  { id: "mcap", label: "Market cap" },
+  { id: "mcap", label: "Mcap" },
 ];
 
+const COPAIR_ADDR = "0xB9B9BfcABA4A1dc55724AD8958bCE3D36c104663";
+
 /**
- * The copair flight deck: an editorial hero with the freshest market as a
- * boarding card, a slim stats rail, then a refined market grid. Calm ground,
- * one green accent, price and rewards as the heroes.
+ * Minimalist market terminal. One headline, one accent, then a single clean
+ * list of markets separated by hairlines. No cards, no boxes, no marquee.
  */
 export function ExploreBoard() {
   const [query, setQuery] = useState("");
@@ -62,107 +62,84 @@ export function ExploreBoard() {
     return s;
   }, [all, debounced, sort]);
 
-  const newest = useMemo(() => [...all].sort((a, b) => b.createdAt - a.createdAt).slice(0, 14), [all]);
-  // Volumes are recorded in each coin's pair token, so convert per token to
-  // dollars before summing; a raw sum would mix NVDA with PONS with ETH.
   const dayVolumeUsd = useMemo(
     () => all.reduce((a, t) => a + (Number(t.volume24hWei || "0") / 1e18) * usdRateOf(t), 0),
     [all],
   );
   const loading = !env.hideTokens && (lv || ln) && all.length === 0;
-  const spotlight = newest[0];
+  const latest = useMemo(() => [...all].sort((a, b) => b.createdAt - a.createdAt)[0], [all]);
 
   return (
-    <div className="board mx-auto max-w-6xl px-4 pb-24 pt-4 sm:px-6">
-      {/* HERO: editorial copy + the freshest market as a boarding card */}
-      {!debounced && (
-        <>
-          <section className="cp-hero">
-            <div className="cp-hero-copy">
-              <p className="cp-eyebrow">
-                <span className="board-dot" /> live on {env.chainName} · pair &amp; earn
-              </p>
-              <h1 className="cp-headline">
-                Every trade.
-                <br />
-                <em>Holders get paid.</em>
-              </h1>
-              <p className="cp-sub">
-                Pair a coin with any tokenized stock, meme, or ETH. 80% of every trade fee is paid
-                to holders in that pair token, delivered automatically. Creators keep 20%.
-              </p>
-              <div className="cp-chips">
-                <span><b>80%</b> to holders</span>
-                <span>pair <b>any token</b></span>
-                <span><b>auto</b> payouts</span>
-                <span>liquidity <b>locked</b></span>
-              </div>
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link to="/launch" className="cp-cta">Launch a coin</Link>
-                <Link to="/docs" className="cp-cta-ghost">How it works</Link>
-              </div>
-              <div className="cp-stats">
-                <div><b>{all.length}</b><span>markets</span></div>
-                <i />
-                <div><b>{fmtUsd(dayVolumeUsd)}</b><span>24h volume</span></div>
-                <i />
-                <div><b>{spotlight ? `$${spotlight.symbol}` : "-"}</b><span>latest launch</span></div>
-              </div>
-            </div>
-            {spotlight ? <HeroCard t={spotlight} /> : loading ? <div className="cp-herocard cp-skel" /> : null}
-          </section>
-          <ContractStrip />
-        </>
-      )}
-
-      {/* Live activity ticker */}
-      {newest.length > 0 && <div className="mt-6"><Ticker tokens={newest} /></div>}
-
-      {/* Search + sort */}
-      <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2.5">
-          <span className="cp-rail" />
-          <h2 className="text-[13px] font-bold uppercase tracking-[0.14em] text-ink-2">
-            {debounced ? "Results" : sort === "new" ? "Fresh launches" : sort === "volume" ? "Most traded" : "Top market cap"}
-          </h2>
+    <div className="cpm">
+      {/* Hero: type only. */}
+      <section className="cpm-hero">
+        <p className="cpm-eyebrow">{env.chainName} · pair &amp; earn</p>
+        <h1 className="cpm-headline">
+          Every trade.
+          <br />
+          <em>Holders get paid.</em>
+        </h1>
+        <p className="cpm-sub">
+          Pair a coin with any stock, meme, or ETH. Holders earn 80% of every trade fee in the
+          pair token, automatically.
+        </p>
+        <div className="cpm-ctas">
+          <Link to="/launch" className="cpm-cta">Launch a coin</Link>
+          <Link to="/docs" className="cpm-link">How it works →</Link>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="relative block sm:w-64">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3">
-              <Icon name="search" size={15} />
-            </span>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search name, ticker or address"
-              type="search"
-              className="board-input h-9 w-full pl-9 pr-3 text-[13px] outline-none"
-            />
-          </label>
-          <div className="board-tabs">
+        <p className="cpm-statline">
+          {all.length} markets · {fmtUsd(dayVolumeUsd)} 24h volume
+          {latest ? <> · latest ${latest.symbol}</> : null}
+        </p>
+      </section>
+
+      {/* Contract line */}
+      <ContractLine />
+
+      {/* Market list */}
+      <section className="cpm-list">
+        <div className="cpm-toolbar">
+          <div className="cpm-tabs">
             {SORTS.map((s) => (
               <button key={s.id} onClick={() => setSort(s.id)} className={sort === s.id ? "on" : ""}>
                 {s.label}
               </button>
             ))}
           </div>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search"
+            type="search"
+            className="cpm-search"
+          />
         </div>
-      </div>
 
-      {/* Market grid */}
-      <div className="mt-4">
+        <div className="cpm-head">
+          <span className="n">#</span>
+          <span>Market</span>
+          <span className="hide-sm">Earns</span>
+          <span className="r">Mcap</span>
+          <span className="r hide-sm">Volume</span>
+          <span className="r hide-md">Age</span>
+        </div>
+
         {loading ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {[...Array(8)].map((_, i) => <BoardSkeleton key={i} />)}
-          </div>
+          [...Array(6)].map((_, i) => <div key={i} className="cpm-row cpm-skel" />)
         ) : feed.length === 0 ? (
-          <BoardEmpty q={debounced} />
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {feed.map((t, i) => <BoardCard key={t.address} t={t} fresh={!debounced && sort === "new" && i === 0} />)}
+          <div className="cpm-empty">
+            {debounced ? (
+              <>No market for &ldquo;{debounced}&rdquo;.</>
+            ) : (
+              <>
+                No launches yet. <Link to="/launch" className="cpm-link">Be the first →</Link>
+              </>
+            )}
           </div>
+        ) : (
+          feed.map((t, i) => <Row key={t.address} t={t} rank={i + 1} />)
         )}
-      </div>
+      </section>
     </div>
   );
 }
@@ -178,179 +155,45 @@ function pairSymOf(t: TokenSummary): string {
   return typeof s === "string" && s ? s : "";
 }
 
-/** The freshest market, styled like a boarding card. */
-function HeroCard({ t }: { t: TokenSummary }) {
-  const [bad, setBad] = useState(false);
-  const src = logoSrc(t);
-  const vol = fmtUsd((Number(t.volumeTotalWei) / 1e18) * usdRateOf(t));
-  const pairSym = pairSymOf(t);
-  return (
-    <Link to={`/token/${t.address}`} className="cp-herocard cp-frame">
-      <i className="cp-corners" aria-hidden />
-      <div className="cp-herocard-art">
-        {src && !bad ? <img src={src} alt="" onError={() => setBad(true)} /> : <QuiverMark />}
-        <span className="cp-herocard-badges">
-          <span className="board-fresh">NEW</span>
-          {isOfficial(t.address) && <span className="board-official">OFFICIAL</span>}
-        </span>
-      </div>
-      <div className="cp-herocard-body">
-        <div className="min-w-0">
-          <p className="truncate text-[16.5px] font-extrabold leading-tight text-ink">
-            {t.name} <span className="mono text-[12.5px] font-bold text-accent-ink">${t.symbol}</span>
-          </p>
-          <p className="mono mt-0.5 text-[11px] text-ink-3">by {shortAddr(t.creator)} · {timeAgo(t.createdAt).replace(" ago", "")}</p>
-        </div>
-        <div className="cp-herocard-figures">
-          <div>
-            <span>Market cap</span>
-            <b className="mono">{fmtUsd(t.marketCapUsd)}</b>
-          </div>
-          <div>
-            <span>Volume</span>
-            <b className="mono">{vol}</b>
-          </div>
-          {pairSym && (
-            <div>
-              <span>Holders earn</span>
-              <b>{pairSym}</b>
-            </div>
-          )}
-        </div>
-        <span className="cp-cta mt-1 w-full text-center">Trade {`$${t.symbol}`}</span>
-      </div>
-    </Link>
-  );
-}
-
-/** The official $COPAIR contract, framed like a target card. */
-function ContractStrip() {
+function ContractLine() {
   const [copied, setCopied] = useState(false);
-  const addr = "0xB9B9BfcABA4A1dc55724AD8958bCE3D36c104663";
   const copy = () => {
-    navigator.clipboard?.writeText(addr).then(() => {
+    navigator.clipboard?.writeText(COPAIR_ADDR).then(() => {
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
+      window.setTimeout(() => setCopied(false), 1500);
     });
   };
   return (
-    <div className="cp-contract cp-frame">
-      <i className="cp-corners" aria-hidden />
-      <span className="lbl">$COPAIR contract</span>
-      <span className="addr flex-1">{addr}</span>
-      <button onClick={copy}>{copied ? "Copied" : "Copy"}</button>
-      <Link to={`/token/${addr}`} className="cp-cta" style={{ padding: "8px 18px", fontSize: 13 }}>
-        Trade
-      </Link>
+    <div className="cpm-contract">
+      <span className="k">$COPAIR</span>
+      <span className="a">{COPAIR_ADDR}</span>
+      <button onClick={copy}>{copied ? "copied" : "copy"}</button>
+      <Link to={`/token/${COPAIR_ADDR}`}>trade →</Link>
     </div>
   );
 }
 
-function Ticker({ tokens }: { tokens: TokenSummary[] }) {
-  // Duplicate the list so the marquee loops seamlessly.
-  const row = [...tokens, ...tokens];
-  return (
-    <div className="board-ticker">
-      <span className="board-ticker-label">JUST LAUNCHED</span>
-      <div className="board-ticker-track">
-        <div className="board-ticker-run">
-          {row.map((t, i) => (
-            <Link key={t.address + i} to={`/token/${t.address}`} className="board-ticker-item">
-              <TickerLogo t={t} />
-              <span className="font-bold text-ink">{t.symbol}</span>
-              <span className="mono text-accent-ink">{fmtUsd(t.marketCapUsd)}</span>
-              <span className="text-ink-3">{timeAgo(t.createdAt).replace(" ago", "")}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TickerLogo({ t }: { t: TokenSummary }) {
+function Row({ t, rank }: { t: TokenSummary; rank: number }) {
   const [bad, setBad] = useState(false);
   const src = logoSrc(t);
-  return (
-    <span className="grid h-5 w-5 place-items-center overflow-hidden rounded-full bg-panel-2">
-      {src && !bad ? (
-        <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" onError={() => setBad(true)} />
-      ) : (
-        <QuiverMark />
-      )}
-    </span>
-  );
-}
-
-function BoardCard({ t, fresh }: { t: TokenSummary; fresh?: boolean }) {
-  const [bad, setBad] = useState(false);
-  const src = logoSrc(t);
-  const age = timeAgo(t.createdAt).replace(" ago", "");
   const pairSym = pairSymOf(t);
+  const vol = fmtUsd((Number(t.volumeTotalWei) / 1e18) * usdRateOf(t));
   return (
-    <Link to={`/token/${t.address}`} className={`board-card ${fresh ? "is-fresh" : ""}`}>
-      <div className="relative aspect-square w-full overflow-hidden bg-panel-2">
-        {src && !bad ? (
-          <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" onError={() => setBad(true)} />
-        ) : (
-          <QuiverMark />
-        )}
-        <span className="board-age">{age}</span>
-        {fresh && <span className="board-fresh board-fresh-abs">NEW</span>}
-        {isOfficial(t.address) && <span className="board-official board-official-abs">OFFICIAL</span>}
-        {pairSym && <span className="cp-earns">earns {pairSym}</span>}
-      </div>
-      <div className="p-3">
-        <div className="flex items-baseline gap-1.5">
-          <p className="min-w-0 truncate text-[13px] font-bold leading-tight text-ink">{t.name}</p>
-          <span className="mono shrink-0 text-[10.5px] font-semibold text-accent-ink">${t.symbol}</span>
-        </div>
-        <div className="mt-2.5 flex items-end justify-between">
-          <div>
-            <p className="text-[9px] uppercase tracking-wide text-ink-3">Mcap</p>
-            <p className="mono text-[14px] font-extrabold leading-tight text-accent-ink">{fmtUsd(t.marketCapUsd)}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[9px] uppercase tracking-wide text-ink-3">Vol</p>
-            <p className="mono text-[11.5px] font-semibold leading-tight text-ink-2">
-              {fmtUsd((Number(t.volumeTotalWei) / 1e18) * usdRateOf(t))}
-            </p>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function BoardSkeleton() {
-  return (
-    <div className="board-card">
-      <div className="aspect-square w-full animate-pulse bg-panel-2" />
-      <div className="space-y-2 p-3">
-        <div className="h-3 w-16 animate-pulse rounded bg-panel-2" />
-        <div className="h-4 w-20 animate-pulse rounded bg-panel-2" />
-      </div>
-    </div>
-  );
-}
-
-function BoardEmpty({ q }: { q: string }) {
-  return (
-    <div className="flex flex-col items-center px-6 py-20 text-center">
-      <span className="grid h-14 w-14 place-items-center rounded-full bg-accent/10 text-accent-ink">
-        <Icon name={q ? "search" : "launch"} size={26} />
+    <Link to={`/token/${t.address}`} className="cpm-row">
+      <span className="n">{rank}</span>
+      <span className="m">
+        <span className="logo">
+          {src && !bad ? <img src={src} alt="" loading="lazy" onError={() => setBad(true)} /> : <QuiverMark />}
+        </span>
+        <span className="nm">
+          <b>{t.name}</b>
+          <i>${t.symbol}{isOfficial(t.address) && <em> · official</em>}</i>
+        </span>
       </span>
-      <p className="mt-4 text-[18px] font-extrabold text-ink">
-        {q ? `No token for "${q}"` : "No launches yet"}
-      </p>
-      <p className="mt-1.5 max-w-sm text-[13.5px] leading-relaxed text-ink-2">
-        {q ? "Try another name, ticker or address." : "Be the first to launch. Holders earn 80% of every trade fee in the paired token, forever."}
-      </p>
-      {!q && (
-        <Link to="/launch" className="board-launch mt-5 !px-5 !py-2.5 !text-[14px]">
-          Launch the first token
-        </Link>
-      )}
-    </div>
+      <span className="hide-sm muted">{pairSym || "–"}</span>
+      <span className="r acc">{fmtUsd(t.marketCapUsd)}</span>
+      <span className="r hide-sm muted">{vol}</span>
+      <span className="r hide-md muted">{timeAgo(t.createdAt).replace(" ago", "")}</span>
+    </Link>
   );
 }
