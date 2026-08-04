@@ -19,7 +19,7 @@ function CopairDocs() {
   const rh = v4Client.v4;
   const contracts: { name: string; address: string; note: string }[] = [
     { name: "Factory", address: rh.factory, note: "Launches, pools, and the $3k single-sided seed" },
-    { name: "Hook", address: rh.hook, note: "Collects trade fees and splits them 80/20" },
+    { name: "Hook", address: rh.hook, note: "Skims the 1% fee, applies the sniper schedule, splits 80/15/5" },
     { name: "Router", address: rh.router, note: "One-tap ETH buys and sells, auto-routed through the pair" },
     { name: "Uniswap V4 PoolManager", address: rh.poolManager, note: "Official singleton that holds every pool" },
   ];
@@ -34,10 +34,10 @@ function CopairDocs() {
 
       <Section title="The copair model: launch to earn">
         <p>
-          Every coin launches paired with a partner token, its <em>copair</em>: any token you choose. A tokenized
-          stock (NVDA, TSLA, and more), another meme coin, or ETH. The pair token is the market your coin
-          trades against <b>and</b> the money its holders earn. Hold the coin, and every trade pays
-          you in its copair.
+          Every coin trades against ETH with a flat 1% fee, and launching is how you earn:
+          80% of every trade fee is paid to the creator in ETH, automatically. 5% of every fee,
+          plus everything snipers overpay in the first seconds, builds a real bid wall: a live
+          buy order sitting just under the market that climbs as the price climbs.
         </p>
         <Facts
           rows={[
@@ -51,32 +51,33 @@ function CopairDocs() {
       <Section title="Launching">
         <p>
           Launching is free; you pay only gas. One transaction deploys your token, creates a real
-          Uniswap V4 pool against your chosen pair token, seeds the full supply single-sided, and
-          opens trading immediately.
+          Uniswap V4 pool against ETH, seeds the full supply single-sided, and opens trading
+          immediately.
         </p>
         <Facts
           rows={[
             ["Total supply", "1,000,000,000 (fixed)"],
             ["Starting market cap", "≈ $3,000 (fixed)"],
             ["Upfront liquidity", "None required"],
-            ["Trade tax", "0–10%, set by creator at launch"],
+            ["Trade fee", "1%, flat, forever"],
           ]}
         />
       </Section>
 
       <Section title="Trading">
         <p>
-          Buys and sells are one tap in plain ETH. The router wraps your ETH and routes it through
-          official Uniswap pools into the pair token, then into your coin, and back out again on
-          sells. You never need to hold the pair token to trade.
+          Buys and sells are one tap in plain ETH, straight through the coin's own pool. Trades
+          in the first 5 seconds pay 15%, then 5% until second 15, then 1% from there on; the
+          early premium is not kept by anyone, it becomes the coin's bid wall.
         </p>
       </Section>
 
       <Section title="Fees and rewards">
         <p>
-          The trade tax is skimmed by the pool's hook on every swap, so it applies to every trade,
-          including ones routed directly by bots or aggregators. Accrued fees are normalized into
-          the pair token on each harvest and split two ways: launch to earn. There is no protocol cut.
+          The fee is skimmed by the pool's hook on every swap, so it applies to every trade,
+          including ones routed directly by bots or aggregators. A keeper harvests every few
+          minutes: fees are normalized to ETH, split, and the bid wall is re-placed just under
+          the current price. Any coins the wall absorbs are burned on the next bump.
         </p>
         <Facts
           rows={[
@@ -86,8 +87,8 @@ function CopairDocs() {
           ]}
         />
         <p>
-          Rewards accrue per wallet with O(1) accounting: buying, selling or transferring settles
-          your pending rewards first, so nothing is ever lost or diluted retroactively.
+          The wall is real single-sided liquidity owned by the protocol, not a promise: you can
+          watch it absorb sells on-chain, and it only ever moves up.
         </p>
       </Section>
 
