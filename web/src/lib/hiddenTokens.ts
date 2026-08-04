@@ -13,7 +13,8 @@ const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   // Robinhood Chain (4663), Hood factory: superseded official launches
   "4663:0x9e73a554968a9b3b69ab71f6ef43ca7f3720518b", // COPAIR (pre-toebeans official)
   "4663:0x5fcb2390cb05d92e3e29e892c606cda027ec0259", // BEANS (deployer launch; the user relaunches the official)
-  "4663:0x077d721af9221dbaa5c953b9f5086df48bd57d3c", // TBS (first official attempt, superseded by BEANS 0xbe5F)
+  "4663:0x077d721af9221dbaa5c953b9f5086df48bd57d3c", // TBS (first official attempt, superseded)
+  "4663:0xbe5fcc1b19de2d32777803b6ae13868bba04d57e", // BEANS (second official attempt, superseded by 0xbF54)
   // Robinhood Chain (4663), quiverpad V4 era
   "4663:0x16ae26dfd4fe18e8f3f0756dca165493b5523a53", // SAFEHOOD (initial test launch)
   "4663:0x55dfcf83135fa4f5d0c3f19311e3d5c103f892c5", // TEST
