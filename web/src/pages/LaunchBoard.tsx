@@ -234,104 +234,14 @@ export function LaunchBoard() {
             placeholder="What is this token about?" maxLength={500} />
         </BoardField>
 
-        {/* Pair + reward token: one token is both the trading pair and reward. */}
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label className="text-[12.5px] font-semibold text-ink">
-              Pair &amp; reward{pair ? <span className="text-ink-3"> · ${pair.symbol}</span> : null}
-            </label>
-            <div className="board-tabs board-tabs-sm">
-              <button type="button" onClick={() => setPairMode("stock")} className={pairMode === "stock" ? "on" : ""}>Stocks</button>
-              <button type="button" onClick={() => setPairMode("custom")} className={pairMode === "custom" ? "on" : ""}>Custom</button>
-            </div>
-          </div>
-
-          {pairMode === "stock" ? (
-            <div>
-              <input
-                value={stockQuery}
-                onChange={(e) => setStockQuery(e.target.value)}
-                placeholder={`Search ${STOCKS.length} stocks by ticker or name`}
-                type="search"
-                className="board-input mb-2 h-9 w-full px-3 text-[12.5px] outline-none"
-              />
-              <div className="grid max-h-56 grid-cols-4 gap-1.5 overflow-y-auto pr-0.5 sm:grid-cols-5">
-                {stockList.map((s) => (
-                  <button
-                    type="button"
-                    key={s.address}
-                    onClick={() => setStock(s.address)}
-                    title={`${s.name} · $${s.usd}`}
-                    className={`flex flex-col items-center gap-1 rounded-xl border py-2 text-[11px] font-bold transition-colors ${
-                      stock === s.address ? "border-accent bg-accent/10 text-accent-ink" : "border-edge text-ink-2 hover:border-accent/50 hover:text-ink"
-                    }`}
-                  >
-                    <StockLogo address={s.address} symbol={s.symbol} size={22} />
-                    {s.symbol}
-                  </button>
-                ))}
-                {stockList.length === 0 && (
-                  <p className="col-span-full py-6 text-center text-[12px] text-ink-3">No stock matches "{stockQuery}".</p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div>
-              <input
-                className="board-input h-10 w-full px-3 font-mono text-[12.5px] outline-none"
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                placeholder="0x… any onchain meme token or stock"
-                spellCheck={false}
-              />
-              <div className="mt-1.5 min-h-[18px] text-[11.5px]">
-                {customState === "loading" && <span className="text-ink-3">Reading token…</span>}
-                {customState === "bad" && <span className="text-down">Not a valid ERC-20 on {env.chainName}.</span>}
-                {customState === "idle" && custom && (
-                  <span className="text-accent-ink">
-                    ✓ {custom.name} <span className="font-mono text-ink-2">${custom.symbol}</span>
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Fee mechanics: reward model */}
-        <div className="rounded-xl border border-accent/25 bg-accent/[0.05] px-3 py-2.5">
-          <p className="text-[12.5px] font-semibold text-ink">
-            You earn <span className="text-accent-ink">80% of every trade fee</span>
-            {pair ? <> in <span className="text-accent-ink">${pair.symbol}</span></> : null}
+        {/* Hood model: every coin pairs with ETH at a flat 1% fee. */}
+        <div className="rounded-xl border border-edge bg-panel-2 px-4 py-3">
+          <p className="text-[12.5px] font-semibold text-ink">Pairs with ETH · 1% flat trade fee</p>
+          <p className="mt-1 text-[11.5px] leading-relaxed text-ink-2">
+            You earn 80% of every trade fee in ETH. 15% funds the platform and 5% builds your
+            coin's bid wall, a real buy order under the market that climbs as price climbs.
+            Snipers pay extra in the first seconds, and it all goes to the wall.
           </p>
-          <ul className="mt-1.5 space-y-1 text-[11.5px] leading-relaxed text-ink-2">
-            <li>· Your token trades against {pair ? `$${pair.symbol}` : "the token you pick"}; buys and sells settle in it.</li>
-            <li>· 80% of every fee goes to you, the creator, in {pair ? `$${pair.symbol}` : "that token"}. Launch to earn.</li>
-            <li>· Holders share the other 20%, so buyers earn too. No tax on the token itself.</li>
-          </ul>
-        </div>
-
-        {/* Trade fee: slider for quick set, plus a custom exact-percent field.
-            Both feed the same value, clamped to the 0-10% protocol max. */}
-        <div>
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <label className="text-[12.5px] font-semibold text-ink">Trade fee</label>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                min={0}
-                max={10}
-                step={0.1}
-                value={taxPct}
-                onChange={(e) => setTaxPct(clampTax(e.target.value))}
-                aria-label="Custom trade fee percent"
-                className="board-input mono h-8 w-16 px-2 text-right text-[13px] font-bold text-accent-ink outline-none"
-              />
-              <span className="mono text-[13px] font-bold text-ink-3">%</span>
-            </div>
-          </div>
-          <input type="range" min={0} max={10} step={0.5} value={taxPct} onChange={(e) => setTaxPct(Number(e.target.value))}
-            className="w-full accent-[color:var(--color-accent)]" />
-          <p className="mt-1 text-[11px] text-ink-3">Set any fee from 0% to 10%. This is what every trade pays.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -343,10 +253,10 @@ export function LaunchBoard() {
         <dl className="space-y-1.5 border-t border-edge pt-3 text-[12px]">
           <Row label="Starting market cap" value="$3,000" />
           <Row label="Supply" value="1,000,000,000" />
-          <Row label="Trade fee" value={`${taxPct}% · 80% you, 20% holders`} />
+          <Row label="Trade fee" value="1% · 80% you, 15% platform, 5% bid wall" />
         </dl>
 
-        <button type="submit" disabled={busy || (pairMode === "custom" && !custom)}
+        <button type="submit" disabled={busy}
           className="board-launch h-11 w-full !text-[14px] disabled:cursor-not-allowed disabled:opacity-50">
           {busy ? "Confirm in wallet…" : isConnected ? "Launch token" : "Connect wallet to launch"}
         </button>
