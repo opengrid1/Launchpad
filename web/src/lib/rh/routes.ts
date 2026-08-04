@@ -131,7 +131,23 @@ export async function pairUsd(pair: Address, pc?: PublicClient): Promise<number>
   } catch {
     /* fall through */
   }
+  // Same-origin relay next: phone carriers and bot walls sometimes block
+  // direct browser fetches to blockscout, which zeroed every mcap on mobile.
+  if (usd === 0 && typeof window !== "undefined") {
+    try {
+      const r = await fetch(`/api/usd?token=${pair}`);
+      if (r.ok) {
+        const v = Number((await r.json())?.usd);
+        if (Number.isFinite(v) && v > 0) usd = v;
+      }
+    } catch {
+      /* fall through */
+    }
+  }
   if (usd === 0) usd = stockOf(pair)?.usd ?? 0;
+  // Last resort for the one token every price hangs off: a bundled ETH
+  // snapshot beats rendering the whole board as $0.
+  if (usd === 0 && key === WETH.toLowerCase()) usd = 1855;
   if (usd === 0 && pc && key !== WETH.toLowerCase()) {
     try {
       const wethUsd = await pairUsd(WETH);

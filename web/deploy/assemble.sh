@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 rm -rf .vercel/output
-mkdir -p .vercel/output/functions/api/rpc.func
+mkdir -p .vercel/output/functions/api/rpc.func .vercel/output/functions/api/usd.func
 cp -r dist .vercel/output/static
 # Bundle the bridge relays + reward keeper (viem inlined; Vercel functions
 # ship no deps).
@@ -25,11 +25,13 @@ done
 BUNDLE=$(ls .vercel/output/static/assets/index-*.js | head -1 | xargs basename)
 printf '{"builtAt":"%s","bundle":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$BUNDLE" > .vercel/output/static/version.json
 cp deploy/api-rpc/index.mjs deploy/api-rpc/.vc-config.json .vercel/output/functions/api/rpc.func/
+cp deploy/api-usd/index.mjs deploy/api-usd/.vc-config.json .vercel/output/functions/api/usd.func/
 cat > .vercel/output/config.json <<'JSON'
 {
   "version": 3,
   "routes": [
     { "src": "^/api/rpc$", "dest": "/api/rpc" },
+    { "src": "^/api/usd$", "dest": "/api/usd" },
     { "src": "^/api/bridge-out$", "dest": "/api/bridge-out" },
     { "src": "^/api/bridge-in$", "dest": "/api/bridge-in" },
     { "src": "^/api/keeper$", "dest": "/api/keeper" },

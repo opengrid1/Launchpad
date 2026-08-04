@@ -647,7 +647,35 @@ export class RhClient {
       }
     }
     const arr = [...buckets.values()].sort((a, b) => a.time - b.time);
-    return arr.slice(-(opts?.limit ?? 500));
+    const limit = opts?.limit ?? 500;
+    if (arr.length === 0) return arr;
+
+    // Fill trade-less intervals with flat candles so a young coin renders a
+    // continuous tape instead of a few isolated dashes, and stitch each
+    // candle's open to the previous close.
+    const now = Math.floor(Date.now() / 1000 / span) * span;
+    const start = Math.max(arr[0].time, now - span * (limit - 1));
+    let prevClose = arr[0].open;
+    for (const c of arr) {
+      if (c.time < start) prevClose = c.close;
+      else break;
+    }
+    const filled: Candle[] = [];
+    let i = arr.findIndex((c) => c.time >= start);
+    if (i < 0) i = arr.length;
+    for (let t = start; t <= now; t += span) {
+      const c = i < arr.length && arr[i].time === t ? arr[i++] : null;
+      if (c) {
+        c.open = prevClose;
+        c.high = String(Math.max(Number(c.high), Number(prevClose)));
+        c.low = String(Math.min(Number(c.low), Number(prevClose)));
+        filled.push(c);
+        prevClose = c.close;
+      } else {
+        filled.push({ time: t, open: prevClose, high: prevClose, low: prevClose, close: prevClose, volume: "0" });
+      }
+    }
+    return filled.slice(-limit);
   }
 
   async getHolders(token: Address, opts?: { limit?: number }): Promise<HolderRecord[]> {
