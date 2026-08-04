@@ -65,14 +65,8 @@ export function LaunchBoard() {
   const [logoData, setLogoData] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // The chosen pair token: the custom token in custom mode, else the stock.
-  const pair: ResolvedToken | null =
-    pairMode === "custom"
-      ? custom
-      : (() => {
-          const s = STOCKS.find((x) => x.address === stock)!;
-          return { address: s.address, symbol: s.symbol, name: s.name, decimals: 18 };
-        })();
+  // Hood model: every coin pairs with WETH.
+  const pair = { address: "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73" as Address, symbol: "ETH", name: "Ether" } as const;
 
   // Filter the full stock list (94 tokens) by ticker or company name.
   const stockList = useMemo(() => {
@@ -136,7 +130,7 @@ export function LaunchBoard() {
     e.preventDefault();
     if (!isConnected) return connectFirst();
     if (!pair) {
-      pushToast({ kind: "error", title: "Pick a pair token", body: "Choose a stock or paste a valid token address." });
+      pushToast({ kind: "error", title: "Something went wrong", body: "Reload and try again." });
       return;
     }
     setBusy(true);
@@ -185,7 +179,7 @@ export function LaunchBoard() {
     <div className="board mx-auto max-w-lg px-4 pb-24 pt-5 sm:px-5">
       <div className="flex items-center gap-2">
         <span className="board-dot" />
-        <h1 className="text-[18px] font-extrabold tracking-tight text-ink">Print a token</h1>
+        <h1 className="text-[18px] font-extrabold tracking-tight text-ink">Launch a token</h1>
       </div>
       <p className="mt-1 text-[12.5px] leading-relaxed text-ink-2">
         One transaction mints your token, opens a live market and seeds the full supply. Pick any
