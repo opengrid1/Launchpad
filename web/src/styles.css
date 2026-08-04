@@ -870,3 +870,27 @@ button.bg-accent:disabled {
 }
 :root[data-brand="copair"] button[type="submit"]:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--color-ink) !important; }
 :root[data-brand="copair"] input[type="range"] { accent-color: var(--color-accent); }
+
+/* Poster Pop CTAs: neutralize the base amber gradient for copair */
+:root[data-brand="copair"] button.bg-accent,
+:root[data-brand="copair"] a.bg-accent {
+  background-image: none !important;
+  background-color: var(--color-accent) !important;
+  color: #fff !important;
+  border: 2.5px solid var(--color-ink) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 5px 0 var(--color-ink) !important;
+  text-shadow: none !important;
+  font-weight: 800;
+}
+:root[data-brand="copair"] button.bg-accent:hover,
+:root[data-brand="copair"] a.bg-accent:hover {
+  background-image: none !important;
+  background-color: var(--color-accent-2) !important;
+  box-shadow: 0 5px 0 var(--color-ink) !important;
+}
+:root[data-brand="copair"] button.bg-accent:active,
+:root[data-brand="copair"] a.bg-accent:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--color-ink) !important;
+}
