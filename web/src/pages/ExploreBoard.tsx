@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
@@ -20,10 +20,9 @@ const SORTS: { id: Sort; label: string }[] = [
 ];
 
 /**
- * Pump.fun-style live board layout, used for the Robinhood-chain brand. A
- * scrolling activity ticker of the latest launches, a spotlight on the newest
- * token, then a dense, glowing grid that flows newest-first. Distinct layout,
- * not a recolor of the default Explore.
+ * The copair flight deck: an editorial hero with the freshest market as a
+ * boarding card, a slim stats rail, then a refined market grid. Calm ground,
+ * one green accent, price and rewards as the heroes.
  */
 export function ExploreBoard() {
   const [query, setQuery] = useState("");
@@ -74,78 +73,87 @@ export function ExploreBoard() {
   const spotlight = newest[0];
 
   return (
-    <div className="board mx-auto max-w-6xl px-3 pb-24 pt-3 sm:px-5">
-      {/* Live activity ticker */}
-      {newest.length > 0 && <Ticker tokens={newest} />}
-
-      {/* Stats strip */}
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <BoardStat label="Markets" value={String(all.length)} live />
-        <BoardStat label="24h volume" value={fmtUsd(dayVolumeUsd)} />
-        <BoardStat label="Latest" value={spotlight ? `$${spotlight.symbol}` : "-"} accent />
-      </div>
-
-      {/* Spotlight on the newest launch */}
-      {spotlight && !debounced && <Spotlight t={spotlight} />}
-
-      {/* Search + sort */}
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <label className="relative block sm:w-72">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3">
-            <Icon name="search" size={15} />
-          </span>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, ticker or address"
-            type="search"
-            className="board-input h-9 w-full pl-9 pr-3 text-[13px] outline-none"
-          />
-        </label>
-        <div className="board-tabs">
-          {SORTS.map((s) => (
-            <button key={s.id} onClick={() => setSort(s.id)} className={sort === s.id ? "on" : ""}>
-              {s.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Section label */}
-      {!loading && feed.length > 0 && (
-        <div className="mt-4 flex items-center gap-2">
-          <span className="board-dot" />
-          <h2 className="text-[12px] font-bold uppercase tracking-wide text-ink-2">
-            {debounced ? "Results" : sort === "new" ? "Fresh launches" : sort === "volume" ? "Most traded" : "Top market cap"}
-          </h2>
-          <span className="board-hair" />
-        </div>
+    <div className="board mx-auto max-w-6xl px-4 pb-24 pt-4 sm:px-6">
+      {/* HERO: editorial copy + the freshest market as a boarding card */}
+      {!debounced && (
+        <section className="cp-hero">
+          <div className="cp-hero-copy">
+            <p className="cp-eyebrow">
+              <span className="board-dot" /> live on {env.chainName}
+            </p>
+            <h1 className="cp-headline">
+              Launch a coin that
+              <br />
+              <em>pays its holders.</em>
+            </h1>
+            <p className="cp-sub">
+              Pair a coin with any tokenized stock, meme, or ETH. Every trade pays holders 80% of
+              the fee in that pair token, delivered automatically. You keep 20% as the creator.
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <Link to="/launch" className="cp-cta">Launch a coin</Link>
+              <Link to="/docs" className="cp-cta-ghost">How it works</Link>
+            </div>
+            <div className="cp-stats">
+              <div><b>{all.length}</b><span>markets</span></div>
+              <i />
+              <div><b>{fmtUsd(dayVolumeUsd)}</b><span>24h volume</span></div>
+              <i />
+              <div><b>{spotlight ? `$${spotlight.symbol}` : "-"}</b><span>latest launch</span></div>
+            </div>
+          </div>
+          {spotlight ? <HeroCard t={spotlight} /> : loading ? <div className="cp-herocard cp-skel" /> : null}
+        </section>
       )}
 
-      {/* Board grid */}
-      <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-        {loading
-          ? [...Array(8)].map((_, i) => <BoardSkeleton key={i} />)
-          : feed.length === 0
-            ? null
-            : feed.map((t, i) => <BoardCard key={t.address} t={t} fresh={i < 4 && sort === "new" && !debounced} />)}
+      {/* Live activity ticker */}
+      {newest.length > 0 && <div className="mt-6"><Ticker tokens={newest} /></div>}
+
+      {/* Search + sort */}
+      <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="cp-rail" />
+          <h2 className="text-[13px] font-bold uppercase tracking-[0.14em] text-ink-2">
+            {debounced ? "Results" : sort === "new" ? "Fresh launches" : sort === "volume" ? "Most traded" : "Top market cap"}
+          </h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="relative block sm:w-64">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3">
+              <Icon name="search" size={15} />
+            </span>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search name, ticker or address"
+              type="search"
+              className="board-input h-9 w-full pl-9 pr-3 text-[13px] outline-none"
+            />
+          </label>
+          <div className="board-tabs">
+            {SORTS.map((s) => (
+              <button key={s.id} onClick={() => setSort(s.id)} className={sort === s.id ? "on" : ""}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {!loading && feed.length === 0 && <BoardEmpty q={debounced} />}
-    </div>
-  );
-}
-
-function BoardStat({ label, value, live, accent }: { label: string; value: string; live?: boolean; accent?: boolean }) {
-  return (
-    <div className="board-stat">
-      <div className="flex items-center gap-1.5">
-        {live && <span className="board-dot" />}
-        <span className="text-[9.5px] uppercase tracking-wide text-ink-3">{label}</span>
+      {/* Market grid */}
+      <div className="mt-4">
+        {loading ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {[...Array(8)].map((_, i) => <BoardSkeleton key={i} />)}
+          </div>
+        ) : feed.length === 0 ? (
+          <BoardEmpty q={debounced} />
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {feed.map((t, i) => <BoardCard key={t.address} t={t} fresh={!debounced && sort === "new" && i === 0} />)}
+          </div>
+        )}
       </div>
-      <p className={`mono mt-0.5 truncate text-[16px] font-extrabold leading-tight ${accent ? "text-accent-ink" : "text-ink"}`}>
-        {value}
-      </p>
     </div>
   );
 }
@@ -154,6 +162,55 @@ function logoSrc(t: TokenSummary): string | null {
   const logo = OFFICIAL_LOGOS[t.address.toLowerCase()] ?? t.metadata?.logo;
   if (!logo || !/^(https?:|ipfs:|data:)/.test(String(logo))) return null;
   return String(logo).startsWith("ipfs://") ? `https://ipfs.io/ipfs/${String(logo).slice(7)}` : String(logo);
+}
+
+function pairSymOf(t: TokenSummary): string {
+  const s = (t.metadata as any)?.pair?.symbol ?? (t.metadata as any)?.rewardStockSymbol;
+  return typeof s === "string" && s ? s : "";
+}
+
+/** The freshest market, styled like a boarding card. */
+function HeroCard({ t }: { t: TokenSummary }) {
+  const [bad, setBad] = useState(false);
+  const src = logoSrc(t);
+  const vol = fmtUsd((Number(t.volumeTotalWei) / 1e18) * usdRateOf(t));
+  const pairSym = pairSymOf(t);
+  return (
+    <Link to={`/token/${t.address}`} className="cp-herocard">
+      <div className="cp-herocard-art">
+        {src && !bad ? <img src={src} alt="" onError={() => setBad(true)} /> : <QuiverMark />}
+        <span className="cp-herocard-badges">
+          <span className="board-fresh">NEW</span>
+          {isOfficial(t.address) && <span className="board-official">OFFICIAL</span>}
+        </span>
+      </div>
+      <div className="cp-herocard-body">
+        <div className="min-w-0">
+          <p className="truncate text-[16.5px] font-extrabold leading-tight text-ink">
+            {t.name} <span className="mono text-[12.5px] font-bold text-accent-ink">${t.symbol}</span>
+          </p>
+          <p className="mono mt-0.5 text-[11px] text-ink-3">by {shortAddr(t.creator)} · {timeAgo(t.createdAt).replace(" ago", "")}</p>
+        </div>
+        <div className="cp-herocard-figures">
+          <div>
+            <span>Market cap</span>
+            <b className="mono">{fmtUsd(t.marketCapUsd)}</b>
+          </div>
+          <div>
+            <span>Volume</span>
+            <b className="mono">{vol}</b>
+          </div>
+          {pairSym && (
+            <div>
+              <span>Holders earn</span>
+              <b>{pairSym}</b>
+            </div>
+          )}
+        </div>
+        <span className="cp-cta mt-1 w-full text-center">Trade {`$${t.symbol}`}</span>
+      </div>
+    </Link>
+  );
 }
 
 function Ticker({ tokens }: { tokens: TokenSummary[] }) {
@@ -192,46 +249,11 @@ function TickerLogo({ t }: { t: TokenSummary }) {
   );
 }
 
-function Spotlight({ t }: { t: TokenSummary }) {
-  const [bad, setBad] = useState(false);
-  const src = logoSrc(t);
-  const age = timeAgo(t.createdAt).replace(" ago", "");
-  return (
-    <Link to={`/token/${t.address}`} className="board-spotlight mt-4">
-      <div className="board-spotlight-glow" />
-      <div className="relative flex items-center gap-4">
-        <span className="board-spotlight-art">
-          {src && !bad ? (
-            <img src={src} alt="" className="h-full w-full object-cover" onError={() => setBad(true)} />
-          ) : (
-            <QuiverMark />
-          )}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="board-fresh">NEW</span>
-            {isOfficial(t.address) && <span className="board-official">OFFICIAL</span>}
-            <span className="text-[11px] text-ink-3">{age}</span>
-          </div>
-          <p className="mt-1 truncate text-[18px] font-extrabold leading-tight text-ink">
-            {t.name} <span className="mono text-accent-ink">${t.symbol}</span>
-          </p>
-          <p className="mono mt-0.5 truncate text-[11px] text-ink-3">by {shortAddr(t.creator)}</p>
-        </div>
-        <div className="hidden text-right sm:block">
-          <p className="text-[9.5px] uppercase tracking-wide text-ink-3">Market cap</p>
-          <p className="mono text-[20px] font-extrabold leading-tight text-accent-ink">{fmtUsd(t.marketCapUsd)}</p>
-          <p className="mono mt-0.5 text-[11px] text-ink-2">{fmtUsd((Number(t.volumeTotalWei) / 1e18) * usdRateOf(t))} vol</p>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 function BoardCard({ t, fresh }: { t: TokenSummary; fresh?: boolean }) {
   const [bad, setBad] = useState(false);
   const src = logoSrc(t);
   const age = timeAgo(t.createdAt).replace(" ago", "");
+  const pairSym = pairSymOf(t);
   return (
     <Link to={`/token/${t.address}`} className={`board-card ${fresh ? "is-fresh" : ""}`}>
       <div className="relative aspect-square w-full overflow-hidden bg-panel-2">
@@ -243,19 +265,24 @@ function BoardCard({ t, fresh }: { t: TokenSummary; fresh?: boolean }) {
         <span className="board-age">{age}</span>
         {fresh && <span className="board-fresh board-fresh-abs">NEW</span>}
         {isOfficial(t.address) && <span className="board-official board-official-abs">OFFICIAL</span>}
+        {pairSym && <span className="cp-earns">earns {pairSym}</span>}
       </div>
-      <div className="p-2.5">
+      <div className="p-3">
         <div className="flex items-baseline gap-1.5">
-          <p className="min-w-0 truncate text-[12.5px] font-bold leading-tight text-ink">{t.name}</p>
+          <p className="min-w-0 truncate text-[13px] font-bold leading-tight text-ink">{t.name}</p>
           <span className="mono shrink-0 text-[10.5px] font-semibold text-accent-ink">${t.symbol}</span>
         </div>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-[9px] uppercase tracking-wide text-ink-3">MC</span>
-          <span className="mono text-[13.5px] font-extrabold text-accent-ink">{fmtUsd(t.marketCapUsd)}</span>
-        </div>
-        <div className="mt-1 flex items-center justify-between">
-          <span className="text-[9px] uppercase tracking-wide text-ink-3">Vol</span>
-          <span className="mono text-[11px] font-semibold text-ink-2">{fmtUsd((Number(t.volumeTotalWei) / 1e18) * usdRateOf(t))}</span>
+        <div className="mt-2.5 flex items-end justify-between">
+          <div>
+            <p className="text-[9px] uppercase tracking-wide text-ink-3">Mcap</p>
+            <p className="mono text-[14px] font-extrabold leading-tight text-accent-ink">{fmtUsd(t.marketCapUsd)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[9px] uppercase tracking-wide text-ink-3">Vol</p>
+            <p className="mono text-[11.5px] font-semibold leading-tight text-ink-2">
+              {fmtUsd((Number(t.volumeTotalWei) / 1e18) * usdRateOf(t))}
+            </p>
+          </div>
         </div>
       </div>
     </Link>
@@ -266,7 +293,7 @@ function BoardSkeleton() {
   return (
     <div className="board-card">
       <div className="aspect-square w-full animate-pulse bg-panel-2" />
-      <div className="space-y-2 p-2.5">
+      <div className="space-y-2 p-3">
         <div className="h-3 w-16 animate-pulse rounded bg-panel-2" />
         <div className="h-4 w-20 animate-pulse rounded bg-panel-2" />
       </div>
