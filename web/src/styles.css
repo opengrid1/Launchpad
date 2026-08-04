@@ -635,6 +635,14 @@ button.bg-accent:disabled {
 .cpt.c1 { background: var(--pop-sky); }
 .cpt.c2 { background: var(--pop-lime); }
 .cpt.c3 { background: var(--pop-pink); }
+.cpt .hd { display: flex; align-items: center; gap: 12px; }
+.cpt .id { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.cpt .id b { margin-top: 0; }
+.cpt .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.cpt .figures { border-top: 2px solid #1b150e2b; padding-top: 10px; align-items: flex-end; }
+.cpt .figures > span:first-child { display: flex; flex-direction: column; }
+.cpt .figures i { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #1b150e80; }
+.cpt .off { position: static; align-self: flex-start; }
 .cpt .lg {
   width: 52px; height: 52px; border-radius: 16px; border: 2.5px solid var(--color-ink);
   background: #fff; overflow: hidden;

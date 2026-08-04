@@ -151,15 +151,22 @@ function Tile({ t, idx }: { t: TokenSummary; idx: number }) {
   const pairSym = pairSymOf(t);
   return (
     <Link to={`/token/${t.address}`} className={`cpt c${idx % 4}`}>
-      {isOfficial(t.address) && <span className="off">OFFICIAL</span>}
-      <span className="lg">
-        {src && !bad ? <img src={src} alt="" loading="lazy" onError={() => setBad(true)} /> : <QuiverMark />}
-      </span>
-      <b>{t.name}</b>
-      <span className="sym">${t.symbol}</span>
-      {pairSym ? <div><span className="earn">earns {pairSym}</span></div> : null}
+      <div className="hd">
+        <span className="lg">
+          {src && !bad ? <img src={src} alt="" loading="lazy" onError={() => setBad(true)} /> : <QuiverMark />}
+        </span>
+        <span className="id">
+          <b>{t.name}</b>
+          <span className="sym">${t.symbol}</span>
+        </span>
+        {isOfficial(t.address) && <span className="off">OFFICIAL</span>}
+      </div>
+      <div className="meta">
+        <span className="earn">1% fee · creator earns ETH</span>
+        {pairSym && pairSym !== "ETH" ? <span className="earn">pairs {pairSym}</span> : null}
+      </div>
       <div className="figures">
-        <span className="mc">{fmtUsd(t.marketCapUsd)}</span>
+        <span><i>Mcap</i><span className="mc">{fmtUsd(t.marketCapUsd)}</span></span>
         <span className="age">{timeAgo(t.createdAt).replace(" ago", "")}</span>
       </div>
     </Link>
