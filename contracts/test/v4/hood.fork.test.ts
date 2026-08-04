@@ -19,8 +19,15 @@ describe("Hood: ETH fees 80/15/5, sniper tax, bid wall (fork)", function () {
     const c2 = await (await ethers.getContractFactory("HookDeployer")).deploy();
     await c2.waitForDeployment();
     const c2Addr = await c2.getAddress();
+    // Factory address is nonce-predicted and baked into the hook as an
+    // immutable, mirroring the deploy script.
+    const nonce = await ethers.provider.getTransactionCount(admin.address);
+    const predictedFactory = ethers.getCreateAddress({ from: admin.address, nonce: nonce + 1 });
     const Hook = await ethers.getContractFactory("HoodHook");
-    const hookArgs = ethers.AbiCoder.defaultAbiCoder().encode(["address", "address"], [POOL_MANAGER, admin.address]);
+    const hookArgs = ethers.AbiCoder.defaultAbiCoder().encode(
+      ["address", "address", "address"],
+      [POOL_MANAGER, predictedFactory, admin.address],
+    );
     const hookInit = ethers.concat([Hook.bytecode, hookArgs]);
     const hookHash = ethers.keccak256(hookInit);
     let hookAddr = "", salt = "";
@@ -36,8 +43,8 @@ describe("Hood: ETH fees 80/15/5, sniper tax, bid wall (fork)", function () {
       admin.address, admin.address, POOL_MANAGER, hookAddr, WETH, STATE_VIEW,
     );
     await factory.waitForDeployment();
-    await (await hook.setFactory(await factory.getAddress())).wait();
-    await (await hook.setTreasury(admin.address)).wait();
+    if ((await factory.getAddress()).toLowerCase() !== predictedFactory.toLowerCase())
+      throw new Error("factory address mismatch vs hook immutable");
     const router = await (await ethers.getContractFactory("RhRouter")).deploy(POOL_MANAGER, await factory.getAddress(), WETH, V3_ROUTER);
     await router.waitForDeployment();
 

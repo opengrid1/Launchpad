@@ -17,8 +17,18 @@ async function main() {
   await c2.waitForDeployment();
   const c2Addr = await c2.getAddress();
 
+  // The hook takes the factory address as an immutable constructor arg, but
+  // the factory needs the hook's address too. Break the cycle by predicting
+  // the factory's CREATE address from the deployer nonce: the hook deploy
+  // (via the CREATE2 deployer) consumes one nonce, the factory the next.
+  const nonce = await ethers.provider.getTransactionCount(signer.address);
+  const predictedFactory = ethers.getCreateAddress({ from: signer.address, nonce: nonce + 1 });
+
   const Hook = await ethers.getContractFactory("HoodHook");
-  const hookArgs = ethers.AbiCoder.defaultAbiCoder().encode(["address", "address"], [POOL_MANAGER, signer.address]);
+  const hookArgs = ethers.AbiCoder.defaultAbiCoder().encode(
+    ["address", "address", "address"],
+    [POOL_MANAGER, predictedFactory, admin],
+  );
   const hookInit = ethers.concat([Hook.bytecode, hookArgs]);
   const hookHash = ethers.keccak256(hookInit);
   let hookAddr = "", salt = "";
@@ -29,26 +39,23 @@ async function main() {
   }
   if (!hookAddr) throw new Error("no hook salt");
   await (await c2.deploy(salt, hookInit)).wait();
-  console.log("hook:", hookAddr);
-  const hook = await ethers.getContractAt("HoodHook", hookAddr);
+  console.log("hook:", hookAddr, "(factory:", predictedFactory, "treasury:", admin, ")");
 
   const STATE_VIEW = "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b";
   const factory = await (await ethers.getContractFactory("HoodFactory")).deploy(signer.address, admin, POOL_MANAGER, hookAddr, WETH, STATE_VIEW);
   await factory.waitForDeployment();
   const factoryAddr = await factory.getAddress();
+  if (factoryAddr.toLowerCase() !== predictedFactory.toLowerCase())
+    throw new Error(`factory address mismatch: got ${factoryAddr}, hook expects ${predictedFactory}`);
   console.log("factory:", factoryAddr);
-
-  await (await hook.setFactory(factoryAddr)).wait();
-  await (await hook.setTreasury(admin)).wait();
 
   const router = await (await ethers.getContractFactory("RhRouter")).deploy(POOL_MANAGER, factoryAddr, WETH, V3_ROUTER);
   await router.waitForDeployment();
   const routerAddr = await router.getAddress();
   console.log("router:", routerAddr);
 
-  await (await hook.renounceOwnership()).wait();
   await (await factory.renounceOwnership()).wait();
-  console.log("ownership renounced on hook + factory");
+  console.log("factory ownership renounced (hook has no owner)");
 
   const startBlock = await ethers.provider.getBlockNumber();
   const out = {

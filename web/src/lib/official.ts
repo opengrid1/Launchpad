@@ -1,6 +1,6 @@
 /** Platform-official token addresses (lowercase). The launched COPAIR token
  *  ships as the default; VITE_RH_OFFICIAL (comma-separated) overrides. */
-const DEFAULT_OFFICIAL = "0x0333634FdC888f6f64282A9C06006f08d27CF345";
+const DEFAULT_OFFICIAL = "0x9E73A554968a9b3B69ab71f6eF43cA7F3720518B";
 
 export const OFFICIAL_TOKENS: ReadonlySet<string> = new Set(
   String(import.meta.env.VITE_RH_OFFICIAL ?? DEFAULT_OFFICIAL)

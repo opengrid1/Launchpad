@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -19,23 +18,24 @@ import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 
 import {IQuiverToken} from "../interfaces/IQuiverToken.sol";
 
-/// @title RhFinalHook
-/// @notice Fee vault for the Robinhood-chain launchpad. A coin pairs against a
-///         creator-chosen token (a Robinhood stock, a meme, or ETH); that token
-///         is both the trading quote and the holder reward. Each swap pays a
-///         per-token tax skimmed in `afterSwap`. On `harvest`, everything is
-///         normalised to the pair token and split:
+/// @title HoodHook
+/// @notice Fee vault for the launch-to-earn launchpad. Every coin pairs with
+///         ETH (WETH) at a flat 1% fee, skimmed in `afterSwap`; trades in the
+///         first seconds pay a sniper premium tracked separately. On `harvest`
+///         everything is normalised to ETH and split:
 ///
-///           1. holders — 80%: credited pro-rata via QuiverToken.distributeRewards
-///           2. creator — 20%: pushed to the creator, in the pair token.
+///           1. creator  — 80%, pushed straight to the creator's wallet
+///           2. treasury — 15%
+///           3. bid wall —  5% + the whole sniper premium, credited to the
+///              factory's wall vault.
 ///
-///         No platform cut. Ownership is renounced at deploy; a hardcoded,
-///         source-visible immutable `admin` keeps the setter power.
+///         There is no owner: `factory` and `treasury` are immutable, so the
+///         recipients of every split can never be redirected.
 interface IHoodWall {
     function creditWall(address token, uint256 amount) external;
 }
 
-contract HoodHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
+contract HoodHook is BaseHook, ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
 
@@ -47,8 +47,8 @@ contract HoodHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     /// @notice Sniper premium fees awaiting harvest, on top of tokenFees/pairFees.
     mapping(address => uint256) public tokenFeesSniper;
     mapping(address => uint256) public pairFeesSniper;
-    address public treasury;
-    function setTreasury(address t) external { require(treasury == address(0), "set"); treasury = t; }
+    /// @notice Platform treasury; fixed at deploy, can never be redirected.
+    address public immutable treasury;
 
     struct PoolConfig {
         address token; // launched coin
@@ -61,7 +61,9 @@ contract HoodHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
         PoolKey poolKey;
     }
 
-    address public factory;
+    /// @notice The launchpad factory (also the bid-wall vault); fixed at
+    ///         deploy via a nonce-predicted address, can never be changed.
+    address public immutable factory;
     mapping(PoolId => PoolConfig) internal _config;
     mapping(address => PoolId) internal _poolOf;
     /// @notice token => launched-coin fees awaiting harvest (from buys).
@@ -78,21 +80,15 @@ contract HoodHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     event PoolRegistered(address indexed token, PoolId indexed id, address pair, uint16 taxBps);
     event FeeAccrued(address indexed token, bool pairToken, uint256 amount);
     event Harvested(address indexed token, uint256 toHolders, uint256 toCreator);
-    event FactorySet(address indexed factory);
 
     error NotFactory();
     error AlreadySet();
     error NotRegistered();
 
-    constructor(IPoolManager pm, address owner_) BaseHook(pm) Ownable(owner_) {}
-
-    /// @notice One-time wiring by the owner during setup; ownership is renounced
-    ///         right after, so this can never change again. The fee split, pair
-    ///         and rewards are fully autonomous once set.
-    function setFactory(address factory_) external onlyOwner {
-        require(factory_ != address(0), "factory=0");
+    constructor(IPoolManager pm, address factory_, address treasury_) BaseHook(pm) {
+        require(factory_ != address(0) && treasury_ != address(0), "zero");
         factory = factory_;
-        emit FactorySet(factory_);
+        treasury = treasury_;
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory p) {
@@ -212,7 +208,7 @@ contract HoodHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
         uint256 toWall = base - toCreator - toTreasury + sniper;
 
         if (toCreator > 0) IERC20(c.pair).safeTransfer(c.creator, toCreator);
-        if (toTreasury > 0 && treasury != address(0)) IERC20(c.pair).safeTransfer(treasury, toTreasury);
+        if (toTreasury > 0) IERC20(c.pair).safeTransfer(treasury, toTreasury);
         if (toWall > 0) {
             IERC20(c.pair).forceApprove(factory, toWall);
             IHoodWall(factory).creditWall(token, toWall);
