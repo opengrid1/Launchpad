@@ -814,6 +814,8 @@ export class RhClient {
   }): Promise<`0x${string}`> {
     const wc = this.requireWallet();
     const creator = this.account();
+    // Hood model: every coin pairs with WETH at a flat 1% fee.
+    params = { ...params, stock: this.v4.weth, taxBps: 100 };
     const metadataURI = params.metadataURI ?? "";
     // Size the $3k start from the pair token's live USD price. Never launch on
     // a bad price (it would mis-size the starting market cap), so require > 0.
