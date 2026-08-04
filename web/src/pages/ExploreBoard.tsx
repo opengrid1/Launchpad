@@ -69,6 +69,8 @@ export function ExploreBoard() {
 
   return (
     <div className="cpm">
+      <span className="cpm-blob b1" aria-hidden />
+      <span className="cpm-blob b2" aria-hidden />
       {/* Hero: type only. */}
       <section className="cpm-hero">
         <p className="cpm-eyebrow">{env.chainName} · pair &amp; earn</p>
@@ -110,17 +112,8 @@ export function ExploreBoard() {
           />
         </div>
 
-        <div className="cpm-head">
-          <span className="n">#</span>
-          <span>Market</span>
-          <span className="hide-sm">Earns</span>
-          <span className="r">Mcap</span>
-          <span className="r hide-sm">Volume</span>
-          <span className="r hide-md">Age</span>
-        </div>
-
         {loading ? (
-          [...Array(6)].map((_, i) => <div key={i} className="cpm-row cpm-skel" />)
+          <div className="cpm-grid">{[...Array(8)].map((_, i) => <div key={i} className="cpm-skel" />)}</div>
         ) : feed.length === 0 ? (
           <div className="cpm-empty">
             {debounced ? (
@@ -132,7 +125,9 @@ export function ExploreBoard() {
             )}
           </div>
         ) : (
-          feed.map((t, i) => <Row key={t.address} t={t} rank={i + 1} />)
+          <div className="cpm-grid">
+            {feed.map((t, i) => <Tile key={t.address} t={t} idx={i} />)}
+          </div>
         )}
       </section>
     </div>
@@ -150,27 +145,23 @@ function pairSymOf(t: TokenSummary): string {
   return typeof s === "string" && s ? s : "";
 }
 
-function Row({ t, rank }: { t: TokenSummary; rank: number }) {
+function Tile({ t, idx }: { t: TokenSummary; idx: number }) {
   const [bad, setBad] = useState(false);
   const src = logoSrc(t);
   const pairSym = pairSymOf(t);
-  const vol = fmtUsd((Number(t.volumeTotalWei) / 1e18) * usdRateOf(t));
   return (
-    <Link to={`/token/${t.address}`} className="cpm-row">
-      <span className="n">{rank}</span>
-      <span className="m">
-        <span className="logo">
-          {src && !bad ? <img src={src} alt="" loading="lazy" onError={() => setBad(true)} /> : <QuiverMark />}
-        </span>
-        <span className="nm">
-          <b>{t.name}</b>
-          <i>${t.symbol}{isOfficial(t.address) && <em> · official</em>}</i>
-        </span>
+    <Link to={`/token/${t.address}`} className={`cpt c${idx % 4}`}>
+      {isOfficial(t.address) && <span className="off">OFFICIAL</span>}
+      <span className="lg">
+        {src && !bad ? <img src={src} alt="" loading="lazy" onError={() => setBad(true)} /> : <QuiverMark />}
       </span>
-      <span className="hide-sm muted">{pairSym || "–"}</span>
-      <span className="r acc">{fmtUsd(t.marketCapUsd)}</span>
-      <span className="r hide-sm muted">{vol}</span>
-      <span className="r hide-md muted">{timeAgo(t.createdAt).replace(" ago", "")}</span>
+      <b>{t.name}</b>
+      <span className="sym">${t.symbol}</span>
+      {pairSym ? <div><span className="earn">earns {pairSym}</span></div> : null}
+      <div className="figures">
+        <span className="mc">{fmtUsd(t.marketCapUsd)}</span>
+        <span className="age">{timeAgo(t.createdAt).replace(" ago", "")}</span>
+      </div>
     </Link>
   );
 }
