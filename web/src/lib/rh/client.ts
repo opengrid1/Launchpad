@@ -653,7 +653,13 @@ export class RhClient {
     // Fill trade-less intervals with flat candles so a young coin renders a
     // continuous tape instead of a few isolated dashes, and stitch each
     // candle's open to the previous close.
-    const now = Math.floor(Date.now() / 1000 / span) * span;
+    // End at the later of device-now and the newest candle: chain timestamps
+    // can run ahead of the device clock, and clamping to device-now would
+    // drop that candle and blank the chart.
+    const now = Math.max(
+      Math.floor(Date.now() / 1000 / span) * span,
+      arr[arr.length - 1].time,
+    );
     const start = Math.max(arr[0].time, now - span * (limit - 1));
     let prevClose = arr[0].open;
     for (const c of arr) {

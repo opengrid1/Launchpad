@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-const TOKEN = "0x077d721af9221dbaa5c953b9f5086df48bd57d3c";
+const TOKEN = "0xbe5fcc1b19de2d32777803b6ae13868bba04d57e";
 const WETH = "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73";
 const STATE_VIEW = "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b";
 const HOOK = "0x0A39aE6542aDdC1294c09a2B4Caa1eAb66dCC044";
