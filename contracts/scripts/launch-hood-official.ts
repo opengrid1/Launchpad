@@ -28,19 +28,8 @@ async function main() {
   const dep = JSON.parse(readFileSync(join(__dirname, "../deployments/robinhood-hood.json"), "utf8"));
   const factoryAddr = dep.contracts.factory as string;
   const factory = await ethers.getContractAt("HoodFactory", factoryAddr);
-  const Token = await ethers.getContractFactory("QuiverToken");
   const params = { name: NAME, symbol: SYMBOL, metadataURI: METADATA, pair: PAIR, taxBps: TAX, pairUsdPrice8: USD8 };
-  const args = ethers.AbiCoder.defaultAbiCoder().encode(
-    ["string", "string", "string", "uint256", "address", "address", "uint16", "address"],
-    [NAME, SYMBOL, METADATA, 10n ** 27n, signer.address, factoryAddr, TAX, PAIR],
-  );
-  const hash = ethers.keccak256(ethers.concat([Token.bytecode, args]));
-  let salt = "";
-  for (let i = 0n; i < 6_000_000n; i++) {
-    const s = ethers.zeroPadValue(ethers.toBeHex(i), 32);
-    if ((BigInt(ethers.getCreate2Address(factoryAddr, s, hash)) & 0xffffn) === 0x4663n) { salt = s; break; }
-  }
-  if (!salt) throw new Error("no vanity salt found");
+  const salt = ethers.hexlify(ethers.randomBytes(32));
   await (await factory.launch(params, salt)).wait();
   const coin = await factory.allTokens((await factory.totalTokens()) - 1n);
   console.log(`${SYMBOL}: ${coin}  pair=${PAIR}`);

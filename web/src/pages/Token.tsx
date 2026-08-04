@@ -339,7 +339,7 @@ function RewardPill({ stock, fallbackSymbol }: { stock: Address; fallbackSymbol?
 function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | null }) {
   const { address, isConnected } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
-  const [pending, setPending] = useState(0n);
+  const [hookPending, setHookPending] = useState<{ coin: bigint; pair: bigint }>({ coin: 0n, pair: 0n });
   const [busy, setBusy] = useState<"claim" | "harvest" | null>(null);
 
   // The reward = the coin's pair token (a stock or a meme). Prefer the curated
@@ -371,13 +371,20 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
   const nm = stockRow?.name ?? metaPair?.symbol ?? chainSym ?? "the paired token";
 
   const refresh = () => {
-    if (isConnected && address)
-      v4Client
-        .pendingDividends(token.address as Address, address)
-        .then(setPending)
-        .catch(() => undefined);
+    // pendingFees exists on the RhClient behind the v4Client facade.
+    (v4Client as any)
+      .pendingFees(token.address as Address)
+      .then(setHookPending)
+      .catch(() => undefined);
   };
-  useEffect(refresh, [isConnected, address, token.address, extra?.totalRewards]);
+  useEffect(() => {
+    refresh();
+    const id = setInterval(() => {
+      if (!document.hidden) refresh();
+    }, 20_000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token.address]);
 
   if (!extra || /^0x0+$/.test(extra.stock)) return null;
   const stock = { symbol: sym, name: nm };
@@ -417,25 +424,31 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
     );
   }
 
-  const run = async (kind: "claim" | "harvest") => {
-    setBusy(kind);
+  // Launch-to-earn model: base fees accrue in the hook until a claim runs;
+  // the claim converts them to ETH and pays the creator 80% directly. The
+  // amount shown is the creator's share of what is sitting in the hook now.
+  const priceEthWei = BigInt((token as any).priceEthWei ?? "0");
+  const coinAsEth = priceEthWei > 0n ? (hookPending.coin * priceEthWei) / 10n ** 18n : 0n;
+  const creatorUnclaimed = ((hookPending.pair + coinAsEth) * 8_000n) / 10_000n;
+  const usdRate = usdRateOf(token);
+  const isCreator = isConnected && address?.toLowerCase() === token.creator.toLowerCase();
+
+  const claimRewards = async () => {
+    setBusy("claim");
     try {
       if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
-      const hash =
-        kind === "claim"
-          ? await v4Client.claimDividends(token.address as Address)
-          : await v4Client.harvest(token.address as Address);
-      pushToast({ kind: "info", title: kind === "claim" ? "Claim submitted" : "Distributing rewards", txHash: hash });
+      const hash = await v4Client.harvest(token.address as Address);
+      pushToast({ kind: "info", title: "Claim submitted", txHash: hash });
       await client.publicClient.waitForTransactionReceipt({ hash });
       pushToast({
         kind: "success",
-        title: kind === "claim" ? `${stock.symbol} claimed` : "Rewards distributed",
-        body: kind === "claim" ? "Sent to your wallet." : "Holder rewards are now claimable.",
+        title: "Rewards claimed",
+        body: "80% paid to the creator in ETH; 5% added to the bid wall.",
         txHash: hash,
       });
       refresh();
     } catch (err) {
-      pushToast({ kind: "error", title: kind === "claim" ? "Claim failed" : "Distribution failed", body: errorText(err) });
+      pushToast({ kind: "error", title: "Claim failed", body: errorText(err) });
     } finally {
       setBusy(null);
     }
@@ -445,27 +458,24 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
     <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-4 py-2.5">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-ink">
-          Holders earn {stock.name} <span className="text-ink-3">({stock.symbol})</span>
+          {isCreator ? "Your creator rewards" : "Creator rewards"}
         </p>
         <p className="mt-0.5 text-xs text-ink-3">
-          The creator earns 80% of every trade fee in ETH; 5% builds this coin's bid wall under the market.
-          Claim anytime, straight to your wallet. {fmtTokens(extra.totalRewards.toString())} {stock.symbol} paid out so far.
+          80% of every trade fee belongs to the creator, paid in ETH straight to their wallet;
+          5% builds this coin's bid wall. Rewards pay out automatically every few minutes, or
+          claim them right now.
         </p>
       </div>
       <div className="flex items-center gap-3">
-        {isConnected ? (
-          <div className="text-right">
-            <p className="tnum text-[15px] font-semibold text-ink">
-              {fmtWei(pending)} {stock.symbol}
-            </p>
-            <p className="text-[11px] text-ink-3">claimable</p>
-          </div>
-        ) : null}
-        {isConnected && pending > 0n ? (
-          <Button variant="primary" disabled={busy !== null} onClick={() => run("claim")}>
-            {busy === "claim" ? "Claiming" : `Claim ${stock.symbol}`}
-          </Button>
-        ) : null}
+        <div className="text-right">
+          <p className="tnum text-[15px] font-semibold text-ink">{fmtWei(creatorUnclaimed)} ETH</p>
+          <p className="tnum text-[11px] text-ink-3">
+            {fmtWeiUsd(creatorUnclaimed.toString(), usdRate)} unclaimed
+          </p>
+        </div>
+        <Button variant="primary" disabled={busy !== null || creatorUnclaimed === 0n} onClick={claimRewards}>
+          {busy === "claim" ? "Claiming" : "Claim rewards"}
+        </Button>
       </div>
     </div>
   );

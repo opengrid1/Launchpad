@@ -2,11 +2,7 @@ import {
   type Address,
   type PublicClient,
   type WalletClient,
-  concatHex,
   decodeEventLog,
-  encodeAbiParameters,
-  getContractAddress,
-  keccak256,
   parseEther,
   toEventSelector,
 } from "viem";
@@ -14,7 +10,6 @@ import type { Candle, CandleInterval, HolderRecord, TokenSummary, TradeRecord } 
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
 
 import { erc20Abi, factoryAbi, hookAbi, poolInitEvent, poolSwapEvent, routerAbi, stateViewAbi, tokenAbi } from "./abis";
-import { QUIVER_TOKEN_BYTECODE } from "./tokenBytecode";
 import { pairUsd, resolvePairRoute } from "./routes";
 
 const Q96 = 2n ** 96n;
@@ -703,6 +698,18 @@ export class RhClient {
     return scale > 0 ? scale : 0;
   }
 
+  /** Un-harvested base trade fees still sitting in the hook for this coin:
+   *  a coin-denominated bucket and an ETH (pair) bucket. The creator's 80%
+   *  comes out of these; the sniper premium is tracked separately and goes
+   *  to the bid wall, so it is deliberately excluded here. */
+  async pendingFees(token: Address): Promise<{ coin: bigint; pair: bigint }> {
+    const [coin, pair] = (await Promise.all([
+      this.publicClient.readContract({ address: this.v4.hook, abi: hookAbi, functionName: "tokenFees", args: [token] }),
+      this.publicClient.readContract({ address: this.v4.hook, abi: hookAbi, functionName: "pairFees", args: [token] }),
+    ])) as [bigint, bigint];
+    return { coin, pair };
+  }
+
   async pendingDividends(token: Address, holder: Address): Promise<bigint> {
     return (await this.publicClient.readContract({
       address: token,
@@ -801,9 +808,8 @@ export class RhClient {
     });
   }
 
-  /** Launch a coin paired against `stock` (a stock or meme). Mines a CREATE2
-   *  salt so the address ends in 4663, and sizes the $3k start from the pair's
-   *  live USD price. */
+  /** Launch a coin. Uses a random CREATE2 salt (addresses are not vanity
+   *  mined) and sizes the $3k start from the pair's live USD price. */
   async createToken(params: {
     name: string;
     symbol: string;
@@ -825,24 +831,9 @@ export class RhClient {
       if (!(usd > 0)) throw new Error("Could not read the pair token price. Try again in a moment.");
       pairUsdPrice8 = BigInt(Math.round(usd * 1e8));
     }
-    const args = encodeAbiParameters(
-      [
-        { type: "string" }, { type: "string" }, { type: "string" }, { type: "uint256" },
-        { type: "address" }, { type: "address" }, { type: "uint16" }, { type: "address" },
-      ],
-      [params.name, params.symbol, metadataURI, TOTAL_SUPPLY, creator, this.v4.factory, params.taxBps, params.stock],
-    );
-    const initCodeHash = keccak256(concatHex([QUIVER_TOKEN_BYTECODE as `0x${string}`, args]));
-    let salt: `0x${string}` | null = null;
-    for (let i = 0n; i < 2_000_000n; i++) {
-      const s = `0x${i.toString(16).padStart(64, "0")}` as `0x${string}`;
-      const addr = getContractAddress({ opcode: "CREATE2", from: this.v4.factory, salt: s, bytecodeHash: initCodeHash });
-      if ((BigInt(addr) & 0xffffn) === 0x4663n) {
-        salt = s;
-        break;
-      }
-    }
-    if (!salt) throw new Error("Could not mine a launch address. Try again.");
+    const saltBytes = new Uint8Array(32);
+    crypto.getRandomValues(saltBytes);
+    const salt = `0x${Array.from(saltBytes, (b) => b.toString(16).padStart(2, "0")).join("")}` as `0x${string}`;
     return wc.writeContract({
       account: creator,
       chain: wc.chain,

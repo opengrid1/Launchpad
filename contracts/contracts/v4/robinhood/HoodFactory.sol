@@ -104,7 +104,6 @@ contract HoodFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     error InvalidParams();
     error PairNotAllowed();
     error BadPair();
-    error BadVanity();
     error NotProtocolAdmin();
 
     address public immutable protocolAdmin;
@@ -174,7 +173,6 @@ contract HoodFactory is Ownable, ReentrancyGuard, IUnlockCallback {
             p.name, p.symbol, p.metadataURI, TOTAL_SUPPLY, msg.sender, address(this), p.taxBps, p.pair
         );
         token = address(qt);
-        if (uint160(token) & 0xffff != 0x4663) revert BadVanity();
         if (token == p.pair) revert BadPair();
 
         bool tokenIsCurrency0 = token < p.pair;
