@@ -894,3 +894,24 @@ button.bg-accent:disabled {
   transform: translateY(3px);
   box-shadow: 0 2px 0 var(--color-ink) !important;
 }
+
+
+/* Poster Pop bottom navigation for the copair board */
+.board-bottomnav {
+  position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 45;
+  display: flex; gap: 4px; padding: 6px;
+  background: #fff; border: 3px solid var(--color-ink); border-radius: 999px;
+  box-shadow: 0 6px 0 var(--color-ink);
+}
+.board-bottomnav a {
+  display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 999px;
+  font-size: 13px; font-weight: 800; color: var(--color-ink-2); transition: color .12s, background .12s;
+}
+.board-bottomnav a.on { background: var(--color-ink); color: #fff8ec; }
+.board-bottomnav a:hover { color: var(--color-ink); }
+.board-bottomnav a.on:hover { color: #fff8ec; }
+
+/* Keep the footer links clickable above the floating nav */
+:root[data-brand="copair"] footer {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}

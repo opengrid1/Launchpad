@@ -67,6 +67,7 @@ function Wallet({ board }: { board?: boolean }) {
  *  nav), sized to fit the narrowest phone without overflow. */
 function BoardHeader() {
   return (
+    <>
     <header className="board-header sticky top-0 z-40">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:gap-3 sm:px-5">
         <Link to="/" aria-label={BRAND.name} className="flex shrink-0 items-center">
@@ -75,16 +76,6 @@ function BoardHeader() {
             <span className="text-accent-ink">{BRAND.tld}</span>
           </span>
         </Link>
-
-        {/* Pill nav, always visible and compact */}
-        <nav className="board-pillnav shrink-0" aria-label="Primary">
-          {BOARD_TABS.map((t) => (
-            <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? "on" : "")}>
-              <Icon name={t.icon} size={14} />
-              <span className="board-pill-label">{t.label}</span>
-            </NavLink>
-          ))}
-        </nav>
 
         <div className="flex-1" />
 
@@ -97,6 +88,22 @@ function BoardHeader() {
         <Wallet board />
       </div>
     </header>
+    <BoardBottomNav />
+    </>
+  );
+}
+
+/** Bottom navigation for the board flavor; the header stays minimal. */
+function BoardBottomNav() {
+  return (
+    <nav className="board-bottomnav" aria-label="Primary">
+      {BOARD_TABS.map((t) => (
+        <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? "on" : "")}>
+          <Icon name={t.icon} size={18} />
+          <span>{t.label}</span>
+        </NavLink>
+      ))}
+    </nav>
   );
 }
 
