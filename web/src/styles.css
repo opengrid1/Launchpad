@@ -838,6 +838,13 @@ button.bg-accent:disabled {
 :root[data-brand="copair"] .board-chip { border: 2px solid var(--color-ink); border-radius: 999px; color: var(--color-ink); font-weight: 700; }
 
 /* Poster Pop forms: chunky inputs and the launch card for the copair flavor */
+:root[data-brand="copair"] .board-form {
+  background: #fff;
+  border: 3px solid var(--color-ink);
+  border-radius: 22px;
+  box-shadow: 7px 7px 0 var(--color-ink);
+}
+
 :root[data-brand="copair"] input:not([type="range"]),
 :root[data-brand="copair"] select,
 :root[data-brand="copair"] textarea {
