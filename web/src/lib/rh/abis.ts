@@ -17,7 +17,7 @@ export const factoryAbi = [
   {
     type: "function",
     name: "launch",
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     inputs: [
       {
         name: "p",

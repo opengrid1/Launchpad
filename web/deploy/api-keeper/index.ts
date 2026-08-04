@@ -8,14 +8,14 @@ import { createPublicClient, createWalletClient, defineChain, http, type Address
 import { privateKeyToAccount } from "viem/accounts";
 
 const RPC = process.env.RH_RPC ?? "https://rpc.mainnet.chain.robinhood.com";
-const FACTORY: Address = "0xC7d47eAe6afb24411cA0C88E6a4C1d8166F5F95C";
-const HOOK: Address = "0xd5E817b653A3eCE9a6952Cd5CC35c982Bd694044";
+const FACTORY: Address = "0x2A992C57AD63e4cC856C5Dc2F89f5Bc34eC00965";
+const HOOK: Address = "0x0A39aE6542aDdC1294c09a2B4Caa1eAb66dCC044";
 const STATE_VIEW: Address = "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b";
 const WETH: Address = "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73";
 const V3_FACTORY: Address = "0x1f7d7550B1b028f7571E69A784071F0205FD2EfA";
 const POOL_MANAGER: Address = "0x8366a39cc670b4001a1121b8f6a443a643e40951";
-const ROUTER: Address = "0x0bdaE67bFF98a83bdC3583dB374479ac636e81D4";
-const START_BLOCK = 27371360n;
+const ROUTER: Address = "0x26490b524a8eaB733562d3F349c9ad4Ed6D7C4ac";
+const START_BLOCK = 27456214n;
 const ZERO: Address = "0x0000000000000000000000000000000000000000";
 
 const HARVEST_MIN_USD = Number(process.env.HARVEST_MIN_USD ?? 5);

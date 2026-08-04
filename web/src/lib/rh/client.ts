@@ -817,6 +817,7 @@ export class RhClient {
     stock: Address; // the pair/reward token
     taxBps: number;
     pairUsdPrice8?: bigint; // pair token USD price, 8dp; fetched if omitted
+    devBuyWei?: bigint; // optional atomic initial buy, in ETH wei
   }): Promise<`0x${string}`> {
     const wc = this.requireWallet();
     const creator = this.account();
@@ -844,6 +845,9 @@ export class RhClient {
         { name: params.name, symbol: params.symbol, metadataURI, pair: params.stock, taxBps: params.taxBps, pairUsdPrice8 },
         salt,
       ],
+      // Atomic dev buy: ETH sent with launch is swapped into the new coin in
+      // the same transaction, sniper-tax-exempt, before anyone else can trade.
+      value: params.devBuyWei ?? 0n,
     });
   }
 

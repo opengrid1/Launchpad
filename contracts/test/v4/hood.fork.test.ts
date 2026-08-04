@@ -62,10 +62,15 @@ describe("Hood: ETH fees 80/15/5, sniper tax, bid wall (fork)", function () {
       const s = ethers.zeroPadValue(ethers.toBeHex(i), 32);
       if ((BigInt(ethers.getCreate2Address(fAddr, s, ih)) & 0xffffn) === 0x4663n) { ts = s; break; }
     }
-    await (await factory.connect(creator).launch(params, ts)).wait();
+    // launch WITH an atomic dev buy: creator gets tokens in the same tx and
+    // pays no sniper premium (factory-sender exemption)
+    await (await factory.connect(creator).launch(params, ts, { value: ethers.parseEther("0.005") })).wait();
     const coin = await factory.allTokens(0n);
     const erc = await ethers.getContractAt("QuiverToken", coin);
     const weth = await ethers.getContractAt("QuiverToken", WETH);
+    expect(await erc.balanceOf(creator.address), "dev buy delivered").to.be.greaterThan(0n);
+    expect(await hook.tokenFeesSniper(coin), "dev buy pays no sniper premium").to.equal(0n);
+    expect(await hook.tokenFees(coin), "dev buy pays the 1% base").to.be.greaterThan(0n);
 
     // sniper buy within 5s -> sniper premium accrues
     await (await router.connect(sniper).buy(coin, "0x", 0, { value: ethers.parseEther("0.01") })).wait();

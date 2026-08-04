@@ -128,7 +128,7 @@ contract HoodHook is BaseHook, ReentrancyGuard, IUnlockCallback {
     // afterSwap: skim the tax
     // ---------------------------------------------------------------------
 
-    function _afterSwap(address, PoolKey calldata key, SwapParams calldata params, BalanceDelta delta, bytes calldata)
+    function _afterSwap(address sender, PoolKey calldata key, SwapParams calldata params, BalanceDelta delta, bytes calldata)
         internal
         override
         returns (bytes4, int128)
@@ -136,8 +136,10 @@ contract HoodHook is BaseHook, ReentrancyGuard, IUnlockCallback {
         PoolConfig storage c = _config[key.toId()];
         if (!c.registered) return (BaseHook.afterSwap.selector, int128(0));
         // Sniper schedule: 15% in the first 5s, 5% until 15s, then the 1% base.
+        // The factory only swaps inside launch (the creator's atomic dev buy),
+        // so that path pays the flat base fee with no sniper premium.
         uint256 age = block.timestamp - c.launchTime;
-        uint256 rateBps = age < 5 ? 1_500 : age < 15 ? 500 : BASE_TAX_BPS;
+        uint256 rateBps = sender == factory ? BASE_TAX_BPS : age < 5 ? 1_500 : age < 15 ? 500 : BASE_TAX_BPS;
 
         bool exactInput = params.amountSpecified < 0;
         bool unspecifiedIsCurrency1 = (params.zeroForOne == exactInput);

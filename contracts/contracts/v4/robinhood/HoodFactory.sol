@@ -15,7 +15,7 @@ import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
-import {ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
+import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 
@@ -32,6 +32,10 @@ import {HoodHook} from "./HoodHook.sol";
 ///         Admin mirrors the V3 launchpad: pause/resume, pair curation, and a
 ///         `collect` LP-recovery lever (the renamed unwind) gated to the
 ///         immutable protocolAdmin. No emergency-drain of fees.
+interface IWETHLike {
+    function deposit() external payable;
+}
+
 interface IStateViewLike {
     function getSlot0(bytes32 poolId) external view returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee);
 }
@@ -94,6 +98,7 @@ contract HoodFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     }
 
     event Launched(address indexed token, address indexed creator, address indexed pair, uint16 taxBps, bytes32 poolId);
+    event DevBuy(address indexed token, address indexed creator, uint256 ethIn, uint256 tokensOut);
     event PairListed(address indexed pair);
     event PairDelisted(address indexed pair);
     event AnyPairSet(bool enabled);
@@ -158,6 +163,7 @@ contract HoodFactory is Ownable, ReentrancyGuard, IUnlockCallback {
 
     function launch(LaunchParams calldata p, bytes32 salt)
         external
+        payable
         nonReentrant
         returns (address token, bytes32 poolId)
     {
@@ -207,6 +213,17 @@ contract HoodFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         _tokensByCreator[msg.sender].push(token);
 
         emit Launched(token, msg.sender, p.pair, p.taxBps, poolId);
+
+        // Optional dev buy, atomic with the launch so nobody can trade first.
+        // The hook charges the flat 1% (no sniper premium) because the swap
+        // sender is the factory, a path only reachable from inside launch.
+        if (msg.value > 0) {
+            IWETHLike(weth).deposit{value: msg.value}();
+            bytes memory r = poolManager.unlock(abi.encode(uint8(2), abi.encode(key, msg.value, tokenIsCurrency0)));
+            uint256 out = abi.decode(r, (uint256));
+            IERC20(token).safeTransfer(msg.sender, out);
+            emit DevBuy(token, msg.sender, msg.value, out);
+        }
     }
 
     function _checkPair(address pair) internal view {
@@ -235,6 +252,30 @@ contract HoodFactory is Ownable, ReentrancyGuard, IUnlockCallback {
             _settleNeg(key.currency0, delta.amount0());
             _settleNeg(key.currency1, delta.amount1());
             return "";
+        }
+
+        if (action == 2) {
+            (PoolKey memory k, uint256 amountIn, bool tokenIs0) = abi.decode(payload, (PoolKey, uint256, bool));
+            // Buy the coin with WETH: selling currency1 when the coin is
+            // currency0 and vice versa. Same resolve pattern as RhRouter.
+            bool zeroForOne = !tokenIs0;
+            BalanceDelta d = poolManager.swap(
+                k,
+                SwapParams({
+                    zeroForOne: zeroForOne,
+                    amountSpecified: -int256(amountIn),
+                    sqrtPriceLimitX96: zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1
+                }),
+                ""
+            );
+            _settleNeg(k.currency0, d.amount0());
+            _settleNeg(k.currency1, d.amount1());
+            uint256 out = _takePositive(
+                tokenIs0 ? k.currency0 : k.currency1,
+                tokenIs0 ? d.amount0() : d.amount1(),
+                address(this)
+            );
+            return abi.encode(out);
         }
 
         (PoolKey memory key, int24 tickLower, int24 tickUpper, uint128 removed, address recipient, bool tokenIsCurrency0) =

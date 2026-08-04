@@ -63,6 +63,7 @@ export function LaunchBoard() {
   const [taxPct, setTaxPct] = useState(1);
   const [busy, setBusy] = useState(false);
   const [logoData, setLogoData] = useState("");
+  const [devBuy, setDevBuy] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Hood model: every coin pairs with WETH.
@@ -153,12 +154,16 @@ export function LaunchBoard() {
         // Record the pair/reward token so the token page can label rewards.
         pair: { address: pair.address, symbol: pair.symbol },
       });
+      const devBuyNum = Number(devBuy);
+      const devBuyWei =
+        Number.isFinite(devBuyNum) && devBuyNum > 0 ? BigInt(Math.round(devBuyNum * 1e18)) : 0n;
       const hash = await (client as any).createToken({
         name: form.name.trim(),
         symbol: form.symbol.trim().toUpperCase(),
         metadataURI: metadata,
         stock: pair.address,
         taxBps: Math.round(taxPct * 100),
+        devBuyWei,
       });
       pushToast({ kind: "info", title: "Launch submitted", txHash: hash });
       const receipt = await client.publicClient.waitForTransactionReceipt({ hash });
@@ -243,6 +248,20 @@ export function LaunchBoard() {
           <BoardField label="Telegram"><input className="board-input h-10 w-full px-3 text-[13px] outline-none" value={form.telegram} onChange={set("telegram")} placeholder="t.me/…" /></BoardField>
           <BoardField label="Website"><input className="board-input h-10 w-full px-3 text-[13px] outline-none" value={form.website} onChange={set("website")} placeholder="https://" /></BoardField>
         </div>
+
+        <BoardField label="Initial buy (ETH, optional)">
+          <input
+            className="board-input h-10 w-full px-3 text-[13px] outline-none"
+            value={devBuy}
+            onChange={(e) => setDevBuy(e.target.value)}
+            inputMode="decimal"
+            placeholder="0.0"
+          />
+          <p className="mt-1 text-[11px] text-ink-3">
+            Buys your coin in the same transaction as the launch, before anyone else can trade.
+            Pays the flat 1% fee only, never the sniper rate.
+          </p>
+        </BoardField>
 
         <dl className="space-y-1.5 border-t border-edge pt-3 text-[12px]">
           <Row label="Starting market cap" value="$3,000" />
