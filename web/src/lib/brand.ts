@@ -39,10 +39,10 @@ const FLAVORS: Record<string, Brand> = {
     url: "https://copair.fun",
     twitter: "https://x.com/Copair_",
     twitterHandle: "Copair_",
-    tagline: "every coin flies with its pair",
+    tagline: "launch a coin, earn ETH on every trade",
     description:
-      "copair. launch a coin paired with any stock, meme, or ETH on Robinhood Chain. Every trade pays holders the token it flies with.",
-    title: "copair | every coin flies with its pair",
+      "copair. launch a coin on Robinhood Chain and earn 80% of every trade fee in ETH. A real bid wall grows under your coin, and snipers pay for it.",
+    title: "copair | launch a coin, earn ETH on every trade",
   },
   steadypads: {
     name: "steadypads",

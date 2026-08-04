@@ -189,7 +189,7 @@ export function LaunchBoard() {
       </div>
       <p className="mt-1 text-[12.5px] leading-relaxed text-ink-2">
         One transaction mints your token, opens a live market and seeds the full supply. Pick any
-        onchain token to pair against; you earn 80% of every trade fee in that token.
+        Launch in one transaction; you earn 80% of every trade fee in ETH, forever.
       </p>
 
       <form onSubmit={submit} className="board-form mt-4 space-y-4">

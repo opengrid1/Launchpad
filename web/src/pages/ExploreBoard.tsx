@@ -73,15 +73,15 @@ export function ExploreBoard() {
       <span className="cpm-blob b2" aria-hidden />
       {/* Hero: type only. */}
       <section className="cpm-hero">
-        <p className="cpm-eyebrow">{env.chainName} · pair &amp; earn</p>
+        <p className="cpm-eyebrow">{env.chainName} · launch to earn</p>
         <h1 className="cpm-headline">
           Launch a coin.
           <br />
           <em>Get paid every trade.</em>
         </h1>
         <p className="cpm-sub">
-          Pair a coin with any stock, meme, or ETH. As the creator you earn 80% of every trade
-          fee in that pair token, automatically. Holders share the other 20%.
+          Every coin trades against ETH with a flat 1% fee. You earn 80% of it, in ETH,
+          automatically. 5% builds a real bid wall under your coin, and snipers fund it.
         </p>
         <div className="cpm-ctas">
           <Link to="/launch" className="cpm-cta">Launch a coin</Link>

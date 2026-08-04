@@ -32,7 +32,7 @@ function CopairDocs() {
         protocol rules.
       </p>
 
-      <Section title="The copair model">
+      <Section title="The copair model: launch to earn">
         <p>
           Every coin launches paired with a partner token, its <em>copair</em>: any token you choose. A tokenized
           stock (NVDA, TSLA, and more), another meme coin, or ETH. The pair token is the market your coin
@@ -41,9 +41,9 @@ function CopairDocs() {
         </p>
         <Facts
           rows={[
-            ["Pair token", "any stock · meme · ETH, creator's choice"],
-            ["Holder rewards", "paid in the pair token"],
-            ["Rewards start", "from the very first trade"],
+            ["Pair", "ETH, every coin"],
+            ["Creator earnings", "80% of every fee, in ETH"],
+            ["Bid wall", "5% of fees + all sniper premium"],
           ]}
         />
       </Section>
@@ -80,9 +80,9 @@ function CopairDocs() {
         </p>
         <Facts
           rows={[
-            ["Creator", "80% · paid in the pair token, every harvest"],
-            ["Holders", "20% · paid in the pair token, pro-rata"],
-            ["Claiming", "one tap on the token page, any time"],
+            ["Creator", "80% · paid in ETH, every harvest"],
+            ["Platform", "15%"],
+            ["Bid wall", "5% + sniper premium (15% first 5s, 5% to 15s)"],
           ]}
         />
         <p>
