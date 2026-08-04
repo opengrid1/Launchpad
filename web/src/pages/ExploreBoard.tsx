@@ -83,10 +83,6 @@ export function ExploreBoard() {
           Every coin trades against ETH with a flat 1% fee. You earn 80% of it, in ETH,
           automatically. 5% builds a real bid wall under your coin, and snipers fund it.
         </p>
-        <div className="cpm-ctas">
-          <Link to="/launch" className="cpm-cta">Launch a coin</Link>
-          <Link to="/docs" className="cpm-link">How it works →</Link>
-        </div>
         <p className="cpm-statline">
           {all.length} markets · {fmtUsd(dayVolumeUsd)} 24h volume
           {latest ? <> · latest ${latest.symbol}</> : null}
