@@ -23,6 +23,7 @@ import { useUi } from "../store";
 // Creator-fee deployments (Arc) split harvests 80/20 and quote in the chain's
 // native dollar; legacy deployments keep the 25% WETH wording.
 const CREATOR_MODE = String(import.meta.env.VITE_FEE_MODE ?? "") === "creator";
+const IS_RH = String(import.meta.env.VITE_PROTOCOL ?? "") === "rh-v4";
 const NATIVE = env.nativeSymbol;
 const WRAPPED = `W${NATIVE}`;
 
@@ -50,11 +51,15 @@ export function AdminPage() {
     queryKey: ["v4-stats"],
     queryFn: async () => {
       const count = await v4Client.publicClient.readContract({ address: v4Client.v4.factory, abi: factoryAbi, functionName: "totalTokens" });
-      // The final reward model has no platform treasury (holders + creator take
-      // 100% of fees); the hook read is best-effort for older deployments.
+      // Hood hooks expose the immutable `treasury`; older deployments used
+      // `protocolTreasury`. Try both, best-effort.
       const treasury = (await v4Client.publicClient
-        .readContract({ address: v4Client.v4.hook, abi: hookAbi, functionName: "protocolTreasury" })
-        .catch(() => "0x0000000000000000000000000000000000000000")) as `0x${string}`;
+        .readContract({ address: v4Client.v4.hook, abi: hookAbi, functionName: "treasury" })
+        .catch(() =>
+          v4Client.publicClient
+            .readContract({ address: v4Client.v4.hook, abi: hookAbi, functionName: "protocolTreasury" })
+            .catch(() => "0x0000000000000000000000000000000000000000"),
+        )) as `0x${string}`;
       const treasuryWeth = /^0x0+$/.test(treasury)
         ? 0n
         : ((await v4Client.publicClient
@@ -160,6 +165,18 @@ export function AdminPage() {
       >
         Distribute
       </button>
+      {IS_RH ? (
+        <button
+          disabled={busyAction !== null}
+          onClick={() =>
+            runTx("Collect wall", () => writeFactory("collectWall", [t.address, address]))
+          }
+          className="rounded-md border border-edge bg-panel px-2.5 py-1 text-[11px] font-semibold text-ink-2 transition-colors hover:border-edge-2 hover:text-ink disabled:opacity-50"
+          title="Pull this coin's bid wall (position + pending WETH) to your wallet"
+        >
+          Collect wall
+        </button>
+      ) : null}
       <button
         disabled={busyAction !== null}
         onClick={() => {
@@ -238,9 +255,11 @@ export function AdminPage() {
           <div className="min-w-0">
             <h2 className="text-[13px] font-semibold text-ink">Protocol treasury</h2>
             <p className="mt-0.5 text-[11px] text-ink-3">
-              {CREATOR_MODE
-                ? `The protocol's 20% share of every harvest is pushed here as native ${NATIVE}. If a push ever falls back to wrapped ${NATIVE}, unwrap converts it in this wallet.`
-                : `The protocol's 25% share of every trade's tax is sent here as ${WRAPPED} on each distribution. Unwrap converts it to native ${NATIVE} in this wallet.`}
+              {IS_RH
+                ? `The platform's 15% share of every harvest is pushed here as ${WRAPPED}. Unwrap converts it to native ${NATIVE} in this wallet.`
+                : CREATOR_MODE
+                  ? `The protocol's 20% share of every harvest is pushed here as native ${NATIVE}. If a push ever falls back to wrapped ${NATIVE}, unwrap converts it in this wallet.`
+                  : `The protocol's 25% share of every trade's tax is sent here as ${WRAPPED} on each distribution. Unwrap converts it to native ${NATIVE} in this wallet.`}
             </p>
             <p className="mt-1.5 font-mono text-[12px] text-ink-2">{s ? s.treasury : "–"}</p>
           </div>

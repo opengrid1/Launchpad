@@ -63,6 +63,8 @@ export const factoryAbi = [
   { type: "function", name: "unwindPosition", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint16" }, { type: "address" }], outputs: [{ type: "uint256" }, { type: "uint256" }] },
   // RhFinalFactory renames the LP-recovery lever to `collect` (same shape).
   { type: "function", name: "collect", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint16" }, { type: "address" }], outputs: [{ type: "uint256" }, { type: "uint256" }] },
+  // HoodFactory: pull a coin's bid wall (position + pending WETH) to a recipient.
+  { type: "function", name: "collectWall", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "address" }], outputs: [] },
 ] as const;
 
 // Uniswap V4 periphery StateView: canonical pool-state reads without logs.
@@ -115,6 +117,8 @@ export const hookAbi = [
   { type: "function", name: "harvest", stateMutability: "nonpayable", inputs: [{ type: "address" }], outputs: [] },
   { type: "function", name: "protocolTreasury", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
   { type: "function", name: "setProtocolTreasury", stateMutability: "nonpayable", inputs: [{ type: "address" }], outputs: [] },
+  // HoodHook: immutable platform treasury.
+  { type: "function", name: "treasury", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
 ] as const;
 
 export const routerAbi = [
