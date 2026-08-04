@@ -4,21 +4,21 @@ import { join } from "path";
 
 // Official token launch: same flow as launch-test-final but with on-chain
 // metadata (logo + social links) baked into the token.
-const NAME = process.env.T_NAME ?? "Copair";
-const SYMBOL = process.env.T_SYMBOL ?? "COPAIR";
+const NAME = process.env.T_NAME ?? "Toebeans";
+const SYMBOL = process.env.T_SYMBOL ?? "BEANS";
 const PAIR = process.env.T_PAIR ?? "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"; // WETH
 const USD8 = BigInt(process.env.T_USD8 ?? "186322000000");
 const TAX = Number(process.env.T_TAX ?? "100");
 
-// Feather mark as a compact self-contained SVG data URI (board-dark tile).
-const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4CF28B"/><stop offset="1" stop-color="#15D262"/></linearGradient><linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#06BC52"/><stop offset="1" stop-color="#017C38"/></linearGradient></defs><rect width="256" height="256" fill="#07100a"/><g transform="translate(68 22) scale(1.0)"><path d="M76 10 L58 42 L69 42 Z" fill="url(#a)"/><path d="M76 10 L69 42 L90 30 Z" fill="url(#b)"/><path d="M72 48 L56 51 L40 94 L60 160 L63 152 Z" fill="url(#a)"/><path d="M72 48 L88 41 L95 86 L80 150 L60 160 L63 152 Z" fill="url(#b)"/><g stroke="#DBFCE7" stroke-opacity=".55" stroke-width="2.1" stroke-linecap="round" fill="none"><path d="M72 48 L61 156"/><path d="M76 10 L69 42"/></g><g stroke="#053B1E" stroke-opacity=".3" stroke-width="2" stroke-linecap="round" fill="none"><path d="M66 66 L48 82"/><path d="M64 92 L46 106"/><path d="M62 118 L50 130"/><path d="M70 66 L88 78"/><path d="M69 92 L90 104"/><path d="M67 118 L80 128"/></g><path d="M60 160 L57 170" stroke="url(#b)" stroke-width="3" stroke-linecap="round"/></g></svg>`;
+// Jelly-bean paw mark (glossy pink on peach) as a compact SVG data URI.
+const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><defs><radialGradient id="bg" cx="50%" cy="14%" r="100%"><stop offset="0" stop-color="#ffe8d6"/><stop offset=".6" stop-color="#ffd9bd"/><stop offset="1" stop-color="#f7b98f"/></radialGradient><linearGradient id="p" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb3c7"/><stop offset=".5" stop-color="#ff7fa4"/><stop offset="1" stop-color="#e5486f"/></linearGradient><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><rect width="256" height="256" fill="url(#bg)"/><g transform="rotate(-18 66 89)"><ellipse cx="66" cy="89" rx="23.5" ry="30" fill="url(#p)"/><ellipse cx="60" cy="78" rx="13" ry="9" fill="url(#g)" opacity=".8"/></g><g transform="rotate(-6 110 64)"><ellipse cx="110" cy="64" rx="23.5" ry="31" fill="url(#p)"/><ellipse cx="105" cy="52" rx="13" ry="9" fill="url(#g)" opacity=".8"/></g><g transform="rotate(7 156 66)"><ellipse cx="156" cy="66" rx="23.5" ry="31" fill="url(#p)"/><ellipse cx="152" cy="54" rx="13" ry="9" fill="url(#g)" opacity=".8"/></g><g transform="rotate(19 196 93)"><ellipse cx="196" cy="93" rx="23" ry="29.5" fill="url(#p)"/><ellipse cx="192" cy="82" rx="12" ry="8.5" fill="url(#g)" opacity=".8"/></g><path d="M128 108 C168 108 201 137 201 170 C201 202 168 218 128 218 C88 218 55 202 55 170 C55 137 88 108 128 108 Z" fill="url(#p)"/><ellipse cx="100" cy="132" rx="32" ry="15" fill="url(#g)" opacity=".7"/></svg>`;
 const LOGO = `data:image/svg+xml;base64,${Buffer.from(LOGO_SVG).toString("base64")}`;
 
 const METADATA = JSON.stringify({
   description:
-    "The official token of copair.fun, the launch-to-earn launchpad on Robinhood Chain. COPAIR trades against ETH with a flat 1% fee: 80% to the creator in ETH, 5% builds a real bid wall under the price, and snipers pay extra straight into the wall.",
+    "The official token of toebeans.fun, the launch-to-earn launchpad on Robinhood Chain. Every coin trades against ETH with a flat 1% fee: 80% to the creator in ETH, 5% builds a real bid wall under the price, and snipers pay extra straight into the wall. Every coin lands on its feet.",
   logo: LOGO,
-  website: "https://www.copair.fun",
+  website: "https://www.toebeans.fun",
   twitter: "https://x.com/Copair_",
   telegram: "",
 });
