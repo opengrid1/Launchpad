@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useToken } from "@launchpad/sdk/react";
+import { useHolders, useToken } from "@launchpad/sdk/react";
 import type { Address, TokenSummary } from "@launchpad/sdk";
 
 // The chart is lazy-loaded so the token header, stats and trade panel paint
@@ -25,6 +25,63 @@ import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { stockOf } from "../lib/v4/stocks";
 import { useUi } from "../store";
 
+
+/** Trades + Holders tab block under the chart. */
+function ActivityTabs({ t, usdRate }: { t: TokenSummary; usdRate: number }) {
+  const [tab, setTab] = useState<"trades" | "holders">("trades");
+  return (
+    <section className="mt-6">
+      <div className="mb-2 flex items-center gap-2">
+        {(["trades", "holders"] as const).map((x) => (
+          <button key={x} onClick={() => setTab(x)}
+            className={`rounded-full border-2 px-4 py-1.5 text-[12.5px] font-extrabold ${tab === x ? "border-edge-2 bg-edge-2 text-bg" : "border-edge-2 text-ink"}`}
+            style={tab === x ? { background: "var(--color-ink)", color: "var(--color-bg)" } : undefined}>
+            {x === "trades" ? "Recent trades" : "Holders"}
+          </button>
+        ))}
+      </div>
+      <div className="overflow-hidden rounded-2xl border border-edge bg-panel">
+        {tab === "trades"
+          ? <TradesList token={t.address as Address} symbol={t.symbol} usdRate={usdRate} />
+          : <HoldersList token={t.address as Address} symbol={t.symbol} />}
+      </div>
+    </section>
+  );
+}
+
+function HoldersList({ token, symbol }: { token: Address; symbol: string }) {
+  const { data: holders, loading } = useHolders(client, token, 50);
+  if (loading) return <div className="p-4"><Skeleton className="h-8" /><Skeleton className="mt-2 h-8" /></div>;
+  if (!holders || holders.length === 0) {
+    return <EmptyState title="No holders yet" body="Holders appear as soon as trading starts." />;
+  }
+  return (
+    <table className="w-full text-left">
+      <thead>
+        <tr className="border-b border-edge text-[9.5px] uppercase tracking-wider text-ink-3">
+          <th className="px-3 py-2 font-medium">#</th>
+          <th className="px-2 py-2 font-medium">Wallet</th>
+          <th className="px-2 py-2 text-right font-medium">{symbol}</th>
+          <th className="px-3 py-2 text-right font-medium">% supply</th>
+        </tr>
+      </thead>
+      <tbody>
+        {holders.map((h, i) => (
+          <tr key={h.address} className="border-b border-edge/50 last:border-0">
+            <td className="mono px-3 py-2.5 text-[12px] text-ink-3">{i + 1}</td>
+            <td className="px-2 py-2.5">
+              <a href={`${env.explorerUrl}/address/${h.address}`} target="_blank" rel="noreferrer" className="mono text-[12px] text-ink hover:underline">
+                {shortAddr(h.address)}
+              </a>
+            </td>
+            <td className="mono px-2 py-2.5 text-right text-[12px] text-ink">{fmtTokens(h.balance)}</td>
+            <td className="mono px-3 py-2.5 text-right text-[12px] text-ink-2">{h.pct.toFixed(2)}%</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
 const IS_STABLE = String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3";
 const CREATOR_MODE = IS_STABLE || String(import.meta.env.VITE_FEE_MODE ?? "") === "creator";
@@ -216,15 +273,8 @@ export function TokenPage() {
         </div>
       </section>
 
-      {/* Recent trades */}
-      <section className="mt-6">
-        <div className="mb-2 flex items-center gap-2">
-          <h2 className="text-[14px] font-bold tracking-tight text-ink">Recent trades</h2>
-        </div>
-        <div className="overflow-hidden rounded-2xl border border-edge bg-panel">
-          <TradesList token={t.address as Address} symbol={t.symbol} usdRate={usdRate} />
-        </div>
-      </section>
+      {/* Trades / Holders */}
+      <ActivityTabs t={t} usdRate={usdRate} />
     </div>
   );
 }
