@@ -19,7 +19,7 @@ const METADATA = JSON.stringify({
     "The official token of toebeans.fun, the launch-to-earn launchpad on Robinhood Chain. Every coin trades against ETH with a flat 1% fee: 80% to the creator in ETH, 5% builds a real bid wall under the price, and snipers pay extra straight into the wall. Every coin lands on its feet.",
   logo: LOGO,
   website: "https://www.toebeans.fun",
-  twitter: "https://x.com/Copair_",
+  twitter: "https://x.com/Toebeans_fun",
   telegram: "",
 });
 

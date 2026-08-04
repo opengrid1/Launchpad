@@ -38,8 +38,8 @@ const FLAVORS: Record<string, Brand> = {
     tld: ".fun",
     domain: "toebeans.fun",
     url: "https://toebeans.fun",
-    twitter: "https://x.com/Copair_",
-    twitterHandle: "Copair_",
+    twitter: "https://x.com/Toebeans_fun",
+    twitterHandle: "Toebeans_fun",
     tagline: "every coin lands on its feet",
     description:
       "toebeans. launch a coin on Robinhood Chain and earn 80% of every trade fee in ETH. A real bid wall grows under your coin, so it always lands on its feet.",
