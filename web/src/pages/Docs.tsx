@@ -32,7 +32,7 @@ function CopairDocs() {
         protocol rules.
       </p>
 
-      <Section title="The copair model: launch to earn">
+      <Section title="The toebeans model: launch to earn">
         <p>
           Every coin trades against ETH with a flat 1% fee, and launching is how you earn:
           80% of every trade fee is paid to the creator in ETH, automatically. 5% of every fee,
