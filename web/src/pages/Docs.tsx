@@ -76,12 +76,12 @@ function CopairDocs() {
         <p>
           The trade tax is skimmed by the pool's hook on every swap, so it applies to every trade,
           including ones routed directly by bots or aggregators. Accrued fees are normalized into
-          the pair token on each harvest and split two ways. There is no protocol cut.
+          the pair token on each harvest and split two ways: launch to earn. There is no protocol cut.
         </p>
         <Facts
           rows={[
-            ["Holders", "80% · paid in the pair token, pro-rata"],
-            ["Creator", "20% · paid in the pair token"],
+            ["Creator", "80% · paid in the pair token, every harvest"],
+            ["Holders", "20% · paid in the pair token, pro-rata"],
             ["Claiming", "one tap on the token page, any time"],
           ]}
         />

@@ -36,7 +36,7 @@ interface ResolvedToken {
  * Board (Robinhood-chain) launch flow. The creator picks ONE onchain token to
  * pair against — a Robinhood tokenized stock or any onchain meme token by
  * address. That token becomes both the trading pair (buys and sells settle in
- * it) and the reward: 80% of every trade fee flows to holders in that token,
+ * it) and the earnings: 80% of every trade fee flows to the creator in that token,
  * auto-distributed once a holder is owed $4 and claimable anytime. The
  * remaining 20% funds the platform. Supply and the starting market cap are
  * fixed protocol rules.
@@ -189,7 +189,7 @@ export function LaunchBoard() {
       </div>
       <p className="mt-1 text-[12.5px] leading-relaxed text-ink-2">
         One transaction mints your token, opens a live market and seeds the full supply. Pick any
-        onchain token to pair against; holders earn 80% of every trade fee in that token.
+        onchain token to pair against; you earn 80% of every trade fee in that token.
       </p>
 
       <form onSubmit={submit} className="board-form mt-4 space-y-4">
@@ -300,13 +300,13 @@ export function LaunchBoard() {
         {/* Fee mechanics: reward model */}
         <div className="rounded-xl border border-accent/25 bg-accent/[0.05] px-3 py-2.5">
           <p className="text-[12.5px] font-semibold text-ink">
-            Holders earn <span className="text-accent-ink">80% of every trade fee</span>
+            You earn <span className="text-accent-ink">80% of every trade fee</span>
             {pair ? <> in <span className="text-accent-ink">${pair.symbol}</span></> : null}
           </p>
           <ul className="mt-1.5 space-y-1 text-[11.5px] leading-relaxed text-ink-2">
             <li>· Your token trades against {pair ? `$${pair.symbol}` : "the token you pick"}; buys and sells settle in it.</li>
-            <li>· 80% of every fee goes to holders in {pair ? `$${pair.symbol}` : "that token"}, split by how much they hold.</li>
-            <li>· You (the creator) keep the other 20%. No tax on the token itself.</li>
+            <li>· 80% of every fee goes to you, the creator, in {pair ? `$${pair.symbol}` : "that token"}. Launch to earn.</li>
+            <li>· Holders share the other 20%, so buyers earn too. No tax on the token itself.</li>
           </ul>
         </div>
 
@@ -343,7 +343,7 @@ export function LaunchBoard() {
         <dl className="space-y-1.5 border-t border-edge pt-3 text-[12px]">
           <Row label="Starting market cap" value="$3,000" />
           <Row label="Supply" value="1,000,000,000" />
-          <Row label="Trade fee" value={`${taxPct}% · 80% holders, 20% you`} />
+          <Row label="Trade fee" value={`${taxPct}% · 80% you, 20% holders`} />
         </dl>
 
         <button type="submit" disabled={busy || (pairMode === "custom" && !custom)}

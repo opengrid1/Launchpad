@@ -18,8 +18,6 @@ const SORTS: { id: Sort; label: string }[] = [
   { id: "mcap", label: "Mcap" },
 ];
 
-const COPAIR_ADDR = "0xB9B9BfcABA4A1dc55724AD8958bCE3D36c104663";
-
 /**
  * Minimalist market terminal. One headline, one accent, then a single clean
  * list of markets separated by hairlines. No cards, no boxes, no marquee.
@@ -75,13 +73,13 @@ export function ExploreBoard() {
       <section className="cpm-hero">
         <p className="cpm-eyebrow">{env.chainName} · pair &amp; earn</p>
         <h1 className="cpm-headline">
-          Every trade.
+          Launch a coin.
           <br />
-          <em>Holders get paid.</em>
+          <em>Get paid every trade.</em>
         </h1>
         <p className="cpm-sub">
-          Pair a coin with any stock, meme, or ETH. Holders earn 80% of every trade fee in the
-          pair token, automatically.
+          Pair a coin with any stock, meme, or ETH. As the creator you earn 80% of every trade
+          fee in that pair token, automatically. Holders share the other 20%.
         </p>
         <div className="cpm-ctas">
           <Link to="/launch" className="cpm-cta">Launch a coin</Link>
@@ -92,9 +90,6 @@ export function ExploreBoard() {
           {latest ? <> · latest ${latest.symbol}</> : null}
         </p>
       </section>
-
-      {/* Contract line */}
-      <ContractLine />
 
       {/* Market list */}
       <section className="cpm-list">
@@ -153,24 +148,6 @@ function logoSrc(t: TokenSummary): string | null {
 function pairSymOf(t: TokenSummary): string {
   const s = (t.metadata as any)?.pair?.symbol ?? (t.metadata as any)?.rewardStockSymbol;
   return typeof s === "string" && s ? s : "";
-}
-
-function ContractLine() {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard?.writeText(COPAIR_ADDR).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    });
-  };
-  return (
-    <div className="cpm-contract">
-      <span className="k">$COPAIR</span>
-      <span className="a">{COPAIR_ADDR}</span>
-      <button onClick={copy}>{copied ? "copied" : "copy"}</button>
-      <Link to={`/token/${COPAIR_ADDR}`}>trade →</Link>
-    </div>
-  );
 }
 
 function Row({ t, rank }: { t: TokenSummary; rank: number }) {

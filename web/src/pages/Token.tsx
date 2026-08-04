@@ -398,7 +398,7 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
           Holders earn {stock.name} <span className="text-ink-3">({stock.symbol})</span>
         </p>
         <p className="mt-0.5 text-xs text-ink-3">
-          80% of every trade fee goes to holders in {stock.symbol}, split by how much you hold.
+          Creators earn 80% of every trade fee; holders share 20% in {stock.symbol}, split by how much you hold.
           Claim anytime, straight to your wallet. {fmtTokens(extra.totalRewards.toString())} {stock.symbol} paid out so far.
         </p>
       </div>
