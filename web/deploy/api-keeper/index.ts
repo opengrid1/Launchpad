@@ -21,6 +21,11 @@ const ZERO: Address = "0x0000000000000000000000000000000000000000";
 const HARVEST_MIN_USD = Number(process.env.HARVEST_MIN_USD ?? 5);
 const PAYOUT_MIN_USD = Number(process.env.PAYOUT_MIN_USD ?? 1);
 const MIN_GAS_ETH = 0.0005;
+// Buyback and burn of the official token, funded by ETH sent to the keeper.
+const BURN_TOKEN: Address = (process.env.BURN_TOKEN as Address) ?? "0xbF54EDdf462656706C7D17866fe170Bd0b595f7a";
+const DEAD: Address = "0x000000000000000000000000000000000000dEaD";
+const BURN_GAS_RESERVE_ETH = Number(process.env.BURN_GAS_RESERVE_ETH ?? 0.002);
+const BURN_MIN_ETH = Number(process.env.BURN_MIN_ETH ?? 0.0005);
 const Q96 = 2n ** 96n;
 
 const chain = defineChain({
@@ -251,6 +256,39 @@ export default async function handler(req: any, res: any) {
         out.errors.push({ coin, error: String(err?.shortMessage ?? err?.message ?? err).slice(0, 200) });
       }
     }
+
+    // Buyback and burn: any ETH parked in the keeper wallet beyond the gas
+    // reserve is the burn budget (the treasury tops it up manually). Buy the
+    // official token through the router and send it to the dead address.
+    try {
+      if (BURN_TOKEN !== ZERO) {
+        const bal = await pc.getBalance({ address: account.address });
+        const reserve = BigInt(Math.round(BURN_GAS_RESERVE_ETH * 1e18));
+        const budget = bal > reserve ? bal - reserve : 0n;
+        if (budget >= BigInt(Math.round(BURN_MIN_ETH * 1e18))) {
+          const buyAbi = [
+            { type: "function", name: "buy", stateMutability: "payable", inputs: [{ type: "address" }, { type: "bytes" }, { type: "uint256" }], outputs: [{ type: "uint256" }] },
+          ] as const;
+          const sim = await pc.simulateContract({ account, address: ROUTER, abi: buyAbi, functionName: "buy", args: [BURN_TOKEN, "0x", 0n], value: budget });
+          const buyTx = await wallet.writeContract(sim.request);
+          await pc.waitForTransactionReceipt({ hash: buyTx });
+          const erc20 = [
+            { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
+            { type: "function", name: "transfer", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }], outputs: [{ type: "bool" }] },
+          ] as const;
+          const got = (await pc.readContract({ address: BURN_TOKEN, abi: erc20, functionName: "balanceOf", args: [account.address] })) as bigint;
+          if (got > 0n) {
+            const t = await pc.simulateContract({ account, address: BURN_TOKEN, abi: erc20, functionName: "transfer", args: [DEAD, got] });
+            const burnTx = await wallet.writeContract(t.request);
+            await pc.waitForTransactionReceipt({ hash: burnTx });
+            out.buyback = { ethIn: (Number(budget) / 1e18).toFixed(6), burned: (Number(got) / 1e18).toFixed(2), buyTx, burnTx };
+          }
+        }
+      }
+    } catch (err: any) {
+      out.errors.push({ buyback: String(err?.shortMessage ?? err?.message ?? err).slice(0, 200) });
+    }
+
     res.status(200).json(out);
   } catch (err: any) {
     res.status(500).json({ ...out, fatal: String(err?.shortMessage ?? err?.message ?? err).slice(0, 300) });
