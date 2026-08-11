@@ -77,11 +77,12 @@ export function ExploreBoard() {
         <h1 className="cpm-headline">
           Launch a coin.
           <br />
-          <em>Get paid every trade.</em>
+          <em>It fights back.</em>
         </h1>
         <p className="cpm-sub">
-          Every coin trades against ETH with a flat 1% fee. You earn 80% of it, in ETH,
-          automatically. 5% builds a real bid wall under your coin, and snipers fund it.
+          A flat 1% fee on every trade: 80% goes to you in ETH, automatically. 5% builds a
+          real bid wall that absorbs sells and only climbs. Snipers pay up to 15%, straight
+          into your wall.
         </p>
         <p className="cpm-statline">
           {all.length} markets · {fmtUsd(dayVolumeUsd)} 24h volume
