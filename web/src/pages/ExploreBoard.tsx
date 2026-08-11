@@ -73,7 +73,6 @@ export function ExploreBoard() {
       <span className="cpm-blob b2" aria-hidden />
       {/* Hero: type only. */}
       <section className="cpm-hero">
-        <p className="cpm-eyebrow">{env.chainName} · launch to earn</p>
         <h1 className="cpm-headline">
           Launch a coin.
           <br />
