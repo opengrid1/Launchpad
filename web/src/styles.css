@@ -535,47 +535,49 @@ button.bg-accent:disabled {
    A distinct layout theme, not a recolor of the default grid.
    ============================================================ */
 :root[data-brand="copair"] {
-  /* Poster Pop: cream ground, ink lines, coral CTA, toy-box tile colors. */
-  --color-bg: #fff8ec;
-  --color-panel: #ffffff;
-  --color-panel-2: #fdf1dc;
-  --color-edge: #e9dcc4;
-  --color-edge-2: #1b150e;
-  --color-ink: #1b150e;
-  --color-ink-2: #6b5d4c;
-  --color-ink-3: #a4947c;
-  --color-accent: #f25f4c;
-  --color-accent-2: #ff7a66;
-  --color-accent-ink: #d94b39;
-  --color-accent-fg: #ffffff;
-  --color-up: #0f9d58;
-  --color-down: #d64545;
-  --shadow-card: 6px 6px 0 #1b150e;
-  --shadow-card-hover: 8px 8px 0 #1b150e;
-  --pop-yellow: #ffd166;
-  --pop-sky: #8bd3dd;
-  --pop-lime: #c3f584;
-  --pop-pink: #f9a1bc;
+  /* Emerald Hood: deep green ground, mint lines, glossy emerald CTA. Poster
+     structure (chunky borders, hard shadows) survives, colors go midnight. */
+  --color-bg: #081a12;
+  --color-panel: #0d2419;
+  --color-panel-2: #123022;
+  --color-edge: #1d3f2c;
+  --color-edge-2: #eafff0;
+  --color-ink: #eafff0;
+  --color-ink-2: #9cc4ab;
+  --color-ink-3: #5f8770;
+  --color-accent: #2fbf74;
+  --color-accent-2: #5fe08a;
+  --color-accent-ink: #5fe08a;
+  --color-accent-fg: #06281a;
+  --color-up: #5fe08a;
+  --color-down: #ff6b5e;
+  --shadow-card: 6px 6px 0 #04120b;
+  --shadow-card-hover: 8px 8px 0 #04120b;
+  --cpm-shadow: #04120b;
+  --pop-yellow: #f7c64b;
+  --pop-sky: #57c4a0;
+  --pop-lime: #8df0a8;
+  --pop-pink: #ff8fa0;
 }
 :root[data-brand="copair"] body {
-  background: var(--color-bg);
+  background: radial-gradient(120% 90% at 50% 0%, #123c2b 0%, #0a211a 45%, #050e0b 100%) fixed, var(--color-bg);
   color: var(--color-ink);
 }
-:root[data-brand="copair"] { color-scheme: light; }
-:root[data-brand="copair"] ::selection { background: #f25f4c44; }
+:root[data-brand="copair"] { color-scheme: dark; }
+:root[data-brand="copair"] ::selection { background: #2fbf7455; }
 
 /* ---- copair Poster Pop: chunky borders, hard shadows, toy-box tiles ---- */
 .cpm { max-width: 1020px; margin: 0 auto; padding: 0 20px 96px; position: relative; }
 .cpm-blob { position: fixed; border-radius: 50%; z-index: -1; }
-.cpm-blob.b1 { width: 380px; height: 380px; background: var(--pop-yellow); top: -140px; right: -100px; opacity: .8; }
-.cpm-blob.b2 { width: 240px; height: 240px; background: var(--pop-sky); bottom: -90px; left: -70px; opacity: .7; }
+.cpm-blob.b1 { width: 420px; height: 420px; background: radial-gradient(circle, #2fbf74, transparent 70%); top: -160px; right: -120px; opacity: .18; }
+.cpm-blob.b2 { width: 300px; height: 300px; background: radial-gradient(circle, #57c4a0, transparent 70%); bottom: -110px; left: -90px; opacity: .14; }
 
 .cpm-hero { padding: 56px 0 30px; }
 .cpm-eyebrow {
   display: inline-block; font-family: var(--font-mono, ui-monospace); font-size: 10.5px;
   font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-ink);
-  background: var(--pop-lime); border: 2px solid var(--color-ink); border-radius: 999px;
-  padding: 5px 14px; box-shadow: 3px 3px 0 var(--color-ink);
+  background: #0f2a1c; border: 2px solid var(--color-edge); border-radius: 999px; color: var(--pop-lime);
+  padding: 5px 14px; box-shadow: 3px 3px 0 var(--cpm-shadow, #04120b);
 }
 .cpm-headline {
   margin-top: 22px; font-family: "Bricolage Grotesque", Inter, sans-serif; font-weight: 800;
@@ -592,11 +594,11 @@ button.bg-accent:disabled {
 .cpm-cta {
   display: inline-block; padding: 14px 30px; border-radius: 999px;
   font-family: "Bricolage Grotesque", Inter, sans-serif; font-size: 16px; font-weight: 800;
-  color: #fff; background: var(--color-accent); border: 2.5px solid var(--color-ink);
-  box-shadow: 0 6px 0 var(--color-ink); transition: transform .1s, box-shadow .1s;
+  color: #06281a; background: linear-gradient(180deg, #5fe08a, #1ea862); border: 2.5px solid #04120b;
+  box-shadow: 0 6px 0 var(--cpm-shadow, #04120b); transition: transform .1s, box-shadow .1s;
 }
-.cpm-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--color-ink); }
-.cpm-cta:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--color-ink); }
+.cpm-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--cpm-shadow, #04120b); }
+.cpm-cta:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--cpm-shadow, #04120b); }
 .cpm-link { font-size: 14px; font-weight: 800; color: var(--color-ink); border-bottom: 3px solid var(--pop-yellow); }
 .cpm-link:hover { border-bottom-color: var(--color-accent); }
 .cpm-statline {
@@ -613,7 +615,7 @@ button.bg-accent:disabled {
   color: var(--color-ink); transition: transform .1s;
 }
 .cpm-tabs button:hover { transform: translateY(-1px); }
-.cpm-tabs button.on { background: var(--color-ink); color: #fff8ec; box-shadow: 3px 3px 0 var(--pop-yellow); }
+.cpm-tabs button.on { background: var(--color-ink); color: #06281a; box-shadow: 3px 3px 0 var(--cpm-shadow, #04120b); }
 .cpm-search {
   width: 200px; background: var(--color-panel); border: 2px solid var(--color-ink);
   border-radius: 999px; outline: none; padding: 8px 16px; font-size: 13px; font-weight: 600;
@@ -627,21 +629,21 @@ button.bg-accent:disabled {
 @media (min-width: 980px) { .cpm-grid { grid-template-columns: repeat(4, 1fr); } }
 .cpt {
   display: block; border: 3px solid var(--color-ink); border-radius: 22px; padding: 16px;
-  box-shadow: 7px 7px 0 var(--color-ink); transition: transform .12s, box-shadow .12s;
+  box-shadow: 7px 7px 0 var(--cpm-shadow, #04120b); transition: transform .12s, box-shadow .12s;
   position: relative; overflow: hidden;
 }
-.cpt:hover { transform: translate(-2px, -2px); box-shadow: 10px 10px 0 var(--color-ink); }
-.cpt.c0 { background: var(--pop-yellow); }
-.cpt.c1 { background: var(--pop-sky); }
-.cpt.c2 { background: var(--pop-lime); }
-.cpt.c3 { background: var(--pop-pink); }
+.cpt:hover { transform: translate(-2px, -2px); box-shadow: 10px 10px 0 var(--cpm-shadow, #04120b); }
+.cpt.c0 { background: #102a1c; }
+.cpt.c1 { background: #0d2a26; }
+.cpt.c2 { background: #16301a; }
+.cpt.c3 { background: #262b1a; }
 .cpt .hd { display: flex; align-items: center; gap: 12px; }
 .cpt .id { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .cpt .id b { margin-top: 0; }
 .cpt .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.cpt .figures { border-top: 2px solid #1b150e2b; padding-top: 10px; align-items: flex-end; }
+.cpt .figures { border-top: 2px solid #eafff022; padding-top: 10px; align-items: flex-end; }
 .cpt .figures > span:first-child { display: flex; flex-direction: column; }
-.cpt .figures i { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #1b150e80; }
+.cpt .figures i { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #eafff080; }
 .cpt .off { position: static; align-self: flex-start; }
 .cpt .lg {
   width: 52px; height: 52px; border-radius: 16px; border: 2.5px solid var(--color-ink);
@@ -649,7 +651,7 @@ button.bg-accent:disabled {
 }
 .cpt .lg img { width: 100%; height: 100%; object-fit: cover; }
 .cpt b { display: block; margin-top: 12px; font-family: "Bricolage Grotesque", Inter, sans-serif; font-size: 17px; font-weight: 800; color: var(--color-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cpt .sym { font-family: var(--font-mono, ui-monospace); font-size: 11px; font-weight: 700; color: #1b150eb0; }
+.cpt .sym { font-family: var(--font-mono, ui-monospace); font-size: 11px; font-weight: 700; color: #eafff0b0; }
 .cpt .earn {
   display: inline-block; margin-top: 8px; background: #ffffffd9; border: 2px solid var(--color-ink);
   border-radius: 999px; padding: 3px 10px; font-size: 10px; font-weight: 800;
@@ -819,18 +821,18 @@ button.bg-accent:disabled {
 
 /* Poster Pop chrome for the copair header + footer */
 :root[data-brand="copair"] .board-header {
-  background: #fff8ecf2; border-bottom: 3px solid var(--color-ink); backdrop-filter: blur(8px);
+  background: #081a12f0; border-bottom: 3px solid var(--color-edge); backdrop-filter: blur(8px);
 }
 :root[data-brand="copair"] .board-header .text-ink { font-family: "Bricolage Grotesque", Inter, sans-serif; }
 :root[data-brand="copair"] .board-pillnav a {
   border-radius: 999px; font-weight: 800; color: var(--color-ink-2);
 }
 :root[data-brand="copair"] .board-pillnav a.on {
-  background: var(--color-ink); color: #fff8ec;
+  background: var(--color-ink); color: #06281a;
 }
 :root[data-brand="copair"] .board-connect {
-  background: var(--color-accent); color: #fff; border: 2.5px solid var(--color-ink);
-  border-radius: 999px; box-shadow: 0 4px 0 var(--color-ink);
+  background: linear-gradient(180deg, #5fe08a, #1ea862); color: #06281a; border: 2.5px solid #04120b;
+  border-radius: 999px; box-shadow: 0 4px 0 var(--cpm-shadow, #04120b);
 }
 :root[data-brand="copair"] .board-connect-ghost {
   border: 2px solid var(--color-ink); border-radius: 999px; color: var(--color-ink); font-weight: 800;
@@ -839,18 +841,18 @@ button.bg-accent:disabled {
 
 /* Poster Pop forms: chunky inputs and the launch card for the copair flavor */
 :root[data-brand="copair"] .board-form {
-  background: #fff;
-  border: 3px solid var(--color-ink);
+  background: var(--color-panel);
+  border: 3px solid var(--color-edge);
   border-radius: 22px;
-  box-shadow: 7px 7px 0 var(--color-ink);
+  box-shadow: 7px 7px 0 var(--cpm-shadow, #04120b);
 }
 
 :root[data-brand="copair"] input:not([type="range"]),
 :root[data-brand="copair"] select,
 :root[data-brand="copair"] textarea {
-  border: 2px solid var(--color-ink) !important;
+  border: 2px solid var(--color-edge) !important;
   border-radius: 14px !important;
-  background: #fff !important;
+  background: #0a1f15 !important;
   color: var(--color-ink) !important;
   font-weight: 600;
 }
@@ -860,33 +862,33 @@ button.bg-accent:disabled {
 }
 :root[data-brand="copair"] .rounded-xl.border.border-edge.bg-panel,
 :root[data-brand="copair"] .rounded-2xl.border.border-edge.bg-panel {
-  border: 3px solid var(--color-ink) !important;
+  border: 3px solid var(--color-edge) !important;
   border-radius: 22px !important;
-  box-shadow: 7px 7px 0 var(--color-ink);
-  background: #fff !important;
+  box-shadow: 7px 7px 0 var(--cpm-shadow, #04120b);
+  background: var(--color-panel) !important;
 }
 :root[data-brand="copair"] .board-launch,
 :root[data-brand="copair"] button[type="submit"] {
-  background: var(--color-accent) !important;
-  color: #fff !important;
-  border: 2.5px solid var(--color-ink) !important;
+  background: linear-gradient(180deg, #5fe08a, #1ea862) !important;
+  color: #06281a !important;
+  border: 2.5px solid #04120b !important;
   border-radius: 999px !important;
-  box-shadow: 0 5px 0 var(--color-ink) !important;
+  box-shadow: 0 5px 0 var(--cpm-shadow, #04120b) !important;
   font-family: "Bricolage Grotesque", Inter, sans-serif !important;
   font-weight: 800 !important;
 }
-:root[data-brand="copair"] button[type="submit"]:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--color-ink) !important; }
+:root[data-brand="copair"] button[type="submit"]:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--cpm-shadow, #04120b) !important; }
 :root[data-brand="copair"] input[type="range"] { accent-color: var(--color-accent); }
 
 /* Poster Pop CTAs: neutralize the base amber gradient for copair */
 :root[data-brand="copair"] button.bg-accent,
 :root[data-brand="copair"] a.bg-accent {
-  background-image: none !important;
+  background-image: linear-gradient(180deg, #5fe08a, #1ea862) !important;
   background-color: var(--color-accent) !important;
-  color: #fff !important;
-  border: 2.5px solid var(--color-ink) !important;
+  color: #06281a !important;
+  border: 2.5px solid #04120b !important;
   border-radius: 999px !important;
-  box-shadow: 0 5px 0 var(--color-ink) !important;
+  box-shadow: 0 5px 0 var(--cpm-shadow, #04120b) !important;
   text-shadow: none !important;
   font-weight: 800;
 }
@@ -894,12 +896,12 @@ button.bg-accent:disabled {
 :root[data-brand="copair"] a.bg-accent:hover {
   background-image: none !important;
   background-color: var(--color-accent-2) !important;
-  box-shadow: 0 5px 0 var(--color-ink) !important;
+  box-shadow: 0 5px 0 var(--cpm-shadow, #04120b) !important;
 }
 :root[data-brand="copair"] button.bg-accent:active,
 :root[data-brand="copair"] a.bg-accent:active {
   transform: translateY(3px);
-  box-shadow: 0 2px 0 var(--color-ink) !important;
+  box-shadow: 0 2px 0 var(--cpm-shadow, #04120b) !important;
 }
 
 
@@ -907,7 +909,7 @@ button.bg-accent:disabled {
 .board-bottomnav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
   display: flex; align-items: stretch;
-  background: #fff; border-top: 3px solid var(--color-ink);
+  background: #0d2419f5; border-top: 3px solid var(--color-edge); backdrop-filter: blur(8px);
   padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
 }
 .board-bottomnav a {
@@ -915,9 +917,9 @@ button.bg-accent:disabled {
   gap: 3px; padding: 7px 0 5px; border-radius: 14px; margin: 0 3px;
   font-size: 11px; font-weight: 800; color: var(--color-ink-2); transition: color .12s, background .12s;
 }
-.board-bottomnav a.on { background: var(--color-ink); color: #fff8ec; }
+.board-bottomnav a.on { background: var(--color-ink); color: #06281a; }
 .board-bottomnav a:hover { color: var(--color-ink); }
-.board-bottomnav a.on:hover { color: #fff8ec; }
+.board-bottomnav a.on:hover { color: #06281a; }
 
 /* Keep the footer links clickable above the sticky nav */
 :root[data-brand="copair"] footer {
