@@ -32,18 +32,18 @@ const FLAVORS: Record<string, Brand> = {
       "hammr. dutch-auction launchpad on Robinhood Chain: coins start at 10x and fall for one hour, then the hammer drops, liquidity locks, and holders earn the pair token on every trade.",
     title: "hammr | every coin goes under the hammer",
   },
-  // The flavor key stays "copair" (build wiring + CSS scope); the brand is toebeans.
+  // The flavor key stays "copair" (build wiring + CSS scope); the brand is uhood.
   copair: {
-    name: "toebeans",
+    name: "uhood",
     tld: ".fun",
-    domain: "toebeans.fun",
-    url: "https://toebeans.fun",
+    domain: "uhood.fun",
+    url: "https://uhood.fun",
     twitter: "https://x.com/Toebeans_fun",
     twitterHandle: "Toebeans_fun",
-    tagline: "every coin lands on its feet",
+    tagline: "launch a coin, earn ETH on every trade",
     description:
-      "toebeans. launch a coin on Robinhood Chain and earn 80% of every trade fee in ETH. A real bid wall grows under your coin, so it always lands on its feet.",
-    title: "toebeans | launch a coin, earn ETH on every trade",
+      "uhood. launch a coin on Robinhood Chain and earn 80% of every trade fee in ETH. A real bid wall grows under your coin, and snipers pay for it.",
+    title: "uhood | launch a coin, earn ETH on every trade",
   },
   steadypads: {
     name: "steadypads",
