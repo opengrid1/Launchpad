@@ -52,13 +52,15 @@ function CopairDocs() {
         <p>
           Launching is free; you pay only gas. One transaction deploys your token, creates a real
           Uniswap V4 pool against ETH, seeds the full supply single-sided, and opens trading
-          immediately.
+          immediately. You can attach an initial buy to the same transaction: it fills before
+          anyone else can trade and pays only the flat 1% fee, never the sniper rate.
         </p>
         <Facts
           rows={[
             ["Total supply", "1,000,000,000 (fixed)"],
             ["Starting market cap", "≈ $3,000 (fixed)"],
             ["Upfront liquidity", "None required"],
+            ["Initial buy", "Optional, atomic, sniper-proof"],
             ["Trade fee", "1%, flat, forever"],
           ]}
         />
@@ -93,7 +95,11 @@ function CopairDocs() {
       </Section>
 
       <Section title="Contracts">
-        <p>The protocol is immutable: ownership is renounced at deploy time.</p>
+        <p>
+          The protocol is immutable. The hook has no owner at all: the factory and treasury
+          addresses are burned in at deploy and can never be redirected, and factory ownership
+          is renounced. Nobody can change the fee split, pause your coin, or touch your pool.
+        </p>
         <div className="mt-3 space-y-2">
           {contracts.map((c) => (
             <ContractRow key={c.name} {...c} />

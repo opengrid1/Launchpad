@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
 
-import { BRAND, BRAND_FLAVOR } from "../lib/brand";
+import { BRAND } from "../lib/brand";
 import { env } from "../lib/env";
-import { OFFICIAL_DEXSCREENER, PRIMARY_OFFICIAL } from "../lib/official";
 
 /**
  * Slim site footer: wordmark left, product links right. Sits below the page
@@ -20,24 +19,6 @@ export function Footer() {
         <span className="hidden sm:inline">{BRAND.tagline}</span>
         <div className="flex-1" />
         <nav className="flex items-center gap-4" aria-label="Footer">
-          {BRAND_FLAVOR === "copair" && PRIMARY_OFFICIAL ? (
-            <>
-              <Link
-                to={`/token/${PRIMARY_OFFICIAL}`}
-                className="font-semibold text-ink-2 transition-colors hover:text-ink"
-              >
-                $BEANS
-              </Link>
-              <a
-                href={OFFICIAL_DEXSCREENER}
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold text-ink-2 transition-colors hover:text-ink"
-              >
-                DexScreener
-              </a>
-            </>
-          ) : null}
           <Link to="/docs" className="font-semibold text-ink-2 transition-colors hover:text-ink">
             Docs
           </Link>
