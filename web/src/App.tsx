@@ -18,6 +18,7 @@ const AdminPage =
     ? lazy(() => import("./pages/AdminStable").then((m) => ({ default: m.AdminStable })))
     : lazy(() => import("./pages/Admin").then((m) => ({ default: m.AdminPage })));
 const DocsPage = lazy(() => import("./pages/Docs").then((m) => ({ default: m.DocsPage })));
+const ProfilePage = lazy(() => import("./pages/Profile").then((m) => ({ default: m.ProfilePage })));
 const BridgePage = lazy(() => import("./pages/Bridge").then((m) => ({ default: m.BridgePage })));
 
 const queryClient = new QueryClient({
@@ -61,6 +62,7 @@ export default function App() {
                   <Route path="/launch" element={<LaunchPage />} />
                   <Route path="/token/:address" element={<TokenPage />} />
                   <Route path="/docs" element={<DocsPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/bridge" element={<BridgePage />} />
                   {/* Hidden operations console; access enforced on-chain by role. */}
                   <Route path="/admin" element={<AdminPage />} />

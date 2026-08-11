@@ -903,22 +903,23 @@ button.bg-accent:disabled {
 }
 
 
-/* Poster Pop bottom navigation for the copair board */
+/* Sticky full-width bottom navigation for the board flavor */
 .board-bottomnav {
-  position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 45;
-  display: flex; gap: 4px; padding: 6px;
-  background: #fff; border: 3px solid var(--color-ink); border-radius: 999px;
-  box-shadow: 0 6px 0 var(--color-ink);
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+  display: flex; align-items: stretch;
+  background: #fff; border-top: 3px solid var(--color-ink);
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
 }
 .board-bottomnav a {
-  display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 999px;
-  font-size: 13px; font-weight: 800; color: var(--color-ink-2); transition: color .12s, background .12s;
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 7px 0 5px; border-radius: 14px; margin: 0 3px;
+  font-size: 11px; font-weight: 800; color: var(--color-ink-2); transition: color .12s, background .12s;
 }
 .board-bottomnav a.on { background: var(--color-ink); color: #fff8ec; }
 .board-bottomnav a:hover { color: var(--color-ink); }
 .board-bottomnav a.on:hover { color: #fff8ec; }
 
-/* Keep the footer links clickable above the floating nav */
+/* Keep the footer links clickable above the sticky nav */
 :root[data-brand="copair"] footer {
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
