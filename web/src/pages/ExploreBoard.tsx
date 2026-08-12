@@ -122,33 +122,40 @@ function Tile({ t }: { t: TokenSummary }) {
   const volUsd = (Number(t.volume24hWei || "0") / 1e18) * usdRateOf(t);
   return (
     <Link to={`/token/${t.address}`} className="cpt">
-      <div className="hd">
-        <span className="lg">
-          {src && !bad ? <img src={src} alt="" loading="lazy" onError={() => setBad(true)} /> : <QuiverMark />}
+      <span className="lg">
+        {src && !bad ? <img src={src} alt="" loading="lazy" onError={() => setBad(true)} /> : <QuiverMark />}
+      </span>
+      <span className="id">
+        <b>{t.name}</b>
+        <span className="sym">
+          ${t.symbol}
+          {isOfficial(t.address) && <em className="off">OFFICIAL</em>}
         </span>
-        <span className="id">
-          <b>{t.name}</b>
-          <span className="sym">
-            ${t.symbol}
-            {isOfficial(t.address) && <em className="off">OFFICIAL</em>}
-          </span>
+      </span>
+      <span className="col vol">
+        <i>24h vol</i>
+        <span>{fmtUsd(volUsd)}</span>
+      </span>
+      <span className="col hold">
+        <i>Holders</i>
+        <span>{t.holderCount > 0 ? t.holderCount : "new"}</span>
+      </span>
+      <span className="col age">
+        <i>Age</i>
+        <span>{timeAgo(t.createdAt).replace(" ago", "")}</span>
+      </span>
+      {hasChg ? (
+        <span className={`chg ${chg >= 0 ? "up" : "dn"}`}>
+          {chg >= 0 ? "+" : ""}
+          {Math.abs(chg) >= 100 ? Math.round(chg) : chg.toFixed(1)}%
         </span>
-        {hasChg && (
-          <span className={`chg ${chg >= 0 ? "up" : "dn"}`}>
-            {chg >= 0 ? "+" : ""}
-            {Math.abs(chg) >= 100 ? Math.round(chg) : chg.toFixed(1)}%
-          </span>
-        )}
-      </div>
-      <div className="kpi">
-        <i>Market cap</i>
+      ) : (
+        <span className="chg none">–</span>
+      )}
+      <span className="col mcap">
+        <i>Mcap</i>
         <span className="mc">{fmtUsd(t.marketCapUsd)}</span>
-      </div>
-      <div className="ft">
-        <span>{fmtUsd(volUsd)} 24h</span>
-        <span>{t.holderCount > 0 ? `${t.holderCount} holders` : "new"}</span>
-        <span className="age">{timeAgo(t.createdAt).replace(" ago", "")}</span>
-      </div>
+      </span>
     </Link>
   );
 }
