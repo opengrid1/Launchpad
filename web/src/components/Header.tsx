@@ -14,6 +14,7 @@ const TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
 // The Robinhood-chain board brand has its own navigation and no bridge.
 const BOARD_TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
   { to: "/", end: true, icon: "explore", label: "Board" },
+  { to: "/flywheel", icon: "activity", label: "Flywheel" },
   { to: "/launch", icon: "launch", label: "Create" },
   { to: "/profile", icon: "wallet", label: "Profile" },
 ];

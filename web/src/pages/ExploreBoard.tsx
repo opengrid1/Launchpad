@@ -3,11 +3,10 @@ import { Link } from "react-router-dom";
 import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
-import { FlywheelPanel } from "../components/FlywheelPanel";
 import { QuiverMark } from "../components/QuiverMark";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { fmtUsd, timeAgo, usdRateOf } from "../lib/format";
+import { fmtUsd, timeAgo } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
 import { isOfficial } from "../lib/official";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
@@ -61,27 +60,15 @@ export function ExploreBoard() {
     return s;
   }, [all, debounced, sort]);
 
-  const dayVolumeUsd = useMemo(
-    () => all.reduce((a, t) => a + (Number(t.volume24hWei || "0") / 1e18) * usdRateOf(t), 0),
-    [all],
-  );
   const loading = !env.hideTokens && (lv || ln) && all.length === 0;
-  const latest = useMemo(() => [...all].sort((a, b) => b.createdAt - a.createdAt)[0], [all]);
 
   return (
     <div className="cpm">
       <span className="cpm-blob b1" aria-hidden />
       <span className="cpm-blob b2" aria-hidden />
-      {/* Slim stats, then the flywheel takes the stage. */}
-      <p className="cpm-statline" style={{ marginTop: 24 }}>
-        {all.length} markets · {fmtUsd(dayVolumeUsd)} 24h volume
-        {latest ? <> · latest ${latest.symbol}</> : null}
-      </p>
-
-      <FlywheelPanel tokens={all} ethUsd={all.length ? usdRateOf(all[0]) * 1e18 : 0} />
-
-      {/* Market list */}
-      <section className="cpm-list">
+      {/* Pure token board: just the toolbar and the card grid. All flywheel
+          analytics live on /flywheel. */}
+      <section className="cpm-list" style={{ marginTop: 18 }}>
         <div className="cpm-toolbar">
           <div className="cpm-tabs">
             {SORTS.map((s) => (
