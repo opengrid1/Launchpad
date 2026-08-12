@@ -6,7 +6,7 @@ import type { TokenSummary } from "@launchpad/sdk";
 import { QuiverMark } from "../components/QuiverMark";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { fmtUsd, timeAgo } from "../lib/format";
+import { fmtUsd, timeAgo, usdRateOf } from "../lib/format";
 import { isHidden } from "../lib/hiddenTokens";
 import { isOfficial } from "../lib/official";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
@@ -100,7 +100,7 @@ export function ExploreBoard() {
           </div>
         ) : (
           <div className="cpm-grid">
-            {feed.map((t, i) => <Tile key={t.address} t={t} idx={i} />)}
+            {feed.map((t) => <Tile key={t.address} t={t} />)}
           </div>
         )}
       </section>
@@ -114,33 +114,39 @@ function logoSrc(t: TokenSummary): string | null {
   return String(logo).startsWith("ipfs://") ? `https://ipfs.io/ipfs/${String(logo).slice(7)}` : String(logo);
 }
 
-function pairSymOf(t: TokenSummary): string {
-  const s = (t.metadata as any)?.pair?.symbol ?? (t.metadata as any)?.rewardStockSymbol;
-  return typeof s === "string" && s ? s : "";
-}
-
-function Tile({ t, idx }: { t: TokenSummary; idx: number }) {
+function Tile({ t }: { t: TokenSummary }) {
   const [bad, setBad] = useState(false);
   const src = logoSrc(t);
-  const pairSym = pairSymOf(t);
+  const chg = t.priceChange24hPct;
+  const hasChg = chg != null && Number.isFinite(chg) && chg !== 0;
+  const volUsd = (Number(t.volume24hWei || "0") / 1e18) * usdRateOf(t);
   return (
-    <Link to={`/token/${t.address}`} className={`cpt c${idx % 4}`}>
+    <Link to={`/token/${t.address}`} className="cpt">
       <div className="hd">
         <span className="lg">
           {src && !bad ? <img src={src} alt="" loading="lazy" onError={() => setBad(true)} /> : <QuiverMark />}
         </span>
         <span className="id">
           <b>{t.name}</b>
-          <span className="sym">${t.symbol}</span>
+          <span className="sym">
+            ${t.symbol}
+            {isOfficial(t.address) && <em className="off">OFFICIAL</em>}
+          </span>
         </span>
-        {isOfficial(t.address) && <span className="off">OFFICIAL</span>}
+        {hasChg && (
+          <span className={`chg ${chg >= 0 ? "up" : "dn"}`}>
+            {chg >= 0 ? "+" : ""}
+            {Math.abs(chg) >= 100 ? Math.round(chg) : chg.toFixed(1)}%
+          </span>
+        )}
       </div>
-      <div className="meta">
-        <span className="earn">1% fee · weekly burn flywheel</span>
-        {pairSym && pairSym !== "ETH" ? <span className="earn">pairs {pairSym}</span> : null}
+      <div className="kpi">
+        <i>Market cap</i>
+        <span className="mc">{fmtUsd(t.marketCapUsd)}</span>
       </div>
-      <div className="figures">
-        <span><i>Mcap</i><span className="mc">{fmtUsd(t.marketCapUsd)}</span></span>
+      <div className="ft">
+        <span>{fmtUsd(volUsd)} 24h</span>
+        <span>{t.holderCount > 0 ? `${t.holderCount} holders` : "new"}</span>
         <span className="age">{timeAgo(t.createdAt).replace(" ago", "")}</span>
       </div>
     </Link>

@@ -660,36 +660,48 @@ button.bg-accent:disabled {
   transform: translateY(-3px); border-color: #00e67636;
   box-shadow: inset 0 1px 0 #ffffff0c, var(--shadow-card-hover);
 }
-.cpt.c0, .cpt.c1, .cpt.c2, .cpt.c3 { background: linear-gradient(180deg, #ffffff07, #ffffff02 45%, transparent), var(--color-panel); }
-.cpt .hd { display: flex; align-items: center; gap: 12px; }
-.cpt .id { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.cpt .id b { margin-top: 0; }
-.cpt .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.cpt .figures { border-top: 1px solid var(--color-edge); padding-top: 10px; align-items: flex-end; }
-.cpt .figures > span:first-child { display: flex; flex-direction: column; }
-.cpt .figures i { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--color-ink-3); }
-.cpt .off { position: static; align-self: flex-start; }
+.cpt .hd { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.cpt .id { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .cpt .lg {
-  width: 50px; height: 50px; border-radius: 15px; border: 1px solid var(--color-edge-2);
-  background: var(--color-panel-2); overflow: hidden;
+  width: 44px; height: 44px; flex-shrink: 0; border-radius: 13px;
+  border: 1px solid var(--color-edge-2); background: var(--color-panel-2); overflow: hidden;
   box-shadow: 0 4px 14px -6px #000b, inset 0 1px 0 #ffffff14;
 }
 .cpt .lg img { width: 100%; height: 100%; object-fit: cover; }
-.cpt b { display: block; margin-top: 12px; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; color: var(--color-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cpt .sym { font-family: var(--font-mono, ui-monospace); font-size: 11px; font-weight: 600; color: var(--color-ink-3); }
-.cpt .earn {
-  display: inline-block; margin-top: 8px; background: #ffffff06; border: 1px solid var(--color-edge);
-  border-radius: 999px; padding: 3px 10px; font-size: 9.5px; font-weight: 700;
-  letter-spacing: 0.09em; text-transform: uppercase; color: var(--color-ink-2);
+.cpt b { display: block; font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; color: var(--color-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cpt .sym {
+  display: flex; align-items: center; gap: 6px; min-width: 0;
+  font-family: var(--font-mono, ui-monospace); font-size: 10.5px; font-weight: 600; color: var(--color-ink-3);
 }
-.cpt .figures { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; }
-.cpt .mc { font-family: var(--font-mono, ui-monospace); font-size: 16px; font-weight: 800; color: var(--color-ink); font-variant-numeric: tabular-nums; }
-.cpt .age { font-size: 11px; font-weight: 600; color: var(--color-ink-3); }
 .cpt .off {
-  position: absolute; top: 12px; right: 12px; background: var(--color-accent); color: var(--color-accent-fg);
-  border-radius: 999px; padding: 3px 10px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em;
-  box-shadow: 0 0 14px -2px #00e676aa;
+  font-style: normal; flex-shrink: 0; font-family: Inter, sans-serif;
+  background: linear-gradient(135deg, #ffd34d, #f0a819); color: #1a1200;
+  border-radius: 999px; padding: 1.5px 7px; font-size: 8px; font-weight: 900; letter-spacing: 0.1em;
+  box-shadow: 0 0 10px -2px #f0a819aa;
 }
+.cpt .chg {
+  flex-shrink: 0; align-self: flex-start;
+  font-family: var(--font-mono, ui-monospace); font-size: 11px; font-weight: 700;
+  font-variant-numeric: tabular-nums; border-radius: 999px; padding: 3px 8px;
+}
+.cpt .chg.up { color: var(--color-up); background: #00e67614; box-shadow: inset 0 0 0 1px #00e67626; }
+.cpt .chg.dn { color: var(--color-down); background: #ff5c6614; box-shadow: inset 0 0 0 1px #ff5c6626; }
+.cpt .kpi { margin-top: 16px; display: flex; flex-direction: column; gap: 2px; }
+.cpt .kpi i {
+  font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--color-ink-3);
+}
+.cpt .mc {
+  font-family: var(--font-mono, ui-monospace); font-size: 21px; font-weight: 700;
+  letter-spacing: -0.02em; color: var(--color-ink); font-variant-numeric: tabular-nums;
+}
+.cpt .ft {
+  display: flex; align-items: baseline; gap: 10px; margin-top: 14px;
+  border-top: 1px solid var(--color-edge); padding-top: 10px;
+  font-size: 10.5px; font-weight: 600; color: var(--color-ink-3);
+  font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden;
+}
+.cpt .ft .age { margin-left: auto; }
 .cpm-skel { height: 180px; border: 1px solid var(--color-edge); border-radius: 20px; animation: pulse 1.6s ease-in-out infinite; background: var(--color-panel); }
 .cpm-empty { padding: 44px 0; text-align: center; font-size: 14px; font-weight: 600; color: var(--color-ink-2); }
 
