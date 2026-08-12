@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
+import { FlywheelPanel } from "../components/FlywheelPanel";
 import { QuiverMark } from "../components/QuiverMark";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
@@ -88,6 +89,8 @@ export function ExploreBoard() {
           {latest ? <> · latest ${latest.symbol}</> : null}
         </p>
       </section>
+
+      <FlywheelPanel tokens={all} ethUsd={all.length ? usdRateOf(all[0]) * 1e18 : 0} />
 
       {/* Market list */}
       <section className="cpm-list">

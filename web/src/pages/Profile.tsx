@@ -239,12 +239,22 @@ function TraderRewards() {
   const abi = [
     { type: "function", name: "currentEpoch", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
     { type: "function", name: "traderClaimable", stateMutability: "view", inputs: [{ type: "uint256" }, { type: "address" }], outputs: [{ type: "uint256" }] },
+    { type: "function", name: "traderVol", stateMutability: "view", inputs: [{ type: "uint256" }, { type: "address" }], outputs: [{ type: "uint256" }] },
+    { type: "function", name: "totalTraderVol", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "uint256" }] },
+    { type: "function", name: "traderPot", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "uint256" }] },
   ] as const;
 
+  const [week, setWeek] = useState<{ vol: bigint; projected: bigint } | null>(null);
   const load = async () => {
     if (!address) return;
     try {
       const cur = (await client.publicClient.readContract({ address: hookAddr, abi, functionName: "currentEpoch" })) as bigint;
+      const [myVol, totVol, pot] = await Promise.all([
+        client.publicClient.readContract({ address: hookAddr, abi, functionName: "traderVol", args: [cur, address as Address] }) as Promise<bigint>,
+        client.publicClient.readContract({ address: hookAddr, abi, functionName: "totalTraderVol", args: [cur] }) as Promise<bigint>,
+        client.publicClient.readContract({ address: hookAddr, abi, functionName: "traderPot", args: [cur] }) as Promise<bigint>,
+      ]);
+      setWeek(myVol > 0n && totVol > 0n ? { vol: myVol, projected: (pot * myVol) / totVol } : null);
       const out: { epoch: bigint; amount: bigint }[] = [];
       for (let e = cur - 1n; e >= 0n && e >= cur - 4n; e--) {
         const amt = (await client.publicClient.readContract({ address: hookAddr, abi, functionName: "traderClaimable", args: [e, address as Address] })) as bigint;
@@ -277,16 +287,33 @@ function TraderRewards() {
     }
   };
 
+  const weekRow = week ? (
+    <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-accent/25 bg-accent/[0.04] px-3.5 py-2.5">
+      <div>
+        <p className="text-[13.5px] font-bold text-ink">This week, so far</p>
+        <p className="text-[11px] text-ink-3">{fmtWei(week.vol)} ETH volume routed by you</p>
+      </div>
+      <div className="text-right">
+        <p className="tnum text-[13.5px] font-semibold text-ink">&asymp; {fmtWei(week.projected)} WETH</p>
+        <p className="text-[10.5px] text-ink-3">projected share, grows with the pot</p>
+      </div>
+    </div>
+  ) : null;
+
   if (rows.length === 0) {
     return (
-      <div className="mt-2 rounded-xl border border-edge bg-panel px-4 py-4 text-sm text-ink-2">
-        Trade any coin and 30% of the fees pool for traders like you; your pro-rata WETH share
-        becomes claimable here when the week closes.
-      </div>
+      <>
+        {weekRow}
+        <div className="mt-2 rounded-xl border border-edge bg-panel px-4 py-4 text-sm text-ink-2">
+          Trade any coin and 30% of the fees pool for traders like you; your pro-rata WETH share
+          becomes claimable here when the week closes.
+        </div>
+      </>
     );
   }
   return (
     <div className="mt-2 space-y-2">
+      {weekRow}
       {rows.map((r) => (
         <div key={String(r.epoch)} className="flex items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-3.5 py-2.5">
           <div>
