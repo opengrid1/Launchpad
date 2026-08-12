@@ -59,6 +59,8 @@ export function TradePanel({ token }: { token: TokenSummary }) {
   const [busy, setBusy] = useState(false);
   const [nativeBalance, setNativeBalance] = useState<bigint | null>(null);
   const [tokenBalance, setTokenBalance] = useState<bigint | null>(null);
+  // Diamond curve: the connected wallet's current extra sell tax, in bps.
+  const [jeetBps, setJeetBps] = useState(0);
 
   const refreshBalances = async () => {
     if (!address) {
@@ -82,6 +84,32 @@ export function TradePanel({ token }: { token: TokenSummary }) {
   useEffect(() => {
     refreshBalances().catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, token.address]);
+
+  useEffect(() => {
+    if (!address) {
+      setJeetBps(0);
+      return;
+    }
+    let live = true;
+    const load = () =>
+      client.publicClient
+        .readContract({
+          address: token.address,
+          abi: [{ type: "function", name: "sellTaxBpsOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint16" }] }] as const,
+          functionName: "sellTaxBpsOf",
+          args: [address],
+        })
+        .then((v) => live && setJeetBps(Number(v)))
+        .catch(() => live && setJeetBps(0)); // pre-diamond coins have no clock
+    load();
+    const id = setInterval(() => {
+      if (!document.hidden) load();
+    }, 30_000);
+    return () => {
+      live = false;
+      clearInterval(id);
+    };
   }, [address, token.address]);
 
   const parsedAmount = useMemo(() => {
@@ -240,11 +268,23 @@ export function TradePanel({ token }: { token: TokenSummary }) {
         <div className="mono mt-1 h-3.5 text-[11px] text-ink-3">{est && est.usd > 0 ? `≈ ${fmtUsd(est.usd)}` : ""}</div>
       </div>
 
+      {/* Diamond curve: what selling right now would cost this wallet extra */}
+      {side === "sell" && jeetBps > 0 ? (
+        <div className="rounded-xl border border-accent/25 bg-accent/[0.05] px-3 py-2 text-[11px] leading-relaxed text-ink-2">
+          <span className="font-semibold text-accent-ink">Diamond curve:</span> selling now costs
+          you an extra <span className="tnum font-semibold text-ink">{(jeetBps / 100).toFixed(jeetBps % 100 ? 1 : 0)}%</span>,
+          paid to the holders who stay. It drops to 4% after 1h, 1.5% after 6h, and 0% after 24h.
+        </div>
+      ) : null}
+
       {/* Details: price, min received, fee, slippage */}
       <div className="rounded-xl border border-edge bg-panel-2/20 px-3 py-2 text-[11px]">
         <Row label="Price" value={priceUsd > 0 ? `${fmtUsd(priceUsd)} / ${token.symbol}` : "–"} />
         <Row label="Min. received" value={est ? `${compact(minReceived)} ${est.symbol}` : "–"} />
         <Row label="Trade fee" value={`${(feeRate * 100).toFixed(taxBps % 100 ? 1 : 0)}%`} />
+        {side === "sell" && jeetBps > 0 ? (
+          <Row label="Early-sell tax" value={`+${(jeetBps / 100).toFixed(jeetBps % 100 ? 1 : 0)}% to holders`} />
+        ) : null}
         <div className="flex items-center justify-between pt-0.5">
           <button
             onClick={() => setShowSettings((s) => !s)}

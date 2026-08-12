@@ -267,6 +267,7 @@ export function LaunchBoard() {
           <Row label="Starting market cap" value="$3,000" />
           <Row label="Supply" value="1,000,000,000" />
           <Row label="Trade fee" value="1% · 80% you, 15% platform, 5% bid wall" />
+          <Row label="Diamond curve" value="early sells pay up to +9%, straight to holders" />
         </dl>
 
         <button type="submit" disabled={busy}

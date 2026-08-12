@@ -74,6 +74,28 @@ function CopairDocs() {
         </p>
       </Section>
 
+      <Section title="The diamond curve">
+        <p>
+          Buying is never taxed. Selling early is: every wallet carries an on-chain holding
+          clock, and sells pay an extra fee that decays with time held. What early sellers pay
+          is converted to ETH at every harvest and split across everyone still holding, pro
+          rata. Jeets pay diamond hands, automatically.
+        </p>
+        <Facts
+          rows={[
+            ["Held under 1 hour", "+9% on sells"],
+            ["Under 6 hours", "+4%"],
+            ["Under 24 hours", "+1.5%"],
+            ["24 hours and beyond", "+0%"],
+            ["Where it goes", "To remaining holders, in ETH"],
+          ]}
+        />
+        <p>
+          Moving coins to a fresh wallet resets that wallet's clock to zero, so the tax cannot
+          be dodged by wallet-hopping.
+        </p>
+      </Section>
+
       <Section title="Fees and rewards">
         <p>
           The fee is skimmed by the pool's hook on every swap, so it applies to every trade,

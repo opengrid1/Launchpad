@@ -455,28 +455,109 @@ function RewardsStrip({ token, extra }: { token: TokenSummary; extra: Extra | nu
   };
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-4 py-2.5">
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-ink">
-          {isCreator ? "Your creator rewards" : "Creator rewards"}
-        </p>
-        <p className="mt-0.5 text-xs text-ink-3">
-          80% of every trade fee belongs to the creator, paid in ETH straight to their wallet;
-          5% builds this coin's bid wall. Rewards pay out automatically every few minutes, or
-          claim them right now.
-        </p>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="text-right">
-          <p className="tnum text-[15px] font-semibold text-ink">{fmtWei(creatorUnclaimed)} ETH</p>
-          <p className="tnum text-[11px] text-ink-3">
-            {fmtWeiUsd(creatorUnclaimed.toString(), usdRate)} unclaimed
+    <div className="shrink-0 space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-4 py-2.5">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-ink">
+            {isCreator ? "Your creator rewards" : "Creator rewards"}
+          </p>
+          <p className="mt-0.5 text-xs text-ink-3">
+            80% of every trade fee belongs to the creator, paid in ETH straight to their wallet;
+            5% builds this coin's bid wall. Rewards pay out automatically every few minutes, or
+            claim them right now.
           </p>
         </div>
-        <Button variant="primary" disabled={busy !== null || creatorUnclaimed === 0n} onClick={claimRewards}>
-          {busy === "claim" ? "Claiming" : "Claim rewards"}
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="tnum text-[15px] font-semibold text-ink">{fmtWei(creatorUnclaimed)} ETH</p>
+            <p className="tnum text-[11px] text-ink-3">
+              {fmtWeiUsd(creatorUnclaimed.toString(), usdRate)} unclaimed
+            </p>
+          </div>
+          <Button variant="primary" disabled={busy !== null || creatorUnclaimed === 0n} onClick={claimRewards}>
+            {busy === "claim" ? "Claiming" : "Claim rewards"}
+          </Button>
+        </div>
       </div>
+      <HolderRewards token={token} usdRate={usdRate} />
+    </div>
+  );
+}
+
+/** Diamond curve holder console: early sellers pay up to 9% extra in coin,
+ *  and every harvest converts it to ETH and splits it across remaining
+ *  holders. Shows the connected wallet's pending ETH and a one-tap claim. */
+function HolderRewards({ token, usdRate }: { token: TokenSummary; usdRate: number }) {
+  const { address, isConnected } = useWallet();
+  const pushToast = useUi((s) => s.pushToast);
+  const [pending, setPending] = useState(0n);
+  const [totalPaid, setTotalPaid] = useState(0n);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    const load = () => {
+      client.publicClient
+        .readContract({
+          address: token.address as Address,
+          abi: [{ type: "function", name: "totalRewardsDistributed", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] }] as const,
+          functionName: "totalRewardsDistributed",
+        })
+        .then((v) => live && setTotalPaid(v as bigint))
+        .catch(() => undefined);
+      if (address)
+        v4Client
+          .pendingDividends(token.address as Address, address)
+          .then((v) => live && setPending(v))
+          .catch(() => undefined);
+    };
+    load();
+    const id = setInterval(() => {
+      if (!document.hidden) load();
+    }, 20_000);
+    return () => {
+      live = false;
+      clearInterval(id);
+    };
+  }, [address, token.address]);
+
+  const claim = async () => {
+    setBusy(true);
+    try {
+      if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+      const hash = await v4Client.claimDividends(token.address as Address);
+      pushToast({ kind: "info", title: "Claim submitted", txHash: hash });
+      await client.publicClient.waitForTransactionReceipt({ hash });
+      pushToast({ kind: "success", title: "ETH claimed", body: "Sent to your wallet.", txHash: hash });
+      setPending(0n);
+    } catch (err) {
+      pushToast({ kind: "error", title: "Claim failed", body: errorText(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/25 bg-accent/[0.04] px-4 py-2.5">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-ink">Holder rewards · the diamond curve</p>
+        <p className="mt-0.5 text-xs text-ink-3">
+          Selling early costs extra: up to 9% in the first hour, fading to 0% after 24h. Every
+          harvest converts what jeets paid into ETH and splits it across everyone still holding.
+          {totalPaid > 0n ? <> {fmtWei(totalPaid)} ETH paid to holders so far.</> : null}
+        </p>
+      </div>
+      {isConnected ? (
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="tnum text-[15px] font-semibold text-ink">{fmtWei(pending)} ETH</p>
+            <p className="tnum text-[11px] text-ink-3">{fmtWeiUsd(pending.toString(), usdRate)} yours</p>
+          </div>
+          <Button variant="dark" disabled={busy || pending === 0n} onClick={claim}>
+            {busy ? "Claiming" : "Claim"}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

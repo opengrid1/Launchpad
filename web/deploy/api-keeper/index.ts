@@ -8,21 +8,21 @@ import { createPublicClient, createWalletClient, defineChain, http, type Address
 import { privateKeyToAccount } from "viem/accounts";
 
 const RPC = process.env.RH_RPC ?? "https://rpc.mainnet.chain.robinhood.com";
-const FACTORY: Address = "0x2A992C57AD63e4cC856C5Dc2F89f5Bc34eC00965";
-const HOOK: Address = "0x0A39aE6542aDdC1294c09a2B4Caa1eAb66dCC044";
+const FACTORY: Address = "0x0d501Fa1b3C4Ebd4D4291Ec92Ee7bf97F81ae82a";
+const HOOK: Address = "0xF372a2CC4061f13392cC72928601aAfF0DF88044";
 const STATE_VIEW: Address = "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b";
 const WETH: Address = "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73";
 const V3_FACTORY: Address = "0x1f7d7550B1b028f7571E69A784071F0205FD2EfA";
 const POOL_MANAGER: Address = "0x8366a39cc670b4001a1121b8f6a443a643e40951";
-const ROUTER: Address = "0x26490b524a8eaB733562d3F349c9ad4Ed6D7C4ac";
-const START_BLOCK = 27456214n;
+const ROUTER: Address = "0x60AB0D5333fbF2054bb06A5AFB93357389c1e724";
+const START_BLOCK = 34392382n;
 const ZERO: Address = "0x0000000000000000000000000000000000000000";
 
 const HARVEST_MIN_USD = Number(process.env.HARVEST_MIN_USD ?? 5);
 const PAYOUT_MIN_USD = Number(process.env.PAYOUT_MIN_USD ?? 1);
 const MIN_GAS_ETH = 0.0005;
 // Buyback and burn of the official token, funded by ETH sent to the keeper.
-const BURN_TOKEN: Address = (process.env.BURN_TOKEN as Address) ?? "0xbF54EDdf462656706C7D17866fe170Bd0b595f7a";
+const BURN_TOKEN: Address = (process.env.BURN_TOKEN as Address) ?? ZERO;
 const DEAD: Address = "0x000000000000000000000000000000000000dEaD";
 const BURN_GAS_RESERVE_ETH = Number(process.env.BURN_GAS_RESERVE_ETH ?? 0.002);
 const BURN_MIN_ETH = Number(process.env.BURN_MIN_ETH ?? 0.0005);
