@@ -61,14 +61,29 @@ export function ExploreBoard() {
   }, [all, debounced, sort]);
 
   const loading = !env.hideTokens && (lv || ln) && all.length === 0;
+  const dayVolumeUsd = useMemo(
+    () => all.reduce((a, t) => a + (Number(t.volume24hWei || "0") / 1e18) * usdRateOf(t), 0),
+    [all],
+  );
+  const latest = useMemo(() => [...all].sort((a, b) => b.createdAt - a.createdAt)[0], [all]);
 
   return (
     <div className="cpm">
       <span className="cpm-blob b1" aria-hidden />
       <span className="cpm-blob b2" aria-hidden />
-      {/* Pure token board: just the toolbar and the card grid. All flywheel
-          analytics live on /flywheel. */}
-      <section className="cpm-list" style={{ marginTop: 18 }}>
+      {/* Broker-desk board: stat cells, then the listings in a dashed frame.
+          All flywheel analytics live on /flywheel. */}
+      <div className="term-stats">
+        <div className="term-stat"><i>Markets</i><b>{all.length}</b></div>
+        <div className="term-stat"><i>24h volume</i><b>{fmtUsd(dayVolumeUsd)}</b></div>
+        <div className="term-stat"><i>Latest listing</i><b>{latest ? `$${latest.symbol}` : "–"}</b></div>
+      </div>
+      <section className="cpm-list term-panel" style={{ marginTop: 14 }}>
+        <div className="term-head">
+          The board
+          <span className="term-head-sub">{feed.length} listings</span>
+        </div>
+        <div className="term-body">
         <div className="cpm-toolbar">
           <div className="cpm-tabs">
             {SORTS.map((s) => (
@@ -103,6 +118,7 @@ export function ExploreBoard() {
             {feed.map((t) => <Tile key={t.address} t={t} />)}
           </div>
         )}
+        </div>
       </section>
     </div>
   );

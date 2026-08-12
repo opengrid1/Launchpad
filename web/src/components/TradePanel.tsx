@@ -202,6 +202,11 @@ export function TradePanel({ token }: { token: TokenSummary }) {
 
   return (
     <div className="tp">
+      <div className="term-head">
+        Trade desk
+        <span className="term-head-sub">1% flat fee</span>
+      </div>
+      <div className="tp-body">
       {/* Buy / Sell segmented control */}
       <div className="tp-seg">
         <button onClick={() => { setSide("buy"); setAmount(""); }} className={`buy ${side === "buy" ? "on" : ""}`}>
@@ -330,6 +335,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
           Connect wallet
         </button>
       )}
+      </div>
     </div>
   );
 }

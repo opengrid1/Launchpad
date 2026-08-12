@@ -597,6 +597,61 @@ button.bg-accent:disabled {
 :root[data-brand="copair"] ::-webkit-scrollbar-track { background: #0c0e0c; }
 :root[data-brand="copair"] ::-webkit-scrollbar-thumb { background: #00e676; }
 :root[data-brand="copair"] ::selection { background: #00e676; color: #04150b; }
+/* Terminal panel chrome: heavy dashed frame + a titled header strip, the
+   broker-desk look. Applied to the flywheel, trade desk and board panels. */
+.term-panel { border: 2px dashed #00e676a6; background: var(--color-panel); box-shadow: 0 0 26px -14px #00e67659; }
+.term-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 11px 16px; border-bottom: 1px solid var(--color-edge); background: #0c0e0c;
+  font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--color-ink);
+}
+.term-head::before { content: "▮ "; color: var(--color-accent); }
+.term-head-sub { font-size: 10px; font-weight: 700; letter-spacing: .12em; color: var(--color-ink-3); }
+.term-body { padding: 14px; }
+.term-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 22px; }
+.term-stat { border: 1px solid var(--color-edge); background: var(--color-panel); padding: 10px 12px; }
+.term-stat i {
+  display: block; font-style: normal; font-size: 9px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--color-ink-3);
+}
+.term-stat b { display: block; margin-top: 4px; font-size: 16px; font-weight: 700; color: var(--color-ink); font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .term-stat b { font-size: 13.5px; } }
+
+/* The incinerator: uhood's answer to the cheque printer. A drawn burn
+   chamber with licking flames sized by the pot, over a metal grate. */
+.burnbox {
+  margin: 14px 0 4px; border: 1px solid var(--color-edge);
+  background: linear-gradient(180deg, #151815, #0b0d0b 70%);
+  padding: 12px 16px 0; position: relative; overflow: hidden;
+}
+.burnbox-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.burnbox-fire { display: flex; align-items: flex-end; gap: 3px; height: 52px; padding-bottom: 6px; }
+.burnbox-fire i {
+  width: 8px; transform-origin: bottom;
+  background: linear-gradient(180deg, #ffd34d, #ff9f5a 45%, #ff5a2c);
+  box-shadow: 0 0 16px -2px #ff9f5acc;
+  animation: fire-lick .8s ease-in-out infinite alternate;
+}
+.burnbox-fire i:nth-child(1) { height: 42%; animation-delay: -.10s; }
+.burnbox-fire i:nth-child(2) { height: 68%; animation-delay: -.35s; }
+.burnbox-fire i:nth-child(3) { height: 96%; animation-delay: -.62s; }
+.burnbox-fire i:nth-child(4) { height: 78%; animation-delay: -.22s; }
+.burnbox-fire i:nth-child(5) { height: 55%; animation-delay: -.48s; }
+.burnbox-fire i:nth-child(6) { height: 34%; animation-delay: -.05s; }
+@keyframes fire-lick {
+  from { transform: scaleY(.55); filter: brightness(.85); }
+  to { transform: scaleY(1.12); filter: brightness(1.2); }
+}
+.burnbox-meta { text-align: right; padding-bottom: 10px; }
+.burnbox-meta .amt { font-size: 19px; font-weight: 800; color: #ff9f5a; text-shadow: 0 0 16px #ff9f5a66; font-variant-numeric: tabular-nums; }
+.burnbox-meta .lbl { margin-top: 2px; font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--color-ink-3); }
+.burnbox-grate {
+  margin: 0 -16px; height: 9px;
+  background: repeating-linear-gradient(90deg, #1c201c 0 10px, #0a0c0a 10px 14px);
+  border-top: 1px solid #00e6761f;
+}
+
 /* Blinking block caret, terminal style. */
 .term-caret {
   display: inline-block; width: 8px; height: 13px; margin-left: 5px;
@@ -787,9 +842,9 @@ button.bg-accent:disabled {
 
 /* Launch form card */
 .board-form {
-  border: 1px solid var(--color-edge);
+  border: 2px dashed #00e676a6;
   background: var(--color-panel);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 0 26px -14px #00e67659;
   padding: 18px;
 }
 .board-launch { justify-content: center; }
@@ -941,13 +996,14 @@ button.bg-accent:disabled {
 
 /* ---- The weekly flywheel panel ---- */
 .fly-panel {
-  margin-top: 26px; border: 1px solid var(--color-edge);
+  margin-top: 26px; border: 2px dashed #00e676a6;
   background:
     radial-gradient(420px 160px at 85% 0%, #ff8f430e, transparent 65%),
     var(--color-panel);
-  box-shadow: var(--shadow-card);
-  padding: 20px 20px 16px;
+  box-shadow: 0 0 26px -14px #00e67659;
+  padding: 0;
 }
+.fly-body { padding: 16px 16px 14px; }
 .fly-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
 .fly-eyebrow {
   font-family: var(--font-mono, ui-monospace); font-size: 10px; font-weight: 700;
@@ -981,11 +1037,12 @@ button.bg-accent:disabled {
 
 /* ---- Terminal trade panel (tokens come from the active theme) ---- */
 .tp {
-  display: flex; flex-direction: column; gap: 10px; height: fit-content;
-  border: 1px solid var(--color-edge); padding: 16px;
+  height: fit-content;
+  border: 2px dashed #00e676a6; padding: 0;
   background: var(--color-panel);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 0 26px -14px #00e67659;
 }
+.tp-body { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
 .tp-seg {
   display: grid; grid-template-columns: 1fr 1fr; gap: 0;
   border: 1px solid var(--color-edge); background: #0c0e0c;

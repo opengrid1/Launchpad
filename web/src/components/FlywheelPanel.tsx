@@ -106,17 +106,26 @@ export function FlywheelPanel({ tokens, ethUsd }: { tokens: TokenSummary[]; ethU
 
   return (
     <section className="fly-panel">
-      <div className="fly-head">
-        <div>
-          <p className="fly-eyebrow">Week {String(s.epoch)} · the flywheel</p>
-          <p className="fly-title">
-            <span className="fly-burn">🔥 {fmtWei(s.pot)} ETH</span> burn pot
-          </p>
-          <p className="fly-sub">
-            {potUsd > 0 ? `${fmtUsd(potUsd)} · ` : ""}buys back and burns the top 3 when the week closes
-            {s.traderPot > 0n ? <> · {fmtWei(s.traderPot)} ETH pooled for traders</> : null}
-          </p>
+      <div className="term-head">
+        The burn counter
+        <span className="term-head-sub">Week {String(s.epoch)}</span>
+      </div>
+      <div className="fly-body">
+      <div className="burnbox">
+        <div className="burnbox-row">
+          <div className="burnbox-fire"><i /><i /><i /><i /><i /><i /></div>
+          <div className="burnbox-meta">
+            <div className="amt">{fmtWei(s.pot)} ETH</div>
+            <div className="lbl">{potUsd > 0 ? `${fmtUsd(potUsd)} · ` : ""}queued for the burn</div>
+          </div>
         </div>
+        <div className="burnbox-grate" />
+      </div>
+      <div className="fly-head">
+        <p className="fly-sub">
+          Buys back and burns the week's top 3 when the counter hits zero
+          {s.traderPot > 0n ? <> · {fmtWei(s.traderPot)} ETH pooled for traders</> : null}
+        </p>
         <div className="fly-count">
           <p className="fly-count-num">{countdown}</p>
           <p className="fly-count-label">until the burn</p>
@@ -147,6 +156,7 @@ export function FlywheelPanel({ tokens, ethUsd }: { tokens: TokenSummary[]; ethU
       ) : (
         <p className="fly-empty">No volume yet this week. The first coins traded take the podium.</p>
       )}
+      </div>
     </section>
   );
 }
