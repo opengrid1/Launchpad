@@ -562,12 +562,23 @@ button.bg-accent:disabled {
   --pop-pink: #ff7a9c;
 }
 :root[data-brand="copair"] body {
+  /* Aurora ground: a soft emerald beam blending into deep teal at the
+     edges, darkened corners, and a film grain overlay (::before) so the
+     gradients read as atmosphere instead of banding. */
   background:
-    radial-gradient(900px 480px at 50% -160px, #00e67608, transparent 60%),
-    radial-gradient(1100px 700px at 85% 115%, #ffffff04, transparent 55%),
-    var(--color-bg);
+    radial-gradient(120% 85% at 50% 12%, transparent 58%, #000000b3 100%),
+    radial-gradient(1100px 660px at 50% -160px, #00e67630, transparent 64%),
+    radial-gradient(760px 560px at -6% 24%, #0fd49a1f, transparent 60%),
+    radial-gradient(860px 620px at 106% 12%, #16b8a81c, transparent 60%),
+    radial-gradient(1000px 720px at 50% 118%, #0e6b4526, transparent 62%),
+    linear-gradient(180deg, #0b0f0d, var(--color-bg) 42%);
   background-attachment: fixed;
   color: var(--color-ink);
+}
+:root[data-brand="copair"] body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 :root[data-brand="copair"] { color-scheme: dark; }
 :root[data-brand="copair"] ::selection { background: #00e67640; }
