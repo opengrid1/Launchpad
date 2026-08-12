@@ -72,23 +72,11 @@ export function ExploreBoard() {
     <div className="cpm">
       <span className="cpm-blob b1" aria-hidden />
       <span className="cpm-blob b2" aria-hidden />
-      {/* Hero: type only. */}
-      <section className="cpm-hero">
-        <h1 className="cpm-headline">
-          Launch a coin.
-          <br />
-          <em>Feed the flywheel.</em>
-        </h1>
-        <p className="cpm-sub">
-          A flat 1% fee on every trade. 25% buys back and burns the week's top 3 coins.
-          30% flows back to traders in ETH, claimable weekly. 20% pays the deployer for the
-          life of the coin. Snipers pay extra, straight into the burn.
-        </p>
-        <p className="cpm-statline">
-          {all.length} markets · {fmtUsd(dayVolumeUsd)} 24h volume
-          {latest ? <> · latest ${latest.symbol}</> : null}
-        </p>
-      </section>
+      {/* Slim stats, then the flywheel takes the stage. */}
+      <p className="cpm-statline" style={{ marginTop: 24 }}>
+        {all.length} markets · {fmtUsd(dayVolumeUsd)} 24h volume
+        {latest ? <> · latest ${latest.symbol}</> : null}
+      </p>
 
       <FlywheelPanel tokens={all} ethUsd={all.length ? usdRateOf(all[0]) * 1e18 : 0} />
 
