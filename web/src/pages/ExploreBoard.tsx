@@ -80,7 +80,7 @@ export function ExploreBoard() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search"
+            placeholder="> search"
             type="search"
             className="cpm-search"
           />

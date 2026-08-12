@@ -76,6 +76,7 @@ function BoardHeader() {
           <span className="text-[13.5px] font-extrabold lowercase tracking-tight text-ink sm:text-[15px]">
             {BRAND.name}
             <span className="text-accent-ink">{BRAND.tld}</span>
+            <span className="term-caret" aria-hidden />
           </span>
         </Link>
 
