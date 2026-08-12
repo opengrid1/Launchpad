@@ -41,7 +41,7 @@ function EthBadge({ size = 22 }: { size?: number }) {
 /** Token chip shown inside the pay/receive fields: logo + ticker. */
 function AssetChip({ token, native }: { token: TokenSummary; native?: boolean }) {
   return (
-    <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-edge bg-panel px-2 py-1">
+    <span className="tp-chip">
       {native ? <EthBadge size={20} /> : <TokenLogo token={token} size={20} />}
       <span className="text-[13px] font-bold text-ink">{native ? env.nativeSymbol : token.symbol}</span>
     </span>
@@ -201,29 +201,19 @@ export function TradePanel({ token }: { token: TokenSummary }) {
   const minReceived = est ? est.amount * Math.max(0, 1 - slip / 100) : 0;
 
   return (
-    <div className="flex h-fit flex-col gap-2.5 rounded-2xl border border-edge bg-panel p-3.5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.6)]">
+    <div className="tp">
       {/* Buy / Sell segmented control */}
-      <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-edge bg-panel-2/50 p-1.5">
-        <button
-          onClick={() => { setSide("buy"); setAmount(""); }}
-          className={`h-10 rounded-xl text-[14px] font-extrabold tracking-wide transition-all ${
-            side === "buy" ? "bg-[#16c784] text-black shadow-[0_6px_20px_-6px_#16c784]" : "text-ink-2 hover:text-ink"
-          }`}
-        >
+      <div className="tp-seg">
+        <button onClick={() => { setSide("buy"); setAmount(""); }} className={`buy ${side === "buy" ? "on" : ""}`}>
           Buy
         </button>
-        <button
-          onClick={() => { setSide("sell"); setAmount(""); }}
-          className={`h-10 rounded-xl text-[14px] font-extrabold tracking-wide transition-all ${
-            side === "sell" ? "bg-[#f6465d] text-white shadow-[0_6px_20px_-6px_#f6465d]" : "text-ink-2 hover:text-ink"
-          }`}
-        >
+        <button onClick={() => { setSide("sell"); setAmount(""); }} className={`sell ${side === "sell" ? "on" : ""}`}>
           Sell
         </button>
       </div>
 
       {/* Pay field */}
-      <div className="rounded-xl border border-edge bg-panel-2/40 px-3 py-2.5 transition-colors focus-within:border-edge-2">
+      <div className="tp-field">
         <div className="mb-1.5 flex items-baseline justify-between text-[10.5px]">
           <span className="uppercase tracking-wide text-ink-3">You pay</span>
           <button className="tnum text-ink-3 transition-colors hover:text-ink" onClick={() => setPct(100)}>
@@ -249,7 +239,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
           <button
             key={v}
             onClick={() => (side === "buy" ? setAmount(BUY_PRESETS[i]) : setPct([25, 50, 75, 100][i]))}
-            className="tnum h-7 rounded-lg border border-edge text-[11px] font-semibold text-ink-2 transition-colors hover:border-accent/50 hover:text-ink"
+            className="tp-preset tnum"
           >
             {side === "buy" ? `${v} ${env.nativeSymbol}` : v}
           </button>
@@ -257,7 +247,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
       </div>
 
       {/* Receive field */}
-      <div className="rounded-xl border border-edge bg-panel-2/40 px-3 py-2.5">
+      <div className="tp-field">
         <div className="mb-1.5 text-[10.5px] uppercase tracking-wide text-ink-3">You receive (est.)</div>
         <div className="flex items-center gap-2">
           <span className="mono min-w-0 flex-1 truncate text-[22px] font-semibold text-ink">
@@ -278,7 +268,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
       ) : null}
 
       {/* Details: price, min received, fee, slippage */}
-      <div className="rounded-xl border border-edge bg-panel-2/20 px-3 py-2 text-[11px]">
+      <div className="tp-rows">
         <Row label="Price" value={priceUsd > 0 ? `${fmtUsd(priceUsd)} / ${token.symbol}` : "–"} />
         <Row label="Min. received" value={est ? `${compact(minReceived)} ${est.symbol}` : "–"} />
         <Row label="Trade fee" value={`${(feeRate * 100).toFixed(taxBps % 100 ? 1 : 0)}%`} />
@@ -325,11 +315,7 @@ export function TradePanel({ token }: { token: TokenSummary }) {
         <button
           onClick={submit}
           disabled={busy || !parsedAmount || parsedAmount === 0n || Boolean(insufficientFunds)}
-          className={`h-12 rounded-2xl text-[15px] font-extrabold uppercase tracking-wide transition-[filter] disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3 disabled:shadow-none ${
-            side === "buy"
-              ? "bg-[#16c784] text-black shadow-[0_10px_30px_-10px_#16c784] hover:brightness-110"
-              : "bg-[#f6465d] text-white shadow-[0_10px_30px_-10px_#f6465d] hover:brightness-105"
-          }`}
+          className={`tp-cta ${side}`}
         >
           {busy
             ? "Confirm in wallet"
@@ -340,11 +326,8 @@ export function TradePanel({ token }: { token: TokenSummary }) {
                 : `Sell ${token.symbol}`}
         </button>
       ) : (
-        <button
-          onClick={connectFirst}
-          className="h-12 rounded-xl bg-accent text-[15px] font-extrabold uppercase tracking-wide text-accent-fg transition-[filter] hover:brightness-105"
-        >
-          Connect Wallet
+        <button onClick={connectFirst} className="tp-cta buy">
+          Connect wallet
         </button>
       )}
     </div>

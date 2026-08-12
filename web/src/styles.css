@@ -958,6 +958,67 @@ button.bg-accent:disabled {
 .fly-empty { margin-top: 12px; font-size: 12.5px; color: var(--color-ink-3); }
 .fly-logo-fallback { width: 26px; height: 26px; border-radius: 8px; background: var(--color-panel-2); border: 1px solid var(--color-edge); }
 
+/* ---- High end trade panel (tokens come from the active theme) ---- */
+.tp {
+  display: flex; flex-direction: column; gap: 10px; height: fit-content;
+  border: 1px solid var(--color-edge); border-radius: 22px; padding: 16px;
+  background: linear-gradient(180deg, #ffffff06, transparent 50%), var(--color-panel);
+  box-shadow: inset 0 1px 0 #ffffff0c, var(--shadow-card);
+}
+.tp-seg {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+  border: 1px solid var(--color-edge); background: #ffffff06; border-radius: 999px; padding: 4px;
+  box-shadow: inset 0 1px 0 #ffffff07;
+}
+.tp-seg button {
+  height: 38px; border-radius: 999px; font-size: 13.5px; font-weight: 800;
+  color: var(--color-ink-3); transition: color .15s, background .15s, box-shadow .15s;
+}
+.tp-seg button:hover { color: var(--color-ink); }
+.tp-seg button.buy.on {
+  background: linear-gradient(180deg, #35eb8a, #00e676 60%, #00cf6a); color: #06281a;
+  box-shadow: inset 0 1px 0 #b8ffd94d, 0 1px 2px #0008, 0 8px 20px -10px #00e67680;
+}
+.tp-seg button.sell.on {
+  background: linear-gradient(180deg, #ff7a84, #ff5c66 60%, #f2404c); color: #fff;
+  box-shadow: inset 0 1px 0 #ffd4d84d, 0 1px 2px #0008, 0 8px 20px -10px #ff5c6680;
+}
+.tp-field {
+  border: 1px solid var(--color-edge); border-radius: 16px;
+  background: #ffffff05; box-shadow: inset 0 1px 0 #ffffff07;
+  padding: 10px 12px; transition: border-color .14s;
+}
+.tp-field:focus-within { border-color: #ffffff2e; }
+.tp-chip {
+  display: flex; flex-shrink: 0; align-items: center; gap: 6px;
+  border: 1px solid var(--color-edge); background: #ffffff08; border-radius: 999px;
+  padding: 4px 10px 4px 5px; box-shadow: inset 0 1px 0 #ffffff0a;
+}
+.tp-preset {
+  height: 30px; border-radius: 999px; border: 1px solid var(--color-edge);
+  background: #ffffff05; font-size: 11px; font-weight: 700; color: var(--color-ink-2);
+  transition: color .14s, border-color .14s, background .14s;
+}
+.tp-preset:hover { color: var(--color-ink); border-color: var(--color-edge-2); background: #ffffff0a; }
+.tp-rows { border-top: 1px solid var(--color-edge); margin-top: 2px; padding: 8px 4px 0; font-size: 11px; }
+.tp-cta {
+  height: 48px; border-radius: 999px; font-size: 14.5px; font-weight: 800; letter-spacing: .01em;
+  transition: transform .12s, box-shadow .12s, filter .12s;
+}
+.tp-cta.buy {
+  background: linear-gradient(180deg, #35eb8a, #00e676 60%, #00cf6a); color: #06281a;
+  box-shadow: inset 0 1px 0 #b8ffd94d, 0 1px 2px #0008, 0 12px 30px -14px #00e67680;
+}
+.tp-cta.sell {
+  background: linear-gradient(180deg, #ff7a84, #ff5c66 60%, #f2404c); color: #fff;
+  box-shadow: inset 0 1px 0 #ffd4d84d, 0 1px 2px #0008, 0 12px 30px -14px #ff5c6680;
+}
+.tp-cta:not(:disabled):hover { transform: translateY(-1px); filter: brightness(1.04); }
+.tp-cta:not(:disabled):active { transform: translateY(1px); }
+.tp-cta:disabled {
+  cursor: not-allowed; background: var(--color-panel-2); color: var(--color-ink-3); box-shadow: none;
+}
+
 /* Explainer cards under the flywheel dashboard (/flywheel) */
 .fly-facts {
   margin-top: 18px; display: grid; gap: 12px;
