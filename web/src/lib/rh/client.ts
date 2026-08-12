@@ -18,7 +18,7 @@ const TOTAL_SUPPLY = 1_000_000_000n * 10n ** 18n;
 const SWAP_TOPIC = toEventSelector(poolSwapEvent as any);
 // Receipt-scanner window: how far back the first scan reaches, and the most
 // blocks any single catch-up will walk (Arc blocks are ~0.5s).
-const RECEIPT_BACKFILL = 240n;
+const RECEIPT_BACKFILL = 900n;
 const RECEIPT_MAX_CATCHUP = 900n;
 const RECEIPT_CHUNK = 25;
 
@@ -363,22 +363,21 @@ export class RhClient {
   }
 
   /** While set (epoch ms), eth_getLogs is considered broken on this RPC and
-   *  every consumer goes straight to view/receipt fallbacks. Persisted so a
-   *  reload doesn't re-pay the multi-second probe before first paint. */
+   *  every consumer goes straight to view/receipt fallbacks. A single failed
+   *  probe (a rate-limit hiccup under launch traffic) used to park logs for
+   *  five minutes AND persist that across reloads, which blanked charts,
+   *  trades, and holders for everyone affected; now a park is short-lived,
+   *  memory-only, and any stale persisted marker is cleared on startup. */
   private logsBrokenUntil = (() => {
     try {
-      return Number(globalThis.localStorage?.getItem("lp.logsBrokenUntil") ?? 0) || 0;
-    } catch {
-      return 0;
-    }
-  })();
-  private parkLogs() {
-    this.logsBrokenUntil = Date.now() + 300_000;
-    try {
-      globalThis.localStorage?.setItem("lp.logsBrokenUntil", String(this.logsBrokenUntil));
+      globalThis.localStorage?.removeItem("lp.logsBrokenUntil");
     } catch {
       /* private mode */
     }
+    return 0;
+  })();
+  private parkLogs() {
+    this.logsBrokenUntil = Date.now() + 45_000;
   }
 
   /** Swap logs for one pool with the block height the result is complete up
