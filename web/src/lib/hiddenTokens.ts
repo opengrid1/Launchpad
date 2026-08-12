@@ -17,6 +17,8 @@ const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   "4663:0xbe5fcc1b19de2d32777803b6ae13868bba04d57e", // BEANS (second official attempt, superseded by 0xbF54)
   "4663:0xeb89c4f0875b46b60aa4bf5337e11dd979a927d4", // TOE (impersonates the official brand)
   "4663:0xbf54eddf462656706c7d17866fe170bd0b595f7a", // BEANS (toebeans-era official, superseded by UHOOD 0x4aBc)
+  "4663:0x2e77fc1860c1e29536fc40cf5e1b53a1704c358c", // KB / Killer Bean (toebeans-era launch)
+  "4663:0x704346b2fade7eae26f96984713871a26d8d8ee7", // BEAGO (toebeans-era launch)
   // Robinhood Chain (4663), quiverpad V4 era
   "4663:0x16ae26dfd4fe18e8f3f0756dca165493b5523a53", // SAFEHOOD (initial test launch)
   "4663:0x55dfcf83135fa4f5d0c3f19311e3d5c103f892c5", // TEST
