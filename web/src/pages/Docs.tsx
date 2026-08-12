@@ -26,90 +26,110 @@ function CopairDocs() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
-      <h1 className="text-[28px] font-semibold tracking-tight text-ink">Docs</h1>
+      <h1 className="text-[24px] font-bold tracking-tight text-ink">Docs</h1>
       <p className="mt-1.5 text-sm text-ink-2">
-        Everything on {BRAND.name} runs on-chain on {env.chainName}. This page explains the fixed
-        protocol rules.
+        {BRAND.name} is a launchpad on {env.chainName} where every trade feeds a weekly burn
+        and reward cycle. Every rule below is enforced by immutable contracts, not by policy.
       </p>
 
-      <Section title="The uhood flywheel">
+      <TermSection title="The 1% fee" sub="Split four ways">
         <p>
-          Every coin trades against ETH with a flat 1% fee, and 75% of it flows straight back
-          to the ecosystem. The community pot buys back and burns the week's top 3 coins by
-          volume, traders reclaim their share in ETH every week, and deployers earn a fee
-          stream for the life of their coin. More volume means more burn, more trader rewards,
-          and more reasons to trade. That is the flywheel.
+          Every coin pairs with ETH and every trade pays a flat 1% fee. The hook skims it
+          inside the pool itself, so it applies to all trades, including bots and aggregators.
+          It is split automatically:
         </p>
         <Facts
           rows={[
-            ["Pair", "ETH, every coin"],
-            ["Community pot", "25% · weekly top-3 buyback and burn"],
-            ["Traders", "30% · claimable in ETH, pro-rata to volume"],
-            ["Deployer", "20% · fee stream, paid in ETH"],
-            ["Platform", "25%"],
+            ["Burn pot", "25% · buys and burns the weekly top 3"],
+            ["Traders", "30% · weekly ETH claims, pro-rata"],
+            ["Deployer", "20% · lifetime fee stream"],
+            ["Platform", "25% · runs the site and keeper"],
           ]}
         />
-      </Section>
+      </TermSection>
 
-      <Section title="Launching">
+      <TermSection title="Launching" sub="One transaction">
         <p>
-          Launching is free; you pay only gas. One transaction deploys your token, creates a real
-          Uniswap V4 pool against ETH, seeds the full supply single-sided, and opens trading
-          immediately. You can attach an initial buy to the same transaction: it fills before
-          anyone else can trade and pays only the flat 1% fee, never the sniper rate.
+          Launching is free, you pay only gas. One transaction deploys the token, opens a
+          Uniswap V4 pool against ETH, seeds the entire supply, and starts trading. You can
+          attach an initial buy to the same transaction: it fills before anyone else can
+          trade and never pays the sniper rate.
         </p>
         <Facts
           rows={[
-            ["Total supply", "1,000,000,000 (fixed)"],
-            ["Starting market cap", "≈ $3,000 (fixed)"],
+            ["Total supply", "1,000,000,000, fixed"],
+            ["Starting market cap", "≈ $3,000"],
             ["Upfront liquidity", "None required"],
-            ["Initial buy", "Optional, atomic, sniper-proof"],
-            ["Trade fee", "1%, flat, forever"],
+            ["Initial buy", "Optional, atomic"],
           ]}
         />
-      </Section>
+      </TermSection>
 
-      <Section title="Trading">
+      <TermSection title="Trading" sub="Sniper tax">
         <p>
-          Buys and sells are one tap in plain ETH, straight through the coin's own pool. Trades
-          in the first 5 seconds pay 15%, then 5% until second 15, then 1% from there on; the
-          early premium is not kept by anyone, it becomes the coin's bid wall.
+          Buys and sells are one tap in plain ETH through the coin's own pool. Brand new
+          coins cost snipers extra: 15% in the first 5 seconds, 5% until second 15, then the
+          flat 1% forever. Nobody keeps the premium. It goes straight to the burn pot.
         </p>
-      </Section>
+      </TermSection>
 
-      <Section title="The weekly cycle">
+      <TermSection title="The weekly burn" sub="7 day clock">
         <p>
-          Weeks run on a fixed on-chain clock. All week, every trade routed through uhood
-          counts toward two ledgers: each coin's volume (the burn leaderboard) and each
-          trader's volume (your reward share). When the week closes, anyone can fire the
-          flywheel: the community pot market-buys the top 3 coins (50/30/20) and burns them,
-          and every trader's ETH share unlocks for claiming on their Profile.
+          Weeks run on a fixed on-chain clock. All week, every trade adds to two ledgers:
+          each coin's volume, which ranks the burn leaderboard, and each trader's volume,
+          which sizes their reward share.
         </p>
-      </Section>
-
-      <Section title="Fees and rewards">
         <p>
-          The fee is skimmed by the pool's hook on every swap, so it applies to every trade,
-          including ones routed directly by bots or aggregators. A keeper harvests every few
-          minutes: fees are normalized to ETH and split on the spot, with the deployer and
-          platform paid instantly and the community and trader pots accruing on-chain.
-          Everything is inspectable; nothing is a points program or a promise.
+          When the week closes, anyone can fire the burn: the pot market-buys the top 3
+          coins by volume and burns them on the spot. Our keeper fires it automatically if
+          nobody beats it to it.
         </p>
-      </Section>
+        <Facts
+          rows={[
+            ["Week length", "7 days, on-chain"],
+            ["Top 3 share", "50% / 30% / 20%"],
+            ["Who can trigger", "Anyone"],
+          ]}
+        />
+      </TermSection>
 
-      <Section title="Contracts">
+      <TermSection title="Getting paid" sub="Claims, not promises">
         <p>
-          The protocol is immutable. The hook has no owner at all: the factory and treasury
-          addresses are burned in at deploy and can never be redirected, and factory ownership
-          is renounced. Nobody can change the fee split, pause your coin, or touch your pool.
+          Traders: when a week closes, your ETH share unlocks on your Profile, sized by your
+          share of that week's volume. Past weeks stay claimable forever.
+        </p>
+        <p>
+          Deployers: your 20% stream accrues from every trade of your coin. Claim it any
+          time from your coin's page or your Profile.
+        </p>
+      </TermSection>
+
+      <TermSection title="Contracts" sub="Immutable">
+        <p>
+          The hook has no owner: the factory and treasury addresses are burned in at deploy
+          and can never be redirected. Nobody can change the fee split, pause your coin, or
+          touch your pool. The burn and trader pots are controlled by code alone.
         </p>
         <div className="mt-3 space-y-2">
           {contracts.map((c) => (
             <ContractRow key={c.name} {...c} />
           ))}
         </div>
-      </Section>
+      </TermSection>
     </div>
+  );
+}
+
+/** Terminal-chrome docs section: titled header strip over a bordered panel. */
+function TermSection({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-5 border border-edge bg-panel">
+      <div className="term-head">
+        {title}
+        {sub ? <span className="term-head-sub">{sub}</span> : null}
+      </div>
+      <div className="term-body space-y-3 text-sm leading-6 text-ink-2">{children}</div>
+    </section>
   );
 }
 
