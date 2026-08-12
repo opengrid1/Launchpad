@@ -815,6 +815,19 @@ export class RhClient {
     throw new Error("No creator fees in this launchpad; holders earn the pair token.");
   }
 
+  /** Claim the caller's WETH share of a closed weekly epoch's trader pot. */
+  async claimTrader(epoch: bigint): Promise<`0x${string}`> {
+    const wc = this.requireWallet();
+    return wc.writeContract({
+      account: this.account(),
+      chain: wc.chain,
+      address: this.v4.hook,
+      abi: hookAbi,
+      functionName: "claimTrader",
+      args: [epoch],
+    });
+  }
+
   async claimDividends(token: Address): Promise<`0x${string}`> {
     const wc = this.requireWallet();
     return wc.writeContract({

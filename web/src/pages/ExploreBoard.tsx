@@ -76,12 +76,12 @@ export function ExploreBoard() {
         <h1 className="cpm-headline">
           Launch a coin.
           <br />
-          <em>It fights back.</em>
+          <em>Feed the flywheel.</em>
         </h1>
         <p className="cpm-sub">
-          A flat 1% fee on every trade: 80% goes to you in ETH, automatically. 5% builds a
-          real bid wall that absorbs sells and only climbs. Snipers pay up to 15%, straight
-          into your wall.
+          A flat 1% fee on every trade. 25% buys back and burns the week's top 3 coins.
+          30% flows back to traders in ETH, claimable weekly. 20% pays the deployer for the
+          life of the coin. Snipers pay extra, straight into the burn.
         </p>
         <p className="cpm-statline">
           {all.length} markets · {fmtUsd(dayVolumeUsd)} 24h volume
@@ -158,7 +158,7 @@ function Tile({ t, idx }: { t: TokenSummary; idx: number }) {
         {isOfficial(t.address) && <span className="off">OFFICIAL</span>}
       </div>
       <div className="meta">
-        <span className="earn">1% fee · creator earns ETH</span>
+        <span className="earn">1% fee · weekly burn flywheel</span>
         {pairSym && pairSym !== "ETH" ? <span className="earn">pairs {pairSym}</span> : null}
       </div>
       <div className="figures">

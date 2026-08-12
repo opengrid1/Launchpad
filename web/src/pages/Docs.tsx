@@ -19,7 +19,7 @@ function CopairDocs() {
   const rh = v4Client.v4;
   const contracts: { name: string; address: string; note: string }[] = [
     { name: "Factory", address: rh.factory, note: "Launches, pools, and the $3k single-sided seed" },
-    { name: "Hook", address: rh.hook, note: "Skims the 1% fee, applies the sniper schedule, splits 80/15/5" },
+    { name: "Hook", address: rh.hook, note: "Skims the 1% fee, runs the weekly burn flywheel and trader rewards" },
     { name: "Router", address: rh.router, note: "One-tap ETH buys and sells, auto-routed through the pair" },
     { name: "Uniswap V4 PoolManager", address: rh.poolManager, note: "Official singleton that holds every pool" },
   ];
@@ -32,18 +32,21 @@ function CopairDocs() {
         protocol rules.
       </p>
 
-      <Section title="The uhood model: launch to earn">
+      <Section title="The uhood flywheel">
         <p>
-          Every coin trades against ETH with a flat 1% fee, and launching is how you earn:
-          80% of every trade fee is paid to the creator in ETH, automatically. 5% of every fee,
-          plus everything snipers overpay in the first seconds, builds a real bid wall: a live
-          buy order sitting just under the market that climbs as the price climbs.
+          Every coin trades against ETH with a flat 1% fee, and 75% of it flows straight back
+          to the ecosystem. The community pot buys back and burns the week's top 3 coins by
+          volume, traders reclaim their share in ETH every week, and deployers earn a fee
+          stream for the life of their coin. More volume means more burn, more trader rewards,
+          and more reasons to trade. That is the flywheel.
         </p>
         <Facts
           rows={[
             ["Pair", "ETH, every coin"],
-            ["Creator earnings", "80% of every fee, in ETH"],
-            ["Bid wall", "5% of fees + all sniper premium"],
+            ["Community pot", "25% · weekly top-3 buyback and burn"],
+            ["Traders", "30% · claimable in ETH, pro-rata to volume"],
+            ["Deployer", "20% · fee stream, paid in ETH"],
+            ["Platform", "25%"],
           ]}
         />
       </Section>
@@ -74,25 +77,13 @@ function CopairDocs() {
         </p>
       </Section>
 
-      <Section title="The diamond curve">
+      <Section title="The weekly cycle">
         <p>
-          Buying is never taxed. Selling early is: every wallet carries an on-chain holding
-          clock, and sells pay an extra fee that decays with time held. What early sellers pay
-          is converted to ETH at every harvest and split across everyone still holding, pro
-          rata. Jeets pay diamond hands, automatically.
-        </p>
-        <Facts
-          rows={[
-            ["Held under 1 hour", "+9% on sells"],
-            ["Under 6 hours", "+4%"],
-            ["Under 24 hours", "+1.5%"],
-            ["24 hours and beyond", "+0%"],
-            ["Where it goes", "To remaining holders, in ETH"],
-          ]}
-        />
-        <p>
-          Moving coins to a fresh wallet resets that wallet's clock to zero, so the tax cannot
-          be dodged by wallet-hopping.
+          Weeks run on a fixed on-chain clock. All week, every trade routed through uhood
+          counts toward two ledgers: each coin's volume (the burn leaderboard) and each
+          trader's volume (your reward share). When the week closes, anyone can fire the
+          flywheel: the community pot market-buys the top 3 coins (50/30/20) and burns them,
+          and every trader's ETH share unlocks for claiming on their Profile.
         </p>
       </Section>
 
@@ -100,19 +91,9 @@ function CopairDocs() {
         <p>
           The fee is skimmed by the pool's hook on every swap, so it applies to every trade,
           including ones routed directly by bots or aggregators. A keeper harvests every few
-          minutes: fees are normalized to ETH, split, and the bid wall is re-placed just under
-          the current price. Any coins the wall absorbs are burned on the next bump.
-        </p>
-        <Facts
-          rows={[
-            ["Creator", "80% · paid in ETH, every harvest"],
-            ["Platform", "15%"],
-            ["Bid wall", "5% + sniper premium (15% first 5s, 5% to 15s)"],
-          ]}
-        />
-        <p>
-          The wall is real single-sided liquidity owned by the protocol, not a promise: you can
-          watch it absorb sells on-chain, and it only ever moves up.
+          minutes: fees are normalized to ETH and split on the spot, with the deployer and
+          platform paid instantly and the community and trader pots accruing on-chain.
+          Everything is inspectable; nothing is a points program or a promise.
         </p>
       </Section>
 

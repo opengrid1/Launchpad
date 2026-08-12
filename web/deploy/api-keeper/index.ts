@@ -8,14 +8,14 @@ import { createPublicClient, createWalletClient, defineChain, http, type Address
 import { privateKeyToAccount } from "viem/accounts";
 
 const RPC = process.env.RH_RPC ?? "https://rpc.mainnet.chain.robinhood.com";
-const FACTORY: Address = "0x0d501Fa1b3C4Ebd4D4291Ec92Ee7bf97F81ae82a";
-const HOOK: Address = "0xF372a2CC4061f13392cC72928601aAfF0DF88044";
+const FACTORY: Address = "0x44F0fEF21366e9a8FA7e594FAc0166eA63efd62c";
+const HOOK: Address = "0xa775543d7CFd79de8Cf5305A60f11c990099C044";
 const STATE_VIEW: Address = "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b";
 const WETH: Address = "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73";
 const V3_FACTORY: Address = "0x1f7d7550B1b028f7571E69A784071F0205FD2EfA";
 const POOL_MANAGER: Address = "0x8366a39cc670b4001a1121b8f6a443a643e40951";
-const ROUTER: Address = "0x60AB0D5333fbF2054bb06A5AFB93357389c1e724";
-const START_BLOCK = 34392382n;
+const ROUTER: Address = "0x7414F382cc855b318ad47B889c7eEEC1764d552F";
+const START_BLOCK = 34558420n;
 const ZERO: Address = "0x0000000000000000000000000000000000000000";
 
 const HARVEST_MIN_USD = Number(process.env.HARVEST_MIN_USD ?? 5);
@@ -192,15 +192,6 @@ export default async function handler(req: any, res: any) {
           const hash = await wallet.writeContract(request);
           await pc.waitForTransactionReceipt({ hash });
           out.harvests.push({ coin, feesUsd: feesUsd.toFixed(2), tx: hash });
-          try {
-            const bumpAbi = [{ type: "function", name: "bumpWall", stateMutability: "nonpayable", inputs: [{ type: "address" }], outputs: [] }] as const;
-            const sim = await pc.simulateContract({ account, address: FACTORY, abi: bumpAbi, functionName: "bumpWall", args: [coin] });
-            const bh = await wallet.writeContract(sim.request);
-            await pc.waitForTransactionReceipt({ hash: bh });
-            out.harvests.push({ coin, wallBumped: true, tx: bh });
-          } catch (err: any) {
-            out.errors.push({ coin, error: "bumpWall: " + String(err?.shortMessage ?? err?.message ?? err).slice(0, 100) });
-          }
         }
 
         // 2) Push payouts to holders owed enough to justify gas.
@@ -255,6 +246,30 @@ export default async function handler(req: any, res: any) {
       } catch (err: any) {
         out.errors.push({ coin, error: String(err?.shortMessage ?? err?.message ?? err).slice(0, 200) });
       }
+    }
+
+    // Weekly flywheel: once the previous epoch has closed, fire the
+    // permissionless top-3 buyback-and-burn + open trader claims.
+    try {
+      const GENESIS = 1786540685;
+      const EPOCH = 604800;
+      const nowS = Math.floor(Date.now() / 1000);
+      const prev = Math.floor((nowS - GENESIS) / EPOCH) - 1;
+      if (prev >= 0) {
+        const epochAbi = [
+          { type: "function", name: "epochResolved", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "bool" }] },
+          { type: "function", name: "resolveEpoch", stateMutability: "nonpayable", inputs: [{ type: "uint256" }], outputs: [] },
+        ] as const;
+        const done = (await pc.readContract({ address: HOOK, abi: epochAbi, functionName: "epochResolved", args: [BigInt(prev)] })) as boolean;
+        if (!done) {
+          const sim = await pc.simulateContract({ account, address: HOOK, abi: epochAbi, functionName: "resolveEpoch", args: [BigInt(prev)] });
+          const tx = await wallet.writeContract(sim.request);
+          await pc.waitForTransactionReceipt({ hash: tx });
+          out.epochResolved = { epoch: prev, tx };
+        }
+      }
+    } catch (err: any) {
+      out.errors.push({ epoch: String(err?.shortMessage ?? err?.message ?? err).slice(0, 200) });
     }
 
     // Buyback and burn: any ETH parked in the keeper wallet beyond the gas

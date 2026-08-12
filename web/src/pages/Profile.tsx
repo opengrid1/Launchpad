@@ -36,7 +36,7 @@ export function ProfilePage() {
     };
   }, [address]);
 
-  // Unclaimed creator rewards per launched coin: 80% of the hook's base fee
+  // Unclaimed deployer rewards per launched coin: 20% of the hook's base fee
   // buckets, coin side converted at the current price.
   useEffect(() => {
     if (!address || mine.length === 0) return;
@@ -48,7 +48,7 @@ export function ProfilePage() {
           const f = (await (v4Client as any).pendingFees(t.address as Address)) as { coin: bigint; pair: bigint };
           const priceEthWei = BigInt((t as any).priceEthWei ?? "0");
           const coinAsEth = priceEthWei > 0n ? (f.coin * priceEthWei) / 10n ** 18n : 0n;
-          next[t.address.toLowerCase()] = ((f.pair + coinAsEth) * 8_000n) / 10_000n;
+          next[t.address.toLowerCase()] = ((f.pair + coinAsEth) * 2_000n) / 10_000n;
         } catch {
           /* leave missing */
         }
@@ -98,7 +98,7 @@ export function ProfilePage() {
       const hash = await (v4Client as any).harvest(t.address as Address);
       pushToast({ kind: "info", title: "Claim submitted", txHash: hash });
       await client.publicClient.waitForTransactionReceipt({ hash });
-      pushToast({ kind: "success", title: "Rewards claimed", body: "80% paid to you in ETH.", txHash: hash });
+      pushToast({ kind: "success", title: "Rewards claimed", body: "Your fee stream, paid in ETH.", txHash: hash });
     } catch (err) {
       pushToast({ kind: "error", title: "Claim failed", body: errorText(err) });
     } finally {
@@ -142,6 +142,10 @@ export function ProfilePage() {
         </div>
       </div>
 
+      {/* Trader rewards: weekly flywheel claims */}
+      <h2 className="mt-6 text-[13px] font-extrabold uppercase tracking-wide text-ink-2">Trader rewards</h2>
+      <TraderRewards />
+
       {/* Launched coins */}
       <h2 className="mt-6 text-[13px] font-extrabold uppercase tracking-wide text-ink-2">Your coins</h2>
       {loading ? (
@@ -152,7 +156,7 @@ export function ProfilePage() {
           <Link to="/launch" className="font-semibold text-accent-ink underline underline-offset-2">
             Launch one
           </Link>{" "}
-          and earn 80% of every trade fee in ETH.
+          and earn a fee stream in ETH for the life of the coin.
         </div>
       ) : (
         <div className="mt-2 space-y-2">
@@ -218,6 +222,85 @@ export function ProfilePage() {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+
+/** Weekly flywheel: 30% of every fee pools per epoch; traders claim their
+ *  pro-rata WETH share once the week closes. Shows the last few epochs. */
+function TraderRewards() {
+  const { address } = useWallet();
+  const pushToast = useUi((s) => s.pushToast);
+  const [rows, setRows] = useState<{ epoch: bigint; amount: bigint }[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const hookAddr = (v4Client as any).v4.hook as Address;
+  const abi = [
+    { type: "function", name: "currentEpoch", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+    { type: "function", name: "traderClaimable", stateMutability: "view", inputs: [{ type: "uint256" }, { type: "address" }], outputs: [{ type: "uint256" }] },
+  ] as const;
+
+  const load = async () => {
+    if (!address) return;
+    try {
+      const cur = (await client.publicClient.readContract({ address: hookAddr, abi, functionName: "currentEpoch" })) as bigint;
+      const out: { epoch: bigint; amount: bigint }[] = [];
+      for (let e = cur - 1n; e >= 0n && e >= cur - 4n; e--) {
+        const amt = (await client.publicClient.readContract({ address: hookAddr, abi, functionName: "traderClaimable", args: [e, address as Address] })) as bigint;
+        if (amt > 0n) out.push({ epoch: e, amount: amt });
+        if (e === 0n) break;
+      }
+      setRows(out);
+    } catch {
+      /* pre-flywheel deployments */
+    }
+  };
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]);
+
+  const claim = async (epoch: bigint) => {
+    setBusy(String(epoch));
+    try {
+      if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+      const hash = await (v4Client as any).claimTrader(epoch);
+      pushToast({ kind: "info", title: "Claim submitted", txHash: hash });
+      await client.publicClient.waitForTransactionReceipt({ hash });
+      pushToast({ kind: "success", title: "WETH claimed", body: "Your trading share, sent to your wallet.", txHash: hash });
+      load();
+    } catch (err) {
+      pushToast({ kind: "error", title: "Claim failed", body: errorText(err) });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  if (rows.length === 0) {
+    return (
+      <div className="mt-2 rounded-xl border border-edge bg-panel px-4 py-4 text-sm text-ink-2">
+        Trade any coin and 30% of the fees pool for traders like you; your pro-rata WETH share
+        becomes claimable here when the week closes.
+      </div>
+    );
+  }
+  return (
+    <div className="mt-2 space-y-2">
+      {rows.map((r) => (
+        <div key={String(r.epoch)} className="flex items-center justify-between gap-3 rounded-xl border border-edge bg-panel px-3.5 py-2.5">
+          <div>
+            <p className="text-[13.5px] font-bold text-ink">Week {String(r.epoch)}</p>
+            <p className="text-[11px] text-ink-3">your trading share</p>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <p className="tnum text-[13.5px] font-semibold text-ink">{fmtWei(r.amount)} WETH</p>
+            <Button variant="primary" disabled={busy !== null} onClick={() => claim(r.epoch)}>
+              {busy === String(r.epoch) ? "Claiming" : "Claim"}
+            </Button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

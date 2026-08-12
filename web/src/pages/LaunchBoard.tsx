@@ -237,9 +237,9 @@ export function LaunchBoard() {
         <div className="rounded-xl border border-edge bg-panel-2 px-4 py-3">
           <p className="text-[12.5px] font-semibold text-ink">Pairs with ETH · 1% flat trade fee</p>
           <p className="mt-1 text-[11.5px] leading-relaxed text-ink-2">
-            You earn 80% of every trade fee in ETH. 15% funds the platform and 5% builds your
-            coin's bid wall, a real buy order under the market that climbs as price climbs.
-            Snipers pay extra in the first seconds, and it all goes to the wall.
+            You earn 20% of every trade fee in ETH for the life of your coin. 25% fills the
+            community pot that buys back and burns the week's top 3 coins, 30% flows back to
+            traders, and 25% funds the platform. Snipers pay extra, straight into the burn pot.
           </p>
         </div>
 
@@ -266,8 +266,8 @@ export function LaunchBoard() {
         <dl className="space-y-1.5 border-t border-edge pt-3 text-[12px]">
           <Row label="Starting market cap" value="$3,000" />
           <Row label="Supply" value="1,000,000,000" />
-          <Row label="Trade fee" value="1% · 80% you, 15% platform, 5% bid wall" />
-          <Row label="Diamond curve" value="early sells pay up to +9%, straight to holders" />
+          <Row label="Trade fee" value="1% · 20% you, 25% platform, 25% burns, 30% traders" />
+          <Row label="Weekly flywheel" value="top 3 coins by volume get bought back and burned" />
         </dl>
 
         <button type="submit" disabled={busy}
