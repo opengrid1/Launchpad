@@ -109,7 +109,7 @@ export function ExploreBoard() {
               <>No market for &ldquo;{debounced}&rdquo;.</>
             ) : (
               <>
-                No launches yet. <Link to="/launch" className="cpm-link">Be the first →</Link>
+                The board is clean. <Link to="/launch" className="cpm-link">Pull the first job</Link>
               </>
             )}
           </div>

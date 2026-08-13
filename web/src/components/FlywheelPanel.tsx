@@ -4,7 +4,9 @@ import type { Address, TokenSummary } from "@launchpad/sdk";
 
 import { TokenLogo } from "./TokenLogo";
 import { client, v4Client } from "../lib/client";
+import { env } from "../lib/env";
 import { fmtUsd, fmtWei } from "../lib/format";
+import { isHidden } from "../lib/hiddenTokens";
 
 const hookAbi = [
   { type: "function", name: "genesis", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
@@ -92,8 +94,12 @@ export function FlywheelPanel({ tokens, ethUsd }: { tokens: TokenSummary[]; ethU
     return m;
   }, [tokens]);
 
+  // Pre-launch quiet mode: with every token hidden the flywheel shows nothing,
+  // so the site reads fresh until the official launch flips the flag.
+  if (env.hideTokens) return null;
   if (!s) return null;
 
+  const top = s.top.filter((r) => !isHidden(r.address));
   const closeAt = (s.genesis + (Number(s.epoch) + 1) * EPOCH_S) * 1000;
   const left = Math.max(0, closeAt - now);
   const d = Math.floor(left / 86_400_000);
@@ -102,7 +108,7 @@ export function FlywheelPanel({ tokens, ethUsd }: { tokens: TokenSummary[]; ethU
   const sec = Math.floor((left % 60_000) / 1000);
   const countdown = d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m ${sec}s`;
   const potUsd = (Number(s.pot) / 1e18) * ethUsd;
-  const maxVol = s.top.length ? Number(s.top[0].vol) : 0;
+  const maxVol = top.length ? Number(top[0].vol) : 0;
 
   return (
     <section className="fly-panel">
@@ -132,9 +138,9 @@ export function FlywheelPanel({ tokens, ethUsd }: { tokens: TokenSummary[]; ethU
         </div>
       </div>
 
-      {s.top.length > 0 ? (
+      {top.length > 0 ? (
         <div className="fly-rows">
-          {s.top.map((row, i) => {
+          {top.map((row, i) => {
             const t = byAddr.get(row.address.toLowerCase());
             const pct = maxVol > 0 ? Math.max(6, (Number(row.vol) / maxVol) * 100) : 0;
             return (
