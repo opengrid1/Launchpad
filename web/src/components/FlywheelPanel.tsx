@@ -94,12 +94,14 @@ export function FlywheelPanel({ tokens, ethUsd }: { tokens: TokenSummary[]; ethU
     return m;
   }, [tokens]);
 
-  // Pre-launch quiet mode: with every token hidden the flywheel shows nothing,
-  // so the site reads fresh until the official launch flips the flag.
-  if (env.hideTokens) return null;
   if (!s) return null;
 
-  const top = s.top.filter((r) => !isHidden(r.address));
+  // Pre-launch quiet mode: with every token hidden the counter renders at
+  // zero (empty podium, empty pots) so the site reads fresh until launch.
+  const quiet = env.hideTokens;
+  const pot = quiet ? 0n : s.pot;
+  const tPot = quiet ? 0n : s.traderPot;
+  const top = quiet ? [] : s.top.filter((r) => !isHidden(r.address));
   const closeAt = (s.genesis + (Number(s.epoch) + 1) * EPOCH_S) * 1000;
   const left = Math.max(0, closeAt - now);
   const d = Math.floor(left / 86_400_000);
@@ -107,7 +109,7 @@ export function FlywheelPanel({ tokens, ethUsd }: { tokens: TokenSummary[]; ethU
   const m = Math.floor((left % 3_600_000) / 60_000);
   const sec = Math.floor((left % 60_000) / 1000);
   const countdown = d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m ${sec}s`;
-  const potUsd = (Number(s.pot) / 1e18) * ethUsd;
+  const potUsd = (Number(pot) / 1e18) * ethUsd;
   const maxVol = top.length ? Number(top[0].vol) : 0;
 
   return (
@@ -121,7 +123,7 @@ export function FlywheelPanel({ tokens, ethUsd }: { tokens: TokenSummary[]; ethU
         <div className="burnbox-row">
           <div className="burnbox-fire"><i /><i /><i /><i /><i /><i /></div>
           <div className="burnbox-meta">
-            <div className="amt">{fmtWei(s.pot)} ETH</div>
+            <div className="amt">{fmtWei(pot)} ETH</div>
             <div className="lbl">{potUsd > 0 ? `${fmtUsd(potUsd)} · ` : ""}queued for the burn</div>
           </div>
         </div>
@@ -130,7 +132,7 @@ export function FlywheelPanel({ tokens, ethUsd }: { tokens: TokenSummary[]; ethU
       <div className="fly-head">
         <p className="fly-sub">
           Buys back and burns the week's top 3 when the counter hits zero
-          {s.traderPot > 0n ? <> · {fmtWei(s.traderPot)} ETH pooled for traders</> : null}
+          {tPot > 0n ? <> · {fmtWei(tPot)} ETH pooled for traders</> : null}
         </p>
         <div className="fly-count">
           <p className="fly-count-num">{countdown}</p>
