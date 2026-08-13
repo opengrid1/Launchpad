@@ -34,6 +34,10 @@ const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   // Flywheel factory: uhood-era official superseded by the hoodheist rebrand;
   // hidden until the official $HEIST launch.
   "4663:0x5cc5d708116e9b63bbca1aa670536fd210fa76ef", // UHOOD (pre-rebrand official)
+  // Only the official HEIST (0xbdD1b563...) stays visible at launch; these
+  // copycat launches impersonate the brand.
+  "4663:0xb65085b3eaffeb08f3e7851886b0d5f3ab6d7c49", // HOODHEIST (impersonator)
+  "4663:0x7c10f0af7a835a1cda2421053c79592574a911be", // HEIST (impersonator)
   // Stable Mainnet (988), steadypads validation launches
   "988:0x785c693d9efe13d88a5e566515258f4d2b093f11", // STEADY (validation launch)
   "988:0x854088037076ec7d3c41c1737513ebab3b46521f", // TEST
