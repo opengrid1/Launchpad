@@ -39,7 +39,7 @@ export function FlywheelPage() {
         </p>
       </section>
 
-      <FlywheelPanel tokens={all} ethUsd={all.length ? usdRateOf(all[0]) * 1e18 : 0} />
+      <FlywheelPanel tokens={all} ethUsd={all.length ? usdRateOf(all[0]) : 0} />
 
       <section className="fly-facts">
         <div className="fly-fact">
