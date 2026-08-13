@@ -50,3 +50,15 @@ const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
 export function isHidden(address: string): boolean {
   return HIDDEN_TOKENS.has(`${env.chainId}:${address.toLowerCase()}`);
 }
+
+// The one address allowed to wear the brand. Kept in sync with official.ts.
+const OFFICIAL_HEIST = "0xbdd1b5639548b04fa95bb5f49b5a74a575be7fc3";
+
+/** Auto-hide launches that impersonate the platform brand (name or ticker
+ *  reads as hoodheist/HEIST) unless they are the official token. New fakes
+ *  disappear without a manual list entry; everything else shows freely. */
+export function isImpersonator(t: { address: string; name?: string; symbol?: string }): boolean {
+  if (t.address.toLowerCase() === OFFICIAL_HEIST) return false;
+  const s = `${t.name ?? ""} ${t.symbol ?? ""}`.toLowerCase();
+  return /hood\s*heist|heist|hoodhiest|h[e3]ist/.test(s.replace(/[^a-z0-9 ]/g, ""));
+}

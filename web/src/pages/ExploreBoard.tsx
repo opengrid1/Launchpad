@@ -7,7 +7,7 @@ import { QuiverMark } from "../components/QuiverMark";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtUsd, timeAgo, usdRateOf } from "../lib/format";
-import { isHidden } from "../lib/hiddenTokens";
+import { isHidden, isImpersonator } from "../lib/hiddenTokens";
 import { isOfficial } from "../lib/official";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 
@@ -38,7 +38,7 @@ export function ExploreBoard() {
     if (env.hideTokens) return [] as TokenSummary[];
     const seen = new Map<string, TokenSummary>();
     for (const t of [...(byVolume ?? []), ...(byNew ?? [])]) {
-      if (!isHidden(t.address)) seen.set(t.address.toLowerCase(), t);
+      if (!isHidden(t.address) && !isImpersonator(t)) seen.set(t.address.toLowerCase(), t);
     }
     return [...seen.values()];
   }, [byVolume, byNew]);

@@ -6,7 +6,7 @@ import { FlywheelPanel } from "../components/FlywheelPanel";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtUsd, usdRateOf } from "../lib/format";
-import { isHidden } from "../lib/hiddenTokens";
+import { isHidden, isImpersonator } from "../lib/hiddenTokens";
 
 /** The flywheel dashboard: live burn pot, countdown, top-3 leaderboard, and
  *  platform-wide stats. The board itself stays a clean token grid. */
@@ -14,7 +14,7 @@ export function FlywheelPage() {
   const { data: byVolume } = useTokens(client, { sort: "volume", limit: 80 });
   const all = useMemo(() => {
     if (env.hideTokens) return [] as TokenSummary[];
-    return (byVolume ?? []).filter((t) => !isHidden(t.address));
+    return (byVolume ?? []).filter((t) => !isHidden(t.address) && !isImpersonator(t));
   }, [byVolume]);
 
   const dayVolumeUsd = useMemo(
