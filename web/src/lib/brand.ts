@@ -38,8 +38,8 @@ const FLAVORS: Record<string, Brand> = {
     tld: ".fun",
     domain: "hoodheist.fun",
     url: "https://hoodheist.fun",
-    twitter: "https://x.com/Toebeans_fun",
-    twitterHandle: "Toebeans_fun",
+    twitter: "https://x.com/hoodheistfun",
+    twitterHandle: "hoodheistfun",
     tagline: "pull the heist, split the loot",
     description:
       "hoodheist. The launchpad heist on Robinhood Chain: every trade skims 1% into the loot. 25% burns the weekly top 3 coins, 30% pays the crew back in ETH, 20% pays the deployer for life.",
