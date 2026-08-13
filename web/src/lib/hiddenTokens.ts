@@ -31,6 +31,9 @@ const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   // by correctly-priced relaunches PPRINT2/CCPRINT2).
   "4663:0x78238f1d6cb47f9d1fa6cc51c9a6dcabb6ea4663", // PPRINT (wrong start price)
   "4663:0xf6dfe56d943dc4001600896130b6ee76fb304663", // CCPRINT (wrong start price)
+  // Flywheel factory: uhood-era official superseded by the hoodheist rebrand;
+  // hidden until the official $HEIST launch.
+  "4663:0x5cc5d708116e9b63bbca1aa670536fd210fa76ef", // UHOOD (pre-rebrand official)
   // Stable Mainnet (988), steadypads validation launches
   "988:0x785c693d9efe13d88a5e566515258f4d2b093f11", // STEADY (validation launch)
   "988:0x854088037076ec7d3c41c1737513ebab3b46521f", // TEST
