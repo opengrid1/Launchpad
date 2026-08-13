@@ -45,7 +45,7 @@ export function FlywheelPage() {
         <div className="fly-fact">
           <b>Every trade counts</b>
           <p>
-            Volume routed through uhood feeds two ledgers all week: each coin's total (the burn
+            Volume routed through hoodheist feeds two ledgers all week: each coin's total (the burn
             leaderboard above) and your personal total (your reward share).
           </p>
         </div>
