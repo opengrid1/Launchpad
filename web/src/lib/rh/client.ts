@@ -11,6 +11,7 @@ import { INTERVAL_SECONDS } from "@launchpad/sdk";
 
 import { baseFactoryLaunchAbi, erc20Abi, factoryAbi, hookAbi, poolInitEvent, poolSwapEvent, routerAbi, stateViewAbi, tokenAbi } from "./abis";
 import { pairUsd, resolvePairRoute } from "./routes";
+import { baseStockUsd, resolveBaseRoute } from "../base/routes";
 
 const Q96 = 2n ** 96n;
 const TOTAL_SUPPLY = 1_000_000_000n * 10n ** 18n;
@@ -523,6 +524,13 @@ export class RhClient {
    *  refreshed opportunistically in the background. */
   private async pairUsdOf(pair: Address): Promise<number> {
     const key = pair.toLowerCase();
+    // Base stocks price off the curated snapshot (also what sizes the launch);
+    // the Robinhood-chain Blockscout price source does not cover Base.
+    if (this.baseStock) {
+      const u = baseStockUsd(pair);
+      this.pairUsdCache.set(key, u);
+      return u;
+    }
     const cached = this.pairUsdCache.get(key);
     // Kick a background refresh; return the cached value immediately if present.
     const refresh = pairUsd(pair, this.publicClient)
@@ -777,6 +785,9 @@ export class RhClient {
     await this.loadCores();
     const core = this.cores.get(token.toLowerCase());
     const pair = (core?.stock ?? this.v4.weth) as Address;
+    // Base stocks bridge ETH<->stock through Aerodrome Slipstream; the
+    // Robinhood fork uses Uniswap V3. Both feed the same router buy/sell ABI.
+    if (this.baseStock) return resolveBaseRoute(pair);
     return resolvePairRoute(this.publicClient, pair);
   }
 

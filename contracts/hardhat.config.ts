@@ -33,7 +33,14 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: false,
       ...(process.env.FORK === "1" && ROBINHOOD_RPC_URL
         ? {
-            forking: { url: ROBINHOOD_RPC_URL },
+            // Pin a recent hardfork so view calls against the forked chain's
+            // latest block execute (Base runs post-Cancun); an optional block
+            // pin (BASE_FORK_BLOCK) makes runs deterministic.
+            hardfork: process.env.FORK_HARDFORK ?? "cancun",
+            forking: {
+              url: ROBINHOOD_RPC_URL,
+              ...(process.env.BASE_FORK_BLOCK ? { blockNumber: Number(process.env.BASE_FORK_BLOCK) } : {}),
+            },
             chainId: ROBINHOOD_CHAIN_ID || undefined,
           }
         : {}),

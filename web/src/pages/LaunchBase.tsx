@@ -168,7 +168,7 @@ export function LaunchBase() {
             Holders earn <span className="text-accent-ink">· {selected.symbol}</span>
             <span className="ml-1 text-ink-3">({selected.name})</span>
           </label>
-          <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7">
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
             {BASE_STOCKS.map((s) => (
               <button
                 type="button"
