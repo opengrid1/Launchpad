@@ -4,7 +4,15 @@ import { keccak256, toHex } from "viem";
 
 import { Field, inputClass } from "../components/ui";
 import { client } from "../lib/client";
-import { BASE_STOCKS } from "../lib/base/stocks";
+import { BASE_STOCKS, type BaseStock } from "../lib/base/stocks";
+import { BASE_USDC } from "../lib/base/routes";
+
+// Coins can pair a tokenized stock (holders earn the stock) or USDC (holders
+// earn dollars). USDC first so a dollar pair is a one-tap choice.
+const PAIRS: BaseStock[] = [
+  { symbol: "USDC", name: "US Dollar Coin", address: BASE_USDC, usd: 1, usdcTickSpacing: 10 },
+  ...BASE_STOCKS,
+];
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
@@ -30,7 +38,7 @@ export function LaunchBase() {
     twitter: "",
     telegram: "",
   });
-  const [stock, setStock] = useState(BASE_STOCKS[0].address);
+  const [stock, setStock] = useState(PAIRS[1].address);
   const [taxPct, setTaxPct] = useState(1);
   const [busy, setBusy] = useState(false);
   const [logoData, setLogoData] = useState("");
@@ -64,7 +72,7 @@ export function LaunchBase() {
     }
   };
 
-  const selected = BASE_STOCKS.find((s) => s.address === stock)!;
+  const selected = PAIRS.find((s) => s.address === stock)!;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,8 +176,8 @@ export function LaunchBase() {
             Holders earn <span className="text-accent-ink">· {selected.symbol}</span>
             <span className="ml-1 text-ink-3">({selected.name})</span>
           </label>
-          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-            {BASE_STOCKS.map((s) => (
+          <div className="grid grid-cols-3 gap-1.5">
+            {PAIRS.map((s) => (
               <button
                 type="button"
                 key={s.address}

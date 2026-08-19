@@ -9,7 +9,7 @@ import {
 import type { Candle, CandleInterval, HolderRecord, TokenSummary, TradeRecord } from "@launchpad/sdk";
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
 
-import { baseFactoryLaunchAbi, erc20Abi, factoryAbi, hookAbi, poolInitEvent, poolSwapEvent, routerAbi, stateViewAbi, tokenAbi } from "./abis";
+import { baseFactoryLaunchAbi, erc20Abi, factoryAbi, hookAbi, poolInitEvent, poolSwapEvent, routerAbi, stateViewAbi, stockTradeRouterAbi, tokenAbi } from "./abis";
 import { pairUsd, resolvePairRoute } from "./routes";
 import { baseStockUsd, resolveBaseRoute } from "../base/routes";
 
@@ -791,8 +791,77 @@ export class RhClient {
     return resolvePairRoute(this.publicClient, pair);
   }
 
+  // Cache of each coin's pair token info (address, symbol, decimals) for the
+  // base-stock pair-denominated trade flow.
+  private pairInfoCache = new Map<string, { address: Address; symbol: string; decimals: number }>();
+
+  /** The pair token a base-stock coin trades against (a stock or USDC): its
+   *  address, ticker and decimals. Used by the trade panel to size input. */
+  async basePairInfo(coin: Address): Promise<{ address: Address; symbol: string; decimals: number }> {
+    const key = coin.toLowerCase();
+    const hit = this.pairInfoCache.get(key);
+    if (hit) return hit;
+    await this.loadCores();
+    const pair = (this.cores.get(key)?.stock ?? this.v4.weth) as Address;
+    let symbol = "TOKEN";
+    let decimals = 18;
+    try {
+      const [s, d] = (await this.publicClient.multicall({
+        allowFailure: false,
+        contracts: [
+          { address: pair, abi: erc20Abi, functionName: "symbol" },
+          { address: pair, abi: erc20Abi, functionName: "decimals" },
+        ],
+      })) as [string, number];
+      symbol = s;
+      decimals = Number(d);
+    } catch {
+      /* keep defaults */
+    }
+    const info = { address: pair, symbol, decimals };
+    this.pairInfoCache.set(key, info);
+    return info;
+  }
+
+  /** Approve `spender` to pull `amount` of `erc` from the caller if the current
+   *  allowance is short. Waits for the approval to confirm. */
+  private async ensureAllowance(erc: Address, spender: Address, amount: bigint) {
+    const wc = this.requireWallet();
+    const account = this.account();
+    const allowance = (await this.publicClient.readContract({
+      address: erc,
+      abi: tokenAbi,
+      functionName: "allowance",
+      args: [account, spender],
+    })) as bigint;
+    if (allowance >= amount) return;
+    const hash = await wc.writeContract({
+      account,
+      chain: wc.chain,
+      address: erc,
+      abi: tokenAbi,
+      functionName: "approve",
+      args: [spender, 2n ** 256n - 1n],
+    });
+    await this.publicClient.waitForTransactionReceipt({ hash });
+  }
+
   async buyToken(token: Address, valueWei: bigint, minOut: bigint = 0n): Promise<`0x${string}`> {
     const wc = this.requireWallet();
+    // Base stocks: pay with the pair token (USDC/stock) through StockTradeRouter.
+    // `valueWei` here is the pair-token amount (already in the pair's decimals).
+    if (this.baseStock) {
+      const pair = await this.basePairInfo(token);
+      await this.ensureAllowance(pair.address, this.v4.router, valueWei);
+      return wc.writeContract({
+        account: this.account(),
+        chain: wc.chain,
+        address: this.v4.router,
+        abi: stockTradeRouterAbi,
+        functionName: "buy",
+        args: [token, valueWei, minOut],
+      });
+    }
     const route = await this.routeFor(token);
     return wc.writeContract({
       account: this.account(),
@@ -808,6 +877,19 @@ export class RhClient {
   async sellToken(token: Address, amount: bigint, minOut: bigint = 0n): Promise<`0x${string}`> {
     const wc = this.requireWallet();
     const account = this.account();
+    // Base stocks: sell the coin for its pair token through StockTradeRouter.
+    // `minOut` is denominated in the pair token.
+    if (this.baseStock) {
+      await this.ensureAllowance(token, this.v4.router, amount);
+      return wc.writeContract({
+        account,
+        chain: wc.chain,
+        address: this.v4.router,
+        abi: stockTradeRouterAbi,
+        functionName: "sell",
+        args: [token, amount, minOut],
+      });
+    }
     const route = await this.routeFor(token);
     const allowance = (await this.publicClient.readContract({
       address: token,

@@ -14,6 +14,8 @@ import { ShareMenu } from "../components/ShareMenu";
 import { StockLogo } from "../components/StockLogo";
 import { TokenLogo } from "../components/TokenLogo";
 import { TradePanel } from "../components/TradePanel";
+import { BaseTradePanel } from "../components/BaseTradePanel";
+import { IS_STOCK_BOARD } from "../lib/brand";
 import { TradesList } from "../components/TradesList";
 import { Button, EmptyState, Skeleton } from "../components/ui";
 import { client, v4Client } from "../lib/client";
@@ -269,7 +271,7 @@ export function TokenPage() {
           </div>
         </div>
         <div className="lg:sticky lg:top-4 lg:self-start">
-          <TradePanel token={t} />
+          {IS_STOCK_BOARD ? <BaseTradePanel token={t} /> : <TradePanel token={t} />}
         </div>
       </section>
 

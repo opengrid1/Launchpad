@@ -164,6 +164,13 @@ export const hookAbi = [
   { type: "function", name: "setPlatformTreasury", stateMutability: "nonpayable", inputs: [{ type: "address" }], outputs: [] },
 ] as const;
 
+// StockTradeRouter: pair-denominated coin<->pair trading through the coin's own
+// v4 pool. The caller trades the coin against its pair token (USDC or a stock).
+export const stockTradeRouterAbi = [
+  { type: "function", name: "buy", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }, { type: "uint256" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "sell", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }, { type: "uint256" }], outputs: [{ type: "uint256" }] },
+] as const;
+
 // RhRouter: one-tap ETH<->pair<->coin. The V3 path (WETH->...->pair) is passed
 // as bytes; empty when the pair token is WETH.
 export const routerAbi = [
