@@ -42,7 +42,7 @@ describe("StockFlyFactoryV2: auto reward vault per launch (fork)", function () {
     const hook = await ethers.getContractAt("StockFeeHook", hookAddr);
 
     const factory = await (await ethers.getContractFactory("StockFlyFactoryV2")).deploy(
-      admin.address, admin.address, POOL_MANAGER, hookAddr, WETH, await b20f.getAddress(), await vd.getAddress(), keeper.address,
+      admin.address, admin.address, POOL_MANAGER, hookAddr, WETH, await b20f.getAddress(), await vd.getAddress(), keeper.address, 4000n * 10n ** 8n,
     );
     await factory.waitForDeployment();
     expect((await factory.getAddress()).toLowerCase()).to.equal(predictedFactory.toLowerCase());
