@@ -40,7 +40,8 @@ contract StockFlyFactoryV2 is Ownable, ReentrancyGuard, IUnlockCallback {
 
     uint256 public constant TOTAL_SUPPLY = 1_000_000_000 ether;
     uint256 public constant TOTAL_SUPPLY_WHOLE = 1_000_000_000;
-    uint256 public constant INITIAL_MARKET_CAP_USD_8 = 3_000 * 1e8;
+    /// @notice Starting market cap in USD (8 decimals), set at deploy.
+    uint256 public immutable INITIAL_MARKET_CAP_USD_8;
     int24 public constant TICK_SPACING = 60;
     uint24 public constant LP_FEE = 0;
     uint16 public constant MAX_TAX_BPS = 1000;
@@ -120,8 +121,10 @@ contract StockFlyFactoryV2 is Ownable, ReentrancyGuard, IUnlockCallback {
         _;
     }
 
-    constructor(address owner_, address protocolAdmin_, IPoolManager poolManager_, StockFeeHook hook_, address weth_, IB20FactoryMin b20Factory_, RewardVaultDeployer vaultDeployer_, address keeper_) Ownable(owner_) {
+    constructor(address owner_, address protocolAdmin_, IPoolManager poolManager_, StockFeeHook hook_, address weth_, IB20FactoryMin b20Factory_, RewardVaultDeployer vaultDeployer_, address keeper_, uint256 startMcapUsd8_) Ownable(owner_) {
         weth = weth_;
+        require(startMcapUsd8_ > 0, "mcap=0");
+        INITIAL_MARKET_CAP_USD_8 = startMcapUsd8_;
         require(address(b20Factory_) != address(0), "b20=0");
         require(address(vaultDeployer_) != address(0) && keeper_ != address(0), "vault/keeper=0");
         b20Factory = b20Factory_;

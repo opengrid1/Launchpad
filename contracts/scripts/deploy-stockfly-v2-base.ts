@@ -7,6 +7,7 @@ const POOL_MANAGER = "0x498581fF718922c3f8e6A244956aF099B2652b2b";
 const WETH = "0x4200000000000000000000000000000000000006";
 const V3_ROUTER = "0x2626664C2603336E57b271C5c0b26F421741E10E";
 const B20_FACTORY = "0xB20f000000000000000000000000000000000000";
+const START_MCAP_USD8 = 4000n * 10n ** 8n; // $4,000 starting market cap
 // beforeInitialize (1<<13) + afterSwap (1<<6) + afterSwapReturnDelta (1<<2)
 const HOOK_FLAGS = (1n << 13n) | (1n << 6n) | (1n << 2n);
 const FLAG_MASK = (1n << 14n) - 1n;
@@ -55,7 +56,7 @@ async function main() {
   console.log("hook:", hookAddr);
 
   const factory = await (await ethers.getContractFactory("StockFlyFactoryV2")).deploy(
-    signer.address, admin, POOL_MANAGER, hookAddr, WETH, B20_FACTORY, vdAddr, keeper, { nonce: base + 1 },
+    signer.address, admin, POOL_MANAGER, hookAddr, WETH, B20_FACTORY, vdAddr, keeper, START_MCAP_USD8, { nonce: base + 1 },
   );
   await factory.waitForDeployment();
   const factoryAddr = await factory.getAddress();
