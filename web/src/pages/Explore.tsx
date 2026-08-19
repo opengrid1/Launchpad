@@ -5,8 +5,9 @@ import type { TokenSummary } from "@launchpad/sdk";
 
 import { Icon } from "../components/Icon";
 import { QuiverMark } from "../components/QuiverMark";
-import { IS_BOARD } from "../lib/brand";
+import { IS_BOARD, IS_STOCK_BOARD } from "../lib/brand";
 import { ExploreBoard } from "./ExploreBoard";
+import { ExploreStockBoard } from "./ExploreStockBoard";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtNative, fmtUsd, shortAddr, timeAgo } from "../lib/format";
@@ -30,6 +31,8 @@ const SORTS: { id: Sort; label: string }[] = [
 export function Explore() {
   // The board brands (Robinhood heist + Base stock launchpad) use a distinct
   // pump.fun-style live market terminal rather than the default card grid.
+  // The Base stock launchpad has its own "coin exchange" terminal identity.
+  if (IS_STOCK_BOARD) return <ExploreStockBoard />;
   if (IS_BOARD) return <ExploreBoard />;
   return <ExploreGrid />;
 }
