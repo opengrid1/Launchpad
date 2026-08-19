@@ -145,6 +145,16 @@ interface Extra {
   creatorFees: bigint;
 }
 
+// Design-preview token (only used when VITE_PREVIEW=1; never in production).
+const PREVIEW_TOKEN = {
+  address: "0xb200000000000000000000d7386d4d98a2386ff6",
+  name: "Koi King", symbol: "KOI", creator: "0x7a11e0000000000000000000000000000000003f",
+  marketCapUsd: "88100", priceUsd: "0.0000881", priceChange24hPct: 27.6,
+  volumeTotalWei: String(44300n * 10n ** 18n), volumeTotalUsd: "44300", liquidityWei: String(31000n * 10n ** 18n),
+  holderCount: 406, createdAt: Math.floor(Date.now() / 1000) - 90000, txCount24h: 88,
+  metadata: { pair: { symbol: "NVDA" }, description: "The pond's finest. Hold KOI, earn NVDA on every trade." },
+} as unknown as TokenSummary;
+
 export function TokenPage() {
   const { address } = useParams<{ address: string }>();
   const token = useToken(client, address as Address | undefined);
@@ -170,7 +180,8 @@ export function TokenPage() {
     };
   }, [address]);
 
-  if (token.loading) {
+  const preview = String(import.meta.env.VITE_PREVIEW ?? "") === "1";
+  if (token.loading && !preview) {
     return (
       <div className="mx-auto max-w-[1400px] space-y-3 px-3 py-4 sm:px-4">
         <Skeleton className="h-14" />
@@ -178,7 +189,7 @@ export function TokenPage() {
       </div>
     );
   }
-  if (token.error) {
+  if (token.error && !preview) {
     // A failed read is a network problem, not a missing token; say so instead
     // of a misleading not-found, and let the user retry in place.
     return (
@@ -195,14 +206,14 @@ export function TokenPage() {
       </div>
     );
   }
-  if (!token.data) {
+  if (!token.data && !preview) {
     return (
       <div className="mx-auto max-w-[1400px] px-4 py-8">
         <EmptyState title="Token not found" body="Check the address, or the indexer may still be catching up." />
       </div>
     );
   }
-  const t = token.data;
+  const t = (token.data ?? PREVIEW_TOKEN) as TokenSummary;
   const meta = t.metadata ?? {};
 
   const usdRate = usdRateOf(t);
@@ -211,6 +222,13 @@ export function TokenPage() {
   const metaPair = (meta as any)?.pair as { symbol?: string } | undefined;
   const rewardSym = rewardStock?.symbol ?? metaPair?.symbol;
   const hasReward = !!extra && !/^0x0+$/.test(extra.stock);
+
+  // The koi.fun (Base) flavor uses a dedicated mobile-first token view that
+  // mirrors the discovery board: price header, chart, tabbed activity and a
+  // sticky Buy/Sell bar. The default flavors keep the desktop two-column view.
+  if (IS_STOCK_BOARD) {
+    return <BaseTokenView t={t} meta={meta} extra={extra} usdRate={usdRate} rewardSym={rewardSym} hasReward={hasReward} />;
+  }
 
   return (
     <div className="rise mx-auto max-w-6xl px-4 pb-24 sm:px-8">
@@ -277,6 +295,125 @@ export function TokenPage() {
 
       {/* Trades / Holders */}
       <ActivityTabs t={t} usdRate={usdRate} />
+    </div>
+  );
+}
+
+/* ============================ koi.fun token view ============================ */
+
+const CHEV_L = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m15 6-6 6 6 6" /></svg>;
+
+/**
+ * Mobile-first token page for koi.fun: a big price header, the live chart,
+ * tabbed activity (Trades / Holders / Stats / Info) and a sticky Buy/Sell bar
+ * that opens the pair-denominated trade sheet. Same real data and trading as
+ * the desktop view, laid out like the discovery board.
+ */
+function BaseTokenView({
+  t, meta, extra, usdRate, rewardSym, hasReward,
+}: { t: TokenSummary; meta: any; extra: Extra | null; usdRate: number; rewardSym?: string; hasReward: boolean }) {
+  const [tab, setTab] = useState<"trades" | "holders" | "stats" | "info">("trades");
+  const [sheet, setSheet] = useState<null | "buy" | "sell">(null);
+  const chg = t.priceChange24hPct;
+  const has = chg != null && isFinite(chg);
+  const up = has && chg! >= 0;
+  const liqWei = String((t as any).liquidityWei ?? "0");
+
+  const TABS = [
+    { id: "trades", label: "Trades" },
+    { id: "holders", label: "Holders" },
+    { id: "stats", label: "Stats" },
+    { id: "info", label: "Info" },
+  ] as const;
+
+  return (
+    <div className="kf kf-page kf-token">
+      {/* Identity */}
+      <div className="kf-tk-head">
+        <button className="kf-tk-back" aria-label="Back" onClick={() => window.history.length > 1 ? window.history.back() : (window.location.href = "/")}>{CHEV_L}</button>
+        <TokenLogo token={t} size={30} />
+        <span className="kf-tk-sym">${t.symbol}</span>
+        {isOfficial(t.address) && <span className="board-official">OFFICIAL</span>}
+        <CaChip address={t.address as Address} />
+        <span className="kf-tk-share"><ShareMenu address={t.address as Address} symbol={t.symbol} name={t.name} /></span>
+      </div>
+
+      {/* Price */}
+      <div className="kf-tk-price">
+        <span className="kf-tk-mc">{fmtUsd(t.marketCapUsd)}</span>
+        {has && (
+          <span className={`kf-tk-chg ${up ? "up" : "down"}`}>
+            {up ? "▲" : "▼"} {up ? "+" : ""}{chg!.toFixed(2)}% <i>24h</i>
+          </span>
+        )}
+      </div>
+      <div className="kf-tk-line">
+        <span>Vol <b>{fmtWeiUsd(t.volumeTotalWei, usdRate)}</b></span>
+        <span className="kf-dotsep">·</span>
+        <span>Liq <b>{fmtWeiUsd(liqWei, usdRate)}</b></span>
+        <span className="kf-dotsep">·</span>
+        <span><b>{compact(t.holderCount)}</b> holders</span>
+      </div>
+
+      {/* Chart */}
+      <div className="kf-tk-chart">
+        <Suspense fallback={<Skeleton className="h-full w-full" />}>
+          <TVChart token={t.address as Address} symbol={t.symbol} />
+        </Suspense>
+      </div>
+
+      {hasReward && rewardSym ? (
+        <div className="kf-tk-earn"><span className="kf-tk-earn-dot" />Holders earn <b>{rewardSym}</b> on every trade</div>
+      ) : null}
+
+      {/* Tabs */}
+      <div className="kf-tk-tabs" role="tablist">
+        {TABS.map((x) => (
+          <button key={x.id} role="tab" aria-selected={tab === x.id} className={`kf-tk-tab ${tab === x.id ? "on" : ""}`} onClick={() => setTab(x.id)}>{x.label}</button>
+        ))}
+      </div>
+
+      <div className="kf-tk-body">
+        {tab === "trades" ? <TradesList token={t.address as Address} symbol={t.symbol} usdRate={usdRate} /> : null}
+        {tab === "holders" ? <HoldersList token={t.address as Address} symbol={t.symbol} /> : null}
+        {tab === "stats" ? <BaseStats t={t} extra={extra} usdRate={usdRate} rewardSym={rewardSym} /> : null}
+        {tab === "info" ? <InfoTab t={t} meta={meta} extra={extra} /> : null}
+      </div>
+
+      {/* Sticky Buy / Sell */}
+      <div className="kf-tk-actions">
+        <button className="kf-tk-buy" onClick={() => setSheet("buy")}>Buy</button>
+        <button className="kf-tk-sell" onClick={() => setSheet("sell")}>Sell</button>
+      </div>
+
+      {sheet ? (
+        <div className="kf-sheet-backdrop" onClick={() => setSheet(null)}>
+          <div className="kf-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="kf-sheet-grip" />
+            <BaseTradePanel token={t} initialSide={sheet} />
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Compact stats grid for the koi token view's Stats tab. */
+function BaseStats({ t, extra, usdRate, rewardSym }: { t: TokenSummary; extra: Extra | null; usdRate: number; rewardSym?: string }) {
+  const rows: [string, React.ReactNode][] = [
+    ["Market cap", fmtUsd(t.marketCapUsd)],
+    ["Volume (total)", fmtWeiUsd(t.volumeTotalWei, usdRate)],
+    ["Holders", compact(t.holderCount)],
+    ["24h change", t.priceChange24hPct != null ? `${t.priceChange24hPct >= 0 ? "+" : ""}${t.priceChange24hPct.toFixed(2)}%` : "—"],
+    ["Created", t.createdAt ? timeAgo(t.createdAt) : "—"],
+    ["Creator", shortAddr(t.creator)],
+  ];
+  if (extra && rewardSym && env.feeMode !== "buyback") rows.push([`${rewardSym} to holders`, fmtTokens(extra.totalRewards.toString())]);
+  return (
+    <div className="kf-stats-grid">
+      {rows.map(([k, v]) => (
+        <div key={k} className="kf-stat-cell"><span className="k">{k}</span><span className="v">{v}</span></div>
+      ))}
     </div>
   );
 }

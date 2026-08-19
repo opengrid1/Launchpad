@@ -2143,3 +2143,60 @@ button.bg-accent:disabled {
 /* Toast */
 :root[data-brand="base"] .kf-toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--nav-h, 74px) + 22px); transform: translate(-50%, 12px); z-index: 60; background: linear-gradient(150deg, var(--color-accent-2), var(--color-accent)); color: #fff; font-family: var(--font-body); font-weight: 700; font-size: 14px; padding: 12px 18px; border-radius: 14px; box-shadow: 0 14px 34px rgba(255, 61, 166, .45); opacity: 0; pointer-events: none; transition: opacity .22s ease, transform .22s ease; white-space: nowrap; max-width: 88vw; }
 :root[data-brand="base"] .kf-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---- koi.fun token page (pools.fun-style detail view) ---- */
+:root[data-brand="base"] .kf-token { padding: 0 16px; }
+:root[data-brand="base"] .kf-tk-head { display: flex; align-items: center; gap: 9px; padding: 6px 0 10px; }
+:root[data-brand="base"] .kf-tk-back { width: 34px; height: 34px; flex: none; border: 0; cursor: pointer; background: var(--color-panel-2); color: var(--color-ink); border-radius: 11px; display: grid; place-items: center; box-shadow: inset 0 0 0 1px var(--color-edge-2); }
+:root[data-brand="base"] .kf-tk-back svg { width: 18px; height: 18px; }
+:root[data-brand="base"] .kf-tk-head .kf-ava, :root[data-brand="base"] .kf-tk-head span[style] > img, :root[data-brand="base"] .kf-tk-head img { border-radius: 9px; }
+:root[data-brand="base"] .kf-tk-sym { font-family: var(--font-display); font-weight: 800; font-size: 18px; letter-spacing: -.02em; }
+:root[data-brand="base"] .kf-tk-share { margin-left: auto; }
+:root[data-brand="base"] .kf-tk-price { display: flex; align-items: center; gap: 12px; padding: 4px 0 2px; flex-wrap: wrap; }
+:root[data-brand="base"] .kf-tk-mc { font-family: var(--font-display); font-weight: 800; font-size: 40px; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+:root[data-brand="base"] .kf-tk-chg { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 700; font-size: 15px; padding: 6px 12px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+:root[data-brand="base"] .kf-tk-chg i { font-style: normal; opacity: .6; font-weight: 600; }
+:root[data-brand="base"] .kf-tk-chg.up { color: var(--color-up); background: rgba(47, 208, 126, .12); }
+:root[data-brand="base"] .kf-tk-chg.down { color: var(--color-down); background: rgba(255, 77, 94, .12); }
+:root[data-brand="base"] .kf-tk-line { display: flex; align-items: center; gap: 8px; padding: 8px 0 4px; color: var(--color-ink-3); font-size: 13.5px; flex-wrap: wrap; }
+:root[data-brand="base"] .kf-tk-line b { color: var(--color-ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+:root[data-brand="base"] .kf-dotsep { color: var(--color-ink-3); }
+:root[data-brand="base"] .kf-tk-chart { height: 360px; margin: 10px 0 0; border-radius: 18px; overflow: hidden; border: 1px solid var(--color-edge); background: var(--color-panel); }
+:root[data-brand="base"] .kf-tk-chart > * { height: 100%; }
+:root[data-brand="base"] .kf-tk-earn { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 14px; border-radius: 13px; background: rgba(255, 61, 166, .08); color: var(--color-ink-2); font-size: 13px; box-shadow: inset 0 0 0 1px rgba(255, 61, 166, .18); }
+:root[data-brand="base"] .kf-tk-earn b { color: var(--color-accent-ink); font-weight: 700; }
+:root[data-brand="base"] .kf-tk-earn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); flex: none; box-shadow: 0 0 8px var(--color-accent); }
+:root[data-brand="base"] .kf-tk-tabs { display: flex; align-items: center; gap: 20px; margin-top: 16px; padding: 0 2px; border-bottom: 1px solid var(--color-edge); overflow-x: auto; scrollbar-width: none; }
+:root[data-brand="base"] .kf-tk-tabs::-webkit-scrollbar { display: none; }
+:root[data-brand="base"] .kf-tk-tab { border: 0; background: transparent; cursor: pointer; color: var(--color-ink-3); font-family: var(--font-body); font-weight: 700; font-size: 15px; padding: 10px 0; position: relative; white-space: nowrap; transition: color .15s ease; }
+:root[data-brand="base"] .kf-tk-tab.on { color: var(--color-ink); }
+:root[data-brand="base"] .kf-tk-tab.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; border-radius: 2px; background: var(--color-accent); }
+:root[data-brand="base"] .kf-tk-body { margin-top: 12px; }
+:root[data-brand="base"] .kf-tk-body .board-official, :root[data-brand="base"] .kf-tk-head .board-official { font-size: 8.5px; }
+/* Stats grid */
+:root[data-brand="base"] .kf-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+:root[data-brand="base"] .kf-stat-cell { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border-radius: 14px; background: var(--color-panel); box-shadow: inset 0 0 0 1px var(--color-edge); }
+:root[data-brand="base"] .kf-stat-cell .k { font-size: 11.5px; color: var(--color-ink-3); font-weight: 600; }
+:root[data-brand="base"] .kf-stat-cell .v { font-family: var(--font-display); font-size: 16px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+/* Sticky Buy/Sell bar (above the fixed nav) */
+:root[data-brand="base"] .kf-token { padding-bottom: 76px; }
+:root[data-brand="base"] .kf-tk-actions {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 88px); z-index: 45;
+  width: calc(min(100vw, 480px) - 28px); max-width: calc(480px - 28px);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+:root[data-brand="base"] .kf-tk-buy, :root[data-brand="base"] .kf-tk-sell {
+  border: 0; cursor: pointer; padding: 15px 0; border-radius: 16px;
+  font-family: var(--font-display); font-weight: 800; font-size: 17px; color: #06231a;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .4);
+}
+:root[data-brand="base"] .kf-tk-buy { background: linear-gradient(180deg, #4ce49a, #2fd07e); }
+:root[data-brand="base"] .kf-tk-sell { background: linear-gradient(180deg, #ff6472, #ff4d5e); color: #2a0206; }
+:root[data-brand="base"] .kf-tk-buy:active, :root[data-brand="base"] .kf-tk-sell:active { transform: translateY(1px); }
+/* Trade sheet */
+:root[data-brand="base"] .kf-sheet-backdrop { position: fixed; inset: 0; z-index: 70; background: rgba(3, 4, 6, .6); backdrop-filter: blur(3px); display: flex; align-items: flex-end; justify-content: center; animation: kf-fade .18s ease; }
+@keyframes kf-fade { from { opacity: 0; } }
+:root[data-brand="base"] .kf-sheet { width: 100%; max-width: 480px; background: var(--color-bg); border-radius: 24px 24px 0 0; padding: 10px 16px calc(env(safe-area-inset-bottom, 0px) + 20px); box-shadow: 0 -18px 50px rgba(0, 0, 0, .6), inset 0 1px 0 var(--color-edge-2); animation: kf-slide .24s cubic-bezier(.2,.8,.2,1); max-height: 90vh; overflow-y: auto; }
+@keyframes kf-slide { from { transform: translateY(100%); } }
+:root[data-brand="base"] .kf-sheet-grip { width: 40px; height: 4px; border-radius: 2px; background: var(--color-edge-2); margin: 2px auto 12px; }

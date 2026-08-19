@@ -31,11 +31,11 @@ function pairUsdOf(pair: Pair): number {
  * v4 pool (StockTradeRouter). You pay/receive the pair token, not ETH. The
  * client handles the one-time token approval on the first trade.
  */
-export function BaseTradePanel({ token }: { token: TokenSummary }) {
+export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; initialSide?: Side }) {
   const { address, isConnected, connectFirst } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
 
-  const [side, setSide] = useState<Side>("buy");
+  const [side, setSide] = useState<Side>(initialSide ?? "buy");
   const [amount, setAmount] = useState("");
   const [slip, setSlip] = useState(8);
   const [busy, setBusy] = useState(false);
