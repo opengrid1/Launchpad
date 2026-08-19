@@ -64,6 +64,43 @@ export const factoryAbi = [
   { type: "function", name: "setAnyPairEnabled", stateMutability: "nonpayable", inputs: [{ type: "bool" }], outputs: [] },
   { type: "function", name: "protocolAdmin", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
   { type: "function", name: "unwindPosition", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint16" }, { type: "address" }], outputs: [{ type: "uint256" }, { type: "uint256" }] },
+  // Base-stock factory (StockFlyFactoryV2): B-20 coins carry no on-chain
+  // metadataURI, so the factory is the registry. Also exposes the per-coin
+  // holder-reward vault.
+  { type: "function", name: "metadataURIOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "string" }] },
+  { type: "function", name: "rewardVaultOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "address" }] },
+] as const;
+
+// StockFlyFactoryV2.launch: adds burnBps + liquidityBps to the base tuple, so
+// part of the creator share can auto-burn the coin and single-side liquidity.
+// The chosen `pair` is the tokenized stock holders earn (not forced to WETH).
+export const baseFactoryLaunchAbi = [
+  {
+    type: "function",
+    name: "launch",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "p",
+        type: "tuple",
+        components: [
+          { name: "name", type: "string" },
+          { name: "symbol", type: "string" },
+          { name: "metadataURI", type: "string" },
+          { name: "pair", type: "address" },
+          { name: "taxBps", type: "uint16" },
+          { name: "pairUsdPrice8", type: "uint256" },
+          { name: "burnBps", type: "uint16" },
+          { name: "liquidityBps", type: "uint16" },
+        ],
+      },
+      { name: "salt", type: "bytes32" },
+    ],
+    outputs: [
+      { name: "token", type: "address" },
+      { name: "poolId", type: "bytes32" },
+    ],
+  },
 ] as const;
 
 // Uniswap V4 periphery StateView: canonical pool-state reads without logs.

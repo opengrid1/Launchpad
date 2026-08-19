@@ -78,7 +78,11 @@ const RH: V4Addresses = {
   stateView: addr("VITE_V4_STATE_VIEW", "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b"),
 };
 const RH_START_BLOCK = BigInt(String(import.meta.env.VITE_RH_START_BLOCK ?? "34558420"));
-const rh = IS_RH ? new RhClient(publicClient, RH, RH_START_BLOCK) : null;
+// "base-stock": the Base StockFlyFactoryV2 model. Coins are native B-20 tokens
+// that pair a creator-chosen tokenized stock and pay holders that stock through
+// a per-coin reward vault (vs. the Robinhood fork's flat WETH pair).
+const IS_BASE_STOCK = String(import.meta.env.VITE_LAUNCH_MODE ?? "") === "base-stock";
+const rh = IS_RH ? new RhClient(publicClient, RH, RH_START_BLOCK, { baseStock: IS_BASE_STOCK }) : null;
 
 const stable = IS_STABLE
   ? new StableV3Client(publicClient, {

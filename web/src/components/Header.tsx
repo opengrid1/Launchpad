@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 
-import { BRAND, BRAND_FLAVOR } from "../lib/brand";
+import { BRAND, BRAND_FLAVOR, IS_BOARD, IS_STOCK_BOARD } from "../lib/brand";
 import { env } from "../lib/env";
 import { useWallet } from "../lib/useWallet";
 import { Icon, type IconName } from "./Icon";
@@ -13,15 +13,20 @@ const TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
   { to: "/bridge", icon: "trade", label: "Bridge" },
 ];
 
-// The Robinhood-chain board brand has its own navigation and no bridge.
-const BOARD_TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
-  { to: "/", end: true, icon: "explore", label: "Board" },
-  { to: "/flywheel", icon: "activity", label: "Flywheel" },
-  { to: "/launch", icon: "launch", label: "Create" },
-  { to: "/profile", icon: "wallet", label: "Profile" },
-];
-
-const IS_BOARD = BRAND_FLAVOR === "copair";
+// The board brands have their own navigation and no bridge. The Base stock
+// launchpad has no weekly flywheel, so it drops that tab.
+const BOARD_TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = IS_STOCK_BOARD
+  ? [
+      { to: "/", end: true, icon: "explore", label: "Board" },
+      { to: "/launch", icon: "launch", label: "Create" },
+      { to: "/profile", icon: "wallet", label: "Profile" },
+    ]
+  : [
+      { to: "/", end: true, icon: "explore", label: "Board" },
+      { to: "/flywheel", icon: "activity", label: "Flywheel" },
+      { to: "/launch", icon: "launch", label: "Create" },
+      { to: "/profile", icon: "wallet", label: "Profile" },
+    ];
 
 /**
  * Top bar; live wordmark left, HUD nav tabs inline on desktop, chain
@@ -131,10 +136,12 @@ function BoardHeader() {
               <Icon name="explore" size={17} />
               Board
             </Link>
-            <Link to="/flywheel" className="blue">
-              <Icon name="activity" size={17} />
-              Flywheel
-            </Link>
+            {!IS_STOCK_BOARD && (
+              <Link to="/flywheel" className="blue">
+                <Icon name="activity" size={17} />
+                Flywheel
+              </Link>
+            )}
             <Link to="/launch" className="orange">
               <Icon name="launch" size={17} />
               Create token

@@ -20,6 +20,7 @@ import {
   type MarketFilters,
 } from "../components/market/util";
 import { TokenLogo } from "../components/TokenLogo";
+import { IS_STOCK_BOARD } from "../lib/brand";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtUsd, timeAgo } from "../lib/format";
@@ -128,7 +129,10 @@ export function ExploreBoard() {
               <>No market matches. Loosen the search or filters.</>
             ) : (
               <>
-                The board is clean. <Link to="/launch" className="cpm-link">Pull the first job</Link>
+                The board is clean.{" "}
+                <Link to="/launch" className="cpm-link">
+                  {IS_STOCK_BOARD ? "Launch the first coin" : "Pull the first job"}
+                </Link>
               </>
             )}
           </div>

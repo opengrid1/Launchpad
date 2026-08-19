@@ -5,7 +5,7 @@ import type { TokenSummary } from "@launchpad/sdk";
 
 import { Icon } from "../components/Icon";
 import { QuiverMark } from "../components/QuiverMark";
-import { BRAND_FLAVOR } from "../lib/brand";
+import { IS_BOARD } from "../lib/brand";
 import { ExploreBoard } from "./ExploreBoard";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
@@ -28,9 +28,9 @@ const SORTS: { id: Sort; label: string }[] = [
  * search field, a row of sort tabs, then a grid of token cards. Cream theme.
  */
 export function Explore() {
-  // The Robinhood-chain brand uses a distinct pump.fun-style live board rather
-  // than the default card grid.
-  if (BRAND_FLAVOR === "copair") return <ExploreBoard />;
+  // The board brands (Robinhood heist + Base stock launchpad) use a distinct
+  // pump.fun-style live market terminal rather than the default card grid.
+  if (IS_BOARD) return <ExploreBoard />;
   return <ExploreGrid />;
 }
 

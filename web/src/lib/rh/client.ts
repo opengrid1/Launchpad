@@ -9,7 +9,7 @@ import {
 import type { Candle, CandleInterval, HolderRecord, TokenSummary, TradeRecord } from "@launchpad/sdk";
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
 
-import { erc20Abi, factoryAbi, hookAbi, poolInitEvent, poolSwapEvent, routerAbi, stateViewAbi, tokenAbi } from "./abis";
+import { baseFactoryLaunchAbi, erc20Abi, factoryAbi, hookAbi, poolInitEvent, poolSwapEvent, routerAbi, stateViewAbi, tokenAbi } from "./abis";
 import { pairUsd, resolvePairRoute } from "./routes";
 
 const Q96 = 2n ** 96n;
@@ -77,11 +77,27 @@ export class RhClient {
   private receiptLogsByPool = new Map<string, any[]>();
   private receiptInflight: Promise<void> | null = null;
 
-  constructor(publicClient: PublicClient, v4: V4Addresses, startBlock: bigint) {
+  // Base-stock mode: coins are native B-20 tokens that pair a chosen tokenized
+  // stock (not WETH) and pay holders that stock through a per-coin reward vault.
+  // B-20 tokens carry no on-chain metadataURI, so metadata is read from the
+  // factory's registry, and launches keep the creator-chosen pair + tax.
+  private readonly baseStock: boolean;
+
+  constructor(publicClient: PublicClient, v4: V4Addresses, startBlock: bigint, opts?: { baseStock?: boolean }) {
     this.publicClient = publicClient;
     this.v4 = v4;
     this.startBlock = startBlock;
+    this.baseStock = opts?.baseStock ?? false;
     this.addresses = { factory: v4.factory, tokenDeployer: v4.factory, weth: v4.weth };
+  }
+
+  /** Where a coin's launch metadata (logo, description, links) lives: on the
+   *  token itself for the Robinhood fork, in the factory registry for Base
+   *  B-20 coins that have no metadataURI of their own. */
+  private metaCall(token: Address) {
+    return this.baseStock
+      ? { address: this.v4.factory, abi: factoryAbi as any, functionName: "metadataURIOf", args: [token] }
+      : { address: token, abi: tokenAbi as any, functionName: "metadataURI" };
   }
 
   connectWallet(wc: WalletClient) {
@@ -142,7 +158,7 @@ export class RhClient {
             { address: token, abi: tokenAbi, functionName: "name" },
             { address: token, abi: tokenAbi, functionName: "symbol" },
             { address: token, abi: tokenAbi, functionName: "totalSupply" },
-            { address: token, abi: tokenAbi, functionName: "metadataURI" },
+            this.metaCall(token),
           ],
         })) as [string, string, bigint, string];
         let metadata: Record<string, unknown> = {};
@@ -210,7 +226,7 @@ export class RhClient {
               { address: token, abi: tokenAbi, functionName: "name" },
               { address: token, abi: tokenAbi, functionName: "symbol" },
               { address: token, abi: tokenAbi, functionName: "totalSupply" },
-              { address: token, abi: tokenAbi, functionName: "metadataURI" },
+              this.metaCall(token),
             ],
           })) as [[Address, Address, number, bigint, `0x${string}`], string, string, bigint, string];
           let metadata: Record<string, unknown> = {};
@@ -864,13 +880,16 @@ export class RhClient {
     taxBps: number;
     pairUsdPrice8?: bigint; // pair token USD price, 8dp; fetched if omitted
     devBuyWei?: bigint; // optional atomic initial buy, in ETH wei
+    burnBps?: number; // base-stock only: creator-share slice that auto-burns
+    liquidityBps?: number; // base-stock only: creator-share slice single-sided into LP
   }): Promise<`0x${string}`> {
     const wc = this.requireWallet();
     const creator = this.account();
-    // Hood model: every coin pairs with WETH at a flat 1% fee.
-    params = { ...params, stock: this.v4.weth, taxBps: 100 };
+    // Base-stock model keeps the creator's chosen stock + tax. The Hood model
+    // instead forces every coin to pair WETH at a flat 1% fee.
+    if (!this.baseStock) params = { ...params, stock: this.v4.weth, taxBps: 100 };
     const metadataURI = params.metadataURI ?? "";
-    // Size the $3k start from the pair token's live USD price. Never launch on
+    // Size the start market cap from the pair token's USD price. Never launch on
     // a bad price (it would mis-size the starting market cap), so require > 0.
     let pairUsdPrice8 = params.pairUsdPrice8 ?? 0n;
     if (pairUsdPrice8 <= 0n) {
@@ -881,6 +900,27 @@ export class RhClient {
     const saltBytes = new Uint8Array(32);
     crypto.getRandomValues(saltBytes);
     const salt = `0x${Array.from(saltBytes, (b) => b.toString(16).padStart(2, "0")).join("")}` as `0x${string}`;
+
+    if (this.baseStock) {
+      // StockFlyFactoryV2: the creator share splits 50/50 between the creator
+      // and the coin's reward vault. burn/liquidity default off, so the whole
+      // creator share is payable and holders earn the maximum stock.
+      const burnBps = params.burnBps ?? 0;
+      const liquidityBps = params.liquidityBps ?? 0;
+      return wc.writeContract({
+        account: creator,
+        chain: wc.chain,
+        address: this.v4.factory,
+        abi: baseFactoryLaunchAbi,
+        functionName: "launch",
+        args: [
+          { name: params.name, symbol: params.symbol, metadataURI, pair: params.stock, taxBps: params.taxBps, pairUsdPrice8, burnBps, liquidityBps },
+          salt,
+        ],
+        value: params.devBuyWei ?? 0n,
+      });
+    }
+
     return wc.writeContract({
       account: creator,
       chain: wc.chain,
