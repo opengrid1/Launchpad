@@ -14,6 +14,11 @@ import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 
+interface IWETH {
+    function deposit() external payable;
+    function withdraw(uint256) external;
+}
+
 /// @notice Minimal StockFlyFactoryV2 surface: the coin's pair token + hook.
 interface IStockFactory {
     function listings(address token)
@@ -45,6 +50,7 @@ contract StockTradeRouter is IUnlockCallback, ReentrancyGuard {
     IPoolManager public immutable poolManager;
     IStockFactory public immutable factory;
     IHooks public immutable hook;
+    address public immutable weth;
 
     struct V4Swap {
         PoolKey key;
@@ -54,11 +60,53 @@ contract StockTradeRouter is IUnlockCallback, ReentrancyGuard {
 
     error NotListed();
     error Slippage();
+    error NotWethPair();
 
-    constructor(IPoolManager pm, IStockFactory factory_) {
+    constructor(IPoolManager pm, IStockFactory factory_, address weth_) {
         poolManager = pm;
         factory = factory_;
         hook = IHooks(factory_.hook());
+        weth = weth_;
+    }
+
+    receive() external payable {}
+
+    // ---------------------------------------------------------------------
+    // Native ETH convenience (only for coins paired with WETH)
+    // ---------------------------------------------------------------------
+
+    /// @notice Buy a WETH-paired `coin` with native ETH: wrap, then swap through
+    ///         the coin's pool. One tap, no external DEX.
+    function buyWithEth(address coin, uint256 minCoinOut)
+        external
+        payable
+        nonReentrant
+        returns (uint256 coinOut)
+    {
+        address pair = _pairOf(coin);
+        if (pair != weth) revert NotWethPair();
+        require(msg.value > 0, "no ETH");
+        IWETH(weth).deposit{value: msg.value}();
+        coinOut = _v4Swap(coin, pair, pair, msg.value);
+        if (coinOut < minCoinOut) revert Slippage();
+        IERC20(coin).safeTransfer(msg.sender, coinOut);
+    }
+
+    /// @notice Sell a WETH-paired `coin` for native ETH: swap, then unwrap.
+    function sellForEth(address coin, uint256 coinIn, uint256 minEthOut)
+        external
+        nonReentrant
+        returns (uint256 ethOut)
+    {
+        address pair = _pairOf(coin);
+        if (pair != weth) revert NotWethPair();
+        IERC20(coin).safeTransferFrom(msg.sender, address(this), coinIn);
+        uint256 wethOut = _v4Swap(coin, pair, coin, coinIn);
+        IWETH(weth).withdraw(wethOut);
+        ethOut = wethOut;
+        if (ethOut < minEthOut) revert Slippage();
+        (bool ok, ) = msg.sender.call{value: ethOut}("");
+        require(ok, "eth xfer");
     }
 
     /// @notice Buy `coin` with its pair token. Caller must approve `pairIn` of

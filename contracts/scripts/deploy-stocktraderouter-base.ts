@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
 const POOL_MANAGER = "0x498581fF718922c3f8e6A244956aF099B2652b2b";
+const WETH = "0x4200000000000000000000000000000000000006";
 
 /** Deploy StockTradeRouter for the live StockFlyFactoryV2 on Base. Coins trade
  *  directly against their pair token (USDC or a tokenized stock) in their own
@@ -15,7 +16,7 @@ async function main() {
   const dep = JSON.parse(readFileSync(depPath, "utf8"));
   const factory = dep.contracts.factory as string;
 
-  const router = await (await ethers.getContractFactory("StockTradeRouter")).deploy(POOL_MANAGER, factory);
+  const router = await (await ethers.getContractFactory("StockTradeRouter")).deploy(POOL_MANAGER, factory, WETH);
   await router.waitForDeployment();
   const addr = await router.getAddress();
   console.log("StockTradeRouter:", addr);

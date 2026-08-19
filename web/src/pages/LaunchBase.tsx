@@ -5,11 +5,12 @@ import { keccak256, toHex } from "viem";
 import { Field, inputClass } from "../components/ui";
 import { client } from "../lib/client";
 import { BASE_STOCKS, type BaseStock } from "../lib/base/stocks";
-import { BASE_USDC } from "../lib/base/routes";
+import { BASE_USDC, BASE_WETH } from "../lib/base/routes";
 
-// Coins can pair a tokenized stock (holders earn the stock) or USDC (holders
-// earn dollars). USDC first so a dollar pair is a one-tap choice.
+// Coins can pair a tokenized stock (holders earn the stock), ETH, or USDC
+// (holders earn ETH / dollars). ETH + USDC lead as the two currency pairs.
 const PAIRS: BaseStock[] = [
+  { symbol: "ETH", name: "Ethereum", address: BASE_WETH, usd: 1900, usdcTickSpacing: 10 },
   { symbol: "USDC", name: "US Dollar Coin", address: BASE_USDC, usd: 1, usdcTickSpacing: 10 },
   ...BASE_STOCKS,
 ];
@@ -38,7 +39,7 @@ export function LaunchBase() {
     twitter: "",
     telegram: "",
   });
-  const [stock, setStock] = useState(PAIRS[1].address);
+  const [stock, setStock] = useState(PAIRS[2].address);
   const [taxPct, setTaxPct] = useState(1);
   const [busy, setBusy] = useState(false);
   const [logoData, setLogoData] = useState("");

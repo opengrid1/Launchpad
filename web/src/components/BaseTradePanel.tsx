@@ -4,7 +4,7 @@ import { launchTokenAbi, type Address, type TokenSummary } from "@launchpad/sdk"
 
 import { client, v4Client } from "../lib/client";
 import { fmtUsd, compact } from "../lib/format";
-import { BASE_USDC } from "../lib/base/routes";
+import { BASE_USDC, BASE_WETH, baseStockUsd } from "../lib/base/routes";
 import { baseStockOf } from "../lib/base/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
@@ -13,11 +13,15 @@ import { TokenLogo } from "./TokenLogo";
 type Side = "buy" | "sell";
 type Pair = { address: Address; symbol: string; decimals: number };
 
-const disp = (s: string) => s.replace(/^wt/, "").replace(/c$/, "");
+const isWeth = (addr: string) => addr.toLowerCase() === BASE_WETH.toLowerCase();
+/** Display label for a pair token: WETH shows as ETH, the "c"/"wt" suffixes drop. */
+const disp = (addr: string, sym: string) => (isWeth(addr) ? "ETH" : sym.replace(/^wt/, "").replace(/c$/, ""));
 
-/** USD price of a coin's pair token: $1 for USDC, else the curated stock price. */
+/** USD price of a coin's pair token: $1 for USDC, ETH snapshot for WETH, else
+ *  the curated stock price. */
 function pairUsdOf(pair: Pair): number {
   if (pair.address.toLowerCase() === BASE_USDC.toLowerCase()) return 1;
+  if (isWeth(pair.address)) return baseStockUsd(BASE_WETH);
   return baseStockOf(pair.address)?.usd ?? 0;
 }
 
@@ -48,8 +52,11 @@ export function BaseTradePanel({ token }: { token: TokenSummary }) {
   const refresh = async () => {
     if (!address || !pair) { setPairBal(null); setCoinBal(null); return; }
     try {
+      // A WETH pair is paid as native ETH (the router wraps), so show ETH balance.
       const [pb, cb] = await Promise.all([
-        client.publicClient.readContract({ address: pair.address, abi: launchTokenAbi, functionName: "balanceOf", args: [address] }),
+        isWeth(pair.address)
+          ? client.publicClient.getBalance({ address })
+          : client.publicClient.readContract({ address: pair.address, abi: launchTokenAbi, functionName: "balanceOf", args: [address] }),
         client.publicClient.readContract({ address: token.address, abi: launchTokenAbi, functionName: "balanceOf", args: [address] }),
       ]);
       setPairBal(pb as bigint);
@@ -73,13 +80,13 @@ export function BaseTradePanel({ token }: { token: TokenSummary }) {
       return { out: coinsOut, symbol: token.symbol, usd: amtNum * pUsd };
     }
     const pairOut = (amtNum * priceUsd / pUsd) * (1 - feeRate);
-    return { out: pairOut, symbol: disp(pair.symbol), usd: amtNum * priceUsd };
+    return { out: pairOut, symbol: disp(pair.address, pair.symbol), usd: amtNum * priceUsd };
   }, [amtNum, side, pair, priceUsd, pUsd, feeRate, token.symbol]);
 
   const payBal = side === "buy" ? pairBal : coinBal;
   const payDecimals = side === "buy" ? (pair?.decimals ?? 18) : 18;
-  const paySymbol = side === "buy" ? (pair ? disp(pair.symbol) : "…") : token.symbol;
-  const recvSymbol = side === "buy" ? token.symbol : (pair ? disp(pair.symbol) : "…");
+  const paySymbol = side === "buy" ? (pair ? disp(pair.address, pair.symbol) : "…") : token.symbol;
+  const recvSymbol = side === "buy" ? token.symbol : (pair ? disp(pair.address, pair.symbol) : "…");
 
   const setPct = (pct: number) => {
     if (payBal == null) return;
@@ -124,7 +131,7 @@ export function BaseTradePanel({ token }: { token: TokenSummary }) {
     <div className="tp">
       <div className="term-head">
         Trade desk
-        <span className="term-head-sub">pays {pair ? disp(pair.symbol) : "the pair"} · {(feeRate * 100).toFixed(taxBps % 100 ? 1 : 0)}% fee</span>
+        <span className="term-head-sub">pays {pair ? disp(pair.address, pair.symbol) : "the pair"} · {(feeRate * 100).toFixed(taxBps % 100 ? 1 : 0)}% fee</span>
       </div>
       <div className="tp-body">
         <div className="tp-seg">
@@ -172,7 +179,7 @@ export function BaseTradePanel({ token }: { token: TokenSummary }) {
 
         <div className="tp-rows">
           <Row label="Price" value={priceUsd > 0 ? `${fmtUsd(priceUsd)} / ${token.symbol}` : "–"} />
-          <Row label="Reward" value={pair ? `holders earn ${disp(pair.symbol)}` : "–"} />
+          <Row label="Reward" value={pair ? `holders earn ${disp(pair.address, pair.symbol)}` : "–"} />
           <Row label="Trade fee" value={`${(feeRate * 100).toFixed(taxBps % 100 ? 1 : 0)}%`} />
           <div className="flex items-center justify-between pt-0.5">
             <span className="text-ink-3">Slippage</span>

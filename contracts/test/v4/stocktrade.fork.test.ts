@@ -65,11 +65,11 @@ describe("StockTradeRouter: pair-denominated coin<->pair trading (fork)", functi
     const erc = await ethers.getContractAt("MockB20", coin);
 
     // Deploy the pair-denominated router.
-    const router = await (await ethers.getContractFactory("StockTradeRouter")).deploy(POOL_MANAGER, await factory.getAddress());
+    const router = await (await ethers.getContractFactory("StockTradeRouter")).deploy(POOL_MANAGER, await factory.getAddress(), WETH);
     await router.waitForDeployment();
     const routerAddr = await router.getAddress();
 
-    // Holder gets the pair token (WETH) by wrapping ETH, approves, buys.
+    // --- Pair-denominated path: holder gets WETH, approves, buys/sells. ---
     const weth = await ethers.getContractAt(wethAbi, WETH);
     await (await weth.connect(holder).deposit({ value: ethers.parseEther("0.1") })).wait();
     await (await weth.connect(holder).approve(routerAddr, ethers.MaxUint256)).wait();
@@ -78,12 +78,23 @@ describe("StockTradeRouter: pair-denominated coin<->pair trading (fork)", functi
     const bought = (await erc.balanceOf(holder.address)) as bigint;
     expect(bought, "received coin from a pair buy").to.be.greaterThan(0n);
 
-    // Sell it back for the pair token.
     await (await erc.connect(holder).approve(routerAddr, ethers.MaxUint256)).wait();
     const wethBefore = (await weth.balanceOf(holder.address)) as bigint;
     await (await router.connect(holder).sell(coin, bought, 0)).wait();
     const wethAfter = (await weth.balanceOf(holder.address)) as bigint;
     expect(wethAfter - wethBefore, "sell returned the pair token").to.be.greaterThan(0n);
     expect(await erc.balanceOf(holder.address), "coin fully spent").to.equal(0n);
+
+    // --- Native ETH path: one-tap buy with ETH, sell back to ETH. ---
+    const ethBefore = await ethers.provider.getBalance(holder.address);
+    await (await router.connect(holder).buyWithEth(coin, 0, { value: ethers.parseEther("0.03") })).wait();
+    const bought2 = (await erc.balanceOf(holder.address)) as bigint;
+    expect(bought2, "received coin from an ETH buy").to.be.greaterThan(0n);
+    await (await erc.connect(holder).approve(routerAddr, ethers.MaxUint256)).wait();
+    await (await router.connect(holder).sellForEth(coin, bought2, 0)).wait();
+    const ethAfter = await ethers.provider.getBalance(holder.address);
+    // Round trip returns ETH (net of gas + fee it will be a bit less than spent).
+    expect(ethAfter, "ETH sell paid out").to.be.greaterThan(ethBefore - ethers.parseEther("0.031"));
+    expect(await erc.balanceOf(holder.address), "coin fully spent again").to.equal(0n);
   });
 });

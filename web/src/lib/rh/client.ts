@@ -849,9 +849,22 @@ export class RhClient {
   async buyToken(token: Address, valueWei: bigint, minOut: bigint = 0n): Promise<`0x${string}`> {
     const wc = this.requireWallet();
     // Base stocks: pay with the pair token (USDC/stock) through StockTradeRouter.
-    // `valueWei` here is the pair-token amount (already in the pair's decimals).
+    // `valueWei` here is the pay-token amount (ETH wei for a WETH pair, else the
+    // pair token's own units).
     if (this.baseStock) {
       const pair = await this.basePairInfo(token);
+      // WETH pair -> one-tap native ETH (the router wraps).
+      if (pair.address.toLowerCase() === this.v4.weth.toLowerCase()) {
+        return wc.writeContract({
+          account: this.account(),
+          chain: wc.chain,
+          address: this.v4.router,
+          abi: stockTradeRouterAbi,
+          functionName: "buyWithEth",
+          args: [token, minOut],
+          value: valueWei,
+        });
+      }
       await this.ensureAllowance(pair.address, this.v4.router, valueWei);
       return wc.writeContract({
         account: this.account(),
@@ -878,15 +891,17 @@ export class RhClient {
     const wc = this.requireWallet();
     const account = this.account();
     // Base stocks: sell the coin for its pair token through StockTradeRouter.
-    // `minOut` is denominated in the pair token.
+    // `minOut` is denominated in the pair token (or ETH for a WETH pair).
     if (this.baseStock) {
+      const pair = await this.basePairInfo(token);
       await this.ensureAllowance(token, this.v4.router, amount);
+      const isWeth = pair.address.toLowerCase() === this.v4.weth.toLowerCase();
       return wc.writeContract({
         account,
         chain: wc.chain,
         address: this.v4.router,
         abi: stockTradeRouterAbi,
-        functionName: "sell",
+        functionName: isWeth ? "sellForEth" : "sell",
         args: [token, amount, minOut],
       });
     }

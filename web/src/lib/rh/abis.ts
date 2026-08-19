@@ -169,6 +169,9 @@ export const hookAbi = [
 export const stockTradeRouterAbi = [
   { type: "function", name: "buy", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }, { type: "uint256" }], outputs: [{ type: "uint256" }] },
   { type: "function", name: "sell", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }, { type: "uint256" }], outputs: [{ type: "uint256" }] },
+  // Native-ETH convenience, for coins paired with WETH.
+  { type: "function", name: "buyWithEth", stateMutability: "payable", inputs: [{ type: "address" }, { type: "uint256" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "sellForEth", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }, { type: "uint256" }], outputs: [{ type: "uint256" }] },
 ] as const;
 
 // RhRouter: one-tap ETH<->pair<->coin. The V3 path (WETH->...->pair) is passed
