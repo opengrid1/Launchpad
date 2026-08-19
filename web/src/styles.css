@@ -1808,3 +1808,72 @@ button.bg-accent:disabled {
   :root[data-brand="base"] .dv-earn { padding: 9px 11px; }
   :root[data-brand="base"] .dv-earn-badge { font-size: 13px; }
 }
+
+/* ============================================================================
+   stonkpad header + footer — their own chrome, cohesive with the dividend
+   gallery (rounded, gradient-accented, warm-premium). Scoped to base brand.
+   ============================================================================ */
+:root[data-brand="base"] .dvh {
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+  border-bottom: 1px solid var(--color-edge);
+}
+:root[data-brand="base"] .dvh::after {
+  content: ""; display: block; height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent) 55%, transparent), color-mix(in srgb, var(--nb-blue) 55%, transparent), transparent);
+  opacity: .5;
+}
+:root[data-brand="base"] .dvh-bar { max-width: 1180px; margin: 0 auto; height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 18px; }
+:root[data-brand="base"] .dvh-mark { display: inline-flex; align-items: center; gap: 8px; }
+:root[data-brand="base"] .dvh-coin {
+  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 9px; font-size: 15px; color: var(--color-accent-fg);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2)); box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--color-accent) 70%, transparent);
+}
+:root[data-brand="base"] .dvh-word { font-family: var(--font-display); font-weight: 800; font-size: 18px; letter-spacing: -0.02em; color: var(--color-ink); }
+:root[data-brand="base"] .dvh-tld { background: linear-gradient(100deg, var(--color-accent), var(--nb-blue)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+:root[data-brand="base"] .dvh-nav { display: flex; gap: 2px; margin-left: 14px; }
+:root[data-brand="base"] .dvh-link { padding: 7px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: var(--color-ink-3); transition: color .12s, background .12s; }
+:root[data-brand="base"] .dvh-link:hover { color: var(--color-ink); }
+:root[data-brand="base"] .dvh-link.on { color: var(--color-ink); background: color-mix(in srgb, var(--color-ink) 9%, transparent); }
+:root[data-brand="base"] .dvh-spacer { flex: 1; }
+:root[data-brand="base"] .dvh-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; font-size: 11.5px; font-weight: 800; letter-spacing: 0.02em; color: var(--color-ink-2); border: 1px solid var(--color-edge); background: color-mix(in srgb, var(--color-panel) 60%, transparent); }
+:root[data-brand="base"] .dvh-chip-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--color-up); box-shadow: 0 0 8px var(--color-up); }
+:root[data-brand="base"] .dvh-launch {
+  padding: 9px 18px; border-radius: 11px; font-weight: 800; font-size: 13.5px; color: var(--color-accent-fg);
+  background: linear-gradient(100deg, var(--color-accent), var(--color-accent-2));
+  box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--color-accent) 65%, transparent); transition: transform .08s, filter .15s;
+}
+:root[data-brand="base"] .dvh-launch:hover { filter: brightness(1.06); transform: translateY(-1px); }
+:root[data-brand="base"] .dvh-connect { padding: 9px 18px; border-radius: 11px; font-weight: 800; font-size: 13.5px; color: #fff; background: linear-gradient(120deg, var(--nb-blue), color-mix(in srgb, var(--nb-blue) 70%, #6a4dff)); transition: filter .15s; }
+:root[data-brand="base"] .dvh-connect:hover { filter: brightness(1.08); }
+:root[data-brand="base"] .dvh-wallet { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 11px; font-size: 12.5px; font-weight: 700; color: var(--color-ink); border: 1px solid var(--color-edge); background: color-mix(in srgb, var(--color-panel) 60%, transparent); }
+:root[data-brand="base"] .dvh-wallet-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--color-up); }
+:root[data-brand="base"] .dvh-burger { display: none; width: 40px; height: 40px; border-radius: 11px; align-items: center; justify-content: center; color: var(--color-ink); border: 1px solid var(--color-edge); background: color-mix(in srgb, var(--color-panel) 60%, transparent); }
+:root[data-brand="base"] .dvh-menu { display: none; flex-direction: column; gap: 2px; padding: 8px 14px 14px; border-bottom: 1px solid var(--color-edge); background: color-mix(in srgb, var(--color-bg) 92%, transparent); }
+:root[data-brand="base"] .dvh-menu-link { padding: 12px 12px; border-radius: 10px; font-weight: 700; color: var(--color-ink-2); }
+:root[data-brand="base"] .dvh-menu-link.on, :root[data-brand="base"] .dvh-menu-link:active { color: var(--color-ink); background: color-mix(in srgb, var(--color-ink) 8%, transparent); }
+
+@media (max-width: 860px) {
+  :root[data-brand="base"] .dvh-nav, :root[data-brand="base"] .dvh-chip { display: none; }
+  :root[data-brand="base"] .dvh-burger { display: inline-flex; }
+  :root[data-brand="base"] .dvh-menu { display: flex; }
+}
+@media (max-width: 480px) {
+  :root[data-brand="base"] .dvh-launch { display: none; }
+}
+
+/* Footer */
+:root[data-brand="base"] .dvf { border-top: 1px solid var(--color-edge); background: color-mix(in srgb, var(--color-panel) 40%, transparent); margin-top: 20px; }
+:root[data-brand="base"] .dvf-inner { max-width: 1180px; margin: 0 auto; padding: 34px 18px 30px; }
+:root[data-brand="base"] .dvf-top { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; justify-content: space-between; }
+:root[data-brand="base"] .dvf-mark { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 800; font-size: 19px; letter-spacing: -0.02em; color: var(--color-ink); }
+:root[data-brand="base"] .dvf-mark span[aria-hidden] { color: var(--color-accent); }
+:root[data-brand="base"] .dvf-tld { background: linear-gradient(100deg, var(--color-accent), var(--nb-blue)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+:root[data-brand="base"] .dvf-tag { margin-top: 8px; font-size: 13px; color: var(--color-ink-3); max-width: 40ch; }
+:root[data-brand="base"] .dvf-links { display: flex; gap: 20px; flex-wrap: wrap; }
+:root[data-brand="base"] .dvf-links a { font-size: 13.5px; font-weight: 700; color: var(--color-ink-2); transition: color .12s; }
+:root[data-brand="base"] .dvf-links a:hover { color: var(--color-ink); }
+:root[data-brand="base"] .dvf-earn { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 24px 0 22px; padding-top: 22px; border-top: 1px solid color-mix(in srgb, var(--color-edge) 55%, transparent); }
+:root[data-brand="base"] .dvf-earn-label { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink-3); margin-right: 4px; }
+:root[data-brand="base"] .dvf-earn-chip { font-size: 12px; font-weight: 800; padding: 5px 11px; border-radius: 999px; color: hsl(var(--h,210) 80% 72%); border: 1px solid hsl(var(--h,210) 70% 50% / 0.3); background: hsl(var(--h,210) 75% 50% / 0.1); }
+:root[data-brand="base"] .dvf-legal { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; font-size: 11.5px; color: var(--color-ink-3); }

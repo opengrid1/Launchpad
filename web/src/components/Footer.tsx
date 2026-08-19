@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 
-import { BRAND } from "../lib/brand";
+import { BRAND, IS_STOCK_BOARD } from "../lib/brand";
 import { env } from "../lib/env";
+import { BaseFooter } from "./BaseFooter";
 
 /**
  * Slim site footer: wordmark left, product links right. Sits below the page
@@ -9,6 +10,7 @@ import { env } from "../lib/env";
  * above it, so links stay reachable via the page end.
  */
 export function Footer() {
+  if (IS_STOCK_BOARD) return <BaseFooter />;
   return (
     <footer className="border-t border-edge">
       <div className="mx-auto flex h-12 max-w-6xl items-center gap-4 px-4 text-[12px] text-ink-3 sm:px-5">

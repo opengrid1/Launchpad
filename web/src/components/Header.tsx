@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 
 import { BRAND, BRAND_FLAVOR, IS_BOARD, IS_STOCK_BOARD } from "../lib/brand";
+import { BaseHeader } from "./BaseHeader";
 import { env } from "../lib/env";
 import { useWallet } from "../lib/useWallet";
 import { Icon, type IconName } from "./Icon";
@@ -35,6 +36,7 @@ const BOARD_TABS: { to: string; end?: boolean; icon: IconName; label: string }[]
  * pump.fun-style nav instead (see BoardHeader).
  */
 export function Header() {
+  if (IS_STOCK_BOARD) return <BaseHeader />;
   if (IS_BOARD) return <BoardHeader />;
   return <DefaultHeader />;
 }
