@@ -26,6 +26,11 @@ const FLAVOR_META: Record<string, { title: string; description: string; icon?: s
       "arcx. launch tokens into real Uniswap markets on Arc. Every trade pays its creator in dollars, forever.",
     icon: "/steadypads-arc-mark.png",
   },
+  base: {
+    title: "stonkpad | launch a coin, earn real stock",
+    description:
+      "stonkpad. Launch a memecoin on Base paired with a tokenized stock. Every trade rewards holders in that stock: hold the coin, earn NVIDIA, Apple, Google and more.",
+  },
 };
 
 function brandHtml(): Plugin {
