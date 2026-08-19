@@ -48,16 +48,16 @@ const FLAVORS: Record<string, Brand> = {
   // Base stock launchpad: memecoins paired with tokenized stocks; holders
   // earn the stock. Working brand name, easy to rename here.
   base: {
-    name: "stonkpad",
+    name: "koi",
     tld: ".fun",
-    domain: "stonkpad.fun",
-    url: "https://stonkpad.fun",
+    domain: "koi.fun",
+    url: "https://koifun.vercel.app",
     twitter: "https://x.com/",
     twitterHandle: "",
     tagline: "launch a coin, earn real stock",
     description:
-      "stonkpad. Launch a memecoin on Base paired with a tokenized stock. Every trade rewards holders in that stock: hold the coin, earn NVIDIA, Apple, Google and more.",
-    title: "stonkpad | launch a coin, earn real stock",
+      "koi.fun. Launch a memecoin on Base paired with a tokenized stock. Every trade rewards holders in that stock: hold the coin, earn NVIDIA, Apple, Google and more.",
+    title: "koi.fun | launch a coin, earn real stock",
   },
   steadypads: {
     name: "steadypads",

@@ -1,74 +1,59 @@
-import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { BRAND } from "../lib/brand";
-import { env } from "../lib/env";
 import { useWallet } from "../lib/useWallet";
-
-const TABS = [
-  { to: "/", end: true, label: "Board" },
-  { to: "/launch", label: "Create" },
-  { to: "/profile", label: "Profile" },
-];
 
 function WalletButton() {
   const { address, isConnected, connectFirst, disconnect, isPending } = useWallet();
   if (isConnected && address) {
     return (
-      <button onClick={() => disconnect()} className="hlh-wallet" title="Disconnect">
-        <span className="hlh-wallet-dot" />
+      <button onClick={() => disconnect()} className="kf-icon-btn kf-connect on" title="Disconnect">
+        <span className="kf-dot" />
         {`${address.slice(0, 4)}…${address.slice(-4)}`}
       </button>
     );
   }
   return (
-    <button onClick={connectFirst} disabled={isPending} className="hlh-connect">
+    <button onClick={connectFirst} disabled={isPending} className="kf-icon-btn kf-connect">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <rect x="3" y="6" width="18" height="13" rx="3" /><path d="M16 12h2" /><path d="M3 9h13a2 2 0 0 1 2 2" />
+      </svg>
       {isPending ? "Connecting" : "Connect"}
     </button>
   );
 }
 
 /**
- * stonkpad top bar — restrained, pro-trading chrome. A quiet wordmark, plain
- * nav links, a Base indicator, and a single mint action. No gradients.
+ * koi.fun top bar — brand mark on the left, a pink launch action and the
+ * wallet button on the right. Restrained playful chrome to match the
+ * discovery dashboard below it.
  */
 export function BaseHeader() {
-  const [menu, setMenu] = useState(false);
   return (
-    <header className="hlh sticky top-0 z-40">
-      <div className="hlh-bar">
-        <Link to="/" aria-label={BRAND.name} className="hlh-mark">
-          {BRAND.name}<span className="hlh-tld">{BRAND.tld}</span>
-        </Link>
+    <header className="kf-hdr">
+      <Link to="/" aria-label={BRAND.name} className="kf-brand">
+        <svg className="kf-brand-mark" viewBox="0 0 40 40" fill="none" aria-hidden>
+          <defs>
+            <linearGradient id="koiMark" x1="6" y1="4" x2="34" y2="36" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#ff5fb6" /><stop offset="1" stopColor="#ff2f9c" />
+            </linearGradient>
+          </defs>
+          <path d="M20 3c-6.5 4-9 8.7-9 14.5 0 3.4 1.6 6.2 4.2 7.9-2.9.5-5.2 2.3-6.7 5.1 3.6 4.2 8 6.5 12.8 6.5 3.4 0 6-1.9 6-5 0-2.2-1.3-3.9-3.4-4.7 4.7-1.9 7.6-6 7.6-11.3C31.5 12.8 27.4 6.7 20 3Z" fill="url(#koiMark)" />
+          <circle cx="17.4" cy="15.6" r="2.5" fill="#fff" />
+          <circle cx="18.1" cy="15.9" r="1.1" fill="#3a0022" />
+        </svg>
+        <span className="kf-brand-name">{BRAND.name}<span className="kf-tld">{BRAND.tld}</span></span>
+      </Link>
 
-        <nav className="hlh-nav" aria-label="Primary">
-          {TABS.map((t) => (
-            <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? "on" : "")}>{t.label}</NavLink>
-          ))}
-        </nav>
+      <Link to="/launch" className="kf-icon-btn kf-rocket" aria-label="Launch a coin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M13.5 3.5c3.3.6 6.4 3.7 7 7-2.1 5.4-7 9-11.5 10L6 27l-1.5-1.5L7 22.5C8 18 11.6 13.1 13.5 3.5Z" />
+          <path d="M9 15l-4 .5L7.5 12M12 18l-.5 4L15 19.5" />
+          <circle cx="15" cy="9" r="1.4" fill="currentColor" stroke="none" />
+        </svg>
+      </Link>
 
-        <div className="hlh-right">
-          <span className="hlh-chip"><span className="hlh-chip-dot" />{env.chainName}</span>
-          <Link to="/launch" className="hlh-launch">Launch</Link>
-          <WalletButton />
-          <button className="hlh-burger" aria-label={menu ? "Close" : "Menu"} aria-expanded={menu} onClick={() => setMenu((m) => !m)}>
-            {menu ? (
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden><path d="M5 5l14 14M19 5 5 19" /></svg>
-            ) : (
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden><path d="M4 6h16M4 12h16M4 18h16" /></svg>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {menu && (
-        <nav className="hlh-menu" aria-label="Menu" onClick={() => setMenu(false)}>
-          {TABS.map((t) => (
-            <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? "on" : "")}>{t.label}</NavLink>
-          ))}
-          <Link to="/docs">Docs</Link>
-        </nav>
-      )}
+      <WalletButton />
     </header>
   );
 }
