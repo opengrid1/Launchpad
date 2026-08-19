@@ -3,36 +3,51 @@ import { Link } from "react-router-dom";
 import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
-import { QuiverMark } from "../components/QuiverMark";
+import { FavoriteButton } from "../components/market/FavoriteButton";
+import { FilterButton, FilterDrawer } from "../components/market/FilterDrawer";
+import { MarketTabs, type MarketSort } from "../components/market/MarketTabs";
+import { Pagination } from "../components/market/Pagination";
+import { SearchBar } from "../components/market/SearchBar";
+import { TokenCard } from "../components/market/TokenCard";
+import { TokenTable } from "../components/market/TokenTable";
+import { ViewToggle, type MarketView } from "../components/market/ViewToggle";
+import { useFavorites } from "../components/market/useFavorites";
+import {
+  EMPTY_FILTERS,
+  activeFilterCount,
+  liqUsd,
+  volUsd,
+  type MarketFilters,
+} from "../components/market/util";
+import { TokenLogo } from "../components/TokenLogo";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { fmtUsd, timeAgo, usdRateOf } from "../lib/format";
+import { fmtUsd, timeAgo } from "../lib/format";
 import { isHidden, isImpersonator } from "../lib/hiddenTokens";
 import { isOfficial } from "../lib/official";
-import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 
-type Sort = "new" | "volume" | "mcap";
-const SORTS: { id: Sort; label: string }[] = [
-  { id: "new", label: "New" },
-  { id: "volume", label: "Volume" },
-  { id: "mcap", label: "Mcap" },
-];
+const PAGE_SIZE = 20;
 
-/**
- * Minimalist market terminal. One headline, one accent, then a single clean
- * list of markets separated by hairlines. No cards, no boxes, no marquee.
- */
+/** Neo-brutalist market terminal: bold editorial header, functional sort
+ *  tabs, search, filters, favorites, list/grid views, and pagination. */
 export function ExploreBoard() {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [sort, setSort] = useState<Sort>("new");
-  const { data: byVolume, loading: lv } = useTokens(client, { sort: "volume", limit: 80 });
-  const { data: byNew, loading: ln } = useTokens(client, { sort: "new", limit: 80 });
+  const [sort, setSort] = useState<MarketSort>("mcap");
+  const [view, setView] = useState<MarketView>("list");
+  const [filters, setFilters] = useState<MarketFilters>(EMPTY_FILTERS);
+  const [drawer, setDrawer] = useState(false);
+  const [page, setPage] = useState(1);
+  const { favs, isFav, toggle } = useFavorites();
+  const { data: byVolume, loading: lv } = useTokens(client, { sort: "volume", limit: 100 });
+  const { data: byNew, loading: ln } = useTokens(client, { sort: "new", limit: 100 });
 
   useEffect(() => {
     const id = window.setTimeout(() => setDebounced(query.trim().toLowerCase()), 130);
     return () => window.clearTimeout(id);
   }, [query]);
+
+  useEffect(() => setPage(1), [debounced, sort, filters]);
 
   const all = useMemo(() => {
     if (env.hideTokens) return [] as TokenSummary[];
@@ -46,100 +61,113 @@ export function ExploreBoard() {
   const feed = useMemo(() => {
     let list = all;
     if (debounced) {
-      list = all.filter(
+      list = list.filter(
         (t) =>
           t.name.toLowerCase().includes(debounced) ||
           t.symbol.toLowerCase().includes(debounced) ||
           t.address.toLowerCase() === debounced,
       );
     }
-    const s = [...list];
-    if (sort === "volume") s.sort((a, b) => Number(b.volumeTotalWei) - Number(a.volumeTotalWei));
-    else if (sort === "mcap") s.sort((a, b) => Number(b.marketCapUsd) - Number(a.marketCapUsd));
-    else s.sort((a, b) => b.createdAt - a.createdAt);
-    return s;
-  }, [all, debounced, sort]);
+    if (filters.favOnly) list = list.filter((t) => favs.has(t.address.toLowerCase()));
+    if (filters.officialOnly) list = list.filter((t) => isOfficial(t.address));
+    if (filters.hideZeroVol) list = list.filter((t) => volUsd(t) > 0);
+    if (filters.minLiqUsd > 0) list = list.filter((t) => liqUsd(t) >= filters.minLiqUsd);
+    if (filters.minVolUsd > 0) list = list.filter((t) => volUsd(t) >= filters.minVolUsd);
 
+    const s = [...list];
+    if (sort === "mcap") s.sort((a, b) => Number(b.marketCapUsd) - Number(a.marketCapUsd));
+    else if (sort === "vol") s.sort((a, b) => volUsd(b) - volUsd(a));
+    else if (sort === "recent") s.sort((a, b) => b.txCount24h - a.txCount24h);
+    else if (sort === "new") s.sort((a, b) => b.createdAt - a.createdAt);
+    else s.sort((a, b) => a.createdAt - b.createdAt);
+    return s;
+  }, [all, debounced, sort, filters, favs]);
+
+  const pages = Math.max(1, Math.ceil(feed.length / PAGE_SIZE));
+  const shown = feed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const loading = !env.hideTokens && (lv || ln) && all.length === 0;
-  const dayVolumeUsd = useMemo(
-    () => all.reduce((a, t) => a + (Number(t.volume24hWei || "0") / 1e18) * usdRateOf(t), 0),
-    [all],
-  );
-  const latest = useMemo(() => [...all].sort((a, b) => b.createdAt - a.createdAt)[0], [all]);
+  const nFilters = activeFilterCount(filters);
 
   return (
     <div className="cpm">
-      <span className="cpm-blob b1" aria-hidden />
-      <span className="cpm-blob b2" aria-hidden />
-      {/* Broker-desk board: stat cells, then the listings in a dashed frame.
-          All flywheel analytics live on /flywheel. */}
-      <div className="term-stats">
-        <div className="term-stat"><i>Markets</i><b>{all.length}</b></div>
-        <div className="term-stat"><i>24h volume</i><b>{fmtUsd(dayVolumeUsd)}</b></div>
-        <div className="term-stat"><i>Latest listing</i><b>{latest ? `$${latest.symbol}` : "–"}</b></div>
-      </div>
-      <section className="cpm-list term-panel" style={{ marginTop: 14 }}>
-        <div className="term-head">
-          The board
-          <span className="term-head-sub">{feed.length} listings</span>
-        </div>
-        <div className="term-body">
+      <section className="cpm-hero">
+        <h1 className="cpm-headline">Explore Markets</h1>
+        <div className="nb-divider" aria-hidden />
+      </section>
+
+      <section className="cpm-list" aria-label="Token markets">
+        <MarketTabs sort={sort} onSort={setSort} />
+
         <div className="cpm-toolbar">
-          <div className="cpm-tabs">
-            {SORTS.map((s) => (
-              <button key={s.id} onClick={() => setSort(s.id)} className={sort === s.id ? "on" : ""}>
-                {s.label}
-              </button>
-            ))}
-          </div>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="> search"
-            type="search"
-            className="cpm-search"
-          />
+          <SearchBar value={query} onChange={setQuery} />
+          <FilterButton count={nFilters} onClick={() => setDrawer(true)} />
+          <ViewToggle view={view} onView={setView} />
+          <button
+            type="button"
+            onClick={() => setFilters((f) => ({ ...f, favOnly: !f.favOnly }))}
+            className={`nb-btn nb-icon ${filters.favOnly ? "on" : ""}`}
+            aria-label="Show favorites only"
+            aria-pressed={filters.favOnly}
+            title="Favorites"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill={filters.favOnly ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.4" aria-hidden>
+              <path d="m12 2.8 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3-5.8 3 1.1-6.5L2.6 9.6l6.5-.9z" />
+            </svg>
+          </button>
         </div>
 
         {loading ? (
-          <div className="cpm-grid">{[...Array(8)].map((_, i) => <div key={i} className="cpm-skel" />)}</div>
-        ) : feed.length === 0 ? (
+          <div className="cpm-grid">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="cpm-skel" />
+            ))}
+          </div>
+        ) : shown.length === 0 ? (
           <div className="cpm-empty">
-            {debounced ? (
-              <>No market for &ldquo;{debounced}&rdquo;.</>
+            {debounced || nFilters > 0 ? (
+              <>No market matches. Loosen the search or filters.</>
             ) : (
               <>
                 The board is clean. <Link to="/launch" className="cpm-link">Pull the first job</Link>
               </>
             )}
           </div>
-        ) : (
-          <div className="cpm-grid">
-            {feed.map((t) => <Tile key={t.address} t={t} />)}
+        ) : view === "grid" ? (
+          <div className="nb-grid">
+            {shown.map((t) => (
+              <TokenCard key={t.address} t={t} fav={isFav(t.address)} onFav={() => toggle(t.address)} />
+            ))}
           </div>
+        ) : (
+          <>
+            {/* Desktop: full data table. Mobile: compact bordered rows. */}
+            <div className="hidden md:block">
+              <TokenTable tokens={shown} isFav={isFav} onFav={toggle} />
+            </div>
+            <div className="cpm-grid md:hidden">
+              {shown.map((t) => (
+                <MobileRow key={t.address} t={t} fav={isFav(t.address)} onFav={() => toggle(t.address)} />
+              ))}
+            </div>
+          </>
         )}
-        </div>
+
+        <Pagination page={page} pages={pages} onPage={setPage} />
       </section>
+
+      <FilterDrawer open={drawer} filters={filters} onChange={setFilters} onClose={() => setDrawer(false)} />
     </div>
   );
 }
 
-function logoSrc(t: TokenSummary): string | null {
-  const logo = OFFICIAL_LOGOS[t.address.toLowerCase()] ?? t.metadata?.logo;
-  if (!logo || !/^(https?:|ipfs:|data:)/.test(String(logo))) return null;
-  return String(logo).startsWith("ipfs://") ? `https://ipfs.io/ipfs/${String(logo).slice(7)}` : String(logo);
-}
-
-function Tile({ t }: { t: TokenSummary }) {
-  const [bad, setBad] = useState(false);
-  const src = logoSrc(t);
+/** Compact list row for small screens; same data, stacked layout. */
+function MobileRow({ t, fav, onFav }: { t: TokenSummary; fav: boolean; onFav: () => void }) {
   const chg = t.priceChange24hPct;
-  const hasChg = chg != null && Number.isFinite(chg) && chg !== 0;
-  const volUsd = (Number(t.volume24hWei || "0") / 1e18) * usdRateOf(t);
+  const hasChg = chg != null && isFinite(chg) && chg !== 0;
   return (
     <Link to={`/token/${t.address}`} className="cpt">
       <span className="lg">
-        {src && !bad ? <img src={src} alt="" loading="lazy" onError={() => setBad(true)} /> : <QuiverMark />}
+        <TokenLogo token={t} size={36} />
       </span>
       <span className="id">
         <b>{t.name}</b>
@@ -150,27 +178,21 @@ function Tile({ t }: { t: TokenSummary }) {
       </span>
       <span className="col vol">
         <i>24h vol</i>
-        <span>{fmtUsd(volUsd)}</span>
-      </span>
-      <span className="col hold">
-        <i>Holders</i>
-        <span>{t.holderCount > 0 ? t.holderCount : "new"}</span>
+        <span>{fmtUsd(volUsd(t))}</span>
       </span>
       <span className="col age">
         <i>Age</i>
         <span>{timeAgo(t.createdAt).replace(" ago", "")}</span>
       </span>
-      {hasChg ? (
-        <span className={`chg ${chg >= 0 ? "up" : "dn"}`}>
-          {chg >= 0 ? "+" : ""}
-          {Math.abs(chg) >= 100 ? Math.round(chg) : chg.toFixed(1)}%
-        </span>
-      ) : (
-        <span className="chg none">–</span>
-      )}
+      <span className={`chg ${hasChg ? (chg! >= 0 ? "up" : "dn") : "none"}`}>
+        {hasChg ? `${chg! >= 0 ? "+" : ""}${Math.abs(chg!) >= 100 ? Math.round(chg!) : chg!.toFixed(1)}%` : "–"}
+      </span>
       <span className="col mcap">
         <i>Mcap</i>
         <span className="mc">{fmtUsd(t.marketCapUsd)}</span>
+      </span>
+      <span onClick={(e) => e.preventDefault()}>
+        <FavoriteButton on={fav} onToggle={onFav} size={15} />
       </span>
     </Link>
   );

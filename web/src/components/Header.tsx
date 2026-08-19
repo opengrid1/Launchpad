@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 
 import { BRAND, BRAND_FLAVOR } from "../lib/brand";
 import { env } from "../lib/env";
 import { useWallet } from "../lib/useWallet";
 import { Icon, type IconName } from "./Icon";
+import { ThemeToggle } from "./market/ThemeToggle";
 
 const TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
   { to: "/", end: true, icon: "explore", label: "Discover" },
@@ -65,29 +67,67 @@ function Wallet({ board }: { board?: boolean }) {
   );
 }
 
-/** Robinhood-chain pump.fun-style navigation: a single top bar (no bottom
- *  nav), sized to fit the narrowest phone without overflow. */
+/** Neo-brutalist top bar: wordmark, desktop nav, theme toggle, the orange
+ *  "+" launch action, wallet, and a menu button on mobile. */
 function BoardHeader() {
+  const [menu, setMenu] = useState(false);
   return (
     <>
     <header className="board-header sticky top-0 z-40">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:gap-3 sm:px-5">
+      <div className="relative mx-auto flex h-16 max-w-6xl items-center gap-2 px-3 sm:gap-3 sm:px-5">
         <Link to="/" aria-label={BRAND.name} className="flex shrink-0 items-center">
-          <span className="text-[13.5px] font-extrabold lowercase tracking-tight text-ink sm:text-[15px]">
+          <span className="text-[15px] font-extrabold lowercase tracking-tight text-ink sm:text-[17px]">
             {BRAND.name}
-            <span className="text-accent-ink">{BRAND.tld}</span>
+            <span style={{ color: "var(--nb-blue)" }}>{BRAND.tld}</span>
           </span>
         </Link>
 
+        <nav className="nb-navlinks ml-2" aria-label="Primary">
+          {BOARD_TABS.map((t) => (
+            <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? "on" : "")}>
+              {t.label}
+            </NavLink>
+          ))}
+        </nav>
+
         <div className="flex-1" />
 
-        {/* Chain chip only where there is room */}
         <div className="board-chip hidden lg:flex">
-          <span className="board-logo-dot !h-1.5 !w-1.5" />
+          <span className="board-logo-dot" />
           {env.chainName}
         </div>
 
+        <ThemeToggle />
+
+        <Link to="/launch" className="nb-btn nb-icon orange" aria-label="Launch a coin" title="Launch a coin">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6" aria-hidden>
+            <path d="M12 4.5v15M4.5 12h15" />
+          </svg>
+        </Link>
+
         <Wallet board />
+
+        <button
+          type="button"
+          onClick={() => setMenu((m) => !m)}
+          className="nb-btn nb-icon md:!hidden"
+          aria-label="Menu"
+          aria-expanded={menu}
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        {menu && (
+          <nav className="nb-menu md:hidden" aria-label="Menu" onClick={() => setMenu(false)}>
+            <Link to="/docs">Docs</Link>
+            <Link to="/admin">Admin</Link>
+            <a href={BRAND.twitter} target="_blank" rel="noreferrer">
+              X / Twitter
+            </a>
+          </nav>
+        )}
       </div>
     </header>
     <BoardBottomNav />
