@@ -1677,3 +1677,134 @@ button.bg-accent:disabled {
   :root[data-brand="base"] .sx-stats { width: 100%; }
   :root[data-brand="base"] .sx-stats > div { flex: 1; min-width: 0; }
 }
+
+/* ============================================================================
+   stonkpad "dividend cards" — the launchpad's own identity. A gallery of coin
+   cards, each foregrounding the real stock its holders earn, tinted with that
+   reward's own hue (--h). Card-based, warm, playful-premium: not a board, not
+   a terminal, not a table. Scoped to the base brand.
+   ============================================================================ */
+:root[data-brand="base"] .dv { max-width: 1180px; margin: 0 auto; padding: 0 18px 90px; }
+
+/* Hero */
+:root[data-brand="base"] .dv-hero { position: relative; padding: 54px 6px 40px; overflow: hidden; }
+:root[data-brand="base"] .dv-hero-glow {
+  position: absolute; inset: -40% 30% auto -10%; height: 420px; z-index: 0; pointer-events: none;
+  background: radial-gradient(60% 60% at 30% 40%, color-mix(in srgb, var(--color-accent) 26%, transparent), transparent 70%),
+              radial-gradient(50% 50% at 80% 20%, color-mix(in srgb, var(--nb-blue) 22%, transparent), transparent 70%);
+  filter: blur(26px); opacity: .55;
+}
+:root[data-brand="base"] .dv-hero > :not(.dv-hero-glow) { position: relative; z-index: 1; }
+:root[data-brand="base"] .dv-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.02em; color: var(--color-ink-2);
+  border: 1px solid var(--color-edge); background: color-mix(in srgb, var(--color-panel) 70%, transparent);
+  padding: 6px 12px; border-radius: 999px; backdrop-filter: blur(6px);
+}
+:root[data-brand="base"] .dv-eyebrow-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--color-up); box-shadow: 0 0 10px var(--color-up); }
+:root[data-brand="base"] .dv-title {
+  margin-top: 20px; font-family: var(--font-display); font-weight: 800; letter-spacing: -0.03em;
+  font-size: clamp(38px, 7vw, 74px); line-height: 0.96; color: var(--color-ink);
+}
+:root[data-brand="base"] .dv-title-hl {
+  background: linear-gradient(100deg, var(--color-accent), var(--nb-blue));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+:root[data-brand="base"] .dv-lede { margin-top: 18px; max-width: 46ch; font-size: 15px; line-height: 1.55; color: var(--color-ink-2); }
+:root[data-brand="base"] .dv-hero-actions { margin-top: 26px; display: flex; gap: 12px; flex-wrap: wrap; }
+:root[data-brand="base"] .dv-btn-primary {
+  padding: 13px 24px; border-radius: 14px; font-weight: 800; font-size: 14.5px; color: var(--color-accent-fg);
+  background: linear-gradient(100deg, var(--color-accent), var(--color-accent-2));
+  box-shadow: 0 8px 26px -8px color-mix(in srgb, var(--color-accent) 60%, transparent); transition: transform .08s, filter .15s;
+}
+:root[data-brand="base"] .dv-btn-primary:hover { filter: brightness(1.05); transform: translateY(-1px); }
+:root[data-brand="base"] .dv-btn-ghost {
+  padding: 13px 22px; border-radius: 14px; font-weight: 700; font-size: 14.5px; color: var(--color-ink);
+  border: 1px solid var(--color-edge); background: color-mix(in srgb, var(--color-panel) 60%, transparent); transition: border-color .15s;
+}
+:root[data-brand="base"] .dv-btn-ghost:hover { border-color: var(--color-ink-3); }
+
+/* Reward filter chips (colored per reward via --h) */
+:root[data-brand="base"] .dv-filters { display: flex; gap: 8px; flex-wrap: wrap; padding: 6px 2px 16px; }
+:root[data-brand="base"] .dv-chip {
+  display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  font-size: 12.5px; font-weight: 700; color: var(--color-ink-2);
+  border: 1px solid var(--color-edge); background: color-mix(in srgb, var(--color-panel) 60%, transparent); transition: all .14s;
+}
+:root[data-brand="base"] .dv-chip:hover { color: var(--color-ink); border-color: var(--color-ink-3); }
+:root[data-brand="base"] .dv-chip-dot { width: 8px; height: 8px; border-radius: 999px; background: hsl(var(--h, 210) 80% 60%); }
+:root[data-brand="base"] .dv-chip.on {
+  color: #fff; border-color: transparent;
+  background: linear-gradient(120deg, hsl(var(--h, 210) 75% 46%), hsl(var(--h, 210) 80% 38%));
+}
+:root[data-brand="base"] .dv-chip.on .dv-chip-dot { background: #fff; }
+
+/* Toolbar */
+:root[data-brand="base"] .dv-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; }
+:root[data-brand="base"] .dv-tabs { display: flex; gap: 3px; border: 1px solid var(--color-edge); border-radius: 12px; padding: 3px; background: color-mix(in srgb, var(--color-panel) 60%, transparent); }
+:root[data-brand="base"] .dv-tab { padding: 7px 15px; border-radius: 9px; font-size: 12.5px; font-weight: 700; color: var(--color-ink-3); cursor: pointer; transition: all .12s; }
+:root[data-brand="base"] .dv-tab:hover { color: var(--color-ink); }
+:root[data-brand="base"] .dv-tab.on { background: var(--color-ink); color: var(--color-bg); }
+:root[data-brand="base"] .dv-search { flex: 1; display: flex; align-items: center; gap: 9px; border: 1px solid var(--color-edge); border-radius: 12px; padding: 0 14px; background: color-mix(in srgb, var(--color-panel) 60%, transparent); color: var(--color-ink-3); }
+:root[data-brand="base"] .dv-search input { flex: 1; background: transparent; border: 0; outline: 0; padding: 11px 0; color: var(--color-ink); font-size: 13.5px; }
+:root[data-brand="base"] .dv-search input::placeholder { color: var(--color-ink-3); }
+
+/* The card wall */
+:root[data-brand="base"] .dv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 16px; }
+:root[data-brand="base"] .dv-card {
+  position: relative; display: flex; flex-direction: column; gap: 14px; padding: 18px; overflow: hidden;
+  border-radius: 20px; border: 1px solid var(--color-edge);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, hsl(var(--h,210) 70% 50%) 9%, transparent), transparent 42%),
+    color-mix(in srgb, var(--color-panel) 92%, #000);
+  box-shadow: 0 1px 2px #0006, 0 22px 44px -30px #000c;
+  transition: transform .14s ease, box-shadow .18s ease, border-color .18s;
+}
+:root[data-brand="base"] .dv-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, hsl(var(--h,210) 75% 55%) 55%, var(--color-edge));
+  box-shadow: 0 8px 18px -8px #000a, 0 30px 60px -30px hsl(var(--h,210) 70% 40% / 0.5);
+}
+:root[data-brand="base"] .dv-card-glow { position: absolute; inset: -50% 40% auto -20%; height: 160px; z-index: 0; pointer-events: none;
+  background: radial-gradient(60% 100% at 30% 0%, hsl(var(--h,210) 80% 55% / 0.22), transparent 70%); filter: blur(14px); }
+:root[data-brand="base"] .dv-card > :not(.dv-card-glow) { position: relative; z-index: 1; }
+:root[data-brand="base"] .dv-card-head { display: flex; align-items: center; gap: 12px; }
+:root[data-brand="base"] .dv-card-head img, :root[data-brand="base"] .dv-card-head .lg { border-radius: 13px; flex-shrink: 0; }
+:root[data-brand="base"] .dv-card-id { min-width: 0; }
+:root[data-brand="base"] .dv-card-id b { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 800; color: var(--color-ink); line-height: 1.15; }
+:root[data-brand="base"] .dv-card-id span { display: block; margin-top: 2px; font-size: 11.5px; color: var(--color-ink-3); }
+:root[data-brand="base"] .dv-off { font-style: normal; font-size: 8px; font-weight: 800; letter-spacing: 0.08em; color: #d9a400; border: 1px solid #d9a40055; border-radius: 4px; padding: 1px 4px; }
+
+/* Signature: what holders earn — the colored dividend band */
+:root[data-brand="base"] .dv-earn {
+  display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; border-radius: 13px;
+  border: 1px solid hsl(var(--h,210) 70% 55% / 0.32);
+  background: linear-gradient(100deg, hsl(var(--h,210) 75% 50% / 0.16), hsl(var(--h,210) 75% 50% / 0.05));
+}
+:root[data-brand="base"] .dv-earn-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-2); }
+:root[data-brand="base"] .dv-earn-badge {
+  font-family: var(--font-display); font-weight: 800; font-size: 15px; letter-spacing: -0.01em;
+  padding: 3px 12px; border-radius: 999px; color: #fff;
+  background: linear-gradient(120deg, hsl(var(--h,210) 78% 52%), hsl(var(--h,210) 82% 42%));
+  box-shadow: 0 4px 14px -4px hsl(var(--h,210) 80% 45% / 0.7);
+}
+
+:root[data-brand="base"] .dv-card-foot { display: flex; align-items: flex-end; gap: 10px; margin-top: auto; }
+:root[data-brand="base"] .dv-stat { display: flex; flex-direction: column; gap: 2px; }
+:root[data-brand="base"] .dv-stat i { font-style: normal; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-ink-3); }
+:root[data-brand="base"] .dv-stat b { font-size: 14.5px; font-weight: 800; color: var(--color-ink); }
+:root[data-brand="base"] .dv-chg { margin-left: auto; font-size: 12.5px; font-weight: 800; padding: 4px 9px; border-radius: 9px; }
+:root[data-brand="base"] .dv-chg.up { color: var(--color-up); background: color-mix(in srgb, var(--color-up) 14%, transparent); }
+:root[data-brand="base"] .dv-chg.dn { color: var(--color-down); background: color-mix(in srgb, var(--color-down) 14%, transparent); }
+:root[data-brand="base"] .dv-chg.flat { color: var(--color-ink-3); }
+
+:root[data-brand="base"] .dv-skel { height: 178px; opacity: .5; animation: sx-shimmer 1.3s infinite; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-ink) 7%, transparent), transparent); background-size: 200% 100%; }
+:root[data-brand="base"] .dv-empty { padding: 60px 16px; text-align: center; color: var(--color-ink-3); font-size: 14px; }
+:root[data-brand="base"] .dv-link { color: var(--color-accent); font-weight: 700; }
+
+@media (max-width: 560px) {
+  :root[data-brand="base"] .dv-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  :root[data-brand="base"] .dv-card { padding: 14px; border-radius: 17px; }
+  :root[data-brand="base"] .dv-earn { padding: 9px 11px; }
+  :root[data-brand="base"] .dv-earn-badge { font-size: 13px; }
+}

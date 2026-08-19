@@ -3,47 +3,54 @@ import { Link } from "react-router-dom";
 import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
-import { TickerTape } from "../components/base/TickerTape";
 import { TokenLogo } from "../components/TokenLogo";
-import { baseStockOf } from "../lib/base/stocks";
+import { BASE_STOCKS, baseStockOf } from "../lib/base/stocks";
+import { BASE_USDC, BASE_WETH } from "../lib/base/routes";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtUsd, timeAgo } from "../lib/format";
 import { isHidden, isImpersonator } from "../lib/hiddenTokens";
 import { isOfficial } from "../lib/official";
-import { liqUsd, volUsd } from "../components/market/util";
+import { volUsd } from "../components/market/util";
 
-type Sort = "mcap" | "vol" | "new" | "gain";
+type Sort = "hot" | "mcap" | "new";
 const SORTS: { id: Sort; label: string }[] = [
-  { id: "mcap", label: "Mkt Cap" },
-  { id: "vol", label: "Volume" },
-  { id: "gain", label: "Movers" },
-  { id: "new", label: "Newest" },
+  { id: "hot", label: "Hot" },
+  { id: "mcap", label: "Top" },
+  { id: "new", label: "Fresh" },
 ];
 
-const stockOf = (t: TokenSummary) => {
-  const addr = (t.metadata as any)?.rewardStock as string | undefined;
-  return baseStockOf(addr);
+// A distinct hue per reward so each pairing has its own identity.
+const HUE: Record<string, number> = {
+  ETH: 258, USDC: 200, NVDA: 140, AAPL: 212, GOOGL: 18, META: 224,
+  AMZN: 32, QQQ: 286, COIN: 226, MSTR: 190, SPY: 45,
 };
-const disp = (sym: string) => sym.replace(/^wt/, "").replace(/c$/, "");
+const rewardLabel = (addr?: string) => {
+  if (!addr) return null;
+  if (addr.toLowerCase() === BASE_WETH.toLowerCase()) return "ETH";
+  if (addr.toLowerCase() === BASE_USDC.toLowerCase()) return "USDC";
+  const s = baseStockOf(addr);
+  return s ? s.symbol : null;
+};
+const rewardOf = (t: TokenSummary) => rewardLabel((t.metadata as any)?.rewardStock as string | undefined);
 
 function priceStr(usd: number): string {
   if (!isFinite(usd) || usd <= 0) return "—";
   if (usd >= 1) return `$${usd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   if (usd >= 0.0001) return `$${usd.toFixed(5)}`;
-  return `$${usd.toExponential(2)}`;
+  return `$${usd.toExponential(1)}`;
 }
 
 /**
- * stonkpad "coin exchange" board — a stock-terminal identity distinct from the
- * heist board: a scrolling reward-stock ticker, a terminal masthead with live
- * market stats, and a dense green/red quotes board where every coin shows the
- * real stock its holders earn.
+ * stonkpad's own identity: a gallery of "dividend cards". Each coin is a card
+ * that foregrounds the one thing no other launchpad has — the real stock its
+ * holders earn — tinted with that reward's own color. Not a board, not a table.
  */
 export function ExploreStockBoard() {
+  const [sort, setSort] = useState<Sort>("hot");
+  const [reward, setReward] = useState<string | null>(null); // filter by earned asset
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [sort, setSort] = useState<Sort>("mcap");
   const { data: byVolume, loading: lv } = useTokens(client, { sort: "volume", limit: 100 });
   const { data: byNew, loading: ln } = useTokens(client, { sort: "new", limit: 100 });
 
@@ -63,115 +70,115 @@ export function ExploreStockBoard() {
 
   const feed = useMemo(() => {
     let list = all;
-    if (debounced) {
-      list = list.filter(
-        (t) =>
-          t.name.toLowerCase().includes(debounced) ||
-          t.symbol.toLowerCase().includes(debounced) ||
-          t.address.toLowerCase() === debounced,
-      );
-    }
+    if (reward) list = list.filter((t) => rewardOf(t) === reward);
+    if (debounced) list = list.filter((t) => t.name.toLowerCase().includes(debounced) || t.symbol.toLowerCase().includes(debounced) || t.address.toLowerCase() === debounced);
     const s = [...list];
     if (sort === "mcap") s.sort((a, b) => Number(b.marketCapUsd) - Number(a.marketCapUsd));
-    else if (sort === "vol") s.sort((a, b) => volUsd(b) - volUsd(a));
-    else if (sort === "gain") s.sort((a, b) => (b.priceChange24hPct ?? -1e9) - (a.priceChange24hPct ?? -1e9));
-    else s.sort((a, b) => b.createdAt - a.createdAt);
+    else if (sort === "new") s.sort((a, b) => b.createdAt - a.createdAt);
+    else s.sort((a, b) => volUsd(b) - volUsd(a) || Number(b.marketCapUsd) - Number(a.marketCapUsd));
     return s;
-  }, [all, debounced, sort]);
+  }, [all, reward, debounced, sort]);
 
-  const stats = useMemo(() => {
-    const mcap = all.reduce((a, t) => a + Number(t.marketCapUsd || 0), 0);
-    const vol = all.reduce((a, t) => a + volUsd(t), 0);
-    return { count: all.length, mcap, vol };
+  const rewardsPresent = useMemo(() => {
+    const set = new Set<string>();
+    all.forEach((t) => { const r = rewardOf(t); if (r) set.add(r); });
+    // keep a stable, sensible order: currencies then the curated stocks.
+    const order = ["ETH", "USDC", ...BASE_STOCKS.map((s) => s.symbol)];
+    return order.filter((r) => set.has(r));
   }, [all]);
 
   const loading = !env.hideTokens && (lv || ln) && all.length === 0;
 
   return (
-    <div className="sx">
-      <TickerTape />
-
-      {/* Terminal masthead */}
-      <section className="sx-head">
-        <div className="sx-head-main">
-          <div className="sx-live"><span className="sx-live-dot" /> LIVE · BASE</div>
-          <h1 className="sx-title">The Coin Exchange</h1>
-          <p className="sx-sub">Launch a coin, earn real stock. Every trade pays holders the stock it&apos;s listed against.</p>
+    <div className="dv">
+      {/* Hero */}
+      <section className="dv-hero">
+        <div className="dv-hero-glow" aria-hidden />
+        <p className="dv-eyebrow"><span className="dv-eyebrow-dot" /> Base · hold the coin, earn the asset</p>
+        <h1 className="dv-title">Memecoins that pay you<br /><span className="dv-title-hl">real stock.</span></h1>
+        <p className="dv-lede">Launch a coin against a tokenized stock, ETH or USDC. Every trade streams that asset to holders — a meme with a dividend.</p>
+        <div className="dv-hero-actions">
+          <Link to="/launch" className="dv-btn-primary">Launch a coin</Link>
+          <a href="#board" className="dv-btn-ghost">Browse the wall</a>
         </div>
-        <dl className="sx-stats">
-          <div><dt>Listings</dt><dd>{stats.count}</dd></div>
-          <div><dt>Total Mkt Cap</dt><dd>{fmtUsd(stats.mcap)}</dd></div>
-          <div><dt>24h Volume</dt><dd>{fmtUsd(stats.vol)}</dd></div>
-        </dl>
       </section>
 
-      {/* Toolbar */}
-      <div className="sx-toolbar">
-        <div className="sx-tabs">
-          {SORTS.map((s) => (
-            <button key={s.id} className={`sx-tab ${sort === s.id ? "on" : ""}`} onClick={() => setSort(s.id)}>
-              {s.label}
-            </button>
-          ))}
-        </div>
-        <div className="sx-search">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden>
-            <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
-          </svg>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search ticker or address" />
-        </div>
-        <Link to="/launch" className="sx-list-btn">List a coin +</Link>
+      {/* Reward filters */}
+      <div id="board" className="dv-filters">
+        <button className={`dv-chip ${reward === null ? "on" : ""}`} onClick={() => setReward(null)}>All</button>
+        {rewardsPresent.map((r) => (
+          <button key={r} className={`dv-chip ${reward === r ? "on" : ""}`} onClick={() => setReward(reward === r ? null : r)}
+            style={{ ["--h" as any]: HUE[r] ?? 210 }}>
+            <span className="dv-chip-dot" /> {r}
+          </button>
+        ))}
       </div>
 
-      {/* Quotes board */}
-      <section className="sx-board" aria-label="Coin quotes">
-        <div className="sx-row sx-row-head">
-          <span className="sx-c-rank">#</span>
-          <span className="sx-c-name">Coin</span>
-          <span className="sx-c-earn">Earns</span>
-          <span className="sx-c-num">Last</span>
-          <span className="sx-c-num">24h</span>
-          <span className="sx-c-num">Mkt Cap</span>
-          <span className="sx-c-num sx-hide-sm">Volume</span>
-          <span className="sx-c-num sx-hide-sm">Age</span>
+      {/* Toolbar */}
+      <div className="dv-toolbar">
+        <div className="dv-tabs">
+          {SORTS.map((s) => (
+            <button key={s.id} className={`dv-tab ${sort === s.id ? "on" : ""}`} onClick={() => setSort(s.id)}>{s.label}</button>
+          ))}
         </div>
+        <div className="dv-search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search a coin" />
+        </div>
+      </div>
 
-        {loading ? (
-          [...Array(8)].map((_, i) => <div key={i} className="sx-row sx-skel" />)
-        ) : feed.length === 0 ? (
-          <div className="sx-empty">
-            The board is quiet. <Link to="/launch" className="sx-link">List the first coin</Link>.
-          </div>
-        ) : (
-          feed.map((t, i) => {
-            const st = stockOf(t);
-            const chg = t.priceChange24hPct;
-            const hasChg = chg != null && isFinite(chg);
-            return (
-              <Link to={`/token/${t.address}`} key={t.address} className="sx-row">
-                <span className="sx-c-rank">{i + 1}</span>
-                <span className="sx-c-name">
-                  <TokenLogo token={t} size={30} />
-                  <span className="sx-name-txt">
-                    <b>{t.symbol}{isOfficial(t.address) && <em className="sx-off">OFFICIAL</em>}</b>
-                    <i>{t.name}</i>
-                  </span>
-                </span>
-                <span className="sx-c-earn">
-                  {st ? <span className="sx-earn-badge">{disp(st.symbol)}</span> : <span className="sx-earn-badge muted">—</span>}
-                </span>
-                <span className="sx-c-num sx-mono">{priceStr(Number(t.priceUsd))}</span>
-                <span className={`sx-c-num sx-mono ${hasChg ? (chg! >= 0 ? "sx-up" : "sx-dn") : "sx-muted"}`}>
-                  {hasChg ? `${chg! >= 0 ? "+" : ""}${chg!.toFixed(1)}%` : "—"}
-                </span>
-                <span className="sx-c-num sx-mono">{fmtUsd(t.marketCapUsd)}</span>
-                <span className="sx-c-num sx-mono sx-hide-sm">{fmtUsd(volUsd(t))}</span>
-                <span className="sx-c-num sx-mono sx-hide-sm">{timeAgo(t.createdAt).replace(" ago", "")}</span>
-              </Link>
-            );
-          })
-        )}
-      </section>
+      {/* Card wall */}
+      {loading ? (
+        <div className="dv-grid">{[...Array(8)].map((_, i) => <div key={i} className="dv-card dv-skel" />)}</div>
+      ) : feed.length === 0 ? (
+        <div className="dv-empty">
+          {reward ? <>No coin earns {reward} yet. </> : debounced ? <>Nothing matches. </> : <>The wall is empty. </>}
+          <Link to="/launch" className="dv-link">Launch the first one</Link>.
+        </div>
+      ) : (
+        <div className="dv-grid">
+          {feed.map((t) => <DividendCard key={t.address} t={t} />)}
+        </div>
+      )}
     </div>
+  );
+}
+
+function DividendCard({ t }: { t: TokenSummary }) {
+  const reward = rewardOf(t);
+  const hue = reward ? HUE[reward] ?? 210 : 210;
+  const chg = t.priceChange24hPct;
+  const hasChg = chg != null && isFinite(chg);
+  return (
+    <Link to={`/token/${t.address}`} className="dv-card" style={{ ["--h" as any]: hue }}>
+      <div className="dv-card-glow" aria-hidden />
+      <div className="dv-card-head">
+        <TokenLogo token={t} size={46} />
+        <div className="dv-card-id">
+          <b>{t.name}{isOfficial(t.address) && <em className="dv-off">OFFICIAL</em>}</b>
+          <span>${t.symbol} · {timeAgo(t.createdAt).replace(" ago", "")}</span>
+        </div>
+      </div>
+
+      {/* The signature: what holders earn */}
+      <div className="dv-earn">
+        <span className="dv-earn-label">Holders earn</span>
+        <span className="dv-earn-badge">{reward ?? "—"}</span>
+      </div>
+
+      <div className="dv-card-foot">
+        <div className="dv-stat">
+          <i>Mkt cap</i>
+          <b>{fmtUsd(t.marketCapUsd)}</b>
+        </div>
+        <div className="dv-stat">
+          <i>Price</i>
+          <b>{priceStr(Number(t.priceUsd))}</b>
+        </div>
+        <div className={`dv-chg ${hasChg ? (chg! >= 0 ? "up" : "dn") : "flat"}`}>
+          {hasChg ? `${chg! >= 0 ? "+" : ""}${chg!.toFixed(1)}%` : "—"}
+        </div>
+      </div>
+    </Link>
   );
 }
