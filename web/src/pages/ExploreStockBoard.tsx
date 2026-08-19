@@ -18,7 +18,6 @@ const TABS: { id: Tab; label: string; live?: boolean }[] = [
   { id: "top", label: "Top" },
   { id: "trending", label: "Trending" },
   { id: "movers", label: "Movers" },
-  { id: "new", label: "New" },
   { id: "live", label: "Live", live: true },
 ];
 
@@ -188,7 +187,6 @@ export function ExploreStockBoard() {
             [...Array(3)].map((_, i) => <div key={i} className="kf-lb-card" style={{ height: 168 }} />)
           ) : (
             leaders.map((t, i) => {
-              const r = rewardOf(t);
               const chg = t.priceChange24hPct;
               const has = chg != null && isFinite(chg);
               return (
@@ -203,7 +201,7 @@ export function ExploreStockBoard() {
                   </div>
                   <div className="kf-lb-stats">
                     <div className="kf-stat"><div className="k">Market Cap</div><div className="v">{fmtUsd(t.marketCapUsd)}</div></div>
-                    <div className="kf-stat"><div className="k">{r ? "Earns" : "Volume"}</div><div className="v">{r ?? fmtUsd(volUsd(t))}</div></div>
+                    <div className="kf-stat"><div className="k">Volume</div><div className="v">{fmtUsd(volUsd(t))}</div></div>
                     <div className="kf-stat chg"><div className="k">24h</div><div className={`v ${has ? (chg! >= 0 ? "up" : "down") : ""}`}>{has ? `${chg! >= 0 ? "+" : ""}${chg!.toFixed(2)}%` : "—"}</div></div>
                   </div>
                   <div className="kf-buy-row">
@@ -230,7 +228,7 @@ export function ExploreStockBoard() {
             <div className="kf-drop-menu" role="menu" onClick={(e) => e.stopPropagation()}>
               <button className={filter === null ? "on" : ""} onClick={() => { setFilter(null); setDropOpen(false); }}>All</button>
               {rewards.map((r) => (
-                <button key={r} className={filter === r ? "on" : ""} onClick={() => { setFilter(r); setDropOpen(false); }}>Earns {r}</button>
+                <button key={r} className={filter === r ? "on" : ""} onClick={() => { setFilter(r); setDropOpen(false); }}>{r}</button>
               ))}
             </div>
           )}
@@ -270,7 +268,6 @@ export function ExploreStockBoard() {
           </div>
         ) : (
           feed.map((t) => {
-            const r = rewardOf(t);
             const chg = t.priceChange24hPct;
             const has = chg != null && isFinite(chg);
             const hot = has && chg! >= 20;
@@ -284,7 +281,6 @@ export function ExploreStockBoard() {
                     {(hot || official) && <span className="kf-flags">{hot && FIRE}{official && CUP}</span>}
                   </span>
                   <span className="kf-pool-sub">
-                    {r ? <span className="kf-status open" title={`Holders earn ${r}`}>{r}</span> : null}
                     <span className="kf-tk">${t.symbol}</span>
                     <span className="kf-vol">· {fmtUsd(volUsd(t))} vol</span>
                   </span>

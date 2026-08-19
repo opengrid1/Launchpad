@@ -362,10 +362,6 @@ function BaseTokenView({
         </Suspense>
       </div>
 
-      {hasReward && rewardSym ? (
-        <div className="kf-tk-earn"><span className="kf-tk-earn-dot" />Holders earn <b>{rewardSym}</b> on every trade</div>
-      ) : null}
-
       {/* Tabs */}
       <div className="kf-tk-tabs" role="tablist">
         {TABS.map((x) => (
