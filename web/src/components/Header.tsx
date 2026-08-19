@@ -111,41 +111,44 @@ function BoardHeader() {
           type="button"
           onClick={() => setMenu((m) => !m)}
           className="nb-btn nb-icon md:!hidden"
-          aria-label="Menu"
+          aria-label={menu ? "Close menu" : "Menu"}
           aria-expanded={menu}
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
-            <path d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          {menu ? (
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" aria-hidden>
+              <path d="M5 5l14 14M19 5 5 19" />
+            </svg>
+          ) : (
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
         </button>
 
         {menu && (
-          <nav className="nb-menu md:hidden" aria-label="Menu" onClick={() => setMenu(false)}>
+          <nav className="nb-mobilenav md:hidden" aria-label="Menu" onClick={() => setMenu(false)}>
+            <Link to="/">
+              <Icon name="explore" size={17} />
+              Board
+            </Link>
+            <Link to="/flywheel" className="blue">
+              <Icon name="activity" size={17} />
+              Flywheel
+            </Link>
+            <Link to="/launch" className="orange">
+              <Icon name="launch" size={17} />
+              Create token
+            </Link>
+            <Link to="/profile" className="green">
+              <Icon name="wallet" size={17} />
+              My profile
+            </Link>
             <Link to="/docs">Docs</Link>
-            <Link to="/admin">Admin</Link>
-            <a href={BRAND.twitter} target="_blank" rel="noreferrer">
-              X / Twitter
-            </a>
           </nav>
         )}
       </div>
     </header>
-    <BoardBottomNav />
     </>
-  );
-}
-
-/** Bottom navigation for the board flavor; the header stays minimal. */
-function BoardBottomNav() {
-  return (
-    <nav className="board-bottomnav" aria-label="Primary">
-      {BOARD_TABS.map((t) => (
-        <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? "on" : "")}>
-          <Icon name={t.icon} size={18} />
-          <span>{t.label}</span>
-        </NavLink>
-      ))}
-    </nav>
   );
 }
 
