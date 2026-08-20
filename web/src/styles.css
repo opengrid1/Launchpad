@@ -2555,3 +2555,18 @@ button.bg-accent:disabled {
 :root[data-brand="base"] .kf-cancel { border: 0; cursor: pointer; border-radius: 13px; background: var(--color-panel-2); color: var(--color-ink); font-family: var(--font-body); font-weight: 700; font-size: 15px; padding: 13px; box-shadow: inset 0 0 0 1px var(--color-edge-2); }
 :root[data-brand="base"] .kf-btnrow .kf-submit { border-radius: 13px; }
 :root[data-brand="base"] .kf-form input[type="range"] { accent-color: #ffffff; }
+
+/* Launch form: flat and full-width like the reference — the sheet supplies the
+   surface, so the form is no longer a boxed card; type steps down a notch. */
+:root[data-brand="base"] .kf-form { background: transparent; box-shadow: none; padding: 0; gap: 20px; }
+:root[data-brand="base"] .kf-launch { padding: 4px 16px 24px; }
+:root[data-brand="base"] .kf-sheet .kf-launch { padding: 4px 6px 10px; max-width: none; }
+:root[data-brand="base"] .kf-launch-h1 { font-size: 22px; }
+:root[data-brand="base"] .kf-launch-sub { font-size: 14px; margin: 4px 0 14px; }
+:root[data-brand="base"] .kf-field label { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+:root[data-brand="base"] .kf-field label i { color: var(--color-ink-2); }
+:root[data-brand="base"] .kf-field input[type="text"], :root[data-brand="base"] .kf-field input[type="url"],
+:root[data-brand="base"] .kf-field textarea, :root[data-brand="base"] .kf-field select { padding: 14px 15px; border-radius: 14px; }
+:root[data-brand="base"] .kf-field .hint { font-size: 13px; color: var(--color-ink-2); }
+:root[data-brand="base"] .kf-drop-zone { border-radius: 14px; }
+:root[data-brand="base"] .kf-sheet { padding-left: 20px; padding-right: 20px; }

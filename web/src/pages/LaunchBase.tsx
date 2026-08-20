@@ -43,6 +43,8 @@ export function LaunchBase({ onCancel }: { onCancel?: () => void } = {}) {
   const [busy, setBusy] = useState(false);
   const [logoData, setLogoData] = useState("");
   const [devBuy, setDevBuy] = useState(0);
+  const [feeMode, setFeeMode] = useState<"twitter" | "wallet">("twitter");
+  const [feeRecipient, setFeeRecipient] = useState("");
   const [tried, setTried] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -107,6 +109,9 @@ export function LaunchBase({ onCancel }: { onCancel?: () => void } = {}) {
         // Surface the reward stock so lists and the token page can badge it.
         rewardStock: selected.address,
         pair: selected.symbol,
+        ...(feeRecipient.trim()
+          ? { feeRecipientType: feeMode, feeRecipient: feeRecipient.trim() }
+          : {}),
       });
       const hash = await (client as any).createToken({
         name: form.name.trim(),
@@ -134,7 +139,7 @@ export function LaunchBase({ onCancel }: { onCancel?: () => void } = {}) {
   };
 
   return (
-    <div className="kf kf-page kf-launch" style={{ maxWidth: 640 }}>
+    <div className="kf kf-page kf-launch">
       <h1 className="kf-launch-h1">Launch a token</h1>
       <p className="kf-launch-sub">
         Deploy a coin on {`Base`} paired with a real tokenized stock. Every trade pays holders that stock.
@@ -235,6 +240,21 @@ export function LaunchBase({ onCancel }: { onCancel?: () => void } = {}) {
         <div className="kf-field">
           <label>Telegram <i>(optional)</i></label>
           <input type="text" value={form.telegram} onChange={set("telegram")} placeholder="https://t.me/..." />
+        </div>
+
+        <div className="kf-field">
+          <label>Fee Recipient <i>(optional)</i></label>
+          <div className="kf-seg2">
+            <button type="button" className={feeMode === "twitter" ? "on" : ""} onClick={() => setFeeMode("twitter")}>𝕏 Twitter</button>
+            <button type="button" className={feeMode === "wallet" ? "on" : ""} onClick={() => setFeeMode("wallet")}>Wallet / ENS</button>
+          </div>
+          <input
+            type="text"
+            value={feeRecipient}
+            onChange={(e) => setFeeRecipient(e.target.value)}
+            placeholder={feeMode === "twitter" ? "@username" : "0x... or name.eth"}
+          />
+          <p className="hint">Leave blank to keep fees for yourself.</p>
         </div>
 
         <div className="kf-field" style={{ borderTop: "1px solid var(--color-edge)", paddingTop: 14 }}>
