@@ -32,6 +32,10 @@ export function BaseBottomNav() {
   const loc = useLocation();
   const isActive = (to: string) => (to === "/" ? loc.pathname === "/" : loc.pathname.startsWith(to));
 
+  // The search page docks its own search bar and the token page docks the
+  // Buy/Sell pair where the nav would sit, matching the reference chrome.
+  if (loc.pathname.startsWith("/search") || loc.pathname.startsWith("/token/")) return null;
+
   return (
     <nav className="kf-nav" aria-label="Primary">
       <div className="kf-nav-main">

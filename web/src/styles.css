@@ -2512,3 +2512,14 @@ button.bg-accent:disabled {
 :root[data-brand="base"] .kf-stat-cell .v { font-size: 14px; }
 :root[data-brand="base"] .kf-tk-buy, :root[data-brand="base"] .kf-tk-sell { padding: 12px 0; font-size: 15px; border-radius: 14px; }
 :root[data-brand="base"] .kf-tk-actions { bottom: calc(env(safe-area-inset-bottom, 0px) + 74px); }
+
+/* With the floating nav hidden on the token page, the Buy/Sell pair docks at
+   the bottom edge; on the search page the search dock does the same. */
+:root[data-brand="base"] .kf-tk-actions { bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); }
+@media (min-width: 1024px) { :root[data-brand="base"] .kf-tk-actions { bottom: 62px; } }
+/* Reference rows use circular avatars; round the TokenLogo wherever it sits in
+   a koi list row (search, rankings, feed, winner cards). */
+:root[data-brand="base"] .kf-srow > span:first-child, :root[data-brand="base"] .kf-srow > span:first-child img,
+:root[data-brand="base"] .kf-rank-row > span:nth-child(2), :root[data-brand="base"] .kf-rank-row > span:nth-child(2) img,
+:root[data-brand="base"] .kf-feed-head > span:first-child, :root[data-brand="base"] .kf-feed-head > span:first-child img,
+:root[data-brand="base"] .kf-win-top > span:first-child, :root[data-brand="base"] .kf-win-top > span:first-child img { border-radius: 50%; }
