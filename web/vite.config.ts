@@ -44,6 +44,16 @@ function brandHtml(): Plugin {
         .replace(/<title>[^<]*<\/title>/, `<title>${meta.title}</title>`)
         .replace(/(<meta name="theme-color" content=")[^"]*(")/, `$1#060a09$2`)
         .replace(/(<meta\s+name="description"\s+content=")[^"]*(")/, `$1${meta.description}$2`);
+      // koi.fun loads its type stack from the HTML head; CSS @import of remote
+      // fonts is unreliable once bundled, so inject real <link> tags instead.
+      if (String(process.env.VITE_BRAND) === "base") {
+        out = out.replace(
+          "</head>",
+          `  <link rel="preconnect" href="https://fonts.googleapis.com" />\n` +
+            `  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n` +
+            `  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@400;600;700;800&family=Geist+Mono:wght@400;500;600&family=Bricolage+Grotesque:opsz,wdth,wght@48,75,400;48,75,600;48,75,700&display=swap" />\n  </head>`,
+        );
+      }
       if (meta.icon) {
         const type = meta.icon.endsWith(".svg") ? "image/svg+xml" : "image/png";
         out = out
