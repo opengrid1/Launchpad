@@ -112,7 +112,7 @@ export function BaseParty() {
               <TokenLogo token={t} size={36} />
               <span className="kf-rank-name"><b>{t.name}</b><i>{t.symbol}</i></span>
               <span className="kf-rank-val">
-                {fmtUsd(volUsd(t))}
+                {volUsd(t) > 0 ? fmtUsd(volUsd(t)) : "—"}
                 <i className={has ? (chg! >= 0 ? "up" : "dn") : ""}>{has ? `${chg! >= 0 ? "+" : ""}${chg!.toFixed(2)}%` : "—"}</i>
               </span>
             </Link>

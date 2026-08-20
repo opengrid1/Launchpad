@@ -34,9 +34,9 @@ export function BaseFeed() {
             <p className="kf-feed-line">Launched by {shortAddr(t.creator)} · {timeAgo(t.createdAt)}</p>
             <div className="kf-feed-card">
               <span style={{ color: "var(--color-ink-2)", fontSize: 13.5 }}>Market cap</span>
-              <span className="v">{fmtUsd(t.marketCapUsd)}</span>
+              <span className="v">{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</span>
               <span style={{ color: "var(--color-ink-2)", fontSize: 13.5 }}>Volume</span>
-              <span className="v">{fmtUsd(volUsd(t))}</span>
+              <span className="v">{volUsd(t) > 0 ? fmtUsd(volUsd(t)) : "—"}</span>
             </div>
           </Link>
         ))}

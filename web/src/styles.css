@@ -2533,3 +2533,9 @@ button.bg-accent:disabled {
 :root[data-brand="base"] .kf-rocket svg { width: 19px; height: 19px; }
 :root[data-brand="base"] .kf-connect { font-size: 14px; border-radius: 14px; padding: 0 16px 0 13px; }
 :root[data-brand="base"] .kf-connect svg { width: 17px; height: 17px; }
+
+/* Final chrome parity: heavier wordmark, larger rocket, pure-black ground. */
+:root[data-brand="base"] .kf-brand-name { font-size: 24px; font-weight: 800; }
+:root[data-brand="base"] .kf-brand-mark { width: 34px; height: 34px; }
+:root[data-brand="base"] .kf-rocket svg { width: 21px; height: 21px; }
+:root[data-brand="base"] body { background: var(--color-bg); }

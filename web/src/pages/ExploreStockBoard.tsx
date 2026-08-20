@@ -131,8 +131,10 @@ export function ExploreStockBoard() {
   }, [byVolume, byNew]);
 
   const leaders = useMemo(() => {
-    const withChg = all.filter((t) => { const c = t.priceChange24hPct; return c != null && isFinite(c) && c > 0; });
-    const base = (withChg.length >= 3 ? withChg : all).slice();
+    const priced = all.filter((t) => Number(t.marketCapUsd) > 0);
+    const pool = priced.length > 0 ? priced : all;
+    const withChg = pool.filter((t) => { const c = t.priceChange24hPct; return c != null && isFinite(c) && c > 0; });
+    const base = (withChg.length >= 3 ? withChg : pool).slice();
     base.sort((a, b) => (b.priceChange24hPct ?? 0) - (a.priceChange24hPct ?? 0) || volUsd(b) - volUsd(a));
     return base.slice(0, 3);
   }, [all]);
@@ -203,8 +205,8 @@ export function ExploreStockBoard() {
                     <KoiMini className="kf-lb-fish" />
                   </div>
                   <div className="kf-lb-stats">
-                    <div className="kf-stat"><div className="k">Market Cap</div><div className="v">{fmtUsd(t.marketCapUsd)}</div></div>
-                    <div className="kf-stat"><div className="k">Volume</div><div className="v">{fmtUsd(volUsd(t))}</div></div>
+                    <div className="kf-stat"><div className="k">Market Cap</div><div className="v">{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</div></div>
+                    <div className="kf-stat"><div className="k">Volume</div><div className="v">{volUsd(t) > 0 ? fmtUsd(volUsd(t)) : "—"}</div></div>
                     <div className="kf-stat chg"><div className="k">24h</div><div className={`v ${has ? (chg! >= 0 ? "up" : "down") : ""}`}>{has ? `${chg! >= 0 ? "+" : ""}${chg!.toFixed(2)}%` : "—"}</div></div>
                   </div>
                   <div className="kf-buy-row">
@@ -289,11 +291,11 @@ export function ExploreStockBoard() {
                   <span className="kf-pool-sub">
                     <KoiMini className="kf-sub-fish" />
                     <span className="kf-tk">{t.symbol}</span>
-                    <span className="kf-vol">· {fmtUsd(volUsd(t))} vol</span>
+                    {volUsd(t) > 0 ? <span className="kf-vol">· {fmtUsd(volUsd(t))} vol</span> : null}
                   </span>
                 </span>
                 <span className="kf-pool-right">
-                  <span className="kf-pool-mc">{fmtUsd(t.marketCapUsd)}</span>
+                  <span className="kf-pool-mc">{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</span>
                   <span className={`kf-pool-chg ${has ? (chg! >= 0 ? "up" : "down") : ""}`}>
                     {has ? (chg! >= 0 ? UP_TRI : DN_TRI) : null}{has ? `${chg! >= 0 ? "+" : ""}${chg!.toFixed(2)}%` : "new"}
                   </span>

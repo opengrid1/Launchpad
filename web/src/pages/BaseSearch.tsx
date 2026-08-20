@@ -57,7 +57,7 @@ export function BaseSearch() {
               <TokenLogo token={t} size={46} />
               <span className="kf-srow-mid"><b>{t.name}</b><i>{t.symbol}</i></span>
               <span className="kf-srow-right">
-                <b>{fmtUsd(t.marketCapUsd)}</b>
+                <b>{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</b>
                 <i className={has ? (chg! >= 0 ? "up" : "dn") : ""}>{has ? `${chg! >= 0 ? "+" : ""}${chg!.toFixed(2)}%` : "new"}</i>
               </span>
             </Link>
