@@ -38,7 +38,7 @@ export function LaunchBase({ onCancel }: { onCancel?: () => void } = {}) {
     twitter: "",
     telegram: "",
   });
-  const [stock, setStock] = useState(PAIRS[2].address);
+  const [stock, setStock] = useState(PAIRS[0].address);
   const [taxPct, setTaxPct] = useState(1);
   const [busy, setBusy] = useState(false);
   const [logoData, setLogoData] = useState("");
