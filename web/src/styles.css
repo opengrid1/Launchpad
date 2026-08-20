@@ -2539,3 +2539,4 @@ button.bg-accent:disabled {
 :root[data-brand="base"] .kf-brand-mark { width: 34px; height: 34px; }
 :root[data-brand="base"] .kf-rocket svg { width: 21px; height: 21px; }
 :root[data-brand="base"] body { background: var(--color-bg); }
+:root[data-brand="base"] .kf-rocket { color: #1c0a13; }
