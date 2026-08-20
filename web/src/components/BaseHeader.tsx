@@ -63,11 +63,10 @@ export function BaseHeader() {
           </nav>
 
           <Link to="/launch" className="kf-icon-btn kf-rocket" aria-label="Launch a token" style={{ marginLeft: "auto" }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-              <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
-              <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
-              <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+            <svg viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" aria-hidden>
+              <path d="M19.7 4.3c.4 4-.9 7.6-3.9 10.6l-1.8 1.8c-.4.4-1 .4-1.4 0l-5.3-5.3c-.4-.4-.4-1 0-1.4l1.8-1.8c3-3 6.6-4.3 10.6-3.9ZM14.7 7.8a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2Z" />
+              <path d="M8.2 7.7 5.9 7.4 4 9.3l2.6.9c.5-.9 1-1.8 1.6-2.5ZM16.3 15.8l.3 2.3-1.9 1.9-.9-2.6c.9-.5 1.8-1 2.5-1.6Z" />
+              <path d="M8.6 16.8c-.5 1.3-1.5 2.2-3 2.7.5-1.5 1.4-2.5 2.7-3l.3.3Z" />
             </svg>
             <span className="kf-rocket-label">Launch a token</span>
           </Link>
