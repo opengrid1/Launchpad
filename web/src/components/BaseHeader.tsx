@@ -2,6 +2,7 @@ import { Link, NavLink } from "react-router-dom";
 
 import { BRAND } from "../lib/brand";
 import { BaseTicker } from "./BaseTicker";
+import { KoiIcon } from "./base/KoiIcon";
 import { useWallet } from "../lib/useWallet";
 
 function WalletButton() {
@@ -16,10 +17,7 @@ function WalletButton() {
   }
   return (
     <button onClick={connectFirst} disabled={isPending} className="kf-icon-btn kf-connect">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" />
-        <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
-      </svg>
+      <KoiIcon name="wallet" size={17} />
       {isPending ? "Connecting" : "Connect"}
     </button>
   );
@@ -63,11 +61,7 @@ export function BaseHeader() {
           </nav>
 
           <Link to="/launch" className="kf-icon-btn kf-rocket" aria-label="Launch a token" style={{ marginLeft: "auto" }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M18.8 5.2c-4.1.4-7.4 2.2-9.8 5.2l-1.4 1.8 4.2 4.2 1.8-1.4c3-2.4 4.8-5.7 5.2-9.8Z" />
-              <circle cx="14.3" cy="9.7" r="1.6" />
-              <path d="M8.3 15.7 5 19M6.9 13.5l-2.4.7M10.5 17.1l-.7 2.4" />
-            </svg>
+            <KoiIcon name="rocket" size={21} />
             <span className="kf-rocket-label">Launch a token</span>
           </Link>
 

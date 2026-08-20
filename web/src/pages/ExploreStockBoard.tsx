@@ -13,6 +13,7 @@ import { isOfficial } from "../lib/official";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 import { volUsd } from "../components/market/util";
 import { PREVIEW, PREVIEW_ON } from "../lib/base/preview";
+import { KoiIcon } from "../components/base/KoiIcon";
 
 type Tab = "top" | "trending" | "movers" | "new" | "live";
 const TABS: { id: Tab; label: string; live?: boolean }[] = [
@@ -75,7 +76,7 @@ const FIRE = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className=
 const CUP = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="kf-cup"><path d="M7 3h10v2h3.5v2.2A3.8 3.8 0 0 1 16.7 11h-.3a5 5 0 0 1-3.4 2.9V16h3v2.5H8V16h3v-2.1A5 5 0 0 1 7.6 11h-.3a3.8 3.8 0 0 1-3.8-3.8V5H7V3Zm-1.5 4.2c0 1 .8 1.8 1.8 1.8h-.1A6.9 6.9 0 0 1 7 5.5H5.5v1.7ZM18.5 7.2V5.5H17c.1 1.2 0 2.4-.2 3.5h-.1c1 0 1.8-.8 1.8-1.8Z" /></svg>;
 const UP_TRI = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 6l7 12H5z" /></svg>;
 const DN_TRI = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 18 5 6h14z" /></svg>;
-const BOLT = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" /></svg>;
+const BOLT = <KoiIcon name="zap" size={18} />;
 
 function ordinal(n: number) {
   return ["th", "st", "nd", "rd"][n % 10 > 3 || (n % 100 >= 11 && n % 100 <= 13) ? 0 : n % 10];
@@ -229,7 +230,7 @@ export function ExploreStockBoard() {
         <div className={`kf-drop ${dropOpen ? "open" : ""}`}>
           <button className="kf-drop-btn" aria-haspopup="true" aria-expanded={dropOpen} onClick={(e) => { e.stopPropagation(); setDropOpen((o) => !o); }}>
             {filter ?? "All"}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m6 9 6 6 6-6" /></svg>
+            <KoiIcon name="chevron-down" size={15} />
           </button>
           {dropOpen && (
             <div className="kf-drop-menu" role="menu" onClick={(e) => e.stopPropagation()}>
