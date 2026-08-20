@@ -25,7 +25,7 @@ const LAUNCHED_TOPIC = keccak256(toHex("Launched(address,address,address,uint16,
  * full supply single-sided, and spins up the coin's holder-reward vault. Half
  * of every trade's creator share flows to holders as that stock.
  */
-export function LaunchBase() {
+export function LaunchBase({ onCancel }: { onCancel?: () => void } = {}) {
   const { isConnected, connectFirst } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
   const navigate = useNavigate();
@@ -42,6 +42,8 @@ export function LaunchBase() {
   const [taxPct, setTaxPct] = useState(1);
   const [busy, setBusy] = useState(false);
   const [logoData, setLogoData] = useState("");
+  const [devBuy, setDevBuy] = useState(0);
+  const [tried, setTried] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const set =
@@ -74,8 +76,16 @@ export function LaunchBase() {
 
   const selected = PAIRS.find((s) => s.address === stock)!;
 
+  const nameError = tried && !form.name.trim() ? "Token name is required." : null;
+  const autoSymbol = () => form.name.trim().replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase() || "TOKEN";
+  const isEthPair = selected.address.toLowerCase() === BASE_WETH.toLowerCase();
+  // Rough share of supply an atomic dev buy takes at the $4k starting cap.
+  const devPct = devBuy > 0 ? Math.min(99, (devBuy * 1900) / (4000 + devBuy * 1900) * 100) : 0;
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTried(true);
+    if (!form.name.trim()) return;
     if (!isConnected) return connectFirst();
     setBusy(true);
     try {
@@ -100,12 +110,15 @@ export function LaunchBase() {
       });
       const hash = await (client as any).createToken({
         name: form.name.trim(),
-        symbol: form.symbol.trim().toUpperCase(),
+        symbol: (form.symbol.trim() || autoSymbol()).toUpperCase(),
         metadataURI: metadata,
         stock: selected.address,
         taxBps: Math.round(taxPct * 100),
         // Size the $4k start from the stock's snapshot USD price (8dp).
         pairUsdPrice8: BigInt(Math.round(selected.usd * 1e8)),
+        // Atomic dev buy: ETH sent with the launch buys the coin in the same
+        // transaction. Only offered on the ETH pair.
+        devBuyWei: isEthPair && devBuy > 0 ? BigInt(Math.round(devBuy * 1e18)) : 0n,
       });
       pushToast({ kind: "info", title: "Launch submitted", txHash: hash });
       const receipt = await client.publicClient.waitForTransactionReceipt({ hash });
@@ -130,7 +143,9 @@ export function LaunchBase() {
       <form onSubmit={submit} className="kf-form">
         <div className="kf-field">
           <label>Token Name</label>
-          <input type="text" value={form.name} onChange={set("name")} placeholder="Enter token name..." required maxLength={48} autoFocus />
+          <input type="text" value={form.name} onChange={set("name")} placeholder="Enter token name..." maxLength={48} autoFocus
+            className={nameError ? "err" : undefined} aria-invalid={!!nameError} />
+          {nameError ? <p className="kf-err-msg">{nameError}</p> : null}
         </div>
 
         <div className="kf-field">
@@ -166,25 +181,38 @@ export function LaunchBase() {
           <textarea value={form.description} onChange={set("description")} placeholder="What is this coin about?" maxLength={500} rows={3} />
         </div>
 
-        {/* Reward pair picker — the koi.fun mechanic */}
+        {/* Pool pairing — the coin trades against this asset and holders earn it */}
         <div className="kf-field">
-          <label>Holders earn <i>· {selected.symbol} ({selected.name})</i></label>
-          <div className="grid grid-cols-3 gap-1.5">
-            {PAIRS.map((s) => (
+          <label>Pool Pairing</label>
+          <div className="kf-pairgrid">
+            {PAIRS.map((s, i) => (
               <button
                 type="button"
                 key={s.address}
                 onClick={() => setStock(s.address)}
                 title={s.name}
-                className="kf-pill"
-                style={stock === s.address ? { boxShadow: "inset 0 0 0 1.5px #7c5cff" } : undefined}
+                className={stock === s.address ? "on" : ""}
               >
-                {s.symbol}
+                {s.symbol}{i === 0 ? " (default)" : ""}
               </button>
             ))}
           </div>
-          <p className="hint">Every trade streams this asset to your holders.</p>
+          <p className="hint">Holders earn {selected.symbol} ({selected.name}) on every trade.</p>
         </div>
+
+        {/* Dev buy — atomic initial buy, ETH pair only */}
+        {isEthPair ? (
+          <div className="kf-field">
+            <label>Dev Buy <i>(optional)</i></label>
+            <input type="text" inputMode="decimal" value={devBuy || ""} placeholder="0.0"
+              onChange={(e) => { const v = parseFloat(e.target.value); setDevBuy(isFinite(v) && v >= 0 ? Math.min(v, 5) : 0); }} />
+            <p className="hint">ETH spent buying your own token in the launch transaction.</p>
+            <div className="kf-devbuy-row"><span>Dev buy amount</span><span>Estimated {devPct.toFixed(0)}% of supply</span></div>
+            <input type="range" min={0} max={1} step={0.01} value={Math.min(devBuy, 1)}
+              onChange={(e) => setDevBuy(Number(e.target.value))} className="w-full accent-[color:var(--color-accent)]" />
+            <div className="kf-devbuy-row muted"><span>0 ETH</span><span>1+ ETH</span></div>
+          </div>
+        ) : null}
 
         {/* Trade tax */}
         <div className="kf-field">
@@ -213,9 +241,14 @@ export function LaunchBase() {
           <p className="hint" style={{ marginTop: 0 }}>Starting market cap $4,000 · Supply 1,000,000,000 · Holder reward {selected.symbol} (50% of the tax)</p>
         </div>
 
-        <button type="submit" className="kf-submit" disabled={busy}>
-          {busy ? "Confirm in wallet…" : isConnected ? "Launch token" : "Connect wallet to launch"}
-        </button>
+        {tried && nameError ? <p className="kf-form-summary">Fix the highlighted fields to launch.</p> : null}
+        <div className="kf-btnrow">
+          <button type="button" className="kf-cancel" onClick={() => (onCancel ? onCancel() : window.history.back())}>Cancel</button>
+          <button type="submit" className="kf-submit" disabled={busy}>
+            {busy ? "Confirm in wallet…" : isConnected ? "Launch token" : "Connect & launch"}
+          </button>
+        </div>
+        {!isConnected ? <p className="hint" style={{ textAlign: "center" }}>Connect a wallet to launch from your own address.</p> : null}
       </form>
     </div>
   );

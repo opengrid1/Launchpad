@@ -99,7 +99,7 @@ export function BaseHeader() {
           <div className="kf-sheet" role="dialog" aria-label="Launch a token" onClick={(e) => e.stopPropagation()}>
             <div className="kf-sheet-grip" />
             <Suspense fallback={<Skeleton className="h-64" />}>
-              <LaunchForm />
+              <LaunchForm onCancel={() => setSheet(false)} />
             </Suspense>
           </div>
         </div>
