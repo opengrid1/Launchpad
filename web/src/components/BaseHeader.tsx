@@ -1,9 +1,15 @@
-import { Link, NavLink } from "react-router-dom";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import { BRAND } from "../lib/brand";
 import { BaseTicker } from "./BaseTicker";
 import { KoiIcon } from "./base/KoiIcon";
+import { Skeleton } from "./ui";
 import { useWallet } from "../lib/useWallet";
+
+// The launch form rides in a slide-up sheet on mobile, so it loads lazily —
+// the header itself stays light.
+const LaunchForm = lazy(() => import("../pages/LaunchBase").then((m) => ({ default: m.LaunchBase })));
 
 function WalletButton() {
   const { address, isConnected, connectFirst, disconnect, isPending } = useWallet();
@@ -33,8 +39,27 @@ const NAV = [
 /**
  * koi.fun chrome: the marquee countdown band, then the black bar — mark +
  * wordmark left, text nav (desktop), pink launch action and wallet right.
+ * Tapping the rocket slides the launch form up as a bottom sheet on mobile;
+ * on desktop it routes to the /launch page.
  */
 export function BaseHeader() {
+  const nav = useNavigate();
+  const loc = useLocation();
+  const [sheet, setSheet] = useState(false);
+
+  // A successful launch navigates to the new token page; close the sheet on
+  // any route change so it never lingers over the next screen.
+  useEffect(() => { setSheet(false); }, [loc.pathname]);
+  useEffect(() => {
+    document.body.style.overflow = sheet ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [sheet]);
+
+  const openLaunch = () => {
+    if (window.innerWidth >= 1024) nav("/launch");
+    else setSheet(true);
+  };
+
   return (
     <>
       <BaseTicker />
@@ -60,14 +85,25 @@ export function BaseHeader() {
             ))}
           </nav>
 
-          <Link to="/launch" className="kf-icon-btn kf-rocket" aria-label="Launch a token" style={{ marginLeft: "auto" }}>
+          <button onClick={openLaunch} className="kf-icon-btn kf-rocket" aria-label="Launch a token" aria-haspopup="dialog" style={{ marginLeft: "auto" }}>
             <KoiIcon name="rocket" size={21} />
             <span className="kf-rocket-label">Launch a token</span>
-          </Link>
+          </button>
 
           <WalletButton />
         </div>
       </header>
+
+      {sheet ? (
+        <div className="kf-sheet-backdrop" onClick={() => setSheet(false)}>
+          <div className="kf-sheet" role="dialog" aria-label="Launch a token" onClick={(e) => e.stopPropagation()}>
+            <div className="kf-sheet-grip" />
+            <Suspense fallback={<Skeleton className="h-64" />}>
+              <LaunchForm />
+            </Suspense>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
