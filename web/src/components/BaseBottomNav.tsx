@@ -5,16 +5,16 @@ const ICONS: Record<string, JSX.Element> = {
     <svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="12" width="3.4" height="8" rx="1" /><rect x="10.3" y="6" width="3.4" height="14" rx="1" /><rect x="16.6" y="9.5" width="3.4" height="10.5" rx="1" /></svg>
   ),
   flame: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3c1.5 2.5 1 4.5-.5 6C10 10.5 9 12 9 14a3 3 0 0 0 6 .2c0-1.3-.5-2.2-1-3 2 .8 3 2.6 3 4.6A6 6 0 1 1 8 11c1-1.4 1.7-2.7 1.7-4.3C11 7.5 11.7 8.5 12 10c.5-2.3.5-4.5 0-7Z" /></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3.5C9 7.3 6.8 10 6.8 13.4a5.2 5.2 0 0 0 10.4 0C17.2 10 15 7.3 12 3.5Z" /><path d="M12 18.4a2.6 2.6 0 0 1-2.6-2.6c0-1.2 1-2.4 2.6-3.6 1.6 1.2 2.6 2.4 2.6 3.6a2.6 2.6 0 0 1-2.6 2.6Z" /></svg>
   ),
   arrow: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15l5-5 4 3 6-7" /><path d="M19 6h-3M19 6v3" /></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16.5 9 11l3.5 3L19 7.5" /><path d="M14.5 7.5H19V12" /></svg>
   ),
   trophy: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" /><path d="M7 5H4v1a3 3 0 0 0 3 3M17 5h3v1a3 3 0 0 1-3 3M9 20h6M12 13v4" /></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" /><path d="M8 5.5H5V7a2.5 2.5 0 0 0 2.5 2.5M16 5.5h3V7a2.5 2.5 0 0 1-2.5 2.5" /><path d="M12 13v3" /><path d="M8.5 19.5h7M10 16h4v3.5h-4z" /></svg>
   ),
   wallet: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="13" rx="3" /><path d="M3 10h18M16 14h2" /></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6.5" width="18" height="13" rx="3" /><path d="M21 11h-4a2 2 0 0 0 0 4h4" /></svg>
   ),
 };
 

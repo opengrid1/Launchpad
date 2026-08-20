@@ -16,8 +16,8 @@ function WalletButton() {
   }
   return (
     <button onClick={connectFirst} disabled={isPending} className="kf-icon-btn kf-connect">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <rect x="3" y="6" width="18" height="13" rx="3" /><path d="M16 12h2" /><path d="M3 9h13a2 2 0 0 1 2 2" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <rect x="3" y="6.5" width="18" height="13" rx="3" /><path d="M21 11h-4a2 2 0 0 0 0 4h4" />
       </svg>
       {isPending ? "Connecting" : "Connect"}
     </button>
@@ -62,10 +62,10 @@ export function BaseHeader() {
           </nav>
 
           <Link to="/launch" className="kf-icon-btn kf-rocket" aria-label="Launch a token" style={{ marginLeft: "auto" }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M13.5 3.5c3.3.6 6.4 3.7 7 7-2.1 5.4-7 9-11.5 10L6 27l-1.5-1.5L7 22.5C8 18 11.6 13.1 13.5 3.5Z" />
-              <path d="M9 15l-4 .5L7.5 12M12 18l-.5 4L15 19.5" />
-              <circle cx="15" cy="9" r="1.4" fill="currentColor" stroke="none" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M18.5 5.5c-4 .4-7.2 2.1-9.5 5L6.5 13a1 1 0 0 0 0 1.4l3.1 3.1a1 1 0 0 0 1.4 0l2.5-2.5c2.9-2.3 4.6-5.5 5-9.5Z" />
+              <circle cx="14.2" cy="9.8" r="1.6" />
+              <path d="M8 16 4.9 19.1M6.7 14.2l-2.2.6M9.8 17.3l-.6 2.2" />
             </svg>
             <span className="kf-rocket-label">Launch a token</span>
           </Link>
