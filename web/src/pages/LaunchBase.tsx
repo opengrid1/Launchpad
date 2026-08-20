@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { keccak256, toHex } from "viem";
 
-import { Field, inputClass } from "../components/ui";
 import { client } from "../lib/client";
 import { BASE_STOCKS, type BaseStock } from "../lib/base/stocks";
 import { BASE_USDC, BASE_WETH } from "../lib/base/routes";
@@ -122,61 +121,54 @@ export function LaunchBase() {
   };
 
   return (
-    <div className="mx-auto max-w-lg px-4 pb-16 pt-5 sm:px-5">
-      <h1 className="text-[18px] font-bold tracking-tight text-ink">Launch a coin</h1>
-      <p className="mt-1 text-[12.5px] leading-relaxed text-ink-2">
-        One transaction mints your coin on Base, opens a live market against a tokenized stock, and
-        seeds the full supply. Every trade pays holders that stock, straight to their wallets.
+    <div className="kf kf-page kf-launch" style={{ maxWidth: 640 }}>
+      <h1 className="kf-launch-h1">Launch a token</h1>
+      <p className="kf-launch-sub">
+        Deploy a coin on {`Base`} paired with a real tokenized stock. Every trade pays holders that stock.
       </p>
 
-      <form onSubmit={submit} className="mt-4 space-y-4 rounded-xl border border-edge bg-panel p-4">
-        {/* Logo + identity */}
-        <div className="flex items-center gap-3">
+      <form onSubmit={submit} className="kf-form">
+        <div className="kf-field">
+          <label>Token Name</label>
+          <input type="text" value={form.name} onChange={set("name")} placeholder="Enter token name..." required maxLength={48} autoFocus />
+        </div>
+
+        <div className="kf-field">
+          <label>Ticker Symbol <i>(optional)</i></label>
+          <input type="text" value={form.symbol} onChange={set("symbol")} placeholder="e.g. TKN" maxLength={12} />
+          <p className="hint">Auto-generated from the name if left blank.</p>
+        </div>
+
+        <div className="kf-field">
+          <label>Token Image <i>(optional)</i></label>
           <input ref={fileRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) onLogoFile(f); }} />
-          <button type="button" onClick={() => fileRef.current?.click()}
-            className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg border border-edge bg-panel-2 transition-colors hover:border-edge-2"
-            aria-label="Upload logo">
+          <div className="kf-drop-zone"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f) onLogoFile(f); }}>
             {logoData ? (
-              <img src={logoData} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-ink-3" aria-hidden>
-                <path d="M12 16V5m0 0l-4 4m4-4l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M4 17.5V19a1.5 1.5 0 001.5 1.5h13A1.5 1.5 0 0020 19v-1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            )}
-          </button>
-          <div>
-            <p className="text-[13px] font-semibold text-ink">Logo</p>
-            <p className="mt-0.5 text-[11.5px] text-ink-3">
-              PNG / JPG.{" "}
-              {logoData ? (
-                <button type="button" className="font-medium text-accent-ink underline underline-offset-2" onClick={() => setLogoData("")}>Remove</button>
-              ) : null}
-            </p>
+              <img src={logoData} alt="" style={{ width: 46, height: 46, borderRadius: 12, objectFit: "cover" }} />
+            ) : null}
+            <input type="text" readOnly value={logoData ? "Image ready" : ""} placeholder="Paste image URL or upload..."
+              onClick={() => fileRef.current?.click()} style={{ cursor: "pointer" }} />
+            <button type="button" className="kf-clip" aria-label="Upload image" onClick={() => fileRef.current?.click()}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m21 11.5-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8L13 4a3.7 3.7 0 0 1 5.2 5.2l-8.2 8.2a1.8 1.8 0 0 1-2.6-2.6L15 7.3" /></svg>
+            </button>
           </div>
+          <p className="hint">
+            Paste an image URL, browse, or drag and drop an image here.
+            {logoData ? <> · <button type="button" style={{ color: "var(--color-accent-ink)", background: "none", border: 0, cursor: "pointer", padding: 0 }} onClick={() => setLogoData("")}>Remove</button></> : null}
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_130px]">
-          <Field label="Coin name">
-            <input className={inputClass} value={form.name} onChange={set("name")} placeholder="My Coin" required maxLength={48} />
-          </Field>
-          <Field label="Symbol">
-            <input className={inputClass} value={form.symbol} onChange={set("symbol")} placeholder="MYC" required maxLength={12} />
-          </Field>
+        <div className="kf-field">
+          <label>Description <i>(optional)</i></label>
+          <textarea value={form.description} onChange={set("description")} placeholder="What is this coin about?" maxLength={500} rows={3} />
         </div>
 
-        <Field label="Description">
-          <textarea className={`${inputClass} min-h-20 resize-y`} value={form.description} onChange={set("description")}
-            placeholder="What is this coin about?" maxLength={500} />
-        </Field>
-
-        {/* Reward stock picker */}
-        <div>
-          <label className="mb-1.5 block text-[12.5px] font-medium text-ink">
-            Holders earn <span className="text-accent-ink">· {selected.symbol}</span>
-            <span className="ml-1 text-ink-3">({selected.name})</span>
-          </label>
+        {/* Reward pair picker — the koi.fun mechanic */}
+        <div className="kf-field">
+          <label>Holders earn <i>· {selected.symbol} ({selected.name})</i></label>
           <div className="grid grid-cols-3 gap-1.5">
             {PAIRS.map((s) => (
               <button
@@ -184,62 +176,47 @@ export function LaunchBase() {
                 key={s.address}
                 onClick={() => setStock(s.address)}
                 title={s.name}
-                className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[10.5px] font-bold transition-colors ${
-                  stock === s.address ? "border-accent bg-accent/10 text-accent-ink" : "border-edge text-ink-2 hover:border-edge-2 hover:text-ink"
-                }`}
+                className="kf-pill"
+                style={stock === s.address ? { boxShadow: "inset 0 0 0 1.5px #7c5cff" } : undefined}
               >
-                <span
-                  className="grid h-6 w-6 place-items-center rounded-full text-[9px] font-extrabold"
-                  style={{ background: "var(--panel-2, #1a2233)", color: "var(--nb-blue, #4d7cff)" }}
-                >
-                  {s.symbol.replace(/^wt/, "").slice(0, 2)}
-                </span>
                 {s.symbol}
               </button>
             ))}
           </div>
+          <p className="hint">Every trade streams this asset to your holders.</p>
         </div>
 
         {/* Trade tax */}
-        <div>
-          <div className="mb-2 flex items-baseline justify-between">
-            <label className="text-[12.5px] font-medium text-ink">Trade tax</label>
-            <span className="tnum text-[13px] font-bold text-accent-ink">{taxPct}%</span>
-          </div>
+        <div className="kf-field">
+          <label>Trade tax <i>· {taxPct}%</i></label>
           <input type="range" min={1} max={10} step={1} value={taxPct} onChange={(e) => setTaxPct(Number(e.target.value))}
             className="w-full accent-[color:var(--color-accent)]" />
-          <p className="mt-1 text-[11px] leading-relaxed text-ink-3">
-            Charged on every trade. Half goes to holders as {selected.symbol}, half to you. The
-            platform takes a small cut of the tax.
-          </p>
+          <p className="hint">Half goes to holders as {selected.symbol}, half to you. The platform takes a small cut.</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Field label="X"><input className={inputClass} value={form.twitter} onChange={set("twitter")} placeholder="x.com/…" /></Field>
-          <Field label="Telegram"><input className={inputClass} value={form.telegram} onChange={set("telegram")} placeholder="t.me/…" /></Field>
-          <Field label="Website"><input className={inputClass} value={form.website} onChange={set("website")} placeholder="https://" /></Field>
+        <div className="kf-field">
+          <label>X URL <i>(optional)</i></label>
+          <input type="text" value={form.twitter} onChange={set("twitter")} placeholder="https://x.com/user/status/..." />
         </div>
 
-        <dl className="space-y-1.5 border-t border-edge pt-3 text-[12px]">
-          <Row label="Starting market cap" value="$4,000" />
-          <Row label="Supply" value="1,000,000,000" />
-          <Row label="Holder reward" value={`${selected.symbol} · 50% of the tax`} />
-        </dl>
+        <div className="kf-field">
+          <label>Website <i>(optional)</i></label>
+          <input type="text" value={form.website} onChange={set("website")} placeholder="https://yourproject.com" />
+        </div>
 
-        <button type="submit" disabled={busy}
-          className="h-11 w-full rounded-lg bg-accent text-[14px] font-semibold text-accent-fg transition-colors hover:bg-accent-2 disabled:cursor-not-allowed disabled:bg-panel-2 disabled:text-ink-3">
-          {busy ? "Confirm in wallet…" : isConnected ? "Launch coin" : "Connect wallet to launch"}
+        <div className="kf-field">
+          <label>Telegram <i>(optional)</i></label>
+          <input type="text" value={form.telegram} onChange={set("telegram")} placeholder="https://t.me/..." />
+        </div>
+
+        <div className="kf-field" style={{ borderTop: "1px solid var(--color-edge)", paddingTop: 14 }}>
+          <p className="hint" style={{ marginTop: 0 }}>Starting market cap $4,000 · Supply 1,000,000,000 · Holder reward {selected.symbol} (50% of the tax)</p>
+        </div>
+
+        <button type="submit" className="kf-submit" disabled={busy}>
+          {busy ? "Confirm in wallet…" : isConnected ? "Launch token" : "Connect wallet to launch"}
         </button>
       </form>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between">
-      <dt className="text-ink-3">{label}</dt>
-      <dd className="tnum font-medium text-ink-2">{value}</dd>
     </div>
   );
 }

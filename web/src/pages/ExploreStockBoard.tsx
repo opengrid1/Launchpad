@@ -12,6 +12,7 @@ import { isHidden, isImpersonator } from "../lib/hiddenTokens";
 import { isOfficial } from "../lib/official";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 import { volUsd } from "../components/market/util";
+import { PREVIEW, PREVIEW_ON } from "../lib/base/preview";
 
 type Tab = "top" | "trending" | "movers" | "new" | "live";
 const TABS: { id: Tab; label: string; live?: boolean }[] = [
@@ -61,6 +62,15 @@ function Avatar({ t }: { t: TokenSummary }) {
 }
 
 const FEATHER = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M20 4c-6 0-11 3-13 9l-2 5 3-1 1-3h5v-2h-3c1-2 3-3 5-3v-2c2 0 4 0 4 0V4Z" /></svg>;
+/** Tiny koi mark used inline beside names and tickers. */
+function KoiMini({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 40 40" fill="none" aria-hidden>
+      <path d="M20 3c-6.5 4-9 8.7-9 14.5 0 3.4 1.6 6.2 4.2 7.9-2.9.5-5.2 2.3-6.7 5.1 3.6 4.2 8 6.5 12.8 6.5 3.4 0 6-1.9 6-5 0-2.2-1.3-3.9-3.4-4.7 4.7-1.9 7.6-6 7.6-11.3C31.5 12.8 27.4 6.7 20 3Z" fill="#ff3da6" />
+      <circle cx="17.4" cy="15.6" r="2.2" fill="#fff" />
+    </svg>
+  );
+}
 const FIRE = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="kf-fire"><path d="M12 2c1.5 3 .5 5-1 6.5C9 10.5 8 12 8 14a4 4 0 0 0 8 .3c0-1.6-.7-2.8-1.3-3.8 2.3.8 3.3 2.7 3.3 5A6 6 0 1 1 7 11c1.3-1.7 2-3.2 2-5 1.6.8 2.4 2 3 3 .4-2.6 0-5-2-7Z" /></svg>;
 const CUP = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="kf-cup"><path d="M6 4h12v3a5 5 0 0 1-4 4.9V15h2.5a1 1 0 0 1 0 2h-9a1 1 0 0 1 0-2H10v-3.1A5 5 0 0 1 6 7V4Zm-2 1H2v1a3 3 0 0 0 3 3V7H4V5Zm16 0v2h-1v2a3 3 0 0 0 3-3V5h-2ZM8 18h8v2H8v-2Z" /></svg>;
 const UP_TRI = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 6l7 12H5z" /></svg>;
@@ -70,26 +80,6 @@ const BOLT = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M
 function ordinal(n: number) {
   return ["th", "st", "nd", "rd"][n % 10 > 3 || (n % 100 >= 11 && n % 100 <= 13) ? 0 : n % 10];
 }
-
-// Design-preview fixtures (only used when VITE_PREVIEW=1 and there is no live data).
-const mk = (name: string, symbol: string, reward: string, mcap: number, price: number, chg: number, vol: number, age: number): any => ({
-  address: `0x${symbol.toLowerCase()}${"0".repeat(38)}`.slice(0, 42), name, symbol, creator: "0x0000000000000000000000000000000000000000",
-  marketCapUsd: String(mcap), priceUsd: String(price), priceChange24hPct: chg, txCount24h: Math.round(vol / 500),
-  createdAt: Math.floor(Date.now() / 1000) - age, volume24hWei: String(BigInt(Math.round(vol)) * 10n ** 18n), volumeTotalWei: "0", liquidityWei: "0",
-  metadata: { rewardStock: BASE_STOCKS.find((s) => s.symbol === reward)?.address ?? (reward === "ETH" ? BASE_WETH : BASE_USDC) },
-});
-const PREVIEW: TokenSummary[] = [
-  mk("pools still open, billa", "OPEN", "GOOGL", 24040, 0.0000241, 71.92, 28190, 7200),
-  mk("Tsunami", "TSU", "ETH", 51200, 0.0000512, 41.0, 33800, 3600),
-  mk("Koi King", "KOI", "NVDA", 88100, 0.0000881, 27.6, 44300, 90000),
-  mk("sushicat", "SUSHI", "META", 234360, 0.000234, 19.34, 125440, 40000),
-  mk("Goldfish Gang", "GOLD", "AAPL", 20800, 0.0000208, 15.9, 12400, 15000),
-  mk("Onigiri", "ONGR", "COIN", 31790, 0.0000317, 12.42, 13980, 62000),
-  mk("Meowshi", "MEOW", "MSTR", 28390, 0.0000283, 8.78, 9360, 26000),
-  mk("Flamingo", "FLMGO", "USDC", 39180, 0.0000391, 5.2, 21000, 120000),
-  mk("Pixel Pond", "POND", "QQQ", 11200, 0.0000112, 2.1, 5200, 200000),
-  mk("Wave Rider", "WAVE", "SPY", 15400, 0.0000154, -4.3, 7700, 260000),
-];
 
 /**
  * koi.fun discovery dashboard — an electric-blue "Today's leaders" board over
@@ -136,7 +126,7 @@ export function ExploreStockBoard() {
       if (!isHidden(t.address) && !isImpersonator(t)) seen.set(t.address.toLowerCase(), t);
     }
     const list = [...seen.values()];
-    if (list.length === 0 && String(import.meta.env.VITE_PREVIEW ?? "") === "1") return PREVIEW;
+    if (list.length === 0 && PREVIEW_ON) return PREVIEW;
     return list;
   }, [byVolume, byNew]);
 
@@ -144,7 +134,7 @@ export function ExploreStockBoard() {
     const withChg = all.filter((t) => { const c = t.priceChange24hPct; return c != null && isFinite(c) && c > 0; });
     const base = (withChg.length >= 3 ? withChg : all).slice();
     base.sort((a, b) => (b.priceChange24hPct ?? 0) - (a.priceChange24hPct ?? 0) || volUsd(b) - volUsd(a));
-    return base.slice(0, 6);
+    return base.slice(0, 3);
   }, [all]);
 
   const feed = useMemo(() => {
@@ -176,13 +166,26 @@ export function ExploreStockBoard() {
 
   return (
     <div className="kf kf-page">
-      {/* Hero / leaders */}
+      {/* Hero: headline + copy + today's leaders, all inside the blue card */}
       <section className="kf-hero" aria-label="Today's leaders">
-        <div className="kf-hero-head">
-          <h2 className="kf-hero-title">Today's leaders</h2>
-          <span className="kf-hero-live"><span className="kf-pulse" />Live</span>
-        </div>
-        <div className="kf-lb-scroll">
+        <div className="kf-hero-grid">
+          <div>
+            <svg className="kf-hero-mascot" viewBox="0 0 40 40" fill="none" aria-hidden>
+              <path d="M20 3c-6.5 4-9 8.7-9 14.5 0 3.4 1.6 6.2 4.2 7.9-2.9.5-5.2 2.3-6.7 5.1 3.6 4.2 8 6.5 12.8 6.5 3.4 0 6-1.9 6-5 0-2.2-1.3-3.9-3.4-4.7 4.7-1.9 7.6-6 7.6-11.3C31.5 12.8 27.4 6.7 20 3Z" fill="url(#koiHero)" />
+              <defs>
+                <linearGradient id="koiHero" x1="6" y1="4" x2="34" y2="36" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#ff5fb6" /><stop offset="1" stopColor="#ff2f9c" />
+                </linearGradient>
+              </defs>
+              <circle cx="17.4" cy="15.6" r="2.5" fill="#fff" />
+              <circle cx="18.1" cy="15.9" r="1.1" fill="#3a0022" />
+            </svg>
+            <h1 className="kf-hero-title-xl">Hold &amp; Earn</h1>
+            <p className="kf-hero-copy">Every coin pairs a real tokenized stock. Each trade streams that stock to holders, paid out every day.</p>
+          </div>
+          <div>
+            <h2 className="kf-hero-label">Today's leaders</h2>
+            <div className="kf-lb-scroll">
           {loading || leaders.length === 0 ? (
             [...Array(3)].map((_, i) => <div key={i} className="kf-lb-card" style={{ height: 168 }} />)
           ) : (
@@ -197,7 +200,7 @@ export function ExploreStockBoard() {
                       {logoSrc(t) ? <img src={logoSrc(t)!} alt="" /> : <span style={{ fontSize: 14 }}>{(t.symbol || "?")[0].toUpperCase()}</span>}
                     </span>
                     <span className="kf-lb-name">${t.symbol}</span>
-                    <span className="kf-lb-chip">{FEATHER}</span>
+                    <KoiMini className="kf-lb-fish" />
                   </div>
                   <div className="kf-lb-stats">
                     <div className="kf-stat"><div className="k">Market Cap</div><div className="v">{fmtUsd(t.marketCapUsd)}</div></div>
@@ -213,6 +216,8 @@ export function ExploreStockBoard() {
               );
             })
           )}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -272,8 +277,9 @@ export function ExploreStockBoard() {
             const has = chg != null && isFinite(chg);
             const hot = has && chg! >= 20;
             const official = isOfficial(t.address);
+            const tint = has ? (chg! >= 0 ? "tint-up" : "tint-dn") : "";
             return (
-              <Link to={`/token/${t.address}`} key={t.address} className="kf-pool">
+              <Link to={`/token/${t.address}`} key={t.address} className={`kf-pool ${tint}`}>
                 <Avatar t={t} />
                 <span className="kf-pool-mid">
                   <span className="kf-pool-name-row">
@@ -281,7 +287,8 @@ export function ExploreStockBoard() {
                     {(hot || official) && <span className="kf-flags">{hot && FIRE}{official && CUP}</span>}
                   </span>
                   <span className="kf-pool-sub">
-                    <span className="kf-tk">${t.symbol}</span>
+                    <KoiMini className="kf-sub-fish" />
+                    <span className="kf-tk">{t.symbol}</span>
                     <span className="kf-vol">· {fmtUsd(volUsd(t))} vol</span>
                   </span>
                 </span>

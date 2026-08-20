@@ -1,7 +1,13 @@
 import { BaseBottomNav } from "./BaseBottomNav";
+import { BaseStatusBar } from "./BaseStatusBar";
 
-/** koi.fun has no traditional footer — the fixed bottom navigation is the
- *  persistent chrome, matching the mobile-first discovery layout. */
+/** koi.fun persistent chrome: the floating bottom nav on mobile and the fixed
+ *  status strip on desktop. No traditional footer. */
 export function BaseFooter() {
-  return <BaseBottomNav />;
+  return (
+    <>
+      <BaseBottomNav />
+      <BaseStatusBar />
+    </>
+  );
 }

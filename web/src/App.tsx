@@ -6,7 +6,7 @@ import { WagmiProvider } from "wagmi";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { Skeleton, Toasts } from "./components/ui";
-import { BRAND_FLAVOR } from "./lib/brand";
+import { BRAND_FLAVOR, IS_STOCK_BOARD } from "./lib/brand";
 import { HammrApp } from "./hammr/HammrApp";
 import { wagmiConfig } from "./lib/wagmi";
 import { Explore } from "./pages/Explore";
@@ -21,6 +21,11 @@ const DocsPage = lazy(() => import("./pages/Docs").then((m) => ({ default: m.Doc
 const ProfilePage = lazy(() => import("./pages/Profile").then((m) => ({ default: m.ProfilePage })));
 const FlywheelPage = lazy(() => import("./pages/Flywheel").then((m) => ({ default: m.FlywheelPage })));
 const BridgePage = lazy(() => import("./pages/Bridge").then((m) => ({ default: m.BridgePage })));
+// koi.fun (Base flavor) discovery pages
+const BasePartyPage = lazy(() => import("./pages/BaseParty").then((m) => ({ default: m.BaseParty })));
+const BaseLeaderboardPage = lazy(() => import("./pages/BaseLeaderboard").then((m) => ({ default: m.BaseLeaderboard })));
+const BaseSearchPage = lazy(() => import("./pages/BaseSearch").then((m) => ({ default: m.BaseSearch })));
+const BaseFeedPage = lazy(() => import("./pages/BaseFeed").then((m) => ({ default: m.BaseFeed })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +71,15 @@ export default function App() {
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/flywheel" element={<FlywheelPage />} />
                   <Route path="/bridge" element={<BridgePage />} />
+                  {IS_STOCK_BOARD && (
+                    <>
+                      <Route path="/party" element={<BasePartyPage />} />
+                      <Route path="/pool-party" element={<Navigate to="/party" replace />} />
+                      <Route path="/leaderboard" element={<BaseLeaderboardPage />} />
+                      <Route path="/search" element={<BaseSearchPage />} />
+                      <Route path="/feed" element={<BaseFeedPage />} />
+                    </>
+                  )}
                   {/* Hidden operations console; access enforced on-chain by role. */}
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
