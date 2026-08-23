@@ -6,7 +6,7 @@ import { WagmiProvider } from "wagmi";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { Skeleton, Toasts } from "./components/ui";
-import { BRAND_FLAVOR, IS_STOCK_BOARD } from "./lib/brand";
+import { BRAND_FLAVOR, IS_HYPER, IS_STOCK_BOARD } from "./lib/brand";
 import { HammrApp } from "./hammr/HammrApp";
 import { wagmiConfig } from "./lib/wagmi";
 import { Explore } from "./pages/Explore";
@@ -76,10 +76,12 @@ export default function App() {
                       <Route path="/party" element={<BasePartyPage />} />
                       <Route path="/pool-party" element={<Navigate to="/party" replace />} />
                       <Route path="/leaderboard" element={<BaseLeaderboardPage />} />
-                      <Route path="/search" element={<BaseSearchPage />} />
                       <Route path="/feed" element={<BaseFeedPage />} />
                     </>
                   )}
+                  {/* The search page is flavor-generic; the stock board and
+                      liquidstock both dock it behind the bottom-nav pill. */}
+                  {(IS_STOCK_BOARD || IS_HYPER) && <Route path="/search" element={<BaseSearchPage />} />}
                   {/* Hidden operations console; access enforced on-chain by role. */}
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />

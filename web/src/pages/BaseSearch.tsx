@@ -4,6 +4,7 @@ import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
 import { TokenLogo } from "../components/TokenLogo";
+import { BRAND } from "../lib/brand";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtUsd } from "../lib/format";
@@ -69,7 +70,7 @@ export function BaseSearch() {
       <div className="kf-search-dock">
         <label className="kf-input">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search basedstonk tokens" />
+          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${BRAND.name} coins`} />
         </label>
         <button className="kf-search-x" aria-label="Close search" onClick={() => nav("/")}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 5l14 14M19 5 5 19" /></svg>

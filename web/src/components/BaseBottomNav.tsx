@@ -9,6 +9,7 @@ const MAIN: { icon: KoiIconName; to: string; label: string }[] = IS_HYPER
   ? [
       { icon: "bar-chart", to: "/", label: "Coins" },
       { icon: "user", to: "/profile", label: "Portfolio" },
+      { icon: "zap", to: "/docs", label: "How it works" },
     ]
   : [
       { icon: "bar-chart", to: "/", label: "Tokens" },
@@ -45,15 +46,10 @@ export function BaseBottomNav() {
           </button>
         )}
       </div>
-      {/* liquidstock has no dedicated search page; the board filters inline. */}
-      {IS_HYPER ? null : (
-        <>
-          <div className="kf-nav-sep" />
-          <Link to="/search" className="kf-nav-search" aria-label="Search">
-            <KoiIcon name="search" size={19} />
-          </Link>
-        </>
-      )}
+      <div className="kf-nav-sep" />
+      <Link to="/search" className="kf-nav-search" aria-label="Search">
+        <KoiIcon name="search" size={19} />
+      </Link>
     </nav>
   );
 }
