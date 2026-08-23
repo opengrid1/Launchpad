@@ -6,20 +6,30 @@ import { client, v4Client } from "../lib/client";
 import { fmtUsd, compact } from "../lib/format";
 import { BASE_USDC, BASE_WETH, baseStockUsd } from "../lib/base/routes";
 import { baseStockOf } from "../lib/base/stocks";
+import { IS_HYPER } from "../lib/brand";
+import { env } from "../lib/env";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 import { TokenLogo } from "./TokenLogo";
 
 type Side = "buy" | "sell";
-type Pair = { address: Address; symbol: string; decimals: number };
+/** `usd`/`isNative` come from clients that resolve them on-chain (stable-v3);
+ *  the Base V4 client omits them and the curated lookups below fill in. */
+type Pair = { address: Address; symbol: string; decimals: number; usd?: number; isNative?: boolean };
 
 const isWeth = (addr: string) => addr.toLowerCase() === BASE_WETH.toLowerCase();
-/** Display label for a pair token: WETH shows as ETH, the "c"/"wt" suffixes drop. */
-const disp = (addr: string, sym: string) => (isWeth(addr) ? "ETH" : sym.replace(/^wt/, "").replace(/c$/, ""));
+/** Paid as the chain's native currency (the router wraps): flagged by the
+ *  client, or Base's WETH. */
+const isNativePair = (p: Pair) => p.isNative ?? isWeth(p.address);
+/** Display label for a pair token: a native pair shows the chain's native
+ *  symbol; stock wrappers drop their "c"/"wt" suffixes. */
+const disp = (p: Pair) => (isNativePair(p) ? env.nativeSymbol : p.symbol.replace(/^wt/, "").replace(/c$/, ""));
 
-/** USD price of a coin's pair token: $1 for USDC, ETH snapshot for WETH, else
- *  the curated stock price. */
+/** USD price of a coin's pair token: the client's on-chain rate when it
+ *  provides one, else $1 for USDC, ETH snapshot for WETH, else the curated
+ *  stock price. */
 function pairUsdOf(pair: Pair): number {
+  if (pair.usd && pair.usd > 0) return pair.usd;
   if (pair.address.toLowerCase() === BASE_USDC.toLowerCase()) return 1;
   if (isWeth(pair.address)) return baseStockUsd(BASE_WETH);
   return baseStockOf(pair.address)?.usd ?? 0;
@@ -55,9 +65,10 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
   const refresh = async () => {
     if (!address || !pair) { setPairBal(null); setCoinBal(null); return; }
     try {
-      // A WETH pair is paid as native ETH (the router wraps), so show ETH balance.
+      // A native pair is paid as native currency (the router wraps), so show
+      // the native balance.
       const [pb, cb] = await Promise.all([
-        isWeth(pair.address)
+        isNativePair(pair)
           ? client.publicClient.getBalance({ address })
           : client.publicClient.readContract({ address: pair.address, abi: launchTokenAbi, functionName: "balanceOf", args: [address] }),
         client.publicClient.readContract({ address: token.address, abi: launchTokenAbi, functionName: "balanceOf", args: [address] }),
@@ -83,14 +94,14 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
       return { out: coinsOut, symbol: token.symbol, usd: amtNum * pUsd };
     }
     const pairOut = (amtNum * priceUsd / pUsd) * (1 - feeRate);
-    return { out: pairOut, symbol: disp(pair.address, pair.symbol), usd: amtNum * priceUsd };
+    return { out: pairOut, symbol: disp(pair), usd: amtNum * priceUsd };
   }, [amtNum, side, pair, priceUsd, pUsd, feeRate, token.symbol]);
 
   const payBal = side === "buy" ? pairBal : coinBal;
   const payDecimals = side === "buy" ? (pair?.decimals ?? 18) : 18;
   const payUsd = side === "buy" ? pUsd : priceUsd;
-  const paySymbol = side === "buy" ? (pair ? disp(pair.address, pair.symbol) : "…") : token.symbol;
-  const recvSymbol = side === "buy" ? token.symbol : (pair ? disp(pair.address, pair.symbol) : "…");
+  const paySymbol = side === "buy" ? (pair ? disp(pair) : "…") : token.symbol;
+  const recvSymbol = side === "buy" ? token.symbol : (pair ? disp(pair) : "…");
 
   // Position readout for the Balance / Value / PnL block (this coin's holding).
   const coinHeld = coinBal != null ? Number(formatUnits(coinBal, 18)) : null;
@@ -211,9 +222,9 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
           <span className="tp-paysel">
             {side === "sell"
               ? <TokenLogo token={token} size={18} />
-              : pair && !isWeth(pair.address)
+              : pair && !isNativePair(pair)
                 ? <StockDot sym={paySymbol} />
-                : <EthMark />}
+                : <NativeMark />}
             <span className="tp-paysym">{paySymbol}</span>
           </span>
         </div>
@@ -252,6 +263,18 @@ function StockDot({ sym }: { sym: string }) {
     <span className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full text-[8px] font-extrabold"
       style={{ background: "var(--color-panel-2, #1a2233)", color: "var(--nb-blue, #4d7cff)" }}>
       {sym.slice(0, 2)}
+    </span>
+  );
+}
+
+/** Native-currency mark for the "Pay with" chip: the ETH diamond, or the
+ *  accent disc on the HYPE-native flavor. */
+function NativeMark() {
+  if (!IS_HYPER) return <EthMark />;
+  return (
+    <span className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full text-[8px] font-extrabold"
+      style={{ background: "var(--color-accent, #4fe0cb)", color: "var(--color-accent-fg, #04221e)" }}>
+      H
     </span>
   );
 }

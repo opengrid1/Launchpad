@@ -6,6 +6,7 @@ import { ethers } from "hardhat";
 //
 //   ACTION=fee-recipient   NEW=0x...            -> setFeeRecipient
 //   ACTION=transfer-owner  NEW=0x...            -> transferOwnership
+//   ACTION=quote-price     NEW=0x... PRICE8=n   -> setQuoteAsset(NEW, true, n)
 const FACTORY = "0x6F2FaEe74afec6d8798dd18652F9cF0ec9a59027";
 const FEES = { maxFeePerGas: 20_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n, gasLimit: 300_000 };
 
@@ -28,8 +29,16 @@ async function main() {
     console.log("transferOwnership tx:", tx.hash);
     await tx.wait();
     console.log("owner now:", await f.owner());
+  } else if (action === "quote-price") {
+    if (!ethers.isAddress(next)) throw new Error("NEW must be an address");
+    const price8 = BigInt(process.env.PRICE8 ?? "0");
+    if (price8 <= 0n) throw new Error("PRICE8 must be > 0 (USD per token, 8 decimals)");
+    const tx = await f.setQuoteAsset(next, true, price8, FEES);
+    console.log("setQuoteAsset tx:", tx.hash);
+    await tx.wait();
+    console.log("quoteAssets now:", await f.quoteAssets(next));
   } else {
-    throw new Error("Set ACTION=fee-recipient|transfer-owner");
+    throw new Error("Set ACTION=fee-recipient|transfer-owner|quote-price");
   }
 }
 main().catch((e) => { console.error(e); process.exit(1); });

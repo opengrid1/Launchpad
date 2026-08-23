@@ -10,6 +10,8 @@ import {
 } from "viem";
 import type { Candle, CandleInterval, PriceUpdate, TokenSummary, TradeRecord } from "@launchpad/sdk";
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
+import { env } from "../env";
+import { HYPER_STOCKS } from "../hyper/stocks";
 
 /**
  * Backend-free client for the StableLaunchpadFactory (Uniswap V3 on Stable
@@ -144,6 +146,14 @@ export class StableV3Client {
    *  Stable, live ETH price on Robinhood). */
   private quoteUsd = 1;
   private quoteUsdLoaded = false;
+  /** Raw factory USD price (8-dec) for the DEFAULT quote, reused by
+   *  resolveQuote so a default-paired coin skips a second registry read. */
+  private quoteUsd8 = 0n;
+  /** Per-coin pair (quote) asset resolved from the factory, keyed by token.
+   *  Single-quote flavors resolve every coin to the same default quote, so
+   *  behavior is unchanged; multi-quote flavors (e.g. stonkliquid) get each
+   *  coin's own stock/native pair for trading and USD pricing. */
+  private quoteOf = new Map<string, { addr: Address; usdPrice8: bigint; decimals: number }>();
   /** Observed seconds per block, refreshed by each trade scan. Stable is a
    *  steady 0.7s; Orbit chains mint blocks on demand so this varies. */
   private avgBlockTime = 0.7;
@@ -262,6 +272,84 @@ export class StableV3Client {
     return this.walletClient;
   }
 
+  // -- per-coin quote resolution ----------------------------------------
+  //
+  // Each coin records its own pair (quote) asset in the factory listing. For
+  // single-quote flavors that quote is always the configured default, so this
+  // returns the same value for every coin and behavior is unchanged. For
+  // multi-quote flavors it returns the coin's actual pair (native or a stock)
+  // so trades route through the right token and prices convert with the right
+  // USD rate.
+
+  private async resolveQuote(token: Address): Promise<{ addr: Address; usdPrice8: bigint; decimals: number }> {
+    const key = token.toLowerCase();
+    const hit = this.quoteOf.get(key);
+    if (hit) return hit;
+    let addr = this.addresses.quote;
+    try {
+      const listing = await this.publicClient.readContract({
+        address: this.addresses.factory,
+        abi: ARC_V3 ? ARC_FACTORY_ABI : FACTORY_ABI,
+        functionName: "listings",
+        args: [token],
+      });
+      // `quote` is the second field in both listing shapes.
+      const q = (listing as unknown as unknown[])[1] as Address;
+      if (q && q !== zeroAddress) addr = q;
+    } catch { /* factory unreadable; fall back to the default quote */ }
+    let usdPrice8 = 0n;
+    let decimals = Number(import.meta.env.VITE_QUOTE_DECIMALS ?? 6);
+    if (addr.toLowerCase() === this.addresses.quote.toLowerCase() && this.quoteUsd8 > 0n) {
+      // Default quote: reuse the already-loaded registry entry.
+      usdPrice8 = this.quoteUsd8;
+    } else {
+      try {
+        const qa = await this.publicClient.readContract({
+          address: this.addresses.factory,
+          abi: FACTORY_ABI,
+          functionName: "quoteAssets",
+          args: [addr],
+        });
+        const [, price8, dec] = qa as unknown as [boolean, bigint, number];
+        if (price8 > 0n) usdPrice8 = price8;
+        if (Number(dec) > 0) decimals = Number(dec);
+      } catch { /* registry unavailable (e.g. Arc); keep the USD fallback */ }
+    }
+    const resolved = { addr, usdPrice8, decimals };
+    this.quoteOf.set(key, resolved);
+    return resolved;
+  }
+
+  /** USD per whole quote token for a coin's pair, falling back to the default
+   *  quote's rate when the coin's pair has no registered price. */
+  private async quoteUsdOf(token: Address): Promise<number> {
+    const q = await this.resolveQuote(token);
+    return q.usdPrice8 > 0n ? Number(q.usdPrice8) / 1e8 : this.quoteUsd;
+  }
+
+  /** The coin's pay token for the UI to label buys/sells. Resolves the coin's
+   *  pair: the wrapped native shows the chain's native symbol; a tokenized
+   *  stock shows its ticker; anything else a short address. `usd` is the
+   *  pair's factory-registered USD price (0 when unknown) and `isNative` is
+   *  true when the pair is paid as the chain's native currency. */
+  async pairOf(token: Address): Promise<{ address: Address; symbol: string; decimals: number; usd: number; isNative: boolean }> {
+    const q = await this.resolveQuote(token);
+    const usd = q.usdPrice8 > 0n ? Number(q.usdPrice8) / 1e8 : 0;
+    if (QUOTE_IS_WNATIVE && q.addr.toLowerCase() === this.addresses.quote.toLowerCase()) {
+      return { address: q.addr, symbol: env.nativeSymbol, decimals: q.decimals, usd, isNative: true };
+    }
+    const stock = HYPER_STOCKS.find((s) => s.address.toLowerCase() === q.addr.toLowerCase());
+    if (stock) return { address: q.addr, symbol: stock.ticker, decimals: q.decimals, usd, isNative: false };
+    const short = `${q.addr.slice(0, 6)}…${q.addr.slice(-4)}`;
+    return { address: q.addr, symbol: short, decimals: q.decimals, usd, isNative: false };
+  }
+
+  /** Same as pairOf, under the name the shared trade panel calls on the V4
+   *  clients, so BaseTradePanel works unchanged against this client. */
+  async basePairInfo(token: Address): Promise<{ address: Address; symbol: string; decimals: number; usd: number; isNative: boolean }> {
+    return this.pairOf(token);
+  }
+
   // -- reads ------------------------------------------------------------
 
   private loadCores(): Promise<Core[]> {
@@ -283,6 +371,7 @@ export class StableV3Client {
           const [, usdPrice8] = q as unknown as [boolean, bigint, number];
           if (usdPrice8 > 0n) {
             this.quoteUsd = Number(usdPrice8) / 1e8;
+            this.quoteUsd8 = usdPrice8;
             this.quoteUsdLoaded = true;
           }
         })
@@ -434,7 +523,10 @@ export class StableV3Client {
     const price = await this.priceWei(core).catch(() => 0n);
     const supply = 1_000_000_000n * 10n ** 18n;
     const mcapWei = (price * supply) / 10n ** 18n;
-    const usd = (Number(mcapWei) / 1e18) * this.quoteUsd;
+    // USD conversion uses THIS coin's pair rate (a stock-paired coin prices off
+    // the stock's USD, not the default quote's).
+    const quoteUsd = await this.quoteUsdOf(core.address).catch(() => this.quoteUsd);
+    const usd = (Number(mcapWei) / 1e18) * quoteUsd;
     const stats = this.statsFromCache(core.address.toLowerCase());
     let metadata: Record<string, unknown> = {};
     try { metadata = JSON.parse(core.metadataURI || "{}"); } catch { /* opaque URI */ }
@@ -451,7 +543,7 @@ export class StableV3Client {
       metadata: metadata as TokenSummary["metadata"],
       totalSupply: supply.toString(),
       priceWei: price.toString(),
-      priceUsd: String((Number(price) / 1e18) * this.quoteUsd),
+      priceUsd: String((Number(price) / 1e18) * quoteUsd),
       marketCapUsd: String(usd),
       liquidityWei: "0",
       volume24hWei: stats.vol24.toString(),
@@ -806,13 +898,19 @@ export class StableV3Client {
         args: [token, minOut], value: nativeWei, chain: wc.chain, account: wc.account!,
       });
     }
+    // Pay with the coin's OWN pair asset. When that pair is the wrapped native
+    // the router wraps plain native value (no approval); a stock/ERC-20 pair is
+    // pulled after an allowance. amountIn keeps the default-quote DEC_GAP
+    // scaling (a no-op where all quotes share the default's decimals).
+    const quote = await this.resolveQuote(token);
     const amountIn = nativeWei / DEC_GAP;
     if (amountIn === 0n) throw new Error("Amount too small.");
-    if (!QUOTE_IS_WNATIVE) await this.ensureAllowance(me, this.addresses.quote, amountIn);
+    const payNative = QUOTE_IS_WNATIVE && quote.addr.toLowerCase() === this.addresses.quote.toLowerCase();
+    if (!payNative) await this.ensureAllowance(me, quote.addr, amountIn);
     return wc.writeContract({
       address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
-      args: [{ tokenIn: this.addresses.quote, tokenOut: token, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
-      value: QUOTE_IS_WNATIVE ? nativeWei : undefined,
+      args: [{ tokenIn: quote.addr, tokenOut: token, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
+      value: payNative ? nativeWei : undefined,
       chain: wc.chain, account: wc.account!,
     });
   }
@@ -831,16 +929,21 @@ export class StableV3Client {
         args: [token, amountIn, minOut], chain: wc.chain, account: wc.account!,
       });
     }
-    if (!QUOTE_IS_WNATIVE) {
+    // Swap into the coin's OWN pair asset. A stock/ERC-20 pair goes straight to
+    // the seller; the wrapped native lands in the router and a second multicall
+    // step unwraps it to native for the seller.
+    const quote = await this.resolveQuote(token);
+    const isWnative = QUOTE_IS_WNATIVE && quote.addr.toLowerCase() === this.addresses.quote.toLowerCase();
+    if (!isWnative) {
       return wc.writeContract({
         address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
-        args: [{ tokenIn: token, tokenOut: this.addresses.quote, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut / DEC_GAP, sqrtPriceLimitX96: 0n }],
+        args: [{ tokenIn: token, tokenOut: quote.addr, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut / DEC_GAP, sqrtPriceLimitX96: 0n }],
         chain: wc.chain, account: wc.account!,
       });
     }
     const swap = encodeFunctionData({
       abi: ROUTER_ABI, functionName: "exactInputSingle",
-      args: [{ tokenIn: token, tokenOut: this.addresses.quote, fee: 10_000, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
+      args: [{ tokenIn: token, tokenOut: quote.addr, fee: 10_000, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
     });
     const unwrap = encodeFunctionData({
       abi: ROUTER_ABI, functionName: "unwrapWETH9",
@@ -927,10 +1030,12 @@ export class StableV3Client {
   async tokenExtra(): Promise<null> { return null; }
   /** USD market cap per whole-unit price, same contract as the V4 client:
    *  mcap = (priceWei/1e18) × scale. Supply is 1e9 whole tokens at $1 USDT0. */
-  async mcapScale(): Promise<number> {
+  async mcapScale(token?: Address): Promise<number> {
     // Ensure the quote's USD price is loaded (kicked off by loadCores).
     await this.loadCores().catch(() => {});
-    return 1e9 * this.quoteUsd;
+    // With a token, scale by ITS pair's USD rate; without one, the default.
+    const quoteUsd = token ? await this.quoteUsdOf(token).catch(() => this.quoteUsd) : this.quoteUsd;
+    return 1e9 * quoteUsd;
   }
   async harvest(): Promise<never> { throw new Error("Not available on Stable."); }
   async claimDividends(): Promise<never> { throw new Error("Not available on Stable."); }
@@ -1014,7 +1119,7 @@ export class StableV3Client {
         this.priceCache.delete(key);
         const price = await this.priceWei(core).catch(() => null);
         if (price !== null) {
-          const update = this.buildPriceUpdate(core, price);
+          const update = await this.buildPriceUpdate(core, price);
           for (const cb of w.priceCbs) cb(update);
         }
       }
@@ -1023,16 +1128,17 @@ export class StableV3Client {
     }
   }
 
-  private buildPriceUpdate(core: Core, price: bigint): PriceUpdate {
+  private async buildPriceUpdate(core: Core, price: bigint): Promise<PriceUpdate> {
     const key = core.address.toLowerCase();
     const supply = 1_000_000_000n * 10n ** 18n;
     const mcapWei = (price * supply) / 10n ** 18n;
     const stats = this.statsFromCache(key);
+    const quoteUsd = await this.quoteUsdOf(core.address).catch(() => this.quoteUsd);
     return {
       token: core.address,
       priceWei: price.toString(),
-      priceUsd: String((Number(price) / 1e18) * this.quoteUsd),
-      marketCapUsd: String((Number(mcapWei) / 1e18) * this.quoteUsd),
+      priceUsd: String((Number(price) / 1e18) * quoteUsd),
+      marketCapUsd: String((Number(mcapWei) / 1e18) * quoteUsd),
       liquidityWei: "0",
       limitsActive: false,
       remainingToGraduationUsd: "0",
