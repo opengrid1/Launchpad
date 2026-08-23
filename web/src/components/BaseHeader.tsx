@@ -80,7 +80,8 @@ export function BaseHeader() {
 
   return (
     <>
-      <BaseTicker />
+      {/* liquidstock skips the marquee band above the header. */}
+      {IS_HYPER ? null : <BaseTicker />}
       <header className="kf-hdr sticky top-0 z-40">
         <div className="kf-hdr-inner">
           <Link to="/" aria-label={BRAND.name} className="kf-brand">
