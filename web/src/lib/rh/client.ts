@@ -172,14 +172,23 @@ export class RhClient {
     // expose the same data through plain view calls, so skip the doomed (and
     // slow, retried) log scan entirely while the method is parked.
     if (Date.now() < this.logsBrokenUntil) return this.loadCoresFromViews(latest);
-    let logs: any[];
+    let logs: any[] = [];
     try {
-      logs = (await this.publicClient.getLogs({
-        address: this.v4.factory,
-        event: factoryAbi[0] as any,
-        fromBlock: this.coresUpTo === 0n ? this.startBlock : this.coresUpTo + 1n,
-        toBlock: latest,
-      })) as any[];
+      // Chunk to <=9k blocks: public Base RPCs cap eth_getLogs at a 10k range,
+      // so a single scan over the whole deployment fails and would park logs
+      // globally — which also disables the swap-log scan and blanks charts.
+      const CHUNK = 9000n;
+      const from0 = this.coresUpTo === 0n ? this.startBlock : this.coresUpTo + 1n;
+      for (let from = from0; from <= latest; from += CHUNK + 1n) {
+        const to = from + CHUNK > latest ? latest : from + CHUNK;
+        const part = (await this.publicClient.getLogs({
+          address: this.v4.factory,
+          event: factoryAbi[0] as any,
+          fromBlock: from,
+          toBlock: to,
+        })) as any[];
+        if (part.length) logs.push(...part);
+      }
     } catch {
       this.parkLogs();
       return this.loadCoresFromViews(latest);
