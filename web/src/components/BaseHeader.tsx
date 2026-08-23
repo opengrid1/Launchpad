@@ -10,8 +10,11 @@ import { useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
 // The launch form rides in a slide-up sheet on mobile, so it loads lazily —
-// the header itself stays light.
-const LaunchForm = lazy(() => import("../pages/LaunchBase").then((m) => ({ default: m.LaunchBase })));
+// the header itself stays light. Each flavor gets its own form: liquidstock's
+// pair picker (HYPE + tokenized stocks), the stock board's LaunchBase.
+const LaunchForm = IS_HYPER
+  ? lazy(() => import("../pages/LaunchHyper").then((m) => ({ default: m.LaunchHyper })))
+  : lazy(() => import("../pages/LaunchBase").then((m) => ({ default: m.LaunchBase })));
 
 function WalletButton() {
   const { address, isConnected, connectFirst, isPending } = useWallet();
