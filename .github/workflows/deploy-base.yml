@@ -25,7 +25,7 @@ env:
   VITE_LAUNCH_MODE: base-stock
   VITE_CHAIN_ID: "8453"
   VITE_CHAIN_NAME: Base
-  VITE_RPC_URL: https://mainnet.base.org
+  VITE_RPC_URL: https://mainnet.base.org,https://base.drpc.org
   VITE_EXPLORER_URL: https://basescan.org
   VITE_NATIVE_SYMBOL: ETH
   VITE_RH_FACTORY: "0x3F0C7039f0426E805873513296B24F7540dD7606"

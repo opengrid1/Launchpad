@@ -444,13 +444,23 @@ export class RhClient {
   ): Promise<{ logs: any[]; upTo: bigint }> {
     if (Date.now() >= this.logsBrokenUntil) {
       try {
-        const logs = (await this.publicClient.getLogs({
-          address: this.v4.poolManager,
-          event: poolSwapEvent as any,
-          args: { id: core.poolId },
-          fromBlock,
-          toBlock: latest,
-        })) as any[];
+        // Chunk to <=9k blocks: public Base RPCs cap eth_getLogs at a 10k range,
+        // and a coin discovered via the log-free views path carries the whole
+        // deployment as its scan range. Filtered by pool id, each chunk's
+        // response is small, so this stays cheap.
+        const CHUNK = 9000n;
+        const logs: any[] = [];
+        for (let from = fromBlock; from <= latest; from += CHUNK + 1n) {
+          const to = from + CHUNK > latest ? latest : from + CHUNK;
+          const part = (await this.publicClient.getLogs({
+            address: this.v4.poolManager,
+            event: poolSwapEvent as any,
+            args: { id: core.poolId },
+            fromBlock: from,
+            toBlock: to,
+          })) as any[];
+          if (part.length) logs.push(...part);
+        }
         return { logs, upTo: latest };
       } catch {
         this.parkLogs();
@@ -680,7 +690,12 @@ export class RhClient {
     // a tradeless non-WETH pool would otherwise read as a fraction of a cent.
     const STARTING_MCAP = 4000;
     const computed = priceUsdPerToken * supplyWhole;
-    const mcapUsd = trades.length > 0 && computed > 0 ? computed : STARTING_MCAP;
+    // For an 18-decimal pair (ETH/WETH) the pool read is already correct, so a
+    // freshly launched coin shows its real live market cap from the pool price
+    // even before the first indexed trade. Only non-WETH pairs (6/8-dec) fall
+    // back to the starting cap until a trade lets us price them safely.
+    const pairIsWeth = core.stock.toLowerCase() === this.v4.weth.toLowerCase();
+    const mcapUsd = computed > 0 && (trades.length > 0 || pairIsWeth) ? computed : STARTING_MCAP;
     // ETH-per-coin equivalent for the trade ticket: buys pay ETH and sells
     // receive ETH (the router auto-routes through the pair), so quotes and
     // minOut must be in native units, not pair units.
