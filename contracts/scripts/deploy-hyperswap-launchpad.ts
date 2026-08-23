@@ -53,8 +53,12 @@ async function main() {
   // explicit gas limits under 3M (this is the size-optimized build; the factory
   // deploy is ~2.985M). Big blocks (needed only for launches) are handled by the
   // frontend prompting each launcher — the factory deploy/config all fit here.
-  const DEPLOY_GAS = { gasLimit: 2_999_000 };
-  const ADMIN_GAS = { gasLimit: 300_000 };
+  // Explicit EIP-1559 fees: skip hardhat's auto fee estimation (its eth_feeHistory
+  // call intermittently errors on the HyperEVM RPC) and cap cost. Base fee is
+  // usually well under 20 gwei; maxFee tolerates minor spikes.
+  const FEES = { maxFeePerGas: 20_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n };
+  const DEPLOY_GAS = { gasLimit: 2_999_000, ...FEES };
+  const ADMIN_GAS = { gasLimit: 300_000, ...FEES };
 
   // Reuse an already-deployed TokenDeployer (e.g. after a gas-price retry) so a
   // rerun doesn't redeploy it. It must not yet be bound to a factory.

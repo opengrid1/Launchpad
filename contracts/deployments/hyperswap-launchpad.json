@@ -1,0 +1,29 @@
+{
+  "network": "robinhood",
+  "chainId": 999,
+  "startBlock": 43964256,
+  "deployer": "0x24d6Eef51722BdCCAAA2923144c8d4754371e161",
+  "owner": "0x24d6Eef51722BdCCAAA2923144c8d4754371e161",
+  "feeRecipient": "0x24d6Eef51722BdCCAAA2923144c8d4754371e161",
+  "hyperswapV3": {
+    "factory": "0xb1c0fa0b789320044a6f623cfe5ebda9562602e3",
+    "positionManager": "0x6eda206207c09e5428f281761ddc0d300851fbc8",
+    "swapRouter": "0x6d99e7f6747af2cdbb5164b6dd50e40d4fde1e77",
+    "whype": "0x5555555555555555555555555555555555555555"
+  },
+  "contracts": {
+    "tokenDeployer": "0x073EA5E995dFA87cD13C190d2aA74aDe9cE56e0f",
+    "factory": "0x6F2FaEe74afec6d8798dd18652F9cF0ec9a59027"
+  },
+  "quoteAssets": {
+    "whypeUsd8": "7970050000",
+    "stocks": []
+  },
+  "config": {
+    "totalSupply": "1000000000e18",
+    "poolFeeTier": 10000,
+    "creatorFeeBps": 7000,
+    "platformFeeBps": 3000,
+    "defaultMarketCapUsd": 3000
+  }
+}
