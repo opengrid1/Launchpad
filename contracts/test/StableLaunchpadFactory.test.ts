@@ -53,6 +53,7 @@ async function deployFixture() {
     await positionManager.getAddress(),
     await swapRouter.getAddress(),
     await wnative.getAddress(),
+    8000,
   );
   await tokenDeployer.setFactory(await factory.getAddress());
 

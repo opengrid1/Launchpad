@@ -17,7 +17,7 @@ const NPM = (process.env.HS_NPM ?? "0x6eda206207c09e5428f281761ddc0d300851fbc8")
 
 const SUPPLY = ethers.parseEther("1000000000");
 const BPS = 10_000n;
-const CREATOR_BPS = 8_000n;
+const CREATOR_BPS = 7_000n; // 70% creator / 30% platform
 
 const WHYPE_ABI = [
   "function deposit() payable",
@@ -37,7 +37,7 @@ describe("HyperSwap launchpad via NonfungiblePositionManager (fork)", function (
     await tokenDeployer.waitForDeployment();
     const factory = await (await ethers.getContractFactory("StableLaunchpadFactory")).deploy(
       owner.address, feeRecipient.address, await tokenDeployer.getAddress(),
-      V3_FACTORY, NPM, SWAP_ROUTER, WHYPE,
+      V3_FACTORY, NPM, SWAP_ROUTER, WHYPE, 7000,
     );
     await factory.waitForDeployment();
     await (await tokenDeployer.setFactory(await factory.getAddress())).wait();
@@ -81,7 +81,7 @@ describe("HyperSwap launchpad via NonfungiblePositionManager (fork)", function (
     expect(await v3.getPool(token, WHYPE, 10_000)).to.equal(listing.pool);
   });
 
-  it("trades on the live HyperSwap router and harvests the 1% fee 80/20", async () => {
+  it("trades on the live HyperSwap router and harvests the 1% fee 70/30", async () => {
     const [, owner, feeRecipient, creator, trader] = await ethers.getSigners();
     const { factory } = await deploySystem(owner, feeRecipient);
     const token = await createToken(factory, creator);

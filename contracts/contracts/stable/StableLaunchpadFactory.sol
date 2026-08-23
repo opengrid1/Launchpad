@@ -169,10 +169,11 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     uint256 public constant TOTAL_SUPPLY = 1_000_000_000e18;
     /// @notice Fixed Uniswap V3 fee tier — 1% — for every launch pool.
     uint24 public constant POOL_FEE_TIER = 10_000;
-    /// @notice Creator share of harvested pool fees.
-    uint16 public constant CREATOR_FEE_BPS = 8_000; // 80%
-    /// @notice Platform share of harvested pool fees.
-    uint16 public constant PLATFORM_FEE_BPS = 2_000; // 20%
+    /// @notice Creator share of harvested pool fees, in bps. Set at deploy
+    ///         (e.g. 8000 = 80% creator / 20% platform).
+    uint16 public immutable CREATOR_FEE_BPS;
+    /// @notice Platform share of harvested pool fees, in bps (10000 - creator).
+    uint16 public immutable PLATFORM_FEE_BPS;
     /// @notice Default starting market cap: $3,000 (8 decimals).
     uint256 public constant DEFAULT_MARKET_CAP_USD8 = 3_000e8;
     /// @notice Creator-selectable market cap bounds (8 decimals).
@@ -219,6 +220,8 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     /// @param swapRouter_ Official SwapRouter.
     /// @param wrappedNative_ Official wrapped native token; auto-approved as a
     ///        $1.00 quote asset (the native currency on Stable is a dollar).
+    /// @param creatorFeeBps_ Creator share of harvested fees in bps (1..10000);
+    ///        the platform gets the remainder (e.g. 8000 = 80/20, 7000 = 70/30).
     constructor(
         address owner_,
         address feeRecipient_,
@@ -226,7 +229,8 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         IUniswapV3Factory uniswapFactory_,
         INonfungiblePositionManager positionManager_,
         ISwapRouter swapRouter_,
-        address wrappedNative_
+        address wrappedNative_,
+        uint16 creatorFeeBps_
     ) Ownable(owner_) {
         if (
             feeRecipient_ == address(0) ||
@@ -236,6 +240,9 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
             address(swapRouter_) == address(0) ||
             wrappedNative_ == address(0)
         ) revert ZeroAddress();
+        if (creatorFeeBps_ == 0 || creatorFeeBps_ > 10_000) revert InvalidParams();
+        CREATOR_FEE_BPS = creatorFeeBps_;
+        PLATFORM_FEE_BPS = 10_000 - creatorFeeBps_;
 
         feeRecipient = feeRecipient_;
         tokenDeployer = tokenDeployer_;

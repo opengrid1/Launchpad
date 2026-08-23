@@ -44,16 +44,17 @@ async function main() {
   const owner = process.env.FACTORY_OWNER ?? signer.address;
   const feeRecipient = process.env.FEE_RECIPIENT ?? owner;
   const hypeUsd8 = BigInt(process.env.HYPE_USD8 ?? String(40n * 10n ** 8n)); // default $40
+  const creatorFeeBps = Number(process.env.CREATOR_FEE_BPS ?? 7000); // 70% creator / 30% platform
 
   console.log("network:", network.name, "| deployer:", signer.address);
-  console.log("owner:", owner, "| feeRecipient:", feeRecipient, "| HYPE usd8:", hypeUsd8.toString());
+  console.log("owner:", owner, "| feeRecipient:", feeRecipient, "| HYPE usd8:", hypeUsd8.toString(), "| creatorFeeBps:", creatorFeeBps);
 
   const tokenDeployer = await (await ethers.getContractFactory("TokenDeployer")).deploy();
   await tokenDeployer.waitForDeployment();
   console.log("TokenDeployer:", await tokenDeployer.getAddress());
 
   const factory = await (await ethers.getContractFactory("StableLaunchpadFactory")).deploy(
-    owner, feeRecipient, await tokenDeployer.getAddress(), V3_FACTORY, POSITION_MANAGER, SWAP_ROUTER, WHYPE,
+    owner, feeRecipient, await tokenDeployer.getAddress(), V3_FACTORY, POSITION_MANAGER, SWAP_ROUTER, WHYPE, creatorFeeBps,
   );
   await factory.waitForDeployment();
   const factoryAddr = await factory.getAddress();
@@ -98,7 +99,7 @@ async function main() {
     hyperswapV3: { factory: V3_FACTORY, positionManager: POSITION_MANAGER, swapRouter: SWAP_ROUTER, whype: WHYPE },
     contracts: { tokenDeployer: await tokenDeployer.getAddress(), factory: factoryAddr },
     quoteAssets: { whypeUsd8: hypeUsd8.toString(), stocks: approved },
-    config: { totalSupply: "1000000000e18", poolFeeTier: 10000, creatorFeeBps: 8000, platformFeeBps: 2000, defaultMarketCapUsd: 3000 },
+    config: { totalSupply: "1000000000e18", poolFeeTier: 10000, creatorFeeBps, platformFeeBps: 10000 - creatorFeeBps, defaultMarketCapUsd: 3000 },
   };
   writeFileSync(join(__dirname, "../deployments/hyperswap-launchpad.json"), JSON.stringify(out, null, 2));
   console.log("saved deployments/hyperswap-launchpad.json");
