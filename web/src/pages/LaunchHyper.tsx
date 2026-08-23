@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { keccak256, toHex } from "viem";
+import { keccak256, parseEther, toHex } from "viem";
 
 import { client } from "../lib/client";
 import { env } from "../lib/env";
@@ -36,6 +36,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
 
   const [form, setForm] = useState({ name: "", symbol: "", description: "", website: "", twitter: "", telegram: "" });
   const [pair, setPair] = useState<`0x${string}`>(WHYPE);
+  const [devBuy, setDevBuy] = useState("");
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [logoData, setLogoData] = useState("");
@@ -111,7 +112,22 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
       const receipt = await client.publicClient.waitForTransactionReceipt({ hash });
       const log = receipt.logs.find((l) => l.topics[0] === TOKEN_CREATED_TOPIC);
       pushToast({ kind: "success", title: "Coin is live", body: `Market open, paired with ${selected.label}.`, txHash: hash });
-      if (log?.topics[1]) navigate(`/token/0x${log.topics[1].slice(26)}`);
+      const tokenAddr = log?.topics[1] ? (`0x${log.topics[1].slice(26)}` as `0x${string}`) : null;
+      // Dev buy: the factory has no atomic buy, so fire it as the very next
+      // transaction after the pool opens - first fill before the coin is
+      // publicly listed anywhere. A failed buy never voids the launch.
+      const devAmt = Number(devBuy) > 0 ? devBuy.trim() : "";
+      if (tokenAddr && devAmt) {
+        try {
+          const buyHash = await (client as any).buyToken(tokenAddr, parseEther(devAmt as `${number}`), 0n);
+          pushToast({ kind: "info", title: "Dev buy submitted", txHash: buyHash });
+          await client.publicClient.waitForTransactionReceipt({ hash: buyHash });
+          pushToast({ kind: "success", title: "Dev buy filled", body: `${devAmt} ${selected.label} into your coin.`, txHash: buyHash });
+        } catch (err) {
+          pushToast({ kind: "error", title: "Dev buy failed (coin is still live)", body: errorText(err) });
+        }
+      }
+      if (tokenAddr) navigate(`/token/${tokenAddr}`);
       else navigate("/");
     } catch (err) {
       pushToast({ kind: "error", title: "Launch failed", body: errorText(err) });
@@ -213,6 +229,22 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
             {filtered.length === 0 ? <div style={{ gridColumn: "1 / -1", padding: "12px 0", textAlign: "center", color: "var(--color-ink-3)" }}>No match.</div> : null}
           </div>
           <p className="hint">You earn 1% of every trade in {selected.label} ({selected.sub}).</p>
+        </div>
+
+        {/* Dev buy: an automatic first buy sent right after the pool opens */}
+        <div className="kf-field">
+          <label>Dev Buy <i>(optional)</i></label>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={devBuy}
+            onChange={(e) => setDevBuy(e.target.value.replace(/[^0-9.]/g, ""))}
+            placeholder="0.0"
+          />
+          <p className="hint">
+            {selected.label} spent buying your own coin, sent automatically the moment the pool opens
+            {selected.address === WHYPE ? "" : ` (you need ${selected.label} in your wallet)`}.
+          </p>
         </div>
 
         <div className="kf-field">
