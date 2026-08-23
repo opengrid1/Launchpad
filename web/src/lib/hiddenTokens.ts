@@ -49,6 +49,7 @@ const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   // launches by anyone are NOT listed here, so they appear on Explore normally.
   "8453:0xb20000000000000000000002da484bdfa643272a", // KOIT (test launch)
   "8453:0xb20000000000000000000041e15f9275f02f383c", // KOIT (test launch)
+  "8453:0xb200000000000000000000838e5d8f9ca4c6fffe", // STONK (name typo "basestonk.fun"; relaunched)
 ]);
 
 export function isHidden(address: string): boolean {
