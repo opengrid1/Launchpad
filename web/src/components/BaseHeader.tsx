@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
-import { BRAND } from "../lib/brand";
+import { BRAND, IS_HYPER } from "../lib/brand";
 import { BaseTicker } from "./BaseTicker";
 import { KoiIcon } from "./base/KoiIcon";
 import { WalletSheet } from "./base/WalletSheet";
@@ -32,14 +32,22 @@ function WalletButton() {
   );
 }
 
-const NAV = [
-  { to: "/", end: true, label: "Tokens" },
-  { to: "/feed", label: "Feed" },
-  { to: "/party", label: "Pool party" },
-  { to: "/leaderboard", label: "Leaderboard" },
-  { to: "/search", label: "Search" },
-  { to: "/docs", label: "How it Works" },
-];
+// liquidstock (hyper) has no pool party / leaderboard / feed routes; it keeps a
+// lean nav to routes that exist for every flavor.
+const NAV = IS_HYPER
+  ? [
+      { to: "/", end: true, label: "Coins" },
+      { to: "/profile", label: "Portfolio" },
+      { to: "/docs", label: "How it Works" },
+    ]
+  : [
+      { to: "/", end: true, label: "Tokens" },
+      { to: "/feed", label: "Feed" },
+      { to: "/party", label: "Pool party" },
+      { to: "/leaderboard", label: "Leaderboard" },
+      { to: "/search", label: "Search" },
+      { to: "/docs", label: "How it Works" },
+    ];
 
 /**
  * koi.fun chrome: the marquee countdown band, then the black bar — mark +
