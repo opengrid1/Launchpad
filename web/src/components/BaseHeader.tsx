@@ -35,11 +35,14 @@ function WalletButton() {
   );
 }
 
-// liquidstock (hyper) has no pool party / leaderboard / feed routes; it keeps a
-// lean nav to routes that exist for every flavor.
+// Same nav shape as the stock board; liquidstock drops only the base-specific
+// pool party and adds Portfolio.
 const NAV = IS_HYPER
   ? [
       { to: "/", end: true, label: "Coins" },
+      { to: "/feed", label: "Feed" },
+      { to: "/leaderboard", label: "Leaderboard" },
+      { to: "/search", label: "Search" },
       { to: "/profile", label: "Portfolio" },
       { to: "/docs", label: "How it Works" },
     ]

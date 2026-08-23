@@ -4,12 +4,13 @@ import { IS_HYPER } from "../lib/brand";
 import { KoiIcon, type KoiIconName } from "./base/KoiIcon";
 import { useUi } from "../store";
 
-// liquidstock keeps a lean tab set: only routes that exist on that flavor.
+// Same chrome as the stock board; liquidstock only swaps the base-specific
+// pool-party tab for Portfolio (its reward model is creator fees).
 const MAIN: { icon: KoiIconName; to: string; label: string }[] = IS_HYPER
   ? [
       { icon: "bar-chart", to: "/", label: "Coins" },
-      { icon: "user", to: "/profile", label: "Portfolio" },
-      { icon: "zap", to: "/docs", label: "How it works" },
+      { icon: "trending-up", to: "/leaderboard", label: "Leaderboard" },
+      { icon: "trophy", to: "/feed", label: "Feed" },
     ]
   : [
       { icon: "bar-chart", to: "/", label: "Tokens" },
@@ -38,13 +39,10 @@ export function BaseBottomNav() {
           </Link>
         ))}
         {/* Wallet opens the slide-up drawer instead of routing, mirroring the
-            reference chrome. liquidstock's Portfolio page covers holdings, so
-            it skips the extra wallet button. */}
-        {IS_HYPER ? null : (
-          <button className="kf-nav-btn" aria-label="Wallet" onClick={() => setWalletOpen(true)}>
-            <KoiIcon name="wallet" size={21} />
-          </button>
-        )}
+            reference chrome. */}
+        <button className="kf-nav-btn" aria-label="Wallet" onClick={() => setWalletOpen(true)}>
+          <KoiIcon name="wallet" size={21} />
+        </button>
       </div>
       <div className="kf-nav-sep" />
       <Link to="/search" className="kf-nav-search" aria-label="Search">

@@ -75,13 +75,17 @@ export default function App() {
                     <>
                       <Route path="/party" element={<BasePartyPage />} />
                       <Route path="/pool-party" element={<Navigate to="/party" replace />} />
-                      <Route path="/leaderboard" element={<BaseLeaderboardPage />} />
-                      <Route path="/feed" element={<BaseFeedPage />} />
                     </>
                   )}
-                  {/* The search page is flavor-generic; the stock board and
-                      liquidstock both dock it behind the bottom-nav pill. */}
-                  {(IS_STOCK_BOARD || IS_HYPER) && <Route path="/search" element={<BaseSearchPage />} />}
+                  {/* Flavor-generic discovery pages, shared by the stock board
+                      and liquidstock (leaderboard, feed, docked search). */}
+                  {(IS_STOCK_BOARD || IS_HYPER) && (
+                    <>
+                      <Route path="/leaderboard" element={<BaseLeaderboardPage />} />
+                      <Route path="/feed" element={<BaseFeedPage />} />
+                      <Route path="/search" element={<BaseSearchPage />} />
+                    </>
+                  )}
                   {/* Hidden operations console; access enforced on-chain by role. */}
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
