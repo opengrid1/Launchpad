@@ -125,8 +125,12 @@ const pairSymbolOf = (t: TokenSummary): string | null => {
   return null;
 };
 
-/* ---- circular avatar: token logo, else the branded default tile ---- */
-const DEFAULT_LOGO = "/stonk-logo.jpg";
+/* ---- circular avatar: token logo, else a mint default tile (no base asset) ---- */
+const DEFAULT_LOGO =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#98fce4'/><stop offset='1' stop-color='#2fb5a6'/></linearGradient></defs><rect width='64' height='64' rx='16' fill='url(#g)'/><text x='32' y='42' font-family='sans-serif' font-size='30' font-weight='800' fill='#032420' text-anchor='middle'>L</text></svg>`,
+  );
 function logoSrc(t: TokenSummary): string | null {
   const logo = OFFICIAL_LOGOS[t.address?.toLowerCase()] ?? t.metadata?.logo;
   if (!logo || !/^(https?:|ipfs:|data:)/.test(String(logo))) return null;
@@ -237,7 +241,7 @@ export function HyperBoard() {
         </div>
         <div className="kf-hero-grid">
           <div>
-            <img className="kf-hero-mascot" src="/stonk-logo.jpg" alt="" aria-hidden style={{ borderRadius: 18, objectFit: "cover" }} />
+            <img className="kf-hero-mascot" src={DEFAULT_LOGO} alt="" aria-hidden style={{ borderRadius: 18, objectFit: "cover" }} />
             <h1 className="kf-hero-title-xl">Launch. Earn the fees.</h1>
             <p className="kf-hero-copy">
               Launch a coin on HyperEVM paired with {env.nativeSymbol} or a tokenized stock. Every trade pays you, the creator, 1% forever.

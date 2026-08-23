@@ -81,13 +81,17 @@ export function BaseHeader() {
       <header className="kf-hdr sticky top-0 z-40">
         <div className="kf-hdr-inner">
           <Link to="/" aria-label={BRAND.name} className="kf-brand">
-            <img
-              className="kf-brand-mark"
-              src="/stonk-logo.jpg"
-              alt=""
-              aria-hidden
-              style={{ borderRadius: 11, objectFit: "cover" }}
-            />
+            {IS_HYPER ? (
+              <span className="kf-brand-mark" aria-hidden style={{ display: "grid", placeItems: "center", background: "linear-gradient(150deg, var(--color-accent-2), var(--color-accent))", color: "var(--color-accent-fg)", fontWeight: 900, fontSize: 15 }}>L</span>
+            ) : (
+              <img
+                className="kf-brand-mark"
+                src="/stonk-logo.jpg"
+                alt=""
+                aria-hidden
+                style={{ borderRadius: 11, objectFit: "cover" }}
+              />
+            )}
             <span className="kf-brand-name">{BRAND.name}<span className="kf-tld">{BRAND.tld}</span></span>
           </Link>
 
