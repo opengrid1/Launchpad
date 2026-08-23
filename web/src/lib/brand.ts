@@ -75,16 +75,16 @@ const FLAVORS: Record<string, Brand> = {
   // or a tokenized stock; the creator earns the pool's 1% fee forever. No holder
   // rewards. Hyperliquid-native dark/teal theme.
   hyper: {
-    name: "stonkliquid",
+    name: "liquidstock",
     tld: ".fun",
-    domain: "stonkliquid.fun",
-    url: "https://stonkliquid.fun",
+    domain: "liquidstock.fun",
+    url: "https://liquidstock.fun",
     twitter: "https://x.com/",
     twitterHandle: "",
     tagline: "launch a coin, earn the fees",
     description:
-      "stonkliquid.fun. Launch a coin on HyperEVM paired with HYPE or a tokenized stock. It opens a real HyperSwap market and every trade pays you, the creator, 1% forever.",
-    title: "stonkliquid | launch a coin, earn the fees",
+      "liquidstock.fun. Launch a coin on HyperEVM paired with HYPE or a tokenized stock. It opens a real HyperSwap market and every trade pays you, the creator, 1% forever.",
+    title: "liquidstock | launch a coin, earn the fees",
   },
   // Arc mainnet flavor: same product, USDC-blue theme for Circle's Arc chain.
   arc: {

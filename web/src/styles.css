@@ -535,6 +535,98 @@ button.bg-accent:disabled {
   background: linear-gradient(#0b111c, #080f18);
 }
 
+/* ---------------------------------------------------------------------------
+   Hyper flavor: Hyperliquid-native. Near-black grounds with a faint teal
+   tint and a mint/teal accent; same HUD system as the steadypads/arc themes. */
+:root[data-brand="hyper"] {
+  --color-bg: #06100e;
+  --color-panel: #0c1614;
+  --color-panel-2: #0f1c19;
+  --color-edge: #1c2b28;
+  --color-edge-2: #26403b;
+
+  --color-ink: #eafaf6;
+  --color-ink-2: #9fc7bf;
+  --color-ink-3: #6a8c86;
+
+  --color-accent: #50d2c1;
+  --color-accent-2: #2fb5a6;
+  --color-accent-ink: #98fce4;
+  --color-accent-fg: #032420;
+
+  --color-ion: #98fce4;
+
+  --color-up: #1fd8a4;
+  --color-down: #ff5d7a;
+
+  --shadow-card: 0 1px 0 #0000, 0 8px 24px -12px #000a;
+  --shadow-card-hover: inset 0 1px 0 #26403b66, 0 14px 34px -14px #000d, 0 0 0 1px #98fce41f;
+  --shadow-btn: 0 0 0 1px #50d2c159, 0 10px 30px -12px #50d2c18c;
+}
+
+:root[data-brand="hyper"] body {
+  background:
+    radial-gradient(1100px 480px at 50% -12%, #50d2c114, transparent 62%),
+    radial-gradient(900px 500px at 82% 8%, #98fce40d, transparent 60%),
+    var(--color-bg);
+  background-attachment: fixed;
+}
+
+:root[data-brand="hyper"] ::selection {
+  background: #50d2c147;
+}
+
+:root[data-brand="hyper"] * {
+  scrollbar-color: #1c2b28 transparent;
+}
+:root[data-brand="hyper"] *::-webkit-scrollbar-thumb {
+  background: #1c2b28;
+}
+
+:root[data-brand="hyper"] button.bg-accent,
+:root[data-brand="hyper"] a.bg-accent {
+  background-color: #50d2c1;
+  background-image: linear-gradient(#7ce6d6, #50d2c1 55%, #2fb5a6);
+  border-color: #50d2c18c;
+  box-shadow: inset 0 1px #c6fff199, 0 0 0 1px #50d2c147, 0 10px 30px -12px #50d2c199;
+}
+:root[data-brand="hyper"] button.bg-accent:hover,
+:root[data-brand="hyper"] a.bg-accent:hover {
+  background-image: linear-gradient(#a2f0e4, #7ce6d6 55%, #50d2c1);
+  box-shadow: inset 0 1px #c6fff1b3, 0 0 0 1px #50d2c166, 0 14px 36px -12px #50d2c1bf;
+}
+:root[data-brand="hyper"] button.bg-accent:active,
+:root[data-brand="hyper"] a.bg-accent:active {
+  box-shadow: inset 0 1px #c6fff199, 0 0 0 1px #50d2c159;
+}
+
+:root[data-brand="hyper"] .nav-sign {
+  background-image: linear-gradient(#0f1c19, #0c1614);
+  box-shadow: inset 0 1px #26403b59, 0 1px #0006;
+}
+:root[data-brand="hyper"] .nav-sign-on {
+  border-color: #50d2c180;
+  box-shadow: inset 0 1px #26403b59, inset 0 0 18px #50d2c11f, 0 0 20px -8px #50d2c199;
+}
+
+:root[data-brand="hyper"] .hud-tab:hover {
+  background: #26403b24;
+}
+:root[data-brand="hyper"] .hud-tab-on {
+  background: radial-gradient(120% 140% at 50% 0, #50d2c124, #0000 70%);
+  border-color: #50d2c173;
+  box-shadow: inset 0 0 16px #50d2c11a, 0 0 18px -8px #50d2c18c;
+}
+
+:root[data-brand="hyper"] .hud-viewport {
+  background: linear-gradient(#98fce40a, #0000 30%), #081310;
+  box-shadow: inset 0 0 0 1px #98fce40f, inset 0 1px #26403b4d;
+}
+
+:root[data-brand="hyper"] .blade-switch {
+  background: linear-gradient(#0c1614, #081310);
+}
+
 /* ============================================================
    Robinhood chain (copair): hoodheist neo-brutalist market UI.
    Warm cream ground, 3px black borders, hard offset shadows, no

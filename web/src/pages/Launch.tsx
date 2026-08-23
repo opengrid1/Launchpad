@@ -6,12 +6,13 @@ import { StockLogo } from "../components/StockLogo";
 import { Field, inputClass } from "../components/ui";
 import { client } from "../lib/client";
 import { addresses, env } from "../lib/env";
-import { BRAND_FLAVOR, IS_STOCK_BOARD } from "../lib/brand";
+import { BRAND_FLAVOR, IS_HYPER, IS_STOCK_BOARD } from "../lib/brand";
 import { STOCKS } from "../lib/v4/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 import { LaunchBoard } from "./LaunchBoard";
 import { LaunchBase } from "./LaunchBase";
+import { LaunchHyper } from "./LaunchHyper";
 
 const LAUNCHED_TOPIC = keccak256(toHex("Launched(address,address,address,uint16,bytes32)"));
 const TOKEN_CREATED_TOPIC = keccak256(
@@ -32,6 +33,9 @@ export function LaunchPage() {
   // The Base stock launchpad pairs a tokenized stock and pays holders that
   // stock through a per-coin vault; its launch screen picks the stock.
   if (IS_STOCK_BOARD) return <LaunchBase />;
+  // liquidstock (HyperEVM): pick WHYPE or a tokenized stock as the pair; the
+  // creator earns the pool's 1% fee. Its own launch screen with a pair picker.
+  if (IS_HYPER) return <LaunchHyper />;
   // The Robinhood-chain board brand pairs against any onchain token and pays
   // holders 80% of fees in it; that flow has its own launch screen.
   if (BRAND_FLAVOR === "copair") return <LaunchBoard />;

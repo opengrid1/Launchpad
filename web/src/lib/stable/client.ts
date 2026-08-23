@@ -751,14 +751,28 @@ export class StableV3Client {
 
   // -- writes -----------------------------------------------------------
 
-  /** Launch a token on the Stable factory (default $3,000 market cap). */
-  async createToken(p: { name: string; symbol: string; metadataURI: string }): Promise<`0x${string}`> {
+  /** Launch a token on the factory (default ~$3,000 market cap). `quote` lets a
+   *  flavor with multiple approved pairs (e.g. liquidstock: WHYPE or a tokenized
+   *  stock) choose the pair per launch; it defaults to the configured quote. */
+  async createToken(p: {
+    name: string;
+    symbol: string;
+    metadataURI: string;
+    quote?: Address;
+    marketCapUsd8?: bigint;
+  }): Promise<`0x${string}`> {
     const wc = this.wallet();
     return wc.writeContract({
       address: this.addresses.factory,
       abi: FACTORY_ABI,
       functionName: "createToken",
-      args: [{ name: p.name, symbol: p.symbol, metadataURI: p.metadataURI, quote: this.addresses.quote, marketCapUsd8: 0n }],
+      args: [{
+        name: p.name,
+        symbol: p.symbol,
+        metadataURI: p.metadataURI,
+        quote: (p.quote ?? this.addresses.quote) as Address,
+        marketCapUsd8: p.marketCapUsd8 ?? 0n,
+      }],
       chain: wc.chain,
       account: wc.account!,
     });
