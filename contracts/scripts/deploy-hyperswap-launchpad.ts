@@ -49,18 +49,33 @@ async function main() {
   console.log("network:", network.name, "| deployer:", signer.address);
   console.log("owner:", owner, "| feeRecipient:", feeRecipient, "| HYPE usd8:", hypeUsd8.toString(), "| creatorFeeBps:", creatorFeeBps);
 
-  const tokenDeployer = await (await ethers.getContractFactory("TokenDeployer")).deploy();
-  await tokenDeployer.waitForDeployment();
-  console.log("TokenDeployer:", await tokenDeployer.getAddress());
+  // HyperEVM "small blocks" cap at 3M gas. Every deploy tx must fit one, so set
+  // explicit gas limits under 3M (this is the size-optimized build; the factory
+  // deploy is ~2.985M). Big blocks (needed only for launches) are handled by the
+  // frontend prompting each launcher — the factory deploy/config all fit here.
+  const DEPLOY_GAS = { gasLimit: 2_999_000 };
+  const ADMIN_GAS = { gasLimit: 300_000 };
+
+  // Reuse an already-deployed TokenDeployer (e.g. after a gas-price retry) so a
+  // rerun doesn't redeploy it. It must not yet be bound to a factory.
+  let tokenDeployer;
+  if (process.env.TOKEN_DEPLOYER) {
+    tokenDeployer = await ethers.getContractAt("TokenDeployer", process.env.TOKEN_DEPLOYER);
+    console.log("Reusing TokenDeployer:", process.env.TOKEN_DEPLOYER);
+  } else {
+    tokenDeployer = await (await ethers.getContractFactory("TokenDeployer")).deploy({ gasLimit: 1_600_000 });
+    await tokenDeployer.waitForDeployment();
+    console.log("TokenDeployer:", await tokenDeployer.getAddress());
+  }
 
   const factory = await (await ethers.getContractFactory("StableLaunchpadFactory")).deploy(
-    owner, feeRecipient, await tokenDeployer.getAddress(), V3_FACTORY, POSITION_MANAGER, SWAP_ROUTER, WHYPE, creatorFeeBps,
+    owner, feeRecipient, await tokenDeployer.getAddress(), V3_FACTORY, POSITION_MANAGER, SWAP_ROUTER, WHYPE, creatorFeeBps, DEPLOY_GAS,
   );
   await factory.waitForDeployment();
   const factoryAddr = await factory.getAddress();
   console.log("StableLaunchpadFactory:", factoryAddr);
 
-  await (await tokenDeployer.setFactory(factoryAddr)).wait();
+  await (await tokenDeployer.setFactory(factoryAddr, ADMIN_GAS)).wait();
   console.log("tokenDeployer.factory set");
 
   const canAdmin = signer.address.toLowerCase() === owner.toLowerCase();
@@ -68,7 +83,7 @@ async function main() {
   // WHYPE is approved at construction with usdPrice8 = 1e8 ($1), which is wrong
   // for HYPE — correct it so WHYPE-paired pools open at a sane market cap.
   if (canAdmin) {
-    await (await factory.setQuoteAsset(WHYPE, true, hypeUsd8)).wait();
+    await (await factory.setQuoteAsset(WHYPE, true, hypeUsd8, ADMIN_GAS)).wait();
     console.log("WHYPE priced at usd8", hypeUsd8.toString());
   } else {
     console.log(`owner action needed: factory.setQuoteAsset(${WHYPE}, true, ${hypeUsd8})`);
@@ -81,7 +96,7 @@ async function main() {
     const [addr, price] = q.split(":");
     if (!addr || !price) { console.log("skip malformed QUOTE_ASSETS entry:", q); continue; }
     if (canAdmin) {
-      await (await factory.setQuoteAsset(addr, true, BigInt(price))).wait();
+      await (await factory.setQuoteAsset(addr, true, BigInt(price), ADMIN_GAS)).wait();
       console.log("approved quote:", addr, "usd8", price);
     } else {
       console.log(`owner action needed: factory.setQuoteAsset(${addr}, true, ${price})`);
