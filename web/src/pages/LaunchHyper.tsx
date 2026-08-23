@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { keccak256, toHex } from "viem";
 
 import { client } from "../lib/client";
+import { env } from "../lib/env";
 import { HYPER_STOCKS, WHYPE, type HyperStock } from "../lib/hyper/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
@@ -28,7 +29,7 @@ const ALL_PAIRS: Pair[] = [WHYPE_PAIR, ...STOCK_PAIRS];
  * ERC-20, opens its HyperSwap pool paired with the chosen asset, and seeds the
  * full supply single-sided. The pool's 1% fee accrues to the creator forever.
  */
-export function LaunchHyper() {
+export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
   const { isConnected, connectFirst } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
   const navigate = useNavigate();
@@ -120,99 +121,124 @@ export function LaunchHyper() {
   };
 
   return (
-    <div className="mx-auto max-w-lg px-4 pb-16 pt-5 sm:px-5">
-      <h1 className="text-[18px] font-bold tracking-tight text-ink">Launch a coin</h1>
-      <p className="mt-1 text-[12.5px] leading-relaxed text-ink-2">
-        One transaction mints your coin, opens a live HyperSwap market and seeds the full supply. Every trade pays
-        <span className="text-accent-ink"> you, the creator, 1% forever</span>.
+    <div className="kf kf-page kf-launch">
+      <h1 className="kf-launch-h1">Launch a coin</h1>
+      <p className="kf-launch-sub">
+        Deploy a coin on HyperEVM paired with {env.nativeSymbol} or a tokenized stock. One transaction opens a live
+        HyperSwap market and seeds the full supply. Every trade pays you, the creator, 1% forever.
       </p>
 
       {/* Big-blocks notice — a launch deploys a V3 pool (~6M gas), above HyperEVM's small-block limit. */}
-      <div className="mt-3 rounded-xl border border-edge bg-panel-2 p-3 text-[11.5px] leading-relaxed text-ink-2">
-        <span className="font-semibold text-accent-ink">One-time setup:</span> launching deploys a pool, which needs
-        HyperEVM <b>big blocks</b> enabled on your wallet. Turn on “Use big blocks for EVM” in the{" "}
-        <a href="https://app.hyperliquid.xyz" target="_blank" rel="noreferrer" className="text-accent-ink underline underline-offset-2">Hyperliquid app</a>{" "}
+      <div style={{
+        margin: "12px 16px 0",
+        border: "1px solid var(--color-edge)",
+        background: "var(--color-panel-2)",
+        borderRadius: 12,
+        padding: 12,
+        fontSize: 11.5,
+        lineHeight: 1.6,
+        color: "var(--color-ink-2)",
+      }}>
+        <b style={{ color: "var(--color-accent-ink)" }}>One-time setup:</b> launching deploys a pool, which needs HyperEVM{" "}
+        <b>big blocks</b> enabled on your wallet. Turn on “Use big blocks for EVM” in the{" "}
+        <a href="https://app.hyperliquid.xyz" target="_blank" rel="noreferrer" style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>Hyperliquid app</a>{" "}
         once, then launch here. Trading your coin afterward needs nothing special.
       </div>
 
-      <form onSubmit={submit} className="mt-4 space-y-4 rounded-xl border border-edge bg-panel p-4">
-        {/* Logo + identity */}
-        <div className="flex items-center gap-3">
+      <form onSubmit={submit} className="kf-form">
+        <div className="kf-field">
+          <label>Token Name</label>
+          <input type="text" value={form.name} onChange={set("name")} placeholder="Enter token name..." maxLength={48}
+            className={nameError ? "err" : undefined} aria-invalid={!!nameError} />
+          {nameError ? <p className="kf-err-msg">{nameError}</p> : null}
+        </div>
+
+        <div className="kf-field">
+          <label>Ticker Symbol <i>(optional)</i></label>
+          <input type="text" value={form.symbol} onChange={set("symbol")} placeholder="e.g. COIN" maxLength={12} />
+          <p className="hint">Auto-generated from the name if left blank.</p>
+        </div>
+
+        <div className="kf-field">
+          <label>Description <i>(optional)</i></label>
+          <textarea value={form.description} onChange={set("description")} placeholder="What is this coin about?" maxLength={500} rows={3} />
+        </div>
+
+        <div className="kf-field">
+          <label>Token Image <i>(optional)</i></label>
           <input ref={fileRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) onLogoFile(f); }} />
-          <button type="button" onClick={() => fileRef.current?.click()}
-            className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg border border-edge bg-panel-2 transition-colors hover:border-edge-2"
-            aria-label="Upload logo">
-            {logoData ? <img src={logoData} alt="" className="h-full w-full object-cover" /> : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-ink-3" aria-hidden>
-                <path d="M12 16V5m0 0l-4 4m4-4l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M4 17.5V19a1.5 1.5 0 001.5 1.5h13A1.5 1.5 0 0020 19v-1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            )}
-          </button>
-          <div>
-            <p className="text-[13px] font-semibold text-ink">Logo</p>
-            <p className="mt-0.5 text-[11.5px] text-ink-3">
-              PNG / JPG.{" "}
-              {logoData ? <button type="button" className="font-medium text-accent-ink underline underline-offset-2" onClick={() => setLogoData("")}>Remove</button> : "Square looks best."}
+          <div className="kf-drop-zone"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f) onLogoFile(f); }}>
+            <div className="kf-drop-row">
+              {logoData ? (
+                <img src={logoData} alt="" style={{ width: 50, height: 50, borderRadius: 12, objectFit: "cover", flex: "none" }} />
+              ) : null}
+              <input
+                type="text"
+                readOnly
+                value={logoData ? "Uploaded image ready" : ""}
+                placeholder="Browse or drag and drop an image..."
+                onFocus={() => fileRef.current?.click()}
+              />
+              <button type="button" className="kf-clip" aria-label="Upload image" onClick={() => fileRef.current?.click()}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m21 11.5-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8L13 4a3.7 3.7 0 0 1 5.2 5.2l-8.2 8.2a1.8 1.8 0 0 1-2.6-2.6L15 7.3" /></svg>
+              </button>
+            </div>
+            <p className="kf-drop-hint">
+              PNG or JPG. Square looks best. Browse or drag and drop an image here.
+              {logoData ? <> · <button type="button" style={{ color: "var(--color-accent-ink)", background: "none", border: 0, cursor: "pointer", padding: 0 }} onClick={() => setLogoData("")}>Remove</button></> : null}
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="text-[12px] font-medium text-ink-2">Name</span>
-            <input value={form.name} onChange={set("name")} placeholder="My Coin" maxLength={48}
-              className={`mt-1 w-full rounded-lg border bg-panel-2 px-3 py-2 text-[13px] text-ink outline-none placeholder:text-ink-3 ${nameError ? "border-down" : "border-edge focus:border-edge-2"}`} />
-          </label>
-          <label className="block">
-            <span className="text-[12px] font-medium text-ink-2">Ticker <i className="text-ink-3">(optional)</i></span>
-            <input value={form.symbol} onChange={set("symbol")} placeholder="COIN" maxLength={12}
-              className="mt-1 w-full rounded-lg border border-edge bg-panel-2 px-3 py-2 text-[13px] text-ink outline-none placeholder:text-ink-3 focus:border-edge-2" />
-          </label>
-        </div>
-        {nameError ? <p className="text-[11.5px] text-down">{nameError}</p> : null}
-
-        <label className="block">
-          <span className="text-[12px] font-medium text-ink-2">Description <i className="text-ink-3">(optional)</i></span>
-          <textarea value={form.description} onChange={set("description")} placeholder="What is this coin about?" maxLength={500} rows={3}
-            className="mt-1 w-full resize-none rounded-lg border border-edge bg-panel-2 px-3 py-2 text-[13px] text-ink outline-none placeholder:text-ink-3 focus:border-edge-2" />
-        </label>
-
-        {/* Pair picker — WHYPE or a tokenized stock; the creator earns fees in it */}
-        <div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-[12px] font-medium text-ink-2">Pair</span>
-            <span className="text-[11px] text-ink-3">You earn 1% of every trade in {selected.label}</span>
-          </div>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search HYPE or a stock (NVDA, TSLA, SPY…)"
-            className="mt-1 w-full rounded-lg border border-edge bg-panel-2 px-3 py-2 text-[12.5px] text-ink outline-none placeholder:text-ink-3 focus:border-edge-2" />
-          <div className="mt-2 grid max-h-44 grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
+        {/* Pool pairing — WHYPE or a tokenized stock; the creator earns its fees */}
+        <div className="kf-field">
+          <label>Pool Pairing</label>
+          <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${env.nativeSymbol} or a stock (NVDA, TSLA, SPY…)`} />
+          <div className="kf-pairgrid" style={{ maxHeight: 200, overflowY: "auto" }}>
             {filtered.map((p) => (
-              <button type="button" key={p.address} onClick={() => setPair(p.address)} title={p.sub}
-                className={`rounded-lg border px-2 py-2 text-left transition-colors ${pair === p.address ? "border-accent bg-panel-2" : "border-edge bg-panel hover:border-edge-2"}`}>
-                <div className="text-[12.5px] font-semibold text-ink">{p.label}</div>
-                <div className="truncate text-[10.5px] text-ink-3">{p.sub}</div>
+              <button
+                type="button"
+                key={p.address}
+                onClick={() => setPair(p.address)}
+                title={p.sub}
+                className={pair === p.address ? "on" : ""}
+              >
+                {p.label}
               </button>
             ))}
-            {filtered.length === 0 ? <div className="col-span-full py-3 text-center text-[11.5px] text-ink-3">No match.</div> : null}
+            {filtered.length === 0 ? <div style={{ gridColumn: "1 / -1", padding: "12px 0", textAlign: "center", color: "var(--color-ink-3)" }}>No match.</div> : null}
           </div>
+          <p className="hint">You earn 1% of every trade in {selected.label} ({selected.sub}).</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <label className="block"><span className="text-[12px] font-medium text-ink-2">Website</span>
-            <input value={form.website} onChange={set("website")} placeholder="yoursite.com" className="mt-1 w-full rounded-lg border border-edge bg-panel-2 px-3 py-2 text-[12.5px] text-ink outline-none placeholder:text-ink-3 focus:border-edge-2" /></label>
-          <label className="block"><span className="text-[12px] font-medium text-ink-2">X</span>
-            <input value={form.twitter} onChange={set("twitter")} placeholder="@handle" className="mt-1 w-full rounded-lg border border-edge bg-panel-2 px-3 py-2 text-[12.5px] text-ink outline-none placeholder:text-ink-3 focus:border-edge-2" /></label>
-          <label className="block"><span className="text-[12px] font-medium text-ink-2">Telegram</span>
-            <input value={form.telegram} onChange={set("telegram")} placeholder="@group" className="mt-1 w-full rounded-lg border border-edge bg-panel-2 px-3 py-2 text-[12.5px] text-ink outline-none placeholder:text-ink-3 focus:border-edge-2" /></label>
+        <div className="kf-field">
+          <label>X URL <i>(optional)</i></label>
+          <input type="text" value={form.twitter} onChange={set("twitter")} placeholder="https://x.com/user or @handle" />
         </div>
 
-        <button type="submit" disabled={busy}
-          className="w-full rounded-lg bg-accent px-4 py-3 text-[14px] font-semibold text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-60">
-          {busy ? "Confirm in wallet…" : isConnected ? "Launch coin" : "Connect & launch"}
-        </button>
-        <p className="text-center text-[11px] text-ink-3">You pay HyperEVM gas. Big blocks must be enabled on your wallet.</p>
+        <div className="kf-field">
+          <label>Telegram <i>(optional)</i></label>
+          <input type="text" value={form.telegram} onChange={set("telegram")} placeholder="https://t.me/yourgroup or @handle" />
+        </div>
+
+        <div className="kf-field">
+          <label>Website <i>(optional)</i></label>
+          <input type="text" value={form.website} onChange={set("website")} placeholder="https://yourproject.com" />
+        </div>
+
+        <div className="kf-divider" />
+
+        <div className="kf-btnrow">
+          <button type="button" className="kf-cancel" onClick={() => (onCancel ? onCancel() : window.history.back())}>Cancel</button>
+          <button type="submit" className="kf-submit" disabled={busy}>
+            {busy ? "Confirm in wallet…" : isConnected ? "Launch coin" : "Connect & launch"}
+          </button>
+        </div>
+        <p className="kf-footnote">You pay HyperEVM gas. Big blocks must be enabled on your wallet.</p>
       </form>
     </div>
   );
