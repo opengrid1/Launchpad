@@ -8,9 +8,7 @@ import { useUi } from "../store";
 const MAIN: { icon: KoiIconName; to: string; label: string }[] = IS_HYPER
   ? [
       { icon: "bar-chart", to: "/", label: "Coins" },
-      { icon: "rocket", to: "/launch", label: "Launch" },
       { icon: "user", to: "/profile", label: "Portfolio" },
-      { icon: "zap", to: "/docs", label: "How it works" },
     ]
   : [
       { icon: "bar-chart", to: "/", label: "Tokens" },
@@ -39,10 +37,13 @@ export function BaseBottomNav() {
           </Link>
         ))}
         {/* Wallet opens the slide-up drawer instead of routing, mirroring the
-            reference chrome. */}
-        <button className="kf-nav-btn" aria-label="Wallet" onClick={() => setWalletOpen(true)}>
-          <KoiIcon name="wallet" size={21} />
-        </button>
+            reference chrome. liquidstock's Portfolio page covers holdings, so
+            it skips the extra wallet button. */}
+        {IS_HYPER ? null : (
+          <button className="kf-nav-btn" aria-label="Wallet" onClick={() => setWalletOpen(true)}>
+            <KoiIcon name="wallet" size={21} />
+          </button>
+        )}
       </div>
       {/* liquidstock has no dedicated search page; the board filters inline. */}
       {IS_HYPER ? null : (
