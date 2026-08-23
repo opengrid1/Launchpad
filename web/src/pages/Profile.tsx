@@ -135,7 +135,7 @@ export function ProfilePage() {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="tnum text-[15px] font-semibold text-ink">{ethBal !== null ? `${fmtWei(ethBal)} ETH` : "–"}</p>
+            <p className="tnum text-[15px] font-semibold text-ink">{ethBal !== null ? `${fmtWei(ethBal)} ${env.nativeSymbol}` : "–"}</p>
             <p className="text-[11px] text-ink-3">balance</p>
           </div>
           <Button variant="ghost" onClick={() => disconnect()}>
