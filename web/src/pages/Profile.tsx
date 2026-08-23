@@ -6,6 +6,8 @@ import type { Address, TokenSummary } from "@launchpad/sdk";
 import { TokenLogo } from "../components/TokenLogo";
 import { Button, EmptyState, Skeleton } from "../components/ui";
 import { client, v4Client } from "../lib/client";
+import { BRAND_FLAVOR } from "../lib/brand";
+import { env } from "../lib/env";
 import { fmtUsd, fmtWei, shortAddr } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
@@ -142,9 +144,13 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {/* Trader rewards: weekly flywheel claims */}
-      <h2 className="mt-6 text-[13px] font-extrabold uppercase tracking-wide text-ink-2">Trader rewards</h2>
-      <TraderRewards />
+      {/* Trader rewards: weekly flywheel claims — only the Robinhood heist board. */}
+      {BRAND_FLAVOR === "copair" && (
+        <>
+          <h2 className="mt-6 text-[13px] font-extrabold uppercase tracking-wide text-ink-2">Trader rewards</h2>
+          <TraderRewards />
+        </>
+      )}
 
       {/* Launched coins */}
       <h2 className="mt-6 text-[13px] font-extrabold uppercase tracking-wide text-ink-2">Your coins</h2>
@@ -156,7 +162,7 @@ export function ProfilePage() {
           <Link to="/launch" className="font-semibold text-accent-ink underline underline-offset-2">
             Launch one
           </Link>{" "}
-          and earn a fee stream in ETH for the life of the coin.
+          and earn a fee stream in {env.nativeSymbol} for the life of the coin.
         </div>
       ) : (
         <div className="mt-2 space-y-2">
