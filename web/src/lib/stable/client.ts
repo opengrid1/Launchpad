@@ -350,6 +350,28 @@ export class StableV3Client {
     return this.pairOf(token);
   }
 
+  /** Wallet-sheet helper: balance of an asset for an owner. The zero address
+   *  means the chain's native currency. */
+  async assetBalance(asset: Address, owner: Address): Promise<bigint> {
+    if (/^0x0+$/.test(asset)) return this.publicClient.getBalance({ address: owner });
+    return this.publicClient.readContract({
+      address: asset, abi: ERC20_ABI, functionName: "balanceOf", args: [owner],
+    }) as Promise<bigint>;
+  }
+
+  /** Wallet-sheet helper: USD per whole unit of an asset, from the factory's
+   *  quote registry. The zero address (native) prices as the wrapped native. */
+  async assetUsdPrice(asset: Address): Promise<number> {
+    const addr = /^0x0+$/.test(asset) ? this.addresses.quote : asset;
+    try {
+      const qa = await this.publicClient.readContract({
+        address: this.addresses.factory, abi: FACTORY_ABI, functionName: "quoteAssets", args: [addr],
+      });
+      const [, price8] = qa as unknown as [boolean, bigint, number];
+      return price8 > 0n ? Number(price8) / 1e8 : 0;
+    } catch { return 0; }
+  }
+
   // -- reads ------------------------------------------------------------
 
   private loadCores(): Promise<Core[]> {

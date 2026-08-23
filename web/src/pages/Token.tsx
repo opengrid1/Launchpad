@@ -431,6 +431,13 @@ function BaseTokenView({
       {/* Holder rewards: claim the paired stock streamed from trades */}
       {hasReward ? <RewardClaimCard coin={t.address as Address} fallbackSym={rewardSym} /> : null}
 
+      {/* Creator-fee flavors (liquidstock): the permissionless harvest strip */}
+      {CREATOR_MODE ? (
+        <div style={{ margin: "10px 16px 2px" }}>
+          <HarvestStrip token={t.address as Address} creator={t.creator} />
+        </div>
+      ) : null}
+
       {/* Chart */}
       <div className="kf-tk-chart">
         <Suspense fallback={<Skeleton className="h-full w-full" />}>

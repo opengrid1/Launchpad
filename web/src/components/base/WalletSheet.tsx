@@ -4,7 +4,9 @@ import { useTokens } from "@launchpad/sdk/react";
 
 import { client } from "../../lib/client";
 import { BASE_USDC, BASE_WETH } from "../../lib/base/routes";
+import { BRAND, IS_HYPER } from "../../lib/brand";
 import { env } from "../../lib/env";
+import { WHYPE } from "../../lib/hyper/stocks";
 import { fmtUsd, shortAddr } from "../../lib/format";
 import { useWallet } from "../../lib/useWallet";
 import { useUi } from "../../store";
@@ -12,20 +14,32 @@ import { KoiIcon } from "./KoiIcon";
 
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 
-// The Base network brandmark badge shown on each holding avatar.
-const BaseMark = () => (
+// The chain brandmark badge shown on each holding avatar: Base's blue disc,
+// or the mint disc on HyperEVM.
+const ChainMark = () => (
   <svg viewBox="0 0 40 40" aria-hidden>
-    <circle cx="20" cy="20" r="20" fill="#fff" />
-    <path d="M24 2.45 A18 18 0 1 0 24 37.55 Z" fill="#0052FF" />
+    {IS_HYPER ? (
+      <circle cx="20" cy="20" r="20" fill="#4fe0cb" />
+    ) : (
+      <>
+        <circle cx="20" cy="20" r="20" fill="#fff" />
+        <path d="M24 2.45 A18 18 0 1 0 24 37.55 Z" fill="#0052FF" />
+      </>
+    )}
   </svg>
 );
 
-// The fundable assets on Base, shown as holdings with their USD value.
-const ASSETS: { key: string; sym: string; name: string; address: Address; decimals: number }[] = [
-  { key: "eth", sym: "ETH", name: "Ethereum", address: ZERO, decimals: 18 },
-  { key: "usdc", sym: "USDC", name: "USD Coin", address: BASE_USDC, decimals: 6 },
-  { key: "weth", sym: "WETH", name: "Wrapped Ether", address: BASE_WETH, decimals: 18 },
-];
+// The fundable assets on this chain, shown as holdings with their USD value.
+const ASSETS: { key: string; sym: string; name: string; address: Address; decimals: number }[] = IS_HYPER
+  ? [
+      { key: "hype", sym: "HYPE", name: "Hyperliquid", address: ZERO, decimals: 18 },
+      { key: "whype", sym: "WHYPE", name: "Wrapped HYPE", address: WHYPE, decimals: 18 },
+    ]
+  : [
+      { key: "eth", sym: "ETH", name: "Ethereum", address: ZERO, decimals: 18 },
+      { key: "usdc", sym: "USDC", name: "USD Coin", address: BASE_USDC, decimals: 6 },
+      { key: "weth", sym: "WETH", name: "Wrapped Ether", address: BASE_WETH, decimals: 18 },
+    ];
 
 type Holding = { key: string; sym: string; name: string; amount: number; usd: number };
 
@@ -121,11 +135,11 @@ export function WalletSheet({ open, onClose }: { open: boolean; onClose: () => v
             <div className="kf-wallet-holdings">
               <div className="kf-wallet-hh">Holdings</div>
               {holdings.length === 0 ? (
-                <p className="hint">No balances on Base yet.</p>
+                <p className="hint">No balances on {env.chainName} yet.</p>
               ) : (
                 holdings.map((h) => (
                   <div key={h.key} className="kf-wallet-hrow">
-                    <span className="kf-wallet-hav">{h.sym.slice(0, 1)}<BaseMark /></span>
+                    <span className="kf-wallet-hav">{h.sym.slice(0, 1)}<ChainMark /></span>
                     <span className="kf-wallet-hmid">
                       <span className="kf-wallet-hsym">{h.sym}</span>
                       <span className="kf-wallet-hname">{h.name}</span>
@@ -140,13 +154,13 @@ export function WalletSheet({ open, onClose }: { open: boolean; onClose: () => v
             </div>
 
             <div className="kf-wallet-tokens">
-              <div className="kf-wallet-th"><span>Your {`basedstonk`} tokens</span><span>{mine.length}</span></div>
+              <div className="kf-wallet-th"><span>Your {BRAND.name} tokens</span><span>{mine.length}</span></div>
               {mine.length === 0 ? (
-                <p className="hint">This wallet hasn't launched any basedstonk tokens yet.</p>
+                <p className="hint">This wallet hasn't launched any {BRAND.name} tokens yet.</p>
               ) : (
                 mine.map((t) => (
                   <a key={t.address} className="kf-wallet-hrow" href={`/token/${t.address}`}>
-                    <span className="kf-wallet-hav">{t.symbol.slice(0, 1)}<BaseMark /></span>
+                    <span className="kf-wallet-hav">{t.symbol.slice(0, 1)}<ChainMark /></span>
                     <span className="kf-wallet-hmid">
                       <span className="kf-wallet-hsym">{t.symbol}</span>
                       <span className="kf-wallet-hname">{t.name}</span>

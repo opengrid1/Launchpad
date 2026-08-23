@@ -1,4 +1,4 @@
-import { BRAND } from "../lib/brand";
+import { BRAND, IS_HYPER } from "../lib/brand";
 import { env } from "../lib/env";
 import { addresses } from "../lib/env";
 import { v4Client } from "../lib/client";
@@ -11,7 +11,90 @@ const IS_RH = String(import.meta.env.VITE_PROTOCOL ?? "") === "rh-v4";
  * plus the protocol contracts. Typography-first, no dashboard.
  */
 export function DocsPage() {
-  return IS_RH ? <CopairDocs /> : <LegacyDocs />;
+  if (IS_RH) return <CopairDocs />;
+  if (IS_HYPER) return <HyperDocs />;
+  return <LegacyDocs />;
+}
+
+/** liquidstock docs: HyperSwap V3 creator-fee launchpad on HyperEVM. */
+function HyperDocs() {
+  const contracts: { name: string; address: string; note: string }[] = [
+    { name: "LaunchpadFactory", address: addresses.factory, note: "Launches, the pair registry, fee harvesting; owns every LP position" },
+    { name: "TokenDeployer", address: addresses.tokenDeployer, note: "Deploys every token with fixed rules" },
+    { name: "WHYPE", address: addresses.weth, note: "Wrapped HYPE, the default pool pair" },
+  ];
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+      <h1 className="text-[24px] font-bold tracking-tight text-ink">Docs</h1>
+      <p className="mt-1.5 text-sm text-ink-2">
+        {BRAND.name} is a launchpad on {env.chainName}, Hyperliquid's EVM. Every coin opens a
+        real HyperSwap market and every rule below is enforced by the contracts, not by policy.
+      </p>
+
+      <TermSection title="The 1% fee" sub="70% yours">
+        <p>
+          Every pool sits at HyperSwap's 1% fee tier, so every buy and sell pays 1% into the
+          pool. Anyone can trigger a harvest at any time: the collected fees are split on-chain
+          in the same transaction, in whichever asset your coin pairs.
+        </p>
+        <Facts
+          rows={[
+            ["Creator", "70% · yours forever"],
+            ["Platform", "30%"],
+            ["Paid in", "your coin's pair: HYPE or the stock"],
+          ]}
+        />
+      </TermSection>
+
+      <TermSection title="Launching" sub="One transaction">
+        <p>
+          Launching is free, you pay only gas. One transaction deploys the token, opens a
+          HyperSwap pool against the pair you pick, seeds the entire supply single-sided, and
+          starts trading. The LP position is locked in the factory forever, so liquidity can
+          never be pulled.
+        </p>
+        <Facts
+          rows={[
+            ["Total supply", "1,000,000,000, fixed"],
+            ["Starting market cap", "≈ $3,000"],
+            ["Pool pairing", `${env.nativeSymbol} or one of 35 tokenized stocks`],
+            ["Upfront liquidity", "None required"],
+          ]}
+        />
+        <p>
+          One-time setup: launching deploys a pool, which needs {env.chainName} big blocks
+          enabled on your wallet. Turn on "Use big blocks for EVM" in the Hyperliquid app once.
+          Trading needs nothing special.
+        </p>
+      </TermSection>
+
+      <TermSection title="Pairing a stock" sub="35 markets">
+        <p>
+          Coins can pair Ondo tokenized US stocks and ETFs live on {env.chainName}: NVDA, TSLA,
+          AAPL, SPY, QQQ and more. A stock-paired coin trades against that stock and its fees
+          accrue in it, so the creator earns the stock on every trade.
+        </p>
+      </TermSection>
+
+      <TermSection title="Trading" sub="Real HyperSwap pools">
+        <p>
+          Buys and sells route through HyperSwap's own router. A {env.nativeSymbol}-paired coin
+          trades in plain {env.nativeSymbol}; a stock-paired coin trades in the stock itself.
+          Pools are standard V3 markets, so aggregators and bots can route them too, and every
+          such trade still pays the 1%.
+        </p>
+      </TermSection>
+
+      <TermSection title="Contracts" sub="On-chain">
+        <div className="mt-1 space-y-2">
+          {contracts.map((c) => (
+            <ContractRow key={c.name} {...c} />
+          ))}
+        </div>
+      </TermSection>
+    </div>
+  );
 }
 
 /** Pair=reward launchpad docs (Robinhood Chain). */

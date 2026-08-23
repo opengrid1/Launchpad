@@ -1,14 +1,23 @@
 import { Link, useLocation } from "react-router-dom";
 
+import { IS_HYPER } from "../lib/brand";
 import { KoiIcon, type KoiIconName } from "./base/KoiIcon";
 import { useUi } from "../store";
 
-const MAIN: { icon: KoiIconName; to: string; label: string }[] = [
-  { icon: "bar-chart", to: "/", label: "Tokens" },
-  { icon: "flame", to: "/party", label: "Pool party" },
-  { icon: "trending-up", to: "/leaderboard", label: "Leaderboard" },
-  { icon: "trophy", to: "/feed", label: "Feed" },
-];
+// liquidstock keeps a lean tab set: only routes that exist on that flavor.
+const MAIN: { icon: KoiIconName; to: string; label: string }[] = IS_HYPER
+  ? [
+      { icon: "bar-chart", to: "/", label: "Coins" },
+      { icon: "rocket", to: "/launch", label: "Launch" },
+      { icon: "user", to: "/profile", label: "Portfolio" },
+      { icon: "zap", to: "/docs", label: "How it works" },
+    ]
+  : [
+      { icon: "bar-chart", to: "/", label: "Tokens" },
+      { icon: "flame", to: "/party", label: "Pool party" },
+      { icon: "trending-up", to: "/leaderboard", label: "Leaderboard" },
+      { icon: "trophy", to: "/feed", label: "Feed" },
+    ];
 
 /** koi.fun floating bottom navigation — fixed pill, pink active icon, with a
  *  separated search action, mirroring the reference chrome. */
@@ -35,10 +44,15 @@ export function BaseBottomNav() {
           <KoiIcon name="wallet" size={21} />
         </button>
       </div>
-      <div className="kf-nav-sep" />
-      <Link to="/search" className="kf-nav-search" aria-label="Search">
-        <KoiIcon name="search" size={19} />
-      </Link>
+      {/* liquidstock has no dedicated search page; the board filters inline. */}
+      {IS_HYPER ? null : (
+        <>
+          <div className="kf-nav-sep" />
+          <Link to="/search" className="kf-nav-search" aria-label="Search">
+            <KoiIcon name="search" size={19} />
+          </Link>
+        </>
+      )}
     </nav>
   );
 }

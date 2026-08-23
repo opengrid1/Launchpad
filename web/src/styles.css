@@ -3746,10 +3746,13 @@ button.bg-accent:disabled {
 
 /* Hero v2: headline + copy + leaders inside a neutral dark card with a faint
    mint accent glow at one corner (no base banner image, no teal wash). */
+/* Hyperliquid-style banner: deep forest-green ground with the mint particle
+   wave (public/hyper-dots.svg, generated art — cascading droplet trails). */
 :root[data-brand="hyper"] .kf-hero { padding: 26px 0 24px;
   background:
-    radial-gradient(90% 70% at 8% -10%, rgba(79, 224, 203, .10), transparent 55%),
-    linear-gradient(160deg, #161b1f, #0e1114 72%);
+    url("/hyper-dots.svg") center / cover no-repeat,
+    linear-gradient(160deg, #0a2e26, #04231d 72%);
+  background-color: #062721;
   box-shadow: 0 18px 44px -20px #000c, inset 0 0 0 1px #ffffff0c; }
 /* Dark scrim so the white hero text stays readable over the glitch art. */
 :root[data-brand="hyper"] .kf-hero::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
