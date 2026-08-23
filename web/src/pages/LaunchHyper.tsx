@@ -102,31 +102,28 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
         pair: selected.symbol,
         pairAddress: pair,
       });
+      // The dev buy rides inside the launch transaction itself (the factory
+      // swaps it through the fresh pool atomically, coins land in the
+      // creator's wallet). For a stock pair the client first ensures the
+      // factory has an allowance for the stock.
+      const devAmt = Number(devBuy) > 0 ? devBuy.trim() : "";
       const hash = await (client as any).createToken({
         name: form.name.trim(),
         symbol: (form.symbol.trim() || form.name.trim().replace(/[^a-zA-Z0-9]/g, "").slice(0, 6) || "TOKEN").toUpperCase(),
         metadataURI: metadata,
         quote: pair,
+        devBuyQuote: devAmt ? parseEther(devAmt as `${number}`) : 0n,
       });
       pushToast({ kind: "info", title: "Launch submitted", txHash: hash });
       const receipt = await client.publicClient.waitForTransactionReceipt({ hash });
       const log = receipt.logs.find((l) => l.topics[0] === TOKEN_CREATED_TOPIC);
-      pushToast({ kind: "success", title: "Coin is live", body: `Market open, paired with ${selected.label}.`, txHash: hash });
+      pushToast({
+        kind: "success",
+        title: "Coin is live",
+        body: `Market open, paired with ${selected.label}.${devAmt ? ` Dev buy of ${devAmt} ${selected.label} filled.` : ""}`,
+        txHash: hash,
+      });
       const tokenAddr = log?.topics[1] ? (`0x${log.topics[1].slice(26)}` as `0x${string}`) : null;
-      // Dev buy: the factory has no atomic buy, so fire it as the very next
-      // transaction after the pool opens - first fill before the coin is
-      // publicly listed anywhere. A failed buy never voids the launch.
-      const devAmt = Number(devBuy) > 0 ? devBuy.trim() : "";
-      if (tokenAddr && devAmt) {
-        try {
-          const buyHash = await (client as any).buyToken(tokenAddr, parseEther(devAmt as `${number}`), 0n);
-          pushToast({ kind: "info", title: "Dev buy submitted", txHash: buyHash });
-          await client.publicClient.waitForTransactionReceipt({ hash: buyHash });
-          pushToast({ kind: "success", title: "Dev buy filled", body: `${devAmt} ${selected.label} into your coin.`, txHash: buyHash });
-        } catch (err) {
-          pushToast({ kind: "error", title: "Dev buy failed (coin is still live)", body: errorText(err) });
-        }
-      }
       if (tokenAddr) navigate(`/token/${tokenAddr}`);
       else navigate("/");
     } catch (err) {
@@ -242,8 +239,8 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
             placeholder="0.0"
           />
           <p className="hint">
-            {selected.label} spent buying your own coin, sent automatically the moment the pool opens
-            {selected.address === WHYPE ? "" : ` (you need ${selected.label} in your wallet)`}.
+            {selected.label} spent buying your own coin in the launch transaction itself, before anyone
+            else can trade{selected.address === WHYPE ? "" : ` (you need ${selected.label} in your wallet)`}.
           </p>
         </div>
 

@@ -45,7 +45,7 @@ describe("HyperSwap launchpad via NonfungiblePositionManager (fork)", function (
   }
 
   async function createToken(factory: any, creator: any) {
-    const p = { name: "Hyper Coin", symbol: "HYPC", metadataURI: "{}", quote: WHYPE, marketCapUsd8: 0n };
+    const p = { name: "Hyper Coin", symbol: "HYPC", metadataURI: "{}", quote: WHYPE, marketCapUsd8: 0n, devBuyQuote: 0n };
     const rc = await (await factory.connect(creator).createToken(p)).wait();
     const ev = rc.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } })
       .find((e: any) => e?.name === "TokenCreated");

@@ -7,7 +7,7 @@ import { ethers } from "hardhat";
 //   ACTION=fee-recipient   NEW=0x...            -> setFeeRecipient
 //   ACTION=transfer-owner  NEW=0x...            -> transferOwnership
 //   ACTION=quote-price     NEW=0x... PRICE8=n   -> setQuoteAsset(NEW, true, n)
-const FACTORY = "0x6F2FaEe74afec6d8798dd18652F9cF0ec9a59027";
+const FACTORY = "0xE1DF818afA3154B56D719D92e25A69686b7046d4";
 const FEES = { maxFeePerGas: 20_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n, gasLimit: 300_000 };
 
 async function main() {

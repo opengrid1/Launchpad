@@ -26,8 +26,8 @@ import { HYPER_STOCKS } from "../hyper/stocks";
  */
 
 const FACTORY_ABI = parseAbi([
-  "struct CreateParams { string name; string symbol; string metadataURI; address quote; uint256 marketCapUsd8; }",
-  "function createToken(CreateParams p) returns (address token, address pool, uint256 positionId)",
+  "struct CreateParams { string name; string symbol; string metadataURI; address quote; uint256 marketCapUsd8; uint256 devBuyQuote; }",
+  "function createToken(CreateParams p) payable returns (address token, address pool, uint256 positionId)",
   "function harvestFees(address token) returns (uint256, uint256, uint256, uint256)",
   "function tokenCount() view returns (uint256)",
   "function allTokens(uint256) view returns (address)",
@@ -867,15 +867,25 @@ export class StableV3Client {
 
   /** Launch a token on the factory (default ~$3,000 market cap). `quote` lets a
    *  flavor with multiple approved pairs (e.g. liquidstock: WHYPE or a tokenized
-   *  stock) choose the pair per launch; it defaults to the configured quote. */
+   *  stock) choose the pair per launch; it defaults to the configured quote.
+   *  `devBuyQuote` (quote units, 18d) rides in the same transaction as an
+   *  atomic first buy: native value for the wrapped-native pair, a factory
+   *  allowance (set here if missing) for any other pair. */
   async createToken(p: {
     name: string;
     symbol: string;
     metadataURI: string;
     quote?: Address;
     marketCapUsd8?: bigint;
+    devBuyQuote?: bigint;
   }): Promise<`0x${string}`> {
     const wc = this.wallet();
+    const quote = (p.quote ?? this.addresses.quote) as Address;
+    const devBuy = p.devBuyQuote ?? 0n;
+    const payNative = QUOTE_IS_WNATIVE && quote.toLowerCase() === this.addresses.quote.toLowerCase();
+    if (devBuy > 0n && !payNative) {
+      await this.ensureAllowance(wc.account!.address as Address, quote, devBuy, this.addresses.factory);
+    }
     return wc.writeContract({
       address: this.addresses.factory,
       abi: FACTORY_ABI,
@@ -884,23 +894,26 @@ export class StableV3Client {
         name: p.name,
         symbol: p.symbol,
         metadataURI: p.metadataURI,
-        quote: (p.quote ?? this.addresses.quote) as Address,
+        quote,
         marketCapUsd8: p.marketCapUsd8 ?? 0n,
+        devBuyQuote: devBuy,
       }],
+      value: devBuy > 0n && payNative ? devBuy : undefined,
       chain: wc.chain,
       account: wc.account!,
     });
   }
 
-  private async ensureAllowance(owner: Address, tokenAddr: Address, amount: bigint) {
+  private async ensureAllowance(owner: Address, tokenAddr: Address, amount: bigint, spender?: Address) {
     const wc = this.wallet();
+    const spend = spender ?? this.addresses.swapRouter;
     const allowance = (await this.publicClient.readContract({
-      address: tokenAddr, abi: ERC20_ABI, functionName: "allowance", args: [owner, this.addresses.swapRouter],
+      address: tokenAddr, abi: ERC20_ABI, functionName: "allowance", args: [owner, spend],
     })) as bigint;
     if (allowance < amount) {
       const hash = await wc.writeContract({
         address: tokenAddr, abi: ERC20_ABI, functionName: "approve",
-        args: [this.addresses.swapRouter, amount], chain: wc.chain, account: wc.account!,
+        args: [spend, amount], chain: wc.chain, account: wc.account!,
       });
       await this.publicClient.waitForTransactionReceipt({ hash });
     }

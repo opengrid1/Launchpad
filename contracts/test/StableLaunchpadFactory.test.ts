@@ -66,7 +66,24 @@ const PARAMS = {
   name: "Steady Token",
   symbol: "STDY",
   metadataURI: JSON.stringify({ description: "test" }),
+  devBuyQuote: 0n,
 };
+
+
+// Off-chain equivalents of the removed factory views: market cap from the
+// pool's live sqrtPrice, and the position id straight from the listing.
+async function mcapUsd8(f: Fixture, token: string): Promise<bigint> {
+  const l = await f.factory.listings(token);
+  const pool = new ethers.Contract(l.pool, ["function slot0() view returns (uint160,int24,uint16,uint16,uint16,uint8,bool)"], f.deployer);
+  const [sp] = await pool.slot0();
+  const Q96 = 2n ** 96n;
+  const supply = SUPPLY;
+  const mcapQuote = l.tokenIsToken0
+    ? (((supply * BigInt(sp)) / Q96) * BigInt(sp)) / Q96
+    : (((supply * Q96) / BigInt(sp)) * Q96) / BigInt(sp);
+  const q = await f.factory.quoteAssets(l.quote);
+  return (mcapQuote * BigInt(q.usdPrice8)) / 10n ** BigInt(q.decimals);
+}
 
 async function createToken(f: Fixture, marketCapUsd8 = 0n, quote?: string) {
   const p = { ...PARAMS, quote: quote ?? (await f.wnative.getAddress()), marketCapUsd8 };
@@ -115,12 +132,12 @@ describe("StableLaunchpadFactory (real Uniswap V3)", function () {
     expect(await erc20.creator()).to.equal(f.creator.address);
 
     // Live pool market cap ≈ $3,000 (tick snapping allows small drift).
-    const mcap = await f.factory.marketCapUsd(token);
+    const mcap = await mcapUsd8(f, token);
     expect(mcap).to.be.greaterThan((DEFAULT_MCAP_USD8 * 90n) / 100n);
     expect(mcap).to.be.lessThan((DEFAULT_MCAP_USD8 * 110n) / 100n);
 
     // LP NFT custodied by the factory.
-    const positionId = await f.factory.positionOf(token);
+    const positionId = (await f.factory.listings(token)).positionId;
     const pm = new ethers.Contract(await f.positionManager.getAddress(), PositionManagerArtifact.abi, f.deployer);
     expect(await pm.ownerOf(positionId)).to.equal(await f.factory.getAddress());
   });
@@ -128,7 +145,7 @@ describe("StableLaunchpadFactory (real Uniswap V3)", function () {
   it("honors a creator-selected market cap", async () => {
     const f = await deployFixture();
     const token = await createToken(f, 10_000n * 10n ** 8n);
-    const mcap = await f.factory.marketCapUsd(token);
+    const mcap = await mcapUsd8(f, token);
     expect(mcap).to.be.greaterThan(9_000n * 10n ** 8n);
     expect(mcap).to.be.lessThan(11_000n * 10n ** 8n);
   });
@@ -196,8 +213,10 @@ describe("StableLaunchpadFactory (real Uniswap V3)", function () {
     expect(await erc20.balanceOf(f.owner.address)).to.be.greaterThan(ownerTokenBefore);
     expect(await f.wnative.balanceOf(f.owner.address)).to.be.greaterThan(ownerQuoteBefore);
 
-    const info = await f.factory.poolInfo(token);
-    expect(info.positionLiquidity).to.equal(0n);
+    const listing = await f.factory.listings(token);
+    const pm2 = new ethers.Contract(await f.positionManager.getAddress(), PositionManagerArtifact.abi, f.deployer);
+    const pos = await pm2.positions(listing.positionId);
+    expect(pos[7], "position liquidity drained").to.equal(0n);
   });
 
   it("supports an approved 6-decimal stablecoin as the quote asset", async () => {
@@ -207,7 +226,7 @@ describe("StableLaunchpadFactory (real Uniswap V3)", function () {
     await (await f.factory.connect(f.owner).setQuoteAsset(usdAddr, true, 100_000_000n)).wait();
 
     const token = await createToken(f, 0n, usdAddr);
-    const mcap = await f.factory.marketCapUsd(token);
+    const mcap = await mcapUsd8(f, token);
     expect(mcap).to.be.greaterThan((DEFAULT_MCAP_USD8 * 90n) / 100n);
     expect(mcap).to.be.lessThan((DEFAULT_MCAP_USD8 * 110n) / 100n);
   });

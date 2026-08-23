@@ -14,7 +14,8 @@ import {
     IUniswapV3Factory,
     IUniswapV3Pool,
     INonfungiblePositionManager,
-    ISwapRouter
+    ISwapRouter,
+    IWETH9
 } from "../interfaces/IUniswapV3.sol";
 
 /// @title StableLaunchpadFactory
@@ -137,6 +138,11 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         address quote;
         /// @dev Optional starting market cap, USD with 8 decimals. 0 = $3,000.
         uint256 marketCapUsd8;
+        /// @dev Optional dev buy, in quote units, filled atomically right
+        ///      after the pool opens (coins go to the creator). For the
+        ///      wrapped-native quote send it as msg.value; for any other
+        ///      quote approve this factory for the amount first. 0 = none.
+        uint256 devBuyQuote;
     }
 
     /// @notice An approved quote asset and its USD price used to size pools.
@@ -206,7 +212,6 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     mapping(address token => Listing) public listings;
     /// @notice Every token this factory has launched, in order.
     address[] public allTokens;
-    mapping(address creator => address[] tokens) internal _tokensByCreator;
 
     // ---------------------------------------------------------------------
     // Construction
@@ -272,11 +277,15 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     ///         current block by construction.
     function createToken(CreateParams calldata p)
         external
+        payable
         nonReentrant
         returns (address token, address pool, uint256 positionId)
     {
         if (launchesPaused) revert LaunchesArePaused();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
+        // Native value is only accepted as the dev buy for the wrapped-native
+        // quote, and must match it exactly.
+        if (msg.value != (p.quote == wrappedNative ? p.devBuyQuote : 0)) revert InvalidParams();
 
         QuoteAsset memory q = quoteAssets[p.quote];
         if (!q.approved) revert QuoteNotApproved();
@@ -333,7 +342,30 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
             tokenIsToken0: tokenIsToken0
         });
         allTokens.push(token);
-        _tokensByCreator[msg.sender].push(token);
+
+        // Optional dev buy: the creator's first fill, atomic with the launch,
+        // through the official router like every other trade. Coins land in
+        // the creator's wallet; a min-out of 0 is safe because the pool was
+        // created and seeded in this same transaction.
+        if (p.devBuyQuote > 0) {
+            if (p.quote == wrappedNative) {
+                IWETH9(wrappedNative).deposit{value: p.devBuyQuote}();
+            } else {
+                IERC20(p.quote).safeTransferFrom(msg.sender, address(this), p.devBuyQuote);
+            }
+            IERC20(p.quote).forceApprove(address(swapRouter), p.devBuyQuote);
+            ISwapRouter(swapRouter).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: p.quote,
+                    tokenOut: token,
+                    fee: POOL_FEE_TIER,
+                    recipient: msg.sender,
+                    amountIn: p.devBuyQuote,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                })
+            );
+        }
     }
 
     /// @dev Initial pool price (snapped to a tick boundary) and the token-only
@@ -514,64 +546,6 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     /// @notice Number of tokens launched by this factory.
     function tokenCount() external view returns (uint256) {
         return allTokens.length;
-    }
-
-    /// @notice All tokens launched by `creator`.
-    function tokensOf(address creator) external view returns (address[] memory) {
-        return _tokensByCreator[creator];
-    }
-
-    /// @notice The V3 position id backing `token`.
-    function positionOf(address token) external view returns (uint256) {
-        Listing memory l = listings[token];
-        if (l.pool == address(0)) revert UnknownToken();
-        return l.positionId;
-    }
-
-    /// @notice Pool and held-position snapshot for a token.
-    function poolInfo(address token)
-        external
-        view
-        returns (
-            address pool,
-            address quote,
-            uint160 sqrtPriceX96,
-            int24 tick,
-            uint128 poolLiquidity,
-            uint256 positionId,
-            uint128 positionLiquidity
-        )
-    {
-        Listing memory l = listings[token];
-        if (l.pool == address(0)) revert UnknownToken();
-        pool = l.pool;
-        quote = l.quote;
-        (sqrtPriceX96, tick, , , , , ) = IUniswapV3Pool(l.pool).slot0();
-        poolLiquidity = IUniswapV3Pool(l.pool).liquidity();
-        positionId = l.positionId;
-        (, , , , , , , positionLiquidity, , , , ) = positionManager.positions(l.positionId);
-    }
-
-    /// @notice Market cap of `token` in quote-asset wei, from the live pool price.
-    function marketCapQuote(address token) public view returns (uint256) {
-        Listing memory l = listings[token];
-        if (l.pool == address(0)) revert UnknownToken();
-        (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(l.pool).slot0();
-        uint256 supply = IERC20(token).totalSupply();
-        if (l.tokenIsToken0) {
-            uint256 a = Math.mulDiv(supply, sqrtPriceX96, 1 << 96);
-            return Math.mulDiv(a, sqrtPriceX96, 1 << 96);
-        } else {
-            uint256 a = Math.mulDiv(supply, 1 << 96, sqrtPriceX96);
-            return Math.mulDiv(a, 1 << 96, sqrtPriceX96);
-        }
-    }
-
-    /// @notice Market cap of `token` in USD (8 decimals).
-    function marketCapUsd(address token) external view returns (uint256) {
-        Listing memory l = listings[token];
-        QuoteAsset memory q = quoteAssets[l.quote];
-        return Math.mulDiv(marketCapQuote(token), q.usdPrice8, 10 ** q.decimals);
     }
 
     /// @dev ERC-721 receiver so the position manager can mint positions here.

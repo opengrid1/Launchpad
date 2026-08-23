@@ -50,7 +50,7 @@ describe("UI trading paths against live HyperSwap (fork)", function () {
   }
 
   async function createToken(factory: any, creator: any, quote: string) {
-    const p = { name: "Hyper Coin", symbol: "HYPC", metadataURI: "{}", quote, marketCapUsd8: 0n };
+    const p = { name: "Hyper Coin", symbol: "HYPC", metadataURI: "{}", quote, marketCapUsd8: 0n, devBuyQuote: 0n };
     const rc = await (await factory.connect(creator).createToken(p)).wait();
     const ev = rc.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } })
       .find((e: any) => e?.name === "TokenCreated");
@@ -78,6 +78,40 @@ describe("UI trading paths against live HyperSwap (fork)", function () {
     await network.provider.send("hardhat_stopImpersonatingAccount", [best.addr]);
     return take;
   }
+
+  it("fills an atomic dev buy in the launch transaction (native and ERC20 quotes)", async () => {
+    const [, owner, feeRecipient, creator] = await ethers.getSigners();
+    const factory = await deploySystem(owner, feeRecipient);
+    const dep = await factory.deploymentTransaction()!.wait();
+    console.log("        factory deploy gas:", dep!.gasUsed.toString());
+
+    // Native (WHYPE) quote: dev buy rides in as msg.value.
+    const devBuy = ethers.parseEther("2");
+    const p = { name: "Dev Coin", symbol: "DEVC", metadataURI: "{}", quote: WHYPE, marketCapUsd8: 0n, devBuyQuote: devBuy };
+    const rc = await (await factory.connect(creator).createToken(p, { value: devBuy })).wait();
+    const ev = rc.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } })
+      .find((e: any) => e?.name === "TokenCreated");
+    const token = ev.args.token as string;
+    console.log("        createToken+devBuy gas:", rc.gasUsed.toString());
+    const coin = new ethers.Contract(token, ERC20_ABI, ethers.provider);
+    expect(await coin.balanceOf(creator.address), "creator holds the dev buy fill").to.be.greaterThan(0n);
+
+    // ERC20 quote: approve the factory, dev buy pulled and swapped atomically.
+    await (await factory.connect(owner).setQuoteAsset(USDT0, true, 100000000n)).wait();
+    const amt = await dealToken(USDT0, creator.address, USDT(200n));
+    const usdt = new ethers.Contract(USDT0, ERC20_ABI, creator);
+    await (await usdt.approve(await factory.getAddress(), amt)).wait();
+    const p2 = { name: "Dev Coin 2", symbol: "DEVC2", metadataURI: "{}", quote: USDT0, marketCapUsd8: 0n, devBuyQuote: amt };
+    const rc2 = await (await factory.connect(creator).createToken(p2)).wait();
+    const ev2 = rc2.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } })
+      .find((e: any) => e?.name === "TokenCreated");
+    const coin2 = new ethers.Contract(ev2.args.token as string, ERC20_ABI, ethers.provider);
+    expect(await coin2.balanceOf(creator.address), "creator holds the ERC20 dev buy fill").to.be.greaterThan(0n);
+    // Wrong native value is rejected.
+    await expect(
+      factory.connect(creator).createToken(p2, { value: 1n }),
+    ).to.be.revertedWithCustomError(factory, "InvalidParams");
+  });
 
   it("buys with plain native value (no wrap, no approval) exactly like the UI", async () => {
     const [, owner, feeRecipient, creator, trader] = await ethers.getSigners();
