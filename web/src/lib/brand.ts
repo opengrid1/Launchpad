@@ -71,6 +71,21 @@ const FLAVORS: Record<string, Brand> = {
       "steadypads. launch tokens into real Uniswap markets. Every trade pays its creator, forever.",
     title: "steadypads | the stable launchpad",
   },
+  // HyperEVM flavor (stonkliquid): coins launch on HyperSwap V3, pairing WHYPE
+  // or a tokenized stock; the creator earns the pool's 1% fee forever. No holder
+  // rewards. Hyperliquid-native dark/teal theme.
+  hyper: {
+    name: "stonkliquid",
+    tld: ".fun",
+    domain: "stonkliquid.fun",
+    url: "https://stonkliquid.fun",
+    twitter: "https://x.com/",
+    twitterHandle: "",
+    tagline: "launch a coin, earn the fees",
+    description:
+      "stonkliquid.fun. Launch a coin on HyperEVM paired with HYPE or a tokenized stock. It opens a real HyperSwap market and every trade pays you, the creator, 1% forever.",
+    title: "stonkliquid | launch a coin, earn the fees",
+  },
   // Arc mainnet flavor: same product, USDC-blue theme for Circle's Arc chain.
   arc: {
     name: "arcx",
@@ -90,10 +105,14 @@ export const BRAND_FLAVOR = String(import.meta.env.VITE_BRAND ?? "copair");
 
 export const BRAND: Brand = FLAVORS[BRAND_FLAVOR] ?? FLAVORS.copair;
 
+/** The HyperEVM launchpad (stonkliquid): HyperSwap V3, creator earns the pool
+ *  fee, coins pair WHYPE or a tokenized stock. No holder rewards. */
+export const IS_HYPER = BRAND_FLAVOR === "hyper";
+
 /** Flavors that render the pump.fun-style live market board (BoardHeader +
- *  ExploreBoard) instead of the default card grid: the Robinhood heist board
- *  and the Base stock launchpad. */
-export const IS_BOARD = BRAND_FLAVOR === "copair" || BRAND_FLAVOR === "base";
+ *  ExploreBoard) instead of the default card grid: the Robinhood heist board,
+ *  the Base stock launchpad, and the HyperEVM launchpad. */
+export const IS_BOARD = BRAND_FLAVOR === "copair" || BRAND_FLAVOR === "base" || IS_HYPER;
 
 /** The Base stock launchpad: coins pair a tokenized stock and holders earn it.
  *  Distinct from the heist board's weekly-flywheel loot model. */
