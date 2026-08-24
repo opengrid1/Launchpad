@@ -42,6 +42,20 @@ export function BaseFeed() {
         ))}
         {list.length === 0 && <div className="kf-empty">No launches yet. Be the first.</div>}
       </div>
+
+      {/* Docs entry point: a tappable link at the end of the feed */}
+      <Link
+        to="/docs"
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          margin: "14px 16px 20px", padding: "13px 15px", borderRadius: 12,
+          border: "1px solid var(--color-edge)", background: "var(--color-panel)",
+          color: "var(--color-ink)", fontSize: 13.5, fontWeight: 600, textDecoration: "none",
+        }}
+      >
+        <span>How it works · fees, launching, stock pairs</span>
+        <span style={{ color: "var(--color-accent-ink)" }}>&rsaquo;</span>
+      </Link>
     </div>
   );
 }

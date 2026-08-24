@@ -10,7 +10,7 @@ const MAIN: { icon: KoiIconName; to: string; label: string }[] = IS_HYPER
   ? [
       { icon: "bar-chart", to: "/", label: "Coins" },
       { icon: "trending-up", to: "/leaderboard", label: "Leaderboard" },
-      { icon: "trophy", to: "/docs", label: "How it works" },
+      { icon: "trophy", to: "/feed", label: "Feed" },
     ]
   : [
       { icon: "bar-chart", to: "/", label: "Tokens" },
