@@ -540,16 +540,17 @@ button.bg-accent:disabled {
    the mint/teal reads as a sharp ACCENT (buttons, links, active, key numbers)
    rather than washing the whole UI. Same HUD system as steadypads/arc. */
 :root[data-brand="hyper"] {
-  --color-bg: #0a0c0e;
-  --color-panel: #12161a;
-  --color-panel-2: #171c21;
-  --color-panel-3: #1e242a;
-  --color-edge: #262c32;
-  --color-edge-2: #333b43;
+  /* Lifted slate-gray grounds (not pitch black) so panels read softer. */
+  --color-bg: #16191d;
+  --color-panel: #1e2228;
+  --color-panel-2: #242930;
+  --color-panel-3: #2b3138;
+  --color-edge: #343b43;
+  --color-edge-2: #434c56;
 
-  --color-ink: #eceff2;
-  --color-ink-2: #9aa4ac;
-  --color-ink-3: #676f76;
+  --color-ink: #eef1f4;
+  --color-ink-2: #a6b0b8;
+  --color-ink-3: #78828a;
 
   --color-accent: #4fe0cb;
   --color-accent-2: #2fb9a8;
@@ -3502,7 +3503,7 @@ button.bg-accent:disabled {
 @keyframes kf-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
 :root[data-brand="hyper"] .kf-lb-scroll { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 :root[data-brand="hyper"] .kf-lb-scroll::-webkit-scrollbar { display: none; }
-:root[data-brand="hyper"] .kf-lb-card { scroll-snap-align: start; flex: 0 0 87%; background: linear-gradient(180deg, #12161a, #081310); border-radius: 22px; padding: 15px 16px 14px; box-shadow: 0 12px 26px rgba(0, 0, 0, .38), inset 0 0 0 1px rgba(255, 255, 255, .05); text-decoration: none; color: var(--color-ink); }
+:root[data-brand="hyper"] .kf-lb-card { scroll-snap-align: start; flex: 0 0 87%; background: linear-gradient(180deg, #1e2228, #141a17); border-radius: 22px; padding: 15px 16px 14px; box-shadow: 0 12px 26px rgba(0, 0, 0, .38), inset 0 0 0 1px rgba(255, 255, 255, .05); text-decoration: none; color: var(--color-ink); }
 :root[data-brand="hyper"] .kf-lb-top { display: flex; align-items: center; gap: 11px; margin-bottom: 15px; }
 :root[data-brand="hyper"] .kf-rank { font-family: var(--font-display); font-stretch: 75%; font-weight: 800; font-size: 22px; letter-spacing: -.03em; color: var(--color-ink); }
 :root[data-brand="hyper"] .kf-rank sup { font-size: 12px; color: var(--color-ink-2); font-weight: 700; }
@@ -3583,9 +3584,9 @@ button.bg-accent:disabled {
    with the $10/$25/$50/$100 presets as four equal buttons, matching the
    reference (h-9, flex-1, rounded-md, hairline border). */
 :root[data-brand="hyper"] .kf-qb-strip { grid-column: 1 / -1; display: flex; gap: 6px; margin-top: 2px; animation: kf-fade .14s ease; }
-:root[data-brand="hyper"] .kf-qb-amt { flex: 1; height: 36px; border-radius: 6px; cursor: pointer; border: 1px solid #262c32; background: #171c21; color: #eceff2; font-family: var(--font-body); font-weight: 500; font-size: 12px; font-variant-numeric: tabular-nums; transition: border-color .12s, color .12s, background .12s; }
+:root[data-brand="hyper"] .kf-qb-amt { flex: 1; height: 36px; border-radius: 6px; cursor: pointer; border: 1px solid #343b43; background: #242930; color: #eceff2; font-family: var(--font-body); font-weight: 500; font-size: 12px; font-variant-numeric: tabular-nums; transition: border-color .12s, color .12s, background .12s; }
 :root[data-brand="hyper"] .kf-qb-amt:hover { border-color: var(--color-accent); color: var(--color-accent-ink); }
-:root[data-brand="hyper"] .kf-qb-amt:active { background: #262c32; }
+:root[data-brand="hyper"] .kf-qb-amt:active { background: #343b43; }
 :root[data-brand="hyper"] .kf-qb-amt:disabled { opacity: .6; cursor: default; }
 :root[data-brand="hyper"] .kf-empty { text-align: center; color: var(--color-ink-2); font-size: 14px; padding: 46px 20px; line-height: 1.6; }
 :root[data-brand="hyper"] .kf-empty a { color: var(--color-accent-ink); font-weight: 700; }
@@ -3614,9 +3615,9 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .kf-nav-btn { border: 0; cursor: pointer; background: transparent; color: var(--color-ink-3); width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; transition: color .15s ease, background .2s ease, transform .1s ease; }
 :root[data-brand="hyper"] .kf-nav-btn svg { width: 22px; height: 22px; }
 :root[data-brand="hyper"] .kf-nav-btn:active { transform: scale(.88); }
-:root[data-brand="hyper"] .kf-nav-btn.on { color: var(--color-accent); background: #262c32; }
+:root[data-brand="hyper"] .kf-nav-btn.on { color: var(--color-accent); background: #343b43; }
 :root[data-brand="hyper"] .kf-nav-sep { display: none; }
-:root[data-brand="hyper"] .kf-nav-search { width: 48px; height: 48px; flex: none; border-radius: 50%; border: 0; cursor: pointer; background: rgba(12, 22, 20, .8); color: var(--color-ink); display: grid; place-items: center; box-shadow: 0 16px 40px rgba(0, 0, 0, .6), inset 0 0 0 1px #262c32; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); transition: transform .1s ease, background .15s ease; }
+:root[data-brand="hyper"] .kf-nav-search { width: 48px; height: 48px; flex: none; border-radius: 50%; border: 0; cursor: pointer; background: rgba(30, 36, 40, .85); color: var(--color-ink); display: grid; place-items: center; box-shadow: 0 16px 40px rgba(0, 0, 0, .6), inset 0 0 0 1px #343b43; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); transition: transform .1s ease, background .15s ease; }
 :root[data-brand="hyper"] .kf-nav-search svg { width: 21px; height: 21px; }
 :root[data-brand="hyper"] .kf-nav-search:active { transform: scale(.88); }
 
@@ -3691,30 +3692,30 @@ button.bg-accent:disabled {
    total USD balance and an X close, a Copy/Explorer/Disconnect row, a Holdings
    asset list, and a "Your koi.fun tokens" section. */
 :root[data-brand="hyper"] .kf-wallet { display: flex; flex-direction: column; gap: 0; }
-:root[data-brand="hyper"] .kf-wallet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #262c32; }
+:root[data-brand="hyper"] .kf-wallet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #343b43; }
 :root[data-brand="hyper"] .kf-wallet-title { font-family: var(--font-head); font-weight: 800; font-size: 19px; margin: 0; }
 :root[data-brand="hyper"] .kf-wallet-addr { display: inline-flex; align-items: center; gap: 5px; margin-top: 3px; border: 0; background: transparent; cursor: pointer; color: #9aa4ac; font-family: var(--font-mono); font-size: 12px; padding: 0; }
 :root[data-brand="hyper"] .kf-wallet-addr svg { color: #676f76; }
 :root[data-brand="hyper"] .kf-wallet-headright { display: flex; align-items: center; gap: 12px; }
 :root[data-brand="hyper"] .kf-wallet-total { font-family: var(--font-head); font-weight: 800; font-size: 20px; letter-spacing: -.02em; }
-:root[data-brand="hyper"] .kf-wallet-x { width: 34px; height: 34px; border-radius: 8px; border: 1px solid #262c32; background: transparent; color: #eceff2; cursor: pointer; display: grid; place-items: center; flex: none; }
-:root[data-brand="hyper"] .kf-wallet-x:hover { background: #171c21; }
+:root[data-brand="hyper"] .kf-wallet-x { width: 34px; height: 34px; border-radius: 8px; border: 1px solid #343b43; background: transparent; color: #eceff2; cursor: pointer; display: grid; place-items: center; flex: none; }
+:root[data-brand="hyper"] .kf-wallet-x:hover { background: #242930; }
 :root[data-brand="hyper"] .kf-wallet-actions { display: flex; gap: 8px; padding: 14px 0; }
-:root[data-brand="hyper"] .kf-wallet-actions > * { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 44px; border-radius: 8px; border: 1px solid #262c32; background: #171c21; color: #eceff2; font-family: var(--font-body); font-weight: 500; font-size: 13px; cursor: pointer; text-decoration: none; }
-:root[data-brand="hyper"] .kf-wallet-actions > *:hover { border-color: #333b43; }
+:root[data-brand="hyper"] .kf-wallet-actions > * { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 44px; border-radius: 8px; border: 1px solid #343b43; background: #242930; color: #eceff2; font-family: var(--font-body); font-weight: 500; font-size: 13px; cursor: pointer; text-decoration: none; }
+:root[data-brand="hyper"] .kf-wallet-actions > *:hover { border-color: #434c56; }
 :root[data-brand="hyper"] .kf-wallet-holdings { padding: 6px 0 4px; }
 :root[data-brand="hyper"] .kf-wallet-hh { font-family: var(--font-head); font-weight: 800; font-size: 16px; margin: 6px 0 6px; }
 :root[data-brand="hyper"] .kf-wallet-hrow { display: flex; align-items: center; gap: 11px; padding: 9px 4px; border-radius: 10px; text-decoration: none; color: #eceff2; }
-:root[data-brand="hyper"] .kf-wallet-hrow:hover { background: #171c21; }
-:root[data-brand="hyper"] .kf-wallet-hav { position: relative; width: 38px; height: 38px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #262c32; color: #eceff2; font-weight: 700; font-size: 14px; }
-:root[data-brand="hyper"] .kf-wallet-hav svg, :root[data-brand="hyper"] .kf-wallet-hav img { position: absolute; right: -2px; bottom: -2px; width: 15px; height: 15px; border-radius: 50%; background: #04231d; box-shadow: 0 0 0 2px #12161a; }
+:root[data-brand="hyper"] .kf-wallet-hrow:hover { background: #242930; }
+:root[data-brand="hyper"] .kf-wallet-hav { position: relative; width: 38px; height: 38px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #343b43; color: #eceff2; font-weight: 700; font-size: 14px; }
+:root[data-brand="hyper"] .kf-wallet-hav svg, :root[data-brand="hyper"] .kf-wallet-hav img { position: absolute; right: -2px; bottom: -2px; width: 15px; height: 15px; border-radius: 50%; background: #04231d; box-shadow: 0 0 0 2px #1e2228; }
 :root[data-brand="hyper"] .kf-wallet-hmid { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 :root[data-brand="hyper"] .kf-wallet-hsym { font-weight: 700; font-size: 15px; }
 :root[data-brand="hyper"] .kf-wallet-hname { color: #9aa4ac; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :root[data-brand="hyper"] .kf-wallet-hright { display: flex; flex-direction: column; align-items: flex-end; }
 :root[data-brand="hyper"] .kf-wallet-husd { font-family: var(--font-head); font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
 :root[data-brand="hyper"] .kf-wallet-hamt { color: #9aa4ac; font-size: 13px; font-variant-numeric: tabular-nums; }
-:root[data-brand="hyper"] .kf-wallet-tokens { border-top: 1px solid #262c32; margin-top: 10px; padding-top: 12px; }
+:root[data-brand="hyper"] .kf-wallet-tokens { border-top: 1px solid #343b43; margin-top: 10px; padding-top: 12px; }
 :root[data-brand="hyper"] .kf-wallet-th { display: flex; align-items: center; justify-content: space-between; font-family: var(--font-head); font-weight: 800; font-size: 16px; margin-bottom: 6px; }
 :root[data-brand="hyper"] .kf-wallet-th span:last-child { color: #9aa4ac; font-weight: 700; }
 :root[data-brand="hyper"] .kf-wallet-tokens .hint, :root[data-brand="hyper"] .kf-wallet-holdings .hint { color: #9aa4ac; font-size: 14px; line-height: 1.5; margin: 6px 0 2px; }
@@ -3725,7 +3726,7 @@ button.bg-accent:disabled {
 /* ============ koi.fun v2 — pools.fun-exact chrome (theme-swapped) ============ */
 
 /* Marquee ticker strip (light band above the header) */
-:root[data-brand="hyper"] .kf-ticker { background: #0d1013; border-bottom: 1px solid var(--color-edge); overflow: hidden; height: 54px; display: flex; align-items: center; position: relative; z-index: 41; }
+:root[data-brand="hyper"] .kf-ticker { background: #191d22; border-bottom: 1px solid var(--color-edge); overflow: hidden; height: 54px; display: flex; align-items: center; position: relative; z-index: 41; }
 :root[data-brand="hyper"] .kf-tick { color: var(--color-ink-2); }
 :root[data-brand="hyper"] .kf-tick b { color: var(--color-accent-ink); }
 :root[data-brand="hyper"] .kf-tick span { color: var(--color-ink-3); }
@@ -3797,7 +3798,7 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .kf-hero-copy { font-family: var(--font-body); font-size: 19px; line-height: 1.5; color: #eceff2; padding: 14px 22px 6px; max-width: 560px; text-shadow: 0 2px 12px rgba(2, 16, 14, .55); }
 :root[data-brand="hyper"] .kf-hero-label { font-family: var(--font-head); font-weight: 700; font-size: 19px; color: #ffffff; padding: 12px 22px 13px; text-shadow: 0 2px 12px rgba(2, 16, 14, .5); }
 :root[data-brand="hyper"] .kf-lb-scroll { padding: 0 16px; }
-:root[data-brand="hyper"] .kf-lb-card { background: #12161a; border-radius: 24px; box-shadow: 0 12px 26px rgba(0, 0, 0, .28); }
+:root[data-brand="hyper"] .kf-lb-card { background: #1e2228; border-radius: 24px; box-shadow: 0 12px 26px rgba(0, 0, 0, .28); }
 :root[data-brand="hyper"] .kf-rank sup { font-family: var(--font-display); font-stretch: 75%; }
 :root[data-brand="hyper"] .kf-lb-name { font-family: var(--font-display); font-stretch: 75%; font-weight: 700; font-size: 22px; }
 :root[data-brand="hyper"] .kf-lb-fish { width: 20px; height: 20px; flex: none; }
@@ -3828,7 +3829,7 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .kf-sec-sub { color: var(--color-ink-2); font-size: 15px; line-height: 1.5; padding: 0 18px 14px; }
 :root[data-brand="hyper"] .kf-win-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px; scroll-snap-type: x mandatory; scrollbar-width: none; }
 :root[data-brand="hyper"] .kf-win-scroll::-webkit-scrollbar { display: none; }
-:root[data-brand="hyper"] .kf-win-card { scroll-snap-align: start; flex: 0 0 72%; background: #12161a; border-radius: 22px; padding: 16px; position: relative; box-shadow: inset 0 0 0 1px var(--color-edge); text-decoration: none; color: var(--color-ink); }
+:root[data-brand="hyper"] .kf-win-card { scroll-snap-align: start; flex: 0 0 72%; background: #1e2228; border-radius: 22px; padding: 16px; position: relative; box-shadow: inset 0 0 0 1px var(--color-edge); text-decoration: none; color: var(--color-ink); }
 :root[data-brand="hyper"] .kf-win-top { display: flex; align-items: center; gap: 10px; }
 :root[data-brand="hyper"] .kf-win-name { font-family: var(--font-display); font-stretch: 75%; font-weight: 700; font-size: 24px; margin-right: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :root[data-brand="hyper"] .kf-win-rank { font-family: var(--font-head); font-weight: 800; font-size: 22px; }
@@ -3931,7 +3932,7 @@ button.bg-accent:disabled {
   :root[data-brand="hyper"] .kf-hero-grid { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 10px; }
   :root[data-brand="hyper"] .kf-lb-scroll { flex-direction: column; overflow: visible; padding-right: 24px; }
   :root[data-brand="hyper"] .kf-lb-card { flex: none; }
-  :root[data-brand="hyper"] .kf-statusbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; height: 46px; align-items: center; gap: 20px; padding: 0 22px; background: #081310; border-top: 1px solid var(--color-edge); font-size: 13.5px; color: var(--color-ink-2); }
+  :root[data-brand="hyper"] .kf-statusbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; height: 46px; align-items: center; gap: 20px; padding: 0 22px; background: #141a17; border-top: 1px solid var(--color-edge); font-size: 13.5px; color: var(--color-ink-2); }
   :root[data-brand="hyper"] .kf-statusbar .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-accent); }
   :root[data-brand="hyper"] .kf-statusbar b { color: var(--color-ink); font-weight: 700; }
   :root[data-brand="hyper"] .kf-statusbar .badge { background: rgba(255, 208, 61, .15); color: #ffd23d; font-size: 11.5px; font-weight: 700; border-radius: 8px; padding: 3px 8px; }
@@ -4102,7 +4103,7 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .kf-connect svg { width: 16px; height: 16px; }
 :root[data-brand="hyper"] .kf-connect .kf-dot { width: 7px; height: 7px; }
 :root[data-brand="hyper"] .kf-nav-links a { font-size: 12px; font-weight: 500; padding: 0 16px; height: 32px; display: inline-flex; align-items: center; border-radius: 8px; }
-:root[data-brand="hyper"] .kf-rocket { color: #0a0c0e; }
+:root[data-brand="hyper"] .kf-rocket { color: #16191d; }
 /* Logo steps up to 40px tall from lg, matching the reference. */
 @media (min-width: 1024px) {
   :root[data-brand="hyper"] .kf-brand-mark { width: 34px; height: 34px; }
@@ -4127,7 +4128,7 @@ button.bg-accent:disabled {
 /* Launch form: boxed card on the page like the reference (bg-surface #12161a,
    #262c32 border, 16px radius, 24/32 padding); inside the sheet it goes flat
    because the sheet already supplies the surface. */
-:root[data-brand="hyper"] .kf-form { background: #12161a; box-shadow: inset 0 0 0 1px #262c32; border-radius: 16px; padding: 32px 24px; gap: 20px; }
+:root[data-brand="hyper"] .kf-form { background: #1e2228; box-shadow: inset 0 0 0 1px #343b43; border-radius: 16px; padding: 32px 24px; gap: 20px; }
 :root[data-brand="hyper"] .kf-sheet .kf-form { background: transparent; box-shadow: none; border-radius: 0; padding: 0; }
 :root[data-brand="hyper"] .kf-launch { padding: 4px 16px 24px; }
 :root[data-brand="hyper"] .kf-sheet .kf-launch { padding: 4px 6px 10px; max-width: none; }
@@ -4202,7 +4203,7 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .kf-devbuy-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; line-height: 16px; color: #9aa4ac; margin: 8px 0 4px; }
 :root[data-brand="hyper"] .kf-devbuy-row.muted { color: #676f76; margin: 4px 0 0; }
 :root[data-brand="hyper"] .kf-form input[type="range"] { height: 44px; width: 100%; cursor: pointer; accent-color: #2fb5a6; }
-:root[data-brand="hyper"] .kf-divider { height: 1px; width: 100%; background: #262c32; border: 0; margin: 0; }
+:root[data-brand="hyper"] .kf-divider { height: 1px; width: 100%; background: #343b43; border: 0; margin: 0; }
 :root[data-brand="hyper"] .kf-footnote { text-align: center; font-size: 12px; line-height: 16px; color: #9aa4ac; margin: 0; }
 :root[data-brand="hyper"] .kf-launch-h1 { font-size: 20px; }
 :root[data-brand="hyper"] .kf-launch-sub { font-size: 13px; margin: 4px 0 12px; }
@@ -4221,54 +4222,54 @@ button.bg-accent:disabled {
   background: #22c55e; color: #0a0c0e; box-shadow: none; font-weight: 500;
 }
 :root[data-brand="hyper"] .kf-submit:hover { background: #2fb5a6; }
-:root[data-brand="hyper"] .kf-cancel { background: #262c32; box-shadow: none; color: #eceff2; font-weight: 500; }
+:root[data-brand="hyper"] .kf-cancel { background: #343b43; box-shadow: none; color: #eceff2; font-weight: 500; }
 :root[data-brand="hyper"] .kf-field input[type="text"], :root[data-brand="hyper"] .kf-field input[type="url"],
-:root[data-brand="hyper"] .kf-field textarea { background: #12161a; box-shadow: inset 0 0 0 1px #262c32; transition: box-shadow .15s, background-color .15s; }
-:root[data-brand="hyper"] .kf-field input:hover, :root[data-brand="hyper"] .kf-field textarea:hover { box-shadow: inset 0 0 0 1px #333b43; background: #171c21; }
-:root[data-brand="hyper"] .kf-field input:focus, :root[data-brand="hyper"] .kf-field textarea:focus { box-shadow: inset 0 0 0 1px #2fb5a6; background: #12161a; }
+:root[data-brand="hyper"] .kf-field textarea { background: #1e2228; box-shadow: inset 0 0 0 1px #343b43; transition: box-shadow .15s, background-color .15s; }
+:root[data-brand="hyper"] .kf-field input:hover, :root[data-brand="hyper"] .kf-field textarea:hover { box-shadow: inset 0 0 0 1px #434c56; background: #242930; }
+:root[data-brand="hyper"] .kf-field input:focus, :root[data-brand="hyper"] .kf-field textarea:focus { box-shadow: inset 0 0 0 1px #2fb5a6; background: #1e2228; }
 :root[data-brand="hyper"] .kf-field input::placeholder, :root[data-brand="hyper"] .kf-field textarea::placeholder { color: #676f76; }
-:root[data-brand="hyper"] .kf-seg2 button, :root[data-brand="hyper"] .kf-pairgrid button { box-shadow: inset 0 0 0 1px #262c32; background: transparent; color: #eceff2; }
-:root[data-brand="hyper"] .kf-seg2 button:hover, :root[data-brand="hyper"] .kf-pairgrid button:hover { box-shadow: inset 0 0 0 1px #333b43; }
-:root[data-brand="hyper"] .kf-seg2 button.on, :root[data-brand="hyper"] .kf-pairgrid button.on { box-shadow: inset 0 0 0 1px #50d2c1; background: #171c21; }
+:root[data-brand="hyper"] .kf-seg2 button, :root[data-brand="hyper"] .kf-pairgrid button { box-shadow: inset 0 0 0 1px #343b43; background: transparent; color: #eceff2; }
+:root[data-brand="hyper"] .kf-seg2 button:hover, :root[data-brand="hyper"] .kf-pairgrid button:hover { box-shadow: inset 0 0 0 1px #434c56; }
+:root[data-brand="hyper"] .kf-seg2 button.on, :root[data-brand="hyper"] .kf-pairgrid button.on { box-shadow: inset 0 0 0 1px #50d2c1; background: #242930; }
 :root[data-brand="hyper"] .kf-field input.err { box-shadow: inset 0 0 0 1.5px #ef4444; background: rgba(69, 10, 10, .55); }
 :root[data-brand="hyper"] .kf-err-msg, :root[data-brand="hyper"] .kf-form-summary { color: #f87171; }
-:root[data-brand="hyper"] .kf-drop-zone { border-color: #262c32; }
-:root[data-brand="hyper"] .kf-drop-row input { box-shadow: inset 0 0 0 1px #262c32 !important; }
-:root[data-brand="hyper"] .kf-clip { box-shadow: inset 0 0 0 1px #262c32; color: #9aa4ac; }
+:root[data-brand="hyper"] .kf-drop-zone { border-color: #343b43; }
+:root[data-brand="hyper"] .kf-drop-row input { box-shadow: inset 0 0 0 1px #343b43 !important; }
+:root[data-brand="hyper"] .kf-clip { box-shadow: inset 0 0 0 1px #343b43; color: #9aa4ac; }
 /* Trade panel, restyled to the reference buy/sell widget: underline Buy/Sell
    tabs (pink active), clean #12161a fields and #171c21 presets, and a
    rounded-full action button — green for Buy (dark text), red for Sell. */
-:root[data-brand="hyper"] .tp-seg { display: flex; gap: 4px; border: 0; background: transparent; border-bottom: 1px solid #262c32; }
+:root[data-brand="hyper"] .tp-seg { display: flex; gap: 4px; border: 0; background: transparent; border-bottom: 1px solid #343b43; }
 :root[data-brand="hyper"] .tp-seg button { height: 46px; flex: 1; font-family: var(--font-body); font-size: 16px; font-weight: 500; text-transform: none; letter-spacing: 0; color: #9aa4ac; background: transparent; border: 0; border-radius: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 :root[data-brand="hyper"] .tp-seg button:hover { background: transparent; color: #eceff2; }
 :root[data-brand="hyper"] .tp-seg button.on { color: var(--color-accent-ink); border-bottom-color: var(--color-accent); font-weight: 600; background: transparent; }
 :root[data-brand="hyper"] .tp-seg button.buy { border-right: 0; }
-:root[data-brand="hyper"] .tp-field { border: 1px solid #262c32; background: #12161a; border-radius: 10px; padding: 12px 14px; }
+:root[data-brand="hyper"] .tp-field { border: 1px solid #343b43; background: #1e2228; border-radius: 10px; padding: 12px 14px; }
 :root[data-brand="hyper"] .tp-field:focus-within { outline: 0; border-color: #2fb5a6; }
-:root[data-brand="hyper"] .tp-chip { border: 0; background: #262c32; border-radius: 999px; padding: 5px 12px 5px 6px; }
-:root[data-brand="hyper"] .tp-preset { height: 34px; border: 1px solid #262c32; background: #171c21; border-radius: 8px; font-family: var(--font-body); font-size: 12px; font-weight: 500; color: #eceff2; box-shadow: none; transition: border-color .12s, color .12s, transform .1s; }
+:root[data-brand="hyper"] .tp-chip { border: 0; background: #343b43; border-radius: 999px; padding: 5px 12px 5px 6px; }
+:root[data-brand="hyper"] .tp-preset { height: 34px; border: 1px solid #343b43; background: #242930; border-radius: 8px; font-family: var(--font-body); font-size: 12px; font-weight: 500; color: #eceff2; box-shadow: none; transition: border-color .12s, color .12s, transform .1s; }
 :root[data-brand="hyper"] .tp-preset:hover { transform: none; box-shadow: none; border-color: var(--color-accent); color: var(--color-accent-ink); }
 :root[data-brand="hyper"] .tp-preset:active { transform: scale(.96); box-shadow: none; }
-:root[data-brand="hyper"] .tp-rows { border-top: 1px solid #262c32; }
+:root[data-brand="hyper"] .tp-rows { border-top: 1px solid #343b43; }
 :root[data-brand="hyper"] .tp-cta { height: 54px; border: 0; border-radius: 14px; font-family: var(--font-body); font-size: 17px; font-weight: 600; letter-spacing: 0; text-transform: none; box-shadow: 0 10px 24px rgba(0, 0, 0, .35); transition: transform .1s, box-shadow .15s, background .15s; }
-:root[data-brand="hyper"] .tp-cta.buy { background: #4ade80; color: #0a0c0e; }
+:root[data-brand="hyper"] .tp-cta.buy { background: #4ade80; color: #16191d; }
 :root[data-brand="hyper"] .tp-cta.sell { background: #f87171; color: #eceff2; }
 :root[data-brand="hyper"] .tp-cta:not(:disabled):hover { transform: none; box-shadow: 0 12px 28px rgba(0, 0, 0, .4); }
 :root[data-brand="hyper"] .tp-cta:not(:disabled):active { transform: scale(.98); box-shadow: 0 6px 16px rgba(0, 0, 0, .35); }
-:root[data-brand="hyper"] .tp-cta:disabled { background: #262c32; color: #676f76; box-shadow: none; }
-:root[data-brand="hyper"] .tp-cta.connect { background: #171c21; color: #676f76; box-shadow: none; cursor: pointer; }
+:root[data-brand="hyper"] .tp-cta:disabled { background: #343b43; color: #676f76; box-shadow: none; }
+:root[data-brand="hyper"] .tp-cta.connect { background: #242930; color: #676f76; box-shadow: none; cursor: pointer; }
 :root[data-brand="hyper"] .tp-cta.connect:hover { background: #16241f; color: #c9e5df; }
 
 /* ---- pools.fun-style Swap card ---- */
 :root[data-brand="hyper"] .tp-swaphead { display: flex; align-items: center; justify-content: space-between; padding: 2px 2px 14px; }
 :root[data-brand="hyper"] .tp-swaptitle { font-family: var(--font-head); font-weight: 700; font-size: 26px; color: #eceff2; letter-spacing: -.01em; }
-:root[data-brand="hyper"] .tp-gear { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid #262c32; background: #12161a; color: #9aa4ac; cursor: pointer; transition: color .12s, border-color .12s; }
-:root[data-brand="hyper"] .tp-gear:hover { color: #eceff2; border-color: #333b43; }
-:root[data-brand="hyper"] .tp-card { border: 1px solid #16241f; background: #081310; border-radius: 18px; padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 18px; }
+:root[data-brand="hyper"] .tp-gear { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid #343b43; background: #1e2228; color: #9aa4ac; cursor: pointer; transition: color .12s, border-color .12s; }
+:root[data-brand="hyper"] .tp-gear:hover { color: #eceff2; border-color: #434c56; }
+:root[data-brand="hyper"] .tp-card { border: 1px solid #16241f; background: #141a17; border-radius: 18px; padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 18px; }
 
-:root[data-brand="hyper"] .tp-mode { display: inline-flex; align-self: flex-start; gap: 2px; padding: 3px; background: #171c21; border-radius: 10px; }
+:root[data-brand="hyper"] .tp-mode { display: inline-flex; align-self: flex-start; gap: 2px; padding: 3px; background: #242930; border-radius: 10px; }
 :root[data-brand="hyper"] .tp-mode button { height: 30px; padding: 0 16px; border: 0; border-radius: 8px; font-family: var(--font-body); font-size: 13px; font-weight: 600; color: #676f76; background: transparent; cursor: pointer; }
-:root[data-brand="hyper"] .tp-mode button.on { background: #333b43; color: #eceff2; }
+:root[data-brand="hyper"] .tp-mode button.on { background: #434c56; color: #eceff2; }
 :root[data-brand="hyper"] .tp-mode button.off:hover { color: #c9e5df; }
 
 :root[data-brand="hyper"] .tp-stats { display: flex; flex-direction: column; gap: 13px; }
@@ -4278,7 +4279,7 @@ button.bg-accent:disabled {
 
 :root[data-brand="hyper"] .tp-amtrow { display: flex; align-items: center; gap: 14px; min-width: 0; }
 :root[data-brand="hyper"] .tp-amtlabel { font-family: var(--font-body); font-size: 16px; color: #9aa4ac; flex: none; }
-:root[data-brand="hyper"] .tp-amtfield { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 8px; height: 60px; padding: 0 16px; border: 1px solid #262c32; background: #12161a; border-radius: 14px; }
+:root[data-brand="hyper"] .tp-amtfield { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 8px; height: 60px; padding: 0 16px; border: 1px solid #343b43; background: #1e2228; border-radius: 14px; }
 :root[data-brand="hyper"] .tp-amtfield:focus-within { border-color: var(--color-accent); }
 :root[data-brand="hyper"] .tp-amtinput { flex: 1 1 0; min-width: 0; width: 0; background: transparent; border: 0; outline: 0; font-family: var(--font-body); font-size: 22px; font-weight: 600; color: #eceff2; }
 :root[data-brand="hyper"] .tp-amtinput::placeholder { color: #3a524d; }
@@ -4289,18 +4290,18 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .tp-approx { margin-top: -6px; font-family: var(--font-body); font-size: 14px; color: #676f76; }
 
 :root[data-brand="hyper"] .tp-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-:root[data-brand="hyper"] .tp-presets .tp-preset { height: 56px; border-radius: 14px; font-size: 16px; font-weight: 600; background: #171c21; border-color: #16241f; }
+:root[data-brand="hyper"] .tp-presets .tp-preset { height: 56px; border-radius: 14px; font-size: 16px; font-weight: 600; background: #242930; border-color: #16241f; }
 
 :root[data-brand="hyper"] .tp-payrow, :root[data-brand="hyper"] .tp-recvrow { display: flex; align-items: center; justify-content: space-between; }
 :root[data-brand="hyper"] .tp-rowlabel { font-family: var(--font-body); font-size: 16px; color: #9aa4ac; }
-:root[data-brand="hyper"] .tp-paysel { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border: 1px solid #262c32; background: #12161a; border-radius: 10px; cursor: default; }
+:root[data-brand="hyper"] .tp-paysel { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border: 1px solid #343b43; background: #1e2228; border-radius: 10px; cursor: default; }
 :root[data-brand="hyper"] .tp-paysym { font-family: var(--font-body); font-size: 16px; font-weight: 700; color: #eceff2; }
 :root[data-brand="hyper"] .tp-paychev { color: #9aa4ac; }
 :root[data-brand="hyper"] .tp-recvval { font-family: var(--font-body); font-size: 16px; font-weight: 600; color: #eceff2; }
 
 :root[data-brand="hyper"] .tp-slip { display: flex; align-items: center; justify-content: space-between; }
 :root[data-brand="hyper"] .tp-slipbtns { display: inline-flex; gap: 6px; }
-:root[data-brand="hyper"] .tp-slipbtns button { padding: 5px 10px; border-radius: 8px; border: 1px solid #262c32; background: #12161a; font-size: 13px; color: #9aa4ac; cursor: pointer; }
+:root[data-brand="hyper"] .tp-slipbtns button { padding: 5px 10px; border-radius: 8px; border: 1px solid #343b43; background: #1e2228; font-size: 13px; color: #9aa4ac; cursor: pointer; }
 :root[data-brand="hyper"] .tp-slipbtns button.on { border-color: var(--color-accent); color: var(--color-accent-ink); }
 
 /* Price chart (lightweight-charts) — an O/H/L/C legend, a clean canvas, then
@@ -4314,18 +4315,18 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .kf-chart-tfs { display: flex; gap: 4px; }
 :root[data-brand="hyper"] .kf-chart-tfs button { height: 30px; padding: 0 11px; border: 0; border-radius: 8px; background: transparent; color: #9aa4ac; font-family: var(--font-body); font-weight: 500; font-size: 12px; cursor: pointer; transition: background .12s, color .12s; }
 :root[data-brand="hyper"] .kf-chart-tfs button:hover { color: #eceff2; }
-:root[data-brand="hyper"] .kf-chart-tfs button.on { background: #262c32; color: #eceff2; }
+:root[data-brand="hyper"] .kf-chart-tfs button.on { background: #343b43; color: #eceff2; }
 :root[data-brand="hyper"] .kf-chart-tools { display: flex; align-items: center; gap: 8px; }
-:root[data-brand="hyper"] .kf-chart-denom { display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: #171c21; box-shadow: inset 0 0 0 1px #262c32; }
+:root[data-brand="hyper"] .kf-chart-denom { display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: #242930; box-shadow: inset 0 0 0 1px #343b43; }
 :root[data-brand="hyper"] .kf-chart-denom button { height: 26px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: #9aa4ac; font-family: var(--font-body); font-weight: 500; font-size: 12px; cursor: pointer; transition: background .12s, color .12s; }
-:root[data-brand="hyper"] .kf-chart-denom button.on { background: #262c32; color: #eceff2; }
+:root[data-brand="hyper"] .kf-chart-denom button.on { background: #343b43; color: #eceff2; }
 :root[data-brand="hyper"] .kf-chart-type { display: flex; gap: 4px; }
 :root[data-brand="hyper"] .kf-chart-type button { width: 32px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: #676f76; cursor: pointer; transition: background .12s, color .12s; }
 :root[data-brand="hyper"] .kf-chart-type button:hover { color: #eceff2; }
-:root[data-brand="hyper"] .kf-chart-type button.on { background: #262c32; color: var(--color-accent-ink); }
+:root[data-brand="hyper"] .kf-chart-type button.on { background: #343b43; color: var(--color-accent-ink); }
 :root[data-brand="hyper"] .kf-chart-canvas { position: relative; width: 100%; height: 360px; border-radius: 12px; overflow: hidden; }
 @media (min-width: 1024px) { :root[data-brand="hyper"] .kf-chart-canvas { height: 440px; } }
 :root[data-brand="hyper"] .kf-chart-empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 0 24px; color: #676f76; font-size: 13px; pointer-events: none; }
 
-:root[data-brand="hyper"] .kf-sheet { background: #12161a; }
+:root[data-brand="hyper"] .kf-sheet { background: #1e2228; }
 :root[data-brand="hyper"] .kf-tick b { color: var(--color-accent); }
