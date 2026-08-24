@@ -13,7 +13,7 @@ const TOKEN_CREATED_TOPIC = keccak256(
 );
 
 // The launch pair options: WHYPE (default) plus every tokenized stock live on
-// HyperEVM. The creator earns the pool's 1% fee in whichever they pick.
+// HyperEVM. The pool's 1% fee is paid in whichever they pick.
 type Pair = { symbol: string; label: string; sub: string; address: `0x${string}` };
 const WHYPE_PAIR: Pair = { symbol: "HYPE", label: "HYPE", sub: "Hyperliquid", address: WHYPE };
 const STOCK_PAIRS: Pair[] = HYPER_STOCKS.map((s: HyperStock) => ({
@@ -27,7 +27,8 @@ const ALL_PAIRS: Pair[] = [WHYPE_PAIR, ...STOCK_PAIRS];
 /**
  * liquidstock launch (HyperEVM / HyperSwap V3). One transaction mints a plain
  * ERC-20, opens its HyperSwap pool paired with the chosen asset, and seeds the
- * full supply single-sided. The pool's 1% fee accrues to the creator forever.
+ * full supply single-sided. The pool's 1% fee splits 50% holders / 40%
+ * creator / 10% platform, forever.
  */
 export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
   const { isConnected, connectFirst } = useWallet();
@@ -226,7 +227,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
             ))}
             {filtered.length === 0 ? <div style={{ gridColumn: "1 / -1", padding: "12px 0", textAlign: "center", color: "var(--color-ink-3)" }}>No match.</div> : null}
           </div>
-          <p className="hint">You earn 1% of every trade in {selected.label} ({selected.sub}).</p>
+          <p className="hint">Every trade pays 1% in {selected.label} ({selected.sub}): 50% to holders, 40% to you, 10% platform.</p>
           {selected.address !== WHYPE ? (
             <div style={{
               marginTop: 8, border: "1px solid var(--color-edge)", background: "var(--color-panel-2)",

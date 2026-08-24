@@ -18,10 +18,11 @@ import { TradePanel } from "../components/TradePanel";
 import { BaseTradePanel } from "../components/BaseTradePanel";
 import { IS_HYPER, IS_STOCK_BOARD } from "../lib/brand";
 
-// Creator/platform split shown on the harvest strip. liquidstock (hyper) is
-// 70/30; the other creator-fee deployments (steadypads/arc) are 80/20.
-const CREATOR_SPLIT = IS_HYPER ? "70%" : "80%";
-const PLATFORM_SPLIT = IS_HYPER ? "30%" : "20%";
+// Fee split shown on the harvest strip. liquidstock (hyper) is 50% holders /
+// 40% creator / 10% platform; the other creator-fee deployments are 80/20.
+const HOLDER_SPLIT = IS_HYPER ? "50%" : null;
+const CREATOR_SPLIT = IS_HYPER ? "40%" : "80%";
+const PLATFORM_SPLIT = IS_HYPER ? "10%" : "20%";
 import { TradesList } from "../components/TradesList";
 import { Button, EmptyState, Skeleton } from "../components/ui";
 import { client, v4Client } from "../lib/client";
@@ -113,7 +114,13 @@ function HarvestStrip({ token, creator }: { token: Address; creator: string }) {
       const hash = await (client as any)[IS_STABLE ? "claimCreatorFees" : "harvest"](token);
       pushToast({ kind: "info", title: "Harvest submitted", txHash: hash });
       await client.publicClient.waitForTransactionReceipt({ hash });
-      pushToast({ kind: "success", title: `Fees distributed: ${CREATOR_SPLIT} creator, ${PLATFORM_SPLIT} platform`, txHash: hash });
+      pushToast({
+        kind: "success",
+        title: HOLDER_SPLIT
+          ? `Fees distributed: ${HOLDER_SPLIT} holders, ${CREATOR_SPLIT} creator, ${PLATFORM_SPLIT} platform`
+          : `Fees distributed: ${CREATOR_SPLIT} creator, ${PLATFORM_SPLIT} platform`,
+        txHash: hash,
+      });
     } catch (err) {
       pushToast({ kind: "error", title: "Harvest failed", body: errorText(err) });
     } finally {
@@ -128,8 +135,9 @@ function HarvestStrip({ token, creator }: { token: Address; creator: string }) {
           {isCreator ? "Your creator fees" : "Creator fees"}
         </p>
         <p className="mt-0.5 text-xs text-ink-3">
-          Every trade's 1% pool fee accrues here. Harvest anytime: {CREATOR_SPLIT} goes straight to the
-          creator's wallet, {PLATFORM_SPLIT} to the platform.
+          {HOLDER_SPLIT
+            ? `Every trade's 1% pool fee accrues here. Harvest anytime: ${HOLDER_SPLIT} streams to holders as claimable rewards, ${CREATOR_SPLIT} goes straight to the creator's wallet, ${PLATFORM_SPLIT} to the platform.`
+            : `Every trade's 1% pool fee accrues here. Harvest anytime: ${CREATOR_SPLIT} goes straight to the creator's wallet, ${PLATFORM_SPLIT} to the platform.`}
         </p>
       </div>
       <button

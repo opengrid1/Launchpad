@@ -58,6 +58,15 @@ const ERC20_ABI = parseAbi([
   "function allowance(address, address) view returns (uint256)",
 ]);
 
+// LaunchpadRewardToken's holder dividend tracker (rewards factory coins only;
+// these calls revert on older LaunchpadERC20 coins and the UI degrades).
+const REWARD_TRACKER_ABI = parseAbi([
+  "function rewardToken() view returns (address)",
+  "function totalRewardsDistributed() view returns (uint256)",
+  "function pendingRewards(address) view returns (uint256)",
+  "function claim() returns (uint256)",
+]);
+
 const POOL_ABI = parseAbi([
   "function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16, uint16, uint16, uint8, bool)",
   "function liquidity() view returns (uint128)",
@@ -1110,7 +1119,7 @@ export class StableV3Client {
     });
   }
 
-  /** Distribute accrued pool fees 80/20 creator/platform (permissionless). */
+  /** Distribute accrued pool fees per the factory's split (permissionless). */
   async claimCreatorFees(token: Address): Promise<`0x${string}`> {
     const wc = this.wallet();
     return wc.writeContract({
@@ -1179,9 +1188,51 @@ export class StableV3Client {
     });
   }
 
-  // -- V4-only surface, degraded gracefully -----------------------------
+  // -- Holder rewards (LaunchpadRewardToken dividend tracker) ------------
 
-  async tokenExtra(): Promise<null> { return null; }
+  /** Reward info for a coin: the pair asset rewards are paid in and the
+   *  lifetime total streamed to holders. Older coins launched before the
+   *  rewards factory have no tracker; those return null and the UI hides
+   *  every reward affordance. */
+  async tokenExtra(token: Address): Promise<{ stock: Address; taxBps: number; totalRewards: bigint; creatorFees: bigint } | null> {
+    try {
+      const [stock, totalRewards] = await Promise.all([
+        this.publicClient.readContract({ address: token, abi: REWARD_TRACKER_ABI, functionName: "rewardToken" }),
+        this.publicClient.readContract({ address: token, abi: REWARD_TRACKER_ABI, functionName: "totalRewardsDistributed" }),
+      ]);
+      return { stock: stock as Address, taxBps: 0, totalRewards: totalRewards as bigint, creatorFees: 0n };
+    } catch {
+      return null; // pre-rewards token: no tracker on the contract
+    }
+  }
+
+  /** The connected wallet's claimable rewards on a coin, in the pair asset. */
+  async baseRewards(coin: Address, account: Address): Promise<{ claimable: bigint; stock: Address } | null> {
+    try {
+      const [claimable, stock] = await Promise.all([
+        this.publicClient.readContract({ address: coin, abi: REWARD_TRACKER_ABI, functionName: "pendingRewards", args: [account] }),
+        this.publicClient.readContract({ address: coin, abi: REWARD_TRACKER_ABI, functionName: "rewardToken" }),
+      ]);
+      return { claimable: claimable as bigint, stock: stock as Address };
+    } catch {
+      return null;
+    }
+  }
+
+  /** Manual claim: pull the wallet's accrued rewards from the coin's tracker. */
+  async claimBaseRewards(coin: Address, account: Address): Promise<`0x${string}`[]> {
+    const info = await this.baseRewards(coin, account);
+    if (!info || info.claimable <= 0n) return [];
+    const wc = this.wallet();
+    const hash = await wc.writeContract({
+      address: coin, abi: REWARD_TRACKER_ABI, functionName: "claim",
+      args: [], chain: wc.chain, account: wc.account!,
+    });
+    await this.publicClient.waitForTransactionReceipt({ hash });
+    return [hash];
+  }
+
+  // -- V4-only surface, degraded gracefully -----------------------------
   /** USD market cap per whole-unit price, same contract as the V4 client:
    *  mcap = (priceWei/1e18) × scale. Supply is 1e9 whole tokens at $1 USDT0. */
   async mcapScale(token?: Address): Promise<number> {

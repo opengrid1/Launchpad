@@ -10,8 +10,9 @@ import { join } from "path";
  * cap, and seeds the entire supply single-sided through HyperSwap's
  * NonfungiblePositionManager (HyperSwap's pool rejects a direct pool.mint, so
  * the NPM periphery is required). The LP position is custodied by the factory
- * forever; the pool's 1% fee tier is the only trading cost, harvested 80% to
- * the coin's creator / 20% to the platform.
+ * forever; the pool's 1% fee tier is the only trading cost, harvested 50% to
+ * the coin's holders (manual claim via the token's dividend tracker), 40% to
+ * the creator and 10% to the platform.
  *
  * Coins pair WHYPE by default; tokenized stocks (Ondo *on tokens) can be
  * approved as extra quote assets via QUOTE_ASSETS (addr:usdPrice8 pairs).
@@ -23,7 +24,7 @@ import { join } from "path";
  *
  * Env:
  *   FACTORY_OWNER   factory owner / platform admin              (required)
- *   FEE_RECIPIENT   platform 20% fee recipient (default: owner)
+ *   FEE_RECIPIENT   platform 10% fee recipient (default: owner)
  *   HYPE_USD8       HYPE price, 8 decimals, to size WHYPE pools (default 4000e8 = $40)
  *   QUOTE_ASSETS    comma-separated addr:usdPrice8 stock quotes (optional)
  *
@@ -44,10 +45,11 @@ async function main() {
   const owner = process.env.FACTORY_OWNER ?? signer.address;
   const feeRecipient = process.env.FEE_RECIPIENT ?? owner;
   const hypeUsd8 = BigInt(process.env.HYPE_USD8 ?? String(40n * 10n ** 8n)); // default $40
-  const creatorFeeBps = Number(process.env.CREATOR_FEE_BPS ?? 7000); // 70% creator / 30% platform
+  const holderFeeBps = Number(process.env.HOLDER_FEE_BPS ?? 5000); // 50% holders
+  const creatorFeeBps = Number(process.env.CREATOR_FEE_BPS ?? 4000); // 40% creator / 10% platform
 
   console.log("network:", network.name, "| deployer:", signer.address);
-  console.log("owner:", owner, "| feeRecipient:", feeRecipient, "| HYPE usd8:", hypeUsd8.toString(), "| creatorFeeBps:", creatorFeeBps);
+  console.log("owner:", owner, "| feeRecipient:", feeRecipient, "| HYPE usd8:", hypeUsd8.toString(), "| holderFeeBps:", holderFeeBps, "| creatorFeeBps:", creatorFeeBps);
 
   // HyperEVM "small blocks" cap at 3M gas. Every deploy tx must fit one, so set
   // explicit gas limits under 3M (this is the size-optimized build; the factory
@@ -56,7 +58,12 @@ async function main() {
   // Explicit EIP-1559 fees: skip hardhat's auto fee estimation (its eth_feeHistory
   // call intermittently errors on the HyperEVM RPC) and cap cost. Base fee is
   // usually well under 20 gwei; maxFee tolerates minor spikes.
-  const FEES = { maxFeePerGas: 20_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n };
+  // Overridable for big-block deploys: the big-block fee market clears around
+  // 0.1 gwei, so a gas-poor deployer can run the whole sequence cheaply.
+  const FEES = {
+    maxFeePerGas: BigInt(process.env.MAX_FEE_WEI ?? 20_000_000_000),
+    maxPriorityFeePerGas: BigInt(process.env.PRIORITY_FEE_WEI ?? 1_000_000_000),
+  };
   const DEPLOY_GAS = { gasLimit: 4_000_000, ...FEES }; // big-block deploy (dual-pool factory is ~3.28M)
   const ADMIN_GAS = { gasLimit: 300_000, ...FEES };
 
@@ -64,16 +71,16 @@ async function main() {
   // rerun doesn't redeploy it. It must not yet be bound to a factory.
   let tokenDeployer;
   if (process.env.TOKEN_DEPLOYER) {
-    tokenDeployer = await ethers.getContractAt("TokenDeployer", process.env.TOKEN_DEPLOYER);
-    console.log("Reusing TokenDeployer:", process.env.TOKEN_DEPLOYER);
+    tokenDeployer = await ethers.getContractAt("RewardTokenDeployer", process.env.TOKEN_DEPLOYER);
+    console.log("Reusing RewardTokenDeployer:", process.env.TOKEN_DEPLOYER);
   } else {
-    tokenDeployer = await (await ethers.getContractFactory("TokenDeployer")).deploy({ gasLimit: 1_600_000 });
+    tokenDeployer = await (await ethers.getContractFactory("RewardTokenDeployer")).deploy({ gasLimit: 3_500_000, ...FEES });
     await tokenDeployer.waitForDeployment();
-    console.log("TokenDeployer:", await tokenDeployer.getAddress());
+    console.log("RewardTokenDeployer:", await tokenDeployer.getAddress());
   }
 
   const factory = await (await ethers.getContractFactory("StableLaunchpadFactory")).deploy(
-    owner, feeRecipient, await tokenDeployer.getAddress(), V3_FACTORY, POSITION_MANAGER, SWAP_ROUTER, WHYPE, creatorFeeBps, DEPLOY_GAS,
+    owner, feeRecipient, await tokenDeployer.getAddress(), V3_FACTORY, POSITION_MANAGER, SWAP_ROUTER, WHYPE, holderFeeBps, creatorFeeBps, DEPLOY_GAS,
   );
   await factory.waitForDeployment();
   const factoryAddr = await factory.getAddress();
@@ -118,7 +125,7 @@ async function main() {
     hyperswapV3: { factory: V3_FACTORY, positionManager: POSITION_MANAGER, swapRouter: SWAP_ROUTER, whype: WHYPE },
     contracts: { tokenDeployer: await tokenDeployer.getAddress(), factory: factoryAddr },
     quoteAssets: { whypeUsd8: hypeUsd8.toString(), stocks: approved },
-    config: { totalSupply: "1000000000e18", poolFeeTier: 10000, creatorFeeBps, platformFeeBps: 10000 - creatorFeeBps, defaultMarketCapUsd: 3000 },
+    config: { totalSupply: "1000000000e18", poolFeeTier: 10000, holderFeeBps, creatorFeeBps, platformFeeBps: 10000 - holderFeeBps - creatorFeeBps, defaultMarketCapUsd: 3000 },
   };
   writeFileSync(join(__dirname, "../deployments/hyperswap-launchpad.json"), JSON.stringify(out, null, 2));
   console.log("saved deployments/hyperswap-launchpad.json");

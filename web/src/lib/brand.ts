@@ -72,8 +72,8 @@ const FLAVORS: Record<string, Brand> = {
     title: "steadypads | the stable launchpad",
   },
   // HyperEVM flavor (stonkliquid): coins launch on HyperSwap V3, pairing WHYPE
-  // or a tokenized stock; the creator earns the pool's 1% fee forever. No holder
-  // rewards. Hyperliquid-native dark/teal theme.
+  // or a tokenized stock; the pool's 1% fee splits 50% holders / 40% creator /
+  // 10% platform, holder rewards claimed manually. Hyperliquid dark/teal theme.
   hyper: {
     name: "liquidstock",
     tld: ".fun",
@@ -83,7 +83,7 @@ const FLAVORS: Record<string, Brand> = {
     twitterHandle: "",
     tagline: "launch a coin, earn the fees",
     description:
-      "liquidstock.fun. Launch a coin on HyperEVM paired with HYPE or a tokenized stock. It opens a real HyperSwap market and every trade pays you, the creator, 1% forever.",
+      "liquidstock.fun. Launch a coin on HyperEVM paired with HYPE or a tokenized stock. It opens a real HyperSwap market and every trade pays 1%: half to holders, 40% to the creator, forever.",
     title: "liquidstock | launch a coin, earn the fees",
   },
   // Arc mainnet flavor: same product, USDC-blue theme for Circle's Arc chain.
@@ -105,8 +105,8 @@ export const BRAND_FLAVOR = String(import.meta.env.VITE_BRAND ?? "copair");
 
 export const BRAND: Brand = FLAVORS[BRAND_FLAVOR] ?? FLAVORS.copair;
 
-/** The HyperEVM launchpad (stonkliquid): HyperSwap V3, creator earns the pool
- *  fee, coins pair WHYPE or a tokenized stock. No holder rewards. */
+/** The HyperEVM launchpad (stonkliquid): HyperSwap V3, coins pair WHYPE or a
+ *  tokenized stock; fees split holders/creator/platform, manual claims. */
 export const IS_HYPER = BRAND_FLAVOR === "hyper";
 
 /** Flavors that render the pump.fun-style live market board (BoardHeader +

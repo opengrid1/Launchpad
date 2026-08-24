@@ -7,7 +7,8 @@ import { ethers } from "hardhat";
 // NonfungiblePositionManager — which is exactly what StableLaunchpadFactory does.
 // This fork test runs the whole lifecycle against LIVE HyperSwap V3: launch +
 // single-sided seed via the NPM, trade on the live SwapRouter, harvest the 1%
-// pool fee 80/20 to creator/platform, and owner-collect the position.
+// pool fee 50/40/10 to holders/creator/platform (holder pot manually
+// claimable), and owner-collect the position.
 const V3_FACTORY = "0xb1c0fa0b789320044a6f623cfe5ebda9562602e3";
 const WHYPE = "0x5555555555555555555555555555555555555555";
 // SwapRouter02 (deadline outside the params struct — matches ISwapRouter).
@@ -17,7 +18,8 @@ const NPM = (process.env.HS_NPM ?? "0x6eda206207c09e5428f281761ddc0d300851fbc8")
 
 const SUPPLY = ethers.parseEther("1000000000");
 const BPS = 10_000n;
-const CREATOR_BPS = 7_000n; // 70% creator / 30% platform
+const HOLDER_BPS = 5_000n;
+const CREATOR_BPS = 4_000n; // 50% holders / 40% creator / 10% platform
 
 const WHYPE_ABI = [
   "function deposit() payable",
@@ -33,11 +35,11 @@ describe("HyperSwap launchpad via NonfungiblePositionManager (fork)", function (
   if (process.env.FORK !== "1") { it.skip("requires FORK=1", () => {}); return; }
 
   async function deploySystem(owner: any, feeRecipient: any) {
-    const tokenDeployer = await (await ethers.getContractFactory("TokenDeployer")).deploy();
+    const tokenDeployer = await (await ethers.getContractFactory("RewardTokenDeployer")).deploy();
     await tokenDeployer.waitForDeployment();
     const factory = await (await ethers.getContractFactory("StableLaunchpadFactory")).deploy(
       owner.address, feeRecipient.address, await tokenDeployer.getAddress(),
-      V3_FACTORY, NPM, SWAP_ROUTER, WHYPE, 7000,
+      V3_FACTORY, NPM, SWAP_ROUTER, WHYPE, 5000, 4000,
     );
     await factory.waitForDeployment();
     await (await tokenDeployer.setFactory(await factory.getAddress())).wait();
@@ -72,7 +74,7 @@ describe("HyperSwap launchpad via NonfungiblePositionManager (fork)", function (
     expect(listing.creator).to.equal(creator.address);
     expect(listing.pool).to.not.equal(ethers.ZeroAddress);
 
-    const erc20 = await ethers.getContractAt("LaunchpadERC20", token);
+    const erc20 = await ethers.getContractAt("LaunchpadRewardToken", token);
     expect(await erc20.owner(), "immutable from birth").to.equal(ethers.ZeroAddress);
     const pooled = await erc20.balanceOf(listing.pool);
     expect(pooled, "most of supply seeded").to.be.greaterThan((SUPPLY * 990_000n) / 1_000_000n);
@@ -81,11 +83,11 @@ describe("HyperSwap launchpad via NonfungiblePositionManager (fork)", function (
     expect(await v3.getPool(token, WHYPE, 10_000)).to.equal(listing.pool);
   });
 
-  it("trades on the live HyperSwap router and harvests the 1% fee 70/30", async () => {
+  it("trades on the live HyperSwap router and harvests the 1% fee 50/40/10", async () => {
     const [, owner, feeRecipient, creator, trader] = await ethers.getSigners();
     const { factory } = await deploySystem(owner, feeRecipient);
     const token = await createToken(factory, creator);
-    const erc20 = await ethers.getContractAt("LaunchpadERC20", token);
+    const erc20 = await ethers.getContractAt("LaunchpadRewardToken", token);
     const whype = new ethers.Contract(WHYPE, WHYPE_ABI, ethers.provider);
 
     await buy(trader, token, ethers.parseEther("5"));
@@ -96,9 +98,22 @@ describe("HyperSwap launchpad via NonfungiblePositionManager (fork)", function (
     await (await factory.harvestFees(token)).wait(); // permissionless
     const creatorGain = (await whype.balanceOf(creator.address)) - creatorBefore;
     const platformGain = (await whype.balanceOf(feeRecipient.address)) - platformBefore;
+    const holderGain = await whype.balanceOf(token); // holder pot inside the token
 
     expect(creatorGain, "creator earns pool fees").to.be.greaterThan(0n);
-    expect(creatorGain, "80% creator split").to.equal(((creatorGain + platformGain) * CREATOR_BPS) / BPS);
+    expect(holderGain, "holders earn pool fees").to.be.greaterThan(0n);
+    const total = creatorGain + platformGain + holderGain;
+    expect(holderGain, "50% holder split").to.equal((total * HOLDER_BPS) / BPS);
+    expect(creatorGain, "40% creator split").to.equal((total * CREATOR_BPS) / BPS);
+    expect(await erc20.totalRewardsDistributed()).to.equal(holderGain);
+
+    // Manual claim pays the trader (the sole eligible holder) in WHYPE.
+    const pending = await erc20.pendingRewards(trader.address);
+    expect(pending).to.be.greaterThan(0n);
+    const traderBefore = await whype.balanceOf(trader.address);
+    await (await erc20.connect(trader).claim()).wait();
+    expect((await whype.balanceOf(trader.address)) - traderBefore).to.equal(pending);
+
     await expect(factory.harvestFees(token)).to.be.revertedWithCustomError(factory, "NothingToCollect");
   });
 
@@ -110,7 +125,7 @@ describe("HyperSwap launchpad via NonfungiblePositionManager (fork)", function (
 
     await expect(factory.connect(creator).collectFees(token)).to.be.revertedWithCustomError(factory, "OwnableUnauthorizedAccount");
 
-    const erc20 = await ethers.getContractAt("LaunchpadERC20", token);
+    const erc20 = await ethers.getContractAt("LaunchpadRewardToken", token);
     const before = await erc20.balanceOf(owner.address);
     await (await factory.connect(owner).collectFees(token)).wait();
     expect(await erc20.balanceOf(owner.address)).to.be.greaterThan(before);

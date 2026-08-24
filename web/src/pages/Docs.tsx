@@ -32,7 +32,7 @@ function HyperDocs() {
         real HyperSwap market and every rule below is enforced by the contracts, not by policy.
       </p>
 
-      <TermSection title="The 1% fee" sub="70% yours">
+      <TermSection title="The 1% fee" sub="Holders earn too">
         <p>
           Every pool sits at HyperSwap's 1% fee tier, so every buy and sell pays 1% into the
           pool. Anyone can trigger a harvest at any time: the collected fees are split on-chain
@@ -40,11 +40,16 @@ function HyperDocs() {
         </p>
         <Facts
           rows={[
-            ["Creator", "70% · yours forever"],
-            ["Platform", "30%"],
+            ["Holders", "50% · pro-rata to everyone holding the coin"],
+            ["Creator", "40% · yours forever"],
+            ["Platform", "10%"],
             ["Paid in", "your coin's pair: HYPE or the stock"],
           ]}
         />
+        <p>
+          Holder rewards accrue on-chain per wallet and are claimed manually: open the coin's
+          page and press Claim whenever you want your share. Nothing is auto-sent.
+        </p>
       </TermSection>
 
       <TermSection title="Launching" sub="One transaction">
@@ -73,7 +78,7 @@ function HyperDocs() {
         <p>
           Coins can pair Backed xStocks live on {env.chainName}: NVIDIA, the S&amp;P 500, the
           Nasdaq, Micron and SK hynix. A stock-paired coin trades against that stock and its
-          fees accrue in it, so the creator earns the stock on every trade. Each xStock has a
+          fees accrue in it, so holders and the creator earn the stock on every trade. Each xStock has a
           real Hyperliquid spot market: buy it with USDC on Hyperliquid, then transfer it to
           EVM to trade here.
         </p>

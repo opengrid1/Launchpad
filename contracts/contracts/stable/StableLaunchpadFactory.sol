@@ -8,7 +8,8 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-import {TokenDeployer} from "../TokenDeployer.sol";
+import {RewardTokenDeployer} from "./RewardTokenDeployer.sol";
+import {LaunchpadRewardToken} from "./LaunchpadRewardToken.sol";
 import {TickMath} from "../libraries/TickMath.sol";
 import {
     IUniswapV3Factory,
@@ -39,8 +40,10 @@ import {
 ///             forever; creators receive no privileges of any kind.
 ///
 ///         Pool trading fees (the 1% tier) accrue inside the held position and
-///         are distributed by {harvestFees}: 80% to the token's creator, 20%
-///         to the configurable platform fee recipient. The factory owner is
+///         are distributed by {harvestFees}: the quote side is split between
+///         the token's holders (paid into the token's dividend tracker for
+///         manual claiming), the token's creator and the configurable platform
+///         fee recipient, in shares fixed at deploy. The factory owner is
 ///         the only privileged account: it can harvest liquidity via
 ///         {collectFees}, pause/resume launches, update the fee recipient and
 ///         recover assets sent here by mistake.
@@ -175,10 +178,13 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     uint256 public constant TOTAL_SUPPLY = 1_000_000_000e18;
     /// @notice Fixed Uniswap V3 fee tier — 1% — for every launch pool.
     uint24 public constant POOL_FEE_TIER = 10_000;
+    /// @notice Holder share of harvested QUOTE-side pool fees, in bps. Paid
+    ///         into the token's dividend tracker in the coin's pair asset.
+    uint16 public immutable HOLDER_FEE_BPS;
     /// @notice Creator share of harvested pool fees, in bps. Set at deploy
-    ///         (e.g. 8000 = 80% creator / 20% platform).
+    ///         (e.g. 4000 = 40% with 5000 holder / 1000 platform).
     uint16 public immutable CREATOR_FEE_BPS;
-    /// @notice Platform share of harvested pool fees, in bps (10000 - creator).
+    /// @notice Platform share, in bps (10000 - holder - creator).
     uint16 public immutable PLATFORM_FEE_BPS;
     /// @notice Default starting market cap: $3,000 (8 decimals).
     uint256 public constant DEFAULT_MARKET_CAP_USD8 = 3_000e8;
@@ -187,7 +193,7 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     uint256 public constant MAX_MARKET_CAP_USD8 = 100_000_000e8;
 
     /// @notice Deploys each token so its bytecode stays out of this contract.
-    TokenDeployer public immutable tokenDeployer;
+    RewardTokenDeployer public immutable tokenDeployer;
     /// @notice Official Uniswap V3 factory on Stable Mainnet.
     IUniswapV3Factory public immutable uniswapFactory;
     /// @notice Official Uniswap V3 NonfungiblePositionManager.
@@ -230,11 +236,12 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     constructor(
         address owner_,
         address feeRecipient_,
-        TokenDeployer tokenDeployer_,
+        RewardTokenDeployer tokenDeployer_,
         IUniswapV3Factory uniswapFactory_,
         INonfungiblePositionManager positionManager_,
         ISwapRouter swapRouter_,
         address wrappedNative_,
+        uint16 holderFeeBps_,
         uint16 creatorFeeBps_
     ) Ownable(owner_) {
         if (
@@ -245,9 +252,10 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
             address(swapRouter_) == address(0) ||
             wrappedNative_ == address(0)
         ) revert ZeroAddress();
-        if (creatorFeeBps_ == 0 || creatorFeeBps_ > 10_000) revert InvalidParams();
+        if (creatorFeeBps_ == 0 || uint256(holderFeeBps_) + creatorFeeBps_ > 10_000) revert InvalidParams();
+        HOLDER_FEE_BPS = holderFeeBps_;
         CREATOR_FEE_BPS = creatorFeeBps_;
-        PLATFORM_FEE_BPS = 10_000 - creatorFeeBps_;
+        PLATFORM_FEE_BPS = 10_000 - holderFeeBps_ - creatorFeeBps_;
 
         feeRecipient = feeRecipient_;
         tokenDeployer = tokenDeployer_;
@@ -298,7 +306,7 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
 
         // The token mints its supply here and renounces ownership in its own
         // constructor — it is immutable before this function returns.
-        token = tokenDeployer.deploy(msg.sender, p.name, p.symbol, p.metadataURI);
+        token = tokenDeployer.deploy(msg.sender, p.name, p.symbol, p.metadataURI, p.quote);
         emit TokenCreated(token, msg.sender, p.name, p.symbol, p.metadataURI, TOTAL_SUPPLY);
 
         bool tokenIsToken0 = token < p.quote;
@@ -311,6 +319,8 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         // fresh each launch, so a pre-existing initialized pool cannot occur.
         pool = positionManager.createAndInitializePoolIfNecessary(token0, token1, POOL_FEE_TIER, sqrtPriceX96);
         emit PoolCreated(token, p.quote, pool, POOL_FEE_TIER, sqrtPriceX96, mcapUsd8);
+        // The pool holds the seeded supply; it must never accrue holder rewards.
+        LaunchpadRewardToken(token).initPool(pool);
 
         IERC20(token).forceApprove(address(positionManager), TOTAL_SUPPLY);
         uint128 liquidity;
@@ -402,13 +412,14 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     }
 
     // ---------------------------------------------------------------------
-    // Fee distribution — 80% creator / 20% platform
+    // Fee distribution — holders / creator / platform
     // ---------------------------------------------------------------------
 
     /// @notice Collect the pool fees accrued to a token's held position and
-    ///         distribute them: 80% to the token's creator, 20% to the
-    ///         platform fee recipient. Permissionless — anyone may trigger a
-    ///         distribution; shares always go to the fixed parties.
+    ///         distribute them: the quote side is split holders / creator /
+    ///         platform per the deploy-time bps, with the holder share paid
+    ///         into the token's dividend tracker. Permissionless — anyone may
+    ///         trigger a distribution; shares always go to the fixed parties.
     function harvestFees(address token)
         external
         nonReentrant
@@ -428,10 +439,28 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         (uint256 tokenAmount, uint256 quoteAmount) = l.tokenIsToken0 ? (amount0, amount1) : (amount1, amount0);
         if (tokenAmount == 0 && quoteAmount == 0) revert NothingToCollect();
 
-        creatorToken = (tokenAmount * CREATOR_FEE_BPS) / BPS;
+        // QUOTE side: holders / creator / platform. The holder share goes into
+        // the token's dividend tracker in the coin's pair asset; when nobody is
+        // eligible yet (all supply still in the pool) it folds into the
+        // creator's share so nothing strands inside the tracker.
+        uint256 holderQuote = (quoteAmount * HOLDER_FEE_BPS) / BPS;
         creatorQuote = (quoteAmount * CREATOR_FEE_BPS) / BPS;
+        if (holderQuote > 0) {
+            if (LaunchpadRewardToken(token).eligibleSupply() > 0) {
+                IERC20(l.quote).safeTransfer(token, holderQuote);
+                LaunchpadRewardToken(token).distributeRewards(holderQuote);
+            } else {
+                creatorQuote += holderQuote;
+            }
+        }
+        platformQuote = quoteAmount - holderQuote - ((quoteAmount * CREATOR_FEE_BPS) / BPS);
+
+        // TOKEN side: split creator/platform in the same ratio as their quote
+        // shares (holders already earn the quote; paying them the coin itself
+        // would just re-dilute the market).
+        uint16 cpBps = CREATOR_FEE_BPS + PLATFORM_FEE_BPS;
+        creatorToken = cpBps == 0 ? 0 : (tokenAmount * CREATOR_FEE_BPS) / cpBps;
         platformToken = tokenAmount - creatorToken;
-        platformQuote = quoteAmount - creatorQuote;
 
         if (creatorToken > 0) IERC20(token).safeTransfer(l.creator, creatorToken);
         if (creatorQuote > 0) IERC20(l.quote).safeTransfer(l.creator, creatorQuote);

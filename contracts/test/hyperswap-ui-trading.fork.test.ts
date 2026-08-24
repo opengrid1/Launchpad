@@ -39,11 +39,11 @@ describe("UI trading paths against live HyperSwap (fork)", function () {
   if (process.env.FORK !== "1") { it.skip("requires FORK=1", () => {}); return; }
 
   async function deploySystem(owner: any, feeRecipient: any) {
-    const tokenDeployer = await (await ethers.getContractFactory("TokenDeployer")).deploy();
+    const tokenDeployer = await (await ethers.getContractFactory("RewardTokenDeployer")).deploy();
     await tokenDeployer.waitForDeployment();
     const factory = await (await ethers.getContractFactory("StableLaunchpadFactory")).deploy(
       owner.address, feeRecipient.address, await tokenDeployer.getAddress(),
-      V3_FACTORY, NPM, SWAP_ROUTER, WHYPE, 7000,
+      V3_FACTORY, NPM, SWAP_ROUTER, WHYPE, 5000, 4000,
     );
     await factory.waitForDeployment();
     await (await tokenDeployer.setFactory(await factory.getAddress())).wait();
