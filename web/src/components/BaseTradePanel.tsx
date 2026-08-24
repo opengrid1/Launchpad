@@ -252,6 +252,31 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
         ) : (
           <button onClick={connectFirst} className="tp-cta connect">Connect to trade</button>
         )}
+
+        {/* Stock-paired coin with no wrapped-native route yet: buying takes the
+            stock itself, which lives on the Hyperliquid Core spot market. Walk
+            the user through getting it instead of leaving a dead end. */}
+        {IS_HYPER && pair && !isNativePair(pair) && side === "buy" ? (
+          <div style={{
+            border: "1px solid var(--color-edge)", background: "var(--color-panel-2)",
+            borderRadius: 10, padding: "10px 12px", fontSize: 11.5, lineHeight: 1.55,
+            color: "var(--color-ink-2)",
+          }}>
+            <b style={{ color: "var(--color-accent-ink)" }}>Need {disp(pair)}?</b> This coin trades in{" "}
+            {disp(pair)}. Get it in two steps:
+            <span style={{ display: "block", marginTop: 4 }}>
+              1. Buy <b>{disp(pair)}</b> on the{" "}
+              <a href="https://app.hyperliquid.xyz/trade" target="_blank" rel="noreferrer"
+                style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>
+                Hyperliquid spot market
+              </a>{" "}
+              (search “{disp(pair)}”).
+            </span>
+            <span style={{ display: "block" }}>
+              2. Transfer it from Hyperliquid to <b>EVM</b> (Portfolio, then Transfer to EVM), then trade here.
+            </span>
+          </div>
+        ) : null}
       </div>
     </div>
   );
