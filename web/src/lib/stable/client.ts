@@ -541,6 +541,42 @@ export class StableV3Client {
     return count;
   }
 
+  /** Top holders for the token page's Holders tab: candidates are every
+   *  trader we've observed plus the creator and the pool, verified against
+   *  live balances so the list is exact for the addresses shown. */
+  async getHolders(token: string, opts?: { limit?: number }): Promise<{ address: Address; balance: string; pct: number }[]> {
+    await this.loadCores();
+    const core = this.cores.get(token.toLowerCase());
+    if (!core) return [];
+    await this.getTrades(token, { limit: 200 }).catch(() => {});
+    const key = core.address.toLowerCase();
+    const trades = (this.tradesCache.get(key) ?? this.loadPersistedTrades(key))?.trades ?? [];
+    const candidates = new Set<string>();
+    for (const t of trades) {
+      if (t.trader && t.trader !== zeroAddress) candidates.add(t.trader.toLowerCase());
+    }
+    try {
+      for (const a of JSON.parse(localStorage.getItem(`steady:holdercands:${key}`) ?? "[]") as string[]) candidates.add(a);
+    } catch { /* corrupt entry */ }
+    candidates.add(core.creator.toLowerCase());
+    if (core.pool) candidates.add(core.pool.toLowerCase());
+    const addrs = [...candidates].slice(0, 80) as Address[];
+    const balances = await Promise.all(
+      addrs.map((a) =>
+        this.publicClient
+          .readContract({ address: core.address, abi: ERC20_ABI, functionName: "balanceOf", args: [a] })
+          .catch(() => 0n),
+      ),
+    );
+    const supply = 1_000_000_000 * 1e18;
+    return addrs
+      .map((address, i) => ({ address, bal: balances[i] as bigint }))
+      .filter((h) => h.bal > 0n)
+      .sort((a, b) => (b.bal > a.bal ? 1 : -1))
+      .slice(0, opts?.limit ?? 50)
+      .map((h) => ({ address: h.address, balance: h.bal.toString(), pct: (Number(h.bal) / supply) * 100 }));
+  }
+
   private async summary(core: Core): Promise<TokenSummary> {
     const price = await this.priceWei(core).catch(() => 0n);
     const supply = 1_000_000_000n * 10n ** 18n;
