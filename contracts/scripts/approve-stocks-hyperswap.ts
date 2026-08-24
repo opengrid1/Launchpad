@@ -8,7 +8,7 @@ import { ethers } from "hardhat";
 // Run with the factory OWNER signer:
 //   HARDHAT_CONFIG=hardhat.config.size.ts npx hardhat run \
 //     scripts/approve-stocks-hyperswap.ts --network robinhood
-const FACTORY = "0x96e4e6718D78D0483Eb363dE34001CbF2eCa29C6";
+const FACTORY = "0x337F5fC288105fAB1478AB4B59136e448099EF0f";
 const FEES = { maxFeePerGas: 20_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n, gasLimit: 200_000 };
 
 // Hyperliquid Core spot mids, 2026-08-24.
