@@ -7,6 +7,7 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomicfoundation/hardhat-verify";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -36,6 +37,28 @@ const config: HardhatUserConfig = {
         : {}),
     },
     ...(RPC ? { robinhood: { url: RPC, chainId: CHAIN || undefined, accounts: PK ? [PK] : [] } } : {}),
+  },
+  // Explorer verification for HyperEVM deploys made with this size-optimized
+  // build: settings must match the deploy compile exactly (runs=1, viaIR).
+  etherscan: {
+    apiKey: { robinhood: process.env.EXPLORER_API_KEY ?? "blockscout" },
+    customChains: process.env.EXPLORER_API_URL
+      ? [
+          {
+            network: "robinhood",
+            chainId: CHAIN || 999,
+            urls: {
+              apiURL: process.env.EXPLORER_API_URL,
+              browserURL: process.env.EXPLORER_BROWSER_URL ?? process.env.EXPLORER_API_URL,
+            },
+          },
+        ]
+      : [],
+  },
+  sourcify: {
+    enabled: true,
+    apiUrl: "https://sourcify.dev/server",
+    browserUrl: "https://repo.sourcify.dev",
   },
   mocha: { timeout: 180_000 },
 };
