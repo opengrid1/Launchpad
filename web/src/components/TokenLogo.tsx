@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { TokenSummary } from "@launchpad/sdk";
 
 import { IS_HYPER } from "../lib/brand";
+import { DEFAULT_TOKEN_LOGO } from "../lib/hyper/defaultLogo";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 import { HyperMark } from "./HyperMark";
 import { QuiverMark } from "./QuiverMark";
@@ -32,6 +33,8 @@ export function TokenLogo({ token, size = 40 }: { token: TokenSummary; size?: nu
           className="h-full w-full object-cover"
           onError={() => setFailed(true)}
         />
+      ) : IS_HYPER ? (
+        <img src={DEFAULT_TOKEN_LOGO} alt="" width={size} height={size} className="h-full w-full object-cover" />
       ) : (
         <QuiverMark />
       )}

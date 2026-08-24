@@ -13,6 +13,7 @@ import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 import { volUsd } from "../components/market/util";
 import { KoiIcon } from "../components/base/KoiIcon";
 import { HyperMark } from "../components/HyperMark";
+import { DEFAULT_TOKEN_LOGO } from "../lib/hyper/defaultLogo";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
@@ -126,12 +127,8 @@ const pairSymbolOf = (t: TokenSummary): string | null => {
   return null;
 };
 
-/* ---- circular avatar: token logo, else a mint default tile (no base asset) ---- */
-const DEFAULT_LOGO =
-  "data:image/svg+xml," +
-  encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#98fce4'/><stop offset='1' stop-color='#2fb5a6'/></linearGradient></defs><rect width='64' height='64' rx='16' fill='url(#g)'/><text x='32' y='42' font-family='sans-serif' font-size='30' font-weight='800' fill='#032420' text-anchor='middle'>L</text></svg>`,
-  );
+/* ---- circular avatar: token logo, else the liquidstock droplet default ---- */
+const DEFAULT_LOGO = DEFAULT_TOKEN_LOGO;
 function logoSrc(t: TokenSummary): string | null {
   const logo = OFFICIAL_LOGOS[t.address?.toLowerCase()] ?? t.metadata?.logo;
   if (!logo || !/^(https?:|ipfs:|data:)/.test(String(logo))) return null;
