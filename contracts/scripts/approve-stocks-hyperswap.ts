@@ -10,7 +10,7 @@ import * as path from "path";
 // Run with the factory owner signer:
 //   HARDHAT_CONFIG=hardhat.config.size.ts npx hardhat run \
 //     scripts/approve-stocks-hyperswap.ts --network robinhood
-const FACTORY = "0x46A402242fBA63f014409106f620C91658691534";
+const FACTORY = "0xE1DF818afA3154B56D719D92e25A69686b7046d4";
 const FEES = { maxFeePerGas: 20_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n, gasLimit: 200_000 };
 
 // Most-recent-close USD prices (Yahoo Finance, ~2026-08-20/21), keyed by the
