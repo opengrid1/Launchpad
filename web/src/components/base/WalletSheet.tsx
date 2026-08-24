@@ -10,24 +10,22 @@ import { WHYPE } from "../../lib/hyper/stocks";
 import { fmtUsd, shortAddr } from "../../lib/format";
 import { useWallet } from "../../lib/useWallet";
 import { useUi } from "../../store";
+import { HyperMark } from "../HyperMark";
 import { KoiIcon } from "./KoiIcon";
 
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 
 // The chain brandmark badge shown on each holding avatar: Base's blue disc,
-// or the mint disc on HyperEVM.
-const ChainMark = () => (
-  <svg viewBox="0 0 40 40" aria-hidden>
-    {IS_HYPER ? (
-      <circle cx="20" cy="20" r="20" fill="#4fe0cb" />
-    ) : (
-      <>
-        <circle cx="20" cy="20" r="20" fill="#fff" />
-        <path d="M24 2.45 A18 18 0 1 0 24 37.55 Z" fill="#0052FF" />
-      </>
-    )}
-  </svg>
-);
+// or the Hyperliquid mark on HyperEVM.
+const ChainMark = () =>
+  IS_HYPER ? (
+    <HyperMark />
+  ) : (
+    <svg viewBox="0 0 40 40" aria-hidden>
+      <circle cx="20" cy="20" r="20" fill="#fff" />
+      <path d="M24 2.45 A18 18 0 1 0 24 37.55 Z" fill="#0052FF" />
+    </svg>
+  );
 
 // The fundable assets on this chain, shown as holdings with their USD value.
 const ASSETS: { key: string; sym: string; name: string; address: Address; decimals: number }[] = IS_HYPER
