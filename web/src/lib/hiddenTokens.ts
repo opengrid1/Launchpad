@@ -12,8 +12,9 @@ import { env } from "./env";
 const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   // HyperEVM (999), liquidstock: deployer test launches. CHIPCAT is also
   // paired with the defunct Ondo NVDAon, which has no market anywhere.
-  "999:0xccbf9a19c00a0ecfe38d68c42e2a727faea51b95", // LIQCAT (test launch)
+  "999:0xccbf9a19c00a0ecfe38d68c42e2a727faea51b95", // LIQCAT (test launch, pre-rewards factory)
   "999:0x2b7d07005a8eb5b97d260bba838469364cc7dd5c", // CHIPCAT (test launch, dead Ondo pair)
+  "999:0x939640e6ac3e16c7eb26c72002be184c9212d835", // LOQCAT (name typo; relaunched as LIQCAT)
 
   // Robinhood Chain (4663), Hood factory: superseded official launches
   "4663:0x9e73a554968a9b3b69ab71f6ef43ca7f3720518b", // COPAIR (pre-toebeans official)
