@@ -4,6 +4,7 @@ import {
   type WalletClient,
   decodeEventLog,
   encodeFunctionData,
+  encodePacked,
   parseAbi,
   toEventSelector,
   zeroAddress,
@@ -33,6 +34,7 @@ const FACTORY_ABI = parseAbi([
   "function allTokens(uint256) view returns (address)",
   "function listings(address) view returns (address creator, address quote, address pool, uint256 positionId, uint64 createdAt, bool tokenIsToken0)",
   "function quoteAssets(address) view returns (bool approved, uint64 usdPrice8, uint8 decimals)",
+  "function uniswapFactory() view returns (address)",
   // Owner console
   "function owner() view returns (address)",
   "function feeRecipient() view returns (address)",
@@ -65,8 +67,14 @@ const POOL_ABI = parseAbi([
 const ROUTER_ABI = parseAbi([
   "struct ExactInputSingleParams { address tokenIn; address tokenOut; uint24 fee; address recipient; uint256 amountIn; uint256 amountOutMinimum; uint160 sqrtPriceLimitX96; }",
   "function exactInputSingle(ExactInputSingleParams params) payable returns (uint256 amountOut)",
+  "struct ExactInputParams { bytes path; address recipient; uint256 amountIn; uint256 amountOutMinimum; }",
+  "function exactInput(ExactInputParams params) payable returns (uint256 amountOut)",
   "function multicall(bytes[] data) payable returns (bytes[] results)",
   "function unwrapWETH9(uint256 amountMinimum, address recipient) payable",
+]);
+
+const V3_CORE_ABI = parseAbi([
+  "function getPool(address, address, uint24) view returns (address)",
 ]);
 
 /** Arc flavor: ArcLaunchpadFactory + ArcSwapRouter on DyorSwap V3 pools with
@@ -154,6 +162,9 @@ export class StableV3Client {
    *  behavior is unchanged; multi-quote flavors (e.g. stonkliquid) get each
    *  coin's own stock/native pair for trading and USD pricing. */
   private quoteOf = new Map<string, { addr: Address; usdPrice8: bigint; decimals: number }>();
+  /** Wrapped-native route to a non-native quote: the WHYPE/quote pool's fee
+   *  tier when a funded pool exists, else null. Keyed by quote address. */
+  private hypeRoutes = new Map<string, number | null>();
   /** Observed seconds per block, refreshed by each trade scan. Stable is a
    *  steady 0.7s; Orbit chains mint blocks on demand so this varies. */
   private avgBlockTime = 0.7;
@@ -327,16 +338,52 @@ export class StableV3Client {
     return q.usdPrice8 > 0n ? Number(q.usdPrice8) / 1e8 : this.quoteUsd;
   }
 
+  /** Wrapped-native route to a non-native quote: the fee tier of a FUNDED
+   *  WHYPE/quote pool on the underlying V3 factory, or null when none exists.
+   *  When a route exists, buys and sells of that coin can be paid in plain
+   *  native via a two-hop exactInput, so holders never need the stock. The
+   *  result is cached; it self-activates the day someone seeds the pool. */
+  private async hypeRouteFor(quote: Address): Promise<number | null> {
+    if (!QUOTE_IS_WNATIVE || quote.toLowerCase() === this.addresses.quote.toLowerCase()) return null;
+    const key = quote.toLowerCase();
+    const hit = this.hypeRoutes.get(key);
+    if (hit !== undefined) return hit;
+    let route: number | null = null;
+    try {
+      const v3 = (await this.publicClient.readContract({
+        address: this.addresses.factory, abi: FACTORY_ABI, functionName: "uniswapFactory",
+      })) as Address;
+      for (const fee of [3000, 500, 10_000, 100]) {
+        const pool = (await this.publicClient.readContract({
+          address: v3, abi: V3_CORE_ABI, functionName: "getPool", args: [this.addresses.quote, quote, fee],
+        })) as Address;
+        if (pool === zeroAddress) continue;
+        const liq = (await this.publicClient.readContract({
+          address: pool, abi: POOL_ABI, functionName: "liquidity",
+        })) as bigint;
+        if (liq > 0n) { route = fee; break; }
+      }
+    } catch { /* factory or pools unreadable; treat as no route */ }
+    this.hypeRoutes.set(key, route);
+    return route;
+  }
+
   /** The coin's pay token for the UI to label buys/sells. Resolves the coin's
    *  pair: the wrapped native shows the chain's native symbol; a tokenized
    *  stock shows its ticker; anything else a short address. `usd` is the
    *  pair's factory-registered USD price (0 when unknown) and `isNative` is
-   *  true when the pair is paid as the chain's native currency. */
+   *  true when the pair is paid as the chain's native currency. A stock pair
+   *  with a live wrapped-native route reports as native: the user pays plain
+   *  native and the client routes through the stock pool automatically. */
   async pairOf(token: Address): Promise<{ address: Address; symbol: string; decimals: number; usd: number; isNative: boolean }> {
     const q = await this.resolveQuote(token);
     const usd = q.usdPrice8 > 0n ? Number(q.usdPrice8) / 1e8 : 0;
     if (QUOTE_IS_WNATIVE && q.addr.toLowerCase() === this.addresses.quote.toLowerCase()) {
       return { address: q.addr, symbol: env.nativeSymbol, decimals: q.decimals, usd, isNative: true };
+    }
+    if ((await this.hypeRouteFor(q.addr)) != null) {
+      const nativeUsd = this.quoteUsd8 > 0n ? Number(this.quoteUsd8) / 1e8 : this.quoteUsd;
+      return { address: this.addresses.quote, symbol: env.nativeSymbol, decimals: 18, usd: nativeUsd, isNative: true };
     }
     const stock = HYPER_STOCKS.find((s) => s.address.toLowerCase() === q.addr.toLowerCase());
     if (stock) return { address: q.addr, symbol: stock.ticker, decimals: q.decimals, usd, isNative: false };
@@ -977,7 +1024,23 @@ export class StableV3Client {
     const amountIn = nativeWei / DEC_GAP;
     if (amountIn === 0n) throw new Error("Amount too small.");
     const payNative = QUOTE_IS_WNATIVE && quote.addr.toLowerCase() === this.addresses.quote.toLowerCase();
-    if (!payNative) await this.ensureAllowance(me, quote.addr, amountIn);
+    if (!payNative) {
+      // Stock pair with a funded wrapped-native route: pay plain native and
+      // hop native -> stock -> coin in one swap. No stock needed, ever.
+      const route = await this.hypeRouteFor(quote.addr);
+      if (route != null) {
+        const path = encodePacked(
+          ["address", "uint24", "address", "uint24", "address"],
+          [this.addresses.quote, route, quote.addr, 10_000, token],
+        );
+        return wc.writeContract({
+          address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInput",
+          args: [{ path, recipient: me, amountIn: nativeWei, amountOutMinimum: minOut }],
+          value: nativeWei, chain: wc.chain, account: wc.account!,
+        });
+      }
+      await this.ensureAllowance(me, quote.addr, amountIn);
+    }
     return wc.writeContract({
       address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
       args: [{ tokenIn: quote.addr, tokenOut: token, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
@@ -1006,6 +1069,26 @@ export class StableV3Client {
     const quote = await this.resolveQuote(token);
     const isWnative = QUOTE_IS_WNATIVE && quote.addr.toLowerCase() === this.addresses.quote.toLowerCase();
     if (!isWnative) {
+      // Stock pair with a funded wrapped-native route: hop coin -> stock ->
+      // native in one swap and unwrap straight to the seller.
+      const route = await this.hypeRouteFor(quote.addr);
+      if (route != null) {
+        const path = encodePacked(
+          ["address", "uint24", "address", "uint24", "address"],
+          [token, 10_000, quote.addr, route, this.addresses.quote],
+        );
+        const hop = encodeFunctionData({
+          abi: ROUTER_ABI, functionName: "exactInput",
+          args: [{ path, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: minOut }],
+        });
+        const unwrapHop = encodeFunctionData({
+          abi: ROUTER_ABI, functionName: "unwrapWETH9", args: [minOut, me],
+        });
+        return wc.writeContract({
+          address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "multicall",
+          args: [[hop, unwrapHop]], chain: wc.chain, account: wc.account!,
+        });
+      }
       return wc.writeContract({
         address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
         args: [{ tokenIn: token, tokenOut: quote.addr, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut / DEC_GAP, sqrtPriceLimitX96: 0n }],

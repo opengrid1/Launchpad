@@ -25,6 +25,7 @@ const ADDRESS_THIS = "0x0000000000000000000000000000000000000002";
 
 const ROUTER02_ABI = [
   "function exactInputSingle((address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96)) payable returns (uint256)",
+  "function exactInput((bytes path,address recipient,uint256 amountIn,uint256 amountOutMinimum)) payable returns (uint256)",
   "function multicall(bytes[] data) payable returns (bytes[])",
   "function unwrapWETH9(uint256 amountMinimum, address recipient) payable",
 ];
@@ -111,6 +112,56 @@ describe("UI trading paths against live HyperSwap (fork)", function () {
     await expect(
       factory.connect(creator).createToken(p2, { value: 1n }),
     ).to.be.revertedWithCustomError(factory, "InvalidParams");
+  });
+
+  it("buys and sells a stock-paired coin with plain HYPE via a two-hop route", async () => {
+    const [, owner, feeRecipient, creator, trader] = await ethers.getSigners();
+    const factory = await deploySystem(owner, feeRecipient);
+    // USDT0 stands in for a stock: it is the one quote with a live, funded
+    // WHYPE pool today, which is exactly what the route detector looks for.
+    await (await factory.connect(owner).setQuoteAsset(USDT0, true, 100000000n)).wait();
+    const token = await createToken(factory, creator, USDT0);
+    const coin = new ethers.Contract(token, ERC20_ABI, trader);
+    const router = new ethers.Contract(SWAP_ROUTER, ROUTER02_ABI, trader);
+
+    // Find the funded WHYPE/USDT0 tier the same way the client does.
+    const v3 = await ethers.getContractAt("IUniswapV3FactoryCore", V3_FACTORY);
+    let tier = 0;
+    for (const fee of [3000, 500, 10_000, 100]) {
+      const pool = (await v3.getPool(WHYPE, USDT0, fee)) as string;
+      if (pool === ethers.ZeroAddress) continue;
+      const liq = await new ethers.Contract(pool, ["function liquidity() view returns (uint128)"], ethers.provider).liquidity();
+      if (liq > 0n) { tier = fee; break; }
+    }
+    expect(tier, "a funded WHYPE/USDT0 pool exists").to.be.greaterThan(0);
+
+    // Buy: plain native in, HYPE -> USDT0 -> coin, exactly the client's call.
+    const amountIn = ethers.parseEther("2");
+    const pathBuy = ethers.solidityPacked(
+      ["address", "uint24", "address", "uint24", "address"],
+      [WHYPE, tier, USDT0, 10_000, token],
+    );
+    await (await router.exactInput(
+      { path: pathBuy, recipient: trader.address, amountIn, amountOutMinimum: 0 },
+      { value: amountIn },
+    )).wait();
+    const got = (await coin.balanceOf(trader.address)) as bigint;
+    expect(got, "coins bought with plain HYPE through the stock pool").to.be.greaterThan(0n);
+
+    // Sell: coin -> USDT0 -> HYPE, unwrapped straight to the seller.
+    await (await coin.approve(SWAP_ROUTER, got)).wait();
+    const pathSell = ethers.solidityPacked(
+      ["address", "uint24", "address", "uint24", "address"],
+      [token, 10_000, USDT0, tier, WHYPE],
+    );
+    const hop = router.interface.encodeFunctionData("exactInput", [
+      { path: pathSell, recipient: ADDRESS_THIS, amountIn: got, amountOutMinimum: 0 },
+    ]);
+    const unwrap = router.interface.encodeFunctionData("unwrapWETH9", [0, trader.address]);
+    const before = await ethers.provider.getBalance(trader.address);
+    const rc = await (await router.multicall([hop, unwrap])).wait();
+    const gained = (await ethers.provider.getBalance(trader.address)) - before + rc.gasUsed * rc.gasPrice;
+    expect(gained, "native HYPE received selling a stock-paired coin").to.be.greaterThan(ethers.parseEther("1.5"));
   });
 
   it("buys with plain native value (no wrap, no approval) exactly like the UI", async () => {
