@@ -228,11 +228,21 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
           </div>
           <p className="hint">You earn 1% of every trade in {selected.label} ({selected.sub}).</p>
           {selected.address !== WHYPE ? (
-            <p className="hint" style={{ color: "var(--color-accent-ink)" }}>
-              Heads up: a {selected.label}-paired coin trades in {selected.label}, so buyers must hold
-              the stock on HyperEVM. Trading bots and most wallets only route {env.nativeSymbol} pairs
-              today. Pick {env.nativeSymbol} for the widest reach.
-            </p>
+            <div style={{
+              marginTop: 8, border: "1px solid var(--color-edge)", background: "var(--color-panel-2)",
+              borderRadius: 10, padding: "10px 12px", fontSize: 11.5, lineHeight: 1.6, color: "var(--color-ink-2)",
+            }}>
+              <b style={{ color: "var(--color-accent-ink)" }}>How buyers get {selected.label}:</b> a{" "}
+              {selected.label}-paired coin trades in {selected.label} on HyperEVM. To hold it, buy{" "}
+              {selected.label} on the{" "}
+              <a href="https://app.hyperliquid.xyz/trade" target="_blank" rel="noreferrer"
+                style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>
+                Hyperliquid spot market
+              </a>{" "}
+              first, then transfer it to EVM (Portfolio, Transfer to EVM). Same goes for your dev buy.
+              Trading bots and most wallets only route {env.nativeSymbol} pairs, so pick{" "}
+              {env.nativeSymbol} for the widest reach.
+            </div>
           ) : null}
         </div>
 
