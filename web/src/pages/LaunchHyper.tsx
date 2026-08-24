@@ -228,9 +228,9 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
           <p className="hint">You earn 1% of every trade in {selected.label} ({selected.sub}).</p>
           {selected.address !== WHYPE ? (
             <p className="hint" style={{ color: "var(--color-accent-ink)" }}>
-              Heads up: a {selected.label}-paired coin trades in {selected.label}, so buyers must hold
-              the stock on HyperEVM. Trading bots and most wallets only route {env.nativeSymbol} pairs
-              today. Pick {env.nativeSymbol} for the widest reach.
+              A {selected.label}-paired launch opens two markets: a {selected.label} pool and a{" "}
+              {env.nativeSymbol} pool, half the supply each. Everyone (bots included) can trade it in
+              plain {env.nativeSymbol}, and you earn fees in both {env.nativeSymbol} and {selected.label}.
             </p>
           ) : null}
         </div>
@@ -246,8 +246,8 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
             placeholder="0.0"
           />
           <p className="hint">
-            {selected.label} spent buying your own coin in the launch transaction itself, before anyone
-            else can trade{selected.address === WHYPE ? "" : ` (you need ${selected.label} in your wallet)`}.
+            {env.nativeSymbol} spent buying your own coin in the launch transaction itself, before
+            anyone else can trade.
           </p>
         </div>
 

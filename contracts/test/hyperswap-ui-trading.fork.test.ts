@@ -96,21 +96,59 @@ describe("UI trading paths against live HyperSwap (fork)", function () {
     const coin = new ethers.Contract(token, ERC20_ABI, ethers.provider);
     expect(await coin.balanceOf(creator.address), "creator holds the dev buy fill").to.be.greaterThan(0n);
 
-    // ERC20 quote: approve the factory, dev buy pulled and swapped atomically.
+    // ERC20 quote: the dev buy is STILL paid in native, filled against the
+    // launch's wrapped-native pool (every launch has one now).
     await (await factory.connect(owner).setQuoteAsset(USDT0, true, 100000000n)).wait();
-    const amt = await dealToken(USDT0, creator.address, USDT(200n));
-    const usdt = new ethers.Contract(USDT0, ERC20_ABI, creator);
-    await (await usdt.approve(await factory.getAddress(), amt)).wait();
-    const p2 = { name: "Dev Coin 2", symbol: "DEVC2", metadataURI: "{}", quote: USDT0, marketCapUsd8: 0n, devBuyQuote: amt };
-    const rc2 = await (await factory.connect(creator).createToken(p2)).wait();
+    const p2 = { name: "Dev Coin 2", symbol: "DEVC2", metadataURI: "{}", quote: USDT0, marketCapUsd8: 0n, devBuyQuote: devBuy };
+    const rc2 = await (await factory.connect(creator).createToken(p2, { value: devBuy })).wait();
     const ev2 = rc2.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } })
       .find((e: any) => e?.name === "TokenCreated");
     const coin2 = new ethers.Contract(ev2.args.token as string, ERC20_ABI, ethers.provider);
-    expect(await coin2.balanceOf(creator.address), "creator holds the ERC20 dev buy fill").to.be.greaterThan(0n);
+    expect(await coin2.balanceOf(creator.address), "creator holds the native dev buy fill on a stock pair").to.be.greaterThan(0n);
     // Wrong native value is rejected.
     await expect(
       factory.connect(creator).createToken(p2, { value: 1n }),
     ).to.be.revertedWithCustomError(factory, "InvalidParams");
+  });
+
+  it("stock-pair launches open a second wrapped-native pool tradable in plain HYPE", async () => {
+    const [, owner, feeRecipient, creator, trader] = await ethers.getSigners();
+    const factory = await deploySystem(owner, feeRecipient);
+    await (await factory.connect(owner).setQuoteAsset(USDT0, true, 100000000n)).wait();
+    const token = await createToken(factory, creator, USDT0);
+
+    const l = await factory.listings(token);
+    expect(l.hypePool, "companion WHYPE pool exists").to.not.equal(ethers.ZeroAddress);
+    expect(l.hypePositionId).to.not.equal(0n);
+    const coin = new ethers.Contract(token, ERC20_ABI, ethers.provider);
+    expect(await coin.balanceOf(l.pool), "half the supply in the stock pool").to.be.greaterThan(ethers.parseEther("490000000"));
+    expect(await coin.balanceOf(l.hypePool), "half the supply in the WHYPE pool").to.be.greaterThan(ethers.parseEther("490000000"));
+
+    // Anyone (bots included) can buy with plain native through the WHYPE pool.
+    const router = new ethers.Contract(SWAP_ROUTER, ROUTER02_ABI, trader);
+    const amountIn = ethers.parseEther("3");
+    await (await router.exactInputSingle(
+      { tokenIn: WHYPE, tokenOut: token, fee: 10_000, recipient: trader.address, amountIn, amountOutMinimum: 0, sqrtPriceLimitX96: 0 },
+      { value: amountIn },
+    )).wait();
+    const got = (await coin.balanceOf(trader.address)) as bigint;
+    expect(got, "coins bought with plain HYPE on a stock-paired coin").to.be.greaterThan(0n);
+
+    // And sell back to native the same way the UI does.
+    const coinT = new ethers.Contract(token, ERC20_ABI, trader);
+    await (await coinT.approve(SWAP_ROUTER, got)).wait();
+    const swap = router.interface.encodeFunctionData("exactInputSingle", [
+      { tokenIn: token, tokenOut: WHYPE, fee: 10_000, recipient: ADDRESS_THIS, amountIn: got, amountOutMinimum: 0, sqrtPriceLimitX96: 0 },
+    ]);
+    const unwrap = router.interface.encodeFunctionData("unwrapWETH9", [0, trader.address]);
+    await (await router.multicall([swap, unwrap])).wait();
+    expect(await coin.balanceOf(trader.address), "sold back to native").to.equal(0n);
+
+    // Harvest pays the creator the WHYPE-side fees 70/30.
+    const whype = new ethers.Contract(WHYPE, ERC20_ABI, ethers.provider);
+    const before = (await whype.balanceOf(creator.address)) as bigint;
+    await (await factory.harvestFees(token)).wait();
+    expect((await whype.balanceOf(creator.address)) - before, "creator earns HYPE-side fees").to.be.greaterThan(0n);
   });
 
   it("buys with plain native value (no wrap, no approval) exactly like the UI", async () => {

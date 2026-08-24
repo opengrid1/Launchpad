@@ -31,7 +31,11 @@ const FACTORY_ABI = parseAbi([
   "function harvestFees(address token) returns (uint256, uint256, uint256, uint256)",
   "function tokenCount() view returns (uint256)",
   "function allTokens(uint256) view returns (address)",
-  "function listings(address) view returns (address creator, address quote, address pool, uint256 positionId, uint64 createdAt, bool tokenIsToken0)",
+  // The dual-pool factory (liquidstock) appends the companion wrapped-native
+  // pool; older single-pool factories (steadypads) return the shorter shape.
+  String(import.meta.env.VITE_BRAND ?? "") === "hyper"
+    ? "function listings(address) view returns (address creator, address quote, address pool, uint256 positionId, uint64 createdAt, bool tokenIsToken0, address hypePool, uint256 hypePositionId)"
+    : "function listings(address) view returns (address creator, address quote, address pool, uint256 positionId, uint64 createdAt, bool tokenIsToken0)",
   "function quoteAssets(address) view returns (bool approved, uint64 usdPrice8, uint8 decimals)",
   // Owner console
   "function owner() view returns (address)",
@@ -286,6 +290,23 @@ export class StableV3Client {
     const hit = this.quoteOf.get(key);
     if (hit) return hit;
     let addr = this.addresses.quote;
+    // Dual-pool factory (liquidstock): every coin trades on its wrapped-native
+    // pool, so the tradable quote is always the wrapped native regardless of
+    // the listed pair. The stock pair remains a display + fee attribute.
+    if (String(import.meta.env.VITE_BRAND ?? "") === "hyper") {
+      const resolvedHype = { addr, usdPrice8: this.quoteUsd8 > 0n ? this.quoteUsd8 : 0n, decimals: 18 };
+      if (resolvedHype.usdPrice8 === 0n) {
+        try {
+          const qa = await this.publicClient.readContract({
+            address: this.addresses.factory, abi: FACTORY_ABI, functionName: "quoteAssets", args: [addr],
+          });
+          const [, price8] = qa as unknown as [boolean, bigint, number];
+          resolvedHype.usdPrice8 = price8;
+        } catch { /* registry unavailable */ }
+      }
+      this.quoteOf.set(key, resolvedHype);
+      return resolvedHype;
+    }
     try {
       const listing = await this.publicClient.readContract({
         address: this.addresses.factory,
@@ -446,9 +467,17 @@ export class StableV3Client {
             [creator, , pool, , , createdAt, tokenIsToken0] = l;
             positionId = 0n;
           } else {
-            [creator, , pool, positionId, createdAt, tokenIsToken0] = listing as unknown as [
-              Address, Address, Address, bigint, bigint, boolean,
+            let hypePool: Address | undefined;
+            [creator, , pool, positionId, createdAt, tokenIsToken0, hypePool] = listing as unknown as [
+              Address, Address, Address, bigint, bigint, boolean, Address?,
             ];
+            // Dual-pool launches: the wrapped-native pool is the canonical
+            // trading market (bots and the app trade it in native currency);
+            // the stock pool stays for its own market + creator fees.
+            if (hypePool && hypePool !== zeroAddress) {
+              pool = hypePool;
+              tokenIsToken0 = a.toLowerCase() < this.addresses.quote.toLowerCase();
+            }
           }
           this.cores.set(a.toLowerCase(), {
             address: a, creator, pool, positionId,

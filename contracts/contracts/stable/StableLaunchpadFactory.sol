@@ -153,7 +153,12 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         uint8 decimals;
     }
 
-    /// @notice A launched token, its market and the position that backs it.
+    /// @notice A launched token, its market(s) and the positions backing them.
+    ///         A stock-paired launch seeds TWO pools: half the supply against
+    ///         the stock (the main market) and half against the wrapped native
+    ///         at the same starting price, so every coin is tradable in the
+    ///         native currency by wallets and bots. `hypePool` is zero when the
+    ///         quote IS the wrapped native (single pool).
     struct Listing {
         address creator;
         address quote;
@@ -161,6 +166,8 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         uint256 positionId;
         uint64 createdAt;
         bool tokenIsToken0;
+        address hypePool;
+        uint256 hypePositionId;
     }
 
     // ---------------------------------------------------------------------
@@ -283,9 +290,9 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     {
         if (launchesPaused) revert LaunchesArePaused();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
-        // Native value is only accepted as the dev buy for the wrapped-native
-        // quote, and must match it exactly.
-        if (msg.value != (p.quote == wrappedNative ? p.devBuyQuote : 0)) revert InvalidParams();
+        // The dev buy is always paid in native currency and must match exactly:
+        // every launch has a wrapped-native pool to fill it against.
+        if (msg.value != p.devBuyQuote) revert InvalidParams();
 
         QuoteAsset memory q = quoteAssets[p.quote];
         if (!q.approved) revert QuoteNotApproved();
@@ -301,8 +308,66 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         token = tokenDeployer.deploy(msg.sender, p.name, p.symbol, p.metadataURI);
         emit TokenCreated(token, msg.sender, p.name, p.symbol, p.metadataURI, TOTAL_SUPPLY);
 
-        bool tokenIsToken0 = token < p.quote;
-        (address token0, address token1) = tokenIsToken0 ? (token, p.quote) : (p.quote, token);
+        IERC20(token).forceApprove(address(positionManager), TOTAL_SUPPLY);
+        address hypePool;
+        uint256 hypePositionId;
+        if (p.quote == wrappedNative) {
+            // Native pair: one pool, full supply.
+            (pool, positionId) = _seed(token, p.quote, q, mcapUsd8, tickSpacing, TOTAL_SUPPLY);
+        } else {
+            // Stock pair: half the supply against the stock (the main market),
+            // half against the wrapped native at the same starting USD price,
+            // so the coin is tradable in native currency everywhere.
+            (pool, positionId) = _seed(token, p.quote, q, mcapUsd8, tickSpacing, TOTAL_SUPPLY / 2);
+            (hypePool, hypePositionId) =
+                _seed(token, wrappedNative, quoteAssets[wrappedNative], mcapUsd8, tickSpacing, TOTAL_SUPPLY / 2);
+        }
+
+        listings[token] = Listing({
+            creator: msg.sender,
+            quote: p.quote,
+            pool: pool,
+            positionId: positionId,
+            createdAt: uint64(block.timestamp),
+            tokenIsToken0: token < p.quote,
+            hypePool: hypePool,
+            hypePositionId: hypePositionId
+        });
+        allTokens.push(token);
+
+        // Optional dev buy: the creator's first fill, atomic with the launch,
+        // paid in native currency and swapped through the coin's wrapped-native
+        // pool via the official router. Coins land in the creator's wallet; a
+        // min-out of 0 is safe because the pool was seeded in this transaction.
+        if (p.devBuyQuote > 0) {
+            IWETH9(wrappedNative).deposit{value: p.devBuyQuote}();
+            IERC20(wrappedNative).forceApprove(address(swapRouter), p.devBuyQuote);
+            ISwapRouter(swapRouter).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: wrappedNative,
+                    tokenOut: token,
+                    fee: POOL_FEE_TIER,
+                    recipient: msg.sender,
+                    amountIn: p.devBuyQuote,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                })
+            );
+        }
+    }
+
+    /// @dev Create + initialize the token/`quote` pool at the market cap's
+    ///      starting price and seed it single-sided with `amount` tokens.
+    function _seed(
+        address token,
+        address quote,
+        QuoteAsset memory q,
+        uint256 mcapUsd8,
+        int24 tickSpacing,
+        uint256 amount
+    ) internal returns (address pool, uint256 positionId) {
+        bool tokenIsToken0 = token < quote;
+        (address token0, address token1) = tokenIsToken0 ? (token, quote) : (quote, token);
 
         (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper) =
             _initialPosition(tokenIsToken0, tickSpacing, mcapUsd8, q);
@@ -310,9 +375,8 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         // Creates the pool if absent and initializes it; token addresses are
         // fresh each launch, so a pre-existing initialized pool cannot occur.
         pool = positionManager.createAndInitializePoolIfNecessary(token0, token1, POOL_FEE_TIER, sqrtPriceX96);
-        emit PoolCreated(token, p.quote, pool, POOL_FEE_TIER, sqrtPriceX96, mcapUsd8);
+        emit PoolCreated(token, quote, pool, POOL_FEE_TIER, sqrtPriceX96, mcapUsd8);
 
-        IERC20(token).forceApprove(address(positionManager), TOTAL_SUPPLY);
         uint128 liquidity;
         uint256 amount0;
         uint256 amount1;
@@ -323,8 +387,8 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
                 fee: POOL_FEE_TIER,
                 tickLower: tickLower,
                 tickUpper: tickUpper,
-                amount0Desired: tokenIsToken0 ? TOTAL_SUPPLY : 0,
-                amount1Desired: tokenIsToken0 ? 0 : TOTAL_SUPPLY,
+                amount0Desired: tokenIsToken0 ? amount : 0,
+                amount1Desired: tokenIsToken0 ? 0 : amount,
                 amount0Min: 0,
                 amount1Min: 0,
                 recipient: address(this),
@@ -332,40 +396,6 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
             })
         );
         emit LiquidityAdded(token, positionId, liquidity, tokenIsToken0 ? amount0 : amount1);
-
-        listings[token] = Listing({
-            creator: msg.sender,
-            quote: p.quote,
-            pool: pool,
-            positionId: positionId,
-            createdAt: uint64(block.timestamp),
-            tokenIsToken0: tokenIsToken0
-        });
-        allTokens.push(token);
-
-        // Optional dev buy: the creator's first fill, atomic with the launch,
-        // through the official router like every other trade. Coins land in
-        // the creator's wallet; a min-out of 0 is safe because the pool was
-        // created and seeded in this same transaction.
-        if (p.devBuyQuote > 0) {
-            if (p.quote == wrappedNative) {
-                IWETH9(wrappedNative).deposit{value: p.devBuyQuote}();
-            } else {
-                IERC20(p.quote).safeTransferFrom(msg.sender, address(this), p.devBuyQuote);
-            }
-            IERC20(p.quote).forceApprove(address(swapRouter), p.devBuyQuote);
-            ISwapRouter(swapRouter).exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: p.quote,
-                    tokenOut: token,
-                    fee: POOL_FEE_TIER,
-                    recipient: msg.sender,
-                    amountIn: p.devBuyQuote,
-                    amountOutMinimum: 0,
-                    sqrtPriceLimitX96: 0
-                })
-            );
-        }
     }
 
     /// @dev Initial pool price (snapped to a tick boundary) and the token-only
@@ -417,16 +447,14 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         Listing memory l = listings[token];
         if (l.pool == address(0)) revert UnknownToken();
 
-        (uint256 amount0, uint256 amount1) = positionManager.collect(
-            INonfungiblePositionManager.CollectParams({
-                tokenId: l.positionId,
-                recipient: address(this),
-                amount0Max: type(uint128).max,
-                amount1Max: type(uint128).max
-            })
-        );
-        (uint256 tokenAmount, uint256 quoteAmount) = l.tokenIsToken0 ? (amount0, amount1) : (amount1, amount0);
-        if (tokenAmount == 0 && quoteAmount == 0) revert NothingToCollect();
+        (uint256 tokenAmount, uint256 quoteAmount) = _collectTo(l.positionId, token, address(this));
+        uint256 hypeAmount;
+        if (l.hypePositionId != 0) {
+            uint256 t2;
+            (t2, hypeAmount) = _collectTo(l.hypePositionId, token, address(this));
+            tokenAmount += t2;
+        }
+        if (tokenAmount == 0 && quoteAmount == 0 && hypeAmount == 0) revert NothingToCollect();
 
         creatorToken = (tokenAmount * CREATOR_FEE_BPS) / BPS;
         creatorQuote = (quoteAmount * CREATOR_FEE_BPS) / BPS;
@@ -437,8 +465,34 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         if (creatorQuote > 0) IERC20(l.quote).safeTransfer(l.creator, creatorQuote);
         if (platformToken > 0) IERC20(token).safeTransfer(feeRecipient, platformToken);
         if (platformQuote > 0) IERC20(l.quote).safeTransfer(feeRecipient, platformQuote);
+        // The wrapped-native pool's quote-side fees, split the same way.
+        if (hypeAmount > 0) {
+            uint256 creatorHype = (hypeAmount * CREATOR_FEE_BPS) / BPS;
+            IERC20(wrappedNative).safeTransfer(l.creator, creatorHype);
+            if (hypeAmount - creatorHype > 0) IERC20(wrappedNative).safeTransfer(feeRecipient, hypeAmount - creatorHype);
+            creatorQuote += creatorHype;
+            platformQuote += hypeAmount - creatorHype;
+        }
 
         emit FeesCollected(token, l.creator, creatorToken, creatorQuote, platformToken, platformQuote);
+    }
+
+    /// @dev Collect a position's accrued fees to `to`, returned as
+    ///      (tokenAmount, otherAmount) relative to `token`.
+    function _collectTo(uint256 positionId, address token, address to)
+        internal
+        returns (uint256 tokenAmount, uint256 otherAmount)
+    {
+        (uint256 amount0, uint256 amount1) = positionManager.collect(
+            INonfungiblePositionManager.CollectParams({
+                tokenId: positionId,
+                recipient: to,
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
+            })
+        );
+        (, , address token0, , , , , , , , , ) = positionManager.positions(positionId);
+        (tokenAmount, otherAmount) = token0 == token ? (amount0, amount1) : (amount1, amount0);
     }
 
     // ---------------------------------------------------------------------
@@ -457,11 +511,27 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         Listing memory l = listings[token];
         if (l.pool == address(0)) revert UnknownToken();
 
-        (, , , , , , , uint128 liquidity, , , , ) = positionManager.positions(l.positionId);
+        uint128 liquidity = _unwind(l.positionId);
+        (tokenAmount, quoteAmount) = _collectTo(l.positionId, token, owner());
+        if (l.hypePositionId != 0) {
+            liquidity += _unwind(l.hypePositionId);
+            (uint256 t2, uint256 q2) = _collectTo(l.hypePositionId, token, owner());
+            tokenAmount += t2;
+            quoteAmount += q2;
+        }
+        if (tokenAmount == 0 && quoteAmount == 0) revert NothingToCollect();
+
+        emit LiquidityCollected(token, liquidity, tokenAmount, quoteAmount, owner());
+    }
+
+    /// @dev Remove all liquidity from a held position (fees + principal stay
+    ///      owed to the position until collected).
+    function _unwind(uint256 positionId) internal returns (uint128 liquidity) {
+        (, , , , , , , liquidity, , , , ) = positionManager.positions(positionId);
         if (liquidity > 0) {
             positionManager.decreaseLiquidity(
                 INonfungiblePositionManager.DecreaseLiquidityParams({
-                    tokenId: l.positionId,
+                    tokenId: positionId,
                     liquidity: liquidity,
                     amount0Min: 0,
                     amount1Min: 0,
@@ -469,19 +539,6 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
                 })
             );
         }
-
-        (uint256 amount0, uint256 amount1) = positionManager.collect(
-            INonfungiblePositionManager.CollectParams({
-                tokenId: l.positionId,
-                recipient: owner(),
-                amount0Max: type(uint128).max,
-                amount1Max: type(uint128).max
-            })
-        );
-        (tokenAmount, quoteAmount) = l.tokenIsToken0 ? (amount0, amount1) : (amount1, amount0);
-        if (tokenAmount == 0 && quoteAmount == 0) revert NothingToCollect();
-
-        emit LiquidityCollected(token, liquidity, tokenAmount, quoteAmount, owner());
     }
 
     // ---------------------------------------------------------------------

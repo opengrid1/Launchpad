@@ -57,7 +57,7 @@ async function main() {
   // call intermittently errors on the HyperEVM RPC) and cap cost. Base fee is
   // usually well under 20 gwei; maxFee tolerates minor spikes.
   const FEES = { maxFeePerGas: 20_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n };
-  const DEPLOY_GAS = { gasLimit: 2_999_000, ...FEES };
+  const DEPLOY_GAS = { gasLimit: 4_000_000, ...FEES }; // big-block deploy (dual-pool factory is ~3.28M)
   const ADMIN_GAS = { gasLimit: 300_000, ...FEES };
 
   // Reuse an already-deployed TokenDeployer (e.g. after a gas-price retry) so a

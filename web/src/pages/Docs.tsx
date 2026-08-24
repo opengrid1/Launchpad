@@ -69,20 +69,22 @@ function HyperDocs() {
         </p>
       </TermSection>
 
-      <TermSection title="Pairing a stock" sub="35 markets">
+      <TermSection title="Pairing a stock" sub="Two markets">
         <p>
           Coins can pair Ondo tokenized US stocks and ETFs live on {env.chainName}: NVDA, TSLA,
-          AAPL, SPY, QQQ and more. A stock-paired coin trades against that stock and its fees
-          accrue in it, so the creator earns the stock on every trade.
+          AAPL, SPY, QQQ and more. A stock-paired launch opens two pools in the same
+          transaction, half the supply each at the same starting price: the stock market, and a{" "}
+          {env.nativeSymbol} market so anyone can trade the coin in plain {env.nativeSymbol}.
+          The creator earns the 1% on both, in the stock and in {env.nativeSymbol}.
         </p>
       </TermSection>
 
       <TermSection title="Trading" sub="Real HyperSwap pools">
         <p>
-          Buys and sells route through HyperSwap's own router. A {env.nativeSymbol}-paired coin
-          trades in plain {env.nativeSymbol}; a stock-paired coin trades in the stock itself.
-          Pools are standard V3 markets, so aggregators and bots can route them too, and every
-          such trade still pays the 1%.
+          Buys and sells route through HyperSwap's own router in plain {env.nativeSymbol} for
+          every coin. Stock-paired coins can also be traded against their stock directly on
+          HyperSwap. Pools are standard V3 markets, so aggregators and bots route them too, and
+          every such trade still pays the 1%.
         </p>
       </TermSection>
 
