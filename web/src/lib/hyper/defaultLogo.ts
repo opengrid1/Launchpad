@@ -1,7 +1,7 @@
-/** liquidstock brand mark and default token logo: three rising candlesticks
- *  emerging from a liquid wave, in the Hyperliquid brand language (flat mint
- *  #97fce4 on the deep-green tile, no gradients). Shown wherever a coin has
- *  no uploaded image and as the header brand mark. */
+/** liquidstock brand mark and default token logo: the liquid surface IS the
+ *  chart — mint liquid rising to the right with bubbles, flat #97fce4 on the
+ *  deep-green tile in the Hyperliquid brand language (no gradients). Shown
+ *  wherever a coin has no uploaded image and as the header brand mark. */
 export const DEFAULT_TOKEN_LOGO =
   "data:image/svg+xml," +
   encodeURIComponent(
@@ -9,12 +9,8 @@ export const DEFAULT_TOKEN_LOGO =
       `<defs><clipPath id='t'><rect width='64' height='64' rx='16'/></clipPath></defs>` +
       `<rect width='64' height='64' rx='16' fill='#072723'/>` +
       `<g clip-path='url(#t)'>` +
-      `<path d='M0 45 C6 41.5 12 41.5 18 44.5 C24 47.5 30 47.5 36 44.5 C42 41.5 48 41.5 54 44.5 C58 46.5 61 46.5 64 45 L64 64 L0 64 Z' fill='#177a66'/>` +
-      `<rect x='14.9' y='24' width='2.2' height='26' rx='1.1' fill='#97fce4'/>` +
-      `<rect x='11' y='29' width='10' height='18' rx='2.5' fill='#97fce4'/>` +
-      `<rect x='30.9' y='16' width='2.2' height='32' rx='1.1' fill='#97fce4'/>` +
-      `<rect x='27' y='21' width='10' height='24' rx='2.5' fill='#97fce4'/>` +
-      `<rect x='46.9' y='9' width='2.2' height='37' rx='1.1' fill='#97fce4'/>` +
-      `<rect x='43' y='14' width='10' height='28' rx='2.5' fill='#97fce4'/>` +
+      `<path d='M0 50 C8 46 12 52 20 46 C28 40 32 44 40 36 C48 28 54 28 64 20 L64 64 L0 64 Z' fill='#97fce4'/>` +
+      `<circle cx='46' cy='16' r='3' fill='#97fce4' opacity='.85'/>` +
+      `<circle cx='55' cy='10' r='2' fill='#97fce4' opacity='.6'/>` +
       `</g></svg>`,
   );
