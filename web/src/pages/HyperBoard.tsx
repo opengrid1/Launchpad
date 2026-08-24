@@ -12,6 +12,7 @@ import { isOfficial } from "../lib/official";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 import { volUsd } from "../components/market/util";
 import { KoiIcon } from "../components/base/KoiIcon";
+import { HyperMark } from "../components/HyperMark";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
@@ -149,14 +150,8 @@ function Avatar({ t }: { t: TokenSummary }) {
   );
 }
 
-// The HyperEVM brandmark — a teal disc flattened on the right — marks every
-// coin as launched on HyperEVM.
-const HYPER_MARK = (
-  <svg viewBox="0 0 40 40" aria-hidden>
-    <circle cx="20" cy="20" r="20" fill="#fff" />
-    <path d="M24 2.45 A18 18 0 1 0 24 37.55 Z" fill="#0aa89e" />
-  </svg>
-);
+// The official Hyperliquid mark badges every coin as launched on HyperEVM.
+const HYPER_MARK = <HyperMark />;
 const FIRE = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="kf-fire"><path d="M12 2.5C8.7 6.7 6.2 9.7 6.2 13.4a5.8 5.8 0 0 0 11.6 0c0-3.7-2.5-6.7-5.8-10.9Zm0 16.3a3 3 0 0 1-3-3c0-1.4 1.1-2.8 3-4.2 1.9 1.4 3 2.8 3 4.2a3 3 0 0 1-3 3Z" /></svg>;
 const CUP = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="kf-cup"><path d="M7 3h10v2h3.5v2.2A3.8 3.8 0 0 1 16.7 11h-.3a5 5 0 0 1-3.4 2.9V16h3v2.5H8V16h3v-2.1A5 5 0 0 1 7.6 11h-.3a3.8 3.8 0 0 1-3.8-3.8V5H7V3Zm-1.5 4.2c0 1 .8 1.8 1.8 1.8h-.1A6.9 6.9 0 0 1 7 5.5H5.5v1.7ZM18.5 7.2V5.5H17c.1 1.2 0 2.4-.2 3.5h-.1c1 0 1.8-.8 1.8-1.8Z" /></svg>;
 const UP_TRI = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 6l7 12H5z" /></svg>;
