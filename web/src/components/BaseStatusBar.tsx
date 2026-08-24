@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-import { BRAND } from "../lib/brand";
+import { BRAND, IS_HYPER } from "../lib/brand";
 import { env } from "../lib/env";
 
 /** Desktop-only fixed bottom status strip: token status left, quick links right. */
@@ -8,13 +8,24 @@ export function BaseStatusBar() {
   return (
     <div className="kf-statusbar">
       <span className="dot" />
-      <b>{BRAND.name}<span className="kf-tld">{BRAND.tld}</span></b>
+      <b>{BRAND.name}{IS_HYPER ? null : <span className="kf-tld">{BRAND.tld}</span>}</b>
       <span className="badge">live</span>
       <span className="sp" />
       <span className="up">● {env.chainName}</span>
-      <Link to="/">≋ Pools</Link>
-      <Link to="/launch">🚀 Launch</Link>
-      <Link to="/search">⌕ Search</Link>
+      {IS_HYPER ? (
+        <>
+          <Link to="/">Coins</Link>
+          <Link to="/launch">Launch</Link>
+          <Link to="/rewards">Rewards</Link>
+          <Link to="/search">Search</Link>
+        </>
+      ) : (
+        <>
+          <Link to="/">≋ Pools</Link>
+          <Link to="/launch">🚀 Launch</Link>
+          <Link to="/search">⌕ Search</Link>
+        </>
+      )}
       {BRAND.twitterHandle ? (
         <a href={BRAND.twitter} target="_blank" rel="noreferrer">𝕏</a>
       ) : null}

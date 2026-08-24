@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import { BRAND, IS_HYPER } from "../lib/brand";
-import { DEFAULT_TOKEN_LOGO } from "../lib/hyper/defaultLogo";
+import { BRAND_MARK } from "../lib/hyper/defaultLogo";
 import { BaseTicker } from "./BaseTicker";
 import { KoiIcon } from "./base/KoiIcon";
 import { WalletSheet } from "./base/WalletSheet";
@@ -91,7 +91,7 @@ export function BaseHeader() {
         <div className="kf-hdr-inner">
           <Link to="/" aria-label={BRAND.name} className="kf-brand">
             {IS_HYPER ? (
-              <img className="kf-brand-mark" src={DEFAULT_TOKEN_LOGO} alt="" aria-hidden style={{ borderRadius: 11, objectFit: "cover" }} />
+              <img className="kf-brand-mark" src={BRAND_MARK} alt="" aria-hidden style={{ borderRadius: 11, objectFit: "cover" }} />
             ) : (
               <img
                 className="kf-brand-mark"
