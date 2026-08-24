@@ -226,6 +226,13 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
             {filtered.length === 0 ? <div style={{ gridColumn: "1 / -1", padding: "12px 0", textAlign: "center", color: "var(--color-ink-3)" }}>No match.</div> : null}
           </div>
           <p className="hint">You earn 1% of every trade in {selected.label} ({selected.sub}).</p>
+          {selected.address !== WHYPE ? (
+            <p className="hint" style={{ color: "var(--color-accent-ink)" }}>
+              Heads up: a {selected.label}-paired coin trades in {selected.label}, so buyers must hold
+              the stock on HyperEVM. Trading bots and most wallets only route {env.nativeSymbol} pairs
+              today. Pick {env.nativeSymbol} for the widest reach.
+            </p>
+          ) : null}
         </div>
 
         {/* Dev buy: an automatic first buy sent right after the pool opens */}
