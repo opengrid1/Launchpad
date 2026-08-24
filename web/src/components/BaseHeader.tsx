@@ -42,6 +42,7 @@ const NAV = IS_HYPER
   ? [
       { to: "/", end: true, label: "Coins" },
       { to: "/feed", label: "Feed" },
+      { to: "/rewards", label: "Rewards" },
       { to: "/leaderboard", label: "Leaderboard" },
       { to: "/search", label: "Search" },
       { to: "/profile", label: "Portfolio" },

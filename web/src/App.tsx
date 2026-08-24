@@ -26,6 +26,8 @@ const BasePartyPage = lazy(() => import("./pages/BaseParty").then((m) => ({ defa
 const BaseLeaderboardPage = lazy(() => import("./pages/BaseLeaderboard").then((m) => ({ default: m.BaseLeaderboard })));
 const BaseSearchPage = lazy(() => import("./pages/BaseSearch").then((m) => ({ default: m.BaseSearch })));
 const BaseFeedPage = lazy(() => import("./pages/BaseFeed").then((m) => ({ default: m.BaseFeed })));
+// liquidstock holder-rewards page: claimable fee shares across every coin.
+const RewardsPage = lazy(() => import("./pages/Rewards").then((m) => ({ default: m.RewardsPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -117,6 +119,7 @@ export default function App() {
                       <Route path="/search" element={<BaseSearchPage />} />
                     </>
                   )}
+                  {IS_HYPER && <Route path="/rewards" element={<RewardsPage />} />}
                   {/* Hidden operations console; access enforced on-chain by role. */}
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
