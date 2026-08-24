@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { Component, lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
@@ -44,6 +44,36 @@ function PageFallback() {
   );
 }
 
+/** Last-resort net under the routed pages: a render crash shows a reload
+ *  screen instead of unmounting the app into a blank page. */
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ minHeight: "60vh", display: "grid", placeItems: "center", padding: 24 }}>
+          <div style={{ textAlign: "center", maxWidth: 420 }}>
+            <p style={{ fontSize: 16, fontWeight: 700, color: "var(--color-ink, #eceff2)" }}>Something went wrong.</p>
+            <p style={{ marginTop: 8, fontSize: 12.5, color: "var(--color-ink-3, #676f76)", overflowWrap: "anywhere" }}>
+              {String(this.state.error?.message ?? this.state.error).slice(0, 200)}
+            </p>
+            <button
+              onClick={() => { this.setState({ error: null }); window.location.href = "/"; }}
+              style={{ marginTop: 16, padding: "10px 22px", borderRadius: 10, border: 0, cursor: "pointer", fontWeight: 700, background: "var(--color-accent, #4fe0cb)", color: "var(--color-accent-fg, #04221e)" }}
+            >
+              Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   // The hammr flavor is a self-contained auction app with its own chrome.
   if (BRAND_FLAVOR === "hammr") {
@@ -62,6 +92,7 @@ export default function App() {
           <div className="flex min-h-screen flex-col bg-bg">
             <Header />
             <main className="flex-1 pb-14 sm:pb-0">
+              <ErrorBoundary>
               <Suspense fallback={<PageFallback />}>
                 <Routes>
                   <Route path="/" element={<Explore />} />
@@ -91,6 +122,7 @@ export default function App() {
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>
+              </ErrorBoundary>
             </main>
             <Footer />
             <Toasts />
