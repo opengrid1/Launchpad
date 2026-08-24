@@ -229,10 +229,12 @@ export function TokenPage() {
   const rewardSym = rewardStock?.symbol ?? metaPair?.symbol;
   const hasReward = !!extra && !/^0x0+$/.test(extra.stock);
 
-  // The koi.fun (Base) flavor uses a dedicated mobile-first token view that
-  // mirrors the discovery board: price header, chart, tabbed activity and a
-  // sticky Buy/Sell bar. The default flavors keep the desktop two-column view.
-  if (IS_STOCK_BOARD) {
+  // The koi.fun (Base) flavor and liquidstock use the dedicated mobile-first
+  // token view that mirrors the discovery board: price header, chart, tabbed
+  // activity and a sticky Buy/Sell bar whose trade sheet is denominated in the
+  // coin's own pair (HYPE or a tokenized stock). The default flavors keep the
+  // desktop two-column view.
+  if (IS_STOCK_BOARD || IS_HYPER) {
     return <BaseTokenView t={t} meta={meta} extra={extra} usdRate={usdRate} rewardSym={rewardSym} hasReward={hasReward} />;
   }
 
