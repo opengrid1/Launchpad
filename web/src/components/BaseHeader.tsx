@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import { BRAND, IS_HYPER } from "../lib/brand";
+import { DEFAULT_TOKEN_LOGO } from "../lib/hyper/defaultLogo";
 import { BaseTicker } from "./BaseTicker";
 import { KoiIcon } from "./base/KoiIcon";
 import { WalletSheet } from "./base/WalletSheet";
@@ -89,7 +90,7 @@ export function BaseHeader() {
         <div className="kf-hdr-inner">
           <Link to="/" aria-label={BRAND.name} className="kf-brand">
             {IS_HYPER ? (
-              <span className="kf-brand-mark" aria-hidden style={{ display: "grid", placeItems: "center", background: "linear-gradient(150deg, var(--color-accent-2), var(--color-accent))", color: "var(--color-accent-fg)", fontWeight: 900, fontSize: 15 }}>L</span>
+              <img className="kf-brand-mark" src={DEFAULT_TOKEN_LOGO} alt="" aria-hidden style={{ borderRadius: 11, objectFit: "cover" }} />
             ) : (
               <img
                 className="kf-brand-mark"
@@ -99,7 +100,7 @@ export function BaseHeader() {
                 style={{ borderRadius: 11, objectFit: "cover" }}
               />
             )}
-            <span className="kf-brand-name">{BRAND.name}<span className="kf-tld">{BRAND.tld}</span></span>
+            <span className="kf-brand-name">{BRAND.name}{IS_HYPER ? null : <span className="kf-tld">{BRAND.tld}</span>}</span>
           </Link>
 
           <nav className="kf-nav-links" aria-label="Primary">
