@@ -206,14 +206,6 @@ export function HyperBoard() {
     return [...seen.values()];
   }, [byVolume, byNew]);
 
-  const leaders = useMemo(() => {
-    const priced = all.filter((t) => Number(t.marketCapUsd) > 0);
-    const pool = priced.length > 0 ? priced : all;
-    const withChg = pool.filter((t) => { const c = t.priceChange24hPct; return c != null && isFinite(c) && c > 0; });
-    const base = (withChg.length >= 3 ? withChg : pool).slice();
-    base.sort((a, b) => (b.priceChange24hPct ?? 0) - (a.priceChange24hPct ?? 0) || volUsd(b) - volUsd(a));
-    return base.slice(0, 3);
-  }, [all]);
 
   const feed = useMemo(() => {
     let list = all;
@@ -231,57 +223,6 @@ export function HyperBoard() {
 
   return (
     <div className="kf kf-page">
-      {/* Hero: headline + creator-fee copy + today's leaders, all inside the card */}
-      <section className="kf-hero" aria-label="Today's leaders">
-        {/* Animated water surface — koi-pond shimmer + flowing waves */}
-        <div className="kf-hero-water" aria-hidden>
-          <span className="kf-wave kf-wave-1" />
-          <span className="kf-wave kf-wave-2" />
-          <span className="kf-wave kf-wave-3" />
-        </div>
-        <div className="kf-hero-grid">
-          <div>
-            <img className="kf-hero-mascot" src={DEFAULT_LOGO} alt="" aria-hidden style={{ borderRadius: 18, objectFit: "cover" }} />
-            <h1 className="kf-hero-title-xl">Launch. Earn the fees.</h1>
-            <p className="kf-hero-copy">
-              Launch a coin on HyperEVM paired with {env.nativeSymbol} or a tokenized stock. Every trade pays you, the creator, 1% forever.
-            </p>
-          </div>
-          <div>
-            <h2 className="kf-hero-label">Today's leaders</h2>
-            <div className="kf-lb-scroll">
-          {loading || leaders.length === 0 ? (
-            [...Array(3)].map((_, i) => <div key={i} className="kf-lb-card" style={{ height: 168 }} />)
-          ) : (
-            leaders.map((t, i) => {
-              const chg = t.priceChange24hPct;
-              const has = chg != null && isFinite(chg);
-              const pair = pairSymbolOf(t);
-              return (
-                <Link to={`/token/${t.address}`} key={t.address} className="kf-lb-card">
-                  <div className="kf-lb-top">
-                    <span className="kf-rank">{i + 1}<sup>{ordinal(i + 1)}</sup></span>
-                    <span className="kf-ava" style={{ width: 34, height: 34 }}>
-                      <img src={logoSrc(t) ?? DEFAULT_LOGO} alt="" />
-                    </span>
-                    <span className="kf-lb-name">${t.symbol}</span>
-                    {pair ? <span className="kf-pill">pairs {pair}</span> : null}
-                  </div>
-                  <div className="kf-lb-stats">
-                    <div className="kf-stat"><div className="k">Market Cap</div><div className="v">{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</div></div>
-                    <div className="kf-stat"><div className="k">Volume</div><div className="v">{volUsd(t) > 0 ? fmtUsd(volUsd(t)) : "—"}</div></div>
-                    <div className="kf-stat chg"><div className="k">24h</div><div className={`v ${has ? (chg! >= 0 ? "up" : "down") : ""}`}>{has ? `${chg! >= 0 ? "+" : ""}${chg!.toFixed(2)}%` : "—"}</div></div>
-                  </div>
-                  <LeaderBuy token={t.address as `0x${string}`} symbol={t.symbol} />
-                </Link>
-              );
-            })
-          )}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Section head */}
       <div className="kf-sec-head">
         <h1 className="kf-sec-title">Pools</h1>
