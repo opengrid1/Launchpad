@@ -1,7 +1,7 @@
 {
   "network": "robinhood",
   "chainId": 999,
-  "startBlock": 43993556,
+  "startBlock": 44009361,
   "deployer": "0x24d6Eef51722BdCCAAA2923144c8d4754371e161",
   "owner": "0x24d6Eef51722BdCCAAA2923144c8d4754371e161",
   "feeRecipient": "0x77002c2e21575F0450D28C2E71C0707ba0F5995A",
@@ -12,8 +12,8 @@
     "whype": "0x5555555555555555555555555555555555555555"
   },
   "contracts": {
-    "tokenDeployer": "0xEF04A642274911Ad9be411bE3BaBF35bFcC1108b",
-    "factory": "0xE1DF818afA3154B56D719D92e25A69686b7046d4"
+    "tokenDeployer": "0xCaaCf389cdCd0c9B5959e34122F37Ba2384c0D24",
+    "factory": "0x46A402242fBA63f014409106f620C91658691534"
   },
   "quoteAssets": {
     "whypeUsd8": "8019000000",

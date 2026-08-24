@@ -152,10 +152,11 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
         lineHeight: 1.6,
         color: "var(--color-ink-2)",
       }}>
-        <b style={{ color: "var(--color-accent-ink)" }}>One-time setup:</b> launching deploys a pool, which needs HyperEVM{" "}
+        <b style={{ color: "var(--color-accent-ink)" }}>One-time setup:</b> launching deploys pools, which needs HyperEVM{" "}
         <b>big blocks</b> enabled on your wallet. Turn on “Use big blocks for EVM” in the{" "}
-        <a href="https://app.hyperliquid.xyz" target="_blank" rel="noreferrer" style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>Hyperliquid app</a>{" "}
-        once, then launch here. Trading your coin afterward needs nothing special.
+        <a href="https://app.hyperliquid.xyz" target="_blank" rel="noreferrer" style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>Hyperliquid app</a>,
+        launch here, then turn it back off (big blocks confirm about once a minute, so leaving it on
+        slows your normal transactions). Trading needs nothing special.
       </div>
 
       <form onSubmit={submit} className="kf-form">
