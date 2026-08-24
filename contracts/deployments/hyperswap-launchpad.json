@@ -1,7 +1,7 @@
 {
   "network": "robinhood",
   "chainId": 999,
-  "startBlock": 44025645,
+  "startBlock": 44028755,
   "deployer": "0x24d6Eef51722BdCCAAA2923144c8d4754371e161",
   "owner": "0x24d6Eef51722BdCCAAA2923144c8d4754371e161",
   "feeRecipient": "0x77002c2e21575F0450D28C2E71C0707ba0F5995A",
@@ -12,31 +12,31 @@
     "whype": "0x5555555555555555555555555555555555555555"
   },
   "contracts": {
-    "tokenDeployer": "0xe3918A375a4Ced6229653f0E604cBA1eaF7EC0b4",
-    "factory": "0x82Ca3B8D4B90a6237f399B1f33cB8833Ff196ec1"
+    "tokenDeployer": "0x9E0564C43335CA22E208D27C36CDd909a33d48b5",
+    "factory": "0x96e4e6718D78D0483Eb363dE34001CbF2eCa29C6"
   },
   "quoteAssets": {
-    "whypeUsd8": "7750000000",
+    "whypeUsd8": "7829000000",
     "stocks": [
       {
-        "quote": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5",
-        "usdPrice8": "21516000000"
+        "quote": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+        "usdPrice8": "21534000000"
       },
       {
-        "quote": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540",
-        "usdPrice8": "76900000000"
+        "quote": "0xe7e553cd128f0011777323a0b44a7b96ea1cb540",
+        "usdPrice8": "76880000000"
       },
       {
-        "quote": "0x4C1AE29c159838fC1b224636E28E086EB69101f7",
-        "usdPrice8": "71066000000"
+        "quote": "0x4c1ae29c159838fc1b224636e28e086eb69101f7",
+        "usdPrice8": "71020000000"
       },
       {
-        "quote": "0xe2047ee3bdDb5C99ae428AB83df63f8730698e30",
-        "usdPrice8": "93596000000"
+        "quote": "0xe2047ee3bddb5c99ae428ab83df63f8730698e30",
+        "usdPrice8": "93574000000"
       },
       {
-        "quote": "0x6215a58ed045d71F2561AaAbe54f4C885C522998",
-        "usdPrice8": "15846000000"
+        "quote": "0x6215a58ed045d71f2561aaabe54f4c885c522998",
+        "usdPrice8": "15825000000"
       }
     ]
   },

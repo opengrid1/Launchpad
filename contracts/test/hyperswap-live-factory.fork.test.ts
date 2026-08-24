@@ -7,7 +7,7 @@ import { ethers, network } from "hardhat";
 // xStocks approved on-chain), live HyperSwap V3 core + NPM. Proves a user
 // clicking "Launch" with a stock pair gets a real listed pool at the right
 // starting price.
-const FACTORY = "0x82Ca3B8D4B90a6237f399B1f33cB8833Ff196ec1";
+const FACTORY = "0x96e4e6718D78D0483Eb363dE34001CbF2eCa29C6";
 const V3_FACTORY = "0xb1c0fa0b789320044a6f623cfe5ebda9562602e3";
 // Backed NVDAx, approved on the live factory at $215.16 (usdPrice8 21516000000).
 const NVDA = "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5";
