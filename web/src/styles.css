@@ -3551,8 +3551,8 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .kf-ava img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 :root[data-brand="hyper"] .kf-ava span { font-family: var(--font-head); font-weight: 800; font-size: 18px; color: rgba(255, 255, 255, .92); text-shadow: 0 1px 3px rgba(0, 0, 0, .4); letter-spacing: -.02em; }
 :root[data-brand="hyper"] .kf-logo-wrap { position: relative; display: inline-grid; flex: none; }
-:root[data-brand="hyper"] .kf-badge { position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; display: grid; place-items: center; box-shadow: 0 0 0 2.5px var(--color-bg); overflow: hidden; }
-:root[data-brand="hyper"] .kf-badge svg { width: 18px; height: 18px; display: block; }
+:root[data-brand="hyper"] .kf-badge { position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%; background: #04231d; display: grid; place-items: center; box-shadow: 0 0 0 2.5px var(--color-bg); overflow: hidden; }
+:root[data-brand="hyper"] .kf-badge svg, :root[data-brand="hyper"] .kf-badge img { width: 18px; height: 18px; display: block; }
 :root[data-brand="hyper"] .kf-pool-mid { min-width: 0; }
 :root[data-brand="hyper"] .kf-pool-name-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
 :root[data-brand="hyper"] .kf-pool-name { font-family: var(--font-head); font-weight: 700; font-size: 16.5px; letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
@@ -3707,7 +3707,7 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .kf-wallet-hrow { display: flex; align-items: center; gap: 11px; padding: 9px 4px; border-radius: 10px; text-decoration: none; color: #eceff2; }
 :root[data-brand="hyper"] .kf-wallet-hrow:hover { background: #171c21; }
 :root[data-brand="hyper"] .kf-wallet-hav { position: relative; width: 38px; height: 38px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #262c32; color: #eceff2; font-weight: 700; font-size: 14px; }
-:root[data-brand="hyper"] .kf-wallet-hav svg { position: absolute; right: -2px; bottom: -2px; width: 15px; height: 15px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #12161a; }
+:root[data-brand="hyper"] .kf-wallet-hav svg, :root[data-brand="hyper"] .kf-wallet-hav img { position: absolute; right: -2px; bottom: -2px; width: 15px; height: 15px; border-radius: 50%; background: #04231d; box-shadow: 0 0 0 2px #12161a; }
 :root[data-brand="hyper"] .kf-wallet-hmid { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 :root[data-brand="hyper"] .kf-wallet-hsym { font-weight: 700; font-size: 15px; }
 :root[data-brand="hyper"] .kf-wallet-hname { color: #9aa4ac; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -3990,7 +3990,7 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .kf-ava-wrap, :root[data-brand="hyper"] .kf-ava { width: 42px; height: 42px; }
 :root[data-brand="hyper"] .kf-ava span { font-size: 15px; }
 :root[data-brand="hyper"] .kf-badge { width: 16px; height: 16px; border-radius: 50%; }
-:root[data-brand="hyper"] .kf-badge svg { width: 16px; height: 16px; }
+:root[data-brand="hyper"] .kf-badge svg, :root[data-brand="hyper"] .kf-badge img { width: 16px; height: 16px; }
 :root[data-brand="hyper"] .kf-pool-name { font-size: 14.5px; }
 :root[data-brand="hyper"] .kf-flags svg { width: 12px; height: 12px; }
 :root[data-brand="hyper"] .kf-pool-sub { font-size: 11.5px; gap: 5px; }
