@@ -2,11 +2,19 @@ import { useEffect, useState } from "react";
 import type { TokenSummary } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
-import { env } from "../lib/env";
+import { env, addresses } from "../lib/env";
+import { IS_HYPER } from "../lib/brand";
+import { HYPER_STOCKS, WHYPE } from "../lib/hyper/stocks";
 import { StableV3Client } from "../lib/stable/client";
 import { fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
+
+const QUOTE_ABI = [{
+  type: "function", name: "quoteAssets", stateMutability: "view",
+  inputs: [{ type: "address" }],
+  outputs: [{ type: "bool" }, { type: "uint64" }, { type: "uint8" }],
+}] as const;
 
 const stable = client as unknown as StableV3Client;
 
@@ -22,6 +30,8 @@ export function AdminStable() {
   const [tokens, setTokens] = useState<TokenSummary[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [newRecipient, setNewRecipient] = useState("");
+  const [quoteStates, setQuoteStates] = useState<Record<string, { approved: boolean; price8: bigint }>>({});
+  const [quotePrices, setQuotePrices] = useState<Record<string, string>>({});
   const [tokenAddr, setTokenAddr] = useState("");
   const [recoverAsset, setRecoverAsset] = useState("");
   const [recoverAmount, setRecoverAmount] = useState("");
@@ -29,6 +39,17 @@ export function AdminStable() {
   const refresh = () => {
     stable.adminInfo().then(setInfo).catch(() => setInfo(null));
     stable.getTokens({ sort: "new", limit: 100 }).then(setTokens).catch(() => setTokens([]));
+    if (IS_HYPER) {
+      const quoteRows = [{ ticker: env.nativeSymbol, address: WHYPE }, ...HYPER_STOCKS.map((s) => ({ ticker: s.ticker, address: s.address }))];
+      Promise.all(quoteRows.map(async (r) => {
+        try {
+          const [approved, price8] = (await stable.publicClient.readContract({
+            address: addresses.factory, abi: QUOTE_ABI, functionName: "quoteAssets", args: [r.address as `0x${string}`],
+          })) as unknown as [boolean, bigint, number];
+          return [r.address, { approved, price8 }] as const;
+        } catch { return [r.address, { approved: false, price8: 0n }] as const; }
+      })).then((rows) => setQuoteStates(Object.fromEntries(rows)));
+    }
   };
   useEffect(() => {
     refresh();
@@ -109,6 +130,39 @@ export function AdminStable() {
           </button>
         </div>
       </Section>
+
+      {/* Stock pair registry: approve pairs and keep USD prices current */}
+      {IS_HYPER ? (
+        <Section
+          title="Stock pairs"
+          hint="Each pair needs an on-chain USD price so launches open at the right market cap. Update prices whenever they drift."
+        >
+          <div className="space-y-2">
+            {[{ ticker: env.nativeSymbol, name: "Wrapped native", address: WHYPE }, ...HYPER_STOCKS].map((s) => {
+              const st = quoteStates[s.address];
+              const cur = st && st.price8 > 0n ? Number(st.price8) / 1e8 : null;
+              const input = quotePrices[s.address] ?? "";
+              const parsed = Number(input);
+              return (
+                <div key={s.address} className="flex items-center gap-2">
+                  <span className="w-16 shrink-0 text-[12.5px] font-bold text-ink">{s.ticker}</span>
+                  <span className="w-32 shrink-0 text-[11px] text-ink-3">
+                    {st ? (st.approved ? `approved @ $${cur?.toLocaleString() ?? "?"}` : "not approved") : "…"}
+                  </span>
+                  <input value={input} onChange={(e) => setQuotePrices((p) => ({ ...p, [s.address]: e.target.value.replace(/[^0-9.]/g, "") }))}
+                    placeholder={cur ? String(cur) : "USD price"} inputMode="decimal"
+                    className="mono h-9 w-28 rounded-lg border border-edge bg-panel-2/40 px-2.5 text-[12.5px] text-ink outline-none placeholder:text-ink-3 focus:border-edge-2" />
+                  <button disabled={busy !== null || !(parsed > 0)}
+                    onClick={() => run(`Set ${s.ticker} pair`, () => stable.adminCall("setQuoteAsset", [s.address, true, BigInt(Math.round(parsed * 1e8))]))}
+                    className="rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-accent-fg disabled:opacity-40">
+                    {st?.approved ? "Update" : "Approve"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </Section>
+      ) : null}
 
       {/* Launched tokens with per-row actions */}
       <Section

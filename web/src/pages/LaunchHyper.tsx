@@ -211,7 +211,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
         <div className="kf-field">
           <label>Pool Pairing <i>({env.nativeSymbol} + {STOCK_PAIRS.length} tokenized stocks)</i></label>
           <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${env.nativeSymbol} or a stock (NVDA, TSLA, SPY…)`} />
+            placeholder={`Search ${env.nativeSymbol} or an xStock (NVDAX, SPYX, QQQX…)`} />
           <div className="kf-pairgrid" style={{ maxHeight: 360, overflowY: "auto" }}>
             {filtered.map((p) => (
               <button

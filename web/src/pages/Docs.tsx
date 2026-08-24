@@ -58,7 +58,7 @@ function HyperDocs() {
           rows={[
             ["Total supply", "1,000,000,000, fixed"],
             ["Starting market cap", "≈ $3,000"],
-            ["Pool pairing", `${env.nativeSymbol} or one of 35 tokenized stocks`],
+            ["Pool pairing", `${env.nativeSymbol} or a tokenized xStock`],
             ["Upfront liquidity", "None required"],
           ]}
         />
@@ -69,11 +69,13 @@ function HyperDocs() {
         </p>
       </TermSection>
 
-      <TermSection title="Pairing a stock" sub="35 markets">
+      <TermSection title="Pairing a stock" sub="xStocks">
         <p>
-          Coins can pair Ondo tokenized US stocks and ETFs live on {env.chainName}: NVDA, TSLA,
-          AAPL, SPY, QQQ and more. A stock-paired coin trades against that stock and its fees
-          accrue in it, so the creator earns the stock on every trade.
+          Coins can pair Backed xStocks live on {env.chainName}: NVIDIA, the S&amp;P 500, the
+          Nasdaq, Micron and SK hynix. A stock-paired coin trades against that stock and its
+          fees accrue in it, so the creator earns the stock on every trade. Each xStock has a
+          real Hyperliquid spot market: buy it with USDC on Hyperliquid, then transfer it to
+          EVM to trade here.
         </p>
       </TermSection>
 
