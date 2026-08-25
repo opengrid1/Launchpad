@@ -8,4 +8,7 @@ export const OFFICIAL_LOGOS: Record<string, string> = {
   "0xa3c4358484a1f90cd9b43b1b445264390d66ceaa": "/steady-frog.png",
   // $HEIST official: the hooded mascot, served crisp from this origin.
   "0xbdd1b5639548b04fa95bb5f49b5a74a575be7fc3": "/hoodheist-pfp.png",
+  // $STOCK, the official hyperstock token: launched before its mark was
+  // final, so the curated liquid-coin logo is served from this origin.
+  "0xdb1cf34b446e3ec9284f974492ba8d1caf1f3754": "/stock-logo.png",
 };
