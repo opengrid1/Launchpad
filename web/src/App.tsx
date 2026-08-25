@@ -6,8 +6,9 @@ import { WagmiProvider } from "wagmi";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { Skeleton, Toasts } from "./components/ui";
-import { BRAND_FLAVOR, IS_HYPER, IS_STOCK_BOARD } from "./lib/brand";
+import { BRAND_FLAVOR, IS_HYPER, IS_INK, IS_STOCK_BOARD } from "./lib/brand";
 import { HammrApp } from "./hammr/HammrApp";
+import { HsShell } from "./components/HsShell";
 import { wagmiConfig } from "./lib/wagmi";
 import { Explore } from "./pages/Explore";
 
@@ -87,15 +88,7 @@ export default function App() {
       </WagmiProvider>
     );
   }
-  return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <div className="flex min-h-screen flex-col bg-bg">
-            <Header />
-            <main className="flex-1 pb-14 sm:pb-0">
-              <ErrorBoundary>
-              <Suspense fallback={<PageFallback />}>
+  const routes = (
                 <Routes>
                   <Route path="/" element={<Explore />} />
                   <Route path="/launch" element={<LaunchPage />} />
@@ -112,24 +105,42 @@ export default function App() {
                   )}
                   {/* Flavor-generic discovery pages, shared by the stock board
                       and hyperstock (leaderboard, feed, docked search). */}
-                  {(IS_STOCK_BOARD || IS_HYPER) && (
+                  {(IS_STOCK_BOARD || IS_HYPER || IS_INK) && (
                     <>
                       <Route path="/leaderboard" element={<BaseLeaderboardPage />} />
                       <Route path="/feed" element={<BaseFeedPage />} />
                       <Route path="/search" element={<BaseSearchPage />} />
                     </>
                   )}
-                  {IS_HYPER && <Route path="/rewards" element={<RewardsPage />} />}
+                  {(IS_HYPER || IS_INK) && <Route path="/rewards" element={<RewardsPage />} />}
                   {/* Hidden operations console; access enforced on-chain by role. */}
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
-              </Suspense>
-              </ErrorBoundary>
-            </main>
-            <Footer />
-            <Toasts />
-          </div>
+  );
+  return (
+    <WagmiProvider config={wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          {IS_INK ? (
+            <ErrorBoundary>
+              <HsShell>
+                <Suspense fallback={<PageFallback />}>{routes}</Suspense>
+              </HsShell>
+              <Toasts />
+            </ErrorBoundary>
+          ) : (
+            <div className="flex min-h-screen flex-col bg-bg">
+              <Header />
+              <main className="flex-1 pb-14 sm:pb-0">
+                <ErrorBoundary>
+                  <Suspense fallback={<PageFallback />}>{routes}</Suspense>
+                </ErrorBoundary>
+              </main>
+              <Footer />
+              <Toasts />
+            </div>
+          )}
         </BrowserRouter>
       </QueryClientProvider>
     </WagmiProvider>

@@ -9,14 +9,26 @@ import "./styles.css";
 // and theme scope in sync with the flavor selected at build time (VITE_BRAND).
 document.title = BRAND.title;
 document.querySelector('meta[name="description"]')?.setAttribute("content", BRAND.description);
-document.documentElement.dataset.brand = BRAND_FLAVOR;
+document.documentElement.dataset.brand = BRAND_FLAVOR === "ink" ? "hyper" : BRAND_FLAVOR;
+if (BRAND_FLAVOR === "ink") document.documentElement.dataset.flavor = "ink";
 
 // hyperstock ships its own mark; the other flavors keep the icons index.html
 // declares. Swapped here because all flavors build from one index.html.
-if (BRAND_FLAVOR === "hyper") {
-  document.querySelector('link[rel="icon"][sizes="64x64"]')?.setAttribute("href", "/hyperstock-favicon.png");
-  document.querySelector('link[rel="icon"][sizes="32x32"]')?.setAttribute("href", "/hyperstock-favicon-32.png");
-  document.querySelector('link[rel="apple-touch-icon"]')?.setAttribute("href", "/hyperstock-touch.png");
+if (BRAND_FLAVOR === "hyper" || BRAND_FLAVOR === "ink") {
+  const font = document.createElement("link");
+  font.rel = "stylesheet";
+  font.href = "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap";
+  document.head.appendChild(font);
+  const icon = BRAND_FLAVOR === "ink" ? undefined : "/hyperstock-favicon.png";
+  if (icon) {
+    document.querySelector('link[rel="icon"][sizes="64x64"]')?.setAttribute("href", icon);
+    document.querySelector('link[rel="icon"][sizes="32x32"]')?.setAttribute("href", "/hyperstock-favicon-32.png");
+    document.querySelector('link[rel="apple-touch-icon"]')?.setAttribute("href", "/hyperstock-touch.png");
+  } else {
+    import("./lib/hyper/defaultLogo").then(({ BRAND_MARK }) => {
+      document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach((l) => l.setAttribute("href", BRAND_MARK));
+    });
+  }
 }
 
 // After a redeploy, a stale tab can request lazy chunks that no longer exist

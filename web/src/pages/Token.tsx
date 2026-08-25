@@ -16,7 +16,7 @@ import { StockLogo } from "../components/StockLogo";
 import { TokenLogo } from "../components/TokenLogo";
 import { TradePanel } from "../components/TradePanel";
 import { BaseTradePanel } from "../components/BaseTradePanel";
-import { IS_HYPER, IS_STOCK_BOARD } from "../lib/brand";
+import { IS_HYPER, IS_INK, IS_STOCK_BOARD } from "../lib/brand";
 
 // Fee split shown on the harvest strip. hyperstock (hyper) is 50% holders /
 // 40% creator / 10% platform; the other creator-fee deployments are 80/20.
@@ -242,7 +242,7 @@ export function TokenPage() {
   // activity and a sticky Buy/Sell bar whose trade sheet is denominated in the
   // coin's own pair (HYPE or a tokenized stock). The default flavors keep the
   // desktop two-column view.
-  if (IS_STOCK_BOARD || IS_HYPER) {
+  if (IS_STOCK_BOARD || IS_HYPER || IS_INK) {
     return <BaseTokenView t={t} meta={meta} extra={extra} usdRate={usdRate} rewardSym={rewardSym} hasReward={hasReward} />;
   }
 

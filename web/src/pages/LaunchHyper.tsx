@@ -4,6 +4,7 @@ import { keccak256, parseEther, toHex } from "viem";
 
 import { client } from "../lib/client";
 import { env } from "../lib/env";
+import { IS_INK } from "../lib/brand";
 import { HYPER_STOCKS, WHYPE, type HyperStock } from "../lib/hyper/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
@@ -15,14 +16,16 @@ const TOKEN_CREATED_TOPIC = keccak256(
 // The launch pair options: WHYPE (default) plus every tokenized stock live on
 // HyperEVM. The pool's 1% fee is paid in whichever they pick.
 type Pair = { symbol: string; label: string; sub: string; address: `0x${string}` };
-const WHYPE_PAIR: Pair = { symbol: "HYPE", label: "HYPE", sub: "Hyperliquid", address: WHYPE };
+const WHYPE_PAIR: Pair = IS_INK
+  ? { symbol: "ETH", label: "ETH", sub: "Ink", address: "0x4200000000000000000000000000000000000006" as `0x${string}` }
+  : { symbol: "HYPE", label: "HYPE", sub: "Hyperliquid", address: WHYPE };
 const STOCK_PAIRS: Pair[] = HYPER_STOCKS.map((s: HyperStock) => ({
   symbol: s.ticker,
   label: s.ticker,
   sub: s.name,
   address: s.address,
 }));
-const ALL_PAIRS: Pair[] = [WHYPE_PAIR, ...STOCK_PAIRS];
+const ALL_PAIRS: Pair[] = IS_INK ? [WHYPE_PAIR] : [WHYPE_PAIR, ...STOCK_PAIRS];
 
 /**
  * hyperstock launch (HyperEVM / HyperSwap V3). One transaction mints a plain
@@ -36,7 +39,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ name: "", symbol: "", description: "", website: "", twitter: "", telegram: "" });
-  const [pair, setPair] = useState<`0x${string}`>(WHYPE);
+  const [pair, setPair] = useState<`0x${string}`>(WHYPE_PAIR.address);
   const [devBuy, setDevBuy] = useState("");
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
@@ -138,12 +141,13 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
     <div className="kf kf-page kf-launch">
       <h1 className="kf-launch-h1">Launch a coin</h1>
       <p className="kf-launch-sub">
-        Deploy a coin on HyperEVM paired with {env.nativeSymbol} or a tokenized stock. One transaction opens a live
-        HyperSwap market and seeds the full supply. Every trade pays you, the creator, 1% forever.
+        {IS_INK
+          ? `Deploy a coin on Ink paired with ${env.nativeSymbol}. One transaction opens a live Uniswap market and seeds the full supply. Every trade pays you, the creator, 1% forever.`
+          : `Deploy a coin on HyperEVM paired with ${env.nativeSymbol} or a tokenized stock. One transaction opens a live HyperSwap market and seeds the full supply. Every trade pays you, the creator, 1% forever.`}
       </p>
 
       {/* Big-blocks notice — a launch deploys a V3 pool (~6M gas), above HyperEVM's small-block limit. */}
-      <div style={{
+      {IS_INK ? null : <div style={{
         margin: "12px 16px 0",
         border: "1px solid var(--color-edge)",
         background: "var(--color-panel-2)",
@@ -158,7 +162,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
         <a href="https://app.hyperliquid.xyz" target="_blank" rel="noreferrer" style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>Hyperliquid app</a>,
         launch here, then turn it back off (big blocks confirm about once a minute, so leaving it on
         slows your normal transactions). Trading needs nothing special.
-      </div>
+      </div>}
 
       <form onSubmit={submit} className="kf-form">
         <div className="kf-field">
@@ -210,9 +214,9 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
 
         {/* Pool pairing — WHYPE or a tokenized stock; the creator earns its fees */}
         <div className="kf-field">
-          <label>Pool Pairing <i>({env.nativeSymbol} + {STOCK_PAIRS.length} tokenized stocks)</i></label>
-          <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${env.nativeSymbol} or an xStock (NVDAX, SPYX, QQQX…)`} />
+          <label>Pool Pairing {IS_INK ? null : <i>({env.nativeSymbol} + {STOCK_PAIRS.length} tokenized stocks)</i>}</label>
+          {IS_INK ? null : <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${env.nativeSymbol} or an xStock (NVDAX, SPYX, QQQX…)`} />}
           <div className="kf-pairgrid" style={{ maxHeight: 360, overflowY: "auto" }}>
             {filtered.map((p) => (
               <button

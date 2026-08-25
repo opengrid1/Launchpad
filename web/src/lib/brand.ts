@@ -86,6 +86,20 @@ const FLAVORS: Record<string, Brand> = {
       "hyperstock.fun. Launch a coin on HyperEVM paired with HYPE or a tokenized stock. It opens a real HyperSwap market and every trade pays 1%: half to holders, 40% to the creator, forever.",
     title: "hyperstock | launch a coin, earn the fees",
   },
+  // Ink chain flavor (squidpad): canonical Uniswap V3 on Ink, coins pair ETH;
+  // the 1% pool fee splits 50/40/10 holders/creator/platform, manual claims.
+  ink: {
+    name: "squidpad",
+    tld: ".fun",
+    domain: "squidpad.fun",
+    url: "https://squidpad.fun",
+    twitter: "https://x.com/",
+    twitterHandle: "",
+    tagline: "launch in the deep",
+    description:
+      "squidpad. Launch a coin on Ink. One transaction opens a real Uniswap market and every trade pays 1%: half to holders, 40% to the creator, forever.",
+    title: "squidpad | launch in the deep",
+  },
   // Arc mainnet flavor: same product, USDC-blue theme for Circle's Arc chain.
   arc: {
     name: "arcx",
@@ -109,10 +123,14 @@ export const BRAND: Brand = FLAVORS[BRAND_FLAVOR] ?? FLAVORS.copair;
  *  tokenized stock; fees split holders/creator/platform, manual claims. */
 export const IS_HYPER = BRAND_FLAVOR === "hyper";
 
+/** The Ink chain launchpad (squidpad): canonical Uniswap V3, ETH pairs, the
+ *  terminal split-view chrome. Shares the hyper flavor's product mechanics. */
+export const IS_INK = BRAND_FLAVOR === "ink";
+
 /** Flavors that render the pump.fun-style live market board (BoardHeader +
  *  ExploreBoard) instead of the default card grid: the Robinhood heist board,
  *  the Base stock launchpad, and the HyperEVM launchpad. */
-export const IS_BOARD = BRAND_FLAVOR === "copair" || BRAND_FLAVOR === "base" || IS_HYPER;
+export const IS_BOARD = BRAND_FLAVOR === "copair" || BRAND_FLAVOR === "base" || IS_HYPER || IS_INK;
 
 /** The Base stock launchpad: coins pair a tokenized stock and holders earn it.
  *  Distinct from the heist board's weekly-flywheel loot model. */

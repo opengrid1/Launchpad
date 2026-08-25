@@ -3,6 +3,7 @@ import { NavLink, Link } from "react-router-dom";
 
 import { BRAND, BRAND_FLAVOR, IS_BOARD, IS_HYPER, IS_STOCK_BOARD } from "../lib/brand";
 import { BaseHeader } from "./BaseHeader";
+import { HsHeader } from "./HsHeader";
 import { env } from "../lib/env";
 import { useWallet } from "../lib/useWallet";
 import { Icon, type IconName } from "./Icon";
