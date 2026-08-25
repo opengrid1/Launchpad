@@ -10,7 +10,7 @@ import { env } from "./env";
 // same address can exist on two chains as two different tokens (hiding the
 // old Stable STEADY silently hid the first Robinhood launch too).
 const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
-  // HyperEVM (999), liquidstock: deployer test launches. CHIPCAT is also
+  // HyperEVM (999), hyperstock: deployer test launches. CHIPCAT is also
   // paired with the defunct Ondo NVDAon, which has no market anywhere.
   "999:0xccbf9a19c00a0ecfe38d68c42e2a727faea51b95", // LIQCAT (test launch, pre-rewards factory)
   "999:0x2b7d07005a8eb5b97d260bba838469364cc7dd5c", // CHIPCAT (test launch, dead Ondo pair)

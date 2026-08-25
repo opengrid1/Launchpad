@@ -11,12 +11,12 @@ document.title = BRAND.title;
 document.querySelector('meta[name="description"]')?.setAttribute("content", BRAND.description);
 document.documentElement.dataset.brand = BRAND_FLAVOR;
 
-// liquidstock ships its own mark; the other flavors keep the icons index.html
+// hyperstock ships its own mark; the other flavors keep the icons index.html
 // declares. Swapped here because all flavors build from one index.html.
 if (BRAND_FLAVOR === "hyper") {
-  document.querySelector('link[rel="icon"][sizes="64x64"]')?.setAttribute("href", "/liquidstock-favicon.png");
-  document.querySelector('link[rel="icon"][sizes="32x32"]')?.setAttribute("href", "/liquidstock-favicon-32.png");
-  document.querySelector('link[rel="apple-touch-icon"]')?.setAttribute("href", "/liquidstock-touch.png");
+  document.querySelector('link[rel="icon"][sizes="64x64"]')?.setAttribute("href", "/hyperstock-favicon.png");
+  document.querySelector('link[rel="icon"][sizes="32x32"]')?.setAttribute("href", "/hyperstock-favicon-32.png");
+  document.querySelector('link[rel="apple-touch-icon"]')?.setAttribute("href", "/hyperstock-touch.png");
 }
 
 // After a redeploy, a stale tab can request lazy chunks that no longer exist

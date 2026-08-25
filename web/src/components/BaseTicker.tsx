@@ -3,7 +3,7 @@ import { env } from "../lib/env";
 
 /**
  * koi.fun marquee ticker — the light band above the header. On basedstonk it
- * carries the "hold & earn" rewards message; on liquidstock (hyper) coins have
+ * carries the "hold & earn" rewards message; on hyperstock (hyper) coins have
  * no holder rewards, so it carries the creator-fee message instead.
  */
 export function BaseTicker() {

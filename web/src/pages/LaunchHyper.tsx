@@ -25,7 +25,7 @@ const STOCK_PAIRS: Pair[] = HYPER_STOCKS.map((s: HyperStock) => ({
 const ALL_PAIRS: Pair[] = [WHYPE_PAIR, ...STOCK_PAIRS];
 
 /**
- * liquidstock launch (HyperEVM / HyperSwap V3). One transaction mints a plain
+ * hyperstock launch (HyperEVM / HyperSwap V3). One transaction mints a plain
  * ERC-20, opens its HyperSwap pool paired with the chosen asset, and seeds the
  * full supply single-sided. The pool's 1% fee splits 50% holders / 40%
  * creator / 10% platform, forever.

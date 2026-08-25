@@ -1,7 +1,7 @@
 // Tokenized stock ERC20s live on HyperEVM (Backed xStocks, wrapped), verified
 // on-chain (code + symbol + decimals) and tradable end to end: each has a live
 // Hyperliquid Core spot market (buy with USDC, transfer to EVM) plus a real
-// EVM supply. Any can be chosen as a coin pair on liquidstock; the creator
+// EVM supply. Any can be chosen as a coin pair on hyperstock; the creator
 // earns the 1% pool fee in that stock.
 export interface HyperStock {
   symbol: string;   // on-chain symbol, e.g. "NVDAon"

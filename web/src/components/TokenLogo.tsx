@@ -41,7 +41,7 @@ export function TokenLogo({ token, size = 40 }: { token: TokenSummary; size?: nu
     </span>
   );
 
-  // Larger avatars carry the chain badge: Hyperliquid's mark on liquidstock,
+  // Larger avatars carry the chain badge: Hyperliquid's mark on hyperstock,
   // Base's disc elsewhere.
   if (size < 30) return inner;
   return (

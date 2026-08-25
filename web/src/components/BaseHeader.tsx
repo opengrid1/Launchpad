@@ -11,7 +11,7 @@ import { useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
 // The launch form rides in a slide-up sheet on mobile, so it loads lazily —
-// the header itself stays light. Each flavor gets its own form: liquidstock's
+// the header itself stays light. Each flavor gets its own form: hyperstock's
 // pair picker (HYPE + tokenized stocks), the stock board's LaunchBase.
 const LaunchForm = IS_HYPER
   ? lazy(() => import("../pages/LaunchHyper").then((m) => ({ default: m.LaunchHyper })))
@@ -36,7 +36,7 @@ function WalletButton() {
   );
 }
 
-// Same nav shape as the stock board; liquidstock drops only the base-specific
+// Same nav shape as the stock board; hyperstock drops only the base-specific
 // pool party and adds Portfolio.
 const NAV = IS_HYPER
   ? [
@@ -85,7 +85,7 @@ export function BaseHeader() {
 
   return (
     <>
-      {/* liquidstock skips the marquee band above the header. */}
+      {/* hyperstock skips the marquee band above the header. */}
       {IS_HYPER ? null : <BaseTicker />}
       <header className="kf-hdr sticky top-0 z-40">
         <div className="kf-hdr-inner">

@@ -1,4 +1,4 @@
-/** liquidstock brand mark and default token logo: the liquid surface IS the
+/** hyperstock brand mark and default token logo: the liquid surface IS the
  *  chart — mint liquid rising to the right with bubbles, flat #97fce4 on the
  *  deep-green tile in the Hyperliquid brand language (no gradients). Shown
  *  wherever a coin has no uploaded image and as the header brand mark. */
@@ -15,7 +15,7 @@ export const DEFAULT_TOKEN_LOGO =
       `</g></svg>`,
   );
 
-/** liquidstock brand mark (header, favicon): the liquid coin — a coin disc
+/** hyperstock brand mark (header, favicon): the liquid coin — a coin disc
  *  holding sloshing liquid with bubbles. Deliberately different from the
  *  default token logo above so no coin can pass as the brand. */
 export const BRAND_MARK =

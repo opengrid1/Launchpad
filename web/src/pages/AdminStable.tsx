@@ -167,7 +167,7 @@ export function AdminStable() {
       {/* Launched tokens with per-row actions */}
       <Section
         title={`Launched tokens${tokens.length ? ` · ${tokens.length}` : ""}`}
-        hint="Harvest splits accrued pool fees per the factory's deploy-time split (liquidstock: 50% holders, 40% creator, 10% platform). Collect unwinds the entire position to the owner. Irreversible for that market's liquidity."
+        hint="Harvest splits accrued pool fees per the factory's deploy-time split (hyperstock: 50% holders, 40% creator, 10% platform). Collect unwinds the entire position to the owner. Irreversible for that market's liquidity."
       >
         {tokens.length === 0 ? (
           <p className="text-[12.5px] text-ink-3">Loading tokens…</p>

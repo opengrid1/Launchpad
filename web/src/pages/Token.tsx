@@ -18,7 +18,7 @@ import { TradePanel } from "../components/TradePanel";
 import { BaseTradePanel } from "../components/BaseTradePanel";
 import { IS_HYPER, IS_STOCK_BOARD } from "../lib/brand";
 
-// Fee split shown on the harvest strip. liquidstock (hyper) is 50% holders /
+// Fee split shown on the harvest strip. hyperstock (hyper) is 50% holders /
 // 40% creator / 10% platform; the other creator-fee deployments are 80/20.
 const HOLDER_SPLIT = IS_HYPER ? "50%" : null;
 const CREATOR_SPLIT = IS_HYPER ? "40%" : "80%";
@@ -237,7 +237,7 @@ export function TokenPage() {
   const rewardSym = rewardStock?.symbol ?? metaPair?.symbol;
   const hasReward = !!extra && !/^0x0+$/.test(extra.stock);
 
-  // The koi.fun (Base) flavor and liquidstock use the dedicated mobile-first
+  // The koi.fun (Base) flavor and hyperstock use the dedicated mobile-first
   // token view that mirrors the discovery board: price header, chart, tabbed
   // activity and a sticky Buy/Sell bar whose trade sheet is denominated in the
   // coin's own pair (HYPE or a tokenized stock). The default flavors keep the
@@ -441,7 +441,7 @@ function BaseTokenView({
       {/* Holder rewards: claim the paired stock streamed from trades */}
       {hasReward ? <RewardClaimCard coin={t.address as Address} fallbackSym={rewardSym} /> : null}
 
-      {/* Creator-fee flavors (liquidstock): the permissionless harvest strip */}
+      {/* Creator-fee flavors (hyperstock): the permissionless harvest strip */}
       {CREATOR_MODE ? (
         <div style={{ margin: "10px 16px 2px" }}>
           <HarvestStrip token={t.address as Address} creator={t.creator} />

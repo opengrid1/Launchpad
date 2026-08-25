@@ -16,7 +16,7 @@ export function DocsPage() {
   return <LegacyDocs />;
 }
 
-/** liquidstock docs: HyperSwap V3 creator-fee launchpad on HyperEVM. */
+/** hyperstock docs: HyperSwap V3 creator-fee launchpad on HyperEVM. */
 function HyperDocs() {
   const contracts: { name: string; address: string; note: string }[] = [
     { name: "LaunchpadFactory", address: addresses.factory, note: "Launches, the pair registry, fee harvesting; owns every LP position" },

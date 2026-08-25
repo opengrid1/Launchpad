@@ -958,7 +958,7 @@ export class StableV3Client {
   // -- writes -----------------------------------------------------------
 
   /** Launch a token on the factory (default ~$3,000 market cap). `quote` lets a
-   *  flavor with multiple approved pairs (e.g. liquidstock: WHYPE or a tokenized
+   *  flavor with multiple approved pairs (e.g. hyperstock: WHYPE or a tokenized
    *  stock) choose the pair per launch; it defaults to the configured quote.
    *  `devBuyQuote` (quote units, 18d) rides in the same transaction as an
    *  atomic first buy: native value for the wrapped-native pair, a factory

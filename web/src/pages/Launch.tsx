@@ -33,7 +33,7 @@ export function LaunchPage() {
   // The Base stock launchpad pairs a tokenized stock and pays holders that
   // stock through a per-coin vault; its launch screen picks the stock.
   if (IS_STOCK_BOARD) return <LaunchBase />;
-  // liquidstock (HyperEVM): pick WHYPE or a tokenized stock as the pair; the
+  // hyperstock (HyperEVM): pick WHYPE or a tokenized stock as the pair; the
   // creator earns the pool's 1% fee. Its own launch screen with a pair picker.
   if (IS_HYPER) return <LaunchHyper />;
   // The Robinhood-chain board brand pairs against any onchain token and pays

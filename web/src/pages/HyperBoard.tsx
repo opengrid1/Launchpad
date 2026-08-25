@@ -127,7 +127,7 @@ const pairSymbolOf = (t: TokenSummary): string | null => {
   return null;
 };
 
-/* ---- circular avatar: token logo, else the liquidstock droplet default ---- */
+/* ---- circular avatar: token logo, else the hyperstock droplet default ---- */
 const DEFAULT_LOGO = DEFAULT_TOKEN_LOGO;
 function logoSrc(t: TokenSummary): string | null {
   const logo = OFFICIAL_LOGOS[t.address?.toLowerCase()] ?? t.metadata?.logo;
@@ -160,8 +160,8 @@ function ordinal(n: number) {
 }
 
 /**
- * liquidstock discovery dashboard — a koi.fun-styled "Today's leaders" board
- * over a live pool list, wired to real HyperEVM launches. liquidstock coins do
+ * hyperstock discovery dashboard — a koi.fun-styled "Today's leaders" board
+ * over a live pool list, wired to real HyperEVM launches. hyperstock coins do
  * not reward holders; the product's hook is that every trade pays the creator
  * the pool's 1% fee forever, so each row surfaces the coin's trading pair.
  */

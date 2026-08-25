@@ -16,7 +16,7 @@ const TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
 
 // The board brands have their own navigation and no bridge. Only the Robinhood
 // heist board (copair) has a weekly flywheel tab; the Base stock launchpad and
-// the HyperEVM launchpad (liquidstock) drop it.
+// the HyperEVM launchpad (hyperstock) drop it.
 const BOARD_TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = BRAND_FLAVOR === "copair"
   ? [
       { to: "/", end: true, icon: "explore", label: "Board" },

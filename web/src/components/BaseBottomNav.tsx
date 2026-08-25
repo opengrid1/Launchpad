@@ -4,7 +4,7 @@ import { IS_HYPER } from "../lib/brand";
 import { KoiIcon, type KoiIconName } from "./base/KoiIcon";
 import { useUi } from "../store";
 
-// Same chrome as the stock board; liquidstock swaps the base-specific
+// Same chrome as the stock board; hyperstock swaps the base-specific
 // pool-party tab for its holder-rewards claim page (trophy), moving the
 // launch feed onto the zap glyph.
 const MAIN: { icon: KoiIconName; to: string; label: string }[] = IS_HYPER

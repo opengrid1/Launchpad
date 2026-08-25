@@ -26,7 +26,7 @@ const BasePartyPage = lazy(() => import("./pages/BaseParty").then((m) => ({ defa
 const BaseLeaderboardPage = lazy(() => import("./pages/BaseLeaderboard").then((m) => ({ default: m.BaseLeaderboard })));
 const BaseSearchPage = lazy(() => import("./pages/BaseSearch").then((m) => ({ default: m.BaseSearch })));
 const BaseFeedPage = lazy(() => import("./pages/BaseFeed").then((m) => ({ default: m.BaseFeed })));
-// liquidstock holder-rewards page: claimable fee shares across every coin.
+// hyperstock holder-rewards page: claimable fee shares across every coin.
 const RewardsPage = lazy(() => import("./pages/Rewards").then((m) => ({ default: m.RewardsPage })));
 
 const queryClient = new QueryClient({
@@ -111,7 +111,7 @@ export default function App() {
                     </>
                   )}
                   {/* Flavor-generic discovery pages, shared by the stock board
-                      and liquidstock (leaderboard, feed, docked search). */}
+                      and hyperstock (leaderboard, feed, docked search). */}
                   {(IS_STOCK_BOARD || IS_HYPER) && (
                     <>
                       <Route path="/leaderboard" element={<BaseLeaderboardPage />} />
