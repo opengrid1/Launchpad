@@ -122,7 +122,17 @@ export function HsShell({ children }: { children: ReactNode }) {
         <main className="hs-content">{children}</main>
       </div>
 
-      <BaseBottomNav />
+      {IS_INK ? (
+        <nav className="hs-tabbar" aria-label="Primary">
+          <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="bar-chart" size={18} /><span>Markets</span></NavLink>
+          <NavLink to="/feed" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="zap" size={18} /><span>Feed</span></NavLink>
+          <button className="hs-tabbar-launch" onClick={openLaunch} aria-label="Launch"><KoiIcon name="rocket" size={19} /></button>
+          <NavLink to="/rewards" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trophy" size={18} /><span>Rewards</span></NavLink>
+          <NavLink to="/profile" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="wallet-alt" size={18} /><span>Wallet</span></NavLink>
+        </nav>
+      ) : (
+        <BaseBottomNav />
+      )}
 
       {sheet ? (
         <div className="kf-sheet-backdrop" onClick={() => setSheet(false)}>

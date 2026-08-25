@@ -4681,3 +4681,65 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"][data-flavor="ink"] .hs-pane-trade:hover { color: #14092e; }
 :root[data-brand="hyper"] .hs-pane-fees { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--hs-rule); font-family: var(--hs-mono); font-size: 11px; letter-spacing: 0.03em; color: var(--hs-ink-3); }
 :root[data-brand="hyper"] .hs-pane-fees b { color: var(--hs-ink-2); font-weight: 600; }
+
+/* ---- mobile swipe deck: one coin per screen ---- */
+:root[data-brand="hyper"] .hs-deck { display: none; }
+@media (max-width: 1023px) {
+  :root[data-brand="hyper"] .hs-split > .hs-ledger, :root[data-brand="hyper"] .hs-split > .hs-detail { display: none; }
+  :root[data-brand="hyper"] .hs-deck {
+    display: block; height: calc(100dvh - 52px - 58px);
+    overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain;
+  }
+  :root[data-brand="hyper"] .hs-deck-top {
+    position: sticky; top: 0; z-index: 5; padding: 8px 12px;
+    background: color-mix(in srgb, var(--hs-bg) 88%, transparent); backdrop-filter: blur(8px);
+  }
+  :root[data-brand="hyper"] .hs-tabs.sm { width: 100%; }
+  :root[data-brand="hyper"] .hs-tabs.sm button { flex: 1; justify-content: center; padding: 0 6px; }
+  :root[data-brand="hyper"] .hs-card {
+    min-height: calc(100dvh - 52px - 58px - 48px); scroll-snap-align: start; scroll-snap-stop: always;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    gap: 10px; padding: 8px 26px 20px;
+  }
+  :root[data-brand="hyper"] .hs-card-rank { align-self: flex-start; font-family: var(--hs-mono); font-size: 11px; color: var(--hs-ink-3); }
+  :root[data-brand="hyper"] .hs-card-rank i { font-style: normal; opacity: .6; }
+  :root[data-brand="hyper"] .hs-card .hs-ava img { border-radius: 20px; }
+  :root[data-brand="hyper"] .hs-card-name { font-family: var(--hs-serif); font-weight: 400; font-size: 34px; line-height: 1; color: var(--hs-ink); }
+  :root[data-brand="hyper"] .hs-card-sub { display: flex; align-items: center; gap: 8px; }
+  :root[data-brand="hyper"] .hs-card-price { display: flex; align-items: baseline; gap: 12px; margin-top: 6px; }
+  :root[data-brand="hyper"] .hs-card-price .v { font-family: var(--hs-mono); font-size: 34px; font-weight: 700; letter-spacing: -0.03em; color: var(--hs-ink); }
+  :root[data-brand="hyper"] .hs-card-stats { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--hs-rule); border-bottom: 1px solid var(--hs-rule); margin-top: 8px; }
+  :root[data-brand="hyper"] .hs-card-stats > div { padding: 10px 2px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--hs-rule); }
+  :root[data-brand="hyper"] .hs-card-stats > div:last-child { border-right: 0; }
+  :root[data-brand="hyper"] .hs-card-stats .l { font-family: var(--hs-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hs-ink-3); }
+  :root[data-brand="hyper"] .hs-card-stats .v { font-family: var(--hs-mono); font-size: 13px; font-weight: 600; color: var(--hs-ink); }
+  :root[data-brand="hyper"] .hs-card-desc { font-size: 13px; line-height: 1.6; color: var(--hs-ink-2); max-width: 340px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  :root[data-brand="hyper"] .hs-card-buy { display: flex; gap: 8px; margin-top: 8px; width: 100%; justify-content: center; flex-wrap: wrap; }
+  :root[data-brand="hyper"] .hs-card-open {
+    width: 100%; max-width: 340px; height: 44px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--hs-mint); border-radius: 4px; color: var(--hs-mint); text-decoration: none;
+    font-family: var(--hs-mono); font-size: 13px; font-weight: 700; margin-top: 4px;
+  }
+  :root[data-brand="hyper"] .hs-card-hint { font-family: var(--hs-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hs-ink-3); margin-top: 6px; }
+}
+
+/* ---- ink mobile tab bar: full-width ruled bar, not the koi pill ---- */
+:root[data-brand="hyper"] .hs-tabbar { display: none; }
+@media (max-width: 1023px) {
+  :root[data-brand="hyper"] .hs-tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; height: 58px;
+    display: grid; grid-template-columns: 1fr 1fr 64px 1fr 1fr; align-items: center;
+    border-top: 1px solid var(--hs-rule-2);
+    background: color-mix(in srgb, var(--hs-bg) 94%, transparent); backdrop-filter: blur(12px);
+  }
+  :root[data-brand="hyper"] .hs-tabbar a {
+    display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none;
+    color: var(--hs-ink-3); font-family: var(--hs-mono); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  :root[data-brand="hyper"] .hs-tabbar a.on { color: var(--hs-mint); }
+  :root[data-brand="hyper"] .hs-tabbar-launch {
+    width: 46px; height: 46px; margin: 0 auto; border-radius: 12px; border: 0; cursor: pointer;
+    display: grid; place-items: center; background: var(--hs-mint); color: #071410;
+    box-shadow: 0 4px 18px rgba(167, 139, 250, 0.35); transform: translateY(-10px);
+  }
+}

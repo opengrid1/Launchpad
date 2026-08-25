@@ -257,7 +257,65 @@ export function HsBoard() {
           </div>
         )}
       </section>
+
+      {/* MOBILE: full-screen swipe deck — one coin per screen, snap scroll */}
+      <section className="hs-deck" aria-label="Coins">
+        <div className="hs-deck-top">
+          <nav className="hs-tabs sm" aria-label="Market views">
+            {TABS.map((t) => (
+              <button key={t.id} className={tab === t.id ? "on" : ""} onClick={() => setTab(t.id)}>
+                {t.live ? <span className="hs-live" /> : null}{t.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+        {loading ? (
+          <div className="hs-card"><div className="hs-empty">Loading markets…</div></div>
+        ) : feed.length === 0 ? (
+          <div className="hs-card"><div className="hs-empty">No coins yet. <Link to="/launch">Launch the first one</Link>.</div></div>
+        ) : (
+          feed.map((t, i) => <DeckCard key={t.address} t={t} rank={i + 1} total={feed.length} />)
+        )}
+      </section>
     </div>
+  );
+}
+
+/** One full-screen card in the mobile deck. */
+function DeckCard({ t, rank, total }: { t: TokenSummary; rank: number; total: number }) {
+  const meta = (t.metadata ?? {}) as any;
+  const official = isOfficial(t.address);
+  const { buy, busyAmt } = useQuickBuy(t.address as `0x${string}`, t.symbol);
+  return (
+    <article className="hs-card">
+      <div className="hs-card-rank">{rank} <i>/ {total}</i></div>
+      <Avatar t={t} size={84} />
+      <h2 className="hs-card-name">{t.name}</h2>
+      <div className="hs-card-sub">
+        <span className="hs-pair">{t.symbol} / {pairSymbolOf(t)}</span>
+        {official ? <span className="hs-tag official">Official</span> : null}
+      </div>
+      <div className="hs-card-price">
+        <span className="v">{fmtPrice(priceUsdOf(t))}</span>
+        <Chg v={t.priceChange24hPct} />
+      </div>
+      <div className="hs-card-stats">
+        <div><span className="l">Mcap</span><span className="v">{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</span></div>
+        <div><span className="l">Vol 24h</span><span className="v">{volUsd(t) > 0 ? fmtUsd(volUsd(t)) : "—"}</span></div>
+        <div><span className="l">Trades</span><span className="v">{t.txCount24h ?? 0}</span></div>
+        <div><span className="l">Age</span><span className="v">{t.createdAt ? timeAgo(t.createdAt) : "—"}</span></div>
+      </div>
+      {meta.description ? <p className="hs-card-desc">{meta.description}</p> : null}
+      <div className="hs-card-buy">
+        {QUICK_BUY_AMOUNTS.map((a) => (
+          <button key={a} className="hs-qb-amt big" disabled={busyAmt != null} onClick={() => buy(a)}>
+            {busyAmt === a ? "…" : `${a} ${env.nativeSymbol}`}
+          </button>
+        ))}
+      </div>
+      <Link to={`/token/${t.address}`} className="hs-card-open">Open market</Link>
+      <div className="hs-card-hint">Swipe for the next coin</div>
+    </article>
   );
 }
 
