@@ -19,6 +19,8 @@ export const HYPER_STOCKS: HyperStock[] = [
   { symbol: 'wQQQx', ticker: 'QQQX', name: 'Nasdaq xStock', address: '0x4c1ae29c159838fc1b224636e28e086eb69101f7', decimals: 18 },
   { symbol: 'wMUx', ticker: 'MUX', name: 'Micron Technology xStock', address: '0xe2047ee3bddb5c99ae428ab83df63f8730698e30', decimals: 18 },
   { symbol: 'wSKHYx', ticker: 'SKHYX', name: 'SK hynix xStock', address: '0x6215a58ed045d71f2561aaabe54f4c885c522998', decimals: 18 },
+  // Pre-IPO dStock: live Core spot market (buy with USDC, transfer to EVM).
+  { symbol: 'SPCXd', ticker: 'SPCX', name: 'SpaceX dStock', address: '0xe8c8AFDf7E80bE51E91AFA28B6aC44404d270B5d', decimals: 18 },
 ];
 
 export const hyperStockByAddress = (addr?: string): HyperStock | undefined =>
