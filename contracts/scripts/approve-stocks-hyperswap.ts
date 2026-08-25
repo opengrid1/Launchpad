@@ -18,7 +18,7 @@ const XSTOCKS: { ticker: string; address: string; usd: number }[] = [
   { ticker: "QQQX", address: "0x4c1ae29c159838fc1b224636e28e086eb69101f7", usd: 710.20 },
   { ticker: "MUX", address: "0xe2047ee3bddb5c99ae428ab83df63f8730698e30", usd: 935.74 },
   { ticker: "SKHYX", address: "0x6215a58ed045d71f2561aaabe54f4c885c522998", usd: 158.25 },
-  { ticker: "SPCX", address: "0xe8c8AFDf7E80bE51E91AFA28B6aC44404d270B5d", usd: 0.0716 },
+  { ticker: "SPCX", address: "0xe8c8AFDf7E80bE51E91AFA28B6aC44404d270B5d", usd: 124.39 },
 ];
 
 async function main() {
