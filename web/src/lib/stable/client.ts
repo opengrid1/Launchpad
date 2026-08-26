@@ -565,6 +565,26 @@ export class StableV3Client {
     return { volTotal, vol24, tx24, holders: this.holdersCache.get(key)?.count };
   }
 
+  /** 24h price change, as a percent, from the cached trade prices: current
+   *  price vs the most recent trade at least 24h old, or the oldest trade we
+   *  have when the coin is younger than a day (change since launch). Null
+   *  when no trades are known yet. */
+  private change24hFromCache(key: string, currentPrice: bigint): number | null {
+    if (currentPrice <= 0n) return null;
+    const trades = (this.tradesCache.get(key) ?? this.loadPersistedTrades(key))?.trades ?? [];
+    if (trades.length === 0) return null;
+    const dayAgo = Math.floor(Date.now() / 1000) - 86_400;
+    // trades are newest-first: the first one at or before 24h ago is the
+    // 24h baseline; if none is that old, the oldest known trade stands in.
+    let baseline = 0n;
+    for (const t of trades) {
+      if (t.timestamp <= dayAgo) { baseline = BigInt(t.priceWei); break; }
+    }
+    if (baseline === 0n) baseline = BigInt(trades[trades.length - 1].priceWei);
+    if (baseline <= 0n) return null;
+    return ((Number(currentPrice) - Number(baseline)) / Number(baseline)) * 100;
+  }
+
   /** Count holders among addresses we've seen trade (Swap `recipient`), the
    *  creator, and the pool. The RPC's 500-block getLogs cap rules out a full
    *  Transfer-history scan, so this converges as trading is observed; traders
@@ -676,7 +696,7 @@ export class StableV3Client {
       holderCount: stats.holders ?? 0,
       limitsActive: false,
       remainingToGraduationUsd: "0",
-      priceChange24hPct: null,
+      priceChange24hPct: this.change24hFromCache(core.address.toLowerCase(), price),
       creatorFeesWei: "0",
     } as unknown as TokenSummary;
   }
