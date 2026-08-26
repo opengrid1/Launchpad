@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
-import { WHYPE, hyperStockByAddress } from "../lib/hyper/stocks";
+import { WHYPE, stockByAddress } from "../lib/hyper/stocks";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtUsd, timeAgo } from "../lib/format";
@@ -90,7 +90,7 @@ const pairSymbolOf = (t: TokenSummary): string => {
   const addr = meta?.pairAddress as string | undefined;
   if (addr) {
     if (addr.toLowerCase() === WHYPE.toLowerCase()) return env.nativeSymbol;
-    const st = hyperStockByAddress(addr);
+    const st = stockByAddress(addr);
     if (st) return st.ticker;
   }
   const p = meta?.pair as string | undefined;

@@ -65,7 +65,7 @@ function InkDocs() {
           rows={[
             ["Total supply", "1,000,000,000, fixed"],
             ["Starting market cap", "≈ $3,000"],
-            ["Pool pairing", "ETH"],
+            ["Pool pairing", "ETH or a tokenized xStock"],
             ["Upfront liquidity", "None required"],
           ]}
         />

@@ -5,7 +5,7 @@ import { keccak256, parseEther, toHex } from "viem";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { IS_INK } from "../lib/brand";
-import { HYPER_STOCKS, WHYPE, type HyperStock } from "../lib/hyper/stocks";
+import { STOCKS, WHYPE, type HyperStock } from "../lib/hyper/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
@@ -19,13 +19,13 @@ type Pair = { symbol: string; label: string; sub: string; address: `0x${string}`
 const WHYPE_PAIR: Pair = IS_INK
   ? { symbol: "ETH", label: "ETH", sub: "Ink", address: "0x4200000000000000000000000000000000000006" as `0x${string}` }
   : { symbol: "HYPE", label: "HYPE", sub: "Hyperliquid", address: WHYPE };
-const STOCK_PAIRS: Pair[] = HYPER_STOCKS.map((s: HyperStock) => ({
+const STOCK_PAIRS: Pair[] = STOCKS.map((s: HyperStock) => ({
   symbol: s.ticker,
   label: s.ticker,
   sub: s.name,
   address: s.address,
 }));
-const ALL_PAIRS: Pair[] = IS_INK ? [WHYPE_PAIR] : [WHYPE_PAIR, ...STOCK_PAIRS];
+const ALL_PAIRS: Pair[] = [WHYPE_PAIR, ...STOCK_PAIRS];
 
 /**
  * hyperstock launch (HyperEVM / HyperSwap V3). One transaction mints a plain
@@ -142,7 +142,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
       <h1 className="kf-launch-h1">Launch a coin</h1>
       <p className="kf-launch-sub">
         {IS_INK
-          ? `Deploy a coin on Ink paired with ${env.nativeSymbol}. One transaction opens a live Uniswap market and seeds the full supply. Every buy auto-pays 1% in the coin: 0.5% to holders, 0.4% to you, 0.1% platform. No harvesting, ever.`
+          ? `Deploy a coin on Ink paired with ${env.nativeSymbol} or a tokenized xStock. One transaction opens a live Uniswap market and seeds the full supply. Every buy auto-pays 1% in the coin: 0.5% to holders, 0.4% to you, 0.1% platform. No harvesting, ever.`
           : `Deploy a coin on HyperEVM paired with ${env.nativeSymbol} or a tokenized stock. One transaction opens a live HyperSwap market and seeds the full supply. Every trade pays you, the creator, 1% forever.`}
       </p>
 
@@ -214,9 +214,9 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
 
         {/* Pool pairing — WHYPE or a tokenized stock; the creator earns its fees */}
         <div className="kf-field">
-          <label>Pool Pairing {IS_INK ? null : <i>({env.nativeSymbol} + {STOCK_PAIRS.length} tokenized stocks)</i>}</label>
-          {IS_INK ? null : <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${env.nativeSymbol} or an xStock (NVDAX, SPYX, QQQX…)`} />}
+          <label>Pool Pairing <i>({env.nativeSymbol} + {STOCK_PAIRS.length} tokenized stocks)</i></label>
+          <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${env.nativeSymbol} or an xStock (NVDAX, SPYX, TSLAX…)`} />
           <div className="kf-pairgrid" style={{ maxHeight: 360, overflowY: "auto" }}>
             {filtered.map((p) => (
               <button
@@ -236,21 +236,37 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
               ? "Every buy skims 1% of the coins automatically: 0.5% to holders, 0.4% to you, 0.1% platform. Recorded on the trade itself, claimable anytime."
               : `Every trade pays 1% in ${selected.label} (${selected.sub}): 50% to holders, 40% to you, 10% platform.`}
           </p>
-          {selected.address !== WHYPE ? (
+          {selected.address !== WHYPE_PAIR.address ? (
             <div style={{
               marginTop: 8, border: "1px solid var(--color-edge)", background: "var(--color-panel-2)",
               borderRadius: 10, padding: "10px 12px", fontSize: 11.5, lineHeight: 1.6, color: "var(--color-ink-2)",
             }}>
-              <b style={{ color: "var(--color-accent-ink)" }}>How buyers get {selected.label}:</b> a{" "}
-              {selected.label}-paired coin trades in {selected.label} on HyperEVM. To hold it, buy{" "}
-              {selected.label} on the{" "}
-              <a href="https://app.hyperliquid.xyz/trade" target="_blank" rel="noreferrer"
-                style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>
-                Hyperliquid spot market
-              </a>{" "}
-              first, then transfer it to EVM (Portfolio, Transfer to EVM). Same goes for your dev buy.
-              Trading bots and most wallets only route {env.nativeSymbol} pairs, so pick{" "}
-              {env.nativeSymbol} for the widest reach.
+              {IS_INK ? (
+                <>
+                  <b style={{ color: "var(--color-accent-ink)" }}>How buyers get {selected.label}:</b> a{" "}
+                  {selected.label}-paired coin trades in {selected.label} ({selected.sub}) on Ink. Buyers
+                  swap into it on{" "}
+                  <a href="https://app.uniswap.org" target="_blank" rel="noreferrer"
+                    style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>
+                    Uniswap on Ink
+                  </a>{" "}
+                  first. Same goes for your dev buy. Trading bots and most wallets only route{" "}
+                  {env.nativeSymbol} pairs, so pick {env.nativeSymbol} for the widest reach.
+                </>
+              ) : (
+                <>
+                  <b style={{ color: "var(--color-accent-ink)" }}>How buyers get {selected.label}:</b> a{" "}
+                  {selected.label}-paired coin trades in {selected.label} on HyperEVM. To hold it, buy{" "}
+                  {selected.label} on the{" "}
+                  <a href="https://app.hyperliquid.xyz/trade" target="_blank" rel="noreferrer"
+                    style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>
+                    Hyperliquid spot market
+                  </a>{" "}
+                  first, then transfer it to EVM (Portfolio, Transfer to EVM). Same goes for your dev buy.
+                  Trading bots and most wallets only route {env.nativeSymbol} pairs, so pick{" "}
+                  {env.nativeSymbol} for the widest reach.
+                </>
+              )}
             </div>
           ) : null}
         </div>
@@ -294,7 +310,9 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
             {busy ? "Confirm in wallet…" : isConnected ? "Launch coin" : "Connect & launch"}
           </button>
         </div>
-        <p className="kf-footnote">You pay HyperEVM gas. Big blocks must be enabled on your wallet.</p>
+        <p className="kf-footnote">
+          {IS_INK ? "You pay Ink gas only. No setup needed." : "You pay HyperEVM gas. Big blocks must be enabled on your wallet."}
+        </p>
       </form>
     </div>
   );

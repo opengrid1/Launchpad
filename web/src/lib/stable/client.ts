@@ -12,7 +12,7 @@ import {
 import type { Candle, CandleInterval, PriceUpdate, TokenSummary, TradeRecord } from "@launchpad/sdk";
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
 import { env } from "../env";
-import { HYPER_STOCKS } from "../hyper/stocks";
+import { STOCKS } from "../hyper/stocks";
 
 /**
  * Backend-free client for the StableLaunchpadFactory (Uniswap V3 on Stable
@@ -394,7 +394,7 @@ export class StableV3Client {
       const nativeUsd = this.quoteUsd8 > 0n ? Number(this.quoteUsd8) / 1e8 : this.quoteUsd;
       return { address: this.addresses.quote, symbol: env.nativeSymbol, decimals: 18, usd: nativeUsd, isNative: true };
     }
-    const stock = HYPER_STOCKS.find((s) => s.address.toLowerCase() === q.addr.toLowerCase());
+    const stock = STOCKS.find((s) => s.address.toLowerCase() === q.addr.toLowerCase());
     if (stock) return { address: q.addr, symbol: stock.ticker, decimals: q.decimals, usd, isNative: false };
     const short = `${q.addr.slice(0, 6)}…${q.addr.slice(-4)}`;
     return { address: q.addr, symbol: short, decimals: q.decimals, usd, isNative: false };

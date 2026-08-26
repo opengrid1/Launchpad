@@ -4,7 +4,7 @@ import type { TokenSummary } from "@launchpad/sdk";
 import { client } from "../lib/client";
 import { env, addresses } from "../lib/env";
 import { IS_HYPER, IS_INK } from "../lib/brand";
-import { HYPER_STOCKS, WHYPE } from "../lib/hyper/stocks";
+import { STOCKS, WHYPE } from "../lib/hyper/stocks";
 import { StableV3Client } from "../lib/stable/client";
 import { fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
@@ -59,9 +59,10 @@ export function AdminStable() {
       })).then((rows) => setPlat(Object.fromEntries(rows)));
     }).catch(() => setTokens([]));
     if (IS_HYPER || IS_INK) {
-      const quoteRows = IS_HYPER
-        ? [{ ticker: env.nativeSymbol, address: WHYPE }, ...HYPER_STOCKS.map((s) => ({ ticker: s.ticker, address: s.address }))]
-        : [{ ticker: env.nativeSymbol, address: addresses.weth }];
+      const quoteRows = [
+        { ticker: env.nativeSymbol, address: IS_HYPER ? WHYPE : (addresses.weth as `0x${string}`) },
+        ...STOCKS.map((s) => ({ ticker: s.ticker, address: s.address })),
+      ];
       Promise.all(quoteRows.map(async (r) => {
         try {
           const [approved, price8] = (await stable.publicClient.readContract({
@@ -155,16 +156,14 @@ export function AdminStable() {
       {/* Quote registry: approve pairs and keep USD prices current */}
       {IS_HYPER || IS_INK ? (
         <Section
-          title={IS_HYPER ? "Stock pairs" : "ETH price"}
-          hint={IS_HYPER
-            ? "Each pair needs an on-chain USD price so launches open at the right market cap. Update prices whenever they drift."
-            : "The on-chain ETH price sets the starting market cap of new launches. Update it when it drifts."}
+          title="Stock pairs"
+          hint="Each pair needs an on-chain USD price so launches open at the right market cap. Update prices whenever they drift."
         >
           <div className="space-y-2">
-            {(IS_HYPER
-              ? [{ ticker: env.nativeSymbol, name: "Wrapped native", address: WHYPE }, ...HYPER_STOCKS]
-              : [{ ticker: env.nativeSymbol, name: "Wrapped ETH", address: addresses.weth }]
-            ).map((s) => {
+            {[
+              { ticker: env.nativeSymbol, name: IS_HYPER ? "Wrapped native" : "Wrapped ETH", address: IS_HYPER ? WHYPE : (addresses.weth as `0x${string}`) },
+              ...STOCKS,
+            ].map((s) => {
               const st = quoteStates[s.address];
               const cur = st && st.price8 > 0n ? Number(st.price8) / 1e8 : null;
               const input = quotePrices[s.address] ?? "";
