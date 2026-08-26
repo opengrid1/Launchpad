@@ -8,7 +8,7 @@ import { formatUnits } from "viem";
 import { TokenLogo } from "../components/TokenLogo";
 import { client, v4Client } from "../lib/client";
 import { IS_INK } from "../lib/brand";
-import { addresses } from "../lib/env";
+import { addresses, env } from "../lib/env";
 import { fmtUsd } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
@@ -68,7 +68,7 @@ export function RewardsPage() {
             const isWhype = key === String(addresses.weth).toLowerCase();
             const [dec, sym, usd] = await Promise.all([
               isWhype ? 18 : (v4Client as any).publicClient.readContract({ address: info.stock, abi: ERC20_META_ABI, functionName: "decimals" }).then(Number).catch(() => 18),
-              isWhype ? "HYPE" : (v4Client as any).publicClient.readContract({ address: info.stock, abi: ERC20_META_ABI, functionName: "symbol" }).then(String).catch(() => ""),
+              isWhype ? env.nativeSymbol : (v4Client as any).publicClient.readContract({ address: info.stock, abi: ERC20_META_ABI, functionName: "symbol" }).then(String).catch(() => ""),
               (v4Client as any).assetUsdPrice(info.stock).catch(() => 0),
             ]);
             meta.set(key, { sym, dec, usd });

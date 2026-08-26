@@ -6,7 +6,7 @@ import type { TokenSummary } from "@launchpad/sdk";
 import { TokenLogo } from "../components/TokenLogo";
 import { client } from "../lib/client";
 import { IS_INK } from "../lib/brand";
-import { env } from "../lib/env";
+import { addresses, env } from "../lib/env";
 import { fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { isHidden, isImpersonator } from "../lib/hiddenTokens";
 import { volUsd } from "../components/market/util";
@@ -56,11 +56,12 @@ function InkRewardsFeed({ list, preview }: { list: TokenSummary[]; preview: bool
               pc.readContract({ address: t.address, abi: REWARDS_READ_ABI, functionName: "totalRewardsDistributed" }),
               pc.readContract({ address: t.address, abi: REWARDS_READ_ABI, functionName: "rewardToken" }),
             ]);
-            const [stockSym, stockUsd] = await Promise.all([
-              pc.readContract({ address: stock, abi: ERC20_SYMBOL_ABI, functionName: "symbol" }).then(String).catch(() => ""),
+            const isNative = String(stock).toLowerCase() === String(addresses.weth).toLowerCase();
+            const [rawSym, stockUsd] = await Promise.all([
+              isNative ? env.nativeSymbol : pc.readContract({ address: stock, abi: ERC20_SYMBOL_ABI, functionName: "symbol" }).then(String).catch(() => ""),
               (client as any).assetUsdPrice(stock).catch(() => 0),
             ]);
-            return [t.address, { coins: Number(coinsWei) / 1e18, stockSym, stockUsd: Number(stockUsd) }] as const;
+            return [t.address, { coins: Number(coinsWei) / 1e18, stockSym: rawSym, stockUsd: Number(stockUsd) }] as const;
           } catch {
             return [t.address, { coins: 0, stockSym: "", stockUsd: 0 }] as const;
           }
