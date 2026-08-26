@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
-import { WHYPE, hyperStockByAddress, HYPER_STOCKS } from "../lib/hyper/stocks";
+import { WHYPE, hyperStockByAddress } from "../lib/hyper/stocks";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtUsd, timeAgo } from "../lib/format";
@@ -11,12 +11,14 @@ import { isHidden, isImpersonator } from "../lib/hiddenTokens";
 import { isOfficial } from "../lib/official";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 import { volUsd } from "../components/market/util";
+import { KoiIcon } from "../components/base/KoiIcon";
 import { HyperMark } from "../components/HyperMark";
 import { DEFAULT_TOKEN_LOGO } from "../lib/hyper/defaultLogo";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
-const QUICK_BUY_AMOUNTS = [1, 5, 10, 25];
+/** Quick-buy sizes in the chain's native token; the bolt fires a real buy. */
+const QUICK_BUY_AMOUNTS = env.nativeSymbol === "ETH" ? [0.005, 0.01, 0.05, 0.1] : [1, 5, 10, 25];
 
 function useQuickBuy(token: `0x${string}`, symbol: string, onDone?: () => void) {
   const { isConnected, connectFirst } = useWallet();
@@ -40,40 +42,44 @@ function useQuickBuy(token: `0x${string}`, symbol: string, onDone?: () => void) 
   return { buy, busyAmt };
 }
 
-function QuickBuy({ token, symbol }: { token: `0x${string}`; symbol: string }) {
+/** The row's bolt: tap to reveal native-token presets, each a real buy. */
+function BoltBuy({ token, symbol }: { token: `0x${string}`; symbol: string }) {
   const [open, setOpen] = useState(false);
   const { buy, busyAmt } = useQuickBuy(token, symbol, () => setOpen(false));
   useEffect(() => {
     if (!open) return;
     const away = (e: MouseEvent) => {
       const el = e.target as HTMLElement;
-      if (!el.closest?.(`[data-hsqb="${token}"]`)) setOpen(false);
+      if (!el.closest?.(`[data-gmqb="${token}"]`)) setOpen(false);
     };
     document.addEventListener("pointerdown", away);
     return () => document.removeEventListener("pointerdown", away);
   }, [open, token]);
   return (
-    <span className="hs-qb" data-hsqb={token} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+    <span className="gm-qb" data-gmqb={token} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
       {open ? (
-        QUICK_BUY_AMOUNTS.map((a) => (
-          <button key={a} className="hs-qb-amt" disabled={busyAmt != null} onClick={() => buy(a)}>
-            {busyAmt === a ? "…" : a}
-          </button>
-        ))
-      ) : (
-        <button className="hs-qb-open" onClick={() => setOpen(true)}>Buy</button>
-      )}
+        <span className="gm-qb-pop">
+          {QUICK_BUY_AMOUNTS.map((a) => (
+            <button key={a} disabled={busyAmt != null} onClick={() => buy(a)}>
+              {busyAmt === a ? "…" : a}
+            </button>
+          ))}
+        </span>
+      ) : null}
+      <button className={`gm-bolt ${open ? "on" : ""}`} aria-label={`Quick buy ${symbol}`} onClick={() => setOpen((o) => !o)}>
+        <KoiIcon name="zap" size={15} />
+        <span>{QUICK_BUY_AMOUNTS[0]}</span>
+      </button>
     </span>
   );
 }
 
-type Tab = "top" | "trending" | "movers" | "new" | "live";
-const TABS: { id: Tab; label: string; live?: boolean }[] = [
-  { id: "movers", label: "Movers" },
-  { id: "top", label: "Top" },
-  { id: "trending", label: "Trending" },
-  { id: "new", label: "New" },
-  { id: "live", label: "Live", live: true },
+type Tab = "pulse" | "new" | "surge" | "top";
+const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: "pulse", label: "Pulse", icon: <KoiIcon name="zap" size={14} /> },
+  { id: "new", label: "New", icon: <KoiIcon name="clock" size={14} /> },
+  { id: "surge", label: "Surge", icon: <KoiIcon name="trending-up" size={14} /> },
+  { id: "top", label: "Top", icon: <KoiIcon name="trophy" size={14} /> },
 ];
 
 const pairSymbolOf = (t: TokenSummary): string => {
@@ -95,51 +101,40 @@ function logoSrc(t: TokenSummary): string | null {
   return String(logo).startsWith("ipfs://") ? `https://ipfs.io/ipfs/${String(logo).slice(7)}` : String(logo);
 }
 
-function Avatar({ t, size = 34 }: { t: TokenSummary; size?: number }) {
+function Avatar({ t }: { t: TokenSummary }) {
   const [failed, setFailed] = useState(false);
   const src = (failed ? null : logoSrc(t)) ?? DEFAULT_TOKEN_LOGO;
   return (
-    <span className="hs-ava" style={{ width: size, height: size }}>
+    <span className="gm-ava">
       <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} />
-      <span className="hs-ava-badge"><HyperMark /></span>
+      <span className="gm-ava-badge"><HyperMark /></span>
     </span>
   );
 }
 
-/** Price per token derived from market cap over the fixed 1B supply. */
 function priceUsdOf(t: TokenSummary): number {
   const mc = Number(t.marketCapUsd);
   return mc > 0 ? mc / 1_000_000_000 : 0;
 }
-
-/** Sub-cent prices keep three significant digits; larger ones read normally. */
 function fmtPrice(p: number): string {
   if (p <= 0) return "—";
   if (p >= 1) return `$${p.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   if (p >= 0.01) return `$${p.toFixed(4)}`;
-  const s = p.toPrecision(3);
-  return `$${Number(s).toString()}`;
-}
-
-function Chg({ v }: { v: number | null | undefined }) {
-  const has = v != null && isFinite(v);
-  const cls = has ? (v! >= 0 ? "up" : "down") : "flat";
-  return <span className={`hs-chg ${cls}`}>{has ? `${v! >= 0 ? "+" : ""}${v!.toFixed(2)}%` : "0.00%"}</span>;
+  return `$${Number(p.toPrecision(3)).toString()}`;
 }
 
 /**
- * hyperstock markets — terminal split view: the coin ledger on the left, a
- * live detail panel for the selected coin on the right. Selecting a row swaps
- * the panel in place; opening the market goes to the full token page. On
- * mobile the panel is skipped and rows navigate directly.
+ * squidpad markets — GMGN-style terminal feed: icon filter pills over dense
+ * multi-stat rows (volume, market cap, trades, holders proxy) with an inline
+ * bolt quick-buy on every row. One layout at every breakpoint; desktop just
+ * breathes wider inside the shell.
  */
 export function HsBoard() {
   const [sp, setSp] = useSearchParams();
-  const tab = (sp.get("tab") as Tab) || "top";
+  const tab = (sp.get("tab") as Tab) || "pulse";
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [sel, setSel] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const { data: byVolume, loading: lv } = useTokens(client, { sort: "volume", limit: 100 });
   const { data: byNew, loading: ln } = useTokens(client, { sort: "new", limit: 100 });
@@ -151,7 +146,7 @@ export function HsBoard() {
 
   const setTab = (id: Tab) => {
     const n = new URLSearchParams(sp);
-    if (id === "top") n.delete("tab"); else n.set("tab", id);
+    if (id === "pulse") n.delete("tab"); else n.set("tab", id);
     setSp(n, { replace: true });
   };
 
@@ -168,204 +163,80 @@ export function HsBoard() {
     let list = all;
     if (debounced) list = list.filter((t) => t.name.toLowerCase().includes(debounced) || t.symbol.toLowerCase().includes(debounced) || t.address.toLowerCase() === debounced);
     const s = [...list];
-    if (tab === "top") s.sort((a, b) => Number(b.marketCapUsd) - Number(a.marketCapUsd));
-    else if (tab === "trending") s.sort((a, b) => volUsd(b) - volUsd(a));
-    else if (tab === "new") s.sort((a, b) => b.createdAt - a.createdAt);
-    else if (tab === "live") s.sort((a, b) => (b.txCount24h ?? 0) - (a.txCount24h ?? 0) || b.createdAt - a.createdAt);
-    else s.sort((a, b) => (b.priceChange24hPct ?? -999) - (a.priceChange24hPct ?? -999) || volUsd(b) - volUsd(a));
+    if (tab === "new") s.sort((a, b) => b.createdAt - a.createdAt);
+    else if (tab === "surge") s.sort((a, b) => (b.priceChange24hPct ?? -999) - (a.priceChange24hPct ?? -999) || volUsd(b) - volUsd(a));
+    else if (tab === "top") s.sort((a, b) => Number(b.marketCapUsd) - Number(a.marketCapUsd));
+    else s.sort((a, b) => (b.txCount24h ?? 0) - (a.txCount24h ?? 0) || b.createdAt - a.createdAt); // pulse: live activity
     return s;
   }, [all, debounced, tab]);
 
-  const selected = useMemo(
-    () => feed.find((t) => t.address.toLowerCase() === sel) ?? feed[0] ?? null,
-    [feed, sel],
-  );
-
   const loading = !env.hideTokens && (lv || ln) && all.length === 0;
-  const isDesktop = () => window.innerWidth >= 1024;
-
-  const stats = useMemo(() => ({
-    coins: all.length,
-    vol: all.reduce((s, t) => s + volUsd(t), 0),
-    mcap: all.reduce((s, t) => s + Math.max(0, Number(t.marketCapUsd) || 0), 0),
-  }), [all]);
 
   return (
-    <div className="hs-split">
-      {/* LEFT: the ledger */}
-      <section className="hs-ledger">
-        <div className="hs-ledger-head">
-          <h1>Markets</h1>
-          <span className="hs-ledger-stats">
-            {stats.coins} coins · {fmtUsd(stats.vol)} 24h · {fmtUsd(stats.mcap)} cap
-          </span>
-        </div>
-        <div className="hs-controls">
-          <nav className="hs-tabs" aria-label="Market views">
-            {TABS.map((t) => (
-              <button key={t.id} className={tab === t.id ? "on" : ""} onClick={() => setTab(t.id)}>
-                {t.live ? <span className="hs-live" /> : null}{t.label}
-              </button>
-            ))}
-          </nav>
-          <label className="hs-search">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search" type="search" />
-          </label>
-        </div>
-        <div className="hs-list" role="listbox" aria-label="Coins">
-          {loading ? (
-            [...Array(8)].map((_, i) => <div key={i} className="hs-rowskel" />)
-          ) : feed.length === 0 ? (
-            <div className="hs-empty">
-              {debounced ? "No coin matches that." : "No coins yet."} <Link to="/launch">Launch the first one</Link>.
-            </div>
-          ) : (
-            feed.map((t, i) => {
-              const active = selected?.address === t.address;
-              return (
-                <button
-                  key={t.address}
-                  className={`hs-li ${active ? "on" : ""}`}
-                  role="option"
-                  aria-selected={active}
-                  onClick={() => (isDesktop() ? setSel(t.address.toLowerCase()) : navigate(`/token/${t.address}`))}
-                >
-                  <span className="c-rank">{i + 1}</span>
-                  <Avatar t={t} size={32} />
-                  <span className="hs-coin-id">
-                    <span className="n">{t.name}{isOfficial(t.address) ? <span className="hs-tag official">Official</span> : null}</span>
-                    <span className="s">{t.symbol} / {pairSymbolOf(t)}</span>
-                  </span>
-                  <span className="hs-li-right">
-                    <span className="p">{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</span>
-                    <Chg v={t.priceChange24hPct} />
-                  </span>
-                </button>
-              );
-            })
-          )}
-        </div>
-      </section>
-
-      {/* RIGHT: live detail panel for the selected coin (desktop only) */}
-      <section className="hs-detail">
-        {selected ? <DetailPane t={selected} /> : (
-          <div className="hs-detail-empty">
-            <img src={DEFAULT_TOKEN_LOGO} alt="" />
-            <p>Select a coin on the left.</p>
-          </div>
-        )}
-      </section>
-
-      {/* MOBILE: full-screen swipe deck — one coin per screen, snap scroll */}
-      <section className="hs-deck" aria-label="Coins">
-        <div className="hs-deck-top">
-          <nav className="hs-tabs sm" aria-label="Market views">
-            {TABS.map((t) => (
-              <button key={t.id} className={tab === t.id ? "on" : ""} onClick={() => setTab(t.id)}>
-                {t.live ? <span className="hs-live" /> : null}{t.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-        {loading ? (
-          <div className="hs-card"><div className="hs-empty">Loading markets…</div></div>
-        ) : feed.length === 0 ? (
-          <div className="hs-card"><div className="hs-empty">No coins yet. <Link to="/launch">Launch the first one</Link>.</div></div>
-        ) : (
-          feed.map((t, i) => <DeckCard key={t.address} t={t} rank={i + 1} total={feed.length} />)
-        )}
-      </section>
-    </div>
-  );
-}
-
-/** One full-screen card in the mobile deck. */
-function DeckCard({ t, rank, total }: { t: TokenSummary; rank: number; total: number }) {
-  const meta = (t.metadata ?? {}) as any;
-  const official = isOfficial(t.address);
-  const { buy, busyAmt } = useQuickBuy(t.address as `0x${string}`, t.symbol);
-  return (
-    <article className="hs-card">
-      <div className="hs-card-rank">{rank} <i>/ {total}</i></div>
-      <Avatar t={t} size={84} />
-      <h2 className="hs-card-name">{t.name}</h2>
-      <div className="hs-card-sub">
-        <span className="hs-pair">{t.symbol} / {pairSymbolOf(t)}</span>
-        {official ? <span className="hs-tag official">Official</span> : null}
-      </div>
-      <div className="hs-card-price">
-        <span className="v">{fmtPrice(priceUsdOf(t))}</span>
-        <Chg v={t.priceChange24hPct} />
-      </div>
-      <div className="hs-card-stats">
-        <div><span className="l">Mcap</span><span className="v">{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</span></div>
-        <div><span className="l">Vol 24h</span><span className="v">{volUsd(t) > 0 ? fmtUsd(volUsd(t)) : "—"}</span></div>
-        <div><span className="l">Trades</span><span className="v">{t.txCount24h ?? 0}</span></div>
-        <div><span className="l">Age</span><span className="v">{t.createdAt ? timeAgo(t.createdAt) : "—"}</span></div>
-      </div>
-      {meta.description ? <p className="hs-card-desc">{meta.description}</p> : null}
-      <div className="hs-card-buy">
-        {QUICK_BUY_AMOUNTS.map((a) => (
-          <button key={a} className="hs-qb-amt big" disabled={busyAmt != null} onClick={() => buy(a)}>
-            {busyAmt === a ? "…" : `${a} ${env.nativeSymbol}`}
+    <div className="gm-page">
+      {/* Icon filter pills + expanding search, GMGN style */}
+      <div className="gm-bar">
+        {TABS.map((t) => (
+          <button key={t.id} className={`gm-pill ${tab === t.id ? "on" : ""}`} onClick={() => setTab(t.id)}>
+            {t.icon}
+            <span>{t.label}</span>
           </button>
         ))}
-      </div>
-      <Link to={`/token/${t.address}`} className="hs-card-open">Open market</Link>
-      <div className="hs-card-hint">Swipe for the next coin</div>
-    </article>
-  );
-}
-
-/** The right-hand market panel: identity, price block, ledger stats, story,
- *  quick buys and the door into the full market page. */
-function DetailPane({ t }: { t: TokenSummary }) {
-  const meta = (t.metadata ?? {}) as any;
-  const price = priceUsdOf(t);
-  const chg = t.priceChange24hPct;
-  const official = isOfficial(t.address);
-  const { buy, busyAmt } = useQuickBuy(t.address as `0x${string}`, t.symbol);
-  return (
-    <div className="hs-pane" key={t.address}>
-      <div className="hs-pane-id">
-        <Avatar t={t} size={46} />
-        <div className="hs-pane-name">
-          <h2>{t.name} {official ? <span className="hs-tag official">Official</span> : null}</h2>
-          <span>{t.symbol} / {pairSymbolOf(t)} · HyperEVM</span>
-        </div>
-        <Link to={`/token/${t.address}`} className="hs-pane-open">Open market</Link>
+        <span className="gm-sp" />
+        {searchOpen ? (
+          <label className="gm-search">
+            <KoiIcon name="search" size={14} />
+            <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Name, ticker, CA" type="search"
+              onBlur={() => { if (!query) setSearchOpen(false); }} />
+          </label>
+        ) : (
+          <button className="gm-pill icon" aria-label="Search" onClick={() => setSearchOpen(true)}>
+            <KoiIcon name="search" size={15} />
+          </button>
+        )}
       </div>
 
-      <div className="hs-pane-price">
-        <span className="v">{fmtPrice(price)}</span>
-        <Chg v={chg} />
-      </div>
-
-      <div className="hs-pane-grid">
-        <div><span className="l">Market cap</span><span className="v">{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</span></div>
-        <div><span className="l">24h volume</span><span className="v">{volUsd(t) > 0 ? fmtUsd(volUsd(t)) : "—"}</span></div>
-        <div><span className="l">24h trades</span><span className="v">{t.txCount24h ?? 0}</span></div>
-        <div><span className="l">Launched</span><span className="v">{t.createdAt ? timeAgo(t.createdAt) : "—"}</span></div>
-      </div>
-
-      {meta.description ? <p className="hs-pane-desc">{meta.description}</p> : null}
-
-      <div className="hs-pane-buy">
-        <span className="l">Quick buy ({env.nativeSymbol})</span>
-        <div className="r">
-          {QUICK_BUY_AMOUNTS.map((a) => (
-            <button key={a} className="hs-qb-amt big" disabled={busyAmt != null} onClick={() => buy(a)}>
-              {busyAmt === a ? "…" : a}
-            </button>
-          ))}
-          <Link to={`/token/${t.address}`} className="hs-pane-trade">Trade</Link>
-        </div>
-      </div>
-
-      <div className="hs-pane-fees">
-        Every trade pays 1%: <b>50% holders · 40% creator · 10% platform</b>
+      {/* Dense rows */}
+      <div className="gm-list">
+        {loading ? (
+          [...Array(9)].map((_, i) => <div key={i} className="gm-skel" />)
+        ) : feed.length === 0 ? (
+          <div className="gm-empty">
+            {debounced ? "No coin matches that." : "No coins in the water yet."} <Link to="/launch">Launch the first one</Link>.
+          </div>
+        ) : (
+          feed.map((t) => {
+            const chg = t.priceChange24hPct;
+            const has = chg != null && isFinite(chg);
+            const official = isOfficial(t.address);
+            return (
+              <Link to={`/token/${t.address}`} key={t.address} className="gm-row">
+                <Avatar t={t} />
+                <span className="gm-mid">
+                  <span className="gm-l1">
+                    <b>{t.symbol}</b>
+                    <span className="nm">{t.name}</span>
+                    {official ? <span className="gm-tag">OFFICIAL</span> : null}
+                    <span className="age"><KoiIcon name="clock" size={11} />{t.createdAt ? timeAgo(t.createdAt) : "—"}</span>
+                  </span>
+                  <span className="gm-l2">
+                    <span>V <b>{volUsd(t) > 0 ? fmtUsd(volUsd(t)) : "$0"}</b></span>
+                    <span>MC <b>{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</b></span>
+                    <span><KoiIcon name="group" size={11} /> <b>{t.txCount24h ?? 0}</b> tx</span>
+                    <span className="pair">{pairSymbolOf(t)}</span>
+                  </span>
+                </span>
+                <span className="gm-right">
+                  <span className="p">{fmtPrice(priceUsdOf(t))}</span>
+                  <span className={`c ${has ? (chg! >= 0 ? "up" : "down") : "flat"}`}>
+                    {has ? `${chg! >= 0 ? "+" : ""}${chg!.toFixed(1)}%` : "0.0%"}
+                  </span>
+                </span>
+                <BoltBuy token={t.address as `0x${string}`} symbol={t.symbol} />
+              </Link>
+            );
+          })
+        )}
       </div>
     </div>
   );
