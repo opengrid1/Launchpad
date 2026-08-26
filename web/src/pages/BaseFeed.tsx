@@ -14,42 +14,59 @@ import { INK_PREVIEW, PREVIEW, PREVIEW_ON } from "../lib/base/preview";
 
 const REWARDS_READ_ABI = [
   { type: "function", name: "totalRewardsDistributed", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "rewardToken", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+] as const;
+const ERC20_SYMBOL_ABI = [
+  { type: "function", name: "symbol", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
 ] as const;
 
-const fmtCoins = (n: number) => {
+const fmtAmt = (n: number) => {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString(undefined, { maximumFractionDigits: n < 1 ? 4 : 2 });
+  if (n >= 1) return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (n > 0) return n.toLocaleString(undefined, { maximumFractionDigits: 6 });
+  return "0";
 };
 
 /** Price per coin from market cap (fixed 1B supply on launchpad coins). */
 const coinPrice = (t: TokenSummary) => Number(t.marketCapUsd) / 1_000_000_000;
 
+/** Per-coin reward stats: coins skimmed to holders, plus the pair asset they
+ *  are paid out in (symbol + USD price) so the page can show the stock. */
+interface Stat { coins: number; stockSym: string; stockUsd: number }
+
 /**
- * squidpad Feed: analytics of rewards paid out to users. Every buy skims 0.5%
- * to holders automatically on chain (totalRewardsDistributed on each coin),
- * so this page reads that counter per coin and rolls it up.
+ * squidpad Analytics: rewards paid out to holders. Every buy skims 0.5% to
+ * holders automatically on chain (totalRewardsDistributed, in coins), which is
+ * paid out in the coin's pair asset (the stock). This reads each coin's
+ * counter and pair, then reports the payout in that stock.
  */
 function InkRewardsFeed({ list, preview }: { list: TokenSummary[]; preview: boolean }) {
-  const [dist, setDist] = useState<Record<string, number>>({});
+  const [stats, setStats] = useState<Record<string, Stat>>({});
 
   useEffect(() => {
     if (preview || list.length === 0) return;
     let alive = true;
+    const pc = (client as any).publicClient;
     const load = async () => {
       const entries = await Promise.all(
         list.map(async (t) => {
           try {
-            const v = await (client as any).publicClient.readContract({
-              address: t.address, abi: REWARDS_READ_ABI, functionName: "totalRewardsDistributed",
-            });
-            return [t.address, Number(v) / 1e18] as const;
+            const [coinsWei, stock] = await Promise.all([
+              pc.readContract({ address: t.address, abi: REWARDS_READ_ABI, functionName: "totalRewardsDistributed" }),
+              pc.readContract({ address: t.address, abi: REWARDS_READ_ABI, functionName: "rewardToken" }),
+            ]);
+            const [stockSym, stockUsd] = await Promise.all([
+              pc.readContract({ address: stock, abi: ERC20_SYMBOL_ABI, functionName: "symbol" }).then(String).catch(() => ""),
+              (client as any).assetUsdPrice(stock).catch(() => 0),
+            ]);
+            return [t.address, { coins: Number(coinsWei) / 1e18, stockSym, stockUsd: Number(stockUsd) }] as const;
           } catch {
-            return [t.address, 0] as const;
+            return [t.address, { coins: 0, stockSym: "", stockUsd: 0 }] as const;
           }
         }),
       );
-      if (alive) setDist(Object.fromEntries(entries));
+      if (alive) setStats(Object.fromEntries(entries));
     };
     load();
     const id = setInterval(load, 30_000);
@@ -57,31 +74,34 @@ function InkRewardsFeed({ list, preview }: { list: TokenSummary[]; preview: bool
   }, [list, preview]);
 
   // Preview fixtures have no contracts on chain: they carry a fixed
-  // previewRewardsUsd figure instead.
-  const coinsOf = (t: TokenSummary) => {
-    if (!preview) return dist[t.address] ?? 0;
+  // previewRewardsUsd figure and a placeholder pair symbol.
+  const statOf = (t: TokenSummary): Stat => {
+    if (!preview) return stats[t.address] ?? { coins: 0, stockSym: "", stockUsd: 0 };
     const p = coinPrice(t);
     const usd = Number((t as any).previewRewardsUsd ?? 0);
-    return p > 0 && usd > 0 ? usd / p : 0;
+    return { coins: p > 0 && usd > 0 ? usd / p : 0, stockSym: (t as any).previewRewardStock ?? "wNVDAx", stockUsd: 0 };
   };
 
   const rows = useMemo(
     () =>
       list
         .map((t) => {
-          const coins = coinsOf(t);
-          return { t, coins, usd: coins * coinPrice(t) };
+          const s = statOf(t);
+          const usd = s.coins * coinPrice(t);
+          // Reward paid to holders, denominated in the pair stock.
+          const stockAmt = s.stockUsd > 0 ? usd / s.stockUsd : 0;
+          return { t, usd, stockAmt, stockSym: s.stockSym };
         })
         .sort((a, b) => b.usd - a.usd),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [list, dist, preview],
+    [list, stats, preview],
   );
 
   const totalUsd = rows.reduce((s, r) => s + r.usd, 0);
   // Creator and platform accruals scale off the holder counter (0.4 and 0.1
   // per 0.5 skimmed to holders).
   const creatorUsd = totalUsd * 0.8;
-  const paying = rows.filter((r) => r.coins > 0).length;
+  const paying = rows.filter((r) => r.usd > 0).length;
   const top = rows.find((r) => r.usd > 0);
   const maxUsd = Math.max(top?.usd ?? 0, 1e-9);
 
@@ -112,7 +132,7 @@ function InkRewardsFeed({ list, preview }: { list: TokenSummary[]; preview: bool
 
       <div className="gm-feed-head">Distribution by coin</div>
       <div className="gm-anb">
-        {rows.map(({ t, coins, usd }, i) => {
+        {rows.map(({ t, usd, stockAmt, stockSym }, i) => {
           const share = totalUsd > 0 ? (usd / totalUsd) * 100 : 0;
           return (
             <Link to={`/token/${t.address}`} key={t.address} className="gm-anb-row">
@@ -123,8 +143,8 @@ function InkRewardsFeed({ list, preview }: { list: TokenSummary[]; preview: bool
                 <span className="track"><span className="fill" style={{ width: `${Math.max((usd / maxUsd) * 100, usd > 0 ? 2 : 0)}%` }} /></span>
               </span>
               <span className="amt">
-                <b>{coins > 0 ? `${fmtCoins(coins)} ${t.symbol}` : "0"}</b>
-                <span>{usd > 0 ? `${fmtUsd(usd)} · ${share >= 10 ? share.toFixed(0) : share.toFixed(1)}%` : "no buys yet"}</span>
+                <b>{usd > 0 && stockAmt > 0 && stockSym ? `${fmtAmt(stockAmt)} ${stockSym}` : usd > 0 ? fmtUsd(usd) : "0"}</b>
+                <span>{usd > 0 ? `${fmtUsd(usd)} to holders · ${share >= 10 ? share.toFixed(0) : share.toFixed(1)}%` : "no buys yet"}</span>
               </span>
             </Link>
           );
