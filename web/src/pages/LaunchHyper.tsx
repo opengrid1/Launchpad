@@ -138,11 +138,11 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
   };
 
   return (
-    <div className="kf kf-page kf-launch">
+    <div className={`kf kf-page kf-launch${IS_INK ? " lf" : ""}`}>
       <h1 className="kf-launch-h1">Launch a coin</h1>
       <p className="kf-launch-sub">
         {IS_INK
-          ? `Deploy a coin on Ink paired with ${env.nativeSymbol} or a tokenized xStock. One transaction opens a live Uniswap market and seeds the full supply. Every buy auto-pays 1% in the coin: 0.5% to holders, 0.4% to you, 0.1% platform. No harvesting, ever.`
+          ? "One transaction opens a live Uniswap market on Ink with the full supply. Every buy auto-pays 1% in the coin: 0.5% holders, 0.4% you, 0.1% platform."
           : `Deploy a coin on HyperEVM paired with ${env.nativeSymbol} or a tokenized stock. One transaction opens a live HyperSwap market and seeds the full supply. Every trade pays you, the creator, 1% forever.`}
       </p>
 
@@ -165,22 +165,22 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
       </div>}
 
       <form onSubmit={submit} className="kf-form">
-        <div className="kf-field">
+        <div className="kf-field lf-half">
           <label>Token Name</label>
           <input type="text" value={form.name} onChange={set("name")} placeholder="Enter token name..." maxLength={48}
             className={nameError ? "err" : undefined} aria-invalid={!!nameError} />
           {nameError ? <p className="kf-err-msg">{nameError}</p> : null}
         </div>
 
-        <div className="kf-field">
+        <div className="kf-field lf-half">
           <label>Ticker Symbol <i>(optional)</i></label>
           <input type="text" value={form.symbol} onChange={set("symbol")} placeholder="e.g. COIN" maxLength={12} />
-          <p className="hint">Auto-generated from the name if left blank.</p>
+          {IS_INK ? null : <p className="hint">Auto-generated from the name if left blank.</p>}
         </div>
 
         <div className="kf-field">
           <label>Description <i>(optional)</i></label>
-          <textarea value={form.description} onChange={set("description")} placeholder="What is this coin about?" maxLength={500} rows={3} />
+          <textarea value={form.description} onChange={set("description")} placeholder="What is this coin about?" maxLength={500} rows={IS_INK ? 2 : 3} />
         </div>
 
         <div className="kf-field">
@@ -206,7 +206,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
               </button>
             </div>
             <p className="kf-drop-hint">
-              PNG or JPG. Square looks best. Browse or drag and drop an image here.
+              {IS_INK ? "PNG or JPG, square looks best." : "PNG or JPG. Square looks best. Browse or drag and drop an image here."}
               {logoData ? <> · <button type="button" style={{ color: "var(--color-accent-ink)", background: "none", border: 0, cursor: "pointer", padding: 0 }} onClick={() => setLogoData("")}>Remove</button></> : null}
             </p>
           </div>
@@ -215,9 +215,9 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
         {/* Pool pairing — WHYPE or a tokenized stock; the creator earns its fees */}
         <div className="kf-field">
           <label>Pool Pairing <i>({env.nativeSymbol} + {STOCK_PAIRS.length} tokenized stocks)</i></label>
-          <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${env.nativeSymbol} or an xStock (NVDAX, SPYX, TSLAX…)`} />
-          <div className="kf-pairgrid" style={{ maxHeight: 360, overflowY: "auto" }}>
+          {IS_INK ? null : <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${env.nativeSymbol} or an xStock (NVDAX, SPYX, TSLAX…)`} />}
+          <div className="kf-pairgrid" style={IS_INK ? undefined : { maxHeight: 360, overflowY: "auto" }}>
             {filtered.map((p) => (
               <button
                 type="button"
@@ -231,11 +231,11 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
             ))}
             {filtered.length === 0 ? <div style={{ gridColumn: "1 / -1", padding: "12px 0", textAlign: "center", color: "var(--color-ink-3)" }}>No match.</div> : null}
           </div>
-          <p className="hint">
-            {IS_INK
-              ? "Every buy skims 1% of the coins automatically: 0.5% to holders, 0.4% to you, 0.1% platform. Recorded on the trade itself, claimable anytime."
-              : `Every trade pays 1% in ${selected.label} (${selected.sub}): 50% to holders, 40% to you, 10% platform.`}
-          </p>
+          {IS_INK ? null : (
+            <p className="hint">
+              Every trade pays 1% in {selected.label} ({selected.sub}): 50% to holders, 40% to you, 10% platform.
+            </p>
+          )}
           {selected.address !== WHYPE_PAIR.address ? (
             <div style={{
               marginTop: 8, border: "1px solid var(--color-edge)", background: "var(--color-panel-2)",
@@ -243,15 +243,12 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
             }}>
               {IS_INK ? (
                 <>
-                  <b style={{ color: "var(--color-accent-ink)" }}>How buyers get {selected.label}:</b> a{" "}
-                  {selected.label}-paired coin trades in {selected.label} ({selected.sub}) on Ink. Buyers
-                  swap into it on{" "}
+                  <b style={{ color: "var(--color-accent-ink)" }}>{selected.label}</b> is {selected.sub} on
+                  Ink. Buyers (and your dev buy) need {selected.label} first, from{" "}
                   <a href="https://app.uniswap.org" target="_blank" rel="noreferrer"
                     style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>
                     Uniswap on Ink
-                  </a>{" "}
-                  first. Same goes for your dev buy. Trading bots and most wallets only route{" "}
-                  {env.nativeSymbol} pairs, so pick {env.nativeSymbol} for the widest reach.
+                  </a>. {env.nativeSymbol} pairs get the widest wallet and bot reach.
                 </>
               ) : (
                 <>
@@ -272,8 +269,8 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
         </div>
 
         {/* Dev buy: an automatic first buy sent right after the pool opens */}
-        <div className="kf-field">
-          <label>Dev Buy <i>(optional)</i></label>
+        <div className={`kf-field${IS_INK ? " lf-half" : ""}`}>
+          <label>Dev Buy <i>(optional, {selected.label})</i></label>
           <input
             type="text"
             inputMode="decimal"
@@ -282,24 +279,36 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
             placeholder="0.0"
           />
           <p className="hint">
-            {selected.label} spent buying your own coin in the launch transaction itself, before anyone
-            else can trade{selected.address === WHYPE ? "" : ` (you need ${selected.label} in your wallet)`}.
+            {IS_INK
+              ? "Your own first buy, inside the launch transaction itself."
+              : `${selected.label} spent buying your own coin in the launch transaction itself, before anyone else can trade${selected.address === WHYPE ? "" : ` (you need ${selected.label} in your wallet)`}.`}
           </p>
         </div>
 
-        <div className="kf-field">
+        {IS_INK ? (
+          <div className="kf-field lf-half lf-facts">
+            <label>Terms</label>
+            <div className="rows">
+              <span><i>Supply</i><b>1,000,000,000</b></span>
+              <span><i>Start mcap</i><b>&asymp; $3,000</b></span>
+              <span><i>Buy fee</i><b>1% auto: 0.5 / 0.4 / 0.1</b></span>
+            </div>
+          </div>
+        ) : null}
+
+        <div className={`kf-field${IS_INK ? " lf-third" : ""}`}>
           <label>X URL <i>(optional)</i></label>
-          <input type="text" value={form.twitter} onChange={set("twitter")} placeholder="https://x.com/user or @handle" />
+          <input type="text" value={form.twitter} onChange={set("twitter")} placeholder={IS_INK ? "@handle" : "https://x.com/user or @handle"} />
         </div>
 
-        <div className="kf-field">
+        <div className={`kf-field${IS_INK ? " lf-third" : ""}`}>
           <label>Telegram <i>(optional)</i></label>
-          <input type="text" value={form.telegram} onChange={set("telegram")} placeholder="https://t.me/yourgroup or @handle" />
+          <input type="text" value={form.telegram} onChange={set("telegram")} placeholder={IS_INK ? "@group" : "https://t.me/yourgroup or @handle"} />
         </div>
 
-        <div className="kf-field">
+        <div className={`kf-field${IS_INK ? " lf-third" : ""}`}>
           <label>Website <i>(optional)</i></label>
-          <input type="text" value={form.website} onChange={set("website")} placeholder="https://yourproject.com" />
+          <input type="text" value={form.website} onChange={set("website")} placeholder={IS_INK ? "https://" : "https://yourproject.com"} />
         </div>
 
         <div className="kf-divider" />

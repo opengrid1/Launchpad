@@ -4571,6 +4571,62 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"][data-flavor="ink"] .hs-tabs button.on,
 :root[data-brand="hyper"][data-flavor="ink"] .hs-tag.official { color: #14092e; }
 :root[data-brand="hyper"][data-flavor="ink"] .hs-qb-open:hover { color: #14092e; }
+/* ---- squidpad launch form: compact terminal grid ---- */
+:root[data-brand="hyper"][data-flavor="ink"] .kf-launch.lf { max-width: 660px; margin: 0 auto; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-launch-h1 { font-family: var(--hs-mono); font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-launch-sub { font-size: 12px; line-height: 1.55; color: var(--hs-ink-2); margin: 4px 0 14px; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-form {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 13px 10px;
+  background: var(--hs-bg-2); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--hs-rule-2); padding: 16px 14px;
+}
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-field { grid-column: span 6; margin: 0; min-width: 0; }
+@media (min-width: 560px) {
+  :root[data-brand="hyper"][data-flavor="ink"] .lf .lf-half { grid-column: span 3; }
+  :root[data-brand="hyper"][data-flavor="ink"] .lf .lf-third { grid-column: span 2; }
+}
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-field label {
+  font-family: var(--hs-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--hs-ink-3); margin-bottom: 6px;
+}
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-field label i { font-size: 9px; letter-spacing: 0.08em; color: var(--hs-ink-3); opacity: 0.8; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-field input[type="text"],
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-field textarea {
+  font-size: 13.5px; padding: 10px 11px; border-radius: 8px; background: var(--hs-bg);
+  box-shadow: inset 0 0 0 1px var(--hs-rule-2);
+}
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-field input:focus,
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-field textarea:focus { box-shadow: inset 0 0 0 1.5px var(--hs-mint); }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-field .hint { font-size: 10.5px; color: var(--hs-ink-3); margin-top: 5px; line-height: 1.5; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-drop-zone { border-radius: 8px; border: 1px dashed var(--hs-rule-2); padding: 7px 9px; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-drop-zone input { font-size: 12.5px; padding: 6px 4px; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-drop-hint { font-size: 10px; color: var(--hs-ink-3); margin: 5px 2px 0; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-pairgrid { display: flex; flex-wrap: wrap; gap: 6px; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-pairgrid button {
+  flex: 0 0 auto; height: 32px; padding: 0 14px; border-radius: 7px; font-family: var(--hs-mono); font-size: 11.5px; font-weight: 700;
+  color: var(--hs-ink-2); box-shadow: inset 0 0 0 1px var(--hs-rule-2); background: var(--hs-bg);
+}
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-pairgrid button.on {
+  color: var(--hs-mint); box-shadow: inset 0 0 0 1.5px var(--hs-mint);
+  background: color-mix(in srgb, var(--hs-mint) 9%, transparent);
+}
+:root[data-brand="hyper"][data-flavor="ink"] .lf .lf-facts .rows {
+  border-radius: 8px; box-shadow: inset 0 0 0 1px var(--hs-rule-2); background: var(--hs-bg);
+  padding: 8px 11px; display: flex; flex-direction: column; gap: 5px;
+}
+:root[data-brand="hyper"][data-flavor="ink"] .lf .lf-facts .rows span { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .lf-facts .rows i { font-style: normal; font-family: var(--hs-mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hs-ink-3); }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .lf-facts .rows b { font-family: var(--hs-mono); font-size: 11px; font-weight: 700; color: var(--hs-ink); white-space: nowrap; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-divider { grid-column: 1 / -1; margin: 2px 0 0; border-color: var(--hs-rule); }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-btnrow { grid-column: 1 / -1; grid-template-columns: 1fr 2fr; gap: 8px; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-cancel { border-radius: 8px; font-family: var(--hs-mono); font-size: 12px; padding: 11px; box-shadow: inset 0 0 0 1px var(--hs-rule-2); color: var(--hs-ink-2); }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-btnrow .kf-submit { border-radius: 8px; font-family: var(--hs-mono); font-size: 13px; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-footnote { grid-column: 1 / -1; font-family: var(--hs-mono); font-size: 10px; letter-spacing: 0.05em; color: var(--hs-ink-3); margin: 0; text-align: center; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-err-msg { font-size: 11px; }
+
+/* The same form inside the mobile launch sheet keeps the compact skin. */
+:root[data-brand="hyper"][data-flavor="ink"] .kf-sheet .kf-launch { padding: 4px 2px 12px; }
+:root[data-brand="hyper"][data-flavor="ink"] .kf-sheet .lf .kf-form { box-shadow: none; padding: 6px 2px; background: transparent; }
+
 /* Glossy CTA buttons repaint violet (the hyper base coat is teal). */
 :root[data-brand="hyper"][data-flavor="ink"] button.bg-accent,
 :root[data-brand="hyper"][data-flavor="ink"] a.bg-accent {
