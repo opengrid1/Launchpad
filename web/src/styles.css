@@ -4570,6 +4570,23 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"][data-flavor="ink"] .hs-tabs button.on,
 :root[data-brand="hyper"][data-flavor="ink"] .hs-tag.official { color: #14092e; }
 :root[data-brand="hyper"][data-flavor="ink"] .hs-qb-open:hover { color: #14092e; }
+/* Glossy CTA buttons repaint violet (the hyper base coat is teal). */
+:root[data-brand="hyper"][data-flavor="ink"] button.bg-accent,
+:root[data-brand="hyper"][data-flavor="ink"] a.bg-accent {
+  background-color: #a78bfa;
+  background-image: linear-gradient(#c4b5fd, #a78bfa 55%, #8b5cf6);
+  border-color: #a78bfa8c;
+  box-shadow: inset 0 1px #ede9fe99, 0 0 0 1px #a78bfa47, 0 10px 30px -12px #a78bfa99;
+}
+:root[data-brand="hyper"][data-flavor="ink"] button.bg-accent:hover,
+:root[data-brand="hyper"][data-flavor="ink"] a.bg-accent:hover {
+  background-image: linear-gradient(#ddd3fe, #c4b5fd 55%, #a78bfa);
+  box-shadow: inset 0 1px #ede9feb3, 0 0 0 1px #a78bfa66, 0 14px 36px -12px #a78bfabf;
+}
+:root[data-brand="hyper"][data-flavor="ink"] button.bg-accent:active,
+:root[data-brand="hyper"][data-flavor="ink"] a.bg-accent:active {
+  box-shadow: inset 0 1px #ede9fe99, 0 0 0 1px #a78bfa59;
+}
 
 /* ---- hs app shell: sidebar + topbar + content ---- */
 :root[data-brand="hyper"] .hs-shell { min-height: 100vh; display: flex; }

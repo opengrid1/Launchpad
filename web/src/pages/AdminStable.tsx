@@ -3,7 +3,7 @@ import type { TokenSummary } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
 import { env, addresses } from "../lib/env";
-import { IS_HYPER } from "../lib/brand";
+import { IS_HYPER, IS_INK } from "../lib/brand";
 import { HYPER_STOCKS, WHYPE } from "../lib/hyper/stocks";
 import { StableV3Client } from "../lib/stable/client";
 import { fmtUsd, shortAddr, timeAgo } from "../lib/format";
@@ -17,6 +17,13 @@ const QUOTE_ABI = [{
 }] as const;
 
 const stable = client as unknown as StableV3Client;
+
+// squidpad coins: the 0.1% platform share accrues inside each coin and is
+// pushed to the factory's fee recipient by anyone via claimPlatformFees.
+const SQUID_PLATFORM_ABI = [
+  { type: "function", name: "platformFees", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "claimPlatformFees", stateMutability: "nonpayable", inputs: [], outputs: [{ type: "uint256" }] },
+] as const;
 
 /**
  * Operations console for the StableLaunchpadFactory owner. Access is enforced
@@ -35,12 +42,26 @@ export function AdminStable() {
   const [tokenAddr, setTokenAddr] = useState("");
   const [recoverAsset, setRecoverAsset] = useState("");
   const [recoverAmount, setRecoverAmount] = useState("");
+  const [plat, setPlat] = useState<Record<string, bigint>>({});
 
   const refresh = () => {
     stable.adminInfo().then(setInfo).catch(() => setInfo(null));
-    stable.getTokens({ sort: "new", limit: 100 }).then(setTokens).catch(() => setTokens([]));
-    if (IS_HYPER) {
-      const quoteRows = [{ ticker: env.nativeSymbol, address: WHYPE }, ...HYPER_STOCKS.map((s) => ({ ticker: s.ticker, address: s.address }))];
+    stable.getTokens({ sort: "new", limit: 100 }).then((ts) => {
+      setTokens(ts);
+      if (!IS_INK) return;
+      Promise.all(ts.map(async (t) => {
+        try {
+          const v = await stable.publicClient.readContract({
+            address: t.address as `0x${string}`, abi: SQUID_PLATFORM_ABI, functionName: "platformFees",
+          });
+          return [t.address, v as bigint] as const;
+        } catch { return [t.address, 0n] as const; }
+      })).then((rows) => setPlat(Object.fromEntries(rows)));
+    }).catch(() => setTokens([]));
+    if (IS_HYPER || IS_INK) {
+      const quoteRows = IS_HYPER
+        ? [{ ticker: env.nativeSymbol, address: WHYPE }, ...HYPER_STOCKS.map((s) => ({ ticker: s.ticker, address: s.address }))]
+        : [{ ticker: env.nativeSymbol, address: addresses.weth }];
       Promise.all(quoteRows.map(async (r) => {
         try {
           const [approved, price8] = (await stable.publicClient.readContract({
@@ -131,14 +152,19 @@ export function AdminStable() {
         </div>
       </Section>
 
-      {/* Stock pair registry: approve pairs and keep USD prices current */}
-      {IS_HYPER ? (
+      {/* Quote registry: approve pairs and keep USD prices current */}
+      {IS_HYPER || IS_INK ? (
         <Section
-          title="Stock pairs"
-          hint="Each pair needs an on-chain USD price so launches open at the right market cap. Update prices whenever they drift."
+          title={IS_HYPER ? "Stock pairs" : "ETH price"}
+          hint={IS_HYPER
+            ? "Each pair needs an on-chain USD price so launches open at the right market cap. Update prices whenever they drift."
+            : "The on-chain ETH price sets the starting market cap of new launches. Update it when it drifts."}
         >
           <div className="space-y-2">
-            {[{ ticker: env.nativeSymbol, name: "Wrapped native", address: WHYPE }, ...HYPER_STOCKS].map((s) => {
+            {(IS_HYPER
+              ? [{ ticker: env.nativeSymbol, name: "Wrapped native", address: WHYPE }, ...HYPER_STOCKS]
+              : [{ ticker: env.nativeSymbol, name: "Wrapped ETH", address: addresses.weth }]
+            ).map((s) => {
               const st = quoteStates[s.address];
               const cur = st && st.price8 > 0n ? Number(st.price8) / 1e8 : null;
               const input = quotePrices[s.address] ?? "";
@@ -167,7 +193,9 @@ export function AdminStable() {
       {/* Launched tokens with per-row actions */}
       <Section
         title={`Launched tokens${tokens.length ? ` · ${tokens.length}` : ""}`}
-        hint="Harvest splits accrued pool fees per the factory's deploy-time split (hyperstock: 50% holders, 40% creator, 10% platform). Collect unwinds the entire position to the owner. Irreversible for that market's liquidity."
+        hint={IS_INK
+          ? "Holder and creator rewards are automatic in-coin on every buy; nothing to harvest for them. Sweep pushes a coin's accrued 0.1% platform share to the fee recipient. Harvest collects the pool's LP fees per the deploy split. Collect unwinds the entire position to the owner and kills that market's liquidity. Never use it on a live coin."
+          : "Harvest splits accrued pool fees per the factory's deploy-time split (hyperstock: 50% holders, 40% creator, 10% platform). Collect unwinds the entire position to the owner. Irreversible for that market's liquidity."}
       >
         {tokens.length === 0 ? (
           <p className="text-[12.5px] text-ink-3">Loading tokens…</p>
@@ -199,6 +227,20 @@ export function AdminStable() {
                     <td className="mono py-2.5 pr-3 text-accent-ink">{fmtUsd(t.marketCapUsd)}</td>
                     <td className="py-2.5 pr-3 text-ink-3">{timeAgo(t.createdAt)}</td>
                     <td className="py-2.5 text-right">
+                      {IS_INK ? (
+                        <button disabled={busy !== null || !(plat[t.address] && plat[t.address] > 0n)}
+                          title={plat[t.address] != null ? `${(Number(plat[t.address]) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${t.symbol} accrued` : undefined}
+                          onClick={() => run(`Sweep ${t.symbol}`, async () => {
+                            const wc = (stable as any).wallet();
+                            return wc.writeContract({
+                              address: t.address as `0x${string}`, abi: SQUID_PLATFORM_ABI, functionName: "claimPlatformFees",
+                              args: [], chain: wc.chain, account: wc.account,
+                            });
+                          })}
+                          className="mr-1.5 rounded-md border border-edge bg-panel px-3 py-1.5 text-[11.5px] font-semibold text-ink disabled:opacity-40">
+                          Sweep
+                        </button>
+                      ) : null}
                       <button disabled={busy !== null}
                         onClick={() => run(`Harvest ${t.symbol}`, () => stable.adminCall("harvestFees", [t.address]))}
                         className="rounded-md bg-accent px-3 py-1.5 text-[11.5px] font-semibold text-accent-fg disabled:opacity-40">
