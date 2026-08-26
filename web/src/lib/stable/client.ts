@@ -648,6 +648,12 @@ export class StableV3Client {
     const stats = this.statsFromCache(core.address.toLowerCase());
     let metadata: Record<string, unknown> = {};
     try { metadata = JSON.parse(core.metadataURI || "{}"); } catch { /* opaque URI */ }
+    // Stamp the coin's real pair asset so the board/card shows the actual pair
+    // (a stock, or the native token) instead of falling back to native.
+    try {
+      const q = await this.resolveQuote(core.address);
+      if (q.addr && !/^0x0+$/.test(q.addr)) (metadata as Record<string, unknown>).pairAddress = q.addr;
+    } catch { /* keep whatever the metadata JSON carried */ }
     return {
       address: core.address,
       name: core.name,
