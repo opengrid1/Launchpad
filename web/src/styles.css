@@ -4609,8 +4609,8 @@ button.bg-accent:disabled {
   color: var(--hs-ink-2); box-shadow: inset 0 0 0 1px var(--hs-rule-2); background: var(--hs-bg);
 }
 :root[data-brand="hyper"][data-flavor="ink"] .lf .kf-pairgrid button.on {
-  color: var(--hs-mint); box-shadow: inset 0 0 0 1.5px var(--hs-mint);
-  background: color-mix(in srgb, var(--hs-mint) 9%, transparent);
+  color: var(--hs-ink); box-shadow: inset 0 0 0 1.5px var(--hs-ink);
+  background: color-mix(in srgb, var(--hs-ink) 8%, transparent);
 }
 :root[data-brand="hyper"][data-flavor="ink"] .lf .lf-facts .rows {
   border-radius: 8px; box-shadow: inset 0 0 0 1px var(--hs-rule-2); background: var(--hs-bg);
