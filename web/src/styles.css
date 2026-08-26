@@ -4862,3 +4862,32 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .gm-tk-cta .s:hover { background: var(--hs-red); color: #14092e; }
 
 :root[data-brand="hyper"] .gm-feed-head { padding: 16px 14px 6px; font-family: var(--hs-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--hs-ink-3); }
+
+/* ---- squidpad terminal skin for the trade form + solid red sell ---- */
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s { background: var(--hs-red); border: 0; color: #2b0a10; }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s:hover { filter: brightness(1.08); }
+
+:root[data-brand="hyper"][data-flavor="ink"] .kf-sheet { background: var(--hs-bg-2); border: 1px solid var(--hs-rule-2); border-bottom: 0; border-radius: 14px 14px 0 0; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-swaphead { padding: 4px 4px 10px; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-swaptitle { font-family: var(--hs-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--hs-ink-3); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-card { background: transparent; border: 0; padding: 0; box-shadow: none; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-seg { border: 1px solid var(--hs-rule-2); border-radius: 8px; overflow: hidden; padding: 0; background: transparent; gap: 0; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-seg button { border-radius: 0; font-family: var(--hs-mono); font-weight: 700; height: 38px; letter-spacing: 0.03em; text-transform: uppercase; font-size: 12px; background: transparent; color: var(--hs-ink-2); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-seg button.on { color: #14092e; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-seg button.on:first-child { background: var(--hs-mint); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-seg button.on:last-child { background: var(--hs-red); color: #2b0a10; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-stats { font-family: var(--hs-mono); font-size: 10.5px; letter-spacing: 0.04em; color: var(--hs-ink-3); border-bottom: 1px solid var(--hs-rule); padding-bottom: 9px; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-stats b, :root[data-brand="hyper"][data-flavor="ink"] .tp-stats span { color: var(--hs-ink-2); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-amtrow { border: 1px solid var(--hs-rule-2); border-radius: 8px; background: var(--hs-bg); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-amtlabel, :root[data-brand="hyper"][data-flavor="ink"] .tp-rowlabel { font-family: var(--hs-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hs-ink-3); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-amtinput { font-family: var(--hs-mono); font-weight: 700; color: var(--hs-ink); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-amtunit, :root[data-brand="hyper"][data-flavor="ink"] .tp-paysym { font-family: var(--hs-mono); color: var(--hs-mint); font-weight: 700; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-approx { font-family: var(--hs-mono); color: var(--hs-ink-3); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-preset { border: 1px solid color-mix(in srgb, var(--hs-mint) 40%, transparent); background: color-mix(in srgb, var(--hs-mint) 8%, transparent); color: var(--hs-mint); border-radius: 7px; font-family: var(--hs-mono); font-weight: 700; font-size: 11.5px; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-preset:hover { background: var(--hs-mint); color: #14092e; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-payrow, :root[data-brand="hyper"][data-flavor="ink"] .tp-recvrow, :root[data-brand="hyper"][data-flavor="ink"] .tp-slip { border-bottom: 1px solid var(--hs-rule); font-family: var(--hs-mono); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-recvval { font-family: var(--hs-mono); font-weight: 700; color: var(--hs-ink); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-cta { border-radius: 8px; font-family: var(--hs-mono); font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-cta.buy { background: var(--hs-mint); color: #14092e; }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-cta.sell { background: var(--hs-red); color: #2b0a10; }
