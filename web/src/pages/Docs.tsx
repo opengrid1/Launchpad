@@ -1,4 +1,4 @@
-import { BRAND, IS_HYPER } from "../lib/brand";
+import { BRAND, IS_HYPER, IS_INK } from "../lib/brand";
 import { env } from "../lib/env";
 import { addresses } from "../lib/env";
 import { v4Client } from "../lib/client";
@@ -12,8 +12,82 @@ const IS_RH = String(import.meta.env.VITE_PROTOCOL ?? "") === "rh-v4";
  */
 export function DocsPage() {
   if (IS_RH) return <CopairDocs />;
+  if (IS_INK) return <InkDocs />;
   if (IS_HYPER) return <HyperDocs />;
   return <LegacyDocs />;
+}
+
+/** squidpad docs: automatic per-trade rewards on Ink, no harvest step. */
+function InkDocs() {
+  const contracts: { name: string; address: string; note: string }[] = [
+    { name: "LaunchpadFactory", address: addresses.factory, note: "Launches, the pool registry; owns every LP position" },
+    { name: "TokenDeployer", address: addresses.tokenDeployer, note: "Deploys every coin with fixed rules" },
+    { name: "WETH", address: addresses.weth, note: "Wrapped ETH, the pool pair" },
+  ].filter((c) => c.address && !/^0x0+$/.test(c.address));
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+      <h1 className="text-[24px] font-bold tracking-tight text-ink">Docs</h1>
+      <p className="mt-1.5 text-sm text-ink-2">
+        {BRAND.name} is a launchpad on {env.chainName}. Every coin opens a real Uniswap market
+        and every rule below is enforced by the coin's own contract, not by policy.
+      </p>
+
+      <TermSection title="Automatic rewards" sub="No harvest, ever">
+        <p>
+          Every buy skims 1% of the bought coins inside the transfer itself and records the
+          split instantly, on the same trade. There is nothing to trigger and no harvest
+          button: by the time a buy confirms, holders, the creator and the platform have
+          already been credited. Sells are never skimmed, so selling always works.
+        </p>
+        <Facts
+          rows={[
+            ["Holders", "0.5% · pro-rata to everyone holding the coin"],
+            ["Creator", "0.4% · visible and claimable only by the creator"],
+            ["Platform", "0.1%"],
+            ["Paid in", "the coin itself"],
+          ]}
+        />
+        <p>
+          Your share accrues on-chain per wallet. Claim it whenever you like with
+          claimRewards, on the coin's page or under Rewards. Creators claim their fees with
+          claimCreatorFees from the coin's page; no one else can see or touch them.
+        </p>
+      </TermSection>
+
+      <TermSection title="Launching" sub="One transaction">
+        <p>
+          Launching is free, you pay only gas. One transaction deploys the coin, opens a
+          Uniswap pool against ETH, seeds the entire supply single-sided, and starts trading.
+          The LP position is locked in the factory forever, so liquidity can never be pulled.
+        </p>
+        <Facts
+          rows={[
+            ["Total supply", "1,000,000,000, fixed"],
+            ["Starting market cap", "≈ $3,000"],
+            ["Pool pairing", "ETH"],
+            ["Upfront liquidity", "None required"],
+          ]}
+        />
+      </TermSection>
+
+      {contracts.length > 0 ? (
+        <TermSection title="Contracts" sub={env.chainName}>
+          <dl className="space-y-2">
+            {contracts.map((c) => (
+              <div key={c.name} className="text-sm">
+                <dt className="font-semibold text-ink">{c.name}</dt>
+                <dd className="text-ink-2">
+                  <a href={explorerAddr(c.address) ?? undefined} target="_blank" rel="noreferrer" className="tnum text-accent-ink">{shortAddr(c.address)}</a>
+                  {" · "}{c.note}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </TermSection>
+      ) : null}
+    </div>
+  );
 }
 
 /** hyperstock docs: HyperSwap V3 creator-fee launchpad on HyperEVM. */

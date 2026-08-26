@@ -80,7 +80,7 @@ async function main() {
   }
 
   const factory = await (await ethers.getContractFactory("StableLaunchpadFactory")).deploy(
-    owner, feeRecipient, await tokenDeployer.getAddress(), V3_FACTORY, POSITION_MANAGER, SWAP_ROUTER, WHYPE, holderFeeBps, creatorFeeBps, DEPLOY_GAS,
+    owner, feeRecipient, await tokenDeployer.getAddress(), V3_FACTORY, POSITION_MANAGER, SWAP_ROUTER, WHYPE, holderFeeBps, creatorFeeBps, 10_000, DEPLOY_GAS,
   );
   await factory.waitForDeployment();
   const factoryAddr = await factory.getAddress();

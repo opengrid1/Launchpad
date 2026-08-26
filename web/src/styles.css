@@ -4863,6 +4863,31 @@ button.bg-accent:disabled {
 
 :root[data-brand="hyper"] .gm-feed-head { padding: 16px 14px 6px; font-family: var(--hs-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--hs-ink-3); }
 
+/* Creator fee card on the trading page: visible only to the coin's dev. */
+:root[data-brand="hyper"] .gm-dev-card {
+  margin: 10px 14px 0; padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--hs-mint) 45%, transparent); border-radius: 10px;
+  background: color-mix(in srgb, var(--hs-mint) 7%, transparent);
+}
+:root[data-brand="hyper"] .gm-dev-card .i { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+:root[data-brand="hyper"] .gm-dev-card .l { font-family: var(--hs-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--hs-ink-3); }
+:root[data-brand="hyper"] .gm-dev-card .v { font-family: var(--hs-mono); font-size: 16px; font-weight: 800; color: var(--hs-ink); }
+:root[data-brand="hyper"] .gm-dev-card .s { font-size: 11px; color: var(--hs-ink-3); line-height: 1.45; }
+:root[data-brand="hyper"] .gm-dev-card button {
+  margin-left: auto; flex: none; height: 34px; padding: 0 16px; border: 0; border-radius: 8px; cursor: pointer;
+  background: var(--hs-mint); color: #14092e; font-family: var(--hs-mono); font-size: 12px; font-weight: 800;
+}
+:root[data-brand="hyper"] .gm-dev-card button:disabled { opacity: 0.45; cursor: default; }
+
+/* Rewards analytics feed: totals strip + per-coin distribution rows. */
+:root[data-brand="hyper"] .gm-an { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 8px 14px 4px; }
+:root[data-brand="hyper"] .gm-an-tile { border: 1px solid var(--hs-rule-2); border-radius: 8px; padding: 10px 12px; background: var(--hs-bg-2); display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+:root[data-brand="hyper"] .gm-an-tile .l { font-family: var(--hs-mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hs-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root[data-brand="hyper"] .gm-an-tile .v { font-family: var(--hs-mono); font-size: 16px; font-weight: 800; color: var(--hs-ink); }
+:root[data-brand="hyper"] .gm-an-tile .v.g { color: var(--hs-green, var(--hs-mint)); }
+:root[data-brand="hyper"] .gm-an-note { padding: 4px 14px 8px; font-size: 11px; color: var(--hs-ink-3); line-height: 1.55; }
+:root[data-brand="hyper"] .gm-an-row .r-amt { font-family: var(--hs-mono); font-size: 12.5px; font-weight: 700; color: var(--hs-green, var(--hs-mint)); }
+
 /* ---- squidpad terminal skin for the trade form + solid red sell ---- */
 :root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s { background: var(--hs-red); border: 0; color: #2b0a10; }
 :root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s:hover { filter: brightness(1.08); }

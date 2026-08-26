@@ -142,7 +142,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
       <h1 className="kf-launch-h1">Launch a coin</h1>
       <p className="kf-launch-sub">
         {IS_INK
-          ? `Deploy a coin on Ink paired with ${env.nativeSymbol}. One transaction opens a live Uniswap market and seeds the full supply. Every trade pays you, the creator, 1% forever.`
+          ? `Deploy a coin on Ink paired with ${env.nativeSymbol}. One transaction opens a live Uniswap market and seeds the full supply. Every buy auto-pays 1% in the coin: 0.5% to holders, 0.4% to you, 0.1% platform. No harvesting, ever.`
           : `Deploy a coin on HyperEVM paired with ${env.nativeSymbol} or a tokenized stock. One transaction opens a live HyperSwap market and seeds the full supply. Every trade pays you, the creator, 1% forever.`}
       </p>
 
@@ -231,7 +231,11 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
             ))}
             {filtered.length === 0 ? <div style={{ gridColumn: "1 / -1", padding: "12px 0", textAlign: "center", color: "var(--color-ink-3)" }}>No match.</div> : null}
           </div>
-          <p className="hint">Every trade pays 1% in {selected.label} ({selected.sub}): 50% to holders, 40% to you, 10% platform.</p>
+          <p className="hint">
+            {IS_INK
+              ? "Every buy skims 1% of the coins automatically: 0.5% to holders, 0.4% to you, 0.1% platform. Recorded on the trade itself, claimable anytime."
+              : `Every trade pays 1% in ${selected.label} (${selected.sub}): 50% to holders, 40% to you, 10% platform.`}
+          </p>
           {selected.address !== WHYPE ? (
             <div style={{
               marginTop: 8, border: "1px solid var(--color-edge)", background: "var(--color-panel-2)",

@@ -33,16 +33,16 @@ async function main() {
 
   let tokenDeployer;
   if (process.env.TOKEN_DEPLOYER) {
-    tokenDeployer = await ethers.getContractAt("RewardTokenDeployer", process.env.TOKEN_DEPLOYER);
+    tokenDeployer = await ethers.getContractAt("SquidTokenDeployer", process.env.TOKEN_DEPLOYER);
     console.log("Reusing RewardTokenDeployer:", process.env.TOKEN_DEPLOYER);
   } else {
-    tokenDeployer = await (await ethers.getContractFactory("RewardTokenDeployer")).deploy();
+    tokenDeployer = await (await ethers.getContractFactory("SquidTokenDeployer")).deploy();
     await tokenDeployer.waitForDeployment();
-    console.log("RewardTokenDeployer:", await tokenDeployer.getAddress());
+    console.log("SquidTokenDeployer:", await tokenDeployer.getAddress());
   }
 
   const factory = await (await ethers.getContractFactory("StableLaunchpadFactory")).deploy(
-    owner, feeRecipient, await tokenDeployer.getAddress(), V3_FACTORY, POSITION_MANAGER, SWAP_ROUTER, WETH, holderFeeBps, creatorFeeBps,
+    owner, feeRecipient, await tokenDeployer.getAddress(), V3_FACTORY, POSITION_MANAGER, SWAP_ROUTER, WETH, holderFeeBps, creatorFeeBps, 500,
   );
   await factory.waitForDeployment();
   const factoryAddr = await factory.getAddress();
@@ -64,7 +64,7 @@ async function main() {
     deployer: signer.address, owner, feeRecipient,
     uniswapV3: { factory: V3_FACTORY, positionManager: POSITION_MANAGER, swapRouter: SWAP_ROUTER, weth: WETH },
     contracts: { tokenDeployer: await tokenDeployer.getAddress(), factory: factoryAddr },
-    config: { totalSupply: "1000000000e18", poolFeeTier: 10000, holderFeeBps, creatorFeeBps, platformFeeBps: 10000 - holderFeeBps - creatorFeeBps, defaultMarketCapUsd: 3000 },
+    config: { totalSupply: "1000000000e18", poolFeeTier: 500, holderFeeBps, creatorFeeBps, platformFeeBps: 10000 - holderFeeBps - creatorFeeBps, defaultMarketCapUsd: 3000 },
   };
   writeFileSync(join(__dirname, "../deployments/ink-launchpad.json"), JSON.stringify(out, null, 2));
   console.log("saved deployments/ink-launchpad.json");

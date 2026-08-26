@@ -7,6 +7,7 @@ import { formatUnits } from "viem";
 
 import { TokenLogo } from "../components/TokenLogo";
 import { client, v4Client } from "../lib/client";
+import { IS_INK } from "../lib/brand";
 import { addresses } from "../lib/env";
 import { fmtUsd } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
@@ -56,6 +57,13 @@ export function RewardsPage() {
           const info = await (v4Client as any).baseRewards(t.address as Address, address as Address);
           if (!info || info.claimable <= 0n) return;
           const key = String(info.stock).toLowerCase();
+          // squidpad coins pay rewards in the coin itself: price it off its
+          // own market cap (fixed 1B supply) instead of the quote registry.
+          if (key === t.address.toLowerCase()) {
+            const px = Number(t.marketCapUsd) / 1_000_000_000;
+            out.push({ t, claimable: info.claimable, stock: info.stock, sym: t.symbol, dec: 18, usd: Number(formatUnits(info.claimable, 18)) * px });
+            return;
+          }
           if (!meta.has(key)) {
             const isWhype = key === String(addresses.weth).toLowerCase();
             const [dec, sym, usd] = await Promise.all([
@@ -102,9 +110,9 @@ export function RewardsPage() {
     <div className="kf kf-page">
       <h1 className="kf-page-h1">Rewards</h1>
       <p style={{ margin: "0 18px 12px", fontSize: 13, lineHeight: 1.55, color: "var(--color-ink-2)" }}>
-        Hold any coin and 50% of every trade's 1% fee streams to holders in the coin's pair,
-        HYPE or the stock itself. Rewards accrue to your wallet on-chain and are claimed
-        manually, here or on the coin's page.
+        {IS_INK
+          ? "Hold any coin and 0.5% of every buy is paid to holders in the coin itself, automatically on the trade. Nothing to trigger: rewards land on-chain as people buy, and you claim them here or on the coin's page."
+          : "Hold any coin and 50% of every trade's 1% fee streams to holders in the coin's pair, HYPE or the stock itself. Rewards accrue to your wallet on-chain and are claimed manually, here or on the coin's page."}
       </p>
 
       {!address ? (
@@ -118,8 +126,11 @@ export function RewardsPage() {
         <div className="kf-empty">Checking your rewards…</div>
       ) : rows.length === 0 ? (
         <div className="kf-empty">
-          No claimable rewards yet. Buy and hold any <Link to="/">coin</Link>; your share
-          starts accruing as soon as its fees are harvested.
+          {IS_INK ? (
+            <>No claimable rewards yet. Buy and hold any <Link to="/">coin</Link>; your share accrues automatically on every buy after yours.</>
+          ) : (
+            <>No claimable rewards yet. Buy and hold any <Link to="/">coin</Link>; your share starts accruing as soon as its fees are harvested.</>
+          )}
         </div>
       ) : (
         <div style={{ margin: "0 16px 20px" }}>

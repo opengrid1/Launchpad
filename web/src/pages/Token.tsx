@@ -524,6 +524,65 @@ function DockBuys({ token, symbol }: { token: Address; symbol: string }) {
   );
 }
 
+const SQUID_FEES_ABI = [
+  { type: "function", name: "creatorFees", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "claimCreatorFees", stateMutability: "nonpayable", inputs: [], outputs: [{ type: "uint256" }] },
+] as const;
+
+/** Dev-only card: the creator's accrued fees on their coin, claimed with
+ *  claimCreatorFees. Invisible to everyone else. */
+function CreatorFeesCard({ token, creator, symbol }: { token: Address; creator: string; symbol: string }) {
+  const { address, isConnected, connectFirst } = useWallet();
+  const pushToast = useUi((s) => s.pushToast);
+  const [fees, setFees] = useState<bigint | null>(null);
+  const [busy, setBusy] = useState(false);
+  const isDev = !!address && address.toLowerCase() === creator?.toLowerCase();
+
+  useEffect(() => {
+    if (!isDev) return;
+    let alive = true;
+    const load = () =>
+      (v4Client as any).publicClient
+        .readContract({ address: token, abi: SQUID_FEES_ABI, functionName: "creatorFees" })
+        .then((v: bigint) => { if (alive) setFees(v); })
+        .catch(() => undefined);
+    load();
+    const id = setInterval(() => { if (!document.hidden) load(); }, 15_000);
+    return () => { alive = false; clearInterval(id); };
+  }, [isDev, token]);
+
+  if (!isDev) return null;
+  const amt = fees != null ? Number(fees) / 1e18 : null;
+
+  const claimFees = async () => {
+    setBusy(true);
+    try {
+      if (!isConnected) return connectFirst();
+      if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+      const wc = (v4Client as any).wallet();
+      const hash = await wc.writeContract({ address: token, abi: SQUID_FEES_ABI, functionName: "claimCreatorFees", args: [], chain: wc.chain, account: wc.account });
+      pushToast({ kind: "success", title: "Creator fees claimed", txHash: hash });
+      await (v4Client as any).publicClient.waitForTransactionReceipt({ hash });
+      setFees(0n);
+    } catch (err) {
+      pushToast({ kind: "error", title: "Claim failed", body: errorText(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="gm-dev-card">
+      <div className="i">
+        <span className="l">Your creator fees</span>
+        <span className="v">{amt != null ? `${amt.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${symbol}` : "…"}</span>
+        <span className="s">0.4% of every buy accrues here automatically. Only you can see and claim this.</span>
+      </div>
+      <button disabled={busy || !fees} onClick={claimFees}>{busy ? "Claiming…" : "Claim"}</button>
+    </div>
+  );
+}
+
 /**
  * squidpad trading page, GMGN terminal style: identity bar, a monospace price
  * hero with the day's move, ledger stat line, the live chart in a sharp
@@ -579,11 +638,7 @@ function GmTokenView({
       </div>
 
       {hasReward ? <RewardClaimCard coin={t.address as Address} fallbackSym={rewardSym} /> : null}
-      {CREATOR_MODE ? (
-        <div style={{ margin: "10px 14px 2px" }}>
-          <HarvestStrip token={t.address as Address} creator={t.creator} />
-        </div>
-      ) : null}
+      <CreatorFeesCard token={t.address as Address} creator={t.creator} symbol={t.symbol} />
 
       {/* Chart */}
       <div className="gm-tk-chart">

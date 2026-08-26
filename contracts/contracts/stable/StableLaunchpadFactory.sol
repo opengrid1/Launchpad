@@ -176,8 +176,10 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
 
     /// @notice Fixed supply of every launched token (1B, 18 decimals).
     uint256 public constant TOTAL_SUPPLY = 1_000_000_000e18;
-    /// @notice Fixed Uniswap V3 fee tier — 1% — for every launch pool.
-    uint24 public constant POOL_FEE_TIER = 10_000;
+    /// @notice Uniswap V3 fee tier used for every launch pool, set at deploy
+    ///         (10000 = 1% where pool fees fund the split; 500 = 0.05% where
+    ///         the token itself skims rewards per trade).
+    uint24 public immutable POOL_FEE_TIER;
     /// @notice Holder share of harvested QUOTE-side pool fees, in bps. Paid
     ///         into the token's dividend tracker in the coin's pair asset.
     uint16 public immutable HOLDER_FEE_BPS;
@@ -242,7 +244,8 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         ISwapRouter swapRouter_,
         address wrappedNative_,
         uint16 holderFeeBps_,
-        uint16 creatorFeeBps_
+        uint16 creatorFeeBps_,
+        uint24 poolFeeTier_
     ) Ownable(owner_) {
         if (
             feeRecipient_ == address(0) ||
@@ -253,6 +256,8 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
             wrappedNative_ == address(0)
         ) revert ZeroAddress();
         if (creatorFeeBps_ == 0 || uint256(holderFeeBps_) + creatorFeeBps_ > 10_000) revert InvalidParams();
+        if (poolFeeTier_ == 0) revert InvalidParams();
+        POOL_FEE_TIER = poolFeeTier_;
         HOLDER_FEE_BPS = holderFeeBps_;
         CREATOR_FEE_BPS = creatorFeeBps_;
         PLATFORM_FEE_BPS = 10_000 - holderFeeBps_ - creatorFeeBps_;
