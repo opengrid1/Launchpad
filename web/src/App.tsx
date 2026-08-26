@@ -108,7 +108,16 @@ export default function App() {
                   {(IS_STOCK_BOARD || IS_HYPER || IS_INK) && (
                     <>
                       <Route path="/leaderboard" element={<BaseLeaderboardPage />} />
-                      <Route path="/feed" element={<BaseFeedPage />} />
+                      {/* squidpad's rewards analytics lives at /analytics; the
+                          old /feed URL redirects. Other flavors keep /feed. */}
+                      {IS_INK ? (
+                        <>
+                          <Route path="/analytics" element={<BaseFeedPage />} />
+                          <Route path="/feed" element={<Navigate to="/analytics" replace />} />
+                        </>
+                      ) : (
+                        <Route path="/feed" element={<BaseFeedPage />} />
+                      )}
                       <Route path="/search" element={<BaseSearchPage />} />
                     </>
                   )}
