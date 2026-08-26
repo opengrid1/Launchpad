@@ -14,7 +14,7 @@ import { volUsd } from "../components/market/util";
 import { KoiIcon } from "../components/base/KoiIcon";
 import { HyperMark } from "../components/HyperMark";
 import { DEFAULT_TOKEN_LOGO } from "../lib/hyper/defaultLogo";
-import { PREVIEW_ON } from "../lib/base/preview";
+import { INK_PREVIEW, PREVIEW_ON } from "../lib/base/preview";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
@@ -83,26 +83,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "top", label: "Top", icon: <KoiIcon name="trophy" size={14} /> },
 ];
 
-// Design-preview fixtures for the empty pre-launch feed (VITE_PREVIEW=1).
-const pv = (name: string, symbol: string, mcap: number, chg: number, vol: number, tx: number, age: number): TokenSummary =>
-  ({
-    address: `0x${symbol.toLowerCase()}${"0".repeat(40)}`.slice(0, 42),
-    name, symbol, creator: "0x0000000000000000000000000000000000000000",
-    marketCapUsd: String(mcap), priceChange24hPct: chg, txCount24h: tx,
-    createdAt: Math.floor(Date.now() / 1000) - age,
-    volume24hWei: String(BigInt(Math.round(vol)) * 10n ** 18n),
-    volumeTotalWei: String(BigInt(Math.round(vol * 3)) * 10n ** 18n),
-    metadata: { pair: env.nativeSymbol },
-  }) as unknown as TokenSummary;
-const INK_PREVIEW: TokenSummary[] = [
-  pv("Inkling", "INKY", 4200, 34.2, 1800, 208, 120),
-  pv("Deep Squid", "DEEP", 3100, 12.4, 920, 41, 660),
-  pv("Kraken Cat", "KCAT", 2800, -4.1, 640, 77, 1560),
-  pv("Tentacle", "TENT", 2600, 2.2, 310, 22, 3600),
-  pv("Abyss", "ABYS", 3000, -1.8, 150, 9, 7200),
-  pv("Blue Ring", "RING", 3500, 8.7, 95, 12, 14400),
-  pv("Lanternfish", "GLOW", 2900, 1.1, 61, 6, 21600),
-];
+// Design-preview fixtures live in lib/base/preview (shared with Analytics).
 
 const pairSymbolOf = (t: TokenSummary): string => {
   const meta = t.metadata as any;

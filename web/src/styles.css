@@ -4879,14 +4879,41 @@ button.bg-accent:disabled {
 }
 :root[data-brand="hyper"] .gm-dev-card button:disabled { opacity: 0.45; cursor: default; }
 
-/* Rewards analytics feed: totals strip + per-coin distribution rows. */
-:root[data-brand="hyper"] .gm-an { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 8px 14px 4px; }
-:root[data-brand="hyper"] .gm-an-tile { border: 1px solid var(--hs-rule-2); border-radius: 8px; padding: 10px 12px; background: var(--hs-bg-2); display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+/* Rewards analytics dashboard: stat tiles, fee-split bar, per-coin bars. */
+:root[data-brand="hyper"] .gm-an { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px 14px 4px; }
+@media (min-width: 720px) { :root[data-brand="hyper"] .gm-an { grid-template-columns: repeat(4, 1fr); } }
+:root[data-brand="hyper"] .gm-an-tile { border: 1px solid var(--hs-rule-2); border-radius: 8px; padding: 11px 12px; background: var(--hs-bg-2); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 :root[data-brand="hyper"] .gm-an-tile .l { font-family: var(--hs-mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hs-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-:root[data-brand="hyper"] .gm-an-tile .v { font-family: var(--hs-mono); font-size: 16px; font-weight: 800; color: var(--hs-ink); }
+:root[data-brand="hyper"] .gm-an-tile .v { font-family: var(--hs-mono); font-size: 17px; font-weight: 800; color: var(--hs-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root[data-brand="hyper"] .gm-an-tile .v i { font-style: normal; font-size: 11px; font-weight: 600; color: var(--hs-ink-3); }
 :root[data-brand="hyper"] .gm-an-tile .v.g { color: var(--hs-green, var(--hs-mint)); }
-:root[data-brand="hyper"] .gm-an-note { padding: 4px 14px 8px; font-size: 11px; color: var(--hs-ink-3); line-height: 1.55; }
-:root[data-brand="hyper"] .gm-an-row .r-amt { font-family: var(--hs-mono); font-size: 12.5px; font-weight: 700; color: var(--hs-green, var(--hs-mint)); }
+
+:root[data-brand="hyper"] .gm-an-split { margin: 8px 14px 2px; border: 1px solid var(--hs-rule-2); border-radius: 8px; background: var(--hs-bg-2); padding: 11px 12px; }
+:root[data-brand="hyper"] .gm-an-split .bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; }
+:root[data-brand="hyper"] .gm-an-split .bar .h { background: var(--hs-green, var(--hs-mint)); }
+:root[data-brand="hyper"] .gm-an-split .bar .c { background: var(--hs-mint); }
+:root[data-brand="hyper"] .gm-an-split .bar .p { background: var(--hs-ink-3); }
+:root[data-brand="hyper"] .gm-an-split .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 12px; margin-top: 8px; font-family: var(--hs-mono); font-size: 10px; color: var(--hs-ink-2); }
+:root[data-brand="hyper"] .gm-an-split .legend span { display: inline-flex; align-items: center; gap: 5px; }
+:root[data-brand="hyper"] .gm-an-split .legend i { width: 7px; height: 7px; border-radius: 2px; }
+:root[data-brand="hyper"] .gm-an-split .legend i.h { background: var(--hs-green, var(--hs-mint)); }
+:root[data-brand="hyper"] .gm-an-split .legend i.c { background: var(--hs-mint); }
+:root[data-brand="hyper"] .gm-an-split .legend i.p { background: var(--hs-ink-3); }
+:root[data-brand="hyper"] .gm-an-split .legend b { font-weight: 500; color: var(--hs-ink-3); margin-left: auto; }
+
+:root[data-brand="hyper"] .gm-anb { padding: 0 6px 24px; }
+:root[data-brand="hyper"] .gm-anb-row { display: grid; grid-template-columns: 20px 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 8px; border-bottom: 1px solid var(--hs-rule); text-decoration: none; border-radius: 6px; }
+:root[data-brand="hyper"] .gm-anb-row:hover { background: color-mix(in srgb, var(--hs-mint) 5%, transparent); }
+:root[data-brand="hyper"] .gm-anb-row .rk { font-family: var(--hs-mono); font-size: 10.5px; font-weight: 700; color: var(--hs-ink-3); text-align: center; }
+:root[data-brand="hyper"] .gm-anb-row .mid { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+:root[data-brand="hyper"] .gm-anb-row .l1 { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+:root[data-brand="hyper"] .gm-anb-row .l1 b { color: var(--hs-ink); font-size: 13px; font-weight: 800; }
+:root[data-brand="hyper"] .gm-anb-row .l1 .nm { color: var(--hs-ink-3); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root[data-brand="hyper"] .gm-anb-row .track { height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--hs-ink-3) 18%, transparent); overflow: hidden; }
+:root[data-brand="hyper"] .gm-anb-row .fill { display: block; height: 100%; border-radius: 3px; background: var(--hs-green, var(--hs-mint)); }
+:root[data-brand="hyper"] .gm-anb-row .amt { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+:root[data-brand="hyper"] .gm-anb-row .amt b { font-family: var(--hs-mono); font-size: 12.5px; font-weight: 700; color: var(--hs-green, var(--hs-mint)); white-space: nowrap; }
+:root[data-brand="hyper"] .gm-anb-row .amt span { font-family: var(--hs-mono); font-size: 10px; color: var(--hs-ink-3); white-space: nowrap; }
 
 /* ---- squidpad terminal skin for the trade form + solid red sell ---- */
 :root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s { background: var(--hs-red); border: 0; color: #2b0a10; }

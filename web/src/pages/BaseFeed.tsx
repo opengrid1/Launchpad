@@ -10,7 +10,7 @@ import { env } from "../lib/env";
 import { fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { isHidden, isImpersonator } from "../lib/hiddenTokens";
 import { volUsd } from "../components/market/util";
-import { PREVIEW, PREVIEW_ON } from "../lib/base/preview";
+import { INK_PREVIEW, PREVIEW, PREVIEW_ON } from "../lib/base/preview";
 
 const REWARDS_READ_ABI = [
   { type: "function", name: "totalRewardsDistributed", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
@@ -56,13 +56,13 @@ function InkRewardsFeed({ list, preview }: { list: TokenSummary[]; preview: bool
     return () => { alive = false; clearInterval(id); };
   }, [list, preview]);
 
-  // Preview fixtures have no contracts on chain: derive a plausible figure
-  // from volume (0.5% of buys, roughly half the printed volume).
+  // Preview fixtures have no contracts on chain: they carry a fixed
+  // previewRewardsUsd figure instead.
   const coinsOf = (t: TokenSummary) => {
     if (!preview) return dist[t.address] ?? 0;
     const p = coinPrice(t);
-    const v = volUsd(t);
-    return p > 0 && v > 0 ? (v * 0.0025) / p : 0;
+    const usd = Number((t as any).previewRewardsUsd ?? 0);
+    return p > 0 && usd > 0 ? usd / p : 0;
   };
 
   const rows = useMemo(
@@ -78,37 +78,58 @@ function InkRewardsFeed({ list, preview }: { list: TokenSummary[]; preview: bool
   );
 
   const totalUsd = rows.reduce((s, r) => s + r.usd, 0);
+  // Creator and platform accruals scale off the holder counter (0.4 and 0.1
+  // per 0.5 skimmed to holders).
+  const creatorUsd = totalUsd * 0.8;
   const paying = rows.filter((r) => r.coins > 0).length;
+  const top = rows.find((r) => r.usd > 0);
+  const maxUsd = Math.max(top?.usd ?? 0, 1e-9);
 
   return (
     <div className="gm-page">
-      <div className="gm-feed-head">Rewards paid to holders</div>
+      <div className="gm-feed-head">Rewards analytics</div>
+
       <div className="gm-an">
-        <div className="gm-an-tile"><span className="l">Distributed</span><span className="v g">{totalUsd > 0 ? fmtUsd(totalUsd) : "$0"}</span></div>
-        <div className="gm-an-tile"><span className="l">Coins paying</span><span className="v">{paying}</span></div>
-        <div className="gm-an-tile"><span className="l">Holder share</span><span className="v">0.5%/buy</span></div>
+        <div className="gm-an-tile"><span className="l">Paid to holders</span><span className="v g">{totalUsd > 0 ? fmtUsd(totalUsd) : "$0"}</span></div>
+        <div className="gm-an-tile"><span className="l">Paid to creators</span><span className="v">{creatorUsd > 0 ? fmtUsd(creatorUsd) : "$0"}</span></div>
+        <div className="gm-an-tile"><span className="l">Coins paying</span><span className="v">{paying}<i>/{rows.length}</i></span></div>
+        <div className="gm-an-tile"><span className="l">Top payer</span><span className="v">{top ? top.t.symbol : "—"}</span></div>
       </div>
-      <div className="gm-an-note">
-        Every buy pays holders automatically: 0.5% of the coins go to everyone holding, 0.4% to the creator and 0.1% to the platform. No harvesting, no waiting. Claim yours on any coin page or in Rewards.
+
+      <div className="gm-an-split">
+        <div className="bar">
+          <span className="h" style={{ width: "50%" }} />
+          <span className="c" style={{ width: "40%" }} />
+          <span className="p" style={{ width: "10%" }} />
+        </div>
+        <div className="legend">
+          <span><i className="h" />Holders 0.5%</span>
+          <span><i className="c" />Creator 0.4%</span>
+          <span><i className="p" />Platform 0.1%</span>
+          <b>of every buy, recorded on the trade itself</b>
+        </div>
       </div>
-      <div className="gm-list">
-        {rows.map(({ t, coins, usd }) => (
-          <Link to={`/token/${t.address}`} key={t.address} className="gm-row gm-an-row">
-            <TokenLogo token={t} size={42} />
-            <span className="gm-mid">
-              <span className="gm-l1"><b>{t.symbol}</b><span className="nm">{t.name}</span></span>
-              <span className="gm-l2">
-                <span>by <b>{shortAddr(t.creator)}</b></span>
-                <span>{timeAgo(t.createdAt)}</span>
+
+      <div className="gm-feed-head">Distribution by coin</div>
+      <div className="gm-anb">
+        {rows.map(({ t, coins, usd }, i) => {
+          const share = totalUsd > 0 ? (usd / totalUsd) * 100 : 0;
+          return (
+            <Link to={`/token/${t.address}`} key={t.address} className="gm-anb-row">
+              <span className="rk">{i + 1}</span>
+              <TokenLogo token={t} size={34} />
+              <span className="mid">
+                <span className="l1"><b>{t.symbol}</b><span className="nm">{t.name}</span></span>
+                <span className="track"><span className="fill" style={{ width: `${Math.max((usd / maxUsd) * 100, usd > 0 ? 2 : 0)}%` }} /></span>
               </span>
-            </span>
-            <span className="gm-right">
-              <span className="r-amt">{coins > 0 ? `${fmtCoins(coins)} ${t.symbol}` : `0 ${t.symbol}`}</span>
-              <span className="c flat">{usd > 0 ? `${fmtUsd(usd)} to holders` : "no buys yet"}</span>
-            </span>
-          </Link>
-        ))}
-        {rows.length === 0 && <div className="gm-empty">No coins yet. Rewards show up here with the first buys.</div>}
+              <span className="amt">
+                <b>{coins > 0 ? `${fmtCoins(coins)} ${t.symbol}` : "0"}</b>
+                <span>{usd > 0 ? `${fmtUsd(usd)} · ${share >= 10 ? share.toFixed(0) : share.toFixed(1)}%` : "no buys yet"}</span>
+              </span>
+            </Link>
+          );
+        })}
+        {rows.length === 0 && <div className="gm-empty">No coins yet. Analytics light up with the first buys.</div>}
       </div>
     </div>
   );
@@ -121,10 +142,11 @@ export function BaseFeed() {
   const list = useMemo(() => {
     if (env.hideTokens) return [] as TokenSummary[];
     const l = (byNew ?? []).filter((t) => !isHidden(t.address) && !isImpersonator(t));
-    return l.length === 0 && PREVIEW_ON ? PREVIEW : l;
+    if (l.length === 0 && PREVIEW_ON) return IS_INK ? INK_PREVIEW : PREVIEW;
+    return l;
   }, [byNew]);
 
-  if (IS_INK) return <InkRewardsFeed list={list} preview={list === PREVIEW} />;
+  if (IS_INK) return <InkRewardsFeed list={list} preview={list === INK_PREVIEW} />;
 
   return (
     <div className="kf kf-page">

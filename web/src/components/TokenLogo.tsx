@@ -1,7 +1,10 @@
 import { useState } from "react";
 import type { TokenSummary } from "@launchpad/sdk";
 
-import { IS_HYPER } from "../lib/brand";
+import { IS_HYPER, IS_INK } from "../lib/brand";
+
+// squidpad rides the hyper look: its own default logo and chain mark.
+const HS_LOOK = IS_HYPER || IS_INK;
 import { DEFAULT_TOKEN_LOGO } from "../lib/hyper/defaultLogo";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 import { HyperMark } from "./HyperMark";
@@ -33,7 +36,7 @@ export function TokenLogo({ token, size = 40 }: { token: TokenSummary; size?: nu
           className="h-full w-full object-cover"
           onError={() => setFailed(true)}
         />
-      ) : IS_HYPER ? (
+      ) : HS_LOOK ? (
         <img src={DEFAULT_TOKEN_LOGO} alt="" width={size} height={size} className="h-full w-full object-cover" />
       ) : (
         <QuiverMark />
@@ -48,7 +51,7 @@ export function TokenLogo({ token, size = 40 }: { token: TokenSummary; size?: nu
     <span className="kf-logo-wrap" style={{ width: size, height: size }}>
       {inner}
       <span className="kf-badge">
-        {IS_HYPER ? (
+        {HS_LOOK ? (
           <HyperMark />
         ) : (
           <svg viewBox="0 0 40 40" aria-hidden>

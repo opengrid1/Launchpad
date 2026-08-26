@@ -18,9 +18,9 @@ const [MARK_A, MARK_B] = IS_INK ? ["squid", "pad"] : ["hyper", "stock"];
 
 const NAV: { to: string; end?: boolean; label: string; icon: ReactNode }[] = [
   { to: "/", end: true, label: "Markets", icon: <KoiIcon name="bar-chart" size={17} /> },
-  { to: "/feed", label: "Feed", icon: <KoiIcon name="zap" size={17} /> },
+  { to: "/feed", label: IS_INK ? "Analytics" : "Feed", icon: <KoiIcon name={IS_INK ? "trending-up" : "zap"} size={17} /> },
   { to: "/rewards", label: "Rewards", icon: <KoiIcon name="trophy" size={17} /> },
-  { to: "/leaderboard", label: "Leaderboard", icon: <KoiIcon name="trending-up" size={17} /> },
+  { to: "/leaderboard", label: "Leaderboard", icon: <KoiIcon name={IS_INK ? "flame" : "trending-up"} size={17} /> },
   { to: "/profile", label: "Portfolio", icon: <KoiIcon name="wallet-alt" size={17} /> },
   { to: "/docs", label: "Docs", icon: <KoiIcon name="menu" size={17} /> },
 ];
@@ -125,7 +125,7 @@ export function HsShell({ children }: { children: ReactNode }) {
       {IS_INK ? (
         <nav className="hs-tabbar" aria-label="Primary">
           <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="bar-chart" size={18} /><span>Markets</span></NavLink>
-          <NavLink to="/feed" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="zap" size={18} /><span>Feed</span></NavLink>
+          <NavLink to="/feed" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trending-up" size={18} /><span>Analytics</span></NavLink>
           <button className="hs-tabbar-launch" onClick={openLaunch} aria-label="Launch"><KoiIcon name="rocket" size={19} /></button>
           <NavLink to="/rewards" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trophy" size={18} /><span>Rewards</span></NavLink>
           <NavLink to="/profile" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="wallet-alt" size={18} /><span>Wallet</span></NavLink>
