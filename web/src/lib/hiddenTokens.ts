@@ -57,6 +57,8 @@ const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   "8453:0xb20000000000000000000002da484bdfa643272a", // KOIT (test launch)
   "8453:0xb20000000000000000000041e15f9275f02f383c", // KOIT (test launch)
   "8453:0xb200000000000000000000838e5d8f9ca4c6fffe", // STONK (name typo "basestonk.fun"; relaunched)
+  // Ink (57073), squidpad
+  "57073:0xcbab433f6fb5b0b71a8d33a4d6cbae957e55eb90", // SQUID (wNVDAx-paired; relaunched ETH-paired)
 ]);
 
 export function isHidden(address: string): boolean {
