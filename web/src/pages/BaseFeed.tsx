@@ -5,6 +5,7 @@ import type { TokenSummary } from "@launchpad/sdk";
 
 import { TokenLogo } from "../components/TokenLogo";
 import { client } from "../lib/client";
+import { IS_INK } from "../lib/brand";
 import { env } from "../lib/env";
 import { fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { isHidden, isImpersonator } from "../lib/hiddenTokens";
@@ -20,6 +21,33 @@ export function BaseFeed() {
     const l = (byNew ?? []).filter((t) => !isHidden(t.address) && !isImpersonator(t));
     return l.length === 0 && PREVIEW_ON ? PREVIEW : l;
   }, [byNew]);
+
+  if (IS_INK) {
+    return (
+      <div className="gm-page">
+        <div className="gm-feed-head">Launch feed</div>
+        <div className="gm-list">
+          {list.map((t) => (
+            <Link to={`/token/${t.address}`} key={t.address} className="gm-row">
+              <TokenLogo token={t} size={42} />
+              <span className="gm-mid">
+                <span className="gm-l1"><b>{t.symbol}</b><span className="nm">{t.name}</span></span>
+                <span className="gm-l2">
+                  <span>by <b>{shortAddr(t.creator)}</b></span>
+                  <span>{timeAgo(t.createdAt)}</span>
+                </span>
+              </span>
+              <span className="gm-right">
+                <span className="p">{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</span>
+                <span className="c flat">{volUsd(t) > 0 ? fmtUsd(volUsd(t)) + " vol" : "new"}</span>
+              </span>
+            </Link>
+          ))}
+          {list.length === 0 && <div className="gm-empty">No launches yet. Be the first.</div>}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="kf kf-page">

@@ -4815,3 +4815,50 @@ button.bg-accent:disabled {
 @media (max-width: 1023px) {
   :root[data-brand="hyper"][data-flavor="ink"] .hs-top .hs-launch { display: none; }
 }
+
+/* ---- gm token page (squidpad trading interface) ---- */
+:root[data-brand="hyper"] .gm-tk { max-width: 860px; margin: 0 auto; padding-bottom: 130px; }
+:root[data-brand="hyper"] .gm-tk-top { display: flex; align-items: center; gap: 9px; padding: 12px 14px 8px; }
+:root[data-brand="hyper"] .gm-tk-back { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--hs-rule); border-radius: 8px; background: transparent; color: var(--hs-ink-2); cursor: pointer; flex: none; }
+:root[data-brand="hyper"] .gm-tk-back svg { width: 16px; height: 16px; }
+:root[data-brand="hyper"] .gm-tk-id { display: flex; flex-direction: column; min-width: 0; }
+:root[data-brand="hyper"] .gm-tk-id b { color: var(--hs-ink); font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
+:root[data-brand="hyper"] .gm-tk-id i { font-style: normal; color: var(--hs-ink-3); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root[data-brand="hyper"] .gm-tk-right { margin-left: auto; display: flex; align-items: center; gap: 7px; }
+:root[data-brand="hyper"] .gm-tk-hero { display: flex; align-items: baseline; gap: 12px; padding: 6px 16px 0; }
+:root[data-brand="hyper"] .gm-tk-hero .p { font-family: var(--hs-mono); font-size: 34px; font-weight: 700; letter-spacing: -0.03em; color: var(--hs-ink); }
+:root[data-brand="hyper"] .gm-tk-hero .c { font-family: var(--hs-mono); font-size: 13px; font-weight: 700; }
+:root[data-brand="hyper"] .gm-tk-hero .c i { font-style: normal; color: var(--hs-ink-3); font-weight: 500; font-size: 10px; }
+:root[data-brand="hyper"] .gm-tk-hero .c.up { color: var(--hs-mint-deep); }
+:root[data-brand="hyper"] .gm-tk-hero .c.down { color: var(--hs-red); }
+:root[data-brand="hyper"] .gm-tk-hero .c.flat { color: var(--hs-ink-3); }
+:root[data-brand="hyper"] .gm-tk-line { display: flex; gap: 14px; padding: 6px 16px 10px; font-family: var(--hs-mono); font-size: 10px; letter-spacing: 0.06em; color: var(--hs-ink-3); flex-wrap: wrap; }
+:root[data-brand="hyper"] .gm-tk-line b { color: var(--hs-ink-2); font-size: 11.5px; letter-spacing: 0; }
+:root[data-brand="hyper"] .gm-tk-chart { height: 340px; margin: 4px 14px 0; border: 1px solid var(--hs-rule-2); border-radius: 6px; overflow: hidden; background: var(--hs-bg-2); }
+:root[data-brand="hyper"] .gm-tk-tabs { display: flex; gap: 7px; padding: 12px 14px 4px; }
+:root[data-brand="hyper"] .gm-tk-tabs button {
+  height: 30px; padding: 0 13px; border: 1px solid var(--hs-rule-2); border-radius: 8px; background: transparent; cursor: pointer;
+  color: var(--hs-ink-2); font-family: var(--hs-mono); font-size: 11.5px; font-weight: 600;
+}
+:root[data-brand="hyper"] .gm-tk-tabs button.on { color: var(--hs-mint); border-color: var(--hs-mint); background: color-mix(in srgb, var(--hs-mint) 10%, transparent); }
+:root[data-brand="hyper"] .gm-tk-body { padding: 4px 0 0; }
+:root[data-brand="hyper"] .gm-tk-dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--hs-rule-2); background: color-mix(in srgb, var(--hs-bg) 94%, transparent); backdrop-filter: blur(12px);
+  display: flex; flex-direction: column; gap: 8px;
+}
+@media (min-width: 1024px) { :root[data-brand="hyper"] .gm-tk-dock { left: 216px; } }
+:root[data-brand="hyper"] .gm-tk-presets { display: flex; align-items: center; gap: 6px; }
+:root[data-brand="hyper"] .gm-tk-presets button {
+  flex: 1; height: 30px; border: 1px solid color-mix(in srgb, var(--hs-mint) 40%, transparent); border-radius: 7px; cursor: pointer;
+  background: color-mix(in srgb, var(--hs-mint) 8%, transparent); color: var(--hs-mint); font-family: var(--hs-mono); font-size: 11.5px; font-weight: 700;
+}
+:root[data-brand="hyper"] .gm-tk-presets button:hover { background: var(--hs-mint); color: #14092e; }
+:root[data-brand="hyper"] .gm-tk-presets .u { font-family: var(--hs-mono); font-size: 10px; color: var(--hs-ink-3); padding: 0 2px; }
+:root[data-brand="hyper"] .gm-tk-cta { display: flex; gap: 8px; }
+:root[data-brand="hyper"] .gm-tk-cta button { flex: 1; height: 44px; border: 0; border-radius: 8px; cursor: pointer; font-family: var(--hs-mono); font-size: 14px; font-weight: 800; }
+:root[data-brand="hyper"] .gm-tk-cta .b { background: var(--hs-mint); color: #14092e; }
+:root[data-brand="hyper"] .gm-tk-cta .s { background: transparent; border: 1px solid var(--hs-red); color: var(--hs-red); }
+:root[data-brand="hyper"] .gm-tk-cta .s:hover { background: var(--hs-red); color: #14092e; }
+
+:root[data-brand="hyper"] .gm-feed-head { padding: 16px 14px 6px; font-family: var(--hs-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--hs-ink-3); }

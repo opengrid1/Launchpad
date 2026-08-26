@@ -242,7 +242,10 @@ export function TokenPage() {
   // activity and a sticky Buy/Sell bar whose trade sheet is denominated in the
   // coin's own pair (HYPE or a tokenized stock). The default flavors keep the
   // desktop two-column view.
-  if (IS_STOCK_BOARD || IS_HYPER || IS_INK) {
+  if (IS_INK) {
+    return <GmTokenView t={t} meta={meta} extra={extra} usdRate={usdRate} rewardSym={rewardSym} hasReward={hasReward} />;
+  }
+  if (IS_STOCK_BOARD || IS_HYPER) {
     return <BaseTokenView t={t} meta={meta} extra={extra} usdRate={usdRate} rewardSym={rewardSym} hasReward={hasReward} />;
   }
 
@@ -473,6 +476,143 @@ function BaseTokenView({
       <div className="kf-tk-actions">
         <button className="kf-tk-buy" onClick={() => setSheet("buy")}>Buy</button>
         <button className="kf-tk-sell" onClick={() => setSheet("sell")}>Sell</button>
+      </div>
+
+      {sheet ? (
+        <div className="kf-sheet-backdrop" onClick={() => setSheet(null)}>
+          <div className="kf-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="kf-sheet-grip" />
+            <BaseTradePanel token={t} initialSide={sheet} />
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/* ========================= squidpad GMGN token view ========================= */
+
+/** One-tap dock buys in the native token, wired to the same buy path. */
+function DockBuys({ token, symbol }: { token: Address; symbol: string }) {
+  const { isConnected, connectFirst } = useWallet();
+  const pushToast = useUi((s) => s.pushToast);
+  const [busy, setBusy] = useState<number | null>(null);
+  const AMTS = [0.005, 0.01, 0.05, 0.1];
+  const buy = async (amt: number) => {
+    if (busy != null) return;
+    if (!isConnected) return connectFirst();
+    setBusy(amt);
+    try {
+      if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+      const hash = await (v4Client as any).buyToken(token, BigInt(Math.round(amt * 1e18)), 0n);
+      pushToast({ kind: "success", title: `Buying ${amt} ${env.nativeSymbol} of ${symbol}`, txHash: hash });
+    } catch (err) {
+      pushToast({ kind: "error", title: "Quick buy failed", body: errorText(err) });
+    } finally {
+      setBusy(null);
+    }
+  };
+  return (
+    <div className="gm-tk-presets">
+      {AMTS.map((a) => (
+        <button key={a} disabled={busy != null} onClick={() => buy(a)}>
+          {busy === a ? "…" : `${a}`}
+        </button>
+      ))}
+      <span className="u">{env.nativeSymbol}</span>
+    </div>
+  );
+}
+
+/**
+ * squidpad trading page, GMGN terminal style: identity bar, a monospace price
+ * hero with the day's move, ledger stat line, the live chart in a sharp
+ * panel, pill tabs over the activity feeds and a docked trade bar with
+ * one-tap preset buys next to Buy/Sell.
+ */
+function GmTokenView({
+  t, meta, extra, usdRate, rewardSym, hasReward,
+}: { t: TokenSummary; meta: any; extra: Extra | null; usdRate: number; rewardSym?: string; hasReward: boolean }) {
+  const [tab, setTab] = useState<"trades" | "holders" | "stats" | "info">("trades");
+  const [sheet, setSheet] = useState<null | "buy" | "sell">(null);
+  const chg = t.priceChange24hPct;
+  const has = chg != null && isFinite(chg);
+  const up = has && chg! >= 0;
+  const liqWei = String((t as any).liquidityWei ?? "0");
+  const price = Number(t.marketCapUsd) > 0 ? Number(t.marketCapUsd) / 1_000_000_000 : 0;
+  const priceStr = price <= 0 ? "—" : price >= 0.01 ? `$${price.toFixed(4)}` : `$${Number(price.toPrecision(3)).toString()}`;
+
+  const TABS = [
+    { id: "trades", label: "Trades" },
+    { id: "holders", label: "Holders" },
+    { id: "stats", label: "Stats" },
+    { id: "info", label: "Info" },
+  ] as const;
+
+  return (
+    <div className="gm-tk">
+      {/* Identity bar */}
+      <div className="gm-tk-top">
+        <button className="gm-tk-back" aria-label="Back" onClick={() => window.history.length > 1 ? window.history.back() : (window.location.href = "/")}>{CHEV_L}</button>
+        <TokenLogo token={t} size={34} />
+        <span className="gm-tk-id">
+          <b>${t.symbol}</b>
+          <i>{t.name}</i>
+        </span>
+        {isOfficial(t.address) && <span className="gm-tag">OFFICIAL</span>}
+        <span className="gm-tk-right">
+          <CaChip address={t.address as Address} />
+          <ShareMenu address={t.address as Address} symbol={t.symbol} name={t.name} />
+        </span>
+      </div>
+
+      {/* Price hero + ledger line */}
+      <div className="gm-tk-hero">
+        <span className="p">{priceStr}</span>
+        <span className={`c ${has ? (up ? "up" : "down") : "flat"}`}>{has ? `${up ? "+" : ""}${chg!.toFixed(2)}%` : "0.00%"} <i>24h</i></span>
+      </div>
+      <div className="gm-tk-line">
+        <span>MC <b>{fmtUsd(t.marketCapUsd)}</b></span>
+        <span>VOL <b>{fmtWeiUsd(t.volumeTotalWei, usdRate)}</b></span>
+        <span>LIQ <b>{fmtWeiUsd(liqWei, usdRate)}</b></span>
+        <span>HOLDERS <b>{compact(t.holderCount)}</b></span>
+      </div>
+
+      {hasReward ? <RewardClaimCard coin={t.address as Address} fallbackSym={rewardSym} /> : null}
+      {CREATOR_MODE ? (
+        <div style={{ margin: "10px 14px 2px" }}>
+          <HarvestStrip token={t.address as Address} creator={t.creator} />
+        </div>
+      ) : null}
+
+      {/* Chart */}
+      <div className="gm-tk-chart">
+        <Suspense fallback={<Skeleton className="h-full w-full" />}>
+          <TVChart token={t.address as Address} symbol={t.symbol} />
+        </Suspense>
+      </div>
+
+      {/* Pill tabs */}
+      <div className="gm-tk-tabs" role="tablist">
+        {TABS.map((x) => (
+          <button key={x.id} role="tab" aria-selected={tab === x.id} className={tab === x.id ? "on" : ""} onClick={() => setTab(x.id)}>{x.label}</button>
+        ))}
+      </div>
+
+      <div className="gm-tk-body">
+        {tab === "trades" ? <TradesList token={t.address as Address} symbol={t.symbol} usdRate={usdRate} /> : null}
+        {tab === "holders" ? <HoldersList token={t.address as Address} symbol={t.symbol} /> : null}
+        {tab === "stats" ? <BaseStats t={t} extra={extra} usdRate={usdRate} rewardSym={rewardSym} /> : null}
+        {tab === "info" ? <InfoTab t={t} meta={meta} extra={extra} /> : null}
+      </div>
+
+      {/* Docked trade bar: preset buys + Buy / Sell */}
+      <div className="gm-tk-dock">
+        <DockBuys token={t.address as Address} symbol={t.symbol} />
+        <div className="gm-tk-cta">
+          <button className="b" onClick={() => setSheet("buy")}>Buy</button>
+          <button className="s" onClick={() => setSheet("sell")}>Sell</button>
+        </div>
       </div>
 
       {sheet ? (
