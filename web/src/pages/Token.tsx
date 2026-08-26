@@ -525,27 +525,38 @@ function DockBuys({ token, symbol }: { token: Address; symbol: string }) {
 }
 
 const SQUID_FEES_ABI = [
-  { type: "function", name: "creatorFees", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "creatorFeesInPair", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "rewardToken", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
   { type: "function", name: "claimCreatorFees", stateMutability: "nonpayable", inputs: [], outputs: [{ type: "uint256" }] },
 ] as const;
 
-/** Dev-only card: the creator's accrued fees on their coin, claimed with
- *  claimCreatorFees. Invisible to everyone else. */
-function CreatorFeesCard({ token, creator, symbol }: { token: Address; creator: string; symbol: string }) {
+const ERC20_SYMBOL_ABI = [
+  { type: "function", name: "symbol", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+] as const;
+
+/** Dev-only card: the creator's accrued fees on their coin, quoted in and
+ *  claimed as the coin's pair asset (the stock). Invisible to everyone else. */
+function CreatorFeesCard({ token, creator }: { token: Address; creator: string; symbol: string }) {
   const { address, isConnected, connectFirst } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
   const [fees, setFees] = useState<bigint | null>(null);
+  const [paySym, setPaySym] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const isDev = !!address && address.toLowerCase() === creator?.toLowerCase();
 
   useEffect(() => {
     if (!isDev) return;
     let alive = true;
+    const pc = (v4Client as any).publicClient;
     const load = () =>
-      (v4Client as any).publicClient
-        .readContract({ address: token, abi: SQUID_FEES_ABI, functionName: "creatorFees" })
+      pc.readContract({ address: token, abi: SQUID_FEES_ABI, functionName: "creatorFeesInPair" })
         .then((v: bigint) => { if (alive) setFees(v); })
         .catch(() => undefined);
+    // Resolve the payout asset symbol once (the stock the fees are paid in).
+    pc.readContract({ address: token, abi: SQUID_FEES_ABI, functionName: "rewardToken" })
+      .then((pair: string) => pc.readContract({ address: pair, abi: ERC20_SYMBOL_ABI, functionName: "symbol" }))
+      .then((s: string) => { if (alive) setPaySym(String(s)); })
+      .catch(() => undefined);
     load();
     const id = setInterval(() => { if (!document.hidden) load(); }, 15_000);
     return () => { alive = false; clearInterval(id); };
@@ -575,8 +586,8 @@ function CreatorFeesCard({ token, creator, symbol }: { token: Address; creator: 
     <div className="gm-dev-card">
       <div className="i">
         <span className="l">Your creator fees</span>
-        <span className="v">{amt != null ? `${amt.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${symbol}` : "…"}</span>
-        <span className="s">0.4% of every buy accrues here automatically. Only you can see and claim this.</span>
+        <span className="v">{amt != null ? `${amt.toLocaleString(undefined, { maximumFractionDigits: amt < 1 ? 6 : 2 })}${paySym ? ` ${paySym}` : ""}` : "…"}</span>
+        <span className="s">0.4% of every buy accrues here automatically and is paid out{paySym ? ` in ${paySym}` : " in the pair asset"}. Only you can see and claim this.</span>
       </div>
       <button disabled={busy || !fees} onClick={claimFees}>{busy ? "Claiming…" : "Claim"}</button>
     </div>

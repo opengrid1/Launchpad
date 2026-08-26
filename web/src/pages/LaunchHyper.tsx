@@ -142,7 +142,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
       <h1 className="kf-launch-h1">Launch a coin</h1>
       <p className="kf-launch-sub">
         {IS_INK
-          ? "One transaction opens a live Uniswap market on Ink with the full supply. Every buy auto-pays 1% in the coin: 0.5% holders, 0.4% you, 0.1% platform."
+          ? "One transaction opens a live Uniswap market on Ink with the full supply. Every buy auto-pays 1%: 0.5% holders, 0.4% you, 0.1% platform, paid out in the pair stock."
           : `Deploy a coin on HyperEVM paired with ${env.nativeSymbol} or a tokenized stock. One transaction opens a live HyperSwap market and seeds the full supply. Every trade pays you, the creator, 1% forever.`}
       </p>
 

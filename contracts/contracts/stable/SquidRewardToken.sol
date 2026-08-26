@@ -2,29 +2,57 @@
 pragma solidity 0.8.26;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 interface IFeeRecipientSource {
     function feeRecipient() external view returns (address);
+    function swapRouter() external view returns (address);
+    function POOL_FEE_TIER() external view returns (uint24);
+}
+
+interface ISquidRouter {
+    struct ExactInputSingleParams {
+        address tokenIn;
+        address tokenOut;
+        uint24 fee;
+        address recipient;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+        uint160 sqrtPriceLimitX96;
+    }
+    function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
+}
+
+interface ISquidPool {
+    function slot0() external view returns (uint160 sqrtPriceX96, int24, uint16, uint16, uint16, uint8, bool);
+    function token0() external view returns (address);
 }
 
 /// @title SquidRewardToken
-/// @notice Launchpad token with fully automatic, per-trade holder rewards.
-///         There is no harvest step anywhere: on every BUY (a transfer out of
-///         the AMM pool) the token itself skims a 1% fee in coins and records
-///         it instantly - 0.50% to all holders via an O(1) accumulator, 0.40%
-///         to the coin's creator and 0.10% to the platform. Sells are never
-///         skimmed (Uniswap V3 pools reject fee-on-transfer on the input
-///         side), so selling always works.
+/// @notice Launchpad token with fully automatic, per-trade holder rewards that
+///         are PAID OUT IN THE COIN'S PAIR ASSET (the tokenized stock, or WETH
+///         for ETH-paired coins).
 ///
-///         Claims are pull-based and named for their audience:
-///           - holders call {claimRewards} (alias {claim} for integrations);
-///           - the creator alone calls {claimCreatorFees};
-///           - anyone may push {claimPlatformFees} to the platform wallet.
+///         On every BUY (a transfer out of the AMM pool) the token skims a 1%
+///         fee in coins and records it instantly - 0.50% to holders via an O(1)
+///         accumulator, 0.40% to the creator, 0.10% to the platform. There is
+///         no harvest step: by the time a buy confirms, every share is booked.
+///         Sells are never skimmed (Uniswap V3 rejects fee-on-transfer on the
+///         input side), so selling always works.
+///
+///         Claims convert on the spot: the skimmed coins owed to the claimer
+///         are swapped through the coin's own pool into the pair asset and sent
+///         out as that asset. Holders call {claimRewards}, the creator alone
+///         calls {claimCreatorFees}, and anyone may push {claimPlatformFees}.
+///         `pendingRewards` and `rewardToken` are denominated in the pair asset
+///         so wallets show the stock the holder will receive.
 ///
 ///         `owner()` is always the zero address: no taxes beyond the fixed
 ///         skim, no controls beyond the factory's one-time pool wiring.
-contract SquidRewardToken is ERC20 {
+contract SquidRewardToken is ERC20, ReentrancyGuard {
     uint256 private constant ACC_PRECISION = 1e24;
+    uint256 private constant Q96 = 0x1000000000000000000000000; // 2**96
     /// @notice Per-buy skim, in bps of the bought amount: holders / creator /
     ///         platform. Total 1%.
     uint16 public constant HOLDER_FEE_BPS = 50;
@@ -33,35 +61,41 @@ contract SquidRewardToken is ERC20 {
 
     /// @notice Wallet credited as the token's creator (immutable attribution).
     address public immutable creator;
-    /// @dev The launchpad factory: mints recipient, pool wirer, fee-recipient source.
+    /// @notice The coin's pair asset: rewards are swapped into and paid in this
+    ///         (a tokenized stock, or WETH for an ETH-paired coin).
+    address public immutable pairAsset;
+    /// @dev The launchpad factory: mints recipient, pool wirer, config source.
     address private immutable _factory;
 
     /// @notice The AMM pool this coin trades on (set once by the factory).
     address public pool;
+    /// @dev SwapRouter and fee tier for the pool, cached from the factory.
+    address private _router;
+    uint24 private _feeTier;
 
     /// @dev Accumulated reward per eligible share, scaled by ACC_PRECISION.
     uint256 private accRewardPerShare;
     /// @notice Supply eligible for rewards (excludes pool/system holders).
     uint256 public eligibleSupply;
     mapping(address => uint256) private rewardDebt;
-    /// @dev Settled-but-unclaimed rewards per holder, in coins.
+    /// @dev Settled-but-unclaimed rewards per holder, in COINS.
     mapping(address => uint256) public claimable;
     /// @notice Addresses that do not participate in rewards (pool, system).
     mapping(address => bool) public excluded;
 
-    /// @notice Lifetime coins credited to holders.
+    /// @notice Lifetime coins credited to holders (coin-denominated).
     uint256 public totalRewardsDistributed;
-    /// @notice Creator fees accrued and not yet claimed, in coins.
+    /// @notice Creator fees accrued and not yet claimed, in COINS.
     uint256 public creatorFees;
-    /// @notice Platform fees accrued and not yet claimed, in coins.
+    /// @notice Platform fees accrued and not yet claimed, in COINS.
     uint256 public platformFees;
 
     string private _metadataURI;
 
     event RewardsAccrued(uint256 holderAmount, uint256 creatorAmount, uint256 platformAmount);
-    event RewardsClaimed(address indexed holder, uint256 amount);
-    event CreatorFeesClaimed(address indexed creator, uint256 amount);
-    event PlatformFeesClaimed(address indexed recipient, uint256 amount);
+    event RewardsClaimed(address indexed holder, uint256 coinAmount, uint256 pairAmount);
+    event CreatorFeesClaimed(address indexed creator, uint256 coinAmount, uint256 pairAmount);
+    event PlatformFeesClaimed(address indexed recipient, uint256 coinAmount, uint256 pairAmount);
     event ExcludedSet(address indexed account, bool excluded);
 
     error OnlyFactory();
@@ -76,9 +110,10 @@ contract SquidRewardToken is ERC20 {
         uint256 supply_,
         address creator_,
         address factory_,
-        address // rewardToken slot kept for deployer-signature parity; rewards pay in this coin
+        address pairAsset_ // the coin's quote asset; rewards pay in this
     ) ERC20(name_, symbol_) {
         creator = creator_;
+        pairAsset = pairAsset_;
         _factory = factory_;
         _metadataURI = metadataURI_;
 
@@ -99,17 +134,23 @@ contract SquidRewardToken is ERC20 {
         return address(0);
     }
 
-    /// @notice Rewards are paid in this coin itself.
+    /// @notice The asset rewards are paid in: this coin's pair (stock or WETH).
     function rewardToken() external view returns (address) {
-        return address(this);
+        return pairAsset;
     }
 
-    /// @notice One-time pool wiring by the factory.
+    /// @notice One-time pool wiring by the factory: records the pool, excludes
+    ///         it, and caches the router/tier plus an infinite coin allowance so
+    ///         claims can swap coins to the pair asset.
     function initPool(address pool_) external {
         if (msg.sender != _factory) revert OnlyFactory();
         if (pool != address(0)) revert PoolAlreadySet();
         pool = pool_;
         _setExcluded(pool_, true);
+
+        _router = IFeeRecipientSource(_factory).swapRouter();
+        _feeTier = IFeeRecipientSource(_factory).POOL_FEE_TIER();
+        _approve(address(this), _router, type(uint256).max);
     }
 
     /// @notice Rewards accrue automatically per trade; the harvest path from
@@ -122,26 +163,39 @@ contract SquidRewardToken is ERC20 {
     // Views + claims
     // ------------------------------------------------------------------
 
-    /// @notice Pending, not-yet-claimed rewards for a holder, in coins.
+    /// @notice Pending, not-yet-claimed rewards for a holder, quoted in the
+    ///         pair asset at the pool's current price (what a claim would pay,
+    ///         before swap slippage).
     function pendingRewards(address holder) public view returns (uint256) {
+        return _quoteToPair(pendingRewardsCoin(holder));
+    }
+
+    /// @notice Pending holder rewards in coin terms (pre-swap).
+    function pendingRewardsCoin(address holder) public view returns (uint256) {
         if (excluded[holder]) return claimable[holder];
         uint256 accrued = (balanceOf(holder) * accRewardPerShare) / ACC_PRECISION;
         uint256 debt = rewardDebt[holder];
         return claimable[holder] + (accrued > debt ? accrued - debt : 0);
     }
 
-    /// @notice Claim all accrued holder rewards to the caller.
-    function claimRewards() public returns (uint256 amount) {
+    /// @notice Creator fees quoted in the pair asset.
+    function creatorFeesInPair() external view returns (uint256) {
+        return _quoteToPair(creatorFees);
+    }
+
+    /// @notice Claim all accrued holder rewards to the caller, paid in the pair
+    ///         asset.
+    function claimRewards() public returns (uint256 pairAmount) {
         return _claimTo(msg.sender);
     }
 
     /// @notice Alias of {claimRewards} for wallets and integrations.
-    function claim() external returns (uint256 amount) {
+    function claim() external returns (uint256 pairAmount) {
         return claimRewards();
     }
 
     /// @notice Push a holder's rewards to THEIR wallet; callable by anyone.
-    function claimFor(address holder) external returns (uint256 amount) {
+    function claimFor(address holder) external returns (uint256 pairAmount) {
         return _claimTo(holder);
     }
 
@@ -150,37 +204,71 @@ contract SquidRewardToken is ERC20 {
         for (uint256 i; i < holders.length; ++i) _claimTo(holders[i]);
     }
 
-    /// @notice Creator-only: claim the accrued dev fees.
-    function claimCreatorFees() external returns (uint256 amount) {
+    /// @notice Creator-only: claim the accrued dev fees, paid in the pair asset.
+    function claimCreatorFees() external nonReentrant returns (uint256 pairAmount) {
         if (msg.sender != creator) revert OnlyCreator();
-        amount = creatorFees;
-        if (amount == 0) return 0;
+        uint256 coinAmount = creatorFees;
+        if (coinAmount == 0) return 0;
         creatorFees = 0;
-        _transfer(address(this), creator, amount);
-        emit CreatorFeesClaimed(creator, amount);
+        pairAmount = _swapToPair(coinAmount, creator);
+        emit CreatorFeesClaimed(creator, coinAmount, pairAmount);
     }
 
-    /// @notice Push accrued platform fees to the factory's fee recipient.
-    function claimPlatformFees() external returns (uint256 amount) {
+    /// @notice Push accrued platform fees to the factory's fee recipient, paid
+    ///         in the pair asset.
+    function claimPlatformFees() external nonReentrant returns (uint256 pairAmount) {
         address to = IFeeRecipientSource(_factory).feeRecipient();
-        amount = platformFees;
-        if (amount == 0) return 0;
+        uint256 coinAmount = platformFees;
+        if (coinAmount == 0) return 0;
         platformFees = 0;
-        _transfer(address(this), to, amount);
-        emit PlatformFeesClaimed(to, amount);
+        pairAmount = _swapToPair(coinAmount, to);
+        emit PlatformFeesClaimed(to, coinAmount, pairAmount);
     }
 
     // ------------------------------------------------------------------
     // Internals
     // ------------------------------------------------------------------
 
-    function _claimTo(address holder) private returns (uint256 amount) {
+    function _claimTo(address holder) private nonReentrant returns (uint256 pairAmount) {
         _settle(holder);
-        amount = claimable[holder];
-        if (amount == 0) return 0;
+        uint256 coinAmount = claimable[holder];
+        if (coinAmount == 0) return 0;
         claimable[holder] = 0;
-        emit RewardsClaimed(holder, amount);
-        _transfer(address(this), holder, amount);
+        pairAmount = _swapToPair(coinAmount, holder);
+        emit RewardsClaimed(holder, coinAmount, pairAmount);
+    }
+
+    /// @dev Swap `coinAmount` of this coin into the pair asset through the
+    ///      coin's own pool and send it to `to`. amountOutMinimum is 0: the
+    ///      amounts are tiny next to the seeded pool, and it is the coin's own
+    ///      market, so there is nothing to sandwich meaningfully.
+    function _swapToPair(uint256 coinAmount, address to) private returns (uint256) {
+        return ISquidRouter(_router).exactInputSingle(
+            ISquidRouter.ExactInputSingleParams({
+                tokenIn: address(this),
+                tokenOut: pairAsset,
+                fee: _feeTier,
+                recipient: to,
+                amountIn: coinAmount,
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
+            })
+        );
+    }
+
+    /// @dev Spot-quote `coinAmount` of this coin into the pair asset from the
+    ///      pool price. Both coin and pair are 18 decimals, so no decimal gap.
+    function _quoteToPair(uint256 coinAmount) private view returns (uint256) {
+        if (coinAmount == 0 || pool == address(0)) return 0;
+        (uint160 sqrtP,,,,,,) = ISquidPool(pool).slot0();
+        if (sqrtP == 0) return 0;
+        bool coinIsToken0 = ISquidPool(pool).token0() == address(this);
+        if (coinIsToken0) {
+            // pair per coin = (sqrtP/Q96)^2
+            return Math.mulDiv(Math.mulDiv(coinAmount, sqrtP, Q96), sqrtP, Q96);
+        }
+        // pair per coin = (Q96/sqrtP)^2
+        return Math.mulDiv(Math.mulDiv(coinAmount, Q96, sqrtP), Q96, sqrtP);
     }
 
     function _settle(address account) private {

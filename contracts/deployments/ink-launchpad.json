@@ -1,7 +1,7 @@
 {
   "network": "ink",
   "chainId": 57073,
-  "startBlock": 54225074,
+  "startBlock": 54226748,
   "deployer": "0xA1Fd89C171E789D22Cd00DDfEFc2667F38990cE6",
   "owner": "0xA1Fd89C171E789D22Cd00DDfEFc2667F38990cE6",
   "feeRecipient": "0x0315ecb53f64b7a4ba56bb8a4dab0d96f0856b60",
@@ -12,14 +12,14 @@
     "weth": "0x4200000000000000000000000000000000000006"
   },
   "contracts": {
-    "tokenDeployer": "0x125b88854AB17f7862b35D82C30b35f4eb95190d",
-    "factory": "0xA99D56AD2b56e5fA0e0B300951F60eDBA0C3e995"
+    "tokenDeployer": "0xb37af41fB84F04ea08BbEFFd5fe3727921215b0E",
+    "factory": "0xc454f5F3aedA0533ddd29A7C6feA96F5FC1D3a1e"
   },
   "quotes": [
     {
       "ticker": "WETH",
       "address": "0x4200000000000000000000000000000000000006",
-      "usd8": "245895653988"
+      "usd8": "246499098772"
     },
     {
       "ticker": "wNVDAx",
@@ -34,7 +34,7 @@
     {
       "ticker": "wAAPLx",
       "address": "0x943BF64D566c32A2Bcd41AC92FB63C111cC9De8f",
-      "usd8": "31064758780"
+      "usd8": "30975057498"
     },
     {
       "ticker": "wTSLAx",

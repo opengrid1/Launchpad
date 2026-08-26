@@ -45,13 +45,15 @@ function InkDocs() {
             ["Holders", "0.5% · pro-rata to everyone holding the coin"],
             ["Creator", "0.4% · visible and claimable only by the creator"],
             ["Platform", "0.1%"],
-            ["Paid in", "the coin itself"],
+            ["Paid in", "the coin's pair, the tokenized stock (or ETH)"],
           ]}
         />
         <p>
-          Your share accrues on-chain per wallet. Claim it whenever you like with
-          claimRewards, on the coin's page or under Rewards. Creators claim their fees with
-          claimCreatorFees from the coin's page; no one else can see or touch them.
+          Your share accrues on-chain per wallet in coins. When you claim, the contract swaps
+          your accrued coins through the coin's own pool and pays you in the pair asset, the
+          stock. Claim whenever you like with claimRewards, on the coin's page or under
+          Rewards. Creators claim their fees with claimCreatorFees from the coin's page; no
+          one else can see or touch them.
         </p>
       </TermSection>
 

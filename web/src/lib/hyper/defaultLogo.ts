@@ -4,30 +4,39 @@
  *  wherever a coin has no uploaded image and as the header brand mark. */
 import { BRAND_FLAVOR } from "../brand";
 
-/** squidpad default token logo: a flat violet squid on the deep-ink tile. */
-const INK_TOKEN_LOGO =
+/** The squidpad squid: violet mantle with tentacles and eyes, centred in a
+ *  64x64 tile. `bg` paints the rounded backing (tile for the logo, none for a
+ *  transparent overlay). Kept in sync with the PNG brand assets in /public. */
+const squidMark = (bg: string) =>
   "data:image/svg+xml," +
   encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>` +
-      `<rect width='64' height='64' rx='16' fill='#120e22'/>` +
-      `<path d='M32 10 C41 10 47 17 47 26 C47 32 44 36 40 38 L40 44 C40 46 38 47 36.5 46 L34 44 L34 49 C34 51 32.7 52 32 52 C31.3 52 30 51 30 49 L30 44 L27.5 46 C26 47 24 46 24 44 L24 38 C20 36 17 32 17 26 C17 17 23 10 32 10 Z' fill='#a78bfa'/>` +
-      `<circle cx='26.5' cy='26' r='3' fill='#120e22'/>` +
-      `<circle cx='37.5' cy='26' r='3' fill='#120e22'/>` +
-      `</svg>`,
+      bg +
+      `<g transform='translate(32 30) scale(0.82)'>` +
+      // back tentacles (darker violet)
+      `<g fill='#8b6ff0'>` +
+      `<path d='M-13 6 C-18 16 -22 22 -26 30 C-24 31 -21 27 -18 22 C-16 26 -18 32 -16 34 C-14 31 -13 24 -12 18 Z'/>` +
+      `<path d='M13 6 C18 16 22 22 26 30 C24 31 21 27 18 22 C16 26 18 32 16 34 C14 31 13 24 12 18 Z'/>` +
+      `</g>` +
+      // front tentacles
+      `<g fill='#a78bfa'>` +
+      `<path d='M-6 8 C-8 20 -9 28 -10 36 C-8 37 -6 30 -5 22 C-4 30 -6 36 -4 38 C-2 34 -1 22 0 12 Z'/>` +
+      `<path d='M6 8 C8 20 9 28 10 36 C8 37 6 30 5 22 C4 30 6 36 4 38 C2 34 1 22 0 12 Z'/>` +
+      `</g>` +
+      // mantle + sheen
+      `<path d='M0 -26 C13 -26 21 -15 21 -1 C21 9 16 15 9 17 C3 18.6 -3 18.6 -9 17 C-16 15 -21 9 -21 -1 C-21 -15 -13 -26 0 -26 Z' fill='#a78bfa'/>` +
+      `<path d='M0 -24 C10 -24 16.5 -16 18 -6 C13 -12 6 -14 0 -14 C-6 -14 -13 -12 -18 -6 C-16.5 -16 -10 -24 0 -24 Z' fill='#c4b5fd' opacity='.55'/>` +
+      // eyes
+      `<circle cx='-8' cy='-3' r='4.4' fill='#0b0717'/>` +
+      `<circle cx='8' cy='-3' r='4.4' fill='#0b0717'/>` +
+      `<circle cx='-6.6' cy='-4.4' r='1.5' fill='#efecff'/>` +
+      `<circle cx='9.4' cy='-4.4' r='1.5' fill='#efecff'/>` +
+      `</g></svg>`,
   );
 
-/** squidpad brand mark: the squid coin. */
-const INK_BRAND_MARK =
-  "data:image/svg+xml," +
-  encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>` +
-      `<rect width='64' height='64' rx='16' fill='#120e22'/>` +
-      `<circle cx='32' cy='32' r='23' fill='none' stroke='#a78bfa' stroke-width='3.6'/>` +
-      `<path d='M32 18 C38.5 18 43 23 43 29.5 C43 33.8 40.8 36.7 38 38.2 L38 42 C38 43.5 36.5 44.2 35.4 43.4 L33.6 42 L33.6 45.4 C33.6 46.8 32.6 47.5 32 47.5 C31.4 47.5 30.4 46.8 30.4 45.4 L30.4 42 L28.6 43.4 C27.5 44.2 26 43.5 26 42 L26 38.2 C23.2 36.7 21 33.8 21 29.5 C21 23 25.5 18 32 18 Z' fill='#a78bfa'/>` +
-      `<circle cx='28' cy='29' r='2.2' fill='#120e22'/>` +
-      `<circle cx='36' cy='29' r='2.2' fill='#120e22'/>` +
-      `</svg>`,
-  );
+/** squidpad default token logo and brand mark: the squid on the deep-ink tile. */
+const INK_TOKEN_LOGO = squidMark(`<rect width='64' height='64' rx='16' fill='#100c22'/>`);
+const INK_BRAND_MARK = INK_TOKEN_LOGO;
 
 const HYPER_TOKEN_LOGO =
   "data:image/svg+xml," +
