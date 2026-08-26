@@ -4630,22 +4630,39 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"][data-flavor="ink"] .kf-sheet .kf-launch { padding: 4px 2px 12px; }
 :root[data-brand="hyper"][data-flavor="ink"] .kf-sheet .lf .kf-form { box-shadow: none; padding: 6px 2px; background: transparent; }
 
-/* Glossy CTA buttons repaint violet (the hyper base coat is teal). */
+/* ---- squidpad button system: one look for every button ----
+   Primary: flat violet fill, dark text, radius 8, mono, no gradients or
+   glows anywhere. Secondary: transparent with a rule border. Buy and sell
+   CTAs keep their semantic green and red fills (same flat shape). */
+:root[data-brand="hyper"][data-flavor="ink"] .hs-launch,
+:root[data-brand="hyper"][data-flavor="ink"] .hs-side-launch,
+:root[data-brand="hyper"][data-flavor="ink"] .hs-wallet,
+:root[data-brand="hyper"][data-flavor="ink"] .hs-iconbtn { border-radius: 8px; }
 :root[data-brand="hyper"][data-flavor="ink"] button.bg-accent,
 :root[data-brand="hyper"][data-flavor="ink"] a.bg-accent {
-  background-color: #a78bfa;
-  background-image: linear-gradient(#c4b5fd, #a78bfa 55%, #8b5cf6);
-  border-color: #a78bfa8c;
-  box-shadow: inset 0 1px #ede9fe99, 0 0 0 1px #a78bfa47, 0 10px 30px -12px #a78bfa99;
+  background: var(--hs-mint); background-image: none; color: #14092e;
+  border-radius: 8px; border-color: transparent; box-shadow: none;
+  font-family: var(--hs-mono); font-weight: 700;
 }
 :root[data-brand="hyper"][data-flavor="ink"] button.bg-accent:hover,
 :root[data-brand="hyper"][data-flavor="ink"] a.bg-accent:hover {
-  background-image: linear-gradient(#ddd3fe, #c4b5fd 55%, #a78bfa);
-  box-shadow: inset 0 1px #ede9feb3, 0 0 0 1px #a78bfa66, 0 14px 36px -12px #a78bfabf;
+  background: var(--hs-mint); background-image: none; box-shadow: none; filter: brightness(1.08);
 }
 :root[data-brand="hyper"][data-flavor="ink"] button.bg-accent:active,
-:root[data-brand="hyper"][data-flavor="ink"] a.bg-accent:active {
-  box-shadow: inset 0 1px #ede9fe99, 0 0 0 1px #a78bfa59;
+:root[data-brand="hyper"][data-flavor="ink"] a.bg-accent:active { box-shadow: none; }
+:root[data-brand="hyper"][data-flavor="ink"] .kf-submit,
+:root[data-brand="hyper"][data-flavor="ink"] .kf-btnrow .kf-submit {
+  background: var(--hs-mint); color: #14092e; border-radius: 8px; box-shadow: none;
+  font-family: var(--hs-mono); font-weight: 700;
+}
+:root[data-brand="hyper"][data-flavor="ink"] .kf-submit:hover { background: var(--hs-mint); filter: brightness(1.08); }
+:root[data-brand="hyper"][data-flavor="ink"] .kf-cancel {
+  border-radius: 8px; background: transparent; box-shadow: inset 0 0 0 1px var(--hs-rule-2);
+  color: var(--hs-ink-2); font-family: var(--hs-mono);
+}
+:root[data-brand="hyper"][data-flavor="ink"] .kf-reward-claim-btn {
+  border-radius: 8px; background: var(--hs-mint); color: #14092e;
+  font-family: var(--hs-mono); font-weight: 700; font-size: 12.5px;
 }
 
 /* ---- hs app shell: sidebar + topbar + content ---- */
