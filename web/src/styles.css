@@ -4571,6 +4571,9 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"][data-flavor="ink"] .hs-tabs button.on,
 :root[data-brand="hyper"][data-flavor="ink"] .hs-tag.official { color: #14092e; }
 :root[data-brand="hyper"][data-flavor="ink"] .hs-qb-open:hover { color: #14092e; }
+/* Active navigation stays neutral ink, not the violet accent. */
+:root[data-brand="hyper"][data-flavor="ink"] .hs-side-nav a.on { color: var(--hs-ink); border-left-color: var(--hs-ink); }
+:root[data-brand="hyper"][data-flavor="ink"] .hs-tabbar a.on { color: var(--hs-ink); }
 /* ---- squidpad launch form: compact terminal grid ---- */
 :root[data-brand="hyper"][data-flavor="ink"] .kf-launch.lf { max-width: 660px; margin: 0 auto; }
 :root[data-brand="hyper"][data-flavor="ink"] .lf .kf-launch-h1 { font-family: var(--hs-mono); font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }

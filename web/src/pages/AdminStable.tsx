@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import type { TokenSummary } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
@@ -30,7 +31,7 @@ const SQUID_PLATFORM_ABI = [
  * on-chain by Ownable: any other wallet reads a 403 and can call nothing.
  */
 export function AdminStable() {
-  const { address, isConnected, connectFirst } = useWallet();
+  const { address, isConnected } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
 
   const [info, setInfo] = useState<Awaited<ReturnType<StableV3Client["adminInfo"]>> | null>(null);
@@ -96,28 +97,12 @@ export function AdminStable() {
     }
   };
 
-  if (!isConnected) {
-    return (
-      <Shell>
-        <p className="text-[13.5px] text-ink-2">Connect the factory owner wallet to continue.</p>
-        <button onClick={connectFirst} className="mt-4 rounded-lg bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-fg">
-          Connect wallet
-        </button>
-      </Shell>
-    );
-  }
-
-  if (info && !isOwner) {
-    return (
-      <Shell>
-        <p className="text-[15px] font-bold text-ink">403</p>
-        <p className="mt-1 text-[13px] text-ink-2">
-          This console is restricted to the factory owner ({shortAddr(info.owner)}). Connected:{" "}
-          {address ? shortAddr(address) : "–"}.
-        </p>
-      </Shell>
-    );
-  }
+  // Hidden console: this route never advertises itself. A confirmed
+  // non-owner bounces home like any unknown URL; everyone else (not
+  // connected, or still resolving the owner on-chain) sees a blank page.
+  // The owner connects their wallet from the top bar, then opens /admin.
+  if (isConnected && info && !isOwner) return <Navigate to="/" replace />;
+  if (!isConnected || !info) return null;
 
   return (
     <Shell>
