@@ -4810,3 +4810,8 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .gm-skel { height: 63px; margin: 6px 14px; border-radius: 12px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--hs-mint) 5%, transparent), transparent); background-size: 200% 100%; animation: hs-sheen 1.4s infinite; }
 :root[data-brand="hyper"] .gm-empty { padding: 60px 20px; text-align: center; color: var(--hs-ink-2); font-family: var(--hs-mono); font-size: 13px; }
 :root[data-brand="hyper"] .gm-empty a { color: var(--hs-mint); font-weight: 700; }
+
+/* Mobile has the raised tab-bar rocket; the top bar keeps only the wallet. */
+@media (max-width: 1023px) {
+  :root[data-brand="hyper"][data-flavor="ink"] .hs-top .hs-launch { display: none; }
+}
