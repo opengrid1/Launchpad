@@ -24,7 +24,7 @@ import { join } from "path";
  */
 const V3_FACTORY = "0x640887a9ba3a9c53ed27d0f7e8246a4f933f3424";
 const POSITION_MANAGER = "0xC0836E5B058BBE22ae2266e1AC488A1A0fD8DCE8";
-const SWAP_ROUTER = "0x177778F19E89Dd1012bdBE603F144088A95C4b53";
+const SWAP_ROUTER = "0x177778F19E89dD1012BdBe603F144088A95C4B53";
 const WETH = "0x4200000000000000000000000000000000000006";
 const USDG = "0xe343167631d89B6Ffc58B88d6b7fB0228795491D"; // 6 dec
 const USDCE = "0xF1815bd50389c46847f0Bda824eC8da914045D14"; // 6 dec
@@ -118,6 +118,14 @@ async function main() {
     } else {
       console.log(`owner action needed: factory.setQuoteAsset(${q.address}, true, ${q.usd8}) // ${q.ticker}`);
     }
+  }
+
+  // Deploy-with-self-as-owner flow: register everything above, then hand the
+  // factory to its final owner in the same run.
+  const finalOwner = process.env.FINAL_OWNER;
+  if (finalOwner && isOwner && finalOwner.toLowerCase() !== signer.address.toLowerCase()) {
+    await (await factory.transferOwnership(finalOwner)).wait();
+    console.log("ownership transferred to", finalOwner);
   }
 
   const out = {

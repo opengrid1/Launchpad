@@ -1,0 +1,68 @@
+{
+  "network": "ink",
+  "chainId": 57073,
+  "startBlock": 54225074,
+  "deployer": "0xA1Fd89C171E789D22Cd00DDfEFc2667F38990cE6",
+  "owner": "0xA1Fd89C171E789D22Cd00DDfEFc2667F38990cE6",
+  "feeRecipient": "0x0315ecb53f64b7a4ba56bb8a4dab0d96f0856b60",
+  "uniswapV3": {
+    "factory": "0x640887a9ba3a9c53ed27d0f7e8246a4f933f3424",
+    "positionManager": "0xC0836E5B058BBE22ae2266e1AC488A1A0fD8DCE8",
+    "swapRouter": "0x177778F19E89dD1012BdBe603F144088A95C4B53",
+    "weth": "0x4200000000000000000000000000000000000006"
+  },
+  "contracts": {
+    "tokenDeployer": "0x125b88854AB17f7862b35D82C30b35f4eb95190d",
+    "factory": "0xA99D56AD2b56e5fA0e0B300951F60eDBA0C3e995"
+  },
+  "quotes": [
+    {
+      "ticker": "WETH",
+      "address": "0x4200000000000000000000000000000000000006",
+      "usd8": "245895653988"
+    },
+    {
+      "ticker": "wNVDAx",
+      "address": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5",
+      "usd8": "21283160016"
+    },
+    {
+      "ticker": "wSPYx",
+      "address": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540",
+      "usd8": "77670532371"
+    },
+    {
+      "ticker": "wAAPLx",
+      "address": "0x943BF64D566c32A2Bcd41AC92FB63C111cC9De8f",
+      "usd8": "31064758780"
+    },
+    {
+      "ticker": "wTSLAx",
+      "address": "0xc3FdBe3A68EE5dE461D30415a8165cf9Aefe1171",
+      "usd8": "35094547459"
+    },
+    {
+      "ticker": "wMSTRx",
+      "address": "0x30987adF0B11dc698438a99BA04ec3a1AB2c7EaB",
+      "usd8": "12088321107"
+    },
+    {
+      "ticker": "wNFLXx",
+      "address": "0x7d87fD6A379714194a797c0bBB8B40c30D250856",
+      "usd8": "79776113617"
+    },
+    {
+      "ticker": "wPLTRx",
+      "address": "0x4A2df09536F62341C9f946427D16414C04e21342",
+      "usd8": "17994001045"
+    }
+  ],
+  "config": {
+    "totalSupply": "1000000000e18",
+    "poolFeeTier": 500,
+    "holderFeeBps": 5000,
+    "creatorFeeBps": 4000,
+    "platformFeeBps": 1000,
+    "defaultMarketCapUsd": 3000
+  }
+}
