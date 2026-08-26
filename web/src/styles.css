@@ -4891,3 +4891,19 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"][data-flavor="ink"] .tp-cta { border-radius: 8px; font-family: var(--hs-mono); font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; }
 :root[data-brand="hyper"][data-flavor="ink"] .tp-cta.buy { background: var(--hs-mint); color: #14092e; }
 :root[data-brand="hyper"][data-flavor="ink"] .tp-cta.sell { background: var(--hs-red); color: #2b0a10; }
+
+/* ---- squidpad trade semantics: buys and gains are GREEN, violet stays brand ---- */
+:root[data-brand="hyper"][data-flavor="ink"] { --hs-green: #4ade80; --hs-green-fg: #06210f; }
+:root[data-brand="hyper"][data-flavor="ink"] .hs-chg.up,
+:root[data-brand="hyper"][data-flavor="ink"] .gm-right .c.up,
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-hero .c.up { color: var(--hs-green); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-bolt { border-color: color-mix(in srgb, var(--hs-green) 45%, transparent); background: color-mix(in srgb, var(--hs-green) 10%, transparent); color: var(--hs-green); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-bolt.on, :root[data-brand="hyper"][data-flavor="ink"] .gm-bolt:hover { background: var(--hs-green); color: var(--hs-green-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-qb-pop button { background: var(--hs-green); color: var(--hs-green-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-presets button { border-color: color-mix(in srgb, var(--hs-green) 40%, transparent); background: color-mix(in srgb, var(--hs-green) 8%, transparent); color: var(--hs-green); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-presets button:hover { background: var(--hs-green); color: var(--hs-green-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .b { background: var(--hs-green); color: var(--hs-green-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-seg button.on:first-child { background: var(--hs-green); color: var(--hs-green-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-preset { border-color: color-mix(in srgb, var(--hs-green) 40%, transparent); background: color-mix(in srgb, var(--hs-green) 8%, transparent); color: var(--hs-green); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-preset:hover { background: var(--hs-green); color: var(--hs-green-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-cta.buy { background: var(--hs-green); color: var(--hs-green-fg); }
