@@ -110,6 +110,10 @@ const DEC_GAP = 10n ** BigInt(18 - Number(import.meta.env.VITE_QUOTE_DECIMALS ??
 /** True when the quote asset is the chain's wrapped native (e.g. WETH on
  *  Robinhood): buys pay native value and sells unwrap back to native. */
 const QUOTE_IS_WNATIVE = String(import.meta.env.VITE_QUOTE_IS_WNATIVE ?? "") === "true";
+/** The fee tier the factory opens every coin pool at, so router paths hit the
+ *  real pool. hyperstock/HyperSwap uses 1% (10000); squidpad/Ink uses 0.05%
+ *  (500). Set VITE_POOL_FEE_TIER to match the deployed factory. */
+const POOL_FEE_TIER = Number(import.meta.env.VITE_POOL_FEE_TIER ?? 10_000);
 /** Max block span of one getLogs request (RPC-dependent; Stable caps at 500,
  *  Robinhood accepts millions). */
 const LOGS_WINDOW = Number(import.meta.env.VITE_LOGS_WINDOW ?? 500);
@@ -1040,7 +1044,7 @@ export class StableV3Client {
       if (route != null) {
         const path = encodePacked(
           ["address", "uint24", "address", "uint24", "address"],
-          [this.addresses.quote, route, quote.addr, 10_000, token],
+          [this.addresses.quote, route, quote.addr, POOL_FEE_TIER, token],
         );
         return wc.writeContract({
           address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInput",
@@ -1052,7 +1056,7 @@ export class StableV3Client {
     }
     return wc.writeContract({
       address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
-      args: [{ tokenIn: quote.addr, tokenOut: token, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
+      args: [{ tokenIn: quote.addr, tokenOut: token, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
       value: payNative ? nativeWei : undefined,
       chain: wc.chain, account: wc.account!,
     });
@@ -1084,7 +1088,7 @@ export class StableV3Client {
       if (route != null) {
         const path = encodePacked(
           ["address", "uint24", "address", "uint24", "address"],
-          [token, 10_000, quote.addr, route, this.addresses.quote],
+          [token, POOL_FEE_TIER, quote.addr, route, this.addresses.quote],
         );
         const hop = encodeFunctionData({
           abi: ROUTER_ABI, functionName: "exactInput",
@@ -1100,13 +1104,13 @@ export class StableV3Client {
       }
       return wc.writeContract({
         address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
-        args: [{ tokenIn: token, tokenOut: quote.addr, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut / DEC_GAP, sqrtPriceLimitX96: 0n }],
+        args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: minOut / DEC_GAP, sqrtPriceLimitX96: 0n }],
         chain: wc.chain, account: wc.account!,
       });
     }
     const swap = encodeFunctionData({
       abi: ROUTER_ABI, functionName: "exactInputSingle",
-      args: [{ tokenIn: token, tokenOut: quote.addr, fee: 10_000, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
+      args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
     });
     const unwrap = encodeFunctionData({
       abi: ROUTER_ABI, functionName: "unwrapWETH9",
