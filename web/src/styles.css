@@ -4534,36 +4534,36 @@ button.bg-accent:disabled {
    hs- terminal chrome and the shared kf- pages.
    ========================================================================= */
 :root[data-brand="hyper"][data-flavor="ink"] {
-  --hs-bg: #0b0917;
-  --hs-bg-2: #100d1f;
-  --hs-panel: #131024;
-  --hs-rule: #241f3d;
-  --hs-rule-2: #37305c;
-  --hs-ink: #efecff;
-  --hs-ink-2: #a29ac6;
-  --hs-ink-3: #665f8a;
-  --hs-mint: #a78bfa;
-  --hs-mint-deep: #8b5cf6;
-  --hs-red: #ff7080;
+  color-scheme: light;
+  --hs-bg: #f6f6fb;
+  --hs-bg-2: #ffffff;
+  --hs-panel: #ffffff;
+  --hs-rule: #ececf1;
+  --hs-rule-2: #e2e0ea;
+  --hs-ink: #17151f;
+  --hs-ink-2: #6a6482;
+  --hs-ink-3: #9a94ac;
+  --hs-mint: #7c5cfc;
+  --hs-mint-deep: #6a44e6;
+  --hs-red: #e11d48;
   /* koi variable repaint for the shared pages (token, launch, docs, rewards) */
-  --color-bg: #0b0917;
-  --color-panel: #131024;
-  --color-panel-2: #181430;
-  --color-panel-3: #1e1938;
-  --color-edge: #241f3d;
-  --color-edge-2: #37305c;
-  --color-ink: #efecff;
-  --color-ink-2: #a29ac6;
-  --color-ink-3: #665f8a;
-  --color-accent: #a78bfa;
-  --color-accent-2: #8b5cf6;
-  --color-accent-ink: #c4b5fd;
-  --color-accent-fg: #14092e;
+  --color-bg: #f6f6fb;
+  --color-panel: #ffffff;
+  --color-panel-2: #f6f6fb;
+  --color-panel-3: #efeef5;
+  --color-edge: #ececf1;
+  --color-edge-2: #e2e0ea;
+  --color-ink: #17151f;
+  --color-ink-2: #6a6482;
+  --color-ink-3: #9a94ac;
+  --color-accent: #7c5cfc;
+  --color-accent-2: #6a44e6;
+  --color-accent-ink: #6a44e6;
+  --color-accent-fg: #ffffff;
 }
+:root[data-brand="hyper"][data-flavor="ink"] { background: var(--hs-bg); }
 :root[data-brand="hyper"][data-flavor="ink"] body {
-  background:
-    radial-gradient(1200px 500px at 70% -10%, rgba(167, 139, 250, 0.06), transparent 60%),
-    var(--hs-bg);
+  background: var(--hs-bg);
 }
 :root[data-brand="hyper"][data-flavor="ink"] .hs-launch,
 :root[data-brand="hyper"][data-flavor="ink"] .hs-cta,
@@ -4666,7 +4666,7 @@ button.bg-accent:disabled {
 
 /* ---- squidpad launch form: compact terminal grid ---- */
 :root[data-brand="hyper"][data-flavor="ink"] .kf-launch.lf { max-width: 660px; margin: 0 auto; }
-:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-launch-h1 { font-family: var(--hs-mono); font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+:root[data-brand="hyper"][data-flavor="ink"] .lf .kf-launch-h1 { font-family: var(--hs-mono); font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: var(--hs-ink); }
 :root[data-brand="hyper"][data-flavor="ink"] .lf .kf-launch-sub { font-size: 12px; line-height: 1.55; color: var(--hs-ink-2); margin: 4px 0 14px; }
 :root[data-brand="hyper"][data-flavor="ink"] .lf .kf-form {
   display: grid; grid-template-columns: repeat(6, 1fr); gap: 13px 10px;
@@ -5131,7 +5131,12 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"][data-flavor="ink"] .tp-cta.sell { background: var(--hs-red); color: #2b0a10; }
 
 /* ---- squidpad trade semantics: buys and gains are GREEN, violet stays brand ---- */
-:root[data-brand="hyper"][data-flavor="ink"] { --hs-green: #4ade80; --hs-green-fg: #06210f; }
+:root[data-brand="hyper"][data-flavor="ink"] { --hs-green: #16a34a; --hs-green-fg: #ffffff; }
+/* Light theme: white text sits on the violet / green fills. */
+:root[data-flavor="ink"] .sqx-launch,
+:root[data-flavor="ink"] .sqx-fab,
+:root[data-flavor="ink"] .sq-official { color: #ffffff; }
+:root[data-flavor="ink"] button.bg-accent, :root[data-flavor="ink"] a.bg-accent { color: #ffffff; }
 :root[data-brand="hyper"][data-flavor="ink"] .hs-chg.up,
 :root[data-brand="hyper"][data-flavor="ink"] .gm-right .c.up,
 :root[data-brand="hyper"][data-flavor="ink"] .gm-tk-hero .c.up { color: var(--hs-green); }
