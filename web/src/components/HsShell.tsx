@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import { BRAND, IS_INK } from "../lib/brand";
+import { env } from "../lib/env";
 import { BRAND_MARK } from "../lib/hyper/defaultLogo";
 import { KoiIcon } from "./base/KoiIcon";
 import { WalletSheet } from "./base/WalletSheet";
@@ -90,7 +91,16 @@ export function HsShell({ children }: { children: ReactNode }) {
         <WalletButton />
       </header>
 
-      <main className="sqx-content">{children}</main>
+      <main className="sqx-content">
+        {children}
+        {/* Mobile-only footer: the secondary links the tab bar has no room for. */}
+        <footer className="sqx-foot">
+          <NavLink to="/leaderboard">Leaderboard</NavLink>
+          <NavLink to="/docs">Docs</NavLink>
+          <a href="https://x.com/squidpad_" target="_blank" rel="noreferrer">X</a>
+          <span className="ch"><span className="hs-dot" /> {env.chainName}</span>
+        </footer>
+      </main>
 
       <nav className="sqx-tabbar" aria-label="Primary">
         <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="bar-chart" size={19} /><span>Markets</span></NavLink>

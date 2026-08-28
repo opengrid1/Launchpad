@@ -4624,6 +4624,13 @@ button.bg-accent:disabled {
   box-shadow: 0 8px 22px -4px color-mix(in srgb, var(--hs-mint) 60%, transparent);
 }
 :root[data-flavor="ink"] .sqx-fab:active { transform: scale(.95); }
+/* Mobile-only footer with the secondary links (desktop keeps them in the top nav). */
+:root[data-flavor="ink"] .sqx-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding: 20px 18px 26px; margin-top: 8px; border-top: 1px solid var(--hs-rule); }
+@media (min-width: 1024px) { :root[data-flavor="ink"] .sqx-foot { display: none; } }
+:root[data-flavor="ink"] .sqx-foot a { color: var(--hs-ink-3); font-family: var(--hs-mono); font-size: 12px; font-weight: 600; text-decoration: none; }
+:root[data-flavor="ink"] .sqx-foot a:hover { color: var(--hs-ink); }
+:root[data-flavor="ink"] .sqx-foot .ch { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; font-family: var(--hs-mono); font-size: 11px; color: var(--hs-ink-3); }
+:root[data-flavor="ink"] .sqx-foot .hs-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hs-mint); }
 
 /* ---- squidpad markets: clean single-column list ---- */
 :root[data-flavor="ink"] .sq-tabs { display: flex; gap: 22px; padding: 14px 18px 0; border-bottom: 1px solid var(--hs-rule); overflow-x: auto; scrollbar-width: none; }
