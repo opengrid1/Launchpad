@@ -4599,15 +4599,15 @@ button.bg-accent:disabled {
 :root[data-flavor="ink"] .sqx-search svg { flex: none; }
 :root[data-flavor="ink"] .sqx-search span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :root[data-flavor="ink"] .sqx-search:hover { border-color: var(--hs-mint); color: var(--hs-ink-2); }
-:root[data-flavor="ink"] .sqx-launch { margin-left: auto; }
-@media (min-width: 1024px) { :root[data-flavor="ink"] .sqx-search { order: 0; flex: none; width: 300px; margin-left: auto; } :root[data-flavor="ink"] .sqx-launch { margin-left: 0; } }
+:root[data-flavor="ink"] .sqx-top .hs-wallet { margin-left: auto; }
+@media (min-width: 1024px) { :root[data-flavor="ink"] .sqx-search { order: 0; flex: none; width: 300px; margin-left: auto; } :root[data-flavor="ink"] .sqx-top .hs-wallet { margin-left: 0; } }
 :root[data-flavor="ink"] .sqx-launch {
-  flex: none; display: flex; align-items: center; gap: 7px; height: 42px; padding: 0 15px; border: 0; border-radius: 13px; cursor: pointer;
+  flex: none; display: none; align-items: center; gap: 7px; height: 42px; padding: 0 16px; border: 0; border-radius: 13px; cursor: pointer;
   background: var(--hs-mint); color: #14092e; font-family: var(--hs-mono); font-weight: 800; font-size: 13px;
 }
 :root[data-flavor="ink"] .sqx-launch:hover { filter: brightness(1.08); }
-:root[data-flavor="ink"] .sqx-launch span { display: none; }
-@media (min-width: 460px) { :root[data-flavor="ink"] .sqx-launch span { display: inline; } }
+/* On mobile the bottom FAB is the launch button, so the header stays clean. */
+@media (min-width: 1024px) { :root[data-flavor="ink"] .sqx-launch { display: flex; } }
 :root[data-flavor="ink"] .sqx-content { flex: 1; min-width: 0; padding-bottom: calc(74px + env(safe-area-inset-bottom)); }
 @media (min-width: 1024px) { :root[data-flavor="ink"] .sqx-content { width: 100%; max-width: 1240px; margin: 0 auto; padding-bottom: 28px; } }
 :root[data-flavor="ink"] .sqx-tabbar {

@@ -14,14 +14,14 @@ const LaunchForm = lazy(() => import("../pages/LaunchHyper").then((m) => ({ defa
 // Wordmark halves: the accent lands on the suffix ("squid|pad", "hyper|stock").
 const [MARK_A, MARK_B] = IS_INK ? ["squid", "pad"] : ["hyper", "stock"];
 
-// Top-bar nav (desktop). Icons ride the mobile tab bar instead.
-const NAV: { to: string; end?: boolean; label: string; icon: ReactNode }[] = [
-  { to: "/", end: true, label: "Markets", icon: <KoiIcon name="bar-chart" size={17} /> },
-  { to: IS_INK ? "/analytics" : "/feed", label: IS_INK ? "Analytics" : "Feed", icon: <KoiIcon name="trending-up" size={17} /> },
-  { to: "/rewards", label: "Rewards", icon: <KoiIcon name="trophy" size={17} /> },
-  { to: "/leaderboard", label: "Leaderboard", icon: <KoiIcon name="flame" size={17} /> },
-  { to: "/profile", label: "Portfolio", icon: <KoiIcon name="wallet-alt" size={17} /> },
-  { to: "/docs", label: "Docs", icon: <KoiIcon name="menu" size={17} /> },
+// Top-bar nav (desktop). The mobile tab bar mirrors the primary four.
+const NAV: { to: string; end?: boolean; label: string }[] = [
+  { to: "/", end: true, label: "Markets" },
+  { to: IS_INK ? "/analytics" : "/feed", label: IS_INK ? "Analytics" : "Feed" },
+  { to: "/rewards", label: "Rewards" },
+  { to: "/leaderboard", label: "Leaderboard" },
+  { to: "/profile", label: "Wallet" },
+  { to: "/docs", label: "Docs" },
 ];
 
 function WalletButton() {

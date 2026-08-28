@@ -10,7 +10,6 @@ import { isHidden, isImpersonator } from "../lib/hiddenTokens";
 import { isOfficial } from "../lib/official";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
 import { volUsd } from "../components/market/util";
-import { KoiIcon } from "../components/base/KoiIcon";
 import { HyperMark } from "../components/HyperMark";
 import { DEFAULT_TOKEN_LOGO } from "../lib/hyper/defaultLogo";
 import { INK_PREVIEW, PREVIEW_ON } from "../lib/base/preview";
@@ -24,12 +23,12 @@ const fmtPrice = (p: number) => {
   return `$${Number(p.toPrecision(3))}`;
 };
 
-type Tab = "pulse" | "new" | "surge" | "top";
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "pulse", label: "Pulse", icon: <KoiIcon name="zap" size={14} /> },
-  { id: "new", label: "New", icon: <KoiIcon name="clock" size={14} /> },
-  { id: "surge", label: "Surge", icon: <KoiIcon name="trending-up" size={14} /> },
-  { id: "top", label: "Top", icon: <KoiIcon name="trophy" size={14} /> },
+type Tab = "trending" | "new" | "gainers" | "stocks";
+const TABS: { id: Tab; label: string }[] = [
+  { id: "trending", label: "Trending" },
+  { id: "new", label: "New" },
+  { id: "gainers", label: "Gainers" },
+  { id: "stocks", label: "Stocks" },
 ];
 
 // Design-preview fixtures live in lib/base/preview (shared with Analytics).
@@ -71,14 +70,14 @@ function Avatar({ t }: { t: TokenSummary }) {
  */
 export function HsBoard() {
   const [sp, setSp] = useSearchParams();
-  const tab = (sp.get("tab") as Tab) || "pulse";
+  const tab = (sp.get("tab") as Tab) || "trending";
 
   const { data: byVolume, loading: lv } = useTokens(client, { sort: "volume", limit: 100 });
   const { data: byNew, loading: ln } = useTokens(client, { sort: "new", limit: 100 });
 
   const setTab = (id: Tab) => {
     const n = new URLSearchParams(sp);
-    if (id === "pulse") n.delete("tab"); else n.set("tab", id);
+    if (id === "trending") n.delete("tab"); else n.set("tab", id);
     setSp(n, { replace: true });
   };
 
@@ -93,11 +92,14 @@ export function HsBoard() {
   }, [byVolume, byNew]);
 
   const feed = useMemo(() => {
-    const s = [...all];
+    let s = [...all];
     if (tab === "new") s.sort((a, b) => b.createdAt - a.createdAt);
-    else if (tab === "surge") s.sort((a, b) => (b.priceChange24hPct ?? -999) - (a.priceChange24hPct ?? -999) || volUsd(b) - volUsd(a));
-    else if (tab === "top") s.sort((a, b) => Number(b.marketCapUsd) - Number(a.marketCapUsd));
-    else s.sort((a, b) => (b.txCount24h ?? 0) - (a.txCount24h ?? 0) || b.createdAt - a.createdAt); // pulse: live activity
+    else if (tab === "gainers") s.sort((a, b) => (b.priceChange24hPct ?? -999) - (a.priceChange24hPct ?? -999) || volUsd(b) - volUsd(a));
+    else if (tab === "stocks") {
+      // Only coins paired with a tokenized stock (not the native token).
+      s = s.filter((t) => pairSymbolOf(t) !== env.nativeSymbol);
+      s.sort((a, b) => Number(b.marketCapUsd) - Number(a.marketCapUsd));
+    } else s.sort((a, b) => (b.txCount24h ?? 0) - (a.txCount24h ?? 0) || b.createdAt - a.createdAt); // trending: live activity
     return s;
   }, [all, tab]);
 
