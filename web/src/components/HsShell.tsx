@@ -2,11 +2,9 @@ import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import { BRAND, IS_INK } from "../lib/brand";
-import { env } from "../lib/env";
 import { BRAND_MARK } from "../lib/hyper/defaultLogo";
 import { KoiIcon } from "./base/KoiIcon";
 import { WalletSheet } from "./base/WalletSheet";
-import { BaseBottomNav } from "./BaseBottomNav";
 import { Skeleton } from "./ui";
 import { useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
@@ -16,24 +14,15 @@ const LaunchForm = lazy(() => import("../pages/LaunchHyper").then((m) => ({ defa
 // Wordmark halves: the accent lands on the suffix ("squid|pad", "hyper|stock").
 const [MARK_A, MARK_B] = IS_INK ? ["squid", "pad"] : ["hyper", "stock"];
 
+// Top-bar nav (desktop). Icons ride the mobile tab bar instead.
 const NAV: { to: string; end?: boolean; label: string; icon: ReactNode }[] = [
   { to: "/", end: true, label: "Markets", icon: <KoiIcon name="bar-chart" size={17} /> },
-  { to: IS_INK ? "/analytics" : "/feed", label: IS_INK ? "Analytics" : "Feed", icon: <KoiIcon name={IS_INK ? "trending-up" : "zap"} size={17} /> },
+  { to: IS_INK ? "/analytics" : "/feed", label: IS_INK ? "Analytics" : "Feed", icon: <KoiIcon name="trending-up" size={17} /> },
   { to: "/rewards", label: "Rewards", icon: <KoiIcon name="trophy" size={17} /> },
-  { to: "/leaderboard", label: "Leaderboard", icon: <KoiIcon name={IS_INK ? "flame" : "trending-up"} size={17} /> },
+  { to: "/leaderboard", label: "Leaderboard", icon: <KoiIcon name="flame" size={17} /> },
   { to: "/profile", label: "Portfolio", icon: <KoiIcon name="wallet-alt" size={17} /> },
   { to: "/docs", label: "Docs", icon: <KoiIcon name="menu" size={17} /> },
 ];
-
-function UtcClock() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  const p = (n: number) => String(n).padStart(2, "0");
-  return <span className="hs-clock">{p(now.getUTCHours())}:{p(now.getUTCMinutes())}:{p(now.getUTCSeconds())} UTC</span>;
-}
 
 function WalletButton() {
   const { address, isConnected, connectFirst, isPending } = useWallet();
@@ -77,62 +66,39 @@ export function HsShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="hs-shell">
-      <aside className="hs-side">
-        <Link to="/" aria-label={BRAND.name} className="hs-side-brand">
+    <div className="sqx">
+      <header className="sqx-top">
+        <Link to="/" className="sqx-brand" aria-label={BRAND.name}>
           <img src={BRAND_MARK} alt="" aria-hidden />
           <span>{MARK_A}<b>{MARK_B}</b></span>
         </Link>
-        <nav className="hs-side-nav" aria-label="Primary">
+        <nav className="sqx-nav" aria-label="Primary">
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => (isActive ? "on" : "")}>
-              {n.icon}
-              <span>{n.label}</span>
+              {n.label}
             </NavLink>
           ))}
         </nav>
-        <button onClick={openLaunch} className="hs-side-launch" aria-haspopup="dialog">
-          <KoiIcon name="rocket" size={16} />
-          <span>Launch a coin</span>
+        <Link to="/search" className="sqx-search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <span>Search coins, tickers, CA</span>
+        </Link>
+        <button onClick={openLaunch} className="sqx-launch" aria-haspopup="dialog">
+          <KoiIcon name="rocket" size={15} />
+          <span>Launch</span>
         </button>
-        <div className="hs-side-foot">
-          <span className="hs-side-chain"><span className="hs-dot" /> {env.chainName}</span>
-        </div>
-      </aside>
+        <WalletButton />
+      </header>
 
-      <div className="hs-main">
-        <div className="hs-top">
-          <Link to="/" className="hs-top-brand" aria-label={BRAND.name}>
-            <img src={BRAND_MARK} alt="" aria-hidden />
-            <span>{MARK_A}<b>{MARK_B}</b></span>
-          </Link>
-          <Link to="/search" className="hs-top-search">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-            <span>Search coins</span>
-          </Link>
-          <div className="hs-top-right">
-            <UtcClock />
-            <button onClick={openLaunch} className="hs-launch" aria-haspopup="dialog">
-              <KoiIcon name="rocket" size={15} />
-              <span>Launch</span>
-            </button>
-            <WalletButton />
-          </div>
-        </div>
-        <main className="hs-content">{children}</main>
-      </div>
+      <main className="sqx-content">{children}</main>
 
-      {IS_INK ? (
-        <nav className="hs-tabbar" aria-label="Primary">
-          <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="bar-chart" size={18} /><span>Markets</span></NavLink>
-          <NavLink to="/analytics" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trending-up" size={18} /><span>Analytics</span></NavLink>
-          <button className="hs-tabbar-launch" onClick={openLaunch} aria-label="Launch"><KoiIcon name="rocket" size={19} /></button>
-          <NavLink to="/rewards" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trophy" size={18} /><span>Rewards</span></NavLink>
-          <NavLink to="/profile" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="wallet-alt" size={18} /><span>Wallet</span></NavLink>
-        </nav>
-      ) : (
-        <BaseBottomNav />
-      )}
+      <nav className="sqx-tabbar" aria-label="Primary">
+        <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="bar-chart" size={19} /><span>Markets</span></NavLink>
+        <NavLink to="/analytics" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trending-up" size={19} /><span>Analytics</span></NavLink>
+        <button className="sqx-fab" onClick={openLaunch} aria-label="Launch"><KoiIcon name="rocket" size={22} /></button>
+        <NavLink to="/rewards" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trophy" size={19} /><span>Rewards</span></NavLink>
+        <NavLink to="/profile" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="wallet-alt" size={19} /><span>Wallet</span></NavLink>
+      </nav>
 
       {sheet ? (
         <div className="kf-sheet-backdrop" onClick={() => setSheet(false)}>
