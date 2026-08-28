@@ -4640,6 +4640,9 @@ button.bg-accent:disabled {
   color: var(--hs-ink-3); font-size: 15px; font-weight: 600; border-bottom: 2px solid transparent; text-transform: capitalize;
 }
 :root[data-flavor="ink"] .sq-tab.on { color: var(--hs-ink); border-bottom-color: var(--hs-mint); }
+/* Kill the sticky tap-focus ring on mobile; keep it for keyboard users. */
+:root[data-flavor="ink"] .sq-tab:focus { outline: none; }
+:root[data-flavor="ink"] .sq-tab:focus-visible { outline: 2px solid var(--hs-mint); outline-offset: 3px; border-radius: 4px; }
 
 :root[data-flavor="ink"] .sq-list { padding: 0 6px; }
 @media (min-width: 1024px) { :root[data-flavor="ink"] .sq-list { padding: 4px 8px; } }
