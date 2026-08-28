@@ -4574,6 +4574,62 @@ button.bg-accent:disabled {
 /* Active navigation stays neutral ink, not the violet accent. */
 :root[data-brand="hyper"][data-flavor="ink"] .hs-side-nav a.on { color: var(--hs-ink); border-left-color: var(--hs-ink); }
 :root[data-brand="hyper"][data-flavor="ink"] .hs-tabbar a.on { color: var(--hs-ink); }
+/* ---- squidpad markets: mobile-first coin card grid ---- */
+:root[data-brand="hyper"][data-flavor="ink"] .sq-grid {
+  display: grid; gap: 10px; padding: 10px 12px 90px;
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+}
+@media (min-width: 480px) { :root[data-brand="hyper"][data-flavor="ink"] .sq-grid { gap: 12px; padding: 12px 16px 90px; } }
+@media (min-width: 1024px) { :root[data-brand="hyper"][data-flavor="ink"] .sq-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); padding: 14px 18px 40px; } }
+
+:root[data-brand="hyper"][data-flavor="ink"] .sq-card {
+  display: flex; flex-direction: column; border: 1px solid var(--hs-rule-2); border-radius: 14px;
+  background: var(--hs-bg-2); overflow: hidden; text-decoration: none; transition: transform .1s, border-color .12s;
+}
+:root[data-brand="hyper"][data-flavor="ink"] .sq-card:active { transform: scale(.985); }
+@media (hover: hover) { :root[data-brand="hyper"][data-flavor="ink"] .sq-card:hover { border-color: color-mix(in srgb, var(--hs-mint) 55%, transparent); } }
+
+:root[data-brand="hyper"][data-flavor="ink"] .sq-card-top {
+  position: relative; height: 92px; display: grid; place-items: center;
+  background: radial-gradient(120% 90% at 30% 20%, color-mix(in srgb, var(--hs-mint) 20%, transparent), transparent 70%), var(--hs-panel);
+  border-bottom: 1px solid var(--hs-rule);
+}
+:root[data-brand="hyper"][data-flavor="ink"] .sq-card-top .gm-ava { width: 52px; height: 52px; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-card-top .gm-ava img { border-radius: 14px; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-pair {
+  position: absolute; top: 8px; left: 8px; font-family: var(--hs-mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em;
+  color: var(--hs-mint); background: color-mix(in srgb, var(--hs-bg) 72%, transparent); padding: 3px 7px; border-radius: 6px; backdrop-filter: blur(4px);
+}
+:root[data-brand="hyper"][data-flavor="ink"] .sq-chg {
+  position: absolute; top: 8px; right: 8px; font-family: var(--hs-mono); font-size: 10px; font-weight: 800;
+  background: color-mix(in srgb, var(--hs-bg) 72%, transparent); padding: 3px 7px; border-radius: 6px; backdrop-filter: blur(4px);
+}
+:root[data-brand="hyper"][data-flavor="ink"] .sq-chg.up { color: var(--hs-green, #4ade80); }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-chg.down { color: var(--hs-red); }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-chg.flat { color: var(--hs-ink-3); }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-official {
+  position: absolute; bottom: 8px; left: 8px; font-family: var(--hs-mono); font-size: 8.5px; font-weight: 800; letter-spacing: 0.08em;
+  color: #14092e; background: var(--hs-mint); padding: 2px 6px; border-radius: 5px;
+}
+:root[data-brand="hyper"][data-flavor="ink"] .sq-card-body { padding: 10px 11px 11px; display: flex; flex-direction: column; gap: 7px; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-l1 { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-l1 b { color: var(--hs-ink); font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-l1 .nm { color: var(--hs-ink-3); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-l2 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-l2 span { font-family: var(--hs-mono); font-size: 12px; font-weight: 700; color: var(--hs-ink-2); }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-l2 i { font-style: normal; font-size: 9.5px; font-weight: 500; color: var(--hs-ink-3); letter-spacing: 0.06em; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-l2 .age { font-size: 10px; font-weight: 500; color: var(--hs-ink-3); }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-spark { width: 100%; height: 30px; display: block; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-buy {
+  margin-top: 1px; height: 34px; border: 0; border-radius: 9px; cursor: pointer;
+  background: var(--hs-green, #4ade80); color: var(--hs-green-fg, #06210f); font-family: var(--hs-mono); font-size: 12.5px; font-weight: 800;
+}
+:root[data-brand="hyper"][data-flavor="ink"] .sq-buy:hover { filter: brightness(1.06); }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-buy:disabled { opacity: 0.6; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-cskel { height: 200px; border-radius: 14px; background: linear-gradient(100deg, var(--hs-bg-2), var(--hs-panel), var(--hs-bg-2)); background-size: 200% 100%; animation: hs-sheen 1.4s infinite; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-empty { grid-column: 1 / -1; padding: 40px 16px; text-align: center; color: var(--hs-ink-3); font-size: 13px; }
+:root[data-brand="hyper"][data-flavor="ink"] .sq-empty a { color: var(--hs-mint); font-weight: 700; }
+
 /* ---- squidpad launch form: compact terminal grid ---- */
 :root[data-brand="hyper"][data-flavor="ink"] .kf-launch.lf { max-width: 660px; margin: 0 auto; }
 :root[data-brand="hyper"][data-flavor="ink"] .lf .kf-launch-h1 { font-family: var(--hs-mono); font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }

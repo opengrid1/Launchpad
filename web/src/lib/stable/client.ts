@@ -585,6 +585,22 @@ export class StableV3Client {
     return ((Number(currentPrice) - Number(baseline)) / Number(baseline)) * 100;
   }
 
+  /** A small price series (oldest to newest) for a card sparkline, sampled
+   *  from cached trades. Empty when nothing has traded yet. */
+  private sparkFromCache(key: string): number[] {
+    const trades = (this.tradesCache.get(key) ?? this.loadPersistedTrades(key))?.trades ?? [];
+    if (trades.length === 0) return [];
+    // trades are newest-first; walk oldest to newest and pull the price.
+    const prices = trades.map((t) => Number(t.priceWei)).filter((n) => n > 0).reverse();
+    if (prices.length <= 24) return prices;
+    // Downsample to ~24 evenly spaced points.
+    const step = prices.length / 24;
+    const out: number[] = [];
+    for (let i = 0; i < 24; i++) out.push(prices[Math.floor(i * step)]);
+    out.push(prices[prices.length - 1]);
+    return out;
+  }
+
   /** Count holders among addresses we've seen trade (Swap `recipient`), the
    *  creator, and the pool. The RPC's 500-block getLogs cap rules out a full
    *  Transfer-history scan, so this converges as trading is observed; traders
@@ -697,6 +713,7 @@ export class StableV3Client {
       limitsActive: false,
       remainingToGraduationUsd: "0",
       priceChange24hPct: this.change24hFromCache(core.address.toLowerCase(), price),
+      sparkline: this.sparkFromCache(core.address.toLowerCase()),
       creatorFeesWei: "0",
     } as unknown as TokenSummary;
   }

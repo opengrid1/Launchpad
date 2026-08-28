@@ -43,37 +43,6 @@ function useQuickBuy(token: `0x${string}`, symbol: string, onDone?: () => void) 
   return { buy, busyAmt };
 }
 
-/** The row's bolt: tap to reveal native-token presets, each a real buy. */
-function BoltBuy({ token, symbol }: { token: `0x${string}`; symbol: string }) {
-  const [open, setOpen] = useState(false);
-  const { buy, busyAmt } = useQuickBuy(token, symbol, () => setOpen(false));
-  useEffect(() => {
-    if (!open) return;
-    const away = (e: MouseEvent) => {
-      const el = e.target as HTMLElement;
-      if (!el.closest?.(`[data-gmqb="${token}"]`)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", away);
-    return () => document.removeEventListener("pointerdown", away);
-  }, [open, token]);
-  return (
-    <span className="gm-qb" data-gmqb={token} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-      {open ? (
-        <span className="gm-qb-pop">
-          {QUICK_BUY_AMOUNTS.map((a) => (
-            <button key={a} disabled={busyAmt != null} onClick={() => buy(a)}>
-              {busyAmt === a ? "…" : a}
-            </button>
-          ))}
-        </span>
-      ) : null}
-      <button className={`gm-bolt ${open ? "on" : ""}`} aria-label={`Quick buy ${symbol}`} onClick={() => setOpen((o) => !o)}>
-        <KoiIcon name="zap" size={15} />
-        <span>{QUICK_BUY_AMOUNTS[0]}</span>
-      </button>
-    </span>
-  );
-}
 
 type Tab = "pulse" | "new" | "surge" | "top";
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -115,22 +84,10 @@ function Avatar({ t }: { t: TokenSummary }) {
   );
 }
 
-function priceUsdOf(t: TokenSummary): number {
-  const mc = Number(t.marketCapUsd);
-  return mc > 0 ? mc / 1_000_000_000 : 0;
-}
-function fmtPrice(p: number): string {
-  if (p <= 0) return "—";
-  if (p >= 1) return `$${p.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-  if (p >= 0.01) return `$${p.toFixed(4)}`;
-  return `$${Number(p.toPrecision(3)).toString()}`;
-}
-
 /**
- * squidpad markets — GMGN-style terminal feed: icon filter pills over dense
- * multi-stat rows (volume, market cap, trades, holders proxy) with an inline
- * bolt quick-buy on every row. One layout at every breakpoint; desktop just
- * breathes wider inside the shell.
+ * squidpad markets — a mobile-first card grid: filter pills over a fluid grid
+ * of coin cards (logo banner, pair + 24h badges, mcap, sparkline, one-tap
+ * buy). Two per row on phones, widening as the screen grows.
  */
 export function HsBoard() {
   const [sp, setSp] = useSearchParams();
@@ -200,48 +157,76 @@ export function HsBoard() {
         )}
       </div>
 
-      {/* Dense rows */}
-      <div className="gm-list">
+      {/* Mobile-first card grid: 2 up on phones, more as the screen grows */}
+      <div className="sq-grid">
         {loading ? (
-          [...Array(9)].map((_, i) => <div key={i} className="gm-skel" />)
+          [...Array(8)].map((_, i) => <div key={i} className="sq-cskel" />)
         ) : feed.length === 0 ? (
-          <div className="gm-empty">
+          <div className="sq-empty">
             {debounced ? "No coin matches that." : "No coins in the water yet."} <Link to="/launch">Launch the first one</Link>.
           </div>
         ) : (
-          feed.map((t) => {
-            const chg = t.priceChange24hPct;
-            const has = chg != null && isFinite(chg);
-            const official = isOfficial(t.address);
-            return (
-              <Link to={`/token/${t.address}`} key={t.address} className="gm-row">
-                <Avatar t={t} />
-                <span className="gm-mid">
-                  <span className="gm-l1">
-                    <b>{t.symbol}</b>
-                    <span className="nm">{t.name}</span>
-                    {official ? <span className="gm-tag">OFFICIAL</span> : null}
-                    <span className="age"><KoiIcon name="clock" size={11} />{t.createdAt ? timeAgo(t.createdAt) : "—"}</span>
-                  </span>
-                  <span className="gm-l2">
-                    <span>V <b>{volUsd(t) > 0 ? fmtUsd(volUsd(t)) : "$0"}</b></span>
-                    <span>MC <b>{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"}</b></span>
-                    <span><KoiIcon name="group" size={11} /> <b>{t.txCount24h ?? 0}</b> tx</span>
-                    <span className="pair">{pairSymbolOf(t)}</span>
-                  </span>
-                </span>
-                <span className="gm-right">
-                  <span className="p">{fmtPrice(priceUsdOf(t))}</span>
-                  <span className={`c ${has ? (chg! >= 0 ? "up" : "down") : "flat"}`}>
-                    {has ? `${chg! >= 0 ? "+" : ""}${chg!.toFixed(1)}%` : "0.0%"}
-                  </span>
-                </span>
-                <BoltBuy token={t.address as `0x${string}`} symbol={t.symbol} />
-              </Link>
-            );
-          })
+          feed.map((t) => <CoinCard key={t.address} t={t} />)
         )}
       </div>
     </div>
+  );
+}
+
+/** One coin as a card: logo banner with pair + change badges, name/mcap, a
+ *  sparkline, and a one-tap Buy. Mobile-first; the grid packs two per row on
+ *  phones and widens on desktop. */
+function CoinCard({ t }: { t: TokenSummary }) {
+  const chg = t.priceChange24hPct;
+  const has = chg != null && isFinite(chg);
+  const up = has && chg! >= 0;
+  const official = isOfficial(t.address);
+  const spark = ((t as any).sparkline as number[] | undefined) ?? [];
+  const { buy, busyAmt } = useQuickBuy(t.address as `0x${string}`, t.symbol);
+  const amt = QUICK_BUY_AMOUNTS[0];
+  return (
+    <Link to={`/token/${t.address}`} className="sq-card">
+      <div className="sq-card-top">
+        <Avatar t={t} />
+        <span className="sq-pair">{pairSymbolOf(t)}</span>
+        <span className={`sq-chg ${has ? (up ? "up" : "down") : "flat"}`}>{has ? `${up ? "+" : ""}${chg!.toFixed(1)}%` : "new"}</span>
+        {official ? <span className="sq-official">OFFICIAL</span> : null}
+      </div>
+      <div className="sq-card-body">
+        <div className="sq-l1"><b>{t.symbol}</b><span className="nm">{t.name}</span></div>
+        <div className="sq-l2">
+          <span>{Number(t.marketCapUsd) > 0 ? fmtUsd(t.marketCapUsd) : "—"} <i>mcap</i></span>
+          <span className="age">{t.createdAt ? timeAgo(t.createdAt) : ""}</span>
+        </div>
+        <Spark data={spark} up={up} />
+        <button
+          className="sq-buy"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); buy(amt); }}
+          disabled={busyAmt != null}
+        >
+          {busyAmt != null ? "Buying…" : `Buy ${amt}`}
+        </button>
+      </div>
+    </Link>
+  );
+}
+
+/** Tiny sparkline from a price series, normalized to the box. Flat baseline
+ *  when there is no trade history yet. */
+function Spark({ data, up }: { data: number[]; up: boolean }) {
+  const W = 200, H = 40;
+  let pts = `0,${H / 2} ${W},${H / 2}`;
+  if (data.length >= 2) {
+    const min = Math.min(...data), max = Math.max(...data);
+    const span = max - min || 1;
+    pts = data
+      .map((v, i) => `${(i / (data.length - 1)) * W},${H - ((v - min) / span) * (H - 6) - 3}`)
+      .join(" ");
+  }
+  const color = data.length >= 2 ? (up ? "var(--hs-green, #4ade80)" : "var(--hs-red, #ff7080)") : "var(--hs-rule-2)";
+  return (
+    <svg className="sq-spark" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
   );
 }
