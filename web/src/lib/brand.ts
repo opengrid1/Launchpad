@@ -100,6 +100,20 @@ const FLAVORS: Record<string, Brand> = {
       "squidpad. Launch a coin on Ink. One transaction opens a real Uniswap market and every trade pays 1%: half to holders, 40% to the creator, forever.",
     title: "squidpad | launch in the deep",
   },
+  // Meowstock: the squidpad product/design (teal, chart-first) on HyperEVM,
+  // rebranded with a cat mark. Same 50/40/10 stock-reward mechanics.
+  meow: {
+    name: "meowstock",
+    tld: ".fun",
+    domain: "meowstock.fun",
+    url: "https://meowstock.fun",
+    twitter: "https://x.com/",
+    twitterHandle: "",
+    tagline: "hold the coin, earn the stock",
+    description:
+      "meowstock. Launch a coin on HyperEVM paired with a tokenized stock. One transaction opens a real market and every trade pays 1%: half to holders, 40% to the creator, forever.",
+    title: "meowstock | hold the coin, earn the stock",
+  },
   // Arc mainnet flavor: same product, USDC-blue theme for Circle's Arc chain.
   arc: {
     name: "arcx",
@@ -123,9 +137,13 @@ export const BRAND: Brand = FLAVORS[BRAND_FLAVOR] ?? FLAVORS.copair;
  *  tokenized stock; fees split holders/creator/platform, manual claims. */
 export const IS_HYPER = BRAND_FLAVOR === "hyper";
 
-/** The Ink chain launchpad (squidpad): canonical Uniswap V3, ETH pairs, the
- *  terminal split-view chrome. Shares the hyper flavor's product mechanics. */
-export const IS_INK = BRAND_FLAVOR === "ink";
+/** Meowstock: the squidpad design and mechanics on HyperEVM, cat-branded. */
+export const IS_MEOW = BRAND_FLAVOR === "meow";
+
+/** The squidpad-style app (Ink squidpad + HyperEVM meowstock): teal design,
+ *  chart-first token view, amount-first desk, boot splash. Meowstock reuses the
+ *  whole ink presentation; chain-specific bits still key off BRAND_FLAVOR. */
+export const IS_INK = BRAND_FLAVOR === "ink" || BRAND_FLAVOR === "meow";
 
 /** Flavors that render the pump.fun-style live market board (BoardHeader +
  *  ExploreBoard) instead of the default card grid: the Robinhood heist board,

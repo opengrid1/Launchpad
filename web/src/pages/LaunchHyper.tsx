@@ -4,7 +4,11 @@ import { keccak256, parseEther, toHex } from "viem";
 
 import { client } from "../lib/client";
 import { env } from "../lib/env";
-import { IS_INK } from "../lib/brand";
+import { BRAND_FLAVOR, IS_INK } from "../lib/brand";
+
+// Chain / DEX labels: squidpad on Ink, meowstock on HyperEVM.
+const NET = BRAND_FLAVOR === "meow" ? "HyperEVM" : "Ink";
+const DEX = BRAND_FLAVOR === "meow" ? "HyperSwap" : "Uniswap";
 import { STOCKS, WHYPE, type HyperStock } from "../lib/hyper/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
@@ -16,7 +20,7 @@ const TOKEN_CREATED_TOPIC = keccak256(
 // The launch pair options: WHYPE (default) plus every tokenized stock live on
 // HyperEVM. The pool's 1% fee is paid in whichever they pick.
 type Pair = { symbol: string; label: string; sub: string; address: `0x${string}` };
-const WHYPE_PAIR: Pair = IS_INK
+const WHYPE_PAIR: Pair = BRAND_FLAVOR === "ink"
   ? { symbol: "ETH", label: "ETH", sub: "Ink", address: "0x4200000000000000000000000000000000000006" as `0x${string}` }
   : { symbol: "HYPE", label: "HYPE", sub: "Hyperliquid", address: WHYPE };
 const STOCK_PAIRS: Pair[] = STOCKS.map((s: HyperStock) => ({
@@ -142,7 +146,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
       <h1 className="kf-launch-h1">Launch a coin</h1>
       <p className="kf-launch-sub">
         {IS_INK
-          ? "One transaction opens a live Uniswap market on Ink with the full supply. Every buy auto-pays 1%: 0.5% holders, 0.4% you, 0.1% platform, paid out in the pair stock."
+          ? `One transaction opens a live ${DEX} market on ${NET} with the full supply. Every buy auto-pays 1%: 0.5% holders, 0.4% you, 0.1% platform, paid out in the pair stock.`
           : `Deploy a coin on HyperEVM paired with ${env.nativeSymbol} or a tokenized stock. One transaction opens a live HyperSwap market and seeds the full supply. Every trade pays you, the creator, 1% forever.`}
       </p>
 
@@ -244,10 +248,10 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
               {IS_INK ? (
                 <>
                   <b style={{ color: "var(--color-accent-ink)" }}>{selected.label}</b> is {selected.sub} on
-                  Ink. Buyers (and your dev buy) need {selected.label} first, from{" "}
-                  <a href="https://app.uniswap.org" target="_blank" rel="noreferrer"
+                  {" "}{NET}. Buyers (and your dev buy) need {selected.label} first, from{" "}
+                  <a href={BRAND_FLAVOR === "meow" ? "https://app.hyperliquid.xyz/trade" : "https://app.uniswap.org"} target="_blank" rel="noreferrer"
                     style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>
-                    Uniswap on Ink
+                    {DEX} on {NET}
                   </a>. {env.nativeSymbol} pairs get the widest wallet and bot reach.
                 </>
               ) : (
@@ -320,7 +324,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
           </button>
         </div>
         <p className="kf-footnote">
-          {IS_INK ? "You pay Ink gas only. No setup needed." : "You pay HyperEVM gas. Big blocks must be enabled on your wallet."}
+          {BRAND_FLAVOR === "ink" ? "You pay Ink gas only. No setup needed." : "You pay HyperEVM gas. Big blocks must be enabled on your wallet."}
         </p>
       </form>
     </div>

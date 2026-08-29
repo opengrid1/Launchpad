@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
-import { BRAND, IS_INK } from "../lib/brand";
+import { BRAND, BRAND_FLAVOR, IS_INK } from "../lib/brand";
 import { BRAND_MARK } from "../lib/hyper/defaultLogo";
 import { KoiIcon } from "./base/KoiIcon";
 import { WalletSheet } from "./base/WalletSheet";
@@ -11,8 +11,9 @@ import { useUi } from "../store";
 
 const LaunchForm = lazy(() => import("../pages/LaunchHyper").then((m) => ({ default: m.LaunchHyper })));
 
-// Wordmark halves: the accent lands on the suffix ("squid|pad", "hyper|stock").
-const [MARK_A, MARK_B] = IS_INK ? ["squid", "pad"] : ["hyper", "stock"];
+// Wordmark halves: the accent lands on the suffix ("squid|pad", "meow|stock").
+const [MARK_A, MARK_B] =
+  BRAND_FLAVOR === "meow" ? ["meow", "stock"] : IS_INK ? ["squid", "pad"] : ["hyper", "stock"];
 
 // Top-bar nav (desktop). The mobile tab bar mirrors the primary four.
 const NAV: { to: string; end?: boolean; label: string }[] = [

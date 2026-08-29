@@ -65,5 +65,11 @@ const HYPER_BRAND_MARK =
       `</g></svg>`,
   );
 
-export const DEFAULT_TOKEN_LOGO = BRAND_FLAVOR === "ink" ? INK_TOKEN_LOGO : HYPER_TOKEN_LOGO;
-export const BRAND_MARK = BRAND_FLAVOR === "ink" ? INK_BRAND_MARK : HYPER_BRAND_MARK;
+// meowstock uses the uploaded cat mark (teal on a deep-teal tile) as both the
+// brand mark and the default token avatar.
+const MEOW_MARK = "/meow-tile.png";
+
+export const DEFAULT_TOKEN_LOGO =
+  BRAND_FLAVOR === "meow" ? MEOW_MARK : BRAND_FLAVOR === "ink" ? INK_TOKEN_LOGO : HYPER_TOKEN_LOGO;
+export const BRAND_MARK =
+  BRAND_FLAVOR === "meow" ? MEOW_MARK : BRAND_FLAVOR === "ink" ? INK_BRAND_MARK : HYPER_BRAND_MARK;

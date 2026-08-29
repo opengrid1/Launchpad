@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 
+import { BRAND, BRAND_FLAVOR } from "../lib/brand";
 import { BRAND_MARK } from "../lib/hyper/defaultLogo";
+
+// Wordmark halves, accent on the suffix.
+const [WM_A, WM_B] =
+  BRAND_FLAVOR === "meow" ? ["meow", "stock"] : ["squid", "pad"];
 
 /**
  * squidpad boot splash: a deep-teal screen with the floating squid mark, the
@@ -23,8 +28,8 @@ export function SquidSplash() {
   return (
     <div className={`sq-splash${hide ? " out" : ""}`} role="status" aria-label="Loading squidpad">
       <div className="sq-splash-mark"><img src={BRAND_MARK} alt="" aria-hidden /></div>
-      <div className="sq-splash-word">squid<b>pad</b></div>
-      <div className="sq-splash-tag">launch in the deep</div>
+      <div className="sq-splash-word">{WM_A}<b>{WM_B}</b></div>
+      <div className="sq-splash-tag">{BRAND.tagline}</div>
       <div className="sq-splash-bar"><span /></div>
     </div>
   );
