@@ -38,6 +38,7 @@ function WalletButton() {
   }
   return (
     <button onClick={connectFirst} disabled={isPending} className="hs-wallet">
+      <KoiIcon name="wallet" size={16} />
       {isPending ? "Connecting" : "Connect"}
     </button>
   );

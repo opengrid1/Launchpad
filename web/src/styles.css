@@ -4600,7 +4600,8 @@ button.bg-accent:disabled {
 :root[data-flavor="ink"] .sqx-search svg { flex: none; }
 :root[data-flavor="ink"] .sqx-search span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :root[data-flavor="ink"] .sqx-search:hover { border-color: var(--hs-mint-deep); color: var(--hs-ink-2); }
-:root[data-flavor="ink"] .sqx-top .hs-wallet { margin-left: auto; }
+:root[data-flavor="ink"] .sqx-top .hs-wallet { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; }
+:root[data-flavor="ink"] .sqx-top .hs-wallet svg { flex: none; }
 @media (min-width: 1024px) { :root[data-flavor="ink"] .sqx-search { order: 0; flex: none; width: 300px; margin-left: auto; } :root[data-flavor="ink"] .sqx-top .hs-wallet { margin-left: 0; } }
 :root[data-flavor="ink"] .sqx-launch {
   flex: none; display: none; align-items: center; gap: 7px; height: 42px; padding: 0 16px; border: 0; border-radius: 13px; cursor: pointer;
