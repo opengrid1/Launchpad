@@ -681,7 +681,6 @@ function GmTokenView({
 
       {/* Docked trade bar: preset buys + Buy / Sell */}
       <div className="gm-tk-dock">
-        <DockBuys token={t.address as Address} symbol={t.symbol} />
         <div className="gm-tk-cta">
           <button className="b" onClick={() => setSheet("buy")}>Buy</button>
           <button className="s" onClick={() => setSheet("sell")}>Sell</button>

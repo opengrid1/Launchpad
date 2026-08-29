@@ -5180,10 +5180,10 @@ button.bg-accent:disabled {
   background: transparent; color: var(--hs-ink-3); font-family: var(--hs-mono); font-size: 13px; font-weight: 600;
 }
 :root[data-flavor="ink"] .gm-tk-tabs button.on { color: var(--hs-ink); border-bottom-color: var(--hs-mint); background: transparent; }
-/* Docked actions: taller rounded buttons, Buy filled green, Sell outline red. */
+/* Docked actions: taller rounded buttons, Buy filled green, Sell filled red. */
 :root[data-flavor="ink"] .gm-tk-cta button { height: 50px; border-radius: 14px; font-size: 15px; }
-:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s { background: transparent; border: 1.5px solid var(--hs-red); color: var(--hs-red); }
-:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s:hover { background: var(--hs-red); color: #ffffff; filter: none; }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s { background: var(--hs-red); border: 0; color: #ffffff; }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s:hover { filter: brightness(1.06); }
 
 /* ============ squidpad amount-first trade desk ============ */
 :root[data-flavor="ink"] .sqbuy { display: flex; flex-direction: column; padding: 2px 2px 6px; }
