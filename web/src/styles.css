@@ -5237,8 +5237,8 @@ button.bg-accent:disabled {
 /* Action-button FILLS switch to Hyperliquid teal (buy/primary) and pink-red
    (sell) with dark text; gains/loss TEXT stays green/red for readability on
    the white ground, and the violet brand accent stays for identity. */
-/* Buttons use the logo-tile dark teal as the fill, with a teal (or red) label. */
-:root[data-brand="hyper"][data-flavor="ink"] { --sq-teal: #062723; --sq-teal-fg: #4fe0cb; --sq-sell: #062723; --sq-sell-fg: #ff5d7a; }
+/* Buttons use the logo-tile dark teal as the fill, with a white label (red for Sell). */
+:root[data-brand="hyper"][data-flavor="ink"] { --sq-teal: #062723; --sq-teal-fg: #ffffff; --sq-sell: #062723; --sq-sell-fg: #ff5d7a; }
 /* primary: launch button + mobile FAB */
 :root[data-flavor="ink"] .sqx-launch { background: var(--sq-teal); color: var(--sq-teal-fg); }
 :root[data-flavor="ink"] .sqx-fab { background: var(--sq-teal); color: var(--sq-teal-fg); box-shadow: 0 8px 22px -4px color-mix(in srgb, var(--sq-teal) 60%, transparent); }
