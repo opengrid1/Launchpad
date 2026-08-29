@@ -1,9 +1,9 @@
 {
   "network": "hyperevm",
   "chainId": 999,
-  "startBlock": 44459830,
-  "deployer": "0x70263ae0b3b7C5b62f5A93b7893d86Ed986aD0aD",
-  "owner": "0x70263ae0b3b7C5b62f5A93b7893d86Ed986aD0aD",
+  "startBlock": 44471248,
+  "deployer": "0x22212AE0f5c4d39d9ca4F294B773b4E3B329264d",
+  "owner": "0x22212AE0f5c4d39d9ca4F294B773b4E3B329264d",
   "feeRecipient": "0x77002c2e21575f0450d28c2e71c0707ba0f5995a",
   "hyperswapV3": {
     "factory": "0xb1c0fa0b789320044a6f623cfe5ebda9562602e3",
@@ -12,8 +12,8 @@
     "whype": "0x5555555555555555555555555555555555555555"
   },
   "contracts": {
-    "tokenDeployer": "0x54BAcAd7500a767e9e437fa54e00B11320e98066",
-    "factory": "0x24Ba7013C7c0074255A35E019c688FbD5D1b71ec"
+    "tokenDeployer": "0x6d36aEd14d1929F0Edb580459bC4A845d3F168C9",
+    "factory": "0x19BEA177067dd79D3D25710D42808e8ec2587239"
   },
   "quotes": [
     {
