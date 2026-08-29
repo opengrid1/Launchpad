@@ -6,7 +6,7 @@ import { client, v4Client } from "../lib/client";
 import { fmtUsd, compact } from "../lib/format";
 import { BASE_USDC, BASE_WETH, baseStockUsd } from "../lib/base/routes";
 import { baseStockOf } from "../lib/base/stocks";
-import { IS_HYPER } from "../lib/brand";
+import { IS_HYPER, IS_INK } from "../lib/brand";
 import { env } from "../lib/env";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
@@ -49,6 +49,10 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
 
   const [side, setSide] = useState<Side>(initialSide ?? "buy");
   const [amount, setAmount] = useState("");
+  // squidpad's amount-first desk lets the big field be typed in dollars or in
+  // the pay token; `field` is the raw string shown, `denom` which unit it means.
+  const [denom, setDenom] = useState<"usd" | "tok">("usd");
+  const [field, setField] = useState("");
   const [slip, setSlip] = useState(8);
   const [showSettings, setShowSettings] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -161,6 +165,77 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
   };
 
   const dollarPresets = side === "buy" ? [10, 25, 50, 100] : null;
+
+  // ---- squidpad amount-first desk ----
+  const trimNum = (n: number) => (n <= 0 || !isFinite(n) ? "" : (n < 1 ? n.toPrecision(4) : n.toFixed(n < 1000 ? 4 : 2)).replace(/\.?0+$/, ""));
+  const switchSide = (s: Side) => { setSide(s); setAmount(""); setField(""); setDenom("usd"); };
+  const onField = (v: string) => {
+    const s = v.replace(/[^0-9.]/g, "");
+    setField(s);
+    const n = Number(s) || 0;
+    setAmount(denom === "usd" ? (payUsd > 0 ? String(n / payUsd) : "") : s);
+  };
+  const toggleDenom = () => {
+    const n = Number(field) || 0;
+    if (denom === "usd") { setDenom("tok"); setField(trimNum(payUsd > 0 ? n / payUsd : 0)); }
+    else { setDenom("usd"); setField(trimNum(n * payUsd)); }
+  };
+  const pickUsd = (d: number) => { setDenom("usd"); setField(String(d)); setAmount(payUsd > 0 ? String(d / payUsd) : ""); };
+  const pickPct = (p: number) => {
+    if (payBal == null) return;
+    const usable = p === 100 ? (payBal * 99n) / 100n : (payBal * BigInt(p)) / 100n;
+    const tok = formatUnits(usable, payDecimals);
+    setDenom("tok"); setField(trimNum(Number(tok))); setAmount(tok);
+  };
+  const earnsSym = pair && !isNativePair(pair) ? disp(pair) : null;
+  const payBalNum = payBal != null ? Number(formatUnits(payBal, payDecimals)) : null;
+
+  if (IS_INK) {
+    return (
+      <div className="sqbuy">
+        <div className="sqbuy-seg">
+          <button className={`buy ${side === "buy" ? "on" : ""}`} onClick={() => switchSide("buy")}>Buy</button>
+          <button className={`sell ${side === "sell" ? "on" : ""}`} onClick={() => switchSide("sell")}>Sell</button>
+        </div>
+
+        <div className="sqbuy-amt">
+          {denom === "usd" ? <span className="cur">$</span> : null}
+          <input value={field} onChange={(e) => onField(e.target.value)} placeholder="0" inputMode="decimal" aria-label="Amount" size={Math.max(1, (field || "0").length)} />
+        </div>
+
+        <div className="sqbuy-denom">
+          <button className={denom === "usd" ? "on" : ""} onClick={() => denom !== "usd" && toggleDenom()}>USD</button>
+          <button className={denom === "tok" ? "on" : ""} onClick={() => denom !== "tok" && toggleDenom()}>{paySymbol}</button>
+        </div>
+
+        <div className="sqbuy-recv">≈ {est ? `${compact(est.out)} ${recvSymbol}` : `0 ${recvSymbol}`}</div>
+
+        <div className="sqbuy-presets">
+          {side === "buy"
+            ? [10, 25, 50, 100].map((d) => (
+                <button key={d} className={denom === "usd" && Number(field) === d ? "on" : ""} onClick={() => pickUsd(d)}>${d}</button>
+              ))
+            : [25, 50, 75, 100].map((p, i) => (
+                <button key={p} onClick={() => pickPct(p)}>{["25%", "50%", "75%", "Max"][i]}</button>
+              ))}
+        </div>
+
+        <div className="sqbuy-meta">
+          <span>Balance {payBalNum != null ? `${compact(payBalNum)} ${paySymbol}` : "—"}</span>
+          {earnsSym ? <span> · earns {earnsSym}</span> : null}
+          <button className="sqbuy-slip" onClick={() => setSlip(slip === 3 ? 8 : slip === 8 ? 15 : 3)}>Slippage {slip}%</button>
+        </div>
+
+        {isConnected ? (
+          <button onClick={submit} disabled={busy || !parsed || parsed === 0n || Boolean(insufficient) || !pair} className={`sqbuy-cta ${side}`}>
+            {busy ? "Confirm in wallet" : insufficient ? "Insufficient balance" : side === "buy" ? `Buy ${token.symbol}` : `Sell ${token.symbol}`}
+          </button>
+        ) : (
+          <button onClick={connectFirst} className="sqbuy-cta buy">Connect to trade</button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="tp">
