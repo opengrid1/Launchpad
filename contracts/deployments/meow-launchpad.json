@@ -1,7 +1,7 @@
 {
   "network": "hyperevm",
   "chainId": 999,
-  "startBlock": 44457038,
+  "startBlock": 44459830,
   "deployer": "0x70263ae0b3b7C5b62f5A93b7893d86Ed986aD0aD",
   "owner": "0x70263ae0b3b7C5b62f5A93b7893d86Ed986aD0aD",
   "feeRecipient": "0x77002c2e21575f0450d28c2e71c0707ba0f5995a",
@@ -12,14 +12,119 @@
     "whype": "0x5555555555555555555555555555555555555555"
   },
   "contracts": {
-    "tokenDeployer": "0x6Bc90ea54A8D127d8CD39F7c005Ada26F76476dB",
-    "factory": "0xd078ef6FB94AEcd8959212c5E8498bEa26f2c628"
+    "tokenDeployer": "0x54BAcAd7500a767e9e437fa54e00B11320e98066",
+    "factory": "0x24Ba7013C7c0074255A35E019c688FbD5D1b71ec"
   },
   "quotes": [
     {
       "ticker": "WHYPE",
       "address": "0x5555555555555555555555555555555555555555",
-      "usd8": "8156000000"
+      "usd8": "8200000000"
+    },
+    {
+      "ticker": "0x499e34",
+      "address": "0x499e347174f237ad28687b947b94c0d49570d1b7",
+      "usd8": "79526000000"
+    },
+    {
+      "ticker": "0x08be08",
+      "address": "0x08be08c37d93e689518ced744a89f113b4afaad4",
+      "usd8": "46373000000"
+    },
+    {
+      "ticker": "0xc304a9",
+      "address": "0xc304a9d52cf9165024ebc7814250ef3a5013f924",
+      "usd8": "8136000000"
+    },
+    {
+      "ticker": "0x173c83",
+      "address": "0x173c83a71c1a9e254721a86b7512cd65bf92648d",
+      "usd8": "91850000000"
+    },
+    {
+      "ticker": "0xb7bf37",
+      "address": "0xb7bf37783db41a2851b77c6917280c56312c833a",
+      "usd8": "76935000000"
+    },
+    {
+      "ticker": "0x5a9d2d",
+      "address": "0x5a9d2deee7d8782011695623f1c453f46b2b566e",
+      "usd8": "57885000000"
+    },
+    {
+      "ticker": "0xe74aa6",
+      "address": "0xe74aa6c4050a15790525eb11cc4562c664dc67c9",
+      "usd8": "9530000000"
+    },
+    {
+      "ticker": "0x3727c7",
+      "address": "0x3727c797073840936e3c18b4088f3574cd1a72a3",
+      "usd8": "32751000000"
+    },
+    {
+      "ticker": "0x7ef4eb",
+      "address": "0x7ef4eba0c0200957e357627ced1884d6cb63e961",
+      "usd8": "6231000000"
+    },
+    {
+      "ticker": "0x35eeda",
+      "address": "0x35eeda03e55ff217a013892e9e2e37e792b264ea",
+      "usd8": "34237000000"
+    },
+    {
+      "ticker": "0x7374dc",
+      "address": "0x7374dc1894fbd1bc6c42f6ebbc50b78c211a8606",
+      "usd8": "30225000000"
+    },
+    {
+      "ticker": "0x4f2164",
+      "address": "0x4f2164c12d2d450a8b1d430492ef6670fe4cad8e",
+      "usd8": "26728000000"
+    },
+    {
+      "ticker": "0x66520d",
+      "address": "0x66520d8fd614487214a25af7babf27584f59f76b",
+      "usd8": "49243000000"
+    },
+    {
+      "ticker": "0xca2156",
+      "address": "0xca2156522638f597ffb3705857ffdc356efabe50",
+      "usd8": "15194000000"
+    },
+    {
+      "ticker": "0xc27855",
+      "address": "0xc2785563af80c05177fff006e3b380ac5d172602",
+      "usd8": "37264000000"
+    },
+    {
+      "ticker": "0xe8c8af",
+      "address": "0xe8c8afdf7e80be51e91afa28b6ac44404d270b5d",
+      "usd8": "14087000000"
+    },
+    {
+      "ticker": "0xa8ddb5",
+      "address": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+      "usd8": "22409000000"
+    },
+    {
+      "ticker": "0xe7e553",
+      "address": "0xe7e553cd128f0011777323a0b44a7b96ea1cb540",
+      "usd8": "76935000000"
+    },
+    {
+      "ticker": "0x4c1ae2",
+      "address": "0x4c1ae29c159838fc1b224636e28e086eb69101f7",
+      "usd8": "79526000000"
+    },
+    {
+      "ticker": "0x6215a5",
+      "address": "0x6215a58ed045d71f2561aaabe54f4c885c522998",
+      "usd8": "16161000000"
+    },
+    {
+      "ticker": "0xe2047e",
+      "address": "0xe2047ee3bddb5c99ae428ab83df63f8730698e30",
+      "usd8": "91850000000"
     }
   ],
   "config": {
