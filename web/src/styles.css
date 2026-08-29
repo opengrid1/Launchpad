@@ -4584,8 +4584,8 @@ button.bg-accent:disabled {
 @media (min-width: 1024px) { :root[data-flavor="ink"] .sqx-top { flex-wrap: nowrap; } }
 :root[data-flavor="ink"] .sqx-brand { display: flex; align-items: center; gap: 9px; text-decoration: none; flex: none; }
 :root[data-flavor="ink"] .sqx-brand img { width: 30px; height: 30px; border-radius: 9px; display: block; }
-:root[data-flavor="ink"] .sqx-brand span { font-family: var(--hs-mono); font-weight: 800; font-size: 18px; letter-spacing: -0.02em; color: var(--hs-ink); }
-:root[data-flavor="ink"] .sqx-brand b { color: var(--hs-mint-deep); font-weight: 800; }
+:root[data-flavor="ink"] .sqx-brand span { font-family: 'Rock Salt', var(--hs-mono); font-weight: 400; font-size: 15px; letter-spacing: 0; line-height: 1; color: var(--hs-ink); padding-top: 2px; }
+:root[data-flavor="ink"] .sqx-brand b { color: var(--hs-mint-deep); font-weight: 400; }
 :root[data-flavor="ink"] .sqx-nav { display: none; }
 @media (min-width: 1024px) {
   :root[data-flavor="ink"] .sqx-nav { display: flex; gap: 3px; margin-left: 6px; }
