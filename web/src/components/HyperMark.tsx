@@ -1,7 +1,7 @@
 /** Chain badge on token avatars: the official chain mark, circle-cropped.
- *  hyperstock shows Hyperliquid's mark; squidpad shows a teal ink-drop badge
- *  (the brand is all teal, no purple). */
-import { IS_INK } from "../lib/brand";
+ *  hyperstock + meowstock show Hyperliquid's (HyperEVM) mark; squidpad shows a
+ *  teal ink-drop badge for Ink (all teal, no purple). */
+import { BRAND_FLAVOR } from "../lib/brand";
 
 // A teal disc with a lighter-teal ink drop, drawn inline so it needs no asset.
 const INK_TEAL_MARK =
@@ -16,7 +16,7 @@ const INK_TEAL_MARK =
 export function HyperMark() {
   return (
     <img
-      src={IS_INK ? INK_TEAL_MARK : "/hyperliquid-mark.png"}
+      src={BRAND_FLAVOR === "ink" ? INK_TEAL_MARK : "/hyperliquid-mark.png"}
       alt=""
       aria-hidden
       style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block" }}
