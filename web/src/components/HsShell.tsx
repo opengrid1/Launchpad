@@ -65,6 +65,11 @@ export function HsShell({ children }: { children: ReactNode }) {
     else setSheet(true);
   };
 
+  // The trading page is a focused view: it docks its own Buy/Sell bar, so the
+  // shell drops the search field and the bottom tab bar there (matching the
+  // reference), leaving just the brand + wallet on top.
+  const onToken = loc.pathname.startsWith("/token/");
+
   return (
     <div className="sqx">
       <header className="sqx-top">
@@ -79,10 +84,12 @@ export function HsShell({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <Link to="/search" className="sqx-search">
-          <KoiIcon name="search" size={15} />
-          <span>Search coins, tickers, CA</span>
-        </Link>
+        {onToken ? null : (
+          <Link to="/search" className="sqx-search">
+            <KoiIcon name="search" size={15} />
+            <span>Search coins, tickers, CA</span>
+          </Link>
+        )}
         <button onClick={openLaunch} className="sqx-launch" aria-haspopup="dialog">
           <KoiIcon name="rocket" size={15} />
           <span>Launch</span>
@@ -90,15 +97,17 @@ export function HsShell({ children }: { children: ReactNode }) {
         <WalletButton />
       </header>
 
-      <main className="sqx-content">{children}</main>
+      <main className={`sqx-content${onToken ? " sqx-content-token" : ""}`}>{children}</main>
 
-      <nav className="sqx-tabbar" aria-label="Primary">
-        <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="bar-chart" size={20} /><span>Markets</span></NavLink>
-        <NavLink to="/analytics" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trending-up" size={20} /><span>Analytics</span></NavLink>
-        <button className="sqx-fab" onClick={openLaunch} aria-label="Launch"><KoiIcon name="rocket" size={22} /></button>
-        <NavLink to="/rewards" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trophy" size={20} /><span>Rewards</span></NavLink>
-        <NavLink to="/profile" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="wallet" size={20} /><span>Wallet</span></NavLink>
-      </nav>
+      {onToken ? null : (
+        <nav className="sqx-tabbar" aria-label="Primary">
+          <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="bar-chart" size={20} /><span>Markets</span></NavLink>
+          <NavLink to="/analytics" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trending-up" size={20} /><span>Analytics</span></NavLink>
+          <button className="sqx-fab" onClick={openLaunch} aria-label="Launch"><KoiIcon name="rocket" size={22} /></button>
+          <NavLink to="/rewards" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trophy" size={20} /><span>Rewards</span></NavLink>
+          <NavLink to="/profile" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="wallet" size={20} /><span>Wallet</span></NavLink>
+        </nav>
+      )}
 
       {sheet ? (
         <div className="kf-sheet-backdrop" onClick={() => setSheet(false)}>

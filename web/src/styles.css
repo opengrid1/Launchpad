@@ -5031,9 +5031,10 @@ button.bg-accent:disabled {
   border-top: 1px solid var(--hs-rule-2); background: color-mix(in srgb, var(--hs-bg) 94%, transparent); backdrop-filter: blur(12px);
   display: flex; flex-direction: column; gap: 8px;
 }
-/* squidpad has no sidebar; on mobile the dock sits above the tab bar. */
-:root[data-flavor="ink"] .gm-tk-dock { bottom: calc(64px + env(safe-area-inset-bottom)); }
-@media (min-width: 1024px) { :root[data-flavor="ink"] .gm-tk-dock { bottom: 0; } }
+/* On the focused trading page the tab bar is hidden, so the dock sits flush at
+   the very bottom and the page needs no tab-bar clearance. */
+:root[data-flavor="ink"] .gm-tk-dock { bottom: 0; }
+:root[data-flavor="ink"] .sqx-content-token { padding-bottom: 0; }
 :root[data-brand="hyper"] .gm-tk-presets { display: flex; align-items: center; gap: 6px; }
 :root[data-brand="hyper"] .gm-tk-presets button {
   flex: 1; height: 30px; border: 1px solid color-mix(in srgb, var(--hs-mint) 40%, transparent); border-radius: 7px; cursor: pointer;
