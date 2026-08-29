@@ -102,21 +102,27 @@ function InkRewardsFeed({ list, preview }: { list: TokenSummary[]; preview: bool
   // Creator and platform accruals scale off the holder counter (0.4 and 0.1
   // per 0.5 skimmed to holders).
   const creatorUsd = totalUsd * 0.8;
+  const platformUsd = totalUsd * 0.2;
   const paying = rows.filter((r) => r.usd > 0).length;
   const top = rows.find((r) => r.usd > 0);
   const maxUsd = Math.max(top?.usd ?? 0, 1e-9);
 
   return (
-    <div className="gm-page">
-      <div className="gm-feed-head">Rewards analytics</div>
+    <div className="gm-page sq-an">
+      <h1 className="sq-an-title">Analytics</h1>
 
-      <div className="gm-an">
-        <div className="gm-an-tile"><span className="l">Paid to holders</span><span className="v g">{totalUsd > 0 ? fmtUsd(totalUsd) : "$0"}</span></div>
-        <div className="gm-an-tile"><span className="l">Paid to creators</span><span className="v">{creatorUsd > 0 ? fmtUsd(creatorUsd) : "$0"}</span></div>
-        <div className="gm-an-tile"><span className="l">Coins paying</span><span className="v">{paying}<i>/{rows.length}</i></span></div>
-        <div className="gm-an-tile"><span className="l">Top payer</span><span className="v">{top ? top.t.symbol : "—"}</span></div>
+      {/* Hero: total paid to holders in real stock, plus creator/platform */}
+      <div className="sq-an-hero">
+        <span className="lbl">Paid to holders in real stock</span>
+        <span className="big">{totalUsd > 0 ? fmtUsd(totalUsd) : "$0"}</span>
+        <span className="sub">across {paying} {paying === 1 ? "coin" : "coins"} · all-time</span>
+        <div className="row">
+          <div className="chip"><span>Creators</span><b>{creatorUsd > 0 ? fmtUsd(creatorUsd) : "$0"}</b></div>
+          <div className="chip"><span>Platform</span><b>{platformUsd > 0 ? fmtUsd(platformUsd) : "$0"}</b></div>
+        </div>
       </div>
 
+      {/* Fee split: 50 holders / 40 creator / 10 platform on every buy */}
       <div className="gm-an-split">
         <div className="bar">
           <span className="h" style={{ width: "50%" }} />
@@ -124,14 +130,13 @@ function InkRewardsFeed({ list, preview }: { list: TokenSummary[]; preview: bool
           <span className="p" style={{ width: "10%" }} />
         </div>
         <div className="legend">
-          <span><i className="h" />Holders 0.5%</span>
-          <span><i className="c" />Creator 0.4%</span>
-          <span><i className="p" />Platform 0.1%</span>
-          <b>of every buy, recorded on the trade itself</b>
+          <span><i className="h" />Holders 50%</span>
+          <span><i className="c" />Creator 40%</span>
+          <span><i className="p" />Platform 10%</span>
         </div>
       </div>
 
-      <div className="gm-feed-head">Distribution by coin</div>
+      <div className="gm-feed-head">Top earners</div>
       <div className="gm-anb">
         {rows.map(({ t, usd, stockAmt, stockSym }, i) => {
           const share = totalUsd > 0 ? (usd / totalUsd) * 100 : 0;

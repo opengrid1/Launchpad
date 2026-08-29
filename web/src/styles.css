@@ -5209,3 +5209,21 @@ button.bg-accent:disabled {
 :root[data-flavor="ink"] .sqbuy-cta.buy { background: var(--hs-green); color: var(--hs-green-fg); }
 :root[data-flavor="ink"] .sqbuy-cta.sell { background: var(--hs-red); color: #ffffff; }
 :root[data-flavor="ink"] .sqbuy-cta:disabled { opacity: 0.5; cursor: default; }
+
+/* ============ squidpad analytics: reward hero + earners ============ */
+:root[data-flavor="ink"] .sq-an-title { padding: 18px 18px 6px; font-size: 22px; font-weight: 800; color: var(--hs-ink); }
+:root[data-flavor="ink"] .sq-an-hero {
+  margin: 6px 16px 0; border-radius: 20px; padding: 20px 20px 18px; color: #ffffff;
+  background: linear-gradient(135deg, var(--hs-mint), var(--hs-mint-deep));
+  display: flex; flex-direction: column; box-shadow: 0 12px 30px -10px color-mix(in srgb, var(--hs-mint) 60%, transparent);
+}
+:root[data-flavor="ink"] .sq-an-hero .lbl { font-size: 12px; opacity: 0.85; }
+:root[data-flavor="ink"] .sq-an-hero .big { font-family: var(--hs-mono); font-size: 40px; font-weight: 800; letter-spacing: -0.04em; margin-top: 4px; line-height: 1.02; }
+:root[data-flavor="ink"] .sq-an-hero .sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+:root[data-flavor="ink"] .sq-an-hero .row { display: flex; gap: 10px; margin-top: 16px; }
+:root[data-flavor="ink"] .sq-an-hero .chip { flex: 1; background: rgba(255, 255, 255, 0.13); border-radius: 12px; padding: 9px 12px; }
+:root[data-flavor="ink"] .sq-an-hero .chip span { display: block; font-size: 10px; opacity: 0.85; }
+:root[data-flavor="ink"] .sq-an-hero .chip b { font-family: var(--hs-mono); font-size: 16px; font-weight: 800; }
+/* borderless split under the hero (just the bar + dot legend) */
+:root[data-flavor="ink"] .sq-an .gm-an-split { margin: 14px 16px 0; border: 0; background: transparent; padding: 0; }
+:root[data-flavor="ink"] .sq-an .gm-an-split .legend b { display: none; }
