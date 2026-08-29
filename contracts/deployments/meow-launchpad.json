@@ -1,0 +1,33 @@
+{
+  "network": "hyperevm",
+  "chainId": 999,
+  "startBlock": 44457038,
+  "deployer": "0x70263ae0b3b7C5b62f5A93b7893d86Ed986aD0aD",
+  "owner": "0x70263ae0b3b7C5b62f5A93b7893d86Ed986aD0aD",
+  "feeRecipient": "0x77002c2e21575f0450d28c2e71c0707ba0f5995a",
+  "hyperswapV3": {
+    "factory": "0xb1c0fa0b789320044a6f623cfe5ebda9562602e3",
+    "positionManager": "0x6eda206207c09e5428f281761ddc0d300851fbc8",
+    "swapRouter": "0x6d99e7f6747af2cdbb5164b6dd50e40d4fde1e77",
+    "whype": "0x5555555555555555555555555555555555555555"
+  },
+  "contracts": {
+    "tokenDeployer": "0x6Bc90ea54A8D127d8CD39F7c005Ada26F76476dB",
+    "factory": "0xd078ef6FB94AEcd8959212c5E8498bEa26f2c628"
+  },
+  "quotes": [
+    {
+      "ticker": "WHYPE",
+      "address": "0x5555555555555555555555555555555555555555",
+      "usd8": "8156000000"
+    }
+  ],
+  "config": {
+    "totalSupply": "1000000000e18",
+    "poolFeeTier": 10000,
+    "holderFeeBps": 5000,
+    "creatorFeeBps": 4000,
+    "platformFeeBps": 1000,
+    "defaultMarketCapUsd": 3000
+  }
+}
