@@ -3,7 +3,7 @@ const path = require("path");
 const { ethers } = require("ethers");
 
 function loadKey() {
-  const env = fs.readFileSync(path.join(__dirname, "..", ".env.meow-deployer"), "utf8");
+  const env = fs.readFileSync(path.join(__dirname, "..", process.env.DEPLOYER_ENV || ".env.meow-deployer"), "utf8");
   return env.match(/PRIVATE_KEY=(0x[0-9a-fA-F]{64})/)[1];
 }
 // Send native HYPE to the HYPE system address -> credits the sender's HyperCore
