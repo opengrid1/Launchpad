@@ -1,4 +1,4 @@
-import { BRAND, IS_HYPER, IS_INK } from "../lib/brand";
+import { BRAND, IS_HYPER, IS_INK, IS_MEOW } from "../lib/brand";
 import { env } from "../lib/env";
 import { addresses } from "../lib/env";
 import { v4Client } from "../lib/client";
@@ -19,17 +19,19 @@ export function DocsPage() {
 
 /** squidpad docs: automatic per-trade rewards on Ink, no harvest step. */
 function InkDocs() {
+  const DEX = IS_MEOW ? "HyperSwap" : "Uniswap";
+  const NAT = env.nativeSymbol; // ETH on Ink, HYPE on HyperEVM
   const contracts: { name: string; address: string; note: string }[] = [
     { name: "LaunchpadFactory", address: addresses.factory, note: "Launches, the pool registry; owns every LP position" },
     { name: "TokenDeployer", address: addresses.tokenDeployer, note: "Deploys every coin with fixed rules" },
-    { name: "WETH", address: addresses.weth, note: "Wrapped ETH, the pool pair" },
+    { name: `W${NAT}`, address: addresses.weth, note: `Wrapped ${NAT}, the pool pair` },
   ].filter((c) => c.address && !/^0x0+$/.test(c.address));
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
       <h1 className="text-[24px] font-bold tracking-tight text-ink">Docs</h1>
       <p className="mt-1.5 text-sm text-ink-2">
-        {BRAND.name} is a launchpad on {env.chainName}. Every coin opens a real Uniswap market
+        {BRAND.name} is a launchpad on {env.chainName}. Every coin opens a real {DEX} market
         and every rule below is enforced by the coin's own contract, not by policy.
       </p>
 
@@ -45,7 +47,7 @@ function InkDocs() {
             ["Holders", "0.5% · pro-rata to everyone holding the coin"],
             ["Creator", "0.4% · visible and claimable only by the creator"],
             ["Platform", "0.1%"],
-            ["Paid in", "the coin's pair, the tokenized stock (or ETH)"],
+            ["Paid in", `the coin's pair, the tokenized stock (or ${NAT})`],
           ]}
         />
         <p>
@@ -60,14 +62,14 @@ function InkDocs() {
       <TermSection title="Launching" sub="One transaction">
         <p>
           Launching is free, you pay only gas. One transaction deploys the coin, opens a
-          Uniswap pool against ETH, seeds the entire supply single-sided, and starts trading.
+          {DEX} pool against {NAT}, seeds the entire supply single-sided, and starts trading.
           The LP position is locked in the factory forever, so liquidity can never be pulled.
         </p>
         <Facts
           rows={[
             ["Total supply", "1,000,000,000, fixed"],
             ["Starting market cap", "≈ $3,000"],
-            ["Pool pairing", "ETH or a tokenized xStock"],
+            ["Pool pairing", `${NAT} or a tokenized xStock`],
             ["Upfront liquidity", "None required"],
           ]}
         />

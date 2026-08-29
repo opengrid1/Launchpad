@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Address } from "@launchpad/sdk";
 
-import { BRAND, IS_HYPER } from "../lib/brand";
+import { BRAND, IS_HYPER, IS_MEOW } from "../lib/brand";
 import { env } from "../lib/env";
 import { Icon } from "./Icon";
 
@@ -34,8 +34,9 @@ export function ShareMenu({ address, symbol, name }: { address: Address; symbol:
   const scanUrl = explorer ? `${explorer}/token/${address}` : "";
   // The chain's DEX interface, pointed at this token's pool: HyperSwap on
   // HyperEVM, Uniswap's hosted app elsewhere.
-  const dexName = IS_HYPER ? "HyperSwap" : "Uniswap";
-  const dexUrl = IS_HYPER
+  const onHyperEvm = IS_HYPER || IS_MEOW;
+  const dexName = onHyperEvm ? "HyperSwap" : "Uniswap";
+  const dexUrl = onHyperEvm
     ? `https://app.hyperswap.exchange/#/swap?outputCurrency=${address}`
     : `https://app.uniswap.org/swap?chain=${env.chainId}&outputCurrency=${address}`;
   const tweet =

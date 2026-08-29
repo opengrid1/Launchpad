@@ -4,7 +4,10 @@ import { useTokens } from "@launchpad/sdk/react";
 
 import { client } from "../../lib/client";
 import { BASE_USDC, BASE_WETH } from "../../lib/base/routes";
-import { BRAND, IS_HYPER } from "../../lib/brand";
+import { BRAND, IS_HYPER, IS_MEOW } from "../../lib/brand";
+
+// meowstock runs on HyperEVM, so it shares the Hyperliquid wallet surface.
+const ON_HYPEREVM = IS_HYPER || IS_MEOW;
 import { env } from "../../lib/env";
 import { WHYPE } from "../../lib/hyper/stocks";
 import { fmtUsd, shortAddr } from "../../lib/format";
@@ -18,7 +21,7 @@ const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 // The chain brandmark badge shown on each holding avatar: Base's blue disc,
 // or the Hyperliquid mark on HyperEVM.
 const ChainMark = () =>
-  IS_HYPER ? (
+  ON_HYPEREVM ? (
     <HyperMark />
   ) : (
     <svg viewBox="0 0 40 40" aria-hidden>
@@ -28,7 +31,7 @@ const ChainMark = () =>
   );
 
 // The fundable assets on this chain, shown as holdings with their USD value.
-const ASSETS: { key: string; sym: string; name: string; address: Address; decimals: number }[] = IS_HYPER
+const ASSETS: { key: string; sym: string; name: string; address: Address; decimals: number }[] = ON_HYPEREVM
   ? [
       { key: "hype", sym: "HYPE", name: "Hyperliquid", address: ZERO, decimals: 18 },
       { key: "whype", sym: "WHYPE", name: "Wrapped HYPE", address: WHYPE, decimals: 18 },

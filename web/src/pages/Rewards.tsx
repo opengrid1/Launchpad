@@ -111,7 +111,7 @@ export function RewardsPage() {
       <h1 className="kf-page-h1">Rewards</h1>
       <p style={{ margin: "0 18px 12px", fontSize: 13, lineHeight: 1.55, color: "var(--color-ink-2)" }}>
         {IS_INK
-          ? "Hold any coin and 0.5% of every buy accrues to holders automatically on the trade. When you claim, it is paid out in the coin's pair, the tokenized stock (or ETH). Nothing to trigger: rewards land on-chain as people buy, and you claim them here or on the coin's page."
+          ? `Hold any coin and 0.5% of every buy accrues to holders automatically on the trade. When you claim, it is paid out in the coin's pair, the tokenized stock (or ${env.nativeSymbol}). Nothing to trigger: rewards land on-chain as people buy, and you claim them here or on the coin's page.`
           : "Hold any coin and 50% of every trade's 1% fee streams to holders in the coin's pair, HYPE or the stock itself. Rewards accrue to your wallet on-chain and are claimed manually, here or on the coin's page."}
       </p>
 

@@ -100,7 +100,7 @@ export function ProfilePage() {
       const hash = await (v4Client as any).harvest(t.address as Address);
       pushToast({ kind: "info", title: "Claim submitted", txHash: hash });
       await client.publicClient.waitForTransactionReceipt({ hash });
-      pushToast({ kind: "success", title: "Rewards claimed", body: "Your fee stream, paid in ETH.", txHash: hash });
+      pushToast({ kind: "success", title: "Rewards claimed", body: `Your fee stream, paid in ${env.nativeSymbol}.`, txHash: hash });
     } catch (err) {
       pushToast({ kind: "error", title: "Claim failed", body: errorText(err) });
     } finally {
@@ -179,7 +179,7 @@ export function ProfilePage() {
                 </Link>
                 <div className="flex items-center gap-2.5">
                   <div className="text-right">
-                    <p className="tnum text-[13.5px] font-semibold text-ink">{fmtWei(p)} ETH</p>
+                    <p className="tnum text-[13.5px] font-semibold text-ink">{fmtWei(p)} {env.nativeSymbol}</p>
                     <p className="text-[10.5px] text-ink-3">unclaimed</p>
                   </div>
                   <Button variant="primary" disabled={busy !== null || p === 0n} onClick={() => claim(t)}>
