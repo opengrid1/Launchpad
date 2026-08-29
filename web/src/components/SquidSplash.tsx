@@ -7,6 +7,9 @@ import { BRAND_MARK } from "../lib/hyper/defaultLogo";
 const [WM_A, WM_B] =
   BRAND_FLAVOR === "meow" ? ["meow", "stock"] : ["squid", "pad"];
 
+// meowstock boots with the white whisker mark; other flavors use their mark.
+const SPLASH_MARK = BRAND_FLAVOR === "meow" ? "/meow-tile-white.png" : BRAND_MARK;
+
 /**
  * Boot splash: the brand mark and wordmark over a game-style loading bar — a
  * glowing striped fill that sweeps as it progresses, no text. It fills, then
@@ -40,7 +43,7 @@ export function SquidSplash() {
   if (done) return null;
   return (
     <div className={`sq-splash${hide ? " out" : ""}`} role="status" aria-label={`Loading ${BRAND.name}`}>
-      <div className="sq-splash-mark"><img src={BRAND_MARK} alt="" aria-hidden /></div>
+      <div className="sq-splash-mark"><img src={SPLASH_MARK} alt="" aria-hidden /></div>
       <div className="sq-splash-lift">
         <div className="sq-splash-word">{WM_A}<b>{WM_B}</b></div>
         <div className="sq-splash-rule" aria-hidden>
