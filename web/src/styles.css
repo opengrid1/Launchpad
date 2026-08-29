@@ -4637,7 +4637,7 @@ button.bg-accent:disabled {
 :root[data-flavor="ink"] .sq-tab.on { color: var(--hs-ink); border-bottom-color: var(--hs-mint); }
 /* Kill the sticky tap-focus ring on mobile; keep it for keyboard users. */
 :root[data-flavor="ink"] .sq-tab:focus { outline: none; }
-:root[data-flavor="ink"] .sq-tab:focus-visible { outline: 2px solid var(--hs-mint); outline-offset: 3px; border-radius: 4px; }
+:root[data-flavor="ink"] .sq-tab:focus-visible { outline: none; color: var(--hs-ink); border-bottom-color: var(--hs-mint); }
 
 :root[data-flavor="ink"] .sq-list { padding: 0 6px; }
 @media (min-width: 1024px) { :root[data-flavor="ink"] .sq-list { padding: 4px 8px; } }
@@ -5285,7 +5285,7 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"][data-flavor="ink"] .gm-dev-card button { background: var(--sq-teal); color: var(--sq-teal-fg); }
 /* tab actives → teal underline */
 :root[data-flavor="ink"] .sq-tab.on { border-bottom-color: #4fe0cb; }
-:root[data-flavor="ink"] .sq-tab:focus-visible { outline-color: #4fe0cb; }
+:root[data-flavor="ink"] .sq-tab:focus-visible { outline: none; border-bottom-color: #4fe0cb; }
 :root[data-flavor="ink"] .gm-tk-tabs button.on { border-bottom-color: #4fe0cb; }
 
 /* ============ squidpad boot splash ============ */
