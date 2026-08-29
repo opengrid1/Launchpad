@@ -5307,10 +5307,11 @@ button.bg-accent:disabled {
   animation: sq-word-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both, sq-word-hover 3.2s ease-in-out 0.7s infinite;
 }
 .sq-splash-word {
-  font-family: 'Space Grotesk', 'JetBrains Mono', system-ui, sans-serif; font-weight: 700; font-size: 31px; letter-spacing: -0.015em;
+  font-family: 'Rock Salt', 'Space Grotesk', cursive; font-weight: 400; font-size: 30px; letter-spacing: 0.005em; line-height: 1.1;
   color: #ffffff; text-shadow: 0 8px 26px rgba(79, 224, 203, 0.4);
+  transform: rotate(-5deg); /* rise to the right, following the underline */
 }
-.sq-splash-word b { color: #4fe0cb; font-weight: 700; }
+.sq-splash-word b { color: #4fe0cb; font-weight: 400; }
 /* Hand-drawn rising double underline that draws itself in. */
 .sq-splash-rule { width: 172px; max-width: 54vw; margin-top: 2px; }
 .sq-splash-rule svg { width: 100%; height: auto; display: block; overflow: visible; }
