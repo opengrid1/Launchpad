@@ -5301,8 +5301,23 @@ button.bg-accent:disabled {
   animation: sq-splash-float 2.4s ease-in-out infinite;
 }
 .sq-splash-mark img { width: 100%; height: 100%; display: block; }
-.sq-splash-word { margin-top: 6px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 800; font-size: 26px; letter-spacing: -0.01em; color: #ffffff; }
-.sq-splash-word b { color: #4fe0cb; font-weight: 800; }
+/* Wordmark lifts up into place, then hovers; two teal underlines draw in below. */
+.sq-splash-lift {
+  margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 9px;
+  animation: sq-word-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both, sq-word-hover 3.2s ease-in-out 0.7s infinite;
+}
+.sq-splash-word {
+  font-family: 'Space Grotesk', 'JetBrains Mono', system-ui, sans-serif; font-weight: 700; font-size: 31px; letter-spacing: -0.015em;
+  color: #ffffff; text-shadow: 0 8px 26px rgba(79, 224, 203, 0.4);
+}
+.sq-splash-word b { color: #4fe0cb; font-weight: 700; }
+.sq-splash-rule { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.sq-splash-rule span { display: block; height: 2px; border-radius: 2px; transform-origin: center; }
+.sq-splash-rule span:first-child { width: 98px; background: linear-gradient(90deg, transparent, #4fe0cb, transparent); animation: sq-rule-grow 0.7s ease 0.28s both; }
+.sq-splash-rule span:last-child { width: 54px; background: linear-gradient(90deg, transparent, #8dfff0, transparent); animation: sq-rule-grow 0.7s ease 0.42s both; }
+@keyframes sq-word-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes sq-word-hover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes sq-rule-grow { from { opacity: 0; transform: scaleX(0.15); } to { opacity: 1; transform: scaleX(1); } }
 .sq-splash-tag { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.05em; color: #6fb7ac; }
 .sq-splash-bar {
   margin-top: 16px; width: 240px; max-width: 66vw; height: 10px; border-radius: 999px; overflow: hidden; position: relative;
@@ -5335,6 +5350,6 @@ button.bg-accent:disabled {
 @keyframes sq-splash-shine { 0% { background-position: 0 0, -120px 0; } 100% { background-position: 0 0, 120px 0; } }
 @keyframes sq-splash-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @media (prefers-reduced-motion: reduce) {
-  .sq-splash-mark { animation: none; }
+  .sq-splash-mark, .sq-splash-lift, .sq-splash-rule span { animation: none; }
   .sq-splash-bar span::before, .sq-splash-bar span::after { animation: none; }
 }

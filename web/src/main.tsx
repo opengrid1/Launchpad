@@ -19,7 +19,7 @@ if (INK_STYLE) document.documentElement.dataset.flavor = "ink";
 if (BRAND_FLAVOR === "hyper" || INK_STYLE) {
   const font = document.createElement("link");
   font.rel = "stylesheet";
-  font.href = "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap";
+  font.href = "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@500;600;700&display=swap";
   document.head.appendChild(font);
   const icon = INK_STYLE ? undefined : "/hyperstock-favicon.png";
   if (icon) {

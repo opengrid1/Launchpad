@@ -41,7 +41,10 @@ export function SquidSplash() {
   return (
     <div className={`sq-splash${hide ? " out" : ""}`} role="status" aria-label={`Loading ${BRAND.name}`}>
       <div className="sq-splash-mark"><img src={BRAND_MARK} alt="" aria-hidden /></div>
-      <div className="sq-splash-word">{WM_A}<b>{WM_B}</b></div>
+      <div className="sq-splash-lift">
+        <div className="sq-splash-word">{WM_A}<b>{WM_B}</b></div>
+        <div className="sq-splash-rule"><span /><span /></div>
+      </div>
       <div className="sq-splash-tag">{BRAND.tagline}</div>
       <div className="sq-splash-bar"><span style={{ width: `${pct}%` }} /></div>
     </div>
