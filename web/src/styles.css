@@ -5302,11 +5302,31 @@ button.bg-accent:disabled {
 .sq-splash-word { margin-top: 6px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 800; font-size: 26px; letter-spacing: -0.01em; color: #ffffff; }
 .sq-splash-word b { color: #4fe0cb; font-weight: 800; }
 .sq-splash-tag { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.05em; color: #6fb7ac; }
-.sq-splash-bar { margin-top: 12px; width: 200px; max-width: 60vw; height: 5px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
-.sq-splash-bar span { display: block; height: 100%; width: 6%; border-radius: 999px; background: linear-gradient(90deg, #2fb9a8, #4fe0cb); box-shadow: 0 0 12px rgba(79, 224, 203, 0.6); animation: sq-splash-load 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-@keyframes sq-splash-load { 0% { width: 6%; } 55% { width: 68%; } 100% { width: 100%; } }
+.sq-splash-bar {
+  margin-top: 14px; width: 240px; max-width: 66vw; height: 8px; border-radius: 999px; overflow: hidden; position: relative;
+  background: rgba(255, 255, 255, 0.10); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+.sq-splash-bar span {
+  display: block; height: 100%; border-radius: 999px; position: relative;
+  background: linear-gradient(90deg, #2fb9a8, #4fe0cb 70%, #7dffe9);
+  box-shadow: 0 0 14px rgba(79, 224, 203, 0.7), 0 0 4px rgba(79, 224, 203, 0.9);
+  transition: width 0.12s linear;
+}
+/* moving shine sweep across the fill, like a game loader */
+.sq-splash-bar span::after {
+  content: ""; position: absolute; inset: 0; border-radius: 999px;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.55) 50%, transparent 80%);
+  background-size: 240px 100%; animation: sq-splash-shine 1s linear infinite;
+}
+.sq-splash-meta {
+  margin-top: 9px; width: 240px; max-width: 66vw; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.03em;
+}
+.sq-splash-meta .tip { color: #6fb7ac; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sq-splash-meta .pct { color: #4fe0cb; font-weight: 700; font-variant-numeric: tabular-nums; }
+@keyframes sq-splash-shine { 0% { background-position: -240px 0; } 100% { background-position: 240px 0; } }
 @keyframes sq-splash-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @media (prefers-reduced-motion: reduce) {
   .sq-splash-mark { animation: none; }
-  .sq-splash-bar span { animation-duration: 0.6s; }
+  .sq-splash-bar span::after { animation: none; display: none; }
 }
