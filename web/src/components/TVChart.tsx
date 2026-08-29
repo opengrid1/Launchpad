@@ -68,7 +68,7 @@ export function TVChart({ token, symbol }: { token: Address; symbol: string }) {
             "popup_hints",
           ],
           enabled_features: ["hide_left_toolbar_by_default", "iframe_loading_compatibility_mode"],
-          loading_screen: { backgroundColor: CHART_BG, foregroundColor: LIGHT ? "#7c5cfc" : "#2f6bff" },
+          loading_screen: { backgroundColor: CHART_BG, foregroundColor: LIGHT ? "#0f766e" : "#2f6bff" },
           overrides: {
             "paneProperties.background": CHART_BG,
             "paneProperties.backgroundType": "solid",
