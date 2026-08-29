@@ -5263,3 +5263,24 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"][data-flavor="ink"] .gm-tk-presets button:hover { background: var(--sq-teal); color: var(--sq-teal-fg); }
 :root[data-brand="hyper"][data-flavor="ink"] .gm-bolt.on, :root[data-brand="hyper"][data-flavor="ink"] .gm-bolt:hover { background: var(--sq-teal); color: var(--sq-teal-fg); }
 :root[data-brand="hyper"][data-flavor="ink"] .gm-qb-pop button { background: var(--sq-teal); color: var(--sq-teal-fg); }
+/* generic accent buttons */
+:root[data-brand="hyper"][data-flavor="ink"] button.bg-accent,
+:root[data-brand="hyper"][data-flavor="ink"] a.bg-accent { background: var(--sq-teal); background-image: none; color: var(--sq-teal-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] button.bg-accent:hover,
+:root[data-brand="hyper"][data-flavor="ink"] a.bg-accent:hover { background: var(--sq-teal); filter: brightness(1.06); }
+/* Connect / wallet: teal fill when not connected, teal-dot outline when connected */
+:root[data-brand="hyper"][data-flavor="ink"] .hs-wallet { background: var(--sq-teal); border-color: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .hs-wallet:hover { border-color: var(--sq-teal); filter: brightness(1.06); }
+:root[data-brand="hyper"][data-flavor="ink"] .hs-wallet.on { background: transparent; border: 1px solid var(--hs-rule-2); color: var(--hs-ink); filter: none; }
+:root[data-brand="hyper"][data-flavor="ink"] .hs-wallet.on .hs-dot { background: var(--sq-teal); }
+/* launch form submit + reward/creator claim buttons */
+:root[data-brand="hyper"][data-flavor="ink"] .kf-submit,
+:root[data-brand="hyper"][data-flavor="ink"] .kf-btnrow .kf-submit { background: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .kf-submit:hover,
+:root[data-brand="hyper"][data-flavor="ink"] .kf-btnrow .kf-submit:hover { background: var(--sq-teal); filter: brightness(1.06); }
+:root[data-brand="hyper"][data-flavor="ink"] .kf-reward-claim-btn { background: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-dev-card button { background: var(--sq-teal); color: var(--sq-teal-fg); }
+/* tab actives → teal underline */
+:root[data-flavor="ink"] .sq-tab.on { border-bottom-color: var(--sq-teal); }
+:root[data-flavor="ink"] .sq-tab:focus-visible { outline-color: var(--sq-teal); }
+:root[data-flavor="ink"] .gm-tk-tabs button.on { border-bottom-color: var(--sq-teal); }
