@@ -1,7 +1,7 @@
 const fs=require("fs"),path=require("path");
 const {ethers}=require("ethers");
-function key(){return fs.readFileSync(path.join(__dirname,"..",".env.meow-deployer"),"utf8").match(/PRIVATE_KEY=(0x[0-9a-fA-F]{64})/)[1];}
-const FACTORY="0x24Ba7013C7c0074255A35E019c688FbD5D1b71ec";
+function key(){return fs.readFileSync(path.join(__dirname,"..",process.env.DEPLOYER_ENV||".env.meow-deployer"),"utf8").match(/PRIVATE_KEY=(0x[0-9a-fA-F]{64})/)[1];}
+const FACTORY=process.env.FACTORY||"0x19BEA177067dd79D3D25710D42808e8ec2587239";
 const WHYPE="0x5555555555555555555555555555555555555555";
 const ABI=["function createToken((string name,string symbol,string metadataURI,address quote,uint256 marketCapUsd8,uint256 devBuyQuote)) payable returns (address token,address pool,uint256 positionId)"];
 const metadata = JSON.stringify({
