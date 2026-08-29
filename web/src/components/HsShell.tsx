@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import { BRAND, IS_INK } from "../lib/brand";
 import { BRAND_MARK } from "../lib/hyper/defaultLogo";
-import { SqIcon } from "./base/SqIcon";
+import { KoiIcon } from "./base/KoiIcon";
 import { WalletSheet } from "./base/WalletSheet";
 import { Skeleton } from "./ui";
 import { useWallet } from "../lib/useWallet";
@@ -80,11 +80,11 @@ export function HsShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <Link to="/search" className="sqx-search">
-          <SqIcon name="search" size={15} />
+          <KoiIcon name="search" size={15} />
           <span>Search coins, tickers, CA</span>
         </Link>
         <button onClick={openLaunch} className="sqx-launch" aria-haspopup="dialog">
-          <SqIcon name="rocket" size={15} />
+          <KoiIcon name="rocket" size={15} />
           <span>Launch</span>
         </button>
         <WalletButton />
@@ -93,11 +93,11 @@ export function HsShell({ children }: { children: ReactNode }) {
       <main className="sqx-content">{children}</main>
 
       <nav className="sqx-tabbar" aria-label="Primary">
-        <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><SqIcon name="markets" size={21} /><span>Markets</span></NavLink>
-        <NavLink to="/analytics" className={({ isActive }) => (isActive ? "on" : "")}><SqIcon name="analytics" size={21} /><span>Analytics</span></NavLink>
-        <button className="sqx-fab" onClick={openLaunch} aria-label="Launch"><SqIcon name="rocket" size={23} /></button>
-        <NavLink to="/rewards" className={({ isActive }) => (isActive ? "on" : "")}><SqIcon name="rewards" size={21} /><span>Rewards</span></NavLink>
-        <NavLink to="/profile" className={({ isActive }) => (isActive ? "on" : "")}><SqIcon name="wallet" size={21} /><span>Wallet</span></NavLink>
+        <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="bar-chart" size={20} /><span>Markets</span></NavLink>
+        <NavLink to="/analytics" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trending-up" size={20} /><span>Analytics</span></NavLink>
+        <button className="sqx-fab" onClick={openLaunch} aria-label="Launch"><KoiIcon name="rocket" size={22} /></button>
+        <NavLink to="/rewards" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="trophy" size={20} /><span>Rewards</span></NavLink>
+        <NavLink to="/profile" className={({ isActive }) => (isActive ? "on" : "")}><KoiIcon name="wallet" size={20} /><span>Wallet</span></NavLink>
       </nav>
 
       {sheet ? (
