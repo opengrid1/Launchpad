@@ -1,0 +1,17 @@
+{
+  "name": "meowstock",
+  "symbol": "MEOW",
+  "pair": "HYPE",
+  "quote": "0x5555555555555555555555555555555555555555",
+  "token": "0x786060009c006a6cb44C5b5E21202dC5a34a1f47",
+  "pool": "0x38430172975e4c4ea47AA7215C87E93f64c655D2",
+  "positionId": "185739",
+  "tx": "0xb038670d53904c5556426220c0290f5f23761e0aed89503ff3d4a26fe599df62",
+  "metadata": {
+    "description": "The official token of meowstock, the memecoin launchpad on HyperEVM. Hold the coin, earn the stock.",
+    "logo": "https://www.meowstock.fun/meowstock-pfp.png",
+    "website": "https://www.meowstock.fun",
+    "twitter": "https://x.com/meowstockX"
+  },
+  "creator": "0x70263ae0b3b7C5b62f5A93b7893d86Ed986aD0aD"
+}
