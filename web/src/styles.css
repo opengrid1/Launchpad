@@ -5231,3 +5231,35 @@ button.bg-accent:disabled {
 /* borderless split under the hero (just the bar + dot legend) */
 :root[data-flavor="ink"] .sq-an .gm-an-split { margin: 14px 16px 0; border: 0; background: transparent; padding: 0; }
 :root[data-flavor="ink"] .sq-an .gm-an-split .legend b { display: none; }
+
+/* ============ squidpad: Hyperliquid teal button theme ============ */
+/* Action-button FILLS switch to Hyperliquid teal (buy/primary) and pink-red
+   (sell) with dark text; gains/loss TEXT stays green/red for readability on
+   the white ground, and the violet brand accent stays for identity. */
+:root[data-brand="hyper"][data-flavor="ink"] { --sq-teal: #4fe0cb; --sq-teal-fg: #04221e; --sq-sell: #ff5d7a; --sq-sell-fg: #2b0a13; }
+/* primary: launch button + mobile FAB */
+:root[data-flavor="ink"] .sqx-launch { background: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-flavor="ink"] .sqx-fab { background: var(--sq-teal); color: var(--sq-teal-fg); box-shadow: 0 8px 22px -4px color-mix(in srgb, var(--sq-teal) 60%, transparent); }
+/* trade dock */
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .b { background: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s { background: var(--sq-sell); border: 0; color: var(--sq-sell-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s:hover { filter: brightness(1.06); }
+/* amount-first desk */
+:root[data-flavor="ink"] .sqbuy-seg .buy.on { background: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-flavor="ink"] .sqbuy-seg .sell.on { background: var(--sq-sell); color: var(--sq-sell-fg); }
+:root[data-flavor="ink"] .sqbuy-presets button.on { background: var(--sq-teal); border-color: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-flavor="ink"] .sqbuy-cta.buy { background: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-flavor="ink"] .sqbuy-cta.sell { background: var(--sq-sell); color: var(--sq-sell-fg); }
+:root[data-flavor="ink"] .sqbuy-slip { color: var(--sq-teal-fg); }
+/* swap-card fallback (other flavors reach it; ink keeps it teal too) */
+:root[data-brand="hyper"][data-flavor="ink"] .tp-cta.buy { background: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-cta.sell { background: var(--sq-sell); color: var(--sq-sell-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-seg button.on:first-child { background: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-seg button.on:last-child { background: var(--sq-sell); color: var(--sq-sell-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-preset { border-color: color-mix(in srgb, var(--sq-teal) 45%, transparent); background: color-mix(in srgb, var(--sq-teal) 10%, transparent); color: var(--sq-teal-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .tp-preset:hover { background: var(--sq-teal); color: var(--sq-teal-fg); }
+/* board quick-buy chips + bolt */
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-presets button { border-color: color-mix(in srgb, var(--sq-teal) 45%, transparent); background: color-mix(in srgb, var(--sq-teal) 10%, transparent); color: var(--sq-teal-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-presets button:hover { background: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-bolt.on, :root[data-brand="hyper"][data-flavor="ink"] .gm-bolt:hover { background: var(--sq-teal); color: var(--sq-teal-fg); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-qb-pop button { background: var(--sq-teal); color: var(--sq-teal-fg); }
