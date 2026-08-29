@@ -11,6 +11,4 @@ export const OFFICIAL_LOGOS: Record<string, string> = {
   // $STOCK, the official hyperstock token: launched before its mark was
   // final, so the curated liquid-coin logo is served from this origin.
   "0xdb1cf34b446e3ec9284f974492ba8d1caf1f3754": "/stock-logo.png",
-  // $MEOW, the official meowstock token: the white whisker-cat profile mark.
-  "0x786060009c006a6cb44c5b5e21202dc5a34a1f47": "/meowstock-pfp.png",
 };
