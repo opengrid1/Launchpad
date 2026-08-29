@@ -13,14 +13,34 @@ export interface HyperStock {
 
 export const WHYPE: `0x${string}` = "0x5555555555555555555555555555555555555555";
 
+// Every stock registered as a quote on the meowstock factory. Two issuer lines
+// bridge to HyperEVM and back a live Hyperliquid Core spot market (buy with
+// USDC, transfer to EVM): dStock (…d) and Backed xStock (w…x). Prices are the
+// real underlying equity, sized on the factory at deploy time.
 export const HYPER_STOCKS: HyperStock[] = [
+  // dStock line
+  { symbol: 'QQQd', ticker: 'QQQ', name: 'Invesco QQQ', address: '0x499e347174f237ad28687b947b94c0d49570d1b7', decimals: 18 },
+  { symbol: 'GLDd', ticker: 'GLD', name: 'SPDR Gold Shares', address: '0x08be08c37d93e689518ced744a89f113b4afaad4', decimals: 18 },
+  { symbol: 'HOODd', ticker: 'HOOD', name: 'Robinhood Markets', address: '0xc304a9d52cf9165024ebc7814250ef3a5013f924', decimals: 18 },
+  { symbol: 'SPYd', ticker: 'SPY', name: 'SPDR S&P 500 ETF', address: '0xb7bf37783db41a2851b77c6917280c56312c833a', decimals: 18 },
+  { symbol: 'MUd', ticker: 'MU', name: 'Micron Technology', address: '0x173c83a71c1a9e254721a86b7512cd65bf92648d', decimals: 18 },
+  { symbol: 'METAd', ticker: 'META', name: 'Meta Platforms', address: '0x5a9d2deee7d8782011695623f1c453f46b2b566e', decimals: 18 },
+  { symbol: 'AAPLd', ticker: 'AAPL', name: 'Apple', address: '0x7374dc1894fbd1bc6c42f6ebbc50b78c211a8606', decimals: 18 },
+  { symbol: 'MSFTd', ticker: 'MSFT', name: 'Microsoft', address: '0x66520d8fd614487214a25af7babf27584f59f76b', decimals: 18 },
+  { symbol: 'GOOGLd', ticker: 'GOOGL', name: 'Alphabet', address: '0x35eeda03e55ff217a013892e9e2e37e792b264ea', decimals: 18 },
+  { symbol: 'AMZNd', ticker: 'AMZN', name: 'Amazon', address: '0x4f2164c12d2d450a8b1d430492ef6670fe4cad8e', decimals: 18 },
+  { symbol: 'TSLAd', ticker: 'TSLA', name: 'Tesla', address: '0x3727c797073840936e3c18b4088f3574cd1a72a3', decimals: 18 },
+  { symbol: 'AVGOd', ticker: 'AVGO', name: 'Broadcom', address: '0xc2785563af80c05177fff006e3b380ac5d172602', decimals: 18 },
+  { symbol: 'ORCLd', ticker: 'ORCL', name: 'Oracle', address: '0xca2156522638f597ffb3705857ffdc356efabe50', decimals: 18 },
+  { symbol: 'CRCLd', ticker: 'CRCL', name: 'Circle', address: '0xe74aa6c4050a15790525eb11cc4562c664dc67c9', decimals: 18 },
+  { symbol: 'SLVd', ticker: 'SLV', name: 'iShares Silver Trust', address: '0x7ef4eba0c0200957e357627ced1884d6cb63e961', decimals: 18 },
+  { symbol: 'SPCXd', ticker: 'SPCX', name: 'SpaceX', address: '0xe8c8AFDf7E80bE51E91AFA28B6aC44404d270B5d', decimals: 18 },
+  // Backed xStock line
   { symbol: 'wNVDAx', ticker: 'NVDAX', name: 'NVIDIA xStock', address: '0xa8ddb5cd96b5222afe198316e9a57caa642850d5', decimals: 18 },
   { symbol: 'wSPYx', ticker: 'SPYX', name: 'SP500 xStock', address: '0xe7e553cd128f0011777323a0b44a7b96ea1cb540', decimals: 18 },
   { symbol: 'wQQQx', ticker: 'QQQX', name: 'Nasdaq xStock', address: '0x4c1ae29c159838fc1b224636e28e086eb69101f7', decimals: 18 },
-  { symbol: 'wMUx', ticker: 'MUX', name: 'Micron Technology xStock', address: '0xe2047ee3bddb5c99ae428ab83df63f8730698e30', decimals: 18 },
+  { symbol: 'wMUx', ticker: 'MUX', name: 'Micron xStock', address: '0xe2047ee3bddb5c99ae428ab83df63f8730698e30', decimals: 18 },
   { symbol: 'wSKHYx', ticker: 'SKHYX', name: 'SK hynix xStock', address: '0x6215a58ed045d71f2561aaabe54f4c885c522998', decimals: 18 },
-  // Pre-IPO dStock: live Core spot market (buy with USDC, transfer to EVM).
-  { symbol: 'SPCXd', ticker: 'SPCX', name: 'SpaceX dStock', address: '0xe8c8AFDf7E80bE51E91AFA28B6aC44404d270B5d', decimals: 18 },
 ];
 
 export const hyperStockByAddress = (addr?: string): HyperStock | undefined =>

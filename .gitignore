@@ -17,3 +17,4 @@ contracts/deployments/localnet.json
 .vercel/
 .vercel
 .env*
+contracts/scripts/meow-quotes.env
