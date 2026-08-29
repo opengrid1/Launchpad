@@ -686,10 +686,29 @@ export class StableV3Client {
     try { metadata = JSON.parse(core.metadataURI || "{}"); } catch { /* opaque URI */ }
     // Stamp the coin's real pair asset so the board/card shows the actual pair
     // (a stock, or the native token) instead of falling back to native.
+    let quoteAddr: Address | null = null;
     try {
       const q = await this.resolveQuote(core.address);
-      if (q.addr && !/^0x0+$/.test(q.addr)) (metadata as Record<string, unknown>).pairAddress = q.addr;
+      if (q.addr && !/^0x0+$/.test(q.addr)) {
+        quoteAddr = q.addr;
+        (metadata as Record<string, unknown>).pairAddress = q.addr;
+      }
     } catch { /* keep whatever the metadata JSON carried */ }
+
+    // Real pool liquidity (TVL) in quote-token wei: the pool's quote reserve
+    // plus its coin reserve valued at the current price. The UI multiplies by
+    // the quote's USD rate to render LIQ in dollars. Single-sided at launch, so
+    // it starts near the market cap and the quote side fills in as people buy.
+    let liquidityWei = 0n;
+    if (quoteAddr && core.pool && !/^0x0+$/.test(core.pool) && price > 0n) {
+      try {
+        const [coinBal, quoteBal] = (await Promise.all([
+          this.publicClient.readContract({ address: core.address, abi: ERC20_ABI, functionName: "balanceOf", args: [core.pool as Address] }).catch(() => 0n),
+          this.publicClient.readContract({ address: quoteAddr, abi: ERC20_ABI, functionName: "balanceOf", args: [core.pool as Address] }).catch(() => 0n),
+        ])) as [bigint, bigint];
+        liquidityWei = quoteBal + (coinBal * price) / 10n ** 18n;
+      } catch { /* leave 0 */ }
+    }
     return {
       address: core.address,
       name: core.name,
@@ -705,7 +724,7 @@ export class StableV3Client {
       priceWei: price.toString(),
       priceUsd: String((Number(price) / 1e18) * quoteUsd),
       marketCapUsd: String(usd),
-      liquidityWei: "0",
+      liquidityWei: liquidityWei.toString(),
       volume24hWei: stats.vol24.toString(),
       volumeTotalWei: stats.volTotal.toString(),
       txCount24h: stats.tx24,
@@ -1386,12 +1405,27 @@ export class StableV3Client {
     const mcapWei = (price * supply) / 10n ** 18n;
     const stats = this.statsFromCache(key);
     const quoteUsd = await this.quoteUsdOf(core.address).catch(() => this.quoteUsd);
+    // Refresh pool liquidity (TVL, quote-wei) on every price push so LIQ tracks
+    // buys/sells instead of snapping back to zero.
+    let liquidityWei = 0n;
+    if (core.pool && !/^0x0+$/.test(core.pool) && price > 0n) {
+      try {
+        const q = await this.resolveQuote(core.address);
+        if (q.addr && !/^0x0+$/.test(q.addr)) {
+          const [coinBal, quoteBal] = (await Promise.all([
+            this.publicClient.readContract({ address: core.address, abi: ERC20_ABI, functionName: "balanceOf", args: [core.pool as Address] }).catch(() => 0n),
+            this.publicClient.readContract({ address: q.addr, abi: ERC20_ABI, functionName: "balanceOf", args: [core.pool as Address] }).catch(() => 0n),
+          ])) as [bigint, bigint];
+          liquidityWei = quoteBal + (coinBal * price) / 10n ** 18n;
+        }
+      } catch { /* leave 0 */ }
+    }
     return {
       token: core.address,
       priceWei: price.toString(),
       priceUsd: String((Number(price) / 1e18) * quoteUsd),
       marketCapUsd: String((Number(mcapWei) / 1e18) * quoteUsd),
-      liquidityWei: "0",
+      liquidityWei: liquidityWei.toString(),
       limitsActive: false,
       remainingToGraduationUsd: "0",
       creatorFeesWei: "0",
