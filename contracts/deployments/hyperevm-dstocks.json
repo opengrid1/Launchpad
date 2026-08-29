@@ -1,0 +1,1013 @@
+{
+  "checkedAt": "2026-08-29T06:40:14.736Z",
+  "method": "Hyperliquid spotMeta, feeShare==1.0 filtered to real equity issuers (Wagyu/xStock/EQX/Unit/dStock). bridgeable=has evmContract; dayVol=dayNtlVlm.",
+  "note": "Only the dStock line (QQQ/GLD/HOOD/MU/SPY) has real spot volume. xStock (wNVDAx/NVDAX, SPYX…), Wagyu (TSLA), EQX are bridgeable or spot-listed but ~$0 volume right now.",
+  "liquid": [
+    {
+      "ticker": "QQQ",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x499e347174f237ad28687b947b94c0d49570d1b7",
+      "hasSpotMarket": true,
+      "mid": 795.255,
+      "dayVol": 22526715.22777
+    },
+    {
+      "ticker": "GLD",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x08be08c37d93e689518ced744a89f113b4afaad4",
+      "hasSpotMarket": true,
+      "mid": 463.725,
+      "dayVol": 2105311.082
+    },
+    {
+      "ticker": "HOOD",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xc304a9d52cf9165024ebc7814250ef3a5013f924",
+      "hasSpotMarket": true,
+      "mid": 81.3635,
+      "dayVol": 68016.7204
+    },
+    {
+      "ticker": "MU",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x173c83a71c1a9e254721a86b7512cd65bf92648d",
+      "hasSpotMarket": true,
+      "mid": 0.085704,
+      "dayVol": 17503.63021468
+    },
+    {
+      "ticker": "TRX1",
+      "issuer": "Wagyu",
+      "fullName": "TRX - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.050774,
+      "dayVol": 14974.04652423
+    },
+    {
+      "ticker": "TSLAX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Tesla xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.12593,
+      "dayVol": 2558.089812
+    },
+    {
+      "ticker": "SPY",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xb7bf37783db41a2851b77c6917280c56312c833a",
+      "hasSpotMarket": true,
+      "mid": 87.4405,
+      "dayVol": 1724.05778
+    },
+    {
+      "ticker": "TAO1",
+      "issuer": "Wagyu",
+      "fullName": "TAO - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.045742,
+      "dayVol": 1018.40565177
+    }
+  ],
+  "bridgeable": [
+    {
+      "ticker": "QQQ",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x499e347174f237ad28687b947b94c0d49570d1b7",
+      "hasSpotMarket": true,
+      "mid": 795.255,
+      "dayVol": 22526715.22777
+    },
+    {
+      "ticker": "GLD",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x08be08c37d93e689518ced744a89f113b4afaad4",
+      "hasSpotMarket": true,
+      "mid": 463.725,
+      "dayVol": 2105311.082
+    },
+    {
+      "ticker": "HOOD",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xc304a9d52cf9165024ebc7814250ef3a5013f924",
+      "hasSpotMarket": true,
+      "mid": 81.3635,
+      "dayVol": 68016.7204
+    },
+    {
+      "ticker": "MU",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x173c83a71c1a9e254721a86b7512cd65bf92648d",
+      "hasSpotMarket": true,
+      "mid": 0.085704,
+      "dayVol": 17503.63021468
+    },
+    {
+      "ticker": "SPY",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xb7bf37783db41a2851b77c6917280c56312c833a",
+      "hasSpotMarket": true,
+      "mid": 87.4405,
+      "dayVol": 1724.05778
+    },
+    {
+      "ticker": "META",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x5a9d2deee7d8782011695623f1c453f46b2b566e",
+      "hasSpotMarket": true,
+      "mid": 113.435,
+      "dayVol": 106.382804
+    },
+    {
+      "ticker": "CRCL",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xe74aa6c4050a15790525eb11cc4562c664dc67c9",
+      "hasSpotMarket": true,
+      "mid": 0.03458,
+      "dayVol": 44.3050294
+    },
+    {
+      "ticker": "TSLA",
+      "issuer": "Wagyu",
+      "fullName": "Tesla - Wagyu.xyz",
+      "bridgeable": true,
+      "evm": "0x3727c797073840936e3c18b4088f3574cd1a72a3",
+      "hasSpotMarket": true,
+      "mid": 106.5505,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SLV",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x7ef4eba0c0200957e357627ced1884d6cb63e961",
+      "hasSpotMarket": true,
+      "mid": 0.0099,
+      "dayVol": 0
+    },
+    {
+      "ticker": "GOOGL",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x35eeda03e55ff217a013892e9e2e37e792b264ea",
+      "hasSpotMarket": true,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "AAPL",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x7374dc1894fbd1bc6c42f6ebbc50b78c211a8606",
+      "hasSpotMarket": true,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "BNB1",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xfd6f06d323f6cb08ee9eeb2d201e9ec0e9112c88",
+      "hasSpotMarket": true,
+      "mid": 0.775025,
+      "dayVol": 0
+    },
+    {
+      "ticker": "AMZN",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x4f2164c12d2d450a8b1d430492ef6670fe4cad8e",
+      "hasSpotMarket": true,
+      "mid": 1580,
+      "dayVol": 0
+    },
+    {
+      "ticker": "MSFT",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x66520d8fd614487214a25af7babf27584f59f76b",
+      "hasSpotMarket": true,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "ORCL",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xca2156522638f597ffb3705857ffdc356efabe50",
+      "hasSpotMarket": true,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "AVGO",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xc2785563af80c05177fff006e3b380ac5d172602",
+      "hasSpotMarket": true,
+      "mid": 0.008209,
+      "dayVol": 0
+    },
+    {
+      "ticker": "DIME",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xa72ae85ca2340ff74cc45c423f2a85a062a4fb4c",
+      "hasSpotMarket": true,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SPCX",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xe8c8afdf7e80be51e91afa28b6ac44404d270b5d",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "NVDAX",
+      "issuer": "xStock",
+      "fullName": "Wrapped NVIDIA xStock",
+      "bridgeable": true,
+      "evm": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SPYX",
+      "issuer": "xStock",
+      "fullName": "Wrapped SP500 xStock",
+      "bridgeable": true,
+      "evm": "0xe7e553cd128f0011777323a0b44a7b96ea1cb540",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "QQQX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Nasdaq xStock",
+      "bridgeable": true,
+      "evm": "0x4c1ae29c159838fc1b224636e28e086eb69101f7",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SKHYX",
+      "issuer": "xStock",
+      "fullName": "Wrapped SK hynix xStock",
+      "bridgeable": true,
+      "evm": "0x6215a58ed045d71f2561aaabe54f4c885c522998",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "MUX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Micron Technology xStock",
+      "bridgeable": true,
+      "evm": "0xe2047ee3bddb5c99ae428ab83df63f8730698e30",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    }
+  ],
+  "spotOnly": [
+    {
+      "ticker": "TRX1",
+      "issuer": "Wagyu",
+      "fullName": "TRX - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.050774,
+      "dayVol": 14974.04652423
+    },
+    {
+      "ticker": "TSLAX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Tesla xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.12593,
+      "dayVol": 2558.089812
+    },
+    {
+      "ticker": "TAO1",
+      "issuer": "Wagyu",
+      "fullName": "TAO - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.045742,
+      "dayVol": 1018.40565177
+    },
+    {
+      "ticker": "DNDX",
+      "issuer": "other",
+      "fullName": "Decentralized Nasdaq",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "THLP",
+      "issuer": "other",
+      "fullName": "Tokenized Hyperliquidity Provider",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "USPYX",
+      "issuer": "xStock",
+      "fullName": "Unit SP500 xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.98652,
+      "dayVol": 0
+    },
+    {
+      "ticker": "XMR1",
+      "issuer": "Wagyu",
+      "fullName": "XMR - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.000919,
+      "dayVol": 0
+    },
+    {
+      "ticker": "NVDA",
+      "issuer": "Wagyu",
+      "fullName": "Nvidia - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SPACEX",
+      "issuer": "Wagyu",
+      "fullName": "SPACEX - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SNDKX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Sandisk Corporation xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SPCXX",
+      "issuer": "xStock",
+      "fullName": "Wrapped SpaceX xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.016626,
+      "dayVol": 0
+    },
+    {
+      "ticker": "AAPLX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Apple xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "CRCLX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Circle xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQQQQ",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized QQQ",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQSPY",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized SPY",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQNVDA",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized NVDA",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQTSLA",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized TSLA",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQAAPL",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized AAPL",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQGOOG",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized GOOGL",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQMETA",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized META",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQMSFT",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized MSFT",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQAMZN",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized AMZN",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQMU",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized MU",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    }
+  ],
+  "all": [
+    {
+      "ticker": "QQQ",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x499e347174f237ad28687b947b94c0d49570d1b7",
+      "hasSpotMarket": true,
+      "mid": 795.255,
+      "dayVol": 22526715.22777
+    },
+    {
+      "ticker": "GLD",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x08be08c37d93e689518ced744a89f113b4afaad4",
+      "hasSpotMarket": true,
+      "mid": 463.725,
+      "dayVol": 2105311.082
+    },
+    {
+      "ticker": "HOOD",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xc304a9d52cf9165024ebc7814250ef3a5013f924",
+      "hasSpotMarket": true,
+      "mid": 81.3635,
+      "dayVol": 68016.7204
+    },
+    {
+      "ticker": "MU",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x173c83a71c1a9e254721a86b7512cd65bf92648d",
+      "hasSpotMarket": true,
+      "mid": 0.085704,
+      "dayVol": 17503.63021468
+    },
+    {
+      "ticker": "TRX1",
+      "issuer": "Wagyu",
+      "fullName": "TRX - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.050774,
+      "dayVol": 14974.04652423
+    },
+    {
+      "ticker": "TSLAX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Tesla xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.12593,
+      "dayVol": 2558.089812
+    },
+    {
+      "ticker": "SPY",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xb7bf37783db41a2851b77c6917280c56312c833a",
+      "hasSpotMarket": true,
+      "mid": 87.4405,
+      "dayVol": 1724.05778
+    },
+    {
+      "ticker": "TAO1",
+      "issuer": "Wagyu",
+      "fullName": "TAO - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.045742,
+      "dayVol": 1018.40565177
+    },
+    {
+      "ticker": "META",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x5a9d2deee7d8782011695623f1c453f46b2b566e",
+      "hasSpotMarket": true,
+      "mid": 113.435,
+      "dayVol": 106.382804
+    },
+    {
+      "ticker": "CRCL",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xe74aa6c4050a15790525eb11cc4562c664dc67c9",
+      "hasSpotMarket": true,
+      "mid": 0.03458,
+      "dayVol": 44.3050294
+    },
+    {
+      "ticker": "TSLA",
+      "issuer": "Wagyu",
+      "fullName": "Tesla - Wagyu.xyz",
+      "bridgeable": true,
+      "evm": "0x3727c797073840936e3c18b4088f3574cd1a72a3",
+      "hasSpotMarket": true,
+      "mid": 106.5505,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SLV",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x7ef4eba0c0200957e357627ced1884d6cb63e961",
+      "hasSpotMarket": true,
+      "mid": 0.0099,
+      "dayVol": 0
+    },
+    {
+      "ticker": "GOOGL",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x35eeda03e55ff217a013892e9e2e37e792b264ea",
+      "hasSpotMarket": true,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "AAPL",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x7374dc1894fbd1bc6c42f6ebbc50b78c211a8606",
+      "hasSpotMarket": true,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "BNB1",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xfd6f06d323f6cb08ee9eeb2d201e9ec0e9112c88",
+      "hasSpotMarket": true,
+      "mid": 0.775025,
+      "dayVol": 0
+    },
+    {
+      "ticker": "AMZN",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x4f2164c12d2d450a8b1d430492ef6670fe4cad8e",
+      "hasSpotMarket": true,
+      "mid": 1580,
+      "dayVol": 0
+    },
+    {
+      "ticker": "MSFT",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0x66520d8fd614487214a25af7babf27584f59f76b",
+      "hasSpotMarket": true,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "ORCL",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xca2156522638f597ffb3705857ffdc356efabe50",
+      "hasSpotMarket": true,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "AVGO",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xc2785563af80c05177fff006e3b380ac5d172602",
+      "hasSpotMarket": true,
+      "mid": 0.008209,
+      "dayVol": 0
+    },
+    {
+      "ticker": "DIME",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xa72ae85ca2340ff74cc45c423f2a85a062a4fb4c",
+      "hasSpotMarket": true,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SPCX",
+      "issuer": "dStock",
+      "fullName": null,
+      "bridgeable": true,
+      "evm": "0xe8c8afdf7e80be51e91afa28b6ac44404d270b5d",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "NVDAX",
+      "issuer": "xStock",
+      "fullName": "Wrapped NVIDIA xStock",
+      "bridgeable": true,
+      "evm": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SPYX",
+      "issuer": "xStock",
+      "fullName": "Wrapped SP500 xStock",
+      "bridgeable": true,
+      "evm": "0xe7e553cd128f0011777323a0b44a7b96ea1cb540",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "QQQX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Nasdaq xStock",
+      "bridgeable": true,
+      "evm": "0x4c1ae29c159838fc1b224636e28e086eb69101f7",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SKHYX",
+      "issuer": "xStock",
+      "fullName": "Wrapped SK hynix xStock",
+      "bridgeable": true,
+      "evm": "0x6215a58ed045d71f2561aaabe54f4c885c522998",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "MUX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Micron Technology xStock",
+      "bridgeable": true,
+      "evm": "0xe2047ee3bddb5c99ae428ab83df63f8730698e30",
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "DNDX",
+      "issuer": "other",
+      "fullName": "Decentralized Nasdaq",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "THLP",
+      "issuer": "other",
+      "fullName": "Tokenized Hyperliquidity Provider",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "USPYX",
+      "issuer": "xStock",
+      "fullName": "Unit SP500 xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.98652,
+      "dayVol": 0
+    },
+    {
+      "ticker": "XMR1",
+      "issuer": "Wagyu",
+      "fullName": "XMR - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.000919,
+      "dayVol": 0
+    },
+    {
+      "ticker": "NVDA",
+      "issuer": "Wagyu",
+      "fullName": "Nvidia - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SPACEX",
+      "issuer": "Wagyu",
+      "fullName": "SPACEX - Wagyu.xyz",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SNDKX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Sandisk Corporation xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "SPCXX",
+      "issuer": "xStock",
+      "fullName": "Wrapped SpaceX xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": true,
+      "mid": 0.016626,
+      "dayVol": 0
+    },
+    {
+      "ticker": "AAPLX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Apple xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "CRCLX",
+      "issuer": "xStock",
+      "fullName": "Wrapped Circle xStock",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQQQQ",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized QQQ",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQSPY",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized SPY",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQNVDA",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized NVDA",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQTSLA",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized TSLA",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQAAPL",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized AAPL",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQGOOG",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized GOOGL",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQMETA",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized META",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQMSFT",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized MSFT",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQAMZN",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized AMZN",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    },
+    {
+      "ticker": "EQMU",
+      "issuer": "EQX",
+      "fullName": "EQX Tokenized MU",
+      "bridgeable": false,
+      "evm": null,
+      "hasSpotMarket": false,
+      "mid": null,
+      "dayVol": 0
+    }
+  ]
+}
