@@ -5285,3 +5285,28 @@ button.bg-accent:disabled {
 :root[data-flavor="ink"] .sq-tab.on { border-bottom-color: var(--sq-teal); }
 :root[data-flavor="ink"] .sq-tab:focus-visible { outline-color: var(--sq-teal); }
 :root[data-flavor="ink"] .gm-tk-tabs button.on { border-bottom-color: var(--sq-teal); }
+
+/* ============ squidpad boot splash ============ */
+.sq-splash {
+  position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: radial-gradient(130% 120% at 50% 32%, #0b3b34 0%, #05241f 58%, #03191600 100%), #041c19;
+  color: #eafff9; opacity: 1; transition: opacity 0.45s ease; padding: 24px;
+}
+.sq-splash.out { opacity: 0; pointer-events: none; }
+.sq-splash-mark {
+  width: 88px; height: 88px; border-radius: 22px; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(79, 224, 203, 0.18), 0 22px 60px -12px rgba(79, 224, 203, 0.45);
+  animation: sq-splash-float 2.4s ease-in-out infinite;
+}
+.sq-splash-mark img { width: 100%; height: 100%; display: block; }
+.sq-splash-word { margin-top: 6px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 800; font-size: 26px; letter-spacing: -0.01em; color: #ffffff; }
+.sq-splash-word b { color: #4fe0cb; font-weight: 800; }
+.sq-splash-tag { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.05em; color: #6fb7ac; }
+.sq-splash-bar { margin-top: 12px; width: 200px; max-width: 60vw; height: 5px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.sq-splash-bar span { display: block; height: 100%; width: 6%; border-radius: 999px; background: linear-gradient(90deg, #2fb9a8, #4fe0cb); box-shadow: 0 0 12px rgba(79, 224, 203, 0.6); animation: sq-splash-load 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+@keyframes sq-splash-load { 0% { width: 6%; } 55% { width: 68%; } 100% { width: 100%; } }
+@keyframes sq-splash-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .sq-splash-mark { animation: none; }
+  .sq-splash-bar span { animation-duration: 0.6s; }
+}

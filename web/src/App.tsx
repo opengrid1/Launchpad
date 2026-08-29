@@ -9,6 +9,7 @@ import { Skeleton, Toasts } from "./components/ui";
 import { BRAND_FLAVOR, IS_HYPER, IS_INK, IS_STOCK_BOARD } from "./lib/brand";
 import { HammrApp } from "./hammr/HammrApp";
 import { HsShell } from "./components/HsShell";
+import { SquidSplash } from "./components/SquidSplash";
 import { wagmiConfig } from "./lib/wagmi";
 import { Explore } from "./pages/Explore";
 
@@ -136,6 +137,7 @@ export default function App() {
               <HsShell>
                 <Suspense fallback={<PageFallback />}>{routes}</Suspense>
               </HsShell>
+              <SquidSplash />
               <Toasts />
             </ErrorBoundary>
           ) : (
