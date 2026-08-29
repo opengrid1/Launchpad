@@ -5311,13 +5311,15 @@ button.bg-accent:disabled {
   color: #ffffff; text-shadow: 0 8px 26px rgba(79, 224, 203, 0.4);
 }
 .sq-splash-word b { color: #4fe0cb; font-weight: 700; }
-.sq-splash-rule { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.sq-splash-rule span { display: block; height: 2px; border-radius: 2px; transform-origin: center; }
-.sq-splash-rule span:first-child { width: 98px; background: linear-gradient(90deg, transparent, #4fe0cb, transparent); animation: sq-rule-grow 0.7s ease 0.28s both; }
-.sq-splash-rule span:last-child { width: 54px; background: linear-gradient(90deg, transparent, #8dfff0, transparent); animation: sq-rule-grow 0.7s ease 0.42s both; }
+/* Hand-drawn rising double underline that draws itself in. */
+.sq-splash-rule { width: 172px; max-width: 54vw; margin-top: 2px; }
+.sq-splash-rule svg { width: 100%; height: auto; display: block; overflow: visible; }
+.sq-splash-rule path { stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; fill: none; stroke-dasharray: 340; stroke-dashoffset: 340; filter: drop-shadow(0 0 5px rgba(79, 224, 203, 0.5)); }
+.sq-splash-rule .r1 { stroke: #8dfff0; animation: sq-draw 0.55s ease 0.36s forwards; }
+.sq-splash-rule .r2 { stroke: #4fe0cb; animation: sq-draw 0.65s ease 0.5s forwards; }
 @keyframes sq-word-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes sq-word-hover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-@keyframes sq-rule-grow { from { opacity: 0; transform: scaleX(0.15); } to { opacity: 1; transform: scaleX(1); } }
+@keyframes sq-draw { to { stroke-dashoffset: 0; } }
 .sq-splash-tag { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.05em; color: #6fb7ac; }
 .sq-splash-bar {
   margin-top: 16px; width: 240px; max-width: 66vw; height: 10px; border-radius: 999px; overflow: hidden; position: relative;

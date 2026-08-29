@@ -43,7 +43,12 @@ export function SquidSplash() {
       <div className="sq-splash-mark"><img src={BRAND_MARK} alt="" aria-hidden /></div>
       <div className="sq-splash-lift">
         <div className="sq-splash-word">{WM_A}<b>{WM_B}</b></div>
-        <div className="sq-splash-rule"><span /><span /></div>
+        <div className="sq-splash-rule" aria-hidden>
+          <svg viewBox="0 0 220 40" fill="none">
+            <path className="r1" d="M12 22 C48 15 84 24 122 16 C154 9 188 13 210 4" />
+            <path className="r2" d="M6 34 C50 28 96 35 146 26 C180 20 200 22 216 14" />
+          </svg>
+        </div>
       </div>
       <div className="sq-splash-tag">{BRAND.tagline}</div>
       <div className="sq-splash-bar"><span style={{ width: `${pct}%` }} /></div>
