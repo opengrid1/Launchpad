@@ -5044,9 +5044,13 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .gm-tk-presets .u { font-family: var(--hs-mono); font-size: 10px; color: var(--hs-ink-3); padding: 0 2px; }
 :root[data-brand="hyper"] .gm-tk-cta { display: flex; gap: 8px; }
 :root[data-brand="hyper"] .gm-tk-cta button { flex: 1; height: 44px; border: 0; border-radius: 8px; cursor: pointer; font-family: var(--hs-mono); font-size: 14px; font-weight: 800; }
-:root[data-brand="hyper"] .gm-tk-cta .b { background: var(--hs-mint); color: #14092e; }
-:root[data-brand="hyper"] .gm-tk-cta .s { background: transparent; border: 1px solid var(--hs-red); color: var(--hs-red); }
-:root[data-brand="hyper"] .gm-tk-cta .s:hover { background: var(--hs-red); color: #14092e; }
+:root[data-brand="hyper"] .gm-tk-cta .b { background: var(--color-accent); color: var(--color-accent-fg); }
+:root[data-brand="hyper"] .gm-tk-cta .s { background: var(--color-down); border: 0; color: #2b0a13; }
+:root[data-brand="hyper"] .gm-tk-cta .s:hover { filter: brightness(1.06); }
+/* hyperstock swap card: Buy in Hyperliquid teal, Sell pink-red (ink stays green) */
+:root[data-brand="hyper"]:not([data-flavor="ink"]) .tp-cta.buy { background: var(--color-accent); color: var(--color-accent-fg); }
+:root[data-brand="hyper"]:not([data-flavor="ink"]) .tp-cta.sell { background: var(--color-down); color: #2b0a13; }
+:root[data-brand="hyper"]:not([data-flavor="ink"]) .tp-seg button.on:first-child { background: var(--color-accent); color: var(--color-accent-fg); }
 
 :root[data-brand="hyper"] .gm-feed-head { padding: 16px 14px 6px; font-family: var(--hs-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--hs-ink-3); }
 
