@@ -54,6 +54,9 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
   const [denom, setDenom] = useState<"usd" | "tok">("usd");
   const [field, setField] = useState("");
   const [slip, setSlip] = useState(8);
+  // Impact-aware output from the pool's real reserves (null = fall back to the
+  // spot estimate). Prevents large buys on a thin pool from reverting.
+  const [impactOutWei, setImpactOutWei] = useState<bigint | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pair, setPair] = useState<Pair | null>(null);
@@ -137,15 +140,37 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
 
   const insufficient = parsed != null && payBal != null && parsed > payBal;
 
+  // Quote the swap against the pool's real reserves so the "you receive" and
+  // the slippage floor reflect price impact, not a naive spot price. Debounced.
+  const recvDec = side === "buy" ? 18 : (pair?.decimals ?? 18);
+  useEffect(() => {
+    let alive = true;
+    if (!parsed || parsed === 0n || !pair) { setImpactOutWei(null); return; }
+    const t = setTimeout(async () => {
+      const out = await v4Client.previewSwapOut(token.address as Address, side, parsed).catch(() => null);
+      if (alive) setImpactOutWei(out);
+    }, 220);
+    return () => { alive = false; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsed?.toString(), side, pair?.address, token.address]);
+
+  // Displayed receive amount: impact-aware when available, else the spot est.
+  const recvOut = impactOutWei != null ? Number(formatUnits(impactOutWei, recvDec)) : (est?.out ?? null);
+  // Price impact vs the spot estimate, for a heads-up on thin pools.
+  const impactPct = impactOutWei != null && est && est.out > 0 ? Math.max(0, (1 - recvOut! / est.out) * 100) : null;
+
   const submit = async () => {
     if (!parsed || parsed === 0n || !pair) return;
     setBusy(true);
     try {
       if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
-      // Slippage floor in the receive token's units.
+      // Slippage floor in the receive token's units. Prefer the impact-aware
+      // pool quote so large buys on a thin pool don't revert on a spot floor.
       let minOut = 0n;
-      if (est) {
-        const recvDec = side === "buy" ? 18 : pair.decimals;
+      const slipBps = BigInt(Math.round(Math.max(0, 1 - slip / 100) * 10_000));
+      if (impactOutWei != null) {
+        minOut = (impactOutWei * slipBps) / 10_000n;
+      } else if (est) {
         const floor = est.out * Math.max(0, 1 - slip / 100);
         minOut = BigInt(Math.max(0, Math.floor(floor * 10 ** recvDec)));
       }
@@ -208,7 +233,7 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
           <button className={denom === "tok" ? "on" : ""} onClick={() => denom !== "tok" && toggleDenom()}>{paySymbol}</button>
         </div>
 
-        <div className="sqbuy-recv">≈ {est ? `${compact(est.out)} ${recvSymbol}` : `0 ${recvSymbol}`}</div>
+        <div className="sqbuy-recv">≈ {recvOut != null ? `${compact(recvOut)} ${recvSymbol}` : `0 ${recvSymbol}`}{impactPct != null && impactPct >= 1 ? ` · impact ${impactPct.toFixed(impactPct >= 10 ? 0 : 1)}%` : ""}</div>
 
         <div className="sqbuy-presets">
           {side === "buy"
@@ -306,7 +331,7 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
 
         <div className="tp-recvrow">
           <span className="tp-rowlabel">You receive</span>
-          <span className="tp-recvval">{est ? `${compact(est.out)} ${recvSymbol}` : "—"}</span>
+          <span className="tp-recvval">{recvOut != null ? `${compact(recvOut)} ${recvSymbol}` : "—"}</span>
         </div>
 
         {showSettings ? (

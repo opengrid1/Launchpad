@@ -1077,6 +1077,44 @@ export class StableV3Client {
     }
   }
 
+  /** Exact impact-aware output by simulating the real router swap (zero floor)
+   *  from the connected account. These single-sided V3 pools are highly
+   *  concentrated, so constant-product on the raw reserves overstates depth by
+   *  10x+ — only a real simulation gives a true quote. Used for the "you
+   *  receive" readout and the slippage floor so large buys on a thin pool don't
+   *  revert. Native-quote (WHYPE) single-hop only; returns null otherwise (the
+   *  UI then falls back to the spot estimate). `amountInWei` is quote wei for a
+   *  buy / coin wei for a sell; the return is the pool's gross output wei. */
+  async previewSwapOut(token: Address, side: "buy" | "sell", amountInWei: bigint): Promise<bigint | null> {
+    if (amountInWei <= 0n) return 0n;
+    let me: Address | undefined;
+    try { me = this.wallet().account?.address as Address; } catch { me = undefined; }
+    if (!me) return null; // need an account holding the input to simulate
+    try {
+      const quote = await this.resolveQuote(token);
+      const payNative = QUOTE_IS_WNATIVE && quote.addr.toLowerCase() === this.addresses.quote.toLowerCase();
+      if (side === "buy") {
+        if (!payNative) return null; // stock two-hop: skip, fall back to spot
+        const amountIn = amountInWei / DEC_GAP;
+        if (amountIn <= 0n) return 0n;
+        const { result } = (await this.publicClient.simulateContract({
+          address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
+          args: [{ tokenIn: quote.addr, tokenOut: token, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }],
+          value: amountInWei, account: me,
+        } as never)) as { result: bigint };
+        return result;
+      }
+      const { result } = (await this.publicClient.simulateContract({
+        address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
+        args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: me, amountIn: amountInWei, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }],
+        account: me,
+      } as never)) as { result: bigint };
+      return result;
+    } catch {
+      return null;
+    }
+  }
+
   /** Buy `token` spending `nativeWei` (18d) of the quote on the router. When
    *  the quote is the wrapped native, the trade pays plain native value and
    *  SwapRouter02 wraps it internally; no approval needed. */
@@ -1116,12 +1154,36 @@ export class StableV3Client {
       }
       await this.ensureAllowance(me, quote.addr, amountIn);
     }
+    // Simulate the real swap to learn the exact fill, then never let the
+    // slippage floor sit above it (99.5% cap). A naive spot floor is far too
+    // high for a large buy on a thin pool and would revert; this keeps the
+    // caller's floor when it is already realistic, and lowers it only when the
+    // pool cannot deliver that much.
+    const floor = await this.cappedFloor(
+      minOut,
+      { address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
+        args: [{ tokenIn: quote.addr, tokenOut: token, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }],
+        value: payNative ? nativeWei : undefined, account: me },
+    );
     return wc.writeContract({
       address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
-      args: [{ tokenIn: quote.addr, tokenOut: token, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
+      args: [{ tokenIn: quote.addr, tokenOut: token, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: floor, sqrtPriceLimitX96: 0n }],
       value: payNative ? nativeWei : undefined,
       chain: wc.chain, account: wc.account!,
     });
+  }
+
+  /** Simulate a router swap (with a zero floor) and return a slippage floor
+   *  that never exceeds 99.5% of the real fill, so the actual tx cannot revert
+   *  on amountOutMinimum. Falls back to the caller's floor if the sim fails. */
+  private async cappedFloor(minOut: bigint, sim: Record<string, unknown>): Promise<bigint> {
+    try {
+      const { result } = (await this.publicClient.simulateContract(sim as never)) as { result: bigint };
+      const cap = (result * 995n) / 1000n;
+      return minOut > cap ? cap : minOut;
+    } catch {
+      return minOut;
+    }
   }
 
   /** Sell `amountIn` token wei for the quote; `minOut` is native wei (18d).
@@ -1164,19 +1226,31 @@ export class StableV3Client {
           args: [[hop, unwrapHop]], chain: wc.chain, account: wc.account!,
         });
       }
+      const floorS = await this.cappedFloor(minOut / DEC_GAP, {
+        address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
+        args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }],
+        account: me,
+      });
       return wc.writeContract({
         address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
-        args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: minOut / DEC_GAP, sqrtPriceLimitX96: 0n }],
+        args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: floorS, sqrtPriceLimitX96: 0n }],
         chain: wc.chain, account: wc.account!,
       });
     }
+    // Cap the native-sell floor to the simulated fill (swap leg into the
+    // router) so a large sell into a thin pool cannot revert on the floor.
+    const floor = await this.cappedFloor(minOut, {
+      address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
+      args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }],
+      account: me,
+    });
     const swap = encodeFunctionData({
       abi: ROUTER_ABI, functionName: "exactInputSingle",
-      args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
+      args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: floor, sqrtPriceLimitX96: 0n }],
     });
     const unwrap = encodeFunctionData({
       abi: ROUTER_ABI, functionName: "unwrapWETH9",
-      args: [minOut, me],
+      args: [floor, me],
     });
     return wc.writeContract({
       address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "multicall",
