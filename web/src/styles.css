@@ -5101,9 +5101,8 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"] .gm-anb-row .amt b { font-family: var(--hs-mono); font-size: 12.5px; font-weight: 700; color: var(--hs-green, var(--hs-mint)); white-space: nowrap; }
 :root[data-brand="hyper"] .gm-anb-row .amt span { font-family: var(--hs-mono); font-size: 10px; color: var(--hs-ink-3); white-space: nowrap; }
 
-/* ---- squidpad terminal skin for the trade form + solid red sell ---- */
-:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s { background: var(--hs-red); border: 0; color: #2b0a10; }
-:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s:hover { filter: brightness(1.08); }
+/* ---- squidpad terminal skin for the trade form ---- */
+/* Chart-first dock: Buy is a green fill, Sell an outline (see chart-first block). */
 
 :root[data-brand="hyper"][data-flavor="ink"] .kf-sheet { background: var(--hs-bg-2); border: 1px solid var(--hs-rule-2); border-bottom: 0; border-radius: 14px 14px 0 0; }
 :root[data-brand="hyper"][data-flavor="ink"] .tp-swaphead { padding: 4px 4px 10px; }
@@ -5150,3 +5149,37 @@ button.bg-accent:disabled {
 :root[data-brand="hyper"][data-flavor="ink"] .tp-preset { border-color: color-mix(in srgb, var(--hs-green) 40%, transparent); background: color-mix(in srgb, var(--hs-green) 8%, transparent); color: var(--hs-green); }
 :root[data-brand="hyper"][data-flavor="ink"] .tp-preset:hover { background: var(--hs-green); color: var(--hs-green-fg); }
 :root[data-brand="hyper"][data-flavor="ink"] .tp-cta.buy { background: var(--hs-green); color: var(--hs-green-fg); }
+
+/* ============ squidpad chart-first trading face ============ */
+/* Price hero: bigger price, the 24h move, and an "earns STOCK" pill. */
+:root[data-flavor="ink"] .gm-tk-hero { align-items: baseline; gap: 10px; padding: 12px 18px 4px; flex-wrap: wrap; }
+:root[data-flavor="ink"] .gm-tk-hero .p { font-size: 33px; font-weight: 800; letter-spacing: -0.03em; }
+:root[data-flavor="ink"] .gm-tk-hero .c { font-size: 15px; }
+:root[data-flavor="ink"] .gm-tk-hero .c i { font-size: 11px; }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-hero .c.down { color: var(--hs-red); }
+:root[data-flavor="ink"] .gm-tk-earns {
+  font-family: var(--hs-mono); font-size: 11px; font-weight: 700; color: var(--hs-mint-deep); align-self: center;
+  background: color-mix(in srgb, var(--hs-mint) 12%, transparent); border: 1px solid color-mix(in srgb, var(--hs-mint) 26%, transparent);
+  padding: 3px 9px; border-radius: 999px; letter-spacing: 0.02em; text-transform: none;
+}
+/* The chart leads the page, edge to edge. */
+:root[data-flavor="ink"] .gm-tk-chart { height: 300px; margin: 6px 0 0; border-radius: 0; border-left: 0; border-right: 0; background: var(--hs-panel); }
+/* Centered four-up stat strip under the chart. */
+:root[data-flavor="ink"] .gm-tk-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); padding: 12px 8px; background: var(--hs-panel);
+  border-top: 1px solid var(--hs-rule); border-bottom: 1px solid var(--hs-rule);
+}
+:root[data-flavor="ink"] .gm-tk-stats span { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; }
+:root[data-flavor="ink"] .gm-tk-stats i { font-style: normal; font-family: var(--hs-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--hs-ink-3); }
+:root[data-flavor="ink"] .gm-tk-stats b { font-family: var(--hs-mono); font-size: 13px; font-weight: 700; color: var(--hs-ink); }
+/* Underline tabs, not pills. */
+:root[data-flavor="ink"] .gm-tk-tabs { gap: 22px; padding: 12px 18px 0; border-bottom: 1px solid var(--hs-rule); }
+:root[data-flavor="ink"] .gm-tk-tabs button {
+  height: auto; padding: 0 0 10px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; margin-bottom: -1px;
+  background: transparent; color: var(--hs-ink-3); font-family: var(--hs-mono); font-size: 13px; font-weight: 600;
+}
+:root[data-flavor="ink"] .gm-tk-tabs button.on { color: var(--hs-ink); border-bottom-color: var(--hs-mint); background: transparent; }
+/* Docked actions: taller rounded buttons, Buy filled green, Sell outline red. */
+:root[data-flavor="ink"] .gm-tk-cta button { height: 50px; border-radius: 14px; font-size: 15px; }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s { background: transparent; border: 1.5px solid var(--hs-red); color: var(--hs-red); }
+:root[data-brand="hyper"][data-flavor="ink"] .gm-tk-cta .s:hover { background: var(--hs-red); color: #ffffff; filter: none; }

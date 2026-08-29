@@ -615,9 +615,9 @@ function GmTokenView({
   const TABS = [
     { id: "trades", label: "Trades" },
     { id: "holders", label: "Holders" },
-    { id: "stats", label: "Stats" },
     { id: "info", label: "Info" },
   ] as const;
+  const earns = hasReward && rewardSym ? rewardSym : null;
 
   return (
     <div className="gm-tk">
@@ -636,29 +636,32 @@ function GmTokenView({
         </span>
       </div>
 
-      {/* Price hero + ledger line */}
+      {/* Price hero: big price, 24h change, and the stock holders earn */}
       <div className="gm-tk-hero">
         <span className="p">{priceStr}</span>
-        <span className={`c ${has ? (up ? "up" : "down") : "flat"}`}>{has ? `${up ? "+" : ""}${chg!.toFixed(2)}%` : "0.00%"} <i>24h</i></span>
-      </div>
-      <div className="gm-tk-line">
-        <span>MC <b>{fmtUsd(t.marketCapUsd)}</b></span>
-        <span>VOL <b>{fmtWeiUsd(t.volumeTotalWei, usdRate)}</b></span>
-        <span>LIQ <b>{fmtWeiUsd(liqWei, usdRate)}</b></span>
-        <span>HOLDERS <b>{compact(t.holderCount)}</b></span>
+        <span className={`c ${has ? (up ? "up" : "down") : "flat"}`}>{has ? `${up ? "▲ +" : "▼ "}${chg!.toFixed(2)}%` : "0.00%"} <i>24h</i></span>
+        {earns ? <span className="gm-tk-earns">earns {earns}</span> : null}
       </div>
 
-      {hasReward ? <RewardClaimCard coin={t.address as Address} fallbackSym={rewardSym} /> : null}
-      <CreatorFeesCard token={t.address as Address} creator={t.creator} symbol={t.symbol} />
-
-      {/* Chart */}
+      {/* Chart leads the page */}
       <div className="gm-tk-chart">
         <Suspense fallback={<Skeleton className="h-full w-full" />}>
           <TVChart token={t.address as Address} symbol={t.symbol} />
         </Suspense>
       </div>
 
-      {/* Pill tabs */}
+      {/* Centered stat strip: market cap, volume, liquidity, holders */}
+      <div className="gm-tk-stats">
+        <span><i>MCAP</i><b>{fmtUsd(t.marketCapUsd)}</b></span>
+        <span><i>VOL</i><b>{fmtWeiUsd(t.volumeTotalWei, usdRate)}</b></span>
+        <span><i>LIQ</i><b>{fmtWeiUsd(liqWei, usdRate)}</b></span>
+        <span><i>HOLDERS</i><b>{compact(t.holderCount)}</b></span>
+      </div>
+
+      {hasReward ? <RewardClaimCard coin={t.address as Address} fallbackSym={rewardSym} /> : null}
+      <CreatorFeesCard token={t.address as Address} creator={t.creator} symbol={t.symbol} />
+
+      {/* Underline tabs */}
       <div className="gm-tk-tabs" role="tablist">
         {TABS.map((x) => (
           <button key={x.id} role="tab" aria-selected={tab === x.id} className={tab === x.id ? "on" : ""} onClick={() => setTab(x.id)}>{x.label}</button>
@@ -668,8 +671,12 @@ function GmTokenView({
       <div className="gm-tk-body">
         {tab === "trades" ? <TradesList token={t.address as Address} symbol={t.symbol} usdRate={usdRate} /> : null}
         {tab === "holders" ? <HoldersList token={t.address as Address} symbol={t.symbol} /> : null}
-        {tab === "stats" ? <BaseStats t={t} extra={extra} usdRate={usdRate} rewardSym={rewardSym} /> : null}
-        {tab === "info" ? <InfoTab t={t} meta={meta} extra={extra} /> : null}
+        {tab === "info" ? (
+          <>
+            <BaseStats t={t} extra={extra} usdRate={usdRate} rewardSym={rewardSym} />
+            <InfoTab t={t} meta={meta} extra={extra} />
+          </>
+        ) : null}
       </div>
 
       {/* Docked trade bar: preset buys + Buy / Sell */}

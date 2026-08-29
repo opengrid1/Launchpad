@@ -1,7 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import type { Address } from "@launchpad/sdk";
 
+import { IS_INK } from "../lib/brand";
 import { makeDatafeed } from "../lib/tvDatafeed";
+
+// squidpad runs a light theme, so its chart is light to sit inside the white
+// trading page; every other flavor keeps the dark terminal chart.
+const LIGHT = IS_INK;
+const CHART_BG = LIGHT ? "#ffffff" : "#14161a";
+const GRID = LIGHT ? "#eef0f4" : "#1f232a";
+const AXIS_TEXT = LIGHT ? "#8a8fa0" : "#9298a2";
+const UP = LIGHT ? "#16a34a" : "#21c45d";
+const DOWN = LIGHT ? "#e11d48" : "#ef584d";
 
 // The TradingView Advanced Charts library is served from jsDelivr (mirroring the
 // public charting-library repo) so it isn't re-bundled into every app deploy.
@@ -47,7 +57,7 @@ export function TVChart({ token, symbol }: { token: Address; symbol: string }) {
           locale: "en",
           timezone: "Etc/UTC",
           autosize: true,
-          theme: "dark",
+          theme: LIGHT ? "light" : "dark",
           disabled_features: [
             "use_localstorage_for_settings",
             "header_symbol_search",
@@ -58,24 +68,24 @@ export function TVChart({ token, symbol }: { token: Address; symbol: string }) {
             "popup_hints",
           ],
           enabled_features: ["hide_left_toolbar_by_default", "iframe_loading_compatibility_mode"],
-          loading_screen: { backgroundColor: "#14161a", foregroundColor: "#2f6bff" },
+          loading_screen: { backgroundColor: CHART_BG, foregroundColor: LIGHT ? "#7c5cfc" : "#2f6bff" },
           overrides: {
-            "paneProperties.background": "#14161a",
+            "paneProperties.background": CHART_BG,
             "paneProperties.backgroundType": "solid",
-            "paneProperties.vertGridProperties.color": "#1f232a",
-            "paneProperties.horzGridProperties.color": "#1f232a",
-            "scalesProperties.textColor": "#9298a2",
-            "scalesProperties.backgroundColor": "#14161a",
-            "mainSeriesProperties.candleStyle.upColor": "#21c45d",
-            "mainSeriesProperties.candleStyle.downColor": "#ef584d",
-            "mainSeriesProperties.candleStyle.borderUpColor": "#21c45d",
-            "mainSeriesProperties.candleStyle.borderDownColor": "#ef584d",
-            "mainSeriesProperties.candleStyle.wickUpColor": "#21c45d",
-            "mainSeriesProperties.candleStyle.wickDownColor": "#ef584d",
+            "paneProperties.vertGridProperties.color": GRID,
+            "paneProperties.horzGridProperties.color": GRID,
+            "scalesProperties.textColor": AXIS_TEXT,
+            "scalesProperties.backgroundColor": CHART_BG,
+            "mainSeriesProperties.candleStyle.upColor": UP,
+            "mainSeriesProperties.candleStyle.downColor": DOWN,
+            "mainSeriesProperties.candleStyle.borderUpColor": UP,
+            "mainSeriesProperties.candleStyle.borderDownColor": DOWN,
+            "mainSeriesProperties.candleStyle.wickUpColor": UP,
+            "mainSeriesProperties.candleStyle.wickDownColor": DOWN,
           },
           studies_overrides: {
-            "volume.volume.color.0": "#ef584d",
-            "volume.volume.color.1": "#21c45d",
+            "volume.volume.color.0": DOWN,
+            "volume.volume.color.1": UP,
             "volume.volume.transparency": 70,
           },
         });
