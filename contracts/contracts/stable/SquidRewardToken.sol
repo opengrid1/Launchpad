@@ -59,6 +59,24 @@ contract SquidRewardToken is ERC20, ReentrancyGuard {
     uint16 public constant CREATOR_FEE_BPS = 40;
     uint16 public constant PLATFORM_FEE_BPS = 10;
 
+    /// @notice Anti-snipe launch protection (adapted from the pons model). For a
+    ///         short window after the pool opens, buys are throttled so bots
+    ///         cannot grab a huge share on block one and dump on holders:
+    ///           - on the launch block itself, only the creator's initial buy
+    ///             executes (every other buy reverts);
+    ///           - for the rest of the window, each wallet may buy at most
+    ///             MAX_BUY_BPS and hold at most MAX_HOLD_BPS of total supply.
+    ///         After the window all limits lift permanently. Sells are never
+    ///         restricted.
+    uint256 public constant PROTECT_BLOCKS = 2;
+    uint16 public constant MAX_HOLD_BPS = 500;  // 5% of supply
+    uint16 public constant MAX_BUY_BPS = 550;   // 5.5% of supply
+    /// @notice Block the pool opened on; the protection window is
+    ///         [launchBlock, launchBlock + PROTECT_BLOCKS). Zero until wired.
+    uint256 public launchBlock;
+    /// @dev Cumulative amount each wallet has bought during the window.
+    mapping(address => uint256) private _boughtInWindow;
+
     /// @notice Wallet credited as the token's creator (immutable attribution).
     address public immutable creator;
     /// @notice The coin's pair asset: rewards are swapped into and paid in this
@@ -101,6 +119,9 @@ contract SquidRewardToken is ERC20, ReentrancyGuard {
     error OnlyFactory();
     error OnlyCreator();
     error PoolAlreadySet();
+    error LaunchGuard();
+    error BuyCap();
+    error HoldCap();
     error Disabled();
 
     constructor(
@@ -147,6 +168,8 @@ contract SquidRewardToken is ERC20, ReentrancyGuard {
         if (pool != address(0)) revert PoolAlreadySet();
         pool = pool_;
         _setExcluded(pool_, true);
+        // Open the anti-snipe protection window from this block.
+        launchBlock = block.number;
 
         _router = IFeeRecipientSource(_factory).swapRouter();
         _feeTier = IFeeRecipientSource(_factory).POOL_FEE_TIER();
@@ -302,6 +325,23 @@ contract SquidRewardToken is ERC20, ReentrancyGuard {
     ///      other transfers (sells into the pool included) move untouched.
     function _update(address from, address to, uint256 value) internal override {
         if (from != address(0) && from == pool && !excluded[to] && value > 0) {
+            // Anti-snipe: throttle buys during the launch window (sells and
+            // excluded/system transfers are unaffected).
+            uint256 lb = launchBlock;
+            if (lb != 0 && block.number < lb + PROTECT_BLOCKS) {
+                if (block.number == lb) {
+                    // Launch block: only the creator's initial buy executes.
+                    if (to != creator) revert LaunchGuard();
+                } else {
+                    uint256 supply = totalSupply();
+                    uint256 bought = _boughtInWindow[to] + value;
+                    if (bought > (supply * MAX_BUY_BPS) / 10_000) revert BuyCap();
+                    // balanceOf(to) is still pre-transfer here; add net received.
+                    if (balanceOf(to) + value > (supply * MAX_HOLD_BPS) / 10_000) revert HoldCap();
+                    _boughtInWindow[to] = bought;
+                }
+            }
+
             uint256 holderFee = (value * HOLDER_FEE_BPS) / 10_000;
             uint256 creatorFee = (value * CREATOR_FEE_BPS) / 10_000;
             uint256 platformFee = (value * PLATFORM_FEE_BPS) / 10_000;
