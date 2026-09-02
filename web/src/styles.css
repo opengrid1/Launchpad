@@ -5731,3 +5731,51 @@ button.bg-accent:disabled {
   background: var(--ct-panel); color: var(--ct-ink); border: 3px solid var(--ct-line); box-shadow: var(--ct-sh-sm);
 }
 :root[data-flavor="ink"][data-skin="cartoon"] .hs-wallet.on:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--ct-line); }
+
+/* --- cartoon: unify icon buttons + remaining action buttons (full sweep) --- */
+/* icon buttons: uniform white sticker (keep each one's own radius) */
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-icon-btn,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-clip,
+:root[data-flavor="ink"][data-skin="cartoon"] .tp-gear,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-tk-back,
+:root[data-flavor="ink"][data-skin="cartoon"] .gm-tk-back,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-search-x,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-x {
+  border: 2.5px solid var(--ct-line); background: var(--ct-panel); color: var(--ct-ink);
+  box-shadow: 2px 2px 0 var(--ct-line); transition: transform .08s ease, box-shadow .08s ease;
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-icon-btn:active,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-clip:active,
+:root[data-flavor="ink"][data-skin="cartoon"] .tp-gear:active,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-tk-back:active,
+:root[data-flavor="ink"][data-skin="cartoon"] .gm-tk-back:active,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-search-x:active,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-x:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ct-line); }
+
+/* remaining green CTAs (launch variants, wallet-sheet connect) */
+:root[data-flavor="ink"][data-skin="cartoon"] .hs-launch,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-rocket,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-connect {
+  background: var(--ct-green); color: #fff; border: 3px solid var(--ct-line); border-radius: 13px;
+  box-shadow: var(--ct-sh-sm); font-family: var(--font-head); font-weight: 700; transition: transform .08s ease, box-shadow .08s ease;
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .hs-launch:active,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-rocket:active,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-connect:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ct-line); }
+
+/* small text buttons stay flat but adopt the display font + ink color */
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-addr,
+:root[data-flavor="ink"][data-skin="cartoon"] .sqbuy-slip { font-family: var(--font-head); font-weight: 600; color: var(--ct-ink-2); }
+
+/* drop/browse button -> white secondary */
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-drop-btn {
+  border: 2.5px solid var(--ct-line); background: var(--ct-panel); color: var(--ct-ink);
+  box-shadow: 2px 2px 0 var(--ct-line); border-radius: 11px; font-family: var(--font-head); font-weight: 600;
+}
+
+/* --- cartoon: token-head chips (contract address, Share) match the sticker look --- */
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-tk-head > button:not(.kf-tk-back),
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-tk-share button {
+  border: 2px solid var(--ct-line); box-shadow: 1.5px 1.5px 0 var(--ct-line); border-radius: 8px;
+  color: var(--ct-ink); background: var(--ct-panel);
+}
