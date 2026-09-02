@@ -18,3 +18,4 @@ contracts/deployments/localnet.json
 .vercel
 .env*
 contracts/scripts/meow-quotes.env
+contracts/scripts/robinhood-quotes.env
