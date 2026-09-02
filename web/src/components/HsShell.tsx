@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
-import { BRAND, BRAND_FLAVOR, IS_INK } from "../lib/brand";
+import { BRAND, BRAND_FLAVOR, IS_INK, IS_ROBIN } from "../lib/brand";
 import { BRAND_MARK } from "../lib/hyper/defaultLogo";
 import { KoiIcon } from "./base/KoiIcon";
 import { WalletSheet } from "./base/WalletSheet";
@@ -25,6 +25,17 @@ const [MARK_A, MARK_B] =
 const NAV: { to: string; end?: boolean; label: string }[] = [
   { to: "/", end: true, label: "Markets" },
   { to: IS_INK ? "/analytics" : "/feed", label: IS_INK ? "Analytics" : "Feed" },
+  { to: "/rewards", label: "Rewards" },
+  { to: "/leaderboard", label: "Leaderboard" },
+  { to: "/profile", label: "Wallet" },
+  { to: "/docs", label: "Docs" },
+];
+
+// Robinhood keeps a clean top bar (logo + search + Launch); the full nav lives
+// in a footer, ponsfamily-style.
+const FOOTER_NAV: { to: string; end?: boolean; label: string }[] = [
+  { to: "/", end: true, label: "Markets" },
+  { to: "/analytics", label: "Analytics" },
   { to: "/rewards", label: "Rewards" },
   { to: "/leaderboard", label: "Leaderboard" },
   { to: "/profile", label: "Wallet" },
@@ -85,13 +96,15 @@ export function HsShell({ children }: { children: ReactNode }) {
           <img src={BRAND_MARK} alt="" aria-hidden />
           <span>{MARK_A}<b>{MARK_B}</b></span>
         </Link>
-        <nav className="sqx-nav" aria-label="Primary">
-          {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => (isActive ? "on" : "")}>
-              {n.label}
-            </NavLink>
-          ))}
-        </nav>
+        {IS_ROBIN ? null : (
+          <nav className="sqx-nav" aria-label="Primary">
+            {NAV.map((n) => (
+              <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => (isActive ? "on" : "")}>
+                {n.label}
+              </NavLink>
+            ))}
+          </nav>
+        )}
         {onToken ? null : (
           <Link to="/search" className="sqx-search">
             <KoiIcon name="search" size={15} />
@@ -106,6 +119,31 @@ export function HsShell({ children }: { children: ReactNode }) {
       </header>
 
       <main className={`sqx-content${onToken ? " sqx-content-token" : ""}`}>{children}</main>
+
+      {IS_ROBIN && !onToken ? (
+        <footer className="sqx-foot">
+          <div className="sqx-foot-in">
+            <div className="sqx-foot-brand">
+              <Link to="/" className="sqx-foot-mark" aria-label={BRAND.name}>
+                <img src={BRAND_MARK} alt="" aria-hidden />
+                <span>{MARK_A}<b>{MARK_B}</b></span>
+              </Link>
+              <p>{BRAND.tagline}</p>
+              {BRAND.twitterHandle ? (
+                <a className="sqx-foot-x" href={BRAND.twitter} target="_blank" rel="noreferrer">@{BRAND.twitterHandle}</a>
+              ) : null}
+            </div>
+            <nav className="sqx-foot-links" aria-label="Footer">
+              {FOOTER_NAV.map((n) => (
+                <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => (isActive ? "on" : "")}>
+                  {n.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+          <div className="sqx-foot-base">Built on Robinhood Chain</div>
+        </footer>
+      ) : null}
 
       {onToken ? null : (
         <nav className="sqx-tabbar" aria-label="Primary">

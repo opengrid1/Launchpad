@@ -1,10 +1,10 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { keccak256, parseEther, toHex } from "viem";
 
 import { client } from "../lib/client";
 import { addresses, env } from "../lib/env";
-import { BRAND_FLAVOR, IS_INK } from "../lib/brand";
+import { BRAND_FLAVOR, IS_INK, IS_ROBIN } from "../lib/brand";
 
 // Chain / DEX labels: squidpad on Ink, meowstock on HyperEVM.
 const NET = BRAND_FLAVOR === "meow" ? "HyperEVM" : BRAND_FLAVOR === "robinhood" ? "Robinhood Chain" : "Ink";
@@ -53,6 +53,19 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
   const [logoData, setLogoData] = useState("");
   const [tried, setTried] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Searchable pair dropdown (robinhood/cartoon): keep the launch form clean
+  // instead of rendering a 177-item grid.
+  const [pairOpen, setPairOpen] = useState(false);
+  const pairDdRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!pairOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (pairDdRef.current && !pairDdRef.current.contains(e.target as Node)) setPairOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [pairOpen]);
 
   const set =
     (key: keyof typeof form) =>
@@ -222,22 +235,49 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
         {/* Pool pairing — WHYPE or a tokenized stock; the creator earns its fees */}
         <div className="kf-field">
           <label>Pool Pairing <i>({env.nativeSymbol} + {STOCK_PAIRS.length} tokenized stocks)</i></label>
-          {IS_INK ? null : <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${env.nativeSymbol} or an xStock (NVDAX, SPYX, TSLAX…)`} />}
-          <div className="kf-pairgrid" style={IS_INK ? undefined : { maxHeight: 360, overflowY: "auto" }}>
-            {filtered.map((p) => (
-              <button
-                type="button"
-                key={p.address}
-                onClick={() => setPair(p.address)}
-                title={p.sub}
-                className={pair === p.address ? "on" : ""}
-              >
-                {p.label}
+          {IS_ROBIN ? (
+            <div className="kf-pairdd" ref={pairDdRef}>
+              <button type="button" className={`kf-pairdd-trigger${pairOpen ? " open" : ""}`} onClick={() => setPairOpen((o) => !o)} aria-haspopup="listbox" aria-expanded={pairOpen}>
+                <span className="kf-pairdd-cur"><b>{selected.label}</b><span>{selected.sub}</span></span>
+                <svg className="kf-pairdd-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
-            ))}
-            {filtered.length === 0 ? <div style={{ gridColumn: "1 / -1", padding: "12px 0", textAlign: "center", color: "var(--color-ink-3)" }}>No match.</div> : null}
-          </div>
+              {pairOpen ? (
+                <div className="kf-pairdd-pop" role="listbox">
+                  <input className="kf-pairdd-search" autoFocus type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+                    placeholder={`Search ${env.nativeSymbol} or a stock (NVDA, GLD, TSLA…)`} />
+                  <div className="kf-pairdd-list">
+                    {filtered.map((p) => (
+                      <button type="button" key={p.address} role="option" aria-selected={pair === p.address}
+                        className={`kf-pairdd-opt${pair === p.address ? " on" : ""}`}
+                        onClick={() => { setPair(p.address); setPairOpen(false); setQuery(""); }}>
+                        <b>{p.label}</b><span>{p.sub}</span>
+                      </button>
+                    ))}
+                    {filtered.length === 0 ? <div className="kf-pairdd-empty">No match.</div> : null}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              {IS_INK ? null : <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Search ${env.nativeSymbol} or an xStock (NVDAX, SPYX, TSLAX…)`} />}
+              <div className="kf-pairgrid" style={IS_INK ? undefined : { maxHeight: 360, overflowY: "auto" }}>
+                {filtered.map((p) => (
+                  <button
+                    type="button"
+                    key={p.address}
+                    onClick={() => setPair(p.address)}
+                    title={p.sub}
+                    className={pair === p.address ? "on" : ""}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+                {filtered.length === 0 ? <div style={{ gridColumn: "1 / -1", padding: "12px 0", textAlign: "center", color: "var(--color-ink-3)" }}>No match.</div> : null}
+              </div>
+            </>
+          )}
           {IS_INK ? null : (
             <p className="hint">
               Every trade pays 1% in {selected.label} ({selected.sub}): 50% to holders, 40% to you, 10% platform.
