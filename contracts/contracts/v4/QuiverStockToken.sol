@@ -4,77 +4,87 @@ pragma solidity 0.8.26;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/// @title QuiverToken
-/// @notice Fixed-supply launchpad token with an on-chain, gas-safe holder
-///         dividend tracker. A share of every trade's tax (routed in by the
-///         hook) is distributed to holders in proportion to how much they
-///         hold, using a MasterChef-style accumulator so distribution is O(1)
-///         regardless of holder count. Locked liquidity (held by the V4
-///         PoolManager) and other system addresses are excluded so rewards
-///         only flow to real holders.
-///
-///         Rewards are paid in `rewardToken` — any ERC-20 the creator picks at
-///         launch (e.g. a tokenized stock), or native currency when set to the
-///         zero address. Holders accrue continuously and pull with claim().
-contract QuiverStockToken is ERC20 {
+interface IStockRhHook {
+    /// @dev Swap `coinAmount` of the caller (this coin) into its pool's pair
+    ///      asset and send the proceeds to `to`. The token transfers the coin to
+    ///      the hook first; the hook performs the V4 swap and returns the amount.
+    function swapCoinToPair(uint256 coinAmount, address to) external returns (uint256 pairAmount);
+}
+
+/// @title QuiverStockToken
+/// @notice The V4 stockpad coin: identical mechanics to the V3 SquidRewardToken,
+///         on Uniswap V4. A 1% trade fee (skimmed by the pool hook in afterSwap)
+///         accrues automatically per trade with NO harvest step — the hook hands
+///         the coin fee to this contract and calls {accrue}, which records every
+///         holder's share instantly (MasterChef accumulator). Rewards accrue in
+///         COIN and are swapped into the pair asset (a tokenized stock or WETH)
+///         at claim time, per holder, through the hook. Split: 50% holders /
+///         40% creator / 10% platform. Sells are never fee'd. An anti-snipe
+///         window throttles buys right after launch.
+contract QuiverStockToken is ERC20, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 private constant ACC_PRECISION = 1e24;
 
+    // Split of the collected fee: 50% holders / 40% creator / 10% platform.
+    uint16 public constant HOLDER_FEE_BPS = 5_000;
+    uint16 public constant CREATOR_FEE_BPS = 4_000;
+
     /// @notice Wallet credited as the token's creator (immutable attribution).
     address public immutable creator;
-    /// @notice The hook allowed to credit dividends; set once by the factory.
-    address public hook;
-    /// @notice Immutable per-token trade tax in basis points (0..1000 = 0-10%).
+    /// @notice Trade tax in bps (the pool hook enforces it); exposed for parity.
     uint16 public immutable taxBps;
-    /// @notice Currency dividends are paid in. address(0) == native.
-    address public immutable rewardToken;
-    /// @notice The V4 PoolManager. On a buy it transfers the coin to the buyer,
-    ///         so `from == poolManager` identifies a buy for anti-snipe.
+    /// @notice The coin's pair asset: rewards are paid in this (stock or WETH).
+    address public immutable pairAsset;
+    /// @notice The V4 PoolManager: on a buy it sends the coin to the buyer, so
+    ///         `from == poolManager` identifies a buy for anti-snipe + the hook.
     address public immutable poolManager;
+    address private immutable _factory;
 
-    // Anti-snipe launch protection (same as the V3 stock launchpad). For a short
-    // window after the pool opens, buys are throttled so bots cannot grab a huge
-    // share on block one and dump on holders.
-    uint256 private constant BPS = 10_000;
+    /// @notice The hook that skims fees and performs claim swaps; set once.
+    address public hook;
+
+    /// @dev Accumulated reward per eligible share (in coin), scaled by PRECISION.
+    uint256 private accRewardPerShare;
+    /// @notice Supply eligible for rewards (excludes pool/system holders).
+    uint256 public eligibleSupply;
+    mapping(address => uint256) private rewardDebt;
+    /// @notice Settled-but-unclaimed rewards per holder, in COINS.
+    mapping(address => uint256) public claimable;
+    /// @notice Addresses that do not participate in rewards (pool, system).
+    mapping(address => bool) public excluded;
+
+    /// @notice Lifetime coins credited to holders (coin-denominated).
+    uint256 public totalRewardsDistributed;
+    /// @notice Creator / platform fees accrued and not yet claimed, in COINS.
+    uint256 public creatorFees;
+    uint256 public platformFees;
+
+    // Anti-snipe launch protection (same as V3).
     uint256 public constant PROTECT_BLOCKS = 2;
     uint16 public constant MAX_HOLD_BPS = 500; // 5% of supply
     uint16 public constant MAX_BUY_BPS = 550;  // 5.5% of supply
-    /// @notice Block the pool opened on; window is [launchBlock, +PROTECT_BLOCKS).
     uint256 public launchBlock;
     mapping(address => uint256) private _boughtInWindow;
 
-    /// @dev Accumulated reward per eligible share, scaled by ACC_PRECISION.
-    uint256 private accRewardPerShare;
-    /// @dev Supply eligible for dividends (excludes system/excluded holders).
-    uint256 public eligibleSupply;
-    /// @dev Reward already accounted to a holder: balance * acc / PRECISION.
-    mapping(address => uint256) private rewardDebt;
-    /// @dev Settled-but-unclaimed rewards per holder.
-    mapping(address => uint256) public claimable;
-    /// @dev Addresses that do not participate in dividends (pool, system).
-    mapping(address => bool) public excluded;
-
-    /// @notice Lifetime rewards distributed to holders, in reward units.
-    uint256 public totalRewardsDistributed;
-
     string private _metadataURI;
 
-    event HookSet(address indexed hook);
+    event RewardsAccrued(uint256 holderAmount, uint256 creatorAmount, uint256 platformAmount);
+    event RewardsClaimed(address indexed holder, uint256 coinAmount, uint256 pairAmount);
+    event CreatorFeesClaimed(address indexed creator, uint256 coinAmount, uint256 pairAmount);
+    event PlatformFeesClaimed(address indexed recipient, uint256 coinAmount, uint256 pairAmount);
     event ExcludedSet(address indexed account, bool excluded);
-    event RewardsDistributed(uint256 amount);
-    event RewardsClaimed(address indexed holder, uint256 amount);
+    event HookSet(address indexed hook);
 
     error OnlyFactory();
     error OnlyHook();
+    error OnlyCreator();
     error HookAlreadySet();
-    error WrongRewardCurrency();
     error LaunchGuard();
     error BuyCap();
     error HoldCap();
-
-    address private immutable _factory;
 
     constructor(
         string memory name_,
@@ -82,138 +92,159 @@ contract QuiverStockToken is ERC20 {
         string memory metadataURI_,
         uint256 supply_,
         address creator_,
-        address supplyRecipient_,
+        address factory_,
         uint16 taxBps_,
-        address rewardToken_,
+        address pairAsset_,
         address poolManager_
     ) ERC20(name_, symbol_) {
-        require(taxBps_ <= 1000, "tax>10%");
-        _factory = msg.sender;
         creator = creator_;
         taxBps = taxBps_;
-        rewardToken = rewardToken_;
+        pairAsset = pairAsset_;
         poolManager = poolManager_;
+        _factory = factory_;
         _metadataURI = metadataURI_;
 
-        // Exclude system endpoints (zero, self, and the supply recipient) from
-        // dividends up front, so rewards only ever flow to real holders.
         excluded[address(0)] = true;
         excluded[address(this)] = true;
-        excluded[supplyRecipient_] = true;
+        excluded[factory_] = true;
+        excluded[poolManager_] = true;
 
-        _mint(supplyRecipient_, supply_);
+        _mint(factory_, supply_);
     }
 
-    /// @notice Off-chain metadata JSON (description, logo, website, socials).
     function metadataURI() external view returns (string memory) {
         return _metadataURI;
     }
 
-    /// @notice Burn tokens held by the caller (used by the hook for buyback&burn).
-    function burn(uint256 amount) external {
-        _burn(msg.sender, amount);
+    /// @notice Interface parity with the other launchpad tokens: never owned.
+    function owner() external pure returns (address) {
+        return address(0);
     }
 
-    // ---------------------------------------------------------------------
-    // Factory wiring (one-time)
-    // ---------------------------------------------------------------------
+    /// @notice The asset rewards are paid in: this coin's pair (stock or WETH).
+    function rewardToken() external view returns (address) {
+        return pairAsset;
+    }
 
-    /// @notice Wire the hook and exclude the pool/system addresses. The factory
-    ///         calls this exactly once, right after it knows the pool endpoints.
+    /// @notice One-time wiring by the factory, in the same tx it opens the pool:
+    ///         records the hook, excludes it, approves it to pull the coin for
+    ///         claim swaps, and starts the anti-snipe window.
     function initHook(address hook_, address[] calldata excludedAddrs) external {
         if (msg.sender != _factory) revert OnlyFactory();
         if (hook != address(0)) revert HookAlreadySet();
         hook = hook_;
         emit HookSet(hook_);
         _setExcluded(hook_, true);
-        for (uint256 i; i < excludedAddrs.length; ++i) {
-            _setExcluded(excludedAddrs[i], true);
-        }
-        // The factory wires the hook in the same tx it opens the pool, so this
-        // block starts the anti-snipe protection window.
+        for (uint256 i; i < excludedAddrs.length; ++i) _setExcluded(excludedAddrs[i], true);
+        _approve(address(this), hook_, type(uint256).max);
         launchBlock = block.number;
     }
 
-    // ---------------------------------------------------------------------
-    // Dividend distribution
-    // ---------------------------------------------------------------------
+    // ------------------------------------------------------------------
+    // Fee accrual (hook-driven, automatic — no harvest)
+    // ------------------------------------------------------------------
 
-    /// @notice Credit an ERC-20 reward distribution to all eligible holders.
-    ///         The hook must have transferred `amount` of `rewardToken` to this
-    ///         contract before calling. No-op-safe when there is no eligible
-    ///         supply (caller keeps the funds).
-    function distributeRewards(uint256 amount) external {
+    /// @notice The pool hook calls this after transferring `coinFee` of this coin
+    ///         to the contract: the fee is split 50/40/10 and every holder's
+    ///         share is recorded instantly. No swap here — coins are swapped into
+    ///         the pair asset per holder at claim time.
+    function accrue(uint256 coinFee) external {
         if (msg.sender != hook) revert OnlyHook();
-        if (rewardToken == address(0)) revert WrongRewardCurrency();
-        _distribute(amount);
+        if (coinFee == 0) return;
+        uint256 holderFee = (coinFee * HOLDER_FEE_BPS) / 10_000;
+        uint256 creatorFee = (coinFee * CREATOR_FEE_BPS) / 10_000;
+        uint256 platformFee = coinFee - holderFee - creatorFee;
+
+        if (holderFee > 0) {
+            uint256 supply = eligibleSupply;
+            if (supply > 0) {
+                accRewardPerShare += (holderFee * ACC_PRECISION) / supply;
+                totalRewardsDistributed += holderFee;
+            } else {
+                creatorFee += holderFee;
+                holderFee = 0;
+            }
+        }
+        creatorFees += creatorFee;
+        platformFees += platformFee;
+        emit RewardsAccrued(holderFee, creatorFee, platformFee);
     }
 
-    /// @notice Credit a native reward distribution to all eligible holders.
-    function distributeRewardsNative() external payable {
-        if (msg.sender != hook) revert OnlyHook();
-        if (rewardToken != address(0)) revert WrongRewardCurrency();
-        _distribute(msg.value);
-    }
+    // ------------------------------------------------------------------
+    // Views + claims
+    // ------------------------------------------------------------------
 
-    function _distribute(uint256 amount) private {
-        uint256 supply = eligibleSupply;
-        if (amount == 0 || supply == 0) return;
-        accRewardPerShare += (amount * ACC_PRECISION) / supply;
-        totalRewardsDistributed += amount;
-        emit RewardsDistributed(amount);
-    }
-
-    /// @notice Pending, not-yet-settled rewards for a holder.
+    /// @notice Pending, not-yet-claimed holder rewards in COINS (the frontend
+    ///         converts to the pair asset at the pool price for display).
     function pendingRewards(address holder) public view returns (uint256) {
         if (excluded[holder]) return claimable[holder];
         uint256 accrued = (balanceOf(holder) * accRewardPerShare) / ACC_PRECISION;
         uint256 debt = rewardDebt[holder];
-        uint256 extra = accrued > debt ? accrued - debt : 0;
-        return claimable[holder] + extra;
+        return claimable[holder] + (accrued > debt ? accrued - debt : 0);
     }
 
-    /// @notice Claim all settled + pending rewards to the caller.
-    function claim() external returns (uint256 amount) {
+    /// @notice Claim all accrued holder rewards to the caller, paid in the pair.
+    function claimRewards() public returns (uint256 pairAmount) {
         return _claimTo(msg.sender);
     }
 
-    /// @notice Push a holder's accrued rewards to THEIR wallet. Callable by
-    ///         anyone (the protocol keeper calls it after every distribution so
-    ///         rewards land in wallets with no user action), but the funds can
-    ///         only ever go to the holder — non-custodial by construction.
-    function claimFor(address holder) external returns (uint256 amount) {
+    function claim() external returns (uint256 pairAmount) {
+        return claimRewards();
+    }
+
+    function claimFor(address holder) external returns (uint256 pairAmount) {
         return _claimTo(holder);
     }
 
-    /// @notice Batch delivery for the keeper: push rewards to many holders in
-    ///         one transaction. A single failing receiver (native rewards only)
-    ///         is skipped rather than blocking the whole batch.
     function claimForMany(address[] calldata holders) external {
-        for (uint256 i; i < holders.length; ++i) {
-            try this.claimFor(holders[i]) {} catch {}
-        }
+        for (uint256 i; i < holders.length; ++i) _claimTo(holders[i]);
     }
 
-    function _claimTo(address holder) private returns (uint256 amount) {
+    /// @notice Creator-only: claim accrued dev fees, paid in the pair asset.
+    function claimCreatorFees() external nonReentrant returns (uint256 pairAmount) {
+        if (msg.sender != creator) revert OnlyCreator();
+        uint256 coinAmount = creatorFees;
+        if (coinAmount == 0) return 0;
+        creatorFees = 0;
+        pairAmount = _swapToPair(coinAmount, creator);
+        emit CreatorFeesClaimed(creator, coinAmount, pairAmount);
+    }
+
+    /// @notice Push accrued platform fees to the factory's fee recipient.
+    function claimPlatformFees() external nonReentrant returns (uint256 pairAmount) {
+        address to = IFeeRecipientSource(_factory).feeRecipient();
+        uint256 coinAmount = platformFees;
+        if (coinAmount == 0) return 0;
+        platformFees = 0;
+        pairAmount = _swapToPair(coinAmount, to);
+        emit PlatformFeesClaimed(to, coinAmount, pairAmount);
+    }
+
+    /// @notice Burn tokens held by the caller.
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+
+    // ------------------------------------------------------------------
+    // Internals
+    // ------------------------------------------------------------------
+
+    function _claimTo(address holder) private nonReentrant returns (uint256 pairAmount) {
         _settle(holder);
-        amount = claimable[holder];
-        if (amount == 0) return 0;
+        uint256 coinAmount = claimable[holder];
+        if (coinAmount == 0) return 0;
         claimable[holder] = 0;
-        emit RewardsClaimed(holder, amount);
-        if (rewardToken == address(0)) {
-            (bool ok, ) = payable(holder).call{value: amount}("");
-            require(ok, "native xfer");
-        } else {
-            IERC20(rewardToken).safeTransfer(holder, amount);
-        }
+        pairAmount = _swapToPair(coinAmount, holder);
+        emit RewardsClaimed(holder, coinAmount, pairAmount);
     }
 
-    // ---------------------------------------------------------------------
-    // Accounting hooks
-    // ---------------------------------------------------------------------
+    /// @dev Swap `coinAmount` of this coin into the pair asset through the hook
+    ///      (which owns the V4 swap path) and send it to `to`.
+    function _swapToPair(uint256 coinAmount, address to) private returns (uint256) {
+        // The hook is pre-approved to pull the coin; it swaps and pays `to`.
+        return IStockRhHook(hook).swapCoinToPair(coinAmount, to);
+    }
 
-    /// @dev Move a holder's freshly-accrued rewards into `claimable` and reset
-    ///      their debt to the current balance basis.
     function _settle(address account) private {
         if (account == address(0) || excluded[account]) return;
         uint256 accrued = (balanceOf(account) * accRewardPerShare) / ACC_PRECISION;
@@ -228,7 +259,6 @@ contract QuiverStockToken is ERC20 {
 
     function _setExcluded(address account, bool value) private {
         if (excluded[account] == value) return;
-        // Settle then flip participation, adjusting eligibleSupply by balance.
         uint256 bal = balanceOf(account);
         if (value) {
             _settle(account);
@@ -241,12 +271,10 @@ contract QuiverStockToken is ERC20 {
         emit ExcludedSet(account, value);
     }
 
-    /// @dev Core transfer/mint/burn accounting. Settles both sides, moves the
-    ///      balance, keeps `eligibleSupply` in sync with participation, and
-    ///      rebases each side's reward debt to its new balance.
     function _update(address from, address to, uint256 value) internal override {
         // Anti-snipe: throttle buys (coin sent from the PoolManager) during the
-        // launch window. Sells and system transfers are unaffected.
+        // launch window. Sells and system transfers are unaffected. The fee
+        // itself is skimmed by the pool hook, not here.
         if (from == poolManager && !excluded[to] && value > 0) {
             uint256 lb = launchBlock;
             if (lb != 0 && block.number < lb + PROTECT_BLOCKS) {
@@ -255,8 +283,8 @@ contract QuiverStockToken is ERC20 {
                 } else {
                     uint256 supply = totalSupply();
                     uint256 bought = _boughtInWindow[to] + value;
-                    if (bought > (supply * MAX_BUY_BPS) / BPS) revert BuyCap();
-                    if (balanceOf(to) + value > (supply * MAX_HOLD_BPS) / BPS) revert HoldCap();
+                    if (bought > (supply * MAX_BUY_BPS) / 10_000) revert BuyCap();
+                    if (balanceOf(to) + value > (supply * MAX_HOLD_BPS) / 10_000) revert HoldCap();
                     _boughtInWindow[to] = bought;
                 }
             }
@@ -270,17 +298,14 @@ contract QuiverStockToken is ERC20 {
 
         super._update(from, to, value);
 
-        // Keep the eligible-supply denominator correct across the flow.
-        if (fromEligible && !toEligible) {
-            eligibleSupply -= value; // eligible -> excluded (or burn)
-        } else if (!fromEligible && toEligible) {
-            eligibleSupply += value; // mint or excluded -> eligible
-        }
+        if (fromEligible && !toEligible) eligibleSupply -= value;
+        else if (!fromEligible && toEligible) eligibleSupply += value;
 
         if (fromEligible) _resetDebt(from);
         if (toEligible) _resetDebt(to);
     }
+}
 
-    /// @notice Accept native only as reward funding.
-    receive() external payable {}
+interface IFeeRecipientSource {
+    function feeRecipient() external view returns (address);
 }

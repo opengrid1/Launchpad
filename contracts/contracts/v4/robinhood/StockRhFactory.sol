@@ -14,7 +14,7 @@ import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
-import {ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
+import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 
@@ -75,9 +75,11 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         uint16 taxBps;
         address pair;             // the coin's pair asset: a tokenized stock or WETH
         uint256 pairUsdPrice8;    // pair USD price, 8dp, sizes the $3k start cap
+        uint256 devBuyPairAmount; // optional launch buy: pair asset the creator spends (0 = none)
     }
 
     event Launched(address indexed token, address indexed creator, uint16 taxBps, bytes32 poolId);
+    event DevBought(address indexed token, address indexed creator, uint256 pairIn, uint256 coinOut);
     event Collected(address indexed token, uint128 liquidityRemoved, uint256 tokenAmount, uint256 wethAmount, address indexed recipient);
     event LaunchesPausedSet(bool paused);
 
@@ -167,6 +169,18 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         _tokensByCreator[msg.sender].push(token);
 
         emit Launched(token, msg.sender, p.taxBps, poolId);
+
+        // Optional dev buy: the creator spends `devBuyPairAmount` of the pair
+        // asset on a launch-block buy. The anti-snipe window allows this because
+        // the coin goes to the creator (to == creator at launchBlock).
+        if (p.devBuyPairAmount > 0) {
+            IERC20(pair).safeTransferFrom(msg.sender, address(this), p.devBuyPairAmount);
+            bytes memory res = poolManager.unlock(
+                abi.encode(uint8(2), abi.encode(key, tokenIsCurrency0, p.devBuyPairAmount, msg.sender))
+            );
+            uint256 coinOut = abi.decode(res, (uint256));
+            emit DevBought(token, msg.sender, p.devBuyPairAmount, coinOut);
+        }
     }
 
     // ---------------------------------------------------------------------
@@ -200,6 +214,34 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
             return "";
         }
 
+        if (action == 2) {
+            // Dev buy: swap the creator's pair asset (held by the factory) into
+            // the coin and send the coin straight to the creator.
+            (PoolKey memory key, bool tokenIsCurrency0, uint256 pairIn, address to) =
+                abi.decode(payload, (PoolKey, bool, uint256, address));
+
+            // Buying the coin means spending the pair: if the coin is currency0,
+            // the pair is currency1, so the swap is oneForZero (zeroForOne=false).
+            bool zeroForOne = !tokenIsCurrency0;
+            BalanceDelta delta = poolManager.swap(
+                key,
+                SwapParams({
+                    zeroForOne: zeroForOne,
+                    amountSpecified: -int256(pairIn),
+                    sqrtPriceLimitX96: zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1
+                }),
+                ""
+            );
+
+            // Pay the pair we owe from the factory's balance; take the coin out
+            // to the creator.
+            _pay(key.currency0, delta.amount0());
+            _pay(key.currency1, delta.amount1());
+            uint256 coinOut = _takePositive(tokenIsCurrency0 ? key.currency0 : key.currency1,
+                tokenIsCurrency0 ? delta.amount0() : delta.amount1(), to);
+            return abi.encode(coinOut);
+        }
+
         (PoolKey memory key, int24 tickLower, int24 tickUpper, uint128 removed, address recipient, bool tokenIsCurrency0) =
             abi.decode(payload, (PoolKey, int24, int24, uint128, address, bool));
 
@@ -219,6 +261,16 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         if (amount <= 0) return 0;
         value = uint256(uint128(amount));
         poolManager.take(currency, to, value);
+    }
+
+    /// @dev Settle a currency the factory owes to the PoolManager from its own
+    ///      balance (positive/zero deltas are no-ops).
+    function _pay(Currency currency, int128 amount) internal {
+        if (amount >= 0) return;
+        uint256 owed = uint256(uint128(-amount));
+        poolManager.sync(currency);
+        IERC20(Currency.unwrap(currency)).safeTransfer(address(poolManager), owed);
+        poolManager.settle();
     }
 
     /// @notice Remove `liquidityBps` of a token's factory-held liquidity and send

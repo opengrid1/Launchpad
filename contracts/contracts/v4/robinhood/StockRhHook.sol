@@ -17,24 +17,26 @@ import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 
-import {IQuiverToken} from "../interfaces/IQuiverToken.sol";
-
-interface IWrappedNative {
-    function withdraw(uint256) external;
-    function deposit() external payable;
+interface IStockCoin {
+    /// @dev Credit a coin-denominated fee to the coin's own accumulator. The
+    ///      hook has already transferred the coin to the token; this is pure
+    ///      bookkeeping (split 50/40/10 done inside the token).
+    function accrue(uint256 coinFee) external;
 }
 
 /// @title StockRhHook
-/// @notice Fee vault for the Robinhood-chain stock launchpad's V4 pools — the
-///         V3 stock-reward model on Uniswap V4. Each coin pairs against a
-///         tokenized stock (or WETH); every swap pays a per-token tax skimmed in
-///         `afterSwap`. On `harvest`, coin-side fees are swapped into the pair
-///         asset and the whole balance is split and paid in the pair asset:
+/// @notice Fee engine for the Robinhood-chain stock launchpad's V4 pools — the
+///         V3 stock-reward model on Uniswap V4, with NO harvest step. Every buy
+///         (the pool sends the coin out to the trader) pays a 1% tax skimmed in
+///         `afterSwap`; the hook hands that coin fee straight to the coin and
+///         calls {IStockCoin.accrue}, so every holder's share is recorded on the
+///         spot (MasterChef accumulator inside the coin). Sells are never taxed,
+///         exactly like V3.
 ///
-///           1. holders  — 50%: credited pro-rata to every eligible holder via
-///                         QuiverStockToken.distributeRewards (paid in the pair).
-///           2. creator  — 40%: sent to the creator in the pair asset.
-///           3. platform — 10%: sent to the platform fee recipient.
+///         Rewards stay denominated in the coin until a holder claims: the coin
+///         calls back into {swapCoinToPair}, which swaps the claimed coin into
+///         the pool's pair asset (a tokenized stock or WETH) and pays the holder.
+///         The 50/40/10 holders/creator/platform split lives inside the coin.
 ///
 ///         Ownership is renounced at deploy; a hardcoded, source-visible
 ///         immutable `admin` keeps the setter powers.
@@ -43,16 +45,9 @@ contract StockRhHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     using PoolIdLibrary for PoolKey;
 
     uint16 internal constant BPS = 10_000;
-    // Same split as the V3 stock launchpad: 50% holders / 40% creator / 10%
-    // platform, all paid in the pair asset (the tokenized stock or WETH).
-    uint16 public constant HOLDER_FEE_BPS = 5_000;
-    uint16 public constant CREATOR_FEE_BPS = 4_000;
 
-    address public immutable WETH;
     /// @notice Immutable admin that survives `renounceOwnership()`.
     address public immutable admin;
-    /// @notice Platform fee recipient (the 10% share of harvested fees).
-    address public platform;
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "not admin");
@@ -71,10 +66,6 @@ contract StockRhHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     address public factory;
     mapping(PoolId => PoolConfig) internal _config;
     mapping(address => PoolId) internal _poolOf;
-    /// @notice token => launched-coin fees awaiting harvest (from buys).
-    mapping(address => uint256) public tokenFees;
-    /// @notice token => pair-asset (stock/WETH) fees awaiting harvest (from sells).
-    mapping(address => uint256) public pairFees;
 
     struct SwapAction {
         PoolKey key;
@@ -83,31 +74,23 @@ contract StockRhHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     }
 
     event PoolRegistered(address indexed token, PoolId indexed id, uint16 taxBps);
-    event FeeAccrued(address indexed token, bool weth, uint256 amount);
-    event Harvested(address indexed token, uint256 toHolders, uint256 toCreator);
+    event FeeAccrued(address indexed token, uint256 coinFee);
     event FactorySet(address indexed factory);
 
     error NotFactory();
     error AlreadySet();
     error NotRegistered();
+    error NotCoin();
 
-    constructor(IPoolManager pm, address owner_, address admin_, address weth_, address platform_) BaseHook(pm) Ownable(owner_) {
-        require(admin_ != address(0) && weth_ != address(0) && platform_ != address(0), "zero");
+    constructor(IPoolManager pm, address owner_, address admin_) BaseHook(pm) Ownable(owner_) {
+        require(admin_ != address(0), "zero");
         admin = admin_;
-        WETH = weth_;
-        platform = platform_;
     }
 
     function setFactory(address factory_) external onlyAdmin {
         require(factory_ != address(0), "factory=0");
         factory = factory_;
         emit FactorySet(factory_);
-    }
-
-    /// @notice Admin can re-point the platform fee recipient.
-    function setPlatform(address platform_) external onlyAdmin {
-        require(platform_ != address(0), "platform=0");
-        platform = platform_;
     }
 
     // ---------------------------------------------------------------------
@@ -141,7 +124,7 @@ contract StockRhHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     }
 
     // ---------------------------------------------------------------------
-    // afterSwap: skim the tax
+    // afterSwap: skim the buy tax in coin, credit the coin's accumulator.
     // ---------------------------------------------------------------------
 
     function _afterSwap(address, PoolKey calldata key, SwapParams calldata params, BalanceDelta delta, bytes calldata)
@@ -152,75 +135,54 @@ contract StockRhHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
         PoolConfig storage c = _config[key.toId()];
         if (!c.registered || c.taxBps == 0) return (BaseHook.afterSwap.selector, int128(0));
 
+        // The V4 return-delta path can only adjust the swap's *unspecified*
+        // currency. We only tax buys, and only when the coin is that unspecified
+        // side (exact-input buys — the router's default path). That keeps the fee
+        // in the coin and the accounting exact; sells and exact-output buys pass
+        // through untaxed, matching V3's "1% on buys, in coin" rule.
         bool exactInput = params.amountSpecified < 0;
         bool unspecifiedIsCurrency1 = (params.zeroForOne == exactInput);
         Currency unspecified = unspecifiedIsCurrency1 ? key.currency1 : key.currency0;
-        int128 unspecifiedAmount = unspecifiedIsCurrency1 ? delta.amount1() : delta.amount0();
+        if (Currency.unwrap(unspecified) != c.token) return (BaseHook.afterSwap.selector, int128(0));
 
-        uint256 magnitude = unspecifiedAmount < 0 ? uint256(uint128(-unspecifiedAmount)) : uint256(uint128(unspecifiedAmount));
-        uint256 fee = (magnitude * c.taxBps) / BPS;
+        int128 unspecifiedAmount = unspecifiedIsCurrency1 ? delta.amount1() : delta.amount0();
+        // Positive = the coin is flowing out to the trader → a buy.
+        if (unspecifiedAmount <= 0) return (BaseHook.afterSwap.selector, int128(0));
+
+        uint256 coinOut = uint256(uint128(unspecifiedAmount));
+        uint256 fee = (coinOut * c.taxBps) / BPS;
         if (fee == 0) return (BaseHook.afterSwap.selector, int128(0));
 
-        poolManager.take(unspecified, address(this), fee);
-
-        bool feeIsToken = Currency.unwrap(unspecified) == c.token;
-        if (feeIsToken) tokenFees[c.token] += fee;
-        else pairFees[c.token] += fee;
-        emit FeeAccrued(c.token, !feeIsToken, fee);
+        // Pull the coin fee out of the pool straight to the coin contract, then
+        // record it — no swap here, no harvest later.
+        poolManager.take(unspecified, c.token, fee);
+        IStockCoin(c.token).accrue(fee);
+        emit FeeAccrued(c.token, fee);
 
         return (BaseHook.afterSwap.selector, int128(int256(fee)));
     }
 
     // ---------------------------------------------------------------------
-    // harvest: normalise coin fees into the pair asset, split 50/40/10, pay in
-    // the pair asset (the tokenized stock or WETH) — same model as V3.
+    // Claim path: the coin calls in to swap accrued coin into its pair asset.
     // ---------------------------------------------------------------------
 
-    function harvest(address token) external nonReentrant {
-        _harvest(token, 0);
-    }
+    /// @notice Swap `coinAmount` of the calling coin into its pool's pair asset
+    ///         and send the proceeds to `to`. Only a registered coin may call,
+    ///         for its own pool. The coin has pre-approved the hook to pull it.
+    function swapCoinToPair(uint256 coinAmount, address to) external nonReentrant returns (uint256 pairAmount) {
+        PoolConfig storage c = _config[_poolOf[msg.sender]];
+        if (!c.registered || c.token != msg.sender) revert NotCoin();
+        if (coinAmount == 0) return 0;
 
-    function harvestBounded(address token, uint256 minPairOut) external nonReentrant {
-        _harvest(token, minPairOut);
-    }
+        IERC20(msg.sender).safeTransferFrom(msg.sender, address(this), coinAmount);
 
-    function _harvest(address token, uint256 minPairOut) private {
-        PoolConfig storage c = _config[_poolOf[token]];
-        if (!c.registered) revert NotRegistered();
+        Currency coinCurrency = c.tokenIsCurrency0 ? c.poolKey.currency0 : c.poolKey.currency1;
+        pairAmount = _swap(c.poolKey, coinCurrency, coinAmount, 0);
 
-        // Coin-denominated fees (from buys) are swapped into the pair asset so
-        // the whole harvest pays out in one currency: the pair (stock/WETH).
-        uint256 tf = tokenFees[token];
-        if (tf > 0) {
-            tokenFees[token] = 0;
-            Currency tokenCurrency = c.tokenIsCurrency0 ? c.poolKey.currency0 : c.poolKey.currency1;
-            pairFees[token] += _swap(c.poolKey, tokenCurrency, tf, minPairOut);
+        if (pairAmount > 0) {
+            address pair = Currency.unwrap(c.tokenIsCurrency0 ? c.poolKey.currency1 : c.poolKey.currency0);
+            IERC20(pair).safeTransfer(to, pairAmount);
         }
-
-        uint256 total = pairFees[token];
-        if (total == 0) {
-            emit Harvested(token, 0, 0);
-            return;
-        }
-        pairFees[token] = 0;
-
-        // The pair asset (non-coin side of the pool) is the reward currency.
-        address pair = Currency.unwrap(c.tokenIsCurrency0 ? c.poolKey.currency1 : c.poolKey.currency0);
-
-        uint256 toHolders = (total * HOLDER_FEE_BPS) / BPS; // 50%
-        uint256 toCreator = (total * CREATOR_FEE_BPS) / BPS; // 40%
-        uint256 toPlatform = total - toHolders - toCreator;  // 10%
-
-        // Holders earn the pair asset: fund the coin, then credit the dividend
-        // accumulator pro-rata to every eligible holder.
-        if (toHolders > 0) {
-            IERC20(pair).safeTransfer(token, toHolders);
-            IQuiverToken(token).distributeRewards(toHolders);
-        }
-        if (toCreator > 0) IERC20(pair).safeTransfer(c.creator, toCreator);
-        if (toPlatform > 0) IERC20(pair).safeTransfer(platform, toPlatform);
-
-        emit Harvested(token, toHolders, toCreator);
     }
 
     // ---------------------------------------------------------------------
