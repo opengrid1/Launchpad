@@ -5810,3 +5810,14 @@ button.bg-accent:disabled {
 :root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-hrow:hover { background: var(--ct-panel-2); }
 :root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-hsym { color: var(--ct-ink); font-family: var(--font-head); font-weight: 700; }
 :root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-husd { color: var(--ct-ink); font-family: var(--font-head); font-weight: 700; }
+
+/* --- cartoon: the shared <Button> component (all variants incl. ghost/dark) --- */
+:root[data-flavor="ink"][data-skin="cartoon"] button.rounded-full.h-12 {
+  border: 3px solid var(--ct-line); box-shadow: var(--ct-sh-sm); border-radius: 13px;
+  font-family: var(--font-head); font-weight: 700; transition: transform .08s ease, box-shadow .08s ease;
+}
+:root[data-flavor="ink"][data-skin="cartoon"] button.rounded-full.h-12:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: var(--ct-sh); }
+:root[data-flavor="ink"][data-skin="cartoon"] button.rounded-full.h-12:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ct-line); }
+:root[data-flavor="ink"][data-skin="cartoon"] button.rounded-full.h-12:disabled { box-shadow: none; opacity: .55; }
+/* ghost variant reads as a white secondary sticker */
+:root[data-flavor="ink"][data-skin="cartoon"] button.rounded-full.h-12.bg-panel { background: var(--ct-panel); color: var(--ct-ink); }
