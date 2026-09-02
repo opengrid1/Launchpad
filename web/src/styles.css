@@ -5699,3 +5699,35 @@ button.bg-accent:disabled {
   box-shadow: 3px 3px 0 var(--ct-line); transition: transform .08s ease, box-shadow .08s ease;
 }
 :root[data-flavor="ink"][data-skin="cartoon"] .sqx-fab:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ct-line); }
+
+/* --- cartoon: make EVERY action button share the same chunky treatment --- */
+/* token-page docked Buy/Sell (were flat gradients, border:0) */
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-tk-buy,
+:root[data-flavor="ink"][data-skin="cartoon"] .gm-tk-cta .b {
+  background: var(--ct-green); color: #fff; border: 3px solid var(--ct-line); border-radius: 14px;
+  box-shadow: var(--ct-sh-sm); font-family: var(--font-head); font-weight: 700; transition: transform .08s ease, box-shadow .08s ease;
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-tk-sell,
+:root[data-flavor="ink"][data-skin="cartoon"] .gm-tk-cta .s {
+  background: var(--ct-red); color: #fff; border: 3px solid var(--ct-line); border-radius: 14px;
+  box-shadow: var(--ct-sh-sm); font-family: var(--font-head); font-weight: 700; transition: transform .08s ease, box-shadow .08s ease;
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-tk-buy:active,
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-tk-sell:active,
+:root[data-flavor="ink"][data-skin="cartoon"] .gm-tk-cta button:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ct-line); }
+
+/* secondary white buttons that used a thin 1px edge (chart Retry, etc.) */
+:root[data-flavor="ink"][data-skin="cartoon"] button.border-edge.bg-panel,
+:root[data-flavor="ink"][data-skin="cartoon"] button.bg-panel.border-edge {
+  border: 3px solid var(--ct-line); border-radius: 12px; box-shadow: var(--ct-sh-sm);
+  font-family: var(--font-head); font-weight: 700; color: var(--ct-ink);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+:root[data-flavor="ink"][data-skin="cartoon"] button.border-edge.bg-panel:hover { transform: translate(-1px,-1px); box-shadow: var(--ct-sh); border-color: var(--ct-line); }
+:root[data-flavor="ink"][data-skin="cartoon"] button.border-edge.bg-panel:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--ct-line); }
+
+/* the connected-wallet chip: give it the same white secondary look */
+:root[data-flavor="ink"][data-skin="cartoon"] .hs-wallet.on {
+  background: var(--ct-panel); color: var(--ct-ink); border: 3px solid var(--ct-line); box-shadow: var(--ct-sh-sm);
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .hs-wallet.on:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--ct-line); }
