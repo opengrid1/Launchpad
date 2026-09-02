@@ -5681,3 +5681,21 @@ button.bg-accent:disabled {
   border-top: 2.5px solid var(--ct-line); text-align: center; padding: 14px; color: var(--ct-ink-2);
   font-family: var(--font-head); font-weight: 600; font-size: 12.5px;
 }
+
+/* --- cartoon: mobile bottom nav (sqx-tabbar) as a chunky comic bar --- */
+:root[data-flavor="ink"][data-skin="cartoon"] .sqx-tabbar {
+  background: var(--ct-panel); backdrop-filter: none; border-top: 3px solid var(--ct-line);
+  height: calc(68px + env(safe-area-inset-bottom));
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .sqx-tabbar a {
+  font-family: var(--font-head); font-weight: 600; font-size: 10.5px; letter-spacing: 0; color: var(--ct-ink-2); gap: 4px;
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .sqx-tabbar a svg { color: var(--ct-ink-2); transition: transform .1s ease; }
+:root[data-flavor="ink"][data-skin="cartoon"] .sqx-tabbar a.on { color: var(--ct-green); }
+:root[data-flavor="ink"][data-skin="cartoon"] .sqx-tabbar a.on svg { color: var(--ct-green); transform: translateY(-1px) scale(1.08); }
+:root[data-flavor="ink"][data-skin="cartoon"] .sqx-fab {
+  width: 58px; height: 58px; margin-top: -30px; border-radius: 18px;
+  background: var(--ct-green); color: #fff; border: 3px solid var(--ct-line);
+  box-shadow: 3px 3px 0 var(--ct-line); transition: transform .08s ease, box-shadow .08s ease;
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .sqx-fab:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ct-line); }
