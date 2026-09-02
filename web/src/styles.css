@@ -5779,3 +5779,34 @@ button.bg-accent:disabled {
   border: 2px solid var(--ct-line); box-shadow: 1.5px 1.5px 0 var(--ct-line); border-radius: 8px;
   color: var(--ct-ink); background: var(--ct-panel);
 }
+
+/* --- cartoon: wallet page (Profile) cards + wallet sheet --- */
+/* Profile/holdings/rewards cards (tailwind) become stickers */
+:root[data-flavor="ink"][data-skin="cartoon"] .rounded-xl.border-edge.bg-panel {
+  border: 3px solid var(--ct-line); box-shadow: var(--ct-sh-sm); border-radius: 16px;
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .rounded-xl[class*="border-accent"] {
+  border: 3px solid var(--ct-line); box-shadow: var(--ct-sh-sm); border-radius: 16px; background: #eafff0;
+}
+
+/* Wallet bottom-sheet modal */
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-sheet {
+  background: var(--ct-bg); border: 3px solid var(--ct-line); border-bottom: 0;
+  border-radius: 22px 22px 0 0; box-shadow: 0 -14px 40px rgba(0,0,0,.18);
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-head { border-bottom: 3px solid var(--ct-line); color: var(--ct-ink); }
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-total { color: var(--ct-ink); }
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-actions > * {
+  border: 2.5px solid var(--ct-line); background: var(--ct-panel); color: var(--ct-ink);
+  box-shadow: 2px 2px 0 var(--ct-line); border-radius: 11px; font-family: var(--font-head); font-weight: 600;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-actions > *:hover { transform: translate(-1px,-1px); box-shadow: var(--ct-sh); border-color: var(--ct-line); }
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-actions > *:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--ct-line); }
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-hrow {
+  border: 2.5px solid var(--ct-line); background: var(--ct-panel); box-shadow: 2px 2px 0 var(--ct-line);
+  border-radius: 12px; margin-bottom: 8px; padding: 10px 12px; color: var(--ct-ink);
+}
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-hrow:hover { background: var(--ct-panel-2); }
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-hsym { color: var(--ct-ink); font-family: var(--font-head); font-weight: 700; }
+:root[data-flavor="ink"][data-skin="cartoon"] .kf-wallet-husd { color: var(--ct-ink); font-family: var(--font-head); font-weight: 700; }
