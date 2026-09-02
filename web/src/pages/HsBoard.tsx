@@ -4,6 +4,7 @@ import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
 import { WHYPE, stockByAddress } from "../lib/hyper/stocks";
+import { BRAND, IS_ROBIN } from "../lib/brand";
 import { client } from "../lib/client";
 import { addresses, env } from "../lib/env";
 import { isHidden, isImpersonator } from "../lib/hiddenTokens";
@@ -21,6 +22,15 @@ const fmtPrice = (p: number) => {
   if (p >= 1) return `$${p.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   if (p >= 0.01) return `$${p.toFixed(4)}`;
   return `$${Number(p.toPrecision(3))}`;
+};
+
+/** Compact USD for the hero stat tiles ($1.2M, $340K). */
+const fmtUsdShort = (n: number) => {
+  if (!n || !isFinite(n) || n <= 0) return "—";
+  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
+  return `$${Math.round(n)}`;
 };
 
 type Tab = "trending" | "new" | "gainers" | "stocks";
@@ -108,8 +118,33 @@ export function HsBoard() {
 
   const loading = !env.hideTokens && (lv || ln) && all.length === 0;
 
+  // Live totals for the hero strip (robinhood flavor only).
+  const stats = useMemo(() => ({
+    coins: all.length,
+    vol: all.reduce((s, t) => s + volUsd(t), 0),
+    mcap: all.reduce((s, t) => s + Number(t.marketCapUsd || 0), 0),
+  }), [all]);
+
   return (
     <div className="gm-page">
+      {IS_ROBIN && (
+        <div className="gm-hero">
+          <div className="gm-hero-main">
+            <h1 className="gm-hero-title">{BRAND.tagline}</h1>
+            <p className="gm-hero-sub">
+              Launch a coin on {env.chainName} paired with a tokenized stock. One transaction opens a
+              real market and every trade pays 1%, forever.
+            </p>
+            <Link to="/launch" className="gm-hero-cta">Launch a coin</Link>
+          </div>
+          <div className="gm-hero-stats">
+            <div className="gm-stat"><b>{stats.coins || "—"}</b><i>Coins</i></div>
+            <div className="gm-stat"><b>{fmtUsdShort(stats.vol)}</b><i>24h Volume</i></div>
+            <div className="gm-stat"><b>{fmtUsdShort(stats.mcap)}</b><i>Total MCap</i></div>
+          </div>
+        </div>
+      )}
+
       {/* Underline filter tabs */}
       <div className="sq-tabs">
         {TABS.map((t) => (
