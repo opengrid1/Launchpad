@@ -13,7 +13,13 @@ const LaunchForm = lazy(() => import("../pages/LaunchHyper").then((m) => ({ defa
 
 // Wordmark halves: the accent lands on the suffix ("squid|pad", "meow|stock").
 const [MARK_A, MARK_B] =
-  BRAND_FLAVOR === "meow" ? ["meow", "stock"] : IS_INK ? ["squid", "pad"] : ["hyper", "stock"];
+  BRAND_FLAVOR === "meow"
+    ? ["meow", "stock"]
+    : BRAND_FLAVOR === "robinhood"
+      ? ["stock", "pad"]
+      : IS_INK
+        ? ["squid", "pad"]
+        : ["hyper", "stock"];
 
 // Top-bar nav (desktop). The mobile tab bar mirrors the primary four.
 const NAV: { to: string; end?: boolean; label: string }[] = [

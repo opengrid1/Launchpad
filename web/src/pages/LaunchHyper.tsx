@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { keccak256, parseEther, toHex } from "viem";
 
 import { client } from "../lib/client";
-import { env } from "../lib/env";
+import { addresses, env } from "../lib/env";
 import { BRAND_FLAVOR, IS_INK } from "../lib/brand";
 
 // Chain / DEX labels: squidpad on Ink, meowstock on HyperEVM.
-const NET = BRAND_FLAVOR === "meow" ? "HyperEVM" : "Ink";
+const NET = BRAND_FLAVOR === "meow" ? "HyperEVM" : BRAND_FLAVOR === "robinhood" ? "Robinhood Chain" : "Ink";
 const DEX = BRAND_FLAVOR === "meow" ? "HyperSwap" : "Uniswap";
 import { STOCKS, WHYPE, type HyperStock } from "../lib/hyper/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
@@ -20,9 +20,12 @@ const TOKEN_CREATED_TOPIC = keccak256(
 // The launch pair options: WHYPE (default) plus every tokenized stock live on
 // HyperEVM. The pool's 1% fee is paid in whichever they pick.
 type Pair = { symbol: string; label: string; sub: string; address: `0x${string}` };
-const WHYPE_PAIR: Pair = BRAND_FLAVOR === "ink"
-  ? { symbol: "ETH", label: "ETH", sub: "Ink", address: "0x4200000000000000000000000000000000000006" as `0x${string}` }
-  : { symbol: "HYPE", label: "HYPE", sub: "Hyperliquid", address: WHYPE };
+const WHYPE_PAIR: Pair =
+  BRAND_FLAVOR === "ink"
+    ? { symbol: "ETH", label: "ETH", sub: "Ink", address: "0x4200000000000000000000000000000000000006" as `0x${string}` }
+    : BRAND_FLAVOR === "robinhood"
+      ? { symbol: "ETH", label: "ETH", sub: "Robinhood Chain", address: addresses.weth }
+      : { symbol: "HYPE", label: "HYPE", sub: "Hyperliquid", address: WHYPE };
 const STOCK_PAIRS: Pair[] = STOCKS.map((s: HyperStock) => ({
   symbol: s.ticker,
   label: s.ticker,

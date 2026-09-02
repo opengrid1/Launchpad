@@ -1,3 +1,5 @@
+import { ROBINHOOD_STOCKS } from "./robinhoodStocks";
+
 // Tokenized stock ERC20s live on HyperEVM (Backed xStocks, wrapped), verified
 // on-chain (code + symbol + decimals) and tradable end to end: each has a live
 // Hyperliquid Core spot market (buy with USDC, transfer to EVM) plus a real
@@ -62,8 +64,14 @@ export const INK_STOCKS: HyperStock[] = [
   { symbol: 'wPLTRx', ticker: 'PLTRX', name: 'Palantir xStock', address: '0x4a2df09536f62341c9f946427d16414c04e21342', decimals: 18 },
 ];
 
-// Flavor-aware roster: squidpad (ink) offers the Ink list, hyperstock its own.
-const IS_INK_FLAVOR = String(import.meta.env.VITE_BRAND ?? "") === "ink";
-export const STOCKS: HyperStock[] = IS_INK_FLAVOR ? INK_STOCKS : HYPER_STOCKS;
+// Flavor-aware roster: squidpad (ink) offers the Ink list, robinhood the full
+// Robinhood Chain roster, hyperstock/meowstock the HyperEVM list.
+const FLAVOR = String(import.meta.env.VITE_BRAND ?? "");
+export const STOCKS: HyperStock[] =
+  FLAVOR === "ink"
+    ? INK_STOCKS
+    : FLAVOR === "robinhood"
+      ? ROBINHOOD_STOCKS
+      : HYPER_STOCKS;
 export const stockByAddress = (addr?: string): HyperStock | undefined =>
   addr ? STOCKS.find((s) => s.address.toLowerCase() === addr.toLowerCase()) : undefined;

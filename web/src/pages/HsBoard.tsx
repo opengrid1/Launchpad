@@ -5,7 +5,7 @@ import type { TokenSummary } from "@launchpad/sdk";
 
 import { WHYPE, stockByAddress } from "../lib/hyper/stocks";
 import { client } from "../lib/client";
-import { env } from "../lib/env";
+import { addresses, env } from "../lib/env";
 import { isHidden, isImpersonator } from "../lib/hiddenTokens";
 import { isOfficial } from "../lib/official";
 import { OFFICIAL_LOGOS } from "../lib/officialLogos";
@@ -37,7 +37,10 @@ const pairSymbolOf = (t: TokenSummary): string => {
   const meta = t.metadata as any;
   const addr = meta?.pairAddress as string | undefined;
   if (addr) {
-    if (addr.toLowerCase() === WHYPE.toLowerCase()) return env.nativeSymbol;
+    // The configured wrapped native (WHYPE on HyperEVM, WETH on Robinhood Chain)
+    // shows as the native symbol; anything else is a tokenized-stock pair.
+    const a = addr.toLowerCase();
+    if (a === WHYPE.toLowerCase() || a === addresses.weth.toLowerCase()) return env.nativeSymbol;
     const st = stockByAddress(addr);
     if (st) return st.ticker;
   }

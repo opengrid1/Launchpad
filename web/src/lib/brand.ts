@@ -114,6 +114,22 @@ const FLAVORS: Record<string, Brand> = {
       "meowstock. Launch a coin on HyperEVM paired with a tokenized stock. One transaction opens a real market and every trade pays 1%: half to holders, 40% to the creator, forever.",
     title: "meowstock | hold the coin, earn the stock",
   },
+  // Robinhood Chain flavor: the meowstock/squidpad product and design (teal,
+  // chart-first, cat mark) on Robinhood Chain, coins pair a tokenized stock and
+  // holders earn it. TEMPORARY placeholder identity - the brand name/wordmark is
+  // not final; rename this whole block in one place when the brand is decided.
+  robinhood: {
+    name: "stockpad",
+    tld: ".fun",
+    domain: "stockpad.fun",
+    url: "https://stockpad.fun",
+    twitter: "https://x.com/",
+    twitterHandle: "",
+    tagline: "hold the coin, earn the stock",
+    description:
+      "Launch a coin on Robinhood Chain paired with a tokenized stock. One transaction opens a real market and every trade pays 1%: half to holders, 40% to the creator, forever.",
+    title: "stockpad | hold the coin, earn the stock",
+  },
   // Arc mainnet flavor: same product, USDC-blue theme for Circle's Arc chain.
   arc: {
     name: "arcx",
@@ -140,10 +156,16 @@ export const IS_HYPER = BRAND_FLAVOR === "hyper";
 /** Meowstock: the squidpad design and mechanics on HyperEVM, cat-branded. */
 export const IS_MEOW = BRAND_FLAVOR === "meow";
 
-/** The squidpad-style app (Ink squidpad + HyperEVM meowstock): teal design,
- *  chart-first token view, amount-first desk, boot splash. Meowstock reuses the
- *  whole ink presentation; chain-specific bits still key off BRAND_FLAVOR. */
-export const IS_INK = BRAND_FLAVOR === "ink" || BRAND_FLAVOR === "meow";
+/** Robinhood Chain launchpad: the squidpad/meowstock design and mechanics on
+ *  Robinhood Chain (chainId 4663), coins pair a tokenized stock via Uniswap V3.
+ *  Placeholder brand pending a final name. */
+export const IS_ROBIN = BRAND_FLAVOR === "robinhood";
+
+/** The squidpad-style app (Ink squidpad + HyperEVM meowstock + Robinhood Chain):
+ *  teal design, chart-first token view, amount-first desk, boot splash. These
+ *  flavors reuse the whole ink presentation; chain-specific bits still key off
+ *  BRAND_FLAVOR. */
+export const IS_INK = BRAND_FLAVOR === "ink" || BRAND_FLAVOR === "meow" || BRAND_FLAVOR === "robinhood";
 
 /** Flavors that render the pump.fun-style live market board (BoardHeader +
  *  ExploreBoard) instead of the default card grid: the Robinhood heist board,

@@ -9,8 +9,10 @@ import "./styles.css";
 // and theme scope in sync with the flavor selected at build time (VITE_BRAND).
 document.title = BRAND.title;
 document.querySelector('meta[name="description"]')?.setAttribute("content", BRAND.description);
-// squidpad (ink) and meowstock (meow) share the ink theme scope.
-const INK_STYLE = BRAND_FLAVOR === "ink" || BRAND_FLAVOR === "meow";
+// squidpad (ink), meowstock (meow) and the Robinhood Chain flavor share the ink
+// theme scope (teal, chart-first, cat mark).
+const INK_STYLE =
+  BRAND_FLAVOR === "ink" || BRAND_FLAVOR === "meow" || BRAND_FLAVOR === "robinhood";
 document.documentElement.dataset.brand = INK_STYLE ? "hyper" : BRAND_FLAVOR;
 if (INK_STYLE) document.documentElement.dataset.flavor = "ink";
 

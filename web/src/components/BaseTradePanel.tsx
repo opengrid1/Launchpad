@@ -147,7 +147,7 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
     let alive = true;
     if (!parsed || parsed === 0n || !pair) { setImpactOutWei(null); return; }
     const t = setTimeout(async () => {
-      const out = await v4Client.previewSwapOut(token.address as Address, side, parsed).catch(() => null);
+      const out = await (v4Client as any).previewSwapOut(token.address as Address, side, parsed).catch(() => null);
       if (alive) setImpactOutWei(out);
     }, 220);
     return () => { alive = false; clearTimeout(t); };
