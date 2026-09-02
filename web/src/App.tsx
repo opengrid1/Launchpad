@@ -6,7 +6,7 @@ import { WagmiProvider } from "wagmi";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { Skeleton, Toasts } from "./components/ui";
-import { BRAND_FLAVOR, IS_HYPER, IS_INK, IS_STOCK_BOARD } from "./lib/brand";
+import { BRAND_FLAVOR, IS_HYPER, IS_INK, IS_ROBIN, IS_STOCK_BOARD } from "./lib/brand";
 import { HammrApp } from "./hammr/HammrApp";
 import { HsShell } from "./components/HsShell";
 import { SquidSplash } from "./components/SquidSplash";
@@ -137,7 +137,7 @@ export default function App() {
               <HsShell>
                 <Suspense fallback={<PageFallback />}>{routes}</Suspense>
               </HsShell>
-              <SquidSplash />
+              {IS_ROBIN ? null : <SquidSplash />}
               <Toasts />
             </ErrorBoundary>
           ) : (
