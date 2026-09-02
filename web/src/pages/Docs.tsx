@@ -61,7 +61,7 @@ function InkDocs() {
 
       <TermSection title="Launching" sub="One transaction">
         <p>
-          Launching is free, you pay only gas. One transaction deploys the coin, opens a
+          Launching is free, you pay only gas. One transaction deploys the coin, opens a{" "}
           {DEX} pool against {NAT}, seeds the entire supply single-sided, and starts trading.
           The LP position is locked in the factory forever, so liquidity can never be pulled.
         </p>

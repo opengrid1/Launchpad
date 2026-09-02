@@ -15,13 +15,16 @@ const INK_STYLE =
   BRAND_FLAVOR === "ink" || BRAND_FLAVOR === "meow" || BRAND_FLAVOR === "robinhood";
 document.documentElement.dataset.brand = INK_STYLE ? "hyper" : BRAND_FLAVOR;
 if (INK_STYLE) document.documentElement.dataset.flavor = "ink";
+// The Robinhood Chain flavor rides the ink layout but repaints it with the
+// "degen" skin: dark neon-gradient theme, big display type, punchy cards.
+if (BRAND_FLAVOR === "robinhood") document.documentElement.dataset.skin = "degen";
 
 // hyperstock ships its own mark; the other flavors keep the icons index.html
 // declares. Swapped here because all flavors build from one index.html.
 if (BRAND_FLAVOR === "hyper" || INK_STYLE) {
   const font = document.createElement("link");
   font.rel = "stylesheet";
-  font.href = "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@500;600;700&family=Rock+Salt&display=swap";
+  font.href = "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@500;600;700&family=Rock+Salt&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&display=swap";
   document.head.appendChild(font);
   const icon = INK_STYLE ? undefined : "/hyperstock-favicon.png";
   if (icon) {
