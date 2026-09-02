@@ -17,7 +17,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 ///         Rewards are paid in `rewardToken` — any ERC-20 the creator picks at
 ///         launch (e.g. a tokenized stock), or native currency when set to the
 ///         zero address. Holders accrue continuously and pull with claim().
-contract QuiverToken is ERC20 {
+contract QuiverStockToken is ERC20 {
     using SafeERC20 for IERC20;
 
     uint256 private constant ACC_PRECISION = 1e24;
@@ -30,6 +30,20 @@ contract QuiverToken is ERC20 {
     uint16 public immutable taxBps;
     /// @notice Currency dividends are paid in. address(0) == native.
     address public immutable rewardToken;
+    /// @notice The V4 PoolManager. On a buy it transfers the coin to the buyer,
+    ///         so `from == poolManager` identifies a buy for anti-snipe.
+    address public immutable poolManager;
+
+    // Anti-snipe launch protection (same as the V3 stock launchpad). For a short
+    // window after the pool opens, buys are throttled so bots cannot grab a huge
+    // share on block one and dump on holders.
+    uint256 private constant BPS = 10_000;
+    uint256 public constant PROTECT_BLOCKS = 2;
+    uint16 public constant MAX_HOLD_BPS = 500; // 5% of supply
+    uint16 public constant MAX_BUY_BPS = 550;  // 5.5% of supply
+    /// @notice Block the pool opened on; window is [launchBlock, +PROTECT_BLOCKS).
+    uint256 public launchBlock;
+    mapping(address => uint256) private _boughtInWindow;
 
     /// @dev Accumulated reward per eligible share, scaled by ACC_PRECISION.
     uint256 private accRewardPerShare;
@@ -56,6 +70,9 @@ contract QuiverToken is ERC20 {
     error OnlyHook();
     error HookAlreadySet();
     error WrongRewardCurrency();
+    error LaunchGuard();
+    error BuyCap();
+    error HoldCap();
 
     address private immutable _factory;
 
@@ -67,13 +84,15 @@ contract QuiverToken is ERC20 {
         address creator_,
         address supplyRecipient_,
         uint16 taxBps_,
-        address rewardToken_
+        address rewardToken_,
+        address poolManager_
     ) ERC20(name_, symbol_) {
         require(taxBps_ <= 1000, "tax>10%");
         _factory = msg.sender;
         creator = creator_;
         taxBps = taxBps_;
         rewardToken = rewardToken_;
+        poolManager = poolManager_;
         _metadataURI = metadataURI_;
 
         // Exclude system endpoints (zero, self, and the supply recipient) from
@@ -110,6 +129,9 @@ contract QuiverToken is ERC20 {
         for (uint256 i; i < excludedAddrs.length; ++i) {
             _setExcluded(excludedAddrs[i], true);
         }
+        // The factory wires the hook in the same tx it opens the pool, so this
+        // block starts the anti-snipe protection window.
+        launchBlock = block.number;
     }
 
     // ---------------------------------------------------------------------
@@ -223,6 +245,23 @@ contract QuiverToken is ERC20 {
     ///      balance, keeps `eligibleSupply` in sync with participation, and
     ///      rebases each side's reward debt to its new balance.
     function _update(address from, address to, uint256 value) internal override {
+        // Anti-snipe: throttle buys (coin sent from the PoolManager) during the
+        // launch window. Sells and system transfers are unaffected.
+        if (from == poolManager && !excluded[to] && value > 0) {
+            uint256 lb = launchBlock;
+            if (lb != 0 && block.number < lb + PROTECT_BLOCKS) {
+                if (block.number == lb) {
+                    if (to != creator) revert LaunchGuard();
+                } else {
+                    uint256 supply = totalSupply();
+                    uint256 bought = _boughtInWindow[to] + value;
+                    if (bought > (supply * MAX_BUY_BPS) / BPS) revert BuyCap();
+                    if (balanceOf(to) + value > (supply * MAX_HOLD_BPS) / BPS) revert HoldCap();
+                    _boughtInWindow[to] = bought;
+                }
+            }
+        }
+
         bool fromEligible = from != address(0) && !excluded[from];
         bool toEligible = to != address(0) && !excluded[to];
 

@@ -24,28 +24,35 @@ interface IWrappedNative {
     function deposit() external payable;
 }
 
-/// @title RhRewardHook
-/// @notice Fee vault for the Robinhood-chain launchpad's ETH-reward model. Every
-///         coin pairs against WETH, so trades settle in ETH and holders earn
-///         ETH. Each swap pays a per-token tax skimmed in `afterSwap`. On
-///         `harvest`, everything is normalised to WETH and split:
+/// @title StockRhHook
+/// @notice Fee vault for the Robinhood-chain stock launchpad's V4 pools — the
+///         V3 stock-reward model on Uniswap V4. Each coin pairs against a
+///         tokenized stock (or WETH); every swap pays a per-token tax skimmed in
+///         `afterSwap`. On `harvest`, coin-side fees are swapped into the pair
+///         asset and the whole balance is split and paid in the pair asset:
 ///
-///           1. holders — 80%: unwrapped to native ETH and distributed to every
-///                        holder pro-rata (QuiverToken.distributeRewardsNative).
-///           2. creator — 20%: unwrapped to native ETH and pushed to the creator.
+///           1. holders  — 50%: credited pro-rata to every eligible holder via
+///                         QuiverStockToken.distributeRewards (paid in the pair).
+///           2. creator  — 40%: sent to the creator in the pair asset.
+///           3. platform — 10%: sent to the platform fee recipient.
 ///
-///         No platform cut. Ownership is renounced at deploy; a hardcoded,
-///         source-visible immutable `admin` keeps the setter powers.
-contract RhRewardHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
+///         Ownership is renounced at deploy; a hardcoded, source-visible
+///         immutable `admin` keeps the setter powers.
+contract StockRhHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
 
     uint16 internal constant BPS = 10_000;
-    uint16 public constant HOLDER_FEE_BPS = 8_000; // 80% to holders, 20% to creator
+    // Same split as the V3 stock launchpad: 50% holders / 40% creator / 10%
+    // platform, all paid in the pair asset (the tokenized stock or WETH).
+    uint16 public constant HOLDER_FEE_BPS = 5_000;
+    uint16 public constant CREATOR_FEE_BPS = 4_000;
 
     address public immutable WETH;
     /// @notice Immutable admin that survives `renounceOwnership()`.
     address public immutable admin;
+    /// @notice Platform fee recipient (the 10% share of harvested fees).
+    address public platform;
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "not admin");
@@ -66,8 +73,8 @@ contract RhRewardHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     mapping(address => PoolId) internal _poolOf;
     /// @notice token => launched-coin fees awaiting harvest (from buys).
     mapping(address => uint256) public tokenFees;
-    /// @notice token => WETH fees awaiting harvest (from sells).
-    mapping(address => uint256) public wethFees;
+    /// @notice token => pair-asset (stock/WETH) fees awaiting harvest (from sells).
+    mapping(address => uint256) public pairFees;
 
     struct SwapAction {
         PoolKey key;
@@ -84,16 +91,23 @@ contract RhRewardHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
     error AlreadySet();
     error NotRegistered();
 
-    constructor(IPoolManager pm, address owner_, address admin_, address weth_) BaseHook(pm) Ownable(owner_) {
-        require(admin_ != address(0) && weth_ != address(0), "zero");
+    constructor(IPoolManager pm, address owner_, address admin_, address weth_, address platform_) BaseHook(pm) Ownable(owner_) {
+        require(admin_ != address(0) && weth_ != address(0) && platform_ != address(0), "zero");
         admin = admin_;
         WETH = weth_;
+        platform = platform_;
     }
 
     function setFactory(address factory_) external onlyAdmin {
         require(factory_ != address(0), "factory=0");
         factory = factory_;
         emit FactorySet(factory_);
+    }
+
+    /// @notice Admin can re-point the platform fee recipient.
+    function setPlatform(address platform_) external onlyAdmin {
+        require(platform_ != address(0), "platform=0");
+        platform = platform_;
     }
 
     // ---------------------------------------------------------------------
@@ -151,61 +165,63 @@ contract RhRewardHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
 
         bool feeIsToken = Currency.unwrap(unspecified) == c.token;
         if (feeIsToken) tokenFees[c.token] += fee;
-        else wethFees[c.token] += fee;
+        else pairFees[c.token] += fee;
         emit FeeAccrued(c.token, !feeIsToken, fee);
 
         return (BaseHook.afterSwap.selector, int128(int256(fee)));
     }
 
     // ---------------------------------------------------------------------
-    // harvest: normalise to WETH, split 80/20, pay in native ETH
+    // harvest: normalise coin fees into the pair asset, split 50/40/10, pay in
+    // the pair asset (the tokenized stock or WETH) — same model as V3.
     // ---------------------------------------------------------------------
 
     function harvest(address token) external nonReentrant {
         _harvest(token, 0);
     }
 
-    function harvestBounded(address token, uint256 minWethOut) external nonReentrant {
-        _harvest(token, minWethOut);
+    function harvestBounded(address token, uint256 minPairOut) external nonReentrant {
+        _harvest(token, minPairOut);
     }
 
-    function _harvest(address token, uint256 minWethOut) private {
+    function _harvest(address token, uint256 minPairOut) private {
         PoolConfig storage c = _config[_poolOf[token]];
         if (!c.registered) revert NotRegistered();
 
+        // Coin-denominated fees (from buys) are swapped into the pair asset so
+        // the whole harvest pays out in one currency: the pair (stock/WETH).
         uint256 tf = tokenFees[token];
         if (tf > 0) {
             tokenFees[token] = 0;
             Currency tokenCurrency = c.tokenIsCurrency0 ? c.poolKey.currency0 : c.poolKey.currency1;
-            wethFees[token] += _swap(c.poolKey, tokenCurrency, tf, minWethOut);
+            pairFees[token] += _swap(c.poolKey, tokenCurrency, tf, minPairOut);
         }
 
-        uint256 total = wethFees[token];
+        uint256 total = pairFees[token];
         if (total == 0) {
             emit Harvested(token, 0, 0);
             return;
         }
-        wethFees[token] = 0;
+        pairFees[token] = 0;
 
-        uint256 toHolders = (total * HOLDER_FEE_BPS) / BPS;
-        uint256 toCreator = total - toHolders;
+        // The pair asset (non-coin side of the pool) is the reward currency.
+        address pair = Currency.unwrap(c.tokenIsCurrency0 ? c.poolKey.currency1 : c.poolKey.currency0);
 
-        // Unwrap and pay both sides in native ETH.
-        IWrappedNative(WETH).withdraw(total);
-        if (toHolders > 0) IQuiverToken(token).distributeRewardsNative{value: toHolders}();
-        if (toCreator > 0) {
-            (bool ok, ) = c.creator.call{value: toCreator, gas: 30_000}("");
-            if (!ok) {
-                // Creator can't receive native: re-wrap and send WETH instead.
-                IWrappedNative(WETH).deposit{value: toCreator}();
-                IERC20(WETH).safeTransfer(c.creator, toCreator);
-            }
+        uint256 toHolders = (total * HOLDER_FEE_BPS) / BPS; // 50%
+        uint256 toCreator = (total * CREATOR_FEE_BPS) / BPS; // 40%
+        uint256 toPlatform = total - toHolders - toCreator;  // 10%
+
+        // Holders earn the pair asset: fund the coin, then credit the dividend
+        // accumulator pro-rata to every eligible holder.
+        if (toHolders > 0) {
+            IERC20(pair).safeTransfer(token, toHolders);
+            IQuiverToken(token).distributeRewards(toHolders);
         }
+        if (toCreator > 0) IERC20(pair).safeTransfer(c.creator, toCreator);
+        if (toPlatform > 0) IERC20(pair).safeTransfer(platform, toPlatform);
 
         emit Harvested(token, toHolders, toCreator);
     }
-
-    receive() external payable {}
 
     // ---------------------------------------------------------------------
     // Swap plumbing (our own router, via PoolManager.unlock)

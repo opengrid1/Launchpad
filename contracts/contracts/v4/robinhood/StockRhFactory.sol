@@ -18,8 +18,8 @@ import {ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.so
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 
-import {QuiverToken} from "../QuiverToken.sol";
-import {RhRewardHook} from "./RhRewardHook.sol";
+import {QuiverStockToken} from "../QuiverStockToken.sol";
+import {StockRhHook} from "./StockRhHook.sol";
 
 /// @title RhRewardFactory
 /// @notice One-transaction launcher for the Robinhood-chain ETH-reward model.
@@ -30,7 +30,7 @@ import {RhRewardHook} from "./RhRewardHook.sol";
 ///         Admin mirrors the V3 launchpad: pause/resume and a `collect`
 ///         LP-recovery lever, gated to an immutable admin that survives
 ///         `renounceOwnership()` (owner() reads as 0x0 post-deploy).
-contract RhRewardFactory is Ownable, ReentrancyGuard, IUnlockCallback {
+contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
 
@@ -42,7 +42,7 @@ contract RhRewardFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     uint16 public constant MAX_TAX_BPS = 1000;
 
     IPoolManager public immutable poolManager;
-    RhRewardHook public immutable hook;
+    StockRhHook public immutable hook;
     /// @notice The WETH every coin pairs against (holders earn native ETH).
     address public immutable weth;
     address public immutable admin;
@@ -54,6 +54,7 @@ contract RhRewardFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         uint16 taxBps;
         uint64 createdAt;
         bytes32 poolId;
+        address pair; // the coin's pair asset (stock/WETH), for pool-key rebuilds
     }
 
     mapping(address token => Listing) public listings;
@@ -72,7 +73,8 @@ contract RhRewardFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         string symbol;
         string metadataURI;
         uint16 taxBps;
-        uint256 ethUsdPrice8; // ETH USD price, 8dp, sizes the $3k start cap
+        address pair;             // the coin's pair asset: a tokenized stock or WETH
+        uint256 pairUsdPrice8;    // pair USD price, 8dp, sizes the $3k start cap
     }
 
     event Launched(address indexed token, address indexed creator, uint16 taxBps, bytes32 poolId);
@@ -89,7 +91,7 @@ contract RhRewardFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         _;
     }
 
-    constructor(address owner_, address admin_, IPoolManager poolManager_, RhRewardHook hook_, address weth_)
+    constructor(address owner_, address admin_, IPoolManager poolManager_, StockRhHook hook_, address weth_)
         Ownable(owner_)
     {
         require(admin_ != address(0) && weth_ != address(0), "zero");
@@ -121,19 +123,20 @@ contract RhRewardFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         if (launchesPaused) revert LaunchesPaused();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
         if (p.taxBps > MAX_TAX_BPS) revert InvalidParams();
-        if (p.ethUsdPrice8 == 0) revert InvalidParams();
+        if (p.pairUsdPrice8 == 0 || p.pair == address(0)) revert InvalidParams();
 
-        // Reward token = address(0): holders earn native ETH.
-        QuiverToken qt = new QuiverToken{salt: salt}(
-            p.name, p.symbol, p.metadataURI, TOTAL_SUPPLY, msg.sender, address(this), p.taxBps, address(0)
+        address pair = p.pair;
+        // Reward token = the pair asset (tokenized stock or WETH): holders earn
+        // the pair. The token knows the PoolManager for anti-snipe buy detection.
+        QuiverStockToken qt = new QuiverStockToken{salt: salt}(
+            p.name, p.symbol, p.metadataURI, TOTAL_SUPPLY, msg.sender, address(this), p.taxBps, pair, address(poolManager)
         );
         token = address(qt);
-        if (uint160(token) & 0xffff != 0x4663) revert BadVanity();
 
-        bool tokenIsCurrency0 = token < weth;
+        bool tokenIsCurrency0 = token < pair;
         PoolKey memory key = PoolKey({
-            currency0: Currency.wrap(tokenIsCurrency0 ? token : weth),
-            currency1: Currency.wrap(tokenIsCurrency0 ? weth : token),
+            currency0: Currency.wrap(tokenIsCurrency0 ? token : pair),
+            currency1: Currency.wrap(tokenIsCurrency0 ? pair : token),
             fee: LP_FEE,
             tickSpacing: TICK_SPACING,
             hooks: IHooks(address(hook))
@@ -144,7 +147,9 @@ contract RhRewardFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         ex[1] = address(this);
         qt.initHook(address(hook), ex);
 
-        uint256 priceQ = _priceQ(p.ethUsdPrice8);
+        // RH stocks and WETH are all 18-decimals, so the WETH pricing math sizes
+        // stock-paired pools identically — just use the pair's USD price.
+        uint256 priceQ = _priceQ(p.pairUsdPrice8);
         (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper) = _initialPosition(tokenIsCurrency0, priceQ);
         poolManager.initialize(key, sqrtPriceX96);
 
@@ -157,7 +162,7 @@ contract RhRewardFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         poolId = PoolId.unwrap(key.toId());
         hook.registerPool(key, token, msg.sender, p.taxBps, tokenIsCurrency0);
 
-        listings[token] = Listing({creator: msg.sender, taxBps: p.taxBps, createdAt: uint64(block.timestamp), poolId: poolId});
+        listings[token] = Listing({creator: msg.sender, taxBps: p.taxBps, createdAt: uint64(block.timestamp), poolId: poolId, pair: pair});
         allTokens.push(token);
         _tokensByCreator[msg.sender].push(token);
 
@@ -235,10 +240,11 @@ contract RhRewardFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         if (removed == 0) revert InvalidParams();
         pos.liquidity = held - removed;
 
-        bool tokenIsCurrency0 = token < weth;
+        address pair = listings[token].pair;
+        bool tokenIsCurrency0 = token < pair;
         PoolKey memory key = PoolKey({
-            currency0: Currency.wrap(tokenIsCurrency0 ? token : weth),
-            currency1: Currency.wrap(tokenIsCurrency0 ? weth : token),
+            currency0: Currency.wrap(tokenIsCurrency0 ? token : pair),
+            currency1: Currency.wrap(tokenIsCurrency0 ? pair : token),
             fee: LP_FEE,
             tickSpacing: TICK_SPACING,
             hooks: IHooks(address(hook))
