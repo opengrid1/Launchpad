@@ -49,12 +49,14 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
 
     bool public launchesPaused;
 
+    // Field order matches the frontend's factory ABI: (creator, pair, taxBps,
+    // createdAt, poolId). `pair` is the coin's reward/pair asset (stock/WETH).
     struct Listing {
         address creator;
+        address pair;
         uint16 taxBps;
         uint64 createdAt;
         bytes32 poolId;
-        address pair; // the coin's pair asset (stock/WETH), for pool-key rebuilds
     }
 
     mapping(address token => Listing) public listings;
@@ -68,17 +70,18 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     }
     mapping(address token => Position) public positions;
 
+    // Field order matches the frontend's factory ABI. A dev buy is a separate
+    // entry point (launchWithDevBuy) so this tuple stays identical to the client.
     struct LaunchParams {
         string name;
         string symbol;
         string metadataURI;
-        uint16 taxBps;
         address pair;             // the coin's pair asset: a tokenized stock or WETH
+        uint16 taxBps;
         uint256 pairUsdPrice8;    // pair USD price, 8dp, sizes the $3k start cap
-        uint256 devBuyPairAmount; // optional launch buy: pair asset the creator spends (0 = none)
     }
 
-    event Launched(address indexed token, address indexed creator, uint16 taxBps, bytes32 poolId);
+    event Launched(address indexed token, address indexed creator, address indexed pair, uint16 taxBps, bytes32 poolId);
     event DevBought(address indexed token, address indexed creator, uint256 pairIn, uint256 coinOut);
     event Collected(address indexed token, uint128 liquidityRemoved, uint256 tokenAmount, uint256 wethAmount, address indexed recipient);
     event LaunchesPausedSet(bool paused);
@@ -121,7 +124,35 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     // Launch
     // ---------------------------------------------------------------------
 
+    /// @notice Launch a coin paired against `p.pair`, seeded single-sided.
     function launch(LaunchParams calldata p, bytes32 salt) external nonReentrant returns (address token, bytes32 poolId) {
+        (token, poolId, , ) = _launch(p, salt);
+    }
+
+    /// @notice Launch plus an atomic creator dev buy of `devBuyPairAmount` of the
+    ///         pair asset (approve this factory first). The anti-snipe window
+    ///         allows it because the coin goes to the creator at launch block.
+    function launchWithDevBuy(LaunchParams calldata p, bytes32 salt, uint256 devBuyPairAmount)
+        external
+        nonReentrant
+        returns (address token, bytes32 poolId)
+    {
+        PoolKey memory key;
+        bool tokenIsCurrency0;
+        (token, poolId, key, tokenIsCurrency0) = _launch(p, salt);
+        if (devBuyPairAmount > 0) {
+            IERC20(p.pair).safeTransferFrom(msg.sender, address(this), devBuyPairAmount);
+            bytes memory res = poolManager.unlock(
+                abi.encode(uint8(2), abi.encode(key, tokenIsCurrency0, devBuyPairAmount, msg.sender))
+            );
+            emit DevBought(token, msg.sender, devBuyPairAmount, abi.decode(res, (uint256)));
+        }
+    }
+
+    function _launch(LaunchParams calldata p, bytes32 salt)
+        internal
+        returns (address token, bytes32 poolId, PoolKey memory key, bool tokenIsCurrency0)
+    {
         if (launchesPaused) revert LaunchesPaused();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
         if (p.taxBps > MAX_TAX_BPS) revert InvalidParams();
@@ -135,8 +166,8 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         );
         token = address(qt);
 
-        bool tokenIsCurrency0 = token < pair;
-        PoolKey memory key = PoolKey({
+        tokenIsCurrency0 = token < pair;
+        key = PoolKey({
             currency0: Currency.wrap(tokenIsCurrency0 ? token : pair),
             currency1: Currency.wrap(tokenIsCurrency0 ? pair : token),
             fee: LP_FEE,
@@ -164,23 +195,11 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         poolId = PoolId.unwrap(key.toId());
         hook.registerPool(key, token, msg.sender, p.taxBps, tokenIsCurrency0);
 
-        listings[token] = Listing({creator: msg.sender, taxBps: p.taxBps, createdAt: uint64(block.timestamp), poolId: poolId, pair: pair});
+        listings[token] = Listing({creator: msg.sender, pair: pair, taxBps: p.taxBps, createdAt: uint64(block.timestamp), poolId: poolId});
         allTokens.push(token);
         _tokensByCreator[msg.sender].push(token);
 
-        emit Launched(token, msg.sender, p.taxBps, poolId);
-
-        // Optional dev buy: the creator spends `devBuyPairAmount` of the pair
-        // asset on a launch-block buy. The anti-snipe window allows this because
-        // the coin goes to the creator (to == creator at launchBlock).
-        if (p.devBuyPairAmount > 0) {
-            IERC20(pair).safeTransferFrom(msg.sender, address(this), p.devBuyPairAmount);
-            bytes memory res = poolManager.unlock(
-                abi.encode(uint8(2), abi.encode(key, tokenIsCurrency0, p.devBuyPairAmount, msg.sender))
-            );
-            uint256 coinOut = abi.decode(res, (uint256));
-            emit DevBought(token, msg.sender, p.devBuyPairAmount, coinOut);
-        }
+        emit Launched(token, msg.sender, pair, p.taxBps, poolId);
     }
 
     // ---------------------------------------------------------------------

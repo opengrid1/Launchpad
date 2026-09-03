@@ -158,8 +158,8 @@ contract StockRhRouter is IUnlockCallback, ReentrancyGuard {
     // ---------------------------------------------------------------------
 
     function _pairOf(address coin) internal view returns (address pair) {
-        // StockRhFactory.Listing: (creator, taxBps, createdAt, poolId, pair).
-        (, , , , pair) = factory.listings(coin);
+        // StockRhFactory.Listing: (creator, pair, taxBps, createdAt, poolId).
+        (, pair, , , ) = factory.listings(coin);
         if (pair == address(0)) revert NotListed();
     }
 
