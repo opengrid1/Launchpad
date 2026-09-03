@@ -43,8 +43,10 @@ async function main() {
   await td.waitForDeployment();
   console.log("token deployer", await td.getAddress());
 
+  // The deployer owns the factory just long enough to wire the auction house,
+  // then hands ownership and the fee recipient to ADMIN.
   const factory = await (await ethers.getContractFactory("OnairFactory")).deploy(
-    admin, admin, await td.getAddress(), HYPERSWAP.factory, HYPERSWAP.positionManager, HYPERSWAP.swapRouter, HYPERSWAP.whype,
+    deployer.address, admin, await td.getAddress(), HYPERSWAP.factory, HYPERSWAP.positionManager, HYPERSWAP.swapRouter, HYPERSWAP.whype,
     price, 0, 7000, 10000,
   );
   await factory.waitForDeployment();
@@ -53,13 +55,11 @@ async function main() {
   const house = await (await ethers.getContractFactory("OnairAuctionHouse")).deploy(await factory.getAddress());
   await house.waitForDeployment();
   console.log("OnairAuctionHouse", await house.getAddress());
-  // The factory is owned by ADMIN; when the deployer is not the admin, the admin
-  // must call setAuctionHouse(house) once from their wallet.
-  if (admin.toLowerCase() === deployer.address.toLowerCase()) {
-    await (await factory.setAuctionHouse(await house.getAddress())).wait();
-    console.log("house wired");
-  } else {
-    console.log("ACTION NEEDED: admin must call factory.setAuctionHouse(", await house.getAddress(), ")");
+  await (await factory.setAuctionHouse(await house.getAddress())).wait();
+  console.log("house wired");
+  if (admin.toLowerCase() !== deployer.address.toLowerCase()) {
+    await (await factory.transferOwnership(admin)).wait();
+    console.log("ownership ->", await factory.owner());
   }
 
   const out = {
