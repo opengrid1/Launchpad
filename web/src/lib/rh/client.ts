@@ -119,12 +119,19 @@ export class RhClient {
   // B-20 tokens carry no on-chain metadataURI, so metadata is read from the
   // factory's registry, and launches keep the creator-chosen pair + tax.
   private readonly baseStock: boolean;
+  // Stock-pair mode (stockpad on Uniswap V4): the default V4 model — coins keep
+  // the creator's chosen stock/WETH pair and pay holders in it via the token's
+  // own accumulator (pendingRewards/claim), with the 1% tax skimmed in the hook.
+  // Differs from the plain default only in that launches do NOT force a WETH
+  // pair, so this reuses the whole default read/trade path unchanged.
+  private readonly stockPair: boolean;
 
-  constructor(publicClient: PublicClient, v4: V4Addresses, startBlock: bigint, opts?: { baseStock?: boolean }) {
+  constructor(publicClient: PublicClient, v4: V4Addresses, startBlock: bigint, opts?: { baseStock?: boolean; stockPair?: boolean }) {
     this.publicClient = publicClient;
     this.v4 = v4;
     this.startBlock = startBlock;
     this.baseStock = opts?.baseStock ?? false;
+    this.stockPair = opts?.stockPair ?? false;
     this.addresses = { factory: v4.factory, tokenDeployer: v4.factory, weth: v4.weth };
   }
 
@@ -1290,9 +1297,11 @@ export class RhClient {
   }): Promise<`0x${string}`> {
     const wc = this.requireWallet();
     const creator = this.account();
-    // Base-stock model keeps the creator's chosen stock + tax. The Hood model
-    // instead forces every coin to pair WETH at a flat 1% fee.
-    if (!this.baseStock) params = { ...params, stock: this.v4.weth, taxBps: 100 };
+    // Base-stock and stock-pair models keep the creator's chosen stock + tax.
+    // The Hood model instead forces every coin to pair WETH at a flat 1% fee.
+    if (!this.baseStock && !this.stockPair) params = { ...params, stock: this.v4.weth, taxBps: 100 };
+    // Stock-pair: keep the creator's pair; default the tax to 1% when unset.
+    if (this.stockPair && !params.taxBps) params = { ...params, taxBps: 100 };
     const metadataURI = params.metadataURI ?? "";
     // Size the start market cap from the pair token's USD price. Never launch on
     // a bad price (it would mis-size the starting market cap), so require > 0.
@@ -1338,9 +1347,10 @@ export class RhClient {
         { name: params.name, symbol: params.symbol, metadataURI, pair: params.stock, taxBps: params.taxBps, pairUsdPrice8 },
         salt,
       ],
-      // Atomic dev buy: ETH sent with launch is swapped into the new coin in
-      // the same transaction, sniper-tax-exempt, before anyone else can trade.
-      value: params.devBuyWei ?? 0n,
+      // Stock-pair launch() is non-payable (dev buy is a separate on-chain
+      // entry point), so never attach value in that mode. The Hood model's
+      // payable launch takes the ETH dev buy inline.
+      value: this.stockPair ? 0n : (params.devBuyWei ?? 0n),
     });
   }
 
