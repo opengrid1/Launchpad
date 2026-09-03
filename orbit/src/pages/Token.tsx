@@ -45,7 +45,7 @@ function MarketPage({ t }: { t: Token }) {
         <Art src={t.metadata?.logo} name={t.name} className="art" />
         <div>
           <h1>{t.name}</h1>
-          <div className="meta"><span className="onair"><span className="dot" style={{ width: 6, height: 6, boxShadow: "none" }} />ON AIR</span>{t.mode === "auction" && <span className="tagl auc">AUCTIONED</span>}<span className="mono">{t.symbol}</span><span>pairs HYPE</span><span>by <a href={`${env.explorerUrl}/address/${t.creator}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)" }}>{short(t.creator)}</a></span><span>since {dateShort(t.createdAt)}</span></div>
+          <div className="meta"><span className="onair"><span className="dot" style={{ width: 6, height: 6, boxShadow: "none" }} />TRADING</span>{t.mode === "auction" && <span className="tagl auc">AUCTIONED</span>}<span className="mono">{t.symbol}</span><span>pairs HYPE</span><span>by <a href={`${env.explorerUrl}/address/${t.creator}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)" }}>{short(t.creator)}</a></span><span>since {dateShort(t.createdAt)}</span></div>
         </div>
         <div className="price">
           <div className="v">{usd(t.priceUsd)}</div>
@@ -60,11 +60,11 @@ function MarketPage({ t }: { t: Token }) {
               <span className="lbl">Price · USD</span>
               <div className="seg">{INTERVALS.map((i) => <button key={i} className={interval === i ? "on" : ""} onClick={() => setInterval_(i)}>{i}</button>)}</div>
             </div>
-            {candles && candles.length > 1 ? <Chart candles={candles} hypeUsd={hypeUsd} /> : <div className="chart" style={{ display: "grid", placeItems: "center", color: "var(--ink3)" }}>{candles ? "Not enough trades for a chart yet. The first buy starts it." : "Tuning in…"}</div>}
+            {candles && candles.length > 1 ? <Chart candles={candles} hypeUsd={hypeUsd} /> : <div className="chart" style={{ display: "grid", placeItems: "center", color: "var(--ink3)" }}>{candles ? "Not enough trades for a chart yet. The first buy starts it." : "Loading chart…"}</div>}
           </div>
 
           <div className="tabs chips-row">
-            {(["trades", "holders", "about"] as const).map((k) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{k === "trades" ? "Live log" : k === "holders" ? "Holders" : "About"}</button>)}
+            {(["trades", "holders", "about"] as const).map((k) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{k === "trades" ? "Trades" : k === "holders" ? "Holders" : "About"}</button>)}
           </div>
           {tab === "trades" && <Trades address={t.address} symbol={t.symbol} hypeUsd={hypeUsd} />}
           {tab === "holders" && <Holders address={t.address} creator={t.creator} pool={t.pool} />}
@@ -78,7 +78,7 @@ function MarketPage({ t }: { t: Token }) {
           {t.mode === "auction" && <MyBids token={t.address} symbol={t.symbol} hypeUsd={hypeUsd} settled />}
           <Rewards token={t.address} />
           <div className="panel" style={{ marginTop: 14 }}>
-            <div className="lbl" style={{ marginBottom: 6 }}>Program details</div>
+            <div className="lbl" style={{ marginBottom: 6 }}>Details</div>
             <dl className="specs">
               <dt>Market cap</dt><dd>{usd(t.marketCapUsd, { compact: true })}</dd>
               <dt>Liquidity</dt><dd>{usd(wei(t.liquidityWei) * hypeUsd, { compact: true })}</dd>
@@ -142,7 +142,7 @@ function AuctionPage({ t }: { t: Token }) {
           <div className="meta"><span className={"onair auc " + (a.open ? "" : "off")}><span className="dot" style={{ width: 6, height: 6, boxShadow: "none" }} />{status}</span><span className="mono">{t.symbol}</span><span>pairs HYPE</span><span>by <a href={`${env.explorerUrl}/address/${t.creator}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)" }}>{short(t.creator)}</a></span><span>since {dateShort(t.createdAt)}</span></div>
         </div>
         <div className="price">
-          <div className="v">{a.open ? countdown(left) : a.cancelled ? "off air" : "ended"}</div>
+          <div className="v">{a.open ? countdown(left) : a.cancelled ? "cancelled" : "ended"}</div>
           <div className="c faint">{a.open ? "left in the auction" : a.cancelled ? "refunds open" : "settling"}</div>
         </div>
       </div>
@@ -220,7 +220,7 @@ function Finalize({ token, cancelled }: { token: Address; cancelled: boolean }) 
   const { isConnected } = useAccount();
   return (
     <div className="fin">
-      <div><b>{cancelled ? "Cancelled by the station." : "The auction has ended."}</b><span className="small">{cancelled ? "Every bid is refunded in full once settled." : "Settlement seeds the pool (or opens refunds). Our keeper does this within minutes; anyone with big blocks on can trigger it now."}</span></div>
+      <div><b>{cancelled ? "Cancelled by the platform." : "The auction has ended."}</b><span className="small">{cancelled ? "Every bid is refunded in full once settled." : "Settlement seeds the pool (or opens refunds). Our keeper does this within minutes; anyone with big blocks on can trigger it now."}</span></div>
       <button className="btn" onClick={async () => { if (!isConnected) return openWalletModal(); await ensureWallet(); await runTx("Settle auction", () => onair.finalize(token), async () => { await qc.invalidateQueries(); }); }}>Settle now</button>
     </div>
   );

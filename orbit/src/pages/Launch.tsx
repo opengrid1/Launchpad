@@ -21,7 +21,7 @@ export default function Launch() {
   const { data: cfg } = useConfig();
   const { data: hypeUsd = 0 } = useHypeUsd();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [mode, setMode] = useState<Mode>("instant");
+  const [mode, setMode] = useState<Mode>("auction");
   const [f, setF] = useState({ name: "", symbol: "", description: "", website: "", twitter: "", telegram: "", devBuy: "" });
   const [logo, setLogo] = useState("");
   const [busy, setBusy] = useState(false);
@@ -75,28 +75,28 @@ export default function Launch() {
     } finally { setBusy(false); }
   };
 
-  const cta = !isConnected ? "Connect wallet" : busy ? (mode === "auction" ? "Opening…" : "Going live…") : mode === "auction" ? `Open the ${symbol} auction` : `Go live with ${symbol}`;
+  const cta = !isConnected ? "Connect wallet" : busy ? (mode === "auction" ? "Starting…" : "Launching…") : mode === "auction" ? `Start the ${symbol} auction` : `Launch ${symbol} now`;
 
   return (
     <main className="page">
       <section className="hero" style={{ gridTemplateColumns: "1fr", paddingBottom: 10 }}>
         <div>
-          <div className="lbl" style={{ marginBottom: 12 }}>Studio · go live</div>
-          <h1>Two ways <em>on air</em>.</h1>
-          <p className="sub">Go instant and trade from the first block, or run a {len} auction where everyone pays the same price. Either way the pool is locked and you earn {FEES.creatorPct}% of every trade's fee.</p>
+          <div className="lbl" style={{ marginBottom: 12 }}>Launch a coin</div>
+          <h1>Two ways to <em>launch</em>.</h1>
+          <p className="sub">Run a {len} auction where everyone pays the same clearing price, or list instantly and trade from the first block. Either way the pool is locked and you earn {FEES.creatorPct}% of every trade's fee.</p>
         </div>
       </section>
 
       <div className="formats">
-        <button type="button" className={"fmt " + (mode === "instant" ? "on" : "")} onClick={() => setMode("instant")}>
-          <span className="lbl"><i className="dot" style={{ animation: "none", boxShadow: "none", width: 7, height: 7 }} />Instant</span>
-          <b>On air now.</b>
-          <span>One transaction. The whole supply goes into a locked HyperSwap pool at {usd(floorUsd, { compact: true })} and trading starts immediately.</span>
-        </button>
         <button type="button" className={"fmt auc " + (mode === "auction" ? "on" : "")} onClick={() => setMode("auction")}>
           <span className="lbl"><i className="dot a" style={{ animation: "none", boxShadow: "none", width: 7, height: 7 }} />Auction</span>
           <b>{len.replace("-", " ")}s, one price.</b>
           <span>Half the supply sells at a single rising clearing price. If it raises {bond} HYPE, the raise and the other half seed the pool. If not, everyone is refunded.</span>
+        </button>
+        <button type="button" className={"fmt " + (mode === "instant" ? "on" : "")} onClick={() => setMode("instant")}>
+          <span className="lbl"><i className="dot" style={{ animation: "none", boxShadow: "none", width: 7, height: 7 }} />Instant</span>
+          <b>Trading in one block.</b>
+          <span>One transaction. The whole supply goes into a locked HyperSwap pool at {usd(floorUsd, { compact: true })} and trading starts immediately.</span>
         </button>
       </div>
 
@@ -140,7 +140,7 @@ export default function Launch() {
         </form>
 
         <aside className="sign d-only">
-          <div className={"onair " + (mode === "auction" ? "auc" : "")}><span className="dot" style={{ width: 7, height: 7, boxShadow: "none" }} />{mode === "auction" ? "AUCTION · PREVIEW" : "ON AIR · PREVIEW"}</div>
+          <div className={"onair " + (mode === "auction" ? "auc" : "")}><span className="dot" style={{ width: 7, height: 7, boxShadow: "none" }} />{mode === "auction" ? "AUCTION · PREVIEW" : "INSTANT · PREVIEW"}</div>
           <Art src={logo} name={f.name || "Your coin"} className="art" />
           <h3>{f.name || "Your coin"}</h3>
           <div className="small mono">{symbol} · {mode === "auction" ? `floor ${usd(floorUsd, { compact: true })}` : usd(floorUsd, { compact: true })} · just now</div>

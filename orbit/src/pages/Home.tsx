@@ -36,13 +36,13 @@ export default function Home() {
     <main className="page">
       <section className="hero">
         <div>
-          <div className="lbl row" style={{ gap: 10, marginBottom: 14 }}><span className="dot" />Broadcasting from HyperEVM</div>
-          <h1>Go <em>live</em><br />with a coin.</h1>
-          <p className="sub">Launch instantly, or run a four-hour auction where every bidder pays one price. Every trade is broadcast here, and every trade pays the creator.</p>
-          <div className="cta"><Link to="/launch" className="btn red">Go live</Link><a href="#feed" className="btn ghost">Watch the feed</a></div>
+          <div className="lbl row" style={{ gap: 10, marginBottom: 14 }}><span className="dot" />Live on HyperEVM</div>
+          <h1>Every coin,<br />one <em>fair</em> price.</h1>
+          <p className="sub">Launch a coin into a four-hour auction where every bidder pays the same clearing price, or list it instantly. Liquidity is locked and every trade pays the creator.</p>
+          <div className="cta"><Link to="/launch" className="btn red">Launch a coin</Link><a href="#feed" className="btn ghost">Browse auctions</a></div>
         </div>
         <div className="m-only">
-          <div className="sec-h" style={{ marginBottom: 8 }}><h2>On air now</h2><span className="lbl">{auctions.length ? "auctions · most traded" : "most traded"}</span></div>
+          <div className="sec-h" style={{ marginBottom: 8 }}><h2>Live now</h2><span className="lbl">{auctions.length ? "closing soon · most traded" : "most traded"}</span></div>
           <div className="strip">{[...auctions.slice(0, 3), ...onair].map((t) => (
             <Link key={t.address} to={`/t/${t.address}`} className="sc">
               <Art src={t.metadata?.logo} name={t.name} className="av" />
@@ -52,8 +52,8 @@ export default function Home() {
           ))}</div>
         </div>
         <div className="board d-only">
-          <div className="lbl"><span className="dot" />On air now</div>
-          {isLoading ? <div className="empty">Tuning in…</div> : auctions.length + onair.length === 0 ? <div className="empty">Nothing on air yet. Be the first.</div> : [...auctions.slice(0, 2), ...onair].slice(0, 4).map((t) => (
+          <div className="lbl"><span className="dot" />Live now</div>
+          {isLoading ? <div className="empty">Loading…</div> : auctions.length + onair.length === 0 ? <div className="empty">No auctions yet. Open the first one.</div> : [...auctions.slice(0, 2), ...onair].slice(0, 4).map((t) => (
             <Link key={t.address} to={`/t/${t.address}`} className="rowi">
               <Art src={t.metadata?.logo} name={t.name} className="av" />
               <div className="nm">{t.name}<small>{t.symbol} · {inAuction(t) ? `auction · ${hype(wei(t.auction!.raised), 1)} / ${hype(wei(t.auction!.minRaiseWei), 0)} HYPE` : `${ago(t.createdAt)} · ${num(t.holderCount || 0, 0)} holders`}</small></div>
@@ -65,7 +65,7 @@ export default function Home() {
 
       <section className="sec" id="feed">
         <div className="sec-h">
-          <h2>Feed</h2>
+          <h2>All coins</h2>
           <div className="toolbar">
             <div className="seg">{(["new", "auctions", "top", "movers"] as Sort[]).map((s) => <button key={s} className={sort === s ? "on" : ""} onClick={() => setSort(s)}>{s === "new" ? "Newest" : s === "auctions" ? "Auctions" : s === "top" ? "Biggest" : "Movers"}</button>)}</div>
             <label className="search m-search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg><input placeholder="Search coins" value={q} onChange={(e) => setQ(e.target.value)} /></label>
@@ -75,7 +75,7 @@ export default function Home() {
           {isLoading ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" />) : (
             <>
               {list.map((t) => <Card key={t.address} t={t} hypeUsd={hypeUsd} />)}
-              <Link to="/launch" className="card new"><div><div className="plus">+</div>Your coin here<br /><small>free · instant or auction</small></div></Link>
+              <Link to="/launch" className="card new"><div><div className="plus">+</div>Your coin here<br /><small>free · auction or instant</small></div></Link>
             </>
           )}
         </div>
@@ -86,21 +86,21 @@ export default function Home() {
             return (
               <Link key={t.address} to={`/t/${t.address}`} className="li">
                 <Art src={t.metadata?.logo} name={t.name} className="art" size={48} />
-                <div className="nm">{t.name} {auc ? <span className="lv amber">● AUCTION</span> : fresh && <span className="lv">● LIVE</span>}<small>{t.symbol} · {auc ? `${countdown(secondsLeft(t.auction!))} left · ${hype(wei(t.auction!.raised), 1)} HYPE in` : `${ago(t.createdAt)} · ${num(t.holderCount || 0, 0)} holders`}</small></div>
+                <div className="nm">{t.name} {auc ? <span className="lv amber">● AUCTION</span> : fresh && <span className="lv">● NEW</span>}<small>{t.symbol} · {auc ? `${countdown(secondsLeft(t.auction!))} left · ${hype(wei(t.auction!.raised), 1)} HYPE in` : `${ago(t.createdAt)} · ${num(t.holderCount || 0, 0)} holders`}</small></div>
                 <div className="px mono"><b>{usd(t.marketCapUsd, { compact: true })}</b>{auc ? <span className="faint">clearing</span> : <span className={chg == null ? "faint" : chg >= 0 ? "up" : "down"}>{pct(chg)}</span>}</div>
               </Link>
             );
           })}
-          {!isLoading && <Link to="/launch" className="li add"><span className="plus">+</span><div className="nm">Your coin here<small>free · instant or auction</small></div><span /></Link>}
+          {!isLoading && <Link to="/launch" className="li add"><span className="plus">+</span><div className="nm">Your coin here<small>free · auction or instant</small></div><span /></Link>}
         </div>
         {!isLoading && list.length === 0 && q && <p className="small" style={{ marginTop: 12 }}>No coins match "{q}".</p>}
-        {!isLoading && list.length === 0 && !q && sort === "auctions" && <p className="small" style={{ marginTop: 12 }}>No auction running right now. <Link to="/launch" style={{ color: "var(--green)" }}>Open one</Link>.</p>}
+        {!isLoading && list.length === 0 && !q && sort === "auctions" && <p className="small" style={{ marginTop: 12 }}>No auction running right now. <Link to="/launch" style={{ color: "var(--green)" }}>Start one</Link>.</p>}
       </section>
 
       <div className="rules">
-        <div><b>$0</b><span>to launch. Gas only. Instant, or a 4-hour auction.</span></div>
+        <div><b>$0</b><span>to launch. Gas only. A 4-hour auction, or instant.</span></div>
         <div><b className="r">{FEES.poolPct}%</b><span>fee on every trade. The only fee.</span></div>
-        <div><b>{FEES.creatorPct}%</b><span>of it paid to the creator. {FEES.platformPct}% runs the station.</span></div>
+        <div><b>{FEES.creatorPct}%</b><span>of it paid to the creator. {FEES.platformPct}% to the platform.</span></div>
         <div><b>∞</b><span>liquidity locked in the factory. No rug possible.</span></div>
       </div>
     </main>
@@ -127,7 +127,7 @@ function Card({ t, hypeUsd }: { t: Token; hypeUsd: number }) {
   }
   return (
     <Link to={`/t/${t.address}`} className="card">
-      <span className="live"><i />LIVE</span>
+      <span className="live"><i />TRADING</span>
       <Art src={t.metadata?.logo} name={t.name} className="art" />
       {fresh && <span className="tag">NEW</span>}
       <h3>{t.name}</h3>

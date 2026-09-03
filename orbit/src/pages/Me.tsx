@@ -38,7 +38,7 @@ export default function Me() {
 
   if (!isConnected || !me) {
     return (
-      <main className="page"><section className="hero" style={{ gridTemplateColumns: "1fr" }}><div><div className="lbl" style={{ marginBottom: 12 }}>Studio</div><h1>Your <em>studio</em>.</h1><p className="sub">Connect a wallet to see what you hold, what you bid on, what you put on air, and what you have earned.</p><div className="cta"><button className="btn red" onClick={() => openWalletModal()}>Connect wallet</button></div></div></section></main>
+      <main className="page"><section className="hero" style={{ gridTemplateColumns: "1fr" }}><div><div className="lbl" style={{ marginBottom: 12 }}>My bids</div><h1>Your <em>bids</em>.</h1><p className="sub">Connect a wallet to see your bids, what you hold, the coins you launched, and what you have earned.</p><div className="cta"><button className="btn red" onClick={() => openWalletModal()}>Connect wallet</button></div></div></section></main>
     );
   }
 
@@ -50,12 +50,12 @@ export default function Me() {
   return (
     <main className="page">
       <section className="sec">
-        <div className="lbl" style={{ marginBottom: 12 }}>Studio · {short(me)}</div>
-        <h1 style={{ fontSize: 56 }}>Your <em>studio</em>.</h1>
+        <div className="lbl" style={{ marginBottom: 12 }}>My bids · {short(me)}</div>
+        <h1 style={{ fontSize: 56 }}>Your <em>bids</em>.</h1>
         <div className="stats3">
           <div className="stat"><b>{usd(value, { compact: true })}</b><span>Holdings value</span></div>
           <div className="stat"><b>{hype(inEscrow, 3)} HYPE</b><span>In auction bids{claimableBids.length ? ` · ${claimableBids.length} ready to claim` : ""}</span></div>
-          <div className="stat"><b>{data?.created.length ?? 0}</b><span>Coins you put on air</span></div>
+          <div className="stat"><b>{data?.created.length ?? 0}</b><span>Coins you launched</span></div>
         </div>
       </section>
 
@@ -83,7 +83,7 @@ export default function Me() {
 
       <section className="sec">
         <div className="sec-h"><h2>Holdings</h2></div>
-        {!data ? <div className="skeleton" style={{ minHeight: 100 }} /> : data.held.length === 0 ? <p className="small">You do not hold any coins from here yet. <Link to="/" style={{ color: "var(--green)" }}>Watch the feed</Link></p> : (
+        {!data ? <div className="skeleton" style={{ minHeight: 100 }} /> : data.held.length === 0 ? <p className="small">You do not hold any coins from here yet. <Link to="/" style={{ color: "var(--green)" }}>Browse coins</Link></p> : (
           <div className="list">
             {data.held.map(({ t, bal, claimable }) => <Row key={t.address} t={t} me={me} left={`${num(wei(bal))} ${t.symbol}`} right={usd(wei(bal) * Number(t.priceUsd))} claimable={claimable} onClaimed={() => qc.invalidateQueries({ queryKey: ["me"] })} />)}
           </div>
@@ -91,8 +91,8 @@ export default function Me() {
       </section>
 
       <section className="sec">
-        <div className="sec-h"><h2>On air by you</h2></div>
-        {!data ? <div className="skeleton" style={{ minHeight: 100 }} /> : data.created.length === 0 ? <p className="small">Nothing yet. <Link to="/launch" style={{ color: "var(--green)" }}>Go live</Link></p> : (
+        <div className="sec-h"><h2>Coins you launched</h2></div>
+        {!data ? <div className="skeleton" style={{ minHeight: 100 }} /> : data.created.length === 0 ? <p className="small">Nothing yet. <Link to="/launch" style={{ color: "var(--green)" }}>Launch a coin</Link></p> : (
           <>
           <div className="list">
             {data.created.map((t) => {
@@ -107,7 +107,7 @@ export default function Me() {
               );
             })}
           </div>
-          <p className="note">Harvest collects the pool's accrued fees and splits them on-chain in the same transaction: {FEES.creatorPct}% to you, {FEES.platformPct}% to the station. Anyone can trigger it.</p>
+          <p className="note">Harvest collects the pool's accrued fees and splits them on-chain in the same transaction: {FEES.creatorPct}% to you, {FEES.platformPct}% to the platform. Anyone can trigger it.</p>
           </>
         )}
       </section>

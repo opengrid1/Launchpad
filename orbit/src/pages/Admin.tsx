@@ -12,7 +12,7 @@ import { runTx, useConfig, useHypeUsd, useIsOwner, useTokens, type Token } from 
 import { countdown, secondsLeft } from "../lib/onair";
 import { ensureWallet, openWalletModal } from "../lib/wallet";
 
-/** The station's control room: owner-only factory and auction-house actions. */
+/** Platform admin: owner-only factory and auction-house actions. */
 export default function Admin() {
   const { address: me, isConnected } = useAccount();
   const owner = useIsOwner();
@@ -29,18 +29,18 @@ export default function Admin() {
     await runTx(label, () => onair.adminCall(fn, args), async () => { await qc.invalidateQueries(); });
   };
 
-  if (!isConnected) return <main className="page"><section className="hero" style={{ gridTemplateColumns: "1fr" }}><div><div className="lbl" style={{ marginBottom: 12 }}>Control room</div><h1>Station <em>controls</em>.</h1><p className="sub">Connect the owner wallet.</p><div className="cta"><button className="btn red" onClick={() => openWalletModal()}>Connect wallet</button></div></div></section></main>;
+  if (!isConnected) return <main className="page"><section className="hero" style={{ gridTemplateColumns: "1fr" }}><div><div className="lbl" style={{ marginBottom: 12 }}>Admin</div><h1>Platform <em>admin</em>.</h1><p className="sub">Connect the owner wallet.</p><div className="cta"><button className="btn red" onClick={() => openWalletModal()}>Connect wallet</button></div></div></section></main>;
 
   return (
     <main className="page admin">
       <section className="sec">
-        <div className="lbl" style={{ marginBottom: 12 }}>Control room · {short(me!)}{owner ? " · owner" : " · read only"}</div>
-        <h1 style={{ fontSize: 56 }}>Station <em>controls</em>.</h1>
+        <div className="lbl" style={{ marginBottom: 12 }}>Admin · {short(me!)}{owner ? " · owner" : " · read only"}</div>
+        <h1 style={{ fontSize: 56 }}>Platform <em>admin</em>.</h1>
         {!owner && <p className="warn" style={{ marginTop: 12 }}>This wallet does not own the factory. Actions will revert. Owner: {cfg ? short(cfg.owner) : "…"}</p>}
       </section>
 
       <section className="sec">
-        <div className="sec-h"><h2>Station</h2></div>
+        <div className="sec-h"><h2>Platform</h2></div>
         <div className="panel">
           <dl className="specs">
             <dt>Factory</dt><dd><a href={`${env.explorerUrl}/address/${ADDRESSES.factory}`} target="_blank" rel="noreferrer">{ADDRESSES.factory}</a></dd>
@@ -128,7 +128,7 @@ function LaunchRow({ t, hypeUsd, me, call }: { t: Token; hypeUsd: number; me: Ad
   const a = t.auction;
   const running = !!a && !a.finalized;
   const dest = (/^0x[0-9a-fA-F]{40}$/.test(to) ? to : me) as Address;
-  const status = t.mode === "instant" ? "instant · on air" : !a ? "auction · seeded" : a.cancelled ? "auction · cancelled" : a.open ? `auction · ${countdown(secondsLeft(a))} left` : a.finalized ? (a.graduated ? "auction · seeded" : "auction · failed, refunds") : "auction · ended, needs settle";
+  const status = t.mode === "instant" ? "instant · trading" : !a ? "auction · seeded" : a.cancelled ? "auction · cancelled" : a.open ? `auction · ${countdown(secondsLeft(a))} left` : a.finalized ? (a.graduated ? "auction · seeded" : "auction · failed, refunds") : "auction · ended, needs settle";
   return (
     <div className="li" style={{ display: "block" }}>
       <div className="arow">

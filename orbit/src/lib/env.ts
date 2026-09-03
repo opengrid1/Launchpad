@@ -42,10 +42,10 @@ export const chain = defineChain({
 });
 
 export const BRAND = {
-  name: "ONAIR",
-  tagline: "Go live with a coin.",
-  url: "https://orbit-hyper.vercel.app",
-  description: "Go live with a coin on HyperEVM. Launch instantly or run a four-hour auction. Liquidity locked, every trade pays the creator.",
+  name: "HYPERAUCTION",
+  tagline: "Every coin, one fair price.",
+  url: "https://hyperauction.vercel.app",
+  description: "Coin auctions on HyperEVM. Launch a coin into a four-hour auction where every bidder pays one clearing price, or list it instantly. Liquidity locked, every trade pays the creator.",
 };
 
 /** Fee split on the 1% pool tier, as deployed. */
