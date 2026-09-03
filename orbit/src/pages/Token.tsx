@@ -6,7 +6,7 @@ import { useAccount } from "wagmi";
 import type { CandleInterval } from "@launchpad/sdk";
 
 import { Chart } from "../components/Chart";
-import { Logo } from "../components/Logo";
+import { Art } from "../components/Art";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { ago, dateShort, hype, num, pct, short, usd, wei } from "../lib/format";
@@ -32,8 +32,9 @@ export default function TokenPage() {
 
   return (
     <main className="page">
+      <div className="band"><Art src={t.metadata?.logo} name={t.name} className="band-bg" /></div>
       <div className="token-head">
-        <Logo src={t.metadata?.logo} name={t.name} className="art" />
+        <Art src={t.metadata?.logo} name={t.name} className="art" />
         <div>
           <h1>{t.name}</h1>
           <div className="small">{t.symbol} · pairs HYPE · by <a href={`${env.explorerUrl}/address/${t.creator}`} target="_blank" rel="noreferrer">{short(t.creator)}</a></div>

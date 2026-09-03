@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Address } from "viem";
 import { useAccount } from "wagmi";
 
-import { Logo } from "../components/Logo";
+import { Art } from "../components/Art";
 import { client, publicClient } from "../lib/client";
 import { hype, num, short, usd, wei } from "../lib/format";
 import { runTx, useHypeUsd, useTokens, type Token } from "../lib/hooks";
@@ -66,7 +66,7 @@ export default function Me() {
           <div className="list">
             {data.created.map((t) => (
               <div key={t.address} className="li" style={{ gridTemplateColumns: "auto 1fr auto auto" }}>
-                <Logo src={t.metadata?.logo} name={t.name} className="art" size={40} />
+                <Art src={t.metadata?.logo} name={t.name} className="art" size={40} />
                 <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{t.symbol} · {usd(t.marketCapUsd, { compact: true })} cap · {usd(wei(t.volume24hWei) * hypeUsd, { compact: true })} today</div></div>
                 <div className="r"><div className="l2">creator fee 40%</div></div>
                 <button className="pillbtn quiet" onClick={async () => { await ensureWallet(); await runTx("Harvest fees", () => client.claimCreatorFees(t.address as Address)); }}>Harvest</button>
@@ -83,7 +83,7 @@ export default function Me() {
 function Row({ t, me, left, right, claimable, onClaimed }: { t: Token; me: Address; left: string; right: string; claimable: bigint; onClaimed: () => void }) {
   return (
     <div className="li" style={{ gridTemplateColumns: "auto 1fr auto auto" }}>
-      <Logo src={t.metadata?.logo} name={t.name} className="art" size={40} />
+      <Art src={t.metadata?.logo} name={t.name} className="art" size={40} />
       <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{left}</div></div>
       <div className="r">{right}<div className="l2">{claimable > 0n ? `${hype(wei(claimable), 4)} HYPE to claim` : "no rewards yet"}</div></div>
       <button className="pillbtn" disabled={claimable === 0n} onClick={async () => { await ensureWallet(); const ok = await runTx("Claim rewards", async () => { const hs = await client.claimBaseRewards(t.address as Address, me); if (!hs.length) throw new Error("Nothing to claim"); return hs[hs.length - 1]; }); if (ok) onClaimed(); }}>Claim</button>

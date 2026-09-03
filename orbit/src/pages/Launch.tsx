@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { parseAbi, parseEther } from "viem";
 import { useAccount } from "wagmi";
 
-import { Logo } from "../components/Logo";
+import { Art } from "../components/Art";
 import { client, publicClient } from "../lib/client";
 import { ADDRESSES } from "../lib/env";
 import { runTx, setToast } from "../lib/hooks";
@@ -92,7 +92,7 @@ export default function Launch() {
         <aside className="preview">
           <div className="small" style={{ marginBottom: 10 }}>Preview</div>
           <div className="card" style={{ maxWidth: 280 }}>
-            <Logo src={logo} name={f.name || "Your coin"} />
+            <Art src={logo} name={f.name || "Your coin"} />
             <div className="name"><span>{f.name || "Your coin"}</span><span className="badge new">New</span></div>
             <div className="sym">{symbol} · just now</div>
             <div className="meta"><span className="cap">$3.0K</span><span className="chg faint">—</span></div>
