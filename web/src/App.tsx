@@ -18,7 +18,9 @@ const LaunchPage = lazy(() => import("./pages/Launch").then((m) => ({ default: m
 const AdminPage =
   String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3"
     ? lazy(() => import("./pages/AdminStable").then((m) => ({ default: m.AdminStable })))
-    : lazy(() => import("./pages/Admin").then((m) => ({ default: m.AdminPage })));
+    : String(import.meta.env.VITE_LAUNCH_MODE ?? "") === "stock-pair"
+      ? lazy(() => import("./pages/AdminStockRh").then((m) => ({ default: m.AdminStockRh })))
+      : lazy(() => import("./pages/Admin").then((m) => ({ default: m.AdminPage })));
 const DocsPage = lazy(() => import("./pages/Docs").then((m) => ({ default: m.DocsPage })));
 const ProfilePage = lazy(() => import("./pages/Profile").then((m) => ({ default: m.ProfilePage })));
 const FlywheelPage = lazy(() => import("./pages/Flywheel").then((m) => ({ default: m.FlywheelPage })));

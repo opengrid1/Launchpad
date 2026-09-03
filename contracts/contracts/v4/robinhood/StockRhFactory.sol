@@ -47,6 +47,10 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     address public immutable weth;
     address public immutable admin;
 
+    /// @notice Where each coin's 10% platform fee share is paid on claim. The
+    ///         coins read this via IFeeRecipientSource; defaults to the admin.
+    address public feeRecipient;
+
     bool public launchesPaused;
 
     // Field order matches the frontend's factory ABI: (creator, pair, taxBps,
@@ -85,6 +89,7 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     event DevBought(address indexed token, address indexed creator, uint256 pairIn, uint256 coinOut);
     event Collected(address indexed token, uint128 liquidityRemoved, uint256 tokenAmount, uint256 wethAmount, address indexed recipient);
     event LaunchesPausedSet(bool paused);
+    event FeeRecipientSet(address indexed recipient);
 
     error LaunchesPaused();
     error InvalidParams();
@@ -101,6 +106,7 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     {
         require(admin_ != address(0) && weth_ != address(0), "zero");
         admin = admin_;
+        feeRecipient = admin_;
         poolManager = poolManager_;
         hook = hook_;
         weth = weth_;
@@ -118,6 +124,13 @@ contract StockRhFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     function resume() external onlyAdmin {
         launchesPaused = false;
         emit LaunchesPausedSet(false);
+    }
+
+    /// @notice Re-point where coins pay their 10% platform fee share.
+    function setFeeRecipient(address recipient) external onlyAdmin {
+        require(recipient != address(0), "zero");
+        feeRecipient = recipient;
+        emit FeeRecipientSet(recipient);
     }
 
     // ---------------------------------------------------------------------
