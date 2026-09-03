@@ -34,7 +34,8 @@ export default function App() {
   const { address, isConnected } = useAccount();
   const toast = useToast();
   const loc = useLocation();
-  useEffect(() => { window.scrollTo({ top: 0 }); }, [loc.pathname]);
+  const path = loc.pathname.replace(/\/+$/, "") || "/";
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [path]);
 
   return (
     <>
@@ -75,11 +76,13 @@ export default function App() {
         </span>
       </footer>
 
-      {loc.pathname !== "/launch" && !loc.pathname.startsWith("/t/") && (
-        <div className="mobilebar">
-          <Link to="/" className="big" style={{ background: "var(--panel2)", color: "var(--ink)", textAlign: "center" }}>Live</Link>
-          <Link to="/launch" className="big sell" style={{ textAlign: "center" }}>Go live</Link>
-        </div>
+      {path !== "/launch" && !path.startsWith("/t/") && (
+        <nav className="tabbar">
+          <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14" /></svg>Live</NavLink>
+          <NavLink to="/launch" className={({ isActive }) => (isActive ? "on" : "")}><span className="rec"><i /></span>Go live</NavLink>
+          <NavLink to="/me" className={({ isActive }) => (isActive ? "on" : "")}><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2" /><path d="M8 22h8" /></svg>Studio</NavLink>
+          <NavLink to="/docs" className={({ isActive }) => (isActive ? "on" : "")}><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM9 9h6M9 13h6" /></svg>Rules</NavLink>
+        </nav>
       )}
 
       {toast && (

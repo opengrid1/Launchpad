@@ -54,7 +54,7 @@ export default function TokenPage() {
             {candles && candles.length > 1 ? <Chart candles={candles} hypeUsd={hypeUsd} /> : <div className="chart" style={{ display: "grid", placeItems: "center", color: "var(--ink3)" }}>{candles ? "Not enough trades for a chart yet. The first buy starts it." : "Tuning in…"}</div>}
           </div>
 
-          <div className="tabs">
+          <div className="tabs chips-row">
             {(["trades", "holders", "about"] as const).map((k) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{k === "trades" ? "Live log" : k === "holders" ? "Holders" : "About"}</button>)}
           </div>
           {tab === "trades" && <Trades address={t.address} symbol={t.symbol} hypeUsd={hypeUsd} />}

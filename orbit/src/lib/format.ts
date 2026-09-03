@@ -6,7 +6,7 @@ export function usd(v: number | string, opts?: { compact?: boolean }): string {
   if (opts?.compact) {
     if (Math.abs(x) >= 1e9) return `$${(x / 1e9).toFixed(2)}B`;
     if (Math.abs(x) >= 1e6) return `$${(x / 1e6).toFixed(2)}M`;
-    if (Math.abs(x) >= 1e4) return `$${(x / 1e3).toFixed(1)}K`;
+    if (Math.abs(x) >= 1e3) return `$${(x / 1e3).toFixed(1)}K`;
   }
   if (x === 0) return "$0";
   if (Math.abs(x) < 0.01) return `$${x.toPrecision(3)}`;

@@ -34,7 +34,16 @@ export default function Home() {
           <p className="sub">Launch in one transaction and it's on air. Every trade is broadcast here, and every trade pays the people holding.</p>
           <div className="cta"><Link to="/launch" className="btn red">Go live</Link><a href="#feed" className="btn ghost">Watch the feed</a></div>
         </div>
-        <div className="board">
+        <div className="m-only">
+          <div className="sec-h" style={{ marginBottom: 8 }}><h2>On air now</h2><span className="lbl">most traded</span></div>
+          <div className="strip">{onair.map((t) => (
+            <Link key={t.address} to={`/t/${t.address}`} className="sc">
+              <Art src={t.metadata?.logo} name={t.name} className="av" />
+              <b>{t.name}</b><small>{usd(t.marketCapUsd, { compact: true })} · <span className={(t.priceChange24hPct ?? 0) >= 0 ? "up" : "down"}>{pct(t.priceChange24hPct)}</span></small>
+            </Link>
+          ))}</div>
+        </div>
+        <div className="board d-only">
           <div className="lbl"><span className="dot" />On air now</div>
           {isLoading ? <div className="empty">Tuning in…</div> : onair.length === 0 ? <div className="empty">Nothing on air yet. Be the first.</div> : onair.map((t) => (
             <Link key={t.address} to={`/t/${t.address}`} className="rowi">
@@ -51,16 +60,29 @@ export default function Home() {
           <h2>Feed</h2>
           <div className="toolbar">
             <div className="seg">{(["new", "top", "movers"] as Sort[]).map((s) => <button key={s} className={sort === s ? "on" : ""} onClick={() => setSort(s)}>{s === "new" ? "Newest" : s === "top" ? "Biggest" : "Movers"}</button>)}</div>
-            <label className="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg><input placeholder="Search coins" value={q} onChange={(e) => setQ(e.target.value)} /></label>
+            <label className="search m-search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg><input placeholder="Search coins" value={q} onChange={(e) => setQ(e.target.value)} /></label>
           </div>
         </div>
-        <div className="grid">
+        <div className="grid d-only">
           {isLoading ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" />) : (
             <>
               {list.map((t) => <Card key={t.address} t={t} hypeUsd={hypeUsd} />)}
               <Link to="/launch" className="card new"><div><div className="plus">+</div>Your coin here<br /><small>free · one transaction</small></div></Link>
             </>
           )}
+        </div>
+        <div className="list m-only">
+          {isLoading ? <div className="skeleton" style={{ minHeight: 200, border: 0, borderRadius: 0 }} /> : list.map((t) => {
+            const chg = t.priceChange24hPct; const fresh = Date.now() / 1000 - t.createdAt < 3600;
+            return (
+              <Link key={t.address} to={`/t/${t.address}`} className="li">
+                <Art src={t.metadata?.logo} name={t.name} className="art" size={48} />
+                <div className="nm">{t.name} {fresh && <span className="lv">● LIVE</span>}<small>{t.symbol} · {ago(t.createdAt)} · {num(t.holderCount || 0, 0)} holders</small></div>
+                <div className="px mono"><b>{usd(t.marketCapUsd, { compact: true })}</b><span className={chg == null ? "faint" : chg >= 0 ? "up" : "down"}>{pct(chg)}</span></div>
+              </Link>
+            );
+          })}
+          {!isLoading && <Link to="/launch" className="li add"><span className="plus">+</span><div className="nm">Your coin here<small>free · one transaction</small></div><span /></Link>}
         </div>
         {!isLoading && list.length === 0 && q && <p className="small" style={{ marginTop: 12 }}>No coins match "{q}".</p>}
       </section>

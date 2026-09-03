@@ -71,8 +71,13 @@ export default function Launch() {
         </div>
       </section>
 
+      <div className="sign-m m-only">
+        <Art src={logo} name={f.name || "Your coin"} className="av" size={48} />
+        <div><b>{f.name || "Your coin"}</b><small className="mono">{symbol} · $3.0K start · pairs HYPE</small></div>
+        <span className="onair"><span className="dot" style={{ width: 6, height: 6, boxShadow: "none" }} />PREVIEW</span>
+      </div>
       <div className="split">
-        <form className="form" onSubmit={submit}>
+        <form className="form" id="golive" onSubmit={submit}>
           <label className="drop" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) onFile(file); }}>
             {logo ? <img src={logo} alt="" /> : <div className="ph">+</div>}
             <div><div style={{ fontWeight: 500 }}>{logo ? "Artwork ready" : "Add artwork"}</div><div className="help">Square PNG or JPG. Stored on-chain with the coin.{logo && <> · <a href="#" onClick={(e) => { e.preventDefault(); setLogo(""); }}>Remove</a></>}</div></div>
@@ -87,11 +92,11 @@ export default function Launch() {
           </div>
           <div className="field"><label>Telegram</label><input value={f.telegram} onChange={set("telegram")} placeholder="@group" /></div>
           <div className="field"><label>First buy (optional)</label><input inputMode="decimal" value={f.devBuy} onChange={set("devBuy")} placeholder="0" /><div className="help">HYPE spent in the same transaction, so you hold from the first block. Everyone can see it.</div></div>
-          <button className="big sell" type="submit" disabled={busy || !f.name.trim()}>{!isConnected ? "Connect wallet" : busy ? "Going live…" : `Go live with ${symbol}`}</button>
+          <button className="big sell d-only" type="submit" disabled={busy || !f.name.trim()}>{!isConnected ? "Connect wallet" : busy ? "Going live…" : `Go live with ${symbol}`}</button>
           <p className="note">Free, you pay HyperEVM gas only. Launching deploys a pool, which needs <b style={{ color: "var(--ink)" }}>big blocks</b> turned on for your wallet once (Hyperliquid app → "Use big blocks for EVM"). Turn it back off after.</p>
         </form>
 
-        <aside className="sign">
+        <aside className="sign d-only">
           <div className="onair"><span className="dot" style={{ width: 7, height: 7, boxShadow: "none" }} />ON AIR · PREVIEW</div>
           <Art src={logo} name={f.name || "Your coin"} className="art" />
           <h3>{f.name || "Your coin"}</h3>
@@ -109,6 +114,7 @@ export default function Launch() {
           </div>
         </aside>
       </div>
+      <div className="mobilebar"><button className="big sell" type="submit" form="golive" disabled={busy || !f.name.trim()}>{!isConnected ? "Connect wallet" : busy ? "Going live…" : `Go live with ${symbol}`}</button></div>
     </main>
   );
 }
