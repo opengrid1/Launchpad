@@ -114,21 +114,19 @@ const FLAVORS: Record<string, Brand> = {
       "meowstock. Launch a coin on HyperEVM paired with a tokenized stock. One transaction opens a real market and every trade pays 1%: half to holders, 40% to the creator, forever.",
     title: "meowstock | hold the coin, earn the stock",
   },
-  // Robinhood Chain flavor: the meowstock/squidpad product and design (teal,
-  // chart-first, cat mark) on Robinhood Chain, coins pair a tokenized stock and
-  // holders earn it. TEMPORARY placeholder identity - the brand name/wordmark is
-  // not final; rename this whole block in one place when the brand is decided.
+  // Robinhood Chain flavor: coins pair a tokenized stock and holders earn it,
+  // paid out like dividends. Brand: Dividenz.
   robinhood: {
-    name: "stockpad",
+    name: "Dividenz",
     tld: ".fun",
-    domain: "stockpad.fun",
-    url: "https://stockpad.fun",
+    domain: "dividenz.fun",
+    url: "https://dividenz.fun",
     twitter: "https://x.com/",
     twitterHandle: "",
     tagline: "hold the coin, earn the stock",
     description:
-      "Launch a coin on Robinhood Chain paired with a tokenized stock. One transaction opens a real market and every trade pays 1%: half to holders, 40% to the creator, forever.",
-    title: "stockpad | hold the coin, earn the stock",
+      "Dividenz. Launch a coin on Robinhood Chain paired with a tokenized stock. Every buy takes a 1% fee: 50% to holders, 40% to the creator, 10% to the platform. Holders are paid their share in the stock, like dividends.",
+    title: "Dividenz | hold the coin, earn the stock",
   },
   // Arc mainnet flavor: same product, USDC-blue theme for Circle's Arc chain.
   arc: {

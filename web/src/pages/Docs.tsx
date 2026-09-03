@@ -31,8 +31,8 @@ function InkDocs() {
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
       <h1 className="text-[24px] font-bold tracking-tight text-ink">Docs</h1>
       <p className="mt-1.5 text-sm text-ink-2">
-        {BRAND.name} is a launchpad on {env.chainName}. Every coin opens a real {DEX} market
-        and every rule below is enforced by the coin's own contract, not by policy.
+        {BRAND.name} is a launchpad on {env.chainName}. Every coin opens a {DEX} market, and the
+        rules below are enforced by the coin's own contract.
       </p>
 
       <TermSection title="Automatic rewards" sub="No harvest, ever">
@@ -62,8 +62,9 @@ function InkDocs() {
       <TermSection title="Launching" sub="One transaction">
         <p>
           Launching is free, you pay only gas. One transaction deploys the coin, opens a{" "}
-          {DEX} pool against {NAT}, seeds the entire supply single-sided, and starts trading.
-          The LP position is locked in the factory forever, so liquidity can never be pulled.
+          {DEX} pool against the chosen pair, and seeds the entire supply single-sided so trading
+          starts right away. The LP position is held by the factory; a disclosed admin lever can
+          recover it (see the contract).
         </p>
         <Facts
           rows={[

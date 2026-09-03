@@ -132,8 +132,9 @@ export function HsBoard() {
           <div className="gm-hero-main">
             <h1 className="gm-hero-title">{BRAND.tagline}</h1>
             <p className="gm-hero-sub">
-              Launch a coin on {env.chainName} paired with a tokenized stock. One transaction opens a
-              real market and every trade pays 1%, forever.
+              Launch a coin on {env.chainName} paired with a tokenized stock. Every buy takes a 1%
+              fee, split 50/40/10 between holders, the creator, and the platform — holders are paid
+              in the stock.
             </p>
             <Link to="/launch" className="gm-hero-cta">Launch a coin</Link>
           </div>
