@@ -16,7 +16,7 @@ const [MARK_A, MARK_B] =
   BRAND_FLAVOR === "meow"
     ? ["meow", "stock"]
     : BRAND_FLAVOR === "robinhood"
-      ? ["stock", "pad"]
+      ? ["Divi", "denz"]
       : IS_INK
         ? ["squid", "pad"]
         : ["hyper", "stock"];
