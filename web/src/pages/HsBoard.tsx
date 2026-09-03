@@ -71,7 +71,7 @@ function Avatar({ t }: { t: TokenSummary }) {
   return (
     <span className="gm-ava">
       <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} />
-      <span className="gm-ava-badge"><HyperMark /></span>
+      {IS_ROBIN ? null : <span className="gm-ava-badge"><HyperMark /></span>}
     </span>
   );
 }

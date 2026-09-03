@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { TokenSummary } from "@launchpad/sdk";
 
-import { IS_HYPER, IS_INK } from "../lib/brand";
+import { IS_HYPER, IS_INK, IS_ROBIN } from "../lib/brand";
 
 // squidpad rides the hyper look: its own default logo and chain mark.
 const HS_LOOK = IS_HYPER || IS_INK;
@@ -45,8 +45,8 @@ export function TokenLogo({ token, size = 40 }: { token: TokenSummary; size?: nu
   );
 
   // Larger avatars carry the chain badge: Hyperliquid's mark on hyperstock,
-  // Base's disc elsewhere.
-  if (size < 30) return inner;
+  // Base's disc elsewhere. Dividenz shows no chain badge on token cards.
+  if (size < 30 || IS_ROBIN) return inner;
   return (
     <span className="kf-logo-wrap" style={{ width: size, height: size }}>
       {inner}

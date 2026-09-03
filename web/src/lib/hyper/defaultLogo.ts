@@ -68,11 +68,20 @@ const HYPER_BRAND_MARK =
 // meowstock uses the uploaded cat mark (teal on a deep-teal tile) as both the
 // brand mark and the default token avatar.
 const MEOW_MARK = "/meow-tile.png";
-// Dividenz (Robinhood Chain): the glossy green feather logo.
+// Dividenz (Robinhood Chain): the glossy green feather is the BRAND mark only.
 const DIVIDENZ_MARK = "/dividenz-feather.png";
 const IS_DIVIDENZ = BRAND_FLAVOR === "robinhood";
+// Neutral placeholder for coins that ship no logo — a plain cartoon coin, NOT
+// the brand feather, so every logoless coin doesn't look like the brand.
+const DIVIDENZ_COIN = "data:image/svg+xml," + encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>` +
+    `<circle cx='32' cy='32' r='29' fill='#00c805' stroke='#1b1a17' stroke-width='3'/>` +
+    `<circle cx='32' cy='32' r='21' fill='none' stroke='#1b1a17' stroke-width='2' opacity='0.45'/>` +
+    `<circle cx='24' cy='23' r='5' fill='#ffffff' opacity='0.35'/>` +
+  `</svg>`,
+);
 
 export const DEFAULT_TOKEN_LOGO =
-  IS_DIVIDENZ ? DIVIDENZ_MARK : BRAND_FLAVOR === "meow" ? MEOW_MARK : BRAND_FLAVOR === "ink" ? INK_TOKEN_LOGO : HYPER_TOKEN_LOGO;
+  IS_DIVIDENZ ? DIVIDENZ_COIN : BRAND_FLAVOR === "meow" ? MEOW_MARK : BRAND_FLAVOR === "ink" ? INK_TOKEN_LOGO : HYPER_TOKEN_LOGO;
 export const BRAND_MARK =
   IS_DIVIDENZ ? DIVIDENZ_MARK : BRAND_FLAVOR === "meow" ? MEOW_MARK : BRAND_FLAVOR === "ink" ? INK_BRAND_MARK : HYPER_BRAND_MARK;
