@@ -16,7 +16,7 @@ const INK_TEAL_MARK =
 export function HyperMark() {
   return (
     <img
-      src={BRAND_FLAVOR === "ink" ? INK_TEAL_MARK : "/hyperliquid-mark.png"}
+      src={BRAND_FLAVOR === "ink" || BRAND_FLAVOR === "robinhood" ? INK_TEAL_MARK : "/hyperliquid-mark.png"}
       alt=""
       aria-hidden
       style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block" }}

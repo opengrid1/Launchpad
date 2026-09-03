@@ -9,7 +9,8 @@ import { BRAND_FLAVOR, IS_INK, IS_ROBIN } from "../lib/brand";
 // Chain / DEX labels: squidpad on Ink, meowstock on HyperEVM.
 const NET = BRAND_FLAVOR === "meow" ? "HyperEVM" : BRAND_FLAVOR === "robinhood" ? "Robinhood Chain" : "Ink";
 const DEX = BRAND_FLAVOR === "meow" ? "HyperSwap" : "Uniswap";
-import { STOCKS, WHYPE, type HyperStock } from "../lib/hyper/stocks";
+import { STOCKS as HYPER_STOCKS, WHYPE, type HyperStock } from "../lib/hyper/stocks";
+import { STOCKS as RH_STOCKS } from "../lib/v4/stocks";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
@@ -26,12 +27,11 @@ const WHYPE_PAIR: Pair =
     : BRAND_FLAVOR === "robinhood"
       ? { symbol: "ETH", label: "ETH", sub: "Robinhood Chain", address: addresses.weth }
       : { symbol: "HYPE", label: "HYPE", sub: "Hyperliquid", address: WHYPE };
-const STOCK_PAIRS: Pair[] = STOCKS.map((s: HyperStock) => ({
-  symbol: s.ticker,
-  label: s.ticker,
-  sub: s.name,
-  address: s.address,
-}));
+// Robinhood Chain trades its own tokenized-stock set (lib/v4/stocks), which is
+// what the router/pricing resolve against; the HyperEVM flavors use their list.
+const STOCK_PAIRS: Pair[] = IS_ROBIN
+  ? RH_STOCKS.map((s) => ({ symbol: s.symbol, label: s.symbol, sub: s.name, address: s.address }))
+  : HYPER_STOCKS.map((s: HyperStock) => ({ symbol: s.ticker, label: s.ticker, sub: s.name, address: s.address }));
 const ALL_PAIRS: Pair[] = [WHYPE_PAIR, ...STOCK_PAIRS];
 
 /**
@@ -367,7 +367,7 @@ export function LaunchHyper({ onCancel }: { onCancel?: () => void } = {}) {
           </button>
         </div>
         <p className="kf-footnote">
-          {BRAND_FLAVOR === "ink" ? "You pay Ink gas only. No setup needed." : "You pay HyperEVM gas. Big blocks must be enabled on your wallet."}
+          {IS_INK ? `You pay ${NET} gas only. No setup needed.` : "You pay HyperEVM gas. Big blocks must be enabled on your wallet."}
         </p>
       </form>
     </div>
