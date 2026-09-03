@@ -66,7 +66,7 @@ async function main() {
     chainId: Number(net.chainId), admin, feeRecipient: admin, hypeUsd8: price.toString(),
     hyperswapV3: HYPERSWAP,
     contracts: { tokenDeployer: await td.getAddress(), factory: await factory.getAddress(), auctionHouse: await house.getAddress() },
-    auction: { supplyBps: 5000, durationBlocks: 14400, floorMcapUsd8: "300000000000", minRaiseWei: "220000000000000000000" },
+    auction: { supplyBps: 5000, durationBlocks: 14400, floorMcapUsd8: "300000000000", minRaiseWei: "220000000000000000000", minBidWei: "50000000000000000" },
     fees: { poolFeeTier: 10000, holderBps: 0, creatorBps: 7000, platformBps: 3000 },
     deployBlock: await ethers.provider.getBlockNumber(), deployedAt: new Date().toISOString(),
   };

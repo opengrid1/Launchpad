@@ -10,7 +10,7 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {OnairTokenDeployer} from "./OnairTokenDeployer.sol";
 import {OnairToken} from "./OnairToken.sol";
 import {TickMath} from "../libraries/TickMath.sol";
-import {IUniswapV3Factory, INonfungiblePositionManager, ISwapRouter, IWETH9} from "../interfaces/IUniswapV3.sol";
+import {IUniswapV3Factory, IUniswapV3Pool, INonfungiblePositionManager, ISwapRouter, IWETH9} from "../interfaces/IUniswapV3.sol";
 import {OnairAuctionHouse} from "./OnairAuctionHouse.sol";
 
 /// @title OnairFactory
@@ -56,6 +56,7 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     error AlreadyFinalized();
     error NotFinalized();
     error HouseAlreadySet();
+    error PoolTampered();
 
     // ------------------------------------------------------------------
     // Events
@@ -75,7 +76,8 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     event FactoryResumed(address indexed by);
     event EmergencyRecovered(address indexed asset, uint256 amount, address indexed to);
     event QuoteUsdUpdated(uint64 usdPrice8);
-    event AuctionConfigUpdated(uint64 durationBlocks, uint64 claimDelayBlocks, uint256 floorMcapUsd8, uint256 minRaiseWei);
+    event AuctionConfigUpdated(uint64 durationBlocks, uint256 minBidWei, uint256 floorMcapUsd8, uint256 minRaiseWei);
+    event PoolPriceRestored(address indexed pool, uint160 fromSqrtPriceX96, uint160 toSqrtPriceX96, int256 amount0, int256 amount1);
 
     // ------------------------------------------------------------------
     // Types
@@ -86,9 +88,12 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         string name;
         string symbol;
         string metadataURI;
-        /// @dev Instant only: optional starting market cap, USD 8-dec. 0 = default.
+        /// @dev Instant: optional starting market cap, USD 8-dec (0 = default).
+        ///      Auction: the max market cap of the creator's opening bid
+        ///      (0 = 100x the floor, i.e. practically never outbid).
         uint256 marketCapUsd8;
-        /// @dev Instant only: optional first buy in HYPE, sent as msg.value.
+        /// @dev Optional first buy in HYPE, sent as msg.value. Instant: swapped
+        ///      on the fresh pool. Auction: placed as the creator's opening bid.
         uint256 devBuyQuote;
     }
 
@@ -122,8 +127,9 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     struct AuctionConfig {
         /// @dev Auction length in blocks (HyperEVM blocks ~1s).
         uint64 durationBlocks;
-        /// @dev Blocks after the end before bidders may claim (0 = immediately).
-        uint64 claimDelayBlocks;
+        /// @dev Smallest bid budget accepted (wei). Keeps dust bids from
+        ///      bloating the tick list that repricing has to walk.
+        uint256 minBidWei;
         /// @dev Floor price expressed as a fully-diluted market cap, USD 8-dec.
         uint256 floorMcapUsd8;
         /// @dev HYPE (wei) the auction must raise to graduate ("bond"). Below
@@ -171,7 +177,8 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     mapping(address token => Listing) public listings;
     mapping(address token => AuctionInfo) public auctions;
     address[] public allTokens;
-    uint256 private _salt;
+    /// @dev Pool allowed to call the swap callback during a price restore.
+    address private _swapPool;
 
     // ------------------------------------------------------------------
     // Construction
@@ -205,8 +212,8 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         swapRouter = swapRouter_;
         wrappedNative = wrappedNative_;
         quoteAssets[wrappedNative_] = QuoteAsset({approved: true, usdPrice8: hypeUsd8_, decimals: 18});
-        // 4 hours at ~1s blocks, claim right after the end, $3k floor, 220 HYPE raised to graduate.
-        auctionConfig = AuctionConfig({durationBlocks: 14_400, claimDelayBlocks: 0, floorMcapUsd8: 3_000e8, minRaiseWei: 220 ether});
+        // 4 hours at ~1s blocks, 0.05 HYPE smallest bid, $3k floor, 220 HYPE raised to graduate.
+        auctionConfig = AuctionConfig({durationBlocks: 14_400, minBidWei: 0.05 ether, floorMcapUsd8: 3_000e8, minRaiseWei: 220 ether});
     }
 
     // ------------------------------------------------------------------
@@ -232,12 +239,14 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         emit TokenCreated(token, msg.sender, p.name, p.symbol, p.metadataURI, uint8(Mode.Instant));
 
         bool tokenIsToken0 = token < wrappedNative;
-        uint160 sqrtPriceX96 = _sqrtPriceForMcap(tokenIsToken0, tickSpacing, mcapUsd8, true);
+        uint160 sqrtPriceX96 = _sqrtPriceFromQ96(tokenIsToken0, tickSpacing, _priceQ96ForMcap(mcapUsd8));
         pool = _createPool(token, tokenIsToken0, sqrtPriceX96, mcapUsd8);
 
+        // Every coin we hold (the whole supply, less anything a price restore
+        // sold above the launch price) goes single-sided above the price.
         (int24 lower, int24 upper) = _aboveRange(tokenIsToken0, tickSpacing, sqrtPriceX96);
         uint256 tokenAmt;
-        (positionId, tokenAmt,) = _mint(token, tokenIsToken0, lower, upper, TOTAL_SUPPLY, 0);
+        (positionId, tokenAmt,) = _mint(token, tokenIsToken0, lower, upper, IERC20(token).balanceOf(address(this)), 0);
         emit LiquidityAdded(token, positionId, 0, tokenAmt, 0);
 
         listings[token] = Listing({creator: msg.sender, quote: wrappedNative, pool: pool, positionId: positionId, createdAt: uint64(block.timestamp), tokenIsToken0: tokenIsToken0});
@@ -261,11 +270,13 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     // ------------------------------------------------------------------
 
     /// @notice Deploy a coin and put AUCTION_BPS of its supply into the auction
-    ///         house, paid in native HYPE. Bidding goes to the house.
-    function createAuction(CreateParams calldata p) external nonReentrant returns (address token) {
+    ///         house, paid in native HYPE. Bidding goes to the house. An optional
+    ///         `devBuyQuote` (msg.value) becomes the creator's opening bid.
+    function createAuction(CreateParams calldata p) external payable nonReentrant returns (address token) {
         if (launchesPaused) revert LaunchesArePaused();
         if (address(house) == address(0)) revert ZeroAddress();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
+        if (msg.value != p.devBuyQuote) revert InvalidParams();
         AuctionConfig memory c = auctionConfig;
 
         token = tokenDeployer.deploy(msg.sender, p.name, p.symbol, p.metadataURI, wrappedNative);
@@ -280,12 +291,21 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         // The house never earns holder rewards; hand it the auctioned supply.
         OnairToken(token).setExcluded(address(house), true);
         IERC20(token).safeTransfer(address(house), AUCTION_SUPPLY);
-        house.open(token, AUCTION_SUPPLY, OnairAuctionHouse.Params({durationBlocks: c.durationBlocks, floorPriceQ96: floorPriceQ96, tickSpacingQ96: tickSpacingQ96, minRaiseWei: c.minRaiseWei}));
+        house.open(token, AUCTION_SUPPLY, OnairAuctionHouse.Params({durationBlocks: c.durationBlocks, floorPriceQ96: floorPriceQ96, tickSpacingQ96: tickSpacingQ96, minRaiseWei: c.minRaiseWei, minBidWei: c.minBidWei}));
 
         listings[token] = Listing({creator: msg.sender, quote: wrappedNative, pool: address(0), positionId: 0, createdAt: uint64(block.timestamp), tokenIsToken0: token < wrappedNative});
         auctions[token] = AuctionInfo({mode: Mode.Auction, finalized: false, graduated: false, overflowPositionId: 0});
         allTokens.push(token);
         emit AuctionStarted(token, uint64(block.number), uint64(block.number) + c.durationBlocks, floorPriceQ96, c.minRaiseWei);
+
+        if (p.devBuyQuote > 0) {
+            // Creator's opening bid: max price from `marketCapUsd8`, rounded up
+            // to the grid; 0 means 100x the floor.
+            uint256 maxPriceQ96 = p.marketCapUsd8 == 0 ? floorPriceQ96 * 100 : _priceQ96ForMcap(p.marketCapUsd8);
+            maxPriceQ96 = ((maxPriceQ96 + tickSpacingQ96 - 1) / tickSpacingQ96) * tickSpacingQ96;
+            if (maxPriceQ96 < floorPriceQ96) maxPriceQ96 = floorPriceQ96;
+            house.bidFor{value: p.devBuyQuote}(token, msg.sender, maxPriceQ96, 0);
+        }
     }
 
     /// @notice After the auction's end block: seed the locked pool at the
@@ -318,16 +338,21 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         }
         a.graduated = true;
 
-        // Wrap whatever HYPE the house sent (raised minus any escrow already
-        // collected) and seed with every coin we hold for this launch.
-        uint256 hype = address(this).balance;
-        if (hype > 0) IWETH9(wrappedNative).deposit{value: hype}();
-        uint256 coins = IERC20(token).balanceOf(address(this)); // reserve + unsold
+        // Wrap exactly the HYPE the house just sent (raised minus any escrow the
+        // owner already collected; 0 after a sweep). Stray native balance is
+        // left alone for {recoverNative}.
+        if (raised > 0) IWETH9(wrappedNative).deposit{value: raised}();
 
         Listing storage l = listings[token];
         int24 tickSpacing = uniswapFactory.feeAmountTickSpacing(POOL_FEE_TIER);
         uint160 sqrtPriceX96 = _sqrtPriceFromQ96(l.tokenIsToken0, tickSpacing, clearingQ96);
         pool = _createPool(token, l.tokenIsToken0, sqrtPriceX96, _quoteWeiToMcap(Math.mulDiv(clearingQ96, TOTAL_SUPPLY, Q96)));
+
+        // Seed with every coin we hold for this launch (reserve + unsold) and
+        // all the WHYPE we hold (the raise, plus anything a price restore sold
+        // coins for above the clearing price).
+        uint256 coins = IERC20(token).balanceOf(address(this));
+        uint256 hype = IERC20(wrappedNative).balanceOf(address(this));
 
         // 1) two-sided full-range position: all the HYPE against as many coins as
         //    the price ratio takes.
@@ -341,16 +366,25 @@ contract OnairFactory is Ownable, ReentrancyGuard {
             emit LiquidityAdded(token, posId, 0, usedCoins, usedQuote);
         }
 
-        // 2) whatever coins the ratio left behind go single-sided above price, so
-        //    the pool holds every coin the auction did not sell. Dust below one
-        //    millionth of supply stays here: V3 rejects zero-liquidity mints.
-        uint256 left = IERC20(token).balanceOf(address(this));
-        if (left > TOTAL_SUPPLY / 1e6) {
+        // 2) the two-sided seed takes the full amount of one side and leaves the
+        //    other's remainder. Coins left over go single-sided above the price,
+        //    WHYPE left over single-sided below it, so the pool ends up holding
+        //    everything the launch raised and did not sell. Dust stays here:
+        //    V3 rejects zero-liquidity mints.
+        uint256 leftCoins = IERC20(token).balanceOf(address(this));
+        uint256 leftHype = IERC20(wrappedNative).balanceOf(address(this));
+        if (leftCoins > TOTAL_SUPPLY / 1e6) {
             (int24 lower, int24 upper) = _aboveRange(l.tokenIsToken0, tickSpacing, sqrtPriceX96);
             // V3 may round the pulled amount up by a wei; keep a hair back.
-            (uint256 posId2, uint256 c2,) = _mint(token, l.tokenIsToken0, lower, upper, left - 1e3, 0);
+            (uint256 posId2, uint256 c2,) = _mint(token, l.tokenIsToken0, lower, upper, leftCoins - 1e3, 0);
             if (posId == 0) posId = posId2; else a.overflowPositionId = posId2;
             emit LiquidityAdded(token, posId2, 0, c2, 0);
+        } else if (leftHype > 1e12) {
+            // the HYPE side sits on the other side of the price
+            (int24 lower, int24 upper) = _aboveRange(!l.tokenIsToken0, tickSpacing, sqrtPriceX96);
+            (uint256 posId2,, uint256 q2) = _mint(token, l.tokenIsToken0, lower, upper, 0, leftHype - 1e3);
+            a.overflowPositionId = posId2;
+            emit LiquidityAdded(token, posId2, 0, 0, q2);
         }
         l.pool = pool;
         l.positionId = posId;
@@ -488,10 +522,13 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         emit QuoteUsdUpdated(usdPrice8);
     }
 
-    function setAuctionConfig(uint64 durationBlocks, uint64 claimDelayBlocks, uint256 floorMcapUsd8, uint256 minRaiseWei) external onlyOwner {
-        if (durationBlocks < 100 || durationBlocks > 1_000_000 || floorMcapUsd8 == 0 || minRaiseWei == 0 || minRaiseWei > type(uint128).max) revert InvalidParams();
-        auctionConfig = AuctionConfig({durationBlocks: durationBlocks, claimDelayBlocks: claimDelayBlocks, floorMcapUsd8: floorMcapUsd8, minRaiseWei: minRaiseWei});
-        emit AuctionConfigUpdated(durationBlocks, claimDelayBlocks, floorMcapUsd8, minRaiseWei);
+    function setAuctionConfig(uint64 durationBlocks, uint256 minBidWei, uint256 floorMcapUsd8, uint256 minRaiseWei) external onlyOwner {
+        if (
+            durationBlocks < 100 || durationBlocks > 1_000_000 || floorMcapUsd8 < MIN_MARKET_CAP_USD8 || floorMcapUsd8 > MAX_MARKET_CAP_USD8
+                || minRaiseWei == 0 || minRaiseWei > type(uint128).max || minBidWei > type(uint128).max
+        ) revert InvalidParams();
+        auctionConfig = AuctionConfig({durationBlocks: durationBlocks, minBidWei: minBidWei, floorMcapUsd8: floorMcapUsd8, minRaiseWei: minRaiseWei});
+        emit AuctionConfigUpdated(durationBlocks, minBidWei, floorMcapUsd8, minRaiseWei);
     }
 
     function setFeeRecipient(address newRecipient) external onlyOwner {
@@ -546,6 +583,15 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         return this.onERC721Received.selector;
     }
 
+    /// @dev Pays a price-restoring swap (see {_restorePoolPrice}). Only the pool
+    ///      being restored may call this, and only during that swap.
+    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata) external {
+        if (msg.sender == address(0) || msg.sender != _swapPool) revert PoolTampered();
+        if (amount0Delta > 0) IERC20(IUniswapV3Pool(msg.sender).token0()).safeTransfer(msg.sender, uint256(amount0Delta));
+        if (amount1Delta > 0) IERC20(IUniswapV3Pool(msg.sender).token1()).safeTransfer(msg.sender, uint256(amount1Delta));
+    }
+
+    /// @dev Native HYPE arrives here only from the auction house at finalize.
     receive() external payable {}
 
     // ------------------------------------------------------------------
@@ -566,16 +612,6 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         uint256 p = Math.mulDiv(_mcapToQuoteWei(mcapUsd8), Q96, TOTAL_SUPPLY);
         if (p == 0) revert InvalidParams();
         return p;
-    }
-
-    /// @dev Pool sqrt price from a target market cap, snapped down to a tick.
-    function _sqrtPriceForMcap(bool tokenIsToken0, int24 tickSpacing, uint256 mcapUsd8, bool aboveForSeed)
-        internal
-        view
-        returns (uint160)
-    {
-        uint256 priceQ96 = _priceQ96ForMcap(mcapUsd8);
-        return _sqrtPriceFromQ96(tokenIsToken0, tickSpacing, priceQ96) + (aboveForSeed ? 0 : 0);
     }
 
     /// @dev sqrtPriceX96 for a HYPE-per-token Q96 price, respecting token order,
@@ -604,11 +640,35 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         }
     }
 
+    /// @dev Create the pool at `sqrtPriceX96`. Anyone can create a V3 pool for a
+    ///      known token address ahead of us (an auction coin's address is public
+    ///      for hours) and initialise it at any price, so the pool that comes
+    ///      back is only trusted once its price is the one we asked for.
     function _createPool(address token, bool tokenIsToken0, uint160 sqrtPriceX96, uint256 mcapUsd8) internal returns (address pool) {
         (address t0, address t1) = tokenIsToken0 ? (token, wrappedNative) : (wrappedNative, token);
         pool = positionManager.createAndInitializePoolIfNecessary(t0, t1, POOL_FEE_TIER, sqrtPriceX96);
+        (uint160 current,,,,,,) = IUniswapV3Pool(pool).slot0();
+        if (current != sqrtPriceX96) _restorePoolPrice(pool, t0, t1, current, sqrtPriceX96);
         OnairToken(token).initPool(pool);
         emit PoolCreated(token, pool, POOL_FEE_TIER, sqrtPriceX96, mcapUsd8);
+    }
+
+    /// @dev Move a pre-existing pool from `current` to `target`. With no
+    ///      liquidity on the way a swap moves the price for free. If someone
+    ///      parked liquidity in between, the swap trades what we hold into it
+    ///      (coins sold above our price, or WHYPE spent below it) and stops at
+    ///      `target`; the proceeds stay here and join the seed. If the price
+    ///      still is not ours afterwards the launch reverts rather than seed a
+    ///      mispriced pool.
+    function _restorePoolPrice(address pool, address t0, address t1, uint160 current, uint160 target) internal {
+        bool zeroForOne = current > target;
+        uint256 have = IERC20(zeroForOne ? t0 : t1).balanceOf(address(this));
+        _swapPool = pool;
+        (int256 a0, int256 a1) = IUniswapV3Pool(pool).swap(address(this), zeroForOne, int256(have == 0 ? 1 : have), target, "");
+        _swapPool = address(0);
+        (uint160 after_,,,,,,) = IUniswapV3Pool(pool).slot0();
+        if (after_ != target) revert PoolTampered();
+        emit PoolPriceRestored(pool, current, target, a0, a1);
     }
 
     function _mint(address token, bool tokenIsToken0, int24 lower, int24 upper, uint256 tokenDesired, uint256 quoteDesired)

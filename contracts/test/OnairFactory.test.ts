@@ -275,4 +275,91 @@ describe("OnairFactory + OnairAuctionHouse", () => {
     await f.factory.connect(f.owner).collectFees(token);
     expect((await f.positionManager.positions(l.positionId)).liquidity).to.equal(0n);
   });
+
+  it("auction: devBuyQuote becomes the creator's opening bid; dust bids are rejected", async () => {
+    const f = await deployFixture();
+    await f.factory.connect(f.owner).setAuctionConfig(300, ethers.parseEther("0.05"), 3_000n * 10n ** 8n, ethers.parseEther("220"));
+    await expect(f.factory.connect(f.creator).createAuction({ ...PARAMS, devBuyQuote: ethers.parseEther("1") })).to.be.revertedWithCustomError(f.factory, "InvalidParams");
+    const rc = await (await f.factory.connect(f.creator).createAuction({ ...PARAMS, devBuyQuote: ethers.parseEther("1") }, { value: ethers.parseEther("1") })).wait();
+    const ev = rc!.logs.map((l) => { try { return f.factory.interface.parseLog(l as any); } catch { return null; } }).find((e) => e?.name === "AuctionStarted")!;
+    const token = ev.args.token as string;
+    const floor = ev.args.floorPriceQ96 as bigint;
+    expect(await f.house.bidCount(token)).to.equal(1n);
+    const b = await f.house.bids(token, 0);
+    expect(b.owner).to.equal(f.creator.address);
+    expect(b.budget).to.equal(ethers.parseEther("1"));
+    expect(b.maxPriceQ96).to.equal(floor * 100n);
+    expect((await f.house.auction(token)).escrow).to.equal(ethers.parseEther("1"));
+    await expect(f.house.connect(f.alice).bid(token, floor, 0, { value: ethers.parseEther("0.01") })).to.be.revertedWithCustomError(f.house, "BidTooSmall");
+    await bid(f, token, f.alice, floor + 200n * floor / 100n, ethers.parseEther("0.05"));
+    expect(await f.house.bidCount(token)).to.equal(2n);
+  });
+
+  it("tamper: a pool created ahead of finalize at a wrong price is restored, even through parked liquidity", async () => {
+    const f = await deployFixture();
+    const wnative = await f.wnative.getAddress();
+    for (const parkLiquidity of [false, true]) {
+      const a = await startAuction(f);
+      await bid(f, a.token, f.alice, a.floor + 1900n * a.tick, ethers.parseEther("240"));
+      // attacker: pool at "1 coin = 1 HYPE" (tick 0), ~10 million times our price
+      const coinIs0 = a.token.toLowerCase() < wnative.toLowerCase();
+      const [t0, t1] = coinIs0 ? [a.token, wnative] : [wnative, a.token];
+      await f.positionManager.connect(f.trader).createAndInitializePoolIfNecessary(t0, t1, 10000, Q96);
+      if (parkLiquidity) {
+        // WHYPE-only liquidity on the path between the fake price and ours
+        await f.wnative.connect(f.trader).deposit({ value: ethers.parseEther("1") });
+        await f.wnative.connect(f.trader).approve(await f.positionManager.getAddress(), ethers.parseEther("1"));
+        await f.positionManager.connect(f.trader).mint({
+          token0: t0, token1: t1, fee: 10000, tickLower: coinIs0 ? -2000 : 200, tickUpper: coinIs0 ? -200 : 2000,
+          amount0Desired: coinIs0 ? 0 : ethers.parseEther("1"), amount1Desired: coinIs0 ? ethers.parseEther("1") : 0,
+          amount0Min: 0, amount1Min: 0, recipient: f.trader.address, deadline: 4102444800,
+        });
+      }
+      await mine(300);
+      const rc = await (await f.factory.finalize(a.token)).wait();
+      const logs = rc!.logs.map((l) => { try { return f.factory.interface.parseLog(l as any); } catch { return null; } });
+      const created = logs.find((e) => e?.name === "PoolCreated")!;
+      const restored = logs.find((e) => e?.name === "PoolPriceRestored")!;
+      expect(restored, "price restore event").to.not.equal(undefined);
+      const pool = new ethers.Contract(created.args.pool, POOL_ABI, ethers.provider);
+      const [sqrt] = await pool.slot0();
+      expect(sqrt).to.equal(created.args.sqrtPriceX96);
+      expect(await pool.liquidity()).to.be.gt(0n);
+      // every wei of WHYPE the launch holds (the raise, plus what the attacker's
+      // parked liquidity paid for coins above our price) is in the pool
+      expect(await f.wnative.balanceOf(await f.factory.getAddress())).to.be.lte(10n ** 12n);
+      if (parkLiquidity) expect(await (await ethers.getContractAt("OnairToken", a.token)).balanceOf(f.trader.address)).to.equal(0n);
+      // the coin still trades at the clearing price, not the attacker's
+      const coin = await ethers.getContractAt("OnairToken", a.token);
+      await buy(f, a.token, f.bob, ethers.parseEther("1"));
+      expect(await coin.balanceOf(f.bob.address)).to.be.gt(ethers.parseEther("1000000"));
+    }
+  });
+
+  it("tamper: instant launch survives a pool pre-created at the predicted coin address", async () => {
+    const f = await deployFixture();
+    const wnative = await f.wnative.getAddress();
+    const td = await f.tokenDeployer.getAddress();
+    const predicted = ethers.getCreateAddress({ from: td, nonce: await ethers.provider.getTransactionCount(td) });
+    const coinIs0 = predicted.toLowerCase() < wnative.toLowerCase();
+    const [t0, t1] = coinIs0 ? [predicted, wnative] : [wnative, predicted];
+    // cheap direction: 1 coin = 1e-12 HYPE (way under the $3k launch price)
+    const cheap = coinIs0 ? Q96 / 10n ** 6n : 10n ** 6n * Q96;
+    await f.positionManager.connect(f.trader).createAndInitializePoolIfNecessary(t0, t1, 10000, cheap);
+    const rc = await (await f.factory.connect(f.creator).createToken(PARAMS)).wait();
+    const logs = rc!.logs.map((l) => { try { return f.factory.interface.parseLog(l as any); } catch { return null; } });
+    const created = logs.find((e) => e?.name === "PoolCreated")!;
+    expect(created.args.token).to.equal(predicted);
+    expect(logs.find((e) => e?.name === "PoolPriceRestored")).to.not.equal(undefined);
+    const pool = new ethers.Contract(created.args.pool, POOL_ABI, ethers.provider);
+    const [sqrt] = await pool.slot0();
+    expect(sqrt).to.equal(created.args.sqrtPriceX96);
+    const l = await f.factory.listings(predicted);
+    expect((await f.positionManager.positions(l.positionId)).liquidity).to.be.gt(0n);
+    // 1 HYPE buys roughly 1/37.5 of the supply at a $3k FDV, not the whole supply
+    await buy(f, predicted, f.bob, ethers.parseEther("1"));
+    const bal = await (await ethers.getContractAt("OnairToken", predicted)).balanceOf(f.bob.address);
+    expect(bal).to.be.gt(SUPPLY / 60n);
+    expect(bal).to.be.lt(SUPPLY / 30n);
+  });
 });

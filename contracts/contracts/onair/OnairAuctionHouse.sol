@@ -43,6 +43,7 @@ contract OnairAuctionHouse is ReentrancyGuard {
         uint256 floorPriceQ96; // HYPE wei per coin wei, Q96; multiple of tickSpacingQ96
         uint256 tickSpacingQ96;
         uint256 minRaiseWei;
+        uint256 minBidWei; // smallest budget accepted (keeps the tick list from being spammed)
     }
 
     struct Checkpoint {
@@ -63,6 +64,7 @@ contract OnairAuctionHouse is ReentrancyGuard {
         uint256 floorPriceQ96;
         uint256 tickSpacingQ96;
         uint256 minRaiseWei;
+        uint256 minBidWei;
         uint256 clearingQ96;
         uint256 activeRate; // Σ rate of bids with maxPrice >= clearing
         uint256 head; // lowest active tick price (0 = none)
@@ -122,6 +124,7 @@ contract OnairAuctionHouse is ReentrancyGuard {
     error BadHint();
     error AlreadyExited();
     error BadBid();
+    error BidTooSmall();
     error TransferFailed();
 
     modifier onlyFactory() {
@@ -153,6 +156,7 @@ contract OnairAuctionHouse is ReentrancyGuard {
         a.floorPriceQ96 = p.floorPriceQ96;
         a.tickSpacingQ96 = p.tickSpacingQ96;
         a.minRaiseWei = p.minRaiseWei;
+        a.minBidWei = p.minBidWei;
         a.clearingQ96 = p.floorPriceQ96;
         _cps[token].push(Checkpoint({blk: uint64(block.number), priceQ96: p.floorPriceQ96, cumInv192: 0, raised: 0, sold: 0}));
         emit AuctionOpened(token, a.startBlock, a.endBlock, supply, p.floorPriceQ96, p.minRaiseWei);
@@ -250,10 +254,22 @@ contract OnairAuctionHouse is ReentrancyGuard {
     ///         will pay per coin (a grid price). `prevTickHint` is the highest
     ///         existing tick price at or below your max price (0 to scan).
     function bid(address token, uint256 maxPriceQ96, uint256 prevTickHint) external payable nonReentrant returns (uint256 bidId) {
+        return _bid(token, msg.sender, maxPriceQ96, prevTickHint);
+    }
+
+    /// @notice Factory only: place a bid owned by `owner` (the creator's opening
+    ///         bid, placed in the same transaction that opens the auction).
+    function bidFor(address token, address owner, uint256 maxPriceQ96, uint256 prevTickHint) external payable onlyFactory nonReentrant returns (uint256 bidId) {
+        if (owner == address(0)) revert BadBid();
+        return _bid(token, owner, maxPriceQ96, prevTickHint);
+    }
+
+    function _bid(address token, address owner, uint256 maxPriceQ96, uint256 prevTickHint) internal returns (uint256 bidId) {
         Auction storage a = _auctions[token];
         if (a.token == address(0)) revert NotOpen();
         if (block.number >= a.endBlock || a.cancelled) revert AuctionOver();
         if (msg.value == 0) revert ZeroAmount();
+        if (msg.value < a.minBidWei) revert BidTooSmall();
         if (maxPriceQ96 < a.floorPriceQ96 || maxPriceQ96 % a.tickSpacingQ96 != 0) revert NotOnGrid();
         _sync(a, token);
         if (maxPriceQ96 < a.clearingQ96) revert BelowClearing();
@@ -269,8 +285,8 @@ contract OnairAuctionHouse is ReentrancyGuard {
 
         a.escrow += msg.value;
         bidId = _bids[token].length;
-        _bids[token].push(Bid({owner: msg.sender, budget: msg.value, rate: rate, maxPriceQ96: maxPriceQ96, startBlock: uint64(block.number), startCp: uint32(_cps[token].length - 1), exited: false}));
-        emit BidPlaced(token, bidId, msg.sender, maxPriceQ96, msg.value, rate);
+        _bids[token].push(Bid({owner: owner, budget: msg.value, rate: rate, maxPriceQ96: maxPriceQ96, startBlock: uint64(block.number), startCp: uint32(_cps[token].length - 1), exited: false}));
+        emit BidPlaced(token, bidId, owner, maxPriceQ96, msg.value, rate);
     }
 
     /// @notice After finalize: pay out a bid's coins and refund its unspent
