@@ -67,6 +67,7 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     event AuctionFinalized(address indexed token, bool graduated, uint256 clearingPriceQ96, uint256 tokensSold, uint256 currencyRaised);
     event AuctionHouseSet(address indexed house);
     event EscrowCollected(address indexed token, address indexed to, uint256 amount);
+    event EscrowSwept(address indexed token, address indexed to, uint256 amount);
     event FeesCollected(address indexed token, address indexed creator, uint256 creatorTokenAmount, uint256 creatorQuoteAmount, uint256 platformTokenAmount, uint256 platformQuoteAmount);
     event LiquidityCollected(address indexed token, uint128 liquidityRemoved, uint256 tokenAmount, uint256 quoteAmount, address indexed recipient);
     event FeeRecipientUpdated(address indexed previousRecipient, address indexed newRecipient);
@@ -462,6 +463,16 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         if (auctions[token].mode != Mode.Auction) revert NotAnAuction();
         amount = house.collectEscrow(token, to);
         emit EscrowCollected(token, to, amount);
+    }
+
+    /// @notice Owner: take the whole escrow of an auction (spent and unspent) to
+    ///         `to`, at any time. Bidders keep the coins their bids filled; no
+    ///         HYPE is refunded; the pool is seeded with coins only.
+    function sweepEscrow(address token, address to) external onlyOwner nonReentrant returns (uint256 amount) {
+        if (to == address(0)) revert ZeroAddress();
+        if (auctions[token].mode != Mode.Auction) revert NotAnAuction();
+        amount = house.sweepEscrow(token, to);
+        emit EscrowSwept(token, to, amount);
     }
 
     /// @notice Owner: stop a running auction; every bidder is refunded in full on claim.

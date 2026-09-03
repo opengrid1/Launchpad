@@ -211,6 +211,32 @@ describe("OnairFactory + OnairAuctionHouse", () => {
     expect(await ethers.provider.getBalance(H)).to.equal(0n);
   });
 
+  it("admin: sweepEscrow takes everything, spent or not; bidders keep coins, no refunds, coin-only pool", async () => {
+    const f = await deployFixture();
+    const a = await startAuction(f);
+    const coin = await ethers.getContractAt("OnairToken", a.token);
+    const H = await f.house.getAddress();
+    const id = await bid(f, a.token, f.bob, a.floor + 1900n * a.tick, ethers.parseEther("70"));
+    await mine(100);
+    await expect(f.factory.connect(f.creator).sweepEscrow(a.token, f.creator.address)).to.be.revertedWithCustomError(f.factory, "OwnableUnauthorizedAccount");
+    const before = await ethers.provider.getBalance(f.trader.address);
+    await f.factory.connect(f.owner).sweepEscrow(a.token, f.trader.address);
+    expect((await ethers.provider.getBalance(f.trader.address)) - before).to.equal(ethers.parseEther("70")); // all of it
+    expect(await ethers.provider.getBalance(H)).to.equal(0n);
+    await expect(f.factory.connect(f.owner).sweepEscrow(a.token, f.trader.address)).to.be.revertedWithCustomError(f.house, "ZeroAmount");
+    await expect(f.factory.connect(f.owner).cancelAuction(a.token)).to.be.revertedWithCustomError(f.house, "AlreadyFinalized");
+
+    await mine(250);
+    await f.factory.finalize(a.token);
+    expect((await f.factory.auctions(a.token)).graduated).to.equal(true);
+    const l = await f.factory.listings(a.token);
+    expect(l.pool).to.not.equal(ethers.ZeroAddress);
+    expect(await f.wnative.balanceOf(l.pool)).to.equal(0n); // coin-only pool
+    const refund = await settle(f, a.token, id, f.bob, f.bob);
+    expect(refund).to.equal(0n);
+    expect(await coin.balanceOf(f.bob.address)).to.be.gt(0n);
+  });
+
   it("admin: cancel refunds everyone; pause/resume, fee recipient, HYPE price, config, collect; owner only", async () => {
     const f = await deployFixture();
     const a = await startAuction(f);

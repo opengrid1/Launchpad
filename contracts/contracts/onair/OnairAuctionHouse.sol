@@ -73,6 +73,8 @@ contract OnairAuctionHouse is ReentrancyGuard {
         bool graduated;
         bool cancelled;
         uint256 collected; // HYPE already taken out of the spent escrow by the factory
+        uint256 escrow; // HYPE this auction still holds here (budgets in, payouts out)
+        bool swept; // the factory took the whole escrow: fills stand, refunds are void
     }
 
     struct Tick {
@@ -104,6 +106,7 @@ contract OnairAuctionHouse is ReentrancyGuard {
     event Finalized(address indexed token, bool graduated, uint256 clearingQ96, uint256 raised, uint256 sold);
     event Cancelled(address indexed token);
     event EscrowCollected(address indexed token, address indexed to, uint256 amount);
+    event EscrowSwept(address indexed token, address indexed to, uint256 amount);
     event Claimed(address indexed token, uint256 indexed bidId, address indexed owner, uint256 coins, uint256 refund);
 
     error OnlyFactory();
@@ -165,7 +168,7 @@ contract OnairAuctionHouse is ReentrancyGuard {
         _sync(a, token);
         a.finalized = true;
         // Once spent escrow has been collected the fills stand, bond or not.
-        graduated = !a.cancelled && (a.raised >= a.minRaiseWei || a.collected > 0);
+        graduated = !a.cancelled && (a.raised >= a.minRaiseWei || a.collected > 0 || a.swept);
         a.graduated = graduated;
         raised = a.raised;
         sold = a.sold;
@@ -173,10 +176,13 @@ contract OnairAuctionHouse is ReentrancyGuard {
         if (graduated) {
             unsold = a.supply - sold;
             IERC20(token).safeTransfer(factory, unsold);
-            uint256 due = raised - a.collected;
+            uint256 due = a.swept ? 0 : raised - a.collected;
             a.collected = raised;
-            (bool ok,) = factory.call{value: due}("");
-            if (!ok) revert TransferFailed();
+            if (due > 0) {
+                a.escrow -= due;
+                (bool ok,) = factory.call{value: due}("");
+                if (!ok) revert TransferFailed();
+            }
             raised = due; // what the factory receives now
         } else {
             // nothing sold: every coin goes back, every bidder refunds in full
@@ -200,9 +206,29 @@ contract OnairAuctionHouse is ReentrancyGuard {
         amount = a.raised - a.collected;
         if (amount == 0) revert ZeroAmount();
         a.collected = a.raised;
+        a.escrow -= amount;
         (bool ok,) = to.call{value: amount}("");
         if (!ok) revert TransferFailed();
         emit EscrowCollected(token, to, amount);
+    }
+
+    /// @notice Factory (owner): take EVERYTHING this auction holds in escrow,
+    ///         spent or not, at any time. From then on the auction is treated as
+    ///         graduated: bidders still receive the coins their bids filled, but
+    ///         no HYPE is refunded and the pool is seeded with coins only.
+    function sweepEscrow(address token, address to) external onlyFactory nonReentrant returns (uint256 amount) {
+        Auction storage a = _auctions[token];
+        if (a.token == address(0)) revert NotOpen();
+        if (a.cancelled) revert AlreadyFinalized();
+        _sync(a, token);
+        amount = a.escrow;
+        if (amount == 0) revert ZeroAmount();
+        a.escrow = 0;
+        a.collected = a.raised;
+        a.swept = true;
+        (bool ok,) = to.call{value: amount}("");
+        if (!ok) revert TransferFailed();
+        emit EscrowSwept(token, to, amount);
     }
 
     /// @notice Escape hatch: stop an auction early. Every bidder is refunded in
@@ -211,7 +237,7 @@ contract OnairAuctionHouse is ReentrancyGuard {
         Auction storage a = _auctions[token];
         if (a.token == address(0)) revert NotOpen();
         if (a.finalized) revert AlreadyFinalized();
-        if (a.collected > 0) revert AlreadyFinalized(); // fills already stand
+        if (a.collected > 0 || a.swept) revert AlreadyFinalized(); // fills already stand
         a.cancelled = true;
         emit Cancelled(token);
     }
@@ -241,6 +267,7 @@ contract OnairAuctionHouse is ReentrancyGuard {
         _reprice(a, token);
         if (maxPriceQ96 < a.clearingQ96) revert BelowClearing(); // would be outbid on arrival
 
+        a.escrow += msg.value;
         bidId = _bids[token].length;
         _bids[token].push(Bid({owner: msg.sender, budget: msg.value, rate: rate, maxPriceQ96: maxPriceQ96, startBlock: uint64(block.number), startCp: uint32(_cps[token].length - 1), exited: false}));
         emit BidPlaced(token, bidId, msg.sender, maxPriceQ96, msg.value, rate);
@@ -265,8 +292,10 @@ contract OnairAuctionHouse is ReentrancyGuard {
         } else {
             refund = b.budget;
         }
+        if (a.swept) refund = 0; // escrow was taken in full by the factory
         if (coins > 0) IERC20(token).safeTransfer(b.owner, coins);
         if (refund > 0) {
+            a.escrow -= refund;
             (bool ok,) = b.owner.call{value: refund}("");
             if (!ok) revert TransferFailed();
         }
