@@ -1,0 +1,22 @@
+{
+  "network": "robinhood",
+  "chainId": 4663,
+  "protocol": "stock-rh-v4",
+  "startBlock": 53099453,
+  "deployer": "0xeAE6EB7010f649008ba10a8E78e931dFeF90BacD",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "renounced": true,
+  "note": "stockpad on Uniswap V4: coins pair a tokenized stock (or WETH); the 1% buy tax accrues automatically (no harvest) and pays holders in the pair asset. Split 50/40/10 holders/creator/platform, anti-snipe + optional dev buy. Ownership renounced; immutable admin keeps pause/collect/setFactory.",
+  "v4": {
+    "poolManager": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+    "weth": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+    "v3Router": "0xCaf681a66D020601342297493863E78C959E5cb2"
+  },
+  "contracts": {
+    "hookDeployer": "0xa2d2A27AB18264Dd55e469E6B6d1423e7843F294",
+    "hook": "0x6c64f852BA42Ed3f7ccA9bce1601444e483D4044",
+    "factory": "0x9Cd08799e2d49C30D70b76A8C294002f968f5b8A",
+    "router": "0x47b4C8bE98938d38D9138837627dCe50eA9A66c0",
+    "salt": "0x00000000000000000000000000000000000000000000000000000000000053fa"
+  }
+}

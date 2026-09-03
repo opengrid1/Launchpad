@@ -87,7 +87,11 @@ contract StockRhHook is BaseHook, Ownable, ReentrancyGuard, IUnlockCallback {
         admin = admin_;
     }
 
-    function setFactory(address factory_) external onlyAdmin {
+    /// @notice One-time setup: the deployer (owner, pre-renounce) or the admin
+    ///         wires the factory in. Owner is included so the launch flow can set
+    ///         it in the same run before ownership is renounced.
+    function setFactory(address factory_) external {
+        require(msg.sender == owner() || msg.sender == admin, "not auth");
         require(factory_ != address(0), "factory=0");
         factory = factory_;
         emit FactorySet(factory_);
