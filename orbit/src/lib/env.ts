@@ -1,6 +1,6 @@
 import { defineChain } from "viem";
 
-/** HyperEVM launchpad: the same factory hyperstock uses, under a new product. */
+/** HyperEVM launchpad: the ONAIR factory (instant + auction launches on HyperSwap V3). */
 export const env = {
   chainId: 999,
   chainName: "HyperEVM",
@@ -14,15 +14,22 @@ export const env = {
   ],
   explorerUrl: "https://hyperevmscan.io",
   walletConnectProjectId: "e1bda672d5deb56579fe084dddfb9174",
-  startBlock: 44095167n,
+  /** OnairFactory deploy block. */
+  startBlock: 44941000n,
   dexscreenerChain: "hyperliquid",
+  /** HyperEVM small blocks land about once a second. */
+  secondsPerBlock: 1,
 };
 
+const addr = (key: string, fallback: string) => String(import.meta.env[key] ?? fallback) as `0x${string}`;
+
+/** Deployed ONAIR contracts on HyperEVM (VITE_* overrides point a build at a local stack). */
 export const ADDRESSES = {
-  factory: "0x8856a0BAa8bfeB39b93d4846c825Ca615Eaf69E3" as `0x${string}`,
-  tokenDeployer: "0x10d9332a0673c7C18b62f59D6C39AbAB4465ebF4" as `0x${string}`,
-  swapRouter: "0x6d99e7f6747af2cdbb5164b6dd50e40d4fde1e77" as `0x${string}`,
-  quote: "0x5555555555555555555555555555555555555555" as `0x${string}`, // WHYPE
+  factory: addr("VITE_FACTORY", "0x469D1F86485720c60e17538cEf44071E4f299ACe"),
+  house: addr("VITE_HOUSE", "0xad1e5800cde9D3A7aabbfD4D1aD7Ef4ce0941c3e"),
+  tokenDeployer: addr("VITE_TOKEN_DEPLOYER", "0xD175CcE73949CB1Db283f64383D148bcb0B49058"),
+  swapRouter: addr("VITE_SWAP_ROUTER", "0x6d99e7f6747af2cdbb5164b6dd50e40d4fde1e77"),
+  quote: addr("VITE_QUOTE", "0x5555555555555555555555555555555555555555"), // WHYPE
 };
 
 export const chain = defineChain({
@@ -38,5 +45,8 @@ export const BRAND = {
   name: "ONAIR",
   tagline: "Go live with a coin.",
   url: "https://orbit-hyper.vercel.app",
-  description: "Go live with a coin on HyperEVM. Launch in one transaction, liquidity locked, every trade pays holders and the creator.",
+  description: "Go live with a coin on HyperEVM. Launch instantly or run a four-hour auction. Liquidity locked, every trade pays the creator.",
 };
+
+/** Fee split on the 1% pool tier, as deployed. */
+export const FEES = { creatorPct: 70, platformPct: 30, poolPct: 1 };

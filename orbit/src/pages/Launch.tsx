@@ -5,9 +5,11 @@ import { parseAbi, parseEther } from "viem";
 import { useAccount } from "wagmi";
 
 import { Art } from "../components/Art";
-import { client, publicClient } from "../lib/client";
-import { ADDRESSES } from "../lib/env";
-import { runTx, setToast } from "../lib/hooks";
+import { onair, publicClient } from "../lib/client";
+import { ADDRESSES, FEES } from "../lib/env";
+import { hype, usd, wei } from "../lib/format";
+import { runTx, setToast, useConfig, useHypeUsd } from "../lib/hooks";
+import type { Mode } from "../lib/onair";
 import { ensureWallet, openWalletModal } from "../lib/wallet";
 
 const FACTORY = parseAbi(["function tokenCount() view returns (uint256)", "function allTokens(uint256) view returns (address)"]);
@@ -16,7 +18,10 @@ export default function Launch() {
   const { isConnected } = useAccount();
   const nav = useNavigate();
   const qc = useQueryClient();
+  const { data: cfg } = useConfig();
+  const { data: hypeUsd = 0 } = useHypeUsd();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useState<Mode>("instant");
   const [f, setF] = useState({ name: "", symbol: "", description: "", website: "", twitter: "", telegram: "", devBuy: "" });
   const [logo, setLogo] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,17 +47,26 @@ export default function Launch() {
   const symbol = (f.symbol.trim() || f.name.trim().replace(/[^a-zA-Z0-9]/g, "").slice(0, 6) || "COIN").toUpperCase();
   const url = (raw: string, p?: "x" | "tg") => { const s = raw.trim(); if (!s) return ""; if (s.startsWith("@") && p) return p === "x" ? `https://x.com/${s.slice(1)}` : `https://t.me/${s.slice(1)}`; return /^https?:\/\//i.test(s) ? s : `https://${s}`; };
 
+  const floorUsd = cfg ? Number(cfg.floorMcapUsd8) / 1e8 : 3000;
+  const bond = cfg ? wei(cfg.minRaiseWei) : 220;
+  const hours = cfg ? Math.round((cfg.durationBlocks / 3600) * 10) / 10 : 4;
+  const len = cfg && cfg.durationBlocks < 3600 ? `${Math.round(cfg.durationBlocks / 60)}-minute` : `${hours}-hour`;
+  const minBid = cfg ? wei(cfg.minBidWei) : 0.05;
+  const dev = Number(f.devBuy) > 0 ? f.devBuy.trim() : "";
+  const devTooSmall = mode === "auction" && dev !== "" && Number(dev) < minBid;
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!f.name.trim()) return;
+    if (!f.name.trim() || devTooSmall) return;
     if (!isConnected) return openWalletModal();
     setBusy(true);
     try {
       await ensureWallet();
       const metadataURI = JSON.stringify({ description: f.description.trim(), logo, website: url(f.website), twitter: url(f.twitter, "x"), telegram: url(f.telegram, "tg") });
-      const dev = Number(f.devBuy) > 0 ? parseEther(f.devBuy.trim() as `${number}`) : 0n;
+      const devWei = dev ? parseEther(dev as `${number}`) : 0n;
       let created: `0x${string}` | null = null;
-      const ok = await runTx(`Launch ${symbol}`, () => client.createToken({ name: f.name.trim(), symbol, metadataURI, quote: ADDRESSES.quote, devBuyQuote: dev }), async () => {
+      const p = { name: f.name.trim(), symbol, metadataURI, devBuyQuote: devWei };
+      const ok = await runTx(mode === "auction" ? `Open the ${symbol} auction` : `Launch ${symbol}`, () => (mode === "auction" ? onair.createAuction(p) : onair.createToken(p)), async () => {
         const n = (await publicClient.readContract({ address: ADDRESSES.factory, abi: FACTORY, functionName: "tokenCount" })) as bigint;
         created = (await publicClient.readContract({ address: ADDRESSES.factory, abi: FACTORY, functionName: "allTokens", args: [n - 1n] })) as `0x${string}`;
         await qc.invalidateQueries({ queryKey: ["tokens"] });
@@ -61,20 +75,35 @@ export default function Launch() {
     } finally { setBusy(false); }
   };
 
+  const cta = !isConnected ? "Connect wallet" : busy ? (mode === "auction" ? "Opening…" : "Going live…") : mode === "auction" ? `Open the ${symbol} auction` : `Go live with ${symbol}`;
+
   return (
     <main className="page">
       <section className="hero" style={{ gridTemplateColumns: "1fr", paddingBottom: 10 }}>
         <div>
           <div className="lbl" style={{ marginBottom: 12 }}>Studio · go live</div>
-          <h1>On air in <em>one</em><br />transaction.</h1>
-          <p className="sub">No upfront liquidity. One billion supply, seeded into a HyperSwap pool that is locked forever. You earn 40% of every trade's fee for as long as it trades.</p>
+          <h1>Two ways <em>on air</em>.</h1>
+          <p className="sub">Go instant and trade from the first block, or run a {len} auction where everyone pays the same price. Either way the pool is locked and you earn {FEES.creatorPct}% of every trade's fee.</p>
         </div>
       </section>
 
+      <div className="formats">
+        <button type="button" className={"fmt " + (mode === "instant" ? "on" : "")} onClick={() => setMode("instant")}>
+          <span className="lbl"><i className="dot" style={{ animation: "none", boxShadow: "none", width: 7, height: 7 }} />Instant</span>
+          <b>On air now.</b>
+          <span>One transaction. The whole supply goes into a locked HyperSwap pool at {usd(floorUsd, { compact: true })} and trading starts immediately.</span>
+        </button>
+        <button type="button" className={"fmt auc " + (mode === "auction" ? "on" : "")} onClick={() => setMode("auction")}>
+          <span className="lbl"><i className="dot a" style={{ animation: "none", boxShadow: "none", width: 7, height: 7 }} />Auction</span>
+          <b>{len.replace("-", " ")}s, one price.</b>
+          <span>Half the supply sells at a single rising clearing price. If it raises {bond} HYPE, the raise and the other half seed the pool. If not, everyone is refunded.</span>
+        </button>
+      </div>
+
       <div className="sign-m m-only">
         <Art src={logo} name={f.name || "Your coin"} className="av" size={48} />
-        <div><b>{f.name || "Your coin"}</b><small className="mono">{symbol} · $3.0K start · pairs HYPE</small></div>
-        <span className="onair"><span className="dot" style={{ width: 6, height: 6, boxShadow: "none" }} />PREVIEW</span>
+        <div><b>{f.name || "Your coin"}</b><small className="mono">{symbol} · {mode === "auction" ? `auction · floor ${usd(floorUsd, { compact: true })}` : `${usd(floorUsd, { compact: true })} start`} · pairs HYPE</small></div>
+        <span className={"onair " + (mode === "auction" ? "auc" : "")}><span className="dot" style={{ width: 6, height: 6, boxShadow: "none" }} />PREVIEW</span>
       </div>
       <div className="split">
         <form className="form" id="golive" onSubmit={submit}>
@@ -91,30 +120,55 @@ export default function Launch() {
             <div className="field"><label>X</label><input value={f.twitter} onChange={set("twitter")} placeholder="@handle" /></div>
           </div>
           <div className="field"><label>Telegram</label><input value={f.telegram} onChange={set("telegram")} placeholder="@group" /></div>
-          <div className="field"><label>First buy (optional)</label><input inputMode="decimal" value={f.devBuy} onChange={set("devBuy")} placeholder="0" /><div className="help">HYPE spent in the same transaction, so you hold from the first block. Everyone can see it.</div></div>
-          <button className="big sell d-only" type="submit" disabled={busy || !f.name.trim()}>{!isConnected ? "Connect wallet" : busy ? "Going live…" : `Go live with ${symbol}`}</button>
-          <p className="note">Free, you pay HyperEVM gas only. Launching deploys a pool, which needs <b style={{ color: "var(--ink)" }}>big blocks</b> turned on for your wallet once (Hyperliquid app → "Use big blocks for EVM"). Turn it back off after.</p>
+          <div className="field">
+            <label>{mode === "auction" ? "Opening bid (optional)" : "First buy (optional)"}</label>
+            <input inputMode="decimal" value={f.devBuy} onChange={set("devBuy")} placeholder="0" />
+            <div className="help">
+              {mode === "auction"
+                ? `HYPE placed as your own bid in the same transaction, spread over the whole auction at up to 100× the floor. Minimum ${hype(minBid)} HYPE. Everyone can see it.`
+                : "HYPE spent in the same transaction, so you hold from the first block. Everyone can see it."}
+              {dev && hypeUsd > 0 && <> · ≈ {usd(Number(dev) * hypeUsd)}</>}
+            </div>
+            {devTooSmall && <div className="warn" style={{ margin: 0 }}>Under the {hype(minBid)} HYPE minimum bid.</div>}
+          </div>
+          <button className="big sell d-only" type="submit" disabled={busy || !f.name.trim() || devTooSmall}>{cta}</button>
+          <p className="note">
+            {mode === "auction"
+              ? <>Free, gas only, and it fits a normal HyperEVM block. When the auction ends the pool is seeded automatically; that step needs big blocks, and our keeper handles it.</>
+              : <>Free, you pay HyperEVM gas only. Launching opens a pool, which needs <b style={{ color: "var(--ink)" }}>big blocks</b> turned on for your wallet once (Hyperliquid app → "Use big blocks for EVM"). Turn it back off after.</>}
+          </p>
         </form>
 
         <aside className="sign d-only">
-          <div className="onair"><span className="dot" style={{ width: 7, height: 7, boxShadow: "none" }} />ON AIR · PREVIEW</div>
+          <div className={"onair " + (mode === "auction" ? "auc" : "")}><span className="dot" style={{ width: 7, height: 7, boxShadow: "none" }} />{mode === "auction" ? "AUCTION · PREVIEW" : "ON AIR · PREVIEW"}</div>
           <Art src={logo} name={f.name || "Your coin"} className="art" />
           <h3>{f.name || "Your coin"}</h3>
-          <div className="small mono">{symbol} · $3.0K · just now</div>
+          <div className="small mono">{symbol} · {mode === "auction" ? `floor ${usd(floorUsd, { compact: true })}` : usd(floorUsd, { compact: true })} · just now</div>
           <div>
             <dl className="specs">
               <dt>Supply</dt><dd>1,000,000,000</dd>
-              <dt>Starting market cap</dt><dd>≈ $3,000</dd>
-              <dt>Pair</dt><dd>HYPE</dd>
-              <dt>Trade fee</dt><dd>1%</dd>
-              <dt>Your share of fees</dt><dd>40%, forever</dd>
-              <dt>Holders' share</dt><dd>50%</dd>
+              {mode === "auction" ? (
+                <>
+                  <dt>For sale</dt><dd>50% of supply</dd>
+                  <dt>Floor price</dt><dd>≈ {usd(floorUsd, { compact: true })} FDV</dd>
+                  <dt>Length</dt><dd>{len.replace("-", " ")}s</dd>
+                  <dt>Bond</dt><dd>{bond} HYPE raised</dd>
+                  <dt>After</dt><dd>Raise + 50% → pool</dd>
+                </>
+              ) : (
+                <>
+                  <dt>Starting market cap</dt><dd>≈ {usd(floorUsd, { compact: true })}</dd>
+                  <dt>Pair</dt><dd>HYPE</dd>
+                </>
+              )}
+              <dt>Trade fee</dt><dd>{FEES.poolPct}%</dd>
+              <dt>Your share of fees</dt><dd>{FEES.creatorPct}%, forever</dd>
               <dt>Liquidity</dt><dd>Locked</dd>
             </dl>
           </div>
         </aside>
       </div>
-      <div className="mobilebar"><button className="big sell" type="submit" form="golive" disabled={busy || !f.name.trim()}>{!isConnected ? "Connect wallet" : busy ? "Going live…" : `Go live with ${symbol}`}</button></div>
+      <div className="mobilebar"><button className="big sell" type="submit" form="golive" disabled={busy || !f.name.trim() || devTooSmall}>{cta}</button></div>
     </main>
   );
 }

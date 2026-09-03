@@ -1,0 +1,23 @@
+name: ONAIR keeper
+
+# Settles ended auctions on HyperEVM (seeds the pool or opens refunds).
+# Needs the repo secret ONAIR_KEEPER_KEY: a wallet with a little HYPE for gas
+# and big blocks enabled on HyperCore.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  settle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i --no-save ethers@6 tsx
+      - run: npx tsx contracts/scripts/onair-keeper.ts
+        env:
+          KEEPER_KEY: ${{ secrets.ONAIR_KEEPER_KEY }}

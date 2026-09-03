@@ -50,6 +50,6 @@ export async function ensureWallet(): Promise<WalletClient> {
   if (getChainId(wagmiConfig) !== chain.id) await switchChain(wagmiConfig, { chainId: chain.id });
   const wc = await getWalletClient(wagmiConfig, { chainId: chain.id });
   if (!wc) throw new Error("No wallet connected");
-  client.connectWallet(wc as unknown as WalletClient);
+  client.connectWallet(wc as unknown as WalletClient); // also attaches the auction api
   return wc as unknown as WalletClient;
 }

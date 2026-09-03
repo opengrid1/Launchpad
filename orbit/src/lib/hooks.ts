@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Candle, CandleInterval, TokenSummary, TradeRecord } from "@launchpad/sdk";
+import type { Candle, CandleInterval, TradeRecord } from "@launchpad/sdk";
 import type { Address, Hash } from "viem";
+import { useAccount } from "wagmi";
 
-import { client, publicClient } from "./client";
+import { client, onair, publicClient, type OnairToken } from "./client";
 import { ADDRESSES } from "./env";
 
-export type Token = TokenSummary & { sparkline?: number[] };
+export type Token = OnairToken;
 
 export function useTokens() {
   return useQuery({
     queryKey: ["tokens"],
-    queryFn: () => client.getTokens({ sort: "new", limit: 120 }) as Promise<Token[]>,
+    queryFn: () => client.getTokens({ sort: "new", limit: 120 }),
     refetchInterval: 20_000,
     staleTime: 8_000,
   });
@@ -21,20 +22,62 @@ export function useToken(address?: string) {
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["token", address?.toLowerCase()],
-    queryFn: () => client.getToken(address!) as Promise<Token | null>,
+    queryFn: () => client.getToken(address!),
     enabled: !!address,
     refetchInterval: 30_000,
   });
-  // live price ticks patch the cached summary in place
+  // live price ticks patch the cached summary in place (pool-backed coins only)
   useEffect(() => {
     if (!address) return;
     return client.subscribeToPrice(address, (u) => {
       qc.setQueryData(["token", address.toLowerCase()], (old: Token | null | undefined) =>
-        old ? { ...old, priceWei: u.priceWei, priceUsd: u.priceUsd, marketCapUsd: u.marketCapUsd, liquidityWei: u.liquidityWei, volume24hWei: u.volume24hWei ?? old.volume24hWei, txCount24h: u.txCount24h ?? old.txCount24h, holderCount: u.holderCount ?? old.holderCount } : old,
+        old && !(old.auction && !old.auction.finalized)
+          ? { ...old, priceWei: u.priceWei, priceUsd: u.priceUsd, marketCapUsd: u.marketCapUsd, liquidityWei: u.liquidityWei, volume24hWei: u.volume24hWei ?? old.volume24hWei, txCount24h: u.txCount24h ?? old.txCount24h, holderCount: u.holderCount ?? old.holderCount }
+          : old,
       );
     });
   }, [address, qc]);
   return q;
+}
+
+/** Live auction state for a coin; polls fast while the auction runs. */
+export function useAuction(address?: Address, enabled = true) {
+  return useQuery({
+    queryKey: ["auction", address?.toLowerCase()],
+    queryFn: () => onair.auction(address!),
+    enabled: !!address && enabled,
+    refetchInterval: (q) => (q.state.data && q.state.data.open ? 6_000 : 30_000),
+  });
+}
+
+export function useBids(address?: Address, owner?: Address) {
+  return useQuery({
+    queryKey: ["bids", address?.toLowerCase(), owner?.toLowerCase() ?? "all"],
+    queryFn: () => onair.bids(address!, { owner, limit: owner ? 50 : 100 }),
+    enabled: !!address,
+    refetchInterval: 12_000,
+  });
+}
+
+export function useCheckpoints(address?: Address) {
+  return useQuery({
+    queryKey: ["checkpoints", address?.toLowerCase()],
+    queryFn: () => onair.checkpoints(address!),
+    enabled: !!address,
+    refetchInterval: 15_000,
+  });
+}
+
+/** Factory settings: auction config, floor, HYPE price, owner. */
+export function useConfig() {
+  return useQuery({ queryKey: ["config"], queryFn: () => onair.config(), staleTime: 60_000 });
+}
+
+/** True when the connected wallet owns the factory. */
+export function useIsOwner() {
+  const { address } = useAccount();
+  const { data } = useConfig();
+  return !!address && !!data && data.owner.toLowerCase() === address.toLowerCase();
 }
 
 export function useTrades(address?: string) {
@@ -127,6 +170,16 @@ export function friendlyError(err: unknown): string {
   if (/insufficient funds/i.test(raw)) return "Not enough HYPE for that.";
   if (/Too little received|amountOutMinimum|slippage/i.test(raw)) return "Price moved. Try again or raise slippage.";
   if (/No wallet connected/i.test(raw)) return "Connect a wallet first.";
+  if (/BelowClearing/.test(raw)) return "Your max price is under the clearing price. Raise it.";
+  if (/BidTooSmall/.test(raw)) return "Bid is under the minimum.";
+  if (/NotOnGrid/.test(raw)) return "Max price is off the auction's grid.";
+  if (/AuctionOver/.test(raw)) return "This auction has ended.";
+  if (/AuctionRunning/.test(raw)) return "The auction is still running.";
+  if (/NotFinalized/.test(raw)) return "Not settled yet. Finalize first.";
+  if (/AlreadyExited/.test(raw)) return "Already claimed.";
+  if (/LaunchesArePaused/.test(raw)) return "Launches are paused right now.";
+  if (/PoolTampered/.test(raw)) return "Pool price could not be restored. Try again.";
+  if (/exceeds block gas limit|gas limit/i.test(raw)) return "Needs big blocks. Turn them on in the Hyperliquid app, then retry.";
   const line = raw.split("\n")[0];
   return line.length > 140 ? line.slice(0, 140) + "…" : line;
 }

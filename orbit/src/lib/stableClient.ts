@@ -444,6 +444,27 @@ export class StableV3Client {
     return this.coresInflight;
   }
 
+  /** Re-read one coin's factory listing (e.g. after an auction seeds its pool)
+   *  so the cached core stops pointing at the zero pool. */
+  async refreshListing(token: Address): Promise<void> {
+    const core = this.cores.get(token.toLowerCase());
+    if (!core) return;
+    const listing = await this.publicClient.readContract({
+      address: this.addresses.factory, abi: FACTORY_ABI, functionName: "listings", args: [token],
+    });
+    const [, , pool, positionId] = listing as unknown as [Address, Address, Address, bigint, bigint, boolean];
+    if (pool && pool !== zeroAddress && pool !== core.pool) {
+      core.pool = pool;
+      core.positionId = positionId;
+      this.priceCache.delete(token.toLowerCase());
+    }
+  }
+
+  /** True when the coin has no pool yet (auction still running or failed). */
+  private poolless(core: Core): boolean {
+    return !core.pool || core.pool === zeroAddress;
+  }
+
   private async _loadCores(): Promise<Core[]> {
     if (!this.quoteUsdLoaded) {
       // One-time: the factory knows the quote's USD price (8 decimals).
@@ -534,6 +555,7 @@ export class StableV3Client {
   }
 
   private async readPriceWei(core: Core): Promise<bigint> {
+    if (this.poolless(core)) return 0n;
     const [sqrtPriceX96] = (await this.publicClient.readContract({
       address: core.pool, abi: POOL_ABI, functionName: "slot0",
     })) as unknown as [bigint];
@@ -770,7 +792,7 @@ export class StableV3Client {
    *  window would otherwise read $0 volume and no holders. */
   private async deepScan(core: Core) {
     const key = core.address.toLowerCase();
-    if (this.deepScanned.has(key)) return;
+    if (this.deepScanned.has(key) || this.poolless(core)) return;
     // Receipts mode has no deep history to scan; retry if logs recover.
     if (this.logsParked()) return;
     this.deepScanned.add(key);
@@ -855,7 +877,7 @@ export class StableV3Client {
   private async scanTrades(key: string): Promise<TradeRecord[]> {
     await this.loadCores();
     const core = this.cores.get(key);
-    if (!core) return [];
+    if (!core || this.poolless(core)) return [];
     const [head, headBlock] = await Promise.all([
       this.publicClient.getBlockNumber(),
       this.publicClient.getBlock().catch(() => null),
@@ -1423,6 +1445,12 @@ export class StableV3Client {
     const w = this.watchers.get(key);
     const core = this.cores.get(key);
     if (!w || !core || w.busy) return;
+    if (this.poolless(core)) {
+      // Still in auction: nothing to poll here. The pool may have appeared
+      // since the listing was cached, so check that on each tick.
+      await this.refreshListing(core.address).catch(() => {});
+      if (this.poolless(core)) return;
+    }
     w.busy = true;
     try {
       const head = await this.publicClient.getBlockNumber();
