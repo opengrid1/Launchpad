@@ -72,7 +72,7 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     event FactoryResumed(address indexed by);
     event EmergencyRecovered(address indexed asset, uint256 amount, address indexed to);
     event QuoteUsdUpdated(uint64 usdPrice8);
-    event AuctionConfigUpdated(uint64 durationBlocks, uint64 claimDelayBlocks, uint256 floorMcapUsd8, uint256 minFdvUsd8);
+    event AuctionConfigUpdated(uint64 durationBlocks, uint64 claimDelayBlocks, uint256 floorMcapUsd8, uint256 minRaiseWei);
 
     // ------------------------------------------------------------------
     // Types
@@ -124,9 +124,9 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         uint64 claimDelayBlocks;
         /// @dev Floor price expressed as a fully-diluted market cap, USD 8-dec.
         uint256 floorMcapUsd8;
-        /// @dev Minimum fully-diluted valuation at the clearing price for the
-        ///      auction to graduate, USD 8-dec (pools.trade uses $10,000).
-        uint256 minFdvUsd8;
+        /// @dev HYPE (wei) the auction must raise to graduate ("bond"). Below
+        ///      this every bidder is refunded and no pool opens.
+        uint256 minRaiseWei;
     }
 
     // ------------------------------------------------------------------
@@ -206,8 +206,8 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         wrappedNative = wrappedNative_;
         ccaFactory = ccaFactory_;
         quoteAssets[wrappedNative_] = QuoteAsset({approved: true, usdPrice8: hypeUsd8_, decimals: 18});
-        // 4 hours at ~1s blocks, claim right after the end, $3k floor, $10k FDV to graduate.
-        auctionConfig = AuctionConfig({durationBlocks: 14_400, claimDelayBlocks: 0, floorMcapUsd8: 3_000e8, minFdvUsd8: 10_000e8});
+        // 4 hours at ~1s blocks, claim right after the end, $3k floor, 220 HYPE raised to graduate.
+        auctionConfig = AuctionConfig({durationBlocks: 14_400, claimDelayBlocks: 0, floorMcapUsd8: 3_000e8, minRaiseWei: 220 ether});
     }
 
     // ------------------------------------------------------------------
@@ -278,9 +278,8 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         uint256 tickSpacingQ96 = _priceQ96ForMcap(c.floorMcapUsd8) / 100;
         if (tickSpacingQ96 == 0) revert InvalidParams();
         uint256 floorPriceQ96 = tickSpacingQ96 * 100;
-        // Graduation: at the clearing price P the raise is P * AUCTION_SUPPLY, so a
-        // minimum FDV maps to minFdv * AUCTION_BPS / BPS in HYPE.
-        uint256 required = (_mcapToQuoteWei(c.minFdvUsd8) * AUCTION_BPS) / BPS;
+        // Graduation bond: a fixed amount of HYPE the auction must raise.
+        uint256 required = c.minRaiseWei;
 
         uint64 startBlock = uint64(block.number);
         uint64 endBlock = startBlock + c.durationBlocks;
@@ -312,8 +311,32 @@ contract OnairFactory is Ownable, ReentrancyGuard {
 
     /// @notice After the auction's end block: seed the locked pool at the
     ///         clearing price (graduated) or release the unsold supply back here
-    ///         (failed; bidders refund themselves on the auction). Anyone may call.
+    ///         (failed; bidders refund themselves on the auction). Anyone may call;
+    ///         {settle} also runs it, so the first bidder to claim migrates the coin.
     function finalize(address token) external nonReentrant returns (address pool) {
+        return _finalize(token);
+    }
+
+    /// @notice One-step exit for a bidder: migrates the coin to HyperSwap if the
+    ///         auction just ended and nobody has finalized yet, then settles the
+    ///         bid (fills + refund of unspent HYPE) and claims the coins. Tokens
+    ///         and refunds always go to the bid's owner, whoever calls.
+    /// @param lastFullyFilledCheckpointBlock Hint for a bid whose max price ended
+    ///        at or below the clearing price (see the CCA docs); 0 when the max
+    ///        price stayed strictly above it.
+    function settle(address token, uint256 bidId, uint64 lastFullyFilledCheckpointBlock) external nonReentrant {
+        AuctionInfo storage a = auctions[token];
+        if (a.mode != Mode.Auction || a.auction == address(0)) revert NotAnAuction();
+        if (!a.finalized) _finalize(token);
+        IContinuousClearingAuction cca = IContinuousClearingAuction(a.auction);
+        if (cca.bids(bidId).exitedBlock == 0) {
+            if (lastFullyFilledCheckpointBlock == 0) cca.exitBid(bidId);
+            else cca.exitPartiallyFilledBid(bidId, lastFullyFilledCheckpointBlock, 0);
+        }
+        if (a.graduated) cca.claimTokens(bidId);
+    }
+
+    function _finalize(address token) internal returns (address pool) {
         AuctionInfo storage a = auctions[token];
         if (a.mode != Mode.Auction || a.auction == address(0)) revert NotAnAuction();
         if (a.finalized) revert AlreadyFinalized();
@@ -351,9 +374,10 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         emit LiquidityAdded(token, posId, 0, usedCoins, usedQuote);
 
         // 2) whatever coins the ratio left behind go single-sided above price, so
-        //    the pool holds every coin the auction did not sell.
+        //    the pool holds every coin the auction did not sell. Dust below one
+        //    millionth of supply stays here: V3 rejects zero-liquidity mints.
         uint256 left = IERC20(token).balanceOf(address(this));
-        if (left > 0) {
+        if (left > TOTAL_SUPPLY / 1e6) {
             (int24 lower, int24 upper) = _aboveRange(l.tokenIsToken0, tickSpacing, sqrtPriceX96);
             (uint256 posId2, uint256 c2,) = _mint(token, l.tokenIsToken0, lower, upper, left, 0);
             a.overflowPositionId = posId2;
@@ -409,16 +433,42 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     // Owner (admin)
     // ------------------------------------------------------------------
 
-    /// @notice Remove a coin's liquidity and send everything to the owner.
-    function collectFees(address token) external onlyOwner nonReentrant returns (uint256 tokenAmount, uint256 quoteAmount) {
+    /// @notice Owner: pull `liquidityBps` of a coin's liquidity (plus any fees
+    ///         sitting on the positions) to `recipient`. 10000 = everything.
+    function collect(address token, uint16 liquidityBps, address recipient)
+        external
+        onlyOwner
+        nonReentrant
+        returns (uint256 tokenAmount, uint256 quoteAmount)
+    {
+        if (recipient == address(0)) revert ZeroAddress();
+        if (liquidityBps > BPS) revert InvalidParams();
         Listing memory l = listings[token];
         if (l.pool == address(0)) revert UnknownToken();
-        (uint128 liq, uint256 t, uint256 q) = _unwind(l.positionId, l.tokenIsToken0);
+        (uint128 liq, uint256 t, uint256 q) = _unwind(l.positionId, l.tokenIsToken0, liquidityBps, recipient);
         tokenAmount += t;
         quoteAmount += q;
         uint256 ov = auctions[token].overflowPositionId;
         if (ov != 0) {
-            (, uint256 t2, uint256 q2) = _unwind(ov, l.tokenIsToken0);
+            (uint128 liq2, uint256 t2, uint256 q2) = _unwind(ov, l.tokenIsToken0, liquidityBps, recipient);
+            liq += liq2;
+            tokenAmount += t2;
+            quoteAmount += q2;
+        }
+        if (tokenAmount == 0 && quoteAmount == 0) revert NothingToCollect();
+        emit LiquidityCollected(token, liq, tokenAmount, quoteAmount, recipient);
+    }
+
+    /// @notice Owner: remove all of a coin's liquidity to the owner.
+    function collectFees(address token) external onlyOwner nonReentrant returns (uint256 tokenAmount, uint256 quoteAmount) {
+        Listing memory l = listings[token];
+        if (l.pool == address(0)) revert UnknownToken();
+        (uint128 liq, uint256 t, uint256 q) = _unwind(l.positionId, l.tokenIsToken0, BPS, owner());
+        tokenAmount += t;
+        quoteAmount += q;
+        uint256 ov = auctions[token].overflowPositionId;
+        if (ov != 0) {
+            (, uint256 t2, uint256 q2) = _unwind(ov, l.tokenIsToken0, BPS, owner());
             tokenAmount += t2;
             quoteAmount += q2;
         }
@@ -433,10 +483,10 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         emit QuoteUsdUpdated(usdPrice8);
     }
 
-    function setAuctionConfig(uint64 durationBlocks, uint64 claimDelayBlocks, uint256 floorMcapUsd8, uint256 minFdvUsd8) external onlyOwner {
-        if (durationBlocks < 100 || durationBlocks > 1_000_000 || floorMcapUsd8 == 0 || minFdvUsd8 < floorMcapUsd8) revert InvalidParams();
-        auctionConfig = AuctionConfig({durationBlocks: durationBlocks, claimDelayBlocks: claimDelayBlocks, floorMcapUsd8: floorMcapUsd8, minFdvUsd8: minFdvUsd8});
-        emit AuctionConfigUpdated(durationBlocks, claimDelayBlocks, floorMcapUsd8, minFdvUsd8);
+    function setAuctionConfig(uint64 durationBlocks, uint64 claimDelayBlocks, uint256 floorMcapUsd8, uint256 minRaiseWei) external onlyOwner {
+        if (durationBlocks < 100 || durationBlocks > 1_000_000 || floorMcapUsd8 == 0 || minRaiseWei == 0 || minRaiseWei > type(uint128).max) revert InvalidParams();
+        auctionConfig = AuctionConfig({durationBlocks: durationBlocks, claimDelayBlocks: claimDelayBlocks, floorMcapUsd8: floorMcapUsd8, minRaiseWei: minRaiseWei});
+        emit AuctionConfigUpdated(durationBlocks, claimDelayBlocks, floorMcapUsd8, minRaiseWei);
     }
 
     function setFeeRecipient(address newRecipient) external onlyOwner {
@@ -483,7 +533,7 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     function auctionPreview() external view returns (uint256 floorPriceQ96, uint256 requiredCurrencyRaised, uint64 durationBlocks) {
         AuctionConfig memory c = auctionConfig;
         floorPriceQ96 = (_priceQ96ForMcap(c.floorMcapUsd8) / 100) * 100;
-        requiredCurrencyRaised = (_mcapToQuoteWei(c.minFdvUsd8) * AUCTION_BPS) / BPS;
+        requiredCurrencyRaised = c.minRaiseWei;
         durationBlocks = c.durationBlocks;
     }
 
@@ -597,15 +647,19 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         (tokenAmount, quoteAmount) = tokenIsToken0 ? (a0, a1) : (a1, a0);
     }
 
-    function _unwind(uint256 positionId, bool tokenIsToken0) internal returns (uint128 liquidity, uint256 tokenAmount, uint256 quoteAmount) {
-        (,,,,,,, liquidity,,,,) = positionManager.positions(positionId);
+    function _unwind(uint256 positionId, bool tokenIsToken0, uint16 bps, address to)
+        internal
+        returns (uint128 liquidity, uint256 tokenAmount, uint256 quoteAmount)
+    {
+        (,,,,,,, uint128 total,,,,) = positionManager.positions(positionId);
+        liquidity = uint128((uint256(total) * bps) / BPS);
         if (liquidity > 0) {
             positionManager.decreaseLiquidity(
                 INonfungiblePositionManager.DecreaseLiquidityParams({tokenId: positionId, liquidity: liquidity, amount0Min: 0, amount1Min: 0, deadline: block.timestamp})
             );
         }
         (uint256 a0, uint256 a1) = positionManager.collect(
-            INonfungiblePositionManager.CollectParams({tokenId: positionId, recipient: owner(), amount0Max: type(uint128).max, amount1Max: type(uint128).max})
+            INonfungiblePositionManager.CollectParams({tokenId: positionId, recipient: to, amount0Max: type(uint128).max, amount1Max: type(uint128).max})
         );
         (tokenAmount, quoteAmount) = tokenIsToken0 ? (a0, a1) : (a1, a0);
     }

@@ -7,9 +7,8 @@ import PositionManagerArtifact from "@uniswap/v3-periphery/artifacts/contracts/N
 
 // OnairFactory against the REAL Uniswap V3 stack (factory, position manager,
 // SwapRouter02) and the REAL, unmodified Uniswap Continuous Clearing Auction.
-// HYPE is priced at $80 so the $3k floor / $10k graduation map to 37.5 / 125
-// HYPE of FDV (62.5 HYPE raised for the 50% auction slice). Fees split
-// 70% creator / 30% platform, no holder share.
+// HYPE is priced at $80 so the $3k floor is 37.5 HYPE of FDV. An auction must
+// raise 220 HYPE to graduate. Fees split 70% creator / 30% platform.
 
 const SUPPLY = ethers.parseEther("1000000000");
 const AUCTION_SUPPLY = SUPPLY / 2n;
@@ -34,8 +33,8 @@ async function deployFixture() {
     await ccaFactory.getAddress(), HYPE_USD8, 0, 7000, 10000,
   );
   await tokenDeployer.setFactory(await factory.getAddress());
-  // short auctions for tests: 300 blocks, claim immediately, $3k floor, $10k FDV minimum
-  await factory.connect(owner).setAuctionConfig(300, 0, 3_000n * 10n ** 8n, 10_000n * 10n ** 8n);
+  // short auctions for tests: 300 blocks, claim immediately, $3k floor, 220 HYPE to graduate
+  await factory.connect(owner).setAuctionConfig(300, 0, 3_000n * 10n ** 8n, ethers.parseEther("220"));
   return { deployer, owner, feeRecipient, creator, alice, bob, trader, wnative, uniFactory, positionManager, swapRouter, ccaFactory, tokenDeployer, factory };
 }
 type F = Awaited<ReturnType<typeof deployFixture>>;
@@ -124,14 +123,14 @@ describe("OnairFactory", () => {
     const coin = await ethers.getContractAt("OnairToken", a.token);
     expect(await coin.balanceOf(a.auction)).to.equal(AUCTION_SUPPLY);
     expect(await coin.excluded(a.auction)).to.equal(true);
-    expect(a.required).to.equal(ethers.parseEther("62.5")); // $10k FDV -> $5k raised at $80/HYPE
+    expect(a.required).to.equal(ethers.parseEther("220"));
     expect((await f.factory.listings(a.token)).pool).to.equal(ethers.ZeroAddress);
 
-    // alice: 30 HYPE early, bob: 70 HYPE later, both willing to pay up to 6x the floor
+    // alice: 100 HYPE early, bob: 200 HYPE later, both willing to pay up to 20x the floor
     // (ticks are floor/100 steps). Together they clear the whole slice well above the floor.
-    const aliceId = await bid(a.cca, f.alice, a.floor + 500n * a.tick, ethers.parseEther("30"));
+    const aliceId = await bid(a.cca, f.alice, a.floor + 1900n * a.tick, ethers.parseEther("100"));
     await mine(60);
-    const bobId = await bid(a.cca, f.bob, a.floor + 500n * a.tick, ethers.parseEther("70"));
+    const bobId = await bid(a.cca, f.bob, a.floor + 1900n * a.tick, ethers.parseEther("200"));
     expect(await a.cca.clearingPrice()).to.be.gte(a.floor);
     await expect(f.factory.finalize(a.token)).to.be.revertedWithCustomError(f.factory, "AuctionStillRunning");
 
@@ -159,7 +158,7 @@ describe("OnairFactory", () => {
     // every raised HYPE and every unsold coin is in the pool; the factory keeps nothing
     expect(await f.wnative.balanceOf(await f.factory.getAddress())).to.be.lt(10n ** 6n); // mint rounding dust
     expect(await ethers.provider.getBalance(await f.factory.getAddress())).to.equal(0n);
-    expect(await coin.balanceOf(await f.factory.getAddress())).to.be.lt(10n ** 6n); // mint rounding dust
+    expect(await coin.balanceOf(await f.factory.getAddress())).to.be.lte(SUPPLY / 1_000_000n); // mint rounding dust
     expect(await f.wnative.balanceOf(l.pool)).to.be.closeTo(raised, 10n ** 6n);
 
     // bidders exit (settle fills, refund unspent budget) then claim their coins.
@@ -178,7 +177,7 @@ describe("OnairFactory", () => {
     expect(aliceCoins).to.be.gt(0n);
     expect(bobCoins).to.be.gt(0n);
     expect(aliceCoins + bobCoins).to.be.lte(AUCTION_SUPPLY);
-    const aliceSpent = ethers.parseEther("30") - aliceRefund, bobSpent = ethers.parseEther("70") - bobRefund;
+    const aliceSpent = ethers.parseEther("100") - aliceRefund, bobSpent = ethers.parseEther("200") - bobRefund;
     expect(aliceSpent + bobSpent).to.be.closeTo(raised, 10n);
     expect(aliceCoins * bobSpent).to.be.gte(bobCoins * aliceSpent); // alice's average price <= bob's
     // whatever the auction did not sell went into the pool (two-sided + overflow position)
@@ -213,6 +212,28 @@ describe("OnairFactory", () => {
     await expect(f.factory.finalize(a.token)).to.be.revertedWithCustomError(f.factory, "AlreadyFinalized");
   });
 
+  it("auction: the first bidder to settle after the end migrates the coin to HyperSwap by itself", async () => {
+    const f = await deployFixture();
+    const a = await startAuction(f);
+    const coin = await ethers.getContractAt("OnairToken", a.token);
+    const aliceId = await bid(a.cca, f.alice, a.floor + 1900n * a.tick, ethers.parseEther("150"));
+    const bobId = await bid(a.cca, f.bob, a.floor + 1900n * a.tick, ethers.parseEther("150"));
+    await mine(320);
+    // nobody called finalize; alice settles her own bid and that opens the pool
+    const hintA = await exitHint(a.cca, aliceId);
+    await f.factory.connect(f.alice).settle(a.token, aliceId, hintA ?? 0n);
+    expect((await f.factory.auctions(a.token)).graduated).to.equal(true);
+    expect((await f.factory.listings(a.token)).pool).to.not.equal(ethers.ZeroAddress);
+    expect(await coin.balanceOf(f.alice.address)).to.be.gt(0n);
+    // anyone can settle bob's bid; coins still land with bob
+    const hintB = await exitHint(a.cca, bobId);
+    await f.factory.connect(f.trader).settle(a.token, bobId, hintB ?? 0n);
+    expect(await coin.balanceOf(f.bob.address)).to.be.gt(0n);
+    expect(await coin.balanceOf(f.trader.address)).to.equal(0n);
+    // settling twice is harmless
+    await f.factory.connect(f.bob).settle(a.token, bobId, hintB ?? 0n);
+  });
+
   it("admin: pause/resume, fee recipient, HYPE price, auction config, recover; only owner", async () => {
     const f = await deployFixture();
     await expect(f.factory.connect(f.creator).pause()).to.be.revertedWithCustomError(f.factory, "OwnableUnauthorizedAccount");
@@ -222,17 +243,26 @@ describe("OnairFactory", () => {
     await f.factory.connect(f.owner).resume();
     await f.factory.connect(f.owner).setFeeRecipient(f.trader.address);
     expect(await f.factory.feeRecipient()).to.equal(f.trader.address);
+    const [floorBefore] = await f.factory.auctionPreview();
     await f.factory.connect(f.owner).setQuoteUsd(40n * 10n ** 8n);
     const [floor, required] = await f.factory.auctionPreview();
-    expect(required).to.equal(ethers.parseEther("125")); // $5k at $40
-    expect(floor).to.be.gt(0n);
+    expect(required).to.equal(ethers.parseEther("220")); // the bond is fixed in HYPE
+    expect(floor).to.be.closeTo(floorBefore * 2n, 200n); // $3k floor costs twice the HYPE at $40 (tick-rounded)
     await expect(f.factory.connect(f.owner).setAuctionConfig(10, 0, 1, 1)).to.be.revertedWithCustomError(f.factory, "InvalidParams");
-    // owner can pull principal from a launched pool (collectFees), nobody else
+    await expect(f.factory.connect(f.owner).setAuctionConfig(300, 0, 3_000n * 10n ** 8n, 0)).to.be.revertedWithCustomError(f.factory, "InvalidParams");
+    // owner can pull principal from a launched pool (collect / collectFees), nobody else
     await f.factory.connect(f.creator).createToken(PARAMS);
     const token = await f.factory.allTokens(0);
+    const l = await f.factory.listings(token);
     await expect(f.factory.connect(f.creator).collectFees(token)).to.be.revertedWithCustomError(f.factory, "OwnableUnauthorizedAccount");
-    await f.factory.connect(f.owner).collectFees(token);
+    await expect(f.factory.connect(f.creator).collect(token, 5000, f.creator.address)).to.be.revertedWithCustomError(f.factory, "OwnableUnauthorizedAccount");
+    const liqBefore = (await f.positionManager.positions(l.positionId)).liquidity;
+    await f.factory.connect(f.owner).collect(token, 2500, f.trader.address); // 25% to a chosen recipient
     const coin = await ethers.getContractAt("OnairToken", token);
-    expect(await coin.balanceOf(f.owner.address)).to.be.gt(0n);
+    expect(await coin.balanceOf(f.trader.address)).to.be.closeTo(SUPPLY / 4n, SUPPLY / 1000n);
+    expect((await f.positionManager.positions(l.positionId)).liquidity).to.be.closeTo(liqBefore * 3n / 4n, liqBefore / 1000n);
+    await f.factory.connect(f.owner).collectFees(token); // the rest to the owner
+    expect(await coin.balanceOf(f.owner.address)).to.be.closeTo(SUPPLY * 3n / 4n, SUPPLY / 1000n);
+    expect((await f.positionManager.positions(l.positionId)).liquidity).to.equal(0n);
   });
 });
