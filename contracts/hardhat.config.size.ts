@@ -9,9 +9,6 @@ import "@nomicfoundation/hardhat-network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-verify";
 import * as dotenv from "dotenv";
-import { readdirSync, statSync } from "fs";
-import { join } from "path";
-const walk = (d: string): string[] => readdirSync(d).flatMap((f) => { const p = join(d, f); return statSync(p).isDirectory() ? walk(p) : p.endsWith(".sol") ? [p] : []; });
 
 dotenv.config();
 dotenv.config({ path: ".env.deployer" });
@@ -23,14 +20,6 @@ const PK = process.env.PRIVATE_KEY;
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [{ version: "0.8.26", settings: { optimizer: { enabled: true, runs: 1 }, viaIR: true } }],
-    // cca overrides: the vendored Uniswap Continuous Clearing Auction keeps its
-    // upstream build settings (foundry: runs 11111, cancun for transient storage).
-    overrides: Object.fromEntries(
-      walk("contracts/cca").map((f) => [
-        f.replace(/\\/g, "/"),
-        { version: "0.8.26", settings: { optimizer: { enabled: true, runs: 11111 }, evmVersion: "cancun", viaIR: f.endsWith("ContinuousClearingAuctionFactory.sol") } },
-      ]),
-    ),
   },
   paths: { artifacts: "./artifacts-size" },
   networks: {

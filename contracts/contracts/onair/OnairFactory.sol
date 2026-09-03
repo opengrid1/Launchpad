@@ -11,9 +11,7 @@ import {OnairTokenDeployer} from "./OnairTokenDeployer.sol";
 import {OnairToken} from "./OnairToken.sol";
 import {TickMath} from "../libraries/TickMath.sol";
 import {IUniswapV3Factory, INonfungiblePositionManager, ISwapRouter, IWETH9} from "../interfaces/IUniswapV3.sol";
-import {AuctionParameters, IContinuousClearingAuction} from "../cca/interfaces/IContinuousClearingAuction.sol";
-import {IContinuousClearingAuctionFactory} from "../cca/interfaces/IContinuousClearingAuctionFactory.sol";
-import {LBPInitializationParams} from "../cca/vendor/ll/interfaces/ILBPInitializer.sol";
+import {OnairAuctionHouse} from "./OnairAuctionHouse.sol";
 
 /// @title OnairFactory
 /// @notice Launchpad for HyperEVM with two launch models on one factory:
@@ -22,14 +20,14 @@ import {LBPInitializationParams} from "../cca/vendor/ll/interfaces/ILBPInitializ
 ///            target market cap (default $3,000) seeded single-sided with the
 ///            whole supply, and trading starts on the official router.
 ///
-///   AUCTION  The coin's supply is split: AUCTION_BPS goes into an unmodified
-///            Uniswap Continuous Clearing Auction (budget + max price bids,
-///            spread across the remaining blocks, one rising uniform clearing
-///            price). When the auction ends and has graduated (raised at least
-///            the configured minimum), {finalize} sweeps the raised HYPE and the
-///            unsold coins back here and seeds a two-sided, factory-locked V3
-///            pool at the auction's clearing price. If it did not graduate,
-///            every bidder refunds themselves from the auction contract.
+///   AUCTION  The coin's supply is split: AUCTION_BPS goes into the ONAIR
+///            auction house, a continuous clearing auction (budget + max price
+///            bids, spread across the remaining blocks, one rising uniform
+///            clearing price) whose escrow this protocol holds. When the auction
+///            ends and has graduated (raised at least the configured bond),
+///            {finalize} moves the raised HYPE and the unsold coins here and
+///            seeds a two-sided, factory-locked HyperSwap V3 pool at the
+///            clearing price. If it did not graduate, every bidder is refunded.
 ///
 /// Both models share the fee model: the pool's 1% fee tier accrues to the held
 /// position and {harvestFees} splits the WHYPE side holders / creator /
@@ -56,6 +54,8 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     error NotAnAuction();
     error AuctionStillRunning();
     error AlreadyFinalized();
+    error NotFinalized();
+    error HouseAlreadySet();
 
     // ------------------------------------------------------------------
     // Events
@@ -63,8 +63,10 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     event TokenCreated(address indexed token, address indexed creator, string name, string symbol, string metadataURI, uint8 mode);
     event PoolCreated(address indexed token, address pool, uint24 feeTier, uint160 sqrtPriceX96, uint256 marketCapUsd8);
     event LiquidityAdded(address indexed token, uint256 positionId, uint128 liquidity, uint256 tokenAmount, uint256 quoteAmount);
-    event AuctionStarted(address indexed token, address indexed auction, uint64 startBlock, uint64 endBlock, uint256 floorPriceQ96, uint256 requiredCurrencyRaised);
-    event AuctionFinalized(address indexed token, address indexed auction, bool graduated, uint256 clearingPriceQ96, uint256 tokensSold, uint256 currencyRaised);
+    event AuctionStarted(address indexed token, uint64 startBlock, uint64 endBlock, uint256 floorPriceQ96, uint256 minRaiseWei);
+    event AuctionFinalized(address indexed token, bool graduated, uint256 clearingPriceQ96, uint256 tokensSold, uint256 currencyRaised);
+    event AuctionHouseSet(address indexed house);
+    event EscrowCollected(address indexed token, address indexed to, uint256 amount);
     event FeesCollected(address indexed token, address indexed creator, uint256 creatorTokenAmount, uint256 creatorQuoteAmount, uint256 platformTokenAmount, uint256 platformQuoteAmount);
     event LiquidityCollected(address indexed token, uint128 liquidityRemoved, uint256 tokenAmount, uint256 quoteAmount, address indexed recipient);
     event FeeRecipientUpdated(address indexed previousRecipient, address indexed newRecipient);
@@ -102,7 +104,6 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     }
 
     struct AuctionInfo {
-        address auction;
         Mode mode;
         bool finalized;
         bool graduated;
@@ -136,7 +137,6 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     int24 internal constant MIN_TICK = -887272;
     int24 internal constant MAX_TICK = 887272;
     uint256 internal constant Q96 = 1 << 96;
-    uint24 internal constant MPS = 1e7;
 
     uint256 public constant TOTAL_SUPPLY = 1_000_000_000e18;
     /// @notice Share of supply sold in an auction (the rest seeds the pool).
@@ -156,7 +156,8 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     INonfungiblePositionManager public immutable positionManager;
     ISwapRouter public immutable swapRouter;
     address public immutable wrappedNative;
-    IContinuousClearingAuctionFactory public immutable ccaFactory;
+    /// @notice The auction house (escrow + clearing), wired once after deploy.
+    OnairAuctionHouse public house;
 
     // ------------------------------------------------------------------
     // Storage
@@ -182,7 +183,6 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         INonfungiblePositionManager positionManager_,
         ISwapRouter swapRouter_,
         address wrappedNative_,
-        IContinuousClearingAuctionFactory ccaFactory_,
         uint64 hypeUsd8_,
         uint16 holderFeeBps_,
         uint16 creatorFeeBps_,
@@ -191,7 +191,6 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         if (
             feeRecipient_ == address(0) || address(tokenDeployer_) == address(0) || address(uniswapFactory_) == address(0)
                 || address(positionManager_) == address(0) || address(swapRouter_) == address(0) || wrappedNative_ == address(0)
-                || address(ccaFactory_) == address(0)
         ) revert ZeroAddress();
         if (creatorFeeBps_ == 0 || uint256(holderFeeBps_) + creatorFeeBps_ > BPS || poolFeeTier_ == 0 || hypeUsd8_ == 0) revert InvalidParams();
         POOL_FEE_TIER = poolFeeTier_;
@@ -204,7 +203,6 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         positionManager = positionManager_;
         swapRouter = swapRouter_;
         wrappedNative = wrappedNative_;
-        ccaFactory = ccaFactory_;
         quoteAssets[wrappedNative_] = QuoteAsset({approved: true, usdPrice8: hypeUsd8_, decimals: 18});
         // 4 hours at ~1s blocks, claim right after the end, $3k floor, 220 HYPE raised to graduate.
         auctionConfig = AuctionConfig({durationBlocks: 14_400, claimDelayBlocks: 0, floorMcapUsd8: 3_000e8, minRaiseWei: 220 ether});
@@ -242,7 +240,7 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         emit LiquidityAdded(token, positionId, 0, tokenAmt, 0);
 
         listings[token] = Listing({creator: msg.sender, quote: wrappedNative, pool: pool, positionId: positionId, createdAt: uint64(block.timestamp), tokenIsToken0: tokenIsToken0});
-        auctions[token] = AuctionInfo({auction: address(0), mode: Mode.Instant, finalized: true, graduated: true, overflowPositionId: 0});
+        auctions[token] = AuctionInfo({mode: Mode.Instant, finalized: true, graduated: true, overflowPositionId: 0});
         allTokens.push(token);
 
         if (p.devBuyQuote > 0) {
@@ -261,117 +259,86 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     // Auction launch
     // ------------------------------------------------------------------
 
-    /// @notice Deploy a coin and put AUCTION_BPS of its supply into a fresh
-    ///         Continuous Clearing Auction, paid in native HYPE. Bidding goes
-    ///         directly to the returned auction contract.
-    function createAuction(CreateParams calldata p) external nonReentrant returns (address token, address auction) {
+    /// @notice Deploy a coin and put AUCTION_BPS of its supply into the auction
+    ///         house, paid in native HYPE. Bidding goes to the house.
+    function createAuction(CreateParams calldata p) external nonReentrant returns (address token) {
         if (launchesPaused) revert LaunchesArePaused();
+        if (address(house) == address(0)) revert ZeroAddress();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
         AuctionConfig memory c = auctionConfig;
 
         token = tokenDeployer.deploy(msg.sender, p.name, p.symbol, p.metadataURI, wrappedNative);
         emit TokenCreated(token, msg.sender, p.name, p.symbol, p.metadataURI, uint8(Mode.Auction));
 
-        // Prices in the auction are HYPE-wei per token-wei, Q96.
-        // Bid granularity: 1% of the floor. The floor itself must sit on a tick
-        // boundary (a multiple of the spacing), so it is re-derived from it.
+        // Prices are HYPE-wei per coin-wei, Q96. Bid granularity is 1% of the
+        // floor; the floor is re-derived from it so it sits on the grid.
         uint256 tickSpacingQ96 = _priceQ96ForMcap(c.floorMcapUsd8) / 100;
         if (tickSpacingQ96 == 0) revert InvalidParams();
         uint256 floorPriceQ96 = tickSpacingQ96 * 100;
-        // Graduation bond: a fixed amount of HYPE the auction must raise.
-        uint256 required = c.minRaiseWei;
 
-        uint64 startBlock = uint64(block.number);
-        uint64 endBlock = startBlock + c.durationBlocks;
-        AuctionParameters memory params = AuctionParameters({
-            currency: address(0),
-            tokensRecipient: address(this),
-            fundsRecipient: address(this),
-            startBlock: startBlock,
-            endBlock: endBlock,
-            claimBlock: endBlock + c.claimDelayBlocks,
-            tickSpacing: tickSpacingQ96,
-            validationHook: address(0),
-            floorPrice: floorPriceQ96,
-            requiredCurrencyRaised: uint128(required),
-            auctionStepsData: _steps(c.durationBlocks)
-        });
-        auction = address(ccaFactory.create(token, AUCTION_SUPPLY, abi.encode(params), bytes32(++_salt)));
-
-        // Hand the auction its supply; it never earns holder rewards.
-        OnairToken(token).setExcluded(auction, true);
-        IERC20(token).safeTransfer(auction, AUCTION_SUPPLY);
-        IContinuousClearingAuction(auction).onTokensReceived();
+        // The house never earns holder rewards; hand it the auctioned supply.
+        OnairToken(token).setExcluded(address(house), true);
+        IERC20(token).safeTransfer(address(house), AUCTION_SUPPLY);
+        house.open(token, AUCTION_SUPPLY, OnairAuctionHouse.Params({durationBlocks: c.durationBlocks, floorPriceQ96: floorPriceQ96, tickSpacingQ96: tickSpacingQ96, minRaiseWei: c.minRaiseWei}));
 
         listings[token] = Listing({creator: msg.sender, quote: wrappedNative, pool: address(0), positionId: 0, createdAt: uint64(block.timestamp), tokenIsToken0: token < wrappedNative});
-        auctions[token] = AuctionInfo({auction: auction, mode: Mode.Auction, finalized: false, graduated: false, overflowPositionId: 0});
+        auctions[token] = AuctionInfo({mode: Mode.Auction, finalized: false, graduated: false, overflowPositionId: 0});
         allTokens.push(token);
-        emit AuctionStarted(token, auction, startBlock, endBlock, floorPriceQ96, required);
+        emit AuctionStarted(token, uint64(block.number), uint64(block.number) + c.durationBlocks, floorPriceQ96, c.minRaiseWei);
     }
 
     /// @notice After the auction's end block: seed the locked pool at the
     ///         clearing price (graduated) or release the unsold supply back here
-    ///         (failed; bidders refund themselves on the auction). Anyone may call;
-    ///         {settle} also runs it, so the first bidder to claim migrates the coin.
+    ///         (failed; bidders are refunded on claim). Anyone may call.
     function finalize(address token) external nonReentrant returns (address pool) {
         return _finalize(token);
     }
 
-    /// @notice One-step exit for a bidder: migrates the coin to HyperSwap if the
-    ///         auction just ended and nobody has finalized yet, then settles the
-    ///         bid (fills + refund of unspent HYPE) and claims the coins. Tokens
-    ///         and refunds always go to the bid's owner, whoever calls.
-    /// @param lastFullyFilledCheckpointBlock Hint for a bid whose max price ended
-    ///        at or below the clearing price (see the CCA docs); 0 when the max
-    ///        price stayed strictly above it.
-    function settle(address token, uint256 bidId, uint64 lastFullyFilledCheckpointBlock) external nonReentrant {
+    /// @notice One-step exit for a bidder once the auction is finalized: coins
+    ///         and the refund of unspent HYPE go to the bid's owner, whoever
+    ///         calls. `cpHint` comes from {OnairAuctionHouse.exitHint}.
+    function settle(address token, uint256 bidId, uint32 cpHint) external nonReentrant returns (uint256 coins, uint256 refund) {
         AuctionInfo storage a = auctions[token];
-        if (a.mode != Mode.Auction || a.auction == address(0)) revert NotAnAuction();
-        if (!a.finalized) _finalize(token);
-        IContinuousClearingAuction cca = IContinuousClearingAuction(a.auction);
-        if (cca.bids(bidId).exitedBlock == 0) {
-            if (lastFullyFilledCheckpointBlock == 0) cca.exitBid(bidId);
-            else cca.exitPartiallyFilledBid(bidId, lastFullyFilledCheckpointBlock, 0);
-        }
-        if (a.graduated) cca.claimTokens(bidId);
+        if (a.mode != Mode.Auction) revert NotAnAuction();
+        if (!a.finalized) revert NotFinalized();
+        return house.claim(token, bidId, cpHint);
     }
 
     function _finalize(address token) internal returns (address pool) {
         AuctionInfo storage a = auctions[token];
-        if (a.mode != Mode.Auction || a.auction == address(0)) revert NotAnAuction();
+        if (a.mode != Mode.Auction) revert NotAnAuction();
         if (a.finalized) revert AlreadyFinalized();
-        IContinuousClearingAuction cca = IContinuousClearingAuction(a.auction);
-        if (block.number < cca.endBlock()) revert AuctionStillRunning();
         a.finalized = true;
 
-        // Both sweeps checkpoint the end block themselves. Unsold coins come back
-        // either way; currency only when graduated.
-        cca.sweepUnsoldTokens();
-        if (!cca.isGraduated()) {
-            emit AuctionFinalized(token, a.auction, false, 0, 0, 0);
+        (bool graduated, uint256 clearingQ96, uint256 raised, uint256 sold,) = house.finalize(token);
+        if (!graduated) {
+            emit AuctionFinalized(token, false, 0, 0, 0);
             return address(0);
         }
         a.graduated = true;
-        cca.sweepCurrency();
-        LBPInitializationParams memory lp = cca.lbpInitializationParams();
 
-        uint256 raised = address(this).balance; // native HYPE swept in
-        IWETH9(wrappedNative).deposit{value: raised}();
+        // Wrap whatever HYPE the house sent (raised minus any escrow already
+        // collected) and seed with every coin we hold for this launch.
+        uint256 hype = address(this).balance;
+        if (hype > 0) IWETH9(wrappedNative).deposit{value: hype}();
         uint256 coins = IERC20(token).balanceOf(address(this)); // reserve + unsold
 
         Listing storage l = listings[token];
         int24 tickSpacing = uniswapFactory.feeAmountTickSpacing(POOL_FEE_TIER);
-        uint160 sqrtPriceX96 = _sqrtPriceFromQ96(l.tokenIsToken0, tickSpacing, lp.initialPriceX96);
-        pool = _createPool(token, l.tokenIsToken0, sqrtPriceX96, _quoteWeiToMcap(Math.mulDiv(lp.initialPriceX96, TOTAL_SUPPLY, Q96)));
+        uint160 sqrtPriceX96 = _sqrtPriceFromQ96(l.tokenIsToken0, tickSpacing, clearingQ96);
+        pool = _createPool(token, l.tokenIsToken0, sqrtPriceX96, _quoteWeiToMcap(Math.mulDiv(clearingQ96, TOTAL_SUPPLY, Q96)));
 
-        // 1) two-sided full-range position: all raised HYPE against as many coins
-        //    as the price ratio takes.
+        // 1) two-sided full-range position: all the HYPE against as many coins as
+        //    the price ratio takes.
         int24 fullLower = (MIN_TICK / tickSpacing) * tickSpacing;
         int24 fullUpper = (MAX_TICK / tickSpacing) * tickSpacing;
-        (uint256 posId, uint256 usedCoins, uint256 usedQuote) = _mint(token, l.tokenIsToken0, fullLower, fullUpper, coins, raised);
-        l.pool = pool;
-        l.positionId = posId;
-        emit LiquidityAdded(token, posId, 0, usedCoins, usedQuote);
+        uint256 posId;
+        uint256 usedCoins;
+        uint256 usedQuote;
+        if (hype > 0) {
+            (posId, usedCoins, usedQuote) = _mint(token, l.tokenIsToken0, fullLower, fullUpper, coins, hype);
+            emit LiquidityAdded(token, posId, 0, usedCoins, usedQuote);
+        }
 
         // 2) whatever coins the ratio left behind go single-sided above price, so
         //    the pool holds every coin the auction did not sell. Dust below one
@@ -379,11 +346,14 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         uint256 left = IERC20(token).balanceOf(address(this));
         if (left > TOTAL_SUPPLY / 1e6) {
             (int24 lower, int24 upper) = _aboveRange(l.tokenIsToken0, tickSpacing, sqrtPriceX96);
-            (uint256 posId2, uint256 c2,) = _mint(token, l.tokenIsToken0, lower, upper, left, 0);
-            a.overflowPositionId = posId2;
+            // V3 may round the pulled amount up by a wei; keep a hair back.
+            (uint256 posId2, uint256 c2,) = _mint(token, l.tokenIsToken0, lower, upper, left - 1e3, 0);
+            if (posId == 0) posId = posId2; else a.overflowPositionId = posId2;
             emit LiquidityAdded(token, posId2, 0, c2, 0);
         }
-        emit AuctionFinalized(token, a.auction, true, lp.initialPriceX96, lp.tokensSold, lp.currencyRaised);
+        l.pool = pool;
+        l.positionId = posId;
+        emit AuctionFinalized(token, true, clearingQ96, sold, raised);
     }
 
     // ------------------------------------------------------------------
@@ -476,6 +446,30 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         emit LiquidityCollected(token, liq, tokenAmount, quoteAmount, owner());
     }
 
+    /// @notice One-time wiring of the auction house (it needs this factory's address first).
+    function setAuctionHouse(OnairAuctionHouse house_) external onlyOwner {
+        if (address(house) != address(0)) revert HouseAlreadySet();
+        if (address(house_) == address(0) || house_.factory() != address(this)) revert InvalidParams();
+        house = house_;
+        emit AuctionHouseSet(address(house_));
+    }
+
+    /// @notice Owner: take the HYPE bidders have already spent in a running
+    ///         auction out of escrow, to `to`. Unspent budgets stay for refunds;
+    ///         after this the auction cannot fail (fills stand).
+    function collectEscrow(address token, address to) external onlyOwner nonReentrant returns (uint256 amount) {
+        if (to == address(0)) revert ZeroAddress();
+        if (auctions[token].mode != Mode.Auction) revert NotAnAuction();
+        amount = house.collectEscrow(token, to);
+        emit EscrowCollected(token, to, amount);
+    }
+
+    /// @notice Owner: stop a running auction; every bidder is refunded in full on claim.
+    function cancelAuction(address token) external onlyOwner {
+        if (auctions[token].mode != Mode.Auction) revert NotAnAuction();
+        house.cancel(token);
+    }
+
     /// @notice USD per HYPE (8 decimals), used to size floors and minimums.
     function setQuoteUsd(uint64 usdPrice8) external onlyOwner {
         if (usdPrice8 == 0) revert InvalidParams();
@@ -561,20 +555,6 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         uint256 p = Math.mulDiv(_mcapToQuoteWei(mcapUsd8), Q96, TOTAL_SUPPLY);
         if (p == 0) revert InvalidParams();
         return p;
-    }
-
-    /// @dev Single step: issue the whole auction supply evenly over `blocks`.
-    ///      Packed uint64 per step = (mps << 40) | blockDelta, and the sum of
-    ///      mps * blockDelta must equal MPS; a second step absorbs rounding.
-    function _steps(uint64 blocks) internal pure returns (bytes memory) {
-        uint24 mps = uint24(MPS / blocks);
-        uint64 rem = uint64(MPS - uint256(mps) * blocks);
-        if (rem == 0) return abi.encodePacked(uint64((uint64(mps) << 40) | blocks));
-        // (blocks - rem) blocks at mps, then rem blocks at mps + 1.
-        return abi.encodePacked(
-            uint64((uint64(mps) << 40) | (blocks - rem)),
-            uint64((uint64(mps + 1) << 40) | rem)
-        );
     }
 
     /// @dev Pool sqrt price from a target market cap, snapped down to a tick.

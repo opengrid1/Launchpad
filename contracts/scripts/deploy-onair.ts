@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
-// Deploys the ONAIR launchpad on HyperEVM: the unmodified Uniswap Continuous
-// Clearing Auction factory, the token deployer and OnairFactory (instant +
-// auction launches on HyperSwap V3). Needs HYPE for gas and BIG BLOCKS enabled
-// for the deployer (the CCA factory and OnairFactory are ~20-24 KB each).
+// Deploys the ONAIR launchpad on HyperEVM: token deployer, OnairFactory
+// (instant + auction launches on HyperSwap V3) and OnairAuctionHouse (the
+// auction escrow). Needs HYPE for gas and BIG BLOCKS enabled for the deployer
+// (OnairFactory is ~20 KB).
 //
 //   HARDHAT_CONFIG=hardhat.config.size.ts ROBINHOOD_RPC_URL=https://rpc.hyperliquid.xyz/evm \
 //   ROBINHOOD_CHAIN_ID=999 PRIVATE_KEY=... [ADMIN=0x..] [HYPE_USD8=8114000000] \
@@ -39,27 +39,33 @@ async function main() {
   const price = await hypeUsd8();
   console.log("chain", net.chainId.toString(), "deployer", deployer.address, "bal", ethers.formatEther(await ethers.provider.getBalance(deployer.address)), "HYPE usd8", price.toString(), "admin", admin);
 
-  const cca = await (await ethers.getContractFactory("ContinuousClearingAuctionFactory")).deploy(ethers.ZeroAddress);
-  await cca.waitForDeployment();
-  console.log("CCA factory", await cca.getAddress());
-
   const td = await (await ethers.getContractFactory("OnairTokenDeployer")).deploy();
   await td.waitForDeployment();
   console.log("token deployer", await td.getAddress());
 
   const factory = await (await ethers.getContractFactory("OnairFactory")).deploy(
     admin, admin, await td.getAddress(), HYPERSWAP.factory, HYPERSWAP.positionManager, HYPERSWAP.swapRouter, HYPERSWAP.whype,
-    await cca.getAddress(), price, 0, 7000, 10000,
+    price, 0, 7000, 10000,
   );
   await factory.waitForDeployment();
   console.log("OnairFactory", await factory.getAddress());
   await (await td.setFactory(await factory.getAddress())).wait();
-  console.log("deployer bound");
+  const house = await (await ethers.getContractFactory("OnairAuctionHouse")).deploy(await factory.getAddress());
+  await house.waitForDeployment();
+  console.log("OnairAuctionHouse", await house.getAddress());
+  // The factory is owned by ADMIN; when the deployer is not the admin, the admin
+  // must call setAuctionHouse(house) once from their wallet.
+  if (admin.toLowerCase() === deployer.address.toLowerCase()) {
+    await (await factory.setAuctionHouse(await house.getAddress())).wait();
+    console.log("house wired");
+  } else {
+    console.log("ACTION NEEDED: admin must call factory.setAuctionHouse(", await house.getAddress(), ")");
+  }
 
   const out = {
     chainId: Number(net.chainId), admin, feeRecipient: admin, hypeUsd8: price.toString(),
     hyperswapV3: HYPERSWAP,
-    contracts: { ccaFactory: await cca.getAddress(), tokenDeployer: await td.getAddress(), factory: await factory.getAddress() },
+    contracts: { tokenDeployer: await td.getAddress(), factory: await factory.getAddress(), auctionHouse: await house.getAddress() },
     auction: { supplyBps: 5000, durationBlocks: 14400, floorMcapUsd8: "300000000000", minRaiseWei: "220000000000000000000" },
     fees: { poolFeeTier: 10000, holderBps: 0, creatorBps: 7000, platformBps: 3000 },
     deployBlock: await ethers.provider.getBlockNumber(), deployedAt: new Date().toISOString(),
