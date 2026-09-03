@@ -32,7 +32,7 @@ export default function Me() {
 
   if (!isConnected || !me) {
     return (
-      <main className="page"><section className="hero"><h1>Your coins.</h1><p className="sub">Connect a wallet to see what you hold, what you launched, and what you have earned.</p><div className="cta"><button className="go" onClick={() => openWalletModal()}>Connect wallet</button></div></section></main>
+      <main className="page"><section className="hero" style={{ gridTemplateColumns: "1fr" }}><div><div className="lbl" style={{ marginBottom: 12 }}>Studio</div><h1>Your <em>studio</em>.</h1><p className="sub">Connect a wallet to see what you hold, what you put on air, and what you have earned.</p><div className="cta"><button className="btn red" onClick={() => openWalletModal()}>Connect wallet</button></div></div></section></main>
     );
   }
 
@@ -41,39 +41,41 @@ export default function Me() {
 
   return (
     <main className="page">
-      <section className="section">
-        <div className="eyebrow">{short(me)}</div>
-        <h1>Your coins.</h1>
-        <div className="features" style={{ marginTop: 18 }}>
-          <div className="feature"><div className="big">{usd(value, { compact: true })}</div><p>Holdings value</p></div>
-          <div className="feature"><div className="big">{hype(totalClaimable, 4)} HYPE</div><p>Rewards waiting to be claimed</p></div>
-          <div className="feature"><div className="big">{data?.created.length ?? 0}</div><p>Coins you launched</p></div>
+      <section className="sec">
+        <div className="lbl" style={{ marginBottom: 12 }}>Studio · {short(me)}</div>
+        <h1 style={{ fontSize: 56 }}>Your <em>studio</em>.</h1>
+        <div className="stats3">
+          <div className="stat"><b>{usd(value, { compact: true })}</b><span>Holdings value</span></div>
+          <div className="stat"><b>{hype(totalClaimable, 4)} HYPE</b><span>Payouts waiting to be claimed</span></div>
+          <div className="stat"><b>{data?.created.length ?? 0}</b><span>Coins you put on air</span></div>
         </div>
       </section>
 
-      <section className="section">
-        <h2>Holdings</h2>
-        {!data ? <div className="skeleton" style={{ minHeight: 100 }} /> : data.held.length === 0 ? <p className="small">You do not hold any coins from here yet. <Link to="/">Browse coins</Link></p> : (
+      <section className="sec">
+        <div className="sec-h"><h2>Holdings</h2></div>
+        {!data ? <div className="skeleton" style={{ minHeight: 100 }} /> : data.held.length === 0 ? <p className="small">You do not hold any coins from here yet. <Link to="/" style={{ color: "var(--green)" }}>Watch the feed</Link></p> : (
           <div className="list">
             {data.held.map(({ t, bal, claimable }) => <Row key={t.address} t={t} me={me} left={`${num(wei(bal))} ${t.symbol}`} right={usd(wei(bal) * Number(t.priceUsd))} claimable={claimable} onClaimed={() => qc.invalidateQueries({ queryKey: ["me"] })} />)}
           </div>
         )}
       </section>
 
-      <section className="section">
-        <h2>Launched by you</h2>
-        {!data ? <div className="skeleton" style={{ minHeight: 100 }} /> : data.created.length === 0 ? <p className="small">Nothing yet. <Link to="/launch">Launch a coin</Link></p> : (
+      <section className="sec">
+        <div className="sec-h"><h2>On air by you</h2></div>
+        {!data ? <div className="skeleton" style={{ minHeight: 100 }} /> : data.created.length === 0 ? <p className="small">Nothing yet. <Link to="/launch" style={{ color: "var(--green)" }}>Go live</Link></p> : (
+          <>
           <div className="list">
             {data.created.map((t) => (
-              <div key={t.address} className="li" style={{ gridTemplateColumns: "auto 1fr auto auto" }}>
-                <Art src={t.metadata?.logo} name={t.name} className="art" size={40} />
+              <div key={t.address} className="li">
+                <Art src={t.metadata?.logo} name={t.name} className="art" size={44} />
                 <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{t.symbol} · {usd(t.marketCapUsd, { compact: true })} cap · {usd(wei(t.volume24hWei) * hypeUsd, { compact: true })} today</div></div>
                 <div className="r"><div className="l2">creator fee 40%</div></div>
-                <button className="pillbtn quiet" onClick={async () => { await ensureWallet(); await runTx("Harvest fees", () => client.claimCreatorFees(t.address as Address)); }}>Harvest</button>
+                <button className="btn" onClick={async () => { await ensureWallet(); await runTx("Harvest fees", () => client.claimCreatorFees(t.address as Address)); }}>Harvest</button>
               </div>
             ))}
-            <p className="note">Harvest collects the pool's accrued fees and splits them on-chain in the same transaction: 50% to holders, 40% to you, 10% platform. Anyone can trigger it.</p>
           </div>
+          <p className="note">Harvest collects the pool's accrued fees and splits them on-chain in the same transaction: 50% to holders, 40% to you, 10% platform. Anyone can trigger it.</p>
+          </>
         )}
       </section>
     </main>
@@ -82,11 +84,11 @@ export default function Me() {
 
 function Row({ t, me, left, right, claimable, onClaimed }: { t: Token; me: Address; left: string; right: string; claimable: bigint; onClaimed: () => void }) {
   return (
-    <div className="li" style={{ gridTemplateColumns: "auto 1fr auto auto" }}>
-      <Art src={t.metadata?.logo} name={t.name} className="art" size={40} />
+    <div className="li">
+      <Art src={t.metadata?.logo} name={t.name} className="art" size={44} />
       <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{left}</div></div>
       <div className="r">{right}<div className="l2">{claimable > 0n ? `${hype(wei(claimable), 4)} HYPE to claim` : "no rewards yet"}</div></div>
-      <button className="pillbtn" disabled={claimable === 0n} onClick={async () => { await ensureWallet(); const ok = await runTx("Claim rewards", async () => { const hs = await client.claimBaseRewards(t.address as Address, me); if (!hs.length) throw new Error("Nothing to claim"); return hs[hs.length - 1]; }); if (ok) onClaimed(); }}>Claim</button>
+      <button className="btn" disabled={claimable === 0n} onClick={async () => { await ensureWallet(); const ok = await runTx("Claim rewards", async () => { const hs = await client.claimBaseRewards(t.address as Address, me); if (!hs.length) throw new Error("Nothing to claim"); return hs[hs.length - 1]; }); if (ok) onClaimed(); }}>Claim</button>
     </div>
   );
 }

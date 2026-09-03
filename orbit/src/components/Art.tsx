@@ -21,7 +21,7 @@ export function Art({ src, name, className = "art", size }: { src?: string; name
     c.width = px; c.height = px;
     const ctx = c.getContext("2d")!;
     const [h1, h2, h3] = hues(name);
-    ctx.fillStyle = `hsl(${h1} 60% 92%)`;
+    ctx.fillStyle = `hsl(${h1} 30% 14%)`;
     ctx.fillRect(0, 0, px, px);
     const blob = (x: number, y: number, r: number, h: number, s: number, l: number) => {
       const g = ctx.createRadialGradient(x, y, 0, x, y, r);
@@ -32,7 +32,7 @@ export function Art({ src, name, className = "art", size }: { src?: string; name
     blob(px * 0.3, px * 0.35, px * 0.8, h1, 75, 60);
     blob(px * 0.78, px * 0.3, px * 0.7, h2, 80, 62);
     blob(px * 0.55, px * 0.85, px * 0.75, h3, 70, 55);
-    blob(px * 0.15, px * 0.9, px * 0.5, h2, 60, 75);
+    blob(px * 0.15, px * 0.9, px * 0.5, h2, 60, 45);
     // a single quiet ring, the brand motif
     ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.ellipse(px * 0.5, px * 0.52, px * 0.3, px * 0.12, -0.5, 0, Math.PI * 2); ctx.stroke();

@@ -1,62 +1,61 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { useAccount } from "wagmi";
 
-import { BRAND, env, ADDRESSES } from "./lib/env";
-import { useToast } from "./lib/hooks";
+import { ADDRESSES, BRAND, env } from "./lib/env";
+import { pct, short, usd, wei } from "./lib/format";
+import { useHypeUsd, useToast, useTokens } from "./lib/hooks";
 import { openWalletModal } from "./lib/wallet";
-import { short } from "./lib/format";
 import Home from "./pages/Home";
 import TokenPage from "./pages/Token";
 import Launch from "./pages/Launch";
 import Me from "./pages/Me";
 import Docs from "./pages/Docs";
 
-function useTheme() {
-  useEffect(() => {
-    try {
-      const t = localStorage.getItem("theme");
-      if (t) document.documentElement.dataset.theme = t;
-    } catch {}
-  }, []);
-  return () => {
-    const cur = document.documentElement.dataset.theme;
-    const dark = cur ? cur === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const next = dark ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    try { localStorage.setItem("theme", next); } catch {}
-  };
+/** The ticker: every live coin's price and move, then the day's totals. Doubled so the loop is seamless. */
+function Tape() {
+  const { data: tokens } = useTokens();
+  const { data: hypeUsd = 0 } = useHypeUsd();
+  const items = useMemo(() => {
+    const list = tokens ?? [];
+    const vol = list.reduce((s, t) => s + wei(t.volume24hWei) * hypeUsd, 0);
+    const out: [string, string, string][] = [["HYPE", usd(hypeUsd), ""]];
+    for (const t of list.slice(0, 20)) out.push([t.symbol, `${usd(t.priceUsd)} ${pct(t.priceChange24hPct)}`, (t.priceChange24hPct ?? 0) >= 0 ? "u" : "d"]);
+    out.push(["24H VOL", usd(vol, { compact: true }), ""], ["ON AIR", String(list.length), ""], ["FEE", "1% · 50% holders · 40% creator", ""]);
+    return out;
+  }, [tokens, hypeUsd]);
+  const seq = [...items, ...items];
+  return (
+    <div className="tape" aria-hidden="true"><div className="track">{seq.map(([k, v, c], i) => <span key={i}>{k}<b className={c}>{v}</b></span>)}</div></div>
+  );
 }
 
 export default function App() {
   const { address, isConnected } = useAccount();
-  const toggle = useTheme();
   const toast = useToast();
   const loc = useLocation();
   useEffect(() => { window.scrollTo({ top: 0 }); }, [loc.pathname]);
 
   return (
     <>
-      <header className="nav">
-        <div className="nav-in">
-          <Link to="/" className="logo"><img src="/icon.svg" alt="" />{BRAND.name}</Link>
-          <nav className="nav-links">
-            <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}>Coins</NavLink>
-            <NavLink to="/launch" className={({ isActive }) => (isActive ? "on" : "")}>Launch</NavLink>
-            <NavLink to="/me" className={({ isActive }) => (isActive ? "on" : "")}>You</NavLink>
-            <NavLink to="/docs" className={({ isActive }) => (isActive ? "on" : "")}>How it works</NavLink>
+      <header className="top">
+        <div className="top-in">
+          <Link to="/" className="brand"><i />{BRAND.name}</Link>
+          <nav className="nav">
+            <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}>Live</NavLink>
+            <NavLink to="/launch" className={({ isActive }) => (isActive ? "on" : "")}>Go live</NavLink>
+            <NavLink to="/me" className={({ isActive }) => (isActive ? "on" : "")}>Studio</NavLink>
+            <NavLink to="/docs" className={({ isActive }) => (isActive ? "on" : "")}>Rules</NavLink>
           </nav>
-          <div className="nav-r">
-            <button className="iconbtn" onClick={toggle} aria-label="Toggle appearance" title="Appearance">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M12 3a9 9 0 0 0 0 18V3Z" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="9" /></svg>
-            </button>
-            <Link to="/launch" className="pillbtn quiet" style={{ textDecoration: "none" }}>Launch</Link>
-            <button className="pillbtn" onClick={() => openWalletModal()}>
-              {isConnected && address ? <><span className="dot" />{short(address)}</> : "Connect"}
+          <div className="top-r">
+            <Link to="/launch" className="btn red">Go live</Link>
+            <button className="btn ghost" onClick={() => openWalletModal()}>
+              {isConnected && address ? <><span className="dot g" style={{ marginRight: 8, width: 7, height: 7 }} />{short(address)}</> : "Connect"}
             </button>
           </div>
         </div>
       </header>
+      <Tape />
 
       <Routes>
         <Route path="/" element={<Home />} />
@@ -68,24 +67,26 @@ export default function App() {
       </Routes>
 
       <footer className="foot">
-        <span>{BRAND.name} · {env.chainName}</span>
+        <span>{BRAND.name} · {env.chainName} · always on</span>
         <span>
           <a href={`${env.explorerUrl}/address/${ADDRESSES.factory}`} target="_blank" rel="noreferrer">Factory</a>
-          {" · "}<Link to="/docs">How it works</Link>
-          {" · "}<Link to="/launch">Launch a coin</Link>
+          {" · "}<Link to="/docs">Rules</Link>
+          {" · "}<Link to="/launch">Go live</Link>
         </span>
       </footer>
 
-      <div className="mobilebar">
-        <Link to="/" className="bigbtn" style={{ background: "var(--fill)", color: "var(--ink)", textAlign: "center", textDecoration: "none" }}>Coins</Link>
-        <Link to="/launch" className="bigbtn" style={{ textAlign: "center", textDecoration: "none" }}>Launch</Link>
-      </div>
+      {loc.pathname !== "/launch" && !loc.pathname.startsWith("/t/") && (
+        <div className="mobilebar">
+          <Link to="/" className="big" style={{ background: "var(--panel2)", color: "var(--ink)", textAlign: "center" }}>Live</Link>
+          <Link to="/launch" className="big sell" style={{ textAlign: "center" }}>Go live</Link>
+        </div>
+      )}
 
       {toast && (
         <div className={"toast " + (toast.kind === "err" ? "err" : toast.kind === "ok" ? "ok" : "")}>
           {toast.kind === "busy" && <span className="spin" />}
           <span>{toast.text}</span>
-          {toast.hash && <a href={`${env.explorerUrl}/tx/${toast.hash}`} target="_blank" rel="noreferrer">View</a>}
+          {toast.hash && <a href={`${env.explorerUrl}/tx/${toast.hash}`} target="_blank" rel="noreferrer">tx</a>}
         </div>
       )}
     </>

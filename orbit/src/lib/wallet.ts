@@ -37,7 +37,7 @@ export function openWalletModal(): Promise<void> {
         defaultNetwork: network,
         projectId: env.walletConnectProjectId,
         metadata: { name: BRAND.name, description: BRAND.description, url: BRAND.url, icons: [`${BRAND.url}/icon.svg`] },
-        themeVariables: { "--w3m-accent": "#0071E3", "--w3m-border-radius-master": "3px", "--w3m-font-family": "-apple-system, Geist, system-ui, sans-serif" },
+        themeVariables: { "--w3m-accent": "#FF3B30", "--w3m-border-radius-master": "2px", "--w3m-font-family": "Archivo, system-ui, sans-serif" },
         features: { analytics: false, email: false, socials: [] },
       }),
     );

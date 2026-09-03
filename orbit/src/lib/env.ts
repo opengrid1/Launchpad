@@ -35,8 +35,8 @@ export const chain = defineChain({
 });
 
 export const BRAND = {
-  name: "Orbit",
-  tagline: "Launch a coin. Watch it go.",
+  name: "ONAIR",
+  tagline: "Go live with a coin.",
   url: "https://orbit-hyper.vercel.app",
-  description: "Launch a coin on HyperEVM. Fair launch, instant liquidity, creators earn on every trade.",
+  description: "Go live with a coin on HyperEVM. Launch in one transaction, liquidity locked, every trade pays holders and the creator.",
 };

@@ -11,11 +11,11 @@ export function Chart({ candles, hypeUsd }: { candles: Candle[]; hypeUsd: number
     if (!ref.current) return;
     const css = getComputedStyle(document.documentElement);
     const ink2 = css.getPropertyValue("--ink2").trim() || "#6E6E73";
-    const line = css.getPropertyValue("--line2").trim() || "#E5E5EA";
+    const line = css.getPropertyValue("--line").trim() || "#26262A";
     const up = candles.length > 1 && Number(candles[candles.length - 1].close) >= Number(candles[0].open);
     const color = up ? (css.getPropertyValue("--up").trim() || "#1D9E4B") : (css.getPropertyValue("--down").trim() || "#E0262D");
     const c = createChart(ref.current, {
-      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: ink2, fontFamily: "-apple-system, Geist, system-ui, sans-serif", fontSize: 11 },
+      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: ink2, fontFamily: "JetBrains Mono, ui-monospace, monospace", fontSize: 11 },
       grid: { vertLines: { visible: false }, horzLines: { color: line } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: 0.08 } },
       timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },

@@ -63,10 +63,12 @@ export default function Launch() {
 
   return (
     <main className="page">
-      <section className="section">
-        <div className="eyebrow">Launch</div>
-        <h1>Your coin, live in one transaction.</h1>
-        <p className="sub">No upfront liquidity. One billion supply, seeded single-sided into a HyperSwap pool that is locked forever. You earn 40% of every trade's fee, for as long as it trades.</p>
+      <section className="hero" style={{ gridTemplateColumns: "1fr", paddingBottom: 10 }}>
+        <div>
+          <div className="lbl" style={{ marginBottom: 12 }}>Studio · go live</div>
+          <h1>On air in <em>one</em><br />transaction.</h1>
+          <p className="sub">No upfront liquidity. One billion supply, seeded into a HyperSwap pool that is locked forever. You earn 40% of every trade's fee for as long as it trades.</p>
+        </div>
       </section>
 
       <div className="split">
@@ -79,26 +81,23 @@ export default function Launch() {
           <div className="field"><label>Name</label><input value={f.name} onChange={set("name")} placeholder="Moon Cat" maxLength={40} required /></div>
           <div className="field"><label>Ticker</label><input value={f.symbol} onChange={set("symbol")} placeholder={symbol} maxLength={10} style={{ textTransform: "uppercase" }} /><div className="help">Up to 10 characters. Leave blank to derive from the name.</div></div>
           <div className="field"><label>Description</label><textarea value={f.description} onChange={set("description")} placeholder="What is this coin about?" maxLength={600} /></div>
-          <div className="split">
+          <div className="split2">
             <div className="field"><label>Website</label><input value={f.website} onChange={set("website")} placeholder="example.com" /></div>
             <div className="field"><label>X</label><input value={f.twitter} onChange={set("twitter")} placeholder="@handle" /></div>
           </div>
           <div className="field"><label>Telegram</label><input value={f.telegram} onChange={set("telegram")} placeholder="@group" /></div>
           <div className="field"><label>First buy (optional)</label><input inputMode="decimal" value={f.devBuy} onChange={set("devBuy")} placeholder="0" /><div className="help">HYPE spent in the same transaction, so you hold from the first block. Everyone can see it.</div></div>
-          <button className="bigbtn" type="submit" disabled={busy || !f.name.trim()}>{!isConnected ? "Connect wallet" : busy ? "Launching…" : `Launch ${symbol}`}</button>
-          <p className="note">Free to launch, you pay HyperEVM gas only. Launching deploys a pool, which needs <b>big blocks</b> turned on for your wallet once (in the Hyperliquid app, "Use big blocks for EVM"). Turn it back off after.</p>
+          <button className="big sell" type="submit" disabled={busy || !f.name.trim()}>{!isConnected ? "Connect wallet" : busy ? "Going live…" : `Go live with ${symbol}`}</button>
+          <p className="note">Free, you pay HyperEVM gas only. Launching deploys a pool, which needs <b style={{ color: "var(--ink)" }}>big blocks</b> turned on for your wallet once (Hyperliquid app → "Use big blocks for EVM"). Turn it back off after.</p>
         </form>
 
-        <aside className="preview">
-          <div className="small" style={{ marginBottom: 10 }}>Preview</div>
-          <div className="card" style={{ maxWidth: 280 }}>
-            <Art src={logo} name={f.name || "Your coin"} />
-            <div className="name"><span>{f.name || "Your coin"}</span><span className="badge new">New</span></div>
-            <div className="sym">{symbol} · just now</div>
-            <div className="meta"><span className="cap">$3.0K</span><span className="chg faint">—</span></div>
-          </div>
-          <div className="panel soft" style={{ marginTop: 14 }}>
-            <dl className="specs" style={{ fontSize: 14 }}>
+        <aside className="sign">
+          <div className="onair"><span className="dot" style={{ width: 7, height: 7, boxShadow: "none" }} />ON AIR · PREVIEW</div>
+          <Art src={logo} name={f.name || "Your coin"} className="art" />
+          <h3>{f.name || "Your coin"}</h3>
+          <div className="small mono">{symbol} · $3.0K · just now</div>
+          <div>
+            <dl className="specs">
               <dt>Supply</dt><dd>1,000,000,000</dd>
               <dt>Starting market cap</dt><dd>≈ $3,000</dd>
               <dt>Pair</dt><dd>HYPE</dd>
