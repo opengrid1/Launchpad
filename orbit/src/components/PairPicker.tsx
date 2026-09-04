@@ -7,8 +7,16 @@ import { stockByAddress } from "../lib/stocks";
 import { Icon } from "./Icon";
 
 /** Stocks with a real Hyperliquid Core spot market today (24h volume over
- *  $1k in the last scan). They lead the list; the rest are listed but thin. */
-const LIQUID = new Set(["QQQ", "GLD", "HOOD", "META", "SPCX", "MU"]);
+ *  $1k in the last scan), by address. They lead the list; the rest are thin. */
+const LIQUID = new Set([
+  "0x499e347174f237ad28687b947b94c0d49570d1b7", // QQQd
+  "0x08be08c37d93e689518ced744a89f113b4afaad4", // GLDd
+  "0xc304a9d52cf9165024ebc7814250ef3a5013f924", // HOODd
+  "0x5a9d2deee7d8782011695623f1c453f46b2b566e", // METAd
+  "0xe8c8afdf7e80be51e91afa28b6ac44404d270b5d", // SPCXd
+  "0x173c83a71c1a9e254721a86b7512cd65bf92648d", // MUd
+]);
+const liquid = (p: QuoteView) => LIQUID.has(p.address.toLowerCase());
 
 /** Pick the pair asset for an instant launch: HYPE or a tokenized stock. A
  *  styled panel (dropdown on desktop, sheet on phones) with search, instead
@@ -33,8 +41,8 @@ export function PairPicker({ pairs, value, onChange, disabled, note }: { pairs: 
     const list = pairs.filter(hit);
     return [
       { title: "Native", items: list.filter((p) => p.isNative) },
-      { title: "Trades on Hyperliquid spot", items: list.filter((p) => !p.isNative && LIQUID.has(p.symbol)) },
-      { title: "Listed · thin or no market yet", items: list.filter((p) => !p.isNative && !LIQUID.has(p.symbol)) },
+      { title: "Trades on Hyperliquid spot", items: list.filter((p) => !p.isNative && liquid(p)) },
+      { title: "Listed · thin or no market yet", items: list.filter((p) => !p.isNative && !liquid(p)) },
     ].filter((g) => g.items.length > 0);
   }, [pairs, q]);
 
