@@ -53,7 +53,7 @@ function MarketPage({ t }: { t: Token }) {
         </div>
         <div className="price">
           <div className="v">{usd(t.priceUsd)}</div>
-          <div className={"c " + (chg == null ? "faint" : chg >= 0 ? "up" : "down")}>{pct(chg)} today</div>
+          <div className={"c " + (chg == null ? "faint" : chg >= 0 ? "up" : "down")}>{chg == null ? "" : `${pct(chg)} · 24h`}</div>
         </div>
       </div>
 
@@ -101,8 +101,8 @@ function MarketPage({ t }: { t: Token }) {
       </div>
 
       <div className="mobilebar">
-        <button className="big" onClick={() => setSheet("buy")}>Buy in</button>
-        <button className="big sell" onClick={() => setSheet("sell")}>Cash out</button>
+        <button className="big" onClick={() => setSheet("buy")}>Buy</button>
+        <button className="big sell" onClick={() => setSheet("sell")}>Sell</button>
       </div>
       {sheet && (
         <>
@@ -429,8 +429,8 @@ function TradePanel({ token, symbol, priceWei, hypeUsd, initial = "buy" }: { tok
   return (
     <>
       <div className="seg">
-        <button className={side === "buy" ? "on" : ""} onClick={() => { setSide("buy"); setAmt(""); }}>Buy in</button>
-        <button className={side === "sell" ? "on sell" : ""} onClick={() => { setSide("sell"); setAmt(""); }}>Cash out</button>
+        <button className={side === "buy" ? "on" : ""} onClick={() => { setSide("buy"); setAmt(""); }}>Buy</button>
+        <button className={side === "sell" ? "on sell" : ""} onClick={() => { setSide("sell"); setAmt(""); }}>Sell</button>
       </div>
       <div className="amount">
         <div className="lbl"><span>{side === "buy" ? "You pay" : "You sell"}</span><span>{bal ? (side === "buy" ? `${hype(wei(bal.native))} HYPE` : `${num(wei(bal.token))} ${symbol}`) : ""}</span></div>
