@@ -27,7 +27,8 @@ export const wei = (s: string | bigint, d = 18) => Number(typeof s === "bigint" 
 export function hype(v: number, d = 3): string {
   if (!isFinite(v)) return "—";
   if (v === 0) return "0";
-  if (v < 0.001) return v.toPrecision(2);
+  // Never fall back to exponent notation: tiny per-coin prices read as 0.000000036.
+  if (v < 0.001) return v.toFixed(Math.min(12, -Math.floor(Math.log10(v)) + 1)).replace(/0+$/, "");
   return v.toLocaleString("en-US", { maximumFractionDigits: d });
 }
 

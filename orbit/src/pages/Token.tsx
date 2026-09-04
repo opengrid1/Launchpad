@@ -160,7 +160,7 @@ function AuctionPage({ t }: { t: Token }) {
               <div>
                 <div className="lbl">Clearing price · everyone pays this</div>
                 <div className="big-price">{usd((Number(clearingWei) / 1e18) * hypeUsd)}</div>
-                <div className="small mono">{hype(wei(clearingWei), 8)} HYPE per coin · {usd(fdvUsd, { compact: true })} FDV · floor {usd(floorFdv, { compact: true })}</div>
+                <div className="small mono">{hype(wei(clearingWei))} HYPE per coin · {usd(fdvUsd, { compact: true })} FDV · floor {usd(floorFdv, { compact: true })}</div>
               </div>
               <div className="stage-n">
                 <div><b>{hype(wei(a.raised), 2)}</b><span>HYPE raised</span></div>
