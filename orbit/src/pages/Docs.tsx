@@ -2,12 +2,15 @@ import { Link } from "react-router-dom";
 
 import { Copy } from "../components/Copy";
 import { Icon, type IconName } from "../components/Icon";
-import { ADDRESSES, env, FEES } from "../lib/env";
+import { ADDRESSES, DEPLOYMENTS, env, FEES } from "../lib/env";
+import { useQuotes } from "../lib/hooks";
 import { usd, wei } from "../lib/format";
 import { useConfig } from "../lib/hooks";
 import { countdown } from "../lib/onair";
 
 export default function Docs() {
+  const { data: quotes } = useQuotes();
+  const stockCount = quotes ? Math.max(0, quotes.filter((q) => q.approved && !q.isNative).length) : 58;
   const { data: cfg } = useConfig();
   const floor = cfg ? usd(Number(cfg.floorMcapUsd8) / 1e8, { compact: true }) : "$3.0K";
   const bond = cfg ? wei(cfg.minRaiseWei) : 220;
@@ -58,6 +61,20 @@ export default function Docs() {
       </section>
 
       <section className="sec">
+        <div className="sec-h"><h2>Stock pairs</h2><span className="lbl">instant launches</span></div>
+        <div className="steps two">
+          <div className="step">
+            <div className="step-h"><Icon name="receipt" size={20} /><h3>Pick the pair</h3></div>
+            <p>An instant launch can pair with HYPE or with any tokenized stock on HyperEVM: dStock, Backed xStock, Ondo and Wagyu lines, {stockCount} in all. The pool then holds that stock on the other side, buyers pay in it, and your {FEES.creatorPct}% of fees arrives in it.</p>
+          </div>
+          <div className="step">
+            <div className="step-h"><Icon name="wallet" size={20} /><h3>Getting the stock</h3></div>
+            <p>Stock tokens trade on Hyperliquid Core spot, not on a HyperEVM DEX. Buy there with USDC, transfer to HyperEVM, then launch or trade. Auctions are bid in HYPE and always pair HYPE.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="sec">
         <div className="sec-h"><h2>Fees and limits</h2></div>
         <div className="facts">
           <div><b>{FEES.poolPct}%</b><span>fee on every buy and sell, into the pool. The only fee.</span></div>
@@ -71,11 +88,9 @@ export default function Docs() {
         <div className="sec-h"><h2>Contracts</h2><span className="lbl">{env.chainName} · {env.chainId}</span></div>
         <div className="panel">
           <dl className="specs">
-            <dt>Factory</dt><dd><Copy value={ADDRESSES.factory} full /></dd>
-            <dt>Auction house</dt><dd><Copy value={ADDRESSES.house} full /></dd>
-            <dt>Token deployer</dt><dd><Copy value={ADDRESSES.tokenDeployer} full /></dd>
+            {DEPLOYMENTS.map((d) => <><dt key={d.factory + "f"}>Factory · {d.name}</dt><dd key={d.factory + "fv"}><Copy value={d.factory} full /></dd><dt key={d.factory + "h"}>Auction house · {d.name}</dt><dd key={d.factory + "hv"}><Copy value={d.house} full /></dd><dt key={d.factory + "t"}>Token deployer · {d.name}</dt><dd key={d.factory + "tv"}><Copy value={d.tokenDeployer} full /></dd></>)}
             <dt>Swap router</dt><dd><Copy value={ADDRESSES.swapRouter} full /></dd>
-            <dt>Pair</dt><dd>WHYPE</dd>
+            <dt>Pairs</dt><dd>WHYPE or any approved tokenized stock (v2)</dd>
             <dt>X</dt><dd><a href="https://x.com/hyperauctionX" target="_blank" rel="noreferrer">@hyperauctionX</a></dd>
           </dl>
         </div>

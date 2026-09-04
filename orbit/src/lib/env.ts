@@ -23,11 +23,47 @@ export const env = {
 
 const addr = (key: string, fallback: string) => String(import.meta.env[key] ?? fallback) as `0x${string}`;
 
-/** Deployed ONAIR contracts on HyperEVM (VITE_* overrides point a build at a local stack). */
+/** One HyperAuction deployment: factory + auction house + token deployer. */
+export interface Deployment {
+  name: string;
+  factory: `0x${string}`;
+  house: `0x${string}`;
+  tokenDeployer: `0x${string}`;
+  /** Factory deploy block, the lower bound for log scans. */
+  startBlock: bigint;
+}
+
+/** The v2 stack (stock pairs) is where new coins launch. The v1 stack stays
+ *  live: its coins, pools, auctions and fees are read and served as before.
+ *  VITE_* overrides point a build at a local stack. */
+const ALL: Deployment[] = [
+  {
+    name: "v2",
+    factory: addr("VITE_FACTORY", "0xA56dC806CAf3866D2c831A0455f5a214d7A27F1D"),
+    house: addr("VITE_HOUSE", "0x41Dd552c84595A201244913d23E51A4EB4A2c99a"),
+    tokenDeployer: addr("VITE_TOKEN_DEPLOYER", "0xCd92A0D7BE5B34019Ca41ddAd29a9F0e9a4E8aeF"),
+    startBlock: 44998000n,
+  },
+  {
+    name: "v1",
+    factory: "0x469D1F86485720c60e17538cEf44071E4f299ACe",
+    house: "0xad1e5800cde9D3A7aabbfD4D1aD7Ef4ce0941c3e",
+    tokenDeployer: "0xD175CcE73949CB1Db283f64383D148bcb0B49058",
+    startBlock: 44941000n,
+  },
+];
+// A local override (VITE_FACTORY) runs a single stack.
+export const DEPLOYMENTS: Deployment[] = import.meta.env.VITE_FACTORY ? ALL.slice(0, 1) : ALL;
+
+export const PRIMARY = DEPLOYMENTS[0];
+export const LEGACY = DEPLOYMENTS.slice(1);
+
+/** Addresses the app writes to (new launches, admin settings) plus the shared
+ *  HyperSwap router and the native pair. */
 export const ADDRESSES = {
-  factory: addr("VITE_FACTORY", "0x469D1F86485720c60e17538cEf44071E4f299ACe"),
-  house: addr("VITE_HOUSE", "0xad1e5800cde9D3A7aabbfD4D1aD7Ef4ce0941c3e"),
-  tokenDeployer: addr("VITE_TOKEN_DEPLOYER", "0xD175CcE73949CB1Db283f64383D148bcb0B49058"),
+  factory: PRIMARY.factory,
+  house: PRIMARY.house,
+  tokenDeployer: PRIMARY.tokenDeployer,
   swapRouter: addr("VITE_SWAP_ROUTER", "0x6d99e7f6747af2cdbb5164b6dd50e40d4fde1e77"),
   quote: addr("VITE_QUOTE", "0x5555555555555555555555555555555555555555"), // WHYPE
 };
@@ -46,7 +82,7 @@ export const BRAND = {
   tagline: "Every coin, one fair price.",
   url: "https://www.hyperauction.fun",
   x: "https://x.com/hyperauctionX",
-  description: "Coin auctions on HyperEVM. Launch a coin into a four-hour auction where every bidder pays one clearing price, or list it instantly. Liquidity locked, every trade pays the creator.",
+  description: "Coin auctions on HyperEVM. Launch a coin into a four-hour auction where every bidder pays one clearing price, or list it instantly against HYPE or a tokenized stock. Liquidity locked, every trade pays the creator.",
 };
 
 /** Fee split on the 1% pool tier, as deployed. */
@@ -59,5 +95,6 @@ export const HIDDEN_TOKENS = new Set([
   "0x1b3bec0bbf8dd383267cc9c33c82d0870bf10b6e", // Hammer Time
   "0x02a6521d5fcb15f16167c0039f899235c7fd7c14", // Final Lot
   "0x94d4c688f79369308f50b33b8bd253e34c4e9e02", // $AUCTION auction attempt (did not bond, refunds via My bids)
+  "0xd9e285871958fb14a2251efed79466f1d6d55a77", // Nasdaq Test (QTEST): v2 factory stock-pair check, pairs QQQd
 ]);
 export const isHidden = (address: string) => HIDDEN_TOKENS.has(address.toLowerCase());

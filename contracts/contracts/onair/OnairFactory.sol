@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
@@ -18,7 +19,9 @@ import {OnairAuctionHouse} from "./OnairAuctionHouse.sol";
 ///
 ///   INSTANT  One transaction deploys the coin, opens a HyperSwap V3 pool at a
 ///            target market cap (default $3,000) seeded single-sided with the
-///            whole supply, and trading starts on the official router.
+///            whole supply, and trading starts on the official router. The
+///            pool's other side is the wrapped native or any owner-approved
+///            quote asset (tokenized stocks); fees accrue in that asset.
 ///
 ///   AUCTION  The coin's supply is split: AUCTION_BPS goes into the ONAIR
 ///            auction house, a continuous clearing auction (budget + max price
@@ -57,6 +60,7 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     error NotFinalized();
     error HouseAlreadySet();
     error PoolTampered();
+    error QuoteNotApproved();
 
     // ------------------------------------------------------------------
     // Events
@@ -76,6 +80,7 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     event FactoryResumed(address indexed by);
     event EmergencyRecovered(address indexed asset, uint256 amount, address indexed to);
     event QuoteUsdUpdated(uint64 usdPrice8);
+    event QuoteAssetSet(address indexed quote, bool approved, uint64 usdPrice8, uint8 decimals);
     event AuctionConfigUpdated(uint64 durationBlocks, uint256 minBidWei, uint256 floorMcapUsd8, uint256 minRaiseWei);
     event PoolPriceRestored(address indexed pool, uint160 fromSqrtPriceX96, uint160 toSqrtPriceX96, int256 amount0, int256 amount1);
 
@@ -88,12 +93,17 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         string name;
         string symbol;
         string metadataURI;
+        /// @dev Pair asset the coin trades against: the wrapped native (0 =
+        ///      same) or any approved quote (tokenized stocks). Auctions are
+        ///      bid in native HYPE, so they only take the wrapped native.
+        address quote;
         /// @dev Instant: optional starting market cap, USD 8-dec (0 = default).
         ///      Auction: the max market cap of the creator's opening bid
         ///      (0 = 100x the floor, i.e. practically never outbid).
         uint256 marketCapUsd8;
-        /// @dev Optional first buy in HYPE, sent as msg.value. Instant: swapped
-        ///      on the fresh pool. Auction: placed as the creator's opening bid.
+        /// @dev Optional first buy in quote units. Wrapped-native pair: sent as
+        ///      msg.value. Stock pair: pulled by allowance. Instant: swapped on
+        ///      the fresh pool. Auction: placed as the creator's opening bid.
         uint256 devBuyQuote;
     }
 
@@ -174,6 +184,9 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     AuctionConfig public auctionConfig;
 
     mapping(address quote => QuoteAsset) public quoteAssets;
+    /// @notice Every quote ever approved (the wrapped native first), so clients
+    ///         can enumerate pairs; check {quoteAssets} for the live flag.
+    address[] public quoteList;
     mapping(address token => Listing) public listings;
     mapping(address token => AuctionInfo) public auctions;
     address[] public allTokens;
@@ -212,6 +225,8 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         swapRouter = swapRouter_;
         wrappedNative = wrappedNative_;
         quoteAssets[wrappedNative_] = QuoteAsset({approved: true, usdPrice8: hypeUsd8_, decimals: 18});
+        quoteList.push(wrappedNative_);
+        emit QuoteAssetSet(wrappedNative_, true, hypeUsd8_, 18);
         // 4 hours at ~1s blocks, 0.05 HYPE smallest bid, $3k floor, 220 HYPE raised to graduate.
         auctionConfig = AuctionConfig({durationBlocks: 14_400, minBidWei: 0.05 ether, floorMcapUsd8: 3_000e8, minRaiseWei: 220 ether});
     }
@@ -229,36 +244,42 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     {
         if (launchesPaused) revert LaunchesArePaused();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
-        if (msg.value != p.devBuyQuote) revert InvalidParams();
+        address quote = p.quote == address(0) ? wrappedNative : p.quote;
+        QuoteAsset memory q = quoteAssets[quote];
+        if (!q.approved) revert QuoteNotApproved();
+        // A first buy in the wrapped native rides along as msg.value; in a
+        // stock it is pulled by allowance and no native may be attached.
+        if (msg.value != (quote == wrappedNative ? p.devBuyQuote : 0)) revert InvalidParams();
         int24 tickSpacing = uniswapFactory.feeAmountTickSpacing(POOL_FEE_TIER);
         if (tickSpacing == 0) revert FeeTierNotSupported();
         uint256 mcapUsd8 = p.marketCapUsd8 == 0 ? DEFAULT_MARKET_CAP_USD8 : p.marketCapUsd8;
         if (mcapUsd8 < MIN_MARKET_CAP_USD8 || mcapUsd8 > MAX_MARKET_CAP_USD8) revert MarketCapOutOfRange();
 
-        token = tokenDeployer.deploy(msg.sender, p.name, p.symbol, p.metadataURI, wrappedNative);
+        token = tokenDeployer.deploy(msg.sender, p.name, p.symbol, p.metadataURI, quote);
         emit TokenCreated(token, msg.sender, p.name, p.symbol, p.metadataURI, uint8(Mode.Instant));
 
-        bool tokenIsToken0 = token < wrappedNative;
-        uint160 sqrtPriceX96 = _sqrtPriceFromQ96(tokenIsToken0, tickSpacing, _priceQ96ForMcap(mcapUsd8));
-        pool = _createPool(token, tokenIsToken0, sqrtPriceX96, mcapUsd8);
+        bool tokenIsToken0 = token < quote;
+        uint160 sqrtPriceX96 = _sqrtPriceFromQ96(tokenIsToken0, tickSpacing, _priceQ96ForMcap(mcapUsd8, q));
+        pool = _createPool(token, quote, tokenIsToken0, sqrtPriceX96, mcapUsd8);
 
         // Every coin we hold (the whole supply, less anything a price restore
         // sold above the launch price) goes single-sided above the price.
         (int24 lower, int24 upper) = _aboveRange(tokenIsToken0, tickSpacing, sqrtPriceX96);
         uint256 tokenAmt;
-        (positionId, tokenAmt,) = _mint(token, tokenIsToken0, lower, upper, IERC20(token).balanceOf(address(this)), 0);
+        (positionId, tokenAmt,) = _mint(token, quote, tokenIsToken0, lower, upper, IERC20(token).balanceOf(address(this)), 0);
         emit LiquidityAdded(token, positionId, 0, tokenAmt, 0);
 
-        listings[token] = Listing({creator: msg.sender, quote: wrappedNative, pool: pool, positionId: positionId, createdAt: uint64(block.timestamp), tokenIsToken0: tokenIsToken0});
+        listings[token] = Listing({creator: msg.sender, quote: quote, pool: pool, positionId: positionId, createdAt: uint64(block.timestamp), tokenIsToken0: tokenIsToken0});
         auctions[token] = AuctionInfo({mode: Mode.Instant, finalized: true, graduated: true, overflowPositionId: 0});
         allTokens.push(token);
 
         if (p.devBuyQuote > 0) {
-            IWETH9(wrappedNative).deposit{value: p.devBuyQuote}();
-            IERC20(wrappedNative).forceApprove(address(swapRouter), p.devBuyQuote);
+            if (quote == wrappedNative) IWETH9(wrappedNative).deposit{value: p.devBuyQuote}();
+            else IERC20(quote).safeTransferFrom(msg.sender, address(this), p.devBuyQuote);
+            IERC20(quote).forceApprove(address(swapRouter), p.devBuyQuote);
             swapRouter.exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
-                    tokenIn: wrappedNative, tokenOut: token, fee: POOL_FEE_TIER, recipient: msg.sender,
+                    tokenIn: quote, tokenOut: token, fee: POOL_FEE_TIER, recipient: msg.sender,
                     amountIn: p.devBuyQuote, amountOutMinimum: 0, sqrtPriceLimitX96: 0
                 })
             );
@@ -276,6 +297,8 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         if (launchesPaused) revert LaunchesArePaused();
         if (address(house) == address(0)) revert ZeroAddress();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
+        // The house escrows native HYPE, so an auction always pairs with it.
+        if (p.quote != address(0) && p.quote != wrappedNative) revert QuoteNotApproved();
         if (msg.value != p.devBuyQuote) revert InvalidParams();
         AuctionConfig memory c = auctionConfig;
 
@@ -284,7 +307,7 @@ contract OnairFactory is Ownable, ReentrancyGuard {
 
         // Prices are HYPE-wei per coin-wei, Q96. Bid granularity is 1% of the
         // floor; the floor is re-derived from it so it sits on the grid.
-        uint256 tickSpacingQ96 = _priceQ96ForMcap(c.floorMcapUsd8) / 100;
+        uint256 tickSpacingQ96 = _priceQ96ForMcap(c.floorMcapUsd8, quoteAssets[wrappedNative]) / 100;
         if (tickSpacingQ96 == 0) revert InvalidParams();
         uint256 floorPriceQ96 = tickSpacingQ96 * 100;
 
@@ -301,7 +324,7 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         if (p.devBuyQuote > 0) {
             // Creator's opening bid: max price from `marketCapUsd8`, rounded up
             // to the grid; 0 means 100x the floor.
-            uint256 maxPriceQ96 = p.marketCapUsd8 == 0 ? floorPriceQ96 * 100 : _priceQ96ForMcap(p.marketCapUsd8);
+            uint256 maxPriceQ96 = p.marketCapUsd8 == 0 ? floorPriceQ96 * 100 : _priceQ96ForMcap(p.marketCapUsd8, quoteAssets[wrappedNative]);
             maxPriceQ96 = ((maxPriceQ96 + tickSpacingQ96 - 1) / tickSpacingQ96) * tickSpacingQ96;
             if (maxPriceQ96 < floorPriceQ96) maxPriceQ96 = floorPriceQ96;
             house.bidFor{value: p.devBuyQuote}(token, msg.sender, maxPriceQ96, 0);
@@ -346,7 +369,7 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         Listing storage l = listings[token];
         int24 tickSpacing = uniswapFactory.feeAmountTickSpacing(POOL_FEE_TIER);
         uint160 sqrtPriceX96 = _sqrtPriceFromQ96(l.tokenIsToken0, tickSpacing, clearingQ96);
-        pool = _createPool(token, l.tokenIsToken0, sqrtPriceX96, _quoteWeiToMcap(Math.mulDiv(clearingQ96, TOTAL_SUPPLY, Q96)));
+        pool = _createPool(token, wrappedNative, l.tokenIsToken0, sqrtPriceX96, _quoteWeiToMcap(Math.mulDiv(clearingQ96, TOTAL_SUPPLY, Q96), quoteAssets[wrappedNative]));
 
         // Seed with every coin we hold for this launch (reserve + unsold) and
         // all the WHYPE we hold (the raise, plus anything a price restore sold
@@ -362,7 +385,7 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         uint256 usedCoins;
         uint256 usedQuote;
         if (hype > 0) {
-            (posId, usedCoins, usedQuote) = _mint(token, l.tokenIsToken0, fullLower, fullUpper, coins, hype);
+            (posId, usedCoins, usedQuote) = _mint(token, wrappedNative, l.tokenIsToken0, fullLower, fullUpper, coins, hype);
             emit LiquidityAdded(token, posId, 0, usedCoins, usedQuote);
         }
 
@@ -376,13 +399,13 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         if (leftCoins > TOTAL_SUPPLY / 1e6) {
             (int24 lower, int24 upper) = _aboveRange(l.tokenIsToken0, tickSpacing, sqrtPriceX96);
             // V3 may round the pulled amount up by a wei; keep a hair back.
-            (uint256 posId2, uint256 c2,) = _mint(token, l.tokenIsToken0, lower, upper, leftCoins - 1e3, 0);
+            (uint256 posId2, uint256 c2,) = _mint(token, wrappedNative, l.tokenIsToken0, lower, upper, leftCoins - 1e3, 0);
             if (posId == 0) posId = posId2; else a.overflowPositionId = posId2;
             emit LiquidityAdded(token, posId2, 0, c2, 0);
         } else if (leftHype > 1e12) {
             // the HYPE side sits on the other side of the price
             (int24 lower, int24 upper) = _aboveRange(!l.tokenIsToken0, tickSpacing, sqrtPriceX96);
-            (uint256 posId2,, uint256 q2) = _mint(token, l.tokenIsToken0, lower, upper, 0, leftHype - 1e3);
+            (uint256 posId2,, uint256 q2) = _mint(token, wrappedNative, l.tokenIsToken0, lower, upper, 0, leftHype - 1e3);
             a.overflowPositionId = posId2;
             emit LiquidityAdded(token, posId2, 0, 0, q2);
         }
@@ -522,6 +545,20 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         emit QuoteUsdUpdated(usdPrice8);
     }
 
+    /// @notice Owner: approve (or re-price, or retire) a pair asset for instant
+    ///         launches. `usdPrice8` is USD per whole token, 8 decimals; it sizes
+    ///         the opening pool. Decimals are read from the token. The wrapped
+    ///         native cannot be retired: auctions settle in it.
+    function setQuoteAsset(address quote, bool approved, uint64 usdPrice8) external onlyOwner {
+        if (quote == address(0)) revert ZeroAddress();
+        if (approved && usdPrice8 == 0) revert InvalidParams();
+        if (!approved && quote == wrappedNative) revert InvalidParams();
+        uint8 dec = IERC20Metadata(quote).decimals();
+        if (quoteAssets[quote].decimals == 0 && quote != wrappedNative) quoteList.push(quote);
+        quoteAssets[quote] = QuoteAsset({approved: approved, usdPrice8: usdPrice8, decimals: dec});
+        emit QuoteAssetSet(quote, approved, usdPrice8, dec);
+    }
+
     function setAuctionConfig(uint64 durationBlocks, uint256 minBidWei, uint256 floorMcapUsd8, uint256 minRaiseWei) external onlyOwner {
         if (
             durationBlocks < 100 || durationBlocks > 1_000_000 || floorMcapUsd8 < MIN_MARKET_CAP_USD8 || floorMcapUsd8 > MAX_MARKET_CAP_USD8
@@ -571,10 +608,14 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         return allTokens.length;
     }
 
+    function quoteCount() external view returns (uint256) {
+        return quoteList.length;
+    }
+
     /// @notice Preview the floor price (Q96) and required raise for a new auction.
     function auctionPreview() external view returns (uint256 floorPriceQ96, uint256 requiredCurrencyRaised, uint64 durationBlocks) {
         AuctionConfig memory c = auctionConfig;
-        floorPriceQ96 = (_priceQ96ForMcap(c.floorMcapUsd8) / 100) * 100;
+        floorPriceQ96 = (_priceQ96ForMcap(c.floorMcapUsd8, quoteAssets[wrappedNative]) / 100) * 100;
         requiredCurrencyRaised = c.minRaiseWei;
         durationBlocks = c.durationBlocks;
     }
@@ -598,18 +639,19 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     // Internals
     // ------------------------------------------------------------------
 
-    /// @dev Market cap (USD 8-dec) -> HYPE wei at the configured HYPE price.
-    function _mcapToQuoteWei(uint256 mcapUsd8) internal view returns (uint256) {
-        return Math.mulDiv(mcapUsd8, 1e18, quoteAssets[wrappedNative].usdPrice8);
+    /// @dev Market cap (USD 8-dec) -> quote units at the quote's registered
+    ///      USD price and decimals.
+    function _mcapToQuoteWei(uint256 mcapUsd8, QuoteAsset memory q) internal pure returns (uint256) {
+        return Math.mulDiv(mcapUsd8, 10 ** q.decimals, q.usdPrice8);
     }
 
-    function _quoteWeiToMcap(uint256 quoteWei) internal view returns (uint256) {
-        return Math.mulDiv(quoteWei, quoteAssets[wrappedNative].usdPrice8, 1e18);
+    function _quoteWeiToMcap(uint256 quoteWei, QuoteAsset memory q) internal pure returns (uint256) {
+        return Math.mulDiv(quoteWei, q.usdPrice8, 10 ** q.decimals);
     }
 
-    /// @dev HYPE-wei per token-wei, Q96, at a fully-diluted market cap.
-    function _priceQ96ForMcap(uint256 mcapUsd8) internal view returns (uint256) {
-        uint256 p = Math.mulDiv(_mcapToQuoteWei(mcapUsd8), Q96, TOTAL_SUPPLY);
+    /// @dev Quote-wei per token-wei, Q96, at a fully-diluted market cap.
+    function _priceQ96ForMcap(uint256 mcapUsd8, QuoteAsset memory q) internal pure returns (uint256) {
+        uint256 p = Math.mulDiv(_mcapToQuoteWei(mcapUsd8, q), Q96, TOTAL_SUPPLY);
         if (p == 0) revert InvalidParams();
         return p;
     }
@@ -619,7 +661,9 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     function _sqrtPriceFromQ96(bool tokenIsToken0, int24 tickSpacing, uint256 priceQ96) internal pure returns (uint160) {
         // token0-denominated price (token1 per token0) in Q96
         uint256 pQ96 = tokenIsToken0 ? priceQ96 : Math.mulDiv(Q96, Q96, priceQ96);
-        uint160 target = uint160(Math.sqrt(pQ96 << 96));
+        // sqrt(p * 2^96): shift first while it fits (exact), otherwise shift
+        // the root (a low-decimal quote makes coin-per-quote prices huge).
+        uint160 target = pQ96 < (1 << 160) ? uint160(Math.sqrt(pQ96 << 96)) : uint160(Math.sqrt(pQ96) << 48);
         int24 tick = TickMath.getTickAtSqrtRatio(target);
         int24 aligned = (tick / tickSpacing) * tickSpacing;
         if (tick < 0 && tick % tickSpacing != 0) aligned -= tickSpacing;
@@ -644,8 +688,8 @@ contract OnairFactory is Ownable, ReentrancyGuard {
     ///      known token address ahead of us (an auction coin's address is public
     ///      for hours) and initialise it at any price, so the pool that comes
     ///      back is only trusted once its price is the one we asked for.
-    function _createPool(address token, bool tokenIsToken0, uint160 sqrtPriceX96, uint256 mcapUsd8) internal returns (address pool) {
-        (address t0, address t1) = tokenIsToken0 ? (token, wrappedNative) : (wrappedNative, token);
+    function _createPool(address token, address quote, bool tokenIsToken0, uint160 sqrtPriceX96, uint256 mcapUsd8) internal returns (address pool) {
+        (address t0, address t1) = tokenIsToken0 ? (token, quote) : (quote, token);
         pool = positionManager.createAndInitializePoolIfNecessary(t0, t1, POOL_FEE_TIER, sqrtPriceX96);
         (uint160 current,,,,,,) = IUniswapV3Pool(pool).slot0();
         if (current != sqrtPriceX96) _restorePoolPrice(pool, t0, t1, current, sqrtPriceX96);
@@ -671,13 +715,13 @@ contract OnairFactory is Ownable, ReentrancyGuard {
         emit PoolPriceRestored(pool, current, target, a0, a1);
     }
 
-    function _mint(address token, bool tokenIsToken0, int24 lower, int24 upper, uint256 tokenDesired, uint256 quoteDesired)
+    function _mint(address token, address quote, bool tokenIsToken0, int24 lower, int24 upper, uint256 tokenDesired, uint256 quoteDesired)
         internal
         returns (uint256 positionId, uint256 tokenUsed, uint256 quoteUsed)
     {
         if (tokenDesired > 0) IERC20(token).forceApprove(address(positionManager), tokenDesired);
-        if (quoteDesired > 0) IERC20(wrappedNative).forceApprove(address(positionManager), quoteDesired);
-        (address t0, address t1) = tokenIsToken0 ? (token, wrappedNative) : (wrappedNative, token);
+        if (quoteDesired > 0) IERC20(quote).forceApprove(address(positionManager), quoteDesired);
+        (address t0, address t1) = tokenIsToken0 ? (token, quote) : (quote, token);
         (uint256 a0, uint256 a1) = tokenIsToken0 ? (tokenDesired, quoteDesired) : (quoteDesired, tokenDesired);
         uint256 amount0;
         uint256 amount1;

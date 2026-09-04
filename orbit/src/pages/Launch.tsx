@@ -1,14 +1,14 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { parseAbi, parseEther } from "viem";
+import { parseAbi, parseEther, parseUnits, zeroAddress, type Address } from "viem";
 import { useAccount } from "wagmi";
 
 import { Art } from "../components/Art";
 import { onair, publicClient } from "../lib/client";
 import { ADDRESSES, FEES } from "../lib/env";
 import { hype, usd, wei } from "../lib/format";
-import { friendlyError, runTx, setToast, useConfig, useHypeUsd } from "../lib/hooks";
+import { friendlyError, runTx, setToast, useConfig, useHypeUsd, useQuotes } from "../lib/hooks";
 import { ONAIR_FACTORY_ABI, type Mode } from "../lib/onair";
 import { ensureWallet, openWalletModal } from "../lib/wallet";
 
@@ -20,6 +20,8 @@ export default function Launch() {
   const qc = useQueryClient();
   const { data: cfg } = useConfig();
   const { data: hypeUsd = 0 } = useHypeUsd();
+  const { data: quotes } = useQuotes();
+  const [pairAddr, setPairAddr] = useState<Address>(ADDRESSES.quote);
   const fileRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<Mode>("auction");
   const [f, setF] = useState({ name: "", symbol: "", description: "", website: "", twitter: "", telegram: "", devBuy: "" });
@@ -54,7 +56,7 @@ export default function Launch() {
   const fitForSmallBlock = async (base: { name: string; symbol: string; devBuyQuote: bigint }, meta: Record<string, string>): Promise<{ metadataURI: string; gas: bigint; shrunk: boolean }> => {
     const est = async (m: Record<string, string>) => publicClient.estimateContractGas({
       address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "createAuction",
-      args: [{ name: base.name, symbol: base.symbol, metadataURI: JSON.stringify(m), marketCapUsd8: 0n, devBuyQuote: base.devBuyQuote }],
+      args: [{ name: base.name, symbol: base.symbol, metadataURI: JSON.stringify(m), quote: zeroAddress, marketCapUsd8: 0n, devBuyQuote: base.devBuyQuote }],
       value: base.devBuyQuote, account: me!,
     });
     // Public RPCs cap eth_estimateGas well under what a big logo needs and
@@ -85,6 +87,12 @@ export default function Launch() {
   const minBid = cfg ? wei(cfg.minBidWei) : 0.05;
   const dev = Number(f.devBuy) > 0 ? f.devBuy.trim() : "";
   const devTooSmall = mode === "auction" && dev !== "" && Number(dev) < minBid;
+  // Pair asset: auctions always pair HYPE; instant launches may pick a stock.
+  const pairs = (quotes ?? []).filter((q) => q.approved);
+  const pair = mode === "auction" ? pairs.find((q) => q.isNative) : pairs.find((q) => q.address.toLowerCase() === pairAddr.toLowerCase()) ?? pairs.find((q) => q.isNative);
+  const pairSym = pair?.symbol ?? "HYPE";
+  const pairNative = !pair || pair.isNative;
+  const pairUsd = pair ? (pair.isNative ? hypeUsd || pair.usd : pair.usd) : hypeUsd;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +102,7 @@ export default function Launch() {
     try {
       await ensureWallet();
       const meta = { description: f.description.trim(), logo, website: url(f.website), twitter: url(f.twitter, "x"), telegram: url(f.telegram, "tg") };
-      const devWei = dev ? parseEther(dev as `${number}`) : 0n;
+      const devWei = dev ? (pairNative ? parseEther(dev as `${number}`) : parseUnits(dev as `${number}`, pair!.decimals)) : 0n;
       let metadataURI = JSON.stringify(meta);
       if (mode === "auction") {
         // Fit a normal block so the launch never hangs in a wallet without big blocks.
@@ -106,7 +114,7 @@ export default function Launch() {
         } catch (err) { setToast({ kind: "err", text: friendlyError(err) }); return; }
       }
       let created: `0x${string}` | null = null;
-      const p = { name: f.name.trim(), symbol, metadataURI, devBuyQuote: devWei };
+      const p = { name: f.name.trim(), symbol, metadataURI, devBuyQuote: devWei, quote: mode === "instant" && !pairNative ? pair!.address : undefined };
       const ok = await runTx(mode === "auction" ? `Open the ${symbol} auction` : `Launch ${symbol}`, () => (mode === "auction" ? onair.createAuction(p) : onair.createToken(p)), async () => {
         const n = (await publicClient.readContract({ address: ADDRESSES.factory, abi: FACTORY, functionName: "tokenCount" })) as bigint;
         created = (await publicClient.readContract({ address: ADDRESSES.factory, abi: FACTORY, functionName: "allTokens", args: [n - 1n] })) as `0x${string}`;
@@ -124,7 +132,7 @@ export default function Launch() {
         <div>
           <div className="lbl" style={{ marginBottom: 12 }}>Launch a coin</div>
           <h1>Two ways to <em>launch</em>.</h1>
-          <p className="sub">Run a {len} auction where everyone pays the same clearing price, or list instantly and trade from the first block. Either way the pool is locked and you earn {FEES.creatorPct}% of every trade's fee.</p>
+          <p className="sub">Run a {len} auction where everyone pays the same clearing price, or list instantly and trade from the first block, paired with HYPE or a tokenized stock. Either way the pool is locked and you earn {FEES.creatorPct}% of every trade's fee.</p>
         </div>
       </section>
 
@@ -137,13 +145,13 @@ export default function Launch() {
         <button type="button" className={"fmt " + (mode === "instant" ? "on" : "")} onClick={() => setMode("instant")}>
           <span className="lbl"><i className="dot" style={{ animation: "none", boxShadow: "none", width: 7, height: 7 }} />Instant</span>
           <b>Trading in one block.</b>
-          <span>One transaction. The whole supply goes into a locked HyperSwap pool at {usd(floorUsd, { compact: true })} and trading starts immediately.</span>
+          <span>One transaction. The whole supply goes into a locked HyperSwap pool at {usd(floorUsd, { compact: true })} and trading starts immediately. Pair it with HYPE or any of {Math.max(0, pairs.length - 1)} tokenized stocks.</span>
         </button>
       </div>
 
       <div className="sign-m m-only">
         <Art src={logo} name={f.name || "Your coin"} className="av" size={48} />
-        <div><b>{f.name || "Your coin"}</b><small className="mono">{symbol} · {mode === "auction" ? `auction · floor ${usd(floorUsd, { compact: true })}` : `${usd(floorUsd, { compact: true })} start`} · pairs HYPE</small></div>
+        <div><b>{f.name || "Your coin"}</b><small className="mono">{symbol} · {mode === "auction" ? `auction · floor ${usd(floorUsd, { compact: true })}` : `${usd(floorUsd, { compact: true })} start`} · pairs {pairSym}</small></div>
         <span className={"onair " + (mode === "auction" ? "auc" : "")}><span className="dot" style={{ width: 6, height: 6, boxShadow: "none" }} />PREVIEW</span>
       </div>
       <div className="split">
@@ -161,14 +169,23 @@ export default function Launch() {
             <div className="field"><label>X</label><input value={f.twitter} onChange={set("twitter")} placeholder="@handle" /></div>
           </div>
           <div className="field"><label>Telegram</label><input value={f.telegram} onChange={set("telegram")} placeholder="@group" /></div>
+          {mode === "instant" && (
+            <div className="field">
+              <label>Pair</label>
+              <select className="inp" value={pair?.address ?? ADDRESSES.quote} onChange={(e) => { setPairAddr(e.target.value as Address); setF({ ...f, devBuy: "" }); }}>
+                {pairs.map((q) => <option key={q.address} value={q.address}>{q.isNative ? "HYPE · native" : `${q.symbol} · ${q.name} · ${usd(q.usd, { compact: true })}`}</option>)}
+              </select>
+              <div className="help">{pairNative ? "The pool holds HYPE on the other side. Buyers pay HYPE and your fees come in HYPE." : `The pool holds ${pairSym} on the other side. Buyers pay ${pairSym}, your fees come in ${pairSym}. Get ${pairSym} on Hyperliquid spot and transfer it to HyperEVM.`}</div>
+            </div>
+          )}
           <div className="field">
             <label>{mode === "auction" ? "Opening bid (optional)" : "First buy (optional)"}</label>
             <input inputMode="decimal" value={f.devBuy} onChange={set("devBuy")} placeholder="0" />
             <div className="help">
               {mode === "auction"
                 ? `HYPE placed as your own bid in the same transaction, spread over the whole auction at up to 100× the floor. Minimum ${hype(minBid)} HYPE. Everyone can see it.`
-                : "HYPE spent in the same transaction, so you hold from the first block. Everyone can see it."}
-              {dev && hypeUsd > 0 && <> · ≈ {usd(Number(dev) * hypeUsd)}</>}
+                : pairNative ? "HYPE spent in the same transaction, so you hold from the first block. Everyone can see it." : `${pairSym} spent in the same transaction (you approve it first), so you hold from the first block. Everyone can see it.`}
+              {dev && pairUsd > 0 && <> · ≈ {usd(Number(dev) * pairUsd)}</>}
             </div>
             {devTooSmall && <div className="warn" style={{ margin: 0 }}>Under the {hype(minBid)} HYPE minimum bid.</div>}
           </div>
@@ -199,7 +216,7 @@ export default function Launch() {
               ) : (
                 <>
                   <dt>Starting market cap</dt><dd>≈ {usd(floorUsd, { compact: true })}</dd>
-                  <dt>Pair</dt><dd>HYPE</dd>
+                  <dt>Pair</dt><dd>{pairSym}</dd>
                 </>
               )}
               <dt>Trade fee</dt><dd>{FEES.poolPct}%</dd>

@@ -8,8 +8,13 @@
 import { ethers } from "ethers";
 
 const RPC = process.env.RPC_URL ?? "https://rpc.hyperliquid.xyz/evm";
-const FACTORY = process.env.ONAIR_FACTORY ?? "0x469D1F86485720c60e17538cEf44071E4f299ACe";
-const HOUSE = process.env.ONAIR_HOUSE ?? "0xad1e5800cde9D3A7aabbfD4D1aD7Ef4ce0941c3e";
+/** Every live stack: v2 (stock pairs) and v1. ONAIR_FACTORY/ONAIR_HOUSE narrow it to one. */
+const STACKS = process.env.ONAIR_FACTORY
+  ? [{ name: "env", factory: process.env.ONAIR_FACTORY, house: process.env.ONAIR_HOUSE ?? "" }]
+  : [
+      { name: "v2", factory: "0xA56dC806CAf3866D2c831A0455f5a214d7A27F1D", house: "0x41Dd552c84595A201244913d23E51A4EB4A2c99a" },
+      { name: "v1", factory: "0x469D1F86485720c60e17538cEf44071E4f299ACe", house: "0xad1e5800cde9D3A7aabbfD4D1aD7Ef4ce0941c3e" },
+    ];
 
 const FACTORY_ABI = [
   "function tokenCount() view returns (uint256)",
@@ -24,12 +29,14 @@ async function main() {
   if (!key) throw new Error("KEEPER_KEY missing");
   const provider = new ethers.JsonRpcProvider(RPC, 999);
   const wallet = new ethers.Wallet(key, provider);
-  const factory = new ethers.Contract(FACTORY, FACTORY_ABI, wallet);
-  const house = new ethers.Contract(HOUSE, HOUSE_ABI, provider);
   const head = await provider.getBlockNumber();
-  const n = Number(await factory.tokenCount());
-  console.log(`keeper ${wallet.address} head ${head} tokens ${n} bal ${ethers.formatEther(await provider.getBalance(wallet.address))}`);
+  console.log(`keeper ${wallet.address} head ${head} bal ${ethers.formatEther(await provider.getBalance(wallet.address))}`);
   let settled = 0;
+  for (const stack of STACKS) {
+  const factory = new ethers.Contract(stack.factory, FACTORY_ABI, wallet);
+  const house = new ethers.Contract(stack.house, HOUSE_ABI, provider);
+  const n = Number(await factory.tokenCount());
+  console.log(`${stack.name} factory ${stack.factory} tokens ${n}`);
   for (let i = 0; i < n; i++) {
     const token: string = await factory.allTokens(i);
     const [mode, finalized] = await factory.auctions(token);
@@ -47,6 +54,7 @@ async function main() {
       console.error(`${token} finalize failed: ${(e.shortMessage ?? e.message ?? String(e)).slice(0, 300)}`);
       process.exitCode = 1;
     }
+  }
   }
   console.log(`done, settled ${settled}`);
 }

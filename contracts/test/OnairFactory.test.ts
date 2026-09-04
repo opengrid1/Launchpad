@@ -39,7 +39,7 @@ async function deployFixture() {
 }
 type F = Awaited<ReturnType<typeof deployFixture>>;
 
-const PARAMS = { name: "Moon Cat", symbol: "MCAT", metadataURI: JSON.stringify({ description: "test" }), marketCapUsd8: 0n, devBuyQuote: 0n };
+const PARAMS = { name: "Moon Cat", symbol: "MCAT", metadataURI: JSON.stringify({ description: "test" }), quote: ethers.ZeroAddress, marketCapUsd8: 0n, devBuyQuote: 0n };
 
 async function startAuction(f: F) {
   const tx = await f.factory.connect(f.creator).createAuction(PARAMS);
@@ -361,5 +361,65 @@ describe("OnairFactory + OnairAuctionHouse", () => {
     const bal = await (await ethers.getContractAt("OnairToken", predicted)).balanceOf(f.bob.address);
     expect(bal).to.be.gt(SUPPLY / 60n);
     expect(bal).to.be.lt(SUPPLY / 30n);
+  });
+  it("instant: stock pair — approved quote only, pool sized in the stock's decimals, first buy by allowance, fees paid in the stock", async () => {
+    const f = await deployFixture();
+    // A 6-decimal ERC20 stands in for a tokenized stock priced at $500.
+    const stock = await (await ethers.getContractFactory("MockUSD")).deploy();
+    const stockAddr = await stock.getAddress();
+    await stock.transfer(f.creator.address, 1_000e6);
+    await stock.transfer(f.trader.address, 1_000e6);
+    const withStock = { ...PARAMS, quote: stockAddr };
+
+    await expect(f.factory.connect(f.creator).createToken(withStock)).to.be.revertedWithCustomError(f.factory, "QuoteNotApproved");
+    await expect(f.factory.connect(f.alice).setQuoteAsset(stockAddr, true, 500n * 10n ** 8n)).to.be.revertedWithCustomError(f.factory, "OwnableUnauthorizedAccount");
+    await expect(f.factory.connect(f.owner).setQuoteAsset(stockAddr, true, 0)).to.be.revertedWithCustomError(f.factory, "InvalidParams");
+    await expect(f.factory.connect(f.owner).setQuoteAsset(await f.wnative.getAddress(), false, 1)).to.be.revertedWithCustomError(f.factory, "InvalidParams");
+    await f.factory.connect(f.owner).setQuoteAsset(stockAddr, true, 500n * 10n ** 8n);
+    expect(await f.factory.quoteCount()).to.equal(2n);
+    expect(await f.factory.quoteList(1)).to.equal(stockAddr);
+    const q = await f.factory.quoteAssets(stockAddr);
+    expect(q.approved).to.equal(true);
+    expect(q.decimals).to.equal(6);
+
+    // Native attached to a stock-paired launch is refused; the first buy is pulled by allowance.
+    await expect(f.factory.connect(f.creator).createToken({ ...withStock, devBuyQuote: 1e6 }, { value: 1n })).to.be.revertedWithCustomError(f.factory, "InvalidParams");
+    await stock.connect(f.creator).approve(await f.factory.getAddress(), 1e6);
+    await f.factory.connect(f.creator).createToken({ ...withStock, devBuyQuote: 1e6 });
+    const token = await f.factory.allTokens(0);
+    const l = await f.factory.listings(token);
+    expect(l.quote).to.equal(stockAddr);
+    const coin = await ethers.getContractAt("OnairToken", token);
+    const pool = new ethers.Contract(l.pool, ["function token0() view returns (address)", "function token1() view returns (address)"], ethers.provider);
+    expect([await pool.token0(), await pool.token1()]).to.include(stockAddr);
+    expect(await stock.balanceOf(l.pool)).to.equal(1e6); // the first buy (1 stock, $500) sits in the pool
+    const devCoins = await coin.balanceOf(f.creator.address);
+    expect(devCoins).to.be.gt(0n);
+
+    // $3k market in a $500 stock is 6 stock units of FDV: 1 stock (a sixth of
+    // the cap) buys a big slice but far less than a sixth after slippage.
+    await stock.connect(f.trader).approve(await f.swapRouter.getAddress(), 1e6);
+    await f.swapRouter.connect(f.trader).exactInputSingle({ tokenIn: stockAddr, tokenOut: token, fee: 10000, recipient: f.trader.address, amountIn: 1e6, amountOutMinimum: 0, sqrtPriceLimitX96: 0 });
+    const got = await coin.balanceOf(f.trader.address);
+    expect(got).to.be.gt(SUPPLY / 200n);
+    expect(got).to.be.lt(SUPPLY / 6n);
+
+    // Fees accrue and split in the stock, 70 / 30.
+    const before = await stock.balanceOf(f.creator.address);
+    await f.factory.connect(f.alice).harvestFees(token);
+    const creatorGot = (await stock.balanceOf(f.creator.address)) - before;
+    const platformGot = await stock.balanceOf(f.feeRecipient.address);
+    const total = creatorGot + platformGot;
+    expect(total).to.be.closeTo(20_000n, 400n); // 1% of 2 stock
+    expect(creatorGot).to.be.closeTo(total * 7n / 10n, 10n);
+    expect(platformGot).to.be.closeTo(total * 3n / 10n, 10n);
+
+    // Auctions are bid in native HYPE, so a stock pair is refused there; a
+    // retired quote is refused everywhere.
+    await expect(f.factory.connect(f.creator).createAuction(withStock)).to.be.revertedWithCustomError(f.factory, "QuoteNotApproved");
+    await f.factory.connect(f.owner).setQuoteAsset(stockAddr, false, 0);
+    expect(await f.factory.quoteCount()).to.equal(2n);
+    await expect(f.factory.connect(f.creator).createToken(withStock)).to.be.revertedWithCustomError(f.factory, "QuoteNotApproved");
+    await f.factory.connect(f.creator).createToken(PARAMS); // HYPE pair still fine
   });
 });

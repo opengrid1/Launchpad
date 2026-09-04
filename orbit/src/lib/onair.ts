@@ -1,6 +1,7 @@
 import { type Address, type PublicClient, type WalletClient, parseAbi, parseAbiItem, zeroAddress } from "viem";
 
-import { ADDRESSES, env } from "./env";
+import { ADDRESSES, DEPLOYMENTS, env, PRIMARY, type Deployment } from "./env";
+import { stockByAddress } from "./stocks";
 
 /**
  * ONAIR-specific reads and writes: the factory's two launch models and the
@@ -14,7 +15,7 @@ export const SUPPLY = 1_000_000_000n * 10n ** 18n;
 export const AUCTION_SUPPLY = SUPPLY / 2n;
 
 export const ONAIR_FACTORY_ABI = parseAbi([
-  "struct CreateParams { string name; string symbol; string metadataURI; uint256 marketCapUsd8; uint256 devBuyQuote; }",
+  "struct CreateParams { string name; string symbol; string metadataURI; address quote; uint256 marketCapUsd8; uint256 devBuyQuote; }",
   "function createToken(CreateParams p) payable returns (address token, address pool, uint256 positionId)",
   "function createAuction(CreateParams p) payable returns (address token)",
   "function finalize(address token) returns (address pool)",
@@ -27,6 +28,9 @@ export const ONAIR_FACTORY_ABI = parseAbi([
   "function auctionConfig() view returns (uint64 durationBlocks, uint256 minBidWei, uint256 floorMcapUsd8, uint256 minRaiseWei)",
   "function auctionPreview() view returns (uint256 floorPriceQ96, uint256 requiredCurrencyRaised, uint64 durationBlocks)",
   "function quoteAssets(address) view returns (bool approved, uint64 usdPrice8, uint8 decimals)",
+  "function quoteCount() view returns (uint256)",
+  "function quoteList(uint256) view returns (address)",
+  "function setQuoteAsset(address quote, bool approved, uint64 usdPrice8)",
   "function house() view returns (address)",
   "function owner() view returns (address)",
   "function feeRecipient() view returns (address)",
@@ -144,11 +148,25 @@ export function snapToGrid(priceQ96: bigint, a: { floorPriceQ96: bigint; tickSpa
   return p;
 }
 
+/** An approved pair asset on the factory. */
+export interface QuoteView {
+  address: Address;
+  symbol: string;
+  name: string;
+  decimals: number;
+  usd: number;
+  approved: boolean;
+  isNative: boolean;
+}
+
+const ERC20_META = parseAbi(["function symbol() view returns (string)", "function name() view returns (string)", "function allowance(address, address) view returns (uint256)", "function approve(address, uint256) returns (bool)"]);
+
+/** Reads and writes against ONE deployment (factory + house). */
 export class OnairApi {
   private modeCache = new Map<string, { mode: Mode; finalized: boolean; graduated: boolean }>();
   private walletClient?: WalletClient;
 
-  constructor(readonly pc: PublicClient) {}
+  constructor(readonly pc: PublicClient, readonly dep: Deployment = PRIMARY) {}
 
   connectWallet(wc: WalletClient) {
     this.walletClient = wc;
@@ -168,7 +186,7 @@ export class OnairApi {
     });
     if (need.length) {
       const res = await this.pc.multicall({
-        contracts: need.map((t) => ({ address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "auctions", args: [t] })),
+        contracts: need.map((t) => ({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "auctions", args: [t] })),
         allowFailure: true,
       });
       need.forEach((t, i) => {
@@ -189,11 +207,11 @@ export class OnairApi {
   /** Full auction state for one token. Null for instant launches. */
   async auction(token: Address): Promise<AuctionState | null> {
     const [factoryRow, a, liveRow, bidCount, cpCount, head] = await Promise.all([
-      this.pc.readContract({ address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "auctions", args: [token] }),
-      this.pc.readContract({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "auction", args: [token] }),
-      this.pc.readContract({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "live", args: [token] }),
-      this.pc.readContract({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "bidCount", args: [token] }),
-      this.pc.readContract({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "checkpointCount", args: [token] }),
+      this.pc.readContract({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "auctions", args: [token] }),
+      this.pc.readContract({ address: this.dep.house, abi: HOUSE_ABI, functionName: "auction", args: [token] }),
+      this.pc.readContract({ address: this.dep.house, abi: HOUSE_ABI, functionName: "live", args: [token] }),
+      this.pc.readContract({ address: this.dep.house, abi: HOUSE_ABI, functionName: "bidCount", args: [token] }),
+      this.pc.readContract({ address: this.dep.house, abi: HOUSE_ABI, functionName: "checkpointCount", args: [token] }),
       this.pc.getBlockNumber(),
     ]);
     const [mode, finalized, graduated] = factoryRow as unknown as [number, boolean, boolean, bigint];
@@ -239,12 +257,12 @@ export class OnairApi {
 
   /** Every bid on a token (capped), newest first, with the house's fill preview. */
   async bids(token: Address, opts?: { owner?: Address; limit?: number }): Promise<BidView[]> {
-    const count = Number(await this.pc.readContract({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "bidCount", args: [token] }));
+    const count = Number(await this.pc.readContract({ address: this.dep.house, abi: HOUSE_ABI, functionName: "bidCount", args: [token] }));
     if (count === 0) return [];
     const max = Math.min(count, 600);
     const ids = Array.from({ length: max }, (_, i) => count - 1 - i);
     const rows = await this.pc.multicall({
-      contracts: ids.map((id) => ({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "bids", args: [token, BigInt(id)] })),
+      contracts: ids.map((id) => ({ address: this.dep.house, abi: HOUSE_ABI, functionName: "bids", args: [token, BigInt(id)] })),
       allowFailure: true,
     });
     let picked = ids
@@ -256,10 +274,10 @@ export class OnairApi {
     if (picked.length === 0) return [];
     const [previews, clearing] = await Promise.all([
       this.pc.multicall({
-        contracts: picked.map((x) => ({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "preview", args: [token, BigInt(x.id)] })),
+        contracts: picked.map((x) => ({ address: this.dep.house, abi: HOUSE_ABI, functionName: "preview", args: [token, BigInt(x.id)] })),
         allowFailure: true,
       }),
-      this.pc.readContract({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "live", args: [token] }).then((r) => (r as unknown as [bigint])[0]).catch(() => 0n),
+      this.pc.readContract({ address: this.dep.house, abi: HOUSE_ABI, functionName: "live", args: [token] }).then((r) => (r as unknown as [bigint])[0]).catch(() => 0n),
     ]);
     return picked.map((x, i) => {
       const p = previews[i].status === "success" ? (previews[i].result as unknown as [bigint, bigint, bigint]) : [0n, 0n, x.b.budget];
@@ -281,11 +299,11 @@ export class OnairApi {
 
   /** The clearing-price history (block, price) for a running or finished auction. */
   async checkpoints(token: Address): Promise<{ block: number; priceQ96: bigint; raised: bigint }[]> {
-    const n = Number(await this.pc.readContract({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "checkpointCount", args: [token] }));
+    const n = Number(await this.pc.readContract({ address: this.dep.house, abi: HOUSE_ABI, functionName: "checkpointCount", args: [token] }));
     if (n === 0) return [];
     const from = Math.max(0, n - 200);
     const rows = await this.pc.multicall({
-      contracts: Array.from({ length: n - from }, (_, i) => ({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "checkpoint", args: [token, BigInt(from + i)] })),
+      contracts: Array.from({ length: n - from }, (_, i) => ({ address: this.dep.house, abi: HOUSE_ABI, functionName: "checkpoint", args: [token, BigInt(from + i)] })),
       allowFailure: true,
     });
     return rows
@@ -299,12 +317,12 @@ export class OnairApi {
   /** Factory-wide auction settings and the current floor. */
   async config(): Promise<{ durationBlocks: number; minBidWei: bigint; floorMcapUsd8: bigint; minRaiseWei: bigint; floorPriceQ96: bigint; hypeUsd: number; owner: Address; feeRecipient: Address; paused: boolean }> {
     const [cfg, prev, qa, owner, feeRecipient, paused] = await Promise.all([
-      this.pc.readContract({ address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "auctionConfig" }),
-      this.pc.readContract({ address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "auctionPreview" }),
-      this.pc.readContract({ address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "quoteAssets", args: [ADDRESSES.quote] }),
-      this.pc.readContract({ address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "owner" }),
-      this.pc.readContract({ address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "feeRecipient" }),
-      this.pc.readContract({ address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "launchesPaused" }),
+      this.pc.readContract({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "auctionConfig" }),
+      this.pc.readContract({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "auctionPreview" }),
+      this.pc.readContract({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "quoteAssets", args: [ADDRESSES.quote] }),
+      this.pc.readContract({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "owner" }),
+      this.pc.readContract({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "feeRecipient" }),
+      this.pc.readContract({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "launchesPaused" }),
     ]);
     const [durationBlocks, minBidWei, floorMcapUsd8, minRaiseWei] = cfg as unknown as [bigint, bigint, bigint, bigint];
     const [floorPriceQ96] = prev as unknown as [bigint, bigint, bigint];
@@ -317,27 +335,75 @@ export class OnairApi {
 
   // -- writes -----------------------------------------------------------
 
-  private params(p: { name: string; symbol: string; metadataURI: string; marketCapUsd8?: bigint; devBuyQuote?: bigint }) {
-    return { name: p.name, symbol: p.symbol, metadataURI: p.metadataURI, marketCapUsd8: p.marketCapUsd8 ?? 0n, devBuyQuote: p.devBuyQuote ?? 0n };
+  private params(p: { name: string; symbol: string; metadataURI: string; quote?: Address; marketCapUsd8?: bigint; devBuyQuote?: bigint }) {
+    return { name: p.name, symbol: p.symbol, metadataURI: p.metadataURI, quote: p.quote ?? zeroAddress, marketCapUsd8: p.marketCapUsd8 ?? 0n, devBuyQuote: p.devBuyQuote ?? 0n };
   }
 
-  /** Instant launch: pool opens in the same transaction. Needs big blocks. */
-  async createToken(p: { name: string; symbol: string; metadataURI: string; marketCapUsd8?: bigint; devBuyQuote?: bigint }): Promise<`0x${string}`> {
+  /** True when `quote` is the native pair (zero address or WHYPE). */
+  static isNativeQuote(quote?: Address): boolean {
+    return !quote || quote === zeroAddress || quote.toLowerCase() === ADDRESSES.quote.toLowerCase();
+  }
+
+  /** Instant launch: pool opens in the same transaction. Needs big blocks.
+   *  A stock pair's first buy is pulled by allowance, so it is approved first. */
+  async createToken(p: { name: string; symbol: string; metadataURI: string; quote?: Address; marketCapUsd8?: bigint; devBuyQuote?: bigint }): Promise<`0x${string}`> {
     const wc = this.wallet();
+    const me = wc.account!.address as Address;
     const dev = p.devBuyQuote ?? 0n;
+    const native = OnairApi.isNativeQuote(p.quote);
+    if (!native && dev > 0n) {
+      const have = (await this.pc.readContract({ address: p.quote!, abi: ERC20_META, functionName: "allowance", args: [me, this.dep.factory] })) as bigint;
+      if (have < dev) {
+        const h = await wc.writeContract({ address: p.quote!, abi: ERC20_META, functionName: "approve", args: [this.dep.factory, dev], chain: wc.chain, account: wc.account! });
+        await this.pc.waitForTransactionReceipt({ hash: h });
+      }
+    }
     return wc.writeContract({
-      address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "createToken", args: [this.params(p)],
-      value: dev > 0n ? dev : undefined, chain: wc.chain, account: wc.account!,
+      address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "createToken", args: [this.params(p)],
+      value: native && dev > 0n ? dev : undefined, chain: wc.chain, account: wc.account!,
+    });
+  }
+
+  /** Every pair asset the factory knows, the native one first. */
+  async quotes(): Promise<QuoteView[]> {
+    const n = Number(await this.pc.readContract({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "quoteCount" }).catch(() => 0n));
+    const addrs = n === 0 ? [ADDRESSES.quote] : ((await this.pc.multicall({
+      contracts: Array.from({ length: n }, (_, i) => ({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "quoteList", args: [BigInt(i)] })),
+      allowFailure: true,
+    })).filter((r) => r.status === "success").map((r) => r.result as Address));
+    const rows = await this.pc.multicall({
+      contracts: addrs.flatMap((a) => [
+        { address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "quoteAssets", args: [a] },
+        { address: a, abi: ERC20_META, functionName: "symbol" },
+        { address: a, abi: ERC20_META, functionName: "name" },
+      ]),
+      allowFailure: true,
+    });
+    return addrs.map((a, i) => {
+      const qa: [boolean, bigint, number] = rows[i * 3].status === "success" ? (rows[i * 3].result as unknown as [boolean, bigint, number]) : [false, 0n, 18];
+      const isNative = a.toLowerCase() === ADDRESSES.quote.toLowerCase();
+      const known = stockByAddress(a);
+      const sym = rows[i * 3 + 1].status === "success" ? String(rows[i * 3 + 1].result) : a.slice(0, 8);
+      const name = rows[i * 3 + 2].status === "success" ? String(rows[i * 3 + 2].result) : "";
+      return {
+        address: a,
+        symbol: isNative ? env.nativeSymbol : known?.ticker ?? sym,
+        name: isNative ? "Hyperliquid" : known?.name ?? name,
+        decimals: Number(qa[2]),
+        usd: Number(qa[1]) / 1e8,
+        approved: qa[0],
+        isNative,
+      };
     });
   }
 
   /** Auction launch: half the supply into the house, an optional opening bid
    *  from the creator. Fits a small block. */
-  async createAuction(p: { name: string; symbol: string; metadataURI: string; marketCapUsd8?: bigint; devBuyQuote?: bigint }): Promise<`0x${string}`> {
+  async createAuction(p: { name: string; symbol: string; metadataURI: string; quote?: Address; marketCapUsd8?: bigint; devBuyQuote?: bigint }): Promise<`0x${string}`> {
     const wc = this.wallet();
     const dev = p.devBuyQuote ?? 0n;
     return wc.writeContract({
-      address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "createAuction", args: [this.params(p)],
+      address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "createAuction", args: [this.params(p)],
       value: dev > 0n ? dev : undefined, chain: wc.chain, account: wc.account!,
     });
   }
@@ -347,9 +413,9 @@ export class OnairApi {
     const wc = this.wallet();
     const me = wc.account!.address as Address;
     // Simulate first so a BelowClearing / BidTooSmall revert reads as a clear error.
-    await this.pc.simulateContract({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "bid", args: [token, maxPriceQ96, 0n], value: budgetWei, account: me });
+    await this.pc.simulateContract({ address: this.dep.house, abi: HOUSE_ABI, functionName: "bid", args: [token, maxPriceQ96, 0n], value: budgetWei, account: me });
     return wc.writeContract({
-      address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "bid", args: [token, maxPriceQ96, 0n],
+      address: this.dep.house, abi: HOUSE_ABI, functionName: "bid", args: [token, maxPriceQ96, 0n],
       value: budgetWei, chain: wc.chain, account: wc.account!,
     });
   }
@@ -357,9 +423,9 @@ export class OnairApi {
   /** Claim a bid's coins and refund (anyone may call; payouts go to the bid owner). */
   async claim(token: Address, bidId: number): Promise<`0x${string}`> {
     const wc = this.wallet();
-    const hint = await this.pc.readContract({ address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "exitHint", args: [token, BigInt(bidId)] });
+    const hint = await this.pc.readContract({ address: this.dep.house, abi: HOUSE_ABI, functionName: "exitHint", args: [token, BigInt(bidId)] });
     return wc.writeContract({
-      address: ADDRESSES.house, abi: HOUSE_ABI, functionName: "claim", args: [token, BigInt(bidId), Number(hint)],
+      address: this.dep.house, abi: HOUSE_ABI, functionName: "claim", args: [token, BigInt(bidId), Number(hint)],
       chain: wc.chain, account: wc.account!,
     });
   }
@@ -367,18 +433,18 @@ export class OnairApi {
   /** Seed the pool (or release refunds) after the end block. Needs big blocks. */
   async finalize(token: Address): Promise<`0x${string}`> {
     const wc = this.wallet();
-    return wc.writeContract({ address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "finalize", args: [token], chain: wc.chain, account: wc.account! });
+    return wc.writeContract({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "finalize", args: [token], chain: wc.chain, account: wc.account! });
   }
 
   /** Owner-gated factory calls from the connected wallet. */
   async adminCall(
     functionName:
-      | "pause" | "resume" | "setFeeRecipient" | "setQuoteUsd" | "setAuctionConfig" | "collect" | "collectFees"
+      | "pause" | "resume" | "setFeeRecipient" | "setQuoteUsd" | "setQuoteAsset" | "setAuctionConfig" | "collect" | "collectFees"
       | "collectEscrow" | "sweepEscrow" | "cancelAuction" | "recoverERC20" | "recoverNative" | "harvestFees" | "finalize" | "transferOwnership",
     args: unknown[] = [],
   ): Promise<`0x${string}`> {
     const wc = this.wallet();
-    return wc.writeContract({ address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName, args: args as never, chain: wc.chain, account: wc.account! });
+    return wc.writeContract({ address: this.dep.factory, abi: ONAIR_FACTORY_ABI, functionName, args: args as never, chain: wc.chain, account: wc.account! });
   }
 
   /** Bid log for a token from the house's BidPlaced events, newest first. */
@@ -390,13 +456,85 @@ export class OnairApi {
       const from = to - W + 1n > fromBlock ? to - W + 1n : fromBlock;
       spans.push({ from, to });
     }
-    const results = await Promise.all(spans.map((s) => this.pc.getLogs({ address: ADDRESSES.house, event: BID_PLACED, args: { token }, fromBlock: s.from, toBlock: s.to }).catch(() => [])));
+    const results = await Promise.all(spans.map((s) => this.pc.getLogs({ address: this.dep.house, event: BID_PLACED, args: { token }, fromBlock: s.from, toBlock: s.to }).catch(() => [])));
     for (const logs of results) {
       for (const l of logs as unknown as { args: { bidId: bigint; owner: Address; budget: bigint; maxPriceQ96: bigint }; blockNumber: bigint; transactionHash: string }[]) {
         out.push({ id: Number(l.args.bidId), owner: l.args.owner, budget: l.args.budget, maxPriceQ96: l.args.maxPriceQ96, block: Number(l.blockNumber), txHash: l.transactionHash });
       }
     }
     return out.sort((a, b) => b.id - a.id);
+  }
+}
+
+export type AdminFn = Parameters<OnairApi["adminCall"]>[0];
+
+/** The app-wide API: launches and settings go to the primary deployment,
+ *  everything about an existing coin goes to whichever deployment lists it. */
+export class OnairRouter {
+  readonly apis: OnairApi[];
+  private homes = new Map<string, OnairApi>();
+  private inflight = new Map<string, Promise<OnairApi>>();
+
+  constructor(readonly pc: PublicClient) {
+    this.apis = DEPLOYMENTS.map((d) => new OnairApi(pc, d));
+  }
+  get primary(): OnairApi { return this.apis[0]; }
+
+  connectWallet(wc: WalletClient) { this.apis.forEach((a) => a.connectWallet(wc)); }
+
+  /** Which deployment lists `token` (creator set). Unknown coins default to the primary. */
+  async forToken(token: Address): Promise<OnairApi> {
+    const key = token.toLowerCase();
+    const hit = this.homes.get(key);
+    if (hit) return hit;
+    if (this.apis.length === 1) return this.primary;
+    let p = this.inflight.get(key);
+    if (!p) {
+      p = (async () => {
+        const rows = await this.pc.multicall({
+          contracts: this.apis.map((a) => ({ address: a.dep.factory, abi: ONAIR_FACTORY_ABI, functionName: "listings", args: [token] })),
+          allowFailure: true,
+        });
+        const i = rows.findIndex((r) => r.status === "success" && (r.result as unknown as [Address])[0] !== zeroAddress);
+        const api = this.apis[i >= 0 ? i : 0];
+        if (i >= 0) this.homes.set(key, api);
+        return api;
+      })().finally(() => this.inflight.delete(key));
+      this.inflight.set(key, p);
+    }
+    return p;
+  }
+  /** Seed the routing table from a listing read elsewhere (saves a multicall). */
+  setHome(token: Address, dep: Deployment) {
+    const api = this.apis.find((a) => a.dep.factory.toLowerCase() === dep.factory.toLowerCase());
+    if (api) this.homes.set(token.toLowerCase(), api);
+  }
+
+  async modes(tokens: Address[]) {
+    const out = new Map<string, { mode: Mode; finalized: boolean; graduated: boolean }>();
+    const groups = new Map<OnairApi, Address[]>();
+    for (const t of tokens) {
+      const api = await this.forToken(t);
+      groups.set(api, [...(groups.get(api) ?? []), t]);
+    }
+    for (const [api, list] of groups) for (const [k, v] of await api.modes(list)) out.set(k, v);
+    return out;
+  }
+  async auction(token: Address) { return (await this.forToken(token)).auction(token); }
+  async bids(token: Address, opts?: { owner?: Address; limit?: number }) { return (await this.forToken(token)).bids(token, opts); }
+  async checkpoints(token: Address) { return (await this.forToken(token)).checkpoints(token); }
+  async bidLog(token: Address, fromBlock: bigint, toBlock: bigint) { return (await this.forToken(token)).bidLog(token, fromBlock, toBlock); }
+  async bid(token: Address, maxPriceQ96: bigint, budgetWei: bigint) { return (await this.forToken(token)).bid(token, maxPriceQ96, budgetWei); }
+  async claim(token: Address, bidId: number) { return (await this.forToken(token)).claim(token, bidId); }
+  async finalize(token: Address) { return (await this.forToken(token)).finalize(token); }
+  config() { return this.primary.config(); }
+  quotes() { return this.primary.quotes(); }
+  createToken(p: Parameters<OnairApi["createToken"]>[0]) { return this.primary.createToken(p); }
+  createAuction(p: Parameters<OnairApi["createAuction"]>[0]) { return this.primary.createAuction(p); }
+  /** Owner calls: about a coin → that coin's factory; platform settings → primary. */
+  async adminCall(functionName: AdminFn, args: unknown[] = [], token?: Address) {
+    const api = token ? await this.forToken(token) : this.primary;
+    return api.adminCall(functionName, args);
   }
 }
 

@@ -118,7 +118,7 @@ function Card({ t, hypeUsd }: { t: Token; hypeUsd: number }) {
       <Art src={t.metadata?.logo} name={t.name} className="art" />
       {fresh && <span className="tag">NEW</span>}
       <h3>{t.name}</h3>
-      <p>{t.symbol} · {ago(t.createdAt)} · {usd(wei(t.volume24hWei) * hypeUsd, { compact: true })} today</p>
+      <p>{t.symbol} · {ago(t.createdAt)} · {usd(wei(t.volume24hWei) * (t.pair?.usd ?? hypeUsd), { compact: true })} today{t.pair && !t.pair.isNative ? ` · ${t.pair.symbol} pair` : ""}</p>
       <div className="st"><b>{usd(t.marketCapUsd, { compact: true })} cap</b><span className={chg == null ? "faint" : chg >= 0 ? "up" : "down"}>{pct(chg)}</span></div>
     </Link>
   );

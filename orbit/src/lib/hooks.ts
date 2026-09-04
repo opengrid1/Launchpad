@@ -4,7 +4,7 @@ import type { Candle, CandleInterval, TradeRecord } from "@launchpad/sdk";
 import type { Address, Hash } from "viem";
 import { useAccount } from "wagmi";
 
-import { client, onair, publicClient, type OnairToken } from "./client";
+import { client, onair, publicClient, type OnairToken, type PairInfo } from "./client";
 import { ADDRESSES } from "./env";
 
 export type Token = OnairToken;
@@ -73,6 +73,22 @@ export function useConfig() {
   return useQuery({ queryKey: ["config"], queryFn: () => onair.config(), staleTime: 60_000 });
 }
 
+/** Pair assets approved on the factory (HYPE first). */
+export function useQuotes() {
+  return useQuery({ queryKey: ["quotes"], queryFn: () => onair.quotes(), staleTime: 120_000 });
+}
+
+/** A coin's pair asset (HYPE or a stock), from the cached token when present. */
+export function usePair(address?: Address, fromToken?: PairInfo) {
+  return useQuery({
+    queryKey: ["pair", address?.toLowerCase()],
+    queryFn: () => client.pairOf(address!),
+    enabled: !!address && !fromToken,
+    staleTime: 300_000,
+    initialData: fromToken,
+  });
+}
+
 /** True when the connected wallet owns the factory. */
 export function useIsOwner() {
   const { address } = useAccount();
@@ -125,23 +141,20 @@ export function useHypeUsd() {
   return useQuery({ queryKey: ["hypeUsd"], queryFn: () => client.assetUsdPrice(ADDRESSES.quote), staleTime: 60_000 });
 }
 
-/** Native + token balances for the connected account. */
-export function useBalances(account?: Address, token?: Address) {
+const BAL_ABI = [{ type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ type: "uint256" }] }] as const;
+
+/** Native, coin and (stock) pair balances for the connected account. `pay` is
+ *  what a buy spends: the native balance for HYPE pairs, the stock balance
+ *  otherwise. */
+export function useBalances(account?: Address, token?: Address, pair?: Address) {
   return useQuery({
-    queryKey: ["bal", account, token],
+    queryKey: ["bal", account, token, pair],
     enabled: !!account,
     refetchInterval: 15_000,
     queryFn: async () => {
-      const native = await publicClient.getBalance({ address: account! });
-      const tok = token
-        ? ((await publicClient.readContract({
-            address: token,
-            abi: [{ type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ type: "uint256" }] }],
-            functionName: "balanceOf",
-            args: [account!],
-          })) as bigint)
-        : 0n;
-      return { native, token: tok };
+      const erc = (a: Address) => publicClient.readContract({ address: a, abi: BAL_ABI, functionName: "balanceOf", args: [account!] }) as Promise<bigint>;
+      const [native, tok, pr] = await Promise.all([publicClient.getBalance({ address: account! }), token ? erc(token) : 0n, pair ? erc(pair) : 0n]);
+      return { native, token: tok, pair: pr, pay: pair ? pr : native };
     },
   });
 }
@@ -179,6 +192,9 @@ export function friendlyError(err: unknown): string {
   if (/AlreadyExited/.test(raw)) return "Already claimed.";
   if (/LaunchesArePaused/.test(raw)) return "Launches are paused right now.";
   if (/PoolTampered/.test(raw)) return "Pool price could not be restored. Try again.";
+  if (/QuoteNotApproved/.test(raw)) return "That pair asset is not approved. Pick another.";
+  if (/ERC20InsufficientAllowance|transfer amount exceeds allowance/i.test(raw)) return "Approve the pair asset first, then retry.";
+  if (/ERC20InsufficientBalance|transfer amount exceeds balance/i.test(raw)) return "Not enough of the pair asset in your wallet.";
   if (/exceeds block gas limit|gas limit/i.test(raw)) return "Needs big blocks. Turn them on in the Hyperliquid app, then retry.";
   const line = raw.split("\n")[0];
   return line.length > 140 ? line.slice(0, 140) + "…" : line;
