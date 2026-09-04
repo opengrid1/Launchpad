@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { Art } from "../components/Art";
+import { isHidden } from "../lib/env";
 import { ago, hype, num, pct, usd, wei } from "../lib/format";
 import { useHypeUsd, useTokens, type Token } from "../lib/hooks";
 import { countdown, secondsLeft } from "../lib/onair";
@@ -11,7 +12,8 @@ type Sort = "new" | "auctions" | "top" | "movers";
 const inAuction = (t: Token) => !!t.auction && !t.auction.finalized;
 
 export default function Home() {
-  const { data: tokens, isLoading } = useTokens();
+  const { data: all, isLoading } = useTokens();
+  const tokens = useMemo(() => all?.filter((t) => !isHidden(t.address)), [all]);
   const { data: hypeUsd = 0 } = useHypeUsd();
   const [sp] = useSearchParams();
   const [sort, setSort] = useState<Sort>((["new", "auctions", "top", "movers"].includes(sp.get("sort") ?? "") ? sp.get("sort") : "new") as Sort);

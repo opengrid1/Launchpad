@@ -7,7 +7,7 @@ import { useAccount } from "wagmi";
 import { Art } from "../components/Art";
 import { Copy } from "../components/Copy";
 import { onair } from "../lib/client";
-import { ADDRESSES, env } from "../lib/env";
+import { ADDRESSES, env, isHidden } from "../lib/env";
 import { hype, num, short, usd, wei } from "../lib/format";
 import { runTx, useConfig, useHypeUsd, useIsOwner, useTokens, type Token } from "../lib/hooks";
 import { countdown, secondsLeft } from "../lib/onair";
@@ -143,7 +143,7 @@ function LaunchRow({ t, hypeUsd, me, call }: { t: Token; hypeUsd: number; me: Ad
     <div className="li" style={{ display: "block" }}>
       <div className="arow">
         <Art src={t.metadata?.logo} name={t.name} className="art" size={40} />
-        <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{t.symbol} · {label} · <Copy value={t.address} /></div></div>
+        <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{t.symbol} · {label}{isHidden(t.address) ? " · hidden from feed" : ""} · <Copy value={t.address} /></div></div>
         <div className="r">{a && state !== "trading" ? `${hype(wei(a.raised), 2)} HYPE raised · ${hype(wei(a.escrow), 2)} in escrow · ${num(a.bidCount, 0)} bids` : `${usd(t.marketCapUsd, { compact: true })} cap · ${usd(wei(t.liquidityWei) * hypeUsd, { compact: true })} liq`}</div>
         <button className="btn ghost" onClick={() => setOpen(!open)}>{open ? "Close" : "Actions"}</button>
       </div>

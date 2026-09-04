@@ -50,3 +50,12 @@ export const BRAND = {
 
 /** Fee split on the 1% pool tier, as deployed. */
 export const FEES = { creatorPct: 70, platformPct: 30, poolPct: 1 };
+
+/** Test launches kept off the public feed. Their pages still open by URL and
+ *  they still show in My bids and Admin. */
+export const HIDDEN_TOKENS = new Set([
+  "0xe621938e8634521a517a6cad4cfa909fba40be3b", // Test Pattern
+  "0x1b3bec0bbf8dd383267cc9c33c82d0870bf10b6e", // Hammer Time
+  "0x02a6521d5fcb15f16167c0039f899235c7fd7c14", // Final Lot
+]);
+export const isHidden = (address: string) => HIDDEN_TOKENS.has(address.toLowerCase());
