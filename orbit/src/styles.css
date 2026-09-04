@@ -376,3 +376,8 @@ h3{font-size:16px;font-weight:600;margin:0}
 .act{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center}
 .act .small{line-height:1.45}
 @media (max-width:860px){.act{grid-template-columns:1fr}}
+.copy{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;padding:2px 0;color:var(--ink);font-size:inherit;cursor:pointer;max-width:100%;transition:color .15s}
+.copy svg{color:var(--ink3);flex:0 0 14px;transition:color .15s}
+.copy:hover svg{color:var(--ink)} .copy.done svg{color:var(--green)}
+.copy .mono{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.specs dd .copy{justify-content:flex-end}

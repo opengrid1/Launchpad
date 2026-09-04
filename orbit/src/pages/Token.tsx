@@ -7,6 +7,7 @@ import type { CandleInterval } from "@launchpad/sdk";
 
 import { Chart } from "../components/Chart";
 import { Art } from "../components/Art";
+import { Copy } from "../components/Copy";
 import { client, onair } from "../lib/client";
 import { env, FEES } from "../lib/env";
 import { ago, dateShort, hype, num, pct, short, usd, wei } from "../lib/format";
@@ -35,6 +36,7 @@ export default function TokenPage() {
 function MarketPage({ t }: { t: Token }) {
   const { data: hypeUsd = 0 } = useHypeUsd();
   const [interval, setInterval_] = useState<CandleInterval>("15m");
+  const [view, setView] = useState<"mcap" | "price">("mcap");
   const { data: candles } = useCandles(t.address, interval);
   const [tab, setTab] = useState<"trades" | "holders" | "about">("trades");
   const [sheet, setSheet] = useState<"buy" | "sell" | null>(null);
@@ -58,11 +60,11 @@ function MarketPage({ t }: { t: Token }) {
       <div className="two">
         <div>
           <div className="panel" style={{ padding: 12 }}>
-            <div className="head" style={{ padding: "2px 4px 8px" }}>
-              <span className="lbl">Price · USD</span>
+            <div className="head" style={{ padding: "2px 4px 8px", flexWrap: "wrap" }}>
+              <div className="seg"><button className={view === "mcap" ? "on" : ""} onClick={() => setView("mcap")}>Market cap</button><button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>Price</button></div>
               <div className="seg">{INTERVALS.map((i) => <button key={i} className={interval === i ? "on" : ""} onClick={() => setInterval_(i)}>{i}</button>)}</div>
             </div>
-            {candles && candles.length > 1 ? <Chart candles={candles} hypeUsd={hypeUsd} /> : <div className="chart" style={{ display: "grid", placeItems: "center", color: "var(--ink3)" }}>{candles ? "Not enough trades for a chart yet. The first buy starts it." : "Loading chart…"}</div>}
+            {candles && candles.length > 1 ? <Chart candles={candles} hypeUsd={hypeUsd} mode={view} /> : <div className="chart" style={{ display: "grid", placeItems: "center", color: "var(--ink3)" }}>{candles ? "Not enough trades for a chart yet. The first buy starts it." : "Loading chart…"}</div>}
           </div>
 
           <div className="tabs chips-row">
@@ -90,8 +92,9 @@ function MarketPage({ t }: { t: Token }) {
               <dt>Supply</dt><dd>1B fixed</dd>
               <dt>Format</dt><dd>{t.mode === "auction" ? "Auction" : "Instant"}</dd>
               <dt>Launched</dt><dd>{dateShort(t.createdAt)}</dd>
-              <dt>Contract</dt><dd><a href={`${env.explorerUrl}/token/${t.address}`} target="_blank" rel="noreferrer">{short(t.address)}</a></dd>
-              <dt>Pool</dt><dd><a href={`https://dexscreener.com/${env.dexscreenerChain}/${t.pool}`} target="_blank" rel="noreferrer">DexScreener</a></dd>
+              <dt>Contract</dt><dd><Copy value={t.address} label="Contract address" /></dd>
+              <dt>Pool</dt><dd><Copy value={t.pool} label="Pool address" /></dd>
+              <dt>Links</dt><dd><a href={`${env.explorerUrl}/token/${t.address}`} target="_blank" rel="noreferrer">Explorer</a> · <a href={`https://dexscreener.com/${env.dexscreenerChain}/${t.pool}`} target="_blank" rel="noreferrer">DexScreener</a></dd>
             </dl>
           </div>
         </aside>
@@ -134,7 +137,7 @@ function AuctionPage({ t }: { t: Token }) {
   const soldPct = a.supply > 0n ? (Number(a.sold) / Number(a.supply)) * 100 : 0;
   const floorFdv = (Number(q96ToFdvWei(a.floorPriceQ96)) / 1e18) * hypeUsd;
   const failed = a.finalized && !a.graduated;
-  const status = a.cancelled ? "CANCELLED" : a.open ? "AUCTION" : failed ? "DID NOT BOND" : "ENDED";
+  const status = a.cancelled ? "CANCELLED" : a.open ? "AUCTION" : failed ? "DID NOT BOND" : a.finalized ? "ENDED" : "NOT SETTLED";
 
   return (
     <main className="page">
@@ -145,8 +148,8 @@ function AuctionPage({ t }: { t: Token }) {
           <div className="meta"><span className={"onair auc " + (a.open ? "" : "off")}><span className="dot" style={{ width: 6, height: 6, boxShadow: "none" }} />{status}</span><span className="mono">{t.symbol}</span><span>pairs HYPE</span><span>by <a href={`${env.explorerUrl}/address/${t.creator}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)" }}>{short(t.creator)}</a></span><span>since {dateShort(t.createdAt)}</span></div>
         </div>
         <div className="price">
-          <div className="v">{a.open ? countdown(left) : a.cancelled ? "cancelled" : "ended"}</div>
-          <div className="c faint">{a.open ? "left in the auction" : a.cancelled || failed ? "refunds open" : "settling"}</div>
+          <div className="v">{a.open ? countdown(left) : a.cancelled ? "cancelled" : a.finalized ? "ended" : "not settled"}</div>
+          <div className="c faint">{a.open ? "left in the auction" : a.cancelled || failed ? "refunds open" : a.finalized ? "" : "ended, waiting for settlement"}</div>
         </div>
       </div>
 
@@ -195,7 +198,8 @@ function AuctionPage({ t }: { t: Token }) {
               <dt>Min bid</dt><dd>{hype(wei(a.minBidWei))} HYPE</dd>
               <dt>Ends</dt><dd>block {num(a.endBlock, 0)}</dd>
               <dt>Escrow</dt><dd>{hype(wei(a.escrow), 3)} HYPE</dd>
-              <dt>Contract</dt><dd><a href={`${env.explorerUrl}/token/${t.address}`} target="_blank" rel="noreferrer">{short(t.address)}</a></dd>
+              <dt>Contract</dt><dd><Copy value={t.address} label="Contract address" /></dd>
+              <dt>Explorer</dt><dd><a href={`${env.explorerUrl}/token/${t.address}`} target="_blank" rel="noreferrer">HyperEVMScan</a></dd>
             </dl>
             <p className="note">Your budget is spread evenly over the blocks left, so being early does not mean being fast. Each block clears at one price for everyone. If the price passes your max you stop filling and the rest of your budget comes back at the end. Bids cannot be withdrawn.</p>
           </div>
@@ -223,7 +227,7 @@ function Finalize({ token, cancelled }: { token: Address; cancelled: boolean }) 
   const { isConnected } = useAccount();
   return (
     <div className="fin">
-      <div><b>{cancelled ? "Cancelled by the platform." : "The auction has ended."}</b><span className="small">{cancelled ? "Every bid is refunded in full once settled." : "Settlement seeds the pool (or opens refunds). Our keeper does this within minutes; anyone with big blocks on can trigger it now."}</span></div>
+      <div><b>{cancelled ? "Cancelled by the platform. Not settled yet." : "Ended. Not settled yet."}</b><span className="small">{cancelled ? "Settling opens full refunds for every bid." : "Settling seeds the pool if it bonded, or opens refunds if it did not. Nothing can be claimed until then. The keeper does this within minutes; anyone with big blocks on can trigger it now."}</span></div>
       <button className="btn" onClick={async () => { if (!isConnected) return openWalletModal(); await ensureWallet(); await runTx("Settle auction", () => onair.finalize(token), async () => { await qc.invalidateQueries(); }); }}>Settle now</button>
     </div>
   );

@@ -79,7 +79,7 @@ export default function Home() {
             return (
               <Link key={t.address} to={`/t/${t.address}`} className="li">
                 <Art src={t.metadata?.logo} name={t.name} className="art" size={48} />
-                <div className="nm">{t.name} {auc ? <span className="lv amber">● AUCTION</span> : fresh && <span className="lv">● NEW</span>}<small>{t.symbol} · {auc ? `${countdown(secondsLeft(t.auction!))} left · ${hype(wei(t.auction!.raised), 1)} HYPE in` : `${ago(t.createdAt)} · ${num(t.holderCount || 0, 0)} holders`}</small></div>
+                <div className="nm">{t.name} {auc ? <span className="lv amber">● AUCTION</span> : fresh && <span className="lv">● NEW</span>}<small>{t.symbol} · {auc ? `${t.auction!.open ? countdown(secondsLeft(t.auction!)) + " left" : t.auction!.finalized ? "did not bond" : "not settled"} · ${hype(wei(t.auction!.raised), 1)} HYPE in` : `${ago(t.createdAt)} · ${num(t.holderCount || 0, 0)} holders`}</small></div>
                 <div className="px mono"><b>{usd(t.marketCapUsd, { compact: true })}</b>{auc ? <span className="faint">clearing</span> : <span className={chg == null ? "faint" : chg >= 0 ? "up" : "down"}>{pct(chg)}</span>}</div>
               </Link>
             );
@@ -102,7 +102,7 @@ function Card({ t, hypeUsd }: { t: Token; hypeUsd: number }) {
     const raisedPct = a.minRaiseWei > 0n ? Math.min(100, (Number(a.raised) / Number(a.minRaiseWei)) * 100) : 0;
     return (
       <Link to={`/t/${t.address}`} className="card auc">
-        <span className="live amber"><i />{a.open ? countdown(secondsLeft(a)) : a.cancelled ? "CANCELLED" : "ENDED"}</span>
+        <span className="live amber"><i />{a.open ? countdown(secondsLeft(a)) : a.cancelled ? "CANCELLED" : a.finalized ? "DID NOT BOND" : "NOT SETTLED"}</span>
         <Art src={t.metadata?.logo} name={t.name} className="art" />
         <span className="tag amber">AUCTION</span>
         <h3>{t.name}</h3>

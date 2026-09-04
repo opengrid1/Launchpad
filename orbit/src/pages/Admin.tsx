@@ -5,6 +5,7 @@ import { parseEther, type Address } from "viem";
 import { useAccount } from "wagmi";
 
 import { Art } from "../components/Art";
+import { Copy } from "../components/Copy";
 import { onair } from "../lib/client";
 import { ADDRESSES, env } from "../lib/env";
 import { hype, num, short, usd, wei } from "../lib/format";
@@ -43,10 +44,10 @@ export default function Admin() {
         <div className="sec-h"><h2>Platform</h2></div>
         <div className="panel">
           <dl className="specs">
-            <dt>Factory</dt><dd><a href={`${env.explorerUrl}/address/${ADDRESSES.factory}`} target="_blank" rel="noreferrer">{ADDRESSES.factory}</a></dd>
-            <dt>Auction house</dt><dd><a href={`${env.explorerUrl}/address/${ADDRESSES.house}`} target="_blank" rel="noreferrer">{ADDRESSES.house}</a></dd>
-            <dt>Owner</dt><dd>{cfg ? cfg.owner : "…"}</dd>
-            <dt>Fee recipient</dt><dd>{cfg ? cfg.feeRecipient : "…"}</dd>
+            <dt>Factory</dt><dd><Copy value={ADDRESSES.factory} full /></dd>
+            <dt>Auction house</dt><dd><Copy value={ADDRESSES.house} full /></dd>
+            <dt>Owner</dt><dd>{cfg ? <Copy value={cfg.owner} full /> : "…"}</dd>
+            <dt>Fee recipient</dt><dd>{cfg ? <Copy value={cfg.feeRecipient} full /> : "…"}</dd>
             <dt>Launches</dt><dd>{cfg ? (cfg.paused ? "PAUSED" : "open") : "…"}</dd>
             <dt>HYPE price on file</dt><dd>{cfg ? usd(cfg.hypeUsd) : "…"}</dd>
             <dt>Auction length</dt><dd>{cfg ? `${num(cfg.durationBlocks, 0)} blocks · ${countdown(cfg.durationBlocks)}` : "…"}</dd>
@@ -142,7 +143,7 @@ function LaunchRow({ t, hypeUsd, me, call }: { t: Token; hypeUsd: number; me: Ad
     <div className="li" style={{ display: "block" }}>
       <div className="arow">
         <Art src={t.metadata?.logo} name={t.name} className="art" size={40} />
-        <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{t.symbol} · {label} · {short(t.address)}</div></div>
+        <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{t.symbol} · {label} · <Copy value={t.address} /></div></div>
         <div className="r">{a && state !== "trading" ? `${hype(wei(a.raised), 2)} HYPE raised · ${hype(wei(a.escrow), 2)} in escrow · ${num(a.bidCount, 0)} bids` : `${usd(t.marketCapUsd, { compact: true })} cap · ${usd(wei(t.liquidityWei) * hypeUsd, { compact: true })} liq`}</div>
         <button className="btn ghost" onClick={() => setOpen(!open)}>{open ? "Close" : "Actions"}</button>
       </div>

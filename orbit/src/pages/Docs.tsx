@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import { Copy } from "../components/Copy";
 import { ADDRESSES, env, FEES } from "../lib/env";
 import { usd, wei } from "../lib/format";
 import { useConfig } from "../lib/hooks";
@@ -33,10 +34,10 @@ export default function Docs() {
         <div className="sec-h"><h2>Contracts</h2></div>
         <div className="panel">
           <dl className="specs">
-            <dt>Factory</dt><dd><a href={`${env.explorerUrl}/address/${ADDRESSES.factory}`} target="_blank" rel="noreferrer">{ADDRESSES.factory}</a></dd>
-            <dt>Auction house</dt><dd><a href={`${env.explorerUrl}/address/${ADDRESSES.house}`} target="_blank" rel="noreferrer">{ADDRESSES.house}</a></dd>
-            <dt>Token deployer</dt><dd><a href={`${env.explorerUrl}/address/${ADDRESSES.tokenDeployer}`} target="_blank" rel="noreferrer">{ADDRESSES.tokenDeployer}</a></dd>
-            <dt>Swap router</dt><dd><a href={`${env.explorerUrl}/address/${ADDRESSES.swapRouter}`} target="_blank" rel="noreferrer">{ADDRESSES.swapRouter}</a></dd>
+            <dt>Factory</dt><dd><Copy value={ADDRESSES.factory} full /></dd>
+            <dt>Auction house</dt><dd><Copy value={ADDRESSES.house} full /></dd>
+            <dt>Token deployer</dt><dd><Copy value={ADDRESSES.tokenDeployer} full /></dd>
+            <dt>Swap router</dt><dd><Copy value={ADDRESSES.swapRouter} full /></dd>
             <dt>Pair</dt><dd>WHYPE</dd>
             <dt>Chain</dt><dd>{env.chainName} · {env.chainId}</dd>
           </dl>
