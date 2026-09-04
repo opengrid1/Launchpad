@@ -23,7 +23,9 @@ export default function TokenPage() {
   if (isLoading) return <main className="page"><div className="prog"><div className="art skeleton" style={{ minHeight: 88 }} /><div className="skeleton" style={{ height: 44, width: 240, minHeight: 0 }} /></div><div className="skeleton" style={{ minHeight: 340 }} /></main>;
   if (!t) return <main className="page"><section className="hero" style={{ gridTemplateColumns: "1fr" }}><div><h1>Off <em>air</em>.</h1><p className="sub">That address is not a coin launched here.</p><Link to="/" className="btn ghost">Back to the feed</Link></div></section></main>;
 
-  if (t.mode === "auction" && t.auction && !t.auction.finalized) return <AuctionPage t={t} />;
+  // Auction coins stay on the auction page until a pool exists: while bidding
+  // runs, while settlement is pending, and forever if the auction did not bond.
+  if (t.mode === "auction" && t.auction && !(t.auction.finalized && t.auction.graduated)) return <AuctionPage t={t} />;
   return <MarketPage t={t} />;
 }
 
@@ -131,7 +133,8 @@ function AuctionPage({ t }: { t: Token }) {
   const raisedPct = a.minRaiseWei > 0n ? Math.min(100, (Number(a.raised) / Number(a.minRaiseWei)) * 100) : 0;
   const soldPct = a.supply > 0n ? (Number(a.sold) / Number(a.supply)) * 100 : 0;
   const floorFdv = (Number(q96ToFdvWei(a.floorPriceQ96)) / 1e18) * hypeUsd;
-  const status = a.cancelled ? "CANCELLED" : a.open ? "AUCTION" : "ENDED";
+  const failed = a.finalized && !a.graduated;
+  const status = a.cancelled ? "CANCELLED" : a.open ? "AUCTION" : failed ? "DID NOT BOND" : "ENDED";
 
   return (
     <main className="page">
@@ -143,7 +146,7 @@ function AuctionPage({ t }: { t: Token }) {
         </div>
         <div className="price">
           <div className="v">{a.open ? countdown(left) : a.cancelled ? "cancelled" : "ended"}</div>
-          <div className="c faint">{a.open ? "left in the auction" : a.cancelled ? "refunds open" : "settling"}</div>
+          <div className="c faint">{a.open ? "left in the auction" : a.cancelled || failed ? "refunds open" : "settling"}</div>
         </div>
       </div>
 
@@ -165,7 +168,7 @@ function AuctionPage({ t }: { t: Token }) {
             <div className="bond">
               <div className="between"><span className="lbl">Bond · {hype(wei(a.minRaiseWei), 0)} HYPE to open the pool</span><span className="mono small">{raisedPct.toFixed(0)}%</span></div>
               <div className="bar"><i style={{ width: `${raisedPct}%` }} /></div>
-              <p className="note">{a.raised >= a.minRaiseWei ? "Bonded. When the auction ends the raise and the unsold half of the supply seed a locked HyperSwap pool at the clearing price." : `Under the bond so far. If it ends below ${hype(wei(a.minRaiseWei), 0)} HYPE every bidder is refunded in full and no pool opens.`}</p>
+              <p className="note">{failed ? `Ended under the ${hype(wei(a.minRaiseWei), 0)} HYPE bond. No coins were sold and no pool opened; every bid is refundable in full below.` : a.raised >= a.minRaiseWei ? "Bonded. When the auction ends the raise and the unsold half of the supply seed a locked HyperSwap pool at the clearing price." : `Under the bond so far. If it ends below ${hype(wei(a.minRaiseWei), 0)} HYPE every bidder is refunded in full and no pool opens.`}</p>
             </div>
             {!a.open && !a.finalized && <Finalize token={t.address} cancelled={a.cancelled} />}
           </div>

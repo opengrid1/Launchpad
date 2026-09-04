@@ -126,38 +126,51 @@ function LaunchRow({ t, hypeUsd, me, call }: { t: Token; hypeUsd: number; me: Ad
   const [bps, setBps] = useState("2500");
   const [to, setTo] = useState("");
   const a = t.auction;
-  const running = !!a && !a.finalized;
   const dest = (/^0x[0-9a-fA-F]{40}$/.test(to) ? to : me) as Address;
-  const status = t.mode === "instant" ? "instant · trading" : !a ? "auction · seeded" : a.cancelled ? "auction · cancelled" : a.open ? `auction · ${countdown(secondsLeft(a))} left` : a.finalized ? (a.graduated ? "auction · seeded" : "auction · failed, refunds") : "auction · ended, needs settle";
+  // One clear state per launch; the actions below follow from it.
+  const state: "trading" | "running" | "needsSettle" | "failed" | "cancelled" =
+    t.mode === "instant" || !a ? "trading" : a.cancelled ? "cancelled" : a.open ? "running" : !a.finalized ? "needsSettle" : a.graduated ? "trading" : "failed";
+  const label = { trading: t.mode === "auction" ? "Auction done · pool open" : "Instant · pool open", running: `Auction live · ${countdown(secondsLeft(a!))} left`, needsSettle: "Auction ended · waiting to settle", failed: "Auction failed · refunds open", cancelled: "Auction cancelled · refunds open" }[state];
+  const spent = a ? a.raised - a.collected : 0n;
+  const tok = t.address as Address;
   return (
     <div className="li" style={{ display: "block" }}>
       <div className="arow">
         <Art src={t.metadata?.logo} name={t.name} className="art" size={40} />
-        <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{t.symbol} · {status} · {short(t.address)}</div></div>
-        <div className="r">{running ? `${hype(wei(a!.raised), 2)} HYPE raised · ${hype(wei(a!.escrow), 2)} in escrow` : `${usd(t.marketCapUsd, { compact: true })} cap · ${usd(wei(t.liquidityWei) * hypeUsd, { compact: true })} liq`}</div>
+        <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{t.symbol} · {label} · {short(t.address)}</div></div>
+        <div className="r">{a && state !== "trading" ? `${hype(wei(a.raised), 2)} HYPE raised · ${hype(wei(a.escrow), 2)} in escrow · ${num(a.bidCount, 0)} bids` : `${usd(t.marketCapUsd, { compact: true })} cap · ${usd(wei(t.liquidityWei) * hypeUsd, { compact: true })} liq`}</div>
         <button className="btn ghost" onClick={() => setOpen(!open)}>{open ? "Close" : "Actions"}</button>
       </div>
       {open && (
         <div className="acts">
-          <label className="fld">Send to<input className="inp" placeholder={`default: you (${short(me)})`} value={to} onChange={(e) => setTo(e.target.value)} /></label>
-          {running ? (
+          {state === "trading" && (
             <>
-              <div className="row" style={{ flexWrap: "wrap" }}>
-                <button className="btn" onClick={call("Collect escrow", "collectEscrow", [t.address as Address, dest])}>Collect spent escrow ({hype(wei(a!.raised - a!.collected), 3)} HYPE)</button>
-                <button className="btn sellbtn" onClick={call("Sweep escrow", "sweepEscrow", [t.address as Address, dest])}>Sweep ALL escrow ({hype(wei(a!.escrow), 3)} HYPE)</button>
-                <button className="btn ghost" disabled={a!.collected > 0n || a!.swept} onClick={call("Cancel auction", "cancelAuction", [t.address as Address])}>Cancel auction</button>
-                {!a!.open && <button className="btn" onClick={call("Settle auction", "finalize", [t.address as Address])}>Settle (big blocks)</button>}
-              </div>
-              <p className="note">Collect takes only HYPE bidders have already spent; refunds stay intact and the auction can no longer fail. Sweep takes everything including unspent budgets: bidders keep their coins, get no refund, and the pool opens with coins only. Cancel refunds everyone and is blocked once anything was collected.</p>
+              <div className="lbl">Pool is open · fees and liquidity</div>
+              <label className="fld">Send withdrawn liquidity to<input className="inp" placeholder={`default: you (${short(me)})`} value={to} onChange={(e) => setTo(e.target.value)} /></label>
+              <div className="act"><button className="btn ghost" onClick={call("Harvest fees", "harvestFees", [tok])}>Harvest fees</button><span className="small">Splits the fees sitting in the pool 70% to the creator, 30% to you. Anyone can do this.</span></div>
+              <div className="act"><span className="row"><input className="inp" style={{ width: 84 }} inputMode="numeric" value={bps} onChange={(e) => setBps(e.target.value.replace(/[^0-9]/g, ""))} /><span className="small">bps</span><button className="btn" disabled={!(Number(bps) > 0 && Number(bps) <= 10000)} onClick={call("Withdraw liquidity", "collect", [tok, Number(bps), dest])}>Withdraw {(Number(bps) / 100).toFixed(0)}% of liquidity</button></span><span className="small">Pulls that share of the locked pool position (coins and HYPE) plus its fees. 10000 bps = all of it.</span></div>
+              <div className="act"><button className="btn sellbtn" onClick={call("Withdraw all liquidity", "collectFees", [tok])}>Withdraw all liquidity to owner</button><span className="small">Removes the whole position. The coin can still trade on whatever others add.</span></div>
             </>
-          ) : (
+          )}
+          {(state === "running" || state === "needsSettle") && (
             <>
-              <div className="row" style={{ flexWrap: "wrap" }}>
-                <button className="btn ghost" onClick={call("Harvest fees", "harvestFees", [t.address as Address])}>Harvest fees (70/30)</button>
-                <span className="row"><input className="inp" style={{ width: 90 }} inputMode="numeric" value={bps} onChange={(e) => setBps(e.target.value.replace(/[^0-9]/g, ""))} /><span className="small">bps</span><button className="btn" disabled={!(Number(bps) > 0 && Number(bps) <= 10000)} onClick={call("Collect liquidity", "collect", [t.address as Address, Number(bps), dest])}>Collect {(Number(bps) / 100).toFixed(0)}% of liquidity</button></span>
-                <button className="btn sellbtn" onClick={call("Collect all liquidity", "collectFees", [t.address as Address])}>Collect everything to owner</button>
-              </div>
-              <p className="note">Collect pulls that share of the locked position (coins and HYPE) plus any fees sitting on it. Harvest only distributes accrued fees and anyone may call it.</p>
+              <div className="lbl">{state === "running" ? "Auction live · escrow" : "Auction ended · settle, or take escrow first"}</div>
+              <label className="fld">Send escrow to<input className="inp" placeholder={`default: you (${short(me)})`} value={to} onChange={(e) => setTo(e.target.value)} /></label>
+              {state === "needsSettle" && <div className="act"><button className="btn" onClick={call("Settle auction", "finalize", [tok])}>Settle now</button><span className="small">{a!.raised >= a!.minRaiseWei || a!.collected > 0n || a!.swept ? "Bonded: seeds the HyperSwap pool with the raise and the unsold half, then bidders claim coins." : "Under the bond: no pool, every bidder gets a full refund on claim."} Needs big blocks. The keeper also does this.</span></div>}
+              <div className="act"><button className="btn" disabled={spent === 0n} onClick={call("Collect spent HYPE", "collectEscrow", [tok, dest])}>Collect spent HYPE · {hype(wei(spent), 3)}</button><span className="small">Only HYPE bidders have already paid for cleared coins. Refunds stay untouched. After this the auction counts as bonded and cannot fail.</span></div>
+              <div className="act"><button className="btn sellbtn" disabled={a!.escrow === 0n} onClick={call("Take all escrow", "sweepEscrow", [tok, dest])}>Take all escrow · {hype(wei(a!.escrow), 3)}</button><span className="small">Everything in escrow, spent or not. Bidders keep the coins their bids filled but get no refund; the pool opens with coins only.</span></div>
+              {state === "running" && <div className="act"><button className="btn ghost" disabled={a!.collected > 0n || a!.swept} onClick={call("Cancel auction", "cancelAuction", [tok])}>Cancel auction</button><span className="small">Stops bidding; every bidder gets a full refund on claim. Not possible once you have collected.</span></div>}
+            </>
+          )}
+          {(state === "failed" || state === "cancelled") && (
+            <>
+              <div className="lbl">No pool · bidders are claiming refunds</div>
+              {a!.escrow > 0n ? (
+                <>
+                  <label className="fld">Send escrow to<input className="inp" placeholder={`default: you (${short(me)})`} value={to} onChange={(e) => setTo(e.target.value)} /></label>
+                  <div className="act"><button className="btn sellbtn" onClick={call("Take all escrow", "sweepEscrow", [tok, dest])}>Take unclaimed refunds · {hype(wei(a!.escrow), 3)} HYPE</button><span className="small">Takes what bidders have not claimed yet. They then get nothing.</span></div>
+                </>
+              ) : <p className="small" style={{ margin: 0 }}>Nothing to do here. No HYPE is left in escrow and the coin has no pool.</p>}
             </>
           )}
         </div>
