@@ -5,6 +5,7 @@ import { parseAbi, parseEther, parseUnits, zeroAddress, type Address } from "vie
 import { useAccount } from "wagmi";
 
 import { Art } from "../components/Art";
+import { PairPicker } from "../components/PairPicker";
 import { onair, publicClient } from "../lib/client";
 import { ADDRESSES, FEES } from "../lib/env";
 import { hype, usd, wei } from "../lib/format";
@@ -171,15 +172,13 @@ export default function Launch() {
           <div className="field"><label>Telegram</label><input value={f.telegram} onChange={set("telegram")} placeholder="@group" /></div>
           <div className="field">
             <label>Pair{mode === "instant" && pairs.length > 1 ? ` · HYPE or ${pairs.length - 1} stocks` : ""}</label>
-            {mode === "auction" ? (
-              <select className="inp" value={ADDRESSES.quote} disabled><option value={ADDRESSES.quote}>HYPE · native</option></select>
-            ) : (
-              <select className="inp" value={pair?.address ?? ADDRESSES.quote} onChange={(e) => { setPairAddr(e.target.value as Address); setF({ ...f, devBuy: "" }); }}>
-                {pairs.length === 0 && <option value={ADDRESSES.quote}>Loading pairs…</option>}
-                {pairs.map((q) => <option key={q.address} value={q.address}>{q.isNative ? "HYPE · native" : `${q.symbol} · ${q.name} · ${usd(q.usd, { compact: true })}`}</option>)}
-              </select>
-            )}
-            <div className="help">{mode === "auction" ? "Auctions are bid in HYPE, so they always pair HYPE. Switch to Instant to pair a tokenized stock." : pairNative ? "The pool holds HYPE on the other side. Buyers pay HYPE and your fees come in HYPE." : `The pool holds ${pairSym} on the other side. Buyers pay ${pairSym}, your fees come in ${pairSym}. Get ${pairSym} on Hyperliquid spot and transfer it to HyperEVM.`}</div>
+            <PairPicker
+              pairs={mode === "auction" ? pairs.filter((q) => q.isNative) : pairs}
+              value={pair?.address ?? ADDRESSES.quote}
+              disabled={mode === "auction"}
+              onChange={(a) => { setPairAddr(a); setF({ ...f, devBuy: "" }); }}
+              note={mode === "auction" ? "Auctions are bid in HYPE, so they always pair HYPE. Switch to Instant to pair a tokenized stock." : pairNative ? "The pool holds HYPE on the other side. Buyers pay HYPE and your fees come in HYPE." : `The pool holds ${pairSym} on the other side. Buyers pay ${pairSym}, your fees come in ${pairSym}. Get ${pairSym} on Hyperliquid spot and transfer it to HyperEVM.`}
+            />
           </div>
           <div className="field">
             <label>{mode === "auction" ? "Opening bid (optional)" : "First buy (optional)"}</label>

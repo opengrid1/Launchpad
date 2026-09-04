@@ -95,6 +95,5 @@ export const HIDDEN_TOKENS = new Set([
   "0x1b3bec0bbf8dd383267cc9c33c82d0870bf10b6e", // Hammer Time
   "0x02a6521d5fcb15f16167c0039f899235c7fd7c14", // Final Lot
   "0x94d4c688f79369308f50b33b8bd253e34c4e9e02", // $AUCTION auction attempt (did not bond, refunds via My bids)
-  "0xd9e285871958fb14a2251efed79466f1d6d55a77", // Nasdaq Test (QTEST): v2 factory stock-pair check, pairs QQQd
 ]);
 export const isHidden = (address: string) => HIDDEN_TOKENS.has(address.toLowerCase());
