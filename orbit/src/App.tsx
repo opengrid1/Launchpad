@@ -79,10 +79,10 @@ export default function App() {
 
       {path !== "/launch" && !path.startsWith("/t/") && (
         <nav className="tabbar">
-          <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><svg viewBox="0 0 24 24"><path d="M4 20h9M8 20v-5M14 4l6 6-4 4-6-6zM11 10l-7 7" /></svg>Auctions</NavLink>
-          <NavLink to="/launch" className={({ isActive }) => (isActive ? "on" : "")}><span className="rec"><i /></span>Launch</NavLink>
-          <NavLink to="/me" className={({ isActive }) => (isActive ? "on" : "")}><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2" /><path d="M8 22h8" /></svg>My bids</NavLink>
-          <NavLink to={owner ? "/admin" : "/docs"} className={({ isActive }) => (isActive ? "on" : "")}>{owner ? <><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>Admin</> : <><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM9 9h6M9 13h6" /></svg>How it works</>}</NavLink>
+          <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><svg viewBox="0 0 24 24"><rect x="12.5" y="2.5" width="7" height="9" rx="1.6" transform="rotate(45 16 7)" /><path d="M12.2 11.8 4 20M3 21h8" /></svg>Auctions</NavLink>
+          <NavLink to="/launch" className={({ isActive }) => (isActive ? "on" : "")}><span className="rec"><svg viewBox="0 0 24 24"><path d="M12 7v10M7 12h10" /></svg></span>Launch</NavLink>
+          <NavLink to="/me" className={({ isActive }) => (isActive ? "on" : "")}><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="10" rx="3.5" /><path d="M12 13v8M9 21h6" /></svg>My bids</NavLink>
+          <NavLink to={owner ? "/admin" : "/docs"} className={({ isActive }) => (isActive ? "on" : "")}>{owner ? <><svg viewBox="0 0 24 24"><path d="M4 7h9M19 7h1M4 17h3M13 17h7" /><circle cx="16" cy="7" r="2.5" /><circle cx="10" cy="17" r="2.5" /></svg>Admin</> : <><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>How it works</>}</NavLink>
         </nav>
       )}
 

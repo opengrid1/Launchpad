@@ -42,8 +42,8 @@ export function Chart({ candles, hypeUsd, mode = "mcap" }: { candles: Candle[]; 
       timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 4, fixLeftEdge: true },
       crosshair: {
         mode: CrosshairMode.Magnet,
-        horzLine: { color: ink2, width: 1, style: LineStyle.Dashed, labelBackgroundColor: "#F3F1EC" },
-        vertLine: { color: ink2, width: 1, style: LineStyle.Dashed, labelBackgroundColor: "#F3F1EC" },
+        horzLine: { color: ink2, width: 1, style: LineStyle.Dashed, labelBackgroundColor: "#2A2A2F" },
+        vertLine: { color: ink2, width: 1, style: LineStyle.Dashed, labelBackgroundColor: "#2A2A2F" },
       },
       handleScroll: { vertTouchDrag: false },
       handleScale: { axisPressedMouseMove: false },
