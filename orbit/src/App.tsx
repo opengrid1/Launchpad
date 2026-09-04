@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { useAccount } from "wagmi";
 
-import { ADDRESSES, BRAND, env, FEES } from "./lib/env";
+import { BRAND, env, FEES } from "./lib/env";
 import { hype, pct, short, usd, wei } from "./lib/format";
 import { useHypeUsd, useIsOwner, useToast, useTokens } from "./lib/hooks";
 import { countdown, secondsLeft } from "./lib/onair";
@@ -76,16 +76,6 @@ export default function App() {
         <Route path="*" element={<Home />} />
       </Routes>
 
-      <footer className="foot">
-        <span>{BRAND.name} · {env.chainName} · {BRAND.tagline}</span>
-        <span>
-          <a href={`${env.explorerUrl}/address/${ADDRESSES.factory}`} target="_blank" rel="noreferrer">Factory</a>
-          {" · "}<a href={`${env.explorerUrl}/address/${ADDRESSES.house}`} target="_blank" rel="noreferrer">Auction house</a>
-          {" · "}<Link to="/docs">How it works</Link>
-          {" · "}<Link to="/launch">Launch a coin</Link>
-          {owner && <>{" · "}<Link to="/admin">Admin</Link></>}
-        </span>
-      </footer>
 
       {path !== "/launch" && !path.startsWith("/t/") && (
         <nav className="tabbar">

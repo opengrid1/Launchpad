@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { Art } from "../components/Art";
-import { FEES } from "../lib/env";
 import { ago, hype, num, pct, usd, wei } from "../lib/format";
 import { useHypeUsd, useTokens, type Token } from "../lib/hooks";
 import { countdown, secondsLeft } from "../lib/onair";
@@ -91,12 +90,6 @@ export default function Home() {
         {!isLoading && list.length === 0 && !q && sort === "auctions" && <p className="small" style={{ marginTop: 12 }}>No auction running right now. <Link to="/launch" style={{ color: "var(--green)" }}>Start one</Link>.</p>}
       </section>
 
-      <div className="rules">
-        <div><b>$0</b><span>to launch. Gas only. A 4-hour auction, or instant.</span></div>
-        <div><b className="r">{FEES.poolPct}%</b><span>fee on every trade. The only fee.</span></div>
-        <div><b>{FEES.creatorPct}%</b><span>of it paid to the creator. {FEES.platformPct}% to the platform.</span></div>
-        <div><b>∞</b><span>liquidity locked in the factory. No rug possible.</span></div>
-      </div>
     </main>
   );
 }
