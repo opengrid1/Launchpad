@@ -34,13 +34,7 @@ export default function Home() {
 
   return (
     <main className="page">
-      <section className="hero">
-        <div>
-          <div className="lbl row" style={{ gap: 10, marginBottom: 14 }}><span className="dot" />Live on HyperEVM</div>
-          <h1>Every coin,<br />one <em>fair</em> price.</h1>
-          <p className="sub">Launch a coin into a four-hour auction where every bidder pays the same clearing price, or list it instantly. Liquidity is locked and every trade pays the creator.</p>
-          <div className="cta"><Link to="/launch" className="btn red">Launch a coin</Link><a href="#feed" className="btn ghost">Browse auctions</a></div>
-        </div>
+      <section className="hero" style={{ gridTemplateColumns: "1fr", paddingTop: 28, alignItems: "start" }}>
         <div className="m-only">
           <div className="sec-h" style={{ marginBottom: 8 }}><h2>Live now</h2><span className="lbl">{auctions.length ? "closing soon · most traded" : "most traded"}</span></div>
           <div className="strip">{[...auctions.slice(0, 3), ...onair].map((t) => (
