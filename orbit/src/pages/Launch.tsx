@@ -8,8 +8,8 @@ import { Art } from "../components/Art";
 import { onair, publicClient } from "../lib/client";
 import { ADDRESSES, FEES } from "../lib/env";
 import { hype, usd, wei } from "../lib/format";
-import { runTx, setToast, useConfig, useHypeUsd } from "../lib/hooks";
-import type { Mode } from "../lib/onair";
+import { friendlyError, runTx, setToast, useConfig, useHypeUsd } from "../lib/hooks";
+import { ONAIR_FACTORY_ABI, type Mode } from "../lib/onair";
 import { ensureWallet, openWalletModal } from "../lib/wallet";
 
 const FACTORY = parseAbi(["function tokenCount() view returns (uint256)", "function allTokens(uint256) view returns (address)"]);
@@ -24,24 +24,49 @@ export default function Launch() {
   const [mode, setMode] = useState<Mode>("auction");
   const [f, setF] = useState({ name: "", symbol: "", description: "", website: "", twitter: "", telegram: "", devBuy: "" });
   const [logo, setLogo] = useState("");
+  const [logoSrc, setLogoSrc] = useState<ImageBitmap | null>(null);
   const [busy, setBusy] = useState(false);
+  const { address: me } = useAccount();
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
 
+  const render = (bmp: ImageBitmap, size: number, q: number) => {
+    const c = document.createElement("canvas"); c.width = size; c.height = size;
+    const ctx = c.getContext("2d")!; const side = Math.min(bmp.width, bmp.height);
+    ctx.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, size, size);
+    const w = c.toDataURL("image/webp", q); return w.startsWith("data:image/webp") ? w : c.toDataURL("image/jpeg", q);
+  };
   const onFile = async (file: File) => {
     try {
       const bmp = await createImageBitmap(file);
-      const render = (size: number, q: number) => {
-        const c = document.createElement("canvas"); c.width = size; c.height = size;
-        const ctx = c.getContext("2d")!; const side = Math.min(bmp.width, bmp.height);
-        ctx.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, size, size);
-        const w = c.toDataURL("image/webp", q); return w.startsWith("data:image/webp") ? w : c.toDataURL("image/jpeg", q);
-      };
-      let out = render(256, 0.8);
-      if (out.length > 24_000) out = render(256, 0.62);
-      if (out.length > 24_000) out = render(192, 0.62);
-      if (out.length > 24_000) out = render(128, 0.6);
+      setLogoSrc(bmp);
+      let out = render(bmp, 256, 0.8);
+      if (out.length > 24_000) out = render(bmp, 256, 0.62);
+      if (out.length > 24_000) out = render(bmp, 192, 0.62);
+      if (out.length > 24_000) out = render(bmp, 128, 0.6);
       setLogo(out);
     } catch { setToast({ kind: "err", text: "Could not read that image. Try a PNG or JPG." }); }
+  };
+
+  /** HyperEVM's normal block holds 3M gas. Auction launches must fit it (no big
+   *  blocks needed), and every KB of on-chain logo costs ~0.75M gas, so the
+   *  logo is re-rendered smaller until the launch estimate fits. */
+  const SMALL_BLOCK_GAS = 2_850_000n;
+  const fitForSmallBlock = async (base: { name: string; symbol: string; devBuyQuote: bigint }, meta: Record<string, string>): Promise<{ metadataURI: string; gas: bigint; shrunk: boolean }> => {
+    const est = async (m: Record<string, string>) => publicClient.estimateContractGas({
+      address: ADDRESSES.factory, abi: ONAIR_FACTORY_ABI, functionName: "createAuction",
+      args: [{ name: base.name, symbol: base.symbol, metadataURI: JSON.stringify(m), marketCapUsd8: 0n, devBuyQuote: base.devBuyQuote }],
+      value: base.devBuyQuote, account: me!,
+    });
+    let gas = await est(meta);
+    if (gas <= SMALL_BLOCK_GAS || !logoSrc) return { metadataURI: JSON.stringify(meta), gas, shrunk: false };
+    for (const [size, q] of [[128, 0.55], [96, 0.5], [72, 0.5], [56, 0.45], [40, 0.4]] as [number, number][]) {
+      const m = { ...meta, logo: render(logoSrc, size, q) };
+      gas = await est(m);
+      if (gas <= SMALL_BLOCK_GAS) return { metadataURI: JSON.stringify(m), gas, shrunk: true };
+    }
+    const m = { ...meta, logo: "" };
+    gas = await est(m);
+    return { metadataURI: JSON.stringify(m), gas, shrunk: true };
   };
 
   const symbol = (f.symbol.trim() || f.name.trim().replace(/[^a-zA-Z0-9]/g, "").slice(0, 6) || "COIN").toUpperCase();
@@ -62,8 +87,18 @@ export default function Launch() {
     setBusy(true);
     try {
       await ensureWallet();
-      const metadataURI = JSON.stringify({ description: f.description.trim(), logo, website: url(f.website), twitter: url(f.twitter, "x"), telegram: url(f.telegram, "tg") });
+      const meta = { description: f.description.trim(), logo, website: url(f.website), twitter: url(f.twitter, "x"), telegram: url(f.telegram, "tg") };
       const devWei = dev ? parseEther(dev as `${number}`) : 0n;
+      let metadataURI = JSON.stringify(meta);
+      if (mode === "auction") {
+        // Fit a normal block so the launch never hangs in a wallet without big blocks.
+        setToast({ kind: "busy", text: "Checking gas…" });
+        try {
+          const fit = await fitForSmallBlock({ name: f.name.trim(), symbol, devBuyQuote: devWei }, meta);
+          metadataURI = fit.metadataURI;
+          if (fit.shrunk) setToast({ kind: "busy", text: "Logo made smaller so the launch fits a normal block" });
+        } catch (err) { setToast({ kind: "err", text: friendlyError(err) }); return; }
+      }
       let created: `0x${string}` | null = null;
       const p = { name: f.name.trim(), symbol, metadataURI, devBuyQuote: devWei };
       const ok = await runTx(mode === "auction" ? `Open the ${symbol} auction` : `Launch ${symbol}`, () => (mode === "auction" ? onair.createAuction(p) : onair.createToken(p)), async () => {
@@ -135,7 +170,7 @@ export default function Launch() {
           <p className="note">
             {mode === "auction"
               ? <>Free, gas only, and it fits a normal HyperEVM block. When the auction ends the pool is seeded automatically; that step needs big blocks, and our keeper handles it.</>
-              : <>Free, you pay HyperEVM gas only. Launching opens a pool, which needs <b style={{ color: "var(--ink)" }}>big blocks</b> turned on for your wallet once (Hyperliquid app → "Use big blocks for EVM"). Turn it back off after.</>}
+              : <>Free, you pay HyperEVM gas only. Launching opens a pool, which needs <b style={{ color: "var(--ink)" }}>big blocks</b> turned on for your wallet once (Hyperliquid app → "Use big blocks for EVM"). Turn it back off after. Without big blocks the transaction never confirms.</>}
           </p>
         </form>
 

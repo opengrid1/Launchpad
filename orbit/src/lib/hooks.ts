@@ -190,7 +190,10 @@ export async function runTx(label: string, fn: () => Promise<Hash>, onDone?: (ha
     setToast({ kind: "busy", text: "Confirm in your wallet" });
     const hash = await fn();
     setToast({ kind: "busy", text: `${label}…`, hash });
-    const rc = await publicClient.waitForTransactionReceipt({ hash });
+    const rc = await publicClient.waitForTransactionReceipt({ hash, timeout: 150_000 }).catch((err) => {
+      if (/timed out|Timed out|timeout/i.test(String((err as any)?.name) + String((err as any)?.message))) throw new Error("Not confirmed after 2 minutes. If it needs big blocks, turn them on in the Hyperliquid app (Use big blocks for EVM) and try again.");
+      throw err;
+    });
     if (rc.status !== "success") throw new Error("Transaction reverted");
     await onDone?.(hash);
     setToast({ kind: "ok", text: `${label} done`, hash });
