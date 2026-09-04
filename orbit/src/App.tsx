@@ -1,11 +1,10 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { useAccount } from "wagmi";
 
-import { BRAND, env, FEES } from "./lib/env";
-import { hype, pct, short, usd, wei } from "./lib/format";
-import { useHypeUsd, useIsOwner, useToast, useTokens } from "./lib/hooks";
-import { countdown, secondsLeft } from "./lib/onair";
+import { BRAND, env } from "./lib/env";
+import { short } from "./lib/format";
+import { useIsOwner, useToast } from "./lib/hooks";
 import { openWalletModal } from "./lib/wallet";
 import { Icon } from "./components/Icon";
 import Home from "./pages/Home";
@@ -14,28 +13,6 @@ import Launch from "./pages/Launch";
 import Me from "./pages/Me";
 import Docs from "./pages/Docs";
 import Admin from "./pages/Admin";
-
-/** The ticker: every live coin's price and move, running auctions, then the day's totals. Doubled so the loop is seamless. */
-function Tape() {
-  const { data: tokens } = useTokens();
-  const { data: hypeUsd = 0 } = useHypeUsd();
-  const items = useMemo(() => {
-    const list = tokens ?? [];
-    const vol = list.reduce((s, t) => s + wei(t.volume24hWei) * hypeUsd, 0);
-    const out: [string, string, string][] = [["HYPE", usd(hypeUsd), ""]];
-    for (const t of list.slice(0, 20)) {
-      if (t.auction && !t.auction.finalized) out.push([t.symbol, `AUCTION ${countdown(secondsLeft(t.auction))} · ${hype(wei(t.auction.raised), 1)} HYPE`, "a"]);
-      else out.push([t.symbol, `${usd(t.priceUsd)} ${pct(t.priceChange24hPct)}`, (t.priceChange24hPct ?? 0) >= 0 ? "u" : "d"]);
-    }
-    const running = list.filter((t) => t.auction && !t.auction.finalized && t.auction.open).length;
-    out.push(["24H VOL", usd(vol, { compact: true }), ""], ["LIVE AUCTIONS", String(running), "a"], ["COINS", String(list.length), ""], ["FEE", `${FEES.poolPct}% · ${FEES.creatorPct}% creator · ${FEES.platformPct}% platform`, ""]);
-    return out;
-  }, [tokens, hypeUsd]);
-  const seq = [...items, ...items];
-  return (
-    <div className="tape" aria-hidden="true"><div className="track">{seq.map(([k, v, c], i) => <span key={i}>{k}<b className={c}>{v}</b></span>)}</div></div>
-  );
-}
 
 export default function App() {
   const { address, isConnected } = useAccount();
@@ -65,7 +42,6 @@ export default function App() {
           </div>
         </div>
       </header>
-      <Tape />
 
       <Routes>
         <Route path="/" element={<Home />} />
