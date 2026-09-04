@@ -192,8 +192,8 @@ function AuctionPage({ t }: { t: Token }) {
           <div className="panel" style={{ marginTop: 14 }}>
             <div className="lbl" style={{ marginBottom: 6 }}>How this auction works</div>
             <dl className="specs">
-              <dt>For sale</dt><dd>{num(wei(AUCTION_SUPPLY), 0)} · 50%</dd>
-              <dt>Released</dt><dd>{num(wei(a.perBlock), 0)} / block</dd>
+              <dt>Auction supply</dt><dd>{num(wei(AUCTION_SUPPLY), 0)} · 50%</dd>
+              <dt>Released per block</dt><dd>{num(wei(a.perBlock), 0)}</dd>
               <dt>Floor</dt><dd>{usd(floorFdv, { compact: true })} FDV</dd>
               <dt>Min bid</dt><dd>{hype(wei(a.minBidWei))} HYPE</dd>
               <dt>Ends</dt><dd>block {num(a.endBlock, 0)}</dd>
