@@ -7,6 +7,7 @@ import { hype, pct, short, usd, wei } from "./lib/format";
 import { useHypeUsd, useIsOwner, useToast, useTokens } from "./lib/hooks";
 import { countdown, secondsLeft } from "./lib/onair";
 import { openWalletModal } from "./lib/wallet";
+import { Icon } from "./components/Icon";
 import Home from "./pages/Home";
 import TokenPage from "./pages/Token";
 import Launch from "./pages/Launch";
@@ -79,10 +80,10 @@ export default function App() {
 
       {path !== "/launch" && !path.startsWith("/t/") && (
         <nav className="tabbar">
-          <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><svg viewBox="0 0 24 24"><rect x="12.5" y="2.5" width="7" height="9" rx="1.6" transform="rotate(45 16 7)" /><path d="M12.2 11.8 4 20M3 21h8" /></svg>Auctions</NavLink>
-          <NavLink to="/launch" className={({ isActive }) => (isActive ? "on" : "")}><span className="rec"><svg viewBox="0 0 24 24"><path d="M12 7v10M7 12h10" /></svg></span>Launch</NavLink>
-          <NavLink to="/me" className={({ isActive }) => (isActive ? "on" : "")}><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="10" rx="3.5" /><path d="M12 13v8M9 21h6" /></svg>My bids</NavLink>
-          <NavLink to={owner ? "/admin" : "/docs"} className={({ isActive }) => (isActive ? "on" : "")}>{owner ? <><svg viewBox="0 0 24 24"><path d="M4 7h9M19 7h1M4 17h3M13 17h7" /><circle cx="16" cy="7" r="2.5" /><circle cx="10" cy="17" r="2.5" /></svg>Admin</> : <><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>How it works</>}</NavLink>
+          <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><Icon name="gavel" />Auctions</NavLink>
+          <NavLink to="/launch" className={({ isActive }) => (isActive ? "on" : "")}><span className="rec"><Icon name="launch" size={16} /></span>Launch</NavLink>
+          <NavLink to="/me" className={({ isActive }) => (isActive ? "on" : "")}><Icon name="wallet" />My bids</NavLink>
+          <NavLink to={owner ? "/admin" : "/docs"} className={({ isActive }) => (isActive ? "on" : "")}>{owner ? <><Icon name="tune" />Admin</> : <><Icon name="info" />How it works</>}</NavLink>
         </nav>
       )}
 
