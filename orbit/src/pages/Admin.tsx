@@ -130,7 +130,12 @@ function LaunchRow({ t, hypeUsd, me, call }: { t: Token; hypeUsd: number; me: Ad
   // One clear state per launch; the actions below follow from it.
   const state: "trading" | "running" | "needsSettle" | "failed" | "cancelled" =
     t.mode === "instant" || !a ? "trading" : a.cancelled ? "cancelled" : a.open ? "running" : !a.finalized ? "needsSettle" : a.graduated ? "trading" : "failed";
-  const label = { trading: t.mode === "auction" ? "Auction done · pool open" : "Instant · pool open", running: `Auction live · ${countdown(secondsLeft(a!))} left`, needsSettle: "Auction ended · waiting to settle", failed: "Auction failed · refunds open", cancelled: "Auction cancelled · refunds open" }[state];
+  const label =
+    state === "running" ? `Auction live · ${countdown(secondsLeft(a!))} left`
+    : state === "needsSettle" ? "Auction ended · waiting to settle"
+    : state === "failed" ? "Auction failed · refunds open"
+    : state === "cancelled" ? "Auction cancelled · refunds open"
+    : t.mode === "auction" ? "Auction done · pool open" : "Instant · pool open";
   const spent = a ? a.raised - a.collected : 0n;
   const tok = t.address as Address;
   return (
