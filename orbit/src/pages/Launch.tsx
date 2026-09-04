@@ -169,15 +169,18 @@ export default function Launch() {
             <div className="field"><label>X</label><input value={f.twitter} onChange={set("twitter")} placeholder="@handle" /></div>
           </div>
           <div className="field"><label>Telegram</label><input value={f.telegram} onChange={set("telegram")} placeholder="@group" /></div>
-          {mode === "instant" && (
-            <div className="field">
-              <label>Pair</label>
+          <div className="field">
+            <label>Pair{mode === "instant" && pairs.length > 1 ? ` · HYPE or ${pairs.length - 1} stocks` : ""}</label>
+            {mode === "auction" ? (
+              <select className="inp" value={ADDRESSES.quote} disabled><option value={ADDRESSES.quote}>HYPE · native</option></select>
+            ) : (
               <select className="inp" value={pair?.address ?? ADDRESSES.quote} onChange={(e) => { setPairAddr(e.target.value as Address); setF({ ...f, devBuy: "" }); }}>
+                {pairs.length === 0 && <option value={ADDRESSES.quote}>Loading pairs…</option>}
                 {pairs.map((q) => <option key={q.address} value={q.address}>{q.isNative ? "HYPE · native" : `${q.symbol} · ${q.name} · ${usd(q.usd, { compact: true })}`}</option>)}
               </select>
-              <div className="help">{pairNative ? "The pool holds HYPE on the other side. Buyers pay HYPE and your fees come in HYPE." : `The pool holds ${pairSym} on the other side. Buyers pay ${pairSym}, your fees come in ${pairSym}. Get ${pairSym} on Hyperliquid spot and transfer it to HyperEVM.`}</div>
-            </div>
-          )}
+            )}
+            <div className="help">{mode === "auction" ? "Auctions are bid in HYPE, so they always pair HYPE. Switch to Instant to pair a tokenized stock." : pairNative ? "The pool holds HYPE on the other side. Buyers pay HYPE and your fees come in HYPE." : `The pool holds ${pairSym} on the other side. Buyers pay ${pairSym}, your fees come in ${pairSym}. Get ${pairSym} on Hyperliquid spot and transfer it to HyperEVM.`}</div>
+          </div>
           <div className="field">
             <label>{mode === "auction" ? "Opening bid (optional)" : "First buy (optional)"}</label>
             <input inputMode="decimal" value={f.devBuy} onChange={set("devBuy")} placeholder="0" />

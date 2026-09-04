@@ -8,7 +8,7 @@ import { StableV3Client } from "./stableClient";
 export const publicClient = createPublicClient({
   chain,
   transport: fallback(
-    env.rpcUrls.map((url) => http(url, { retryCount: 1, retryDelay: 150, timeout: 6_000, batch: { wait: 16 } })),
+    env.rpcUrls.map((url) => http(url, { retryCount: 1, retryDelay: 150, timeout: 6_000, batch: { wait: 16, batchSize: 20 } }) /* HyperEVM RPC caps JSON-RPC batches at 20 */),
     { rank: { interval: 30_000, sampleCount: 5 } },
   ),
   pollingInterval: 10_000,
