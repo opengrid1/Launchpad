@@ -133,7 +133,7 @@ function AuctionPage({ t }: { t: Token }) {
   const links = linksOf(t);
   const clearingWei = q96ToWei(a.clearingQ96);
   const fdvUsd = (Number(q96ToFdvWei(a.clearingQ96)) / 1e18) * hypeUsd;
-  const raisedPct = a.minRaiseWei > 0n ? Math.min(100, (Number(a.raised) / Number(a.minRaiseWei)) * 100) : 0;
+  const raisedPct = a.minRaiseWei > 0n ? Math.min(100, (Number(a.committed) / Number(a.minRaiseWei)) * 100) : 0;
   const soldPct = a.supply > 0n ? (Number(a.sold) / Number(a.supply)) * 100 : 0;
   const floorFdv = (Number(q96ToFdvWei(a.floorPriceQ96)) / 1e18) * hypeUsd;
   const failed = a.finalized && !a.graduated;
@@ -163,7 +163,7 @@ function AuctionPage({ t }: { t: Token }) {
                 <div className="small mono">{hype(wei(clearingWei))} HYPE per coin · {usd(fdvUsd, { compact: true })} FDV · floor {usd(floorFdv, { compact: true })}</div>
               </div>
               <div className="stage-n">
-                <div><b>{hype(wei(a.raised), 2)}</b><span>HYPE raised</span></div>
+                <div><b>{hype(wei(a.committed), 2)}</b><span>HYPE committed</span></div>
                 <div><b>{num(a.bidCount, 0)}</b><span>bids</span></div>
                 <div><b>{soldPct.toFixed(1)}%</b><span>of the sale sold</span></div>
               </div>
@@ -171,7 +171,7 @@ function AuctionPage({ t }: { t: Token }) {
             <div className="bond">
               <div className="between"><span className="lbl">Bond · {hype(wei(a.minRaiseWei), 0)} HYPE to open the pool</span><span className="mono small">{raisedPct.toFixed(0)}%</span></div>
               <div className="bar"><i style={{ width: `${raisedPct}%` }} /></div>
-              <p className="note">{failed ? `Ended under the ${hype(wei(a.minRaiseWei), 0)} HYPE bond. No coins were sold and no pool opened; every bid is refundable in full below.` : a.raised >= a.minRaiseWei ? "Bonded. When the auction ends the raise and the unsold half of the supply seed a locked HyperSwap pool at the clearing price." : `Under the bond so far. If it ends below ${hype(wei(a.minRaiseWei), 0)} HYPE every bidder is refunded in full and no pool opens.`}</p>
+              <p className="note">{failed ? `Ended under the ${hype(wei(a.minRaiseWei), 0)} HYPE bond. No coins were sold and no pool opened; every bid is refundable in full below.` : a.committed >= a.minRaiseWei ? `On track to bond: ${hype(wei(a.committed), 2)} HYPE committed by active bids, ${hype(wei(a.raised), 3)} spent so far. When the auction ends the raise and the unsold half of the supply seed a locked HyperSwap pool at the clearing price.` : `${hype(wei(a.committed), 2)} HYPE committed by active bids (${hype(wei(a.raised), 3)} spent so far). Budgets are spent block by block until the end. If the total ends below ${hype(wei(a.minRaiseWei), 0)} HYPE every bidder is refunded in full and no pool opens.`}</p>
             </div>
             {!a.open && !a.finalized && <Finalize token={t.address} cancelled={a.cancelled} />}
           </div>

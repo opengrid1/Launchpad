@@ -58,8 +58,8 @@ class OnairClient extends StableV3Client {
           out.priceWei = price.toString();
           out.priceUsd = String((Number(price) / 1e18) * hypeUsd);
           out.marketCapUsd = String((Number(q96ToFdvWei(a.clearingQ96)) / 1e18) * hypeUsd);
-          out.liquidityWei = a.raised.toString();
-          out.volumeTotalWei = a.raised.toString();
+          out.liquidityWei = a.committed.toString();
+          out.volumeTotalWei = a.committed.toString();
           out.txCount24h = a.bidCount;
         }
         return out;

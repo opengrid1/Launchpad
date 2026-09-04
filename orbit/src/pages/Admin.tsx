@@ -144,7 +144,7 @@ function LaunchRow({ t, hypeUsd, me, call }: { t: Token; hypeUsd: number; me: Ad
       <div className="arow">
         <Art src={t.metadata?.logo} name={t.name} className="art" size={40} />
         <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{t.symbol} · {label}{isHidden(t.address) ? " · hidden from feed" : ""} · <Copy value={t.address} /></div></div>
-        <div className="r">{a && state !== "trading" ? `${hype(wei(a.raised), 2)} HYPE raised · ${hype(wei(a.escrow), 2)} in escrow · ${num(a.bidCount, 0)} bids` : `${usd(t.marketCapUsd, { compact: true })} cap · ${usd(wei(t.liquidityWei) * hypeUsd, { compact: true })} liq`}</div>
+        <div className="r">{a && state !== "trading" ? `${hype(wei(a.committed), 2)} HYPE committed · ${hype(wei(a.raised), 3)} spent · ${hype(wei(a.escrow), 2)} in escrow · ${num(a.bidCount, 0)} bids` : `${usd(t.marketCapUsd, { compact: true })} cap · ${usd(wei(t.liquidityWei) * hypeUsd, { compact: true })} liq`}</div>
         <button className="btn ghost" onClick={() => setOpen(!open)}>{open ? "Close" : "Actions"}</button>
       </div>
       {open && (

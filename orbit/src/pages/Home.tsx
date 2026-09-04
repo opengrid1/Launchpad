@@ -51,7 +51,7 @@ export default function Home() {
           {isLoading ? <div className="empty">Loading…</div> : auctions.length + onair.length === 0 ? <div className="empty">No auctions yet. Open the first one.</div> : [...auctions.slice(0, 2), ...onair].slice(0, 4).map((t) => (
             <Link key={t.address} to={`/t/${t.address}`} className="rowi">
               <Art src={t.metadata?.logo} name={t.name} className="av" />
-              <div className="nm">{t.name}<small>{t.symbol} · {inAuction(t) ? `auction · ${hype(wei(t.auction!.raised), 1)} / ${hype(wei(t.auction!.minRaiseWei), 0)} HYPE` : `${ago(t.createdAt)} · ${num(t.holderCount || 0, 0)} holders`}</small></div>
+              <div className="nm">{t.name}<small>{t.symbol} · {inAuction(t) ? `auction · ${hype(wei(t.auction!.committed), 1)} / ${hype(wei(t.auction!.minRaiseWei), 0)} HYPE` : `${ago(t.createdAt)} · ${num(t.holderCount || 0, 0)} holders`}</small></div>
               <div className="px">{inAuction(t) ? <><b className="amber">{countdown(secondsLeft(t.auction!))}</b><span className="faint">{usd(t.marketCapUsd, { compact: true })} FDV</span></> : <><b>{usd(t.priceUsd)}</b><span className={(t.priceChange24hPct ?? 0) >= 0 ? "up" : "down"}>{pct(t.priceChange24hPct)}</span></>}</div>
             </Link>
           ))}
@@ -80,7 +80,7 @@ export default function Home() {
             return (
               <Link key={t.address} to={`/t/${t.address}`} className="li">
                 <Art src={t.metadata?.logo} name={t.name} className="art" size={48} />
-                <div className="nm">{t.name} {auc ? <span className="lv amber">● AUCTION</span> : fresh && <span className="lv">● NEW</span>}<small>{t.symbol} · {auc ? `${t.auction!.open ? countdown(secondsLeft(t.auction!)) + " left" : t.auction!.finalized ? "did not bond" : "not settled"} · ${hype(wei(t.auction!.raised), 1)} HYPE in` : `${ago(t.createdAt)} · ${num(t.holderCount || 0, 0)} holders`}</small></div>
+                <div className="nm">{t.name} {auc ? <span className="lv amber">● AUCTION</span> : fresh && <span className="lv">● NEW</span>}<small>{t.symbol} · {auc ? `${t.auction!.open ? countdown(secondsLeft(t.auction!)) + " left" : t.auction!.finalized ? "did not bond" : "not settled"} · ${hype(wei(t.auction!.committed), 1)} HYPE in` : `${ago(t.createdAt)} · ${num(t.holderCount || 0, 0)} holders`}</small></div>
                 <div className="px mono"><b>{usd(t.marketCapUsd, { compact: true })}</b>{auc ? <span className="faint">clearing</span> : <span className={chg == null ? "faint" : chg >= 0 ? "up" : "down"}>{pct(chg)}</span>}</div>
               </Link>
             );
@@ -99,14 +99,14 @@ function Card({ t, hypeUsd }: { t: Token; hypeUsd: number }) {
   const fresh = Date.now() / 1000 - t.createdAt < 3600;
   const a = t.auction;
   if (a && !a.finalized) {
-    const raisedPct = a.minRaiseWei > 0n ? Math.min(100, (Number(a.raised) / Number(a.minRaiseWei)) * 100) : 0;
+    const raisedPct = a.minRaiseWei > 0n ? Math.min(100, (Number(a.committed) / Number(a.minRaiseWei)) * 100) : 0;
     return (
       <Link to={`/t/${t.address}`} className="card auc">
         <span className="live amber"><i />{a.open ? countdown(secondsLeft(a)) : a.cancelled ? "CANCELLED" : a.finalized ? "DID NOT BOND" : "NOT SETTLED"}</span>
         <Art src={t.metadata?.logo} name={t.name} className="art" />
         <span className="tag amber">AUCTION</span>
         <h3>{t.name}</h3>
-        <p>{t.symbol} · {num(a.bidCount, 0)} bids · {hype(wei(a.raised), 1)} HYPE in</p>
+        <p>{t.symbol} · {num(a.bidCount, 0)} bids · {hype(wei(a.committed), 1)} HYPE in</p>
         <div className="bar" style={{ marginBottom: 8 }}><i style={{ width: `${raisedPct}%` }} /></div>
         <div className="st"><b>{usd(t.marketCapUsd, { compact: true })} clearing</b><span className="faint">{raisedPct.toFixed(0)}% bonded</span></div>
       </Link>

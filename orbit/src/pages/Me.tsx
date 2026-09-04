@@ -100,7 +100,7 @@ export default function Me() {
               return (
                 <div key={t.address} className="li">
                   <Art src={t.metadata?.logo} name={t.name} className="art" size={44} />
-                  <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{t.symbol} · {live ? `auction · ${hype(wei(t.auction!.raised), 2)} HYPE raised` : `${usd(t.marketCapUsd, { compact: true })} cap · ${usd(wei(t.volume24hWei) * hypeUsd, { compact: true })} today`}</div></div>
+                  <div><Link to={`/t/${t.address}`} style={{ color: "inherit", fontWeight: 600 }}>{t.name}</Link><div className="l2">{t.symbol} · {live ? `auction · ${hype(wei(t.auction!.committed), 2)} HYPE committed` : `${usd(t.marketCapUsd, { compact: true })} cap · ${usd(wei(t.volume24hWei) * hypeUsd, { compact: true })} today`}</div></div>
                   <div className="r"><div className="l2">{t.mode === "auction" ? "auction" : "instant"} · fee {FEES.creatorPct}%</div></div>
                   <button className="btn" disabled={!!live} onClick={async () => { await ensureWallet(); await runTx("Harvest fees", () => client.claimCreatorFees(t.address as Address)); }}>Harvest</button>
                 </div>

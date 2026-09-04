@@ -96,7 +96,12 @@ export interface AuctionState {
   minRaiseWei: bigint;
   minBidWei: bigint;
   clearingQ96: bigint;
+  /** HYPE already spent on cleared coins (accrues block by block). */
   raised: bigint;
+  /** HYPE the active bids will have spent by the end if nothing changes:
+   *  raised so far plus the rest of their budgets. This is what the bond is
+   *  measured against at settlement, so progress bars use it. */
+  committed: bigint;
   sold: bigint;
   activeRate: bigint;
   escrow: bigint;
@@ -222,6 +227,7 @@ export class OnairApi {
       minBidWei: x.minBidWei,
       clearingQ96,
       raised,
+      committed: raised + activeRate * blocksLeft,
       sold,
       activeRate,
       escrow: x.escrow,
