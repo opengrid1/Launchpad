@@ -228,11 +228,6 @@ h3{font-size:16px;font-weight:600;margin:0}
 .list .l2{font-size:12.5px;color:var(--ink2)}
 .list .r{text-align:right;font-family:var(--mono);font-size:13.5px;font-variant-numeric:tabular-nums}
 
-/* ---------- rules page ---------- */
-.rule{display:grid;grid-template-columns:120px 1fr;gap:20px;padding:24px 0;border-bottom:1px solid var(--line)}
-.rule b{font-family:var(--display);font-size:38px;letter-spacing:-.03em;line-height:1;color:var(--red);font-weight:400}
-.rule p{margin:0;color:var(--ink2);max-width:62ch;line-height:1.55}
-.rule h3{font-size:18px;margin-bottom:6px}
 
 /* ---------- toast ---------- */
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel3);color:var(--ink);border:1px solid var(--line2);padding:11px 16px;border-radius:999px;font-family:var(--mono);font-size:13px;z-index:60;display:flex;gap:10px;align-items:center;max-width:92vw;box-shadow:var(--shadow);animation:pop .28s var(--ease) both}
@@ -382,3 +377,18 @@ h3{font-size:16px;font-weight:600;margin:0}
 .copy:hover svg{color:var(--ink)} .copy.done svg{color:var(--green)}
 .copy .mono{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .specs dd .copy{justify-content:flex-end}
+
+/* ---------- how it works ---------- */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.steps.two{grid-template-columns:1fr 1fr}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:10px;align-content:start;transition:border-color .2s}
+.step:hover{border-color:var(--line2)}
+.step-h{display:flex;align-items:center;gap:10px;color:var(--red)}
+.step-h h3{color:var(--ink);font-size:16px}
+.step-n{font-family:var(--mono);font-size:11px;color:var(--ink3);width:22px;height:22px;border-radius:50%;border:1px solid var(--line2);display:grid;place-items:center}
+.step p{margin:0;color:var(--ink2);font-size:13.5px;line-height:1.55}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.facts div{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.facts b{font-family:var(--display);font-size:30px;display:block;letter-spacing:-.03em;line-height:1;margin-bottom:8px;font-weight:400;color:var(--red)}
+.facts span{color:var(--ink2);font-size:13.5px;line-height:1.5}
+@media (max-width:860px){.steps,.steps.two,.facts{grid-template-columns:1fr}}

@@ -68,7 +68,6 @@ export default function Home() {
           {isLoading ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" />) : (
             <>
               {list.map((t) => <Card key={t.address} t={t} hypeUsd={hypeUsd} />)}
-              <Link to="/launch" className="card new"><div><div className="plus">+</div>Your coin here<br /><small>free · auction or instant</small></div></Link>
             </>
           )}
         </div>
@@ -84,7 +83,6 @@ export default function Home() {
               </Link>
             );
           })}
-          {!isLoading && <Link to="/launch" className="li add"><span className="plus">+</span><div className="nm">Your coin here<small>free · auction or instant</small></div><span /></Link>}
         </div>
         {!isLoading && list.length === 0 && q && <p className="small" style={{ marginTop: 12 }}>No coins match "{q}".</p>}
         {!isLoading && list.length === 0 && !q && sort === "auctions" && <p className="small" style={{ marginTop: 12 }}>No auction running right now. <Link to="/launch" style={{ color: "var(--green)" }}>Start one</Link>.</p>}
