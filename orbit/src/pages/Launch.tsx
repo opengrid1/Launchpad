@@ -57,12 +57,18 @@ export default function Launch() {
       args: [{ name: base.name, symbol: base.symbol, metadataURI: JSON.stringify(m), marketCapUsd8: 0n, devBuyQuote: base.devBuyQuote }],
       value: base.devBuyQuote, account: me!,
     });
-    let gas = await est(meta);
-    if (gas <= SMALL_BLOCK_GAS || !logoSrc) return { metadataURI: JSON.stringify(meta), gas, shrunk: false };
-    for (const [size, q] of [[128, 0.55], [96, 0.5], [72, 0.5], [56, 0.45], [40, 0.4]] as [number, number][]) {
-      const m = { ...meta, logo: render(logoSrc, size, q) };
-      gas = await est(m);
-      if (gas <= SMALL_BLOCK_GAS) return { metadataURI: JSON.stringify(m), gas, shrunk: true };
+    // Public RPCs cap eth_estimateGas well under what a big logo needs and
+    // report that as a revert, so a failed estimate counts as "too big" and we
+    // keep shrinking. Only the final, logo-free attempt surfaces its error.
+    const tryEst = async (m: Record<string, string>) => { try { return await est(m); } catch { return null; } };
+    let gas = await tryEst(meta);
+    if (gas !== null && gas <= SMALL_BLOCK_GAS) return { metadataURI: JSON.stringify(meta), gas, shrunk: false };
+    if (logoSrc) {
+      for (const [size, q] of [[96, 0.55], [72, 0.5], [56, 0.45], [40, 0.4]] as [number, number][]) {
+        const m = { ...meta, logo: render(logoSrc, size, q) };
+        gas = await tryEst(m);
+        if (gas !== null && gas <= SMALL_BLOCK_GAS) return { metadataURI: JSON.stringify(m), gas, shrunk: true };
+      }
     }
     const m = { ...meta, logo: "" };
     gas = await est(m);
