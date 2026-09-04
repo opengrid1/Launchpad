@@ -45,6 +45,7 @@ export const BRAND = {
   name: "HYPERAUCTION",
   tagline: "Every coin, one fair price.",
   url: "https://hyperauction.vercel.app",
+  x: "https://x.com/hyperauctionX",
   description: "Coin auctions on HyperEVM. Launch a coin into a four-hour auction where every bidder pays one clearing price, or list it instantly. Liquidity locked, every trade pays the creator.",
 };
 

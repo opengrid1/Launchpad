@@ -76,9 +76,10 @@ export default function Docs() {
             <dt>Token deployer</dt><dd><Copy value={ADDRESSES.tokenDeployer} full /></dd>
             <dt>Swap router</dt><dd><Copy value={ADDRESSES.swapRouter} full /></dd>
             <dt>Pair</dt><dd>WHYPE</dd>
+            <dt>X</dt><dd><a href="https://x.com/hyperauctionX" target="_blank" rel="noreferrer">@hyperauctionX</a></dd>
           </dl>
         </div>
-        <p className="small" style={{ marginTop: 14 }}>Your bids, claims and coins are under <Link to="/me" style={{ color: "var(--green)" }}>My bids</Link>.</p>
+        <p className="small" style={{ marginTop: 14 }}>Your bids, claims and coins are under <Link to="/me" style={{ color: "var(--green)" }}>My bids</Link>. Updates on <a href="https://x.com/hyperauctionX" target="_blank" rel="noreferrer" style={{ color: "var(--green)" }}>X</a>.</p>
       </section>
     </main>
   );
