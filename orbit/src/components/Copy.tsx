@@ -26,7 +26,7 @@ export function Copy({ value, label, full = false }: { value: string; label?: st
   };
   return (
     <button type="button" className={"copy " + (done ? "done" : "")} onClick={copy} title={value} aria-label={`Copy ${label ?? "address"}`}>
-      <span className="mono">{full ? value : short(value)}</span>
+      {full ? <><span className="mono d-only">{value}</span><span className="mono m-only">{short(value, 6)}</span></> : <span className="mono">{short(value)}</span>}
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         {done ? <path d="M5 12l5 5L20 7" /> : <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 0 1 2-2h9" /></>}
       </svg>
