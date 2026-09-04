@@ -26,7 +26,7 @@ export default function App() {
     <>
       <header className="top">
         <div className="top-in">
-          <Link to="/" className="brand"><i />{BRAND.name}</Link>
+          <Link to="/" className="brand">{BRAND.name}</Link>
           <nav className="nav">
             <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}>Auctions</NavLink>
             <NavLink to="/launch" className={({ isActive }) => (isActive ? "on" : "")}>Launch</NavLink>

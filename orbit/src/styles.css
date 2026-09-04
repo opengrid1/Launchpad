@@ -47,7 +47,6 @@ img{max-width:100%}
 .top{position:sticky;top:0;z-index:40;background:rgba(10,10,11,.82);backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);border-bottom:1px solid var(--line)}
 .top-in{max-width:1180px;margin:0 auto;padding:0 24px;height:62px;display:flex;align-items:center;justify-content:space-between;gap:18px}
 .brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-size:19px;letter-spacing:-.01em}
-.brand i{width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 0 4px var(--red-soft);animation:pulse 1.8s ease-in-out infinite}
 .nav{display:flex;gap:4px;font-size:14px;color:var(--ink2);font-weight:500}
 .nav a{padding:7px 12px;border-radius:999px;transition:color .18s,background .18s}
 .nav a:hover{color:var(--ink)} .nav a.on{color:var(--ink);background:var(--panel2)}
@@ -366,7 +365,7 @@ h3{font-size:16px;font-weight:600;margin:0}
 
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .tape .track,.dot,.brand i,.skeleton,.page,.sheet,.scrim,.toast,.log .li,.acts{animation:none!important}
+  .dot,.skeleton,.page,.sheet,.scrim,.toast,.log .li,.acts{animation:none!important}
   *{transition:none!important}
 }
 .act{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center}
