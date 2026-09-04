@@ -176,7 +176,7 @@ function LaunchRow({ t, hypeUsd, me, call }: { t: Token; hypeUsd: number; me: Ad
                   <label className="fld">Send escrow to<input className="inp" placeholder={`default: you (${short(me)})`} value={to} onChange={(e) => setTo(e.target.value)} /></label>
                   <div className="act"><button className="btn sellbtn" onClick={call("Take all escrow", "sweepEscrow", [tok, dest])}>Take unclaimed refunds · {hype(wei(a!.escrow), 3)} HYPE</button><span className="small">Takes what bidders have not claimed yet. They then get nothing.</span></div>
                 </>
-              ) : <p className="small" style={{ margin: 0 }}>Nothing to do here. No HYPE is left in escrow and the coin has no pool.</p>}
+              ) : <p className="small" style={{ margin: 0 }}>Nothing to do here: this auction ended with no HYPE in escrow and no pool. Collect, Take all escrow and Cancel only apply while an auction is running; Harvest and Withdraw only once a pool is open.</p>}
             </>
           )}
         </div>
