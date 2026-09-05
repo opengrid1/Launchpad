@@ -275,7 +275,7 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
 .step-h h3{color:var(--ink)}
 .step-n{font-family:var(--display);font-weight:800;font-size:13px;color:var(--ink3);letter-spacing:.04em}
 .step p{margin:0;color:var(--ink2);font-size:14px;line-height:1.6}
-.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .facts div{background:var(--tile);border-radius:var(--r);box-shadow:var(--shadow);padding:20px}
 .facts b{display:block;font-family:var(--display);font-size:34px;font-weight:800;letter-spacing:-.035em;color:var(--acc);margin-bottom:8px;line-height:1}
 .facts span{color:var(--ink2);font-size:14px;line-height:1.55}

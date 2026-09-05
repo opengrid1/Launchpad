@@ -38,7 +38,6 @@ export default function Docs() {
           <div><b>{FEES.taxPct}%</b><span>of the pair side on every buy and sell, taken inside the pool by the hook. The only fee.</span></div>
           <div><b>{FEES.creatorPct}/{FEES.holderPct}/{FEES.platformPct}</b><span>creator, holders, platform. Credited per trade, no harvest.</span></div>
           <div><b>1B</b><span>fixed supply. No mint, no burn, no owner, no proxy, no pause on the coin.</span></div>
-          <div><b>0</b><span>withdraw paths for liquidity. The admin can pause launches and curate pairs, nothing else.</span></div>
         </div>
       </section>
       <section className="sec">
