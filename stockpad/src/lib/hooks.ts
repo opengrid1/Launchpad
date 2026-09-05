@@ -47,7 +47,7 @@ export function useIsAdmin() {
 
 export function useTrades(address?: string) {
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["trades", address?.toLowerCase()], queryFn: () => client.getTrades(address!, { limit: 60 }), enabled: !!address, refetchInterval: 30_000 });
+  const q = useQuery({ queryKey: ["trades", address?.toLowerCase()], queryFn: () => client.getTrades(address!, { limit: 100 }), enabled: !!address, refetchInterval: 30_000 });
   useEffect(() => {
     if (!address) return;
     return client.subscribeToTrades(address, (t: TradeRecord) => {
@@ -68,7 +68,7 @@ export function useCandles(address: string | undefined, interval: CandleInterval
 }
 
 export function useHolders(address?: string) {
-  return useQuery({ queryKey: ["holders", address?.toLowerCase()], queryFn: () => client.getHolders(address!, { limit: 30 }), enabled: !!address, refetchInterval: 60_000 });
+  return useQuery({ queryKey: ["holders", address?.toLowerCase()], queryFn: () => client.getHolders(address!, { limit: 11 }), enabled: !!address, refetchInterval: 60_000 });
 }
 
 /** USD per ETH, from the factory (Chainlink). */

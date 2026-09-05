@@ -163,6 +163,7 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
 .log .li:hover{background:var(--tile2)}
 .log .t{color:var(--ink3);font-size:13px} .log .who{color:var(--ink2)}
 .log .r{text-align:right;color:var(--ink);font-weight:600} .log .r small{display:block;color:var(--ink3);font-size:12px;font-weight:500}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;color:var(--ink3);font-size:13px;font-family:var(--mono)}
 .log .side{font-weight:700;font-size:12px;letter-spacing:.06em}
 
 /* ---------- coin page ---------- */

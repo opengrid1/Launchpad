@@ -214,41 +214,65 @@ function Rewards({ token, pair }: { token: Address; pair: PairInfo }) {
   );
 }
 
+const PAGE = 10;
+
+/** Previous / next controls under a paged list. Hidden when one page fits. */
+function Pager({ page, total, onPage }: { page: number; total: number; onPage: (p: number) => void }) {
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  if (pages <= 1) return null;
+  return (
+    <div className="pager">
+      <button className="btn sm" disabled={page === 0} onClick={() => onPage(page - 1)}>Prev</button>
+      <span>{page * PAGE + 1}–{Math.min(total, (page + 1) * PAGE)} of {total}</span>
+      <button className="btn sm" disabled={page >= pages - 1} onClick={() => onPage(page + 1)}>Next</button>
+    </div>
+  );
+}
+
 function Trades({ address, symbol, pair }: { address: Address; symbol: string; pair: PairInfo }) {
   const { data: trades } = useTrades(address);
+  const [page, setPage] = useState(0);
   if (!trades) return <div className="skeleton" style={{ height: 140 }} />;
+  const slice = trades.slice(page * PAGE, page * PAGE + PAGE);
   return (
-    <div className="log">
-      {trades.length === 0 && <div className="empty">No trades yet. The first buy sets the price.</div>}
-      {trades.map((tr) => (
-        <a key={tr.id} className="li" href={`${env.explorerUrl}/tx/${tr.txHash}`} target="_blank" rel="noreferrer">
-          <span className="t">{ago(tr.timestamp)}</span>
-          <span className={"side " + (tr.isBuy ? "up" : "down")}>{tr.isBuy ? "BUY" : "SELL"}</span>
-          <span className="who">{short(tr.trader)}</span>
-          <span className="r">{num(wei(tr.tokenAmount))} {symbol}<small>{hype(wei(tr.nativeAmountWei), 4)} {pair.symbol} · {usd(wei(tr.nativeAmountWei) * pair.usd)}</small></span>
-        </a>
-      ))}
-    </div>
+    <>
+      <div className="log">
+        {trades.length === 0 && <div className="empty">No trades yet. The first buy sets the price.</div>}
+        {slice.map((tr) => (
+          <a key={tr.id} className="li" href={`${env.explorerUrl}/tx/${tr.txHash}`} target="_blank" rel="noreferrer">
+            <span className="t">{ago(tr.timestamp)}</span>
+            <span className={"side " + (tr.isBuy ? "up" : "down")}>{tr.isBuy ? "BUY" : "SELL"}</span>
+            <span className="who">{short(tr.trader)}</span>
+            <span className="r">{num(wei(tr.tokenAmount))} {symbol}<small>{hype(wei(tr.nativeAmountWei), 4)} {pair.symbol} · {usd(wei(tr.nativeAmountWei) * pair.usd)}</small></span>
+          </a>
+        ))}
+      </div>
+      <Pager page={page} total={trades.length} onPage={setPage} />
+    </>
   );
 }
 
 function Holders({ address, creator }: { address: Address; creator: Address }) {
   const { data: holders } = useHolders(address);
   if (!holders) return <div className="skeleton" style={{ height: 140 }} />;
+  const slice = holders.slice(0, PAGE);
   return (
-    <div className="log">
-      {holders.length === 0 && <div className="empty">No holders found yet.</div>}
-      {holders.map((h, i) => {
-        const dev = h.address.toLowerCase() === creator.toLowerCase();
-        return (
-          <a key={h.address} className="li" href={`${env.explorerUrl}/address/${h.address}`} target="_blank" rel="noreferrer">
-            <span className="t">#{i + 1}</span>
-            <span className={"side " + (dev ? "acc" : "faint")}>{dev ? "DEV" : ""}</span>
-            <span className="who">{short(h.address)}</span>
-            <span className="r">{h.pct.toFixed(2)}%<small>{num(wei(h.balance))}</small></span>
-          </a>
-        );
-      })}
-    </div>
+    <>
+      <div className="log">
+        {holders.length === 0 && <div className="empty">No holders found yet.</div>}
+        {slice.map((h, i) => {
+          const dev = h.address.toLowerCase() === creator.toLowerCase();
+          return (
+            <a key={h.address} className="li" href={`${env.explorerUrl}/address/${h.address}`} target="_blank" rel="noreferrer">
+              <span className="t">#{i + 1}</span>
+              <span className={"side " + (dev ? "acc" : "faint")}>{dev ? "DEV" : ""}</span>
+              <span className="who">{short(h.address)}</span>
+              <span className="r">{h.pct.toFixed(2)}%<small>{num(wei(h.balance))}</small></span>
+            </a>
+          );
+        })}
+      </div>
+      {holders.length > PAGE && <p className="note" style={{ textAlign: "center" }}>Top {PAGE} holders. Full list on <a className="acc" href={`${env.explorerUrl}/token/${address}#balances`} target="_blank" rel="noreferrer">Etherscan</a>.</p>}
+    </>
   );
 }
