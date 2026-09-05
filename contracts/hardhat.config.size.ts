@@ -30,7 +30,7 @@ const config: HardhatUserConfig = {
         ? {
             hardfork: process.env.FORK_HARDFORK ?? "cancun",
             chains: { [CHAIN || 999]: { hardforkHistory: { [process.env.FORK_HARDFORK ?? "cancun"]: 0 } } },
-            forking: { url: RPC },
+            forking: { url: RPC, ...(process.env.FORK_BLOCK ? { blockNumber: Number(process.env.FORK_BLOCK) } : {}) },
             chainId: CHAIN || undefined,
           }
         : {}),
