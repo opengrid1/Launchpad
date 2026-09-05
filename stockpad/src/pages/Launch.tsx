@@ -120,7 +120,6 @@ export default function Launch() {
             <div className="help">{canDevBuy ? `Spent in the same transaction at the base ${FEES.taxPct}% fee, so you hold from block one. Everyone can see it.` : "Not available for a pair without an ETH route."}{dev && ethUsd > 0 && <> · about {usd(Number(dev) * ethUsd)}</>}</div>
           </div>
           <button className="big ink" type="submit" disabled={busy || !f.name.trim()}>{cta}</button>
-          <p className="note">Gas only, usually under a dollar. First 20 seconds: the fee starts at 99% and decays to {FEES.taxPct}%; each wallet is capped at 3% of supply for three blocks. Your own first buy is exempt.</p>
         </form>
 
         <aside className="preview">
