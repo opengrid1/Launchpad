@@ -333,6 +333,8 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
   .chg{height:22px;padding:0 8px;font-size:12px}
   .tile-meta{grid-area:meta;font-size:12px;padding-top:8px;margin-top:4px;gap:4px}
   .tile-meta span+span::before{margin:0 6px 0 2px}
+  .preview .tile>.kv{grid-column:1/-1;grid-row:4;width:100%;margin-top:6px;border-top:1px solid var(--line)}
+  .preview .kv dd{overflow-wrap:normal;white-space:nowrap}
   .tile.ghost{display:flex;min-height:0;padding:18px 14px}
   .tile.ghost b{font-size:17px}
   .desk,.launch{grid-template-columns:1fr}
