@@ -30,6 +30,8 @@ function Coin({ t }: { t: Token }) {
   const [interval, setInterval_] = useState<CandleInterval>("15m");
   const [view, setView] = useState<"mcap" | "price">("mcap");
   const { data: candles } = useCandles(t.address, interval);
+  const { data: tradeList } = useTrades(t.address);
+  const last = tradeList?.[0];
   const [tab, setTab] = useState<"trades" | "holders" | "about">("trades");
   const [sheet, setSheet] = useState<"buy" | "sell" | null>(null);
   const chg = t.priceChange24hPct;
@@ -57,13 +59,29 @@ function Coin({ t }: { t: Token }) {
 
       <div className="desk">
         <div>
-          <div className="panel">
-            <div className="chart-h">
-              <div className="seg"><button className={view === "mcap" ? "on" : ""} onClick={() => setView("mcap")}>Market cap</button><button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>Price</button></div>
-              <div className="seg">{INTERVALS.map((i) => <button key={i} className={interval === i ? "on" : ""} onClick={() => setInterval_(i)}>{i}</button>)}</div>
+          <div className="panel market">
+            <div className="mk-stats">
+              <div><span>Price</span><b>{usd(t.priceUsd)}</b></div>
+              <div><span>Market cap</span><b className={chg == null ? "" : chg >= 0 ? "up" : "down"}>{usd(t.marketCapUsd, { compact: true })}</b></div>
+              <div><span>Volume 24h</span><b>{usd(wei(t.volume24hWei) * pair.usd, { compact: true })}</b></div>
+              <div><span>Trades 24h</span><b>{num(t.txCount24h, 0)}</b></div>
+              <div><span>Last trade</span><b>{last ? <><em className={last.isBuy ? "up" : "down"}>{last.isBuy ? "BUY" : "SELL"}</em> {usd(wei(last.nativeAmountWei) * pair.usd)}</> : "—"}</b></div>
+              <div><span>Holders</span><b>{num(t.holderCount, 0)}</b></div>
+            </div>
+            <div className="mk-pair">
+              <b>{t.symbol} / {pair.symbol}</b>
+              <span>{hype(wei(t.priceWei || "0"), 5)} {pair.symbol} · {pair.symbol} at {usd(pair.usd)}</span>
+            </div>
+            <div className="mk-big">
+              <div><b className={chg == null ? "" : chg >= 0 ? "up" : "down"}>{view === "mcap" ? usd(t.marketCapUsd, { compact: true }) : usd(t.priceUsd)}</b>{chg != null && <em className={chg >= 0 ? "up" : "down"}>{pct(chg)}</em>}</div>
+              <span className="faint">{view === "mcap" ? "Mcap · from $3,000" : "Price"}</span>
             </div>
             <div className="chart-wrap">
-              {candles && candles.length > 1 ? <Chart candles={candles} hypeUsd={pair.usd} mode={view} /> : <div className="chart" style={{ display: "grid", placeItems: "center", color: "var(--ink3)" }}>{candles ? "No chart yet. The first trades draw it." : "Loading chart…"}</div>}
+              {candles && candles.length > 1 ? <Chart candles={candles} hypeUsd={pair.usd} mode={view} pairSymbol={pair.symbol} /> : <div className="chart" style={{ display: "grid", placeItems: "center", color: "var(--ink3)" }}>{candles ? "No chart yet. The first trades draw it." : "Loading chart…"}</div>}
+            </div>
+            <div className="chart-h">
+              <div className="seg">{INTERVALS.map((i) => <button key={i} className={interval === i ? "on" : ""} onClick={() => setInterval_(i)}>{i}</button>)}</div>
+              <div className="seg"><button className={view === "mcap" ? "on" : ""} onClick={() => setView("mcap")}>Mcap</button><button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>Price</button></div>
             </div>
           </div>
           <div className="tabs">
