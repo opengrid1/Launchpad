@@ -33,7 +33,9 @@ export const ADDRESSES = {
   ethUsdFeed: addr("VITE_ETH_USD_FEED", "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"),
 };
 
-export const DEPLOYED = ADDRESSES.factory !== "0x0000000000000000000000000000000000000000";
+/** Preview build with sample coins (VITE_DEMO=1): reads come from src/lib/demo.ts, writes are refused. */
+export const DEMO = !!import.meta.env.VITE_DEMO;
+export const DEPLOYED = DEMO || ADDRESSES.factory !== "0x0000000000000000000000000000000000000000";
 
 export const chain = defineChain({
   id: env.chainId,

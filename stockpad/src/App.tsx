@@ -3,7 +3,7 @@ import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { useAccount } from "wagmi";
 
 import { Icon } from "./components/Icon";
-import { BRAND, env } from "./lib/env";
+import { BRAND, DEMO, env } from "./lib/env";
 import { short, usd } from "./lib/format";
 import { useConfig, useIsAdmin, useToast } from "./lib/hooks";
 import { openWalletModal } from "./lib/wallet";
@@ -44,6 +44,7 @@ export default function App() {
         </div>
       </header>
 
+      {DEMO && <div className="demo">Design preview with sample coins. The contracts are not on Ethereum yet, so nothing here can be bought or launched.</div>}
       <div className="wrap">
         <Routes>
           <Route path="/" element={<Home />} />

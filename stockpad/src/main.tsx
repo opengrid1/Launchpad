@@ -5,8 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 
 import App from "./App";
+import { publicClient, setClient } from "./lib/client";
+import { DemoClient } from "./lib/demo";
+import { DEMO } from "./lib/env";
 import { wagmiConfig } from "./lib/wallet";
 import "./styles.css";
+
+if (DEMO) setClient(new DemoClient(publicClient));
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 

@@ -642,4 +642,6 @@ export class StockPadClient {
   }
 }
 
-export const client = new StockPadClient(publicClient);
+export let client = new StockPadClient(publicClient);
+/** Swap the live client for another (the preview build's sample-data client). */
+export function setClient(c: StockPadClient) { client = c; }

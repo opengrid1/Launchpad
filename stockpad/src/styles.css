@@ -49,6 +49,8 @@ h3{font-size:17px}
 .bar-eth b{color:var(--ink);font-weight:600}
 @media (min-width:1000px){.bar-eth{display:inline}}
 
+.demo{background:var(--ink);color:#fff;text-align:center;font-size:13px;font-weight:500;padding:8px 16px}
+
 /* ---------- buttons + inputs ---------- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;background:var(--tile);border:1px solid var(--line2);color:var(--ink);font-size:14px;font-weight:600;transition:transform .12s,background .15s,border-color .15s,box-shadow .15s;white-space:nowrap}
 .btn:hover{border-color:var(--line3);box-shadow:var(--shadow)}
@@ -173,7 +175,9 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
 .head .px .v{font-family:var(--display);font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1}
 .head .px .c{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:8px;color:var(--ink3);font-size:13px}
 .desk{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
-.desk aside{position:sticky;top:calc(var(--bar) + 12px);display:grid;gap:16px}
+.desk>*{min-width:0}
+.desk aside{position:sticky;top:calc(var(--bar) + 12px);display:grid;gap:16px;min-width:0}
+.desk aside>*{min-width:0}
 .chart{height:400px;width:100%}
 .chart-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 16px 6px;flex-wrap:wrap}
 .chart-wrap{padding:0 8px 8px}
@@ -182,7 +186,7 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
 .ticket .amount:focus-within{border-color:var(--acc-line)}
 .ticket .amount .lbl{display:flex;justify-content:space-between;color:var(--ink3);font-size:12px;font-weight:600}
 .ticket .amount .in{display:flex;align-items:baseline;gap:8px}
-.ticket .amount input{flex:1;min-width:0;background:none;border:0;outline:none;font-family:var(--display);font-size:32px;font-weight:700;letter-spacing:-.03em;padding:4px 0;color:var(--ink)}
+.ticket .amount input{flex:1 1 0;width:0;min-width:0;background:none;border:0;outline:none;font-family:var(--display);font-size:32px;font-weight:700;letter-spacing:-.03em;padding:4px 0;color:var(--ink)}
 .ticket .amount input::placeholder{color:var(--ink4)}
 .ticket .amount .unit{color:var(--ink2);font-size:14px;font-weight:600}
 .chips{display:flex;gap:6px;margin:0 0 14px}
@@ -290,9 +294,28 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
   .log .li{grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px;padding:10px 14px;font-size:13px}
   .log .r,.log .who{white-space:nowrap}
   .log .r small{font-size:11px}
-  .grid{grid-template-columns:1fr;gap:10px}
-  .tile{padding:14px;gap:10px}
-  .tile-cap .v{font-size:26px}
+  h1{font-size:28px}
+  .lead .say p{display:none}
+  .lead .say .cta{display:none}
+  .demo{font-size:12px;padding:7px 14px}
+  .lead{margin-bottom:14px}
+  /* phone: coin tiles become compact rows, art / name+pair / cap+change */
+  .grid{grid-template-columns:1fr;gap:8px}
+  .tile{display:grid;grid-template-columns:48px minmax(0,1fr) auto;grid-template-areas:"art name cap" "art stamp cap" "meta meta meta";gap:3px 12px;padding:12px 14px;align-items:center;border-radius:var(--r2)}
+  .tile:hover{transform:none}
+  .tile-top{display:contents}
+  .tile-art{grid-area:art;width:48px;height:48px;border-radius:14px;flex-basis:48px;align-self:center;grid-row:art-start/stamp-end}
+  .tile-name{grid-area:name;align-self:end}
+  .tile-name b{font-size:17px}
+  .stamp{grid-area:stamp;justify-self:start;height:22px;padding:0 8px;font-size:11px;align-self:start}
+  .tile-cap{grid-area:cap;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
+  .tile-cap .k{display:none}
+  .tile-cap .v{font-size:20px}
+  .chg{height:22px;padding:0 8px;font-size:12px}
+  .tile-meta{grid-area:meta;font-size:12px;padding-top:8px;margin-top:4px;gap:4px}
+  .tile-meta span+span::before{margin:0 6px 0 2px}
+  .tile.ghost{display:flex;min-height:0;padding:18px 14px}
+  .tile.ghost b{font-size:17px}
   .desk,.launch{grid-template-columns:1fr}
   .desk aside{position:static}
   .preview{position:static}
