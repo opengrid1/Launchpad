@@ -2,11 +2,11 @@ import { useEffect } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { useAccount } from "wagmi";
 
-import { BRAND, env } from "./lib/env";
-import { short } from "./lib/format";
-import { useIsAdmin, useToast } from "./lib/hooks";
-import { openWalletModal } from "./lib/wallet";
 import { Icon } from "./components/Icon";
+import { BRAND, env } from "./lib/env";
+import { short, usd } from "./lib/format";
+import { useConfig, useIsAdmin, useToast } from "./lib/hooks";
+import { openWalletModal } from "./lib/wallet";
 import Home from "./pages/Home";
 import TokenPage from "./pages/Token";
 import Launch from "./pages/Launch";
@@ -17,48 +17,51 @@ import Admin from "./pages/Admin";
 export default function App() {
   const { address, isConnected } = useAccount();
   const admin = useIsAdmin();
+  const { data: cfg } = useConfig();
   const toast = useToast();
   const loc = useLocation();
   const path = loc.pathname.replace(/\/+$/, "") || "/";
   useEffect(() => { window.scrollTo({ top: 0 }); }, [path]);
+  const cls = ({ isActive }: { isActive: boolean }) => (isActive ? "on" : "");
 
   return (
     <>
-      <header className="top">
-        <div className="top-in">
-          <Link to="/" className="brand">{BRAND.name}</Link>
+      <header className="bar">
+        <div className="bar-in">
+          <Link to="/" className="brand"><i />{BRAND.name}</Link>
           <nav className="nav">
-            <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}>Coins</NavLink>
-            <NavLink to="/launch" className={({ isActive }) => (isActive ? "on" : "")}>Launch</NavLink>
-            <NavLink to="/me" className={({ isActive }) => (isActive ? "on" : "")}>My coins</NavLink>
-            <NavLink to="/docs" className={({ isActive }) => (isActive ? "on" : "")}>How it works</NavLink>
-            {admin && <NavLink to="/admin" className={({ isActive }) => (isActive ? "on" : "")}>Admin</NavLink>}
+            <NavLink to="/" end className={cls}>Coins</NavLink>
+            <NavLink to="/launch" className={cls}>Launch</NavLink>
+            <NavLink to="/me" className={cls}>Mine</NavLink>
+            <NavLink to="/docs" className={cls}>How it works</NavLink>
+            {admin && <NavLink to="/admin" className={cls}>Admin</NavLink>}
           </nav>
-          <div className="top-r">
-            <Link to="/launch" className="btn red">Launch a coin</Link>
-            <button className="btn ghost" onClick={() => openWalletModal()}>
-              {isConnected && address ? <><span className="dot g" style={{ marginRight: 8, width: 7, height: 7 }} />{short(address)}</> : "Connect"}
-            </button>
+          <div className="bar-r">
+            <span className="bar-eth">ETH <b>{cfg ? usd(cfg.ethUsd) : "—"}</b></span>
+            <Link to="/launch" className="btn acc">Launch a coin</Link>
+            <button className="btn ink" onClick={() => openWalletModal()}>{isConnected && address ? short(address) : "Connect"}</button>
           </div>
         </div>
       </header>
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/t/:address" element={<TokenPage />} />
-        <Route path="/launch" element={<Launch />} />
-        <Route path="/me" element={<Me />} />
-        <Route path="/docs" element={<Docs />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="*" element={<Home />} />
-      </Routes>
+      <div className="wrap">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/t/:address" element={<TokenPage />} />
+          <Route path="/launch" element={<Launch />} />
+          <Route path="/me" element={<Me />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="*" element={<Home />} />
+        </Routes>
+      </div>
 
       {path !== "/launch" && !path.startsWith("/t/") && (
         <nav className="tabbar">
-          <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}><Icon name="receipt" />Coins</NavLink>
-          <NavLink to="/launch" className={({ isActive }) => (isActive ? "on" : "")}><span className="rec"><Icon name="launch" size={16} /></span>Launch</NavLink>
-          <NavLink to="/me" className={({ isActive }) => (isActive ? "on" : "")}><Icon name="wallet" />My coins</NavLink>
-          <NavLink to={admin ? "/admin" : "/docs"} className={({ isActive }) => (isActive ? "on" : "")}>{admin ? <><Icon name="tune" />Admin</> : <><Icon name="info" />How it works</>}</NavLink>
+          <NavLink to="/" end className={cls}><Icon name="receipt" size={20} />Coins</NavLink>
+          <NavLink to="/launch" className={cls}><Icon name="launch" size={20} />Launch</NavLink>
+          <NavLink to="/me" className={cls}><Icon name="wallet" size={20} />Mine</NavLink>
+          <NavLink to={admin ? "/admin" : "/docs"} className={cls}>{admin ? <><Icon name="tune" size={20} />Admin</> : <><Icon name="info" size={20} />How</>}</NavLink>
         </nav>
       )}
 
@@ -66,7 +69,7 @@ export default function App() {
         <div className={"toast " + (toast.kind === "err" ? "err" : toast.kind === "ok" ? "ok" : "")}>
           {toast.kind === "busy" && <span className="spin" />}
           <span>{toast.text}</span>
-          {toast.hash && <a href={`${env.explorerUrl}/tx/${toast.hash}`} target="_blank" rel="noreferrer">tx</a>}
+          {toast.hash && <a href={`${env.explorerUrl}/tx/${toast.hash}`} target="_blank" rel="noreferrer">View tx</a>}
         </div>
       )}
     </>

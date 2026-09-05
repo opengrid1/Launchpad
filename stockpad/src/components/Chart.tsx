@@ -26,8 +26,8 @@ export function Chart({ candles, hypeUsd, mode = "mcap" }: { candles: Candle[]; 
     if (!ref.current) return;
     const css = getComputedStyle(document.documentElement);
     const v = (k: string, d: string) => css.getPropertyValue(k).trim() || d;
-    const ink2 = v("--ink2", "#9A9AA2"), ink3 = v("--ink3", "#66666E"), line = v("--line", "rgba(255,255,255,.06)");
-    const up = v("--up", "#2EDB6A"), down = v("--down", "#FF3B30");
+    const ink = v("--ink", "#0D1017"), ink2 = v("--ink2", "#4E5766"), ink3 = v("--ink3", "#8590A0"), line = v("--line", "#E1E4EA");
+    const up = v("--up", "#0B9E5A"), down = v("--down", "#E2383F");
     const scale = (mode === "mcap" ? SUPPLY : 1) * hypeUsd;
     const rows = candles
       .map((k) => ({ time: k.time as any, open: Number(k.open) * scale, high: Number(k.high) * scale, low: Number(k.low) * scale, close: Number(k.close) * scale }))
@@ -36,14 +36,14 @@ export function Chart({ candles, hypeUsd, mode = "mcap" }: { candles: Candle[]; 
     const accent = rising ? up : down;
 
     const c = createChart(ref.current, {
-      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: ink3, fontFamily: "JetBrains Mono, ui-monospace, monospace", fontSize: 11, attributionLogo: false },
+      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: ink3, fontFamily: "Instrument Sans, system-ui, sans-serif", fontSize: 12, attributionLogo: false },
       grid: { vertLines: { visible: false }, horzLines: { color: line, style: LineStyle.Solid } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.14, bottom: 0.1 }, entireTextOnly: true },
       timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 4, fixLeftEdge: true },
       crosshair: {
         mode: CrosshairMode.Magnet,
-        horzLine: { color: ink2, width: 1, style: LineStyle.Dashed, labelBackgroundColor: "#2A2A2F" },
-        vertLine: { color: ink2, width: 1, style: LineStyle.Dashed, labelBackgroundColor: "#2A2A2F" },
+        horzLine: { color: ink2, width: 1, style: LineStyle.Dashed, labelBackgroundColor: ink },
+        vertLine: { color: ink2, width: 1, style: LineStyle.Dashed, labelBackgroundColor: ink },
       },
       handleScroll: { vertTouchDrag: false },
       handleScale: { axisPressedMouseMove: false },
