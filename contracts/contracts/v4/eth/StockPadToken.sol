@@ -16,6 +16,11 @@ interface IFeeRecipientSource {
     function feeRecipient() external view returns (address);
 }
 
+interface IStockPadHook {
+    /// @dev Deliver fees the hook still holds for `token` as V4 claims.
+    function flush(address token) external returns (uint256);
+}
+
 /// @title StockPadToken
 /// @notice The mainnet stockpad coin. Fixed 1B supply, no owner, no mint, no
 ///         pause, metadata on-chain. Every swap in the coin's Uniswap V4 pool
@@ -226,6 +231,7 @@ contract StockPadToken is ERC20, ReentrancyGuard {
         amount = platformFees;
         if (amount == 0) return 0;
         platformFees = 0;
+        _ensure(amount);
         IERC20(pairAsset).safeTransfer(to, amount);
         emit PlatformFeesClaimed(to, amount);
     }
@@ -248,7 +254,15 @@ contract StockPadToken is ERC20, ReentrancyGuard {
         emit RewardsClaimed(holder, amount, asEth);
     }
 
+    /// @dev Fees are credited the moment a swap happens, but the hook may still
+    ///      be holding the pair as a V4 claim (see StockPadHook). Pull it in
+    ///      before paying out.
+    function _ensure(uint256 amount) private {
+        if (IERC20(pairAsset).balanceOf(address(this)) < amount && hook != address(0)) IStockPadHook(hook).flush(address(this));
+    }
+
     function _payout(address to, uint256 amount, bool asEth, uint256 minEthOut, bytes memory route) private {
+        _ensure(amount);
         if (!asEth) {
             IERC20(pairAsset).safeTransfer(to, amount);
             return;

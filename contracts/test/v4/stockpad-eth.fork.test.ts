@@ -166,6 +166,53 @@ describe("stockpad on Ethereum mainnet (fork)", function () {
     expect(tAfter + rc2!.gasUsed * rc2!.gasPrice - tBefore).to.be.gt(0n);
   });
 
+  it("stock with no V4 pool yet (ULon): the fee is held as a V4 claim, delivered on the next swap or when someone claims", async () => {
+    const [admin, creator, trader] = await ethers.getSigners();
+    const { hook, factory, router } = await deployAll(admin);
+    const UL = "0x1598f7d25d0b0e1261eAB9BD2AD7924291EB26bB";
+    await (await factory.connect(admin).setQuoteAsset(UL, true, 64n * 10n ** 8n, ethers.ZeroAddress)).wait();
+    const coin = await launch(factory, creator, UL);
+    const coinAddr = await coin.getAddress();
+    await pastSnipe();
+    // Hand the trader 100 ULon by writing its balance slot (mapping at slot 0x33).
+    const key = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["address", "bytes32"], [trader.address, ethers.zeroPadValue("0x33", 32)]));
+    await network.provider.send("hardhat_setStorageAt", [UL, key, ethers.zeroPadValue(ethers.toBeHex(ethers.parseEther("100")), 32)]);
+    const ul = new ethers.Contract(UL, ERC20, trader);
+    expect(await ul.balanceOf(trader.address)).to.equal(ethers.parseEther("100"));
+    expect(await ul.balanceOf(POOL_MANAGER)).to.equal(0n);
+
+    // First buy: the PoolManager holds no ULon during afterSwap, so the fee is kept as a claim.
+    await (await ul.approve(await router.getAddress(), ethers.MaxUint256)).wait();
+    await (await router.connect(trader).buyWithPair(coinAddr, ethers.parseEther("2"), 0)).wait();
+    const held = await hook.owed(coinAddr);
+    expect(held).to.equal(ethers.parseEther("2") * BigInt(TAX_BPS) / 10_000n);
+    expect(await ul.balanceOf(coinAddr)).to.equal(0n);
+    const creatorFees = await coin.creatorFees();
+    expect(creatorFees).to.be.gt(0n);
+
+    // Claiming pulls the held fee in through the hook first.
+    const before = await ul.balanceOf(creator.address);
+    await (await coin.connect(creator).claimCreatorFees(false, 0, NO_ROUTE)).wait();
+    expect((await ul.balanceOf(creator.address)) - before).to.equal(creatorFees);
+    expect(await hook.owed(coinAddr)).to.equal(0n);
+    expect(await ul.balanceOf(coinAddr)).to.equal(held - creatorFees);
+
+    // Second trade: the PoolManager now holds ULon, so the fee lands in the coin at once.
+    const got = await coin.balanceOf(trader.address);
+    await (await coin.connect(trader).approve(await router.getAddress(), got)).wait();
+    await (await router.connect(trader).sellForPair(coinAddr, got / 2n, 0)).wait();
+    expect(await hook.owed(coinAddr)).to.equal(0n);
+    const pending = await coin.pendingRewards(trader.address);
+    expect(pending).to.be.gt(0n);
+    const t0 = await ul.balanceOf(trader.address);
+    await (await coin.connect(trader).claimRewards()).wait();
+    expect((await ul.balanceOf(trader.address)) - t0).to.equal(pending);
+    const platform = await coin.platformFees();
+    expect(platform).to.be.gt(0n);
+    await (await coin.connect(trader).claimPlatformFees()).wait();
+    expect(await ul.balanceOf(await factory.feeRecipient())).to.be.gte(platform);
+  });
+
   it("anti-snipe: 99% fee decaying over 20s goes to the platform; per-wallet caps in the first blocks; launch block is creator-only", async () => {
     const [admin, creator, sniper, other] = await ethers.getSigners();
     const { factory, router, hook } = await deployAll(admin);
