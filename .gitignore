@@ -19,3 +19,5 @@ contracts/deployments/localnet.json
 .env*
 contracts/scripts/meow-quotes.env
 contracts/scripts/robinhood-quotes.env
+stockpad/node_modules
+stockpad/dist

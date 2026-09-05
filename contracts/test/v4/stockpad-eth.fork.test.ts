@@ -20,6 +20,7 @@ const NO_ROUTE = "0x";
 const ETH_USD_8 = 4_000n * 10n ** 8n;
 const NVDA_USD_8 = 228n * 10n ** 8n;
 const SUPPLY = 10n ** 27n;
+const TAX_BPS = 400; // 4% of the pair side on every swap
 
 // beforeSwap | afterSwap | beforeSwapReturnDelta | afterSwapReturnDelta
 const HOOK_FLAGS = (1n << 7n) | (1n << 6n) | (1n << 3n) | (1n << 2n);
@@ -44,7 +45,7 @@ async function deployAll(admin: any) {
   const hook = await ethers.getContractAt("StockPadHook", hookAddr);
 
   const factory = await (await ethers.getContractFactory("StockPadFactory")).deploy(
-    admin.address, admin.address, POOL_MANAGER, hookAddr, WETH, ETH_USD_8, 5000, 3000,
+    admin.address, admin.address, POOL_MANAGER, hookAddr, WETH, ETH_USD_8, TAX_BPS, 5000, 3000,
   );
   await factory.waitForDeployment();
   await (await hook.connect(admin).setFactory(await factory.getAddress())).wait();
@@ -81,9 +82,9 @@ describe("stockpad on Ethereum mainnet (fork)", function () {
     const devCoins = await coin.balanceOf(creator.address);
     expect(devCoins).to.be.gt(SUPPLY / 100n); // 0.1 ETH = $400 into a $3k market
     expect(devCoins).to.be.lt(SUPPLY / 4n);
-    // The dev buy pays the base 1% only (no snipe surcharge for the factory).
+    // The dev buy pays the base 4% only (no snipe surcharge for the factory).
     const feeAfterDev = await weth.balanceOf(await coin.getAddress());
-    expect(feeAfterDev).to.be.closeTo(ethers.parseEther("0.001"), ethers.parseEther("0.00001"));
+    expect(feeAfterDev).to.be.closeTo(ethers.parseEther("0.004"), ethers.parseEther("0.00001"));
     expect(await coin.platformFees()).to.equal(feeAfterDev * 2000n / 10000n);
 
     await pastSnipe();
@@ -92,7 +93,7 @@ describe("stockpad on Ethereum mainnet (fork)", function () {
     const got = (await coin.balanceOf(trader.address)) - before;
     expect(got).to.be.gt(0n);
     const feeAfterBuy = await weth.balanceOf(await coin.getAddress());
-    expect(feeAfterBuy - feeAfterDev).to.be.closeTo(ethers.parseEther("0.0005"), ethers.parseEther("0.000005"));
+    expect(feeAfterBuy - feeAfterDev).to.be.closeTo(ethers.parseEther("0.002"), ethers.parseEther("0.000005"));
 
     // Sell half back for ETH: the fee comes off the WETH output.
     await (await coin.connect(trader).approve(await router.getAddress(), got)).wait();
@@ -150,7 +151,7 @@ describe("stockpad on Ethereum mainnet (fork)", function () {
     const rc = await (await router.connect(trader).sell(await coin.getAddress(), got * 9n / 10n, NVDA_ROUTE, 0)).wait();
     const ethAfter = await ethers.provider.getBalance(trader.address);
     const back = ethAfter + rc!.gasUsed * rc!.gasPrice - ethBefore;
-    expect(back).to.be.gt(ethers.parseEther("0.02")); // 90% back minus 2x1% fee, 2x0.9% NVDAon pool, V3 fees and impact
+    expect(back).to.be.gt(ethers.parseEther("0.018")); // 90% back minus 2x4% fee, 2x0.9% NVDAon pool, V3 fees and impact
     expect(back).to.be.lt(ethers.parseEther("0.045"));
 
     // Creator claims in the stock, then the trader's holder rewards as ETH.
@@ -184,20 +185,21 @@ describe("stockpad on Ethereum mainnet (fork)", function () {
     expect(fee).to.be.gt(ethers.parseEther("0.008")); // ~89% of the 0.01 ETH two seconds in
     const platform = await coin.platformFees();
     expect(platform).to.be.gt(fee * 95n / 100n); // nearly all of it is surcharge
-    expect(await coin.creatorFees()).to.be.lt(ethers.parseEther("0.0001"));
+    // Only the base 4% slice reaches the creator (plus the holder share while nobody holds).
+    expect(await coin.creatorFees()).to.be.lt(ethers.parseEther("0.0005"));
 
     // Still inside the block window: a wallet cannot take more than 3% of supply.
     await expect(router.connect(other).buy(coinAddr, NO_ROUTE, 0, { value: ethers.parseEther("5") })).to.be.reverted;
 
-    // After the window the fee is back to 1%.
+    // After the window the fee is back to the base 4%.
     await pastSnipe();
     const id = (await factory.listings(coinAddr)).poolId;
     const [total, base] = await hook.feeBpsNow(id, sniper.address);
-    expect(total).to.equal(100);
-    expect(base).to.equal(100);
+    expect(total).to.equal(TAX_BPS);
+    expect(base).to.equal(TAX_BPS);
     const before = await weth.balanceOf(coinAddr);
     await (await router.connect(other).buy(coinAddr, NO_ROUTE, 0, { value: ethers.parseEther("0.01") })).wait();
-    expect((await weth.balanceOf(coinAddr)) - before).to.be.closeTo(ethers.parseEther("0.0001"), ethers.parseEther("0.000001"));
+    expect((await weth.balanceOf(coinAddr)) - before).to.be.closeTo(ethers.parseEther("0.0004"), ethers.parseEther("0.000001"));
   });
 
   it("admin: pause, pair curation with a Chainlink feed, no liquidity withdraw path, ownership renounce keeps the admin", async () => {

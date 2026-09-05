@@ -57,7 +57,8 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     uint256 public constant INITIAL_MARKET_CAP_USD_8 = 3_000 * 1e8;
     int24 public constant TICK_SPACING = 60;
     uint24 public constant LP_FEE = 0;
-    uint16 public constant TAX_BPS = 100;
+    /// @notice Trade fee on every swap, bps of the pair side (set at deploy).
+    uint16 public immutable TAX_BPS;
     /// @notice Fee split of every trade fee, bps: creator / holders / platform.
     uint16 public immutable CREATOR_BPS;
     uint16 public immutable HOLDER_BPS;
@@ -145,11 +146,13 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         StockPadHook hook_,
         address weth_,
         uint64 ethUsd8_,
+        uint16 taxBps_,
         uint16 creatorBps_,
         uint16 holderBps_
     ) Ownable(owner_) {
         if (admin_ == address(0) || weth_ == address(0)) revert ZeroAddress();
-        if (ethUsd8_ == 0 || uint256(creatorBps_) + holderBps_ > 10_000) revert InvalidParams();
+        if (ethUsd8_ == 0 || taxBps_ == 0 || taxBps_ > 1_000 || uint256(creatorBps_) + holderBps_ > 10_000) revert InvalidParams();
+        TAX_BPS = taxBps_;
         admin = admin_;
         feeRecipient = admin_;
         poolManager = poolManager_;
