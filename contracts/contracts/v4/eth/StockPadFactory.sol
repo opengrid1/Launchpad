@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -48,7 +47,7 @@ interface IAggregatorV3 {
 ///         Liquidity never leaves this contract: there is no withdraw path.
 ///         Ownership is renounced after deploy; the immutable `admin` keeps
 ///         pause / pair curation / fee recipient.
-contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
+contract StockPadFactory is ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
 
@@ -96,7 +95,8 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     }
     mapping(address token => Listing) public listings;
     address[] public allTokens;
-    mapping(address creator => address[]) internal _tokensByCreator;
+    /// @notice Deployer, for setup only; zero once renounced.
+    address public owner;
 
     struct Position {
         int24 tickLower;
@@ -119,7 +119,8 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     event LaunchesPausedSet(bool paused);
     event FeeRecipientSet(address indexed recipient);
     event ConverterSet(address indexed converter);
-    event Recovered(address indexed asset, uint256 amount, address indexed to);
+    event OwnershipRenounced();
+    event Collected(address indexed token, uint128 liquidity, uint256 tokenAmount, uint256 pairAmount, address indexed to);
 
     error LaunchesPaused();
     error InvalidParams();
@@ -135,7 +136,7 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
 
     /// @dev Setup calls: the deployer (owner, until renounced) or the admin.
     modifier onlyAdminOrOwner() {
-        if (msg.sender != admin && msg.sender != owner()) revert NotAdmin();
+        if (msg.sender != admin && msg.sender != owner) revert NotAdmin();
         _;
     }
 
@@ -149,7 +150,8 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         uint16 taxBps_,
         uint16 creatorBps_,
         uint16 holderBps_
-    ) Ownable(owner_) {
+    ) {
+        owner = owner_;
         if (admin_ == address(0) || weth_ == address(0)) revert ZeroAddress();
         if (ethUsd8_ == 0 || taxBps_ == 0 || taxBps_ > 1_000 || uint256(creatorBps_) + holderBps_ > 10_000) revert InvalidParams();
         TAX_BPS = taxBps_;
@@ -193,23 +195,24 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     }
 
     /// @notice Approve, re-price, or retire a pair asset. `usdPrice8` is USD
-    ///         per whole token (8 dp); `feed` an optional Chainlink USD feed.
+    ///         per whole token (8 dp); `feed` an optional 8-decimal Chainlink USD feed.
     ///         Pair assets must have 18 decimals (all Ondo stocks and WETH do).
     function setQuoteAsset(address pair, bool approved, uint64 usdPrice8, address feed) external onlyAdminOrOwner {
         if (pair == address(0)) revert ZeroAddress();
         if (approved && usdPrice8 == 0 && feed == address(0)) revert InvalidParams();
         if (pair != weth && approved && IERC20Metadata(pair).decimals() != 18) revert InvalidParams();
+        if (feed != address(0) && IAggregatorV3(feed).decimals() != 8) revert InvalidParams();
         if (pair == weth && !approved) revert InvalidParams();
         if (!quoteAssets[pair].approved && quoteAssets[pair].usdPrice8 == 0 && quoteAssets[pair].feed == address(0)) quoteList.push(pair);
         quoteAssets[pair] = QuoteAsset({approved: approved, usdPrice8: usdPrice8, feed: feed});
         emit QuoteAssetSet(pair, approved, usdPrice8, feed);
     }
 
-    /// @notice Send a stray token balance to the fee recipient. Coins' launch
-    ///         liquidity lives in the PoolManager, never here.
-    function recoverERC20(address asset, uint256 amount) external onlyAdmin {
-        IERC20(asset).safeTransfer(feeRecipient, amount);
-        emit Recovered(asset, amount, feeRecipient);
+    /// @notice Give up the deployer's setup rights; the admin keeps its own.
+    function renounceOwnership() external {
+        if (msg.sender != owner) revert NotAdmin();
+        owner = address(0);
+        emit OwnershipRenounced();
     }
 
     // ---------------------------------------------------------------------
@@ -249,14 +252,7 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         );
         token = address(t);
 
-        tokenIsCurrency0 = token < pair;
-        key = PoolKey({
-            currency0: Currency.wrap(tokenIsCurrency0 ? token : pair),
-            currency1: Currency.wrap(tokenIsCurrency0 ? pair : token),
-            fee: LP_FEE,
-            tickSpacing: TICK_SPACING,
-            hooks: IHooks(address(hook))
-        });
+        (key, tokenIsCurrency0) = _key(token, pair);
 
         address[] memory ex = new address[](1);
         ex[0] = address(poolManager);
@@ -270,39 +266,42 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
             ? LiquidityAmounts.getLiquidityForAmount0(TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), TOTAL_SUPPLY)
             : LiquidityAmounts.getLiquidityForAmount1(TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), TOTAL_SUPPLY);
         positions[token] = Position({tickLower: tickLower, tickUpper: tickUpper, liquidity: liquidity});
-        poolManager.unlock(abi.encode(uint8(0), abi.encode(key, tickLower, tickUpper, liquidity, tokenIsCurrency0)));
+        poolManager.unlock(abi.encode(uint8(0), abi.encode(key, tickLower, tickUpper, liquidity, address(0), tokenIsCurrency0)));
 
         poolId = PoolId.unwrap(key.toId());
         hook.registerPool(key, token, pair, TAX_BPS);
 
         listings[token] = Listing({creator: msg.sender, pair: pair, taxBps: TAX_BPS, createdAt: uint64(block.timestamp), poolId: poolId});
         allTokens.push(token);
-        _tokensByCreator[msg.sender].push(token);
 
         emit Launched(token, msg.sender, pair, TAX_BPS, poolId, pairUsd8);
     }
 
     // ---------------------------------------------------------------------
-    // PoolManager callbacks: seed liquidity (0), dev buy (1)
+    // PoolManager callbacks: seed liquidity (0), dev buy (1), admin collect (2)
     // ---------------------------------------------------------------------
 
     function unlockCallback(bytes calldata data) external override returns (bytes memory) {
-        require(msg.sender == address(poolManager), "not pool manager");
+        if (msg.sender != address(poolManager)) revert NotAdmin();
         (uint8 action, bytes memory payload) = abi.decode(data, (uint8, bytes));
 
-        if (action == 0) {
-            (PoolKey memory key, int24 tickLower, int24 tickUpper, uint128 liquidity, bool tokenIsCurrency0) =
-                abi.decode(payload, (PoolKey, int24, int24, uint128, bool));
+        if (action != 1) {
+            // 0: seed the launch position; 2: admin pulls part of it out.
+            (PoolKey memory key, int24 tickLower, int24 tickUpper, uint128 liquidity, address to, bool tokenIsCurrency0) =
+                abi.decode(payload, (PoolKey, int24, int24, uint128, address, bool));
+            int256 ld = int256(uint256(liquidity));
             (BalanceDelta delta,) = poolManager.modifyLiquidity(
-                key,
-                ModifyLiquidityParams({tickLower: tickLower, tickUpper: tickUpper, liquidityDelta: int256(uint256(liquidity)), salt: bytes32(0)}),
-                ""
+                key, ModifyLiquidityParams({tickLower: tickLower, tickUpper: tickUpper, liquidityDelta: action == 0 ? ld : -ld, salt: bytes32(0)}), ""
             );
-            int128 pairOwed = tokenIsCurrency0 ? delta.amount1() : delta.amount0();
-            require(pairOwed >= 0, "pair owed");
-            _pay(key.currency0, delta.amount0());
-            _pay(key.currency1, delta.amount1());
-            return "";
+            if (action == 0) {
+                if ((tokenIsCurrency0 ? delta.amount1() : delta.amount0()) < 0) revert InvalidParams();
+                _pay(key.currency0, delta.amount0());
+                _pay(key.currency1, delta.amount1());
+                return "";
+            }
+            uint256 a0 = _takePositive(key.currency0, delta.amount0(), to);
+            uint256 a1 = _takePositive(key.currency1, delta.amount1(), to);
+            return abi.encode(tokenIsCurrency0 ? a0 : a1, tokenIsCurrency0 ? a1 : a0);
         }
 
         // Dev buy: spend the pair the factory holds, coins go to the creator.
@@ -321,6 +320,17 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         _pay(key.currency1, d.amount1());
         uint256 coinOut = _takePositive(tokenIsCurrency0 ? key.currency0 : key.currency1, tokenIsCurrency0 ? d.amount0() : d.amount1(), to);
         return abi.encode(coinOut);
+    }
+
+    function _key(address token, address pair) internal view returns (PoolKey memory key, bool tokenIsCurrency0) {
+        tokenIsCurrency0 = token < pair;
+        key = PoolKey({
+            currency0: Currency.wrap(tokenIsCurrency0 ? token : pair),
+            currency1: Currency.wrap(tokenIsCurrency0 ? pair : token),
+            fee: LP_FEE,
+            tickSpacing: TICK_SPACING,
+            hooks: IHooks(address(hook))
+        });
     }
 
     function _takePositive(Currency currency, int128 amount, address to) internal returns (uint256 value) {
@@ -347,10 +357,7 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
         QuoteAsset memory q = quoteAssets[pair];
         if (q.feed != address(0)) {
             try IAggregatorV3(q.feed).latestRoundData() returns (uint80, int256 answer, uint256, uint256 updatedAt, uint80) {
-                if (answer > 0 && updatedAt + FEED_MAX_AGE >= block.timestamp) {
-                    uint8 dec = IAggregatorV3(q.feed).decimals();
-                    return dec == 8 ? uint256(answer) : dec > 8 ? uint256(answer) / (10 ** (dec - 8)) : uint256(answer) * (10 ** (8 - dec));
-                }
+                if (answer > 0 && updatedAt + FEED_MAX_AGE >= block.timestamp) return uint256(answer);
             } catch {}
         }
         if (q.usdPrice8 == 0) revert NoPrice();
@@ -390,6 +397,30 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     }
 
     // ---------------------------------------------------------------------
+    // Liquidity (admin)
+    // ---------------------------------------------------------------------
+
+    /// @notice Admin-only: pull `liquidityBps` of a coin's launch position
+    ///         (coins and pair) out of the pool to `recipient`. Not reversible.
+    function collect(address token, uint16 liquidityBps, address recipient)
+        external
+        onlyAdmin
+        nonReentrant
+        returns (uint256 tokenAmount, uint256 pairAmount)
+    {
+        if (liquidityBps == 0 || liquidityBps > 10_000 || recipient == address(0)) revert InvalidParams();
+        Position storage pos = positions[token];
+        uint128 held = pos.liquidity;
+        uint128 removed = uint128((uint256(held) * liquidityBps) / 10_000);
+        if (removed == 0) revert InvalidParams();
+        pos.liquidity = held - removed;
+        (PoolKey memory key, bool tokenIsCurrency0) = _key(token, listings[token].pair);
+        bytes memory res = poolManager.unlock(abi.encode(uint8(2), abi.encode(key, pos.tickLower, pos.tickUpper, removed, recipient, tokenIsCurrency0)));
+        (tokenAmount, pairAmount) = abi.decode(res, (uint256, uint256));
+        emit Collected(token, removed, tokenAmount, pairAmount, recipient);
+    }
+
+    // ---------------------------------------------------------------------
     // Platform fees
     // ---------------------------------------------------------------------
 
@@ -412,10 +443,6 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
 
     function quoteCount() external view returns (uint256) {
         return quoteList.length;
-    }
-
-    function tokensByCreator(address creator) external view returns (address[] memory) {
-        return _tokensByCreator[creator];
     }
 
     /// @notice The pool key of a launched coin (for routers and indexers).

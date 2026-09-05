@@ -280,6 +280,13 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
 .facts b{display:block;font-family:var(--display);font-size:34px;font-weight:800;letter-spacing:-.035em;color:var(--acc);margin-bottom:8px;line-height:1}
 .facts span{color:var(--ink2);font-size:14px;line-height:1.55}
 
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(13,16,23,.45);animation:fade .15s both}
+.modal .panel{width:100%;max-width:420px;padding:20px;animation:pop .2s both}
+.btn.danger{border-color:rgba(226,56,63,.4);color:var(--down);background:var(--down-soft)}
+.btn.danger:hover{background:#FBD5D7}
+.note.down{color:var(--down)}
+
 /* ---------- toast ---------- */
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;padding:12px 18px;font-size:14px;font-weight:500;border-radius:999px;animation:up .25s both;box-shadow:var(--shadow2);max-width:calc(100vw - 32px)}
 .toast.ok{background:var(--up)} .toast.err{background:var(--down)}

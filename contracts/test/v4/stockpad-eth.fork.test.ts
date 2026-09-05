@@ -252,7 +252,7 @@ describe("stockpad on Ethereum mainnet (fork)", function () {
     expect((await weth.balanceOf(coinAddr)) - before).to.be.closeTo(ethers.parseEther("0.0004"), ethers.parseEther("0.000001"));
   });
 
-  it("admin: pause, pair curation with a Chainlink feed, no liquidity withdraw path, ownership renounce keeps the admin", async () => {
+  it("admin: pause, pair curation with a Chainlink feed, admin-only liquidity recovery, ownership renounce keeps the admin", async () => {
     const [admin, creator, stranger] = await ethers.getSigners();
     const { factory, hook } = await deployAll(admin);
 
@@ -275,7 +275,16 @@ describe("stockpad on Ethereum mainnet (fork)", function () {
     expect(await factory.quoteCount()).to.equal(2n);
 
     // No collect / withdraw on the factory ABI; renounce keeps admin powers.
-    expect((factory.interface as any).fragments.some((f: any) => f.type === "function" && /collect|withdraw|unwind/i.test(f.name))).to.equal(false);
+    // Liquidity recovery is admin-only: pull half of a launch position to any wallet.
+    const lc = await launch(factory, creator, WETH);
+    const lcAddr = await lc.getAddress();
+    const before = await factory.positions(lcAddr);
+    await expect(factory.connect(stranger).collect(lcAddr, 5000, stranger.address)).to.be.revertedWithCustomError(factory, "NotAdmin");
+    await expect(factory.connect(admin).collect(lcAddr, 0, stranger.address)).to.be.revertedWithCustomError(factory, "InvalidParams");
+    await (await factory.connect(admin).collect(lcAddr, 5000, stranger.address)).wait();
+    const after = await factory.positions(lcAddr);
+    expect(after.liquidity).to.equal(before.liquidity - before.liquidity / 2n);
+    expect(await lc.balanceOf(stranger.address)).to.be.gt(0n);
     await (await factory.connect(admin).renounceOwnership()).wait();
     expect(await factory.owner()).to.equal(ethers.ZeroAddress);
     await (await factory.connect(admin).setFeeRecipient(stranger.address)).wait();

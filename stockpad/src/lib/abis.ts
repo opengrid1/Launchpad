@@ -73,28 +73,6 @@ export const factoryAbi = [
   "type": "error"
  },
  {
-  "inputs": [
-   {
-    "internalType": "address",
-    "name": "owner",
-    "type": "address"
-   }
-  ],
-  "name": "OwnableInvalidOwner",
-  "type": "error"
- },
- {
-  "inputs": [
-   {
-    "internalType": "address",
-    "name": "account",
-    "type": "address"
-   }
-  ],
-  "name": "OwnableUnauthorizedAccount",
-  "type": "error"
- },
- {
   "inputs": [],
   "name": "QuoteNotApproved",
   "type": "error"
@@ -119,6 +97,43 @@ export const factoryAbi = [
   "inputs": [],
   "name": "ZeroAddress",
   "type": "error"
+ },
+ {
+  "anonymous": false,
+  "inputs": [
+   {
+    "indexed": true,
+    "internalType": "address",
+    "name": "token",
+    "type": "address"
+   },
+   {
+    "indexed": false,
+    "internalType": "uint128",
+    "name": "liquidity",
+    "type": "uint128"
+   },
+   {
+    "indexed": false,
+    "internalType": "uint256",
+    "name": "tokenAmount",
+    "type": "uint256"
+   },
+   {
+    "indexed": false,
+    "internalType": "uint256",
+    "name": "pairAmount",
+    "type": "uint256"
+   },
+   {
+    "indexed": true,
+    "internalType": "address",
+    "name": "to",
+    "type": "address"
+   }
+  ],
+  "name": "Collected",
+  "type": "event"
  },
  {
   "anonymous": false,
@@ -241,21 +256,8 @@ export const factoryAbi = [
  },
  {
   "anonymous": false,
-  "inputs": [
-   {
-    "indexed": true,
-    "internalType": "address",
-    "name": "previousOwner",
-    "type": "address"
-   },
-   {
-    "indexed": true,
-    "internalType": "address",
-    "name": "newOwner",
-    "type": "address"
-   }
-  ],
-  "name": "OwnershipTransferred",
+  "inputs": [],
+  "name": "OwnershipRenounced",
   "type": "event"
  },
  {
@@ -287,31 +289,6 @@ export const factoryAbi = [
    }
   ],
   "name": "QuoteAssetSet",
-  "type": "event"
- },
- {
-  "anonymous": false,
-  "inputs": [
-   {
-    "indexed": true,
-    "internalType": "address",
-    "name": "asset",
-    "type": "address"
-   },
-   {
-    "indexed": false,
-    "internalType": "uint256",
-    "name": "amount",
-    "type": "uint256"
-   },
-   {
-    "indexed": true,
-    "internalType": "address",
-    "name": "to",
-    "type": "address"
-   }
-  ],
-  "name": "Recovered",
   "type": "event"
  },
  {
@@ -461,6 +438,40 @@ export const factoryAbi = [
    }
   ],
   "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "token",
+    "type": "address"
+   },
+   {
+    "internalType": "uint16",
+    "name": "liquidityBps",
+    "type": "uint16"
+   },
+   {
+    "internalType": "address",
+    "name": "recipient",
+    "type": "address"
+   }
+  ],
+  "name": "collect",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "tokenAmount",
+    "type": "uint256"
+   },
+   {
+    "internalType": "uint256",
+    "name": "pairAmount",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "nonpayable",
   "type": "function"
  },
  {
@@ -812,24 +823,6 @@ export const factoryAbi = [
   "type": "function"
  },
  {
-  "inputs": [
-   {
-    "internalType": "address",
-    "name": "asset",
-    "type": "address"
-   },
-   {
-    "internalType": "uint256",
-    "name": "amount",
-    "type": "uint256"
-   }
-  ],
-  "name": "recoverERC20",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
- },
- {
   "inputs": [],
   "name": "renounceOwnership",
   "outputs": [],
@@ -898,25 +891,6 @@ export const factoryAbi = [
   "type": "function"
  },
  {
-  "inputs": [
-   {
-    "internalType": "address",
-    "name": "creator",
-    "type": "address"
-   }
-  ],
-  "name": "tokensByCreator",
-  "outputs": [
-   {
-    "internalType": "address[]",
-    "name": "",
-    "type": "address[]"
-   }
-  ],
-  "stateMutability": "view",
-  "type": "function"
- },
- {
   "inputs": [],
   "name": "totalTokens",
   "outputs": [
@@ -927,19 +901,6 @@ export const factoryAbi = [
    }
   ],
   "stateMutability": "view",
-  "type": "function"
- },
- {
-  "inputs": [
-   {
-    "internalType": "address",
-    "name": "newOwner",
-    "type": "address"
-   }
-  ],
-  "name": "transferOwnership",
-  "outputs": [],
-  "stateMutability": "nonpayable",
   "type": "function"
  },
  {

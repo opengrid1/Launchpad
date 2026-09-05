@@ -10,7 +10,7 @@ export default function Docs() {
   const approved = quotes?.filter((q) => q.approved && !q.isNative) ?? [];
   const routable = approved.filter((q) => q.ethRoute);
   const steps: { icon: IconName; t: string; p: string }[] = [
-    { icon: "launch", t: "Launch", p: "One transaction deploys a fixed 1B supply coin and puts all of it into a Uniswap V4 pool at about $3,000, paired with ETH or a tokenized stock you pick. Optional first buy in ETH. No withdraw path for the liquidity." },
+    { icon: "launch", t: "Launch", p: "One transaction deploys a fixed 1B supply coin and puts all of it into a Uniswap V4 pool at about $3,000, paired with ETH or a tokenized stock you pick. Optional first buy in ETH. Liquidity stays in the pool; only the platform admin can pull it back out." },
     { icon: "receipt", t: "Trade in ETH", p: "You pay and receive ETH whatever the pair. The router swaps ETH into the stock through the stock's own pool and into the coin in one transaction, and back on the way out." },
     { icon: "wallet", t: "Earn on every swap", p: `Every trade pays ${FEES.taxPct}% of the pair side. ${FEES.creatorPct}% to the creator, ${FEES.holderPct}% credited to holders on the spot, ${FEES.platformPct}% to the platform. No harvest. Claim any time, as the stock or as ETH.` },
     { icon: "tune", t: "No sniping", p: `For the first 20 seconds the fee starts at 99% and decays to ${FEES.taxPct}%, with the surcharge going to the platform, and each wallet is capped at 3% of supply for three blocks. The launch block is creator-only.` },

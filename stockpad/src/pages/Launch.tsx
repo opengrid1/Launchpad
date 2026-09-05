@@ -141,7 +141,7 @@ export default function Launch() {
               <dt>Trade fee</dt><dd>{FEES.taxPct}%</dd>
               <dt>Your share</dt><dd>{FEES.creatorPct}%, forever</dd>
               <dt>Holders' share</dt><dd>{FEES.holderPct}%, per trade</dd>
-              <dt>Liquidity</dt><dd>Locked forever</dd>
+              <dt>Liquidity</dt><dd>Locked in the pool</dd>
             </dl>
           </div>
         </aside>

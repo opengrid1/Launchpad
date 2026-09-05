@@ -640,7 +640,7 @@ export class StockPadClient {
     return { admin, owner, feeRecipient, paused, taxBps: Number(taxBps), creatorBps: Number(creatorBps), holderBps: Number(holderBps), ethUsd: await this.ethUsd(), converter, totalTokens: Number(total) };
   }
 
-  async adminCall(fn: "pause" | "resume" | "setFeeRecipient" | "setQuoteAsset" | "recoverERC20", args: unknown[] = []): Promise<Hex> {
+  async adminCall(fn: "pause" | "resume" | "setFeeRecipient" | "setQuoteAsset" | "collect", args: unknown[] = []): Promise<Hex> {
     const wc = this.wallet();
     return wc.writeContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: fn as any, args: args as any, chain: wc.chain, account: wc.account! });
   }
