@@ -72,12 +72,8 @@ function Coin({ t }: { t: Token }) {
               <b>{t.symbol} / {pair.symbol}</b>
               <span>{hype(wei(t.priceWei || "0"), 5)} {pair.symbol} · {pair.symbol} at {usd(pair.usd)}</span>
             </div>
-            <div className="mk-big">
-              <div><b className={chg == null ? "" : chg >= 0 ? "up" : "down"}>{view === "mcap" ? usd(t.marketCapUsd, { compact: true }) : usd(t.priceUsd)}</b>{chg != null && <em className={chg >= 0 ? "up" : "down"}>{pct(chg)}</em>}</div>
-              <span className="faint">{view === "mcap" ? "Mcap · from $3,000" : "Price"}</span>
-            </div>
             <div className="chart-wrap">
-              {candles && candles.length > 1 ? <Chart candles={candles} hypeUsd={pair.usd} mode={view} pairSymbol={pair.symbol} /> : <div className="chart" style={{ display: "grid", placeItems: "center", color: "var(--ink3)" }}>{candles ? "No chart yet. The first trades draw it." : "Loading chart…"}</div>}
+              {candles ? <Chart candles={candles} hypeUsd={pair.usd} mode={view} volumeUsd={wei(t.volume24hWei) * pair.usd} /> : <div className="gc-empty">Loading chart…</div>}
             </div>
             <div className="chart-h">
               <div className="seg">{INTERVALS.map((i) => <button key={i} className={interval === i ? "on" : ""} onClick={() => setInterval_(i)}>{i}</button>)}</div>
