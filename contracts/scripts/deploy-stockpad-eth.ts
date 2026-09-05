@@ -36,7 +36,8 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const net = await ethers.provider.getNetwork();
   const admin = ethers.getAddress(process.env.ADMIN ?? deployer.address);
-  const depFile = path.join(__dirname, "..", "deployments", "ethereum-stockpad.json");
+  // DEPLOY_FILE redirects the record (e.g. a local fork run) away from the mainnet file.
+  const depFile = process.env.DEPLOY_FILE ?? path.join(__dirname, "..", "deployments", "ethereum-stockpad.json");
   const dep = fs.existsSync(depFile) ? JSON.parse(fs.readFileSync(depFile, "utf8")) : { contracts: {}, quotes: [] };
   const price = await ethUsd8();
   console.log("chain", net.chainId.toString(), "deployer", deployer.address, "bal", ethers.formatEther(await ethers.provider.getBalance(deployer.address)), "ETH usd8", price.toString(), "admin", admin);

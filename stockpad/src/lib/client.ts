@@ -330,7 +330,13 @@ export class StockPadClient {
           blockNumber: Number(log.blockNumber), txHash: log.transactionHash, timestamp: 0,
         };
       });
-      for (const r of fresh) r.timestamp = await this.blockTs(BigInt(r.blockNumber), latest);
+      // Real block timestamps for the blocks that carry trades (bounded), the
+      // 12s estimate for the rest.
+      const blocks = [...new Set(fresh.map((r) => r.blockNumber))].slice(-120);
+      const stamps = new Map<number, number>();
+      const got = await Promise.allSettled(blocks.map((b) => this.pc.getBlock({ blockNumber: BigInt(b) })));
+      got.forEach((r, i) => { if (r.status === "fulfilled") stamps.set(blocks[i], Number(r.value.timestamp)); });
+      for (const r of fresh) r.timestamp = stamps.get(r.blockNumber) ?? (await this.blockTs(BigInt(r.blockNumber), latest));
       // The Swap sender is our router; attribute trades to the wallet that sent the tx.
       if (fresh.length) {
         const hashes = [...new Set(fresh.map((r) => r.txHash))].slice(-200);
