@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { parseEther, type Address } from "viem";
 import { useAccount } from "wagmi";
 
 import { Art } from "../components/Art";
 import { Copy } from "../components/Copy";
 import { client, type QuoteView } from "../lib/client";
-import { ADDRESSES, env, isHidden } from "../lib/env";
+import { ADDRESSES, env, FEES, isHidden } from "../lib/env";
 import { hype, num, short, usd, wei } from "../lib/format";
 import { runTx, useConfig, useIsAdmin, useQuotes, useTokens, type Token } from "../lib/hooks";
 import { ensureWallet, openWalletModal } from "../lib/wallet";
@@ -69,17 +69,11 @@ export default function Admin() {
         </div>
       </section>
       <section className="sec">
-        <div className="sec-h"><h2>Pair assets</h2></div>
-        <Quotes call={call} />
+        <Fees tokens={tokens} />
       </section>
       <section className="sec">
-        <div className="sec-h"><h2>Coins</h2><span className="caps">{tokens?.length ?? 0}</span></div>
-        {!tokens ? <div className="skeleton" style={{ height: 120 }} /> : (
-          <div className="tbl" style={{ display: "block" }}><table>
-            <thead><tr><th>Coin</th><th>Pair</th><th className="num">Market cap</th><th className="num">Paid out</th><th className="num">Explorer</th><th></th></tr></thead>
-            <tbody>{tokens.map((t) => <CoinRow key={t.address} t={t} />)}</tbody>
-          </table></div>
-        )}
+        <div className="sec-h"><h2>Pair assets</h2></div>
+        <Quotes call={call} />
       </section>
       <p className="note"><Link to="/" className="acc">Back to coins</Link></p>
     </main>
@@ -126,16 +120,55 @@ function Quotes({ call }: { call: (label: string, fn: Fn, args?: unknown[]) => (
   );
 }
 
-function CoinRow({ t }: { t: Token }) {
+/** Platform fees waiting in every coin, with per-coin and one-shot collection. */
+function Fees({ tokens }: { tokens?: Token[] }) {
   const qc = useQueryClient();
+  const { data: waiting } = useQuery({
+    queryKey: ["platformWaiting", tokens?.map((t) => t.address).join(",")],
+    enabled: !!tokens,
+    refetchInterval: 30_000,
+    queryFn: () => client.platformWaiting((tokens ?? []).map((t) => t.address)),
+  });
+  const pending = (t: Token) => waiting?.get(t.address.toLowerCase()) ?? 0n;
+  const withFees = (tokens ?? []).filter((t) => pending(t) > 0n);
+  const totalUsd = withFees.reduce((s, t) => s + wei(pending(t)) * t.pair.usd, 0);
+  const refresh = async () => { await qc.invalidateQueries({ queryKey: ["platformWaiting"] }); await qc.invalidateQueries({ queryKey: ["tokens"] }); };
+  const collect = (label: string, list: Token[]) => async () => {
+    await ensureWallet();
+    await runTx(label, () => (list.length === 1 ? client.claimPlatformFees(list[0].address) : client.pushPlatformFees(list.map((t) => t.address))), refresh);
+  };
+  return (
+    <>
+      <div className="sec-h">
+        <h2>Collect fees</h2>
+        <div className="tools">
+          <span className="caps">{withFees.length} coin{withFees.length === 1 ? "" : "s"} · {usd(totalUsd, { compact: true })} waiting</span>
+          <button className="btn ink" disabled={withFees.length === 0} onClick={collect(`Collect fees from ${withFees.length} coins`, withFees)}>Collect all</button>
+        </div>
+      </div>
+      {!tokens || !waiting ? <div className="skeleton" style={{ height: 120 }} /> : (
+        <div className="tbl" style={{ display: "block" }}><table>
+          <thead><tr><th>Coin</th><th>Pair</th><th className="num">Market cap</th><th className="num">Waiting</th><th className="num">Collected so far</th><th className="num">Explorer</th><th></th></tr></thead>
+          <tbody>{tokens.map((t) => <CoinRow key={t.address} t={t} waiting={pending(t)} onCollect={collect(`Collect ${t.symbol} fees`, [t])} />)}</tbody>
+        </table></div>
+      )}
+      <p className="note">Your {cfgPlatformPct}% of every trade fee accrues inside each coin in its pair asset. Collecting sends it to the fee recipient; anyone can trigger it, the destination cannot change. Creators and holders claim their own shares from the coin page.</p>
+    </>
+  );
+}
+const cfgPlatformPct = FEES.platformPct;
+
+function CoinRow({ t, waiting, onCollect }: { t: Token; waiting: bigint; onCollect: () => Promise<void> }) {
+  const collected = t.rewards ? t.rewards.platform - waiting : 0n;
   return (
     <tr>
       <td><Link to={`/t/${t.address}`} className="coin"><Art src={t.metadata?.logo} name={t.name} className="art" /><b>{t.name}</b><small>{t.symbol}</small>{isHidden(t.address) && <span className="tag">hidden</span>}</Link></td>
       <td><span className={"tag " + (t.pair.isNative ? "" : "stock")}>{t.pair.symbol}</span></td>
       <td className="num">{usd(t.marketCapUsd, { compact: true })}</td>
-      <td className="num">{t.rewards ? `${hype(wei(t.rewards.holders + t.rewards.creator + t.rewards.platform), 4)} ${t.pair.symbol}` : "—"}</td>
+      <td className={"num " + (waiting > 0n ? "up" : "faint")}>{hype(wei(waiting), 5)} {t.pair.symbol} · {usd(wei(waiting) * t.pair.usd)}</td>
+      <td className="num dim">{hype(wei(collected > 0n ? collected : 0n), 4)} {t.pair.symbol}</td>
       <td className="num dim"><a className="acc" href={`${env.explorerUrl}/token/${t.address}`} target="_blank" rel="noreferrer">Etherscan</a></td>
-      <td className="num"><button className="btn sm" onClick={async () => { await ensureWallet(); await runTx("Push platform fees", () => client.claimPlatformFees(t.address), async () => { await qc.invalidateQueries(); }); }}>Push platform fees</button></td>
+      <td className="num"><button className="btn sm" disabled={waiting === 0n} onClick={onCollect}>Collect</button></td>
     </tr>
   );
 }

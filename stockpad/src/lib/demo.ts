@@ -117,5 +117,7 @@ export class DemoClient extends StockPadClient {
   override async claimRewards(): Promise<Hex> { return this.nope(); }
   override async claimCreatorFees(): Promise<Hex> { return this.nope(); }
   override async claimPlatformFees(): Promise<Hex> { return this.nope(); }
+  override async pushPlatformFees(): Promise<Hex> { return this.nope(); }
+  override async platformWaiting(tokens: Address[]): Promise<Map<string, bigint>> { return new Map(tokens.map((t) => [t.toLowerCase(), this.find(t)?.rewards?.platform ?? 0n])); }
   override async adminCall(): Promise<Hex> { return this.nope(); }
 }

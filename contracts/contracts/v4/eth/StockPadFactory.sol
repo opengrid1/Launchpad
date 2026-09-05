@@ -390,6 +390,19 @@ contract StockPadFactory is Ownable, ReentrancyGuard, IUnlockCallback {
     }
 
     // ---------------------------------------------------------------------
+    // Platform fees
+    // ---------------------------------------------------------------------
+
+    /// @notice Push the platform share waiting in each coin to `feeRecipient`
+    ///         in one transaction. Anyone may call; the destination is fixed.
+    function pushPlatformFees(address[] calldata tokens) external {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            if (listings[tokens[i]].createdAt == 0) revert InvalidParams();
+            StockPadToken(tokens[i]).claimPlatformFees();
+        }
+    }
+
+    // ---------------------------------------------------------------------
     // Views
     // ---------------------------------------------------------------------
 

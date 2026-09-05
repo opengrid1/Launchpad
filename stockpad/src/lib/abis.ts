@@ -740,6 +740,19 @@ export const factoryAbi = [
  {
   "inputs": [
    {
+    "internalType": "address[]",
+    "name": "tokens",
+    "type": "address[]"
+   }
+  ],
+  "name": "pushPlatformFees",
+  "outputs": [],
+  "stateMutability": "nonpayable",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
     "internalType": "address",
     "name": "",
     "type": "address"

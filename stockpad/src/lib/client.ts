@@ -523,6 +523,19 @@ export class StockPadClient {
     return wc.writeContract({ address: token, abi: tokenAbi, functionName: "claimPlatformFees", chain: wc.chain, account: wc.account! });
   }
 
+  /** Push the platform share of many coins to the fee recipient in one transaction. */
+  async pushPlatformFees(tokens: Address[]): Promise<Hex> {
+    const wc = this.wallet();
+    return wc.writeContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "pushPlatformFees", args: [tokens], chain: wc.chain, account: wc.account! });
+  }
+
+  /** Platform fees waiting in each coin, in its pair asset. */
+  async platformWaiting(tokens: Address[]): Promise<Map<string, bigint>> {
+    if (tokens.length === 0) return new Map();
+    const res = await this.pc.multicall({ allowFailure: true, contracts: tokens.map((t) => ({ address: t, abi: tokenAbi, functionName: "platformFees" as const })) });
+    return new Map(tokens.map((t, i) => [t.toLowerCase(), res[i].status === "success" ? (res[i].result as bigint) : 0n]));
+  }
+
   // -- trading ------------------------------------------------------------
 
   private async ensureAllowance(erc: Address, spender: Address, amount: bigint) {

@@ -119,10 +119,13 @@ describe("stockpad on Ethereum mainnet (fork)", function () {
     expect(await weth.balanceOf(trader.address)).to.equal(pending);
     expect(await coin.pendingRewards(trader.address)).to.equal(0n);
 
-    // Platform: anyone pushes it to the fee recipient.
+    // Platform: anyone pushes it to the fee recipient, per coin or in bulk through the factory.
     const pf = await coin.platformFees();
-    await (await coin.connect(trader).claimPlatformFees()).wait();
+    expect(pf).to.be.gt(0n);
+    await expect(factory.connect(trader).pushPlatformFees([trader.address])).to.be.revertedWithCustomError(factory, "InvalidParams");
+    await (await factory.connect(trader).pushPlatformFees([await coin.getAddress()])).wait();
     expect(await weth.balanceOf(admin.address)).to.equal(pf);
+    expect(await coin.platformFees()).to.equal(0n);
   });
 
   it("NVDAon pair: ETH first buy routes through V3 into the stock, router trades in ETH, fees land in NVDAon, rewards claim as ETH", async () => {
