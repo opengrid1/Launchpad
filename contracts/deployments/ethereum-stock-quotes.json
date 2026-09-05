@@ -1,0 +1,1662 @@
+{
+ "builtAt": "2026-09-05T03:10:08.274Z",
+ "note": "USD per whole token for the mainnet stockpad factory: DexScreener pool price where a real pool exists, else the underlying share price (Yahoo).",
+ "quotes": [
+  {
+   "symbol": "HIMSon",
+   "name": "Hims & Hers Health",
+   "address": "0xCa468554e5C0423Ee858fe3942c9568C51FcAa79",
+   "usd": 27.76,
+   "source": "pool:0x00a38533c68327aBE0Cc265436e036066E2D6B38  USDC",
+   "poolLiqUsd": 185592,
+   "poolVol24Usd": 7500
+  },
+  {
+   "symbol": "SLVon",
+   "name": "iShares Silver Trust",
+   "address": "0xF3e4872e6a4cF365888D93b6146a2bAA7348F1A4",
+   "usd": 59.62,
+   "source": "pool:uniswap v3 USDT",
+   "poolLiqUsd": 148169,
+   "poolVol24Usd": 35954
+  },
+  {
+   "symbol": "TLTon",
+   "name": "iShares 20+ Year Treasury Bond ETF",
+   "address": "0x992651BFeB9A0DCC4457610E284ba66D86489d4d",
+   "usd": 82.21,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "IEFAon",
+   "name": "iShares Core MSCI EAFE ETF",
+   "address": "0xFEFf7a377A86462F5a2A872009722C154707F09e",
+   "usd": 101.08,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CRCLon",
+   "name": "Circle Internet Group",
+   "address": "0x3632DEa96A953C11dac2f00b4A05a32CD1063fAE",
+   "usd": 100.78,
+   "source": "pool:uniswap v4 USDC",
+   "poolLiqUsd": 54236,
+   "poolVol24Usd": 76
+  },
+  {
+   "symbol": "AGGon",
+   "name": "iShares Core US Aggregate Bond ETF",
+   "address": "0xfF7CF16aA2fFc463b996DB2f7B7cf0130336899D",
+   "usd": 97,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "PFEon",
+   "name": "Pfizer",
+   "address": "0x06954faa913fA14c28Eb1b2e459594F22f33f3dE",
+   "usd": 28.45,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "PBRon",
+   "name": "Petrobras",
+   "address": "0xD08DDb436e731f32455Fe302723eE0FD2E9E8706",
+   "usd": 20.12,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "EEMon",
+   "name": "iShares MSCI Emerging Markets ETF",
+   "address": "0x77A1a02e4a888ADA8620b93C30dE8a41E621126c",
+   "usd": 68.7,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "EFAon",
+   "name": "iShares MSCI EAFE ETF",
+   "address": "0x4111b60bc87F2Bd1e81E783E271D7F0ec6EE088B",
+   "usd": 108.35,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "TIPon",
+   "name": "iShares TIPS Bond ETF",
+   "address": "0x2Df38cA485D01fC15e4FD85847ed26b7EF871c1c",
+   "usd": 106.97,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "IAUon",
+   "name": "iShares Gold Trust",
+   "address": "0x4f0CA3df1c2e6b943cf82E649d576ffe7B2fABCF",
+   "usd": 83.39,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "IVVon",
+   "name": "iShares Core S&P 500 ETF",
+   "address": "0x62cA254a363dc3c748e7E955c20447aB5bF06fF7",
+   "usd": 773.92,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "NVDAon",
+   "name": "NVIDIA",
+   "address": "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
+   "usd": 229.26,
+   "source": "pool:uniswap v4 USDC",
+   "poolLiqUsd": 73619,
+   "poolVol24Usd": 233785
+  },
+  {
+   "symbol": "ITOTon",
+   "name": "iShares Core S&P Total US Stock Market ETF",
+   "address": "0x0692481C369E2BDc728A69ae31b848343a4567Be",
+   "usd": 168.64,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "INTCon",
+   "name": "Intel",
+   "address": "0xFdA09936DbD717368De0835bA441d9E62069d36f",
+   "usd": 95.8,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "SPYon",
+   "name": "SPDR S&P 500 ETF",
+   "address": "0xFeDC5f4a6c38211c1338aa411018DFAf26612c08",
+   "usd": 774.46,
+   "source": "pool:uniswap v3 USDC",
+   "poolLiqUsd": 44984,
+   "poolVol24Usd": 41691
+  },
+  {
+   "symbol": "MSTRon",
+   "name": "MicroStrategy",
+   "address": "0xCabD955322dfbf94C084929ac5E9Eca3fEB5556F",
+   "usd": 142.8,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "NVOon",
+   "name": "Novo Nordisk",
+   "address": "0x28151F5888833D3d767C4d6945a0Ee50D1B193E3",
+   "usd": 46.6,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "SPCXon",
+   "name": "SpaceX",
+   "address": "0xc9eef266834730340A55B6CC24621B31BAF55581",
+   "usd": 266.6,
+   "source": "pool:uniswap v4 USDC",
+   "poolLiqUsd": 17529,
+   "poolVol24Usd": 350
+  },
+  {
+   "symbol": "KOon",
+   "name": "Coca-Cola",
+   "address": "0x74a03d741226f738098C35da8188E57acA50d146",
+   "usd": 88.07,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "IJHon",
+   "name": "iShares Core S&P MidCap ETF",
+   "address": "0xFd50Fc4E3686a8DA814c5C3D6121d8aB98a537F0",
+   "usd": 75.85,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "JDon",
+   "name": "JD.com",
+   "address": "0xdeB6B89088cA9B7d7756087c8a0F7C6DF46f319C",
+   "usd": 28.26,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "QQQon",
+   "name": "Invesco QQQ",
+   "address": "0x0e397938C1Aa0680954093495B70A9F5e2249aBa",
+   "usd": 714.47,
+   "source": "pool:uniswap v4 USDT",
+   "poolLiqUsd": 13482,
+   "poolVol24Usd": 145
+  },
+  {
+   "symbol": "MRVLon",
+   "name": "Marvell Technology",
+   "address": "0xF404E5f887dBd5508e16a1198fCDD5DE1A4296B8",
+   "usd": 223.84,
+   "source": "pool:uniswap v3 USDT",
+   "poolLiqUsd": 5005,
+   "poolVol24Usd": 6069
+  },
+  {
+   "symbol": "CMGon",
+   "name": "Chipotle",
+   "address": "0x25018520138bbaB60684AD7983D4432E8B8E926B",
+   "usd": 36.96,
+   "source": "yahoo",
+   "poolLiqUsd": 997,
+   "poolVol24Usd": 106
+  },
+  {
+   "symbol": "QBTSon",
+   "name": "D-Wave Quantum",
+   "address": "0x3807562A482B824C08A564DFefcc471806d3E00a",
+   "usd": 16.58,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "GOOGLon",
+   "name": "Alphabet Class A",
+   "address": "0xbA47214eDd2bb43099611b208f75E4b42FDcfEDc",
+   "usd": 338.13,
+   "source": "pool:uniswap v3 USDC",
+   "poolLiqUsd": 19725,
+   "poolVol24Usd": 7902
+  },
+  {
+   "symbol": "SMCIon",
+   "name": "Super Micro Computer",
+   "address": "0x2ca12a3F9635fD69C21580def14F25C210cA9612",
+   "usd": 39.59,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BMNRon",
+   "name": "BitMine Immersion Technologies",
+   "address": "0x33483A58079b4225b10e57958Ca28ad7b9CDbAF7",
+   "usd": 24.97,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CSCOon",
+   "name": "Cisco Systems",
+   "address": "0x980a1001ee94e54142b231f44C7CA7c9DF71FBe1",
+   "usd": 109.2,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "IWNon",
+   "name": "iShares Russell 2000 Value ETF",
+   "address": "0x9DCf7f739B8C0270E2FC0Cc8D0DaBe355a150dBa",
+   "usd": 224.62,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "HOODon",
+   "name": "Robinhood Markets",
+   "address": "0x998f02A9E343EF6E3E6f28700d5A20F839fD74E6",
+   "usd": 122.11,
+   "source": "yahoo",
+   "poolLiqUsd": 363,
+   "poolVol24Usd": 130
+  },
+  {
+   "symbol": "RIOTon",
+   "name": "Riot Platforms",
+   "address": "0x21deafD91116FCe9fE87C8f15Bde03f99a309b72",
+   "usd": 21.8,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ASTSon",
+   "name": "AST SpaceMobile",
+   "address": "0x0D1fa4E1E3719945899Ef7b02840627Df46aF44A",
+   "usd": 62.31,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "WMTon",
+   "name": "Walmart",
+   "address": "0x82106347dDbB23cE44Cf4cE4053Ef1adf8b9323B",
+   "usd": 107.14,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "SBUXon",
+   "name": "Starbucks",
+   "address": "0xf15FbC1349ab99ABAd63db3f9A510BF413bE3BeF",
+   "usd": 104.47,
+   "source": "yahoo",
+   "poolLiqUsd": 919,
+   "poolVol24Usd": 35
+  },
+  {
+   "symbol": "PYPLon",
+   "name": "PayPal",
+   "address": "0x4EFD92F372898B57F292De69fCe377dd7D912bDd",
+   "usd": 54.96,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "IWFon",
+   "name": "iShares Russell 1000 Growth ETF",
+   "address": "0x8d05432C2786e3F93f1a9A62b9572DBf54f3ea06",
+   "usd": 123.41,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "PGon",
+   "name": "Procter & Gamble",
+   "address": "0x339ce23a355ed6D513DD3e1462975C4eCD86823a",
+   "usd": 146.44,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "USOon",
+   "name": "United States Oil Fund",
+   "address": "0x1F5fc5c3c8B0F15c7E21AF623936FF2b210b6415",
+   "usd": 138.64,
+   "source": "pool:uniswap v4 USDC",
+   "poolLiqUsd": 3827,
+   "poolVol24Usd": 972
+  },
+  {
+   "symbol": "TSLAon",
+   "name": "Tesla",
+   "address": "0xf6b1117ec07684D3958caD8BEb1b302bfD21103f",
+   "usd": 1640.69,
+   "source": "pool:uniswap v4 USDT",
+   "poolLiqUsd": 355868,
+   "poolVol24Usd": 2
+  },
+  {
+   "symbol": "MUon",
+   "name": "Micron Technology",
+   "address": "0x050362Ab1072Cb2Ce74d74770E22A3203Ad04ee5",
+   "usd": 959.16,
+   "source": "pool:uniswap v3 USDT",
+   "poolLiqUsd": 5072,
+   "poolVol24Usd": 621
+  },
+  {
+   "symbol": "AAPLon",
+   "name": "Apple",
+   "address": "0x14c3abF95Cb9C93a8b82C1CdCB76D72Cb87b2d4c",
+   "usd": 316.93,
+   "source": "pool:uniswap v3 USDC",
+   "poolLiqUsd": 3463,
+   "poolVol24Usd": 121064
+  },
+  {
+   "symbol": "MARAon",
+   "name": "MARA Holdings",
+   "address": "0x4604b0b581269843ac7a6b70A5FC019E7762e511",
+   "usd": 11.31,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "PEPon",
+   "name": "PepsiCo",
+   "address": "0x3cE219D498D807317F840f4CB0f03FA27dd65046",
+   "usd": 137.63,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "WFCon",
+   "name": "Wells Fargo",
+   "address": "0x4AD2118Da8a65eaa81402A3d583FEF6eE76BDf3F",
+   "usd": 89.97,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BABAon",
+   "name": "Alibaba",
+   "address": "0x41765F0FCddC276309195166C7A62AE522FA09ef",
+   "usd": 113.24,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AMZNon",
+   "name": "Amazon",
+   "address": "0xbb8774FB97436d23d74C1b882E8E9A69322cFD31",
+   "usd": 262.42,
+   "source": "pool:uniswap v4 ETH",
+   "poolLiqUsd": 1220,
+   "poolVol24Usd": 10
+  },
+  {
+   "symbol": "BOTon",
+   "name": "RoboStrategy",
+   "address": "0x0e05BA0756C504B69AAA642f7379CD1AF7C63969",
+   "usd": 26.8,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "GMEon",
+   "name": "GameStop",
+   "address": "0x71d24Baeb0A033ec5F90FF65C4210545AF378D97",
+   "usd": 19.16,
+   "source": "yahoo",
+   "poolLiqUsd": 865,
+   "poolVol24Usd": 6
+  },
+  {
+   "symbol": "ABTon",
+   "name": "Abbott",
+   "address": "0x3859385363f7BB4Dfe42811cCF3F294FcD41dd1D",
+   "usd": 108.33,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "COINon",
+   "name": "Coinbase",
+   "address": "0xF042cfa86cf1D598a75Bdb55c3507a1F39f9493b",
+   "usd": 184.64,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "METAon",
+   "name": "Meta Platforms",
+   "address": "0x59644165402b611b350645555B50Afb581C71EB2",
+   "usd": 616.77,
+   "source": "yahoo",
+   "poolLiqUsd": 144,
+   "poolVol24Usd": 375
+  },
+  {
+   "symbol": "AMDon",
+   "name": "AMD",
+   "address": "0x0C1f3412A44Ff99E40bF14e06e5Ea321aE7B3938",
+   "usd": 477.57,
+   "source": "yahoo",
+   "poolLiqUsd": 160,
+   "poolVol24Usd": 1
+  },
+  {
+   "symbol": "CVXon",
+   "name": "Chevron",
+   "address": "0x8F3E41b378ae010c46d255F36bFC1D303b52dceb",
+   "usd": 208.6,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "IWMon",
+   "name": "iShares Russell 2000 ETF",
+   "address": "0x070D79021dD7e841123cB0CF554993bF683c511D",
+   "usd": 296.01,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "UBERon",
+   "name": "Uber",
+   "address": "0x5Bcd8195E3Ef58f677aeF9eBC276B5087c027050",
+   "usd": 75.76,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "HYGon",
+   "name": "iBoxx $ High Yield Corporate Bond ETF",
+   "address": "0xeD3618Bb8778F8eBBe2f241Da532227591771D04",
+   "usd": 79.16,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BIDUon",
+   "name": "Baidu",
+   "address": "0x9d4C6AD12B55E4645b585209F90Cc26614061E91",
+   "usd": 99.47,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BTGOon",
+   "name": "BitGo Holdings",
+   "address": "0x510Dd21055188Eda378714DE3bb5591Ffa0CC468",
+   "usd": 7.3,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "TMon",
+   "name": "Toyota",
+   "address": "0xaB02fc332e9278eBCbbC6B4a8038050c01D15F69",
+   "usd": 197.11,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "MSFTon",
+   "name": "Microsoft",
+   "address": "0xB812837b81a3a6b81d7CD74CfB19A7f2784555E5",
+   "usd": 499.7,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "MCDon",
+   "name": "McDonald's",
+   "address": "0x4C82c8cD9a218612DCe60b156B73A36705645e3b",
+   "usd": 255.69,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ABNBon",
+   "name": "Airbnb",
+   "address": "0xb035c3d5083bdc80074F380aeBc9Fcb68aBa0A28",
+   "usd": 181.94,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "DISon",
+   "name": "Disney",
+   "address": "0xc3D93B45249E8E06cfeB01d25A96337E8893265d",
+   "usd": 105.31,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "COPXon",
+   "name": "Global X Copper Miners ETF",
+   "address": "0x423A63dfE8d82CD9C6568C92210AA537d8Ef6885",
+   "usd": 90.78,
+   "source": "pool:uniswap v3 USDC",
+   "poolLiqUsd": 3998,
+   "poolVol24Usd": 55
+  },
+  {
+   "symbol": "JPMon",
+   "name": "JPMorgan Chase",
+   "address": "0x03C1EC4CA9DBb168E6Db0DeF827c085999CBffaF",
+   "usd": 358.64,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "IBMon",
+   "name": "IBM",
+   "address": "0x25d3f236B2d61656eebdeA86Ac6D42168e340011",
+   "usd": 234.89,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "LMTon",
+   "name": "Lockheed",
+   "address": "0x691b126cF619707Ed5d16CaB1B27C000aa8De300",
+   "usd": 525.28,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "FUTUon",
+   "name": "Futu Holdings",
+   "address": "0x5Ce215d9c37a195DF88e294a06B8396C296B4e15",
+   "usd": 121.75,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "PANWon",
+   "name": "Palo Alto Networks",
+   "address": "0x34bfdFF25F0fdA6d3ad0c33F1e06c0D40bD68885",
+   "usd": 333.26,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ORCLon",
+   "name": "Oracle",
+   "address": "0x8a23C6BaadB88512b30475C83Df6A63881e33e1E",
+   "usd": 161.29,
+   "source": "pool:uniswap v3 USDT",
+   "poolLiqUsd": 2396,
+   "poolVol24Usd": 573
+  },
+  {
+   "symbol": "ARMon",
+   "name": "Arm Holdings plc",
+   "address": "0x5Bf1b2A808598C0eF4Af1673a5457d86fE6d7B3d",
+   "usd": 252.09,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "PLTRon",
+   "name": "Palantir Technologies",
+   "address": "0x0c666485b02F7A87d21AdD7AEb9F5e64975AA490",
+   "usd": 175.96,
+   "source": "pool:0x00a38533c68327aBE0Cc265436e036066E2D6B38  TSLAon",
+   "poolLiqUsd": 4859,
+   "poolVol24Usd": 209
+  },
+  {
+   "symbol": "AVGOon",
+   "name": "Broadcom",
+   "address": "0x0d54D4279B9E8c54cD8547c2C75A8Ee81A0BcaE8",
+   "usd": 357.895,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "QCOMon",
+   "name": "Qualcomm",
+   "address": "0xE3419710c1f77D44B4DaB02316d3f048818C4E59",
+   "usd": 168.74,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "APOon",
+   "name": "Apollo Global Management",
+   "address": "0x4D21aFfD27183B07335935F81A5C26b6A5A15355",
+   "usd": 133.67,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BBAIon",
+   "name": "BigBear.ai Holdings",
+   "address": "0x1b8d3e59b31981385C066eE0916Ec964628ff1f9",
+   "usd": 2.92,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BAon",
+   "name": "Boeing",
+   "address": "0x57270D35A840BC5C094da6FBeCA033FB71eA6Ab0",
+   "usd": 212.25,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "TSMon",
+   "name": "Taiwan Semiconductor Manufacturing",
+   "address": "0x3Cafdbfe682aec17d5acE2f97A2f3ab3dCf6a4A9",
+   "usd": 429.17,
+   "source": "pool:0x00a38533c68327aBE0Cc265436e036066E2D6B38  USDC",
+   "poolLiqUsd": 3623,
+   "poolVol24Usd": 317
+  },
+  {
+   "symbol": "ACNon",
+   "name": "Accenture",
+   "address": "0xAbA9Ae731Aad63335C604E5f6E6A5db2e05f549d",
+   "usd": 186.72,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "SHOPon",
+   "name": "Shopify",
+   "address": "0x908266C1192628371Cff7AD2F5Eba4dE061a0ac5",
+   "usd": 145.09,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "Von",
+   "name": "Visa",
+   "address": "0xaC37c20C1d0E5285035e056101a64e263Ff94a41",
+   "usd": 375.07,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "DASHon",
+   "name": "DoorDash",
+   "address": "0x241958c86c7744d15d5f6314BA1Ea4c81DDA2896",
+   "usd": 649.25,
+   "source": "pool:uniswap v4 USDC",
+   "poolLiqUsd": 1061,
+   "poolVol24Usd": 77
+  },
+  {
+   "symbol": "GEon",
+   "name": "General Electric",
+   "address": "0xD904bCf89B7CedF5c89f9Df7e829191D695F847E",
+   "usd": 337.12,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CRMon",
+   "name": "Salesforce",
+   "address": "0x55720eF5b023Fd043AE5F8D2e526030207978950",
+   "usd": 259.23,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "LLYon",
+   "name": "Eli Lilly",
+   "address": "0xf192957AE52dB3eb088654403CC2eDeD014ae556",
+   "usd": 1149.36,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "RDDTon",
+   "name": "Reddit",
+   "address": "0xA9431d354cFAD3c6B76E50f0e73b43D48Be80CD0",
+   "usd": 154.46,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "SNOWon",
+   "name": "Snowflake",
+   "address": "0x5D1a9a9B118fF19721e0111f094f2360b6Ef7A2f",
+   "usd": 337.18,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "LINon",
+   "name": "Linde plc",
+   "address": "0x01B19c68f8A9eE3a480dA788ba401cFAbdf19B93",
+   "usd": 477.57,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "UNHon",
+   "name": "UnitedHealth",
+   "address": "0x075756F3b6381a79633438fAA8964946bf40163d",
+   "usd": 397.14,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ADBEon",
+   "name": "Adobe",
+   "address": "0x7042a8fFc7c7049684BfBc2fcb41b72380755a43",
+   "usd": 266.51,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AXPon",
+   "name": "American Express",
+   "address": "0x2Bc7Ff0C5dA9F1a4A51F96e77C5b0F7165DC06d2",
+   "usd": 326.16,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "INTUon",
+   "name": "Intuit",
+   "address": "0x6cc0afD51CE4Cb6920B775F3D6376Ab82b9A93Bb",
+   "usd": 332.7,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "MAon",
+   "name": "Mastercard",
+   "address": "0xA29dC2102dfc2a0A4A5dCb84Af984315567c9858",
+   "usd": 579.21,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BEon",
+   "name": "Bloom Energy",
+   "address": "0x92e04b1fCC2b16347820241D226853Cf01C9eBAB",
+   "usd": 252.87,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "SPGIon",
+   "name": "S&P Global",
+   "address": "0xbc843b147DB4C7E00721d76037b8b92e13AfE13f",
+   "usd": 468.16,
+   "source": "pool:0x00a38533c68327aBE0Cc265436e036066E2D6B38  USDC",
+   "poolLiqUsd": 8721,
+   "poolVol24Usd": 467
+  },
+  {
+   "symbol": "BLKon",
+   "name": "Blackrock, Inc.",
+   "address": "0x7a0F89c1606f71499950AA2590d547c3975B728E",
+   "usd": 1122.29,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "NOWon",
+   "name": "ServiceNow",
+   "address": "0x8bCF9012f4b0c1C3D359eDb7133C294f82f80790",
+   "usd": 141.26,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "EQIXon",
+   "name": "Equinix",
+   "address": "0x73d2ccEE12C120E7DA265a2dE9d9f952a0101b4f",
+   "usd": 1035.98,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ASMLon",
+   "name": "ASML Holding NV",
+   "address": "0xE51bA774ebF6392c45Bf1d9E6b334d07992460d3",
+   "usd": 1714.88,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AAOIon",
+   "name": "Applied Optoelectronics",
+   "address": "0x99888f2CCD08258eD5F66e94bA59d7E75016900F",
+   "usd": 103.85,
+   "source": "pool:0x00a38533c68327aBE0Cc265436e036066E2D6B38  USDC",
+   "poolLiqUsd": 1009,
+   "poolVol24Usd": 30
+  },
+  {
+   "symbol": "ACHRon",
+   "name": "Archer Aviation",
+   "address": "0x9cFA08002d606e638Fe91941bE725e1b970B84a6",
+   "usd": 5.71,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "COSTon",
+   "name": "Costco",
+   "address": "0x0c8276E4FeC072cf7854Be69c70F7773D1610857",
+   "usd": 915.74,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AMCon",
+   "name": "AMC Entertainment",
+   "address": "0x592643a667633bCa51Cb2387C98B6dE6CE549A45",
+   "usd": 1.26,
+   "source": "pool:uniswap v4 USDC",
+   "poolLiqUsd": 1199,
+   "poolVol24Usd": 89
+  },
+  {
+   "symbol": "SPOTon",
+   "name": "Spotify",
+   "address": "0x590F21186489cA1612f49a4B1ff5c66acD6796A9",
+   "usd": 542.43,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "NFLXon",
+   "name": "Netflix",
+   "address": "0x032deC3372F25C41EA8054B4987a7c4832CDB338",
+   "usd": 78.25,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BILIon",
+   "name": "Bilibili",
+   "address": "0x7e08cE07acA80CefE61ebbFA0CedFe5C7b07eDB9",
+   "usd": 15.23,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CIFRon",
+   "name": "Cipher Mining",
+   "address": "0x24E5Bc45d5b6Cef6F38989AC33dF587a3FC850cf",
+   "usd": 17.74,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "APPon",
+   "name": "AppLovin",
+   "address": "0xd5C5B2883735Fa9B658Dd52e2FCC8d7c0f1A42Ce",
+   "usd": 320.56,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CIBRon",
+   "name": "First Trust NASDAQ Cybersecurity ETF",
+   "address": "0x42d6E274B8631e5289a8F853E8d1A7bAEff3C8d1",
+   "usd": 94.59,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AALon",
+   "name": "American Airlines Group",
+   "address": "0xBE8eb7b51a08f9d52Bb6C8c7EcA699f0f89BfC02",
+   "usd": 13.13,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AIPon",
+   "name": "Arteris",
+   "address": "0x0D8EF471a11036Bc6dDa1536069457f7e97daB66",
+   "usd": 21.37,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "APLDon",
+   "name": "Applied Digital",
+   "address": "0x318Dcb4f07C3e6ccEcc12A252100Fb3Bf76Eeb02",
+   "usd": 26.37,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "MELIon",
+   "name": "MercadoLibre",
+   "address": "0x2816169A49953C548BfEb3948dCF05c4A0E4657D",
+   "usd": 1978.36,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CEGon",
+   "name": "Constellation Energy",
+   "address": "0x060505527C83E8BfEb9b4Ff08248B82e688800F1",
+   "usd": 298.96,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BOTZon",
+   "name": "Global X Robotics & Artificial Intelligence ETF",
+   "address": "0x7AbeC847A3f9820397C82E1DAd231721Bf5a6732",
+   "usd": 35.95,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BNOon",
+   "name": "US Brent Oil Fund",
+   "address": "0x9ddb2524782684942FAD28b44E76552cB7f3F548",
+   "usd": 56.11,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CBRSon",
+   "name": "Cerebras Systems",
+   "address": "0x61882Bb63aF8e6A39531175CdfDe1Fcd98346503",
+   "usd": 210.05,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AXTIon",
+   "name": "AXT",
+   "address": "0x6a3E77d984e22bed6A036D3DA79D7857936a593f",
+   "usd": 61.64,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AMATon",
+   "name": "Applied Materials",
+   "address": "0x6bE935eaDc71c49c414b1175985946ee40365c67",
+   "usd": 454.71,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BTGon",
+   "name": "B2Gold",
+   "address": "0x8AC6AD49b3344024834f373f3CA491f22ceb952e",
+   "usd": 5.61,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AEHRon",
+   "name": "Aehr Test Systems",
+   "address": "0xeB48e68F01c0C76735dc6F1dcC0F151A973BD9d2",
+   "usd": 86.26,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BACon",
+   "name": "Bank of America",
+   "address": "0x576E9CA70e3a040c00d8139b0665a2b7b7B64844",
+   "usd": 62.68,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CCJon",
+   "name": "Cameco",
+   "address": "0xA9F9BE37b19F261AB067C5f7DEDA2c969Ec66944",
+   "usd": 100.74,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AGon",
+   "name": "First Majestic Silver",
+   "address": "0xaa26e62e51bc5da24ED2B6Fc6491e137d68824B9",
+   "usd": 20.97,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BTDRon",
+   "name": "Bitdeer Technologies",
+   "address": "0x0683154c33B7563ed39951B4d7C0470EA28D93e9",
+   "usd": 12.38,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ARGTon",
+   "name": "Global X MSCI Argentina ETF",
+   "address": "0xfb1b703B26957C344aAb03BBE11EC9C23E9eDdf5",
+   "usd": 96.41,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AAONon",
+   "name": "AAON",
+   "address": "0x6E9C573e5b8A59CEC47D8E317C148E4b0595FB39",
+   "usd": 79.4,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BZon",
+   "name": "Kanzhun",
+   "address": "0x858e985126543b5a066C4E8a5DAB0249C1d683f7",
+   "usd": 16.92,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BILon",
+   "name": "SPDR Bloomberg 1-3 Month T-Bill ETF",
+   "address": "0x2710E30d84B376c34a3B3036aa196b26a83A321b",
+   "usd": 91.45,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ANETon",
+   "name": "Arista Networks",
+   "address": "0x20e113E9235dF6A2A9BFc6f244c2ccC380c8f546",
+   "usd": 306.47,
+   "source": "pool:uniswap v4 USDC",
+   "poolLiqUsd": 1407,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ALOYon",
+   "name": "REalloys",
+   "address": "0x4cDd1099146f28a9b428CD85F36B562B6d05c8c8",
+   "usd": 10.1,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AMKRon",
+   "name": "Amkor Technology",
+   "address": "0xF02b8309df07641dDcFd1DABCeFFDde3d30915De",
+   "usd": 47.77,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CAPRon",
+   "name": "Capricor Therapeutics",
+   "address": "0x70Ec0f5B23404C0cD6f29ce88f4af00A0b0d895D",
+   "usd": 9.4,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ALABon",
+   "name": "Astera Labs",
+   "address": "0xd6D09189B6fD611A75435e4a123e373A56Ab0e41",
+   "usd": 310.4,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CIENon",
+   "name": "Ciena",
+   "address": "0x1ffAc2Df9696868D06F9fe8d72fEE9e1452eeF76",
+   "usd": 321,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AURon",
+   "name": "Aurora Innovation",
+   "address": "0xFc9D0eBBd17d3aAa336a50488795806c69EA4b32",
+   "usd": 6.34,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ARQQon",
+   "name": "Arqit Quantum",
+   "address": "0x45583545BE579cc96409903597c5e17B3fd7ceFf",
+   "usd": 21.37,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ALBon",
+   "name": "Albemarle",
+   "address": "0x1b468d5535Ed7C19Ce42f0073db7Fdf441028131",
+   "usd": 126.28,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AIQon",
+   "name": "Global X Artificial Intelligence & Technology ETF",
+   "address": "0x2A5ae1BdE731cb8732fD762073DD0bBE151360B9",
+   "usd": 64.32,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AMGNon",
+   "name": "Amgen",
+   "address": "0x1c5FA55eAdE69ae98571059332520F73733C2D82",
+   "usd": 437.23,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CATon",
+   "name": "Caterpillar",
+   "address": "0xF719b02079E0FaA5450392DA2D3e11a1e5b0EADB",
+   "usd": 813.94,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ABBVon",
+   "name": "AbbVie",
+   "address": "0x7c7378143a9c8839e0502e2178F058F46c6ea504",
+   "usd": 256.46,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BINCon",
+   "name": "iShares Flexible Income Active ETF",
+   "address": "0x88703C1E71f44a2D329C99e8E112F7a4E7dD6312",
+   "usd": 51.68,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BAIon",
+   "name": "iShares A.I. Innovation and Tech Active ETF",
+   "address": "0x9463b0EE32c1b40B7fdA6459e815F0790159bC3A",
+   "usd": 44.59,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BLSHon",
+   "name": "Bullish",
+   "address": "0x334ccd8Df4013bac99Af8C5C61d3605B315302a0",
+   "usd": 36,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ATKRon",
+   "name": "Atkore",
+   "address": "0xB50A8bd8883Dfe59eAF1a8b1130acD97CEd9AC84",
+   "usd": 93.76,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AMEon",
+   "name": "AMETEK",
+   "address": "0x113faE6e1103A4C09250C8697a6a4BE6Ca987d06",
+   "usd": 237.72,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "APHon",
+   "name": "Amphenol",
+   "address": "0xD9C1b5df94063177CF168680b695A417919aE1ae",
+   "usd": 82.78,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CEVAon",
+   "name": "CEVA",
+   "address": "0xC4881Ce8269744B9255b926B76728eAdcB240A3B",
+   "usd": 26.95,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AOSLon",
+   "name": "Alpha and Omega Semiconductor",
+   "address": "0x55025c1e2acFE5A7092CF32f7A4F351a9FD21e1c",
+   "usd": 25.2,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BLCRon",
+   "name": "iShares Large Cap Core Active ETF",
+   "address": "0x08D777b6a82c8dee715848702F72dAD4c2504687",
+   "usd": 49.87,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BRTRon",
+   "name": "iShares Total Return Active ETF",
+   "address": "0x3d45D340a30f49F036142e5e4D8993b9ad4e3F9a",
+   "usd": 49.231,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BRHYon",
+   "name": "iShares High Yield Active ETF",
+   "address": "0xaeB2C4f3540a162045cC3Bd82d367AC38C2F4Da6",
+   "usd": 50.735,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BRLNon",
+   "name": "iShares Floating Rate Loan Active ETF",
+   "address": "0xfcBa0eEBbb946FF933C91D2DDB2991845a400F39",
+   "usd": 50.89,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ACLSon",
+   "name": "Axcelis Technologies",
+   "address": "0x6785cE8060655b1F4991C3893dc41814154A1808",
+   "usd": 115.08,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BWETon",
+   "name": "Breakwave Tanker Shipping ETF",
+   "address": "0xEcA55ac71f83931B7e074228AEBc9104F13d8c02",
+   "usd": 505.17,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BKCHon",
+   "name": "Global X Blockchain ETF",
+   "address": "0xDd00b1046692aA2780ef04849829609Fc4F90fD7",
+   "usd": 74.91,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ACMRon",
+   "name": "ACM Research",
+   "address": "0x8379c5595b8148A9968bEE6D8110B2b4a627a9Dd",
+   "usd": 74.44,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ADIon",
+   "name": "Analog Devices",
+   "address": "0x2dDc2391CC89E3e716A938F089AE755174cfDf1f",
+   "usd": 362.25,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CAMTon",
+   "name": "Camtek",
+   "address": "0xC087EA645a1eFE021577c19413FBE39d617A3196",
+   "usd": 145.72,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "GRNDon",
+   "name": "Grindr",
+   "address": "0xe5b26BA77E6a4d79a7c54a5296d81254269D9700",
+   "usd": 15.25,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "AIon",
+   "name": "C3.ai",
+   "address": "0x4554ad55ccA5e7CB97B77813f486aAf6D4D9AB62",
+   "usd": 10.46,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "APDon",
+   "name": "Air Products & Chemicals",
+   "address": "0x6fAfA492d5aFBfd1A7328CD697164daAF08A0420",
+   "usd": 301.27,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ARon",
+   "name": "Antero Resources",
+   "address": "0xD7C740449090Cd8864F1980076aFf0b5f4561412",
+   "usd": 39.41,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ARRYon",
+   "name": "Array Technologies",
+   "address": "0x673f8d2e5F05c17BABa0c86e1AAbA99f2d7F9e1A",
+   "usd": 4.6,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ASXon",
+   "name": "ASE Technology Holding",
+   "address": "0x94912D9f8ef1108CA605A6F5331a0dA0294Adfe0",
+   "usd": 37.51,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ATOMon",
+   "name": "Atomera",
+   "address": "0xA36182b7Fc5CBd88ca8231b85195fDebDe8646d9",
+   "usd": 4.04,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BATLon",
+   "name": "Battalion Oil",
+   "address": "0x9Af688DB5FC6E34ce98cdAc29CF977cf9D1aC204",
+   "usd": 1.29,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BHPon",
+   "name": "BHP Group",
+   "address": "0xa2CbcD28F87bdf6Ae1321818758F19402e97f3F1",
+   "usd": 90.42,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BIRDon",
+   "name": "Allbirds",
+   "address": "0xA310A90Bb0929c577fc26095f41A381DbF9CbA0f",
+   "usd": 2.52,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BKKTon",
+   "name": "Bakkt Holdings",
+   "address": "0x9e411A38Ff3E6A3FEDe4ec2Bac1DA74e3203e4f8",
+   "usd": 8.33,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BTBTon",
+   "name": "Bit Digital",
+   "address": "0xFbC17997CE549373D3Bd245F56908fb124A2723b",
+   "usd": 1.64,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BWXTon",
+   "name": "BWX Technologies",
+   "address": "0x5B82827a5fb24aBAD3bc542D48e59eB0A7FeE148",
+   "usd": 157.59,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "BXSLon",
+   "name": "Blackstone Secured Lending Fund",
+   "address": "0x55b184974bF20fE41db42526Bb15f33F35E57a47",
+   "usd": 24.72,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CDNSon",
+   "name": "Cadence Design Systems",
+   "address": "0x807C00E3A4b4e1e660a8d36E8dFFE68448F95913",
+   "usd": 292.7,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CFon",
+   "name": "CF Industries Holdings",
+   "address": "0xd955D0f9907C3949345Dd859D9cbb866f05C7Eb8",
+   "usd": 133.35,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CGNXon",
+   "name": "Cognex",
+   "address": "0xC1715Ee24c8f4a41F2d10143a320FA1d151ba22b",
+   "usd": 62.25,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "CMCSAon",
+   "name": "Comcast",
+   "address": "0x85Fd8DfD987988EdE1777935d9d09c7ac7f09f0b",
+   "usd": 26.49,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "MSon",
+   "name": "Morgan Stanley",
+   "address": "0xb7CBA7593baaFffc96F9BBc86e578026369DEc55",
+   "usd": 217.72,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "SONYon",
+   "name": "Sony",
+   "address": "0xaF1382692F9927FD6a6C25ADd60285628a1879e5",
+   "usd": 24.56,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  },
+  {
+   "symbol": "ULon",
+   "name": "Unilever",
+   "address": "0x1598f7d25d0b0e1261eAB9BD2AD7924291EB26bB",
+   "usd": 64.2,
+   "source": "yahoo",
+   "poolLiqUsd": 0,
+   "poolVol24Usd": 0
+  }
+ ]
+}
