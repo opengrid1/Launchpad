@@ -43,7 +43,7 @@ function build(s: Seed, i: number): StockToken {
   const paid = (s.vol / s.pair.usd) * FEES.taxPct / 100;
   return {
     address: addrOf(0xd3a0 + i), name: s.name, symbol: s.symbol, creator: addrOf(0xc0ffee + i * 7919), pool: addrOf(0), feeTier: 0,
-    createdAt: NOW - Math.round(s.ageH * 3600), featured: false, metadata: { description: s.desc, logo: s.logo, twitter: "https://x.com/stockpad" },
+    createdAt: NOW - Math.round(s.ageH * 3600), featured: false, metadata: { description: s.desc, logo: s.logo, twitter: "https://x.com/stonkreum" },
     totalSupply: toWeiStr(SUPPLY), priceWei: toWeiStr(pricePair), priceUsd: String(priceUsd), marketCapUsd: String(s.mcap),
     liquidityWei: toWeiStr((s.mcap * 0.42) / s.pair.usd), volume24hWei: toWeiStr(s.vol / s.pair.usd), volumeTotalWei: toWeiStr((s.vol * 1.8) / s.pair.usd),
     txCount24h: Math.round(s.vol / 140), holderCount: s.holders, limitsActive: s.ageH < 0.01, remainingToGraduationUsd: "0", priceChange24hPct: s.chg,

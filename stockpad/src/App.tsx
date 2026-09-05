@@ -28,7 +28,7 @@ export default function App() {
     <>
       <header className="bar">
         <div className="bar-in">
-          <Link to="/" className="brand"><i />{BRAND.name}</Link>
+          <Link to="/" className="brand">{BRAND.name}</Link>
           <nav className="nav">
             <NavLink to="/" end className={cls}>Coins</NavLink>
             <NavLink to="/launch" className={cls}>Launch</NavLink>

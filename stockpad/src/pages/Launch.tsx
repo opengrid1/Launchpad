@@ -82,7 +82,6 @@ export default function Launch() {
     <main className="page">
       <section className="hero" style={{ paddingTop: 10 }}>
         <h1>Launch a coin paired with a <em>stock</em>.</h1>
-        <p className="sub">One transaction. 1B supply into a locked Uniswap V4 pool at about $3.0K, paired with ETH or any of {Math.max(0, pairs.length - 1)} tokenized stocks. Every trade pays {FEES.taxPct}%: {FEES.creatorPct}% to you, {FEES.holderPct}% to holders, {FEES.platformPct}% to the platform.</p>
       </section>
 
       <div className="launch">

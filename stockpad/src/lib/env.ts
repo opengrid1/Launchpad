@@ -47,10 +47,10 @@ export const chain = defineChain({
 });
 
 export const BRAND = {
-  name: "STOCKPAD",
+  name: "STONKREUM",
   tagline: "Coins paired with real stocks.",
-  url: "https://stockpad.fun",
-  x: "https://x.com/stockpad",
+  url: "https://stonkreum.fun",
+  x: "https://x.com/stonkreum",
   description: "Launch a coin on Ethereum paired with ETH or any of 184 tokenized stocks. Trade it in plain ETH. Every swap pays the creator, the holders and the platform, no harvest needed.",
 };
 
