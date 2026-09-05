@@ -36,7 +36,10 @@
      "pair": "0x9B727C74e881433D05E536FD95e516673D1028EA",
      "liq": 148169,
      "vol24": 35954,
-     "priceUsd": 59.62
+     "priceUsd": 59.62,
+     "v3Fee": 3000,
+     "v3Factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+     "token0": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
     }
    ]
   },
@@ -189,7 +192,10 @@
      "pair": "0x5638bbDE046EC2EFC7C8f3fd8DC5A9A1016f7EEB",
      "liq": 44984,
      "vol24": 41691,
-     "priceUsd": 774.46
+     "priceUsd": 774.46,
+     "v3Fee": 3000,
+     "v3Factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+     "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
     }
    ]
   },
@@ -307,7 +313,10 @@
      "pair": "0xb8F5Bc3a4ab43F9E55EBDC6686B9DdA2cb1d45cB",
      "liq": 5005,
      "vol24": 6069,
-     "priceUsd": 223.84
+     "priceUsd": 223.84,
+     "v3Fee": 3000,
+     "v3Factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+     "token0": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
     }
    ]
   },
@@ -353,7 +362,10 @@
      "pair": "0x39FCB1935f6Ccb0A106D05eB928205C59646af57",
      "liq": 19725,
      "vol24": 7902,
-     "priceUsd": 338.13
+     "priceUsd": 338.13,
+     "v3Fee": 10000,
+     "v3Factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+     "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
     }
    ]
   },
@@ -549,7 +561,10 @@
      "pair": "0x9EE89931836A87ce8b724DC3c1B0b2F9a88f7336",
      "liq": 5072,
      "vol24": 621,
-     "priceUsd": 959.16
+     "priceUsd": 959.16,
+     "v3Fee": 3000,
+     "v3Factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+     "token0": "0x050362Ab1072Cb2Ce74d74770E22A3203Ad04ee5"
     }
    ]
   },
@@ -568,7 +583,10 @@
      "pair": "0xad82C9EB065a5CFed71DB087e4a52C8a09c69921",
      "liq": 3463,
      "vol24": 121064,
-     "priceUsd": 316.93
+     "priceUsd": 316.93,
+     "v3Fee": 10000,
+     "v3Factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+     "token0": "0x14c3abF95Cb9C93a8b82C1CdCB76D72Cb87b2d4c"
     }
    ]
   },
@@ -818,7 +836,10 @@
      "pair": "0x89dfB4033d87f3B15dC1BAdb4A7B97e01cC41837",
      "liq": 3998,
      "vol24": 55,
-     "priceUsd": 90.78
+     "priceUsd": 90.78,
+     "v3Fee": 10000,
+     "v3Factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+     "token0": "0x423A63dfE8d82CD9C6568C92210AA537d8Ef6885"
     }
    ]
   },
@@ -877,7 +898,10 @@
      "pair": "0x5f297b8566F1Ac73D885e0A87B053F8b19e4E1f9",
      "liq": 2396,
      "vol24": 573,
-     "priceUsd": 161.29
+     "priceUsd": 161.29,
+     "v3Fee": 3000,
+     "v3Factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+     "token0": "0x8a23C6BaadB88512b30475C83Df6A63881e33e1E"
     }
    ]
   },
