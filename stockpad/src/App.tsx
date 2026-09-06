@@ -32,7 +32,7 @@ export default function App() {
           <nav className="nav">
             <NavLink to="/" end className={cls}>Coins</NavLink>
             <NavLink to="/launch" className={cls}>Launch</NavLink>
-            <NavLink to="/me" className={cls}>Mine</NavLink>
+            <NavLink to="/me" className={cls}>Portfolio</NavLink>
             <NavLink to="/docs" className={cls}>How it works</NavLink>
             {admin && <NavLink to="/admin" className={cls}>Admin</NavLink>}
           </nav>
@@ -61,7 +61,7 @@ export default function App() {
         <nav className="tabbar">
           <NavLink to="/" end className={cls}><Icon name="receipt" size={20} />Coins</NavLink>
           <NavLink to="/launch" className={cls}><Icon name="launch" size={20} />Launch</NavLink>
-          <NavLink to="/me" className={cls}><Icon name="wallet" size={20} />Mine</NavLink>
+          <NavLink to="/me" className={cls}><Icon name="wallet" size={20} />Portfolio</NavLink>
           <NavLink to={admin ? "/admin" : "/docs"} className={cls}>{admin ? <><Icon name="tune" size={20} />Admin</> : <><Icon name="info" size={20} />How</>}</NavLink>
         </nav>
       )}

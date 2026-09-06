@@ -49,7 +49,7 @@ export default function Docs() {
           <dt>Pool manager</dt><dd><Copy value={ADDRESSES.poolManager} full /></dd>
           <dt>X</dt><dd><a className="acc" href={BRAND.x} target="_blank" rel="noreferrer">{BRAND.x.replace("https://x.com/", "@")}</a></dd>
         </dl></div>
-        <p className="note">Your holdings, rewards and launched coins are under <Link to="/me" className="acc">Mine</Link>.</p>
+        <p className="note">Your holdings, rewards and launched coins are under <Link to="/me" className="acc">Portfolio</Link>.</p>
       </section>
     </main>
   );

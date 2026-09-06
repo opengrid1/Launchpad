@@ -49,7 +49,7 @@ export const chain = defineChain({
 export const BRAND = {
   name: "STONKREUM",
   tagline: "Coins paired with real stocks.",
-  url: "https://stonkreum.fun",
+  url: "https://www.stonkreum.fun",
   x: "https://x.com/stonkreum",
   description: "Launch a coin on Ethereum paired with ETH or any of 184 tokenized stocks. Trade it in plain ETH. Every swap pays the creator, the holders and the platform, no harvest needed.",
 };
