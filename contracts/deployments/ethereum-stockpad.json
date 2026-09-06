@@ -222,6 +222,36 @@
       "address": "0x82106347dDbB23cE44Cf4cE4053Ef1adf8b9323B",
       "usd": 107.14,
       "usd8": "10714000000"
+    },
+    {
+      "symbol": "SBUXon",
+      "address": "0xf15FbC1349ab99ABAd63db3f9A510BF413bE3BeF",
+      "usd": 104.47,
+      "usd8": "10447000000"
+    },
+    {
+      "symbol": "PYPLon",
+      "address": "0x4EFD92F372898B57F292De69fCe377dd7D912bDd",
+      "usd": 54.96,
+      "usd8": "5496000000"
+    },
+    {
+      "symbol": "IWFon",
+      "address": "0x8d05432C2786e3F93f1a9A62b9572DBf54f3ea06",
+      "usd": 123.41,
+      "usd8": "12341000000"
+    },
+    {
+      "symbol": "PGon",
+      "address": "0x339ce23a355ed6D513DD3e1462975C4eCD86823a",
+      "usd": 146.44,
+      "usd8": "14644000000"
+    },
+    {
+      "symbol": "USOon",
+      "address": "0x1F5fc5c3c8B0F15c7E21AF623936FF2b210b6415",
+      "usd": 138.64,
+      "usd8": "13864000000"
     }
   ]
 }
