@@ -15,7 +15,7 @@ export const env = {
   explorerUrl: "https://etherscan.io",
   walletConnectProjectId: "e1bda672d5deb56579fe084dddfb9174",
   /** Factory deploy block, the lower bound for log scans. */
-  startBlock: BigInt(import.meta.env.VITE_START_BLOCK ?? "25908000"),
+  startBlock: BigInt(import.meta.env.VITE_START_BLOCK ?? "25915149"),
   dexscreenerChain: "ethereum",
   secondsPerBlock: 12,
 };
@@ -24,9 +24,9 @@ const addr = (key: string, fallback: string) => String(import.meta.env[key] ?? f
 
 /** Deployed contracts on Ethereum mainnet (VITE_* overrides point a build at a fork). */
 export const ADDRESSES = {
-  factory: addr("VITE_FACTORY", "0x0000000000000000000000000000000000000000"),
-  hook: addr("VITE_HOOK", "0x0000000000000000000000000000000000000000"),
-  router: addr("VITE_ROUTER", "0x0000000000000000000000000000000000000000"),
+  factory: addr("VITE_FACTORY", "0x88e21f36829f692FA1fF29fcC8Cc5E61afE77922"),
+  hook: addr("VITE_HOOK", "0xAAC2F4D64bD4157c34a19801006D4551342E00cc"),
+  router: addr("VITE_ROUTER", "0x0258Edc01480A836600B0d878B9b52f9431dC5F3"),
   poolManager: addr("VITE_POOL_MANAGER", "0x000000000004444c5dc75cB358380D2e3dE08A90"),
   stateView: addr("VITE_STATE_VIEW", "0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227"),
   weth: addr("VITE_WETH", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
