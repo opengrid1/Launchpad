@@ -126,6 +126,66 @@
       "address": "0xc9eef266834730340A55B6CC24621B31BAF55581",
       "usd": 266.6,
       "usd8": "26660000000"
+    },
+    {
+      "symbol": "KOon",
+      "address": "0x74a03d741226f738098C35da8188E57acA50d146",
+      "usd": 88.07,
+      "usd8": "8807000000"
+    },
+    {
+      "symbol": "IJHon",
+      "address": "0xFd50Fc4E3686a8DA814c5C3D6121d8aB98a537F0",
+      "usd": 75.85,
+      "usd8": "7585000000"
+    },
+    {
+      "symbol": "JDon",
+      "address": "0xdeB6B89088cA9B7d7756087c8a0F7C6DF46f319C",
+      "usd": 28.26,
+      "usd8": "2826000000"
+    },
+    {
+      "symbol": "QQQon",
+      "address": "0x0e397938C1Aa0680954093495B70A9F5e2249aBa",
+      "usd": 714.47,
+      "usd8": "71447000000"
+    },
+    {
+      "symbol": "MRVLon",
+      "address": "0xF404E5f887dBd5508e16a1198fCDD5DE1A4296B8",
+      "usd": 223.84,
+      "usd8": "22384000000"
+    },
+    {
+      "symbol": "CMGon",
+      "address": "0x25018520138bbaB60684AD7983D4432E8B8E926B",
+      "usd": 36.96,
+      "usd8": "3696000000"
+    },
+    {
+      "symbol": "QBTSon",
+      "address": "0x3807562A482B824C08A564DFefcc471806d3E00a",
+      "usd": 16.58,
+      "usd8": "1658000000"
+    },
+    {
+      "symbol": "GOOGLon",
+      "address": "0xbA47214eDd2bb43099611b208f75E4b42FDcfEDc",
+      "usd": 338.13,
+      "usd8": "33813000000"
+    },
+    {
+      "symbol": "SMCIon",
+      "address": "0x2ca12a3F9635fD69C21580def14F25C210cA9612",
+      "usd": 39.59,
+      "usd8": "3959000000"
+    },
+    {
+      "symbol": "BMNRon",
+      "address": "0x33483A58079b4225b10e57958Ca28ad7b9CDbAF7",
+      "usd": 24.97,
+      "usd8": "2497000000"
     }
   ]
 }
