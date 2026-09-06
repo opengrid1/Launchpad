@@ -22,6 +22,20 @@ const ADMIN = "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b";
     const rc = await tx.wait();
     console.log(sym, "claimed", ethers.formatEther(owed), asEth ? "(as ETH)" : "", "tx", tx.hash, "status", rc.status);
   }
+  // PLATFORM=1 also pushes the platform's share to the factory fee recipient
+  // (the admin), paid in the pair asset: WETH for STONKREUM, NVDAon for STEST.
+  if (process.env.PLATFORM === "1") {
+    const F = ["function pushPlatformFees(address[] tokens)", "function feeRecipient() view returns (address)"];
+    const f = new ethers.Contract("0x88e21f36829f692FA1fF29fcC8Cc5E61afE77922", F, w);
+    const tokens = ["0x89587D36065CB81b49b783bd3CD3C210C4ccd210", "0x7d1f2A2a5897DeEA34A3F96f48CA16f9DFf23306"];
+    const owed = await Promise.all(tokens.map((a) => new ethers.Contract(a, T, p).platformFees()));
+    const todo = tokens.filter((_, i) => owed[i] > 0n);
+    if (todo.length) {
+      const tx = await f.pushPlatformFees(todo, opts);
+      const rc = await tx.wait();
+      console.log("platform fees pushed to", await f.feeRecipient(), todo.map((a, i) => `${a.slice(0, 6)}=${ethers.formatEther(owed[tokens.indexOf(a)])}`).join(" "), "tx", tx.hash, "status", rc.status);
+    } else console.log("no platform fees waiting");
+  }
   const bal = await p.getBalance(w.address);
   const keep = ethers.parseEther("0.0004"); // gas reserve for future claims
   const send = bal - keep;
