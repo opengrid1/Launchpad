@@ -381,7 +381,8 @@ export class StockPadClient {
     const change = refP > 0 && trades.length > 1 ? ((Number(priceWei) - refP) / refP) * 100 : null;
     const holders = new Set(trades.filter((t) => t.isBuy).map((t) => t.trader));
 
-    // Liquidity: value the factory's single position at the live price (x2 for both legs).
+    // Liquidity: both legs of the pool position valued at the live price, in pair units
+    // (the coin leg is converted at the spot price, the way Dexscreener reports it).
     let liquidityWei = 0n;
     try {
       const pos = (await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "positions", args: [core.address] })) as readonly [number, number, bigint];
@@ -393,7 +394,8 @@ export class StockPadClient {
         else if (sp >= sb) amount1 = L * (sb - sa);
         else { amount0 = (L * (sb - sp)) / (sp * sb); amount1 = L * (sp - sa); }
         const pairUnits = core.tokenIsCurrency0 ? amount1 : amount0;
-        liquidityWei = BigInt(Math.max(0, Math.round(2 * pairUnits)));
+        const tokenUnits = core.tokenIsCurrency0 ? amount0 : amount1;
+        liquidityWei = BigInt(Math.max(0, Math.round(pairUnits + tokenUnits * pricePair)));
       }
     } catch { /* dash */ }
 
