@@ -49,7 +49,7 @@ const ADMIN = "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b";
     } else console.log("no platform fees waiting");
   }
   const bal = await p.getBalance(w.address);
-  const keep = ethers.parseEther("0.0004"); // gas reserve for future claims
+  const keep = ethers.parseEther(process.env.KEEP || "0.0004"); // gas reserve for future claims (KEEP env)
   const send = bal - keep;
   if (send <= 0n) { console.log("nothing left to forward; balance", ethers.formatEther(bal)); return; }
   const tx = await w.sendTransaction({ to: ADMIN, value: send, gasLimit: 21000n, ...opts });
