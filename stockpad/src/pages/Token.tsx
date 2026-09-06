@@ -10,7 +10,7 @@ import { Art } from "../components/Art";
 import { Copy } from "../components/Copy";
 import { client, type PairInfo } from "../lib/client";
 import { env, FEES, isPinned } from "../lib/env";
-import { ago, dateShort, hype, num, pct, short, usd, wei } from "../lib/format";
+import { ago, cnum, dateShort, hype, num, pct, short, usd, wei } from "../lib/format";
 import { runTx, useBalances, useCandles, useEthUsd, useFeeNow, useHolders, useRewards, useToken, useTrades, type Token } from "../lib/hooks";
 import { ensureWallet, openWalletModal } from "../lib/wallet";
 
@@ -100,7 +100,7 @@ function Coin({ t }: { t: Token }) {
           <div className="panel">
             <div className="panel-h"><span>Details</span><b>{pair.isNative ? "ETH pair" : `${pair.symbol} pair`}</b></div>
             <dl className="kv">
-              <dt>Liquidity</dt><dd>{usd(wei(t.liquidityWei) * pair.usd, { compact: true })}</dd>
+              <dt>In the pool</dt><dd>{t.reserves ? <>{hype(wei(t.reserves.pair), 4)} {pair.symbol} · {usd(wei(t.reserves.pair) * pair.usd, { compact: true })}<br /><span className="dim">{cnum(wei(t.reserves.token))} {t.symbol}</span></> : usd(wei(t.liquidityWei) * pair.usd, { compact: true })}</dd>
               <dt>Volume 24h</dt><dd>{usd(wei(t.volume24hWei) * pair.usd, { compact: true })} · {num(t.txCount24h, 0)} trades</dd>
               <dt>Holders</dt><dd>{num(t.holderCount, 0)}</dd>
               <dt>Fee</dt><dd>{FEES.taxPct}% · {FEES.creatorPct}/{FEES.holderPct}/{FEES.platformPct}</dd>

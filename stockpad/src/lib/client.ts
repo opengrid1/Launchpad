@@ -72,6 +72,8 @@ export type StockToken = TokenSummary & {
   launchBlock: number;
   /** Lifetime pair-asset paid to holders / creator / platform. */
   rewards?: { holders: bigint; creator: bigint; platform: bigint };
+  /** What actually sits in the pool right now: pair asset and coin, in wei. */
+  reserves?: { pair: bigint; token: bigint };
 };
 
 export interface RewardsView {
@@ -384,6 +386,7 @@ export class StockPadClient {
     // Liquidity: both legs of the pool position valued at the live price, in pair units
     // (the coin leg is converted at the spot price, the way Dexscreener reports it).
     let liquidityWei = 0n;
+    let reserves: StockToken["reserves"];
     try {
       const pos = (await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "positions", args: [core.address] })) as readonly [number, number, bigint];
       const L = Number(pos[2]);
@@ -396,6 +399,7 @@ export class StockPadClient {
         const pairUnits = core.tokenIsCurrency0 ? amount1 : amount0;
         const tokenUnits = core.tokenIsCurrency0 ? amount0 : amount1;
         liquidityWei = BigInt(Math.max(0, Math.round(pairUnits + tokenUnits * pricePair)));
+        reserves = { pair: BigInt(Math.max(0, Math.round(pairUnits))), token: BigInt(Math.max(0, Math.round(tokenUnits))) };
       }
     } catch { /* dash */ }
 
@@ -415,7 +419,7 @@ export class StockPadClient {
       priceWei: priceWei.toString(), priceUsd: String(priceUsd), marketCapUsd: String(mcap), liquidityWei: liquidityWei.toString(),
       volume24hWei: vol24.toString(), volumeTotalWei: volTotal.toString(), txCount24h: day.length, holderCount: holders.size,
       limitsActive: false, remainingToGraduationUsd: "0", priceChange24hPct: change,
-      pair, poolId: core.poolId, launchBlock: Number(core.launchBlock), rewards,
+      pair, poolId: core.poolId, launchBlock: Number(core.launchBlock), rewards, reserves,
     };
   }
 
