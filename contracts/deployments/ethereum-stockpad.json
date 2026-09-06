@@ -1117,5 +1117,13 @@
     "address": "0x7d1f2A2a5897DeEA34A3F96f48CA16f9DFf23306",
     "block": 25916087,
     "tx": "0xb01a0f6d635a4d04a02738c9a86437a19a25bc061a36f6ecd238d2799bf2c153"
+  },
+  "officialToken": {
+    "name": "Stonkreum.fun",
+    "symbol": "STONKREUM",
+    "address": "0x89587D36065CB81b49b783bd3CD3C210C4ccd210",
+    "pair": "ETH",
+    "block": 25916348,
+    "tx": "0xb07b07c384544d4e7e9301cf72c5c63a6fcd836b520364b171f87af28675e1c0"
   }
 }
