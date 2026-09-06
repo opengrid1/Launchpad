@@ -1,0 +1,77 @@
+{
+  "contracts": {
+    "hookDeployer": "0xfA5675271688f1382ED6dEaFAdA26fD64884CF0E",
+    "hookSalt": "0x000000000000000000000000000000000000000000000000000000000000059e",
+    "hook": "0xAAC2F4D64bD4157c34a19801006D4551342E00cc",
+    "factory": "0x88e21f36829f692FA1fF29fcC8Cc5E61afE77922",
+    "router": "0x0258Edc01480A836600B0d878B9b52f9431dC5F3"
+  },
+  "quotes": [
+    {
+      "symbol": "HIMSon",
+      "address": "0xCa468554e5C0423Ee858fe3942c9568C51FcAa79",
+      "usd": 27.76,
+      "usd8": "2776000000"
+    },
+    {
+      "symbol": "SLVon",
+      "address": "0xF3e4872e6a4cF365888D93b6146a2bAA7348F1A4",
+      "usd": 59.62,
+      "usd8": "5962000000"
+    },
+    {
+      "symbol": "TLTon",
+      "address": "0x992651BFeB9A0DCC4457610E284ba66D86489d4d",
+      "usd": 82.21,
+      "usd8": "8221000000"
+    },
+    {
+      "symbol": "IEFAon",
+      "address": "0xFEFf7a377A86462F5a2A872009722C154707F09e",
+      "usd": 101.08,
+      "usd8": "10108000000"
+    },
+    {
+      "symbol": "CRCLon",
+      "address": "0x3632DEa96A953C11dac2f00b4A05a32CD1063fAE",
+      "usd": 100.78,
+      "usd8": "10078000000"
+    },
+    {
+      "symbol": "AGGon",
+      "address": "0xfF7CF16aA2fFc463b996DB2f7B7cf0130336899D",
+      "usd": 97,
+      "usd8": "9700000000"
+    },
+    {
+      "symbol": "PFEon",
+      "address": "0x06954faa913fA14c28Eb1b2e459594F22f33f3dE",
+      "usd": 28.45,
+      "usd8": "2845000000"
+    },
+    {
+      "symbol": "PBRon",
+      "address": "0xD08DDb436e731f32455Fe302723eE0FD2E9E8706",
+      "usd": 20.12,
+      "usd8": "2012000000"
+    },
+    {
+      "symbol": "EEMon",
+      "address": "0x77A1a02e4a888ADA8620b93C30dE8a41E621126c",
+      "usd": 68.7,
+      "usd8": "6870000000"
+    },
+    {
+      "symbol": "EFAon",
+      "address": "0x4111b60bc87F2Bd1e81E783E271D7F0ec6EE088B",
+      "usd": 108.35,
+      "usd8": "10835000000"
+    },
+    {
+      "symbol": "TIPon",
+      "address": "0x2Df38cA485D01fC15e4FD85847ed26b7EF871c1c",
+      "usd": 106.97,
+      "usd8": "10697000000"
+    }
+  ]
+}
