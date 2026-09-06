@@ -1,4 +1,4 @@
-import { createPublicClient, fallback, http, parseAbi, type Address, type Hex, type PublicClient, type WalletClient } from "viem";
+import { createPublicClient, encodeFunctionData, fallback, http, parseAbi, type Address, type Hex, type PublicClient, type WalletClient } from "viem";
 import type { Candle, CandleInterval, HolderRecord, TokenSummary, TradeRecord } from "@launchpad/sdk";
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
 
@@ -28,6 +28,8 @@ const TOTAL_SUPPLY = 1_000_000_000n * 10n ** 18n;
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 const LOG_CHUNK = 5_000n;
 
+const MULTICALL3 = "0xcA11bde05977b3631167028862bE2a173976CA11" as Address;
+const multicall3Abi = parseAbi(["struct Call3 { address target; bool allowFailure; bytes callData; }", "struct Result { bool success; bytes returnData; }", "function aggregate3(Call3[] calldata calls) payable returns (Result[] memory returnData)"]);
 const stateViewAbi = parseAbi(["function getSlot0(bytes32 poolId) view returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)"]);
 const erc20Abi = parseAbi([
   "function balanceOf(address) view returns (uint256)",
@@ -656,6 +658,26 @@ export class StockPadClient {
   async adminCall(fn: "pause" | "resume" | "setFeeRecipient" | "setQuoteAsset" | "collect", args: unknown[] = []): Promise<Hex> {
     const wc = this.wallet();
     return wc.writeContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: fn as any, args: args as any, chain: wc.chain, account: wc.account! });
+  }
+
+  /** Holders of a coin with unclaimed rewards, largest first (in pair-asset wei). */
+  async holdersWithPending(token: Address): Promise<{ address: Address; pending: bigint }[]> {
+    const holders = await this.getHolders(token, { limit: 2000 });
+    if (holders.length === 0) return [];
+    const out: { address: Address; pending: bigint }[] = [];
+    for (let i = 0; i < holders.length; i += 200) {
+      const chunk = holders.slice(i, i + 200);
+      const res = (await this.pc.multicall({ allowFailure: true, contracts: chunk.map((h) => ({ address: token, abi: tokenAbi, functionName: "pendingRewards", args: [h.address] })) })) as { status: string; result?: bigint }[];
+      res.forEach((r, j) => { if (r.status === "success" && (r.result ?? 0n) > 0n) out.push({ address: chunk[j].address, pending: r.result! }); });
+    }
+    return out.sort((a, b) => (b.pending > a.pending ? 1 : b.pending < a.pending ? -1 : 0));
+  }
+
+  /** Push rewards to many holders in one transaction via Multicall3 (claimFor is permissionless). */
+  async pushRewards(token: Address, holders: Address[]): Promise<Hex> {
+    const wc = this.wallet();
+    const calls = holders.map((h) => ({ target: token, allowFailure: true, callData: encodeFunctionData({ abi: tokenAbi, functionName: "claimFor", args: [h] }) }));
+    return wc.writeContract({ address: MULTICALL3, abi: multicall3Abi, functionName: "aggregate3", args: [calls], chain: wc.chain, account: wc.account! });
   }
 
   /** Live fee bps for a coin right now (base plus any anti-snipe surcharge). */

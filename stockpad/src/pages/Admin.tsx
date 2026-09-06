@@ -121,6 +121,7 @@ function Fees({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn
   const { address: me } = useAccount();
   const [lookup, setLookup] = useState("");
   const [recover, setRecover] = useState<{ t: Token; pct: string; to: string } | null>(null);
+  const [push, setPush] = useState<{ t: Token; list: { address: Address; pending: bigint }[]; busy: boolean; done: number } | null>(null);
   const { data: waiting } = useQuery({
     queryKey: ["platformWaiting", tokens?.map((t) => t.address).join(",")],
     enabled: !!tokens,
@@ -146,9 +147,30 @@ function Fees({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn
     await call(`Recover ${t.symbol} liquidity`, "collect", [t.address, Math.round(pct * 100), to.trim() as Address])();
     await refresh();
   };
+  const BATCH = 60;
+  const openPush = (t: Token) => async () => {
+    setPush({ t, list: [], busy: true, done: 0 });
+    try { const list = await client.holdersWithPending(t.address); setPush({ t, list, busy: false, done: 0 }); }
+    catch { setPush(null); }
+  };
+  const runPush = async () => {
+    if (!push || push.list.length === 0) return;
+    await ensureWallet();
+    const { t, list } = push;
+    setPush({ ...push, busy: true });
+    for (let i = 0; i < list.length; i += BATCH) {
+      const batch = list.slice(i, i + BATCH).map((h) => h.address);
+      const ok = await runTx(`Push ${t.symbol} rewards ${i / BATCH + 1}/${Math.ceil(list.length / BATCH)}`, () => client.pushRewards(t.address, batch));
+      if (!ok) { setPush({ ...push, busy: false, done: i }); return; }
+      setPush({ t, list, busy: true, done: Math.min(list.length, i + BATCH) });
+    }
+    setPush(null);
+    await refresh();
+  };
   const actions = (t: Token) => (
     <div className="row" style={{ justifyContent: "flex-end" }}>
       <button className="btn sm" disabled={pending(t) === 0n} onClick={collect(`Collect ${t.symbol} fees`, [t])}>Collect fees</button>
+      <button className="btn sm" onClick={openPush(t)}>Push rewards</button>
       <button className="btn sm danger" onClick={() => setRecover({ t, pct: "100", to: me ?? "" })}>Recover LP</button>
     </div>
   );
@@ -187,7 +209,25 @@ function Fees({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn
             </tr>); })}</tbody>
         </table></div>
       )}
-      <p className="note">Collect fees sends a coin's {cfgPlatformPct}% platform share to the fee recipient; anyone can trigger it, the destination cannot change. Recover LP is admin-only: it pulls that share of the launch position (coins and pair) to a wallet you choose, and cannot be undone.</p>
+      <p className="note">Collect fees sends a coin's {cfgPlatformPct}% platform share to the fee recipient; anyone can trigger it, the destination cannot change. Push rewards pays every holder's unclaimed share to their own wallet in the pair asset; anyone can trigger it, you only pay gas. Recover LP is admin-only: it pulls that share of the launch position (coins and pair) to a wallet you choose, and cannot be undone.</p>
+      {push && (
+        <div className="modal" onClick={() => !push.busy && setPush(null)}>
+          <div className="panel" onClick={(e) => e.stopPropagation()}>
+            <h3>Push {push.t.symbol} rewards to holders</h3>
+            {push.busy && push.list.length === 0 ? <p className="note">Reading holders…</p> : (
+              <>
+                <p className="note">{push.list.length} holder{push.list.length === 1 ? "" : "s"} have unclaimed rewards, {hype(wei(push.list.reduce((s, h) => s + h.pending, 0n)), 4)} {push.t.pair.symbol} in total ({usd(wei(push.list.reduce((s, h) => s + h.pending, 0n)) * push.t.pair.usd, { compact: true })}). Each one receives their share in {push.t.pair.symbol}, straight to their wallet. You pay the gas, about {Math.ceil(push.list.length / BATCH)} transaction{push.list.length > BATCH ? "s" : ""}.</p>
+                {push.list.length > 0 && <div className="tbl" style={{ display: "block", maxHeight: 220, overflow: "auto", marginTop: 10 }}><table><tbody>{push.list.slice(0, 50).map((h) => <tr key={h.address}><td><a href={`${env.explorerUrl}/address/${h.address}`} target="_blank" rel="noreferrer">{short(h.address)}</a></td><td className="num">{hype(wei(h.pending), 5)} {push.t.pair.symbol}</td></tr>)}</tbody></table>{push.list.length > 50 && <p className="note">and {push.list.length - 50} more</p>}</div>}
+                {push.busy && <p className="note">Sent to {push.done} of {push.list.length}…</p>}
+                <div className="row" style={{ justifyContent: "flex-end", marginTop: 12 }}>
+                  <button className="btn" disabled={push.busy} onClick={() => setPush(null)}>Cancel</button>
+                  <button className="btn ink" disabled={push.busy || push.list.length === 0} onClick={runPush}>Push to {push.list.length} holder{push.list.length === 1 ? "" : "s"}</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       {recover && (
         <div className="modal" onClick={() => setRecover(null)}>
           <div className="panel" onClick={(e) => e.stopPropagation()}>
