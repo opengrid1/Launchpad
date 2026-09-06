@@ -39,6 +39,10 @@ const erc20Abi = parseAbi([
   "function allowance(address, address) view returns (uint256)",
   "function approve(address, uint256) returns (bool)",
 ]);
+const transferEvent = {
+  type: "event", name: "Transfer",
+  inputs: [{ name: "from", type: "address", indexed: true }, { name: "to", type: "address", indexed: true }, { name: "value", type: "uint256", indexed: false }],
+} as const;
 const swapEvent = {
   type: "event", name: "Swap",
   inputs: [
@@ -127,6 +131,8 @@ export class StockPadClient {
   private coresInflight: Promise<Core[]> | null = null;
   private trades = new Map<string, { records: TradeRecord[]; upTo: bigint }>();
   private tradesInflight = new Map<string, Promise<TradeRecord[]>>();
+  private balances = new Map<string, { bal: Map<string, bigint>; upTo: bigint }>();
+  private balancesInflight = new Map<string, Promise<Map<string, bigint>>>();
   private pairUsdCache = new Map<string, { v: number; at: number }>();
   private pairMeta = new Map<string, { symbol: string; name: string; decimals: number }>();
   private blockAnchor?: { block: bigint; ts: number };
@@ -383,7 +389,8 @@ export class StockPadClient {
     const ref = [...trades].reverse().find((t) => t.timestamp <= dayAgo) ?? trades[0];
     const refP = ref ? Number(ref.priceWei) : 0;
     const change = refP > 0 && trades.length > 1 ? ((Number(priceWei) - refP) / refP) * 100 : null;
-    const holders = new Set(trades.filter((t) => t.isBuy).map((t) => t.trader));
+    let holderCount = new Set(trades.filter((t) => t.isBuy).map((t) => t.trader)).size;
+    try { holderCount = this.holderEntries(await this.loadBalances(core.address)).length; } catch { /* fallback above */ }
 
     // Liquidity: both legs of the pool position valued at the live price, in pair units
     // (the coin leg is converted at the spot price, the way Dexscreener reports it).
@@ -419,7 +426,7 @@ export class StockPadClient {
       address: core.address, name: core.name, symbol: core.symbol, creator: core.creator, pool: ADDRESSES.poolManager, feeTier: core.taxBps,
       createdAt: core.createdAt, featured: false, metadata: core.metadata as any, totalSupply: TOTAL_SUPPLY.toString(),
       priceWei: priceWei.toString(), priceUsd: String(priceUsd), marketCapUsd: String(mcap), liquidityWei: liquidityWei.toString(),
-      volume24hWei: vol24.toString(), volumeTotalWei: volTotal.toString(), txCount24h: day.length, holderCount: holders.size,
+      volume24hWei: vol24.toString(), volumeTotalWei: volTotal.toString(), txCount24h: day.length, holderCount,
       limitsActive: false, remainingToGraduationUsd: "0", priceChange24hPct: change,
       pair, poolId: core.poolId, launchBlock: Number(core.launchBlock), rewards, reserves,
     };
@@ -474,12 +481,51 @@ export class StockPadClient {
     return filled.slice(-limit);
   }
 
+  /** Wallet balances from Transfer logs (incremental), pool and zero address excluded. */
+  private loadBalances(token: Address): Promise<Map<string, bigint>> {
+    const key = token.toLowerCase();
+    const inflight = this.balancesInflight.get(key);
+    if (inflight) return inflight;
+    const p = this.loadBalancesInner(token).finally(() => this.balancesInflight.delete(key));
+    this.balancesInflight.set(key, p);
+    return p;
+  }
+
+  private async loadBalancesInner(token: Address): Promise<Map<string, bigint>> {
+    await this.loadCores();
+    const key = token.toLowerCase();
+    const core = this.cores.get(key);
+    if (!core) return new Map();
+    const cached = this.balances.get(key);
+    const bal = cached ? new Map(cached.bal) : new Map<string, bigint>();
+    try {
+      const latest = await this.pc.getBlockNumber();
+      const fromBlock = cached ? cached.upTo + 1n : core.launchBlock;
+      if (fromBlock > latest) return bal;
+      for (let from = fromBlock; from <= latest; from += LOG_CHUNK + 1n) {
+        const to = from + LOG_CHUNK > latest ? latest : from + LOG_CHUNK;
+        const logs = await logClient.getLogs({ address: token, event: transferEvent, fromBlock: from, toBlock: to });
+        for (const l of logs) {
+          const f = String(l.args.from).toLowerCase(), t = String(l.args.to).toLowerCase(), v = l.args.value as bigint;
+          bal.set(f, (bal.get(f) ?? 0n) - v);
+          bal.set(t, (bal.get(t) ?? 0n) + v);
+        }
+      }
+      this.balances.set(key, { bal, upTo: latest });
+    } catch { /* keep whatever we had */ }
+    return bal;
+  }
+
+  private holderEntries(bal: Map<string, bigint>): [string, bigint][] {
+    const skip = new Set([ADDRESSES.poolManager.toLowerCase(), ZERO.toLowerCase()]);
+    return [...bal.entries()].filter(([a, b]) => b > 0n && !skip.has(a)).sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0));
+  }
+
   async getHolders(token: string, opts?: { limit?: number }): Promise<HolderRecord[]> {
-    const trades = await this.loadTrades(token as Address);
-    const bal = new Map<string, number>();
-    for (const t of trades) { const amt = Number(t.tokenAmount) / 1e18; bal.set(t.trader, (bal.get(t.trader) ?? 0) + (t.isBuy ? amt : -amt)); }
-    return [...bal.entries()].filter(([, b]) => b > 0).sort((a, b) => b[1] - a[1]).slice(0, opts?.limit ?? 30)
-      .map(([address, b]) => ({ address: address as Address, balance: String(Math.round(b * 1e18)), pct: (b / 1e9) * 100 }));
+    const [bal, supply] = await Promise.all([this.loadBalances(token as Address), this.pc.readContract({ address: token as Address, abi: tokenAbi, functionName: "totalSupply" }) as Promise<bigint>]);
+    const total = Number(supply) / 1e18 || 1e9;
+    return this.holderEntries(bal).slice(0, opts?.limit ?? 30)
+      .map(([address, b]) => ({ address: address as Address, balance: b.toString(), pct: (Number(b) / 1e18 / total) * 100 }));
   }
 
   subscribeToTrades(token: string, cb: (t: TradeRecord) => void): () => void {
