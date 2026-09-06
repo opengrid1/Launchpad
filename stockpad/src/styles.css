@@ -126,6 +126,9 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
 .stamp.stock{background:var(--ink);color:#fff}
 .stamp.stock i{width:7px;height:7px;border-radius:50%;background:var(--acc);display:inline-block}
 .stamp.eth i{width:7px;height:7px;border-radius:50%;background:var(--ink3);display:inline-block}
+.stamps{display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.stamp.official{background:var(--ink);color:#fff;text-transform:uppercase;letter-spacing:.08em;font-size:11px}
+.tile.pinned{border-color:var(--ink)}
 .tile-name{display:flex;align-items:baseline;gap:8px;min-width:0}
 .tile-name b{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .tile-name span{color:var(--ink3);font-weight:600;font-size:13px;flex:0 0 auto}
@@ -333,7 +336,8 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
   .tile-art{grid-area:art;width:48px;height:48px;border-radius:14px;flex-basis:48px;align-self:center;grid-row:art-start/stamp-end}
   .tile-name{grid-area:name;align-self:end}
   .tile-name b{font-size:17px}
-  .stamp{grid-area:stamp;justify-self:start;height:22px;padding:0 8px;font-size:11px;align-self:start}
+  .stamps{grid-area:stamp;justify-self:start;align-self:start}
+  .stamp{height:22px;padding:0 8px;font-size:11px}
   .tile-cap{grid-area:cap;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
   .tile-cap .k{display:none}
   .tile-cap .v{font-size:20px}

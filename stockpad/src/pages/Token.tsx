@@ -9,7 +9,7 @@ import { Chart } from "../components/Chart";
 import { Art } from "../components/Art";
 import { Copy } from "../components/Copy";
 import { client, type PairInfo } from "../lib/client";
-import { env, FEES } from "../lib/env";
+import { env, FEES, isPinned } from "../lib/env";
 import { ago, dateShort, hype, num, pct, short, usd, wei } from "../lib/format";
 import { runTx, useBalances, useCandles, useEthUsd, useFeeNow, useHolders, useRewards, useToken, useTrades, type Token } from "../lib/hooks";
 import { ensureWallet, openWalletModal } from "../lib/wallet";
@@ -45,6 +45,7 @@ function Coin({ t }: { t: Token }) {
         <div>
           <h1>{t.name}<span>{t.symbol}</span></h1>
           <div className="meta">
+            {isPinned(t.address) && <span className="stamp official">Official</span>}
             <span className={"stamp " + (pair.isNative ? "eth" : "stock")}><i />{pair.symbol} pair</span>
             <span>by <a href={`${env.explorerUrl}/address/${t.creator}`} target="_blank" rel="noreferrer">{short(t.creator)}</a></span>
             <span>{dateShort(t.createdAt)}</span>

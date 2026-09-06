@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { Art } from "../components/Art";
-import { DEPLOYED, FEES, isHidden } from "../lib/env";
+import { DEPLOYED, FEES, isHidden, isPinned } from "../lib/env";
 import { ago, num, pct, usd, wei } from "../lib/format";
 import { useQuotes, useTokens, type Token } from "../lib/hooks";
 
@@ -35,6 +35,8 @@ export default function Home() {
     if (only === "eth") l = l.filter((t) => t.pair.isNative);
     if (only === "stock") l = l.filter((t) => !t.pair.isNative);
     l.sort((a, b) => key(b) - key(a));
+    // Official coins stay on top whatever the sort.
+    l.sort((a, b) => Number(isPinned(b.address)) - Number(isPinned(a.address)));
     return l;
   }, [tokens, q, only, sort]);
   const totals = useMemo(() => {
@@ -92,11 +94,15 @@ export default function Home() {
 
 export function Tile({ t, i = 0 }: { t: Token; i?: number }) {
   const c = t.priceChange24hPct;
+  const pinned = isPinned(t.address);
   return (
-    <Link to={`/t/${t.address}`} className="tile" style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
+    <Link to={`/t/${t.address}`} className={"tile" + (pinned ? " pinned" : "")} style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
       <div className="tile-top">
         <Art src={t.metadata?.logo} name={t.name} className="tile-art" />
-        <span className={"stamp " + (t.pair.isNative ? "eth" : "stock")}><i />{t.pair.symbol}</span>
+        <span className="stamps">
+          {pinned && <span className="stamp official">Official</span>}
+          <span className={"stamp " + (t.pair.isNative ? "eth" : "stock")}><i />{t.pair.symbol}</span>
+        </span>
       </div>
       <div className="tile-name"><b>{t.name}</b><span>{t.symbol}</span></div>
       <div className="tile-cap">

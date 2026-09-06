@@ -63,6 +63,10 @@ export const BRAND = {
 /** Fee model as deployed: 4% of the pair side on every swap, split creator / holders / platform. */
 export const FEES = { taxPct: 4, creatorPct: 50, holderPct: 30, platformPct: 20 };
 
+/** Official coins, always listed first on the feed. */
+export const PINNED_TOKENS = ["0x89587d36065cb81b49b783bd3cd3c210c4ccd210"];
+export const isPinned = (address: string) => PINNED_TOKENS.includes(address.toLowerCase());
+
 /** Coins kept off the public feed (tests). Pages still open by URL. */
 export const HIDDEN_TOKENS = new Set<string>([]);
 export const isHidden = (address: string) => HIDDEN_TOKENS.has(address.toLowerCase());
