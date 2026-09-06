@@ -16,7 +16,7 @@ const RPC = process.env.ALCHEMY_HTTP || process.env.RPC_URL || "https://gateway.
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 const DRY = process.env.DRY_RUN === "1";
-const MIN_TRADE_USD = Number(process.env.MIN_TRADE_USD ?? "250");
+const MIN_TRADE_USD = Number(process.env.MIN_TRADE_USD ?? "0"); // launches only by default
 const POLL_MS = Number(process.env.POLL_MS ?? "6000");
 const STATE_FILE = process.env.STATE_FILE || path.join(process.cwd(), "state.json");
 const BACKFILL = Number(process.env.BACKFILL_BLOCKS ?? "0");
