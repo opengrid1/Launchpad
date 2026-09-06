@@ -1,12 +1,17 @@
 import { defineChain } from "viem";
 
 /** Ethereum mainnet stockpad: coins on Uniswap V4 paired with ETH or Ondo stocks. */
+// Keyed endpoint (VITE_ALCHEMY_KEY at build time) goes first for every read;
+// the public endpoints stay as fallbacks.
+const alchemy = import.meta.env.VITE_ALCHEMY_KEY ? [`https://eth-mainnet.g.alchemy.com/v2/${String(import.meta.env.VITE_ALCHEMY_KEY)}`] : [];
+
 export const env = {
   chainId: 1,
   chainName: "Ethereum",
   nativeSymbol: "ETH",
   // VITE_RPC_OVERRIDE points every read at one endpoint (local relay in dev/CI).
   rpcUrls: import.meta.env.VITE_RPC_OVERRIDE ? [String(import.meta.env.VITE_RPC_OVERRIDE)] : [
+    ...alchemy,
     "https://ethereum-rpc.publicnode.com",
     "https://eth.llamarpc.com",
     "https://rpc.ankr.com/eth",
@@ -15,6 +20,7 @@ export const env = {
   // Log scans (trades, launches) need wide eth_getLogs ranges, which the free
   // public RPCs above refuse; these endpoints serve them.
   logRpcUrls: import.meta.env.VITE_LOG_RPC ? [String(import.meta.env.VITE_LOG_RPC)] : import.meta.env.VITE_RPC_OVERRIDE ? [String(import.meta.env.VITE_RPC_OVERRIDE)] : [
+    ...alchemy,
     "https://gateway.tenderly.co/public/mainnet",
     "https://eth.drpc.org",
   ],
