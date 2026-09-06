@@ -6,8 +6,8 @@ import { DEPLOYED, FEES, isHidden, isPinned } from "../lib/env";
 import { ago, num, pct, usd, wei } from "../lib/format";
 import { useQuotes, useTokens, type Token } from "../lib/hooks";
 
-type Sort = "new" | "mcap" | "vol" | "chg" | "paid";
-const SORTS: { k: Sort; l: string }[] = [{ k: "new", l: "New" }, { k: "mcap", l: "Market cap" }, { k: "vol", l: "Volume" }, { k: "chg", l: "24h" }, { k: "paid", l: "Paid out" }];
+type Sort = "new" | "mcap" | "vol" | "chg" | "paid" | "holders";
+const SORTS: { k: Sort; l: string }[] = [{ k: "new", l: "New" }, { k: "mcap", l: "Market cap" }, { k: "vol", l: "Volume" }, { k: "chg", l: "24h" }, { k: "paid", l: "Paid out" }, { k: "holders", l: "Holders" }];
 
 const paidUsd = (t: Token) => (t.rewards ? wei(t.rewards.holders + t.rewards.creator + t.rewards.platform) * t.pair.usd : 0);
 
@@ -16,6 +16,7 @@ export default function Home() {
   const { data: quotes } = useQuotes();
   const tokens = useMemo(() => all?.filter((t) => !isHidden(t.address)), [all]);
   const [sort, setSort] = useState<Sort>("new");
+  const [desc, setDesc] = useState(true);
   const [q, setQ] = useState("");
   const [only, setOnly] = useState<"all" | "eth" | "stock">("all");
 
@@ -25,6 +26,7 @@ export default function Home() {
       case "vol": return wei(t.volume24hWei) * t.pair.usd;
       case "chg": return t.priceChange24hPct ?? -1e9;
       case "paid": return paidUsd(t);
+      case "holders": return t.holderCount ?? 0;
       default: return t.createdAt;
     }
   };
@@ -34,11 +36,11 @@ export default function Home() {
     if (s) l = l.filter((t) => `${t.name} ${t.symbol} ${t.address} ${t.pair.symbol}`.toLowerCase().includes(s));
     if (only === "eth") l = l.filter((t) => t.pair.isNative);
     if (only === "stock") l = l.filter((t) => !t.pair.isNative);
-    l.sort((a, b) => key(b) - key(a));
+    l.sort((a, b) => (desc ? key(b) - key(a) : key(a) - key(b)));
     // Official coins stay on top whatever the sort.
     l.sort((a, b) => Number(isPinned(b.address)) - Number(isPinned(a.address)));
     return l;
-  }, [tokens, q, only, sort]);
+  }, [tokens, q, only, sort, desc]);
   const totals = useMemo(() => {
     const t = tokens ?? [];
     return { n: t.length, vol: t.reduce((s, x) => s + wei(x.volume24hWei) * x.pair.usd, 0), paid: t.reduce((s, x) => s + paidUsd(x), 0) };
@@ -71,7 +73,9 @@ export default function Home() {
                 <button className={only === "stock" ? "on" : ""} onClick={() => setOnly("stock")}>Stock pairs</button>
                 <button className={only === "eth" ? "on" : ""} onClick={() => setOnly("eth")}>ETH pairs</button>
               </div>
-              <div className="seg">{SORTS.map((s) => <button key={s.k} className={sort === s.k ? "on" : ""} onClick={() => setSort(s.k)}>{s.l}</button>)}</div>
+              <div className="seg sort-seg">{SORTS.map((s) => <button key={s.k} className={sort === s.k ? "on" : ""} onClick={() => setSort(s.k)}>{s.l}</button>)}</div>
+              <label className="sort-sel"><span>Sort</span><select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>{SORTS.map((s) => <option key={s.k} value={s.k}>{s.l}</option>)}</select></label>
+              <button className={"dir" + (desc ? "" : " asc")} onClick={() => setDesc((d) => !d)} title={desc ? "Highest first" : "Lowest first"} aria-label="Toggle sort direction">{desc ? "High → low" : "Low → high"}</button>
             </div>
             <input className="inp" style={{ width: 240 }} placeholder="Search name, ticker or pair" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>

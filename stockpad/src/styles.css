@@ -97,6 +97,11 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
 .seg button.on{background:var(--tile);color:var(--ink);box-shadow:var(--shadow)}
 .seg button.on.down{color:var(--down)}
 .seg button.on.up{color:var(--up)}
+.sort-sel{display:none;align-items:center;gap:8px;height:38px;padding:0 6px 0 12px;border-radius:999px;background:var(--bg2);font-size:13px;font-weight:600;color:var(--ink2);flex:0 0 auto}
+.sort-sel select{height:32px;border:0;border-radius:999px;background:var(--tile);color:var(--ink);font:inherit;font-weight:600;padding:0 28px 0 12px;box-shadow:var(--shadow);appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%230D1017' stroke-width='1.6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center}
+.dir{height:38px;padding:0 14px;border-radius:999px;background:var(--bg2);color:var(--ink2);font-size:13px;font-weight:600;white-space:nowrap;flex:0 0 auto;transition:background .15s,color .15s}
+.dir:hover{color:var(--ink)}
+.dir.asc{background:var(--ink);color:#fff}
 .tag{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:999px;background:var(--bg2);color:var(--ink2);font-size:12px;font-weight:600;white-space:nowrap}
 .tag.acc{background:var(--acc-soft);color:var(--acc-ink)}
 .tag.stock{background:var(--ink);color:#fff}
@@ -315,11 +320,14 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
   .stats div{padding:12px 12px 10px;min-height:88px;border-radius:var(--r2)}
   .stats b{font-size:20px}
   .stats span{font-size:10px}
-  .sec-h .tools{flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px;scrollbar-width:none}
-  .sec-h .tools::-webkit-scrollbar{display:none}
+  .sec-h .tools{flex-wrap:wrap;max-width:100%}
   .seg{flex:0 0 auto}
   .seg button{white-space:nowrap;padding:0 11px}
   .sec-h .inp{width:100%!important}
+  .sort-seg{display:none}
+  .sort-sel{display:inline-flex;flex:1 1 auto}
+  .sort-sel select{flex:1}
+  .sec-h .tools{width:100%}
   .log .li{grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px;padding:10px 14px;font-size:13px}
   .log .r,.log .who{white-space:nowrap}
   .log .r small{font-size:11px}
