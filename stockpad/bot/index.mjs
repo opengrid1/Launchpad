@@ -11,6 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { ethers } from "ethers";
 import "dotenv/config";
+import { startKeeper } from "./keeper.mjs";
 
 const RPC = process.env.ALCHEMY_HTTP || process.env.RPC_URL || "https://gateway.tenderly.co/public/mainnet";
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -191,6 +192,7 @@ async function tick() {
   await loadPools(head);
   if (ONCE) { await tick(); return; }
   console.log("polling every", POLL_MS, "ms from block", state.lastBlock || head);
+  startKeeper(); // no-op unless KEEPER_PRIVATE_KEY is set
   for (;;) {
     try { await tick(); } catch (e) { console.error("tick failed:", e.shortMessage || e.message); }
     await new Promise((r) => setTimeout(r, POLL_MS));
