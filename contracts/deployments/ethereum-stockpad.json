@@ -252,6 +252,78 @@
       "address": "0x1F5fc5c3c8B0F15c7E21AF623936FF2b210b6415",
       "usd": 138.64,
       "usd8": "13864000000"
+    },
+    {
+      "symbol": "TSLAon",
+      "address": "0xf6b1117ec07684D3958caD8BEb1b302bfD21103f",
+      "usd": 1640.69,
+      "usd8": "164069000000"
+    },
+    {
+      "symbol": "MUon",
+      "address": "0x050362Ab1072Cb2Ce74d74770E22A3203Ad04ee5",
+      "usd": 959.16,
+      "usd8": "95916000000"
+    },
+    {
+      "symbol": "AAPLon",
+      "address": "0x14c3abF95Cb9C93a8b82C1CdCB76D72Cb87b2d4c",
+      "usd": 316.93,
+      "usd8": "31693000000"
+    },
+    {
+      "symbol": "MARAon",
+      "address": "0x4604b0b581269843ac7a6b70A5FC019E7762e511",
+      "usd": 11.31,
+      "usd8": "1131000000"
+    },
+    {
+      "symbol": "PEPon",
+      "address": "0x3cE219D498D807317F840f4CB0f03FA27dd65046",
+      "usd": 137.63,
+      "usd8": "13763000000"
+    },
+    {
+      "symbol": "WFCon",
+      "address": "0x4AD2118Da8a65eaa81402A3d583FEF6eE76BDf3F",
+      "usd": 89.97,
+      "usd8": "8997000000"
+    },
+    {
+      "symbol": "BABAon",
+      "address": "0x41765F0FCddC276309195166C7A62AE522FA09ef",
+      "usd": 113.24,
+      "usd8": "11324000000"
+    },
+    {
+      "symbol": "AMZNon",
+      "address": "0xbb8774FB97436d23d74C1b882E8E9A69322cFD31",
+      "usd": 262.42,
+      "usd8": "26242000000"
+    },
+    {
+      "symbol": "BOTon",
+      "address": "0x0e05BA0756C504B69AAA642f7379CD1AF7C63969",
+      "usd": 26.8,
+      "usd8": "2680000000"
+    },
+    {
+      "symbol": "GMEon",
+      "address": "0x71d24Baeb0A033ec5F90FF65C4210545AF378D97",
+      "usd": 19.16,
+      "usd8": "1916000000"
+    },
+    {
+      "symbol": "ABTon",
+      "address": "0x3859385363f7BB4Dfe42811cCF3F294FcD41dd1D",
+      "usd": 108.33,
+      "usd8": "10833000000"
+    },
+    {
+      "symbol": "COINon",
+      "address": "0xF042cfa86cf1D598a75Bdb55c3507a1F39f9493b",
+      "usd": 184.64,
+      "usd8": "18464000000"
     }
   ]
 }
