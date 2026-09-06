@@ -16,6 +16,13 @@ export const publicClient = createPublicClient({
   batch: { multicall: { wait: 24 } },
 }) as PublicClient;
 
+/** Read-only client for eth_getLogs: the ranked public RPCs cap log ranges at
+ *  about 100 blocks, so scans go to endpoints that allow wide ranges. */
+export const logClient = createPublicClient({
+  chain,
+  transport: fallback(env.logRpcUrls.map((url) => http(url, { retryCount: 2, retryDelay: 500, timeout: 30_000, batch: false }))),
+}) as PublicClient;
+
 const Q96 = 2n ** 96n;
 const TOTAL_SUPPLY = 1_000_000_000n * 10n ** 18n;
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
@@ -161,7 +168,7 @@ export class StockPadClient {
         try {
           for (let from = env.startBlock; from <= latest; from += LOG_CHUNK + 1n) {
             const to = from + LOG_CHUNK > latest ? latest : from + LOG_CHUNK;
-            const logs = await this.pc.getLogs({ address: ADDRESSES.factory, event: factoryAbi.find((f) => f.type === "event" && f.name === "Launched") as any, fromBlock: from, toBlock: to });
+            const logs = await logClient.getLogs({ address: ADDRESSES.factory, event: factoryAbi.find((f) => f.type === "event" && f.name === "Launched") as any, fromBlock: from, toBlock: to });
             for (const l of logs as any[]) launchBlocks.set(String(l.args.token).toLowerCase(), l.blockNumber as bigint);
           }
         } catch { /* fall back to the deployment start block */ }
@@ -314,7 +321,7 @@ export class StockPadClient {
       const logs: any[] = [];
       for (let from = fromBlock; from <= latest; from += LOG_CHUNK + 1n) {
         const to = from + LOG_CHUNK > latest ? latest : from + LOG_CHUNK;
-        const part = await this.pc.getLogs({ address: ADDRESSES.poolManager, event: swapEvent, args: { id: core.poolId }, fromBlock: from, toBlock: to });
+        const part = await logClient.getLogs({ address: ADDRESSES.poolManager, event: swapEvent, args: { id: core.poolId }, fromBlock: from, toBlock: to });
         if (part.length) logs.push(...part);
       }
       const abs = (v: bigint) => (v < 0n ? -v : v);

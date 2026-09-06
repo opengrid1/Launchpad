@@ -12,6 +12,12 @@ export const env = {
     "https://rpc.ankr.com/eth",
     "https://1rpc.io/eth",
   ],
+  // Log scans (trades, launches) need wide eth_getLogs ranges, which the free
+  // public RPCs above refuse; these endpoints serve them.
+  logRpcUrls: import.meta.env.VITE_LOG_RPC ? [String(import.meta.env.VITE_LOG_RPC)] : import.meta.env.VITE_RPC_OVERRIDE ? [String(import.meta.env.VITE_RPC_OVERRIDE)] : [
+    "https://gateway.tenderly.co/public/mainnet",
+    "https://eth.drpc.org",
+  ],
   explorerUrl: "https://etherscan.io",
   walletConnectProjectId: "e1bda672d5deb56579fe084dddfb9174",
   /** Factory deploy block, the lower bound for log scans. */
