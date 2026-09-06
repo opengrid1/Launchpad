@@ -76,10 +76,13 @@ export default function Home() {
           {isLoading && !tokens ? (
             <div className="grid">{[0, 1, 2].map((i) => <div key={i} className="skeleton" style={{ height: 230 }} />)}</div>
           ) : (
-            <div className="grid">
-              {list.map((t, i) => <Tile key={t.address} t={t} i={i} />)}
-              <Link to="/launch" className="tile ghost"><div><b>{list.length === 0 ? (q ? "Nothing matches" : "No coins yet") : "Launch yours"}</b>One transaction. Pick ETH or a stock as the pair. Earn {FEES.creatorPct}% of every trade fee.</div></Link>
-            </div>
+            list.length === 0 ? (
+              <div className="panel"><div className="empty">{q ? "Nothing matches." : "No coins yet."}</div></div>
+            ) : (
+              <div className="grid">
+                {list.map((t, i) => <Tile key={t.address} t={t} i={i} />)}
+              </div>
+            )
           )}
         </section>
       )}
