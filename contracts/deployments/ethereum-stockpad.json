@@ -72,6 +72,60 @@
       "address": "0x2Df38cA485D01fC15e4FD85847ed26b7EF871c1c",
       "usd": 106.97,
       "usd8": "10697000000"
+    },
+    {
+      "symbol": "IAUon",
+      "address": "0x4f0CA3df1c2e6b943cf82E649d576ffe7B2fABCF",
+      "usd": 83.39,
+      "usd8": "8339000000"
+    },
+    {
+      "symbol": "IVVon",
+      "address": "0x62cA254a363dc3c748e7E955c20447aB5bF06fF7",
+      "usd": 773.92,
+      "usd8": "77392000000"
+    },
+    {
+      "symbol": "NVDAon",
+      "address": "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
+      "usd": 229.26,
+      "usd8": "22926000000"
+    },
+    {
+      "symbol": "ITOTon",
+      "address": "0x0692481C369E2BDc728A69ae31b848343a4567Be",
+      "usd": 168.64,
+      "usd8": "16864000000"
+    },
+    {
+      "symbol": "INTCon",
+      "address": "0xFdA09936DbD717368De0835bA441d9E62069d36f",
+      "usd": 95.8,
+      "usd8": "9580000000"
+    },
+    {
+      "symbol": "SPYon",
+      "address": "0xFeDC5f4a6c38211c1338aa411018DFAf26612c08",
+      "usd": 774.46,
+      "usd8": "77446000000"
+    },
+    {
+      "symbol": "MSTRon",
+      "address": "0xCabD955322dfbf94C084929ac5E9Eca3fEB5556F",
+      "usd": 142.8,
+      "usd8": "14280000000"
+    },
+    {
+      "symbol": "NVOon",
+      "address": "0x28151F5888833D3d767C4d6945a0Ee50D1B193E3",
+      "usd": 46.6,
+      "usd8": "4660000000"
+    },
+    {
+      "symbol": "SPCXon",
+      "address": "0xc9eef266834730340A55B6CC24621B31BAF55581",
+      "usd": 266.6,
+      "usd8": "26660000000"
     }
   ]
 }
