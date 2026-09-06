@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect width="64" height="64" rx="14" fill="#0D1017"/>
-  <text x="32" y="47" text-anchor="middle" font-family="Bricolage Grotesque, Arial Black, Arial, sans-serif" font-weight="800" font-size="42" fill="#F1F2F5">S</text>
+  <circle cx="32" cy="32" r="31" fill="#0D1017"/>
+  <circle cx="32" cy="32" r="27.5" fill="none" stroke="#F1F2F5" stroke-width="1.2"/>
+  <polygon points="32,12 45,33 32,41 19,33" fill="#F1F2F5"/>
+  <polygon points="32,44.5 45,36.5 32,53 19,36.5" fill="#F1F2F5"/>
 </svg>
