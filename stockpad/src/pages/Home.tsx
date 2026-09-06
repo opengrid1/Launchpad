@@ -74,10 +74,12 @@ export default function Home() {
                 <button className={only === "eth" ? "on" : ""} onClick={() => setOnly("eth")}>ETH pairs</button>
               </div>
               <div className="seg sort-seg">{SORTS.map((s) => <button key={s.k} className={sort === s.k ? "on" : ""} onClick={() => setSort(s.k)}>{s.l}</button>)}</div>
-              <label className="sort-sel"><span>Sort</span><select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>{SORTS.map((s) => <option key={s.k} value={s.k}>{s.l}</option>)}</select></label>
-              <button className={"dir" + (desc ? "" : " asc")} onClick={() => setDesc((d) => !d)} title={desc ? "Highest first" : "Lowest first"} aria-label="Toggle sort direction">{desc ? "High → low" : "Low → high"}</button>
+              <button className={"dir dir-wide" + (desc ? "" : " asc")} onClick={() => setDesc((d) => !d)} aria-label="Toggle sort direction">{desc ? "↓ Highest first" : "↑ Lowest first"}</button>
             </div>
-            <input className="inp" style={{ width: 240 }} placeholder="Search name, ticker or pair" value={q} onChange={(e) => setQ(e.target.value)} />
+            <div className="search-row">
+              <input className="inp" placeholder="Search name, ticker or pair" value={q} onChange={(e) => setQ(e.target.value)} />
+              <button className={"dir dir-icon" + (desc ? "" : " asc")} onClick={() => setDesc((d) => !d)} aria-label="Toggle sort direction">{desc ? "↓" : "↑"}</button>
+            </div>
           </div>
           {isLoading && !tokens ? (
             <div className="grid">{[0, 1, 2].map((i) => <div key={i} className="skeleton" style={{ height: 230 }} />)}</div>
