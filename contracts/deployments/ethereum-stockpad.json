@@ -186,6 +186,42 @@
       "address": "0x33483A58079b4225b10e57958Ca28ad7b9CDbAF7",
       "usd": 24.97,
       "usd8": "2497000000"
+    },
+    {
+      "symbol": "CSCOon",
+      "address": "0x980a1001ee94e54142b231f44C7CA7c9DF71FBe1",
+      "usd": 109.2,
+      "usd8": "10920000000"
+    },
+    {
+      "symbol": "IWNon",
+      "address": "0x9DCf7f739B8C0270E2FC0Cc8D0DaBe355a150dBa",
+      "usd": 224.62,
+      "usd8": "22462000000"
+    },
+    {
+      "symbol": "HOODon",
+      "address": "0x998f02A9E343EF6E3E6f28700d5A20F839fD74E6",
+      "usd": 122.11,
+      "usd8": "12211000000"
+    },
+    {
+      "symbol": "RIOTon",
+      "address": "0x21deafD91116FCe9fE87C8f15Bde03f99a309b72",
+      "usd": 21.8,
+      "usd8": "2180000000"
+    },
+    {
+      "symbol": "ASTSon",
+      "address": "0x0D1fa4E1E3719945899Ef7b02840627Df46aF44A",
+      "usd": 62.31,
+      "usd8": "6231000000"
+    },
+    {
+      "symbol": "WMTon",
+      "address": "0x82106347dDbB23cE44Cf4cE4053Ef1adf8b9323B",
+      "usd": 107.14,
+      "usd8": "10714000000"
     }
   ]
 }

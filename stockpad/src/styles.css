@@ -1,9 +1,9 @@
-/* STONKREUM — exchange floor. Light ground, big type, one loud blue, large tiles. */
+/* STONKREUM — exchange floor. Light ground, big type, black accent, large tiles. */
 :root{
   --bg:#F1F2F5; --bg2:#E9EBEF; --tile:#FFFFFF; --tile2:#F6F7F9; --tile3:#EDEFF3;
   --line:#E1E4EA; --line2:#CBD0D9; --line3:#AEB5C1;
   --ink:#0D1017; --ink2:#4E5766; --ink3:#8590A0; --ink4:#B4BBC7;
-  --acc:#2447FF; --acc2:#1A37D6; --acc-soft:#E9EDFF; --acc-line:#B7C3FF; --acc-ink:#1B36C9;
+  --acc:#0D1017; --acc2:#222836; --acc-soft:#E9EBEF; --acc-line:#AEB5C1; --acc-ink:#0D1017;
   --up:#0B9E5A; --up-soft:#E2F6EB; --down:#E2383F; --down-soft:#FDE7E8;
   --shadow:0 1px 2px rgba(13,16,23,.04),0 8px 24px -12px rgba(13,16,23,.18);
   --shadow2:0 2px 4px rgba(13,16,23,.05),0 24px 48px -16px rgba(13,16,23,.28);
@@ -66,7 +66,7 @@ h3{font-size:17px}
 .btn.sm{height:32px;padding:0 12px;font-size:13px}
 .btn.up{background:var(--up);border-color:var(--up);color:#fff}
 .btn.down{background:var(--down);border-color:var(--down);color:#fff}
-.big{width:100%;height:54px;border-radius:999px;background:var(--acc);color:#fff;font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;transition:background .15s,transform .12s,box-shadow .15s;box-shadow:0 10px 24px -10px rgba(36,71,255,.7)}
+.big{width:100%;height:54px;border-radius:999px;background:var(--acc);color:#fff;font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;transition:background .15s,transform .12s,box-shadow .15s;box-shadow:0 10px 24px -10px rgba(13,16,23,.55)}
 .big:hover{background:var(--acc2)} .big:active{transform:translateY(1px)}
 .big:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
 .big.ink{background:var(--ink);color:#fff;box-shadow:0 10px 24px -10px rgba(13,16,23,.6)} .big.ink:hover{background:#222836}
@@ -107,7 +107,7 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
 
 /* ---------- lead (home headline + stat tiles) ---------- */
 .lead{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:stretch;margin:10px 0 28px}
-.lead .say h1 em{font-style:normal;color:var(--up)}
+.lead .say h1 em{font-style:normal;color:var(--ink);background:var(--acc-soft);border-radius:14px;padding:0 .18em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .lead .say p{color:var(--ink2);font-size:17px;max-width:520px;margin:14px 0 0;line-height:1.5}
 .lead .say .cta{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
