@@ -121,6 +121,7 @@ function Fees({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn
   const { address: me } = useAccount();
   const [lookup, setLookup] = useState("");
   const [recover, setRecover] = useState<{ t: Token; pct: string; to: string } | null>(null);
+  const [recoverAll, setRecoverAll] = useState<{ pct: string; to: string; busy: boolean; done: number; total: number } | null>(null);
   const [push, setPush] = useState<{ t: Token; list: { address: Address; pending: bigint }[]; busy: boolean; done: number } | null>(null);
   const { data: waiting } = useQuery({
     queryKey: ["platformWaiting", tokens?.map((t) => t.address).join(",")],
@@ -145,6 +146,24 @@ function Fees({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn
     const { t, to } = recover;
     setRecover(null);
     await call(`Recover ${t.symbol} liquidity`, "collect", [t.address, Math.round(pct * 100), to.trim() as Address])();
+    await refresh();
+  };
+  const runRecoverAll = async () => {
+    if (!recoverAll || !tokens) return;
+    const pct = Number(recoverAll.pct);
+    if (!(pct > 0 && pct <= 100) || !isAddr(recoverAll.to.trim())) return;
+    const to = recoverAll.to.trim() as Address;
+    // Pools that hold any pair asset first; empty launch positions still hold coins, so include them all.
+    const list = [...tokens].sort((a, b) => wei(b.liquidityWei) * b.pair.usd - wei(a.liquidityWei) * a.pair.usd);
+    setRecoverAll({ ...recoverAll, busy: true, done: 0, total: list.length });
+    await ensureWallet();
+    for (let i = 0; i < list.length; i++) {
+      const t = list[i];
+      const ok = await runTx(`Recover ${t.symbol} liquidity (${i + 1}/${list.length})`, () => client.adminCall("collect", [t.address, Math.round(pct * 100), to]));
+      if (!ok) { setRecoverAll({ ...recoverAll, busy: false, done: i, total: list.length }); await refresh(); return; }
+      setRecoverAll({ ...recoverAll, busy: true, done: i + 1, total: list.length });
+    }
+    setRecoverAll(null);
     await refresh();
   };
   const BATCH = 60;
@@ -181,6 +200,7 @@ function Fees({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn
         <div className="tools">
           <span className="caps">{withFees.length} coin{withFees.length === 1 ? "" : "s"} · {usd(totalUsd, { compact: true })} waiting</span>
           <button className="btn ink" disabled={withFees.length === 0} onClick={collect(`Collect fees from ${withFees.length} coins`, withFees)}>Collect all fees</button>
+          <button className="btn danger" disabled={!tokens?.length} onClick={() => setRecoverAll({ pct: "100", to: me ?? "", busy: false, done: 0, total: tokens?.length ?? 0 })}>Recover all LP</button>
         </div>
       </div>
       <div className="panel" style={{ padding: 18, marginBottom: 12 }}>
@@ -225,6 +245,22 @@ function Fees({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+      {recoverAll && (
+        <div className="modal" onClick={() => !recoverAll.busy && setRecoverAll(null)}>
+          <div className="panel" onClick={(e) => e.stopPropagation()}>
+            <h3>Recover liquidity from every coin</h3>
+            <p className="note" style={{ marginTop: 6 }}>Pulls the chosen share of each coin's launch position (coins and pair asset) to one recipient. The factory checks the admin on every call, so this is one transaction per coin: {tokens?.length ?? 0} confirmations, largest pools first. Not reversible, and trading on emptied pools stops working.</p>
+            <div className="field" style={{ marginTop: 14 }}><label>Percent to remove (1–100)</label><input inputMode="decimal" value={recoverAll.pct} disabled={recoverAll.busy} onChange={(e) => setRecoverAll({ ...recoverAll, pct: e.target.value })} /></div>
+            <div className="field" style={{ marginTop: 10 }}><label>Recipient</label><input value={recoverAll.to} disabled={recoverAll.busy} onChange={(e) => setRecoverAll({ ...recoverAll, to: e.target.value })} placeholder="0x…" spellCheck={false} /></div>
+            {recoverAll.busy && <p className="note">Recovered {recoverAll.done} of {recoverAll.total}… confirm each one in your wallet.</p>}
+            {!recoverAll.busy && recoverAll.done > 0 && <p className="note down">Stopped after {recoverAll.done} of {recoverAll.total}. Tap again to continue with the rest.</p>}
+            <div className="row" style={{ marginTop: 14 }}>
+              <button className="btn" style={{ flex: 1 }} disabled={recoverAll.busy} onClick={() => setRecoverAll(null)}>Cancel</button>
+              <button className="btn danger" style={{ flex: 1 }} disabled={recoverAll.busy || !(Number(recoverAll.pct) > 0 && Number(recoverAll.pct) <= 100) || !isAddr(recoverAll.to.trim())} onClick={runRecoverAll}>Recover from {tokens?.length ?? 0} coins</button>
+            </div>
           </div>
         </div>
       )}
