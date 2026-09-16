@@ -8,8 +8,9 @@ export function hues(name: string): [number, number, number] {
   return [a, (a + 45 + (h % 60)) % 360, (a + 200 + (h % 90)) % 360];
 }
 
-/** Coin artwork: the creator's image when there is one, else a soft mesh
- *  gradient painted on canvas from the coin's name. Never a letter tile. */
+/** Coin artwork: the creator's image when there is one, else an engraved
+ *  "banknote" seal drawn on canvas from the coin's name: a warm two-tone
+ *  ground, guilloche rings, and the coin's initial set in the display serif. */
 export function Art({ src, name, className = "art", size }: { src?: string; name: string; className?: string; size?: number }) {
   const [bad, setBad] = useState(false);
   const ref = useRef<HTMLCanvasElement>(null);
@@ -20,24 +21,30 @@ export function Art({ src, name, className = "art", size }: { src?: string; name
     const px = 256;
     c.width = px; c.height = px;
     const ctx = c.getContext("2d")!;
-    const [h1, h2, h3] = hues(name);
-    ctx.fillStyle = `hsl(${h1} 30% 14%)`;
-    ctx.fillRect(0, 0, px, px);
-    const blob = (x: number, y: number, r: number, h: number, s: number, l: number) => {
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, `hsl(${h} ${s}% ${l}% / 0.95)`);
-      g.addColorStop(1, `hsl(${h} ${s}% ${l}% / 0)`);
-      ctx.fillStyle = g; ctx.fillRect(0, 0, px, px);
-    };
-    blob(px * 0.3, px * 0.35, px * 0.8, h1, 75, 60);
-    blob(px * 0.78, px * 0.3, px * 0.7, h2, 80, 62);
-    blob(px * 0.55, px * 0.85, px * 0.75, h3, 70, 55);
-    blob(px * 0.15, px * 0.9, px * 0.5, h2, 60, 45);
-    // a single quiet ring, the brand motif
-    ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.ellipse(px * 0.5, px * 0.52, px * 0.3, px * 0.12, -0.5, 0, Math.PI * 2); ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,.92)";
-    ctx.beginPath(); ctx.arc(px * 0.5, px * 0.52, px * 0.075, 0, Math.PI * 2); ctx.fill();
+    const [h1, h2] = hues(name);
+    // ground: a soft diagonal wash between two warm, desaturated hues
+    const g = ctx.createLinearGradient(0, 0, px, px);
+    g.addColorStop(0, `hsl(${h1} 38% 88%)`);
+    g.addColorStop(1, `hsl(${h2} 34% 76%)`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, px, px);
+    // guilloche: concentric fine rings, slightly offset, like an engraved seal
+    ctx.strokeStyle = `hsl(${h1} 30% 30% / 0.16)`; ctx.lineWidth = 1;
+    for (let r = 22; r < px * 0.72; r += 9) { ctx.beginPath(); ctx.arc(px * 0.5, px * 0.5, r, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.strokeStyle = `hsl(${h2} 30% 30% / 0.10)`;
+    for (let r = 26; r < px * 0.72; r += 9) { ctx.beginPath(); ctx.arc(px * 0.54, px * 0.46, r, 0, Math.PI * 2); ctx.stroke(); }
+    // the medallion
+    ctx.fillStyle = `hsl(${h1} 26% 14%)`;
+    ctx.beginPath(); ctx.arc(px * 0.5, px * 0.5, px * 0.31, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(px * 0.5, px * 0.5, px * 0.27, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,.22)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(px * 0.5, px * 0.5, px * 0.335, 0, Math.PI * 2); ctx.stroke();
+    // the initial, set in the display serif
+    const letter = (name.trim().match(/[A-Za-z0-9]/)?.[0] ?? "$").toUpperCase();
+    ctx.fillStyle = `hsl(${h1} 40% 92%)`;
+    ctx.font = `italic ${Math.round(px * 0.34)}px "Instrument Serif", "Times New Roman", Georgia, serif`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(letter, px * 0.5, px * 0.52);
   }, [src, bad, name]);
   if (src && !bad) return <img className={className} src={src} alt="" loading="lazy" onError={() => setBad(true)} style={style} />;
   return <canvas ref={ref} className={className} style={style} aria-hidden="true" />;

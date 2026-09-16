@@ -98,12 +98,25 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
 .seg button.on{background:var(--tile);color:var(--ink);box-shadow:var(--shadow)}
 .seg button.on.down{color:var(--down)}
 .seg button.on.up{color:var(--up)}
-.dir{height:38px;padding:0 14px;border-radius:999px;background:var(--bg2);color:var(--ink2);font-size:13px;font-weight:600;white-space:nowrap;flex:0 0 auto;transition:background .15s,color .15s}
-.dir:hover{color:var(--ink)}
-.dir.asc{background:var(--ink);color:#fff}
-.dir.dir-icon{display:none}
-.search-row{display:flex;gap:8px;align-items:center}
-.search-row .inp{width:240px}
+.inp.search{width:260px}
+.sortmenu{position:relative;flex:0 0 auto}
+.sortmenu-btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 14px;border-radius:999px;background:var(--tile);border:1px solid var(--line2);color:var(--ink);font-size:14px;transition:border-color .15s,box-shadow .15s}
+.sortmenu-btn svg{color:var(--ink2)}
+.sortmenu-btn:hover,.sortmenu.open .sortmenu-btn{border-color:var(--line3);box-shadow:var(--shadow)}
+.sortmenu-btn .k{color:var(--ink3);font-weight:500}
+.sortmenu-btn .v{font-weight:700}
+.sortmenu-btn .chev{width:8px;height:8px;border-right:1.6px solid var(--ink2);border-bottom:1.6px solid var(--ink2);transform:translateY(-2px) rotate(45deg);transition:transform .15s;margin-left:2px}
+.sortmenu.open .sortmenu-btn .chev{transform:translateY(2px) rotate(-135deg)}
+.sortmenu-list{position:absolute;z-index:30;top:calc(100% + 8px);left:0;width:264px;margin:0;padding:6px;list-style:none;background:var(--tile);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow2);animation:pop .15s both}
+.sortmenu-list .sortmenu-h{padding:8px 12px 6px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);cursor:default}
+.sortmenu-list li{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:11px;color:var(--ink2);cursor:pointer;transition:background .12s}
+.sortmenu-list li:hover{background:var(--bg2);color:var(--ink)}
+.sortmenu-list li .ic{width:32px;height:32px;border-radius:10px;background:var(--tile3);display:grid;place-items:center;color:var(--ink2);flex:0 0 auto}
+.sortmenu-list li .tx{display:flex;flex-direction:column;min-width:0;flex:1}
+.sortmenu-list li .tx b{font-size:14px;font-weight:600;color:var(--ink)}
+.sortmenu-list li .tx small{font-size:12px;color:var(--ink3)}
+.sortmenu-list li.on .ic{background:var(--ink);color:#fff}
+.sortmenu-list li .ck{color:var(--ink);flex:0 0 auto}
 .tag{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:999px;background:var(--bg2);color:var(--ink2);font-size:12px;font-weight:600;white-space:nowrap}
 .tag.acc{background:var(--acc-soft);color:var(--acc-ink)}
 .tag.stock{background:var(--ink);color:#fff}
@@ -326,14 +339,12 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
   .seg{flex:0 0 auto}
   .seg button{white-space:nowrap;padding:0 11px}
   .sec-h .inp{width:100%!important}
-  .sort-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:16px;width:100%}
-  .sort-seg button{height:36px;padding:0;border-radius:12px;text-align:center}
-  .dir.dir-wide{display:none}
-  .dir.dir-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:40px;padding:0;font-size:18px;border-radius:999px;background:var(--tile);border:1px solid var(--line2);color:var(--ink)}
-  .dir.dir-icon.asc{background:var(--ink);border-color:var(--ink);color:#fff}
-  .search-row{width:100%}
-  .search-row .inp{flex:1;width:auto!important}
-  .sec-h .tools{width:100%}
+  .sec-h{flex-wrap:nowrap}
+  .sec-h .tools{width:auto;flex:0 0 auto;order:2}
+  .sortmenu-btn{height:40px;padding:0 12px 0 14px}
+  .sortmenu-btn .k{display:none}
+  .sortmenu-list{left:auto;right:0}
+  .sec-h .inp.search{flex:1 1 0;width:auto!important;min-width:0;order:1}
   .log .li{grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px;padding:10px 14px;font-size:13px}
   .log .r,.log .who{white-space:nowrap}
   .log .r small{font-size:11px}
