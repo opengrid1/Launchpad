@@ -2,8 +2,6 @@ import { useEffect, useMemo, useRef } from "react";
 import { ColorType, CrosshairMode, createChart, type IChartApi, type UTCTimestamp } from "lightweight-charts";
 import type { Candle } from "@launchpad/sdk";
 
-import { usd } from "../lib/format";
-
 const SUPPLY = 1_000_000_000;
 
 /** Dollar formatter that never falls back to exponent notation: tiny coin
@@ -25,7 +23,7 @@ const cssVar = (name: string, fallback: string) => (typeof window === "undefined
 /** TradingView-style candles (Lightweight Charts) with a volume histogram
  *  underneath, a price scale on the right and a time scale at the foot.
  *  The header carries the latest value and the move since the first candle. */
-export function Chart({ candles, hypeUsd, mode = "mcap", startUsd = 3000, volumeUsd }: { candles: Candle[]; hypeUsd: number; mode?: "price" | "mcap"; startUsd?: number; volumeUsd?: number }) {
+export function Chart({ candles, hypeUsd, mode = "mcap", startUsd = 3000 }: { candles: Candle[]; hypeUsd: number; mode?: "price" | "mcap"; startUsd?: number; volumeUsd?: number }) {
   const box = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const scale = (mode === "mcap" ? SUPPLY : 1) * hypeUsd;
@@ -41,9 +39,7 @@ export function Chart({ candles, hypeUsd, mode = "mcap", startUsd = 3000, volume
     const from = mode === "mcap" ? Math.min(first, startUsd) : first;
     const last = rows[rows.length - 1].close;
     const chg = from > 0 ? ((last - from) / from) * 100 : 0;
-    const lo = Math.min(...rows.map((r) => r.low)), hi = Math.max(...rows.map((r) => r.high));
-    const vol = rows.reduce((s, r) => s + r.volume, 0);
-    return { rows, from, last, chg, up: last >= from, lo, hi, vol };
+    return { rows, from, last, chg, up: last >= from };
   }, [candles, scale, hypeUsd, mode, startUsd]);
 
   useEffect(() => {
@@ -84,10 +80,6 @@ export function Chart({ candles, hypeUsd, mode = "mcap", startUsd = 3000, volume
         <span className="from">{mode === "mcap" ? "Mcap" : "Price"} · from {money(d.from)}</span>
       </div>
       <div ref={box} className="gc tv" role="img" aria-label={`${mode === "mcap" ? "market cap" : "price"} candlestick chart`} />
-      <div className="gc-f">
-        <span>Vol {usd(volumeUsd ?? d.vol, { compact: true })}</span>
-        <span>{money(d.lo)} — {money(d.hi)}</span>
-      </div>
     </div>
   );
 }
