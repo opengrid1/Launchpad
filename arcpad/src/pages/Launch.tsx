@@ -121,7 +121,7 @@ export default function Launch() {
               <dt>Pool fee</dt><dd>{FEES.taxPct}%</dd>
               <dt>Your share</dt><dd>{FEES.creatorPct}% of every fee, forever</dd>
               <dt>Platform</dt><dd>{FEES.platformPct}%</dd>
-              <dt>Liquidity</dt><dd>Locked in the pool</dd>
+              <dt>Liquidity</dt><dd>Locked forever</dd>
             </dl>
           </div>
         </aside>
