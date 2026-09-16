@@ -10,7 +10,8 @@
     "web",
     "lend",
     "orbit",
-    "stockpad"
+    "stockpad",
+    "arcpad"
   ],
   "scripts": {
     "build": "npm run build -w sdk && npm run build -w backend && npm run build -w web",
