@@ -7,7 +7,7 @@ import { ADDRESSES, chain, env, FEES } from "./env";
 export const publicClient = createPublicClient({
   chain,
   transport: fallback(
-    env.rpcUrls.map((url) => http(url, { retryCount: 1, retryDelay: 200, timeout: 8_000, batch: { wait: 16, batchSize: 20 } })),
+    env.rpcUrls.map((url) => http(url, { retryCount: 2, retryDelay: 700, timeout: 10_000, batch: { wait: 16, batchSize: 20 } })),
     { rank: { interval: 30_000, sampleCount: 5 } },
   ),
   pollingInterval: 4_000,
@@ -15,10 +15,11 @@ export const publicClient = createPublicClient({
 }) as PublicClient;
 
 /** Read-only client for eth_getLogs. The public Arc RPC allows about 5,000
- *  blocks per request and keeps roughly a million blocks of history. */
+ *  blocks per request, keeps roughly a million blocks of history, and
+ *  rate-limits bursts, so every scan goes through the gate below. */
 export const logClient = createPublicClient({
   chain,
-  transport: fallback(env.logRpcUrls.map((url) => http(url, { retryCount: 2, retryDelay: 500, timeout: 30_000, batch: false }))),
+  transport: fallback(env.logRpcUrls.map((url) => http(url, { retryCount: 3, retryDelay: 800, timeout: 30_000, batch: false }))),
 }) as PublicClient;
 
 const Q96 = 2n ** 96n;
@@ -30,8 +31,43 @@ const NATIVE_PER_QUOTE = 10n ** 12n;
 const LOG_CHUNK = env.logChunk;
 /** Blocks of history the public RPC serves; older ranges error out. */
 const RETAIN = env.logRetain;
-const CONCURRENCY = 6;
+/** First sync covers this many recent blocks (about six hours); the rest backfills in the background. */
+const INITIAL = 43_200n;
 const CREATOR_BPS = BigInt(FEES.creatorPct * 100);
+const FEE_BPS = BigInt(FEES.taxPct * 100);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Concurrency gate with spacing, so bursts never trip the public RPC's rate limit.
+ *  A 429 is retried after a pause instead of failing the whole scan. */
+class Gate {
+  private active = 0;
+  private queue: (() => void)[] = [];
+  private last = 0;
+  constructor(private max: number, private gapMs: number) {}
+  async run<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
+    if (this.active >= this.max) await new Promise<void>((r) => this.queue.push(r));
+    this.active++;
+    try {
+      for (let attempt = 0; ; attempt++) {
+        const wait = this.last + this.gapMs - Date.now();
+        if (wait > 0) await sleep(wait);
+        this.last = Date.now();
+        try {
+          return await fn();
+        } catch (e) {
+          const msg = String((e as any)?.details ?? (e as any)?.shortMessage ?? (e as any)?.message ?? e);
+          if (attempt < retries && /429|rate|Too Many/i.test(msg)) { await sleep(900 * (attempt + 1)); continue; }
+          throw e;
+        }
+      }
+    } finally {
+      this.active--;
+      this.queue.shift()?.();
+    }
+  }
+}
+const logGate = new Gate(2, 150);
+const readGate = new Gate(4, 40);
 
 const factoryAbi = parseAbi([
   "struct CreateParams { string name; string symbol; string metadataURI; address quote; uint256 marketCapUsd8; }",
@@ -54,7 +90,6 @@ const factoryAbi = parseAbi([
   "function setFeeRecipient(address recipient)",
   "function setQuoteAsset(address quote, bool approved, uint64 usdPrice8)",
   "event TokenCreated(address indexed token, address indexed creator, string name, string symbol, string metadataURI, uint256 totalSupply)",
-  "event FeesCollected(address indexed token, address indexed creator, uint256 creatorTokenAmount, uint256 creatorQuoteAmount, uint256 platformTokenAmount, uint256 platformQuoteAmount)",
 ]);
 const routerAbi = parseAbi([
   "function buy(address token, uint256 minOut) payable returns (uint256 out)",
@@ -74,11 +109,9 @@ const tokenAbi = parseAbi([
   "function approve(address, uint256) returns (bool)",
   "event Transfer(address indexed from, address indexed to, uint256 value)",
 ]);
-const tokenCreatedEvent = getAbiItem({ abi: factoryAbi, name: "TokenCreated" });
-const feesCollectedEvent = getAbiItem({ abi: factoryAbi, name: "FeesCollected" });
 const swapEvent = getAbiItem({ abi: poolAbi, name: "Swap" });
 const transferEvent = getAbiItem({ abi: tokenAbi, name: "Transfer" });
-const TOKEN_CREATED_TOPIC = toEventSelector(tokenCreatedEvent);
+const TOKEN_CREATED_TOPIC = toEventSelector(getAbiItem({ abi: factoryAbi, name: "TokenCreated" }));
 
 /** A coin's pair asset. On Arc that is always native USDC. */
 export interface PairInfo {
@@ -103,7 +136,7 @@ export type StockToken = TokenSummary & {
   pair: PairInfo;
   poolId: Hex;
   launchBlock: number;
-  /** Lifetime pair-asset paid to holders / creator / platform (18-dp wei). */
+  /** Pair-asset fees earned by holders / creator / platform over the scanned trades (18-dp wei). */
   rewards?: { holders: bigint; creator: bigint; platform: bigint };
   /** What actually sits in the pool right now: pair asset and coin, in wei. */
   reserves?: { pair: bigint; token: bigint };
@@ -140,6 +173,7 @@ interface Core {
   pool: Address;
   tickLower: number;
   tickUpper: number;
+  /** Estimated from the listing timestamp; a lower bound for log scans. */
   launchBlock: bigint;
   createdAt: number;
   name: string;
@@ -152,7 +186,7 @@ interface Core {
 const USDC_PAIR: PairInfo = { address: ADDRESSES.weth.toLowerCase() as Address, symbol: "USDC", name: "USD Coin", decimals: 18, usd: 1, isNative: true, ethRoute: true };
 
 // -- small persistent cache (log scans survive reloads; history is pruned server-side) --
-const STORE_PREFIX = `arcx.${ADDRESSES.factory.slice(2, 10).toLowerCase()}.`;
+const STORE_PREFIX = `arcx.${ADDRESSES.factory.slice(2, 10).toLowerCase()}.v2.`;
 const store = {
   get<T>(key: string): T | null {
     try { const raw = globalThis.localStorage?.getItem(STORE_PREFIX + key); return raw ? (JSON.parse(raw) as T) : null; } catch { return null; }
@@ -162,20 +196,11 @@ const store = {
   },
 };
 
-interface FactoryScan { upTo: string; launch: Record<string, string>; fees: Record<string, { c: string; p: string }> }
-
-/** Run `fn` over [from, to] in LOG_CHUNK windows, a few at a time. Pruned or
- *  failing windows are skipped so one bad range does not empty the result. */
-async function scanRange<T>(from: bigint, to: bigint, fn: (a: bigint, b: bigint) => Promise<T[]>): Promise<T[]> {
-  const windows: [bigint, bigint][] = [];
-  for (let a = from; a <= to; a += LOG_CHUNK + 1n) windows.push([a, a + LOG_CHUNK > to ? to : a + LOG_CHUNK]);
-  const out: T[] = [];
-  for (let i = 0; i < windows.length; i += CONCURRENCY) {
-    const part = await Promise.all(windows.slice(i, i + CONCURRENCY).map(([a, b]) => fn(a, b).catch(() => [] as T[])));
-    for (const p of part) out.push(...p);
-  }
-  return out;
-}
+/** A scanned block range [lo, hi] with its records. lo = 0 means nothing scanned yet. */
+interface Scan<T> { lo: bigint; hi: bigint; data: T }
+interface TradeStore { lo: string; hi: string; byPool: Record<string, TradeRecord[]>; anchors: [string, number][] }
+interface BalStore { lo: string; hi: string; bal: Record<string, string> }
+const MAX_RECORDS_PER_POOL = 3000;
 
 /** Backend-free client for the Arc launchpad: coins, prices, trades and fees
  *  come straight from the factory, the Uniswap V3 pools and the coins;
@@ -186,16 +211,25 @@ export class StockPadClient {
   private cores = new Map<string, Core>();
   private coresUpTo = 0n;
   private coresInflight: Promise<Core[]> | null = null;
-  private scan: FactoryScan = store.get<FactoryScan>("factory") ?? { upTo: "0", launch: {}, fees: {} };
-  private scanInflight: Promise<void> | null = null;
-  private trades = new Map<string, { records: TradeRecord[]; upTo: bigint }>();
-  private tradesInflight = new Map<string, Promise<TradeRecord[]>>();
-  private balances = new Map<string, { bal: Map<string, bigint>; upTo: bigint }>();
-  private balancesInflight = new Map<string, Promise<Map<string, bigint>>>();
-  private blockAnchor?: { block: bigint; ts: number };
+  /** One combined Swap scan across every launch pool. */
+  private tr: Scan<Map<string, TradeRecord[]>> = { lo: 0n, hi: 0n, data: new Map() };
+  private trInflight: Promise<void> | null = null;
+  private trBackfilling = false;
+  /** Block-number → timestamp anchors (one per scanned chunk) for estimating trade times. */
+  private anchors: [bigint, number][] = [];
+  /** Per-coin Transfer scans (token page only). */
+  private bals = new Map<string, Scan<Map<string, bigint>>>();
+  private balInflight = new Map<string, Promise<void>>();
+  private balBackfilling = new Set<string>();
+  private head?: { block: bigint; ts: number; at: number };
 
   constructor(pc: PublicClient) {
     this.pc = pc;
+    const saved = store.get<TradeStore>("trades");
+    if (saved) {
+      this.tr = { lo: BigInt(saved.lo), hi: BigInt(saved.hi), data: new Map(Object.entries(saved.byPool)) };
+      this.anchors = (saved.anchors ?? []).map(([b, t]) => [BigInt(b), t]);
+    }
   }
 
   connectWallet(wc: WalletClient) {
@@ -211,30 +245,35 @@ export class StockPadClient {
     return a;
   }
 
-  // -- factory log scan: launch blocks and lifetime fee payouts ------------
+  // -- chain head and time estimates --------------------------------------
 
-  private scanFactory(latest: bigint): Promise<void> {
-    if (this.scanInflight) return this.scanInflight;
-    this.scanInflight = this.scanFactoryInner(latest).finally(() => (this.scanInflight = null));
-    return this.scanInflight;
+  /** Latest block and its timestamp, cached a few seconds. */
+  private async headInfo(): Promise<{ block: bigint; ts: number }> {
+    if (this.head && Date.now() - this.head.at < 4_000) return this.head;
+    const b = await readGate.run(() => this.pc.getBlock({ blockTag: "latest" }));
+    this.head = { block: b.number ?? 0n, ts: Number(b.timestamp), at: Date.now() };
+    return this.head;
   }
 
-  private async scanFactoryInner(latest: bigint) {
-    const upTo = BigInt(this.scan.upTo);
-    let from = upTo > 0n ? upTo + 1n : env.startBlock;
-    if (from < latest - RETAIN) from = latest - RETAIN;
-    if (from > latest) return;
-    const logs = await scanRange(from, latest, (a, b) => logClient.getLogs({ address: ADDRESSES.factory, events: [tokenCreatedEvent, feesCollectedEvent] as any, fromBlock: a, toBlock: b }) as Promise<any[]>);
-    for (const l of logs) {
-      const token = String(l.args.token).toLowerCase();
-      if (l.eventName === "TokenCreated") this.scan.launch[token] = String(l.blockNumber);
-      else if (l.eventName === "FeesCollected") {
-        const cur = this.scan.fees[token] ?? { c: "0", p: "0" };
-        this.scan.fees[token] = { c: (BigInt(cur.c) + (l.args.creatorQuoteAmount as bigint)).toString(), p: (BigInt(cur.p) + (l.args.platformQuoteAmount as bigint)).toString() };
-      }
-    }
-    this.scan.upTo = latest.toString();
-    store.set("factory", this.scan);
+  private addAnchor(block: bigint, ts: number) {
+    if (this.anchors.some(([b]) => b === block)) return;
+    this.anchors.push([block, ts]);
+    this.anchors.sort((a, b) => (a[0] < b[0] ? -1 : 1));
+    if (this.anchors.length > 400) this.anchors.splice(0, this.anchors.length - 400);
+  }
+
+  /** Timestamp for a block from the nearest anchor and Arc's steady block time. */
+  private tsOf(block: bigint): number {
+    let best: [bigint, number] | undefined;
+    for (const a of this.anchors) if (!best || (a[0] > block ? a[0] - block : block - a[0]) < (best[0] > block ? best[0] - block : block - best[0])) best = a;
+    if (!best) return Math.floor(Date.now() / 1000) - Math.round(Number((this.head?.block ?? block) - block) * env.secondsPerBlock);
+    return best[1] + Math.round(Number(block - best[0]) * env.secondsPerBlock);
+  }
+
+  /** Rough block for a timestamp, biased early so it works as a scan floor. */
+  private blockFromTimestamp(ts: number, head: { block: bigint; ts: number }): bigint {
+    const back = BigInt(Math.max(0, Math.round((head.ts - ts) / env.secondsPerBlock))) + 4_000n;
+    return back >= head.block ? 0n : head.block - back;
   }
 
   // -- discovery ---------------------------------------------------------
@@ -246,57 +285,44 @@ export class StockPadClient {
   }
 
   private async loadCoresInner(): Promise<Core[]> {
-    const latest = await this.pc.getBlockNumber().catch(() => 0n);
-    if (latest === 0n || (this.coresUpTo !== 0n && latest <= this.coresUpTo)) return [...this.cores.values()];
-    const total = Number(await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "totalTokens" }).catch(() => 0n));
+    const head = await this.headInfo().catch(() => null);
+    if (!head || (this.coresUpTo !== 0n && head.block <= this.coresUpTo)) return [...this.cores.values()];
+    const total = Number(await readGate.run(() => this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "totalTokens" })).catch(() => 0n));
     if (total > this.cores.size) {
-      const addrs = (await this.pc.multicall({
+      const addrs = (await readGate.run(() => this.pc.multicall({
         allowFailure: false,
         contracts: Array.from({ length: total }, (_, i) => ({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "allTokens", args: [BigInt(i)] })),
-      })) as Address[];
+      }))) as Address[];
       const fresh = addrs.filter((a) => !this.cores.has(a.toLowerCase()));
-      if (fresh.length) await this.scanFactory(latest).catch(() => undefined);
-      for (const raw of fresh) {
-        const token = raw.toLowerCase() as Address;
-        try {
-          const [listing, name, symbol, metaURI] = (await this.pc.multicall({
-            allowFailure: false,
-            contracts: [
-              { address: ADDRESSES.factory, abi: factoryAbi, functionName: "listings", args: [token] },
-              { address: token, abi: tokenAbi, functionName: "name" },
-              { address: token, abi: tokenAbi, functionName: "symbol" },
-              { address: token, abi: tokenAbi, functionName: "metadataURI" },
-            ],
-          })) as [readonly [Address, Address, Address, number, number, bigint, boolean], string, string, string];
+      for (let i = 0; i < fresh.length; i += 10) {
+        const batch = fresh.slice(i, i + 10).map((a) => a.toLowerCase() as Address);
+        const rows = await readGate.run(() => this.pc.multicall({
+          allowFailure: true,
+          contracts: batch.flatMap((token) => [
+            { address: ADDRESSES.factory, abi: factoryAbi, functionName: "listings", args: [token] },
+            { address: token, abi: tokenAbi, functionName: "name" },
+            { address: token, abi: tokenAbi, functionName: "symbol" },
+            { address: token, abi: tokenAbi, functionName: "metadataURI" },
+          ]) as any,
+        })).catch(() => null);
+        if (!rows) continue;
+        batch.forEach((token, j) => {
+          const [l, n, s, m] = rows.slice(j * 4, j * 4 + 4);
+          if (l.status !== "success" || n.status !== "success" || s.status !== "success") return;
+          const listing = l.result as unknown as readonly [Address, Address, Address, number, number, bigint, boolean];
+          const metaURI = m.status === "success" ? String(m.result) : "";
           let metadata: Record<string, unknown> = {};
           try { metadata = JSON.parse(metaURI); } catch { metadata = { description: metaURI }; }
-          const launch = this.scan.launch[token];
           this.cores.set(token, {
             address: token, creator: listing[0].toLowerCase() as Address, pair: listing[1].toLowerCase() as Address, pool: listing[2].toLowerCase() as Address,
             tickLower: Number(listing[3]), tickUpper: Number(listing[4]), createdAt: Number(listing[5]), tokenIsToken0: listing[6],
-            launchBlock: launch ? BigInt(launch) : this.blockFromTimestamp(Number(listing[5]), latest),
-            name, symbol, metadata,
+            launchBlock: this.blockFromTimestamp(Number(listing[5]), head), name: String(n.result), symbol: String(s.result), metadata,
           });
-        } catch { /* picked up next refresh */ }
+        });
       }
     }
-    this.coresUpTo = latest;
+    this.coresUpTo = head.block;
     return [...this.cores.values()];
-  }
-
-  /** Rough block for a timestamp when the launch log is out of reach. */
-  private blockFromTimestamp(ts: number, latest: bigint): bigint {
-    const anchorTs = this.blockAnchor?.ts ?? Math.floor(Date.now() / 1000);
-    const back = BigInt(Math.max(0, Math.round((anchorTs - ts) / env.secondsPerBlock)));
-    return back >= latest ? 0n : latest - back;
-  }
-
-  private async blockTs(block: bigint, latest: bigint): Promise<number> {
-    if (!this.blockAnchor || this.blockAnchor.block !== latest) {
-      const b = await this.pc.getBlock({ blockNumber: latest }).catch(() => null);
-      this.blockAnchor = { block: latest, ts: b ? Number(b.timestamp) : Math.floor(Date.now() / 1000) };
-    }
-    return this.blockAnchor.ts - Math.round(Number(latest - block) * env.secondsPerBlock);
   }
 
   // -- pricing ------------------------------------------------------------
@@ -308,96 +334,164 @@ export class StockPadClient {
     return tokenIsToken0 ? (sqrtP * sqrtP * scale) / Q192 : (Q192 * scale) / (sqrtP * sqrtP);
   }
 
-  private async slot0(pool: Address): Promise<bigint> {
-    try {
-      const [sqrtP] = (await this.pc.readContract({ address: pool, abi: poolAbi, functionName: "slot0" })) as readonly [bigint, number, number, number, number, number, boolean];
-      return sqrtP;
-    } catch {
-      return 0n;
-    }
-  }
-
   async assetUsdPrice(): Promise<number> { return 1; }
   async ethUsd(): Promise<number> { return 1; }
   async pairInfo(_pair?: Address): Promise<PairInfo> { return USDC_PAIR; }
   async pairOf(_token?: Address): Promise<PairInfo> { return USDC_PAIR; }
   async quotes(): Promise<QuoteView[]> { return [{ ...USDC_PAIR, approved: true, liqUsd: 0, vol24Usd: 0 }]; }
 
-  // -- trades -------------------------------------------------------------
+  // -- trades: one Swap scan over every pool, forward on demand, backward in the background --
 
-  private loadTrades(token: Address): Promise<TradeRecord[]> {
-    const key = token.toLowerCase();
-    const inflight = this.tradesInflight.get(key);
-    if (inflight) return inflight;
-    const p = this.loadTradesInner(token).finally(() => this.tradesInflight.delete(key));
-    this.tradesInflight.set(key, p);
-    return p;
+  private async getLogsRange(addresses: Address[], event: any, from: bigint, to: bigint): Promise<any[]> {
+    return logGate.run(() => logClient.getLogs({ address: addresses, event, fromBlock: from, toBlock: to }) as Promise<any[]>);
   }
 
-  private async loadTradesInner(token: Address): Promise<TradeRecord[]> {
+  /** Split [from, to] into RPC-sized windows and fetch them through the gate; a failed window is skipped. */
+  private async scanRange(addresses: Address[], event: any, from: bigint, to: bigint): Promise<any[]> {
+    const windows: [bigint, bigint][] = [];
+    for (let a = from; a <= to; a += LOG_CHUNK + 1n) windows.push([a, a + LOG_CHUNK > to ? to : a + LOG_CHUNK]);
+    const parts = await Promise.all(windows.map(([a, b]) => this.getLogsRange(addresses, event, a, b).catch(() => [] as any[])));
+    return parts.flat();
+  }
+
+  private poolCores(): Map<string, Core> {
+    return new Map([...this.cores.values()].map((c) => [c.pool, c]));
+  }
+
+  private ingestSwaps(logs: any[]) {
+    const byPool = this.poolCores();
+    const abs = (v: bigint) => (v < 0n ? -v : v);
+    const fresh = new Map<string, TradeRecord[]>();
+    for (const log of logs) {
+      const core = byPool.get(String(log.address).toLowerCase());
+      if (!core) continue;
+      const a0 = log.args.amount0 as bigint, a1 = log.args.amount1 as bigint;
+      // V3 deltas are the pool's: positive came in, negative went out.
+      const quoteDelta = core.tokenIsToken0 ? a1 : a0;
+      const tokenDelta = core.tokenIsToken0 ? a0 : a1;
+      const quoteWei = abs(quoteDelta) * NATIVE_PER_QUOTE;
+      const block = log.blockNumber as bigint;
+      const rec: TradeRecord = {
+        id: `${log.transactionHash}-${log.logIndex}`, token: core.address, trader: String(log.args.recipient).toLowerCase() as Address,
+        isBuy: tokenDelta < 0n, nativeAmountWei: quoteWei.toString(), tokenAmount: abs(tokenDelta).toString(),
+        feeWei: ((quoteWei * FEE_BPS) / 10_000n).toString(),
+        priceWei: this.priceFromSqrt(log.args.sqrtPriceX96 as bigint, core.tokenIsToken0).toString(),
+        blockNumber: Number(block), txHash: log.transactionHash, timestamp: this.tsOf(block),
+      };
+      const arr = fresh.get(core.pool) ?? [];
+      arr.push(rec);
+      fresh.set(core.pool, arr);
+    }
+    for (const [pool, recs] of fresh) {
+      const have = this.tr.data.get(pool) ?? [];
+      const seen = new Set(have.map((r) => r.id));
+      const merged = have.concat(recs.filter((r) => !seen.has(r.id))).sort((a, b) => a.blockNumber - b.blockNumber || a.id.localeCompare(b.id));
+      this.tr.data.set(pool, merged.length > MAX_RECORDS_PER_POOL ? merged.slice(-MAX_RECORDS_PER_POOL) : merged);
+    }
+    return fresh;
+  }
+
+  /** Real timestamps for a few blocks (newest first), which also become anchors. */
+  private async stampBlocks(blocks: bigint[]) {
+    const want = [...new Set(blocks)].sort((a, b) => (a < b ? 1 : -1)).slice(0, 8).filter((b) => !this.anchors.some(([x]) => x === b));
+    const got = await Promise.allSettled(want.map((b) => readGate.run(() => this.pc.getBlock({ blockNumber: b }))));
+    got.forEach((r, i) => { if (r.status === "fulfilled") this.addAnchor(want[i], Number(r.value.timestamp)); });
+  }
+
+  private restamp() {
+    for (const recs of this.tr.data.values()) for (const r of recs) r.timestamp = this.tsOf(BigInt(r.blockNumber));
+  }
+
+  /** Sells pay the router first, so the Swap recipient is the router; look up the sender for the newest ones. */
+  private async attributeSells(fresh: Map<string, TradeRecord[]>) {
+    const router = ADDRESSES.router.toLowerCase();
+    const recs = [...fresh.values()].flat().filter((r) => r.trader === router).sort((a, b) => b.blockNumber - a.blockNumber).slice(0, 24);
+    if (!recs.length) return;
+    const hashes = [...new Set(recs.map((r) => r.txHash))];
+    const txs = await Promise.allSettled(hashes.map((h) => readGate.run(() => this.pc.getTransaction({ hash: h as Hex }))));
+    const from = new Map<string, Address>();
+    txs.forEach((r, i) => { if (r.status === "fulfilled" && r.value?.from) from.set(hashes[i], r.value.from.toLowerCase() as Address); });
+    for (const recsOfPool of this.tr.data.values()) for (const r of recsOfPool) if (r.trader === router && from.has(r.txHash)) r.trader = from.get(r.txHash)!;
+  }
+
+  private persistTrades() {
+    store.set("trades", { lo: this.tr.lo.toString(), hi: this.tr.hi.toString(), byPool: Object.fromEntries([...this.tr.data.entries()].map(([p, r]) => [p, r.slice(-1500)])), anchors: this.anchors.map(([b, t]) => [b.toString(), t]) } satisfies TradeStore);
+  }
+
+  /** Oldest block any scan needs: the earliest launch, bounded by what the RPC still serves. */
+  private floorBlock(head: bigint): bigint {
+    const launches = [...this.cores.values()].map((c) => c.launchBlock);
+    const oldest = launches.length ? launches.reduce((a, b) => (a < b ? a : b)) : head;
+    const retained = head > RETAIN ? head - RETAIN : 0n;
+    return oldest > retained ? oldest : retained;
+  }
+
+  /** Bring the combined trade scan up to the chain head. */
+  private syncTrades(): Promise<void> {
+    if (this.trInflight) return this.trInflight;
+    this.trInflight = this.syncTradesInner().catch(() => undefined).finally(() => (this.trInflight = null));
+    return this.trInflight;
+  }
+
+  private async syncTradesInner() {
+    const cores = await this.loadCores();
+    if (!cores.length) return;
+    const head = await this.headInfo();
+    this.addAnchor(head.block, head.ts);
+    const pools = cores.map((c) => c.pool);
+    const floor = this.floorBlock(head.block);
+    let from: bigint;
+    if (this.tr.hi === 0n) from = head.block - INITIAL > floor ? head.block - INITIAL : floor;
+    else { from = this.tr.hi + 1n; if (from > head.block) return; }
+    const logs = await this.scanRange(pools, swapEvent, from, head.block);
+    await this.stampBlocks(logs.map((l) => l.blockNumber as bigint));
+    const fresh = this.ingestSwaps(logs);
+    this.restamp();
+    if (this.tr.lo === 0n) this.tr.lo = from;
+    this.tr.hi = head.block;
+    await this.attributeSells(fresh).catch(() => undefined);
+    this.persistTrades();
+    this.backfillTrades();
+  }
+
+  /** Extend the scan backwards one window at a time, until the oldest launch or the RPC's retention edge. */
+  private backfillTrades() {
+    if (this.trBackfilling || typeof window === "undefined") return;
+    this.trBackfilling = true;
+    const done = () => { this.trBackfilling = false; };
+    const step = async () => {
+      try {
+        const floor = this.floorBlock(this.tr.hi);
+        if (this.tr.lo === 0n || this.tr.lo <= floor) return done();
+        const to = this.tr.lo - 1n;
+        const from = to - LOG_CHUNK > floor ? to - LOG_CHUNK : floor;
+        const pools = [...this.cores.values()].map((c) => c.pool);
+        const logs = await this.getLogsRange(pools, swapEvent, from, to).catch(() => null);
+        if (logs === null) { this.tr.lo = floor; this.persistTrades(); return done(); } // pruned or refused: stop here
+        const b = await readGate.run(() => this.pc.getBlock({ blockNumber: from })).catch(() => null);
+        if (b) this.addAnchor(from, Number(b.timestamp));
+        this.ingestSwaps(logs);
+        this.restamp();
+        this.tr.lo = from;
+        this.persistTrades();
+        setTimeout(step, 250);
+      } catch { done(); }
+    };
+    setTimeout(step, 300);
+  }
+
+  private async tradesOf(token: Address): Promise<TradeRecord[]> {
     await this.loadCores();
-    const key = token.toLowerCase();
-    const core = this.cores.get(key);
+    const core = this.cores.get(token.toLowerCase());
     if (!core) return [];
-    let cached = this.trades.get(key);
-    if (!cached) {
-      const saved = store.get<{ upTo: string; records: TradeRecord[] }>(`trades.${key}`);
-      if (saved) { cached = { records: saved.records, upTo: BigInt(saved.upTo) }; this.trades.set(key, cached); }
-    }
-    try {
-      const latest = await this.pc.getBlockNumber();
-      let fromBlock = cached ? cached.upTo + 1n : core.launchBlock;
-      if (fromBlock < latest - RETAIN) fromBlock = latest - RETAIN;
-      if (cached && fromBlock > latest) return cached.records;
-      const logs = await scanRange(fromBlock, latest, (a, b) => logClient.getLogs({ address: core.pool, event: swapEvent, fromBlock: a, toBlock: b }) as Promise<any[]>);
-      const abs = (v: bigint) => (v < 0n ? -v : v);
-      const fresh: TradeRecord[] = logs.map((log) => {
-        const a0 = log.args.amount0 as bigint, a1 = log.args.amount1 as bigint;
-        // V3 deltas are the pool's: positive came in, negative went out.
-        const quoteDelta = core.tokenIsToken0 ? a1 : a0;
-        const tokenDelta = core.tokenIsToken0 ? a0 : a1;
-        const quoteWei = abs(quoteDelta) * NATIVE_PER_QUOTE;
-        return {
-          id: `${log.transactionHash}-${log.logIndex}`, token: core.address, trader: String(log.args.recipient).toLowerCase() as Address,
-          isBuy: tokenDelta < 0n, nativeAmountWei: quoteWei.toString(), tokenAmount: abs(tokenDelta).toString(),
-          feeWei: ((quoteWei * BigInt(FEES.taxPct * 100)) / 10_000n).toString(),
-          priceWei: this.priceFromSqrt(log.args.sqrtPriceX96 as bigint, core.tokenIsToken0).toString(),
-          blockNumber: Number(log.blockNumber), txHash: log.transactionHash, timestamp: 0,
-        };
-      }).sort((a, b) => a.blockNumber - b.blockNumber || a.id.localeCompare(b.id));
-      // Real timestamps for the blocks that carry trades (bounded), the block-time estimate for the rest.
-      const blocks = [...new Set(fresh.map((r) => r.blockNumber))].slice(-120);
-      const stamps = new Map<number, number>();
-      const got = await Promise.allSettled(blocks.map((b) => this.pc.getBlock({ blockNumber: BigInt(b) })));
-      got.forEach((r, i) => { if (r.status === "fulfilled") stamps.set(blocks[i], Number(r.value.timestamp)); });
-      for (const r of fresh) r.timestamp = stamps.get(r.blockNumber) ?? (await this.blockTs(BigInt(r.blockNumber), latest));
-      // Buys land on the buyer directly; sells pay the router first, so attribute those to the sender.
-      const router = ADDRESSES.router.toLowerCase();
-      const viaRouter = fresh.filter((r) => r.trader === router);
-      if (viaRouter.length) {
-        const hashes = [...new Set(viaRouter.map((r) => r.txHash))].slice(-150);
-        const txs = await Promise.allSettled(hashes.map((h) => this.pc.getTransaction({ hash: h as Hex })));
-        const from = new Map<string, Address>();
-        txs.forEach((r, i) => { if (r.status === "fulfilled" && r.value?.from) from.set(hashes[i], r.value.from.toLowerCase() as Address); });
-        for (const r of viaRouter) r.trader = from.get(r.txHash) ?? r.trader;
-      }
-      let records = fresh;
-      if (cached) {
-        const seen = new Set(cached.records.map((r) => r.id));
-        records = cached.records.concat(fresh.filter((r) => !seen.has(r.id)));
-      }
-      this.trades.set(key, { records, upTo: latest });
-      store.set(`trades.${key}`, { upTo: latest.toString(), records: records.slice(-2000) });
-      return records;
-    } catch {
-      return cached?.records ?? [];
-    }
+    await this.syncTrades();
+    return this.tr.data.get(core.pool) ?? [];
   }
 
   // -- summaries ----------------------------------------------------------
 
-  private async summarize(core: Core): Promise<StockToken> {
-    const [trades, sqrtP] = await Promise.all([this.loadTrades(core.address), this.slot0(core.pool)]);
+  private async summarize(core: Core, sqrtP: bigint, liquidity: bigint): Promise<StockToken> {
+    const trades = this.tr.data.get(core.pool) ?? [];
     const pair = USDC_PAIR;
     const priceWei = sqrtP > 0n ? this.priceFromSqrt(sqrtP, core.tokenIsToken0) : trades.length ? BigInt(trades[trades.length - 1].priceWei) : 0n;
     const pricePair = Number(priceWei) / 1e18;
@@ -410,31 +504,32 @@ export class StockPadClient {
     const ref = [...trades].reverse().find((t) => t.timestamp <= dayAgo) ?? trades[0];
     const refP = ref ? Number(ref.priceWei) : 0;
     const change = refP > 0 && trades.length > 1 ? ((Number(priceWei) - refP) / refP) * 100 : null;
-    let holderCount = new Set(trades.filter((t) => t.isBuy).map((t) => t.trader)).size;
-    try { holderCount = this.holderEntries(core, await this.loadBalances(core.address)).length; } catch { /* fallback above */ }
+    // Holder count from a completed Transfer scan when the token page has built one; else distinct buyers.
+    const bal = this.bals.get(core.address);
+    const holderCount = bal && bal.lo !== 0n && bal.lo <= core.launchBlock ? this.holderEntries(core, bal.data).length : new Set(trades.filter((t) => t.isBuy).map((t) => t.trader)).size;
 
     // Liquidity: both legs of the launch position at the live price, in USDC wei
     // (the coin leg converted at spot, the way Dexscreener reports it).
     let liquidityWei = 0n;
     let reserves: StockToken["reserves"];
-    try {
-      const L = Number(await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "positionLiquidity", args: [core.address] }));
-      if (L > 0 && sqrtP > 0n) {
-        const sp = Number(sqrtP) / 2 ** 96, sa = Math.sqrt(1.0001 ** core.tickLower), sb = Math.sqrt(1.0001 ** core.tickUpper);
-        let amount0 = 0, amount1 = 0;
-        if (sp <= sa) amount0 = (L * (sb - sa)) / (sa * sb);
-        else if (sp >= sb) amount1 = L * (sb - sa);
-        else { amount0 = (L * (sb - sp)) / (sp * sb); amount1 = L * (sp - sa); }
-        const quoteRaw = core.tokenIsToken0 ? amount1 : amount0;
-        const tokenUnits = core.tokenIsToken0 ? amount0 : amount1;
-        const pairUnits = quoteRaw * 1e12;
-        liquidityWei = BigInt(Math.max(0, Math.round(pairUnits + tokenUnits * pricePair)));
-        reserves = { pair: BigInt(Math.max(0, Math.round(pairUnits))), token: BigInt(Math.max(0, Math.round(tokenUnits))) };
-      }
-    } catch { /* dash */ }
+    const L = Number(liquidity);
+    if (L > 0 && sqrtP > 0n) {
+      const sp = Number(sqrtP) / 2 ** 96, sa = Math.sqrt(1.0001 ** core.tickLower), sb = Math.sqrt(1.0001 ** core.tickUpper);
+      let amount0 = 0, amount1 = 0;
+      if (sp <= sa) amount0 = (L * (sb - sa)) / (sa * sb);
+      else if (sp >= sb) amount1 = L * (sb - sa);
+      else { amount0 = (L * (sb - sp)) / (sp * sb); amount1 = L * (sp - sa); }
+      const quoteRaw = core.tokenIsToken0 ? amount1 : amount0;
+      const tokenUnits = core.tokenIsToken0 ? amount0 : amount1;
+      const pairUnits = quoteRaw * 1e12;
+      liquidityWei = BigInt(Math.max(0, Math.round(pairUnits + tokenUnits * pricePair)));
+      reserves = { pair: BigInt(Math.max(0, Math.round(pairUnits))), token: BigInt(Math.max(0, Math.round(tokenUnits))) };
+    }
 
-    const paid = this.scan.fees[core.address];
-    const rewards = { holders: 0n, creator: paid ? BigInt(paid.c) * NATIVE_PER_QUOTE : 0n, platform: paid ? BigInt(paid.p) * NATIVE_PER_QUOTE : 0n };
+    // Fees earned over the scanned trades: the pool's 1% of volume, split 80/20.
+    const fees = (volTotal * FEE_BPS) / 10_000n;
+    const creator = (fees * CREATOR_BPS) / 10_000n;
+    const rewards = { holders: 0n, creator, platform: fees - creator };
 
     return {
       address: core.address, name: core.name, symbol: core.symbol, creator: core.creator, pool: core.pool, feeTier: FEES.taxPct * 100,
@@ -446,10 +541,33 @@ export class StockPadClient {
     };
   }
 
+  /** slot0 and position liquidity for many coins in one multicall. */
+  private async poolState(cores: Core[]): Promise<Map<string, { sqrtP: bigint; liquidity: bigint }>> {
+    const out = new Map<string, { sqrtP: bigint; liquidity: bigint }>();
+    for (let i = 0; i < cores.length; i += 40) {
+      const batch = cores.slice(i, i + 40);
+      const rows = await readGate.run(() => this.pc.multicall({
+        allowFailure: true,
+        contracts: batch.flatMap((c) => [
+          { address: c.pool, abi: poolAbi, functionName: "slot0" },
+          { address: ADDRESSES.factory, abi: factoryAbi, functionName: "positionLiquidity", args: [c.address] },
+        ]) as any,
+      })).catch(() => null);
+      batch.forEach((c, j) => {
+        const s = rows?.[j * 2], l = rows?.[j * 2 + 1];
+        out.set(c.address, {
+          sqrtP: s?.status === "success" ? ((s.result as unknown as readonly [bigint])[0] ?? 0n) : 0n,
+          liquidity: l?.status === "success" ? (l.result as unknown as bigint) : 0n,
+        });
+      });
+    }
+    return out;
+  }
+
   async getTokens(opts?: { sort?: string; limit?: number }): Promise<StockToken[]> {
     const cores = await this.loadCores();
-    const settled = await Promise.allSettled(cores.map((c) => this.summarize(c)));
-    const list = settled.filter((r): r is PromiseFulfilledResult<StockToken> => r.status === "fulfilled").map((r) => r.value);
+    const [state] = await Promise.all([this.poolState(cores), this.syncTrades()]);
+    const list = await Promise.all(cores.map((c) => { const s = state.get(c.address) ?? { sqrtP: 0n, liquidity: 0n }; return this.summarize(c, s.sqrtP, s.liquidity); }));
     if (opts?.sort === "mcap") list.sort((a, b) => Number(b.marketCapUsd) - Number(a.marketCapUsd));
     else list.sort((a, b) => b.createdAt - a.createdAt);
     return list.slice(0, opts?.limit ?? 120);
@@ -458,16 +576,19 @@ export class StockPadClient {
   async getToken(token: string): Promise<StockToken | null> {
     await this.loadCores();
     const core = this.cores.get(token.toLowerCase());
-    return core ? this.summarize(core) : null;
+    if (!core) return null;
+    const [state] = await Promise.all([this.poolState([core]), this.syncTrades()]);
+    const s = state.get(core.address) ?? { sqrtP: 0n, liquidity: 0n };
+    return this.summarize(core, s.sqrtP, s.liquidity);
   }
 
   async getTrades(token: string, opts?: { limit?: number }): Promise<TradeRecord[]> {
-    const t = await this.loadTrades(token as Address);
+    const t = await this.tradesOf(token as Address);
     return [...t].reverse().slice(0, opts?.limit ?? 60);
   }
 
   async getCandles(token: string, interval: CandleInterval, opts?: { limit?: number }): Promise<Candle[]> {
-    const trades = await this.loadTrades(token as Address);
+    const trades = await this.tradesOf(token as Address);
     const span = INTERVAL_SECONDS[interval];
     const buckets = new Map<number, Candle>();
     for (const t of trades) {
@@ -495,42 +616,73 @@ export class StockPadClient {
     return filled.slice(-limit);
   }
 
-  /** Wallet balances from Transfer logs (incremental, persisted). */
-  private loadBalances(token: Address): Promise<Map<string, bigint>> {
+  // -- holders: Transfer scan per coin, only when a token page asks ----------
+
+  private ingestTransfers(bal: Map<string, bigint>, logs: any[]) {
+    for (const l of logs) {
+      const f = String(l.args.from).toLowerCase(), t = String(l.args.to).toLowerCase(), v = l.args.value as bigint;
+      bal.set(f, (bal.get(f) ?? 0n) - v);
+      bal.set(t, (bal.get(t) ?? 0n) + v);
+    }
+  }
+
+  private persistBal(token: string, s: Scan<Map<string, bigint>>) {
+    store.set(`bal.${token}`, { lo: s.lo.toString(), hi: s.hi.toString(), bal: Object.fromEntries([...s.data.entries()].filter(([, v]) => v !== 0n).map(([a, v]) => [a, v.toString()])) } satisfies BalStore);
+  }
+
+  private syncBalances(token: Address): Promise<void> {
     const key = token.toLowerCase();
-    const inflight = this.balancesInflight.get(key);
+    const inflight = this.balInflight.get(key);
     if (inflight) return inflight;
-    const p = this.loadBalancesInner(token).finally(() => this.balancesInflight.delete(key));
-    this.balancesInflight.set(key, p);
+    const p = this.syncBalancesInner(key).catch(() => undefined).finally(() => this.balInflight.delete(key));
+    this.balInflight.set(key, p);
     return p;
   }
 
-  private async loadBalancesInner(token: Address): Promise<Map<string, bigint>> {
-    await this.loadCores();
-    const key = token.toLowerCase();
+  private async syncBalancesInner(key: string) {
     const core = this.cores.get(key);
-    if (!core) return new Map();
-    let cached = this.balances.get(key);
-    if (!cached) {
-      const saved = store.get<{ upTo: string; bal: Record<string, string> }>(`bal.${key}`);
-      if (saved) { cached = { bal: new Map(Object.entries(saved.bal).map(([a, v]) => [a, BigInt(v)])), upTo: BigInt(saved.upTo) }; this.balances.set(key, cached); }
+    if (!core) return;
+    let s = this.bals.get(key);
+    if (!s) {
+      const saved = store.get<BalStore>(`bal.${key}`);
+      s = saved ? { lo: BigInt(saved.lo), hi: BigInt(saved.hi), data: new Map(Object.entries(saved.bal).map(([a, v]) => [a, BigInt(v)])) } : { lo: 0n, hi: 0n, data: new Map() };
+      this.bals.set(key, s);
     }
-    const bal = cached ? new Map(cached.bal) : new Map<string, bigint>();
-    try {
-      const latest = await this.pc.getBlockNumber();
-      let fromBlock = cached ? cached.upTo + 1n : core.launchBlock;
-      if (fromBlock < latest - RETAIN) fromBlock = latest - RETAIN;
-      if (fromBlock > latest) return bal;
-      const logs = await scanRange(fromBlock, latest, (a, b) => logClient.getLogs({ address: token, event: transferEvent, fromBlock: a, toBlock: b }) as Promise<any[]>);
-      for (const l of logs) {
-        const f = String(l.args.from).toLowerCase(), t = String(l.args.to).toLowerCase(), v = l.args.value as bigint;
-        bal.set(f, (bal.get(f) ?? 0n) - v);
-        bal.set(t, (bal.get(t) ?? 0n) + v);
-      }
-      this.balances.set(key, { bal, upTo: latest });
-      store.set(`bal.${key}`, { upTo: latest.toString(), bal: Object.fromEntries([...bal.entries()].filter(([, v]) => v !== 0n).map(([a, v]) => [a, v.toString()])) });
-    } catch { /* keep whatever we had */ }
-    return bal;
+    const head = await this.headInfo();
+    const retained = head.block > RETAIN ? head.block - RETAIN : 0n;
+    const floor = core.launchBlock > retained ? core.launchBlock : retained;
+    let from: bigint;
+    if (s.hi === 0n) from = head.block - INITIAL > floor ? head.block - INITIAL : floor;
+    else { from = s.hi + 1n; if (from > head.block) { this.backfillBalances(key); return; } }
+    const logs = await this.scanRange([core.address], transferEvent, from, head.block);
+    this.ingestTransfers(s.data, logs);
+    if (s.lo === 0n) s.lo = from;
+    s.hi = head.block;
+    this.persistBal(key, s);
+    this.backfillBalances(key);
+  }
+
+  private backfillBalances(key: string) {
+    if (this.balBackfilling.has(key) || typeof window === "undefined") return;
+    const core = this.cores.get(key), s = this.bals.get(key);
+    if (!core || !s) return;
+    this.balBackfilling.add(key);
+    const step = async () => {
+      try {
+        const retained = s.hi > RETAIN ? s.hi - RETAIN : 0n;
+        const floor = core.launchBlock > retained ? core.launchBlock : retained;
+        if (s.lo <= floor || s.lo === 0n) { this.balBackfilling.delete(key); return; }
+        const to = s.lo - 1n;
+        const from = to - LOG_CHUNK > floor ? to - LOG_CHUNK : floor;
+        const logs = await this.getLogsRange([core.address], transferEvent, from, to).catch(() => null);
+        if (logs === null) { s.lo = floor; this.balBackfilling.delete(key); return; }
+        this.ingestTransfers(s.data, logs);
+        s.lo = from;
+        this.persistBal(key, s);
+        setTimeout(step, 250);
+      } catch { this.balBackfilling.delete(key); }
+    };
+    setTimeout(step, 300);
   }
 
   private holderEntries(core: Core, bal: Map<string, bigint>): [string, bigint][] {
@@ -542,16 +694,18 @@ export class StockPadClient {
     await this.loadCores();
     const core = this.cores.get(token.toLowerCase());
     if (!core) return [];
-    const [bal, supply] = await Promise.all([this.loadBalances(token as Address), this.pc.readContract({ address: token as Address, abi: tokenAbi, functionName: "totalSupply" }) as Promise<bigint>]);
-    const total = Number(supply) / 1e18 || 1e9;
-    return this.holderEntries(core, bal).slice(0, opts?.limit ?? 30)
+    await this.syncBalances(token as Address);
+    const s = this.bals.get(core.address);
+    if (!s) return [];
+    const total = 1e9;
+    return this.holderEntries(core, s.data).slice(0, opts?.limit ?? 30)
       .map(([address, b]) => ({ address: address as Address, balance: b.toString(), pct: (Number(b) / 1e18 / total) * 100 }));
   }
 
   subscribeToTrades(token: string, cb: (t: TradeRecord) => void): () => void {
     const seen = new Set<string>();
     let seeded = false;
-    const tick = () => this.loadTrades(token as Address).then((tr) => {
+    const tick = () => this.tradesOf(token as Address).then((tr) => {
       if (!seeded) { for (const r of tr) seen.add(r.id); seeded = true; return; }
       for (const r of tr) if (!seen.has(r.id)) { seen.add(r.id); cb(r); }
     }).catch(() => undefined);
@@ -565,7 +719,7 @@ export class StockPadClient {
   /** Fees sitting in a coin's pool position, in native USDC wei: creator share and platform share. */
   private async pendingSplit(tokens: Address[]): Promise<Map<string, { creator: bigint; platform: bigint }>> {
     if (tokens.length === 0) return new Map();
-    const res = await this.pc.multicall({ allowFailure: true, contracts: tokens.map((t) => ({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "pendingFees" as const, args: [t] as const })) as any });
+    const res = await readGate.run(() => this.pc.multicall({ allowFailure: true, contracts: tokens.map((t) => ({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "pendingFees" as const, args: [t] as const })) as any }));
     return new Map(tokens.map((t, i) => {
       const r = res[i];
       const quote = r.status === "success" ? ((r.result as unknown as readonly [bigint, bigint])[1] ?? 0n) * NATIVE_PER_QUOTE : 0n;
@@ -579,13 +733,14 @@ export class StockPadClient {
     const core = this.cores.get(token.toLowerCase());
     const [split, balance] = await Promise.all([
       this.pendingSplit([token]),
-      account ? (this.pc.readContract({ address: token, abi: tokenAbi, functionName: "balanceOf", args: [account] }) as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n),
+      account ? readGate.run(() => this.pc.readContract({ address: token, abi: tokenAbi, functionName: "balanceOf", args: [account] }) as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n),
     ]);
     const s = split.get(token.toLowerCase()) ?? { creator: 0n, platform: 0n };
-    const paid = this.scan.fees[token.toLowerCase()];
+    const trades = core ? this.tr.data.get(core.pool) ?? [] : [];
+    const fees = (trades.reduce((a, t) => a + BigInt(t.nativeAmountWei), 0n) * FEE_BPS) / 10_000n;
+    const totalCreator = (fees * CREATOR_BPS) / 10_000n;
     return {
-      pending: 0n, creatorFees: s.creator, platformFees: s.platform, totalHolder: 0n,
-      totalCreator: paid ? BigInt(paid.c) * NATIVE_PER_QUOTE : 0n, totalPlatform: paid ? BigInt(paid.p) * NATIVE_PER_QUOTE : 0n,
+      pending: 0n, creatorFees: s.creator, platformFees: s.platform, totalHolder: 0n, totalCreator, totalPlatform: fees - totalCreator,
       isCreator: !!account && !!core && core.creator === account.toLowerCase(), balance,
     };
   }
@@ -695,14 +850,14 @@ export class StockPadClient {
   // -- admin --------------------------------------------------------------
 
   async config(): Promise<ConfigView> {
-    const [owner, feeRecipient, paused, creatorBps, feeTier, total] = (await this.pc.multicall({ allowFailure: false, contracts: [
+    const [owner, feeRecipient, paused, creatorBps, feeTier, total] = (await readGate.run(() => this.pc.multicall({ allowFailure: false, contracts: [
       { address: ADDRESSES.factory, abi: factoryAbi, functionName: "owner" },
       { address: ADDRESSES.factory, abi: factoryAbi, functionName: "feeRecipient" },
       { address: ADDRESSES.factory, abi: factoryAbi, functionName: "launchesPaused" },
       { address: ADDRESSES.factory, abi: factoryAbi, functionName: "CREATOR_FEE_BPS" },
       { address: ADDRESSES.factory, abi: factoryAbi, functionName: "POOL_FEE_TIER" },
       { address: ADDRESSES.factory, abi: factoryAbi, functionName: "totalTokens" },
-    ] })) as [Address, Address, boolean, number, number, bigint];
+    ] }))) as [Address, Address, boolean, number, number, bigint];
     return { admin: owner, owner, feeRecipient, paused, taxBps: Number(feeTier) / 10, creatorBps: Number(creatorBps), holderBps: 0, ethUsd: 1, converter: ZERO, totalTokens: Number(total) };
   }
 

@@ -18,8 +18,9 @@ const INTERVALS: CandleInterval[] = ["5m", "15m", "1h", "4h", "1d"];
 
 export default function TokenPage() {
   const { address } = useParams<{ address: string }>();
-  const { data: t, isLoading } = useToken(address);
+  const { data: t, isLoading, isError, refetch } = useToken(address);
   if (isLoading) return <main className="page"><div className="skeleton" style={{ height: 90, marginBottom: 16 }} /><div className="skeleton" style={{ height: 420 }} /></main>;
+  if (isError) return <main className="page"><section className="hero"><h1>Arc is <em>busy</em>.</h1><p className="sub">The Arc RPC did not answer in time. This usually clears in a few seconds.</p><div className="cta"><button className="btn ink" onClick={() => refetch()}>Try again</button></div></section></main>;
   if (!t) return <main className="page"><section className="hero"><h1>Not <em>here</em>.</h1><p className="sub">That address is not a coin launched on this factory.</p><div className="cta"><Link to="/" className="btn ink">Back to coins</Link></div></section></main>;
   return <Coin t={t} />;
 }
@@ -194,7 +195,7 @@ function CreatorFees({ token, pair }: { token: Address; pair: PairInfo }) {
   const claim = (label: string, fn: () => Promise<`0x${string}`>) => async () => { await ensureWallet(); await runTx(label, fn, async () => { await qc.invalidateQueries({ queryKey: ["rewards", token.toLowerCase()] }); await qc.invalidateQueries({ queryKey: ["bal"] }); }); };
   return (
     <div className="panel pay">
-      <div className="between"><div><div className="caps">Your creator fees</div><div className="v">{hype(wei(data.creatorFees), 2)} <span className="dim" style={{ fontSize: 14, fontWeight: 600 }}>{unit}</span></div></div><span className="faint" style={{ fontSize: 12 }}>lifetime {hype(wei(data.totalCreator), 2)}</span></div>
+      <div className="between"><div><div className="caps">Your creator fees</div><div className="v">{hype(wei(data.creatorFees), 2)} <span className="dim" style={{ fontSize: 14, fontWeight: 600 }}>{unit}</span></div></div><span className="faint" style={{ fontSize: 12 }}>earned so far {hype(wei(data.totalCreator), 2)}</span></div>
       {data.creatorFees > 0n && <div className="row" style={{ marginTop: 12, flexWrap: "wrap" }}><button className="btn acc sm" onClick={claim("Collect creator fees", () => client.claimCreatorFees(token, false))}>Collect {unit}</button></div>}
       <p className="note">{FEES.creatorPct}% of every pool fee is yours. Collect whenever you like; it arrives as {unit}.</p>
     </div>

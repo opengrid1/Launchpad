@@ -12,7 +12,7 @@ const SORTS: { k: Sort; l: string; d: string; hint: string }[] = [
   { k: "mcap", l: "Market cap", hint: "biggest coins first", d: "M4 20V10M10 20V4M16 20v-7M22 20H2" },
   { k: "vol", l: "Volume", hint: "most traded today", d: "M3 17l5-5 4 4 5-6 4 3M3 21h18" },
   { k: "chg", l: "24h change", hint: "top movers first", d: "M3 17l6-6 4 4 8-8M15 7h6v6" },
-  { k: "paid", l: "Paid to creator", hint: "most fees earned", d: "M12 2v20M17 6.5c-1-1.5-2.5-2-5-2s-4.5 1.2-4.5 3.2c0 4.8 9.5 2 9.5 7 0 2-2 3.3-5 3.3s-4.5-.8-5.5-2.5" },
+  { k: "paid", l: "Creator fees", hint: "most fees earned", d: "M12 2v20M17 6.5c-1-1.5-2.5-2-5-2s-4.5 1.2-4.5 3.2c0 4.8 9.5 2 9.5 7 0 2-2 3.3-5 3.3s-4.5-.8-5.5-2.5" },
   { k: "holders", l: "Holders", hint: "widest ownership", d: "M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM21 21v-2a4 4 0 0 0-3-3.9M15 3.1a4 4 0 0 1 0 7.8" },
 ];
 const SortIcon = ({ d }: { d: string }) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
@@ -59,7 +59,7 @@ export default function Home() {
         <div className="stats">
           <div className="acc"><b>{num(totals.n, 0)}</b><span>coins live</span></div>
           <div><b>{usd(totals.vol, { compact: true })}</b><span>volume 24h</span></div>
-          <div><b>{usd(totals.paid, { compact: true })}</b><span>paid to creators</span></div>
+          <div><b>{usd(totals.paid, { compact: true })}</b><span>creator fees earned</span></div>
         </div>
       </section>
 
@@ -143,7 +143,7 @@ export function Tile({ t, i = 0 }: { t: Token; i?: number }) {
       <div className="tile-meta">
         <span><b>{usd(wei(t.volume24hWei) * t.pair.usd, { compact: true })}</b>vol</span>
         <span><b>{num(t.holderCount, 0)}</b>holders</span>
-        <span><b>{usd(paidUsd(t), { compact: true })}</b>to creator</span>
+        <span><b>{usd(paidUsd(t), { compact: true })}</b>creator fees</span>
         <span>{ago(t.createdAt)}</span>
       </div>
     </Link>
