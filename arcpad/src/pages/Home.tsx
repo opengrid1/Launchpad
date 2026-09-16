@@ -53,7 +53,6 @@ export default function Home() {
     <main className="page">
       <section className="lead">
         <div className="say">
-          <h1>Coins priced in <em>dollars</em>.</h1>
           <p>Launch a coin on Arc, Circle's dollar chain. Every coin trades against USDC in a real Uniswap pool, so the price, the fees and your payout are in dollars from the first trade. The {FEES.taxPct}% pool fee pays the creator {FEES.creatorPct}% and the platform {FEES.platformPct}%.</p>
           <div className="cta"><Link to="/launch" className="btn acc">Launch a coin</Link><Link to="/docs" className="btn">How it works</Link></div>
         </div>
