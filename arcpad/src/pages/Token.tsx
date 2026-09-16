@@ -69,10 +69,6 @@ function Coin({ t }: { t: Token }) {
               <div><span>Last trade</span><b>{last ? <><em className={last.isBuy ? "up" : "down"}>{last.isBuy ? "BUY" : "SELL"}</em> {usd(wei(last.nativeAmountWei) * pair.usd)}</> : "—"}</b></div>
               <div><span>Holders</span><b>{num(t.holderCount, 0)}</b></div>
             </div>
-            <div className="mk-pair">
-              <b>{t.symbol} / {pair.symbol}</b>
-              <span>{hype(wei(t.priceWei || "0"), 5)} {pair.symbol} · {pair.symbol} at {usd(pair.usd)}</span>
-            </div>
             <div className="chart-tools">
               <div className="tf" role="tablist" aria-label="Timeframe">{INTERVALS.map((i) => <button key={i} role="tab" aria-selected={interval === i} className={interval === i ? "on" : ""} onClick={() => setInterval_(i)}>{i}</button>)}</div>
               <div className="seg sm"><button className={view === "mcap" ? "on" : ""} onClick={() => setView("mcap")}>Mcap</button><button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>Price</button></div>
