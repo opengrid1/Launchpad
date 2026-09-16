@@ -5,17 +5,11 @@ export const env = {
   chainId: 5042,
   chainName: "Arc",
   nativeSymbol: "USDC",
-  // VITE_RPC_OVERRIDE points every read at one endpoint (local relay in dev/CI).
-  rpcUrls: import.meta.env.VITE_RPC_OVERRIDE ? [String(import.meta.env.VITE_RPC_OVERRIDE)] : [
-    ...(import.meta.env.VITE_ALCHEMY_KEY ? [`https://arc-mainnet.g.alchemy.com/v2/${String(import.meta.env.VITE_ALCHEMY_KEY)}`] : []),
-    "https://rpc.mainnet.arc.io",
-  ],
-  // Log scans (trades, launches) need wide eth_getLogs ranges; the public Arc
-  // RPC caps the range and prunes history, so a keyed endpoint goes first.
-  logRpcUrls: import.meta.env.VITE_LOG_RPC ? [String(import.meta.env.VITE_LOG_RPC)] : import.meta.env.VITE_RPC_OVERRIDE ? [String(import.meta.env.VITE_RPC_OVERRIDE)] : [
-    ...(import.meta.env.VITE_ALCHEMY_KEY ? [`https://arc-mainnet.g.alchemy.com/v2/${String(import.meta.env.VITE_ALCHEMY_KEY)}`] : []),
-    "https://rpc.mainnet.arc.io",
-  ],
+  // Arc's official RPC. VITE_RPC_OVERRIDE points every read at one endpoint (local relay in dev/CI).
+  rpcUrls: import.meta.env.VITE_RPC_OVERRIDE ? [String(import.meta.env.VITE_RPC_OVERRIDE)] : ["https://rpc.mainnet.arc.io"],
+  // Log scans (trades, launches) go to the same endpoint unless VITE_LOG_RPC names another;
+  // the official RPC takes 5,000-block ranges and keeps about a million blocks of history.
+  logRpcUrls: import.meta.env.VITE_LOG_RPC ? [String(import.meta.env.VITE_LOG_RPC)] : import.meta.env.VITE_RPC_OVERRIDE ? [String(import.meta.env.VITE_RPC_OVERRIDE)] : ["https://rpc.mainnet.arc.io"],
   explorerUrl: "https://explorer.arc.io",
   walletConnectProjectId: "e1bda672d5deb56579fe084dddfb9174",
   /** Factory deploy block, the lower bound for log scans. */
