@@ -42,7 +42,7 @@ export function Art({ src, name, className = "art", size }: { src?: string; name
     // the initial, set in the display serif
     const letter = (name.trim().match(/[A-Za-z0-9]/)?.[0] ?? "$").toUpperCase();
     ctx.fillStyle = `hsl(${h1} 40% 92%)`;
-    ctx.font = `italic ${Math.round(px * 0.34)}px "Instrument Serif", "Times New Roman", Georgia, serif`;
+    ctx.font = `600 ${Math.round(px * 0.32)}px "Space Grotesk", "DM Sans", system-ui, sans-serif`;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(letter, px * 0.5, px * 0.52);
   }, [src, bad, name]);
