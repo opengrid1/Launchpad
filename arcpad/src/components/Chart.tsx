@@ -77,7 +77,6 @@ export function Chart({ candles, hypeUsd, mode = "mcap", startUsd = 3000 }: { ca
     <div>
       <div className="gc-h">
         <b className={tone}>{money(d.last)}<span>{d.chg >= 0 ? "+" : ""}{d.chg.toFixed(1)}%</span></b>
-        <span className="from">{mode === "mcap" ? "Mcap" : "Price"} · from {money(d.from)}</span>
       </div>
       <div ref={box} className="gc tv" role="img" aria-label={`${mode === "mcap" ? "market cap" : "price"} candlestick chart`} />
     </div>
