@@ -83,19 +83,12 @@ function Coin({ t }: { t: Token }) {
           {tab === "trades" && <Trades address={t.address} symbol={t.symbol} pair={pair} />}
           {tab === "holders" && <Holders address={t.address} creator={t.creator} />}
           {tab === "about" && (
-            <div className="panel" style={{ padding: 20 }}>
-              <p style={{ margin: 0, whiteSpace: "pre-wrap", color: "var(--ink2)", maxWidth: 640 }}>{t.metadata?.description || "The creator did not add a description."}</p>
-              {links.length > 0 && <div className="row" style={{ marginTop: 14, flexWrap: "wrap" }}>{links.map((l) => <a key={l.l} className="btn sm" href={l.u} target="_blank" rel="noreferrer">{l.l}</a>)}</div>}
-            </div>
-          )}
-        </div>
-
-        <aside>
-          <div className="panel ticket"><TradePanel token={t.address} symbol={t.symbol} priceWei={BigInt(t.priceWei || "0")} pair={pair} ethUsd={ethUsd} /></div>
-          <CreatorFees token={t.address} pair={pair} />
-          <div className="panel">
-            <div className="panel-h"><span>Details</span><b>{`${pair.symbol} pair`}</b></div>
-            <dl className="kv">
+            <div className="panel">
+              <div style={{ padding: "20px 20px 6px" }}>
+                <p style={{ margin: 0, whiteSpace: "pre-wrap", color: "var(--ink2)", maxWidth: 640 }}>{t.metadata?.description || "The creator did not add a description."}</p>
+                {links.length > 0 && <div className="row" style={{ marginTop: 14, flexWrap: "wrap" }}>{links.map((l) => <a key={l.l} className="btn sm" href={l.u} target="_blank" rel="noreferrer">{l.l}</a>)}</div>}
+              </div>
+              <dl className="kv">
               <dt>In the pool</dt><dd>{t.reserves ? <>{hype(wei(t.reserves.pair), 4)} {pair.symbol} · {usd(wei(t.reserves.pair) * pair.usd, { compact: true })}<br /><span className="dim">{cnum(wei(t.reserves.token))} {t.symbol}</span></> : usd(wei(t.liquidityWei) * pair.usd, { compact: true })}</dd>
               <dt>Volume 24h</dt><dd>{usd(wei(t.volume24hWei) * pair.usd, { compact: true })} · {num(t.txCount24h, 0)} trades</dd>
               <dt>Holders</dt><dd>{num(t.holderCount, 0)}</dd>
@@ -106,7 +99,13 @@ function Coin({ t }: { t: Token }) {
               <dt>Pool</dt><dd><Copy value={t.poolId} label="id" /></dd>
               <dt>Links</dt><dd><a className="acc" href={`${env.explorerUrl}/token/${t.address}`} target="_blank" rel="noreferrer">Explorer</a> · <a className="acc" href={`${env.explorerUrl}/address/${t.pool}`} target="_blank" rel="noreferrer">Pool</a></dd>
             </dl>
-          </div>
+            </div>
+          )}
+        </div>
+
+        <aside>
+          <div className="panel ticket"><TradePanel token={t.address} symbol={t.symbol} priceWei={BigInt(t.priceWei || "0")} pair={pair} ethUsd={ethUsd} /></div>
+          <CreatorFees token={t.address} pair={pair} />
         </aside>
       </div>
 
