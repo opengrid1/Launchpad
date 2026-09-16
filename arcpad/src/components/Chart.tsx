@@ -18,6 +18,9 @@ export function money(p: number): string {
   return `$${p.toFixed(decimals)}`;
 }
 
+/** Axis labels: whole dollars when the visible range is tight, otherwise the compact form. */
+const axisMoney = (p: number, narrow: boolean) => (narrow && p >= 1000 && p < 1e6 ? `$${Math.round(p).toLocaleString("en-US")}` : money(p));
+
 const cssVar = (name: string, fallback: string) => (typeof window === "undefined" ? fallback : getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback);
 
 /** TradingView-style candles (Lightweight Charts) with a volume histogram
@@ -39,7 +42,10 @@ export function Chart({ candles, hypeUsd, mode = "mcap", startUsd = 3000 }: { ca
     const from = mode === "mcap" ? Math.min(first, startUsd) : first;
     const last = rows[rows.length - 1].close;
     const chg = from > 0 ? ((last - from) / from) * 100 : 0;
-    return { rows, from, last, chg, up: last >= from };
+    // A young coin moves a fraction of a percent: the axis then needs whole dollars, not $3.04K on every tick.
+    const lo = Math.min(...rows.map((r) => r.low)), hi = Math.max(...rows.map((r) => r.high));
+    const narrow = last > 0 && (hi - lo) / last < 0.05;
+    return { rows, from, last, chg, up: last >= from, narrow };
   }, [candles, scale, hypeUsd, mode, startUsd]);
 
   useEffect(() => {
@@ -56,18 +62,20 @@ export function Chart({ candles, hypeUsd, mode = "mcap", startUsd = 3000 }: { ca
       crosshair: { mode: CrosshairMode.Normal, vertLine: { color: ink3, width: 1, style: 3, labelBackgroundColor: cssVar("--ink", "#1B3158") }, horzLine: { color: ink3, width: 1, style: 3, labelBackgroundColor: cssVar("--ink", "#1B3158") } },
       handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
       handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: true },
-      localization: { priceFormatter: (p: number) => money(p) },
+      localization: { priceFormatter: (p: number) => axisMoney(p, d.narrow) },
     });
     chartRef.current = chart;
     const series = chart.addCandlestickSeries({
       upColor: up, downColor: down, borderUpColor: up, borderDownColor: down, wickUpColor: up, wickDownColor: down,
-      priceFormat: { type: "custom", formatter: (p: number) => money(p), minMove: 1e-12 },
+      priceFormat: { type: "custom", formatter: (p: number) => axisMoney(p, d.narrow), minMove: 1e-12 },
     });
     series.setData(d.rows.map(({ time, open, high, low, close }) => ({ time, open, high, low, close })));
     const vol = chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "vol", lastValueVisible: false, priceLineVisible: false });
     vol.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 }, borderVisible: false });
     vol.setData(d.rows.map((r) => ({ time: r.time, value: r.volume, color: r.close >= r.open ? up + "99" : down + "99" })));
-    chart.timeScale().fitContent();
+    // Show the last ~60 bars at a normal width; a brand-new coin with one or two candles
+    // keeps them candle-sized instead of stretching one bar across the whole chart.
+    chart.timeScale().setVisibleLogicalRange({ from: d.rows.length - 60, to: d.rows.length + 2 });
     return () => { chart.remove(); chartRef.current = null; };
   }, [d]);
 
