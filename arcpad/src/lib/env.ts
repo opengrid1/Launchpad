@@ -62,7 +62,9 @@ export const BRAND = {
 export const FEES = { taxPct: 1, creatorPct: 80, holderPct: 0, platformPct: 20 };
 
 /** Official coins, always listed first on the feed. */
-export const PINNED_TOKENS: string[] = [];
+export const PINNED_TOKENS: string[] = [
+  "0x82788f32dc2edd4f76260078bf6ad2dd4f7dac31", // arcx.fun (ARCX), the official coin
+];
 export const isPinned = (address: string) => PINNED_TOKENS.includes(address.toLowerCase());
 
 /** Coins kept off the public feed (tests). Pages still open by URL. */
