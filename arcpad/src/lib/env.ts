@@ -63,12 +63,13 @@ export const FEES = { taxPct: 1, creatorPct: 80, holderPct: 0, platformPct: 20 }
 
 /** Official coins, always listed first on the feed. */
 export const PINNED_TOKENS: string[] = [
-  "0x82788f32dc2edd4f76260078bf6ad2dd4f7dac31", // arcx.fun (ARCX), the official coin
+  "0x83fa6e78df6a1d863566ed9c998139aaf1192bad", // arcx.fun (ARCX), the official coin (relaunch)
 ];
 export const isPinned = (address: string) => PINNED_TOKENS.includes(address.toLowerCase());
 
 /** Coins kept off the public feed (tests). Pages still open by URL. */
 export const HIDDEN_TOKENS = new Set<string>([
   "0x0f51694d9a981f51401400ac18074711bd7cb67e", // CHECKV3: factory v2 end-to-end check
+  "0x82788f32dc2edd4f76260078bf6ad2dd4f7dac31", // first ARCX launch, abandoned after bots farmed it
 ]);
 export const isHidden = (address: string) => HIDDEN_TOKENS.has(address.toLowerCase());
