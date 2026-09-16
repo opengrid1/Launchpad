@@ -56,11 +56,16 @@ export default function Launch() {
       const p = { name: f.name.trim(), symbol, metadataURI: JSON.stringify(meta), pair: pair.address, devBuyWei: devWei };
       try { await client.estimateLaunch(p, me!); } catch (err) { setToast({ kind: "err", text: friendlyError(err) }); return; }
       let created: `0x${string}` | null = null;
-      const ok = await runTx(`Launch ${symbol}`, () => client.createToken(p), async () => {
-        const list = await client.getTokens({ limit: 5 });
-        created = (list.find((t) => t.creator.toLowerCase() === me!.toLowerCase() && t.symbol === symbol)?.address ?? list[0]?.address ?? null) as `0x${string}` | null;
+      const ok = await runTx(`Launch ${symbol}`, () => client.createToken(p), async (hash) => {
+        created = await client.launchedToken(hash).catch(() => null);
+        if (!created) {
+          const list = await client.getTokens({ limit: 5 });
+          created = (list.find((t) => t.creator.toLowerCase() === me!.toLowerCase() && t.symbol === symbol)?.address ?? list[0]?.address ?? null) as `0x${string}` | null;
+        }
         await qc.invalidateQueries({ queryKey: ["tokens"] });
       });
+      // The factory launches without a buy, so the first buy is its own router transaction right after.
+      if (ok && created && devWei > 0n) await runTx(`First buy of ${symbol}`, () => client.buyToken(created!, devWei, 0n), async () => { await qc.invalidateQueries(); });
       if (ok && created) nav(`/t/${created}`);
     } finally { setBusy(false); }
   };
@@ -94,7 +99,7 @@ export default function Launch() {
           <div className="field">
             <label>First buy in USDC (optional)</label>
             <input inputMode="decimal" value={f.devBuy} onChange={set("devBuy")} placeholder="0" />
-            <div className="help">Spent in the same transaction at the {FEES.taxPct}% pool fee, so you hold from block one. Everyone can see it.{dev && <> · {usd(Number(dev))}</>}</div>
+            <div className="help">Sent as a second transaction right after the launch, at the {FEES.taxPct}% pool fee, so you hold from the first seconds. Everyone can see it.{dev && <> · {usd(Number(dev))}</>}</div>
           </div>
           <button className="big ink" type="submit" disabled={busy || !f.name.trim()}>{cta}</button>
         </form>

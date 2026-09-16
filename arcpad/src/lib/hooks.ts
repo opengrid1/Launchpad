@@ -116,12 +116,12 @@ export function friendlyError(err: unknown): string {
   if (/insufficient funds/i.test(raw)) return "Not enough USDC for that.";
   if (/Slippage/i.test(raw)) return "Price moved. Try again.";
   if (/No wallet connected/i.test(raw)) return "Connect a wallet first.";
-  if (/LaunchGuard/.test(raw)) return "Launch block: only the creator can buy in the first block.";
-  if (/BuyCap|HoldCap/.test(raw)) return "Launch window: max 3% of supply per wallet for the first three blocks.";
-  if (/LaunchesPaused/.test(raw)) return "Launches are paused right now.";
+  if (/LaunchesArePaused|LaunchesPaused/.test(raw)) return "Launches are paused right now.";
   if (/QuoteNotApproved/.test(raw)) return "That pair is not approved.";
-  if (/BadRoute/.test(raw)) return "No route for this pair. Pay in the stock instead.";
-  if (/NotAdmin/.test(raw)) return "Admin only.";
+  if (/NothingToCollect/.test(raw)) return "Nothing to collect yet.";
+  if (/PoolMissing|UnknownToken/.test(raw)) return "This coin was not launched here.";
+  if (/ZeroAmount/.test(raw)) return "Amount too small: buys need at least 0.000001 USDC.";
+  if (/OwnableUnauthorizedAccount|NotAdmin/.test(raw)) return "Admin only.";
   if (/ERC20InsufficientAllowance|allowance/i.test(raw)) return "Approve the token first, then retry.";
   if (/ERC20InsufficientBalance|exceeds balance/i.test(raw)) return "Not enough balance.";
   const line = raw.split("\n")[0];

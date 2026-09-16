@@ -19,23 +19,28 @@ export const env = {
   explorerUrl: "https://explorer.arc.io",
   walletConnectProjectId: "e1bda672d5deb56579fe084dddfb9174",
   /** Factory deploy block, the lower bound for log scans. */
-  startBlock: BigInt(import.meta.env.VITE_START_BLOCK ?? "0"),
+  startBlock: BigInt(import.meta.env.VITE_START_BLOCK ?? "21105124"),
   dexscreenerChain: "arc",
-  secondsPerBlock: 1,
+  secondsPerBlock: 0.5,
+  /** Largest eth_getLogs span the log RPC accepts (the public Arc RPC: 5,000). */
+  logChunk: BigInt(import.meta.env.VITE_LOG_CHUNK ?? "5000"),
+  /** Blocks of log history the RPC keeps; older ranges are not requested. */
+  logRetain: BigInt(import.meta.env.VITE_LOG_RETAIN ?? "1000000"),
 };
 
 const addr = (key: string, fallback: string) => String(import.meta.env[key] ?? fallback) as `0x${string}`;
 
 /** Deployed contracts on Arc mainnet (VITE_* overrides point a build at a fork). */
 export const ADDRESSES = {
-  factory: addr("VITE_FACTORY", "0x0000000000000000000000000000000000000000"),
-  hook: addr("VITE_HOOK", "0x0000000000000000000000000000000000000000"),
-  router: addr("VITE_ROUTER", "0x0000000000000000000000000000000000000000"),
-  poolManager: addr("VITE_POOL_MANAGER", "0x0000000000000000000000000000000000000000"),
-  stateView: addr("VITE_STATE_VIEW", "0x0000000000000000000000000000000000000000"),
+  /** ArcLaunchpadFactory v2 (contracts/deployments/arc-v3-launchpad-v2.json). */
+  factory: addr("VITE_FACTORY", "0xE77c6b80cE7C5eDa900c31D9A225F3D918fAfdCf"),
+  /** ArcSwapRouter: buys and sells in native USDC. */
+  router: addr("VITE_ROUTER", "0x2577144ff1a0A79F895237b84921738B338f67BD"),
+  tokenDeployer: addr("VITE_TOKEN_DEPLOYER", "0xb4eD32D72793Abd14ea036E245d9aFbf4860591B"),
+  /** DyorSwap's Uniswap V3 factory, where every launch pool lives. */
+  v3Factory: addr("VITE_V3_FACTORY", "0xF0Db7b58379503491d857DB50Ac9ECE64C653918"),
   /** Native USDC's ERC-20 interface on Arc (6 decimals; the native balance is 18). */
   weth: addr("VITE_USDC", "0x3600000000000000000000000000000000000000"),
-  ethUsdFeed: addr("VITE_ETH_USD_FEED", "0x0000000000000000000000000000000000000000"),
 };
 
 /** Preview build with sample coins (VITE_DEMO=1): reads come from src/lib/demo.ts, writes are refused. */
@@ -67,5 +72,7 @@ export const PINNED_TOKENS: string[] = [];
 export const isPinned = (address: string) => PINNED_TOKENS.includes(address.toLowerCase());
 
 /** Coins kept off the public feed (tests). Pages still open by URL. */
-export const HIDDEN_TOKENS = new Set<string>([]);
+export const HIDDEN_TOKENS = new Set<string>([
+  "0x0f51694d9a981f51401400ac18074711bd7cb67e", // CHECKV3: factory v2 end-to-end check
+]);
 export const isHidden = (address: string) => HIDDEN_TOKENS.has(address.toLowerCase());

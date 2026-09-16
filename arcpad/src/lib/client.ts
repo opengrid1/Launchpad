@@ -1,10 +1,8 @@
-import { createPublicClient, encodeFunctionData, fallback, http, parseAbi, type Address, type Hex, type PublicClient, type WalletClient } from "viem";
+import { createPublicClient, encodeAbiParameters, fallback, getAbiItem, http, keccak256, parseAbi, toEventSelector, type Address, type Hex, type PublicClient, type WalletClient } from "viem";
 import type { Candle, CandleInterval, HolderRecord, TokenSummary, TradeRecord } from "@launchpad/sdk";
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
 
-import { factoryAbi, hookAbi, routerAbi, tokenAbi } from "./abis";
-import { ADDRESSES, chain, env } from "./env";
-import { hasEthRoute, routeFor, stockByAddress, WETH } from "./stocks";
+import { ADDRESSES, chain, env, FEES } from "./env";
 
 export const publicClient = createPublicClient({
   chain,
@@ -12,48 +10,77 @@ export const publicClient = createPublicClient({
     env.rpcUrls.map((url) => http(url, { retryCount: 1, retryDelay: 200, timeout: 8_000, batch: { wait: 16, batchSize: 20 } })),
     { rank: { interval: 30_000, sampleCount: 5 } },
   ),
-  pollingInterval: 12_000,
+  pollingInterval: 4_000,
   batch: { multicall: { wait: 24 } },
 }) as PublicClient;
 
-/** Read-only client for eth_getLogs: the ranked public RPCs cap log ranges at
- *  about 100 blocks, so scans go to endpoints that allow wide ranges. */
+/** Read-only client for eth_getLogs. The public Arc RPC allows about 5,000
+ *  blocks per request and keeps roughly a million blocks of history. */
 export const logClient = createPublicClient({
   chain,
   transport: fallback(env.logRpcUrls.map((url) => http(url, { retryCount: 2, retryDelay: 500, timeout: 30_000, batch: false }))),
 }) as PublicClient;
 
 const Q96 = 2n ** 96n;
+const Q192 = Q96 * Q96;
 const TOTAL_SUPPLY = 1_000_000_000n * 10n ** 18n;
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
-const LOG_CHUNK = 5_000n;
+/** Native USDC has 18 decimals; its ERC-20 interface (what pools hold) has 6. */
+const NATIVE_PER_QUOTE = 10n ** 12n;
+const LOG_CHUNK = env.logChunk;
+/** Blocks of history the public RPC serves; older ranges error out. */
+const RETAIN = env.logRetain;
+const CONCURRENCY = 6;
+const CREATOR_BPS = BigInt(FEES.creatorPct * 100);
 
-const MULTICALL3 = "0xcA11bde05977b3631167028862bE2a173976CA11" as Address;
-const multicall3Abi = parseAbi(["struct Call3 { address target; bool allowFailure; bytes callData; }", "struct Result { bool success; bytes returnData; }", "function aggregate3(Call3[] calldata calls) payable returns (Result[] memory returnData)"]);
-const stateViewAbi = parseAbi(["function getSlot0(bytes32 poolId) view returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)"]);
-const erc20Abi = parseAbi([
-  "function balanceOf(address) view returns (uint256)",
-  "function symbol() view returns (string)",
+const factoryAbi = parseAbi([
+  "struct CreateParams { string name; string symbol; string metadataURI; address quote; uint256 marketCapUsd8; }",
+  "function createToken(CreateParams p) returns (address token, address pool)",
+  "function totalTokens() view returns (uint256)",
+  "function allTokens(uint256) view returns (address)",
+  "function listings(address token) view returns (address creator, address quote, address pool, int24 tickLower, int24 tickUpper, uint64 createdAt, bool tokenIsToken0)",
+  "function positionLiquidity(address token) view returns (uint128)",
+  "function pendingFees(address token) returns (uint256 tokenAmount, uint256 quoteAmount)",
+  "function harvestFees(address token) returns (uint256, uint256, uint256, uint256)",
+  "function harvestMany(address[] tokens) returns (uint256)",
+  "function collect(address token, uint16 liquidityBps, address recipient) returns (uint256, uint256)",
+  "function owner() view returns (address)",
+  "function feeRecipient() view returns (address)",
+  "function launchesPaused() view returns (bool)",
+  "function CREATOR_FEE_BPS() view returns (uint16)",
+  "function POOL_FEE_TIER() view returns (uint24)",
+  "function pause()",
+  "function resume()",
+  "function setFeeRecipient(address recipient)",
+  "function setQuoteAsset(address quote, bool approved, uint64 usdPrice8)",
+  "event TokenCreated(address indexed token, address indexed creator, string name, string symbol, string metadataURI, uint256 totalSupply)",
+  "event FeesCollected(address indexed token, address indexed creator, uint256 creatorTokenAmount, uint256 creatorQuoteAmount, uint256 platformTokenAmount, uint256 platformQuoteAmount)",
+]);
+const routerAbi = parseAbi([
+  "function buy(address token, uint256 minOut) payable returns (uint256 out)",
+  "function sell(address token, uint256 amountIn, uint256 minOut) returns (uint256 out)",
+]);
+const poolAbi = parseAbi([
+  "function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16, uint16, uint16, uint8, bool)",
+  "event Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)",
+]);
+const tokenAbi = parseAbi([
   "function name() view returns (string)",
-  "function decimals() view returns (uint8)",
+  "function symbol() view returns (string)",
+  "function metadataURI() view returns (string)",
+  "function totalSupply() view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
   "function allowance(address, address) view returns (uint256)",
   "function approve(address, uint256) returns (bool)",
+  "event Transfer(address indexed from, address indexed to, uint256 value)",
 ]);
-const transferEvent = {
-  type: "event", name: "Transfer",
-  inputs: [{ name: "from", type: "address", indexed: true }, { name: "to", type: "address", indexed: true }, { name: "value", type: "uint256", indexed: false }],
-} as const;
-const swapEvent = {
-  type: "event", name: "Swap",
-  inputs: [
-    { name: "id", type: "bytes32", indexed: true }, { name: "sender", type: "address", indexed: true },
-    { name: "amount0", type: "int128", indexed: false }, { name: "amount1", type: "int128", indexed: false },
-    { name: "sqrtPriceX96", type: "uint160", indexed: false }, { name: "liquidity", type: "uint128", indexed: false },
-    { name: "tick", type: "int24", indexed: false }, { name: "fee", type: "uint24", indexed: false },
-  ],
-} as const;
+const tokenCreatedEvent = getAbiItem({ abi: factoryAbi, name: "TokenCreated" });
+const feesCollectedEvent = getAbiItem({ abi: factoryAbi, name: "FeesCollected" });
+const swapEvent = getAbiItem({ abi: poolAbi, name: "Swap" });
+const transferEvent = getAbiItem({ abi: tokenAbi, name: "Transfer" });
+const TOKEN_CREATED_TOPIC = toEventSelector(tokenCreatedEvent);
 
-/** A coin's pair asset: ETH (native) or a tokenized stock. */
+/** A coin's pair asset. On Arc that is always native USDC. */
 export interface PairInfo {
   address: Address;
   symbol: string;
@@ -61,11 +88,11 @@ export interface PairInfo {
   decimals: number;
   usd: number;
   isNative: boolean;
-  /** ETH can be routed into and out of this pair on-chain. */
+  /** The pair can be paid in the chain's native asset. */
   ethRoute: boolean;
 }
 
-/** An approved pair on the factory, joined with the roster's liquidity data. */
+/** An approved pair on the factory. */
 export interface QuoteView extends PairInfo {
   approved: boolean;
   liqUsd: number;
@@ -76,7 +103,7 @@ export type StockToken = TokenSummary & {
   pair: PairInfo;
   poolId: Hex;
   launchBlock: number;
-  /** Lifetime pair-asset paid to holders / creator / platform. */
+  /** Lifetime pair-asset paid to holders / creator / platform (18-dp wei). */
   rewards?: { holders: bigint; creator: bigint; platform: bigint };
   /** What actually sits in the pool right now: pair asset and coin, in wei. */
   reserves?: { pair: bigint; token: bigint };
@@ -110,31 +137,61 @@ interface Core {
   address: Address;
   creator: Address;
   pair: Address;
-  taxBps: number;
-  poolId: Hex;
+  pool: Address;
+  tickLower: number;
+  tickUpper: number;
   launchBlock: bigint;
   createdAt: number;
   name: string;
   symbol: string;
   metadata: Record<string, unknown>;
-  tokenIsCurrency0: boolean;
+  tokenIsToken0: boolean;
 }
 
-/** Backend-free client for the mainnet stockpad: reads coins, prices, trades
- *  and rewards straight from the factory, the V4 PoolManager and the coins;
- *  trades and launches go through the router and factory. */
+/** USDC as the pair of every coin: pool amounts are 6-dp, the UI works in 18-dp native wei. */
+const USDC_PAIR: PairInfo = { address: ADDRESSES.weth.toLowerCase() as Address, symbol: "USDC", name: "USD Coin", decimals: 18, usd: 1, isNative: true, ethRoute: true };
+
+// -- small persistent cache (log scans survive reloads; history is pruned server-side) --
+const STORE_PREFIX = `arcx.${ADDRESSES.factory.slice(2, 10).toLowerCase()}.`;
+const store = {
+  get<T>(key: string): T | null {
+    try { const raw = globalThis.localStorage?.getItem(STORE_PREFIX + key); return raw ? (JSON.parse(raw) as T) : null; } catch { return null; }
+  },
+  set(key: string, value: unknown) {
+    try { globalThis.localStorage?.setItem(STORE_PREFIX + key, JSON.stringify(value)); } catch { /* quota or private mode */ }
+  },
+};
+
+interface FactoryScan { upTo: string; launch: Record<string, string>; fees: Record<string, { c: string; p: string }> }
+
+/** Run `fn` over [from, to] in LOG_CHUNK windows, a few at a time. Pruned or
+ *  failing windows are skipped so one bad range does not empty the result. */
+async function scanRange<T>(from: bigint, to: bigint, fn: (a: bigint, b: bigint) => Promise<T[]>): Promise<T[]> {
+  const windows: [bigint, bigint][] = [];
+  for (let a = from; a <= to; a += LOG_CHUNK + 1n) windows.push([a, a + LOG_CHUNK > to ? to : a + LOG_CHUNK]);
+  const out: T[] = [];
+  for (let i = 0; i < windows.length; i += CONCURRENCY) {
+    const part = await Promise.all(windows.slice(i, i + CONCURRENCY).map(([a, b]) => fn(a, b).catch(() => [] as T[])));
+    for (const p of part) out.push(...p);
+  }
+  return out;
+}
+
+/** Backend-free client for the Arc launchpad: coins, prices, trades and fees
+ *  come straight from the factory, the Uniswap V3 pools and the coins;
+ *  trades go through ArcSwapRouter in native USDC. */
 export class StockPadClient {
   readonly pc: PublicClient;
   private wc?: WalletClient;
   private cores = new Map<string, Core>();
   private coresUpTo = 0n;
   private coresInflight: Promise<Core[]> | null = null;
+  private scan: FactoryScan = store.get<FactoryScan>("factory") ?? { upTo: "0", launch: {}, fees: {} };
+  private scanInflight: Promise<void> | null = null;
   private trades = new Map<string, { records: TradeRecord[]; upTo: bigint }>();
   private tradesInflight = new Map<string, Promise<TradeRecord[]>>();
   private balances = new Map<string, { bal: Map<string, bigint>; upTo: bigint }>();
   private balancesInflight = new Map<string, Promise<Map<string, bigint>>>();
-  private pairUsdCache = new Map<string, { v: number; at: number }>();
-  private pairMeta = new Map<string, { symbol: string; name: string; decimals: number }>();
   private blockAnchor?: { block: bigint; ts: number };
 
   constructor(pc: PublicClient) {
@@ -152,6 +209,32 @@ export class StockPadClient {
     const a = this.wc?.account?.address;
     if (!a) throw new Error("No wallet connected");
     return a;
+  }
+
+  // -- factory log scan: launch blocks and lifetime fee payouts ------------
+
+  private scanFactory(latest: bigint): Promise<void> {
+    if (this.scanInflight) return this.scanInflight;
+    this.scanInflight = this.scanFactoryInner(latest).finally(() => (this.scanInflight = null));
+    return this.scanInflight;
+  }
+
+  private async scanFactoryInner(latest: bigint) {
+    const upTo = BigInt(this.scan.upTo);
+    let from = upTo > 0n ? upTo + 1n : env.startBlock;
+    if (from < latest - RETAIN) from = latest - RETAIN;
+    if (from > latest) return;
+    const logs = await scanRange(from, latest, (a, b) => logClient.getLogs({ address: ADDRESSES.factory, events: [tokenCreatedEvent, feesCollectedEvent] as any, fromBlock: a, toBlock: b }) as Promise<any[]>);
+    for (const l of logs) {
+      const token = String(l.args.token).toLowerCase();
+      if (l.eventName === "TokenCreated") this.scan.launch[token] = String(l.blockNumber);
+      else if (l.eventName === "FeesCollected") {
+        const cur = this.scan.fees[token] ?? { c: "0", p: "0" };
+        this.scan.fees[token] = { c: (BigInt(cur.c) + (l.args.creatorQuoteAmount as bigint)).toString(), p: (BigInt(cur.p) + (l.args.platformQuoteAmount as bigint)).toString() };
+      }
+    }
+    this.scan.upTo = latest.toString();
+    store.set("factory", this.scan);
   }
 
   // -- discovery ---------------------------------------------------------
@@ -172,17 +255,7 @@ export class StockPadClient {
         contracts: Array.from({ length: total }, (_, i) => ({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "allTokens", args: [BigInt(i)] })),
       })) as Address[];
       const fresh = addrs.filter((a) => !this.cores.has(a.toLowerCase()));
-      // Launch blocks come from the Launched logs (one scan, chunked).
-      const launchBlocks = new Map<string, bigint>();
-      if (fresh.length) {
-        try {
-          for (let from = env.startBlock; from <= latest; from += LOG_CHUNK + 1n) {
-            const to = from + LOG_CHUNK > latest ? latest : from + LOG_CHUNK;
-            const logs = await logClient.getLogs({ address: ADDRESSES.factory, event: factoryAbi.find((f) => f.type === "event" && f.name === "Launched") as any, fromBlock: from, toBlock: to });
-            for (const l of logs as any[]) launchBlocks.set(String(l.args.token).toLowerCase(), l.blockNumber as bigint);
-          }
-        } catch { /* fall back to the deployment start block */ }
-      }
+      if (fresh.length) await this.scanFactory(latest).catch(() => undefined);
       for (const raw of fresh) {
         const token = raw.toLowerCase() as Address;
         try {
@@ -194,14 +267,15 @@ export class StockPadClient {
               { address: token, abi: tokenAbi, functionName: "symbol" },
               { address: token, abi: tokenAbi, functionName: "metadataURI" },
             ],
-          })) as [readonly [Address, Address, number, bigint, Hex], string, string, string];
+          })) as [readonly [Address, Address, Address, number, number, bigint, boolean], string, string, string];
           let metadata: Record<string, unknown> = {};
           try { metadata = JSON.parse(metaURI); } catch { metadata = { description: metaURI }; }
-          const pair = listing[1].toLowerCase() as Address;
+          const launch = this.scan.launch[token];
           this.cores.set(token, {
-            address: token, creator: listing[0].toLowerCase() as Address, pair, taxBps: Number(listing[2]), poolId: listing[4],
-            launchBlock: launchBlocks.get(token) ?? env.startBlock, createdAt: Number(listing[3]), name, symbol, metadata,
-            tokenIsCurrency0: BigInt(token) < BigInt(pair),
+            address: token, creator: listing[0].toLowerCase() as Address, pair: listing[1].toLowerCase() as Address, pool: listing[2].toLowerCase() as Address,
+            tickLower: Number(listing[3]), tickUpper: Number(listing[4]), createdAt: Number(listing[5]), tokenIsToken0: listing[6],
+            launchBlock: launch ? BigInt(launch) : this.blockFromTimestamp(Number(listing[5]), latest),
+            name, symbol, metadata,
           });
         } catch { /* picked up next refresh */ }
       }
@@ -210,102 +284,44 @@ export class StockPadClient {
     return [...this.cores.values()];
   }
 
+  /** Rough block for a timestamp when the launch log is out of reach. */
+  private blockFromTimestamp(ts: number, latest: bigint): bigint {
+    const anchorTs = this.blockAnchor?.ts ?? Math.floor(Date.now() / 1000);
+    const back = BigInt(Math.max(0, Math.round((anchorTs - ts) / env.secondsPerBlock)));
+    return back >= latest ? 0n : latest - back;
+  }
+
   private async blockTs(block: bigint, latest: bigint): Promise<number> {
     if (!this.blockAnchor || this.blockAnchor.block !== latest) {
       const b = await this.pc.getBlock({ blockNumber: latest }).catch(() => null);
       this.blockAnchor = { block: latest, ts: b ? Number(b.timestamp) : Math.floor(Date.now() / 1000) };
     }
-    return this.blockAnchor.ts - Number(latest - block) * env.secondsPerBlock;
+    return this.blockAnchor.ts - Math.round(Number(latest - block) * env.secondsPerBlock);
   }
 
   // -- pricing ------------------------------------------------------------
 
-  /** Pair-wei per whole coin from a pool sqrtPriceX96. */
-  private priceFromSqrt(sqrtP: bigint, tokenIsCurrency0: boolean): bigint {
+  /** Native USDC wei (18-dp) per whole coin from a pool sqrtPriceX96. */
+  private priceFromSqrt(sqrtP: bigint, tokenIsToken0: boolean): bigint {
     if (sqrtP === 0n) return 0n;
-    return tokenIsCurrency0 ? (sqrtP * sqrtP * 10n ** 18n) / (Q96 * Q96) : (Q96 * Q96 * 10n ** 18n) / (sqrtP * sqrtP);
+    const scale = 10n ** 18n * NATIVE_PER_QUOTE;
+    return tokenIsToken0 ? (sqrtP * sqrtP * scale) / Q192 : (Q192 * scale) / (sqrtP * sqrtP);
   }
 
-  private async slot0(poolId: Hex): Promise<bigint> {
+  private async slot0(pool: Address): Promise<bigint> {
     try {
-      const [sqrtP] = (await this.pc.readContract({ address: ADDRESSES.stateView, abi: stateViewAbi, functionName: "getSlot0", args: [poolId] })) as readonly [bigint, number, number, number];
+      const [sqrtP] = (await this.pc.readContract({ address: pool, abi: poolAbi, functionName: "slot0" })) as readonly [bigint, number, number, number, number, number, boolean];
       return sqrtP;
     } catch {
       return 0n;
     }
   }
 
-  /** USD per whole pair token from the factory (Chainlink feed or admin price). */
-  async assetUsdPrice(asset: Address): Promise<number> {
-    const key = (asset === ZERO ? WETH : asset).toLowerCase();
-    const hit = this.pairUsdCache.get(key);
-    if (hit && Date.now() - hit.at < 60_000) return hit.v;
-    let v = 0;
-    try {
-      v = Number(await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "pairUsdPrice", args: [key as Address] })) / 1e8;
-    } catch {
-      v = stockByAddress(key)?.usd ?? 0;
-    }
-    if (v > 0) this.pairUsdCache.set(key, { v, at: Date.now() });
-    return v;
-  }
-
-  ethUsd(): Promise<number> {
-    return this.assetUsdPrice(WETH);
-  }
-
-  async pairInfo(pair: Address): Promise<PairInfo> {
-    const key = pair.toLowerCase() as Address;
-    const isNative = key === WETH;
-    const usd = await this.assetUsdPrice(key);
-    if (isNative) return { address: key, symbol: "ETH", name: "Ether", decimals: 18, usd, isNative: true, ethRoute: true };
-    const s = stockByAddress(key);
-    let meta = this.pairMeta.get(key);
-    if (!meta) {
-      if (s) meta = { symbol: s.ticker, name: s.name, decimals: 18 };
-      else {
-        try {
-          const [symbol, name, decimals] = (await this.pc.multicall({ allowFailure: false, contracts: [
-            { address: key, abi: erc20Abi, functionName: "symbol" }, { address: key, abi: erc20Abi, functionName: "name" }, { address: key, abi: erc20Abi, functionName: "decimals" },
-          ] })) as [string, string, number];
-          meta = { symbol, name, decimals: Number(decimals) };
-        } catch { meta = { symbol: key.slice(0, 8), name: "", decimals: 18 }; }
-      }
-      this.pairMeta.set(key, meta);
-    }
-    return { address: key, ...meta, usd, isNative: false, ethRoute: hasEthRoute(key) };
-  }
-
-  /** A coin's pair asset. */
-  async pairOf(token: Address): Promise<PairInfo> {
-    await this.loadCores();
-    const core = this.cores.get(token.toLowerCase());
-    return this.pairInfo(core?.pair ?? WETH);
-  }
-
-  /** Every pair the factory knows, ETH first, then by real liquidity. */
-  async quotes(): Promise<QuoteView[]> {
-    const n = Number(await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteCount" }).catch(() => 0n));
-    const addrs = n === 0 ? [WETH] : ((await this.pc.multicall({
-      allowFailure: true,
-      contracts: Array.from({ length: n }, (_, i) => ({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteList", args: [BigInt(i)] })),
-    })).filter((r) => r.status === "success").map((r) => (r.result as Address).toLowerCase() as Address));
-    const rows = await this.pc.multicall({
-      allowFailure: true,
-      contracts: addrs.map((a) => ({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteAssets", args: [a] })),
-    });
-    const out: QuoteView[] = [];
-    for (let i = 0; i < addrs.length; i++) {
-      const qa: readonly [boolean, bigint, Address] = rows[i].status === "success" ? (rows[i].result as unknown as readonly [boolean, bigint, Address]) : [false, 0n, ZERO];
-      const approved: boolean = qa[0];
-      const usd8: bigint = qa[1];
-      const s = stockByAddress(addrs[i]);
-      const info = await this.pairInfo(addrs[i]);
-      if (!(info.usd > 0) && usd8 > 0n) info.usd = Number(usd8) / 1e8;
-      out.push({ ...info, approved, liqUsd: s?.liqUsd ?? 0, vol24Usd: s?.vol24Usd ?? 0 });
-    }
-    return out.sort((a, b) => (a.isNative ? -1 : b.isNative ? 1 : b.liqUsd - a.liqUsd));
-  }
+  async assetUsdPrice(): Promise<number> { return 1; }
+  async ethUsd(): Promise<number> { return 1; }
+  async pairInfo(_pair?: Address): Promise<PairInfo> { return USDC_PAIR; }
+  async pairOf(_token?: Address): Promise<PairInfo> { return USDC_PAIR; }
+  async quotes(): Promise<QuoteView[]> { return [{ ...USDC_PAIR, approved: true, liqUsd: 0, vol24Usd: 0 }]; }
 
   // -- trades -------------------------------------------------------------
 
@@ -323,44 +339,47 @@ export class StockPadClient {
     const key = token.toLowerCase();
     const core = this.cores.get(key);
     if (!core) return [];
-    const cached = this.trades.get(key);
+    let cached = this.trades.get(key);
+    if (!cached) {
+      const saved = store.get<{ upTo: string; records: TradeRecord[] }>(`trades.${key}`);
+      if (saved) { cached = { records: saved.records, upTo: BigInt(saved.upTo) }; this.trades.set(key, cached); }
+    }
     try {
       const latest = await this.pc.getBlockNumber();
-      const fromBlock = cached ? cached.upTo + 1n : core.launchBlock;
+      let fromBlock = cached ? cached.upTo + 1n : core.launchBlock;
+      if (fromBlock < latest - RETAIN) fromBlock = latest - RETAIN;
       if (cached && fromBlock > latest) return cached.records;
-      const logs: any[] = [];
-      for (let from = fromBlock; from <= latest; from += LOG_CHUNK + 1n) {
-        const to = from + LOG_CHUNK > latest ? latest : from + LOG_CHUNK;
-        const part = await logClient.getLogs({ address: ADDRESSES.poolManager, event: swapEvent, args: { id: core.poolId }, fromBlock: from, toBlock: to });
-        if (part.length) logs.push(...part);
-      }
+      const logs = await scanRange(fromBlock, latest, (a, b) => logClient.getLogs({ address: core.pool, event: swapEvent, fromBlock: a, toBlock: b }) as Promise<any[]>);
       const abs = (v: bigint) => (v < 0n ? -v : v);
       const fresh: TradeRecord[] = logs.map((log) => {
         const a0 = log.args.amount0 as bigint, a1 = log.args.amount1 as bigint;
-        const pairDelta = core.tokenIsCurrency0 ? a1 : a0;
-        const tokenDelta = core.tokenIsCurrency0 ? a0 : a1;
+        // V3 deltas are the pool's: positive came in, negative went out.
+        const quoteDelta = core.tokenIsToken0 ? a1 : a0;
+        const tokenDelta = core.tokenIsToken0 ? a0 : a1;
+        const quoteWei = abs(quoteDelta) * NATIVE_PER_QUOTE;
         return {
-          id: `${log.transactionHash}-${log.logIndex}`, token: core.address, trader: String(log.args.sender).toLowerCase() as Address,
-          isBuy: tokenDelta > 0n, nativeAmountWei: abs(pairDelta).toString(), tokenAmount: abs(tokenDelta).toString(),
-          feeWei: ((abs(pairDelta) * BigInt(core.taxBps)) / 10_000n).toString(),
-          priceWei: this.priceFromSqrt(log.args.sqrtPriceX96 as bigint, core.tokenIsCurrency0).toString(),
+          id: `${log.transactionHash}-${log.logIndex}`, token: core.address, trader: String(log.args.recipient).toLowerCase() as Address,
+          isBuy: tokenDelta < 0n, nativeAmountWei: quoteWei.toString(), tokenAmount: abs(tokenDelta).toString(),
+          feeWei: ((quoteWei * BigInt(FEES.taxPct * 100)) / 10_000n).toString(),
+          priceWei: this.priceFromSqrt(log.args.sqrtPriceX96 as bigint, core.tokenIsToken0).toString(),
           blockNumber: Number(log.blockNumber), txHash: log.transactionHash, timestamp: 0,
         };
-      });
-      // Real block timestamps for the blocks that carry trades (bounded), the
-      // 12s estimate for the rest.
+      }).sort((a, b) => a.blockNumber - b.blockNumber || a.id.localeCompare(b.id));
+      // Real timestamps for the blocks that carry trades (bounded), the block-time estimate for the rest.
       const blocks = [...new Set(fresh.map((r) => r.blockNumber))].slice(-120);
       const stamps = new Map<number, number>();
       const got = await Promise.allSettled(blocks.map((b) => this.pc.getBlock({ blockNumber: BigInt(b) })));
       got.forEach((r, i) => { if (r.status === "fulfilled") stamps.set(blocks[i], Number(r.value.timestamp)); });
       for (const r of fresh) r.timestamp = stamps.get(r.blockNumber) ?? (await this.blockTs(BigInt(r.blockNumber), latest));
-      // The Swap sender is our router; attribute trades to the wallet that sent the tx.
-      if (fresh.length) {
-        const hashes = [...new Set(fresh.map((r) => r.txHash))].slice(-200);
+      // Buys land on the buyer directly; sells pay the router first, so attribute those to the sender.
+      const router = ADDRESSES.router.toLowerCase();
+      const viaRouter = fresh.filter((r) => r.trader === router);
+      if (viaRouter.length) {
+        const hashes = [...new Set(viaRouter.map((r) => r.txHash))].slice(-150);
         const txs = await Promise.allSettled(hashes.map((h) => this.pc.getTransaction({ hash: h as Hex })));
         const from = new Map<string, Address>();
         txs.forEach((r, i) => { if (r.status === "fulfilled" && r.value?.from) from.set(hashes[i], r.value.from.toLowerCase() as Address); });
-        for (const r of fresh) r.trader = from.get(r.txHash) ?? r.trader;
+        for (const r of viaRouter) r.trader = from.get(r.txHash) ?? r.trader;
       }
       let records = fresh;
       if (cached) {
@@ -368,6 +387,7 @@ export class StockPadClient {
         records = cached.records.concat(fresh.filter((r) => !seen.has(r.id)));
       }
       this.trades.set(key, { records, upTo: latest });
+      store.set(`trades.${key}`, { upTo: latest.toString(), records: records.slice(-2000) });
       return records;
     } catch {
       return cached?.records ?? [];
@@ -377,8 +397,9 @@ export class StockPadClient {
   // -- summaries ----------------------------------------------------------
 
   private async summarize(core: Core): Promise<StockToken> {
-    const [trades, sqrtP, pair] = await Promise.all([this.loadTrades(core.address), this.slot0(core.poolId), this.pairInfo(core.pair)]);
-    const priceWei = sqrtP > 0n ? this.priceFromSqrt(sqrtP, core.tokenIsCurrency0) : trades.length ? BigInt(trades[trades.length - 1].priceWei) : 0n;
+    const [trades, sqrtP] = await Promise.all([this.loadTrades(core.address), this.slot0(core.pool)]);
+    const pair = USDC_PAIR;
+    const priceWei = sqrtP > 0n ? this.priceFromSqrt(sqrtP, core.tokenIsToken0) : trades.length ? BigInt(trades[trades.length - 1].priceWei) : 0n;
     const pricePair = Number(priceWei) / 1e18;
     const priceUsd = pricePair * pair.usd;
     const mcap = priceUsd * 1e9;
@@ -390,45 +411,38 @@ export class StockPadClient {
     const refP = ref ? Number(ref.priceWei) : 0;
     const change = refP > 0 && trades.length > 1 ? ((Number(priceWei) - refP) / refP) * 100 : null;
     let holderCount = new Set(trades.filter((t) => t.isBuy).map((t) => t.trader)).size;
-    try { holderCount = this.holderEntries(await this.loadBalances(core.address)).length; } catch { /* fallback above */ }
+    try { holderCount = this.holderEntries(core, await this.loadBalances(core.address)).length; } catch { /* fallback above */ }
 
-    // Liquidity: both legs of the pool position valued at the live price, in pair units
-    // (the coin leg is converted at the spot price, the way Dexscreener reports it).
+    // Liquidity: both legs of the launch position at the live price, in USDC wei
+    // (the coin leg converted at spot, the way Dexscreener reports it).
     let liquidityWei = 0n;
     let reserves: StockToken["reserves"];
     try {
-      const pos = (await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "positions", args: [core.address] })) as readonly [number, number, bigint];
-      const L = Number(pos[2]);
+      const L = Number(await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "positionLiquidity", args: [core.address] }));
       if (L > 0 && sqrtP > 0n) {
-        const sp = Number(sqrtP) / 2 ** 96, sa = Math.sqrt(1.0001 ** pos[0]), sb = Math.sqrt(1.0001 ** pos[1]);
+        const sp = Number(sqrtP) / 2 ** 96, sa = Math.sqrt(1.0001 ** core.tickLower), sb = Math.sqrt(1.0001 ** core.tickUpper);
         let amount0 = 0, amount1 = 0;
         if (sp <= sa) amount0 = (L * (sb - sa)) / (sa * sb);
         else if (sp >= sb) amount1 = L * (sb - sa);
         else { amount0 = (L * (sb - sp)) / (sp * sb); amount1 = L * (sp - sa); }
-        const pairUnits = core.tokenIsCurrency0 ? amount1 : amount0;
-        const tokenUnits = core.tokenIsCurrency0 ? amount0 : amount1;
+        const quoteRaw = core.tokenIsToken0 ? amount1 : amount0;
+        const tokenUnits = core.tokenIsToken0 ? amount0 : amount1;
+        const pairUnits = quoteRaw * 1e12;
         liquidityWei = BigInt(Math.max(0, Math.round(pairUnits + tokenUnits * pricePair)));
         reserves = { pair: BigInt(Math.max(0, Math.round(pairUnits))), token: BigInt(Math.max(0, Math.round(tokenUnits))) };
       }
     } catch { /* dash */ }
 
-    let rewards: StockToken["rewards"];
-    try {
-      const [h, c, p] = (await this.pc.multicall({ allowFailure: false, contracts: [
-        { address: core.address, abi: tokenAbi, functionName: "totalHolderRewards" },
-        { address: core.address, abi: tokenAbi, functionName: "totalCreatorFees" },
-        { address: core.address, abi: tokenAbi, functionName: "totalPlatformFees" },
-      ] })) as [bigint, bigint, bigint];
-      rewards = { holders: h, creator: c, platform: p };
-    } catch { /* optional */ }
+    const paid = this.scan.fees[core.address];
+    const rewards = { holders: 0n, creator: paid ? BigInt(paid.c) * NATIVE_PER_QUOTE : 0n, platform: paid ? BigInt(paid.p) * NATIVE_PER_QUOTE : 0n };
 
     return {
-      address: core.address, name: core.name, symbol: core.symbol, creator: core.creator, pool: ADDRESSES.poolManager, feeTier: core.taxBps,
+      address: core.address, name: core.name, symbol: core.symbol, creator: core.creator, pool: core.pool, feeTier: FEES.taxPct * 100,
       createdAt: core.createdAt, featured: false, metadata: core.metadata as any, totalSupply: TOTAL_SUPPLY.toString(),
       priceWei: priceWei.toString(), priceUsd: String(priceUsd), marketCapUsd: String(mcap), liquidityWei: liquidityWei.toString(),
       volume24hWei: vol24.toString(), volumeTotalWei: volTotal.toString(), txCount24h: day.length, holderCount,
       limitsActive: false, remainingToGraduationUsd: "0", priceChange24hPct: change,
-      pair, poolId: core.poolId, launchBlock: Number(core.launchBlock), rewards, reserves,
+      pair, poolId: core.pool as Hex, launchBlock: Number(core.launchBlock), rewards, reserves,
     };
   }
 
@@ -481,7 +495,7 @@ export class StockPadClient {
     return filled.slice(-limit);
   }
 
-  /** Wallet balances from Transfer logs (incremental), pool and zero address excluded. */
+  /** Wallet balances from Transfer logs (incremental, persisted). */
   private loadBalances(token: Address): Promise<Map<string, bigint>> {
     const key = token.toLowerCase();
     const inflight = this.balancesInflight.get(key);
@@ -496,35 +510,41 @@ export class StockPadClient {
     const key = token.toLowerCase();
     const core = this.cores.get(key);
     if (!core) return new Map();
-    const cached = this.balances.get(key);
+    let cached = this.balances.get(key);
+    if (!cached) {
+      const saved = store.get<{ upTo: string; bal: Record<string, string> }>(`bal.${key}`);
+      if (saved) { cached = { bal: new Map(Object.entries(saved.bal).map(([a, v]) => [a, BigInt(v)])), upTo: BigInt(saved.upTo) }; this.balances.set(key, cached); }
+    }
     const bal = cached ? new Map(cached.bal) : new Map<string, bigint>();
     try {
       const latest = await this.pc.getBlockNumber();
-      const fromBlock = cached ? cached.upTo + 1n : core.launchBlock;
+      let fromBlock = cached ? cached.upTo + 1n : core.launchBlock;
+      if (fromBlock < latest - RETAIN) fromBlock = latest - RETAIN;
       if (fromBlock > latest) return bal;
-      for (let from = fromBlock; from <= latest; from += LOG_CHUNK + 1n) {
-        const to = from + LOG_CHUNK > latest ? latest : from + LOG_CHUNK;
-        const logs = await logClient.getLogs({ address: token, event: transferEvent, fromBlock: from, toBlock: to });
-        for (const l of logs) {
-          const f = String(l.args.from).toLowerCase(), t = String(l.args.to).toLowerCase(), v = l.args.value as bigint;
-          bal.set(f, (bal.get(f) ?? 0n) - v);
-          bal.set(t, (bal.get(t) ?? 0n) + v);
-        }
+      const logs = await scanRange(fromBlock, latest, (a, b) => logClient.getLogs({ address: token, event: transferEvent, fromBlock: a, toBlock: b }) as Promise<any[]>);
+      for (const l of logs) {
+        const f = String(l.args.from).toLowerCase(), t = String(l.args.to).toLowerCase(), v = l.args.value as bigint;
+        bal.set(f, (bal.get(f) ?? 0n) - v);
+        bal.set(t, (bal.get(t) ?? 0n) + v);
       }
       this.balances.set(key, { bal, upTo: latest });
+      store.set(`bal.${key}`, { upTo: latest.toString(), bal: Object.fromEntries([...bal.entries()].filter(([, v]) => v !== 0n).map(([a, v]) => [a, v.toString()])) });
     } catch { /* keep whatever we had */ }
     return bal;
   }
 
-  private holderEntries(bal: Map<string, bigint>): [string, bigint][] {
-    const skip = new Set([ADDRESSES.poolManager.toLowerCase(), ZERO.toLowerCase()]);
+  private holderEntries(core: Core, bal: Map<string, bigint>): [string, bigint][] {
+    const skip = new Set([core.pool, ADDRESSES.factory.toLowerCase(), ADDRESSES.router.toLowerCase(), ZERO]);
     return [...bal.entries()].filter(([a, b]) => b > 0n && !skip.has(a)).sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0));
   }
 
   async getHolders(token: string, opts?: { limit?: number }): Promise<HolderRecord[]> {
+    await this.loadCores();
+    const core = this.cores.get(token.toLowerCase());
+    if (!core) return [];
     const [bal, supply] = await Promise.all([this.loadBalances(token as Address), this.pc.readContract({ address: token as Address, abi: tokenAbi, functionName: "totalSupply" }) as Promise<bigint>]);
     const total = Number(supply) / 1e18 || 1e9;
-    return this.holderEntries(bal).slice(0, opts?.limit ?? 30)
+    return this.holderEntries(core, bal).slice(0, opts?.limit ?? 30)
       .map(([address, b]) => ({ address: address as Address, balance: b.toString(), pct: (Number(b) / 1e18 / total) * 100 }));
   }
 
@@ -536,169 +556,154 @@ export class StockPadClient {
       for (const r of tr) if (!seen.has(r.id)) { seen.add(r.id); cb(r); }
     }).catch(() => undefined);
     void tick();
-    const id = setInterval(tick, 15_000);
+    const id = setInterval(tick, 10_000);
     return () => clearInterval(id);
   }
 
-  // -- rewards ------------------------------------------------------------
+  // -- fees ---------------------------------------------------------------
+
+  /** Fees sitting in a coin's pool position, in native USDC wei: creator share and platform share. */
+  private async pendingSplit(tokens: Address[]): Promise<Map<string, { creator: bigint; platform: bigint }>> {
+    if (tokens.length === 0) return new Map();
+    const res = await this.pc.multicall({ allowFailure: true, contracts: tokens.map((t) => ({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "pendingFees" as const, args: [t] as const })) as any });
+    return new Map(tokens.map((t, i) => {
+      const r = res[i];
+      const quote = r.status === "success" ? ((r.result as unknown as readonly [bigint, bigint])[1] ?? 0n) * NATIVE_PER_QUOTE : 0n;
+      const creator = (quote * CREATOR_BPS) / 10_000n;
+      return [t.toLowerCase(), { creator, platform: quote - creator }];
+    }));
+  }
 
   async rewards(token: Address, account?: Address): Promise<RewardsView> {
-    const who = account ?? ZERO;
-    const [pending, creatorFees, platformFees, th, tc, tp, creator, balance] = (await this.pc.multicall({ allowFailure: false, contracts: [
-      { address: token, abi: tokenAbi, functionName: "pendingRewards", args: [who] },
-      { address: token, abi: tokenAbi, functionName: "creatorFees" },
-      { address: token, abi: tokenAbi, functionName: "platformFees" },
-      { address: token, abi: tokenAbi, functionName: "totalHolderRewards" },
-      { address: token, abi: tokenAbi, functionName: "totalCreatorFees" },
-      { address: token, abi: tokenAbi, functionName: "totalPlatformFees" },
-      { address: token, abi: tokenAbi, functionName: "creator" },
-      { address: token, abi: tokenAbi, functionName: "balanceOf", args: [who] },
-    ] })) as [bigint, bigint, bigint, bigint, bigint, bigint, Address, bigint];
-    return { pending, creatorFees, platformFees, totalHolder: th, totalCreator: tc, totalPlatform: tp, isCreator: !!account && creator.toLowerCase() === account.toLowerCase(), balance };
-  }
-
-  private async routeOf(token: Address): Promise<{ pair: Address; route: Hex | null }> {
     await this.loadCores();
-    const pair = this.cores.get(token.toLowerCase())?.pair ?? WETH;
-    return { pair, route: routeFor(pair) };
+    const core = this.cores.get(token.toLowerCase());
+    const [split, balance] = await Promise.all([
+      this.pendingSplit([token]),
+      account ? (this.pc.readContract({ address: token, abi: tokenAbi, functionName: "balanceOf", args: [account] }) as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n),
+    ]);
+    const s = split.get(token.toLowerCase()) ?? { creator: 0n, platform: 0n };
+    const paid = this.scan.fees[token.toLowerCase()];
+    return {
+      pending: 0n, creatorFees: s.creator, platformFees: s.platform, totalHolder: 0n,
+      totalCreator: paid ? BigInt(paid.c) * NATIVE_PER_QUOTE : 0n, totalPlatform: paid ? BigInt(paid.p) * NATIVE_PER_QUOTE : 0n,
+      isCreator: !!account && !!core && core.creator === account.toLowerCase(), balance,
+    };
   }
 
-  async claimRewards(token: Address, asEth: boolean): Promise<Hex> {
-    const wc = this.wallet();
-    const { route } = await this.routeOf(token);
-    if (asEth && route === null) throw new Error("No ETH route for this pair; claim in the stock instead.");
-    return asEth
-      ? wc.writeContract({ address: token, abi: tokenAbi, functionName: "claimRewardsAsEth", args: [0n, route!], chain: wc.chain, account: wc.account! })
-      : wc.writeContract({ address: token, abi: tokenAbi, functionName: "claimRewards", chain: wc.chain, account: wc.account! });
-  }
+  /** No holder rewards on Arc: the pool fee is split creator / platform only. */
+  async claimRewards(): Promise<Hex> { throw new Error("This launchpad has no holder rewards."); }
 
-  async claimCreatorFees(token: Address, asEth: boolean): Promise<Hex> {
+  /** Harvest a coin's pool fees: the creator and the platform are both paid in the same call. */
+  async claimCreatorFees(token: Address, _asEth?: boolean): Promise<Hex> {
     const wc = this.wallet();
-    const { route } = await this.routeOf(token);
-    if (asEth && route === null) throw new Error("No ETH route for this pair; claim in the stock instead.");
-    return wc.writeContract({ address: token, abi: tokenAbi, functionName: "claimCreatorFees", args: [asEth, 0n, asEth ? route! : "0x"], chain: wc.chain, account: wc.account! });
+    return wc.writeContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "harvestFees", args: [token], chain: wc.chain, account: wc.account! });
   }
 
   async claimPlatformFees(token: Address): Promise<Hex> {
-    const wc = this.wallet();
-    return wc.writeContract({ address: token, abi: tokenAbi, functionName: "claimPlatformFees", chain: wc.chain, account: wc.account! });
+    return this.claimCreatorFees(token);
   }
 
-  /** Push the platform share of many coins to the fee recipient in one transaction. */
+  /** Harvest many coins in one transaction; coins with nothing waiting are skipped. */
   async pushPlatformFees(tokens: Address[]): Promise<Hex> {
     const wc = this.wallet();
-    return wc.writeContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "pushPlatformFees", args: [tokens], chain: wc.chain, account: wc.account! });
+    return wc.writeContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "harvestMany", args: [tokens], chain: wc.chain, account: wc.account! });
   }
 
-  /** Platform fees waiting in each coin, in its pair asset. */
+  /** Platform share waiting in each coin's pool, in native USDC wei. */
   async platformWaiting(tokens: Address[]): Promise<Map<string, bigint>> {
-    if (tokens.length === 0) return new Map();
-    const res = await this.pc.multicall({ allowFailure: true, contracts: tokens.map((t) => ({ address: t, abi: tokenAbi, functionName: "platformFees" as const })) });
-    return new Map(tokens.map((t, i) => [t.toLowerCase(), res[i].status === "success" ? (res[i].result as bigint) : 0n]));
+    const split = await this.pendingSplit(tokens);
+    return new Map([...split.entries()].map(([k, v]) => [k, v.platform]));
   }
 
   // -- trading ------------------------------------------------------------
 
   private async ensureAllowance(erc: Address, spender: Address, amount: bigint) {
     const me = this.me();
-    const have = (await this.pc.readContract({ address: erc, abi: erc20Abi, functionName: "allowance", args: [me, spender] })) as bigint;
+    const have = (await this.pc.readContract({ address: erc, abi: tokenAbi, functionName: "allowance", args: [me, spender] })) as bigint;
     if (have >= amount) return;
     const wc = this.wallet();
-    const h = await wc.writeContract({ address: erc, abi: erc20Abi, functionName: "approve", args: [spender, 2n ** 256n - 1n], chain: wc.chain, account: wc.account! });
+    const h = await wc.writeContract({ address: erc, abi: tokenAbi, functionName: "approve", args: [spender, 2n ** 256n - 1n], chain: wc.chain, account: wc.account! });
     await this.pc.waitForTransactionReceipt({ hash: h });
   }
 
-  /** Simulate a buy (ETH in) or sell (coins in), returning the exact fill.
-   *  Pair-denominated when the pair has no ETH route. */
+  /** Storage slot of `allowance[owner][spender]` on the launch token (OpenZeppelin ERC20: mapping at slot 1). */
+  private allowanceSlot(owner: Address, spender: Address): Hex {
+    const inner = keccak256(encodeAbiParameters([{ type: "address" }, { type: "uint256" }], [owner, 1n]));
+    return keccak256(encodeAbiParameters([{ type: "address" }, { type: "bytes32" }], [spender, inner]));
+  }
+
+  /** Simulate a buy (USDC in) or sell (coins in), returning the exact fill.
+   *  Sells are simulated with the allowance overridden, so no approval is needed to see a quote. */
   async previewSwapOut(token: Address, side: "buy" | "sell", amountIn: bigint): Promise<bigint | null> {
     if (amountIn <= 0n) return 0n;
     const me = this.wc?.account?.address as Address | undefined;
     if (!me) return null;
-    const { pair, route } = await this.routeOf(token);
     try {
       if (side === "buy") {
-        if (route === null) {
-          const { result } = await this.pc.simulateContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "buyWithPair", args: [token, amountIn, 0n], account: me });
-          return result as bigint;
-        }
-        const { result } = await this.pc.simulateContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "buy", args: [token, route, 0n], value: amountIn, account: me });
+        const { result } = await this.pc.simulateContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "buy", args: [token, 0n], value: amountIn, account: me });
         return result as bigint;
       }
-      if (route === null) {
-        const { result } = await this.pc.simulateContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "sellForPair", args: [token, amountIn, 0n], account: me });
-        return result as bigint;
-      }
-      const { result } = await this.pc.simulateContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "sell", args: [token, amountIn, route, 0n], account: me });
+      const { result } = await this.pc.simulateContract({
+        address: ADDRESSES.router, abi: routerAbi, functionName: "sell", args: [token, amountIn, 0n], account: me,
+        stateOverride: [{ address: token, stateDiff: [{ slot: this.allowanceSlot(me, ADDRESSES.router), value: `0x${"ff".repeat(32)}` as Hex }] }],
+      });
       return result as bigint;
     } catch {
-      pair;
       return null;
     }
   }
 
-  /** Buy with ETH along the pair's route, or with the pair asset when it has none. */
+  /** Buy with native USDC. `amountIn` is native wei (18-dp); `minOut` is coin wei. */
   async buyToken(token: Address, amountIn: bigint, minOut: bigint): Promise<Hex> {
     const wc = this.wallet();
-    const { pair, route } = await this.routeOf(token);
-    if (route === null) {
-      await this.ensureAllowance(pair, ADDRESSES.router, amountIn);
-      return wc.writeContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "buyWithPair", args: [token, amountIn, minOut], chain: wc.chain, account: wc.account! });
-    }
-    return wc.writeContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "buy", args: [token, route, minOut], value: amountIn, chain: wc.chain, account: wc.account! });
+    return wc.writeContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "buy", args: [token, minOut], value: amountIn, chain: wc.chain, account: wc.account! });
   }
 
-  /** Sell for ETH along the pair's route, or for the pair asset when it has none. */
+  /** Sell coins for native USDC. `minOut` is native wei (18-dp). */
   async sellToken(token: Address, amountIn: bigint, minOut: bigint): Promise<Hex> {
     const wc = this.wallet();
-    const { route } = await this.routeOf(token);
     await this.ensureAllowance(token, ADDRESSES.router, amountIn);
-    if (route === null) return wc.writeContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "sellForPair", args: [token, amountIn, minOut], chain: wc.chain, account: wc.account! });
-    return wc.writeContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "sell", args: [token, amountIn, route, minOut], chain: wc.chain, account: wc.account! });
+    return wc.writeContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "sell", args: [token, amountIn, minOut], chain: wc.chain, account: wc.account! });
   }
 
   // -- launch -------------------------------------------------------------
 
+  private launchArgs(p: { name: string; symbol: string; metadataURI: string }) {
+    return [{ name: p.name, symbol: p.symbol, metadataURI: p.metadataURI, quote: ADDRESSES.weth, marketCapUsd8: 0n }] as const;
+  }
+
+  /** Launch a coin. The whole supply goes into a USDC pool at the default market cap.
+   *  A first buy is a separate router transaction right after (see Launch page). */
   async createToken(p: { name: string; symbol: string; metadataURI: string; pair: Address; devBuyWei?: bigint }): Promise<Hex> {
     const wc = this.wallet();
-    const pair = p.pair.toLowerCase() as Address;
-    const route = routeFor(pair);
-    const dev = p.devBuyWei ?? 0n;
-    if (dev > 0n && route === null) throw new Error("This pair has no ETH route, so a first buy is not possible. Launch without one.");
-    const salt = new Uint8Array(32);
-    crypto.getRandomValues(salt);
-    const saltHex = `0x${Array.from(salt, (b) => b.toString(16).padStart(2, "0")).join("")}` as Hex;
-    return wc.writeContract({
-      address: ADDRESSES.factory, abi: factoryAbi, functionName: "launch",
-      args: [{ name: p.name, symbol: p.symbol, metadataURI: p.metadataURI, pair }, saltHex, route ?? "0x"],
-      value: dev > 0n ? dev : undefined, chain: wc.chain, account: wc.account!,
-    });
+    return wc.writeContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "createToken", args: this.launchArgs(p), chain: wc.chain, account: wc.account! });
   }
 
   /** Gas estimate for a launch, so the form can warn before a wallet prompt. */
   async estimateLaunch(p: { name: string; symbol: string; metadataURI: string; pair: Address; devBuyWei?: bigint }, from: Address): Promise<bigint> {
-    const pair = p.pair.toLowerCase() as Address;
-    return this.pc.estimateContractGas({
-      address: ADDRESSES.factory, abi: factoryAbi, functionName: "launch",
-      args: [{ name: p.name, symbol: p.symbol, metadataURI: p.metadataURI, pair }, `0x${"11".repeat(32)}` as Hex, routeFor(pair) ?? "0x"],
-      value: p.devBuyWei ?? 0n, account: from,
-    });
+    return this.pc.estimateContractGas({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "createToken", args: this.launchArgs(p), account: from });
+  }
+
+  /** The coin a launch transaction created, from its TokenCreated log. */
+  async launchedToken(hash: Hex): Promise<Address | null> {
+    const rc = await this.pc.getTransactionReceipt({ hash }).catch(() => null);
+    if (!rc) return null;
+    const log = rc.logs.find((l) => l.address.toLowerCase() === ADDRESSES.factory.toLowerCase() && l.topics[0] === TOKEN_CREATED_TOPIC);
+    return log?.topics[1] ? (`0x${log.topics[1].slice(26)}`.toLowerCase() as Address) : null;
   }
 
   // -- admin --------------------------------------------------------------
 
   async config(): Promise<ConfigView> {
-    const [admin, owner, feeRecipient, paused, taxBps, creatorBps, holderBps, converter, total] = (await this.pc.multicall({ allowFailure: false, contracts: [
-      { address: ADDRESSES.factory, abi: factoryAbi, functionName: "admin" },
+    const [owner, feeRecipient, paused, creatorBps, feeTier, total] = (await this.pc.multicall({ allowFailure: false, contracts: [
       { address: ADDRESSES.factory, abi: factoryAbi, functionName: "owner" },
       { address: ADDRESSES.factory, abi: factoryAbi, functionName: "feeRecipient" },
       { address: ADDRESSES.factory, abi: factoryAbi, functionName: "launchesPaused" },
-      { address: ADDRESSES.factory, abi: factoryAbi, functionName: "TAX_BPS" },
-      { address: ADDRESSES.factory, abi: factoryAbi, functionName: "CREATOR_BPS" },
-      { address: ADDRESSES.factory, abi: factoryAbi, functionName: "HOLDER_BPS" },
-      { address: ADDRESSES.factory, abi: factoryAbi, functionName: "converter" },
+      { address: ADDRESSES.factory, abi: factoryAbi, functionName: "CREATOR_FEE_BPS" },
+      { address: ADDRESSES.factory, abi: factoryAbi, functionName: "POOL_FEE_TIER" },
       { address: ADDRESSES.factory, abi: factoryAbi, functionName: "totalTokens" },
-    ] })) as [Address, Address, Address, boolean, number, number, number, Address, bigint];
-    return { admin, owner, feeRecipient, paused, taxBps: Number(taxBps), creatorBps: Number(creatorBps), holderBps: Number(holderBps), ethUsd: await this.ethUsd(), converter, totalTokens: Number(total) };
+    ] })) as [Address, Address, boolean, number, number, bigint];
+    return { admin: owner, owner, feeRecipient, paused, taxBps: Number(feeTier) / 10, creatorBps: Number(creatorBps), holderBps: 0, ethUsd: 1, converter: ZERO, totalTokens: Number(total) };
   }
 
   async adminCall(fn: "pause" | "resume" | "setFeeRecipient" | "setQuoteAsset" | "collect", args: unknown[] = []): Promise<Hex> {
@@ -706,33 +711,12 @@ export class StockPadClient {
     return wc.writeContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: fn as any, args: args as any, chain: wc.chain, account: wc.account! });
   }
 
-  /** Holders of a coin with unclaimed rewards, largest first (in pair-asset wei). */
-  async holdersWithPending(token: Address): Promise<{ address: Address; pending: bigint }[]> {
-    const holders = await this.getHolders(token, { limit: 2000 });
-    if (holders.length === 0) return [];
-    const out: { address: Address; pending: bigint }[] = [];
-    for (let i = 0; i < holders.length; i += 200) {
-      const chunk = holders.slice(i, i + 200);
-      const res = (await this.pc.multicall({ allowFailure: true, contracts: chunk.map((h) => ({ address: token, abi: tokenAbi, functionName: "pendingRewards", args: [h.address] })) })) as { status: string; result?: bigint }[];
-      res.forEach((r, j) => { if (r.status === "success" && (r.result ?? 0n) > 0n) out.push({ address: chunk[j].address, pending: r.result! }); });
-    }
-    return out.sort((a, b) => (b.pending > a.pending ? 1 : b.pending < a.pending ? -1 : 0));
-  }
+  async holdersWithPending(): Promise<{ address: Address; pending: bigint }[]> { return []; }
+  async pushRewards(): Promise<Hex> { throw new Error("This launchpad has no holder rewards."); }
 
-  /** Push rewards to many holders in one transaction via Multicall3 (claimFor is permissionless). */
-  async pushRewards(token: Address, holders: Address[]): Promise<Hex> {
-    const wc = this.wallet();
-    const calls = holders.map((h) => ({ target: token, allowFailure: true, callData: encodeFunctionData({ abi: tokenAbi, functionName: "claimFor", args: [h] }) }));
-    return wc.writeContract({ address: MULTICALL3, abi: multicall3Abi, functionName: "aggregate3", args: [calls], chain: wc.chain, account: wc.account! });
-  }
-
-  /** Live fee bps for a coin right now (base plus any anti-snipe surcharge). */
-  async feeNow(token: Address): Promise<{ total: number; base: number }> {
-    await this.loadCores();
-    const core = this.cores.get(token.toLowerCase());
-    if (!core) return { total: 0, base: 0 };
-    const [total, base] = (await this.pc.readContract({ address: ADDRESSES.hook, abi: hookAbi, functionName: "feeBpsNow", args: [core.poolId, ADDRESSES.router] })) as readonly [number, number];
-    return { total: Number(total), base: Number(base) };
+  /** The pool fee is fixed per coin: the tier's 1%. */
+  async feeNow(_token?: Address): Promise<{ total: number; base: number }> {
+    return { total: FEES.taxPct * 100, base: FEES.taxPct * 100 };
   }
 }
 
