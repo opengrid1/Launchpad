@@ -1,10 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { ColorType, CrosshairMode, createChart, type IChartApi, type UTCTimestamp } from "lightweight-charts";
 import type { Candle } from "@launchpad/sdk";
 
 import { usd } from "../lib/format";
 
 const SUPPLY = 1_000_000_000;
-const W = 640, H = 230, LINE_H = 160, LINE_TOP = 8, VOL_TOP = 182, VOL_H = 44;
 
 /** Dollar formatter that never falls back to exponent notation: tiny coin
  *  prices show as $0.00000253, larger figures as $1.2K / $3.4M. */
@@ -20,54 +20,70 @@ export function money(p: number): string {
   return `$${p.toFixed(decimals)}`;
 }
 
-/** Market cap (or price) over time as one stretched SVG: a line with a
- *  gradient under it and buy/sell volume bars at the foot. No axes. The
- *  header carries the latest value and the move since the first point;
- *  the footer the volume and the low-high range. */
+const cssVar = (name: string, fallback: string) => (typeof window === "undefined" ? fallback : getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback);
+
+/** TradingView-style candles (Lightweight Charts) with a volume histogram
+ *  underneath, a price scale on the right and a time scale at the foot.
+ *  The header carries the latest value and the move since the first candle. */
 export function Chart({ candles, hypeUsd, mode = "mcap", startUsd = 3000, volumeUsd }: { candles: Candle[]; hypeUsd: number; mode?: "price" | "mcap"; startUsd?: number; volumeUsd?: number }) {
+  const box = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
   const scale = (mode === "mcap" ? SUPPLY : 1) * hypeUsd;
+
   const d = useMemo(() => {
-    const pts = candles.map((k) => ({ t: k.time, p: Number(k.close) * scale, o: Number(k.open) * scale, v: Number(k.volume) * hypeUsd })).filter((x) => isFinite(x.p) && x.p > 0);
-    if (pts.length === 1) pts.push({ ...pts[0], t: pts[0].t + 60 });
-    if (pts.length < 2) return null;
-    const vals = pts.map((x) => x.p);
-    const from = mode === "mcap" ? Math.min(vals[0], startUsd) : vals[0];
-    const last = vals[vals.length - 1];
-    const up = last >= from;
+    const rows = candles
+      .map((k) => ({ time: k.time as UTCTimestamp, open: Number(k.open) * scale, high: Number(k.high) * scale, low: Number(k.low) * scale, close: Number(k.close) * scale, volume: Number(k.volume) * hypeUsd }))
+      .filter((x) => isFinite(x.close) && x.close > 0)
+      .sort((a, b) => a.time - b.time)
+      .filter((x, i, arr) => i === 0 || x.time !== arr[i - 1].time);
+    if (rows.length === 0) return null;
+    const first = rows[0].open || rows[0].close;
+    const from = mode === "mcap" ? Math.min(first, startUsd) : first;
+    const last = rows[rows.length - 1].close;
     const chg = from > 0 ? ((last - from) / from) * 100 : 0;
-    const lo = Math.min(...vals, from), hi = Math.max(...vals);
-    const pad = (hi - lo) * 0.08 || 1;
-    const floor = Math.max(0, lo - pad), span = hi + pad - floor || 1;
-    const maxV = Math.max(...pts.map((x) => x.v), 1e-9);
-    const n = pts.length;
-    const xs = pts.map((_, i) => (i / Math.max(n - 1, 1)) * W);
-    const ys = vals.map((p) => LINE_TOP + (1 - (p - floor) / span) * LINE_H);
-    const line = xs.map((x, i) => `${x.toFixed(1)},${ys[i].toFixed(1)}`).join(" ");
-    const area = `0,${VOL_TOP - 6} ${line} ${W},${VOL_TOP - 6}`;
-    const bw = Math.max(2.2, W / n - 0.8);
-    const bars = pts.map((x, i) => ({ key: `${x.t}-${i}`, x: Math.max(0, xs[i] - bw / 2), h: Math.max(1.5, (x.v / maxV) * VOL_H), up: i === 0 || vals[i] >= vals[i - 1] }));
-    const vol = pts.reduce((s, x) => s + x.v, 0);
-    return { line, area, bars, bw, from, last, up, chg, lo, hi, vol };
+    const lo = Math.min(...rows.map((r) => r.low)), hi = Math.max(...rows.map((r) => r.high));
+    const vol = rows.reduce((s, r) => s + r.volume, 0);
+    return { rows, from, last, chg, up: last >= from, lo, hi, vol };
   }, [candles, scale, hypeUsd, mode, startUsd]);
+
+  useEffect(() => {
+    const el = box.current;
+    if (!el || !d) return;
+    const up = cssVar("--up", "#0E7C4A"), down = cssVar("--down", "#D14424");
+    const ink3 = cssVar("--ink3", "#5B636B"), line = cssVar("--line", "#DFE5EC"), mono = cssVar("--mono", "Space Mono, monospace");
+    const chart = createChart(el, {
+      autoSize: true,
+      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: ink3, fontFamily: mono, fontSize: 11, attributionLogo: false },
+      grid: { vertLines: { color: line, style: 1 }, horzLines: { color: line, style: 1 } },
+      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.26 } },
+      timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 2, barSpacing: 8, minBarSpacing: 3 },
+      crosshair: { mode: CrosshairMode.Normal, vertLine: { color: ink3, width: 1, style: 3, labelBackgroundColor: cssVar("--ink", "#1B3158") }, horzLine: { color: ink3, width: 1, style: 3, labelBackgroundColor: cssVar("--ink", "#1B3158") } },
+      handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+      handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: true },
+      localization: { priceFormatter: (p: number) => money(p) },
+    });
+    chartRef.current = chart;
+    const series = chart.addCandlestickSeries({
+      upColor: up, downColor: down, borderUpColor: up, borderDownColor: down, wickUpColor: up, wickDownColor: down,
+      priceFormat: { type: "custom", formatter: (p: number) => money(p), minMove: 1e-12 },
+    });
+    series.setData(d.rows.map(({ time, open, high, low, close }) => ({ time, open, high, low, close })));
+    const vol = chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "vol", lastValueVisible: false, priceLineVisible: false });
+    vol.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 }, borderVisible: false });
+    vol.setData(d.rows.map((r) => ({ time: r.time, value: r.volume, color: r.close >= r.open ? up + "99" : down + "99" })));
+    chart.timeScale().fitContent();
+    return () => { chart.remove(); chartRef.current = null; };
+  }, [d]);
 
   if (!d) return <div className="gc-empty">Chart loads with the first trade.</div>;
   const tone = d.up ? "up" : "down";
-  const gid = d.up ? "gcUp" : "gcDown";
   return (
     <div>
       <div className="gc-h">
         <b className={tone}>{money(d.last)}<span>{d.chg >= 0 ? "+" : ""}{d.chg.toFixed(1)}%</span></b>
         <span className="from">{mode === "mcap" ? "Mcap" : "Price"} · from {money(d.from)}</span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="gc" role="img" aria-label={`${mode === "mcap" ? "market cap" : "price"} chart`}>
-        <defs>
-          <linearGradient id="gcUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--up)" stopOpacity="0.42" /><stop offset="100%" stopColor="var(--up)" stopOpacity="0" /></linearGradient>
-          <linearGradient id="gcDown" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--down)" stopOpacity="0.38" /><stop offset="100%" stopColor="var(--down)" stopOpacity="0" /></linearGradient>
-        </defs>
-        <polygon points={d.area} fill={`url(#${gid})`} />
-        <polyline points={d.line} fill="none" stroke={d.up ? "var(--up)" : "var(--down)"} strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        {d.bars.map((b) => <rect key={b.key} x={b.x} y={VOL_TOP + (VOL_H + 4 - b.h)} width={d.bw} height={b.h} fill={b.up ? "var(--up)" : "var(--down)"} opacity="0.75" />)}
-      </svg>
+      <div ref={box} className="gc tv" role="img" aria-label={`${mode === "mcap" ? "market cap" : "price"} candlestick chart`} />
       <div className="gc-f">
         <span>Vol {usd(volumeUsd ?? d.vol, { compact: true })}</span>
         <span>{money(d.lo)} — {money(d.hi)}</span>

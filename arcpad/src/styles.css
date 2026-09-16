@@ -221,6 +221,8 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
 .gc-h b span{font-size:14px;margin-left:8px;font-weight:600}
 .gc-h .from{color:var(--ink3);font-size:12px;white-space:nowrap}
 .gc{display:block;width:100%;height:224px}
+.gc.tv{height:300px;position:relative}
+.gc.tv canvas{border-radius:8px}
 .gc-f{display:flex;justify-content:space-between;gap:10px;margin-top:6px;color:var(--ink3);font-size:12px;font-family:var(--mono)}
 .gc-empty{display:grid;place-items:center;height:224px;color:var(--ink3);font-size:14px}
 .ticket{padding:18px}
@@ -381,6 +383,7 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
   .mk-pair{padding:12px 16px 0}
   .chart-wrap{padding:8px 16px 0}
   .gc{height:200px}
+  .gc.tv{height:260px}
   .gc-h b{font-size:24px}
   .head{gap:12px}
   .head .art{width:56px;height:56px;border-radius:16px;flex-basis:56px}
