@@ -51,7 +51,7 @@ export const chain = defineChain({
 });
 
 export const BRAND = {
-  name: "ARCX",
+  name: "arcx.fun",
   tagline: "Coins priced in dollars.",
   url: "https://www.arcx.fun",
   x: "https://x.com/arcxfun",

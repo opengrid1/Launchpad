@@ -6,7 +6,7 @@ import { ADDRESSES, BRAND, env, FEES } from "../lib/env";
 
 export default function Docs() {
   const steps: { icon: IconName; t: string; p: string }[] = [
-    { icon: "launch", t: "Launch", p: "One transaction deploys a fixed 1B supply coin and puts all of it into a Uniswap V3 pool against USDC at about $3,000. Optional first buy in USDC. The launch position is held by the factory, never by the creator." },
+    { icon: "launch", t: "Launch", p: "One transaction deploys a fixed 1B supply coin and puts all of it into a Uniswap V3 pool against USDC at about $3,000. Optional first buy in USDC. Liquidity is locked in the pool." },
     { icon: "receipt", t: "Trade in dollars", p: "Arc's gas token is USDC, so you pay USDC, receive USDC, and the price on the chart is a dollar price. No wrapped tokens, no gas token to buy first." },
     { icon: "wallet", t: "Creator gets paid", p: `Every trade pays the pool's ${FEES.taxPct}% fee. ${FEES.creatorPct}% of it belongs to the creator and ${FEES.platformPct}% to the platform. Collect any time, as USDC.` },
     { icon: "tune", t: "Nothing else", p: "No presale, no bonding curve, no tax on transfers, no holder rewards, no mint, no owner. The coin is done the moment it launches." },
