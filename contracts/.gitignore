@@ -3,3 +3,4 @@ artifacts-size/
 .meow-tokendeployer
 .env.alchemy
 .env.telegram
+.env.arc-deployer
