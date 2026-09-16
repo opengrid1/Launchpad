@@ -204,8 +204,14 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
 .desk>*{min-width:0}
 .desk aside{position:sticky;top:calc(var(--bar) + 12px);display:grid;gap:16px;min-width:0}
 .desk aside>*{min-width:0}
-.chart-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 16px 14px;flex-wrap:wrap}
-.chart-wrap{padding:8px 18px 0}
+.chart-tools{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 18px 0}
+.tf{display:flex;gap:2px;background:var(--tile3);border-radius:10px;padding:3px}
+.tf button{height:28px;padding:0 11px;border-radius:8px;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:.02em;transition:background .12s,color .12s}
+.tf button:hover{color:var(--ink)}
+.tf button.on{background:var(--tile);color:var(--ink);box-shadow:var(--shadow)}
+.seg.sm{padding:3px}
+.seg.sm button{height:28px;padding:0 11px;font-size:12px;font-weight:600}
+.chart-wrap{padding:8px 18px 14px}
 .market{padding-top:4px}
 .mk-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 12px;padding:16px 18px 6px}
 .mk-stats div{display:grid;gap:3px;min-width:0}
@@ -381,7 +387,9 @@ textarea.inp{height:auto;min-height:84px;padding:10px 14px;resize:vertical;borde
   .mk-stats{grid-template-columns:repeat(2,1fr);padding:14px 16px 4px;gap:12px 10px}
   .mk-stats b{font-size:18px}
   .mk-pair{padding:12px 16px 0}
-  .chart-wrap{padding:8px 16px 0}
+  .chart-wrap{padding:8px 12px 12px}
+  .chart-tools{padding:10px 12px 0}
+  .tf button{padding:0 9px}
   .gc{height:200px}
   .gc.tv{height:260px}
   .gc-h b{font-size:24px}

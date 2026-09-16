@@ -61,18 +61,25 @@ export class DemoClient extends StockPadClient {
   override async quotes(): Promise<QuoteView[]> { return [{ ...USDC, approved: true, liqUsd: 1e9, vol24Usd: 1e9 }]; }
   override async getCandles(token: string, interval: CandleInterval): Promise<Candle[]> {
     const t = this.find(token); if (!t) return [];
-    const s = seedOf(t); const r = rng(s.seed);
+    const s = seedOf(t); const r = rng(s.seed * 7 + INTERVAL_SECONDS[interval]);
     const step = INTERVAL_SECONDS[interval];
-    const n = Math.min(160, Math.max(6, Math.floor((s.ageH * 3600) / step)));
+    const n = Math.min(180, Math.max(12, Math.floor((s.ageH * 3600) / step)));
     const last = Number(t.priceWei) / 1e18;
     const start = last / (1 + (s.chg ?? 0) / 100);
-    const out: Candle[] = []; let p = start;
+    // Random walk with drift toward the final price: open is the previous close,
+    // wicks reach past the body, volume swells on the bigger moves.
+    const volPct = Math.min(0.09, 0.012 * Math.sqrt(step / 300) + 0.01);
+    const out: Candle[] = []; let prev = start;
     for (let i = 0; i < n; i++) {
-      const target = start + ((last - start) * (i + 1)) / n;
-      const o = p; const c = i === n - 1 ? last : target * (1 + (r() - 0.5) * 0.12);
-      const h = Math.max(o, c) * (1 + r() * 0.05), l = Math.min(o, c) * (1 - r() * 0.05);
-      out.push({ time: NOW - (n - i) * step, open: String(o), high: String(h), low: String(l), close: String(c), volume: String(r() * 2000) });
-      p = c;
+      const drift = (Math.log(last / prev) / Math.max(1, n - i)) * 1.2;
+      const shock = (r() + r() + r() - 1.5) * volPct;
+      const close = i === n - 1 ? last : prev * Math.exp(drift + shock);
+      const body = Math.abs(close - prev);
+      const high = Math.max(prev, close) + body * r() * 0.9 + prev * volPct * r() * 0.35;
+      const low = Math.max(1e-18, Math.min(prev, close) - body * r() * 0.9 - prev * volPct * r() * 0.35);
+      const volume = (s.vol / n) * (0.35 + r() * 0.9 + Math.abs(shock) * 25);
+      out.push({ time: NOW - (n - i) * step, open: String(prev), high: String(high), low: String(low), close: String(close), volume: String(volume) });
+      prev = close;
     }
     return out;
   }

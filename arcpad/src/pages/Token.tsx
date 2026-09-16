@@ -73,12 +73,12 @@ function Coin({ t }: { t: Token }) {
               <b>{t.symbol} / {pair.symbol}</b>
               <span>{hype(wei(t.priceWei || "0"), 5)} {pair.symbol} · {pair.symbol} at {usd(pair.usd)}</span>
             </div>
+            <div className="chart-tools">
+              <div className="tf" role="tablist" aria-label="Timeframe">{INTERVALS.map((i) => <button key={i} role="tab" aria-selected={interval === i} className={interval === i ? "on" : ""} onClick={() => setInterval_(i)}>{i}</button>)}</div>
+              <div className="seg sm"><button className={view === "mcap" ? "on" : ""} onClick={() => setView("mcap")}>Mcap</button><button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>Price</button></div>
+            </div>
             <div className="chart-wrap">
               {candles ? <Chart candles={candles} hypeUsd={pair.usd} mode={view} volumeUsd={wei(t.volume24hWei) * pair.usd} /> : <div className="gc-empty">Loading chart…</div>}
-            </div>
-            <div className="chart-h">
-              <div className="seg">{INTERVALS.map((i) => <button key={i} className={interval === i ? "on" : ""} onClick={() => setInterval_(i)}>{i}</button>)}</div>
-              <div className="seg"><button className={view === "mcap" ? "on" : ""} onClick={() => setView("mcap")}>Mcap</button><button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>Price</button></div>
             </div>
           </div>
           <div className="tabs">
