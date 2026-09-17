@@ -74,4 +74,6 @@ export const HIDDEN_TOKENS = new Set<string>([
 ]);
 /** When true, the feed shows only the pinned official coins; every other coin is hidden (still opens by URL). */
 export const FEED_ONLY_PINNED = true;
-export const isHidden = (address: string) => HIDDEN_TOKENS.has(address.toLowerCase()) || (FEED_ONLY_PINNED && !isPinned(address));
+/** When true, the feed is empty: every coin, the official one included, is hidden (still opens by URL). */
+export const FEED_HIDE_ALL = true;
+export const isHidden = (address: string) => FEED_HIDE_ALL || HIDDEN_TOKENS.has(address.toLowerCase()) || (FEED_ONLY_PINNED && !isPinned(address));
