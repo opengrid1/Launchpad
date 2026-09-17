@@ -72,4 +72,6 @@ export const HIDDEN_TOKENS = new Set<string>([
   "0x0f51694d9a981f51401400ac18074711bd7cb67e", // CHECKV3: factory v2 end-to-end check
   "0x82788f32dc2edd4f76260078bf6ad2dd4f7dac31", // first ARCX launch, abandoned after bots farmed it
 ]);
-export const isHidden = (address: string) => HIDDEN_TOKENS.has(address.toLowerCase());
+/** When true, the feed shows only the pinned official coins; every other coin is hidden (still opens by URL). */
+export const FEED_ONLY_PINNED = true;
+export const isHidden = (address: string) => HIDDEN_TOKENS.has(address.toLowerCase()) || (FEED_ONLY_PINNED && !isPinned(address));

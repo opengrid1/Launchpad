@@ -3,7 +3,7 @@ import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { useAccount } from "wagmi";
 
 import { Icon } from "./components/Icon";
-import { BRAND, DEMO, env, HIDDEN_TOKENS } from "./lib/env";
+import { BRAND, DEMO, env, FEED_ONLY_PINNED, HIDDEN_TOKENS, PINNED_TOKENS } from "./lib/env";
 import { short } from "./lib/format";
 import { useConfig, useIsAdmin, useToast } from "./lib/hooks";
 import { openWalletModal } from "./lib/wallet";
@@ -37,7 +37,7 @@ export default function App() {
             {admin && <NavLink to="/admin" className={cls}>Admin</NavLink>}
           </nav>
           <div className="bar-r">
-            <span className="bar-eth">Arc <b>{cfg ? `${Math.max(0, cfg.totalTokens - HIDDEN_TOKENS.size)} coins` : "—"}</b></span>
+            <span className="bar-eth">Arc <b>{cfg ? `${FEED_ONLY_PINNED ? PINNED_TOKENS.length : Math.max(0, cfg.totalTokens - HIDDEN_TOKENS.size)} coins` : "—"}</b></span>
             <Link to="/launch" className="btn acc">Launch a coin</Link>
             <button className="btn ink" onClick={() => openWalletModal()}>{isConnected && address ? short(address) : "Connect"}</button>
           </div>
