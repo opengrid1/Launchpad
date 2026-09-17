@@ -63,7 +63,7 @@ export const FEES = { taxPct: 1, creatorPct: 80, holderPct: 0, platformPct: 20 }
 
 /** Official coins, always listed first on the feed. */
 export const PINNED_TOKENS: string[] = [
-  "0x83fa6e78df6a1d863566ed9c998139aaf1192bad", // arcx.fun (ARCX), the official coin (relaunch)
+  "0x19d4a0dfd1c9200c2a480f4eaa75814b10311fac", // arcx.fun (ARCX), the official coin (third launch)
 ];
 export const isPinned = (address: string) => PINNED_TOKENS.includes(address.toLowerCase());
 
@@ -71,6 +71,7 @@ export const isPinned = (address: string) => PINNED_TOKENS.includes(address.toLo
 export const HIDDEN_TOKENS = new Set<string>([
   "0x0f51694d9a981f51401400ac18074711bd7cb67e", // CHECKV3: factory v2 end-to-end check
   "0x82788f32dc2edd4f76260078bf6ad2dd4f7dac31", // first ARCX launch, abandoned after bots farmed it
+  "0x83fa6e78df6a1d863566ed9c998139aaf1192bad", // second ARCX launch, replaced
 ]);
 /** When true, the feed shows only the pinned official coins; every other coin is hidden (still opens by URL). */
 export const FEED_ONLY_PINNED = true;
