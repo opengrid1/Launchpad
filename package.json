@@ -11,7 +11,8 @@
     "lend",
     "orbit",
     "stockpad",
-    "arcpad"
+    "arcpad",
+    "arbistonk"
   ],
   "scripts": {
     "build": "npm run build -w sdk && npm run build -w backend && npm run build -w web",
