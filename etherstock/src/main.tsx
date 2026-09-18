@@ -22,13 +22,11 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { err
   render() {
     if (!this.state.error) return this.props.children;
     return (
-      <main className="page">
-        <section className="hero">
-          <div className="caps" style={{ marginBottom: 12 }}>Something broke</div>
-          <h1>Page <em>error</em>.</h1>
-          <p className="sub">{String(this.state.error.message || this.state.error)}</p>
-          <div className="cta"><button className="btn acc" onClick={() => location.reload()}>Reload</button><a className="btn ghost" href="/">Back home</a></div>
-        </section>
+      <main className="gate" style={{ padding: 40 }}>
+        <div className="lbl" style={{ marginBottom: 12 }}>Something broke</div>
+        <h1>Page error.</h1>
+        <p>{String(this.state.error.message || this.state.error)}</p>
+        <div className="row"><button className="b pri" onClick={() => location.reload()}>Reload</button><a className="b" href="/">Back to the board</a></div>
       </main>
     );
   }

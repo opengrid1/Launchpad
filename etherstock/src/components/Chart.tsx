@@ -24,8 +24,9 @@ export function money(p: number): string {
  *  gradient under it and buy/sell volume bars at the foot. No axes. The
  *  header carries the latest value and the move since the first point;
  *  the footer the volume and the low-high range. */
-export function Chart({ candles, hypeUsd, mode = "mcap", startUsd = 3000, volumeUsd }: { candles: Candle[]; hypeUsd: number; mode?: "price" | "mcap"; startUsd?: number; volumeUsd?: number }) {
-  const scale = (mode === "mcap" ? SUPPLY : 1) * hypeUsd;
+export function Chart({ candles, hypeUsd, mode = "mcap", startUsd = 3000, volumeUsd, supply = SUPPLY }: { candles: Candle[]; hypeUsd: number; mode?: "price" | "mcap"; startUsd?: number; volumeUsd?: number; supply?: number }) {
+  // Supply shrinks with every burn, so market cap uses the live supply passed in.
+  const scale = (mode === "mcap" ? supply : 1) * hypeUsd;
   const d = useMemo(() => {
     const pts = candles.map((k) => ({ t: k.time, p: Number(k.close) * scale, o: Number(k.open) * scale, v: Number(k.volume) * hypeUsd })).filter((x) => isFinite(x.p) && x.p > 0);
     if (pts.length === 1) pts.push({ ...pts[0], t: pts[0].t + 60 });

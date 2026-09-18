@@ -19,11 +19,13 @@ const INTERVALS: CandleInterval[] = ["5m", "15m", "1h", "4h", "1d"];
 export default function TokenPage() {
   const { address } = useParams<{ address: string }>();
   const { data: t, isLoading } = useToken(address);
-  if (isLoading) return <main className="page"><div className="skeleton" style={{ height: 90, marginBottom: 16 }} /><div className="skeleton" style={{ height: 420 }} /></main>;
-  if (!t) return <main className="page"><section className="hero"><h1>Not <em>here</em>.</h1><p className="sub">That address is not a coin launched on this factory.</p><div className="cta"><Link to="/" className="btn ink">Back to coins</Link></div></section></main>;
+  if (isLoading) return <main><div className="skel" style={{ height: 80, marginBottom: 16 }} /><div className="skel" style={{ height: 380 }} /></main>;
+  if (!t) return <main className="gate"><h1>Not a coin here.</h1><p>That address was not launched on this factory.</p><Link to="/" className="b pri">Back to the board</Link></main>;
   return <Coin t={t} />;
 }
 
+/** Coin page in bands: identity, a stat strip, chart beside the burn ledger,
+ *  then the order dock across the full width, then the logs. */
 function Coin({ t }: { t: Token }) {
   const { data: ethUsd = 0 } = useEthUsd();
   const pair = t.pair;
@@ -32,105 +34,139 @@ function Coin({ t }: { t: Token }) {
   const { data: candles } = useCandles(t.address, interval);
   const { data: tradeList } = useTrades(t.address);
   const last = tradeList?.[0];
-  const [tab, setTab] = useState<"trades" | "holders" | "about">("trades");
+  const [tab, setTab] = useState<"trades" | "holders" | "about" | "details">("trades");
   const [sheet, setSheet] = useState<"buy" | "sell" | null>(null);
   const chg = t.priceChange24hPct;
   const links = [t.metadata?.website && { l: "Website", u: t.metadata.website }, t.metadata?.twitter && { l: "X", u: t.metadata.twitter }, t.metadata?.telegram && { l: "Telegram", u: t.metadata.telegram }].filter(Boolean) as { l: string; u: string }[];
-  const paid = t.fees ? t.fees.burn + t.fees.creator + t.fees.platform : 0n;
+  const fees = t.fees ? t.fees.burn + t.fees.creator + t.fees.platform : 0n;
   const burnedPct = t.burn ? (Number(t.burn.burned) / 1e27) * 100 : 0;
+  const supplyLeft = 1e9 - wei(t.burn?.burned ?? 0n);
 
   return (
-    <main className="page">
-      <div className="head">
+    <main>
+      <div className="coin-id">
         <Art src={t.metadata?.logo} name={t.name} className="art" />
         <div>
-          <h1>{t.name}<span>{t.symbol}</span></h1>
+          <h1>{t.name}<span>{t.symbol}</span>{isPinned(t.address) && <span className="chip official">official</span>}</h1>
           <div className="meta">
-            {isPinned(t.address) && <span className="stamp official">Official</span>}
-            <span className={"stamp " + (pair.isNative ? "eth" : "stock")}><i />{pair.symbol} pair</span>
+            <span className={"chip " + (pair.isNative ? "eth" : "stock")}>{pair.symbol} pair</span>
             <span>by <a href={`${env.explorerUrl}/address/${t.creator}`} target="_blank" rel="noreferrer">{short(t.creator)}</a></span>
             <span>{dateShort(t.createdAt)}</span>
             <Copy value={t.address} label="CA" />
           </div>
         </div>
-        <div className="px">
-          <div className="v">{usd(t.marketCapUsd, { compact: true })}</div>
-          <div className="c"><span className={"chg " + (chg == null ? "" : chg >= 0 ? "up" : "down")}>{chg == null ? "no 24h data" : `${pct(chg)} 24h`}</span><span>{usd(t.priceUsd)} per {t.symbol}</span></div>
+        <div className="coin-px">
+          <div className="v">{usd(t.priceUsd)}</div>
+          <div className="c"><span className={chg == null ? "" : chg >= 0 ? "up" : "down"}>{chg == null ? "no 24h data" : `${pct(chg)} 24h`}</span><span>{hype(wei(t.priceWei || "0"), 6)} {pair.symbol}</span></div>
         </div>
       </div>
 
-      <div className="desk">
-        <div>
-          <div className="panel market">
-            <div className="mk-stats">
-              <div><span>Price</span><b>{usd(t.priceUsd)}</b></div>
-              <div><span>Market cap</span><b className={chg == null ? "" : chg >= 0 ? "up" : "down"}>{usd(t.marketCapUsd, { compact: true })}</b></div>
-              <div><span>Volume 24h</span><b>{usd(wei(t.volume24hWei) * pair.usd, { compact: true })}</b></div>
-              <div><span>Trades 24h</span><b>{num(t.txCount24h, 0)}</b></div>
-              <div><span>Last trade</span><b>{last ? <><em className={last.isBuy ? "up" : "down"}>{last.isBuy ? "BUY" : "SELL"}</em> {usd(wei(last.nativeAmountWei) * pair.usd)}</> : "—"}</b></div>
-              <div><span>Holders</span><b>{num(t.holderCount, 0)}</b></div>
-            </div>
-            <div className="mk-pair">
-              <b>{t.symbol} / {pair.symbol}</b>
-              <span>{hype(wei(t.priceWei || "0"), 5)} {pair.symbol} · {pair.symbol} at {usd(pair.usd)}</span>
-            </div>
-            <div className="chart-wrap">
-              {candles ? <Chart candles={candles} hypeUsd={pair.usd} mode={view} volumeUsd={wei(t.volume24hWei) * pair.usd} /> : <div className="gc-empty">Loading chart…</div>}
-            </div>
-            <div className="chart-h">
+      <div className="strip">
+        <div><span className="lbl">Market cap</span><b>{usd(t.marketCapUsd, { compact: true })}</b></div>
+        <div><span className="lbl">Supply left</span><b>{cnum(supplyLeft)} <span className="faint">/ 1B</span></b></div>
+        <div><span className="lbl">Burned</span><b className="ember">{burnedPct.toFixed(2)}%</b></div>
+        <div><span className="lbl">Volume 24h</span><b>{usd(wei(t.volume24hWei) * pair.usd, { compact: true })}</b></div>
+        <div><span className="lbl">Trades 24h</span><b>{num(t.txCount24h, 0)}</b></div>
+        <div><span className="lbl">Holders</span><b>{num(t.holderCount, 0)}</b></div>
+        <div><span className="lbl">Last trade</span><b>{last ? <><span className={last.isBuy ? "up" : "down"}>{last.isBuy ? "BUY" : "SELL"}</span> {usd(wei(last.nativeAmountWei) * pair.usd)}</> : "—"}</b></div>
+      </div>
+
+      <div className="coin-grid">
+        <div className="chartbox">
+          <div className="chart-h">
+            <span className="pair"><b>{t.symbol} / {pair.symbol}</b> · {pair.symbol} at {usd(pair.usd)}</span>
+            <div className="row">
               <div className="seg">{INTERVALS.map((i) => <button key={i} className={interval === i ? "on" : ""} onClick={() => setInterval_(i)}>{i}</button>)}</div>
               <div className="seg"><button className={view === "mcap" ? "on" : ""} onClick={() => setView("mcap")}>Mcap</button><button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>Price</button></div>
             </div>
           </div>
-          <div className="tabs">
-            {(["trades", "holders", "about"] as const).map((k) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{k}</button>)}
-          </div>
-          {tab === "trades" && <Trades address={t.address} symbol={t.symbol} pair={pair} />}
-          {tab === "holders" && <Holders address={t.address} creator={t.creator} />}
-          {tab === "about" && (
-            <div className="panel" style={{ padding: 20 }}>
-              <p style={{ margin: 0, whiteSpace: "pre-wrap", color: "var(--ink2)", maxWidth: 640 }}>{t.metadata?.description || "The creator did not add a description."}</p>
-              {links.length > 0 && <div className="row" style={{ marginTop: 14, flexWrap: "wrap" }}>{links.map((l) => <a key={l.l} className="btn sm" href={l.u} target="_blank" rel="noreferrer">{l.l}</a>)}</div>}
-            </div>
-          )}
+          {candles ? <Chart candles={candles} hypeUsd={pair.usd} mode={view} volumeUsd={wei(t.volume24hWei) * pair.usd} supply={wei(t.totalSupply || "0") || 1e9} /> : <div className="gc-empty">Loading chart…</div>}
         </div>
-
-        <aside>
-          <div className="panel ticket"><TradePanel token={t.address} symbol={t.symbol} priceWei={BigInt(t.priceWei || "0")} pair={pair} ethUsd={ethUsd} /></div>
-          <Burn token={t.address} pair={pair} symbol={t.symbol} />
-          <div className="panel">
-            <div className="panel-h"><span>Details</span><b>{pair.isNative ? "ETH pair" : `${pair.symbol} pair`}</b></div>
-            <dl className="kv">
-              <dt>In the pool</dt><dd>{t.reserves ? <>{hype(wei(t.reserves.pair), 4)} {pair.symbol} · {usd(wei(t.reserves.pair) * pair.usd, { compact: true })}<br /><span className="dim">{cnum(wei(t.reserves.token))} {t.symbol}</span></> : usd(wei(t.liquidityWei) * pair.usd, { compact: true })}</dd>
-              <dt>Volume 24h</dt><dd>{usd(wei(t.volume24hWei) * pair.usd, { compact: true })} · {num(t.txCount24h, 0)} trades</dd>
-              <dt>Holders</dt><dd>{num(t.holderCount, 0)}</dd>
-              <dt>Fee</dt><dd>{FEES.taxPct}% · {FEES.creatorPct}/{FEES.burnPct}/{FEES.platformPct}</dd>
-              <dt>Fees so far</dt><dd>{hype(wei(paid), 4)} {pair.symbol} · {usd(wei(paid) * pair.usd, { compact: true })}</dd>
-              <dt>Burned</dt><dd>{t.burn ? <>{num(wei(t.burn.burned), 0)} {t.symbol} · {burnedPct.toFixed(2)}%<br /><span className="dim">{hype(wei(t.burn.spent), 4)} {pair.symbol} spent on buybacks</span></> : "—"}</dd>
-              <dt>Supply</dt><dd>{t.burn ? `${cnum(1e9 - wei(t.burn.burned))} left of 1B` : "1B at launch"}</dd>
-              <dt>Pair</dt><dd>{pair.isNative ? "ETH" : <Copy value={pair.address} label={pair.symbol} />}</dd>
-              <dt>Pool</dt><dd><Copy value={t.poolId} label="id" /></dd>
-              <dt>Links</dt><dd><a className="acc" href={`${env.explorerUrl}/token/${t.address}`} target="_blank" rel="noreferrer">Etherscan</a> · <a className="acc" href={`https://dexscreener.com/${env.dexscreenerChain}/${t.poolId}`} target="_blank" rel="noreferrer">DexScreener</a></dd>
-            </dl>
-          </div>
-        </aside>
+        <Ledger token={t.address} pair={pair} symbol={t.symbol} />
       </div>
 
+      <Dock token={t.address} symbol={t.symbol} priceWei={BigInt(t.priceWei || "0")} pair={pair} ethUsd={ethUsd} />
+
+      <div className="tabs">
+        {(["trades", "holders", "about", "details"] as const).map((k) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{k}</button>)}
+      </div>
+      {tab === "trades" && <Trades address={t.address} symbol={t.symbol} pair={pair} />}
+      {tab === "holders" && <Holders address={t.address} creator={t.creator} />}
+      {tab === "about" && (
+        <div className="about">
+          {t.metadata?.description || "The creator did not add a description."}
+          {links.length > 0 && <div className="row" style={{ marginTop: 14 }}>{links.map((l) => <a key={l.l} className="b sm" href={l.u} target="_blank" rel="noreferrer">{l.l}</a>)}</div>}
+        </div>
+      )}
+      {tab === "details" && (
+        <dl className="kv" style={{ padding: "18px 4px" }}>
+          <dt>In the pool</dt><dd>{t.reserves ? <>{hype(wei(t.reserves.pair), 4)} {pair.symbol} · {usd(wei(t.reserves.pair) * pair.usd, { compact: true })}<span className="dim">{cnum(wei(t.reserves.token))} {t.symbol}</span></> : usd(wei(t.liquidityWei) * pair.usd, { compact: true })}</dd>
+          <dt>Fees so far</dt><dd>{hype(wei(fees), 4)} {pair.symbol} · {usd(wei(fees) * pair.usd, { compact: true })}<span className="dim">{FEES.taxPct}% per trade · {FEES.creatorPct} creator / {FEES.burnPct} burn / {FEES.platformPct} platform</span></dd>
+          <dt>Burned</dt><dd>{t.burn ? <>{num(wei(t.burn.burned), 0)} {t.symbol} · {burnedPct.toFixed(2)}%<span className="dim">{hype(wei(t.burn.spent), 4)} {pair.symbol} spent on buybacks</span></> : "—"}</dd>
+          <dt>Pair</dt><dd>{pair.isNative ? "ETH" : <Copy value={pair.address} label={pair.symbol} />}</dd>
+          <dt>Pool</dt><dd><Copy value={t.poolId} label="pool id" /></dd>
+          <dt>Links</dt><dd><a className="ember" href={`${env.explorerUrl}/token/${t.address}`} target="_blank" rel="noreferrer">Etherscan</a> · <a className="ember" href={`https://dexscreener.com/${env.dexscreenerChain}/${t.poolId}`} target="_blank" rel="noreferrer">DexScreener</a></dd>
+        </dl>
+      )}
+
       <div className="mobilebar">
-        <button className="big up" onClick={() => setSheet("buy")}>Buy</button>
-        <button className="big down" onClick={() => setSheet("sell")}>Sell</button>
+        <button className="b buy" onClick={() => setSheet("buy")}>Buy</button>
+        <button className="b sell" onClick={() => setSheet("sell")}>Sell</button>
       </div>
       {sheet && (
         <>
           <div className="scrim" onClick={() => setSheet(null)} />
-          <div className="sheet"><div className="grab" /><TradePanel token={t.address} symbol={t.symbol} priceWei={BigInt(t.priceWei || "0")} pair={pair} ethUsd={ethUsd} initial={sheet} /></div>
+          <div className="sheet"><div className="grab" /><Dock token={t.address} symbol={t.symbol} priceWei={BigInt(t.priceWei || "0")} pair={pair} ethUsd={ethUsd} initial={sheet} /></div>
         </>
       )}
     </main>
   );
 }
 
-function TradePanel({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { token: Address; symbol: string; priceWei: bigint; pair: PairInfo; ethUsd: number; initial?: "buy" | "sell" }) {
+/** The burn ledger: what has burned, the fuse toward the next burn, a manual
+ *  trigger, and the creator's claim when it is the creator looking. */
+function Ledger({ token, pair, symbol }: { token: Address; pair: PairInfo; symbol: string }) {
+  const { address: me } = useAccount();
+  const qc = useQueryClient();
+  const { data } = useLedger(token, me);
+  if (!data) return <div className="skel" style={{ minHeight: 320 }} />;
+  const canEth = pair.ethRoute && !pair.isNative;
+  const unit = pair.symbol;
+  const burnedPct = (Number(data.burned) / 1e27) * 100;
+  const fill = data.buybackMin > 0n ? Math.min(100, (Number(data.reserve) / Number(data.buybackMin)) * 100) : 0;
+  const armed = fill >= 100;
+  const act = (label: string, fn: () => Promise<`0x${string}`>) => async () => { await ensureWallet(); await runTx(label, fn, async () => { await qc.invalidateQueries({ queryKey: ["ledger", token.toLowerCase()] }); await qc.invalidateQueries({ queryKey: ["token", token.toLowerCase()] }); await qc.invalidateQueries({ queryKey: ["tokens"] }); }); };
+  return (
+    <div className="ledger">
+      <div>
+        <div className="lbl">Burn ledger</div>
+        <div className="big">{burnedPct.toFixed(2)}%<small>of supply gone</small></div>
+      </div>
+      <div className="row2">
+        <div><span className="lbl">Coins burned</span><b>{cnum(wei(data.burned))}</b></div>
+        <div><span className="lbl">{unit} spent</span><b>{hype(wei(data.spent), 4)}</b></div>
+      </div>
+      <div className="fuse">
+        <div className="fuse-h"><span>Next burn</span><b>{hype(wei(data.reserve), 5)} / {hype(wei(data.buybackMin), 4)} {unit}</b></div>
+        <div className="fuse-bar"><i className={armed ? "hot" : ""} style={{ width: `${fill}%` }} /></div>
+        <div className="fuse-f"><span>{usd(wei(data.reserve) * pair.usd)} in reserve</span><span className={armed ? "ember" : ""}>{armed ? "armed · fires on the next trade" : `fires at ${usd(wei(data.buybackMin) * pair.usd)}`}</span></div>
+      </div>
+      {data.reserve > 0n
+        ? <div className="row"><button className="b soft" onClick={act(`Burn ${symbol}`, () => client.buybackAndBurn(token))}>Burn now</button><span className="faint" style={{ fontSize: 12 }}>anyone can, you pay gas</span></div>
+        : <p className="note" style={{ margin: 0 }}>{FEES.burnPct}% of every fee lands here in {unit}. When it holds about $25 the next trade spends it on {symbol} and burns what it bought.</p>}
+      {data.isCreator && (
+        <div className="creator">
+          <div className="lbl">Your creator fees · lifetime {hype(wei(data.totalCreator), 4)} {unit}</div>
+          <div className="v">{hype(wei(data.creatorFees), 5)} <span className="faint" style={{ fontSize: 13 }}>{unit}</span></div>
+          {data.creatorFees > 0n && <div className="row"><button className="b pri sm" onClick={act("Claim creator fees", () => client.claimCreatorFees(token, false))}>Claim {pair.isNative ? "ETH" : unit}</button>{canEth && <button className="b sm" onClick={act("Claim as ETH", () => client.claimCreatorFees(token, true))}>Claim as ETH</button>}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The order dock: side, amount, quote and the button in one horizontal line. */
+function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { token: Address; symbol: string; priceWei: bigint; pair: PairInfo; ethUsd: number; initial?: "buy" | "sell" }) {
   const { address: me, isConnected } = useAccount();
   const qc = useQueryClient();
   const [side, setSide] = useState<"buy" | "sell">(initial);
@@ -166,75 +202,45 @@ function TradePanel({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: 
     const ok = await runTx(side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`, () => (side === "buy" ? client.buyToken(token, amountWei, floor) : client.sellToken(token, amountWei, floor)));
     if (ok) { setAmt(""); qc.invalidateQueries(); }
   };
+  const burnCut = amountWei > 0n ? wei(side === "buy" ? amountWei : out) * payUsd * (FEES.taxPct / 100) * (FEES.burnPct / 100) : 0;
   return (
     <>
-      <div className="seg" style={{ display: "flex" }}>
-        <button style={{ flex: 1 }} className={side === "buy" ? "on up" : ""} onClick={() => { setSide("buy"); setAmt(""); }}>Buy</button>
-        <button style={{ flex: 1 }} className={side === "sell" ? "on down" : ""} onClick={() => { setSide("sell"); setAmt(""); }}>Sell</button>
+      <div className="dock">
+        <div className="seg side">
+          <button className={side === "buy" ? "on buy" : ""} onClick={() => { setSide("buy"); setAmt(""); }}>Buy</button>
+          <button className={side === "sell" ? "on sell" : ""} onClick={() => { setSide("sell"); setAmt(""); }}>Sell</button>
+        </div>
+        <div className="amt">
+          <div className="bal"><span>{side === "buy" ? "You pay" : "You sell"}</span><button type="button" onClick={max}>{bal ? (side === "buy" ? `${hype(wei(payBal), 4)} ${payUnit}` : `${num(wei(bal.token))} ${symbol}`) : "max"}</button></div>
+          <div className="field"><input inputMode="decimal" placeholder="0" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.]/g, ""))} /><span className="u">{side === "buy" ? payUnit : symbol}</span></div>
+          <div className="chips">{side === "buy" ? [0.01, 0.05, 0.1, 0.5].map((v) => <button key={v} onClick={() => chip(v)}>{v}</button>) : [0.25, 0.5, 0.75, 1].map((v) => <button key={v} onClick={() => chip(v)}>{v * 100}%</button>)}</div>
+        </div>
+        <div className="quote">
+          <span>You get</span><b>{amountWei > 0n ? `${side === "buy" ? num(outNum) : hype(outNum, 5)} ${side === "buy" ? symbol : payUnit}` : "—"}</b>
+          <span>Value</span><b>{amountWei > 0n ? usd(side === "buy" ? wei(amountWei) * payUsd : outNum * payUsd) : "—"}</b>
+          <span>{sim != null ? "Impact" : "Quote"}</span><b>{sim != null ? (impact != null ? `${Math.max(0, impact).toFixed(2)}%` : "—") : "spot"}</b>
+          <span>Fee</span><b className={surcharge ? "down" : ""}>{(feeBps / 100).toFixed(0)}%{surcharge ? " snipe" : ""} <span className="ember">· burns {usd(burnCut)}</span></b>
+        </div>
+        <div className="go">
+          <button className={"b lg " + (side === "sell" ? "sell" : "buy")} disabled={isConnected && (amountWei === 0n || over)} onClick={go}>{!isConnected ? "Connect wallet" : over ? "Not enough" : side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`}</button>
+          <span className="sub">{surcharge ? `Anti-snipe fee, back to ${FEES.taxPct}% within 20s of launch` : "Slippage 5% · Uniswap V4"}</span>
+        </div>
       </div>
-      <div className="amount">
-        <div className="lbl"><span>{side === "buy" ? "You pay" : "You sell"}</span><span>{bal ? (side === "buy" ? `${hype(wei(payBal), 4)} ${payUnit}` : `${num(wei(bal.token))} ${symbol}`) : ""}</span></div>
-        <div className="in"><input inputMode="decimal" placeholder="0" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.]/g, ""))} /><span className="unit">{side === "buy" ? payUnit : symbol}</span></div>
-      </div>
-      <div className="chips">
-        {side === "buy" ? [0.01, 0.05, 0.1, 0.5].map((v) => <button key={v} onClick={() => chip(v)}>{v}</button>) : [0.25, 0.5, 0.75].map((v) => <button key={v} onClick={() => chip(v)}>{v * 100}%</button>)}
-        <button onClick={max}>Max</button>
-      </div>
-      <dl className="quote">
-        <dt>You get</dt><dd>{amountWei > 0n ? `${side === "buy" ? num(outNum) : hype(outNum, 5)} ${side === "buy" ? symbol : payUnit}` : "—"}</dd>
-        <dt>Value</dt><dd>{amountWei > 0n ? usd(side === "buy" ? wei(amountWei) * payUsd : outNum * payUsd) : "—"}</dd>
-        <dt>{sim != null ? "Price impact" : "Quote"}</dt><dd>{sim != null ? (impact != null ? `${Math.max(0, impact).toFixed(2)}%` : "—") : "spot"}</dd>
-        <dt>Fee</dt><dd className={surcharge ? "down" : ""}>{(feeBps / 100).toFixed(0)}%{surcharge ? " · launch surcharge" : ` · ${FEES.burnPct}% burns`}</dd>
-      </dl>
-      {surcharge && <div className="warn">Anti-snipe: the fee is {(feeBps / 100).toFixed(0)}% right now and drops back to {FEES.taxPct}% within 20 seconds of launch.</div>}
-      {over && <div className="warn">More than you have.</div>}
-      <button className={"big " + (side === "sell" ? "down" : "up")} disabled={isConnected && (amountWei === 0n || over)} onClick={go}>{!isConnected ? "Connect wallet" : side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`}</button>
-      <p className="note">{pair.isNative ? "" : payEth ? `Priced in ${pair.symbol}. You pay and receive ETH; the router goes through ${pair.symbol}'s pool. ` : `Priced in ${pair.symbol}, which has no ETH route on-chain: you pay and receive ${pair.symbol}. `}Slippage 5%. Settles on Uniswap V4.</p>
+      <p className="dock-note">{pair.isNative ? "" : payEth ? `Priced in ${pair.symbol}. You pay and receive ETH; the router goes through ${pair.symbol}'s pool.` : `Priced in ${pair.symbol}, which has no ETH route: you pay and receive ${pair.symbol}.`}</p>
     </>
   );
 }
 
-function Burn({ token, pair, symbol }: { token: Address; pair: PairInfo; symbol: string }) {
-  const { address: me } = useAccount();
-  const qc = useQueryClient();
-  const { data } = useLedger(token, me);
-  if (!data) return null;
-  const canEth = pair.ethRoute && !pair.isNative;
-  const unit = pair.symbol;
-  const burnedPct = (Number(data.burned) / 1e27) * 100;
-  const fill = data.buybackMin > 0n ? Math.min(100, (Number(data.reserve) / Number(data.buybackMin)) * 100) : 0;
-  const act = (label: string, fn: () => Promise<`0x${string}`>) => async () => { await ensureWallet(); await runTx(label, fn, async () => { await qc.invalidateQueries({ queryKey: ["ledger", token.toLowerCase()] }); await qc.invalidateQueries({ queryKey: ["token", token.toLowerCase()] }); await qc.invalidateQueries({ queryKey: ["bal"] }); }); };
-  return (
-    <div className="panel pay">
-      <div className="between"><div><div className="caps">Burned so far</div><div className="v ember">{burnedPct.toFixed(2)}<span className="dim" style={{ fontSize: 14, fontWeight: 600 }}>% of supply</span></div></div><span className="faint" style={{ fontSize: 12, textAlign: "right" }}>{num(wei(data.burned), 0)} {symbol}<br />{hype(wei(data.spent), 4)} {unit} spent</span></div>
-      <div className="fuse" style={{ marginTop: 14 }}>
-        <div className="fuse-h"><span>Next burn</span><span>{hype(wei(data.reserve), 5)} / {hype(wei(data.buybackMin), 4)} {unit}</span></div>
-        <div className="fuse-bar"><i style={{ width: `${fill}%` }} /></div>
-        <div className="fuse-f"><span>{usd(wei(data.reserve) * pair.usd)} waiting</span><span>{fill >= 100 ? "fires on the next trade" : `fires at ${usd(wei(data.buybackMin) * pair.usd)}`}</span></div>
-      </div>
-      {data.reserve > 0n && <div className="row" style={{ marginTop: 12, flexWrap: "wrap" }}><button className="btn ember sm" onClick={act(`Burn ${symbol}`, () => client.buybackAndBurn(token))}>Burn now</button><span className="faint" style={{ fontSize: 12 }}>anyone can, you pay gas</span></div>}
-      {data.isCreator && (
-        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-          <div className="between"><div><div className="caps">Creator fees</div><div className="v">{hype(wei(data.creatorFees), 5)} <span className="dim" style={{ fontSize: 14, fontWeight: 600 }}>{unit}</span></div></div><span className="faint" style={{ fontSize: 12 }}>lifetime {hype(wei(data.totalCreator), 4)}</span></div>
-          {data.creatorFees > 0n && <div className="row" style={{ marginTop: 12, flexWrap: "wrap" }}><button className="btn acc sm" onClick={act("Claim creator fees", () => client.claimCreatorFees(token, false))}>Claim {pair.isNative ? "ETH" : unit}</button>{canEth && <button className="btn sm" onClick={act("Claim creator fees as ETH", () => client.claimCreatorFees(token, true))}>Claim as ETH</button>}</div>}
-        </div>
-      )}
-      <p className="note">{FEES.burnPct}% of every fee goes to the reserve in {unit}. Once it holds about $25 the next trade spends it buying {symbol} back and burns the coins in the same transaction. Nothing is minted, ever.{data.platformFees > 0n ? ` Platform share waiting: ${hype(wei(data.platformFees), 5)} ${unit}.` : ""}</p>
-    </div>
-  );
-}
+const PAGE = 12;
 
-const PAGE = 10;
-
-/** Previous / next controls under a paged list. Hidden when one page fits. */
 function Pager({ page, total, onPage }: { page: number; total: number; onPage: (p: number) => void }) {
   const pages = Math.max(1, Math.ceil(total / PAGE));
   if (pages <= 1) return null;
   return (
     <div className="pager">
-      <button className="btn sm" disabled={page === 0} onClick={() => onPage(page - 1)}>Prev</button>
+      <button className="b sm" disabled={page === 0} onClick={() => onPage(page - 1)}>Prev</button>
       <span>{page * PAGE + 1}–{Math.min(total, (page + 1) * PAGE)} of {total}</span>
-      <button className="btn sm" disabled={page >= pages - 1} onClick={() => onPage(page + 1)}>Next</button>
+      <button className="b sm" disabled={page >= pages - 1} onClick={() => onPage(page + 1)}>Next</button>
     </div>
   );
 }
@@ -242,7 +248,7 @@ function Pager({ page, total, onPage }: { page: number; total: number; onPage: (
 function Trades({ address, symbol, pair }: { address: Address; symbol: string; pair: PairInfo }) {
   const { data: trades } = useTrades(address);
   const [page, setPage] = useState(0);
-  if (!trades) return <div className="skeleton" style={{ height: 140 }} />;
+  if (!trades) return <div className="skel" style={{ height: 140, marginTop: 12 }} />;
   const slice = trades.slice(page * PAGE, page * PAGE + PAGE);
   return (
     <>
@@ -264,7 +270,7 @@ function Trades({ address, symbol, pair }: { address: Address; symbol: string; p
 
 function Holders({ address, creator }: { address: Address; creator: Address }) {
   const { data: holders } = useHolders(address);
-  if (!holders) return <div className="skeleton" style={{ height: 140 }} />;
+  if (!holders) return <div className="skel" style={{ height: 140, marginTop: 12 }} />;
   const slice = holders.slice(0, PAGE);
   return (
     <>
@@ -275,14 +281,14 @@ function Holders({ address, creator }: { address: Address; creator: Address }) {
           return (
             <a key={h.address} className="li" href={`${env.explorerUrl}/address/${h.address}`} target="_blank" rel="noreferrer">
               <span className="t">#{i + 1}</span>
-              <span className={"side " + (dev ? "acc" : "faint")}>{dev ? "DEV" : ""}</span>
+              <span className={"side " + (dev ? "ember" : "faint")}>{dev ? "DEV" : ""}</span>
               <span className="who">{short(h.address)}</span>
               <span className="r">{h.pct.toFixed(2)}%<small>{num(wei(h.balance))}</small></span>
             </a>
           );
         })}
       </div>
-      {holders.length > PAGE && <p className="note" style={{ textAlign: "center" }}>Top {PAGE} holders. Full list on <a className="acc" href={`${env.explorerUrl}/token/${address}#balances`} target="_blank" rel="noreferrer">Etherscan</a>.</p>}
+      {holders.length > PAGE && <p className="note" style={{ textAlign: "center", maxWidth: "none" }}>Top {PAGE}. Full list on <a className="ember" href={`${env.explorerUrl}/token/${address}#balances`} target="_blank" rel="noreferrer">Etherscan</a>.</p>}
     </>
   );
 }

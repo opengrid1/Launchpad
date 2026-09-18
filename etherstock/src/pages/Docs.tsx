@@ -1,55 +1,79 @@
 import { Link } from "react-router-dom";
 
 import { Copy } from "../components/Copy";
-import { Icon, type IconName } from "../components/Icon";
 import { ADDRESSES, BRAND, env, FEES } from "../lib/env";
 import { useQuotes } from "../lib/hooks";
 
+/** The rules, written as a numbered spec. One factory enforces every line. */
 export default function Docs() {
   const { data: quotes } = useQuotes();
   const approved = quotes?.filter((q) => q.approved && !q.isNative) ?? [];
   const routable = approved.filter((q) => q.ethRoute);
-  const steps: { icon: IconName; t: string; p: string }[] = [
-    { icon: "launch", t: "Launch", p: "One transaction deploys a fixed 1B supply coin and puts all of it into a Uniswap V4 pool at about $3,000, paired with ETH or a tokenized stock you pick. Optional first buy in ETH. Liquidity is locked forever." },
-    { icon: "receipt", t: "Trade in ETH", p: "You pay and receive ETH whatever the pair. The router swaps ETH into the stock through the stock's own pool and into the coin in one transaction, and back on the way out." },
-    { icon: "wallet", t: "Burn on every swap", p: `Every trade pays ${FEES.taxPct}% of the pair side. ${FEES.creatorPct}% to the creator, ${FEES.burnPct}% into the coin's burn reserve, ${FEES.platformPct}% to the platform. Once the reserve holds about $25 of the pair, the next trade spends it buying the coin back from its own pool and burns what it bought, inside that same transaction. Anyone can also fire it by hand.` },
-    { icon: "tune", t: "No sniping", p: `For the first 20 seconds the fee starts at 99% and decays to ${FEES.taxPct}%, with the surcharge going to the platform, and each wallet is capped at 3% of supply for three blocks. The launch block is creator-only.` },
-  ];
   return (
-    <main className="page">
-      <section className="hero" style={{ paddingTop: 10 }}>
-        <h1>Same rules for <em>every</em> coin.</h1>
-        <p className="sub">One factory on Ethereum enforces all of it. A coin, a pool, a fee that pays the creator and burns the coin.</p>
-      </section>
-      <section className="sec">
-        <div className="sec-h"><h2>The loop</h2><span className="caps">Uniswap V4 · Ethereum mainnet</span></div>
-        <div className="steps">{steps.map((s, i) => <div key={s.t} className="step"><div className="step-h"><span className="step-n">{i + 1}</span><Icon name={s.icon} size={20} /><h3>{s.t}</h3></div><p>{s.p}</p></div>)}</div>
-      </section>
-      <section className="sec">
-        <div className="sec-h"><h2>Stock pairs</h2><span className="caps">{approved.length} approved · {routable.length} tradeable in ETH</span></div>
-        <div className="steps two">
-          <div className="step"><div className="step-h"><Icon name="receipt" size={20} /><h3>What a pair means</h3></div><p>The pool holds the stock on the other side, so the coin's price is quoted in that stock and every fee arrives in it. A coin paired with NVDAon is a bet denominated in NVIDIA, and its buybacks are paid in NVIDIA.</p></div>
-          <div className="step"><div className="step-h"><Icon name="info" size={20} /><h3>Which stocks work</h3></div><p>Ondo's tokenized stocks live on Ethereum, but only some have a real pool today. Pairs marked "tradeable in ETH" have one, so buyers pay ETH. The rest can be paired, but buyers must already hold the stock.</p></div>
+    <main className="doc">
+      <h1>The rules.</h1>
+      <p className="lead">Every coin on Etherstock runs on the same contract with the same numbers. Nothing below is configurable per coin, by anyone.</p>
+
+      <section>
+        <div className="no">§1<small>launch</small></div>
+        <div>
+          <h2>One transaction, one pool, locked forever</h2>
+          <p>Launching deploys a coin with a fixed 1,000,000,000 supply and puts all of it into a Uniswap V4 pool priced at about $3,000 of market cap, paired with ETH or a tokenized stock you pick. The pool position belongs to the factory and cannot be withdrawn by the creator. An optional first buy in ETH happens in the same transaction.</p>
         </div>
       </section>
-      <section className="sec">
-        <div className="sec-h"><h2>Fees and limits</h2></div>
-        <div className="facts">
-          <div><b>{FEES.taxPct}%</b><span>of the pair side on every buy and sell, taken inside the pool by the hook. The only fee.</span></div>
-          <div><b>{FEES.creatorPct}/{FEES.burnPct}/{FEES.platformPct}</b><span>creator, burn, platform. Credited per trade, the burn fires itself.</span></div>
-          <div><b>1B</b><span>at launch, then only down. No mint, no owner, no proxy, no pause on the coin. Burned coins are gone.</span></div>
+
+      <section>
+        <div className="no">§2<small>the fee</small></div>
+        <div>
+          <h2>{FEES.taxPct}% of the pair side, split three ways</h2>
+          <div className="loop">
+            <div><b>{FEES.taxPct}%</b><span>taken by the hook inside the pool on every buy and sell</span></div>
+            <div><b>{FEES.creatorPct}%</b><span>to the creator, credited per trade, claimable any time</span></div>
+            <div><b className="ember">{FEES.burnPct}%</b><span>into the coin's burn reserve</span></div>
+            <div><b>{FEES.platformPct}%</b><span>to the platform</span></div>
+          </div>
+          <p>The fee is charged in the pair asset, so a coin paired with NVDAon collects NVDAon. The creator can claim it as the stock or, when the stock has an ETH route, straight as ETH.</p>
         </div>
       </section>
-      <section className="sec">
-        <div className="sec-h"><h2>Contracts</h2><span className="caps">{env.chainName} · {env.chainId}</span></div>
-        <div className="panel"><dl className="kv">
-          <dt>Factory</dt><dd><Copy value={ADDRESSES.factory} full /></dd>
-          <dt>Hook</dt><dd><Copy value={ADDRESSES.hook} full /></dd>
-          <dt>Router</dt><dd><Copy value={ADDRESSES.router} full /></dd>
-          <dt>Pool manager</dt><dd><Copy value={ADDRESSES.poolManager} full /></dd>
-          <dt>X</dt><dd><a className="acc" href={BRAND.x} target="_blank" rel="noreferrer">{BRAND.x.replace("https://x.com/", "@")}</a></dd>
-        </dl></div>
-        <p className="note">Your holdings, creator fees and launched coins are under <Link to="/me" className="acc">Portfolio</Link>.</p>
+
+      <section>
+        <div className="no">§3<small>the burn</small></div>
+        <div>
+          <h2>The reserve fills, then the next trade burns</h2>
+          <p>Each coin keeps its own burn reserve in the pair asset. Once the reserve reaches about $25 at the pair's price on file, the very next trade spends the whole reserve buying the coin back from its own pool and burns what it bought, inside that same transaction. The buyback swap pays no fee. Anyone can also fire it early with the Burn now button, paying only gas.</p>
+          <p>Burned coins are destroyed, not parked. Total supply falls, the market cap on the board is computed from the live supply, and nothing can ever be minted back.</p>
+        </div>
+      </section>
+
+      <section>
+        <div className="no">§4<small>trading</small></div>
+        <div>
+          <h2>Pay in ETH whatever the pair</h2>
+          <p>The router takes ETH, swaps it into the stock through the stock's own pool, and into the coin, in one transaction, and back on the way out. {approved.length} stocks are approved and {routable.length} have a live on-chain pool. A stock without one can still be paired, but buyers must already hold it.</p>
+        </div>
+      </section>
+
+      <section>
+        <div className="no">§5<small>anti-snipe</small></div>
+        <div>
+          <h2>The first 20 seconds are expensive</h2>
+          <p>The launch block is creator-only. For the first 20 seconds the fee starts at 99% and decays to {FEES.taxPct}%, with the surcharge going to the platform, and each wallet is capped at 3% of supply for three blocks. Bots pay for being first.</p>
+        </div>
+      </section>
+
+      <section>
+        <div className="no">§6<small>contracts</small></div>
+        <div>
+          <h2>Ethereum mainnet · chain {env.chainId}</h2>
+          <dl className="addr">
+            <dt>Factory</dt><dd><Copy value={ADDRESSES.factory} full /></dd>
+            <dt>Hook</dt><dd><Copy value={ADDRESSES.hook} full /></dd>
+            <dt>Router</dt><dd><Copy value={ADDRESSES.router} full /></dd>
+            <dt>Pool manager</dt><dd><Copy value={ADDRESSES.poolManager} full /></dd>
+            <dt>X</dt><dd><a className="ember" href={BRAND.x} target="_blank" rel="noreferrer">{BRAND.x.replace("https://x.com/", "@")}</a></dd>
+          </dl>
+          <p className="note">Source is verified on Etherscan. Your holdings, creator fees and launched coins are under <Link to="/me" className="ember">Portfolio</Link>.</p>
+        </div>
       </section>
     </main>
   );
