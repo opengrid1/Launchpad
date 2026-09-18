@@ -91,6 +91,12 @@
       "address": "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
       "usd": 229.26,
       "usd8": "22926000000"
+    },
+    {
+      "symbol": "ITOTon",
+      "address": "0x0692481C369E2BDc728A69ae31b848343a4567Be",
+      "usd": 168.64,
+      "usd8": "16864000000"
     }
   ],
   "officialToken": {
