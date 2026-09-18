@@ -40,7 +40,8 @@ interface IEtherStockHook {
 ///         (about $25 of the pair, set at launch) the very next swap in the
 ///         pool triggers a buyback. Still inside that swap's PoolManager
 ///         unlock, this contract swaps the whole reserve into its own coin
-///         through the same pool and burns what it gets. No keeper, no gas
+///         through the same pool and sends what it gets to the dead address,
+///         where every scanner counts it as burned. No keeper, no gas
 ///         wallet, no button. Anyone may also call {buybackAndBurn} directly,
 ///         which does the same in its own unlock. The hook charges no fee on
 ///         the coin's own buyback swaps.
@@ -90,9 +91,11 @@ contract EtherStockToken is ERC20, ReentrancyGuard, IUnlockCallback {
     bool private _inBuyback;
 
     // Anti-snipe launch protection.
-    uint256 public constant PROTECT_BLOCKS = 3;
-    uint16 public constant MAX_HOLD_BPS = 300; // 3% of supply
-    uint16 public constant MAX_BUY_BPS = 300;
+    uint256 public constant PROTECT_BLOCKS = 10;
+    uint16 public constant MAX_HOLD_BPS = 100; // 1% of supply
+    uint16 public constant MAX_BUY_BPS = 100;
+    /// @notice Where burned coins go. Balance here is the burned total.
+    address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
     uint256 public launchBlock;
     uint256 public launchTime;
     mapping(address => uint256) private _boughtInWindow;
@@ -141,6 +144,7 @@ contract EtherStockToken is ERC20, ReentrancyGuard, IUnlockCallback {
         _metadataURI = metadataURI_;
 
         excluded[address(0)] = true;
+        excluded[DEAD] = true;
         excluded[address(this)] = true;
         excluded[factory_] = true;
         excluded[address(poolManager_)] = true;
@@ -254,7 +258,7 @@ contract EtherStockToken is ERC20, ReentrancyGuard, IUnlockCallback {
         if (coinDelta > 0) {
             burned = uint256(uint128(coinDelta));
             poolManager.take(Currency.wrap(address(this)), address(this), burned);
-            _burn(address(this), burned);
+            _transfer(address(this), DEAD, burned);
         }
         totalBuybackPair += pairIn;
         totalBurned += burned;
@@ -287,9 +291,15 @@ contract EtherStockToken is ERC20, ReentrancyGuard, IUnlockCallback {
         emit PlatformFeesClaimed(to, amount);
     }
 
-    /// @notice Burn coins held by the caller.
+    /// @notice Burn coins held by the caller: they go to the dead address.
     function burn(uint256 amount) external {
-        _burn(msg.sender, amount);
+        _transfer(msg.sender, DEAD, amount);
+        totalBurned += amount;
+    }
+
+    /// @notice Supply that is not burned.
+    function circulatingSupply() external view returns (uint256) {
+        return totalSupply() - balanceOf(DEAD);
     }
 
     // ------------------------------------------------------------------

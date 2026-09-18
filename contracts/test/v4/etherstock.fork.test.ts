@@ -20,6 +20,7 @@ const NO_ROUTE = "0x";
 const ETH_USD_8 = 4_000n * 10n ** 8n;
 const SLV_USD_8 = 60n * 10n ** 8n;
 const SUPPLY = 10n ** 27n;
+const DEAD = "0x000000000000000000000000000000000000dEaD";
 const TAX_BPS = 400;
 const CREATOR_BPS = 5000, BURN_BPS = 3000;
 /** $25 of WETH at $4,000. */
@@ -69,8 +70,8 @@ async function launch(factory: any, creator: any, pair: string, ethIn = 0n, rout
 }
 
 async function pastSnipe() {
-  await network.provider.send("evm_increaseTime", [30]);
-  for (let i = 0; i < 3; i++) await network.provider.send("evm_mine", []);
+  await network.provider.send("evm_increaseTime", [40]);
+  for (let i = 0; i < 11; i++) await network.provider.send("evm_mine", []);
 }
 
 describe("Etherstock on Ethereum mainnet (fork)", function () {
@@ -95,7 +96,7 @@ describe("Etherstock on Ethereum mainnet (fork)", function () {
     await pastSnipe();
     // A 0.5 ETH buy adds 0.006 WETH to the reserve: over the threshold, so this
     // very swap triggers the buyback. Supply drops inside the buyer's transaction.
-    const supplyBefore = await coin.totalSupply();
+    const deadBefore = await coin.balanceOf(DEAD);
     const rc = await (await router.connect(trader).buy(coinAddr, NO_ROUTE, 0, { value: ethers.parseEther("0.5") })).wait();
     const ev = rc!.logs.map((l: any) => { try { return coin.interface.parseLog(l); } catch { return null; } }).find((e: any) => e?.name === "Buyback");
     expect(ev, "Buyback event in the buy tx").to.not.equal(undefined);
@@ -104,7 +105,8 @@ describe("Etherstock on Ethereum mainnet (fork)", function () {
     expect(await coin.burnReserve()).to.equal(0n);
     const burned = await coin.totalBurned();
     expect(burned).to.be.gt(0n);
-    expect(await coin.totalSupply()).to.equal(supplyBefore - burned);
+    expect(await coin.totalSupply()).to.equal(SUPPLY); // supply is constant: burns sit at the dead address
+    expect(await coin.balanceOf(DEAD)).to.equal(deadBefore + burned);
     expect(await coin.balanceOf(coinAddr)).to.equal(0n); // everything bought was burned
     expect(await coin.totalBuybackPair()).to.equal(ev!.args.pairIn);
     // The buyback swap itself paid no fee: creator share reflects the two taxed swaps only.
@@ -121,13 +123,13 @@ describe("Etherstock on Ethereum mainnet (fork)", function () {
     const reserve = await coin.burnReserve();
     expect(reserve).to.be.gt(0n);
     expect(reserve).to.be.lt(BUYBACK_MIN_WETH);
-    const supplyMid = await coin.totalSupply();
+    const deadMid = await coin.balanceOf(DEAD);
     const rc2 = await (await coin.connect(trader).buybackAndBurn()).wait();
     const ev2 = rc2!.logs.map((l: any) => { try { return coin.interface.parseLog(l); } catch { return null; } }).find((e: any) => e?.name === "Buyback");
     expect(ev2!.args.inSwap).to.equal(false);
     expect(ev2!.args.pairIn).to.equal(reserve);
     expect(await coin.burnReserve()).to.equal(0n);
-    expect(await coin.totalSupply()).to.equal(supplyMid - ev2!.args.coinsBurned);
+    expect(await coin.balanceOf(DEAD)).to.equal(deadMid + ev2!.args.coinsBurned);
     await expect(coin.connect(trader).buybackAndBurn()).to.be.revertedWithCustomError(coin, "NothingToBuy");
 
     // Creator and platform claims still work as before.
@@ -155,21 +157,21 @@ describe("Etherstock on Ethereum mainnet (fork)", function () {
     await (await router.connect(trader).buy(coinAddr, SLV_ROUTE, 0, { value: ethers.parseEther("0.05") })).wait();
     const reserve = await coin.burnReserve();
     expect(reserve).to.be.gt(0n);
-    const supply0 = await coin.totalSupply();
+    const dead0 = await coin.balanceOf(DEAD);
     // Below the threshold: burn by hand. The pair may still sit in the hook as a V4 claim; the coin flushes it first.
     const rc = await (await coin.connect(trader).buybackAndBurn()).wait();
     const ev = rc!.logs.map((l: any) => { try { return coin.interface.parseLog(l); } catch { return null; } }).find((e: any) => e?.name === "Buyback");
     expect(ev!.args.pairIn).to.equal(reserve);
-    expect(await coin.totalSupply()).to.equal(supply0 - ev!.args.coinsBurned);
+    expect(await coin.balanceOf(DEAD)).to.equal(dead0 + ev!.args.coinsBurned);
     expect(await slv.balanceOf(coinAddr)).to.equal((await coin.creatorFees()) + (await coin.platformFees()));
 
     // A big enough buy crosses the threshold and burns inside the swap.
-    const supply1 = await coin.totalSupply();
+    const dead1 = await coin.balanceOf(DEAD);
     const rc2 = await (await router.connect(trader).buy(coinAddr, SLV_ROUTE, 0, { value: ethers.parseEther("1") })).wait();
     const ev2 = rc2!.logs.map((l: any) => { try { return coin.interface.parseLog(l); } catch { return null; } }).find((e: any) => e?.name === "Buyback");
     if (ev2) {
       expect(ev2.args.inSwap).to.equal(true);
-      expect(await coin.totalSupply()).to.equal(supply1 - ev2.args.coinsBurned);
+      expect(await coin.balanceOf(DEAD)).to.equal(dead1 + ev2.args.coinsBurned);
       expect(await coin.burnReserve()).to.equal(0n);
     } else {
       // The stock was not physically in the PoolManager during the swap (held as a claim): deferred, not lost.
@@ -197,7 +199,7 @@ describe("Etherstock on Ethereum mainnet (fork)", function () {
     await tx1.wait();
     const coinAddr = await factory.allTokens(n);
     const coin = await ethers.getContractAt("EtherStockToken", coinAddr);
-    // Next block: caps apply (3% per wallet) and the surcharge is still high.
+    // Next block: caps apply (1% per wallet) and the surcharge is still high.
     await expect(router.connect(trader).buy(coinAddr, NO_ROUTE, 0, { value: ethers.parseEther("2") })).to.be.reverted;
     await (await router.connect(trader).buy(coinAddr, NO_ROUTE, 0, { value: ethers.parseEther("0.001") })).wait();
     // The surcharge above the 4% base is platform-only: platform fees exceed 20% of the creator share ratio.

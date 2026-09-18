@@ -52,7 +52,7 @@ contract EtherStockHook is BaseHook, IUnlockCallback {
 
     uint16 internal constant BPS = 10_000;
     uint16 public constant SNIPE_START_BPS = 9_900;
-    uint256 public constant SNIPE_SECONDS = 20;
+    uint256 public constant SNIPE_SECONDS = 30;
 
     address public immutable admin;
     /// @notice The deployer may wire the factory once, so the admin wallet
