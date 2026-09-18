@@ -85,7 +85,7 @@ export default function App() {
 function Tape() {
   const { data: tokens } = useTokens();
   const items = useMemo(() => (tokens ?? []).filter((t) => !isHidden(t.address)).slice(0, 40), [tokens]);
-  if (items.length === 0) return <div className="tape"><span className="tape-empty">ETHERSTOCK · Ethereum · Uniswap V4 · 4% fee · 30% of every fee burns the coin</span></div>;
+  if (items.length === 0) return null;
   const run = [...items, ...items];
   return (
     <div className="tape" aria-hidden="true">
