@@ -1009,6 +1009,54 @@
       "address": "0x673f8d2e5F05c17BABa0c86e1AAbA99f2d7F9e1A",
       "usd": 4.6,
       "usd8": "460000000"
+    },
+    {
+      "symbol": "ASXon",
+      "address": "0x94912D9f8ef1108CA605A6F5331a0dA0294Adfe0",
+      "usd": 37.51,
+      "usd8": "3751000000"
+    },
+    {
+      "symbol": "ATOMon",
+      "address": "0xA36182b7Fc5CBd88ca8231b85195fDebDe8646d9",
+      "usd": 4.04,
+      "usd8": "404000000"
+    },
+    {
+      "symbol": "BATLon",
+      "address": "0x9Af688DB5FC6E34ce98cdAc29CF977cf9D1aC204",
+      "usd": 1.29,
+      "usd8": "129000000"
+    },
+    {
+      "symbol": "BHPon",
+      "address": "0xa2CbcD28F87bdf6Ae1321818758F19402e97f3F1",
+      "usd": 90.42,
+      "usd8": "9042000000"
+    },
+    {
+      "symbol": "BIRDon",
+      "address": "0xA310A90Bb0929c577fc26095f41A381DbF9CbA0f",
+      "usd": 2.52,
+      "usd8": "252000000"
+    },
+    {
+      "symbol": "BKKTon",
+      "address": "0x9e411A38Ff3E6A3FEDe4ec2Bac1DA74e3203e4f8",
+      "usd": 8.33,
+      "usd8": "833000000"
+    },
+    {
+      "symbol": "BTBTon",
+      "address": "0xFbC17997CE549373D3Bd245F56908fb124A2723b",
+      "usd": 1.64,
+      "usd8": "164000000"
+    },
+    {
+      "symbol": "BWXTon",
+      "address": "0x5B82827a5fb24aBAD3bc542D48e59eB0A7FeE148",
+      "usd": 157.59,
+      "usd8": "15759000000"
     }
   ]
 }
