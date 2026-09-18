@@ -89,7 +89,7 @@ export default function Launch() {
   return (
     <main>
       <div className="band" style={{ gridTemplateColumns: "1fr", paddingBottom: 18 }}>
-        <div><h1>Launch a coin that <em>burns</em>.</h1><p>One transaction. A fixed 1B supply, all of it in a Uniswap V4 pool at about $3,000, paired with ETH or a stock. Liquidity locked forever. From the first trade on, {FEES.burnPct}% of every fee buys it back and burns it.</p></div>
+        <div><h1>Launch a coin that <em>burns</em>.</h1><p>One transaction. A fixed 1B supply, all of it in a Uniswap V4 pool at about $3,000, paired with ETH or a stock. Liquidity burned forever. From the first trade on, {FEES.burnPct}% of every fee buys it back and burns it.</p></div>
       </div>
       <div className="wiz">
         <div className="wiz-steps">
@@ -146,7 +146,7 @@ export default function Launch() {
                   <dt>Supply</dt><dd>1,000,000,000 at launch, then only down</dd>
                   <dt>Opening cap</dt><dd>about $3,000, all supply in the pool</dd>
                   <dt>Trade fee</dt><dd>{FEES.taxPct}% · {FEES.creatorPct}% you · {FEES.burnPct}% burn · {FEES.platformPct}% platform</dd>
-                  <dt>Liquidity</dt><dd>Locked forever</dd>
+                  <dt>Liquidity</dt><dd>Burned forever</dd>
                 </dl>
               </div>
             </div>
@@ -155,7 +155,7 @@ export default function Launch() {
               <input className="in" inputMode="decimal" value={f.devBuy} onChange={set("devBuy")} placeholder="0" disabled={!canDevBuy} />
               <div className="help">{canDevBuy ? `Spent in the same transaction at the base ${FEES.taxPct}% fee, so you hold from block one. Everyone can see it.` : "Not available for a pair without an ETH route."}{dev && ethUsd > 0 && <> · about {usd(Number(dev) * ethUsd)}</>}</div>
             </div>
-            <div className="terms"><b>What you cannot change later:</b> the name, ticker, pair and metadata are fixed at launch. The fee split is the same for every coin. No one, including you, can mint, pause or pull the liquidity.</div>
+            <div className="terms"><b>What you cannot change later:</b> the name, ticker, pair and metadata are fixed at launch. The fee split is the same for every coin. No one, including you, can mint, pause or pull the liquidity. It is burned forever.</div>
             <div className="wiz-nav"><button className="b" onClick={() => setStep(1)}>Back</button><button className="b fire lg" disabled={busy || !ready0} onClick={submit}>{!isConnected ? "Connect wallet" : busy ? "Launching…" : `Launch ${symbol}`}</button></div>
           </div>
         )}

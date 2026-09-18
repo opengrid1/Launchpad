@@ -17,8 +17,8 @@ export default function Docs() {
       <section>
         <div className="no">§1<small>launch</small></div>
         <div>
-          <h2>One transaction, one pool, locked forever</h2>
-          <p>Launching deploys a coin with a fixed 1,000,000,000 supply and puts all of it into a Uniswap V4 pool priced at about $3,000 of market cap, paired with ETH or a tokenized stock you pick. The pool position belongs to the factory and cannot be withdrawn by the creator. An optional first buy in ETH happens in the same transaction.</p>
+          <h2>One transaction, one pool, burned forever</h2>
+          <p>Launching deploys a coin with a fixed 1,000,000,000 supply and puts all of it into a Uniswap V4 pool priced at about $3,000 of market cap, paired with ETH or a tokenized stock you pick. The liquidity is burned forever: the creator can never withdraw it. An optional first buy in ETH happens in the same transaction.</p>
         </div>
       </section>
 
