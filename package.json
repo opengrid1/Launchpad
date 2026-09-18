@@ -12,7 +12,8 @@
     "orbit",
     "stockpad",
     "arcpad",
-    "arbistonk"
+    "arbistonk",
+    "etherstock"
   ],
   "scripts": {
     "build": "npm run build -w sdk && npm run build -w backend && npm run build -w web",
