@@ -17,7 +17,7 @@ async function retry(fn, what) { for (let k = 0; k < 8; k++) { try { return awai
   const logo = fs.readFileSync(process.env.LOGO_FILE, "utf8").trim();
   const NAME = process.env.NAME ?? "Etherstock Test", SYMBOL = process.env.SYMBOL ?? "ESTEST", KEY = process.env.KEY ?? "testToken";
   const DESC = process.env.DESC ?? (KEY === "officialToken" ? "The official coin of Etherstock. 30% of every trade fee buys it back from its own pool and burns it, forever. Supply only goes down." : "Test coin. Not the official coin, hidden from the board.");
-  const meta = JSON.stringify({ description: DESC, logo, website: "https://www.etherstock.fun", twitter: "https://x.com/etherstock" });
+  const meta = JSON.stringify({ description: DESC, logo, website: "https://www.etherstock.fun", twitter: "https://x.com/Etherstock_" });
   const me = new ethers.Wallet(pk).address;
   console.log("deployer", me, "bal", ethers.formatEther(await retry((p) => p.getBalance(me), "balance")), "meta bytes", Buffer.byteLength(meta));
   const p0 = provider(); const w = new ethers.Wallet(pk, p0); const f = new ethers.Contract(FACTORY, ABI, w);

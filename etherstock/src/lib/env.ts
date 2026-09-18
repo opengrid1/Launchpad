@@ -61,7 +61,7 @@ export const BRAND = {
   name: "ETHERSTOCK",
   tagline: "Coins that burn themselves.",
   url: "https://www.etherstock.fun",
-  x: "https://x.com/etherstock",
+  x: "https://x.com/Etherstock_",
   description: "Launch a coin on Ethereum paired with ETH or a tokenized stock. Every trade pays 4%: half to the creator, 30% buys the coin back and burns it, 20% to the platform. Supply only goes down.",
 };
 
