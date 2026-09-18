@@ -26,7 +26,7 @@ export const env = {
   explorerUrl: "https://etherscan.io",
   walletConnectProjectId: "e1bda672d5deb56579fe084dddfb9174",
   /** Factory deploy block, the lower bound for log scans. */
-  startBlock: BigInt(import.meta.env.VITE_START_BLOCK ?? "26003130"),
+  startBlock: BigInt(import.meta.env.VITE_START_BLOCK ?? "26004270"),
   dexscreenerChain: "ethereum",
   secondsPerBlock: 12,
 };
@@ -35,9 +35,9 @@ const addr = (key: string, fallback: string) => String(import.meta.env[key] ?? f
 
 /** Deployed contracts on Ethereum mainnet (VITE_* overrides point a build at a fork). */
 export const ADDRESSES = {
-  factory: addr("VITE_FACTORY", "0x13AdF682f27957B78829437F39116C1710dc0e75"),
-  hook: addr("VITE_HOOK", "0x2D462aD38a5a52280639Df88E67997F65B1880cc"),
-  router: addr("VITE_ROUTER", "0x48f845Baa82aF46107eae79f01c7D9b1f80238EE"),
+  factory: addr("VITE_FACTORY", "0x9813e48b3001c77B2baFb6F93E4Ba0BE8d708dB6"),
+  hook: addr("VITE_HOOK", "0x5fD399753B9fa70698f24BE4b398f32e810c80CC"),
+  router: addr("VITE_ROUTER", "0x0Dc98fA8536dBE8248D1E027c3166D4077d3fc0c"),
   poolManager: addr("VITE_POOL_MANAGER", "0x000000000004444c5dc75cB358380D2e3dE08A90"),
   stateView: addr("VITE_STATE_VIEW", "0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227"),
   weth: addr("VITE_WETH", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
@@ -69,9 +69,9 @@ export const BRAND = {
 export const FEES = { taxPct: 4, creatorPct: 50, burnPct: 30, platformPct: 20 };
 
 /** Official coins, always listed first on the feed. */
-export const PINNED_TOKENS: string[] = ["0xac82515d6c00f6acea663a6db63ed8c66e018d15"]; // Etherstock.fun (ETHERSTOCK)
+export const PINNED_TOKENS: string[] = [];
 export const isPinned = (address: string) => PINNED_TOKENS.includes(address.toLowerCase());
 
 /** Coins kept off the public feed (tests). Pages still open by URL. */
-export const HIDDEN_TOKENS = new Set<string>(["0x47ad68a802190862c405cab0536ccf679a3beaef"]); // ESTEST test coin
+export const HIDDEN_TOKENS = new Set<string>([]);
 export const isHidden = (address: string) => HIDDEN_TOKENS.has(address.toLowerCase());

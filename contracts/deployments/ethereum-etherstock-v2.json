@@ -4,7 +4,39 @@
     "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000004aed",
     "hook": "0x5fD399753B9fa70698f24BE4b398f32e810c80CC",
     "tokenDeployer": "0x56fdDCc086E68f3EFB63F103B94AC783335a4E89",
-    "factory": "0x9813e48b3001c77B2baFb6F93E4Ba0BE8d708dB6"
+    "factory": "0x9813e48b3001c77B2baFb6F93E4Ba0BE8d708dB6",
+    "router": "0x0Dc98fA8536dBE8248D1E027c3166D4077d3fc0c"
   },
-  "quotes": []
+  "quotes": [
+    {
+      "symbol": "HIMSon",
+      "address": "0xCa468554e5C0423Ee858fe3942c9568C51FcAa79",
+      "usd": 27.76,
+      "usd8": "2776000000"
+    },
+    {
+      "symbol": "SLVon",
+      "address": "0xF3e4872e6a4cF365888D93b6146a2bAA7348F1A4",
+      "usd": 59.62,
+      "usd8": "5962000000"
+    },
+    {
+      "symbol": "TLTon",
+      "address": "0x992651BFeB9A0DCC4457610E284ba66D86489d4d",
+      "usd": 82.21,
+      "usd8": "8221000000"
+    },
+    {
+      "symbol": "IEFAon",
+      "address": "0xFEFf7a377A86462F5a2A872009722C154707F09e",
+      "usd": 101.08,
+      "usd8": "10108000000"
+    },
+    {
+      "symbol": "CRCLon",
+      "address": "0x3632DEa96A953C11dac2f00b4A05a32CD1063fAE",
+      "usd": 100.78,
+      "usd8": "10078000000"
+    }
+  ]
 }
