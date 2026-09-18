@@ -73,5 +73,5 @@ export const PINNED_TOKENS: string[] = [];
 export const isPinned = (address: string) => PINNED_TOKENS.includes(address.toLowerCase());
 
 /** Coins kept off the public feed (tests). Pages still open by URL. */
-export const HIDDEN_TOKENS = new Set<string>([]);
+export const HIDDEN_TOKENS = new Set<string>(["0x47ad68a802190862c405cab0536ccf679a3beaef"]); // ESTEST test coin
 export const isHidden = (address: string) => HIDDEN_TOKENS.has(address.toLowerCase());

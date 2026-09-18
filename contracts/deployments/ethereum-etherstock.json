@@ -1057,6 +1057,80 @@
       "address": "0x5B82827a5fb24aBAD3bc542D48e59eB0A7FeE148",
       "usd": 157.59,
       "usd8": "15759000000"
+    },
+    {
+      "symbol": "BXSLon",
+      "address": "0x55b184974bF20fE41db42526Bb15f33F35E57a47",
+      "usd": 24.72,
+      "usd8": "2472000000"
+    },
+    {
+      "symbol": "CDNSon",
+      "address": "0x807C00E3A4b4e1e660a8d36E8dFFE68448F95913",
+      "usd": 292.7,
+      "usd8": "29270000000"
+    },
+    {
+      "symbol": "CFon",
+      "address": "0xd955D0f9907C3949345Dd859D9cbb866f05C7Eb8",
+      "usd": 133.35,
+      "usd8": "13335000000"
+    },
+    {
+      "symbol": "CGNXon",
+      "address": "0xC1715Ee24c8f4a41F2d10143a320FA1d151ba22b",
+      "usd": 62.25,
+      "usd8": "6225000000"
+    },
+    {
+      "symbol": "CMCSAon",
+      "address": "0x85Fd8DfD987988EdE1777935d9d09c7ac7f09f0b",
+      "usd": 26.49,
+      "usd8": "2649000000"
+    },
+    {
+      "symbol": "MSon",
+      "address": "0xb7CBA7593baaFffc96F9BBc86e578026369DEc55",
+      "usd": 217.72,
+      "usd8": "21772000000"
+    },
+    {
+      "symbol": "SONYon",
+      "address": "0xaF1382692F9927FD6a6C25ADd60285628a1879e5",
+      "usd": 24.56,
+      "usd8": "2456000000"
+    },
+    {
+      "symbol": "ULon",
+      "address": "0x1598f7d25d0b0e1261eAB9BD2AD7924291EB26bB",
+      "usd": 64.2,
+      "usd8": "6420000000"
     }
-  ]
+  ],
+  "chainId": 1,
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "ethUsd8": "250218294067",
+  "uniswap": {
+    "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+    "weth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "swapRouter02": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"
+  },
+  "fees": {
+    "taxBps": 400,
+    "creatorBps": 5000,
+    "burnBps": 3000,
+    "platformBps": 2000
+  },
+  "deployBlock": 26003130,
+  "deployedAt": "2026-09-18T09:04:59.844Z",
+  "testToken": {
+    "name": "Etherstock Test",
+    "symbol": "ESTEST",
+    "address": "0x47aD68A802190862C405Cab0536cCf679a3beaEF",
+    "pair": "ETH",
+    "block": 26003375,
+    "tx": "0x0cfa78fa3e547558b98e467a55650d9778962050112da9bcfa552d6ab2b7a38a"
+  },
+  "note": "deployBlock is the factory's creation block. COPXon approval hit a nonce race and must be approved by the admin from the Admin page."
 }
