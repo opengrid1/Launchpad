@@ -35,12 +35,16 @@ const config: HardhatUserConfig = {
           }
         : {}),
     },
-    ...(RPC ? { robinhood: { url: RPC, chainId: CHAIN || undefined, accounts: PK ? [PK] : [] } } : {}),
+    // GAS_PRICE_WEI pins a legacy gas price for live deploys (ethers' default
+    // 1 gwei priority tip is ~15x mainnet's base fee at quiet times).
+    ...(RPC ? { robinhood: { url: RPC, chainId: CHAIN || undefined, accounts: PK ? [PK] : [], ...(process.env.GAS_PRICE_WEI ? { gasPrice: Number(process.env.GAS_PRICE_WEI) } : {}) } } : {}),
   },
   // Explorer verification for HyperEVM deploys made with this size-optimized
   // build: settings must match the deploy compile exactly (runs=1, viaIR).
+  // Without EXPLORER_API_URL the plugin uses its built-in Etherscan v2 chain
+  // list (mainnet etc.), which needs a plain API key string.
   etherscan: {
-    apiKey: { robinhood: process.env.EXPLORER_API_KEY ?? "blockscout" },
+    apiKey: process.env.EXPLORER_API_URL ? { robinhood: process.env.EXPLORER_API_KEY ?? "blockscout" } : (process.env.EXPLORER_API_KEY ?? ""),
     customChains: process.env.EXPLORER_API_URL
       ? [
           {
@@ -55,7 +59,7 @@ const config: HardhatUserConfig = {
       : [],
   },
   sourcify: {
-    enabled: true,
+    enabled: process.env.SOURCIFY === "1",
     apiUrl: "https://sourcify.dev/server",
     browserUrl: "https://repo.sourcify.dev",
   },

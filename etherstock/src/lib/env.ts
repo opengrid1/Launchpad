@@ -13,7 +13,6 @@ export const env = {
   rpcUrls: import.meta.env.VITE_RPC_OVERRIDE ? [String(import.meta.env.VITE_RPC_OVERRIDE)] : [
     ...alchemy,
     "https://ethereum-rpc.publicnode.com",
-    "https://eth.llamarpc.com",
     "https://rpc.ankr.com/eth",
     "https://1rpc.io/eth",
   ],
@@ -27,7 +26,7 @@ export const env = {
   explorerUrl: "https://etherscan.io",
   walletConnectProjectId: "e1bda672d5deb56579fe084dddfb9174",
   /** Factory deploy block, the lower bound for log scans. */
-  startBlock: BigInt(import.meta.env.VITE_START_BLOCK ?? "0"),
+  startBlock: BigInt(import.meta.env.VITE_START_BLOCK ?? "26003130"),
   dexscreenerChain: "ethereum",
   secondsPerBlock: 12,
 };
@@ -36,9 +35,9 @@ const addr = (key: string, fallback: string) => String(import.meta.env[key] ?? f
 
 /** Deployed contracts on Ethereum mainnet (VITE_* overrides point a build at a fork). */
 export const ADDRESSES = {
-  factory: addr("VITE_FACTORY", "0x0000000000000000000000000000000000000000"),
-  hook: addr("VITE_HOOK", "0x0000000000000000000000000000000000000000"),
-  router: addr("VITE_ROUTER", "0x0000000000000000000000000000000000000000"),
+  factory: addr("VITE_FACTORY", "0x13AdF682f27957B78829437F39116C1710dc0e75"),
+  hook: addr("VITE_HOOK", "0x2D462aD38a5a52280639Df88E67997F65B1880cc"),
+  router: addr("VITE_ROUTER", "0x48f845Baa82aF46107eae79f01c7D9b1f80238EE"),
   poolManager: addr("VITE_POOL_MANAGER", "0x000000000004444c5dc75cB358380D2e3dE08A90"),
   stateView: addr("VITE_STATE_VIEW", "0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227"),
   weth: addr("VITE_WETH", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
