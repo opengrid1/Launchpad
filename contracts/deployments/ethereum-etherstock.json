@@ -451,6 +451,90 @@
       "address": "0x0c666485b02F7A87d21AdD7AEb9F5e64975AA490",
       "usd": 175.96,
       "usd8": "17596000000"
+    },
+    {
+      "symbol": "AVGOon",
+      "address": "0x0d54D4279B9E8c54cD8547c2C75A8Ee81A0BcaE8",
+      "usd": 357.895,
+      "usd8": "35789500000"
+    },
+    {
+      "symbol": "QCOMon",
+      "address": "0xE3419710c1f77D44B4DaB02316d3f048818C4E59",
+      "usd": 168.74,
+      "usd8": "16874000000"
+    },
+    {
+      "symbol": "APOon",
+      "address": "0x4D21aFfD27183B07335935F81A5C26b6A5A15355",
+      "usd": 133.67,
+      "usd8": "13367000000"
+    },
+    {
+      "symbol": "BBAIon",
+      "address": "0x1b8d3e59b31981385C066eE0916Ec964628ff1f9",
+      "usd": 2.92,
+      "usd8": "292000000"
+    },
+    {
+      "symbol": "BAon",
+      "address": "0x57270D35A840BC5C094da6FBeCA033FB71eA6Ab0",
+      "usd": 212.25,
+      "usd8": "21225000000"
+    },
+    {
+      "symbol": "TSMon",
+      "address": "0x3Cafdbfe682aec17d5acE2f97A2f3ab3dCf6a4A9",
+      "usd": 429.17,
+      "usd8": "42917000000"
+    },
+    {
+      "symbol": "ACNon",
+      "address": "0xAbA9Ae731Aad63335C604E5f6E6A5db2e05f549d",
+      "usd": 186.72,
+      "usd8": "18672000000"
+    },
+    {
+      "symbol": "SHOPon",
+      "address": "0x908266C1192628371Cff7AD2F5Eba4dE061a0ac5",
+      "usd": 145.09,
+      "usd8": "14509000000"
+    },
+    {
+      "symbol": "Von",
+      "address": "0xaC37c20C1d0E5285035e056101a64e263Ff94a41",
+      "usd": 375.07,
+      "usd8": "37507000000"
+    },
+    {
+      "symbol": "DASHon",
+      "address": "0x241958c86c7744d15d5f6314BA1Ea4c81DDA2896",
+      "usd": 649.25,
+      "usd8": "64925000000"
+    },
+    {
+      "symbol": "GEon",
+      "address": "0xD904bCf89B7CedF5c89f9Df7e829191D695F847E",
+      "usd": 337.12,
+      "usd8": "33712000000"
+    },
+    {
+      "symbol": "CRMon",
+      "address": "0x55720eF5b023Fd043AE5F8D2e526030207978950",
+      "usd": 259.23,
+      "usd8": "25923000000"
+    },
+    {
+      "symbol": "LLYon",
+      "address": "0xf192957AE52dB3eb088654403CC2eDeD014ae556",
+      "usd": 1149.36,
+      "usd8": "114936000000"
+    },
+    {
+      "symbol": "RDDTon",
+      "address": "0xA9431d354cFAD3c6B76E50f0e73b43D48Be80CD0",
+      "usd": 154.46,
+      "usd8": "15446000000"
     }
   ]
 }
