@@ -37,6 +37,12 @@
       "address": "0x3632DEa96A953C11dac2f00b4A05a32CD1063fAE",
       "usd": 100.78,
       "usd8": "10078000000"
+    },
+    {
+      "symbol": "AGGon",
+      "address": "0xfF7CF16aA2fFc463b996DB2f7B7cf0130336899D",
+      "usd": 97,
+      "usd8": "9700000000"
     }
   ]
 }
