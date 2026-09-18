@@ -919,6 +919,96 @@
       "address": "0x55025c1e2acFE5A7092CF32f7A4F351a9FD21e1c",
       "usd": 25.2,
       "usd8": "2520000000"
+    },
+    {
+      "symbol": "BLCRon",
+      "address": "0x08D777b6a82c8dee715848702F72dAD4c2504687",
+      "usd": 49.87,
+      "usd8": "4987000000"
+    },
+    {
+      "symbol": "BRTRon",
+      "address": "0x3d45D340a30f49F036142e5e4D8993b9ad4e3F9a",
+      "usd": 49.231,
+      "usd8": "4923100000"
+    },
+    {
+      "symbol": "BRHYon",
+      "address": "0xaeB2C4f3540a162045cC3Bd82d367AC38C2F4Da6",
+      "usd": 50.735,
+      "usd8": "5073500000"
+    },
+    {
+      "symbol": "BRLNon",
+      "address": "0xfcBa0eEBbb946FF933C91D2DDB2991845a400F39",
+      "usd": 50.89,
+      "usd8": "5089000000"
+    },
+    {
+      "symbol": "ACLSon",
+      "address": "0x6785cE8060655b1F4991C3893dc41814154A1808",
+      "usd": 115.08,
+      "usd8": "11508000000"
+    },
+    {
+      "symbol": "BWETon",
+      "address": "0xEcA55ac71f83931B7e074228AEBc9104F13d8c02",
+      "usd": 505.17,
+      "usd8": "50517000000"
+    },
+    {
+      "symbol": "BKCHon",
+      "address": "0xDd00b1046692aA2780ef04849829609Fc4F90fD7",
+      "usd": 74.91,
+      "usd8": "7491000000"
+    },
+    {
+      "symbol": "ACMRon",
+      "address": "0x8379c5595b8148A9968bEE6D8110B2b4a627a9Dd",
+      "usd": 74.44,
+      "usd8": "7444000000"
+    },
+    {
+      "symbol": "ADIon",
+      "address": "0x2dDc2391CC89E3e716A938F089AE755174cfDf1f",
+      "usd": 362.25,
+      "usd8": "36225000000"
+    },
+    {
+      "symbol": "CAMTon",
+      "address": "0xC087EA645a1eFE021577c19413FBE39d617A3196",
+      "usd": 145.72,
+      "usd8": "14572000000"
+    },
+    {
+      "symbol": "GRNDon",
+      "address": "0xe5b26BA77E6a4d79a7c54a5296d81254269D9700",
+      "usd": 15.25,
+      "usd8": "1525000000"
+    },
+    {
+      "symbol": "AIon",
+      "address": "0x4554ad55ccA5e7CB97B77813f486aAf6D4D9AB62",
+      "usd": 10.46,
+      "usd8": "1046000000"
+    },
+    {
+      "symbol": "APDon",
+      "address": "0x6fAfA492d5aFBfd1A7328CD697164daAF08A0420",
+      "usd": 301.27,
+      "usd8": "30127000000"
+    },
+    {
+      "symbol": "ARon",
+      "address": "0xD7C740449090Cd8864F1980076aFf0b5f4561412",
+      "usd": 39.41,
+      "usd8": "3941000000"
+    },
+    {
+      "symbol": "ARRYon",
+      "address": "0x673f8d2e5F05c17BABa0c86e1AAbA99f2d7F9e1A",
+      "usd": 4.6,
+      "usd8": "460000000"
     }
   ]
 }
