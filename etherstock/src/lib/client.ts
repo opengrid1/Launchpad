@@ -439,7 +439,8 @@ export class StockPadClient {
         { address: core.address, abi: tokenAbi, functionName: "totalSupply" },
       ] })) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint];
       fees = { burn: b, creator: c, platform: p };
-      burn = { reserve, burned, spent, min };
+      // Burned = everything gone from the launch supply, automatic buybacks and manual burns alike.
+      burn = { reserve, burned: TOTAL_SUPPLY - ts, spent, min };
       supply = ts;
     } catch { /* optional */ }
     const mcapLive = priceUsd * (Number(supply) / 1e18);
@@ -566,10 +567,10 @@ export class StockPadClient {
 
   async ledger(token: Address, account?: Address): Promise<LedgerView> {
     const who = account ?? ZERO;
-    const [reserve, buybackMin, burned, spent, creatorFees, platformFees, tb, tc, tp, creator, balance] = (await this.pc.multicall({ allowFailure: false, contracts: [
+    const [reserve, buybackMin, supply, spent, creatorFees, platformFees, tb, tc, tp, creator, balance] = (await this.pc.multicall({ allowFailure: false, contracts: [
       { address: token, abi: tokenAbi, functionName: "burnReserve" },
       { address: token, abi: tokenAbi, functionName: "buybackMin" },
-      { address: token, abi: tokenAbi, functionName: "totalBurned" },
+      { address: token, abi: tokenAbi, functionName: "totalSupply" },
       { address: token, abi: tokenAbi, functionName: "totalBuybackPair" },
       { address: token, abi: tokenAbi, functionName: "creatorFees" },
       { address: token, abi: tokenAbi, functionName: "platformFees" },
@@ -579,7 +580,7 @@ export class StockPadClient {
       { address: token, abi: tokenAbi, functionName: "creator" },
       { address: token, abi: tokenAbi, functionName: "balanceOf", args: [who] },
     ] })) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, Address, bigint];
-    return { reserve, buybackMin, burned, spent, creatorFees, platformFees, totalBurn: tb, totalCreator: tc, totalPlatform: tp, isCreator: !!account && creator.toLowerCase() === account.toLowerCase(), balance };
+    return { reserve, buybackMin, burned: TOTAL_SUPPLY - supply, spent, creatorFees, platformFees, totalBurn: tb, totalCreator: tc, totalPlatform: tp, isCreator: !!account && creator.toLowerCase() === account.toLowerCase(), balance };
   }
 
   /** Spend a coin's burn reserve on itself and burn the coins now (anyone may). */
