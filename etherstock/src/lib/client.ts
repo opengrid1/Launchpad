@@ -25,6 +25,7 @@ export const logClient = createPublicClient({
 
 const Q96 = 2n ** 96n;
 const TOTAL_SUPPLY = 1_000_000_000n * 10n ** 18n;
+const DEAD = "0x000000000000000000000000000000000000dEaD" as Address;
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 const LOG_CHUNK = 5_000n;
 
@@ -428,20 +429,20 @@ export class StockPadClient {
     let burn: StockToken["burn"];
     let supply = TOTAL_SUPPLY;
     try {
-      const [b, c, p, reserve, burned, spent, min, ts] = (await this.pc.multicall({ allowFailure: false, contracts: [
+      const [b, c, p, reserve, spent, min, ts, dead] = (await this.pc.multicall({ allowFailure: false, contracts: [
         { address: core.address, abi: tokenAbi, functionName: "totalBurnFees" },
         { address: core.address, abi: tokenAbi, functionName: "totalCreatorFees" },
         { address: core.address, abi: tokenAbi, functionName: "totalPlatformFees" },
         { address: core.address, abi: tokenAbi, functionName: "burnReserve" },
-        { address: core.address, abi: tokenAbi, functionName: "totalBurned" },
         { address: core.address, abi: tokenAbi, functionName: "totalBuybackPair" },
         { address: core.address, abi: tokenAbi, functionName: "buybackMin" },
         { address: core.address, abi: tokenAbi, functionName: "totalSupply" },
+        { address: core.address, abi: tokenAbi, functionName: "balanceOf", args: [DEAD] },
       ] })) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint];
       fees = { burn: b, creator: c, platform: p };
-      // Burned = everything gone from the launch supply, automatic buybacks and manual burns alike.
-      burn = { reserve, burned: TOTAL_SUPPLY - ts, spent, min };
-      supply = ts;
+      // Burned coins sit at the dead address (where every scanner counts them); the circulating supply excludes them.
+      burn = { reserve, burned: dead + (TOTAL_SUPPLY - ts), spent, min };
+      supply = ts - dead;
     } catch { /* optional */ }
     const mcapLive = priceUsd * (Number(supply) / 1e18);
 
@@ -567,10 +568,10 @@ export class StockPadClient {
 
   async ledger(token: Address, account?: Address): Promise<LedgerView> {
     const who = account ?? ZERO;
-    const [reserve, buybackMin, supply, spent, creatorFees, platformFees, tb, tc, tp, creator, balance] = (await this.pc.multicall({ allowFailure: false, contracts: [
+    const [reserve, buybackMin, dead, spent, creatorFees, platformFees, tb, tc, tp, creator, balance] = (await this.pc.multicall({ allowFailure: false, contracts: [
       { address: token, abi: tokenAbi, functionName: "burnReserve" },
       { address: token, abi: tokenAbi, functionName: "buybackMin" },
-      { address: token, abi: tokenAbi, functionName: "totalSupply" },
+      { address: token, abi: tokenAbi, functionName: "balanceOf", args: [DEAD] },
       { address: token, abi: tokenAbi, functionName: "totalBuybackPair" },
       { address: token, abi: tokenAbi, functionName: "creatorFees" },
       { address: token, abi: tokenAbi, functionName: "platformFees" },
@@ -580,7 +581,7 @@ export class StockPadClient {
       { address: token, abi: tokenAbi, functionName: "creator" },
       { address: token, abi: tokenAbi, functionName: "balanceOf", args: [who] },
     ] })) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, Address, bigint];
-    return { reserve, buybackMin, burned: TOTAL_SUPPLY - supply, spent, creatorFees, platformFees, totalBurn: tb, totalCreator: tc, totalPlatform: tp, isCreator: !!account && creator.toLowerCase() === account.toLowerCase(), balance };
+    return { reserve, buybackMin, burned: dead, spent, creatorFees, platformFees, totalBurn: tb, totalCreator: tc, totalPlatform: tp, isCreator: !!account && creator.toLowerCase() === account.toLowerCase(), balance };
   }
 
   /** Spend a coin's burn reserve on itself and burn the coins now (anyone may). */

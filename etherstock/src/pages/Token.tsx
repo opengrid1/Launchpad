@@ -223,7 +223,7 @@ function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { toke
         </div>
         <div className="go">
           <button className={"b lg " + (side === "sell" ? "sell" : "buy")} disabled={isConnected && (amountWei === 0n || over)} onClick={go}>{!isConnected ? "Connect wallet" : over ? "Not enough" : side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`}</button>
-          <span className="sub">{surcharge ? `Anti-snipe fee, back to ${FEES.taxPct}% within 20s of launch` : "Slippage 5% · Uniswap V4"}</span>
+          <span className="sub">{surcharge ? `Anti-snipe fee, back to ${FEES.taxPct}% within 30s of launch` : "Slippage 5% · Uniswap V4"}</span>
         </div>
       </div>
       <p className="dock-note">{pair.isNative ? "" : payEth ? `Priced in ${pair.symbol}. You pay and receive ETH; the router goes through ${pair.symbol}'s pool.` : `Priced in ${pair.symbol}, which has no ETH route: you pay and receive ${pair.symbol}.`}</p>

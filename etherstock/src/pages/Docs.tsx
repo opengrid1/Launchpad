@@ -41,7 +41,7 @@ export default function Docs() {
         <div>
           <h2>The reserve fills, then the next trade burns</h2>
           <p>Each coin keeps its own burn reserve in the pair asset. Once the reserve reaches about $25 at the pair's price on file, the very next trade spends the whole reserve buying the coin back from its own pool and burns what it bought, inside that same transaction. The buyback swap pays no fee. Anyone can also fire it early with the Burn now button, paying only gas.</p>
-          <p>Burned coins are destroyed, not parked. Total supply falls, the market cap on the board is computed from the live supply, and nothing can ever be minted back.</p>
+          <p>Burned coins go to the dead address, 0x…dEaD, where every scanner and explorer counts them as burned. The market cap on the board is computed from the circulating supply, and nothing can ever be minted back.</p>
         </div>
       </section>
 
@@ -56,8 +56,8 @@ export default function Docs() {
       <section>
         <div className="no">§5<small>anti-snipe</small></div>
         <div>
-          <h2>The first 20 seconds are expensive</h2>
-          <p>The launch block is creator-only. For the first 20 seconds the fee starts at 99% and decays to {FEES.taxPct}%, with the surcharge going to the platform, and each wallet is capped at 3% of supply for three blocks. Bots pay for being first.</p>
+          <h2>The first 30 seconds are expensive</h2>
+          <p>The launch block is creator-only. For the first 30 seconds the fee starts at 99% and decays to {FEES.taxPct}%, with the surcharge going to the platform, and each wallet is capped at 1% of supply for ten blocks. Bots pay for being first.</p>
         </div>
       </section>
 
