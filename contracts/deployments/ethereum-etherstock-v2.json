@@ -553,6 +553,12 @@
       "address": "0x01B19c68f8A9eE3a480dA788ba401cFAbdf19B93",
       "usd": 477.57,
       "usd8": "47757000000"
+    },
+    {
+      "symbol": "UNHon",
+      "address": "0x075756F3b6381a79633438fAA8964946bf40163d",
+      "usd": 397.14,
+      "usd8": "39714000000"
     }
   ],
   "officialToken": {
