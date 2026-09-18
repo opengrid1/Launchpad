@@ -69,7 +69,7 @@ export const BRAND = {
 export const FEES = { taxPct: 4, creatorPct: 50, burnPct: 30, platformPct: 20 };
 
 /** Official coins, always listed first on the feed. */
-export const PINNED_TOKENS: string[] = [];
+export const PINNED_TOKENS: string[] = ["0xc4ccdeb2a9442347dd08b2e4aa1581ef8c327281"]; // Etherstock.fun (ETHERSTOCK) on v2
 export const isPinned = (address: string) => PINNED_TOKENS.includes(address.toLowerCase());
 
 /** Coins kept off the public feed (tests). Pages still open by URL. */

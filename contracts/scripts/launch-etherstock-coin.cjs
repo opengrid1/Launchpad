@@ -37,7 +37,7 @@ async function retry(fn, what) { for (let k = 0; k < 8; k++) { try { return awai
   if (!rc || rc.status !== 1) throw new Error("launch failed " + tx.hash);
   const token = await retry((p) => new ethers.Contract(FACTORY, ABI, p).allTokens(n), "allTokens");
   console.log("launched", SYMBOL, token, "block", rc.blockNumber, "gasUsed", rc.gasUsed.toString(), "bal left", ethers.formatEther(await retry((p) => p.getBalance(me), "balance")));
-  const depFile = path.join(__dirname, "..", "deployments", "ethereum-etherstock.json");
+  const depFile = process.env.DEPLOY_FILE ?? path.join(__dirname, "..", "deployments", "ethereum-etherstock.json");
   const dep = JSON.parse(fs.readFileSync(depFile, "utf8"));
   dep[KEY] = { name: NAME, symbol: SYMBOL, address: token, pair: "ETH", block: rc.blockNumber, tx: tx.hash };
   fs.writeFileSync(depFile, JSON.stringify(dep, null, 2));
