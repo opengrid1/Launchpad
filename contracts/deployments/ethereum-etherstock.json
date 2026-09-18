@@ -1133,12 +1133,21 @@
     "tx": "0x0cfa78fa3e547558b98e467a55650d9778962050112da9bcfa552d6ab2b7a38a"
   },
   "note": "deployBlock is the factory's creation block. COPXon approval hit a nonce race and must be approved by the admin from the Admin page.",
-  "officialToken": {
+  "officialToken1": {
     "name": "Etherstock.fun",
     "symbol": "ETHERSTOCK",
     "address": "0xaC82515D6c00F6AcEa663a6dB63Ed8C66e018D15",
     "pair": "ETH",
     "block": 26004085,
-    "tx": "0xfa6580941105d9d3bd95a63945344871122efc9f2c3785035dd0fd21899495f2"
+    "tx": "0xfa6580941105d9d3bd95a63945344871122efc9f2c3785035dd0fd21899495f2",
+    "note": "first launch, retired: sniped at launch, hidden from the board"
+  },
+  "officialToken": {
+    "name": "Etherstock.fun",
+    "symbol": "ETHERSTOCK",
+    "address": "0xB4f948a28566322626bBE0b2792030B3e44BEccB",
+    "pair": "ETH",
+    "block": 26004233,
+    "tx": "0xae42611c8703a4933804dc816d96baf3a0806c62cd52e24658448a9b4d3de5dd"
   }
 }
