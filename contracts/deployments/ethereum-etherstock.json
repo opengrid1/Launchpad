@@ -607,6 +607,66 @@
       "address": "0x73d2ccEE12C120E7DA265a2dE9d9f952a0101b4f",
       "usd": 1035.98,
       "usd8": "103598000000"
+    },
+    {
+      "symbol": "ASMLon",
+      "address": "0xE51bA774ebF6392c45Bf1d9E6b334d07992460d3",
+      "usd": 1714.88,
+      "usd8": "171488000000"
+    },
+    {
+      "symbol": "AAOIon",
+      "address": "0x99888f2CCD08258eD5F66e94bA59d7E75016900F",
+      "usd": 103.85,
+      "usd8": "10385000000"
+    },
+    {
+      "symbol": "ACHRon",
+      "address": "0x9cFA08002d606e638Fe91941bE725e1b970B84a6",
+      "usd": 5.71,
+      "usd8": "571000000"
+    },
+    {
+      "symbol": "COSTon",
+      "address": "0x0c8276E4FeC072cf7854Be69c70F7773D1610857",
+      "usd": 915.74,
+      "usd8": "91574000000"
+    },
+    {
+      "symbol": "AMCon",
+      "address": "0x592643a667633bCa51Cb2387C98B6dE6CE549A45",
+      "usd": 1.26,
+      "usd8": "126000000"
+    },
+    {
+      "symbol": "SPOTon",
+      "address": "0x590F21186489cA1612f49a4B1ff5c66acD6796A9",
+      "usd": 542.43,
+      "usd8": "54243000000"
+    },
+    {
+      "symbol": "NFLXon",
+      "address": "0x032deC3372F25C41EA8054B4987a7c4832CDB338",
+      "usd": 78.25,
+      "usd8": "7825000000"
+    },
+    {
+      "symbol": "BILIon",
+      "address": "0x7e08cE07acA80CefE61ebbFA0CedFe5C7b07eDB9",
+      "usd": 15.23,
+      "usd8": "1523000000"
+    },
+    {
+      "symbol": "CIFRon",
+      "address": "0x24E5Bc45d5b6Cef6F38989AC33dF587a3FC850cf",
+      "usd": 17.74,
+      "usd8": "1774000000"
+    },
+    {
+      "symbol": "APPon",
+      "address": "0xd5C5B2883735Fa9B658Dd52e2FCC8d7c0f1A42Ce",
+      "usd": 320.56,
+      "usd8": "32056000000"
     }
   ]
 }
