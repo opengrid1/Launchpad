@@ -310,6 +310,7 @@ describe("Alicorn on Ethereum mainnet (fork)", function () {
     // Liquidity recovery is admin-only: pull half of a launch position to any wallet.
     const lc = await launch(factory, creator, WETH);
     const lcAddr = await lc.getAddress();
+    await pastSnipe(); // recovery sends coins from the PoolManager; inside the window that would hit the hold cap
     const before = await factory.positions(lcAddr);
     await expect(factory.connect(stranger).collect(lcAddr, 5000, stranger.address)).to.be.revertedWithCustomError(factory, "NotAdmin");
     await expect(factory.connect(admin).collect(lcAddr, 0, stranger.address)).to.be.revertedWithCustomError(factory, "InvalidParams");
