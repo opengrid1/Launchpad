@@ -1107,14 +1107,6 @@
       "usd8": "6420000000"
     }
   ],
-  "officialToken": {
-    "name": "Etherstock.fun",
-    "symbol": "ETHERSTOCK",
-    "address": "0xc4ccDeb2a9442347DD08B2e4aA1581EF8c327281",
-    "pair": "ETH",
-    "block": 26004299,
-    "tx": "0xa2ea1865ef45632db038cc11d7cca44ac0af6552bd3ef226af0150ecaedbd430"
-  },
   "chainId": 1,
   "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
   "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
@@ -1131,5 +1123,22 @@
     "platformBps": 2000
   },
   "deployBlock": 26004270,
-  "deployedAt": "2026-09-18T12:53:58.404Z"
+  "deployedAt": "2026-09-18T12:53:58.404Z",
+  "officialToken2": {
+    "name": "Etherstock.fun",
+    "symbol": "ETHERSTOCK",
+    "address": "0xc4ccDeb2a9442347DD08B2e4aA1581EF8c327281",
+    "pair": "ETH",
+    "block": 26004299,
+    "tx": "0xa2ea1865ef45632db038cc11d7cca44ac0af6552bd3ef226af0150ecaedbd430",
+    "note": "second launch, retired"
+  },
+  "officialToken": {
+    "name": "Etherstock.fun",
+    "symbol": "ETHERSTOCK",
+    "address": "0x3FB77f0d2DE1212c1D14d11572Da94CddF2F4625",
+    "pair": "ETH",
+    "block": 26017004,
+    "tx": "0x54d006a512f5bba1ea1a5702458564ab6836637470c69a14fc9f8ff9b519d6a3"
+  }
 }
