@@ -5,7 +5,6 @@ import { ADDRESSES, BRAND, env, FEES } from "../lib/env";
 import { useQuotes } from "../lib/hooks";
 import { isTokenPair } from "../lib/stocks";
 
-/** The terms, in the order money moves. */
 export default function Docs() {
   const { data: quotes } = useQuotes();
   const approved = quotes?.filter((q) => q.approved && !q.isNative) ?? [];
@@ -14,69 +13,54 @@ export default function Docs() {
   const routable = approved.filter((q) => q.ethRoute);
   return (
     <main className="doc">
-      <div className="eyebrow">Ethereum mainnet · Uniswap V4</div>
-      <h1 style={{ marginTop: 12 }}>The <em>terms</em>.</h1>
-      <p className="lead">One factory, one set of numbers for every coin. Nothing below can be changed per coin, by anyone.</p>
+      <h1>Docs</h1>
+      <p className="lead">Alicorn is a coin launchpad on Ethereum, built on Uniswap V4. Every coin is paired with an asset of the creator's choice, and every trade pays the coin's holders in that asset. One factory, one set of rules for every coin.</p>
 
       <section>
-        <div className="n">1</div>
-        <div>
-          <h2>Pick a pair. Any approved asset.</h2>
-          <p>A coin is launched against a pair asset: ETH, a plain token like {tokens.slice(0, 4).map((t) => t.symbol).join(", ") || "UNI, LINK, PEPE"}, or a tokenized stock like NVDAon. The pool holds the pair on the other side, so the coin is priced in it and every fee arrives in it. {tokens.length} tokens and {stocks.length} stocks are approved; {routable.length} have an on-chain route from ETH.</p>
-          <p>Pairs are curated by the admin: each needs 18 decimals and a USD price on file, from a Chainlink feed where one exists, because the price sizes the $3,000 opening pool.</p>
-        </div>
+        <h2>Pair assets</h2>
+        <p>A coin is launched against a pair asset: ETH, a token like {tokens.slice(0, 4).map((t) => t.symbol).join(", ") || "UNI, LINK, PEPE"}, or a tokenized stock like NVDAon. The pool holds the pair on the other side, so the coin is priced in it and every fee is collected in it. {tokens.length} tokens and {stocks.length} stocks are approved; {routable.length} have an on-chain route from ETH.</p>
+        <p>Pairs are added by the admin. Each needs 18 decimals and a USD price on file, from a Chainlink feed where one exists, because the price sizes the opening pool.</p>
       </section>
 
       <section>
-        <div className="n">2</div>
-        <div>
-          <h2>Launch in one transaction</h2>
-          <p>A fixed 1,000,000,000 supply goes into a single Uniswap V4 pool at about $3,000 of market cap. The liquidity is burned forever: the creator can never withdraw it. An optional first buy in ETH lands in the same transaction.</p>
-        </div>
+        <h2>Launch</h2>
+        <p>A fixed 1,000,000,000 supply goes into a single Uniswap V4 pool at about $3,000 of market cap. The liquidity is burned: the creator can never withdraw it. An optional first buy in ETH happens in the same transaction. Name, ticker, pair and metadata are fixed at launch. No one can mint or pause the coin.</p>
       </section>
 
       <section>
-        <div className="n">3</div>
-        <div>
-          <h2>Every trade pays {FEES.taxPct}%, split three ways</h2>
-          <div className="split">
-            <div className="vio"><b>{FEES.holderPct}%</b><span>to holders, in the pair asset, as the trade settles</span></div>
-            <div><b>{FEES.creatorPct}%</b><span>to the creator, claimable any time</span></div>
-            <div><b>{FEES.platformPct}%</b><span>to the platform</span></div>
-          </div>
-          <p>The hook takes the fee inside the pool on both buys and sells and credits it on the spot with a per-share accumulator. Nothing to stake, nothing to harvest: hold the coin and your share accrues; claim it whenever you like, in the pair or straight as ETH when the pair has a route.</p>
+        <h2>Fees</h2>
+        <p>Every trade pays {FEES.taxPct}%, taken inside the pool on both buys and sells, in the pair asset.</p>
+        <div className="split">
+          <div className="vio"><b>{FEES.holderPct}%</b><span>to holders, credited as the trade settles</span></div>
+          <div><b>{FEES.creatorPct}%</b><span>to the creator, claimable any time</span></div>
+          <div><b>{FEES.platformPct}%</b><span>to the platform</span></div>
         </div>
+        <p>Holder rewards use a per-share accumulator: hold the coin and your share accrues automatically. Nothing to stake and nothing to harvest. Claim in the pair asset, or as ETH when the pair has a route.</p>
       </section>
 
       <section>
-        <div className="n">4</div>
-        <div>
-          <h2>Trade in plain ETH whatever the pair</h2>
-          <p>The router takes ETH, swaps it into the pair through the pair's own Uniswap pool and into the coin, in one transaction, and back on the way out. A pair without a route can still be used, but buyers must already hold it.</p>
-        </div>
+        <h2>Trading in ETH</h2>
+        <p>Whatever the pair, buyers can pay in ETH. The router swaps ETH into the pair through the pair's own Uniswap pool and then into the coin, in one transaction, and back on the way out. A pair without a route can still be used, but buyers must already hold it.</p>
       </section>
 
       <section>
-        <div className="n">5</div>
-        <div>
-          <h2>The first 30 seconds are expensive</h2>
-          <p>The launch block is creator-only. For the first 30 seconds the fee starts at 99% and decays to {FEES.taxPct}%, with the surcharge going to the platform, and each wallet is capped at 1% of supply for ten blocks. Bots pay for being first.</p>
-        </div>
+        <h2>Launch protection</h2>
+        <p>The launch block is creator-only. For the first 30 seconds the fee starts at 99% and decays to {FEES.taxPct}%, with the surcharge going to the platform. Each wallet is capped at 1% of supply for ten blocks.</p>
       </section>
 
       <section>
-        <div className="n">6</div>
-        <div>
-          <h2>Contracts · chain {env.chainId}</h2>
-          <dl className="kv" style={{ marginTop: 6 }}>
-            <dt>Factory</dt><dd><Copy value={ADDRESSES.factory} full /></dd>
-            <dt>Hook</dt><dd><Copy value={ADDRESSES.hook} full /></dd>
-            <dt>Router</dt><dd><Copy value={ADDRESSES.router} full /></dd>
-            <dt>Pool mgr</dt><dd><Copy value={ADDRESSES.poolManager} full /></dd>
-            <dt>X</dt><dd><a className="vi" href={BRAND.x} target="_blank" rel="noreferrer">{BRAND.x.replace("https://x.com/", "@")}</a></dd>
+        <h2>Contracts</h2>
+        <div className="card" style={{ padding: 14, marginTop: 8 }}>
+          <dl className="kv" style={{ gridTemplateColumns: "120px 1fr" }}>
+            <dt>Chain</dt><dd style={{ textAlign: "left" }}>Ethereum mainnet ({env.chainId})</dd>
+            <dt>Factory</dt><dd style={{ textAlign: "left" }}><Copy value={ADDRESSES.factory} full /></dd>
+            <dt>Hook</dt><dd style={{ textAlign: "left" }}><Copy value={ADDRESSES.hook} full /></dd>
+            <dt>Router</dt><dd style={{ textAlign: "left" }}><Copy value={ADDRESSES.router} full /></dd>
+            <dt>Pool manager</dt><dd style={{ textAlign: "left" }}><Copy value={ADDRESSES.poolManager} full /></dd>
+            <dt>X</dt><dd style={{ textAlign: "left" }}><a className="vi" href={BRAND.x} target="_blank" rel="noreferrer">{BRAND.x.replace("https://x.com/", "@")}</a></dd>
           </dl>
-          <p className="note">Source verified on Etherscan. Your holdings and claims are under <Link to="/me" className="vi">Statement</Link>.</p>
         </div>
+        <p className="note">Source verified on Etherscan. Your holdings and claims are under <Link to="/me" className="vi">Rewards</Link>.</p>
       </section>
     </main>
   );

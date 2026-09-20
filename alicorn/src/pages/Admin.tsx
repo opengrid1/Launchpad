@@ -29,7 +29,7 @@ export default function Admin() {
     await ensureWallet();
     await runTx(label, () => client.adminCall(fn, args), async () => { await qc.invalidateQueries(); });
   };
-  if (!isConnected) return <main className="gate"><h1>Platform admin.</h1><p>Connect the admin wallet.</p><button className="b pri" onClick={() => openWalletModal()}>Connect wallet</button></main>;
+  if (!isConnected) return <main className="gate"><h1>Admin</h1><p>Connect the admin wallet.</p><button className="b pri" onClick={() => openWalletModal()}>Connect wallet</button></main>;
 
   return (
     <main>

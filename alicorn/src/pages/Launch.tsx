@@ -4,7 +4,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { parseEther, type Address } from "viem";
 import { useAccount } from "wagmi";
 
-import { Art } from "../components/Art";
 import { PairPicker } from "../components/PairPicker";
 import { client } from "../lib/client";
 import { DEPLOYED, FEES } from "../lib/env";
@@ -13,7 +12,6 @@ import { friendlyError, runTx, setToast, useEthUsd, useQuotes } from "../lib/hoo
 import { isTokenPair, WETH } from "../lib/stocks";
 import { ensureWallet, openWalletModal } from "../lib/wallet";
 
-/** The launch form as three numbered fieldsets, with a summary that follows. */
 export default function Launch() {
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -77,74 +75,72 @@ export default function Launch() {
     } finally { setBusy(false); }
   };
 
-  if (!DEPLOYED) return <main className="gate"><h1>Not live yet.</h1><p>The factory is not on Ethereum yet.</p><Link to="/" className="b ghost">Back to the board</Link></main>;
-  const cta = !isConnected ? "Connect wallet" : busy ? "Launching…" : `Launch ${symbol}, paying out in ${pairSym}`;
+  if (!DEPLOYED) return <main className="gate"><h1>Not live yet</h1><p>The factory is not on Ethereum yet.</p><Link to="/" className="b">Back to coins</Link></main>;
+  const cta = !isConnected ? "Connect wallet" : busy ? "Launching…" : `Launch ${symbol}`;
 
   return (
-    <main>
-      <div className="eyebrow">One transaction · about $3,000 opening pool · liquidity burned forever</div>
-      <h1 style={{ marginTop: 12 }}>Open a coin that pays its holders in <em>{pairSym}</em>.</h1>
+    <main className="launch">
+      <h1>Launch a coin</h1>
+      <p className="sub">One transaction. 1,000,000,000 supply into a Uniswap V4 pool at about $3,000 market cap. Liquidity is burned.</p>
 
-      <div className="launch">
-        <form className="form" id="golive" onSubmit={submit}>
-          <div className="fs">
-            <div className="fs-h"><span className="no">01</span><h3>Identity</h3></div>
-            <label className="drop" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) onFile(file); }}>
-              {logo ? <img src={logo} alt="" /> : <div className="ph">+</div>}
-              <div><div className="t">{logo ? "Artwork ready" : "Add artwork"}</div><div className="help">Square PNG or JPG, kept small on-chain.{logo && <> · <a href="#" onClick={(e) => { e.preventDefault(); setLogo(""); }}>Remove</a></>}</div></div>
-              <input ref={fileRef} type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) onFile(file); }} />
-            </label>
-            <div className="f2">
-              <div className="f"><label>Name</label><input className="in" value={f.name} onChange={set("name")} placeholder="Moon Cat" maxLength={40} required /></div>
-              <div className="f"><label>Ticker</label><input className="in" value={f.symbol} onChange={set("symbol")} placeholder={symbol} maxLength={10} style={{ textTransform: "uppercase" }} /><div className="help">Up to 10 characters. Blank derives from the name.</div></div>
+      <form className="card" onSubmit={submit}>
+        <div className="fs">
+          <h3>Coin</h3>
+          <label className="drop" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) onFile(file); }}>
+            {logo ? <img src={logo} alt="" /> : <div className="ph">+</div>}
+            <div><div className="t">{logo ? "Logo added" : "Upload a logo"}</div><div className="help">Square PNG or JPG. Stored on-chain, so it is kept small.{logo && <> · <a href="#" onClick={(e) => { e.preventDefault(); setLogo(""); }}>Remove</a></>}</div></div>
+            <input ref={fileRef} type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) onFile(file); }} />
+          </label>
+          <div className="f2">
+            <div className="f"><label>Name</label><input className="in" value={f.name} onChange={set("name")} placeholder="Moon Cat" maxLength={40} required /></div>
+            <div className="f"><label>Ticker</label><input className="in" value={f.symbol} onChange={set("symbol")} placeholder={symbol} maxLength={10} style={{ textTransform: "uppercase" }} /></div>
+          </div>
+          <div className="f"><label>Description</label><textarea className="in" value={f.description} onChange={set("description")} placeholder="What is this coin about?" maxLength={400} /></div>
+          <div className="f2">
+            <div className="f"><label>Website</label><input className="in" value={f.website} onChange={set("website")} placeholder="example.com" /></div>
+            <div className="f"><label>X</label><input className="in" value={f.twitter} onChange={set("twitter")} placeholder="@handle" /></div>
+          </div>
+          <div className="f"><label>Telegram</label><input className="in" value={f.telegram} onChange={set("telegram")} placeholder="@group" /></div>
+        </div>
+
+        <div className="fs">
+          <h3>Pair asset<small>What the coin is priced in and what holders are paid in</small></h3>
+          <PairPicker pairs={pairs} value={pair?.address ?? WETH} onChange={(a) => { setPairAddr(a); setF({ ...f, devBuy: "" }); }} />
+          <div className="f" style={{ marginTop: 10 }}>
+            <div className="help">
+              <span className={"chip " + kind} style={{ marginRight: 8 }}>{pairSym}</span>
+              {isEth
+                ? "The pool holds ETH. Buyers pay ETH and holders are paid in ETH."
+                : pair.ethRoute
+                  ? `The pool holds ${pairSym}. Buyers still pay ETH; the router swaps through ${pairSym}. Holders and you are paid in ${pairSym}, claimable as ETH.`
+                  : `${pairSym} has no ETH route: buyers must already hold ${pairSym}, and no ETH first buy is possible.`}
             </div>
-            <div className="f"><label>Description</label><textarea className="in" value={f.description} onChange={set("description")} placeholder="What is this coin about?" maxLength={400} /></div>
-            <div className="f2">
-              <div className="f"><label>Website</label><input className="in" value={f.website} onChange={set("website")} placeholder="example.com" /></div>
-              <div className="f"><label>X</label><input className="in" value={f.twitter} onChange={set("twitter")} placeholder="@handle" /></div>
-            </div>
-            <div className="f"><label>Telegram</label><input className="in" value={f.telegram} onChange={set("telegram")} placeholder="@group" /></div>
           </div>
+        </div>
 
-          <div className="fs">
-            <div className="fs-h"><span className="no">02</span><h3>Pair asset</h3><span className="faint" style={{ fontSize: 13 }}>what the coin is priced in and holders are paid in</span></div>
-            <PairPicker pairs={pairs} value={pair?.address ?? WETH} onChange={(a) => { setPairAddr(a); setF({ ...f, devBuy: "" }); }} />
-            <div className="help" style={{ marginTop: 10 }}>{isEth
-              ? "The pool holds ETH on the other side. Buyers pay ETH and holders are paid in ETH."
-              : pair.ethRoute
-                ? `The pool holds ${pairSym}. Buyers still pay plain ETH; the router swaps through ${pairSym}'s pool. Holders and you are paid in ${pairSym}, claimable as ETH.`
-                : `${pairSym} has no on-chain route right now: buyers must already hold ${pairSym}, and no ETH first buy is possible.`}</div>
+        <div className="fs">
+          <h3>First buy<small>Optional</small></h3>
+          <div className="f">
+            <label>Amount in ETH</label>
+            <input className="in" inputMode="decimal" value={f.devBuy} onChange={set("devBuy")} placeholder="0" disabled={!canDevBuy} />
+            <div className="help">{canDevBuy ? `Bought in the same transaction at the ${FEES.taxPct}% fee, so you hold from block one.` : "Not available for a pair without an ETH route."}{dev && ethUsd > 0 && <> About {usd(Number(dev) * ethUsd)}.</>}</div>
           </div>
+        </div>
 
-          <div className="fs">
-            <div className="fs-h"><span className="no">03</span><h3>Go live</h3></div>
-            <div className="f">
-              <label>First buy in ETH (optional)</label>
-              <input className="in" inputMode="decimal" value={f.devBuy} onChange={set("devBuy")} placeholder="0" disabled={!canDevBuy} />
-              <div className="help">{canDevBuy ? `Spent in the same transaction at the base ${FEES.taxPct}% fee, so you hold from block one. Everyone can see it.` : "Not available for a pair without an ETH route."}{dev && ethUsd > 0 && <> · about {usd(Number(dev) * ethUsd)}</>}</div>
-            </div>
-            <button className="b vio lg wide" type="submit" disabled={busy || !f.name.trim()}>{cta}</button>
-          </div>
-        </form>
-
-        <aside className="summary">
-          <div className="top-line"><Art src={logo} name={f.name || "Your coin"} className="art" /><div><h3>{f.name || "Your coin"}</h3><span className="faint mono" style={{ fontSize: 12 }}>{symbol}</span></div></div>
-          <div className="pairline">
-            <span className={"chip " + kind}>{pairSym}</span>
-            <b>{isEth ? "Pays out in Ether" : `Pays out in ${pair.name}`}</b>
-            <small>{pair && pair.usd > 0 ? `${pairSym} at ${usd(pair.usd)} · ` : ""}priced in {pairSym}</small>
-          </div>
+        <div className="fs summary">
+          <h3>Summary</h3>
           <dl className="kv">
-            <dt>Supply</dt><dd>1,000,000,000 fixed</dd>
-            <dt>Opening</dt><dd>about $3,000, all in the pool</dd>
-            <dt>Fee</dt><dd>{FEES.taxPct}% per trade</dd>
-            <dt>Holders</dt><dd>{FEES.holderPct}% of every fee</dd>
-            <dt>You</dt><dd>{FEES.creatorPct}% of every fee, forever</dd>
-            <dt>Liquidity</dt><dd>Burned forever</dd>
+            <dt>Coin</dt><dd>{f.name || "—"} ({symbol})</dd>
+            <dt>Pair</dt><dd>{isEth ? "ETH" : `${pair.name} (${pairSym})`}{pair && pair.usd > 0 ? ` · ${usd(pair.usd)}` : ""}</dd>
+            <dt>Supply</dt><dd>1,000,000,000, fixed</dd>
+            <dt>Opening</dt><dd>About $3,000 market cap, all in the pool</dd>
+            <dt>Fee</dt><dd>{FEES.taxPct}% per trade: {FEES.holderPct}% holders / {FEES.creatorPct}% you / {FEES.platformPct}% platform</dd>
+            <dt>Liquidity</dt><dd>Burned at launch</dd>
+            <dt>Launch protection</dt><dd>99% fee fading to {FEES.taxPct}% over 30 seconds, 1% wallet cap for 10 blocks</dd>
           </dl>
-          <div className="terms"><b>Fixed at launch:</b> name, ticker, pair and metadata. No one can mint, pause or pull the liquidity. The first 30 seconds carry a 99% fee that fades to {FEES.taxPct}%; wallets are capped at 1% for ten blocks.</div>
-        </aside>
-      </div>
+          <button className="b pri lg wide" type="submit" disabled={busy || !f.name.trim()} style={{ marginTop: 16 }}>{cta}</button>
+        </div>
+      </form>
     </main>
   );
 }

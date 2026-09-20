@@ -3,10 +3,10 @@
     <linearGradient id="horn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#6E4DFF"/><stop offset=".55" stop-color="#2BD6C4"/><stop offset="1" stop-color="#F5C043"/></linearGradient>
     <clipPath id="cone"><path d="M256 44 L346 456 Q256 500 166 456 Z"/></clipPath>
   </defs>
-  <rect width="512" height="512" rx="120" fill="#17132B"/>
+  <rect width="512" height="512" rx="120" fill="#14161C"/>
   <g clip-path="url(#cone)">
     <path d="M256 44 L346 456 Q256 500 166 456 Z" fill="url(#horn)"/>
-    <g fill="#17132B" opacity=".82">
+    <g fill="#14161C" opacity=".82">
       <path d="M120 470 L400 400 L400 430 L120 500 Z"/>
       <path d="M120 400 L400 330 L400 360 L120 430 Z"/>
       <path d="M120 330 L400 260 L400 290 L120 360 Z"/>
