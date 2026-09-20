@@ -28,6 +28,11 @@ const SEEDS: Seed[] = [
   { name: "Index Fund Andy", symbol: "ANDY", pair: stockPair("SPYon"), mcap: 132_000, chg: 4.2, holders: 640, ageH: 72, vol: 44_000, desc: "Boring on purpose. Fees paid in SPY, forever.", seed: 5 },
   { name: "Apple Bottom", symbol: "APLB", pair: stockPair("AAPLon"), mcap: 3_100, chg: null as unknown as number, holders: 3, ageH: 0.2, vol: 300, desc: "Just launched.", seed: 9 },
   { name: "Silver Surfer", symbol: "SURF", pair: stockPair("SLVon"), mcap: 15_600, chg: 21.0, holders: 120, ageH: 30, vol: 12_200, desc: "Precious metal, precious memes.", seed: 13 },
+  { name: "Hooked", symbol: "HOOK", pair: stockPair("UNI"), mcap: 27_400, chg: 14.2, holders: 156, ageH: 9, vol: 22_800, desc: "A coin that pays its holders in UNI. Built on the hook, paid in the horn.", seed: 17 },
+  { name: "Frog Dividend", symbol: "FDIV", pair: stockPair("PEPE"), mcap: 12_300, chg: 52.7, holders: 310, ageH: 6, vol: 15_900, desc: "Every trade sends PEPE to everyone holding. That is the whole idea.", seed: 19 },
+  { name: "Node Runner", symbol: "NODE", pair: stockPair("LINK"), mcap: 6_800, chg: -3.4, holders: 52, ageH: 41, vol: 2_900, desc: "Paid in LINK, like the oracles.", seed: 23 },
+  { name: "Gas Rebate", symbol: "GAS", pair: ethPair, mcap: 31_000, chg: 9.9, holders: 203, ageH: 28, vol: 19_400, desc: "Hold it and the fees hand your gas back in ETH.", seed: 29 },
+  { name: "Dividend Dog", symbol: "DDOG", pair: ethPair, mcap: 4_900, chg: -6.2, holders: 27, ageH: 12, vol: 1_700, desc: "Good boy. Pays in ETH.", seed: 31 },
 ];
 
 const rng = (seed: number) => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32; };

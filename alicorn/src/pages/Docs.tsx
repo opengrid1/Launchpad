@@ -5,7 +5,7 @@ import { ADDRESSES, BRAND, env, FEES } from "../lib/env";
 import { useQuotes } from "../lib/hooks";
 import { isTokenPair } from "../lib/stocks";
 
-/** How it pays, in the order money moves. */
+/** The terms, in the order money moves. */
 export default function Docs() {
   const { data: quotes } = useQuotes();
   const approved = quotes?.filter((q) => q.approved && !q.isNative) ?? [];
@@ -15,7 +15,7 @@ export default function Docs() {
   return (
     <main className="doc">
       <div className="eyebrow">Ethereum mainnet · Uniswap V4</div>
-      <h1 style={{ marginTop: 10 }}>How it <span className="horn-text">pays</span>.</h1>
+      <h1 style={{ marginTop: 12 }}>The <em>terms</em>.</h1>
       <p className="lead">One factory, one set of numbers for every coin. Nothing below can be changed per coin, by anyone.</p>
 
       <section>
@@ -31,7 +31,7 @@ export default function Docs() {
         <div className="n">2</div>
         <div>
           <h2>Launch in one transaction</h2>
-          <p>A fixed 1,000,000,000 supply goes into a single Uniswap V4 pool at about $3,000 of market cap. The position is held by the factory and cannot be withdrawn by the creator: the liquidity is burned forever. An optional first buy in ETH lands in the same transaction.</p>
+          <p>A fixed 1,000,000,000 supply goes into a single Uniswap V4 pool at about $3,000 of market cap. The liquidity is burned forever: the creator can never withdraw it. An optional first buy in ETH lands in the same transaction.</p>
         </div>
       </section>
 
@@ -40,11 +40,11 @@ export default function Docs() {
         <div>
           <h2>Every trade pays {FEES.taxPct}%, split three ways</h2>
           <div className="split">
-            <div className="horn"><b>{FEES.holderPct}%</b><span>to holders, in the pair asset, the moment the trade happens</span></div>
+            <div className="vio"><b>{FEES.holderPct}%</b><span>to holders, in the pair asset, as the trade settles</span></div>
             <div><b>{FEES.creatorPct}%</b><span>to the creator, claimable any time</span></div>
             <div><b>{FEES.platformPct}%</b><span>to the platform</span></div>
           </div>
-          <p>The hook takes the fee inside the pool on both buys and sells and credits it on the spot with a per-share accumulator. There is nothing to stake and nothing to harvest: hold the coin and your share accrues, claim it whenever you like, in the pair or straight as ETH when the pair has a route.</p>
+          <p>The hook takes the fee inside the pool on both buys and sells and credits it on the spot with a per-share accumulator. Nothing to stake, nothing to harvest: hold the coin and your share accrues; claim it whenever you like, in the pair or straight as ETH when the pair has a route.</p>
         </div>
       </section>
 
@@ -72,10 +72,10 @@ export default function Docs() {
             <dt>Factory</dt><dd><Copy value={ADDRESSES.factory} full /></dd>
             <dt>Hook</dt><dd><Copy value={ADDRESSES.hook} full /></dd>
             <dt>Router</dt><dd><Copy value={ADDRESSES.router} full /></dd>
-            <dt>Pool manager</dt><dd><Copy value={ADDRESSES.poolManager} full /></dd>
+            <dt>Pool mgr</dt><dd><Copy value={ADDRESSES.poolManager} full /></dd>
             <dt>X</dt><dd><a className="vi" href={BRAND.x} target="_blank" rel="noreferrer">{BRAND.x.replace("https://x.com/", "@")}</a></dd>
           </dl>
-          <p className="note">Source verified on Etherscan. Your holdings and claims are under <Link to="/me" className="vi">Rewards</Link>.</p>
+          <p className="note">Source verified on Etherscan. Your holdings and claims are under <Link to="/me" className="vi">Statement</Link>.</p>
         </div>
       </section>
     </main>

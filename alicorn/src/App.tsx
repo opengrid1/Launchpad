@@ -14,7 +14,7 @@ import Me from "./pages/Me";
 import Docs from "./pages/Docs";
 import Admin from "./pages/Admin";
 
-/** One thin top bar with underlined links; bottom tabs on phones. */
+/** A masthead with a double rule, like the top of a statement. Bottom tabs on phones. */
 export default function App() {
   const { address, isConnected } = useAccount();
   const admin = useIsAdmin();
@@ -27,25 +27,26 @@ export default function App() {
 
   return (
     <>
-      <header className="top">
-        <div className="top-in">
-          <Link to="/" className="brand"><img src="/icon.svg" alt="" width={30} height={30} /><span>Ali<em>corn</em></span></Link>
-          <nav className="topnav">
-            <NavLink to="/" end className={cls}>Coins</NavLink>
+      {DEMO && <div className="demo">Preview with sample coins. <em>Nothing here is on Ethereum yet.</em></div>}
+      <header className="mast">
+        <div className="mast-in">
+          <Link to="/" className="brand"><img src="/icon.svg" alt="" width={28} height={28} />Alicorn</Link>
+          <nav className="mnav">
+            <NavLink to="/" end className={cls}>Board</NavLink>
             <NavLink to="/launch" className={cls}>Launch</NavLink>
-            <NavLink to="/me" className={cls}>Rewards</NavLink>
-            <NavLink to="/docs" className={cls}>How it pays</NavLink>
+            <NavLink to="/me" className={cls}>Statement</NavLink>
+            <NavLink to="/docs" className={cls}>Terms</NavLink>
             {admin && <NavLink to="/admin" className={cls}>Admin</NavLink>}
           </nav>
-          <div className="top-r">
-            <span className="top-eth">ETH <b>{cfg ? usd(cfg.ethUsd) : "—"}</b></span>
-            <Link to="/launch" className="b horn sm" style={{ height: 36 }}>Launch a coin</Link>
-            <button className="b pri sm" style={{ height: 36 }} onClick={() => openWalletModal()}>{isConnected && address ? short(address) : "Connect"}</button>
+          <div className="mast-r">
+            <span className="mast-eth">ETH <b>{cfg ? usd(cfg.ethUsd) : "—"}</b></span>
+            <Link to="/launch" className="b sm">Launch a coin</Link>
+            <button className="b pri sm" onClick={() => openWalletModal()}>{isConnected && address ? short(address) : "Connect"}</button>
           </div>
         </div>
+        <div className="mast-rule"><i /></div>
       </header>
 
-      {DEMO && <div className="demo">Design preview with sample coins. <em>Nothing here is on Ethereum yet.</em></div>}
       <div className="wrap page">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -59,10 +60,10 @@ export default function App() {
       </div>
 
       <nav className="tabbar">
-        <NavLink to="/" end className={cls}><Icon name="receipt" size={20} />Coins</NavLink>
+        <NavLink to="/" end className={cls}><Icon name="receipt" size={20} />Board</NavLink>
         <NavLink to="/launch" className={cls}><Icon name="launch" size={20} />Launch</NavLink>
-        <NavLink to="/me" className={cls}><Icon name="wallet" size={20} />Rewards</NavLink>
-        <NavLink to={admin ? "/admin" : "/docs"} className={cls}>{admin ? <><Icon name="tune" size={20} />Admin</> : <><Icon name="book" size={20} />How</>}</NavLink>
+        <NavLink to="/me" className={cls}><Icon name="wallet" size={20} />Statement</NavLink>
+        <NavLink to={admin ? "/admin" : "/docs"} className={cls}>{admin ? <><Icon name="tune" size={20} />Admin</> : <><Icon name="book" size={20} />Terms</>}</NavLink>
       </nav>
 
       {toast && (
