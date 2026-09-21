@@ -4,7 +4,6 @@
     <clipPath id="cone"><path d="M256 44 L346 456 Q256 500 166 456 Z"/></clipPath>
   </defs>
   
-  <rect width="512" height="512" rx="120" fill="#0A0B0D"/>
   <g clip-path="url(#cone)">
     <path d="M256 44 L346 456 Q256 500 166 456 Z" fill="url(#horn)"/>
     <g fill="#0A0B0D" opacity=".82">

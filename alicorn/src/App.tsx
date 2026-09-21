@@ -51,7 +51,7 @@ export default function App() {
       {DEMO && <div className="demo">Preview with sample data. <em>Nothing here is on Ethereum yet.</em></div>}
       <div className="shell">
         <aside className="side">
-          <Link to="/" className="brand"><img src="/icon.svg" alt="" width={32} height={32} />Alicorn</Link>
+          <Link to="/" className="brand"><img src="/logo.svg" alt="" width={32} height={32} />Alicorn</Link>
           {nav}
           <Link to="/launch" className="b pri wide launchb">Launch a coin</Link>
           {foot}
@@ -60,7 +60,7 @@ export default function App() {
         <div className="mainc">
           <header className="topbar">
             <button className="burger" aria-label="Menu" onClick={() => setMenu(true)}><Icon name="menu" size={22} /></button>
-            <Link to="/" className="mbrand"><img src="/icon.svg" alt="" width={30} height={30} />Alicorn</Link>
+            <Link to="/" className="mbrand"><img src="/logo.svg" alt="" width={30} height={30} />Alicorn</Link>
             <form className="search" onSubmit={(e) => e.preventDefault()}>
               <Icon name="search" size={18} />
               <input placeholder="Search coins" value={q} onChange={(e) => search(e.target.value)} />
@@ -87,7 +87,7 @@ export default function App() {
         <>
           <div className="scrim menu" onClick={() => setMenu(false)} />
           <aside className="drawer">
-            <div className="drawer-h"><Link to="/" className="brand"><img src="/icon.svg" alt="" width={30} height={30} />Alicorn</Link><button className="burger" aria-label="Close" onClick={() => setMenu(false)}><Icon name="close" size={22} /></button></div>
+            <div className="drawer-h"><Link to="/" className="brand"><img src="/logo.svg" alt="" width={30} height={30} />Alicorn</Link><button className="burger" aria-label="Close" onClick={() => setMenu(false)}><Icon name="close" size={22} /></button></div>
             {nav}
             <Link to="/launch" className="b pri wide launchb">Launch a coin</Link>
             {foot}
