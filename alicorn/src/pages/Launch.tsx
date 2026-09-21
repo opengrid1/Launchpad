@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { parseEther, type Address } from "viem";
 import { useAccount } from "wagmi";
 
+import { Art } from "../components/Art";
+import { FeeBar } from "../components/FeeBar";
 import { PairPicker } from "../components/PairPicker";
 import { client, type PairPreview } from "../lib/client";
 import { DEPLOYED, FEES } from "../lib/env";
@@ -83,9 +85,11 @@ export default function Launch() {
 
   return (
     <main className="launch">
-      <h1>Launch a coin</h1>
-      <p className="sub">One transaction. 1,000,000,000 supply into a Uniswap V4 pool at about $3,000 market cap, paired with ETH, a listed token or stock, or any ERC-20 with a Uniswap pool. Liquidity is burned.</p>
-
+      <div className="launch-head">
+        <h1 className="display">Launch a coin</h1>
+        <p className="sub">One transaction. 1,000,000,000 supply into a Uniswap V4 pool at about $3,000 market cap, paired with ETH, a listed token or stock, or any ERC-20 with a Uniswap pool. Liquidity is burned.</p>
+      </div>
+      <div className="launch-grid">
       <form className="card" onSubmit={submit}>
         <div className="fs">
           <h3>Coin</h3>
@@ -146,6 +150,28 @@ export default function Launch() {
           <button className="b pri lg wide" type="submit" disabled={busy || !f.name.trim()} style={{ marginTop: 16 }}>{cta}</button>
         </div>
       </form>
+
+      <aside className="preview">
+        <div className={"coincard " + kind}>
+          <div className="cc-top">
+            <Art src={logo} name={f.name || "Your coin"} className="art" size={64} />
+            <span className={"chip " + kind}>{pairSym}</span>
+          </div>
+          <div className="cc-name display">{f.name || "Your coin"}</div>
+          <div className="cc-sym">{symbol}{selfRegisters ? " · new pair" : ""}</div>
+          <div className="cc-pays">Pays holders in <b>{pairSym}</b></div>
+          <FeeBar pair={pairSym} />
+          <dl className="cc-kv">
+            <dt>Opening cap</dt><dd>$3,000</dd>
+            <dt>Supply</dt><dd>1B, fixed</dd>
+            <dt>Liquidity</dt><dd>Burned</dd>
+            <dt>Your cut</dt><dd>{FEES.creatorPct}% of fees, forever</dd>
+          </dl>
+          {f.description.trim() && <p className="cc-desc">{f.description.trim()}</p>}
+        </div>
+        <p className="note">This is how the coin will appear on the board. Name, ticker, pair and metadata are fixed at launch.</p>
+      </aside>
+      </div>
     </main>
   );
 }

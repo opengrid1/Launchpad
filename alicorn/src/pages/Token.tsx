@@ -44,12 +44,13 @@ function Coin({ t }: { t: Token }) {
 
   return (
     <main>
-      <div className="tk-h">
-        <Art src={t.metadata?.logo} name={t.name} className="art" />
-        <div>
-          <h1>{t.name}<span>{t.symbol}</span>{isPinned(t.address) && <span className="chip official">Official</span>}</h1>
+      <div className={"tk-h " + kind}>
+        <div className="glow" aria-hidden />
+        <Art src={t.metadata?.logo} name={t.name} className="art" size={84} />
+        <div className="id">
+          <h1 className="display">{t.name}<span>{t.symbol}</span>{isPinned(t.address) && <span className="chip official">Official</span>}</h1>
+          <div className="pays">Pays holders in <span className={"chip " + kind}>{pair.symbol}</span>{t.rewards && <em>{num(pw(t.rewards.holders), 4)} {pair.symbol} paid so far</em>}</div>
           <div className="meta">
-            <span className={"chip " + kind}>Pays in {pair.symbol}</span>
             <span>Created {dateShort(t.createdAt)} by <a href={`${env.explorerUrl}/address/${t.creator}`} target="_blank" rel="noreferrer">{short(t.creator)}</a></span>
             <Copy value={t.address} label="CA" />
             {links.map((l) => <a key={l.l} href={l.u} target="_blank" rel="noreferrer">{l.l}</a>)}
@@ -57,7 +58,7 @@ function Coin({ t }: { t: Token }) {
         </div>
         <div className="price">
           <div className="v">{usd(t.priceUsd)}</div>
-          <div className="c"><b className={chg == null ? "faint" : chg >= 0 ? "up" : "down"}>{chg == null ? "no 24h data" : `${pct(chg)} 24h`}</b>{hype(pw(t.priceWei || "0"), 6)} {pair.symbol}</div>
+          <div className="c"><b className={"chip " + (chg == null ? "" : chg >= 0 ? "up" : "down")}>{chg == null ? "no 24h data" : `${pct(chg)} 24h`}</b><span>{hype(pw(t.priceWei || "0"), 6)} {pair.symbol}</span></div>
         </div>
       </div>
 

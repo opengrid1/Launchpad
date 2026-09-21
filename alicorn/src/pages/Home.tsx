@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Art } from "../components/Art";
+import { FeeBar } from "../components/FeeBar";
+import { Icon } from "../components/Icon";
+import { Spark } from "../components/Spark";
 import { DEPLOYED, FEES, isHidden, isPinned } from "../lib/env";
 import { ago, num, pct, usd, wei } from "../lib/format";
 import { useQuotes, useTokens, type Token } from "../lib/hooks";
@@ -73,15 +76,15 @@ export default function Home() {
   return (
     <main>
       <section className="hero">
-        <div>
-          <h1>Launch a coin paired with <span>anything</span>. Holders get paid in it.</h1>
+        <div className="hero-copy">
+          <div className="eyebrow-line"><span className="dot live" />Ethereum mainnet · Uniswap V4</div>
+          <h1 className="display">Launch a coin paired with <span>anything</span>.<br />Holders get paid in it.</h1>
           <p>ETH, UNI, LINK, PEPE, a tokenized stock, or any ERC-20 with a Uniswap pool. Every trade pays {FEES.taxPct}%, and {FEES.holderPct}% of it goes to holders in the pair asset as the trade settles.</p>
-          <div className="cta"><Link to="/launch" className="b pri">Launch a coin</Link><Link to="/docs" className="b">How it works</Link></div>
+          <div className="cta"><Link to="/launch" className="b pri lg"><Icon name="launch" size={18} />Launch a coin</Link><Link to="/docs" className="b lg">How it works</Link></div>
         </div>
         <div className="tiles">
-          <div><span>Paid to holders</span><b className="vi">{usd(totals.paid, { compact: true })}</b></div>
-          <div><span>24h volume</span><b>{usd(totals.vol, { compact: true })}</b></div>
-          <div><span>Coins</span><b>{num(totals.n, 0)}</b></div>
+          <div className="hi"><span><Icon name="wallet" size={15} />Paid to holders</span><b className="vi">{usd(totals.paid, { compact: true })}</b><small>lifetime, in pair assets</small></div>
+          <div><span><Icon name="receipt" size={15} />24h volume</span><b>{usd(totals.vol, { compact: true })}</b><small>{num(totals.n, 0)} coins · {num(totals.holders, 0)} holders</small></div>
         </div>
       </section>
       <div className="home">
@@ -108,14 +111,15 @@ export default function Home() {
                   <th>Pays in</th>
                   <th className="r"><button className={sort === "price" ? "on" : ""} onClick={head("price")}>Price{arrow("price")}</button></th>
                   <th className="r c-hide-sm"><button className={sort === "chg" ? "on" : ""} onClick={head("chg")}>24h{arrow("chg")}</button></th>
+                  <th className="c-hide-md spark-h">7d</th>
                   <th className="r"><button className={sort === "mcap" ? "on" : ""} onClick={head("mcap")}>Market cap{arrow("mcap")}</button></th>
                   <th className="r c-hide-md"><button className={sort === "vol" ? "on" : ""} onClick={head("vol")}>Volume 24h{arrow("vol")}</button></th>
-                  <th className="r c-hide-md"><button className={sort === "holders" ? "on" : ""} onClick={head("holders")}>Holders{arrow("holders")}</button></th>
+                  <th className="r c-hide-md c-hide-lg"><button className={sort === "holders" ? "on" : ""} onClick={head("holders")}>Holders{arrow("holders")}</button></th>
                   <th className="r c-hide-sm"><button className={sort === "paid" ? "on" : ""} onClick={head("paid")}>Paid to holders{arrow("paid")}</button></th>
                 </tr>
               </thead>
               <tbody>
-                {list.length === 0 && <tr><td colSpan={8}><div className="empty">{tokens?.length ? "No coins match." : "No coins yet."}</div></td></tr>}
+                {list.length === 0 && <tr><td colSpan={9}><div className="empty">{tokens?.length ? "No coins match." : "No coins yet."}</div></td></tr>}
                 {list.map((t) => {
                   const c = t.priceChange24hPct;
                   const kind = kindOf(t.pair.isNative, t.pair.address, t.pair.v3Fee);
@@ -125,12 +129,13 @@ export default function Home() {
                         <Art src={t.metadata?.logo} name={t.name} className="art" />
                         <span style={{ minWidth: 0 }}><b>{t.name}</b><small><span>{t.symbol}</span>{isPinned(t.address) && <span className="chip official" style={{ height: 18, fontSize: 10.5 }}>Official</span>}<span>{ago(t.createdAt)}</span></small></span>
                       </Link></td>
-                      <td><span className={"chip " + kind}>{t.pair.symbol}</span></td>
+                      <td><span className={"chip pair " + kind}><i className={"av " + kind}>{t.pair.symbol.replace(/on$/, "").slice(0, 4)}</i>{t.pair.symbol}</span></td>
                       <td className="r">{usd(t.priceUsd)}</td>
-                      <td className={"r c-hide-sm " + (c == null ? "faint" : c >= 0 ? "up" : "down")}>{c == null ? "—" : pct(c)}</td>
+                      <td className="r c-hide-sm"><span className={"pill " + (c == null ? "" : c >= 0 ? "up" : "down")}>{c == null ? "new" : pct(c)}</span></td>
+                      <td className="c-hide-md spark-c"><Spark token={t.address} up={c == null ? null : c >= 0} width={96} height={30} /></td>
                       <td className="r">{usd(t.marketCapUsd, { compact: true })}</td>
                       <td className="r c-hide-md">{usd(volUsd(t), { compact: true })}</td>
-                      <td className="r c-hide-md">{num(t.holderCount, 0)}</td>
+                      <td className="r c-hide-md c-hide-lg">{num(t.holderCount, 0)}</td>
                       <td className="r c-hide-sm">{usd(paidUsd(t), { compact: true })}<small>{t.rewards ? `${num(wei(t.rewards.holders, t.pair.decimals), 4)} ${t.pair.symbol}` : "—"}</small></td>
                     </tr>
                   );
@@ -145,9 +150,10 @@ export default function Home() {
         <div className="card accent">
           <div className="card-h"><h2>How it works</h2><Link to="/docs" className="b ghost sm">Docs</Link></div>
           <div className="card-b steps">
-            <div><span>1</span><p><b>Pick a pair asset.</b> ETH, UNI, LINK, PEPE, a tokenized stock, or any ERC-20 with a Uniswap pool. The coin is priced in it.</p></div>
-            <div><span>2</span><p><b>Every trade pays {FEES.taxPct}%.</b> {FEES.holderPct}% goes to holders in the pair asset, {FEES.creatorPct}% to the creator, {FEES.platformPct}% to the platform.</p></div>
-            <div><span>3</span><p><b>Hold and claim.</b> Rewards accrue per trade. No staking, no lockup. Liquidity is burned at launch.</p></div>
+            <div><span>1</span><p><b>Pick a pair asset.</b> ETH, UNI, LINK, PEPE, a tokenized stock, or paste any ERC-20 with a Uniswap pool. The coin is priced in it.</p></div>
+            <div><span>2</span><p><b>Every trade pays {FEES.taxPct}%</b>, split the same way for every coin:</p></div>
+            <FeeBar compact />
+            <div><span>3</span><p><b>Hold and claim.</b> Rewards accrue per trade in the pair asset. No staking, no lockup. Liquidity is burned at launch.</p></div>
           </div>
           <div style={{ padding: "0 14px 14px" }}><Link to="/launch" className="b pri wide">Launch a coin</Link></div>
         </div>
