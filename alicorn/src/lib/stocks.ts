@@ -268,3 +268,9 @@ export function routeFor(pair: Address): Hex | null {
 
 /** True when ETH can be routed into and out of this pair on-chain. */
 export const hasEthRoute = (pair: Address) => routeFor(pair) !== null;
+
+/** The route for a self-registered pair: one WETH -> pair hop on the V3 fee
+ *  tier the registry picked. */
+export function v3RouteFor(pair: Address, fee: number): Hex {
+  return encodeAbiParameters([{ type: "bytes" }, KEY_T], [encodePacked(["address", "uint24", "address"], [WETH, fee, pair]), ZERO_KEY]);
+}

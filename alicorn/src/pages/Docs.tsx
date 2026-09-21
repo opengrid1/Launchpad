@@ -14,12 +14,13 @@ export default function Docs() {
   return (
     <main className="doc">
       <h1>Docs</h1>
-      <p className="lead">Alicorn is a coin launchpad on Ethereum, built on Uniswap V4. Every coin is paired with an asset of the creator's choice, and every trade pays the coin's holders in that asset. One factory, one set of rules for every coin.</p>
+      <p className="lead">Alicorn is a coin launchpad on Ethereum, built on Uniswap V4. Every coin is paired with an asset of the creator's choice, any ERC-20 with a Uniswap pool, and every trade pays the coin's holders in that asset. One factory, one set of rules for every coin.</p>
 
       <section>
         <h2>Pair assets</h2>
-        <p>A coin is launched against a pair asset: ETH, a token like {tokens.slice(0, 4).map((t) => t.symbol).join(", ") || "UNI, LINK, PEPE"}, or a tokenized stock like NVDAon. The pool holds the pair on the other side, so the coin is priced in it and every fee is collected in it. {tokens.length} tokens and {stocks.length} stocks are approved; {routable.length} have an on-chain route from ETH.</p>
-        <p>Pairs are added by the admin. Each needs 18 decimals and a USD price on file, from a Chainlink feed where one exists, because the price sizes the opening pool.</p>
+        <p>A coin is launched against a pair asset: ETH, a token like {tokens.slice(0, 4).map((t) => t.symbol).join(", ") || "UNI, LINK, PEPE"}, a tokenized stock like NVDAon, or any other ERC-20 on Ethereum. The pool holds the pair on the other side, so the coin is priced in it and every fee is collected in it. {tokens.length} tokens and {stocks.length} stocks are listed; {routable.length} have an on-chain route from ETH.</p>
+        <p><b>Any token.</b> Paste a contract address on the launch page. If the token has a Uniswap V3 pool against WETH holding at least 1 WETH, the launch registers it in the same transaction: the pool's spot price (times Chainlink ETH/USD) sizes the opening pool and prices the coin, and the same pool is the ETH route for buys, sells and ETH claims. Tokens with up to 18 decimals work. The admin can block a token.</p>
+        <p><b>Listed pairs</b> are curated by the admin with a USD price on file, from a Chainlink feed where one exists. Tokenized stocks trade against USDC rather than WETH, so they are listed this way.</p>
       </section>
 
       <section>
@@ -54,6 +55,7 @@ export default function Docs() {
           <dl className="kv" style={{ gridTemplateColumns: "120px 1fr" }}>
             <dt>Chain</dt><dd style={{ textAlign: "left" }}>Ethereum mainnet ({env.chainId})</dd>
             <dt>Factory</dt><dd style={{ textAlign: "left" }}><Copy value={ADDRESSES.factory} full /></dd>
+            <dt>Pair registry</dt><dd style={{ textAlign: "left" }}><Copy value={ADDRESSES.pairs} full /></dd>
             <dt>Hook</dt><dd style={{ textAlign: "left" }}><Copy value={ADDRESSES.hook} full /></dd>
             <dt>Router</dt><dd style={{ textAlign: "left" }}><Copy value={ADDRESSES.router} full /></dd>
             <dt>Pool manager</dt><dd style={{ textAlign: "left" }}><Copy value={ADDRESSES.poolManager} full /></dd>

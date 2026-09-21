@@ -38,7 +38,7 @@ interface IAlicornHook {
 contract AlicornToken is ERC20, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    uint256 private constant ACC_PRECISION = 1e24;
+    uint256 private constant ACC_PRECISION = 1e30;
     uint16 internal constant BPS = 10_000;
 
     /// @notice Wallet credited as the coin's creator (immutable attribution).

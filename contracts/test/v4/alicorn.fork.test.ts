@@ -12,12 +12,16 @@ const SLV = "0xF3e4872e6a4cF365888D93b6146a2bAA7348F1A4";
 const UNI = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
 const UNI_FEED = "0x553303d460EE0afB37EdFf9bE42922D8FF63220e"; // Chainlink UNI/USD
 const USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+const V3_FACTORY = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
+const ETH_USD_FEED = "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419";
 const EMPTY_KEY = { currency0: ethers.ZeroAddress, currency1: ethers.ZeroAddress, fee: 0, tickSpacing: 0, hooks: ethers.ZeroAddress };
 const KEY_T = "tuple(address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks)";
 // Route for SLVon: WETH -(V3 0.05%)-> USDC -(V3 1%)-> SLVon, no V4 leg.
 const NVDA_ROUTE = ethers.AbiCoder.defaultAbiCoder().encode(["bytes", KEY_T], [ethers.solidityPacked(["address", "uint24", "address", "uint24", "address"], [WETH, 500, USDC, 10000, SLV]), EMPTY_KEY]);
 // Route for UNI: WETH -(V3 0.3%)-> UNI.
 const UNI_ROUTE = ethers.AbiCoder.defaultAbiCoder().encode(["bytes", KEY_T], [ethers.solidityPacked(["address", "uint24", "address"], [WETH, 3000, UNI]), EMPTY_KEY]);
+// Route for USDC (self-registered): WETH -(V3 0.05%)-> USDC, the deepest WETH/USDC pool.
+const USDC_ROUTE = ethers.AbiCoder.defaultAbiCoder().encode(["bytes", KEY_T], [ethers.solidityPacked(["address", "uint24", "address"], [WETH, 500, USDC]), EMPTY_KEY]);
 const NO_ROUTE = "0x";
 const ETH_USD_8 = 4_000n * 10n ** 8n;
 const NVDA_USD_8 = 60n * 10n ** 8n; // SLVon
@@ -46,17 +50,19 @@ async function deployAll(admin: any) {
   await (await c2.deploy(salt, hookInit)).wait();
   const hook = await ethers.getContractAt("AlicornHook", hookAddr);
 
+  const pairs = await (await ethers.getContractFactory("AlicornPairs")).deploy(admin.address, admin.address, WETH, V3_FACTORY, ETH_USD_FEED, ETH_USD_8);
+  await pairs.waitForDeployment();
   const factory = await (await ethers.getContractFactory("AlicornFactory")).deploy(
-    admin.address, admin.address, POOL_MANAGER, hookAddr, WETH, ETH_USD_8, TAX_BPS, 5000, 3000,
+    admin.address, admin.address, POOL_MANAGER, hookAddr, WETH, await pairs.getAddress(), TAX_BPS, 5000, 3000,
   );
   await factory.waitForDeployment();
   await (await hook.connect(admin).setFactory(await factory.getAddress())).wait();
   const router = await (await ethers.getContractFactory("AlicornRouter")).deploy(POOL_MANAGER, await factory.getAddress(), WETH, ROUTER02);
   await router.waitForDeployment();
   await (await factory.connect(admin).setConverter(await router.getAddress())).wait();
-  await (await factory.connect(admin).setQuoteAsset(SLV, true, NVDA_USD_8, ethers.ZeroAddress)).wait();
-  await (await factory.connect(admin).setQuoteAsset(UNI, true, 8n * 10n ** 8n, UNI_FEED)).wait();
-  return { hook, factory, router };
+  await (await pairs.connect(admin).setQuoteAsset(SLV, true, NVDA_USD_8, ethers.ZeroAddress)).wait();
+  await (await pairs.connect(admin).setQuoteAsset(UNI, true, 8n * 10n ** 8n, UNI_FEED)).wait();
+  return { hook, factory, router, pairs };
 }
 
 async function launch(factory: any, creator: any, pair: string, ethIn = 0n, route = NO_ROUTE) {
@@ -174,9 +180,9 @@ describe("Alicorn on Ethereum mainnet (fork)", function () {
 
   it("stock with no V4 pool yet (ULon): the fee is held as a V4 claim, delivered on the next swap or when someone claims", async () => {
     const [admin, creator, trader] = await ethers.getSigners();
-    const { hook, factory, router } = await deployAll(admin);
+    const { hook, factory, router, pairs } = await deployAll(admin);
     const UL = "0x1598f7d25d0b0e1261eAB9BD2AD7924291EB26bB";
-    await (await factory.connect(admin).setQuoteAsset(UL, true, 64n * 10n ** 8n, ethers.ZeroAddress)).wait();
+    await (await pairs.connect(admin).setQuoteAsset(UL, true, 64n * 10n ** 8n, ethers.ZeroAddress)).wait();
     const coin = await launch(factory, creator, UL);
     const coinAddr = await coin.getAddress();
     await pastSnipe();
@@ -221,9 +227,9 @@ describe("Alicorn on Ethereum mainnet (fork)", function () {
 
   it("UNI pair (any approved token): ETH routes through the UNI/WETH V3 pool, fees and rewards land in UNI, price from the Chainlink feed", async () => {
     const [admin, creator, trader] = await ethers.getSigners();
-    const { factory, router } = await deployAll(admin);
+    const { factory, router, pairs } = await deployAll(admin);
     // The feed prices the pair, not the admin's placeholder.
-    const px = await factory.pairUsdPrice(UNI);
+    const px = await pairs.pairUsdPrice(UNI);
     expect(px).to.be.gt(1n * 10n ** 8n);
     expect(px).to.not.equal(8n * 10n ** 8n);
     const coin = await launch(factory, creator, UNI, ethers.parseEther("0.1"), UNI_ROUTE);
@@ -286,25 +292,32 @@ describe("Alicorn on Ethereum mainnet (fork)", function () {
 
   it("admin: pause, pair curation with a Chainlink feed, admin-only liquidity recovery, ownership renounce keeps the admin", async () => {
     const [admin, creator, stranger] = await ethers.getSigners();
-    const { factory, hook } = await deployAll(admin);
+    const { factory, hook, pairs } = await deployAll(admin);
 
     await expect(factory.connect(stranger).pause()).to.be.revertedWithCustomError(factory, "NotAdmin");
     await (await factory.connect(admin).pause()).wait();
     await expect(factory.connect(creator).launch({ name: "P", symbol: "P", metadataURI: "", pair: WETH }, ethers.ZeroHash, NO_ROUTE)).to.be.revertedWithCustomError(factory, "LaunchesPaused");
     await (await factory.connect(admin).resume()).wait();
 
-    // Unapproved pair is refused; a feed overrides the static price; stale feed falls back.
-    await expect(factory.connect(creator).launch({ name: "X", symbol: "X", metadataURI: "", pair: creator.address }, ethers.ZeroHash, NO_ROUTE)).to.be.revertedWithCustomError(factory, "QuoteNotApproved");
+    // A non-token (EOA) cannot register; a token without a deep WETH pool cannot either.
+    await expect(factory.connect(creator).launch({ name: "X", symbol: "X", metadataURI: "", pair: creator.address }, ethers.ZeroHash, NO_ROUTE)).to.be.reverted;
+    const dust = await (await ethers.getContractFactory("AlicornToken")).deploy("Dust", "DUST", "", SUPPLY, creator.address, creator.address, WETH, POOL_MANAGER, 5000, 3000);
+    await expect(pairs.register(await dust.getAddress())).to.be.revertedWithCustomError(pairs, "NoPool");
+    // A feed overrides the static price; stale feed falls back.
     const feed = await (await ethers.getContractFactory("MockAggregator")).deploy(250n * 10n ** 8n, 8);
-    await (await factory.connect(admin).setQuoteAsset(SLV, true, NVDA_USD_8, await feed.getAddress())).wait();
-    expect(await factory.pairUsdPrice(SLV)).to.equal(250n * 10n ** 8n);
+    await (await pairs.connect(admin).setQuoteAsset(SLV, true, NVDA_USD_8, await feed.getAddress())).wait();
+    expect(await pairs.pairUsdPrice(SLV)).to.equal(250n * 10n ** 8n);
     const now = (await ethers.provider.getBlock("latest"))!.timestamp;
     await (await feed.setUpdatedAt(now - 8 * 24 * 3600)).wait(); // stale: back to the admin price
-    expect(await factory.pairUsdPrice(SLV)).to.equal(NVDA_USD_8);
-    await expect(factory.connect(stranger).setQuoteAsset(SLV, false, 0, ethers.ZeroAddress)).to.be.revertedWithCustomError(factory, "NotAdmin");
-    await (await factory.connect(admin).setQuoteAsset(SLV, false, 0, ethers.ZeroAddress)).wait();
-    await expect(factory.connect(creator).launch({ name: "X", symbol: "X", metadataURI: "", pair: SLV }, ethers.ZeroHash, NO_ROUTE)).to.be.revertedWithCustomError(factory, "QuoteNotApproved");
-    expect(await factory.quoteCount()).to.equal(3n); // WETH, SLVon, UNI
+    expect(await pairs.pairUsdPrice(SLV)).to.equal(NVDA_USD_8);
+    await expect(pairs.connect(stranger).setQuoteAsset(SLV, false, 0, ethers.ZeroAddress)).to.be.revertedWithCustomError(pairs, "NotAdmin");
+    await (await pairs.connect(admin).setQuoteAsset(SLV, false, 0, ethers.ZeroAddress)).wait();
+    await expect(factory.connect(creator).launch({ name: "X", symbol: "X", metadataURI: "", pair: SLV }, ethers.ZeroHash, NO_ROUTE)).to.be.revertedWithCustomError(pairs, "Blocked");
+    // Admin can block a self-registrable token outright.
+    await (await pairs.connect(admin).setBlocked(USDC, true)).wait();
+    await expect(factory.connect(creator).launch({ name: "X", symbol: "X", metadataURI: "", pair: USDC }, ethers.ZeroHash, NO_ROUTE)).to.be.revertedWithCustomError(pairs, "Blocked");
+    await (await pairs.connect(admin).setBlocked(USDC, false)).wait();
+    expect(await pairs.quoteCount()).to.equal(3n); // WETH, SLVon, UNI
 
     // No collect / withdraw on the factory ABI; renounce keeps admin powers.
     // Liquidity recovery is admin-only: pull half of a launch position to any wallet.
@@ -320,8 +333,67 @@ describe("Alicorn on Ethereum mainnet (fork)", function () {
     expect(await lc.balanceOf(stranger.address)).to.be.gt(0n);
     await (await factory.connect(admin).renounceOwnership()).wait();
     expect(await factory.owner()).to.equal(ethers.ZeroAddress);
+    await (await pairs.connect(admin).renounceOwnership()).wait();
+    expect(await pairs.owner()).to.equal(ethers.ZeroAddress);
     await (await factory.connect(admin).setFeeRecipient(stranger.address)).wait();
     expect(await factory.feeRecipient()).to.equal(stranger.address);
     await expect(hook.connect(admin).setFactory(stranger.address)).to.be.revertedWithCustomError(hook, "AlreadySet");
   });
+  it("any token: USDC (6 decimals) registers itself at launch from its deepest WETH pool; priced from the pool; ETH routes through it; fees and rewards in USDC; claim as ETH", async () => {
+    const [admin, creator, trader] = await ethers.getSigners();
+    const { factory, router, pairs } = await deployAll(admin);
+    const usdc = new ethers.Contract(USDC, ERC20, admin);
+
+    // Preview: not registered yet, but registrable from the 0.05% WETH/USDC pool at about $1.
+    const pv = await pairs.preview(USDC);
+    expect(pv.ok).to.equal(true);
+    expect(pv.approved).to.equal(false);
+    expect(pv.decimals).to.equal(6);
+    expect(pv.v3Fee).to.equal(500);
+    expect(pv.poolWeth).to.be.gt(ethers.parseEther("1"));
+    expect(pv.usdPrice8).to.be.closeTo(10n ** 8n, 3n * 10n ** 6n);
+
+    // Launch with a first buy: the factory registers USDC in the same transaction.
+    const ethIn = ethers.parseEther("0.01");
+    const coin = await launch(factory, creator, USDC, ethIn, USDC_ROUTE);
+    const coinAddr = await coin.getAddress();
+    const q = await pairs.quoteAssets(USDC);
+    expect(q.approved).to.equal(true);
+    expect(q.v3Fee).to.equal(500);
+    expect(await pairs.routeOf(USDC)).to.equal(USDC_ROUTE);
+    expect(await pairs.quoteCount()).to.equal(4n);
+    // Opening cap is $3,000: 0.01 ETH buys about ethUsd/100 / 3000 of the supply.
+    const ethUsd = Number(await pairs.ethUsdPrice()) / 1e8;
+    const expectShare = (ethUsd * 0.01) / 3000;
+    const got = Number(await coin.balanceOf(creator.address)) / 1e27;
+    expect(got).to.be.gt(expectShare * 0.6);
+    expect(got).to.be.lt(expectShare * 1.05);
+
+    await pastSnipe();
+    const before = await usdc.balanceOf(coinAddr);
+    await (await router.connect(trader).buy(coinAddr, USDC_ROUTE, 0, { value: ethers.parseEther("0.05") })).wait();
+    expect(await coin.balanceOf(trader.address)).to.be.gt(0n);
+    const fee = (await usdc.balanceOf(coinAddr)) - before;
+    // 4% of ~0.05 ETH worth of USDC, 6 decimals.
+    expect(Number(fee) / 1e6).to.be.closeTo(0.05 * ethUsd * 0.04, 0.05 * ethUsd * 0.04 * 0.2);
+    expect(await coin.totalHolderRewards()).to.be.closeTo((fee * 3n) / 10n, fee / 50n);
+
+    // Holder rewards accrue in USDC with 6-decimal precision; creator claims as ETH.
+    const pending = await coin.pendingRewards(creator.address);
+    expect(pending).to.be.gt(0n);
+    const ub = await usdc.balanceOf(creator.address);
+    await (await coin.connect(creator).claimRewards()).wait();
+    expect((await usdc.balanceOf(creator.address)) - ub).to.equal(pending);
+    const eb = await ethers.provider.getBalance(creator.address);
+    const rc = await (await coin.connect(creator).claimCreatorFees(true, 0, USDC_ROUTE)).wait();
+    expect((await ethers.provider.getBalance(creator.address)) + rc!.gasUsed * rc!.gasPrice - eb).to.be.gt(0n);
+
+    // Selling routes back USDC -> WETH -> ETH.
+    const bal = await coin.balanceOf(trader.address);
+    await (await coin.connect(trader).approve(await router.getAddress(), bal)).wait();
+    const tb = await ethers.provider.getBalance(trader.address);
+    const rs = await (await router.connect(trader).sell(coinAddr, bal / 2n, USDC_ROUTE, 0)).wait();
+    expect((await ethers.provider.getBalance(trader.address)) + rs!.gasUsed * rs!.gasPrice - tb).to.be.gt(0n);
+  });
+
 });

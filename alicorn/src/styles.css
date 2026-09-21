@@ -134,7 +134,7 @@ textarea.in{height:auto;min-height:88px;padding:9px 11px;resize:vertical}
 .pairlist a .n{text-align:right;font-size:12.5px}
 .pairlist a .n small{display:block}
 .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:600;color:#fff;background:var(--ink2)}
-.av.eth{background:#2B4DBE} .av.token{background:var(--brand)} .av.stock{background:#146B47}
+.av.eth{background:#2B4DBE} .av.token{background:var(--brand)} .av.stock{background:#146B47} .av.any{background:#B8562F}
 .steps{display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--ink2)}
 .steps div{display:grid;grid-template-columns:22px 1fr;gap:8px}
 .steps span{width:22px;height:22px;border-radius:50%;background:var(--bg);color:var(--ink);font-size:11.5px;font-weight:600;display:grid;place-items:center;border:1px solid var(--line)}
@@ -228,6 +228,7 @@ textarea.in{height:auto;min-height:88px;padding:9px 11px;resize:vertical}
 .picker .opt:last-child{border-bottom:0}
 .picker .opt:hover{background:var(--card2)}
 .picker .opt.on{background:var(--brand-soft)}
+.picker .list .empty{padding:18px 12px}
 .picker .opt b{font-weight:500}
 .picker .opt small{display:block;color:var(--mute);font-size:11.5px}
 .picker .opt .px{font-size:12.5px;color:var(--ink2)}

@@ -33,10 +33,10 @@ export default function Me() {
   if (!isConnected || !me) return <main className="gate"><h1>Rewards</h1><p>Connect a wallet to see what every coin you hold has paid you, and claim it.</p><button className="b pri" onClick={() => openWalletModal()}>Connect wallet</button></main>;
 
   const value = data?.held.reduce((s, h) => s + wei(h.bal) * Number(h.t.priceUsd), 0) ?? 0;
-  const owed = data ? [...data.rewards.entries()].reduce((s, [addr, r]) => { const t = tokens?.find((x) => x.address.toLowerCase() === addr); return s + (r && t ? (wei(r.pending) + (r.isCreator ? wei(r.creatorFees) : 0)) * t.pair.usd : 0); }, 0) : 0;
+  const owed = data ? [...data.rewards.entries()].reduce((s, [addr, r]) => { const t = tokens?.find((x) => x.address.toLowerCase() === addr); return s + (r && t ? (wei(r.pending, t.pair.decimals) + (r.isCreator ? wei(r.creatorFees, t.pair.decimals) : 0)) * t.pair.usd : 0); }, 0) : 0;
   const refresh = () => { qc.invalidateQueries({ queryKey: ["me"] }); qc.invalidateQueries({ queryKey: ["rewards"] }); };
   const claim = (label: string, fn: () => Promise<`0x${string}`>) => async () => { await ensureWallet(); const ok = await runTx(label, fn); if (ok) refresh(); };
-  const kindOf = (t: { pair: { isNative: boolean; address: string } }) => (t.pair.isNative ? "eth" : isTokenPair(t.pair.address) ? "token" : "stock");
+  const kindOf = (t: { pair: { isNative: boolean; address: string; v3Fee?: number } }) => (t.pair.isNative ? "eth" : isTokenPair(t.pair.address) || t.pair.v3Fee ? "token" : "stock");
 
   return (
     <main>
@@ -59,7 +59,7 @@ export default function Me() {
                 <td><span className={"chip " + kindOf(t)}>{t.pair.symbol}</span></td>
                 <td className="r">{num(wei(bal))}</td>
                 <td className="r">{usd(wei(bal) * Number(t.priceUsd))}</td>
-                <td className={"r " + (p > 0n ? "up" : "faint")}>{hype(wei(p), 5)} {t.pair.symbol}<small>{usd(wei(p) * t.pair.usd)}</small></td>
+                <td className={"r " + (p > 0n ? "up" : "faint")}>{hype(wei(p, t.pair.decimals), 5)} {t.pair.symbol}<small>{usd(wei(p, t.pair.decimals) * t.pair.usd)}</small></td>
                 <td className="r">{p > 0n ? <button className="b pri sm" onClick={claim("Claim rewards", () => client.claimRewards(t.address, eth))}>Claim{eth ? " as ETH" : ""}</button> : <Link className="b ghost sm" to={`/t/${t.address}`}>Trade</Link>}</td>
               </tr>); })}</tbody>
           </table></div>
@@ -76,10 +76,10 @@ export default function Me() {
                 <td><Link to={`/t/${t.address}`} className="coin"><Art src={t.metadata?.logo} name={t.name} className="art" /><span><b>{t.name}</b><small>{t.symbol}</small></span></Link></td>
                 <td><span className={"chip " + kindOf(t)}>{t.pair.symbol}</span></td>
                 <td className="r">{usd(t.marketCapUsd, { compact: true })}</td>
-                <td className="r">{usd(wei(t.volume24hWei) * t.pair.usd, { compact: true })}</td>
-                <td className="r vi">{usd(wei(r?.totalHolder ?? 0n) * t.pair.usd, { compact: true })}</td>
-                <td className={"r " + (fees > 0n ? "up" : "faint")}>{hype(wei(fees), 5)} {t.pair.symbol}</td>
-                <td className="r dim">{hype(wei(r?.totalCreator ?? 0n), 4)}</td>
+                <td className="r">{usd(wei(t.volume24hWei, t.pair.decimals) * t.pair.usd, { compact: true })}</td>
+                <td className="r vi">{usd(wei(r?.totalHolder ?? 0n, t.pair.decimals) * t.pair.usd, { compact: true })}</td>
+                <td className={"r " + (fees > 0n ? "up" : "faint")}>{hype(wei(fees, t.pair.decimals), 5)} {t.pair.symbol}</td>
+                <td className="r dim">{hype(wei(r?.totalCreator ?? 0n, t.pair.decimals), 4)}</td>
                 <td className="r"><button className="b pri sm" disabled={fees === 0n} onClick={claim("Claim creator fees", () => client.claimCreatorFees(t.address, eth))}>Claim{eth ? " as ETH" : ""}</button></td>
               </tr>); })}</tbody>
           </table></div>

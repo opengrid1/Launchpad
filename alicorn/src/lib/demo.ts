@@ -3,7 +3,7 @@ import { parseEther, type Address, type Hex } from "viem";
 
 const INTERVAL_SECONDS: Record<CandleInterval, number> = { "1m": 60, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "4h": 14400, "1d": 86400, "1w": 604800 };
 
-import { StockPadClient, type ConfigView, type PairInfo, type QuoteView, type RewardsView, type StockToken } from "./client";
+import { StockPadClient, type ConfigView, type PairInfo, type PairPreview, type QuoteView, type RewardsView, type StockToken } from "./client";
 import { FEES } from "./env";
 import { PAIRS as STOCKS, WETH, hasEthRoute } from "./stocks";
 
@@ -67,6 +67,12 @@ export class DemoClient extends StockPadClient {
   override async assetUsdPrice(asset: Address): Promise<number> { return asset.toLowerCase() === WETH ? ETH_USD : STOCKS.find((s) => s.address.toLowerCase() === asset.toLowerCase())?.usd ?? 0; }
   override async pairInfo(pair: Address): Promise<PairInfo> { return pair.toLowerCase() === WETH ? ethPair : stockPair(STOCKS.find((s) => s.address.toLowerCase() === pair.toLowerCase())!.symbol); }
   override async pairOf(token: Address): Promise<PairInfo> { return this.find(token)?.pair ?? ethPair; }
+  override async previewPair(address: Address): Promise<PairPreview> {
+    const s = STOCKS.find((x) => x.address.toLowerCase() === address.toLowerCase());
+    if (s) return { ...stockPair(s.symbol), ok: true, approved: true, blocked: false, poolWeth: 0n };
+    // Preview build: any other address reads as a token with a 0.3% WETH pool.
+    return { address: address.toLowerCase() as Address, symbol: "TOKEN", name: "Sample token " + address.slice(2, 8), decimals: 18, usd: 0.42, isNative: false, ethRoute: true, v3Fee: 3000, ok: true, approved: false, blocked: false, poolWeth: 10n ** 19n };
+  }
   override async quotes(): Promise<QuoteView[]> {
     return [{ ...ethPair, approved: true, liqUsd: 1e9, vol24Usd: 1e9 }, ...STOCKS.map((s) => ({ ...stockPair(s.symbol), approved: true, liqUsd: s.liqUsd, vol24Usd: s.vol24Usd }))];
   }

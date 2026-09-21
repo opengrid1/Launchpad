@@ -36,11 +36,14 @@ const addr = (key: string, fallback: string) => String(import.meta.env[key] ?? f
 /** Deployed contracts on Ethereum mainnet (VITE_* overrides point a build at a fork). */
 export const ADDRESSES = {
   factory: addr("VITE_FACTORY", "0x0000000000000000000000000000000000000000"),
+  /** Pair-asset registry: curated pairs plus any token that registers itself from its Uniswap V3 pool. */
+  pairs: addr("VITE_PAIRS", "0x0000000000000000000000000000000000000000"),
   hook: addr("VITE_HOOK", "0x0000000000000000000000000000000000000000"),
   router: addr("VITE_ROUTER", "0x0000000000000000000000000000000000000000"),
   poolManager: addr("VITE_POOL_MANAGER", "0x000000000004444c5dc75cB358380D2e3dE08A90"),
   stateView: addr("VITE_STATE_VIEW", "0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227"),
   weth: addr("VITE_WETH", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
+  v3Factory: addr("VITE_V3_FACTORY", "0x1F98431c8aD98523631AE4a59f267346ea31F984"),
   ethUsdFeed: addr("VITE_ETH_USD_FEED", "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"),
 };
 
@@ -62,7 +65,7 @@ export const BRAND = {
   tagline: "Pair with anything. Get paid to hold.",
   url: "https://www.alicorn.fun",
   x: "https://x.com/alicornfun",
-  description: "Launch a coin on Ethereum paired with ETH, UNI, LINK, PEPE, a tokenized stock, any approved token. Every trade pays 4%: half to the creator, 30% to holders in the pair asset, 20% to the platform. No harvest, no lockups.",
+  description: "Launch a coin on Ethereum paired with ETH, UNI, LINK, PEPE, a tokenized stock, or any ERC-20 with a Uniswap pool. Every trade pays 4%: half to the creator, 30% to holders in the pair asset, 20% to the platform. No harvest, no lockups.",
 };
 
 /** Fee model as deployed: 4% of the pair side on every swap, split creator / holders / platform. */

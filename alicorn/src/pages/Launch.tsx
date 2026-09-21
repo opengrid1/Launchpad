@@ -5,7 +5,7 @@ import { parseEther, type Address } from "viem";
 import { useAccount } from "wagmi";
 
 import { PairPicker } from "../components/PairPicker";
-import { client } from "../lib/client";
+import { client, type PairPreview } from "../lib/client";
 import { DEPLOYED, FEES } from "../lib/env";
 import { usd } from "../lib/format";
 import { friendlyError, runTx, setToast, useEthUsd, useQuotes } from "../lib/hooks";
@@ -19,6 +19,8 @@ export default function Launch() {
   const { data: ethUsd = 0 } = useEthUsd();
   const { data: quotes } = useQuotes();
   const [pairAddr, setPairAddr] = useState<Address>(WETH);
+  /** A pasted token the registry can price: not on the list yet, registers at launch. */
+  const [custom, setCustom] = useState<PairPreview | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [f, setF] = useState({ name: "", symbol: "", description: "", website: "", twitter: "", telegram: "", devBuy: "" });
   const [logo, setLogo] = useState("");
@@ -43,10 +45,11 @@ export default function Launch() {
 
   const symbol = (f.symbol || f.name).replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 10) || "COIN";
   const pairs = (quotes ?? []).filter((q) => q.approved);
-  const pair = pairs.find((q) => q.address.toLowerCase() === pairAddr.toLowerCase()) ?? pairs.find((q) => q.isNative);
+  const pair = pairs.find((q) => q.address.toLowerCase() === pairAddr.toLowerCase()) ?? (custom && custom.address.toLowerCase() === pairAddr.toLowerCase() ? custom : undefined) ?? pairs.find((q) => q.isNative);
+  const selfRegisters = !!custom && custom.address.toLowerCase() === pairAddr.toLowerCase() && !custom.approved;
   const pairSym = pair?.symbol ?? "ETH";
   const isEth = !pair || pair.isNative;
-  const kind = isEth ? "eth" : isTokenPair(pair.address) ? "token" : "stock";
+  const kind = isEth ? "eth" : isTokenPair(pair.address) || pair.v3Fee ? "token" : "stock";
   const canDevBuy = !pair || pair.ethRoute;
   const dev = Number(f.devBuy) > 0 ? f.devBuy.trim() : "";
 
@@ -81,7 +84,7 @@ export default function Launch() {
   return (
     <main className="launch">
       <h1>Launch a coin</h1>
-      <p className="sub">One transaction. 1,000,000,000 supply into a Uniswap V4 pool at about $3,000 market cap. Liquidity is burned.</p>
+      <p className="sub">One transaction. 1,000,000,000 supply into a Uniswap V4 pool at about $3,000 market cap, paired with ETH, a listed token or stock, or any ERC-20 with a Uniswap pool. Liquidity is burned.</p>
 
       <form className="card" onSubmit={submit}>
         <div className="fs">
@@ -105,13 +108,15 @@ export default function Launch() {
 
         <div className="fs">
           <h3>Pair asset<small>What the coin is priced in and what holders are paid in</small></h3>
-          <PairPicker pairs={pairs} value={pair?.address ?? WETH} onChange={(a) => { setPairAddr(a); setF({ ...f, devBuy: "" }); }} />
+          <PairPicker pairs={pairs} value={pair?.address ?? WETH} onChange={(a, pv) => { setPairAddr(a); if (pv) setCustom(pv); setF({ ...f, devBuy: "" }); }} />
           <div className="f" style={{ marginTop: 10 }}>
             <div className="help">
               <span className={"chip " + kind} style={{ marginRight: 8 }}>{pairSym}</span>
               {isEth
                 ? "The pool holds ETH. Buyers pay ETH and holders are paid in ETH."
-                : pair.ethRoute
+                : selfRegisters
+                  ? `${pairSym} is not on the list yet. The launch registers it from its Uniswap V3 pool in the same transaction; price and ETH route come from that pool. Holders and you are paid in ${pairSym}, claimable as ETH.`
+                  : pair.ethRoute
                   ? `The pool holds ${pairSym}. Buyers still pay ETH; the router swaps through ${pairSym}. Holders and you are paid in ${pairSym}, claimable as ETH.`
                   : `${pairSym} has no ETH route: buyers must already hold ${pairSym}, and no ETH first buy is possible.`}
             </div>
@@ -131,7 +136,7 @@ export default function Launch() {
           <h3>Summary</h3>
           <dl className="kv">
             <dt>Coin</dt><dd>{f.name || "—"} ({symbol})</dd>
-            <dt>Pair</dt><dd>{isEth ? "ETH" : `${pair.name} (${pairSym})`}{pair && pair.usd > 0 ? ` · ${usd(pair.usd)}` : ""}</dd>
+            <dt>Pair</dt><dd>{isEth ? "ETH" : `${pair.name || pairSym} (${pairSym})`}{pair && pair.usd > 0 ? ` · ${usd(pair.usd)}` : ""}{selfRegisters ? " · registers at launch" : ""}</dd>
             <dt>Supply</dt><dd>1,000,000,000, fixed</dd>
             <dt>Opening</dt><dd>About $3,000 market cap, all in the pool</dd>
             <dt>Fee</dt><dd>{FEES.taxPct}% per trade: {FEES.holderPct}% holders / {FEES.creatorPct}% you / {FEES.platformPct}% platform</dd>

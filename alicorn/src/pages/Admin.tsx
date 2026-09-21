@@ -123,7 +123,7 @@ function Fees({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn
   });
   const pending = (t: Token) => waiting?.get(t.address.toLowerCase()) ?? 0n;
   const withFees = (tokens ?? []).filter((t) => pending(t) > 0n);
-  const totalUsd = withFees.reduce((s, t) => s + wei(pending(t)) * t.pair.usd, 0);
+  const totalUsd = withFees.reduce((s, t) => s + wei(pending(t), t.pair.decimals) * t.pair.usd, 0);
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["platformWaiting"] }); await qc.invalidateQueries({ queryKey: ["tokens"] }); };
   const collect = (label: string, list: Token[]) => async () => {
     await ensureWallet();
@@ -177,7 +177,7 @@ function Fees({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn
         <input className="in" placeholder="Paste a coin contract address (0x…)" value={lookup} onChange={(e) => setLookup(e.target.value)} spellCheck={false} />
         {lookup.trim() && !isAddr(lookup.trim()) && <p className="note down">That is not a valid address.</p>}
         {isAddr(lookup.trim()) && !found && <p className="note down">This address is not a coin launched here.</p>}
-        {found && <div className="row-flex" style={{ justifyContent: "space-between", marginTop: 12 }}><Link to={`/t/${found.address}`} className="row-flex"><Art src={found.metadata?.logo} name={found.name} className="art" /><span><b>{found.name}</b> <small className="faint">{found.symbol} · {usd(found.marketCapUsd, { compact: true })} · {hype(wei(pending(found)), 5)} {found.pair.symbol} waiting</small></span></Link>{actions(found)}</div>}
+        {found && <div className="row-flex" style={{ justifyContent: "space-between", marginTop: 12 }}><Link to={`/t/${found.address}`} className="row-flex"><Art src={found.metadata?.logo} name={found.name} className="art" /><span><b>{found.name}</b> <small className="faint">{found.symbol} · {usd(found.marketCapUsd, { compact: true })} · {hype(wei(pending(found), found.pair.decimals), 5)} {found.pair.symbol} waiting</small></span></Link>{actions(found)}</div>}
       </div>
       {!tokens || !waiting ? <div className="skel" style={{ height: 120 }} /> : (
         <div className="tbl"><table>
@@ -187,8 +187,8 @@ function Fees({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn
               <td><Link to={`/t/${t.address}`} className="coin"><Art src={t.metadata?.logo} name={t.name} className="art" /><span><b>{t.name}</b><small>{t.symbol}{isHidden(t.address) ? " · hidden" : ""}</small></span></Link></td>
               <td><span className={"chip " + (t.pair.isNative ? "eth" : isTokenPair(t.pair.address) ? "token" : "stock")}>{t.pair.symbol}</span></td>
               <td className="num">{usd(t.marketCapUsd, { compact: true })}</td>
-              <td className={"num " + (w > 0n ? "up" : "faint")}>{hype(wei(w), 5)} {t.pair.symbol} · {usd(wei(w) * t.pair.usd)}</td>
-              <td className="num vi">{t.rewards ? usd(wei(t.rewards.holders) * t.pair.usd, { compact: true }) : "—"}</td>
+              <td className={"num " + (w > 0n ? "up" : "faint")}>{hype(wei(w, t.pair.decimals), 5)} {t.pair.symbol} · {usd(wei(w, t.pair.decimals) * t.pair.usd)}</td>
+              <td className="num vi">{t.rewards ? usd(wei(t.rewards.holders, t.pair.decimals) * t.pair.usd, { compact: true }) : "—"}</td>
               <td className="num">{actions(t)}</td>
             </tr>); })}</tbody>
         </table></div>
@@ -200,8 +200,8 @@ function Fees({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn
             <h3>Push {push.t.symbol} rewards to holders</h3>
             {push.busy && push.list.length === 0 ? <p className="note">Reading holders…</p> : (
               <>
-                <p className="note">{push.list.length} holder{push.list.length === 1 ? "" : "s"} have unclaimed rewards, {hype(wei(push.list.reduce((s, h) => s + h.pending, 0n)), 4)} {push.t.pair.symbol} in total ({usd(wei(push.list.reduce((s, h) => s + h.pending, 0n)) * push.t.pair.usd, { compact: true })}). Each one receives their share in {push.t.pair.symbol}. You pay the gas, about {Math.ceil(push.list.length / BATCH)} transaction{push.list.length > BATCH ? "s" : ""}.</p>
-                {push.list.length > 0 && <div className="tbl" style={{ maxHeight: 220, marginTop: 10 }}><table><tbody>{push.list.slice(0, 50).map((h) => <tr key={h.address}><td><a href={`${env.explorerUrl}/address/${h.address}`} target="_blank" rel="noreferrer">{short(h.address)}</a></td><td className="num">{hype(wei(h.pending), 5)} {push.t.pair.symbol}</td></tr>)}</tbody></table>{push.list.length > 50 && <p className="note">and {push.list.length - 50} more</p>}</div>}
+                <p className="note">{push.list.length} holder{push.list.length === 1 ? "" : "s"} have unclaimed rewards, {hype(wei(push.list.reduce((s, h) => s + h.pending, 0n), push.t.pair.decimals), 4)} {push.t.pair.symbol} in total ({usd(wei(push.list.reduce((s, h) => s + h.pending, 0n), push.t.pair.decimals) * push.t.pair.usd, { compact: true })}). Each one receives their share in {push.t.pair.symbol}. You pay the gas, about {Math.ceil(push.list.length / BATCH)} transaction{push.list.length > BATCH ? "s" : ""}.</p>
+                {push.list.length > 0 && <div className="tbl" style={{ maxHeight: 220, marginTop: 10 }}><table><tbody>{push.list.slice(0, 50).map((h) => <tr key={h.address}><td><a href={`${env.explorerUrl}/address/${h.address}`} target="_blank" rel="noreferrer">{short(h.address)}</a></td><td className="num">{hype(wei(h.pending, push.t.pair.decimals), 5)} {push.t.pair.symbol}</td></tr>)}</tbody></table>{push.list.length > 50 && <p className="note">and {push.list.length - 50} more</p>}</div>}
                 {push.busy && <p className="note">Sent to {push.done} of {push.list.length}…</p>}
                 <div className="row-flex" style={{ justifyContent: "flex-end", marginTop: 12 }}>
                   <button className="b ghost" disabled={push.busy} onClick={() => setPush(null)}>Cancel</button>

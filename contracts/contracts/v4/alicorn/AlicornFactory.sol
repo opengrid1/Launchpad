@@ -27,18 +27,20 @@ interface IPairRouter {
     function ethToPair(address pair, bytes calldata route, address to, uint256 minOut) external payable returns (uint256 pairOut);
 }
 
-interface IAggregatorV3 {
-    function decimals() external view returns (uint8);
-    function latestRoundData() external view returns (uint80, int256 answer, uint256, uint256 updatedAt, uint80);
+/// @dev The pair-asset registry: curated pairs plus any ERC-20 that registers
+///      itself from its Uniswap V3 pool. {ensure} registers on first use.
+interface IAlicornPairs {
+    function ensure(address pair) external returns (uint256 usdPrice8, uint8 decimals);
 }
 
 /// @title AlicornFactory
 /// @notice One-transaction launcher on Ethereum mainnet / Uniswap V4. A coin
-///         pairs against WETH or any approved tokenized stock; the whole 1B
-///         supply seeds a single-sided, factory-held V4 position at a $3,000
-///         start cap, priced from the pair's Chainlink feed when one is set
-///         and from the admin's USD price otherwise. Trading starts in the
-///         same block; the AlicornHook takes the fee on every swap.
+///         pairs against WETH or any ERC-20 the AlicornPairs registry prices:
+///         curated pairs (tokenized stocks, tokens with Chainlink feeds) and
+///         any token with a Uniswap V3 pool against WETH, which registers
+///         itself at launch. The whole 1B supply seeds a single-sided,
+///         factory-held V4 position at a $3,000 start cap. Trading starts in
+///         the same block; the AlicornHook takes the fee on every swap.
 ///
 ///         The creator's optional first buy is paid in plain ETH whatever the
 ///         pair: the router turns it into the stock along the supplied route
@@ -61,13 +63,12 @@ contract AlicornFactory is ReentrancyGuard, IUnlockCallback {
     /// @notice Fee split of every trade fee, bps: creator / holders / platform.
     uint16 public immutable CREATOR_BPS;
     uint16 public immutable HOLDER_BPS;
-    /// @notice A Chainlink answer older than this falls back to the admin price.
-    uint256 public constant FEED_MAX_AGE = 7 days;
-
     IPoolManager public immutable poolManager;
     AlicornHook public immutable hook;
     address public immutable weth;
     address public immutable admin;
+    /// @notice The pair-asset registry: prices, decimals, permissionless registration.
+    IAlicornPairs public immutable pairs;
 
     /// @notice The launchpad router: ETH <-> pair routing for first buys and
     ///         for claimants who want ETH; set once.
@@ -75,16 +76,6 @@ contract AlicornFactory is ReentrancyGuard, IUnlockCallback {
     /// @notice Where each coin's platform share is paid on claim.
     address public feeRecipient;
     bool public launchesPaused;
-
-    /// @notice An approved pair asset. `feed` (Chainlink, USD) wins over
-    ///         `usdPrice8` when set and fresh.
-    struct QuoteAsset {
-        bool approved;
-        uint64 usdPrice8;
-        address feed;
-    }
-    mapping(address => QuoteAsset) public quoteAssets;
-    address[] public quoteList;
 
     struct Listing {
         address creator;
@@ -109,13 +100,12 @@ contract AlicornFactory is ReentrancyGuard, IUnlockCallback {
         string name;
         string symbol;
         string metadataURI;
-        /// @dev The pair: WETH (or zero for WETH) or an approved stock.
+        /// @dev The pair: WETH (or zero for WETH) or any ERC-20 the registry can price.
         address pair;
     }
 
     event Launched(address indexed token, address indexed creator, address indexed pair, uint16 taxBps, bytes32 poolId, uint256 pairUsdPrice8);
     event DevBought(address indexed token, address indexed creator, uint256 ethIn, uint256 pairIn, uint256 coinOut);
-    event QuoteAssetSet(address indexed pair, bool approved, uint64 usdPrice8, address feed);
     event LaunchesPausedSet(bool paused);
     event FeeRecipientSet(address indexed recipient);
     event ConverterSet(address indexed converter);
@@ -125,8 +115,6 @@ contract AlicornFactory is ReentrancyGuard, IUnlockCallback {
     error LaunchesPaused();
     error InvalidParams();
     error NotAdmin();
-    error QuoteNotApproved();
-    error NoPrice();
     error ZeroAddress();
 
     modifier onlyAdmin() {
@@ -146,14 +134,14 @@ contract AlicornFactory is ReentrancyGuard, IUnlockCallback {
         IPoolManager poolManager_,
         AlicornHook hook_,
         address weth_,
-        uint64 ethUsd8_,
+        IAlicornPairs pairs_,
         uint16 taxBps_,
         uint16 creatorBps_,
         uint16 holderBps_
     ) {
         owner = owner_;
-        if (admin_ == address(0) || weth_ == address(0)) revert ZeroAddress();
-        if (ethUsd8_ == 0 || taxBps_ == 0 || taxBps_ > 1_000 || uint256(creatorBps_) + holderBps_ > 10_000) revert InvalidParams();
+        if (admin_ == address(0) || weth_ == address(0) || address(pairs_) == address(0)) revert ZeroAddress();
+        if (taxBps_ == 0 || taxBps_ > 1_000 || uint256(creatorBps_) + holderBps_ > 10_000) revert InvalidParams();
         TAX_BPS = taxBps_;
         admin = admin_;
         feeRecipient = admin_;
@@ -162,9 +150,7 @@ contract AlicornFactory is ReentrancyGuard, IUnlockCallback {
         weth = weth_;
         CREATOR_BPS = creatorBps_;
         HOLDER_BPS = holderBps_;
-        quoteAssets[weth_] = QuoteAsset({approved: true, usdPrice8: ethUsd8_, feed: address(0)});
-        quoteList.push(weth_);
-        emit QuoteAssetSet(weth_, true, ethUsd8_, address(0));
+        pairs = pairs_;
     }
 
     // ---------------------------------------------------------------------
@@ -192,20 +178,6 @@ contract AlicornFactory is ReentrancyGuard, IUnlockCallback {
         if (converter != address(0) || converter_ == address(0)) revert InvalidParams();
         converter = converter_;
         emit ConverterSet(converter_);
-    }
-
-    /// @notice Approve, re-price, or retire a pair asset. `usdPrice8` is USD
-    ///         per whole token (8 dp); `feed` an optional 8-decimal Chainlink USD feed.
-    ///         Pair assets must have 18 decimals (all Ondo stocks and WETH do).
-    function setQuoteAsset(address pair, bool approved, uint64 usdPrice8, address feed) external onlyAdminOrOwner {
-        if (pair == address(0)) revert ZeroAddress();
-        if (approved && usdPrice8 == 0 && feed == address(0)) revert InvalidParams();
-        if (pair != weth && approved && IERC20Metadata(pair).decimals() != 18) revert InvalidParams();
-        if (feed != address(0) && IAggregatorV3(feed).decimals() != 8) revert InvalidParams();
-        if (pair == weth && !approved) revert InvalidParams();
-        if (!quoteAssets[pair].approved && quoteAssets[pair].usdPrice8 == 0 && quoteAssets[pair].feed == address(0)) quoteList.push(pair);
-        quoteAssets[pair] = QuoteAsset({approved: approved, usdPrice8: usdPrice8, feed: feed});
-        emit QuoteAssetSet(pair, approved, usdPrice8, feed);
     }
 
     /// @notice Give up the deployer's setup rights; the admin keeps its own.
@@ -243,9 +215,7 @@ contract AlicornFactory is ReentrancyGuard, IUnlockCallback {
         if (launchesPaused) revert LaunchesPaused();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
         pair = p.pair == address(0) ? weth : p.pair;
-        QuoteAsset memory q = quoteAssets[pair];
-        if (!q.approved) revert QuoteNotApproved();
-        uint256 pairUsd8 = pairUsdPrice(pair);
+        (uint256 pairUsd8, uint8 pairDecimals) = pairs.ensure(pair);
 
         AlicornToken t = new AlicornToken{salt: salt}(
             p.name, p.symbol, p.metadataURI, TOTAL_SUPPLY, msg.sender, address(this), pair, address(poolManager), CREATOR_BPS, HOLDER_BPS
@@ -258,7 +228,7 @@ contract AlicornFactory is ReentrancyGuard, IUnlockCallback {
         ex[0] = address(poolManager);
         t.initHook(address(hook), converter, ex);
 
-        uint256 priceQ = _priceQ(pairUsd8);
+        uint256 priceQ = _priceQ(pairUsd8, pairDecimals);
         (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper) = _initialPosition(tokenIsCurrency0, priceQ);
         poolManager.initialize(key, sqrtPriceX96);
 
@@ -348,25 +318,12 @@ contract AlicornFactory is ReentrancyGuard, IUnlockCallback {
     }
 
     // ---------------------------------------------------------------------
-    // Pricing (pairs are 18 decimals)
+    // Pricing
     // ---------------------------------------------------------------------
 
-    /// @notice USD per whole pair token, 8 dp: the Chainlink feed when set and
-    ///         fresh, else the admin price.
-    function pairUsdPrice(address pair) public view returns (uint256) {
-        QuoteAsset memory q = quoteAssets[pair];
-        if (q.feed != address(0)) {
-            try IAggregatorV3(q.feed).latestRoundData() returns (uint80, int256 answer, uint256, uint256 updatedAt, uint80) {
-                if (answer > 0 && updatedAt + FEED_MAX_AGE >= block.timestamp) return uint256(answer);
-            } catch {}
-        }
-        if (q.usdPrice8 == 0) revert NoPrice();
-        return q.usdPrice8;
-    }
-
-    function _priceQ(uint256 pairUsd8) internal pure returns (uint256 priceQ) {
-        // pair-wei per whole coin: $3,000 / 1e9 coins / pairUsd, scaled 1e18.
-        priceQ = Math.mulDiv(INITIAL_MARKET_CAP_USD_8, 1e18, TOTAL_SUPPLY_WHOLE * pairUsd8);
+    function _priceQ(uint256 pairUsd8, uint8 pairDecimals) internal pure returns (uint256 priceQ) {
+        // pair raw units per whole coin: $3,000 / 1e9 coins / pairUsd, in the pair's decimals.
+        priceQ = Math.mulDiv(INITIAL_MARKET_CAP_USD_8, 10 ** uint256(pairDecimals), TOTAL_SUPPLY_WHOLE * pairUsd8);
         if (priceQ == 0) revert InvalidParams();
     }
 
@@ -439,10 +396,6 @@ contract AlicornFactory is ReentrancyGuard, IUnlockCallback {
 
     function totalTokens() external view returns (uint256) {
         return allTokens.length;
-    }
-
-    function quoteCount() external view returns (uint256) {
-        return quoteList.length;
     }
 
     /// @notice The pool key of a launched coin (for routers and indexers).

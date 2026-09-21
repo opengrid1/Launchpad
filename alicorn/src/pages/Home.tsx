@@ -7,8 +7,9 @@ import { ago, num, pct, usd, wei } from "../lib/format";
 import { useQuotes, useTokens, type Token } from "../lib/hooks";
 import { isTokenPair } from "../lib/stocks";
 
-const paidUsd = (t: Token) => (t.rewards ? wei(t.rewards.holders) * t.pair.usd : 0);
-const kindOf = (isNative: boolean, addr: string) => (isNative ? "eth" : isTokenPair(addr) ? "token" : "stock");
+const paidUsd = (t: Token) => (t.rewards ? wei(t.rewards.holders, t.pair.decimals) * t.pair.usd : 0);
+const volUsd = (t: Token) => wei(t.volume24hWei, t.pair.decimals) * t.pair.usd;
+const kindOf = (isNative: boolean, addr: string, v3Fee?: number) => (isNative ? "eth" : isTokenPair(addr) || v3Fee ? "token" : "stock");
 
 type Col = "new" | "price" | "chg" | "mcap" | "vol" | "holders" | "paid";
 type Filter = "all" | "eth" | "token" | "stock";
@@ -25,7 +26,7 @@ export default function Home() {
 
   const totals = useMemo(() => {
     const t = tokens ?? [];
-    return { n: t.length, vol: t.reduce((s, x) => s + wei(x.volume24hWei) * x.pair.usd, 0), paid: t.reduce((s, x) => s + paidUsd(x), 0), holders: t.reduce((s, x) => s + (x.holderCount ?? 0), 0) };
+    return { n: t.length, vol: t.reduce((s, x) => s + volUsd(x), 0), paid: t.reduce((s, x) => s + paidUsd(x), 0), holders: t.reduce((s, x) => s + (x.holderCount ?? 0), 0) };
   }, [tokens]);
   const approved = useMemo(() => (quotes ?? []).filter((x) => x.approved), [quotes]);
 
@@ -34,7 +35,7 @@ export default function Home() {
       case "price": return Number(t.priceUsd);
       case "chg": return t.priceChange24hPct ?? -1e9;
       case "mcap": return Number(t.marketCapUsd);
-      case "vol": return wei(t.volume24hWei) * t.pair.usd;
+      case "vol": return volUsd(t);
       case "holders": return t.holderCount ?? 0;
       case "paid": return paidUsd(t);
       default: return t.createdAt;
@@ -44,7 +45,7 @@ export default function Home() {
     let l = (tokens ?? []).slice();
     const s = q.trim().toLowerCase();
     if (s) l = l.filter((t) => `${t.name} ${t.symbol} ${t.address} ${t.pair.symbol}`.toLowerCase().includes(s));
-    if (filter !== "all") l = l.filter((t) => kindOf(t.pair.isNative, t.pair.address) === filter);
+    if (filter !== "all") l = l.filter((t) => kindOf(t.pair.isNative, t.pair.address, t.pair.v3Fee) === filter);
     l.sort((a, b) => (desc ? key(b) - key(a) : key(a) - key(b)));
     l.sort((a, b) => Number(isPinned(b.address)) - Number(isPinned(a.address)));
     return l;
@@ -57,17 +58,17 @@ export default function Home() {
     const m = new Map<string, { sym: string; kind: string; usd: number; coins: number; paid: number }>();
     for (const t of tokens ?? []) {
       const k = t.pair.address.toLowerCase();
-      const e = m.get(k) ?? { sym: t.pair.symbol, kind: kindOf(t.pair.isNative, t.pair.address), usd: t.pair.usd, coins: 0, paid: 0 };
+      const e = m.get(k) ?? { sym: t.pair.symbol, kind: kindOf(t.pair.isNative, t.pair.address, t.pair.v3Fee), usd: t.pair.usd, coins: 0, paid: 0 };
       e.coins++; e.paid += paidUsd(t); m.set(k, e);
     }
     for (const x of approved) {
       const k = x.address.toLowerCase();
-      if (!m.has(k) && (x.isNative || isTokenPair(x.address))) m.set(k, { sym: x.symbol, kind: kindOf(x.isNative, x.address), usd: x.usd, coins: 0, paid: 0 });
+      if (!m.has(k) && (x.isNative || isTokenPair(x.address) || x.v3Fee)) m.set(k, { sym: x.symbol, kind: kindOf(x.isNative, x.address, x.v3Fee), usd: x.usd, coins: 0, paid: 0 });
     }
     return [...m.values()].sort((a, b) => b.coins - a.coins || b.paid - a.paid).slice(0, 8);
   }, [tokens, approved]);
-  const nTokens = approved.filter((x) => !x.isNative && isTokenPair(x.address)).length;
-  const nStocks = approved.filter((x) => !x.isNative && !isTokenPair(x.address)).length;
+  const nTokens = approved.filter((x) => !x.isNative && (isTokenPair(x.address) || x.v3Fee)).length;
+  const nStocks = approved.filter((x) => !x.isNative && !isTokenPair(x.address) && !x.v3Fee).length;
 
   return (
     <main className="home">
@@ -108,7 +109,7 @@ export default function Home() {
                 {list.length === 0 && <tr><td colSpan={8}><div className="empty">{tokens?.length ? "No coins match." : "No coins yet."}</div></td></tr>}
                 {list.map((t) => {
                   const c = t.priceChange24hPct;
-                  const kind = kindOf(t.pair.isNative, t.pair.address);
+                  const kind = kindOf(t.pair.isNative, t.pair.address, t.pair.v3Fee);
                   return (
                     <tr key={t.address} className="link" onClick={() => nav(`/t/${t.address}`)}>
                       <td><Link to={`/t/${t.address}`} className="coin" onClick={(e) => e.stopPropagation()}>
@@ -119,9 +120,9 @@ export default function Home() {
                       <td className="r">{usd(t.priceUsd)}</td>
                       <td className={"r c-hide-sm " + (c == null ? "faint" : c >= 0 ? "up" : "down")}>{c == null ? "—" : pct(c)}</td>
                       <td className="r">{usd(t.marketCapUsd, { compact: true })}</td>
-                      <td className="r c-hide-md">{usd(wei(t.volume24hWei) * t.pair.usd, { compact: true })}</td>
+                      <td className="r c-hide-md">{usd(volUsd(t), { compact: true })}</td>
                       <td className="r c-hide-md">{num(t.holderCount, 0)}</td>
-                      <td className="r c-hide-sm">{usd(paidUsd(t), { compact: true })}<small>{t.rewards ? `${num(wei(t.rewards.holders), 4)} ${t.pair.symbol}` : "—"}</small></td>
+                      <td className="r c-hide-sm">{usd(paidUsd(t), { compact: true })}<small>{t.rewards ? `${num(wei(t.rewards.holders, t.pair.decimals), 4)} ${t.pair.symbol}` : "—"}</small></td>
                     </tr>
                   );
                 })}
@@ -135,14 +136,14 @@ export default function Home() {
         <div className="card">
           <div className="card-h"><h2>How it works</h2><Link to="/docs" className="b ghost sm">Docs</Link></div>
           <div className="card-b steps">
-            <div><span>1</span><p><b>Pick a pair asset.</b> ETH, UNI, LINK, PEPE, a tokenized stock. The coin is priced in it.</p></div>
+            <div><span>1</span><p><b>Pick a pair asset.</b> ETH, UNI, LINK, PEPE, a tokenized stock, or any ERC-20 with a Uniswap pool. The coin is priced in it.</p></div>
             <div><span>2</span><p><b>Every trade pays {FEES.taxPct}%.</b> {FEES.holderPct}% goes to holders in the pair asset, {FEES.creatorPct}% to the creator, {FEES.platformPct}% to the platform.</p></div>
             <div><span>3</span><p><b>Hold and claim.</b> Rewards accrue per trade. No staking, no lockup. Liquidity is burned at launch.</p></div>
           </div>
           <div style={{ padding: "0 14px 14px" }}><Link to="/launch" className="b pri wide">Launch a coin</Link></div>
         </div>
         <div className="card">
-          <div className="card-h"><h2>Pair assets</h2><span className="eyebrow">ETH · {nTokens} tokens · {nStocks} stocks</span></div>
+          <div className="card-h"><h2>Pair assets</h2><span className="eyebrow">ETH · {nTokens} tokens · {nStocks} stocks · any ERC-20</span></div>
           <div className="pairlist">
             {pairs.map((p) => (
               <Link key={p.sym} to="/launch">

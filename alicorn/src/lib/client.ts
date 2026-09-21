@@ -2,9 +2,9 @@ import { createPublicClient, encodeFunctionData, fallback, http, parseAbi, type 
 import type { Candle, CandleInterval, HolderRecord, TokenSummary, TradeRecord } from "@launchpad/sdk";
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
 
-import { factoryAbi, hookAbi, routerAbi, tokenAbi } from "./abis";
+import { factoryAbi, hookAbi, pairsAbi, routerAbi, tokenAbi } from "./abis";
 import { ADDRESSES, chain, env } from "./env";
-import { hasEthRoute, routeFor, stockByAddress, WETH } from "./stocks";
+import { hasEthRoute, routeFor, stockByAddress, v3RouteFor, WETH } from "./stocks";
 
 export const publicClient = createPublicClient({
   chain,
@@ -53,7 +53,8 @@ const swapEvent = {
   ],
 } as const;
 
-/** A coin's pair asset: ETH (native) or a tokenized stock. */
+/** A coin's pair asset: ETH (native), a curated token or stock, or any
+ *  ERC-20 that registered itself from its Uniswap V3 pool. */
 export interface PairInfo {
   address: Address;
   symbol: string;
@@ -63,14 +64,30 @@ export interface PairInfo {
   isNative: boolean;
   /** ETH can be routed into and out of this pair on-chain. */
   ethRoute: boolean;
+  /** Self-registered pairs: the WETH/pair V3 fee tier that prices and routes it. */
+  v3Fee?: number;
 }
 
-/** An approved pair on the factory, joined with the roster's liquidity data. */
+/** A pair on the registry, joined with the roster's liquidity data. */
 export interface QuoteView extends PairInfo {
   approved: boolean;
+  blocked?: boolean;
   liqUsd: number;
   vol24Usd: number;
 }
+
+/** What the registry would do with an arbitrary token address. */
+export interface PairPreview extends PairInfo {
+  ok: boolean;
+  approved: boolean;
+  blocked: boolean;
+  /** WETH sitting in the V3 pool that prices it. */
+  poolWeth: bigint;
+  reason?: string;
+}
+
+/** A registry row: approved, blocked, decimals, v3Fee, usdPrice8, feed. */
+type RegRow = { approved: boolean; blocked: boolean; decimals: number; v3Fee: number; usd8: bigint };
 
 export type StockToken = TokenSummary & {
   pair: PairInfo;
@@ -135,6 +152,7 @@ export class StockPadClient {
   private balancesInflight = new Map<string, Promise<Map<string, bigint>>>();
   private pairUsdCache = new Map<string, { v: number; at: number }>();
   private pairMeta = new Map<string, { symbol: string; name: string; decimals: number }>();
+  private regRows = new Map<string, { row: RegRow | null; at: number }>();
   private blockAnchor?: { block: bigint; ts: number };
 
   constructor(pc: PublicClient) {
@@ -235,14 +253,28 @@ export class StockPadClient {
     }
   }
 
-  /** USD per whole pair token from the factory (Chainlink feed or admin price). */
+  /** The registry's row for a pair (cached a minute); null when it has none. */
+  private async regRow(pair: Address): Promise<RegRow | null> {
+    const key = pair.toLowerCase();
+    const hit = this.regRows.get(key);
+    if (hit && Date.now() - hit.at < 60_000) return hit.row;
+    let row: RegRow | null = null;
+    try {
+      const r = (await this.pc.readContract({ address: ADDRESSES.pairs, abi: pairsAbi, functionName: "quoteAssets", args: [key as Address] })) as readonly [boolean, boolean, number, number, bigint, Address];
+      row = { approved: r[0], blocked: r[1], decimals: Number(r[2]), v3Fee: Number(r[3]), usd8: r[4] };
+    } catch { row = null; }
+    this.regRows.set(key, { row, at: Date.now() });
+    return row;
+  }
+
+  /** USD per whole pair token from the registry (Chainlink feed, V3 pool spot, or admin price). */
   async assetUsdPrice(asset: Address): Promise<number> {
     const key = (asset === ZERO ? WETH : asset).toLowerCase();
     const hit = this.pairUsdCache.get(key);
     if (hit && Date.now() - hit.at < 60_000) return hit.v;
     let v = 0;
     try {
-      v = Number(await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "pairUsdPrice", args: [key as Address] })) / 1e8;
+      v = Number(await this.pc.readContract({ address: ADDRESSES.pairs, abi: pairsAbi, functionName: "pairUsdPrice", args: [key as Address] })) / 1e8;
     } catch {
       v = stockByAddress(key)?.usd ?? 0;
     }
@@ -260,20 +292,22 @@ export class StockPadClient {
     const usd = await this.assetUsdPrice(key);
     if (isNative) return { address: key, symbol: "ETH", name: "Ether", decimals: 18, usd, isNative: true, ethRoute: true };
     const s = stockByAddress(key);
+    const row = await this.regRow(key);
     let meta = this.pairMeta.get(key);
     if (!meta) {
-      if (s) meta = { symbol: s.ticker, name: s.name, decimals: 18 };
+      if (s) meta = { symbol: s.ticker, name: s.name, decimals: row?.decimals || 18 };
       else {
         try {
           const [symbol, name, decimals] = (await this.pc.multicall({ allowFailure: false, contracts: [
             { address: key, abi: erc20Abi, functionName: "symbol" }, { address: key, abi: erc20Abi, functionName: "name" }, { address: key, abi: erc20Abi, functionName: "decimals" },
           ] })) as [string, string, number];
           meta = { symbol, name, decimals: Number(decimals) };
-        } catch { meta = { symbol: key.slice(0, 8), name: "", decimals: 18 }; }
+        } catch { meta = { symbol: key.slice(0, 8), name: "", decimals: row?.decimals || 18 }; }
       }
       this.pairMeta.set(key, meta);
     }
-    return { address: key, ...meta, usd, isNative: false, ethRoute: hasEthRoute(key) };
+    const v3Fee = row?.v3Fee || undefined;
+    return { address: key, ...meta, usd, isNative: false, ethRoute: hasEthRoute(key) || !!v3Fee, v3Fee };
   }
 
   /** A coin's pair asset. */
@@ -283,26 +317,25 @@ export class StockPadClient {
     return this.pairInfo(core?.pair ?? WETH);
   }
 
-  /** Every pair the factory knows, ETH first, then by real liquidity. */
+  /** Every pair the registry knows (curated and self-registered), ETH first, then by real liquidity. */
   async quotes(): Promise<QuoteView[]> {
-    const n = Number(await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteCount" }).catch(() => 0n));
+    const n = Number(await this.pc.readContract({ address: ADDRESSES.pairs, abi: pairsAbi, functionName: "quoteCount" }).catch(() => 0n));
     const addrs = n === 0 ? [WETH] : ((await this.pc.multicall({
       allowFailure: true,
-      contracts: Array.from({ length: n }, (_, i) => ({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteList", args: [BigInt(i)] })),
+      contracts: Array.from({ length: n }, (_, i) => ({ address: ADDRESSES.pairs, abi: pairsAbi, functionName: "quoteList", args: [BigInt(i)] })),
     })).filter((r) => r.status === "success").map((r) => (r.result as Address).toLowerCase() as Address));
     const rows = await this.pc.multicall({
       allowFailure: true,
-      contracts: addrs.map((a) => ({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteAssets", args: [a] })),
+      contracts: addrs.map((a) => ({ address: ADDRESSES.pairs, abi: pairsAbi, functionName: "quoteAssets", args: [a] })),
     });
     const out: QuoteView[] = [];
     for (let i = 0; i < addrs.length; i++) {
-      const qa: readonly [boolean, bigint, Address] = rows[i].status === "success" ? (rows[i].result as unknown as readonly [boolean, bigint, Address]) : [false, 0n, ZERO];
-      const approved: boolean = qa[0];
-      const usd8: bigint = qa[1];
+      const qa = rows[i].status === "success" ? (rows[i].result as unknown as readonly [boolean, boolean, number, number, bigint, Address]) : null;
+      if (qa) this.regRows.set(addrs[i], { row: { approved: qa[0], blocked: qa[1], decimals: Number(qa[2]), v3Fee: Number(qa[3]), usd8: qa[4] }, at: Date.now() });
       const s = stockByAddress(addrs[i]);
       const info = await this.pairInfo(addrs[i]);
-      if (!(info.usd > 0) && usd8 > 0n) info.usd = Number(usd8) / 1e8;
-      out.push({ ...info, approved, liqUsd: s?.liqUsd ?? 0, vol24Usd: s?.vol24Usd ?? 0 });
+      if (!(info.usd > 0) && qa && qa[4] > 0n) info.usd = Number(qa[4]) / 1e8;
+      out.push({ ...info, approved: qa?.[0] ?? false, blocked: qa?.[1] ?? false, liqUsd: s?.liqUsd ?? 0, vol24Usd: s?.vol24Usd ?? 0 });
     }
     return out.sort((a, b) => (a.isNative ? -1 : b.isNative ? 1 : b.liqUsd - a.liqUsd));
   }
@@ -379,7 +412,7 @@ export class StockPadClient {
   private async summarize(core: Core): Promise<StockToken> {
     const [trades, sqrtP, pair] = await Promise.all([this.loadTrades(core.address), this.slot0(core.poolId), this.pairInfo(core.pair)]);
     const priceWei = sqrtP > 0n ? this.priceFromSqrt(sqrtP, core.tokenIsCurrency0) : trades.length ? BigInt(trades[trades.length - 1].priceWei) : 0n;
-    const pricePair = Number(priceWei) / 1e18;
+    const pricePair = Number(priceWei) / 10 ** pair.decimals;
     const priceUsd = pricePair * pair.usd;
     const mcap = priceUsd * 1e9;
     const dayAgo = Math.floor(Date.now() / 1000) - 86400;
@@ -454,11 +487,12 @@ export class StockPadClient {
 
   async getCandles(token: string, interval: CandleInterval, opts?: { limit?: number }): Promise<Candle[]> {
     const trades = await this.loadTrades(token as Address);
+    const unit = 10 ** (await this.pairOf(token as Address)).decimals;
     const span = INTERVAL_SECONDS[interval];
     const buckets = new Map<number, Candle>();
     for (const t of trades) {
       const b = Math.floor(t.timestamp / span) * span;
-      const price = Number(t.priceWei) / 1e18, vol = Number(t.nativeAmountWei) / 1e18;
+      const price = Number(t.priceWei) / unit, vol = Number(t.nativeAmountWei) / unit;
       const c = buckets.get(b);
       if (!c) buckets.set(b, { time: b, open: String(price), high: String(price), low: String(price), close: String(price), volume: String(vol) });
       else { c.high = String(Math.max(Number(c.high), price)); c.low = String(Math.min(Number(c.low), price)); c.close = String(price); c.volume = String(Number(c.volume) + vol); }
@@ -557,10 +591,42 @@ export class StockPadClient {
     return { pending, creatorFees, platformFees, totalHolder: th, totalCreator: tc, totalPlatform: tp, isCreator: !!account && creator.toLowerCase() === account.toLowerCase(), balance };
   }
 
+  /** The router route for a pair: the roster's route for curated pairs, the
+   *  registry's V3 hop for self-registered ones, null when there is none. */
+  async pairRoute(pair: Address): Promise<Hex | null> {
+    const fixed = routeFor(pair);
+    if (fixed !== null) return fixed;
+    const row = await this.regRow(pair);
+    return row?.v3Fee ? v3RouteFor(pair, row.v3Fee) : null;
+  }
+
   private async routeOf(token: Address): Promise<{ pair: Address; route: Hex | null }> {
     await this.loadCores();
     const pair = this.cores.get(token.toLowerCase())?.pair ?? WETH;
-    return { pair, route: routeFor(pair) };
+    return { pair, route: await this.pairRoute(pair) };
+  }
+
+  /** What the registry would do with any token address: registrable from a
+   *  Uniswap V3 pool, already approved, blocked, or unusable. */
+  async previewPair(address: Address): Promise<PairPreview> {
+    const key = address.toLowerCase() as Address;
+    const none = { address: key, symbol: "", name: "", decimals: 18, usd: 0, isNative: false, ethRoute: false, poolWeth: 0n };
+    if (key === WETH) return { ...(await this.pairInfo(WETH)), ok: true, approved: true, blocked: false, poolWeth: 0n };
+    let pv: readonly [boolean, boolean, boolean, number, number, bigint, bigint];
+    try {
+      pv = (await this.pc.readContract({ address: ADDRESSES.pairs, abi: pairsAbi, functionName: "preview", args: [key] })) as typeof pv;
+    } catch { return { ...none, ok: false, approved: false, blocked: false, reason: "Not a token contract." }; }
+    const [ok, approved, blocked, v3Fee, decimals, usd8, poolWeth] = pv;
+    let symbol = "", name = "";
+    try {
+      [symbol, name] = (await this.pc.multicall({ allowFailure: false, contracts: [{ address: key, abi: erc20Abi, functionName: "symbol" }, { address: key, abi: erc20Abi, functionName: "name" }] })) as [string, string];
+    } catch { /* unnamed token */ }
+    const s = stockByAddress(key);
+    const reason = ok ? undefined : blocked ? "Blocked by the admin." : Number(decimals) > 18 ? "More than 18 decimals." : Number(decimals) === 0 && !symbol ? "Not a token contract." : "No Uniswap V3 pool against WETH holding at least 1 WETH.";
+    return {
+      address: key, symbol: s?.ticker ?? symbol, name: s?.name ?? name, decimals: Number(decimals) || 18, usd: Number(usd8) / 1e8, isNative: false,
+      ethRoute: hasEthRoute(key) || Number(v3Fee) > 0, v3Fee: Number(v3Fee) || undefined, ok, approved, blocked, poolWeth, reason,
+    };
   }
 
   async claimRewards(token: Address, asEth: boolean): Promise<Hex> {
@@ -658,10 +724,19 @@ export class StockPadClient {
 
   // -- launch -------------------------------------------------------------
 
+  /** The route a launch's first buy takes: fixed for curated pairs, the V3
+   *  hop the registry will pick for a token that registers itself at launch. */
+  private async launchRoute(pair: Address): Promise<Hex | null> {
+    const route = await this.pairRoute(pair);
+    if (route !== null) return route;
+    const pv = await this.previewPair(pair);
+    return pv.ok && pv.v3Fee ? v3RouteFor(pair, pv.v3Fee) : null;
+  }
+
   async createToken(p: { name: string; symbol: string; metadataURI: string; pair: Address; devBuyWei?: bigint }): Promise<Hex> {
     const wc = this.wallet();
     const pair = p.pair.toLowerCase() as Address;
-    const route = routeFor(pair);
+    const route = await this.launchRoute(pair);
     const dev = p.devBuyWei ?? 0n;
     if (dev > 0n && route === null) throw new Error("This pair has no ETH route, so a first buy is not possible. Launch without one.");
     const salt = new Uint8Array(32);
@@ -679,7 +754,7 @@ export class StockPadClient {
     const pair = p.pair.toLowerCase() as Address;
     return this.pc.estimateContractGas({
       address: ADDRESSES.factory, abi: factoryAbi, functionName: "launch",
-      args: [{ name: p.name, symbol: p.symbol, metadataURI: p.metadataURI, pair }, `0x${"11".repeat(32)}` as Hex, routeFor(pair) ?? "0x"],
+      args: [{ name: p.name, symbol: p.symbol, metadataURI: p.metadataURI, pair }, `0x${"11".repeat(32)}` as Hex, (await this.launchRoute(pair)) ?? "0x"],
       value: p.devBuyWei ?? 0n, account: from,
     });
   }
@@ -701,9 +776,10 @@ export class StockPadClient {
     return { admin, owner, feeRecipient, paused, taxBps: Number(taxBps), creatorBps: Number(creatorBps), holderBps: Number(holderBps), ethUsd: await this.ethUsd(), converter, totalTokens: Number(total) };
   }
 
-  async adminCall(fn: "pause" | "resume" | "setFeeRecipient" | "setQuoteAsset" | "collect", args: unknown[] = []): Promise<Hex> {
+  async adminCall(fn: "pause" | "resume" | "setFeeRecipient" | "setQuoteAsset" | "setBlocked" | "collect", args: unknown[] = []): Promise<Hex> {
     const wc = this.wallet();
-    return wc.writeContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: fn as any, args: args as any, chain: wc.chain, account: wc.account! });
+    const onRegistry = fn === "setQuoteAsset" || fn === "setBlocked";
+    return wc.writeContract({ address: onRegistry ? ADDRESSES.pairs : ADDRESSES.factory, abi: (onRegistry ? pairsAbi : factoryAbi) as any, functionName: fn as any, args: args as any, chain: wc.chain, account: wc.account! });
   }
 
   /** Holders of a coin with unclaimed rewards, largest first (in pair-asset wei). */

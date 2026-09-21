@@ -29,9 +29,9 @@ export const factoryAbi = [
     "type": "address"
    },
    {
-    "internalType": "uint64",
-    "name": "ethUsd8_",
-    "type": "uint64"
+    "internalType": "contract IAlicornPairs",
+    "name": "pairs_",
+    "type": "address"
    },
    {
     "internalType": "uint16",
@@ -64,17 +64,7 @@ export const factoryAbi = [
  },
  {
   "inputs": [],
-  "name": "NoPrice",
-  "type": "error"
- },
- {
-  "inputs": [],
   "name": "NotAdmin",
-  "type": "error"
- },
- {
-  "inputs": [],
-  "name": "QuoteNotApproved",
   "type": "error"
  },
  {
@@ -261,37 +251,6 @@ export const factoryAbi = [
   "type": "event"
  },
  {
-  "anonymous": false,
-  "inputs": [
-   {
-    "indexed": true,
-    "internalType": "address",
-    "name": "pair",
-    "type": "address"
-   },
-   {
-    "indexed": false,
-    "internalType": "bool",
-    "name": "approved",
-    "type": "bool"
-   },
-   {
-    "indexed": false,
-    "internalType": "uint64",
-    "name": "usdPrice8",
-    "type": "uint64"
-   },
-   {
-    "indexed": false,
-    "internalType": "address",
-    "name": "feed",
-    "type": "address"
-   }
-  ],
-  "name": "QuoteAssetSet",
-  "type": "event"
- },
- {
   "inputs": [],
   "name": "CREATOR_BPS",
   "outputs": [
@@ -299,19 +258,6 @@ export const factoryAbi = [
     "internalType": "uint16",
     "name": "",
     "type": "uint16"
-   }
-  ],
-  "stateMutability": "view",
-  "type": "function"
- },
- {
-  "inputs": [],
-  "name": "FEED_MAX_AGE",
-  "outputs": [
-   {
-    "internalType": "uint256",
-    "name": "",
-    "type": "uint256"
    }
   ],
   "stateMutability": "view",
@@ -635,19 +581,13 @@ export const factoryAbi = [
   "type": "function"
  },
  {
-  "inputs": [
-   {
-    "internalType": "address",
-    "name": "pair",
-    "type": "address"
-   }
-  ],
-  "name": "pairUsdPrice",
+  "inputs": [],
+  "name": "pairs",
   "outputs": [
    {
-    "internalType": "uint256",
+    "internalType": "contract IAlicornPairs",
     "name": "",
-    "type": "uint256"
+    "type": "address"
    }
   ],
   "stateMutability": "view",
@@ -762,67 +702,6 @@ export const factoryAbi = [
   "type": "function"
  },
  {
-  "inputs": [
-   {
-    "internalType": "address",
-    "name": "",
-    "type": "address"
-   }
-  ],
-  "name": "quoteAssets",
-  "outputs": [
-   {
-    "internalType": "bool",
-    "name": "approved",
-    "type": "bool"
-   },
-   {
-    "internalType": "uint64",
-    "name": "usdPrice8",
-    "type": "uint64"
-   },
-   {
-    "internalType": "address",
-    "name": "feed",
-    "type": "address"
-   }
-  ],
-  "stateMutability": "view",
-  "type": "function"
- },
- {
-  "inputs": [],
-  "name": "quoteCount",
-  "outputs": [
-   {
-    "internalType": "uint256",
-    "name": "",
-    "type": "uint256"
-   }
-  ],
-  "stateMutability": "view",
-  "type": "function"
- },
- {
-  "inputs": [
-   {
-    "internalType": "uint256",
-    "name": "",
-    "type": "uint256"
-   }
-  ],
-  "name": "quoteList",
-  "outputs": [
-   {
-    "internalType": "address",
-    "name": "",
-    "type": "address"
-   }
-  ],
-  "stateMutability": "view",
-  "type": "function"
- },
- {
   "inputs": [],
   "name": "renounceOwnership",
   "outputs": [],
@@ -858,34 +737,6 @@ export const factoryAbi = [
    }
   ],
   "name": "setFeeRecipient",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
- },
- {
-  "inputs": [
-   {
-    "internalType": "address",
-    "name": "pair",
-    "type": "address"
-   },
-   {
-    "internalType": "bool",
-    "name": "approved",
-    "type": "bool"
-   },
-   {
-    "internalType": "uint64",
-    "name": "usdPrice8",
-    "type": "uint64"
-   },
-   {
-    "internalType": "address",
-    "name": "feed",
-    "type": "address"
-   }
-  ],
-  "name": "setQuoteAsset",
   "outputs": [],
   "stateMutability": "nonpayable",
   "type": "function"
@@ -938,6 +789,536 @@ export const factoryAbi = [
  {
   "stateMutability": "payable",
   "type": "receive"
+ }
+] as const;
+
+export const pairsAbi = [
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "owner_",
+    "type": "address"
+   },
+   {
+    "internalType": "address",
+    "name": "admin_",
+    "type": "address"
+   },
+   {
+    "internalType": "address",
+    "name": "weth_",
+    "type": "address"
+   },
+   {
+    "internalType": "contract IUniswapV3Factory",
+    "name": "v3Factory_",
+    "type": "address"
+   },
+   {
+    "internalType": "contract IAggregatorV3",
+    "name": "ethUsdFeed_",
+    "type": "address"
+   },
+   {
+    "internalType": "uint64",
+    "name": "ethUsd8_",
+    "type": "uint64"
+   }
+  ],
+  "stateMutability": "nonpayable",
+  "type": "constructor"
+ },
+ {
+  "inputs": [],
+  "name": "Blocked",
+  "type": "error"
+ },
+ {
+  "inputs": [],
+  "name": "InvalidParams",
+  "type": "error"
+ },
+ {
+  "inputs": [],
+  "name": "NoPool",
+  "type": "error"
+ },
+ {
+  "inputs": [],
+  "name": "NoPrice",
+  "type": "error"
+ },
+ {
+  "inputs": [],
+  "name": "NotAdmin",
+  "type": "error"
+ },
+ {
+  "inputs": [],
+  "name": "QuoteNotApproved",
+  "type": "error"
+ },
+ {
+  "inputs": [],
+  "name": "ZeroAddress",
+  "type": "error"
+ },
+ {
+  "anonymous": false,
+  "inputs": [],
+  "name": "OwnershipRenounced",
+  "type": "event"
+ },
+ {
+  "anonymous": false,
+  "inputs": [
+   {
+    "indexed": true,
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   },
+   {
+    "indexed": false,
+    "internalType": "bool",
+    "name": "blocked",
+    "type": "bool"
+   }
+  ],
+  "name": "PairBlocked",
+  "type": "event"
+ },
+ {
+  "anonymous": false,
+  "inputs": [
+   {
+    "indexed": true,
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   },
+   {
+    "indexed": true,
+    "internalType": "address",
+    "name": "by",
+    "type": "address"
+   },
+   {
+    "indexed": false,
+    "internalType": "uint24",
+    "name": "v3Fee",
+    "type": "uint24"
+   },
+   {
+    "indexed": false,
+    "internalType": "uint8",
+    "name": "decimals",
+    "type": "uint8"
+   },
+   {
+    "indexed": false,
+    "internalType": "uint256",
+    "name": "usdPrice8",
+    "type": "uint256"
+   }
+  ],
+  "name": "PairRegistered",
+  "type": "event"
+ },
+ {
+  "anonymous": false,
+  "inputs": [
+   {
+    "indexed": true,
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   },
+   {
+    "indexed": false,
+    "internalType": "bool",
+    "name": "approved",
+    "type": "bool"
+   },
+   {
+    "indexed": false,
+    "internalType": "uint64",
+    "name": "usdPrice8",
+    "type": "uint64"
+   },
+   {
+    "indexed": false,
+    "internalType": "address",
+    "name": "feed",
+    "type": "address"
+   }
+  ],
+  "name": "QuoteAssetSet",
+  "type": "event"
+ },
+ {
+  "inputs": [],
+  "name": "FEED_MAX_AGE",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "MIN_POOL_WETH",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "admin",
+  "outputs": [
+   {
+    "internalType": "address",
+    "name": "",
+    "type": "address"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   }
+  ],
+  "name": "ensure",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "usdPrice8",
+    "type": "uint256"
+   },
+   {
+    "internalType": "uint8",
+    "name": "decimals",
+    "type": "uint8"
+   }
+  ],
+  "stateMutability": "nonpayable",
+  "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "ethUsdFeed",
+  "outputs": [
+   {
+    "internalType": "contract IAggregatorV3",
+    "name": "",
+    "type": "address"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "ethUsdPrice",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "owner",
+  "outputs": [
+   {
+    "internalType": "address",
+    "name": "",
+    "type": "address"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   }
+  ],
+  "name": "pairUsdPrice",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   }
+  ],
+  "name": "preview",
+  "outputs": [
+   {
+    "internalType": "bool",
+    "name": "ok",
+    "type": "bool"
+   },
+   {
+    "internalType": "bool",
+    "name": "approved",
+    "type": "bool"
+   },
+   {
+    "internalType": "bool",
+    "name": "blocked",
+    "type": "bool"
+   },
+   {
+    "internalType": "uint24",
+    "name": "v3Fee",
+    "type": "uint24"
+   },
+   {
+    "internalType": "uint8",
+    "name": "decimals",
+    "type": "uint8"
+   },
+   {
+    "internalType": "uint256",
+    "name": "usdPrice8",
+    "type": "uint256"
+   },
+   {
+    "internalType": "uint256",
+    "name": "poolWeth",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "",
+    "type": "address"
+   }
+  ],
+  "name": "quoteAssets",
+  "outputs": [
+   {
+    "internalType": "bool",
+    "name": "approved",
+    "type": "bool"
+   },
+   {
+    "internalType": "bool",
+    "name": "blocked",
+    "type": "bool"
+   },
+   {
+    "internalType": "uint8",
+    "name": "decimals",
+    "type": "uint8"
+   },
+   {
+    "internalType": "uint24",
+    "name": "v3Fee",
+    "type": "uint24"
+   },
+   {
+    "internalType": "uint64",
+    "name": "usdPrice8",
+    "type": "uint64"
+   },
+   {
+    "internalType": "address",
+    "name": "feed",
+    "type": "address"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "quoteCount",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "uint256",
+    "name": "",
+    "type": "uint256"
+   }
+  ],
+  "name": "quoteList",
+  "outputs": [
+   {
+    "internalType": "address",
+    "name": "",
+    "type": "address"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   }
+  ],
+  "name": "register",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "usdPrice8",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "nonpayable",
+  "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "renounceOwnership",
+  "outputs": [],
+  "stateMutability": "nonpayable",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   }
+  ],
+  "name": "routeOf",
+  "outputs": [
+   {
+    "internalType": "bytes",
+    "name": "",
+    "type": "bytes"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   },
+   {
+    "internalType": "bool",
+    "name": "blocked",
+    "type": "bool"
+   }
+  ],
+  "name": "setBlocked",
+  "outputs": [],
+  "stateMutability": "nonpayable",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   },
+   {
+    "internalType": "bool",
+    "name": "approved",
+    "type": "bool"
+   },
+   {
+    "internalType": "uint64",
+    "name": "usdPrice8",
+    "type": "uint64"
+   },
+   {
+    "internalType": "address",
+    "name": "feed",
+    "type": "address"
+   }
+  ],
+  "name": "setQuoteAsset",
+  "outputs": [],
+  "stateMutability": "nonpayable",
+  "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "v3Factory",
+  "outputs": [
+   {
+    "internalType": "contract IUniswapV3Factory",
+    "name": "",
+    "type": "address"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "weth",
+  "outputs": [
+   {
+    "internalType": "address",
+    "name": "",
+    "type": "address"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
  }
 ] as const;
 
@@ -3715,4 +4096,3 @@ export const hookAbi = [
   "type": "function"
  }
 ] as const;
-
