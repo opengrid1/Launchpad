@@ -71,7 +71,20 @@ export default function Home() {
   const nStocks = approved.filter((x) => !x.isNative && !isTokenPair(x.address) && !x.v3Fee).length;
 
   return (
-    <main className="home">
+    <main>
+      <section className="hero">
+        <div>
+          <h1>Launch a coin paired with <span>anything</span>. Holders get paid in it.</h1>
+          <p>ETH, UNI, LINK, PEPE, a tokenized stock, or any ERC-20 with a Uniswap pool. Every trade pays {FEES.taxPct}%, and {FEES.holderPct}% of it goes to holders in the pair asset as the trade settles.</p>
+          <div className="cta"><Link to="/launch" className="b pri">Launch a coin</Link><Link to="/docs" className="b">How it works</Link></div>
+        </div>
+        <div className="tiles">
+          <div><span>Paid to holders</span><b className="vi">{usd(totals.paid, { compact: true })}</b></div>
+          <div><span>24h volume</span><b>{usd(totals.vol, { compact: true })}</b></div>
+          <div><span>Coins</span><b>{num(totals.n, 0)}</b></div>
+        </div>
+      </section>
+      <div className="home">
       <div>
         <div className="toolbar">
           <input className="in" placeholder="Search coins" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -79,11 +92,7 @@ export default function Home() {
             {(["all", "eth", "token", "stock"] as Filter[]).map((f) => <button key={f} className={filter === f ? "on" : ""} onClick={() => setFilter(f)}>{f === "all" ? "All" : f === "eth" ? "ETH pairs" : f === "token" ? "Token pairs" : "Stock pairs"}</button>)}
           </div>
           <span className="spacer" />
-          <div className="stats c-hide-sm">
-            <span>Coins<b>{num(totals.n, 0)}</b></span>
-            <span>24h volume<b>{usd(totals.vol, { compact: true })}</b></span>
-            <span>Paid to holders<b>{usd(totals.paid, { compact: true })}</b></span>
-          </div>
+          <div className="stats c-hide-sm"><span>{num(totals.holders, 0)} holders across {num(totals.n, 0)} coins</span></div>
         </div>
 
         {!DEPLOYED ? (
@@ -133,7 +142,7 @@ export default function Home() {
       </div>
 
       <aside className="side">
-        <div className="card">
+        <div className="card accent">
           <div className="card-h"><h2>How it works</h2><Link to="/docs" className="b ghost sm">Docs</Link></div>
           <div className="card-b steps">
             <div><span>1</span><p><b>Pick a pair asset.</b> ETH, UNI, LINK, PEPE, a tokenized stock, or any ERC-20 with a Uniswap pool. The coin is priced in it.</p></div>
@@ -155,6 +164,7 @@ export default function Home() {
           </div>
         </div>
       </aside>
+      </div>
     </main>
   );
 }
