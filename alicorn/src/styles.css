@@ -174,8 +174,8 @@ textarea.in{height:auto;min-height:100px;padding:12px 14px;resize:vertical}
 .sum-main .fee .chip{background:var(--brand-soft);color:var(--brand-ink);height:28px;padding:0 12px;font-size:13px}
 .sum-main .cta{margin-top:auto;padding-top:22px;display:flex;gap:8px;flex-wrap:wrap}
 .sum-tiles{display:grid;grid-template-rows:repeat(3,1fr);gap:10px}
-.sum-tiles div{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:14px 18px;border:1px solid var(--line2);border-radius:var(--r)}
-.sum-tiles .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand)}
+.sum-tiles>div{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:14px 18px;border:1px solid var(--line2);border-radius:var(--r)}
+.sum-tiles .ic{width:40px;height:40px;border-radius:999px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand)}
 .sum-tiles span{font-size:14px;color:var(--ink2);font-weight:500}
 .sum-tiles b{font-size:20px;font-weight:600;letter-spacing:-.02em}
 .movers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:22px 0 26px}
@@ -394,7 +394,7 @@ textarea.in{height:auto;min-height:100px;padding:12px 14px;resize:vertical}
   .sum-main{padding:22px}
   .sum-main .big{font-size:40px}
   .sum-tiles{grid-template-rows:none;grid-template-columns:repeat(3,minmax(0,1fr))}
-  .sum-tiles div{grid-template-columns:1fr;gap:6px;padding:12px}
+  .sum-tiles>div{grid-template-columns:1fr;gap:6px;padding:12px}
   .sum-tiles .ic{width:32px;height:32px}
   .sum-tiles b{font-size:17px}
   .tk-h .price{margin-left:0;text-align:left;width:100%}

@@ -68,9 +68,9 @@ export default function Home() {
           <div className="cta"><Link to="/launch" className="b pri">Launch a coin</Link><Link to="/docs" className="b">How it works</Link></div>
         </div>
         <div className="sum-tiles">
-          <div><div className="ic"><Icon name="receipt" size={18} /></div><span>24h volume</span><b>{usd(totals.vol, { compact: true })}</b></div>
-          <div><div className="ic"><Icon name="launch" size={18} /></div><span>Coins</span><b>{num(totals.n, 0)}</b></div>
-          <div><div className="ic"><Icon name="wallet" size={18} /></div><span>Holders</span><b>{num(totals.holders, 0)}</b></div>
+          <div><div className="ic"><Icon name="chart" size={20} /></div><span>24h volume</span><b>{usd(totals.vol, { compact: true })}</b></div>
+          <div><div className="ic"><Icon name="coins" size={20} /></div><span>Coins</span><b>{num(totals.n, 0)}</b></div>
+          <div><div className="ic"><Icon name="group" size={20} /></div><span>Holders</span><b>{num(totals.holders, 0)}</b></div>
         </div>
       </section>
 
