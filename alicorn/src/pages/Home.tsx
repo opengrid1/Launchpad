@@ -60,16 +60,18 @@ export default function Home() {
 
   return (
     <main>
-      <section className="headline">
-        <div className="lbl">Paid to holders, all coins</div>
-        <div className="big">{DEPLOYED ? usd(totals.paid, { compact: totals.paid >= 1e6 }) : "$0.00"}</div>
-        <div className="sub">
-          <span><b>{usd(totals.vol, { compact: true })}</b>24h volume</span>
-          <span><b>{num(totals.n, 0)}</b>coins</span>
-          <span><b>{num(totals.holders, 0)}</b>holders</span>
-          <span><b>{FEES.holderPct}%</b>of every {FEES.taxPct}% trade fee goes to holders</span>
+      <section className="summary">
+        <div className="sum-main">
+          <div className="lbl">Paid to holders</div>
+          <div className="big">{DEPLOYED ? usd(totals.paid, { compact: totals.paid >= 1e6 }) : "$0.00"}</div>
+          <div className="fee"><span className="chip">{FEES.holderPct}% of every {FEES.taxPct}% trade fee</span><span className="faint">paid in the pair asset, every trade</span></div>
+          <div className="cta"><Link to="/launch" className="b pri">Launch a coin</Link><Link to="/docs" className="b">How it works</Link></div>
         </div>
-        <div className="cta"><Link to="/launch" className="b pri">Launch a coin</Link><Link to="/docs" className="b">How it works</Link></div>
+        <div className="sum-tiles">
+          <div><div className="ic"><Icon name="receipt" size={18} /></div><span>24h volume</span><b>{usd(totals.vol, { compact: true })}</b></div>
+          <div><div className="ic"><Icon name="launch" size={18} /></div><span>Coins</span><b>{num(totals.n, 0)}</b></div>
+          <div><div className="ic"><Icon name="wallet" size={18} /></div><span>Holders</span><b>{num(totals.holders, 0)}</b></div>
+        </div>
       </section>
 
       {DEPLOYED && movers.length > 0 && (
