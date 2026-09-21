@@ -4,8 +4,8 @@ import { useAccount } from "wagmi";
 
 import { Icon } from "./components/Icon";
 import { DEMO, env } from "./lib/env";
-import { short, usd } from "./lib/format";
-import { useConfig, useIsAdmin, useToast } from "./lib/hooks";
+import { short } from "./lib/format";
+import { useIsAdmin, useToast } from "./lib/hooks";
 import { openWalletModal } from "./lib/wallet";
 import { useTheme } from "./lib/theme";
 import Home from "./pages/Home";
@@ -20,7 +20,6 @@ import Admin from "./pages/Admin";
 export default function App() {
   const { address, isConnected } = useAccount();
   const admin = useIsAdmin();
-  const { data: cfg } = useConfig();
   const toast = useToast();
   const loc = useLocation();
   const path = loc.pathname.replace(/\/+$/, "") || "/";
@@ -44,7 +43,6 @@ export default function App() {
   const foot = (
     <div className="side-foot">
       <button className="theme" onClick={() => setTheme(isDark ? "light" : "dark")}><Icon name={isDark ? "sun" : "moon"} size={18} /><span>{isDark ? "Light mode" : "Dark mode"}</span></button>
-      <div className="eth"><span>ETH</span><b>{cfg ? usd(cfg.ethUsd) : "—"}</b></div>
     </div>
   );
 
