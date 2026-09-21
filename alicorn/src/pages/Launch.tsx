@@ -86,7 +86,7 @@ export default function Launch() {
   return (
     <main className="launch">
       <div className="launch-head">
-        <h1 className="display">Launch a coin</h1>
+        <h1>Launch a coin</h1>
         <p className="sub">One transaction. 1,000,000,000 supply into a Uniswap V4 pool at about $3,000 market cap, paired with ETH, a listed token or stock, or any ERC-20 with a Uniswap pool. Liquidity is burned.</p>
       </div>
       <div className="launch-grid">

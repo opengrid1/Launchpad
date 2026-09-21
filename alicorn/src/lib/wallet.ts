@@ -18,7 +18,9 @@ const network = defineChain({
 });
 
 const adapter = new WagmiAdapter({
-  networks: [network],
+  // Two copies of appkit-common in the workspace disagree on the type; the value is the same shape.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  networks: [network as any],
   projectId: env.walletConnectProjectId,
   transports: { [chain.id]: http(env.rpcUrls[0], { batch: { wait: 16 } }) },
 });
@@ -33,7 +35,9 @@ export function openWalletModal(): Promise<void> {
     modal = import("@reown/appkit/react").then(({ createAppKit }) =>
       createAppKit({
         adapters: [adapter],
-        networks: [network],
+        // Two copies of appkit-common in the workspace disagree on the type; the value is the same shape.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  networks: [network as any],
         defaultNetwork: network,
         projectId: env.walletConnectProjectId,
         metadata: { name: BRAND.name, description: BRAND.description, url: BRAND.url, icons: [`${BRAND.url}/icon.svg`] },

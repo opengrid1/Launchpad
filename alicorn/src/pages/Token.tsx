@@ -83,7 +83,7 @@ function Coin({ t }: { t: Token }) {
           </div>
 
           <div className="card" style={{ marginTop: 16 }}>
-            <div className="tabs">{(["trades", "holders", "about"] as const).map((k) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{k}</button>)}</div>
+            <div className="tabs pad">{(["trades", "holders", "about"] as const).map((k) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{k}</button>)}</div>
             {tab === "trades" && <Trades address={t.address} symbol={t.symbol} pair={pair} />}
             {tab === "holders" && <Holders address={t.address} creator={t.creator} />}
             {tab === "about" && <div className="about">{t.metadata?.description || "The creator did not add a description."}</div>}
