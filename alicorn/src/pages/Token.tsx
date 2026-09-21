@@ -45,8 +45,7 @@ function Coin({ t }: { t: Token }) {
   return (
     <main>
       <div className={"tk-h " + kind}>
-        <div className="glow" aria-hidden />
-        <Art src={t.metadata?.logo} name={t.name} className="art" size={84} />
+        <Art src={t.metadata?.logo} name={t.name} className="art" size={64} />
         <div className="id">
           <h1 className="display">{t.name}<span>{t.symbol}</span>{isPinned(t.address) && <span className="chip official">Official</span>}</h1>
           <div className="pays">Pays holders in <span className={"chip " + kind}>{pair.symbol}</span>{t.rewards && <em>{num(pw(t.rewards.holders), 4)} {pair.symbol} paid so far</em>}</div>
