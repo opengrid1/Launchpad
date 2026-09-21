@@ -69,8 +69,8 @@ export default function Home() {
         </div>
         <div className="sum-tiles">
           <div><div className="ic"><Icon name="chart" size={20} /></div><span>24h volume</span><b>{usd(totals.vol, { compact: true })}</b></div>
-          <div><div className="ic"><Icon name="coins" size={20} /></div><span>Coins</span><b>{num(totals.n, 0)}</b></div>
-          <div><div className="ic"><Icon name="group" size={20} /></div><span>Holders</span><b>{num(totals.holders, 0)}</b></div>
+          <div><div className="ic gold"><Icon name="coins" size={20} /></div><span>Coins</span><b>{num(totals.n, 0)}</b></div>
+          <div><div className="ic violet"><Icon name="group" size={20} /></div><span>Holders</span><b>{num(totals.holders, 0)}</b></div>
         </div>
       </section>
 
@@ -135,8 +135,8 @@ export default function Home() {
 
       <div className="howto">
         <div><div className="ic"><Icon name="bolt" size={18} /></div><h3>Pair with anything</h3><p>ETH, listed tokens and stocks, or paste any ERC-20 with a Uniswap pool. The coin is priced in it and pays in it.</p></div>
-        <div><div className="ic"><Icon name="wallet" size={18} /></div><h3>Holders are paid every trade</h3><p>Every trade pays {FEES.taxPct}%: {FEES.holderPct}% to holders in the pair asset, {FEES.creatorPct}% to the creator, {FEES.platformPct}% to the platform. No staking, no harvest.</p></div>
-        <div><div className="ic"><Icon name="shield" size={18} /></div><h3>Fixed rules</h3><p>1B supply, $3,000 opening cap, liquidity burned at launch, a 30-second anti-snipe fee and a 1% wallet cap at the open.</p></div>
+        <div><div className="ic gold"><Icon name="wallet" size={18} /></div><h3>Holders are paid every trade</h3><p>Every trade pays {FEES.taxPct}%: {FEES.holderPct}% to holders in the pair asset, {FEES.creatorPct}% to the creator, {FEES.platformPct}% to the platform. No staking, no harvest.</p></div>
+        <div><div className="ic violet"><Icon name="shield" size={18} /></div><h3>Fixed rules</h3><p>1B supply, $3,000 opening cap, liquidity burned at launch, a 30-second anti-snipe fee and a 1% wallet cap at the open.</p></div>
       </div>
     </main>
   );
