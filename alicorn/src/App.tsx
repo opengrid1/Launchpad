@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { useAccount } from "wagmi";
 
+import { Glyph } from "./components/Glyph";
 import { Icon } from "./components/Icon";
 import { DEMO, env } from "./lib/env";
 import { short } from "./lib/format";
@@ -33,11 +34,11 @@ export default function App() {
 
   const nav = (
     <nav className="snav">
-      <NavLink to="/" end className={cls}><Icon name="coins" size={22} />Coins</NavLink>
-      <NavLink to="/launch" className={cls}><Icon name="launch" size={22} />Launch</NavLink>
-      <NavLink to="/me" className={cls}><Icon name="wallet" size={22} />Rewards</NavLink>
-      <NavLink to="/docs" className={cls}><Icon name="book" size={22} />Docs</NavLink>
-      {admin && <NavLink to="/admin" className={cls}><Icon name="tune" size={22} />Admin</NavLink>}
+      <NavLink to="/" end className={cls}><Glyph name="coins" size={22} />Coins</NavLink>
+      <NavLink to="/launch" className={cls}><Glyph name="rocket" size={22} />Launch</NavLink>
+      <NavLink to="/me" className={cls}><Glyph name="wallet" size={22} />Rewards</NavLink>
+      <NavLink to="/docs" className={cls}><Glyph name="book" size={22} />Docs</NavLink>
+      {admin && <NavLink to="/admin" className={cls}><Glyph name="sliders" size={22} />Admin</NavLink>}
     </nav>
   );
   const foot = (

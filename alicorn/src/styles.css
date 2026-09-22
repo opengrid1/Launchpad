@@ -74,7 +74,7 @@ p{margin:0}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .brand img,:root:not([data-theme="light"]) .mbrand img{background:#1E2025;box-shadow:0 0 0 1px rgba(255,255,255,.22)}}
 .snav{display:flex;flex-direction:column;gap:2px}
 .snav a{display:flex;align-items:center;gap:12px;height:46px;padding:0 12px;border-radius:12px;color:var(--ink2);font-weight:500;font-size:15px;transition:background .12s,color .12s}
-.snav a svg{color:var(--mute)}
+.snav a svg{color:var(--mute);flex:0 0 auto}
 .snav a:hover{background:var(--surface);color:var(--ink)}
 .snav a.on{background:var(--brand-soft);color:var(--brand-ink);font-weight:600}
 .snav a.on svg{color:var(--accent)}

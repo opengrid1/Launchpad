@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Art } from "../components/Art";
-import { Icon } from "../components/Icon";
+import { Glyph } from "../components/Glyph";
 import { Spark } from "../components/Spark";
 import { DEPLOYED, FEES, isHidden, isPinned } from "../lib/env";
 import { ago, num, pct, usd, wei } from "../lib/format";
@@ -68,9 +68,9 @@ export default function Home() {
           <div className="cta"><Link to="/launch" className="b pri">Launch a coin</Link><Link to="/docs" className="b">How it works</Link></div>
         </div>
         <div className="sum-tiles">
-          <div><div className="ic"><Icon name="chart" size={20} /></div><span>24h volume</span><b>{usd(totals.vol, { compact: true })}</b></div>
-          <div><div className="ic gold"><Icon name="stack" size={20} /></div><span>Coins</span><b>{num(totals.n, 0)}</b></div>
-          <div><div className="ic violet"><Icon name="group" size={20} /></div><span>Holders</span><b>{num(totals.holders, 0)}</b></div>
+          <div><div className="ic"><Glyph name="chart" size={20} /></div><span>24h volume</span><b>{usd(totals.vol, { compact: true })}</b></div>
+          <div><div className="ic gold"><Glyph name="coins" size={20} /></div><span>Coins</span><b>{num(totals.n, 0)}</b></div>
+          <div><div className="ic violet"><Glyph name="users" size={20} /></div><span>Holders</span><b>{num(totals.holders, 0)}</b></div>
         </div>
       </section>
 
