@@ -33,7 +33,7 @@ export default function App() {
 
   const nav = (
     <nav className="snav">
-      <NavLink to="/" end className={cls}><Icon name="receipt" size={22} />Coins</NavLink>
+      <NavLink to="/" end className={cls}><Icon name="coins" size={22} />Coins</NavLink>
       <NavLink to="/launch" className={cls}><Icon name="launch" size={22} />Launch</NavLink>
       <NavLink to="/me" className={cls}><Icon name="wallet" size={22} />Rewards</NavLink>
       <NavLink to="/docs" className={cls}><Icon name="book" size={22} />Docs</NavLink>
