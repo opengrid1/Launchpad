@@ -21,8 +21,7 @@ const loadUnicorn = () => {
 };
 
 /** Coin artwork: the creator's image when there is one, else the default
- *  logo: the brand unicorn over a soft mesh gradient painted on canvas from
- *  the coin's name, so every coin still looks like its own. Never a letter tile. */
+ *  logo: the brand unicorn on a plain dark tile. Never a letter tile. */
 export function Art({ src, name, className = "art", size }: { src?: string; name: string; className?: string; size?: number }) {
   const [bad, setBad] = useState(false);
   const ref = useRef<HTMLCanvasElement>(null);
@@ -35,22 +34,10 @@ export function Art({ src, name, className = "art", size }: { src?: string; name
     const paint = () => {
       c.width = px; c.height = px;
       const ctx = c.getContext("2d")!;
-      const [h1, h2, h3] = hues(name);
-      ctx.fillStyle = `hsl(${h1} 30% 14%)`;
+      ctx.fillStyle = "#0A0B0D";
       ctx.fillRect(0, 0, px, px);
-      const blob = (x: number, y: number, r: number, h: number, s: number, l: number) => {
-        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-        g.addColorStop(0, `hsl(${h} ${s}% ${l}% / 0.95)`);
-        g.addColorStop(1, `hsl(${h} ${s}% ${l}% / 0)`);
-        ctx.fillStyle = g; ctx.fillRect(0, 0, px, px);
-      };
-      blob(px * 0.3, px * 0.35, px * 0.8, h1, 70, 52);
-      blob(px * 0.78, px * 0.3, px * 0.7, h2, 75, 54);
-      blob(px * 0.55, px * 0.85, px * 0.75, h3, 65, 48);
-      blob(px * 0.15, px * 0.9, px * 0.5, h2, 55, 40);
       if (unicorn) {
         const h = px * 0.6, w = (unicorn.width / unicorn.height) * h;
-        ctx.shadowColor = "rgba(0,0,0,.35)"; ctx.shadowBlur = px * 0.05; ctx.shadowOffsetY = px * 0.015;
         ctx.drawImage(unicorn, (px - w) / 2, (px - h) / 2 + px * 0.01, w, h);
       }
     };
