@@ -26,7 +26,7 @@ export const env = {
   explorerUrl: "https://etherscan.io",
   walletConnectProjectId: "e1bda672d5deb56579fe084dddfb9174",
   /** Factory deploy block, the lower bound for log scans. */
-  startBlock: BigInt(import.meta.env.VITE_START_BLOCK ?? "0"),
+  startBlock: BigInt(import.meta.env.VITE_START_BLOCK ?? "26046985"),
   dexscreenerChain: "ethereum",
   secondsPerBlock: 12,
 };
@@ -35,11 +35,11 @@ const addr = (key: string, fallback: string) => String(import.meta.env[key] ?? f
 
 /** Deployed contracts on Ethereum mainnet (VITE_* overrides point a build at a fork). */
 export const ADDRESSES = {
-  factory: addr("VITE_FACTORY", "0x0000000000000000000000000000000000000000"),
+  factory: addr("VITE_FACTORY", "0x98A59A3B4776b4c4E44d57f19A691944D01e4aD9"),
   /** Pair-asset registry: curated pairs plus any token that registers itself from its Uniswap V3 pool. */
-  pairs: addr("VITE_PAIRS", "0x0000000000000000000000000000000000000000"),
-  hook: addr("VITE_HOOK", "0x0000000000000000000000000000000000000000"),
-  router: addr("VITE_ROUTER", "0x0000000000000000000000000000000000000000"),
+  pairs: addr("VITE_PAIRS", "0x896b35f89B5e657fafb96A6a6cDdA65594437F59"),
+  hook: addr("VITE_HOOK", "0x8593D5F1Fa2a074A257EDaCb6DD1cDF51d96C0cC"),
+  router: addr("VITE_ROUTER", "0x41437Ee59Cf1b1463dff060625dA4A9Bed2961aD"),
   poolManager: addr("VITE_POOL_MANAGER", "0x000000000004444c5dc75cB358380D2e3dE08A90"),
   stateView: addr("VITE_STATE_VIEW", "0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227"),
   weth: addr("VITE_WETH", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),

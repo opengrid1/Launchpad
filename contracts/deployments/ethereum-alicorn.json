@@ -1,0 +1,30 @@
+{
+  "contracts": {
+    "hookDeployer": "0x40169A2BC653c122F42ec0AD36563e7db7B24A47",
+    "hookSalt": "0x00000000000000000000000000000000000000000000000000000000000006ae",
+    "hook": "0x8593D5F1Fa2a074A257EDaCb6DD1cDF51d96C0cC",
+    "pairs": "0x896b35f89B5e657fafb96A6a6cDdA65594437F59",
+    "factory": "0x98A59A3B4776b4c4E44d57f19A691944D01e4aD9",
+    "router": "0x41437Ee59Cf1b1463dff060625dA4A9Bed2961aD"
+  },
+  "quotes": [],
+  "chainId": 1,
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "ethUsd8": "265025170485",
+  "uniswap": {
+    "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+    "weth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "swapRouter02": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+    "v3Factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+  },
+  "ethUsdFeed": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+  "fees": {
+    "taxBps": 400,
+    "creatorBps": 5000,
+    "holderBps": 3000,
+    "platformBps": 2000
+  },
+  "deployBlock": 26046985,
+  "deployedAt": "2026-09-24T11:21:49.099Z"
+}
