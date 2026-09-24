@@ -94,7 +94,7 @@ export default function Home() {
       <div className="sec-h"><h2>All coins</h2></div>
       <div className="filters">
         <div className="seg">
-          {(["all", "eth", "token", "stock"] as Filter[]).map((f) => <button key={f} className={filter === f ? "on" : ""} onClick={() => setFilter(f)}>{f === "all" ? "All" : f === "eth" ? "Pays ETH" : f === "token" ? "Pays tokens" : "Pays stocks"}</button>)}
+          {(["all", "eth", "token", "stock"] as Filter[]).map((f) => <button key={f} className={filter === f ? "on" : ""} onClick={() => setFilter(f)}>{f === "all" ? "All" : f === "eth" ? "ETH" : f === "token" ? "Tokens" : "Stocks"}</button>)}
         </div>
       </div>
 
