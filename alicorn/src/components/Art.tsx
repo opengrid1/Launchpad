@@ -8,8 +8,21 @@ export function hues(name: string): [number, number, number] {
   return [a, (a + 45 + (h % 60)) % 360, (a + 200 + (h % 90)) % 360];
 }
 
-/** Coin artwork: the creator's image when there is one, else a soft mesh
- *  gradient painted on canvas from the coin's name. Never a letter tile. */
+/** The brand unicorn, loaded once and shared by every default artwork. */
+let unicorn: HTMLImageElement | null = null;
+let unicornReady: Promise<HTMLImageElement> | null = null;
+const loadUnicorn = () => {
+  if (!unicornReady) {
+    const img = new Image();
+    img.src = "/unicorn.png";
+    unicornReady = img.decode().then(() => (unicorn = img));
+  }
+  return unicornReady;
+};
+
+/** Coin artwork: the creator's image when there is one, else the default
+ *  logo: the brand unicorn over a soft mesh gradient painted on canvas from
+ *  the coin's name, so every coin still looks like its own. Never a letter tile. */
 export function Art({ src, name, className = "art", size }: { src?: string; name: string; className?: string; size?: number }) {
   const [bad, setBad] = useState(false);
   const ref = useRef<HTMLCanvasElement>(null);
@@ -18,26 +31,32 @@ export function Art({ src, name, className = "art", size }: { src?: string; name
     if ((src && !bad) || !ref.current) return;
     const c = ref.current;
     const px = 256;
-    c.width = px; c.height = px;
-    const ctx = c.getContext("2d")!;
-    const [h1, h2, h3] = hues(name);
-    ctx.fillStyle = `hsl(${h1} 30% 14%)`;
-    ctx.fillRect(0, 0, px, px);
-    const blob = (x: number, y: number, r: number, h: number, s: number, l: number) => {
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, `hsl(${h} ${s}% ${l}% / 0.95)`);
-      g.addColorStop(1, `hsl(${h} ${s}% ${l}% / 0)`);
-      ctx.fillStyle = g; ctx.fillRect(0, 0, px, px);
+    let alive = true;
+    const paint = () => {
+      c.width = px; c.height = px;
+      const ctx = c.getContext("2d")!;
+      const [h1, h2, h3] = hues(name);
+      ctx.fillStyle = `hsl(${h1} 30% 14%)`;
+      ctx.fillRect(0, 0, px, px);
+      const blob = (x: number, y: number, r: number, h: number, s: number, l: number) => {
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, `hsl(${h} ${s}% ${l}% / 0.95)`);
+        g.addColorStop(1, `hsl(${h} ${s}% ${l}% / 0)`);
+        ctx.fillStyle = g; ctx.fillRect(0, 0, px, px);
+      };
+      blob(px * 0.3, px * 0.35, px * 0.8, h1, 70, 52);
+      blob(px * 0.78, px * 0.3, px * 0.7, h2, 75, 54);
+      blob(px * 0.55, px * 0.85, px * 0.75, h3, 65, 48);
+      blob(px * 0.15, px * 0.9, px * 0.5, h2, 55, 40);
+      if (unicorn) {
+        const h = px * 0.6, w = (unicorn.width / unicorn.height) * h;
+        ctx.shadowColor = "rgba(0,0,0,.35)"; ctx.shadowBlur = px * 0.05; ctx.shadowOffsetY = px * 0.015;
+        ctx.drawImage(unicorn, (px - w) / 2, (px - h) / 2 + px * 0.01, w, h);
+      }
     };
-    blob(px * 0.3, px * 0.35, px * 0.8, h1, 75, 60);
-    blob(px * 0.78, px * 0.3, px * 0.7, h2, 80, 62);
-    blob(px * 0.55, px * 0.85, px * 0.75, h3, 70, 55);
-    blob(px * 0.15, px * 0.9, px * 0.5, h2, 60, 45);
-    // a single quiet ring, the brand motif
-    ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.ellipse(px * 0.5, px * 0.52, px * 0.3, px * 0.12, -0.5, 0, Math.PI * 2); ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,.92)";
-    ctx.beginPath(); ctx.arc(px * 0.5, px * 0.52, px * 0.075, 0, Math.PI * 2); ctx.fill();
+    paint();
+    if (!unicorn) loadUnicorn().then(() => { if (alive) paint(); }).catch(() => {});
+    return () => { alive = false; };
   }, [src, bad, name]);
   if (src && !bad) return <img className={className} src={src} alt="" loading="lazy" onError={() => setBad(true)} style={style} />;
   return <canvas ref={ref} className={className} style={style} aria-hidden="true" />;
