@@ -72,7 +72,7 @@ export const BRAND = {
 export const FEES = { taxPct: 4, creatorPct: 50, holderPct: 30, platformPct: 20 };
 
 /** Official coins, always listed first on the feed. */
-export const PINNED_TOKENS: string[] = [];
+export const PINNED_TOKENS: string[] = ["0x46371c83b92d941eaa43855bc9684e5bcbf15c99"];
 export const isPinned = (address: string) => PINNED_TOKENS.includes(address.toLowerCase());
 
 /** Coins kept off the public feed (tests). Pages still open by URL. */

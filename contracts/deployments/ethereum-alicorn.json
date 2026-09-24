@@ -1201,6 +1201,15 @@
       "creator": "0x1f26110C02f7609a766f6592129Dc776282829d7",
       "block": 26047028,
       "tx": "0x97aa75b4f6eda66db4bd08256296eceb159ba7c92069869a9cbeb3d617168e17"
+    },
+    "official": {
+      "name": "Alicorn",
+      "symbol": "ALICORN",
+      "address": "0x46371C83b92D941EAA43855bc9684E5bcbf15c99",
+      "pair": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "creator": "0x1f26110C02f7609a766f6592129Dc776282829d7",
+      "block": 26047448,
+      "tx": "0x044e7c3086c9314a0f1f67233e1456cf696054f0433117627b532723f7f09937"
     }
   }
 }
