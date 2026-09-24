@@ -7,7 +7,362 @@
     "factory": "0x98A59A3B4776b4c4E44d57f19A691944D01e4aD9",
     "router": "0x41437Ee59Cf1b1463dff060625dA4A9Bed2961aD"
   },
-  "quotes": [],
+  "quotes": [
+    {
+      "symbol": "UNI",
+      "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+      "usd": 8.71,
+      "usd8": "871000000",
+      "feed": "0x553303d460EE0afB37EdFf9bE42922D8FF63220e"
+    },
+    {
+      "symbol": "LINK",
+      "address": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+      "usd": 11.95,
+      "usd8": "1195000000",
+      "feed": "0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c"
+    },
+    {
+      "symbol": "AAVE",
+      "address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+      "usd": 136.91,
+      "usd8": "13691000000",
+      "feed": "0x547a514d5e3769680Ce22B2361c10Ea13619e8a9"
+    },
+    {
+      "symbol": "MKR",
+      "address": "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",
+      "usd": 1553.49,
+      "usd8": "155349000000",
+      "feed": "0xec1D1B3b0443256cc3860e24a46F108e699484Aa"
+    },
+    {
+      "symbol": "CRV",
+      "address": "0xD533a949740bb3306d119CC777fa900bA034cd52",
+      "usd": 0.3318,
+      "usd8": "33180000",
+      "feed": "0xCd627aA160A6fA45Eb793D19Ef54f5062F20f33f"
+    },
+    {
+      "symbol": "ENS",
+      "address": "0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72",
+      "usd": 6.26,
+      "usd8": "626000000",
+      "feed": "0x5C00128d4d1c2F4f652C267d7bcdD7aC99C16E16"
+    },
+    {
+      "symbol": "LDO",
+      "address": "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
+      "usd": 0.55,
+      "usd8": "55000000"
+    },
+    {
+      "symbol": "PEPE",
+      "address": "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
+      "usd": 0.0000045,
+      "usd8": "450"
+    },
+    {
+      "symbol": "SHIB",
+      "address": "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE",
+      "usd": 0.0000065,
+      "usd8": "650"
+    },
+    {
+      "symbol": "HIMSon",
+      "address": "0xCa468554e5C0423Ee858fe3942c9568C51FcAa79",
+      "usd": 27.76,
+      "usd8": "2776000000"
+    },
+    {
+      "symbol": "SLVon",
+      "address": "0xF3e4872e6a4cF365888D93b6146a2bAA7348F1A4",
+      "usd": 59.62,
+      "usd8": "5962000000"
+    },
+    {
+      "symbol": "TLTon",
+      "address": "0x992651BFeB9A0DCC4457610E284ba66D86489d4d",
+      "usd": 82.21,
+      "usd8": "8221000000"
+    },
+    {
+      "symbol": "IEFAon",
+      "address": "0xFEFf7a377A86462F5a2A872009722C154707F09e",
+      "usd": 101.08,
+      "usd8": "10108000000"
+    },
+    {
+      "symbol": "CRCLon",
+      "address": "0x3632DEa96A953C11dac2f00b4A05a32CD1063fAE",
+      "usd": 100.78,
+      "usd8": "10078000000"
+    },
+    {
+      "symbol": "AGGon",
+      "address": "0xfF7CF16aA2fFc463b996DB2f7B7cf0130336899D",
+      "usd": 97,
+      "usd8": "9700000000"
+    },
+    {
+      "symbol": "PFEon",
+      "address": "0x06954faa913fA14c28Eb1b2e459594F22f33f3dE",
+      "usd": 28.45,
+      "usd8": "2845000000"
+    },
+    {
+      "symbol": "PBRon",
+      "address": "0xD08DDb436e731f32455Fe302723eE0FD2E9E8706",
+      "usd": 20.12,
+      "usd8": "2012000000"
+    },
+    {
+      "symbol": "EEMon",
+      "address": "0x77A1a02e4a888ADA8620b93C30dE8a41E621126c",
+      "usd": 68.7,
+      "usd8": "6870000000"
+    },
+    {
+      "symbol": "EFAon",
+      "address": "0x4111b60bc87F2Bd1e81E783E271D7F0ec6EE088B",
+      "usd": 108.35,
+      "usd8": "10835000000"
+    },
+    {
+      "symbol": "TIPon",
+      "address": "0x2Df38cA485D01fC15e4FD85847ed26b7EF871c1c",
+      "usd": 106.97,
+      "usd8": "10697000000"
+    },
+    {
+      "symbol": "IAUon",
+      "address": "0x4f0CA3df1c2e6b943cf82E649d576ffe7B2fABCF",
+      "usd": 83.39,
+      "usd8": "8339000000"
+    },
+    {
+      "symbol": "IVVon",
+      "address": "0x62cA254a363dc3c748e7E955c20447aB5bF06fF7",
+      "usd": 773.92,
+      "usd8": "77392000000"
+    },
+    {
+      "symbol": "NVDAon",
+      "address": "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
+      "usd": 229.26,
+      "usd8": "22926000000"
+    },
+    {
+      "symbol": "ITOTon",
+      "address": "0x0692481C369E2BDc728A69ae31b848343a4567Be",
+      "usd": 168.64,
+      "usd8": "16864000000"
+    },
+    {
+      "symbol": "INTCon",
+      "address": "0xFdA09936DbD717368De0835bA441d9E62069d36f",
+      "usd": 95.8,
+      "usd8": "9580000000"
+    },
+    {
+      "symbol": "SPYon",
+      "address": "0xFeDC5f4a6c38211c1338aa411018DFAf26612c08",
+      "usd": 774.46,
+      "usd8": "77446000000"
+    },
+    {
+      "symbol": "MSTRon",
+      "address": "0xCabD955322dfbf94C084929ac5E9Eca3fEB5556F",
+      "usd": 142.8,
+      "usd8": "14280000000"
+    },
+    {
+      "symbol": "NVOon",
+      "address": "0x28151F5888833D3d767C4d6945a0Ee50D1B193E3",
+      "usd": 46.6,
+      "usd8": "4660000000"
+    },
+    {
+      "symbol": "SPCXon",
+      "address": "0xc9eef266834730340A55B6CC24621B31BAF55581",
+      "usd": 266.6,
+      "usd8": "26660000000"
+    },
+    {
+      "symbol": "KOon",
+      "address": "0x74a03d741226f738098C35da8188E57acA50d146",
+      "usd": 88.07,
+      "usd8": "8807000000"
+    },
+    {
+      "symbol": "IJHon",
+      "address": "0xFd50Fc4E3686a8DA814c5C3D6121d8aB98a537F0",
+      "usd": 75.85,
+      "usd8": "7585000000"
+    },
+    {
+      "symbol": "JDon",
+      "address": "0xdeB6B89088cA9B7d7756087c8a0F7C6DF46f319C",
+      "usd": 28.26,
+      "usd8": "2826000000"
+    },
+    {
+      "symbol": "QQQon",
+      "address": "0x0e397938C1Aa0680954093495B70A9F5e2249aBa",
+      "usd": 714.47,
+      "usd8": "71447000000"
+    },
+    {
+      "symbol": "MRVLon",
+      "address": "0xF404E5f887dBd5508e16a1198fCDD5DE1A4296B8",
+      "usd": 223.84,
+      "usd8": "22384000000"
+    },
+    {
+      "symbol": "CMGon",
+      "address": "0x25018520138bbaB60684AD7983D4432E8B8E926B",
+      "usd": 36.96,
+      "usd8": "3696000000"
+    },
+    {
+      "symbol": "QBTSon",
+      "address": "0x3807562A482B824C08A564DFefcc471806d3E00a",
+      "usd": 16.58,
+      "usd8": "1658000000"
+    },
+    {
+      "symbol": "GOOGLon",
+      "address": "0xbA47214eDd2bb43099611b208f75E4b42FDcfEDc",
+      "usd": 338.13,
+      "usd8": "33813000000"
+    },
+    {
+      "symbol": "SMCIon",
+      "address": "0x2ca12a3F9635fD69C21580def14F25C210cA9612",
+      "usd": 39.59,
+      "usd8": "3959000000"
+    },
+    {
+      "symbol": "BMNRon",
+      "address": "0x33483A58079b4225b10e57958Ca28ad7b9CDbAF7",
+      "usd": 24.97,
+      "usd8": "2497000000"
+    },
+    {
+      "symbol": "CSCOon",
+      "address": "0x980a1001ee94e54142b231f44C7CA7c9DF71FBe1",
+      "usd": 109.2,
+      "usd8": "10920000000"
+    },
+    {
+      "symbol": "IWNon",
+      "address": "0x9DCf7f739B8C0270E2FC0Cc8D0DaBe355a150dBa",
+      "usd": 224.62,
+      "usd8": "22462000000"
+    },
+    {
+      "symbol": "HOODon",
+      "address": "0x998f02A9E343EF6E3E6f28700d5A20F839fD74E6",
+      "usd": 122.11,
+      "usd8": "12211000000"
+    },
+    {
+      "symbol": "RIOTon",
+      "address": "0x21deafD91116FCe9fE87C8f15Bde03f99a309b72",
+      "usd": 21.8,
+      "usd8": "2180000000"
+    },
+    {
+      "symbol": "ASTSon",
+      "address": "0x0D1fa4E1E3719945899Ef7b02840627Df46aF44A",
+      "usd": 62.31,
+      "usd8": "6231000000"
+    },
+    {
+      "symbol": "WMTon",
+      "address": "0x82106347dDbB23cE44Cf4cE4053Ef1adf8b9323B",
+      "usd": 107.14,
+      "usd8": "10714000000"
+    },
+    {
+      "symbol": "SBUXon",
+      "address": "0xf15FbC1349ab99ABAd63db3f9A510BF413bE3BeF",
+      "usd": 104.47,
+      "usd8": "10447000000"
+    },
+    {
+      "symbol": "PYPLon",
+      "address": "0x4EFD92F372898B57F292De69fCe377dd7D912bDd",
+      "usd": 54.96,
+      "usd8": "5496000000"
+    },
+    {
+      "symbol": "IWFon",
+      "address": "0x8d05432C2786e3F93f1a9A62b9572DBf54f3ea06",
+      "usd": 123.41,
+      "usd8": "12341000000"
+    },
+    {
+      "symbol": "PGon",
+      "address": "0x339ce23a355ed6D513DD3e1462975C4eCD86823a",
+      "usd": 146.44,
+      "usd8": "14644000000"
+    },
+    {
+      "symbol": "USOon",
+      "address": "0x1F5fc5c3c8B0F15c7E21AF623936FF2b210b6415",
+      "usd": 138.64,
+      "usd8": "13864000000"
+    },
+    {
+      "symbol": "TSLAon",
+      "address": "0xf6b1117ec07684D3958caD8BEb1b302bfD21103f",
+      "usd": 1640.69,
+      "usd8": "164069000000"
+    },
+    {
+      "symbol": "MUon",
+      "address": "0x050362Ab1072Cb2Ce74d74770E22A3203Ad04ee5",
+      "usd": 959.16,
+      "usd8": "95916000000"
+    },
+    {
+      "symbol": "AAPLon",
+      "address": "0x14c3abF95Cb9C93a8b82C1CdCB76D72Cb87b2d4c",
+      "usd": 316.93,
+      "usd8": "31693000000"
+    },
+    {
+      "symbol": "MARAon",
+      "address": "0x4604b0b581269843ac7a6b70A5FC019E7762e511",
+      "usd": 11.31,
+      "usd8": "1131000000"
+    },
+    {
+      "symbol": "PEPon",
+      "address": "0x3cE219D498D807317F840f4CB0f03FA27dd65046",
+      "usd": 137.63,
+      "usd8": "13763000000"
+    },
+    {
+      "symbol": "WFCon",
+      "address": "0x4AD2118Da8a65eaa81402A3d583FEF6eE76BDf3F",
+      "usd": 89.97,
+      "usd8": "8997000000"
+    },
+    {
+      "symbol": "BABAon",
+      "address": "0x41765F0FCddC276309195166C7A62AE522FA09ef",
+      "usd": 113.24,
+      "usd8": "11324000000"
+    },
+    {
+      "symbol": "AMZNon",
+      "address": "0xbb8774FB97436d23d74C1b882E8E9A69322cFD31",
+      "usd": 262.42,
+      "usd8": "26242000000"
+    }
+  ],
   "chainId": 1,
   "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
   "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
@@ -26,5 +381,16 @@
     "platformBps": 2000
   },
   "deployBlock": 26046985,
-  "deployedAt": "2026-09-24T11:21:49.099Z"
+  "deployedAt": "2026-09-24T11:21:49.099Z",
+  "coins": {
+    "pawsinu": {
+      "name": "PAWSINU",
+      "symbol": "PAWSINU",
+      "address": "0x68A026Cc122FFc309b3B37c6E69eB21d82d9bB6b",
+      "pair": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+      "creator": "0x1f26110C02f7609a766f6592129Dc776282829d7",
+      "block": 26047028,
+      "tx": "0x97aa75b4f6eda66db4bd08256296eceb159ba7c92069869a9cbeb3d617168e17"
+    }
+  }
 }
