@@ -361,6 +361,12 @@
       "address": "0xbb8774FB97436d23d74C1b882E8E9A69322cFD31",
       "usd": 262.42,
       "usd8": "26242000000"
+    },
+    {
+      "symbol": "BOTon",
+      "address": "0x0e05BA0756C504B69AAA642f7379CD1AF7C63969",
+      "usd": 26.8,
+      "usd8": "2680000000"
     }
   ],
   "chainId": 1,
