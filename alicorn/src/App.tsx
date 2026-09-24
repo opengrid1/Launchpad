@@ -4,7 +4,7 @@ import { useAccount } from "wagmi";
 
 import { Glyph } from "./components/Glyph";
 import { Icon } from "./components/Icon";
-import { DEMO, env } from "./lib/env";
+import { BRAND, DEMO, env } from "./lib/env";
 import { short } from "./lib/format";
 import { useIsAdmin, useToast } from "./lib/hooks";
 import { openWalletModal } from "./lib/wallet";
@@ -43,6 +43,7 @@ export default function App() {
   );
   const foot = (
     <div className="side-foot">
+      <a className="theme" href={BRAND.x} target="_blank" rel="noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M18.9 2H22l-7.2 8.2L23 22h-6.6l-5.2-6.8L5.3 22H2.1l7.7-8.8L1.7 2h6.8l4.7 6.2L18.9 2Zm-1.2 18h1.8L7.2 3.9H5.3L17.7 20Z"/></svg><span>{BRAND.x.replace("https://x.com/", "@")}</span></a>
       <button className="theme" onClick={() => setTheme(isDark ? "light" : "dark")}><Icon name={isDark ? "sun" : "moon"} size={18} /><span>{isDark ? "Light mode" : "Dark mode"}</span></button>
     </div>
   );

@@ -64,7 +64,7 @@ export const BRAND = {
   name: "Alicorn",
   tagline: "Pair with anything. Get paid to hold.",
   url: "https://www.alicorn.fun",
-  x: "https://x.com/alicornfun",
+  x: "https://x.com/alicorn_fun",
   description: "Launch a coin on Ethereum paired with ETH, UNI, LINK, PEPE, a tokenized stock, or any ERC-20 with a Uniswap pool. Every trade pays 4%: half to the creator, 30% to holders in the pair asset, 20% to the platform. No harvest, no lockups.",
 };
 
