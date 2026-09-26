@@ -27,7 +27,7 @@ export const config = {
   secret: need("BOT_SECRET"),
   dataDir: process.env.DATA_DIR ?? join(ROOT, "data"),
   factory: process.env.NEAR_FACTORY ?? "chipfi.near",
-  rpcUrls: (process.env.NEAR_RPC ?? "https://free.rpc.fastnear.com,https://rpc.mainnet.near.org,https://near.lava.build").split(","),
+  rpcUrls: (process.env.NEAR_RPC ?? "https://free.rpc.fastnear.com,https://rpc.mainnet.near.org").split(","),
   siteUrl: process.env.SITE_URL ?? "https://www.chipfi.fun",
   dex: "v2.ref-finance.near",
   dcl: "dclv2.ref-labs.near",

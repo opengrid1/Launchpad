@@ -38,10 +38,18 @@ export async function view<T>(contract: string, method: string, args: Record<str
   return (await provider.callFunction(contract, method, args)) as T;
 }
 
-/** Native balance; zero for an implicit account nobody has funded yet. */
+/** Native balance; zero for an implicit account nobody has funded yet. Goes
+ *  straight to the RPC so a missing account is an answer, not a failover. */
 export async function balanceOf(accountId: string): Promise<bigint> {
-  try { return BigInt((await provider.viewAccount(accountId)).amount); }
-  catch { return 0n; }
+  for (const url of config.rpcUrls) {
+    try {
+      const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "view_account", finality: "final", account_id: accountId } }), signal: AbortSignal.timeout(10_000) });
+      const j = (await r.json()) as { result?: { amount: string }; error?: { cause?: { name?: string } } };
+      if (j.result) return BigInt(j.result.amount);
+      if (j.error?.cause?.name === "UNKNOWN_ACCOUNT") return 0n;
+    } catch { /* next url */ }
+  }
+  return 0n;
 }
 
 export const ftBalance = async (token: string, accountId: string) => BigInt((await view<string>(token, "ft_balance_of", { account_id: accountId }).catch(() => "0")) || "0");
