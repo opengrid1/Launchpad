@@ -148,7 +148,7 @@ function SwapBox({ pair }: { pair: Pair }) {
             </dl>
             {noLiq && (
               <div className="warn" style={{ marginBottom: 10 }}>
-                No solver is quoting {sym} on NEAR Intents right now. It tends to come back with market hours. Meanwhile: the token also trades on BNB Chain{pancake ? <>, <a className="vi" href={pancake} target="_blank" rel="noreferrer">on PancakeSwap</a></> : null}, and the <a className="vi" href={INTENTS_APP} target="_blank" rel="noreferrer">NEAR Intents app</a> can bring it to NEAR.
+                No solver is quoting {sym} on NEAR Intents right now. Ondo stock tokens trade 24/5: quotes stop Friday 8pm ET and come back Sunday 8pm ET (Monday 8am Manila). Meanwhile: the token also trades on BNB Chain{pancake ? <>, <a className="vi" href={pancake} target="_blank" rel="noreferrer">on PancakeSwap</a></> : null}, and the <a className="vi" href={INTENTS_APP} target="_blank" rel="noreferrer">NEAR Intents app</a> can bring it to NEAR.
               </div>
             )}
             {dryErr && !noLiq && <div className="warn" style={{ marginBottom: 10 }}>{String((dryErr as Error).message)}</div>}

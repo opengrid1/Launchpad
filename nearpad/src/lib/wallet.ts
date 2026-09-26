@@ -1,4 +1,6 @@
-import { setupWalletSelector, type WalletSelector, type Action } from "@near-wallet-selector/core";
+import { setupWalletSelector, type WalletSelector } from "@near-wallet-selector/core";
+import { actionCreators } from "@near-js/transactions";
+import { Buffer } from "buffer";
 import { setupModal, type WalletSelectorModal } from "@near-wallet-selector/modal-ui";
 import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 import { setupMeteorWallet } from "@near-wallet-selector/meteor-wallet";
@@ -7,6 +9,10 @@ import { useEffect, useState } from "react";
 
 import { DEMO, env } from "./env";
 import { friendlyError, setToast } from "./hooks";
+
+// wallet-selector decodes function-call args with the Node Buffer global.
+const g = globalThis as { Buffer?: typeof Buffer };
+if (!g.Buffer) g.Buffer = Buffer;
 
 let selector: WalletSelector | null = null;
 let modal: WalletSelectorModal | null = null;
@@ -70,7 +76,7 @@ export async function send(label: string, calls: Call[], after?: () => Promise<v
     const txs = calls.map((c) => ({
       signerId: accountId!,
       receiverId: c.receiverId,
-      actions: [{ type: "FunctionCall", params: { methodName: c.methodName, args: c.args ?? {}, gas: c.gas ?? TGAS(100), deposit: c.deposit ?? "0" } } as unknown as Action],
+      actions: [actionCreators.functionCall(c.methodName, c.args ?? {}, BigInt(c.gas ?? TGAS(100)), BigInt(c.deposit ?? "0"))],
     }));
     const res = txs.length === 1 ? await w.signAndSendTransaction(txs[0]) : await w.signAndSendTransactions({ transactions: txs });
     const last = Array.isArray(res) ? res[res.length - 1] : res;
