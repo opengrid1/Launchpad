@@ -49,7 +49,7 @@ async function coinCard(u: User, coin: Coin, i: Info) {
     `<b>Pool</b>`,
     `🏦 ${i.pool_id != null ? `Rhea pool #${i.pool_id}` : `Curve · ${progress!.toFixed(0)}% to Rhea`} · pair <b>${sym}</b>`,
     `📊 Mcap: <b>${usd(mcap)}</b>`,
-    `💧 Liq: <b>${fmt(units(liq, dec), 2)} ${sym}</b> (${usd(units(liq, dec) * pUsd)})`,
+    `💧 Liq: <b>${usd(units(liq, dec) * pUsd)}</b>`,
     `💵 Price: ${price.toPrecision(3)} ${sym}${pUsd ? ` (${usd(price * pUsd)})` : ""}`,
     ``,
     `<b>Token</b>`,
