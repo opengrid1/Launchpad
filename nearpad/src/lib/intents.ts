@@ -104,3 +104,45 @@ export async function quoteNearToStockOnRhea(stockAccount: string, yoctoIn: stri
 /** The ft_transfer_call message that swaps through a DCL pool. */
 export const dclSwapMsg = (poolId: string, outputToken: string, minOut: string) =>
   JSON.stringify({ Swap: { pool_ids: [poolId], output_token: outputToken, min_output_amount: minOut } });
+
+/** A quote for a stock token back into NEAR, delivered straight to the wallet. */
+export async function quoteStockToNear(opts: { account: string; stockAccount: string; amountIn: string; dry: boolean; slippageBps?: number }): Promise<Quote> {
+  const deadline = new Date(Date.now() + 15 * 60_000).toISOString();
+  const body = {
+    dry: opts.dry,
+    swapType: "EXACT_INPUT",
+    slippageTolerance: opts.slippageBps ?? 100,
+    originAsset: assetOf(opts.stockAccount),
+    depositType: "ORIGIN_CHAIN",
+    destinationAsset: WNEAR_ASSET,
+    amount: opts.amountIn,
+    refundTo: opts.account,
+    refundType: "ORIGIN_CHAIN",
+    recipient: opts.account,
+    recipientType: "DESTINATION_CHAIN",
+    deadline,
+  };
+  const r = await fetch(`${ONECLICK}/quote?ondoTokens`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(20_000) });
+  const j = await r.json();
+  if (!r.ok) {
+    const m = String(j?.message ?? r.statusText);
+    if (/liquidity/i.test(m)) throw new NoLiquidity(m);
+    throw new Error(m);
+  }
+  const q = j.quote as Quote;
+  return { ...q, depositAddress: q.depositAddress, depositMemo: q.depositMemo, deadline: j.quoteRequest?.deadline ?? deadline };
+}
+
+/** The best stock-to-NEAR quote across the stock's Rhea DCL pools. The pool
+ *  unwraps on the way out, so native NEAR lands in the wallet. */
+export async function quoteStockToNearOnRhea(stockAccount: string, amountIn: string, viewFn: <T>(c: string, m: string, a: Record<string, unknown>) => Promise<T>): Promise<DclQuote | null> {
+  const wnear = WNEAR_ASSET.slice(7);
+  const pools = DCL_FEES.map((fee) => ({ fee, poolId: [stockAccount, wnear].sort().join("|") + `|${fee}` }));
+  const quotes = await Promise.all(pools.map(async (p) => {
+    try {
+      const r = await viewFn<{ amount: string }>(DCL, "quote", { pool_ids: [p.poolId], input_token: stockAccount, output_token: wnear, input_amount: amountIn, tag: null });
+      return BigInt(r.amount) > 0n ? { ...p, amountOut: r.amount } : null;
+    } catch { return null; }
+  }));
+  return quotes.filter((q): q is DclQuote => !!q).sort((a, b) => (BigInt(b.amountOut) > BigInt(a.amountOut) ? 1 : -1))[0] ?? null;
+}

@@ -6,7 +6,7 @@ import { PairLogo } from "../components/PairLogo";
 import { DEMO, env } from "../lib/env";
 import { toUnits, units } from "../lib/format";
 import { setToast, useNearUsd, usePairs } from "../lib/hooks";
-import { DCL, INTENTS_APP, INTENTS_CONTRACT, NoLiquidity, dclSwapMsg, pancakeUrl, quoteNearToStock, quoteNearToStockOnRhea, submitDeposit, swapStatus, type Quote, type SwapStatus } from "../lib/intents";
+import { DCL, INTENTS_APP, INTENTS_CONTRACT, NoLiquidity, dclSwapMsg, pancakeUrl, quoteNearToStock, quoteNearToStockOnRhea, quoteStockToNear, quoteStockToNearOnRhea, submitDeposit, swapStatus, type Quote, type SwapStatus } from "../lib/intents";
 import { accountBalance, view } from "../lib/rpc";
 import type { Pair } from "../lib/types";
 import { pairKind, unitsFmt } from "../lib/value";
@@ -23,9 +23,10 @@ export default function GetStock() {
   const [sel, setSel] = useState<string | undefined>(key);
   useEffect(() => { if (key) setSel(key); }, [key]);
   const pair = stocks.find((p) => p.key === sel) ?? stocks[0];
+  const [dir, setDir] = useState<"buy" | "sell">("buy");
   return (
     <main>
-      <div style={{ marginBottom: 12 }}><h1 style={{ fontSize: 22 }}>Get a stock token</h1><p className="fine" style={{ marginTop: 4 }}>Coins paired with a stock are bought with that stock's token. Swap NEAR for it here, through Rhea or NEAR Intents, whichever pays more, and it lands in your wallet.</p></div>
+      <div style={{ marginBottom: 12 }}><h1 style={{ fontSize: 22 }}>Get a stock token</h1><p className="fine" style={{ marginTop: 4 }}>Coins paired with a stock are bought with that stock's token. Swap NEAR for it here, through Rhea or NEAR Intents, whichever pays more, and it lands in your wallet. Swap it back to NEAR the same way.</p></div>
       {stocks.length === 0 ? <div className="card"><div className="empty">No stock pairs are listed yet.</div></div> : (
         <>
           <div className="scroll-x" style={{ marginBottom: 6 }}>
@@ -35,7 +36,15 @@ export default function GetStock() {
               </Link>
             ))}
           </div>
-          {pair && <SwapBox pair={pair} />}
+          {pair && (
+            <>
+              <div className="row-flex" style={{ margin: "6px 0 10px" }}>
+                <button className={"b sm " + (dir === "buy" ? "pri" : "ghost")} onClick={() => setDir("buy")}>NEAR → {pair.key}</button>
+                <button className={"b sm " + (dir === "sell" ? "pri" : "ghost")} onClick={() => setDir("sell")}>{pair.key} → NEAR</button>
+              </div>
+              {dir === "buy" ? <SwapBox pair={pair} /> : <SellBox pair={pair} />}
+            </>
+          )}
         </>
       )}
     </main>
@@ -185,6 +194,122 @@ function SwapBox({ pair }: { pair: Pair }) {
             {dryErr && !noLiq && !route && <div className="warn" style={{ marginBottom: 10 }}>{String((dryErr as Error).message)}</div>}
             <button className="b pri lg wide" disabled={!!accountId && (raw === 0n || !route || busy)} onClick={start}>{!accountId ? "Connect wallet" : busy ? "Waiting…" : `Swap for ${sym}`}</button>
             <p className="fine" style={{ marginTop: 10 }}>{route === "rhea" ? `One approval: the NEAR is wrapped and swapped through Rhea's ${sym} pool, and ${sym} lands in your wallet.` : `Two approvals: the NEAR goes to NEAR Intents and comes back as ${sym} in your Intents account, then you withdraw it to your wallet.`} Slippage 1%. {nearUsd > 0 ? `NEAR $${nearUsd.toFixed(2)}.` : ""}</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type SellStep = { phase: "idle" } | { phase: "deposited"; q: Quote; status: SwapStatus | "SENT" } | { phase: "done"; amountOut: string; approx?: boolean };
+
+/** The way back: a stock token in the wallet into NEAR. Rhea's pool pays
+ *  native NEAR in one approval; Intents delivers to the wallet after the
+ *  solver fills. */
+function SellBox({ pair }: { pair: Pair }) {
+  const { accountId } = useAccount();
+  const qc = useQueryClient();
+  const { data: nearUsd = 0 } = useNearUsd();
+  const token = pair.asset !== "Near" ? pair.asset.Token.account_id : "";
+  const dec = pair.asset !== "Near" ? pair.asset.Token.decimals : 18;
+  const sym = pair.key;
+  const [amt, setAmt] = useState("");
+  const [step, setStep] = useState<SellStep>({ phase: "idle" });
+  const raw = useMemo(() => toUnits(amt, dec), [amt, dec]);
+  useEffect(() => { setStep({ phase: "idle" }); setAmt(""); }, [pair.key]);
+  const { data: stockBal } = useQuery({ queryKey: ["stockbal", accountId, token], enabled: !!accountId && !DEMO, refetchInterval: env.pollMs, queryFn: async () => BigInt((await view<string>(token, "ft_balance_of", { account_id: accountId }).catch(() => "0")) || "0") });
+  const { data: dry, error: dryErr, isFetching } = useQuery({
+    queryKey: ["dryquote-sell", token, raw.toString(), accountId ?? "anon"],
+    enabled: raw > 0n && !DEMO,
+    staleTime: 20_000,
+    retry: false,
+    queryFn: () => quoteStockToNear({ account: accountId ?? "chipfi.near", stockAccount: token, amountIn: raw.toString(), dry: true }),
+  });
+  const { data: rhea, isFetching: rheaFetching } = useQuery({
+    queryKey: ["dclquote-sell", token, raw.toString()],
+    enabled: raw > 0n && !DEMO,
+    staleTime: 20_000,
+    retry: false,
+    queryFn: () => quoteStockToNearOnRhea(token, raw.toString(), view),
+  });
+  const noLiq = dryErr instanceof NoLiquidity;
+  const intentsOut = dry ? BigInt(dry.amountOut) : 0n;
+  const rheaOut = rhea ? BigInt(rhea.amountOut) : 0n;
+  const route: "intents" | "rhea" | null = intentsOut === 0n && rheaOut === 0n ? null : rheaOut >= intentsOut ? "rhea" : "intents";
+  const outRaw = route === "rhea" ? rheaOut : intentsOut;
+  const outNear = units(outRaw.toString(), 24);
+  const quoting = isFetching || rheaFetching;
+
+  useEffect(() => {
+    if (step.phase !== "deposited" || !step.q.depositAddress) return;
+    let alive = true;
+    const t = setInterval(async () => {
+      try {
+        const s = await swapStatus(step.q.depositAddress!, step.q.depositMemo);
+        if (!alive) return;
+        if (s.status === "SUCCESS") { qc.invalidateQueries(); setStep({ phase: "done", amountOut: s.swapDetails?.amountOut ?? step.q.minAmountOut }); }
+        else if (s.status === "REFUNDED" || s.status === "FAILED") { setToast({ kind: "err", text: s.status === "REFUNDED" ? `The swap was refunded; your ${sym} is back in your wallet.` : "The swap failed." }); setStep({ phase: "idle" }); }
+        else setStep({ phase: "deposited", q: step.q, status: s.status });
+      } catch { /* try again next tick */ }
+    }, 4000);
+    return () => { alive = false; clearInterval(t); };
+  }, [step, qc, sym]);
+
+  const start = async () => {
+    if (!accountId) return openWalletModal();
+    if (raw === 0n) return;
+    if (stockBal != null && raw > stockBal) return setToast({ kind: "err", text: `You only have ${unitsFmt(units(stockBal.toString(), dec))} ${sym}.` });
+    if (route === "rhea" && rhea) {
+      const minOut = (rheaOut * 99n) / 100n;
+      const res = await send(`Swap ${unitsFmt(units(raw, dec))} ${sym} for NEAR on Rhea`, [
+        { receiverId: token, methodName: "ft_transfer_call", args: { receiver_id: DCL, amount: raw.toString(), msg: dclSwapMsg(rhea.poolId, "wrap.near", minOut.toString()) }, deposit: "1", gas: "180000000000000" },
+      ], () => qc.invalidateQueries());
+      if (res) setStep({ phase: "done", amountOut: rhea.amountOut, approx: true });
+      return;
+    }
+    let q: Quote;
+    try { q = await quoteStockToNear({ account: accountId, stockAccount: token, amountIn: raw.toString(), dry: false }); }
+    catch (e) { setToast({ kind: "err", text: e instanceof NoLiquidity ? `No one is quoting ${sym} right now. Try again later.` : String((e as Error).message) }); return; }
+    if (!q.depositAddress) { setToast({ kind: "err", text: "No deposit address in the quote." }); return; }
+    const res = await send(`Swap ${unitsFmt(units(raw, dec))} ${sym} for NEAR`, [
+      { receiverId: token, methodName: "ft_transfer", args: { receiver_id: q.depositAddress, amount: raw.toString(), memo: q.depositMemo ?? null }, deposit: "1", gas: "30000000000000" },
+    ]);
+    if (!res) return;
+    if (res.hash) submitDeposit(q.depositAddress, res.hash, q.depositMemo);
+    setStep({ phase: "deposited", q, status: "SENT" });
+  };
+
+  const busy = step.phase === "deposited";
+  return (
+    <div className="card">
+      <div className="card-h"><h2><PairLogo k={pair.key} size={22} /> Sell {sym}</h2><span className="eyebrow">{route === "rhea" ? "via Rhea" : "via NEAR Intents"}</span></div>
+      <div className="card-b">
+        {step.phase === "done" ? (
+          <div className="creditbox">
+            <b>{step.approx ? "About " : ""}{unitsFmt(units(step.amountOut, 24))} NEAR is in your wallet.</b>
+            <div className="row-flex" style={{ marginTop: 10 }}><Link to="/" className="b pri sm">Browse coins</Link><button className="b ghost sm" onClick={() => setStep({ phase: "idle" })}>Swap more</button></div>
+          </div>
+        ) : step.phase === "deposited" ? (
+          <div className="creditbox">
+            <div className="row-flex"><span className="spin" /><b>{step.status === "SENT" || step.status === "PENDING_DEPOSIT" || step.status === "KNOWN_DEPOSIT_TX" ? "Deposit sent, waiting for the solver" : step.status === "PROCESSING" ? "Swapping" : step.status.toLowerCase().replace(/_/g, " ")}</b></div>
+            <p className="fine" style={{ marginTop: 6 }}>Usually under a minute. Keep this page open; if it takes longer, the {sym} goes back to your wallet.</p>
+          </div>
+        ) : (
+          <>
+            <div className="amount">
+              <div className="lbl"><span>You sell</span><button type="button" onClick={() => stockBal != null && setAmt(units(stockBal.toString(), dec).toString())}>{stockBal != null ? `${unitsFmt(units(stockBal.toString(), dec))} ${sym}` : "Max"}</button></div>
+              <div className="in-row"><input inputMode="decimal" placeholder="0" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.]/g, ""))} /><span className="u">{sym}</span></div>
+            </div>
+            <div className="chips">{[25, 50, 75, 100].map((x) => <button key={x} onClick={() => stockBal != null && setAmt(units(((stockBal * BigInt(x)) / 100n).toString(), dec).toString())}>{x}%</button>)}</div>
+            <dl className="quote">
+              <dt>You receive</dt><dd><b>{route ? `${unitsFmt(outNear)} NEAR` : quoting ? "…" : "—"}</b>{route && nearUsd > 0 ? <span className="faint"> ≈ ${(outNear * nearUsd).toFixed(2)}</span> : null}</dd>
+              {route === "rhea" && rhea && <><dt>Route</dt><dd><b>Rhea pool, {rhea.fee / 10000}% fee</b></dd></>}
+              {route === "intents" && dry && <><dt>Value</dt><dd><b>${Number(dry.amountOutUsd).toFixed(2)}</b><span className="faint"> for ${Number(dry.amountInUsd).toFixed(2)} of {sym}</span></dd></>}
+            </dl>
+            {noLiq && !route && !quoting && <div className="warn" style={{ marginBottom: 10 }}>No route is quoting {sym} into NEAR right now. Rhea has no NEAR pool for it, and NEAR Intents solvers return Sunday 8pm ET (Monday 8am Manila).</div>}
+            {dryErr && !noLiq && !route && <div className="warn" style={{ marginBottom: 10 }}>{String((dryErr as Error).message)}</div>}
+            <button className="b pri lg wide" disabled={!!accountId && (raw === 0n || !route || busy)} onClick={start}>{!accountId ? "Connect wallet" : busy ? "Waiting…" : "Swap for NEAR"}</button>
+            <p className="fine" style={{ marginTop: 10 }}>{route === "rhea" ? `One approval: the ${sym} goes through Rhea's pool and NEAR lands in your wallet.` : `One approval: the ${sym} goes to NEAR Intents and NEAR lands in your wallet when the solver fills.`} Slippage 1%.</p>
           </>
         )}
       </div>
