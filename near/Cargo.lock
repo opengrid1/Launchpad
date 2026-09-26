@@ -823,6 +823,7 @@ version = "2.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "115531babc129696a58c64a4fef0a8bf9e9698629fb97e9e40767d235cfbcd53"
 dependencies = [
+ "pkcs8",
  "signature",
 ]
 
@@ -835,8 +836,10 @@ dependencies = [
  "curve25519-dalek",
  "ed25519",
  "rand_core 0.6.4",
+ "serde",
  "sha2 0.10.9",
  "subtle",
+ "zeroize",
 ]
 
 [[package]]
@@ -1683,6 +1686,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "launch-deploy"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "near-sdk",
+ "near-workspaces",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "launch-factory"
 version = "0.1.0"
 dependencies = [
@@ -2174,6 +2189,7 @@ dependencies = [
  "base64 0.22.1",
  "borsh",
  "bs58 0.5.1",
+ "ed25519-dalek",
  "near-account-id",
  "near-crypto",
  "near-gas",
@@ -2188,6 +2204,7 @@ dependencies = [
  "near-token",
  "near-vm-runner",
  "once_cell",
+ "p256",
  "serde",
  "serde_json",
  "serde_with",

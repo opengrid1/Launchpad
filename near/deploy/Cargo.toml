@@ -1,0 +1,19 @@
+[package]
+name = "launch-deploy"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Deploys and configures the launchpad factory on NEAR mainnet or testnet."
+
+[[bin]]
+name = "launch-deploy"
+path = "src/main.rs"
+
+[dependencies]
+near-workspaces = "0.23"
+near-sdk = { workspace = true, features = ["non-contract-usage"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+serde_json = "1"
+anyhow = "1"
+base64 = "0.22"
