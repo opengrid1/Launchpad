@@ -40,10 +40,29 @@ export function demoCoins(): Coin[] {
 }
 
 export function demoPairs(): Pair[] {
+  // The live mainnet pair set, same reserves as alicorn.near.
   return [
     { key: "NEAR", asset: "Near", name: "NEAR", virtual_reserve: (1000n * NEAR).toString(), enabled: true },
-    { key: "NVDAon", asset: { Token: { account_id: "bnb-0xa9ee28c80f960b889dfbd1902055218cba016f75.omdep.near", symbol: "NVDAon", decimals: 18 } }, name: "NVIDIA (Ondo)", virtual_reserve: (41n * ONE).toString(), enabled: true },
-    { key: "TSLAon", asset: { Token: { account_id: "bnb-0x2494b603319d4d9f9715c9f4496d9e0364b59d93.omdep.near", symbol: "TSLAon", decimals: 18 } }, name: "Tesla (Ondo)", virtual_reserve: (24n * ONE).toString(), enabled: true },
+    { key: "NVDAon", asset: { Token: { account_id: "bnb-0xa9ee28c80f960b889dfbd1902055218cba016f75.omdep.near", symbol: "NVDAon", decimals: 18 } }, name: "NVIDIA (Ondo)", virtual_reserve: (21770000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "TSLAon", asset: { Token: { account_id: "bnb-0x2494b603319d4d9f9715c9f4496d9e0364b59d93.omdep.near", symbol: "TSLAon", decimals: 18 } }, name: "Tesla (Ondo)", virtual_reserve: (13170000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "AAPLon", asset: { Token: { account_id: "bnb-0x390a684ef9cade28a7ad0dfa61ab1eb3842618c4.omdep.near", symbol: "AAPLon", decimals: 18 } }, name: "Apple (Ondo)", virtual_reserve: (14370000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "GOOGLon", asset: { Token: { account_id: "bnb-0x091fc7778e6932d4009b087b191d1ee3bac5729a.omdep.near", symbol: "GOOGLon", decimals: 18 } }, name: "Alphabet Class A (Ondo)", virtual_reserve: (14250000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "METAon", asset: { Token: { account_id: "bnb-0xd7df5863a3e742f0c767768cdfcb63f09e0422f6.omdep.near", symbol: "METAon", decimals: 18 } }, name: "Meta Platforms (Ondo)", virtual_reserve: (6519000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "MSFTon", asset: { Token: { account_id: "bnb-0x6bfe75d1ad432050ea973c3a3dcd88f02e2444c3.omdep.near", symbol: "MSFTon", decimals: 18 } }, name: "Microsoft (Ondo)", virtual_reserve: (9493000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "AMZNon", asset: { Token: { account_id: "bnb-0x4553cfe1c09f37f38b12dc509f676964e392f8fc.omdep.near", symbol: "AMZNon", decimals: 18 } }, name: "Amazon (Ondo)", virtual_reserve: (19630000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "HOODon", asset: { Token: { account_id: "bnb-0x19601179a60f55ff6636f5d1a8b6671053bd60a8.omdep.near", symbol: "HOODon", decimals: 18 } }, name: "Robinhood Markets (Ondo)", virtual_reserve: (41040000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "INTCon", asset: { Token: { account_id: "bnb-0xa528caaa2f96090e379d43f90834c75df54d6e74.omdep.near", symbol: "INTCon", decimals: 18 } }, name: "Intel (Ondo)", virtual_reserve: (39840000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "MRVLon", asset: { Token: { account_id: "bnb-0x1501ec83ffef405b4331cc4f73277a40fb0c627d.omdep.near", symbol: "MRVLon", decimals: 18 } }, name: "Marvell Technology (Ondo)", virtual_reserve: (18710000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "CRCLon", asset: { Token: { account_id: "bnb-0x992879cd8ce0c312d98648875b5a8d6d042cbf34.omdep.near", symbol: "CRCLon", decimals: 18 } }, name: "Circle Internet Group (Ondo)", virtual_reserve: (55060000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "SPYon", asset: { Token: { account_id: "bnb-0x6a708ead771238919d85930b5a0f10454e1c331a.omdep.near", symbol: "SPYon", decimals: 18 } }, name: "SPDR S&P 500 ETF (Ondo)", virtual_reserve: (6352000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "QQQon", asset: { Token: { account_id: "bnb-0x0cde6936d305d5b34667fc46425e852efd73559a.omdep.near", symbol: "QQQon", decimals: 18 } }, name: "Invesco QQQ (Ondo)", virtual_reserve: (6582000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "GLDon", asset: { Token: { account_id: "bnb-0xfa9a1e901085e269f6d428f79cd5252d8b919344.omdep.near", symbol: "GLDon", decimals: 18 } }, name: "SPDR Gold Shares (Ondo)", virtual_reserve: (12460000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "IAUon", asset: { Token: { account_id: "bnb-0xcb2a0f46f67dc4c58a316f1c008edef5c2311795.omdep.near", symbol: "IAUon", decimals: 18 } }, name: "iShares Gold Trust (Ondo)", virtual_reserve: (60750000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "SLVon", asset: { Token: { account_id: "bnb-0x8b872732b07be325a8803cdb480d9d20b6f8d11b.omdep.near", symbol: "SLVon", decimals: 18 } }, name: "iShares Silver Trust (Ondo)", virtual_reserve: (84280000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "TLTon", asset: { Token: { account_id: "bnb-0xf69e40069ac227c11459e3f4e8a446b3401616b6.omdep.near", symbol: "TLTon", decimals: 18 } }, name: "iShares 20+ Year Treasury Bond ETF (Ondo)", virtual_reserve: (61780000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "SGOVon", asset: { Token: { account_id: "bnb-0xc008c5f579ec1450f20099c39f587547e27c7523.omdep.near", symbol: "SGOVon", decimals: 18 } }, name: "iShares 0-3 Month Treasury Bond ETF (Ondo)", virtual_reserve: (48680000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "TIPon", asset: { Token: { account_id: "bnb-0x2ac26ec236df5d1d2ad1a6dd4e448a90e45dc35d.omdep.near", symbol: "TIPon", decimals: 18 } }, name: "iShares TIPS Bond ETF (Ondo)", virtual_reserve: (46870000n * ONE / 1_000_000n).toString(), enabled: true },
+    { key: "AGGon", asset: { Token: { account_id: "bnb-0x08ce97f3d5cf11e577d091ab048bc5e2eae3fabb.omdep.near", symbol: "AGGon", decimals: 18 } }, name: "iShares Core US Aggregate Bond ETF (Ondo)", virtual_reserve: (51510000n * ONE / 1_000_000n).toString(), enabled: true },
   ];
 }
 

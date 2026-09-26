@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Art } from "../components/Art";
+import { PairLogo } from "../components/PairLogo";
 import { Chart } from "../components/Chart";
 import { Copy } from "../components/Copy";
 import { Ring } from "../components/Ring";
@@ -50,7 +51,7 @@ function CoinView({ c }: { c: Coin }) {
         <div className="id">
           <Art src={i.icon ?? undefined} name={i.name} className="art" size={56} />
           <div style={{ minWidth: 0, flex: 1 }}>
-            <h1>{i.name}<span className="sym">{i.symbol}</span>{PINNED.includes(c.account_id) && <span className="chip official">Official</span>}<span className={"chip " + (pool ? "pool" : i.phase === "Graduating" ? "grad" : kind)}>{pool ? "Graduated" : i.phase === "Graduating" ? "Opening the pool" : `Pays ${sym}`}</span></h1>
+            <h1>{i.name}<span className="sym">{i.symbol}</span>{PINNED.includes(c.account_id) && <span className="chip official">Official</span>}<span className={"chip " + (pool ? "pool" : i.phase === "Graduating" ? "grad" : kind)}>{pool ? "Graduated" : i.phase === "Graduating" ? "Opening the pool" : <><PairLogo k={sym} size={16} />Pays {sym}</>}</span></h1>
             <div className="meta">
               <span>by <a href={`${env.explorerUrl}/address/${i.creator}`} target="_blank" rel="noreferrer">{i.creator}</a></span>
               <span>{dateShort(i.created_at_ms)}</span>

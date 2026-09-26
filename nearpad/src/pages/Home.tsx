@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { Art } from "../components/Art";
+import { PairLogo } from "../components/PairLogo";
 import { Ring } from "../components/Ring";
 import { DEPLOYED, PINNED } from "../lib/env";
 import { ago, units } from "../lib/format";
@@ -84,7 +85,7 @@ export default function Home() {
 
       <div className="scroll-x" style={{ marginTop: 6 }}>
         <button className={"pill " + (pair === "all" ? "on" : "")} onClick={() => setPair("all")}>All pairs</button>
-        {(pairs ?? []).map((p) => <button key={p.key} className={"pill " + (pair === p.key ? "on" : "")} onClick={() => setPair(p.key)}><span className="av">{p.key.slice(0, 2).toUpperCase()}</span>{p.name}</button>)}
+        {(pairs ?? []).map((p) => <button key={p.key} className={"pill " + (pair === p.key ? "on" : "")} onClick={() => setPair(p.key)}><PairLogo k={p.key} size={22} />{p.key === "NEAR" ? "NEAR" : p.key}</button>)}
       </div>
 
       <div className="filters">

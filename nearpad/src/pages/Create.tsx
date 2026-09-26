@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Art } from "../components/Art";
+import { PairLogo } from "../components/PairLogo";
 import { SplitBar } from "../components/SplitBar";
 import { DEPLOYED, env, RULES } from "../lib/env";
 import { toUnits, units } from "../lib/format";
@@ -10,7 +11,7 @@ import { setToast, useConfig, useCurrency, useNearUsd, usePairs } from "../lib/h
 import { view } from "../lib/rpc";
 import type { CoinRow, Split } from "../lib/types";
 import { pairSymbol } from "../lib/types";
-import { makeValuer } from "../lib/value";
+import { makeValuer, pairKind } from "../lib/value";
 import { openWalletModal, send, useAccount } from "../lib/wallet";
 
 const PRESETS: { k: string; label: string; help: string; buy: number; sell: number; split: Split }[] = [
@@ -32,6 +33,7 @@ export default function Create() {
   const [f, setF] = useState({ name: "", symbol: "", description: "", website: "", x: "", telegram: "", feeWallet: "", initialBuy: "" });
   const [icon, setIcon] = useState("");
   const [pairKey, setPairKey] = useState("NEAR");
+  const [pairTab, setPairTab] = useState<"near" | "stock" | "token">("near");
   const [preset, setPreset] = useState("diamond");
   const [buy, setBuy] = useState(3);
   const [sell, setSell] = useState(3);
@@ -57,6 +59,14 @@ export default function Create() {
 
   const symbol = (f.symbol || f.name).replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 10) || "COIN";
   const pair = (pairs ?? []).find((p) => p.key === pairKey) ?? pairs?.[0];
+  const live = (pairs ?? []).filter((p) => p.enabled);
+  const stocks = live.filter((p) => p.asset !== "Near" && pairKind(p.asset) === "stock");
+  const tokens = live.filter((p) => p.asset !== "Near" && pairKind(p.asset) === "token");
+  const pickTab = (t: typeof pairTab) => {
+    setPairTab(t);
+    if (t === "near") setPairKey("NEAR");
+    else { const group = t === "stock" ? stocks : tokens; if (!group.some((p) => p.key === pairKey)) setPairKey(group[0]?.key ?? "NEAR"); }
+  };
   const near = !pair || pair.asset === "Near";
   const psym = pair ? pairSymbol(pair.asset) : "NEAR";
   const val = useMemo(() => makeValuer(ccy, nearUsd), [ccy, nearUsd]);
@@ -128,10 +138,35 @@ export default function Create() {
 
         <section className="step">
           <h3><i>2</i>Pair with<small>what people buy it with</small></h3>
-          <div className="scroll-x" style={{ margin: 0, padding: "2px 0" }}>
-            {(pairs ?? []).filter((p) => p.enabled).map((p) => <button type="button" key={p.key} className={"pill " + (pairKey === p.key ? "on" : "")} onClick={() => setPairKey(p.key)}><span className="av">{p.key.slice(0, 2).toUpperCase()}</span>{p.name}</button>)}
+          <div className="seg pairtabs">
+            <button type="button" className={pairTab === "near" ? "on" : ""} onClick={() => pickTab("near")}><PairLogo k="NEAR" size={18} />NEAR</button>
+            {stocks.length > 0 && <button type="button" className={pairTab === "stock" ? "on" : ""} onClick={() => pickTab("stock")}>Stocks<em>{stocks.length}</em></button>}
+            {tokens.length > 0 && <button type="button" className={pairTab === "token" ? "on" : ""} onClick={() => pickTab("token")}>Tokens<em>{tokens.length}</em></button>}
           </div>
-          <p className="fine">{near ? "People buy your coin with NEAR and holders are paid in NEAR, straight from their wallet." : `People buy your coin with ${psym} and holders are paid in ${psym}. Buyers need ${psym} in their wallet.`} Graduates at {pair ? val(pair.asset).fmt(graduation) : "—"} raised.</p>
+          {pairTab === "near" ? (
+            <div className="pcell on solo">
+              <PairLogo k="NEAR" size={40} />
+              <div className="txt"><b>NEAR</b><small>The native coin. Buyers pay straight from their wallet, holders are paid in NEAR.</small></div>
+              <span className="tick" aria-hidden>✓</span>
+            </div>
+          ) : (
+            <div className="pairgrid">
+              {(pairTab === "stock" ? stocks : tokens).map((p) => (
+                <button type="button" key={p.key} className={"pcell " + (pairKey === p.key ? "on" : "")} onClick={() => setPairKey(p.key)} aria-pressed={pairKey === p.key}>
+                  <PairLogo k={p.key} size={32} />
+                  <div className="txt"><b>{p.key}</b><small>{p.name.replace(/ \(Ondo\)$/, "")}</small></div>
+                  {pairKey === p.key && <span className="tick" aria-hidden>✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="pairsum">
+            <PairLogo k={pair?.key ?? "NEAR"} size={28} />
+            <div>
+              <b>{near ? "Priced and paid in NEAR" : `Priced and paid in ${psym}`}</b>
+              <small>{near ? "Anyone with NEAR can buy." : `Buyers need ${psym} in their wallet. ${pair?.name.replace(/ \(Ondo\)$/, "")} tokenized by Ondo.`} Graduates at {pair ? val(pair.asset).fmt(graduation) : "—"} raised.</small>
+            </div>
+          </div>
         </section>
 
         <section className="step">
