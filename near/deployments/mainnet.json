@@ -7,10 +7,10 @@
   "coin_state_deposit_near": "0.5",
   "near_virtual_reserve": "1000",
   "coin_code": {
-    "version": "0.1.0",
-    "code_hash": "i8FX4XZLD6dxJdLbT4nzERcoBTaR4N2Gxg4wQAmVM88",
-    "bytes": 294568,
-    "published_at_block": 217279396
+    "version": "0.2.0",
+    "code_hash": "EqJ9ZeUmrHrLtjCHJ4UVGtkYaGcgqVFGX1KhWQQ6qiFv",
+    "bytes": 349809,
+    "published_at_block": 217287757
   },
   "factory_wasm_bytes": 281349,
   "pairs": {
@@ -120,11 +120,13 @@
     }
   },
   "notes": "Stock virtual reserves are 1,000 NEAR worth at deployment prices (NEAR 4.90 USD), so every pair graduates at the same dollar size as the NEAR pair. All stock tokens have 18 decimals.",
-  "coin_code_pending": {
-    "version": "0.2.0",
-    "code_hash": "EqJ9ZeUmrHrLtjCHJ4UVGtkYaGcgqVFGX1KhWQQ6qiFv",
-    "bytes": 349809,
-    "note": "publish with launch-deploy publish 0.2.0 once alicorn.near holds ~36 NEAR, then call set_current_version and set_paused false"
-  },
-  "factory_code": "redeployed 2026-09-26: payable coin_collect_liquidity, coin_collect_curve, 25 TGas admin calls; state unchanged"
+  "factory_code": "redeployed 2026-09-26: payable coin_collect_liquidity, coin_collect_curve, 25 TGas admin calls; state unchanged",
+  "coin_code_history": [
+    {
+      "version": "0.1.0",
+      "code_hash": "i8FX4XZLD6dxJdLbT4nzERcoBTaR4N2Gxg4wQAmVM88",
+      "bytes": 294568,
+      "note": "in-contract pool; superseded, never used by a coin"
+    }
+  ]
 }
