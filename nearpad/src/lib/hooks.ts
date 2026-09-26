@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { demoCandles, demoCoins, demoHolder, demoPairs, demoTrades } from "./demo";
+import { demoCandles, demoCoins, demoHolder, demoPairs, demoPool, demoTrades } from "./demo";
 import { DEMO, env, HIDDEN } from "./env";
 import { mapLimit, view } from "./rpc";
-import type { Candle, Coin, CoinRow, Config, Holder, Info, Pair, Trade } from "./types";
+import type { Candle, Coin, CoinRow, Config, DexPool, Holder, Info, Pair, Trade } from "./types";
 
 // ----------------------------------------------------------------------
 // Toasts
@@ -41,7 +41,7 @@ export function friendlyError(e: unknown): string {
 export function useConfig() {
   return useQuery({
     queryKey: ["config"],
-    queryFn: () => (DEMO ? { owner: "you.near", treasury: "treasury.near", launch_fee: "500000000000000000000000", coin_state_deposit: "500000000000000000000000", paused: false, current_version: { version: "0.1.0", code_hash: "", published_at_block: 0 }, count: demoCoins().length } as Config : view<Config>(env.factory, "get_config")),
+    queryFn: () => (DEMO ? { owner: "you.near", treasury: "treasury.near", launch_fee: "500000000000000000000000", coin_state_deposit: "500000000000000000000000", paused: false, current_version: { version: "0.2.0", code_hash: "", published_at_block: 0 }, count: demoCoins().length } as Config : view<Config>(env.factory, "get_config")),
     staleTime: 60_000,
   });
 }
@@ -108,6 +108,16 @@ export function useTrades(account: string | undefined) {
     enabled: !!account,
     refetchInterval: env.pollMs,
     queryFn: () => (DEMO ? demoTrades() : view<Trade[]>(account!, "get_trades", { limit: 200 })),
+  });
+}
+
+/** A graduated coin's Rhea pool: live reserves for the price. */
+export function usePool(dex: string | undefined, poolId: number | null | undefined) {
+  return useQuery({
+    queryKey: ["pool", dex, poolId],
+    enabled: !!dex && poolId != null,
+    refetchInterval: env.pollMs,
+    queryFn: () => (DEMO ? demoPool() : view<DexPool>(dex!, "get_pool", { pool_id: poolId })),
   });
 }
 

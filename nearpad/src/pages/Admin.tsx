@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { env } from "../lib/env";
 import { toUnits, units } from "../lib/format";
+import { unitsFmt } from "../lib/value";
 import { useCoins, useConfig, usePairs } from "../lib/hooks";
 import { send, useAccount } from "../lib/wallet";
 
@@ -27,7 +28,7 @@ export default function Admin() {
   const owed = (coins ?? []).filter((c) => c.info.platform_credit !== "0");
   const owedNear = owed.filter((c) => c.info.pair === "Near").reduce((s, c) => s + units(c.info.platform_credit, 24), 0);
   const collectAll = () => {
-    const ids = owed.slice(0, 20).map((c) => c.id);
+    const ids = owed.slice(0, 10).map((c) => c.id);
     if (ids.length === 0) return;
     return send(`Collect fees from ${ids.length} coins`, [{ receiverId: env.factory, methodName: "collect_platform_many", args: { ids }, gas: "300000000000000" }], () => qc.invalidateQueries());
   };
@@ -44,7 +45,7 @@ export default function Admin() {
           <div className="faint" style={{ fontSize: 13 }}>The platform's 20% of every tax lands in the treasury, {cfg.treasury}, as each trade settles. Nothing to collect on NEAR coins.</div>
           {owed.length > 0 && <>
             <div className="warn">{owedNear > 0 ? `${owedNear.toFixed(4)} NEAR and ` : ""}fees in other pairs could not be delivered (the treasury may not be registered on that token). Register it, then collect.</div>
-            <div className="row-flex"><button className="b pri" onClick={collectAll}>Collect from {Math.min(owed.length, 20)} coin{owed.length === 1 ? "" : "s"}</button></div>
+            <div className="row-flex"><button className="b pri" onClick={collectAll}>Collect from {Math.min(owed.length, 10)} coin{owed.length === 1 ? "" : "s"}</button></div>
             <div className="faint" style={{ fontSize: 13 }}>{owed.map((c) => `${c.symbol} ${units(c.info.platform_credit, c.info.pair === "Near" ? 24 : c.info.pair.Token.decimals).toFixed(4)} ${c.info.pair === "Near" ? "NEAR" : c.info.pair.Token.symbol}`).join(" · ")}</div>
           </>}
         </div>
@@ -95,7 +96,10 @@ export default function Admin() {
                 </div>
                 <div className="f"><label>Re-point creator fees (takeover)</label><input className="in" value={feeWallet} onChange={(e) => setFeeWallet(e.target.value)} placeholder="community-lead.near" /><input className="in" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason, published on chain" style={{ marginTop: 6 }} /><div className="row-flex" style={{ marginTop: 6 }}><button className="b sell sm" disabled={!feeWallet} onClick={() => { if (confirm(`Send future creator fees of coin #${idNum} to ${feeWallet}?`)) call("Takeover", "coin_set_fee_wallet", { id: idNum, fee_wallet: feeWallet, reason: reason || null }); }}>Re-point fees</button></div></div>
                 {coins?.find((x) => x.id === idNum)?.info.phase === "Pool" && (
-                  <div className="f"><label>Withdraw liquidity</label><div className="f2"><input className="in" value={lp.pct} onChange={(e) => setLp({ ...lp, pct: e.target.value })} placeholder="% of the pool, 1 to 100" /><input className="in" value={lp.to} onChange={(e) => setLp({ ...lp, to: e.target.value })} placeholder={cfg.treasury} /></div><div className="help">Pulls that share of the pool, pair and tokens, to the wallet. Not reversible.</div><div className="row-flex" style={{ marginTop: 6 }}><button className="b sell sm" disabled={!(Number(lp.pct) > 0 && Number(lp.pct) <= 100)} onClick={() => { const to = lp.to.trim() || cfg.treasury; if (confirm(`Withdraw ${lp.pct}% of coin #${idNum}'s pool to ${to}?`)) call("Withdraw liquidity", "coin_collect_liquidity", { id: idNum, bps: Math.round(Number(lp.pct) * 100), to }); }}>Withdraw</button></div></div>
+                  <>
+                    <div className="f"><label>Withdraw liquidity</label><div className="f2"><input className="in" value={lp.pct} onChange={(e) => setLp({ ...lp, pct: e.target.value })} placeholder="% of the LP, 1 to 100" /><input className="in" value={lp.to} onChange={(e) => setLp({ ...lp, to: e.target.value })} placeholder={cfg.treasury} /></div><div className="help">Moves that share of the coin's Rhea LP shares to the wallet, which can then remove the liquidity on Rhea under Your liquidity. Attaches 0.01 NEAR for the wallet's registration on the pool. Not reversible.</div><div className="row-flex" style={{ marginTop: 6 }}><button className="b sell sm" disabled={!(Number(lp.pct) > 0 && Number(lp.pct) <= 100)} onClick={() => { const to = lp.to.trim() || cfg.treasury; if (confirm(`Move ${lp.pct}% of coin #${idNum}'s LP to ${to}?`)) send("Withdraw liquidity", [{ receiverId: env.factory, methodName: "coin_collect_liquidity", args: { id: idNum, bps: Math.round(Number(lp.pct) * 100), to }, deposit: "10000000000000000000000", gas: "150000000000000" }], () => qc.invalidateQueries()); }}>Withdraw</button></div></div>
+                    <div className="f"><label>Harvest the tax</label><div className="help">{unitsFmt(units(coins!.find((x) => x.id === idNum)!.info.tax_tokens, 18))} {coins!.find((x) => x.id === idNum)!.symbol} of tax waiting. Anyone can harvest once 1,000 tokens have gathered; it burns, sells the rest on Rhea and pays everyone out, the platform included.</div><div className="row-flex" style={{ marginTop: 6 }}><button className="b sm" onClick={() => { const c = coins!.find((x) => x.id === idNum)!; send(`Harvest ${c.symbol}`, [{ receiverId: c.account_id, methodName: "harvest", gas: "300000000000000" }], () => qc.invalidateQueries()); }}>Harvest</button></div></div>
+                  </>
                 )}
                 <div className="f"><label>Fix description or links</label><textarea className="in" value={meta.description} onChange={(e) => setMeta({ ...meta, description: e.target.value })} placeholder="New description (leave empty to keep)" maxLength={280} /><input className="in" value={meta.website} onChange={(e) => setMeta({ ...meta, website: e.target.value })} placeholder="https://website" style={{ marginTop: 6 }} /><input className="in" value={meta.x} onChange={(e) => setMeta({ ...meta, x: e.target.value })} placeholder="https://x.com/handle" style={{ marginTop: 6 }} /><input className="in" value={meta.telegram} onChange={(e) => setMeta({ ...meta, telegram: e.target.value })} placeholder="https://t.me/group" style={{ marginTop: 6 }} /><div className="row-flex" style={{ marginTop: 6 }}><button className="b sm" onClick={() => call("Set metadata", "coin_set_metadata", { id: idNum, icon: null, description: meta.description || null, links: meta.website || meta.x || meta.telegram ? { website: meta.website || null, x: meta.x || null, telegram: meta.telegram || null } : null })}>Save</button></div></div>
               </>

@@ -74,6 +74,24 @@ export interface Info {
   platform_credit: string;
   trades: number;
   holders: number;
+  /** The exchange the coin graduates to (Rhea). */
+  dex: string;
+  pool_id: number | null;
+  lp_shares: string;
+  lp_collected: string;
+  /** Tax taken in tokens since graduation, waiting for a harvest. */
+  tax_tokens: string;
+  grad: { pool_created: boolean; wrapped: boolean; coin_deposited: boolean; pair_deposited: boolean; lock_until: number };
+  harvest: { step: number; total: string; platform_tokens: string; creator_tokens: string; dividend_tokens: string; liquidity_tokens: string; swap_tokens: string; out: string; liquidity_pair: string; lock_until: number };
+}
+
+/** A Rhea simple pool, from `get_pool`. */
+export interface DexPool {
+  pool_kind: string;
+  token_account_ids: string[];
+  amounts: string[];
+  total_fee: number;
+  shares_total_supply: string;
 }
 
 export interface Holder {

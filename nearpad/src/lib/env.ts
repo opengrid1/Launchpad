@@ -37,5 +37,13 @@ export const RULES = {
   maxTaxPct: 10,
 };
 
+/** The exchange coins graduate to. */
+export const RHEA = {
+  dex: "v2.ref-finance.near",
+  wnear: "wrap.near",
+  url: "https://dex.rhea.finance",
+  swap: (tokenIn: string, tokenOut: string) => `https://dex.rhea.finance/#${tokenIn}|${tokenOut}`,
+};
+
 export const PINNED: string[] = [];
 export const HIDDEN = new Set<string>([]);

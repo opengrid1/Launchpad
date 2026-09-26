@@ -1,4 +1,4 @@
-import type { Candle, Coin, Holder, Info, Pair, Trade } from "./types";
+import type { Candle, Coin, DexPool, Holder, Info, Pair, Trade } from "./types";
 
 const NEAR = 10n ** 24n;
 const ONE = 10n ** 18n;
@@ -22,9 +22,14 @@ const mk = (id: number, name: string, symbol: string, pair: "NEAR" | "NVDAon", s
     pool_pair: phase === "Pool" ? (2n * vr).toString() : "0", pool_tokens: phase === "Pool" ? (250_000_000n * ONE).toString() : "0",
     price: price.toString(), market_cap: (price * 1_000_000_000n).toString(), graduation: (2n * vr).toString(), curve_supply: (750_000_000n * ONE).toString(),
     burned: "0", buyback_spent: "0", liquidity_added: "0", dividends_total: (raised / 20n).toString(), creator_fees_total: (raised / 40n).toString(), platform_fees_total: (raised / 50n).toString(),
-    pending_buyback: "0", pending_liquidity: "0", platform_credit: "0", trades, holders, ...extra,
+    pending_buyback: "0", pending_liquidity: "0", platform_credit: "0", trades, holders,
+    dex: "v2.ref-finance.near", pool_id: phase === "Pool" ? 5000 + id : null, lp_shares: phase === "Pool" ? (1_000_000n * ONE).toString() : "0", lp_collected: "0",
+    tax_tokens: phase === "Pool" ? (2_400n * ONE).toString() : "0",
+    grad: { pool_created: phase === "Pool", wrapped: phase === "Pool", coin_deposited: phase === "Pool", pair_deposited: phase === "Pool", lock_until: 0 },
+    harvest: { step: 0, total: "0", platform_tokens: "0", creator_tokens: "0", dividend_tokens: "0", liquidity_tokens: "0", swap_tokens: "0", out: "0", liquidity_pair: "0", lock_until: 0 },
+    ...extra,
   };
-  return { id, account_id: `c${id}.pad.near`, name, symbol, pair, creator, created_at_ms: info.created_at_ms, code_version: "0.1.0", hidden: false, info };
+  return { id, account_id: `c${id}.pad.near`, name, symbol, pair, creator, created_at_ms: info.created_at_ms, code_version: "0.2.0", hidden: false, info };
 };
 
 export function demoCoins(): Coin[] {
@@ -92,4 +97,9 @@ export function demoTrades(): Trade[] {
     t: now - i * 97_000, account: names[i % names.length], buy: i % 3 !== 0,
     pair: (BigInt(3 + (i * 7) % 40) * NEAR / 4n).toString(), tokens: (BigInt(200_000 + (i * 91_237) % 3_000_000) * ONE).toString(), price: (1_200_000_000_000_000_000n - BigInt(i) * 3_000_000_000_000_000n).toString(),
   }));
+}
+
+/** The Rhea pool of a graduated sample coin: a little above the opening price. */
+export function demoPool(): DexPool {
+  return { pool_kind: "SIMPLE_POOL", token_account_ids: ["c7.pad.near", "wrap.near"], amounts: [(236_000_000n * ONE).toString(), (2_120n * NEAR).toString()], total_fee: 30, shares_total_supply: (1_000_000n * ONE).toString() };
 }
