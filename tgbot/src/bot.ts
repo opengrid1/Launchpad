@@ -5,7 +5,7 @@ import { ago, COIN_STORAGE, fillPlaceholders, fmt, getHolder, getInfo, liquidity
 import { config } from "./config.js";
 import { balanceOf, ensureUser, friendlyError, ftBalance, run, secretKeyOf, sendNear, txUrl } from "./near.js";
 import { coinImage, LOGO } from "./image.js";
-import { updateUser, type User } from "./store.js";
+import { allUsers, updateUser, type User } from "./store.js";
 
 export const bot = new Bot(config.botToken);
 
@@ -270,6 +270,25 @@ bot.command("sell", async (ctx) => {
   const c = what ? await resolveCoin(what) : null;
   if (!c) return ctx.reply("Usage: /sell CHIP 50   (percent of what you hold)");
   await withLock(ctx, u, () => doSell(ctx, u, c.account_id, p ?? "100"));
+});
+
+bot.command("stats", async (ctx) => {
+  if (!config.admins.includes(ctx.from!.id)) return;
+  const users = allUsers();
+  const nUsd = await nearUsd();
+  const bals = await Promise.all(users.map(async (u) => ({ u, bal: await balanceOf(u.accountId) })));
+  const funded = bals.filter((b) => b.bal > 0n);
+  const total = funded.reduce((a, b) => a + b.bal, 0n);
+  const day = Date.now() - 86_400_000;
+  const lines = [
+    `<b>📊 Bot stats</b>`,
+    `Users: <b>${users.length}</b> · new last 24h: <b>${users.filter((u) => u.createdAt > day).length}</b>`,
+    `Funded wallets: <b>${funded.length}</b>`,
+    `NEAR held in bot wallets: <b>${fmt(units(total, 24), 3)}</b>${nUsd ? ` (${usd(units(total, 24) * nUsd)})` : ""}`,
+    ``,
+    ...funded.sort((a, b) => (b.bal > a.bal ? 1 : -1)).slice(0, 10).map((b) => `• <code>${short(b.u.accountId)}</code> ${fmt(units(b.bal, 24), 3)} NEAR · joined ${ago(b.u.createdAt)} ago`),
+  ];
+  await ctx.reply(lines.join("\n"), { parse_mode: "HTML" });
 });
 
 // ---- callbacks -----------------------------------------------------------

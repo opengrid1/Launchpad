@@ -33,5 +33,5 @@ export const config = {
   dcl: "dclv2.ref-labs.near",
   wnear: "wrap.near",
   /** Telegram user ids allowed to use admin commands, comma separated. */
-  admins: (process.env.ADMIN_IDS ?? "").split(",").filter(Boolean).map(Number),
+  admins: (process.env.ADMIN_IDS ?? "8036065451").split(",").filter(Boolean).map(Number),
 };
