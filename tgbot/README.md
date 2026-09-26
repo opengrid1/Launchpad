@@ -26,3 +26,5 @@ fly volumes create botdata --size 1 --region sin
 fly secrets set TG_BOT_TOKEN=... BOT_SECRET=...
 fly deploy
 ```
+
+Deploys from the `tgbot` folder on every push; the volume at `/data` holds the wallet file.
