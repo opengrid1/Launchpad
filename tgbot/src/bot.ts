@@ -38,7 +38,8 @@ async function coinCard(u: User, coin: Coin, i: Info) {
   const [liq, pUsd, nUsd, h, bal] = await Promise.all([liquidity(i), pairUsd(i.pair), nearUsd(), getHolder(coin.account_id, u.accountId), balanceOf(u.accountId)]);
   const price = units(i.price, dec);
   const mcap = units(i.market_cap, dec) * pUsd;
-  const progress = i.pool_id != null ? null : Math.min(100, (units(i.raised, dec) / units(i.graduation, dec)) * 100);
+  // Same measure as the site: tokens sold out of the curve supply.
+  const progress = i.pool_id != null ? null : Math.min(100, (units(i.tokens_sold, 18) / units(i.curve_supply, 18)) * 100);
   const mine = BigInt(h.balance); const mineVal = units(mine, 18) * price * pUsd;
   const claimable = BigInt(h.claimable_dividends) + BigInt(h.credit);
   const s = i.split;
@@ -47,7 +48,7 @@ async function coinCard(u: User, coin: Coin, i: Info) {
     `<code>${coin.account_id}</code>`,
     ``,
     `<b>Pool</b>`,
-    `🏦 ${i.pool_id != null ? `Rhea pool #${i.pool_id}` : `Curve · ${progress!.toFixed(0)}% to Rhea`} · pair <b>${sym}</b>`,
+    `🏦 ${i.pool_id != null ? `Rhea pool #${i.pool_id}` : `Curve · <b>${progress!.toFixed(1)}%</b> sold · ${fmt(units(i.raised, dec), 1)} / ${fmt(units(i.graduation, dec), 0)} ${sym} raised`} · pair <b>${sym}</b>`,
     `📊 Mcap: <b>${usd(mcap)}</b>`,
     `💧 Liq: <b>${usd(units(liq, dec) * pUsd)}</b>`,
     `💵 Price: ${price.toPrecision(3)} ${sym}${pUsd ? ` (${usd(price * pUsd)})` : ""}`,
