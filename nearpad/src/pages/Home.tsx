@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { Art } from "../components/Art";
-import { PairLogo } from "../components/PairLogo";
 import { Ring } from "../components/Ring";
 import { DEPLOYED, PINNED } from "../lib/env";
 import { ago, units } from "../lib/format";
-import { useCoins, useCurrency, useNearUsd, usePairs } from "../lib/hooks";
+import { useCoins, useCurrency, useNearUsd } from "../lib/hooks";
 import type { Coin } from "../lib/types";
 import { pairSymbol } from "../lib/types";
 import { makeValuer, pairKind, progress } from "../lib/value";
@@ -15,12 +14,10 @@ type Sort = "trending" | "mcap" | "progress" | "holders" | "new";
 
 export default function Home() {
   const { data: coins, isLoading } = useCoins();
-  const { data: pairs } = usePairs();
   const { data: nearUsd = 0 } = useNearUsd();
   const [ccy] = useCurrency();
   const val = useMemo(() => makeValuer(ccy, nearUsd), [ccy, nearUsd]);
   const [q, setQ] = useState("");
-  const [pair, setPair] = useState("all");
   const [tab, setTab] = useState<"live" | "new" | "graduated">("live");
   const [sort, setSort] = useState<Sort>("trending");
   useEffect(() => {
@@ -33,8 +30,6 @@ export default function Home() {
     let l = (coins ?? []).slice();
     const s = q.trim().toLowerCase();
     if (s) l = l.filter((c) => `${c.name} ${c.symbol} ${c.account_id} ${c.creator}`.toLowerCase().includes(s));
-    if (pair === "NEAR") l = l.filter((c) => c.info.pair === "Near");
-    if (pair === "stocks") l = l.filter((c) => pairKind(c.info.pair) === "stock");
     if (tab === "graduated") l = l.filter((c) => c.info.phase === "Pool");
     if (tab === "live") l = l.filter((c) => c.info.phase !== "Pool");
     const key = (c: Coin) => {
@@ -49,7 +44,7 @@ export default function Home() {
     l.sort((a, b) => key(b) - key(a));
     l.sort((a, b) => Number(PINNED.includes(b.account_id)) - Number(PINNED.includes(a.account_id)));
     return l;
-  }, [coins, q, pair, tab, sort]);
+  }, [coins, q, tab, sort]);
 
   const closest = useMemo(() => (coins ?? []).filter((c) => c.info.phase === "Curve").sort((a, b) => progress(b) - progress(a)).slice(0, 6), [coins]);
   const totals = useMemo(() => {
@@ -84,11 +79,6 @@ export default function Home() {
         </>
       )}
 
-      <div className="row-flex" style={{ marginTop: 6 }}>
-        <button className={"pill " + (pair === "all" ? "on" : "")} onClick={() => setPair("all")}>All pairs</button>
-        <button className={"pill " + (pair === "NEAR" ? "on" : "")} onClick={() => setPair("NEAR")}><PairLogo k="NEAR" size={22} />NEAR</button>
-        {(pairs ?? []).some((p) => p.asset !== "Near") && <button className={"pill " + (pair === "stocks" ? "on" : "")} onClick={() => setPair("stocks")}>Stocks</button>}
-      </div>
 
       <div className="filters">
         <div className="seg">
@@ -111,7 +101,14 @@ export default function Home() {
         <div className="skel" style={{ height: 380 }} />
       ) : (
         <div className="rows">
-          {list.length === 0 && <div className="empty">{coins?.length ? "No coins match." : "No coins yet. Create the first one."}</div>}
+          {list.length === 0 && (coins?.length ? <div className="empty">No coins match.</div> : (
+            <div className="empty-hero">
+              <img src="/logo.svg" alt="" />
+              <h3>No coins yet. <em>Yours could be the first.</em></h3>
+              <p>Name it, pick where the tax goes, and launch. Holders get paid on every trade, and the coin graduates to Rhea.</p>
+              <Link to="/create" className="b pri">Create a coin</Link>
+            </div>
+          ))}
           {list.map((c) => {
             const v = val(c.info.pair);
             const pool = c.info.phase === "Pool";

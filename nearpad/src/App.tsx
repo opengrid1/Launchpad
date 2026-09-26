@@ -33,10 +33,11 @@ export default function App() {
 
   return (
     <>
+      <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden><defs><linearGradient id="hornGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#4F46E5" /><stop offset=".6" stopColor="#8B5CF6" /><stop offset="1" stopColor="#F0B33F" /></linearGradient></defs></svg>
       {DEMO && <div className="demo">Preview with sample data. <em>Nothing here is on NEAR yet.</em></div>}
       <header className="appbar">
         <div className="row">
-          <Link to="/" className="brand"><img src="/logo.svg" alt="" />{BRAND.name}<span className="net">NEAR</span></Link>
+          <Link to="/" className="brand"><img src="/logo.svg" alt="" /><span className="name">{BRAND.name}</span><span className="net">NEAR</span></Link>
           <span className="sp" />
           {accountId
             ? <button className="wallet" title="Account" onClick={() => setMenu(true)}>{short(accountId, 7)}</button>
