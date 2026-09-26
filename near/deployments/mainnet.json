@@ -22,105 +22,105 @@
     "NVDAon": {
       "token": "bnb-0xa9ee28c80f960b889dfbd1902055218cba016f75.omdep.near",
       "name": "NVIDIA (Ondo)",
-      "virtual_reserve": "21.77"
+      "virtual_reserve": "4.998"
     },
     "TSLAon": {
       "token": "bnb-0x2494b603319d4d9f9715c9f4496d9e0364b59d93.omdep.near",
       "name": "Tesla (Ondo)",
-      "virtual_reserve": "13.17"
+      "virtual_reserve": "3.023"
     },
     "AAPLon": {
       "token": "bnb-0x390a684ef9cade28a7ad0dfa61ab1eb3842618c4.omdep.near",
       "name": "Apple (Ondo)",
-      "virtual_reserve": "14.37"
+      "virtual_reserve": "3.298"
     },
     "GOOGLon": {
       "token": "bnb-0x091fc7778e6932d4009b087b191d1ee3bac5729a.omdep.near",
       "name": "Alphabet Class A (Ondo)",
-      "virtual_reserve": "14.25"
+      "virtual_reserve": "3.271"
     },
     "METAon": {
       "token": "bnb-0xd7df5863a3e742f0c767768cdfcb63f09e0422f6.omdep.near",
       "name": "Meta Platforms (Ondo)",
-      "virtual_reserve": "6.519"
+      "virtual_reserve": "1.497"
     },
     "MSFTon": {
       "token": "bnb-0x6bfe75d1ad432050ea973c3a3dcd88f02e2444c3.omdep.near",
       "name": "Microsoft (Ondo)",
-      "virtual_reserve": "9.493"
+      "virtual_reserve": "2.18"
     },
     "AMZNon": {
       "token": "bnb-0x4553cfe1c09f37f38b12dc509f676964e392f8fc.omdep.near",
       "name": "Amazon (Ondo)",
-      "virtual_reserve": "19.63"
+      "virtual_reserve": "4.506"
     },
     "HOODon": {
       "token": "bnb-0x19601179a60f55ff6636f5d1a8b6671053bd60a8.omdep.near",
       "name": "Robinhood Markets (Ondo)",
-      "virtual_reserve": "41.04"
+      "virtual_reserve": "9.422"
     },
     "INTCon": {
       "token": "bnb-0xa528caaa2f96090e379d43f90834c75df54d6e74.omdep.near",
       "name": "Intel (Ondo)",
-      "virtual_reserve": "39.84"
+      "virtual_reserve": "9.146"
     },
     "MRVLon": {
       "token": "bnb-0x1501ec83ffef405b4331cc4f73277a40fb0c627d.omdep.near",
       "name": "Marvell Technology (Ondo)",
-      "virtual_reserve": "18.71"
+      "virtual_reserve": "4.295"
     },
     "CRCLon": {
       "token": "bnb-0x992879cd8ce0c312d98648875b5a8d6d042cbf34.omdep.near",
       "name": "Circle Internet Group (Ondo)",
-      "virtual_reserve": "55.06"
+      "virtual_reserve": "12.64"
     },
     "SPYon": {
       "token": "bnb-0x6a708ead771238919d85930b5a0f10454e1c331a.omdep.near",
       "name": "SPDR S&P 500 ETF (Ondo)",
-      "virtual_reserve": "6.352"
+      "virtual_reserve": "1.458"
     },
     "QQQon": {
       "token": "bnb-0x0cde6936d305d5b34667fc46425e852efd73559a.omdep.near",
       "name": "Invesco QQQ (Ondo)",
-      "virtual_reserve": "6.582"
+      "virtual_reserve": "1.511"
     },
     "GLDon": {
       "token": "bnb-0xfa9a1e901085e269f6d428f79cd5252d8b919344.omdep.near",
       "name": "SPDR Gold Shares (Ondo)",
-      "virtual_reserve": "12.46"
+      "virtual_reserve": "2.86"
     },
     "IAUon": {
       "token": "bnb-0xcb2a0f46f67dc4c58a316f1c008edef5c2311795.omdep.near",
       "name": "iShares Gold Trust (Ondo)",
-      "virtual_reserve": "60.75"
+      "virtual_reserve": "13.95"
     },
     "SLVon": {
       "token": "bnb-0x8b872732b07be325a8803cdb480d9d20b6f8d11b.omdep.near",
       "name": "iShares Silver Trust (Ondo)",
-      "virtual_reserve": "84.28"
+      "virtual_reserve": "19.35"
     },
     "TLTon": {
       "token": "bnb-0xf69e40069ac227c11459e3f4e8a446b3401616b6.omdep.near",
       "name": "iShares 20+ Year Treasury Bond ETF (Ondo)",
-      "virtual_reserve": "61.78"
+      "virtual_reserve": "14.18"
     },
     "SGOVon": {
       "token": "bnb-0xc008c5f579ec1450f20099c39f587547e27c7523.omdep.near",
       "name": "iShares 0-3 Month Treasury Bond ETF (Ondo)",
-      "virtual_reserve": "48.68"
+      "virtual_reserve": "11.18"
     },
     "TIPon": {
       "token": "bnb-0x2ac26ec236df5d1d2ad1a6dd4e448a90e45dc35d.omdep.near",
       "name": "iShares TIPS Bond ETF (Ondo)",
-      "virtual_reserve": "46.87"
+      "virtual_reserve": "10.76"
     },
     "AGGon": {
       "token": "bnb-0x08ce97f3d5cf11e577d091ab048bc5e2eae3fabb.omdep.near",
       "name": "iShares Core US Aggregate Bond ETF (Ondo)",
-      "virtual_reserve": "51.51"
+      "virtual_reserve": "11.83"
     }
   },
-  "notes": "Stock virtual reserves are 1,000 NEAR worth at deployment prices (NEAR 4.90 USD), so every pair graduates at the same dollar size as the NEAR pair. All stock tokens have 18 decimals.",
+  "notes": "Stock virtual reserves are 1,125 NEAR-dollars worth at deployment prices (NEAR 4.90 USD), so a stock coin graduates at about $2,250 while the bridged supply on NEAR is thin. The NEAR pair keeps 1,000 NEAR (graduates at 2,000 NEAR). All stock tokens have 18 decimals.",
   "factory_code": "deployed 2026-09-26 at chipfi.near (286,631 bytes) with register_version; coin code 0.2.0 registered by hash, no second publish",
   "coin_code_history": [
     {
@@ -135,6 +135,7 @@
   },
   "coins": {
     "c1.chipfi.near": "CHIP, official, NEAR pair, 1%/1%, 100% dividends",
-    "c2.chipfi.near": "JENSEN, NEAR pair, 3%/3%, 25/50/15/10"
+    "c2.chipfi.near": "JENSEN first try on the NEAR pair, collected back and hidden",
+    "c3.chipfi.near": "JENSEN, NVDAon pair, 3%/3%, 25/50/15/10"
   }
 }
