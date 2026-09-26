@@ -11,6 +11,7 @@
 //!   transfer <to> <near>                           send NEAR from the signer
 //!   factory <owner> <treasury> <launch_fee_near>   deploy the factory wasm to NEAR_ACCOUNT_ID and init it
 //!   redeploy                                       put new factory code on NEAR_ACCOUNT_ID, state untouched
+//!   call <method> <json> [deposit_near]            any owner call on the factory (set_paused, set_current_version, ...)
 //!   publish <version>                              publish out/launch_token.wasm as the coin code (burns ~30 NEAR from the factory's balance)
 //!   pair <key> <token_account> <symbol> <decimals> <name> <virtual_reserve>   add a NEP-141 pair (reserve in whole units)
 //!   balance [account]                              print an account's balance
@@ -68,6 +69,14 @@ async fn main() -> anyhow::Result<()> {
                     let v = worker.view_account(&id).await?;
                     println!("{}: {} NEAR (locked {}), {} bytes", id, v.balance.as_near() as f64 + (v.balance.as_yoctonear() % NEAR) as f64 / NEAR as f64, v.locked, v.storage_usage);
                     return Ok(());
+                }
+                "call" => {
+                    // Any owner call on the factory: call <method> <json args> [deposit_near]
+                    let method = args[1].clone();
+                    let json: Value = serde_json::from_str(&args[2])?;
+                    let deposit: f64 = args.get(3).map(|s| s.parse()).transpose()?.unwrap_or(0.0);
+                    let r = me.call(&factory, &method).args_json(json).deposit(near(deposit)).gas(Gas::from_tgas(100)).transact().await?;
+                    println!("{}: success={} {:?}", method, r.is_success(), r.failures());
                 }
                 "redeploy" => {
                     // New factory code on the same account; the state layout must be unchanged.
