@@ -164,7 +164,7 @@ export default function Create() {
             <PairLogo k={pair?.key ?? "NEAR"} size={28} />
             <div>
               <b>{near ? "Priced and paid in NEAR" : `Priced and paid in ${psym}`}</b>
-              <small>{near ? "Anyone with NEAR can buy." : `Buyers need ${psym} in their wallet. ${pair?.name.replace(/ \(Ondo\)$/, "")} tokenized by Ondo.`} Graduates at {pair ? val(pair.asset).fmt(graduation) : "—"} raised.</small>
+              <small>{near ? "Anyone with NEAR can buy." : <>Buyers need {psym} in their wallet, <Link to={`/get/${pair?.key}`} className="vi">swapped from NEAR here</Link>. {pair?.name.replace(/ \(Ondo\)$/, "")} tokenized by Ondo.</>} Graduates at {pair ? val(pair.asset).fmt(graduation) : "—"} raised.</small>
             </div>
           </div>
         </section>

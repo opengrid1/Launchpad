@@ -14,6 +14,7 @@ import Create from "./pages/Create";
 import Portfolio from "./pages/Portfolio";
 import Docs from "./pages/Docs";
 import Admin from "./pages/Admin";
+import GetStock from "./pages/GetStock";
 
 /** App shell: a sticky app bar with the navigation as a tab strip under it on
  *  phones and centred in the bar on desktop. Settings live in a drawer. */
@@ -60,6 +61,8 @@ export default function App() {
           <Route path="/create" element={<Create />} />
           <Route path="/me" element={<Portfolio />} />
           <Route path="/docs" element={<Docs />} />
+          <Route path="/get" element={<GetStock />} />
+          <Route path="/get/:key" element={<GetStock />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<Home />} />
         </Routes>
@@ -74,6 +77,7 @@ export default function App() {
             <NavLink to="/" end className={cls}><Glyph name="coins" size={18} />Coins</NavLink>
             <NavLink to="/create" className={cls}><Glyph name="rocket" size={18} />Create a coin</NavLink>
             <NavLink to="/me" className={cls}><Glyph name="wallet" size={18} />Portfolio</NavLink>
+            <NavLink to="/get" className={cls}><Glyph name="coins" size={18} />Get a stock token</NavLink>
             <NavLink to="/docs" className={cls}><Glyph name="book" size={18} />How it works</NavLink>
             {admin && <NavLink to="/admin" className={cls}><Glyph name="sliders" size={18} />Admin</NavLink>}
             <div className="foot">

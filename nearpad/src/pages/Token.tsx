@@ -302,7 +302,7 @@ function TradeBox({ c, nearUsd, dexPool, initial = "buy" }: { c: Coin; nearUsd: 
     if (!accountId) return openWalletModal();
     if (i.phase === "Graduating") return send("Open the pool on Rhea", [{ receiverId: c.account_id, methodName: "open_pool", deposit: near ? "0" : OPEN_POOL_DEPOSIT, gas: GAS_MAX }], () => qc.invalidateQueries());
     const floor = ((out * 95n) / 100n).toString();
-    let ok: boolean;
+    let ok: { hash?: string } | false;
     if (!pool) {
       ok = side === "buy"
         ? near
@@ -352,7 +352,8 @@ function TradeBox({ c, nearUsd, dexPool, initial = "buy" }: { c: Coin; nearUsd: 
         <dt>Where</dt><dd><b>{pool ? "Rhea pool" : "The curve"}</b></dd>
       </dl>
       {i.phase === "Graduating" && <div className="warn" style={{ marginBottom: 10 }}>The curve just filled. Open the pool on Rhea to resume trading; anyone can.{near ? "" : " It costs 0.2 NEAR of Rhea storage."}</div>}
-      {over && <div className="warn" style={{ marginBottom: 10 }}>Amount is more than your balance.</div>}
+      {over && <div className="warn" style={{ marginBottom: 10 }}>Amount is more than your balance.{!near && side === "buy" && <> <Link to={`/get/${sym}`} className="vi">Get {sym} with NEAR</Link>.</>}</div>}
+      {!near && side === "buy" && !over && payBal === 0n && <div className="warn" style={{ marginBottom: 10 }}>You have no {sym} yet. <Link to={`/get/${sym}`} className="vi">Swap NEAR for {sym}</Link> first.</div>}
       <button className={"b lg wide " + (side === "sell" ? "sell" : "buy")} disabled={!!accountId && i.phase !== "Graduating" && (raw === 0n || over || (pool && !res))} onClick={go}>{!accountId ? "Connect wallet" : i.phase === "Graduating" ? "Open the pool" : side === "buy" ? `Buy ${i.symbol}` : `Sell ${i.symbol}`}</button>
       {pool && near && (wnearBal ?? 0n) > 0n && <div className="row-flex" style={{ marginTop: 10, justifyContent: "space-between" }}><span className="fine">{unitsFmt(units(wnearBal!.toString(), 24))} wNEAR in your wallet from sales</span><button className="b ghost sm" onClick={unwrap}>Unwrap to NEAR</button></div>}
       <p className="fine" style={{ marginTop: 10 }}>{pool

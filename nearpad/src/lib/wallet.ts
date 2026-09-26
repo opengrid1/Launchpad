@@ -60,7 +60,7 @@ export type Call = { receiverId: string; methodName: string; args?: Record<strin
 const TGAS = (n: number) => (BigInt(n) * 1_000_000_000_000n).toString();
 
 /** Sends one or more function calls, each its own transaction, with one wallet approval. */
-export async function send(label: string, calls: Call[], after?: () => Promise<void> | void): Promise<boolean> {
+export async function send(label: string, calls: Call[], after?: () => Promise<void> | void): Promise<{ hash?: string } | false> {
   if (DEMO) { setToast({ kind: "err", text: "Preview only. Nothing is sent." }); return false; }
   const s = await init();
   if (!s || !accountId) { await openWalletModal(); return false; }
@@ -77,7 +77,7 @@ export async function send(label: string, calls: Call[], after?: () => Promise<v
     const hash = (last as { transaction?: { hash?: string } } | undefined)?.transaction?.hash;
     await after?.();
     setToast({ kind: "ok", text: `${label}: done`, hash });
-    return true;
+    return { hash };
   } catch (e) {
     setToast({ kind: "err", text: friendlyError(e) });
     return false;
