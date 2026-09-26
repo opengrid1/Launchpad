@@ -37,7 +37,7 @@ export default function App() {
       {DEMO && <div className="demo">Preview with sample data. <em>Nothing here is on NEAR yet.</em></div>}
       <header className="appbar">
         <div className="row">
-          <Link to="/" className="brand"><img src="/logo.svg" alt="" /><span className="name">{BRAND.name}</span><span className="net">NEAR</span></Link>
+          <Link to="/" className="brand"><img src="/logo.svg" alt="" /><span className="name">{BRAND.name}</span></Link>
           <span className="sp" />
           {accountId
             ? <button className="wallet" title="Account" onClick={() => setMenu(true)}>{short(accountId, 7)}</button>
