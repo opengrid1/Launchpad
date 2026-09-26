@@ -22,8 +22,8 @@ export const DEPLOYED = DEMO || env.factory !== "";
 export const BRAND = {
   name: "Chipfi",
   tagline: "Launch a coin on NEAR, paired with NEAR or a stock. Holders get paid on every trade.",
-  url: "https://nearpad-site.vercel.app",
-  x: "https://x.com/alicorn_fun",
+  url: "https://www.chipfi.fun",
+  x: "https://x.com/chipfi_fun",
 };
 
 /** Numbers fixed in the contracts. */
@@ -45,5 +45,6 @@ export const RHEA = {
   swap: (tokenIn: string, tokenOut: string) => `https://dex.rhea.finance/#${tokenIn}|${tokenOut}`,
 };
 
-export const PINNED: string[] = [];
+/** The official coin, shown first. */
+export const PINNED: string[] = ["c2.alicorn.near"];
 export const HIDDEN = new Set<string>([]);
