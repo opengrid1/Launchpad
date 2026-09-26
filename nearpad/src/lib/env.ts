@@ -4,8 +4,8 @@ const network = (import.meta.env.VITE_NEAR_NETWORK as "mainnet" | "testnet" | un
 
 export const env = {
   network,
-  /** The factory. Empty means the site runs on sample data. */
-  factory: String(import.meta.env.VITE_FACTORY ?? ""),
+  /** The factory. Mainnet lives at alicorn.near; an empty override means sample data. */
+  factory: String(import.meta.env.VITE_FACTORY ?? (network === "mainnet" ? "alicorn.near" : "")),
   rpcUrls: import.meta.env.VITE_RPC_OVERRIDE
     ? [String(import.meta.env.VITE_RPC_OVERRIDE)]
     : network === "mainnet"
