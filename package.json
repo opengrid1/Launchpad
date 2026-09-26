@@ -14,7 +14,8 @@
     "arcpad",
     "arbistonk",
     "etherstock",
-    "alicorn"
+    "alicorn",
+    "nearpad"
   ],
   "scripts": {
     "build": "npm run build -w sdk && npm run build -w backend && npm run build -w web",

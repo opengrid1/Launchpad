@@ -157,6 +157,7 @@ fn pool_trades_pay_fee_and_buyback_burns() {
     assert_eq!(after.total_supply.0, TOTAL_SUPPLY - after.burned.0);
     // 1% tax + 1% pool fee on 10 NEAR: 0.199 NEAR, 20% platform
     assert_eq!(after.platform_fees_total.0 - before.platform_fees_total.0, (10 * NEAR / 100 + (10 * NEAR - 10 * NEAR / 100) / 100) / 5);
+    assert_eq!(after.platform_credit.0, 0, "a NEAR coin pushes the platform share on the spot");
 }
 
 #[test]
@@ -285,4 +286,29 @@ fn candles_and_recent_trades_are_kept_on_chain() {
     assert_eq!(trades.len(), 3);
     assert!(!trades[0].buy && trades[1].buy, "newest first");
     assert_eq!(trades[0].account, alice());
+}
+
+#[test]
+fn factory_can_collect_liquidity_after_graduation() {
+    let mut c = launch(split(0, 10000, 0, 0), 100, 100);
+    let cost = storage_cost(&c);
+    testing_env!(ctx(bob(), 3000 * NEAR + cost).build());
+    c.buy(None, None);
+    testing_env!(ctx(alice(), 0).build());
+    c.open_pool();
+    let before = c.get_info();
+    let mut b = ctx(factory(), 0); b.account_balance(NearToken::from_near(5000)); testing_env!(b.build());
+    c.collect_liquidity(2500, treasury());
+    let after = c.get_info();
+    assert_eq!(after.pool_pair.0, before.pool_pair.0 - before.pool_pair.0 / 4);
+    assert_eq!(after.pool_tokens.0, before.pool_tokens.0 - before.pool_tokens.0 / 4);
+    assert_eq!(c.get_holder(treasury()).balance.0, before.pool_tokens.0 / 4);
+}
+
+#[test]
+#[should_panic(expected = "the pool is not open")]
+fn collect_liquidity_needs_the_pool() {
+    let mut c = launch(split(0, 10000, 0, 0), 100, 100);
+    testing_env!(ctx(factory(), 0).build());
+    c.collect_liquidity(1000, treasury());
 }

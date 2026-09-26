@@ -95,15 +95,17 @@ async fn launch_trade_graduate_claim() -> anyhow::Result<()> {
     assert!(y(&i["burned"]) > 0, "pending buyback burned on open");
     assert!(y(&i["liquidity_added"]) > 0);
 
-    // Pool trade, then the platform collects.
+    // Pool trade: the platform's share lands in the treasury on the spot.
+    let t0 = treasury.view_account().await?.balance.as_yoctonear();
     let r = bob.call(&coin, "buy").args_json(json!({ "min_out": null, "for_account": null })).deposit(NearToken::from_near(5)).gas(Gas::from_tgas(100)).transact().await?;
     assert!(r.is_success(), "pool buy: {:?}", r.failures());
-    let t0 = treasury.view_account().await?.balance.as_yoctonear();
-    let r = bob.call(factory.id(), "collect_platform").args_json(json!({ "id": 1 })).gas(Gas::from_tgas(50)).transact().await?;
-    assert!(r.is_success(), "collect: {:?}", r.failures());
     let t1 = treasury.view_account().await?.balance.as_yoctonear();
-    assert!(t1 > t0, "treasury paid");
+    // 5 NEAR: 3% tax + 1% pool fee, 20% of that to the platform
+    assert!(t1 - t0 > 35 * NEAR / 1000, "treasury paid on the spot: {}", t1 - t0);
     assert_eq!(y(&info(&coin, &worker).await["platform_credit"]), 0);
+    // Nothing left to collect on a NEAR coin.
+    let r = bob.call(factory.id(), "collect_platform").args_json(json!({ "id": 1 })).gas(Gas::from_tgas(50)).transact().await?;
+    assert!(r.is_failure(), "nothing to collect");
 
     // Admin: owner re-points creator fees; a stranger cannot.
     let r = owner.call(factory.id(), "coin_set_fee_wallet").args_json(json!({ "id": 1, "fee_wallet": bob.id(), "reason": "takeover" })).gas(Gas::from_tgas(50)).transact().await?;

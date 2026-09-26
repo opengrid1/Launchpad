@@ -467,8 +467,9 @@ impl Contract {
         )
     }
 
-    /// Pays the platform its share. Only the factory calls, and it is paid to
-    /// the treasury on record.
+    /// Pays the platform any share that could not be delivered on the spot
+    /// (a pair-token transfer that failed). Only the factory calls, and it is
+    /// paid to the treasury on record. On a NEAR coin there is never anything here.
     pub fn claim_platform(&mut self) -> Promise {
         require!(env::predecessor_account_id() == self.factory, "factory only");
         let amount = std::mem::take(&mut self.platform_credit);
@@ -538,6 +539,40 @@ impl Contract {
         }
         if let Some(l) = links { self.links = l; }
         self.emit("metadata_changed", "{}");
+    }
+
+    /// Pulls `bps` of the pool's position, pair and tokens, out to `to`. Only
+    /// the factory (the platform), only once the pool is open. Not reversible.
+    pub fn collect_liquidity(&mut self, bps: u32, to: AccountId) -> Promise {
+        self.assert_factory();
+        require!(self.phase == Phase::Pool, "the pool is not open");
+        require!(bps > 0 && bps <= BPS, "bps: 1 to 10000");
+        require!(to != env::current_account_id(), "to");
+        let pair_out = self.pool_pair * bps as u128 / BPS as u128;
+        let tokens_out = self.pool_tokens * bps as u128 / BPS as u128;
+        require!(pair_out > 0 || tokens_out > 0, "nothing to collect");
+        self.pool_pair -= pair_out;
+        self.pool_tokens -= tokens_out;
+        if tokens_out > 0 {
+            if !self.token.accounts.contains_key(&to) {
+                self.token.internal_register_account(&to);
+            }
+            self.settle(&to);
+            let me = env::current_account_id();
+            let before = self.token.accounts.get(&to).unwrap_or(0);
+            self.token.internal_transfer(&me, &to, tokens_out, None);
+            self.reset_debt(&to);
+            self.track_holders(&to, before, before + tokens_out);
+        }
+        self.emit("liquidity_collected", &format!(
+            "{{\"to\":\"{}\",\"bps\":{},\"pair\":\"{}\",\"tokens\":\"{}\"}}",
+            to, bps, pair_out, tokens_out
+        ));
+        if pair_out > 0 {
+            self.pay_pair(&to, pair_out)
+        } else {
+            Promise::new(to)
+        }
     }
 
     fn assert_factory(&self) {
@@ -775,8 +810,8 @@ impl Contract {
         if total == 0 { return; }
         let platform = total * PLATFORM_BPS as u128 / BPS as u128;
         let rest = total - platform;
-        self.platform_credit += platform;
         self.platform_fees_total += platform;
+        self.pay_platform(platform);
         let creator = rest * self.split.creator_bps as u128 / BPS as u128;
         let dividends = rest * self.split.dividends_bps as u128 / BPS as u128;
         let burn = rest * self.split.burn_bps as u128 / BPS as u128;
@@ -802,11 +837,36 @@ impl Contract {
         self.token.total_supply - self.token.accounts.get(&env::current_account_id()).unwrap_or(0)
     }
 
+    /// The platform's share goes straight to the treasury on every trade. A
+    /// NEAR transfer to an existing account cannot fail; a pair-token transfer
+    /// can (the treasury may not be registered on it), and then the amount is
+    /// held as a credit the factory can collect later.
+    fn pay_platform(&mut self, amount: u128) {
+        if amount == 0 { return; }
+        match &self.pair {
+            PairAsset::Near => {
+                let _p = Promise::new(self.treasury.clone()).transfer(NearToken::from_yoctonear(amount));
+            }
+            PairAsset::Token { account_id, .. } => {
+                let _p = ext_ft::ext(account_id.clone())
+                    .with_attached_deposit(ONE_YOCTO)
+                    .with_static_gas(GAS_FOR_FT_TRANSFER)
+                    .ft_transfer(self.treasury.clone(), U128(amount), None)
+                    .then(
+                        Self::ext(env::current_account_id())
+                            .with_static_gas(GAS_FOR_CLAIM_CALLBACK)
+                            .on_claim_platform(U128(amount)),
+                    );
+            }
+        }
+    }
+
     fn pay_dividends(&mut self, amount: u128) {
         let eligible = self.eligible_supply();
         if eligible == 0 {
             // Nobody holds yet: it goes to the platform rather than nowhere.
-            self.platform_credit += amount;
+            self.platform_fees_total += amount;
+            self.pay_platform(amount);
             return;
         }
         self.acc_per_token += mul_div(amount, ACC_SCALE, eligible);

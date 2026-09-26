@@ -403,9 +403,34 @@ impl Factory {
         self.call_coin(id, "set_metadata", args)
     }
 
+    /// Pulls `bps` of a graduated coin's pool position, pair and tokens, to `to`.
+    /// Not reversible.
+    pub fn coin_collect_liquidity(&mut self, id: u64, bps: u32, to: AccountId) -> Promise {
+        self.assert_owner();
+        let coin = self.coins.get(&id).expect("coin");
+        Promise::new(coin.account_id.clone()).function_call(
+            "collect_liquidity",
+            near_sdk::serde_json::json!({ "bps": bps, "to": to }).to_string().into_bytes(),
+            NearToken::from_yoctonear(0),
+            Gas::from_tgas(30),
+        )
+    }
+
     /// Pays the platform's share held in a coin to the treasury. Anyone may call.
     pub fn collect_platform(&mut self, id: u64) -> Promise {
         self.call_coin(id, "claim_platform", near_sdk::serde_json::json!({}))
+    }
+
+    /// Collects from several coins in one transaction. Anyone may call; each
+    /// coin pays the treasury. Up to 20 at a time.
+    pub fn collect_platform_many(&mut self, ids: Vec<u64>) -> Promise {
+        require!(!ids.is_empty() && ids.len() <= 20, "1 to 20 coins");
+        let mut it = ids.into_iter();
+        let mut p = self.call_coin(it.next().unwrap(), "claim_platform", near_sdk::serde_json::json!({}));
+        for id in it {
+            p = p.and(self.call_coin(id, "claim_platform", near_sdk::serde_json::json!({})));
+        }
+        p
     }
 
     fn call_coin(&self, id: u64, method: &str, args: near_sdk::serde_json::Value) -> Promise {
