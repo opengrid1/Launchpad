@@ -34,7 +34,7 @@ const mk = (id: number, name: string, symbol: string, pair: "NEAR" | "NVDAon", s
 
 export function demoCoins(): Coin[] {
   return [
-    mk(7, "Alicorn", "ALICORN", "NEAR", 1, "Pool", [1, 1], [0, 100, 0, 0], "alicorn.near", 4 * 1440, 541, 3120),
+    mk(7, "Chipfi", "CHIP", "NEAR", 1, "Pool", [1, 1], [0, 100, 0, 0], "chipfi.near", 4 * 1440, 541, 3120),
     mk(6, "Nearkat", "NEARKAT", "NEAR", 1, "Pool", [3, 3], [0, 100, 0, 0], "humpydumpy.near", 3 * 1440, 277, 1980),
     mk(5, "Ironclaw", "IRONCLAW", "NEAR", 0.68, "Curve", [3, 3], [40, 30, 20, 10], "claw.near", 600, 88, 412),
     mk(4, "Attention", "ATTN", "NEAR", 0.6, "Curve", [5, 5], [30, 50, 20, 0], "attn.near", 300, 64, 240),

@@ -20,9 +20,9 @@ export const DEMO = !!import.meta.env.VITE_DEMO;
 export const DEPLOYED = DEMO || env.factory !== "";
 
 export const BRAND = {
-  name: "Alicorn",
-  tagline: "Launch a coin on NEAR. Holders get paid on every trade.",
-  url: "https://near.alicorn.fun",
+  name: "Chipfi",
+  tagline: "Launch a coin on NEAR, paired with NEAR or a stock. Holders get paid on every trade.",
+  url: "https://nearpad-site.vercel.app",
   x: "https://x.com/alicorn_fun",
 };
 

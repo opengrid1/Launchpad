@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 export type Theme = "light" | "dark" | "system";
-const KEY = "alicorn.theme";
+const KEY = "chipfi.theme";
 
 function read(): Theme {
   try { const v = localStorage.getItem(KEY); if (v === "light" || v === "dark") return v; } catch { /* private mode */ }
