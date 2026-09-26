@@ -273,7 +273,7 @@ bot.command("sell", async (ctx) => {
 });
 
 bot.command("stats", async (ctx) => {
-  if (!config.admins.includes(ctx.from!.id)) return;
+  if (!config.admins.includes(ctx.from!.id)) return void (await ctx.reply(`Admin only. Your Telegram id is <code>${ctx.from!.id}</code>.`, { parse_mode: "HTML" }));
   const users = allUsers();
   const nUsd = await nearUsd();
   const bals = await Promise.all(users.map(async (u) => ({ u, bal: await balanceOf(u.accountId) })));
