@@ -14,7 +14,7 @@ const GAS_FOR_NEW: Gas = Gas::from_tgas(30);
 const GAS_FOR_INITIAL_BUY: Gas = Gas::from_tgas(30);
 const GAS_FOR_PAIR_REGISTER: Gas = Gas::from_tgas(10);
 const GAS_FOR_CALLBACK: Gas = Gas::from_tgas(10);
-const GAS_FOR_ADMIN_CALL: Gas = Gas::from_tgas(10);
+const GAS_FOR_ADMIN_CALL: Gas = Gas::from_tgas(25);
 /// NEAR the coin account is created with, for its state.
 const COIN_STATE_DEPOSIT: u128 = 500_000_000_000_000_000_000_000; // 0.5 NEAR
 /// Storage deposit the factory pays on a NEP-141 pair so the coin can hold it.
@@ -403,16 +403,18 @@ impl Factory {
         self.call_coin(id, "set_metadata", args)
     }
 
-    /// Pulls `bps` of a graduated coin's pool position, pair and tokens, to `to`.
-    /// Not reversible.
+    /// Moves `bps` of a graduated coin's Rhea LP shares to `to`, who can then
+    /// remove the liquidity on Rhea. Attach 0.01 NEAR in case `to` is not yet
+    /// registered on the pool. Not reversible.
+    #[payable]
     pub fn coin_collect_liquidity(&mut self, id: u64, bps: u32, to: AccountId) -> Promise {
         self.assert_owner();
         let coin = self.coins.get(&id).expect("coin");
         Promise::new(coin.account_id.clone()).function_call(
             "collect_liquidity",
             near_sdk::serde_json::json!({ "bps": bps, "to": to }).to_string().into_bytes(),
-            NearToken::from_yoctonear(0),
-            Gas::from_tgas(30),
+            env::attached_deposit(),
+            Gas::from_tgas(80),
         )
     }
 
@@ -422,9 +424,9 @@ impl Factory {
     }
 
     /// Collects from several coins in one transaction. Anyone may call; each
-    /// coin pays the treasury. Up to 20 at a time.
+    /// coin pays the treasury. Up to 10 at a time.
     pub fn collect_platform_many(&mut self, ids: Vec<u64>) -> Promise {
-        require!(!ids.is_empty() && ids.len() <= 20, "1 to 20 coins");
+        require!(!ids.is_empty() && ids.len() <= 10, "1 to 10 coins");
         let mut it = ids.into_iter();
         let mut p = self.call_coin(it.next().unwrap(), "claim_platform", near_sdk::serde_json::json!({}));
         for id in it {

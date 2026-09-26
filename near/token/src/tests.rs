@@ -15,9 +15,17 @@ fn ctx(predecessor: AccountId, deposit: u128) -> VMContextBuilder {
     b.current_account_id(coin())
         .predecessor_account_id(predecessor)
         .attached_deposit(NearToken::from_yoctonear(deposit))
+        .account_balance(NearToken::from_near(5000))
         .prepaid_gas(Gas::from_tgas(300));
     b
 }
+
+/// A callback context: the coin calling itself with the given promise results.
+fn cb_env(results: Vec<PromiseResult>) {
+    testing_env!(ctx(coin(), 0).build(), near_sdk::test_vm_config(), near_sdk::RuntimeFeesConfig::test(), Default::default(), results);
+}
+
+fn ok(json: &str) -> PromiseResult { PromiseResult::Successful(json.as_bytes().to_vec()) }
 
 fn split(creator: u32, dividends: u32, burn: u32, liquidity: u32) -> Split {
     Split { creator_bps: creator, dividends_bps: dividends, burn_bps: burn, liquidity_bps: liquidity }
@@ -32,12 +40,41 @@ fn launch(s: Split, buy_tax: u32, sell_tax: u32) -> Contract {
     )
 }
 
-fn storage_cost(c: &Contract) -> u128 { c.token.storage_balance_bounds().min.as_yoctonear() }
+fn storage_cost(_c: &Contract) -> u128 { MIN_STORAGE }
 
 /// Dividend accounting rounds down by a few yocto per settlement.
 fn approx(actual: u128, expected: u128) {
     let tol: u128 = 1_000_000_000_000; // 1e-12 NEAR
     assert!(actual <= expected && actual + tol >= expected, "actual {} expected {}", actual, expected);
+}
+
+/// Fills the curve with one whale buy and walks the graduation callbacks as
+/// if Rhea had answered each step.
+fn graduate(c: &mut Contract) {
+    let cost = storage_cost(c);
+    testing_env!(ctx(bob(), 3000 * NEAR + cost).build());
+    c.buy(None, None);
+    assert_eq!(c.get_info().phase, Phase::Graduating);
+    testing_env!(ctx(alice(), 0).build());
+    c.open_pool();
+    let i = c.get_info();
+    assert!(i.grad.lock_until > 0);
+    cb_env(vec![ok("7"), ok("")]);
+    c.on_pool_created(true);
+    let i = c.get_info();
+    assert_eq!(i.pool_id, Some(7));
+    assert!(i.grad.pool_created && i.grad.wrapped);
+    cb_env(vec![ok("\"0\""), ok(&format!("\"{}\"", i.pool_pair.0))]);
+    c.on_deposited(true, true);
+    let i = c.get_info();
+    assert!(i.grad.coin_deposited && i.grad.pair_deposited);
+    assert_eq!(c.get_holder(dex()).balance.0, i.pool_tokens.0, "the pool tokens sit with the exchange");
+    cb_env(vec![ok("\"123456\"")]);
+    c.on_liquidity_added(Ok(U128(123456)));
+    let i = c.get_info();
+    assert_eq!(i.phase, Phase::Pool);
+    assert_eq!(i.lp_shares.0, 123456);
+    assert_eq!(i.grad.lock_until, 0);
 }
 
 #[test]
@@ -50,6 +87,7 @@ fn opens_at_888_near_market_cap_and_graduates_at_2000() {
     assert!((888 * NEAR..889 * NEAR).contains(&info.market_cap.0));
     assert_eq!(info.graduation.0, 2000 * NEAR);
     assert_eq!(c.eligible_supply(), 0);
+    assert_eq!(info.dex.as_str(), DEX);
 }
 
 #[test]
@@ -80,9 +118,6 @@ fn dividends_go_to_existing_holders_pro_rata() {
     let bob_tokens = c.buy(None, None).0;
     testing_env!(ctx(alice(), 100 * NEAR + cost).build());
     c.buy(None, None);
-    // Each 10 NEAR tax: 2 platform, 8 dividends to everyone holding once the
-    // buy has landed, the buyer included. Bob got all 8 of his own, then his
-    // share of alice's 8; alice only her share of her own.
     let hb = c.get_holder(bob());
     let ha = c.get_holder(alice());
     assert_eq!(hb.balance.0, bob_tokens);
@@ -110,7 +145,7 @@ fn sell_credits_near_and_claim_moves_it() {
 }
 
 #[test]
-fn curve_fills_at_exactly_2000_near_and_pool_opens_at_same_price() {
+fn curve_fills_at_exactly_2000_near_and_the_pool_opens_at_the_same_price() {
     let mut c = launch(split(0, 10000, 0, 0), 100, 100);
     let cost = storage_cost(&c);
     // Buy with far more than the curve needs: it fills exactly and refunds the rest.
@@ -123,41 +158,186 @@ fn curve_fills_at_exactly_2000_near_and_pool_opens_at_same_price() {
     assert_eq!(info.tokens_sold.0, CURVE_SUPPLY);
     // last curve price: 0.000008 NEAR
     assert_eq!(info.price.0, 8_000_000_000_000_000_000);
-    let price_before = info.price.0;
     // refund: 5000 NEAR - 1% tax = 4950 net, 2000 used
     let credit = c.get_holder(bob()).credit.0;
     assert_eq!(credit, 4950 * NEAR - 2000 * NEAR);
     testing_env!(ctx(alice(), 0).build());
     c.open_pool();
     let info = c.get_info();
-    assert_eq!(info.phase, Phase::Pool);
-    assert_eq!(info.pool_pair.0, 2000 * NEAR);
+    assert_eq!(info.phase, Phase::Graduating, "Rhea has not answered yet");
+    // A NEAR coin pays the 0.2 NEAR of Rhea storage out of the raise.
+    assert_eq!(info.pool_pair.0, 2000 * NEAR - GRAD_COST);
     assert_eq!(info.pool_tokens.0, POOL_SUPPLY);
-    assert_eq!(info.price.0, price_before);
-    assert!((7999 * NEAR..=8000 * NEAR).contains(&info.market_cap.0), "{}", info.market_cap.0);
+    assert_eq!(info.price.0, mul_div(2000 * NEAR - GRAD_COST, ONE, POOL_SUPPLY));
+    // Second call while the first is in flight is refused.
+    testing_env!(ctx(bob(), 0).build());
+    let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.open_pool()));
+    assert!(r.is_err(), "locked");
 }
 
 #[test]
-fn pool_trades_pay_fee_and_buyback_burns() {
+fn graduation_walks_the_rhea_steps_and_buys_back_on_open() {
     let mut c = launch(split(0, 0, 10000, 0), 100, 100);
+    graduate(&mut c);
+    let i = c.get_info();
+    assert!(i.burned.0 > 0, "pending buyback burned on open");
+    assert_eq!(i.pending_buyback.0, 0);
+    assert_eq!(i.total_supply.0, TOTAL_SUPPLY - i.burned.0);
+    assert_eq!(i.pool_tokens.0, POOL_SUPPLY - i.burned.0);
+    assert!(i.pool_pair.0 > 2000 * NEAR - GRAD_COST, "the buyback pair went into the pool");
+}
+
+#[test]
+fn a_failed_step_unlocks_and_can_be_retried() {
+    let mut c = launch(split(0, 10000, 0, 0), 100, 100);
     let cost = storage_cost(&c);
     testing_env!(ctx(bob(), 3000 * NEAR + cost).build());
     c.buy(None, None);
     testing_env!(ctx(alice(), 0).build());
     c.open_pool();
-    let before = c.get_info();
-    // pending buyback from the curve phase was executed on open
-    assert!(before.burned.0 > 0);
-    assert_eq!(before.pending_buyback.0, 0);
-    testing_env!(ctx(alice(), 10 * NEAR + cost).build());
-    let out = c.buy(None, None).0;
-    assert!(out > 0);
-    let after = c.get_info();
-    assert!(after.burned.0 > before.burned.0);
-    assert_eq!(after.total_supply.0, TOTAL_SUPPLY - after.burned.0);
-    // 1% tax + 1% pool fee on 10 NEAR: 0.199 NEAR, 20% platform
-    assert_eq!(after.platform_fees_total.0 - before.platform_fees_total.0, (10 * NEAR / 100 + (10 * NEAR - 10 * NEAR / 100) / 100) / 5);
-    assert_eq!(after.platform_credit.0, 0, "a NEAR coin pushes the platform share on the spot");
+    // Rhea failed, wrap succeeded.
+    cb_env(vec![PromiseResult::Failed, ok("")]);
+    c.on_pool_created(true);
+    let i = c.get_info();
+    assert!(!i.grad.pool_created && i.grad.wrapped);
+    assert_eq!(i.grad.lock_until, 0);
+    // Retry: wrap is not repeated.
+    testing_env!(ctx(alice(), 0).build());
+    c.open_pool();
+    cb_env(vec![ok("3")]);
+    c.on_pool_created(false);
+    assert_eq!(c.get_info().pool_id, Some(3));
+    // The coin deposit fails: the tokens come back.
+    cb_env(vec![PromiseResult::Failed, ok("\"1\"")]);
+    c.on_deposited(true, true);
+    let i = c.get_info();
+    assert!(!i.grad.coin_deposited);
+    assert!(i.grad.pair_deposited);
+    assert_eq!(c.get_holder(dex()).balance.0, 0);
+    assert_eq!(c.get_holder(coin()).balance.0, i.pool_tokens.0);
+}
+
+#[test]
+fn after_graduation_transfers_with_the_exchange_pay_tax_and_curve_trading_stops() {
+    let mut c = launch(split(0, 10000, 0, 0), 300, 500);
+    graduate(&mut c);
+    let bob_bal = c.get_holder(bob()).balance.0;
+    // Bob sells 1,000 tokens on Rhea: 5% stays as tax.
+    testing_env!(ctx(bob(), 1).build());
+    c.ft_transfer(dex(), U128(1000 * ONE), None);
+    let i = c.get_info();
+    assert_eq!(i.tax_tokens.0, 50 * ONE);
+    assert_eq!(c.get_holder(bob()).balance.0, bob_bal - 1000 * ONE);
+    // Rhea pays alice 2,000 tokens for a buy: 3% stays as tax.
+    testing_env!(ctx(alice(), storage_cost(&c)).build());
+    c.storage_deposit(None, None);
+    testing_env!(ctx(dex(), 1).build());
+    c.ft_transfer(alice(), U128(2000 * ONE), None);
+    let i = c.get_info();
+    assert_eq!(i.tax_tokens.0, 50 * ONE + 60 * ONE);
+    assert_eq!(c.get_holder(alice()).balance.0, 1940 * ONE);
+    assert_eq!(i.trades, 3);
+    // Wallet to wallet is free; the treasury is free.
+    testing_env!(ctx(alice(), 1).build());
+    c.ft_transfer(bob(), U128(100 * ONE), None);
+    assert_eq!(c.get_info().tax_tokens.0, 110 * ONE);
+    // The curve is closed.
+    testing_env!(ctx(bob(), 10 * NEAR).build());
+    let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.buy(None, None)));
+    assert!(r.is_err());
+    assert_eq!(c.quote_buy(U128(NEAR)).0, 0);
+    // The pool's tokens earn no dividends: only holders do.
+    assert_eq!(c.eligible_supply(), c.get_info().total_supply.0 - c.get_holder(coin()).balance.0 - c.get_holder(dex()).balance.0);
+}
+
+#[test]
+fn a_sell_through_ft_transfer_call_refunds_the_tax_on_the_unused_part() {
+    let mut c = launch(split(0, 10000, 0, 0), 300, 1000);
+    graduate(&mut c);
+    testing_env!(ctx(bob(), 1).build());
+    c.ft_transfer_call(dex(), U128(1000 * ONE), None, "{}".into());
+    assert_eq!(c.get_info().tax_tokens.0, 100 * ONE);
+    let before = c.get_holder(bob()).balance.0;
+    // Rhea used only half.
+    cb_env(vec![ok(&format!("\"{}\"", 450 * ONE))]);
+    let used = c.ft_resolve_taxed(bob(), dex(), U128(900 * ONE), U128(100 * ONE)).0;
+    assert_eq!(used, 450 * ONE);
+    assert_eq!(c.get_info().tax_tokens.0, 50 * ONE);
+    assert_eq!(c.get_holder(bob()).balance.0, before + 450 * ONE + 50 * ONE);
+}
+
+#[test]
+fn harvest_burns_then_sells_the_rest_and_divides_the_pair() {
+    let mut c = launch(split(2500, 2500, 2500, 2500), 500, 500);
+    graduate(&mut c);
+    testing_env!(ctx(bob(), 1).build());
+    c.ft_transfer(dex(), U128(100_000 * ONE), None);
+    let i = c.get_info();
+    assert_eq!(i.tax_tokens.0, 5_000 * ONE);
+    let burned_before = i.burned.0;
+    let supply_before = i.total_supply.0;
+    testing_env!(ctx(alice(), 0).build());
+    c.harvest();
+    let i = c.get_info();
+    assert_eq!(i.tax_tokens.0, 0);
+    // 20% platform = 1,000; rest 4,000: 1,000 each share. Burn 1,000 now; keep 500 for the pool; swap 3,500.
+    assert_eq!(i.burned.0 - burned_before, 1_000 * ONE);
+    assert_eq!(i.total_supply.0, supply_before - 1_000 * ONE);
+    assert_eq!(i.harvest.platform_tokens.0, 1_000 * ONE);
+    assert_eq!(i.harvest.liquidity_tokens.0, 500 * ONE);
+    assert_eq!(i.harvest.swap_tokens.0, 3_500 * ONE);
+    // Rhea holds the pool tokens, bob's 95,000 net sale and the 4,000 just deposited.
+    assert_eq!(c.get_holder(dex()).balance.0, i.pool_tokens.0 + 95_000 * ONE + 4_000 * ONE, "deposited on Rhea");
+    // Deposited, swapped for 7 NEAR, withdrawn, unwrapped.
+    cb_env(vec![ok("\"0\"")]);
+    c.on_harvest_deposited();
+    assert_eq!(c.get_info().harvest.step, 1);
+    cb_env(vec![ok(&format!("\"{}\"", 7 * NEAR))]);
+    c.on_harvest_swapped(Ok(U128(7 * NEAR)));
+    let h = c.get_info().harvest;
+    assert_eq!(h.step, 2);
+    assert_eq!(h.out.0, 7 * NEAR);
+    // 500 of the 3,500 swapped were the liquidity half: 1 NEAR of the 7.
+    assert_eq!(h.liquidity_pair.0, NEAR);
+    cb_env(vec![ok("")]);
+    c.on_harvest_withdrawn();
+    assert_eq!(c.get_info().harvest.step, 3);
+    let pf = c.get_info().platform_fees_total.0;
+    let cf = c.get_info().creator_fees_total.0;
+    let dv = c.get_info().dividends_total.0;
+    let alice_credit = c.get_holder(alice()).credit.0;
+    cb_env(vec![ok("")]);
+    c.on_harvest_unwrapped();
+    let i = c.get_info();
+    assert_eq!(i.harvest.step, 0);
+    assert_eq!(i.harvest.lock_until, 0);
+    // Of the 7 NEAR: 2 platform (1,000 of 3,500), 2 creator, 2 dividends, 1 liquidity.
+    assert_eq!(i.platform_fees_total.0 - pf, 2 * NEAR);
+    assert_eq!(i.creator_fees_total.0 - cf, 2 * NEAR);
+    assert_eq!(i.dividends_total.0 - dv, 2 * NEAR);
+    assert!(i.liquidity_added.0 >= NEAR);
+    assert_eq!(c.get_holder(alice()).credit.0 - alice_credit, 2 * NEAR, "the creator's fee wallet");
+}
+
+#[test]
+fn harvest_needs_enough_tax_and_refunds_a_failed_deposit() {
+    let mut c = launch(split(0, 10000, 0, 0), 100, 100);
+    graduate(&mut c);
+    testing_env!(ctx(alice(), 0).build());
+    let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.harvest()));
+    assert!(r.is_err(), "nothing to harvest");
+    testing_env!(ctx(bob(), 1).build());
+    c.ft_transfer(dex(), U128(200_000 * ONE), None);
+    assert_eq!(c.get_info().tax_tokens.0, 2_000 * ONE);
+    testing_env!(ctx(alice(), 0).build());
+    c.harvest();
+    assert_eq!(c.get_info().tax_tokens.0, 0);
+    cb_env(vec![PromiseResult::Failed]);
+    c.on_harvest_deposited();
+    let i = c.get_info();
+    assert_eq!(i.tax_tokens.0, 2_000 * ONE, "back in the pot");
+    assert_eq!(i.harvest.step, 0);
+    assert_eq!(i.harvest.lock_until, 0);
 }
 
 #[test]
@@ -252,6 +432,26 @@ fn token_pair_buys_through_ft_on_transfer_and_pays_in_the_pair() {
 }
 
 #[test]
+fn token_pair_graduation_needs_the_storage_deposit_and_keeps_the_raise() {
+    let mut c = launch_token_pair();
+    testing_env!(ctx(bob(), storage_cost(&c)).build());
+    c.storage_deposit(None, Some(true));
+    testing_env!(ctx(pair_token(), 0).build());
+    c.ft_on_transfer(bob(), U128(200 * ONE), "".into());
+    assert_eq!(c.get_info().phase, Phase::Graduating);
+    testing_env!(ctx(alice(), 0).build());
+    let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.open_pool()));
+    assert!(r.is_err(), "needs 0.2 NEAR");
+    testing_env!(ctx(alice(), GRAD_COST).build());
+    c.open_pool();
+    let i = c.get_info();
+    assert_eq!(i.pool_pair.0, 82 * ONE, "the whole raise seeds the pool");
+    cb_env(vec![ok("9")]);
+    c.on_pool_created(false);
+    assert_eq!(c.get_info().pool_id, Some(9));
+}
+
+#[test]
 #[should_panic(expected = "pay in the pair")]
 fn token_pair_refuses_near_buy() {
     let mut c = launch_token_pair();
@@ -289,20 +489,16 @@ fn candles_and_recent_trades_are_kept_on_chain() {
 }
 
 #[test]
-fn factory_can_collect_liquidity_after_graduation() {
+fn factory_can_collect_lp_shares_after_graduation() {
     let mut c = launch(split(0, 10000, 0, 0), 100, 100);
-    let cost = storage_cost(&c);
-    testing_env!(ctx(bob(), 3000 * NEAR + cost).build());
-    c.buy(None, None);
-    testing_env!(ctx(alice(), 0).build());
-    c.open_pool();
-    let before = c.get_info();
-    let mut b = ctx(factory(), 0); b.account_balance(NearToken::from_near(5000)); testing_env!(b.build());
+    graduate(&mut c);
+    testing_env!(ctx(factory(), LP_REGISTER).build());
     c.collect_liquidity(2500, treasury());
-    let after = c.get_info();
-    assert_eq!(after.pool_pair.0, before.pool_pair.0 - before.pool_pair.0 / 4);
-    assert_eq!(after.pool_tokens.0, before.pool_tokens.0 - before.pool_tokens.0 / 4);
-    assert_eq!(c.get_holder(treasury()).balance.0, before.pool_tokens.0 / 4);
+    cb_env(vec![ok("\"123456\""), ok("false")]);
+    c.on_lp_checked(2500, treasury());
+    cb_env(vec![ok("")]);
+    c.on_lp_transferred(treasury(), U128(123456 / 4), 2500);
+    assert_eq!(c.get_info().lp_collected.0, 123456 / 4);
 }
 
 #[test]
@@ -311,4 +507,18 @@ fn collect_liquidity_needs_the_pool() {
     let mut c = launch(split(0, 10000, 0, 0), 100, 100);
     testing_env!(ctx(factory(), 0).build());
     c.collect_liquidity(1000, treasury());
+}
+
+#[test]
+fn storage_is_a_fixed_deposit_returned_on_unregister() {
+    let mut c = launch(split(0, 10000, 0, 0), 100, 100);
+    assert_eq!(c.storage_balance_bounds().min.as_yoctonear(), MIN_STORAGE);
+    testing_env!(ctx(bob(), 3 * MIN_STORAGE).build());
+    c.storage_deposit(None, None);
+    assert_eq!(c.storage_balance_of(bob()).unwrap().total.as_yoctonear(), MIN_STORAGE);
+    testing_env!(ctx(bob(), 1).build());
+    let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.storage_withdraw(Some(NearToken::from_yoctonear(1)))));
+    assert!(r.is_err());
+    assert!(c.storage_unregister(None));
+    assert!(c.storage_balance_of(bob()).is_none());
 }

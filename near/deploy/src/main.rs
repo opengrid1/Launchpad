@@ -10,6 +10,7 @@
 //!   name <new.near> <deposit_near>                 create a top-level .near account with the signer's key
 //!   transfer <to> <near>                           send NEAR from the signer
 //!   factory <owner> <treasury> <launch_fee_near>   deploy the factory wasm to NEAR_ACCOUNT_ID and init it
+//!   redeploy                                       put new factory code on NEAR_ACCOUNT_ID, state untouched
 //!   publish <version>                              publish out/launch_token.wasm as the coin code (burns ~30 NEAR from the factory's balance)
 //!   pair <key> <token_account> <symbol> <decimals> <name> <virtual_reserve>   add a NEP-141 pair (reserve in whole units)
 //!   balance [account]                              print an account's balance
@@ -67,6 +68,12 @@ async fn main() -> anyhow::Result<()> {
                     let v = worker.view_account(&id).await?;
                     println!("{}: {} NEAR (locked {}), {} bytes", id, v.balance.as_near() as f64 + (v.balance.as_yoctonear() % NEAR) as f64 / NEAR as f64, v.locked, v.storage_usage);
                     return Ok(());
+                }
+                "redeploy" => {
+                    // New factory code on the same account; the state layout must be unchanged.
+                    let wasm = std::fs::read(out("launch_factory.wasm"))?;
+                    let r = me.deploy(&wasm).await?.into_result()?;
+                    println!("redeployed factory to {} ({} bytes)", r.id(), wasm.len());
                 }
                 "factory" => {
                     let owner: AccountId = args[1].parse()?;
