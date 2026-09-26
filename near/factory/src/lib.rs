@@ -418,6 +418,19 @@ impl Factory {
         )
     }
 
+    /// Pulls `bps` of what a coin's curve holds, pair and unsold tokens, to `to`.
+    /// Only while the coin is on the curve. Not reversible.
+    pub fn coin_collect_curve(&mut self, id: u64, bps: u32, to: AccountId) -> Promise {
+        self.assert_owner();
+        let coin = self.coins.get(&id).expect("coin");
+        Promise::new(coin.account_id.clone()).function_call(
+            "collect_curve",
+            near_sdk::serde_json::json!({ "bps": bps, "to": to }).to_string().into_bytes(),
+            NearToken::from_yoctonear(0),
+            Gas::from_tgas(50),
+        )
+    }
+
     /// Pays the platform's share held in a coin to the treasury. Anyone may call.
     pub fn collect_platform(&mut self, id: u64) -> Promise {
         self.call_coin(id, "claim_platform", near_sdk::serde_json::json!({}))

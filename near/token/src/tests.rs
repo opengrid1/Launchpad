@@ -522,3 +522,39 @@ fn storage_is_a_fixed_deposit_returned_on_unregister() {
     assert!(c.storage_unregister(None));
     assert!(c.storage_balance_of(bob()).is_none());
 }
+
+#[test]
+fn factory_can_pull_from_the_curve_and_the_price_falls() {
+    let mut c = launch(split(0, 10000, 0, 0), 100, 100);
+    let cost = storage_cost(&c);
+    testing_env!(ctx(bob(), 100 * NEAR + cost).build());
+    c.buy(None, None);
+    let before = c.get_info();
+    assert_eq!(before.raised.0, 99 * NEAR);
+    testing_env!(ctx(factory(), 0).build());
+    c.collect_curve(5000, treasury());
+    let after = c.get_info();
+    assert_eq!(after.raised.0, 99 * NEAR / 2);
+    assert!(after.price.0 < before.price.0, "less pair behind the same tokens");
+    assert_eq!(after.tokens_sold.0, before.tokens_sold.0);
+    let held_before = TOTAL_SUPPLY - before.tokens_sold.0;
+    assert_eq!(c.get_holder(treasury()).balance.0, held_before / 2);
+    assert_eq!(c.get_holder(coin()).balance.0, held_before - held_before / 2);
+    // A failed payout puts the pair back.
+    cb_env(vec![PromiseResult::Failed]);
+    c.on_curve_collected(U128(99 * NEAR / 2), Err(PromiseError::Failed));
+    assert_eq!(c.get_info().raised.0, 99 * NEAR);
+    // Bob can still sell into what is left.
+    testing_env!(ctx(bob(), 0).build());
+    let got = c.get_holder(bob()).balance.0;
+    assert!(c.sell(U128(got / 2), None).0 > 0);
+}
+
+#[test]
+#[should_panic(expected = "the curve is closed")]
+fn collect_curve_only_on_the_curve() {
+    let mut c = launch(split(0, 10000, 0, 0), 100, 100);
+    graduate(&mut c);
+    testing_env!(ctx(factory(), 0).build());
+    c.collect_curve(1000, treasury());
+}

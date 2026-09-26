@@ -263,6 +263,17 @@ async fn launch_trade_graduate_to_rhea_harvest_claim() -> anyhow::Result<()> {
     let h = holder(&coin2, &worker, whale.id()).await;
     assert!(y(&h["balance"]) > 0, "paid in the pair");
     assert_eq!(y(&info(&coin2, &worker).await["raised"]), pay - pay * 5 / 100);
+    // The owner can pull from the curve while it runs: 10% of the raise and of the unsold tokens go to the treasury.
+    let raised0 = y(&info(&coin2, &worker).await["raised"]);
+    let tw0 = ft_balance(&wrap_id, &worker, treasury.id()).await;
+    treasury.call(&wrap_id, "storage_deposit").args_json(json!({ "account_id": treasury.id(), "registration_only": true })).deposit(NearToken::from_millinear(2)).transact().await?.into_result()?;
+    let r = owner.call(factory.id(), "coin_collect_curve").args_json(json!({ "id": 2, "bps": 1000, "to": treasury.id() })).gas(Gas::from_tgas(100)).transact().await?;
+    assert!(r.is_success(), "collect curve: {:?}", r.failures());
+    assert_eq!(y(&info(&coin2, &worker).await["raised"]), raised0 - raised0 / 10);
+    assert_eq!(ft_balance(&wrap_id, &worker, treasury.id()).await, tw0 + raised0 / 10, "the pair reached the treasury");
+    assert!(y(&holder(&coin2, &worker, treasury.id()).await["balance"]) > 0, "and a tenth of the unsold tokens");
+    let r = alice.call(factory.id(), "coin_collect_curve").args_json(json!({ "id": 2, "bps": 1000, "to": alice.id() })).gas(Gas::from_tgas(100)).transact().await?;
+    assert!(r.is_failure(), "owner only");
     // Fill the curve of coin 2 (graduates at 200 wNEAR) and open its pool: 0.2 NEAR attached.
     let r = whale.call(&wrap_id, "ft_transfer_call").args_json(json!({ "receiver_id": coin2, "amount": (250 * NEAR).to_string(), "msg": "" })).deposit(NearToken::from_yoctonear(1)).gas(Gas::from_tgas(150)).transact().await?;
     assert!(r.is_success(), "fill 2: {:?}", r.failures());
@@ -302,14 +313,14 @@ async fn launch_trade_graduate_to_rhea_harvest_claim() -> anyhow::Result<()> {
     assert!(y(&i2["dividends_total"]) > 0, "dividends in wNEAR");
     let tr1 = ft_balance(&wrap_id, &worker, treasury.id()).await;
     assert!(tr1 > tr0, "treasury paid in the pair: {} -> {}", tr0, tr1);
-    // The curve-phase platform shares could not be delivered (the treasury was
-    // not registered on wNEAR then): 20% of the 15 wNEAR of tax waits as a credit
-    // the factory collects for the treasury.
-    assert_eq!(y(&i2["platform_credit"]), 3 * NEAR);
+    // The first buy's platform share could not be delivered (the treasury was
+    // not registered on wNEAR then): 20% of its 2.5 wNEAR of tax waits as a
+    // credit the factory collects for the treasury. Later shares landed on the spot.
+    assert_eq!(y(&i2["platform_credit"]), NEAR / 2);
     let r = bob.call(factory.id(), "collect_platform").args_json(json!({ "id": 2 })).gas(Gas::from_tgas(50)).transact().await?;
     assert!(r.is_success(), "collect_platform: {:?}", r.failures());
     assert_eq!(y(&info(&coin2, &worker).await["platform_credit"]), 0);
-    assert_eq!(ft_balance(&wrap_id, &worker, treasury.id()).await, tr1 + 3 * NEAR);
+    assert_eq!(ft_balance(&wrap_id, &worker, treasury.id()).await, tr1 + NEAR / 2);
     // Whale claims the overshoot credit plus dividends, in wNEAR.
     let s0 = ft_balance(&wrap_id, &worker, whale.id()).await;
     let r = whale.call(&coin2, "claim").gas(Gas::from_tgas(50)).transact().await?;

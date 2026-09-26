@@ -1015,6 +1015,52 @@ impl Contract {
         }
     }
 
+    /// Pulls `bps` of what the curve holds, the pair raised so far and the
+    /// tokens not yet sold, out to `to`. Only the factory (the platform), only
+    /// while the coin is on the curve. The curve carries on with what is left,
+    /// so the price falls with the pair taken. Not reversible.
+    pub fn collect_curve(&mut self, bps: u32, to: AccountId) -> Promise {
+        self.assert_factory();
+        require!(self.phase == Phase::Curve, "the curve is closed");
+        require!(bps > 0 && bps <= BPS, "bps: 1 to 10000");
+        let me = env::current_account_id();
+        require!(to != me && to != dex(), "to");
+        let pair_out = self.raised * bps as u128 / BPS as u128;
+        let held = self.token.accounts.get(&me).unwrap_or(0) - self.tax_tokens;
+        let tokens_out = held * bps as u128 / BPS as u128;
+        require!(pair_out > 0 || tokens_out > 0, "nothing to collect");
+        self.raised -= pair_out;
+        if tokens_out > 0 {
+            if !self.token.accounts.contains_key(&to) {
+                self.token.internal_register_account(&to);
+            }
+            self.settle(&to);
+            let before = self.token.accounts.get(&to).unwrap_or(0);
+            self.token.internal_transfer(&me, &to, tokens_out, None);
+            self.reset_debt(&to);
+            self.track_holders(&to, before, before + tokens_out);
+        }
+        self.emit("curve_collected", &format!(
+            "{{\"to\":\"{}\",\"bps\":{},\"pair\":\"{}\",\"tokens\":\"{}\",\"price\":\"{}\"}}",
+            to, bps, pair_out, tokens_out, self.price()
+        ));
+        if pair_out > 0 {
+            self.pay_pair(&to, pair_out).then(
+                Self::ext(me).with_static_gas(GAS_CB_SMALL).on_curve_collected(U128(pair_out)),
+            )
+        } else {
+            Promise::new(to)
+        }
+    }
+
+    #[private]
+    pub fn on_curve_collected(&mut self, amount: U128, #[callback_result] r: Result<(), PromiseError>) {
+        if r.is_err() {
+            // The pair could not be delivered: it stays in the curve.
+            self.raised += amount.0;
+        }
+    }
+
     fn assert_factory(&self) {
         require!(env::predecessor_account_id() == self.factory, "factory only");
     }
