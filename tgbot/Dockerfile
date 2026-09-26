@@ -5,5 +5,4 @@ RUN npm install --omit=dev
 COPY src ./src
 COPY tsconfig.json ./
 ENV DATA_DIR=/data
-VOLUME ["/data"]
 CMD ["npx", "tsx", "src/main.ts"]
