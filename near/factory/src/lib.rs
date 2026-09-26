@@ -339,6 +339,18 @@ impl Factory {
         Promise::new(env::current_account_id()).deploy_global_contract(code)
     }
 
+    /// Registers coin code that is already published on chain as a global
+    /// contract (by another factory, or an earlier one), without deploying it
+    /// again. New launches use it once `set_current_version` points at it.
+    pub fn register_version(&mut self, version: String, code_hash: Base58CryptoHash) {
+        self.assert_owner();
+        require!(!self.versions.contains_key(&version), "version already published");
+        self.versions.insert(version.clone(), Version { version: version.clone(), code_hash, published_at_block: env::block_height() });
+        if self.current_version.is_none() {
+            self.current_version = Some(version);
+        }
+    }
+
     /// Points new launches at an already published version.
     pub fn set_current_version(&mut self, version: String) {
         self.assert_owner();

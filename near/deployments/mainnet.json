@@ -1,6 +1,6 @@
 {
   "network": "mainnet",
-  "factory": "alicorn.near",
+  "factory": "chipfi.near",
   "owner": "richgoat3540.near",
   "treasury": "richgoat3540.near",
   "launch_fee_near": "0.5",
@@ -10,7 +10,8 @@
     "version": "0.2.0",
     "code_hash": "EqJ9ZeUmrHrLtjCHJ4UVGtkYaGcgqVFGX1KhWQQ6qiFv",
     "bytes": 349809,
-    "published_at_block": 217287757
+    "published_at_block": 217287757,
+    "registered_at_block": 217332591
   },
   "factory_wasm_bytes": 281349,
   "pairs": {
@@ -120,7 +121,7 @@
     }
   },
   "notes": "Stock virtual reserves are 1,000 NEAR worth at deployment prices (NEAR 4.90 USD), so every pair graduates at the same dollar size as the NEAR pair. All stock tokens have 18 decimals.",
-  "factory_code": "redeployed 2026-09-26: payable coin_collect_liquidity, coin_collect_curve, 25 TGas admin calls; state unchanged",
+  "factory_code": "deployed 2026-09-26 at chipfi.near (286,631 bytes) with register_version; coin code 0.2.0 registered by hash, no second publish",
   "coin_code_history": [
     {
       "version": "0.1.0",
@@ -128,5 +129,12 @@
       "bytes": 294568,
       "note": "in-contract pool; superseded, never used by a coin"
     }
-  ]
+  ],
+  "retired": {
+    "alicorn.near": "first factory, paused; coins c1/c2.alicorn.near collected back and hidden; account kept (3 NEAR storage recoverable by deleting it)"
+  },
+  "coins": {
+    "c1.chipfi.near": "CHIP, official, NEAR pair, 1%/1%, 100% dividends",
+    "c2.chipfi.near": "JENSEN, NEAR pair, 3%/3%, 25/50/15/10"
+  }
 }

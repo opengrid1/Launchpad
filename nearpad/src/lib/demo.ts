@@ -45,7 +45,7 @@ export function demoCoins(): Coin[] {
 }
 
 export function demoPairs(): Pair[] {
-  // The live mainnet pair set, same reserves as alicorn.near.
+  // The live mainnet pair set, same reserves as chipfi.near.
   return [
     { key: "NEAR", asset: "Near", name: "NEAR", virtual_reserve: (1000n * NEAR).toString(), enabled: true },
     { key: "NVDAon", asset: { Token: { account_id: "bnb-0xa9ee28c80f960b889dfbd1902055218cba016f75.omdep.near", symbol: "NVDAon", decimals: 18 } }, name: "NVIDIA (Ondo)", virtual_reserve: (21770000n * ONE / 1_000_000n).toString(), enabled: true },

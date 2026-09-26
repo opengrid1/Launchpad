@@ -4,8 +4,8 @@ const network = (import.meta.env.VITE_NEAR_NETWORK as "mainnet" | "testnet" | un
 
 export const env = {
   network,
-  /** The factory. Mainnet lives at alicorn.near; an empty override means sample data. */
-  factory: String(import.meta.env.VITE_FACTORY ?? (network === "mainnet" ? "alicorn.near" : "")),
+  /** The factory. Mainnet lives at chipfi.near; an empty override means sample data. */
+  factory: String(import.meta.env.VITE_FACTORY ?? (network === "mainnet" ? "chipfi.near" : "")),
   rpcUrls: import.meta.env.VITE_RPC_OVERRIDE
     ? [String(import.meta.env.VITE_RPC_OVERRIDE)]
     : network === "mainnet"
@@ -46,5 +46,5 @@ export const RHEA = {
 };
 
 /** The official coin, shown first. */
-export const PINNED: string[] = ["c2.alicorn.near"];
+export const PINNED: string[] = ["c1.chipfi.near"];
 export const HIDDEN = new Set<string>([]);
