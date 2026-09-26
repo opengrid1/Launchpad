@@ -12,6 +12,7 @@
 //!   factory <owner> <treasury> <launch_fee_near>   deploy the factory wasm to NEAR_ACCOUNT_ID and init it
 //!   redeploy                                       put new factory code on NEAR_ACCOUNT_ID, state untouched
 //!   call <method> <json> [deposit_near]            any owner call on the factory (set_paused, set_current_version, ...)
+//!   send <contract> <method> <json> [yocto] [tgas]  any call from the signer to any contract
 //!   publish <version>                              publish out/launch_token.wasm as the coin code (burns ~30 NEAR from the factory's balance)
 //!   pair <key> <token_account> <symbol> <decimals> <name> <virtual_reserve>   add a NEP-141 pair (reserve in whole units)
 //!   balance [account]                              print an account's balance
@@ -77,6 +78,17 @@ async fn main() -> anyhow::Result<()> {
                     let deposit: f64 = args.get(3).map(|s| s.parse()).transpose()?.unwrap_or(0.0);
                     let r = me.call(&factory, &method).args_json(json).deposit(near(deposit)).gas(Gas::from_tgas(100)).transact().await?;
                     println!("{}: success={} {:?}", method, r.is_success(), r.failures());
+                }
+                "send" => {
+                    // Any call from the signer: send <contract> <method> <json args> [deposit_yocto] [tgas]
+                    let contract: AccountId = args[1].parse()?;
+                    let method = args[2].clone();
+                    let json: Value = serde_json::from_str(&args[3])?;
+                    let deposit: u128 = args.get(4).map(|s| s.parse()).transpose()?.unwrap_or(0);
+                    let tgas: u64 = args.get(5).map(|s| s.parse()).transpose()?.unwrap_or(50);
+                    let r = me.call(&contract, &method).args_json(json).deposit(NearToken::from_yoctonear(deposit)).gas(Gas::from_tgas(tgas)).transact().await?;
+                    println!("{} {}: success={} {:?} tx={}", contract, method, r.is_success(), r.failures(), r.outcome().transaction_hash);
+                    return Ok(());
                 }
                 "redeploy" => {
                     // New factory code on the same account; the state layout must be unchanged.
