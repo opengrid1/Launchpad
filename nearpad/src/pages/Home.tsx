@@ -33,7 +33,8 @@ export default function Home() {
     let l = (coins ?? []).slice();
     const s = q.trim().toLowerCase();
     if (s) l = l.filter((c) => `${c.name} ${c.symbol} ${c.account_id} ${c.creator}`.toLowerCase().includes(s));
-    if (pair !== "all") l = l.filter((c) => c.pair === pair);
+    if (pair === "NEAR") l = l.filter((c) => c.info.pair === "Near");
+    if (pair === "stocks") l = l.filter((c) => pairKind(c.info.pair) === "stock");
     if (tab === "graduated") l = l.filter((c) => c.info.phase === "Pool");
     if (tab === "live") l = l.filter((c) => c.info.phase !== "Pool");
     const key = (c: Coin) => {
@@ -85,7 +86,8 @@ export default function Home() {
 
       <div className="scroll-x" style={{ marginTop: 6 }}>
         <button className={"pill " + (pair === "all" ? "on" : "")} onClick={() => setPair("all")}>All pairs</button>
-        {(pairs ?? []).map((p) => <button key={p.key} className={"pill " + (pair === p.key ? "on" : "")} onClick={() => setPair(p.key)}><PairLogo k={p.key} size={22} />{p.key === "NEAR" ? "NEAR" : p.key}</button>)}
+        <button className={"pill " + (pair === "NEAR" ? "on" : "")} onClick={() => setPair("NEAR")}><PairLogo k="NEAR" size={22} />NEAR</button>
+        {(pairs ?? []).some((p) => p.asset !== "Near") && <button className={"pill " + (pair === "stocks" ? "on" : "")} onClick={() => setPair("stocks")}>Stocks</button>}
       </div>
 
       <div className="filters">
