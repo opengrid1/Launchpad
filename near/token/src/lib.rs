@@ -76,7 +76,40 @@ enum StorageKey {
     Token,
     RewardDebt,
     Credits,
+    Candles,
+    Trades,
 }
+
+/// Five-minute price bucket, kept on chain so the chart needs no indexer.
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Copy, Debug)]
+pub struct Candle {
+    /// Bucket start, unix ms.
+    pub t: u64,
+    pub o: U128,
+    pub h: U128,
+    pub l: U128,
+    pub c: U128,
+    /// Pair units traded in the bucket.
+    pub v: U128,
+}
+
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug)]
+pub struct Trade {
+    pub t: u64,
+    pub account: AccountId,
+    pub buy: bool,
+    pub pair: U128,
+    pub tokens: U128,
+    pub price: U128,
+}
+
+/// 5 minutes.
+pub const CANDLE_MS: u64 = 5 * 60 * 1000;
+/// A week of five-minute candles.
+pub const MAX_CANDLES: u32 = 2016;
+pub const MAX_TRADES: u32 = 200;
 
 /// What a coin is paired with.
 #[near(serializers = [json, borsh])]
@@ -216,6 +249,10 @@ pub struct Contract {
     platform_fees_total: u128,
     trades: u64,
     holders: u64,
+    candles: near_sdk::store::Vector<Candle>,
+    candles_start: u32,
+    recent: near_sdk::store::Vector<Trade>,
+    recent_next: u32,
 }
 
 fn mul_div(a: u128, b: u128, c: u128) -> u128 {
@@ -309,6 +346,10 @@ impl Contract {
             platform_fees_total: 0,
             trades: 0,
             holders: 0,
+            candles: near_sdk::store::Vector::new(StorageKey::Candles),
+            candles_start: 0,
+            recent: near_sdk::store::Vector::new(StorageKey::Trades),
+            recent_next: 0,
         };
         this.emit("launch", &format!(
             "{{\"creator\":\"{}\",\"fee_wallet\":\"{}\",\"pair\":\"{}\",\"buy_tax_bps\":{},\"sell_tax_bps\":{}}}",
@@ -375,6 +416,7 @@ impl Contract {
         self.add_credit(&seller, net);
         self.distribute(tax + pool_fee);
         self.trades += 1;
+        self.record(&seller, false, gross, amount);
         self.emit("trade", &format!(
             "{{\"side\":\"sell\",\"account\":\"{}\",\"tokens_in\":\"{}\",\"tax\":\"{}\",\"pair_out\":\"{}\",\"price\":\"{}\",\"phase\":\"{:?}\"}}",
             seller, amount, tax + pool_fee, net, self.price(), self.phase
@@ -556,6 +598,34 @@ impl Contract {
         }
     }
 
+    /// Five-minute candles, oldest first. `from_t` skips buckets before it.
+    pub fn get_candles(&self, from_t: Option<u64>, limit: Option<u32>) -> Vec<Candle> {
+        let limit = limit.unwrap_or(MAX_CANDLES).min(MAX_CANDLES) as usize;
+        let n = self.candles.len();
+        let mut out = Vec::new();
+        for i in 0..n {
+            let idx = (self.candles_start + i) % n;
+            let c = self.candles[idx];
+            if from_t.map_or(true, |f| c.t >= f) {
+                out.push(c);
+                if out.len() >= limit { break; }
+            }
+        }
+        out
+    }
+
+    /// The most recent trades, newest first.
+    pub fn get_trades(&self, limit: Option<u32>) -> Vec<Trade> {
+        let limit = limit.unwrap_or(50).min(MAX_TRADES) as usize;
+        let n = self.recent.len();
+        let mut out = Vec::new();
+        for i in 0..n.min(limit as u32) {
+            let idx = (self.recent_next + n - 1 - i) % n;
+            out.push(self.recent[idx].clone());
+        }
+        out
+    }
+
     /// Tokens for a pair amount, after tax, at the current state. For quotes.
     pub fn quote_buy(&self, pair_in: U128) -> U128 {
         let tax = pair_in.0 * self.buy_tax_bps as u128 / BPS as u128;
@@ -622,6 +692,7 @@ impl Contract {
         }
         self.distribute(tax + pool_fee);
         self.trades += 1;
+        self.record(buyer, true, net, out);
         self.emit("trade", &format!(
             "{{\"side\":\"buy\",\"account\":\"{}\",\"pair_in\":\"{}\",\"tax\":\"{}\",\"tokens_out\":\"{}\",\"price\":\"{}\",\"phase\":\"{:?}\"}}",
             buyer, amount, tax + pool_fee, out, self.price(), self.phase
@@ -799,6 +870,41 @@ impl Contract {
                 .with_static_gas(GAS_FOR_FT_TRANSFER)
                 .ft_transfer(to.clone(), U128(amount), None),
         }
+    }
+
+    /// Adds a trade to the candles and the recent list. Ring buffers, capped.
+    fn record(&mut self, account: &AccountId, buy: bool, pair: u128, tokens: u128) {
+        let now = env::block_timestamp_ms();
+        let price = self.price();
+        let bucket = now - now % CANDLE_MS;
+        let n = self.candles.len();
+        let last = if n == 0 { None } else { Some((self.candles_start + n - 1) % n) };
+        match last {
+            Some(i) if self.candles[i].t == bucket => {
+                let c = &mut self.candles[i];
+                if price > c.h.0 { c.h = U128(price); }
+                if price < c.l.0 { c.l = U128(price); }
+                c.c = U128(price);
+                c.v = U128(c.v.0 + pair);
+            }
+            _ => {
+                let open = last.map(|i| self.candles[i].c.0).unwrap_or(price);
+                let candle = Candle { t: bucket, o: U128(open), h: U128(price.max(open)), l: U128(price.min(open)), c: U128(price), v: U128(pair) };
+                if n < MAX_CANDLES {
+                    self.candles.push(candle);
+                } else {
+                    self.candles[self.candles_start] = candle;
+                    self.candles_start = (self.candles_start + 1) % n;
+                }
+            }
+        }
+        let trade = Trade { t: now, account: account.clone(), buy, pair: U128(pair), tokens: U128(tokens), price: U128(price) };
+        if self.recent.len() < MAX_TRADES {
+            self.recent.push(trade);
+        } else {
+            self.recent[self.recent_next] = trade;
+        }
+        self.recent_next = (self.recent_next + 1) % MAX_TRADES;
     }
 
     fn pair_label(&self) -> String {

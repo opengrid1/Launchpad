@@ -265,3 +265,24 @@ fn ft_on_transfer_only_from_the_pair() {
     testing_env!(ctx(bob(), 0).build());
     c.ft_on_transfer(bob(), U128(10 * ONE), "".into());
 }
+
+#[test]
+fn candles_and_recent_trades_are_kept_on_chain() {
+    let mut c = launch(split(0, 10000, 0, 0), 100, 100);
+    let cost = storage_cost(&c);
+    let mut b = ctx(bob(), 10 * NEAR + cost); b.block_timestamp(1_000_000 * 1_000_000); testing_env!(b.build());
+    c.buy(None, None);
+    let mut b = ctx(alice(), 10 * NEAR + cost); b.block_timestamp(1_000_000 * 1_000_000 + 60_000 * 1_000_000); testing_env!(b.build());
+    c.buy(None, None);
+    let mut b = ctx(alice(), 0); b.block_timestamp(1_000_000 * 1_000_000 + 6 * 60_000 * 1_000_000); testing_env!(b.build());
+    c.sell(U128(ONE), None);
+    let candles = c.get_candles(None, None);
+    assert_eq!(candles.len(), 2, "two five-minute buckets");
+    assert!(candles[0].h.0 >= candles[0].o.0 && candles[0].c.0 >= candles[0].o.0);
+    assert_eq!(candles[0].v.0, 2 * (10 * NEAR - 10 * NEAR / 100));
+    assert!(candles[1].t > candles[0].t);
+    let trades = c.get_trades(Some(10));
+    assert_eq!(trades.len(), 3);
+    assert!(!trades[0].buy && trades[1].buy, "newest first");
+    assert_eq!(trades[0].account, alice());
+}

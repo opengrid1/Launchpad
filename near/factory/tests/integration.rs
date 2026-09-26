@@ -20,8 +20,8 @@ async fn holder(coin: &AccountId, w: &near_workspaces::Worker<near_workspaces::n
 #[tokio::test]
 async fn launch_trade_graduate_claim() -> anyhow::Result<()> {
     let worker = near_workspaces::sandbox().await?;
-    let factory_wasm = std::fs::read("../target/wasm32-unknown-unknown/release/launch_factory.wasm")?;
-    let token_wasm = std::fs::read("../target/wasm32-unknown-unknown/release/launch_token.wasm")?;
+    let factory_wasm = std::fs::read(if std::path::Path::new("../out/launch_factory.wasm").exists() { "../out/launch_factory.wasm" } else { "../target/wasm32-unknown-unknown/release/launch_factory.wasm" })?;
+    let token_wasm = std::fs::read(if std::path::Path::new("../out/launch_token.wasm").exists() { "../out/launch_token.wasm" } else { "../target/wasm32-unknown-unknown/release/launch_token.wasm" })?;
 
     let root = worker.root_account()?;
     let owner = root.create_subaccount("owner").initial_balance(NearToken::from_near(100)).transact().await?.into_result()?;
