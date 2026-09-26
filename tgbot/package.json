@@ -13,7 +13,8 @@
     "grammy": "^1.36.0",
     "near-api-js": "^6.5.1",
     "tsx": "^4.19.0",
-    "@near-js/transactions": "^2.5.1"
+    "@near-js/transactions": "^2.5.1",
+    "sharp": "^0.34.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

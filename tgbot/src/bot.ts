@@ -1,9 +1,10 @@
 /** The Telegram side: screens, inline keyboards, and the buy/sell flows. */
-import { Bot, InlineKeyboard, type Context } from "grammy";
+import { Bot, InlineKeyboard, InputFile, type Context } from "grammy";
 
 import { ago, COIN_STORAGE, fillPlaceholders, fmt, getHolder, getInfo, liquidity, listCoins, NEAR, nearUsd, pairDec, pairSym, pairUsd, planBuy, planSell, resolveCoin, toUnits, units, usd, yocto, type Coin, type Info } from "./chipfi.js";
 import { config } from "./config.js";
 import { balanceOf, ensureUser, friendlyError, ftBalance, run, secretKeyOf, sendNear, txUrl } from "./near.js";
+import { coinImage, LOGO } from "./image.js";
 import { updateUser, type User } from "./store.js";
 
 export const bot = new Bot(config.botToken);
@@ -87,8 +88,15 @@ async function showCoin(ctx: Context, u: User, coin: Coin, edit = false) {
   const i = await getInfo(coin.account_id);
   const text = await coinCard(u, coin, i);
   const kb = coinKb(u, coin, i);
-  if (edit && ctx.callbackQuery?.message) await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb, link_preview_options: { is_disabled: true } }).catch(() => ctx.reply(text, { parse_mode: "HTML", reply_markup: kb }));
-  else await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb, link_preview_options: { is_disabled: true } });
+  const msg = ctx.callbackQuery?.message;
+  // A refresh keeps the photo and rewrites the caption; anything else is a new card.
+  if (edit && msg && "photo" in msg) {
+    const ok = await ctx.editMessageCaption({ caption: text, parse_mode: "HTML", reply_markup: kb }).then(() => true).catch(() => false);
+    if (ok) return;
+  }
+  const photo = new InputFile(await coinImage(i.icon), `${i.symbol}.png`);
+  const sent = await ctx.replyWithPhoto(photo, { caption: text, parse_mode: "HTML", reply_markup: kb }).then(() => true).catch(() => false);
+  if (!sent) await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb, link_preview_options: { is_disabled: true } });
 }
 
 async function walletText(u: User) {
@@ -157,6 +165,13 @@ const HELP = [
 ].join("\n");
 
 // ---- helpers -------------------------------------------------------------
+
+/** Rewrites a text message in place; a photo message gets a new message instead. */
+async function editOrReply(ctx: Context, text: string, kb: InlineKeyboard) {
+  const m = ctx.callbackQuery?.message;
+  if (m && !("photo" in m)) { const ok = await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb, link_preview_options: { is_disabled: true } }).then(() => true).catch(() => false); if (ok) return; }
+  await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb, link_preview_options: { is_disabled: true } });
+}
 
 async function withLock(ctx: Context, u: User, f: () => Promise<void>) {
   if (busy.has(u.tgId)) { await ctx.answerCallbackQuery?.({ text: "One trade at a time.", show_alert: false }).catch(() => {}); return; }
@@ -235,7 +250,7 @@ bot.command("start", async (ctx) => {
   const u = ensureUser(ctx.from!.id);
   const payload = ctx.match?.trim();
   if (payload) { const c = await resolveCoin(payload); if (c) return showCoin(ctx, u, c); }
-  await ctx.reply(await homeText(u), { parse_mode: "HTML", reply_markup: homeKb() });
+  await ctx.replyWithPhoto(new InputFile(LOGO, "chipfi.png"), { caption: await homeText(u), parse_mode: "HTML", reply_markup: homeKb() });
 });
 bot.command("wallet", async (ctx) => { const u = ensureUser(ctx.from!.id); await ctx.reply(await walletText(u), { parse_mode: "HTML", reply_markup: walletKb() }); });
 bot.command("coins", async (ctx) => { ensureUser(ctx.from!.id); const { text, kb } = await coinsText(); await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb }); });
@@ -264,10 +279,15 @@ bot.on("callback_query:data", async (ctx) => {
   const [op, a, b] = ctx.callbackQuery.data.split(":");
   await ctx.answerCallbackQuery().catch(() => {});
   switch (op) {
-    case "home": return void ctx.editMessageText(await homeText(u), { parse_mode: "HTML", reply_markup: homeKb() }).catch(() => ctx.reply(""));
-    case "wallet": return void (ctx.callbackQuery.message ? ctx.editMessageText(await walletText(u), { parse_mode: "HTML", reply_markup: walletKb() }).catch(() => {}) : ctx.reply(await walletText(u), { parse_mode: "HTML", reply_markup: walletKb() }));
-    case "coins": { const { text, kb } = await coinsText(); return void ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb }).catch(() => {}); }
-    case "settings": return void ctx.editMessageText(settingsText(u), { parse_mode: "HTML", reply_markup: settingsKb(u) }).catch(() => {});
+    case "home": {
+      const t = await homeText(u);
+      const m = ctx.callbackQuery.message;
+      if (m && "photo" in m) return void ctx.editMessageCaption({ caption: t, parse_mode: "HTML", reply_markup: homeKb() }).catch(() => {});
+      return void ctx.editMessageText(t, { parse_mode: "HTML", reply_markup: homeKb() }).catch(() => {});
+    }
+    case "wallet": return void editOrReply(ctx, await walletText(u), walletKb());
+    case "coins": { const { text, kb } = await coinsText(); return void editOrReply(ctx, text, kb); }
+    case "settings": return void editOrReply(ctx, settingsText(u), settingsKb(u));
     case "help": return void ctx.reply(HELP, { parse_mode: "HTML" });
     case "coin": { const c = await resolveCoin(a); if (c) await showCoin(ctx, u, c, true); return; }
     case "buy": return withLock(ctx, u, () => doBuy(ctx, u, a, b));

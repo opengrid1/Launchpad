@@ -7,7 +7,7 @@ import type { User } from "./store.js";
 export interface Coin { id: number; account_id: string; name: string; symbol: string; pair: string; creator: string; created_at_ms: number; hidden: boolean }
 export type PairAsset = "Near" | { Token: { account_id: string; symbol: string; decimals: number } };
 export interface Info {
-  name: string; symbol: string; creator: string; pair: PairAsset; virtual_reserve: string; buy_tax_bps: number; sell_tax_bps: number;
+  name: string; symbol: string; icon?: string | null; creator: string; pair: PairAsset; virtual_reserve: string; buy_tax_bps: number; sell_tax_bps: number;
   split: { creator_bps: number; dividends_bps: number; burn_bps: number; liquidity_bps: number };
   phase: "Curve" | "Graduating" | "Rhea" | string; total_supply: string; tokens_sold: string; raised: string; pool_pair: string; pool_tokens: string;
   price: string; market_cap: string; graduation: string; curve_supply: string; burned: string; dividends_total: string; trades: number; holders: number;
