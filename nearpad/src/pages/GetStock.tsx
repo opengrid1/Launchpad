@@ -6,13 +6,13 @@ import { PairLogo } from "../components/PairLogo";
 import { DEMO, env } from "../lib/env";
 import { toUnits, units } from "../lib/format";
 import { setToast, useNearUsd, usePairs } from "../lib/hooks";
-import { INTENTS_APP, INTENTS_CONTRACT, NoLiquidity, pancakeUrl, quoteNearToStock, submitDeposit, swapStatus, type Quote, type SwapStatus } from "../lib/intents";
+import { DCL, INTENTS_APP, INTENTS_CONTRACT, NoLiquidity, dclSwapMsg, pancakeUrl, quoteNearToStock, quoteNearToStockOnRhea, submitDeposit, swapStatus, type Quote, type SwapStatus } from "../lib/intents";
 import { accountBalance, view } from "../lib/rpc";
 import type { Pair } from "../lib/types";
 import { pairKind, unitsFmt } from "../lib/value";
 import { openWalletModal, send, useAccount } from "../lib/wallet";
 
-type Step = { phase: "idle" } | { phase: "quoted"; q: Quote } | { phase: "deposited"; q: Quote; status: SwapStatus | "SENT" } | { phase: "done"; q: Quote; amountOut: string } | { phase: "withdrawn"; amountOut: string };
+type Step = { phase: "idle" } | { phase: "quoted"; q: Quote } | { phase: "deposited"; q: Quote; status: SwapStatus | "SENT" } | { phase: "done"; q: Quote; amountOut: string } | { phase: "withdrawn"; amountOut: string; approx?: boolean };
 
 /** Turn NEAR into a tokenized stock without leaving NEAR, through NEAR
  *  Intents. Two approvals: the deposit, then the withdrawal to the wallet. */
@@ -25,7 +25,7 @@ export default function GetStock() {
   const pair = stocks.find((p) => p.key === sel) ?? stocks[0];
   return (
     <main>
-      <div style={{ marginBottom: 12 }}><h1 style={{ fontSize: 22 }}>Get a stock token</h1><p className="fine" style={{ marginTop: 4 }}>Coins paired with a stock are bought with that stock's token. Swap NEAR for it here, through NEAR Intents, and it lands in your wallet.</p></div>
+      <div style={{ marginBottom: 12 }}><h1 style={{ fontSize: 22 }}>Get a stock token</h1><p className="fine" style={{ marginTop: 4 }}>Coins paired with a stock are bought with that stock's token. Swap NEAR for it here, through Rhea or NEAR Intents, whichever pays more, and it lands in your wallet.</p></div>
       {stocks.length === 0 ? <div className="card"><div className="empty">No stock pairs are listed yet.</div></div> : (
         <>
           <div className="scroll-x" style={{ marginBottom: 6 }}>
@@ -65,6 +65,20 @@ function SwapBox({ pair }: { pair: Pair }) {
   });
   const noLiq = dryErr instanceof NoLiquidity;
   const pancake = pancakeUrl(token);
+  // Rhea's DCL pools price the stock on-chain; the better of the two routes wins.
+  const { data: rhea, isFetching: rheaFetching } = useQuery({
+    queryKey: ["dclquote", token, raw.toString()],
+    enabled: raw > 0n && !DEMO,
+    staleTime: 20_000,
+    retry: false,
+    queryFn: () => quoteNearToStockOnRhea(token, raw.toString(), view),
+  });
+  const intentsOut = dry ? BigInt(dry.amountOut) : 0n;
+  const rheaOut = rhea ? BigInt(rhea.amountOut) : 0n;
+  const route: "intents" | "rhea" | null = intentsOut === 0n && rheaOut === 0n ? null : rheaOut >= intentsOut ? "rhea" : "intents";
+  const outRaw = route === "rhea" ? rheaOut : intentsOut;
+  const outFmt = unitsFmt(units(outRaw.toString(), dec));
+  const quoting = isFetching || rheaFetching;
 
   // Poll the swap once the deposit is sent.
   useEffect(() => {
@@ -86,6 +100,22 @@ function SwapBox({ pair }: { pair: Pair }) {
     if (!accountId) return openWalletModal();
     if (raw === 0n) return;
     if (bal != null && raw > bal - toUnits("0.1", 24)) return setToast({ kind: "err", text: "Leave at least 0.1 NEAR for gas." });
+    if (route === "rhea" && rhea) {
+      // One approval: wrap the NEAR and swap it through the pool; the stock lands in the wallet.
+      const [wrapReg, stockReg] = await Promise.all([
+        view<unknown>("wrap.near", "storage_balance_of", { account_id: accountId }).catch(() => null),
+        view<unknown>(token, "storage_balance_of", { account_id: accountId }).catch(() => null),
+      ]);
+      const minOut = (rheaOut * 99n) / 100n;
+      const res = await send(`Swap ${unitsFmt(units(raw, 24))} NEAR for ${sym} on Rhea`, [
+        ...(wrapReg ? [] : [{ receiverId: "wrap.near", methodName: "storage_deposit", args: { account_id: accountId, registration_only: true }, deposit: "1250000000000000000000", gas: "30000000000000" }]),
+        ...(stockReg ? [] : [{ receiverId: token, methodName: "storage_deposit", args: { account_id: accountId, registration_only: true }, deposit: "12500000000000000000000", gas: "30000000000000" }]),
+        { receiverId: "wrap.near", methodName: "near_deposit", args: {}, deposit: raw.toString(), gas: "30000000000000" },
+        { receiverId: "wrap.near", methodName: "ft_transfer_call", args: { receiver_id: DCL, amount: raw.toString(), msg: dclSwapMsg(rhea.poolId, token, minOut.toString()) }, deposit: "1", gas: "180000000000000" },
+      ], () => qc.invalidateQueries());
+      if (res) setStep({ phase: "withdrawn", amountOut: rhea.amountOut, approx: true });
+      return;
+    }
     let q: Quote;
     try { q = await quoteNearToStock({ account: accountId, stockAccount: token, yoctoIn: raw.toString(), dry: false }); }
     catch (e) { setToast({ kind: "err", text: e instanceof NoLiquidity ? "No one is quoting this stock right now. Try again later." : String((e as Error).message) }); return; }
@@ -115,11 +145,11 @@ function SwapBox({ pair }: { pair: Pair }) {
   const busy = step.phase === "quoted" || step.phase === "deposited";
   return (
     <div className="card">
-      <div className="card-h"><h2><PairLogo k={pair.key} size={22} /> Get {sym}</h2><span className="eyebrow">via NEAR Intents</span></div>
+      <div className="card-h"><h2><PairLogo k={pair.key} size={22} /> Get {sym}</h2><span className="eyebrow">{route === "rhea" ? "via Rhea" : "via NEAR Intents"}</span></div>
       <div className="card-b">
         {step.phase === "withdrawn" ? (
           <div className="creditbox">
-            <b>{unitsFmt(units(step.amountOut, dec))} {sym} is in your wallet.</b>
+            <b>{step.approx ? "About " : ""}{unitsFmt(units(step.amountOut, dec))} {sym} is in your wallet.</b>
             <p className="fine" style={{ margin: "6px 0 10px" }}>You can now buy any coin paired with {sym}.</p>
             <div className="row-flex"><Link to="/" className="b pri sm">Find a coin paired with {sym}</Link><button className="b ghost sm" onClick={() => setStep({ phase: "idle" })}>Swap more</button></div>
           </div>
@@ -142,18 +172,19 @@ function SwapBox({ pair }: { pair: Pair }) {
             </div>
             <div className="chips">{[5, 10, 25, 50].map((x) => <button key={x} onClick={() => setAmt(String(x))}>{x}</button>)}</div>
             <dl className="quote">
-              <dt>You receive</dt><dd><b>{dry ? `${unitsFmt(Number(dry.amountOutFormatted))} ${sym}` : isFetching ? "…" : "—"}</b></dd>
-              {dry && <><dt>Value</dt><dd><b>${Number(dry.amountOutUsd).toFixed(2)}</b><span className="faint"> for ${Number(dry.amountInUsd).toFixed(2)} of NEAR</span></dd></>}
+              <dt>You receive</dt><dd><b>{route ? `${outFmt} ${sym}` : quoting ? "…" : "—"}</b></dd>
+              {route === "intents" && dry && <><dt>Value</dt><dd><b>${Number(dry.amountOutUsd).toFixed(2)}</b><span className="faint"> for ${Number(dry.amountInUsd).toFixed(2)} of NEAR</span></dd></>}
+              {route === "rhea" && rhea && <><dt>Route</dt><dd><b>Rhea pool, {rhea.fee / 10000}% fee</b>{nearUsd > 0 ? <span className="faint"> for ${(units(raw, 24) * nearUsd).toFixed(2)} of NEAR</span> : null}</dd></>}
               {stockBal != null && stockBal > 0n && <><dt>In your wallet</dt><dd><b>{unitsFmt(units(stockBal.toString(), dec))} {sym}</b></dd></>}
             </dl>
-            {noLiq && (
+            {noLiq && !route && !quoting && (
               <div className="warn" style={{ marginBottom: 10 }}>
                 No solver is quoting {sym} on NEAR Intents right now. Ondo stock tokens trade 24/5: quotes stop Friday 8pm ET and come back Sunday 8pm ET (Monday 8am Manila). Meanwhile: the token also trades on BNB Chain{pancake ? <>, <a className="vi" href={pancake} target="_blank" rel="noreferrer">on PancakeSwap</a></> : null}, and the <a className="vi" href={INTENTS_APP} target="_blank" rel="noreferrer">NEAR Intents app</a> can bring it to NEAR.
               </div>
             )}
-            {dryErr && !noLiq && <div className="warn" style={{ marginBottom: 10 }}>{String((dryErr as Error).message)}</div>}
-            <button className="b pri lg wide" disabled={!!accountId && (raw === 0n || !dry || busy)} onClick={start}>{!accountId ? "Connect wallet" : busy ? "Waiting…" : `Swap for ${sym}`}</button>
-            <p className="fine" style={{ marginTop: 10 }}>Two approvals: the NEAR goes to NEAR Intents and comes back as {sym} in your Intents account, then you withdraw it to your wallet. Slippage 1%. {nearUsd > 0 ? `NEAR $${nearUsd.toFixed(2)}.` : ""}</p>
+            {dryErr && !noLiq && !route && <div className="warn" style={{ marginBottom: 10 }}>{String((dryErr as Error).message)}</div>}
+            <button className="b pri lg wide" disabled={!!accountId && (raw === 0n || !route || busy)} onClick={start}>{!accountId ? "Connect wallet" : busy ? "Waiting…" : `Swap for ${sym}`}</button>
+            <p className="fine" style={{ marginTop: 10 }}>{route === "rhea" ? `One approval: the NEAR is wrapped and swapped through Rhea's ${sym} pool, and ${sym} lands in your wallet.` : `Two approvals: the NEAR goes to NEAR Intents and comes back as ${sym} in your Intents account, then you withdraw it to your wallet.`} Slippage 1%. {nearUsd > 0 ? `NEAR $${nearUsd.toFixed(2)}.` : ""}</p>
           </>
         )}
       </div>
