@@ -1,27 +1,28 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Art } from "../components/Art";
 import { Chart } from "../components/Chart";
 import { Copy } from "../components/Copy";
+import { Ring } from "../components/Ring";
 import { SplitBar } from "../components/SplitBar";
 import { env, PINNED, RULES } from "../lib/env";
 import { ago, dateShort, num, short, toUnits, units } from "../lib/format";
 import { useCandles, useCoin, useCurrency, useHolder, useNearUsd, useTrades } from "../lib/hooks";
+import { accountBalance, view } from "../lib/rpc";
 import type { Coin, Info } from "../lib/types";
 import { isNearPair, pairAccount, pairDecimals, pairSymbol } from "../lib/types";
 import { makeValuer, pairKind, progress, unitsFmt } from "../lib/value";
 import { openWalletModal, send, useAccount } from "../lib/wallet";
-import { accountBalance, view } from "../lib/rpc";
-import { useQuery } from "@tanstack/react-query";
 
 const BUCKETS: { k: string; m: number }[] = [{ k: "5m", m: 5 }, { k: "15m", m: 15 }, { k: "1h", m: 60 }, { k: "4h", m: 240 }, { k: "1d", m: 1440 }];
+type Fmt = (raw: string, compact?: boolean) => string;
 
 export default function TokenPage() {
   const { account } = useParams<{ account: string }>();
   const { data: c, isLoading } = useCoin(account);
-  if (isLoading) return <main><div className="skel" style={{ height: 60, marginBottom: 16 }} /><div className="skel" style={{ height: 420 }} /></main>;
+  if (isLoading) return <main><div className="skel" style={{ height: 80, marginBottom: 12 }} /><div className="skel" style={{ height: 380 }} /></main>;
   if (!c) return <main className="gate"><h1>Coin not found</h1><p>That account was not launched on this factory.</p><Link to="/" className="b">Back to coins</Link></main>;
   return <CoinView c={c} />;
 }
@@ -32,7 +33,7 @@ function CoinView({ c }: { c: Coin }) {
   const [ccy] = useCurrency();
   const v = useMemo(() => makeValuer(ccy, nearUsd)(i.pair), [ccy, nearUsd, i.pair]);
   const [bucket, setBucket] = useState(15);
-  const [view_, setView] = useState<"mcap" | "price">("mcap");
+  const [mode, setMode] = useState<"mcap" | "price">("mcap");
   const { data: candles } = useCandles(c.account_id);
   const { data: trades } = useTrades(c.account_id);
   const [tab, setTab] = useState<"trades" | "tax" | "about">("trades");
@@ -45,109 +46,112 @@ function CoinView({ c }: { c: Coin }) {
 
   return (
     <main>
-      <div className={"tk-h " + kind}>
-        <Art src={i.icon ?? undefined} name={i.name} className="art" size={64} />
+      <div className="head">
         <div className="id">
-          <h1 className="display">{i.name}<span>{i.symbol}</span>{PINNED.includes(c.account_id) && <span className="chip official">Official</span>}<span className={"phase " + (pool ? "pool" : i.phase === "Graduating" ? "grad" : "")}>{pool ? "Graduated" : i.phase === "Graduating" ? "Opening the pool" : "On the curve"}</span></h1>
-          <div className="pays">Pays holders in <span className={"chip " + kind}>{sym}</span><em>{v.fmt(i.dividends_total)} paid so far</em></div>
-          <div className="meta">
-            <span>Created {dateShort(i.created_at_ms)} by <a href={`${env.explorerUrl}/address/${i.creator}`} target="_blank" rel="noreferrer">{i.creator}</a></span>
-            <Copy value={c.account_id} label="Contract" />
-            {links.map((l) => <a key={l.l} href={l.u} target="_blank" rel="noreferrer">{l.l}</a>)}
+          <Art src={i.icon ?? undefined} name={i.name} className="art" size={56} />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h1>{i.name}<span className="sym">{i.symbol}</span>{PINNED.includes(c.account_id) && <span className="chip official">Official</span>}<span className={"chip " + (pool ? "pool" : i.phase === "Graduating" ? "grad" : kind)}>{pool ? "Graduated" : i.phase === "Graduating" ? "Opening the pool" : `Pays ${sym}`}</span></h1>
+            <div className="meta">
+              <span>by <a href={`${env.explorerUrl}/address/${i.creator}`} target="_blank" rel="noreferrer">{i.creator}</a></span>
+              <span>{dateShort(i.created_at_ms)}</span>
+              <Copy value={c.account_id} label="contract" />
+              {links.map((l) => <a key={l.l} href={l.u} target="_blank" rel="noreferrer">{l.l}</a>)}
+            </div>
           </div>
+          {!pool && <Ring pct={progress(c)} size={52} stroke={5} />}
         </div>
-        <div className="price">
-          <div className="v">{v.fmt(i.market_cap, true)}</div>
-          <div className="c"><b className="chip">market cap</b><span>{unitsFmt(units(i.price, v.dec))} {sym} per {i.symbol}</span></div>
+        <div className="big">
+          <div className="v">{v.fmt(i.market_cap, true)}<small>market cap · {unitsFmt(units(i.price, v.dec))} {sym} per {i.symbol}</small></div>
+          <div className="desk"><span className="chip">{v.fmt(i.dividends_total)} paid to holders</span></div>
         </div>
       </div>
 
-      <div className="tk">
-        <div>
+      <div className="grid2">
+        <div style={{ display: "grid", gap: 12 }}>
           <div className="card">
             <div className="strip">
-              <div><span>Market cap</span><b>{v.fmt(i.market_cap, true)}</b></div>
               <div><span>{pool ? "In the pool" : "Raised"}</span><b>{v.fmt(pool ? i.pool_pair : i.raised, true)}</b></div>
-              <div><span>Trades</span><b>{num(i.trades, 0)}</b></div>
               <div><span>Holders</span><b>{num(i.holders, 0)}</b></div>
-              <div><span>Paid to holders</span><b className="vi">{v.fmt(i.dividends_total)}</b></div>
+              <div><span>Trades</span><b>{num(i.trades, 0)}</b></div>
+              <div><span>Paid to holders</span><b className="vi">{v.fmt(i.dividends_total, true)}</b></div>
+              <div><span>Tax</span><b>{i.buy_tax_bps / 100}% / {i.sell_tax_bps / 100}%</b></div>
               <div><span>Last trade</span><b>{last ? <><span className={last.buy ? "up" : "down"}>{last.buy ? "Buy" : "Sell"}</span> {v.fmt(last.pair)}</> : "—"}</b></div>
             </div>
             {!pool && (
-              <div style={{ padding: "0 16px 14px" }}>
-                <div className="prog" style={{ height: 8 }}><i style={{ width: `${progress(c)}%` }} /></div>
-                <div className="prog-l"><span>{unitsFmt(units(i.tokens_sold, 18))} of {unitsFmt(RULES.curveSupply)} sold on the curve</span><b>{progress(c).toFixed(1)}%</b></div>
-                <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>Graduates at {v.fmt(i.graduation)} raised. The pool opens at the last curve price with the 250,000,000 tokens held back.</div>
+              <div className="progress">
+                <div className="bar"><i style={{ width: `${progress(c)}%` }} /></div>
+                <div className="l"><span>{unitsFmt(units(i.tokens_sold, 18))} of {unitsFmt(RULES.curveSupply)} sold</span><b>{progress(c).toFixed(1)}%</b></div>
+                <div className="fine" style={{ marginTop: 4 }}>Graduates at {v.fmt(i.graduation)} raised. The pool then opens at the last curve price with the 250,000,000 tokens held back.</div>
               </div>
             )}
             <div className="chart-h">
               <span className="pair"><b>{i.symbol}/{sym}</b>{isNearPair(i.pair) && nearUsd > 0 ? <> · NEAR ${nearUsd.toFixed(2)}</> : null}</span>
               <div className="row-flex">
                 <div className="seg">{BUCKETS.map((b) => <button key={b.k} className={bucket === b.m ? "on" : ""} onClick={() => setBucket(b.m)}>{b.k}</button>)}</div>
-                <div className="seg"><button className={view_ === "mcap" ? "on" : ""} onClick={() => setView("mcap")}>Mcap</button><button className={view_ === "price" ? "on" : ""} onClick={() => setView("price")}>Price</button></div>
+                <div className="seg"><button className={mode === "mcap" ? "on" : ""} onClick={() => setMode("mcap")}>Mcap</button><button className={mode === "price" ? "on" : ""} onClick={() => setMode("price")}>Price</button></div>
               </div>
             </div>
-            <div className="chart-b">{candles ? <Chart candles={candles} pairDecimals={v.dec} scale={v.scale} unit={v.unit} mode={view_} supply={units(i.total_supply, 18)} bucketMinutes={bucket} /> : <div className="gc-empty">Chart loads with the first trade.</div>}</div>
+            <div className="chart-b">{candles ? <Chart candles={candles} pairDecimals={v.dec} scale={v.scale} unit={v.unit} mode={mode} supply={units(i.total_supply, 18)} bucketMinutes={bucket} /> : <div className="gc-empty">Chart loads with the first trade.</div>}</div>
           </div>
 
-          <div className="card" style={{ marginTop: 16 }}>
-            <div className="tabs pad">{(["trades", "tax", "about"] as const).map((k) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{k === "tax" ? "Where the tax goes" : k}</button>)}</div>
+          <div className="card">
+            <div className="tabs">{(["trades", "tax", "about"] as const).map((k) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{k === "tax" ? "Where the tax goes" : k}</button>)}</div>
             {tab === "trades" && <Trades c={c} fmt={v.fmt} />}
             {tab === "tax" && <TaxPanel i={i} fmt={v.fmt} />}
             {tab === "about" && <div className="about">{i.description || "The creator did not add a description."}</div>}
           </div>
-        </div>
 
-        <aside>
-          <div className="card trade desk"><div className="card-b"><TradeBox c={c} nearUsd={nearUsd} /></div></div>
-          <div className="card" style={{ marginTop: 12 }}><Yours c={c} fmt={v.fmt} /></div>
-          <div className="card" style={{ marginTop: 12 }}>
-            <div className="card-h"><h2>The coin</h2><span className="eyebrow">Fixed at launch</span></div>
+          <div className="card">
+            <div className="card-h"><h2>The coin</h2><span className="eyebrow">fixed at launch</span></div>
             <div className="card-b">
               <dl className="kv">
-                <dt>Pair</dt><dd>{sym}{!isNearPair(i.pair) && <span className="dim">{pairAccount(i.pair)}</span>}</dd>
+                <dt>Pair</dt><dd>{sym}{!isNearPair(i.pair) && <span className="dim" style={{ wordBreak: "break-all" }}>{pairAccount(i.pair)}</span>}</dd>
                 <dt>Tax buy / sell</dt><dd>{i.buy_tax_bps / 100}% / {i.sell_tax_bps / 100}%<span className="dim">plus a 1% pool fee once graduated</span></dd>
                 <dt>Supply</dt><dd>{unitsFmt(units(i.total_supply, 18))}<span className="dim">{units(i.burned, 18) > 0 ? `${unitsFmt(units(i.burned, 18))} burned` : "1,000,000,000 minted once"}</span></dd>
-                <dt>Liquidity</dt><dd>{pool ? <>{v.fmt(i.pool_pair)}<span className="dim">{unitsFmt(units(i.pool_tokens, 18))} {i.symbol} in the pool</span></> : <>Opens at graduation<span className="dim">{v.fmt(i.graduation)} plus 250,000,000 {i.symbol}</span></>}</dd>
-                <dt>Creator fee wallet</dt><dd><span style={{ wordBreak: "break-all" }}>{i.fee_wallet}</span></dd>
+                <dt>Pool</dt><dd>{pool ? <>{v.fmt(i.pool_pair)}<span className="dim">{unitsFmt(units(i.pool_tokens, 18))} {i.symbol}</span></> : <>Opens at graduation<span className="dim">{v.fmt(i.graduation)} plus 250,000,000 {i.symbol}</span></>}</dd>
+                <dt>Fee wallet</dt><dd style={{ wordBreak: "break-all" }}>{i.fee_wallet}</dd>
                 <dt>Explorer</dt><dd><a className="vi" href={`${env.explorerUrl}/address/${c.account_id}`} target="_blank" rel="noreferrer">NearBlocks</a></dd>
               </dl>
             </div>
           </div>
+        </div>
+
+        <aside style={{ display: "grid", gap: 12 }}>
+          <div className="card desk"><div className="card-b"><TradeBox c={c} nearUsd={nearUsd} /></div></div>
+          <div className="card"><Yours c={c} fmt={v.fmt} /></div>
         </aside>
       </div>
 
-      <div className="mobilebar">
-        <button className="b buy" onClick={() => setSheet("buy")}>Buy</button>
+      <div className="actionbar">
+        <button className="b buy" onClick={() => setSheet("buy")}>Buy {i.symbol}</button>
         <button className="b sell" onClick={() => setSheet("sell")}>Sell</button>
       </div>
       {sheet && (
         <>
           <div className="scrim" onClick={() => setSheet(null)} />
-          <div className="sheet"><div className="grab" /><div className="trade"><TradeBox c={c} nearUsd={nearUsd} initial={sheet} /></div></div>
+          <div className="sheet"><div className="grab" /><TradeBox c={c} nearUsd={nearUsd} initial={sheet} /></div>
         </>
       )}
     </main>
   );
 }
 
-function TaxPanel({ i, fmt }: { i: Info; fmt: (raw: string, compact?: boolean) => string }) {
+function TaxPanel({ i, fmt }: { i: Info; fmt: Fmt }) {
   return (
     <div className="card-b" style={{ display: "grid", gap: 14 }}>
       <SplitBar split={i.split} taxPct={i.buy_tax_bps / 100} />
       <dl className="kv">
-        <dt>Holder dividends</dt><dd>{fmt(i.dividends_total)}<span className="dim">paid to everyone holding, in proportion, claim any time</span></dd>
+        <dt>Holder dividends</dt><dd>{fmt(i.dividends_total)}<span className="dim">to everyone holding, in proportion</span></dd>
         <dt>Creator fees</dt><dd>{fmt(i.creator_fees_total)}<span className="dim">credited to the fee wallet</span></dd>
         <dt>Bought back and burned</dt><dd>{unitsFmt(units(i.burned, 18))} {i.symbol}<span className="dim">{fmt(i.buyback_spent)} spent{units(i.pending_buyback, 24) > 0 ? ` · ${fmt(i.pending_buyback)} waiting for the pool` : ""}</span></dd>
         <dt>Added to liquidity</dt><dd>{fmt(i.liquidity_added)}<span className="dim">{units(i.pending_liquidity, 24) > 0 ? `${fmt(i.pending_liquidity)} waiting for the pool` : "from the day the pool opens"}</span></dd>
-        <dt>Platform</dt><dd>{fmt(i.platform_fees_total)}<span className="dim">20% of every tax</span></dd>
+        <dt>Platform</dt><dd>{fmt(i.platform_fees_total)}<span className="dim">20% of every tax, paid as it happens</span></dd>
       </dl>
     </div>
   );
 }
 
-/** Your holding, dividends and credits in this coin, and the claim button. */
-function Yours({ c, fmt }: { c: Coin; fmt: (raw: string, compact?: boolean) => string }) {
+function Yours({ c, fmt }: { c: Coin; fmt: Fmt }) {
   const { accountId } = useAccount();
   const qc = useQueryClient();
   const { data } = useHolder(c.account_id, accountId);
@@ -160,12 +164,12 @@ function Yours({ c, fmt }: { c: Coin; fmt: (raw: string, compact?: boolean) => s
       <div className="card-h"><h2>Yours</h2><span className="eyebrow">{i.split.dividends_bps / 100}% of the split to holders</span></div>
       <div className="card-b rw">
         <span className="eyebrow">Owed to you</span>
-        <div className="big">{data ? fmt(owed.toString()) : "—"}</div>
+        <div className="bigv">{data ? fmt(owed.toString()) : "—"}</div>
         <div className="sub">{!accountId ? "Connect a wallet to see your balance and what you are owed." : data ? `${unitsFmt(units(data.balance, 18))} ${i.symbol} held · ${fmt(data.claimable_dividends)} dividends · ${fmt(data.credit)} credits` : "Loading…"}</div>
         {!accountId && <div className="row-flex"><button className="b sm" onClick={() => openWalletModal()}>Connect wallet</button></div>}
         {owed > 0n && <div className="row-flex"><button className="b pri sm" onClick={claim}>Claim {fmt(owed.toString())}</button></div>}
-        {isFeeWallet && <p className="fine">You are this coin's fee wallet: creator fees are part of your credits above. Lifetime {fmt(i.creator_fees_total)}.</p>}
-        <p className="fine">A sale credits you; claiming pays your wallet in {pairSymbol(i.pair)}. Nothing is pushed.</p>
+        {isFeeWallet && <p className="fine" style={{ marginTop: 8 }}>You are this coin's fee wallet. Creator fees are part of your credits, lifetime {fmt(i.creator_fees_total)}.</p>}
+        <p className="fine" style={{ marginTop: 8 }}>A sale credits you; claiming pays your wallet in {pairSymbol(i.pair)}. Nothing is pushed.</p>
       </div>
     </>
   );
@@ -234,20 +238,20 @@ function TradeBox({ c, nearUsd, initial = "buy" }: { c: Coin; nearUsd: number; i
       <dl className="quote">
         <dt>You receive</dt><dd><b>{raw > 0n ? (side === "buy" ? `${unitsFmt(units(out, 18))} ${i.symbol}` : `${unitsFmt(units(out, dec))} ${sym}`) : "—"}</b></dd>
         {payUsd > 0 && <><dt>Value</dt><dd><b>{raw > 0n ? `$${(side === "buy" ? units(raw, dec) * payUsd : units(out, dec) * payUsd).toFixed(2)}` : "—"}</b></dd></>}
-        <dt>Tax</dt><dd><b>{taxPct}%{i.phase === "Pool" ? " + 1% pool fee" : ""}<span className="faint" style={{ fontWeight: 400 }}> · {i.split.dividends_bps / 100}% of the split to holders</span></b></dd>
+        <dt>Tax</dt><dd><b>{taxPct}%{i.phase === "Pool" ? " + 1% pool fee" : ""}</b><span className="faint"> · {i.split.dividends_bps / 100}% of it to holders</span></dd>
         <dt>Price</dt><dd><b>{unitsFmt(units(i.price, dec))} {sym}</b></dd>
       </dl>
-      {i.phase === "Graduating" && <div className="warn">The curve just filled. Open the pool to resume trading; anyone can.</div>}
-      {over && <div className="warn">Amount is more than your balance.</div>}
+      {i.phase === "Graduating" && <div className="warn" style={{ marginBottom: 10 }}>The curve just filled. Open the pool to resume trading; anyone can.</div>}
+      {over && <div className="warn" style={{ marginBottom: 10 }}>Amount is more than your balance.</div>}
       <button className={"b lg wide " + (side === "sell" ? "sell" : "buy")} disabled={!!accountId && i.phase !== "Graduating" && (raw === 0n || over)} onClick={go}>{!accountId ? "Connect wallet" : i.phase === "Graduating" ? "Open the pool" : side === "buy" ? `Buy ${i.symbol}` : `Sell ${i.symbol}`}</button>
-      <p className="fine">{near ? "You pay NEAR from your wallet in one approval." : `You pay ${sym} from your wallet. A first buy also registers you on the coin (0.00125 NEAR).`} A sale credits you in {sym}; claim it below. Slippage 5%.</p>
+      <p className="fine" style={{ marginTop: 10 }}>{near ? "You pay NEAR from your wallet in one approval." : `You pay ${sym} from your wallet. A first buy also registers you on the coin (0.00125 NEAR).`} A sale credits you in {sym}; claim it any time. Slippage 5%.</p>
     </>
   );
 }
 
 const PAGE = 12;
 
-function Trades({ c, fmt }: { c: Coin; fmt: (raw: string, compact?: boolean) => string }) {
+function Trades({ c, fmt }: { c: Coin; fmt: Fmt }) {
   const { data: trades } = useTrades(c.account_id);
   const [page, setPage] = useState(0);
   if (!trades) return <div className="skel" style={{ height: 140, margin: 12 }} />;
@@ -260,7 +264,7 @@ function Trades({ c, fmt }: { c: Coin; fmt: (raw: string, compact?: boolean) => 
         <a key={`${tr.t}-${k}`} className="li" href={`${env.explorerUrl}/address/${tr.account}`} target="_blank" rel="noreferrer">
           <span className="t">{ago(tr.t)}</span>
           <span className={"side " + (tr.buy ? "up" : "down")}>{tr.buy ? "Buy" : "Sell"}</span>
-          <span className="who">{short(tr.account, 10)}</span>
+          <span className="who">{short(tr.account, 9)}</span>
           <span className="r">{unitsFmt(units(tr.tokens, 18))} {c.info.symbol}<small>{fmt(tr.pair)}</small></span>
         </a>
       ))}

@@ -6,7 +6,6 @@ import "@near-wallet-selector/modal-ui/styles.css";
 
 import App from "./App";
 import "./styles.css";
-import "./extra.css";
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 5_000 } } });
 

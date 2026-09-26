@@ -50,6 +50,6 @@ export function unitsFmt(v: number): string {
 /** Progress along the curve as tokens sold, 0 to 100. */
 export const progress = (c: Coin) => (c.info.phase === "Pool" || c.info.phase === "Graduating" ? 100 : Math.min(100, (units(c.info.tokens_sold, 18) / units(c.info.curve_supply, 18)) * 100));
 
-export const pairKind = (p: PairAsset) => (isNearPair(p) ? "eth" : /on$/.test(pairSymbol(p)) ? "stock" : "token");
+export const pairKind = (p: PairAsset) => (isNearPair(p) ? "near" : /on$/.test(pairSymbol(p)) ? "stock" : "token");
 
 export const pairName = (pairs: Pair[] | undefined, key: string) => pairs?.find((p) => p.key === key)?.name ?? key;

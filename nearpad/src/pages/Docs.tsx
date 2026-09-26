@@ -4,8 +4,8 @@ import { useConfig } from "../lib/hooks";
 export default function Docs() {
   const { data: cfg } = useConfig();
   return (
-    <main className="docs">
-      <div className="launch-head"><h1>How it works</h1><p className="sub">One token, one screen, one tap to buy. Everything a coin does is in its own contract on NEAR.</p></div>
+    <main>
+      <div style={{ marginBottom: 12 }}><h1 style={{ fontSize: 22 }}>How it works</h1><p className="fine" style={{ marginTop: 4 }}>One token, one screen, one tap to buy. Everything a coin does is in its own contract on NEAR.</p></div>
       <div className="card"><div className="card-b docs-b">
         <h2>The coin</h2>
         <p>Every coin is its own NEAR account running the same published code. It holds the token, its price, its liquidity and its tax. You pay in the coin's pair and you are paid in it: NEAR, unless the coin was made with another pair.</p>

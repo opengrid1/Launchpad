@@ -9,7 +9,7 @@ import { toUnits, units } from "../lib/format";
 import { setToast, useConfig, useCurrency, useNearUsd, usePairs } from "../lib/hooks";
 import { view } from "../lib/rpc";
 import type { CoinRow, Split } from "../lib/types";
-import { pairDecimals, pairSymbol } from "../lib/types";
+import { pairSymbol } from "../lib/types";
 import { makeValuer } from "../lib/value";
 import { openWalletModal, send, useAccount } from "../lib/wallet";
 
@@ -59,7 +59,6 @@ export default function Create() {
   const pair = (pairs ?? []).find((p) => p.key === pairKey) ?? pairs?.[0];
   const near = !pair || pair.asset === "Near";
   const psym = pair ? pairSymbol(pair.asset) : "NEAR";
-  const pdec = pair ? pairDecimals(pair.asset) : 24;
   const val = useMemo(() => makeValuer(ccy, nearUsd), [ccy, nearUsd]);
   const graduation = pair ? (BigInt(pair.virtual_reserve) * 2n).toString() : "0";
   const sum = split.creator_bps + split.dividends_bps + split.burn_bps + split.liquidity_bps;
@@ -69,11 +68,7 @@ export default function Create() {
   const initial = near ? toUnits(f.initialBuy, 24) : 0n;
   const total = launchFee + stateDeposit + initial + (near ? 0n : 12_500_000_000_000_000_000_000n);
 
-  const applyPreset = (k: string) => {
-    const p = PRESETS.find((x) => x.k === k);
-    if (!p) return;
-    setPreset(k); setBuy(p.buy); setSell(p.sell); setSplit(p.split);
-  };
+  const applyPreset = (k: string) => { const p = PRESETS.find((x) => x.k === k); if (!p) return; setPreset(k); setBuy(p.buy); setSell(p.sell); setSplit(p.split); };
   const setShare = (k: keyof Split, v: number) => { setPreset("custom"); setSplit({ ...split, [k]: v * 100 }); };
   const even = () => { setPreset("custom"); setSplit({ creator_bps: 2500, dividends_bps: 2500, burn_bps: 2500, liquidity_bps: 2500 }); };
 
@@ -91,128 +86,107 @@ export default function Create() {
         fee_wallet: f.feeWallet.trim() || null, initial_buy: initial > 0n ? initial.toString() : null,
       };
       const before = cfg?.count ?? 0;
-      const done = await send(`Create ${symbol}`, [{ receiverId: env.factory, methodName: "create", args: { params }, deposit: total.toString(), gas: "300000000000000" }], async () => {
-        await qc.invalidateQueries();
-      });
+      const done = await send(`Create ${symbol}`, [{ receiverId: env.factory, methodName: "create", args: { params }, deposit: total.toString(), gas: "300000000000000" }], async () => { await qc.invalidateQueries(); });
       if (done) {
         const list = await view<CoinRow[]>(env.factory, "list", { limit: 5 }).catch(() => []);
         const mine = list.find((r) => r.creator === accountId && r.symbol === symbol) ?? list.find((r) => r.id > before);
-        if (mine) nav(`/t/${mine.account_id}`); else nav("/");
+        nav(mine ? `/t/${mine.account_id}` : "/");
       }
     } finally { setBusy(false); }
   };
 
   if (!DEPLOYED) return <main className="gate"><h1>Not live yet</h1><p>The factory is not on NEAR yet.</p><Link to="/" className="b">Back to coins</Link></main>;
-  const cta = !accountId ? "Connect wallet" : busy ? "Creating…" : `Create ${symbol}`;
-  const shares = [["creator_bps", "Creator", "Paid to the creator fee wallet."], ["dividends_bps", "Dividends", "Paid out to token holders."], ["burn_bps", "Buyback and burn", "Buys tokens from the pool and burns them."], ["liquidity_bps", "Liquidity", "Added to the pool as liquidity."]] as const;
+  const cta = !accountId ? "Connect wallet" : busy ? "Creating…" : `Create ${symbol} · ${units(total.toString(), 24)} NEAR`;
+  const shares = [["creator_bps", "Creator"], ["dividends_bps", "Dividends"], ["burn_bps", "Buyback, burn"], ["liquidity_bps", "Liquidity"]] as const;
 
   return (
-    <main className="launch">
-      <div className="launch-head">
-        <h1>Create a coin</h1>
-        <p className="sub">Name it, choose where the tax goes, and launch. Everything below is fixed at launch, so read it once.</p>
-      </div>
-      <div className="launch-grid">
-      <form className="card" onSubmit={submit}>
-        <div className="fs">
-          <h3>Coin details<small>Fixed at launch. Choose carefully.</small></h3>
+    <main className="create">
+      <form className="steps" onSubmit={submit}>
+        <div>
+          <h1 style={{ fontSize: 22 }}>Create a coin</h1>
+          <p className="fine" style={{ marginTop: 4 }}>Name it, choose where the tax goes, and launch. Everything below is fixed at launch.</p>
+        </div>
+
+        <section className="step">
+          <h3><i>1</i>The coin<small>fixed at launch</small></h3>
           <label className="drop" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) onFile(file); }}>
             {icon ? <img src={icon} alt="" /> : <div className="ph">+</div>}
-            <div><div className="t">{icon ? "Image added" : "Token image"}</div><div className="help">PNG, JPG or WebP. Square, stored on chain, so it is kept small.{icon && <> · <a href="#" onClick={(e) => { e.preventDefault(); setIcon(""); }}>Remove</a></>}</div></div>
+            <div><div className="t">{icon ? "Image added" : "Add an image"}</div><div className="fine">PNG, JPG or WebP, square. Stored on chain, so it is kept small.{icon && <> · <a href="#" onClick={(e) => { e.preventDefault(); setIcon(""); }}>Remove</a></>}</div></div>
             <input ref={fileRef} type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) onFile(file); }} />
           </label>
           <div className="f2">
-            <div className="f"><label>Name</label><input className="in" value={f.name} onChange={set("name")} placeholder="Moon Cat" minLength={2} maxLength={32} required /><div className="help">2 to 32 characters.</div></div>
-            <div className="f"><label>Ticker</label><input className="in" value={f.symbol} onChange={set("symbol")} placeholder={symbol} maxLength={10} style={{ textTransform: "uppercase" }} /><div className="help">2 to 10 letters or digits.</div></div>
+            <div className="f"><label>Name</label><input className="in" value={f.name} onChange={set("name")} placeholder="Moon Cat" minLength={2} maxLength={32} required /></div>
+            <div className="f"><label>Ticker</label><input className="in" value={f.symbol} onChange={set("symbol")} placeholder={symbol} maxLength={10} style={{ textTransform: "uppercase" }} /></div>
           </div>
-          <div className="f"><label>Description</label><textarea className="in" value={f.description} onChange={set("description")} placeholder="A short description of the token" maxLength={280} /><div className="help">Optional. {f.description.length}/280</div></div>
+          <div className="f"><label>Description <span className="faint" style={{ fontWeight: 500 }}>optional · {f.description.length}/280</span></label><textarea className="in" value={f.description} onChange={set("description")} placeholder="What is this coin about?" maxLength={280} /></div>
           <div className="f2">
             <div className="f"><label>Website</label><input className="in" value={f.website} onChange={set("website")} placeholder="example.com" /></div>
             <div className="f"><label>X</label><input className="in" value={f.x} onChange={set("x")} placeholder="@handle" /></div>
           </div>
           <div className="f"><label>Telegram</label><input className="in" value={f.telegram} onChange={set("telegram")} placeholder="@group" /></div>
-        </div>
+        </section>
 
-        <div className="fs">
-          <h3>Pair with<small>What people buy your token with. Fixed at launch.</small></h3>
-          <div className="pairs-row">
-            {(pairs ?? []).filter((p) => p.enabled).map((p) => <button type="button" key={p.key} className={pairKey === p.key ? "on" : ""} onClick={() => setPairKey(p.key)}><span className="av">{p.key.slice(0, 2).toUpperCase()}</span>{p.name}</button>)}
+        <section className="step">
+          <h3><i>2</i>Pair with<small>what people buy it with</small></h3>
+          <div className="scroll-x" style={{ margin: 0, padding: "2px 0" }}>
+            {(pairs ?? []).filter((p) => p.enabled).map((p) => <button type="button" key={p.key} className={"pill " + (pairKey === p.key ? "on" : "")} onClick={() => setPairKey(p.key)}><span className="av">{p.key.slice(0, 2).toUpperCase()}</span>{p.name}</button>)}
           </div>
-          <div className="help">{near ? "People buy your token with NEAR, and holder dividends are paid in NEAR. Buyers pay straight from their wallet." : `People buy your token with ${psym}, and holder dividends are paid in ${psym}. Buyers need ${psym} in their wallet.`} Graduates at {pair ? val(pair.asset).fmt(graduation) : "—"} raised.</div>
-        </div>
+          <p className="fine">{near ? "People buy your coin with NEAR and holders are paid in NEAR, straight from their wallet." : `People buy your coin with ${psym} and holders are paid in ${psym}. Buyers need ${psym} in their wallet.`} Graduates at {pair ? val(pair.asset).fmt(graduation) : "—"} raised.</p>
+        </section>
 
-        <div className="fs">
-          <h3>Where the tax goes<small>The platform keeps 20% of the tax. The split below is the other 80%.</small></h3>
-          <div className="taxform">
-            <div className="presets">
-              {PRESETS.map((p) => <button type="button" key={p.k} className={preset === p.k ? "on" : ""} onClick={() => applyPreset(p.k)}>{p.label}</button>)}
-              <button type="button" className={preset === "custom" ? "on" : ""} onClick={() => setPreset("custom")}>Custom</button>
-            </div>
-            <div className="help">{PRESETS.find((p) => p.k === preset)?.help ?? "Your own tax and split."}</div>
-            <div className="sliders">
-              <label><span>Buy tax</span><input type="range" min={RULES.minTaxPct} max={RULES.maxTaxPct} value={buy} onChange={(e) => { setPreset("custom"); setBuy(Number(e.target.value)); }} /><span className="val">{buy}%</span></label>
-              <label><span>Sell tax</span><input type="range" min={RULES.minTaxPct} max={RULES.maxTaxPct} value={sell} onChange={(e) => { setPreset("custom"); setSell(Number(e.target.value)); }} /><span className="val">{sell}%</span></label>
-              {shares.map(([k, label]) => (
-                <label key={k}><span>{label}</span><input type="range" min={0} max={100} step={5} value={split[k] / 100} onChange={(e) => setShare(k, Number(e.target.value))} /><span className={"val " + (ok ? "" : "bad")}>{split[k] / 100}%</span></label>
-              ))}
-            </div>
-            <div className="row-flex" style={{ alignItems: "center", gap: 10 }}>
-              <span className={"help " + (ok ? "" : "down")} style={{ margin: 0 }}>Totals {sum / 100}%{ok ? "" : ", must be 100%"}</span>
-              <button type="button" className="b ghost sm" onClick={even}>Split evenly</button>
-            </div>
-            <SplitBar split={split} compact />
+        <section className="step">
+          <h3><i>3</i>Where the tax goes<small>platform keeps 20%, you divide the rest</small></h3>
+          <div className="presets">
+            {PRESETS.map((p) => <button type="button" key={p.k} className={preset === p.k ? "on" : ""} onClick={() => applyPreset(p.k)}>{p.label}</button>)}
+            <button type="button" className={preset === "custom" ? "on" : ""} onClick={() => setPreset("custom")}>Custom</button>
           </div>
-        </div>
+          <p className="fine">{PRESETS.find((p) => p.k === preset)?.help ?? "Your own tax and split."}</p>
+          <div className="sliders">
+            <label><span>Buy tax</span><input type="range" min={RULES.minTaxPct} max={RULES.maxTaxPct} value={buy} onChange={(e) => { setPreset("custom"); setBuy(Number(e.target.value)); }} /><span className="val">{buy}%</span></label>
+            <label><span>Sell tax</span><input type="range" min={RULES.minTaxPct} max={RULES.maxTaxPct} value={sell} onChange={(e) => { setPreset("custom"); setSell(Number(e.target.value)); }} /><span className="val">{sell}%</span></label>
+            {shares.map(([k, label]) => (
+              <label key={k}><span>{label}</span><input type="range" min={0} max={100} step={5} value={split[k] / 100} onChange={(e) => setShare(k, Number(e.target.value))} /><span className={"val " + (ok ? "" : "bad")}>{split[k] / 100}%</span></label>
+            ))}
+          </div>
+          <div className="row-flex" style={{ justifyContent: "space-between" }}>
+            <span className={"fine " + (ok ? "" : "down")}>Shares total {sum / 100}%{ok ? "" : ", must be 100%"}</span>
+            <button type="button" className="b ghost sm" onClick={even}>Split evenly</button>
+          </div>
+          <SplitBar split={split} compact />
+        </section>
 
-        <div className="fs">
-          <h3>Initial buy<small>Optional. The first trade on your token, before anyone else can buy.</small></h3>
-          <div className="f">
-            <label>Amount in NEAR</label>
-            <input className="in" inputMode="decimal" value={f.initialBuy} onChange={set("initialBuy")} placeholder="0" disabled={!near} />
-            <div className="help">{near ? `Bought in the same transaction at the ${buy}% tax.` : `Not available on a ${psym} coin. Buy on the coin page right after launch.`}</div>
+        <section className="step">
+          <h3><i>4</i>Launch<small>optional first buy and fee wallet</small></h3>
+          <div className="f2">
+            <div className="f"><label>Initial buy, NEAR</label><input className="in" inputMode="decimal" value={f.initialBuy} onChange={set("initialBuy")} placeholder="0" disabled={!near} /><div className="help">{near ? `The first trade, in the same transaction, at the ${buy}% tax.` : `Not available on a ${psym} coin.`}</div></div>
+            <div className="f"><label>Creator fee wallet</label><input className="in" value={f.feeWallet} onChange={set("feeWallet")} placeholder={accountId ?? "you.near"} /><div className="help">Defaults to your wallet. Only the platform can reassign it.</div></div>
           </div>
-          <div className="f">
-            <label>Creator fee wallet</label>
-            <input className="in" value={f.feeWallet} onChange={set("feeWallet")} placeholder={accountId ?? "you.near"} />
-            <div className="help">Credited in {psym}. Defaults to your wallet. Only the platform can reassign it, to a community lead on request.</div>
-          </div>
-        </div>
-
-        <div className="fs summary">
-          <h3>Review and launch</h3>
           <dl className="kv">
             <dt>Launch fee</dt><dd>{units(launchFee.toString(), 24)} NEAR</dd>
             <dt>Coin account</dt><dd>{units(stateDeposit.toString(), 24)} NEAR<span className="dim">stays with the coin for its storage</span></dd>
             {!near && <><dt>Pair registration</dt><dd>0.0125 NEAR</dd></>}
             {initial > 0n && <><dt>Initial buy</dt><dd>{units(initial.toString(), 24)} NEAR</dd></>}
-            <dt>Total</dt><dd><b>{units(total.toString(), 24)} NEAR</b>{nearUsd > 0 ? <span className="dim">about ${(units(total.toString(), 24) * nearUsd).toFixed(2)}</span> : null}</dd>
           </dl>
-          <button className="b pri lg wide" type="submit" disabled={busy || !f.name.trim() || !ok} style={{ marginTop: 16 }}>{cta}</button>
-        </div>
+          <div className="total"><span>Total</span><b>{units(total.toString(), 24)} NEAR{nearUsd > 0 ? <span className="fine" style={{ marginLeft: 8 }}>≈ ${(units(total.toString(), 24) * nearUsd).toFixed(2)}</span> : null}</b></div>
+        </section>
+
+        <div className="sticky-cta"><button className="b pri lg wide" type="submit" disabled={busy || !f.name.trim() || !ok}>{cta}</button></div>
       </form>
 
       <aside className="preview">
-        <div className={"coincard " + (near ? "eth" : "stock")}>
-          <div className="cc-top">
-            <Art src={icon} name={f.name || "Your coin"} className="art" size={64} />
-            <span className={"chip " + (near ? "eth" : "stock")}>{psym}</span>
-          </div>
-          <div className="cc-name display">{f.name || "Your coin"}</div>
-          <div className="cc-sym">{symbol}</div>
-          <div className="cc-pays">Pays holders in <b>{psym}</b></div>
+        <div className="pcard">
+          <div className="t"><Art src={icon} name={f.name || "Your coin"} className="art" size={52} /><div><b>{symbol}</b><small>{f.name || "Your coin"} · pays {psym}</small></div></div>
           <SplitBar split={split} compact />
-          <dl className="cc-kv">
+          <dl className="kv">
             <dt>Opens at</dt><dd>{pair ? val(pair.asset).fmt((BigInt(pair.virtual_reserve) * 8n / 9n).toString(), true) : "—"} cap</dd>
             <dt>Graduates at</dt><dd>{pair ? val(pair.asset).fmt(graduation, true) : "—"} raised</dd>
             <dt>Tax</dt><dd>{buy}% / {sell}%</dd>
             <dt>Supply</dt><dd>1B, fixed</dd>
-            <dt>Pool</dt><dd>Opens at graduation</dd>
           </dl>
-          {f.description.trim() && <p className="cc-desc">{f.description.trim()}</p>}
+          {f.description.trim() && <p className="fine" style={{ color: "inherit", opacity: .75 }}>{f.description.trim()}</p>}
         </div>
-        <p className="note">Locked once the token is live: the name, ticker and image, the buy and sell tax, the four-way split, the pair. The creator fee wallet can only be reassigned by the platform on request. {pdec === 24 ? "" : ""}</p>
+        <p className="fine">Locked once live: name, ticker, image, pair, buy and sell tax, the four-way split. The fee wallet can only be reassigned by the platform on request.</p>
       </aside>
-      </div>
     </main>
   );
 }

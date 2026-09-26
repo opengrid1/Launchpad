@@ -36,11 +36,11 @@ export default function Admin() {
   const idNum = Number(coinId);
   return (
     <main>
-      <div className="sec-h"><h2>Admin</h2><span className="eyebrow">{env.factory}</span></div>
+      <div className="sec" style={{ marginTop: 4 }}><h2>Admin</h2><span className="eyebrow">{env.factory}</span></div>
       <div className="card" style={{ marginBottom: 14 }}>
         <div className="card-h"><h2>Platform fees</h2><span className="eyebrow">paid to the treasury on every trade</span></div>
         <div className="card-b creditbox">
-          <div className="big">{(coins ?? []).filter((c) => c.info.pair === "Near").reduce((s, c) => s + units(c.info.platform_fees_total, 24), 0).toFixed(4)}<small>NEAR lifetime</small></div>
+          <div className="bigv">{(coins ?? []).filter((c) => c.info.pair === "Near").reduce((s, c) => s + units(c.info.platform_fees_total, 24), 0).toFixed(4)}<small>NEAR lifetime</small></div>
           <div className="faint" style={{ fontSize: 13 }}>The platform's 20% of every tax lands in the treasury, {cfg.treasury}, as each trade settles. Nothing to collect on NEAR coins.</div>
           {owed.length > 0 && <>
             <div className="warn">{owedNear > 0 ? `${owedNear.toFixed(4)} NEAR and ` : ""}fees in other pairs could not be delivered (the treasury may not be registered on that token). Register it, then collect.</div>
@@ -49,7 +49,7 @@ export default function Admin() {
           </>}
         </div>
       </div>
-      <div className="admin-grid">
+      <div className="admin">
         <div className="card">
           <div className="card-h"><h2>Platform</h2><span className="eyebrow">{cfg.paused ? "launches paused" : "launches open"}</span></div>
           <div className="card-b">

@@ -15,8 +15,8 @@ import Portfolio from "./pages/Portfolio";
 import Docs from "./pages/Docs";
 import Admin from "./pages/Admin";
 
-/** App shell: sidebar on desktop; on phones a top bar with a menu button
- *  that opens the same navigation as a drawer. */
+/** App shell: a sticky app bar with the navigation as a tab strip under it on
+ *  phones and centred in the bar on desktop. Settings live in a drawer. */
 export default function App() {
   const { accountId } = useAccount();
   const { data: cfg } = useConfig();
@@ -28,78 +28,62 @@ export default function App() {
   const cls = ({ isActive }: { isActive: boolean }) => (isActive ? "on" : "");
   const [, isDark, setTheme] = useTheme();
   const [ccy, setCcy] = useCurrency();
-  const [q, setQ] = useState("");
   const [menu, setMenu] = useState(false);
   useEffect(() => { setMenu(false); }, [path]);
-  const search = (v: string) => { setQ(v); window.dispatchEvent(new CustomEvent("nearpad:search", { detail: v })); };
-
-  const nav = (
-    <nav className="snav">
-      <NavLink to="/" end className={cls}><Glyph name="coins" size={22} />Coins</NavLink>
-      <NavLink to="/create" className={cls}><Glyph name="rocket" size={22} />Create</NavLink>
-      <NavLink to="/me" className={cls}><Glyph name="wallet" size={22} />Portfolio</NavLink>
-      <NavLink to="/docs" className={cls}><Glyph name="book" size={22} />How it works</NavLink>
-      {admin && <NavLink to="/admin" className={cls}><Glyph name="sliders" size={22} />Admin</NavLink>}
-    </nav>
-  );
-  const foot = (
-    <div className="side-foot">
-      <div className="ccy" style={{ margin: "0 6px 6px" }}>
-        <button className={ccy === "NEAR" ? "on" : ""} onClick={() => setCcy("NEAR")}>NEAR</button>
-        <button className={ccy === "USD" ? "on" : ""} onClick={() => setCcy("USD")}>USD</button>
-      </div>
-      <a className="theme" href={BRAND.x} target="_blank" rel="noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M18.9 2H22l-7.2 8.2L23 22h-6.6l-5.2-6.8L5.3 22H2.1l7.7-8.8L1.7 2h6.8l4.7 6.2L18.9 2Zm-1.2 18h1.8L7.2 3.9H5.3L17.7 20Z"/></svg><span>{BRAND.x.replace("https://x.com/", "@")}</span></a>
-      <button className="theme" onClick={() => setTheme(isDark ? "light" : "dark")}><Icon name={isDark ? "sun" : "moon"} size={18} /><span>{isDark ? "Light mode" : "Dark mode"}</span></button>
-    </div>
-  );
 
   return (
     <>
       {DEMO && <div className="demo">Preview with sample data. <em>Nothing here is on NEAR yet.</em></div>}
-      <div className="shell">
-        <aside className="side">
-          <Link to="/" className="brand"><img src="/logo.svg" alt="" width={32} height={32} />{BRAND.name}<span className="chip" style={{ marginLeft: 8, height: 20, fontSize: 11 }}>NEAR</span></Link>
-          {nav}
-          <Link to="/create" className="b pri wide launchb">Create a coin</Link>
-          {foot}
-        </aside>
-
-        <div className="mainc">
-          <header className="topbar">
-            <button className="burger" aria-label="Menu" onClick={() => setMenu(true)}><Icon name="menu" size={22} /></button>
-            <Link to="/" className="mbrand"><img src="/logo.svg" alt="" width={30} height={30} />{BRAND.name}</Link>
-            <form className="search" onSubmit={(e) => e.preventDefault()}>
-              <Icon name="search" size={18} />
-              <input placeholder="Search coins" value={q} onChange={(e) => search(e.target.value)} />
-            </form>
-            <span className="sp" />
-            {accountId
-              ? <button className="b soft" title="Sign out" onClick={() => signOut()}>{short(accountId, 10)}</button>
-              : <button className="b soft" onClick={() => openWalletModal()}>Connect wallet</button>}
-          </header>
-
-          <div className="wrap page">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/t/:account" element={<TokenPage />} />
-              <Route path="/create" element={<Create />} />
-              <Route path="/me" element={<Portfolio />} />
-              <Route path="/docs" element={<Docs />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="*" element={<Home />} />
-            </Routes>
-          </div>
+      <header className="appbar">
+        <div className="row">
+          <Link to="/" className="brand"><img src="/logo.svg" alt="" />{BRAND.name}<span className="net">NEAR</span></Link>
+          <span className="sp" />
+          {accountId
+            ? <button className="wallet" title="Account" onClick={() => setMenu(true)}>{short(accountId, 7)}</button>
+            : <button className="wallet off" onClick={() => openWalletModal()}>Connect</button>}
+          <button className="iconbtn" aria-label="Menu" onClick={() => setMenu(true)}><Icon name="menu" size={20} /></button>
         </div>
+        <nav className="tabs-nav">
+          <NavLink to="/" end className={cls}><Glyph name="coins" />Coins</NavLink>
+          <NavLink to="/create" className={cls}><Glyph name="rocket" />Create</NavLink>
+          <NavLink to="/me" className={cls}><Glyph name="wallet" />Portfolio</NavLink>
+          <NavLink to="/docs" className={cls}><Glyph name="book" />Docs</NavLink>
+          {admin && <NavLink to="/admin" className={cls}><Glyph name="sliders" />Admin</NavLink>}
+        </nav>
+      </header>
+
+      <div className="page">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/t/:account" element={<TokenPage />} />
+          <Route path="/create" element={<Create />} />
+          <Route path="/me" element={<Portfolio />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="*" element={<Home />} />
+        </Routes>
       </div>
 
       {menu && (
         <>
-          <div className="scrim menu" onClick={() => setMenu(false)} />
+          <div className="scrim" onClick={() => setMenu(false)} />
           <aside className="drawer">
-            <div className="drawer-h"><Link to="/" className="brand"><img src="/logo.svg" alt="" width={30} height={30} />{BRAND.name}</Link><button className="burger" aria-label="Close" onClick={() => setMenu(false)}><Icon name="close" size={22} /></button></div>
-            {nav}
-            <Link to="/create" className="b pri wide launchb">Create a coin</Link>
-            {foot}
+            <div className="row-flex"><span className="brand"><img src="/logo.svg" alt="" />{BRAND.name}</span><button className="iconbtn close" aria-label="Close" onClick={() => setMenu(false)}><Icon name="close" size={20} /></button></div>
+            {accountId && <div className="fine" style={{ padding: "0 12px" }}>Signed in as <b>{accountId}</b></div>}
+            <NavLink to="/" end className={cls}><Glyph name="coins" size={18} />Coins</NavLink>
+            <NavLink to="/create" className={cls}><Glyph name="rocket" size={18} />Create a coin</NavLink>
+            <NavLink to="/me" className={cls}><Glyph name="wallet" size={18} />Portfolio</NavLink>
+            <NavLink to="/docs" className={cls}><Glyph name="book" size={18} />How it works</NavLink>
+            {admin && <NavLink to="/admin" className={cls}><Glyph name="sliders" size={18} />Admin</NavLink>}
+            <div className="foot">
+              <div className="seg" style={{ justifySelf: "start" }}>
+                <button className={ccy === "NEAR" ? "on" : ""} onClick={() => setCcy("NEAR")}>NEAR</button>
+                <button className={ccy === "USD" ? "on" : ""} onClick={() => setCcy("USD")}>USD</button>
+              </div>
+              <button className="item" onClick={() => setTheme(isDark ? "light" : "dark")}><Icon name={isDark ? "sun" : "moon"} size={18} />{isDark ? "Light mode" : "Dark mode"}</button>
+              <a href={BRAND.x} target="_blank" rel="noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M18.9 2H22l-7.2 8.2L23 22h-6.6l-5.2-6.8L5.3 22H2.1l7.7-8.8L1.7 2h6.8l4.7 6.2L18.9 2Zm-1.2 18h1.8L7.2 3.9H5.3L17.7 20Z"/></svg>{BRAND.x.replace("https://x.com/", "@")}</a>
+              {accountId && <button className="item" onClick={() => { signOut(); setMenu(false); }}><Icon name="close" size={18} />Sign out</button>}
+            </div>
           </aside>
         </>
       )}
