@@ -25,6 +25,7 @@
   --r-sm: 14px;
   --pad: 16px;
   --top: 56px;
+  --pcard-bg: #0F1117; --pcard-ink: #FFFFFF; --pcard-mute: rgba(255, 255, 255, .6);
   --font: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
   --display: "Unbounded", "Manrope", system-ui, sans-serif;
 }
@@ -35,6 +36,7 @@
     --up: #34C77B; --up-soft: rgba(52, 199, 123, .16); --down: #FF6B70; --down-soft: rgba(255, 107, 112, .16);
     --gold: #F0B33F; --gold-soft: rgba(240, 179, 63, .16); --violet: #B18CFF; --violet-soft: rgba(177, 140, 255, .16);
     --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 32px -12px rgba(0, 0, 0, .6);
+    --pcard-bg: #1C2030; --pcard-ink: #F2F3F8; --pcard-mute: #7E849A;
   }
 }
 :root[data-theme="dark"] {
@@ -43,6 +45,7 @@
   --up: #34C77B; --up-soft: rgba(52, 199, 123, .16); --down: #FF6B70; --down-soft: rgba(255, 107, 112, .16);
   --gold: #F0B33F; --gold-soft: rgba(240, 179, 63, .16); --violet: #B18CFF; --violet-soft: rgba(177, 140, 255, .16);
   --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 32px -12px rgba(0, 0, 0, .6);
+  --pcard-bg: #1C2030; --pcard-ink: #F2F3F8; --pcard-mute: #7E849A;
 }
 
 * { box-sizing: border-box; }
@@ -74,14 +77,15 @@ img { display: block; }
 .iconbtn:hover { color: var(--ink); }
 .wallet { flex: 0 0 auto; height: 38px; padding: 0 14px; border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 700; font-size: 13px; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wallet.off { background: var(--accent); color: var(--on-accent); }
-.tabs-nav { display: flex; gap: 4px; padding: 0 var(--pad) 8px; max-width: 1120px; margin: 0 auto; overflow-x: auto; scrollbar-width: none; }
-.tabs-nav::-webkit-scrollbar { display: none; }
-.tabs-nav a { flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13.5px; color: var(--ink2); }
+.tabs-nav { display: flex; gap: 4px; padding: 0 var(--pad) 8px; max-width: 1120px; margin: 0 auto; overflow: hidden; }
+.tabs-nav a { flex: 1 1 0; min-width: 0; height: 34px; padding: 0 6px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: 13px; color: var(--ink2); white-space: nowrap; }
+@media (max-width: 460px) { .tabs-nav a svg { display: none; } }
 .tabs-nav a svg { width: 16px; height: 16px; }
 .tabs-nav a.on { background: var(--ink); color: var(--bg); }
 @media (min-width: 900px) {
   .appbar .row { height: 64px; }
   .tabs-nav { position: absolute; left: 50%; transform: translateX(-50%); top: 15px; padding: 0; margin: 0; }
+  .tabs-nav a { flex: 0 0 auto; padding: 0 14px; font-size: 13.5px; }
   .appbar { position: sticky; }
   .brand { font-size: 17px; }
   .brand img { width: 34px; height: 34px; }
@@ -138,9 +142,9 @@ select.in { appearance: none; padding-right: 32px; background-image: linear-grad
 .chip.pool { background: var(--up-soft); color: var(--up); border-color: transparent; }
 .chip.grad { background: var(--gold-soft); color: var(--gold); border-color: transparent; }
 .chip.official { background: var(--ink); color: var(--bg); border-color: transparent; }
-.scroll-x { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 6px; margin: 0 calc(-1 * var(--pad)); padding-left: var(--pad); padding-right: var(--pad); scroll-snap-type: x proximity; }
+.scroll-x { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 6px; margin: 0 calc(-1 * var(--pad)); padding-left: var(--pad); padding-right: var(--pad); }
 .scroll-x::-webkit-scrollbar { display: none; }
-.scroll-x > * { flex: 0 0 auto; scroll-snap-align: start; }
+.scroll-x > * { flex: 0 0 auto; }
 .pill { height: 36px; padding: 0 14px 0 8px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; background: var(--card); border: 1px solid var(--line); color: var(--ink2); }
 .pill .av { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 9px; font-weight: 800; background: var(--accent-soft); color: var(--accent-ink); }
 .plogo { display: inline-grid; place-items: center; border-radius: 50%; background: #fff; border: 1px solid var(--line); overflow: hidden; flex: 0 0 auto; }
@@ -200,8 +204,9 @@ select.in { appearance: none; padding-right: 32px; background-image: linear-grad
   .rows.three { grid-template-columns: repeat(3, 1fr); }
   .row { padding: 14px 16px; }
 }
-.filters { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0 10px; }
-.filters .seg { overflow-x: auto; }
+.filters { display: flex; align-items: center; justify-content: space-between; gap: 8px 10px; margin: 6px 0 10px; flex-wrap: wrap; }
+.filters .seg { max-width: 100%; }
+.filters .seg button { padding: 0 10px; }
 
 /* ---- Coin page ---- */
 .head { display: grid; gap: 12px; margin-bottom: 12px; }
@@ -339,14 +344,15 @@ select.in { appearance: none; padding-right: 32px; background-image: linear-grad
 .sliders .val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; }
 .sliders .bad { color: var(--down); }
 .preview { display: grid; gap: 10px; }
-.pcard { background: var(--ink); color: var(--bg); border-radius: var(--r); padding: 18px; display: grid; gap: 12px; }
+.pcard { background: var(--pcard-bg); color: var(--pcard-ink); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 12px; position: relative; z-index: 0; }
 .pcard .t { display: flex; align-items: center; gap: 12px; }
 .pcard .t .art { border-radius: 16px; width: 52px; height: 52px; }
 .pcard .t b { display: block; font-family: var(--display); font-weight: 500; font-size: 17px; }
 .pcard .t small { display: block; opacity: .7; font-size: 12px; }
-.pcard .kv dt { color: color-mix(in srgb, var(--bg) 60%, transparent); }
+.pcard .kv dt { color: var(--pcard-mute); }
 .pcard .sb-bar { background: rgba(255, 255, 255, .12); }
-.sticky-cta { position: sticky; bottom: 12px; z-index: 20; }
+.sticky-cta { position: sticky; bottom: 12px; z-index: 20; padding: 6px; margin: 0 -6px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.steps { position: relative; z-index: 1; }
 @media (min-width: 900px) {
   .create { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
   .preview { position: sticky; top: 80px; }

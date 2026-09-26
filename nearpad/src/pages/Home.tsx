@@ -84,7 +84,7 @@ export default function Home() {
         </>
       )}
 
-      <div className="scroll-x" style={{ marginTop: 6 }}>
+      <div className="row-flex" style={{ marginTop: 6 }}>
         <button className={"pill " + (pair === "all" ? "on" : "")} onClick={() => setPair("all")}>All pairs</button>
         <button className={"pill " + (pair === "NEAR" ? "on" : "")} onClick={() => setPair("NEAR")}><PairLogo k="NEAR" size={22} />NEAR</button>
         {(pairs ?? []).some((p) => p.asset !== "Near") && <button className={"pill " + (pair === "stocks" ? "on" : "")} onClick={() => setPair("stocks")}>Stocks</button>}
