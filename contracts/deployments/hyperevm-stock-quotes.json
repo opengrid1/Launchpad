@@ -1,0 +1,586 @@
+{
+  "builtAt": "2026-09-04T10:11:22.043Z",
+  "note": "Pair assets to approve on the HyperAuction factory. usd = USD per whole token: Hyperliquid Core mid where the spot market has >$1k/day volume, else the underlying share price (Yahoo).",
+  "quotes": [
+    {
+      "ticker": "QQQ",
+      "name": "Invesco QQQ (dStock)",
+      "address": "0x499e347174f237ad28687b947b94c0d49570d1b7",
+      "coreMid": 1017,
+      "coreVol": 25566390.425854,
+      "underlyingUsd": 717.67,
+      "usd": 1017,
+      "source": "core-mid"
+    },
+    {
+      "ticker": "GLD",
+      "name": "SPDR Gold Shares (dStock)",
+      "address": "0x08be08c37d93e689518ced744a89f113b4afaad4",
+      "coreMid": 545.215,
+      "coreVol": 14160295.064999998,
+      "underlyingUsd": 410.22,
+      "usd": 545.215,
+      "source": "core-mid"
+    },
+    {
+      "ticker": "HOOD",
+      "name": "Robinhood Markets (dStock)",
+      "address": "0xc304a9d52cf9165024ebc7814250ef3a5013f924",
+      "coreMid": 87.0595,
+      "coreVol": 83033.47414,
+      "underlyingUsd": 124.72,
+      "usd": 87.0595,
+      "source": "core-mid"
+    },
+    {
+      "ticker": "SPCX",
+      "name": "SpaceX (dStock)",
+      "address": "0xe8c8afdf7e80be51e91afa28b6ac44404d270b5d",
+      "coreMid": 0.0696225,
+      "coreVol": 65571.8289371,
+      "underlyingUsd": null,
+      "usd": 0.0696225,
+      "source": "core-mid"
+    },
+    {
+      "ticker": "MU",
+      "name": "Micron Technology (dStock)",
+      "address": "0x173c83a71c1a9e254721a86b7512cd65bf92648d",
+      "coreMid": 0.073586,
+      "coreVol": 17394.95596945,
+      "underlyingUsd": 958.16,
+      "usd": 0.073586,
+      "source": "core-mid"
+    },
+    {
+      "ticker": "META",
+      "name": "Meta Platforms (dStock)",
+      "address": "0x5a9d2deee7d8782011695623f1c453f46b2b566e",
+      "coreMid": 107.8905,
+      "coreVol": 5885.326795,
+      "underlyingUsd": 610.68,
+      "usd": 107.8905,
+      "source": "core-mid"
+    },
+    {
+      "ticker": "SPCXD",
+      "name": "Space Exploration Technologies Corp.",
+      "address": "0x95687557c66bc799a850ba7037673528238ae763",
+      "coreMid": 0.003665,
+      "coreVol": 693.91724888,
+      "underlyingUsd": null,
+      "usd": 0.003665,
+      "source": "core-mid-stale"
+    },
+    {
+      "ticker": "SPY",
+      "name": "SPDR S&P 500 ETF (dStock)",
+      "address": "0xb7bf37783db41a2851b77c6917280c56312c833a",
+      "coreMid": 97.8375,
+      "coreVol": 624.9416,
+      "underlyingUsd": 773.17,
+      "usd": 773.17,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "TSLA",
+      "name": "Tesla - Wagyu.xyz",
+      "address": "0x3727c797073840936e3c18b4088f3574cd1a72a3",
+      "coreMid": 89.2,
+      "coreVol": 2.6796,
+      "underlyingUsd": 376.365,
+      "usd": 376.365,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "AAPL",
+      "name": "Apple (dStock)",
+      "address": "0x7374dc1894fbd1bc6c42f6ebbc50b78c211a8606",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 328.21,
+      "usd": 328.21,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "AMZN",
+      "name": "Amazon (dStock)",
+      "address": "0x4f2164c12d2d450a8b1d430492ef6670fe4cad8e",
+      "coreMid": 1580,
+      "coreVol": 0,
+      "underlyingUsd": 258.9,
+      "usd": 258.9,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "AVGO",
+      "name": "Broadcom (dStock)",
+      "address": "0xc2785563af80c05177fff006e3b380ac5d172602",
+      "coreMid": 0.010069,
+      "coreVol": 0,
+      "underlyingUsd": 357.16,
+      "usd": 357.16,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "BNB1",
+      "name": "BNB (dStock)",
+      "address": "0xfd6f06d323f6cb08ee9eeb2d201e9ec0e9112c88",
+      "coreMid": 0.775045,
+      "coreVol": 0,
+      "underlyingUsd": 716.82,
+      "usd": 716.82,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "CRCL",
+      "name": "Circle Internet Group (dStock)",
+      "address": "0xe74aa6c4050a15790525eb11cc4562c664dc67c9",
+      "coreMid": 0.033862,
+      "coreVol": 0,
+      "underlyingUsd": 103.23,
+      "usd": 103.23,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "GOOGL",
+      "name": "Alphabet Class A (dStock)",
+      "address": "0x35eeda03e55ff217a013892e9e2e37e792b264ea",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 342.48,
+      "usd": 342.48,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "MSFT",
+      "name": "Microsoft (dStock)",
+      "address": "0x66520d8fd614487214a25af7babf27584f59f76b",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 510.12,
+      "usd": 510.12,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "MUX",
+      "name": "Wrapped Micron Technology xStock",
+      "address": "0xe2047ee3bddb5c99ae428ab83df63f8730698e30",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 958.16,
+      "usd": 958.16,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "NVDAX",
+      "name": "Wrapped NVIDIA xStock",
+      "address": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 228.45,
+      "usd": 228.45,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "ORCL",
+      "name": "Oracle (dStock)",
+      "address": "0xca2156522638f597ffb3705857ffdc356efabe50",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 154.04,
+      "usd": 154.04,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "QQQX",
+      "name": "Wrapped Nasdaq xStock",
+      "address": "0x4c1ae29c159838fc1b224636e28e086eb69101f7",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 717.67,
+      "usd": 717.67,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "SKHYX",
+      "name": "Wrapped SK hynix xStock",
+      "address": "0x6215a58ed045d71f2561aaabe54f4c885c522998",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 1218.7631810681014,
+      "usd": 1218.7631810681014,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "SLV",
+      "name": "iShares Silver Trust (dStock)",
+      "address": "0x7ef4eba0c0200957e357627ced1884d6cb63e961",
+      "coreMid": 0.0099,
+      "coreVol": 0,
+      "underlyingUsd": 60.55,
+      "usd": 60.55,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "SPYX",
+      "name": "Wrapped SP500 xStock",
+      "address": "0xe7e553cd128f0011777323a0b44a7b96ea1cb540",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 773.17,
+      "usd": 773.17,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "AAPLon",
+      "name": "Apple (Ondo)",
+      "address": "0x81db0DF77669b3BE563e7a0591685a2C8C3EE1c5",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 328.21,
+      "usd": 328.21,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "AMDon",
+      "name": "AMD (Ondo)",
+      "address": "0x33706203A7a7c82B6F6c09dd9Ae4E6e881d36386",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 456.16,
+      "usd": 456.16,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "AMZNon",
+      "name": "Amazon (Ondo)",
+      "address": "0xeD68F063264a01fd7f93087DC19CC1E0D614e8De",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 258.9,
+      "usd": 258.9,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "BABAon",
+      "name": "Alibaba (Ondo)",
+      "address": "0x799Bf997B733CAb2e1377D0411b63E35133991eb",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 111.81,
+      "usd": 111.81,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "COINon",
+      "name": "Coinbase (Ondo)",
+      "address": "0x639Bcd00422facAcA534063e3d860e8fcf78B46F",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 192.7,
+      "usd": 192.7,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "COPXon",
+      "name": "Global X Copper Miners ETF (Ondo)",
+      "address": "0x86E33197369a3560CeE2Ab6Bb12376AC7b29f3dD",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 91.25,
+      "usd": 91.25,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "CRCLon",
+      "name": "Circle Internet Group (Ondo)",
+      "address": "0x13a81c5e8b4AB05Fc721DfF7bA95e250b29458F8",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 103.23,
+      "usd": 103.23,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "CRWVon",
+      "name": "CoreWeave (Ondo)",
+      "address": "0xd616dDC3a9e13e12533d7124d5BD94B53Fb60A3f",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 84.56,
+      "usd": 84.56,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "EWYon",
+      "name": "iShares MSCI South Korea ETF (Ondo)",
+      "address": "0xed871e0D99369AB869Fc38255a284361A137746B",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 180.56,
+      "usd": 180.56,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "FCXon",
+      "name": "Freeport-McMoRan (Ondo)",
+      "address": "0xA019295D44677dd2f5B066245453938B1b1C483B",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 72.56,
+      "usd": 72.56,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "GLDon",
+      "name": "SPDR Gold Shares (Ondo)",
+      "address": "0x95FebDd6f447B5278c9b98743B4254eB02c6EA1d",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 410.22,
+      "usd": 410.22,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "GOOGLon",
+      "name": "Alphabet Class A (Ondo)",
+      "address": "0x4D34798f18Eb747F7225663F0553eA2D880cf75D",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 342.48,
+      "usd": 342.48,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "HOODon",
+      "name": "Robinhood Markets (Ondo)",
+      "address": "0xF1Df92AC8E22763A16bf4Bd9a966EEBcD70fA5a3",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 124.72,
+      "usd": 124.72,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "IAUon",
+      "name": "iShares Gold Trust (Ondo)",
+      "address": "0x83b01AC9e2D1632A70Dd1C813c5B8eDF29cd707f",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 84.1,
+      "usd": 84.1,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "INTCon",
+      "name": "Intel (Ondo)",
+      "address": "0x7bf529bb5Db370D679F33f4fe5420F48eE234bB7",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 91.67,
+      "usd": 91.67,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "IVVon",
+      "name": "iShares Core S&P 500 ETF (Ondo)",
+      "address": "0xAd26B6048cc3682f67Fe4C829b7Ac99dbF95920e",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 777.13,
+      "usd": 777.13,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "METAon",
+      "name": "Meta Platforms (Ondo)",
+      "address": "0x46FA18Ffe2707bbecc46D457D40EFBE6B932f711",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 610.68,
+      "usd": 610.68,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "MSFTon",
+      "name": "Microsoft (Ondo)",
+      "address": "0xD53471f6D493f7eD766181D88Ba9c2Bfc371399A",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 510.12,
+      "usd": 510.12,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "MSTRon",
+      "name": "MicroStrategy (Ondo)",
+      "address": "0x8a64FDf0857c1C734A594cd1DB20B3f8E3f133f6",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 144.82,
+      "usd": 144.82,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "MUon",
+      "name": "Micron Technology (Ondo)",
+      "address": "0x0f8E33F5CdefAE9C2E59de8fB61feD347046D046",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 958.16,
+      "usd": 958.16,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "NFLXon",
+      "name": "Netflix (Ondo)",
+      "address": "0x81Ebb420a81855f1Bf1B0fF95eCa9d3Bd736ea89",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 82.67,
+      "usd": 82.67,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "NVDAon",
+      "name": "NVIDIA (Ondo)",
+      "address": "0xB989ad9b91886b1Aaed8DaADb26F028b29b40945",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 228.45,
+      "usd": 228.45,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "ORCLon",
+      "name": "Oracle (Ondo)",
+      "address": "0x4775e99a13651B1D077c2fa04Eb9BF007f684af5",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 154.04,
+      "usd": 154.04,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "PALLon",
+      "name": "abrdn Physical Palladium Shares ETF (Ondo)",
+      "address": "0x5Ff6E08A0Bdbc1ff11004FfB62B7aC7CdCf101Bd",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 25.79,
+      "usd": 25.79,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "PLTRon",
+      "name": "Palantir Technologies (Ondo)",
+      "address": "0x039358AB6919159f6026Ea4428595a5AaF12A35C",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 182.53,
+      "usd": 182.53,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "PPLTon",
+      "name": "abrdn Physical Platinum Shares ETF (Ondo)",
+      "address": "0xB4C0eaf28Ae7f667D9dabAA995F7A6E75e094770",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 16.49,
+      "usd": 16.49,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "QQQon",
+      "name": "Invesco QQQ (Ondo)",
+      "address": "0x911e2dCD2b70F44231F3F0f1C6ec9aF75068FD85",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 717.67,
+      "usd": 717.67,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "RIVNon",
+      "name": "Rivian Automotive (Ondo)",
+      "address": "0x353D347bb7bc1C812E3a131d9b5193b3618029e5",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 15.91,
+      "usd": 15.91,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "SLVon",
+      "name": "iShares Silver Trust (Ondo)",
+      "address": "0xd53d98d13D93C817011645442c2e4d46E499B460",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 60.55,
+      "usd": 60.55,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "SNDKon",
+      "name": "SanDisk (Ondo)",
+      "address": "0xB8927cfF399E23328eEC0e457e75c709DCfcF382",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 1554.99,
+      "usd": 1554.99,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "SPYon",
+      "name": "SPDR S&P 500 ETF (Ondo)",
+      "address": "0x32eC2792aeC02122eDD9f28866B720db1e1c1B54",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 773.17,
+      "usd": 773.17,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "TSLAon",
+      "name": "Tesla (Ondo)",
+      "address": "0x417883b1709545f1211A25b00ad13455fC7F1bc5",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 376.365,
+      "usd": 376.365,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "TSMon",
+      "name": "Taiwan Semiconductor Manufacturing (Ondo)",
+      "address": "0x3254cdffDDEDdb1F61B9eF6f67e178615CCb0E85",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 417.01,
+      "usd": 417.01,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "UNGon",
+      "name": "US Natural Gas Fund (Ondo)",
+      "address": "0x2c81466C9B144E3B6e9D6e8858Bc0973a953Fb0A",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 10.49,
+      "usd": 10.49,
+      "source": "yahoo-underlying"
+    },
+    {
+      "ticker": "USOon",
+      "name": "United States Oil Fund (Ondo)",
+      "address": "0xA4dB50bB345151f3649539300523e83a8b8A6BC7",
+      "coreMid": 0,
+      "coreVol": 0,
+      "underlyingUsd": 142.09,
+      "usd": 142.09,
+      "source": "yahoo-underlying"
+    }
+  ]
+}

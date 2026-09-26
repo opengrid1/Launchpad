@@ -3,8 +3,14 @@
  * Dyor V3 pool, buy with native USDC, sell half back, then harvest fees and
  * verify the 80/20 creator/platform split pays out in real balances.
  */
+import fs from "node:fs";
+import path from "node:path";
 import { ethers } from "hardhat";
-import record from "../deployments/arc-v3-launchpad.json";
+
+// RECORD picks the deployment file (default: the first arc-v3-launchpad.json).
+const record = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "deployments", process.env.RECORD ?? "arc-v3-launchpad.json"), "utf8")) as {
+  factory: string; swapRouter: string; quoteNative: string; owner: string;
+};
 
 async function main() {
   const [deployer] = await ethers.getSigners();

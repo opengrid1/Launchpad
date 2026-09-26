@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
-import { BRAND } from "../lib/brand";
+import { BRAND, IS_HYPER } from "../lib/brand";
+import { BRAND_MARK } from "../lib/hyper/defaultLogo";
 import { BaseTicker } from "./BaseTicker";
 import { KoiIcon } from "./base/KoiIcon";
 import { WalletSheet } from "./base/WalletSheet";
@@ -10,8 +11,11 @@ import { useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
 // The launch form rides in a slide-up sheet on mobile, so it loads lazily —
-// the header itself stays light.
-const LaunchForm = lazy(() => import("../pages/LaunchBase").then((m) => ({ default: m.LaunchBase })));
+// the header itself stays light. Each flavor gets its own form: hyperstock's
+// pair picker (HYPE + tokenized stocks), the stock board's LaunchBase.
+const LaunchForm = IS_HYPER
+  ? lazy(() => import("../pages/LaunchHyper").then((m) => ({ default: m.LaunchHyper })))
+  : lazy(() => import("../pages/LaunchBase").then((m) => ({ default: m.LaunchBase })));
 
 function WalletButton() {
   const { address, isConnected, connectFirst, isPending } = useWallet();
@@ -32,14 +36,26 @@ function WalletButton() {
   );
 }
 
-const NAV = [
-  { to: "/", end: true, label: "Tokens" },
-  { to: "/feed", label: "Feed" },
-  { to: "/party", label: "Pool party" },
-  { to: "/leaderboard", label: "Leaderboard" },
-  { to: "/search", label: "Search" },
-  { to: "/docs", label: "How it Works" },
-];
+// Same nav shape as the stock board; hyperstock drops only the base-specific
+// pool party and adds Portfolio.
+const NAV = IS_HYPER
+  ? [
+      { to: "/", end: true, label: "Coins" },
+      { to: "/feed", label: "Feed" },
+      { to: "/rewards", label: "Rewards" },
+      { to: "/leaderboard", label: "Leaderboard" },
+      { to: "/search", label: "Search" },
+      { to: "/profile", label: "Portfolio" },
+      { to: "/docs", label: "How it Works" },
+    ]
+  : [
+      { to: "/", end: true, label: "Tokens" },
+      { to: "/feed", label: "Feed" },
+      { to: "/party", label: "Pool party" },
+      { to: "/leaderboard", label: "Leaderboard" },
+      { to: "/search", label: "Search" },
+      { to: "/docs", label: "How it Works" },
+    ];
 
 /**
  * koi.fun chrome: the marquee countdown band, then the black bar — mark +
@@ -69,18 +85,23 @@ export function BaseHeader() {
 
   return (
     <>
-      <BaseTicker />
+      {/* hyperstock skips the marquee band above the header. */}
+      {IS_HYPER ? null : <BaseTicker />}
       <header className="kf-hdr sticky top-0 z-40">
         <div className="kf-hdr-inner">
           <Link to="/" aria-label={BRAND.name} className="kf-brand">
-            <img
-              className="kf-brand-mark"
-              src="/stonk-logo.jpg"
-              alt=""
-              aria-hidden
-              style={{ borderRadius: 11, objectFit: "cover" }}
-            />
-            <span className="kf-brand-name">{BRAND.name}<span className="kf-tld">{BRAND.tld}</span></span>
+            {IS_HYPER ? (
+              <img className="kf-brand-mark" src={BRAND_MARK} alt="" aria-hidden style={{ borderRadius: 11, objectFit: "cover" }} />
+            ) : (
+              <img
+                className="kf-brand-mark"
+                src="/stonk-logo.jpg"
+                alt=""
+                aria-hidden
+                style={{ borderRadius: 11, objectFit: "cover" }}
+              />
+            )}
+            <span className="kf-brand-name">{BRAND.name}{IS_HYPER ? null : <span className="kf-tld">{BRAND.tld}</span>}</span>
           </Link>
 
           <nav className="kf-nav-links" aria-label="Primary">

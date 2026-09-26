@@ -17,3 +17,12 @@ contracts/deployments/localnet.json
 .vercel/
 .vercel
 .env*
+contracts/scripts/meow-quotes.env
+contracts/scripts/robinhood-quotes.env
+stockpad/node_modules
+stockpad/dist
+
+tgbot/.env
+tgbot/data/
+tgbot/node_modules/
+tgbot/dist/

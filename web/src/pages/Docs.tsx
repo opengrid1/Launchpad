@@ -1,4 +1,4 @@
-import { BRAND } from "../lib/brand";
+import { BRAND, IS_HYPER, IS_INK, IS_MEOW } from "../lib/brand";
 import { env } from "../lib/env";
 import { addresses } from "../lib/env";
 import { v4Client } from "../lib/client";
@@ -11,7 +11,176 @@ const IS_RH = String(import.meta.env.VITE_PROTOCOL ?? "") === "rh-v4";
  * plus the protocol contracts. Typography-first, no dashboard.
  */
 export function DocsPage() {
-  return IS_RH ? <CopairDocs /> : <LegacyDocs />;
+  if (IS_RH) return <CopairDocs />;
+  if (IS_INK) return <InkDocs />;
+  if (IS_HYPER) return <HyperDocs />;
+  return <LegacyDocs />;
+}
+
+/** squidpad docs: automatic per-trade rewards on Ink, no harvest step. */
+function InkDocs() {
+  const DEX = IS_MEOW ? "HyperSwap" : "Uniswap";
+  const NAT = env.nativeSymbol; // ETH on Ink, HYPE on HyperEVM
+  const contracts: { name: string; address: string; note: string }[] = [
+    { name: "LaunchpadFactory", address: addresses.factory, note: "Launches, the pool registry; owns every LP position" },
+    { name: "TokenDeployer", address: addresses.tokenDeployer, note: "Deploys every coin with fixed rules" },
+    { name: `W${NAT}`, address: addresses.weth, note: `Wrapped ${NAT}, the pool pair` },
+  ].filter((c) => c.address && !/^0x0+$/.test(c.address));
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+      <h1 className="text-[24px] font-bold tracking-tight text-ink">Docs</h1>
+      <p className="mt-1.5 text-sm text-ink-2">
+        {BRAND.name} is a launchpad on {env.chainName}. Every coin opens a {DEX} market, and the
+        rules below are enforced by the coin's own contract.
+      </p>
+
+      <TermSection title="Automatic rewards" sub="No harvest, ever">
+        <p>
+          Every buy skims 1% of the bought coins inside the transfer itself and records the
+          split instantly, on the same trade. There is nothing to trigger and no harvest
+          button: by the time a buy confirms, holders, the creator and the platform have
+          already been credited. Sells are never skimmed, so selling always works.
+        </p>
+        <Facts
+          rows={[
+            ["Holders", "0.5% · pro-rata to everyone holding the coin"],
+            ["Creator", "0.4% · visible and claimable only by the creator"],
+            ["Platform", "0.1%"],
+            ["Paid in", `the coin's pair, the tokenized stock (or ${NAT})`],
+          ]}
+        />
+        <p>
+          Your share accrues on-chain per wallet in coins. When you claim, the contract swaps
+          your accrued coins through the coin's own pool and pays you in the pair asset, the
+          stock. Claim whenever you like with claimRewards, on the coin's page or under
+          Rewards. Creators claim their fees with claimCreatorFees from the coin's page; no
+          one else can see or touch them.
+        </p>
+      </TermSection>
+
+      <TermSection title="Launching" sub="One transaction">
+        <p>
+          Launching is free, you pay only gas. One transaction deploys the coin, opens a{" "}
+          {DEX} pool against the chosen pair, and seeds the entire supply single-sided so trading
+          starts right away. The LP position is held by the factory; a disclosed admin lever can
+          recover it (see the contract).
+        </p>
+        <Facts
+          rows={[
+            ["Total supply", "1,000,000,000, fixed"],
+            ["Starting market cap", "≈ $3,000"],
+            ["Pool pairing", `${NAT} or a tokenized xStock`],
+            ["Upfront liquidity", "None required"],
+          ]}
+        />
+      </TermSection>
+
+      {contracts.length > 0 ? (
+        <TermSection title="Contracts" sub={env.chainName}>
+          <dl className="space-y-2">
+            {contracts.map((c) => (
+              <div key={c.name} className="text-sm">
+                <dt className="font-semibold text-ink">{c.name}</dt>
+                <dd className="text-ink-2">
+                  <a href={explorerAddr(c.address) ?? undefined} target="_blank" rel="noreferrer" className="tnum text-accent-ink">{shortAddr(c.address)}</a>
+                  {" · "}{c.note}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </TermSection>
+      ) : null}
+    </div>
+  );
+}
+
+/** hyperstock docs: HyperSwap V3 creator-fee launchpad on HyperEVM. */
+function HyperDocs() {
+  const contracts: { name: string; address: string; note: string }[] = [
+    { name: "LaunchpadFactory", address: addresses.factory, note: "Launches, the pair registry, fee harvesting; owns every LP position" },
+    { name: "TokenDeployer", address: addresses.tokenDeployer, note: "Deploys every token with fixed rules" },
+    { name: "WHYPE", address: addresses.weth, note: "Wrapped HYPE, the default pool pair" },
+  ];
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+      <h1 className="text-[24px] font-bold tracking-tight text-ink">Docs</h1>
+      <p className="mt-1.5 text-sm text-ink-2">
+        {BRAND.name} is a launchpad on {env.chainName}, Hyperliquid's EVM. Every coin opens a
+        real HyperSwap market and every rule below is enforced by the contracts, not by policy.
+      </p>
+
+      <TermSection title="The 1% fee" sub="Holders earn too">
+        <p>
+          Every pool sits at HyperSwap's 1% fee tier, so every buy and sell pays 1% into the
+          pool. Anyone can trigger a harvest at any time: the collected fees are split on-chain
+          in the same transaction, in whichever asset your coin pairs.
+        </p>
+        <Facts
+          rows={[
+            ["Holders", "50% · pro-rata to everyone holding the coin"],
+            ["Creator", "40% · yours forever"],
+            ["Platform", "10%"],
+            ["Paid in", "your coin's pair: HYPE or the stock"],
+          ]}
+        />
+        <p>
+          Holder rewards accrue on-chain per wallet and are claimed manually: open the coin's
+          page and press Claim whenever you want your share. Nothing is auto-sent.
+        </p>
+      </TermSection>
+
+      <TermSection title="Launching" sub="One transaction">
+        <p>
+          Launching is free, you pay only gas. One transaction deploys the token, opens a
+          HyperSwap pool against the pair you pick, seeds the entire supply single-sided, and
+          starts trading. The LP position is locked in the factory forever, so liquidity can
+          never be pulled.
+        </p>
+        <Facts
+          rows={[
+            ["Total supply", "1,000,000,000, fixed"],
+            ["Starting market cap", "≈ $3,000"],
+            ["Pool pairing", `${env.nativeSymbol} or a tokenized xStock`],
+            ["Upfront liquidity", "None required"],
+          ]}
+        />
+        <p>
+          One-time setup: launching deploys a pool, which needs {env.chainName} big blocks
+          enabled on your wallet. Turn on "Use big blocks for EVM" in the Hyperliquid app once.
+          Trading needs nothing special.
+        </p>
+      </TermSection>
+
+      <TermSection title="Pairing a stock" sub="xStocks">
+        <p>
+          Coins can pair Backed xStocks live on {env.chainName}: NVIDIA, the S&amp;P 500, the
+          Nasdaq, Micron and SK hynix. A stock-paired coin trades against that stock and its
+          fees accrue in it, so holders and the creator earn the stock on every trade. Each xStock has a
+          real Hyperliquid spot market: buy it with USDC on Hyperliquid, then transfer it to
+          EVM to trade here.
+        </p>
+      </TermSection>
+
+      <TermSection title="Trading" sub="Real HyperSwap pools">
+        <p>
+          Buys and sells route through HyperSwap's own router. A {env.nativeSymbol}-paired coin
+          trades in plain {env.nativeSymbol}; a stock-paired coin trades in the stock itself.
+          Pools are standard V3 markets, so aggregators and bots can route them too, and every
+          such trade still pays the 1%.
+        </p>
+      </TermSection>
+
+      <TermSection title="Contracts" sub="On-chain">
+        <div className="mt-1 space-y-2">
+          {contracts.map((c) => (
+            <ContractRow key={c.name} {...c} />
+          ))}
+        </div>
+      </TermSection>
+    </div>
+  );
 }
 
 /** Pair=reward launchpad docs (Robinhood Chain). */

@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { Component, lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
@@ -6,8 +6,10 @@ import { WagmiProvider } from "wagmi";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { Skeleton, Toasts } from "./components/ui";
-import { BRAND_FLAVOR, IS_STOCK_BOARD } from "./lib/brand";
+import { BRAND_FLAVOR, IS_HYPER, IS_INK, IS_ROBIN, IS_STOCK_BOARD } from "./lib/brand";
 import { HammrApp } from "./hammr/HammrApp";
+import { HsShell } from "./components/HsShell";
+import { SquidSplash } from "./components/SquidSplash";
 import { wagmiConfig } from "./lib/wagmi";
 import { Explore } from "./pages/Explore";
 
@@ -16,7 +18,9 @@ const LaunchPage = lazy(() => import("./pages/Launch").then((m) => ({ default: m
 const AdminPage =
   String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3"
     ? lazy(() => import("./pages/AdminStable").then((m) => ({ default: m.AdminStable })))
-    : lazy(() => import("./pages/Admin").then((m) => ({ default: m.AdminPage })));
+    : String(import.meta.env.VITE_LAUNCH_MODE ?? "") === "stock-pair"
+      ? lazy(() => import("./pages/AdminStockRh").then((m) => ({ default: m.AdminStockRh })))
+      : lazy(() => import("./pages/Admin").then((m) => ({ default: m.AdminPage })));
 const DocsPage = lazy(() => import("./pages/Docs").then((m) => ({ default: m.DocsPage })));
 const ProfilePage = lazy(() => import("./pages/Profile").then((m) => ({ default: m.ProfilePage })));
 const FlywheelPage = lazy(() => import("./pages/Flywheel").then((m) => ({ default: m.FlywheelPage })));
@@ -26,6 +30,8 @@ const BasePartyPage = lazy(() => import("./pages/BaseParty").then((m) => ({ defa
 const BaseLeaderboardPage = lazy(() => import("./pages/BaseLeaderboard").then((m) => ({ default: m.BaseLeaderboard })));
 const BaseSearchPage = lazy(() => import("./pages/BaseSearch").then((m) => ({ default: m.BaseSearch })));
 const BaseFeedPage = lazy(() => import("./pages/BaseFeed").then((m) => ({ default: m.BaseFeed })));
+// hyperstock holder-rewards page: claimable fee shares across every coin.
+const RewardsPage = lazy(() => import("./pages/Rewards").then((m) => ({ default: m.RewardsPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +50,36 @@ function PageFallback() {
   );
 }
 
+/** Last-resort net under the routed pages: a render crash shows a reload
+ *  screen instead of unmounting the app into a blank page. */
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ minHeight: "60vh", display: "grid", placeItems: "center", padding: 24 }}>
+          <div style={{ textAlign: "center", maxWidth: 420 }}>
+            <p style={{ fontSize: 16, fontWeight: 700, color: "var(--color-ink, #eceff2)" }}>Something went wrong.</p>
+            <p style={{ marginTop: 8, fontSize: 12.5, color: "var(--color-ink-3, #676f76)", overflowWrap: "anywhere" }}>
+              {String(this.state.error?.message ?? this.state.error).slice(0, 200)}
+            </p>
+            <button
+              onClick={() => { this.setState({ error: null }); window.location.href = "/"; }}
+              style={{ marginTop: 16, padding: "10px 22px", borderRadius: 10, border: 0, cursor: "pointer", fontWeight: 700, background: "var(--color-accent, #4fe0cb)", color: "var(--color-accent-fg, #04221e)" }}
+            >
+              Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   // The hammr flavor is a self-contained auction app with its own chrome.
   if (BRAND_FLAVOR === "hammr") {
@@ -55,14 +91,7 @@ export default function App() {
       </WagmiProvider>
     );
   }
-  return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <div className="flex min-h-screen flex-col bg-bg">
-            <Header />
-            <main className="flex-1 pb-14 sm:pb-0">
-              <Suspense fallback={<PageFallback />}>
+  const routes = (
                 <Routes>
                   <Route path="/" element={<Explore />} />
                   <Route path="/launch" element={<LaunchPage />} />
@@ -75,20 +104,56 @@ export default function App() {
                     <>
                       <Route path="/party" element={<BasePartyPage />} />
                       <Route path="/pool-party" element={<Navigate to="/party" replace />} />
-                      <Route path="/leaderboard" element={<BaseLeaderboardPage />} />
-                      <Route path="/search" element={<BaseSearchPage />} />
-                      <Route path="/feed" element={<BaseFeedPage />} />
                     </>
                   )}
+                  {/* Flavor-generic discovery pages, shared by the stock board
+                      and hyperstock (leaderboard, feed, docked search). */}
+                  {(IS_STOCK_BOARD || IS_HYPER || IS_INK) && (
+                    <>
+                      <Route path="/leaderboard" element={<BaseLeaderboardPage />} />
+                      {/* squidpad's rewards analytics lives at /analytics; the
+                          old /feed URL redirects. Other flavors keep /feed. */}
+                      {IS_INK ? (
+                        <>
+                          <Route path="/analytics" element={<BaseFeedPage />} />
+                          <Route path="/feed" element={<Navigate to="/analytics" replace />} />
+                        </>
+                      ) : (
+                        <Route path="/feed" element={<BaseFeedPage />} />
+                      )}
+                      <Route path="/search" element={<BaseSearchPage />} />
+                    </>
+                  )}
+                  {(IS_HYPER || IS_INK) && <Route path="/rewards" element={<RewardsPage />} />}
                   {/* Hidden operations console; access enforced on-chain by role. */}
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
-              </Suspense>
-            </main>
-            <Footer />
-            <Toasts />
-          </div>
+  );
+  return (
+    <WagmiProvider config={wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          {IS_INK ? (
+            <ErrorBoundary>
+              <HsShell>
+                <Suspense fallback={<PageFallback />}>{routes}</Suspense>
+              </HsShell>
+              {IS_ROBIN ? null : <SquidSplash />}
+              <Toasts />
+            </ErrorBoundary>
+          ) : (
+            <div className="flex min-h-screen flex-col bg-bg">
+              <Header />
+              <main className="flex-1 pb-14 sm:pb-0">
+                <ErrorBoundary>
+                  <Suspense fallback={<PageFallback />}>{routes}</Suspense>
+                </ErrorBoundary>
+              </main>
+              <Footer />
+              <Toasts />
+            </div>
+          )}
         </BrowserRouter>
       </QueryClientProvider>
     </WagmiProvider>

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 
-import { BRAND, BRAND_FLAVOR, IS_BOARD, IS_STOCK_BOARD } from "../lib/brand";
+import { BRAND, BRAND_FLAVOR, IS_BOARD, IS_HYPER, IS_STOCK_BOARD } from "../lib/brand";
 import { BaseHeader } from "./BaseHeader";
+import { HsHeader } from "./HsHeader";
 import { env } from "../lib/env";
 import { useWallet } from "../lib/useWallet";
 import { Icon, type IconName } from "./Icon";
@@ -14,17 +15,18 @@ const TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = [
   { to: "/bridge", icon: "trade", label: "Bridge" },
 ];
 
-// The board brands have their own navigation and no bridge. The Base stock
-// launchpad has no weekly flywheel, so it drops that tab.
-const BOARD_TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = IS_STOCK_BOARD
+// The board brands have their own navigation and no bridge. Only the Robinhood
+// heist board (copair) has a weekly flywheel tab; the Base stock launchpad and
+// the HyperEVM launchpad (hyperstock) drop it.
+const BOARD_TABS: { to: string; end?: boolean; icon: IconName; label: string }[] = BRAND_FLAVOR === "copair"
   ? [
       { to: "/", end: true, icon: "explore", label: "Board" },
+      { to: "/flywheel", icon: "activity", label: "Flywheel" },
       { to: "/launch", icon: "launch", label: "Create" },
       { to: "/profile", icon: "wallet", label: "Profile" },
     ]
   : [
       { to: "/", end: true, icon: "explore", label: "Board" },
-      { to: "/flywheel", icon: "activity", label: "Flywheel" },
       { to: "/launch", icon: "launch", label: "Create" },
       { to: "/profile", icon: "wallet", label: "Profile" },
     ];
@@ -36,7 +38,7 @@ const BOARD_TABS: { to: string; end?: boolean; icon: IconName; label: string }[]
  * pump.fun-style nav instead (see BoardHeader).
  */
 export function Header() {
-  if (IS_STOCK_BOARD) return <BaseHeader />;
+  if (IS_STOCK_BOARD || IS_HYPER) return <BaseHeader />;
   if (IS_BOARD) return <BoardHeader />;
   return <DefaultHeader />;
 }
@@ -106,11 +108,13 @@ function BoardHeader() {
 
         <ThemeToggle />
 
-        <Link to="/launch" className="nb-btn nb-icon orange" aria-label="Launch a coin" title="Launch a coin">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6" aria-hidden>
-            <path d="M12 4.5v15M4.5 12h15" />
-          </svg>
-        </Link>
+        {BRAND_FLAVOR === "copair" && (
+          <Link to="/launch" className="nb-btn nb-icon orange" aria-label="Launch a coin" title="Launch a coin">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6" aria-hidden>
+              <path d="M12 4.5v15M4.5 12h15" />
+            </svg>
+          </Link>
+        )}
 
         <Wallet board />
 
@@ -138,7 +142,7 @@ function BoardHeader() {
               <Icon name="explore" size={17} />
               Board
             </Link>
-            {!IS_STOCK_BOARD && (
+            {BRAND_FLAVOR === "copair" && (
               <Link to="/flywheel" className="blue">
                 <Icon name="activity" size={17} />
                 Flywheel

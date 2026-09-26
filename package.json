@@ -7,7 +7,16 @@
     "contracts",
     "sdk",
     "backend",
-    "web"
+    "web",
+    "lend",
+    "orbit",
+    "stockpad",
+    "arcpad",
+    "arbistonk",
+    "etherstock",
+    "alicorn",
+    "nearpad",
+    "tgbot"
   ],
   "scripts": {
     "build": "npm run build -w sdk && npm run build -w backend && npm run build -w web",

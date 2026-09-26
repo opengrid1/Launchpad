@@ -1,0 +1,18 @@
+# fly launch --no-deploy; fly volumes create botdata --size 1; fly secrets set TG_BOT_TOKEN=... BOT_SECRET=...; fly deploy
+app = "chipfi-bot"
+primary_region = "sin"
+
+[build]
+
+[env]
+  DATA_DIR = "/data"
+  NEAR_FACTORY = "chipfi.near"
+  SITE_URL = "https://www.chipfi.fun"
+
+[mounts]
+  source = "botdata"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

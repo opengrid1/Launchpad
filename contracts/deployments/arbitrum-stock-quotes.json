@@ -1,0 +1,15 @@
+{
+  "chain": "Arbitrum One",
+  "chainId": 42161,
+  "issuer": "Reality Finance rTokens (backed 1:1, custody at Alpaca)",
+  "note": "Only rTokens with a funded Uniswap V3 USDC pool (0.05% tier) are listed; the router buys them ETH -> USDC -> rToken through those pools. usd is the pool spot price at listing time (the factory's admin price; refresh with setQuoteAsset). Rescan deployments/../scratchpad reality-arb.json for new pools.",
+  "usdc": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+  "weth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+  "wethUsdcPool": "0xC6962004f452bE9203591991D15f6b388e09E8D0",
+  "quotes": [
+    { "symbol": "rCRCL", "ticker": "CRCL", "name": "Circle Internet Group", "address": "0x861a85a78c371bc0a02675bbe00a4cbc0826b421", "usd": 86.23, "pool": "0x18c3fBfd0178113875792659E3207A5F895E0FEe", "poolFee": 500, "liqUsd": 101154 },
+    { "symbol": "rSPCX", "ticker": "SPCX", "name": "SpaceX", "address": "0x5181b7dd097b42d7787ee78efab86f43d4e12f44", "usd": 155.06, "pool": "0xe072110fBaeC692284b4038e196b7fDb2c96Ff58", "poolFee": 500, "liqUsd": 102258 },
+    { "symbol": "rHOOD", "ticker": "HOOD", "name": "Robinhood Markets", "address": "0x485cb1ed5662a911eba7f8547eb9e253cf43b8ae", "usd": 111.57, "pool": "0x928e5328036180D1587a97c55B75B3Ea5ca0F348", "poolFee": 500, "liqUsd": 98880 },
+    { "symbol": "rAAPL", "ticker": "AAPL", "name": "Apple", "address": "0xaba5e0c80e9f58e391214689fb342049c0d31892", "usd": 336.14, "pool": "0x70A690E54860cA1140cdCe260a1EBa0277cdB806", "poolFee": 500, "liqUsd": 100551 }
+  ]
+}

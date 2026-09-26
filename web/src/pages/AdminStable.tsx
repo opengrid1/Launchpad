@@ -1,34 +1,78 @@
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import type { TokenSummary } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
-import { env } from "../lib/env";
+import { env, addresses } from "../lib/env";
+import { IS_HYPER, IS_INK } from "../lib/brand";
+import { STOCKS, WHYPE } from "../lib/hyper/stocks";
 import { StableV3Client } from "../lib/stable/client";
 import { fmtUsd, shortAddr, timeAgo } from "../lib/format";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 
+const QUOTE_ABI = [{
+  type: "function", name: "quoteAssets", stateMutability: "view",
+  inputs: [{ type: "address" }],
+  outputs: [{ type: "bool" }, { type: "uint64" }, { type: "uint8" }],
+}] as const;
+
 const stable = client as unknown as StableV3Client;
+
+// squidpad coins: the 0.1% platform share accrues inside each coin and is
+// pushed to the factory's fee recipient by anyone via claimPlatformFees.
+const SQUID_PLATFORM_ABI = [
+  { type: "function", name: "platformFees", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "claimPlatformFees", stateMutability: "nonpayable", inputs: [], outputs: [{ type: "uint256" }] },
+] as const;
 
 /**
  * Operations console for the StableLaunchpadFactory owner. Access is enforced
  * on-chain by Ownable: any other wallet reads a 403 and can call nothing.
  */
 export function AdminStable() {
-  const { address, isConnected, connectFirst } = useWallet();
+  const { address, isConnected } = useWallet();
   const pushToast = useUi((s) => s.pushToast);
 
   const [info, setInfo] = useState<Awaited<ReturnType<StableV3Client["adminInfo"]>> | null>(null);
   const [tokens, setTokens] = useState<TokenSummary[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [newRecipient, setNewRecipient] = useState("");
+  const [quoteStates, setQuoteStates] = useState<Record<string, { approved: boolean; price8: bigint }>>({});
+  const [quotePrices, setQuotePrices] = useState<Record<string, string>>({});
   const [tokenAddr, setTokenAddr] = useState("");
   const [recoverAsset, setRecoverAsset] = useState("");
   const [recoverAmount, setRecoverAmount] = useState("");
+  const [plat, setPlat] = useState<Record<string, bigint>>({});
 
   const refresh = () => {
     stable.adminInfo().then(setInfo).catch(() => setInfo(null));
-    stable.getTokens({ sort: "new", limit: 100 }).then(setTokens).catch(() => setTokens([]));
+    stable.getTokens({ sort: "new", limit: 100 }).then((ts) => {
+      setTokens(ts);
+      if (!IS_INK) return;
+      Promise.all(ts.map(async (t) => {
+        try {
+          const v = await stable.publicClient.readContract({
+            address: t.address as `0x${string}`, abi: SQUID_PLATFORM_ABI, functionName: "platformFees",
+          });
+          return [t.address, v as bigint] as const;
+        } catch { return [t.address, 0n] as const; }
+      })).then((rows) => setPlat(Object.fromEntries(rows)));
+    }).catch(() => setTokens([]));
+    if (IS_HYPER || IS_INK) {
+      const quoteRows = [
+        { ticker: env.nativeSymbol, address: IS_HYPER ? WHYPE : (addresses.weth as `0x${string}`) },
+        ...STOCKS.map((s) => ({ ticker: s.ticker, address: s.address })),
+      ];
+      Promise.all(quoteRows.map(async (r) => {
+        try {
+          const [approved, price8] = (await stable.publicClient.readContract({
+            address: addresses.factory, abi: QUOTE_ABI, functionName: "quoteAssets", args: [r.address as `0x${string}`],
+          })) as unknown as [boolean, bigint, number];
+          return [r.address, { approved, price8 }] as const;
+        } catch { return [r.address, { approved: false, price8: 0n }] as const; }
+      })).then((rows) => setQuoteStates(Object.fromEntries(rows)));
+    }
   };
   useEffect(() => {
     refresh();
@@ -53,28 +97,12 @@ export function AdminStable() {
     }
   };
 
-  if (!isConnected) {
-    return (
-      <Shell>
-        <p className="text-[13.5px] text-ink-2">Connect the factory owner wallet to continue.</p>
-        <button onClick={connectFirst} className="mt-4 rounded-lg bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-fg">
-          Connect wallet
-        </button>
-      </Shell>
-    );
-  }
-
-  if (info && !isOwner) {
-    return (
-      <Shell>
-        <p className="text-[15px] font-bold text-ink">403</p>
-        <p className="mt-1 text-[13px] text-ink-2">
-          This console is restricted to the factory owner ({shortAddr(info.owner)}). Connected:{" "}
-          {address ? shortAddr(address) : "–"}.
-        </p>
-      </Shell>
-    );
-  }
+  // Hidden console: this route never advertises itself. A confirmed
+  // non-owner bounces home like any unknown URL; everyone else (not
+  // connected, or still resolving the owner on-chain) sees a blank page.
+  // The owner connects their wallet from the top bar, then opens /admin.
+  if (isConnected && info && !isOwner) return <Navigate to="/" replace />;
+  if (!isConnected || !info) return null;
 
   return (
     <Shell>
@@ -110,10 +138,48 @@ export function AdminStable() {
         </div>
       </Section>
 
+      {/* Quote registry: approve pairs and keep USD prices current */}
+      {IS_HYPER || IS_INK ? (
+        <Section
+          title="Stock pairs"
+          hint="Each pair needs an on-chain USD price so launches open at the right market cap. Update prices whenever they drift."
+        >
+          <div className="space-y-2">
+            {[
+              { ticker: env.nativeSymbol, name: IS_HYPER ? "Wrapped native" : "Wrapped ETH", address: IS_HYPER ? WHYPE : (addresses.weth as `0x${string}`) },
+              ...STOCKS,
+            ].map((s) => {
+              const st = quoteStates[s.address];
+              const cur = st && st.price8 > 0n ? Number(st.price8) / 1e8 : null;
+              const input = quotePrices[s.address] ?? "";
+              const parsed = Number(input);
+              return (
+                <div key={s.address} className="flex items-center gap-2">
+                  <span className="w-16 shrink-0 text-[12.5px] font-bold text-ink">{s.ticker}</span>
+                  <span className="w-32 shrink-0 text-[11px] text-ink-3">
+                    {st ? (st.approved ? `approved @ $${cur?.toLocaleString() ?? "?"}` : "not approved") : "…"}
+                  </span>
+                  <input value={input} onChange={(e) => setQuotePrices((p) => ({ ...p, [s.address]: e.target.value.replace(/[^0-9.]/g, "") }))}
+                    placeholder={cur ? String(cur) : "USD price"} inputMode="decimal"
+                    className="mono h-9 w-28 rounded-lg border border-edge bg-panel-2/40 px-2.5 text-[12.5px] text-ink outline-none placeholder:text-ink-3 focus:border-edge-2" />
+                  <button disabled={busy !== null || !(parsed > 0)}
+                    onClick={() => run(`Set ${s.ticker} pair`, () => stable.adminCall("setQuoteAsset", [s.address, true, BigInt(Math.round(parsed * 1e8))]))}
+                    className="rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-accent-fg disabled:opacity-40">
+                    {st?.approved ? "Update" : "Approve"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </Section>
+      ) : null}
+
       {/* Launched tokens with per-row actions */}
       <Section
         title={`Launched tokens${tokens.length ? ` · ${tokens.length}` : ""}`}
-        hint="Harvest splits accrued pool fees 80/20 creator/platform. Collect unwinds the entire position to the owner. Irreversible for that market's liquidity."
+        hint={IS_INK
+          ? "Holder and creator rewards are automatic in-coin on every buy; nothing to harvest for them. Sweep pushes a coin's accrued 0.1% platform share to the fee recipient. Harvest collects the pool's LP fees per the deploy split. Collect unwinds the entire position to the owner and kills that market's liquidity. Never use it on a live coin."
+          : "Harvest splits accrued pool fees per the factory's deploy-time split (hyperstock: 50% holders, 40% creator, 10% platform). Collect unwinds the entire position to the owner. Irreversible for that market's liquidity."}
       >
         {tokens.length === 0 ? (
           <p className="text-[12.5px] text-ink-3">Loading tokens…</p>
@@ -145,6 +211,20 @@ export function AdminStable() {
                     <td className="mono py-2.5 pr-3 text-accent-ink">{fmtUsd(t.marketCapUsd)}</td>
                     <td className="py-2.5 pr-3 text-ink-3">{timeAgo(t.createdAt)}</td>
                     <td className="py-2.5 text-right">
+                      {IS_INK ? (
+                        <button disabled={busy !== null || !(plat[t.address] && plat[t.address] > 0n)}
+                          title={plat[t.address] != null ? `${(Number(plat[t.address]) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${t.symbol} accrued` : undefined}
+                          onClick={() => run(`Sweep ${t.symbol}`, async () => {
+                            const wc = (stable as any).wallet();
+                            return wc.writeContract({
+                              address: t.address as `0x${string}`, abi: SQUID_PLATFORM_ABI, functionName: "claimPlatformFees",
+                              args: [], chain: wc.chain, account: wc.account,
+                            });
+                          })}
+                          className="mr-1.5 rounded-md border border-edge bg-panel px-3 py-1.5 text-[11.5px] font-semibold text-ink disabled:opacity-40">
+                          Sweep
+                        </button>
+                      ) : null}
                       <button disabled={busy !== null}
                         onClick={() => run(`Harvest ${t.symbol}`, () => stable.adminCall("harvestFees", [t.address]))}
                         className="rounded-md bg-accent px-3 py-1.5 text-[11.5px] font-semibold text-accent-fg disabled:opacity-40">

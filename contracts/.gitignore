@@ -1,0 +1,6 @@
+artifacts-size/
+.env.meow-deployer
+.meow-tokendeployer
+.env.alchemy
+.env.telegram
+.env.arc-deployer

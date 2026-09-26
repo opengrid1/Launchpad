@@ -1,0 +1,12 @@
+{
+  "name": "Dividenz",
+  "symbol": "DIVIDENZ",
+  "token": "0x26aA8881b37f2eEa8e191E0B5b73CAbbBb94b2Be",
+  "pair": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+  "poolId": "0xf97370e0ec037d675c9baa9521e241360f6bd9ed519c2538fecaf74e778f081d",
+  "creator": "0xeAE6EB7010f649008ba10a8E78e931dFeF90BacD",
+  "factory": "0x7B7C415898C3DFF9535d3eE12919ff4f48E8e8a3",
+  "txHash": "0xf550a2e60edcaae516618a2b4a0c4ded22c9d090b94b4347e65a8987c44630e0",
+  "block": 53272072,
+  "ethUsdAtLaunch": 1855
+}

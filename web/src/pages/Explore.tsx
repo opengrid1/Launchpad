@@ -5,9 +5,11 @@ import type { TokenSummary } from "@launchpad/sdk";
 
 import { Icon } from "../components/Icon";
 import { QuiverMark } from "../components/QuiverMark";
-import { IS_BOARD, IS_STOCK_BOARD } from "../lib/brand";
+import { IS_BOARD, IS_HYPER, IS_INK, IS_STOCK_BOARD } from "../lib/brand";
 import { ExploreBoard } from "./ExploreBoard";
 import { ExploreStockBoard } from "./ExploreStockBoard";
+import { HyperBoard } from "./HyperBoard";
+import { HsBoard } from "./HsBoard";
 import { client } from "../lib/client";
 import { env } from "../lib/env";
 import { fmtNative, fmtUsd, shortAddr, timeAgo } from "../lib/format";
@@ -33,6 +35,8 @@ export function Explore() {
   // pump.fun-style live market terminal rather than the default card grid.
   // The Base stock launchpad has its own "coin exchange" terminal identity.
   if (IS_STOCK_BOARD) return <ExploreStockBoard />;
+  if (IS_INK) return <HsBoard />;
+  if (IS_HYPER) return <HyperBoard />;
   if (IS_BOARD) return <ExploreBoard />;
   return <ExploreGrid />;
 }

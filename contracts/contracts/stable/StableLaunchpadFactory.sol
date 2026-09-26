@@ -8,13 +8,15 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-import {TokenDeployer} from "../TokenDeployer.sol";
+import {RewardTokenDeployer} from "./RewardTokenDeployer.sol";
+import {LaunchpadRewardToken} from "./LaunchpadRewardToken.sol";
 import {TickMath} from "../libraries/TickMath.sol";
 import {
     IUniswapV3Factory,
     IUniswapV3Pool,
     INonfungiblePositionManager,
-    ISwapRouter
+    ISwapRouter,
+    IWETH9
 } from "../interfaces/IUniswapV3.sol";
 
 /// @title StableLaunchpadFactory
@@ -38,8 +40,10 @@ import {
 ///             forever; creators receive no privileges of any kind.
 ///
 ///         Pool trading fees (the 1% tier) accrue inside the held position and
-///         are distributed by {harvestFees}: 80% to the token's creator, 20%
-///         to the configurable platform fee recipient. The factory owner is
+///         are distributed by {harvestFees}: the quote side is split between
+///         the token's holders (paid into the token's dividend tracker for
+///         manual claiming), the token's creator and the configurable platform
+///         fee recipient, in shares fixed at deploy. The factory owner is
 ///         the only privileged account: it can harvest liquidity via
 ///         {collectFees}, pause/resume launches, update the fee recipient and
 ///         recover assets sent here by mistake.
@@ -137,6 +141,11 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         address quote;
         /// @dev Optional starting market cap, USD with 8 decimals. 0 = $3,000.
         uint256 marketCapUsd8;
+        /// @dev Optional dev buy, in quote units, filled atomically right
+        ///      after the pool opens (coins go to the creator). For the
+        ///      wrapped-native quote send it as msg.value; for any other
+        ///      quote approve this factory for the amount first. 0 = none.
+        uint256 devBuyQuote;
     }
 
     /// @notice An approved quote asset and its USD price used to size pools.
@@ -167,12 +176,18 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
 
     /// @notice Fixed supply of every launched token (1B, 18 decimals).
     uint256 public constant TOTAL_SUPPLY = 1_000_000_000e18;
-    /// @notice Fixed Uniswap V3 fee tier — 1% — for every launch pool.
-    uint24 public constant POOL_FEE_TIER = 10_000;
-    /// @notice Creator share of harvested pool fees.
-    uint16 public constant CREATOR_FEE_BPS = 8_000; // 80%
-    /// @notice Platform share of harvested pool fees.
-    uint16 public constant PLATFORM_FEE_BPS = 2_000; // 20%
+    /// @notice Uniswap V3 fee tier used for every launch pool, set at deploy
+    ///         (10000 = 1% where pool fees fund the split; 500 = 0.05% where
+    ///         the token itself skims rewards per trade).
+    uint24 public immutable POOL_FEE_TIER;
+    /// @notice Holder share of harvested QUOTE-side pool fees, in bps. Paid
+    ///         into the token's dividend tracker in the coin's pair asset.
+    uint16 public immutable HOLDER_FEE_BPS;
+    /// @notice Creator share of harvested pool fees, in bps. Set at deploy
+    ///         (e.g. 4000 = 40% with 5000 holder / 1000 platform).
+    uint16 public immutable CREATOR_FEE_BPS;
+    /// @notice Platform share, in bps (10000 - holder - creator).
+    uint16 public immutable PLATFORM_FEE_BPS;
     /// @notice Default starting market cap: $3,000 (8 decimals).
     uint256 public constant DEFAULT_MARKET_CAP_USD8 = 3_000e8;
     /// @notice Creator-selectable market cap bounds (8 decimals).
@@ -180,7 +195,7 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     uint256 public constant MAX_MARKET_CAP_USD8 = 100_000_000e8;
 
     /// @notice Deploys each token so its bytecode stays out of this contract.
-    TokenDeployer public immutable tokenDeployer;
+    RewardTokenDeployer public immutable tokenDeployer;
     /// @notice Official Uniswap V3 factory on Stable Mainnet.
     IUniswapV3Factory public immutable uniswapFactory;
     /// @notice Official Uniswap V3 NonfungiblePositionManager.
@@ -205,7 +220,6 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     mapping(address token => Listing) public listings;
     /// @notice Every token this factory has launched, in order.
     address[] public allTokens;
-    mapping(address creator => address[] tokens) internal _tokensByCreator;
 
     // ---------------------------------------------------------------------
     // Construction
@@ -219,14 +233,19 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     /// @param swapRouter_ Official SwapRouter.
     /// @param wrappedNative_ Official wrapped native token; auto-approved as a
     ///        $1.00 quote asset (the native currency on Stable is a dollar).
+    /// @param creatorFeeBps_ Creator share of harvested fees in bps (1..10000);
+    ///        the platform gets the remainder (e.g. 8000 = 80/20, 7000 = 70/30).
     constructor(
         address owner_,
         address feeRecipient_,
-        TokenDeployer tokenDeployer_,
+        RewardTokenDeployer tokenDeployer_,
         IUniswapV3Factory uniswapFactory_,
         INonfungiblePositionManager positionManager_,
         ISwapRouter swapRouter_,
-        address wrappedNative_
+        address wrappedNative_,
+        uint16 holderFeeBps_,
+        uint16 creatorFeeBps_,
+        uint24 poolFeeTier_
     ) Ownable(owner_) {
         if (
             feeRecipient_ == address(0) ||
@@ -236,6 +255,12 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
             address(swapRouter_) == address(0) ||
             wrappedNative_ == address(0)
         ) revert ZeroAddress();
+        if (creatorFeeBps_ == 0 || uint256(holderFeeBps_) + creatorFeeBps_ > 10_000) revert InvalidParams();
+        if (poolFeeTier_ == 0) revert InvalidParams();
+        POOL_FEE_TIER = poolFeeTier_;
+        HOLDER_FEE_BPS = holderFeeBps_;
+        CREATOR_FEE_BPS = creatorFeeBps_;
+        PLATFORM_FEE_BPS = 10_000 - holderFeeBps_ - creatorFeeBps_;
 
         feeRecipient = feeRecipient_;
         tokenDeployer = tokenDeployer_;
@@ -265,11 +290,15 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     ///         current block by construction.
     function createToken(CreateParams calldata p)
         external
+        payable
         nonReentrant
         returns (address token, address pool, uint256 positionId)
     {
         if (launchesPaused) revert LaunchesArePaused();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
+        // Native value is only accepted as the dev buy for the wrapped-native
+        // quote, and must match it exactly.
+        if (msg.value != (p.quote == wrappedNative ? p.devBuyQuote : 0)) revert InvalidParams();
 
         QuoteAsset memory q = quoteAssets[p.quote];
         if (!q.approved) revert QuoteNotApproved();
@@ -282,7 +311,7 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
 
         // The token mints its supply here and renounces ownership in its own
         // constructor — it is immutable before this function returns.
-        token = tokenDeployer.deploy(msg.sender, p.name, p.symbol, p.metadataURI);
+        token = tokenDeployer.deploy(msg.sender, p.name, p.symbol, p.metadataURI, p.quote);
         emit TokenCreated(token, msg.sender, p.name, p.symbol, p.metadataURI, TOTAL_SUPPLY);
 
         bool tokenIsToken0 = token < p.quote;
@@ -295,6 +324,8 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         // fresh each launch, so a pre-existing initialized pool cannot occur.
         pool = positionManager.createAndInitializePoolIfNecessary(token0, token1, POOL_FEE_TIER, sqrtPriceX96);
         emit PoolCreated(token, p.quote, pool, POOL_FEE_TIER, sqrtPriceX96, mcapUsd8);
+        // The pool holds the seeded supply; it must never accrue holder rewards.
+        LaunchpadRewardToken(token).initPool(pool);
 
         IERC20(token).forceApprove(address(positionManager), TOTAL_SUPPLY);
         uint128 liquidity;
@@ -326,7 +357,30 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
             tokenIsToken0: tokenIsToken0
         });
         allTokens.push(token);
-        _tokensByCreator[msg.sender].push(token);
+
+        // Optional dev buy: the creator's first fill, atomic with the launch,
+        // through the official router like every other trade. Coins land in
+        // the creator's wallet; a min-out of 0 is safe because the pool was
+        // created and seeded in this same transaction.
+        if (p.devBuyQuote > 0) {
+            if (p.quote == wrappedNative) {
+                IWETH9(wrappedNative).deposit{value: p.devBuyQuote}();
+            } else {
+                IERC20(p.quote).safeTransferFrom(msg.sender, address(this), p.devBuyQuote);
+            }
+            IERC20(p.quote).forceApprove(address(swapRouter), p.devBuyQuote);
+            ISwapRouter(swapRouter).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: p.quote,
+                    tokenOut: token,
+                    fee: POOL_FEE_TIER,
+                    recipient: msg.sender,
+                    amountIn: p.devBuyQuote,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                })
+            );
+        }
     }
 
     /// @dev Initial pool price (snapped to a tick boundary) and the token-only
@@ -363,13 +417,14 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     }
 
     // ---------------------------------------------------------------------
-    // Fee distribution — 80% creator / 20% platform
+    // Fee distribution — holders / creator / platform
     // ---------------------------------------------------------------------
 
     /// @notice Collect the pool fees accrued to a token's held position and
-    ///         distribute them: 80% to the token's creator, 20% to the
-    ///         platform fee recipient. Permissionless — anyone may trigger a
-    ///         distribution; shares always go to the fixed parties.
+    ///         distribute them: the quote side is split holders / creator /
+    ///         platform per the deploy-time bps, with the holder share paid
+    ///         into the token's dividend tracker. Permissionless — anyone may
+    ///         trigger a distribution; shares always go to the fixed parties.
     function harvestFees(address token)
         external
         nonReentrant
@@ -389,10 +444,28 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
         (uint256 tokenAmount, uint256 quoteAmount) = l.tokenIsToken0 ? (amount0, amount1) : (amount1, amount0);
         if (tokenAmount == 0 && quoteAmount == 0) revert NothingToCollect();
 
-        creatorToken = (tokenAmount * CREATOR_FEE_BPS) / BPS;
+        // QUOTE side: holders / creator / platform. The holder share goes into
+        // the token's dividend tracker in the coin's pair asset; when nobody is
+        // eligible yet (all supply still in the pool) it folds into the
+        // creator's share so nothing strands inside the tracker.
+        uint256 holderQuote = (quoteAmount * HOLDER_FEE_BPS) / BPS;
         creatorQuote = (quoteAmount * CREATOR_FEE_BPS) / BPS;
+        if (holderQuote > 0) {
+            if (LaunchpadRewardToken(token).eligibleSupply() > 0) {
+                IERC20(l.quote).safeTransfer(token, holderQuote);
+                LaunchpadRewardToken(token).distributeRewards(holderQuote);
+            } else {
+                creatorQuote += holderQuote;
+            }
+        }
+        platformQuote = quoteAmount - holderQuote - ((quoteAmount * CREATOR_FEE_BPS) / BPS);
+
+        // TOKEN side: split creator/platform in the same ratio as their quote
+        // shares (holders already earn the quote; paying them the coin itself
+        // would just re-dilute the market).
+        uint16 cpBps = CREATOR_FEE_BPS + PLATFORM_FEE_BPS;
+        creatorToken = cpBps == 0 ? 0 : (tokenAmount * CREATOR_FEE_BPS) / cpBps;
         platformToken = tokenAmount - creatorToken;
-        platformQuote = quoteAmount - creatorQuote;
 
         if (creatorToken > 0) IERC20(token).safeTransfer(l.creator, creatorToken);
         if (creatorQuote > 0) IERC20(l.quote).safeTransfer(l.creator, creatorQuote);
@@ -507,64 +580,6 @@ contract StableLaunchpadFactory is Ownable, ReentrancyGuard {
     /// @notice Number of tokens launched by this factory.
     function tokenCount() external view returns (uint256) {
         return allTokens.length;
-    }
-
-    /// @notice All tokens launched by `creator`.
-    function tokensOf(address creator) external view returns (address[] memory) {
-        return _tokensByCreator[creator];
-    }
-
-    /// @notice The V3 position id backing `token`.
-    function positionOf(address token) external view returns (uint256) {
-        Listing memory l = listings[token];
-        if (l.pool == address(0)) revert UnknownToken();
-        return l.positionId;
-    }
-
-    /// @notice Pool and held-position snapshot for a token.
-    function poolInfo(address token)
-        external
-        view
-        returns (
-            address pool,
-            address quote,
-            uint160 sqrtPriceX96,
-            int24 tick,
-            uint128 poolLiquidity,
-            uint256 positionId,
-            uint128 positionLiquidity
-        )
-    {
-        Listing memory l = listings[token];
-        if (l.pool == address(0)) revert UnknownToken();
-        pool = l.pool;
-        quote = l.quote;
-        (sqrtPriceX96, tick, , , , , ) = IUniswapV3Pool(l.pool).slot0();
-        poolLiquidity = IUniswapV3Pool(l.pool).liquidity();
-        positionId = l.positionId;
-        (, , , , , , , positionLiquidity, , , , ) = positionManager.positions(l.positionId);
-    }
-
-    /// @notice Market cap of `token` in quote-asset wei, from the live pool price.
-    function marketCapQuote(address token) public view returns (uint256) {
-        Listing memory l = listings[token];
-        if (l.pool == address(0)) revert UnknownToken();
-        (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(l.pool).slot0();
-        uint256 supply = IERC20(token).totalSupply();
-        if (l.tokenIsToken0) {
-            uint256 a = Math.mulDiv(supply, sqrtPriceX96, 1 << 96);
-            return Math.mulDiv(a, sqrtPriceX96, 1 << 96);
-        } else {
-            uint256 a = Math.mulDiv(supply, 1 << 96, sqrtPriceX96);
-            return Math.mulDiv(a, 1 << 96, sqrtPriceX96);
-        }
-    }
-
-    /// @notice Market cap of `token` in USD (8 decimals).
-    function marketCapUsd(address token) external view returns (uint256) {
-        Listing memory l = listings[token];
-        QuoteAsset memory q = quoteAssets[l.quote];
-        return Math.mulDiv(marketCapQuote(token), q.usdPrice8, 10 ** q.decimals);
     }
 
     /// @dev ERC-721 receiver so the position manager can mint positions here.
