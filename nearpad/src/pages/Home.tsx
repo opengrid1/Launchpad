@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { Art } from "../components/Art";
+import { Menu } from "../components/Menu";
 import { Ring } from "../components/Ring";
 import { DEPLOYED, PINNED } from "../lib/env";
 import { ago, units } from "../lib/format";
@@ -85,13 +86,7 @@ export default function Home() {
           {(["live", "new", "graduated"] as const).map((t) => <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{t === "live" ? "On the curve" : t[0].toUpperCase() + t.slice(1)}</button>)}
         </div>
         {tab !== "new" && (
-          <select className="in" style={{ width: "auto", height: 36, fontSize: 13, fontWeight: 700 }} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-            <option value="trending">Most traded</option>
-            <option value="mcap">Market cap</option>
-            <option value="progress">Progress</option>
-            <option value="holders">Holders</option>
-            <option value="new">Newest</option>
-          </select>
+          <Menu<Sort> value={sort} onChange={setSort} label="Sort" options={[{ v: "trending", l: "Most traded" }, { v: "mcap", l: "Market cap" }, { v: "progress", l: "Progress" }, { v: "holders", l: "Holders" }, { v: "new", l: "Newest" }]} />
         )}
       </div>
 

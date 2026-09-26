@@ -398,3 +398,15 @@ select.in { appearance: none; padding-right: 32px; background-image: linear-grad
 .admin .card-b { display: grid; gap: 10px; }
 .creditbox .bigv { font-family: var(--display); font-weight: 500; font-size: 26px; }
 .creditbox .bigv small { font: 700 12px var(--font); color: var(--mute); margin-left: 8px; }
+
+/* ---- Dropdown menu ---- */
+.menu { position: relative; }
+.menu-b { height: 36px; padding: 0 12px 0 14px; border-radius: 999px; background: var(--card2); border: 1px solid var(--line); color: var(--ink); font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; }
+.menu-b .menu-l { color: var(--mute); font-weight: 600; }
+.menu-b svg { color: var(--mute); transition: transform .15s; }
+.menu.open .menu-b { border-color: var(--accent); }
+.menu.open .menu-b svg { transform: rotate(180deg); }
+.menu-list { position: absolute; right: 0; top: calc(100% + 6px); z-index: 35; min-width: 180px; margin: 0; padding: 6px; list-style: none; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+.menu-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--ink2); cursor: pointer; }
+.menu-list li:hover { background: var(--card2); color: var(--ink); }
+.menu-list li.on { color: var(--accent-ink); background: var(--accent-soft); }
