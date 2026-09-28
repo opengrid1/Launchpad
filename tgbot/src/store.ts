@@ -6,27 +6,43 @@ import { join } from "node:path";
 
 import { config } from "./config.js";
 
-export interface User {
-  tgId: number;
-  /** Implicit NEAR account: the hex of the public key. */
+export interface Wallet {
+  /** Implicit hex account, or a named account the user imported. */
   accountId: string;
   publicKey: string;
   /** AES-256-GCM: iv.tag.ciphertext, base64. */
   secretKeyEnc: string;
+  label: string;
+  imported?: boolean;
+}
+
+export interface User {
+  tgId: number;
+  /** The active wallet, mirrored from `wallets[active]` so trade code reads one place. */
+  accountId: string;
+  publicKey: string;
+  secretKeyEnc: string;
+  wallets: Wallet[];
+  active: number;
   slippageBps: number;
   /** Buy presets in NEAR. */
   presets: number[];
   createdAt: number;
 }
 
-interface Db { users: Record<string, User> }
+interface Db { users: Record<string, User>; tokens: Record<string, string> }
 
 const file = join(config.dataDir, "store.json");
-let db: Db = { users: {} };
+let db: Db = { users: {}, tokens: {} };
 
 export function load() {
   mkdirSync(config.dataDir, { recursive: true });
-  try { db = JSON.parse(readFileSync(file, "utf8")) as Db; } catch { db = { users: {} }; }
+  try { db = JSON.parse(readFileSync(file, "utf8")) as Db; } catch { db = { users: {}, tokens: {} }; }
+  db.tokens ??= {};
+  // Users from before multi-wallet: their one wallet becomes W1.
+  for (const u of Object.values(db.users)) {
+    if (!u.wallets) { u.wallets = [{ accountId: u.accountId, publicKey: u.publicKey, secretKeyEnc: u.secretKeyEnc, label: "W1" }]; u.active = 0; }
+  }
 }
 
 function save() {
@@ -62,4 +78,39 @@ export function updateUser(tgId: number, patch: Partial<User>) {
   save();
 }
 
+/** Makes wallet `k` the active one. */
+export function activate(tgId: number, k: number) {
+  const u = getUser(tgId);
+  if (!u || !u.wallets[k]) return;
+  const w = u.wallets[k];
+  Object.assign(u, { active: k, accountId: w.accountId, publicKey: w.publicKey, secretKeyEnc: w.secretKeyEnc });
+  save();
+}
+
+export function addWallet(tgId: number, w: Omit<Wallet, "label">): Wallet {
+  const u = getUser(tgId)!;
+  const label = `W${u.wallets.length + 1}`;
+  const full = { ...w, label };
+  u.wallets.push(full);
+  activate(tgId, u.wallets.length - 1);
+  return full;
+}
+
+export function removeWallet(tgId: number, k: number) {
+  const u = getUser(tgId);
+  if (!u || u.wallets.length < 2 || !u.wallets[k]) return;
+  u.wallets.splice(k, 1);
+  u.wallets.forEach((w, i) => { w.label = `W${i + 1}`; });
+  activate(tgId, Math.min(u.active, u.wallets.length - 1));
+}
+
 export const allUsers = (): User[] => Object.values(db.users);
+
+/** Callback data is capped at 64 bytes and token ids can be longer, so
+ *  buttons carry a short alias that maps back here. */
+export function tokenAlias(token: string): string {
+  const a = createHash("sha1").update(token).digest("hex").slice(0, 12);
+  if (db.tokens[a] !== token) { db.tokens[a] = token; save(); }
+  return a;
+}
+export const tokenFromAlias = (a: string): string | undefined => db.tokens[a];

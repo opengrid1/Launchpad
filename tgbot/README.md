@@ -1,7 +1,12 @@
 # Chipfi Telegram bot
 
-A wallet per Telegram user, held by the bot, and buy/sell of Chipfi coins from chat.
-Paste a coin address, symbol or chipfi.fun link and tap Buy.
+Wallets held by the bot, several per Telegram user, and buy/sell of Chipfi coins and
+any NEAR token from chat. Paste a coin symbol, a token address or a chipfi.fun link and tap Buy.
+
+- Wallets: the bot makes one; users add more, import a private key (named or implicit
+  account, looked up through FastNear), switch, export, remove.
+- Any NEP-141 token: routed through Rhea's smart router, swapped in one
+  `ft_transfer_call` into the exchange; sells unwrap back to NEAR.
 
 - Curve coins in NEAR: `buy` with attached NEAR; `sell` + `claim` in one transaction.
 - Stock-paired coins: NEAR -> stock through Rhea DCL, then the stock into the coin. Sells go back the same way.

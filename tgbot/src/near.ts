@@ -6,7 +6,7 @@ const { JsonRpcProvider, FailoverRpcProvider } = providers;
 type FinalExecutionOutcome = Awaited<ReturnType<Account["signAndSendTransaction"]>>;
 
 import { config } from "./config.js";
-import { decrypt, encrypt, getUser, putUser, type User } from "./store.js";
+import { addWallet, decrypt, encrypt, getUser, putUser, type User, type Wallet } from "./store.js";
 
 export const provider = new FailoverRpcProvider(config.rpcUrls.map((url) => new JsonRpcProvider({ url })));
 
@@ -55,18 +55,70 @@ export async function balanceOf(accountId: string): Promise<bigint> {
 export const ftBalance = async (token: string, accountId: string) => BigInt((await view<string>(token, "ft_balance_of", { account_id: accountId }).catch(() => "0")) || "0");
 export const ftRegistered = async (token: string, accountId: string) => !!(await view<unknown>(token, "storage_balance_of", { account_id: accountId }).catch(() => null));
 
-/** Makes a fresh wallet for a Telegram user. The account is implicit: it
- *  exists once someone sends NEAR to it. */
-export function createWallet(tgId: number): User {
+/** A fresh key pair as an implicit account: it exists once someone sends NEAR to it. */
+function freshKey() {
   const kp = KeyPair.fromRandom("ed25519");
   const pk = kp.getPublicKey();
-  const accountId = Buffer.from(pk.data).toString("hex");
-  const u: User = { tgId, accountId, publicKey: pk.toString(), secretKeyEnc: encrypt(kp.toString()), slippageBps: 500, presets: [1, 5, 10], createdAt: Date.now() };
+  return { accountId: Buffer.from(pk.data).toString("hex"), publicKey: pk.toString(), secretKeyEnc: encrypt(kp.toString()) };
+}
+
+/** First contact: a user record with one wallet. */
+export function createUser(tgId: number): User {
+  const w = freshKey();
+  const u: User = { tgId, ...w, wallets: [{ ...w, label: "W1" }], active: 0, slippageBps: 500, presets: [1, 5, 10], createdAt: Date.now() };
   putUser(u);
   return u;
 }
 
-export const ensureUser = (tgId: number): User => getUser(tgId) ?? createWallet(tgId);
+export const ensureUser = (tgId: number): User => getUser(tgId) ?? createUser(tgId);
+
+/** Another bot-made wallet for the same user; it becomes the active one. */
+export const newWallet = (tgId: number): Wallet => addWallet(tgId, freshKey());
+
+/** The accounts a public key belongs to, from FastNear's index. */
+async function accountsForKey(publicKey: string): Promise<string[]> {
+  try {
+    const r = await fetch(`https://api.fastnear.com/v0/public_key/${publicKey}`, { signal: AbortSignal.timeout(10_000) });
+    const j = (await r.json()) as { account_ids?: string[] };
+    return j.account_ids ?? [];
+  } catch { return []; }
+}
+
+/** Whether the key is a full-access key on the account; trades need that. */
+async function isFullAccess(accountId: string, publicKey: string): Promise<boolean> {
+  try {
+    const r = await provider.query({ request_type: "view_access_key", finality: "final", account_id: accountId, public_key: publicKey }) as unknown as { permission?: unknown };
+    return r.permission === "FullAccess";
+  } catch { return false; }
+}
+
+export type ImportResult = { ok: true; wallet: Wallet } | { ok: false; reason: string } | { choose: string[]; publicKey: string };
+
+/** Imports a private key. With no account given, FastNear says which named
+ *  accounts hold the key; several means the user picks. None means the
+ *  implicit hex account. */
+export async function importKey(tgId: number, secret: string, accountId?: string): Promise<ImportResult> {
+  let kp: KeyPair;
+  try { kp = KeyPair.fromString((secret.startsWith("ed25519:") ? secret : `ed25519:${secret}`) as `ed25519:${string}`); }
+  catch { return { ok: false, reason: "That is not a valid ed25519 private key." }; }
+  const pk = kp.getPublicKey(); const publicKey = pk.toString();
+  const implicit = Buffer.from(pk.data).toString("hex");
+  const u = getUser(tgId)!;
+  const finish = (acct: string): ImportResult => {
+    if (u.wallets.some((w) => w.accountId === acct)) return { ok: false, reason: `${acct} is already in your wallets.` };
+    return { ok: true, wallet: addWallet(tgId, { accountId: acct, publicKey, secretKeyEnc: encrypt(kp.toString()), imported: true }) };
+  };
+  if (accountId) {
+    if (accountId !== implicit && !(await isFullAccess(accountId, publicKey))) return { ok: false, reason: `That key is not a full-access key on ${accountId}.` };
+    return finish(accountId);
+  }
+  const named = (await accountsForKey(publicKey)).filter((a) => a !== implicit);
+  const full: string[] = [];
+  for (const a of named) if (await isFullAccess(a, publicKey)) full.push(a);
+  if (full.length === 0) return finish(implicit);
+  if (full.length === 1) return finish(full[0]);
+  return { choose: full, publicKey };
+}
 
 export const secretKeyOf = (u: User) => decrypt(u.secretKeyEnc);
 

@@ -6,7 +6,7 @@ import { encrypt, load, type User } from "../src/store.js";
 
 load();
 const [what, near] = process.argv.slice(2);
-const u: User = { tgId: 0, accountId: process.env.NEAR_ACCOUNT_ID!, publicKey: "", secretKeyEnc: encrypt(process.env.NEAR_SECRET_KEY!), slippageBps: 500, presets: [1, 5, 10], createdAt: 0 };
+const u: User = { tgId: 0, accountId: process.env.NEAR_ACCOUNT_ID!, publicKey: "", secretKeyEnc: encrypt(process.env.NEAR_SECRET_KEY!), wallets: [], active: 0, slippageBps: 500, presets: [1, 5, 10], createdAt: 0 };
 const c = (await resolveCoin(what))!;
 const acct = c.account_id;
 let i = await getInfo(acct);
