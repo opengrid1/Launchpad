@@ -1,74 +1,51 @@
-# GIWA RPC node
+# GIWA mainnet RPC
 
-Your own JSON-RPC endpoint for GIWA, Upbit's OP Stack L2. One command on a fresh
-Ubuntu server installs Docker, GIWA's official node (op-reth + op-node), a
-restart policy, and an HTTPS front door.
+Two pieces, both mainnet only. GIWA is Upbit's OP Stack L2; its mainnet chain
+id is 9134 and it has not launched yet, so the gateway goes up first and the
+node follows on launch day.
 
-GIWA mainnet is not launched. Chain id 9134 is reserved for it; the testnet is
-GIWA Sepolia, chain id 91342. The same installer runs mainnet the day GIWA
-publishes `.env.mainnet` in `giwa-io/node`.
+## 1. Gateway: the URL wallets use
 
-## Server
+`proxy/` is a dependency-free Node service. It answers `eth_chainId` with 9134,
+so MetaMask and OKX Wallet accept the network, and forwards everything else to
+`UPSTREAM_HTTP`. With no upstream set it returns a clear "GIWA mainnet has not
+launched yet" error and shows the wallet settings on its home page.
 
-| | Testnet minimum | Recommended |
+Deploy on Railway from this repo: root directory `giwa-rpc/proxy`, no variables
+needed at first, then generate a public domain or attach `rpc.chipfi.fun`.
+
+Variables, all optional:
+
+| Name | Default | Meaning |
 |---|---|---|
-| CPU | 4 cores | 8+ |
-| RAM | 8 GB | 16+ GB |
-| Disk | 500 GB NVMe | 1+ TB NVMe |
+| `UPSTREAM_HTTP` | empty | Your GIWA node or the RPC GIWA publishes at launch |
+| `CHAIN_ID` | `9134` | GIWA mainnet |
+| `CHAIN_NAME` | `GIWA` | Shown on the page |
+| `EXPLORER` | empty | Set when GIWA announces it |
 
-Hetzner CCX23 or CPX41 with a 1 TB volume, or a dedicated AX41, is the usual
-pick. Open ports 30303 and 9222 (TCP+UDP) for peers, and 80/443 for the RPC.
+Wallet settings: network name GIWA, RPC URL the gateway's address, chain id
+9134, currency ETH.
 
-## Install
+## 2. Node: the machine behind it
 
-On the server, as root:
+`install.sh` sets up GIWA's official node (op-reth + op-node) on a fresh Ubuntu
+server with Docker, a restart policy, localhost-only RPC ports and Caddy HTTPS.
+
+Server: 8+ cores, 16+ GB RAM, 1 TB NVMe. Open 30303 and 9222 TCP+UDP for
+peers, 80 and 443 for the RPC.
+
+On the server as root, the day GIWA publishes `.env.mainnet` in `giwa-io/node`:
 
 ```
 curl -sSL https://raw.githubusercontent.com/opengrid1/launchpad/claude/arc-inspired-crypto-app-if7yel/giwa-rpc/install.sh \
-  | bash -s -- sepolia rpc.chipfi.fun
+  | bash -s -- mainnet rpc-node.chipfi.fun
 ```
 
-Arguments: `network` (`sepolia` or `mainnet`), then an optional domain, an
-optional L1 RPC, and an optional L1 beacon URL. Point the domain's A record at
-the server first; Caddy gets the certificate on its own.
+Arguments: `mainnet`, an optional domain for Caddy, an optional L1 RPC and an
+optional L1 beacon URL. The defaults are PublicNode's free L1 endpoints; a busy
+production node should use its own L1 or a paid provider.
 
-Without a domain the RPC listens only on the box, at `http://127.0.0.1:8545`.
+Then point the gateway at it: set `UPSTREAM_HTTP=https://rpc-node.chipfi.fun`
+on the Railway service. Wallets keep the same URL and start seeing blocks.
 
-The default L1 endpoints are PublicNode's free ones. They are fine to sync a
-follower; for a busy production node use your own L1 or a paid provider and pass
-both URLs as the third and fourth arguments.
-
-## Check
-
-```
-giwa-check
-```
-
-prints the execution head and op-node's unsafe/safe/finalized L2 heads. The node
-is usable once the unsafe head keeps moving; snap sync takes a few hours.
-
-Logs:
-
-```
-cd /opt/giwa/node && docker compose logs -f
-```
-
-## Mainnet day
-
-```
-curl -sSL https://raw.githubusercontent.com/opengrid1/launchpad/claude/arc-inspired-crypto-app-if7yel/giwa-rpc/install.sh \
-  | bash -s -- mainnet rpc.chipfi.fun
-```
-
-Mainnet data lives in the same `/opt/giwa/data` directory, so stop and wipe the
-Sepolia data first if the disk is tight: `cd /opt/giwa/node && docker compose
-down -v && rm -rf /opt/giwa/data`.
-
-## Wallet settings
-
-| | Sepolia | Mainnet |
-|---|---|---|
-| Chain id | 91342 | 9134 |
-| RPC | `https://rpc.chipfi.fun` | same, after the switch |
-| Currency | ETH | ETH |
-| Explorer | https://sepolia-explorer.giwa.io | to be announced |
+Health on the server: `giwa-check`. Logs: `cd /opt/giwa/node && docker compose logs -f`.
