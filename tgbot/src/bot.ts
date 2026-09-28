@@ -100,7 +100,7 @@ async function showCoin(ctx: Context, u: User, coin: Coin, edit = false) {
 }
 
 async function walletText(u: User) {
-  const [bal, nUsd, coins] = await Promise.all([balanceOf(u.accountId), nearUsd(), listCoins()]);
+  const [bal, nUsd, coins] = await Promise.all([balanceOf(u.accountId), nearUsd(), listCoins(false, true)]);
   const rows: string[] = [];
   let total = units(bal, 24) * nUsd;
   await Promise.all(coins.map(async (c) => {

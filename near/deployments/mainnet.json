@@ -134,8 +134,10 @@
     "alicorn.near": "first factory, paused; coins c1/c2.alicorn.near collected back and hidden; account kept (3 NEAR storage recoverable by deleting it)"
   },
   "coins": {
-    "c1.chipfi.near": "CHIP, official, NEAR pair, 1%/1%, 100% dividends",
+    "c1.chipfi.near": "first CHIP, retired 2026-09-28 and hidden; still tradable by link so holders can sell",
     "c2.chipfi.near": "JENSEN first try on the NEAR pair, collected back and hidden",
-    "c3.chipfi.near": "JENSEN, NVDAon pair, 3%/3%, 25/50/15/10"
+    "c3.chipfi.near": "JENSEN test on the NVDAon pair, retired 2026-09-28 and hidden; still tradable by link",
+    "c4.chipfi.near": "CHIPCAT, launched by realve.near, listed",
+    "c5.chipfi.near": "CHIP, official, NEAR pair, 1%/1%, 100% dividends, 0.5 NEAR initial buy, pinned"
   }
 }

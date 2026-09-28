@@ -57,11 +57,12 @@ export const pairToken = (pair: PairAsset) => (pair === "Near" ? config.wnear : 
 // ---- coins ---------------------------------------------------------------
 
 let coinsCache: { list: Coin[]; t: number } = { list: [], t: 0 };
-export async function listCoins(force = false): Promise<Coin[]> {
-  if (!force && Date.now() - coinsCache.t < 30_000 && coinsCache.list.length) return coinsCache.list;
-  const list = await view<Coin[]>(config.factory, "list", { limit: 200, include_hidden: false });
-  coinsCache = { list: list.filter((c) => !c.hidden), t: Date.now() };
-  return coinsCache.list;
+/** Listed coins; `all` includes retired (hidden) ones, which still trade by address. */
+export async function listCoins(force = false, all = false): Promise<Coin[]> {
+  if (!force && Date.now() - coinsCache.t < 30_000 && coinsCache.list.length) return all ? coinsCache.list : coinsCache.list.filter((c) => !c.hidden);
+  const list = await view<Coin[]>(config.factory, "list", { limit: 200, include_hidden: true });
+  coinsCache = { list, t: Date.now() };
+  return all ? list : list.filter((c) => !c.hidden);
 }
 
 /** A pasted account, symbol, or chipfi.fun link to a coin. */
@@ -73,8 +74,8 @@ export async function resolveCoin(text: string): Promise<Coin | null> {
   if (acct) {
     const c = coins.find((c) => c.account_id === acct);
     if (c) return c;
-    // A coin the cache has not seen yet, or a hidden one typed on purpose.
-    const all = await listCoins(true);
+    // A coin the cache has not seen yet, or a retired one typed on purpose.
+    const all = await listCoins(true, true);
     return all.find((c) => c.account_id === acct) ?? null;
   }
   const sym = t.replace(/^\$/, "").toUpperCase();

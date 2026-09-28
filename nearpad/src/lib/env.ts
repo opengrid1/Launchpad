@@ -46,5 +46,5 @@ export const RHEA = {
 };
 
 /** The official coin, shown first. */
-export const PINNED: string[] = ["c1.chipfi.near"];
+export const PINNED: string[] = ["c5.chipfi.near"];
 export const HIDDEN = new Set<string>([]);
