@@ -90,6 +90,7 @@ contract StockPadToken is ERC20, ReentrancyGuard {
     event PlatformFeesClaimed(address indexed recipient, uint256 amount);
     event ExcludedSet(address indexed account, bool excluded);
     event Funded(address indexed from, uint256 amount);
+    event MetadataSet(string uri);
     event HookSet(address indexed hook, address indexed converter);
 
     error OnlyFactory();
@@ -128,6 +129,14 @@ contract StockPadToken is ERC20, ReentrancyGuard {
         excluded[poolManager_] = true;
 
         _mint(factory_, supply_);
+    }
+
+    /// @notice The factory (its admin) may replace the on-chain metadata,
+    ///         for a takeover or a fix; nothing else about the coin can change.
+    function setMetadataURI(string calldata uri) external {
+        if (msg.sender != _factory) revert OnlyFactory();
+        _metadataURI = uri;
+        emit MetadataSet(uri);
     }
 
     function metadataURI() external view returns (string memory) {

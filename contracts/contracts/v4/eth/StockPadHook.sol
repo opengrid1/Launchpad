@@ -77,6 +77,7 @@ contract StockPadHook is BaseHook, IUnlockCallback {
     mapping(address => uint256) public owed;
 
     event PoolRegistered(address indexed token, address indexed pair, PoolId indexed id, uint16 taxBps);
+    event PoolTaxSet(PoolId indexed id, uint16 taxBps);
     event FeeTaken(address indexed token, uint256 fee, uint256 extra);
     event FactorySet(address indexed factory);
     event FeeHeld(address indexed token, uint256 amount);
@@ -107,6 +108,15 @@ contract StockPadHook is BaseHook, IUnlockCallback {
         p.afterSwap = true;
         p.beforeSwapReturnDelta = true;
         p.afterSwapReturnDelta = true;
+    }
+
+    /// @notice The factory (its admin) may change a registered pool's tax.
+    function setPoolTax(PoolId id, uint16 taxBps) external {
+        if (msg.sender != factory) revert NotFactory();
+        PoolConfig storage c = _config[id];
+        if (!c.registered) revert AlreadySet();
+        c.taxBps = taxBps;
+        emit PoolTaxSet(id, taxBps);
     }
 
     function registerPool(PoolKey calldata key, address token, address pair, uint16 taxBps) external {

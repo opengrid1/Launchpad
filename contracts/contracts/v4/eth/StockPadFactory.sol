@@ -94,6 +94,9 @@ contract StockPadFactory is ReentrancyGuard, IUnlockCallback {
         bytes32 poolId;
     }
     mapping(address token => Listing) public listings;
+    /// @notice Coins the admin hid from listings; they still trade.
+    mapping(address token => bool) public hidden;
+    uint16 public constant MAX_TAX_BPS = 1_000;
     address[] public allTokens;
     /// @notice Deployer, for setup only; zero once renounced.
     address public owner;
@@ -114,6 +117,8 @@ contract StockPadFactory is ReentrancyGuard, IUnlockCallback {
     }
 
     event Launched(address indexed token, address indexed creator, address indexed pair, uint16 taxBps, bytes32 poolId, uint256 pairUsdPrice8);
+    event HiddenSet(address indexed token, bool hidden);
+    event CoinTaxSet(address indexed token, uint16 taxBps);
     event DevBought(address indexed token, address indexed creator, uint256 ethIn, uint256 pairIn, uint256 coinOut);
     event QuoteAssetSet(address indexed pair, bool approved, uint64 usdPrice8, address feed);
     event LaunchesPausedSet(bool paused);
@@ -179,6 +184,29 @@ contract StockPadFactory is ReentrancyGuard, IUnlockCallback {
     function resume() external onlyAdmin {
         launchesPaused = false;
         emit LaunchesPausedSet(false);
+    }
+
+    /// @notice Hide a coin from the listings (sites and bots read this); it
+    ///         keeps trading, so holders can always sell.
+    function setHidden(address token, bool hidden_) external onlyAdmin {
+        if (listings[token].createdAt == 0) revert InvalidParams();
+        hidden[token] = hidden_;
+        emit HiddenSet(token, hidden_);
+    }
+
+    /// @notice Change one coin's trade tax, up to MAX_TAX_BPS.
+    function setCoinTax(address token, uint16 taxBps) external onlyAdmin {
+        Listing storage l = listings[token];
+        if (l.createdAt == 0 || taxBps > MAX_TAX_BPS) revert InvalidParams();
+        l.taxBps = taxBps;
+        hook.setPoolTax(PoolId.wrap(l.poolId), taxBps);
+        emit CoinTaxSet(token, taxBps);
+    }
+
+    /// @notice Replace one coin's on-chain metadata (image, description, links).
+    function setCoinMetadata(address token, string calldata uri) external onlyAdmin {
+        if (listings[token].createdAt == 0) revert InvalidParams();
+        StockPadToken(token).setMetadataURI(uri);
     }
 
     function setFeeRecipient(address recipient) external onlyAdmin {
