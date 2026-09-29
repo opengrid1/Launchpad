@@ -117,16 +117,18 @@ async function main() {
     }
   }
 
-  // 4b. The revenue vault: stake the main coin, earn the platform share as ETH.
-  //     Needs MAIN_TOKEN (the coin launched through this factory). The admin
-  //     then points factory.setFeeRecipient at it from the admin wallet.
-  if (process.env.MAIN_TOKEN && !dep.contracts.vault) {
-    const v = await (await ethers.getContractFactory("ChipVault")).deploy(ethers.getAddress(process.env.MAIN_TOKEN), WETH, routerAddr, admin);
-    await v.waitForDeployment();
-    dep.contracts.vault = await v.getAddress();
+  // 4b. The distributor: the factory's fee recipient. Every coin's platform
+  //     share lands here and is pushed into the main coin's holder rewards,
+  //     so holding the main coin earns the launchpad's fees, no staking.
+  //     Needs MAIN_TOKEN (launched through this factory). The admin then
+  //     points factory.setFeeRecipient at it from the admin wallet.
+  if (process.env.MAIN_TOKEN && !dep.contracts.distributor) {
+    const d = await (await ethers.getContractFactory("ChipDistributor")).deploy(ethers.getAddress(process.env.MAIN_TOKEN), WETH, routerAddr);
+    await d.waitForDeployment();
+    dep.contracts.distributor = await d.getAddress();
     dep.mainToken = ethers.getAddress(process.env.MAIN_TOKEN);
     fs.writeFileSync(depFile, JSON.stringify(dep, null, 2));
-    console.log("vault", dep.contracts.vault, "-> admin must call factory.setFeeRecipient(vault)");
+    console.log("distributor", dep.contracts.distributor, "-> admin must call factory.setFeeRecipient(distributor)");
   }
 
   // 5. Renounce: only the immutable admin keeps control.

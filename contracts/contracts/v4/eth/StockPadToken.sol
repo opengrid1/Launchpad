@@ -89,6 +89,7 @@ contract StockPadToken is ERC20, ReentrancyGuard {
     event CreatorFeesClaimed(address indexed creator, uint256 amount, bool asEth);
     event PlatformFeesClaimed(address indexed recipient, uint256 amount);
     event ExcludedSet(address indexed account, bool excluded);
+    event Funded(address indexed from, uint256 amount);
     event HookSet(address indexed hook, address indexed converter);
 
     error OnlyFactory();
@@ -99,6 +100,7 @@ contract StockPadToken is ERC20, ReentrancyGuard {
     error BuyCap();
     error HoldCap();
     error NoConverter();
+    error NoHolders();
 
     constructor(
         string memory name_,
@@ -185,6 +187,21 @@ contract StockPadToken is ERC20, ReentrancyGuard {
         totalCreatorFees += creatorFee;
         totalPlatformFees += platformFee;
         emit FeesAccrued(holderFee, creatorFee, platformFee);
+    }
+
+    /// @notice Add rewards for holders from outside the pool: `amount` of the
+    ///         pair asset is pulled from the caller and credited to every
+    ///         eligible holder on the spot. Used by the platform distributor
+    ///         to pay the main coin's holders the launchpad's fee share, and
+    ///         open to anyone who wants to reward a coin's holders.
+    function fund(uint256 amount) external nonReentrant {
+        if (amount == 0) return;
+        uint256 supply = eligibleSupply;
+        if (supply == 0) revert NoHolders();
+        IERC20(pairAsset).safeTransferFrom(msg.sender, address(this), amount);
+        accRewardPerShare += (amount * ACC_PRECISION) / supply;
+        totalHolderRewards += amount;
+        emit Funded(msg.sender, amount);
     }
 
     // ------------------------------------------------------------------
