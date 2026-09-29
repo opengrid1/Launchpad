@@ -18,8 +18,8 @@ const WETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const ROUTER02 = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
 const ETH_USD_FEED = "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"; // Chainlink ETH/USD
 const TAX_BPS = 200; // 2% of the pair side on every swap
-const CREATOR_BPS = 5000;
-const HOLDER_BPS = 3000;
+const CREATOR_BPS = 3500; // 0.7% of the 2%
+const HOLDER_BPS = 1500; // 0.3% of the 2%; platform (STONK holders) gets the remaining 50% = 1.0%
 
 // beforeSwap | afterSwap | beforeSwapReturnDelta | afterSwapReturnDelta
 const HOOK_FLAGS = (1n << 7n) | (1n << 6n) | (1n << 3n) | (1n << 2n);
