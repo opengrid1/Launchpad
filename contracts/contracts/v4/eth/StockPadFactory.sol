@@ -19,6 +19,7 @@ import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 
 import {StockPadToken} from "./StockPadToken.sol";
+import {StockPadTokenDeployer} from "./StockPadTokenDeployer.sol";
 import {StockPadHook} from "./StockPadHook.sol";
 
 /// @dev The launchpad router: turns ETH into a pair asset along a caller-
@@ -68,6 +69,8 @@ contract StockPadFactory is ReentrancyGuard, IUnlockCallback {
     StockPadHook public immutable hook;
     address public immutable weth;
     address public immutable admin;
+    /// @notice Creates the coins, so this contract stays under the size limit.
+    StockPadTokenDeployer public immutable tokenDeployer;
 
     /// @notice The launchpad router: ETH <-> pair routing for first buys and
     ///         for claimants who want ETH; set once.
@@ -150,12 +153,14 @@ contract StockPadFactory is ReentrancyGuard, IUnlockCallback {
         address admin_,
         IPoolManager poolManager_,
         StockPadHook hook_,
+        StockPadTokenDeployer tokenDeployer_,
         address weth_,
         uint64 ethUsd8_,
         uint16 taxBps_,
         uint16 creatorBps_,
         uint16 holderBps_
     ) {
+        tokenDeployer = tokenDeployer_;
         owner = owner_;
         if (admin_ == address(0) || weth_ == address(0)) revert ZeroAddress();
         if (ethUsd8_ == 0 || taxBps_ == 0 || taxBps_ > 1_000 || uint256(creatorBps_) + holderBps_ > 10_000) revert InvalidParams();
@@ -275,10 +280,8 @@ contract StockPadFactory is ReentrancyGuard, IUnlockCallback {
         if (!q.approved) revert QuoteNotApproved();
         uint256 pairUsd8 = pairUsdPrice(pair);
 
-        StockPadToken t = new StockPadToken{salt: salt}(
-            p.name, p.symbol, p.metadataURI, TOTAL_SUPPLY, msg.sender, address(this), pair, address(poolManager), CREATOR_BPS, HOLDER_BPS
-        );
-        token = address(t);
+        token = tokenDeployer.deploy(salt, p.name, p.symbol, p.metadataURI, TOTAL_SUPPLY, msg.sender, pair, address(poolManager), CREATOR_BPS, HOLDER_BPS);
+        StockPadToken t = StockPadToken(token);
 
         (key, tokenIsCurrency0) = _key(token, pair);
 

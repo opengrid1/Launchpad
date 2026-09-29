@@ -68,15 +68,25 @@ async function main() {
   const hook = await ethers.getContractAt("StockPadHook", hookAddr);
 
   // 2. Factory (deployer owns it until renounce; admin is immutable).
+  let tdAddr: string = process.env.TOKEN_DEPLOYER ?? dep.contracts.tokenDeployer ?? "";
+  if (!tdAddr) {
+    const td = await (await ethers.getContractFactory("StockPadTokenDeployer")).deploy();
+    await td.waitForDeployment();
+    tdAddr = await td.getAddress();
+    dep.contracts.tokenDeployer = tdAddr;
+    fs.writeFileSync(depFile, JSON.stringify(dep, null, 2));
+  }
+  console.log("tokenDeployer", tdAddr);
   let factoryAddr: string = process.env.FACTORY ?? dep.contracts.factory ?? "";
   if (!factoryAddr) {
-    const f = await (await ethers.getContractFactory("StockPadFactory")).deploy(deployer.address, admin, POOL_MANAGER, hookAddr, WETH, price, TAX_BPS, CREATOR_BPS, HOLDER_BPS);
+    const f = await (await ethers.getContractFactory("StockPadFactory")).deploy(deployer.address, admin, POOL_MANAGER, hookAddr, tdAddr, WETH, price, TAX_BPS, CREATOR_BPS, HOLDER_BPS);
     await f.waitForDeployment();
     factoryAddr = await f.getAddress();
     dep.contracts.factory = factoryAddr;
     fs.writeFileSync(depFile, JSON.stringify(dep, null, 2));
   }
   console.log("factory", factoryAddr);
+  { const td = await ethers.getContractAt("StockPadTokenDeployer", tdAddr); if ((await td.factory()) === ethers.ZeroAddress) { await (await td.setFactory(factoryAddr)).wait(); console.log("token deployer wired"); } }
   const factory = await ethers.getContractAt("StockPadFactory", factoryAddr);
   if ((await hook.factory()) === ethers.ZeroAddress) { await (await hook.setFactory(factoryAddr)).wait(); console.log("hook wired"); }
 
