@@ -27,7 +27,15 @@ async function main() {
     },
     { name: "StockPadRouter", address: c.router, args: [d.uniswap.poolManager, c.factory, d.uniswap.weth, d.uniswap.swapRouter02], file: "StockPadRouter.sol" },
   ];
-  if (c.distributor) targets.push({ name: "ChipDistributor", address: c.distributor, args: [d.mainToken, d.uniswap.weth, c.router] });
+  if (c.distributor) targets.push({ name: "ChipDistributor", address: c.distributor, args: [d.mainToken, d.uniswap.weth, c.router], file: "ChipDistributor.sol" });
+  if (d.mainToken) {
+    // The coin's constructor args, read back from the chain so the metadata string matches byte for byte.
+    const { ethers } = await import("hardhat");
+    const t = await ethers.getContractAt("StockPadToken", d.mainToken);
+    const f = await ethers.getContractAt("StockPadFactory", c.factory);
+    const [name, symbol, uri, creator, pair, pm, cb, hb, supply] = await Promise.all([t.name(), t.symbol(), t.metadataURI(), t.creator(), t.pairAsset(), t.poolManager(), t.creatorBps(), t.holderBps(), f.TOTAL_SUPPLY()]);
+    targets.push({ name: "StockPadToken", address: d.mainToken, args: [name, symbol, uri, supply, creator, c.factory, pair, pm, cb, hb], file: "StockPadToken.sol" });
+  }
 
   for (const t of targets) {
     if (!t.address) continue;

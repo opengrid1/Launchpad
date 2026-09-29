@@ -46,7 +46,8 @@ export default function Launch() {
   };
 
   const symbol = (f.symbol || f.name).replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 10) || "COIN";
-  const pairs = useMemo(() => (quotes ?? []).filter((q) => q.approved), [quotes]);
+  const ethQuote = useMemo(() => ({ address: WETH, symbol: "ETH", name: "Ether", decimals: 18, usd: ethUsd, isNative: true, ethRoute: true, approved: true, liqUsd: 0, vol24Usd: 0 }), [ethUsd]);
+  const pairs = useMemo(() => { const l = (quotes ?? []).filter((q) => q.approved); return l.some((q) => q.isNative) ? l : [ethQuote, ...l]; }, [quotes, ethQuote]);
   const shown = useMemo(() => { const s = pq.trim().toLowerCase(); return s ? pairs.filter((p) => `${p.symbol} ${p.name}`.toLowerCase().includes(s)) : pairs.slice(0, 12); }, [pairs, pq]);
   const pair = pairs.find((q) => q.address.toLowerCase() === pairAddr.toLowerCase()) ?? pairs.find((q) => q.isNative);
   const pairSym = pair?.symbol ?? "ETH";

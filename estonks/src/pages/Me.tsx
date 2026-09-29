@@ -30,8 +30,8 @@ export default function Me() {
     <main>
       <div style={{ paddingTop: 14 }}><h1>Portfolio.</h1><p className="lede num">{me}</p></div>
       <div className="figs" style={{ marginTop: 14 }}>
-        <div><span className="label">Holdings</span><b>{usd(value, { compact: value >= 1e5 })}</b><small>{held.filter((h) => h.bal > 0n).length} coins</small></div>
-        <div><span className="label">Rewards</span><b>{usd(rewardUsd)}</b><small>{rewards.length} coins paying</small></div>
+        <div><span className="label">Holdings</span><b>{usd(value, { compact: value >= 1e5 })}</b><small>{held.filter((h) => h.bal > 0n).length} {held.filter((h) => h.bal > 0n).length === 1 ? "coin" : "coins"}</small></div>
+        <div><span className="label">Rewards</span><b>{usd(rewardUsd)}</b><small>{rewards.length} {rewards.length === 1 ? "coin" : "coins"} paying</small></div>
         <div><span className="label">Creator fees</span><b>{usd(creatorUsd)}</b><small>{created.length} launched</small></div>
         <div><span className="label">STONK share</span><b>{(() => { const m = held.find((h) => isMain(h.t.address)); return m && m.t.totalSupply ? `${((Number(m.bal) / Number(BigInt(m.t.totalSupply))) * 100).toFixed(3)}%` : "0%"; })()}</b><small>of supply{lifetimeUsd ? "" : ""}</small></div>
       </div>

@@ -5,7 +5,8 @@
     "hook": "0xeC1004c620Da189aD00B08B7dF772FCE225380cC",
     "tokenDeployer": "0xad38C321cBbD734eb12994216E858E827657dcd8",
     "factory": "0x12f4d0eAEe4ea0cEf7722aF00989D5210417DaD9",
-    "router": "0x706a0661C049A6D1e8b480bFE64627d2333ec532"
+    "router": "0x706a0661C049A6D1e8b480bFE64627d2333ec532",
+    "distributor": "0xDDca19Da2D6c8b1971Ef96A0E48e51C3BAb1CbB9"
   },
   "quotes": [
     {
@@ -1129,5 +1130,8 @@
     "platformBps": 5000
   },
   "deployBlock": 26081375,
-  "deployedAt": "2026-09-29T06:37:25.342Z"
+  "deployedAt": "2026-09-29T06:37:25.342Z",
+  "mainToken": "0x3494c410caa17ad30391DA7F1Eb4554303fbDd99",
+  "mainTokenLaunchTx": "0x2ed9f1f97ae5c2ca0765b9419b0c04614c0dc03a1657316a654743e897f7f087",
+  "mainTokenLaunchBlock": 26081757
 }

@@ -56,7 +56,7 @@ export const chain = defineChain({
 export const BRAND = {
   name: "Estonks",
   url: "https://estonks.fun",
-  x: "https://x.com/estonks",
+  x: "https://x.com/estonks_fun",
   telegram: "https://t.me/estonks",
   description: "Meme coins on Ethereum paired with ETH or a real stock. Holders earn on every trade. STONK holders earn on every coin.",
 };
@@ -65,5 +65,5 @@ export const BRAND = {
 export const FEES = { taxPct: 2, creatorPct: 35, holderPct: 15, platformPct: 50 };
 
 /** The main token. Set once STONK is launched; empty until then. */
-export const MAIN_TOKEN = String(import.meta.env.VITE_MAIN_TOKEN ?? "").toLowerCase();
+export const MAIN_TOKEN = String(import.meta.env.VITE_MAIN_TOKEN ?? "0x3494c410caa17ad30391DA7F1Eb4554303fbDd99").toLowerCase();
 export const isMain = (address: string) => !!MAIN_TOKEN && address.toLowerCase() === MAIN_TOKEN;

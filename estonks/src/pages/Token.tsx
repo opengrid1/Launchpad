@@ -168,10 +168,13 @@ function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { toke
   const spot = priceWei > 0n ? (side === "buy" ? BigInt(Math.floor((Number(amountWei) * k * 1e18) / Number(priceWei))) : BigInt(Math.floor((Number(amountWei) * Number(priceWei)) / 1e18 / k))) : 0n;
   const feeBps = fee?.total ?? FEES.taxPct * 100;
   const out = sim ?? (spot * BigInt(10_000 - feeBps)) / 10_000n;
+  const simKnown = typeof sim === "bigint";
   const outNum = wei(out);
-  const impact = spot > 0n && sim != null ? Math.max(0, (1 - Number(sim) / Number(spot)) * 100) : null;
+  const impact = spot > 0n && simKnown ? Math.max(0, (1 - Number(sim) / Number(spot)) * 100) : null;
   const surcharge = !!fee && fee.total > fee.base;
   const over = side === "buy" ? !!bal && amountWei > payBal : !!bal && amountWei > bal.token;
+  // A reverted simulation means the route cannot fill right now (thin stock pool, launch guard); never send blind.
+  const noRoute = amountWei > 0n && isConnected && sim === null;
   const minOut = (out * 95n) / 100n;
   const pctOf = (f: number) => { if (!bal) return; if (side === "buy") { const keep = payEth ? parseEther("0.003") : 0n; const base = payBal > keep ? payBal - keep : 0n; setAmt(formatEther((base * BigInt(Math.round(f * 100))) / 100n)); } else setAmt(formatEther((bal.token * BigInt(Math.round(f * 100))) / 100n)); };
   const go = async () => {
@@ -199,12 +202,13 @@ function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { toke
       </div>
       <div className="det">
         <div><span>Rate</span><b>{priceWei > 0n ? `1 ${payUnit} = ${num(k * 1e18 / Number(priceWei))} ${symbol}` : "—"}</b></div>
-        <div><span>Price impact</span><b className={impact != null && impact > 5 ? "down" : ""}>{impact != null ? `${impact.toFixed(2)}%` : sim === null ? "—" : "quote"}</b></div>
+        <div><span>Price impact</span><b className={impact != null && impact > 5 ? "down" : ""}>{impact != null ? `${impact.toFixed(2)}%` : sim === null ? "—" : "estimate"}</b></div>
         <div><span>Min received</span><b>{amountWei > 0n ? (side === "buy" ? num(wei(minOut)) : hype(wei(minOut), 5)) : "—"}</b></div>
         <div><span>Fee</span><b className={surcharge ? "down" : ""}>{(feeBps / 100).toFixed(feeBps % 100 ? 2 : 0)}%{surcharge ? " anti-snipe" : ""}</b></div>
         <div><span>Route</span><b>{route}</b></div>
       </div>
-      <button className={"btn lg wide go " + (side === "sell" ? "sellb" : "buy")} disabled={isConnected && (amountWei === 0n || over)} onClick={go}>{!isConnected ? "Connect wallet" : over ? "Not enough" : side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`}</button>
+      <button className={"btn lg wide go " + (side === "sell" ? "sellb" : "buy")} disabled={isConnected && (amountWei === 0n || over || noRoute)} onClick={go}>{!isConnected ? "Connect wallet" : over ? "Not enough" : noRoute ? "No quote right now" : side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`}</button>
+      {noRoute && <p className="note" style={{ margin: 0, textAlign: "center" }}>{pair.isNative ? "The pool could not fill this size. Try a smaller amount." : `The ${pair.symbol} route could not fill this size right now. Try a smaller amount, or trade in ${pair.symbol} directly.`}</p>}
     </div>
   );
 }

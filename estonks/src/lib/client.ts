@@ -294,35 +294,52 @@ export class StockPadClient {
     return this.pairInfo(core?.pair ?? WETH);
   }
 
-  /** Every pair the factory knows, ETH first, then by real liquidity. One multicall for the list, one for prices and approvals. */
-  async quotes(): Promise<QuoteView[]> {
-    const n = Number(await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteCount" }).catch(() => 0n));
-    const addrs = n === 0 ? [WETH] : ((await this.pc.multicall({
-      allowFailure: true,
-      contracts: Array.from({ length: n }, (_, i) => ({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteList", args: [BigInt(i)] })),
-    })).filter((r) => r.status === "success").map((r) => (r.result as Address).toLowerCase() as Address));
-    const rows = await this.pc.multicall({
-      allowFailure: true,
-      contracts: addrs.flatMap((a) => [
-        { address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteAssets", args: [a] } as const,
-        { address: ADDRESSES.factory, abi: factoryAbi, functionName: "pairUsdPrice", args: [a] } as const,
-      ]),
-    });
-    const out: QuoteView[] = [];
-    for (let i = 0; i < addrs.length; i++) {
-      const qa = rows[i * 2], px = rows[i * 2 + 1];
-      const [approved, usd8] = qa.status === "success" ? (qa.result as unknown as readonly [boolean, bigint, Address]) : [false, 0n];
-      let usd = px.status === "success" ? Number(px.result as bigint) / 1e8 : 0;
-      if (!(usd > 0) && usd8 > 0n) usd = Number(usd8) / 1e8;
-      if (usd > 0) this.pairUsdCache.set(addrs[i], { v: usd, at: Date.now() });
-      const s = stockByAddress(addrs[i]);
-      const info: PairInfo = addrs[i] === WETH
-        ? { address: WETH, symbol: "ETH", name: "Ether", decimals: 18, usd, isNative: true, ethRoute: true }
-        : s ? { address: addrs[i], symbol: s.symbol, name: s.name, decimals: 18, usd, isNative: false, ethRoute: hasEthRoute(addrs[i]) }
-        : { ...(await this.pairInfo(addrs[i])), usd };
-      out.push({ ...info, approved, liqUsd: s?.liqUsd ?? 0, vol24Usd: s?.vol24Usd ?? 0 });
+  /** Multicall in chunks so slow RPCs (and forks) never time out one giant aggregate. */
+  private async chunked<T>(contracts: any[], size = 40): Promise<{ status: "success" | "failure"; result?: T }[]> {
+    const out: { status: "success" | "failure"; result?: T }[] = [];
+    for (let i = 0; i < contracts.length; i += size) {
+      try {
+        const part = await this.pc.multicall({ allowFailure: true, contracts: contracts.slice(i, i + size) as any });
+        out.push(...(part as any));
+      } catch {
+        out.push(...contracts.slice(i, i + size).map(() => ({ status: "failure" as const })));
+      }
     }
-    return out.sort((a, b) => (a.isNative ? -1 : b.isNative ? 1 : Number(b.ethRoute) - Number(a.ethRoute) || b.liqUsd - a.liqUsd));
+    return out;
+  }
+
+  /** Every pair the factory knows, ETH first, then by real liquidity. Never throws: ETH is always offered. */
+  async quotes(): Promise<QuoteView[]> {
+    const ethOnly = async (): Promise<QuoteView[]> => [{ address: WETH, symbol: "ETH", name: "Ether", decimals: 18, usd: await this.ethUsd().catch(() => 0), isNative: true, ethRoute: true, approved: true, liqUsd: 0, vol24Usd: 0 }];
+    try {
+      const n = Number(await this.pc.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteCount" }).catch(() => 0n));
+      if (n === 0) return ethOnly();
+      const listed = await this.chunked<Address>(Array.from({ length: n }, (_, i) => ({ address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteList", args: [BigInt(i)] })));
+      const addrs = listed.filter((r) => r.status === "success").map((r) => (r.result as Address).toLowerCase() as Address);
+      if (!addrs.includes(WETH)) addrs.unshift(WETH);
+      const rows = await this.chunked<unknown>(addrs.flatMap((a) => [
+        { address: ADDRESSES.factory, abi: factoryAbi, functionName: "quoteAssets", args: [a] },
+        { address: ADDRESSES.factory, abi: factoryAbi, functionName: "pairUsdPrice", args: [a] },
+      ]));
+      const out: QuoteView[] = [];
+      for (let i = 0; i < addrs.length; i++) {
+        const qa = rows[i * 2], px = rows[i * 2 + 1];
+        const [approved, usd8] = qa?.status === "success" ? (qa.result as readonly [boolean, bigint, Address]) : [addrs[i] === WETH, 0n];
+        let usd = px?.status === "success" ? Number(px.result as bigint) / 1e8 : 0;
+        if (!(usd > 0) && usd8 > 0n) usd = Number(usd8) / 1e8;
+        if (!(usd > 0)) usd = stockByAddress(addrs[i])?.usd ?? 0;
+        if (usd > 0) this.pairUsdCache.set(addrs[i], { v: usd, at: Date.now() });
+        const s = stockByAddress(addrs[i]);
+        const info: PairInfo = addrs[i] === WETH
+          ? { address: WETH, symbol: "ETH", name: "Ether", decimals: 18, usd, isNative: true, ethRoute: true }
+          : s ? { address: addrs[i], symbol: s.symbol, name: s.name, decimals: 18, usd, isNative: false, ethRoute: hasEthRoute(addrs[i]) }
+          : { ...(await this.pairInfo(addrs[i])), usd };
+        out.push({ ...info, approved, liqUsd: s?.liqUsd ?? 0, vol24Usd: s?.vol24Usd ?? 0 });
+      }
+      return out.sort((a, b) => (a.isNative ? -1 : b.isNative ? 1 : Number(b.ethRoute) - Number(a.ethRoute) || b.liqUsd - a.liqUsd));
+    } catch {
+      return ethOnly();
+    }
   }
 
   // -- trades -------------------------------------------------------------
@@ -645,12 +662,20 @@ export class StockPadClient {
     await this.pc.waitForTransactionReceipt({ hash: h });
   }
 
-  /** Simulate a buy (ETH in) or sell (coins in), returning the exact fill. Pair-denominated when the pair has no ETH route. */
-  async previewSwapOut(token: Address, side: "buy" | "sell", amountIn: bigint): Promise<bigint | null> {
+  /** Simulate a buy (ETH in) or sell (coins in), returning the exact fill. Pair-denominated when the pair has no ETH route.
+   *  `null` means the route reverted; `undefined` means no simulation was possible yet (no wallet, or the sell has no allowance). */
+  async previewSwapOut(token: Address, side: "buy" | "sell", amountIn: bigint): Promise<bigint | null | undefined> {
     if (amountIn <= 0n) return 0n;
     const me = this.wc?.account?.address as Address | undefined;
-    if (!me) return null;
-    const { route } = await this.routeOf(token);
+    if (!me) return undefined;
+    const { pair, route } = await this.routeOf(token);
+    // A sell (or a pair-denominated buy) pulls tokens through the router; without an allowance the
+    // simulation reverts for a reason that has nothing to do with the route.
+    const pulls = side === "sell" ? token : route === null ? pair : null;
+    if (pulls) {
+      const have = (await this.pc.readContract({ address: pulls, abi: erc20Abi, functionName: "allowance", args: [me, ADDRESSES.router] }).catch(() => 0n)) as bigint;
+      if (have < amountIn) return undefined;
+    }
     try {
       if (side === "buy") {
         if (route === null) {
