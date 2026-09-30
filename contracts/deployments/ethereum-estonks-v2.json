@@ -1,0 +1,91 @@
+{
+  "contracts": {
+    "hookDeployer": "0x11a0CCbf3f307056e0ca403C35eFfA122F6c4994",
+    "hookSalt": "0x000000000000000000000000000000000000000000000000000000000000131e",
+    "hook": "0x97953B0b8f37A0e87b220c8Be1C0C72ADfCcC0cc",
+    "tokenDeployer": "0x3d608288719d372010f21f2fA10a2D546a893F51",
+    "factory": "0x462cC9885188FE0f08597C9Df407f62E86c6D345",
+    "router": "0x467cDd862c36f17b67827Dbba8bdcf4160a8E369"
+  },
+  "quotes": [
+    {
+      "symbol": "TSLAon",
+      "address": "0xf6b1117ec07684D3958caD8BEb1b302bfD21103f",
+      "usd": 1640.69,
+      "usd8": "164069000000"
+    },
+    {
+      "symbol": "SLVon",
+      "address": "0xF3e4872e6a4cF365888D93b6146a2bAA7348F1A4",
+      "usd": 59.62,
+      "usd8": "5962000000"
+    },
+    {
+      "symbol": "NVDAon",
+      "address": "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
+      "usd": 229.26,
+      "usd8": "22926000000"
+    },
+    {
+      "symbol": "CRCLon",
+      "address": "0x3632DEa96A953C11dac2f00b4A05a32CD1063fAE",
+      "usd": 100.78,
+      "usd8": "10078000000"
+    },
+    {
+      "symbol": "SPYon",
+      "address": "0xFeDC5f4a6c38211c1338aa411018DFAf26612c08",
+      "usd": 774.46,
+      "usd8": "77446000000"
+    },
+    {
+      "symbol": "GOOGLon",
+      "address": "0xbA47214eDd2bb43099611b208f75E4b42FDcfEDc",
+      "usd": 338.13,
+      "usd8": "33813000000"
+    },
+    {
+      "symbol": "SPCXon",
+      "address": "0xc9eef266834730340A55B6CC24621B31BAF55581",
+      "usd": 266.6,
+      "usd8": "26660000000"
+    },
+    {
+      "symbol": "QQQon",
+      "address": "0x0e397938C1Aa0680954093495B70A9F5e2249aBa",
+      "usd": 714.47,
+      "usd8": "71447000000"
+    },
+    {
+      "symbol": "COPXon",
+      "address": "0x423A63dfE8d82CD9C6568C92210AA537d8Ef6885",
+      "usd": 90.78,
+      "usd8": "9078000000"
+    },
+    {
+      "symbol": "AAPLon",
+      "address": "0x14c3abF95Cb9C93a8b82C1CdCB76D72Cb87b2d4c",
+      "usd": 316.93,
+      "usd8": "31693000000"
+    }
+  ],
+  "factoryOwner": "0x86E32f9A1a18ab6dcbaDe74A6fb9DD032F9ed58C",
+  "deployBlock": 26087264,
+  "chainId": 1,
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "ethUsd8": "267096518029",
+  "uniswap": {
+    "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+    "weth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "swapRouter02": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+    "ethUsdFeed": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
+  },
+  "fees": {
+    "taxBps": 200,
+    "creatorBps": 3500,
+    "holderBps": 1500,
+    "platformBps": 5000
+  },
+  "deployedAt": "2026-09-30T02:23:01.511Z"
+}
