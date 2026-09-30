@@ -1,4 +1,4 @@
-// Generated from contracts/artifacts-size/contracts/v4/eth (StockPad* contracts, Estonks mainnet build). Do not edit by hand.
+// Generated from contracts/artifacts-size/contracts/v4/estonks (Estonks v2 mainnet build). Do not edit by hand.
 export const factoryAbi = [
  {
   "inputs": [
@@ -18,12 +18,12 @@ export const factoryAbi = [
     "type": "address"
    },
    {
-    "internalType": "contract StockPadHook",
+    "internalType": "contract EstonksHook",
     "name": "hook_",
     "type": "address"
    },
    {
-    "internalType": "contract StockPadTokenDeployer",
+    "internalType": "contract EstonksTokenDeployer",
     "name": "tokenDeployer_",
     "type": "address"
    },
@@ -113,12 +113,12 @@ export const factoryAbi = [
    },
    {
     "indexed": false,
-    "internalType": "uint16",
-    "name": "taxBps",
-    "type": "uint16"
+    "internalType": "string",
+    "name": "uri",
+    "type": "string"
    }
   ],
-  "name": "CoinTaxSet",
+  "name": "CoinMetadataSet",
   "type": "event"
  },
  {
@@ -400,19 +400,6 @@ export const factoryAbi = [
  },
  {
   "inputs": [],
-  "name": "MAX_TAX_BPS",
-  "outputs": [
-   {
-    "internalType": "uint16",
-    "name": "",
-    "type": "uint16"
-   }
-  ],
-  "stateMutability": "view",
-  "type": "function"
- },
- {
-  "inputs": [],
   "name": "TAX_BPS",
   "outputs": [
    {
@@ -579,7 +566,7 @@ export const factoryAbi = [
   "name": "hook",
   "outputs": [
    {
-    "internalType": "contract StockPadHook",
+    "internalType": "contract EstonksHook",
     "name": "",
     "type": "address"
    }
@@ -610,9 +597,19 @@ export const factoryAbi = [
       "internalType": "address",
       "name": "pair",
       "type": "address"
+     },
+     {
+      "internalType": "uint256",
+      "name": "minPairOut",
+      "type": "uint256"
+     },
+     {
+      "internalType": "address[]",
+      "name": "basket",
+      "type": "address[]"
      }
     ],
-    "internalType": "struct StockPadFactory.LaunchParams",
+    "internalType": "struct EstonksFactory.LaunchParams",
     "name": "p",
     "type": "tuple"
    },
@@ -690,6 +687,44 @@ export const factoryAbi = [
     "internalType": "bytes32",
     "name": "poolId",
     "type": "bytes32"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "token",
+    "type": "address"
+   }
+  ],
+  "name": "metadataOf",
+  "outputs": [
+   {
+    "internalType": "string",
+    "name": "",
+    "type": "string"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "token",
+    "type": "address"
+   }
+  ],
+  "name": "metadataOverride",
+  "outputs": [
+   {
+    "internalType": "string",
+    "name": "",
+    "type": "string"
    }
   ],
   "stateMutability": "view",
@@ -932,24 +967,6 @@ export const factoryAbi = [
   "inputs": [
    {
     "internalType": "address",
-    "name": "token",
-    "type": "address"
-   },
-   {
-    "internalType": "uint16",
-    "name": "taxBps",
-    "type": "uint16"
-   }
-  ],
-  "name": "setCoinTax",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
- },
- {
-  "inputs": [
-   {
-    "internalType": "address",
     "name": "converter_",
     "type": "address"
    }
@@ -1023,7 +1040,7 @@ export const factoryAbi = [
   "name": "tokenDeployer",
   "outputs": [
    {
-    "internalType": "contract StockPadTokenDeployer",
+    "internalType": "contract EstonksTokenDeployer",
     "name": "",
     "type": "address"
    }
@@ -1085,63 +1102,80 @@ export const tokenAbi = [
  {
   "inputs": [
    {
-    "internalType": "string",
-    "name": "name_",
-    "type": "string"
-   },
-   {
-    "internalType": "string",
-    "name": "symbol_",
-    "type": "string"
-   },
-   {
-    "internalType": "string",
-    "name": "metadataURI_",
-    "type": "string"
-   },
-   {
-    "internalType": "uint256",
-    "name": "supply_",
-    "type": "uint256"
-   },
-   {
-    "internalType": "address",
-    "name": "creator_",
-    "type": "address"
-   },
-   {
-    "internalType": "address",
-    "name": "factory_",
-    "type": "address"
-   },
-   {
-    "internalType": "address",
-    "name": "pairAsset_",
-    "type": "address"
-   },
-   {
-    "internalType": "address",
-    "name": "poolManager_",
-    "type": "address"
-   },
-   {
-    "internalType": "uint16",
-    "name": "creatorBps_",
-    "type": "uint16"
-   },
-   {
-    "internalType": "uint16",
-    "name": "holderBps_",
-    "type": "uint16"
+    "components": [
+     {
+      "internalType": "string",
+      "name": "name",
+      "type": "string"
+     },
+     {
+      "internalType": "string",
+      "name": "symbol",
+      "type": "string"
+     },
+     {
+      "internalType": "string",
+      "name": "metadataURI",
+      "type": "string"
+     },
+     {
+      "internalType": "uint256",
+      "name": "supply",
+      "type": "uint256"
+     },
+     {
+      "internalType": "address",
+      "name": "creator",
+      "type": "address"
+     },
+     {
+      "internalType": "address",
+      "name": "factory",
+      "type": "address"
+     },
+     {
+      "internalType": "address",
+      "name": "pairAsset",
+      "type": "address"
+     },
+     {
+      "internalType": "address",
+      "name": "poolManager",
+      "type": "address"
+     },
+     {
+      "internalType": "address",
+      "name": "hook",
+      "type": "address"
+     },
+     {
+      "internalType": "address",
+      "name": "converter",
+      "type": "address"
+     },
+     {
+      "internalType": "uint16",
+      "name": "creatorBps",
+      "type": "uint16"
+     },
+     {
+      "internalType": "uint16",
+      "name": "holderBps",
+      "type": "uint16"
+     },
+     {
+      "internalType": "address[]",
+      "name": "basket",
+      "type": "address[]"
+     }
+    ],
+    "internalType": "struct EstonksToken.Init",
+    "name": "p",
+    "type": "tuple"
    }
   ],
   "stateMutability": "nonpayable",
   "type": "constructor"
- },
- {
-  "inputs": [],
-  "name": "AlreadyInit",
-  "type": "error"
  },
  {
   "inputs": [],
@@ -1241,7 +1275,17 @@ export const tokenAbi = [
  },
  {
   "inputs": [],
+  "name": "InvalidParams",
+  "type": "error"
+ },
+ {
+  "inputs": [],
   "name": "LaunchGuard",
+  "type": "error"
+ },
+ {
+  "inputs": [],
+  "name": "NoBasket",
   "type": "error"
  },
  {
@@ -1252,21 +1296,6 @@ export const tokenAbi = [
  {
   "inputs": [],
   "name": "NoHolders",
-  "type": "error"
- },
- {
-  "inputs": [],
-  "name": "OnlyCreator",
-  "type": "error"
- },
- {
-  "inputs": [],
-  "name": "OnlyFactory",
-  "type": "error"
- },
- {
-  "inputs": [],
-  "name": "OnlyHook",
   "type": "error"
  },
  {
@@ -1324,34 +1353,9 @@ export const tokenAbi = [
     "internalType": "uint256",
     "name": "amount",
     "type": "uint256"
-   },
-   {
-    "indexed": false,
-    "internalType": "bool",
-    "name": "asEth",
-    "type": "bool"
    }
   ],
-  "name": "CreatorFeesClaimed",
-  "type": "event"
- },
- {
-  "anonymous": false,
-  "inputs": [
-   {
-    "indexed": true,
-    "internalType": "address",
-    "name": "account",
-    "type": "address"
-   },
-   {
-    "indexed": false,
-    "internalType": "bool",
-    "name": "excluded",
-    "type": "bool"
-   }
-  ],
-  "name": "ExcludedSet",
+  "name": "CreatorFeesPaid",
   "type": "event"
  },
  {
@@ -1404,38 +1408,6 @@ export const tokenAbi = [
    {
     "indexed": true,
     "internalType": "address",
-    "name": "hook",
-    "type": "address"
-   },
-   {
-    "indexed": true,
-    "internalType": "address",
-    "name": "converter",
-    "type": "address"
-   }
-  ],
-  "name": "HookSet",
-  "type": "event"
- },
- {
-  "anonymous": false,
-  "inputs": [
-   {
-    "indexed": false,
-    "internalType": "string",
-    "name": "uri",
-    "type": "string"
-   }
-  ],
-  "name": "MetadataSet",
-  "type": "event"
- },
- {
-  "anonymous": false,
-  "inputs": [
-   {
-    "indexed": true,
-    "internalType": "address",
     "name": "recipient",
     "type": "address"
    },
@@ -1446,7 +1418,7 @@ export const tokenAbi = [
     "type": "uint256"
    }
   ],
-  "name": "PlatformFeesClaimed",
+  "name": "PlatformFeesPaid",
   "type": "event"
  },
  {
@@ -1466,9 +1438,9 @@ export const tokenAbi = [
    },
    {
     "indexed": false,
-    "internalType": "bool",
-    "name": "asEth",
-    "type": "bool"
+    "internalType": "uint8",
+    "name": "payout",
+    "type": "uint8"
    }
   ],
   "name": "RewardsClaimed",
@@ -1498,6 +1470,19 @@ export const tokenAbi = [
   ],
   "name": "Transfer",
   "type": "event"
+ },
+ {
+  "inputs": [],
+  "name": "MAX_BASKET",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
  },
  {
   "inputs": [],
@@ -1536,24 +1521,6 @@ export const tokenAbi = [
    }
   ],
   "stateMutability": "view",
-  "type": "function"
- },
- {
-  "inputs": [
-   {
-    "internalType": "uint256",
-    "name": "fee",
-    "type": "uint256"
-   },
-   {
-    "internalType": "uint256",
-    "name": "extra",
-    "type": "uint256"
-   }
-  ],
-  "name": "accrue",
-  "outputs": [],
-  "stateMutability": "nonpayable",
   "type": "function"
  },
  {
@@ -1624,6 +1591,19 @@ export const tokenAbi = [
   "type": "function"
  },
  {
+  "inputs": [],
+  "name": "basketAssets",
+  "outputs": [
+   {
+    "internalType": "address[]",
+    "name": "",
+    "type": "address[]"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
   "inputs": [
    {
     "internalType": "uint256",
@@ -1633,35 +1613,6 @@ export const tokenAbi = [
   ],
   "name": "burn",
   "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
- },
- {
-  "inputs": [
-   {
-    "internalType": "bool",
-    "name": "asEth",
-    "type": "bool"
-   },
-   {
-    "internalType": "uint256",
-    "name": "minEthOut",
-    "type": "uint256"
-   },
-   {
-    "internalType": "bytes",
-    "name": "route",
-    "type": "bytes"
-   }
-  ],
-  "name": "claimCreatorFees",
-  "outputs": [
-   {
-    "internalType": "uint256",
-    "name": "amount",
-    "type": "uint256"
-   }
-  ],
   "stateMutability": "nonpayable",
   "type": "function"
  },
@@ -1686,7 +1637,7 @@ export const tokenAbi = [
  },
  {
   "inputs": [],
-  "name": "claimPlatformFees",
+  "name": "claimRewards",
   "outputs": [
    {
     "internalType": "uint256",
@@ -1698,8 +1649,24 @@ export const tokenAbi = [
   "type": "function"
  },
  {
-  "inputs": [],
-  "name": "claimRewards",
+  "inputs": [
+   {
+    "internalType": "bytes",
+    "name": "pairRoute",
+    "type": "bytes"
+   },
+   {
+    "internalType": "bytes[]",
+    "name": "routes",
+    "type": "bytes[]"
+   },
+   {
+    "internalType": "uint256[]",
+    "name": "minOuts",
+    "type": "uint256[]"
+   }
+  ],
+  "name": "claimRewardsAsBasket",
   "outputs": [
    {
     "internalType": "uint256",
@@ -1851,6 +1818,19 @@ export const tokenAbi = [
   "type": "function"
  },
  {
+  "inputs": [],
+  "name": "factory",
+  "outputs": [
+   {
+    "internalType": "address",
+    "name": "",
+    "type": "address"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
   "inputs": [
    {
     "internalType": "uint256",
@@ -1887,29 +1867,6 @@ export const tokenAbi = [
    }
   ],
   "stateMutability": "view",
-  "type": "function"
- },
- {
-  "inputs": [
-   {
-    "internalType": "address",
-    "name": "hook_",
-    "type": "address"
-   },
-   {
-    "internalType": "address",
-    "name": "converter_",
-    "type": "address"
-   },
-   {
-    "internalType": "address[]",
-    "name": "excludedAddrs",
-    "type": "address[]"
-   }
-  ],
-  "name": "initHook",
-  "outputs": [],
-  "stateMutability": "nonpayable",
   "type": "function"
  },
  {
@@ -1991,6 +1948,32 @@ export const tokenAbi = [
   "type": "function"
  },
  {
+  "inputs": [],
+  "name": "payCreator",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "amount",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "nonpayable",
+  "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "payPlatform",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "amount",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "nonpayable",
+  "type": "function"
+ },
+ {
   "inputs": [
    {
     "internalType": "address",
@@ -2037,6 +2020,19 @@ export const tokenAbi = [
  },
  {
   "inputs": [],
+  "name": "reserved",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [],
   "name": "rewardToken",
   "outputs": [
    {
@@ -2046,19 +2042,6 @@ export const tokenAbi = [
    }
   ],
   "stateMutability": "view",
-  "type": "function"
- },
- {
-  "inputs": [
-   {
-    "internalType": "string",
-    "name": "uri",
-    "type": "string"
-   }
-  ],
-  "name": "setMetadataURI",
-  "outputs": [],
-  "stateMutability": "nonpayable",
   "type": "function"
  },
  {
@@ -2072,6 +2055,19 @@ export const tokenAbi = [
    }
   ],
   "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "sync",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "amount",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "nonpayable",
   "type": "function"
  },
  {
@@ -2178,6 +2174,19 @@ export const tokenAbi = [
   ],
   "stateMutability": "nonpayable",
   "type": "function"
+ },
+ {
+  "inputs": [],
+  "name": "unsynced",
+  "outputs": [
+   {
+    "internalType": "uint256",
+    "name": "",
+    "type": "uint256"
+   }
+  ],
+  "stateMutability": "view",
+  "type": "function"
  }
 ] as const;
 export const routerAbi = [
@@ -2189,7 +2198,7 @@ export const routerAbi = [
     "type": "address"
    },
    {
-    "internalType": "contract StockPadFactory",
+    "internalType": "contract EstonksFactory",
     "name": "factory_",
     "type": "address"
    },
@@ -2240,8 +2249,56 @@ export const routerAbi = [
  },
  {
   "inputs": [],
+  "name": "ZeroAddress",
+  "type": "error"
+ },
+ {
+  "inputs": [],
   "name": "ZeroAmount",
   "type": "error"
+ },
+ {
+  "anonymous": false,
+  "inputs": [
+   {
+    "indexed": true,
+    "internalType": "address",
+    "name": "from",
+    "type": "address"
+   },
+   {
+    "indexed": true,
+    "internalType": "address",
+    "name": "to",
+    "type": "address"
+   },
+   {
+    "indexed": false,
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   },
+   {
+    "indexed": false,
+    "internalType": "uint256",
+    "name": "pairIn",
+    "type": "uint256"
+   },
+   {
+    "indexed": false,
+    "internalType": "address[]",
+    "name": "stocks",
+    "type": "address[]"
+   },
+   {
+    "indexed": false,
+    "internalType": "uint256[]",
+    "name": "outs",
+    "type": "uint256[]"
+   }
+  ],
+  "name": "BasketBought",
+  "type": "event"
  },
  {
   "anonymous": false,
@@ -2414,12 +2471,61 @@ export const routerAbi = [
   "name": "factory",
   "outputs": [
    {
-    "internalType": "contract StockPadFactory",
+    "internalType": "contract EstonksFactory",
     "name": "",
     "type": "address"
    }
   ],
   "stateMutability": "view",
+  "type": "function"
+ },
+ {
+  "inputs": [
+   {
+    "internalType": "address",
+    "name": "pair",
+    "type": "address"
+   },
+   {
+    "internalType": "uint256",
+    "name": "amount",
+    "type": "uint256"
+   },
+   {
+    "internalType": "address",
+    "name": "to",
+    "type": "address"
+   },
+   {
+    "internalType": "bytes",
+    "name": "pairRoute",
+    "type": "bytes"
+   },
+   {
+    "internalType": "address[]",
+    "name": "stocks",
+    "type": "address[]"
+   },
+   {
+    "internalType": "bytes[]",
+    "name": "routes",
+    "type": "bytes[]"
+   },
+   {
+    "internalType": "uint256[]",
+    "name": "minOuts",
+    "type": "uint256[]"
+   }
+  ],
+  "name": "pairToBasket",
+  "outputs": [
+   {
+    "internalType": "uint256[]",
+    "name": "outs",
+    "type": "uint256[]"
+   }
+  ],
+  "stateMutability": "nonpayable",
   "type": "function"
  },
  {
@@ -2594,11 +2700,6 @@ export const hookAbi = [
     "internalType": "contract IPoolManager",
     "name": "pm",
     "type": "address"
-   },
-   {
-    "internalType": "address",
-    "name": "admin_",
-    "type": "address"
    }
   ],
   "stateMutability": "nonpayable",
@@ -2611,12 +2712,17 @@ export const hookAbi = [
  },
  {
   "inputs": [],
+  "name": "BadTax",
+  "type": "error"
+ },
+ {
+  "inputs": [],
   "name": "HookNotImplemented",
   "type": "error"
  },
  {
   "inputs": [],
-  "name": "NotAdmin",
+  "name": "NotDeployer",
   "type": "error"
  },
  {
@@ -2699,12 +2805,6 @@ export const hookAbi = [
     "internalType": "uint256",
     "name": "fee",
     "type": "uint256"
-   },
-   {
-    "indexed": false,
-    "internalType": "uint256",
-    "name": "extra",
-    "type": "uint256"
    }
   ],
   "name": "FeeTaken",
@@ -2742,25 +2842,6 @@ export const hookAbi = [
   "type": "event"
  },
  {
-  "anonymous": false,
-  "inputs": [
-   {
-    "indexed": true,
-    "internalType": "PoolId",
-    "name": "id",
-    "type": "bytes32"
-   },
-   {
-    "indexed": false,
-    "internalType": "uint16",
-    "name": "taxBps",
-    "type": "uint16"
-   }
-  ],
-  "name": "PoolTaxSet",
-  "type": "event"
- },
- {
   "inputs": [],
   "name": "SNIPE_SECONDS",
   "outputs": [
@@ -2781,19 +2862,6 @@ export const hookAbi = [
     "internalType": "uint16",
     "name": "",
     "type": "uint16"
-   }
-  ],
-  "stateMutability": "view",
-  "type": "function"
- },
- {
-  "inputs": [],
-  "name": "admin",
-  "outputs": [
-   {
-    "internalType": "address",
-    "name": "",
-    "type": "address"
    }
   ],
   "stateMutability": "view",
@@ -3629,7 +3697,7 @@ export const hookAbi = [
       "type": "bool"
      }
     ],
-    "internalType": "struct StockPadHook.PoolConfig",
+    "internalType": "struct EstonksHook.PoolConfig",
     "name": "",
     "type": "tuple"
    }
@@ -3911,24 +3979,6 @@ export const hookAbi = [
    }
   ],
   "name": "setFactory",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
- },
- {
-  "inputs": [
-   {
-    "internalType": "PoolId",
-    "name": "id",
-    "type": "bytes32"
-   },
-   {
-    "internalType": "uint16",
-    "name": "taxBps",
-    "type": "uint16"
-   }
-  ],
-  "name": "setPoolTax",
   "outputs": [],
   "stateMutability": "nonpayable",
   "type": "function"

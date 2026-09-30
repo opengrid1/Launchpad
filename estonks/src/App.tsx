@@ -3,7 +3,7 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-ro
 import { useAccount } from "wagmi";
 
 import { Icon, Logo } from "./components/Icon";
-import { BRAND, env, listed } from "./lib/env";
+import { ADDRESSES, BRAND, env, listed } from "./lib/env";
 import { pct, short, usd } from "./lib/format";
 import { useConfig, useIsAdmin, useToast, useTokens } from "./lib/hooks";
 import { openWalletModal } from "./lib/wallet";
@@ -13,6 +13,7 @@ import Launch from "./pages/Launch";
 import Me from "./pages/Me";
 import Stats from "./pages/Stats";
 import Admin from "./pages/Admin";
+import Docs from "./pages/Docs";
 
 const NAVS = [
   { to: "/", icon: "coins", label: "Coins", end: true },
@@ -42,6 +43,7 @@ export default function App() {
         <Link className="brand" to="/"><Logo /><span className="word">Estonks</span><span className="badge eth">ETH</span></Link>
         <nav className="topnav" aria-label="Main">
           {NAVS.map((n) => <NavLink key={n.to} to={n.to} end={"end" in n} className={cls}>{n.label}</NavLink>)}
+          <NavLink to="/docs" className={cls}>Docs</NavLink>
           {admin && <NavLink to="/admin" className={cls}>Admin</NavLink>}
         </nav>
         <div className="tools">
@@ -59,12 +61,13 @@ export default function App() {
         <Route path="/me" element={<Me />} />
         <Route path="/stats" element={<Stats />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/docs" element={<Docs />} />
         <Route path="*" element={<Home />} />
       </Routes>
 
       {!onCoin && (
         <footer className="footer">
-          <span>Contracts verified on <a href={`${env.explorerUrl}/address/${cfg ? "" : ""}`.replace(/\/address\/$/, "/address/0x12f4d0eAEe4ea0cEf7722aF00989D5210417DaD9")} target="_blank" rel="noreferrer">Etherscan</a>.</span>
+          <span><Link to="/docs">Docs</Link> · Contracts verified on <a href={`${env.explorerUrl}/address/${ADDRESSES.factory}`} target="_blank" rel="noreferrer">Etherscan</a>.</span>
           <span><a href={BRAND.x} target="_blank" rel="noreferrer">X</a> · <a href={BRAND.telegram} target="_blank" rel="noreferrer">Telegram</a></span>
         </footer>
       )}

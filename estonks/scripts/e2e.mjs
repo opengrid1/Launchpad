@@ -84,7 +84,11 @@ try {
     await p.fill('.lf-f input.mono', 'TPEPE');
     await p.fill('.lf-f input[placeholder="One line about the coin"]', 'End to end test coin on the fork.');
     await p.fill('.lf-f input[placeholder="@handle"]', 'estonks');
-    await p.click('.lf-quick button:has-text("0.05")');
+    await p.click('.lf-sec:has(h2:has-text("First buy")) .lf-quick button:has-text("0.05")');
+    // Rewards basket: NVDAon + SPYon.
+    await p.click('.lf-sec:has(h2:has-text("Rewards basket")) .pair:has-text("NVDAon")');
+    await p.click('.lf-sec:has(h2:has-text("Rewards basket")) .pair:has-text("SPYon")');
+    log('preview basket:', await p.locator('.lf-side .kv:has-text("Rewards basket") b').textContent());
     await shot(p, 'launch-filled');
     await p.click('.lf-side .btn.pri');
     log('launch:', await waitToast(/Launch TPEPE done|Cancelled|failed|Not enough|reverted|error/i, 180000));
@@ -112,7 +116,17 @@ try {
     log('position:', (await p.locator('.pos .pg').first().innerText()).replace(/\n/g, ' | '));
     log('trades rows:', await p.locator('.list .item').count(), 'pager:', await p.locator('.pager span').first().textContent().catch(() => 'none'));
 
-    // 4. Claim holder rewards.
+    // 4. Claim as the basket, then the regular claim.
+    log('basket info:', await p.locator('.info .kv:has-text("Rewards basket") b').textContent().catch(() => 'none'));
+    const basketBtn = p.locator('.pos .btn:has-text("Claim as basket")');
+    log('basket claim enabled:', await basketBtn.isEnabled());
+    if (await basketBtn.isEnabled()) {
+      const bal = async (a) => BigInt(await rpc('eth_call', [{ to: a, data: '0x70a08231' + USER.slice(2).toLowerCase().padStart(64, '0') }, 'latest']));
+      const [n0, s0] = [await bal('0x2d1f7226bd1f780af6b9a49dcc0ae00e8df4bdee'), await bal('0xfedc5f4a6c38211c1338aa411018dfaf26612c08')];
+      await basketBtn.click(); log('basket claim:', await waitToast(/Claim as basket done|Cancelled|failed|reverted|error|Price moved/i));
+      log('basket received NVDAon', Number((await bal('0x2d1f7226bd1f780af6b9a49dcc0ae00e8df4bdee')) - n0) / 1e18, 'SPYon', Number((await bal('0xfedc5f4a6c38211c1338aa411018dfaf26612c08')) - s0) / 1e18);
+      await p.waitForTimeout(3000);
+    }
     const claimBtn = p.locator('.pos .btn.claim').first();
     log('claim enabled:', await claimBtn.isEnabled());
     if (await claimBtn.isEnabled()) { await claimBtn.click(); log('claim:', await waitToast(/Claim rewards done|Cancelled|failed|reverted|error|Nothing/i)); }
@@ -125,8 +139,8 @@ try {
     await p.fill('.lf-f input[placeholder="Pepe on Nvidia"]', 'Jensen Test');
     await p.fill('.lf-f input.mono', 'TJEN');
     await p.fill('.lf-search input', 'NVDA'); await p.waitForTimeout(500);
-    await p.click('.lf-pairs .pair:has-text("NVDAon")');
-    await p.click('.lf-quick button:has-text("0.05")');
+    await p.click('.lf-sec:has(h2:text-is("Pair")) .pair:has-text("NVDAon")');
+    await p.click('.lf-sec:has(h2:has-text("First buy")) .lf-quick button:has-text("0.05")');
     await shot(p, 'launch-nvda');
     await p.click('.lf-side .btn.pri');
     log('launch NVDA:', await waitToast(/Launch TJEN done|Cancelled|failed|Not enough|reverted|error/i, 180000));
@@ -149,6 +163,8 @@ try {
     if (await claimAll.isEnabled()) { await claimAll.click(); log('claim all:', await waitToast(/Claim all done|Cancelled|failed|reverted|error/i)); }
     await p.goto(SITE + '/stats', { waitUntil: 'load' }); await p.waitForTimeout(8000); await shot(p, 'stats');
     log('stats:', (await p.locator('.hero').innerText()).replace(/\n/g, ' | '), '|', (await p.locator('.figs').first().innerText()).replace(/\n/g, ' | '));
+    await p.goto(SITE + '/docs', { waitUntil: 'load' }); await p.waitForTimeout(2000); await shot(p, 'docs');
+    log('docs sections:', (await p.locator('.docs h2').allInnerTexts()).join(' / '));
     // 8. Mobile sheet.
     const m = await ctx.newPage(); await m.setViewportSize({ width: 390, height: 844 });
     await m.goto(coinUrl, { waitUntil: 'load' }); await m.waitForTimeout(7000);
@@ -156,7 +172,7 @@ try {
     log('mobile sheet open:', await m.locator('.tsheet.open').count());
     await m.close();
   } else {
-    // Admin flow: pause/resume, hide/unhide first coin, set tax, set metadata, push fees, set fee recipient back.
+    // Admin flow: pause/resume, hide/unhide first coin, set metadata, push fees, set fee recipient back.
     await p.goto(SITE + '/admin', { waitUntil: 'load' }); await p.waitForTimeout(9000); await shot(p, 'admin');
     log('status:', (await p.locator('.adm-status').innerText()).replace(/\n/g, ' | '));
     await p.click('.adm-actions .btn:has-text("Pause launches")'); log('pause:', await waitToast(/Pause launches done|failed|reverted|error|Admin only/i));
@@ -170,9 +186,7 @@ try {
       log('hidden badge:', await p.locator('.adm-coin').first().locator('.badge.down').count());
       await p.locator('.adm-coin').first().locator('.btn:has-text("Unhide")').first().click(); log('unhide:', await waitToast(/Unhide .* done|failed|reverted|error/i));
       await p.waitForTimeout(3000);
-      await p.locator('.adm-coin').first().locator('input[placeholder="tax %"]').fill('3');
-      await p.locator('.adm-coin').first().locator('.btn:has-text("Set tax")').click(); log('set tax:', await waitToast(/tax done|failed|reverted|error/i));
-      await p.waitForTimeout(3000);
+      log('tax setter present:', await p.locator('input[placeholder="tax %"]').count());
       await p.locator('.adm-coin').first().locator('input[placeholder="metadata JSON or URI"]').fill(JSON.stringify({ description: 'Edited by admin', twitter: 'https://x.com/estonks' }));
       await p.locator('.adm-coin').first().locator('.btn:has-text("Set metadata")').click(); log('set metadata:', await waitToast(/metadata done|failed|reverted|error/i));
       await p.waitForTimeout(3000);

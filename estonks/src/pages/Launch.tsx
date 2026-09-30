@@ -9,10 +9,17 @@ import { client } from "../lib/client";
 import { DEPLOYED, FEES } from "../lib/env";
 import { usd } from "../lib/format";
 import { friendlyError, runTx, setToast, useEthUsd, useQuotes } from "../lib/hooks";
-import { WETH } from "../lib/stocks";
+import { stockByAddress, WETH } from "../lib/stocks";
 import { ensureWallet, openWalletModal } from "../lib/wallet";
 
 const QUICK = ["0", "0.05", "0.1", "0.25", "0.5"];
+const MAX_BASKET = 4;
+/** Ready-made baskets, by ticker; a preset shows only when every stock in it is listed. */
+const PRESETS: { name: string; tickers: string[] }[] = [
+  { name: "Big tech", tickers: ["NVDA", "AAPL", "GOOGL", "TSLA"] },
+  { name: "Index", tickers: ["SPY", "QQQ"] },
+  { name: "Metals", tickers: ["SLV", "COPX"] },
+];
 
 /** Launch: coin, pair, first buy, preview. One transaction. */
 export default function Launch() {
@@ -27,6 +34,7 @@ export default function Launch() {
   const [f, setF] = useState({ name: "", symbol: "", description: "", website: "", twitter: "", telegram: "", devBuy: "0" });
   const [logo, setLogo] = useState("");
   const [busy, setBusy] = useState(false);
+  const [basket, setBasket] = useState<Address[]>([]);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
 
   const render = (bmp: ImageBitmap, size: number, q: number) => {
@@ -53,6 +61,14 @@ export default function Launch() {
   const shown = useMemo(() => { const s = pq.trim().toLowerCase(); return s ? pairs.filter((p) => `${p.symbol} ${p.name}`.toLowerCase().includes(s)) : pairs.slice(0, 12); }, [pairs, pq]);
   const pair = pairs.find((q) => q.address.toLowerCase() === pairAddr.toLowerCase()) ?? pairs.find((q) => q.isNative);
   const pairSym = pair?.symbol ?? "ETH";
+  // Basket stocks: listed stocks buyers can reach with ETH, deepest pools first.
+  const stocks = useMemo(() => pairs.filter((q) => !q.isNative && q.ethRoute), [pairs]);
+  const tickerOf = (a: Address) => stockByAddress(a)?.ticker ?? "";
+  const presets = PRESETS.map((p) => ({ ...p, addrs: p.tickers.map((tk) => stocks.find((q) => tickerOf(q.address) === tk)?.address) }))
+    .filter((p) => p.addrs.every(Boolean)) as { name: string; tickers: string[]; addrs: Address[] }[];
+  const inBasket = (a: Address) => basket.some((b) => b.toLowerCase() === a.toLowerCase());
+  const toggle = (a: Address) => setBasket(inBasket(a) ? basket.filter((b) => b.toLowerCase() !== a.toLowerCase()) : basket.length < MAX_BASKET ? [...basket, a] : basket);
+  const basketSyms = basket.map((a) => stocks.find((q) => q.address.toLowerCase() === a.toLowerCase())?.symbol ?? "").filter(Boolean);
   const canDevBuy = !pair || pair.ethRoute;
   const dev = Number(f.devBuy) > 0 ? f.devBuy.trim() : "";
   const ready = f.name.trim().length > 0;
@@ -69,7 +85,7 @@ export default function Launch() {
       if (f.telegram.trim()) meta.telegram = /^https?:/i.test(f.telegram.trim()) ? f.telegram.trim() : `https://t.me/${f.telegram.trim().replace(/^@/, "")}`;
       if (logo) meta.logo = logo;
       const devWei = dev ? parseEther(dev as `${number}`) : 0n;
-      const p = { name: f.name.trim(), symbol, metadataURI: JSON.stringify(meta), pair: pair.address, devBuyWei: devWei };
+      const p = { name: f.name.trim(), symbol, metadataURI: JSON.stringify(meta), pair: pair.address, devBuyWei: devWei, basket };
       try { await client.estimateLaunch(p, me!); } catch (err) { setToast({ kind: "err", text: friendlyError(err) }); return; }
       let created: `0x${string}` | null = null;
       const ok = await runTx(`Launch ${symbol}`, () => client.createToken(p), async () => {
@@ -96,8 +112,9 @@ export default function Launch() {
         <div className="kv"><span>Liquidity</span><b>Uniswap V4</b></div>
         <div className="kv"><span>Trade fee</span><b>{FEES.taxPct}%</b></div>
         <div className="kv"><span><i className="sw" style={{ background: "#ffab7a" }} />You</span><b>{(FEES.taxPct * FEES.creatorPct / 100).toFixed(1)}%</b></div>
-        <div className="kv"><span><i className="sw" style={{ background: "#9b7dff" }} />Holders, in {pairSym}</span><b>{(FEES.taxPct * FEES.holderPct / 100).toFixed(1)}%</b></div>
+        <div className="kv"><span><i className="sw" style={{ background: "#9b7dff" }} />Holders, in {pairSym}{basket.length ? " or basket" : ""}</span><b>{(FEES.taxPct * FEES.holderPct / 100).toFixed(1)}%</b></div>
         <div className="kv"><span><i className="sw" style={{ background: "#e3b657" }} />STONK holders</span><b>{(FEES.taxPct * FEES.platformPct / 100).toFixed(1)}%</b></div>
+        <div className="kv"><span>Rewards basket</span><b>{basketSyms.length ? basketSyms.join(" · ") : "none"}</b></div>
         <div className="kv"><span>First buy</span><b>{dev ? `${dev} ETH` : "none"}</b></div>
       </div>
       <button className="btn pri lg wide" disabled={busy || !ready} onClick={submit}>{!isConnected ? "Connect wallet" : busy ? "Launching…" : `Launch ${symbol}`}</button>
@@ -139,6 +156,20 @@ export default function Launch() {
             </div>
           </div>
           {pair && !pair.isNative && !pair.ethRoute && <p className="note">{pairSym} has no ETH route on chain yet. Buyers must hold {pairSym}, and a first buy in ETH is not possible.</p>}
+        </section>
+
+        <section className="lf-sec"><div className="lf-head"><h2>Rewards basket</h2><span className="lf-hint">Optional · up to {MAX_BASKET} · fixed forever</span></div>
+          <div className="lf-group">
+            <p className="note" style={{ margin: 0 }}>Holders can claim their rewards as equal parts of these stocks instead of {pairSym}.</p>
+            {presets.length > 0 && <div className="lf-quick">{presets.map((p) => { const on = p.addrs.length === basket.length && p.addrs.every(inBasket); return <button type="button" key={p.name} className={on ? "on" : ""} onClick={() => setBasket(on ? [] : p.addrs)}>{p.name}</button>; })}</div>}
+            <div className="lf-pairs">
+              {stocks.length === 0 && <span className="lf-hint">Loading stocks…</span>}
+              {stocks.map((q) => { const on = inBasket(q.address); return (
+                <button type="button" key={q.address} className={"pair " + (on ? "on" : "")} disabled={!on && basket.length >= MAX_BASKET} onClick={() => toggle(q.address)}>
+                  <span className="badge stock">{q.symbol}</span><span className="pn">{q.name}</span><span className="pp">{usd(q.usd)}</span>
+                </button>); })}
+            </div>
+          </div>
         </section>
 
         <section className="lf-sec"><div className="lf-head"><h2>First buy</h2><span className="lf-hint">Optional</span></div>

@@ -62,7 +62,7 @@ export default function Admin() {
 function Coins({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: Fn, args?: unknown[]) => () => Promise<void> }) {
   const qc = useQueryClient();
   const { address: me } = useAccount();
-  const [edit, setEdit] = useState<Record<string, { tax?: string; uri?: string; pct?: string; to?: string }>>({});
+  const [edit, setEdit] = useState<Record<string, { uri?: string; pct?: string; to?: string }>>({});
   const { data: waiting } = useQuery({
     queryKey: ["platformWaiting", tokens?.map((t) => t.address).join(",")],
     enabled: !!tokens,
@@ -73,21 +73,20 @@ function Coins({ tokens, call }: { tokens?: Token[]; call: (label: string, fn: F
   const withFees = (tokens ?? []).filter((t) => pending(t) > 0n);
   const totalUsd = withFees.reduce((s, t) => s + wei(pending(t)) * t.pair.usd, 0);
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["platformWaiting"] }); await qc.invalidateQueries({ queryKey: ["tokens"] }); };
-  const push = (label: string, list: Token[]) => async () => { await ensureWallet(); await runTx(label, () => (list.length === 1 ? client.claimPlatformFees(list[0].address) : client.pushPlatformFees(list.map((t) => t.address))), refresh); };
+  const push = (label: string, list: Token[]) => async () => { await ensureWallet(); await runTx(label, () => (list.length === 1 ? client.payPlatform(list[0].address) : client.pushPlatformFees(list.map((t) => t.address))), refresh); };
   const e = (t: Token) => edit[t.address] ?? {};
   const setE = (t: Token, patch: Record<string, string>) => setEdit({ ...edit, [t.address]: { ...e(t), ...patch } });
   return (
     <>
       <div className="sec"><h2>Coins</h2><div className="rowb"><span className="badge mute">{usd(totalUsd)} platform fees waiting</span><button className="btn dim sm" disabled={withFees.length === 0} onClick={push(`Push fees from ${withFees.length} coins`, withFees)}>Push all</button></div></div>
       {!tokens ? <div className="skel" style={{ height: 120 }} /> : tokens.length === 0 ? <div className="adm-empty">No coins launched yet.</div> : (
-        <div className="adm-coins">{tokens.map((t) => { const w = pending(t); const x = e(t); const taxBps = Math.round(Number(x.tax ?? "") * 100); const lp = Math.round(Number(x.pct ?? "") * 100); return (
+        <div className="adm-coins">{tokens.map((t) => { const w = pending(t); const x = e(t); const lp = Math.round(Number(x.pct ?? "") * 100); return (
           <div key={t.address} className={"adm-coin " + (t.hidden ? "hid" : "")}>
             <div className="adm-coin-h"><Art src={t.metadata?.logo} address={t.address} size="sm" /><b>{t.symbol}</b><span className={"badge " + (t.pair.isNative ? "eth" : "stock")}>{t.pair.symbol}</span>{t.hidden && <span className="badge down">hidden</span>}<Copy value={t.address} /><Link className="badge mute" to={`/t/${t.address}`}>Open</Link></div>
-            <div className="adm-coin-m"><span>Creator <b className="num">{short(t.creator)}</b></span><span>Tax <b className="num">{(t.feeTier / 100).toFixed(2)}%</b></span><span>Mcap <b className="num">{usd(t.marketCapUsd, { compact: true })}</b></span><span>Liquidity <b className="num">{usd(wei(t.liquidityWei) * t.pair.usd, { compact: true })}</b></span><span>Platform fees <b className="num">{hype(wei(w), 5)} {t.pair.symbol}</b></span></div>
+            <div className="adm-coin-m"><span>Creator <b className="num">{short(t.creator)}</b></span><span>Fee <b className="num">{(t.feeTier / 100).toFixed(2)}%</b></span><span>Mcap <b className="num">{usd(t.marketCapUsd, { compact: true })}</b></span><span>Liquidity <b className="num">{usd(wei(t.liquidityWei) * t.pair.usd, { compact: true })}</b></span><span>Platform fees <b className="num">{hype(wei(w), 5)} {t.pair.symbol}</b></span></div>
             <div className="adm-coin-a">
               <button className="btn dim sm" onClick={call(t.hidden ? `Unhide ${t.symbol}` : `Hide ${t.symbol}`, "setHidden", [t.address, !t.hidden])}>{t.hidden ? "Unhide" : "Hide"}</button>
               <button className="btn dim sm" disabled={w === 0n} onClick={push(`Push ${t.symbol} fees`, [t])}>Push fees</button>
-              <span className="adm-inline"><input placeholder="tax %" inputMode="decimal" value={x.tax ?? ""} onChange={(ev) => setE(t, { tax: ev.target.value })} /><button className="btn dim sm" disabled={!(taxBps >= 0 && taxBps <= 1000 && x.tax)} onClick={call(`Set ${t.symbol} tax`, "setCoinTax", [t.address, taxBps])}>Set tax</button></span>
               <span className="adm-inline"><input placeholder="metadata JSON or URI" value={x.uri ?? ""} onChange={(ev) => setE(t, { uri: ev.target.value })} style={{ width: 200 }} /><button className="btn dim sm" disabled={!x.uri} onClick={call(`Set ${t.symbol} metadata`, "setCoinMetadata", [t.address, x.uri ?? ""])}>Set metadata</button></span>
               <span className="adm-inline"><input placeholder="% of LP" inputMode="decimal" value={x.pct ?? ""} onChange={(ev) => setE(t, { pct: ev.target.value })} /><input placeholder={me ? short(me) : "to 0x…"} value={x.to ?? ""} onChange={(ev) => setE(t, { to: ev.target.value })} spellCheck={false} /><button className="btn sellb sm" disabled={!(lp > 0 && lp <= 10000) || !isAddr(x.to || me)} onClick={async () => { if (!confirm(`Pull ${lp / 100}% of ${t.symbol}'s liquidity out of the pool? This cannot be undone.`)) return; await call(`Collect ${t.symbol} liquidity`, "collect", [t.address, lp, (x.to || me) as Address])(); }}>Collect</button></span>
             </div>

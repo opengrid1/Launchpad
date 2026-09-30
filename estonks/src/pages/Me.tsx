@@ -54,11 +54,11 @@ export default function Me() {
 
       <div className="sec"><h2>Launched by you</h2><span className="badge mute">{created.length}</span></div>
       {!data ? <div className="skel" style={{ height: 120 }} /> : created.length === 0 ? <div className="empty">Nothing yet. <Link to="/launch">Launch a coin</Link></div> : (
-        <div className="list">{created.map((t) => { const r = data.ledgers.get(t.address.toLowerCase()); const fees = r?.creatorFees ?? 0n; const eth = t.pair.ethRoute && !t.pair.isNative; return (
+        <div className="list">{created.map((t) => { const r = data.ledgers.get(t.address.toLowerCase()); const fees = r?.creatorFees ?? 0n; return (
           <div key={t.address} className="item">
             <Art src={t.metadata?.logo} address={t.address} size="sm" />
             <span><Link to={`/t/${t.address}`}><b>{t.symbol}</b></Link><small className="num">{usd(t.marketCapUsd, { compact: true })} mcap · {hype(wei(fees), 5)} {t.pair.symbol} to claim</small></span>
-            <span className="rowb"><button className="btn dim claim sm" disabled={fees === 0n} onClick={act("Claim creator fees", () => client.claimCreatorFees(t.address, eth))}>Claim{eth ? " as ETH" : ""}</button></span>
+            <span className="rowb"><button className="btn dim claim sm" disabled={fees === 0n} onClick={act("Claim creator fees", () => client.payCreator(t.address))}>Claim {t.pair.symbol}</button></span>
           </div>); })}</div>
       )}
       <p className="note">{short(me)} · rewards are credited as each trade happens, in the coin's pair asset.</p>

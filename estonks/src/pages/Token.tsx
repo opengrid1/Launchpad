@@ -12,6 +12,7 @@ import { Icon } from "../components/Icon";
 import { client, type PairInfo } from "../lib/client";
 import { env, FEES, isMain } from "../lib/env";
 import { ago, dateShort, hype, num, pct, short, usd, wei } from "../lib/format";
+import { stockByAddress } from "../lib/stocks";
 import { runTx, useBalances, useCandles, useEthUsd, useFeeNow, useHolders, useLedger, useToken, useTrades, type Token } from "../lib/hooks";
 import { ensureWallet, openWalletModal } from "../lib/wallet";
 
@@ -87,6 +88,7 @@ function Coin({ t }: { t: Token }) {
           <div className="kv"><span>Creator</span><b><Copy value={t.creator} label="Creator" /></b></div>
           <div className="kv"><span>Pool</span><b><a href={`https://dexscreener.com/${env.dexscreenerChain}/${t.poolId}`} target="_blank" rel="noreferrer">DexScreener</a></b></div>
           <div className="kv"><span>In the pool</span><b>{t.reserves ? `${hype(wei(t.reserves.pair), 4)} ${pair.symbol}` : "—"}</b></div>
+          {t.basket.length > 0 && <div className="kv"><span>Rewards basket</span><b>{basketNames(t.basket)}</b></div>}
           <div className="kv"><span>Fee</span><b>{(t.feeTier / 100).toFixed(t.feeTier % 100 ? 2 : 0)}%</b></div>
           <div className="kv"><span>Supply</span><b>{num(wei(t.totalSupply), 0)}</b></div>
         </div>
@@ -127,15 +129,16 @@ function Position({ t, pair }: { t: Token; pair: PairInfo }) {
       <div className="rowb">
         <button className="btn dim claim" disabled={data.pending === 0n} onClick={act("Claim rewards", () => client.claimRewards(t.address, false))}>Claim {pair.symbol}</button>
         {canEth && <button className="btn dim" disabled={data.pending === 0n} onClick={act("Claim as ETH", () => client.claimRewards(t.address, true))}>Claim as ETH</button>}
+        {t.basket.length > 0 && <button className="btn dim" disabled={data.pending === 0n} onClick={act("Claim as basket", () => client.claimAsBasket(t.address))}>Claim as basket</button>}
       </div>
+      {t.basket.length > 0 && <p className="note" style={{ margin: 0 }}>Basket: equal parts {basketNames(t.basket)}, bought when you claim. Each stock has a 5% price floor.</p>}
       <p className="note" style={{ margin: 0 }}>{FEES.holderPct}% of the {FEES.taxPct}% fee on every trade is split among holders, credited as trades happen. Lifetime paid to holders: {hype(wei(data.totalHolder), 4)} {pair.symbol}.</p>
       {data.isCreator && (
         <div className="creator">
           <div className="ph"><h3>Creator fees</h3><span className="badge mute">lifetime {hype(wei(data.totalCreator), 4)} {pair.symbol}</span></div>
           <div className="pg"><div><span className="label">To claim</span><b>{hype(wei(data.creatorFees), 5)} {pair.symbol}</b><small>{usd(wei(data.creatorFees) * pair.usd)}</small></div></div>
           <div className="rowb">
-            <button className="btn dim claim" disabled={data.creatorFees === 0n} onClick={act("Claim creator fees", () => client.claimCreatorFees(t.address, false))}>Claim {pair.symbol}</button>
-            {canEth && <button className="btn dim" disabled={data.creatorFees === 0n} onClick={act("Claim as ETH", () => client.claimCreatorFees(t.address, true))}>Claim as ETH</button>}
+            <button className="btn dim claim" disabled={data.creatorFees === 0n} onClick={act("Claim creator fees", () => client.payCreator(t.address))}>Claim {pair.symbol}</button>
           </div>
         </div>
       )}
@@ -212,6 +215,9 @@ function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { toke
     </div>
   );
 }
+
+/** Basket stocks by ticker symbol, in launch order. */
+const basketNames = (b: Address[]) => b.map((a) => stockByAddress(a)?.symbol ?? short(a)).join(" · ");
 
 const PAGE = 8;
 
