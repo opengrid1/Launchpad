@@ -14,10 +14,12 @@ import Me from "./pages/Me";
 import Stats from "./pages/Stats";
 import Admin from "./pages/Admin";
 import Docs from "./pages/Docs";
+import Private from "./pages/Private";
 
 const NAVS = [
   { to: "/", icon: "coins", label: "Coins", end: true },
   { to: "/launch", icon: "launch", label: "Launch" },
+  { to: "/private", icon: "private", label: "Private" },
   { to: "/me", icon: "wallet", label: "Portfolio" },
   { to: "/stats", icon: "stats", label: "Stats" },
 ] as const;
@@ -48,6 +50,7 @@ export default function App() {
         </nav>
         <div className="tools">
           <form className="search" onSubmit={submitSearch}><Icon name="search" size={16} /><input type="search" placeholder="Search coins" aria-label="Search coins" value={q} onChange={(e) => setQ(e.target.value)} /></form>
+          <Link className="ico" to="/docs" aria-label="Docs"><Icon name="docs" size={18} /></Link>
           <Link className="ico" to="/?focus=1" aria-label="Search"><Icon name="search" size={18} /></Link>
           <span className="tick"><i />ETH <b>{cfg ? usd(cfg.ethUsd) : "…"}</b></span>
           <button className="wallet" onClick={() => openWalletModal()}>{isConnected && <span className="av" />}<span className="addr">{isConnected && address ? short(address) : "Connect"}</span><Icon name="down" size={14} className="chev" /></button>
@@ -62,6 +65,7 @@ export default function App() {
         <Route path="/stats" element={<Stats />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/docs" element={<Docs />} />
+        <Route path="/private" element={<Private />} />
         <Route path="*" element={<Home />} />
       </Routes>
 

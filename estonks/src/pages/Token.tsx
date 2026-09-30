@@ -15,6 +15,8 @@ import { ago, dateShort, hype, num, pct, short, usd, wei } from "../lib/format";
 import { stockByAddress } from "../lib/stocks";
 import { runTx, useBalances, useCandles, useEthUsd, useFeeNow, useHolders, useLedger, useToken, useTrades, type Token } from "../lib/hooks";
 import { ensureWallet, openWalletModal } from "../lib/wallet";
+import { ETH as PRIVATE_ETH } from "../lib/private/core";
+import { priv, usePrivate } from "../lib/private/session";
 
 const RANGES: { k: CandleInterval; l: string }[] = [{ k: "5m", l: "1H" }, { k: "15m", l: "24H" }, { k: "1h", l: "7D" }, { k: "1d", l: "ALL" }];
 
@@ -153,16 +155,23 @@ function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { toke
   const [side, setSide] = useState<"buy" | "sell">(initial);
   useEffect(() => { setSide(initial); setAmt(""); }, [initial]);
   const [amt, setAmt] = useState("");
+  const ps = usePrivate();
+  const [privOn, setPrivOn] = useState(false);
   const payEth = pair.ethRoute;
+  // Private mode: pay from, and receive into, the private balance. ETH-routable coins only.
+  const privMode = privOn && ps.unlocked && payEth;
   const payUnit = payEth ? "ETH" : pair.symbol;
   const payUsd = payEth ? ethUsd : pair.usd;
   const { data: bal } = useBalances(me, token, pair.isNative ? undefined : pair.address);
   const { data: fee } = useFeeNow(token);
   const amountWei = useMemo(() => { try { return amt && Number(amt) > 0 ? parseEther(amt as `${number}`) : 0n; } catch { return 0n; } }, [amt]);
-  const payBal = bal ? (payEth ? bal.native : bal.pair) : 0n;
+  const privEth = ps.balances.get(PRIVATE_ETH) ?? 0n;
+  const privTok = ps.balances.get(token.toLowerCase()) ?? 0n;
+  const payBal = privMode ? privEth : bal ? (payEth ? bal.native : bal.pair) : 0n;
+  const tokBal = privMode ? privTok : bal?.token ?? 0n;
   const { data: sim } = useQuery({
     queryKey: ["quote", token, side, amountWei.toString(), me],
-    enabled: amountWei > 0n && isConnected,
+    enabled: amountWei > 0n && isConnected && !privMode,
     queryFn: async () => { await ensureWallet().catch(() => undefined); return client.previewSwapOut(token, side, amountWei); },
     staleTime: 8_000,
   });
@@ -170,17 +179,22 @@ function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { toke
   const k = payEth && !pair.isNative ? pairPerEth : 1;
   const spot = priceWei > 0n ? (side === "buy" ? BigInt(Math.floor((Number(amountWei) * k * 1e18) / Number(priceWei))) : BigInt(Math.floor((Number(amountWei) * Number(priceWei)) / 1e18 / k))) : 0n;
   const feeBps = fee?.total ?? FEES.taxPct * 100;
-  const out = sim ?? (spot * BigInt(10_000 - feeBps)) / 10_000n;
+  const out = privMode ? (spot * BigInt(10_000 - feeBps - 50)) / 10_000n : sim ?? (spot * BigInt(10_000 - feeBps)) / 10_000n;
   const simKnown = typeof sim === "bigint";
   const outNum = wei(out);
   const impact = spot > 0n && simKnown ? Math.max(0, (1 - Number(sim) / Number(spot)) * 100) : null;
   const surcharge = !!fee && fee.total > fee.base;
-  const over = side === "buy" ? !!bal && amountWei > payBal : !!bal && amountWei > bal.token;
+  const over = privMode ? amountWei > (side === "buy" ? privEth : privTok) : side === "buy" ? !!bal && amountWei > payBal : !!bal && amountWei > bal.token;
   // A reverted simulation means the route cannot fill right now (thin stock pool, launch guard); never send blind.
-  const noRoute = amountWei > 0n && isConnected && sim === null;
+  const noRoute = !privMode && amountWei > 0n && isConnected && sim === null;
   const minOut = (out * 95n) / 100n;
-  const pctOf = (f: number) => { if (!bal) return; if (side === "buy") { const keep = payEth ? parseEther("0.003") : 0n; const base = payBal > keep ? payBal - keep : 0n; setAmt(formatEther((base * BigInt(Math.round(f * 100))) / 100n)); } else setAmt(formatEther((bal.token * BigInt(Math.round(f * 100))) / 100n)); };
+  const pctOf = (f: number) => { if (!bal && !privMode) return; if (side === "buy") { const keep = payEth && !privMode ? parseEther("0.003") : 0n; const base = payBal > keep ? payBal - keep : 0n; setAmt(formatEther((base * BigInt(Math.round(f * 100))) / 100n)); } else setAmt(formatEther((tokBal * BigInt(Math.round(f * 100))) / 100n)); };
   const go = async () => {
+    if (privMode) {
+      const ok = await runTx(side === "buy" ? `Private buy ${symbol}` : `Private sell ${symbol}`, () => (side === "buy" ? priv.buy(token, amountWei) : priv.sell(token, amountWei, (out * 90n) / 100n)), undefined, "Proving on this device");
+      if (ok) { setAmt(""); qc.invalidateQueries(); }
+      return;
+    }
     if (!isConnected) return openWalletModal();
     await ensureWallet();
     const ok = await runTx(side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`, () => (side === "buy" ? client.buyToken(token, amountWei, minOut) : client.sellToken(token, amountWei, minOut)));
@@ -192,14 +206,20 @@ function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { toke
   return (
     <div className={"tcard " + (side === "sell" ? "sell" : "")}>
       <div className="seg"><button className={side === "buy" ? "on" : ""} onClick={() => { setSide("buy"); setAmt(""); }}>Buy</button><button className={side === "sell" ? "on" : ""} onClick={() => { setSide("sell"); setAmt(""); }}>Sell</button></div>
+      {ps.live && payEth && <div className="dock-private">
+        {ps.unlocked
+          ? <button className={privOn ? "on" : ""} onClick={() => { setPrivOn(!privOn); setAmt(""); }}><Icon name="private" size={14} /> {privOn ? "Private: on" : "Private: off"}</button>
+          : <Link to="/private"><Icon name="private" size={14} /> Trade privately</Link>}
+        {privMode && <span>From your private balance · 0.5% + gas</span>}
+      </div>}
       <div className="box">
-        <div className="bh"><span>You pay</span><span className="bal">Balance <b>{bal ? (side === "buy" ? `${hype(wei(payBal), 4)} ${payUnit}` : `${num(wei(bal.token))} ${symbol}`) : "…"}</b></span></div>
+        <div className="bh"><span>You pay</span><span className="bal">{privMode ? "Private" : "Balance"} <b>{bal || privMode ? (side === "buy" ? `${hype(wei(payBal), 4)} ${payUnit}` : `${num(wei(tokBal))} ${symbol}`) : "…"}</b></span></div>
         <div className="bi"><input inputMode="decimal" placeholder="0" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.]/g, ""))} aria-label="Amount" /><span className="tok"><i className="dot" style={{ background: side === "buy" ? (payEth ? "#a9b8cc" : "#9b7dff") : "#2fd67b" }} />{inTok}</span></div>
         <div className="bf"><span className="usd">{amountWei > 0n ? usd(side === "buy" ? wei(amountWei) * payUsd : wei(amountWei) * Number(priceWei) / 1e18 * pair.usd) : "$0"}</span><div className="q">{[0.25, 0.5, 1].map((f) => <button key={f} onClick={() => pctOf(f)}>{f === 1 ? "Max" : `${f * 100}%`}</button>)}</div></div>
       </div>
       <div className="arrow"><Icon name="down" size={14} /></div>
       <div className="box">
-        <div className="bh"><span>You receive</span>{bal && <span className="bal">Holding <b>{num(wei(bal.token))}</b></span>}</div>
+        <div className="bh"><span>You receive</span>{(bal || privMode) && <span className="bal">{privMode ? "Private" : "Holding"} <b>{num(wei(tokBal))}</b></span>}</div>
         <div className="bi"><output>{amountWei > 0n ? (side === "buy" ? num(outNum) : hype(outNum, 5)) : "0"}</output><span className="tok"><i className="dot" style={{ background: side === "buy" ? "#2fd67b" : (payEth ? "#a9b8cc" : "#9b7dff") }} />{outTok}</span></div>
         <div className="bf"><span className="usd">{amountWei > 0n ? usd(side === "buy" ? outNum * Number(priceWei) / 1e18 * pair.usd : outNum * payUsd) : "$0"}</span></div>
       </div>
@@ -210,7 +230,7 @@ function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { toke
         <div><span>Fee</span><b className={surcharge ? "down" : ""}>{(feeBps / 100).toFixed(feeBps % 100 ? 2 : 0)}%{surcharge ? " anti-snipe" : ""}</b></div>
         <div><span>Route</span><b>{route}</b></div>
       </div>
-      <button className={"btn lg wide go " + (side === "sell" ? "sellb" : "buy")} disabled={isConnected && (amountWei === 0n || over || noRoute)} onClick={go}>{!isConnected ? "Connect wallet" : over ? "Not enough" : noRoute ? "No quote right now" : side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`}</button>
+      <button className={"btn lg wide go " + (side === "sell" ? "sellb" : "buy")} disabled={(isConnected || privMode) && (amountWei === 0n || over || noRoute)} onClick={go}>{privMode ? (over ? "Not enough" : side === "buy" ? `Buy ${symbol} privately` : `Sell ${symbol} privately`) : !isConnected ? "Connect wallet" : over ? "Not enough" : noRoute ? "No quote right now" : side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`}</button>
       {noRoute && <p className="note" style={{ margin: 0, textAlign: "center" }}>{pair.isNative ? "The pool could not fill this size. Try a smaller amount." : `The ${pair.symbol} route could not fill this size right now. Try a smaller amount, or trade in ${pair.symbol} directly.`}</p>}
     </div>
   );

@@ -5,6 +5,7 @@ import { INTERVAL_SECONDS } from "@launchpad/sdk";
 import { factoryAbi, hookAbi, routerAbi, tokenAbi } from "./abis";
 import { ADDRESSES, chain, env } from "./env";
 import { hasEthRoute, routeFor, stockByAddress, WETH } from "./stocks";
+import { vaultAbi } from "./private/wallet";
 
 export const publicClient = createPublicClient({
   chain,
@@ -708,6 +709,28 @@ export class StockPadClient {
     if (tokens.length === 0) return new Map();
     const res = await this.pc.multicall({ allowFailure: true, contracts: tokens.map((t) => ({ address: t, abi: tokenAbi, functionName: "platformFees" as const })) });
     return new Map(tokens.map((t, i) => [t.toLowerCase(), res[i].status === "success" ? (res[i].result as bigint) : 0n]));
+  }
+
+  // -- private vault --------------------------------------------------------
+
+  /** Put ETH (asset 0x0) or a coin into the private vault as a note for the private wallet. */
+  async vaultDeposit(vault: Address, asset: Address, amount: bigint, partial: bigint, encrypted: Hex): Promise<Hex> {
+    const wc = this.wallet();
+    if (asset !== ZERO) await this.ensureAllowance(asset, vault, amount);
+    return wc.writeContract({ address: vault, abi: vaultAbi, functionName: "deposit", args: [asset, amount, partial, encrypted], value: asset === ZERO ? amount : 0n, chain: wc.chain, account: wc.account! });
+  }
+
+  /** Coins `ethIn` buys through the router right now (simulated from a funded throwaway address). */
+  async quoteBuy(coin: Address, ethIn: bigint): Promise<bigint> {
+    const { route } = await this.routeOf(coin);
+    const from = "0x00000000000000000000000000000000000e5701" as Address;
+    const { result } = await this.pc.simulateContract({ address: ADDRESSES.router, abi: routerAbi, functionName: "buy", args: [coin, route ?? "0x", 0n], value: ethIn, account: from, stateOverride: [{ address: from, balance: 10n ** 30n }] });
+    return result as bigint;
+  }
+
+  /** The router route for a coin's pair ("0x" for a WETH pair), or null when ETH can't reach it. */
+  async routeFor(coin: Address): Promise<Hex | null> {
+    return (await this.routeOf(coin)).route;
   }
 
   // -- trading ------------------------------------------------------------

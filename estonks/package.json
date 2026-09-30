@@ -9,15 +9,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@noble/curves": "^1.9.7",
+    "@noble/hashes": "^1.8.0",
     "@reown/appkit": "^1.8.22",
     "@reown/appkit-adapter-wagmi": "^1.8.22",
+    "@scure/bip39": "^1.6.0",
     "@tanstack/react-query": "^5.59.0",
+    "lightweight-charts": "^4.2.0",
+    "poseidon-lite": "^0.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.0",
     "viem": "^2.21.0",
-    "wagmi": "^2.12.0",
-    "lightweight-charts": "^4.2.0",
-    "react-router-dom": "^6.26.0"
+    "wagmi": "^2.12.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",

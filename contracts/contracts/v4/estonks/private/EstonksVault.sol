@@ -80,6 +80,8 @@ contract EstonksVault is ReentrancyGuard {
     address public immutable admin;
 
     address public feeRecipient;
+    /// @notice Most ETH the vault takes in deposits while it is young; the admin raises it over time.
+    uint256 public ethCap = 5 ether;
     bool public depositsPaused;
     bool public tradesPaused;
 
@@ -135,6 +137,7 @@ contract EstonksVault is ReentrancyGuard {
     event FeesClaimed(address indexed to, uint256 amount);
     event PauseSet(bool deposits, bool trades);
     event FeeRecipientSet(address indexed recipient);
+    event EthCapSet(uint256 cap);
 
     error NotAdmin();
     error Paused();
@@ -150,6 +153,7 @@ contract EstonksVault is ReentrancyGuard {
     error Insolvent();
     error EthTransfer();
     error ZeroAddress();
+    error CapReached();
 
     modifier onlyAdmin() {
         if (msg.sender != admin) revert NotAdmin();
@@ -200,6 +204,7 @@ contract EstonksVault is ReentrancyGuard {
         if (partialNote == 0 || partialNote >= FIELD) revert BadNote();
         if (asset == ETH) {
             if (msg.value != amount) revert BadAmount();
+            if (liabilities[ETH] + amount > ethCap) revert CapReached();
         } else {
             if (msg.value != 0 || !_listed(asset)) revert BadAsset();
             uint256 before = IERC20(asset).balanceOf(address(this));
@@ -331,6 +336,12 @@ contract EstonksVault is ReentrancyGuard {
         depositsPaused = deposits;
         tradesPaused = trades;
         emit PauseSet(deposits, trades);
+    }
+
+    /// @notice Raise or lower the ETH deposit cap. Existing balances are never affected.
+    function setEthCap(uint256 cap) external onlyAdmin {
+        ethCap = cap;
+        emit EthCapSet(cap);
     }
 
     function setFeeRecipient(address recipient) external onlyAdmin {

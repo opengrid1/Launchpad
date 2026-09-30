@@ -196,6 +196,12 @@ describe("Estonks private vault (mainnet fork)", function () {
     const note: Note = bobEth;
     await expect(send({ keys: bok, asset: ETH, inputs: [note], outputs: [], publicOut: note.amount, partialOut: 0n, ext: ext({ kind: KIND.withdraw, recipient: bob.address }), encrypted: NO_ENC })).to.be.revertedWithCustomError(vault, "Sanctioned");
     await (await sanctions.set(bob.address, false)).wait();
+    // The ETH cap stops new deposits past it; the admin can raise it.
+    const cap = await vault.ethCap();
+    const room = cap - (await vault.liabilities(ETH));
+    await expect(vault.connect(alice).deposit(ETH, room + 1n, partialOf(alk.pk, rand()), "0x", { value: room + 1n })).to.be.revertedWithCustomError(vault, "CapReached");
+    await expect(vault.connect(alice).setEthCap(E("100"))).to.be.revertedWithCustomError(vault, "NotAdmin");
+    await (await vault.connect(admin).setEthCap(E("100"))).wait();
     await solvent();
   });
 

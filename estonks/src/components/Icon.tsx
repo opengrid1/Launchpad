@@ -4,6 +4,8 @@ const ICONS: Record<string, JSX.Element> = {
   launch: <><path d="M12 2.5c3 2.4 4.5 5.8 4.5 9.8L14 15h-4l-2.5-2.7c0-4 1.5-7.4 4.5-9.8z" fill="currentColor" fillOpacity=".18" /><circle cx="12" cy="9.5" r="1.7" fill="currentColor" stroke="none" /><path d="M7.6 11.6L5 15.5l3.4-.6M16.4 11.6L19 15.5l-3.4-.6" /><path d="M10.4 17.5L12 21.5l1.6-4" /></>,
   wallet: <><path d="M3.5 8.5A2.5 2.5 0 0 1 6 6h11.5A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5H6a2.5 2.5 0 0 1-2.5-2.5z" fill="currentColor" fillOpacity=".18" /><path d="M20 11h-4a2 2 0 0 0 0 4h4" fill="currentColor" fillOpacity=".3" /><path d="M6 6l9.5-2.5v2.5" /><circle cx="16.2" cy="13" r=".9" fill="currentColor" stroke="none" /></>,
   stats: <><rect x="4" y="13" width="4" height="7" rx="1.5" fill="currentColor" fillOpacity=".18" /><rect x="10" y="8" width="4" height="12" rx="1.5" fill="currentColor" fillOpacity=".45" /><rect x="16" y="4" width="4" height="16" rx="1.5" fill="currentColor" fillOpacity=".18" /></>,
+  private: <><path d="M12 3.2l7 2.8v5.6c0 4.3-2.9 7.9-7 9.4-4.1-1.5-7-5.1-7-9.4V6z" fill="currentColor" fillOpacity=".18" /><circle cx="12" cy="10.6" r="1.9" fill="currentColor" stroke="none" /><path d="M12 12.4v3.4" /></>,
+  docs: <><path d="M6.5 3.5h8l4 4v11.5a1.5 1.5 0 0 1-1.5 1.5H6.5A1.5 1.5 0 0 1 5 19V5a1.5 1.5 0 0 1 1.5-1.5z" fill="currentColor" fillOpacity=".18" /><path d="M14.5 3.5v4h4M8.5 12h7M8.5 15.5h5" /></>,
   tune: <><path d="M4 7h10M18 7h2M4 17h4M12 17h8M4 12h14" /><circle cx="16" cy="7" r="2" fill="currentColor" fillOpacity=".3" /><circle cx="10" cy="17" r="2" fill="currentColor" fillOpacity=".3" /><circle cx="20" cy="12" r="0" /></>,
   search: <><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4-4" /></>,
   back: <path d="M15 5l-7 7 7 7" />,

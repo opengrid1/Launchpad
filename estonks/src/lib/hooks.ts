@@ -148,9 +148,9 @@ export function friendlyError(err: unknown): string {
 }
 
 /** Run a wallet action with toast feedback; resolves true on a mined success. */
-export async function runTx(label: string, fn: () => Promise<Hash>, onDone?: (hash: Hash) => void | Promise<void>): Promise<boolean> {
+export async function runTx(label: string, fn: () => Promise<Hash>, onDone?: (hash: Hash) => void | Promise<void>, pending = "Confirm in your wallet"): Promise<boolean> {
   try {
-    setToast({ kind: "busy", text: "Confirm in your wallet" });
+    setToast({ kind: "busy", text: pending });
     const hash = await fn();
     setToast({ kind: "busy", text: `${label}…`, hash });
     const rc = await publicClient.waitForTransactionReceipt({ hash, timeout: 240_000 });
