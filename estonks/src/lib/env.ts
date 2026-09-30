@@ -64,8 +64,8 @@ export const BRAND = {
 /** Fee model as deployed: 2% of the pair side on every swap, split creator / coin holders / platform (STONK holders). */
 export const FEES = { taxPct: 2, creatorPct: 35, holderPct: 15, platformPct: 50 };
 
-/** The main token. Set once STONK is launched on v2; empty until then. */
-export const MAIN_TOKEN = String(import.meta.env.VITE_MAIN_TOKEN ?? "").toLowerCase();
+/** The main token: STONK on v2. */
+export const MAIN_TOKEN = String(import.meta.env.VITE_MAIN_TOKEN ?? "0xA567DeB6dAa8120e156966382AF536A8E5638136").toLowerCase();
 export const isMain = (address: string) => !!MAIN_TOKEN && address.toLowerCase() === MAIN_TOKEN;
 
 /** Whether a coin shows in the lists: not hidden by the admin. */
