@@ -67,3 +67,10 @@ export const FEES = { taxPct: 2, creatorPct: 35, holderPct: 15, platformPct: 50 
 /** The main token. Set once STONK is launched; empty until then. */
 export const MAIN_TOKEN = String(import.meta.env.VITE_MAIN_TOKEN ?? "0x3494c410caa17ad30391DA7F1Eb4554303fbDd99").toLowerCase();
 export const isMain = (address: string) => !!MAIN_TOKEN && address.toLowerCase() === MAIN_TOKEN;
+
+/** Coins launched at or before this unix time are left off the lists (the main token stays).
+ *  They still trade, open by link, and show in portfolios. 0 lists everything. */
+export const HIDE_BEFORE = Number(import.meta.env.VITE_HIDE_BEFORE ?? 1790733857);
+/** Whether a coin shows in the lists: not hidden by the admin and not an old coin. */
+export const listed = (t: { address: string; hidden: boolean; createdAt: number }) =>
+  !t.hidden && (isMain(t.address) || t.createdAt > HIDE_BEFORE);

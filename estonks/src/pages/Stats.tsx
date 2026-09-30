@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import { Art } from "../components/Art";
-import { FEES, isMain } from "../lib/env";
+import { FEES, isMain, listed } from "../lib/env";
 import { num, usd, wei } from "../lib/format";
 import { useQuotes, useTokens } from "../lib/hooks";
 
@@ -21,7 +21,7 @@ export default function Stats() {
     const trades24 = list.reduce((a, t) => a + t.txCount24h, 0);
     const dayAgo = Math.floor(Date.now() / 1000) - 86400;
     const launched24 = list.filter((t) => t.createdAt >= dayAgo).length;
-    const top = [...list].sort((a, b) => u(BigInt(b.volume24hWei), b.pair.usd) - u(BigInt(a.volume24hWei), a.pair.usd)).slice(0, 5);
+    const top = list.filter(listed).sort((a, b) => u(BigInt(b.volume24hWei), b.pair.usd) - u(BigInt(a.volume24hWei), a.pair.usd)).slice(0, 5);
     return { n: list.length, holders, creators, platform, vol24, volAll, trades24, launched24, top };
   }, [tokens]);
   const stocks = quotes ? quotes.filter((q) => q.approved && !q.isNative).length : 0;

@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Tape } from "../App";
 import { Art } from "../components/Art";
 import { Icon } from "../components/Icon";
-import { DEPLOYED, isMain } from "../lib/env";
+import { DEPLOYED, isMain, listed } from "../lib/env";
 import { num, pct, usd, wei } from "../lib/format";
 import { useTokens, type Token } from "../lib/hooks";
 
@@ -20,7 +20,7 @@ export default function Home() {
   useEffect(() => { setQ(params.get("q") ?? ""); if (params.get("focus")) inp.current?.focus(); }, [params]);
 
   const list = useMemo(() => {
-    let l = (all ?? []).filter((t) => !t.hidden);
+    let l = (all ?? []).filter(listed);
     const s = q.trim().toLowerCase();
     if (s) l = l.filter((t) => `${t.name} ${t.symbol} ${t.address} ${t.pair.symbol}`.toLowerCase().includes(s));
     if (filter === "eth") l = l.filter((t) => t.pair.isNative);

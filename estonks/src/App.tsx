@@ -3,7 +3,7 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-ro
 import { useAccount } from "wagmi";
 
 import { Icon, Logo } from "./components/Icon";
-import { BRAND, env } from "./lib/env";
+import { BRAND, env, listed } from "./lib/env";
 import { pct, short, usd } from "./lib/format";
 import { useConfig, useIsAdmin, useToast, useTokens } from "./lib/hooks";
 import { openWalletModal } from "./lib/wallet";
@@ -89,7 +89,7 @@ export default function App() {
 /** Ticker tape of every visible coin: symbol, cap and 24h move, doubled for a seamless loop. */
 export function Tape() {
   const { data: tokens } = useTokens();
-  const items = useMemo(() => (tokens ?? []).filter((t) => !t.hidden).slice(0, 40), [tokens]);
+  const items = useMemo(() => (tokens ?? []).filter(listed).slice(0, 40), [tokens]);
   if (items.length === 0) return null;
   const run = [...items, ...items];
   return (
