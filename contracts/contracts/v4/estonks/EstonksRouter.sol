@@ -63,6 +63,7 @@ contract EstonksRouter is IUnlockCallback, ReentrancyGuard {
 
     event Bought(address indexed coin, address indexed buyer, uint256 ethIn, uint256 pairIn, uint256 coinOut);
     event Sold(address indexed coin, address indexed seller, uint256 coinIn, uint256 pairOut, uint256 ethOut);
+    event BasketBought(address indexed from, address indexed to, address pair, uint256 pairIn, address[] stocks, uint256[] outs);
 
     error NotListed();
     error Slippage();
@@ -160,6 +161,53 @@ contract EstonksRouter is IUnlockCallback, ReentrancyGuard {
         require(ok, "eth xfer");
     }
 
+    /// @notice Pull `amount` of `pair` from the caller and turn it into equal
+    ///         shares of `stocks`, sent to `to`. Shares already in the pair are
+    ///         passed on as is; the rest is sold for WETH along `pairRoute`
+    ///         (walked backwards) and bought along `routes[i]`. Each stock must
+    ///         come out at `minOuts[i]` or more.
+    function pairToBasket(
+        address pair,
+        uint256 amount,
+        address to,
+        bytes calldata pairRoute,
+        address[] calldata stocks,
+        bytes[] calldata routes,
+        uint256[] calldata minOuts
+    ) external nonReentrant returns (uint256[] memory outs) {
+        if (to == address(0)) revert ZeroAddress();
+        uint256 n = stocks.length;
+        if (n == 0 || routes.length != n || minOuts.length != n) revert BadRoute();
+        outs = new uint256[](n);
+        if (amount == 0) return outs;
+        IERC20(pair).safeTransferFrom(msg.sender, address(this), amount);
+
+        uint256 same = 0;
+        for (uint256 i; i < n; i++) if (stocks[i] == pair) same++;
+        uint256 swaps = n - same;
+        uint256 direct = (amount * same) / n;
+        uint256 wethAmt = swaps == 0 ? 0 : _pairToWeth(pair, amount - direct, pairRoute);
+        uint256 directLeft = direct;
+        uint256 wethLeft = wethAmt;
+        uint256 sameSeen = 0;
+        uint256 swapSeen = 0;
+        for (uint256 i; i < n; i++) {
+            uint256 out;
+            if (stocks[i] == pair) {
+                out = ++sameSeen == same ? directLeft : direct / same;
+                directLeft -= out;
+            } else {
+                uint256 part = ++swapSeen == swaps ? wethLeft : wethAmt / swaps;
+                wethLeft -= part;
+                out = _wethToPair(stocks[i], part, routes[i]);
+            }
+            if (out < minOuts[i]) revert Slippage();
+            if (out > 0) IERC20(stocks[i]).safeTransfer(to, out);
+            outs[i] = out;
+        }
+        emit BasketBought(msg.sender, to, pair, amount, stocks, outs);
+    }
+
     // ---------------------------------------------------------------------
     // Routing
     // ---------------------------------------------------------------------
@@ -169,13 +217,18 @@ contract EstonksRouter is IUnlockCallback, ReentrancyGuard {
         (v3Path, v4Key) = abi.decode(route, (bytes, PoolKey));
     }
 
-    /// @dev Forward: WETH -[v3Path]-> X -[v4Key]-> pair. Returns pair held here.
-    function _ethToPair(address pair, uint256 ethAmount, bytes calldata route) internal returns (uint256 amount) {
+    /// @dev Wrap `ethAmount` and route it into `pair`. Returns pair held here.
+    function _ethToPair(address pair, uint256 ethAmount, bytes calldata route) internal returns (uint256) {
         IWrappedNative(weth).deposit{value: ethAmount}();
-        if (pair == weth) return ethAmount;
+        return _wethToPair(pair, ethAmount, route);
+    }
+
+    /// @dev Forward: WETH -[v3Path]-> X -[v4Key]-> pair. Returns pair held here.
+    function _wethToPair(address pair, uint256 wethAmount, bytes calldata route) internal returns (uint256 amount) {
+        if (pair == weth || wethAmount == 0) return wethAmount;
         (bytes memory v3Path, PoolKey memory v4Key) = _decode(route);
         address held = weth;
-        amount = ethAmount;
+        amount = wethAmount;
         if (v3Path.length > 0) {
             if (_first(v3Path) != weth) revert BadRoute();
             IERC20(weth).forceApprove(address(v3Router), amount);
@@ -193,7 +246,7 @@ contract EstonksRouter is IUnlockCallback, ReentrancyGuard {
 
     /// @dev Backward: pair -[v4Key]-> X -[reversed v3Path]-> WETH. Returns WETH held.
     function _pairToWeth(address pair, uint256 pairAmount, bytes calldata route) internal returns (uint256 amount) {
-        if (pair == weth) return pairAmount;
+        if (pair == weth || pairAmount == 0) return pairAmount;
         (bytes memory v3Path, PoolKey memory v4Key) = _decode(route);
         address held = pair;
         amount = pairAmount;
@@ -222,12 +275,12 @@ contract EstonksRouter is IUnlockCallback, ReentrancyGuard {
 
     /// @dev First / last token of a V3 path (20-byte address, 3-byte fee, ...).
     function _first(bytes memory path) internal pure returns (address a) {
-        assembly { a := shr(96, mload(add(path, 32))) }
+        assembly ("memory-safe") { a := shr(96, mload(add(path, 32))) }
     }
 
     function _last(bytes memory path) internal pure returns (address a) {
         uint256 off = path.length - 20;
-        assembly { a := shr(96, mload(add(add(path, 32), off))) }
+        assembly ("memory-safe") { a := shr(96, mload(add(add(path, 32), off))) }
     }
 
     /// @dev Reverse a V3 path: tokenA fee tokenB fee tokenC -> tokenC fee tokenB fee tokenA.

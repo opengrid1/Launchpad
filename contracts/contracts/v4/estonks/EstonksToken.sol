@@ -10,6 +10,18 @@ interface IPairConverter {
     /// @dev Convert `amount` of `pair` (pulled from the caller by allowance)
     ///      into native ETH along `route` and send it to `to`.
     function pairToEth(address pair, uint256 amount, address to, uint256 minOut, bytes calldata route) external returns (uint256 ethOut);
+    /// @dev Convert `amount` of `pair` (pulled from the caller) into equal
+    ///      shares of `stocks`, each bought along `routes[i]` with at least
+    ///      `minOuts[i]` out, all sent to `to`.
+    function pairToBasket(
+        address pair,
+        uint256 amount,
+        address to,
+        bytes calldata pairRoute,
+        address[] calldata stocks,
+        bytes[] calldata routes,
+        uint256[] calldata minOuts
+    ) external returns (uint256[] memory outs);
 }
 
 interface IFeeRecipientSource {
@@ -39,6 +51,13 @@ interface IEstonksHook {
 ///         pair asset, or as ETH through the launchpad router. The creator's
 ///         and platform's shares are pushed to their fixed recipients by
 ///         anyone.
+///
+///         Basket rewards: the creator may pick up to MAX_BASKET tokenized
+///         stocks at launch. The list is fixed forever. Holders can then take
+///         their rewards as equal shares of those stocks, bought at claim
+///         time by the router with the holder's own minimum per stock, so no
+///         one else can set the price they get. Claiming in the pair asset or
+///         as ETH always stays available.
 ///
 ///         Launch protection: in the launch block only the creator may receive
 ///         coins from the pool; for the next PROTECT_BLOCKS every wallet is
@@ -97,8 +116,14 @@ contract EstonksToken is ERC20, ReentrancyGuard {
 
     string private _metadataURI;
 
+    /// @notice Most stocks a basket may hold.
+    uint256 public constant MAX_BASKET = 4;
+    /// @dev Basket stocks, fixed in the constructor; empty when the coin has none.
+    address[] private _basket;
+
     event FeesAccrued(uint256 holderAmount, uint256 creatorAmount, uint256 platformAmount);
-    event RewardsClaimed(address indexed holder, uint256 amount, bool asEth);
+    /// @dev payout: 0 pair asset, 1 ETH, 2 basket.
+    event RewardsClaimed(address indexed holder, uint256 amount, uint8 payout);
     event CreatorFeesPaid(address indexed creator, uint256 amount);
     event PlatformFeesPaid(address indexed recipient, uint256 amount);
     event Funded(address indexed from, uint256 amount);
@@ -109,6 +134,7 @@ contract EstonksToken is ERC20, ReentrancyGuard {
     error NoConverter();
     error NoHolders();
     error InvalidParams();
+    error NoBasket();
 
     struct Init {
         string name;
@@ -123,6 +149,7 @@ contract EstonksToken is ERC20, ReentrancyGuard {
         address converter;
         uint16 creatorBps;
         uint16 holderBps;
+        address[] basket;
     }
 
     constructor(Init memory p) ERC20(p.name, p.symbol) {
@@ -138,6 +165,11 @@ contract EstonksToken is ERC20, ReentrancyGuard {
         launchBlock = block.number;
         launchTime = block.timestamp;
         _metadataURI = p.metadataURI;
+        if (p.basket.length > MAX_BASKET) revert InvalidParams();
+        for (uint256 i; i < p.basket.length; i++) {
+            if (p.basket[i] == address(0)) revert InvalidParams();
+            _basket.push(p.basket[i]);
+        }
 
         excluded[address(0)] = true;
         excluded[address(this)] = true;
@@ -162,6 +194,11 @@ contract EstonksToken is ERC20, ReentrancyGuard {
     /// @notice The asset rewards are paid in.
     function rewardToken() external view returns (address) {
         return pairAsset;
+    }
+
+    /// @notice The stocks holders may take their rewards in, equal shares; empty for none.
+    function basketAssets() external view returns (address[] memory) {
+        return _basket;
     }
 
     // ------------------------------------------------------------------
@@ -211,18 +248,34 @@ contract EstonksToken is ERC20, ReentrancyGuard {
 
     /// @notice Claim your holder rewards in the pair asset.
     function claimRewards() external nonReentrant returns (uint256 amount) {
-        return _claimTo(msg.sender, false, 0, "");
+        return _claimTo(msg.sender, 0, 0, "");
     }
 
     /// @notice Claim your holder rewards as native ETH, swapped by the router
     ///         along `route` (empty when the pair is WETH).
     function claimRewardsAsEth(uint256 minEthOut, bytes calldata route) external nonReentrant returns (uint256 amount) {
-        return _claimTo(msg.sender, true, minEthOut, route);
+        return _claimTo(msg.sender, 1, minEthOut, route);
+    }
+
+    /// @notice Claim your holder rewards as the coin's stock basket, equal
+    ///         shares. `pairRoute` turns the pair into ETH (empty for WETH);
+    ///         `routes[i]` buys `basketAssets()[i]` with at least `minOuts[i]`.
+    function claimRewardsAsBasket(bytes calldata pairRoute, bytes[] calldata routes, uint256[] calldata minOuts)
+        external
+        nonReentrant
+        returns (uint256 amount)
+    {
+        if (_basket.length == 0) revert NoBasket();
+        amount = _take(msg.sender);
+        if (amount == 0) return 0;
+        IERC20(pairAsset).forceApprove(converter, amount);
+        IPairConverter(converter).pairToBasket(pairAsset, amount, msg.sender, pairRoute, _basket, routes, minOuts);
+        emit RewardsClaimed(msg.sender, amount, 2);
     }
 
     /// @notice Push a holder's rewards to them, in the pair asset. Anyone.
     function claimFor(address holder) external nonReentrant returns (uint256 amount) {
-        return _claimTo(holder, false, 0, "");
+        return _claimTo(holder, 0, 0, "");
     }
 
     /// @notice Push the creator's accrued share to the creator, in the pair asset. Anyone.
@@ -290,14 +343,20 @@ contract EstonksToken is ERC20, ReentrancyGuard {
         _sync();
     }
 
-    function _claimTo(address holder, bool asEth, uint256 minEthOut, bytes memory route) private returns (uint256 amount) {
+    /// @dev Settle `holder`, zero their claim and release it from `reserved`.
+    function _take(address holder) private returns (uint256 amount) {
         _pull();
         _settle(holder);
         amount = claimable[holder];
         if (amount == 0) return 0;
         claimable[holder] = 0;
         reserved -= amount;
-        if (!asEth) {
+    }
+
+    function _claimTo(address holder, uint8 payout, uint256 minEthOut, bytes memory route) private returns (uint256 amount) {
+        amount = _take(holder);
+        if (amount == 0) return 0;
+        if (payout == 0) {
             IERC20(pairAsset).safeTransfer(holder, amount);
         } else {
             address c = converter;
@@ -305,7 +364,7 @@ contract EstonksToken is ERC20, ReentrancyGuard {
             IERC20(pairAsset).forceApprove(c, amount);
             IPairConverter(c).pairToEth(pairAsset, amount, holder, minEthOut, route);
         }
-        emit RewardsClaimed(holder, amount, asEth);
+        emit RewardsClaimed(holder, amount, payout);
     }
 
     function _settle(address account) private {

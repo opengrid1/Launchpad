@@ -123,6 +123,10 @@ contract EstonksFactory is ReentrancyGuard, IUnlockCallback {
         address pair;
         /// @dev First buy only: minimum pair asset the ETH must buy along the route (sandwich guard).
         uint256 minPairOut;
+        /// @dev Optional reward basket: up to 4 approved stocks (not WETH), no
+        ///      repeats. Holders may claim their rewards as equal shares of it.
+        ///      Fixed in the coin forever.
+        address[] basket;
     }
 
     event Launched(address indexed token, address indexed creator, address indexed pair, uint16 taxBps, bytes32 poolId, uint256 pairUsdPrice8);
@@ -285,6 +289,7 @@ contract EstonksFactory is ReentrancyGuard, IUnlockCallback {
         QuoteAsset memory q = quoteAssets[pair];
         if (!q.approved) revert QuoteNotApproved();
         uint256 pairUsd8 = pairUsdPrice(pair);
+        _checkBasket(p.basket);
 
         if (converter == address(0)) revert InvalidParams();
         token = tokenDeployer.deploy(
@@ -301,7 +306,8 @@ contract EstonksFactory is ReentrancyGuard, IUnlockCallback {
                 hook: address(hook),
                 converter: converter,
                 creatorBps: CREATOR_BPS,
-                holderBps: HOLDER_BPS
+                holderBps: HOLDER_BPS,
+                basket: p.basket
             })
         );
 
@@ -324,6 +330,16 @@ contract EstonksFactory is ReentrancyGuard, IUnlockCallback {
         allTokens.push(token);
 
         emit Launched(token, msg.sender, pair, TAX_BPS, poolId, pairUsd8);
+    }
+
+    function _checkBasket(address[] calldata basket) internal view {
+        uint256 n = basket.length;
+        if (n > 4) revert InvalidParams();
+        for (uint256 i; i < n; i++) {
+            address s = basket[i];
+            if (s == weth || !quoteAssets[s].approved) revert QuoteNotApproved();
+            for (uint256 j; j < i; j++) if (basket[j] == s) revert InvalidParams();
+        }
     }
 
     // ---------------------------------------------------------------------

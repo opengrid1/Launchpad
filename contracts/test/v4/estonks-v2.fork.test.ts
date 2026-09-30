@@ -18,6 +18,13 @@ const NVDA_ROUTE = ethers.AbiCoder.defaultAbiCoder().encode(
   ["bytes", KEY_T],
   [ethers.solidityPacked(["address", "uint24", "address", "uint24", "address"], [WETH, 500, USDC, 3000, NVDA]), EMPTY_KEY],
 );
+const SPY = ethers.getAddress("0xfedc5f4a6c38211c1338aa411018dfaf26612c08");
+// SPYon: Uniswap V3 SPYon/USDC 0.3%. Route: WETH -(0.05%)-> USDC -(0.3%)-> SPYon.
+const SPY_ROUTE = ethers.AbiCoder.defaultAbiCoder().encode(
+  ["bytes", KEY_T],
+  [ethers.solidityPacked(["address", "uint24", "address", "uint24", "address"], [WETH, 500, USDC, 3000, SPY]), EMPTY_KEY],
+);
+const SPY_USD_8 = 774n * 10n ** 8n;
 const NO_ROUTE = "0x";
 const ETH_USD_8 = 2_700n * 10n ** 8n;
 const NVDA_USD_8 = 229n * 10n ** 8n;
@@ -60,9 +67,9 @@ async function deployAll(admin: any) {
   return { hook, factory, router, td, deployer };
 }
 
-async function launch(factory: any, creator: any, pair: string, ethIn = 0n, route = NO_ROUTE, meta = '{"description":"fork test"}') {
+async function launch(factory: any, creator: any, pair: string, ethIn = 0n, route = NO_ROUTE, meta = '{"description":"fork test"}', basket: string[] = []) {
   const n = Number(await factory.totalTokens());
-  await (await factory.connect(creator).launch({ name: "Test Coin", symbol: "TC", metadataURI: meta, pair, minPairOut: 0 }, nextSalt(), route, { value: ethIn })).wait();
+  await (await factory.connect(creator).launch({ name: "Test Coin", symbol: "TC", metadataURI: meta, pair, minPairOut: 0, basket }, nextSalt(), route, { value: ethIn })).wait();
   return ethers.getContractAt("EstonksToken", await factory.allTokens(n));
 }
 
@@ -91,7 +98,7 @@ describe("Estonks v2 (mainnet fork)", function () {
     const coinAbi = (await ethers.getContractFactory("EstonksToken")).interface;
     const writes = coinAbi.fragments.filter((f: any) => f.type === "function" && !["view", "pure"].includes(f.stateMutability)).map((f: any) => f.name).sort();
     // Standard ERC20 writes plus permissionless or self-serve actions only.
-    expect(writes).to.deep.equal(["approve", "burn", "claimFor", "claimRewards", "claimRewardsAsEth", "fund", "payCreator", "payPlatform", "sync", "transfer", "transferFrom"]);
+    expect(writes).to.deep.equal(["approve", "burn", "claimFor", "claimRewards", "claimRewardsAsBasket", "claimRewardsAsEth", "fund", "payCreator", "payPlatform", "sync", "transfer", "transferFrom"]);
     const hookAbi = (await ethers.getContractFactory("EstonksHook")).interface;
     expect(hookAbi.getFunction("setPoolTax")).to.equal(null);
     const facAbi = (await ethers.getContractFactory("EstonksFactory")).interface;
@@ -188,7 +195,7 @@ describe("Estonks v2 (mainnet fork)", function () {
   it("NVDAon pair: ETH first buy routes through V3 into the stock, router trades in ETH, fees land in NVDAon, rewards claim as ETH", async () => {
     const [admin, creator, trader] = await ethers.getSigners();
     const { factory, router } = await deployAll(admin);
-    await expect(factory.connect(creator).launch({ name: "G", symbol: "G", metadataURI: "", pair: NVDA, minPairOut: ethers.parseEther("1000") }, nextSalt(), NVDA_ROUTE, { value: ethers.parseEther("0.05") }))
+    await expect(factory.connect(creator).launch({ name: "G", symbol: "G", metadataURI: "", pair: NVDA, minPairOut: ethers.parseEther("1000"), basket: [] }, nextSalt(), NVDA_ROUTE, { value: ethers.parseEther("0.05") }))
       .to.be.revertedWithCustomError(router, "Slippage"); // first-buy floor on the ETH -> stock leg
     const coin = await launch(factory, creator, NVDA, ethers.parseEther("0.05"), NVDA_ROUTE);
     const coinAddr = await coin.getAddress();
@@ -255,11 +262,79 @@ describe("Estonks v2 (mainnet fork)", function () {
     await expectSolvent(coin, UL, [creator.address, trader.address]);
   });
 
+  it("basket rewards: fixed at launch, validated, claimed as equal shares of stocks with the holder's own minimums", async () => {
+    const [admin, creator, trader, stranger] = await ethers.getSigners();
+    const { factory, router } = await deployAll(admin);
+    await (await factory.connect(admin).setQuoteAsset(SPY, true, SPY_USD_8, ethers.ZeroAddress)).wait();
+    const rAddr = await router.getAddress();
+    const nvda = new ethers.Contract(NVDA, ERC20, ethers.provider);
+    const spy = new ethers.Contract(SPY, ERC20, ethers.provider);
+    const weth = new ethers.Contract(WETH, ERC20, ethers.provider);
+
+    // Validation: stocks only, approved only, no repeats, at most four.
+    const p = (basket: string[]) => ({ name: "B", symbol: "B", metadataURI: "", pair: WETH, minPairOut: 0, basket });
+    await expect(factory.connect(creator).launch(p([WETH]), nextSalt(), NO_ROUTE)).to.be.revertedWithCustomError(factory, "QuoteNotApproved");
+    await expect(factory.connect(creator).launch(p([UL]), nextSalt(), NO_ROUTE)).to.be.revertedWithCustomError(factory, "QuoteNotApproved");
+    await expect(factory.connect(creator).launch(p([NVDA, NVDA]), nextSalt(), NO_ROUTE)).to.be.revertedWithCustomError(factory, "InvalidParams");
+    await expect(factory.connect(creator).launch(p([NVDA, SPY, NVDA, SPY, NVDA]), nextSalt(), NO_ROUTE)).to.be.revertedWithCustomError(factory, "InvalidParams");
+
+    // An ETH coin with no basket cannot claim as one.
+    const plain = await launch(factory, creator, WETH, ethers.parseEther("0.01"));
+    await expect(plain.connect(creator).claimRewardsAsBasket(NO_ROUTE, [], [])).to.be.revertedWithCustomError(plain, "NoBasket");
+
+    // ETH coin, basket NVDA + SPY.
+    const coin = await launch(factory, creator, WETH, ethers.parseEther("0.05"), NO_ROUTE, "", [NVDA, SPY]);
+    const coinAddr = await coin.getAddress();
+    expect(await coin.basketAssets()).to.deep.equal([NVDA, SPY]);
+    await pastSnipe();
+    await (await router.connect(trader).buy(coinAddr, NO_ROUTE, 0, { value: ethers.parseEther("1") })).wait();
+    const got = await coin.balanceOf(trader.address);
+    await (await coin.connect(trader).approve(rAddr, got)).wait();
+    await (await router.connect(trader).sell(coinAddr, got / 4n, NO_ROUTE, 0)).wait();
+    const pending = await coin.pendingRewards(trader.address);
+    expect(pending).to.be.gt(0n);
+
+    // Wrong lengths and an unmet minimum both revert, and nothing is lost.
+    await expect(coin.connect(trader).claimRewardsAsBasket(NO_ROUTE, [NVDA_ROUTE], [0])).to.be.revertedWithCustomError(router, "BadRoute");
+    await expect(coin.connect(trader).claimRewardsAsBasket(NO_ROUTE, [NVDA_ROUTE, SPY_ROUTE], [ethers.parseEther("1000"), 0])).to.be.revertedWithCustomError(router, "Slippage");
+    expect(await coin.pendingRewards(trader.address)).to.equal(pending);
+
+    const [n0, s0] = [await nvda.balanceOf(trader.address), await spy.balanceOf(trader.address)];
+    await (await coin.connect(trader).claimRewardsAsBasket(NO_ROUTE, [NVDA_ROUTE, SPY_ROUTE], [1, 1])).wait();
+    const [dn, ds] = [(await nvda.balanceOf(trader.address)) - n0, (await spy.balanceOf(trader.address)) - s0];
+    expect(dn).to.be.gt(0n);
+    expect(ds).to.be.gt(0n);
+    // Equal value on both legs: within 10% of each other at fork prices.
+    const vn = dn * NVDA_USD_8, vs = ds * SPY_USD_8;
+    expect(vn > vs ? (vn - vs) * 100n / vn : (vs - vn) * 100n / vs).to.be.lte(10n);
+    expect(await coin.pendingRewards(trader.address)).to.equal(0n);
+    for (const t of [weth, nvda, spy]) expect(await t.balanceOf(rAddr)).to.equal(0n);
+    await expectSolvent(coin, WETH, [creator.address, trader.address]);
+    // Only the holder decides their own basket claim; others can still push them the pair asset.
+    await (await router.connect(trader).buy(coinAddr, NO_ROUTE, 0, { value: ethers.parseEther("0.2") })).wait();
+    await (await coin.connect(stranger).claimFor(trader.address)).wait();
+
+    // NVDAon coin, basket NVDA + SPY: the NVDA half is passed on as is, only the SPY half is swapped.
+    const sc = await launch(factory, creator, NVDA, ethers.parseEther("0.02"), NVDA_ROUTE, "", [NVDA, SPY]);
+    const scAddr = await sc.getAddress();
+    await pastSnipe();
+    await (await router.connect(trader).buy(scAddr, NVDA_ROUTE, 0, { value: ethers.parseEther("0.3") })).wait();
+    await (await router.connect(stranger).buy(scAddr, NVDA_ROUTE, 0, { value: ethers.parseEther("0.3") })).wait(); // the trader earns on others' trades
+    const sp = await sc.pendingRewards(trader.address);
+    expect(sp).to.be.gt(0n);
+    const [n1, s1] = [await nvda.balanceOf(trader.address), await spy.balanceOf(trader.address)];
+    await (await sc.connect(trader).claimRewardsAsBasket(NVDA_ROUTE, [NO_ROUTE, SPY_ROUTE], [1, 1])).wait();
+    expect((await nvda.balanceOf(trader.address)) - n1).to.equal(sp / 2n);
+    expect((await spy.balanceOf(trader.address)) - s1).to.be.gt(0n);
+    for (const t of [weth, nvda, spy]) expect(await t.balanceOf(rAddr)).to.equal(0n);
+    await expectSolvent(sc, NVDA, [creator.address, trader.address]);
+  });
+
   it("launch protection: creator-only launch block, 3% caps for three blocks, 99% fee decaying to 2% over 20s", async () => {
     const [admin, creator, sniper, other] = await ethers.getSigners();
     const { factory, router, hook } = await deployAll(admin);
     await network.provider.send("evm_setAutomine", [false]);
-    const tx1 = await factory.connect(creator).launch({ name: "Snipe", symbol: "SN", metadataURI: "", pair: WETH, minPairOut: 0 }, nextSalt(), NO_ROUTE);
+    const tx1 = await factory.connect(creator).launch({ name: "Snipe", symbol: "SN", metadataURI: "", pair: WETH, minPairOut: 0, basket: [] }, nextSalt(), NO_ROUTE);
     const n = Number(await factory.totalTokens());
     await network.provider.send("evm_mine", []);
     await tx1.wait();
@@ -284,9 +359,9 @@ describe("Estonks v2 (mainnet fork)", function () {
 
     await expect(factory.connect(stranger).pause()).to.be.revertedWithCustomError(factory, "NotAdmin");
     await (await factory.connect(admin).pause()).wait();
-    await expect(factory.connect(creator).launch({ name: "P", symbol: "P", metadataURI: "", pair: WETH, minPairOut: 0 }, nextSalt(), NO_ROUTE)).to.be.revertedWithCustomError(factory, "LaunchesPaused");
+    await expect(factory.connect(creator).launch({ name: "P", symbol: "P", metadataURI: "", pair: WETH, minPairOut: 0, basket: [] }, nextSalt(), NO_ROUTE)).to.be.revertedWithCustomError(factory, "LaunchesPaused");
     await (await factory.connect(admin).resume()).wait();
-    await expect(factory.connect(creator).launch({ name: "X", symbol: "X", metadataURI: "", pair: creator.address, minPairOut: 0 }, nextSalt(), NO_ROUTE)).to.be.revertedWithCustomError(factory, "QuoteNotApproved");
+    await expect(factory.connect(creator).launch({ name: "X", symbol: "X", metadataURI: "", pair: creator.address, minPairOut: 0, basket: [] }, nextSalt(), NO_ROUTE)).to.be.revertedWithCustomError(factory, "QuoteNotApproved");
 
     const coin = await launch(factory, creator, WETH, 0n, NO_ROUTE, '{"description":"original"}');
     const coinAddr = await coin.getAddress();
