@@ -47,7 +47,9 @@ export default function Launch() {
 
   const symbol = (f.symbol || f.name).replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 10) || "COIN";
   const ethQuote = useMemo(() => ({ address: WETH, symbol: "ETH", name: "Ether", decimals: 18, usd: ethUsd, isNative: true, ethRoute: true, approved: true, liqUsd: 0, vol24Usd: 0 }), [ethUsd]);
-  const pairs = useMemo(() => { const l = (quotes ?? []).filter((q) => q.approved); return l.some((q) => q.isNative) ? l : [ethQuote, ...l]; }, [quotes, ethQuote]);
+  // Only pairs buyers can reach with ETH: a stock with no liquid pool leaves the coin unbuyable and
+  // unpriced on scanners (liquidity reads $0). Those stay approved on chain but are not offered here.
+  const pairs = useMemo(() => { const l = (quotes ?? []).filter((q) => q.approved && (q.isNative || q.ethRoute)); return l.some((q) => q.isNative) ? l : [ethQuote, ...l]; }, [quotes, ethQuote]);
   const shown = useMemo(() => { const s = pq.trim().toLowerCase(); return s ? pairs.filter((p) => `${p.symbol} ${p.name}`.toLowerCase().includes(s)) : pairs.slice(0, 12); }, [pairs, pq]);
   const pair = pairs.find((q) => q.address.toLowerCase() === pairAddr.toLowerCase()) ?? pairs.find((q) => q.isNative);
   const pairSym = pair?.symbol ?? "ETH";
@@ -127,7 +129,7 @@ export default function Launch() {
 
         <section className="lf-sec"><div className="lf-head"><h2>Pair</h2><span className="lf-hint">Rewards are paid in the pair</span></div>
           <div className="lf-group">
-            <label className="lf-search"><Icon name="search" size={16} /><input placeholder={`Search ${Math.max(0, pairs.length - 1)} Ondo stocks`} value={pq} onChange={(e) => setPq(e.target.value)} /></label>
+            <label className="lf-search"><Icon name="search" size={16} /><input placeholder={`Search ${Math.max(0, pairs.length - 1)} tradeable stocks`} value={pq} onChange={(e) => setPq(e.target.value)} /></label>
             <div className="lf-pairs">
               {shown.length === 0 && <span className="lf-hint">No pair matches.</span>}
               {shown.map((p) => { const on = p.address.toLowerCase() === (pair?.address ?? WETH).toLowerCase(); return (
