@@ -74,7 +74,7 @@ export class PrivateWallet {
   private spentSet = new Set<string>();
   private busy: Promise<void> | null = null;
 
-  constructor(phrase: string, private pc: PublicClient, private logs: PublicClient, private vault: Address, private fromBlock: bigint) {
+  constructor(phrase: string, private pc: PublicClient, private logs: PublicClient, private vault: Address, private readonly fromBlock: bigint) {
     this.keys = keysFromPhrase(phrase);
     this.scannedTo = fromBlock - 1n;
   }
@@ -114,6 +114,9 @@ export class PrivateWallet {
       for (const l of spent) this.spentSet.add(String((l.args as any).nullifier));
       this.scannedTo = to;
     }
+    // Public RPCs can index logs a few blocks late; re-read the tail next time.
+    // Reading a block twice changes nothing: leaves, notes and spends are keyed.
+    if (this.scannedTo > this.fromBlock + 8n) this.scannedTo -= 8n;
   }
 
   notes(asset?: Address): Owned[] {

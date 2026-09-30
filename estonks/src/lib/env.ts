@@ -40,13 +40,13 @@ export const ADDRESSES = {
   stateView: addr("VITE_STATE_VIEW", "0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227"),
   weth: addr("VITE_WETH", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
   ethUsdFeed: addr("VITE_ETH_USD_FEED", "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"),
-  /** Private vault (contracts/deployments/ethereum-estonks-v2.json: vault). Empty until it is live. */
-  vault: String(import.meta.env.VITE_VAULT ?? "") as `0x${string}` | "",
+  /** Private vault (contracts/deployments/ethereum-estonks-v2.json: vault). */
+  vault: String(import.meta.env.VITE_VAULT ?? "0x0B1a2a9Bbb68C739cC8B03521eda2C9E5E41D4cF") as `0x${string}` | "",
 };
 
 /** Private vault deploy block and relay endpoint. */
 export const PRIVATE = {
-  startBlock: BigInt(import.meta.env.VITE_VAULT_START_BLOCK ?? "0"),
+  startBlock: BigInt(import.meta.env.VITE_VAULT_START_BLOCK ?? "26088791"),
   relay: String(import.meta.env.VITE_RELAY_URL ?? "/api/relay"),
 };
 

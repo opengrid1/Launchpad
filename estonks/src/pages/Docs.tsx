@@ -11,6 +11,8 @@ const CONTRACTS: { name: string; address: string; what: string }[] = [
   { name: "Hook", address: ADDRESSES.hook, what: "Takes the fixed fee on every swap and sends it to the coin." },
   { name: "Router", address: ADDRESSES.router, what: "Buys and sells in ETH, and pays claims as ETH or a stock basket." },
   { name: "Token deployer", address: ADDRESSES.tokenDeployer, what: "Creates each coin contract for the factory." },
+  { name: "Private vault", address: "0x0B1a2a9Bbb68C739cC8B03521eda2C9E5E41D4cF", what: "Holds private balances and makes private trades. Checks every zero-knowledge proof." },
+  { name: "Proof verifier", address: "0x52DC3beBA801c4ab2b366a4708bEF361790C3206", what: "The Groth16 verifier the vault calls for each spend." },
   { name: "Uniswap V4 PoolManager", address: ADDRESSES.poolManager, what: "Uniswap's contract that holds every pool." },
 ];
 
@@ -70,6 +72,19 @@ export default function Docs() {
           <div className="kv"><span>First 20 seconds</span><b>Fee starts at 99% and falls to {FEES.taxPct}%</b></div>
         </div>
         <p>The extra fee during the first 20 seconds is split like any other fee, so snipers pay the coin's holders and creator.</p>
+      </section>
+
+      <section>
+        <h2>Private trading</h2>
+        <p>The <Link to="/private">Private</Link> page gives you a second wallet that lives in your browser, protected by a passphrase and a 24-word recovery phrase. Move ETH or coins into it (shield), and from there buy, sell and send without your normal wallet appearing anywhere. Take funds out (unshield) to any address, like a brand-new wallet nobody can link to you.</p>
+        <p>Your balance is held as sealed notes in the private vault contract. To spend one, your browser makes a zero-knowledge proof that you own a note in the vault without revealing which one. A relay submits it and pays the gas, so no wallet of yours signs it. The vault then trades through the Estonks router, and the result becomes a new note only you can open.</p>
+        <div className="card">
+          <div className="kv"><span>Shield and unshield</span><b>Gas only (unshield: the relay's gas fee)</b></div>
+          <div className="kv"><span>Private buy or sell</span><b>0.5% plus the relay's gas fee</b></div>
+          <div className="kv"><span>ETH the vault accepts while in beta</span><b>5 ETH in total</b></div>
+        </div>
+        <p>Public: every deposit and withdrawal (address, asset, amount) and every private trade's coin, size, price and time, with the vault as the trader. Private: which deposit paid for which trade or withdrawal, and who owns what inside the vault. Exact amounts and quick timing can still link actions, so wait between steps and use round amounts. The relay sees your IP address.</p>
+        <p>Coins held privately don't earn holder rewards; their share goes to STONK holders. New deposits and trades can be paused; withdrawals never can, and no one can move a note but its owner. Private mode is in beta: the vault has not had a third-party audit, which is why deposits are capped.</p>
       </section>
 
       <section>

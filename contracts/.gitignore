@@ -4,3 +4,4 @@ artifacts-size/
 .env.alchemy
 .env.telegram
 .env.arc-deployer
+.smoke-note.json

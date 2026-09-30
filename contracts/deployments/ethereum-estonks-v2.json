@@ -6,7 +6,9 @@
     "tokenDeployer": "0x3d608288719d372010f21f2fA10a2D546a893F51",
     "factory": "0x462cC9885188FE0f08597C9Df407f62E86c6D345",
     "router": "0x467cDd862c36f17b67827Dbba8bdcf4160a8E369",
-    "distributor": "0x007f76605B24822f89D41A4163D4eeB589BF235C"
+    "distributor": "0x007f76605B24822f89D41A4163D4eeB589BF235C",
+    "vaultVerifier": "0x52DC3beBA801c4ab2b366a4708bEF361790C3206",
+    "vault": "0x0B1a2a9Bbb68C739cC8B03521eda2C9E5E41D4cF"
   },
   "quotes": [
     {
@@ -98,5 +100,14 @@
     "0x14c3abF95Cb9C93a8b82C1CdCB76D72Cb87b2d4c",
     "0xbA47214eDd2bb43099611b208f75E4b42FDcfEDc",
     "0xf6b1117ec07684D3958caD8BEb1b302bfD21103f"
-  ]
+  ],
+  "vaultDeployBlock": 26088791,
+  "vault": {
+    "poseidonT3": "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
+    "poseidonT4": "0x4443338EF595F44e0121df4C21102677B142ECF0",
+    "sanctions": "0x40C57923924B5c5c5455c48D93317139ADDaC8fb",
+    "feeBps": 50,
+    "rewardsRecipient": "0x007f76605B24822f89D41A4163D4eeB589BF235C",
+    "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b"
+  }
 }
