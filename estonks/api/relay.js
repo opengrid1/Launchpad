@@ -16,7 +16,7 @@ const STATE_VIEW = "0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227";
 const WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 const ETH = "0x0000000000000000000000000000000000000000";
 // Gas the relay charges for, per kind (a little above measured use).
-const UNITS = { 0: 1_400_000n, 1: 1_400_000n, 2: 2_000_000n, 3: 2_000_000n };
+const UNITS = { 0: 1_050_000n, 1: 1_050_000n, 2: 1_750_000n, 3: 1_750_000n };
 const MARGIN = 110n; // % of the live cost the fee must cover
 
 const vaultAbi = parseAbi([

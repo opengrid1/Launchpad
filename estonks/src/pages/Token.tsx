@@ -179,7 +179,14 @@ function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { toke
   const k = payEth && !pair.isNative ? pairPerEth : 1;
   const spot = priceWei > 0n ? (side === "buy" ? BigInt(Math.floor((Number(amountWei) * k * 1e18) / Number(priceWei))) : BigInt(Math.floor((Number(amountWei) * Number(priceWei)) / 1e18 / k))) : 0n;
   const feeBps = fee?.total ?? FEES.taxPct * 100;
-  const out = privMode ? (spot * BigInt(10_000 - feeBps - 50)) / 10_000n : sim ?? (spot * BigInt(10_000 - feeBps)) / 10_000n;
+  // Private trades also pay the vault's 0.5% and the relay's gas, in ETH.
+  const { data: relay } = useQuery({ queryKey: ["relay"], queryFn: () => priv.relay(), enabled: !!privMode, staleTime: 30_000 });
+  const relayFee = privMode && relay ? priv.feeEth(relay, side === "buy" ? 2 : 3) : 0n;
+  const privSpot = side === "buy"
+    ? (priceWei > 0n && amountWei > relayFee ? BigInt(Math.floor((Number(amountWei - (amountWei * 50n) / 10_000n - relayFee) * k * 1e18) / Number(priceWei))) : 0n)
+    : spot;
+  const privOut = side === "buy" ? (privSpot * BigInt(10_000 - feeBps)) / 10_000n : (() => { const gross = (spot * BigInt(10_000 - feeBps)) / 10_000n; const net = gross - (gross * 50n) / 10_000n - relayFee; return net > 0n ? net : 0n; })();
+  const out = privMode ? privOut : sim ?? (spot * BigInt(10_000 - feeBps)) / 10_000n;
   const simKnown = typeof sim === "bigint";
   const outNum = wei(out);
   const impact = spot > 0n && simKnown ? Math.max(0, (1 - Number(sim) / Number(spot)) * 100) : null;
@@ -208,9 +215,9 @@ function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { toke
       <div className="seg"><button className={side === "buy" ? "on" : ""} onClick={() => { setSide("buy"); setAmt(""); }}>Buy</button><button className={side === "sell" ? "on" : ""} onClick={() => { setSide("sell"); setAmt(""); }}>Sell</button></div>
       {ps.live && payEth && <div className="dock-private">
         {ps.unlocked
-          ? <button className={privOn ? "on" : ""} onClick={() => { setPrivOn(!privOn); setAmt(""); }}><Icon name="private" size={14} /> {privOn ? "Private: on" : "Private: off"}</button>
+          ? <button className={"pswitch " + (privOn ? "on" : "")} role="switch" aria-checked={privOn} onClick={() => { setPrivOn(!privOn); setAmt(""); }}><Icon name="private" size={15} /><span>Trade privately</span><i aria-hidden /></button>
           : <Link to="/private"><Icon name="private" size={14} /> Trade privately</Link>}
-        {privMode && <span>From your private balance · 0.5% + gas</span>}
+        {privMode && <span>Private balance · 0.5% + gas</span>}
       </div>}
       <div className="box">
         <div className="bh"><span>You pay</span><span className="bal">{privMode ? "Private" : "Balance"} <b>{bal || privMode ? (side === "buy" ? `${hype(wei(payBal), 4)} ${payUnit}` : `${num(wei(tokBal))} ${symbol}`) : "…"}</b></span></div>
@@ -229,8 +236,11 @@ function Dock({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { toke
         <div><span>Min received</span><b>{amountWei > 0n ? (side === "buy" ? num(wei(minOut)) : hype(wei(minOut), 5)) : "—"}</b></div>
         <div><span>Fee</span><b className={surcharge ? "down" : ""}>{(feeBps / 100).toFixed(feeBps % 100 ? 2 : 0)}%{surcharge ? " anti-snipe" : ""}</b></div>
         <div><span>Route</span><b>{route}</b></div>
+        {privMode && <div><span>Relay gas</span><b>{relay ? `${hype(wei(relayFee), 6)} ETH` : "…"}</b></div>}
       </div>
       <button className={"btn lg wide go " + (side === "sell" ? "sellb" : "buy")} disabled={(isConnected || privMode) && (amountWei === 0n || over || noRoute)} onClick={go}>{privMode ? (over ? "Not enough" : side === "buy" ? `Buy ${symbol} privately` : `Sell ${symbol} privately`) : !isConnected ? "Connect wallet" : over ? "Not enough" : noRoute ? "No quote right now" : side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`}</button>
+      {privMode && ps.step && <p className="note" style={{ margin: 0, textAlign: "center" }}>{ps.step}</p>}
+      {privMode && relay && amountWei > 0n && side === "buy" && amountWei <= relayFee * 4n && <p className="note" style={{ margin: 0, textAlign: "center" }}>Most of a buy this small goes to relay gas. Larger private trades cost relatively less.</p>}
       {noRoute && <p className="note" style={{ margin: 0, textAlign: "center" }}>{pair.isNative ? "The pool could not fill this size. Try a smaller amount." : `The ${pair.symbol} route could not fill this size right now. Try a smaller amount, or trade in ${pair.symbol} directly.`}</p>}
     </div>
   );

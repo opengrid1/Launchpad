@@ -529,3 +529,11 @@ input[type="search"]::-webkit-search-cancel-button { display: none; }
 .dock-private { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; color: var(--text-3); }
 .dock-private button { font-weight: 700; }
 .dock-private .on { color: var(--text); }
+
+.pswitch { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 6px 0 10px; border-radius: 999px; border: 1px solid var(--hair-2, var(--hair)); background: var(--card-2); color: var(--text-2); font-size: 13px; font-weight: 700; }
+.pswitch i { position: relative; width: 30px; height: 18px; border-radius: 999px; background: rgba(255, 255, 255, .14); transition: background .15s; }
+.pswitch i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.pswitch.on { color: var(--text); border-color: rgba(47, 214, 123, .5); }
+.pswitch.on i { background: var(--green); }
+.pswitch.on i::after { transform: translateX(12px); }
+@media (prefers-reduced-motion: reduce) { .pswitch i, .pswitch i::after { transition: none; } }

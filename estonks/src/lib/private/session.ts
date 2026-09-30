@@ -143,7 +143,7 @@ class Session {
   }
 
   /** The relay's fee for a kind, in ETH wei, with room for gas to move before it lands. */
-  private feeEth(info: RelayInfo, kind: number) { return (info.units[String(kind)] * info.gasPrice * info.margin * 130n) / 10_000n; }
+  feeEth(info: RelayInfo, kind: number) { return (info.units[String(kind)] * info.gasPrice * info.margin * 115n) / 10_000n; }
 
   /** The same fee in coins, for coin transfers and withdrawals. */
   private async feeInCoin(coin: Address, feeEth: bigint) {
