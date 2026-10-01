@@ -6,8 +6,13 @@
 <meta name="description" content="Jeet Wars: meme coins fight in 90-minute rounds under bStock armies on BNB Chain. The winner absorbs every loser. Hold the winner, jeets get eaten.">
 <meta property="og:title" content="Jeet Wars">
 <meta property="og:description" content="Hold the winner. Jeets get eaten. Meme coin battles on BNB Chain.">
+<meta property="og:image" content="https://jeetwars.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://jeetwars.vercel.app/og.png">
 <meta name="theme-color" content="#09090b">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23f3ba2f'/%3E%3Cpath fill='%23161004' d='M3 3h2v1h1v1h1v1h2V5h1V4h1V3h2v2h-1v1h-1v1h-1v2h1v1h1v1h1v2h-2v-1h-1v-1h-1v-1H7v1H6v1H5v1H3v-2h1v-1h1V9h1V7H5V6H4V5H3z'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjM2IDE0IDQ3NCA0NzQiPjxkZWZzPjxtYXNrIGlkPSJtZmF2Ij48cmVjdCB4PSItMTQyIiB5PSItMTMwIiB3aWR0aD0iNzg0IiBoZWlnaHQ9Ijc4NCIgZmlsbD0iI2ZmZiIvPjxjaXJjbGUgY3g9IjI5My43IiBjeT0iNTYuNiIgcj0iNDAiIGZpbGw9IiMwMDAiLz48Y2lyY2xlIGN4PSIzNzkuMyIgY3k9Ijk2LjUiIHI9IjQ2IiBmaWxsPSIjMDAwIi8+PGNpcmNsZSBjeD0iNDQxLjgiIGN5PSIxNzYuNiIgcj0iNDAiIGZpbGw9IiMwMDAiLz48L21hc2s+PGNsaXBQYXRoIGlkPSJjZmF2Ij48Y2lyY2xlIGN4PSIyNTAiIGN5PSIyNjIiIHI9IjIwNi43OCIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIG1hc2s9InVybCgjbWZhdikiPjxjaXJjbGUgY3g9IjI1MCIgY3k9IjI2MiIgcj0iMTk2IiBmaWxsPSIjZjNiYTJmIiBzdHJva2U9IiMxNjEwMDQiIHN0cm9rZS13aWR0aD0iMjEuNTYiLz48Y2lyY2xlIGN4PSIyNTAiIGN5PSIyNjIiIHI9IjE1Ni44IiBmaWxsPSJub25lIiBzdHJva2U9IiNkODlhMTQiIHN0cm9rZS13aWR0aD0iMTMuNzIiLz48cGF0aCBkPSJNMTI4LjQ4MDAwMDAwMDAwMDAyLDIxMy4wIEExMzMuMjgsMTMzLjI4IDAgMCAxIDIxMC44LDEzNi41NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZlMDhhIiBzdHJva2Utd2lkdGg9IjEzLjcyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48ZyB0cmFuc2Zvcm09InJvdGF0ZSg0NSAyNTAgMjYyKSI+CjxwYXRoIGQ9Ik0yMzguNzUsMzE2LjAgTDIzOC43NSwxNTIuNSBMMjUwLDExNi41IEwyNjEuMjUsMTUyLjUgTDI2MS4yNSwzMTYuMCBaIiBmaWxsPSIjMTYxMDA0Ii8+CjxyZWN0IHg9IjIwMi43NSIgeT0iMzE2LjAiIHdpZHRoPSI5NC41IiBoZWlnaHQ9IjIxLjM3NSIgcng9IjYuNzUiIGZpbGw9IiMxNjEwMDQiLz4KPHJlY3QgeD0iMjQwLjU1IiB5PSIzMzYuMjUiIHdpZHRoPSIxOC45IiBoZWlnaHQ9IjYwLjAiIGZpbGw9IiMxNjEwMDQiLz4KPGNpcmNsZSBjeD0iMjUwIiBjeT0iNDA2LjM3NSIgcj0iMTUuNzQ5OTk5OTk5OTk5OTk4IiBmaWxsPSIjMTYxMDA0Ii8+PC9nPjxnIHRyYW5zZm9ybT0icm90YXRlKC00NSAyNTAgMjYyKSI+CjxwYXRoIGQ9Ik0yMzguNzUsMzE2LjAgTDIzOC43NSwxNTIuNSBMMjUwLDExNi41IEwyNjEuMjUsMTUyLjUgTDI2MS4yNSwzMTYuMCBaIiBmaWxsPSIjMTYxMDA0Ii8+CjxyZWN0IHg9IjIwMi43NSIgeT0iMzE2LjAiIHdpZHRoPSI5NC41IiBoZWlnaHQ9IjIxLjM3NSIgcng9IjYuNzUiIGZpbGw9IiMxNjEwMDQiLz4KPHJlY3QgeD0iMjQwLjU1IiB5PSIzMzYuMjUiIHdpZHRoPSIxOC45IiBoZWlnaHQ9IjYwLjAiIGZpbGw9IiMxNjEwMDQiLz4KPGNpcmNsZSBjeD0iMjUwIiBjeT0iNDA2LjM3NSIgcj0iMTUuNzQ5OTk5OTk5OTk5OTk4IiBmaWxsPSIjMTYxMDA0Ii8+PC9nPjwvZz48ZyBjbGlwLXBhdGg9InVybCgjY2ZhdikiIG1hc2s9InVybCgjbWZhdikiPjxjaXJjbGUgY3g9IjI5My43IiBjeT0iNTYuNiIgcj0iNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzE2MTAwNCIgc3Ryb2tlLXdpZHRoPSI0My4xMiIvPjxjaXJjbGUgY3g9IjM3OS4zIiBjeT0iOTYuNSIgcj0iNDYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzE2MTAwNCIgc3Ryb2tlLXdpZHRoPSI0My4xMiIvPjxjaXJjbGUgY3g9IjQ0MS44IiBjeT0iMTc2LjYiIHI9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjEwMDQiIHN0cm9rZS13aWR0aD0iNDMuMTIiLz48L2c+PHJlY3QgeD0iNDQyLjEiIHk9IjQyLjUiIHdpZHRoPSIyNS41IiBoZWlnaHQ9IjI1LjUiIGZpbGw9IiNmM2JhMmYiIHN0cm9rZT0iIzE2MTAwNCIgc3Ryb2tlLXdpZHRoPSI5LjciIHRyYW5zZm9ybT0icm90YXRlKDE4IDQ0OS45IDUwLjMpIi8+PHJlY3QgeD0iNDczLjQiIHk9IjkzLjQiIHdpZHRoPSIxNy42IiBoZWlnaHQ9IjE3LjYiIGZpbGw9IiNmM2JhMmYiIHN0cm9rZT0iIzE2MTAwNCIgc3Ryb2tlLXdpZHRoPSI4LjYiLz48L3N2Zz4=">
 <style>[hidden]{display:none!important} :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 <title>Jeet Wars</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,6 +51,7 @@ button { cursor: pointer; }
 /* header */
 .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: rgba(9,9,11,.93); backdrop-filter: blur(8px); border-bottom: 2px solid var(--line); }
 .top .wrap { display: flex; align-items: center; gap: 14px; padding-block: 10px; }
+.logo .mark { width: 40px; height: 40px; flex: none; }
 .logo { display: flex; align-items: center; gap: 10px; white-space: nowrap; text-decoration: none; }
 .logo b i { font-style: normal; color: var(--hot); text-shadow: 3px 3px 0 #4a0016; }
 .logo b { font-family: var(--marquee); font-weight: 400; font-size: 26px; line-height: 1; color: var(--bnb); text-shadow: 0 0 18px rgba(243,186,47,.45), 3px 3px 0 #5c3f00; }
@@ -108,6 +114,17 @@ h2.title, h3.title { font-size: 22px; }
 .ghost-btn:hover { border-color: var(--bnb); color: var(--bnb); }
 .hint { font-size: 12.5px; color: var(--fg-3); margin: 0; }
 .empty { padding: 18px; color: var(--fg-3); text-align: center; }
+
+/* arena banner */
+.banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 18px 22px; border: 2px solid var(--bnb); border-radius: 14px; background: radial-gradient(120% 140% at 0% 50%, rgba(243,186,47,.16), transparent 55%), repeating-linear-gradient(135deg, rgba(243,186,47,.05) 0 10px, transparent 10px 20px), var(--panel); box-shadow: 0 0 40px -18px rgba(243,186,47,.6); }
+.ban-mark { width: 116px; height: 116px; display: block; filter: drop-shadow(0 6px 18px rgba(243,186,47,.35)); }
+.ban-copy { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.ban-title { margin: 0; font-family: var(--marquee); font-weight: 400; font-size: clamp(38px, 6vw, 64px); line-height: .95; color: var(--bnb); text-shadow: 3px 3px 0 #b07800, 6px 6px 0 #161004; letter-spacing: .01em; }
+.ban-title i { font-style: normal; color: var(--hot); text-shadow: 3px 3px 0 #a3123d, 6px 6px 0 #161004; }
+.ban-tag { margin: 4px 0 0; font-family: var(--pixel); font-size: 11px; line-height: 1.6; color: var(--fg); text-transform: uppercase; }
+.ban-sub { margin: 0; color: var(--fg-2); font-size: 14px; max-width: 56ch; }
+.ban-cta { display: flex; flex-direction: column; gap: 10px; align-items: stretch; min-width: 200px; }
+.ban-cta .ghost-btn { text-align: center; padding-block: 12px 10px; }
 
 /* HUD */
 .hud { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; }
@@ -414,6 +431,11 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   .stat:nth-child(n+4) { border-top: 2px solid var(--line); }
 }
 @media (max-width: 760px) {
+  .banner { grid-template-columns: auto minmax(0, 1fr); gap: 14px; padding: 16px; }
+  .ban-mark { width: 76px; height: 76px; }
+  .ban-cta { grid-column: 1 / -1; flex-direction: row; min-width: 0; }
+  .ban-cta > * { flex: 1; }
+  .ban-sub { display: none; }
   .ca .addr { display: none; } .ca .addr-s { display: inline; }
   .ca { flex: 1 1 100%; justify-content: space-between; }
   .lf-row { grid-template-columns: minmax(0, 1fr); }
@@ -432,6 +454,9 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 }
 @media (max-width: 480px) {
   .logo b { font-size: 21px; }
+  .logo .mark { width: 34px; height: 34px; }
+  .ban-title { font-size: 34px; }
+  .ban-tag { font-size: 9px; }
   .p1-stats b { font-size: 23px; }
   .p1-stats div { padding: 8px; }
   .top .wrap { gap: 8px; }
@@ -468,7 +493,15 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 <header class="top">
   <div class="wrap">
     <a class="logo" href="#arena" aria-label="Jeet Wars home">
-      <svg width="34" height="34" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#f3ba2f"/><path fill="#161004" d="M3 3h2v1h1v1h1v1h2V5h1V4h1V3h2v2h-1v1h-1v1h-1v2h1v1h1v1h1v2h-2v-1h-1v-1h-1v-1H7v1H6v1H5v1H3v-2h1v-1h1V9h1V7H5V6H4V5H3z"/></svg>
+      <svg class="mark" viewBox="36 14 474 474" aria-hidden="true"><defs><mask id="mhdr"><rect x="-142" y="-130" width="784" height="784" fill="#fff"/><circle cx="293.7" cy="56.6" r="40" fill="#000"/><circle cx="379.3" cy="96.5" r="46" fill="#000"/><circle cx="441.8" cy="176.6" r="40" fill="#000"/></mask><clipPath id="chdr"><circle cx="250" cy="262" r="206.78"/></clipPath></defs><g mask="url(#mhdr)"><circle cx="250" cy="262" r="196" fill="#f3ba2f" stroke="#161004" stroke-width="21.56"/><circle cx="250" cy="262" r="156.8" fill="none" stroke="#d89a14" stroke-width="13.72"/><path d="M128.48000000000002,213.0 A133.28,133.28 0 0 1 210.8,136.56" fill="none" stroke="#ffe08a" stroke-width="13.72" stroke-linecap="round"/><g transform="rotate(45 250 262)">
+<path d="M238.75,316.0 L238.75,152.5 L250,116.5 L261.25,152.5 L261.25,316.0 Z" fill="#161004"/>
+<rect x="202.75" y="316.0" width="94.5" height="21.375" rx="6.75" fill="#161004"/>
+<rect x="240.55" y="336.25" width="18.9" height="60.0" fill="#161004"/>
+<circle cx="250" cy="406.375" r="15.749999999999998" fill="#161004"/></g><g transform="rotate(-45 250 262)">
+<path d="M238.75,316.0 L238.75,152.5 L250,116.5 L261.25,152.5 L261.25,316.0 Z" fill="#161004"/>
+<rect x="202.75" y="316.0" width="94.5" height="21.375" rx="6.75" fill="#161004"/>
+<rect x="240.55" y="336.25" width="18.9" height="60.0" fill="#161004"/>
+<circle cx="250" cy="406.375" r="15.749999999999998" fill="#161004"/></g></g><g clip-path="url(#chdr)" mask="url(#mhdr)"><circle cx="293.7" cy="56.6" r="40" fill="none" stroke="#161004" stroke-width="43.12"/><circle cx="379.3" cy="96.5" r="46" fill="none" stroke="#161004" stroke-width="43.12"/><circle cx="441.8" cy="176.6" r="40" fill="none" stroke="#161004" stroke-width="43.12"/></g><rect x="442.1" y="42.5" width="25.5" height="25.5" fill="#f3ba2f" stroke="#161004" stroke-width="9.7" transform="rotate(18 449.9 50.3)"/><rect x="473.4" y="93.4" width="17.6" height="17.6" fill="#f3ba2f" stroke="#161004" stroke-width="8.6"/></svg>
       <b>Jeet <i>Wars</i></b>
     </a>
     <nav class="nav" aria-label="Pages">
@@ -759,7 +792,20 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 
   const PAGES = {
     arena: {
-      mount: () => `<div class="page">${hudHtml()}
+      mount: () => `<div class="page">
+        <section class="banner" aria-label="Jeet Wars">
+          <svg class="ban-mark" viewBox="36 14 474 474" aria-hidden="true"><defs><mask id="mban"><rect x="-142" y="-130" width="784" height="784" fill="#fff"/><circle cx="293.7" cy="56.6" r="40" fill="#000"/><circle cx="379.3" cy="96.5" r="46" fill="#000"/><circle cx="441.8" cy="176.6" r="40" fill="#000"/></mask><clipPath id="cban"><circle cx="250" cy="262" r="206.78"/></clipPath></defs><g mask="url(#mban)"><circle cx="250" cy="262" r="196" fill="#f3ba2f" stroke="#161004" stroke-width="21.56"/><circle cx="250" cy="262" r="156.8" fill="none" stroke="#d89a14" stroke-width="13.72"/><path d="M128.48000000000002,213.0 A133.28,133.28 0 0 1 210.8,136.56" fill="none" stroke="#ffe08a" stroke-width="13.72" stroke-linecap="round"/><g transform="rotate(45 250 262)">
+<path d="M238.75,316.0 L238.75,152.5 L250,116.5 L261.25,152.5 L261.25,316.0 Z" fill="#161004"/>
+<rect x="202.75" y="316.0" width="94.5" height="21.375" rx="6.75" fill="#161004"/>
+<rect x="240.55" y="336.25" width="18.9" height="60.0" fill="#161004"/>
+<circle cx="250" cy="406.375" r="15.749999999999998" fill="#161004"/></g><g transform="rotate(-45 250 262)">
+<path d="M238.75,316.0 L238.75,152.5 L250,116.5 L261.25,152.5 L261.25,316.0 Z" fill="#161004"/>
+<rect x="202.75" y="316.0" width="94.5" height="21.375" rx="6.75" fill="#161004"/>
+<rect x="240.55" y="336.25" width="18.9" height="60.0" fill="#161004"/>
+<circle cx="250" cy="406.375" r="15.749999999999998" fill="#161004"/></g></g><g clip-path="url(#cban)" mask="url(#mban)"><circle cx="293.7" cy="56.6" r="40" fill="none" stroke="#161004" stroke-width="43.12"/><circle cx="379.3" cy="96.5" r="46" fill="none" stroke="#161004" stroke-width="43.12"/><circle cx="441.8" cy="176.6" r="40" fill="none" stroke="#161004" stroke-width="43.12"/></g><rect x="442.1" y="42.5" width="25.5" height="25.5" fill="#f3ba2f" stroke="#161004" stroke-width="9.7" transform="rotate(18 449.9 50.3)"/><rect x="473.4" y="93.4" width="17.6" height="17.6" fill="#f3ba2f" stroke="#161004" stroke-width="8.6"/></svg>
+          <div class="ban-copy"><h1 class="ban-title">Jeet <i>Wars</i></h1><p class="ban-tag">Hold the winner. Jeets get eaten.</p><p class="ban-sub">8 meme coins fight every 90 minutes under bStock armies on BNB Chain. The winner eats every loser's pool.</p></div>
+          <div class="ban-cta"><a class="big-btn" href="#launch">Launch a fighter</a><a class="ghost-btn" href="#how">How to play</a></div>
+        </section>${hudHtml()}
         <div class="grid2">
           <div class="board"><div class="board-h"><h2 class="title">High <i>score</i> board</h2><span class="px" id="boardSub"></span></div><div id="rows"></div></div>
           <aside class="stack">
