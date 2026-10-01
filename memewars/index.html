@@ -533,7 +533,9 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   .p1-stats div { padding: 8px; }
   .top .wrap { gap: 8px; }
   .wallet { padding-inline: 8px; }
-  .top .coin-btn { display: none; }
+  .top .coin-btn { padding: 10px 9px 8px; font-size: 8px; }
+  .top .coin-btn .blink { display: none; }
+  .wallet #wBal { display: none; }
   .rail-l em { display: none; }
   .row { grid-template-columns: 24px minmax(0, 1fr) 76px; }
   .row .hp { display: none; }
@@ -563,7 +565,6 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 </head>
 <body>
 
-<div class="free" role="note"><span class="px">Beta</span><span>Live on BNB Chain. The contracts are verified but not audited yet. Trade small.</span></div>
 
 <header class="top">
   <div class="wrap">
@@ -589,7 +590,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 </header>
 
 <main class="wrap"><p class="net" id="netState" role="status"></p><div id="view"></div>
-  <footer class="foot"><span>Jeet Wars · jeetwars.fun · BNB Chain</span><span><a href="#docs">Docs</a> · Beta, unaudited contracts. Not affiliated with Binance.</span></footer>
+  <footer class="foot"><span>Jeet Wars · jeetwars.fun · BNB Chain</span><span><a href="#docs">Docs</a> · Not affiliated with Binance.</span></footer>
 </main>
 
 <nav class="tabs" aria-label="Pages">
