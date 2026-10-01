@@ -637,6 +637,8 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     usdt: "0x55d398326f99059fF775485246999027B3197955",
     genesis: 1790832900, startTick: 191000,
     explorer: "https://bscscan.com",
+    // Kept off every listing by the site (test coins); the admin can also hide on chain.
+    siteHidden: ["0x558efb29d8b84d73415c63d10e0c81150fb90c41"],
   };
   const ENLIST = 900, BELL = 3600, ROUND = 5400, WINDOW = 600, HITS = 10, HIT_GAP = 180, FEE = 0.02, MAX_FIRST = 0.5;
   const STOCK_FEE = { NVDA: 2500, QQQ: 100, TSLA: 2500, GOOGL: 2500, BABA: 2500, AAPL: 2500, CRCL: 2500, SPY: 100 };
@@ -870,7 +872,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       act.forEach((a, i) => {
         const c = S.coins.get(a), d = dyn.slice(i * per, i * per + per);
         if (d[0]) { c.sqrt = d[0][0]; c.tick = Number(d[0][1]); }
-        c.liq = d[1] ?? c.liq; c.hidden = !!d[2];
+        c.liq = d[1] ?? c.liq; c.hiddenChain = !!d[2]; c.hidden = c.hiddenChain || CFG.siteHidden.includes(a);
         const ov = d[3]; c.meta = parseMeta(ov && ov.length ? ov : c.uriOwn);
         if (d[4]) c.pool = { bell: d[4].bell, status: Number(d[4].status), registered: d[4].registered, lastTime: d[4].lastTime, startTaken: d[4].startTaken, cum: d[4].cum, startCum: d[4].startCum };
         c.supply = d[5] ?? c.supply;
@@ -1552,7 +1554,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       update(_, full) {
         if (!full) return;
         const r = curRound(), titles = {};
-        for (const [, R] of S.rounds) if (R.settled && R.winner !== E.ZeroAddress) { const w = S.coins.get(R.winner.toLowerCase()); if (w) { const n = S.armies[w.army]?.name; titles[n] = (titles[n] || 0) + 1; } }
+        for (const [, R] of S.rounds) if (R.settled && R.winner !== E.ZeroAddress) { const w = S.coins.get(R.winner.toLowerCase()); if (w && !w.hidden) { const n = S.armies[w.army]?.name; titles[n] = (titles[n] || 0) + 1; } }
         $("armyGrid").innerHTML = S.armies.map((a) => {
           const mine = coinsOf(r).filter((c) => c.army === a.id && !c.hidden), cap = mine.reduce((s, c) => s + toUsd(mcapBnb(c)), 0);
           return `<a class="army-card" href="#army-${a.name}" style="--army:${armyVar(a.name)}"><span class="px muted">${esc(ARMY_META[a.name]?.[1] || a.name)}</span><h3>${esc(a.name)}</h3>
@@ -1587,9 +1589,9 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         <div class="tbl"><table><thead><tr><th class="px">Round</th><th class="px">Champion</th><th class="px">Army</th><th class="px r">K.O.s</th><th class="px r">Loot</th><th class="px r">Market cap now</th></tr></thead><tbody id="hRows"></tbody></table></div></div>`,
       update(_, full) {
         if (!full) return;
-        const rows = [...S.rounds.entries()].filter(([, R]) => R.settled && R.winner !== E.ZeroAddress).sort((a, b) => b[0] - a[0]);
+        const rows = [...S.rounds.entries()].filter(([, R]) => R.settled && R.winner !== E.ZeroAddress && !S.coins.get(R.winner.toLowerCase())?.hidden).sort((a, b) => b[0] - a[0]);
         const loot = rows.reduce((s, [, R]) => s + f18(R.loot), 0);
-        $("hTiles").innerHTML = [["Rounds settled", rows.length], ["Total loot", bnbN(loot)], ["Coins launched", S.list.length], ["Live round", `#${curRound()}`]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
+        $("hTiles").innerHTML = [["Rounds settled", rows.length], ["Total loot", bnbN(loot)], ["Coins launched", S.list.filter((a) => !S.coins.get(a)?.hidden).length], ["Live round", `#${curRound()}`]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
         $("hRows").innerHTML = rows.length ? rows.map(([k, R]) => { const w = S.coins.get(R.winner.toLowerCase()); if (!w) return ""; const n = S.armies[w.army]?.name; return `<tr><td class="dg">#${k}</td><td><a href="#coin-${w.addr}"><b>${esc(w.name)}</b> <span class="dg muted">${esc(w.symbol)}</span></a></td><td><a class="chip" href="#army-${esc(n)}" style="--army:${armyVar(n)}">${esc(n)}</a></td><td class="dg r">${Math.max(0, (S.roundCoins.get(k) || []).length - 1)}</td><td class="dg r">${bnbN(f18(R.loot))}</td><td class="dg r">${w.sqrt ? usd(toUsd(mcapBnb(w))) : "—"}</td></tr>`; }).join("") : `<tr><td colspan="6" class="muted">The first champion appears when round ${curRound()} is settled after its bell.</td></tr>`;
       },
     },
@@ -1661,7 +1663,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         $("aTipGo").onclick = () => { let w; try { w = E.parseEther($("aTipIn").value.trim() || "0"); } catch { return toast("Enter an amount"); } if (w <= 0n) return toast("Enter an amount"); send("Fund tips", CFG.arena, I.arena, "fundTips", [], w); };
         $("aCoins").addEventListener("click", (e) => {
           const b = e.target.closest("button[data-act]"); if (!b) return; const c = S.coins.get(b.dataset.c); if (!c) return;
-          if (b.dataset.act === "hide") send(`${c.hidden ? "Show" : "Hide"} ${c.symbol}`, CFG.arena, I.arena, "setHidden", [c.addr, !c.hidden]);
+          if (b.dataset.act === "hide") send(`${c.hiddenChain ? "Show" : "Hide"} ${c.symbol}`, CFG.arena, I.arena, "setHidden", [c.addr, !c.hiddenChain]);
           if (b.dataset.act === "pick") { self.sel = b.dataset.c; self.drawSel(); }
         });
         $("aArmies").addEventListener("click", (e) => { const b = e.target.closest("button[data-army]"); if (!b) return; const a = S.armies[+b.dataset.army]; send(`${a.enabled ? "Close" : "Open"} ${a.name}`, CFG.arena, I.arena, "setArmy", [a.id, a.stock, !a.enabled, a.name]); });
@@ -1693,12 +1695,12 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         if (!$("aStats") || !full) return;
         $("aWho").innerHTML = this.isAdmin() ? "Connected as the admin wallet. Every button sends a transaction." : `Read only. Connect the admin wallet (${short(S.admin)}) to make changes; the contracts reject any other wallet.`;
         const coins = S.list.map((a) => S.coins.get(a));
-        $("aStats").innerHTML = [["Launches", S.paused ? "Paused" : "Open"], ["Coins", String(coins.length)], ["Hidden", String(coins.filter((c) => c.hidden).length)], ["Round", `#${curRound()}`]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
+        $("aStats").innerHTML = [["Launches", S.paused ? "Paused" : "Open"], ["Coins", String(coins.length)], ["Hidden", String(coins.filter((c) => c.hiddenChain).length)], ["Round", `#${curRound()}`]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
         $("aPauseState").innerHTML = S.paused ? `<span class="st risk px">Paused</span>` : `<span class="st safe px">Open</span>`;
         $("aPause").textContent = S.paused ? "Resume launches" : "Pause launches";
         $("aRecip").innerHTML = `${short(S.feeRecipient)} ${ICON.copy}`; $("aRecip").dataset.copy = S.feeRecipient;
         $("aTips").textContent = bnbN(f18(S.tipBudget)); $("aTip").textContent = bnbN(f18(S.tip));
-        $("aCoins").innerHTML = coins.slice().reverse().map((c) => `<tr class="${this.sel === c.addr.toLowerCase() ? "sel" : ""}"><td><b>${esc(c.name)}</b> <span class="dg muted">${esc(c.symbol)}</span></td><td class="dg">${c.round}</td><td class="dg r">${c.liq === 0n ? "—" : c.sqrt ? bnbN(poolBnb(c)) : "…"}</td><td><button type="button" class="tog ${c.hidden ? "off" : ""}" data-act="hide" data-c="${c.addr.toLowerCase()}">${c.hidden ? "Hidden" : "Listed"}</button></td><td><button type="button" class="ghost-btn sm" data-act="pick" data-c="${c.addr.toLowerCase()}">Edit</button></td></tr>`).join("") || `<tr><td colspan="5" class="muted">No coins yet.</td></tr>`;
+        $("aCoins").innerHTML = coins.slice().reverse().map((c) => `<tr class="${this.sel === c.addr.toLowerCase() ? "sel" : ""}"><td><b>${esc(c.name)}</b> <span class="dg muted">${esc(c.symbol)}</span></td><td class="dg">${c.round}</td><td class="dg r">${c.liq === 0n ? "—" : c.sqrt ? bnbN(poolBnb(c)) : "…"}</td><td><button type="button" class="tog ${c.hiddenChain ? "off" : ""}" data-act="hide" data-c="${c.addr.toLowerCase()}">${c.hiddenChain ? "Hidden" : "Listed"}</button>${!c.hiddenChain && c.hidden ? ` <span class="px muted">site-hidden</span>` : ""}</td><td><button type="button" class="ghost-btn sm" data-act="pick" data-c="${c.addr.toLowerCase()}">Edit</button></td></tr>`).join("") || `<tr><td colspan="5" class="muted">No coins yet.</td></tr>`;
         $("aArmies").innerHTML = S.armies.map((a) => `<tr><td><span class="chip" style="--army:${armyVar(a.name)}">${esc(a.name)}</span> ${esc(ARMY_META[a.name]?.[1] || "")}</td><td><a class="dg" href="${CFG.explorer}/token/${a.stock}" target="_blank" rel="noopener noreferrer">${esc(a.token)}</a></td><td><button type="button" class="tog ${a.enabled ? "" : "off"}" data-army="${a.id}">${a.enabled ? "On" : "Off"}</button></td></tr>`).join("");
         $("aLog").innerHTML = S.txlog.map((l) => `<div><b>${ago(nowS() - l.at)} ago</b> ${esc(l.label)} <a href="${CFG.explorer}/tx/${l.hash}" target="_blank" rel="noopener noreferrer">${l.hash.slice(0, 10)}…</a></div>`).join("") || "<div>No transactions from this page yet.</div>";
       },
