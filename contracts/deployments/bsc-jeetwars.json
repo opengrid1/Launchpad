@@ -61,5 +61,11 @@
       "name": "SPY",
       "stock": "0x7138b48df7D98D7e3cc221BfE7192D0a178182D8"
     }
-  ]
+  ],
+  "smokeCoin": {
+    "symbol": "JWTEST",
+    "address": "0x558eFb29D8B84D73415c63D10E0C81150fb90c41",
+    "round": 0,
+    "launchTx": "0x3b69a0771ff9f8def436b4e389b230b85ba3ec0546e0c14498f9a5f49791ed70"
+  }
 }
