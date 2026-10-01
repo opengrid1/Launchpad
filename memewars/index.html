@@ -1112,7 +1112,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
               <div class="card"><div class="sec-h"><h3 class="title">Preview</h3><span class="hint">How it shows on the board</span></div><div class="pv" id="preview"></div></div>
               <div class="card"><h3 class="title">Cost</h3>
                 <div class="kv"><span>Enters</span><b class="t" id="sRound"></b></div>
-                <div class="kv"><span>Network fee</span><b>≈ 0.0006 BNB</b></div>
+                <div class="kv"><span>Network fee</span><b>≈ 0.0002 BNB</b></div>
                 <div class="kv"><span>First buy</span><b id="sFirst">0 BNB</b></div>
                 <div class="kv tot"><span>Total</span><b id="sTotal"></b></div>
                 <div class="kv"><span>Your balance</span><b id="sBal"></b></div>
@@ -1149,7 +1149,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         const fb = f.first === "" ? 0 : Number(f.first);
         if (!(fb >= 0)) e.First = "Enter an amount in BNB.";
         else if (fb > 0.5) e.First = "The first buy is capped at 0.5 BNB.";
-        else if (fb + 0.0006 > me.credits) e.First = `You have ${me.credits.toFixed(3)} BNB.`;
+        else if (fb + 0.0002 > me.credits) e.First = `You have ${me.credits.toFixed(3)} BNB.`;
         if (!$("lfOk").checked) e.Ok = "Tick the box to confirm.";
         return { f, e, fb: fb > 0 ? fb : 0 };
       },
@@ -1206,7 +1206,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         $("armyNote").textContent = `${ARMIES[this.pick].name}: holders earn ${ARMIES[this.pick].token} if you win · ${inArmy} in this round · ${titles} ${titles === 1 ? "title" : "titles"}`;
         const pct = fb ? ((fb * (1 - FEE) * BNB_USD) / (2800 / SUPPLY) / SUPPLY) * 100 : 0;
         $("fbNote").textContent = fb ? `About ${qty((fb * (1 - FEE) * BNB_USD) / (2800 / SUPPLY))} ${f.ticker || "tokens"}, ${pct.toFixed(1)}% of supply, at the starting price. Max 0.5 BNB.` : "Skip it and the pool opens with nobody holding yet. Max 0.5 BNB.";
-        $("sFirst").textContent = `${fb} BNB`; $("sTotal").textContent = `≈ ${(fb + 0.0006).toFixed(4)} BNB`;
+        $("sFirst").textContent = `${fb} BNB`; $("sTotal").textContent = `≈ ${(fb + 0.0002).toFixed(4)} BNB`;
         const name = f.name || "Your fighter", tk = f.ticker || "TICKER", a = army(this.pick), s = { x: f.x, tg: f.tg, web: f.web };
         $("preview").innerHTML = `<div class="pv-row" style="--army:${a}"><span class="sprite lg">${this.img ? `<img src="${this.img}" alt="">` : esc(tk[0])}</span>
           <div class="pv-main"><b>${esc(name)}</b><span class="dg tk">$${esc(tk)}</span><div class="meta"><span class="chip" style="--army:${a}">${this.pick} army</span>${["x", "tg", "web"].filter((k) => s[k]).map((k) => `<span class="pv-link px">${{ x: "X", tg: "TG", web: "Web" }[k]}</span>`).join("")}</div></div></div>
@@ -1429,12 +1429,12 @@ canvas.chart { width: 100%; height: 260px; display: block; }
               <tr><td><b>The bell</b></td><td class="dg">0 min</td><td>Trading on every coin in the round stops. Anyone can call <code>settle</code>, which reads the scores and names the winner. The winner reopens right away.</td></tr>
               <tr><td><b>Merge</b></td><td class="dg">30 min</td><td>The losers' pools are pulled and their BNB buys the winner in 10 buys, one every 3 minutes.</td></tr>
             </tbody></table></div>
-            <p>A round with a single coin has no battle: that coin simply keeps trading. Coins launched while a round is in battle or merge wait for the next enlisting window.</p>
+            <p>A round with a single coin has no battle: that coin simply keeps trading. Coins launched while a round is in battle or merge go live and trade right away, and fight in the next round.</p>
           </section>
 
           <section id="d-launch"><h2>Launching a coin</h2>
             <ul>
-              <li><b>Cost:</b> gas only, about 0.0006 BNB. No launch fee.</li>
+              <li><b>Cost:</b> gas only, about 0.0002 BNB. No launch fee.</li>
               <li><b>Supply:</b> 1,000,000,000 tokens, all placed in the PancakeSwap pool at launch. No presale, no team allocation, no mint function.</li>
               <li><b>Army:</b> pick one of 8 stock armies. It decides which bStock your holders earn, and it can't be changed.</li>
               <li><b>Name, ticker, logo:</b> required and final. Tickers are unique across all of Jeet Wars.</li>
@@ -1523,7 +1523,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
               <details><summary>Can I trade on GMGN, Maestro or another bot?</summary><p>Yes, if the bot routes through PancakeSwap Infinity pools. The 2% fee and the round rules apply wherever the trade happens.</p></details>
               <details><summary>What if my coin wins?</summary><p>It keeps trading as a normal coin, with a pool that just absorbed every loser and a crowd of new holders from the redemptions.</p></details>
               <details><summary>When can I redeem?</summary><p>Right after the 10th merge buy, about 30 minutes after the bell. There's no deadline.</p></details>
-              <details><summary>Can I launch outside the enlisting window?</summary><p>Yes. Your coin is queued and enters the next round when enlisting opens.</p></details>
+              <details><summary>Can I launch outside the enlisting window?</summary><p>Yes. Your coin goes live and trades right away, and fights in the next round.</p></details>
               <details><summary>Who decides the winner?</summary><p>The contract, from the pool prices. Nobody can pick or change the winner.</p></details>
             </div>
           </section>
