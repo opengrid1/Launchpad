@@ -20,24 +20,28 @@ const USDG = "0xe343167631d89B6Ffc58B88d6b7fB0228795491D";
 const TAX_BPS = 200; // 2% of the pair side on every swap, fixed per pool
 const CREATOR_BPS = 3500; // 0.7%
 const HOLDER_BPS = 2500; // 0.5% in the basket; platform gets the remaining 40% = 0.8%
-// Wrapped Backed xStocks with a USDG 0.05% Uniswap V3 pool on Ink.
+// Official wrapped Backed xStocks on Ink (wrapper deployer 0x28b4…1Db2A) that
+// have a funded USDG pool on the canonical Uniswap V3 factory; scanned 2026-10-01.
+// `fee` is the deepest USDG pool's tier, used for pricing and as the basket route.
 const STOCKS = [
-  { symbol: "wNVDAx", address: "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5" },
-  { symbol: "wSPYx", address: "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540" },
-  { symbol: "wAAPLx", address: "0x943BF64D566c32A2Bcd41AC92FB63C111cC9De8f" },
-  { symbol: "wTSLAx", address: "0xc3FdBe3A68EE5dE461D30415a8165cf9Aefe1171" },
-  { symbol: "wMSTRx", address: "0x30987adF0B11dc698438a99BA04ec3a1AB2c7EaB" },
-  { symbol: "wNFLXx", address: "0x7d87fD6A379714194a797c0bBB8B40c30D250856" },
-  { symbol: "wPLTRx", address: "0x4A2df09536F62341C9f946427D16414C04e21342" },
+  { symbol: "wNVDAx", address: "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5", fee: 500 },
+  { symbol: "wSPYx", address: "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540", fee: 3000 },
+  { symbol: "wQQQx", address: "0x4C1AE29c159838fC1b224636E28E086EB69101f7", fee: 3000 },
+  { symbol: "wTSLAx", address: "0xc3FdBe3A68EE5dE461D30415a8165cf9Aefe1171", fee: 500 },
+  { symbol: "wAAPLx", address: "0x943BF64D566c32A2Bcd41AC92FB63C111cC9De8f", fee: 500 },
+  { symbol: "wMSTRx", address: "0x30987adF0B11dc698438a99BA04ec3a1AB2c7EaB", fee: 500 },
+  { symbol: "wSPCXx", address: "0x8e2eed8b8b5e13ea7bf38e50d7821d2c57309072", fee: 500 },
+  { symbol: "wPLTRx", address: "0x4A2df09536F62341C9f946427D16414C04e21342", fee: 500 },
+  { symbol: "wNFLXx", address: "0x7d87fD6A379714194a797c0bBB8B40c30D250856", fee: 500 },
 ];
 const V3_FACTORY = "0x640887a9ba3a9c53ed27d0f7e8246a4f933f3424";
 const HOOK_FLAGS = (1n << 7n) | (1n << 6n) | (1n << 3n) | (1n << 2n);
 const FLAG_MASK = (1n << 14n) - 1n;
 
 /// USD per whole stock (8 dp) from its USDG 0.05% V3 pool spot price (USDG has 6 decimals).
-async function stockUsd8(stock: string): Promise<bigint> {
+async function stockUsd8(stock: string, fee: number): Promise<bigint> {
   const f = await ethers.getContractAt(["function getPool(address,address,uint24) view returns (address)"], V3_FACTORY);
-  const pool: string = await f.getPool(stock, USDG, 500);
+  const pool: string = await f.getPool(stock, USDG, fee);
   if (pool === ethers.ZeroAddress) return 0n;
   const p = await ethers.getContractAt(["function slot0() view returns (uint160 sqrtPriceX96,int24,uint16,uint16,uint16,uint8,bool)", "function token0() view returns (address)"], pool);
   const [sqrt] = await p.slot0();
@@ -163,13 +167,14 @@ async function main() {
   if (process.env.QUOTES !== "0") {
     dep.quotes ??= [];
     const done = new Set(dep.quotes.map((q: any) => q.address.toLowerCase()));
-    for (const s of STOCKS) {
+    for (const raw of STOCKS) {
+      const s = { ...raw, address: ethers.getAddress(raw.address) };
       if (done.has(s.address.toLowerCase())) continue;
-      const usd8 = await stockUsd8(s.address);
+      const usd8 = await stockUsd8(s.address, s.fee);
       if (usd8 === 0n) { console.log("  !", s.symbol, "no USDG pool"); continue; }
       const tx = await factory.setQuoteAsset(s.address, true, usd8, ethers.ZeroAddress);
       await tx.wait();
-      dep.quotes.push({ symbol: s.symbol, address: s.address, usd8: usd8.toString(), usd: Number(usd8) / 1e8 });
+      dep.quotes.push({ symbol: s.symbol, address: s.address, usd8: usd8.toString(), usd: Number(usd8) / 1e8, usdgPoolFee: s.fee });
       save();
       console.log("  +", s.symbol, "$" + (Number(usd8) / 1e8).toFixed(2), tx.hash);
     }
@@ -186,7 +191,7 @@ async function main() {
     uniswap: { poolManager: POOL_MANAGER, weth: WETH, swapRouter02: ROUTER02, v3Factory: V3_FACTORY, usdg: USDG },
     fees: { taxBps: TAX_BPS, creatorBps: CREATOR_BPS, holderBps: HOLDER_BPS, platformBps: 10000 - CREATOR_BPS - HOLDER_BPS, payoutBpsOfPlatform: 1250 },
     leaderboard: { epochSeconds: 3 * 86400, winnersPerBoard: 5, tiersBps: [4000, 2500, 1500, 1200, 800] },
-    basketRoute: "WETH -(1%)-> USDG -(0.05%)-> stock, Uniswap V3",
+    basketRoute: "WETH -(1%)-> USDG -(usdgPoolFee)-> stock, Uniswap V3",
     deployedAt: dep.deployedAt ?? new Date().toISOString(),
   });
   save();
