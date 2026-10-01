@@ -68,7 +68,7 @@ button { cursor: pointer; }
 @keyframes blink { 50% { opacity: 0; } }
 
 /* tab bar (phones) */
-.tabs { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; background: rgba(9,9,11,.97); border-top: 2px solid var(--line); padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.tabs { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; background: rgba(9,9,11,.97); border-top: 2px solid var(--line); padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; }
 .tabs a { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 2px; border-radius: 8px; text-decoration: none; color: var(--fg-3); font-family: var(--pixel); font-size: 7px; text-transform: uppercase; }
 .tabs a svg { width: 22px; height: 22px; }
 .tabs a.on { color: var(--bnb); background: var(--panel); }
@@ -409,6 +409,38 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 .faq summary { cursor: pointer; font-weight: 700; }
 .faq p { margin: 10px 0 0; color: var(--fg-2); max-width: 70ch; }
 
+/* docs */
+.docs-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 28px; align-items: start; }
+.toc { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 2px; padding: 14px; background: var(--panel); border: 2px solid var(--line); border-radius: 14px; }
+.toc .px { color: var(--fg-3); padding: 0 8px 8px; }
+.toc a { text-decoration: none; color: var(--fg-2); font-size: 14px; padding: 7px 8px; border-radius: 6px; }
+.toc a:hover { color: var(--bnb); }
+.toc a.on { color: var(--bnb); background: var(--panel-2); }
+.doc { min-width: 0; display: flex; flex-direction: column; gap: 36px; max-width: 760px; }
+.doc section { scroll-margin-top: 90px; display: flex; flex-direction: column; gap: 12px; }
+.doc h2 { margin: 0; font-family: var(--marquee); font-weight: 400; font-size: 26px; line-height: 1.05; color: var(--fg); text-wrap: balance; }
+.doc p, .doc li { color: var(--fg-2); font-size: 15.5px; line-height: 1.6; max-width: 68ch; }
+.doc p { margin: 0; }
+.doc b { color: var(--fg); }
+.doc ul, .doc ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.doc code { font-family: var(--digits); font-size: 18px; color: var(--bnb); background: var(--panel-2); padding: 0 5px; border-radius: 4px; }
+.doc .tbl table { min-width: 520px; }
+.doc .tbl td { color: var(--fg-2); vertical-align: top; }
+.callout { border: 2px solid var(--bnb); background: rgba(243,186,47,.07); border-radius: 12px; padding: 12px 14px; color: var(--fg-2); font-size: 14.5px; line-height: 1.55; }
+.formula { font-family: var(--digits); font-size: 22px; line-height: 1.25; color: var(--bnb); background: var(--well); border: 2px solid var(--line-2); border-radius: 10px; padding: 12px 16px; overflow-x: auto; }
+.formula i { font-style: normal; color: var(--fg); }
+.example { background: var(--panel); border: 2px solid var(--line); border-radius: 12px; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+.example .px { color: var(--cyan); }
+.tl { display: flex; gap: 4px; }
+.tl div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 8px; min-width: 0; color: #0b0b0d; }
+.tl b { font-family: var(--marquee); font-weight: 400; font-size: 16px; color: inherit; }
+.tl span { font-family: var(--digits); font-size: 18px; line-height: 1; }
+.tl .l { background: var(--ok); } .tl .b { background: var(--hot); color: #fff; } .tl .m { background: var(--bnb); }
+.gl { margin: 0; display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 8px 16px; }
+.gl dt { font-weight: 700; color: var(--fg); }
+.gl dd { margin: 0; color: var(--fg-2); }
+.foot a { color: var(--fg-2); }
+
 .foot { margin-top: 40px; padding-top: 18px; border-top: 2px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--fg-3); font-size: 12.5px; }
 .toast { position: fixed; left: 50%; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--bnb); color: var(--ink); padding: 12px 16px 10px; border-radius: 10px; font-family: var(--pixel); font-size: 9px; line-height: 1.6; max-width: calc(100% - 32px); z-index: 70; box-shadow: 0 5px 0 var(--bnb-lo); text-align: center; }
 .flash { animation: flash .9s steps(6, end); }
@@ -418,6 +450,10 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   .grid2 { grid-template-columns: minmax(0, 1fr); }
   .coin-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "chart" "side" "main"; }
   .launch-grid { grid-template-columns: minmax(0, 1fr); }
+  .docs-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .toc { position: static; flex-direction: row; overflow-x: auto; padding: 8px; gap: 4px; scrollbar-width: none; }
+  .toc .px { display: none; }
+  .toc a { white-space: nowrap; flex: none; }
   .launch-side { position: static; }
   .levels, .army-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .nav { display: none; }
@@ -466,6 +502,9 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   .row { grid-template-columns: 24px minmax(0, 1fr) 76px; }
   .row .hp { display: none; }
   .levels { grid-template-columns: minmax(0, 1fr); }
+  .gl { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .gl dd { margin-bottom: 10px; }
+  .tl b { font-size: 12px; } .tl span { font-size: 15px; } .tl div { padding: 8px; }
   .outcome { grid-template-columns: minmax(0, 1fr); }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat:nth-child(n) { border-left: 0; border-top: 2px solid var(--line); }
@@ -505,7 +544,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       <b>Jeet <i>Wars</i></b>
     </a>
     <nav class="nav" aria-label="Pages">
-      <a href="#arena" data-nav="arena">Arena</a><a href="#launch" data-nav="launch">Launch</a><a href="#armies" data-nav="armies">Armies</a><a href="#hall" data-nav="hall">Hall of fame</a><a href="#how" data-nav="how">How to play</a>
+      <a href="#arena" data-nav="arena">Arena</a><a href="#launch" data-nav="launch">Launch</a><a href="#armies" data-nav="armies">Armies</a><a href="#hall" data-nav="hall">Hall of fame</a><a href="#docs" data-nav="docs">Docs</a>
     </nav>
     <span class="sp"></span>
     <a class="wallet" href="#me" title="My wallet"><span class="px">Wallet</span><span class="dg" id="credits">10.00</span></a>
@@ -514,7 +553,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 </header>
 
 <main class="wrap"><div id="view"></div>
-  <footer class="foot"><span>Jeet Wars · jeetwars.fun · BNB Chain</span><span>Free play preview. Figures are simulated. Not affiliated with Binance.</span></footer>
+  <footer class="foot"><span>Jeet Wars · jeetwars.fun · BNB Chain</span><span><a href="#docs">Docs</a> · Free play preview. Figures are simulated. Not affiliated with Binance.</span></footer>
 </main>
 
 <nav class="tabs" aria-label="Pages">
@@ -522,6 +561,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   <a href="#launch" data-nav="launch"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M7 1h2v1h1v2h1v4h1v3h-1v1h-1v-1H6v1H5v-1H4V8h1V4h1V2h1zM7 13h2v2H7z"/></svg>Launch</a>
   <a href="#armies" data-nav="armies"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M3 1h1v14H3zM5 2h8v1h-1v2h1v1H5z"/></svg>Armies</a>
   <a href="#hall" data-nav="hall"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M3 2h10v1h2v3h-1v1h-2v1h-1v1H9v2h2v1h1v2H4v-2h1v-1h2V9H5V8H4V7H2V6H1V3h2zm0 2H2v1h1zm10 0v1h1V4z"/></svg>Hall</a>
+  <a href="#docs" data-nav="docs"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M2 2h5v1h2V2h5v11H9v1H7v-1H2zm2 2v7h3V4zm5 0v7h3V4z"/></svg>Docs</a>
   <a href="#me" data-nav="me"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M2 4h11v1h1v8H2zm9 4v2h2V8z"/></svg>Wallet</a>
 </nav>
 <div class="toast" id="toast" hidden></div>
@@ -704,6 +744,8 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     const h = decodeURIComponent(location.hash.slice(1)) || "arena";
     if (h.startsWith("coin-")) return { p: "coin", id: h.slice(5) };
     if (h.startsWith("army-")) return { p: "army", id: h.slice(5) };
+    if (h === "how") return { p: "docs" };
+    if (h.startsWith("docs-")) return { p: "docs", id: h.slice(5) };
     return { p: PAGES[h] ? h : "arena" };
   }
   function go() {
@@ -712,7 +754,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     view.innerHTML = page.mount(route);
     page.wire?.(route);
     page.update?.(route);
-    window.scrollTo(0, 0);
+    if (!(route.p === "docs" && route.id)) window.scrollTo(0, 0);
   }
 
   function hudHtml() {
@@ -790,6 +832,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     return ar.length ? ar.map(([k, v]) => `<a class="army-row" href="#army-${k}" style="--army:${army(k)}"><span class="chip">${k}</span><span class="bar"><i style="width:${(v / max) * 100}%"></i></span><span class="v dg">${usd(v)}</span></a>`).join("") : `<p class="hint">No fighters yet. Press start.</p>`;
   }
 
+  const DOCS = [["overview", "Overview"], ["round", "How a round works"], ["launch", "Launching a coin"], ["trade", "Trading"], ["winner", "How the winner is decided"], ["merge", "The merge"], ["redeem", "Redeeming"], ["armies", "Armies and rewards"], ["fees", "Fees"], ["contracts", "Contracts"], ["risks", "Risks"], ["faq", "FAQ"], ["glossary", "Glossary"]];
   const PAGES = {
     arena: {
       mount: () => `<div class="page">
@@ -804,7 +847,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 <rect x="240.55" y="336.25" width="18.9" height="60.0" fill="#161004"/>
 <circle cx="250" cy="406.375" r="15.749999999999998" fill="#161004"/></g></g><g clip-path="url(#cban)" mask="url(#mban)"><circle cx="293.7" cy="56.6" r="40" fill="none" stroke="#161004" stroke-width="43.12"/><circle cx="379.3" cy="96.5" r="46" fill="none" stroke="#161004" stroke-width="43.12"/><circle cx="441.8" cy="176.6" r="40" fill="none" stroke="#161004" stroke-width="43.12"/></g><rect x="442.1" y="42.5" width="25.5" height="25.5" fill="#f3ba2f" stroke="#161004" stroke-width="9.7" transform="rotate(18 449.9 50.3)"/><rect x="473.4" y="93.4" width="17.6" height="17.6" fill="#f3ba2f" stroke="#161004" stroke-width="8.6"/></svg>
           <div class="ban-copy"><h1 class="ban-title">Jeet <i>Wars</i></h1><p class="ban-tag">Hold the winner. Jeets get eaten.</p><p class="ban-sub">8 meme coins fight every 90 minutes under bStock armies on BNB Chain. The winner eats every loser's pool.</p></div>
-          <div class="ban-cta"><a class="big-btn" href="#launch">Launch a fighter</a><a class="ghost-btn" href="#how">How to play</a></div>
+          <div class="ban-cta"><a class="big-btn" href="#launch">Launch a fighter</a><a class="ghost-btn" href="#docs">Read the docs</a></div>
         </section>${hudHtml()}
         <div class="grid2">
           <div class="board"><div class="board-h"><h2 class="title">High <i>score</i> board</h2><span class="px" id="boardSub"></span></div><div id="rows"></div></div>
@@ -1219,21 +1262,151 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       },
     },
 
-    how: {
-      mount: () => `<div class="page"><div class="page-h"><h1 class="title">How to <i>play</i></h1><p>Hold the winner. Jeets get eaten. Every round is the same 90 minutes, and only one coin walks out.</p></div>
-        <div class="levels">
-          <div class="level"><span class="px">Level 1 · 15 min</span><b>Enlist</b><p>Coins launch into the round, each under a stock army: NVDA, TSLA, AAPL, SPY and more.</p></div>
-          <div class="level"><span class="px">Level 2 · 45 min</span><b>Battle</b><p>Open trading. Communities push their fighter up the board.</p></div>
-          <div class="level"><span class="px">Level 3 · the bell</span><b>K.O.</b><p>Highest average market cap over the last 10 minutes wins. A last-second pump barely moves an average.</p></div>
-          <div class="level"><span class="px">Level 4 · 30 min</span><b>Absorb</b><p>Losers' pools buy the winner in 10 hits. Losing holders redeem into the winner.</p></div>
-        </div>
-        <div class="faq">
-          <details open><summary>What happens to my coins if my fighter loses?</summary><p>Its pool is pulled and used to buy the winner. You redeem your coins for your share of the winner, so you end up holding the champion.</p></details>
-          <details><summary>Why the 10-minute average and not the final price?</summary><p>A single big buy in the last second would decide everything. An average over the final 10 minutes means a coin has to hold its level, so late pumps barely count.</p></details>
-          <details><summary>Can bots front-run the merge?</summary><p>The losers' liquidity buys the winner in 10 hits over 30 minutes, each with a price cap, so there is no single big buy to sandwich.</p></details>
-          <details><summary>Who runs the rounds?</summary><p>Contract rules. The clock, the winner and every merge step are on chain. Anyone can trigger the next step and earn a small tip for it.</p></details>
-          <details><summary>Is this live?</summary><p>Not yet. This is a free play preview with simulated rounds and test BNB. Nothing here is a real market.</p></details>
-        </div></div>`,
+    docs: {
+      mount: () => {
+        const toc = DOCS.map(([id, t]) => `<a href="#docs-${id}" data-doc="${id}">${t}</a>`).join("");
+        const armies = Object.entries(ARMIES).map(([k, a]) => `<tr><td><span class="chip" style="--army:var(${a.v})">${k}</span></td><td>${a.name}</td><td class="dg">${a.token}</td></tr>`).join("");
+        return `<div class="page docs">
+        <div class="page-h"><h1 class="title">The <i>docs</i></h1><p>Everything about how Jeet Wars works: rounds, launching, trading, the merge, redeeming and fees.</p></div>
+        <div class="docs-grid">
+          <nav class="toc" aria-label="Docs sections"><span class="px">On this page</span>${toc}</nav>
+          <article class="doc">
+
+          <section id="d-overview"><h2>Overview</h2>
+            <p>Jeet Wars is a meme coin launchpad on BNB Chain where coins fight. Every 90 minutes up to 8 new coins enter a round. When the round ends, the coin with the highest average market cap wins, and the liquidity of every losing coin is used to buy the winner.</p>
+            <p>Holders of a losing coin don't lose their bag to zero. They redeem it for their share of the winner. Hold the winner and you get pumped by everyone else's pool. Jeets get eaten.</p>
+            <div class="callout"><b>Preview.</b> The contracts are not live yet. This site runs a simulation with test BNB so you can see exactly how a round plays out. Contract addresses will be posted in this section at launch.</div>
+          </section>
+
+          <section id="d-round"><h2>How a round works</h2>
+            <p>Every round runs on the same 90-minute clock, set in the contract. A new round starts as soon as the previous one ends.</p>
+            <div class="tl" aria-hidden="true"><div class="l" style="flex:15"><b>Enlist</b><span>15 min</span></div><div class="b" style="flex:45"><b>Battle</b><span>45 min</span></div><div class="m" style="flex:30"><b>Merge</b><span>30 min</span></div></div>
+            <div class="tbl"><table><thead><tr><th class="px">Phase</th><th class="px">Length</th><th class="px">What happens</th></tr></thead><tbody>
+              <tr><td><b>Enlist</b></td><td class="dg">15 min</td><td>Coins launch into the round, up to 8. Trading is already open, but the score doesn't count yet.</td></tr>
+              <tr><td><b>Battle</b></td><td class="dg">45 min</td><td>Open trading. The last 10 minutes are the deciding window: each coin's score is its average market cap over those 10 minutes.</td></tr>
+              <tr><td><b>The bell</b></td><td class="dg">0 min</td><td>Trading on every coin in the round stops. Anyone can call <code>settle</code>, which reads the scores and names the winner. The winner reopens right away.</td></tr>
+              <tr><td><b>Merge</b></td><td class="dg">30 min</td><td>The losers' pools are pulled and their BNB buys the winner in 10 buys, one every 3 minutes.</td></tr>
+            </tbody></table></div>
+            <p>A round with a single coin has no battle: that coin simply keeps trading. Coins launched while a round is in battle or merge wait for the next enlisting window.</p>
+          </section>
+
+          <section id="d-launch"><h2>Launching a coin</h2>
+            <ul>
+              <li><b>Cost:</b> gas only, about 0.0006 BNB. No launch fee.</li>
+              <li><b>Supply:</b> 1,000,000,000 tokens, all placed in the PancakeSwap pool at launch. No presale, no team allocation, no mint function.</li>
+              <li><b>Army:</b> pick one of 8 stock armies. It decides which bStock your holders earn, and it can't be changed.</li>
+              <li><b>Name, ticker, logo:</b> required and final. Tickers are unique across all of Jeet Wars.</li>
+              <li><b>First buy:</b> optional, up to 0.5 BNB, made in the same transaction as the launch so no bot can buy before you.</li>
+              <li><b>Creator share:</b> 0.7% of every trade on your coin, paid in BNB, for as long as it trades.</li>
+            </ul>
+          </section>
+
+          <section id="d-trade"><h2>Trading</h2>
+            <p>Every coin trades in its own PancakeSwap Infinity pool paired with BNB. You can trade on Jeet Wars, or on any bot, aggregator or terminal that routes through PancakeSwap Infinity pools.</p>
+            <ul>
+              <li><b>Fee:</b> 2% on every buy and sell, fixed forever. It's taken by the pool itself, so it applies wherever you trade.</li>
+              <li><b>Slippage:</b> set it in the trade panel (0.5% to 5%). Meme pools move fast; small pools move faster.</li>
+              <li><b>After the bell:</b> trading on a losing coin stays closed for good. Its holders redeem instead (see Redeeming).</li>
+            </ul>
+          </section>
+
+          <section id="d-winner"><h2>How the winner is decided</h2>
+            <p>Every coin has the same 1 billion supply, so market cap comes straight from the pool price. Each time someone trades, the pool records the price and how long it held. At the bell the contract takes the time-weighted average over the last 10 minutes of battle:</p>
+            <div class="formula">score = average market cap from <i>bell − 10 min</i> to <i>bell</i></div>
+            <p>The highest score wins. A single buy in the last second barely moves a 10-minute average, so a coin has to hold its level through the whole window. Prices are recorded before each trade in a block, so one transaction can't pump and dump to fake a score.</p>
+            <p>If two coins tie exactly, the one that launched first wins.</p>
+          </section>
+
+          <section id="d-merge"><h2>The merge</h2>
+            <ol>
+              <li>Each losing coin's liquidity is removed from its pool. The BNB goes to the merge; the coins that were still in the pool are burned.</li>
+              <li>That BNB buys the winner in <b>10 buys, one every 3 minutes</b>. Each buy has a price cap, so there is no single large order to sandwich.</li>
+              <li>If a buy hits its cap, the unspent BNB rolls into the next buy. Anything still unspent after the 10th buy is paid out as BNB in the redemption.</li>
+              <li>The bought winner tokens are held by the Redeemer contract for the losers' holders.</li>
+            </ol>
+            <p>Anyone can trigger each buy when it's due and receive a small tip for it, so the merge runs without anyone in charge.</p>
+          </section>
+
+          <section id="d-redeem"><h2>Redeeming a losing coin</h2>
+            <p>Once all 10 buys are done, holders of each losing coin can redeem. Redeeming burns your losing coins and sends you your share of what that coin's BNB bought:</p>
+            <div class="formula">you receive = <i>your coins</i> ÷ <i>all coins held outside the pool</i> × <i>winner tokens bought with that coin's BNB</i></div>
+            <div class="example"><span class="px">Example</span>
+              <p>$FROG loses. Its pool held 10 BNB, and 600M FROG were held by people. You hold 60M (10%). The merge spends those 10 BNB on 50M of the winner, $PUP. You redeem 60M FROG and receive 5M PUP.</p></div>
+            <ul>
+              <li>There is no deadline. Redeem whenever you like.</li>
+              <li>Every holder of a coin redeems at the same rate, whenever they bought. Early buyers come out ahead; late buyers at the top get less than they paid.</li>
+              <li>You end up holding the winner, which has just been bought by every loser's pool.</li>
+            </ul>
+          </section>
+
+          <section id="d-armies"><h2>Armies and bStock rewards</h2>
+            <p>Every coin fights under one of 8 armies. Holders earn 0.3% of every trade on their coin, paid in that army's bStock: tokenized US stocks issued by Binance on BNB Chain.</p>
+            <div class="tbl"><table><thead><tr><th class="px">Army</th><th class="px">Stock</th><th class="px">Rewards paid in</th></tr></thead><tbody>${armies}</tbody></table></div>
+            <p>Rewards build up from trading and are claimed from the coin page. Only official bStocks are accepted: they all share one Binance contract template, which the contract checks, so a lookalike token can't be added as an army.</p>
+          </section>
+
+          <section id="d-fees"><h2>Fees</h2>
+            <div class="tbl"><table><thead><tr><th class="px">Part of the 2% fee</th><th class="px r">Share of each trade</th><th class="px">Paid in</th></tr></thead><tbody>
+              <tr><td>Creator</td><td class="dg r">0.7%</td><td>BNB</td></tr>
+              <tr><td>Holders</td><td class="dg r">0.3%</td><td>Army bStock</td></tr>
+              <tr><td>Platform</td><td class="dg r">1.0%</td><td>BNB, funds keeper tips</td></tr>
+              <tr><td><b>Total</b></td><td class="dg r"><b>2.0%</b></td><td>Fixed forever</td></tr>
+            </tbody></table></div>
+            <p>There is no function that can change the fee. Launching costs gas only, and redeeming costs gas only.</p>
+          </section>
+
+          <section id="d-contracts"><h2>Contracts</h2>
+            <div class="tbl"><table><thead><tr><th class="px">Contract</th><th class="px">Job</th><th class="px">Address</th></tr></thead><tbody>
+              <tr><td><b>Arena</b></td><td>Runs the rounds: launches, the clock, settling the winner and the merge.</td><td class="muted">At launch</td></tr>
+              <tr><td><b>Hook</b></td><td>Attached to every pool. Takes the 2% fee, records prices for the average, and closes losing pools.</td><td class="muted">At launch</td></tr>
+              <tr><td><b>Token</b></td><td>Plain BEP-20 with a fixed supply. No tax, no mint, no blacklist.</td><td class="muted">One per coin</td></tr>
+              <tr><td><b>Redeemer</b></td><td>Holds the winner tokens bought in the merge and pays out redemptions.</td><td class="muted">At launch</td></tr>
+            </tbody></table></div>
+            <p>Every step of a round, from settling to each merge buy, can be called by anyone. Source code will be verified on BscScan.</p>
+          </section>
+
+          <section id="d-risks"><h2>Risks</h2>
+            <ul>
+              <li><b>Meme coins are volatile.</b> Prices can drop to a fraction of what you paid within minutes.</li>
+              <li><b>A losing coin can't be sold after the bell.</b> Its only exit is redeeming into the winner, and that can be worth less than you paid.</li>
+              <li><b>The winner can be bought by whales.</b> The 10-minute average makes it expensive, not impossible.</li>
+              <li><b>bStocks are issued by Binance.</b> They are upgradeable tokens and Binance controls them.</li>
+              <li><b>Smart contract risk.</b> The contracts are new. Only put in what you can afford to lose.</li>
+            </ul>
+          </section>
+
+          <section id="d-faq"><h2>FAQ</h2>
+            <div class="faq">
+              <details><summary>What's a jeet?</summary><p>Someone who sells the moment a coin moves. In Jeet Wars, people who hold the winner get paid by the pools of every other coin.</p></details>
+              <details><summary>Can I trade on GMGN, Maestro or another bot?</summary><p>Yes, if the bot routes through PancakeSwap Infinity pools. The 2% fee and the round rules apply wherever the trade happens.</p></details>
+              <details><summary>What if my coin wins?</summary><p>It keeps trading as a normal coin, with a pool that just absorbed every loser and a crowd of new holders from the redemptions.</p></details>
+              <details><summary>When can I redeem?</summary><p>Right after the 10th merge buy, about 30 minutes after the bell. There's no deadline.</p></details>
+              <details><summary>Can I launch outside the enlisting window?</summary><p>Yes. Your coin is queued and enters the next round when enlisting opens.</p></details>
+              <details><summary>Who decides the winner?</summary><p>The contract, from the pool prices. Nobody can pick or change the winner.</p></details>
+            </div>
+          </section>
+
+          <section id="d-glossary"><h2>Glossary</h2>
+            <dl class="gl">
+              <dt>Army</dt><dd>The stock a coin fights under. Decides its holders' bStock rewards.</dd>
+              <dt>Bell</dt><dd>The end of the battle phase. Scores are fixed and losing pools close.</dd>
+              <dt>Deciding window</dt><dd>The last 10 minutes of battle, used for the average market cap.</dd>
+              <dt>Merge</dt><dd>The 30 minutes after the bell when the losers' BNB buys the winner.</dd>
+              <dt>Redeem</dt><dd>Swapping a losing coin for your share of the winner.</dd>
+              <dt>bStock</dt><dd>A tokenized US stock issued by Binance on BNB Chain, such as NVDAB.</dd>
+            </dl>
+          </section>
+          </article>
+        </div></div>`;
+      },
+      wire(r) {
+        const go = (id) => { const el = document.getElementById("d-" + id); if (el) el.scrollIntoView({ block: "start" }); };
+        if (r.id) setTimeout(() => go(r.id), 0);
+        const links = [...view.querySelectorAll(".toc a")];
+        const secs = links.map((a) => document.getElementById("d-" + a.dataset.doc));
+        const spy = () => { let cur = secs[0]; for (const s of secs) if (s && s.getBoundingClientRect().top < 140) cur = s; links.forEach((a) => a.classList.toggle("on", "d-" + a.dataset.doc === cur?.id)); };
+        removeEventListener("scroll", this.spy || (() => {})); this.spy = spy; addEventListener("scroll", spy, { passive: true }); spy();
+      },
     },
   };
 
