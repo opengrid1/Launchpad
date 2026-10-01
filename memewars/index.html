@@ -720,7 +720,6 @@ canvas.chart { width: 100%; height: 260px; display: block; }
               <div class="meta"><a class="chip" href="#army-${c.army}">${c.army} army</a><span id="cStatus"></span><span class="px muted" id="cRound"></span><span class="muted age" id="cAge"></span></div>
               ${c.desc ? `<p class="desc">${esc(c.desc)}</p>` : ""}</div></div>
           <div class="ca-bar">
-            <button type="button" class="ca" data-copy="${c.ca}" title="Copy contract address"><span class="px">CA</span><span class="dg addr">${c.ca}</span><span class="dg addr-s">${short(c.ca)}</span>${ICON.copy}</button>
             <div class="links">
               <button type="button" class="lnk" data-ext="BscScan">BscScan${ICON.out}</button><button type="button" class="lnk" data-ext="DexScreener">DexScreener${ICON.out}</button>
               ${own("x", "X")}${own("tg", "Telegram")}${own("web", "Website")}
