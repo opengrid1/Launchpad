@@ -287,6 +287,62 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 .lf-row input { font-size: 14px; padding: 9px 10px; }
 
 /* launch */
+.launch-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 14px; align-items: start; }
+.launch-side { position: sticky; top: 84px; }
+.lf { gap: 18px; }
+.sec { display: flex; flex-direction: column; gap: 12px; padding-bottom: 18px; border-bottom: 2px solid var(--line); }
+.sec-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.sec-h .title { font-size: 20px; }
+.sec-h .hint { text-align: right; }
+.fighter small { font-size: 15px; color: var(--fg-3); line-height: 1; }
+.fighter.on small { color: var(--army); }
+.lf-id { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 14px; align-items: start; }
+.lf-fields { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.lbl { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.count { font-size: 16px; color: var(--fg-3); }
+.logo-field { display: flex; flex-direction: column; gap: 6px; }
+.logo-drop { width: 132px; height: 132px; border: 2px dashed var(--line-2); border-radius: 14px; background: var(--well); display: grid; place-items: center; cursor: pointer; overflow: hidden; position: relative; text-align: center; }
+.logo-drop:hover, .logo-drop.over { border-color: var(--bnb); }
+.logo-drop.bad { border-color: var(--hot); }
+.logo-drop span#logoInner { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--fg-2); padding: 8px; }
+.logo-drop small { font-size: 11px; color: var(--fg-3); line-height: 1.3; }
+.logo-drop img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.logo-drop .chg { position: absolute; left: 6px; right: 6px; bottom: 6px; background: rgba(0,0,0,.72); color: var(--bnb); border-radius: 6px; padding: 5px 0 4px; }
+.ic.big { width: 30px; height: 30px; color: var(--bnb); }
+.sr-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.logo-field:focus-within .logo-drop { outline: 2px solid var(--bnb); outline-offset: 2px; }
+.tk-in { display: flex; align-items: center; border: 2px solid var(--line-2); border-radius: 10px; background: var(--well); padding-left: 12px; }
+.tk-in:focus-within { border-color: var(--bnb); }
+.tk-in .dg { font-size: 24px; color: var(--fg-3); }
+.lf .tk-in input#lfTicker { border: 0; background: transparent; flex: 1; padding-left: 4px; outline: 0; }
+.lf input.bad, .lf textarea.bad { border-color: var(--hot); }
+.tk-in:has(input.bad) { border-color: var(--hot); }
+.err { color: var(--hot); font-size: 12.5px; min-height: 0; }
+.err:empty { display: none; }
+.fb-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 10px; align-items: center; }
+.fb-row .field input { font-size: 28px; }
+.fb-row .field.bad, .fb-row .field:has(input.bad) { border-color: var(--hot); }
+.fb-row .quick button { font-size: 17px; padding: 6px 0; }
+.lf .field input { border: 0; padding: 0; background: transparent; outline: 0; font-family: var(--digits); color: var(--bnb); }
+.lf label.check { flex-direction: row; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--fg-2); cursor: pointer; }
+.check input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--bnb); flex: none; }
+.done { background: rgba(85,239,140,.08); border: 2px solid rgba(85,239,140,.35); border-radius: 10px; padding: 12px 14px; }
+.done p { margin: 6px 0 0; font-size: 13.5px; color: var(--fg-2); }
+.done a { color: var(--bnb); }
+.pv { display: flex; flex-direction: column; gap: 10px; background: var(--well); border-radius: 10px; padding: 14px; }
+.pv-row { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.pv-row .sprite.lg { width: 56px; height: 56px; font-size: 26px; overflow: hidden; }
+.sprite img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+.sprite:has(img) { box-shadow: none; background: var(--panel-2); }
+.pv-main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pv-main b { font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv-main .tk { color: var(--bnb); font-size: 20px; line-height: 1; }
+.pv-main .meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.pv-link { font-size: 7px; color: var(--fg-2); border: 1px solid var(--line-2); border-radius: 4px; padding: 3px 5px 2px; }
+.pv-desc { margin: 0; font-size: 13.5px; color: var(--fg-2); overflow-wrap: anywhere; }
+.kv.tot { border-bottom-color: var(--line-2); }
+.kv.tot b { color: var(--bnb); }
 .roster { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .fighter { border: 2px solid var(--line-2); background: var(--well); border-radius: 10px; padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--fg-2); position: relative; }
 .fighter .sprite { width: 58px; height: 40px; font-size: 11px; letter-spacing: -.02em; }
@@ -343,6 +399,8 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 @media (max-width: 1020px) {
   .grid2 { grid-template-columns: minmax(0, 1fr); }
   .coin-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "chart" "side" "main"; }
+  .launch-grid { grid-template-columns: minmax(0, 1fr); }
+  .launch-side { position: static; }
   .levels, .army-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .nav { display: none; }
   .tabs { display: grid; }
@@ -389,6 +447,13 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   .coin-head .sprite.lg { width: 52px; height: 52px; font-size: 26px; }
   .ch-title .tk { font-size: 22px; }
   .fighter .sprite { width: 100%; max-width: 58px; height: 34px; font-size: 9.5px; }
+  .fighter small { font-size: 13px; }
+  .fighter .px { font-size: 7px; }
+  .lf-id { grid-template-columns: 104px minmax(0, 1fr); gap: 12px; }
+  .logo-drop { width: 104px; height: 104px; }
+  .logo-drop small { display: none; }
+  .fb-row { grid-template-columns: minmax(0, 1fr); }
+  .sec-h .hint { text-align: left; }
 }
 @media (prefers-reduced-motion: reduce) { .blink, .phase i, .flash { animation: none !important; } .hp-bar i, .bar i { transition: none; } }
 </style>
@@ -458,8 +523,10 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   const ICON = {
     copy: `<svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M5 1h9v9h-2V3H5zM2 5h9v10H2zm2 2v6h5V7z"/></svg>`,
     out: `<svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M8 2h6v6h-2V5.5L7.5 10 6 8.5 10.5 4H8zM2 4h4v2H4v6h6v-2h2v4H2z"/></svg>`,
+    img: `<svg class="ic big" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M1 2h14v12H1zm2 2v6l3-3 2 2 3-4 2 3V4zm8 1h2v2h-2z"/></svg>`,
     share: `<svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M11 1h4v4h-4V4H9v1H7v1H5v4h2v1h2v1h2v-1h4v4h-4v-1H9v-1H7v-1H5v1H1V6h4v1z"/></svg>`,
   };
+  const face = (c) => (c.img ? `<img src="${c.img}" alt="">` : esc(c.ticker[0]));
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- simulation state ----------
@@ -518,7 +585,8 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     }
     if (queued && ph === "launch" && coins.length < 8) {
       const c = makeCoin([queued.name, queued.ticker, queued.army], 2800, t);
-      c.hist.push({ t, v: c.cap }); c.mine = true; c.desc = queued.desc; c.socials = queued.socials; c.creator = "0x" + hex(40); coins.push(c); me.launched.unshift(c.ticker); queued = null;
+      c.hist.push({ t, v: c.cap }); c.mine = true; c.desc = queued.desc; c.socials = queued.socials; c.img = queued.img; c.creator = "0x" + hex(40); coins.push(c);
+      if (queued.first) { me.credits += queued.first; buy(c, queued.first); } me.launched.unshift(c.ticker); queued = null;
       pushLog(`<b>${c.ticker}</b> (you) joined the ${c.army} army.`); toast(`${c.ticker} entered round ${round}`);
     }
     if (ph !== "merge") for (const c of coins) {
@@ -651,7 +719,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     $("leadLink").href = `#coin-${c.ticker}`;
     $("leadLabel").textContent = winner ? `Champion · round ${round}` : ph === "launch" ? "Player 1 · early lead" : "Player 1 · leading";
     $("leadCrown").textContent = winner ? "K.O." : "#1";
-    $("leadAv").textContent = c.ticker[0]; $("leadAv").style.setProperty("--army", army(c.army));
+    $("leadAv").innerHTML = face(c); $("leadAv").style.setProperty("--army", army(c.army));
     $("leadName").textContent = c.name; $("leadTag").textContent = `${c.army} army`; $("leadTag").style.setProperty("--army", army(c.army));
     $("leadCapLabel").textContent = winner ? "Market cap" : "10m avg";
     $("leadTwap").textContent = usd(winner ? c.cap : lead.avg);
@@ -672,7 +740,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       const sub = lost ? `<small class="dg">1 = ${c.ratio.toFixed(4)} ${c.into}</small>` : `<small class="dg ${chg >= 0 ? "up" : "down"}">${chg >= 0 ? "+" : ""}${chg.toFixed(1)}% 1h</small>`;
       rows.push(`<a class="row ${idx === 0 ? "first" : ""} ${lost ? "ko" : ""} ${me.holdings.has(c.ticker) || c.mine ? "mine" : ""}" href="#coin-${c.ticker}" style="--army:${a}">
         <span class="rank">${idx + 1}</span>
-        <span class="coin"><span class="sprite" style="--army:${a}">${esc(c.ticker[0])}</span><span class="cn"><b>${esc(c.name)}${c.mine ? " · you" : ""}</b><small><span class="chip" style="--army:${a}">${c.army}</span>${c.holders} holders</small></span></span>
+        <span class="coin"><span class="sprite" style="--army:${a}">${face(c)}</span><span class="cn"><b>${esc(c.name)}${c.mine ? " · you" : ""}</b><small><span class="chip" style="--army:${a}">${c.army}</span>${c.holders} holders</small></span></span>
         <span class="hp"><span class="hp-bar"><i style="width:${hp}%"></i></span><span class="hp-l"><span>HP</span><span class="dg">${hp}</span></span></span>
         <span class="score"><b>${usd(e.avg)}</b>${sub}</span>
         <span class="status">${st}</span></a>`);
@@ -715,7 +783,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         const own = (k, label) => (s[k] ? `<a class="lnk" href="${esc(s[k])}" target="_blank" rel="noopener noreferrer">${label}</a>` : "");
         return `<div class="page" style="--army:${a}">
           <a class="back" href="#arena">Back to the arena</a>
-          <div class="coin-head"><span class="sprite lg">${esc(c.ticker[0])}</span>
+          <div class="coin-head"><span class="sprite lg">${face(c)}</span>
             <div class="ch-main"><div class="ch-title"><h1>${esc(c.name)}</h1><span class="dg tk">$${esc(c.ticker)}</span></div>
               <div class="meta"><a class="chip" href="#army-${c.army}">${c.army} army</a><span id="cStatus"></span><span class="px muted" id="cRound"></span><span class="muted age" id="cAge"></span></div>
               ${c.desc ? `<p class="desc">${esc(c.desc)}</p>` : ""}</div></div>
@@ -871,60 +939,167 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     },
 
     launch: {
-      pick: "NVDA",
+      pick: "NVDA", img: null, tried: false, first: "",
       mount() {
+        const f = this.draft || {};
         return `<div class="page">
-          <div class="page-h"><h1 class="title">Select your <i>army</i></h1><p id="lStatus"></p></div>
-          <div class="cols2">
+          <div class="page-h"><h1 class="title">Launch a <i>fighter</i></h1><p id="lStatus"></p></div>
+          <div class="launch-grid">
             <form class="card lf" id="lf" novalidate>
-              <div class="roster" id="roster">${Object.keys(ARMIES).map((k) => `<button type="button" class="fighter ${k === this.pick ? "on" : ""}" data-a="${k}" style="--army:${army(k)}"><span class="sprite" style="--army:${army(k)}">${k}</span><span class="px">${ARMIES[k].name}</span></button>`).join("")}</div>
-              <label for="lfName"><span class="px">Fighter name</span><input id="lfName" maxlength="28" placeholder="Jensen Pepe" required></label>
-              <label for="lfTicker"><span class="px">Ticker</span><input id="lfTicker" maxlength="8" placeholder="JPEPE"></label>
-              <label for="lfDesc"><span class="px">Description · optional</span><textarea id="lfDesc" maxlength="160" rows="2" placeholder="One line on why this fighter wins."></textarea></label>
-              <div class="lf-row">
-                <label for="lfX"><span class="px">X · optional</span><input id="lfX" inputmode="url" placeholder="x.com/yourcoin"></label>
-                <label for="lfTg"><span class="px">Telegram · optional</span><input id="lfTg" inputmode="url" placeholder="t.me/yourcoin"></label>
-                <label for="lfWeb"><span class="px">Website · optional</span><input id="lfWeb" inputmode="url" placeholder="yourcoin.fun"></label>
-              </div>
+              <section class="sec"><div class="sec-h"><h3 class="title">Army</h3><span class="hint" id="armyNote"></span></div>
+                <div class="roster" id="roster">${Object.keys(ARMIES).map((k) => `<button type="button" class="fighter ${k === this.pick ? "on" : ""}" data-a="${k}" style="--army:${army(k)}" aria-pressed="${k === this.pick}"><span class="sprite" style="--army:${army(k)}">${k}</span><span class="px">${ARMIES[k].name}</span><small class="dg">${ARMIES[k].token}</small></button>`).join("")}</div>
+              </section>
+              <section class="sec"><div class="sec-h"><h3 class="title">Coin</h3></div>
+                <div class="lf-id">
+                  <div class="logo-field">
+                    <label class="logo-drop" id="logoDrop" for="lfImg" tabindex="-1"><span id="logoInner"></span></label>
+                    <input type="file" id="lfImg" accept="image/png,image/jpeg,image/gif,image/webp" class="sr-file">
+                    <span class="err" id="eImg"></span>
+                  </div>
+                  <div class="lf-fields">
+                    <label for="lfName"><span class="lbl"><span class="px">Name</span><span class="count dg" id="cName">0/28</span></span><input id="lfName" maxlength="28" placeholder="Jensen Pepe" autocomplete="off" value="${esc(f.name || "")}"><span class="err" id="eName"></span></label>
+                    <label for="lfTicker"><span class="lbl"><span class="px">Ticker</span><span class="count dg" id="cTicker">0/8</span></span><div class="tk-in"><span class="dg">$</span><input id="lfTicker" maxlength="8" placeholder="JPEPE" autocomplete="off" value="${esc(f.ticker || "")}"></div><span class="err" id="eTicker"></span></label>
+                  </div>
+                </div>
+                <label for="lfDesc"><span class="lbl"><span class="px">Description · optional</span><span class="count dg" id="cDesc">0/160</span></span><textarea id="lfDesc" maxlength="160" rows="3" placeholder="One line on why this fighter wins.">${esc(f.desc || "")}</textarea></label>
+              </section>
+              <section class="sec"><div class="sec-h"><h3 class="title">Links</h3><span class="hint">Optional. Shown on the coin page.</span></div>
+                <div class="lf-row">
+                  <label for="lfX"><span class="px">X</span><input id="lfX" inputmode="url" placeholder="x.com/yourcoin" autocomplete="off" value="${esc(f.x || "")}"><span class="err" id="eX"></span></label>
+                  <label for="lfTg"><span class="px">Telegram</span><input id="lfTg" inputmode="url" placeholder="t.me/yourcoin" autocomplete="off" value="${esc(f.tg || "")}"><span class="err" id="eTg"></span></label>
+                  <label for="lfWeb"><span class="px">Website</span><input id="lfWeb" inputmode="url" placeholder="yourcoin.fun" autocomplete="off" value="${esc(f.web || "")}"><span class="err" id="eWeb"></span></label>
+                </div>
+              </section>
+              <section class="sec"><div class="sec-h"><h3 class="title">First buy</h3><span class="hint">Optional. Bought in the launch transaction, so no bot gets in before you.</span></div>
+                <div class="fb-row"><div class="field"><input id="lfFirst" inputmode="decimal" placeholder="0.00" aria-label="First buy in BNB" value="${esc(this.first)}"><span>BNB</span></div>
+                  <div class="quick" id="fbQuick">${["0", "0.1", "0.25", "0.5"].map((q) => `<button type="button" data-q="${q}">${q === "0" ? "None" : q}</button>`).join("")}</div></div>
+                <p class="hint" id="fbNote"></p><span class="err" id="eFirst"></span>
+              </section>
+              <label class="check" for="lfOk"><input type="checkbox" id="lfOk"><span>I understand the name, ticker and logo are final once launched, and that if my fighter loses, its holders redeem into the winner.</span></label>
+              <span class="err" id="eOk"></span>
               <button class="big-btn" type="submit" id="lfGo"></button>
-              <p class="hint" id="lfHint">Launching costs gas only. The whole supply goes into a BNB pool; no presale, no team bags.</p>
+              <div class="done" id="lfDone" hidden></div>
             </form>
-            <div class="stack">
-              <div class="card card-preview" id="preview"></div>
-              <div class="card"><h3 class="title">The <i>rules</i></h3>
-                <div class="kv"><span>Win the round</span><b class="t">Absorb every loser's pool</b></div>
-                <div class="kv"><span>Winner's holders</span><b class="t">Rewards in their army's bStock</b></div>
-                <div class="kv"><span>Losers' holders</span><b class="t">Redeem for the winner</b></div>
-                <div class="kv"><span>Who wins</span><b class="t">10-minute average cap</b></div>
-                <div class="kv"><span>Trade fee</span><b class="t">2%, fixed forever</b></div></div>
-            </div>
+            <aside class="stack launch-side">
+              <div class="card"><div class="sec-h"><h3 class="title">Preview</h3><span class="hint">How it shows on the board</span></div><div class="pv" id="preview"></div></div>
+              <div class="card"><h3 class="title">Cost</h3>
+                <div class="kv"><span>Enters</span><b class="t" id="sRound"></b></div>
+                <div class="kv"><span>Network fee</span><b>≈ 0.0006 BNB</b></div>
+                <div class="kv"><span>First buy</span><b id="sFirst">0 BNB</b></div>
+                <div class="kv tot"><span>Total</span><b id="sTotal"></b></div>
+                <div class="kv"><span>Your balance</span><b id="sBal"></b></div>
+              </div>
+              <div class="card"><h3 class="title">What you <i>get</i></h3>
+                <div class="kv"><span>Creator share</span><b class="t">0.7% of every trade, in BNB</b></div>
+                <div class="kv"><span>Supply</span><b class="t">1,000,000,000, all in the pool</b></div>
+                <div class="kv"><span>Presale or team tokens</span><b class="t">None</b></div>
+                <div class="kv"><span>If you win</span><b class="t">Absorb every loser's pool</b></div>
+                <div class="kv"><span>If you lose</span><b class="t">Holders redeem into the winner</b></div>
+                <div class="kv"><span>Trade fee</span><b class="t">2%, fixed forever</b></div>
+              </div>
+            </aside>
           </div></div>`;
       },
+      fields() {
+        const v = (id) => $(id).value.trim();
+        return { name: v("lfName"), ticker: v("lfTicker").toUpperCase(), desc: v("lfDesc"), x: v("lfX"), tg: v("lfTg"), web: v("lfWeb"), first: v("lfFirst") };
+      },
+      link(v, hosts) {
+        if (!v) return { ok: true, url: "" };
+        let s = /^https?:\/\//i.test(v) ? v : "https://" + v;
+        try { const u = new URL(s); if (!/^https?:$/.test(u.protocol) || !u.hostname.includes(".")) throw 0; if (hosts && !hosts.some((h) => u.hostname === h || u.hostname.endsWith("." + h))) return { ok: false }; return { ok: true, url: u.href }; } catch { return { ok: false }; }
+      },
+      check() {
+        const f = this.fields(), e = {};
+        if (!this.img) e.Img = "Add a logo.";
+        if (f.name.length < 2) e.Name = "Use at least 2 characters.";
+        if (f.ticker.length < 2) e.Ticker = "Use 2 to 8 letters or numbers.";
+        else { const taken = [...all.values()].find((c) => c.ticker.toUpperCase() === f.ticker); if (taken || queued?.ticker === f.ticker) e.Ticker = `$${f.ticker} is taken${taken ? ` by ${taken.name}` : ""}.`; }
+        if (!this.link(f.x, ["x.com", "twitter.com"]).ok) e.X = "Use an x.com link.";
+        if (!this.link(f.tg, ["t.me", "telegram.me"]).ok) e.Tg = "Use a t.me link.";
+        if (!this.link(f.web).ok) e.Web = "That isn't a web address.";
+        const fb = f.first === "" ? 0 : Number(f.first);
+        if (!(fb >= 0)) e.First = "Enter an amount in BNB.";
+        else if (fb > 0.5) e.First = "The first buy is capped at 0.5 BNB.";
+        else if (fb + 0.0006 > me.credits) e.First = `You have ${me.credits.toFixed(3)} BNB.`;
+        if (!$("lfOk").checked) e.Ok = "Tick the box to confirm.";
+        return { f, e, fb: fb > 0 ? fb : 0 };
+      },
+      show(e) {
+        for (const k of ["Img", "Name", "Ticker", "X", "Tg", "Web", "First", "Ok"]) {
+          const msg = this.tried ? e[k] || "" : "";
+          $("e" + k).textContent = msg;
+          const inp = { Img: "logoDrop", Name: "lfName", Ticker: "lfTicker", X: "lfX", Tg: "lfTg", Web: "lfWeb", First: "lfFirst" }[k];
+          if (inp) $(inp).classList.toggle("bad", !!msg);
+        }
+      },
       wire() {
-        $("roster").addEventListener("click", (e) => { const b = e.target.closest("button[data-a]"); if (!b) return; this.pick = b.dataset.a; document.querySelectorAll("#roster .fighter").forEach((x) => x.classList.toggle("on", x === b)); this.preview(); });
-        $("lfName").addEventListener("input", () => this.preview());
-        $("lfTicker").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/[^a-z0-9]/gi, "").toUpperCase(); this.preview(); });
+        const self = this;
+        $("roster").addEventListener("click", (e) => { const b = e.target.closest("button[data-a]"); if (!b) return; self.pick = b.dataset.a; document.querySelectorAll("#roster .fighter").forEach((x) => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); }); self.refresh(); });
+        $("lfTicker").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/[^a-z0-9]/gi, "").toUpperCase(); });
+        $("lf").addEventListener("input", () => self.refresh());
+        $("lf").addEventListener("change", () => self.refresh());
+        $("fbQuick").addEventListener("click", (e) => { const b = e.target.closest("button[data-q]"); if (!b) return; $("lfFirst").value = b.dataset.q === "0" ? "" : b.dataset.q; self.refresh(); });
+        const take = (file) => {
+          $("eImg").textContent = "";
+          if (!file) return;
+          if (!/^image\/(png|jpeg|gif|webp)$/.test(file.type)) { $("eImg").textContent = "Use a PNG, JPG, GIF or WebP."; return; }
+          if (file.size > 4 * 1024 * 1024) { $("eImg").textContent = "Keep the logo under 4 MB."; return; }
+          if (self.img) URL.revokeObjectURL(self.img);
+          self.img = URL.createObjectURL(file); self.refresh();
+        };
+        $("lfImg").addEventListener("change", (e) => take(e.target.files[0]));
+        const drop = $("logoDrop");
+        drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+        drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+        drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); take(e.dataTransfer.files[0]); });
         $("lf").addEventListener("submit", (e) => {
           e.preventDefault();
-          const name = $("lfName").value.trim();
-          if (!name) { $("lfHint").textContent = "Give your fighter a name first."; $("lfName").focus(); return; }
-          const ticker = ($("lfTicker").value || name.replace(/[^a-z0-9]/gi, "").slice(0, 6)).toUpperCase() || "COIN";
-          const url = (id) => { let v = $(id).value.trim(); if (!v) return ""; if (!/^https?:\/\//i.test(v)) v = "https://" + v; try { const u = new URL(v); return /^https?:$/.test(u.protocol) ? u.href : ""; } catch { return ""; } };
-          queued = { name, ticker, army: this.pick, desc: $("lfDesc").value.trim(), socials: { x: url("lfX"), tg: url("lfTg"), web: url("lfWeb") } };
-          $("lfHint").textContent = phase() === "launch" && coins.length < 8 ? `${ticker} enters round ${round} in a moment (simulated).` : `${ticker} enters round ${round + 1} when enlisting opens (simulated). Try 120× on the arena to get there fast.`;
-          this.update();
+          if (queued) return;
+          self.tried = true;
+          const { f, e: errs, fb } = self.check();
+          self.show(errs);
+          const firstBad = Object.keys(errs)[0];
+          if (firstBad) { const el = $("e" + firstBad); el.closest("label, .logo-field, .sec")?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
+          me.credits -= fb; // held for the first buy
+          queued = { name: f.name, ticker: f.ticker, army: self.pick, desc: f.desc, img: self.img, first: fb, socials: { x: self.link(f.x).url, tg: self.link(f.tg).url, web: self.link(f.web).url } };
+          self.img = null; self.draft = null; self.first = ""; self.tried = false;
+          self.update();
         });
-        this.preview();
+        self.refresh();
       },
-      preview() {
-        const name = $("lfName")?.value.trim() || "Your fighter", tk = ($("lfTicker")?.value || name.replace(/[^a-z0-9]/gi, "").slice(0, 6)).toUpperCase() || "COIN";
-        $("preview").style.setProperty("--army", army(this.pick));
-        $("preview").innerHTML = `<span class="px" style="color:var(--bnb)">Player 1</span><span class="sprite" style="--army:${army(this.pick)}">${esc(tk[0] || "?")}</span><h3>${esc(name)}</h3><span class="chip" style="--army:${army(this.pick)}">${this.pick} army</span><span class="vs">VS</span><span class="hint">${coins.length} fighters in round ${round}</span>`;
+      refresh() {
+        const { f, e, fb } = this.check();
+        this.draft = f; this.first = f.first;
+        this.show(e);
+        $("cName").textContent = `${f.name.length}/28`; $("cTicker").textContent = `${f.ticker.length}/8`; $("cDesc").textContent = `${f.desc.length}/160`;
+        $("logoInner").innerHTML = this.img ? `<img src="${this.img}" alt="Logo preview"><span class="px chg">Change</span>` : `${ICON.img}<span class="px">Add logo</span><small>PNG, JPG, GIF, WebP · 4 MB</small>`;
+        const inArmy = coins.filter((c) => c.army === this.pick).length, titles = history.filter((h) => all.get(h.ticker)?.army === this.pick).length;
+        $("armyNote").textContent = `${ARMIES[this.pick].name}: holders earn ${ARMIES[this.pick].token} if you win · ${inArmy} in this round · ${titles} ${titles === 1 ? "title" : "titles"}`;
+        const pct = fb ? ((fb * (1 - FEE) * BNB_USD) / (2800 / SUPPLY) / SUPPLY) * 100 : 0;
+        $("fbNote").textContent = fb ? `About ${qty((fb * (1 - FEE) * BNB_USD) / (2800 / SUPPLY))} ${f.ticker || "tokens"}, ${pct.toFixed(1)}% of supply, at the starting price. Max 0.5 BNB.` : "Skip it and the pool opens with nobody holding yet. Max 0.5 BNB.";
+        $("sFirst").textContent = `${fb} BNB`; $("sTotal").textContent = `≈ ${(fb + 0.0006).toFixed(4)} BNB`;
+        const name = f.name || "Your fighter", tk = f.ticker || "TICKER", a = army(this.pick), s = { x: f.x, tg: f.tg, web: f.web };
+        $("preview").innerHTML = `<div class="pv-row" style="--army:${a}"><span class="sprite lg">${this.img ? `<img src="${this.img}" alt="">` : esc(tk[0])}</span>
+          <div class="pv-main"><b>${esc(name)}</b><span class="dg tk">$${esc(tk)}</span><div class="meta"><span class="chip" style="--army:${a}">${this.pick} army</span>${["x", "tg", "web"].filter((k) => s[k]).map((k) => `<span class="pv-link px">${{ x: "X", tg: "TG", web: "Web" }[k]}</span>`).join("")}</div></div></div>
+          ${f.desc ? `<p class="pv-desc">${esc(f.desc)}</p>` : `<p class="pv-desc muted">No description yet.</p>`}`;
+        this.update();
       },
       update() {
         const open = phase() === "launch" && coins.length < 8;
-        $("lStatus").textContent = open ? `Round ${round} is enlisting: ${mmss(LAUNCH - t)} left, ${8 - coins.length} slots open.` : `Round ${round} is ${phase() === "battle" ? "in battle" : "merging"}. The next enlisting window opens in ${mmss(ROUND - t)}.`;
-        $("lfGo").textContent = queued ? `Queued · ${queued.ticker}` : open ? `Enlist in round ${round}` : `Enlist in round ${round + 1}`;
+        $("lStatus").textContent = open ? `Round ${round} is enlisting: ${mmss(LAUNCH - t)} left, ${8 - coins.length} of 8 slots open.` : `Round ${round} is ${phase() === "battle" ? "in battle" : "merging"}. Enlisting for round ${round + 1} opens in ${mmss(ROUND - t)}.`;
+        $("sRound").textContent = open ? `Round ${round}, right away` : `Round ${round + 1}, in ${mmss(ROUND - t)}`;
+        $("sBal").textContent = `${me.credits.toFixed(3)} BNB`;
+        const mineNow = me.launched[0] && all.get(me.launched[0]);
+        const go = $("lfGo"), done = $("lfDone");
+        if (queued) {
+          go.textContent = `Queued · $${queued.ticker}`; go.disabled = true; done.hidden = false;
+          done.innerHTML = `<span class="px" style="color:var(--ok)">Launch sent</span><p>$${esc(queued.ticker)} enters ${open ? `round ${round} in a moment` : `round ${round + 1} when enlisting opens, in ${mmss(ROUND - t)}`}. ${queued.first ? `Your ${queued.first} BNB first buy goes in with it.` : ""} Simulated: set the arena to 120× to get there fast.</p>`;
+        } else {
+          go.disabled = false; go.textContent = open ? `Launch into round ${round}` : `Launch into round ${round + 1}`;
+          if (mineNow && this.justLaunched !== mineNow.ticker && me.launched.length) { done.hidden = false; done.innerHTML = `<span class="px" style="color:var(--ok)">Live</span><p>$${esc(mineNow.ticker)} is on the board. <a href="#coin-${mineNow.ticker}">Open its page</a> or launch another.</p>`; }
+          else done.hidden = true;
+        }
       },
     },
 
@@ -991,7 +1166,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         });
         $("mTiles").innerHTML = [["Test BNB", me.credits.toFixed(2)], ["Fighters held", me.holdings.size], ["Value", bnb(value)], ["P&L", `${value - cost >= 0 ? "+" : ""}${(value - cost).toFixed(3)}`]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
         $("mRows").innerHTML = rows.join("") || `<tr><td colspan="6" class="muted">Nothing held yet. Open a fighter from the <a href="#arena">arena</a> and buy.</td></tr>`;
-        $("mLaunched").innerHTML = me.launched.length ? me.launched.map((tk) => { const c = all.get(tk); return `<a class="li" href="#coin-${tk}" style="text-decoration:none"><span class="sprite" style="--army:${army(c.army)}">${esc(tk[0])}</span><span><b>${esc(c.name)}</b> <span class="dg muted">${tk}</span></span><span class="dg">${usd(c.cap)}</span></a>`; }).join("") : (queued ? `<div class="empty">${esc(queued.ticker)} is queued for the next enlisting window.</div>` : `<div class="empty">You haven't launched a fighter. <a href="#launch">Launch one</a>.</div>`);
+        $("mLaunched").innerHTML = me.launched.length ? me.launched.map((tk) => { const c = all.get(tk); return `<a class="li" href="#coin-${tk}" style="text-decoration:none"><span class="sprite" style="--army:${army(c.army)}">${face(c)}</span><span><b>${esc(c.name)}</b> <span class="dg muted">${tk}</span></span><span class="dg">${usd(c.cap)}</span></a>`; }).join("") : (queued ? `<div class="empty">${esc(queued.ticker)} is queued for the next enlisting window.</div>` : `<div class="empty">You haven't launched a fighter. <a href="#launch">Launch one</a>.</div>`);
       },
     },
 
