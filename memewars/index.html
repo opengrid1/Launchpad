@@ -115,6 +115,14 @@ h2.title, h3.title { font-size: 22px; }
 .hint { font-size: 12.5px; color: var(--fg-3); margin: 0; }
 .empty { padding: 18px; color: var(--fg-3); text-align: center; }
 
+.net { margin: 10px 0 0; color: var(--hot); font-size: 13px; min-height: 0; }
+.net:empty { display: none; }
+.keeper { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 34px; }
+.ghost-btn.kp { border-color: var(--bnb); color: var(--bnb); }
+.ghost-btn.kp[disabled] { border-color: var(--line-2); color: var(--fg-3); }
+.wallet #wAddr { color: var(--fg-2); }
+.row .score small { display: block; font-size: 15px; }
+
 /* arena banner */
 .banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 18px 22px; border: 2px solid var(--bnb); border-radius: 14px; background: radial-gradient(120% 140% at 0% 50%, rgba(243,186,47,.16), transparent 55%), repeating-linear-gradient(135deg, rgba(243,186,47,.05) 0 10px, transparent 10px 20px), var(--panel); box-shadow: 0 0 40px -18px rgba(243,186,47,.6); }
 .ban-mark { width: 116px; height: 116px; display: block; filter: drop-shadow(0 6px 18px rgba(243,186,47,.35)); }
@@ -548,7 +556,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 </head>
 <body>
 
-<div class="free" role="note"><span class="px">Free play</span><span>Preview build. Rounds, prices and trades are simulated until the contracts go live on BNB Chain.</span></div>
+<div class="free" role="note"><span class="px">Beta</span><span>Live on BNB Chain. The contracts are verified but not audited yet. Trade small.</span></div>
 
 <header class="top">
   <div class="wrap">
@@ -568,13 +576,13 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       <a href="#arena" data-nav="arena">Arena</a><a href="#launch" data-nav="launch">Launch</a><a href="#armies" data-nav="armies">Armies</a><a href="#hall" data-nav="hall">Hall of fame</a><a href="#docs" data-nav="docs">Docs</a>
     </nav>
     <span class="sp"></span>
-    <a class="wallet" href="#me" title="My wallet"><span class="px">Wallet</span><span class="dg" id="credits">10.00</span></a>
-    <button type="button" class="coin-btn" id="connect"><span class="blink" aria-hidden="true">▶ </span>Insert coin</button>
+    <a class="wallet" href="#me" id="walletChip" title="My wallet" hidden><span class="px" id="wAddr"></span><span class="dg" id="wBal">0.000</span></a>
+    <button type="button" class="coin-btn" id="connect"><span class="blink" aria-hidden="true">▶ </span>Connect wallet</button>
   </div>
 </header>
 
-<main class="wrap"><div id="view"></div>
-  <footer class="foot"><span>Jeet Wars · jeetwars.fun · BNB Chain</span><span><a href="#docs">Docs</a> · Free play preview. Figures are simulated. Not affiliated with Binance.</span></footer>
+<main class="wrap"><p class="net" id="netState" role="status"></p><div id="view"></div>
+  <footer class="foot"><span>Jeet Wars · jeetwars.fun · BNB Chain</span><span><a href="#docs">Docs</a> · Beta, unaudited contracts. Not affiliated with Binance.</span></footer>
 </main>
 
 <nav class="tabs" aria-label="Pages">
@@ -587,192 +595,362 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 </nav>
 <div class="toast" id="toast" hidden></div>
 
+<script src="ethers.umd.min.js"></script>
 <script>
 (() => {
-  // ---------- data ----------
-  const ARMIES = {
-    NVDA: { v: "--a-nvda", name: "NVIDIA", token: "NVDAB" }, QQQ: { v: "--a-qqq", name: "Nasdaq-100", token: "QQQB" }, TSLA: { v: "--a-tsla", name: "Tesla", token: "TSLAB" }, GOOGL: { v: "--a-googl", name: "Alphabet", token: "GOOGLB" },
-    BABA: { v: "--a-baba", name: "Alibaba", token: "BABAB" }, AAPL: { v: "--a-aapl", name: "Apple", token: "AAPLB" }, CRCL: { v: "--a-crcl", name: "Circle", token: "CRCLB" }, SPY: { v: "--a-spy", name: "S&P 500", token: "SPYB" },
+  const E = window.ethers;
+  // ---------------------------------------------------------------------
+  // Config (BNB Chain mainnet)
+  // ---------------------------------------------------------------------
+  const CFG = {
+    chainId: 56n, chainHex: "0x38",
+    rpcs: ["https://bsc-rpc.publicnode.com", "https://bsc-dataseed.bnbchain.org", "https://bsc-dataseed1.defibit.io"],
+    arena: "0x18B8ad90d4C767BdA953909b132311069C9CBA34",
+    hook: "0x97c549177B98782aBe0b9335Ca8cab469cD263B4",
+    router: "0x8fBB324880714747548C98C552db4C278BdB758b",
+    redeemer: "0x82193432d7cB5F742acC8DCBDf8c658E21884C24",
+    clpm: "0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b",
+    multicall: "0xcA11bde05977b3631167028862bE2a173976CA11",
+    feed: "0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE",
+    wbnb: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+    usdt: "0x55d398326f99059fF775485246999027B3197955",
+    genesis: 1790832900, startTick: 191000,
+    explorer: "https://bscscan.com",
   };
-  const POOL = [
-    ["Jensen Pepe", "JPEPE", "NVDA"], ["Cybertruck Doge", "CYDOGE", "TSLA"], ["iFrog", "IFROG", "AAPL"], ["Index Chad", "ICHAD", "SPY"],
-    ["Nasdaq Neko", "NNEKO", "QQQ"], ["Taobao Cat", "TBCAT", "BABA"], ["Gemini Pup", "GPUP", "GOOGL"], ["USDC Doge", "UDOGE", "CRCL"],
-    ["Blackwell Bull", "BWELL", "NVDA"], ["Gigafrog", "GIGA", "TSLA"], ["Vision Goat", "VGOAT", "AAPL"], ["Boomer Shiba", "BSHIB", "SPY"],
-    ["Tech Rat", "TRAT", "QQQ"], ["Jack Ma Moon", "JMOON", "BABA"], ["Waymo Wojak", "WAYMO", "GOOGL"], ["Stablecoin Shiba", "SSHIB", "CRCL"],
-    ["H100 Hamster", "H100", "NVDA"], ["Robotaxi Rex", "RREX", "TSLA"], ["Tim Apple Ape", "TAPE", "AAPL"], ["Dip Buyer", "DIPB", "SPY"],
-  ];
-  const BNB_USD = 612; // sample price for the simulation
-  const SUPPLY = 1e9, FEE = 0.02;
-  const LAUNCH = 15 * 60, BATTLE = 45 * 60, MERGE = 30 * 60, ROUND = LAUNCH + BATTLE + MERGE, WINDOW = 10 * 60;
+  const ENLIST = 900, BELL = 3600, ROUND = 5400, WINDOW = 600, HITS = 10, HIT_GAP = 180, FEE = 0.02, MAX_FIRST = 0.5;
+  const STOCK_FEE = { NVDA: 2500, QQQ: 100, TSLA: 2500, GOOGL: 2500, BABA: 2500, AAPL: 2500, CRCL: 2500, SPY: 100 };
+  const ARMY_META = { NVDA: ["--a-nvda", "NVIDIA"], QQQ: ["--a-qqq", "Nasdaq-100"], TSLA: ["--a-tsla", "Tesla"], GOOGL: ["--a-googl", "Alphabet"], BABA: ["--a-baba", "Alibaba"], AAPL: ["--a-aapl", "Apple"], CRCL: ["--a-crcl", "Circle"], SPY: ["--a-spy", "S&P 500"] };
+  const Q96 = 2n ** 96n;
+
+  const I = {
+    arena: new E.Interface([
+      "function currentRound() view returns (uint32)", "function launchesPaused() view returns (bool)", "function admin() view returns (address)",
+      "function owner() view returns (address)", "function feeRecipient() view returns (address)", "function tipBudget() view returns (uint256)",
+      "function tip() view returns (uint256)", "function totalCoins() view returns (uint256)", "function allCoins(uint256) view returns (address)",
+      "function armies() view returns ((address stock,bool enabled,string name)[])",
+      "function coins(address) view returns (address creator,uint32 round,uint8 army,bool pulled,uint64 launchedAt,bytes32 poolId)",
+      "function rounds(uint32) view returns (bool settled,bool finalized,uint8 hits,uint64 lastHit,address winner,uint256 loot,uint256 spent,uint256 bought)",
+      "function roundCoins(uint32) view returns (address[])", "function liquidityOf(address) view returns (uint128)", "function hidden(address) view returns (bool)",
+      "function metadataOf(address) view returns (string)", "function metadataOverride(address) view returns (string)", "function lootOf(address) view returns (uint256)",
+      "function tickerTaken(bytes32) view returns (bool)", "function converter() view returns (address)",
+      "function launch((string name,string symbol,string metadataURI,uint8 army) p) payable returns (address)",
+      "function settle(uint32 r)", "function hit(uint32 r)", "function fundTips() payable",
+      "function pause()", "function resume()", "function setHidden(address,bool)", "function setCoinMetadata(address,string)",
+      "function setFeeRecipient(address)", "function collect(address,uint16,address)", "function setArmy(uint8,address,bool,string)",
+      "function pushPlatformFees(address[])",
+      "event Launched(address indexed coin, address indexed creator, uint32 indexed round, uint8 army, bytes32 poolId, uint256 firstBuy, uint256 firstBuyOut)",
+    ]),
+    hook: new E.Interface(["function pool(bytes32) view returns ((address coin,uint64 bell,uint8 status,bool registered,uint64 lastTime,int24 blockTick,bool startTaken,int256 cum,int256 startCum))"]),
+    token: new E.Interface([
+      "function name() view returns (string)", "function symbol() view returns (string)", "function metadataURI() view returns (string)",
+      "function stock() view returns (address)", "function totalSupply() view returns (uint256)", "function balanceOf(address) view returns (uint256)",
+      "function pendingRewards(address) view returns (uint256)", "function creatorFees() view returns (uint256)", "function platformFees() view returns (uint256)",
+      "function totalHolderRewards() view returns (uint256)", "function totalCreatorFees() view returns (uint256)", "function allowance(address,address) view returns (uint256)",
+      "function approve(address,uint256) returns (bool)", "function claimRewards() returns (uint256)", "function claimRewardsAsStock(bytes,uint256) returns (uint256)",
+      "function payCreator() returns (uint256)",
+    ]),
+    router: new E.Interface(["function buy(address coin,uint256 minOut,address to) payable returns (uint256)", "function sell(address coin,uint256 amount,uint256 minOut,address to) returns (uint256)"]),
+    redeemer: new E.Interface([
+      "function pots(address) view returns (address winner,uint128 tokens,uint128 bnb,uint256 supply,uint32 round)",
+      "function quote(address,uint256) view returns (uint256 tokens,uint256 bnb)", "function redeem(address loser,uint256 amount,address to) returns (uint256,uint256)",
+    ]),
+    clpm: new E.Interface(["function getSlot0(bytes32) view returns (uint160 sqrtPriceX96,int24 tick,uint24 protocolFee,uint24 lpFee)"]),
+    feed: new E.Interface(["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"]),
+    mc: new E.Interface(["function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns ((bool success,bytes returnData)[])", "function getEthBalance(address) view returns (uint256)"]),
+  };
+
+  // ---------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------
   const $ = (id) => document.getElementById(id);
-  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-  const army = (k) => `var(${ARMIES[k].v})`;
-  const usd = (v) => v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v.toFixed(v < 10 ? 2 : 0)}`;
-  const bnb = (v) => `${v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2)} BNB`;
-  const qty = (v) => v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(1)}K` : v.toFixed(0);
-  const mmss = (s) => { s = Math.max(0, Math.ceil(s)); return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
-  const randn = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
-  const hex = (n) => Array.from({ length: n }, () => "0123456789abcdef"[(Math.random() * 16) | 0]).join("");
-  const short = (a, x = 6, y = 4) => `${a.slice(0, x)}…${a.slice(-y)}`;
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const short = (a, x = 6, y = 4) => (a ? `${a.slice(0, x)}…${a.slice(-y)}` : "—");
+  const nowS = () => Math.floor(Date.now() / 1000);
+  const mmss = (s) => { s = Math.max(0, Math.ceil(s)); const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); const r = s % 60; return h ? `${h}:${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}` : `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`; };
   const ago = (s) => (s < 60 ? `${Math.max(1, Math.floor(s))}s` : s < 3600 ? `${Math.floor(s / 60)}m` : s < 86400 ? `${Math.floor(s / 3600)}h` : `${Math.floor(s / 86400)}d`);
+  const usd = (v) => (!isFinite(v) ? "—" : v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v.toFixed(v < 10 ? 2 : 0)}`);
+  const bnbN = (v) => (!isFinite(v) ? "—" : `${v >= 100 ? v.toFixed(0) : v >= 1 ? v.toFixed(2) : v >= 0.01 ? v.toFixed(3) : v.toFixed(5)} BNB`);
+  const qty = (v) => (v >= 1e9 ? `${(v / 1e9).toFixed(2)}B` : v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(1)}K` : v.toFixed(v < 10 ? 2 : 0));
+  const f18 = (x) => Number(E.formatEther(x ?? 0n));
   const SUB = "₀₁₂₃₄₅₆₇₈₉";
-  const price = (v) => { if (v >= 1) return `$${v.toFixed(2)}`; if (v >= 0.001) return `$${v.toPrecision(3)}`; const [m, e] = v.toExponential(2).split("e-"); return `$0.0${String(+e - 1).split("").map((d) => SUB[d]).join("")}${m.replace(".", "")}`; };
+  const price = (v) => { if (!isFinite(v) || v <= 0) return "—"; if (v >= 1) return `$${v.toFixed(2)}`; if (v >= 0.001) return `$${v.toPrecision(3)}`; const [m, e] = v.toExponential(2).split("e-"); return `$0.0${String(+e - 1).split("").map((d) => SUB[d]).join("")}${m.replace(".", "")}`; };
   const ICON = {
     copy: `<svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M5 1h9v9h-2V3H5zM2 5h9v10H2zm2 2v6h5V7z"/></svg>`,
     out: `<svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M8 2h6v6h-2V5.5L7.5 10 6 8.5 10.5 4H8zM2 4h4v2H4v6h6v-2h2v4H2z"/></svg>`,
-    img: `<svg class="ic big" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M1 2h14v12H1zm2 2v6l3-3 2 2 3-4 2 3V4zm8 1h2v2h-2z"/></svg>`,
     share: `<svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M11 1h4v4h-4V4H9v1H7v1H5v4h2v1h2v1h2v-1h4v4h-4v-1H9v-1H7v-1H5v1H1V6h4v1z"/></svg>`,
+    img: `<svg class="ic big" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M1 2h14v12H1zm2 2v6l3-3 2 2 3-4 2 3V4zm8 1h2v2h-2z"/></svg>`,
   };
-  const face = (c) => (c.img ? `<img src="${c.img}" alt="">` : esc(c.ticker[0]));
-  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const armyVar = (name) => `var(${(ARMY_META[name] || ["--bnb"])[0]})`;
+  const safeImg = (u) => (typeof u === "string" && (/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(u) || /^https:\/\/[^\s"'<>]+$/.test(u)) ? u : "");
+  const face = (c) => (c?.meta?.image ? `<img src="${esc(c.meta.image)}" alt="">` : esc((c?.symbol || "?")[0]));
+  const errMsg = (e) => {
+    const m = e?.shortMessage || e?.info?.error?.message || e?.reason || e?.message || String(e);
+    if (/user (rejected|denied)|ACTION_REJECTED/i.test(m)) return "You cancelled it in your wallet.";
+    if (/insufficient funds/i.test(m)) return "Not enough BNB for this and the gas.";
+    return m.length > 140 ? m.slice(0, 137) + "…" : m;
+  };
 
-  // ---------- simulation state ----------
-  let clock = 100000, round = 128, speed = 30, t = LAUNCH + 15 * 60 + 36, coins = [], winner = null, merged = 0, logLines = [], history = [], queued = null, poolIdx = 0;
-  const all = new Map(); // every coin ever, by ticker, so old coin pages still open
-  const me = { credits: 10, holdings: new Map(), launched: [] }; // holdings: ticker -> { qty, cost }
-
-  function uniqueTicker(tk) { let x = tk, n = 2; while (all.has(x)) x = `${tk}${n++}`; return x; }
-  function makeCoin([name, ticker, a], cap, joinedAt) {
-    const c = { name, ticker: uniqueTicker(ticker), army: a, cap, hist: [], joinedAt, round, holders: 20 + Math.floor(Math.random() * 60), vol: 0.9 + Math.random() * 0.8, drift: (Math.random() - 0.4) * 0.00012, absorbed: false, trades: [], top: [],
-      ca: "0x" + hex(40), creator: "0x" + hex(40), poolId: "0x" + hex(64), born: clock - Math.max(0, t - joinedAt), volBnb: 0, txns: 0, socials: {} };
-    c.top = Array.from({ length: 6 }, () => ({ who: "0x" + hex(40), pct: 1 + Math.random() * 6 })).sort((a, b) => b.pct - a.pct);
-    all.set(c.ticker, c);
-    return c;
-  }
-  const adm = { paused: false, recipient: "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b", owed: 0, paid: 0, router: "", renounced: false, log: [] };
-  const isAddr = (v) => /^0x[0-9a-fA-F]{40}$/.test(v);
-  function alog(msg) { adm.log.unshift({ at: clock, msg, tx: "0x" + hex(64) }); if (adm.log.length > 40) adm.log.pop(); toast(msg.length > 46 ? msg.slice(0, 44) + "…" : msg); }
-  function collect(c, share, to) {
-    const out = poolBnb(c) * share;
-    c.poolScale = (c.poolScale ?? 1) * (1 - share);
-    const inRound = coins.includes(c);
-    if (share >= 0.999) {
-      c.pulled = true;
-      if (inRound && !winner) { coins = coins.filter((x) => x !== c); pushLog(`<b>${c.ticker}</b> left the round: liquidity collected.`); }
-      if (winner === c) { merged = 10; pushLog(`Merge stopped: <b>${c.ticker}</b> liquidity collected. Losers redeem for BNB.`); }
+  // ---------------------------------------------------------------------
+  // RPC + multicall (reads never need a wallet)
+  // ---------------------------------------------------------------------
+  let rpcIdx = 0;
+  async function rpc(method, params) {
+    let last;
+    for (let k = 0; k < CFG.rpcs.length; k++) {
+      const url = CFG.rpcs[(rpcIdx + k) % CFG.rpcs.length];
+      try {
+        const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
+        const j = await r.json();
+        if (j.error) throw new Error(j.error.message);
+        rpcIdx = (rpcIdx + k) % CFG.rpcs.length;
+        return j.result;
+      } catch (e) { last = e; }
     }
-    alog(`collect(${c.ticker}, ${Math.round(share * 10000)} bps, ${short(to)}): ${bnb(out)}`);
+    throw last;
   }
-  function trade(c, at, buy, bnbAmt, who) {
-    const x = { at, buy, bnb: bnbAmt, tok: (bnbAmt * BNB_USD) / priceUsd(c), who, maker: "0x" + hex(40), tx: "0x" + hex(64) };
-    c.trades.unshift(x); if (c.trades.length > 60) c.trades.pop(); c.volBnb += bnbAmt; c.txns++; adm.owed += bnbAmt * 0.01;
-  }
-  const poolBnb = (c) => (c.pulled ? 0 : Math.sqrt(c.cap / BNB_USD) * 3.2 * (c.poolScale ?? 1));
-  const priceUsd = (c) => c.cap / SUPPLY;
-  function twap(c, now) {
-    const pts = c.hist.filter((p) => p.t >= now - WINDOW && p.t <= now);
-    return pts.length ? pts.reduce((s, p) => s + p.v, 0) / pts.length : c.cap;
-  }
-  function seedHistory(c, now) {
-    let v = c.cap * (0.4 + Math.random() * 0.3);
-    for (let s = Math.max(c.joinedAt, 0); s <= now; s += 10) {
-      v *= Math.exp(c.drift * 10 + 0.03 * randn() * c.vol);
-      if (Math.random() < 0.004) v *= 1.3 + Math.random() * 0.6;
-      v = Math.max(900, v); c.hist.push({ t: s, v });
-      c.cap = v; if (Math.random() < 0.25) trade(c, clock - (now - s), Math.random() < 0.55, 0.05 + Math.random() * 1.6, "");
+  async function mc(calls) {
+    const out = [];
+    for (let k = 0; k < calls.length; k += 120) {
+      const chunk = calls.slice(k, k + 120);
+      const data = I.mc.encodeFunctionData("aggregate3", [chunk.map((c) => ({ target: c[0], allowFailure: true, callData: c[1].encodeFunctionData(c[2], c[3] || []) }))]);
+      const raw = await rpc("eth_call", [{ to: CFG.multicall, data }, "latest"]);
+      const [res] = I.mc.decodeFunctionResult("aggregate3", raw);
+      res.forEach((r, j) => {
+        const c = chunk[j]; let v = null;
+        if (r.success) { try { const d = c[1].decodeFunctionResult(c[2], r.returnData); v = d.length === 1 ? d[0] : d; } catch {} }
+        out.push(v);
+      });
     }
-    c.cap = v;
+    return out;
   }
-  function newRound(fresh) {
-    coins = []; winner = null; merged = 0;
-    if (fresh) for (let i = 0; i < 8; i++) { const c = makeCoin(POOL[(poolIdx++) % POOL.length], 3000 * (1 + Math.random() * 6), 60 * i); seedHistory(c, t); coins.push(c); }
-  }
-  function pushLog(html) { logLines.unshift(html); if (logLines.length > 40) logLines.pop(); }
-  const bell = () => LAUNCH + BATTLE;
-  const phase = () => (t < LAUNCH ? "launch" : t < bell() ? "battle" : "merge");
+  const A = (f, a) => [CFG.arena, I.arena, f, a];
 
-  function ranked() {
-    const now = Math.min(t, bell());
-    return coins.map((c) => ({ c, avg: c.absorbed ? twap(c, bell()) : twap(c, now) }))
-      .sort((a, b) => (winner ? (a.c === winner ? -1 : b.c === winner ? 1 : b.avg - a.avg) : b.avg - a.avg));
+  // ---------------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------------
+  const S = {
+    loaded: false, round: 0, paused: false, admin: "", owner: "", feeRecipient: "", tipBudget: 0n, tip: 0n, armies: [], bnbUsd: 0,
+    list: [], coins: new Map(), rounds: new Map(), roundCoins: new Map(), user: "", userBnb: 0n, signer: null, txlog: [], pots: new Map(),
+  };
+  const roundStart = (r) => CFG.genesis + r * ROUND;
+  const bellOf = (r) => roundStart(r) + BELL;
+  const phaseOf = (r, t = nowS()) => (t < roundStart(r) + ENLIST ? "launch" : t < bellOf(r) ? "battle" : "merge");
+  const curRound = () => Math.max(0, Math.floor((nowS() - CFG.genesis) / ROUND));
+
+  function parseMeta(raw) {
+    let m = {};
+    try { if (raw && raw.trim().startsWith("{")) m = JSON.parse(raw); } catch {}
+    const url = (v) => (typeof v === "string" && /^https:\/\/[^\s"'<>]+$/.test(v) ? v : "");
+    return { image: safeImg(m.image), description: typeof m.description === "string" ? m.description.slice(0, 200) : "", x: url(m.x), tg: url(m.tg), web: url(m.web) };
   }
 
-  function step(dt) {
-    const prev = t; t += dt; clock += dt;
-    const ph = phase();
-    if (!adm.paused && ph === "launch" && coins.length < 8 && Math.random() < dt / 70) {
-      const c = makeCoin(POOL[(poolIdx++) % POOL.length], 2600 + Math.random() * 2400, t);
-      c.hist.push({ t, v: c.cap }); coins.push(c); pushLog(`<b>${c.ticker}</b> joined the ${c.army} army.`);
-    }
-    if (queued && !adm.paused && ph === "launch" && coins.length < 8) {
-      const c = makeCoin([queued.name, queued.ticker, queued.army], 2800, t);
-      c.hist.push({ t, v: c.cap }); c.mine = true; c.desc = queued.desc; c.socials = queued.socials; c.img = queued.img; c.creator = "0x" + hex(40); coins.push(c);
-      if (queued.first) { me.credits += queued.first; buy(c, queued.first); } me.launched.unshift(c.ticker); queued = null;
-      pushLog(`<b>${c.ticker}</b> (you) joined the ${c.army} army.`); toast(`${c.ticker} entered round ${round}`);
-    }
-    if (ph !== "merge") for (const c of coins) {
-      const k = Math.max(1, Math.round(dt / 10));
-      for (let i = 0; i < k; i++) {
-        c.cap *= Math.exp(c.drift * 10 + 0.028 * randn() * c.vol);
-        if (Math.random() < 0.003) { const p = Math.round(25 + Math.random() * 40); c.cap *= 1 + p / 100; if (ph === "battle") pushLog(`<b>${c.ticker}</b> <span class="combo">+${p}% power-up</span>`); }
-        if (Math.random() < 0.002) c.cap *= 0.62 + Math.random() * 0.2;
-        c.cap = Math.max(900, c.cap);
-        if (Math.random() < 0.3) trade(c, clock - dt + (i + 1) * 10, Math.random() < 0.55, 0.05 + Math.random() * 1.6, "");
+  // Derived numbers ------------------------------------------------------
+  const sqrtUpper = Math.pow(1.0001, CFG.startTick / 2);
+  const realSqrt = (c) => Number(c.sqrt) / 2 ** 96;
+  const priceBnb = (c) => { if (!c.sqrt) return NaN; const r = realSqrt(c); return 1 / (r * r); };
+  const supplyN = (c) => f18(c.supply ?? 10n ** 27n);
+  const mcapBnb = (c) => priceBnb(c) * supplyN(c);
+  const poolBnb = (c) => (c.liq && c.sqrt ? (Number(c.liq) * (1 / realSqrt(c) - 1 / sqrtUpper)) / 1e18 : 0);
+  const poolCoins = (c) => (c.liq && c.sqrt ? (Number(c.liq) * realSqrt(c)) / 1e18 : 0);
+  const toUsd = (b) => b * S.bnbUsd;
+  const mcapFromTick = (c, tick) => supplyN(c) / Math.pow(1.0001, tick);
+
+  /** Live score: the time-weighted average tick over the deciding window so far. */
+  function score(c) {
+    const p = c.pool;
+    if (!p || !p.registered || c.tick == null) return { live: false, mcap: mcapBnb(c) };
+    const bell = Number(p.bell), ws = bell - WINDOW, t = Math.min(nowS(), bell), last = Number(p.lastTime), tick = BigInt(c.tick);
+    if (t <= ws) return { live: false, mcap: mcapBnb(c) };
+    const cumNow = p.cum + tick * BigInt(Math.max(0, t - last));
+    let cumStart;
+    if (p.startTaken) cumStart = p.startCum;
+    else if (last <= ws) cumStart = p.cum + tick * BigInt(ws - last);
+    else cumStart = p.cum;
+    const span = p.startTaken || last <= ws ? t - ws : t - last;
+    if (span <= 0) return { live: true, mcap: mcapBnb(c) };
+    const avg = Number(cumNow - cumStart) / span;
+    return { live: true, mcap: mcapFromTick(c, avg), avgTick: avg };
+  }
+
+  // Quotes from the pool math (one position, constant liquidity in range).
+  function quoteBuy(c, wei) {
+    if (!c.liq || !c.sqrt || wei <= 0n) return { out: 0n, impact: 0 };
+    const L = BigInt(c.liq), s = BigInt(c.sqrt), x = (wei * 98n) / 100n;
+    const sNew = (L * Q96 * s) / (L * Q96 + x * s);
+    const out = (L * (s - sNew)) / Q96;
+    const r = Number(s) / Number(sNew);
+    return { out, impact: (r * r - 1) * 100 };
+  }
+  function quoteSell(c, wei) {
+    if (!c.liq || !c.sqrt || wei <= 0n) return { out: 0n, impact: 0 };
+    const L = BigInt(c.liq), s = BigInt(c.sqrt);
+    let sNew = s + (wei * Q96) / L;
+    const sU = BigInt(Math.floor(sqrtUpper * 2 ** 48)) * 2n ** 48n;
+    if (sNew > sU) sNew = sU;
+    const gross = (L * (sNew - s) * Q96) / (s * sNew);
+    const out = (gross * 98n) / 100n;
+    const r = Number(sNew) / Number(s);
+    return { out, impact: (1 - 1 / (r * r)) * 100 };
+  }
+
+  // ---------------------------------------------------------------------
+  // Refresh from chain
+  // ---------------------------------------------------------------------
+  let refreshing = false, lastRefresh = 0;
+  async function refresh(force) {
+    if (refreshing && !force) return;
+    refreshing = true;
+    try {
+      const head = await mc([A("currentRound"), A("launchesPaused"), A("admin"), A("owner"), A("feeRecipient"), A("tipBudget"), A("tip"), A("totalCoins"), A("armies"), [CFG.feed, I.feed, "latestRoundData"]]);
+      S.round = Number(head[0] ?? curRound());
+      S.paused = !!head[1]; S.admin = head[2] || ""; S.owner = head[3] || ""; S.feeRecipient = head[4] || ""; S.tipBudget = head[5] ?? 0n; S.tip = head[6] ?? 0n;
+      const total = Number(head[7] ?? 0);
+      if (head[8]) S.armies = head[8].map((a, id) => ({ id, stock: a.stock, enabled: a.enabled, name: a.name, token: `${a.name}B` }));
+      if (head[9]) S.bnbUsd = Number(head[9][1]) / 1e8;
+
+      // New coins: addresses + static info.
+      if (total > S.list.length) {
+        const idx = []; for (let i = S.list.length; i < total; i++) idx.push(A("allCoins", [i]));
+        const addrs = (await mc(idx)).filter(Boolean);
+        const st = await mc(addrs.flatMap((a) => [A("coins", [a]), [a, I.token, "name"], [a, I.token, "symbol"], [a, I.token, "metadataURI"], [a, I.token, "stock"]]));
+        addrs.forEach((a, i) => {
+          const [info, name, symbol, uri, stock] = st.slice(i * 5, i * 5 + 5);
+          if (!info) return;
+          S.coins.set(a.toLowerCase(), { addr: a, name: name || "?", symbol: symbol || "?", uriOwn: uri || "", meta: parseMeta(uri), creator: info.creator, round: Number(info.round), army: Number(info.army), launchedAt: Number(info.launchedAt), poolId: info.poolId, stock, pulled: info.pulled });
+          S.list.push(a.toLowerCase());
+        });
       }
-      if (Math.random() < dt / 25) c.holders += 1 + Math.floor(Math.random() * 3);
-    }
-    const from = Math.floor(prev / 10) + 1, to = Math.floor(t / 10);
-    for (let s = from; s <= to; s++) for (const c of coins) if (!c.absorbed) { c.hist.push({ t: s * 10, v: c.cap }); if (c.hist.length > 700) c.hist.shift(); }
 
-    if (ph === "merge" && !winner && coins.length) {
-      winner = coins.reduce((a, c) => (twap(c, bell()) > twap(a, bell()) ? c : a), coins[0]);
-      winner.loot = coins.filter((c) => c !== winner).reduce((s, c) => s + poolBnb(c), 0);
-      winner.spent = 0; winner.capAtWin = winner.cap; winner.champion = round;
-      for (const c of coins) if (c !== winner) { c.absorbed = true; c.frozenCap = c.cap; c.into = winner.ticker; c.ratio = c.frozenCap / winner.capAtWin; }
-      pushLog(`K.O.! <b>${winner.ticker}</b> wins round ${round} for the ${winner.army} army.`);
-      const el = $("lead"); if (el) { el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+      // Rounds near now + the hall.
+      const r = S.round, wantRounds = [];
+      for (let k = Math.max(0, r - 1); k <= r + 1; k++) wantRounds.push(k);
+      for (let k = 0; k < r - 1; k++) { const R = S.rounds.get(k); if (!R || !R.finalized) wantRounds.push(k); }
+      const rr = await mc(wantRounds.flatMap((k) => [A("rounds", [k]), A("roundCoins", [k])]));
+      wantRounds.forEach((k, i) => {
+        const R = rr[i * 2], list = rr[i * 2 + 1];
+        if (R) S.rounds.set(k, { settled: R.settled, finalized: R.finalized, hits: Number(R.hits), lastHit: Number(R.lastHit), winner: R.winner, loot: R.loot, spent: R.spent, bought: R.bought });
+        if (list) S.roundCoins.set(k, list.map((a) => a.toLowerCase()));
+      });
+
+      // Dynamic data for the coins that matter now.
+      const active = new Set();
+      for (let k = Math.max(0, r - 1); k <= r + 1; k++) (S.roundCoins.get(k) || []).forEach((a) => active.add(a));
+      for (const [, R] of S.rounds) if (R.winner && R.winner !== E.ZeroAddress) active.add(R.winner.toLowerCase());
+      if (route.p === "coin" && route.id) active.add(route.id.toLowerCase());
+      if (route.p === "me" || route.p === "admin" || route.p === "hall") S.list.forEach((a) => active.add(a));
+      const act = [...active].filter((a) => S.coins.has(a));
+      const per = 7 + (S.user ? 2 : 0);
+      const dyn = await mc(act.flatMap((a) => {
+        const c = S.coins.get(a);
+        const calls = [[CFG.clpm, I.clpm, "getSlot0", [c.poolId]], A("liquidityOf", [c.addr]), A("hidden", [c.addr]), A("metadataOverride", [c.addr]), [CFG.hook, I.hook, "pool", [c.poolId]], [c.addr, I.token, "totalSupply"], A("coins", [c.addr])];
+        if (S.user) calls.push([c.addr, I.token, "balanceOf", [S.user]], [c.addr, I.token, "pendingRewards", [S.user]]);
+        return calls;
+      }));
+      act.forEach((a, i) => {
+        const c = S.coins.get(a), d = dyn.slice(i * per, i * per + per);
+        if (d[0]) { c.sqrt = d[0][0]; c.tick = Number(d[0][1]); }
+        c.liq = d[1] ?? c.liq; c.hidden = !!d[2];
+        const ov = d[3]; c.meta = parseMeta(ov && ov.length ? ov : c.uriOwn);
+        if (d[4]) c.pool = { bell: d[4].bell, status: Number(d[4].status), registered: d[4].registered, lastTime: d[4].lastTime, startTaken: d[4].startTaken, cum: d[4].cum, startCum: d[4].startCum };
+        c.supply = d[5] ?? c.supply;
+        if (d[6]) c.pulled = d[6].pulled;
+        if (S.user) { c.bal = d[7] ?? 0n; c.pending = d[8] ?? 0n; }
+        c.at = Date.now();
+      });
+
+      // Redemption pots for losers of finalized rounds near now.
+      const losers = [];
+      for (const [k, R] of S.rounds) if (R.finalized && R.winner !== E.ZeroAddress && k >= r - 2) (S.roundCoins.get(k) || []).forEach((a) => { if (a !== R.winner.toLowerCase()) losers.push(a); });
+      if (route.p === "coin" && route.id) losers.push(route.id.toLowerCase());
+      const uniq = [...new Set(losers)].filter((a) => S.coins.has(a));
+      const pots = await mc(uniq.map((a) => [CFG.redeemer, I.redeemer, "pots", [S.coins.get(a).addr]]));
+      uniq.forEach((a, i) => { if (pots[i]) S.pots.set(a, { winner: pots[i].winner, tokens: pots[i].tokens, bnb: pots[i].bnb, supply: pots[i].supply }); });
+
+      if (S.user) S.userBnb = BigInt(await rpc("eth_getBalance", [S.user, "latest"]));
+      S.loaded = true; lastRefresh = Date.now();
+      $("netState").textContent = "";
+    } catch (e) {
+      console.error(e);
+      $("netState").textContent = "Can't reach BNB Chain right now. Retrying…";
+    } finally {
+      refreshing = false;
     }
-    if (ph === "merge" && winner) {
-      const hits = 10, per = MERGE / hits, due = Math.min(hits, Math.floor((t - bell()) / per) + 1);
-      while (merged < due) {
-        merged++;
-        const buy = winner.loot / hits;
-        winner.cap *= Math.pow(1 + buy / poolBnb(winner), 2); winner.spent += buy; winner.holders += 4 + Math.floor(Math.random() * 8);
-        winner.hist.push({ t: Math.floor(t / 10) * 10, v: winner.cap });
-        trade(winner, clock, true, buy, "merge");
-        pushLog(`<span class="combo">Combo x${merged}</span> ${bnb(buy)} hit <b>${winner.ticker}</b> · cap ${usd(winner.cap)}`);
+    header();
+    if (!pressed) page?.update?.(route, true);
+  }
+
+  // ---------------------------------------------------------------------
+  // Wallet
+  // ---------------------------------------------------------------------
+  async function ensureChain(eth) {
+    const id = await eth.request({ method: "eth_chainId" });
+    if (BigInt(id) === CFG.chainId) return;
+    try { await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CFG.chainHex }] }); }
+    catch (e) {
+      if (e?.code === 4902) await eth.request({ method: "wallet_addEthereumChain", params: [{ chainId: CFG.chainHex, chainName: "BNB Smart Chain", nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 }, rpcUrls: ["https://bsc-dataseed.bnbchain.org"], blockExplorerUrls: ["https://bscscan.com"] }] });
+      else throw e;
+    }
+  }
+  async function connect(silent) {
+    const eth = window.ethereum;
+    if (!eth) { if (!silent) toast("No wallet found. Open this site in MetaMask, Trust, OKX or Binance Wallet."); return false; }
+    try {
+      const accounts = await eth.request({ method: silent ? "eth_accounts" : "eth_requestAccounts" });
+      if (!accounts?.length) return false;
+      if (!silent) await ensureChain(eth);
+      S.user = E.getAddress(accounts[0]);
+      S.bp = new E.BrowserProvider(eth);
+      S.signer = null;
+      if (!S.listening) {
+        S.listening = true;
+        eth.on?.("accountsChanged", (a) => { S.user = a?.[0] ? E.getAddress(a[0]) : ""; S.signer = null; refresh(true); });
+        eth.on?.("chainChanged", () => { S.signer = null; header(); });
       }
-    }
-    if (t >= ROUND) {
-      if (winner) { history.unshift({ round, ticker: winner.ticker, kos: coins.length - 1, cap: winner.cap }); if (history.length > 20) history.pop(); }
-      round++; t = 0; newRound(false); pushLog(`Round ${round}: enlisting is open.`);
-    }
+      header(); refresh(true);
+      return true;
+    } catch (e) { if (!silent) toast(errMsg(e)); return false; }
+  }
+  async function signer() {
+    if (!S.user && !(await connect())) return null;
+    await ensureChain(window.ethereum);
+    S.bp = new E.BrowserProvider(window.ethereum);
+    S.signer = await S.bp.getSigner();
+    return S.signer;
+  }
+  /** Send one transaction with toasts; refresh afterwards. */
+  async function send(label, to, iface, fn, args, value) {
+    try {
+      const sg = await signer(); if (!sg) return null;
+      toast(`${label}: confirm in your wallet`);
+      const tx = await sg.sendTransaction({ to, data: iface.encodeFunctionData(fn, args), value: value ?? 0n });
+      toast(`${label}: sent, waiting for BNB Chain`);
+      const rc = await tx.wait();
+      if (rc.status !== 1) throw new Error("Transaction failed on chain");
+      S.txlog.unshift({ label, hash: tx.hash, at: nowS() });
+      toast(`${label}: done`);
+      refresh(true);
+      return rc;
+    } catch (e) { toast(errMsg(e)); return null; }
+  }
+  async function ensureAllowance(coin, spender, amount, label) {
+    const allowRaw = await rpc("eth_call", [{ to: coin, data: I.token.encodeFunctionData("allowance", [S.user, spender]) }, "latest"]);
+    const allow = I.token.decodeFunctionResult("allowance", allowRaw)[0];
+    if (allow >= amount) return true;
+    return !!(await send(label, coin, I.token, "approve", [spender, E.MaxUint256]));
   }
 
-  // ---------- player actions (simulated) ----------
-  function buy(c, bnbIn) {
-    if (!(bnbIn > 0)) return toast("Enter an amount first");
-    if (bnbIn > me.credits + 1e-9) return toast("Not enough test BNB");
-    if (c.absorbed) return toast(`${c.ticker} was absorbed. Redeem it instead.`);
-    const p = priceUsd(c);
-    const got = (bnbIn * (1 - FEE) * BNB_USD) / p;
-    me.credits -= bnbIn;
-    const h = me.holdings.get(c.ticker) || { qty: 0, cost: 0 }; h.qty += got; h.cost += bnbIn; me.holdings.set(c.ticker, h);
-    c.cap *= Math.pow(1 + bnbIn / poolBnb(c), 2); c.holders += h.qty === got ? 1 : 0;
-    trade(c, clock, true, bnbIn, "you");
-    toast(`Bought ${qty(got)} ${c.ticker}`);
-  }
-  function sell(c, amount) {
-    const h = me.holdings.get(c.ticker);
-    if (!h || !(amount > 0)) return toast("Enter an amount first");
-    if (amount > h.qty + 1e-6) return toast(`You hold ${qty(h.qty)} ${c.ticker}`);
-    if (c.absorbed) return toast(`${c.ticker} was absorbed. Redeem it instead.`);
-    const out = (amount * priceUsd(c) * (1 - FEE)) / BNB_USD;
-    me.credits += out; h.cost *= 1 - amount / h.qty; h.qty -= amount; if (h.qty < 1) me.holdings.delete(c.ticker);
-    c.cap /= Math.pow(1 + out / poolBnb(c), 2); c.cap = Math.max(900, c.cap);
-    trade(c, clock, false, out, "you");
-    toast(`Sold for ${bnb(out)}`);
-  }
-  function redeem(c) {
-    const h = me.holdings.get(c.ticker);
-    if (!h || !c.absorbed) return;
-    const into = all.get(c.into), got = h.qty * c.ratio;
-    const g = me.holdings.get(into.ticker) || { qty: 0, cost: 0 }; g.qty += got; g.cost += h.cost; me.holdings.set(into.ticker, g);
-    me.holdings.delete(c.ticker);
-    toast(`Redeemed into ${qty(got)} ${into.ticker}`);
+  function header() {
+    const w = $("walletChip"), b = $("connect");
+    if (S.user) {
+      w.hidden = false; b.hidden = true;
+      $("wAddr").textContent = short(S.user, 6, 4);
+      $("wBal").textContent = f18(S.userBnb).toFixed(3);
+    } else { w.hidden = true; b.hidden = false; }
   }
 
-  // ---------- views ----------
+  // ---------------------------------------------------------------------
+  // Routing
+  // ---------------------------------------------------------------------
   const view = $("view");
   let route = { p: "arena" }, page = null;
   function parse() {
@@ -788,153 +966,188 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     document.querySelectorAll("[data-nav]").forEach((a) => a.classList.toggle("on", a.dataset.nav === route.p || (route.p === "coin" && a.dataset.nav === "arena") || (route.p === "army" && a.dataset.nav === "armies")));
     view.innerHTML = page.mount(route);
     page.wire?.(route);
-    page.update?.(route);
+    page.update?.(route, true);
     if (!(route.p === "docs" && route.id)) window.scrollTo(0, 0);
+    if (["coin", "me", "admin", "hall"].includes(route.p)) refresh(true);
   }
+
+  // ---------------------------------------------------------------------
+  // Shared pieces
+  // ---------------------------------------------------------------------
+  const coinsOf = (r) => (S.roundCoins.get(r) || []).map((a) => S.coins.get(a)).filter(Boolean);
+  function ranked(r) {
+    const R = S.rounds.get(r);
+    const list = coinsOf(r).map((c) => ({ c, s: score(c), out: c.pulled || (c.liq != null && c.liq === 0n && !(R?.winner?.toLowerCase() === c.addr.toLowerCase())) }));
+    list.sort((a, b) => {
+      if (R?.settled && R.winner) { const w = R.winner.toLowerCase(); if (a.c.addr.toLowerCase() === w) return -1; if (b.c.addr.toLowerCase() === w) return 1; }
+      if (a.out !== b.out) return a.out ? 1 : -1;
+      return b.s.mcap - a.s.mcap;
+    });
+    return list;
+  }
+  function dueActions() {
+    const out = [], t = nowS();
+    for (let r = Math.max(0, S.round - 2); r <= S.round; r++) {
+      const R = S.rounds.get(r); if (!R) continue;
+      const n = (S.roundCoins.get(r) || []).length;
+      if (!R.settled && n > 0 && t >= bellOf(r)) out.push({ kind: "settle", r, label: `Settle round ${r}` });
+      if (R.settled && !R.finalized) {
+        const due = Math.max(bellOf(r) + R.hits * HIT_GAP, R.hits > 0 ? R.lastHit + HIT_GAP : 0);
+        out.push({ kind: "hit", r, label: `Merge hit ${R.hits + 1} of ${HITS}, round ${r}`, due });
+      }
+    }
+    return out;
+  }
+  function tipText() { return S.tip > 0n && S.tipBudget >= S.tip ? `pays you ${f18(S.tip)} BNB` : "no tip right now"; }
 
   function hudHtml() {
     return `<section class="hud" aria-label="Current round">
       <div class="screen" id="clockScreen">
         <div class="hud-h"><span class="phase px" id="phasePill"></span><span class="round-no" id="roundNo"></span><span class="px" id="phaseSub"></span></div>
-        <div class="clock"><span class="big" id="countdown">00:00</span><span class="what" id="countWhat"></span></div>
+        <div class="clock"><span class="big" id="countdown">--:--</span><span class="what" id="countWhat"></span></div>
         <div><div class="rail" aria-hidden="true"><div class="l"><span id="railL"></span></div><div class="b"><span id="railB"></span></div><div class="m"><span id="railM"></span></div></div>
         <div class="rail-l px"><span>Launch<em> 15m</em></span><span>Battle<em> 45m</em></span><span>Merge<em> 30m</em></span></div></div>
-        <div class="sim"><span class="px">Sim speed</span><div class="speed" role="group" aria-label="Simulation speed">${[1, 30, 120].map((s) => `<button type="button" data-s="${s}" class="${s === speed ? "on" : ""}">${s}×</button>`).join("")}</div></div>
+        <div class="keeper" id="keeper"></div>
       </div>
       <div class="card gold" id="lead">
         <div class="p1-tag"><span class="px" id="leadLabel"></span><span class="crown" id="leadCrown">#1</span></div>
-        <a class="p1-name" id="leadLink" href="#arena"><span class="sprite lg" id="leadAv"></span><div style="min-width:0"><h2 id="leadName"></h2><span class="chip" id="leadTag"></span></div></a>
-        <div class="p1-stats"><div><span class="px" id="leadCapLabel">10m avg</span><b id="leadTwap"></b></div><div><span class="px">Absorbs</span><b id="leadAbs"></b></div><div><span class="px">Loot</span><b id="leadLiq"></b></div></div>
+        <a class="p1-name" id="leadLink" href="#launch"><span class="sprite lg" id="leadAv">?</span><div style="min-width:0"><h2 id="leadName">Loading…</h2><span class="chip" id="leadTag"></span></div></a>
+        <div class="p1-stats"><div><span class="px" id="leadCapLabel">Score</span><b id="leadTwap">—</b></div><div><span class="px">Absorbs</span><b id="leadAbs">—</b></div><div><span class="px">Loot</span><b id="leadLiq">—</b></div></div>
         <p class="hint" id="leadNote" style="color:var(--fg-2);font-size:13.5px"></p>
       </div>
     </section>`;
   }
-  function wireSpeed() {
-    view.querySelectorAll(".speed button").forEach((b) => b.addEventListener("click", () => { speed = +b.dataset.s; view.querySelectorAll(".speed button").forEach((x) => x.classList.toggle("on", x === b)); }));
-  }
   function updateHud() {
-    const ph = phase();
-    const pill = $("phasePill"); if (!pill) return;
-    pill.className = "phase px " + ph; pill.innerHTML = ph === "launch" ? "Enlisting" : ph === "battle" ? "<i></i>Battle" : "Absorbing";
-    $("clockScreen").classList.toggle("hot", ph === "battle" && bell() - t < WINDOW);
-    $("roundNo").textContent = `Round ${round}`;
-    const na = new Set(coins.map((c) => c.army)).size;
-    $("phaseSub").textContent = `${coins.length} ${coins.length === 1 ? "coin" : "coins"} · ${na} ${na === 1 ? "army" : "armies"}`;
-    $("countdown").textContent = mmss(ph === "launch" ? LAUNCH - t : ph === "battle" ? bell() - t : ROUND - t);
-    $("countWhat").textContent = ph === "launch" ? "left to enlist. Coins that launch now fight this round." : ph === "battle" ? (bell() - t < WINDOW ? "Final 10 minutes: this window decides the winner." : "until the battle ends. Highest 10-minute average market cap wins.") : "until the merge finishes and the next round opens.";
-    $("railL").style.transform = `scaleX(${Math.min(1, t / LAUNCH)})`;
-    $("railB").style.transform = `scaleX(${Math.max(0, Math.min(1, (t - LAUNCH) / BATTLE))})`;
-    $("railM").style.transform = `scaleX(${Math.max(0, Math.min(1, (t - bell()) / MERGE))})`;
-    const r = ranked().filter((e) => !e.c.hidden), lead = r[0];
-    if (!lead) { $("leadLabel").textContent = "No fighters yet"; $("leadName").textContent = "Press start"; $("leadAv").textContent = "?"; $("leadNote").textContent = "Enlisting is open. Launch a coin to be first in."; return; }
-    const c = lead.c, others = coins.length - 1;
-    $("lead").style.setProperty("--army", army(c.army));
-    $("leadLink").href = `#coin-${c.ticker}`;
-    $("leadLabel").textContent = winner ? `Champion · round ${round}` : ph === "launch" ? "Player 1 · early lead" : "Player 1 · leading";
-    $("leadCrown").textContent = winner ? "K.O." : "#1";
-    $("leadAv").innerHTML = face(c); $("leadAv").style.setProperty("--army", army(c.army));
-    $("leadName").textContent = c.name; $("leadTag").textContent = `${c.army} army`; $("leadTag").style.setProperty("--army", army(c.army));
-    $("leadCapLabel").textContent = winner ? "Market cap" : "10m avg";
-    $("leadTwap").textContent = usd(winner ? c.cap : lead.avg);
-    $("leadAbs").textContent = String(others);
-    $("leadLiq").textContent = bnb(winner ? winner.loot : coins.filter((x) => x !== c).reduce((s, x) => s + poolBnb(x), 0));
-    $("leadNote").textContent = winner ? `${bnb(winner.spent)} of ${bnb(winner.loot)} has hit ${c.ticker}. Up ${Math.round((c.cap / winner.capAtWin - 1) * 100)}% since the bell.` : ph === "launch" ? "Enlisting is open. The board counts once the battle starts." : `If the battle ended now, the other ${others} coins' pools would buy ${c.ticker} over 30 minutes.`;
-  }
-  function boardRows(list, opts = {}) {
-    const top = list[0]?.avg || 1;
-    const rows = [`<div class="row head" aria-hidden="true"><span class="px">#</span><span class="px">Fighter</span><span class="px hp">Health</span><span class="px">Score</span><span class="px status">Status</span></div>`];
-    list.forEach((e, idx) => {
-      const c = e.c, a = army(c.army);
-      const first = c.hist.find((p) => p.t >= t - 3600) || c.hist[0];
-      const chg = first ? (c.cap / first.v - 1) * 100 : 0;
-      const won = winner && c === winner, lost = c.absorbed;
-      const hp = winner ? (won ? 100 : 0) : Math.max(4, Math.round((e.avg / top) * 100));
-      const st = winner ? (won ? `<span class="st win px">Winner</span>` : `<span class="st ko px">K.O.</span>`) : idx === 0 ? `<span class="st win px">Winning</span>` : e.avg > top * 0.75 ? `<span class="st safe px">In reach</span>` : `<span class="st risk px">Danger</span>`;
-      const sub = lost ? `<small class="dg">1 = ${c.ratio.toFixed(4)} ${c.into}</small>` : `<small class="dg ${chg >= 0 ? "up" : "down"}">${chg >= 0 ? "+" : ""}${chg.toFixed(1)}% 1h</small>`;
-      rows.push(`<a class="row ${idx === 0 ? "first" : ""} ${lost ? "ko" : ""} ${me.holdings.has(c.ticker) || c.mine ? "mine" : ""}" href="#coin-${c.ticker}" style="--army:${a}">
-        <span class="rank">${idx + 1}</span>
-        <span class="coin"><span class="sprite" style="--army:${a}">${face(c)}</span><span class="cn"><b>${esc(c.name)}${c.mine ? " · you" : ""}</b><small><span class="chip" style="--army:${a}">${c.army}</span>${c.holders} holders</small></span></span>
-        <span class="hp"><span class="hp-bar"><i style="width:${hp}%"></i></span><span class="hp-l"><span>HP</span><span class="dg">${hp}</span></span></span>
-        <span class="score"><b>${usd(e.avg)}</b>${sub}</span>
-        <span class="status">${st}</span></a>`);
-    });
-    if (opts.slots) for (let s = coins.length; s < 8; s++) rows.push(`<a class="slot" href="#launch"><span class="px blink">Press start</span><span>Open slot · ${phase() === "launch" ? "launch now to fight this round" : "fills next round"}</span></a>`);
-    return rows.join("");
-  }
-  function armyPowerHtml() {
-    const by = {}; for (const c of coins) if (!c.hidden) by[c.army] = (by[c.army] || 0) + c.cap;
-    const ar = Object.entries(by).sort((a, b) => b[1] - a[1]), max = ar[0]?.[1] || 1;
-    return ar.length ? ar.map(([k, v]) => `<a class="army-row" href="#army-${k}" style="--army:${army(k)}"><span class="chip">${k}</span><span class="bar"><i style="width:${(v / max) * 100}%"></i></span><span class="v dg">${usd(v)}</span></a>`).join("") : `<p class="hint">No fighters yet. Press start.</p>`;
+    if (!$("phasePill")) return;
+    const r = curRound(), t = nowS(), ph = phaseOf(r, t), R = S.rounds.get(r);
+    const pill = $("phasePill");
+    pill.className = "phase px " + ph; pill.innerHTML = ph === "launch" ? "Enlisting" : ph === "battle" ? "<i></i>Battle" : R?.settled ? "Absorbing" : "Bell rang";
+    $("clockScreen").classList.toggle("hot", ph === "battle" && bellOf(r) - t < WINDOW);
+    $("roundNo").textContent = `Round ${r}`;
+    const list = coinsOf(r).filter((c) => !c.hidden);
+    const na = new Set(list.map((c) => c.army)).size;
+    $("phaseSub").textContent = `${list.length} ${list.length === 1 ? "coin" : "coins"} · ${na} ${na === 1 ? "army" : "armies"}`;
+    $("countdown").textContent = mmss(ph === "launch" ? roundStart(r) + ENLIST - t : ph === "battle" ? bellOf(r) - t : roundStart(r + 1) - t);
+    $("countWhat").textContent = ph === "launch" ? "left to enlist. Coins launched now fight this round." : ph === "battle" ? (bellOf(r) - t < WINDOW ? "Final 10 minutes: this window decides the winner." : "until the bell. Highest 10-minute average market cap wins.") : "until the next round opens.";
+    $("railL").style.transform = `scaleX(${Math.min(1, Math.max(0, (t - roundStart(r)) / ENLIST))})`;
+    $("railB").style.transform = `scaleX(${Math.max(0, Math.min(1, (t - roundStart(r) - ENLIST) / (BELL - ENLIST)))})`;
+    $("railM").style.transform = `scaleX(${Math.max(0, Math.min(1, (t - bellOf(r)) / (ROUND - BELL)))})`;
+
+    // Keeper actions
+    const acts = dueActions();
+    $("keeper").innerHTML = acts.length ? acts.map((a, i) => {
+      const wait = a.due && a.due > t ? a.due - t : 0;
+      return `<button type="button" class="ghost-btn kp" data-act="${i}" ${wait ? "disabled" : ""}>${esc(a.label)} · ${wait ? `in ${mmss(wait)}` : tipText()}</button>`;
+    }).join("") : `<span class="px muted">Settling and merge buys can be triggered by anyone once due.</span>`;
+    $("keeper").onclick = async (e) => {
+      const b = e.target.closest("button[data-act]"); if (!b) return; const a = acts[+b.dataset.act]; if (!a) return;
+      b.disabled = true; await send(a.label, CFG.arena, I.arena, a.kind, [a.r]); b.disabled = false;
+    };
+
+    const rk = ranked(r).filter((e) => !e.c.hidden && !e.out), lead = rk[0];
+    if (!lead) { $("leadLabel").textContent = S.loaded ? "No fighters yet" : "Loading"; $("leadName").textContent = S.loaded ? "Press start" : "…"; $("leadAv").textContent = "?"; $("leadNote").textContent = S.loaded ? (ph === "launch" ? "Enlisting is open. Launch a coin to be first in." : "No coins in this round. Launch one to fight in the next round.") : ""; $("leadLink").href = "#launch"; $("leadTwap").textContent = "—"; $("leadAbs").textContent = "—"; $("leadLiq").textContent = "—"; return; }
+    const c = lead.c, others = list.length - 1, won = R?.settled && R.winner?.toLowerCase() === c.addr.toLowerCase();
+    $("lead").style.setProperty("--army", armyVar(S.armies[c.army]?.name));
+    $("leadLink").href = `#coin-${c.addr}`;
+    $("leadLabel").textContent = won ? `Champion · round ${r}` : ph === "launch" ? "Player 1 · early lead" : "Player 1 · leading";
+    $("leadCrown").textContent = won ? "K.O." : "#1";
+    $("leadAv").innerHTML = face(c); $("leadAv").style.setProperty("--army", armyVar(S.armies[c.army]?.name));
+    $("leadName").textContent = c.name; $("leadTag").textContent = `${S.armies[c.army]?.name || "?"} army`; $("leadTag").style.setProperty("--army", armyVar(S.armies[c.army]?.name));
+    $("leadCapLabel").textContent = lead.s.live ? "10m avg" : "Market cap";
+    $("leadTwap").textContent = usd(toUsd(lead.s.mcap));
+    $("leadAbs").textContent = String(Math.max(0, others));
+    const loot = won ? f18(R.loot) : list.filter((x) => x !== c).reduce((s, x) => s + poolBnb(x), 0);
+    $("leadLiq").textContent = bnbN(loot);
+    $("leadNote").textContent = won ? `${HITS - (R.hits || 0) > 0 && !R.finalized ? `Merge ${R.hits}/${HITS}: ` : ""}${bnbN(f18(R.spent))} of ${bnbN(f18(R.loot))} has bought ${c.symbol}.` : ph === "launch" ? "Enlisting is open. The score counts in the final 10 minutes of battle." : `If the bell rang now, the other ${others} coins' pools would buy ${c.symbol} over 30 minutes.`;
   }
 
+  function boardRows(list, R) {
+    const top = Math.max(...list.filter((e) => !e.out).map((e) => e.s.mcap), 1e-18);
+    const rows = [`<div class="row head" aria-hidden="true"><span class="px">#</span><span class="px">Fighter</span><span class="px hp">Health</span><span class="px">Score</span><span class="px status">Status</span></div>`];
+    list.forEach((e, idx) => {
+      const c = e.c, an = S.armies[c.army]?.name, a = armyVar(an);
+      const won = R?.settled && R.winner?.toLowerCase() === c.addr.toLowerCase(), lost = R?.settled && !won;
+      const hp = lost || e.out ? 0 : won ? 100 : Math.max(4, Math.round((e.s.mcap / top) * 100));
+      const st = e.out && !R?.settled ? `<span class="st ko px">Out</span>` : won ? `<span class="st win px">Winner</span>` : lost ? `<span class="st ko px">K.O.</span>` : idx === 0 ? `<span class="st win px">Winning</span>` : e.s.mcap > top * 0.75 ? `<span class="st safe px">In reach</span>` : `<span class="st risk px">Danger</span>`;
+      const mine = S.user && c.creator?.toLowerCase() === S.user.toLowerCase();
+      rows.push(`<a class="row ${idx === 0 && !lost ? "first" : ""} ${lost ? "ko" : ""} ${mine || (c.bal && c.bal > 0n) ? "mine" : ""}" href="#coin-${c.addr}" style="--army:${a}">
+        <span class="rank">${idx + 1}</span>
+        <span class="coin"><span class="sprite" style="--army:${a}">${face(c)}</span><span class="cn"><b>${esc(c.name)}${mine ? " · you" : ""}</b><small><span class="chip" style="--army:${a}">${esc(an || "?")}</span><span class="dg">$${esc(c.symbol)}</span></small></span></span>
+        <span class="hp"><span class="hp-bar"><i style="width:${hp}%"></i></span><span class="hp-l"><span>HP</span><span class="dg">${hp}</span></span></span>
+        <span class="score"><b>${usd(toUsd(e.s.mcap))}</b><small class="dg muted">${e.s.live ? "10m avg" : "mcap now"}</small></span>
+        <span class="status">${st}</span></a>`);
+    });
+    return rows.join("");
+  }
+
+  // ---------------------------------------------------------------------
+  // Pages
+  // ---------------------------------------------------------------------
   const DOCS = [["overview", "Overview"], ["round", "How a round works"], ["launch", "Launching a coin"], ["trade", "Trading"], ["winner", "How the winner is decided"], ["merge", "The merge"], ["redeem", "Redeeming"], ["armies", "Armies and rewards"], ["fees", "Fees"], ["contracts", "Contracts"], ["risks", "Risks"], ["faq", "FAQ"], ["glossary", "Glossary"]];
   const PAGES = {
     arena: {
       mount: () => `<div class="page">
         <section class="banner" aria-label="Jeet Wars">
-          <svg class="ban-mark" viewBox="36 14 474 474" aria-hidden="true"><defs><mask id="mban"><rect x="-142" y="-130" width="784" height="784" fill="#fff"/><circle cx="293.7" cy="56.6" r="40" fill="#000"/><circle cx="379.3" cy="96.5" r="46" fill="#000"/><circle cx="441.8" cy="176.6" r="40" fill="#000"/></mask><clipPath id="cban"><circle cx="250" cy="262" r="206.78"/></clipPath></defs><g mask="url(#mban)"><circle cx="250" cy="262" r="196" fill="#f3ba2f" stroke="#161004" stroke-width="21.56"/><circle cx="250" cy="262" r="156.8" fill="none" stroke="#d89a14" stroke-width="13.72"/><path d="M128.48000000000002,213.0 A133.28,133.28 0 0 1 210.8,136.56" fill="none" stroke="#ffe08a" stroke-width="13.72" stroke-linecap="round"/><g transform="rotate(45 250 262)">
-<path d="M238.75,316.0 L238.75,152.5 L250,116.5 L261.25,152.5 L261.25,316.0 Z" fill="#161004"/>
-<rect x="202.75" y="316.0" width="94.5" height="21.375" rx="6.75" fill="#161004"/>
-<rect x="240.55" y="336.25" width="18.9" height="60.0" fill="#161004"/>
-<circle cx="250" cy="406.375" r="15.749999999999998" fill="#161004"/></g><g transform="rotate(-45 250 262)">
-<path d="M238.75,316.0 L238.75,152.5 L250,116.5 L261.25,152.5 L261.25,316.0 Z" fill="#161004"/>
-<rect x="202.75" y="316.0" width="94.5" height="21.375" rx="6.75" fill="#161004"/>
-<rect x="240.55" y="336.25" width="18.9" height="60.0" fill="#161004"/>
-<circle cx="250" cy="406.375" r="15.749999999999998" fill="#161004"/></g></g><g clip-path="url(#cban)" mask="url(#mban)"><circle cx="293.7" cy="56.6" r="40" fill="none" stroke="#161004" stroke-width="43.12"/><circle cx="379.3" cy="96.5" r="46" fill="none" stroke="#161004" stroke-width="43.12"/><circle cx="441.8" cy="176.6" r="40" fill="none" stroke="#161004" stroke-width="43.12"/></g><rect x="442.1" y="42.5" width="25.5" height="25.5" fill="#f3ba2f" stroke="#161004" stroke-width="9.7" transform="rotate(18 449.9 50.3)"/><rect x="473.4" y="93.4" width="17.6" height="17.6" fill="#f3ba2f" stroke="#161004" stroke-width="8.6"/></svg>
+          ${BANNER_MARK}
           <div class="ban-copy"><h1 class="ban-title">Jeet <i>Wars</i></h1><p class="ban-tag">Hold the winner. Jeets get eaten.</p><p class="ban-sub">8 meme coins fight every 90 minutes under bStock armies on BNB Chain. The winner eats every loser's pool.</p></div>
           <div class="ban-cta"><a class="big-btn" href="#launch">Launch a fighter</a><a class="ghost-btn" href="#docs">Read the docs</a></div>
         </section>${hudHtml()}
         <div class="grid2">
-          <div class="board"><div class="board-h"><h2 class="title">High <i>score</i> board</h2><span class="px" id="boardSub"></span></div><div id="rows"></div></div>
+          <div class="board"><div class="board-h"><h2 class="title">High <i>score</i> board</h2><span class="px" id="boardSub"></span></div><div id="rows"><div class="empty">Loading from BNB Chain…</div></div></div>
           <aside class="stack">
             <div class="card"><h3 class="title">Army <i>power</i></h3><div class="armies" id="armies"></div><a class="ghost-btn" href="#armies" style="align-self:flex-start">All armies</a></div>
-            <div class="card"><h3 class="title">Combo <i>feed</i></h3><div class="log" id="log"></div></div>
+            <div class="card"><h3 class="title">Next <i>round</i></h3><div class="list" id="nextRound"></div></div>
           </aside>
         </div></div>`,
-      wire: wireSpeed,
-      update() {
+      update(_, full) {
         updateHud();
-        $("rows").innerHTML = boardRows(ranked().filter((e) => !e.c.hidden), { slots: true });
-        $("boardSub").textContent = winner ? "Final board · losers redeem into the champion" : "10-minute average market cap · tap a fighter";
-        $("armies").innerHTML = armyPowerHtml();
-        $("log").innerHTML = logLines.map((l) => `<div>${l}</div>`).join("") || "<div>Waiting for the first move.</div>";
+        if (!full) return;
+        const r = curRound(), R = S.rounds.get(r), list = ranked(r).filter((e) => !e.c.hidden);
+        $("rows").innerHTML = list.length ? boardRows(list, R) : `<a class="slot" href="#launch"><span class="px blink">Press start</span><span>${phaseOf(r) === "launch" ? "No fighters yet. Launch now to fight this round." : "No fighters this round. Launch now to fight next round."}</span></a>`;
+        if (list.length && list.length < 8 && phaseOf(r) === "launch") $("rows").insertAdjacentHTML("beforeend", Array.from({ length: 8 - list.length }, () => `<a class="slot" href="#launch"><span class="px blink">Press start</span><span>Open slot · launch now to fight this round</span></a>`).join(""));
+        $("boardSub").textContent = R?.settled ? "Final board · losers redeem into the champion" : "10-minute average market cap · tap a fighter";
+        const by = {}; list.filter((e) => !e.out).forEach((e) => { const n = S.armies[e.c.army]?.name || "?"; by[n] = (by[n] || 0) + toUsd(e.s.mcap); });
+        const ar = Object.entries(by).sort((a, b) => b[1] - a[1]), max = ar[0]?.[1] || 1;
+        $("armies").innerHTML = ar.length ? ar.map(([k, v]) => `<a class="army-row" href="#army-${k}" style="--army:${armyVar(k)}"><span class="chip">${k}</span><span class="bar"><i style="width:${(v / max) * 100}%"></i></span><span class="v dg">${usd(v)}</span></a>`).join("") : `<p class="hint">No fighters yet.</p>`;
+        const nx = coinsOf(r + 1).filter((c) => !c.hidden);
+        $("nextRound").innerHTML = nx.length ? nx.map((c) => `<a class="li" href="#coin-${c.addr}" style="text-decoration:none"><span class="sprite" style="--army:${armyVar(S.armies[c.army]?.name)}">${face(c)}</span><span><b>${esc(c.name)}</b> <span class="dg muted">${esc(c.symbol)}</span></span><span class="dg">${usd(toUsd(mcapBnb(c)))}</span></a>`).join("") : `<div class="empty">Coins launched after enlisting closes fight in round ${r + 1}.</div>`;
       },
     },
 
     coin: {
-      side: "buy", tf: 3600, mode: "cap", slip: 1, tab: "trades",
+      side: "buy", tf: "1h", mode: "cap", slip: 1, tab: "trades",
       mount(r) {
-        const c = all.get(r.id);
-        if (!c) return `<div class="page"><a class="back" href="#arena">Back to the arena</a><div class="card empty">That fighter isn't on the board. It may be from a round before you opened this page.</div></div>`;
-        const a = army(c.army), s = c.socials || {};
-        const own = (k, label) => (s[k] ? `<a class="lnk" href="${esc(s[k])}" target="_blank" rel="noopener noreferrer">${label}</a>` : "");
+        const c = S.coins.get(String(r.id).toLowerCase());
+        if (!c) return `<div class="page"><a class="back" href="#arena">Back to the arena</a><div class="card empty" id="coinMissing">${S.loaded ? "That coin isn't a Jeet Wars coin." : "Loading from BNB Chain…"}</div></div>`;
+        const an = S.armies[c.army]?.name, a = armyVar(an), m = c.meta || {};
+        const own = (k, label) => (m[k] ? `<a class="lnk" href="${esc(m[k])}" target="_blank" rel="noopener noreferrer">${label}</a>` : "");
         return `<div class="page" style="--army:${a}">
           <a class="back" href="#arena">Back to the arena</a>
           <div class="coin-head"><span class="sprite lg">${face(c)}</span>
-            <div class="ch-main"><div class="ch-title"><h1>${esc(c.name)}</h1><span class="dg tk">$${esc(c.ticker)}</span></div>
-              <div class="meta"><a class="chip" href="#army-${c.army}">${c.army} army</a><span id="cStatus"></span><span class="px muted" id="cRound"></span><span class="muted age" id="cAge"></span></div>
-              ${c.desc ? `<p class="desc">${esc(c.desc)}</p>` : ""}${c.pulled ? `<p class="desc" style="color:var(--hot)">Liquidity for this coin was collected.</p>` : ""}</div></div>
-          <div class="ca-bar">
-            <div class="links">
-              <button type="button" class="lnk" data-ext="BscScan">BscScan${ICON.out}</button><button type="button" class="lnk" data-ext="DexScreener">DexScreener${ICON.out}</button>
-              ${own("x", "X")}${own("tg", "Telegram")}${own("web", "Website")}
-              <button type="button" class="lnk" id="share">${ICON.share}Share</button>
-            </div>
-          </div>
+            <div class="ch-main"><div class="ch-title"><h1>${esc(c.name)}</h1><span class="dg tk">$${esc(c.symbol)}</span></div>
+              <div class="meta"><a class="chip" href="#army-${esc(an)}">${esc(an)} army</a><span id="cStatus"></span><span class="px muted">Round ${c.round}</span><span class="muted age">Launched ${ago(nowS() - c.launchedAt)} ago</span></div>
+              ${m.description ? `<p class="desc">${esc(m.description)}</p>` : ""}</div></div>
+          <div class="ca-bar"><div class="links">
+            <a class="lnk" href="${CFG.explorer}/token/${c.addr}" target="_blank" rel="noopener noreferrer">BscScan${ICON.out}</a>
+            <a class="lnk" href="https://www.geckoterminal.com/bsc/pools/${c.poolId}" target="_blank" rel="noopener noreferrer">GeckoTerminal${ICON.out}</a>
+            <a class="lnk" href="https://dexscreener.com/bsc/${c.addr}" target="_blank" rel="noopener noreferrer">DexScreener${ICON.out}</a>
+            ${own("x", "X")}${own("tg", "Telegram")}${own("web", "Website")}
+            <button type="button" class="lnk" id="share">${ICON.share}Share</button>
+          </div></div>
           <div class="stats" id="cStats"></div>
           <div class="coin-grid">
             <div class="card chart-card a-chart">
               <div class="chart-h"><div class="ch-val"><span class="px muted" id="chartLabel">Market cap</span><b id="cCap"></b><span class="dg" id="cChg"></span></div>
-                <div class="chart-ctl"><div class="seg sm" id="tfSeg">${[["15m", 900], ["30m", 1800], ["1h", 3600], ["All", 0]].map(([l, v]) => `<button type="button" data-tf="${v}" class="${v === this.tf ? "on" : ""}">${l}</button>`).join("")}</div>
+                <div class="chart-ctl"><div class="seg sm" id="tfSeg">${["15m", "1h", "4h", "1d"].map((l) => `<button type="button" data-tf="${l}" class="${l === this.tf ? "on" : ""}">${l}</button>`).join("")}</div>
                 <div class="seg sm" id="modeSeg"><button type="button" data-m="cap" class="${this.mode === "cap" ? "on" : ""}">MCap</button><button type="button" data-m="price" class="${this.mode === "price" ? "on" : ""}">Price</button></div></div></div>
               <canvas class="chart" id="chart"></canvas>
-              <div class="legend"><span><i></i><em id="lgLine">Market cap</em></span><span><i class="avg"></i>10m average</span><span><i class="win"></i>Deciding window</span></div>
+              <div class="legend"><span><i></i><em id="lgLine">Market cap</em></span><span class="muted" id="chartNote">USD, from GeckoTerminal</span></div>
             </div>
             <aside class="stack a-side">
               <div class="card" id="tradeCard">
                 <div class="seg" role="group" aria-label="Side"><button type="button" id="bBuy" class="on">Buy</button><button type="button" id="bSell">Sell</button></div>
-                <div class="bal"><span>Balance</span><button type="button" class="dg" id="balMax" title="Use the whole balance"></button></div>
-                <div class="field"><input id="amt" inputmode="decimal" placeholder="0.00" aria-label="Amount"><span id="amtUnit">BNB</span></div>
+                <div class="bal"><span>Balance</span><button type="button" class="dg" id="balMax" title="Use the whole balance">—</button></div>
+                <div class="field"><input id="amt" inputmode="decimal" placeholder="0.00" aria-label="Amount" autocomplete="off"><span id="amtUnit">BNB</span></div>
                 <div class="quick" id="quick"></div>
                 <div class="sum">
                   <div class="kv"><span>You receive</span><b id="est">0</b></div>
@@ -942,145 +1155,205 @@ canvas.chart { width: 100%; height: 260px; display: block; }
                   <div class="kv"><span>Price impact</span><b id="impact">0%</b></div>
                   <div class="kv"><span>Slippage</span><span class="slip" id="slip">${[0.5, 1, 3, 5].map((v) => `<button type="button" data-sl="${v}" class="${v === this.slip ? "on" : ""}">${v}%</button>`).join("")}</span></div>
                 </div>
-                <button type="button" class="big-btn" id="go"></button>
-                <p class="hint" id="tHint"></p>
+                <button type="button" class="big-btn" id="go">Buy</button>
+                <p class="hint" id="tHint">2% fee on every trade, included above.</p>
               </div>
-              <div class="card"><h3 class="title">Your <i>position</i></h3><div class="kv"><span>${esc(c.ticker)}</span><b id="myQty">0</b></div><div class="kv"><span>Value</span><b id="myVal">$0</b></div><div class="kv"><span>P&amp;L</span><b id="myPl">—</b></div></div>
+              <div class="card" id="redeemCard" hidden></div>
+              <div class="card"><h3 class="title">Your <i>position</i></h3>
+                <div class="kv"><span>${esc(c.symbol)}</span><b id="myQty">—</b></div><div class="kv"><span>Value</span><b id="myVal">—</b></div>
+                <div class="kv"><span>Rewards</span><b id="myRew">—</b></div>
+                <div class="row-btns"><button type="button" class="ghost-btn" id="claimBnb">Claim BNB</button><button type="button" class="ghost-btn" id="claimStock">Claim as ${esc(S.armies[c.army]?.token || "stock")}</button></div>
+              </div>
               <div class="card"><h3 class="title">Token <i>info</i></h3>
-                <div class="kv"><span>Contract</span><button type="button" class="kv-copy dg" data-copy="${c.ca}">${short(c.ca)} ${ICON.copy}</button></div>
-                <div class="kv"><span>Creator</span><button type="button" class="kv-copy dg" data-copy="${c.creator}">${c.mine ? "You" : short(c.creator)} ${ICON.copy}</button></div>
+                <div class="kv"><span>Contract</span><button type="button" class="kv-copy dg" data-copy="${c.addr}">${short(c.addr)} ${ICON.copy}</button></div>
+                <div class="kv"><span>Creator</span><button type="button" class="kv-copy dg" data-copy="${c.creator}">${short(c.creator)} ${ICON.copy}</button></div>
                 <div class="kv"><span>Pool</span><button type="button" class="kv-copy dg" data-copy="${c.poolId}">${short(c.poolId, 6, 4)} ${ICON.copy}</button></div>
                 <div class="kv"><span>DEX</span><b class="t">PancakeSwap Infinity</b></div>
-                <div class="kv"><span>Supply</span><b>1,000,000,000</b></div>
+                <div class="kv"><span>Supply</span><b id="iSupply">—</b></div>
                 <div class="kv"><span>Trade fee</span><b class="t">2%: 0.7 creator · 0.3 holders · 1.0 platform</b></div>
-                <div class="kv"><span>Holder rewards</span><b class="t">Paid in ${ARMIES[c.army].token}</b></div>
+                <div class="kv"><span>Holder rewards</span><b class="t">BNB, or ${esc(S.armies[c.army]?.token || "")}</b></div>
               </div>
             </aside>
             <div class="stack a-main">
               <div class="card"><h3 class="title">Battle <i>status</i></h3><div class="tiles" id="cTiles"></div><div class="outcome" id="cOutcome"></div></div>
-              <div class="card act"><div class="act-h"><div class="tabs-in" id="actTabs"><button type="button" data-t="trades" class="${this.tab === "trades" ? "on" : ""}">Trades</button><button type="button" data-t="holders" class="${this.tab === "holders" ? "on" : ""}">Holders <span id="hCount"></span></button></div><span class="px muted" id="actSub"></span></div><div class="act-body" id="actBody"></div></div>
+              <div class="card act"><div class="act-h"><div class="tabs-in" id="actTabs"><button type="button" class="on">Trades</button></div><a class="px muted" href="${CFG.explorer}/token/${c.addr}#balances" target="_blank" rel="noopener noreferrer">Holders on BscScan ↗</a></div><div class="act-body" id="actBody"><div class="empty">Loading trades…</div></div></div>
             </div>
           </div></div>`;
       },
       wire(r) {
-        const c = all.get(r.id); if (!c) return;
+        const c = S.coins.get(String(r.id).toLowerCase()); if (!c) return;
         const self = this;
-        const quick = () => { $("quick").innerHTML = (self.side === "buy" ? ["0.1", "0.5", "1", "2"] : ["25%", "50%", "75%", "100%"]).map((q) => `<button type="button" data-q="${q}">${q}</button>`).join(""); };
-        const setSide = (s) => { self.side = s; $("bBuy").className = s === "buy" ? "on" : ""; $("bSell").className = s === "sell" ? "on sell" : ""; $("amtUnit").textContent = s === "buy" ? "BNB" : c.ticker; $("amt").value = ""; quick(); self.update(r); };
+        const quick = () => { $("quick").innerHTML = (self.side === "buy" ? ["0.01", "0.05", "0.1", "0.5"] : ["25%", "50%", "75%", "100%"]).map((q) => `<button type="button" data-q="${q}">${q}</button>`).join(""); };
+        const setSide = (s) => { self.side = s; $("bBuy").className = s === "buy" ? "on" : ""; $("bSell").className = s === "sell" ? "on sell" : ""; $("amtUnit").textContent = s === "buy" ? "BNB" : c.symbol; $("amt").value = ""; quick(); self.panel(c); };
         $("bBuy").onclick = () => setSide("buy"); $("bSell").onclick = () => setSide("sell");
-        $("quick").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; const q = b.dataset.q; if (q.endsWith("%")) { const h = me.holdings.get(c.ticker); $("amt").value = h ? Math.floor(h.qty * parseFloat(q) / 100) : 0; } else $("amt").value = q; self.update(r); });
-        $("balMax").onclick = () => { if (self.side === "buy") $("amt").value = Math.max(0, me.credits - 0.005).toFixed(3); else { const h = me.holdings.get(c.ticker); $("amt").value = h ? Math.floor(h.qty) : 0; } self.update(r); };
-        $("amt").addEventListener("input", () => self.update(r));
-        $("slip").addEventListener("click", (e) => { const b = e.target.closest("button[data-sl]"); if (!b) return; self.slip = +b.dataset.sl; $("slip").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); self.update(r); });
-        $("tfSeg").addEventListener("click", (e) => { const b = e.target.closest("button[data-tf]"); if (!b) return; self.tf = +b.dataset.tf; $("tfSeg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); self.update(r); });
-        $("modeSeg").addEventListener("click", (e) => { const b = e.target.closest("button[data-m]"); if (!b) return; self.mode = b.dataset.m; $("modeSeg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); self.update(r); });
-        $("actTabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-t]"); if (!b) return; self.tab = b.dataset.t; $("actTabs").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); self.update(r); });
+        $("quick").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; const q = b.dataset.q; if (q.endsWith("%")) $("amt").value = c.bal ? E.formatEther((c.bal * BigInt(parseInt(q))) / 100n) : "0"; else $("amt").value = q; self.panel(c); });
+        $("balMax").onclick = () => { if (self.side === "buy") $("amt").value = S.userBnb > E.parseEther("0.002") ? E.formatEther(S.userBnb - E.parseEther("0.002")) : "0"; else $("amt").value = c.bal ? E.formatEther(c.bal) : "0"; self.panel(c); };
+        $("amt").addEventListener("input", () => self.panel(c));
+        $("slip").addEventListener("click", (e) => { const b = e.target.closest("button[data-sl]"); if (!b) return; self.slip = +b.dataset.sl; $("slip").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); self.panel(c); });
+        $("tfSeg").addEventListener("click", (e) => { const b = e.target.closest("button[data-tf]"); if (!b) return; self.tf = b.dataset.tf; $("tfSeg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); self.chart(c, true); });
+        $("modeSeg").addEventListener("click", (e) => { const b = e.target.closest("button[data-m]"); if (!b) return; self.mode = b.dataset.m; $("modeSeg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); self.chart(c, false); });
         $("share").onclick = () => copyText(location.href, "Link copied");
-        $("go").onclick = () => {
-          if (c.absorbed) { redeem(c); self.update(r); return; }
-          const v = parseFloat($("amt").value);
-          if (self.side === "buy") buy(c, v); else sell(c, v);
-          $("amt").value = ""; self.update(r);
-        };
-        self.side = "buy"; quick();
-      },
-      update(r) {
-        const c = all.get(r.id); if (!c) return;
-        const inThis = coins.includes(c);
-        const rk = inThis ? ranked().findIndex((e) => e.c === c) + 1 : 0;
-        const avg = twap(c, inThis ? Math.min(t, bell()) : c.hist[c.hist.length - 1]?.t ?? 0);
-        const top = inThis ? ranked()[0]?.avg || 1 : avg;
-        const hp = c.absorbed ? 0 : winner === c || c.champion ? 100 : Math.max(4, Math.round((avg / top) * 100));
-        const won = c.champion != null;
-        const mine = me.holdings.get(c.ticker);
-        $("cStatus").innerHTML = c.absorbed ? `<span class="st ko px">K.O. into ${c.into}</span>` : won ? `<span class="st win px">Champion · round ${c.champion}</span>` : rk === 1 ? `<span class="st win px">Winning</span>` : avg > top * 0.75 ? `<span class="st safe px">In reach</span>` : `<span class="st risk px">Danger</span>`;
-        $("cRound").textContent = `Round ${c.round}`;
-        $("cAge").textContent = `Launched ${ago(clock - c.born)} ago`;
-        // header stats
-        const p = priceUsd(c), last = c.hist[c.hist.length - 1];
-        const chg = (secs) => { if (!last) return 0; const f = c.hist.find((x) => x.t >= last.t - secs) || c.hist[0]; return (c.cap / f.v - 1) * 100; };
-        const pct = (v) => `<span class="${v >= 0 ? "up" : "down"}">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</span>`;
-        $("cStats").innerHTML = [
-          ["Price", price(p), `${(p / BNB_USD).toExponential(2)} BNB`], ["Market cap", usd(c.cap), pct(chg(3600)) + " 1h"], ["Liquidity", c.absorbed ? "Pulled" : usd(poolBnb(c) * BNB_USD * 2), c.absorbed ? "Merged into " + c.into : bnb(poolBnb(c)) + " in pool"],
-          ["Volume", usd(c.volBnb * BNB_USD), `${c.txns} trades`], ["Holders", String(c.holders), ""], ["5m", pct(chg(300)), "change"],
-        ].map(([k, v, s]) => `<div class="stat"><span class="px">${k}</span><b>${v}</b><small>${s}</small></div>`).join("");
-        // chart
-        const isP = this.mode === "price";
-        $("chartLabel").textContent = isP ? "Price" : "Market cap"; $("lgLine").textContent = isP ? "Price" : "Market cap";
-        $("cCap").textContent = isP ? price(p) : usd(c.cap);
-        const tfc = this.tf ? chg(this.tf) : last ? (c.cap / c.hist[0].v - 1) * 100 : 0;
-        $("cChg").innerHTML = `${pct(tfc)} <span class="muted">${this.tf ? (this.tf >= 3600 ? "1h" : this.tf / 60 + "m") : "all"}</span>`;
-        drawChart($("chart"), c, inThis && !winner ? Math.min(t, bell()) : null, avg, this.tf, isP);
-        // battle
-        $("cTiles").innerHTML = [["10m average", usd(avg)], ["Rank", rk ? `#${rk} of ${coins.length}` : "—"], ["Health", `${hp} HP`], ["Pool", c.absorbed ? "Absorbed" : bnb(poolBnb(c))]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
-        const lead = inThis ? ranked()[0]?.c : null;
-        const loot = coins.filter((x) => x !== c).reduce((s, x) => s + poolBnb(x), 0);
-        $("cOutcome").innerHTML = c.absorbed
-          ? `<div><span class="px" style="color:var(--hot)">Lost round ${c.round}</span><p>Every ${c.ticker} redeems for ${c.ratio.toFixed(4)} ${c.into}. Its pool was pulled into the merge.</p></div><div><span class="px" style="color:var(--bnb)">What to do</span><p>Holders redeem into <a href="#coin-${c.into}">${c.into}</a> from the trade panel.</p></div>`
-          : won
-          ? `<div><span class="px" style="color:var(--bnb)">Won round ${c.champion}</span><p>Absorbed the other coins' pools. Holders earn ${ARMIES[c.army].token} rewards.</p></div><div><span class="px" style="color:var(--cyan)">Now</span><p>It trades on as a normal coin with a bigger pool and more holders.</p></div>`
-          : `<div><span class="px" style="color:var(--bnb)">If ${c.ticker} wins</span><p>It absorbs ${coins.length - 1} coins: about ${bnb(loot)} of their pools buys ${c.ticker} over 30 minutes.</p></div><div><span class="px" style="color:var(--hot)">If it loses</span><p>${lead && lead !== c ? `Holders redeem into the winner, ${lead.ticker} if the bell rang now.` : "Holders redeem into whichever coin wins."}</p></div>`;
-        // activity
-        const poolPct = c.absorbed ? 0 : Math.max(4, Math.min(100, Math.sqrt(2600 / c.cap) * 100));
-        $("hCount").textContent = c.holders;
-        if (this.tab === "trades") {
-          $("actSub").textContent = "Latest 25";
-          $("actBody").innerHTML = `<div class="tbl flat"><table><thead><tr><th class="px">Age</th><th class="px">Type</th><th class="px r">BNB</th><th class="px r">${esc(c.ticker)}</th><th class="px">Maker</th><th class="px r">Tx</th></tr></thead><tbody>${
-            c.trades.slice(0, 25).map((x) => `<tr class="${x.buy ? "tb" : "ts"}"><td class="dg muted">${ago(clock - x.at)}</td><td><span class="side-b ${x.buy ? "b" : "s"}">${x.who === "merge" ? "Merge" : x.buy ? "Buy" : "Sell"}</span></td><td class="dg r">${x.bnb.toFixed(3)}</td><td class="dg r">${qty(x.tok)}</td><td class="dg">${x.who === "you" ? `<span style="color:var(--bnb)">You</span>` : x.who === "merge" ? "Arena" : `<button type="button" class="kv-copy" data-copy="${x.maker}">${short(x.maker)}</button>`}</td><td class="r"><button type="button" class="kv-copy dg" data-copy="${x.tx}" title="Copy transaction hash">${x.tx.slice(0, 6)}…</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">No trades yet.</td></tr>`
-          }</tbody></table></div>`;
-        } else {
-          $("actSub").textContent = "Top 10 by balance";
-          const rest = (100 - poolPct) / 100, mineP = mine ? (mine.qty / SUPPLY) * 100 : 0;
-          const rows = [{ who: c.poolId, label: "PancakeSwap pool", pct: poolPct, tag: "Pool" }, ...c.top.map((h) => ({ who: h.who, pct: h.pct * rest * 0.9 })), ...(mine ? [{ who: "you", pct: mineP, tag: "You" }] : [])].sort((x, y) => y.pct - x.pct).slice(0, 10);
-          $("actBody").innerHTML = `<div class="hl">${rows.map((h, i) => `<div class="hrow"><span class="dg muted">#${i + 1}</span><span class="who">${h.who === "you" ? "Your wallet" : h.label ? h.label : `<button type="button" class="kv-copy dg" data-copy="${h.who}">${short(h.who)}</button>`}${h.tag ? ` <span class="tag px">${h.tag}</span>` : ""}</span><span class="hbar"><i style="width:${Math.min(100, h.pct)}%"></i></span><span class="dg">${h.pct.toFixed(2)}%</span></div>`).join("")}</div>`;
-        }
-        // trade panel
-        const v = parseFloat($("amt").value) || 0, sl = this.slip / 100;
-        const seg = $("tradeCard").querySelector(".seg");
-        if (c.absorbed) {
-          seg.hidden = true; $("amt").closest(".field").hidden = true; $("quick").hidden = true; $("slip").closest(".kv").hidden = true; $("tradeCard").querySelector(".bal").hidden = true;
-          const got = mine ? mine.qty * c.ratio : 0;
-          $("est").textContent = `${qty(got)} ${c.into}`; $("minOut").textContent = `${qty(got)} ${c.into}`; $("impact").textContent = "None";
-          $("go").textContent = mine ? `Redeem for ${c.into}` : "Nothing to redeem"; $("go").disabled = !mine;
-          $("tHint").textContent = `${c.ticker} lost. Redeeming burns it and gives you your share of ${c.into}.`;
-        } else {
-          seg.hidden = false; $("amt").closest(".field").hidden = false; $("quick").hidden = false; $("slip").closest(".kv").hidden = false; $("tradeCard").querySelector(".bal").hidden = false; $("go").disabled = false;
-          if (this.side === "buy") {
-            const got = (v * (1 - FEE) * BNB_USD) / p, imp = (Math.pow(1 + v / poolBnb(c), 2) - 1) * 100;
-            $("balMax").textContent = `${me.credits.toFixed(3)} BNB`;
-            $("est").textContent = `${qty(got)} ${c.ticker}`; $("minOut").textContent = `${qty(got * (1 - sl))} ${c.ticker}`; $("impact").innerHTML = `<span class="${imp > 10 ? "down" : ""}">${imp.toFixed(2)}%</span>`;
-            $("go").textContent = `Buy ${c.ticker}`;
+        $("go").onclick = async () => {
+          if (!S.user) { await connect(); return; }
+          const v = $("amt").value.trim(); let wei;
+          try { wei = E.parseEther(v || "0"); } catch { return toast("Enter a valid amount"); }
+          if (wei <= 0n) return toast("Enter an amount first");
+          const sl = BigInt(Math.round(self.slip * 100));
+          $("go").disabled = true;
+          if (self.side === "buy") {
+            if (wei > S.userBnb) { $("go").disabled = false; return toast("Not enough BNB"); }
+            const q = quoteBuy(c, wei); const min = (q.out * (10_000n - sl)) / 10_000n;
+            await send(`Buy ${c.symbol}`, CFG.router, I.router, "buy", [c.addr, min, S.user], wei);
           } else {
-            const out = (v * p * (1 - FEE)) / BNB_USD, imp = (1 - 1 / Math.pow(1 + out / poolBnb(c), 2)) * 100;
-            $("balMax").textContent = `${qty(mine?.qty || 0)} ${c.ticker}`;
-            $("est").textContent = bnb(out); $("minOut").textContent = bnb(out * (1 - sl)); $("impact").innerHTML = `<span class="${imp > 10 ? "down" : ""}">${imp.toFixed(2)}%</span>`;
-            $("go").textContent = `Sell ${c.ticker}`;
+            if (!c.bal || wei > c.bal) { $("go").disabled = false; return toast(`You hold ${qty(f18(c.bal || 0n))} ${c.symbol}`); }
+            if (await ensureAllowance(c.addr, CFG.router, wei, `Approve ${c.symbol}`)) {
+              const q = quoteSell(c, wei); const min = (q.out * (10_000n - sl)) / 10_000n;
+              await send(`Sell ${c.symbol}`, CFG.router, I.router, "sell", [c.addr, wei, min, S.user]);
+            }
           }
-          $("tHint").textContent = "2% fee on every trade, included above. Test BNB only.";
+          $("amt").value = ""; $("go").disabled = false; self.panel(c);
+        };
+        $("claimBnb").onclick = () => send("Claim rewards", c.addr, I.token, "claimRewards", []);
+        $("claimStock").onclick = () => {
+          const an = S.armies[c.army]?.name, fee = STOCK_FEE[an];
+          if (!fee) return toast("No stock route for this army yet");
+          const path = E.solidityPacked(["address", "uint24", "address", "uint24", "address"], [CFG.wbnb, 100, CFG.usdt, fee, c.stock]);
+          send(`Claim as ${an}B`, c.addr, I.token, "claimRewardsAsStock", [path, 1n]);
+        };
+        self.side = "buy"; quick(); self.chart(c, true); self.trades(c);
+        clearInterval(self.timer); self.timer = setInterval(() => { if (route.p !== "coin") return clearInterval(self.timer); self.chart(c, true); self.trades(c); }, 25_000);
+      },
+      panel(c) {
+        if (!$("tradeCard")) return;
+        const R = S.rounds.get(c.round), won = R?.settled && R.winner?.toLowerCase() === c.addr.toLowerCase(), lost = R?.settled && !won;
+        const frozen = !lost && !R?.settled && nowS() >= bellOf(c.round);
+        const v = $("amt").value.trim(); let wei = 0n; try { wei = E.parseEther(v || "0"); } catch {}
+        const sl = this.slip / 100;
+        const go = $("go"), hint = $("tHint");
+        $("balMax").textContent = S.user ? (this.side === "buy" ? `${f18(S.userBnb).toFixed(4)} BNB` : `${qty(f18(c.bal || 0n))} ${c.symbol}`) : "Connect wallet";
+        if (this.side === "buy") {
+          const q = quoteBuy(c, wei);
+          $("est").textContent = `${qty(f18(q.out))} ${c.symbol}`; $("minOut").textContent = `${qty(f18(q.out) * (1 - sl))} ${c.symbol}`;
+          $("impact").innerHTML = `<span class="${q.impact > 10 ? "down" : ""}">${q.impact.toFixed(2)}%</span>`;
+          go.textContent = S.user ? `Buy ${c.symbol}` : "Connect wallet";
+        } else {
+          const q = quoteSell(c, wei);
+          $("est").textContent = bnbN(f18(q.out)); $("minOut").textContent = bnbN(f18(q.out) * (1 - sl));
+          $("impact").innerHTML = `<span class="${q.impact > 10 ? "down" : ""}">${q.impact.toFixed(2)}%</span>`;
+          go.textContent = S.user ? `Sell ${c.symbol}` : "Connect wallet";
         }
-        $("myQty").textContent = mine ? qty(mine.qty) : "0";
-        const val = mine ? mine.qty * (c.absorbed ? c.ratio * priceUsd(all.get(c.into)) : p) : 0;
-        $("myVal").textContent = usd(val);
-        $("myPl").innerHTML = mine ? (() => { const pl = val / BNB_USD - mine.cost; return `<span class="${pl >= 0 ? "up" : "down"}">${pl >= 0 ? "+" : ""}${pl.toFixed(3)} BNB</span>`; })() : "—";
+        const closed = lost || frozen || c.pulled || c.liq === 0n;
+        go.disabled = !!(closed && S.user);
+        hint.textContent = lost ? `${c.symbol} lost round ${c.round}. Its pool is closed: redeem below.` : frozen ? "The bell rang. Trading reopens for the winner once someone settles the round." : c.liq === 0n ? "This coin's liquidity was collected." : "2% fee on every trade, included above. Quotes come from the pool's current price.";
+      },
+      async chart(c, refetch) {
+        const tfMap = { "15m": ["minute", 1, 15], "1h": ["minute", 1, 60], "4h": ["minute", 5, 48], "1d": ["minute", 15, 96] };
+        const [unit, agg, limit] = tfMap[this.tf];
+        if (refetch || !this.pts || this.ptsKey !== c.addr + this.tf) {
+          const j = await gt(`/networks/bsc/pools/${c.poolId}/ohlcv/${unit}?aggregate=${agg}&limit=${limit}&currency=usd`);
+          const list = j?.data?.attributes?.ohlcv_list || [];
+          this.pts = list.map((x) => ({ t: x[0], v: x[4] })).sort((a, b) => a.t - b.t);
+          this.ptsKey = c.addr + this.tf;
+        }
+        const isP = this.mode === "price", k = isP ? 1 : supplyN(c);
+        const pts = (this.pts || []).map((p) => ({ t: p.t, v: p.v * k }));
+        const nowV = (isP ? priceBnb(c) : mcapBnb(c)) * S.bnbUsd;
+        if (isFinite(nowV) && nowV > 0) pts.push({ t: nowS(), v: nowV });
+        $("chartLabel").textContent = isP ? "Price" : "Market cap"; $("lgLine").textContent = isP ? "Price" : "Market cap";
+        $("cCap").textContent = isP ? price(nowV) : usd(nowV);
+        const first = pts[0]?.v; const chg = first ? (nowV / first - 1) * 100 : 0;
+        $("cChg").innerHTML = first ? `<span class="${chg >= 0 ? "up" : "down"}">${chg >= 0 ? "+" : ""}${chg.toFixed(1)}%</span> <span class="muted">${this.tf}</span>` : "";
+        $("chartNote").textContent = pts.length > 1 ? "USD · candles from GeckoTerminal" : "Waiting for the first trades to chart";
+        drawChart($("chart"), pts, isP ? price : usd, armyVar(S.armies[c.army]?.name));
+      },
+      async trades(c) {
+        const j = await gt(`/networks/bsc/pools/${c.poolId}/trades`);
+        const list = (j?.data || []).map((d) => d.attributes).slice(0, 30);
+        if (!$("actBody")) return;
+        if (!list.length) { $("actBody").innerHTML = `<div class="empty">${j ? "No trades yet." : "Trades are loading slowly. Check GeckoTerminal for the full list."}</div>`; return; }
+        const coinAddr = c.addr.toLowerCase();
+        $("actBody").innerHTML = `<div class="tbl flat"><table><thead><tr><th class="px">Age</th><th class="px">Type</th><th class="px r">BNB</th><th class="px r">${esc(c.symbol)}</th><th class="px">Maker</th><th class="px r">Tx</th></tr></thead><tbody>${
+          list.map((x) => {
+            const buy = x.kind === "buy", bnbAmt = buy ? +x.from_token_amount : +x.to_token_amount, tok = buy ? +x.to_token_amount : +x.from_token_amount;
+            void coinAddr;
+            const me = S.user && x.tx_from_address?.toLowerCase() === S.user.toLowerCase();
+            return `<tr class="${buy ? "tb" : "ts"}"><td class="dg muted">${ago(nowS() - Date.parse(x.block_timestamp) / 1000)}</td><td><span class="side-b ${buy ? "b" : "s"}">${buy ? "Buy" : "Sell"}</span></td><td class="dg r">${bnbAmt.toFixed(4)}</td><td class="dg r">${qty(tok)}</td><td class="dg">${me ? `<span style="color:var(--bnb)">You</span>` : `<a href="${CFG.explorer}/address/${esc(x.tx_from_address)}" target="_blank" rel="noopener noreferrer">${short(x.tx_from_address)}</a>`}</td><td class="r"><a class="dg" href="${CFG.explorer}/tx/${esc(x.tx_hash)}" target="_blank" rel="noopener noreferrer">${esc(x.tx_hash.slice(0, 8))}…</a></td></tr>`;
+          }).join("")
+        }</tbody></table></div>`;
+      },
+      update(r, full) {
+        const c = S.coins.get(String(r.id).toLowerCase());
+        if (!c) { if (S.loaded && $("coinMissing")) $("coinMissing").textContent = "That coin isn't a Jeet Wars coin."; else if (S.loaded) go(); return; }
+        if (!$("cStats")) { go(); return; }
+        if (!full) return;
+        const R = S.rounds.get(c.round), won = R?.settled && R.winner?.toLowerCase() === c.addr.toLowerCase(), lost = R?.settled && !won;
+        const rk = ranked(c.round).filter((e) => !e.out), idx = rk.findIndex((e) => e.c === c), s = score(c), top = rk[0]?.s.mcap || s.mcap;
+        $("cStatus").innerHTML = lost ? `<span class="st ko px">K.O.</span>` : won ? `<span class="st win px">Champion · round ${c.round}</span>` : nowS() >= bellOf(c.round) ? `<span class="st risk px">Awaiting settle</span>` : idx === 0 ? `<span class="st win px">Winning</span>` : s.mcap > top * 0.75 ? `<span class="st safe px">In reach</span>` : `<span class="st risk px">Danger</span>`;
+        const p = priceBnb(c), pb = poolBnb(c);
+        $("cStats").innerHTML = [
+          ["Price", price(p * S.bnbUsd), `${p.toExponential(2)} BNB`], ["Market cap", usd(toUsd(mcapBnb(c))), bnbN(mcapBnb(c))],
+          ["Liquidity", c.liq === 0n ? "Pulled" : usd(toUsd(pb + poolCoins(c) * p)), c.liq === 0n ? "" : `${bnbN(pb)} in pool`],
+          ["Volume 24h", this.vol != null ? usd(this.vol) : "—", this.txs != null ? `${this.txs} trades` : ""], ["Buys / sells 24h", "—", ""], ["Round", `#${c.round}`, phaseOf(c.round) === "launch" ? "enlisting" : phaseOf(c.round)],
+        ].map(([k, v, s2]) => `<div class="stat"><span class="px">${k}</span><b>${v}</b><small>${s2}</small></div>`).join("");
+        this.poolInfo(c);
+        $("cTiles").innerHTML = [["10m average", s.live ? usd(toUsd(s.mcap)) : "Not yet"], ["Rank", idx >= 0 ? `#${idx + 1} of ${rk.length}` : "—"], ["Health", `${lost ? 0 : won ? 100 : Math.max(4, Math.round((s.mcap / (top || 1)) * 100))} HP`], ["Pool", c.liq === 0n ? "Closed" : bnbN(pb)]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
+        const loot = rk.filter((e) => e.c !== c).reduce((sum, e) => sum + poolBnb(e.c), 0);
+        const pot = S.pots.get(c.addr.toLowerCase());
+        $("cOutcome").innerHTML = lost
+          ? `<div><span class="px" style="color:var(--hot)">Lost round ${c.round}</span><p>Its pool was pulled into the merge. ${pot?.winner && pot.winner !== E.ZeroAddress ? "Redemption is open: burn your coins for the winner below." : "Redemption opens after the 10th merge hit."}</p></div><div><span class="px" style="color:var(--bnb)">Winner</span><p><a href="#coin-${R.winner}">${esc(S.coins.get(R.winner.toLowerCase())?.name || short(R.winner))}</a></p></div>`
+          : won ? `<div><span class="px" style="color:var(--bnb)">Won round ${c.round}</span><p>Absorbed the other coins' pools: ${bnbN(f18(R.loot))} of loot, ${R.finalized ? "merge done" : `merge ${R.hits}/${HITS}`}.</p></div><div><span class="px" style="color:var(--cyan)">Now</span><p>It trades on as a normal coin with a bigger pool and more holders.</p></div>`
+          : `<div><span class="px" style="color:var(--bnb)">If ${esc(c.symbol)} wins</span><p>It absorbs ${Math.max(0, rk.length - 1)} coins: about ${bnbN(loot)} of their pools buys ${esc(c.symbol)} over 30 minutes.</p></div><div><span class="px" style="color:var(--hot)">If it loses</span><p>Its pool closes at the bell and holders redeem into the winner.</p></div>`;
+        $("myQty").textContent = S.user ? qty(f18(c.bal || 0n)) : "Connect wallet";
+        $("myVal").textContent = S.user ? usd(f18(c.bal || 0n) * p * S.bnbUsd) : "—";
+        $("myRew").textContent = S.user ? bnbN(f18(c.pending || 0n)) : "—";
+        $("claimBnb").disabled = $("claimStock").disabled = !S.user || !(c.pending > 0n);
+        $("iSupply").textContent = qty(supplyN(c));
+        this.redeemPanel(c, lost, pot);
+        this.panel(c);
+      },
+      async poolInfo(c) {
+        if (this.infoAt && Date.now() - this.infoAt < 30_000 && this.infoKey === c.addr) return;
+        this.infoAt = Date.now(); this.infoKey = c.addr;
+        const j = await gt(`/networks/bsc/pools/${c.poolId}`);
+        const a = j?.data?.attributes; if (!a) return;
+        this.vol = +(a.volume_usd?.h24 ?? 0); const t = a.transactions?.h24; this.txs = t ? (t.buys || 0) + (t.sells || 0) : null;
+        const stats = $("cStats"); if (stats) { const v = stats.children[3]; if (v) v.innerHTML = `<span class="px">Volume 24h</span><b>${usd(this.vol)}</b><small>${this.txs ?? "—"} trades</small>`; }
+        const rw = stats?.children[4]; if (rw) rw.innerHTML = `<span class="px">Buys / sells 24h</span><b>${t ? `${t.buys}/${t.sells}` : "—"}</b><small>${t ? `${t.buyers ?? "—"} buyers` : ""}</small>`;
+      },
+      redeemPanel(c, lost, pot) {
+        const box = $("redeemCard"); if (!box) return;
+        if (!lost || !pot?.winner || pot.winner === E.ZeroAddress) { box.hidden = true; return; }
+        box.hidden = false;
+        const w = S.coins.get(pot.winner.toLowerCase());
+        const bal = c.bal || 0n, sup = pot.supply || 1n;
+        const tokens = sup ? (BigInt(pot.tokens) * bal) / sup : 0n, bnbOut = sup ? (BigInt(pot.bnb) * bal) / sup : 0n;
+        box.innerHTML = `<h3 class="title">Redeem <i>for the winner</i></h3>
+          <div class="kv"><span>You burn</span><b>${qty(f18(bal))} ${esc(c.symbol)}</b></div>
+          <div class="kv"><span>You receive</span><b>${qty(f18(tokens))} ${esc(w?.symbol || "winner")}${bnbOut > 0n ? ` + ${bnbN(f18(bnbOut))}` : ""}</b></div>
+          <button type="button" class="big-btn" id="redeemGo" ${!S.user || bal === 0n ? "disabled" : ""}>${S.user ? (bal === 0n ? "Nothing to redeem" : `Redeem for ${esc(w?.symbol || "the winner")}`) : "Connect wallet"}</button>
+          <p class="hint">Same rate for every holder, no deadline. Redeeming burns your ${esc(c.symbol)}.</p>`;
+        $("redeemGo").onclick = async () => {
+          if (!S.user) return connect();
+          if (await ensureAllowance(c.addr, CFG.redeemer, bal, `Approve ${c.symbol}`)) await send(`Redeem ${c.symbol}`, CFG.redeemer, I.redeemer, "redeem", [c.addr, bal, S.user]);
+        };
       },
     },
 
     launch: {
-      pick: "NVDA", img: null, tried: false, first: "",
+      pick: 0, img: "", tried: false,
       mount() {
-        if (ARMIES[this.pick]?.off) this.pick = Object.keys(ARMIES).find((k) => !ARMIES[k].off) || this.pick;
         const f = this.draft || {};
         return `<div class="page">
           <div class="page-h"><h1 class="title">Launch a <i>fighter</i></h1><p id="lStatus"></p></div>
           <div class="launch-grid">
             <form class="card lf" id="lf" novalidate>
               <section class="sec"><div class="sec-h"><h3 class="title">Army</h3><span class="hint" id="armyNote"></span></div>
-                <div class="roster" id="roster">${Object.keys(ARMIES).filter((k) => !ARMIES[k].off).map((k) => `<button type="button" class="fighter ${k === this.pick ? "on" : ""}" data-a="${k}" style="--army:${army(k)}" aria-pressed="${k === this.pick}"><span class="sprite" style="--army:${army(k)}">${k}</span><span class="px">${ARMIES[k].name}</span><small class="dg">${ARMIES[k].token}</small></button>`).join("")}</div>
+                <div class="roster" id="roster"></div>
               </section>
               <section class="sec"><div class="sec-h"><h3 class="title">Coin</h3></div>
                 <div class="lf-id">
                   <div class="logo-field">
-                    <label class="logo-drop" id="logoDrop" for="lfImg" tabindex="-1"><span id="logoInner"></span></label>
+                    <label class="logo-drop" id="logoDrop" for="lfImg"><span id="logoInner"></span></label>
                     <input type="file" id="lfImg" accept="image/png,image/jpeg,image/gif,image/webp" class="sr-file">
                     <span class="err" id="eImg"></span>
                   </div>
@@ -1099,28 +1372,27 @@ canvas.chart { width: 100%; height: 260px; display: block; }
                 </div>
               </section>
               <section class="sec"><div class="sec-h"><h3 class="title">First buy</h3><span class="hint">Optional. Bought in the launch transaction, so no bot gets in before you.</span></div>
-                <div class="fb-row"><div class="field"><input id="lfFirst" inputmode="decimal" placeholder="0.00" aria-label="First buy in BNB" value="${esc(this.first)}"><span>BNB</span></div>
-                  <div class="quick" id="fbQuick">${["0", "0.1", "0.25", "0.5"].map((q) => `<button type="button" data-q="${q}">${q === "0" ? "None" : q}</button>`).join("")}</div></div>
+                <div class="fb-row"><div class="field"><input id="lfFirst" inputmode="decimal" placeholder="0.00" aria-label="First buy in BNB" value="${esc(f.first || "")}"><span>BNB</span></div>
+                  <div class="quick" id="fbQuick">${["0", "0.05", "0.1", "0.5"].map((q) => `<button type="button" data-q="${q}">${q === "0" ? "None" : q}</button>`).join("")}</div></div>
                 <p class="hint" id="fbNote"></p><span class="err" id="eFirst"></span>
               </section>
-              <label class="check" for="lfOk"><input type="checkbox" id="lfOk"><span>I understand the name, ticker and logo are final once launched, and that if my fighter loses, its holders redeem into the winner.</span></label>
+              <label class="check" for="lfOk"><input type="checkbox" id="lfOk"><span>I understand the name, ticker and logo are final once launched, and that if my fighter loses, its pool closes and holders redeem into the winner.</span></label>
               <span class="err" id="eOk"></span>
-              <button class="big-btn" type="submit" id="lfGo"></button>
-              <div class="done" id="lfDone" hidden></div>
+              <button class="big-btn" type="submit" id="lfGo">Launch</button>
             </form>
             <aside class="stack launch-side">
               <div class="card"><div class="sec-h"><h3 class="title">Preview</h3><span class="hint">How it shows on the board</span></div><div class="pv" id="preview"></div></div>
               <div class="card"><h3 class="title">Cost</h3>
                 <div class="kv"><span>Enters</span><b class="t" id="sRound"></b></div>
-                <div class="kv"><span>Network fee</span><b>≈ 0.0002 BNB</b></div>
+                <div class="kv"><span>Network fee</span><b>≈ 0.0004 BNB</b></div>
                 <div class="kv"><span>First buy</span><b id="sFirst">0 BNB</b></div>
                 <div class="kv tot"><span>Total</span><b id="sTotal"></b></div>
-                <div class="kv"><span>Your balance</span><b id="sBal"></b></div>
+                <div class="kv"><span>Your balance</span><b id="sBal">—</b></div>
               </div>
               <div class="card"><h3 class="title">What you <i>get</i></h3>
                 <div class="kv"><span>Creator share</span><b class="t">0.7% of every trade, in BNB</b></div>
                 <div class="kv"><span>Supply</span><b class="t">1,000,000,000, all in the pool</b></div>
-                <div class="kv"><span>Presale or team tokens</span><b class="t">None</b></div>
+                <div class="kv"><span>Starting market cap</span><b class="t">About 5 BNB</b></div>
                 <div class="kv"><span>If you win</span><b class="t">Absorb every loser's pool</b></div>
                 <div class="kv"><span>If you lose</span><b class="t">Holders redeem into the winner</b></div>
                 <div class="kv"><span>Trade fee</span><b class="t">2%, fixed forever</b></div>
@@ -1128,34 +1400,32 @@ canvas.chart { width: 100%; height: 260px; display: block; }
             </aside>
           </div></div>`;
       },
-      fields() {
-        const v = (id) => $(id).value.trim();
-        return { name: v("lfName"), ticker: v("lfTicker").toUpperCase(), desc: v("lfDesc"), x: v("lfX"), tg: v("lfTg"), web: v("lfWeb"), first: v("lfFirst") };
-      },
+      fields() { const v = (id) => $(id).value.trim(); return { name: v("lfName"), ticker: v("lfTicker").toUpperCase(), desc: v("lfDesc"), x: v("lfX"), tg: v("lfTg"), web: v("lfWeb"), first: v("lfFirst") }; },
       link(v, hosts) {
         if (!v) return { ok: true, url: "" };
-        let s = /^https?:\/\//i.test(v) ? v : "https://" + v;
-        try { const u = new URL(s); if (!/^https?:$/.test(u.protocol) || !u.hostname.includes(".")) throw 0; if (hosts && !hosts.some((h) => u.hostname === h || u.hostname.endsWith("." + h))) return { ok: false }; return { ok: true, url: u.href }; } catch { return { ok: false }; }
+        const s = /^https?:\/\//i.test(v) ? v : "https://" + v;
+        try { const u = new URL(s); if (u.protocol !== "https:" || !u.hostname.includes(".")) return { ok: false }; if (hosts && !hosts.some((h) => u.hostname === h || u.hostname.endsWith("." + h))) return { ok: false }; return { ok: true, url: u.href }; } catch { return { ok: false }; }
       },
       check() {
         const f = this.fields(), e = {};
         if (!this.img) e.Img = "Add a logo.";
         if (f.name.length < 2) e.Name = "Use at least 2 characters.";
-        if (f.ticker.length < 2) e.Ticker = "Use 2 to 8 letters or numbers.";
-        else { const taken = [...all.values()].find((c) => c.ticker.toUpperCase() === f.ticker); if (taken || queued?.ticker === f.ticker) e.Ticker = `$${f.ticker} is taken${taken ? ` by ${taken.name}` : ""}.`; }
+        if (!/^[A-Z0-9]{2,8}$/.test(f.ticker)) e.Ticker = "Use 2 to 8 letters or numbers.";
+        else if (this.taken === f.ticker) e.Ticker = `$${f.ticker} is taken.`;
         if (!this.link(f.x, ["x.com", "twitter.com"]).ok) e.X = "Use an x.com link.";
         if (!this.link(f.tg, ["t.me", "telegram.me"]).ok) e.Tg = "Use a t.me link.";
-        if (!this.link(f.web).ok) e.Web = "That isn't a web address.";
+        if (!this.link(f.web).ok) e.Web = "Use an https:// web address.";
         const fb = f.first === "" ? 0 : Number(f.first);
         if (!(fb >= 0)) e.First = "Enter an amount in BNB.";
-        else if (fb > 0.5) e.First = "The first buy is capped at 0.5 BNB.";
-        else if (fb + 0.0002 > me.credits) e.First = `You have ${me.credits.toFixed(3)} BNB.`;
+        else if (fb > MAX_FIRST) e.First = "The first buy is capped at 0.5 BNB.";
+        else if (S.user && fb + 0.0005 > f18(S.userBnb)) e.First = `You have ${f18(S.userBnb).toFixed(4)} BNB.`;
         if (!$("lfOk").checked) e.Ok = "Tick the box to confirm.";
+        const a = S.armies[this.pick]; if (!a || !a.enabled) e.Ok = "Pick an army.";
         return { f, e, fb: fb > 0 ? fb : 0 };
       },
       show(e) {
         for (const k of ["Img", "Name", "Ticker", "X", "Tg", "Web", "First", "Ok"]) {
-          const msg = this.tried ? e[k] || "" : "";
+          const msg = this.tried ? e[k] || "" : k === "Ticker" && e[k]?.includes("taken") ? e[k] : "";
           $("e" + k).textContent = msg;
           const inp = { Img: "logoDrop", Name: "lfName", Ticker: "lfTicker", X: "lfX", Tg: "lfTg", Web: "lfWeb", First: "lfFirst" }[k];
           if (inp) $(inp).classList.toggle("bad", !!msg);
@@ -1163,251 +1433,253 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       },
       wire() {
         const self = this;
-        $("roster").addEventListener("click", (e) => { const b = e.target.closest("button[data-a]"); if (!b) return; self.pick = b.dataset.a; document.querySelectorAll("#roster .fighter").forEach((x) => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); }); self.refresh(); });
-        $("lfTicker").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/[^a-z0-9]/gi, "").toUpperCase(); });
+        $("roster").addEventListener("click", (e) => { const b = e.target.closest("button[data-a]"); if (!b) return; self.pick = +b.dataset.a; self.drawRoster(); self.refresh(); });
+        $("lfTicker").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/[^a-z0-9]/gi, "").toUpperCase(); clearTimeout(self.tt); self.tt = setTimeout(() => self.checkTicker(), 400); });
         $("lf").addEventListener("input", () => self.refresh());
         $("lf").addEventListener("change", () => self.refresh());
         $("fbQuick").addEventListener("click", (e) => { const b = e.target.closest("button[data-q]"); if (!b) return; $("lfFirst").value = b.dataset.q === "0" ? "" : b.dataset.q; self.refresh(); });
-        const take = (file) => {
+        const take = async (file) => {
           $("eImg").textContent = "";
           if (!file) return;
           if (!/^image\/(png|jpeg|gif|webp)$/.test(file.type)) { $("eImg").textContent = "Use a PNG, JPG, GIF or WebP."; return; }
-          if (file.size > 4 * 1024 * 1024) { $("eImg").textContent = "Keep the logo under 4 MB."; return; }
-          if (self.img) URL.revokeObjectURL(self.img);
-          self.img = URL.createObjectURL(file); self.refresh();
+          if (file.size > 8 * 1024 * 1024) { $("eImg").textContent = "Keep the logo under 8 MB."; return; }
+          try { self.img = await shrink(file); self.refresh(); } catch { $("eImg").textContent = "That image couldn't be read."; }
         };
         $("lfImg").addEventListener("change", (e) => take(e.target.files[0]));
         const drop = $("logoDrop");
         drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
         drop.addEventListener("dragleave", () => drop.classList.remove("over"));
         drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); take(e.dataTransfer.files[0]); });
-        $("lf").addEventListener("submit", (e) => {
+        $("lf").addEventListener("submit", async (e) => {
           e.preventDefault();
-          if (queued) return;
+          if (!S.user) { await connect(); return; }
           self.tried = true;
+          await self.checkTicker();
           const { f, e: errs, fb } = self.check();
           self.show(errs);
           const firstBad = Object.keys(errs)[0];
-          if (firstBad) { const el = $("e" + firstBad); el.closest("label, .logo-field, .sec")?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
-          me.credits -= fb; // held for the first buy
-          queued = { name: f.name, ticker: f.ticker, army: self.pick, desc: f.desc, img: self.img, first: fb, socials: { x: self.link(f.x).url, tg: self.link(f.tg).url, web: self.link(f.web).url } };
-          self.img = null; self.draft = null; self.first = ""; self.tried = false;
-          self.update();
+          if (firstBad) { $("e" + firstBad).closest("label, .logo-field, .sec")?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
+          const meta = JSON.stringify({ image: self.img, description: f.desc, x: self.link(f.x, ["x.com", "twitter.com"]).url, tg: self.link(f.tg, ["t.me", "telegram.me"]).url, web: self.link(f.web).url });
+          $("lfGo").disabled = true;
+          const rc = await send(`Launch $${f.ticker}`, CFG.arena, I.arena, "launch", [{ name: f.name, symbol: f.ticker, metadataURI: meta, army: self.pick }], E.parseEther(fb.toFixed(6)));
+          $("lfGo").disabled = false;
+          if (rc) {
+            const ev = rc.logs.map((l) => { try { return I.arena.parseLog(l); } catch { return null; } }).find((x) => x?.name === "Launched");
+            self.img = ""; self.draft = null; self.tried = false;
+            await refresh(true);
+            if (ev) location.hash = `coin-${ev.args.coin}`;
+          }
         });
-        self.refresh();
+        self.drawRoster(); self.refresh();
+      },
+      async checkTicker() {
+        const t = $("lfTicker")?.value.trim().toUpperCase();
+        if (!t || !/^[A-Z0-9]{2,8}$/.test(t)) return;
+        try {
+          const raw = await rpc("eth_call", [{ to: CFG.arena, data: I.arena.encodeFunctionData("tickerTaken", [E.keccak256(E.toUtf8Bytes(t))]) }, "latest"]);
+          this.taken = I.arena.decodeFunctionResult("tickerTaken", raw)[0] ? t : "";
+        } catch {}
+        this.refresh();
+      },
+      drawRoster() {
+        const box = $("roster"); if (!box) return;
+        const list = S.armies.filter((a) => a.enabled);
+        if (!list.find((a) => a.id === this.pick) && list[0]) this.pick = list[0].id;
+        box.innerHTML = list.length ? list.map((a) => `<button type="button" class="fighter ${a.id === this.pick ? "on" : ""}" data-a="${a.id}" style="--army:${armyVar(a.name)}" aria-pressed="${a.id === this.pick}"><span class="sprite" style="--army:${armyVar(a.name)}">${esc(a.name)}</span><span class="px">${esc(ARMY_META[a.name]?.[1] || a.name)}</span><small class="dg">${esc(a.token)}</small></button>`).join("") : `<div class="empty">Loading armies…</div>`;
       },
       refresh() {
+        if (!$("lf")) return;
         const { f, e, fb } = this.check();
-        this.draft = f; this.first = f.first;
+        this.draft = f;
         this.show(e);
         $("cName").textContent = `${f.name.length}/28`; $("cTicker").textContent = `${f.ticker.length}/8`; $("cDesc").textContent = `${f.desc.length}/160`;
-        $("logoInner").innerHTML = this.img ? `<img src="${this.img}" alt="Logo preview"><span class="px chg">Change</span>` : `${ICON.img}<span class="px">Add logo</span><small>PNG, JPG, GIF, WebP · 4 MB</small>`;
-        const inArmy = coins.filter((c) => c.army === this.pick).length, titles = history.filter((h) => all.get(h.ticker)?.army === this.pick).length;
-        $("armyNote").textContent = `${ARMIES[this.pick].name}: holders earn ${ARMIES[this.pick].token} if you win · ${inArmy} in this round · ${titles} ${titles === 1 ? "title" : "titles"}`;
-        const pct = fb ? ((fb * (1 - FEE) * BNB_USD) / (2800 / SUPPLY) / SUPPLY) * 100 : 0;
-        $("fbNote").textContent = fb ? `About ${qty((fb * (1 - FEE) * BNB_USD) / (2800 / SUPPLY))} ${f.ticker || "tokens"}, ${pct.toFixed(1)}% of supply, at the starting price. Max 0.5 BNB.` : "Skip it and the pool opens with nobody holding yet. Max 0.5 BNB.";
-        $("sFirst").textContent = `${fb} BNB`; $("sTotal").textContent = `≈ ${(fb + 0.0002).toFixed(4)} BNB`;
-        const name = f.name || "Your fighter", tk = f.ticker || "TICKER", a = army(this.pick), s = { x: f.x, tg: f.tg, web: f.web };
-        $("preview").innerHTML = `<div class="pv-row" style="--army:${a}"><span class="sprite lg">${this.img ? `<img src="${this.img}" alt="">` : esc(tk[0])}</span>
-          <div class="pv-main"><b>${esc(name)}</b><span class="dg tk">$${esc(tk)}</span><div class="meta"><span class="chip" style="--army:${a}">${this.pick} army</span>${["x", "tg", "web"].filter((k) => s[k]).map((k) => `<span class="pv-link px">${{ x: "X", tg: "TG", web: "Web" }[k]}</span>`).join("")}</div></div></div>
+        $("logoInner").innerHTML = this.img ? `<img src="${esc(this.img)}" alt="Logo preview"><span class="px chg">Change</span>` : `${ICON.img}<span class="px">Add logo</span><small>PNG, JPG, GIF, WebP</small>`;
+        const a = S.armies[this.pick];
+        const inArmy = coinsOf(curRound()).filter((c) => c.army === this.pick).length;
+        $("armyNote").textContent = a ? `${ARMY_META[a.name]?.[1] || a.name}: holders can take rewards as ${a.token} · ${inArmy} in this round` : "";
+        $("fbNote").textContent = fb ? `About ${qty((fb * 0.98 * 1e9) / 5.07)} ${f.ticker || "tokens"}, ${((fb * 0.98) / 5.07 * 100).toFixed(1)}% of supply, at the starting price. Max 0.5 BNB.` : "Skip it and the pool opens with nobody holding yet. Max 0.5 BNB.";
+        $("sFirst").textContent = `${fb} BNB`; $("sTotal").textContent = `≈ ${(fb + 0.0004).toFixed(4)} BNB`;
+        const name = f.name || "Your fighter", tk = f.ticker || "TICKER", av = armyVar(a?.name);
+        $("preview").innerHTML = `<div class="pv-row" style="--army:${av}"><span class="sprite lg">${this.img ? `<img src="${esc(this.img)}" alt="">` : esc(tk[0])}</span>
+          <div class="pv-main"><b>${esc(name)}</b><span class="dg tk">$${esc(tk)}</span><div class="meta"><span class="chip" style="--army:${av}">${esc(a?.name || "")} army</span>${["x", "tg", "web"].filter((k) => f[k]).map((k) => `<span class="pv-link px">${{ x: "X", tg: "TG", web: "Web" }[k]}</span>`).join("")}</div></div></div>
           ${f.desc ? `<p class="pv-desc">${esc(f.desc)}</p>` : `<p class="pv-desc muted">No description yet.</p>`}`;
         this.update();
       },
       update() {
-        const open = !adm.paused && phase() === "launch" && coins.length < 8;
-        if (adm.paused) { $("lStatus").textContent = "Launches are paused for now. Coins already live keep trading."; $("sRound").textContent = "Paused"; $("lfGo").textContent = "Launches paused"; $("lfGo").disabled = true; $("sBal").textContent = `${me.credits.toFixed(3)} BNB`; return; }
-        $("lStatus").textContent = open ? `Round ${round} is enlisting: ${mmss(LAUNCH - t)} left, ${8 - coins.length} of 8 slots open.` : `Round ${round} is ${phase() === "battle" ? "in battle" : "merging"}. Enlisting for round ${round + 1} opens in ${mmss(ROUND - t)}.`;
-        $("sRound").textContent = open ? `Round ${round}, right away` : `Round ${round + 1}, in ${mmss(ROUND - t)}`;
-        $("sBal").textContent = `${me.credits.toFixed(3)} BNB`;
-        const mineNow = me.launched[0] && all.get(me.launched[0]);
-        const go = $("lfGo"), done = $("lfDone");
-        if (queued) {
-          go.textContent = `Queued · $${queued.ticker}`; go.disabled = true; done.hidden = false;
-          done.innerHTML = `<span class="px" style="color:var(--ok)">Launch sent</span><p>$${esc(queued.ticker)} enters ${open ? `round ${round} in a moment` : `round ${round + 1} when enlisting opens, in ${mmss(ROUND - t)}`}. ${queued.first ? `Your ${queued.first} BNB first buy goes in with it.` : ""} Simulated: set the arena to 120× to get there fast.</p>`;
-        } else {
-          go.disabled = false; go.textContent = open ? `Launch into round ${round}` : `Launch into round ${round + 1}`;
-          if (mineNow && this.justLaunched !== mineNow.ticker && me.launched.length) { done.hidden = false; done.innerHTML = `<span class="px" style="color:var(--ok)">Live</span><p>$${esc(mineNow.ticker)} is on the board. <a href="#coin-${mineNow.ticker}">Open its page</a> or launch another.</p>`; }
-          else done.hidden = true;
-        }
+        if (!$("lStatus")) return;
+        if (!$("roster").children.length || $("roster").querySelector(".empty")) this.drawRoster();
+        const r = curRound(), open = phaseOf(r) === "launch" && coinsOf(r).length < 8;
+        const go = $("lfGo");
+        $("sBal").textContent = S.user ? `${f18(S.userBnb).toFixed(4)} BNB` : "Connect wallet";
+        if (S.paused) { $("lStatus").textContent = "Launches are paused for now. Coins already live keep trading."; $("sRound").textContent = "Paused"; go.textContent = "Launches paused"; go.disabled = true; return; }
+        go.disabled = false;
+        $("lStatus").textContent = open ? `Round ${r} is enlisting: ${mmss(roundStart(r) + ENLIST - nowS())} left, ${8 - coinsOf(r).length} of 8 slots open.` : `Round ${r} is ${phaseOf(r) === "battle" ? "in battle" : "merging"}. New coins go live now and fight in round ${r + 1}.`;
+        $("sRound").textContent = open ? `Round ${r}, right away` : `Round ${r + 1}, starts in ${mmss(roundStart(r + 1) - nowS())}`;
+        go.textContent = S.user ? (open ? `Launch into round ${r}` : `Launch for round ${r + 1}`) : "Connect wallet to launch";
       },
     },
 
     armies: {
-      mount: () => `<div class="page"><div class="page-h"><h1 class="title">The <i>armies</i></h1><p>Every coin fights under a stock. When a coin wins, its holders earn rewards in that stock.</p></div><div class="army-grid" id="armyGrid"></div></div>`,
-      update() {
-        $("armyGrid").innerHTML = Object.entries(ARMIES).map(([k, a]) => {
-          const mine = coins.filter((c) => c.army === k && !c.hidden), cap = mine.reduce((s, c) => s + c.cap, 0);
-          const wins = history.filter((h) => all.get(h.ticker)?.army === k).length;
-          return `<a class="army-card" href="#army-${k}" style="--army:var(${a.v})"><span class="px muted">${a.name}</span><h3>${k}</h3>
-            <div class="nums"><div><span class="px">Fighters</span><b>${mine.length}</b></div><div><span class="px">Power</span><b>${usd(cap)}</b></div><div><span class="px">Titles</span><b>${wins}</b></div></div>
-            <p>${mine.length ? `Leading: ${esc(mine.sort((x, y) => y.cap - x.cap)[0].name)}` : "No fighters this round"}</p></a>`;
-        }).join("");
+      mount: () => `<div class="page"><div class="page-h"><h1 class="title">The <i>armies</i></h1><p>Every coin fights under a stock. Holders can take their rewards in that stock, a Binance bStock on BNB Chain.</p></div><div class="army-grid" id="armyGrid"></div></div>`,
+      update(_, full) {
+        if (!full) return;
+        const r = curRound(), titles = {};
+        for (const [, R] of S.rounds) if (R.settled && R.winner !== E.ZeroAddress) { const w = S.coins.get(R.winner.toLowerCase()); if (w) { const n = S.armies[w.army]?.name; titles[n] = (titles[n] || 0) + 1; } }
+        $("armyGrid").innerHTML = S.armies.map((a) => {
+          const mine = coinsOf(r).filter((c) => c.army === a.id && !c.hidden), cap = mine.reduce((s, c) => s + toUsd(mcapBnb(c)), 0);
+          return `<a class="army-card" href="#army-${a.name}" style="--army:${armyVar(a.name)}"><span class="px muted">${esc(ARMY_META[a.name]?.[1] || a.name)}</span><h3>${esc(a.name)}</h3>
+            <div class="nums"><div><span class="px">Fighters</span><b>${mine.length}</b></div><div><span class="px">Power</span><b>${usd(cap)}</b></div><div><span class="px">Titles</span><b>${titles[a.name] || 0}</b></div></div>
+            <p>${a.enabled ? (mine.length ? `Leading: ${esc(mine.sort((x, y) => mcapBnb(y) - mcapBnb(x))[0].name)}` : "No fighters this round") : "Closed to new launches"}</p></a>`;
+        }).join("") || `<div class="empty">Loading armies…</div>`;
       },
     },
 
     army: {
       mount(r) {
-        const a = ARMIES[r.id]; if (!a) return `<div class="page"><a class="back" href="#armies">All armies</a><div class="card empty">Unknown army.</div></div>`;
-        return `<div class="page" style="--army:var(${a.v})"><a class="back" href="#armies">All armies</a>
-          <div class="coin-head"><span class="sprite lg" style="font-size:16px">${r.id}</span><div><h1 style="color:var(--army)">${r.id} army</h1><div class="meta"><span class="px muted">Fights for ${a.token} rewards · ${a.name} bStock</span></div></div></div>
-          <div class="tiles" id="aTiles"></div>
+        const a = S.armies.find((x) => x.name === r.id), meta = ARMY_META[r.id];
+        if (!meta) return `<div class="page"><a class="back" href="#armies">All armies</a><div class="card empty">Unknown army.</div></div>`;
+        return `<div class="page" style="--army:${armyVar(r.id)}"><a class="back" href="#armies">All armies</a>
+          <div class="coin-head"><span class="sprite lg" style="font-size:16px">${esc(r.id)}</span><div><h1 style="color:var(--army)">${esc(r.id)} army</h1><div class="meta"><span class="px muted">Rewards in ${esc(a?.token || r.id + "B")} · ${esc(meta[1])} bStock</span>${a?.stock ? `<a class="px muted" href="${CFG.explorer}/token/${a.stock}" target="_blank" rel="noopener noreferrer">${short(a.stock)} ↗</a>` : ""}</div></div></div>
           <div class="board"><div class="board-h"><h2 class="title">Fighters this <i>round</i></h2></div><div id="aRows"></div></div>
-          <div class="tbl"><table><thead><tr><th class="px">Round</th><th class="px">Champion</th><th class="px r">K.O.s</th><th class="px r">Final cap</th></tr></thead><tbody id="aHist"></tbody></table></div></div>`;
+          <div class="tbl"><table><thead><tr><th class="px">Round</th><th class="px">Champion</th><th class="px r">Loot</th></tr></thead><tbody id="aHist"></tbody></table></div></div>`;
       },
-      update(r) {
-        if (!ARMIES[r.id]) return;
-        const list = ranked().filter((e) => e.c.army === r.id);
-        const titles = history.filter((h) => all.get(h.ticker)?.army === r.id);
-        $("aTiles").innerHTML = [["Fighters", list.length], ["Power", usd(list.reduce((s, e) => s + e.c.cap, 0))], ["Titles", titles.length], ["Best rank", list.length ? `#${ranked().findIndex((e) => e.c.army === r.id) + 1}` : "—"]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
-        $("aRows").innerHTML = list.length ? boardRows(list) : `<div class="empty">No ${r.id} fighters this round. <a href="#launch">Launch one</a>.</div>`;
-        $("aHist").innerHTML = titles.length ? titles.map((h) => `<tr><td class="dg">#${h.round}</td><td><a href="#coin-${h.ticker}"><b>${esc(all.get(h.ticker).name)}</b></a></td><td class="dg r">${h.kos}</td><td class="dg r">${usd(h.cap)}</td></tr>`).join("") : `<tr><td colspan="4" class="muted">No titles yet for this army.</td></tr>`;
+      update(r, full) {
+        if (!full || !$("aRows")) return;
+        const a = S.armies.find((x) => x.name === r.id); if (!a) return;
+        const cr = curRound(), R = S.rounds.get(cr);
+        const list = ranked(cr).filter((e) => e.c.army === a.id && !e.c.hidden);
+        $("aRows").innerHTML = list.length ? boardRows(list, R) : `<div class="empty">No ${esc(r.id)} fighters this round. <a href="#launch">Launch one</a>.</div>`;
+        const rows = [...S.rounds.entries()].filter(([, x]) => x.settled && x.winner !== E.ZeroAddress && S.coins.get(x.winner.toLowerCase())?.army === a.id).sort((x, y) => y[0] - x[0]);
+        $("aHist").innerHTML = rows.length ? rows.map(([k, x]) => { const w = S.coins.get(x.winner.toLowerCase()); return `<tr><td class="dg">#${k}</td><td><a href="#coin-${w.addr}"><b>${esc(w.name)}</b> <span class="dg muted">${esc(w.symbol)}</span></a></td><td class="dg r">${bnbN(f18(x.loot))}</td></tr>`; }).join("") : `<tr><td colspan="3" class="muted">No titles yet for this army.</td></tr>`;
       },
     },
 
     hall: {
-      mount: () => `<div class="page"><div class="page-h"><h1 class="title">Hall of <i>fame</i></h1><p>Champions of finished rounds in this preview.</p></div><div class="tiles" id="hTiles"></div>
-        <div class="tbl"><table><thead><tr><th class="px">Round</th><th class="px">Champion</th><th class="px">Army</th><th class="px r">K.O.s</th><th class="px r">Final cap</th></tr></thead><tbody id="hRows"></tbody></table></div></div>`,
-      update() {
-        const best = history.reduce((m, h) => (h.cap > (m?.cap ?? 0) ? h : m), null);
-        const counts = {}; history.forEach((h) => { const a = all.get(h.ticker)?.army; if (a) counts[a] = (counts[a] || 0) + 1; });
-        const topArmy = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-        $("hTiles").innerHTML = [["Rounds played", history.length], ["Biggest champion", best ? usd(best.cap) : "—"], ["Top army", topArmy ? `${topArmy[0]} ×${topArmy[1]}` : "—"], ["Live round", `#${round}`]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
-        $("hRows").innerHTML = history.length ? history.map((h) => { const c = all.get(h.ticker); return `<tr><td class="dg">#${h.round}</td><td><a href="#coin-${h.ticker}"><b>${esc(c.name)}</b> <span class="dg muted" style="font-size:18px">${h.ticker}</span></a></td><td><a class="chip" href="#army-${c.army}" style="--army:${army(c.army)}">${c.army}</a></td><td class="dg r">${h.kos}</td><td class="dg r">${usd(h.cap)}</td></tr>`; }).join("") : `<tr><td colspan="5" class="muted">The first champion appears when the current round's merge finishes. Set the arena to 120× to get there fast.</td></tr>`;
+      mount: () => `<div class="page"><div class="page-h"><h1 class="title">Hall of <i>fame</i></h1><p>Champions of every settled round on BNB Chain.</p></div><div class="tiles" id="hTiles"></div>
+        <div class="tbl"><table><thead><tr><th class="px">Round</th><th class="px">Champion</th><th class="px">Army</th><th class="px r">K.O.s</th><th class="px r">Loot</th><th class="px r">Market cap now</th></tr></thead><tbody id="hRows"></tbody></table></div></div>`,
+      update(_, full) {
+        if (!full) return;
+        const rows = [...S.rounds.entries()].filter(([, R]) => R.settled && R.winner !== E.ZeroAddress).sort((a, b) => b[0] - a[0]);
+        const loot = rows.reduce((s, [, R]) => s + f18(R.loot), 0);
+        $("hTiles").innerHTML = [["Rounds settled", rows.length], ["Total loot", bnbN(loot)], ["Coins launched", S.list.length], ["Live round", `#${curRound()}`]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
+        $("hRows").innerHTML = rows.length ? rows.map(([k, R]) => { const w = S.coins.get(R.winner.toLowerCase()); if (!w) return ""; const n = S.armies[w.army]?.name; return `<tr><td class="dg">#${k}</td><td><a href="#coin-${w.addr}"><b>${esc(w.name)}</b> <span class="dg muted">${esc(w.symbol)}</span></a></td><td><a class="chip" href="#army-${esc(n)}" style="--army:${armyVar(n)}">${esc(n)}</a></td><td class="dg r">${Math.max(0, (S.roundCoins.get(k) || []).length - 1)}</td><td class="dg r">${bnbN(f18(R.loot))}</td><td class="dg r">${w.sqrt ? usd(toUsd(mcapBnb(w))) : "—"}</td></tr>`; }).join("") : `<tr><td colspan="6" class="muted">The first champion appears when round ${curRound()} is settled after its bell.</td></tr>`;
       },
     },
 
     me: {
-      mount: () => `<div class="page"><div class="page-h"><h1 class="title">My <i>wallet</i></h1><p>Free play wallet with test BNB. Buy fighters on any coin page; if one loses, redeem it into the winner here.</p></div>
+      mount: () => `<div class="page"><div class="page-h"><h1 class="title">My <i>wallet</i></h1><p id="meSub">Your Jeet Wars coins, rewards and redemptions.</p></div>
         <div class="tiles" id="mTiles"></div>
-        <div class="tbl"><table><thead><tr><th class="px">Fighter</th><th class="px r">Amount</th><th class="px r">Value</th><th class="px r">P&amp;L</th><th class="px">Status</th><th class="px"></th></tr></thead><tbody id="mRows"></tbody></table></div>
-        <div class="card"><h3 class="title">Fighters you <i>launched</i></h3><div class="list" id="mLaunched"></div></div></div>`,
-      wire() {
-        $("mRows").addEventListener("click", (e) => { const b = e.target.closest("button[data-redeem]"); if (!b) return; redeem(all.get(b.dataset.redeem)); this.update(); });
-      },
-      update() {
-        let value = 0, cost = 0;
-        const rows = [...me.holdings.entries()].map(([tk, h]) => {
-          const c = all.get(tk), v = (h.qty * (c.absorbed ? c.ratio * priceUsd(all.get(c.into)) : priceUsd(c))) / BNB_USD;
-          value += v; cost += h.cost;
-          const pl = v - h.cost;
-          const st = c.absorbed ? `<span class="st ko px">K.O.</span>` : c.champion ? `<span class="st win px">Champion</span>` : winner === c ? `<span class="st win px">Winner</span>` : `<span class="st safe px">Fighting</span>`;
-          return `<tr><td><a href="#coin-${tk}"><b>${esc(c.name)}</b> <span class="dg muted" style="font-size:18px">${tk}</span></a></td><td class="dg r">${qty(h.qty)}</td><td class="dg r">${bnb(v)}</td><td class="dg r ${pl >= 0 ? "up" : "down"}">${pl >= 0 ? "+" : ""}${pl.toFixed(3)}</td><td>${st}</td><td>${c.absorbed ? `<button type="button" class="ghost-btn" data-redeem="${tk}">Redeem</button>` : ""}</td></tr>`;
+        <div class="tbl"><table><thead><tr><th class="px">Coin</th><th class="px r">Amount</th><th class="px r">Value</th><th class="px r">Rewards</th><th class="px">Status</th></tr></thead><tbody id="mRows"></tbody></table></div>
+        <div class="card"><h3 class="title">Coins you <i>launched</i></h3><div class="list" id="mLaunched"></div></div></div>`,
+      update(_, full) {
+        if (!full) return;
+        if (!S.user) {
+          $("mTiles").innerHTML = ""; $("meSub").innerHTML = `Connect a wallet to see your coins. <button type="button" class="ghost-btn" id="meConnect">Connect wallet</button>`;
+          $("meConnect").onclick = () => connect();
+          $("mRows").innerHTML = `<tr><td colspan="5" class="muted">No wallet connected.</td></tr>`; $("mLaunched").innerHTML = ""; return;
+        }
+        $("meSub").textContent = `Connected as ${short(S.user)}.`;
+        const held = S.list.map((a) => S.coins.get(a)).filter((c) => c && ((c.bal && c.bal > 0n) || (c.pending && c.pending > 0n)));
+        let value = 0, rew = 0;
+        const rows = held.map((c) => {
+          const v = f18(c.bal || 0n) * priceBnb(c) * S.bnbUsd, R = S.rounds.get(c.round), won = R?.settled && R.winner?.toLowerCase() === c.addr.toLowerCase(), lost = R?.settled && !won;
+          value += lost ? 0 : v; rew += f18(c.pending || 0n);
+          const st = lost ? `<span class="st ko px">Redeem</span>` : won ? `<span class="st win px">Champion</span>` : `<span class="st safe px">Fighting</span>`;
+          return `<tr><td><a href="#coin-${c.addr}"><b>${esc(c.name)}</b> <span class="dg muted">${esc(c.symbol)}</span></a></td><td class="dg r">${qty(f18(c.bal || 0n))}</td><td class="dg r">${lost ? "—" : usd(v)}</td><td class="dg r">${bnbN(f18(c.pending || 0n))}</td><td>${st}</td></tr>`;
         });
-        $("mTiles").innerHTML = [["Test BNB", me.credits.toFixed(2)], ["Fighters held", me.holdings.size], ["Value", bnb(value)], ["P&L", `${value - cost >= 0 ? "+" : ""}${(value - cost).toFixed(3)}`]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
-        $("mRows").innerHTML = rows.join("") || `<tr><td colspan="6" class="muted">Nothing held yet. Open a fighter from the <a href="#arena">arena</a> and buy.</td></tr>`;
-        $("mLaunched").innerHTML = me.launched.length ? me.launched.map((tk) => { const c = all.get(tk); return `<a class="li" href="#coin-${tk}" style="text-decoration:none"><span class="sprite" style="--army:${army(c.army)}">${face(c)}</span><span><b>${esc(c.name)}</b> <span class="dg muted">${tk}</span></span><span class="dg">${usd(c.cap)}</span></a>`; }).join("") : (queued ? `<div class="empty">${esc(queued.ticker)} is queued for the next enlisting window.</div>` : `<div class="empty">You haven't launched a fighter. <a href="#launch">Launch one</a>.</div>`);
+        $("mTiles").innerHTML = [["BNB", f18(S.userBnb).toFixed(4)], ["Coins held", held.length], ["Value", usd(value)], ["Rewards", bnbN(rew)]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
+        $("mRows").innerHTML = rows.join("") || `<tr><td colspan="5" class="muted">No Jeet Wars coins in this wallet yet. Open a fighter from the <a href="#arena">arena</a> and buy.</td></tr>`;
+        const mine = S.list.map((a) => S.coins.get(a)).filter((c) => c && c.creator?.toLowerCase() === S.user.toLowerCase());
+        $("mLaunched").innerHTML = mine.length ? mine.map((c) => `<a class="li" href="#coin-${c.addr}" style="text-decoration:none"><span class="sprite" style="--army:${armyVar(S.armies[c.army]?.name)}">${face(c)}</span><span><b>${esc(c.name)}</b> <span class="dg muted">${esc(c.symbol)}</span></span><span class="dg">${c.sqrt ? usd(toUsd(mcapBnb(c))) : "—"}</span></a>`).join("") : `<div class="empty">You haven't launched a coin. <a href="#launch">Launch one</a>.</div>`;
       },
     },
 
     admin: {
-      sel: null,
+      sel: "",
       mount() {
         return `<div class="page adm">
         <div class="page-h"><h1 class="title">Admin <i>panel</i></h1><p>Hidden page. Not linked anywhere on the site.</p></div>
-        <div class="callout">On mainnet every button here sends a transaction from the admin wallet, and the contracts reject any other wallet. In this preview the actions run on the simulation.</div>
+        <div class="callout" id="aWho"></div>
         <div class="tiles" id="aStats"></div>
         <div class="adm-grid">
           <div class="stack">
             <div class="card"><div class="sec-h"><h3 class="title">Launches</h3><span id="aPauseState"></span></div>
-              <p class="hint">Pausing stops new coins and new rounds from starting. Trading, settling, the merge and redeeming keep working.</p>
-              <div class="row-btns"><button type="button" class="big-btn" id="aPause"></button></div>
-            </div>
+              <p class="hint">Pausing stops new launches. Trading, settling, the merge and redeeming keep working.</p>
+              <div class="row-btns"><button type="button" class="big-btn" id="aPause">Pause</button></div></div>
             <div class="card"><h3 class="title">Platform <i>fees</i></h3>
-              <div class="kv"><span>Waiting in coins</span><b id="aOwed"></b></div>
-              <div class="kv"><span>Sent so far</span><b id="aPaid"></b></div>
               <div class="kv"><span>Fee recipient</span><button type="button" class="kv-copy dg" id="aRecip"></button></div>
-              <button type="button" class="ghost-btn" id="aPush">Push platform fees to recipient</button>
-              <label class="af"><span class="px">New fee recipient</span><div class="af-row"><input id="aRecipIn" placeholder="0x…" autocomplete="off" spellcheck="false"><button type="button" class="ghost-btn" id="aRecipSet">Set</button></div><span class="err" id="aRecipErr"></span></label>
-            </div>
-            <div class="card"><h3 class="title">Setup</h3>
-              <div class="kv"><span>Router (one-time)</span><b class="t" id="aConv"></b></div>
-              <label class="af" id="aConvBox"><span class="px">Set router address</span><div class="af-row"><input id="aConvIn" placeholder="0x…" autocomplete="off" spellcheck="false"><button type="button" class="ghost-btn" id="aConvSet">Set once</button></div><span class="err" id="aConvErr"></span></label>
-              <div class="kv"><span>Deployer setup rights</span><b class="t" id="aOwner"></b></div>
-              <button type="button" class="ghost-btn danger" id="aRenounce">Renounce deployer rights</button>
-              <p class="hint">Renouncing removes the deployer's setup rights for good. The admin keeps every function on this page.</p>
-            </div>
+              <button type="button" class="ghost-btn" id="aPush">Push platform fees from every coin</button>
+              <label class="af"><span class="px">New fee recipient</span><div class="af-row"><input id="aRecipIn" placeholder="0x…" autocomplete="off" spellcheck="false"><button type="button" class="ghost-btn" id="aRecipSet">Set</button></div><span class="err" id="aRecipErr"></span></label></div>
+            <div class="card"><h3 class="title">Tip <i>budget</i></h3>
+              <div class="kv"><span>Budget</span><b id="aTips"></b></div><div class="kv"><span>Per settle or hit</span><b id="aTip"></b></div>
+              <label class="af"><span class="px">Add BNB (anyone can)</span><div class="af-row"><input id="aTipIn" inputmode="decimal" placeholder="0.01" autocomplete="off"><button type="button" class="ghost-btn" id="aTipGo">Fund</button></div></label></div>
+            <div class="card"><h3 class="title">Your <i>transactions</i></h3><div class="log adm-log" id="aLog"></div></div>
           </div>
           <div class="stack">
             <div class="card act"><div class="act-h"><h3 class="title">Coins</h3><span class="px muted">Pick one to edit or collect</span></div>
-              <div class="tbl flat"><table><thead><tr><th class="px">Coin</th><th class="px">Round</th><th class="px">Status</th><th class="px r">Pool</th><th class="px">Listing</th><th class="px"></th></tr></thead><tbody id="aCoins"></tbody></table></div></div>
-            <div class="card" id="aSel"></div>
+              <div class="tbl flat"><table><thead><tr><th class="px">Coin</th><th class="px">Round</th><th class="px r">Pool</th><th class="px">Listing</th><th class="px"></th></tr></thead><tbody id="aCoins"></tbody></table></div></div>
+            <div class="card" id="aSel"><h3 class="title">Edit a <i>coin</i></h3><p class="hint">Pick a coin from the table.</p></div>
             <div class="card act"><div class="act-h"><h3 class="title">Armies</h3><span class="px muted">Official bStocks only</span></div>
-              <div class="tbl flat"><table><thead><tr><th class="px">Army</th><th class="px">Reward token</th><th class="px">Check</th><th class="px">Launches</th></tr></thead><tbody id="aArmies"></tbody></table></div></div>
-            <div class="card"><h3 class="title">Activity</h3><div class="log adm-log" id="aLog"></div></div>
+              <div class="tbl flat"><table><thead><tr><th class="px">Army</th><th class="px">Stock</th><th class="px">Launches</th></tr></thead><tbody id="aArmies"></tbody></table></div></div>
           </div>
         </div></div>`;
       },
+      isAdmin: () => S.user && S.admin && S.user.toLowerCase() === S.admin.toLowerCase(),
       wire() {
         const self = this;
-        $("aPause").onclick = () => { adm.paused = !adm.paused; alog(adm.paused ? "pause()" : "resume()"); self.update(); };
-        $("aPush").onclick = () => { if (adm.owed < 1e-9) return toast("Nothing waiting"); alog(`pushPlatformFees: ${bnb(adm.owed)} to ${short(adm.recipient)}`); adm.paid += adm.owed; adm.owed = 0; self.update(); };
-        $("aRecipSet").onclick = () => { const v = $("aRecipIn").value.trim(); if (!isAddr(v)) { $("aRecipErr").textContent = "Enter a 0x address with 40 hex characters."; return; } $("aRecipErr").textContent = ""; adm.recipient = v; $("aRecipIn").value = ""; alog(`setFeeRecipient(${short(v)})`); self.update(); };
-        $("aConvSet").onclick = () => { const v = $("aConvIn").value.trim(); if (adm.router) return; if (!isAddr(v)) { $("aConvErr").textContent = "Enter a 0x address with 40 hex characters."; return; } adm.router = v; alog(`setConverter(${short(v)})`); self.update(); };
-        $("aRenounce").onclick = () => { if (adm.renounced) return; if (!confirm("Renounce the deployer's setup rights? This can't be undone.")) return; adm.renounced = true; alog("renounceOwnership()"); self.update(); };
+        $("aPause").onclick = () => send(S.paused ? "Resume launches" : "Pause launches", CFG.arena, I.arena, S.paused ? "resume" : "pause", []);
+        $("aPush").onclick = () => { const list = S.list.map((a) => S.coins.get(a).addr); if (!list.length) return toast("No coins yet"); send("Push platform fees", CFG.arena, I.arena, "pushPlatformFees", [list]); };
+        $("aRecipSet").onclick = () => { const v = $("aRecipIn").value.trim(); if (!E.isAddress(v)) { $("aRecipErr").textContent = "Enter a 0x address with 40 hex characters."; return; } $("aRecipErr").textContent = ""; send("Set fee recipient", CFG.arena, I.arena, "setFeeRecipient", [E.getAddress(v)]); };
+        $("aTipGo").onclick = () => { let w; try { w = E.parseEther($("aTipIn").value.trim() || "0"); } catch { return toast("Enter an amount"); } if (w <= 0n) return toast("Enter an amount"); send("Fund tips", CFG.arena, I.arena, "fundTips", [], w); };
         $("aCoins").addEventListener("click", (e) => {
-          const b = e.target.closest("button[data-act]"); if (!b) return; const c = all.get(b.dataset.tk); if (!c) return;
-          if (b.dataset.act === "hide") { c.hidden = !c.hidden; alog(`setHidden(${c.ticker}, ${c.hidden})`); }
-          if (b.dataset.act === "pick") { self.sel = c.ticker; self.drawSel(); }
-          self.update();
+          const b = e.target.closest("button[data-act]"); if (!b) return; const c = S.coins.get(b.dataset.c); if (!c) return;
+          if (b.dataset.act === "hide") send(`${c.hidden ? "Show" : "Hide"} ${c.symbol}`, CFG.arena, I.arena, "setHidden", [c.addr, !c.hidden]);
+          if (b.dataset.act === "pick") { self.sel = b.dataset.c; self.drawSel(); }
         });
-        $("aArmies").addEventListener("click", (e) => { const b = e.target.closest("button[data-army]"); if (!b) return; const a = ARMIES[b.dataset.army]; a.off = !a.off; alog(`setArmy(${b.dataset.army}, ${a.token}, ${a.off ? "off" : "on"})`); self.update(); });
-        self.drawSel();
+        $("aArmies").addEventListener("click", (e) => { const b = e.target.closest("button[data-army]"); if (!b) return; const a = S.armies[+b.dataset.army]; send(`${a.enabled ? "Close" : "Open"} ${a.name}`, CFG.arena, I.arena, "setArmy", [a.id, a.stock, !a.enabled, a.name]); });
       },
       drawSel() {
-        const c = this.sel && all.get(this.sel), box = $("aSel");
-        if (!c) { box.innerHTML = `<h3 class="title">Edit a <i>coin</i></h3><p class="hint">Pick a coin from the table to change its displayed info or collect its liquidity.</p>`; return; }
-        const s = c.socials || {};
-        box.innerHTML = `<div class="sec-h"><h3 class="title">${esc(c.name)} <i>$${esc(c.ticker)}</i></h3><a class="ghost-btn" href="#coin-${c.ticker}">Open page</a></div>
-          <span class="px muted">Displayed info</span>
-          <p class="hint">Stored in the factory and shown by the site. The coin contract itself never changes.</p>
-          <label class="af"><span class="px">Logo URL</span><input id="mImg" value="${esc(c.imgUrl || "")}" placeholder="https://… or leave empty" autocomplete="off"></label>
-          <label class="af"><span class="px">Description</span><textarea id="mDesc" rows="2" maxlength="160">${esc(c.desc || "")}</textarea></label>
-          <div class="lf-row"><label class="af"><span class="px">X</span><input id="mX" value="${esc(s.x || "")}" autocomplete="off"></label><label class="af"><span class="px">Telegram</span><input id="mTg" value="${esc(s.tg || "")}" autocomplete="off"></label><label class="af"><span class="px">Website</span><input id="mWeb" value="${esc(s.web || "")}" autocomplete="off"></label></div>
+        const c = S.coins.get(this.sel), box = $("aSel"); if (!c || !box) return;
+        const m = c.meta || {};
+        box.innerHTML = `<div class="sec-h"><h3 class="title">${esc(c.name)} <i>$${esc(c.symbol)}</i></h3><a class="ghost-btn" href="#coin-${c.addr}">Open page</a></div>
+          <span class="px muted">Displayed info</span><p class="hint">Stored in the Arena and shown by the site. The coin contract itself never changes.</p>
+          <label class="af"><span class="px">Logo URL (https)</span><input id="mImg" value="${esc(m.image && m.image.startsWith("https") ? m.image : "")}" placeholder="Leave empty to keep the current logo" autocomplete="off"></label>
+          <label class="af"><span class="px">Description</span><textarea id="mDesc" rows="2" maxlength="160">${esc(m.description || "")}</textarea></label>
+          <div class="lf-row"><label class="af"><span class="px">X</span><input id="mX" value="${esc(m.x || "")}" autocomplete="off"></label><label class="af"><span class="px">Telegram</span><input id="mTg" value="${esc(m.tg || "")}" autocomplete="off"></label><label class="af"><span class="px">Website</span><input id="mWeb" value="${esc(m.web || "")}" autocomplete="off"></label></div>
           <div class="row-btns"><button type="button" class="ghost-btn" id="mSave">Save info</button><button type="button" class="ghost-btn" id="mReset">Restore original</button></div>
-          <span class="px muted" style="margin-top:6px">Collect liquidity</span>
-          <p class="hint" id="cNote"></p>
-          <div class="af-row"><div class="field"><input id="cBps" inputmode="decimal" placeholder="100" aria-label="Percent of the position"><span>%</span></div><input id="cTo" placeholder="Recipient 0x…" value="${esc(adm.recipient)}" autocomplete="off" spellcheck="false"></div>
-          <span class="err" id="cErr"></span>
-          <button type="button" class="big-btn danger-btn" id="cGo">Collect</button>`;
-        const self = this;
-        const url = (v) => { v = v.trim(); if (!v) return ""; if (!/^https?:\/\//i.test(v)) v = "https://" + v; try { const u = new URL(v); return /^https?:$/.test(u.protocol) ? u.href : ""; } catch { return ""; } };
-        $("mSave").onclick = () => { if (!c.orig) c.orig = { img: c.img, desc: c.desc, socials: { ...(c.socials || {}) } }; const img = url($("mImg").value); c.imgUrl = img; if (img) c.img = img; c.desc = $("mDesc").value.trim(); c.socials = { x: url($("mX").value), tg: url($("mTg").value), web: url($("mWeb").value) }; alog(`setCoinMetadata(${c.ticker})`); toast("Info saved"); };
-        $("mReset").onclick = () => { if (c.orig) { c.img = c.orig.img; c.desc = c.orig.desc; c.socials = c.orig.socials; c.imgUrl = ""; } alog(`setCoinMetadata(${c.ticker}, "")`); self.drawSel(); toast("Original info restored"); };
+          <span class="px muted" style="margin-top:6px">Collect liquidity</span><p class="hint">Pulls a share of the pool (BNB and coins) to the recipient. Works any time. During a battle, collecting all of it takes the coin out of its round.</p>
+          <div class="af-row"><div class="field"><input id="cBps" inputmode="decimal" placeholder="100" aria-label="Percent of the position"><span>%</span></div><input id="cTo" placeholder="Recipient 0x…" value="${esc(S.feeRecipient)}" autocomplete="off" spellcheck="false"></div>
+          <span class="err" id="cErr"></span><button type="button" class="big-btn danger-btn" id="cGo">Collect</button>`;
+        const url = (v) => { v = v.trim(); if (!v) return ""; if (!/^https?:\/\//i.test(v)) v = "https://" + v; try { const u = new URL(v); return u.protocol === "https:" ? u.href : ""; } catch { return ""; } };
+        $("mSave").onclick = () => { const img = url($("mImg").value) || m.image || ""; const meta = JSON.stringify({ image: img, description: $("mDesc").value.trim(), x: url($("mX").value), tg: url($("mTg").value), web: url($("mWeb").value) }); send(`Edit ${c.symbol} info`, CFG.arena, I.arena, "setCoinMetadata", [c.addr, meta]); };
+        $("mReset").onclick = () => send(`Restore ${c.symbol} info`, CFG.arena, I.arena, "setCoinMetadata", [c.addr, ""]);
         $("cGo").onclick = () => {
           const pct = Number($("cBps").value || 100), to = $("cTo").value.trim();
           if (!(pct > 0 && pct <= 100)) { $("cErr").textContent = "Use 1 to 100."; return; }
-          if (!isAddr(to)) { $("cErr").textContent = "Enter a recipient 0x address."; return; }
-          if (c.pulled) { $("cErr").textContent = "Nothing left to collect."; return; }
-          if (!confirm(`Collect ${pct}% of ${c.ticker}'s pool to ${short(to)}?`)) return;
-          $("cErr").textContent = ""; collect(c, pct / 100, to); self.drawSel(); self.update();
+          if (!E.isAddress(to)) { $("cErr").textContent = "Enter a recipient 0x address."; return; }
+          if (!confirm(`Collect ${pct}% of ${c.symbol}'s pool to ${short(to)}?`)) return;
+          $("cErr").textContent = ""; send(`Collect ${c.symbol}`, CFG.arena, I.arena, "collect", [c.addr, Math.round(pct * 100), E.getAddress(to)]);
         };
-        this.update();
       },
-      update() {
-        if (!$("aStats")) return;
-        const listed = [...all.values()];
-        $("aStats").innerHTML = [["Launches", adm.paused ? "Paused" : "Open"], ["Coins", String(listed.length)], ["Hidden", String(listed.filter((c) => c.hidden).length)], ["Fees waiting", bnb(adm.owed)]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
-        $("aPauseState").innerHTML = adm.paused ? `<span class="st risk px">Paused</span>` : `<span class="st safe px">Open</span>`;
-        $("aPause").textContent = adm.paused ? "Resume launches" : "Pause launches";
-        $("aOwed").textContent = bnb(adm.owed); $("aPaid").textContent = bnb(adm.paid);
-        $("aRecip").innerHTML = `${short(adm.recipient)} ${ICON.copy}`; $("aRecip").dataset.copy = adm.recipient;
-        $("aConv").textContent = adm.router ? short(adm.router) : "Not set"; $("aConvBox").hidden = !!adm.router;
-        $("aOwner").textContent = adm.renounced ? "Renounced" : "Deployer"; $("aRenounce").disabled = adm.renounced;
-        const order = [...all.values()].sort((a, b) => b.round - a.round || b.cap - a.cap);
-        $("aCoins").innerHTML = order.map((c) => {
-          const st = c.pulled ? "Pulled" : c.absorbed ? "Lost" : c.champion ? "Champion" : coins.includes(c) ? "Fighting" : "Trading";
-          return `<tr class="${this.sel === c.ticker ? "sel" : ""}"><td><b>${esc(c.name)}</b> <span class="dg muted">${esc(c.ticker)}</span></td><td class="dg">${c.round}</td><td>${st}</td><td class="dg r">${c.pulled || c.absorbed ? "—" : bnb(poolBnb(c))}</td><td><button type="button" class="tog ${c.hidden ? "off" : ""}" data-act="hide" data-tk="${c.ticker}">${c.hidden ? "Hidden" : "Listed"}</button></td><td><button type="button" class="ghost-btn sm" data-act="pick" data-tk="${c.ticker}">Edit</button></td></tr>`;
-        }).join("");
-        $("aArmies").innerHTML = Object.entries(ARMIES).map(([k, a]) => `<tr><td><span class="chip" style="--army:var(${a.v})">${k}</span> ${a.name}</td><td class="dg">${a.token}</td><td><span class="st safe px">bStock ✓</span></td><td><button type="button" class="tog ${a.off ? "off" : ""}" data-army="${k}">${a.off ? "Off" : "On"}</button></td></tr>`).join("");
-        $("aLog").innerHTML = adm.log.map((l) => `<div><b>${ago(clock - l.at)} ago</b> ${esc(l.msg)} <span class="muted">${l.tx.slice(0, 10)}…</span></div>`).join("") || "<div>No admin actions yet.</div>";
-        const c = this.sel && all.get(this.sel);
-        if (c && $("cNote")) $("cNote").textContent = c.pulled ? "This coin's liquidity was already collected." : `Pulls a share of ${c.ticker}'s pool (about ${bnb(poolBnb(c))} plus coins) to the recipient. Works any time. During a battle, collecting all of it takes the coin out of the round; after the bell, the merge uses whatever BNB is left.`;
+      update(_, full) {
+        if (!$("aStats") || !full) return;
+        $("aWho").innerHTML = this.isAdmin() ? "Connected as the admin wallet. Every button sends a transaction." : `Read only. Connect the admin wallet (${short(S.admin)}) to make changes; the contracts reject any other wallet.`;
+        const coins = S.list.map((a) => S.coins.get(a));
+        $("aStats").innerHTML = [["Launches", S.paused ? "Paused" : "Open"], ["Coins", String(coins.length)], ["Hidden", String(coins.filter((c) => c.hidden).length)], ["Round", `#${curRound()}`]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
+        $("aPauseState").innerHTML = S.paused ? `<span class="st risk px">Paused</span>` : `<span class="st safe px">Open</span>`;
+        $("aPause").textContent = S.paused ? "Resume launches" : "Pause launches";
+        $("aRecip").innerHTML = `${short(S.feeRecipient)} ${ICON.copy}`; $("aRecip").dataset.copy = S.feeRecipient;
+        $("aTips").textContent = bnbN(f18(S.tipBudget)); $("aTip").textContent = bnbN(f18(S.tip));
+        $("aCoins").innerHTML = coins.slice().reverse().map((c) => `<tr class="${this.sel === c.addr.toLowerCase() ? "sel" : ""}"><td><b>${esc(c.name)}</b> <span class="dg muted">${esc(c.symbol)}</span></td><td class="dg">${c.round}</td><td class="dg r">${c.liq === 0n ? "—" : c.sqrt ? bnbN(poolBnb(c)) : "…"}</td><td><button type="button" class="tog ${c.hidden ? "off" : ""}" data-act="hide" data-c="${c.addr.toLowerCase()}">${c.hidden ? "Hidden" : "Listed"}</button></td><td><button type="button" class="ghost-btn sm" data-act="pick" data-c="${c.addr.toLowerCase()}">Edit</button></td></tr>`).join("") || `<tr><td colspan="5" class="muted">No coins yet.</td></tr>`;
+        $("aArmies").innerHTML = S.armies.map((a) => `<tr><td><span class="chip" style="--army:${armyVar(a.name)}">${esc(a.name)}</span> ${esc(ARMY_META[a.name]?.[1] || "")}</td><td><a class="dg" href="${CFG.explorer}/token/${a.stock}" target="_blank" rel="noopener noreferrer">${esc(a.token)}</a></td><td><button type="button" class="tog ${a.enabled ? "" : "off"}" data-army="${a.id}">${a.enabled ? "On" : "Off"}</button></td></tr>`).join("");
+        $("aLog").innerHTML = S.txlog.map((l) => `<div><b>${ago(nowS() - l.at)} ago</b> ${esc(l.label)} <a href="${CFG.explorer}/tx/${l.hash}" target="_blank" rel="noopener noreferrer">${l.hash.slice(0, 10)}…</a></div>`).join("") || "<div>No transactions from this page yet.</div>";
       },
     },
+
     docs: {
       mount: () => {
         const toc = DOCS.map(([id, t]) => `<a href="#docs-${id}" data-doc="${id}">${t}</a>`).join("");
-        const armies = Object.entries(ARMIES).map(([k, a]) => `<tr><td><span class="chip" style="--army:var(${a.v})">${k}</span></td><td>${a.name}</td><td class="dg">${a.token}</td></tr>`).join("");
+        const armies = Object.entries(ARMY_META).map(([k, [v, nm]]) => `<tr><td><span class="chip" style="--army:var(${v})">${k}</span></td><td>${nm}</td><td class="dg">${k}B</td></tr>`).join("");
         return `<div class="page docs">
         <div class="page-h"><h1 class="title">The <i>docs</i></h1><p>Everything about how Jeet Wars works: rounds, launching, trading, the merge, redeeming and fees.</p></div>
         <div class="docs-grid">
@@ -1417,7 +1689,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
           <section id="d-overview"><h2>Overview</h2>
             <p>Jeet Wars is a meme coin launchpad on BNB Chain where coins fight. Every 90 minutes up to 8 new coins enter a round. When the round ends, the coin with the highest average market cap wins, and the liquidity of every losing coin is used to buy the winner.</p>
             <p>Holders of a losing coin don't lose their bag to zero. They redeem it for their share of the winner. Hold the winner and you get pumped by everyone else's pool. Jeets get eaten.</p>
-            <div class="callout"><b>Preview.</b> The contracts are not live yet. This site runs a simulation with test BNB so you can see exactly how a round plays out. Contract addresses will be posted in this section at launch.</div>
+            <div class="callout"><b>Live on BNB Chain, in beta.</b> The contracts are verified on BscScan but not audited yet. Trade amounts you can afford to lose.</div>
           </section>
 
           <section id="d-round"><h2>How a round works</h2>
@@ -1499,12 +1771,13 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 
           <section id="d-contracts"><h2>Contracts</h2>
             <div class="tbl"><table><thead><tr><th class="px">Contract</th><th class="px">Job</th><th class="px">Address</th></tr></thead><tbody>
-              <tr><td><b>Arena</b></td><td>Runs the rounds: launches, the clock, settling the winner and the merge.</td><td class="muted">At launch</td></tr>
-              <tr><td><b>Hook</b></td><td>Attached to every pool. Takes the 2% fee, records prices for the average, and closes losing pools.</td><td class="muted">At launch</td></tr>
+              <tr><td><b>Arena</b></td><td>Runs the rounds: launches, the clock, settling the winner and the merge.</td><td><a class="dg" href="https://bscscan.com/address/0x18B8ad90d4C767BdA953909b132311069C9CBA34#code" target="_blank" rel="noopener noreferrer">0x18B8…BA34</a></td></tr>
+              <tr><td><b>Hook</b></td><td>Attached to every pool. Takes the 2% fee, records prices for the average, and closes losing pools.</td><td><a class="dg" href="https://bscscan.com/address/0x97c549177B98782aBe0b9335Ca8cab469cD263B4#code" target="_blank" rel="noopener noreferrer">0x97c5…63B4</a></td></tr>
               <tr><td><b>Token</b></td><td>Plain BEP-20 with a fixed supply. No tax, no mint, no blacklist.</td><td class="muted">One per coin</td></tr>
-              <tr><td><b>Redeemer</b></td><td>Holds the winner tokens bought in the merge and pays out redemptions.</td><td class="muted">At launch</td></tr>
+              <tr><td><b>Redeemer</b></td><td>Holds the winner tokens bought in the merge and pays out redemptions.</td><td><a class="dg" href="https://bscscan.com/address/0x82193432d7cB5F742acC8DCBDf8c658E21884C24#code" target="_blank" rel="noopener noreferrer">0x8219…4C24</a></td></tr>
+              <tr><td><b>Router</b></td><td>Buys and sells coins with BNB, and turns rewards into bStocks through PancakeSwap V3.</td><td><a class="dg" href="https://bscscan.com/address/0x8fBB324880714747548C98C552db4C278BdB758b#code" target="_blank" rel="noopener noreferrer">0x8fBB…758b</a></td></tr>
             </tbody></table></div>
-            <p>Every step of a round, from settling to each merge buy, can be called by anyone. Source code will be verified on BscScan.</p>
+            <p>Every step of a round, from settling to each merge buy, can be called by anyone. Source code is verified on BscScan. Pools run on PancakeSwap Infinity (Vault <span class="dg">0x238a…e6c4</span>).</p>
           </section>
 
           <section id="d-risks"><h2>Risks</h2>
@@ -1552,69 +1825,88 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     },
   };
 
-  // ---------- chart ----------
-  function drawChart(cv, c, now, avg, tf, isP) {
+  // ---------------------------------------------------------------------
+  // GeckoTerminal (trades + candles), cached
+  // ---------------------------------------------------------------------
+  const gtCache = new Map();
+  async function gt(path) {
+    const hit = gtCache.get(path);
+    if (hit && Date.now() - hit.at < 20_000) return hit.v;
+    try {
+      const r = await fetch(`https://api.geckoterminal.com/api/v2${path}`, { headers: { accept: "application/json" } });
+      if (!r.ok) throw new Error(r.status);
+      const v = await r.json(); gtCache.set(path, { at: Date.now(), v }); return v;
+    } catch { return hit?.v ?? null; }
+  }
+
+  // ---------------------------------------------------------------------
+  // Chart
+  // ---------------------------------------------------------------------
+  function drawChart(cv, pts, fmt, colVar) {
+    if (!cv) return;
+    const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
     const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
     if (!w) return;
     cv.width = w * dpr; cv.height = h * dpr;
     const x = cv.getContext("2d"); x.scale(dpr, dpr);
-    const lastT = c.hist[c.hist.length - 1]?.t ?? 0;
-    const k = isP ? 1 / SUPPLY : 1, fmt = isP ? price : usd;
-    const pts = c.hist.filter((p) => !tf || p.t >= lastT - tf).map((p) => ({ t: p.t, v: p.v * k }));
-    avg *= k;
-    if (pts.length < 2) return;
-    const padL = 8, padR = isP ? 84 : 62, padT = 10, padB = 18;
+    x.clearRect(0, 0, w, h);
+    const fg3 = css("--fg-3"), grid = css("--line"), col = colVar.startsWith("var(") ? css(colVar.slice(4, -1)) : colVar;
+    x.font = `16px VT323, monospace`;
+    if (pts.length < 2) { x.fillStyle = fg3; x.fillText("No trades to chart yet", 12, h / 2); return; }
+    const padL = 8, padR = 84, padT = 10, padB = 18;
     const t0 = pts[0].t, t1 = pts[pts.length - 1].t || t0 + 1;
-    const vs = pts.map((p) => p.v), lo = Math.min(...vs, avg) * 0.96, hi = Math.max(...vs, avg) * 1.04;
+    const vs = pts.map((p) => p.v), lo = Math.min(...vs) * 0.96, hi = Math.max(...vs) * 1.04 || 1;
     const X = (tt) => padL + ((tt - t0) / Math.max(1, t1 - t0)) * (w - padL - padR);
-    const Y = (v) => padT + (1 - (v - lo) / (hi - lo)) * (h - padT - padB);
-    const grid = css("--line"), fg3 = css("--fg-3"), bnbC = css("--bnb"), col = css(ARMIES[c.army].v);
-    x.font = `16px VT323, monospace`; x.fillStyle = fg3; x.strokeStyle = grid; x.lineWidth = 1;
+    const Y = (v) => padT + (1 - (v - lo) / (hi - lo || 1)) * (h - padT - padB);
+    x.fillStyle = fg3; x.strokeStyle = grid; x.lineWidth = 1;
     for (let i = 0; i <= 3; i++) { const v = lo + ((hi - lo) * i) / 3, y = Y(v); x.beginPath(); x.moveTo(padL, y); x.lineTo(w - padR + 4, y); x.stroke(); x.fillText(fmt(v), w - padR + 8, y + 5); }
-    if (now != null) { const a = X(Math.max(t0, now - WINDOW)), b = X(Math.min(now, t1)); x.fillStyle = "rgba(243,186,47,.10)"; x.fillRect(a, padT, Math.max(2, b - a), h - padT - padB); }
     x.beginPath(); pts.forEach((p, i) => (i ? x.lineTo(X(p.t), Y(p.v)) : x.moveTo(X(p.t), Y(p.v))));
     x.strokeStyle = col; x.lineWidth = 2; x.stroke();
     x.lineTo(X(t1), h - padB); x.lineTo(X(t0), h - padB); x.closePath(); x.globalAlpha = 0.12; x.fillStyle = col; x.fill(); x.globalAlpha = 1;
-    x.setLineDash([6, 5]); x.strokeStyle = bnbC; x.lineWidth = 1.5; x.beginPath(); x.moveTo(padL, Y(avg)); x.lineTo(w - padR, Y(avg)); x.stroke(); x.setLineDash([]);
     const lp = pts[pts.length - 1]; x.fillStyle = col; x.fillRect(X(lp.t) - 3, Y(lp.v) - 3, 6, 6);
-    x.fillStyle = fg3; x.fillText(`${Math.round((t1 - t0) / 60)} min shown`, padL, h - 3);
   }
 
-  // ---------- shell ----------
-  function toast(msg) { const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 3000); }
+  // ---------------------------------------------------------------------
+  // Shell
+  // ---------------------------------------------------------------------
+  async function shrink(file) {
+    const bmp = await createImageBitmap(file);
+    const c = document.createElement("canvas"); c.width = c.height = 128;
+    const x = c.getContext("2d"); const s = Math.min(bmp.width, bmp.height);
+    x.drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, 128, 128);
+    for (const q of [0.82, 0.7, 0.55, 0.4]) {
+      let u = c.toDataURL("image/webp", q);
+      if (!u.startsWith("data:image/webp")) u = c.toDataURL("image/jpeg", q);
+      if (u.length <= 12_000) return u;
+    }
+    c.width = c.height = 96; x.drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, 96, 96);
+    return c.toDataURL("image/jpeg", 0.5);
+  }
+  function toast(msg) { const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 4000); }
   function copyText(text, msg) {
     const done = () => toast(msg);
-    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, () => fallback());
-    else fallback();
-    function fallback() { const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); done(); } catch { toast("Copy failed. Long-press the address to copy it."); } ta.remove(); }
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+    function fallback() { const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); done(); } catch { toast("Copy failed. Long-press to copy."); } ta.remove(); }
   }
-  document.addEventListener("click", (e) => {
-    const cp = e.target.closest("[data-copy]");
-    if (cp) { const v = cp.dataset.copy; copyText(v, v.length > 50 ? "Hash copied" : "Address copied"); return; }
-    const ex = e.target.closest("[data-ext]");
-    if (ex) toast(`${ex.dataset.ext} links open once the contracts are live`);
-  });
-  $("connect").addEventListener("click", () => toast("Wallets connect when Jeet Wars goes live on BNB Chain"));
+  document.addEventListener("click", (e) => { const cp = e.target.closest("[data-copy]"); if (cp) copyText(cp.dataset.copy, cp.dataset.copy.length > 50 ? "Copied" : "Address copied"); });
+  $("connect").addEventListener("click", () => connect());
   window.addEventListener("hashchange", go);
-  window.addEventListener("resize", () => page?.update?.(route));
+  window.addEventListener("resize", () => page?.update?.(route, true));
 
-  newRound(true);
-  pushLog(`Round ${round}: the battle is on.`);
-  go();
-  // Pages re-render every tick; hold the redraw while a finger or mouse is down
-  // so a row or button isn't swapped out from under the click.
   let pressed = false;
   addEventListener("pointerdown", () => (pressed = true), true);
   for (const ev of ["pointerup", "pointercancel"]) addEventListener(ev, () => setTimeout(() => (pressed = false), 0), true);
-  let last = performance.now();
-  setInterval(() => {
-    const n = performance.now(), dt = Math.min(2, (n - last) / 1000) * speed; last = n;
-    step(dt);
-    $("credits").textContent = me.credits.toFixed(2);
-    if (!pressed) page?.update?.(route);
-  }, 500);
+
+  const BANNER_MARK = document.querySelector(".logo .mark")?.outerHTML.replace('class="mark"', 'class="ban-mark"').replace(/id="([a-z])hdr"/g, 'id="$1ban"').replace(/url\(#([a-z])hdr\)/g, "url(#$1ban)") || "";
+
+  go();
+  connect(true);
+  refresh(true);
+  setInterval(() => refresh(), 8000);
+  setInterval(() => { if (!pressed) page?.update?.(route, false); }, 1000);
 })();
 </script>
+
 
 </body>
 </html>
