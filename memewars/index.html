@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Meme coins fight in 90-minute rounds under stock armies on BNB Chain. The winner absorbs every loser.">
+<meta property="og:title" content="Meme Wars">
+<meta property="og:description" content="Pick your army. Losers get absorbed. Meme coin battles on BNB Chain.">
+<meta name="theme-color" content="#09090b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23f3ba2f'/%3E%3Cpath fill='%23161004' d='M3 3h2v1h1v1h1v1h2V5h1V4h1V3h2v2h-1v1h-1v1h-1v2h1v1h1v1h1v2h-2v-1h-1v-1h-1v-1H7v1H6v1H5v1H3v-2h1v-1h1V9h1V7H5V6H4V5H3z'/%3E%3C/svg%3E">
+<style>[hidden]{display:none!important} :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>Meme Wars</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&family=VT323&family=Chakra+Petch:wght@400;500;600;700&display=swap">
+<style>
+/* Arcade cabinet: a marquee HUD (round, phase, clock), the high-score board as the main screen with health bars, player side panel; BNB yellow on black, one dark look on purpose. */
+:root {
+  --bg: #09090b; --panel: #121216; --panel-2: #1b1b21; --line: #2b2b34; --line-2: #3b3b46;
+  --fg: #f6f3e7; --fg-2: #bdbab0; --fg-3: #7d7c86;
+  --bnb: #f3ba2f; --bnb-hi: #ffd35c; --bnb-lo: #b98712; --ink: #161004;
+  --hot: #ff3d6e; --cyan: #3fe0ff; --ok: #55ef8c;
+  --a-nvda: #84c341; --a-tsla: #ff4a3d; --a-aapl: #c3c8cd; --a-spy: #4d8dff; --a-qqq: #a774ff; --a-amzn: #ff9d2e; --a-googl: #ffd43a; --a-meta: #2fd1d1;
+  --marquee: "Bungee", "Arial Black", Impact, sans-serif;
+  --pixel: "Press Start 2P", "Courier New", monospace;
+  --digits: "VT323", "Courier New", monospace;
+  --body: "Chakra Petch", "Trebuchet MS", Arial, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.45; margin: 0; position: relative; }
+body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 40; background: repeating-linear-gradient(to bottom, rgba(255,255,255,.035) 0 1px, transparent 1px 3px); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 0 48px; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--bnb); outline-offset: 2px; }
+.px { font-family: var(--pixel); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; line-height: 1.5; }
+.dg { font-family: var(--digits); font-variant-numeric: tabular-nums; }
+
+/* free play strip */
+.free { display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 9px 16px; background: var(--bnb); color: var(--ink); text-align: center; }
+.free .px { font-size: 9px; }
+.free span:last-child { font-size: 13px; font-weight: 600; }
+
+/* header */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: rgba(9,9,11,.92); backdrop-filter: blur(8px); border-bottom: 2px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 16px; padding-block: 10px; }
+.logo { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.logo b { font-family: var(--marquee); font-weight: 400; font-size: 26px; line-height: 1; color: var(--bnb); text-shadow: 0 0 18px rgba(243,186,47,.45), 3px 3px 0 #5c3f00; letter-spacing: .02em; }
+.nav { display: flex; gap: 2px; margin-left: 6px; }
+.nav a { padding: 8px 11px; color: var(--fg-2); text-decoration: none; font-weight: 700; font-size: 14px; border-radius: 6px; }
+.nav a:hover { color: var(--bnb); }
+.top .sp { flex: 1; }
+.sim { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 4px; }
+.sim > .px { color: var(--fg-3); }
+.speed { display: inline-flex; border: 2px solid var(--line-2); border-radius: 8px; overflow: hidden; }
+.speed button { background: transparent; border: 0; padding: 6px 9px; font-family: var(--pixel); font-size: 8px; color: var(--fg-3); }
+.speed button.on { background: var(--panel-2); color: var(--bnb); }
+.coin-btn { font-family: var(--pixel); font-size: 9px; letter-spacing: .05em; background: var(--bnb); color: var(--ink); border: 0; border-radius: 8px; padding: 11px 12px 9px; box-shadow: 0 4px 0 var(--bnb-lo); transition: transform .06s, box-shadow .06s; white-space: nowrap; }
+.coin-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--bnb-lo); }
+.coin-btn .blink { animation: blink 1.1s steps(2, start) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* HUD */
+.hud { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; margin-top: 18px; }
+.screen { background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; position: relative; overflow: hidden; }
+.screen.hot { border-color: var(--bnb); box-shadow: 0 0 0 1px rgba(243,186,47,.25), 0 0 40px -10px rgba(243,186,47,.45); }
+.hud-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.phase { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px 5px; border-radius: 6px; }
+.phase.battle { background: rgba(255,61,110,.14); color: var(--hot); }
+.phase.battle i { width: 7px; height: 7px; background: var(--hot); animation: blink 1s steps(2, start) infinite; }
+.phase.launch { background: rgba(85,239,140,.13); color: var(--ok); }
+.phase.merge { background: rgba(243,186,47,.15); color: var(--bnb); }
+.round-no { font-family: var(--marquee); font-size: 22px; line-height: 1; }
+.hud-h .px { color: var(--fg-3); }
+.clock { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.clock .big { font-family: var(--digits); font-size: clamp(76px, 13vw, 128px); line-height: .78; color: var(--bnb); text-shadow: 0 0 22px rgba(243,186,47,.5); letter-spacing: .02em; }
+.clock .what { color: var(--fg-2); font-size: 15px; max-width: 30ch; padding-bottom: 6px; }
+.rail { display: grid; grid-template-columns: 15fr 45fr 30fr; gap: 4px; }
+.rail div { height: 12px; background: var(--panel-2); position: relative; overflow: hidden; border-radius: 2px; }
+.rail div::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 6px, rgba(0,0,0,.55) 6px 8px); }
+.rail span { position: absolute; inset: 0; transform-origin: left; }
+.rail .l span { background: var(--ok); } .rail .b span { background: var(--hot); } .rail .m span { background: var(--bnb); }
+.rail-l { display: grid; grid-template-columns: 15fr 45fr 30fr; gap: 4px; color: var(--fg-3); margin-top: 7px; }
+.rail-l em { font-style: normal; }
+
+.p1 { background: var(--panel); border: 2px solid var(--bnb); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; position: relative; overflow: hidden; box-shadow: inset 0 0 60px -20px var(--army, var(--bnb)); }
+.p1-tag { display: flex; justify-content: space-between; gap: 10px; color: var(--bnb); }
+.crown { font-family: var(--pixel); font-size: 9px; color: var(--ink); background: var(--bnb); padding: 5px 7px 4px; border-radius: 4px; }
+.p1-name { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.p1-name h2 { margin: 0; font-family: var(--marquee); font-weight: 400; font-size: clamp(28px, 4.4vw, 42px); line-height: .95; overflow-wrap: anywhere; color: var(--fg); text-shadow: 3px 3px 0 rgba(0,0,0,.6); }
+.p1-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.p1-stats div { background: var(--panel-2); border-radius: 8px; padding: 9px 10px; min-width: 0; }
+.p1-stats .px { color: var(--fg-3); font-size: 7.5px; }
+.p1-stats b { display: block; font-family: var(--digits); font-weight: 400; font-size: 30px; line-height: 1; margin-top: 5px; color: var(--fg); }
+.p1 p { margin: 0; font-size: 13.5px; color: var(--fg-2); }
+
+/* sprites + army chips */
+.sprite { flex: none; width: 38px; height: 38px; border-radius: 8px; display: grid; place-items: center; font-family: var(--marquee); font-size: 19px; color: #0b0b0d; background: var(--army); box-shadow: inset -3px -3px 0 rgba(0,0,0,.28), inset 3px 3px 0 rgba(255,255,255,.28); }
+.p1 .sprite { width: 58px; height: 58px; font-size: 30px; border-radius: 10px; }
+.chip { display: inline-flex; align-items: center; height: 19px; padding: 0 6px; border-radius: 4px; font-family: var(--pixel); font-size: 7.5px; color: #0b0b0d; background: var(--army); white-space: nowrap; }
+
+/* board */
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 14px; margin-top: 14px; align-items: start; }
+.board { background: var(--panel); border: 2px solid var(--line); border-radius: 14px; overflow: hidden; min-width: 0; }
+.board-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 16px 18px 12px; }
+.title { margin: 0; font-family: var(--marquee); font-weight: 400; font-size: 22px; line-height: 1; color: var(--fg); }
+.title i { font-style: normal; color: var(--bnb); }
+.board-h .px { color: var(--fg-3); }
+.row { display: grid; grid-template-columns: 40px minmax(0, 1.4fr) minmax(0, 1.4fr) 100px 96px; gap: 14px; align-items: center; padding: 11px 18px; border: 0; border-top: 2px solid var(--line); background: transparent; width: 100%; text-align: left; position: relative; }
+.row:hover { background: var(--panel-2); }
+.row.sel { background: var(--panel-2); box-shadow: inset 4px 0 0 var(--bnb); }
+.row.head { cursor: default; padding-block: 9px; background: transparent; box-shadow: none; }
+.row.head span { color: var(--fg-3); }
+.rank { font-family: var(--marquee); font-size: 22px; color: var(--fg-3); }
+.row.first .rank { color: var(--bnb); text-shadow: 0 0 12px rgba(243,186,47,.6); }
+.coin { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.coin .cn { min-width: 0; display: block; }
+.coin b { display: block; font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.coin small { display: flex; gap: 7px; align-items: center; color: var(--fg-3); font-size: 12px; margin-top: 3px; }
+.hp { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.hp-bar { height: 14px; background: #050506; border: 2px solid var(--line-2); border-radius: 3px; position: relative; overflow: hidden; }
+.hp-bar i { position: absolute; inset: 0 auto 0 0; background: var(--army); transition: width .45s steps(8, end); }
+.hp-bar::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 9px, rgba(0,0,0,.6) 9px 11px); }
+.hp-l { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--fg-3); }
+.hp-l .dg { font-size: 19px; line-height: .8; color: var(--fg); }
+.score b { display: block; font-family: var(--digits); font-weight: 400; font-size: 26px; line-height: .9; }
+.score small { font-family: var(--digits); font-size: 17px; }
+.up { color: var(--ok); } .down { color: var(--hot); }
+.status { justify-self: end; }
+.st { display: inline-flex; padding: 6px 7px 5px; border-radius: 4px; white-space: nowrap; }
+.st.win { color: var(--ink); background: var(--bnb); }
+.st.safe { color: var(--cyan); background: rgba(63,224,255,.12); }
+.st.risk { color: var(--hot); background: rgba(255,61,110,.13); }
+.st.ko { color: var(--fg-3); border: 2px dashed var(--line-2); }
+.row.ko { opacity: .6; }
+.row.ko::after { content: "K.O."; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-6deg); font-family: var(--marquee); font-size: 30px; color: var(--hot); text-shadow: 2px 2px 0 #000; pointer-events: none; opacity: .85; }
+.slot { padding: 14px 18px; border-top: 2px dashed var(--line); color: var(--fg-3); display: flex; align-items: center; gap: 10px; }
+.slot .blink { animation: blink 1.4s steps(2, start) infinite; color: var(--bnb); }
+
+/* side */
+.side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card { background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.army { display: grid; grid-template-columns: 56px minmax(0, 1fr) 70px; gap: 10px; align-items: center; }
+.army .bar { height: 12px; background: #050506; border-radius: 2px; overflow: hidden; border: 1px solid var(--line-2); }
+.army .bar i { display: block; height: 100%; background: var(--army); transition: width .45s steps(8, end); }
+.army .v { text-align: right; font-size: 19px; line-height: 1; }
+.armies { display: flex; flex-direction: column; gap: 9px; }
+.sel-h { display: flex; gap: 12px; align-items: center; }
+.sel-h b { font-size: 18px; display: block; }
+.kv { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding-block: 5px; border-bottom: 2px solid var(--line); }
+.kv:last-child { border-bottom: 0; }
+.kv span { color: var(--fg-2); font-size: 13.5px; }
+.kv b { font-family: var(--digits); font-weight: 400; font-size: 21px; line-height: 1; text-align: right; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: #050506; border-radius: 10px; }
+.seg button { border: 0; background: transparent; height: 38px; border-radius: 7px; font-family: var(--pixel); font-size: 9px; color: var(--fg-3); }
+.seg button.on { background: var(--ok); color: #04150a; }
+.seg button.on.sell { background: var(--hot); color: #fff; }
+.field { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line-2); border-radius: 10px; padding: 6px 12px; background: #050506; }
+.field input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-family: var(--digits); font-size: 32px; color: var(--bnb); }
+.field span { font-family: var(--pixel); font-size: 8px; color: var(--fg-3); }
+.quick { display: flex; gap: 6px; }
+.quick button { flex: 1; border: 2px solid var(--line-2); background: transparent; border-radius: 8px; padding: 4px 0; font-family: var(--digits); font-size: 19px; color: var(--fg-2); }
+.quick button:hover { border-color: var(--bnb); color: var(--bnb); }
+.big-btn { font-family: var(--pixel); font-size: 11px; letter-spacing: .04em; border: 0; border-radius: 10px; padding: 16px 12px 14px; background: var(--bnb); color: var(--ink); box-shadow: 0 5px 0 var(--bnb-lo); transition: transform .06s, box-shadow .06s; line-height: 1.5; }
+.big-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--bnb-lo); }
+.hint { font-size: 12.5px; color: var(--fg-3); margin: 0; }
+.log { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow: auto; font-family: var(--digits); font-size: 18px; line-height: 1.05; color: var(--fg-2); }
+.log b { color: var(--bnb); font-weight: 400; }
+.log .combo { color: var(--hot); }
+
+/* sections */
+.sec { margin-top: 38px; display: flex; flex-direction: column; gap: 14px; }
+.sec-h { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.sec-h p { margin: 0; color: var(--fg-2); font-size: 14px; max-width: 58ch; }
+.select { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; }
+.roster { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.fighter { border: 2px solid var(--line-2); background: #050506; border-radius: 10px; padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--fg-2); position: relative; }
+.fighter .sprite { width: 44px; height: 44px; font-size: 13px; }
+.fighter span.px { font-size: 8px; }
+.fighter.on { border-color: var(--army); color: var(--fg); box-shadow: 0 0 0 2px var(--army), 0 0 22px -4px var(--army); }
+.fighter.on::after { content: "P1"; position: absolute; top: 5px; right: 6px; font-family: var(--pixel); font-size: 7px; color: var(--army); }
+.lf { display: flex; flex-direction: column; gap: 12px; }
+.lf label { display: flex; flex-direction: column; gap: 6px; }
+.lf label .px { color: var(--fg-3); }
+.lf input { border: 2px solid var(--line-2); border-radius: 10px; padding: 11px 12px; background: #050506; font-size: 16px; color: var(--fg); min-width: 0; }
+.lf input#lfTicker { font-family: var(--digits); font-size: 24px; padding-block: 6px; text-transform: uppercase; color: var(--bnb); }
+.rules .kv b { font-family: var(--body); font-size: 13.5px; font-weight: 700; }
+.levels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.level { background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.level .px { color: var(--bnb); }
+.level b { font-family: var(--marquee); font-weight: 400; font-size: 20px; }
+.level p { margin: 0; color: var(--fg-2); font-size: 13.5px; }
+.scores { background: var(--panel); border: 2px solid var(--line); border-radius: 14px; overflow-x: auto; }
+.scores table { width: 100%; border-collapse: collapse; min-width: 560px; }
+.scores th { text-align: left; padding: 11px 16px; border-bottom: 2px solid var(--line); color: var(--fg-3); font-weight: 400; }
+.scores td { padding: 11px 16px; border-bottom: 2px solid var(--line); font-size: 14px; }
+.scores tr:last-child td { border-bottom: 0; }
+.scores .r { text-align: right; }
+.scores td.dg { font-size: 22px; }
+.foot { margin-top: 40px; padding-top: 18px; border-top: 2px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--fg-3); font-size: 12.5px; }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--bnb); color: var(--ink); padding: 12px 16px 10px; border-radius: 10px; font-family: var(--pixel); font-size: 9px; line-height: 1.6; max-width: calc(100% - 32px); z-index: 50; box-shadow: 0 5px 0 var(--bnb-lo); text-align: center; }
+.flash { animation: flash .9s steps(6, end); }
+@keyframes flash { 0%, 40% { box-shadow: 0 0 0 4px var(--bnb), 0 0 60px var(--bnb); } 100% { box-shadow: none; } }
+
+@media (max-width: 1020px) { .main { grid-template-columns: minmax(0, 1fr); } .levels { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .hud, .select { grid-template-columns: minmax(0, 1fr); }
+  .nav { display: none; }
+  .row { grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1fr) 80px; gap: 10px; padding-inline: 14px; }
+  .row .status { display: none; }
+  .row.ko::after { font-size: 24px; }
+}
+@media (max-width: 480px) {
+  .logo b { font-size: 21px; }
+  .top .wrap { gap: 8px; }
+  .rail-l em { display: none; }
+  .row { grid-template-columns: 24px minmax(0, 1fr) 76px; }
+  .row .hp { display: none; }
+  .levels { grid-template-columns: minmax(0, 1fr); }
+  .roster { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .fighter .sprite { width: 36px; height: 36px; }
+  .speed button { padding: 6px 7px; }
+}
+@media (prefers-reduced-motion: reduce) { .blink, .phase i, .slot .blink, .coin-btn .blink, .flash { animation: none !important; } .hp-bar i, .army .bar i { transition: none; } }
+</style>
+</head>
+<body>
+
+
+<div class="free" role="note"><span class="px">Free play</span><span>Preview build. Rounds, prices and trades are simulated until the contracts go live on BNB Chain.</span></div>
+
+<header class="top">
+  <div class="wrap">
+    <div class="logo" aria-label="Meme Wars">
+      <svg width="34" height="34" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#f3ba2f"/><path fill="#161004" d="M3 3h2v1h1v1h1v1h2V5h1V4h1V3h2v2h-1v1h-1v1h-1v2h1v1h1v1h1v2h-2v-1h-1v-1h-1v-1H7v1H6v1H5v1H3v-2h1v-1h1V9h1V7H5V6H4V5H3z"/></svg>
+      <b>Meme Wars</b>
+    </div>
+    <nav class="nav" aria-label="Sections"><a href="#arena">Arena</a><a href="#select">Launch</a><a href="#how">How to play</a><a href="#scores">High scores</a></nav>
+    <span class="sp"></span>
+    <button type="button" class="coin-btn" id="connect"><span class="blink" aria-hidden="true">▶ </span>Insert coin</button>
+  </div>
+</header>
+
+<main class="wrap" id="arena">
+  <section class="hud" aria-label="Current round">
+    <div class="screen" id="clockScreen">
+      <div class="hud-h"><span class="phase battle px" id="phasePill"><i></i>Battle</span><span class="round-no" id="roundNo">Round 128</span><span class="px" id="phaseSub">8 coins · 8 armies</span></div>
+      <div class="clock"><span class="big" id="countdown">29:24</span><span class="what" id="countWhat">until the battle ends. Highest 10-minute average market cap wins.</span></div>
+      <div>
+        <div class="rail" aria-hidden="true"><div class="l"><span id="railL"></span></div><div class="b"><span id="railB"></span></div><div class="m"><span id="railM"></span></div></div>
+        <div class="rail-l px"><span>Launch<em> 15m</em></span><span>Battle<em> 45m</em></span><span>Merge<em> 30m</em></span></div>
+      </div>
+      <div class="sim"><span class="px">Sim speed</span><div class="speed" role="group" aria-label="Simulation speed"><button type="button" data-s="1" title="Real time">1×</button><button type="button" data-s="30" class="on">30×</button><button type="button" data-s="120">120×</button></div></div>
+    </div>
+    <div class="p1" id="lead">
+      <div class="p1-tag"><span class="px" id="leadLabel">Player 1 · leading</span><span class="crown" id="leadCrown">#1</span></div>
+      <div class="p1-name"><span class="sprite" id="leadAv">I</span><div style="min-width:0"><h2 id="leadName">Index Chad</h2><span class="chip" id="leadTag">SPY army</span></div></div>
+      <div class="p1-stats">
+        <div><span class="px" id="leadCapLabel">10m avg</span><b id="leadTwap">$0</b></div>
+        <div><span class="px">Absorbs</span><b id="leadAbs">7</b></div>
+        <div><span class="px">Loot</span><b id="leadLiq">0 BNB</b></div>
+      </div>
+      <p id="leadNote">If the battle ended now, the other 7 coins' pools would buy this coin over 30 minutes.</p>
+    </div>
+  </section>
+
+  <section class="main">
+    <div class="board">
+      <div class="board-h"><h3 class="title">High <i>score</i> board</h3><span class="px" id="boardSub">10-minute average market cap · tap a fighter</span></div>
+      <div id="rows"></div>
+    </div>
+    <aside class="side">
+      <div class="card">
+        <h3 class="title">Army <i>power</i></h3>
+        <div class="armies" id="armies"></div>
+      </div>
+      <div class="card" id="trade">
+        <div class="sel-h"><span class="sprite" id="selAv">I</span><div style="min-width:0"><b id="selName">Index Chad</b><span class="chip" id="selTag">SPY</span></div></div>
+        <div>
+          <div class="kv"><span>Market cap</span><b id="selMc">$0</b></div>
+          <div class="kv"><span>10m average</span><b id="selTwap">$0</b></div>
+          <div class="kv"><span>Pool</span><b id="selPool">0 BNB</b></div>
+          <div class="kv"><span>Holders</span><b id="selHolders">0</b></div>
+        </div>
+        <div class="seg" role="group" aria-label="Side"><button type="button" id="bBuy" class="on">Buy</button><button type="button" id="bSell">Sell</button></div>
+        <div class="field"><input id="amt" inputmode="decimal" placeholder="0.00" aria-label="Amount"><span id="amtUnit">BNB</span></div>
+        <div class="quick"><button type="button" data-q="0.1">0.1</button><button type="button" data-q="0.5">0.5</button><button type="button" data-q="1">1</button><button type="button" data-q="5">5</button></div>
+        <button type="button" class="big-btn" id="goTrade">Buy Index Chad</button>
+        <p class="hint" id="tradeHint">2% fee on every trade.</p>
+      </div>
+      <div class="card">
+        <h3 class="title">Combo <i>feed</i></h3>
+        <div class="log" id="log"></div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="sec" id="select">
+    <div class="sec-h"><h3 class="title">Select your <i>army</i></h3><p>Name your coin, pick an army, and enlist. Up to 8 fighters per round; enlisting is open for the first 15 minutes.</p></div>
+    <div class="select">
+      <form class="card lf" id="lf" novalidate>
+        <div class="roster" id="armyPick"></div>
+        <label for="lfName"><span class="px">Fighter name</span><input id="lfName" maxlength="28" placeholder="Jensen Pepe" required></label>
+        <label for="lfTicker"><span class="px">Ticker</span><input id="lfTicker" maxlength="8" placeholder="JPEPE"></label>
+        <button class="big-btn" type="submit" id="lfGo">Enlist in round 129</button>
+        <p class="hint" id="lfHint">Launching costs gas only. The whole supply goes into a BNB pool; no presale, no team bags.</p>
+      </form>
+      <div class="card rules">
+        <h3 class="title">The <i>rules</i></h3>
+        <div class="kv"><span>Win the round</span><b>Absorb every loser's pool</b></div>
+        <div class="kv"><span>Winner's holders</span><b>Rewards in their army's stock</b></div>
+        <div class="kv"><span>Losers' holders</span><b>Redeem for the winner</b></div>
+        <div class="kv"><span>Who wins</span><b>10-minute average cap</b></div>
+        <div class="kv"><span>Trade fee</span><b>2%, fixed forever</b></div>
+        <p class="hint">After the bell, every step runs on contract rules. Anyone can push the next step and earn a small tip.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="how">
+    <div class="sec-h"><h3 class="title">How to <i>play</i></h3><p>Every round is the same 90 minutes.</p></div>
+    <div class="levels">
+      <div class="level"><span class="px">Level 1 · 15 min</span><b>Enlist</b><p>Coins launch into the round, each under a stock army: NVDA, TSLA, AAPL, SPY and more.</p></div>
+      <div class="level"><span class="px">Level 2 · 45 min</span><b>Battle</b><p>Open trading. Communities push their fighter up the board.</p></div>
+      <div class="level"><span class="px">Level 3 · the bell</span><b>K.O.</b><p>Highest average market cap over the last 10 minutes wins. A last-second pump barely moves an average.</p></div>
+      <div class="level"><span class="px">Level 4 · 30 min</span><b>Absorb</b><p>Losers' pools buy the winner in 10 hits. Losing holders redeem into the winner.</p></div>
+    </div>
+  </section>
+
+  <section class="sec" id="scores">
+    <div class="sec-h"><h3 class="title">Hall of <i>fame</i></h3><p>Winners of finished rounds in this preview.</p></div>
+    <div class="scores"><table><thead><tr><th class="px">Round</th><th class="px">Champion</th><th class="px">Army</th><th class="px r">K.O.s</th><th class="px r">Final cap</th></tr></thead><tbody id="hist"></tbody></table></div>
+  </section>
+
+  <footer class="foot"><span>Meme Wars · BNB Chain · free play preview</span><span>Figures are simulated. Nothing on this page is a live market.</span></footer>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  const ARMIES = { NVDA: "--a-nvda", TSLA: "--a-tsla", AAPL: "--a-aapl", SPY: "--a-spy", QQQ: "--a-qqq", AMZN: "--a-amzn", GOOGL: "--a-googl", META: "--a-meta" };
+  const POOL = [
+    ["Jensen Pepe", "JPEPE", "NVDA"], ["Cybertruck Doge", "CYDOGE", "TSLA"], ["iFrog", "IFROG", "AAPL"], ["Index Chad", "ICHAD", "SPY"],
+    ["Nasdaq Neko", "NNEKO", "QQQ"], ["Prime Cat", "PCAT", "AMZN"], ["Gemini Pup", "GPUP", "GOOGL"], ["Zuck Bonk", "ZBONK", "META"],
+    ["Blackwell Bull", "BWELL", "NVDA"], ["Gigafrog", "GIGA", "TSLA"], ["Vision Goat", "VGOAT", "AAPL"], ["Boomer Shiba", "BSHIB", "SPY"],
+    ["Tech Rat", "TRAT", "QQQ"], ["Bezos Moon", "BMOON", "AMZN"], ["Waymo Wojak", "WAYMO", "GOOGL"], ["Llama Lord", "LLAMA", "META"],
+    ["H100 Hamster", "H100", "NVDA"], ["Robotaxi Rex", "RREX", "TSLA"], ["Tim Apple Ape", "TAPE", "AAPL"], ["Dip Buyer", "DIPB", "SPY"],
+  ];
+  const BNB_USD = 612; // sample price for the simulation
+  const LAUNCH = 15 * 60, BATTLE = 45 * 60, MERGE = 30 * 60, ROUND = LAUNCH + BATTLE + MERGE, WINDOW = 10 * 60;
+  const $ = (id) => document.getElementById(id);
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const usd = (v) => v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v.toFixed(0)}`;
+  const bnb = (v) => `${v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2)} BNB`;
+  const mmss = (s) => { s = Math.max(0, Math.ceil(s)); return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
+  const randn = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const army = (k) => `var(${ARMIES[k]})`;
+
+  let round = 128, speed = 30, t = LAUNCH + 15 * 60 + 36, coins = [], selected = 0, side = "buy", winner = null, merged = 0, logLines = [], history = [], queued = null, poolIdx = 0, pickArmy = "NVDA";
+
+  function makeCoin([name, ticker, a], cap, joinedAt) {
+    return { name, ticker, army: a, cap, hist: [], joinedAt, holders: 20 + Math.floor(Math.random() * 60), vol: 0.9 + Math.random() * 0.8, drift: (Math.random() - 0.4) * 0.00012, absorbed: false };
+  }
+  const poolBnb = (c) => Math.sqrt(c.cap / BNB_USD) * 3.2;
+  function twap(c, now) {
+    const pts = c.hist.filter((p) => p.t >= now - WINDOW);
+    return pts.length ? pts.reduce((s, p) => s + p.v, 0) / pts.length : c.cap;
+  }
+  function seedHistory(c, now) {
+    let v = c.cap * (0.4 + Math.random() * 0.3);
+    for (let s = Math.max(c.joinedAt, 0); s <= now; s += 10) {
+      v *= Math.exp(c.drift * 10 + 0.03 * randn() * c.vol);
+      if (Math.random() < 0.004) v *= 1.3 + Math.random() * 0.6;
+      v = Math.max(900, v); c.hist.push({ t: s, v });
+    }
+    c.cap = v;
+  }
+  function newRound(fresh) {
+    coins = []; winner = null; merged = 0; selected = 0;
+    if (fresh) for (let i = 0; i < 8; i++) { const c = makeCoin(POOL[(poolIdx++) % POOL.length], 3000 * (1 + Math.random() * 6), 60 * i); seedHistory(c, t); coins.push(c); }
+  }
+  function pushLog(html) {
+    logLines.unshift(html); if (logLines.length > 30) logLines.pop();
+    $("log").innerHTML = logLines.map((l) => `<div>${l}</div>`).join("");
+  }
+
+  function step(dt) {
+    const prev = t; t += dt;
+    const inLaunch = t < LAUNCH, inBattle = t >= LAUNCH && t < LAUNCH + BATTLE, inMerge = t >= LAUNCH + BATTLE && t < ROUND;
+    if (inLaunch && coins.length < 8 && Math.random() < dt / 70) {
+      const c = makeCoin(POOL[(poolIdx++) % POOL.length], 2600 + Math.random() * 2400, t);
+      c.hist.push({ t, v: c.cap }); coins.push(c); pushLog(`<b>${c.ticker}</b> joined the ${c.army} army.`);
+    }
+    if (queued && inLaunch && coins.length < 8) {
+      const c = makeCoin([queued.name, queued.ticker, queued.army], 2800, t);
+      c.hist.push({ t, v: c.cap }); c.mine = true; coins.push(c); queued = null;
+      pushLog(`<b>${c.ticker}</b> (you) joined the ${c.army} army.`); updateLaunchButton();
+    }
+    if (!inMerge) for (const c of coins) {
+      const k = Math.max(1, Math.round(dt / 10));
+      for (let i = 0; i < k; i++) {
+        c.cap *= Math.exp(c.drift * 10 + 0.028 * randn() * c.vol);
+        if (Math.random() < 0.003) { const p = Math.round(25 + Math.random() * 40); c.cap *= 1 + p / 100; if (inBattle) pushLog(`<b>${c.ticker}</b> <span class="combo">+${p}% power-up</span>`); }
+        if (Math.random() < 0.002) c.cap *= 0.62 + Math.random() * 0.2;
+        c.cap = Math.max(900, c.cap);
+      }
+      if (Math.random() < dt / 25) c.holders += 1 + Math.floor(Math.random() * 3);
+    }
+    const from = Math.floor(prev / 10) + 1, to = Math.floor(t / 10);
+    for (let s = from; s <= to; s++) for (const c of coins) if (!c.absorbed) { c.hist.push({ t: s * 10, v: c.cap }); if (c.hist.length > 700) c.hist.shift(); }
+
+    if (inMerge && !winner && coins.length) {
+      const bell = LAUNCH + BATTLE;
+      winner = coins.reduce((a, c) => (twap(c, bell) > twap(a, bell) ? c : a), coins[0]);
+      winner.loot = coins.filter((c) => c !== winner).reduce((s, c) => s + poolBnb(c), 0);
+      winner.spent = 0; winner.capAtWin = winner.cap;
+      for (const c of coins) if (c !== winner) { c.absorbed = true; c.frozenCap = c.cap; }
+      pushLog(`K.O.! <b>${winner.ticker}</b> wins round ${round} for the ${winner.army} army.`);
+      flash("lead");
+    }
+    if (inMerge && winner) {
+      const hits = 10, per = MERGE / hits, due = Math.min(hits, Math.floor((t - LAUNCH - BATTLE) / per) + 1);
+      while (merged < due) {
+        merged++;
+        const buy = winner.loot / hits;
+        winner.cap *= Math.pow(1 + buy / poolBnb(winner), 2); winner.spent += buy; winner.holders += 4 + Math.floor(Math.random() * 8);
+        pushLog(`<span class="combo">Combo x${merged}</span> ${bnb(buy)} hit <b>${winner.ticker}</b> · cap ${usd(winner.cap)}`);
+      }
+    }
+    if (t >= ROUND) {
+      if (winner) { history.unshift({ round, name: winner.name, ticker: winner.ticker, army: winner.army, kos: coins.length - 1, cap: winner.cap }); if (history.length > 8) history.pop(); }
+      round++; t = 0; newRound(false); pushLog(`Round ${round}: enlisting is open.`); updateLaunchButton();
+    }
+  }
+  function flash(id) { const el = $(id); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+
+  function render() {
+    const inLaunch = t < LAUNCH, inBattle = t >= LAUNCH && t < LAUNCH + BATTLE;
+    const pill = $("phasePill");
+    pill.className = "phase px " + (inLaunch ? "launch" : inBattle ? "battle" : "merge");
+    pill.innerHTML = inLaunch ? "Enlisting" : inBattle ? "<i></i>Battle" : "Absorbing";
+    $("clockScreen").classList.toggle("hot", inBattle && LAUNCH + BATTLE - t < 600);
+    $("roundNo").textContent = `Round ${round}`;
+    const nArmies = new Set(coins.map((c) => c.army)).size;
+    $("phaseSub").textContent = `${coins.length} ${coins.length === 1 ? "coin" : "coins"} · ${nArmies} ${nArmies === 1 ? "army" : "armies"}`;
+    $("countdown").textContent = mmss(inLaunch ? LAUNCH - t : inBattle ? LAUNCH + BATTLE - t : ROUND - t);
+    $("countWhat").textContent = inLaunch ? "left to enlist. Coins that launch now fight this round." : inBattle ? (LAUNCH + BATTLE - t < 600 ? "Final 10 minutes: this is the window that decides the winner." : "until the battle ends. Highest 10-minute average market cap wins.") : "until the merge finishes and the next round opens.";
+    $("railL").style.transform = `scaleX(${Math.min(1, t / LAUNCH)})`;
+    $("railB").style.transform = `scaleX(${Math.max(0, Math.min(1, (t - LAUNCH) / BATTLE))})`;
+    $("railM").style.transform = `scaleX(${Math.max(0, Math.min(1, (t - LAUNCH - BATTLE) / MERGE))})`;
+
+    const now = Math.min(t, LAUNCH + BATTLE);
+    const r = coins.map((c, i) => ({ c, i, avg: c.absorbed ? twap(c, LAUNCH + BATTLE) : twap(c, now) }))
+      .sort((a, b) => (winner ? (a.c === winner ? -1 : b.c === winner ? 1 : b.avg - a.avg) : b.avg - a.avg));
+    const lead = r[0];
+    if (lead) {
+      const c = lead.c, others = coins.length - 1;
+      $("lead").style.setProperty("--army", army(c.army));
+      $("leadLabel").textContent = winner ? `Champion · round ${round}` : inLaunch ? "Player 1 · early lead" : "Player 1 · leading";
+      $("leadCrown").textContent = winner ? "K.O." : "#1";
+      $("leadAv").textContent = c.ticker[0]; $("leadAv").style.setProperty("--army", army(c.army));
+      $("leadName").textContent = c.name;
+      $("leadTag").textContent = `${c.army} army`; $("leadTag").style.setProperty("--army", army(c.army));
+      $("leadCapLabel").textContent = winner ? "Market cap" : "10m avg";
+      $("leadTwap").textContent = usd(winner ? c.cap : lead.avg);
+      $("leadAbs").textContent = String(others);
+      $("leadLiq").textContent = bnb(winner ? winner.loot : coins.filter((x) => x !== c).reduce((s, x) => s + poolBnb(x), 0));
+      $("leadNote").textContent = winner
+        ? `${bnb(winner.spent)} of ${bnb(winner.loot)} has hit ${c.ticker}. Up ${Math.round((c.cap / winner.capAtWin - 1) * 100)}% since the bell.`
+        : inLaunch ? "Enlisting is open. The board counts once the battle starts." : `If the battle ended now, the other ${others} coins' pools would buy ${c.ticker} over 30 minutes.`;
+    }
+
+    const top = r[0]?.avg || 1;
+    const rows = [`<div class="row head" aria-hidden="true"><span class="px">#</span><span class="px">Fighter</span><span class="px hp">Health</span><span class="px">Score</span><span class="px status">Status</span></div>`];
+    r.forEach((e, idx) => {
+      const c = e.c, a = army(c.army);
+      const first = c.hist.find((p) => p.t >= t - 3600) || c.hist[0];
+      const chg = first ? (c.cap / first.v - 1) * 100 : 0;
+      const hp = winner ? (c === winner ? 100 : 0) : Math.max(4, Math.round((e.avg / top) * 100));
+      let st;
+      if (winner) st = c === winner ? `<span class="st win px">Winner</span>` : `<span class="st ko px">K.O.</span>`;
+      else if (idx === 0) st = `<span class="st win px">Winning</span>`;
+      else if (e.avg > top * 0.75) st = `<span class="st safe px">In reach</span>`;
+      else st = `<span class="st risk px">Danger</span>`;
+      const sub = winner && c !== winner ? `<small class="dg">1 → ${(c.frozenCap / winner.capAtWin).toFixed(4)} ${winner.ticker}</small>` : `<small class="dg ${chg >= 0 ? "up" : "down"}">${chg >= 0 ? "+" : ""}${chg.toFixed(1)}% 1h</small>`;
+      rows.push(`<button type="button" class="row ${idx === 0 ? "first" : ""} ${e.i === selected ? "sel" : ""} ${c.absorbed ? "ko" : ""}" data-i="${e.i}" style="--army:${a}">
+        <span class="rank">${idx + 1}</span>
+        <span class="coin"><span class="sprite" style="--army:${a}">${c.ticker[0]}</span><span class="cn"><b>${c.name}${c.mine ? " · you" : ""}</b><small><span class="chip" style="--army:${a}">${c.army}</span>${c.holders} holders</small></span></span>
+        <span class="hp"><span class="hp-bar"><i style="width:${hp}%"></i></span><span class="hp-l"><span>HP</span><span class="dg">${hp}</span></span></span>
+        <span class="score"><b>${usd(e.avg)}</b>${sub}</span>
+        <span class="status">${st}</span>
+      </button>`);
+    });
+    for (let s = coins.length; s < 8; s++) rows.push(`<div class="slot"><span class="px blink">Press start</span><span>Open slot · ${inLaunch ? "launch now to fight this round" : "fills next round"}</span></div>`);
+    $("rows").innerHTML = rows.join("");
+    $("boardSub").textContent = winner ? "Final board · losers redeem into the champion" : "10-minute average market cap · tap a fighter";
+
+    const byArmy = {};
+    for (const c of coins) byArmy[c.army] = (byArmy[c.army] || 0) + c.cap;
+    const ar = Object.entries(byArmy).sort((a, b) => b[1] - a[1]), maxA = ar[0]?.[1] || 1;
+    $("armies").innerHTML = ar.length ? ar.map(([k, v]) => `<div class="army" style="--army:${army(k)}"><span class="chip">${k}</span><span class="bar"><i style="width:${(v / maxA) * 100}%"></i></span><span class="v dg">${usd(v)}</span></div>`).join("") : `<p class="hint">No fighters yet. Press start.</p>`;
+
+    const s = coins[selected] || coins[0];
+    if (s) {
+      const a = army(s.army);
+      $("selAv").textContent = s.ticker[0]; $("selAv").style.setProperty("--army", a);
+      $("selName").textContent = s.name; $("selTag").textContent = s.army; $("selTag").style.setProperty("--army", a);
+      $("selMc").textContent = usd(s.cap); $("selTwap").textContent = usd(twap(s, now));
+      $("selPool").textContent = s.absorbed ? "Absorbed" : bnb(poolBnb(s)); $("selHolders").textContent = s.holders;
+      $("goTrade").textContent = s.absorbed ? `Redeem for ${winner.ticker}` : `${side === "buy" ? "Buy" : "Sell"} ${s.ticker}`;
+      $("tradeHint").textContent = s.absorbed ? `${s.ticker} lost round ${round}. Burn it to get your share of ${winner.ticker}.` : "2% fee on every trade. Win and your coin absorbs the losers; lose and you redeem into the winner.";
+    }
+    $("hist").innerHTML = history.length ? history.map((h) => `<tr><td class="dg">#${h.round}</td><td><b>${h.name}</b> <span class="dg" style="color:var(--fg-3);font-size:18px">${h.ticker}</span></td><td><span class="chip" style="--army:${army(h.army)}">${h.army}</span></td><td class="dg r">${h.kos}</td><td class="dg r">${usd(h.cap)}</td></tr>`).join("") : `<tr><td colspan="5" style="color:var(--fg-3)">The first champion appears when this round's merge finishes. Try 120×.</td></tr>`;
+  }
+
+  function toast(msg) { const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 3200); }
+  function updateLaunchButton() {
+    const open = t < LAUNCH && coins.length < 8;
+    $("lfGo").textContent = queued ? `Queued · ${queued.ticker}` : open ? `Enlist in round ${round}` : `Enlist in round ${round + 1}`;
+  }
+
+  document.querySelectorAll(".speed button").forEach((b) => b.addEventListener("click", () => { speed = +b.dataset.s; document.querySelectorAll(".speed button").forEach((x) => x.classList.toggle("on", x === b)); }));
+  $("rows").addEventListener("click", (e) => { const r = e.target.closest(".row[data-i]"); if (!r) return; selected = +r.dataset.i; render(); if (window.innerWidth < 1020) $("trade").scrollIntoView({ behavior: "smooth", block: "start" }); });
+  $("bBuy").addEventListener("click", () => { side = "buy"; $("bBuy").className = "on"; $("bSell").className = ""; $("amtUnit").textContent = "BNB"; render(); });
+  $("bSell").addEventListener("click", () => { side = "sell"; $("bSell").className = "on sell"; $("bBuy").className = ""; $("amtUnit").textContent = coins[selected]?.ticker ?? ""; render(); });
+  document.querySelectorAll(".quick button").forEach((b) => b.addEventListener("click", () => { $("amt").value = b.dataset.q; }));
+  $("goTrade").addEventListener("click", () => toast("Free play. Trading opens when the contracts go live."));
+  $("connect").addEventListener("click", () => toast("Wallets connect when Meme Wars goes live on BNB Chain."));
+  $("armyPick").innerHTML = Object.keys(ARMIES).map((k) => `<button type="button" class="fighter ${k === pickArmy ? "on" : ""}" data-a="${k}" style="--army:${army(k)}"><span class="sprite" style="--army:${army(k)}">${k}</span><span class="px">${k}</span></button>`).join("");
+  $("armyPick").addEventListener("click", (e) => { const b = e.target.closest("button[data-a]"); if (!b) return; pickArmy = b.dataset.a; document.querySelectorAll("#armyPick .fighter").forEach((x) => x.classList.toggle("on", x === b)); });
+  $("lfTicker").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/[^a-z0-9]/gi, "").toUpperCase(); });
+  $("lf").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = $("lfName").value.trim();
+    if (!name) { $("lfHint").textContent = "Give your fighter a name first."; $("lfName").focus(); return; }
+    const ticker = ($("lfTicker").value || name.replace(/[^a-z0-9]/gi, "").slice(0, 6)).toUpperCase() || "COIN";
+    queued = { name, ticker, army: pickArmy };
+    $("lfHint").textContent = t < LAUNCH && coins.length < 8 ? `${ticker} enters round ${round} in a moment (simulated).` : `${ticker} enters round ${round + 1} when enlisting opens (simulated). Try 120× to get there fast.`;
+    updateLaunchButton();
+  });
+
+  newRound(true);
+  pushLog(`Round ${round}: the battle is on.`);
+  updateLaunchButton();
+  render();
+  let last = performance.now();
+  setInterval(() => { const n = performance.now(), dt = Math.min(2, (n - last) / 1000) * speed; last = n; step(dt); render(); }, 500);
+})();
+</script>
+
+</body>
+</html>
