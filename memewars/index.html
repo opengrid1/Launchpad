@@ -20,7 +20,7 @@
   --fg: #f6f3e7; --fg-2: #bdbab0; --fg-3: #7d7c86;
   --bnb: #f3ba2f; --bnb-lo: #b98712; --ink: #161004;
   --hot: #ff3d6e; --cyan: #3fe0ff; --ok: #55ef8c;
-  --a-nvda: #84c341; --a-tsla: #ff4a3d; --a-aapl: #c3c8cd; --a-spy: #4d8dff; --a-qqq: #a774ff; --a-amzn: #ff9d2e; --a-googl: #ffd43a; --a-meta: #2fd1d1;
+  --a-nvda: #84c341; --a-tsla: #ff4a3d; --a-aapl: #c3c8cd; --a-spy: #4d8dff; --a-qqq: #a774ff; --a-baba: #ff8a1f; --a-googl: #ffd43a; --a-crcl: #2fd1d1;
   --marquee: "Bungee", "Arial Black", Impact, sans-serif;
   --pixel: "Press Start 2P", "Courier New", monospace;
   --digits: "VT323", "Courier New", monospace;
@@ -219,6 +219,73 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 .outcome .px { font-size: 7.5px; }
 .outcome p { margin: 6px 0 0; font-size: 13.5px; color: var(--fg-2); }
 
+.ch-main { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.ch-title { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.ch-title .tk { font-size: 26px; color: var(--bnb); }
+.coin-head .meta { margin-top: 0; }
+.age { font-size: 12.5px; }
+.desc { margin: 0; color: var(--fg-2); font-size: 14px; max-width: 60ch; }
+.ic { width: 14px; height: 14px; flex: none; }
+.ca-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ca { display: inline-flex; align-items: center; gap: 10px; min-width: 0; max-width: 100%; border: 2px solid var(--bnb); background: rgba(243,186,47,.08); color: var(--fg); border-radius: 10px; padding: 7px 12px; }
+.ca .px { color: var(--bnb); }
+.ca .dg { font-size: 20px; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ca .addr-s { display: none; }
+.ca .ic { color: var(--bnb); }
+.ca:hover { background: rgba(243,186,47,.16); }
+.links { display: flex; gap: 6px; flex-wrap: wrap; }
+.lnk { display: inline-flex; align-items: center; gap: 6px; border: 2px solid var(--line-2); background: transparent; color: var(--fg-2); border-radius: 8px; padding: 7px 10px; font-size: 13px; font-weight: 700; text-decoration: none; }
+.lnk:hover { border-color: var(--bnb); color: var(--bnb); }
+.stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); background: var(--panel); border: 2px solid var(--line); border-radius: 14px; }
+.stat { padding: 11px 14px; border-left: 2px solid var(--line); min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.stat:first-child { border-left: 0; }
+.stat .px { color: var(--fg-3); font-size: 7.5px; }
+.stat b { font-family: var(--digits); font-weight: 400; font-size: 26px; line-height: 1; overflow-wrap: anywhere; }
+.stat small { font-size: 12px; color: var(--fg-3); min-height: 1em; }
+.ch-val { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ch-val #cChg { font-size: 20px; }
+.chart-ctl { display: flex; gap: 6px; flex-wrap: wrap; }
+.seg.sm { display: inline-flex; padding: 3px; gap: 2px; border-radius: 8px; }
+.seg.sm button { height: 28px; padding: 0 9px; font-size: 7.5px; border-radius: 6px; }
+.seg.sm button.on { background: var(--panel-2); color: var(--bnb); }
+.chart-card .legend { padding: 4px 4px 0; }
+.bal { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--fg-3); margin-bottom: -6px; }
+.bal button { border: 0; background: transparent; color: var(--fg-2); font-size: 19px; padding: 0; text-decoration: underline dotted; text-underline-offset: 3px; }
+.bal button:hover { color: var(--bnb); }
+.sum { display: flex; flex-direction: column; }
+.sum .kv { padding-block: 5px; }
+.sum .kv b { font-size: 18px; }
+.slip { display: inline-flex; gap: 4px; }
+.slip button { border: 2px solid var(--line-2); background: transparent; color: var(--fg-3); border-radius: 6px; padding: 2px 6px; font-family: var(--digits); font-size: 16px; line-height: 1; }
+.slip button.on { border-color: var(--bnb); color: var(--bnb); }
+.kv-copy { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; color: var(--fg); padding: 0; font-family: var(--digits); font-size: 18px; line-height: 1; }
+.kv-copy:hover { color: var(--bnb); }
+.kv .kv-copy { font-size: 19px; }
+.act { padding: 0; gap: 0; overflow: hidden; }
+.act-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 2px solid var(--line); flex-wrap: wrap; }
+.tabs-in { display: flex; gap: 4px; }
+.tabs-in button { border: 0; background: transparent; color: var(--fg-3); font-family: var(--marquee); font-size: 18px; padding: 4px 8px; border-radius: 6px; }
+.tabs-in button.on { color: var(--fg); background: var(--panel-2); }
+.tabs-in button span { font-family: var(--digits); font-size: 18px; color: var(--bnb); }
+.tbl.flat { border: 0; border-radius: 0; background: transparent; }
+.tbl.flat table { min-width: 560px; }
+.tbl.flat td, .tbl.flat th { padding: 8px 14px; }
+.tbl.flat td.dg { font-size: 19px; }
+.tbl.flat tr.tb td.r.dg:nth-child(3) { color: var(--ok); }
+.tbl.flat tr.ts td.r.dg:nth-child(3) { color: var(--hot); }
+.hl { display: flex; flex-direction: column; padding: 4px 16px 10px; }
+.hrow { display: grid; grid-template-columns: 34px minmax(0, 1.3fr) minmax(0, 1fr) 70px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 2px solid var(--line); }
+.hrow:last-child { border-bottom: 0; }
+.hrow .dg { font-size: 19px; line-height: 1; }
+.hrow > .dg:last-child { text-align: right; }
+.hrow .who { font-size: 13.5px; color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbar { height: 8px; background: var(--well); border-radius: 2px; overflow: hidden; }
+.hbar i { display: block; height: 100%; background: var(--army, var(--bnb)); }
+.tag { font-size: 7px; color: var(--ink); background: var(--bnb); padding: 3px 4px 2px; border-radius: 3px; vertical-align: 2px; }
+.lf textarea { border: 2px solid var(--line-2); border-radius: 10px; padding: 10px 12px; background: var(--well); font-size: 15px; color: var(--fg); resize: vertical; min-width: 0; font-family: var(--body); }
+.lf-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lf-row input { font-size: 14px; padding: 9px 10px; }
+
 /* launch */
 .roster { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .fighter { border: 2px solid var(--line-2); background: var(--well); border-radius: 10px; padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--fg-2); position: relative; }
@@ -282,7 +349,21 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   .wrap { padding-block-end: 110px; }
   .toast { bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
 }
+@media (max-width: 1020px) {
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stat:nth-child(4) { border-left: 0; }
+  .stat:nth-child(n+4) { border-top: 2px solid var(--line); }
+}
 @media (max-width: 760px) {
+  .ca .addr { display: none; } .ca .addr-s { display: inline; }
+  .ca { flex: 1 1 100%; justify-content: space-between; }
+  .lf-row { grid-template-columns: minmax(0, 1fr); }
+  .hrow { grid-template-columns: 30px minmax(0, 1fr) 64px; } .hrow .hbar { display: none; }
+  .tbl.flat table { min-width: 0; }
+  .tbl.flat th:nth-child(6), .tbl.flat td:nth-child(6) { display: none; }
+  .tbl.flat td, .tbl.flat th { padding: 8px 6px; }
+  .tbl.flat td:first-child, .tbl.flat th:first-child { padding-left: 14px; }
+  .tbl.flat td.dg, .tbl.flat .kv-copy { font-size: 16px; }
   .hud, .cols2 { grid-template-columns: minmax(0, 1fr); }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .row { grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1fr) 80px; gap: 10px; padding-inline: 14px; }
@@ -300,6 +381,13 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   .row .hp { display: none; }
   .levels { grid-template-columns: minmax(0, 1fr); }
   .outcome { grid-template-columns: minmax(0, 1fr); }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat:nth-child(n) { border-left: 0; border-top: 2px solid var(--line); }
+  .stat:nth-child(2n) { border-left: 2px solid var(--line); }
+  .stat:nth-child(-n+2) { border-top: 0; }
+  .ca { flex: 1 1 100%; justify-content: space-between; }
+  .coin-head .sprite.lg { width: 52px; height: 52px; font-size: 26px; }
+  .ch-title .tk { font-size: 22px; }
   .fighter .sprite { width: 100%; max-width: 58px; height: 34px; font-size: 9.5px; }
 }
 @media (prefers-reduced-motion: reduce) { .blink, .phase i, .flash { animation: none !important; } .hp-bar i, .bar i { transition: none; } }
@@ -341,14 +429,14 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 (() => {
   // ---------- data ----------
   const ARMIES = {
-    NVDA: { v: "--a-nvda", name: "NVIDIA" }, TSLA: { v: "--a-tsla", name: "Tesla" }, AAPL: { v: "--a-aapl", name: "Apple" }, SPY: { v: "--a-spy", name: "S&P 500" },
-    QQQ: { v: "--a-qqq", name: "Nasdaq-100" }, AMZN: { v: "--a-amzn", name: "Amazon" }, GOOGL: { v: "--a-googl", name: "Alphabet" }, META: { v: "--a-meta", name: "Meta" },
+    NVDA: { v: "--a-nvda", name: "NVIDIA", token: "NVDAB" }, QQQ: { v: "--a-qqq", name: "Nasdaq-100", token: "QQQB" }, TSLA: { v: "--a-tsla", name: "Tesla", token: "TSLAB" }, GOOGL: { v: "--a-googl", name: "Alphabet", token: "GOOGLB" },
+    BABA: { v: "--a-baba", name: "Alibaba", token: "BABAB" }, AAPL: { v: "--a-aapl", name: "Apple", token: "AAPLB" }, CRCL: { v: "--a-crcl", name: "Circle", token: "CRCLB" }, SPY: { v: "--a-spy", name: "S&P 500", token: "SPYB" },
   };
   const POOL = [
     ["Jensen Pepe", "JPEPE", "NVDA"], ["Cybertruck Doge", "CYDOGE", "TSLA"], ["iFrog", "IFROG", "AAPL"], ["Index Chad", "ICHAD", "SPY"],
-    ["Nasdaq Neko", "NNEKO", "QQQ"], ["Prime Cat", "PCAT", "AMZN"], ["Gemini Pup", "GPUP", "GOOGL"], ["Zuck Bonk", "ZBONK", "META"],
+    ["Nasdaq Neko", "NNEKO", "QQQ"], ["Taobao Cat", "TBCAT", "BABA"], ["Gemini Pup", "GPUP", "GOOGL"], ["USDC Doge", "UDOGE", "CRCL"],
     ["Blackwell Bull", "BWELL", "NVDA"], ["Gigafrog", "GIGA", "TSLA"], ["Vision Goat", "VGOAT", "AAPL"], ["Boomer Shiba", "BSHIB", "SPY"],
-    ["Tech Rat", "TRAT", "QQQ"], ["Bezos Moon", "BMOON", "AMZN"], ["Waymo Wojak", "WAYMO", "GOOGL"], ["Llama Lord", "LLAMA", "META"],
+    ["Tech Rat", "TRAT", "QQQ"], ["Jack Ma Moon", "JMOON", "BABA"], ["Waymo Wojak", "WAYMO", "GOOGL"], ["Stablecoin Shiba", "SSHIB", "CRCL"],
     ["H100 Hamster", "H100", "NVDA"], ["Robotaxi Rex", "RREX", "TSLA"], ["Tim Apple Ape", "TAPE", "AAPL"], ["Dip Buyer", "DIPB", "SPY"],
   ];
   const BNB_USD = 612; // sample price for the simulation
@@ -362,20 +450,34 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   const qty = (v) => v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(1)}K` : v.toFixed(0);
   const mmss = (s) => { s = Math.max(0, Math.ceil(s)); return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
   const randn = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
-  const wallet = () => "0x" + Math.random().toString(16).slice(2, 6) + "…" + Math.random().toString(16).slice(2, 6);
+  const hex = (n) => Array.from({ length: n }, () => "0123456789abcdef"[(Math.random() * 16) | 0]).join("");
+  const short = (a, x = 6, y = 4) => `${a.slice(0, x)}…${a.slice(-y)}`;
+  const ago = (s) => (s < 60 ? `${Math.max(1, Math.floor(s))}s` : s < 3600 ? `${Math.floor(s / 60)}m` : s < 86400 ? `${Math.floor(s / 3600)}h` : `${Math.floor(s / 86400)}d`);
+  const SUB = "₀₁₂₃₄₅₆₇₈₉";
+  const price = (v) => { if (v >= 1) return `$${v.toFixed(2)}`; if (v >= 0.001) return `$${v.toPrecision(3)}`; const [m, e] = v.toExponential(2).split("e-"); return `$0.0${String(+e - 1).split("").map((d) => SUB[d]).join("")}${m.replace(".", "")}`; };
+  const ICON = {
+    copy: `<svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M5 1h9v9h-2V3H5zM2 5h9v10H2zm2 2v6h5V7z"/></svg>`,
+    out: `<svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M8 2h6v6h-2V5.5L7.5 10 6 8.5 10.5 4H8zM2 4h4v2H4v6h6v-2h2v4H2z"/></svg>`,
+    share: `<svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M11 1h4v4h-4V4H9v1H7v1H5v4h2v1h2v1h2v-1h4v4h-4v-1H9v-1H7v-1H5v1H1V6h4v1z"/></svg>`,
+  };
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- simulation state ----------
-  let round = 128, speed = 30, t = LAUNCH + 15 * 60 + 36, coins = [], winner = null, merged = 0, logLines = [], history = [], queued = null, poolIdx = 0;
+  let clock = 100000, round = 128, speed = 30, t = LAUNCH + 15 * 60 + 36, coins = [], winner = null, merged = 0, logLines = [], history = [], queued = null, poolIdx = 0;
   const all = new Map(); // every coin ever, by ticker, so old coin pages still open
   const me = { credits: 10, holdings: new Map(), launched: [] }; // holdings: ticker -> { qty, cost }
 
   function uniqueTicker(tk) { let x = tk, n = 2; while (all.has(x)) x = `${tk}${n++}`; return x; }
   function makeCoin([name, ticker, a], cap, joinedAt) {
-    const c = { name, ticker: uniqueTicker(ticker), army: a, cap, hist: [], joinedAt, round, holders: 20 + Math.floor(Math.random() * 60), vol: 0.9 + Math.random() * 0.8, drift: (Math.random() - 0.4) * 0.00012, absorbed: false, trades: [], top: [] };
-    c.top = Array.from({ length: 6 }, () => ({ who: wallet(), pct: 1 + Math.random() * 6 })).sort((a, b) => b.pct - a.pct);
+    const c = { name, ticker: uniqueTicker(ticker), army: a, cap, hist: [], joinedAt, round, holders: 20 + Math.floor(Math.random() * 60), vol: 0.9 + Math.random() * 0.8, drift: (Math.random() - 0.4) * 0.00012, absorbed: false, trades: [], top: [],
+      ca: "0x" + hex(40), creator: "0x" + hex(40), poolId: "0x" + hex(64), born: clock - Math.max(0, t - joinedAt), volBnb: 0, txns: 0, socials: {} };
+    c.top = Array.from({ length: 6 }, () => ({ who: "0x" + hex(40), pct: 1 + Math.random() * 6 })).sort((a, b) => b.pct - a.pct);
     all.set(c.ticker, c);
     return c;
+  }
+  function trade(c, at, buy, bnbAmt, who) {
+    const x = { at, buy, bnb: bnbAmt, tok: (bnbAmt * BNB_USD) / priceUsd(c), who, maker: "0x" + hex(40), tx: "0x" + hex(64) };
+    c.trades.unshift(x); if (c.trades.length > 60) c.trades.pop(); c.volBnb += bnbAmt; c.txns++;
   }
   const poolBnb = (c) => Math.sqrt(c.cap / BNB_USD) * 3.2;
   const priceUsd = (c) => c.cap / SUPPLY;
@@ -389,9 +491,9 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       v *= Math.exp(c.drift * 10 + 0.03 * randn() * c.vol);
       if (Math.random() < 0.004) v *= 1.3 + Math.random() * 0.6;
       v = Math.max(900, v); c.hist.push({ t: s, v });
-      if (Math.random() < 0.25) c.trades.unshift({ t: s, buy: Math.random() < 0.55, bnb: 0.05 + Math.random() * 1.6, who: wallet() });
+      c.cap = v; if (Math.random() < 0.25) trade(c, clock - (now - s), Math.random() < 0.55, 0.05 + Math.random() * 1.6, "");
     }
-    c.trades = c.trades.slice(0, 40); c.cap = v;
+    c.cap = v;
   }
   function newRound(fresh) {
     coins = []; winner = null; merged = 0;
@@ -408,7 +510,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   }
 
   function step(dt) {
-    const prev = t; t += dt;
+    const prev = t; t += dt; clock += dt;
     const ph = phase();
     if (ph === "launch" && coins.length < 8 && Math.random() < dt / 70) {
       const c = makeCoin(POOL[(poolIdx++) % POOL.length], 2600 + Math.random() * 2400, t);
@@ -416,7 +518,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     }
     if (queued && ph === "launch" && coins.length < 8) {
       const c = makeCoin([queued.name, queued.ticker, queued.army], 2800, t);
-      c.hist.push({ t, v: c.cap }); c.mine = true; coins.push(c); me.launched.unshift(c.ticker); queued = null;
+      c.hist.push({ t, v: c.cap }); c.mine = true; c.desc = queued.desc; c.socials = queued.socials; c.creator = "0x" + hex(40); coins.push(c); me.launched.unshift(c.ticker); queued = null;
       pushLog(`<b>${c.ticker}</b> (you) joined the ${c.army} army.`); toast(`${c.ticker} entered round ${round}`);
     }
     if (ph !== "merge") for (const c of coins) {
@@ -426,7 +528,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         if (Math.random() < 0.003) { const p = Math.round(25 + Math.random() * 40); c.cap *= 1 + p / 100; if (ph === "battle") pushLog(`<b>${c.ticker}</b> <span class="combo">+${p}% power-up</span>`); }
         if (Math.random() < 0.002) c.cap *= 0.62 + Math.random() * 0.2;
         c.cap = Math.max(900, c.cap);
-        if (Math.random() < 0.3) { c.trades.unshift({ t: prev + (i + 1) * 10, buy: Math.random() < 0.55, bnb: 0.05 + Math.random() * 1.6, who: wallet() }); if (c.trades.length > 40) c.trades.pop(); }
+        if (Math.random() < 0.3) trade(c, clock - dt + (i + 1) * 10, Math.random() < 0.55, 0.05 + Math.random() * 1.6, "");
       }
       if (Math.random() < dt / 25) c.holders += 1 + Math.floor(Math.random() * 3);
     }
@@ -448,7 +550,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         const buy = winner.loot / hits;
         winner.cap *= Math.pow(1 + buy / poolBnb(winner), 2); winner.spent += buy; winner.holders += 4 + Math.floor(Math.random() * 8);
         winner.hist.push({ t: Math.floor(t / 10) * 10, v: winner.cap });
-        winner.trades.unshift({ t, buy: true, bnb: buy, who: "merge" });
+        trade(winner, clock, true, buy, "merge");
         pushLog(`<span class="combo">Combo x${merged}</span> ${bnb(buy)} hit <b>${winner.ticker}</b> · cap ${usd(winner.cap)}`);
       }
     }
@@ -468,7 +570,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     me.credits -= bnbIn;
     const h = me.holdings.get(c.ticker) || { qty: 0, cost: 0 }; h.qty += got; h.cost += bnbIn; me.holdings.set(c.ticker, h);
     c.cap *= Math.pow(1 + bnbIn / poolBnb(c), 2); c.holders += h.qty === got ? 1 : 0;
-    c.trades.unshift({ t, buy: true, bnb: bnbIn, who: "you" });
+    trade(c, clock, true, bnbIn, "you");
     toast(`Bought ${qty(got)} ${c.ticker}`);
   }
   function sell(c, amount) {
@@ -479,7 +581,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     const out = (amount * priceUsd(c) * (1 - FEE)) / BNB_USD;
     me.credits += out; h.cost *= 1 - amount / h.qty; h.qty -= amount; if (h.qty < 1) me.holdings.delete(c.ticker);
     c.cap /= Math.pow(1 + out / poolBnb(c), 2); c.cap = Math.max(900, c.cap);
-    c.trades.unshift({ t, buy: false, bnb: out, who: "you" });
+    trade(c, clock, false, out, "you");
     toast(`Sold for ${bnb(out)}`);
   }
   function redeem(c) {
@@ -605,96 +707,167 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     },
 
     coin: {
-      side: "buy",
+      side: "buy", tf: 3600, mode: "cap", slip: 1, tab: "trades",
       mount(r) {
         const c = all.get(r.id);
         if (!c) return `<div class="page"><a class="back" href="#arena">Back to the arena</a><div class="card empty">That fighter isn't on the board. It may be from a round before you opened this page.</div></div>`;
-        const a = army(c.army);
+        const a = army(c.army), s = c.socials || {};
+        const own = (k, label) => (s[k] ? `<a class="lnk" href="${esc(s[k])}" target="_blank" rel="noopener noreferrer">${label}</a>` : "");
         return `<div class="page" style="--army:${a}">
           <a class="back" href="#arena">Back to the arena</a>
-          <div class="coin-head"><span class="sprite lg">${esc(c.ticker[0])}</span><div style="min-width:0"><h1>${esc(c.name)}</h1><div class="meta"><span class="dg" style="font-size:24px;color:var(--bnb)">$${esc(c.ticker)}</span><a class="chip" href="#army-${c.army}">${c.army} army</a><span id="cStatus"></span><span class="px muted" id="cRound"></span></div></div></div>
+          <div class="coin-head"><span class="sprite lg">${esc(c.ticker[0])}</span>
+            <div class="ch-main"><div class="ch-title"><h1>${esc(c.name)}</h1><span class="dg tk">$${esc(c.ticker)}</span></div>
+              <div class="meta"><a class="chip" href="#army-${c.army}">${c.army} army</a><span id="cStatus"></span><span class="px muted" id="cRound"></span><span class="muted age" id="cAge"></span></div>
+              ${c.desc ? `<p class="desc">${esc(c.desc)}</p>` : ""}</div></div>
+          <div class="ca-bar">
+            <button type="button" class="ca" data-copy="${c.ca}" title="Copy contract address"><span class="px">CA</span><span class="dg addr">${c.ca}</span><span class="dg addr-s">${short(c.ca)}</span>${ICON.copy}</button>
+            <div class="links">
+              <button type="button" class="lnk" data-ext="BscScan">BscScan${ICON.out}</button><button type="button" class="lnk" data-ext="DexScreener">DexScreener${ICON.out}</button>
+              ${own("x", "X")}${own("tg", "Telegram")}${own("web", "Website")}
+              <button type="button" class="lnk" id="share">${ICON.share}Share</button>
+            </div>
+          </div>
+          <div class="stats" id="cStats"></div>
           <div class="coin-grid">
-              <div class="card chart-card a-chart"><div class="chart-h"><b id="cCap"></b><div class="legend"><span><i></i>Market cap</span><span><i class="avg"></i>10m average</span><span><i class="win"></i>Deciding window</span></div></div><canvas class="chart" id="chart"></canvas></div>
-            <div class="stack a-main">
-              <div class="tiles" id="cTiles"></div>
-              <div class="card"><h3 class="title">What <i>happens</i> next</h3><div class="outcome" id="cOutcome"></div></div>
-              <div class="cols2">
-                <div class="card"><h3 class="title">Recent <i>trades</i></h3><div class="list" id="cTrades"></div></div>
-                <div class="card"><h3 class="title">Top <i>holders</i></h3><div class="list" id="cHolders"></div></div>
-              </div>
+            <div class="card chart-card a-chart">
+              <div class="chart-h"><div class="ch-val"><span class="px muted" id="chartLabel">Market cap</span><b id="cCap"></b><span class="dg" id="cChg"></span></div>
+                <div class="chart-ctl"><div class="seg sm" id="tfSeg">${[["15m", 900], ["30m", 1800], ["1h", 3600], ["All", 0]].map(([l, v]) => `<button type="button" data-tf="${v}" class="${v === this.tf ? "on" : ""}">${l}</button>`).join("")}</div>
+                <div class="seg sm" id="modeSeg"><button type="button" data-m="cap" class="${this.mode === "cap" ? "on" : ""}">MCap</button><button type="button" data-m="price" class="${this.mode === "price" ? "on" : ""}">Price</button></div></div></div>
+              <canvas class="chart" id="chart"></canvas>
+              <div class="legend"><span><i></i><em id="lgLine">Market cap</em></span><span><i class="avg"></i>10m average</span><span><i class="win"></i>Deciding window</span></div>
             </div>
             <aside class="stack a-side">
               <div class="card" id="tradeCard">
                 <div class="seg" role="group" aria-label="Side"><button type="button" id="bBuy" class="on">Buy</button><button type="button" id="bSell">Sell</button></div>
+                <div class="bal"><span>Balance</span><button type="button" class="dg" id="balMax" title="Use the whole balance"></button></div>
                 <div class="field"><input id="amt" inputmode="decimal" placeholder="0.00" aria-label="Amount"><span id="amtUnit">BNB</span></div>
                 <div class="quick" id="quick"></div>
-                <div class="est"><span id="estL">You get about</span><b id="est">0</b></div>
+                <div class="sum">
+                  <div class="kv"><span>You receive</span><b id="est">0</b></div>
+                  <div class="kv"><span>Minimum after slippage</span><b id="minOut">0</b></div>
+                  <div class="kv"><span>Price impact</span><b id="impact">0%</b></div>
+                  <div class="kv"><span>Slippage</span><span class="slip" id="slip">${[0.5, 1, 3, 5].map((v) => `<button type="button" data-sl="${v}" class="${v === this.slip ? "on" : ""}">${v}%</button>`).join("")}</span></div>
+                </div>
                 <button type="button" class="big-btn" id="go"></button>
-                <p class="hint" id="tHint">2% fee on every trade. Test BNB only.</p>
+                <p class="hint" id="tHint"></p>
               </div>
-              <div class="card"><div class="kv"><span>Your ${esc(c.ticker)}</span><b id="myQty">0</b></div><div class="kv"><span>Value</span><b id="myVal">$0</b></div><div class="kv"><span>Test BNB</span><b id="myBnb">0</b></div></div>
+              <div class="card"><h3 class="title">Your <i>position</i></h3><div class="kv"><span>${esc(c.ticker)}</span><b id="myQty">0</b></div><div class="kv"><span>Value</span><b id="myVal">$0</b></div><div class="kv"><span>P&amp;L</span><b id="myPl">—</b></div></div>
+              <div class="card"><h3 class="title">Token <i>info</i></h3>
+                <div class="kv"><span>Contract</span><button type="button" class="kv-copy dg" data-copy="${c.ca}">${short(c.ca)} ${ICON.copy}</button></div>
+                <div class="kv"><span>Creator</span><button type="button" class="kv-copy dg" data-copy="${c.creator}">${c.mine ? "You" : short(c.creator)} ${ICON.copy}</button></div>
+                <div class="kv"><span>Pool</span><button type="button" class="kv-copy dg" data-copy="${c.poolId}">${short(c.poolId, 6, 4)} ${ICON.copy}</button></div>
+                <div class="kv"><span>DEX</span><b class="t">PancakeSwap Infinity</b></div>
+                <div class="kv"><span>Supply</span><b>1,000,000,000</b></div>
+                <div class="kv"><span>Trade fee</span><b class="t">2%: 0.7 creator · 0.3 holders · 1.0 platform</b></div>
+                <div class="kv"><span>Holder rewards</span><b class="t">Paid in ${ARMIES[c.army].token}</b></div>
+              </div>
             </aside>
+            <div class="stack a-main">
+              <div class="card"><h3 class="title">Battle <i>status</i></h3><div class="tiles" id="cTiles"></div><div class="outcome" id="cOutcome"></div></div>
+              <div class="card act"><div class="act-h"><div class="tabs-in" id="actTabs"><button type="button" data-t="trades" class="${this.tab === "trades" ? "on" : ""}">Trades</button><button type="button" data-t="holders" class="${this.tab === "holders" ? "on" : ""}">Holders <span id="hCount"></span></button></div><span class="px muted" id="actSub"></span></div><div class="act-body" id="actBody"></div></div>
+            </div>
           </div></div>`;
       },
       wire(r) {
         const c = all.get(r.id); if (!c) return;
-        const setSide = (s) => { this.side = s; $("bBuy").className = s === "buy" ? "on" : ""; $("bSell").className = s === "sell" ? "on sell" : ""; $("amtUnit").textContent = s === "buy" ? "BNB" : c.ticker; $("amt").value = ""; quick(); this.update(r); };
-        const quick = () => { $("quick").innerHTML = (this.side === "buy" ? ["0.1", "0.5", "1", "2"] : ["25%", "50%", "75%", "Max"]).map((q) => `<button type="button" data-q="${q}">${q}</button>`).join(""); };
+        const self = this;
+        const quick = () => { $("quick").innerHTML = (self.side === "buy" ? ["0.1", "0.5", "1", "2"] : ["25%", "50%", "75%", "100%"]).map((q) => `<button type="button" data-q="${q}">${q}</button>`).join(""); };
+        const setSide = (s) => { self.side = s; $("bBuy").className = s === "buy" ? "on" : ""; $("bSell").className = s === "sell" ? "on sell" : ""; $("amtUnit").textContent = s === "buy" ? "BNB" : c.ticker; $("amt").value = ""; quick(); self.update(r); };
         $("bBuy").onclick = () => setSide("buy"); $("bSell").onclick = () => setSide("sell");
-        $("quick").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; const q = b.dataset.q; if (q.endsWith("%") || q === "Max") { const h = me.holdings.get(c.ticker); const f = q === "Max" ? 1 : parseFloat(q) / 100; $("amt").value = h ? Math.floor(h.qty * f) : 0; } else $("amt").value = q; this.update(r); });
-        $("amt").addEventListener("input", () => this.update(r));
+        $("quick").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; const q = b.dataset.q; if (q.endsWith("%")) { const h = me.holdings.get(c.ticker); $("amt").value = h ? Math.floor(h.qty * parseFloat(q) / 100) : 0; } else $("amt").value = q; self.update(r); });
+        $("balMax").onclick = () => { if (self.side === "buy") $("amt").value = Math.max(0, me.credits - 0.005).toFixed(3); else { const h = me.holdings.get(c.ticker); $("amt").value = h ? Math.floor(h.qty) : 0; } self.update(r); };
+        $("amt").addEventListener("input", () => self.update(r));
+        $("slip").addEventListener("click", (e) => { const b = e.target.closest("button[data-sl]"); if (!b) return; self.slip = +b.dataset.sl; $("slip").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); self.update(r); });
+        $("tfSeg").addEventListener("click", (e) => { const b = e.target.closest("button[data-tf]"); if (!b) return; self.tf = +b.dataset.tf; $("tfSeg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); self.update(r); });
+        $("modeSeg").addEventListener("click", (e) => { const b = e.target.closest("button[data-m]"); if (!b) return; self.mode = b.dataset.m; $("modeSeg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); self.update(r); });
+        $("actTabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-t]"); if (!b) return; self.tab = b.dataset.t; $("actTabs").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); self.update(r); });
+        $("share").onclick = () => copyText(location.href, "Link copied");
         $("go").onclick = () => {
-          if (c.absorbed) { redeem(c); this.update(r); return; }
+          if (c.absorbed) { redeem(c); self.update(r); return; }
           const v = parseFloat($("amt").value);
-          if (this.side === "buy") buy(c, v); else sell(c, v);
-          $("amt").value = ""; this.update(r);
+          if (self.side === "buy") buy(c, v); else sell(c, v);
+          $("amt").value = ""; self.update(r);
         };
-        this.side = "buy"; quick();
+        self.side = "buy"; quick();
       },
       update(r) {
         const c = all.get(r.id); if (!c) return;
-        const now = Math.min(t, c.round === round ? bell() : Infinity);
         const inThis = coins.includes(c);
         const rk = inThis ? ranked().findIndex((e) => e.c === c) + 1 : 0;
         const avg = twap(c, inThis ? Math.min(t, bell()) : c.hist[c.hist.length - 1]?.t ?? 0);
         const top = inThis ? ranked()[0]?.avg || 1 : avg;
         const hp = c.absorbed ? 0 : winner === c || c.champion ? 100 : Math.max(4, Math.round((avg / top) * 100));
         const won = c.champion != null;
+        const mine = me.holdings.get(c.ticker);
         $("cStatus").innerHTML = c.absorbed ? `<span class="st ko px">K.O. into ${c.into}</span>` : won ? `<span class="st win px">Champion · round ${c.champion}</span>` : rk === 1 ? `<span class="st win px">Winning</span>` : avg > top * 0.75 ? `<span class="st safe px">In reach</span>` : `<span class="st risk px">Danger</span>`;
         $("cRound").textContent = `Round ${c.round}`;
-        $("cCap").textContent = usd(c.cap);
-        $("cTiles").innerHTML = [
-          ["10m average", usd(avg)], ["Rank", rk ? `#${rk} of ${coins.length}` : "—"], ["Health", `${hp} HP`], ["Pool", c.absorbed ? "Absorbed" : bnb(poolBnb(c))],
-        ].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
+        $("cAge").textContent = `Launched ${ago(clock - c.born)} ago`;
+        // header stats
+        const p = priceUsd(c), last = c.hist[c.hist.length - 1];
+        const chg = (secs) => { if (!last) return 0; const f = c.hist.find((x) => x.t >= last.t - secs) || c.hist[0]; return (c.cap / f.v - 1) * 100; };
+        const pct = (v) => `<span class="${v >= 0 ? "up" : "down"}">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</span>`;
+        $("cStats").innerHTML = [
+          ["Price", price(p), `${(p / BNB_USD).toExponential(2)} BNB`], ["Market cap", usd(c.cap), pct(chg(3600)) + " 1h"], ["Liquidity", c.absorbed ? "Pulled" : usd(poolBnb(c) * BNB_USD * 2), c.absorbed ? "Merged into " + c.into : bnb(poolBnb(c)) + " in pool"],
+          ["Volume", usd(c.volBnb * BNB_USD), `${c.txns} trades`], ["Holders", String(c.holders), ""], ["5m", pct(chg(300)), "change"],
+        ].map(([k, v, s]) => `<div class="stat"><span class="px">${k}</span><b>${v}</b><small>${s}</small></div>`).join("");
+        // chart
+        const isP = this.mode === "price";
+        $("chartLabel").textContent = isP ? "Price" : "Market cap"; $("lgLine").textContent = isP ? "Price" : "Market cap";
+        $("cCap").textContent = isP ? price(p) : usd(c.cap);
+        const tfc = this.tf ? chg(this.tf) : last ? (c.cap / c.hist[0].v - 1) * 100 : 0;
+        $("cChg").innerHTML = `${pct(tfc)} <span class="muted">${this.tf ? (this.tf >= 3600 ? "1h" : this.tf / 60 + "m") : "all"}</span>`;
+        drawChart($("chart"), c, inThis && !winner ? Math.min(t, bell()) : null, avg, this.tf, isP);
+        // battle
+        $("cTiles").innerHTML = [["10m average", usd(avg)], ["Rank", rk ? `#${rk} of ${coins.length}` : "—"], ["Health", `${hp} HP`], ["Pool", c.absorbed ? "Absorbed" : bnb(poolBnb(c))]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
         const lead = inThis ? ranked()[0]?.c : null;
         const loot = coins.filter((x) => x !== c).reduce((s, x) => s + poolBnb(x), 0);
         $("cOutcome").innerHTML = c.absorbed
           ? `<div><span class="px" style="color:var(--hot)">Lost round ${c.round}</span><p>Every ${c.ticker} redeems for ${c.ratio.toFixed(4)} ${c.into}. Its pool was pulled into the merge.</p></div><div><span class="px" style="color:var(--bnb)">What to do</span><p>Holders redeem into <a href="#coin-${c.into}">${c.into}</a> from the trade panel.</p></div>`
           : won
-          ? `<div><span class="px" style="color:var(--bnb)">Won round ${c.champion}</span><p>Absorbed the other coins' pools. Holders earn ${c.army} stock rewards.</p></div><div><span class="px" style="color:var(--cyan)">Now</span><p>It trades on as a normal coin with a bigger pool and more holders.</p></div>`
+          ? `<div><span class="px" style="color:var(--bnb)">Won round ${c.champion}</span><p>Absorbed the other coins' pools. Holders earn ${ARMIES[c.army].token} rewards.</p></div><div><span class="px" style="color:var(--cyan)">Now</span><p>It trades on as a normal coin with a bigger pool and more holders.</p></div>`
           : `<div><span class="px" style="color:var(--bnb)">If ${c.ticker} wins</span><p>It absorbs ${coins.length - 1} coins: about ${bnb(loot)} of their pools buys ${c.ticker} over 30 minutes.</p></div><div><span class="px" style="color:var(--hot)">If it loses</span><p>${lead && lead !== c ? `Holders redeem into the winner, ${lead.ticker} if the bell rang now.` : "Holders redeem into whichever coin wins."}</p></div>`;
-        $("cTrades").innerHTML = c.trades.slice(0, 9).map((x) => `<div class="li"><span class="side-b ${x.buy ? "b" : "s"}">${x.buy ? "Buy" : "Sell"}</span><span class="who">${x.who === "you" ? "You" : x.who === "merge" ? "Merge hit" : x.who}</span><span class="dg">${bnb(x.bnb)}</span></div>`).join("") || `<div class="empty">No trades yet.</div>`;
-        const mine = me.holdings.get(c.ticker);
-        const holders = [...c.top];
-        $("cHolders").innerHTML = holders.map((h, i) => `<div class="li"><span class="dg muted">#${i + 1}</span><span class="who">${h.who}</span><span class="dg">${h.pct.toFixed(2)}%</span></div>`).join("") + (mine ? `<div class="li"><span class="dg" style="color:var(--bnb)">You</span><span class="who">Your wallet</span><span class="dg">${((mine.qty / SUPPLY) * 100).toFixed(3)}%</span></div>` : "");
+        // activity
+        const poolPct = c.absorbed ? 0 : Math.max(4, Math.min(100, Math.sqrt(2600 / c.cap) * 100));
+        $("hCount").textContent = c.holders;
+        if (this.tab === "trades") {
+          $("actSub").textContent = "Latest 25";
+          $("actBody").innerHTML = `<div class="tbl flat"><table><thead><tr><th class="px">Age</th><th class="px">Type</th><th class="px r">BNB</th><th class="px r">${esc(c.ticker)}</th><th class="px">Maker</th><th class="px r">Tx</th></tr></thead><tbody>${
+            c.trades.slice(0, 25).map((x) => `<tr class="${x.buy ? "tb" : "ts"}"><td class="dg muted">${ago(clock - x.at)}</td><td><span class="side-b ${x.buy ? "b" : "s"}">${x.who === "merge" ? "Merge" : x.buy ? "Buy" : "Sell"}</span></td><td class="dg r">${x.bnb.toFixed(3)}</td><td class="dg r">${qty(x.tok)}</td><td class="dg">${x.who === "you" ? `<span style="color:var(--bnb)">You</span>` : x.who === "merge" ? "Arena" : `<button type="button" class="kv-copy" data-copy="${x.maker}">${short(x.maker)}</button>`}</td><td class="r"><button type="button" class="kv-copy dg" data-copy="${x.tx}" title="Copy transaction hash">${x.tx.slice(0, 6)}…</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">No trades yet.</td></tr>`
+          }</tbody></table></div>`;
+        } else {
+          $("actSub").textContent = "Top 10 by balance";
+          const rest = (100 - poolPct) / 100, mineP = mine ? (mine.qty / SUPPLY) * 100 : 0;
+          const rows = [{ who: c.poolId, label: "PancakeSwap pool", pct: poolPct, tag: "Pool" }, ...c.top.map((h) => ({ who: h.who, pct: h.pct * rest * 0.9 })), ...(mine ? [{ who: "you", pct: mineP, tag: "You" }] : [])].sort((x, y) => y.pct - x.pct).slice(0, 10);
+          $("actBody").innerHTML = `<div class="hl">${rows.map((h, i) => `<div class="hrow"><span class="dg muted">#${i + 1}</span><span class="who">${h.who === "you" ? "Your wallet" : h.label ? h.label : `<button type="button" class="kv-copy dg" data-copy="${h.who}">${short(h.who)}</button>`}${h.tag ? ` <span class="tag px">${h.tag}</span>` : ""}</span><span class="hbar"><i style="width:${Math.min(100, h.pct)}%"></i></span><span class="dg">${h.pct.toFixed(2)}%</span></div>`).join("")}</div>`;
+        }
         // trade panel
-        const v = parseFloat($("amt").value) || 0;
+        const v = parseFloat($("amt").value) || 0, sl = this.slip / 100;
+        const seg = $("tradeCard").querySelector(".seg");
         if (c.absorbed) {
-          $("tradeCard").querySelector(".seg").hidden = true; $("amt").closest(".field").hidden = true; $("quick").hidden = true;
+          seg.hidden = true; $("amt").closest(".field").hidden = true; $("quick").hidden = true; $("slip").closest(".kv").hidden = true; $("tradeCard").querySelector(".bal").hidden = true;
           const got = mine ? mine.qty * c.ratio : 0;
-          $("estL").textContent = "You receive"; $("est").textContent = `${qty(got)} ${c.into}`;
-          $("go").textContent = mine ? `Redeem for ${c.into}` : `Nothing to redeem`; $("go").disabled = !mine;
+          $("est").textContent = `${qty(got)} ${c.into}`; $("minOut").textContent = `${qty(got)} ${c.into}`; $("impact").textContent = "None";
+          $("go").textContent = mine ? `Redeem for ${c.into}` : "Nothing to redeem"; $("go").disabled = !mine;
           $("tHint").textContent = `${c.ticker} lost. Redeeming burns it and gives you your share of ${c.into}.`;
         } else {
-          $("tradeCard").querySelector(".seg").hidden = false; $("amt").closest(".field").hidden = false; $("quick").hidden = false; $("go").disabled = false;
-          if (this.side === "buy") { $("estL").textContent = "You get about"; $("est").textContent = `${qty((v * (1 - FEE) * BNB_USD) / priceUsd(c))} ${c.ticker}`; $("go").textContent = `Buy ${c.ticker}`; }
-          else { $("estL").textContent = "You get about"; $("est").textContent = bnb((v * priceUsd(c) * (1 - FEE)) / BNB_USD); $("go").textContent = `Sell ${c.ticker}`; }
-          $("tHint").textContent = "2% fee on every trade. Test BNB only; your buy moves the price.";
+          seg.hidden = false; $("amt").closest(".field").hidden = false; $("quick").hidden = false; $("slip").closest(".kv").hidden = false; $("tradeCard").querySelector(".bal").hidden = false; $("go").disabled = false;
+          if (this.side === "buy") {
+            const got = (v * (1 - FEE) * BNB_USD) / p, imp = (Math.pow(1 + v / poolBnb(c), 2) - 1) * 100;
+            $("balMax").textContent = `${me.credits.toFixed(3)} BNB`;
+            $("est").textContent = `${qty(got)} ${c.ticker}`; $("minOut").textContent = `${qty(got * (1 - sl))} ${c.ticker}`; $("impact").innerHTML = `<span class="${imp > 10 ? "down" : ""}">${imp.toFixed(2)}%</span>`;
+            $("go").textContent = `Buy ${c.ticker}`;
+          } else {
+            const out = (v * p * (1 - FEE)) / BNB_USD, imp = (1 - 1 / Math.pow(1 + out / poolBnb(c), 2)) * 100;
+            $("balMax").textContent = `${qty(mine?.qty || 0)} ${c.ticker}`;
+            $("est").textContent = bnb(out); $("minOut").textContent = bnb(out * (1 - sl)); $("impact").innerHTML = `<span class="${imp > 10 ? "down" : ""}">${imp.toFixed(2)}%</span>`;
+            $("go").textContent = `Sell ${c.ticker}`;
+          }
+          $("tHint").textContent = "2% fee on every trade, included above. Test BNB only.";
         }
         $("myQty").textContent = mine ? qty(mine.qty) : "0";
-        $("myVal").textContent = mine ? usd(mine.qty * (c.absorbed ? c.ratio * priceUsd(all.get(c.into)) : priceUsd(c))) : "$0";
-        $("myBnb").textContent = me.credits.toFixed(2);
-        drawChart($("chart"), c, inThis && !winner ? Math.min(t, bell()) : null, avg);
+        const val = mine ? mine.qty * (c.absorbed ? c.ratio * priceUsd(all.get(c.into)) : p) : 0;
+        $("myVal").textContent = usd(val);
+        $("myPl").innerHTML = mine ? (() => { const pl = val / BNB_USD - mine.cost; return `<span class="${pl >= 0 ? "up" : "down"}">${pl >= 0 ? "+" : ""}${pl.toFixed(3)} BNB</span>`; })() : "—";
       },
     },
 
@@ -708,6 +881,12 @@ canvas.chart { width: 100%; height: 260px; display: block; }
               <div class="roster" id="roster">${Object.keys(ARMIES).map((k) => `<button type="button" class="fighter ${k === this.pick ? "on" : ""}" data-a="${k}" style="--army:${army(k)}"><span class="sprite" style="--army:${army(k)}">${k}</span><span class="px">${ARMIES[k].name}</span></button>`).join("")}</div>
               <label for="lfName"><span class="px">Fighter name</span><input id="lfName" maxlength="28" placeholder="Jensen Pepe" required></label>
               <label for="lfTicker"><span class="px">Ticker</span><input id="lfTicker" maxlength="8" placeholder="JPEPE"></label>
+              <label for="lfDesc"><span class="px">Description · optional</span><textarea id="lfDesc" maxlength="160" rows="2" placeholder="One line on why this fighter wins."></textarea></label>
+              <div class="lf-row">
+                <label for="lfX"><span class="px">X · optional</span><input id="lfX" inputmode="url" placeholder="x.com/yourcoin"></label>
+                <label for="lfTg"><span class="px">Telegram · optional</span><input id="lfTg" inputmode="url" placeholder="t.me/yourcoin"></label>
+                <label for="lfWeb"><span class="px">Website · optional</span><input id="lfWeb" inputmode="url" placeholder="yourcoin.fun"></label>
+              </div>
               <button class="big-btn" type="submit" id="lfGo"></button>
               <p class="hint" id="lfHint">Launching costs gas only. The whole supply goes into a BNB pool; no presale, no team bags.</p>
             </form>
@@ -715,7 +894,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
               <div class="card card-preview" id="preview"></div>
               <div class="card"><h3 class="title">The <i>rules</i></h3>
                 <div class="kv"><span>Win the round</span><b class="t">Absorb every loser's pool</b></div>
-                <div class="kv"><span>Winner's holders</span><b class="t">Rewards in their army's stock</b></div>
+                <div class="kv"><span>Winner's holders</span><b class="t">Rewards in their army's bStock</b></div>
                 <div class="kv"><span>Losers' holders</span><b class="t">Redeem for the winner</b></div>
                 <div class="kv"><span>Who wins</span><b class="t">10-minute average cap</b></div>
                 <div class="kv"><span>Trade fee</span><b class="t">2%, fixed forever</b></div></div>
@@ -731,7 +910,8 @@ canvas.chart { width: 100%; height: 260px; display: block; }
           const name = $("lfName").value.trim();
           if (!name) { $("lfHint").textContent = "Give your fighter a name first."; $("lfName").focus(); return; }
           const ticker = ($("lfTicker").value || name.replace(/[^a-z0-9]/gi, "").slice(0, 6)).toUpperCase() || "COIN";
-          queued = { name, ticker, army: this.pick };
+          const url = (id) => { let v = $(id).value.trim(); if (!v) return ""; if (!/^https?:\/\//i.test(v)) v = "https://" + v; try { const u = new URL(v); return /^https?:$/.test(u.protocol) ? u.href : ""; } catch { return ""; } };
+          queued = { name, ticker, army: this.pick, desc: $("lfDesc").value.trim(), socials: { x: url("lfX"), tg: url("lfTg"), web: url("lfWeb") } };
           $("lfHint").textContent = phase() === "launch" && coins.length < 8 ? `${ticker} enters round ${round} in a moment (simulated).` : `${ticker} enters round ${round + 1} when enlisting opens (simulated). Try 120× on the arena to get there fast.`;
           this.update();
         });
@@ -766,7 +946,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       mount(r) {
         const a = ARMIES[r.id]; if (!a) return `<div class="page"><a class="back" href="#armies">All armies</a><div class="card empty">Unknown army.</div></div>`;
         return `<div class="page" style="--army:var(${a.v})"><a class="back" href="#armies">All armies</a>
-          <div class="coin-head"><span class="sprite lg" style="font-size:16px">${r.id}</span><div><h1 style="color:var(--army)">${r.id} army</h1><div class="meta"><span class="px muted">Fights for ${a.name} stock rewards</span></div></div></div>
+          <div class="coin-head"><span class="sprite lg" style="font-size:16px">${r.id}</span><div><h1 style="color:var(--army)">${r.id} army</h1><div class="meta"><span class="px muted">Fights for ${a.token} rewards · ${a.name} bStock</span></div></div></div>
           <div class="tiles" id="aTiles"></div>
           <div class="board"><div class="board-h"><h2 class="title">Fighters this <i>round</i></h2></div><div id="aRows"></div></div>
           <div class="tbl"><table><thead><tr><th class="px">Round</th><th class="px">Champion</th><th class="px r">K.O.s</th><th class="px r">Final cap</th></tr></thead><tbody id="aHist"></tbody></table></div></div>`;
@@ -835,32 +1015,47 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   };
 
   // ---------- chart ----------
-  function drawChart(cv, c, now, avg) {
+  function drawChart(cv, c, now, avg, tf, isP) {
     const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
     if (!w) return;
     cv.width = w * dpr; cv.height = h * dpr;
     const x = cv.getContext("2d"); x.scale(dpr, dpr);
-    const pts = c.hist.slice(-360);
+    const lastT = c.hist[c.hist.length - 1]?.t ?? 0;
+    const k = isP ? 1 / SUPPLY : 1, fmt = isP ? price : usd;
+    const pts = c.hist.filter((p) => !tf || p.t >= lastT - tf).map((p) => ({ t: p.t, v: p.v * k }));
+    avg *= k;
     if (pts.length < 2) return;
-    const padL = 8, padR = 62, padT = 10, padB = 18;
+    const padL = 8, padR = isP ? 84 : 62, padT = 10, padB = 18;
     const t0 = pts[0].t, t1 = pts[pts.length - 1].t || t0 + 1;
     const vs = pts.map((p) => p.v), lo = Math.min(...vs, avg) * 0.96, hi = Math.max(...vs, avg) * 1.04;
     const X = (tt) => padL + ((tt - t0) / Math.max(1, t1 - t0)) * (w - padL - padR);
     const Y = (v) => padT + (1 - (v - lo) / (hi - lo)) * (h - padT - padB);
     const grid = css("--line"), fg3 = css("--fg-3"), bnbC = css("--bnb"), col = css(ARMIES[c.army].v);
     x.font = `16px VT323, monospace`; x.fillStyle = fg3; x.strokeStyle = grid; x.lineWidth = 1;
-    for (let i = 0; i <= 3; i++) { const v = lo + ((hi - lo) * i) / 3, y = Y(v); x.beginPath(); x.moveTo(padL, y); x.lineTo(w - padR + 4, y); x.stroke(); x.fillText(usd(v), w - padR + 8, y + 5); }
+    for (let i = 0; i <= 3; i++) { const v = lo + ((hi - lo) * i) / 3, y = Y(v); x.beginPath(); x.moveTo(padL, y); x.lineTo(w - padR + 4, y); x.stroke(); x.fillText(fmt(v), w - padR + 8, y + 5); }
     if (now != null) { const a = X(Math.max(t0, now - WINDOW)), b = X(Math.min(now, t1)); x.fillStyle = "rgba(243,186,47,.10)"; x.fillRect(a, padT, Math.max(2, b - a), h - padT - padB); }
     x.beginPath(); pts.forEach((p, i) => (i ? x.lineTo(X(p.t), Y(p.v)) : x.moveTo(X(p.t), Y(p.v))));
     x.strokeStyle = col; x.lineWidth = 2; x.stroke();
     x.lineTo(X(t1), h - padB); x.lineTo(X(t0), h - padB); x.closePath(); x.globalAlpha = 0.12; x.fillStyle = col; x.fill(); x.globalAlpha = 1;
     x.setLineDash([6, 5]); x.strokeStyle = bnbC; x.lineWidth = 1.5; x.beginPath(); x.moveTo(padL, Y(avg)); x.lineTo(w - padR, Y(avg)); x.stroke(); x.setLineDash([]);
     const lp = pts[pts.length - 1]; x.fillStyle = col; x.fillRect(X(lp.t) - 3, Y(lp.v) - 3, 6, 6);
-    x.fillStyle = fg3; x.fillText(`${Math.round((t1 - t0) / 60)} min`, padL, h - 3);
+    x.fillStyle = fg3; x.fillText(`${Math.round((t1 - t0) / 60)} min shown`, padL, h - 3);
   }
 
   // ---------- shell ----------
   function toast(msg) { const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 3000); }
+  function copyText(text, msg) {
+    const done = () => toast(msg);
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, () => fallback());
+    else fallback();
+    function fallback() { const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); done(); } catch { toast("Copy failed. Long-press the address to copy it."); } ta.remove(); }
+  }
+  document.addEventListener("click", (e) => {
+    const cp = e.target.closest("[data-copy]");
+    if (cp) { const v = cp.dataset.copy; copyText(v, v.length > 50 ? "Hash copied" : "Address copied"); return; }
+    const ex = e.target.closest("[data-ext]");
+    if (ex) toast(`${ex.dataset.ext} links open once the contracts are live`);
+  });
   $("connect").addEventListener("click", () => toast("Wallets connect when Meme Wars goes live on BNB Chain"));
   window.addEventListener("hashchange", go);
   window.addEventListener("resize", () => page?.update?.(route));
