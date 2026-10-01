@@ -109,5 +109,20 @@
     "feeBps": 50,
     "rewardsRecipient": "0x007f76605B24822f89D41A4163D4eeB589BF235C",
     "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b"
+  },
+  "coins": {
+    "UPTOBER": {
+      "name": "Uptober",
+      "token": "0xEF3D2F98f3064e8F4353a754Fd8bF5eBB577FA22",
+      "poolId": "0x4b1aba4b72d4f91ae92881b608ea63fd14a9085dac9bafe1defdfb3ee5b78ff3",
+      "forwarder": "0x010E4221342D8ca5df7BA5351edCD5d6BCc71414",
+      "launchTx": "0x8e1d10fbf6aa6532e9cf5ba08ec06e4325e0a800bbc5944cc79d0cb4088167d4",
+      "basket": [
+        "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
+        "0x14c3abF95Cb9C93a8b82C1CdCB76D72Cb87b2d4c",
+        "0xbA47214eDd2bb43099611b208f75E4b42FDcfEDc",
+        "0xf6b1117ec07684D3958caD8BEb1b302bfD21103f"
+      ]
+    }
   }
 }
