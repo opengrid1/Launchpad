@@ -313,6 +313,13 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 .lf-row input { font-size: 14px; padding: 9px 10px; }
 
 /* launch */
+.pair-pick { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.pair-on { display: inline-flex; align-items: center; gap: 12px; padding: 10px 14px; border: 2px solid var(--bnb); border-radius: 12px; background: rgba(243,186,47,.08); box-shadow: 0 0 0 2px rgba(243,186,47,.15); }
+.pair-on b { display: block; font-family: var(--marquee); font-weight: 400; font-size: 20px; line-height: 1; color: var(--bnb); }
+.pair-on small { display: block; font-size: 12px; color: var(--fg-2); margin-top: 3px; }
+.pair-tag { font-size: 7px; color: var(--ink); background: var(--bnb); padding: 4px 5px 3px; border-radius: 3px; }
+.bnb-ic { width: 34px; height: 34px; flex: none; }
+.pair-note { flex: 1; min-width: 220px; font-size: 13px; color: var(--fg-3); }
 .launch-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 14px; align-items: start; }
 .launch-side { position: sticky; top: 84px; }
 .lf { gap: 18px; }
@@ -1168,6 +1175,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
                 <div class="kv"><span>Contract</span><button type="button" class="kv-copy dg" data-copy="${c.addr}">${short(c.addr)} ${ICON.copy}</button></div>
                 <div class="kv"><span>Creator</span><button type="button" class="kv-copy dg" data-copy="${c.creator}">${short(c.creator)} ${ICON.copy}</button></div>
                 <div class="kv"><span>Pool</span><button type="button" class="kv-copy dg" data-copy="${c.poolId}">${short(c.poolId, 6, 4)} ${ICON.copy}</button></div>
+                <div class="kv"><span>Pair</span><b class="t">${esc(c.symbol)} / BNB</b></div>
                 <div class="kv"><span>DEX</span><b class="t">PancakeSwap Infinity</b></div>
                 <div class="kv"><span>Supply</span><b id="iSupply">—</b></div>
                 <div class="kv"><span>Trade fee</span><b class="t">2%: 0.7 creator · 0.3 holders · 1.0 platform</b></div>
@@ -1350,6 +1358,10 @@ canvas.chart { width: 100%; height: 260px; display: block; }
               <section class="sec"><div class="sec-h"><h3 class="title">Army</h3><span class="hint" id="armyNote"></span></div>
                 <div class="roster" id="roster"></div>
               </section>
+              <section class="sec"><div class="sec-h"><h3 class="title">Pair</h3><span class="hint">Every Jeet Wars coin trades against native BNB.</span></div>
+                <div class="pair-pick"><span class="pair-on"><svg class="bnb-ic" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="16" fill="#f3ba2f"/><path fill="#161004" d="M16 7.5l2.6 2.6-6.3 6.3-2.6-2.6zm4.6 4.6l2.6 2.6-6.6 6.6-6.6-6.6 2.6-2.6 4 4zM9.4 13.4L12 16l-2.6 2.6L6.8 16zm13.2 0l2.6 2.6-2.6 2.6L20 16zM16 21.9l2.6-2.6 2.6 2.6L16 27.1l-5.2-5.2 2.6-2.6z"/></svg><span><b>BNB</b><small>Native BNB · PancakeSwap Infinity</small></span><span class="px pair-tag">Paired</span></span>
+                <span class="pair-note">Buys pay BNB, sells return BNB, and the 2% fee and creator share are paid in BNB.</span></div>
+              </section>
               <section class="sec"><div class="sec-h"><h3 class="title">Coin</h3></div>
                 <div class="lf-id">
                   <div class="logo-field">
@@ -1383,6 +1395,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
             <aside class="stack launch-side">
               <div class="card"><div class="sec-h"><h3 class="title">Preview</h3><span class="hint">How it shows on the board</span></div><div class="pv" id="preview"></div></div>
               <div class="card"><h3 class="title">Cost</h3>
+                <div class="kv"><span>Pool</span><b class="t" id="sPool">$TICKER / BNB on PancakeSwap Infinity</b></div>
                 <div class="kv"><span>Enters</span><b class="t" id="sRound"></b></div>
                 <div class="kv"><span>Network fee</span><b>≈ 0.0004 BNB</b></div>
                 <div class="kv"><span>First buy</span><b id="sFirst">0 BNB</b></div>
@@ -1498,10 +1511,11 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         const inArmy = coinsOf(curRound()).filter((c) => c.army === this.pick).length;
         $("armyNote").textContent = a ? `${ARMY_META[a.name]?.[1] || a.name}: holders can take rewards as ${a.token} · ${inArmy} in this round` : "";
         $("fbNote").textContent = fb ? `About ${qty((fb * 0.98 * 1e9) / 5.07)} ${f.ticker || "tokens"}, ${((fb * 0.98) / 5.07 * 100).toFixed(1)}% of supply, at the starting price. Max 0.5 BNB.` : "Skip it and the pool opens with nobody holding yet. Max 0.5 BNB.";
+        $("sPool").textContent = `$${f.ticker || "TICKER"} / BNB on PancakeSwap Infinity`;
         $("sFirst").textContent = `${fb} BNB`; $("sTotal").textContent = `≈ ${(fb + 0.0004).toFixed(4)} BNB`;
         const name = f.name || "Your fighter", tk = f.ticker || "TICKER", av = armyVar(a?.name);
         $("preview").innerHTML = `<div class="pv-row" style="--army:${av}"><span class="sprite lg">${this.img ? `<img src="${esc(this.img)}" alt="">` : esc(tk[0])}</span>
-          <div class="pv-main"><b>${esc(name)}</b><span class="dg tk">$${esc(tk)}</span><div class="meta"><span class="chip" style="--army:${av}">${esc(a?.name || "")} army</span>${["x", "tg", "web"].filter((k) => f[k]).map((k) => `<span class="pv-link px">${{ x: "X", tg: "TG", web: "Web" }[k]}</span>`).join("")}</div></div></div>
+          <div class="pv-main"><b>${esc(name)}</b><span class="dg tk">$${esc(tk)} <span class="muted">/ BNB</span></span><div class="meta"><span class="chip" style="--army:${av}">${esc(a?.name || "")} army</span>${["x", "tg", "web"].filter((k) => f[k]).map((k) => `<span class="pv-link px">${{ x: "X", tg: "TG", web: "Web" }[k]}</span>`).join("")}</div></div></div>
           ${f.desc ? `<p class="pv-desc">${esc(f.desc)}</p>` : `<p class="pv-desc muted">No description yet.</p>`}`;
         this.update();
       },
