@@ -132,6 +132,24 @@ h2.title, h3.title { font-size: 22px; }
 .xbtn { display: inline-grid; place-items: center; padding: 0 12px; }
 .xbtn svg { width: 16px; height: 16px; }
 
+.official { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 18px; align-items: center; padding: 16px 20px; border: 3px solid var(--hot); border-radius: 14px; background: linear-gradient(90deg, rgba(255,61,110,.18), rgba(243,186,47,.06) 70%), var(--panel); box-shadow: 0 0 0 4px rgba(255,61,110,.12), 0 0 46px -14px rgba(255,61,110,.75); position: relative; }
+.official::before { content: "Official token"; position: absolute; top: -12px; left: 18px; background: var(--hot); color: #fff; font-family: var(--pixel); font-size: 8px; padding: 6px 8px 5px; border-radius: 5px; letter-spacing: .06em; }
+.off-logo { width: 64px !important; height: 64px !important; text-decoration: none; overflow: hidden; }
+.off-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.off-tag { display: none; }
+.off-name { font-family: var(--marquee); font-size: 26px; line-height: 1; color: var(--fg); text-decoration: none; overflow-wrap: anywhere; }
+.off-name span { color: var(--bnb); }
+.off-status { font-size: 13.5px; color: var(--fg-2); }
+.off-ca { align-self: flex-start; display: inline-flex; gap: 6px; align-items: center; border: 0; background: transparent; padding: 0; color: var(--fg-3); font-size: 17px; }
+.off-ca:hover { color: var(--bnb); }
+.off-stats { display: grid; grid-template-columns: repeat(3, auto); gap: 18px; }
+.off-stats .px { color: var(--fg-3); font-size: 7.5px; }
+.off-stats b { display: block; font-family: var(--digits); font-weight: 400; font-size: 24px; line-height: 1; margin-top: 4px; }
+.off-cta .big-btn { display: inline-block; white-space: nowrap; }
+.upnext { padding: 10px 18px; color: var(--bnb); border-bottom: 2px solid var(--line); }
+.nav a.nav-off { color: var(--ink); background: var(--bnb); margin-left: 4px; }
+.nav a.nav-off:hover { color: var(--ink); filter: brightness(1.08); }
+
 /* arena banner */
 .banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 18px 22px; border: 2px solid var(--bnb); border-radius: 14px; background: radial-gradient(120% 140% at 0% 50%, rgba(243,186,47,.16), transparent 55%), repeating-linear-gradient(135deg, rgba(243,186,47,.05) 0 10px, transparent 10px 20px), var(--panel); box-shadow: 0 0 40px -18px rgba(243,186,47,.6); }
 .ban-mark { width: 116px; height: 116px; display: block; filter: drop-shadow(0 6px 18px rgba(243,186,47,.35)); }
@@ -491,6 +509,8 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 @keyframes flash { 0%, 40% { box-shadow: 0 0 0 4px var(--bnb), 0 0 60px var(--bnb); } 100% { box-shadow: none; } }
 
 @media (max-width: 1020px) {
+  .official { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .off-cta { grid-column: 1 / -1; }
   .grid2 { grid-template-columns: minmax(0, 1fr); }
   .coin-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "chart" "side" "main"; }
   .launch-grid { grid-template-columns: minmax(0, 1fr); }
@@ -517,6 +537,11 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   .ban-cta { grid-column: 1 / -1; flex-direction: row; min-width: 0; }
   .ban-cta > * { flex: 1; }
   .ban-sec .ghost-btn:first-child { padding-inline: 6px; }
+  .official { grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 14px; }
+  .off-stats { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .off-cta { grid-column: 1 / -1; } .off-cta .big-btn { display: block; }
+  .off-logo { width: 54px !important; height: 54px !important; }
+  .off-name { font-size: 21px; }
   .ban-sub { display: none; }
   .ca .addr { display: none; } .ca .addr-s { display: inline; }
   .ca { flex: 1 1 100%; justify-content: space-between; }
@@ -593,7 +618,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       <b>Jeet <i>Wars</i></b>
     </a>
     <nav class="nav" aria-label="Pages">
-      <a href="#arena" data-nav="arena">Arena</a><a href="#launch" data-nav="launch">Launch</a><a href="#armies" data-nav="armies">Armies</a><a href="#hall" data-nav="hall">Hall of fame</a><a href="#docs" data-nav="docs">Docs</a>
+      <a href="#arena" data-nav="arena">Arena</a><a href="#launch" data-nav="launch">Launch</a><a href="#armies" data-nav="armies">Armies</a><a href="#hall" data-nav="hall">Hall of fame</a><a href="#docs" data-nav="docs">Docs</a><a class="nav-off" href="#coin-0x438A865700AC1CE2ea2dF8D7b1881DE883014D43">$JEETWARS</a>
     </nav>
     <span class="sp"></span>
     <a class="xlink" href="https://x.com/jeetwars" target="_blank" rel="noopener noreferrer" aria-label="Jeet Wars on X" title="@jeetwars on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
@@ -639,6 +664,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     explorer: "https://bscscan.com",
     // Kept off every listing by the site (test coins); the admin can also hide on chain.
     siteHidden: ["0x558efb29d8b84d73415c63d10e0c81150fb90c41"],
+    official: "0x438A865700AC1CE2ea2dF8D7b1881DE883014D43",
   };
   const ENLIST = 900, BELL = 3600, ROUND = 5400, WINDOW = 600, HITS = 10, HIT_GAP = 180, FEE = 0.02, MAX_FIRST = 0.5;
   const STOCK_FEE = { NVDA: 2500, QQQ: 100, TSLA: 2500, GOOGL: 2500, BABA: 2500, AAPL: 2500, CRCL: 2500, SPY: 100 };
@@ -860,6 +886,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       for (let k = Math.max(0, r - 1); k <= r + 1; k++) (S.roundCoins.get(k) || []).forEach((a) => active.add(a));
       for (const [, R] of S.rounds) if (R.winner && R.winner !== E.ZeroAddress) active.add(R.winner.toLowerCase());
       if (route.p === "coin" && route.id) active.add(route.id.toLowerCase());
+      active.add(CFG.official.toLowerCase());
       if (route.p === "me" || route.p === "admin" || route.p === "hall") S.list.forEach((a) => active.add(a));
       const act = [...active].filter((a) => S.coins.has(a));
       const per = 7 + (S.user ? 2 : 0);
@@ -1084,14 +1111,31 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     $("leadNote").textContent = won ? `${HITS - (R.hits || 0) > 0 && !R.finalized ? `Merge ${R.hits}/${HITS}: ` : ""}${bnbN(f18(R.spent))} of ${bnbN(f18(R.loot))} has bought ${c.symbol}.` : ph === "launch" ? "Enlisting is open. The score counts in the final 10 minutes of battle." : `If the bell rang now, the other ${others} coins' pools would buy ${c.symbol} over 30 minutes.`;
   }
 
-  function boardRows(list, R) {
+  function officialCard() {
+    const box = $("official"); if (!box) return;
+    const c = S.coins.get(CFG.official.toLowerCase());
+    if (!c) { box.innerHTML = `<div class="off-main"><span class="px off-tag">Official token</span><b class="off-name">$JEETWARS</b><span class="muted">Loading from BNB Chain…</span></div>`; return; }
+    const R = S.rounds.get(c.round), won = R?.settled && R.winner?.toLowerCase() === c.addr.toLowerCase(), lost = R?.settled && !won;
+    const t = nowS(), ph = phaseOf(c.round, t);
+    const status = won ? `Won round ${c.round}` : lost ? `Lost round ${c.round}` : t < roundStart(c.round) ? `Fights in round ${c.round} · starts in ${mmss(roundStart(c.round) - t)}` : ph === "battle" ? (bellOf(c.round) - t < WINDOW ? `Round ${c.round} · deciding window · ${mmss(bellOf(c.round) - t)} left` : `Round ${c.round} · battle · bell in ${mmss(bellOf(c.round) - t)}`) : ph === "launch" ? `Round ${c.round} · enlisting` : `Round ${c.round} · awaiting settle`;
+    const mc = c.sqrt ? usd(toUsd(mcapBnb(c))) : "—", pr = c.sqrt ? price(priceBnb(c) * S.bnbUsd) : "—";
+    box.style.setProperty("--army", armyVar(S.armies[c.army]?.name));
+    box.innerHTML = `<a class="off-logo sprite lg" href="#coin-${c.addr}">${face(c)}</a>
+      <div class="off-main"><span class="px off-tag">Official token</span><a class="off-name" href="#coin-${c.addr}">${esc(c.name)} <span>$${esc(c.symbol)}</span></a>
+        <span class="off-status">${esc(status)}</span>
+        <button type="button" class="off-ca dg" data-copy="${c.addr}" title="Copy contract address">CA ${short(c.addr, 8, 6)} ${ICON.copy}</button></div>
+      <div class="off-stats"><div><span class="px">Market cap</span><b>${mc}</b></div><div><span class="px">Price</span><b>${pr}</b></div><div><span class="px">Pair</span><b>BNB</b></div></div>
+      <div class="off-cta"><a class="big-btn" href="#coin-${c.addr}">Buy $${esc(c.symbol)}</a></div>`;
+  }
+
+  function boardRows(list, R, upcoming) {
     const top = Math.max(...list.filter((e) => !e.out).map((e) => e.s.mcap), 1e-18);
     const rows = [`<div class="row head" aria-hidden="true"><span class="px">#</span><span class="px">Fighter</span><span class="px hp">Health</span><span class="px">Score</span><span class="px status">Status</span></div>`];
     list.forEach((e, idx) => {
       const c = e.c, an = S.armies[c.army]?.name, a = armyVar(an);
       const won = R?.settled && R.winner?.toLowerCase() === c.addr.toLowerCase(), lost = R?.settled && !won;
       const hp = lost || e.out ? 0 : won ? 100 : Math.max(4, Math.round((e.s.mcap / top) * 100));
-      const st = e.out && !R?.settled ? `<span class="st ko px">Out</span>` : won ? `<span class="st win px">Winner</span>` : lost ? `<span class="st ko px">K.O.</span>` : idx === 0 ? `<span class="st win px">Winning</span>` : e.s.mcap > top * 0.75 ? `<span class="st safe px">In reach</span>` : `<span class="st risk px">Danger</span>`;
+      const st = upcoming ? `<span class="st safe px">Next round</span>` : e.out && !R?.settled ? `<span class="st ko px">Out</span>` : won ? `<span class="st win px">Winner</span>` : lost ? `<span class="st ko px">K.O.</span>` : idx === 0 ? `<span class="st win px">Winning</span>` : e.s.mcap > top * 0.75 ? `<span class="st safe px">In reach</span>` : `<span class="st risk px">Danger</span>`;
       const mine = S.user && c.creator?.toLowerCase() === S.user.toLowerCase();
       rows.push(`<a class="row ${idx === 0 && !lost ? "first" : ""} ${lost ? "ko" : ""} ${mine || (c.bal && c.bal > 0n) ? "mine" : ""}" href="#coin-${c.addr}" style="--army:${a}">
         <span class="rank">${idx + 1}</span>
@@ -1110,11 +1154,13 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   const PAGES = {
     arena: {
       mount: () => `<div class="page">
+        <section class="official" id="official" aria-label="Official token"></section>
         <section class="banner" aria-label="Jeet Wars">
           ${BANNER_MARK}
           <div class="ban-copy"><h1 class="ban-title">Jeet <i>Wars</i></h1><p class="ban-tag">Hold the winner. Jeets get eaten.</p><p class="ban-sub">8 meme coins fight every 90 minutes under bStock armies on BNB Chain. The winner eats every loser's pool.</p></div>
           <div class="ban-cta"><a class="big-btn" href="#launch">Launch a fighter</a><div class="ban-sec"><a class="ghost-btn" href="#docs">Read the docs</a><a class="ghost-btn xbtn" href="https://x.com/jeetwars" target="_blank" rel="noopener noreferrer" aria-label="Follow @jeetwars on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a></div></div>
-        </section>${hudHtml()}
+        </section>
+        ${hudHtml()}
         <div class="grid2">
           <div class="board"><div class="board-h"><h2 class="title">High <i>score</i> board</h2><span class="px" id="boardSub"></span></div><div id="rows"><div class="empty">Loading from BNB Chain…</div></div></div>
           <aside class="stack">
@@ -1124,9 +1170,11 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         </div></div>`,
       update(_, full) {
         updateHud();
+        officialCard();
         if (!full) return;
         const r = curRound(), R = S.rounds.get(r), list = ranked(r).filter((e) => !e.c.hidden);
-        $("rows").innerHTML = list.length ? boardRows(list, R) : `<a class="slot" href="#launch"><span class="px blink">Press start</span><span>${phaseOf(r) === "launch" ? "No fighters yet. Launch now to fight this round." : "No fighters this round. Launch now to fight next round."}</span></a>`;
+        const nextList = ranked(r + 1).filter((e) => !e.c.hidden);
+        $("rows").innerHTML = list.length ? boardRows(list, R) : nextList.length ? `<div class="upnext px">Up next · round ${r + 1} starts in ${mmss(roundStart(r + 1) - nowS())}</div>` + boardRows(nextList, null, true) : `<a class="slot" href="#launch"><span class="px blink">Press start</span><span>${phaseOf(r) === "launch" ? "No fighters yet. Launch now to fight this round." : "No fighters this round. Launch now to fight next round."}</span></a>`;
         if (list.length && list.length < 8 && phaseOf(r) === "launch") $("rows").insertAdjacentHTML("beforeend", Array.from({ length: 8 - list.length }, () => `<a class="slot" href="#launch"><span class="px blink">Press start</span><span>Open slot · launch now to fight this round</span></a>`).join(""));
         $("boardSub").textContent = R?.settled ? "Final board · losers redeem into the champion" : "10-minute average market cap · tap a fighter";
         const by = {}; list.filter((e) => !e.out).forEach((e) => { const n = S.armies[e.c.army]?.name || "?"; by[n] = (by[n] || 0) + toUsd(e.s.mcap); });
