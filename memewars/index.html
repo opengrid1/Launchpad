@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="SAFU.lol: meme coins fight in 90-minute rounds under bStock armies on BNB Chain. The winner absorbs every loser. Funds are safu, your coin isn't.">
-<meta property="og:title" content="SAFU.lol">
-<meta property="og:description" content="Funds are safu. Your coin isn't. Meme coin battles on BNB Chain.">
+<meta name="description" content="Jeet Wars: meme coins fight in 90-minute rounds under bStock armies on BNB Chain. The winner absorbs every loser. Hold the winner, jeets get eaten.">
+<meta property="og:title" content="Jeet Wars">
+<meta property="og:description" content="Hold the winner. Jeets get eaten. Meme coin battles on BNB Chain.">
 <meta name="theme-color" content="#09090b">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23f3ba2f'/%3E%3Cpath fill='%23161004' d='M3 2h10v7h-1v2h-1v1h-1v1H9v1H7v-1H6v-1H5v-1H4V9H3z'/%3E%3Cpath fill='%23f3ba2f' d='M10 4h2v2h-1v1h-1v1H9v1H8v1H7V9H6V8H5V6h1v1h1v1h1V7h1V6h1z'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23f3ba2f'/%3E%3Cpath fill='%23161004' d='M3 3h2v1h1v1h1v1h2V5h1V4h1V3h2v2h-1v1h-1v1h-1v2h1v1h1v1h1v2h-2v-1h-1v-1h-1v-1H7v1H6v1H5v1H3v-2h1v-1h1V9h1V7H5V6H4V5H3z'/%3E%3C/svg%3E">
 <style>[hidden]{display:none!important} :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
-<title>SAFU.lol</title>
+<title>Jeet Wars</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&family=VT323&family=Chakra+Petch:wght@400;500;600;700&display=swap">
@@ -47,7 +47,7 @@ button { cursor: pointer; }
 .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: rgba(9,9,11,.93); backdrop-filter: blur(8px); border-bottom: 2px solid var(--line); }
 .top .wrap { display: flex; align-items: center; gap: 14px; padding-block: 10px; }
 .logo { display: flex; align-items: center; gap: 10px; white-space: nowrap; text-decoration: none; }
-.logo b i { font-style: normal; color: var(--hot); font-size: .62em; text-shadow: 2px 2px 0 #4a0016; margin-left: 1px; }
+.logo b i { font-style: normal; color: var(--hot); text-shadow: 3px 3px 0 #4a0016; }
 .logo b { font-family: var(--marquee); font-weight: 400; font-size: 26px; line-height: 1; color: var(--bnb); text-shadow: 0 0 18px rgba(243,186,47,.45), 3px 3px 0 #5c3f00; }
 .nav { display: flex; gap: 2px; margin-left: 4px; }
 .nav a { padding: 8px 10px; color: var(--fg-2); text-decoration: none; font-weight: 700; font-size: 14px; border-radius: 6px; white-space: nowrap; }
@@ -467,9 +467,9 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 
 <header class="top">
   <div class="wrap">
-    <a class="logo" href="#arena" aria-label="SAFU.lol home">
-      <svg width="34" height="34" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#f3ba2f"/><path fill="#161004" d="M3 2h10v7h-1v2h-1v1h-1v1H9v1H7v-1H6v-1H5v-1H4V9H3z"/><path fill="#f3ba2f" d="M10 4h2v2h-1v1h-1v1H9v1H8v1H7V9H6V8H5V6h1v1h1v1h1V7h1V6h1z"/></svg>
-      <b>SAFU<i>.lol</i></b>
+    <a class="logo" href="#arena" aria-label="Jeet Wars home">
+      <svg width="34" height="34" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#f3ba2f"/><path fill="#161004" d="M3 3h2v1h1v1h1v1h2V5h1V4h1V3h2v2h-1v1h-1v1h-1v2h1v1h1v1h1v2h-2v-1h-1v-1h-1v-1H7v1H6v1H5v1H3v-2h1v-1h1V9h1V7H5V6H4V5H3z"/></svg>
+      <b>Jeet <i>Wars</i></b>
     </a>
     <nav class="nav" aria-label="Pages">
       <a href="#arena" data-nav="arena">Arena</a><a href="#launch" data-nav="launch">Launch</a><a href="#armies" data-nav="armies">Armies</a><a href="#hall" data-nav="hall">Hall of fame</a><a href="#how" data-nav="how">How to play</a>
@@ -481,7 +481,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 </header>
 
 <main class="wrap"><div id="view"></div>
-  <footer class="foot"><span>SAFU.lol · funds are safu, your coin isn't · BNB Chain</span><span>Free play preview. Figures are simulated. Not affiliated with Binance.</span></footer>
+  <footer class="foot"><span>Jeet Wars · jeetwars.fun · BNB Chain</span><span>Free play preview. Figures are simulated. Not affiliated with Binance.</span></footer>
 </main>
 
 <nav class="tabs" aria-label="Pages">
@@ -1174,7 +1174,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     },
 
     how: {
-      mount: () => `<div class="page"><div class="page-h"><h1 class="title">How to <i>play</i></h1><p>Funds are safu. Your coin isn't. Every round is the same 90 minutes, and only one coin walks out.</p></div>
+      mount: () => `<div class="page"><div class="page-h"><h1 class="title">How to <i>play</i></h1><p>Hold the winner. Jeets get eaten. Every round is the same 90 minutes, and only one coin walks out.</p></div>
         <div class="levels">
           <div class="level"><span class="px">Level 1 · 15 min</span><b>Enlist</b><p>Coins launch into the round, each under a stock army: NVDA, TSLA, AAPL, SPY and more.</p></div>
           <div class="level"><span class="px">Level 2 · 45 min</span><b>Battle</b><p>Open trading. Communities push their fighter up the board.</p></div>
@@ -1233,7 +1233,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     const ex = e.target.closest("[data-ext]");
     if (ex) toast(`${ex.dataset.ext} links open once the contracts are live`);
   });
-  $("connect").addEventListener("click", () => toast("Wallets connect when SAFU.lol goes live on BNB Chain"));
+  $("connect").addEventListener("click", () => toast("Wallets connect when Jeet Wars goes live on BNB Chain"));
   window.addEventListener("hashchange", go);
   window.addEventListener("resize", () => page?.update?.(route));
 
