@@ -168,7 +168,8 @@ contract BatchFactory is ReentrancyGuard, IUnlockCallback {
         uint64 ethUsd8_,
         uint16 taxBps_,
         uint16 creatorBps_,
-        uint16 holderBps_
+        uint16 holderBps_,
+        address feeRecipient_
     ) {
         tokenDeployer = tokenDeployer_;
         owner = owner_;
@@ -176,7 +177,7 @@ contract BatchFactory is ReentrancyGuard, IUnlockCallback {
         if (ethUsd8_ == 0 || taxBps_ == 0 || taxBps_ > 1_000 || uint256(creatorBps_) + holderBps_ > 10_000) revert InvalidParams();
         TAX_BPS = taxBps_;
         admin = admin_;
-        feeRecipient = admin_;
+        feeRecipient = feeRecipient_ == address(0) ? admin_ : feeRecipient_;
         poolManager = poolManager_;
         hook = hook_;
         weth = weth_;

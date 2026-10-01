@@ -43,7 +43,7 @@ async function deployAll(admin: any) {
   const hook = await ethers.getContractAt("BatchHook", hookAddr, deployer);
   const td = await (await ethers.getContractFactory("BatchTokenDeployer", deployer)).deploy();
   const factory = await (await ethers.getContractFactory("BatchFactory", deployer)).deploy(
-    deployer.address, admin.address, POOL_MANAGER, hookAddr, await td.getAddress(), WETH, ETH_USD_8, TAX_BPS, CREATOR_BPS, HOLDER_BPS,
+    deployer.address, admin.address, POOL_MANAGER, hookAddr, await td.getAddress(), WETH, ETH_USD_8, TAX_BPS, CREATOR_BPS, HOLDER_BPS, ethers.ZeroAddress,
   );
   const fAddr = await factory.getAddress();
   await (await td.setFactory(fAddr)).wait();
