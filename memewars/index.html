@@ -409,6 +409,26 @@ canvas.chart { width: 100%; height: 260px; display: block; }
 .faq summary { cursor: pointer; font-weight: 700; }
 .faq p { margin: 10px 0 0; color: var(--fg-2); max-width: 70ch; }
 
+/* admin */
+.adm-grid { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 14px; align-items: start; }
+.af { display: flex; flex-direction: column; gap: 6px; }
+.af input, .af textarea, .af-row > input { border: 2px solid var(--line-2); border-radius: 10px; padding: 9px 11px; background: var(--well); color: var(--fg); font: inherit; font-size: 14px; min-width: 0; }
+.af-row { display: flex; gap: 8px; align-items: stretch; }
+.af-row > input, .af-row .field { flex: 1; }
+.af-row .field { padding: 2px 10px; }
+.af-row .field input { font-size: 24px; border: 0; background: transparent; outline: 0; color: var(--bnb); font-family: var(--digits); min-width: 0; width: 100%; }
+.row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.row-btns > * { flex: 1; }
+.ghost-btn.sm { padding: 6px 8px 5px; font-size: 7.5px; }
+.ghost-btn.danger, .ghost-btn.danger:hover { border-color: var(--hot); color: var(--hot); }
+.ghost-btn[disabled] { opacity: .4; cursor: not-allowed; }
+.danger-btn { background: var(--hot); color: #fff; box-shadow: 0 5px 0 #8a0f30; }
+.tog { border: 2px solid var(--ok); background: rgba(85,239,140,.1); color: var(--ok); border-radius: 6px; padding: 4px 8px; font-family: var(--pixel); font-size: 7.5px; }
+.tog.off { border-color: var(--line-2); background: transparent; color: var(--fg-3); }
+.adm tr.sel td { background: var(--panel-2); }
+.adm .tbl.flat table { min-width: 600px; }
+.adm-log { max-height: 260px; font-size: 17px; }
+
 /* docs */
 .docs-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 28px; align-items: start; }
 .toc { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 2px; padding: 14px; background: var(--panel); border: 2px solid var(--line); border-radius: 14px; }
@@ -451,6 +471,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   .coin-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "chart" "side" "main"; }
   .launch-grid { grid-template-columns: minmax(0, 1fr); }
   .docs-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .adm-grid { grid-template-columns: minmax(0, 1fr); }
   .toc { position: static; flex-direction: row; overflow-x: auto; padding: 8px; gap: 4px; scrollbar-width: none; }
   .toc .px { display: none; }
   .toc a { white-space: nowrap; flex: none; }
@@ -476,11 +497,11 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   .ca { flex: 1 1 100%; justify-content: space-between; }
   .lf-row { grid-template-columns: minmax(0, 1fr); }
   .hrow { grid-template-columns: 30px minmax(0, 1fr) 64px; } .hrow .hbar { display: none; }
-  .tbl.flat table { min-width: 0; }
-  .tbl.flat th:nth-child(6), .tbl.flat td:nth-child(6) { display: none; }
-  .tbl.flat td, .tbl.flat th { padding: 8px 6px; }
-  .tbl.flat td:first-child, .tbl.flat th:first-child { padding-left: 14px; }
-  .tbl.flat td.dg, .tbl.flat .kv-copy { font-size: 16px; }
+  .act-body .tbl.flat table { min-width: 0; }
+  .act-body .tbl.flat th:nth-child(6), .act-body .tbl.flat td:nth-child(6) { display: none; }
+  .act-body .tbl.flat td, .act-body .tbl.flat th { padding: 8px 6px; }
+  .act-body .tbl.flat td:first-child, .act-body .tbl.flat th:first-child { padding-left: 14px; }
+  .act-body .tbl.flat td.dg, .act-body .tbl.flat .kv-copy { font-size: 16px; }
   .hud, .cols2 { grid-template-columns: minmax(0, 1fr); }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .row { grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1fr) 80px; gap: 10px; padding-inline: 14px; }
@@ -618,11 +639,25 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     all.set(c.ticker, c);
     return c;
   }
+  const adm = { paused: false, recipient: "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b", owed: 0, paid: 0, router: "", renounced: false, log: [] };
+  const isAddr = (v) => /^0x[0-9a-fA-F]{40}$/.test(v);
+  function alog(msg) { adm.log.unshift({ at: clock, msg, tx: "0x" + hex(64) }); if (adm.log.length > 40) adm.log.pop(); toast(msg.length > 46 ? msg.slice(0, 44) + "…" : msg); }
+  function collect(c, share, to) {
+    const out = poolBnb(c) * share;
+    c.poolScale = (c.poolScale ?? 1) * (1 - share);
+    const inRound = coins.includes(c);
+    if (share >= 0.999) {
+      c.pulled = true;
+      if (inRound && !winner) { coins = coins.filter((x) => x !== c); pushLog(`<b>${c.ticker}</b> left the round: liquidity collected.`); }
+      if (winner === c) { merged = 10; pushLog(`Merge stopped: <b>${c.ticker}</b> liquidity collected. Losers redeem for BNB.`); }
+    }
+    alog(`collect(${c.ticker}, ${Math.round(share * 10000)} bps, ${short(to)}): ${bnb(out)}`);
+  }
   function trade(c, at, buy, bnbAmt, who) {
     const x = { at, buy, bnb: bnbAmt, tok: (bnbAmt * BNB_USD) / priceUsd(c), who, maker: "0x" + hex(40), tx: "0x" + hex(64) };
-    c.trades.unshift(x); if (c.trades.length > 60) c.trades.pop(); c.volBnb += bnbAmt; c.txns++;
+    c.trades.unshift(x); if (c.trades.length > 60) c.trades.pop(); c.volBnb += bnbAmt; c.txns++; adm.owed += bnbAmt * 0.01;
   }
-  const poolBnb = (c) => Math.sqrt(c.cap / BNB_USD) * 3.2;
+  const poolBnb = (c) => (c.pulled ? 0 : Math.sqrt(c.cap / BNB_USD) * 3.2 * (c.poolScale ?? 1));
   const priceUsd = (c) => c.cap / SUPPLY;
   function twap(c, now) {
     const pts = c.hist.filter((p) => p.t >= now - WINDOW && p.t <= now);
@@ -655,11 +690,11 @@ canvas.chart { width: 100%; height: 260px; display: block; }
   function step(dt) {
     const prev = t; t += dt; clock += dt;
     const ph = phase();
-    if (ph === "launch" && coins.length < 8 && Math.random() < dt / 70) {
+    if (!adm.paused && ph === "launch" && coins.length < 8 && Math.random() < dt / 70) {
       const c = makeCoin(POOL[(poolIdx++) % POOL.length], 2600 + Math.random() * 2400, t);
       c.hist.push({ t, v: c.cap }); coins.push(c); pushLog(`<b>${c.ticker}</b> joined the ${c.army} army.`);
     }
-    if (queued && ph === "launch" && coins.length < 8) {
+    if (queued && !adm.paused && ph === "launch" && coins.length < 8) {
       const c = makeCoin([queued.name, queued.ticker, queued.army], 2800, t);
       c.hist.push({ t, v: c.cap }); c.mine = true; c.desc = queued.desc; c.socials = queued.socials; c.img = queued.img; c.creator = "0x" + hex(40); coins.push(c);
       if (queued.first) { me.credits += queued.first; buy(c, queued.first); } me.launched.unshift(c.ticker); queued = null;
@@ -790,7 +825,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     $("railL").style.transform = `scaleX(${Math.min(1, t / LAUNCH)})`;
     $("railB").style.transform = `scaleX(${Math.max(0, Math.min(1, (t - LAUNCH) / BATTLE))})`;
     $("railM").style.transform = `scaleX(${Math.max(0, Math.min(1, (t - bell()) / MERGE))})`;
-    const r = ranked(), lead = r[0];
+    const r = ranked().filter((e) => !e.c.hidden), lead = r[0];
     if (!lead) { $("leadLabel").textContent = "No fighters yet"; $("leadName").textContent = "Press start"; $("leadAv").textContent = "?"; $("leadNote").textContent = "Enlisting is open. Launch a coin to be first in."; return; }
     const c = lead.c, others = coins.length - 1;
     $("lead").style.setProperty("--army", army(c.army));
@@ -827,7 +862,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     return rows.join("");
   }
   function armyPowerHtml() {
-    const by = {}; for (const c of coins) by[c.army] = (by[c.army] || 0) + c.cap;
+    const by = {}; for (const c of coins) if (!c.hidden) by[c.army] = (by[c.army] || 0) + c.cap;
     const ar = Object.entries(by).sort((a, b) => b[1] - a[1]), max = ar[0]?.[1] || 1;
     return ar.length ? ar.map(([k, v]) => `<a class="army-row" href="#army-${k}" style="--army:${army(k)}"><span class="chip">${k}</span><span class="bar"><i style="width:${(v / max) * 100}%"></i></span><span class="v dg">${usd(v)}</span></a>`).join("") : `<p class="hint">No fighters yet. Press start.</p>`;
   }
@@ -859,7 +894,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       wire: wireSpeed,
       update() {
         updateHud();
-        $("rows").innerHTML = boardRows(ranked(), { slots: true });
+        $("rows").innerHTML = boardRows(ranked().filter((e) => !e.c.hidden), { slots: true });
         $("boardSub").textContent = winner ? "Final board · losers redeem into the champion" : "10-minute average market cap · tap a fighter";
         $("armies").innerHTML = armyPowerHtml();
         $("log").innerHTML = logLines.map((l) => `<div>${l}</div>`).join("") || "<div>Waiting for the first move.</div>";
@@ -878,7 +913,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
           <div class="coin-head"><span class="sprite lg">${face(c)}</span>
             <div class="ch-main"><div class="ch-title"><h1>${esc(c.name)}</h1><span class="dg tk">$${esc(c.ticker)}</span></div>
               <div class="meta"><a class="chip" href="#army-${c.army}">${c.army} army</a><span id="cStatus"></span><span class="px muted" id="cRound"></span><span class="muted age" id="cAge"></span></div>
-              ${c.desc ? `<p class="desc">${esc(c.desc)}</p>` : ""}</div></div>
+              ${c.desc ? `<p class="desc">${esc(c.desc)}</p>` : ""}${c.pulled ? `<p class="desc" style="color:var(--hot)">Liquidity for this coin was collected.</p>` : ""}</div></div>
           <div class="ca-bar">
             <div class="links">
               <button type="button" class="lnk" data-ext="BscScan">BscScan${ICON.out}</button><button type="button" class="lnk" data-ext="DexScreener">DexScreener${ICON.out}</button>
@@ -1033,13 +1068,14 @@ canvas.chart { width: 100%; height: 260px; display: block; }
     launch: {
       pick: "NVDA", img: null, tried: false, first: "",
       mount() {
+        if (ARMIES[this.pick]?.off) this.pick = Object.keys(ARMIES).find((k) => !ARMIES[k].off) || this.pick;
         const f = this.draft || {};
         return `<div class="page">
           <div class="page-h"><h1 class="title">Launch a <i>fighter</i></h1><p id="lStatus"></p></div>
           <div class="launch-grid">
             <form class="card lf" id="lf" novalidate>
               <section class="sec"><div class="sec-h"><h3 class="title">Army</h3><span class="hint" id="armyNote"></span></div>
-                <div class="roster" id="roster">${Object.keys(ARMIES).map((k) => `<button type="button" class="fighter ${k === this.pick ? "on" : ""}" data-a="${k}" style="--army:${army(k)}" aria-pressed="${k === this.pick}"><span class="sprite" style="--army:${army(k)}">${k}</span><span class="px">${ARMIES[k].name}</span><small class="dg">${ARMIES[k].token}</small></button>`).join("")}</div>
+                <div class="roster" id="roster">${Object.keys(ARMIES).filter((k) => !ARMIES[k].off).map((k) => `<button type="button" class="fighter ${k === this.pick ? "on" : ""}" data-a="${k}" style="--army:${army(k)}" aria-pressed="${k === this.pick}"><span class="sprite" style="--army:${army(k)}">${k}</span><span class="px">${ARMIES[k].name}</span><small class="dg">${ARMIES[k].token}</small></button>`).join("")}</div>
               </section>
               <section class="sec"><div class="sec-h"><h3 class="title">Coin</h3></div>
                 <div class="lf-id">
@@ -1178,7 +1214,8 @@ canvas.chart { width: 100%; height: 260px; display: block; }
         this.update();
       },
       update() {
-        const open = phase() === "launch" && coins.length < 8;
+        const open = !adm.paused && phase() === "launch" && coins.length < 8;
+        if (adm.paused) { $("lStatus").textContent = "Launches are paused for now. Coins already live keep trading."; $("sRound").textContent = "Paused"; $("lfGo").textContent = "Launches paused"; $("lfGo").disabled = true; $("sBal").textContent = `${me.credits.toFixed(3)} BNB`; return; }
         $("lStatus").textContent = open ? `Round ${round} is enlisting: ${mmss(LAUNCH - t)} left, ${8 - coins.length} of 8 slots open.` : `Round ${round} is ${phase() === "battle" ? "in battle" : "merging"}. Enlisting for round ${round + 1} opens in ${mmss(ROUND - t)}.`;
         $("sRound").textContent = open ? `Round ${round}, right away` : `Round ${round + 1}, in ${mmss(ROUND - t)}`;
         $("sBal").textContent = `${me.credits.toFixed(3)} BNB`;
@@ -1199,7 +1236,7 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       mount: () => `<div class="page"><div class="page-h"><h1 class="title">The <i>armies</i></h1><p>Every coin fights under a stock. When a coin wins, its holders earn rewards in that stock.</p></div><div class="army-grid" id="armyGrid"></div></div>`,
       update() {
         $("armyGrid").innerHTML = Object.entries(ARMIES).map(([k, a]) => {
-          const mine = coins.filter((c) => c.army === k), cap = mine.reduce((s, c) => s + c.cap, 0);
+          const mine = coins.filter((c) => c.army === k && !c.hidden), cap = mine.reduce((s, c) => s + c.cap, 0);
           const wins = history.filter((h) => all.get(h.ticker)?.army === k).length;
           return `<a class="army-card" href="#army-${k}" style="--army:var(${a.v})"><span class="px muted">${a.name}</span><h3>${k}</h3>
             <div class="nums"><div><span class="px">Fighters</span><b>${mine.length}</b></div><div><span class="px">Power</span><b>${usd(cap)}</b></div><div><span class="px">Titles</span><b>${wins}</b></div></div>
@@ -1262,6 +1299,111 @@ canvas.chart { width: 100%; height: 260px; display: block; }
       },
     },
 
+    admin: {
+      sel: null,
+      mount() {
+        return `<div class="page adm">
+        <div class="page-h"><h1 class="title">Admin <i>panel</i></h1><p>Hidden page. Not linked anywhere on the site.</p></div>
+        <div class="callout">On mainnet every button here sends a transaction from the admin wallet, and the contracts reject any other wallet. In this preview the actions run on the simulation.</div>
+        <div class="tiles" id="aStats"></div>
+        <div class="adm-grid">
+          <div class="stack">
+            <div class="card"><div class="sec-h"><h3 class="title">Launches</h3><span id="aPauseState"></span></div>
+              <p class="hint">Pausing stops new coins and new rounds from starting. Trading, settling, the merge and redeeming keep working.</p>
+              <div class="row-btns"><button type="button" class="big-btn" id="aPause"></button></div>
+            </div>
+            <div class="card"><h3 class="title">Platform <i>fees</i></h3>
+              <div class="kv"><span>Waiting in coins</span><b id="aOwed"></b></div>
+              <div class="kv"><span>Sent so far</span><b id="aPaid"></b></div>
+              <div class="kv"><span>Fee recipient</span><button type="button" class="kv-copy dg" id="aRecip"></button></div>
+              <button type="button" class="ghost-btn" id="aPush">Push platform fees to recipient</button>
+              <label class="af"><span class="px">New fee recipient</span><div class="af-row"><input id="aRecipIn" placeholder="0x…" autocomplete="off" spellcheck="false"><button type="button" class="ghost-btn" id="aRecipSet">Set</button></div><span class="err" id="aRecipErr"></span></label>
+            </div>
+            <div class="card"><h3 class="title">Setup</h3>
+              <div class="kv"><span>Router (one-time)</span><b class="t" id="aConv"></b></div>
+              <label class="af" id="aConvBox"><span class="px">Set router address</span><div class="af-row"><input id="aConvIn" placeholder="0x…" autocomplete="off" spellcheck="false"><button type="button" class="ghost-btn" id="aConvSet">Set once</button></div><span class="err" id="aConvErr"></span></label>
+              <div class="kv"><span>Deployer setup rights</span><b class="t" id="aOwner"></b></div>
+              <button type="button" class="ghost-btn danger" id="aRenounce">Renounce deployer rights</button>
+              <p class="hint">Renouncing removes the deployer's setup rights for good. The admin keeps every function on this page.</p>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="card act"><div class="act-h"><h3 class="title">Coins</h3><span class="px muted">Pick one to edit or collect</span></div>
+              <div class="tbl flat"><table><thead><tr><th class="px">Coin</th><th class="px">Round</th><th class="px">Status</th><th class="px r">Pool</th><th class="px">Listing</th><th class="px"></th></tr></thead><tbody id="aCoins"></tbody></table></div></div>
+            <div class="card" id="aSel"></div>
+            <div class="card act"><div class="act-h"><h3 class="title">Armies</h3><span class="px muted">Official bStocks only</span></div>
+              <div class="tbl flat"><table><thead><tr><th class="px">Army</th><th class="px">Reward token</th><th class="px">Check</th><th class="px">Launches</th></tr></thead><tbody id="aArmies"></tbody></table></div></div>
+            <div class="card"><h3 class="title">Activity</h3><div class="log adm-log" id="aLog"></div></div>
+          </div>
+        </div></div>`;
+      },
+      wire() {
+        const self = this;
+        $("aPause").onclick = () => { adm.paused = !adm.paused; alog(adm.paused ? "pause()" : "resume()"); self.update(); };
+        $("aPush").onclick = () => { if (adm.owed < 1e-9) return toast("Nothing waiting"); alog(`pushPlatformFees: ${bnb(adm.owed)} to ${short(adm.recipient)}`); adm.paid += adm.owed; adm.owed = 0; self.update(); };
+        $("aRecipSet").onclick = () => { const v = $("aRecipIn").value.trim(); if (!isAddr(v)) { $("aRecipErr").textContent = "Enter a 0x address with 40 hex characters."; return; } $("aRecipErr").textContent = ""; adm.recipient = v; $("aRecipIn").value = ""; alog(`setFeeRecipient(${short(v)})`); self.update(); };
+        $("aConvSet").onclick = () => { const v = $("aConvIn").value.trim(); if (adm.router) return; if (!isAddr(v)) { $("aConvErr").textContent = "Enter a 0x address with 40 hex characters."; return; } adm.router = v; alog(`setConverter(${short(v)})`); self.update(); };
+        $("aRenounce").onclick = () => { if (adm.renounced) return; if (!confirm("Renounce the deployer's setup rights? This can't be undone.")) return; adm.renounced = true; alog("renounceOwnership()"); self.update(); };
+        $("aCoins").addEventListener("click", (e) => {
+          const b = e.target.closest("button[data-act]"); if (!b) return; const c = all.get(b.dataset.tk); if (!c) return;
+          if (b.dataset.act === "hide") { c.hidden = !c.hidden; alog(`setHidden(${c.ticker}, ${c.hidden})`); }
+          if (b.dataset.act === "pick") { self.sel = c.ticker; self.drawSel(); }
+          self.update();
+        });
+        $("aArmies").addEventListener("click", (e) => { const b = e.target.closest("button[data-army]"); if (!b) return; const a = ARMIES[b.dataset.army]; a.off = !a.off; alog(`setArmy(${b.dataset.army}, ${a.token}, ${a.off ? "off" : "on"})`); self.update(); });
+        self.drawSel();
+      },
+      drawSel() {
+        const c = this.sel && all.get(this.sel), box = $("aSel");
+        if (!c) { box.innerHTML = `<h3 class="title">Edit a <i>coin</i></h3><p class="hint">Pick a coin from the table to change its displayed info or collect its liquidity.</p>`; return; }
+        const s = c.socials || {};
+        box.innerHTML = `<div class="sec-h"><h3 class="title">${esc(c.name)} <i>$${esc(c.ticker)}</i></h3><a class="ghost-btn" href="#coin-${c.ticker}">Open page</a></div>
+          <span class="px muted">Displayed info</span>
+          <p class="hint">Stored in the factory and shown by the site. The coin contract itself never changes.</p>
+          <label class="af"><span class="px">Logo URL</span><input id="mImg" value="${esc(c.imgUrl || "")}" placeholder="https://… or leave empty" autocomplete="off"></label>
+          <label class="af"><span class="px">Description</span><textarea id="mDesc" rows="2" maxlength="160">${esc(c.desc || "")}</textarea></label>
+          <div class="lf-row"><label class="af"><span class="px">X</span><input id="mX" value="${esc(s.x || "")}" autocomplete="off"></label><label class="af"><span class="px">Telegram</span><input id="mTg" value="${esc(s.tg || "")}" autocomplete="off"></label><label class="af"><span class="px">Website</span><input id="mWeb" value="${esc(s.web || "")}" autocomplete="off"></label></div>
+          <div class="row-btns"><button type="button" class="ghost-btn" id="mSave">Save info</button><button type="button" class="ghost-btn" id="mReset">Restore original</button></div>
+          <span class="px muted" style="margin-top:6px">Collect liquidity</span>
+          <p class="hint" id="cNote"></p>
+          <div class="af-row"><div class="field"><input id="cBps" inputmode="decimal" placeholder="100" aria-label="Percent of the position"><span>%</span></div><input id="cTo" placeholder="Recipient 0x…" value="${esc(adm.recipient)}" autocomplete="off" spellcheck="false"></div>
+          <span class="err" id="cErr"></span>
+          <button type="button" class="big-btn danger-btn" id="cGo">Collect</button>`;
+        const self = this;
+        const url = (v) => { v = v.trim(); if (!v) return ""; if (!/^https?:\/\//i.test(v)) v = "https://" + v; try { const u = new URL(v); return /^https?:$/.test(u.protocol) ? u.href : ""; } catch { return ""; } };
+        $("mSave").onclick = () => { if (!c.orig) c.orig = { img: c.img, desc: c.desc, socials: { ...(c.socials || {}) } }; const img = url($("mImg").value); c.imgUrl = img; if (img) c.img = img; c.desc = $("mDesc").value.trim(); c.socials = { x: url($("mX").value), tg: url($("mTg").value), web: url($("mWeb").value) }; alog(`setCoinMetadata(${c.ticker})`); toast("Info saved"); };
+        $("mReset").onclick = () => { if (c.orig) { c.img = c.orig.img; c.desc = c.orig.desc; c.socials = c.orig.socials; c.imgUrl = ""; } alog(`setCoinMetadata(${c.ticker}, "")`); self.drawSel(); toast("Original info restored"); };
+        $("cGo").onclick = () => {
+          const pct = Number($("cBps").value || 100), to = $("cTo").value.trim();
+          if (!(pct > 0 && pct <= 100)) { $("cErr").textContent = "Use 1 to 100."; return; }
+          if (!isAddr(to)) { $("cErr").textContent = "Enter a recipient 0x address."; return; }
+          if (c.pulled) { $("cErr").textContent = "Nothing left to collect."; return; }
+          if (!confirm(`Collect ${pct}% of ${c.ticker}'s pool to ${short(to)}?`)) return;
+          $("cErr").textContent = ""; collect(c, pct / 100, to); self.drawSel(); self.update();
+        };
+        this.update();
+      },
+      update() {
+        if (!$("aStats")) return;
+        const listed = [...all.values()];
+        $("aStats").innerHTML = [["Launches", adm.paused ? "Paused" : "Open"], ["Coins", String(listed.length)], ["Hidden", String(listed.filter((c) => c.hidden).length)], ["Fees waiting", bnb(adm.owed)]].map(([k, v]) => `<div class="tile"><span class="px">${k}</span><b>${v}</b></div>`).join("");
+        $("aPauseState").innerHTML = adm.paused ? `<span class="st risk px">Paused</span>` : `<span class="st safe px">Open</span>`;
+        $("aPause").textContent = adm.paused ? "Resume launches" : "Pause launches";
+        $("aOwed").textContent = bnb(adm.owed); $("aPaid").textContent = bnb(adm.paid);
+        $("aRecip").innerHTML = `${short(adm.recipient)} ${ICON.copy}`; $("aRecip").dataset.copy = adm.recipient;
+        $("aConv").textContent = adm.router ? short(adm.router) : "Not set"; $("aConvBox").hidden = !!adm.router;
+        $("aOwner").textContent = adm.renounced ? "Renounced" : "Deployer"; $("aRenounce").disabled = adm.renounced;
+        const order = [...all.values()].sort((a, b) => b.round - a.round || b.cap - a.cap);
+        $("aCoins").innerHTML = order.map((c) => {
+          const st = c.pulled ? "Pulled" : c.absorbed ? "Lost" : c.champion ? "Champion" : coins.includes(c) ? "Fighting" : "Trading";
+          return `<tr class="${this.sel === c.ticker ? "sel" : ""}"><td><b>${esc(c.name)}</b> <span class="dg muted">${esc(c.ticker)}</span></td><td class="dg">${c.round}</td><td>${st}</td><td class="dg r">${c.pulled || c.absorbed ? "—" : bnb(poolBnb(c))}</td><td><button type="button" class="tog ${c.hidden ? "off" : ""}" data-act="hide" data-tk="${c.ticker}">${c.hidden ? "Hidden" : "Listed"}</button></td><td><button type="button" class="ghost-btn sm" data-act="pick" data-tk="${c.ticker}">Edit</button></td></tr>`;
+        }).join("");
+        $("aArmies").innerHTML = Object.entries(ARMIES).map(([k, a]) => `<tr><td><span class="chip" style="--army:var(${a.v})">${k}</span> ${a.name}</td><td class="dg">${a.token}</td><td><span class="st safe px">bStock ✓</span></td><td><button type="button" class="tog ${a.off ? "off" : ""}" data-army="${k}">${a.off ? "Off" : "On"}</button></td></tr>`).join("");
+        $("aLog").innerHTML = adm.log.map((l) => `<div><b>${ago(clock - l.at)} ago</b> ${esc(l.msg)} <span class="muted">${l.tx.slice(0, 10)}…</span></div>`).join("") || "<div>No admin actions yet.</div>";
+        const c = this.sel && all.get(this.sel);
+        if (c && $("cNote")) $("cNote").textContent = c.pulled ? "This coin's liquidity was already collected." : `Pulls a share of ${c.ticker}'s pool (about ${bnb(poolBnb(c))} plus coins) to the recipient. Works any time. During a battle, collecting all of it takes the coin out of the round; after the bell, the merge uses whatever BNB is left.`;
+      },
+    },
     docs: {
       mount: () => {
         const toc = DOCS.map(([id, t]) => `<a href="#docs-${id}" data-doc="${id}">${t}</a>`).join("");
