@@ -1,0 +1,113 @@
+{
+  "contracts": {
+    "hookDeployer": "0xf570Ab3Cc0CC08B87695A4784C67C6EaB75B2F98",
+    "hookSalt": "0x000000000000000000000000000000000000000000000000000000000000147d",
+    "hook": "0x115f272AC83a77c6214F97e1d34cD3fa7ee540cC",
+    "ledger": "0x07B9dDd3AfB7cD1dd9cc19510Acd04F847510d45",
+    "payout": "0x58c710Ba32bA475C6EBeFa379a4B0e43fEd9fD2f",
+    "treasury": "0xd0EAbfb642AF125D8C73c104ff075886BAB33002",
+    "tokenDeployer": "0xCf1DB06786298a7F5c55c5B0ece066b7592fd447",
+    "factory": "0x0E4C3A944d86243c4463045Ba704645608C865f4",
+    "router": "0xcF3fa6c81a603dee91D4e2597A6b882d2B027F30"
+  },
+  "quotes": [
+    {
+      "symbol": "wNVDAx",
+      "address": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5",
+      "usd8": "23582226503",
+      "usd": 235.82226503,
+      "usdgPoolFee": 500
+    },
+    {
+      "symbol": "wSPYx",
+      "address": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540",
+      "usd8": "77149984878",
+      "usd": 771.49984878,
+      "usdgPoolFee": 3000
+    },
+    {
+      "symbol": "wQQQx",
+      "address": "0x4C1AE29c159838fC1b224636E28E086EB69101f7",
+      "usd8": "75452679008",
+      "usd": 754.52679008,
+      "usdgPoolFee": 3000
+    },
+    {
+      "symbol": "wTSLAx",
+      "address": "0xc3FdBe3A68EE5dE461D30415a8165cf9Aefe1171",
+      "usd8": "37172032431",
+      "usd": 371.72032431,
+      "usdgPoolFee": 500
+    },
+    {
+      "symbol": "wAAPLx",
+      "address": "0x943BF64D566c32A2Bcd41AC92FB63C111cC9De8f",
+      "usd8": "33290887293",
+      "usd": 332.90887293,
+      "usdgPoolFee": 500
+    },
+    {
+      "symbol": "wMSTRx",
+      "address": "0x30987adF0B11dc698438a99BA04ec3a1AB2c7EaB",
+      "usd8": "16018997075",
+      "usd": 160.18997075,
+      "usdgPoolFee": 500
+    },
+    {
+      "symbol": "wSPCXx",
+      "address": "0x8e2eeD8b8B5E13Ea7BF38e50d7821d2C57309072",
+      "usd8": "15666109898",
+      "usd": 156.66109898,
+      "usdgPoolFee": 500
+    },
+    {
+      "symbol": "wPLTRx",
+      "address": "0x4A2df09536F62341C9f946427D16414C04e21342",
+      "usd8": "19063143490",
+      "usd": 190.6314349,
+      "usdgPoolFee": 500
+    },
+    {
+      "symbol": "wNFLXx",
+      "address": "0x7d87fD6A379714194a797c0bBB8B40c30D250856",
+      "usd8": "67571433059",
+      "usd": 675.71433059,
+      "usdgPoolFee": 500
+    }
+  ],
+  "ledgerGenesis": 1790956718,
+  "factoryOwner": "0xA27f7f839E5c692b4E442057F8012c52f8D041bD",
+  "deployBlock": 57458313,
+  "network": "ink",
+  "chainId": 57073,
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0xd0EAbfb642AF125D8C73c104ff075886BAB33002",
+  "ethUsd8": "270019210210",
+  "uniswap": {
+    "poolManager": "0x360e68faccca8ca495c1b759fd9eee466db9fb32",
+    "weth": "0x4200000000000000000000000000000000000006",
+    "swapRouter02": "0x177778F19E89dD1012BdBe603F144088A95C4B53",
+    "v3Factory": "0x640887a9ba3a9c53ed27d0f7e8246a4f933f3424",
+    "usdg": "0xe343167631d89B6Ffc58B88d6b7fB0228795491D"
+  },
+  "fees": {
+    "taxBps": 200,
+    "creatorBps": 3500,
+    "holderBps": 2500,
+    "platformBps": 4000,
+    "payoutBpsOfPlatform": 1250
+  },
+  "leaderboard": {
+    "epochSeconds": 259200,
+    "winnersPerBoard": 5,
+    "tiersBps": [
+      4000,
+      2500,
+      1500,
+      1200,
+      800
+    ]
+  },
+  "basketRoute": "WETH -(1%)-> USDG -(usdgPoolFee)-> stock, Uniswap V3",
+  "deployedAt": "2026-10-02T15:59:23.277Z"
+}
