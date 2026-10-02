@@ -29,7 +29,7 @@ HEAD = '''<meta charset="utf-8"><meta name="viewport" content="width=device-widt
 <link rel="icon" href="img/favicon.ico" sizes="any"><link rel="icon" type="image/svg+xml" href="img/favicon.svg"><link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <meta property="og:site_name" content="Inkypump"><meta property="og:type" content="website"><meta property="og:image" content="https://inkypump.fun/img/og.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://inkypump.fun/img/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..800&family=Titan+One&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="o1.css"><link rel="stylesheet" href="extra.css">'''
 
 # ---------- helpers ----------
@@ -386,9 +386,7 @@ for c in chips[1:]: c.decompose()
 chips[0]['data-tpl'] = 'chip'; chips[0].parent['id'] = 'newchips'
 
 main = root.select_one('main')
-h1 = main.select_one('h1'); g = h1.select_one('span'); g.string = 'Inky'
-for n in list(h1.contents):
-    if isinstance(n, NavigableString): n.replace_with('pump')
+h1 = main.select_one('h1'); h1.clear(); h1.append(frag(open('img/hero-wordmark.svg').read()))
 p = main.select_one('p.mt-5')
 u = p.select('span.inline')
 stack = p.select_one('span[role=list]')

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="hero-wm" role="img" aria-label="Inkypump" viewBox="0 0 420 143" overflow="visible">
+  <defs><clipPath id="hi"><rect x="0" y="0" width="420" height="65.78"/></clipPath></defs>
+  <g transform="rotate(-2 210 71.5)">
+  <text x="12.6" y="111.54" font-family="'Titan One'" font-size="69" letter-spacing="-0.6900000000000001" rotate="-4 3 -2 4 -3 2 -4 3" fill="#f3f5f9" stroke="#f3f5f9" stroke-width="17.25" stroke-linejoin="round"><tspan dy="0 -3.45 2.3 -2.875 1.725 -2.3 2.875 -1.725">inkypump</tspan></text>
+  <text x="12.6" y="111.54" font-family="'Titan One'" font-size="69" letter-spacing="-0.6900000000000001" rotate="-4 3 -2 4 -3 2 -4 3" fill="#14121a" stroke="#14121a" stroke-width="8.049999999999999" stroke-linejoin="round"><tspan dy="0 -3.45 2.3 -2.875 1.725 -2.3 2.875 -1.725">inkypump</tspan></text>
+  <text x="12.6" y="111.54" font-family="'Titan One'" font-size="69" letter-spacing="-0.6900000000000001" rotate="-4 3 -2 4 -3 2 -4 3" fill="#ff4fa3"><tspan dy="0 -3.45 2.3 -2.875 1.725 -2.3 2.875 -1.725">inkypump</tspan></text>
+  <g clip-path="url(#hi)"><text x="12.6" y="111.54" font-family="'Titan One'" font-size="69" letter-spacing="-0.6900000000000001" rotate="-4 3 -2 4 -3 2 -4 3" fill="#ff7cbb"><tspan dy="0 -3.45 2.3 -2.875 1.725 -2.3 2.875 -1.725">inkypump</tspan></text></g>
+  <g transform="translate(361.2 128.70000000000002) scale(0.69)"><path fill="#f3f5f9" stroke="#f3f5f9" stroke-width="7" stroke-linejoin="round" d="M0 0c3 5 6 9 6 13a6 6 0 0 1-12 0c0-4 3-8 6-13z"/><path fill="#ff4fa3" stroke="#14121a" stroke-width="3" stroke-linejoin="round" d="M0 0c3 5 6 9 6 13a6 6 0 0 1-12 0c0-4 3-8 6-13z"/></g>
+  </g></svg>
