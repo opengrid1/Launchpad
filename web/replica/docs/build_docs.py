@@ -172,7 +172,7 @@ PAGES = [
  dict(tab=L, group='Trading', slug='liquidity', title='Single-sided liquidity', desc='Why the whole supply sits in one position and what that means for price.', body=[
   p('At launch the factory places all 1 billion coins in one Uniswap V4 range that starts at a $3,000 market cap and extends to the maximum tick. There is no paired asset in the pool at first; every buy adds some, every sell takes some back out. The curve is the only market maker.'),
   h2('Properties'),
-  ul('No one, including the admin, can add a second position through the factory; traders may of course add their own liquidity on Uniswap.',
+  ul('No one can add a second position through the factory; traders may of course add their own liquidity on Uniswap.',
      'The position is owned by the factory, which has no function to withdraw it.',
      'LP fee is 0; the only fee is the hook\'s 2%.',
      'Tick spacing 60; price moves in 0.6% steps at the tick level, continuously inside a tick.'),
