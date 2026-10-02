@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
   let p = await pg(1440,900); await p.goto('http://127.0.0.1:8767/token.html',{waitUntil:'networkidle'}); await p.waitForTimeout(800);
   await p.click('header button[aria-label="Launchpad"]'); console.log('brand menu', !!await p.$('.o-menu'));
   await p.keyboard.press('Escape');
-  await p.keyboard.press('/'); await p.waitForTimeout(200); console.log('search dialog', !!await p.$('#sq')); await p.type('#sq','mog'); await p.waitForTimeout(100); console.log('search results', (await p.$$('#sres .opt')).length); await p.keyboard.press('Escape');
+  await p.keyboard.press('/'); await p.waitForTimeout(300); console.log('search dialog', !!await p.$('#sq')); await p.type('#sq','mog'); await p.waitForTimeout(100); console.log('search results', (await p.$$('#sres .opt')).length); await p.keyboard.press('Escape');
   await p.click('header button[aria-label^="Language"]'); console.log('lang dialog', !!await p.$('[data-lang]')); await p.keyboard.press('Escape');
   await p.click('#cta'); await p.waitForTimeout(200); console.log('connect dialog', !!await p.$('[data-w]')); await p.click('[data-w="MetaMask"]'); await p.waitForTimeout(1300);
   console.log('wallet pill', await p.textContent('header .relative.flex.h-9.shrink-0.items-stretch button'), '| cta', await p.textContent('#cta'), '| pos visible', await p.isVisible('#pos'));
@@ -24,7 +24,7 @@ const { chromium } = require('playwright');
   // mobile token flows
   p = await pg(390,844); await p.goto('http://127.0.0.1:8767/token.html',{waitUntil:'networkidle'}); await p.waitForTimeout(600);
   await p.click('#mbar [data-side="buy"]',{position:{x:60,y:24}}); await p.waitForTimeout(300); console.log('mobile sheet', !!await p.$('.o-sheet #m_cta'), await p.textContent('.o-sheet #m_cta'));
-  await p.keyboard.press('Escape'); await p.click('header button:has(.lucide-menu)'); await p.waitForTimeout(200); console.log('mobile menu links', (await p.$$('.o-sheet .nav a')).length); await p.close();
+  await p.keyboard.press('Escape'); await p.click('header button:has(.lucide-menu)'); await p.waitForTimeout(300); console.log('drawer items', (await p.$$('.o-drawer [data-go]')).length); await p.close();
   // home flows
   p = await pg(1440,900); await p.goto('http://127.0.0.1:8767/index.html',{waitUntil:'networkidle'}); await p.waitForTimeout(600);
   console.log('feed rows', (await p.$$('#rows .group')).length, 'trend', (await p.$$('#trend button.h-16')).length, 'chips', (await p.$$('#newchips .group')).length);

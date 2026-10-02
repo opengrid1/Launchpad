@@ -47,7 +47,11 @@
 .o-menu .i.on .r,.o-menu .i.on svg{color:var(--color-accent)}
 .o-menu .d{height:1px;margin:6px 4px;background:var(--color-border-default)}
 .o-overlay{position:fixed;inset:0;z-index:80;background:rgba(2,3,6,.6);backdrop-filter:blur(4px);animation:dialogOverlayIn .2s ease both;display:flex;align-items:center;justify-content:center;padding:16px}
-.o-dialog{width:100%;max-width:440px;border:1px solid var(--color-border-default);border-radius:20px;background:var(--color-bg-card);box-shadow:0 24px 64px -16px #000c;animation:dialogIn .2s ease both;max-height:calc(100dvh - 32px);display:flex;flex-direction:column;overflow:hidden}
+.o-overlay.top{align-items:flex-start;padding-top:12vh}
+.o-overlay.out{animation:dialogOverlayOut .22s ease both}
+.o-overlay.out .o-dialog{animation:dialogOut .2s ease both}
+.o-sheet-ov.out{animation:dialogOverlayOut .22s ease both}.o-sheet-ov.out .o-sheet{animation:sheetOut .22s ease both}
+.o-dialog{width:100%;max-width:440px;border:1px solid var(--color-border-default);border-radius:20px;background:var(--color-bg-card);box-shadow:0 24px 64px -16px #000c;animation:dialogIn .24s cubic-bezier(.2,.7,.2,1) both;max-height:calc(100dvh - 32px);display:flex;flex-direction:column;overflow:hidden}
 .o-dialog.wide{max-width:640px}
 .o-dialog .dh{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 12px}
 .o-dialog .dh h3{font-size:17px;font-weight:700;color:var(--color-text-primary)}
@@ -55,7 +59,7 @@
 .o-dialog .x{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;color:var(--color-text-muted);cursor:pointer}
 .o-dialog .x:hover{background:var(--color-bg-elevated);color:var(--color-text-primary)}
 .o-dialog .x svg{width:16px;height:16px}
-.o-dialog .db{padding:0 12px 12px;overflow:auto}
+.o-dialog .db{padding:0 12px 12px;overflow:auto;animation:dialogContentIn .16s ease-out .08s both}
 .o-dialog .opt{display:flex;align-items:center;gap:12px;width:100%;height:56px;padding:0 12px;border-radius:14px;cursor:pointer;color:var(--color-text-primary);font-size:14px;font-weight:600;text-align:left}
 .o-dialog .opt:hover{background:var(--color-bg-input)}
 .o-dialog .opt .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;flex:none}
@@ -77,7 +81,10 @@
 .o-sheet .nav a svg{width:18px;height:18px;color:var(--color-text-muted)}
 .o-sheet .nav a.on{background:color-mix(in oklab,var(--color-accent) 15%,transparent);color:var(--color-accent)}
 .o-sheet .nav a.on svg{color:var(--color-accent)}
-@keyframes sheetIn{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes sheetIn{from{transform:translateY(100%)}to{transform:none}}
+@keyframes sheetOut{from{transform:none}to{transform:translateY(100%)}}
+.o-sheet{animation:sheetIn .32s cubic-bezier(.2,.7,.2,1) both}
+.o-sheet.search{height:92dvh}.o-sheet.search .o-search{border-bottom:1px solid var(--color-border-default)}
 .o-toasts{position:fixed;right:16px;bottom:16px;z-index:100;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 @media (max-width:767px){.o-toasts{left:16px;right:16px;bottom:72px}}
 .o-toast{display:flex;align-items:center;gap:10px;min-width:260px;max-width:360px;padding:12px 14px;border:1px solid var(--color-border-default);border-radius:12px;background:var(--color-bg-card);box-shadow:0 12px 32px -8px #000c;font-size:13.5px;font-weight:500;color:var(--color-text-primary);animation:menuIn .2s ease both}
@@ -139,3 +146,42 @@ textarea.adm-in{height:auto;padding:8px 12px;resize:vertical}
 .adm-btn.danger{border-color:color-mix(in oklab,var(--color-error) 40%,transparent);color:var(--color-error);background:color-mix(in oklab,var(--color-error) 10%,transparent)}
 .adm-btn.sm{height:28px;padding:0 10px;font-size:12px}
 @media (min-width:1024px){.lg\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.lg\:col-span-1{grid-column:span 1 / span 1}}
+.o-overlay.out,.o-sheet-ov.out{pointer-events:none}
+/* ---- product menu (brand dropdown) and right-side drawer (hamburger), as on o1 mobile ---- */
+.o-menu.prod{min-width:300px;max-width:calc(100vw - 32px);padding:10px 8px}
+.o-menu .pi{display:flex;align-items:center;gap:12px;width:100%;padding:8px 8px;border-radius:12px;text-align:left;cursor:pointer;color:var(--color-text-primary)}
+.o-menu .pi:hover{background:var(--color-bg-card-hover)}
+.o-menu .pi .tile{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:10px;border:1px solid var(--color-border-default);background:var(--color-bg-input);color:var(--color-text-secondary)}
+.o-menu .pi.on .tile{color:var(--color-accent)}
+.o-menu .pi .tile svg{width:18px;height:18px}
+.o-menu .pi .t{min-width:0;flex:1}
+.o-menu .pi .t b{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;line-height:1.2}
+.o-menu .pi .t span{display:block;margin-top:2px;font-size:13px;line-height:1.3;color:var(--color-text-muted)}
+.o-menu .pi .cur{display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:999px;background:color-mix(in oklab,var(--color-accent) 15%,transparent);font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--color-accent)}
+.o-menu .pi .ch{width:16px;height:16px;color:var(--color-text-muted);flex:none}
+.o-drawer-ov{position:fixed;inset:0;z-index:80;background:rgba(2,3,6,.55);animation:dialogOverlayIn .2s ease both;display:flex;justify-content:flex-end}
+.o-drawer-ov.out{animation:dialogOverlayOut .22s ease both;pointer-events:none}
+.o-drawer{width:75%;max-width:360px;height:100%;background:var(--color-bg-card);border-left:1px solid var(--color-border-default);display:flex;flex-direction:column;animation:drawerIn .28s cubic-bezier(.2,.7,.2,1) both;padding-bottom:env(safe-area-inset-bottom)}
+.o-drawer-ov.out .o-drawer{animation:drawerOut .22s ease both}
+@keyframes drawerIn{from{transform:translateX(100%)}to{transform:none}}
+@keyframes drawerOut{from{transform:none}to{transform:translateX(100%)}}
+.o-drawer .dh{display:flex;align-items:center;justify-content:space-between;height:72px;padding:0 20px 0 20px;border-bottom:1px solid var(--color-border-default)}
+.o-drawer .dh b{font-size:17px;font-weight:600}
+.o-drawer .dh .x{width:36px;height:36px;border-radius:50%;border:1px solid var(--color-border-default);display:grid;place-items:center;color:var(--color-text-secondary);cursor:pointer}
+.o-drawer .dh .x svg{width:16px;height:16px}
+.o-drawer .db{overflow:auto;padding:10px 16px 16px}
+.o-drawer .h{padding:14px 8px 8px;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--color-text-muted)}
+.o-drawer .li{display:flex;align-items:center;gap:14px;width:100%;height:50px;padding:0 8px;border-radius:12px;font-size:17px;font-weight:500;color:var(--color-text-primary);cursor:pointer;text-align:left}
+.o-drawer .li:hover{background:var(--color-bg-card-hover)}
+.o-drawer .li svg{width:20px;height:20px;color:var(--color-text-primary);flex:none}
+.o-drawer .d{height:1px;margin:10px 0;background:var(--color-border-default)}
+.o-drawer .pi{display:flex;align-items:center;gap:14px;width:100%;padding:8px;border-radius:12px;cursor:pointer;text-align:left;color:var(--color-text-primary)}
+.o-drawer .pi:hover{background:var(--color-bg-card-hover)}
+.o-drawer .pi .tile{width:48px;height:48px;flex:none;display:grid;place-items:center;border-radius:12px;border:1px solid var(--color-border-default);background:var(--color-bg-input);color:var(--color-text-secondary)}
+.o-drawer .pi.on .tile{color:var(--color-accent)}
+.o-drawer .pi .tile svg{width:20px;height:20px}
+.o-drawer .pi .t{min-width:0;flex:1}
+.o-drawer .pi .t b{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:600;line-height:1.2}
+.o-drawer .pi .t span{display:block;margin-top:3px;font-size:14px;line-height:1.3;color:var(--color-text-muted)}
+.o-drawer .pi .cur{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:color-mix(in oklab,var(--color-accent) 15%,transparent);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--color-accent)}
+.o-drawer .pi .ch{width:18px;height:18px;color:var(--color-text-muted);flex:none}
