@@ -77,7 +77,7 @@ L = 'launchpad'; D = 'developers'
 PAGES = [
  # ---------------- Launchpad tab
  dict(tab=L, group='Overview', slug='introduction', title='Introduction', desc='Launch a fixed-supply memecoin on Ink with liquidity locked forever and a 2% fee that pays the creator, the holders and the platform on every trade.', body=[
-  warn('<strong>Coming soon.</strong> The Inkypump contracts are not deployed yet. Launching, trading and claiming open the day they go live on Ink; until then the app shows empty states and the launch form does not send a transaction.'),
+  note('<strong>Contracts are live.</strong> Inkypump is deployed and verified on Ink. Launching from the app opens shortly; integrators can use the contracts now (see <a class="link" href="production-contracts.html">Production contracts</a>).'),
   p('Inkypump turns a token idea into a live Uniswap V4 market on Ink in one transaction. You choose the name, the asset it is paired with (ETH or a tokenized stock), and whether holders share the trading fees. The factory does the rest and keeps the liquidity forever.'),
   note('Every number below is a fixed rule of the contracts. Nothing here can change after a coin launches.'),
   cards(2,
@@ -270,14 +270,15 @@ PAGES = [
      '<code>Settled</code> and <code>Claimed</code> on the payout contract'),
  ]),
  dict(tab=D, group='Reference', slug='production-contracts', title='Production contracts', desc='Addresses on Ink (chain id 57073).', body=[
-  warn('Inkypump contracts are not deployed yet. The table fills in at deployment; the Uniswap and stock addresses below are live today.'),
+  note('All Inkypump contracts are deployed and source-verified on the Ink explorer. Click an address to open it.'),
   table(['Contract', 'Address', 'Role'], [
-   ['InkypumpFactory', '<code>pending</code>', 'launches coins, owns the locked positions'],
-   ['InkypumpHook', '<code>pending</code>', 'takes the 2% fee, reports trades'],
-   ['InkypumpRouter', '<code>pending</code>', 'ETH in / out trading on any pair, claim routing'],
-   ['InkypumpLedger', '<code>pending</code>', 'cost basis, realized PnL, fees paid per epoch'],
-   ['InkypumpPayout', '<code>pending</code>', 'leaderboard prize pool'],
-   ['InkypumpTreasury', '<code>pending</code>', 'platform fee recipient, 1/8 to the pool'],
+   ['InkypumpFactory', ex('0x0E4C3A944d86243c4463045Ba704645608C865f4', '0x0E4C3A944d86243c4463045Ba704645608C865f4'), 'launches coins, owns the locked positions'],
+   ['InkypumpHook', ex('0x115f272AC83a77c6214F97e1d34cD3fa7ee540cC', '0x115f272AC83a77c6214F97e1d34cD3fa7ee540cC'), 'takes the 2% fee, reports trades'],
+   ['InkypumpRouter', ex('0xcF3fa6c81a603dee91D4e2597A6b882d2B027F30', '0xcF3fa6c81a603dee91D4e2597A6b882d2B027F30'), 'ETH in / out trading on any pair, claim routing'],
+   ['InkypumpLedger', ex('0x07B9dDd3AfB7cD1dd9cc19510Acd04F847510d45', '0x07B9dDd3AfB7cD1dd9cc19510Acd04F847510d45'), 'cost basis, realized PnL, fees paid per epoch'],
+   ['InkypumpPayout', ex('0x58c710Ba32bA475C6EBeFa379a4B0e43fEd9fD2f', '0x58c710Ba32bA475C6EBeFa379a4B0e43fEd9fD2f'), 'leaderboard prize pool'],
+   ['InkypumpTreasury', ex('0xd0EAbfb642AF125D8C73c104ff075886BAB33002', '0xd0EAbfb642AF125D8C73c104ff075886BAB33002'), 'platform fee recipient, 1/8 to the pool'],
+   ['InkypumpTokenDeployer', ex('0xCf1DB06786298a7F5c55c5B0ece066b7592fd447', '0xCf1DB06786298a7F5c55c5B0ece066b7592fd447'), 'creates each coin for the factory'],
    ['Uniswap V4 PoolManager', ex(A['pm']), 'Uniswap\'s, on Ink'],
    ['Uniswap V3 SwapRouter02', ex(A['r02']), 'stock routes'],
    ['WETH', ex(A['weth']), 'paired asset'],
