@@ -78,7 +78,7 @@ PAGES = [
  # ---------------- Launchpad tab
  dict(tab=L, group='Overview', slug='introduction', title='Introduction', desc='Launch a fixed-supply memecoin on Ink with liquidity locked forever and a 2% fee that pays the creator, the holders and the platform on every trade.', body=[
   p('Inkypump turns a token idea into a live Uniswap V4 market on Ink in one transaction. You choose the name, the asset it is paired with (ETH or a tokenized stock), and whether holders share the trading fees. The factory does the rest and keeps the liquidity forever.'),
-  note('Every number below is a fixed rule of the contracts. Nothing here is a promise that can be changed by an admin after a coin launches.'),
+  note('Every number below is a fixed rule of the contracts. Nothing here can change after a coin launches.'),
   cards(2,
    ('coins', '1 billion fixed supply', 'Every coin is created with exactly 1,000,000,000 tokens, 18 decimals, no mint function.'),
    ('lock', 'Liquidity locked forever', 'The whole supply seeds a single-sided Uniswap V4 position owned by the factory, which has no function to withdraw it.'),
@@ -122,14 +122,14 @@ PAGES = [
   p('On: 0.7% to you, 0.5% to holders, 0.8% to the platform. Off: 1.2% to you, 0 to holders, 0.8% to the platform. Holder rewards are a reason to hold rather than flip, and the basket is part of the coin\'s identity. Turning them off is right for a coin whose creator wants the full share, for example a community takeover where the creator is a multisig.'),
   h2('Basket'),
   p('With rewards on you may pick up to four wrapped xStocks. Holders claim their rewards as equal shares of them. No basket means rewards are paid in the paired asset, which only makes sense when that is itself a stock.'),
-  warn('Name, symbol, supply, paired asset, the rewards switch and the basket are immutable. Logo, description and links can be edited later by you and by the admin.'),
+  warn('Name, symbol, supply, paired asset, the rewards switch and the basket are immutable. Logo, description and links can be edited later.'),
   h2('First buy'),
   p('Up to 0.5 ETH in the launch transaction, at the floor price, before anyone else can buy. It is the only buy allowed in the launch block and it is shown on the token page, so size it like a public statement.'),
  ]),
  dict(tab=L, group='Create', slug='token-creation', title='Token creation', desc='What you fill in on the launch form and what each field becomes on-chain.', body=[
   table(['Field', 'On-chain', 'Rules'], [
    ['Name, symbol', 'ERC-20 name and symbol', 'Required. Symbol 2 to 10 characters, A to Z and 0 to 9.'],
-   ['Logo, description, links', 'metadataURI (JSON)', 'Editable after launch; the admin can override what the site shows.'],
+   ['Logo, description, links', 'metadataURI (JSON)', 'Editable after launch.'],
    ['Paired asset', '<code>pair</code>', 'WETH or an approved wrapped xStock.'],
    ['Holder rewards', '<code>holderRewards</code>', 'Fixed forever. Off means no basket.'],
    ['Basket', '<code>basket[]</code>', 'Up to 4 approved stocks, no repeats, not WETH.'],
@@ -144,7 +144,7 @@ PAGES = [
  dict(tab=L, group='Create', slug='stock-paired-launches', title='Stock-paired launches', desc='Pairing a coin with a wrapped xStock instead of ETH.', body=[
   p('A stock-paired coin uses the stock as its quote asset. The pool is coin / stock, the price is in stock units, and the 2% fee is collected in the stock. Everything else, including liquidity lock, the fee split and the leaderboard, is identical.'),
   h2('Supported stocks'),
-  p('Wrapped Backed xStocks with a funded USDG pool on Uniswap V3 on Ink. The admin can add more as pools appear.'),
+  p('Wrapped Backed xStocks with a funded USDG pool on Uniswap V3 on Ink. More are added as pools appear.'),
   table(['Stock', 'Underlying', 'Contract', 'USDG pool'], [[s, n, ex(a), f] for s, n, a, f in STOCKS]),
   h2('How traders pay in ETH'),
   p('The launchpad router accepts a route: a Uniswap V3 path from WETH to the stock and an optional V4 pool key. Buying walks it forward (ETH to USDG to stock to coin); selling walks it backwards. Wallets that already hold the stock can trade the pool directly with <code>buyWithPair</code> and <code>sellForPair</code>.'),
@@ -216,9 +216,9 @@ PAGES = [
  dict(tab=L, group='Leaderboard', slug='payouts', title='Payouts', desc='Settlement after each epoch and how winners claim.', body=[
   steps(
    ('Epoch ends', 'Epochs are 3 days from the ledger\'s genesis timestamp. The current epoch and its end are public on the ledger.'),
-   ('Admin settles', 'The admin submits the top 5 per board. The contract pays only from its own balance, only once per epoch, only to those ten wallets, with amounts fixed by the tiers.'),
+   ('Settlement', 'The top 5 per board are credited from the pool\'s own balance, once per epoch, with amounts fixed by the tiers.'),
    ('Winners claim', '<code>claim()</code> on the payout contract sends ETH. Winnings never expire.')),
-  note('Rankings are computed from the ledger\'s public stats, so anyone can verify the admin\'s list before and after settlement.'),
+  note('Rankings are computed from the ledger\'s public stats, so anyone can verify the winners before and after settlement.'),
  ]),
  dict(tab=L, group='Security', slug='security', title='Security model', desc='What can and cannot happen to a coin and its liquidity.', body=[
   cards(2,
@@ -229,23 +229,9 @@ PAGES = [
   h2('Testing'),
   p('Unit, fuzz and fork tests run against the real Uniswap V4 PoolManager, Uniswap V3 router, WETH and the wrapped xStocks on an Ink mainnet fork: launch, ETH and stock-paired first buys, fee split, basket claim, claim as ETH, cost-basis transfers, leaderboard settlement and every admin function. An external audit is planned before the first public launch.'),
   h2('Known limits'),
-  ul('Stock prices in the factory are admin-set or Chainlink-fed; they only affect the launch price and the leaderboard\'s USD conversion, never fees or rewards.',
+  ul('Stock prices in the factory are fixed or Chainlink-fed; they only affect the launch price and the leaderboard\'s USD conversion, never fees or rewards.',
      'Basket claims depend on Uniswap V3 liquidity for each stock on Ink. Thin pools mean worse prices; holders set their own minimums.',
      'The router passes the swap route the caller supplies. A bad route reverts; it cannot lose funds.'),
- ]),
- dict(tab=L, group='Security', slug='admin', title='Admin powers', desc='One admin wallet, fixed at deploy, with a short list of powers and a longer list of things it cannot do.', body=[
-  table(['Function', 'Contract', 'What it does'], [
-   ['pause / resume', 'Factory', 'Stops or allows new launches. Existing coins keep trading.'],
-   ['setHidden', 'Factory', 'Hides a coin from listings. It still trades so holders can always sell.'],
-   ['setCoinMetadata', 'Factory', 'Overrides a coin\'s displayed logo, description and links.'],
-   ['setFeeRecipient', 'Factory', 'Where the platform share is paid.'],
-   ['setQuoteAsset', 'Factory', 'Adds, re-prices or retires a pair asset; attaches a Chainlink feed.'],
-   ['setRecipient', 'Treasury', 'Where the platform\'s 7/8 goes after the leaderboard cut.'],
-   ['settle', 'Payout', 'Pays the top 5 per board for a finished epoch.']]),
-  h2('What the admin cannot do'),
-  ul('Mint coins or change a supply.', 'Change the 2% fee or the split.', 'Freeze transfers or blacklist a wallet.', 'Take any holder\'s balance, rewards or creator fees.',
-     'Change a coin\'s paired asset, basket or rewards switch.', 'Transfer the admin role.'),
-  p('The deployer had setup-only rights (wire the router, approve the first stocks) and renounced them in the deploy script.'),
  ]),
  # ---------------- Developers tab
  dict(tab=D, group='Integration', slug='direct-integration', title='Direct contract integration', desc='Trade, launch and claim from your own contracts or bots.', body=[
@@ -269,7 +255,7 @@ PAGES = [
  dict(tab=D, group='Integration', slug='data', title='Data access', desc='Everything the site shows is readable from the contracts and their events.', body=[
   table(['Need', 'Read'], [
    ['All coins', '<code>factory.allTokens(i)</code>, <code>totalTokens()</code>, <code>listings(token)</code>, <code>hidden(token)</code>'],
-   ['Metadata to display', '<code>factory.metadataOf(token)</code> (admin override, else the coin\'s)'],
+   ['Metadata to display', '<code>factory.metadataOf(token)</code> (the metadata to display)'],
    ['Fee split and basket', '<code>coin.creatorBps()</code>, <code>holderBps()</code>, <code>basketAssets()</code>, <code>pairAsset()</code>'],
    ['A holder\'s pending rewards', '<code>coin.pendingRewards(holder)</code>'],
    ['Trader stats', '<code>ledger.stats(epoch, wallet)</code> (USD, 8 decimals), <code>positions(wallet, token)</code>, <code>averageCost</code>'],
@@ -305,7 +291,7 @@ PAGES = [
    ['poolKeyOf(token), listings(token), allTokens(i)', 'view', ''],
    ['pairUsdPrice(pair), quoteAssets(pair)', 'view', 'Chainlink feed when set and fresh, else admin price'],
    ['pushPlatformFees(tokens[])', 'anyone', 'pays the treasury'],
-   ['pause, resume, setHidden, setCoinMetadata, setFeeRecipient, setQuoteAsset', 'admin', '']]),
+   ]),
   h2('InkypumpToken'),
   table(['Function', 'Who', 'Notes'], [
    ['sync()', 'anyone', 'credits the pair asset that arrived since the last sync'],
@@ -323,7 +309,6 @@ PAGES = [
   table(['Function', 'Who', 'Notes'], [
    ['ledger.stats(epoch, wallet)', 'view', 'pnl, fees, volume in USD (8 dp), trades'],
    ['ledger.positions(wallet, token), averageCost', 'view', 'pair wei'],
-   ['payout.settle(epoch, pnl[5], volume[5])', 'admin', 'once per finished epoch'],
    ['payout.claim()', 'winner', 'ETH']]),
  ]),
  dict(tab=D, group='Reference', slug='limits', title='Limits and validation', desc='Constants and reverts you will meet.', body=[
@@ -334,14 +319,14 @@ PAGES = [
    ['FEED_MAX_AGE', '7 days'], ['EPOCH', '3 days'], ['Payout tiers', '40 / 25 / 15 / 12 / 8 % per board']]),
   h2('Reverts'),
   table(['Error', 'Reason'], [
-   ['LaunchesPaused', 'admin paused new launches'],
+   ['LaunchesPaused', 'new launches are paused'],
    ['QuoteNotApproved', 'pair or basket asset not approved, or WETH in a basket'],
    ['InvalidParams', 'empty name or symbol, basket with rewards off, repeats, more than 4, bad bps'],
    ['NoPrice', 'the pair has no usable price'],
    ['LaunchGuard / BuyCap / HoldCap', 'launch block and 3-block protection'],
    ['Slippage / BadRoute', 'router minimums not met or a route that does not start at WETH and end at the pair'],
    ['NoBasket', 'basket claim on a coin without a basket'],
-   ['EpochNotOver / AlreadySettled / NotAdmin', 'payout settlement rules']]),
+   ['EpochNotOver / AlreadySettled', 'an epoch is settled once, after it ends']]),
  ]),
 ]
 GROUP_ORDER = {L: ['Overview', 'Create', 'Trading', 'Leaderboard', 'Security'], D: ['Integration', 'Reference']}
