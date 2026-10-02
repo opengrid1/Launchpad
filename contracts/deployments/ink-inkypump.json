@@ -114,5 +114,13 @@
     "token": "0x5c1138FA782f7165A3be4C950cC0f32C6b70D08E",
     "devBuy": "500000000000000",
     "note": "INKT smoke coin"
+  },
+  "official": {
+    "token": "0x5E6B13743aC666A68aA5c06bDa61C79e9612A7CE",
+    "launchTx": "0xc46b28f4831e71b28612cc9ca61f225ab055b174b4e76cc3e33f070a7df69d7f",
+    "block": 57461753,
+    "creator": "0xA27f7f839E5c692b4E442057F8012c52f8D041bD",
+    "name": "Inkypump.fun",
+    "symbol": "INKY"
   }
 }
