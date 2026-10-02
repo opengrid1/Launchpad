@@ -9,9 +9,8 @@ const { chromium } = require('playwright'); const fs=require('fs'); const wordma
  const p=await b.newPage({viewport:{width:2000,height:800},deviceScaleFactor:1});
  const abs=(x,y,inner,extra='')=>`<div style="position:absolute;left:${x}px;top:${y}px;${extra}">${inner}</div>`;
  await p.setContent(`<!doctype html><html><head>${font}<style>html,body{margin:0;background:#0e1117;width:2000px;height:800px;overflow:hidden;font-family:Geist}</style></head><body><div style="position:relative;width:2000px;height:800px;background:#0e1117;color:#f3f5f9">
-  ${abs(120,215,`<div style="font:600 30px Geist;letter-spacing:.18em;color:#ff6fb5">INTRODUCING</div>`)}
-  ${abs(100,265,wordmark(760))}
-  ${abs(122,545,`<div style="display:inline-flex;align-items:center;gap:12px;font:500 26px Geist;color:#c3c9d6;padding:12px 20px;border-radius:999px;border:1px solid #1e2430;background:#141821"><img src="${ink}" style="width:30px;height:30px;border-radius:50%">Built on Ink</div>`)}
+  ${abs(100,235,wordmark(760))}
+  ${abs(122,520,`<div style="display:inline-flex;align-items:center;gap:12px;font:500 26px Geist;color:#c3c9d6;padding:12px 20px;border-radius:999px;border:1px solid #1e2430;background:#141821"><img src="${ink}" style="width:30px;height:30px;border-radius:50%">Built on Ink</div>`)}
   ${abs(1040,470,blot('NVDAx',180,-8,62))}${abs(1180,520,blot('SPYx',150,9,70))}${abs(1295,460,blot('TSLAx',180,-12,62))}
   ${abs(1420,80,sz(logo,600))}
   <svg style="position:absolute;left:0;top:0" width="2000" height="800" viewBox="0 0 2000 800" fill="#ff4fa3" stroke="#14121a" stroke-width="6"><circle cx="1000" cy="90" r="12"/><circle cx="1960" cy="620" r="9"/><circle cx="980" cy="700" r="7"/><circle cx="60" cy="700" r="14"/><circle cx="760" cy="160" r="8"/><circle cx="1380" cy="130" r="9"/></svg>
