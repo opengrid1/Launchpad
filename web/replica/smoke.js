@@ -5,7 +5,7 @@ const TOKEN = '0x5c1138fa782f7165a3be4c950cc0f32c6b70d08e';
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--proxy-server=' + process.env.HTTPS_PROXY, '--ignore-certificate-errors', '--proxy-bypass-list=127.0.0.1;localhost'] });
   const errs = [];
   async function pg(w, h, wallet) { const p = await b.newPage({ viewport: { width: w, height: h } }); p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/favicon/.test(m.text())) errs.push('console: ' + m.text().slice(0, 160)); }); await p.route('**/config.js', r => r.fulfill({ contentType: 'application/javascript', body: CFG })); if (wallet) await p.addInitScript(() => localStorage.setItem('wallet', '1')); return p; }
-  const ready = async p => { await p.waitForFunction(() => !document.getElementById('prehide'), null, { timeout: 40000 }); await p.waitForTimeout(400); };
+  const ready = async p => { await p.waitForFunction(() => document.documentElement.dataset.ready === '1', null, { timeout: 40000 }); await p.waitForTimeout(400); };
   // home
   let p = await pg(1440, 900); await p.goto('http://127.0.0.1:8767/', { waitUntil: 'domcontentloaded' }); await ready(p);
   console.log('home feed rows', (await p.$$('#rows .group')).length, '| trend', (await p.$$('#trend button.h-16')).length, '| chips', (await p.$$('#newchips .group')).length, '| stats', await p.evaluate(() => [...document.querySelectorAll('[data-home] div.text-lg')].map(d => d.textContent)));

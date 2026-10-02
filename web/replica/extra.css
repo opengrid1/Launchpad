@@ -394,3 +394,6 @@ h1 .hero-inky{width:74px;height:auto;flex:none;margin-left:-6px;filter:drop-shad
 .o-menu .h.wh{display:flex;align-items:center;gap:10px}
 .o-menu .wav.lg{display:inline-flex;width:30px;height:30px;border-radius:8px;overflow:hidden;flex:none}
 .o-menu .h.wh{text-transform:none;letter-spacing:0;font-family:var(--font-mono);font-size:13px;color:var(--color-text-primary)}
+
+/* template nodes are cloned by app.js and never shown themselves */
+[data-tpl]{display:none!important}
