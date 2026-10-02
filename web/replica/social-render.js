@@ -22,9 +22,8 @@ const { chromium } = require('playwright'); const fs=require('fs');
  // X banner 1500x500, rendered at 2x. Avatar overlaps the bottom-left on X, so nothing important lives there.
  const banner=`<div style="position:relative;width:1500px;height:500px;background:#0e1117;color:#f3f5f9;font-family:Geist;overflow:hidden">
    ${abs(1110,22,sz(logo,450))}
-   ${abs(90,120,`<div style="font:400 118px 'Titan One';line-height:1;letter-spacing:-2px">inkypump</div>`)}
-   ${abs(96,268,`<div style="font:600 36px Geist;line-height:1.2;width:900px">Memecoins on Ink that pay holders in stocks.</div>`)}
-   ${abs(96,338,`<div style="font:500 22px Geist;color:#c3c9d6">Liquidity locked forever · 2% fee shared with holders · built on Ink</div>`)}
+   ${abs(90,135,`<div style="font:400 118px 'Titan One';line-height:1;letter-spacing:-2px">inkypump</div>`)}
+   ${abs(96,285,`<div style="font:600 36px Geist;line-height:1.2;width:900px">Memecoins on Ink that pay holders in stocks.</div>`)}
    ${abs(790,290,blot('NVDAx',150,-8,62))}${abs(905,335,blot('SPYx',130,9,70))}${abs(1000,275,blot('TSLAx',150,-12,62))}
    <svg style="position:absolute;left:0;top:0" width="1500" height="500" viewBox="0 0 1500 500" fill="#ff4fa3" stroke="#14121a" stroke-width="6"><circle cx="1000" cy="60" r="12"/><circle cx="1480" cy="110" r="8"/><circle cx="820" cy="440" r="7"/><circle cx="1440" cy="470" r="14"/><circle cx="1090" cy="470" r="7"/></svg>
  </div>`;
