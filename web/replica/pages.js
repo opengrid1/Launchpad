@@ -8,7 +8,7 @@ async function runTx(btn,fn,okMsg){ const t=btn?btn.textContent:''; if(btn){ btn
 
 /* ======================= LAUNCH ======================= */
 function initLaunch(){
-  const g=id=>document.getElementById(id); const TAKEN=new Set(TOK.map(x=>x.t.toUpperCase())); let basket=['NVDAx','SPYx'], logoURL=null, dev=false, pair='ETH', rew=true, busy=false;
+  const g=id=>document.getElementById(id); const TAKEN=new Set((window.CHAIN&&LIVE?CHAIN.tokens():TOK).map(x=>x.t.toUpperCase())); let basket=['NVDAx','SPYx'], logoURL=null, dev=false, pair='ETH', rew=true, busy=false;
   const PAIR_USD={ETH:ETH}; STOCKS.forEach(s=>PAIR_USD[s[0]]=0);
   const PAIRS=[['ETH','Ethereum',ETH_IMG],...STOCKS.filter(s=>!LIVE||STOCK_ADDR[s[0]]).map(x=>[x[0],x[1],STOCK_IMG(x[0])])]; const pairImg2=()=>PAIRS.find(x=>x[0]===pair)[2]; const CAP_USD=3000;
   const pairAddr=p=>p==='ETH'?((window.INKY&&INKY.weth)||'0x4200000000000000000000000000000000000006'):STOCK_ADDR[p];
