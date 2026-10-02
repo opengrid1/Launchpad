@@ -87,7 +87,10 @@ function initDocs(){ const links=$$('#toc a'); const main=$('main'); const hs=li
   if(location.hash){ const t=$(location.hash); if(t) setTimeout(()=>main.scrollTo({top:t.offsetTop-24}),50); } }
 
 /* ======================= ADMIN ======================= */
-function initAdmin(){ $('#qa').innerHTML=STOCKS.map(s=>stockTag(s[0])).join('');
+function initAdmin(){ const g=id=>document.getElementById(id);
+  const gate=()=>{ const on=W.connected; g('admGate').classList.toggle('hidden',on); g('admConsole').classList.toggle('hidden',!on); }; gate();
+  g('admConnect').onclick=()=>{ openConnect(); const t=setInterval(()=>{ if(W.connected){ clearInterval(t); gate(); } },400); };
+  $('#qa').innerHTML=STOCKS.map(s=>stockTag(s[0])).join('');
   $('#atb').innerHTML=TOK.map(x=>`<tr class="h-[4.5rem] text-text-primary">${tdiv('px-4 py-3 align-middle','<span class="flex items-center gap-3">'+tokAv(x,'size-9 text-sm')+'<span class="min-w-0"><span class="block truncate text-sm font-bold">'+x.t+'</span><span class="block truncate text-xs text-text-muted">'+x.n+'</span></span></span>')}${tdiv('px-4 py-3 align-middle text-right',x.t==='DEAD'?'<span class="font-medium text-error">yes</span>':'<span class="text-text-muted">no</span>')}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(fmtUsd(x.mc)))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR((x.vol*0.008/ETH).toFixed(3)+' ETH'))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(fmtUsd(x.liq)))}${tdiv('px-4 py-3 align-middle text-right','<span class="inline-flex gap-1"><button class="adm-btn sm" data-toast="Editor opens in the live build">Edit</button><button class="adm-btn sm" data-toast="Hidden">Hide</button><button class="adm-btn sm" data-toast="Fees pushed">Push fees</button></span>')}</tr>`).join('');
   let e=LB_ENDS; setInterval(()=>{ e--; const c=$('#cd'); if(c) c.textContent=Math.floor(e/86400)+'d '+Math.floor(e%86400/3600)+'h'; },1000);
   $$('[data-toast]').forEach(b=>b.addEventListener('click',()=>toast(b.dataset.toast)));

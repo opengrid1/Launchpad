@@ -353,3 +353,8 @@ h1 .hero-wm{display:block;width:346px;max-width:100%;height:auto;margin:-10px 0 
 .lf-opt.rew{margin-top:18px}
 .lf.rew-off #rewBox{display:none}
 @media (max-width:639px){.lf-pairs{grid-template-columns:minmax(0,1fr)}}
+
+.adm-gate{margin-top:48px}
+.adm-gate .ic svg{width:26px;height:26px}
+
+.adm-gate.hidden,#admConsole.hidden{display:none}
