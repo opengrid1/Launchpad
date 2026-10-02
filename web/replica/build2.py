@@ -383,7 +383,7 @@ mnav = root.select_one('nav.h-14'); mnav['id'] = 'mnav'
 root.append(frag('<div id="layer"></div>'))
 
 open(OUT + '/token.html', 'w').write(page_shell(root, 'Token | Inkypump', 'Price, chart, trades, holders and stock rewards for a token launched on Inkypump.',
-    '<script src="charting_library/charting_library.standalone.js"></script><script src="tv.js"></script>'))
+    '<script src="charting_library/charting_library.standalone.js" defer></script><script src="tv.js" defer></script>'))
 print('token.html ok')
 
 # =====================================================================
