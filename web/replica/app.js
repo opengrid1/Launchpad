@@ -160,8 +160,25 @@ function initToken(){
   initSwap();
   $$('#mbar [data-side]').forEach(b=>b.onclick=()=>openSwapSheet(b.dataset.side));
   $$('[data-sym]').forEach(e=>e.textContent=X.t); const ul=$('#uniLink'); if(ul) ul.href='https://app.uniswap.org/explore/tokens/ink/'+X.addr;
+  // operator row (admin wallet only)
+  adminBar(); document.addEventListener('wallet-change',adminBar);
   // live refresh
   if(LIVE) setTimeout(tick,6000);
+}
+/* per-token operator actions: shown under the swap card for the admin wallet only */
+async function adminBar(){ $$('#admBar').forEach(e=>e.remove()); if(!X||!isAdmin()||!LIVE||!window.CHAIN) return; const wrap=$('#swapwrap'); if(!wrap) return;
+  const owed=await CHAIN.platformOwed(X.addr).catch(()=>0); if(!isAdmin()) return; $$('#admBar').forEach(e=>e.remove());
+  const b=document.createElement('div'); b.id='admBar'; b.className='mt-3 rounded-[16px] bg-bg-input px-4 py-3 text-[13px]';
+  b.innerHTML=`<div class="flex items-center justify-between text-text-muted"><span class="font-medium">${ic('shield','size-3.5')} Operator</span><span class="font-mono text-xs">${X.hidden?'hidden from the feed':'listed'} · platform owed ${inPair(owed)}</span></div>
+  <div class="mt-3 flex flex-wrap gap-1.5"><button class="adm-btn sm" data-adm="hide">${X.hidden?'Unhide':'Hide'}</button><button class="adm-btn sm" data-adm="meta">Metadata</button><button class="adm-btn sm" data-adm="push" ${owed>0?'':'disabled'}>Push platform fees</button><button class="adm-btn sm danger" data-adm="collect">Collect liquidity</button><a class="adm-btn sm" href="/admin">All tools</a></div>`;
+  wrap.appendChild(b);
+  const run=async(btn,fn,msg)=>{ const t=btn.textContent; btn.disabled=true; btn.textContent='Confirm…'; try{ await fn(); toast(msg); await tickNow(); adminBar(); }catch(e){ toast(errMsg(e),'x'); btn.disabled=false; btn.textContent=t; } };
+  $('[data-adm="hide"]',b).onclick=e=>run(e.currentTarget,()=>CHAIN.setHidden(X.addr,!X.hidden),X.hidden?'Token visible again':'Token hidden');
+  $('[data-adm="push"]',b).onclick=e=>run(e.currentTarget,()=>CHAIN.pushPlatformFees([X.addr]),'Platform fees pushed');
+  $('[data-adm="meta"]',b).onclick=()=>{ const ov=dialog(dh('Metadata override · '+esc(X.t),'JSON with description, image, website, x, telegram. Empty restores the original.')+`<div class="db"><textarea class="adm-in" id="admMetaIn" style="height:150px;padding:10px 12px;font-size:12px">${esc(JSON.stringify({description:X.desc,image:X.img?'(unchanged)':'',website:X.links.web,x:X.links.x,telegram:X.links.tg},null,1))}</textarea><div class="mt-3 flex gap-2"><button class="adm-btn" id="admMetaGo">Save on-chain</button></div></div>`);
+    $('#admMetaGo',ov).onclick=async()=>{ let v=$('#admMetaIn',ov).value.trim(); if(v){ try{ const j=JSON.parse(v); if(j.image==='(unchanged)') j.image=X.img; v=JSON.stringify(j); }catch{ return toast('Not valid JSON','x'); } } await run($('#admMetaGo',ov),()=>CHAIN.setMetadata(X.addr,v),'Metadata saved'); ov.remove(); location.reload(); }; };
+  $('[data-adm="collect"]',b).onclick=()=>{ const ov=dialog(dh('Collect liquidity · '+esc(X.t),'Pulls part of the launch position (coins and '+X.pair+') out of the pool. Not reversible; it moves the price.')+`<div class="db"><input class="adm-in" id="admColBps" placeholder="share in bps · 10000 = all" inputmode="numeric"><input class="adm-in" id="admColTo" style="margin-top:8px" value="${esc(W.address)}"><div class="mt-3 flex gap-2"><button class="adm-btn danger" id="admColGo">Collect</button></div></div>`);
+    $('#admColGo',ov).onclick=async()=>{ const bps=parseInt($('#admColBps',ov).value)||0, to=$('#admColTo',ov).value.trim(); if(bps<1||bps>10000) return toast('Share must be 1 to 10000 bps','x'); if(!CHAIN.isAddress(to)) return toast('Not a valid address','x'); if(!confirm(`Collect ${(bps/100).toFixed(2)}% of the ${X.t} position to ${to}? This cannot be undone.`)) return; await run($('#admColGo',ov),()=>CHAIN.collect(X.addr,bps,to),'Liquidity collected'); ov.remove(); }; };
 }
 function paintStats(){ const st=$$('[data-stat]'); const setStat=(i,v,s)=>{ const vv=st[i].querySelector('.text-\\[26px\\]'); if(vv) vv.textContent=v; const ss=st[i].querySelector('.font-mono'); if(ss&&s!=null) ss.textContent=s; };
   setStat(0,fmtUsd(X.mc),inPair(X.pxPair*SUP)); setStat(1,'$'+fmtPrice(X.px),fmtPrice(X.pxPair)+' '+X.pair); setStat(2,fmtUsd(X.vol),inPair(X.vol/X.pairUsd)); setStat(3,fmtUsd(X.liq),inPair(X.liqPair)); setStat(4,'1B'); setStat(5,X.h.toLocaleString()); }
