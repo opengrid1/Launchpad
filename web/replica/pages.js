@@ -38,7 +38,7 @@ function initLaunch(){
   function loadLogo(file){ if(!file||!file.type.startsWith('image/')){ toast('Please choose an image file','x'); return; } if(file.size>1024*1024){ toast('Logo too big, max 1 MB','x'); return; }
     const img=new Image(); img.onload=()=>{ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d'); const s=Math.min(img.width,img.height); x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,256,256); logoURL=c.toDataURL('image/webp',0.85); sync(); }; img.src=URL.createObjectURL(file); }
   g('fLogo').addEventListener('change',e=>loadLogo(e.target.files[0])); const dz=g('drop'); ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault(); dz.style.borderColor='var(--color-accent)';})); ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault(); dz.style.borderColor='';})); dz.addEventListener('drop',e=>loadLogo(e.dataTransfer.files[0]));
-  const cta=g('deploy'); const setCta=()=>{ cta.textContent=W.connected?'Launch token':'Connect Wallet'; }; setCta();
+  const cta=g('deploy'); const setCta=()=>{ cta.textContent=W.connected?'Launch token':'Connect Wallet'; }; setCta(); document.addEventListener('wallet-change',setCta);
   cta.onclick=()=>{ if(!W.connected){ openConnect(); const t=setInterval(()=>{ if(W.connected){ clearInterval(t); setCta(); } },500); return; } if(!val1()||!val2()){ toast('Fix the highlighted fields','x'); $('main').scrollTo({top:0,behavior:'smooth'}); return; } if(PRE){ toast('Launches open when the contracts go live on Ink'); return; } cta.disabled=true; cta.textContent='Confirm in wallet…'; setTimeout(()=>{ cta.textContent='Deploying…'; },900);
     setTimeout(()=>{ cta.disabled=false; setCta(); $('.lf-grid').classList.add('hidden'); g('doneBox').classList.remove('hidden'); toast((g('fName').value||'Token')+' deployed on Ink'); $('main').scrollTo({top:0,behavior:'smooth'}); },2200); };
   g('shareX').onclick=()=>{ const t=g('fTick').value.trim().toUpperCase(); open('https://x.com/intent/tweet?text='+encodeURIComponent('$'+t+' is live on Inkypump (Ink), paired with '+pair+'. LP locked forever.'+(rew?' Holders earn '+(basket.join(' + ')||pair)+' on every trade.':''))); };
@@ -58,12 +58,18 @@ function initBoard(){
   $$('#btabs [data-board]').forEach(b=>b.onclick=()=>draw(b.dataset.board)); draw('pnl');
   if(PRE){ $('#cd').textContent='At launch'; }
   let ends=LB_ENDS; if(!PRE) setInterval(()=>{ ends--; $('#cd').textContent=Math.floor(ends/86400)+'d '+Math.floor(ends%86400/3600)+'h '+Math.floor(ends%3600/60)+'m'; },1000);
-  if(W.connected&&PRE){ const y=$('#youCard'); y.innerHTML='<div class="flex h-7 items-center"><div class="text-lg font-semibold text-text-primary">No trades yet</div></div><div class="mt-0.5 text-xs font-medium text-accent">Your rank appears after your first trade</div>'; }
-  if(!W.connected){ const y=$('#youCard'); y.innerHTML='<div class="flex h-7 items-center"><div class="text-lg font-semibold text-text-primary">Connect to see your rank</div></div><div class="mt-0.5 text-xs font-medium text-accent">Every trade counts, wherever you trade</div>'; y.style.cursor='pointer'; y.onclick=openConnect; }
+  boardYou();
+}
+let YOU_HTML=null;
+function boardYou(){ const y=$('#youCard'); if(!y) return; if(YOU_HTML===null) YOU_HTML=y.innerHTML; else { y.innerHTML=YOU_HTML; y.style.cursor=''; y.onclick=null; }
+  if(W.connected&&PRE){ y.innerHTML='<div class="flex h-7 items-center"><div class="text-lg font-semibold text-text-primary">No trades yet</div></div><div class="mt-0.5 text-xs font-medium text-accent">Your rank appears after your first trade</div>'; }
+  if(!W.connected){ y.innerHTML='<div class="flex h-7 items-center"><div class="text-lg font-semibold text-text-primary">Connect to see your rank</div></div><div class="mt-0.5 text-xs font-medium text-accent">Every trade counts, wherever you trade</div>'; y.style.cursor='pointer'; y.onclick=openConnect; }
 }
 
 /* ======================= PROFILE ======================= */
+let PROFILE_HTML=null;
 function initProfile(){
+  { const pg=$('#profilePage'); if(PROFILE_HTML===null) PROFILE_HTML=pg.innerHTML; else pg.innerHTML=PROFILE_HTML; }
   if(!W.connected){ const pg=$('#profilePage'); pg.innerHTML=`<div class="o-empty"><div class="ic">${ic('wallet')}</div><h2>Connect your wallet</h2><p>See your holdings, stock rewards, creator fees and leaderboard payouts in one place.</p><button id="pc">Connect Wallet</button></div>`; $('#pc').onclick=openConnect; return; }
   const H=[{t:'MOGCAT',n:'Mogcat',c:'#f2a93b',bal:2104320,px:0.000927,avg:0.000352,earned:38.4,pend:21.9},{t:'CPEPE',n:'Cold Pepe',c:'#7fe3d1',bal:180400,px:0.00241,avg:0.00263,earned:12.1,pend:9.3},{t:'WEN',n:'Wen Lambo',c:'#b8c6ff',bal:910000,px:0.000412,avg:0.000301,earned:14.6,pend:8.1},{t:'GRASS',n:'Touch Grass',c:'#a3e68a',bal:52000,px:0.000288,avg:0.000330,earned:2.2,pend:1.9}];
   if(PRE){ const em=t=>'<div class="o-feed-empty">'+emptyBox(t,'Rewards, holdings and payouts show up here once you trade.',null,null,true)+'</div>';
@@ -96,3 +102,4 @@ function initDocs(){ const links=$$('#toc a'); const main=$('main'); const hs=li
 /* ======================= ADMIN ======================= */
 
 document.addEventListener('DOMContentLoaded',()=>{ if($('#launchPage')) initLaunch(); if($('#boardPage')) initBoard(); if($('#profilePage')) initProfile(); if($('#docsPage')) initDocs();  });
+document.addEventListener('wallet-change',()=>{ if($('#profilePage')) initProfile(); if($('#boardPage')) boardYou(); });
