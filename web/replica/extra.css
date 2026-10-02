@@ -336,3 +336,5 @@ header button[aria-label^="Language"] svg.lucide-chevron-down{transition:transfo
 @media (max-width:767px){.lf-h1{font-size:32px}.lf-idrow{grid-template-columns:1fr;row-gap:22px}.lf-logo{width:128px;height:128px}.lf-fields .lf-label:first-child{margin-top:0}.lf-cards{grid-template-columns:1fr}.lf-kv2{grid-template-columns:1fr 1fr}.lf-side{margin-top:40px}.lf-done-acts{flex-direction:column}}
 
 .lf-label.mt24{margin-top:24px}
+
+.lf-sec.first{margin-top:0}
