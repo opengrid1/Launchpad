@@ -362,3 +362,18 @@ h1 .hero-wm{display:block;width:346px;max-width:100%;height:auto;margin:-10px 0 
 /* leaderboard trophies for ranks 4+ (muted) */
 .border-text-muted\/50{border-color:rgba(124,132,152,.5)}
 .border-text-muted\/60{border-color:rgba(124,132,152,.6)}
+
+/* leaderboard: how payouts work */
+.lb-how{padding:4px 0 8px}
+.lb-how-hero{display:flex;align-items:center;gap:22px;padding:18px 22px;border-radius:20px;background:linear-gradient(135deg,rgba(255,79,163,.14),rgba(255,79,163,.03) 60%,transparent);border:1px solid rgba(255,79,163,.22)}
+.lb-how-inky{width:112px;height:auto;flex:none;filter:drop-shadow(0 10px 24px rgba(255,79,163,.25))}
+.lb-how-txt h2{font-size:22px;font-weight:700;letter-spacing:-.01em;color:var(--color-text-primary);line-height:1.15}
+.lb-how-txt p{margin-top:8px;font-size:14px;line-height:1.55;color:var(--color-text-secondary);max-width:560px}
+.lb-how-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+.lb-how-card{padding:16px 16px 18px;border-radius:16px;background:var(--color-bg-input);border:1px solid var(--color-border-default)}
+.lb-how-ic{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:rgba(255,79,163,.12);color:var(--color-accent)}
+.lb-how-ic svg{width:17px;height:17px}
+.lb-how-card b{display:block;margin-top:12px;font-size:14px;font-weight:700;color:var(--color-text-primary)}
+.lb-how-card p{margin-top:5px;font-size:13px;line-height:1.55;color:var(--color-text-secondary)}
+@media (max-width:1023px){.lb-how-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:639px){.lb-how-hero{gap:14px;padding:16px}.lb-how-inky{width:88px}.lb-how-txt h2{font-size:19px}.lb-how-txt p{font-size:13px}.lb-how-grid{grid-template-columns:minmax(0,1fr);gap:10px}}

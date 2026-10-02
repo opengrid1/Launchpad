@@ -23,13 +23,18 @@
     <div class="md:hidden" id="bmob"></div></div>
   </div>
 
-  <div class="mt-12"><section class="py-5"><div class="flex min-h-6 items-center justify-between gap-3"><h2 class="flex items-center gap-1.5 text-[17px] font-bold leading-none text-text-primary"><span>How payouts work</span></h2></div>
-    <div class="mt-4"><ul class="grid gap-x-8 gap-y-5 sm:grid-cols-2">
-      <li class="flex gap-2.5"><span class="mt-1.5 size-[5px] shrink-0 rounded-full bg-text-muted"></span><span class="min-w-0"><span class="block text-[13px] font-semibold text-text-primary md:text-xs">Pool</span><span class="mt-1 block text-[13px] leading-relaxed text-text-secondary md:text-xs">0.1% of every trade on the platform, taken from the platform's share. Half to each board.</span></span></li>
-      <li class="flex gap-2.5"><span class="mt-1.5 size-[5px] shrink-0 rounded-full bg-text-muted"></span><span class="min-w-0"><span class="block text-[13px] font-semibold text-text-primary md:text-xs">Epoch</span><span class="mt-1 block text-[13px] leading-relaxed text-text-secondary md:text-xs">3 days. Payout at the end of the epoch, then the boards reset. Top 5 only, each board: 1st 40%, 2nd 25%, 3rd 15%, 4th 12%, 5th 8%.</span></span></li>
-      <li class="flex gap-2.5"><span class="mt-1.5 size-[5px] shrink-0 rounded-full bg-text-muted"></span><span class="min-w-0"><span class="block text-[13px] font-semibold text-text-primary md:text-xs">PnL board</span><span class="mt-1 block text-[13px] leading-relaxed text-text-secondary md:text-xs">Realized profit in ETH over the epoch, from the ledger's cost basis. A wash trade is zero profit minus fees, so it cannot climb this board. Profit is only realized on tokens the same wallet bought.</span></span></li>
-      <li class="flex gap-2.5"><span class="mt-1.5 size-[5px] shrink-0 rounded-full bg-text-muted"></span><span class="min-w-0"><span class="block text-[13px] font-semibold text-text-primary md:text-xs">Volume board</span><span class="mt-1 block text-[13px] leading-relaxed text-text-secondary md:text-xs">Fees paid (volume × 2%). Washing 100 ETH costs 2 ETH in fees to compete for a share of a far smaller pool.</span></span></li>
-      <li class="flex gap-2.5"><span class="mt-1.5 size-[5px] shrink-0 rounded-full bg-text-muted"></span><span class="min-w-0"><span class="block text-[13px] font-semibold text-text-primary md:text-xs">Every trade counts</span><span class="mt-1 block text-[13px] leading-relaxed text-text-secondary md:text-xs">This site, Uniswap, aggregators, Telegram bots. The pool's hook records the wallet that signed each swap, so you do not have to trade here to rank.</span></span></li>
-      <li class="flex gap-2.5"><span class="mt-1.5 size-[5px] shrink-0 rounded-full bg-text-muted"></span><span class="min-w-0"><span class="block text-[13px] font-semibold text-text-primary md:text-xs">Claiming</span><span class="mt-1 block text-[13px] leading-relaxed text-text-secondary md:text-xs">Payouts are claimable from Profile › Rewards and never expire.</span></span></li>
-    </ul></div></section></div>
+  <div class="mt-12"><section class="lb-how">
+    <div class="lb-how-hero">
+      <img src="img/inky-anim.svg" alt="" class="lb-how-inky" width="140" height="144">
+      <div class="lb-how-txt"><h2>How payouts work</h2><p>Every 3 days the top 5 traders on each board split a prize pool funded by 0.1% of all volume. Trade anywhere on Ink; the pool's hook sees it.</p></div>
+    </div>
+    <div class="lb-how-grid">
+      <div class="lb-how-card"><span class="lb-how-ic">__COINS__</span><b>Pool</b><p>0.1% of every trade on the platform, taken from the platform's share. Half to each board.</p></div>
+      <div class="lb-how-card"><span class="lb-how-ic">__TROPHY__</span><b>Epoch</b><p>3 days. Payout at the end, then the boards reset. Top 5 per board: 1st 40%, 2nd 25%, 3rd 15%, 4th 12%, 5th 8%.</p></div>
+      <div class="lb-how-card"><span class="lb-how-ic">__SPARK__</span><b>PnL board</b><p>Realized profit in USD over the epoch, from the ledger's cost basis. A wash trade is zero profit minus fees, so it cannot climb this board.</p></div>
+      <div class="lb-how-card"><span class="lb-how-ic">__ROCKET__</span><b>Volume board</b><p>Fees paid in USD (volume × 2%). Washing $100K costs $2K in fees to compete for a share of a far smaller pool.</p></div>
+      <div class="lb-how-card"><span class="lb-how-ic">__SHIELDOK__</span><b>Every trade counts</b><p>This site, Uniswap, aggregators, bots. The pool's hook records the wallet that signed each swap, so you do not have to trade here to rank.</p></div>
+      <div class="lb-how-card"><span class="lb-how-ic">__CHECK__</span><b>Claiming</b><p>Payouts are claimable from Profile › Rewards in ETH and never expire. Minimum $100 of volume in the epoch to rank.</p></div>
+    </div>
+  </section></div>
 </div>
