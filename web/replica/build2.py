@@ -386,7 +386,7 @@ for c in chips[1:]: c.decompose()
 chips[0]['data-tpl'] = 'chip'; chips[0].parent['id'] = 'newchips'
 
 main = root.select_one('main')
-h1 = main.select_one('h1'); h1.clear(); h1.append(frag(open('img/hero-wordmark.svg').read()))
+h1 = main.select_one('h1'); h1.clear(); h1.append(frag('<img src="img/hero-wordmark.png" alt="Inkypump" class="hero-wm" decoding="async">'))
 p = main.select_one('p.mt-5')
 u = p.select('span.inline')
 stack = p.select_one('span[role=list]')

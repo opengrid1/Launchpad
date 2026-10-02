@@ -339,5 +339,5 @@ header button[aria-label^="Language"] svg.lucide-chevron-down{transition:transfo
 
 .lf-sec.first{margin-top:0}
 /* hero wordmark (sticker style) replaces the h1 text on the home page */
-h1 .hero-wm{display:block;width:340px;max-width:100%;height:auto;margin:-14px 0 -10px -10px;overflow:visible}
-@media (min-width:640px){h1 .hero-wm{width:430px;margin:-18px 0 -12px -12px}}
+h1 .hero-wm{display:block;width:346px;max-width:100%;height:auto;margin:-10px 0 -8px -12px}
+@media (min-width:640px){h1 .hero-wm{width:440px;margin:-14px 0 -10px -14px}}
