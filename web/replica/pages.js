@@ -53,6 +53,7 @@ function initBoard(){
 
 /* ======================= PROFILE ======================= */
 function initProfile(){
+  if(!W.connected){ const pg=$('#profilePage'); pg.innerHTML=`<div class="o-empty"><div class="ic">${ic('wallet')}</div><h2>Connect your wallet</h2><p>See your holdings, stock rewards, creator fees and leaderboard payouts in one place.</p><button id="pc">Connect Wallet</button></div>`; $('#pc').onclick=openConnect; return; }
   const H=[{t:'MOGCAT',n:'Mogcat',c:'#f2a93b',bal:2104320,px:0.000927,avg:0.000352,earned:38.4,pend:21.9},{t:'CPEPE',n:'Cold Pepe',c:'#7fe3d1',bal:180400,px:0.00241,avg:0.00263,earned:12.1,pend:9.3},{t:'WEN',n:'Wen Lambo',c:'#b8c6ff',bal:910000,px:0.000412,avg:0.000301,earned:14.6,pend:8.1},{t:'GRASS',n:'Touch Grass',c:'#a3e68a',bal:52000,px:0.000288,avg:0.000330,earned:2.2,pend:1.9}];
   const bk=t=>BASKETS[t]||['SPYx'];
   const rrow=(av,title,sub,val,btns)=>`<div class="flex min-w-0 items-center gap-3 border-b border-border-default px-4 py-3 last:border-b-0 hover:bg-bg-elevated">${av}<div class="min-w-0 flex-1"><div class="truncate text-sm font-semibold text-text-primary">${title}</div><div class="mt-1 truncate text-xs text-text-muted">${sub}</div></div><div class="hidden shrink-0 text-right sm:block"><div class="text-sm font-semibold tabular-nums text-success">${val}</div></div><div class="flex shrink-0 gap-1.5">${btns}</div></div>`;
@@ -69,7 +70,7 @@ function initProfile(){
   $('#act').innerHTML=ACT.map(a=>`<div class="flex items-center gap-3 border-b border-border-default py-3.5 last:border-b-0"><span class="w-[72px] shrink-0 text-xs text-text-muted">${a[0]}</span><div class="min-w-0 flex-1 text-sm"><span class="font-semibold ${a[3]}">${a[1]}</span> <span class="text-text-secondary">${a[2]}</span></div><a class="inline-flex text-text-muted hover:text-accent" href="https://explorer.inkonchain.com" target="_blank" rel="noopener noreferrer">${ic('ext','size-3.5')}</a></div>`).join('');
   $$('#ptabs [data-ptab]').forEach(b=>b.onclick=()=>{ setTab('#ptabs [data-ptab]',b); $$('#ppanes [data-ppane]').forEach(p=>p.classList.toggle('hidden',p.dataset.ppane!==b.dataset.ptab)); });
   $('#claimAll').onclick=()=>toast('Claimed $41.20 in stocks, 0.22 ETH creator fees and 0.27 ETH leaderboard payout');
-  if(!W.connected){ const ov=dialog(dh('Connect to view your profile','Holdings, rewards and leaderboard rank are read from your wallet')+'<div class="db"><button class="opt" id="pc"><span class="ic" style="background:var(--color-accent);color:var(--color-accent-ink)">'+ic('wallet')+'</span><span>Connect wallet<small>MetaMask, Rabby, WalletConnect, Coinbase</small></span></button></div>'); $('#pc',ov).onclick=()=>{ ov.remove(); openConnect(); }; }
+  if(!W.connected){ const pg=$('#profilePage'); pg.innerHTML=`<div class="o-empty"><div class="ic">${ic('wallet')}</div><h2>Connect your wallet</h2><p>See your holdings, stock rewards, creator fees and leaderboard payouts in one place.</p><button id="pc">Connect Wallet</button></div>`; $('#pc').onclick=openConnect; return; }
 }
 
 /* ======================= DOCS ======================= */

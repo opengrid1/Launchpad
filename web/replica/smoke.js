@@ -40,7 +40,7 @@ const { chromium } = require('playwright');
   await p.click('[data-next="3"]'); console.log('step3 visible', await p.isVisible('[data-wiz="3"]'), 'tags', (await p.$$('#rTags span')).length);
   await p.close();
   // leaderboard / profile / docs / admin load
-  for (const n of ['leaderboard','portfolio','docs','admin']) { p = await pg(1440,900); await p.goto('http://127.0.0.1:8767/'+n+'.html',{waitUntil:'networkidle'}); await p.waitForTimeout(500); if(n==='leaderboard'){ await p.click('[data-board="vol"]'); console.log('vol board rows', (await p.$$('#btb tr')).length); } if(n==='portfolio'){ await p.keyboard.press('Escape'); await p.click('[data-ptab="act"]'); console.log('activity rows', (await p.$$('#act > div')).length); } await p.close(); }
+  for (const n of ['leaderboard','portfolio','docs','admin']) { p = await pg(1440,900); await p.goto('http://127.0.0.1:8767/'+n+'.html',{waitUntil:'networkidle'}); await p.waitForTimeout(500); if(n==='leaderboard'){ await p.click('[data-board="vol"]'); console.log('vol board rows', (await p.$$('#btb tr')).length); } if(n==='portfolio'){ console.log('profile empty state', !!await p.$('.o-empty')); await p.evaluate(()=>localStorage.setItem('wallet','1')); await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(400); await p.click('[data-ptab="act"]'); console.log('activity rows', (await p.$$('#act > div')).length); await p.evaluate(()=>localStorage.removeItem('wallet')); } await p.close(); }
   console.log('ERRORS', errs);
   await b.close();
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

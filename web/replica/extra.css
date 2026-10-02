@@ -186,3 +186,20 @@ textarea.adm-in{height:auto;padding:8px 12px;resize:vertical}
 .o-drawer .pi .t span{display:block;margin-top:3px;font-size:14px;line-height:1.3;color:var(--color-text-muted)}
 .o-drawer .pi .cur{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:color-mix(in oklab,var(--color-accent) 15%,transparent);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--color-accent)}
 .o-drawer .pi .ch{width:18px;height:18px;color:var(--color-text-muted);flex:none}
+
+/* language popover, as on the reference */
+.o-menu.lang{min-width:220px;padding:6px}
+.o-menu.lang .i{height:44px;font-size:17px;font-weight:500;padding:0 14px;border-radius:10px}
+.o-menu.lang .i.on{background:var(--color-bg-elevated);color:var(--color-accent)}
+.o-menu.lang .i .r svg{width:18px;height:18px}
+header button[aria-label^="Language"] svg.lucide-chevron-down{transition:transform .2s}
+@media (max-width:767px){.o-menu.lang{position:fixed;left:calc(50% - 110px)!important;right:auto!important;top:72px!important;min-width:220px;width:220px}}
+/* profile empty state (not connected), as on the reference */
+.o-empty{margin:24px auto 0;max-width:1024px;border-radius:20px;background:var(--color-bg-input);padding:64px 24px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.o-empty .ic{width:118px;height:118px;border-radius:50%;background:var(--color-bg-elevated);display:grid;place-items:center;color:var(--color-text-secondary)}
+.o-empty .ic svg{width:48px;height:48px;stroke-width:1.6}
+.o-empty h2{margin-top:28px;font-size:28px;font-weight:700;letter-spacing:-.02em;color:var(--color-text-primary)}
+.o-empty p{margin-top:16px;max-width:620px;font-size:18px;line-height:1.55;color:var(--color-text-secondary)}
+.o-empty button{margin-top:36px;height:60px;padding:0 44px;border-radius:999px;background:var(--color-accent);color:var(--color-accent-ink);font-size:20px;font-weight:700;cursor:pointer}
+.o-empty button:hover{background:var(--color-accent-hover)}
+@media (max-width:767px){.o-empty{margin-top:8px;padding:56px 20px}.o-empty h2{font-size:26px}.o-empty p{font-size:17px}.o-empty button{height:56px;padding:0 32px;font-size:18px}}
