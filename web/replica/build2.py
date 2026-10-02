@@ -467,10 +467,8 @@ def other(name, title, desc, active, connected_only=False):
     inner.append(frag(body) if body.count('<div class="mx-auto') == 1 else BeautifulSoup(body, 'html.parser'))
     r.append(frag('<div id="layer"></div>'))
     html = page_shell(r, title, desc).replace('<script src="app.js"></script>', '<script src="app.js"></script><script src="pages.js"></script>')
-    if name == 'admin.html': html = html.replace('<meta name="description"', '<meta name="robots" content="noindex"><meta name="description"')
     open(OUT + '/' + name, 'w').write(html); print(name, 'ok')
 other('launch.html', 'Launch a token | Inkypump', 'Launch a memecoin on Ink with locked Uniswap V4 liquidity and a stock basket for holders.', 'Launch Token')
 other('portfolio.html', 'Profile | Inkypump', 'Your holdings, stock rewards, creator fees and leaderboard payouts.', 'Profile')
 other('leaderboard.html', 'Trader leaderboard | Inkypump', 'Top 5 traders by PnL and volume every 3 days, paid in ETH.', 'Leaderboard')
-other('admin.html', 'Admin | Inkypump', 'Factory admin functions.', 'Docs')
 
