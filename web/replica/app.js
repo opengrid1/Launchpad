@@ -38,7 +38,12 @@ function toast(msg,icon='check'){let w=$('.o-toasts'); if(!w){w=document.createE
 async function copyText(v,msg){try{await navigator.clipboard.writeText(v);}catch{} toast(msg||'Copied to clipboard');}
 
 /* ---------- wallet state ---------- */
-const W={get connected(){try{return localStorage.getItem('wallet')==='1';}catch{return false;}}, set(v){try{localStorage.setItem('wallet',v?'1':'0');}catch{} }};
+/* Wallet state: Reown AppKit when the site has a project id (window.inkyWallet from wallet.js), the demo wallet otherwise. */
+const DYN=()=>window.inkyWallet&&window.inkyWallet.ready?window.inkyWallet:null;
+const W={get connected(){ const d=DYN(); if(d) return d.connected; try{return localStorage.getItem('wallet')==='1';}catch{return false;} }, set(v){try{localStorage.setItem('wallet',v?'1':'0');}catch{} },
+  get address(){ const d=DYN(); return d&&d.address?d.address:ME_FULL; }, get short(){ const a=this.address; return a.slice(0,6)+'…'+a.slice(-4); },
+  disconnect(){ const d=DYN(); if(d) return d.logout(); W.set(false); } };
+window.addEventListener('inky:wallet',()=>{ if(typeof renderWallet==='function') renderWallet(); document.dispatchEvent(new Event('wallet-change')); });
 
 /* ---------- generic overlay helpers ---------- */
 let openEl=null;
@@ -78,13 +83,14 @@ function initHeader(){
 function renderWallet(){
   const pill=$('header .relative.flex.h-9.shrink-0.items-stretch'); if(!pill) return;
   const btn=pill.querySelector('button');
-  if(W.connected){ btn.innerHTML=`<span class="o-wpill"><span class="dot"></span><span class="font-mono font-medium">${ME}</span></span>`; btn.dataset.menu='1'; btn.onclick=()=>{ if($('.o-menu')) return $$('.o-menu').forEach(m=>m.remove()); menu(btn,`<div class="h">${ME}</div><button class="i" data-act="copy">${ic('copy')}Copy address</button><button class="i" data-act="portfolio">${ic('user')}Profile</button><button class="i" data-act="explorer">${ic('globe')}View on explorer<span class="r">${ic('ext','size-3')}</span></button><div class="d"></div><button class="i" data-act="out">${ic('logout')}Disconnect</button>`); $$('.o-menu [data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='copy') copyText(ME_FULL,'Address copied'); if(a==='portfolio') location.href='portfolio.html'; if(a==='explorer') window.open('https://explorer.inkonchain.com/address/'+ME_FULL,'_blank'); if(a==='out'){W.set(false); location.reload();} }); }; }
+  if(W.connected){ btn.innerHTML=`<span class="o-wpill"><span class="dot"></span><span class="font-mono font-medium">${W.short}</span></span>`; btn.dataset.menu='1'; btn.onclick=()=>{ if($('.o-menu')) return $$('.o-menu').forEach(m=>m.remove()); menu(btn,`<div class="h">${W.short}</div><button class="i" data-act="copy">${ic('copy')}Copy address</button><button class="i" data-act="portfolio">${ic('user')}Profile</button><button class="i" data-act="explorer">${ic('globe')}View on explorer<span class="r">${ic('ext','size-3')}</span></button><div class="d"></div><button class="i" data-act="out">${ic('logout')}Disconnect</button>`); $$('.o-menu [data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='copy') copyText(W.address,'Address copied'); if(a==='portfolio') location.href='portfolio.html'; if(a==='explorer') window.open('https://explorer.inkonchain.com/address/'+W.address,'_blank'); if(a==='out'){W.disconnect(); if(!DYN()) location.reload();} }); }; }
   else { btn.innerHTML='<span class="hidden sm:inline">Connect Wallet</span><span class="sm:hidden">Connect</span>'; btn.onclick=openConnect; }
   const chain=pill.querySelectorAll('button')[1]; if(chain) chain.onclick=()=>{ const ov=dialog(dh('Network','Tokens on this launchpad live on Ink')+`<div class="db"><button class="opt on"><span class="ic" style="overflow:hidden"><img src="img/ink.png" alt="Ink" style="width:100%;height:100%"></span><span>Ink<small>Chain 57073 · 1s blocks</small></span><span class="r">${ic('check')}</span></button></div>`); };
   $$('#cta').forEach(c=>{ if(W.connected){ c.textContent=(window.swapSide==='sell'?'Sell':'Buy')+' MOGCAT'; } else { c.textContent='Connect Wallet'; } });
   const pos=$('#pos'); if(pos) pos.classList.toggle('hidden',!W.connected);
 }
 function openConnect(){
+  const d=DYN(); if(d){ d.open(); return; }
   const wallets=[['MetaMask','#f6851b','M','Browser extension'],['Rabby','#8697ff','R','Browser extension'],['WalletConnect','#3b99fc','W','Scan with your phone'],['Coinbase Wallet','#1652f0','C','Browser extension']];
   const ov=dialog(dh('Connect wallet','Connect to Ink (chain 57073) to trade and claim rewards')+'<div class="db">'+wallets.map(w=>`<button class="opt" data-w="${w[0]}"><span class="ic" style="background:${w[1]}">${w[2]}</span><span>${w[0]}<small>${w[3]}</small></span></button>`).join('')+'</div><div class="foot">By connecting you agree to the <a href="docs/introduction.html#terms">terms</a>. Demo build: the connection is simulated.</div>');
   $$('[data-w]',ov).forEach(b=>b.onclick=()=>{ b.innerHTML=`<span class="ic" style="background:var(--color-bg-elevated)">…</span><span>Connecting to ${b.dataset.w}<small>Approve in your wallet</small></span>`; setTimeout(()=>{W.set(true); ov.remove(); renderWallet(); toast('Connected '+ME);},900); });

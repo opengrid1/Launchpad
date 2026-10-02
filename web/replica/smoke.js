@@ -2,7 +2,8 @@ const { chromium } = require('playwright');
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--proxy-server=' + process.env.HTTPS_PROXY, '--ignore-certificate-errors'] });
   const errs = [];
-  async function pg(w,h){ const p = await b.newPage({ viewport:{width:w,height:h} }); p.on('pageerror', e => errs.push(e.message)); return p; }
+  // the smoke test drives the demo wallet: serve a config without the Reown project id
+  async function pg(w,h){ const p = await b.newPage({ viewport:{width:w,height:h} }); p.on('pageerror', e => errs.push(e.message)); await p.route('**/config.js', r => r.fulfill({ contentType:'application/javascript', body:"window.INKY={reownProjectId:'',chainId:57073,rpc:'https://rpc-gel.inkonchain.com',explorer:'https://explorer.inkonchain.com'};" })); return p; }
   // desktop token flows
   let p = await pg(1440,900); await p.goto('http://127.0.0.1:8767/token.html',{waitUntil:'networkidle'}); await p.waitForTimeout(800);
   await p.click('header button[aria-label="Launchpad"]'); console.log('brand menu', !!await p.$('.o-menu'));
