@@ -147,6 +147,9 @@ async function initAdmin(){
   if(!isAdmin()){ b.innerHTML=`<div class="o-empty"><div class="ic">${ic('shield')}</div><h2>Not the admin wallet</h2><p>${W.short} is not the admin of these contracts. Nothing here would go through.</p></div>`; return; }
   if(!LIVE||!window.CHAIN){ b.innerHTML=emptyBox('Contracts not live','Operator tools need the live contracts.',null,null,true); return; }
   b.innerHTML='<p class="text-sm text-text-muted">Loading…</p>';
+  try{ await initAdminBody(b); }catch(e){ b.innerHTML=`<div class="o-empty sm"><div class="ic">${ic('x')}</div><h2>Could not load</h2><p>${esc(errMsg(e))}</p><button id="admRetry">Retry</button></div>`; $('#admRetry').onclick=()=>initAdmin(); }
+}
+async function initAdminBody(b){
   const cur=await CHAIN.currentEpoch(); const prev=cur-1; const [board,prevBoard,prevSettled,tw]=await Promise.all([CHAIN.board(),prev>=0?CHAIN.board(prev):null,prev>=0?CHAIN.settled(prev):true,CHAIN.treasuryWeth()]);
   const all=CHAIN.tokens(); const [owed,feeTo,trTo]=await Promise.all([Promise.all(all.map(x=>CHAIN.platformOwed(x.addr).catch(()=>0))),CHAIN.feeRecipient().catch(()=>''),CHAIN.treasuryRecipient()]);
   const wl=w=>`<code>${shortAddr(w)}</code>`; const list=(rows,k)=>rows.slice(0,5).map((r,i)=>`<div class="flex justify-between text-xs"><span>#${i+1} ${wl(r.wallet)}</span><b>${k==='pnl'?(r.pnl>=0?'+':'-')+fmtUsd(Math.abs(r.pnl)):fmtUsd(r.fees)}</b></div>`).join('')||'<div class="text-xs text-text-muted">nobody qualified</div>';

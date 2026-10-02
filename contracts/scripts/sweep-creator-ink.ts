@@ -30,10 +30,15 @@ async function main() {
   // the public RPC is load-balanced: wait until a node shows the balance the payouts imply
   let wbal = 0n; for (let i = 0; i < 10; i++) { wbal = await retry(() => weth.balanceOf(me.address)); if (wbal > 0n) { await new Promise(r => setTimeout(r, 2000)); const again = await retry(() => weth.balanceOf(me.address)); if (again === wbal) break; wbal = again; } else await new Promise(r => setTimeout(r, 1500)); }
   if (wbal > 0n) { const rc = await (await weth.withdraw(wbal)).wait(); console.log("unwrapped", ethers.formatEther(wbal), "WETH tx", rc!.hash); }
-  if (wbal > 0n) {
-    const tx = await me.sendTransaction({ to: admin, value: wbal });
+  // forward everything above a small gas reserve (covers ETH unwrapped by an earlier run whose transfer failed)
+  await new Promise(r => setTimeout(r, 3000));
+  const reserve = ethers.parseEther("0.005");
+  let bal = 0n; for (let i = 0; i < 6; i++) { bal = await ethers.provider.getBalance(me.address); if (bal > reserve) break; await new Promise(r => setTimeout(r, 1500)); }
+  const send = bal > reserve ? bal - reserve : 0n;
+  if (send > 0n) {
+    const tx = await me.sendTransaction({ to: admin, value: send, gasLimit: 30000n });
     const rc = await tx.wait();
-    console.log("sent", ethers.formatEther(wbal), "ETH to admin tx", rc!.hash);
+    console.log("sent", ethers.formatEther(send), "ETH to admin tx", rc!.hash);
   } else console.log("nothing to send");
   console.log("deployer ETH left", ethers.formatEther(await ethers.provider.getBalance(me.address)));
 }

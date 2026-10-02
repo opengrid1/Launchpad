@@ -17,8 +17,27 @@ const STOCKS = (CFG.stocks || []).map(s => ({ ...s, address: s.address.toLowerCa
 const SYM = Object.fromEntries(STOCKS.map(s => [s.address, s.symbol]));
 SYM[WETH] = 'ETH';
 
-const provider = new ethers.JsonRpcProvider(RPC, { chainId: 57073, name: 'ink' }, { staticNetwork: true, batchMaxCount: 40, batchStallTime: 15 });
-const logsProvider = new ethers.JsonRpcProvider(LOGS_RPC, { chainId: 57073, name: 'ink' }, { staticNetwork: true, batchMaxCount: 1 });
+// Public RPCs rate-limit per IP; rotate through several on 429 / network errors and remember the one that answered.
+const RPCS = [...new Set([RPC, LOGS_RPC, ...(CFG.rpcs || ['https://ink.drpc.org'])])];
+class RotatingProvider extends ethers.JsonRpcProvider {
+  constructor(urls, opts) { super(urls[0], { chainId: 57073, name: 'ink' }, { staticNetwork: true, ...opts }); this.urls = urls; this.at = 0; }
+  async _send(payload) {
+    let lastErr; const body = JSON.stringify(payload);
+    for (let n = 0; n < this.urls.length; n++) {
+      const url = this.urls[(this.at + n) % this.urls.length];
+      try {
+        const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+        if (r.status === 429 || r.status >= 500) throw new Error('http ' + r.status);
+        const j = await r.json(); const arr = Array.isArray(j) ? j : [j];
+        if (arr.some(x => x && x.error && /limit|rate|too many/i.test(String(x.error.message)))) throw new Error('rate limited');
+        this.at = (this.at + n) % this.urls.length; return arr;
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('all RPCs failed');
+  }
+}
+const provider = new RotatingProvider(RPCS, { batchMaxCount: 40, batchStallTime: 15 });
+const logsProvider = new RotatingProvider([LOGS_RPC, ...RPCS.filter(u => u !== LOGS_RPC)], { batchMaxCount: 1 });
 const iface = Object.fromEntries(Object.entries(ABI).map(([k, v]) => [k, new ethers.Interface(v)]));
 const factory = new ethers.Contract(C.factory, ABI.InkypumpFactory, provider);
 const ledger = new ethers.Contract(C.ledger, ABI.InkypumpLedger, provider);
@@ -212,8 +231,9 @@ const api = {
   ready: null, tokens: () => tokens, token: a => byAddr[lower(a)], trades: async a => (await allTrades()).filter(t => !a || t.token === lower(a)), allTrades, tradePrice, ethUsd, pairUsd, routeFor, explorer: EXPLORER, symbolOf: a => SYM[lower(a)] || '', stocks: STOCKS, weth: WETH,
   stale: false,
   async load() {
-    if (loadSnapshot()) { api.stale = true; loadTokens().then(() => { api.stale = false; window.dispatchEvent(new CustomEvent('chain-update')); }).catch(e => console.warn('background refresh', e)); }
-    else await loadTokens();
+    const full = () => retry(loadTokens, 3);
+    if (loadSnapshot()) { api.stale = true; full().then(() => { api.stale = false; window.dispatchEvent(new CustomEvent('chain-update')); }).catch(e => console.warn('background refresh', e)); }
+    else await full();
     window.dispatchEvent(new CustomEvent('chain-ready')); return tokens; },
   async refresh(addr) { memo.trades = null; return addr ? refreshOne(addr) : loadTokens(); },
   holders, topTraders, quoteBuy, quoteSell, quoteBuyEth, quoteSellEth, feeBps: a => feeBps(byAddr[lower(a)]),
