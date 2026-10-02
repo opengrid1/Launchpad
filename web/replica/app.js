@@ -347,7 +347,7 @@ function initHome(){
 }
 
 /* ---------- boot ---------- */
-function syncTok(){ if(!window.CHAIN) return; TOK=CHAIN.tokens().filter(x=>!x.hidden||(W.connected&&W.address&&(x.creator===W.address.toLowerCase()||isAdmin()))); }
+function syncTok(){ if(!window.CHAIN) return; TOK=CHAIN.tokens().filter(x=>!x.hidden); }
 const reveal=()=>{ const p=document.getElementById('prehide'); if(p) p.remove(); };
 let chainError=null;
 async function boot(){
