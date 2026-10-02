@@ -104,16 +104,19 @@ function tradePrice(t) { const coin = Number(t.coin) / 1e18, pair = Number(t.pai
 
 // --------------------------------------------------------------- tokens
 let tokens = [], byAddr = {};
-const statics = {}; // per token: fields that never change after launch
+const statics = {}; // per token: fields that never change after launch (also kept in localStorage)
+const SKEY = 'inky:static:' + lower(C.factory), TKEY = 'inky:tokens:' + lower(C.factory);
+try { Object.assign(statics, LS.get(SKEY) || {}); } catch {}
 async function loadStatic(a) {
   const al = lower(a); if (statics[al]) return statics[al]; const c = coinOf(a);
   const [L, meta, name, symbol, basket, holderBps, creatorBps, pos] = await Promise.all([
     factory.listings(a), factory.metadataOf(a).catch(() => ''), c.name(), c.symbol(), c.basketAssets(), c.holderBps(), c.creatorBps(), factory.positions(a)]);
   const pair = lower(L.pair); const m = parseMeta(meta);
-  return statics[al] = { addr: al, n: name, t: symbol, c: '#ff4fa3', pair: SYM[pair] || 'ETH', pairAddr: pair, tokenIs0: al < pair, poolId: L.poolId, createdAt: Number(L.createdAt), creator: lower(L.creator),
+  const out = statics[al] = { addr: al, n: name, t: symbol, c: '#ff4fa3', pair: SYM[pair] || 'ETH', pairAddr: pair, tokenIs0: al < pair, poolId: L.poolId, createdAt: Number(L.createdAt), creator: lower(L.creator),
     basket: basket.map(b => SYM[lower(b)] || lower(b)), basketAddrs: basket.map(lower), holderBps: Number(holderBps), creatorBps: Number(creatorBps), rewards: Number(holderBps) > 0,
     img: m.image || '', desc: m.description || '', links: { web: m.website || m.web || '', x: m.x || m.twitter || '', tg: m.telegram || m.tg || '' },
     pos: { tickLower: Number(pos.tickLower), tickUpper: Number(pos.tickUpper), liquidity: pos.liquidity.toString() } };
+  LS.set(SKEY, statics); return out;
 }
 async function loadOne(a, trades) {
   const s = await loadStatic(a); const c = coinOf(a);
@@ -138,7 +141,15 @@ async function loadTokens() {
   const list = await Promise.all(addrs.map(a => loadOne(a, trades)));
   tokens = list; byAddr = Object.fromEntries(list.map(x => [x.addr, x]));
   await Promise.all(list.map(holderCount));
+  LS.set(TKEY, { t: Date.now(), eth: memo.ethusd ? memo.ethusd.v : 0, list });
   return list;
+}
+// serve the last snapshot first (instant paint), then refresh from the chain in the background
+function loadSnapshot() {
+  const s = LS.get(TKEY); if (!s || !Array.isArray(s.list) || !s.list.length) return false;
+  tokens = s.list.map(x => ({ ...x, age: ageStr(x.createdAt) })); byAddr = Object.fromEntries(tokens.map(x => [x.addr, x]));
+  if (s.eth > 0 && !memo.ethusd) memo.ethusd = { v: s.eth, t: Date.now() - 50_000 };
+  return true;
 }
 async function refreshOne(addr) {
   const trades = await allTrades(); const x = await loadOne(addr, trades); await holderCount(x);
@@ -199,7 +210,11 @@ async function quoteBuyEth(addr, ethIn) { const x = byAddr[lower(addr)]; if (!x)
 async function quoteSellEth(addr, coinIn) { const x = byAddr[lower(addr)]; if (!x) throw new Error('unknown token'); let out = await quoteSell(addr, coinIn); if (x.pairAddr !== WETH) { const [e, p] = await Promise.all([ethUsd(), pairUsd(x.pairAddr)]); out = out * BigInt(Math.round(p * 1e6)) / BigInt(Math.round(e * 1e6)); out -= out * 3n / 1000n; } return out; }
 const api = {
   ready: null, tokens: () => tokens, token: a => byAddr[lower(a)], trades: async a => (await allTrades()).filter(t => !a || t.token === lower(a)), allTrades, tradePrice, ethUsd, pairUsd, routeFor, explorer: EXPLORER, symbolOf: a => SYM[lower(a)] || '', stocks: STOCKS, weth: WETH,
-  async load() { await loadTokens(); window.dispatchEvent(new CustomEvent('chain-ready')); return tokens; },
+  stale: false,
+  async load() {
+    if (loadSnapshot()) { api.stale = true; loadTokens().then(() => { api.stale = false; window.dispatchEvent(new CustomEvent('chain-update')); }).catch(e => console.warn('background refresh', e)); }
+    else await loadTokens();
+    window.dispatchEvent(new CustomEvent('chain-ready')); return tokens; },
   async refresh(addr) { memo.trades = null; return addr ? refreshOne(addr) : loadTokens(); },
   holders, topTraders, quoteBuy, quoteSell, quoteBuyEth, quoteSellEth, feeBps: a => feeBps(byAddr[lower(a)]),
   // admin (the connected wallet must be the admin; the contracts enforce it)

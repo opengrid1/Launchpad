@@ -311,9 +311,11 @@ function openSwapSheet(side){ if(side!==window.swapSide) $('#flip').click(); con
   $('#m_cta',card).onclick=async()=>{ $('#amtIn').value=amt.value; await doSwap(); syncSheet(); }; syncSheet(); }
 
 /* ======================= HOME PAGE ======================= */
-function initHome(){
-  // stat cards
+function initHomeStats(){
   if(window.CHAIN&&LIVE){ CHAIN.allTrades().then(tr=>{ const set=(k,v)=>{ const c=$(`[data-home="${k}"] div.text-lg`); if(c) c.textContent=v; }; const all=TOK; const vis=new Set(TOK.map(x=>x.addr)); tr=tr.filter(t=>vis.has(t.token)); set('tokens',String(TOK.length)); set('traders',new Set(tr.map(t=>t.wallet)).size.toLocaleString()); set('volume',fmtUsd(all.reduce((s,x)=>s+x.volAll,0))); set('holders',fmtUsd(all.reduce((s,x)=>s+x.totalHolderRewards*x.pairUsd,0))); set('creators',fmtUsd(all.reduce((s,x)=>s+x.totalCreatorFees*x.pairUsd,0))); const ath=Math.max(0,...tr.map(t=>{ const x=CHAIN.token(t.token); return x?CHAIN.tradePrice(t)*x.pairUsd*SUPPLY:0; }),...all.map(x=>x.mc)); set('ath',fmtUsd(ath)); }).catch(()=>{}); }
+}
+function initHome(){
+  initHomeStats();
   // "New" chips
   const nc=$('#newchips'); if(nc){ const tpl=$('[data-tpl="chip"]',nc); tpl.remove(); [...TOK].sort((a,b)=>b.createdAt-a.createdAt).slice(0,8).forEach(x=>{ const c=tpl.cloneNode(true); c.removeAttribute('data-tpl'); setAv($('.bg-avatar-gradient',c),x.img,x.t[0]); $('.block.truncate',c).textContent=x.t; c.querySelector('button').onclick=()=>go(tokenUrl(x)); nc.appendChild(c); }); if(!TOK.length){ const bar=nc.closest('div.border-b')||nc.parentElement; if(bar) bar.style.display='none'; } }
   // stock stack in the hero paragraph
@@ -343,15 +345,17 @@ function initHome(){
   $$('[data-dd="assets"]').forEach(b=>{ b.dataset.menu='1'; b.onclick=()=>{ if($('.o-menu')) return $$('.o-menu').forEach(m=>m.remove()); const opts=[['all','All assets'],['ETH','ETH pairs'],...STOCKS.map(s=>[s[0],s[0]+' pairs & baskets'])]; menu(b,'<div class="h">Paired / reward asset</div>'+opts.map(o=>`<button class="i${o[0]===asset?' on':''}" data-o="${o[0]}">${o[1]}</button>`).join('')); $$('.o-menu [data-o]').forEach(m=>m.onclick=()=>{ asset=m.dataset.o; $$('[data-dd="assets"] span.truncate').forEach(s=>s.textContent=m.textContent); $$('.o-menu').forEach(x=>x.remove()); shown=12; render(); }); }; });
   const lm=$('#loadmore'); if(lm) lm.onclick=()=>{ shown+=12; render(); };
   const fb=$('#feed'), main=$('main'); const sync=()=>{ const stuck=fb.getBoundingClientRect().top<=main.getBoundingClientRect().top+1 && main.scrollTop>40; fb.style.backgroundColor=stuck?'var(--color-bg-card)':''; fb.style.borderBottom=stuck?'1px solid var(--color-border-default)':''; main.style.setProperty('--feed-sticky-top',fb.offsetHeight+'px'); }; main.addEventListener('scroll',sync,{passive:true}); addEventListener('resize',sync); sync();
+  window.homeRender=()=>{ syncTok(); render(); };
   if(LIVE&&window.CHAIN) setInterval(async()=>{ if(document.hidden) return; try{ await CHAIN.refresh(); syncTok(); render(); }catch{} },15000);
 }
+window.addEventListener('chain-update',()=>{ if(window.homeRender){ homeRender(); if($('#rows')) initHomeStats(); } if(X&&typeof tickNow==='function') tickNow(); });
 
 /* ---------- boot ---------- */
 function syncTok(){ if(!window.CHAIN) return; TOK=CHAIN.tokens().filter(x=>!x.hidden); }
 const reveal=()=>{ const p=document.getElementById('prehide'); if(p) p.remove(); };
 let chainError=null;
 async function boot(){
-  if(LIVE&&window.CHAIN&&CHAIN.ready){ try{ const t=await Promise.race([CHAIN.ready,sleep(30000).then(()=>null)]); if(!t) throw new Error('timeout'); ETH=await CHAIN.ethUsd(); syncTok(); const cur=tokenFromUrl(); if(cur&&CHAIN.token(cur)){ const trades=await CHAIN.trades(cur); CHAIN.token(cur)._trades=trades; } }catch(e){ chainError=e; console.error('chain',e); } }
+  if(LIVE&&window.CHAIN&&CHAIN.ready){ try{ const t=await Promise.race([CHAIN.ready,sleep(30000).then(()=>null)]); if(!t) throw new Error('timeout'); ETH=await CHAIN.ethUsd(); syncTok(); const cur=tokenFromUrl(); if(cur&&CHAIN.token(cur)&&!CHAIN.stale){ const trades=await CHAIN.trades(cur); CHAIN.token(cur)._trades=trades; } }catch(e){ chainError=e; console.error('chain',e); } }
   try{ initHeader(); initHistory(); initGeneric(); if($('#tb')) initToken(); if($('#rows')) initHome(); document.dispatchEvent(new Event('data-ready')); } finally { reveal(); }
   if(chainError){ const m=$('main'); if(m) m.insertAdjacentHTML('afterbegin',`<div class="mx-auto mt-4 w-full max-w-[1600px] px-4 sm:px-8"><div class="flex items-center justify-between gap-3 rounded-2xl border border-warning/30 bg-warning-soft px-4 py-3 text-[13px] text-text-primary"><span>Could not reach Ink right now. Live data is paused.</span><button class="h-8 shrink-0 rounded-full bg-accent px-3 text-xs font-semibold text-accent-ink" onclick="location.reload()">Retry</button></div></div>`); }
 }
