@@ -361,7 +361,7 @@ mnav = root.select_one('nav.h-14'); mnav['id'] = 'mnav'
 root.append(frag('<div id="layer"></div>'))
 
 open(OUT + '/token.html', 'w').write(page_shell(root, 'Mogcat $0.000927 | Inkypump', 'MOGCAT on Ink: price, chart, trades, holders and stock rewards.',
-    '<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>'))
+    '<script src="charting_library/charting_library.standalone.js"></script><script src="tv.js"></script><script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>'))
 print('token.html ok')
 
 # =====================================================================

@@ -18,7 +18,7 @@ const { chromium } = require('playwright');
   await p.click('#seg [data-side="sell"]'); console.log('sell filter rows visible', await p.evaluate(()=>[...document.querySelectorAll('#tb tr')].filter(r=>r.style.display!=='none').every(r=>r.dataset.k==='sell')));
   await p.click('#loadmore button'); console.log('rows after load more', (await p.$$('#tb tr')).length);
   await p.click('#warn button'); console.log('warn expanded', await p.getAttribute('#warn button','aria-expanded'));
-  await p.click('#tfBtn'); console.log('tf menu', (await p.$$('.o-menu [data-tf]')).length); await p.click('.o-menu [data-tf="5m"]'); console.log('tf now', await p.textContent('#tfBtn'));
+  console.log('tradingview iframe', !!await p.$('#tv iframe'));
   await p.click('header .relative.flex.h-9.shrink-0.items-stretch button'); await p.waitForTimeout(100); console.log('wallet menu', (await p.$$('.o-menu [data-act]')).length);
   await p.close();
   // mobile token flows

@@ -184,6 +184,7 @@ function rank(i,small){ const n=i+1; if(i<3){ const col=['warning','text-seconda
 let series, candles=[], vols=[], chart;
 function initChart(){
   const tv=$('#tv'); if(!tv) return;
+  if(window.TradingView&&window.initTV){ tv.id='tv'; window.tvActive=true; initTV('tv'); setInterval(()=>{ if(typeof price==='number') tvTick(price); },2500); return; }
   tv.innerHTML=`<div class="tv"><div class="tb"><button class="b" id="tfBtn">1h</button><span class="sep"></span><button class="b" title="Candles">${ic('candle')}</button><span class="sep"></span><button class="b dim">${ic('ind')}Indicators</button><span class="sep"></span><button class="b on" data-ccy="USD">USD</button><span class="sl">/</span><button class="b dim" data-ccy="ETH">ETH</button><span class="sep"></span><button class="b dim" data-mode="mc">MarketCap</button><span class="sl">/</span><button class="b on" data-mode="px">Price</button><span class="sep hm"></span><button class="b hm" title="Fullscreen" id="fsBtn">${ic('max')}</button><button class="b dim hm" title="Undo">${ic('undo')}</button><button class="b dim hm" title="Redo">${ic('redo')}</button><span class="sp"></span><button class="b hm" title="Chart settings">${ic('settings')}</button><button class="b hm" title="Screenshot">${ic('camera')}</button></div>
   <div class="rail">${['crosshair','line','fib','shapes','pen','text','smile','ruler','zoom','magnet','lock','eye','trash'].map(n=>`<button title="${n}">${ic(n)}</button>`).join('')}</div>
   <div class="area"><div class="lg" id="lg"></div><div id="tvc"></div><div class="tvlogo"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h8v3H9v9H6V9H4zM13 6h3l2 6 2-6h3l-3.5 12h-3z"/></svg></div></div>
@@ -210,7 +211,7 @@ function initChart(){
 }
 function legend(d){ const lg=$('#lg'); if(!lg||!d) return; const ch=(d.close-d.open)/d.open*100; const f=v=>window.chartCcy==='ETH'?fmtPrice(v/ETH):fmtPrice(v); const v=vols.find(x=>x.time===d.time); const cls=ch>=0?'u':'d';
   lg.innerHTML=`<span>MOGCAT/ETH · ${$('#tfBtn')?$('#tfBtn').textContent:'1h'} · Inkypump</span><span class="o">O</span><span class="${cls}">${f(d.open)}</span><span class="o">H</span><span class="${cls}">${f(d.high)}</span><span class="o">L</span><span class="${cls}">${f(d.low)}</span><span class="o">C</span><span class="${cls}">${f(d.close)}</span> <span class="${cls}">${(ch>=0?'+':'')+(d.close-d.open>=0?'':'')}${f(Math.abs(d.close-d.open))} (${ch>=0?'+':'−'}${Math.abs(ch).toFixed(2)}%)</span><span class="vol">Volume <b>${v?fmtAmt(v.value):'—'}</b></span><span class="col">${ic('up','size-3')}</span>`; }
-function chartTick(px){ if(!series) return; const last=candles[candles.length-1]; last.close=px; last.high=Math.max(last.high,px); last.low=Math.min(last.low,px); series.update(last); legend(last); }
+function chartTick(px){ if(window.tvActive){ tvTick(px); return; } if(!series) return; const last=candles[candles.length-1]; last.close=px; last.high=Math.max(last.high,px); last.low=Math.min(last.low,px); series.update(last); legend(last); }
 
 /* ---------- swap card ---------- */
 function initSwap(){

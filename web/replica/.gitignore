@@ -3,3 +3,4 @@ o1.css
 shots/
 !pages/*.html
 !ref/*.html
+!charting_library/**
