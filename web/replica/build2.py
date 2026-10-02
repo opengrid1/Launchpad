@@ -220,7 +220,7 @@ strongs[0].insert_after(' Tokens launched here cannot mint more supply, pause or
 settext(strongs[1], 'DYOR!')
 
 # --- hero
-av = hero.select_one('span.bg-avatar-gradient'); av['id'] = 'hAv'; av.select_one('span').string = 'M'; av.append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/t-MOGCAT.png">'))
+av = hero.select_one('span.bg-avatar-gradient'); av['id'] = 'hAv'; av.select_one('span').string = 'M'; av.append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/t-default.png">'))
 settext(byexact(hero, 'BLUE CHIP', 'h1'), 'Mogcat')
 for n in hero.find_all(string=lambda s: s and s.strip() == 'BLUECHIP'): n.replace_with('MOGCAT')
 for n in hero.find_all(string=lambda s: s and s.strip() == '0xb200…4a01'): n.replace_with('0x7b26…4593')
@@ -325,7 +325,7 @@ for n in card.find_all(string=lambda s: s and s.strip() == 'Base'): n.replace_wi
 for n in card.find_all(string=lambda s: s and s.strip() == 'BLUECHIP'): n.replace_with('MOGCAT')
 avs = card.select('span.bg-avatar-gradient')
 avs[0].select_one('span').string = 'E'; avs[0]['data-av'] = 'in'; avs[0].append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/eth.png">'))
-avs[1].select_one('span').string = 'M'; avs[1]['data-av'] = 'out'; avs[1].append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/t-MOGCAT.png">'))
+avs[1].select_one('span').string = 'M'; avs[1]['data-av'] = 'out'; avs[1].append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/t-default.png">'))
 ins = card.select('input')
 ins[0]['id'] = 'amtIn'; ins[0]['placeholder'] = '0'; ins[0]['inputmode'] = 'decimal'; ins[0]['autocomplete'] = 'off'
 ins[1]['id'] = 'amtOut'; ins[1]['placeholder'] = '0'; ins[1]['readonly'] = ''
