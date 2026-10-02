@@ -284,4 +284,6 @@ function initHome(){
 }
 
 /* ---------- boot ---------- */
-document.addEventListener('DOMContentLoaded',()=>{ initHeader(); initHistory(); initGeneric(); if($('#tb')) initToken(); if($('#rows')) initHome(); });
+const reveal=()=>{ const p=document.getElementById('prehide'); if(p) p.remove(); };
+document.addEventListener('DOMContentLoaded',()=>{ try{ initHeader(); initHistory(); initGeneric(); if($('#tb')) initToken(); if($('#rows')) initHome(); } finally { reveal(); } });
+setTimeout(reveal,1500);

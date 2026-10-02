@@ -25,6 +25,7 @@ OVERRIDE = '''
 '''
 open(OUT + '/o1.css', 'w').write(css + OVERRIDE)
 
+PRELAUNCH = True  # no sample numbers in the markup; app.js reveals the page once the empty states are in place
 HEAD = '''<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0c11">
 <link rel="icon" href="img/favicon.ico" sizes="any"><link rel="icon" type="image/svg+xml" href="img/favicon.svg"><link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <meta property="og:site_name" content="Inkypump"><meta property="og:type" content="website"><meta property="og:image" content="https://inkypump.fun/img/og.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://inkypump.fun/img/og.png">
@@ -181,11 +182,11 @@ def mark_active(root, label):
 def page_shell(root, title, desc, extra_head=''):
     return '''<!doctype html>
 <html lang="en" translate="no" dir="ltr">
-<head><title>%s</title><meta name="description" content="%s">%s%s</head>
+<head><title>%s</title><meta name="description" content="%s">%s%s%s</head>
 <body data-dynamic-theme="dark" data-dynamic-theme-brand="bold">
 %s
 <script src="config.js"></script><script src="data.js"></script><script src="i18n.js"></script><script src="app.js"></script><script src="wallet.js" defer></script>
-</body></html>''' % (title, desc, HEAD, extra_head, str(root))
+</body></html>''' % (title, desc, HEAD, extra_head, '<style id="prehide">main{visibility:hidden}</style>' if PRELAUNCH else '', str(root))
 
 # =====================================================================
 # TOKEN PAGE
@@ -409,7 +410,7 @@ p.append(' '); p.append(stack)
 acts = main.select_one('div.mt-7')
 ab = acts.select('button'); ab[0]['data-href'] = 'launch.html'; ab[1]['data-href'] = '#feed'
 cards = main.select('div.rounded-2xl.bg-bg-input.px-4.py-3')
-vals = [('1,284', 'Tokens launched', 'Tokens launched through the factory'), ('18.6K', 'Traders', 'Wallets with at least one trade'), ('$41.2M', 'Lifetime volume', 'All trades, both sides'), ('$206K', 'Paid to holders', 'Holder rewards paid out in stocks'), ('$288K', 'Paid to creators', 'Creator share of fees'), ('$2.41M', 'Highest market cap', 'Highest market cap reached by a token')]
+vals = [('0' if PRELAUNCH else '1,284', 'Tokens launched', 'Tokens launched through the factory'), ('0' if PRELAUNCH else '18.6K', 'Traders', 'Wallets with at least one trade'), ('$0' if PRELAUNCH else '$41.2M', 'Lifetime volume', 'All trades, both sides'), ('$0' if PRELAUNCH else '$206K', 'Paid to holders', 'Holder rewards paid out in stocks'), ('$0' if PRELAUNCH else '$288K', 'Paid to creators', 'Creator share of fees'), ('$0' if PRELAUNCH else '$2.41M', 'Highest market cap', 'Highest market cap reached by a token')]
 for c, (v, l, tip) in zip(cards, vals):
     settext(c.select_one('div.text-lg'), v); settext(c.select_one('div.mt-0\\.5 span'), l); c.select_one('span.cursor-help')['title'] = tip
 trend = main.select_one('div.rounded-\\[20px\\].bg-bg-input'); trend['id'] = 'trend'
