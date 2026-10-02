@@ -1,15 +1,23 @@
 const { chromium } = require('playwright'); const fs=require('fs');
 (async()=>{ const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--proxy-server='+process.env.HTTPS_PROXY,'--ignore-certificate-errors']});
  const p=await b.newPage({viewport:{width:1200,height:630},deviceScaleFactor:1});
- const logo=fs.readFileSync('img/logo.svg','utf8'), mark=fs.readFileSync('img/mark.svg','utf8');
- const font='<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&display=swap">';
- const shot=async(html,w,h,file,bg)=>{ await p.setViewportSize({width:w,height:h}); await p.setContent(`<!doctype html><html><head>${font}<style>html,body{margin:0;background:${bg||'transparent'};width:${w}px;height:${h}px;overflow:hidden}</style></head><body>${html}</body></html>`); await p.evaluate(()=>document.fonts.ready); await p.waitForTimeout(400); await p.screenshot({path:file,omitBackground:!bg}); };
- const sized=(svg,s)=>svg.replace('width="64" height="64"',`width="${s}" height="${s}"`);
- await shot(sized(logo,512),512,512,'img/logo-512.png');
- await shot(sized(logo,180),180,180,'img/apple-touch-icon.png');
- await shot(sized(logo,32),32,32,'img/favicon-32.png');
- await shot(sized(logo,192),192,192,'img/icon-192.png');
- await shot(`<div style="display:flex;align-items:center;gap:22px;height:120px;padding:0 24px;font-family:Geist,sans-serif">${sized(logo,96)}<div style="font-size:66px;font-weight:700;letter-spacing:-2px;color:#f3f5f9;line-height:1">Inky<span style="color:#ff4fa3">pump</span></div></div>`,560,120,'img/wordmark-dark.png','#0e1117');
- await shot(`<div style="display:flex;align-items:center;gap:22px;height:120px;padding:0 24px;font-family:Geist,sans-serif">${sized(logo,96)}<div style="font-size:66px;font-weight:700;letter-spacing:-2px;color:#0e1117;line-height:1">Inky<span style="color:#ff4fa3">pump</span></div></div>`,560,120,'img/wordmark-light.png','#ffffff');
- await shot(`<div style="position:relative;width:1200px;height:630px;background:#0e1117;font-family:Geist,sans-serif;color:#f3f5f9;overflow:hidden"><div style="position:absolute;right:-140px;top:-160px;width:720px;height:720px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,79,163,.22),rgba(255,79,163,0))"></div><div style="position:absolute;left:80px;top:96px;display:flex;align-items:center;gap:26px">${sized(logo,112)}<div style="font-size:78px;font-weight:700;letter-spacing:-2.5px;line-height:1">Inky<span style="color:#ff4fa3">pump</span></div></div><div style="position:absolute;left:80px;top:284px;font-size:54px;font-weight:600;letter-spacing:-1.5px;line-height:1.12;max-width:900px">Memecoins on Ink that pay holders in stocks.</div><div style="position:absolute;left:80px;top:444px;font-size:28px;color:#c3c9d6;font-weight:500">Uniswap V4 · liquidity locked forever · 2% fee shared with holders</div><div style="position:absolute;left:80px;bottom:56px;display:flex;align-items:center;gap:12px;font-size:24px;color:#7c8498;font-weight:500"><img src="http://127.0.0.1:8767/img/ink.png" style="width:30px;height:30px;border-radius:50%">Built on Ink, Kraken's L2 · inkypump.fun</div></div>`,1200,630,'img/og.png','#0e1117');
+ const logo=fs.readFileSync('img/logo.svg','utf8'), head=fs.readFileSync('img/favicon.svg','utf8'); const ink='data:image/png;base64,'+fs.readFileSync('img/ink.png').toString('base64');
+ const font='<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Titan+One&family=Geist:wght@500;600&display=swap">';
+ const shot=async(html,w,h,file,bg)=>{ await p.setViewportSize({width:w,height:h}); await p.setContent(`<!doctype html><html><head>${font}<style>html,body{margin:0;background:${bg||'transparent'};width:${w}px;height:${h}px;overflow:hidden}</style></head><body>${html}</body></html>`); await p.evaluate(()=>document.fonts.ready); await p.waitForTimeout(500); await p.screenshot({path:file,omitBackground:!bg}); };
+ const sz=(svg,s)=>svg.replace(/width="\d+" height="\d+"/,`width="${s}" height="${s}"`);
+ await shot(sz(logo,512),512,512,'img/logo-512.png');
+ await shot(sz(logo,192),192,192,'img/icon-192.png');
+ await shot(`<div style="background:#ff4fa3;width:180px;height:180px;display:grid;place-items:center">${sz(head,150)}</div>`,180,180,'img/apple-touch-icon.png','#ff4fa3');
+ await shot(sz(head,32),32,32,'img/favicon-32.png');
+ await shot(sz(head,64),64,64,'img/favicon-64.png');
+ const wm=(fg,bg)=>`<div style="display:flex;align-items:center;gap:14px;height:140px;padding:0 24px"><div style="width:120px;height:120px">${sz(logo,120)}</div><div style="font:400 78px 'Titan One';color:${fg};line-height:1;letter-spacing:-1px;padding-top:6px">inkypump</div></div>`;
+ await shot(wm('#f3f5f9'),600,140,'img/wordmark-dark.png','#0e1117');
+ await shot(wm('#14121a'),600,140,'img/wordmark-light.png','#ffffff');
+ await shot(`<div style="position:relative;width:1200px;height:630px;background:#0e1117;color:#f3f5f9;font-family:Geist;overflow:hidden">
+   <div style="position:absolute;left:70px;top:95px;width:440px;height:440px">${sz(logo,440)}</div>
+   <div style="position:absolute;left:560px;top:150px;font:400 108px 'Titan One';line-height:1;letter-spacing:-2px">inkypump</div>
+   <div style="position:absolute;left:566px;top:290px;font:600 34px Geist;line-height:1.25;color:#f3f5f9;width:560px">Memecoins on Ink that pay holders in stocks.</div>
+   <div style="position:absolute;left:566px;top:392px;font:500 22px Geist;color:#c3c9d6;width:560px;line-height:1.5">Liquidity locked forever. 2% fee on every trade: creator, holders in NVDAx / SPYx / TSLAx, and a 3-day trader prize pool.</div>
+   <div style="position:absolute;left:566px;top:520px;display:flex;align-items:center;gap:10px;font:500 20px Geist;color:#7c8498"><img src="${ink}" style="width:26px;height:26px;border-radius:50%">Built on Ink · inkypump.fun</div>
+ </div>`,1200,630,'img/og.png','#0e1117');
  await b.close(); })();

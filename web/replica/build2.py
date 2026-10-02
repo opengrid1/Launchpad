@@ -26,7 +26,7 @@ OVERRIDE = '''
 open(OUT + '/o1.css', 'w').write(css + OVERRIDE)
 
 HEAD = '''<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0c11">
-<link rel="icon" href="img/favicon.ico" sizes="any"><link rel="icon" type="image/svg+xml" href="img/logo.svg"><link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="icon" href="img/favicon.ico" sizes="any"><link rel="icon" type="image/svg+xml" href="img/favicon.svg"><link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <meta property="og:site_name" content="Inkypump"><meta property="og:type" content="website"><meta property="og:image" content="https://inkypump.fun/img/og.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://inkypump.fun/img/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
