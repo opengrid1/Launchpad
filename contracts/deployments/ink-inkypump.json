@@ -109,5 +109,10 @@
     ]
   },
   "basketRoute": "WETH -(1%)-> USDG -(usdgPoolFee)-> stock, Uniswap V3",
-  "deployedAt": "2026-10-02T15:59:23.277Z"
+  "deployedAt": "2026-10-02T15:59:23.277Z",
+  "smoke": {
+    "token": "0x5c1138FA782f7165A3be4C950cC0f32C6b70D08E",
+    "devBuy": "500000000000000",
+    "note": "INKT smoke coin"
+  }
 }
