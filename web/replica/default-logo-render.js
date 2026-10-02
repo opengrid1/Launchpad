@@ -1,0 +1,10 @@
+const { chromium } = require('playwright'); const fs=require('fs');
+(async()=>{ const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--proxy-server='+process.env.HTTPS_PROXY,'--ignore-certificate-errors']});
+ const p=await b.newPage({viewport:{width:512,height:512}});
+ const svg=fs.readFileSync('t-default.svg','utf8'); const sz=s=>svg.replace('width="256" height="256"',`width="${s}" height="${s}"`);
+ const font='<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Titan+One&family=Geist:wght@500;700&display=swap">';
+ const shot=async(html,w,h,file)=>{ await p.setViewportSize({width:w,height:h}); await p.setContent(`<!doctype html><html><head>${font}<style>html,body{margin:0;background:#0e1117;width:${w}px;height:${h}px;overflow:hidden}</style></head><body>${html}</body></html>`); await p.evaluate(()=>document.fonts.ready); await p.waitForTimeout(500); await p.screenshot({path:file}); };
+ await shot(sz(512),512,512,'../site2/img/t-default.png');
+ const av=(s,r)=>`<span style="display:inline-block;width:${s}px;height:${s}px;border-radius:${r}px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(243,245,249,.1)">${sz(s)}</span>`;
+ await shot(`<div style="display:flex;align-items:flex-end;gap:18px;padding:30px;font:500 13px Geist;color:#7c8498">${av(24,6)}${av(36,6)}${av(44,8)}${av(64,10)}${av(172,16)}<div style="display:flex;align-items:center;gap:10px;border:1px solid #1e2430;border-radius:12px;padding:10px 14px">${av(36,6)}<span><b style="color:#f3f5f9;font-size:14px;font-weight:700">Wen Lambo</b> WEN<br>Liq $4.1K · Vol 24h $12K</span></div></div>`,900,240,'sheet3.png');
+ await b.close(); })();
