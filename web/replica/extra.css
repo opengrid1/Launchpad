@@ -59,15 +59,16 @@
 .o-dialog .x{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;color:var(--color-text-muted);cursor:pointer}
 .o-dialog .x:hover{background:var(--color-bg-elevated);color:var(--color-text-primary)}
 .o-dialog .x svg{width:16px;height:16px}
-.o-dialog .db{padding:0 12px 12px;overflow:auto;animation:dialogContentIn .16s ease-out .08s both}
-.o-dialog .opt{display:flex;align-items:center;gap:12px;width:100%;height:56px;padding:0 12px;border-radius:14px;cursor:pointer;color:var(--color-text-primary);font-size:14px;font-weight:600;text-align:left}
-.o-dialog .opt:hover{background:var(--color-bg-input)}
-.o-dialog .opt .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;flex:none}
-.o-dialog .opt small{display:block;margin-top:2px;font-size:12px;font-weight:500;color:var(--color-text-muted)}
-.o-dialog .opt .r{margin-left:auto;font-size:12px;font-weight:500;color:var(--color-text-muted)}
-.o-dialog .opt.on{background:color-mix(in oklab,var(--color-accent) 12%,transparent)}
-.o-dialog .foot{padding:10px 16px 14px;border-top:1px solid var(--color-border-default);font-size:12px;line-height:1.6;color:var(--color-text-muted);text-align:center}
-.o-dialog .foot a{color:var(--color-text-primary);font-weight:500}
+.o-dialog .db,.o-sheet .db{padding:0 12px 12px;overflow:auto;animation:dialogContentIn .16s ease-out .08s both}
+.o-sheet.search .sb{padding:0;display:flex;flex-direction:column;min-height:0}.o-sheet.search .db{flex:1}
+.o-dialog .opt,.o-sheet .opt{display:flex;align-items:center;gap:12px;width:100%;height:56px;padding:0 12px;border-radius:14px;cursor:pointer;color:var(--color-text-primary);font-size:14px;font-weight:600;text-align:left}
+.o-dialog .opt:hover,.o-sheet .opt:hover{background:var(--color-bg-input)}
+.o-dialog .opt .ic,.o-sheet .opt .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;flex:none}
+.o-dialog .opt small,.o-sheet .opt small{display:block;margin-top:2px;font-size:12px;font-weight:500;color:var(--color-text-muted)}
+.o-dialog .opt .r,.o-sheet .opt .r{margin-left:auto;font-size:12px;font-weight:500;color:var(--color-text-muted)}
+.o-dialog .opt.on,.o-sheet .opt.on{background:color-mix(in oklab,var(--color-accent) 12%,transparent)}
+.o-dialog .foot,.o-sheet .foot{padding:10px 16px 14px;border-top:1px solid var(--color-border-default);font-size:12px;line-height:1.6;color:var(--color-text-muted);text-align:center}
+.o-dialog .foot a,.o-sheet .foot a{color:var(--color-text-primary);font-weight:500}
 .o-search{display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-bottom:1px solid var(--color-border-default)}
 .o-search input{flex:1;min-width:0;background:none;border:0;outline:0;font-size:15px;color:var(--color-text-primary)}
 .o-search input::placeholder{color:var(--color-text-muted)}
