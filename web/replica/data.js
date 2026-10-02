@@ -53,3 +53,7 @@ const ageStr=a=>a.endsWith('m')?a+' ago':a.endsWith('h')?a+' ago':a==='1d'?'yest
 const ageMin=a=>{const n=parseInt(a); return a.endsWith('m')?n:a.endsWith('h')?n*60:n*1440;};
 
 const STOCK_IMG=s=>'img/s-'+s+'.png'; const INK_IMG='img/ink.png', ETH_IMG='img/eth.png';
+
+/* pre-launch: no sample data anywhere */
+const PRE=!!(window.INKY&&window.INKY.prelaunch);
+if(PRE){ TOK.length=0; LB_PNL.length=0; LB_VOL.length=0; }

@@ -200,8 +200,8 @@ header button[aria-label^="Language"] svg.lucide-chevron-down{transition:transfo
 .o-empty .ic svg{width:22px;height:22px;stroke-width:1.8}
 .o-empty h2{margin-top:18px;font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--color-text-primary)}
 .o-empty p{margin-top:10px;max-width:520px;font-size:15px;line-height:1.55;color:var(--color-text-secondary)}
-.o-empty button{margin-top:22px;height:40px;padding:0 24px;border-radius:999px;background:var(--color-accent);color:var(--color-accent-ink);font-size:16px;font-weight:700;cursor:pointer}
-.o-empty button:hover{background:var(--color-accent-hover)}
+.o-empty button,.o-empty .o-btn{margin-top:22px;height:40px;padding:0 24px;border-radius:999px;background:var(--color-accent);color:var(--color-accent-ink);font-size:16px;font-weight:700;cursor:pointer}
+.o-empty button:hover,.o-empty .o-btn:hover{background:var(--color-accent-hover)}
 @media (max-width:767px){.o-empty{margin-top:31px;padding:38px 20px 40px}}
 /* ===== Launch form, measured from the reference create page (1440 desktop / 390 phone) ===== */
 .lf-h1{font-size:32px;font-weight:700;line-height:1.1;letter-spacing:-.02em;color:var(--color-text-primary)}
@@ -379,3 +379,11 @@ h1 .hero-inky{width:74px;height:auto;flex:none;margin-left:-6px;filter:drop-shad
 .lb-how-card p{margin-top:5px;font-size:13px;line-height:1.55;color:var(--color-text-secondary)}
 @media (max-width:1023px){.lb-how-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:639px){.lb-how-hero{gap:14px;padding:16px}.lb-how-inky{width:88px}.lb-how-txt h2{font-size:19px}.lb-how-txt p{font-size:13px}.lb-how-grid{grid-template-columns:minmax(0,1fr);gap:10px}}
+
+/* pre-launch empty states */
+.o-empty.sm{margin:0;padding:34px 18px}
+.o-empty.sm .ic{width:42px;height:42px}.o-empty.sm .ic svg{width:20px;height:20px}
+.o-empty.sm h2{font-size:16px;margin-top:12px}.o-empty.sm p{font-size:13px;max-width:360px}
+.o-empty.sm .o-btn{height:36px;font-size:13px;padding:0 16px;margin-top:14px;display:inline-flex;align-items:center;text-decoration:none}
+.o-feed-empty{padding:12px 0 24px}
+.o-feed-empty .o-empty{max-width:none}
