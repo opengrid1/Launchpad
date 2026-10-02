@@ -3,7 +3,7 @@
 import re, copy, os
 from bs4 import BeautifulSoup, NavigableString
 
-REF = 'ref/'
+REF = '../ref/'
 OUT = '.'
 
 # ---------- stylesheet ----------
@@ -26,6 +26,8 @@ OVERRIDE = '''
 open(OUT + '/o1.css', 'w').write(css + OVERRIDE)
 
 HEAD = '''<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0c11">
+<link rel="icon" href="img/favicon.ico" sizes="any"><link rel="icon" type="image/svg+xml" href="img/logo.svg"><link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<meta property="og:site_name" content="Inkypump"><meta property="og:type" content="website"><meta property="og:image" content="https://inkypump.fun/img/og.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://inkypump.fun/img/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="o1.css"><link rel="stylesheet" href="extra.css">'''
@@ -117,7 +119,7 @@ def frag(html):
 def appendall(el, html):
     for c in list(BeautifulSoup(html, 'html.parser').contents): el.append(c)
 
-BRAND_ICON = '<span class="flex size-[26px] shrink-0 items-center justify-center rounded-lg bg-accent text-accent-ink"><svg width="15" height="15" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 8.5h8M3.5 5.5h5M5 2.5h2"/></svg></span>'
+BRAND_ICON = '<img src="img/logo.svg" alt="Inkypump" width="26" height="26" class="size-[26px] shrink-0 rounded-lg">'
 INK_BADGE = '<img alt="Ink" class="size-full object-cover" src="img/ink.png">'
 
 def common_clean(root):
@@ -129,6 +131,8 @@ def common_clean(root):
     # brand
     img = root.select_one('img[alt="o1"]')
     if img: img.replace_with(frag(BRAND_ICON))
+    for sp in root.select('button[aria-label="Launchpad"] span.max-sm\\:hidden'):
+        sp.string = 'Inkypump'
     # avatar images: drop, keep the letter
     for img in root.select('img.object-cover'):
         if 'size-full' in img.get('class', []) and img.parent.name == 'span' and 'size-3' in img.parent.get('class', []):
@@ -137,6 +141,8 @@ def common_clean(root):
             img.decompose()
     for img in root.select('img'):
         cls = ' '.join(img.get('class', []))
+        if img.get('src', '').startswith('img/'):
+            continue
         if 'rounded-full' in cls:
             img.replace_with(frag('<img alt="Ink" class="%s" src="img/ink.png">' % cls))
         else:
