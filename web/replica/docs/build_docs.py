@@ -77,6 +77,7 @@ L = 'launchpad'; D = 'developers'
 PAGES = [
  # ---------------- Launchpad tab
  dict(tab=L, group='Overview', slug='introduction', title='Introduction', desc='Launch a fixed-supply memecoin on Ink with liquidity locked forever and a 2% fee that pays the creator, the holders and the platform on every trade.', body=[
+  warn('<strong>Coming soon.</strong> The Inkypump contracts are not deployed yet. Launching, trading and claiming open the day they go live on Ink; until then the app shows empty states and the launch form does not send a transaction.'),
   p('Inkypump turns a token idea into a live Uniswap V4 market on Ink in one transaction. You choose the name, the asset it is paired with (ETH or a tokenized stock), and whether holders share the trading fees. The factory does the rest and keeps the liquidity forever.'),
   note('Every number below is a fixed rule of the contracts. Nothing here can change after a coin launches.'),
   cards(2,
