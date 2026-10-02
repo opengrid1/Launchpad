@@ -118,7 +118,7 @@ def appendall(el, html):
     for c in list(BeautifulSoup(html, 'html.parser').contents): el.append(c)
 
 BRAND_ICON = '<span class="flex size-[26px] shrink-0 items-center justify-center rounded-lg bg-accent text-accent-ink"><svg width="15" height="15" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 8.5h8M3.5 5.5h5M5 2.5h2"/></svg></span>'
-INK_BADGE = '<span class="flex size-full items-center justify-center rounded-full" style="background:#7c3aed"><svg width="7" height="7" viewBox="0 0 10 10" fill="#fff"><circle cx="5" cy="5" r="2.2"/></svg></span>'
+INK_BADGE = '<img alt="Ink" class="size-full object-cover" src="img/ink.png">'
 
 def common_clean(root):
     for t in root.select('script, style, noscript, iframe'): t.decompose()
@@ -138,7 +138,7 @@ def common_clean(root):
     for img in root.select('img'):
         cls = ' '.join(img.get('class', []))
         if 'rounded-full' in cls:
-            img.replace_with(frag('<span class="%s inline-flex items-center justify-center" style="background:#7c3aed;color:#fff;font:700 7px/1 var(--font-mono);letter-spacing:.02em">INK</span>' % cls))
+            img.replace_with(frag('<img alt="Ink" class="%s" src="img/ink.png">' % cls))
         else:
             img.decompose()
 
@@ -214,7 +214,7 @@ strongs[0].insert_after(' Tokens launched here cannot mint more supply, pause or
 settext(strongs[1], 'DYOR!')
 
 # --- hero
-av = hero.select_one('span.bg-avatar-gradient'); av['id'] = 'hAv'; av.select_one('span').string = 'M'
+av = hero.select_one('span.bg-avatar-gradient'); av['id'] = 'hAv'; av.select_one('span').string = 'M'; av.append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/t-MOGCAT.png">'))
 settext(byexact(hero, 'BLUE CHIP', 'h1'), 'Mogcat')
 for n in hero.find_all(string=lambda s: s and s.strip() == 'BLUECHIP'): n.replace_with('MOGCAT')
 for n in hero.find_all(string=lambda s: s and s.strip() == '0xb200…4a01'): n.replace_with('0x7b26…4593')
@@ -222,7 +222,7 @@ for b in hero.select('button[aria-label="Copy token address"]'): b['data-copy'] 
 for b in hero.select('button[aria-label="Copy token referral link"]'): b['data-copy'] = 'https://ethpad-mock.vercel.app/token.html?ref=0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'; b['data-toast'] = 'Referral link copied'
 tags = hero.select_one('div.flex.flex-wrap')
 pair_tag = tags.select('span.cursor-help')[0]
-pair_av = pair_tag.select_one('span.bg-avatar-gradient'); pair_av['style'] = 'background:#627eea'; pair_av.select_one('span').string = 'Ξ'
+pair_av = pair_tag.select_one('span.bg-avatar-gradient'); pair_av.select_one('span').string = 'E'; pair_av.append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/eth.png">'))
 for n in pair_tag.find_all(string=lambda s: s and s.strip() == 'NVDA'): n.replace_with('ETH')
 pair_tag['title'] = 'Paired asset: ETH on Uniswap V4'
 tags['id'] = 'tags'
@@ -318,8 +318,8 @@ card = swap.select_one('div.rounded-\\[20px\\]'); card['id'] = 'swapcard'
 for n in card.find_all(string=lambda s: s and s.strip() == 'Base'): n.replace_with('Ink')
 for n in card.find_all(string=lambda s: s and s.strip() == 'BLUECHIP'): n.replace_with('MOGCAT')
 avs = card.select('span.bg-avatar-gradient')
-avs[0]['style'] = 'background:#627eea'; avs[0].select_one('span').string = 'Ξ'; avs[0]['data-av'] = 'in'
-avs[1]['style'] = 'background:#f2a93b'; avs[1].select_one('span').string = 'M'; avs[1]['data-av'] = 'out'
+avs[0].select_one('span').string = 'E'; avs[0]['data-av'] = 'in'; avs[0].append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/eth.png">'))
+avs[1].select_one('span').string = 'M'; avs[1]['data-av'] = 'out'; avs[1].append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/t-MOGCAT.png">'))
 ins = card.select('input')
 ins[0]['id'] = 'amtIn'; ins[0]['placeholder'] = '0'; ins[0]['inputmode'] = 'decimal'; ins[0]['autocomplete'] = 'off'
 ins[1]['id'] = 'amtOut'; ins[1]['placeholder'] = '0'; ins[1]['readonly'] = ''
@@ -400,7 +400,7 @@ for it in items[1:]: it.decompose()
 stack['aria-label'] = 'Reward stocks'; stack['id'] = 'stack'
 items[0]['data-tpl'] = 'stk'
 ic = items[0].select_one('span.block'); ic.clear()
-ic.append(frag('<span class="flex size-6 items-center justify-center rounded-full bg-bg-card font-mono text-[10px] font-bold text-white ring-2 ring-bg-primary" data-f="av">N</span>'))
+ic.append(frag('<img alt="" class="size-6 rounded-full bg-bg-card object-cover ring-2 ring-bg-primary" data-f="av" src="img/s-NVDAx.png">'))
 p.append(' '); p.append(stack); p.append(' and the top five traders split the fee pool every 3 days.')
 acts = main.select_one('div.mt-7')
 ab = acts.select('button'); ab[0]['data-href'] = 'launch.html'; ab[1]['data-href'] = '#feed'

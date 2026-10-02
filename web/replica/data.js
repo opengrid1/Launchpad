@@ -42,7 +42,7 @@ const TOK=[
  {n:'Sigma',t:'SIGMA',c:'#d9b8ff',mc:142000,age:'1h',c5:6.7,c1:22.0,c24:22.0,vol:220000,liq:33000,h:255,tx:860},
  {n:'Normie',t:'NORMIE',c:'#ffe0a3',mc:3980000,age:'5d',c5:0.1,c1:0.8,c24:-2.2,vol:2100000,liq:390000,h:7820,tx:5120},
 ];
-TOK.forEach(x=>{x.px=x.mc/SUPPLY; x.basket=BASKETS[x.t]||['SPYx']; x.rew24=x.vol*0.005; x.cre24=x.vol*0.007;});
+TOK.forEach(x=>{x.img='img/t-'+x.t+'.png'; x.px=x.mc/SUPPLY; x.basket=BASKETS[x.t]||['SPYx']; x.rew24=x.vol*0.005; x.cre24=x.vol*0.007;});
 const stockChips=(b,sm)=>b.map(s=>{const st=STOCKS.find(x=>x[0]===s); return `<span class="sc${sm?' sm':''}" style="--c:${st[2]}">${s}</span>`;}).join('');
 
 /* extra data for the replica */
@@ -51,3 +51,5 @@ const STOCK_NAME=Object.fromEntries(STOCKS.map(s=>[s[0],s[1]]));
 const ME='0x5DdD…4A0b', ME_FULL='0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b';
 const ageStr=a=>a.endsWith('m')?a+' ago':a.endsWith('h')?a+' ago':a==='1d'?'yesterday':a+' ago';
 const ageMin=a=>{const n=parseInt(a); return a.endsWith('m')?n:a.endsWith('h')?n*60:n*1440;};
+
+const STOCK_IMG=s=>'img/s-'+s+'.png'; const INK_IMG='img/ink.png', ETH_IMG='img/eth.png';
