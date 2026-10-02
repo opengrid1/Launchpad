@@ -122,5 +122,21 @@
     "creator": "0xA27f7f839E5c692b4E442057F8012c52f8D041bD",
     "name": "Inkypump.fun",
     "symbol": "INKY"
-  }
+  },
+  "launches": [
+    {
+      "token": "0xB1BF86d693c986956cF91000F49901f3F12274AA",
+      "name": "Ink Inu",
+      "symbol": "INU",
+      "launchTx": "0x2859f385c9692b4d62ccc05b3b09db2729e195a3e0ad8d35c535c593db8c5f7e",
+      "block": 57466148,
+      "creator": "0xA27f7f839E5c692b4E442057F8012c52f8D041bD",
+      "pair": "ETH",
+      "basket": [
+        "NVDAx",
+        "SPYx"
+      ],
+      "rewards": true
+    }
+  ]
 }
