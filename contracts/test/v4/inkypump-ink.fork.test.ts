@@ -61,11 +61,13 @@ async function deployAll(admin: any) {
   return { hook, factory, router, ledger, payout, treasury, foreign, deployer };
 }
 
-async function launch(factory: any, creator: any, ethIn = 0n, basket: string[] = [], meta = '{"description":"ink fork test"}') {
+async function launch(factory: any, creator: any, ethIn = 0n, basket: string[] = [], meta = '{"description":"ink fork test"}', holderRewards = true, pair = WETH) {
   const n = Number(await factory.totalTokens());
-  await (await factory.connect(creator).launch({ name: "Gorb", symbol: "GORB", metadataURI: meta, pair: WETH, minPairOut: 0, basket }, nextSalt(), NO_ROUTE, { value: ethIn })).wait();
+  const route = pair === WETH ? NO_ROUTE : routeFor(pair);
+  await (await factory.connect(creator).launch({ name: "Gorb", symbol: "GORB", metadataURI: meta, pair, minPairOut: 0, basket, holderRewards }, nextSalt(), route, { value: ethIn })).wait();
   return ethers.getContractAt("InkypumpToken", await factory.allTokens(n));
 }
+const usd8 = (wei: bigint, px: bigint) => (wei * px) / 10n ** 18n;
 
 async function pastSnipe() {
   await network.provider.send("evm_increaseTime", [30]);
@@ -161,8 +163,8 @@ describe("Inkypump on Ink (mainnet fork)", function () {
     expect(pos.units).to.eq(await coin.balanceOf(trader.address));
     expect(pos.basis).to.eq(E("0.1"));
     let st = await ledger.stats(epoch, trader.address);
-    expect(st.fees).to.eq(E("0.1") * TAX_BPS / 10_000n);
-    expect(st.volume).to.eq(E("0.1"));
+    expect(st.fees).to.eq(usd8(E("0.1") * TAX_BPS / 10_000n, ETH_USD_8));
+    expect(st.volume).to.eq(usd8(E("0.1"), ETH_USD_8));
     expect(st.trades).to.eq(1n);
 
     // sell half through a FOREIGN router with empty hook data: attributed by tx.origin
@@ -179,9 +181,11 @@ describe("Inkypump on Ink (mainnet fork)", function () {
     expect(pos.basis).to.be.closeTo(E("0.05"), 2n); // half the basis left (floor rounding)
     st = await ledger.stats(epoch, trader.address);
     expect(st.trades).to.eq(2n);
-    expect(st.pnl).to.be.closeTo(received - E("0.05"), 2n); // realized = net proceeds - basis of the half
-    expect(st.volume).to.eq(E("0.1") + received);
-    console.log("      trader pnl this epoch:", ethers.formatEther(st.pnl), "ETH | fees paid:", ethers.formatEther(st.fees));
+    // stats are USD (8 dp) at the factory's ETH price: realized = net proceeds - basis of the half
+    const pnlUsd = ((received - E("0.05")) * ETH_USD_8) / 10n ** 18n;
+    expect(st.pnl).to.be.closeTo(pnlUsd, 10n);
+    expect(st.volume).to.be.closeTo(usd8(E("0.1"), ETH_USD_8) + usd8(received, ETH_USD_8), 2n);
+    console.log("      trader pnl this epoch: $" + (Number(st.pnl) / 1e8).toFixed(2), "| fees paid: $" + (Number(st.fees) / 1e8).toFixed(2));
   });
 
   it("ledger: coins received by transfer realize nothing when sold (no fake profit on a fresh wallet)", async () => {
@@ -236,6 +240,80 @@ describe("Inkypump on Ink (mainnet fork)", function () {
     expect(await payout.claimable(w1.address)).to.eq(0n);
     // unpaid tiers (the empty slots) stay in the pool for the next epoch
     expect(await payout.available()).to.eq(pool - ((half * 8000n) / 10_000n) - ((half * 4000n) / 10_000n) + 0n - 0n);
+  });
+
+  it("stock pair: a coin paired with wNVDAx; ETH first buy and trades route through USDG; fees and rewards are in wNVDAx; claim as ETH; the leaderboard counts it in USD", async () => {
+    const [admin, creator, trader] = await ethers.getSigners();
+    const { factory, router, ledger } = await deployAll(admin);
+    const nvda = await ethers.getContractAt(ERC20, NVDA);
+    const coin = await launch(factory, creator, E("0.05"), [], '{"description":"nvda pair"}', true, NVDA);
+    const coinAddr = await coin.getAddress();
+    expect(await coin.pairAsset()).to.eq(NVDA);
+    expect(await coin.rewardToken()).to.eq(NVDA);
+    expect(await coin.balanceOf(creator.address)).to.be.gt(0n); // ETH -> USDG -> wNVDAx -> coin, in the launch tx
+    const listing = await factory.listings(coinAddr);
+    expect(listing.pair).to.eq(NVDA);
+    await pastSnipe();
+
+    const epoch = await ledger.currentEpoch();
+    await (await router.connect(trader).buy(coinAddr, routeFor(NVDA), 0, { value: E("0.2") })).wait();
+    const got = await coin.balanceOf(trader.address);
+    expect(got).to.be.gt(0n);
+    const pos = await ledger.positions(trader.address, coinAddr);
+    expect(pos.units).to.eq(got);
+    expect(pos.basis).to.be.gt(0n); // in wNVDAx wei
+    const st = await ledger.stats(epoch, trader.address);
+    expect(st.trades).to.eq(1n);
+    expect(st.volume).to.be.gt(0n); // USD, priced from the factory's wNVDAx price
+    const nvdaUsd = await factory.pairUsdPrice(NVDA);
+    expect(st.volume).to.eq(usd8(pos.basis, nvdaUsd));
+
+    await (await coin.connect(trader).approve(await router.getAddress(), got)).wait();
+    const e0 = await ethers.provider.getBalance(trader.address);
+    const rc = await (await router.connect(trader).sell(coinAddr, got / 2n, routeFor(NVDA), 0)).wait();
+    expect((await ethers.provider.getBalance(trader.address)) + rc!.gasUsed * rc!.gasPrice).to.be.gt(e0); // ETH came back
+
+    // fees landed in the coin as wNVDAx; the holder claims wNVDAx, then the creator takes their share
+    const pending = await coin.pendingRewards(trader.address);
+    expect(pending).to.be.gt(0n);
+    const n0 = await nvda.balanceOf(trader.address);
+    await (await coin.connect(trader).claimRewards()).wait();
+    expect((await nvda.balanceOf(trader.address)) - n0).to.eq(pending);
+    const c0 = await nvda.balanceOf(creator.address);
+    await (await coin.payCreator()).wait();
+    expect((await nvda.balanceOf(creator.address)) - c0).to.be.gt(0n);
+    // and a holder can take rewards as ETH along the same route, backwards
+    await (await router.connect(trader).buy(coinAddr, routeFor(NVDA), 0, { value: E("0.1") })).wait();
+    await (await coin.connect(trader).approve(await router.getAddress(), ethers.MaxUint256)).wait();
+    await (await router.connect(trader).sell(coinAddr, (await coin.balanceOf(trader.address)) / 4n, routeFor(NVDA), 0)).wait();
+    expect(await coin.pendingRewards(trader.address)).to.be.gt(0n);
+    const e1 = await ethers.provider.getBalance(trader.address);
+    const rc2 = await (await coin.connect(trader).claimRewardsAsEth(0, routeFor(NVDA))).wait();
+    expect((await ethers.provider.getBalance(trader.address)) + rc2!.gasUsed * rc2!.gasPrice).to.be.gt(e1);
+    console.log("      wNVDAx pair: trader volume $" + (Number(st.volume) / 1e8).toFixed(2), "| holder claim", ethers.formatEther(pending), "wNVDAx");
+  });
+
+  it("holder rewards off: no basket allowed, the holder share goes to the creator (1.2%), holders earn nothing, platform unchanged", async () => {
+    const [admin, creator, trader] = await ethers.getSigners();
+    const { factory, router } = await deployAll(admin);
+    await expect(launch(factory, creator, 0n, [NVDA], '{}', false)).to.be.revertedWithCustomError(factory, "InvalidParams"); // basket needs rewards
+    const coin = await launch(factory, creator, 0n, [], '{}', false);
+    const coinAddr = await coin.getAddress();
+    expect(await coin.holderBps()).to.eq(0n);
+    expect(await coin.creatorBps()).to.eq(CREATOR_BPS + HOLDER_BPS);
+    expect(await coin.basketAssets()).to.deep.eq([]);
+    await pastSnipe();
+    await (await router.connect(trader).buy(coinAddr, NO_ROUTE, 0, { value: E("0.1") })).wait();
+    const got = await coin.balanceOf(trader.address);
+    await (await coin.connect(trader).approve(await router.getAddress(), got)).wait();
+    await (await router.connect(trader).sell(coinAddr, got / 2n, NO_ROUTE, 0)).wait();
+    const h = await coin.totalHolderRewards(), c = await coin.totalCreatorFees(), p = await coin.totalPlatformFees();
+    expect(h).to.eq(0n);
+    expect(await coin.pendingRewards(trader.address)).to.eq(0n);
+    const total = c + p;
+    expect((c * 10_000n) / total).to.be.within(5999n, 6001n); // 0.7 + 0.5 = 1.2% of the 2%
+    expect((p * 10_000n) / total).to.be.within(3999n, 4001n); // platform still 0.8%
+    await expect(coin.connect(trader).claimRewardsAsBasket(NO_ROUTE, [], [])).to.be.revertedWithCustomError(coin, "NoBasket");
   });
 
   it("admin: pause/resume, hide, metadata override, fee recipient, collect liquidity any time; the coin itself has no owner", async () => {

@@ -40,7 +40,9 @@ interface IAggregatorV3 {
 ///         start cap, priced from the pair's Chainlink feed when one is set
 ///         and from the admin's USD price otherwise. Trading starts in the
 ///         same block; the InkypumpHook takes a FIXED fee on every swap. No
-///         function changes a coin's fee after launch.
+///         function changes a coin's fee after launch. The creator decides at
+///         launch whether holders share the fee (optionally paid as a stock
+///         basket) or the whole creator-plus-holder share is theirs.
 ///
 ///         The creator's optional first buy is paid in plain ETH whatever the
 ///         pair: the router turns it into the stock along the supplied route
@@ -125,11 +127,15 @@ contract InkypumpFactory is ReentrancyGuard, IUnlockCallback {
         uint256 minPairOut;
         /// @dev Optional reward basket: up to 4 approved stocks (not WETH), no
         ///      repeats. Holders may claim their rewards as equal shares of it.
-        ///      Fixed in the coin forever.
+        ///      Fixed in the coin forever. Needs `holderRewards`.
         address[] basket;
+        /// @dev Whether holders earn a share of every trade fee. When off the
+        ///      holder share goes to the creator instead and no basket is allowed.
+        ///      Fixed in the coin forever.
+        bool holderRewards;
     }
 
-    event Launched(address indexed token, address indexed creator, address indexed pair, uint16 taxBps, bytes32 poolId, uint256 pairUsdPrice8);
+    event Launched(address indexed token, address indexed creator, address indexed pair, uint16 taxBps, bytes32 poolId, uint256 pairUsdPrice8, bool holderRewards);
     event HiddenSet(address indexed token, bool hidden);
     event CoinMetadataSet(address indexed token, string uri);
     event DevBought(address indexed token, address indexed creator, uint256 ethIn, uint256 pairIn, uint256 coinOut);
@@ -290,6 +296,7 @@ contract InkypumpFactory is ReentrancyGuard, IUnlockCallback {
         QuoteAsset memory q = quoteAssets[pair];
         if (!q.approved) revert QuoteNotApproved();
         uint256 pairUsd8 = pairUsdPrice(pair);
+        if (!p.holderRewards && p.basket.length != 0) revert InvalidParams();
         _checkBasket(p.basket);
 
         if (converter == address(0)) revert InvalidParams();
@@ -306,8 +313,8 @@ contract InkypumpFactory is ReentrancyGuard, IUnlockCallback {
                 poolManager: address(poolManager),
                 hook: address(hook),
                 converter: converter,
-                creatorBps: CREATOR_BPS,
-                holderBps: HOLDER_BPS,
+                creatorBps: p.holderRewards ? CREATOR_BPS : CREATOR_BPS + HOLDER_BPS,
+                holderBps: p.holderRewards ? HOLDER_BPS : 0,
                 basket: p.basket
             })
         );
@@ -330,7 +337,7 @@ contract InkypumpFactory is ReentrancyGuard, IUnlockCallback {
         listings[token] = Listing({creator: msg.sender, pair: pair, taxBps: TAX_BPS, createdAt: uint64(block.timestamp), poolId: poolId});
         allTokens.push(token);
 
-        emit Launched(token, msg.sender, pair, TAX_BPS, poolId, pairUsd8);
+        emit Launched(token, msg.sender, pair, TAX_BPS, poolId, pairUsd8, p.holderRewards);
     }
 
     function _checkBasket(address[] calldata basket) internal view {

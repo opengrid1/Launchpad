@@ -16,8 +16,18 @@ pragma solidity 0.8.26;
 ///         without any transfer accounting in the coin.
 ///
 ///         Stats are kept per 3-day epoch: realized profit, fees paid and
-///         volume, in the pair asset. Only WETH-paired coins feed the stats
-///         so every number is in the same unit.
+///         volume, converted to USD (8 decimals) at the pair's price in the
+///         factory, so coins paired with ETH and coins paired with a stock
+///         rank on the same board. A pair with no price (never, for an
+///         approved pair) keeps the position but adds nothing to the stats.
+interface IHookFactory {
+    function factory() external view returns (address);
+}
+
+interface IFactoryPrice {
+    function pairUsdPrice(address pair) external view returns (uint256);
+}
+
 contract InkypumpLedger {
     uint256 public constant EPOCH = 3 days;
 
@@ -71,6 +81,14 @@ contract InkypumpLedger {
         return genesis + (epoch + 1) * EPOCH;
     }
 
+    /// @notice USD per whole pair token (8 dp) from the factory; zero when unknown.
+    function pairUsd8(address pair) public view returns (uint256) {
+        address f;
+        try IHookFactory(hook).factory() returns (address a) { f = a; } catch { return 0; }
+        if (f == address(0)) return 0;
+        try IFactoryPrice(f).pairUsdPrice(pair) returns (uint256 px) { return px; } catch { return 0; }
+    }
+
     /// @notice Hook only. `pairAmount` is what the wallet paid (buy, fee
     ///         included) or received (sell, fee deducted) in the pair asset.
     function record(address wallet, address token, address pair, bool isBuy, uint256 coinAmount, uint256 pairAmount, uint256 fee) external {
@@ -93,14 +111,17 @@ contract InkypumpLedger {
             }
         }
         uint256 epoch = currentEpoch();
-        if (pair == weth) {
+        uint256 px = pairUsd8(pair);
+        if (px != 0) {
+            int256 pnlUsd = (realized * int256(px)) / 1e18;
+            uint256 feeUsd = (fee * px) / 1e18;
             Stat storage s = stats[epoch][wallet];
-            s.pnl += int128(realized);
-            s.fees += uint128(fee);
-            s.volume += uint128(pairAmount);
+            s.pnl += int128(pnlUsd);
+            s.fees += uint128(feeUsd);
+            s.volume += uint128((pairAmount * px) / 1e18);
             s.trades += 1;
-            lifetimePnl[wallet] += realized;
-            lifetimeFees[wallet] += fee;
+            lifetimePnl[wallet] += pnlUsd;
+            lifetimeFees[wallet] += feeUsd;
         }
         emit Trade(wallet, token, epoch, isBuy, coinAmount, pairAmount, fee, realized);
     }
