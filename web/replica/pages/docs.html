@@ -9,22 +9,23 @@
     <article class="docs-prose">
       <h1 id="overview">Memecoins that pay you in stocks</h1>
       <p class="lede">Inkypump is a launchpad on Ink, Kraken's L2, built on Uniswap V4. Every coin launches with its liquidity locked forever, and every trade pays its holders in tokenized stocks (Nvidia, S&amp;P 500, Tesla, Apple and more) chosen by the creator at launch.</p>
-      <p>Fixed for every token: 1,000,000,000 supply, all of it in a Uniswap V4 pool paired with ETH, liquidity that can never be withdrawn, and a 2% fee taken in ETH on every trade. Gas on Ink is about $0.001 per trade.</p>
+      <p>Fixed for every token: 1,000,000,000 supply, all of it in a Uniswap V4 pool paired with the asset the creator chooses (ETH or any wrapped xStock), liquidity that can never be withdrawn, and a 2% fee taken in that paired asset on every trade. Gas on Ink is about $0.001 per trade.</p>
 
       <h2 id="launch">How a launch works</h2>
       <div class="docs-flow">
-        <div><small>1 · one tx</small><b>Deploy</b>The creator picks a name, ticker, logo and a basket of up to four stocks, then deploys. Token and pool are created together.</div>
+        <div><small>1 · one tx</small><b>Deploy</b>The creator picks a name, ticker, logo, the paired asset (ETH or a stock), and whether holders share the fees, with an optional basket of up to four stocks. Token and pool are created together.</div>
         <div><small>2 · same second</small><b>Live</b>The coin is on the dashboard and tradable on Uniswap, aggregators and bots.</div>
-        <div><small>3 · every trade</small><b>Fees flow</b>2% in ETH: 0.7% to the creator, 0.5% swapped into the basket for holders, 0.8% to the platform.</div>
+        <div><small>3 · every trade</small><b>Fees flow</b>2% in the paired asset: 0.7% to the creator, 0.5% to holders (or to the creator when holder rewards are off), 0.8% to the platform.</div>
         <div><small>4 · any time</small><b>Claim</b>Holders claim their stocks whenever they like, or claim as ETH instead.</div>
       </div>
       <p>Launching costs gas only. The creator may make a first buy of up to 0.5 ETH inside the launch transaction at the floor price; it is the only buy allowed in the launch block and is shown publicly on the token page.</p>
 
       <h2 id="rewards">Stock rewards</h2>
-      <p>At launch the creator picks a <strong>basket</strong>: one to four of the wrapped Backed xStocks that have liquidity on Ink. Today that list is NVDAx, SPYx, QQQx, TSLAx, AAPLx, MSTRx, SPCXx (SpaceX), PLTRx and NFLXx, 9 of the 14 official wrapped xStocks on Ink. The other 5 (GOOGLx, METAx, MSFTx, MCDx, PALLx) are added the moment they get a pool.</p>
+      <p>Holder rewards are the creator's choice at launch and cannot change afterwards. <strong>On</strong>: 0.5% of every trade goes to holders. <strong>Off</strong>: that 0.5% goes to the creator, who then earns 1.2% of every trade; the token page shows which it is. The platform's 0.8% is the same either way.</p>
+      <p>With rewards on, the creator picks a <strong>basket</strong>: one to four of the wrapped Backed xStocks that have liquidity on Ink. Today that list is NVDAx, SPYx, QQQx, TSLAx, AAPLx, MSTRx, SPCXx (SpaceX), PLTRx and NFLXx, 9 of the 14 official wrapped xStocks on Ink. The other 5 (GOOGLx, METAx, MSFTx, MCDx, PALLx) are added the moment they get a pool.</p>
       <ul>
-        <li>On every trade, 0.5% of the ETH is credited to holders pro-rata to their balance at that moment. The credit is tracked per holder inside the token's reward accounting.</li>
-        <li>When you claim, the ETH is swapped into the basket (equal weights) through Uniswap on Ink and sent to your wallet as the stock tokens themselves.</li>
+        <li>On every trade, 0.5% of the paired asset is credited to holders pro-rata to their balance at that moment. The credit is tracked per holder inside the token's reward accounting.</li>
+        <li>When you claim, it is swapped into the basket (equal weights) through Uniswap on Ink and sent to your wallet as the stock tokens themselves. A coin paired with a stock and launched without a basket pays holders in that stock directly.</li>
         <li>You keep earning as long as you hold. Selling stops future credit but never takes away what you already earned. Rewards do not expire.</li>
         <li>Pools, routers and the platform are excluded from rewards; only real holders earn.</li>
       </ul>
@@ -34,7 +35,7 @@
       <h2 id="claim">Claiming</h2>
       <ul>
         <li><strong>Claim basket</strong>: receive the stocks. One transaction per coin, or “Claim all” from Profile.</li>
-        <li><strong>Claim as ETH</strong>: skip the swap and take the ETH.</li>
+        <li><strong>Claim as ETH</strong>: skip the basket and take ETH instead, whatever the coin is paired with.</li>
         <li>Minimum per claim is $1 to keep swaps sensible; smaller amounts keep accruing.</li>
         <li>Wrapped xStocks can be unwrapped and withdrawn to Kraken by eligible users; see Backed's terms. They also trade on Uniswap on Ink against USDG.</li>
       </ul>
@@ -42,28 +43,29 @@
       <h2 id="board">Trader leaderboard</h2>
       <p>0.1% of every trade, taken from the platform's share, goes into a prize pool. Every 3 days the pool is split evenly across two boards and the <strong>top 5 on each board</strong> are paid in ETH.</p>
       <table class="docs-table"><thead><tr><th>Board</th><th>Ranked by</th><th>Why it can't be gamed</th></tr></thead><tbody>
-        <tr><td>PnL</td><td>Realized profit in ETH for the epoch, from average cost basis</td><td>Wash trades realize zero profit minus fees</td></tr>
-        <tr><td>Volume</td><td>Fees paid (volume × 2%)</td><td>Washing costs 2% to compete for a share of a far smaller pool</td></tr></tbody></table>
-      <p>Per board: 1st 40%, 2nd 25%, 3rd 15%, 4th 12%, 5th 8%. Example: at $1M of daily volume the 3-day pool is about $3,000, so first place on a board takes about $600. Payouts are claimable from Profile and never expire. A minimum of 0.05 ETH volume in the epoch is required to rank.</p>
+        <tr><td>PnL</td><td>Realized profit in USD for the epoch, from average cost basis</td><td>Wash trades realize zero profit minus fees</td></tr>
+        <tr><td>Volume</td><td>Fees paid in USD (volume × 2%)</td><td>Washing costs 2% to compete for a share of a far smaller pool</td></tr></tbody></table>
+      <p>Per board: 1st 40%, 2nd 25%, 3rd 15%, 4th 12%, 5th 8%. Example: at $1M of daily volume the 3-day pool is about $3,000, so first place on a board takes about $600. Payouts are claimable from Profile and never expire. A minimum of $100 of volume in the epoch is required to rank. Trades on coins paired with a stock count the same as trades on ETH-paired coins; everything is converted to USD at the pair's price.</p>
       <p><strong>Every trade counts, wherever it happens.</strong> The pool's hook records the wallet that signed each swap (through this site, Uniswap, an aggregator or a trading bot) and keeps that wallet's average cost basis and realized profit on-chain. Profit is realized only on tokens the same wallet bought, so moving coins to a new wallet before selling does not create profit out of nothing. Smart-contract wallets are attributed by the address passed in the swap's hook data when available.</p>
 
       <h2 id="trade">Trading</h2>
-      <p>Every coin is an ordinary Uniswap V4 pool paired with ETH on Ink. Trade it here, on Uniswap, through aggregators, or in any bot that supports V4 on Ink. The 2% fee is applied by the pool's hook, so it is the same wherever you trade; holder rewards accrue and your leaderboard PnL is recorded regardless of where the trade happened.</p>
+      <p>Every coin is an ordinary Uniswap V4 pool on Ink, paired with ETH or with a wrapped xStock. Trade it here in plain ETH whatever the pair (the router walks the stock route for you), on Uniswap, through aggregators, or in any bot that supports V4 on Ink. The 2% fee is applied by the pool's hook, so it is the same wherever you trade; holder rewards accrue and your leaderboard PnL is recorded regardless of where the trade happened.</p>
       <p>Launch protection: in the launch block only the creator's first buy is allowed; for the first 20 seconds the total fee falls linearly from 90% to 2%, so sniping bots pay the holders.</p>
 
       <h2 id="fees">Fees</h2>
       <table class="docs-table"><thead><tr><th>Fee</th><th>Rate</th><th>Goes to</th></tr></thead><tbody>
         <tr><td>Launch</td><td class="mono">0</td><td>gas only</td></tr>
-        <tr><td>Trading · creator</td><td class="mono">0.70%</td><td>the token's creator, claimable any time in ETH</td></tr>
-        <tr><td>Trading · holders</td><td class="mono">0.50%</td><td>holders, paid in the coin's stock basket</td></tr>
+        <tr><td>Trading · creator</td><td class="mono">0.70%</td><td>the token's creator, claimable any time; 1.20% when holder rewards are off</td></tr>
+        <tr><td>Trading · holders</td><td class="mono">0.50%</td><td>holders, paid in the coin's stock basket; 0 when the creator turned rewards off</td></tr>
         <tr><td>Trading · platform</td><td class="mono">0.80%</td><td>the platform; an eighth of this funds the trader leaderboard</td></tr>
         <tr><td>Claim</td><td class="mono">0</td><td>gas only; the swap into stocks pays Uniswap's pool fee</td></tr></tbody></table>
 
       <h2 id="creators">For creators</h2>
       <ul>
-        <li>0.7% of every trade, forever, claimable any time in ETH.</li>
+        <li>0.7% of every trade, forever, claimable any time. Turn holder rewards off at launch and it is 1.2%.</li>
+        <li>Pair your coin with ETH or with a stock: a Tesla coin that trades against TSLAx is priced in Tesla.</li>
         <li>The basket is your coin's identity: a Tesla coin that pays TSLAx, a “Mag 7” coin that pays four stocks. Choose it to match the meme.</li>
-        <li>Logo, description and links can be edited after launch. Name, ticker, supply and basket cannot.</li>
+        <li>Logo, description and links can be edited after launch. Name, ticker, supply, paired asset, the rewards switch and the basket cannot.</li>
         <li>No dev allocation beyond your optional, public first buy.</li>
       </ul>
 
