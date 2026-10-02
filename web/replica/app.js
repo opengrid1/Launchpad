@@ -258,7 +258,7 @@ function initSwap(){
   $$('[data-av]').forEach(a=>{ if(a.dataset.av==='out') setAv(a,X.img,X.t[0]); else setAv(a,ETH_IMG,'E'); });
   $$('#assetOut .text-\\[16px\\]').forEach(n=>n.textContent=X.t);
   amt.addEventListener('input',()=>updSwap());
-  $$('[data-q]').forEach(b=>b.onclick=()=>{ if(!W.connected) return openConnect(); const max=window.swapSide==='buy'?Math.max(0,balEth-0.0003):balCoin; const q=b.dataset.q; const v=q==='MAX'?max:max*parseInt(q)/100; amt.value=window.swapSide==='buy'?String(+v.toFixed(6)):String(Math.floor(v)); updSwap(); });
+  $$('[data-q]').forEach(b=>b.onclick=()=>{ if(!W.connected) return openConnect(); const max=window.swapSide==='buy'?Math.max(0,balEth-0.002):balCoin; const q=b.dataset.q; const v=q==='MAX'?max:max*parseInt(q)/100; amt.value=window.swapSide==='buy'?String(+v.toFixed(6)):String(Math.floor(v)); updSwap(); });
   $('#flip').onclick=()=>{ window.swapSide=window.swapSide==='buy'?'sell':'buy'; const a=$('#assetIn'),b=$('#assetOut'); const av1=$('[data-av]',a), av2=$('[data-av]',b); const n1=$('.text-\\[16px\\]',a), n2=$('.text-\\[16px\\]',b);
     if(window.swapSide==='sell'){ setAv(av1,X.img,X.t[0]); setAv(av2,ETH_IMG,'E'); n1.textContent=X.t; n2.textContent='ETH'; } else { setAv(av1,ETH_IMG,'E'); setAv(av2,X.img,X.t[0]); n1.textContent='ETH'; n2.textContent=X.t; }
     amt.value=''; $('#amtOut').value=''; paintBal(); renderWallet(); updSwap(); };
