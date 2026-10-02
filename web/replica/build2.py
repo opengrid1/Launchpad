@@ -389,11 +389,11 @@ stack = p.select_one('span[role=list]')
 p.clear()
 def under(text, tip):
     s = copy.copy(u[0]); s.string = text; s['title'] = tip; return s
-p.append('Give your community something to call its own. Launch a ')
-p.append(under('memecoin', 'A fixed-supply ERC-20 with no owner, no mint and no tax'))
-p.append(' on Ink with permanently locked ')
-p.append(under('Uniswap V4', 'Single-sided liquidity position, locked forever'))
-p.append(' liquidity. Every trade pays holders in ')
+p.append('Give your community something to call its own. Launch ')
+p.append(under('memecoins', 'Fixed-supply ERC-20s with no owner, no mint and no tax'))
+p.append(' on ')
+p.append(under('Ink', "Kraken's L2: 1-second blocks, fees under a cent, Uniswap V4 pools"))
+p.append(' that pay holders in ')
 p.append(under('stocks', 'Wrapped xStocks on Ink, chosen by the creator at launch'))
 items = stack.select('span[role=listitem]')
 for it in items[1:]: it.decompose()
@@ -401,7 +401,7 @@ stack['aria-label'] = 'Reward stocks'; stack['id'] = 'stack'
 items[0]['data-tpl'] = 'stk'
 ic = items[0].select_one('span.block'); ic.clear()
 ic.append(frag('<img alt="" class="size-6 rounded-full bg-bg-card object-cover ring-2 ring-bg-primary" data-f="av" src="img/s-NVDAx.png">'))
-p.append(' '); p.append(stack); p.append(' and the top five traders split the fee pool every 3 days.')
+p.append(' '); p.append(stack)
 acts = main.select_one('div.mt-7')
 ab = acts.select('button'); ab[0]['data-href'] = 'launch.html'; ab[1]['data-href'] = '#feed'
 cards = main.select('div.rounded-2xl.bg-bg-input.px-4.py-3')
