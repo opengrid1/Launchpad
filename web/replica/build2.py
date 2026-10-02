@@ -150,7 +150,7 @@ def common_clean(root):
 
 def set_nav(root):
     """header nav + mobile nav: Cooking -> Leaderboard, Staking -> Docs; make them links"""
-    page_of = {'Dashboard': 'index.html', 'Profile': 'portfolio.html', 'Cooking': 'leaderboard.html', 'Staking': 'docs.html', 'Search': '#search', 'Launch Token': 'launch.html', 'Leaderboard': 'leaderboard.html', 'Docs': 'docs.html'}
+    page_of = {'Dashboard': 'index.html', 'Profile': 'portfolio.html', 'Cooking': 'leaderboard.html', 'Staking': 'docs/introduction.html', 'Search': '#search', 'Launch Token': 'launch.html', 'Leaderboard': 'leaderboard.html', 'Docs': 'docs.html'}
     for b in root.select('header nav button, nav.h-14 > button, header .hidden.sm\\:block > button'):
         label = b.get_text(' ', strip=True)
         if label == 'Cooking':
@@ -164,7 +164,7 @@ def set_nav(root):
         if label in page_of: b['data-href'] = page_of[label]
     # history label is fine; developers button -> docs
     dev = root.select_one('header button[aria-label="Developers"]')
-    if dev: dev['data-href'] = 'docs.html'
+    if dev: dev['data-href'] = 'docs/direct-integration.html'
 
 def mark_active(root, label):
     on = 'bg-accent/15 font-semibold text-accent'.split()
@@ -472,6 +472,5 @@ def other(name, title, desc, active, connected_only=False):
 other('launch.html', 'Launch a token | Inkypump', 'Launch a memecoin on Ink with locked Uniswap V4 liquidity and a stock basket for holders.', 'Launch Token')
 other('portfolio.html', 'Profile | Inkypump', 'Your holdings, stock rewards, creator fees and leaderboard payouts.', 'Profile')
 other('leaderboard.html', 'Trader leaderboard | Inkypump', 'Top 5 traders by PnL and volume every 3 days, paid in ETH.', 'Leaderboard')
-other('docs.html', 'Docs | Inkypump', 'How launches, stock rewards, fees and the trader leaderboard work.', 'Docs')
 other('admin.html', 'Admin | Inkypump', 'Factory admin functions.', 'Docs')
 
