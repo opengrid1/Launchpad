@@ -251,8 +251,9 @@ tags['id'] = 'tags'
 
 # --- stats: ids by index
 for i, st in enumerate(stats.select('div.max-sm\\:shrink-0')):
-    vals = st.select('div.mt-2, div.mt-1\\.5, button.group span')
     st['data-stat'] = str(i)
+    for v in st.select('.text-\\[26px\\]'): settext(v, '—')
+    for v in st.select('.font-mono'): settext(v, '')
 settext(byexact(stats, 'Total supply'), 'Total supply')
 labels = ['Market cap', 'Token price', 'Volume 24h', 'Pool liquidity', 'Total supply', 'Holders']
 

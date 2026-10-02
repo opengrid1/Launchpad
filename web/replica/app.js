@@ -355,8 +355,11 @@ function syncTok(){ if(!window.CHAIN) return; TOK=CHAIN.tokens().filter(x=>!x.hi
 const reveal=()=>{ const p=document.getElementById('prehide'); if(p) p.remove(); };
 let chainError=null;
 async function boot(){
+  // paint the shell first; the markup carries no sample numbers, so the empty strip reads as a skeleton
+  try{ initHeader(); }catch(e){ console.error(e); } reveal(); if(LIVE&&window.CHAIN&&CHAIN.ready&&!CHAIN.tokens().length){ const r=$('#rows')||$('#tb'); if(r) r.insertAdjacentHTML('beforeend','<div class="o-loading py-10 text-center text-sm text-text-muted">Loading from Ink…</div>'); }
   if(LIVE&&window.CHAIN&&CHAIN.ready){ try{ const t=await Promise.race([CHAIN.ready,sleep(30000).then(()=>null)]); if(!t) throw new Error('timeout'); ETH=await CHAIN.ethUsd(); syncTok(); const cur=tokenFromUrl(); if(cur&&CHAIN.token(cur)&&!CHAIN.stale){ const trades=await CHAIN.trades(cur); CHAIN.token(cur)._trades=trades; } }catch(e){ chainError=e; console.error('chain',e); } }
-  try{ initHeader(); initHistory(); initGeneric(); if($('#tb')) initToken(); if($('#rows')) initHome(); document.dispatchEvent(new Event('data-ready')); } finally { reveal(); }
+  $$('.o-loading').forEach(e=>e.remove());
+  try{ initHistory(); initGeneric(); if($('#tb')) initToken(); if($('#rows')) initHome(); document.dispatchEvent(new Event('data-ready')); } finally { reveal(); }
   if(chainError){ const m=$('main'); if(m) m.insertAdjacentHTML('afterbegin',`<div class="mx-auto mt-4 w-full max-w-[1600px] px-4 sm:px-8"><div class="flex items-center justify-between gap-3 rounded-2xl border border-warning/30 bg-warning-soft px-4 py-3 text-[13px] text-text-primary"><span>Could not reach Ink right now. Live data is paused.</span><button class="h-8 shrink-0 rounded-full bg-accent px-3 text-xs font-semibold text-accent-ink" onclick="location.reload()">Retry</button></div></div>`); }
 }
 document.addEventListener('DOMContentLoaded',boot);
