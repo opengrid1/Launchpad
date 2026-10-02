@@ -24,8 +24,8 @@ const { chromium } = require('playwright'); const fs=require('fs');
    ${abs(1110,22,sz(logo,450))}
    ${abs(90,135,`<div style="font:400 118px 'Titan One';line-height:1;letter-spacing:-2px">inkypump</div>`)}
    ${abs(96,285,`<div style="font:600 36px Geist;line-height:1.2;width:900px">Memecoins on Ink that pay holders in stocks.</div>`)}
-   ${abs(850,330,blot('NVDAx',150,-8,62))}${abs(962,362,blot('SPYx',130,9,70))}${abs(1045,300,blot('TSLAx',150,-12,62))}
-   <svg style="position:absolute;left:0;top:0" width="1500" height="500" viewBox="0 0 1500 500" fill="#ff4fa3" stroke="#14121a" stroke-width="6"><circle cx="1000" cy="60" r="12"/><circle cx="1480" cy="110" r="8"/><circle cx="820" cy="440" r="7"/><circle cx="1440" cy="470" r="14"/><circle cx="1090" cy="470" r="7"/></svg>
+   
+   <svg style="position:absolute;left:0;top:0" width="1500" height="500" viewBox="0 0 1500 500" fill="#ff4fa3" stroke="#14121a" stroke-width="6"><circle cx="1000" cy="60" r="12"/><circle cx="1480" cy="110" r="8"/><circle cx="900" cy="400" r="9"/><circle cx="1440" cy="470" r="14"/><circle cx="1090" cy="470" r="7"/></svg>
  </div>`;
  await shot(banner,1500,500,'../site2/img/banner-x.png',2);
  await shot(banner,1500,500,'../site2/img/banner-x-1x.png',1);
