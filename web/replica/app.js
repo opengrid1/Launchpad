@@ -26,8 +26,9 @@ const I={ // lucide icons
  medal:'<path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><path d="M8 7h8"/><circle cx="12" cy="17" r="5"/><path d="M12 18v-2h-.5"/>',
 };
 const ic=(n,cls='size-4')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide ${cls}" aria-hidden="true">${I[n]}</svg>`;
-const AVIMG=src=>`<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="${src}" loading="lazy" decoding="async">`;
-function setAv(span,src,letter){ if(!span) return; span.style.background=''; const l=span.querySelector('span'); if(l&&letter) l.textContent=letter; span.querySelectorAll('img').forEach(i=>i.remove()); if(src) span.insertAdjacentHTML('beforeend',AVIMG(src)); }
+const DEF_LOGO='img/t-default.png';
+const AVIMG=src=>`<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="${src||DEF_LOGO}" onerror="this.onerror=null;this.src='${DEF_LOGO}'" loading="lazy" decoding="async">`;
+function setAv(span,src,letter){ if(!span) return; span.style.background=''; const l=span.querySelector('span'); if(l&&letter) l.textContent=letter; span.querySelectorAll('img').forEach(i=>i.remove()); span.insertAdjacentHTML('beforeend',AVIMG(src)); }
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const page=location.pathname.split('/').pop()||'index.html';
 const layer=()=>$('#layer')||document.body;
