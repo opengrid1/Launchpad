@@ -37,7 +37,7 @@ class RotatingProvider extends ethers.JsonRpcProvider {
   }
 }
 const provider = new RotatingProvider(RPCS, { batchMaxCount: 40, batchStallTime: 15 });
-const logsProvider = new RotatingProvider([LOGS_RPC, ...RPCS.filter(u => u !== LOGS_RPC)], { batchMaxCount: 1 });
+const logsProvider = new RotatingProvider([LOGS_RPC, ...RPCS.filter(u => u !== LOGS_RPC)], { batchMaxCount: 25, batchStallTime: 15 });
 const iface = Object.fromEntries(Object.entries(ABI).map(([k, v]) => [k, new ethers.Interface(v)]));
 const factory = new ethers.Contract(C.factory, ABI.InkypumpFactory, provider);
 const ledger = new ethers.Contract(C.ledger, ABI.InkypumpLedger, provider);
@@ -89,7 +89,15 @@ function tickSqrt(tick) { // sqrt(1.0001^tick) * 2^96, float-based (enough for d
 const TRADE_TOPIC = iface.InkypumpLedger.getEvent('Trade').topicHash;
 const CLAIM_TOPIC = iface.InkypumpToken.getEvent('RewardsClaimed').topicHash;
 const LAUNCH_TOPIC = iface.InkypumpFactory.getEvent('Launched').topicHash;
+async function rpcLogs(address, topics, fromBlock, toBlock) {
+  const ls = await logsProvider.getLogs({ address: address || undefined, topics, fromBlock, toBlock });
+  const out = ls.map(l => ({ address: l.address, topics: l.topics, data: l.data, blockNumber: l.blockNumber, timeStamp: 0, txHash: l.transactionHash, index: l.index }));
+  const blocks = {}; for (const l of out) { if (!blocks[l.blockNumber]) blocks[l.blockNumber] = logsProvider.getBlock(l.blockNumber).then(b => b.timestamp); } for (const l of out) l.timeStamp = await blocks[l.blockNumber];
+  return out;
+}
 async function fetchLogs(address, topics, fromBlock, toBlock) {
+  // small ranges go straight to the RPC (one call, no explorer rate limit); big ranges try the explorer first
+  if (toBlock !== 'latest' && toBlock - fromBlock <= 9000) { try { return await rpcLogs(address, topics, fromBlock, toBlock); } catch (e) { console.warn('rpc logs', e); } }
   const t = topics.map((x, i) => x ? `&topic${i}=${x}` : '').join('');
   const url = `${EXPLORER}/api?module=logs&action=getLogs&fromBlock=${fromBlock}&toBlock=${toBlock}` + (address ? `&address=${address}` : '') + t + (topics.length > 1 ? '&topic0_1_opr=and' : '');
   try {
@@ -153,7 +161,8 @@ async function loadOne(a, trades) {
     rew24: s.holderBps > 0 ? vol(86400) * 0.02 * s.holderBps / 10000 : 0, cre24: vol(86400) * 0.02 * s.creatorBps / 10000,
     totalHolderRewards: Number(thr) / 1e18, totalCreatorFees: Number(tcf) / 1e18, sqrtPriceX96: st.sqrtPriceX96.toString(), liquidity: st.liquidity.toString() };
 }
-async function holderCount(x) { try { const r = await fetch(`${EXPLORER}/api/v2/tokens/${x.addr}/counters`, { cache: 'no-store' }); const j = await r.json(); x.h = Number(j.token_holders_count) || 0; } catch {} }
+const hcAt = {}; // explorer counters at most once a minute per token (the explorer rate-limits hard)
+async function holderCount(x) { const prev = byAddr[x.addr]; if (prev && prev.h && hcAt[x.addr] && Date.now() - hcAt[x.addr] < 60_000) { x.h = prev.h; return; } try { const r = await fetch(`${EXPLORER}/api/v2/tokens/${x.addr}/counters`, { cache: 'no-store' }); if (r.status === 429) { x.h = prev ? prev.h : x.h; return; } const j = await r.json(); x.h = Number(j.token_holders_count) || x.h || 0; hcAt[x.addr] = Date.now(); } catch { if (prev) x.h = prev.h; } }
 async function loadTokens() {
   const n = Number(await factory.totalTokens());
   const [addrs, trades] = await Promise.all([Promise.all([...Array(n)].map((_, i) => factory.allTokens(i))), allTrades()]);
