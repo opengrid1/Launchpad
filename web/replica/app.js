@@ -26,29 +26,36 @@ const I={ // lucide icons
  medal:'<path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><path d="M8 7h8"/><circle cx="12" cy="17" r="5"/><path d="M12 18v-2h-.5"/>',
 };
 const ic=(n,cls='size-4')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide ${cls}" aria-hidden="true">${I[n]}</svg>`;
-const DEF_LOGO='img/t-default.png';
+I.coins='<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>';
+const DEF_LOGO='/img/t-default.png';
 const AVIMG=src=>`<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="${src||DEF_LOGO}" onerror="this.onerror=null;this.src='${DEF_LOGO}'" loading="lazy" decoding="async">`;
 function setAv(span,src,letter){ if(!span) return; span.style.background=''; const l=span.querySelector('span'); if(l&&letter) l.textContent=letter; span.querySelectorAll('img').forEach(i=>i.remove()); span.insertAdjacentHTML('beforeend',AVIMG(src)); }
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const page=location.pathname.split('/').pop()||'index.html';
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const layer=()=>$('#layer')||document.body;
+const EXPLORER=(window.INKY&&INKY.explorer)||'https://explorer.inkonchain.com';
+const SITE='https://inkypump.fun';
+const go=u=>{ location.href=u; };
+const errMsg=e=>{ const m=String(e&&(e.shortMessage||e.reason||e.message)||e); if(/user rejected|denied|rejected the request/i.test(m)) return 'Transaction cancelled'; if(/insufficient funds/i.test(m)) return 'Not enough ETH for this transaction'; if(/Connect your wallet/i.test(m)) return m; return m.length>140?m.slice(0,140)+'…':m; };
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ---------- toasts ---------- */
-function toast(msg,icon='check'){let w=$('.o-toasts'); if(!w){w=document.createElement('div'); w.className='o-toasts'; document.body.appendChild(w);} const t=document.createElement('div'); t.className='o-toast'; t.innerHTML=ic(icon)+'<span>'+esc(msg)+'</span>'; w.appendChild(t); setTimeout(()=>{t.classList.add('out'); setTimeout(()=>t.remove(),300);},2600);}
+function toast(msg,icon='check'){let w=$('.o-toasts'); if(!w){w=document.createElement('div'); w.className='o-toasts'; document.body.appendChild(w);} const t=document.createElement('div'); t.className='o-toast'; t.innerHTML=ic(icon)+'<span>'+esc(msg)+'</span>'; w.appendChild(t); setTimeout(()=>{t.classList.add('out'); setTimeout(()=>t.remove(),300);},icon==='x'?4200:2600);}
 async function copyText(v,msg){try{await navigator.clipboard.writeText(v);}catch{} toast(msg||'Copied to clipboard');}
 
 /* ---------- wallet state ---------- */
-/* Wallet state: Reown AppKit when the site has a project id (window.inkyWallet from wallet.js), the demo wallet otherwise. */
+/* Reown AppKit when the site has a project id (window.inkyWallet from wallet.js), a local demo switch otherwise. */
 const DYN=()=>window.inkyWallet&&window.inkyWallet.ready?window.inkyWallet:null;
+const DEMO_ADDR='0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b';
 const W={get connected(){ const d=DYN(); if(d) return d.connected; try{return localStorage.getItem('wallet')==='1';}catch{return false;} }, set(v){try{localStorage.setItem('wallet',v?'1':'0');}catch{} },
-  get address(){ const d=DYN(); return d&&d.address?d.address:ME_FULL; }, get short(){ const a=this.address; return a.slice(0,6)+'…'+a.slice(-4); },
+  get address(){ const d=DYN(); return d&&d.address?d.address:(this.connected?DEMO_ADDR:null); }, get short(){ const a=this.address; return a?a.slice(0,6)+'…'+a.slice(-4):''; },
+  get onInk(){ const d=DYN(); return !d||!d.chainId||d.chainId===57073; },
   disconnect(){ const d=DYN(); if(d) return d.logout(); W.set(false); } };
 window.addEventListener('inky:wallet',()=>{ if(typeof renderWallet==='function') renderWallet(); document.dispatchEvent(new Event('wallet-change')); });
+const isAdmin=()=>!!(W.connected&&W.address&&window.INKY&&INKY.admin&&W.address.toLowerCase()===INKY.admin.toLowerCase());
 
 const emptyBox=(t,p,href,cta,sm)=>`<div class="o-empty${sm?' sm':''}"><div class="ic">${ic('rocket')}</div><h2>${t}</h2><p>${p}</p>${href?`<a class="o-btn" href="${href}">${cta}</a>`:''}</div>`;
 
 /* ---------- generic overlay helpers ---------- */
-let openEl=null;
 function closeOv(ov){ if(!ov||ov.classList.contains('out')) return; ov.classList.add('out'); setTimeout(()=>ov.remove(),220); }
 function closeAll(){ $$('.o-menu').forEach(e=>e.remove()); $$('.o-overlay,.o-sheet-ov,.o-drawer-ov').forEach(closeOv); $$('[aria-expanded="true"]').forEach(b=>{if(!b.closest('aside'))b.setAttribute('aria-expanded','false');}); }
 document.addEventListener('click',e=>{ if(!e.target.closest('.o-menu') && !e.target.closest('[data-menu]')) $$('.o-menu').forEach(m=>m.remove()); });
@@ -59,231 +66,277 @@ function sheet(html,cls=''){ closeAll(); const ov=document.createElement('div');
 const dh=(t,p)=>`<div class="dh"><div><h3>${t}</h3>${p?'<p>'+p+'</p>':''}</div><button class="x" aria-label="Close">${ic('x')}</button></div>`;
 
 /* ---------- product list (brand dropdown + drawer) ---------- */
-const PRODUCTS=[['Launchpad','Memecoins that pay holders in stocks','rocket','index.html',true],['Leaderboard','Top 5 traders paid every 3 days','trophy','leaderboard.html'],['Docs','How launches, rewards and fees work','book','docs/introduction.html'],['Ink explorer','Verified contracts and transactions','terminal','https://explorer.inkonchain.com']];
+const PRODUCTS=[['Launchpad','Memecoins that pay holders in stocks','rocket','/',true],['Leaderboard','Top 5 traders paid every 3 days','trophy','/leaderboard'],['Docs','How launches, rewards and fees work','book','/docs/introduction'],['Ink explorer','Verified contracts and transactions','terminal',EXPLORER]];
 const prodItems=cls=>PRODUCTS.map(p=>`<button class="${cls}${p[4]?' on':''}" data-go="${p[3]}"><span class="tile">${ic(p[2])}</span><span class="t"><b>${p[0]}${p[4]?'<span class="cur">Current</span>':''}</b><span>${p[1]}</span></span>${p[3].startsWith('http')?ic('chevr','ch'):''}</button>`).join('');
-function openDrawer(){ closeAll(); const ov=document.createElement('div'); ov.className='o-drawer-ov'; ov.innerHTML=`<div class="o-drawer"><div class="dh"><b>Menu</b><button class="x" aria-label="Close">${ic('x')}</button></div><div class="db"><div class="h">Developers</div><button class="li" data-go="docs/direct-integration.html">${ic('code')}Developers</button><button class="li" data-go="docs/production-contracts.html">${ic('shield')}Contract addresses</button><div class="d"></div><div class="h">Products</div>${prodItems('pi')}</div></div>`; ov.addEventListener('click',e=>{ if(e.target===ov) closeOv(ov); }); ov.querySelector('.x').onclick=()=>closeOv(ov); ov.remove=()=>closeOv(ov); $$('[data-go]',ov).forEach(b=>b.onclick=()=>{ const g=b.dataset.go; g.startsWith('http')?window.open(g,'_blank'):location.href=g; }); layer().appendChild(ov); return ov; }
+function openDrawer(){ closeAll(); const ov=document.createElement('div'); ov.className='o-drawer-ov'; ov.innerHTML=`<div class="o-drawer"><div class="dh"><b>Menu</b><button class="x" aria-label="Close">${ic('x')}</button></div><div class="db"><div class="h">Developers</div><button class="li" data-go="/docs/direct-integration">${ic('code')}Developers</button><button class="li" data-go="/docs/production-contracts">${ic('shield')}Contract addresses</button><div class="d"></div><div class="h">Products</div>${prodItems('pi')}</div></div>`; ov.addEventListener('click',e=>{ if(e.target===ov) closeOv(ov); }); ov.querySelector('.x').onclick=()=>closeOv(ov); ov.remove=()=>closeOv(ov); $$('[data-go]',ov).forEach(b=>b.onclick=()=>{ const g=b.dataset.go; g.startsWith('http')?window.open(g,'_blank'):go(g); }); layer().appendChild(ov); return ov; }
 
 /* ---------- header ---------- */
 function initHeader(){
-  // navigation buttons
-  $$('[data-href]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault(); const h=b.dataset.href; if(h==='#search') return openSearch(); if(h.startsWith('#')){const t=$(h); if(t) t.scrollIntoView({behavior:'smooth'}); return;} location.href=h;}));
-  // brand menu
+  $$('[data-href]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault(); const h=b.dataset.href; if(h==='#search') return openSearch(); if(h.startsWith('#')){const t=$(h); if(t) t.scrollIntoView({behavior:'smooth'}); return;} go(h);}));
   const brand=$('header button[aria-label="Launchpad"]'); if(brand){brand.dataset.menu='1'; brand.onclick=()=>{ if($('.o-menu')) return $$('.o-menu').forEach(m=>m.remove()); const m=menu(brand,prodItems('pi'),true); m.classList.add('prod'); wire(); }; }
-  // developers menu
-  const dev=$('header button[aria-label="Developers"]'); if(dev){dev.dataset.menu='1'; dev.onclick=()=>{ if($('.o-menu')) return $$('.o-menu').forEach(m=>m.remove()); menu(dev,`<div class="h">Developers</div><button class="i" data-go="docs/production-contracts.html">${ic('code')}Contract addresses</button><button class="i" data-go="docs/direct-integration.html">${ic('book')}Integrate the hook</button>`); wire(); }; }
-  // language
+  const dev=$('header button[aria-label="Developers"]'); if(dev){dev.dataset.menu='1'; dev.onclick=()=>{ if($('.o-menu')) return $$('.o-menu').forEach(m=>m.remove()); menu(dev,`<div class="h">Developers</div><button class="i" data-go="/docs/production-contracts">${ic('code')}Contract addresses</button><button class="i" data-go="/docs/direct-integration">${ic('book')}Integrate the hook</button>`); wire(); }; }
   const lang=$('header button[aria-label^="Language"]'); if(lang){ lang.dataset.menu='1'; lang.onclick=()=>{ const ch=lang.querySelector('svg.lucide-chevron-down'); if($('.o-menu')){ $$('.o-menu').forEach(m=>m.remove()); if(ch) ch.style.transform=''; return; } if(ch) ch.style.transform='rotate(180deg)'; const m=menu(lang,LANGS.map(([c,n])=>`<button class="i${c===LANG?' on':''}" data-lang="${c}" role="option">${n}${c===LANG?'<span class="r">'+ic('check')+'</span>':''}</button>`).join('')); m.classList.add('lang'); if(innerWidth<768){ const r=lang.getBoundingClientRect(); m.style.left=Math.min(r.left,innerWidth-187-8)+'px'; } $$('[data-lang]',m).forEach(b=>b.onclick=()=>{ setLang(b.dataset.lang); $$('.o-menu').forEach(x=>x.remove()); if(ch) ch.style.transform=''; }); }; document.addEventListener('click',e=>{ if(!$('.o-menu')){ const ch=lang.querySelector('svg.lucide-chevron-down'); if(ch) ch.style.transform=''; } }); }
-  // search
   $$('header button[aria-label="Search"], header button.flex.h-9.w-full').forEach(b=>b.onclick=openSearch);
   addEventListener('keydown',e=>{ if(e.key==='/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault(); openSearch();}});
-  // wallet
   renderWallet();
-  // mobile hamburger
   const ham=$('header button[aria-label="Menu"], header button:has(.lucide-menu)'); if(ham) ham.onclick=openDrawer;
-  function wire(){ $$('.o-menu [data-go]').forEach(b=>b.onclick=()=>{ const g=b.dataset.go; g.startsWith('http')?window.open(g,'_blank'):location.href=g; }); }
+  function wire(){ $$('.o-menu [data-go]').forEach(b=>b.onclick=()=>{ const g=b.dataset.go; g.startsWith('http')?window.open(g,'_blank'):go(g); }); }
 }
 function renderWallet(){
   const pill=$('header .relative.flex.h-9.shrink-0.items-stretch'); if(!pill) return;
   const btn=pill.querySelector('button');
-  if(W.connected){ btn.innerHTML=`<span class="o-wpill"><span class="wav">${window.walletAvatar?walletAvatar(W.address,18):''}</span><span class="font-mono font-medium">${W.short}</span></span>`; btn.dataset.menu='1'; btn.onclick=()=>{ if($('.o-menu')) return $$('.o-menu').forEach(m=>m.remove()); menu(btn,`<div class="h wh"><span class="wav lg">${window.walletAvatar?walletAvatar(W.address,30):''}</span>${W.short}</div><button class="i" data-act="copy">${ic('copy')}Copy address</button><button class="i" data-act="portfolio">${ic('user')}Profile</button><button class="i" data-act="explorer">${ic('globe')}View on explorer<span class="r">${ic('ext','size-3')}</span></button><div class="d"></div><button class="i" data-act="out">${ic('logout')}Disconnect</button>`); $$('.o-menu [data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='copy') copyText(W.address,'Address copied'); if(a==='portfolio') location.href='portfolio.html'; if(a==='explorer') window.open('https://explorer.inkonchain.com/address/'+W.address,'_blank'); if(a==='out'){W.disconnect(); if(!DYN()) location.reload();} }); }; }
+  if(W.connected){ btn.innerHTML=`<span class="o-wpill"><span class="wav">${window.walletAvatar?walletAvatar(W.address,18):''}</span><span class="font-mono font-medium">${W.short}</span></span>`; btn.dataset.menu='1'; btn.onclick=()=>{ if($('.o-menu')) return $$('.o-menu').forEach(m=>m.remove()); menu(btn,`<div class="h wh"><span class="wav lg">${window.walletAvatar?walletAvatar(W.address,30):''}</span>${W.short}</div><button class="i" data-act="copy">${ic('copy')}Copy address</button><button class="i" data-act="portfolio">${ic('user')}Profile</button>${isAdmin()?`<button class="i" data-act="admin">${ic('shield')}Operator</button>`:''}<button class="i" data-act="explorer">${ic('globe')}View on explorer<span class="r">${ic('ext','size-3')}</span></button><div class="d"></div><button class="i" data-act="out">${ic('logout')}Disconnect</button>`); $$('.o-menu [data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='copy') copyText(W.address,'Address copied'); if(a==='portfolio') go('/profile'); if(a==='admin') go('/admin'); if(a==='explorer') window.open(EXPLORER+'/address/'+W.address,'_blank'); if(a==='out'){W.disconnect(); if(!DYN()){ renderWallet(); document.dispatchEvent(new Event('wallet-change')); }} }); }; }
   else { btn.innerHTML='<span class="hidden sm:inline">Connect Wallet</span><span class="sm:hidden">Connect</span>'; btn.onclick=openConnect; }
-  const chain=pill.querySelectorAll('button')[1]; if(chain) chain.onclick=()=>{ const ov=dialog(dh('Network','Tokens on this launchpad live on Ink')+`<div class="db"><button class="opt on"><span class="ic" style="overflow:hidden"><img src="img/ink.png" alt="Ink" style="width:100%;height:100%"></span><span>Ink<small>Chain 57073 · 1s blocks</small></span><span class="r">${ic('check')}</span></button></div>`); };
-  $$('#cta').forEach(c=>{ if(W.connected){ c.textContent=(window.swapSide==='sell'?'Sell':'Buy')+' MOGCAT'; } else { c.textContent='Connect Wallet'; } });
+  const chain=pill.querySelectorAll('button')[1]; if(chain) chain.onclick=()=>{ const d=DYN(); const wrong=d&&d.connected&&!W.onInk; const ov=dialog(dh('Network',wrong?'Your wallet is on another network':'Tokens on this launchpad live on Ink')+`<div class="db"><button class="opt on" id="swInk"><span class="ic" style="overflow:hidden"><img src="/img/ink.png" alt="Ink" style="width:100%;height:100%"></span><span>Ink<small>Chain 57073 · 1s blocks</small></span><span class="r">${wrong?'Switch':ic('check')}</span></button></div>`); if(wrong) $('#swInk',ov).onclick=async()=>{ try{ await d.switchToInk(); ov.remove(); }catch(e){ toast(errMsg(e),'x'); } }; };
+  if(typeof swapCta==='function') swapCta();
   const pos=$('#pos'); if(pos) pos.classList.toggle('hidden',!W.connected);
 }
 function openConnect(){
   const d=DYN(); if(d){ d.open(); return; }
+  if(window.INKY&&INKY.reownProjectId){ toast('Wallet is still loading, try again in a second'); return; }
   const wallets=[['MetaMask','#f6851b','M','Browser extension'],['Rabby','#8697ff','R','Browser extension'],['WalletConnect','#3b99fc','W','Scan with your phone'],['Coinbase Wallet','#1652f0','C','Browser extension']];
-  const ov=dialog(dh('Connect wallet','Connect to Ink (chain 57073) to trade and claim rewards')+'<div class="db">'+wallets.map(w=>`<button class="opt" data-w="${w[0]}"><span class="ic" style="background:${w[1]}">${w[2]}</span><span>${w[0]}<small>${w[3]}</small></span></button>`).join('')+'</div><div class="foot">By connecting you agree to the <a href="docs/introduction.html#terms">terms</a>. Demo build: the connection is simulated.</div>');
-  $$('[data-w]',ov).forEach(b=>b.onclick=()=>{ b.innerHTML=`<span class="ic" style="background:var(--color-bg-elevated)">…</span><span>Connecting to ${b.dataset.w}<small>Approve in your wallet</small></span>`; setTimeout(()=>{W.set(true); ov.remove(); renderWallet(); toast('Connected '+ME);},900); });
+  const ov=dialog(dh('Connect wallet','Connect to Ink (chain 57073) to trade and claim rewards')+'<div class="db">'+wallets.map(w=>`<button class="opt" data-w="${w[0]}"><span class="ic" style="background:${w[1]}">${w[2]}</span><span>${w[0]}<small>${w[3]}</small></span></button>`).join('')+'</div><div class="foot">By connecting you agree to the <a href="/docs/introduction#terms">terms</a>. Demo build: the connection is simulated.</div>');
+  $$('[data-w]',ov).forEach(b=>b.onclick=()=>{ b.innerHTML=`<span class="ic" style="background:var(--color-bg-elevated)">…</span><span>Connecting to ${b.dataset.w}<small>Approve in your wallet</small></span>`; setTimeout(()=>{W.set(true); ov.remove(); renderWallet(); document.dispatchEvent(new Event('wallet-change')); toast('Connected '+W.short);},900); });
 }
 function openSearch(){
   const inner=`<div class="o-search">${ic('search')}<input id="sq" placeholder="Search by name, symbol, or address" autocomplete="off"><kbd>ESC</kbd></div><div class="db" id="sres" style="padding-top:8px"></div>`;
   const ov=innerWidth<768?sheet(inner,'search'):dialog(inner,'wide',true);
   const inp=$('#sq',ov), res=$('#sres',ov);
-  const render=q=>{ q=q.trim().toLowerCase(); if(!TOK.length){ res.innerHTML=emptyBox('No tokens yet','The first launch will show up here.','launch.html','Launch a token',true); return; } let list=TOK.filter(x=>!q||x.n.toLowerCase().includes(q)||x.t.toLowerCase().includes(q)||('0x7b26'.includes(q))); res.innerHTML=(q?'':'<div class="h" style="padding:6px 12px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-muted)">Trending</div>')+list.slice(0,8).map(x=>`<button class="opt" data-go="token.html"><span class="ic" style="background:var(--color-bg-input);overflow:hidden"><img src="${x.img}" alt="" style="width:100%;height:100%;object-fit:cover"></span><span>${esc(x.n)}<small>${x.t} · ETH · ${ageStr(x.age)}</small></span><span class="r">${fmtUsd(x.mc)}</span></button>`).join('')||'<p class="py-6 text-center text-sm text-text-muted">No tokens match.</p>'; $$('[data-go]',res).forEach(b=>b.onclick=()=>location.href=b.dataset.go); };
+  const render=q=>{ q=q.trim().toLowerCase(); if(!TOK.length){ res.innerHTML=emptyBox('No tokens yet','The first launch will show up here.','/launch','Launch a token',true); return; } let list=TOK.filter(x=>!q||x.n.toLowerCase().includes(q)||x.t.toLowerCase().includes(q)||x.addr.includes(q)); list=[...list].sort((a,b)=>b.vol-a.vol); res.innerHTML=(q?'':'<div class="h" style="padding:6px 12px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-muted)">Trending</div>')+list.slice(0,8).map(x=>`<button class="opt" data-go="${tokenUrl(x)}"><span class="ic" style="background:var(--color-bg-input);overflow:hidden"><img src="${x.img||DEF_LOGO}" alt="" style="width:100%;height:100%;object-fit:cover"></span><span>${esc(x.n)}<small>${esc(x.t)} · ${x.pair} · ${ageStr(x.age)}</small></span><span class="r">${fmtUsd(x.mc)}</span></button>`).join('')||'<p class="py-6 text-center text-sm text-text-muted">No tokens match.</p>'; $$('[data-go]',res).forEach(b=>b.onclick=()=>go(b.dataset.go)); };
   inp.oninput=()=>render(inp.value); render(''); setTimeout(()=>inp.focus(),30);
 }
 
 /* ---------- history chips (sub bar) ---------- */
+const tokenFromUrl=()=>{ const m=location.pathname.match(/\/token\/(0x[0-9a-fA-F]{40})/)||location.search.match(/[?&]t=(0x[0-9a-fA-F]{40})/); return m?m[1].toLowerCase():null; };
 function initHistory(){
   const h=$('#hist'); if(!h) return; const tpl=$('[data-tpl="chip"]',h); tpl.remove();
-  let hist; try{hist=JSON.parse(localStorage.getItem('hist')||'null');}catch{} if(!hist) hist=['MOGCAT','CPEPE','VHAIR'];
-  if(page==='token.html'){ hist=['MOGCAT',...hist.filter(x=>x!=='MOGCAT')].slice(0,8); try{localStorage.setItem('hist',JSON.stringify(hist));}catch{} }
-  if(!TOK.length){ const bar=h.closest('div.border-b')||h.parentElement; if(bar) bar.style.display='none'; return; }
-  hist.forEach(sym=>{ const x=TOK.find(t=>t.t===sym); if(!x) return; const c=tpl.cloneNode(true); c.removeAttribute('data-tpl'); setAv($('.bg-avatar-gradient',c),x.img,x.t[0]); $('.block.truncate',c).textContent=x.t; c.querySelectorAll('button')[0].onclick=()=>location.href='token.html'; const rm=c.querySelectorAll('button')[1]; if(rm){rm.setAttribute('aria-label','Remove '+x.t+' from history'); rm.onclick=e=>{e.stopPropagation(); c.remove(); hist=hist.filter(s=>s!==sym); try{localStorage.setItem('hist',JSON.stringify(hist));}catch{} };} h.appendChild(c); });
+  let hist; try{hist=JSON.parse(localStorage.getItem('hist2')||'null');}catch{} if(!Array.isArray(hist)) hist=[];
+  const cur=tokenFromUrl(); if(cur&&TOK.find(x=>x.addr===cur)){ hist=[cur,...hist.filter(x=>x!==cur)].slice(0,8); try{localStorage.setItem('hist2',JSON.stringify(hist));}catch{} }
+  hist=hist.filter(a=>TOK.find(x=>x.addr===a));
+  if(!hist.length){ const bar=h.closest('div.border-b')||h.parentElement; if(bar) bar.style.display='none'; return; }
+  hist.forEach(a=>{ const x=TOK.find(t=>t.addr===a); const c=tpl.cloneNode(true); c.removeAttribute('data-tpl'); setAv($('.bg-avatar-gradient',c),x.img,x.t[0]); $('.block.truncate',c).textContent=x.t; c.querySelectorAll('button')[0].onclick=()=>go(tokenUrl(x)); const rm=c.querySelectorAll('button')[1]; if(rm){rm.setAttribute('aria-label','Remove '+x.t+' from history'); rm.onclick=e=>{e.stopPropagation(); c.remove(); hist=hist.filter(s=>s!==a); try{localStorage.setItem('hist2',JSON.stringify(hist));}catch{} };} h.appendChild(c); });
 }
 
 /* ---------- shared: copy buttons / toasts ---------- */
 function initGeneric(){
-  $$('[data-copy]').forEach(b=>b.addEventListener('click',()=>copyText(b.dataset.copy,b.dataset.toast||'Address copied')));
+  $$('[data-copy]').forEach(b=>b.addEventListener('click',()=>{ if(b.dataset.copy) copyText(b.dataset.copy,b.dataset.toast||'Address copied'); }));
   $$('[data-toast]:not([data-copy])').forEach(b=>b.addEventListener('click',()=>toast(b.dataset.toast)));
   const w=$('#warn'); if(w){ const b=w.querySelector('button'), sp=w.querySelector('span.min-w-0'), ch=w.querySelector('svg.lucide-chevron-down'); b.onclick=()=>{ const o=b.getAttribute('aria-expanded')==='true'; b.setAttribute('aria-expanded',String(!o)); sp.classList.toggle('truncate',o); ch.style.transform=o?'':'rotate(180deg)'; }; }
-  $$('span.cursor-help[title], span.cursor-help button[aria-label$="info"]').forEach(()=>{});
 }
 
 /* ======================= TOKEN PAGE ======================= */
-const BASKET=['NVDAx','SPYx','TSLAx','MSTRx']; const SUP=1e9; let price=0.000927; window.swapSide='buy';
+let X=null, price=0; window.swapSide='buy';
+const SUP=1e9;
+const fmtDate=ts=>new Date(ts*1000).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const inPair=(v,x)=>(x||X).pair==='ETH'?fmtEth(v):fmtAmt(v)+' '+(x||X).pair;
 function initToken(){
-  if(!TOK.length){ const m=$('main'); m.innerHTML='<div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-8">'+emptyBox('Coming soon','Inkypump is launching on Ink. Token pages open with the first launch.','docs/introduction.html','How it works')+'</div>'; return; }
-  // basket tags (clone of the paired-asset tag)
-  const tags=$('#tags'); const base=tags.children[0];
-  BASKET.forEach(s=>{ const c=base.cloneNode(true); setAv($('.bg-avatar-gradient',c),STOCK_IMG(s),s[0]); c.title='Holders are paid in '+STOCK_NAME[s]+' ('+s+')'; const inner=c.querySelector('span.inline-flex'); inner.lastChild.textContent=s; tags.insertBefore(c,tags.lastElementChild); });
-  const rb=$('#rewBasket'); if(rb) BASKET.forEach(s=>{ const c=base.cloneNode(true); setAv($('.bg-avatar-gradient',c),STOCK_IMG(s),s[0]); c.querySelector('span.inline-flex').lastChild.textContent=STOCK_NAME[s]+' · '+s; rb.appendChild(c); });
+  const addr=tokenFromUrl(); X=addr?TOK.find(x=>x.addr===addr)||(window.CHAIN&&CHAIN.token(addr)):null;
+  if(!X){ const m=$('main'); m.innerHTML='<div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-8">'+(TOK.length||addr?emptyBox('Token not found','No token with that address was launched on Inkypump.','/','Back to the feed'):emptyBox('Coming soon','Inkypump is launching on Ink. Token pages open with the first launch.','/docs/introduction','How it works'))+'</div>'; $('#mbar')&&$('#mbar').remove(); return; }
+  price=X.px; document.title=`${X.t} $${fmtPrice(X.px)} | Inkypump`;
+  // hero
+  setAv($('#hAv'),X.img,X.t[0]); $('#hName').textContent=X.n; $('#hSym').textContent=X.t; $$('.hAddrT').forEach(e=>e.textContent=shortAddr(X.addr)); $$('.hAddr').forEach(e=>e.dataset.copy=cs(X.addr)); $('#hShare').dataset.copy=SITE+tokenUrl(X);
+  const tags=$('#tags'); const base=tags.children[0]; { const pa=$('.bg-avatar-gradient',base); setAv(pa,pairImg(X.pair),X.pair[0]); const inner=base.querySelector('span.inline-flex'); inner.lastChild.textContent=X.pair; base.title='Paired asset: '+X.pair+' on Uniswap V4'; }
+  if(X.rewards){ (X.basket.length?X.basket:[X.pair]).forEach(s=>{ const c=base.cloneNode(true); setAv($('.bg-avatar-gradient',c),pairImg(s),s[0]); c.title='Holders are paid in '+(STOCK_NAME[s]||s)+' ('+s+')'; const inner=c.querySelector('span.inline-flex'); inner.lastChild.textContent=s; tags.insertBefore(c,tags.lastElementChild); }); }
+  else { const c=base.cloneNode(true); c.querySelector('.bg-avatar-gradient').remove(); c.title='Holder rewards are off: the creator earns 1.2% of every trade'; const inner=c.querySelector('span.inline-flex'); inner.lastChild.textContent='No holder rewards'; tags.insertBefore(c,tags.lastElementChild); }
+  const rb=$('#rewBasket'); if(rb){ (X.rewards?(X.basket.length?X.basket:[X.pair]):[]).forEach(s=>{ const c=base.cloneNode(true); setAv($('.bg-avatar-gradient',c),pairImg(s),s[0]); c.querySelector('span.inline-flex').lastChild.textContent=(STOCK_NAME[s]||s)+' · '+s; rb.appendChild(c); }); }
+  // description + links under the hero
+  const hero=$('#hName').closest('.flex.items-start'); if(hero&&(X.desc||X.links.web||X.links.x||X.links.tg)){ const lk=[['web',X.links.web,'globe'],['x',X.links.x,'ext'],['tg',X.links.tg,'ext']].filter(l=>l[1]&&/^https?:\/\//.test(l[1])).map(l=>`<a class="inline-flex items-center gap-1 text-text-muted hover:text-accent" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2],'size-3.5')}${l[0]==='web'?'Website':l[0]==='x'?'X':'Telegram'}</a>`).join(''); hero.insertAdjacentHTML('afterend',`<div class="mt-3 max-w-[720px] text-[13px] leading-relaxed text-text-secondary">${esc(X.desc)}${lk?'<div class="mt-2 flex flex-wrap gap-4 text-xs font-medium">'+lk+'</div>':''}</div>`); }
   // stats
   const st=$$('[data-stat]');
-  const setStat=(i,v,s)=>{ const vv=st[i].querySelector('.text-\\[26px\\]'); if(vv) vv.textContent=v; const ss=st[i].querySelector('.font-mono'); if(ss&&s!=null) ss.textContent=s; };
-  setStat(2,'$1.21M','497.7 ETH'); setStat(3,'$96.4K','39.6 ETH'); setStat(4,'1B'); setStat(5,'7.2K');
-  const s4=st[4].querySelector('.font-mono'); if(s4) s4.remove();
-  const s5=st[5].querySelector('.font-mono'); if(s5) s5.remove();
-  const stMc=st[0].querySelector('.text-\\[26px\\]'), stMcE=st[0].querySelector('.font-mono'), stPx=st[1].querySelector('.text-\\[26px\\]'), stPxE=st[1].querySelector('.font-mono');
+  const s4=st[4].querySelector('.font-mono'); if(s4) s4.remove(); const s5=st[5].querySelector('.font-mono'); if(s5) s5.remove();
   st[5].querySelector('button')?.addEventListener('click',()=>showTab('hold'));
-  // chart chrome + data
+  paintStats();
+  // info
+  $('#infoCreator').href=EXPLORER+'/address/'+X.creator; $('#infoCreator span').textContent=shortAddr(X.creator); $('#infoCreatorCopy').dataset.copy=cs(X.creator);
+  { const c=$('#infoCreated'); c.firstChild.textContent=fmtDate(X.createdAt); c.querySelector('span').textContent='('+ageStr(X.age)+')'; }
+  paintInfo();
+  // chart
   initChart();
   // trades
-  const tb=$('#tb'), tpl=$('[data-tpl="tx"]',tb); tpl.remove(); const mtb=$('#mtb'), mtpl=$('[data-tpl="mtx"]',mtb); mtpl.remove();
-  const trades=[]; let now=Math.floor(Date.now()/1000);
-  const mk=ts=>{const buy=rnd()<0.58; const eth=+(0.01+rnd()*rnd()*1.2).toFixed(3); const px=price*(1+(buy?1:-1)*rnd()*0.004); return {t:ts,buy,eth,usd:eth*ETH,amt:eth/(px/ETH),px,mk:hex(),tx:'0x'+Math.floor(rnd()*1e16).toString(16).padStart(16,'0')};};
-  for(let i=0;i<40;i++) trades.unshift(mk(now-i*9-Math.floor(rnd()*6))); trades.sort((a,b)=>b.t-a.t);
-  const agoTxt=x=>ago(Math.max(0,now-x.t))+' ago';
-  function row(x){ const r=tpl.cloneNode(true); r.removeAttribute('data-tpl'); const td=r.children; const tm=td[0].querySelector('span'); tm.textContent=agoTxt(x); tm.dataset.ts=x.t; tm.title=new Date(x.t*1000).toLocaleString();
-    const ty=td[1].querySelector('span'); ty.textContent=x.buy?'Buy':'Sell'; ty.className=x.buy?'inline-flex h-6 items-center rounded-md border px-2 text-[11px] font-semibold border-success/20 bg-success-soft text-success':'inline-flex h-6 items-center rounded-md border px-2 text-[11px] font-semibold border-error/20 bg-error/10 text-error';
-    const c2=td[2].querySelectorAll('span.block'); c2[1].textContent=fmtPrice(x.px/ETH)+' ETH'; c2[2].textContent='approx $'+fmtPrice(x.px);
-    td[3].querySelector('span.block span').textContent=fmtAmt(x.amt)+' MOGCAT';
-    const c4=td[4].querySelectorAll('span.block'); c4[1].textContent=x.eth.toFixed(4)+' ETH'; c4[2].textContent='approx '+fmtUsd(x.usd);
-    td[5].querySelector('span.block span').textContent=(x.eth*0.02).toFixed(5)+' ETH';
-    const a=td[6].querySelector('a'); a.href='https://explorer.inkonchain.com/address/'+x.mk; a.querySelector('span').textContent=x.mk;
-    td[7].querySelector('a').href='https://explorer.inkonchain.com/tx/'+x.tx; r.dataset.k=x.buy?'buy':'sell'; return r; }
-  function mrow(x){ const r=mtpl.cloneNode(true); r.removeAttribute('data-tpl'); const f=k=>r.querySelector('[data-f="'+k+'"]'); const sd=f('side'); sd.textContent=x.buy?'Buy':'Sell'; sd.className='mr-1.5 '+(x.buy?'text-success':'text-error'); f('amt').textContent=fmtAmt(x.amt)+' MOGCAT'; f('time').textContent=agoTxt(x); f('time').dataset.ts=x.t; f('wallet').textContent=x.mk.slice(0,6)+'…'; r.querySelector('a').href='https://explorer.inkonchain.com/address/'+x.mk; f('px').textContent='$'+fmtPrice(x.px); f('fee').textContent='Fee '+(x.eth*0.02).toFixed(5)+' ETH'; f('usd').textContent='approx '+fmtUsd(x.usd); r.dataset.k=x.buy?'buy':'sell'; return r; }
-  trades.forEach(x=>{tb.appendChild(row(x)); mtb.appendChild(mrow(x));});
-  setInterval(()=>{now=Math.floor(Date.now()/1000); $$('[data-ts]').forEach(e=>e.textContent=ago(Math.max(0,now-+e.dataset.ts))+' ago');},1000);
-  let filter='all'; const applyFilter=()=>{ $$('#tb tr,#mtb > div').forEach(r=>r.style.display=(filter==='all'||r.dataset.k===filter)?'':'none'); };
-  const seg=$('#seg'); seg.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; $$('button',seg).forEach(x=>{ x.className=x.className.replace(' bg-accent text-accent-ink','').replace(' text-text-secondary hover:text-text-primary',''); x.className+= x===b?' bg-accent text-accent-ink':' text-text-secondary hover:text-text-primary'; }); filter=b.dataset.side; applyFilter(); });
-  // normalise initial seg classes
-  $$('button',seg).forEach((x,i)=>{ const base=x.className.replace(/ bg-accent text-accent-ink| text-text-secondary hover:text-text-primary/g,''); x.className=base+(i===0?' bg-accent text-accent-ink':' text-text-secondary hover:text-text-primary'); });
-  $('#loadmore button').onclick=()=>{ const last=trades[trades.length-1]; for(let i=0;i<10;i++){ const x=mk(last.t-9*(i+1)-Math.floor(rnd()*6)); trades.push(x); tb.appendChild(row(x)); mtb.appendChild(mrow(x)); } applyFilter(); };
-  // live ticks
-  function tick(){ const tr=mk(Math.floor(Date.now()/1000)); const old=price; price=tr.px; trades.unshift(tr); const r=row(tr); r.classList.add('o-flash'); tb.insertBefore(r,tb.firstChild); mtb.insertBefore(mrow(tr),mtb.firstChild); if(tb.children.length>80) tb.lastElementChild.remove(); if(mtb.children.length>80) mtb.lastElementChild.remove(); applyFilter();
-    stPx.textContent='$'+fmtPrice(price); stPxE.textContent=fmtPrice(price/ETH)+' ETH'; stMc.textContent=fmtUsd(price*SUP); stMcE.textContent=(price*SUP/ETH).toFixed(1)+' ETH';
-    [stPx,stMc].forEach(e=>{e.classList.remove('stat-up','stat-dn'); void e.offsetWidth; e.classList.add(price>=old?'stat-up':'stat-dn'); setTimeout(()=>e.classList.remove('stat-up','stat-dn'),600);});
-    chartTick(price); updSwap(); setTimeout(tick,1500+rnd()*3000); }
-  stPx.textContent='$'+fmtPrice(price); stPxE.textContent=fmtPrice(price/ETH)+' ETH'; stMc.textContent=fmtUsd(price*SUP); stMcE.textContent=(price*SUP/ETH).toFixed(1)+' ETH';
-  setTimeout(tick,1800);
+  tradesInit();
   // tabs
   $$('#tabs [data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
-  fillHolders(); fillTop();
   // swap
   initSwap();
-  // mobile buy/sell bar
   $$('#mbar [data-side]').forEach(b=>b.onclick=()=>openSwapSheet(b.dataset.side));
+  $$('[data-sym]').forEach(e=>e.textContent=X.t); const ul=$('#uniLink'); if(ul) ul.href='https://app.uniswap.org/explore/tokens/ink/'+X.addr;
+  // live refresh
+  if(LIVE) setTimeout(tick,6000);
 }
+function paintStats(){ const st=$$('[data-stat]'); const setStat=(i,v,s)=>{ const vv=st[i].querySelector('.text-\\[26px\\]'); if(vv) vv.textContent=v; const ss=st[i].querySelector('.font-mono'); if(ss&&s!=null) ss.textContent=s; };
+  setStat(0,fmtUsd(X.mc),inPair(X.pxPair*SUP)); setStat(1,'$'+fmtPrice(X.px),fmtPrice(X.pxPair)+' '+X.pair); setStat(2,fmtUsd(X.vol),inPair(X.vol/X.pairUsd)); setStat(3,fmtUsd(X.liq),inPair(X.liqPair)); setStat(4,'1B'); setStat(5,X.h.toLocaleString()); }
+function paintInfo(){ const pu=X.pairUsd; const cell=(k,usd,pair)=>{ const c=$(`[data-info="${k}"]`); if(!c) return; const d=c.querySelectorAll('div'); d[1].textContent=fmtUsd(usd); d[2].textContent=pair; };
+  const feePair=X.feeUsd/pu; cell('vol',X.volAll,inPair(X.volAll/pu)); cell('cre',X.totalCreatorFees*pu,inPair(X.totalCreatorFees)); cell('hold',X.totalHolderRewards*pu,X.rewards?inPair(X.totalHolderRewards)+(X.basket.length?' → '+X.basket.join(', '):''):'off'); cell('proto',feePair*0.4*pu,inPair(feePair*0.4));
+  const disc=$$('[data-disc]'); if(disc.length){ const tr=X._trades||[]; const dev=tr.find(t=>t.wallet===X.creator&&t.buy&&t.ts<=X.createdAt+2); disc[1].textContent='No tokens were sent directly to recipients or placed in a vesting vault at launch. The full fixed supply entered the pool'+(dev?'; the creator bought '+inPair(Number(dev.pair)/1e18)+' in the launch transaction.':'; there was no dev buy.');
+    const paid=X.rewards?(X.basket.length?' (paid in '+X.basket.join(', ')+')':' (paid in '+X.pair+')'):''; disc[3].textContent=`The normal hook fee is 2.00%. Fees are always charged in ${X.pair}, the pool's paired asset. Buys use part of the ${X.pair} paid, and sells use part of the ${X.pair} received. It is split ${(X.creatorBps/100).toFixed(2)}% creator, ${(X.holderBps/100).toFixed(2)}% holders${paid} and 40.00% platform, of which an eighth funds the 3-day trader leaderboard.`; }
+  const rw=(k,v,s)=>{ const c=$(`[data-rew="${k}"]`); if(!c) return; const d=c.querySelectorAll('div'); d[1].textContent=v; if(s!=null) d[2].textContent=s; };
+  rw('all',fmtUsd(X.totalHolderRewards*pu),inPair(X.totalHolderRewards)); rw('day',fmtUsd(X.rew24),inPair(X.rew24/pu)); rw('rate',X.mc>0?fmtUsd(X.rew24/X.mc*1000):'$0.00');
+  const rt=$('#rewText'); if(rt) rt.textContent=!X.rewards?'Holder rewards are off for this token. The creator chose to take the full 1.2% share of every trade; the 0.8% platform share is unchanged.':X.basket.length?`Every trade pays ${(X.holderBps*2/10000).toFixed(2)}% in ${X.pair} to holders, pro-rata to balance. On claim the ${X.pair} is swapped on Uniswap into ${X.basket.join(', ')} in equal shares and sent as wrapped stock tokens. Claim as ETH is always available.`:`Every trade pays ${(X.holderBps*2/10000).toFixed(2)}% in ${X.pair} to holders, pro-rata to balance. Rewards are claimed in ${X.pair}; claim as ETH is always available.`; }
 function showTab(k){ $$('#tabs [data-tab]').forEach(b=>{ const on=b.dataset.tab===k; b.className=b.className.replace(/ text-text-primary| text-text-muted hover:text-text-secondary/g,'')+(on?' text-text-primary':' text-text-muted hover:text-text-secondary'); });
   $$('#panes [data-pane]').forEach(p=>{ const on=p.dataset.pane===k; if(p.classList.contains('md:hidden')) p.classList.toggle('hidden-i',!on); else { p.classList.toggle('hidden',!on); if(on&&p.classList.contains('md:block')) p.classList.remove('hidden'); } });
-  // the desktop tx table has md:block + hidden: handle explicitly
   $$('#panes [data-pane="tx"]').forEach(p=>{ if(p.classList.contains('md:block')){ p.classList.toggle('hidden-i',k!=='tx'); p.classList.add('hidden'); } });
-  $('#seg').style.display=k==='tx'?'':'none'; $('#loadmore').style.display=k==='tx'?'':'none'; }
+  $('#seg').style.display=k==='tx'?'':'none'; $('#loadmore').style.display=k==='tx'?'':'none';
+  if(k==='hold') fillHolders(); if(k==='top') fillTop(); if(k==='rew') fillRew(); }
 function tdiv(cls,inner){return `<td class="${cls}">${inner}</td>`;}
 function cellR(main,sub){return `<span class="block min-w-0 text-right tabular-nums"><span class="block max-w-full truncate font-medium text-text-primary">${main}</span>${sub?`<span class="mt-0.5 block max-w-full truncate text-xs text-text-muted">${sub}</span>`:''}</span>`;}
-const wlink=(a,full)=>`<a class="inline-flex min-w-0 items-center gap-1 transition-colors hover:text-accent text-text-primary" href="https://explorer.inkonchain.com/address/${full||a}" target="_blank" rel="noopener noreferrer"><span class="truncate">${a}</span>${ic('ext','lucide-external-link size-3 shrink-0')}</a>`;
+const wlink=(a,full)=>`<a class="inline-flex min-w-0 items-center gap-1 transition-colors hover:text-accent text-text-primary" href="${EXPLORER}/address/${full||a}" target="_blank" rel="noopener noreferrer"><span class="truncate">${a}</span>${ic('ext','lucide-external-link size-3 shrink-0')}</a>`;
 const tagS=t=>`<span class="ml-1.5 inline-flex h-5 items-center rounded-full bg-bg-elevated px-2 text-[11px] font-semibold text-text-secondary">${t}</span>`;
-function fillHolders(){ const H=[['0x3f1a…9c02',4.21,'Uniswap V4 pool'],['0x5DdD…4A0b',1.82,'creator'],['0x9a4e…11bd',1.44],['0xb77c…e2f0',1.20],['0x14d9…77a3',0.98],['0xe0c1…5b6f',0.91],['0x77a1…0e4b',0.80],['0xc2d8…9f31',0.72],['0x1b6e…aa07',0.61],['0x8f13…2c55',0.55]];
-  $('#tb_hold').innerHTML=H.map((h,i)=>`<tr class="h-[4.5rem] text-text-primary">${tdiv('whitespace-nowrap px-4 py-3 align-middle','<span class="block text-text-muted">'+(i+1)+'</span>')}${tdiv('px-4 py-3 align-middle',wlink(h[0])+(h[2]?tagS(h[2]):''))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(fmtAmt(h[1]/100*SUP)+' MOGCAT'))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(h[1].toFixed(2)+'%'))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(fmtUsd(h[1]/100*SUP*price),(h[1]/100*SUP*price/ETH).toFixed(3)+' ETH'))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(h[2]==='Uniswap V4 pool'?'—':'$'+(h[1]*21).toFixed(2),h[2]==='Uniswap V4 pool'?'':'in stocks'))}${tdiv('px-4 py-3 align-middle text-right','<span class="block text-text-muted">'+(1+i)+'d</span>')}</tr>`).join(''); }
-function fillTop(){ $('#tb_top').innerHTML=LB_PNL.slice(0,8).map((r,i)=>`<tr class="h-[4.5rem] text-text-primary">${tdiv('whitespace-nowrap px-4 py-3 align-middle',rank(i,true))}${tdiv('px-4 py-3 align-middle',wlink(r[0])+(r[2]?tagS('YOU'):''))}${tdiv('px-4 py-3 align-middle text-right tabular-nums','<span class="block font-medium text-success">+'+r[1].toFixed(2)+' ETH</span>')}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR((r[1]*14).toFixed(1)+' ETH',fmtUsd(r[1]*14*ETH)))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(String(40+i*17)))}${tdiv('px-4 py-3 align-middle text-right',cellR(i%3?'Yes':'No'))}</tr>`).join(''); }
+const youTag=w=>W.connected&&W.address&&w===W.address.toLowerCase()?tagS('YOU'):'';
+const emptyRow=(n,t)=>`<tr><td colspan="${n}" class="px-4 py-8 text-center text-sm text-text-muted">${t}</td></tr>`;
+const PM=((window.INKY&&INKY.contracts&&INKY.contracts.poolManager)||'').toLowerCase();
+let holdersLoaded=false, topLoaded=false;
+async function fillHolders(){ const tb=$('#tb_hold'); if(!tb||holdersLoaded||!window.CHAIN) return; holdersLoaded=true; tb.innerHTML=emptyRow(6,'Loading holders…');
+  let H=await CHAIN.holders(X.addr,50); if(!H.length){ tb.innerHTML=emptyRow(6,'No holders yet.'); holdersLoaded=false; return; }
+  H=H.filter(h=>h.bal>=1e-6); const pend=await Promise.all(H.slice(0,25).map(h=>h.wallet===PM?0:CHAIN.pending(X.addr,h.wallet).then(v=>Number(v)/1e18).catch(()=>0)));
+  tb.innerHTML=H.map((h,i)=>{ const tag=h.wallet===PM?'Uniswap V4 pool':h.wallet===X.creator?'creator':h.name?h.name:''; return `<tr class="h-[4.5rem] text-text-primary">${tdiv('whitespace-nowrap px-4 py-3 align-middle','<span class="block text-text-muted">'+(i+1)+'</span>')}${tdiv('px-4 py-3 align-middle',wlink(shortAddr(h.wallet),h.wallet)+(tag?tagS(esc(tag)):'')+youTag(h.wallet))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(fmtAmt(h.bal)+' '+X.t))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(h.share.toFixed(2)+'%'))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(fmtUsd(h.bal*X.px),inPair(h.bal*X.pxPair)))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(h.wallet===PM?'—':i<25?fmtUsd(pend[i]*X.pairUsd):'…',h.wallet===PM?'':i<25&&pend[i]>0?inPair(pend[i]):''))}</tr>`; }).join(''); }
+async function fillTop(){ const tb=$('#tb_top'); if(!tb||topLoaded||!window.CHAIN) return; topLoaded=true; const T=await CHAIN.topTraders(X.addr);
+  if(!T.length){ tb.innerHTML=emptyRow(6,'No trades yet.'); topLoaded=false; return; }
+  tb.innerHTML=T.slice(0,25).map((r,i)=>`<tr class="h-[4.5rem] text-text-primary">${tdiv('whitespace-nowrap px-4 py-3 align-middle',rank(i,true))}${tdiv('px-4 py-3 align-middle',wlink(shortAddr(r.wallet),r.wallet)+(r.wallet===X.creator?tagS('creator'):'')+youTag(r.wallet))}${tdiv('px-4 py-3 align-middle text-right tabular-nums','<span class="block font-medium '+(r.pnl>=0?'text-success':'text-error')+'">'+(r.pnl>=0?'+':'-')+fmtUsd(Math.abs(r.pnl))+'</span>')}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(fmtUsd(r.volume),inPair(r.volume/X.pairUsd)))}${tdiv('px-4 py-3 align-middle text-right tabular-nums',cellR(String(r.trades)))}${tdiv('px-4 py-3 align-middle text-right',cellR(r.holding?'Yes':'No'))}</tr>`).join(''); }
+async function fillRew(){ const c=$('[data-rew="you"]'); if(!c) return; const d=c.querySelectorAll('div'); if(!W.connected||!window.CHAIN){ d[1].textContent='—'; d[2].textContent='connect to see'; return; } try{ const p=Number(await CHAIN.pending(X.addr,W.address))/1e18; d[1].textContent=fmtUsd(p*X.pairUsd); d[2].textContent=inPair(p); }catch{ d[1].textContent='—'; } }
 function rank(i,small){ const n=i+1; const col=i<3?['warning','text-secondary','burn'][i]:'text-muted'; const box=small?'size-7 rounded-md':'size-8 rounded-lg'; return `<span class="relative z-10 inline-flex shrink-0 items-center justify-center border font-mono font-bold tabular-nums ${box} border-${col}/50 bg-${col}/10 text-${col}">${ic('trophy','size-4')}<span class="absolute -bottom-1.5 -right-1.5 grid size-5 place-items-center rounded-full border bg-bg-card text-[11px] leading-none border-${col}/60 text-${col}">${n}</span></span>`; }
 
-/* ---------- chart (TradingView-style chrome around lightweight-charts) ---------- */
-let series, candles=[], vols=[], chart;
-function initChart(){
-  const tv=$('#tv'); if(!tv) return;
-  if(window.TradingView&&window.initTV){ tv.id='tv'; window.tvActive=true; initTV('tv'); setInterval(()=>{ if(typeof price==='number') tvTick(price); },2500); return; }
-  tv.innerHTML=`<div class="tv"><div class="tb"><button class="b" id="tfBtn">1h</button><span class="sep"></span><button class="b" title="Candles">${ic('candle')}</button><span class="sep"></span><button class="b dim">${ic('ind')}Indicators</button><span class="sep"></span><button class="b on" data-ccy="USD">USD</button><span class="sl">/</span><button class="b dim" data-ccy="ETH">ETH</button><span class="sep"></span><button class="b dim" data-mode="mc">MarketCap</button><span class="sl">/</span><button class="b on" data-mode="px">Price</button><span class="sep hm"></span><button class="b hm" title="Fullscreen" id="fsBtn">${ic('max')}</button><button class="b dim hm" title="Undo">${ic('undo')}</button><button class="b dim hm" title="Redo">${ic('redo')}</button><span class="sp"></span><button class="b hm" title="Chart settings">${ic('settings')}</button><button class="b hm" title="Screenshot">${ic('camera')}</button></div>
-  <div class="rail">${['crosshair','line','fib','shapes','pen','text','smile','ruler','zoom','magnet','lock','eye','trash'].map(n=>`<button title="${n}">${ic(n)}</button>`).join('')}</div>
-  <div class="area"><div class="lg" id="lg"></div><div id="tvc"></div><div class="tvlogo"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h8v3H9v9H6V9H4zM13 6h3l2 6 2-6h3l-3.5 12h-3z"/></svg></div></div>
-  <div class="bb"><button class="b" data-rng="3m">3m</button><button class="b" data-rng="1m">1m</button><button class="b" data-rng="5d">5d</button><button class="b on" data-rng="1d">1d</button><span class="sp"></span><span class="t" id="clock"></span><span class="sep"></span><button class="b">%</button><button class="b">log</button><button class="b on">auto</button></div></div>`;
-  let t=Math.floor(Date.now()/3600)*3600-240*3600, p=0.000291; candles=[]; vols=[];
-  for(let i=0;i<240;i++){const o=p; const drift=i<60?0.012:i<160?0.004:-0.002; const c=o*(1+drift+(rnd()-0.5)*0.05); const hh=Math.max(o,c)*(1+rnd()*0.02); const ll=Math.min(o,c)*(1-rnd()*0.02); candles.push({time:t,open:o,high:hh,low:ll,close:c}); vols.push({time:t,value:2000+rnd()*9000,color:c>=o?'rgba(47,211,107,.35)':'rgba(242,74,92,.35)'}); p=c; t+=3600;}
-  price=candles[candles.length-1].close;
-  const el=$('#tvc'); if(!window.LightweightCharts){ el.innerHTML='<div class="flex h-full items-center justify-center text-sm text-text-muted">Chart unavailable offline</div>'; legend(candles[candles.length-1]); return; }
-  const cs=getComputedStyle(document.documentElement); const col={bg:cs.getPropertyValue('--color-bg-card').trim(),grid:cs.getPropertyValue('--color-border-default').trim(),tx:cs.getPropertyValue('--color-text-muted').trim()};
-  chart=LightweightCharts.createChart(el,{layout:{attributionLogo:false,background:{color:col.bg},textColor:col.tx,fontFamily:'JetBrains Mono',fontSize:11},grid:{vertLines:{color:col.grid},horzLines:{color:col.grid}},rightPriceScale:{borderColor:col.grid},timeScale:{borderColor:col.grid,timeVisible:true},crosshair:{mode:0},localization:{priceFormatter:v=>fmtPrice(v)}});
-  series=chart.addCandlestickSeries({upColor:'#2fd36b',downColor:'#f24a5c',borderVisible:false,wickUpColor:'#2fd36b',wickDownColor:'#f24a5c',priceFormat:{type:'custom',minMove:1e-9,formatter:v=>fmtPrice(v)}});
-  series.priceScale().applyOptions({scaleMargins:{top:0.12,bottom:0.22}});
-  const vs=chart.addHistogramSeries({priceFormat:{type:'volume'},priceScaleId:''}); vs.priceScale().applyOptions({scaleMargins:{top:0.82,bottom:0}});
-  series.setData(candles); vs.setData(vols); chart.timeScale().scrollToPosition(3,false);
-  new ResizeObserver(()=>chart.applyOptions({width:el.clientWidth,height:el.clientHeight})).observe(el);
-  chart.subscribeCrosshairMove(e=>{const d=e.seriesData&&e.seriesData.get(series); legend(d||candles[candles.length-1]);});
-  legend(candles[candles.length-1]);
-  setInterval(()=>{const c=$('#clock'); if(c) c.textContent=new Date().toISOString().slice(11,19)+' UTC';},1000);
-  const tfs=['1m','5m','15m','1h','4h','1D','1W']; $('#tfBtn').dataset.menu='1'; $('#tfBtn').onclick=e=>{ if($('.o-menu')) return $$('.o-menu').forEach(m=>m.remove()); menu(e.currentTarget,'<div class="h">Interval</div>'+tfs.map(x=>`<button class="i${x==='1h'?' on':''}" data-tf="${x}">${x}</button>`).join(''),true,$('#chartShell')); $$('.o-menu [data-tf]').forEach(b=>b.onclick=()=>{$('#tfBtn').textContent=b.dataset.tf; $$('.o-menu').forEach(m=>m.remove()); legend(candles[candles.length-1]);}); };
-  $$('[data-rng]',tv).forEach(b=>b.onclick=()=>{ $$('[data-rng]',tv).forEach(x=>x.classList.remove('on')); b.classList.add('on'); const n={'3m':240,'1m':240,'5d':120,'1d':24}[b.dataset.rng]; chart.timeScale().setVisibleLogicalRange({from:candles.length-n,to:candles.length+3}); });
-  $$('[data-ccy]',tv).forEach(b=>b.onclick=()=>{ $$('[data-ccy]',tv).forEach(x=>{x.classList.toggle('on',x===b); x.classList.toggle('dim',x!==b);}); window.chartCcy=b.dataset.ccy; chart.applyOptions({localization:{priceFormatter:v=>window.chartCcy==='ETH'?fmtPrice(v/ETH):fmtPrice(v)}}); legend(candles[candles.length-1]); });
-  $$('[data-mode]',tv).forEach(b=>b.onclick=()=>{ $$('[data-mode]',tv).forEach(x=>{x.classList.toggle('on',x===b); x.classList.toggle('dim',x!==b);}); window.chartMode=b.dataset.mode; chart.applyOptions({localization:{priceFormatter:v=>window.chartMode==='mc'?fmtUsd(v*SUP):fmtPrice(v)}}); });
-  $('#fsBtn').onclick=()=>{ const sh=$('#chartShell'); const fs=sh.dataset.fullscreen==='true'; sh.dataset.fullscreen=fs?'false':'true'; sh.style.cssText=fs?'':'position:fixed;inset:0;z-index:100;height:100dvh'; chart.applyOptions({width:el.clientWidth,height:el.clientHeight}); };
-}
-function legend(d){ const lg=$('#lg'); if(!lg||!d) return; const ch=(d.close-d.open)/d.open*100; const f=v=>window.chartCcy==='ETH'?fmtPrice(v/ETH):fmtPrice(v); const v=vols.find(x=>x.time===d.time); const cls=ch>=0?'u':'d';
-  lg.innerHTML=`<span>MOGCAT/ETH · ${$('#tfBtn')?$('#tfBtn').textContent:'1h'} · Inkypump</span><span class="o">O</span><span class="${cls}">${f(d.open)}</span><span class="o">H</span><span class="${cls}">${f(d.high)}</span><span class="o">L</span><span class="${cls}">${f(d.low)}</span><span class="o">C</span><span class="${cls}">${f(d.close)}</span> <span class="${cls}">${(ch>=0?'+':'')+(d.close-d.open>=0?'':'')}${f(Math.abs(d.close-d.open))} (${ch>=0?'+':'−'}${Math.abs(ch).toFixed(2)}%)</span><span class="vol">Volume <b>${v?fmtAmt(v.value):'—'}</b></span><span class="col">${ic('up','size-3')}</span>`; }
-function chartTick(px){ if(window.tvActive){ tvTick(px); return; } if(!series) return; const last=candles[candles.length-1]; last.close=px; last.high=Math.max(last.high,px); last.low=Math.min(last.low,px); series.update(last); legend(last); }
+/* ---------- trades table ---------- */
+let TR=[], trSeen=new Set(), filter='all', shownTr=40;
+function tradeView(t){ const coin=Number(t.coin)/1e18, pair=Number(t.pair)/1e18; const pxPair=CHAIN.tradePrice(t); return {t:t.ts,buy:t.buy,pair,usd:pair*X.pairUsd,amt:coin,pxPair,px:pxPair*X.pairUsd,fee:Number(t.fee)/1e18,mk:t.wallet,tx:t.tx,k:t.tx+':'+t.index}; }
+function tradesInit(){ const tb=$('#tb'), tpl=$('[data-tpl="tx"]',tb); tpl.remove(); const mtb=$('#mtb'), mtpl=$('[data-tpl="mtx"]',mtb); mtpl.remove(); window._tpl={tpl,mtpl};
+  TR=(X._trades||[]).map(tradeView).reverse(); TR.forEach(x=>trSeen.add(x.k)); renderTrades();
+  setInterval(()=>{ const now=Math.floor(Date.now()/1000); $$('[data-ts]').forEach(e=>e.textContent=ago(Math.max(0,now-+e.dataset.ts))+' ago'); },1000);
+  const seg=$('#seg'); seg.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; $$('button',seg).forEach(x=>{ x.className=x.className.replace(' bg-accent text-accent-ink','').replace(' text-text-secondary hover:text-text-primary',''); x.className+= x===b?' bg-accent text-accent-ink':' text-text-secondary hover:text-text-primary'; }); filter=b.dataset.side; applyFilter(); });
+  $$('button',seg).forEach((x,i)=>{ const base=x.className.replace(/ bg-accent text-accent-ink| text-text-secondary hover:text-text-primary/g,''); x.className=base+(i===0?' bg-accent text-accent-ink':' text-text-secondary hover:text-text-primary'); });
+  $('#loadmore button').onclick=()=>{ shownTr+=40; renderTrades(); }; }
+function applyFilter(){ $$('#tb tr,#mtb > div').forEach(r=>r.style.display=(filter==='all'||r.dataset.k===filter)?'':'none'); }
+function renderTrades(){ const tb=$('#tb'), mtb=$('#mtb'); tb.innerHTML=''; mtb.innerHTML=''; if(!TR.length){ tb.innerHTML=emptyRow(8,'No trades yet. The first buy shows up here within seconds.'); mtb.innerHTML='<p class="py-6 text-center text-sm text-text-muted">No trades yet.</p>'; $('#loadmore').style.display='none'; return; }
+  TR.slice(0,shownTr).forEach(x=>{ tb.appendChild(row(x)); mtb.appendChild(mrow(x)); }); applyFilter(); $('#loadmore').style.display=TR.length>shownTr?'':'none'; }
+const agoTxt=x=>ago(Math.max(0,Math.floor(Date.now()/1000)-x.t))+' ago';
+function row(x){ const r=window._tpl.tpl.cloneNode(true); r.removeAttribute('data-tpl'); const td=r.children; const tm=td[0].querySelector('span'); tm.textContent=agoTxt(x); tm.dataset.ts=x.t; tm.title=new Date(x.t*1000).toLocaleString();
+  const ty=td[1].querySelector('span'); ty.textContent=x.buy?'Buy':'Sell'; ty.className=x.buy?'inline-flex h-6 items-center rounded-md border px-2 text-[11px] font-semibold border-success/20 bg-success-soft text-success':'inline-flex h-6 items-center rounded-md border px-2 text-[11px] font-semibold border-error/20 bg-error/10 text-error';
+  const c2=td[2].querySelectorAll('span.block'); c2[1].textContent=fmtPrice(x.pxPair)+' '+X.pair; c2[2].textContent='approx $'+fmtPrice(x.px);
+  td[3].querySelector('span.block span').textContent=fmtAmt(x.amt)+' '+X.t;
+  const c4=td[4].querySelectorAll('span.block'); c4[1].textContent=inPair(x.pair); c4[2].textContent='approx '+fmtUsd(x.usd);
+  td[5].querySelector('span.block span').textContent=inPair(x.fee);
+  const a=td[6].querySelector('a'); a.href=EXPLORER+'/address/'+x.mk; a.querySelector('span').textContent=shortAddr(x.mk);
+  td[7].querySelector('a').href=EXPLORER+'/tx/'+x.tx; r.dataset.k=x.buy?'buy':'sell'; return r; }
+function mrow(x){ const r=window._tpl.mtpl.cloneNode(true); r.removeAttribute('data-tpl'); const f=k=>r.querySelector('[data-f="'+k+'"]'); const sd=f('side'); sd.textContent=x.buy?'Buy':'Sell'; sd.className='mr-1.5 '+(x.buy?'text-success':'text-error'); f('amt').textContent=fmtAmt(x.amt)+' '+X.t; f('time').textContent=agoTxt(x); f('time').dataset.ts=x.t; f('wallet').textContent=x.mk.slice(0,6)+'…'; r.querySelector('a').href=EXPLORER+'/address/'+x.mk; f('px').textContent='$'+fmtPrice(x.px); f('fee').textContent='Fee '+inPair(x.fee); f('usd').textContent='approx '+fmtUsd(x.usd); r.dataset.k=x.buy?'buy':'sell'; return r; }
+
+/* ---------- live refresh ---------- */
+let ticking=false;
+async function tick(){ if(ticking||document.hidden){ setTimeout(tick,4000); return; } ticking=true;
+  try{ const old=price; const nx=await CHAIN.refresh(X.addr); const trades=await CHAIN.trades(X.addr); nx._trades=trades; Object.assign(X,nx); price=X.px; const i=TOK.findIndex(t=>t.addr===X.addr); if(i>=0) TOK[i]=X;
+    const fresh=trades.filter(t=>!trSeen.has(t.tx+':'+t.index)); if(fresh.length){ fresh.forEach(t=>trSeen.add(t.tx+':'+t.index)); const v=fresh.map(tradeView).reverse(); TR=[...v,...TR]; const tb=$('#tb'), mtb=$('#mtb'); if(TR.length===v.length) renderTrades(); else { v.slice().reverse().forEach(x=>{ const r=row(x); r.classList.add('o-flash'); tb.insertBefore(r,tb.firstChild); mtb.insertBefore(mrow(x),mtb.firstChild); }); applyFilter(); } holdersLoaded=false; topLoaded=false; }
+    paintStats(); paintInfo(); document.title=`${X.t} $${fmtPrice(X.px)} | Inkypump`;
+    const st=$$('[data-stat]'); [st[0],st[1]].forEach(s=>{ const e=s.querySelector('.text-\\[26px\\]'); if(!e||price===old) return; e.classList.remove('stat-up','stat-dn'); void e.offsetWidth; e.classList.add(price>=old?'stat-up':'stat-dn'); setTimeout(()=>e.classList.remove('stat-up','stat-dn'),600); });
+    if(window.tvTick&&window.tvActive) tvTick(X.pxPair,fresh); if(fresh.length||price!==old){ updSwap(); } if(fresh.length) refreshPosition();
+  }catch(e){ console.warn('refresh failed',e); } ticking=false; setTimeout(tick,6000); }
+
+/* ---------- chart ---------- */
+function initChart(){ const tv=$('#tv'); if(!tv) return; if(window.TradingView&&window.initTV){ window.tvActive=true; initTV('tv',X); return; } tv.innerHTML='<div class="flex h-full items-center justify-center text-sm text-text-muted">Chart unavailable</div>'; }
 
 /* ---------- swap card ---------- */
+let balEth=0, balCoin=0, quoteSeq=0, quoteOut=0n, quoting=false;
+function swapCta(){ const c=$('#cta'); if(!c||!X) return; const v=parseFloat(String($('#amtIn').value).replace(/,/g,''))||0; let t, dis=false;
+  if(!W.connected) t='Connect Wallet'; else if(!W.onInk) t='Switch to Ink'; else if(!v) { t=(window.swapSide==='buy'?'Buy ':'Sell ')+X.t; dis=true; } else if(window.swapSide==='buy'&&v>balEth) { t='Insufficient ETH'; dis=true; } else if(window.swapSide==='sell'&&v>balCoin*1.0000001) { t='Insufficient '+X.t; dis=true; } else if(quoting) { t='Fetching quote…'; dis=true; } else t=(window.swapSide==='buy'?'Buy ':'Sell ')+X.t;
+  if(c.dataset.busy) return; c.textContent=t; c.disabled=dis&&W.connected; const m=$('#m_cta'); if(m){ m.textContent=t; m.disabled=c.disabled; } }
 function initSwap(){
-  const amt=$('#amtIn'); if(!amt) return;
-  amt.value='0.1'; window.balIn=0.842; window.balOut=2104320;
-  $('#balIn').textContent='Balance: '+(W.connected?'0.842':'0'); $('#balOut').textContent='Balance: '+(W.connected?'2,104,320':'0');
-  amt.addEventListener('input',updSwap);
-  $$('[data-q]').forEach(b=>b.onclick=()=>{ if(!W.connected) return openConnect(); const max=window.swapSide==='buy'?0.842:2104320; const q=b.dataset.q; amt.value=q==='MAX'?String(max):String(+(max*parseInt(q)/100).toFixed(window.swapSide==='buy'?4:0)); updSwap(); });
+  const amt=$('#amtIn'); if(!amt) return; amt.value='';
+  $$('[data-av]').forEach(a=>{ if(a.dataset.av==='out') setAv(a,X.img,X.t[0]); else setAv(a,ETH_IMG,'E'); });
+  $$('#assetOut .text-\\[16px\\]').forEach(n=>n.textContent=X.t);
+  amt.addEventListener('input',()=>updSwap());
+  $$('[data-q]').forEach(b=>b.onclick=()=>{ if(!W.connected) return openConnect(); const max=window.swapSide==='buy'?Math.max(0,balEth-0.0003):balCoin; const q=b.dataset.q; const v=q==='MAX'?max:max*parseInt(q)/100; amt.value=window.swapSide==='buy'?String(+v.toFixed(6)):String(Math.floor(v)); updSwap(); });
   $('#flip').onclick=()=>{ window.swapSide=window.swapSide==='buy'?'sell':'buy'; const a=$('#assetIn'),b=$('#assetOut'); const av1=$('[data-av]',a), av2=$('[data-av]',b); const n1=$('.text-\\[16px\\]',a), n2=$('.text-\\[16px\\]',b);
-    const i1=av1.querySelector('img'), i2=av2.querySelector('img'); const s1=i1?i1.src:'', s2=i2?i2.src:''; const l1=av1.querySelector('span').textContent, l2=av2.querySelector('span').textContent; setAv(av1,s2,l2); setAv(av2,s1,l1); const t1=n1.textContent; n1.textContent=n2.textContent; n2.textContent=t1;
-    const bi=$('#balIn').textContent, bo=$('#balOut').textContent; $('#balIn').textContent=bo; $('#balOut').textContent=bi; amt.value=window.swapSide==='buy'?'0.1':'1000000'; renderWallet(); updSwap(); };
+    if(window.swapSide==='sell'){ setAv(av1,X.img,X.t[0]); setAv(av2,ETH_IMG,'E'); n1.textContent=X.t; n2.textContent='ETH'; } else { setAv(av1,ETH_IMG,'E'); setAv(av2,X.img,X.t[0]); n1.textContent='ETH'; n2.textContent=X.t; }
+    amt.value=''; $('#amtOut').value=''; paintBal(); renderWallet(); updSwap(); };
   $('#detBtn').onclick=()=>{ const o=$('#detBtn').getAttribute('aria-expanded')==='true'; $('#detBtn').setAttribute('aria-expanded',String(!o)); const b=$('#detBody'); b.classList.toggle('grid-rows-[0fr]',o); b.classList.toggle('opacity-0',o); b.classList.toggle('grid-rows-[1fr]',!o); b.classList.toggle('opacity-100',!o); const ch=$('#detBtn svg.lucide-chevron-down'); if(ch) ch.style.transform=o?'':'rotate(180deg)'; };
-  const sa=$('#slipAuto'); if(sa) sa.onclick=()=>{ $('#slip').value='1'; toast('Slippage set to auto (1%)'); };
-  $('#cta').onclick=()=>{ if(!W.connected) return openConnect(); const v=parseFloat(amt.value)||0; if(!v) return toast('Enter an amount','x'); toast((window.swapSide==='buy'?'Bought ':'Sold ')+$('#amtOut').value+(window.swapSide==='buy'?' MOGCAT':' ETH')+' · tx sent'); };
-  updSwap();
+  const sa=$('#slipAuto'); if(sa) sa.onclick=()=>{ $('#slip').value='1'; toast('Slippage set to auto (1%)'); updSwap(); }; $('#slip').addEventListener('input',()=>updSwap());
+  $('#cta').onclick=doSwap;
+  $$('#posActs [data-claim]').forEach(b=>b.onclick=()=>doClaim(b.dataset.claim));
+  if(/[?&]side=sell/.test(location.search)) $('#flip').click();
+  paintBal(); refreshPosition(); updSwap(); document.addEventListener('wallet-change',()=>{ refreshPosition(); updSwap(); });
 }
-function updSwap(){ const amt=$('#amtIn'); if(!amt) return; const v=parseFloat(String(amt.value).replace(/,/g,''))||0; const out=$('#amtOut');
-  if(window.swapSide==='buy'){ const o=v*0.98/(price/ETH); out.value=v?Math.round(o).toLocaleString():''; $('#usdIn').textContent='$'+(v*ETH).toFixed(2); $('#usdOut').textContent='$'+(o*price).toFixed(2); $('#d_minr').textContent=Math.round(o*(1-parseFloat($('#slip').value||1)/100)).toLocaleString()+' MOGCAT'; $('#d_fee').textContent='2.00% · '+(v*0.02).toFixed(4)+' ETH'; }
-  else { const o=v*price/ETH*0.98; out.value=v?o.toFixed(4):''; $('#usdIn').textContent='$'+(v*price).toFixed(2); $('#usdOut').textContent='$'+(o*ETH).toFixed(2); $('#d_minr').textContent=(o*(1-parseFloat($('#slip').value||1)/100)).toFixed(4)+' ETH'; $('#d_fee').textContent='2.00% · '+(o/0.98*0.02).toFixed(5)+' ETH'; }
-  $('#d_impact').textContent=(0.1+v*(window.swapSide==='buy'?3.2:0.0000012)).toFixed(2)+'%'; }
-function openSwapSheet(side){ const card=$('#swapcard').cloneNode(true); card.querySelectorAll('[id]').forEach(e=>e.id='m_'+e.id); const ov=sheet(''); ov.querySelector('.sb').appendChild(card); if(side!==window.swapSide) $('#flip').click();
-  const amt=$('#m_amtIn',card), out=$('#m_amtOut',card); const sync=()=>{ $('#amtIn').value=amt.value; updSwap(); out.value=$('#amtOut').value; $('#m_usdIn',card).textContent=$('#usdIn').textContent; $('#m_usdOut',card).textContent=$('#usdOut').textContent; $('#m_d_minr',card).textContent=$('#d_minr').textContent; $('#m_d_fee',card).textContent=$('#d_fee').textContent; $('#m_cta',card).textContent=$('#cta').textContent; };
-  amt.addEventListener('input',sync); $$('[data-q]',card).forEach(b=>b.onclick=()=>{ $(`#swapcard [data-q="${b.dataset.q}"]`).click(); amt.value=$('#amtIn').value; sync(); }); $('#m_flip',card).onclick=()=>{ $('#flip').click(); ov.remove(); openSwapSheet(window.swapSide); };
+function paintBal(){ const bi=$('#balIn'), bo=$('#balOut'); if(!bi) return; const e='Balance: '+(W.connected?(+balEth.toFixed(5)).toString():'0'), c='Balance: '+(W.connected?fmtAmt(balCoin):'0'); if(window.swapSide==='buy'){ bi.textContent=e; bo.textContent=c; } else { bi.textContent=c; bo.textContent=e; } }
+async function refreshPosition(){ const pos=$('#pos'); if(!pos) return; if(!W.connected||!LIVE||!window.CHAIN){ balEth=0; balCoin=0; paintBal(); pos.classList.add('hidden'); return; }
+  try{ const u=W.address; const [eb,cb,pend,p]=await Promise.all([CHAIN.ethBalance(u),CHAIN.balance(X.addr,u),CHAIN.pending(X.addr,u),CHAIN.position(X.addr,u)]); balEth=Number(eb)/1e18; balCoin=Number(cb)/1e18; const pendV=Number(pend)/1e18; paintBal(); swapCta();
+    pos.classList.remove('hidden'); $('#posBal').textContent=fmtAmt(balCoin)+' '+X.t; $('#posVal').textContent=fmtUsd(balCoin*X.px)+' · '+inPair(balCoin*X.pxPair);
+    $('#posAvg').textContent=p.avg>0?'$'+fmtPrice(p.avg*X.pairUsd)+' · '+fmtPrice(p.avg)+' '+X.pair:'—';
+    const pnl=$('#posPnl'); if(p.avg>0&&p.units>0){ const held=Math.min(p.units,balCoin); const u=(X.pxPair-p.avg)*held*X.pairUsd; const pc=(X.pxPair/p.avg-1)*100; pnl.textContent=(pc>=0?'+':'')+pc.toFixed(1)+'% · '+(u>=0?'+':'-')+fmtUsd(Math.abs(u)); pnl.className=pc>=0?'text-success':'text-error'; } else { pnl.textContent='—'; pnl.className='text-text-primary'; }
+    $('#posPendL').textContent=X.rewards?'Rewards pending':'Holder rewards'; $('#posPend').textContent=X.rewards?fmtUsd(pendV*X.pairUsd)+' · '+inPair(pendV):'off';
+    const acts=$('#posActs'); const bb=acts.querySelector('[data-claim="basket"]'), be=acts.querySelector('[data-claim="eth"]'); acts.style.display=X.rewards?'':'none';
+    if(X.basket.length){ bb.textContent='Claim basket'; bb.dataset.claim='basket'; be.style.display=''; } else if(X.pair==='ETH'){ bb.textContent='Claim ETH'; bb.dataset.claim='pair'; be.style.display='none'; } else { bb.textContent='Claim '+X.pair; bb.dataset.claim='pair'; be.style.display=''; }
+    bb.disabled=be.disabled=!(pendV>0);
+  }catch(e){ console.warn('position',e); } }
+async function updSwap(){ const amt=$('#amtIn'); if(!amt||!X) return; const v=parseFloat(String(amt.value).replace(/,/g,''))||0; const out=$('#amtOut'); const slip=Math.min(50,Math.max(0.01,parseFloat($('#slip').value)||1));
+  if(!v){ out.value=''; $('#usdIn').textContent=''; $('#usdOut').textContent=''; $('#d_minr').textContent='—'; $('#d_fee').textContent='2.00%'; $('#d_impact').textContent='—'; quoteOut=0n; quoting=false; swapCta(); syncSheet(); return; }
+  const seq=++quoteSeq; quoting=true; swapCta();
+  try{ let o, spot; if(!LIVE||!window.CHAIN){ o=window.swapSide==='buy'?v*0.98/X.pxPair:v*X.pxPair*0.98; spot=o; }
+    else if(window.swapSide==='buy'){ const wei=CHAIN.parseEther(v.toFixed(18)); quoteOut=await CHAIN.quoteBuyEth(X.addr,wei); o=Number(quoteOut)/1e18; spot=v*ETH/X.px*0.98; }
+    else { const wei=CHAIN.parseEther(Math.min(v,balCoin||v).toFixed(18)); quoteOut=await CHAIN.quoteSellEth(X.addr,wei); o=Number(quoteOut)/1e18; spot=v*X.px/ETH*0.98; }
+    if(seq!==quoteSeq) return; quoting=false;
+    if(window.swapSide==='buy'){ out.value=o?Math.floor(o).toLocaleString():''; $('#usdIn').textContent='$'+(v*ETH).toFixed(2); $('#usdOut').textContent='$'+(o*X.px).toFixed(2); $('#d_minr').textContent=Math.floor(o*(1-slip/100)).toLocaleString()+' '+X.t; $('#d_fee').textContent='2.00% · '+(v*0.02).toFixed(5)+' ETH'; }
+    else { out.value=o?(+o.toFixed(6)).toString():''; $('#usdIn').textContent='$'+(v*X.px).toFixed(2); $('#usdOut').textContent='$'+(o*ETH).toFixed(2); $('#d_minr').textContent=(o*(1-slip/100)).toFixed(6)+' ETH'; $('#d_fee').textContent='2.00% · '+(o/0.98*0.02).toFixed(5)+' ETH'; }
+    const imp=spot>0?Math.max(0,(1-o/spot)*100):0; $('#d_impact').textContent=imp.toFixed(2)+'%'; $('#d_impact').className=$('#d_impact').className.replace(/ text-(warning|error)/g,'')+(imp>15?' text-error':imp>5?' text-warning':'');
+  }catch(e){ if(seq!==quoteSeq) return; quoting=false; out.value=''; $('#d_impact').textContent='—'; console.warn('quote',e); }
+  swapCta(); syncSheet(); }
+async function doSwap(){ if(!W.connected) return openConnect(); if(!W.onInk){ try{ await DYN().switchToInk(); }catch(e){ toast(errMsg(e),'x'); } return; } const amt=$('#amtIn'); const v=parseFloat(String(amt.value).replace(/,/g,''))||0; if(!v) return toast('Enter an amount','x'); if(!LIVE||!window.CHAIN) return toast('Trading opens when the contracts are live');
+  if(quoting||!(quoteOut>0n)) return toast('Fetching the quote, try again','x'); const slip=Math.min(50,Math.max(0.01,parseFloat($('#slip').value)||1)); const min=quoteOut-quoteOut*BigInt(Math.round(slip*100))/10000n;
+  const c=$('#cta'); c.dataset.busy='1'; c.disabled=true; c.textContent='Confirm in wallet…'; const m=$('#m_cta'); if(m){ m.disabled=true; m.textContent='Confirm in wallet…'; }
+  try{ let rc; if(window.swapSide==='buy') rc=await CHAIN.buy(X.addr,CHAIN.parseEther(v.toFixed(18)),min); else rc=await CHAIN.sell(X.addr,CHAIN.parseEther(Math.min(v,balCoin).toFixed(18)),min);
+    toast((window.swapSide==='buy'?'Bought ':'Sold ')+X.t+' · confirmed'); amt.value=''; $('#amtOut').value=''; quoteOut=0n; delete c.dataset.busy; await tickNow(); }
+  catch(e){ delete c.dataset.busy; toast(errMsg(e),'x'); }
+  c.disabled=false; swapCta(); updSwap(); }
+async function tickNow(){ try{ const nx=await CHAIN.refresh(X.addr); const trades=await CHAIN.trades(X.addr); nx._trades=trades; Object.assign(X,nx); price=X.px; const fresh=trades.filter(t=>!trSeen.has(t.tx+':'+t.index)); fresh.forEach(t=>trSeen.add(t.tx+':'+t.index)); if(fresh.length){ const v=fresh.map(tradeView).reverse(); TR=[...v,...TR]; renderTrades(); holdersLoaded=false; topLoaded=false; } paintStats(); paintInfo(); if(window.tvTick&&window.tvActive) tvTick(X.pxPair,fresh); }catch(e){} await refreshPosition(); }
+async function doClaim(mode){ if(!W.connected) return openConnect(); const b=$(`#posActs [data-claim="${mode}"]`); const t=b?b.textContent:''; if(b){ b.disabled=true; b.textContent='Confirm…'; }
+  try{ await CHAIN.claim(X.addr,mode); toast('Rewards claimed'+(mode==='basket'?' in '+X.basket.join(', '):mode==='eth'?' as ETH':' in '+X.pair)); await refreshPosition(); fillRew(); }catch(e){ toast(errMsg(e),'x'); } if(b){ b.textContent=t; b.disabled=false; } }
+let sheetEl=null;
+function syncSheet(){ const card=sheetEl; if(!card||!card.isConnected) return; $('#m_amtOut',card).value=$('#amtOut').value; $('#m_usdIn',card).textContent=$('#usdIn').textContent; $('#m_usdOut',card).textContent=$('#usdOut').textContent; $('#m_d_minr',card).textContent=$('#d_minr').textContent; $('#m_d_fee',card).textContent=$('#d_fee').textContent; $('#m_d_impact',card).textContent=$('#d_impact').textContent; $('#m_balIn',card).textContent=$('#balIn').textContent; $('#m_balOut',card).textContent=$('#balOut').textContent; const mc=$('#m_cta',card); mc.textContent=$('#cta').textContent; mc.disabled=$('#cta').disabled; }
+function openSwapSheet(side){ if(side!==window.swapSide) $('#flip').click(); const card=$('#swapcard').cloneNode(true); card.querySelectorAll('[id]').forEach(e=>e.id='m_'+e.id); const ov=sheet(''); ov.querySelector('.sb').appendChild(card); sheetEl=card;
+  const amt=$('#m_amtIn',card); amt.value=$('#amtIn').value; amt.addEventListener('input',()=>{ $('#amtIn').value=amt.value; updSwap(); }); $$('[data-q]',card).forEach(b=>b.onclick=()=>{ $(`#swapcard [data-q="${b.dataset.q}"]`).click(); amt.value=$('#amtIn').value; }); $('#m_flip',card).onclick=()=>{ ov.remove(); $('#flip').click(); openSwapSheet(window.swapSide); };
   $('#m_detBtn',card).onclick=()=>{ $('#detBtn').click(); const b=$('#m_detBody',card), o=$('#detBody').classList.contains('grid-rows-[1fr]'); b.classList.toggle('grid-rows-[0fr]',!o); b.classList.toggle('opacity-0',!o); b.classList.toggle('grid-rows-[1fr]',o); b.classList.toggle('opacity-100',o); };
-  $('#m_cta',card).onclick=()=>{ $('#amtIn').value=amt.value; $('#cta').click(); if(W.connected) ov.remove(); }; sync(); }
+  $$('#m_posActs [data-claim]',card).forEach(b=>b.onclick=()=>doClaim(b.dataset.claim));
+  $('#m_cta',card).onclick=async()=>{ $('#amtIn').value=amt.value; await doSwap(); syncSheet(); }; syncSheet(); }
 
 /* ======================= HOME PAGE ======================= */
 function initHome(){
+  // stat cards
+  if(window.CHAIN&&LIVE){ CHAIN.allTrades().then(tr=>{ const set=(k,v)=>{ const c=$(`[data-home="${k}"] div.text-lg`); if(c) c.textContent=v; }; const all=window.CHAIN.tokens(); set('tokens',String(TOK.length)); set('traders',new Set(tr.map(t=>t.wallet)).size.toLocaleString()); set('volume',fmtUsd(all.reduce((s,x)=>s+x.volAll,0))); set('holders',fmtUsd(all.reduce((s,x)=>s+x.totalHolderRewards*x.pairUsd,0))); set('creators',fmtUsd(all.reduce((s,x)=>s+x.totalCreatorFees*x.pairUsd,0))); const ath=Math.max(0,...tr.map(t=>{ const x=CHAIN.token(t.token); return x?CHAIN.tradePrice(t)*x.pairUsd*SUPPLY:0; }),...all.map(x=>x.mc)); set('ath',fmtUsd(ath)); }).catch(()=>{}); }
   // "New" chips
-  if(PRE){ $$('main div.rounded-2xl.bg-bg-input.px-4.py-3 div.text-lg').forEach(d=>{ d.textContent=d.textContent.trim().startsWith('$')?'$0':'0'; }); }
-  const nc=$('#newchips'); if(nc){ const tpl=$('[data-tpl="chip"]',nc); tpl.remove(); [...TOK].sort((a,b)=>ageMin(a.age)-ageMin(b.age)).slice(0,8).forEach(x=>{ const c=tpl.cloneNode(true); c.removeAttribute('data-tpl'); setAv($('.bg-avatar-gradient',c),x.img,x.t[0]); $('.block.truncate',c).textContent=x.t; c.querySelector('button').onclick=()=>location.href='token.html'; nc.appendChild(c); }); if(!TOK.length){ const bar=nc.closest('div.border-b')||nc.parentElement; if(bar) bar.style.display='none'; } }
+  const nc=$('#newchips'); if(nc){ const tpl=$('[data-tpl="chip"]',nc); tpl.remove(); [...TOK].sort((a,b)=>b.createdAt-a.createdAt).slice(0,8).forEach(x=>{ const c=tpl.cloneNode(true); c.removeAttribute('data-tpl'); setAv($('.bg-avatar-gradient',c),x.img,x.t[0]); $('.block.truncate',c).textContent=x.t; c.querySelector('button').onclick=()=>go(tokenUrl(x)); nc.appendChild(c); }); if(!TOK.length){ const bar=nc.closest('div.border-b')||nc.parentElement; if(bar) bar.style.display='none'; } }
   // stock stack in the hero paragraph
   const stack=$('#stack'); if(stack){ const tpl=$('[data-tpl="stk"]',stack); tpl.remove(); STOCKS.slice(0,6).forEach(s=>{ const c=tpl.cloneNode(true); c.removeAttribute('data-tpl'); const av=$('[data-f="av"]',c); av.src=STOCK_IMG(s[0]); av.alt=s[1]; c.title=s[1]+' · '+s[0]; c.querySelector('span.block').setAttribute('aria-label',s[1]); stack.appendChild(c); }); }
   // trending
-  const tr=$('#trend'); if(tr){ const a=$('[data-tpl="trendTop"]',tr), b=$('[data-tpl="trendPlain"]',tr); a.remove(); b.remove(); if(!TOK.length){ tr.insertAdjacentHTML('beforeend',emptyBox('Coming soon','Trending fills in after the first launches.',null,null,true)); } [...TOK].sort((x,y)=>y.vol-x.vol).slice(0,5).forEach((x,i)=>{ const c=(i<3?a:b).cloneNode(true); c.removeAttribute('data-tpl'); if(i<3){ const col=['warning','text-secondary','burn'][i]; const rk=c.querySelector('span[aria-label^="Rank"]'); rk.setAttribute('aria-label','Rank '+(i+1)); rk.className='relative z-10 inline-flex shrink-0 items-center justify-center border font-mono font-bold tabular-nums size-8 rounded-lg border-'+col+'/50 bg-'+col+'/10 text-'+col; rk.querySelector('svg').outerHTML=ic(i?'medal':'crown','size-4'); const n=rk.querySelector('span'); n.textContent=i+1; n.className='absolute -bottom-1.5 -right-1.5 grid size-5 place-items-center rounded-full border bg-bg-card text-[11px] leading-none border-'+col+'/60 text-'+col; } else c.querySelector('span[aria-label^="Rank"]').textContent=i+1;
-    setAv($('.bg-avatar-gradient',c),x.img,x.t[0]); const names=c.querySelectorAll('.items-baseline span'); names[0].textContent=x.n; names[1].textContent=x.t; const meta=c.querySelector('.mt-1.flex'); meta.innerHTML='<span>ETH</span><span> · '+ageStr(x.age)+'</span>'; const rt=c.querySelector('.text-right'); rt.querySelector('.truncate.text-sm').textContent=fmtUsd(x.mc); rt.querySelector('.font-medium').textContent=fmtUsd(x.vol); c.onclick=()=>location.href='token.html'; tr.appendChild(c); }); }
+  const tr=$('#trend'); if(tr){ const a=$('[data-tpl="trendTop"]',tr), b=$('[data-tpl="trendPlain"]',tr); a.remove(); b.remove(); if(!TOK.length){ tr.insertAdjacentHTML('beforeend',emptyBox('Coming soon','Trending fills in after the first launches.',null,null,true)); } [...TOK].sort((x,y)=>(y.vol-x.vol)||(y.mc-x.mc)).slice(0,5).forEach((x,i)=>{ const c=(i<3?a:b).cloneNode(true); c.removeAttribute('data-tpl'); if(i<3){ const col=['warning','text-secondary','burn'][i]; const rk=c.querySelector('span[aria-label^="Rank"]'); rk.setAttribute('aria-label','Rank '+(i+1)); rk.className='relative z-10 inline-flex shrink-0 items-center justify-center border font-mono font-bold tabular-nums size-8 rounded-lg border-'+col+'/50 bg-'+col+'/10 text-'+col; rk.querySelector('svg').outerHTML=ic(i?'medal':'crown','size-4'); const n=rk.querySelector('span'); n.textContent=i+1; n.className='absolute -bottom-1.5 -right-1.5 grid size-5 place-items-center rounded-full border bg-bg-card text-[11px] leading-none border-'+col+'/60 text-'+col; } else c.querySelector('span[aria-label^="Rank"]').textContent=i+1;
+    setAv($('.bg-avatar-gradient',c),x.img,x.t[0]); const names=c.querySelectorAll('.items-baseline span'); names[0].textContent=x.n; names[1].textContent=x.t; const meta=c.querySelector('.mt-1.flex'); meta.innerHTML='<span>'+x.pair+'</span><span> · '+ageStr(x.age)+'</span>'; const rt=c.querySelector('.text-right'); rt.querySelector('.truncate.text-sm').textContent=fmtUsd(x.mc); rt.querySelector('.font-medium').textContent=fmtUsd(x.vol); c.onclick=()=>go(tokenUrl(x)); tr.appendChild(c); }); }
   // feed
   const rows=$('#rows'); if(!rows) return; const tpl=$('[data-tpl="row"]',rows); tpl.remove(); const mr=$('#mrows'), mtpl=$('[data-tpl="mrow"]',mr); mtpl.remove();
-  let fil='all', sortK='trend', shown=12;
+  let fil='all', sortK='trend', shown=12, asset='all';
   function render(){ let list=[...TOK]; if(fil==='new') list=list.filter(x=>ageMin(x.age)<=60); if(fil==='multi') list=list.filter(x=>x.basket.length>1);
-    list.sort(sortK==='vol'?(a,b)=>b.vol-a.vol:sortK==='new'?(a,b)=>ageMin(a.age)-ageMin(b.age):sortK==='liq'?(a,b)=>b.liq-a.liq:(a,b)=>b.c1-a.c1);
+    if(asset==='ETH') list=list.filter(x=>x.pair==='ETH'); else if(asset!=='all') list=list.filter(x=>x.pair===asset||x.basket.includes(asset));
+    list.sort(sortK==='vol'?(a,b)=>b.vol-a.vol:sortK==='new'?(a,b)=>b.createdAt-a.createdAt:sortK==='liq'?(a,b)=>b.liq-a.liq:(a,b)=>(b.vol-a.vol)||(b.c1-a.c1)||(b.createdAt-a.createdAt));
     $$('#rows > .group, #mrows > div').forEach(e=>e.remove());
-    $$('.o-feed-empty').forEach(e=>e.remove()); if(!list.length){ const em=emptyBox('Coming soon','Inkypump is launching on Ink. Launching, trading and holder rewards open the day the contracts go live.','docs/introduction.html','How it works',true); rows.insertAdjacentHTML('beforeend','<div class="o-feed-empty">'+em+'</div>'); mr.insertAdjacentHTML('beforeend','<div class="o-feed-empty">'+em+'</div>'); }
+    $$('.o-feed-empty').forEach(e=>e.remove()); if(!list.length){ const em=TOK.length?emptyBox('Nothing here','No token matches this filter yet.',null,null,true):PRE?emptyBox('Coming soon','Inkypump is launching on Ink. Launching, trading and holder rewards open the day the contracts go live.','/docs/introduction','How it works',true):emptyBox('Be the first','The contracts are live on Ink. The first launch shows up here within seconds.','/launch','Launch a token',true); rows.insertAdjacentHTML('beforeend','<div class="o-feed-empty">'+em+'</div>'); mr.insertAdjacentHTML('beforeend','<div class="o-feed-empty">'+em+'</div>'); }
     list.slice(0,shown).forEach((x,i)=>{ const r=tpl.cloneNode(true); r.removeAttribute('data-tpl'); r.style.animationDelay=(i*30)+'ms'; setAv($('.bg-avatar-gradient',r),x.img,x.t[0]);
-      const tk=r.children[0]; const n1=tk.querySelector('.items-center.gap-2'); n1.querySelector('span.truncate').textContent=x.t; const nb=n1.querySelector('button span'); nb.textContent=x.n; const n2=tk.querySelector('.mt-1'); const sp=n2.querySelectorAll(':scope > span'); sp[0].textContent='ETH'; sp[2].textContent=ageStr(x.age); const nt=$('[data-f="new"]',r); if(nt) nt.style.display=ageMin(x.age)<=60?'':'none';
+      const tk=r.children[0]; const n1=tk.querySelector('.items-center.gap-2'); n1.querySelector('span.truncate').textContent=x.t; n1.querySelector('span.truncate').title=x.t; const nb=n1.querySelector('button span'); nb.textContent=x.n; nb.parentElement.title=x.n; nb.parentElement.onclick=e=>{ e.stopPropagation(); copyText(cs(x.addr),'Address copied'); }; const n2=tk.querySelector('.mt-1'); const sp=n2.querySelectorAll(':scope > span'); sp[0].textContent=x.pair; sp[2].textContent=ageStr(x.age); const nt=$('[data-f="new"]',r); if(nt) nt.style.display=ageMin(x.age)<=60?'':'none';
       const cells=[...r.children].slice(1,7); const put=(c,a,b)=>{const d=c.querySelectorAll('div'); d[0].textContent=a; if(d[1]) d[1].textContent=b;};
-      put(cells[0],fmtUsd(x.mc),(x.mc/ETH).toFixed(1)+' ETH'); put(cells[1],fmtUsd(x.liq),(x.liq/ETH).toFixed(2)+' ETH'); put(cells[2],fmtUsd(x.vol),(x.vol/ETH).toFixed(2)+' ETH'); put(cells[3],fmtUsd(x.rew24),x.basket.join(' · ')); cells[3].querySelector('div').classList.add('text-success'); put(cells[4],x.h.toLocaleString()); put(cells[5],'$'+fmtPrice(x.px),fmtPrice(x.px/ETH)+' ETH');
-      r.onclick=()=>location.href='token.html'; r.querySelector('button.inline-flex.h-8').onclick=e=>{e.stopPropagation(); location.href='token.html';}; rows.appendChild(r);
-      const m=mtpl.cloneNode(true); m.removeAttribute('data-tpl'); const f=k=>m.querySelector('[data-f="'+k+'"]'); setAv(f('av').parentElement,x.img,x.t[0]); f('sym').textContent=x.t; f('name').textContent=x.n; f('age').textContent=ageStr(x.age); f('vol').outerHTML=ageMin(x.age)<=60?'<span class="inline-flex items-center gap-1.5 h-5 shrink-0 rounded-full border-0 px-2 text-[11px] font-semibold leading-none bg-accent/10 text-accent">NEW</span>':''; f('mc').textContent=fmtUsd(x.mc); f('chg').innerHTML='<span class="text-text-muted">Liq </span><span class="text-text-primary">'+fmtUsd(x.liq)+'</span><span class="text-text-muted"> · Vol 24h </span><span class="text-text-primary">'+fmtUsd(x.vol)+'</span>'; f('chg').className='mt-1 text-xs tabular-nums whitespace-nowrap'; m.onclick=()=>location.href='token.html'; mr.appendChild(m); });
+      put(cells[0],fmtUsd(x.mc),inPair(x.pxPair*SUPPLY,x)); put(cells[1],fmtUsd(x.liq),inPair(x.liqPair,x)); put(cells[2],fmtUsd(x.vol),inPair(x.vol/x.pairUsd,x)); put(cells[3],x.rewards?fmtUsd(x.rew24):'Off',x.rewards?(x.basket.join(' · ')||x.pair):'creator 1.2%'); cells[3].querySelector('div').classList.toggle('text-success',x.rewards); put(cells[4],x.h.toLocaleString()); put(cells[5],'$'+fmtPrice(x.px),fmtPrice(x.pxPair)+' '+x.pair);
+      r.onclick=()=>go(tokenUrl(x)); const qb=r.querySelector('button.inline-flex.h-8'); if(qb) qb.onclick=e=>{e.stopPropagation(); go(tokenUrl(x));}; rows.appendChild(r);
+      const m=mtpl.cloneNode(true); m.removeAttribute('data-tpl'); const f=k=>m.querySelector('[data-f="'+k+'"]'); setAv(f('av').parentElement,x.img,x.t[0]); f('sym').textContent=x.t; f('name').textContent=x.n; f('age').textContent=ageStr(x.age); f('age').previousElementSibling.previousElementSibling.textContent=x.pair; f('vol').outerHTML=ageMin(x.age)<=60?'<span class="inline-flex items-center gap-1.5 h-5 shrink-0 rounded-full border-0 px-2 text-[11px] font-semibold leading-none bg-accent/10 text-accent">NEW</span>':''; f('mc').textContent=fmtUsd(x.mc); f('chg').innerHTML='<span class="text-text-muted">Liq </span><span class="text-text-primary">'+fmtUsd(x.liq)+'</span><span class="text-text-muted"> · Vol 24h </span><span class="text-text-primary">'+fmtUsd(x.vol)+'</span>'; f('chg').className='mt-1 text-xs tabular-nums whitespace-nowrap'; m.onclick=()=>go(tokenUrl(x)); mr.appendChild(m); });
     const lm=$('#loadmore'); if(lm) lm.style.display=list.length>shown?'':'none'; }
   render();
   $$('[data-filter]').forEach(b=>b.onclick=()=>{ $$('[data-filter]').forEach(x=>{x.className=x.className.replace(/ text-text-primary| text-text-muted hover:text-text-secondary/g,'')+(x===b?' text-text-primary':' text-text-muted hover:text-text-secondary');}); fil=b.dataset.filter; shown=12; render(); });
   $$('[data-sort]').forEach(b=>b.onclick=()=>{ $$('[data-sort]').forEach(x=>{ x.className=x.className.replace(/ bg-accent text-accent-ink| text-text-secondary hover:text-text-primary/g,'')+(x===b?' bg-accent text-accent-ink':' text-text-secondary hover:text-text-primary'); }); sortK=b.dataset.sort; render(); });
   $$('[data-sort]').forEach((x,i)=>{ x.className=x.className.replace(/ bg-accent text-accent-ink| text-text-secondary hover:text-text-primary/g,'')+(i===0?' bg-accent text-accent-ink':' text-text-secondary hover:text-text-primary'); });
-  $$('[data-dd="assets"]').forEach(b=>{ b.dataset.menu='1'; b.onclick=()=>{ if($('.o-menu')) return $$('.o-menu').forEach(m=>m.remove()); const opts=['All assets','ETH pairs','NVDAx baskets','SPYx baskets','TSLAx baskets','MSTRx baskets']; menu(b,'<div class="h">Paired / reward asset</div>'+opts.map((o,i)=>`<button class="i${i?'':' on'}" data-o="${o}">${o}</button>`).join('')); $$('.o-menu [data-o]').forEach(m=>m.onclick=()=>{ $$('[data-dd="assets"] span.truncate').forEach(s=>s.textContent=m.dataset.o); $$('.o-menu').forEach(x=>x.remove()); }); }; });
+  $$('[data-dd="assets"]').forEach(b=>{ b.dataset.menu='1'; b.onclick=()=>{ if($('.o-menu')) return $$('.o-menu').forEach(m=>m.remove()); const opts=[['all','All assets'],['ETH','ETH pairs'],...STOCKS.map(s=>[s[0],s[0]+' pairs & baskets'])]; menu(b,'<div class="h">Paired / reward asset</div>'+opts.map(o=>`<button class="i${o[0]===asset?' on':''}" data-o="${o[0]}">${o[1]}</button>`).join('')); $$('.o-menu [data-o]').forEach(m=>m.onclick=()=>{ asset=m.dataset.o; $$('[data-dd="assets"] span.truncate').forEach(s=>s.textContent=m.textContent); $$('.o-menu').forEach(x=>x.remove()); shown=12; render(); }); }; });
   const lm=$('#loadmore'); if(lm) lm.onclick=()=>{ shown+=12; render(); };
-  // sticky filter bar: solid background once it sticks, and feed header offset below it (o1 does both in JS)
   const fb=$('#feed'), main=$('main'); const sync=()=>{ const stuck=fb.getBoundingClientRect().top<=main.getBoundingClientRect().top+1 && main.scrollTop>40; fb.style.backgroundColor=stuck?'var(--color-bg-card)':''; fb.style.borderBottom=stuck?'1px solid var(--color-border-default)':''; main.style.setProperty('--feed-sticky-top',fb.offsetHeight+'px'); }; main.addEventListener('scroll',sync,{passive:true}); addEventListener('resize',sync); sync();
+  if(LIVE&&window.CHAIN) setInterval(async()=>{ if(document.hidden) return; try{ await CHAIN.refresh(); syncTok(); render(); }catch{} },15000);
 }
 
 /* ---------- boot ---------- */
+function syncTok(){ if(!window.CHAIN) return; TOK=CHAIN.tokens().filter(x=>!x.hidden||(W.connected&&W.address&&(x.creator===W.address.toLowerCase()||isAdmin()))); }
 const reveal=()=>{ const p=document.getElementById('prehide'); if(p) p.remove(); };
-document.addEventListener('DOMContentLoaded',()=>{ try{ initHeader(); initHistory(); initGeneric(); if($('#tb')) initToken(); if($('#rows')) initHome(); } finally { reveal(); } });
-setTimeout(reveal,1500);
+let chainError=null;
+async function boot(){
+  if(LIVE&&window.CHAIN&&CHAIN.ready){ try{ const t=await Promise.race([CHAIN.ready,sleep(30000).then(()=>null)]); if(!t) throw new Error('timeout'); ETH=await CHAIN.ethUsd(); syncTok(); const cur=tokenFromUrl(); if(cur&&CHAIN.token(cur)){ const trades=await CHAIN.trades(cur); CHAIN.token(cur)._trades=trades; } }catch(e){ chainError=e; console.error('chain',e); } }
+  try{ initHeader(); initHistory(); initGeneric(); if($('#tb')) initToken(); if($('#rows')) initHome(); document.dispatchEvent(new Event('data-ready')); } finally { reveal(); }
+  if(chainError){ const m=$('main'); if(m) m.insertAdjacentHTML('afterbegin',`<div class="mx-auto mt-4 w-full max-w-[1600px] px-4 sm:px-8"><div class="flex items-center justify-between gap-3 rounded-2xl border border-warning/30 bg-warning-soft px-4 py-3 text-[13px] text-text-primary"><span>Could not reach Ink right now. Live data is paused.</span><button class="h-8 shrink-0 rounded-full bg-accent px-3 text-xs font-semibold text-accent-ink" onclick="location.reload()">Retry</button></div></div>`); }
+}
+document.addEventListener('DOMContentLoaded',boot);
+setTimeout(reveal,15000);

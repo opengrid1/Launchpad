@@ -77,7 +77,7 @@ L = 'launchpad'; D = 'developers'
 PAGES = [
  # ---------------- Launchpad tab
  dict(tab=L, group='Overview', slug='introduction', title='Introduction', desc='Launch a fixed-supply memecoin on Ink with liquidity locked forever and a 2% fee that pays the creator, the holders and the platform on every trade.', body=[
-  note('<strong>Contracts are live.</strong> Inkypump is deployed and verified on Ink. Launching from the app opens shortly; integrators can use the contracts now (see <a class="link" href="production-contracts.html">Production contracts</a>).'),
+  note('<strong>Contracts are live.</strong> Inkypump is deployed and verified on Ink. Launch, trade and claim from the app, or integrate the contracts directly (see <a class="link" href="/docs/production-contracts">Production contracts</a>).'),
   p('Inkypump turns a token idea into a live Uniswap V4 market on Ink in one transaction. You choose the name, the asset it is paired with (ETH or a tokenized stock), and whether holders share the trading fees. The factory does the rest and keeps the liquidity forever.'),
   note('Every number below is a fixed rule of the contracts. Nothing here can change after a coin launches.'),
   cards(2,
@@ -93,10 +93,10 @@ PAGES = [
    ['Platform', '0.80%', 'the paired asset; one eighth funds the leaderboard']]),
   h2('Where to go next'),
   cards(2,
-   ('rocket', 'How it works', 'The launch transaction, the pool, the hook and the fee flow, step by step. <a class="link" href="how-it-works.html">Read</a>'),
-   ('wallet', 'Plan your launch', 'Pick a paired asset, decide on holder rewards and a basket, size your first buy. <a class="link" href="launch-planning.html">Read</a>'),
-   ('trophy', 'Leaderboard', 'How the 3-day prize pool is funded, ranked and paid. <a class="link" href="leaderboard.html">Read</a>'),
-   ('code', 'Developers', 'Contracts, routes, events and limits for integrators. <a class="link" href="direct-integration.html">Read</a>')),
+   ('rocket', 'How it works', 'The launch transaction, the pool, the hook and the fee flow, step by step. <a class="link" href="/docs/how-it-works">Read</a>'),
+   ('wallet', 'Plan your launch', 'Pick a paired asset, decide on holder rewards and a basket, size your first buy. <a class="link" href="/docs/launch-planning">Read</a>'),
+   ('trophy', 'Leaderboard', 'How the 3-day prize pool is funded, ranked and paid. <a class="link" href="/docs/leaderboard">Read</a>'),
+   ('code', 'Developers', 'Contracts, routes, events and limits for integrators. <a class="link" href="/docs/direct-integration">Read</a>')),
  ]),
  dict(tab=L, group='Overview', slug='how-it-works', title='How it works', desc='From the launch transaction to the first claim: what the factory, the pool hook and the coin contract do.', body=[
   h2('The launch transaction'),
@@ -202,7 +202,7 @@ PAGES = [
   h2('Platform'),
   p('<code>payPlatform()</code> pushes the platform share to the factory\'s fee recipient, the treasury. <code>pushPlatformFees(tokens[])</code> on the factory does it for many coins at once. The treasury\'s <code>sweep</code> then sends one eighth to the leaderboard pool and the rest to the platform wallet. All permissionless.'),
   h2('Routes'),
-  p('Claims that leave the paired asset (ETH or basket) need a route for a stock pair. The site keeps one route per stock and passes it for you; integrators find them under <a class="link" href="routes.html">Routes for stock pairs</a>.'),
+  p('Claims that leave the paired asset (ETH or basket) need a route for a stock pair. The site keeps one route per stock and passes it for you; integrators find them under <a class="link" href="/docs/routes">Routes for stock pairs</a>.'),
  ]),
  dict(tab=L, group='Leaderboard', slug='leaderboard', title='How the leaderboard works', desc='Every 3 days the top traders split a prize pool funded by 0.1% of all volume.', body=[
   p('One eighth of the platform\'s 0.8% is 0.1% of every trade. The treasury sends it to the payout contract, and after each 3-day epoch the pool is split evenly across two boards.'),
@@ -332,7 +332,7 @@ PAGES = [
  ]),
 ]
 GROUP_ORDER = {L: ['Overview', 'Create', 'Trading', 'Leaderboard', 'Security'], D: ['Integration', 'Reference']}
-TABS = [(L, 'Launchpad', 'introduction.html'), (D, 'Developers', 'direct-integration.html')]
+TABS = [(L, 'Launchpad', '/docs/introduction'), (D, 'Developers', '/docs/direct-integration')]
 
 # ---------------------------------------------------------------- renderers
 def slugify(t):
@@ -404,7 +404,7 @@ def render_sidebar(tab, current):
             on = pg['slug'] == current
             li_attr = ' data-active="true" data-active-nav-item="true"' if on else ''
             a_attr = ' aria-current="page"' if on else ''
-            out += (f'<li class="relative scroll-m-4 first:scroll-m-20"{li_attr} data-title="{pg["title"]}" id="/{pg["slug"]}"><a{a_attr} class="{A_ON if on else A_OFF}" href="{pg["slug"]}.html" style="padding-left:1rem">'
+            out += (f'<li class="relative scroll-m-4 first:scroll-m-20"{li_attr} data-title="{pg["title"]}" id="/{pg["slug"]}"><a{a_attr} class="{A_ON if on else A_OFF}" href="/docs/{pg["slug"]}" style="padding-left:1rem">'
                     f'<div class="flex-1 flex min-w-0 items-start gap-x-2.5"><div class="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 [word-break:break-word]"><span class="min-w-0 max-w-full break-words hyphens-auto">{pg["title"]}</span></div></div></a></li>')
         out += '</ul></div>'
         first = False
@@ -429,9 +429,9 @@ def render_toc(body):
 def render_pagination(prev, nxt):
     out = '<nav aria-label="Pagination" class="px-0.5 flex items-center gap-6 text-sm font-semibold text-gray-700 dark:text-gray-200" id="pagination">'
     if prev:
-        out += f'<a aria-label="Previous: {prev["title"]}" class="group flex items-center min-w-0 gap-3 rounded-sm pagination-prev" href="{prev["slug"]}.html" rel="prev">{I["prev"]}<div class="truncate group-hover:text-gray-900 dark:group-hover:text-white">{prev["title"]}</div></a>'
+        out += f'<a aria-label="Previous: {prev["title"]}" class="group flex items-center min-w-0 gap-3 rounded-sm pagination-prev" href="/docs/{prev["slug"]}" rel="prev">{I["prev"]}<div class="truncate group-hover:text-gray-900 dark:group-hover:text-white">{prev["title"]}</div></a>'
     if nxt:
-        out += f'<a aria-label="Next: {nxt["title"]}" class="group flex items-center min-w-0 gap-3 rounded-sm ml-auto pagination-next" href="{nxt["slug"]}.html" rel="next"><div class="truncate group-hover:text-gray-900 dark:group-hover:text-white">{nxt["title"]}</div>{I["next"]}</a>'
+        out += f'<a aria-label="Next: {nxt["title"]}" class="group flex items-center min-w-0 gap-3 rounded-sm ml-auto pagination-next" href="/docs/{nxt["slug"]}" rel="next"><div class="truncate group-hover:text-gray-900 dark:group-hover:text-white">{nxt["title"]}</div>{I["next"]}</a>'
     return out + '</nav>'
 
 # ---------------------------------------------------------------- shell
@@ -456,10 +456,10 @@ def build(page, prev, nxt):
     # navbar: logo, cta, search labels
     nb = soup.select_one('#navbar')
     logo_a = nb.select_one('a.select-none')
-    logo_a['href'] = '../index.html'
+    logo_a['href'] = '/'
     logo_a.clear(); logo_a.append(frag(f'<span class="sr-only">{SITE} home page</span><img alt="{SITE}" class="nav-logo w-auto h-7 relative object-contain shrink-0 block" src="../img/wordmark-dark.png">'))
     for a in nb.select('a[href="https://o1.exchange"]'):
-        a['href'] = '../launch.html'; a['target'] = '_self'
+        a['href'] = '/launch'; a['target'] = '_self'
         for s in a.find_all('span', string=re.compile('Start Trading')): s.string = 'Launch a token'
     kb = nb.select_one('#search-bar-entry span.flex-none')
     if kb: kb.string = 'Ctrl K'
@@ -514,7 +514,7 @@ def main():
         print(pg['slug'] + '.html ok')
     # search index
     import json
-    idx = [{'t': pg['title'], 'g': pg['group'], 'u': pg['slug'] + '.html', 'd': pg['desc']} for pg in PAGES]
+    idx = [{'t': pg['title'], 'g': pg['group'], 'u': '/docs/' + pg['slug'], 'd': pg['desc']} for pg in PAGES]
     open(f'{OUT}/search.json', 'w').write(json.dumps(idx))
 
 if __name__ == '__main__':

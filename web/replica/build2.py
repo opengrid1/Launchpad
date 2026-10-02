@@ -25,7 +25,7 @@ OVERRIDE = '''
 '''
 open(OUT + '/o1.css', 'w').write(css + OVERRIDE)
 
-PRELAUNCH = True  # no sample numbers in the markup; app.js reveals the page once the empty states are in place
+PRELAUNCH = False  # config.js decides at runtime; the markup carries no sample numbers either way
 HEAD = '''<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0c11">
 <link rel="icon" href="img/favicon.ico" sizes="any"><link rel="icon" type="image/svg+xml" href="img/favicon.svg"><link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <meta property="og:site_name" content="Inkypump"><meta property="og:type" content="website"><meta property="og:image" content="https://inkypump.fun/img/og.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://inkypump.fun/img/og.png">
@@ -151,7 +151,7 @@ def common_clean(root):
 
 def set_nav(root):
     """header nav + mobile nav: Cooking -> Leaderboard, Staking -> Docs; make them links"""
-    page_of = {'Dashboard': 'index.html', 'Profile': 'portfolio.html', 'Cooking': 'leaderboard.html', 'Staking': 'docs/introduction.html', 'Search': '#search', 'Launch Token': 'launch.html', 'Leaderboard': 'leaderboard.html', 'Docs': 'docs.html'}
+    page_of = {'Dashboard': 'index.html', 'Profile': 'profile.html', 'Cooking': 'leaderboard.html', 'Staking': 'docs/introduction.html', 'Search': '#search', 'Launch Token': 'launch.html', 'Leaderboard': 'leaderboard.html', 'Docs': 'docs.html'}
     for b in root.select('header nav button, nav.h-14 > button, header .hidden.sm\\:block > button'):
         label = b.get_text(' ', strip=True)
         if label == 'Cooking':
@@ -179,14 +179,27 @@ def mark_active(root, label):
         cl = [c for c in b['class'] if c not in ('text-accent', 'text-text-muted', 'hover:text-text-primary')]
         b['class'] = cl + (['text-accent'] if txt == label else ['text-text-muted', 'hover:text-text-primary'])
 
+CLEAN = {'index.html': '/', 'launch.html': '/launch', 'profile.html': '/profile', 'portfolio.html': '/profile', 'leaderboard.html': '/leaderboard', 'token.html': '/token', 'docs.html': '/docs/introduction'}
+def clean_url(h):
+    """extensionless site links; assets and external links untouched"""
+    if h == '' or re.match(r'^(https?:|//|#|mailto:|data:|javascript:|blob:)', h): return h
+    base = re.split(r'[#?]', h, 1)[0]; tail = h[len(base):]
+    if base in CLEAN: return CLEAN[base] + tail
+    m = re.match(r'^docs/([a-z0-9-]+)\.html$', base)
+    if m: return '/docs/' + m.group(1) + tail
+    return ('/' + base if not base.startswith('/') else base) + tail
+def absolutize(html):
+    """root-absolute src/href/data-href so pages served at /token/0x... still find their assets"""
+    return re.sub(r'\b(src|href|data-href|data-go)="([^"]*)"', lambda m: '%s="%s"' % (m.group(1), clean_url(m.group(2))), html)
+
 def page_shell(root, title, desc, extra_head=''):
-    return '''<!doctype html>
+    return absolutize('''<!doctype html>
 <html lang="en" translate="no" dir="ltr">
 <head><title>%s</title><meta name="description" content="%s">%s%s%s</head>
 <body data-dynamic-theme="dark" data-dynamic-theme-brand="bold">
 %s
-<script src="config.js"></script><script src="data.js"></script><script src="avatar.js"></script><script src="i18n.js"></script><script src="app.js"></script><script src="wallet.js" defer></script>
-</body></html>''' % (title, desc, HEAD, extra_head, '<style id="prehide">main{visibility:hidden}</style>' if PRELAUNCH else '', str(root))
+<script src="config.js"></script><script src="data.js"></script><script src="avatar.js"></script><script src="i18n.js"></script><script src="chain.js"></script><script src="app.js"></script><script src="wallet.js" defer></script>
+</body></html>''' % (title, desc, HEAD, extra_head, '<style id="prehide">main{visibility:hidden}</style>', str(root)))
 
 # =====================================================================
 # TOKEN PAGE
@@ -221,12 +234,13 @@ strongs[0].insert_after(' Tokens launched here cannot mint more supply, pause or
 settext(strongs[1], 'DYOR!')
 
 # --- hero
-av = hero.select_one('span.bg-avatar-gradient'); av['id'] = 'hAv'; av.select_one('span').string = 'M'; av.append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/t-default.png">'))
-settext(byexact(hero, 'BLUE CHIP', 'h1'), 'Mogcat')
-for n in hero.find_all(string=lambda s: s and s.strip() == 'BLUECHIP'): n.replace_with('MOGCAT')
-for n in hero.find_all(string=lambda s: s and s.strip() == '0xb200…4a01'): n.replace_with('0x7b26…4593')
-for b in hero.select('button[aria-label="Copy token address"]'): b['data-copy'] = '0x7b26f2a1c3e9d0b4a7f6e5d4c3b2a1908f7e4593'
-for b in hero.select('button[aria-label="Copy token referral link"]'): b['data-copy'] = 'https://ethpad-mock.vercel.app/token.html?ref=0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'; b['data-toast'] = 'Referral link copied'
+av = hero.select_one('span.bg-avatar-gradient'); av['id'] = 'hAv'; av.select_one('span').string = ''; av.append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/t-default.png">'))
+h1 = byexact(hero, 'BLUE CHIP', 'h1'); settext(h1, ''); h1['id'] = 'hName'
+for n in hero.find_all(string=lambda s: s and s.strip() == 'BLUECHIP'): n.parent['id'] = 'hSym'; n.replace_with('')
+for n in hero.find_all(string=lambda s: s and s.strip() == '0xb200…4a01'):
+    b = n.parent; b['class'] = b.get('class', []) + ['hAddr']; b['data-copy'] = ''; n.replace_with(frag('<span class="hAddrT"></span>'))
+for b in hero.select('button[aria-label="Copy token referral link"]'): b['data-copy'] = ''; b['data-toast'] = 'Link copied'; b['id'] = 'hShare'
+for sp in hero.select('button[aria-label="Copy token referral link"] span'): sp.string = 'Share'
 tags = hero.select_one('div.flex.flex-wrap')
 pair_tag = tags.select('span.cursor-help')[0]
 pair_av = pair_tag.select_one('span.bg-avatar-gradient'); pair_av.select_one('span').string = 'E'; pair_av.append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/eth.png">'))
@@ -249,15 +263,14 @@ shell.append(frag('<div class="absolute inset-0" id="tv"></div>'))
 
 # --- info
 info = grid.select_one('section.mt-10')
-creator = info.select_one('a'); creator['href'] = 'https://explorer.inkonchain.com/address/0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'; creator.select_one('span').string = '0x5DdD…4A0b'
-info.select_one('button[aria-label]')  # copy btn
-cp = creator.find_next('button'); cp['data-copy'] = '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'
-created = byexact(info, 'Aug 20, 2026'); settext(created, 'Sep 28, 2026'); settext(created.select_one('span'), '(3 days ago)')
-settext(byexact(info, '1.00%'), '2.00%')
+creator = info.select_one('a'); creator['href'] = 'https://explorer.inkonchain.com'; creator['id'] = 'infoCreator'; creator.select_one('span').string = ''
+cp = creator.find_next('button'); cp['data-copy'] = ''; cp['id'] = 'infoCreatorCopy'
+created = byexact(info, 'Aug 20, 2026'); settext(created, ''); created['id'] = 'infoCreated'; settext(created.select_one('span'), '')
+fee = byexact(info, '1.00%'); settext(fee, '2.00%'); fee['id'] = 'infoFee'
 i2 = info.select('div.grid')[1]
 cells = i2.select('div.min-w-0')
-for cell, (lab, v, s) in zip(cells, [('Lifetime volume', '$7.68M', '3,159 ETH'), ('Creator revenue', '$53.8K', '22.11 ETH'), ('Holder rewards', '$38.4K', '15.79 ETH → stocks'), ('Protocol revenue', '$61.4K', '25.27 ETH')]):
-    settext(cell.select_one('span.truncate'), lab); settext(cell.select('div')[1], v); settext(cell.select('div')[2], s)
+for cell, (lab, key) in zip(cells, [('Lifetime volume', 'vol'), ('Creator revenue', 'cre'), ('Holder rewards', 'hold'), ('Protocol revenue', 'proto')]):
+    settext(cell.select_one('span.truncate'), lab); settext(cell.select('div')[1], '—'); settext(cell.select('div')[2], ''); cell['data-info'] = key
 
 # --- transactions
 txsec = grid.select_one('div.mt-12.scroll-mt-4'); txsec['id'] = 'txsec'
@@ -295,15 +308,15 @@ def table_pane(key, cols, widths, aligns):
     tb = tp.select_one('tbody'); tb.clear(); tb['id'] = 'tb_' + key
     tp.select_one('div.overflow-auto')['class'] = tp.select_one('div.overflow-auto')['class']
     return tp
-hold = table_pane('hold', ['#', 'Wallet', 'Balance', 'Share', 'Value', 'Rewards earned', 'Since'], ['7%', '15%', '15%', '13%', '14%', '14%', '12%'], ['left', 'left', 'right', 'right', 'right', 'right', 'right'])
+hold = table_pane('hold', ['#', 'Wallet', 'Balance', 'Share', 'Value', 'Pending rewards'], ['7%', '19%', '17%', '13%', '15%', '16%'], ['left', 'left', 'right', 'right', 'right', 'right'])
 top = table_pane('top', ['#', 'Wallet', 'Realized PnL', 'Volume', 'Trades', 'Still holding'], ['7%', '15%', '15%', '14%', '12%', '13%'], ['left', 'left', 'right', 'right', 'right', 'right'])
 mob.insert_after(hold); hold.insert_after(top)
 rew = frag('''<div class="hidden" data-pane="rew"><div class="grid grid-cols-2 gap-x-8 gap-y-5 lg:grid-cols-4 pt-2">
-<div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Paid to holders · lifetime</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums">$38,400</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">15.79 ETH</div></div>
-<div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Paid 24h</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums">$6,050</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">2.49 ETH</div></div>
-<div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Claimed</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums">71%</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">5,120 wallets</div></div>
-<div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Per $1K held / day</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums">$6.52</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">at 24h volume</div></div></div>
-<p class="mt-5 max-w-[720px] text-[13px] leading-relaxed text-text-secondary md:text-xs">Every trade pays 0.5% in ETH to holders, pro-rata to balance. On claim the ETH is swapped on Uniswap into the basket in equal shares and sent as wrapped stock tokens. Claim as ETH is always available.</p>
+<div class="min-w-0" data-rew="all"><div class="text-[13px] font-medium text-text-muted">Paid to holders · lifetime</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums">—</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted"></div></div>
+<div class="min-w-0" data-rew="day"><div class="text-[13px] font-medium text-text-muted">Earned 24h</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums">—</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted"></div></div>
+<div class="min-w-0" data-rew="you"><div class="text-[13px] font-medium text-text-muted">Your pending</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums">—</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted"></div></div>
+<div class="min-w-0" data-rew="rate"><div class="text-[13px] font-medium text-text-muted">Per $1K held / day</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums">—</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">at 24h volume</div></div></div>
+<p class="mt-5 max-w-[720px] text-[13px] leading-relaxed text-text-secondary md:text-xs" id="rewText">Every trade pays 0.5% in ETH to holders, pro-rata to balance. On claim the ETH is swapped on Uniswap into the basket in equal shares and sent as wrapped stock tokens. Claim as ETH is always available.</p>
 <div class="mt-4 flex flex-wrap items-center gap-1.5" id="rewBasket"></div></div>''')
 top.insert_after(rew)
 upd = frag('<div class="hidden" data-pane="upd"><p class="py-6 text-center text-sm text-text-muted">No updates from the creator yet.</p></div>')
@@ -316,14 +329,14 @@ texts = [('Locked liquidity and limited control', 'The Uniswap V4 position is pe
          ('No reserved supply', 'No tokens were sent directly to recipients or placed in a vesting vault at launch. The full fixed supply entered the pool; the creator bought 0.1 ETH in the launch transaction.'),
          ('Anti-sniping protection', 'For the first 20 seconds after launch, the total fee falls linearly every second from 90.00% to 2.00%. This makes instant sniping expensive: exact-input swaps remain available, while exact-output swaps are disabled until the window ends. The surcharge goes to the holders.'),
          ('Fee split', "The normal hook fee is 2.00%. Fees are always charged in ETH, the pool's paired asset. Buys use part of the ETH paid, and sells use part of the ETH received. It is split 35.00% creator, 25.00% holders (paid in NVDAx, SPYx, TSLAx and MSTRx) and 40.00% platform, of which an eighth funds the 3-day trader leaderboard.")]
-for li, (h, p) in zip(items, texts):
-    sp = li.select('span.block'); settext(sp[0], h); settext(sp[1], p)
+for i, (li, (h, p)) in enumerate(zip(items, texts)):
+    sp = li.select('span.block'); settext(sp[0], h); settext(sp[1], p); sp[1]['data-disc'] = str(i)
 
 # --- swap card
 swap = [c for c in grid.children if getattr(c, 'name', None)][1]; swap['id'] = 'swapwrap'
 card = swap.select_one('div.rounded-\\[20px\\]'); card['id'] = 'swapcard'
 for n in card.find_all(string=lambda s: s and s.strip() == 'Base'): n.replace_with('Ink')
-for n in card.find_all(string=lambda s: s and s.strip() == 'BLUECHIP'): n.replace_with('MOGCAT')
+for n in card.find_all(string=lambda s: s and s.strip() == 'BLUECHIP'): n.parent['data-sym'] = '1'; n.replace_with('')
 avs = card.select('span.bg-avatar-gradient')
 avs[0].select_one('span').string = 'E'; avs[0]['data-av'] = 'in'; avs[0].append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/eth.png">'))
 avs[1].select_one('span').string = 'M'; avs[1]['data-av'] = 'out'; avs[1].append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/t-default.png">'))
@@ -346,15 +359,15 @@ for r, (k, v) in zip(rowsd, [('minr', '0 MOGCAT'), ('fee', '2.00%'), ('net', '< 
         pass
 cta = card.select_one('button.border-transparent'); cta['id'] = 'cta'
 foot = card.select_one('p.border-t'); foot.clear()
-appendall(foot, '<span class="font-medium">Need more advanced trading features?</span> Trade MOGCAT on <a class="inline-flex items-center gap-1 font-medium text-text-primary transition-colors hover:text-accent" href="https://app.uniswap.org" target="_blank" rel="noopener noreferrer">Uniswap' + svg('ext', 'lucide-external-link size-3') + '</a> or any Ink terminal. Every trade still counts for holder rewards and the <a class="inline-flex items-center gap-1 font-medium text-text-primary transition-colors hover:text-accent" href="leaderboard.html">leaderboard</a>.')
+appendall(foot, '<span class="font-medium">Need more advanced trading features?</span> Trade <span data-sym="1"></span> on <a class="inline-flex items-center gap-1 font-medium text-text-primary transition-colors hover:text-accent" href="https://app.uniswap.org" target="_blank" rel="noopener noreferrer" id="uniLink">Uniswap' + svg('ext', 'lucide-external-link size-3') + '</a> or any Ink terminal. Every trade still counts for holder rewards and the <a class="inline-flex items-center gap-1 font-medium text-text-primary transition-colors hover:text-accent" href="leaderboard.html">leaderboard</a>.')
 # gas "Auto" button label keep; slippage auto button
 for b in card.select('button'):
     if b.get_text(strip=True) == 'Auto' and 'rounded-full' in b.get('class', []): b['id'] = 'slipAuto'
 # position box (shown when connected) inserted after CTA
 pos = frag('''<div id="pos" class="hidden rounded-[16px] bg-bg-input px-4 py-3 text-[13px]">
-<div class="flex items-center justify-between text-text-muted"><span class="font-medium">Your position</span><span class="font-mono" id="posBal">2,104,320 MOGCAT</span></div>
-<div class="mt-2 space-y-1.5 font-medium"><div class="flex justify-between"><span class="text-text-muted">Value</span><span id="posVal">$1,950.70</span></div><div class="flex justify-between"><span class="text-text-muted">Avg entry</span><span>$0.0₃352</span></div><div class="flex justify-between"><span class="text-text-muted">Unrealized PnL</span><span class="text-success" id="posPnl">+163.4% · +$1,210</span></div><div class="flex justify-between"><span class="text-text-muted">Stock rewards pending</span><span class="text-success">$21.90</span></div></div>
-<div class="mt-3 grid grid-cols-2 gap-1.5"><button class="h-8 cursor-pointer rounded-full bg-accent text-xs font-semibold text-accent-ink transition-colors hover:bg-accent-hover" data-toast="Claimed 0.009 ETH as NVDAx, SPYx, TSLAx, MSTRx">Claim basket</button><button class="h-8 cursor-pointer rounded-full bg-bg-elevated text-xs font-semibold text-text-primary transition-colors hover:bg-bg-selector-hover" data-toast="Claimed 0.009 ETH">Claim as ETH</button></div></div>''')
+<div class="flex items-center justify-between text-text-muted"><span class="font-medium">Your position</span><span class="font-mono" id="posBal">—</span></div>
+<div class="mt-2 space-y-1.5 font-medium"><div class="flex justify-between"><span class="text-text-muted">Value</span><span id="posVal">—</span></div><div class="flex justify-between"><span class="text-text-muted">Avg entry</span><span id="posAvg">—</span></div><div class="flex justify-between"><span class="text-text-muted">Unrealized PnL</span><span class="text-text-primary" id="posPnl">—</span></div><div class="flex justify-between"><span class="text-text-muted" id="posPendL">Rewards pending</span><span class="text-success" id="posPend">—</span></div></div>
+<div class="mt-3 grid grid-cols-2 gap-1.5" id="posActs"><button class="h-8 cursor-pointer rounded-full bg-accent text-xs font-semibold text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-50" data-claim="basket">Claim basket</button><button class="h-8 cursor-pointer rounded-full bg-bg-elevated text-xs font-semibold text-text-primary transition-colors hover:bg-bg-selector-hover disabled:opacity-50" data-claim="eth">Claim as ETH</button></div></div>''')
 cta.insert_after(pos)
 
 # --- mobile buy/sell bar
@@ -367,8 +380,8 @@ mnav = root.select_one('nav.h-14'); mnav['id'] = 'mnav'
 # modals / sheets / toasts root
 root.append(frag('<div id="layer"></div>'))
 
-open(OUT + '/token.html', 'w').write(page_shell(root, 'Mogcat $0.000927 | Inkypump', 'MOGCAT on Ink: price, chart, trades, holders and stock rewards.',
-    '<script src="charting_library/charting_library.standalone.js"></script><script src="tv.js"></script><script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>'))
+open(OUT + '/token.html', 'w').write(page_shell(root, 'Token | Inkypump', 'Price, chart, trades, holders and stock rewards for a token launched on Inkypump.',
+    '<script src="charting_library/charting_library.standalone.js"></script><script src="tv.js"></script>'))
 print('token.html ok')
 
 # =====================================================================
@@ -410,9 +423,9 @@ p.append(' '); p.append(stack)
 acts = main.select_one('div.mt-7')
 ab = acts.select('button'); ab[0]['data-href'] = 'launch.html'; ab[1]['data-href'] = '#feed'
 cards = main.select('div.rounded-2xl.bg-bg-input.px-4.py-3')
-vals = [('0' if PRELAUNCH else '1,284', 'Tokens launched', 'Tokens launched through the factory'), ('0' if PRELAUNCH else '18.6K', 'Traders', 'Wallets with at least one trade'), ('$0' if PRELAUNCH else '$41.2M', 'Lifetime volume', 'All trades, both sides'), ('$0' if PRELAUNCH else '$206K', 'Paid to holders', 'Holder rewards paid out in stocks'), ('$0' if PRELAUNCH else '$288K', 'Paid to creators', 'Creator share of fees'), ('$0' if PRELAUNCH else '$2.41M', 'Highest market cap', 'Highest market cap reached by a token')]
-for c, (v, l, tip) in zip(cards, vals):
-    settext(c.select_one('div.text-lg'), v); settext(c.select_one('div.mt-0\\.5 span'), l); c.select_one('span.cursor-help')['title'] = tip
+vals = [('0', 'Tokens launched', 'Tokens launched through the factory'), ('0', 'Traders', 'Wallets with at least one trade'), ('$0', 'Lifetime volume', 'All trades, both sides'), ('$0', 'Paid to holders', 'Holder rewards earned by holders'), ('$0', 'Paid to creators', 'Creator share of fees'), ('$0', 'Highest market cap', 'Highest market cap reached by a token')]
+for c, (v, l, tip), key in zip(cards, vals, ['tokens', 'traders', 'volume', 'holders', 'creators', 'ath']):
+    settext(c.select_one('div.text-lg'), v); settext(c.select_one('div.mt-0\\.5 span'), l); c.select_one('span.cursor-help')['title'] = tip; c['data-home'] = key
 trend = main.select_one('div.rounded-\\[20px\\].bg-bg-input'); trend['id'] = 'trend'
 trows = trend.select('button.relative.flex.h-16')
 trows[0]['data-tpl'] = 'trendTop'; trows[3]['data-tpl'] = 'trendPlain'
@@ -467,9 +480,22 @@ def other(name, title, desc, active, connected_only=False):
     for k, v in ICONS.items(): body = body.replace(k, v)
     inner.append(frag(body) if body.count('<div class="mx-auto') == 1 else BeautifulSoup(body, 'html.parser'))
     r.append(frag('<div id="layer"></div>'))
-    html = page_shell(r, title, desc).replace('<script src="app.js"></script>', '<script src="app.js"></script><script src="pages.js"></script>')
+    html = page_shell(r, title, desc).replace('<script src="/app.js"></script>', '<script src="/app.js"></script><script src="/pages.js"></script>')
     open(OUT + '/' + name, 'w').write(html); print(name, 'ok')
 other('launch.html', 'Launch a token | Inkypump', 'Launch a memecoin on Ink with locked Uniswap V4 liquidity and a stock basket for holders.', 'Launch Token')
-other('portfolio.html', 'Profile | Inkypump', 'Your holdings, stock rewards, creator fees and leaderboard payouts.', 'Profile')
+other('profile.html', 'Profile | Inkypump', 'Your holdings, stock rewards, creator fees and leaderboard payouts.', 'Profile')
 other('leaderboard.html', 'Trader leaderboard | Inkypump', 'Top 5 traders by PnL and volume every 3 days, paid in ETH.', 'Leaderboard')
+other('admin.html', 'Admin | Inkypump', 'Operator tools.', '')
+
+import json
+open(OUT + '/vercel.json', 'w').write(json.dumps({
+    'cleanUrls': True, 'trailingSlash': False,
+    'rewrites': [{'source': '/token/:addr', 'destination': '/token'}],
+    'redirects': [{'source': '/portfolio', 'destination': '/profile', 'permanent': True}, {'source': '/docs', 'destination': '/docs/introduction', 'permanent': False}, {'source': '/token', 'destination': '/', 'permanent': False}],
+    'headers': [{'source': '/(.*)', 'headers': [{'key': 'X-Content-Type-Options', 'value': 'nosniff'}, {'key': 'Referrer-Policy', 'value': 'strict-origin-when-cross-origin'}]},
+                {'source': '/(chain|wallet|app|pages|tv|avatar|i18n|data).js', 'headers': [{'key': 'Cache-Control', 'value': 'public, max-age=0, must-revalidate'}]},
+                {'source': '/img/(.*)', 'headers': [{'key': 'Cache-Control', 'value': 'public, max-age=86400'}]},
+                {'source': '/charting_library/(.*)', 'headers': [{'key': 'Cache-Control', 'value': 'public, max-age=604800, immutable'}]}],
+}, indent=1))
+print('vercel.json ok')
 

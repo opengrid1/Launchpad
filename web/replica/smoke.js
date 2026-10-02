@@ -1,47 +1,54 @@
-const { chromium } = require('playwright');
+const { chromium } = require('playwright'); const fs = require('fs');
+const CFG = fs.readFileSync(__dirname + '/config.js', 'utf8').replace(/reownProjectId: '[^']*'/, "reownProjectId: ''");
+const TOKEN = '0x5c1138fa782f7165a3be4c950cc0f32c6b70d08e';
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--proxy-server=' + process.env.HTTPS_PROXY, '--ignore-certificate-errors'] });
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--proxy-server=' + process.env.HTTPS_PROXY, '--ignore-certificate-errors', '--proxy-bypass-list=127.0.0.1;localhost'] });
   const errs = [];
-  // the smoke test drives the demo wallet: serve a config without the Reown project id
-  async function pg(w,h){ const p = await b.newPage({ viewport:{width:w,height:h} }); p.on('pageerror', e => errs.push(e.message)); await p.route('**/config.js', r => r.fulfill({ contentType:'application/javascript', body:"window.INKY={prelaunch:false,reownProjectId:'',chainId:57073,rpc:'https://rpc-gel.inkonchain.com',explorer:'https://explorer.inkonchain.com'};" })); return p; }
-  // desktop token flows
-  let p = await pg(1440,900); await p.goto('http://127.0.0.1:8767/token.html',{waitUntil:'networkidle'}); await p.waitForTimeout(800);
-  await p.click('header button[aria-label="Launchpad"]'); console.log('brand menu', !!await p.$('.o-menu'));
-  await p.keyboard.press('Escape');
-  await p.keyboard.press('/'); await p.waitForTimeout(300); console.log('search dialog', !!await p.$('#sq')); await p.type('#sq','mog'); await p.waitForTimeout(100); console.log('search results', (await p.$$('#sres .opt')).length); await p.keyboard.press('Escape');
-  await p.click('header button[aria-label^="Language"]'); console.log('lang dialog', !!await p.$('[data-lang]')); await p.keyboard.press('Escape');
-  await p.click('#cta'); await p.waitForTimeout(200); console.log('connect dialog', !!await p.$('[data-w]')); await p.click('[data-w="MetaMask"]'); await p.waitForTimeout(1300);
-  console.log('wallet pill', await p.textContent('header .relative.flex.h-9.shrink-0.items-stretch button'), '| cta', await p.textContent('#cta'), '| pos visible', await p.isVisible('#pos'));
-  await p.click('#flip'); await p.waitForTimeout(100); console.log('after flip cta', await p.textContent('#cta'), '| out', await p.inputValue('#amtOut'));
-  await p.click('[data-q="50%"]'); console.log('50% amt', await p.inputValue('#amtIn'));
-  await p.click('#detBtn'); console.log('details open', await p.getAttribute('#detBtn','aria-expanded'));
-  for (const t of ['hold','rew','top','upd','tx']) { await p.click(`#tabs [data-tab="${t}"]`); await p.waitForTimeout(80); console.log('tab',t, await p.evaluate(k=>[...document.querySelectorAll('#panes [data-pane]')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.dataset.pane).join(','),t)); }
-  await p.click('#seg [data-side="sell"]'); console.log('sell filter rows visible', await p.evaluate(()=>[...document.querySelectorAll('#tb tr')].filter(r=>r.style.display!=='none').every(r=>r.dataset.k==='sell')));
-  await p.click('#loadmore button'); console.log('rows after load more', (await p.$$('#tb tr')).length);
-  await p.click('#warn button'); console.log('warn expanded', await p.getAttribute('#warn button','aria-expanded'));
-  console.log('tradingview iframe', !!await p.$('#tv iframe'));
-  await p.click('header .relative.flex.h-9.shrink-0.items-stretch button'); await p.waitForTimeout(100); console.log('wallet menu', (await p.$$('.o-menu [data-act]')).length);
+  async function pg(w, h, wallet) { const p = await b.newPage({ viewport: { width: w, height: h } }); p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/favicon/.test(m.text())) errs.push('console: ' + m.text().slice(0, 160)); }); await p.route('**/config.js', r => r.fulfill({ contentType: 'application/javascript', body: CFG })); if (wallet) await p.addInitScript(() => localStorage.setItem('wallet', '1')); return p; }
+  const ready = async p => { await p.waitForFunction(() => !document.getElementById('prehide'), null, { timeout: 40000 }); await p.waitForTimeout(400); };
+  // home
+  let p = await pg(1440, 900); await p.goto('http://127.0.0.1:8767/', { waitUntil: 'domcontentloaded' }); await ready(p);
+  console.log('home feed rows', (await p.$$('#rows .group')).length, '| trend', (await p.$$('#trend button.h-16')).length, '| chips', (await p.$$('#newchips .group')).length, '| stats', await p.evaluate(() => [...document.querySelectorAll('[data-home] div.text-lg')].map(d => d.textContent)));
+  console.log('feed first row', await p.evaluate(() => document.querySelector('#rows .group') && document.querySelector('#rows .group').innerText.replace(/\n/g, ' | ')));
+  await p.keyboard.press('/'); await p.waitForTimeout(300); await p.type('#sq', 'ink'); await p.waitForTimeout(100); console.log('search results', (await p.$$('#sres .opt')).length, await p.getAttribute('#sres .opt', 'data-go')); await p.keyboard.press('Escape');
+  await p.click('#rows .group'); await p.waitForURL(/\/token\/0x/); console.log('navigated to', p.url()); await p.close();
+  // token page desktop
+  p = await pg(1440, 900, true); await p.goto('http://127.0.0.1:8767/token/' + TOKEN, { waitUntil: 'domcontentloaded' }); await ready(p); await p.waitForTimeout(2500);
+  console.log('title', await p.title()); console.log('hero', await p.textContent('#hName'), await p.textContent('#hSym'), await p.textContent('.hAddrT'), '| tags', await p.evaluate(() => document.getElementById('tags').innerText.replace(/\n/g, ' ')));
+  console.log('stats', await p.evaluate(() => [...document.querySelectorAll('[data-stat]')].map(s => s.innerText.replace(/\n/g, ' ')).join(' || ')));
+  console.log('info', await p.evaluate(() => [...document.querySelectorAll('[data-info]')].map(s => s.innerText.replace(/\n/g, ' ')).join(' || ')), '| creator', await p.textContent('#infoCreator'), await p.textContent('#infoCreated'));
+  console.log('trades rows', (await p.$$('#tb tr')).length, '|', await p.evaluate(() => document.querySelector('#tb tr') && document.querySelector('#tb tr').innerText.replace(/\n/g, ' | ')));
+  console.log('tv iframe', !!await p.$('#tv iframe'), '| cta', await p.textContent('#cta'), '| pos visible', await p.isVisible('#pos'), await p.evaluate(() => document.getElementById('pos').innerText.replace(/\n/g, ' | ')));
+  await p.fill('#amtIn', '0.001'); await p.waitForTimeout(1500); console.log('buy quote out', await p.inputValue('#amtOut'), '| min', await p.textContent('#d_minr'), '| impact', await p.textContent('#d_impact'), '| cta', await p.textContent('#cta'));
+  await p.click('#flip'); await p.fill('#amtIn', '1000'); await p.waitForTimeout(1500); console.log('sell quote out', await p.inputValue('#amtOut'), '| cta', await p.textContent('#cta'));
+  for (const t of ['hold', 'top', 'rew']) { await p.click(`#tabs [data-tab="${t}"]`); await p.waitForTimeout(2500); console.log('tab', t, await p.evaluate(k => { const e = document.querySelector(`#panes [data-pane="${k}"]`); return e.innerText.replace(/\s+/g, ' ').slice(0, 300); }, t)); }
+  console.log('disclosures', await p.evaluate(() => [...document.querySelectorAll('[data-disc]')].map(e => e.textContent.slice(0, 90)).join(' // ')));
   await p.close();
-  // mobile token flows
-  p = await pg(390,844); await p.goto('http://127.0.0.1:8767/token.html',{waitUntil:'networkidle'}); await p.waitForTimeout(600);
-  await p.click('#mbar [data-side="buy"]',{position:{x:60,y:24}}); await p.waitForTimeout(300); console.log('mobile sheet', !!await p.$('.o-sheet #m_cta'), await p.textContent('.o-sheet #m_cta'));
-  await p.keyboard.press('Escape'); await p.click('header button:has(.lucide-menu)'); await p.waitForTimeout(300); console.log('drawer items', (await p.$$('.o-drawer [data-go]')).length); await p.close();
-  // home flows
-  p = await pg(1440,900); await p.goto('http://127.0.0.1:8767/index.html',{waitUntil:'networkidle'}); await p.waitForTimeout(600);
-  console.log('feed rows', (await p.$$('#rows .group')).length, 'trend', (await p.$$('#trend button.h-16')).length, 'chips', (await p.$$('#newchips .group')).length);
-  await p.click('[data-filter="new"]'); console.log('new filter rows', (await p.$$('#rows .group')).length);
-  await p.click('[data-sort="liq"]'); console.log('first after liq sort', await p.textContent('#rows .group .n1, #rows .group .text-sm.font-bold'));
-  await p.click('[data-dd="assets"] >> visible=true'); await p.waitForTimeout(100); console.log('assets menu', (await p.$$('.o-menu [data-o]')).length);
-  await p.evaluate(()=>document.querySelector('main').scrollTo(0,900)); await p.waitForTimeout(300); console.log('feed bar bg', await p.evaluate(()=>document.getElementById('feed').style.backgroundColor));
+  // token page mobile
+  p = await pg(390, 844); await p.goto('http://127.0.0.1:8767/token/' + TOKEN, { waitUntil: 'domcontentloaded' }); await ready(p); await p.waitForTimeout(1500);
+  await p.click('#mbar [data-side="buy"]', { position: { x: 60, y: 24 } }); await p.waitForTimeout(300); console.log('mobile sheet', !!await p.$('.o-sheet #m_cta'), await p.textContent('.o-sheet #m_cta')); await p.close();
+  // 404 token
+  p = await pg(1440, 900); await p.goto('http://127.0.0.1:8767/token/0x0000000000000000000000000000000000000001', { waitUntil: 'domcontentloaded' }); await ready(p); console.log('unknown token', await p.evaluate(() => document.querySelector('main .o-empty h2').textContent)); await p.close();
+  // launch
+  p = await pg(1440, 900, true); await p.goto('http://127.0.0.1:8767/launch', { waitUntil: 'domcontentloaded' }); await ready(p); await p.waitForTimeout(1500);
+  console.log('picks', (await p.$$('#pick [data-s]')).length, '| pairs', (await p.$$('#pairMenu [data-p]')).length, '| pair prices', await p.evaluate(() => document.getElementById('pairMenu').innerText.replace(/\n/g, ' ').slice(0, 160)));
+  await p.fill('#fName', 'Gorb'); await p.fill('#fTick', 'INKT'); console.log('taken check', await p.textContent('#tMsg')); await p.fill('#fTick', 'GORB'); console.log('avail', await p.textContent('#tMsg'), '| preview', await p.textContent('#pvPrice'), '| cta', await p.textContent('#deploy'));
   await p.close();
-  // launch wizard
-  p = await pg(1440,900); await p.goto('http://127.0.0.1:8767/launch.html',{waitUntil:'networkidle'}); await p.waitForTimeout(500);
-  console.log('picks', (await p.$$('#pick [data-s]')).length);
-  await p.click('#pick [data-s="TSLAx"]'); console.log('alloc', await p.textContent('#allocLeft'));
-  await p.click('#swDev'); console.log('dev box', await p.isVisible('#devBox')); await p.fill('#fName','Gorb'); await p.fill('#fTick','GORB'); console.log('preview', await p.textContent('#pName'), await p.textContent('#pTick'), await p.textContent('#tMsg'));
+  // leaderboard
+  p = await pg(1440, 900, true); await p.goto('http://127.0.0.1:8767/leaderboard', { waitUntil: 'domcontentloaded' }); await ready(p); await p.waitForTimeout(2500);
+  console.log('board cards', await p.evaluate(() => [...document.querySelectorAll('#boardPage .grid > div')].map(d => d.innerText.replace(/\n/g, ' ')).join(' || ')), '| podium', await p.evaluate(() => document.getElementById('podium').innerText.replace(/\s+/g, ' ').slice(0, 200)));
   await p.close();
-  // leaderboard / profile / docs / admin load
-  for (const n of ['leaderboard','portfolio']) { p = await pg(1440,900); await p.goto('http://127.0.0.1:8767/'+n+'.html',{waitUntil:'networkidle'}); await p.waitForTimeout(500); if(n==='leaderboard'){ await p.click('[data-board="vol"]'); console.log('vol board rows', (await p.$$('#btb tr')).length); } if(n==='portfolio'){ console.log('profile empty state', !!await p.$('.o-empty')); await p.evaluate(()=>localStorage.setItem('wallet','1')); await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(400); await p.click('[data-ptab="act"]'); console.log('activity rows', (await p.$$('#act > div')).length); await p.evaluate(()=>localStorage.removeItem('wallet')); } await p.close(); }
+  // profile (demo wallet = admin address)
+  p = await pg(1440, 900, true); await p.goto('http://127.0.0.1:8767/profile', { waitUntil: 'domcontentloaded' }); await ready(p); await p.waitForTimeout(4000);
+  console.log('profile', await p.evaluate(() => document.getElementById('pfTags').innerText.replace(/\n/g, ' ')), '|', await p.evaluate(() => [...document.querySelectorAll('#profilePage .items-stretch > div')].map(d => d.innerText.replace(/\n/g, ' ')).join(' || ')));
+  console.log('rewards', await p.evaluate(() => document.getElementById('rewards').innerText.replace(/\s+/g, ' ').slice(0, 200)));
+  await p.close();
+  // admin
+  p = await pg(1440, 900, true); await p.goto('http://127.0.0.1:8767/admin', { waitUntil: 'domcontentloaded' }); await ready(p); await p.waitForTimeout(4000);
+  console.log('admin', await p.evaluate(() => document.getElementById('admBody').innerText.replace(/\s+/g, ' ').slice(0, 500)));
+  await p.close();
+  // docs
+  p = await pg(1440, 900); await p.goto('http://127.0.0.1:8767/docs/introduction', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(500); console.log('docs links', await p.evaluate(() => [...document.querySelectorAll('#navigation-items a')].slice(0, 4).map(a => a.getAttribute('href')).join(' ')), '| pagination', await p.evaluate(() => [...document.querySelectorAll('#pagination a')].map(a => a.getAttribute('href')).join(' '))); await p.close();
   console.log('ERRORS', errs);
   await b.close();
-})().catch(e => { console.error('FAIL', e.message); process.exit(1); });
+})().catch(e => { console.error('FAIL', e); process.exit(1); });
