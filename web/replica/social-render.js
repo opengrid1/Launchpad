@@ -1,4 +1,4 @@
-const { chromium } = require('playwright'); const fs=require('fs');
+const { chromium } = require('playwright'); const fs=require('fs'); const wordmark=require('./wordmark.js');
 (async()=>{ const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--proxy-server='+process.env.HTTPS_PROXY,'--ignore-certificate-errors']});
  const logo=fs.readFileSync('../site2/img/logo.svg','utf8'); const def=fs.readFileSync('t-default.svg','utf8');
  const blobPath=def.match(/<path d="(M[^"]+)"\/>/)[1]; const drops=def.match(/<circle[^>]+\/>(<circle[^>]+\/>)*/)[0];
@@ -22,7 +22,7 @@ const { chromium } = require('playwright'); const fs=require('fs');
  // X banner 1500x500, rendered at 2x. Avatar overlaps the bottom-left on X, so nothing important lives there.
  const banner=`<div style="position:relative;width:1500px;height:500px;background:#0e1117;color:#f3f5f9;font-family:Geist;overflow:hidden">
    ${abs(1110,22,sz(logo,450))}
-   ${abs(90,180,`<div style="font:400 118px 'Titan One';line-height:1;letter-spacing:-2px">inkypump</div>`)}
+   ${abs(70,130,wordmark(700))}
    ${abs(850,330,blot('NVDAx',150,-8,62))}${abs(962,362,blot('SPYx',130,9,70))}${abs(1045,300,blot('TSLAx',150,-12,62))}
    <svg style="position:absolute;left:0;top:0" width="1500" height="500" viewBox="0 0 1500 500" fill="#ff4fa3" stroke="#14121a" stroke-width="6"><circle cx="1000" cy="60" r="12"/><circle cx="1480" cy="110" r="8"/><circle cx="820" cy="440" r="7"/><circle cx="1440" cy="470" r="14"/><circle cx="1090" cy="470" r="7"/></svg>
  </div>`;
