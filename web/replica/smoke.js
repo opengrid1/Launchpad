@@ -35,9 +35,9 @@ const { chromium } = require('playwright');
   await p.close();
   // launch wizard
   p = await pg(1440,900); await p.goto('http://127.0.0.1:8767/launch.html',{waitUntil:'networkidle'}); await p.waitForTimeout(500);
-  await p.click('[data-next="2"]'); console.log('step2 visible', await p.isVisible('[data-wiz="2"]'), 'picks', (await p.$$('#pick [data-s]')).length);
-  await p.click('#pick [data-s="TSLAx"]'); console.log('pkC', await p.textContent('#pkC'));
-  await p.click('[data-next="3"]'); console.log('step3 visible', await p.isVisible('[data-wiz="3"]'), 'tags', (await p.$$('#rTags span')).length);
+  console.log('picks', (await p.$$('#pick [data-s]')).length);
+  await p.click('#pick [data-s="TSLAx"]'); console.log('alloc', await p.textContent('#allocLeft'));
+  await p.click('#swDev'); console.log('dev box', await p.isVisible('#devBox')); await p.fill('#fName','Gorb'); await p.fill('#fTick','GORB'); console.log('preview', await p.textContent('#pName'), await p.textContent('#pTick'), await p.textContent('#tMsg'));
   await p.close();
   // leaderboard / profile / docs / admin load
   for (const n of ['leaderboard','portfolio','docs','admin']) { p = await pg(1440,900); await p.goto('http://127.0.0.1:8767/'+n+'.html',{waitUntil:'networkidle'}); await p.waitForTimeout(500); if(n==='leaderboard'){ await p.click('[data-board="vol"]'); console.log('vol board rows', (await p.$$('#btb tr')).length); } if(n==='portfolio'){ console.log('profile empty state', !!await p.$('.o-empty')); await p.evaluate(()=>localStorage.setItem('wallet','1')); await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(400); await p.click('[data-ptab="act"]'); console.log('activity rows', (await p.$$('#act > div')).length); await p.evaluate(()=>localStorage.removeItem('wallet')); } await p.close(); }

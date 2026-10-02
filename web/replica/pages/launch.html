@@ -1,99 +1,105 @@
-<div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-8 pb-10 pt-5 md:pt-7" id="launchPage">
-  <div class="hidden md:block"><button class="inline-flex cursor-pointer items-center gap-1.5 text-[13px] font-semibold text-text-muted transition-colors hover:text-text-primary" data-href="index.html" type="button">__CHEVL__All tokens</button></div>
+<div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-8 pb-10 pt-5 md:pt-7 lf" id="launchPage">
+  <h1 class="lf-h1">Launch a token</h1>
+  <p class="lf-sub">Mint a fixed-supply launch token and seed its locked Uniswap v4 pool in one transaction.</p>
 
-  <div class="mt-6 flex min-w-0 items-start justify-between gap-3">
-    <div class="min-w-0"><h1 class="text-2xl font-bold leading-none tracking-[-0.01em] text-text-primary">Launch a token</h1><p class="mt-2 text-[13px] leading-5 text-text-secondary md:text-xs">No launch fee, gas only (about $0.002 on Ink). Liquidity locked forever. Holders earn stocks on every trade.</p></div>
-    <span class="hidden shrink-0 md:inline-flex"><span class="inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold leading-none md:text-[11px] bg-success-soft text-success">__LOCK__Immutable</span></span>
-  </div>
+  <div class="lf-grid">
+    <div class="lf-form">
+      <div class="lf-label">Token type</div>
+      <div class="lf-seg" id="ttype"><button type="button" class="on" data-type="standard">Standard token</button><button type="button" data-type="tax" title="Not available on Ink yet">Tax token</button></div>
 
-  <div class="mt-6 flex gap-[3px] border border-border-default p-[3px] h-10 max-w-full w-fit overflow-x-auto rounded-full bg-bg-input [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" id="steps">
-    <button class="shrink-0 cursor-pointer font-semibold whitespace-nowrap transition-colors disabled:cursor-default disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 bg-accent text-accent-ink h-8 rounded-full px-3 py-0 text-[13px] md:text-xs" data-step="1">1 · Identity</button>
-    <button class="shrink-0 cursor-pointer font-semibold whitespace-nowrap transition-colors disabled:cursor-default disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 text-text-secondary hover:text-text-primary h-8 rounded-full px-3 py-0 text-[13px] md:text-xs" data-step="2">2 · Rewards basket</button>
-    <button class="shrink-0 cursor-pointer font-semibold whitespace-nowrap transition-colors disabled:cursor-default disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 text-text-secondary hover:text-text-primary h-8 rounded-full px-3 py-0 text-[13px] md:text-xs" data-step="3">3 · Review &amp; deploy</button>
-  </div>
+      <div class="lf-sec"><span class="lf-num">01</span><h2>Token identity</h2></div>
+      <div class="lf-idrow">
+        <label class="lf-logo" id="drop"><input type="file" id="fLogo" accept="image/*" hidden><span class="lf-logo-in" id="pLogo">__IMGPLUS__<span>Logo</span></span></label>
+        <div class="lf-fields">
+          <div class="lf-label">Token name <i>*</i> __INFO__</div>
+          <input class="lf-in" id="fName" placeholder="Token name" maxlength="32" autocomplete="off">
+          <span class="lf-err" id="nMsg"></span>
+          <div class="lf-label">Token symbol <i>*</i> __INFO__</div>
+          <input class="lf-in lf-up" id="fTick" placeholder="TOKEN" maxlength="10" autocomplete="off">
+          <span class="lf-err" id="tMsg"></span>
+        </div>
+      </div>
 
-  <div class="mt-9 flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-10 xl:grid-cols-[minmax(0,1fr)_432px]">
-    <div class="min-w-0">
-      <!-- step 1 -->
-      <section data-wiz="1" class="flex flex-col gap-3">
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5"><span class="flex items-center justify-between text-[14px] font-medium leading-none text-text-muted"><span>Name</span><span class="font-mono text-[12px]" id="nC">4 / 32</span></span><input class="w-full min-w-0 border-0 bg-transparent p-0 text-[16px] font-semibold text-text-primary outline-none placeholder:text-text-disabled" id="fName" value="Gorb" maxlength="32" placeholder="Gorb"><span class="text-[12px] font-medium text-error" id="nMsg"></span></label>
-          <label class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5"><span class="flex items-center justify-between text-[14px] font-medium leading-none text-text-muted"><span>Ticker</span><span class="font-mono text-[12px]" id="tC">4 / 10</span></span><input class="w-full min-w-0 border-0 bg-transparent p-0 font-mono text-[16px] font-semibold uppercase text-text-primary outline-none placeholder:text-text-disabled" id="fTick" value="GORB" maxlength="10" placeholder="GORB"><span class="text-[12px] font-medium text-success" id="tMsg">$GORB is available</span></label>
-        </div>
-        <div class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5"><span class="flex items-center justify-between text-[14px] font-medium leading-none text-text-muted"><span>Logo</span><span class="font-mono text-[12px]">png · jpg · webp · ≤ 1 MB</span></span>
-          <div class="flex items-center gap-4 rounded-[12px] border border-dashed border-border-strong px-4 py-3" id="drop"><span class="relative flex shrink-0 overflow-hidden bg-avatar-gradient ring-1 ring-inset ring-text-primary/10 size-16 rounded-xl text-2xl" id="pLogo"><span class="absolute inset-0 flex items-center justify-center rounded-md font-bold text-text-primary">GO</span></span><div class="min-w-0"><p class="text-sm font-semibold text-text-primary">Drop an image or <label class="cursor-pointer text-accent">browse<input type="file" id="fLogo" accept="image/*" hidden></label></p><p class="mt-1 text-[12px] text-text-muted" id="logoMsg">Stored on-chain with the token metadata. No logo = ticker initials.</p></div></div>
-        </div>
-        <label class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5"><span class="flex items-center justify-between text-[14px] font-medium leading-none text-text-muted"><span>Description</span><span class="font-mono text-[12px]" id="dC">71 / 280</span></span><textarea class="w-full min-w-0 resize-none border-0 bg-transparent p-0 text-[15px] font-medium leading-relaxed text-text-primary outline-none placeholder:text-text-disabled" rows="3" id="fDesc" maxlength="280" placeholder="What is it?">The gorb is a creature. It does not know what it is. Neither do you.</textarea></label>
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <label class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5"><span class="text-[14px] font-medium leading-none text-text-muted">Website <span class="text-text-disabled">optional</span></span><input class="w-full min-w-0 border-0 bg-transparent p-0 text-[15px] font-medium text-text-primary outline-none placeholder:text-text-disabled" id="fWeb" placeholder="https://" value="https://gorb.wtf"></label>
-          <label class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5"><span class="text-[14px] font-medium leading-none text-text-muted">X <span class="text-text-disabled">optional</span></span><input class="w-full min-w-0 border-0 bg-transparent p-0 text-[15px] font-medium text-text-primary outline-none placeholder:text-text-disabled" id="fX" placeholder="x.com/" value="x.com/gorbcoin"></label>
-          <label class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5"><span class="text-[14px] font-medium leading-none text-text-muted">Telegram <span class="text-text-disabled">optional</span></span><input class="w-full min-w-0 border-0 bg-transparent p-0 text-[15px] font-medium text-text-primary outline-none placeholder:text-text-disabled" id="fTg" placeholder="t.me/"></label>
-        </div>
-        <div class="flex items-center justify-between gap-3 pt-1"><span class="text-[12px] text-text-muted">Name, ticker and logo are fixed after deploy. Links can be edited later.</span><button class="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-accent px-5 text-sm font-bold text-accent-ink transition-colors hover:bg-accent-hover" data-next="2">Next: Rewards basket __CHEVR__</button></div>
-      </section>
+      <div class="lf-label">Paired asset <i>*</i> __INFO__</div>
+      <button type="button" class="lf-row" id="pairBtn"><span class="lf-row-l"><img src="img/eth.png" alt="" class="lf-coin">ETH</span><span class="lf-row-r"><span class="lf-pill">1 asset</span>__CHEV__</span></button>
+      <button type="button" class="lf-row" id="mktBtn"><span class="lf-row-l">Market details</span><span class="lf-row-r"><span class="lf-pill ok">Enabled</span>__CHEV__</span></button>
+      <div class="lf-mkt" id="mkt">
+        <div><span>Supply</span><b>1,000,000,000 · all in the pool</b></div>
+        <div><span>Pool</span><b>Uniswap V4 · ETH · Ink</b></div>
+        <div><span>Trading fee</span><b>2.00% · 0.7 creator · 0.5 holders · 0.8 platform</b></div>
+        <div><span>Liquidity</span><b class="ok">Locked forever</b></div>
+      </div>
+      <div class="lf-fee"><span>Creation fee</span><b>0 ETH <small>gas only</small></b></div>
 
-      <!-- step 2 -->
-      <section data-wiz="2" class="hidden flex-col gap-3">
-        <div class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5"><span class="flex items-center justify-between text-[14px] font-medium leading-none text-text-muted"><span>Pick up to 4 of 9 stocks</span><span class="font-mono text-[12px]" id="pkC">2 / 4 selected</span></span>
-          <div class="grid grid-cols-1 gap-2 sm:grid-cols-3" id="pick"></div>
-          <p class="text-[12px] leading-relaxed text-text-muted">0.5% of every trade is swapped into these and credited to holders pro-rata. Holders can claim the basket, or claim as ETH. Fixed after deploy. Wrapped Backed xStocks on Ink; liquidity shown is today's Uniswap pool depth.</p><span class="text-[12px] font-medium text-error" id="pkMsg"></span></div>
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5"><span class="text-[14px] font-medium leading-none text-text-muted">Fee split <span class="text-text-disabled">fixed · 2% per trade, in ETH</span></span>
-            <div class="flex h-2 overflow-hidden rounded-full"><span style="width:35%;background:var(--color-accent)"></span><span style="width:25%;background:var(--color-success)"></span><span style="width:40%;background:var(--color-text-muted)"></span></div>
-            <div class="flex flex-wrap gap-x-4 gap-y-1 text-[12px] font-medium text-text-secondary"><span><span class="mr-1.5 inline-block size-2 rounded-full" style="background:var(--color-accent)"></span>creator 0.7%</span><span><span class="mr-1.5 inline-block size-2 rounded-full" style="background:var(--color-success)"></span>holders 0.5% (in the basket)</span><span><span class="mr-1.5 inline-block size-2 rounded-full" style="background:var(--color-text-muted)"></span>platform 0.8%</span></div></div>
-          <label class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5"><span class="flex items-center justify-between text-[14px] font-medium leading-none text-text-muted"><span>Your own first buy</span><span class="text-text-disabled">optional · max 0.5 ETH</span></span>
-            <div class="flex items-center justify-between gap-2"><input class="w-full min-w-0 border-0 bg-transparent p-0 text-[26px] font-semibold leading-8 tracking-[-0.02em] text-text-primary tabular-nums outline-none placeholder:text-text-disabled" id="fCommit" value="0.1" inputmode="decimal" placeholder="0"><span class="flex shrink-0 items-center gap-2 rounded-full bg-bg-elevated py-1.5 pl-1.5 pr-3"><span class="relative flex shrink-0 overflow-hidden rounded-full ring-1 ring-inset ring-text-primary/10 size-6"><img alt="" class="absolute inset-0 size-full object-cover" src="img/eth.png"></span><span class="text-[14px] font-bold text-text-primary">ETH</span></span></div>
-            <span class="text-[12px] text-text-muted">Executed inside the launch tx at the floor price (≈ <span class="font-mono" id="fbOut">45.2M</span> tokens, fee-free). Shown publicly as “creator bought <span class="font-mono" id="fbTxt">0.1 ETH</span>”.</span><span class="text-[12px] font-medium text-error" id="cMsg"></span></label>
-        </div>
-        <div class="grid grid-cols-2 gap-x-8 gap-y-5 lg:grid-cols-4 rounded-[16px] bg-bg-input px-4 py-3.5">
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Supply</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums">1,000,000,000</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">all in the pool</div></div>
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Pool</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary">Uniswap V4 · ETH</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">Ink · 57073</div></div>
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Starting mcap</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums">$4.9K</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">2 ETH</div></div>
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Liquidity</div><div class="mt-2 truncate text-base font-semibold leading-snug text-success">Locked forever</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">no owner · no mint</div></div>
-        </div>
-        <div class="flex items-center justify-between gap-3 pt-1"><button class="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-border-default bg-bg-card px-4 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-elevated" data-next="1">__CHEVL__Back</button><button class="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-accent px-5 text-sm font-bold text-accent-ink transition-colors hover:bg-accent-hover" data-next="3">Next: Review __CHEVR__</button></div>
-      </section>
+      <div class="lf-label mt24">Description __INFO__</div>
+      <textarea class="lf-ta" id="fDesc" placeholder="What is this token about?" maxlength="280"></textarea>
 
-      <!-- step 3 -->
-      <section data-wiz="3" class="hidden flex-col gap-3">
-        <div class="flex items-start gap-4"><span class="relative flex shrink-0 overflow-hidden bg-avatar-gradient ring-1 ring-inset ring-text-primary/10 size-[52px] rounded-xl text-2xl md:size-16 md:text-3xl" id="pLogo3"><span class="absolute inset-0 flex items-center justify-center rounded-md font-bold text-text-primary">GO</span></span><div class="min-w-0 flex-1"><div class="flex min-w-0 items-baseline gap-2.5"><h2 class="min-w-0 truncate text-2xl font-bold leading-none tracking-[-0.01em] text-text-primary" id="rName2">Gorb</h2><span class="shrink truncate text-[15px] font-medium text-text-muted" id="rTick2">GORB</span></div><div class="mt-1.5 truncate font-mono text-[13px] font-medium text-text-muted" id="rLinks">gorb.wtf · x.com/gorbcoin</div><div class="mt-2.5 flex flex-wrap items-center gap-1.5" id="rTags"></div></div></div>
-        <p class="text-[13px] leading-relaxed text-text-secondary" id="rDesc"></p>
-        <div class="grid grid-cols-2 gap-x-8 gap-y-5 lg:grid-cols-4 rounded-[16px] bg-bg-input px-4 py-3.5">
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Your first buy</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums" id="rCommit">0.1 ETH</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted" id="rOut">45.2M tokens</div></div>
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Launch fee</div><div class="mt-2 truncate text-base font-semibold leading-snug text-success">0</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">gas ≈ 0.000002 ETH</div></div>
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Total now</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums" id="rTotal">0.1000 ETH</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">balance 0.842 ETH</div></div>
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Trading fee</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary">2.00%</div><div class="mt-0.5 truncate font-mono text-[13px] font-medium text-text-muted">you get 0.7%</div></div>
-        </div>
-        <aside class="overflow-hidden rounded-[10px] border border-warning/25 bg-warning/10"><div class="flex items-start gap-2.5 px-3 py-2 text-[13px] leading-5 text-text-secondary md:text-xs">__SHIELD__<span><strong class="mr-1.5 font-semibold text-warning">Permanent:</strong> the pool's liquidity can never be withdrawn, not by you, not by us. Name, ticker, logo, supply and basket are fixed at deploy. Description and links can be edited later.</span></div></aside>
-        <label class="flex cursor-pointer items-start gap-2.5 text-[13px] text-text-secondary"><input type="checkbox" id="fAck" class="mt-0.5 size-4"> I understand the liquidity is locked forever and the basket cannot be changed.</label><span class="text-[12px] font-medium text-error" id="aMsg"></span>
-        <div class="flex items-center justify-between gap-3 pt-1"><button class="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-border-default bg-bg-card px-4 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-elevated" data-next="2">__CHEVL__Back</button><button class="inline-flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-accent px-6 text-base font-bold text-accent-ink shadow-cta transition-colors hover:bg-accent-hover disabled:pointer-events-none disabled:bg-bg-elevated disabled:text-text-muted" id="deploy">__ROCKET__Deploy</button></div>
-      </section>
+      <div class="lf-label">Links (optional) __INFO__</div>
+      <div class="lf-links">
+        <input class="lf-in" id="fWeb" placeholder="https://yourproject.xyz" autocomplete="off">
+        <input class="lf-in" id="fX" placeholder="https://x.com/yourproject" autocomplete="off">
+        <input class="lf-in" id="fTg" placeholder="https://t.me/yourproject" autocomplete="off">
+      </div>
 
-      <!-- done -->
-      <section data-wiz="done" class="hidden flex-col gap-4">
-        <span class="w-fit inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold leading-none bg-success-soft text-success">__CHECK__Deployed · block #57,371,602</span>
-        <div class="flex items-start gap-4"><span class="relative flex shrink-0 overflow-hidden bg-avatar-gradient ring-1 ring-inset ring-text-primary/10 size-16 rounded-xl text-3xl" id="pLogo4"><span class="absolute inset-0 flex items-center justify-center rounded-md font-bold text-text-primary">GO</span></span><div class="min-w-0"><h2 class="text-2xl font-bold leading-none tracking-[-0.01em] text-text-primary"><span id="dName">Gorb</span> is live on Ink</h2><div class="mt-2 flex flex-wrap items-center gap-3"><button class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 font-mono text-[13px] font-medium text-text-muted transition-colors hover:text-text-primary" data-copy="0x91aa4c0e8c2b7d7f01f5a3e9b6c4d2a1f0e9d8c7">0x91aa…07c3 __COPY__</button><a class="inline-flex items-center gap-1 font-mono text-[13px] font-medium text-text-muted hover:text-accent" href="https://explorer.inkonchain.com" target="_blank" rel="noopener noreferrer">tx 0x3f8c…a21e __EXT__</a></div></div></div>
-        <div class="grid grid-cols-2 gap-x-8 gap-y-5 lg:grid-cols-4 rounded-[16px] bg-bg-input px-4 py-3.5">
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Rewards basket</div><div class="mt-2 flex flex-wrap gap-1" id="dBasket"></div></div>
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Your first buy</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary tabular-nums" id="dBuy">45.2M tokens</div></div>
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Pool</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary">Uniswap V4 · locked</div></div>
-          <div class="min-w-0"><div class="text-[13px] font-medium text-text-muted">Holder rewards</div><div class="mt-2 truncate text-base font-semibold leading-snug text-text-primary">0.5% per trade</div></div>
+      <div class="lf-vanity"><span class="lf-vi">__SPARK__</span><div><b>Vanity address __INFO__</b><code>Token address ending in 0x...ba</code><p>Generated after metadata is prepared and before wallet confirmation.</p></div></div>
+
+      <div class="lf-sec"><span class="lf-num">02</span><h2>Rewards basket</h2></div>
+      <p class="lf-para">Every trade pays 0.5% in ETH to holders, swapped into the stocks you pick here when they claim. Pick one to four wrapped xStocks. The basket is fixed at launch; holders can always claim as ETH instead.</p>
+      <div class="lf-cards" id="pick"></div>
+      <div class="lf-alloc">
+        <div class="lf-donut"><svg viewBox="0 0 120 120" id="donut"></svg><div class="lf-dc"><b id="allocPct">50%</b><span>per stock</span></div><div class="lf-dl" id="allocLeft">2 of 4 picked</div><div class="lf-legend" id="allocLegend"></div></div>
+        <div class="lf-split">
+          <div class="lf-split-h">Fee split <span>fixed · 2.00% per trade, taken in ETH</span></div>
+          <div class="lf-srow"><span class="dot" style="background:var(--color-accent)"></span><span>Creator</span><b>0.70%</b></div>
+          <div class="lf-srow"><span class="dot" style="background:var(--color-success)"></span><span>Holders · in the basket</span><b>0.50%</b></div>
+          <div class="lf-srow"><span class="dot" style="background:var(--color-text-muted)"></span><span>Platform · funds the 3-day leaderboard</span><b>0.80%</b></div>
+          <p>Fees are charged by the pool's hook, so they are the same wherever the token is traded.</p>
         </div>
-        <div class="flex flex-wrap gap-2"><a class="inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-accent px-5 text-sm font-bold text-accent-ink transition-colors hover:bg-accent-hover" href="token.html">Open token page __CHEVR__</a><button class="inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-border-default bg-bg-card px-4 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-elevated" id="shareX">Share on X</button><a class="inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-border-default bg-bg-card px-4 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-elevated" href="portfolio.html">Profile</a></div>
-      </section>
+      </div>
+      <span class="lf-err" id="pkMsg"></span>
+
+      <div class="lf-sec"><span class="lf-num">03</span><h2>Launch options</h2></div>
+      <div class="lf-opt"><div class="lf-opt-h"><button type="button" class="lf-sw" id="swDev" aria-checked="false"></button><b>Include Dev Buy __INFO__</b></div><p>Buy tokens as part of the launch, in the same transaction. Up to 0.5 ETH at the floor price, shown publicly on the token page.</p>
+        <div class="lf-dev" id="devBox"><input class="lf-in" id="fCommit" value="0.1" inputmode="decimal" placeholder="0"><span class="lf-unit">ETH</span><span class="lf-devout">≈ <b id="fbOut">45.2M</b> tokens</span></div><span class="lf-err" id="cMsg"></span></div>
+      <div class="lf-opt"><div class="lf-opt-h"><button type="button" class="lf-sw on" id="swSnipe" aria-checked="true" disabled></button><b>Enable anti-sniping __INFO__</b></div><p>Trading fees start higher and decrease over 20 seconds. Dev Buy skips this extra charge but still pays normal fees.</p></div>
+      <div class="lf-opt"><div class="lf-opt-h"><button type="button" class="lf-sw on" id="swMeta" aria-checked="true"></button><b>Metadata editable after launch __INFO__</b></div><p>Let the creator update description and links after launch. Name, symbol, logo and basket are always locked.</p></div>
+      <button type="button" class="lf-add" id="addMeta">__PLUS__Add on-chain metadata</button> <span class="lf-infoi">__INFO__</span>
+
+      <ul class="lf-bullets">
+        <li>The token and its Uniswap V4 market go live together, priced in ETH.</li>
+        <li>The market starts with token-only liquidity that remains permanently locked.</li>
+        <li>The fixed launch supply is minted once and seeded into the permanently locked pool.</li>
+        <li>The 2% hook fee applies wherever the token trades. Creator funds accrue in ETH; holder rewards are paid in the basket stocks.</li>
+        <li>Optional profile editing can update description and links, but cannot mint tokens, pause transfers, or remove liquidity.</li>
+      </ul>
     </div>
 
-    <!-- preview -->
-    <div class="mt-8 min-w-0 lg:sticky lg:top-4 lg:mt-0">
-      <div class="rounded-[20px] bg-bg-card p-1.5"><div class="min-w-0 px-3 py-4">
-        <div class="mb-4 flex items-center justify-between gap-3"><h2 class="flex items-center gap-1.5 text-lg font-bold text-text-primary">Preview</h2><span class="text-[12px] font-medium text-text-muted">how it appears in the feed</span></div>
-        <div class="flex flex-col gap-3">
-          <div class="rounded-[16px] bg-bg-input px-4 py-3.5"><div class="flex items-center gap-3"><span class="relative flex shrink-0 overflow-hidden bg-avatar-gradient ring-1 ring-inset ring-text-primary/10 size-11 rounded-md text-sm" id="pLogo2"><span class="absolute inset-0 flex items-center justify-center rounded-md font-bold text-text-primary">GO</span></span><div class="min-w-0 flex-1"><div class="flex min-w-0 items-center gap-2"><span class="min-w-0 shrink truncate text-sm font-bold leading-tight text-text-primary" id="pTick">GORB</span><span class="min-w-0 truncate text-sm font-medium text-text-muted" id="pName">Gorb</span></div><div class="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden text-[13px] leading-none text-text-muted"><span>ETH</span><span class="text-text-disabled">·</span><span>just now</span><span class="inline-flex items-center gap-1.5 h-5 shrink-0 rounded-full border-0 px-2 text-[11px] font-semibold leading-none bg-accent/10 text-accent">NEW</span></div></div><div class="shrink-0 text-right"><div class="text-[15px] font-medium tabular-nums text-text-primary">$4.9K</div><div class="mt-0.5 text-xs tabular-nums text-text-muted">1 holder</div></div></div></div>
-          <div class="rounded-[16px] bg-bg-input px-4 py-3.5"><span class="text-[14px] font-medium leading-none text-text-muted">Rewards paid in</span><div class="mt-2.5 flex flex-wrap items-center gap-1.5" id="pBasket"></div><div class="mt-3 flex items-center justify-between text-[13px] font-medium"><span class="text-text-muted">Holder share</span><span class="text-text-primary">0.5% of every trade</span></div><div class="mt-1.5 flex items-center justify-between text-[13px] font-medium"><span class="text-text-muted">Creator share</span><span class="text-text-primary">0.7% of every trade</span></div></div>
-          <div class="rounded-[16px] bg-bg-input px-4 py-3.5"><span class="text-[14px] font-medium leading-none text-text-muted">What happens</span>
-            <ul class="mt-3 grid gap-3"><li class="flex gap-2.5"><span class="mt-1.5 size-[5px] shrink-0 rounded-full bg-accent"></span><span class="min-w-0"><span class="block text-[13px] font-semibold text-text-primary md:text-xs">Deploy</span><span class="mt-1 block text-[13px] leading-relaxed text-text-secondary md:text-xs">Token and V4 pool in one transaction. All supply in the pool, liquidity locked.</span></span></li><li class="flex gap-2.5"><span class="mt-1.5 size-[5px] shrink-0 rounded-full bg-text-muted"></span><span class="min-w-0"><span class="block text-[13px] font-semibold text-text-primary md:text-xs">Second 1</span><span class="mt-1 block text-[13px] leading-relaxed text-text-secondary md:text-xs">Tradable on Uniswap, aggregators and bots. Every trade counts for the leaderboard.</span></span></li><li class="flex gap-2.5"><span class="mt-1.5 size-[5px] shrink-0 rounded-full bg-text-muted"></span><span class="min-w-0"><span class="block text-[13px] font-semibold text-text-primary md:text-xs">Every trade</span><span class="mt-1 block text-[13px] leading-relaxed text-text-secondary md:text-xs">2% in ETH: 0.7% to you, 0.5% swapped into the basket for holders, 0.8% platform.</span></span></li><li class="flex gap-2.5"><span class="mt-1.5 size-[5px] shrink-0 rounded-full bg-text-muted"></span><span class="min-w-0"><span class="block text-[13px] font-semibold text-text-primary md:text-xs">Holders</span><span class="mt-1 block text-[13px] leading-relaxed text-text-secondary md:text-xs">Claim their stocks any time, or claim as ETH. Rewards never expire.</span></span></li></ul></div>
+    <aside class="lf-side">
+      <div class="lf-card">
+        <div class="lf-card-l">Live preview</div>
+        <div class="lf-pv-h"><span class="lf-pv-av" id="pLogo2"><span id="pLetter">T</span></span><div class="lf-pv-n"><b id="pName">Your token</b><span><span id="pTick">TOKEN</span>/ETH</span></div><span class="lf-new">NEW</span></div>
+        <p class="lf-pv-d" id="pDesc">Fixed-supply token trading on a locked Uniswap V4 pool.</p>
+        <div class="lf-kv"><span>Start price</span><b>≈ $0.0₅39885</b><small>0.0₈146856 ETH at the current ETH price.</small></div>
+        <div class="lf-kv2">
+          <div class="lf-kv"><span>Launch cap</span><b>≈ $4.86K</b><small>2 ETH at the current ETH price.</small></div>
+          <div class="lf-kv"><span>Fixed supply</span><b>1B</b><small>Set by the factory for future launches.</small></div>
         </div>
-      </div></div>
-    </div>
+        <div class="lf-tags"><span class="lf-tag"><img src="img/eth.png" alt="">ETH</span><span class="lf-tag ok">Immutable</span><span class="lf-tag" id="pBasket"></span></div>
+      </div>
+      <div class="lf-card">
+        <div class="lf-sum"><div><span>Fixed supply</span><b>1B</b></div><div><span>Pool model</span><b>Locked pool</b></div><div><span>Launch market cap</span><b>≈ $4.86K</b></div><div><span>Creation fee</span><b>0 ETH</b></div><div><span>Paired asset</span><b>ETH</b></div><div><span>Rewards basket</span><b id="sumBasket">NVDAx, SPYx</b></div><div id="sumDevRow"><span>Dev buy</span><b id="sumDev">0.1 ETH</b></div></div>
+        <button type="button" class="lf-cta" id="deploy">Connect Wallet</button>
+        <p class="lf-note">You'll confirm the transaction in your wallet. Nothing is minted until you submit.</p>
+      </div>
+    </aside>
   </div>
+
+  <section class="lf-done hidden" id="doneBox">
+    <div class="lf-card">
+      <span class="lf-tag ok">__CHECK__Deployed · block #57,371,602</span>
+      <div class="lf-pv-h" style="margin-top:14px"><span class="lf-pv-av" id="pLogo4"><span>T</span></span><div class="lf-pv-n"><b><span id="dName">Your token</span> is live on Ink</b><span><button type="button" class="lf-ca" data-copy="0x91aa4c0e8c2b7d7f01f5a3e9b6c4d2a1f0e9d8c7">0x91aa…07ba __COPY__</button></span></div></div>
+      <div class="lf-sum" style="margin-top:14px"><div><span>Rewards basket</span><b id="dBasket">NVDAx, SPYx</b></div><div><span>Your dev buy</span><b id="dBuy">45.2M tokens</b></div><div><span>Pool</span><b>Uniswap V4 · locked</b></div><div><span>Holder rewards</span><b>0.5% per trade</b></div></div>
+      <div class="lf-done-acts"><a class="lf-cta" href="token.html">Open token page</a><button type="button" class="lf-ghost" id="shareX">Share on X</button></div>
+    </div>
+  </section>
 </div>
