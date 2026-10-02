@@ -13,11 +13,13 @@ const { chromium } = require('playwright'); const fs=require('fs'); const wordma
  const wm=(fg)=>`<div style="display:flex;align-items:center;gap:18px;height:140px;padding:0 24px"><div style="width:120px;height:120px">${sz(logo,120)}</div><div style="padding-top:4px">${wordmark(400,{edge:fg==='#14121a'?'#0e1117':'#f3f5f9'})}</div></div>`;
  await shot(wm('#f3f5f9'),600,140,'img/wordmark-dark.png','#0e1117');
  await shot(wm('#14121a'),600,140,'img/wordmark-light.png','#ffffff');
+ const def=fs.readFileSync('img/t-default.svg','utf8'); const blobPath=def.match(/<path d="(M[^"]+)"\/>/)[1]; const drops=def.match(/<circle[^>]+\/>(<circle[^>]+\/>)*/)[0];
+ const blot=(txt,s,rot=-5,fsz=78)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="${s}" height="${s}"><g transform="rotate(${rot} 128 128)"><g fill="#f3f5f9" stroke="#f3f5f9" stroke-width="18" stroke-linejoin="round"><path d="${blobPath}"/>${drops}</g><g fill="#14121a" stroke="#14121a" stroke-width="7" stroke-linejoin="round"><path d="${blobPath}"/>${drops}</g><g fill="#ff4fa3"><path d="${blobPath}"/>${drops}</g><path fill="#ff7cbb" d="M78 86c8-18 26-30 48-30-20 6-34 20-40 40-2 8-12 8-12-2 0-3 2-5 4-8z"/><text x="128" y="158" text-anchor="middle" font-family="'Titan One'" font-size="${fsz}" fill="#f3f5f9" stroke="#14121a" stroke-width="9" stroke-linejoin="round" paint-order="stroke" transform="rotate(-3 128 140)">${txt}</text></g></svg>`;
  await shot(`<div style="position:relative;width:1200px;height:630px;background:#0e1117;color:#f3f5f9;font-family:Geist;overflow:hidden">
-   <div style="position:absolute;left:70px;top:95px;width:440px;height:440px">${sz(logo,440)}</div>
-   <div style="position:absolute;left:560px;top:100px">${wordmark(560)}</div>
-   <div style="position:absolute;left:566px;top:318px;font:600 34px Geist;line-height:1.25;color:#f3f5f9;width:560px">Memecoins on Ink that pay holders in stocks.</div>
-   <div style="position:absolute;left:566px;top:418px;font:500 22px Geist;color:#c3c9d6;width:560px;line-height:1.5">Liquidity locked forever. 2% fee on every trade: creator, holders in NVDAx / SPYx / TSLAx, and a 3-day trader prize pool.</div>
-   <div style="position:absolute;left:566px;top:520px;display:flex;align-items:center;gap:10px;font:500 20px Geist;color:#7c8498"><img src="${ink}" style="width:26px;height:26px;border-radius:50%">Built on Ink · inkypump.fun</div>
+   <div style="position:absolute;left:40px;top:85px;width:460px;height:460px">${sz(logo,460)}</div>
+   <div style="position:absolute;left:520px;top:150px">${wordmark(620)}</div>
+   <div style="position:absolute;left:534px;top:385px;font:600 27px Geist;line-height:1.2;white-space:nowrap">Memecoins on Ink that pay holders in stocks.</div>
+   <div style="position:absolute;left:520px;top:438px">${blot('NVDAx',140,-8,62)}</div><div style="position:absolute;left:640px;top:458px">${blot('SPYx',120,9,70)}</div><div style="position:absolute;left:745px;top:433px">${blot('TSLAx',140,-12,62)}</div>
+   <svg style="position:absolute;left:0;top:0" width="1200" height="630" viewBox="0 0 1200 630" fill="#ff4fa3" stroke="#14121a" stroke-width="6"><circle cx="1120" cy="80" r="12"/><circle cx="1160" cy="560" r="8"/><circle cx="40" cy="590" r="9"/><circle cx="560" cy="60" r="7"/></svg>
  </div>`,1200,630,'img/og.png','#0e1117');
  await b.close(); })();
