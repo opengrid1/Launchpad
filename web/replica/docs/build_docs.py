@@ -227,7 +227,7 @@ PAGES = [
    ('scale', 'Fees are fixed', 'Set once per pool at registration. No function changes them.'),
    ('users', 'Payouts are permissionless', 'Creator, platform and holder shares are pushed by anyone to fixed recipients.')),
   h2('Testing'),
-  p('Unit, fuzz and fork tests run against the real Uniswap V4 PoolManager, Uniswap V3 router, WETH and the wrapped xStocks on an Ink mainnet fork: launch, ETH and stock-paired first buys, fee split, basket claim, claim as ETH, cost-basis transfers, leaderboard settlement and every admin function. An external audit is planned before the first public launch.'),
+  p('Unit, fuzz and fork tests run against the real Uniswap V4 PoolManager, Uniswap V3 router, WETH and the wrapped xStocks on an Ink mainnet fork: launch, ETH and stock-paired first buys, fee split, basket claim, claim as ETH, cost-basis transfers, leaderboard settlement. An external audit is planned before the first public launch.'),
   h2('Known limits'),
   ul('Stock prices in the factory are fixed or Chainlink-fed; they only affect the launch price and the leaderboard\'s USD conversion, never fees or rewards.',
      'Basket claims depend on Uniswap V3 liquidity for each stock on Ink. Thin pools mean worse prices; holders set their own minimums.',
@@ -289,7 +289,7 @@ PAGES = [
   table(['Function', 'Who', 'Notes'], [
    ['launch(params, salt, route) payable', 'anyone', 'returns (token, poolId); ETH sent is the first buy'],
    ['poolKeyOf(token), listings(token), allTokens(i)', 'view', ''],
-   ['pairUsdPrice(pair), quoteAssets(pair)', 'view', 'Chainlink feed when set and fresh, else admin price'],
+   ['pairUsdPrice(pair), quoteAssets(pair)', 'view', 'Chainlink feed when set and fresh, else the factory price'],
    ['pushPlatformFees(tokens[])', 'anyone', 'pays the treasury'],
    ]),
   h2('InkypumpToken'),
