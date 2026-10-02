@@ -387,3 +387,10 @@ h1 .hero-inky{width:74px;height:auto;flex:none;margin-left:-6px;filter:drop-shad
 .o-empty.sm .o-btn{height:36px;font-size:13px;padding:0 16px;margin-top:14px;display:inline-flex;align-items:center;text-decoration:none}
 .o-feed-empty{padding:12px 0 24px}
 .o-feed-empty .o-empty{max-width:none}
+
+/* wallet avatars */
+.o-wpill .wav{display:inline-flex;width:18px;height:18px;border-radius:5px;overflow:hidden;flex:none}
+.o-wpill .wav svg{width:100%;height:100%}
+.o-menu .h.wh{display:flex;align-items:center;gap:10px}
+.o-menu .wav.lg{display:inline-flex;width:30px;height:30px;border-radius:8px;overflow:hidden;flex:none}
+.o-menu .h.wh{text-transform:none;letter-spacing:0;font-family:var(--font-mono);font-size:13px;color:var(--color-text-primary)}

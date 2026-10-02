@@ -185,7 +185,7 @@ def page_shell(root, title, desc, extra_head=''):
 <head><title>%s</title><meta name="description" content="%s">%s%s%s</head>
 <body data-dynamic-theme="dark" data-dynamic-theme-brand="bold">
 %s
-<script src="config.js"></script><script src="data.js"></script><script src="i18n.js"></script><script src="app.js"></script><script src="wallet.js" defer></script>
+<script src="config.js"></script><script src="data.js"></script><script src="avatar.js"></script><script src="i18n.js"></script><script src="app.js"></script><script src="wallet.js" defer></script>
 </body></html>''' % (title, desc, HEAD, extra_head, '<style id="prehide">main{visibility:hidden}</style>' if PRELAUNCH else '', str(root))
 
 # =====================================================================
