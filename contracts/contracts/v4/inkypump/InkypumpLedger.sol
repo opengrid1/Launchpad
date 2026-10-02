@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-/// @title BatchLedger
+/// @title InkypumpLedger
 /// @notice The trading record behind the leaderboard. The pool hook reports
-///         every swap in every Batch pool here, attributed to the wallet that
+///         every swap in every Inkypump pool here, attributed to the wallet that
 ///         signed the transaction (or the wallet a router named in hook data),
 ///         so trades through this site, Uniswap, aggregators and bots all
 ///         count the same.
@@ -18,7 +18,7 @@ pragma solidity 0.8.26;
 ///         Stats are kept per 3-day epoch: realized profit, fees paid and
 ///         volume, in the pair asset. Only WETH-paired coins feed the stats
 ///         so every number is in the same unit.
-contract BatchLedger {
+contract InkypumpLedger {
     uint256 public constant EPOCH = 3 days;
 
     address public immutable hook;

@@ -4,13 +4,13 @@ pragma solidity 0.8.26;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/// @title BatchTreasury
+/// @title InkypumpTreasury
 /// @notice The factory's fee recipient. Every coin's platform share lands here
 ///         (as its pair asset) and anyone can sweep it: one eighth of the WETH
 ///         goes to the leaderboard pool, the rest and every other asset go to
 ///         the platform wallet. The split is fixed; the admin can only move
 ///         the platform wallet.
-contract BatchTreasury {
+contract InkypumpTreasury {
     using SafeERC20 for IERC20;
 
     uint16 internal constant BPS = 10_000;

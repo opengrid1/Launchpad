@@ -13,7 +13,7 @@ import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 
-import {BatchFactory} from "./BatchFactory.sol";
+import {InkypumpFactory} from "./InkypumpFactory.sol";
 
 interface IWrappedNative {
     function deposit() external payable;
@@ -31,8 +31,8 @@ interface ISwapRouter02 {
     function exactInput(ExactInputParams calldata params) external payable returns (uint256 amountOut);
 }
 
-/// @title BatchRouter
-/// @notice One-tap trading for Batch coins in plain ETH, whatever the pair.
+/// @title InkypumpRouter
+/// @notice One-tap trading for Inkypump coins in plain ETH, whatever the pair.
 ///         Tokenized stocks live in scattered pools (on Ink: wrapped xStocks on
 ///         Uniswap V3 against USDG), so the ETH <-> stock leg follows a
 ///         caller-supplied `route`:
@@ -47,11 +47,11 @@ interface ISwapRouter02 {
 ///         The router also turns pair-asset fees into ETH for claimants (coins
 ///         call {pairToEth}) and performs the factory's ETH first buy
 ///         ({ethToPair}). It holds no funds between calls.
-contract BatchRouter is IUnlockCallback, ReentrancyGuard {
+contract InkypumpRouter is IUnlockCallback, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     IPoolManager public immutable poolManager;
-    BatchFactory public immutable factory;
+    InkypumpFactory public immutable factory;
     address public immutable weth;
     ISwapRouter02 public immutable v3Router;
 
@@ -73,7 +73,7 @@ contract BatchRouter is IUnlockCallback, ReentrancyGuard {
     error BadRoute();
     error ZeroAddress();
 
-    constructor(IPoolManager pm, BatchFactory factory_, address weth_, ISwapRouter02 v3Router_) {
+    constructor(IPoolManager pm, InkypumpFactory factory_, address weth_, ISwapRouter02 v3Router_) {
         if (address(pm) == address(0) || address(factory_) == address(0) || weth_ == address(0) || address(v3Router_) == address(0)) revert ZeroAddress();
         poolManager = pm;
         factory = factory_;

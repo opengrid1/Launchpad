@@ -14,16 +14,16 @@ import {CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
 import {IUnlockCallback} from "@uniswap/v4-core/src/interfaces/callback/IUnlockCallback.sol";
 import {IERC20Minimal} from "@uniswap/v4-core/src/interfaces/external/IERC20Minimal.sol";
 
-interface IBatchCoin {
+interface IInkypumpCoin {
     function sync() external returns (uint256);
 }
 
-interface IBatchLedger {
+interface IInkypumpLedger {
     function record(address wallet, address token, address pair, bool isBuy, uint256 coinAmount, uint256 pairAmount, uint256 fee) external;
 }
 
-/// @title BatchHook
-/// @notice Fee engine for Batch' Uniswap V4 pools. Every swap pays a FIXED
+/// @title InkypumpHook
+/// @notice Fee engine for Inkypump' Uniswap V4 pools. Every swap pays a FIXED
 ///         fee of the PAIR side (WETH or a tokenized stock), whichever way the
 ///         trade goes. The fee is set once per pool at registration and no
 ///         function exists to change it.
@@ -55,7 +55,7 @@ interface IBatchLedger {
 ///
 ///         Two setters exist: wiring the factory and the ledger, once each,
 ///         at deployment.
-contract BatchHook is BaseHook, IUnlockCallback {
+contract InkypumpHook is BaseHook, IUnlockCallback {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 
@@ -220,7 +220,7 @@ contract BatchHook is BaseHook, IUnlockCallback {
         if (_deliver(pairCurrency, c.token, fee)) {
             // Credit it now. A failed sync (the coin busy in a claim that routed
             // through this pool) loses nothing: the balance is credited next sync.
-            try IBatchCoin(c.token).sync() {} catch {}
+            try IInkypumpCoin(c.token).sync() {} catch {}
         }
         emit FeeTaken(c.token, fee);
         return (BaseHook.afterSwap.selector, ret);
@@ -238,7 +238,7 @@ contract BatchHook is BaseHook, IUnlockCallback {
         uint256 coinAmt = coinDelta < 0 ? uint256(uint128(-coinDelta)) : uint256(uint128(coinDelta));
         uint256 paid = isBuy ? pairAmt + fee : (pairAmt > fee ? pairAmt - fee : 0);
         address wallet = hookData.length == 20 ? address(bytes20(hookData)) : tx.origin;
-        try IBatchLedger(l).record(wallet, c.token, c.pair, isBuy, coinAmt, paid, fee) {} catch {}
+        try IInkypumpLedger(l).record(wallet, c.token, c.pair, isBuy, coinAmt, paid, fee) {} catch {}
     }
 
     /// @dev Move `fee` (plus anything held from earlier swaps) to the coin when

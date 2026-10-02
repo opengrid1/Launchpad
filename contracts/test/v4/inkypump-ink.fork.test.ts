@@ -1,10 +1,10 @@
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
 
-// Batch (Estonks model) on an Ink mainnet fork: real Uniswap V4 PoolManager,
+// Inkypump (Estonks model) on an Ink mainnet fork: real Uniswap V4 PoolManager,
 // Uniswap V3 SwapRouter02, WETH and the wrapped Backed xStocks.
 //   FORK=1 ROBINHOOD_RPC_URL=https://rpc-gel.inkonchain.com ROBINHOOD_CHAIN_ID=57073 BLOCK_GAS_LIMIT=30000000 \
-//   HARDHAT_CONFIG=hardhat.config.size.ts npx hardhat test test/v4/batch-ink.fork.test.ts
+//   HARDHAT_CONFIG=hardhat.config.size.ts npx hardhat test test/v4/inkypump-ink.fork.test.ts
 const POOL_MANAGER = "0x360e68faccca8ca495c1b759fd9eee466db9fb32";
 const WETH = "0x4200000000000000000000000000000000000006";
 const ROUTER02 = "0x177778F19E89dD1012BdBe603F144088A95C4B53";
@@ -30,7 +30,7 @@ async function deployAll(admin: any) {
   const deployer = (await ethers.getSigners())[9];
   const c2 = await (await ethers.getContractFactory("HookDeployer", deployer)).deploy();
   const c2Addr = await c2.getAddress();
-  const Hook = await ethers.getContractFactory("BatchHook");
+  const Hook = await ethers.getContractFactory("InkypumpHook");
   const init = ethers.concat([Hook.bytecode, ethers.AbiCoder.defaultAbiCoder().encode(["address"], [POOL_MANAGER])]);
   const hash = ethers.keccak256(init);
   let hookAddr = "", salt = "";
@@ -40,22 +40,22 @@ async function deployAll(admin: any) {
     if ((BigInt(a) & FLAG_MASK) === HOOK_FLAGS) { hookAddr = a; salt = s; break; }
   }
   await (await c2.deploy(salt, init)).wait();
-  const hook = await ethers.getContractAt("BatchHook", hookAddr, deployer);
-  const td = await (await ethers.getContractFactory("BatchTokenDeployer", deployer)).deploy();
-  const factory = await (await ethers.getContractFactory("BatchFactory", deployer)).deploy(
+  const hook = await ethers.getContractAt("InkypumpHook", hookAddr, deployer);
+  const td = await (await ethers.getContractFactory("InkypumpTokenDeployer", deployer)).deploy();
+  const factory = await (await ethers.getContractFactory("InkypumpFactory", deployer)).deploy(
     deployer.address, admin.address, POOL_MANAGER, hookAddr, await td.getAddress(), WETH, ETH_USD_8, TAX_BPS, CREATOR_BPS, HOLDER_BPS, ethers.ZeroAddress,
   );
   const fAddr = await factory.getAddress();
   await (await td.setFactory(fAddr)).wait();
   await (await hook.setFactory(fAddr)).wait();
-  const ledger = await (await ethers.getContractFactory("BatchLedger", deployer)).deploy(hookAddr, WETH);
+  const ledger = await (await ethers.getContractFactory("InkypumpLedger", deployer)).deploy(hookAddr, WETH);
   await (await hook.setLedger(await ledger.getAddress())).wait();
-  const router = await (await ethers.getContractFactory("BatchRouter", deployer)).deploy(POOL_MANAGER, fAddr, WETH, ROUTER02);
+  const router = await (await ethers.getContractFactory("InkypumpRouter", deployer)).deploy(POOL_MANAGER, fAddr, WETH, ROUTER02);
   await (await factory.setConverter(await router.getAddress())).wait();
   await (await factory.setQuoteAsset(NVDA, true, 185n * 10n ** 8n, ethers.ZeroAddress)).wait();
   await (await factory.setQuoteAsset(SPY, true, 650n * 10n ** 8n, ethers.ZeroAddress)).wait();
-  const payout = await (await ethers.getContractFactory("BatchPayout", deployer)).deploy(WETH, admin.address, await ledger.getAddress());
-  const treasury = await (await ethers.getContractFactory("BatchTreasury", deployer)).deploy(WETH, admin.address, await payout.getAddress());
+  const payout = await (await ethers.getContractFactory("InkypumpPayout", deployer)).deploy(WETH, admin.address, await ledger.getAddress());
+  const treasury = await (await ethers.getContractFactory("InkypumpTreasury", deployer)).deploy(WETH, admin.address, await payout.getAddress());
   await (await factory.connect(admin).setFeeRecipient(await treasury.getAddress())).wait();
   const foreign = await (await ethers.getContractFactory("ForeignSwapper", deployer)).deploy(POOL_MANAGER);
   return { hook, factory, router, ledger, payout, treasury, foreign, deployer };
@@ -64,7 +64,7 @@ async function deployAll(admin: any) {
 async function launch(factory: any, creator: any, ethIn = 0n, basket: string[] = [], meta = '{"description":"ink fork test"}') {
   const n = Number(await factory.totalTokens());
   await (await factory.connect(creator).launch({ name: "Gorb", symbol: "GORB", metadataURI: meta, pair: WETH, minPairOut: 0, basket }, nextSalt(), NO_ROUTE, { value: ethIn })).wait();
-  return ethers.getContractAt("BatchToken", await factory.allTokens(n));
+  return ethers.getContractAt("InkypumpToken", await factory.allTokens(n));
 }
 
 async function pastSnipe() {
@@ -72,7 +72,7 @@ async function pastSnipe() {
   for (let i = 0; i < 4; i++) await network.provider.send("evm_mine", []);
 }
 
-describe("Batch on Ink (mainnet fork)", function () {
+describe("Inkypump on Ink (mainnet fork)", function () {
   this.timeout(600_000);
   const E = ethers.parseEther;
 

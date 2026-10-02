@@ -32,7 +32,7 @@ function initLaunch(){
   const cta=g('deploy'); const setCta=()=>{ cta.textContent=W.connected?'Launch token':'Connect Wallet'; }; setCta();
   cta.onclick=()=>{ if(!W.connected){ openConnect(); const t=setInterval(()=>{ if(W.connected){ clearInterval(t); setCta(); } },500); return; } if(!val1()||!val2()){ toast('Fix the highlighted fields','x'); $('main').scrollTo({top:0,behavior:'smooth'}); return; } cta.disabled=true; cta.textContent='Confirm in wallet…'; setTimeout(()=>{ cta.textContent='Deploying…'; },900);
     setTimeout(()=>{ cta.disabled=false; setCta(); $('.lf-grid').classList.add('hidden'); g('doneBox').classList.remove('hidden'); toast((g('fName').value||'Token')+' deployed on Ink'); $('main').scrollTo({top:0,behavior:'smooth'}); },2200); };
-  g('shareX').onclick=()=>{ const t=g('fTick').value.trim().toUpperCase(); open('https://x.com/intent/tweet?text='+encodeURIComponent('$'+t+' is live on Batch (Ink). LP locked forever. Holders earn '+basket.join(' + ')+' on every trade.')); };
+  g('shareX').onclick=()=>{ const t=g('fTick').value.trim().toUpperCase(); open('https://x.com/intent/tweet?text='+encodeURIComponent('$'+t+' is live on Inkypump (Ink). LP locked forever. Holders earn '+basket.join(' + ')+' on every trade.')); };
   sync();
 }
 

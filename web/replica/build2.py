@@ -360,7 +360,7 @@ mnav = root.select_one('nav.h-14'); mnav['id'] = 'mnav'
 # modals / sheets / toasts root
 root.append(frag('<div id="layer"></div>'))
 
-open(OUT + '/token.html', 'w').write(page_shell(root, 'Mogcat $0.000927 | Batch Launchpad', 'MOGCAT on Ink: price, chart, trades, holders and stock rewards.',
+open(OUT + '/token.html', 'w').write(page_shell(root, 'Mogcat $0.000927 | Inkypump', 'MOGCAT on Ink: price, chart, trades, holders and stock rewards.',
     '<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>'))
 print('token.html ok')
 
@@ -380,9 +380,9 @@ for c in chips[1:]: c.decompose()
 chips[0]['data-tpl'] = 'chip'; chips[0].parent['id'] = 'newchips'
 
 main = root.select_one('main')
-h1 = main.select_one('h1'); g = h1.select_one('span'); g.string = 'Batch'
+h1 = main.select_one('h1'); g = h1.select_one('span'); g.string = 'Inky'
 for n in list(h1.contents):
-    if isinstance(n, NavigableString): n.replace_with(' Launchpad')
+    if isinstance(n, NavigableString): n.replace_with('pump')
 p = main.select_one('p.mt-5')
 u = p.select('span.inline')
 stack = p.select_one('span[role=list]')
@@ -442,7 +442,7 @@ mobile = frag('''<div class="md:hidden" id="mrows"><div class="flex cursor-point
 desk.insert_after(mobile)
 feedwrap.select_one('div.flex.w-full.justify-center button')['id'] = 'loadmore'
 root.append(frag('<div id="layer"></div>'))
-open(OUT + '/index.html', 'w').write(page_shell(root, 'Batch Launchpad', 'Launch memecoins on Ink with locked Uniswap V4 liquidity that pay holders in stocks.'))
+open(OUT + '/index.html', 'w').write(page_shell(root, 'Inkypump', 'Launch memecoins on Ink with locked Uniswap V4 liquidity that pay holders in stocks.'))
 print('index.html ok')
 
 # =====================================================================
@@ -465,9 +465,9 @@ def other(name, title, desc, active, connected_only=False):
     html = page_shell(r, title, desc).replace('<script src="app.js"></script>', '<script src="app.js"></script><script src="pages.js"></script>')
     if name == 'admin.html': html = html.replace('<meta name="description"', '<meta name="robots" content="noindex"><meta name="description"')
     open(OUT + '/' + name, 'w').write(html); print(name, 'ok')
-other('launch.html', 'Launch a token | Batch Launchpad', 'Launch a memecoin on Ink with locked Uniswap V4 liquidity and a stock basket for holders.', 'Launch Token')
-other('portfolio.html', 'Profile | Batch Launchpad', 'Your holdings, stock rewards, creator fees and leaderboard payouts.', 'Profile')
-other('leaderboard.html', 'Trader leaderboard | Batch Launchpad', 'Top 5 traders by PnL and volume every 3 days, paid in ETH.', 'Leaderboard')
-other('docs.html', 'Docs | Batch Launchpad', 'How launches, stock rewards, fees and the trader leaderboard work.', 'Docs')
-other('admin.html', 'Admin | Batch Launchpad', 'Factory admin functions.', 'Docs')
+other('launch.html', 'Launch a token | Inkypump', 'Launch a memecoin on Ink with locked Uniswap V4 liquidity and a stock basket for holders.', 'Launch Token')
+other('portfolio.html', 'Profile | Inkypump', 'Your holdings, stock rewards, creator fees and leaderboard payouts.', 'Profile')
+other('leaderboard.html', 'Trader leaderboard | Inkypump', 'Top 5 traders by PnL and volume every 3 days, paid in ETH.', 'Leaderboard')
+other('docs.html', 'Docs | Inkypump', 'How launches, stock rewards, fees and the trader leaderboard work.', 'Docs')
+other('admin.html', 'Admin | Inkypump', 'Factory admin functions.', 'Docs')
 

@@ -18,9 +18,9 @@ import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/Pool
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 
-import {BatchToken} from "./BatchToken.sol";
-import {BatchTokenDeployer} from "./BatchTokenDeployer.sol";
-import {BatchHook} from "./BatchHook.sol";
+import {InkypumpToken} from "./InkypumpToken.sol";
+import {InkypumpTokenDeployer} from "./InkypumpTokenDeployer.sol";
+import {InkypumpHook} from "./InkypumpHook.sol";
 
 /// @dev The launchpad router: turns ETH into a pair asset along a caller-
 ///      supplied route (Uniswap V3 path and/or a V4 pool) and back.
@@ -33,13 +33,13 @@ interface IAggregatorV3 {
     function latestRoundData() external view returns (uint80, int256 answer, uint256, uint256 updatedAt, uint80);
 }
 
-/// @title BatchFactory
+/// @title InkypumpFactory
 /// @notice One-transaction launcher on Ink / Uniswap V4. A coin
 ///         pairs against WETH or any approved tokenized stock; the whole 1B
 ///         supply seeds a single-sided, factory-held V4 position at a $3,000
 ///         start cap, priced from the pair's Chainlink feed when one is set
 ///         and from the admin's USD price otherwise. Trading starts in the
-///         same block; the BatchHook takes a FIXED fee on every swap. No
+///         same block; the InkypumpHook takes a FIXED fee on every swap. No
 ///         function changes a coin's fee after launch.
 ///
 ///         The creator's optional first buy is paid in plain ETH whatever the
@@ -51,7 +51,7 @@ interface IAggregatorV3 {
 ///         itself stays immutable), pair curation, the fee recipient, and
 ///         liquidity collection. The admin cannot mint, change fees, freeze
 ///         transfers or touch any holder's balance.
-contract BatchFactory is ReentrancyGuard, IUnlockCallback {
+contract InkypumpFactory is ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
 
@@ -69,11 +69,11 @@ contract BatchFactory is ReentrancyGuard, IUnlockCallback {
     uint256 public constant FEED_MAX_AGE = 7 days;
 
     IPoolManager public immutable poolManager;
-    BatchHook public immutable hook;
+    InkypumpHook public immutable hook;
     address public immutable weth;
     address public immutable admin;
     /// @notice Creates the coins, so this contract stays under the size limit.
-    BatchTokenDeployer public immutable tokenDeployer;
+    InkypumpTokenDeployer public immutable tokenDeployer;
 
     /// @notice The launchpad router: ETH <-> pair routing for first buys and
     ///         for claimants who want ETH; set once.
@@ -162,8 +162,8 @@ contract BatchFactory is ReentrancyGuard, IUnlockCallback {
         address owner_,
         address admin_,
         IPoolManager poolManager_,
-        BatchHook hook_,
-        BatchTokenDeployer tokenDeployer_,
+        InkypumpHook hook_,
+        InkypumpTokenDeployer tokenDeployer_,
         address weth_,
         uint64 ethUsd8_,
         uint16 taxBps_,
@@ -222,7 +222,7 @@ contract BatchFactory is ReentrancyGuard, IUnlockCallback {
     /// @notice The metadata sites should show: the admin's edit if any, else the coin's own.
     function metadataOf(address token) external view returns (string memory) {
         string memory o = metadataOverride[token];
-        return bytes(o).length > 0 ? o : BatchToken(token).metadataURI();
+        return bytes(o).length > 0 ? o : InkypumpToken(token).metadataURI();
     }
 
     function setFeeRecipient(address recipient) external onlyAdmin {
@@ -295,7 +295,7 @@ contract BatchFactory is ReentrancyGuard, IUnlockCallback {
         if (converter == address(0)) revert InvalidParams();
         token = tokenDeployer.deploy(
             salt,
-            BatchToken.Init({
+            InkypumpToken.Init({
                 name: p.name,
                 symbol: p.symbol,
                 metadataURI: p.metadataURI,
@@ -498,7 +498,7 @@ contract BatchFactory is ReentrancyGuard, IUnlockCallback {
     function pushPlatformFees(address[] calldata tokens) external {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (listings[tokens[i]].createdAt == 0) revert InvalidParams();
-            BatchToken(tokens[i]).payPlatform();
+            InkypumpToken(tokens[i]).payPlatform();
         }
     }
 

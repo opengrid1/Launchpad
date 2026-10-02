@@ -28,13 +28,13 @@ interface IFeeRecipientSource {
     function feeRecipient() external view returns (address);
 }
 
-interface IBatchHook {
+interface IInkypumpHook {
     /// @dev Deliver fees the hook still holds for `token` as V4 claims.
     function flush(address token) external returns (uint256);
 }
 
-/// @title BatchToken
-/// @notice An Batch coin. Fixed supply, no owner, no mint, no pause, no
+/// @title InkypumpToken
+/// @notice An Inkypump coin. Fixed supply, no owner, no mint, no pause, no
 ///         blacklist, no setter of any kind, and no function that checks who
 ///         the caller is: every piece of state is fixed in the constructor or
 ///         moved by rules anyone can trigger.
@@ -62,7 +62,7 @@ interface IBatchHook {
 ///         Launch protection: in the launch block only the creator may receive
 ///         coins from the pool; for the next PROTECT_BLOCKS every wallet is
 ///         capped at MAX_BUY_BPS bought and MAX_HOLD_BPS held.
-contract BatchToken is ERC20, ReentrancyGuard {
+contract InkypumpToken is ERC20, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 private constant ACC_PRECISION = 1e24;
@@ -339,7 +339,7 @@ contract BatchToken is ERC20, ReentrancyGuard {
 
     /// @dev Pull in fees the hook still holds as V4 claims, then credit everything.
     function _pull() private {
-        IBatchHook(hook).flush(address(this));
+        IInkypumpHook(hook).flush(address(this));
         _sync();
     }
 

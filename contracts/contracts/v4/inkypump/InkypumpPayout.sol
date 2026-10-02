@@ -9,11 +9,11 @@ interface IWrappedNativeMin {
     function withdraw(uint256) external;
 }
 
-interface IBatchLedger {
+interface IInkypumpLedger {
     function currentEpoch() external view returns (uint256);
 }
 
-/// @title BatchPayout
+/// @title InkypumpPayout
 /// @notice The leaderboard prize pool. WETH arrives here from the treasury
 ///         (its share of platform fees). After each 3-day epoch the admin
 ///         settles it: the top 5 of the PnL board and the top 5 of the volume
@@ -23,7 +23,7 @@ interface IBatchLedger {
 ///         The admin can only settle a finished epoch once, only with the
 ///         pool's own balance, and only to ten wallets with tier-shaped
 ///         amounts; nothing here can send funds anywhere else.
-contract BatchPayout is ReentrancyGuard {
+contract InkypumpPayout is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint16 internal constant BPS = 10_000;
@@ -33,7 +33,7 @@ contract BatchPayout is ReentrancyGuard {
 
     address public immutable weth;
     address public immutable admin;
-    IBatchLedger public immutable ledger;
+    IInkypumpLedger public immutable ledger;
 
     /// @notice ETH (as WETH) credited to winners and not yet claimed.
     uint256 public owed;
@@ -49,7 +49,7 @@ contract BatchPayout is ReentrancyGuard {
     error EpochNotOver();
     error ZeroAddress();
 
-    constructor(address weth_, address admin_, IBatchLedger ledger_) {
+    constructor(address weth_, address admin_, IInkypumpLedger ledger_) {
         if (weth_ == address(0) || admin_ == address(0) || address(ledger_) == address(0)) revert ZeroAddress();
         weth = weth_;
         admin = admin_;

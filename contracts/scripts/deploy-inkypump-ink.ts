@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-// Deploys Batch on Ink: BatchHook (CREATE2 at a flag-encoding address), token
+// Deploys Inkypump on Ink: InkypumpHook (CREATE2 at a flag-encoding address), token
 // deployer, factory, ledger, router, payout and treasury; wires them; approves
 // the wrapped xStocks as basket assets; points the fee recipient at the
 // treasury (admin tx, so only when ADMIN is the deployer or ADMIN_TX=1 with
@@ -8,7 +8,7 @@
 //
 //   HARDHAT_CONFIG=hardhat.config.size.ts ROBINHOOD_RPC_URL=https://rpc-gel.inkonchain.com \
 //   ROBINHOOD_CHAIN_ID=57073 PRIVATE_KEY=... ADMIN=0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b \
-//     npx hardhat run scripts/deploy-batch-ink.ts --network robinhood
+//     npx hardhat run scripts/deploy-inkypump-ink.ts --network robinhood
 import { ethers, network } from "hardhat";
 import fs from "node:fs";
 import path from "node:path";
@@ -72,7 +72,7 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const net = await ethers.provider.getNetwork();
   const admin = ethers.getAddress(process.env.ADMIN ?? deployer.address);
-  const depFile = process.env.DEPLOY_FILE ?? path.join(__dirname, "..", "deployments", "ink-batch.json");
+  const depFile = process.env.DEPLOY_FILE ?? path.join(__dirname, "..", "deployments", "ink-inkypump.json");
   const dep = fs.existsSync(depFile) ? JSON.parse(fs.readFileSync(depFile, "utf8")) : { contracts: {}, quotes: [] };
   const save = () => fs.writeFileSync(depFile, JSON.stringify(dep, null, 2));
   const price = await ethUsd8();
@@ -84,7 +84,7 @@ async function main() {
     const c2 = await (await ethers.getContractFactory("HookDeployer")).deploy();
     await c2.waitForDeployment();
     const c2Addr = await c2.getAddress();
-    const Hook = await ethers.getContractFactory("BatchHook");
+    const Hook = await ethers.getContractFactory("InkypumpHook");
     const init = ethers.concat([Hook.bytecode, ethers.AbiCoder.defaultAbiCoder().encode(["address"], [POOL_MANAGER])]);
     const hash = ethers.keccak256(init);
     let salt = "", hookAddr = "";
@@ -99,11 +99,11 @@ async function main() {
     save();
   }
   console.log("hook", dep.contracts.hook);
-  const hook = await ethers.getContractAt("BatchHook", dep.contracts.hook);
+  const hook = await ethers.getContractAt("InkypumpHook", dep.contracts.hook);
 
   // 3. Ledger, wired into the hook once.
   if (!dep.contracts.ledger) {
-    const l = await (await ethers.getContractFactory("BatchLedger")).deploy(dep.contracts.hook, WETH);
+    const l = await (await ethers.getContractFactory("InkypumpLedger")).deploy(dep.contracts.hook, WETH);
     await l.waitForDeployment();
     dep.contracts.ledger = await l.getAddress();
     dep.ledgerGenesis = Number(await l.genesis());
@@ -114,14 +114,14 @@ async function main() {
 
   // 5. Payout (leaderboard pool) and treasury (fee recipient).
   if (!dep.contracts.payout) {
-    const p = await (await ethers.getContractFactory("BatchPayout")).deploy(WETH, admin, dep.contracts.ledger);
+    const p = await (await ethers.getContractFactory("InkypumpPayout")).deploy(WETH, admin, dep.contracts.ledger);
     await p.waitForDeployment();
     dep.contracts.payout = await p.getAddress();
     save();
   }
   console.log("payout", dep.contracts.payout);
   if (!dep.contracts.treasury) {
-    const t = await (await ethers.getContractFactory("BatchTreasury")).deploy(WETH, admin, dep.contracts.payout);
+    const t = await (await ethers.getContractFactory("InkypumpTreasury")).deploy(WETH, admin, dep.contracts.payout);
     await t.waitForDeployment();
     dep.contracts.treasury = await t.getAddress();
     save();
@@ -130,14 +130,14 @@ async function main() {
 
   // 2b. Token deployer and factory (fee recipient = treasury from the first block).
   if (!dep.contracts.tokenDeployer) {
-    const td = await (await ethers.getContractFactory("BatchTokenDeployer")).deploy();
+    const td = await (await ethers.getContractFactory("InkypumpTokenDeployer")).deploy();
     await td.waitForDeployment();
     dep.contracts.tokenDeployer = await td.getAddress();
     save();
   }
   console.log("tokenDeployer", dep.contracts.tokenDeployer);
   if (!dep.contracts.factory) {
-    const f = await (await ethers.getContractFactory("BatchFactory")).deploy(
+    const f = await (await ethers.getContractFactory("InkypumpFactory")).deploy(
       deployer.address, admin, POOL_MANAGER, dep.contracts.hook, dep.contracts.tokenDeployer, WETH, price, TAX_BPS, CREATOR_BPS, HOLDER_BPS, dep.contracts.treasury,
     );
     await f.waitForDeployment();
@@ -148,14 +148,14 @@ async function main() {
   }
   const factoryAddr: string = dep.contracts.factory;
   console.log("factory", factoryAddr);
-  const td = await ethers.getContractAt("BatchTokenDeployer", dep.contracts.tokenDeployer);
+  const td = await ethers.getContractAt("InkypumpTokenDeployer", dep.contracts.tokenDeployer);
   if ((await td.factory()) === ethers.ZeroAddress) { await (await td.setFactory(factoryAddr)).wait(); console.log("token deployer wired"); }
   if ((await hook.factory()) === ethers.ZeroAddress) { await (await hook.setFactory(factoryAddr)).wait(); console.log("hook -> factory wired"); }
-  const factory = await ethers.getContractAt("BatchFactory", factoryAddr);
+  const factory = await ethers.getContractAt("InkypumpFactory", factoryAddr);
 
   // 4. Router, wired once as the factory's converter.
   if (!dep.contracts.router) {
-    const r = await (await ethers.getContractFactory("BatchRouter")).deploy(POOL_MANAGER, factoryAddr, WETH, ROUTER02);
+    const r = await (await ethers.getContractFactory("InkypumpRouter")).deploy(POOL_MANAGER, factoryAddr, WETH, ROUTER02);
     await r.waitForDeployment();
     dep.contracts.router = await r.getAddress();
     save();
