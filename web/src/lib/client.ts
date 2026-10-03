@@ -82,7 +82,12 @@ const RH_START_BLOCK = BigInt(String(import.meta.env.VITE_RH_START_BLOCK ?? "345
 // that pair a creator-chosen tokenized stock and pay holders that stock through
 // a per-coin reward vault (vs. the Robinhood fork's flat WETH pair).
 const IS_BASE_STOCK = String(import.meta.env.VITE_LAUNCH_MODE ?? "") === "base-stock";
-const rh = IS_RH ? new RhClient(publicClient, RH, RH_START_BLOCK, { baseStock: IS_BASE_STOCK }) : null;
+/** "stock-pair": stockpad on Uniswap V4 — coins keep the creator's chosen stock
+ *  pair and pay holders in it via the coin's own accumulator (no vault, no
+ *  harvest). Reuses the default rh-v4 read/trade path; only launch keeps the
+ *  chosen pair instead of forcing WETH. */
+const IS_STOCK_PAIR = String(import.meta.env.VITE_LAUNCH_MODE ?? "") === "stock-pair";
+const rh = IS_RH ? new RhClient(publicClient, RH, RH_START_BLOCK, { baseStock: IS_BASE_STOCK, stockPair: IS_STOCK_PAIR }) : null;
 
 const stable = IS_STABLE
   ? new StableV3Client(publicClient, {

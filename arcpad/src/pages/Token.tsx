@@ -1,0 +1,266 @@
+import { useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { formatEther, parseEther, type Address } from "viem";
+import { useAccount } from "wagmi";
+import type { CandleInterval } from "@launchpad/sdk";
+
+import { Chart } from "../components/Chart";
+import { Art } from "../components/Art";
+import { Copy } from "../components/Copy";
+import { client, type PairInfo } from "../lib/client";
+import { env, FEES, isPinned } from "../lib/env";
+import { ago, cnum, dateShort, hype, num, pct, short, usd, wei } from "../lib/format";
+import { runTx, useBalances, useCandles, useEthUsd, useFeeNow, useHolders, useRewards, useToken, useTrades, type Token } from "../lib/hooks";
+import { ensureWallet, openWalletModal } from "../lib/wallet";
+
+const INTERVALS: CandleInterval[] = ["5m", "15m", "1h", "4h", "1d"];
+
+export default function TokenPage() {
+  const { address } = useParams<{ address: string }>();
+  const { data: t, isLoading, isError, refetch } = useToken(address);
+  if (isLoading) return <main className="page"><div className="skeleton" style={{ height: 90, marginBottom: 16 }} /><div className="skeleton" style={{ height: 420 }} /></main>;
+  if (isError) return <main className="page"><section className="hero"><h1>Arc is <em>busy</em>.</h1><p className="sub">The Arc RPC did not answer in time. This usually clears in a few seconds.</p><div className="cta"><button className="btn ink" onClick={() => refetch()}>Try again</button></div></section></main>;
+  if (!t) return <main className="page"><section className="hero"><h1>Not <em>here</em>.</h1><p className="sub">That address is not a coin launched on this factory.</p><div className="cta"><Link to="/" className="btn ink">Back to coins</Link></div></section></main>;
+  return <Coin t={t} />;
+}
+
+function Coin({ t }: { t: Token }) {
+  const { data: ethUsd = 0 } = useEthUsd();
+  const pair = t.pair;
+  const [interval, setInterval_] = useState<CandleInterval>("15m");
+  const [view, setView] = useState<"mcap" | "price">("mcap");
+  const { data: candles } = useCandles(t.address, interval);
+  const { data: tradeList } = useTrades(t.address);
+  const last = tradeList?.[0];
+  const [tab, setTab] = useState<"trades" | "holders" | "about">("trades");
+  const [sheet, setSheet] = useState<"buy" | "sell" | null>(null);
+  const chg = t.priceChange24hPct;
+  const links = [t.metadata?.website && { l: "Website", u: t.metadata.website }, t.metadata?.twitter && { l: "X", u: t.metadata.twitter }, t.metadata?.telegram && { l: "Telegram", u: t.metadata.telegram }].filter(Boolean) as { l: string; u: string }[];
+  const paid = t.rewards ? t.rewards.creator : 0n;
+
+  return (
+    <main className="page">
+      <div className="head">
+        <Art src={t.metadata?.logo} name={t.name} className="art" />
+        <div>
+          <h1>{t.name}<span>{t.symbol}</span></h1>
+          <div className="meta">
+            {isPinned(t.address) && <span className="stamp official">Official</span>}
+            <span className={"stamp " + (pair.isNative ? "eth" : "stock")}><i />{pair.symbol} pair</span>
+            <span>by <a href={`${env.explorerUrl}/address/${t.creator}`} target="_blank" rel="noreferrer">{short(t.creator)}</a></span>
+            <span>{dateShort(t.createdAt)}</span>
+            <Copy value={t.address} label="CA" />
+          </div>
+        </div>
+        <div className="px">
+          <div className="v">{usd(t.marketCapUsd, { compact: true })}</div>
+          <div className="c"><span className={"chg " + (chg == null ? "" : chg >= 0 ? "up" : "down")}>{chg == null ? "no 24h data" : `${pct(chg)} 24h`}</span><span>{usd(t.priceUsd)} per {t.symbol}</span></div>
+        </div>
+      </div>
+
+      <div className="desk">
+        <div>
+          <div className="panel market">
+            <div className="mk-stats">
+              <div><span>Price</span><b>{usd(t.priceUsd)}</b></div>
+              <div><span>Market cap</span><b className={chg == null ? "" : chg >= 0 ? "up" : "down"}>{usd(t.marketCapUsd, { compact: true })}</b></div>
+              <div><span>Volume 24h</span><b>{usd(wei(t.volume24hWei) * pair.usd, { compact: true })}</b></div>
+              <div><span>Trades 24h</span><b>{num(t.txCount24h, 0)}</b></div>
+              <div><span>Last trade</span><b>{last ? <><em className={last.isBuy ? "up" : "down"}>{last.isBuy ? "BUY" : "SELL"}</em> {usd(wei(last.nativeAmountWei) * pair.usd)}</> : "—"}</b></div>
+              <div><span>Holders</span><b>{num(t.holderCount, 0)}</b></div>
+            </div>
+            <div className="chart-tools">
+              <div className="tf" role="tablist" aria-label="Timeframe">{INTERVALS.map((i) => <button key={i} role="tab" aria-selected={interval === i} className={interval === i ? "on" : ""} onClick={() => setInterval_(i)}>{i}</button>)}</div>
+              <div className="seg sm"><button className={view === "mcap" ? "on" : ""} onClick={() => setView("mcap")}>Mcap</button><button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>Price</button></div>
+            </div>
+            <div className="chart-wrap">
+              {candles ? <Chart candles={candles} hypeUsd={pair.usd} mode={view} volumeUsd={wei(t.volume24hWei) * pair.usd} /> : <div className="gc-empty">Loading chart…</div>}
+            </div>
+          </div>
+          <div className="tabs">
+            {(["trades", "holders", "about"] as const).map((k) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{k}</button>)}
+          </div>
+          {tab === "trades" && <Trades address={t.address} symbol={t.symbol} pair={pair} />}
+          {tab === "holders" && <Holders address={t.address} creator={t.creator} />}
+          {tab === "about" && (
+            <div className="panel">
+              <div style={{ padding: "20px 20px 6px" }}>
+                <p style={{ margin: 0, whiteSpace: "pre-wrap", color: "var(--ink2)", maxWidth: 640 }}>{t.metadata?.description || "The creator did not add a description."}</p>
+                {links.length > 0 && <div className="row" style={{ marginTop: 14, flexWrap: "wrap" }}>{links.map((l) => <a key={l.l} className="btn sm" href={l.u} target="_blank" rel="noreferrer">{l.l}</a>)}</div>}
+              </div>
+              <dl className="kv">
+              <dt>In the pool</dt><dd>{t.reserves ? <>{hype(wei(t.reserves.pair), 4)} {pair.symbol} · {usd(wei(t.reserves.pair) * pair.usd, { compact: true })}<br /><span className="dim">{cnum(wei(t.reserves.token))} {t.symbol}</span></> : usd(wei(t.liquidityWei) * pair.usd, { compact: true })}</dd>
+              <dt>Volume 24h</dt><dd>{usd(wei(t.volume24hWei) * pair.usd, { compact: true })} · {num(t.txCount24h, 0)} trades</dd>
+              <dt>Holders</dt><dd>{num(t.holderCount, 0)}</dd>
+              <dt>Pool fee</dt><dd>{FEES.taxPct}% · {FEES.creatorPct}% creator, {FEES.platformPct}% platform</dd>
+              <dt>Creator earned</dt><dd>{usd(wei(paid) * pair.usd, { compact: true })}</dd>
+              <dt>Supply</dt><dd>1B fixed</dd>
+              <dt>Pair</dt><dd><Copy value={pair.address} label={pair.symbol} /></dd>
+              <dt>Pool</dt><dd><Copy value={t.poolId} label="id" /></dd>
+              <dt>Links</dt><dd><a className="acc" href={`${env.explorerUrl}/token/${t.address}`} target="_blank" rel="noreferrer">Explorer</a> · <a className="acc" href={`${env.explorerUrl}/address/${t.pool}`} target="_blank" rel="noreferrer">Pool</a></dd>
+            </dl>
+            </div>
+          )}
+        </div>
+
+        <aside>
+          <div className="panel ticket"><TradePanel token={t.address} symbol={t.symbol} priceWei={BigInt(t.priceWei || "0")} pair={pair} ethUsd={ethUsd} /></div>
+          <CreatorFees token={t.address} pair={pair} />
+        </aside>
+      </div>
+
+      <div className="mobilebar">
+        <button className="big up" onClick={() => setSheet("buy")}>Buy</button>
+        <button className="big down" onClick={() => setSheet("sell")}>Sell</button>
+      </div>
+      {sheet && (
+        <>
+          <div className="scrim" onClick={() => setSheet(null)} />
+          <div className="sheet"><div className="grab" /><TradePanel token={t.address} symbol={t.symbol} priceWei={BigInt(t.priceWei || "0")} pair={pair} ethUsd={ethUsd} initial={sheet} /></div>
+        </>
+      )}
+    </main>
+  );
+}
+
+function TradePanel({ token, symbol, priceWei, pair, ethUsd, initial = "buy" }: { token: Address; symbol: string; priceWei: bigint; pair: PairInfo; ethUsd: number; initial?: "buy" | "sell" }) {
+  const { address: me, isConnected } = useAccount();
+  const qc = useQueryClient();
+  const [side, setSide] = useState<"buy" | "sell">(initial);
+  const [amt, setAmt] = useState("");
+  const payEth = pair.ethRoute;
+  const payUnit = pair.symbol;
+  const payUsd = payEth ? ethUsd : pair.usd;
+  const { data: bal } = useBalances(me, token, pair.isNative ? undefined : pair.address);
+  const { data: fee } = useFeeNow(token);
+  const amountWei = useMemo(() => { try { return amt && Number(amt) > 0 ? parseEther(amt as `${number}`) : 0n; } catch { return 0n; } }, [amt]);
+  const payBal = bal ? (payEth ? bal.native : bal.pair) : 0n;
+  const { data: sim } = useQuery({
+    queryKey: ["quote", token, side, amountWei.toString(), me],
+    enabled: amountWei > 0n && isConnected,
+    queryFn: async () => { await ensureWallet().catch(() => undefined); return client.previewSwapOut(token, side, amountWei); },
+    staleTime: 8_000,
+  });
+  const pairPerEth = pair.usd > 0 && ethUsd > 0 ? ethUsd / pair.usd : 1;
+  const k = payEth && !pair.isNative ? pairPerEth : 1;
+  const spot = priceWei > 0n ? (side === "buy" ? BigInt(Math.floor((Number(amountWei) * k * 1e18) / Number(priceWei))) : BigInt(Math.floor((Number(amountWei) * Number(priceWei)) / 1e18 / k))) : 0n;
+  const feeBps = fee?.total ?? FEES.taxPct * 100;
+  const out = sim ?? (spot * BigInt(10_000 - feeBps)) / 10_000n;
+  const outNum = wei(out);
+  const impact = spot > 0n && sim != null ? (1 - Number(sim) / Number(spot)) * 100 : null;
+  const over = side === "buy" ? !!bal && amountWei > payBal : !!bal && amountWei > bal.token;
+  const max = () => { if (!bal) return; if (side === "buy") { const keep = payEth ? parseEther("0.005") : 0n; setAmt(formatEther(payBal > keep ? payBal - keep : 0n)); } else setAmt(formatEther(bal.token)); };
+  const chip = (f: number) => { if (side === "buy") setAmt(String(f)); else if (bal) setAmt(formatEther((bal.token * BigInt(Math.round(f * 100))) / 100n)); };
+  const go = async () => {
+    if (!isConnected) return openWalletModal();
+    await ensureWallet();
+    const floor = (out * 95n) / 100n;
+    const ok = await runTx(side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`, () => (side === "buy" ? client.buyToken(token, amountWei, floor) : client.sellToken(token, amountWei, floor)));
+    if (ok) { setAmt(""); qc.invalidateQueries(); }
+  };
+  return (
+    <>
+      <div className="seg" style={{ display: "flex" }}>
+        <button style={{ flex: 1 }} className={side === "buy" ? "on up" : ""} onClick={() => { setSide("buy"); setAmt(""); }}>Buy</button>
+        <button style={{ flex: 1 }} className={side === "sell" ? "on down" : ""} onClick={() => { setSide("sell"); setAmt(""); }}>Sell</button>
+      </div>
+      <div className="amount">
+        <div className="lbl"><span>{side === "buy" ? "You pay" : "You sell"}</span><span>{bal ? (side === "buy" ? `${hype(wei(payBal), 4)} ${payUnit}` : `${num(wei(bal.token))} ${symbol}`) : ""}</span></div>
+        <div className="in"><input inputMode="decimal" placeholder="0" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.]/g, ""))} /><span className="unit">{side === "buy" ? payUnit : symbol}</span></div>
+      </div>
+      <div className="chips">
+        {side === "buy" ? [10, 50, 100, 500].map((v) => <button key={v} onClick={() => chip(v)}>${v}</button>) : [0.25, 0.5, 0.75].map((v) => <button key={v} onClick={() => chip(v)}>{v * 100}%</button>)}
+        <button onClick={max}>Max</button>
+      </div>
+      <dl className="quote">
+        <dt>You get</dt><dd>{amountWei > 0n ? `${side === "buy" ? num(outNum) : hype(outNum, 5)} ${side === "buy" ? symbol : payUnit}` : "—"}</dd>
+        <dt>Value</dt><dd>{amountWei > 0n ? usd(side === "buy" ? wei(amountWei) * payUsd : outNum * payUsd) : "—"}</dd>
+        <dt>{sim != null ? "Price impact" : "Quote"}</dt><dd>{sim != null ? (impact != null ? `${Math.max(0, impact).toFixed(2)}%` : "—") : "spot"}</dd>
+        <dt>Fee</dt><dd>{(feeBps / 100).toFixed(0)}% · {FEES.creatorPct}% to the creator</dd>
+      </dl>
+      {over && <div className="warn">More than you have.</div>}
+      <button className={"big " + (side === "sell" ? "down" : "up")} disabled={isConnected && (amountWei === 0n || over)} onClick={go}>{!isConnected ? "Connect wallet" : side === "buy" ? `Buy ${symbol}` : `Sell ${symbol}`}</button>
+      <p className="note">You pay and receive USDC, the chain's native dollar. Slippage 5%. Settles on Uniswap V3 on Arc.</p>
+    </>
+  );
+}
+
+function CreatorFees({ token, pair }: { token: Address; pair: PairInfo }) {
+  const { address: me } = useAccount();
+  const qc = useQueryClient();
+  const { data } = useRewards(token, me);
+  if (!data || !data.isCreator) return null;
+  const unit = pair.symbol;
+  const claim = (label: string, fn: () => Promise<`0x${string}`>) => async () => { await ensureWallet(); await runTx(label, fn, async () => { await qc.invalidateQueries({ queryKey: ["rewards", token.toLowerCase()] }); await qc.invalidateQueries({ queryKey: ["bal"] }); }); };
+  return (
+    <div className="panel pay">
+      <div className="between"><div><div className="caps">Your creator fees</div><div className="v">{hype(wei(data.creatorFees), 2)} <span className="dim" style={{ fontSize: 14, fontWeight: 600 }}>{unit}</span></div></div><span className="faint" style={{ fontSize: 12 }}>earned so far {hype(wei(data.totalCreator), 2)}</span></div>
+      {data.creatorFees > 0n && <div className="row" style={{ marginTop: 12, flexWrap: "wrap" }}><button className="btn acc sm" onClick={claim("Collect creator fees", () => client.claimCreatorFees(token, false))}>Collect {unit}</button></div>}
+      <p className="note">{FEES.creatorPct}% of every pool fee is yours. Collect whenever you like; it arrives as {unit}.</p>
+    </div>
+  );
+}
+
+const PAGE = 10;
+
+/** Previous / next controls under a paged list. Hidden when one page fits. */
+function Pager({ page, total, onPage }: { page: number; total: number; onPage: (p: number) => void }) {
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  if (pages <= 1) return null;
+  return (
+    <div className="pager">
+      <button className="btn sm" disabled={page === 0} onClick={() => onPage(page - 1)}>Prev</button>
+      <span>{page * PAGE + 1}–{Math.min(total, (page + 1) * PAGE)} of {total}</span>
+      <button className="btn sm" disabled={page >= pages - 1} onClick={() => onPage(page + 1)}>Next</button>
+    </div>
+  );
+}
+
+function Trades({ address, symbol, pair }: { address: Address; symbol: string; pair: PairInfo }) {
+  const { data: trades } = useTrades(address);
+  const [page, setPage] = useState(0);
+  if (!trades) return <div className="skeleton" style={{ height: 140 }} />;
+  const slice = trades.slice(page * PAGE, page * PAGE + PAGE);
+  return (
+    <>
+      <div className="log">
+        {trades.length === 0 && <div className="empty">No trades yet. The first buy sets the price.</div>}
+        {slice.map((tr) => (
+          <a key={tr.id} className="li" href={`${env.explorerUrl}/tx/${tr.txHash}`} target="_blank" rel="noreferrer">
+            <span className="t">{ago(tr.timestamp)}</span>
+            <span className={"side " + (tr.isBuy ? "up" : "down")}>{tr.isBuy ? "BUY" : "SELL"}</span>
+            <span className="who">{short(tr.trader)}</span>
+            <span className="r">{num(wei(tr.tokenAmount))} {symbol}<small>{hype(wei(tr.nativeAmountWei), 4)} {pair.symbol} · {usd(wei(tr.nativeAmountWei) * pair.usd)}</small></span>
+          </a>
+        ))}
+      </div>
+      <Pager page={page} total={trades.length} onPage={setPage} />
+    </>
+  );
+}
+
+function Holders({ address, creator }: { address: Address; creator: Address }) {
+  const { data: holders } = useHolders(address);
+  if (!holders) return <div className="skeleton" style={{ height: 140 }} />;
+  const slice = holders.slice(0, PAGE);
+  return (
+    <>
+      <div className="log">
+        {holders.length === 0 && <div className="empty">No holders found yet.</div>}
+        {slice.map((h, i) => {
+          const dev = h.address.toLowerCase() === creator.toLowerCase();
+          return (
+            <a key={h.address} className="li" href={`${env.explorerUrl}/address/${h.address}`} target="_blank" rel="noreferrer">
+              <span className="t">#{i + 1}</span>
+              <span className={"side " + (dev ? "acc" : "faint")}>{dev ? "DEV" : ""}</span>
+              <span className="who">{short(h.address)}</span>
+              <span className="r">{h.pct.toFixed(2)}%<small>{num(wei(h.balance))}</small></span>
+            </a>
+          );
+        })}
+      </div>
+      {holders.length > PAGE && <p className="note" style={{ textAlign: "center" }}>Top {PAGE} holders. Full list on <a className="acc" href={`${env.explorerUrl}/token/${address}`} target="_blank" rel="noreferrer">the explorer</a>.</p>}
+    </>
+  );
+}

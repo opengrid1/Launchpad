@@ -1,0 +1,114 @@
+{
+ "checkedAt": "2026-09-05T03:04:43.813Z",
+ "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+ "keys": [
+  {
+   "symbol": "CRCLon",
+   "address": "0x3632DEa96A953C11dac2f00b4A05a32CD1063fAE",
+   "id": "0x4b4cf0eb6da4974e57c7ec58d60381e668efd1c4396b03549c5f64b32760e3b8",
+   "other": "USDC",
+   "liq": 54236,
+   "currency0": "0x3632DEa96A953C11dac2f00b4A05a32CD1063fAE",
+   "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "fee": 9999,
+   "tickSpacing": 200,
+   "hooks": "0x0000000000000000000000000000000000000000"
+  },
+  {
+   "symbol": "NVDAon",
+   "address": "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
+   "id": "0xff145fd4d52ebd0e758393740aea7eb6228569285b348176c1cdfc5363793b72",
+   "other": "USDC",
+   "liq": 73619,
+   "currency0": "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
+   "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "fee": 9000,
+   "tickSpacing": 90,
+   "hooks": "0x0000000000000000000000000000000000000000"
+  },
+  {
+   "symbol": "SPCXon",
+   "address": "0xc9eef266834730340A55B6CC24621B31BAF55581",
+   "id": "0x163b8d5a42179fbd194e4abcb76603d86a04a64b21591f2a3c6f37a4ded5d9d8",
+   "other": "USDC",
+   "liq": 17529,
+   "currency0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "currency1": "0xc9eef266834730340A55B6CC24621B31BAF55581",
+   "fee": 660000,
+   "tickSpacing": 13200,
+   "hooks": "0x0000000000000000000000000000000000000000"
+  },
+  {
+   "symbol": "QQQon",
+   "address": "0x0e397938C1Aa0680954093495B70A9F5e2249aBa",
+   "id": "0xed0206cffa2515b8010715c21983dbb751c49dde585641d5fcf54bae43908cb6",
+   "other": "USDT",
+   "liq": 13482,
+   "currency0": "0x0e397938C1Aa0680954093495B70A9F5e2249aBa",
+   "currency1": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "fee": 10000,
+   "tickSpacing": 200,
+   "hooks": "0x0000000000000000000000000000000000000000"
+  },
+  {
+   "symbol": "USOon",
+   "address": "0x1F5fc5c3c8B0F15c7E21AF623936FF2b210b6415",
+   "id": "0x372aaa0dcd79c82516055d39cf94414e73a58b9a4ee3ba241e90f8e030b24466",
+   "other": "USDC",
+   "liq": 3827,
+   "currency0": "0x1F5fc5c3c8B0F15c7E21AF623936FF2b210b6415",
+   "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "fee": 3000,
+   "tickSpacing": 60,
+   "hooks": "0x0000000000000000000000000000000000000000"
+  },
+  {
+   "symbol": "TSLAon",
+   "address": "0xf6b1117ec07684D3958caD8BEb1b302bfD21103f",
+   "id": "0xf6c5960d1e31fa10fa50e04db4c4227d1b7da0cd260c36e9c8682257b996c79b",
+   "other": "USDT",
+   "liq": 355868,
+   "currency0": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "currency1": "0xf6b1117ec07684D3958caD8BEb1b302bfD21103f",
+   "fee": 800000,
+   "tickSpacing": 16000,
+   "hooks": "0x0000000000000000000000000000000000000000"
+  },
+  {
+   "symbol": "DASHon",
+   "address": "0x241958c86c7744d15d5f6314BA1Ea4c81DDA2896",
+   "id": "0x91d79a8fbd4e04c5488e8a1a3392e9d5f35c3cf724a7cf88c57ec83e718fdc01",
+   "other": "USDC",
+   "liq": 1061,
+   "currency0": "0x241958c86c7744d15d5f6314BA1Ea4c81DDA2896",
+   "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "fee": 290000,
+   "tickSpacing": 5800,
+   "hooks": "0x0000000000000000000000000000000000000000"
+  },
+  {
+   "symbol": "AMCon",
+   "address": "0x592643a667633bCa51Cb2387C98B6dE6CE549A45",
+   "id": "0x7b23f73e8ba0fa187157c96434805a9ae68380d43164cc3dfa4c68978c99d862",
+   "other": "USDC",
+   "liq": 1199,
+   "currency0": "0x592643a667633bCa51Cb2387C98B6dE6CE549A45",
+   "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "fee": 850000,
+   "tickSpacing": 17000,
+   "hooks": "0x0000000000000000000000000000000000000000"
+  },
+  {
+   "symbol": "ANETon",
+   "address": "0x20e113E9235dF6A2A9BFc6f244c2ccC380c8f546",
+   "id": "0x2d4781343828b8c3561d618df81e1e272fe06d66d99a3c6d9d144c806ffda396",
+   "other": "USDC",
+   "liq": 1407,
+   "currency0": "0x20e113E9235dF6A2A9BFc6f244c2ccC380c8f546",
+   "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "fee": 750000,
+   "tickSpacing": 15000,
+   "hooks": "0x0000000000000000000000000000000000000000"
+  }
+ ]
+}

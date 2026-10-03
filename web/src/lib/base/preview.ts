@@ -18,6 +18,30 @@ const mk = (name: string, symbol: string, reward: string, mcap: number, price: n
     metadata: { rewardStock: BASE_STOCKS.find((s) => s.symbol === reward)?.address ?? (reward === "ETH" ? BASE_WETH : BASE_USDC) },
   }) as unknown as TokenSummary;
 
+// squidpad fixtures: ETH-paired squid coins plus a plausible lifetime holder
+// payout (previewRewardsUsd) for the analytics page.
+const inkPv = (name: string, symbol: string, mcap: number, chg: number, vol: number, tx: number, age: number, rewardsUsd: number): TokenSummary =>
+  ({
+    address: `0x${symbol.toLowerCase()}${"0".repeat(40)}`.slice(0, 42),
+    name, symbol, creator: "0x0000000000000000000000000000000000000000",
+    marketCapUsd: String(mcap), priceChange24hPct: chg, txCount24h: tx,
+    createdAt: Math.floor(Date.now() / 1000) - age,
+    volume24hWei: String(BigInt(Math.round(vol)) * 10n ** 18n),
+    volumeTotalWei: String(BigInt(Math.round(vol * 3)) * 10n ** 18n),
+    metadata: { pair: "ETH" }, previewRewardsUsd: rewardsUsd,
+  }) as unknown as TokenSummary;
+
+/** squidpad design-preview coins (VITE_PREVIEW=1, empty live data only). */
+export const INK_PREVIEW: TokenSummary[] = [
+  inkPv("Inkling", "INKY", 4200, 34.2, 1800, 208, 120, 92),
+  inkPv("Deep Squid", "DEEP", 3100, 12.4, 920, 41, 660, 41),
+  inkPv("Kraken Cat", "KCAT", 2800, -4.1, 640, 77, 1560, 28),
+  inkPv("Tentacle", "TENT", 2600, 2.2, 310, 22, 3600, 12),
+  inkPv("Abyss", "ABYS", 3000, -1.8, 150, 9, 7200, 6.2),
+  inkPv("Blue Ring", "RING", 3500, 8.7, 95, 12, 14400, 3.8),
+  inkPv("Lanternfish", "GLOW", 2900, 1.1, 61, 6, 21600, 1.4),
+];
+
 /** Design-preview fixtures (only shown when VITE_PREVIEW=1 and live data is empty). */
 export const PREVIEW: TokenSummary[] = [
   mk("pools still open, billa", "OPEN", "GOOGL", 24040, 0.0000241, 71.92, 28190, 7200),

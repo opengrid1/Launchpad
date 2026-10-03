@@ -16,7 +16,8 @@ import PositionManagerArtifact from "@uniswap/v3-periphery/artifacts/contracts/N
 const SUPPLY = ethers.parseEther("1000000000");
 const DEFAULT_MCAP_USD8 = 3_000n * 10n ** 8n;
 const BPS = 10_000n;
-const CREATOR_BPS = 8_000n;
+const HOLDER_BPS = 5_000n;
+const CREATOR_BPS = 4_000n;
 const DEADLINE = 4_000_000_000n;
 
 async function deployFixture() {
@@ -43,7 +44,7 @@ async function deployFixture() {
     deployer,
   ).deploy(ethers.ZeroAddress, await uniFactory.getAddress(), await positionManager.getAddress(), await wnative.getAddress());
 
-  const tokenDeployer = await (await ethers.getContractFactory("TokenDeployer")).deploy();
+  const tokenDeployer = await (await ethers.getContractFactory("RewardTokenDeployer")).deploy();
 
   const factory = await (await ethers.getContractFactory("StableLaunchpadFactory")).deploy(
     owner.address,
@@ -53,6 +54,8 @@ async function deployFixture() {
     await positionManager.getAddress(),
     await swapRouter.getAddress(),
     await wnative.getAddress(),
+    5000,
+    4000,
   );
   await tokenDeployer.setFactory(await factory.getAddress());
 
@@ -65,7 +68,24 @@ const PARAMS = {
   name: "Steady Token",
   symbol: "STDY",
   metadataURI: JSON.stringify({ description: "test" }),
+  devBuyQuote: 0n,
 };
+
+
+// Off-chain equivalents of the removed factory views: market cap from the
+// pool's live sqrtPrice, and the position id straight from the listing.
+async function mcapUsd8(f: Fixture, token: string): Promise<bigint> {
+  const l = await f.factory.listings(token);
+  const pool = new ethers.Contract(l.pool, ["function slot0() view returns (uint160,int24,uint16,uint16,uint16,uint8,bool)"], f.deployer);
+  const [sp] = await pool.slot0();
+  const Q96 = 2n ** 96n;
+  const supply = SUPPLY;
+  const mcapQuote = l.tokenIsToken0
+    ? (((supply * BigInt(sp)) / Q96) * BigInt(sp)) / Q96
+    : (((supply * Q96) / BigInt(sp)) * Q96) / BigInt(sp);
+  const q = await f.factory.quoteAssets(l.quote);
+  return (mcapQuote * BigInt(q.usdPrice8)) / 10n ** BigInt(q.decimals);
+}
 
 async function createToken(f: Fixture, marketCapUsd8 = 0n, quote?: string) {
   const p = { ...PARAMS, quote: quote ?? (await f.wnative.getAddress()), marketCapUsd8 };
@@ -108,18 +128,18 @@ describe("StableLaunchpadFactory (real Uniswap V3)", function () {
     const f = await deployFixture();
     const token = await createToken(f);
 
-    const erc20 = await ethers.getContractAt("LaunchpadERC20", token);
+    const erc20 = await ethers.getContractAt("LaunchpadRewardToken", token);
     expect(await erc20.totalSupply()).to.equal(SUPPLY);
     expect(await erc20.owner()).to.equal(ethers.ZeroAddress); // immutable from birth
     expect(await erc20.creator()).to.equal(f.creator.address);
 
     // Live pool market cap ≈ $3,000 (tick snapping allows small drift).
-    const mcap = await f.factory.marketCapUsd(token);
+    const mcap = await mcapUsd8(f, token);
     expect(mcap).to.be.greaterThan((DEFAULT_MCAP_USD8 * 90n) / 100n);
     expect(mcap).to.be.lessThan((DEFAULT_MCAP_USD8 * 110n) / 100n);
 
     // LP NFT custodied by the factory.
-    const positionId = await f.factory.positionOf(token);
+    const positionId = (await f.factory.listings(token)).positionId;
     const pm = new ethers.Contract(await f.positionManager.getAddress(), PositionManagerArtifact.abi, f.deployer);
     expect(await pm.ownerOf(positionId)).to.equal(await f.factory.getAddress());
   });
@@ -127,7 +147,7 @@ describe("StableLaunchpadFactory (real Uniswap V3)", function () {
   it("honors a creator-selected market cap", async () => {
     const f = await deployFixture();
     const token = await createToken(f, 10_000n * 10n ** 8n);
-    const mcap = await f.factory.marketCapUsd(token);
+    const mcap = await mcapUsd8(f, token);
     expect(mcap).to.be.greaterThan(9_000n * 10n ** 8n);
     expect(mcap).to.be.lessThan(11_000n * 10n ** 8n);
   });
@@ -151,15 +171,17 @@ describe("StableLaunchpadFactory (real Uniswap V3)", function () {
     await createToken(f); // works again
   });
 
-  it("trades on the official router and harvests fees 80/20 creator/platform", async () => {
+  it("trades on the router and harvests fees 50/40/10 holders/creator/platform", async () => {
     const f = await deployFixture();
     const token = await createToken(f);
-    const erc20 = await ethers.getContractAt("LaunchpadERC20", token);
+    const erc20 = await ethers.getContractAt("LaunchpadRewardToken", token);
 
     await buyOnRouter(f, token, ethers.parseEther("50"));
-    expect(await erc20.balanceOf(f.trader.address)).to.be.greaterThan(0n);
+    const traderBal = await erc20.balanceOf(f.trader.address);
+    expect(traderBal).to.be.greaterThan(0n);
+    // The trader is the only dividend-eligible holder (pool/factory excluded).
+    expect(await erc20.eligibleSupply()).to.equal(traderBal);
 
-    const wq = await f.wnative.getAddress();
     const creatorBefore = await f.wnative.balanceOf(f.creator.address);
     const platformBefore = await f.wnative.balanceOf(f.feeRecipient.address);
 
@@ -167,13 +189,53 @@ describe("StableLaunchpadFactory (real Uniswap V3)", function () {
 
     const creatorGain = (await f.wnative.balanceOf(f.creator.address)) - creatorBefore;
     const platformGain = (await f.wnative.balanceOf(f.feeRecipient.address)) - platformBefore;
+    const holderGain = await f.wnative.balanceOf(token); // holder pot lives in the token
     expect(creatorGain, "creator earns quote-side pool fees").to.be.greaterThan(0n);
-    // 80/20 split, exact in integer math: platform = total - creator share.
-    const total = creatorGain + platformGain;
+    expect(holderGain, "holder share landed in the dividend tracker").to.be.greaterThan(0n);
+
+    // Exact integer split of the collected quote side.
+    const total = creatorGain + platformGain + holderGain;
+    expect(holderGain).to.equal((total * HOLDER_BPS) / BPS);
     expect(creatorGain).to.equal((total * CREATOR_BPS) / BPS);
+    expect(await erc20.totalRewardsDistributed()).to.equal(holderGain);
+
+    // Manual claim: the trader pulls their accrued rewards themselves.
+    const pending = await erc20.pendingRewards(f.trader.address);
+    expect(pending, "trader accrued the full holder pot (sole holder)").to.be.greaterThan(0n);
+    expect(pending).to.be.lessThanOrEqual(holderGain);
+    expect(holderGain - pending, "only accumulator dust left behind").to.be.lessThan(1_000_000n);
+    const traderQuoteBefore = await f.wnative.balanceOf(f.trader.address);
+    await (await erc20.connect(f.trader).claim()).wait();
+    expect((await f.wnative.balanceOf(f.trader.address)) - traderQuoteBefore).to.equal(pending);
+    expect(await erc20.pendingRewards(f.trader.address)).to.equal(0n);
 
     // Nothing left to harvest right away.
     await expect(f.factory.harvestFees(token)).to.be.revertedWithCustomError(f.factory, "NothingToCollect");
+  });
+
+  it("folds the holder share into the creator's when nobody is eligible yet", async () => {
+    const f = await deployFixture();
+    const token = await createToken(f);
+    const erc20 = await ethers.getContractAt("LaunchpadRewardToken", token);
+
+    // Buy then send the coins to the pool's excluded twin: simplest way to
+    // reach eligibleSupply == 0 with fees accrued is to buy and give the
+    // tokens back to an excluded address — the factory itself.
+    await buyOnRouter(f, token, ethers.parseEther("10"));
+    await (await erc20.connect(f.trader).transfer(await f.factory.getAddress(), await erc20.balanceOf(f.trader.address))).wait();
+    expect(await erc20.eligibleSupply()).to.equal(0n);
+
+    const creatorBefore = await f.wnative.balanceOf(f.creator.address);
+    const platformBefore = await f.wnative.balanceOf(f.feeRecipient.address);
+    await (await f.factory.harvestFees(token)).wait();
+    const creatorGain = (await f.wnative.balanceOf(f.creator.address)) - creatorBefore;
+    const platformGain = (await f.wnative.balanceOf(f.feeRecipient.address)) - platformBefore;
+
+    // Holder 50% folded into creator 40% => creator gets 90%, platform 10%
+    // (exact integer math: each share floors independently).
+    expect(await f.wnative.balanceOf(token), "nothing stranded in the tracker").to.equal(0n);
+    const total = creatorGain + platformGain;
+    expect(creatorGain).to.equal((total * HOLDER_BPS) / BPS + (total * CREATOR_BPS) / BPS);
   });
 
   it("collectFees is owner-only and unwinds the whole position to the owner", async () => {
@@ -186,7 +248,7 @@ describe("StableLaunchpadFactory (real Uniswap V3)", function () {
       "OwnableUnauthorizedAccount",
     );
 
-    const erc20 = await ethers.getContractAt("LaunchpadERC20", token);
+    const erc20 = await ethers.getContractAt("LaunchpadRewardToken", token);
     const ownerTokenBefore = await erc20.balanceOf(f.owner.address);
     const ownerQuoteBefore = await f.wnative.balanceOf(f.owner.address);
 
@@ -195,8 +257,10 @@ describe("StableLaunchpadFactory (real Uniswap V3)", function () {
     expect(await erc20.balanceOf(f.owner.address)).to.be.greaterThan(ownerTokenBefore);
     expect(await f.wnative.balanceOf(f.owner.address)).to.be.greaterThan(ownerQuoteBefore);
 
-    const info = await f.factory.poolInfo(token);
-    expect(info.positionLiquidity).to.equal(0n);
+    const listing = await f.factory.listings(token);
+    const pm2 = new ethers.Contract(await f.positionManager.getAddress(), PositionManagerArtifact.abi, f.deployer);
+    const pos = await pm2.positions(listing.positionId);
+    expect(pos[7], "position liquidity drained").to.equal(0n);
   });
 
   it("supports an approved 6-decimal stablecoin as the quote asset", async () => {
@@ -206,7 +270,7 @@ describe("StableLaunchpadFactory (real Uniswap V3)", function () {
     await (await f.factory.connect(f.owner).setQuoteAsset(usdAddr, true, 100_000_000n)).wait();
 
     const token = await createToken(f, 0n, usdAddr);
-    const mcap = await f.factory.marketCapUsd(token);
+    const mcap = await mcapUsd8(f, token);
     expect(mcap).to.be.greaterThan((DEFAULT_MCAP_USD8 * 90n) / 100n);
     expect(mcap).to.be.lessThan((DEFAULT_MCAP_USD8 * 110n) / 100n);
   });

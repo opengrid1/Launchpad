@@ -1,0 +1,14 @@
+{
+  "name": "RUNNER",
+  "symbol": "RUNNER",
+  "token": "0x2b3240Ff289631121828560e503d8Ee8E023502e",
+  "pool": "0xBBf2A4bcCD035E8CB5CA0330f0dcB29f4723913E",
+  "pair": "RUN",
+  "pairAddress": "0x756Bc80af765C82da966a788858d65aDF14f3793",
+  "factory": "0xDaE6C39084485B88b457Da4F9446C9aEAd94D0eB",
+  "chainId": 4663,
+  "txHash": "0xfe5937ae229c2d3f3bae6f64b8e38d7437f4e37fe2ca74aee83554d4473622f9",
+  "creator": "0xeAE6EB7010f649008ba10a8E78e931dFeF90BacD",
+  "poolFeeTier": 10000,
+  "launchedAt": "2026-09-02T14:09:07.266Z"
+}
