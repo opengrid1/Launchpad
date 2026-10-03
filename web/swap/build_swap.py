@@ -95,6 +95,7 @@ def build(name, title, desc, active):
     m = r.select_one('main'); inner = m.select_one('div.relative.z-\\[1\\]'); inner.clear()
     body = open('pages/' + name).read()
     for k, v in ICONS.items(): body = body.replace(k, v)
+    inner.append(frag('<div class="mx-auto w-full max-w-[1600px] px-4 pt-5 sm:px-8 md:pt-7"><div class="sw-notice">%s<span><b>Contracts are not live yet.</b> Inkypump Swap is in audit. Swaps, pools and staking switch on together when it clears; until then every page is a preview and no transaction can be sent.</span><a href="https://www.inkypump.fun" target="_blank" rel="noopener noreferrer">Trade on the launchpad %s</a></div></div>' % (svg('shield', 'lucide size-4 shrink-0'), svg('ext', 'lucide size-3'))))
     inner.append(BeautifulSoup(body, 'html.parser'))
     r.append(frag('<div id="layer"></div>'))
     open(name, 'w').write(page_shell(r, title, desc)); print(name, 'ok')

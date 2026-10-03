@@ -26,9 +26,9 @@
   function setCta(id,txt,dis){ const c=g(id); if(!c) return; c.textContent=txt; c.disabled=!!dis; }
   function refresh(){
     if(g('swapPage')){ const v=num(g('amtIn').value); g('rate').textContent=`1 ${sel.in.sym} = — ${sel.out.sym}`; g('usdIn').textContent=v&&sel.in.px?'$'+(v*sel.in.px).toFixed(2):''; g('amtOut').value=''; g('usdOut').textContent=''; g('d_minr').textContent='—'; g('d_route').textContent=sel.in.sym==='ETH'||sel.out.sym==='ETH'?`${sel.in.sym} → ${sel.out.sym}`:`${sel.in.sym} → ETH → ${sel.out.sym}`; g('d_impact').textContent='—';
-      if(!W.connected) setCta('cta','Connect Wallet'); else if(!SWLIVE) setCta('cta','Swaps open with the AMM',true); else if(!v) setCta('cta','Enter an amount',true); else setCta('cta',`Swap ${sel.in.sym} for ${sel.out.sym}`); }
-    if(g('liqPage')){ g('liqPool').textContent=`${sel.a.sym} / ${sel.b.sym}`; if(!W.connected){ setCta('liqCta','Connect Wallet'); setCta('rmCta','Connect Wallet'); } else if(!SWLIVE){ setCta('liqCta','Pools open with the AMM',true); setCta('rmCta','Pools open with the AMM',true); } else { setCta('liqCta','Add liquidity',!(num(g('liqA').value)&&num(g('liqB').value))); setCta('rmCta','Remove liquidity',!num(g('rmRange').value)); } }
-    if(g('stakePage')){ if(!W.connected) setCta('skCta','Connect Wallet'); else if(!SWLIVE) setCta('skCta','Staking opens with the AMM',true); else setCta('skCta',g('skTabs').querySelector('.text-text-primary').dataset.stab==='stake'?'Stake INKY':'Unstake INKY',!num(g('skAmt').value)); }
+      if(!W.connected) setCta('cta','Connect Wallet'); else if(!SWLIVE) setCta('cta','Contracts in audit',true); else if(!v) setCta('cta','Enter an amount',true); else setCta('cta',`Swap ${sel.in.sym} for ${sel.out.sym}`); }
+    if(g('liqPage')){ g('liqPool').textContent=`${sel.a.sym} / ${sel.b.sym}`; if(!W.connected){ setCta('liqCta','Connect Wallet'); setCta('rmCta','Connect Wallet'); } else if(!SWLIVE){ setCta('liqCta','Contracts in audit',true); setCta('rmCta','Contracts in audit',true); } else { setCta('liqCta','Add liquidity',!(num(g('liqA').value)&&num(g('liqB').value))); setCta('rmCta','Remove liquidity',!num(g('rmRange').value)); } }
+    if(g('stakePage')){ if(!W.connected) setCta('skCta','Connect Wallet'); else if(!SWLIVE) setCta('skCta','Contracts in audit',true); else setCta('skCta',g('skTabs').querySelector('.text-text-primary').dataset.stab==='stake'?'Stake INKY':'Unstake INKY',!num(g('skAmt').value)); }
   }
   document.addEventListener('wallet-change',refresh);
   if(g('swapPage')){
@@ -38,7 +38,7 @@
     g('slipAuto').onclick=()=>{ g('slip').value='0.5'; g('slipLabel').textContent='Auto'; toast('Slippage set to auto (0.5%)'); }; g('slip').addEventListener('input',()=>{ g('slipLabel').textContent=(parseFloat(g('slip').value)||0.5)+'%'; });
     g('swSettings').onclick=()=>{ g('slip').focus(); g('slip').select(); };
     document.querySelectorAll('#swapPage [data-q]').forEach(b=>b.onclick=()=>{ if(!W.connected) return openConnect(); toast('Balances load when the AMM is live'); });
-    g('cta').onclick=()=>{ if(!W.connected) return openConnect(); toast('Swaps open with the AMM'); };
+    g('cta').onclick=()=>{ if(!W.connected) return openConnect(); toast('Contracts in audit'); };
   }
   if(g('liqPage')){
     ['liqA','liqB'].forEach(id=>g(id).addEventListener('input',refresh));
@@ -58,7 +58,7 @@
   if(g('poolsPage')){
     const rows=g('poolRows'), mob=g('poolMob');
     const empty=(t,p)=>`<div class="o-empty sm"><div class="ic">${ic('rocket')}</div><h2>${t}</h2><p>${p}</p><a class="o-btn" href="https://www.inkypump.fun" target="_blank" rel="noopener noreferrer">Trade on the launchpad</a></div>`;
-    const draw=tab=>{ rows.innerHTML=''; mob.innerHTML=''; const em=tab==='mine'?(W.connected?empty('No positions yet','Your LP positions show up here once you add liquidity.'):empty('Connect your wallet','See the pools you are in and the fees they have earned.')):empty('Pools open with the AMM','The first pool will be INKY/ETH. Every launchpad coin can list the moment its creator adds liquidity.');
+    const draw=tab=>{ rows.innerHTML=''; mob.innerHTML=''; const em=tab==='mine'?(W.connected?empty('No positions yet','Your LP positions show up here once you add liquidity.'):empty('Connect your wallet','See the pools you are in and the fees they have earned.')):empty('Contracts in audit','The first pool will be INKY/ETH. Every launchpad coin can list the moment its creator adds liquidity.');
       rows.innerHTML=`<tr class="sw-pools-empty"><td colspan="6">${em}</td></tr>`; mob.innerHTML='<div class="o-feed-empty">'+em+'</div>'; };
     let tab='all'; document.querySelectorAll('#ptabs [data-ptab]').forEach(b=>b.onclick=()=>{ tab=b.dataset.ptab; document.querySelectorAll('#ptabs [data-ptab]').forEach(x=>{ x.className=x.className.replace(/ text-text-primary| text-text-muted hover:text-text-secondary/g,'')+(x===b?' text-text-primary':' text-text-muted hover:text-text-secondary'); }); draw(tab); }); draw(tab); document.addEventListener('wallet-change',()=>draw(tab));
   }
