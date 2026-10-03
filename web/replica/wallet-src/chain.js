@@ -18,7 +18,7 @@ const SYM = Object.fromEntries(STOCKS.map(s => [s.address, s.symbol]));
 SYM[WETH] = 'ETH';
 
 // Public RPCs rate-limit per IP; rotate through several on 429 / network errors and remember the one that answered.
-const RPCS = [...new Set([RPC, LOGS_RPC, ...(CFG.rpcs || ['https://ink.drpc.org'])])];
+const RPCS = [...new Set([...(CFG.rpcs || []), LOGS_RPC, RPC])];
 class RotatingProvider extends ethers.JsonRpcProvider {
   constructor(urls, opts) { super(urls[0], { chainId: 57073, name: 'ink' }, { staticNetwork: true, ...opts }); this.urls = urls; this.at = 0; }
   async _send(payload) {
@@ -89,15 +89,19 @@ function tickSqrt(tick) { // sqrt(1.0001^tick) * 2^96, float-based (enough for d
 const TRADE_TOPIC = iface.InkypumpLedger.getEvent('Trade').topicHash;
 const CLAIM_TOPIC = iface.InkypumpToken.getEvent('RewardsClaimed').topicHash;
 const LAUNCH_TOPIC = iface.InkypumpFactory.getEvent('Launched').topicHash;
+// Ink seals one block per second, so a timestamp is one reference block away: no per-block lookups.
+let refBlock = null;
+async function blockTs(n) { if (!refBlock || Date.now() - refBlock.at > 60_000) { const b = await logsProvider.getBlock('latest'); refBlock = { n: b.number, ts: b.timestamp, at: Date.now() }; } return refBlock.ts - (refBlock.n - n); }
 async function rpcLogs(address, topics, fromBlock, toBlock) {
   const ls = await logsProvider.getLogs({ address: address || undefined, topics, fromBlock, toBlock });
   const out = ls.map(l => ({ address: l.address, topics: l.topics, data: l.data, blockNumber: l.blockNumber, timeStamp: 0, txHash: l.transactionHash, index: l.index }));
-  const blocks = {}; for (const l of out) { if (!blocks[l.blockNumber]) blocks[l.blockNumber] = logsProvider.getBlock(l.blockNumber).then(b => b.timestamp); } for (const l of out) l.timeStamp = await blocks[l.blockNumber];
+  for (const l of out) l.timeStamp = await blockTs(l.blockNumber);
   return out;
 }
 async function fetchLogs(address, topics, fromBlock, toBlock) {
   // small ranges go straight to the RPC (one call, no explorer rate limit); big ranges try the explorer first
   if (toBlock !== 'latest' && toBlock - fromBlock <= 9000) { try { return await rpcLogs(address, topics, fromBlock, toBlock); } catch (e) { console.warn('rpc logs', e); } }
+  if (toBlock !== 'latest' && toBlock - fromBlock <= 45000) { try { const out = []; for (let a = fromBlock; a <= toBlock; a += 9000) out.push(...await rpcLogs(address, topics, a, Math.min(toBlock, a + 8999))); return out; } catch (e) { console.warn('rpc logs chunked', e); } }
   const t = topics.map((x, i) => x ? `&topic${i}=${x}` : '').join('');
   const url = `${EXPLORER}/api?module=logs&action=getLogs&fromBlock=${fromBlock}&toBlock=${toBlock}` + (address ? `&address=${address}` : '') + t + (topics.length > 1 ? '&topic0_1_opr=and' : '');
   try {
@@ -108,7 +112,7 @@ async function fetchLogs(address, topics, fromBlock, toBlock) {
   // fallback: chunked eth_getLogs
   const out = []; const head = toBlock === 'latest' ? await logsProvider.getBlockNumber() : toBlock; const CH = 9000;
   for (let a = fromBlock; a <= head; a += CH) { const b = Math.min(head, a + CH - 1); const ls = await logsProvider.getLogs({ address: address || undefined, topics, fromBlock: a, toBlock: b }); for (const l of ls) out.push({ address: l.address, topics: l.topics, data: l.data, blockNumber: l.blockNumber, timeStamp: 0, txHash: l.transactionHash, index: l.index }); }
-  if (out.length && !out[0].timeStamp) { const blocks = {}; for (const l of out) { if (!blocks[l.blockNumber]) blocks[l.blockNumber] = (await logsProvider.getBlock(l.blockNumber)).timestamp; l.timeStamp = blocks[l.blockNumber]; } }
+  for (const l of out) if (!l.timeStamp) l.timeStamp = await blockTs(l.blockNumber);
   return out;
 }
 const LS = { get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
