@@ -1,0 +1,36 @@
+{
+ "cleanUrls": true,
+ "trailingSlash": false,
+ "redirects": [
+  {
+   "source": "/swap",
+   "destination": "/",
+   "permanent": false
+  },
+  {
+   "source": "/profile",
+   "destination": "/liquidity",
+   "permanent": false
+  }
+ ],
+ "headers": [
+  {
+   "source": "/(.*)",
+   "headers": [
+    {
+     "key": "X-Content-Type-Options",
+     "value": "nosniff"
+    }
+   ]
+  },
+  {
+   "source": "/(app|swapapp|wallet|avatar|i18n|data).js",
+   "headers": [
+    {
+     "key": "Cache-Control",
+     "value": "public, max-age=0, must-revalidate"
+    }
+   ]
+  }
+ ]
+}

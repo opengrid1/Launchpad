@@ -1,0 +1,73 @@
+<div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-8 pb-10 pt-5 md:pt-7" id="liqPage">
+  <div class="sw-wrap">
+    <div class="sw-main">
+      <div class="rounded-[20px] bg-bg-card p-1.5">
+        <div class="min-w-0 px-3 py-4">
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-5" id="liqTabs"><button class="text-lg font-bold text-text-primary" data-ltab="add">Add liquidity</button><button class="text-lg font-bold text-text-muted hover:text-text-secondary" data-ltab="remove">Remove</button></div>
+            <span class="sw-tier">0.3% fee</span>
+          </div>
+          <div data-lpane="add">
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5">
+                <span class="text-[14px] font-medium leading-none text-text-muted">Token A</span>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="min-w-0 flex-1"><input autocomplete="off" class="w-full min-w-0 border-0 bg-transparent p-0 text-[36px] font-semibold leading-10 tracking-[-0.02em] text-text-primary tabular-nums outline-none placeholder:text-text-disabled" id="liqA" inputmode="decimal" placeholder="0" type="text"><div class="mt-0.5 h-4 text-[12px] font-medium leading-4 text-text-muted" id="liqAUsd"></div></div>
+                  <div class="relative shrink-0"><button class="sw-asset" id="assetA" type="button" data-side="a"><span class="relative flex shrink-0 size-8"><span class="relative flex shrink-0 overflow-hidden bg-avatar-gradient ring-1 ring-inset ring-text-primary/10 size-full rounded-full" data-av="a"><img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/pfp.png"></span></span><span class="flex min-w-0 flex-1 flex-col leading-tight"><span class="truncate text-[16px] font-bold text-text-primary" data-sym="a">INKY</span><span class="truncate text-[12px] font-medium text-text-muted">Ink</span></span>__CHEV__</button></div>
+                </div>
+                <div class="flex min-h-6 items-center justify-between gap-2"><span class="truncate text-[12px] font-medium text-text-muted" id="balA">Balance: 0</span><span class="flex shrink-0 items-center gap-1"><button class="sw-q" data-q="50%" data-for="liqA">50%</button><button class="sw-q" data-q="MAX" data-for="liqA">MAX</button></span></div>
+              </div>
+              <div class="flex justify-center -my-1.5"><span class="flex size-9 items-center justify-center rounded-[12px] border-4 border-bg-card bg-bg-elevated text-text-muted">__PLUS__</span></div>
+              <div class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5">
+                <span class="text-[14px] font-medium leading-none text-text-muted">Token B</span>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="min-w-0 flex-1"><input autocomplete="off" class="w-full min-w-0 border-0 bg-transparent p-0 text-[36px] font-semibold leading-10 tracking-[-0.02em] text-text-primary tabular-nums outline-none placeholder:text-text-disabled" id="liqB" inputmode="decimal" placeholder="0" type="text"><div class="mt-0.5 h-4 text-[12px] font-medium leading-4 text-text-muted" id="liqBUsd"></div></div>
+                  <div class="relative shrink-0"><button class="sw-asset" id="assetB" type="button" data-side="b"><span class="relative flex shrink-0 size-8"><span class="relative flex shrink-0 overflow-hidden bg-avatar-gradient ring-1 ring-inset ring-text-primary/10 size-full rounded-full" data-av="b"><img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/eth.png"></span></span><span class="flex min-w-0 flex-1 flex-col leading-tight"><span class="truncate text-[16px] font-bold text-text-primary" data-sym="b">ETH</span><span class="truncate text-[12px] font-medium text-text-muted">Ink</span></span>__CHEV__</button></div>
+                </div>
+                <div class="flex min-h-6 items-center justify-between gap-2"><span class="truncate text-[12px] font-medium text-text-muted" id="balB">Balance: 0</span><span class="flex shrink-0 items-center gap-1"><button class="sw-q" data-q="50%" data-for="liqB">50%</button><button class="sw-q" data-q="MAX" data-for="liqB">MAX</button></span></div>
+              </div>
+              <div class="sw-kv">
+                <div><span>Pool</span><b id="liqPool">INKY / ETH</b></div>
+                <div><span>Current price</span><b id="liqPrice">—</b></div>
+                <div><span>Your share after</span><b id="liqShare">—</b></div>
+                <div><span>LP tokens</span><b id="liqLp">—</b></div>
+              </div>
+              <button class="inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:bg-bg-elevated disabled:text-text-muted bg-accent text-accent-ink hover:bg-accent-hover gap-2 px-5 text-base font-bold shadow-cta h-14 w-full rounded-full" id="liqCta">Connect Wallet</button>
+            </div>
+          </div>
+          <div data-lpane="remove" class="hidden">
+            <div class="flex flex-col gap-3">
+              <div class="rounded-[16px] bg-bg-input px-4 py-3.5">
+                <div class="flex items-center justify-between"><span class="text-[14px] font-medium leading-none text-text-muted">Position</span><span class="text-[12px] font-medium text-text-muted" id="rmBal">0 LP</span></div>
+                <div class="mt-3 text-[36px] font-semibold leading-10 tracking-[-0.02em] text-text-primary tabular-nums" id="rmPct">0%</div>
+                <input type="range" min="0" max="100" value="0" class="sw-range" id="rmRange">
+                <div class="mt-2 flex items-center gap-1"><button class="sw-q" data-rm="25">25%</button><button class="sw-q" data-rm="50">50%</button><button class="sw-q" data-rm="75">75%</button><button class="sw-q" data-rm="100">MAX</button></div>
+              </div>
+              <div class="sw-kv">
+                <div><span>You receive</span><b id="rmOutA">— INKY</b></div>
+                <div><span></span><b id="rmOutB">— ETH</b></div>
+                <div><span>Earned fees included</span><b class="text-success">yes</b></div>
+              </div>
+              <button class="inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:bg-bg-elevated disabled:text-text-muted bg-accent text-accent-ink hover:bg-accent-hover gap-2 px-5 text-base font-bold shadow-cta h-14 w-full rounded-full" id="rmCta">Connect Wallet</button>
+            </div>
+          </div>
+          <p class="mt-4 border-t border-border-default pt-3 text-center text-xs leading-relaxed text-text-muted">LP tokens are plain ERC-20s. Fees accrue in the pool and come back when you remove. Launchpad coins keep their hook fee on the Uniswap V4 side; here the pool charges 0.3%.</p>
+        </div>
+      </div>
+    </div>
+    <aside class="sw-side">
+      <div class="sw-card">
+        <h3>Your positions</h3>
+        <div id="myPos"><div class="sw-empty">__WALLET__<p>Connect a wallet to see your LP positions and the fees they have earned.</p></div></div>
+      </div>
+      <div class="sw-card">
+        <h3>Before you add</h3>
+        <ul class="sw-list">
+          <li>Both sides go in at the current pool ratio. The first deposit into a new pool sets the starting price.</li>
+          <li>Prices move against one side while you are in the pool. Fees are meant to pay for that.</li>
+          <li>Nothing is locked. Remove any time, any share.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
