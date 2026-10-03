@@ -66,9 +66,9 @@ function sheet(html,cls=''){ closeAll(); const ov=document.createElement('div');
 const dh=(t,p)=>`<div class="dh"><div><h3>${t}</h3>${p?'<p>'+p+'</p>':''}</div><button class="x" aria-label="Close">${ic('x')}</button></div>`;
 
 /* ---------- product list (brand dropdown + drawer) ---------- */
-const PRODUCTS=[['Launchpad','Memecoins that pay holders in stocks','rocket','/',true],['Leaderboard','Top 5 traders paid every 3 days','trophy','/leaderboard'],['Docs','How launches, rewards and fees work','book','/docs/introduction'],['Ink explorer','Verified contracts and transactions','terminal',EXPLORER]];
-const prodItems=cls=>PRODUCTS.map(p=>`<button class="${cls}${p[4]?' on':''}" data-go="${p[3]}"><span class="tile">${ic(p[2])}</span><span class="t"><b>${p[0]}${p[4]?'<span class="cur">Current</span>':''}</b><span>${p[1]}</span></span>${p[3].startsWith('http')?ic('chevr','ch'):''}</button>`).join('');
-function openDrawer(){ closeAll(); const ov=document.createElement('div'); ov.className='o-drawer-ov'; ov.innerHTML=`<div class="o-drawer"><div class="dh"><b>Menu</b><button class="x" aria-label="Close">${ic('x')}</button></div><div class="db"><div class="h">Developers</div><button class="li" data-go="/docs/direct-integration">${ic('code')}Developers</button><button class="li" data-go="/docs/production-contracts">${ic('shield')}Contract addresses</button><div class="d"></div><div class="h">Products</div>${prodItems('pi')}</div></div>`; ov.addEventListener('click',e=>{ if(e.target===ov) closeOv(ov); }); ov.querySelector('.x').onclick=()=>closeOv(ov); ov.remove=()=>closeOv(ov); $$('[data-go]',ov).forEach(b=>b.onclick=()=>{ const g=b.dataset.go; g.startsWith('http')?window.open(g,'_blank'):go(g); }); layer().appendChild(ov); return ov; }
+const PRODUCTS=[['Launchpad','Memecoins that pay holders in stocks','rocket','/',true],['Swap','Trade any token on Ink, fees to $INKY stakers','swap','https://swap.inkypump.fun'],['Leaderboard','Top 5 traders paid every 3 days','trophy','/leaderboard'],['Docs','How launches, rewards and fees work','book','/docs/introduction'],['Ink explorer','Verified contracts and transactions','terminal',EXPLORER]];
+const prodItems=cls=>PRODUCTS.map(p=>`<button class="${cls}${p[4]?' on':''}" data-go="${p[3]}"><span class="tile">${ic(p[2])}</span><span class="t"><b>${p[0]}${p[4]?'<span class="cur">Current</span>':''}</b><span>${p[1]}</span></span>${p[3].startsWith('http')&&!p[3].includes('inkypump.fun')?ic('chevr','ch'):''}</button>`).join('');
+function openDrawer(){ closeAll(); const ov=document.createElement('div'); ov.className='o-drawer-ov'; ov.innerHTML=`<div class="o-drawer"><div class="dh"><b>Menu</b><button class="x" aria-label="Close">${ic('x')}</button></div><div class="db"><div class="h">Developers</div><button class="li" data-go="/docs/direct-integration">${ic('code')}Developers</button><button class="li" data-go="/docs/production-contracts">${ic('shield')}Contract addresses</button><div class="d"></div><div class="h">Products</div>${prodItems('pi')}</div></div>`; ov.addEventListener('click',e=>{ if(e.target===ov) closeOv(ov); }); ov.querySelector('.x').onclick=()=>closeOv(ov); ov.remove=()=>closeOv(ov); $$('[data-go]',ov).forEach(b=>b.onclick=()=>{ const g=b.dataset.go; (g.startsWith('http')&&!g.includes('inkypump.fun'))?window.open(g,'_blank'):go(g); }); layer().appendChild(ov); return ov; }
 
 /* ---------- header ---------- */
 function initHeader(){
@@ -80,7 +80,7 @@ function initHeader(){
   addEventListener('keydown',e=>{ if(e.key==='/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault(); openSearch();}});
   renderWallet();
   const ham=$('header button[aria-label="Menu"], header button:has(.lucide-menu)'); if(ham) ham.onclick=openDrawer;
-  function wire(){ $$('.o-menu [data-go]').forEach(b=>b.onclick=()=>{ const g=b.dataset.go; g.startsWith('http')?window.open(g,'_blank'):go(g); }); }
+  function wire(){ $$('.o-menu [data-go]').forEach(b=>b.onclick=()=>{ const g=b.dataset.go; (g.startsWith('http')&&!g.includes('inkypump.fun'))?window.open(g,'_blank'):go(g); }); }
 }
 function renderWallet(){
   const pill=$('header .relative.flex.h-9.shrink-0.items-stretch'); if(!pill) return;
