@@ -18,26 +18,30 @@ const SYM = Object.fromEntries(STOCKS.map(s => [s.address, s.symbol]));
 SYM[WETH] = 'ETH';
 
 // Public RPCs rate-limit per IP; rotate through several on 429 / network errors and remember the one that answered.
-const RPCS = [...new Set([...(CFG.rpcs || []), LOGS_RPC, RPC])];
+// rpc-gel takes big batches without a per-second cap; rpc-qnd allows 20 calls/s; drpc's free tier rejects batches over 3
+const RPCS = [...new Set([RPC, ...(CFG.rpcs || []), LOGS_RPC])];
 class RotatingProvider extends ethers.JsonRpcProvider {
   constructor(urls, opts) { super(urls[0], { chainId: 57073, name: 'ink' }, { staticNetwork: true, ...opts }); this.urls = urls; this.at = 0; }
   async _send(payload) {
     let lastErr; const body = JSON.stringify(payload);
-    for (let n = 0; n < this.urls.length; n++) {
-      const url = this.urls[(this.at + n) % this.urls.length];
-      try {
-        const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
-        if (r.status === 429 || r.status >= 500) throw new Error('http ' + r.status);
-        const j = await r.json(); const arr = Array.isArray(j) ? j : [j];
-        if (arr.some(x => x && x.error && /limit|rate|too many/i.test(String(x.error.message)))) throw new Error('rate limited');
-        this.at = (this.at + n) % this.urls.length; return arr;
-      } catch (e) { lastErr = e; }
+    for (let round = 0; round < 3; round++) {
+      if (round) await new Promise(r => setTimeout(r, 600 * round));
+      for (let n = 0; n < this.urls.length; n++) {
+        const url = this.urls[(this.at + n) % this.urls.length];
+        try {
+          const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+          if (r.status === 429 || r.status >= 500) throw new Error('http ' + r.status);
+          const j = await r.json(); const arr = Array.isArray(j) ? j : [j];
+          if (arr.some(x => x && x.error && /limit|rate|too many|batch/i.test(String(x.error.message)))) throw new Error('rate limited');
+          this.at = (this.at + n) % this.urls.length; return arr;
+        } catch (e) { lastErr = e; }
+      }
     }
     throw lastErr || new Error('all RPCs failed');
   }
 }
-const provider = new RotatingProvider(RPCS, { batchMaxCount: 40, batchStallTime: 15 });
-const logsProvider = new RotatingProvider([LOGS_RPC, ...RPCS.filter(u => u !== LOGS_RPC)], { batchMaxCount: 25, batchStallTime: 15 });
+const provider = new RotatingProvider(RPCS, { batchMaxCount: 20, batchStallTime: 15 });
+const logsProvider = new RotatingProvider(RPCS, { batchMaxCount: 20, batchStallTime: 15 });
 const iface = Object.fromEntries(Object.entries(ABI).map(([k, v]) => [k, new ethers.Interface(v)]));
 const factory = new ethers.Contract(C.factory, ABI.InkypumpFactory, provider);
 const ledger = new ethers.Contract(C.ledger, ABI.InkypumpLedger, provider);
