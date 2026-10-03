@@ -35,7 +35,7 @@ const layer=()=>$('#layer')||document.body;
 const EXPLORER=(window.INKY&&INKY.explorer)||'https://explorer.inkonchain.com';
 const SITE='https://inkypump.fun';
 const go=u=>{ location.href=u; };
-const errMsg=e=>{ const m=String(e&&(e.shortMessage||e.reason||e.message)||e); if(/user rejected|denied|rejected the request/i.test(m)) return 'Transaction cancelled'; if(/insufficient funds/i.test(m)) return 'Not enough ETH for this transaction'; if(/Connect your wallet/i.test(m)) return m; return m.length>140?m.slice(0,140)+'…':m; };
+const errMsg=e=>{ const m=String(e&&(e.shortMessage||e.reason||e.message)||e); if(/user rejected|denied|rejected the request/i.test(m)) return 'Transaction cancelled'; if(/coalesce|missing revert data/i.test(m)) return 'The wallet could not simulate this transaction. Try a smaller logo or a smaller amount.'; if(/insufficient funds/i.test(m)) return 'Not enough ETH for this transaction'; if(/Connect your wallet/i.test(m)) return m; return m.length>140?m.slice(0,140)+'…':m; };
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ---------- toasts ---------- */

@@ -271,8 +271,15 @@ const api = {
   // gas limit from our own RPC (estimate + 30%), so the wallet does not have to guess on a chain it may not know well
   async buy(addr, ethIn, minOut) { const x = byAddr[lower(addr)]; const s = await signer(); const me = await s.getAddress(); const route = routeFor(x.pairAddr); const ro = new ethers.Contract(C.router, ABI.InkypumpRouter, provider); const g = await ro.buy.estimateGas(addr, route, minOut, { from: me, value: ethIn }); const r = new ethers.Contract(C.router, ABI.InkypumpRouter, s); return send(() => r.buy(addr, route, minOut, { value: ethIn, gasLimit: g * 13n / 10n })); },
   async sell(addr, amount, minEthOut) { const x = byAddr[lower(addr)]; const s = await signer(); const me = await s.getAddress(); const c = coinOf(addr, s); const al = await c.allowance(me, C.router); if (al < amount) await (await c.approve(C.router, ethers.MaxUint256)).wait(); const route = routeFor(x.pairAddr); const ro = new ethers.Contract(C.router, ABI.InkypumpRouter, provider); const g = await ro.sell.estimateGas(addr, amount, route, minEthOut, { from: me }); const r = new ethers.Contract(C.router, ABI.InkypumpRouter, s); return send(() => r.sell(addr, amount, route, minEthOut, { gasLimit: g * 13n / 10n })); },
-  async launch(p, devBuyWei) { const s = await signer(); const f = new ethers.Contract(C.factory, ABI.InkypumpFactory, s); const salt = ethers.hexlify(ethers.randomBytes(32)); const route = routeFor(p.pair);
-    const rc = await send(() => f.launch({ name: p.name, symbol: p.symbol, metadataURI: p.metadataURI, pair: p.pair, minPairOut: p.minPairOut || 0, basket: p.basket || [], holderRewards: !!p.holderRewards }, salt, route, { value: devBuyWei || 0n }));
+  async launch(p, devBuyWei) { const s = await signer(); const me = await s.getAddress(); const f = new ethers.Contract(C.factory, ABI.InkypumpFactory, s); const salt = ethers.hexlify(ethers.randomBytes(32)); const route = routeFor(p.pair);
+    const params = { name: p.name, symbol: p.symbol, metadataURI: p.metadataURI, pair: p.pair, minPairOut: p.minPairOut || 0, basket: p.basket || [], holderRewards: !!p.holderRewards };
+    // estimate on our own RPC first: a wallet that cannot estimate shows a useless generic error
+    let gas; try { gas = await new ethers.Contract(C.factory, ABI.InkypumpFactory, provider).launch.estimateGas(params, salt, route, { from: me, value: devBuyWei || 0n }); }
+    catch (e) { const m = String(e && (e.shortMessage || e.message) || e); if (/insufficient funds/i.test(m)) throw new Error('Not enough ETH in the wallet for the launch');
+      if (p.metadataURI.length > 6000) throw new Error('Logo too large to store on-chain (' + Math.round(p.metadataURI.length / 1024) + ' KB). Pick a smaller image.');
+      throw new Error('The launch would fail: ' + (m.length > 120 ? m.slice(0, 120) + '…' : m)); }
+    if (gas > 25_000_000n) throw new Error('Launch needs too much gas for one block; use a smaller logo');
+    const rc = await send(() => f.launch(params, salt, route, { value: devBuyWei || 0n, gasLimit: gas * 12n / 10n }));
     let token = null; for (const l of rc.logs) { if (lower(l.address) === lower(C.factory) && l.topics[0] === LAUNCH_TOPIC) { token = ethers.getAddress('0x' + l.topics[1].slice(26)); } } return { rc, token }; },
   async claim(addr, mode) { const x = byAddr[lower(addr)]; const s = await signer(); const c = coinOf(addr, s);
     if (mode === 'eth') return send(() => c.claimRewardsAsEth(0, routeFor(x.pairAddr)));
