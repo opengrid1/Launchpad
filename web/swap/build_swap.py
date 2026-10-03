@@ -60,7 +60,7 @@ def shell(active):
             sp = b.select_one('span'); (settext(sp, 'Positions') if sp else settext(b, 'Positions')); b['data-href'] = 'liquidity.html'
     # brand pill
     for sp in r.select('button[aria-label="Launchpad"] span.max-sm\\:hidden'):
-        sp.insert_after(frag('<span class="sw-pill">Swap</span>'))
+        sp.insert_after(frag('<span class="sw-pill max-sm:hidden">Swap</span>'))
     for b in r.select('button[aria-label="Launchpad"]'): b['aria-label'] = 'Inkypump'
     # header search -> token search (handled by swapapp.js)
     for b in r.select('header button.flex.h-9.w-full'): b['data-href'] = '#search'
