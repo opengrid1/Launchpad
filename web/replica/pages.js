@@ -77,7 +77,7 @@ async function initBoard(){
   let kind='pnl'; $$('#btabs [data-board]').forEach(b=>b.onclick=()=>{ kind=b.dataset.board; draw(kind); }); draw(kind);
   const cd=$('#cd'); if(BOARD){ const paintCd=()=>{ const left=Math.max(0,BOARD.ends-Math.floor(Date.now()/1000)); cd.textContent=left?Math.floor(left/86400)+'d '+Math.floor(left%86400/3600)+'h '+Math.floor(left%3600/60)+'m':'settling'; }; paintCd(); setInterval(paintCd,30000); } else cd.textContent=PRE?'At launch':'—';
   boardYou();
-  if(LIVE&&window.CHAIN) setInterval(async()=>{ if(document.hidden) return; try{ BOARD=await CHAIN.board(); draw(kind); boardYou(); setCard(0,fmtEth(BOARD.pool)); setCard(2,String(BOARD.traders)); }catch{} },20000);
+  if(LIVE&&window.CHAIN) setInterval(async()=>{ if(document.hidden) return; try{ BOARD=await CHAIN.board(); draw(kind); boardYou(); setCard(0,fmtEth(BOARD.pool)); setCard(2,String(BOARD.traders)); }catch{} },45000);
 }
 let YOU_HTML=null;
 function boardYou(){ const y=$('#youCard'); if(!y) return; if(YOU_HTML===null) YOU_HTML=y.innerHTML; else { y.innerHTML=YOU_HTML; y.style.cursor=''; y.onclick=null; }

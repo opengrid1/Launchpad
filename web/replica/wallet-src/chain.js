@@ -17,31 +17,47 @@ const STOCKS = (CFG.stocks || []).map(s => ({ ...s, address: s.address.toLowerCa
 const SYM = Object.fromEntries(STOCKS.map(s => [s.address, s.symbol]));
 SYM[WETH] = 'ETH';
 
-// Public RPCs rate-limit per IP; rotate through several on 429 / network errors and remember the one that answered.
-// rpc-gel takes big batches without a per-second cap; rpc-qnd allows 20 calls/s; drpc's free tier rejects batches over 3
-const RPCS = [...new Set([RPC, ...(CFG.rpcs || []), LOGS_RPC])];
+// Public RPCs rate-limit per IP. Spread every request across all of them (round robin), respect each node's batch
+// size, and on a 429 or a rate-limit error move that chunk to the next node, with a short backoff between rounds.
+// Measured limits: rpc-gel batches of 20 fine; rpc-qnd 20 calls/s; publicnode batches of 20; tenderly single calls only;
+// drpc free tier batches of at most 3.
+const BATCH_CAP = { 'rpc-gel.inkonchain.com': 20, 'rpc-qnd.inkonchain.com': 10, 'ink-rpc.publicnode.com': 20, 'ink.gateway.tenderly.co': 1, 'ink.drpc.org': 3 };
+const capOf = url => { try { return BATCH_CAP[new URL(url).host] || 10; } catch { return 10; } };
+const RPCS = [...new Set([RPC, LOGS_RPC, ...(CFG.rpcs || [])])];
+let rr = 0; const cool = {}; // url -> time until which it is skipped after a rate limit
 class RotatingProvider extends ethers.JsonRpcProvider {
-  constructor(urls, opts) { super(urls[0], { chainId: 57073, name: 'ink' }, { staticNetwork: true, ...opts }); this.urls = urls; this.at = 0; }
-  async _send(payload) {
-    let lastErr; const body = JSON.stringify(payload);
-    for (let round = 0; round < 3; round++) {
-      if (round) await new Promise(r => setTimeout(r, 600 * round));
-      for (let n = 0; n < this.urls.length; n++) {
-        const url = this.urls[(this.at + n) % this.urls.length];
-        try {
-          const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
-          if (r.status === 429 || r.status >= 500) throw new Error('http ' + r.status);
-          const j = await r.json(); const arr = Array.isArray(j) ? j : [j];
-          if (arr.some(x => x && x.error && /limit|rate|too many|batch/i.test(String(x.error.message)))) throw new Error('rate limited');
-          this.at = (this.at + n) % this.urls.length; return arr;
-        } catch (e) { lastErr = e; }
+  constructor(urls, opts) { super(urls[0], { chainId: 57073, name: 'ink' }, { staticNetwork: true, ...opts }); this.urls = urls; }
+  async _post(url, items) {
+    const body = JSON.stringify(items.length === 1 ? items[0] : items);
+    const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+    if (r.status === 429 || r.status >= 500) throw Object.assign(new Error('http ' + r.status), { limited: true });
+    const j = await r.json(); const arr = Array.isArray(j) ? j : [j];
+    if (arr.some(x => x && x.error && /limit|rate|too many|batch/i.test(String(x.error.message)))) throw Object.assign(new Error('rate limited'), { limited: true });
+    return arr;
+  }
+  async _chunk(items) {
+    let lastErr;
+    for (let round = 0; round < 4; round++) {
+      if (round) await new Promise(r => setTimeout(r, 500 * round));
+      const now = Date.now(); const order = []; for (let i = 0; i < this.urls.length; i++) order.push(this.urls[(rr + i) % this.urls.length]); rr++;
+      const live = order.filter(u => !(cool[u] > now)); const tryList = (live.length ? live : order).filter(u => capOf(u) >= items.length);
+      for (const url of (tryList.length ? tryList : order)) {
+        if (capOf(url) < items.length) continue;
+        try { return await this._post(url, items); } catch (e) { lastErr = e; if (e.limited) cool[url] = Date.now() + 15_000; }
       }
     }
     throw lastErr || new Error('all RPCs failed');
   }
+  async _send(payload) {
+    const items = Array.isArray(payload) ? payload : [payload];
+    if (items.length <= 3) return this._chunk(items);
+    const size = 10; const chunks = []; for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
+    const parts = await Promise.all(chunks.map(ch => this._chunk(ch)));
+    return parts.flat();
+  }
 }
-const provider = new RotatingProvider(RPCS, { batchMaxCount: 20, batchStallTime: 15 });
-const logsProvider = new RotatingProvider(RPCS, { batchMaxCount: 20, batchStallTime: 15 });
+const provider = new RotatingProvider(RPCS, { batchMaxCount: 30, batchStallTime: 15 });
+const logsProvider = new RotatingProvider(RPCS, { batchMaxCount: 10, batchStallTime: 15 });
 const iface = Object.fromEntries(Object.entries(ABI).map(([k, v]) => [k, new ethers.Interface(v)]));
 const factory = new ethers.Contract(C.factory, ABI.InkypumpFactory, provider);
 const ledger = new ethers.Contract(C.ledger, ABI.InkypumpLedger, provider);
@@ -119,6 +135,7 @@ async function fetchLogs(address, topics, fromBlock, toBlock) {
   for (const l of out) if (!l.timeStamp) l.timeStamp = await blockTs(l.blockNumber);
   return out;
 }
+const statCache = {}; const statKey = (e, w) => e + ':' + w;
 const LS = { get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 let tradeCache = null;
 async function allTrades() {
@@ -297,7 +314,12 @@ const api = {
   creatorFees: async addr => coinOf(addr).creatorFees(),
   // leaderboard for an epoch (current by default)
   async board(epoch) { const cur = Number(await ledger.currentEpoch()); epoch = epoch == null ? cur : epoch; const trades = await allTrades(); const wallets = [...new Set(trades.filter(t => t.epoch === epoch).map(t => t.wallet))];
-    const stats = await Promise.all(wallets.map(w => ledger.stats(epoch, w)));
+    // a wallet's stats only change when it trades: re-read only wallets with new trades since the last call
+    const count = {}; for (const t of trades) if (t.epoch === epoch) count[t.wallet] = (count[t.wallet] || 0) + 1;
+    const stale = wallets.filter(w => { const k = statKey(epoch, w); return !statCache[k] || statCache[k].n !== count[w]; });
+    const fresh = await Promise.all(stale.map(w => ledger.stats(epoch, w)));
+    stale.forEach((w, i) => { statCache[statKey(epoch, w)] = { n: count[w], s: { pnl: fresh[i].pnl, fees: fresh[i].fees, volume: fresh[i].volume, trades: fresh[i].trades } }; });
+    const stats = wallets.map(w => statCache[statKey(epoch, w)].s);
     const rows = wallets.map((w, i) => ({ wallet: w, pnl: Number(stats[i].pnl) / 1e8, fees: Number(stats[i].fees) / 1e8, volume: Number(stats[i].volume) / 1e8, trades: Number(stats[i].trades), best: bestToken(trades, w, epoch) }));
     const [pool, end, isSettled, lastPaid] = await Promise.all([payout.available(), ledger.epochEnd(epoch), epoch < cur ? payout.settled(epoch) : false, cur > 0 ? payout.paidInEpoch(cur - 1) : 0n]);
     const q = rows.filter(r => r.volume >= 100);

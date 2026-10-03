@@ -16,7 +16,7 @@ async function main() {
   const [me] = await ethers.getSigners();
   const dep = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "deployments", "ink-inkypump.json"), "utf8"));
   const admin: string = dep.admin;
-  const tokens: string[] = [dep.smoke?.token, dep.official?.token].filter(Boolean);
+  const tokens: string[] = [dep.smoke?.token, dep.official?.token, ...(dep.launches || []).map((l: any) => l.token)].filter(Boolean);
   const weth = await ethers.getContractAt(WETH_ABI, WETH, me);
   console.log("deployer", me.address, "-> admin", admin);
   for (const t of tokens) {

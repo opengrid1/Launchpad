@@ -346,7 +346,7 @@ function initHome(){
   const lm=$('#loadmore'); if(lm) lm.onclick=()=>{ shown+=12; render(); };
   const fb=$('#feed'), main=$('main'); const sync=()=>{ const stuck=fb.getBoundingClientRect().top<=main.getBoundingClientRect().top+1 && main.scrollTop>40; fb.style.backgroundColor=stuck?'var(--color-bg-card)':''; fb.style.borderBottom=stuck?'1px solid var(--color-border-default)':''; main.style.setProperty('--feed-sticky-top',fb.offsetHeight+'px'); }; main.addEventListener('scroll',sync,{passive:true}); addEventListener('resize',sync); sync();
   window.homeRender=()=>{ syncTok(); render(); };
-  if(LIVE&&window.CHAIN) setInterval(async()=>{ if(document.hidden) return; try{ await CHAIN.refresh(); syncTok(); render(); }catch{} },15000);
+  if(LIVE&&window.CHAIN) setInterval(async()=>{ if(document.hidden) return; try{ await CHAIN.refresh(); syncTok(); render(); }catch{} },30000);
 }
 window.addEventListener('chain-update',()=>{ if(window.homeRender){ homeRender(); if($('#rows')) initHomeStats(); } if(X&&typeof tickNow==='function') tickNow(); });
 
