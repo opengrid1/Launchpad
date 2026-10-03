@@ -35,3 +35,4 @@
 .sw-tok .r{font-size:13px;color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
 .sw-tok.on{background:color-mix(in oklab,var(--color-accent) 10%,transparent)}
 .sw-pools-empty td{padding:56px 16px}
+@media (max-width:639px){.sw-pill{display:none}}
