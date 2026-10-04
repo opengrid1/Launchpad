@@ -20,39 +20,60 @@ interface IWrappedNative {
     function withdraw(uint256) external;
 }
 
-/// @dev Uniswap V3 SwapRouter02 multi-hop surface (no deadline).
-interface ISwapRouter02 {
-    struct ExactInputParams {
-        bytes path;
-        address recipient;
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-    }
-    function exactInput(ExactInputParams calldata params) external payable returns (uint256 amountOut);
+/// @dev Uniswap V3, PancakeSwap V3 and Aerodrome Slipstream pools share this swap.
+interface IV3SwapPool {
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+    function swap(address recipient, bool zeroForOne, int256 amountSpecified, uint160 sqrtPriceLimitX96, bytes calldata data)
+        external
+        returns (int256 amount0, int256 amount1);
+}
+
+/// @dev Aerodrome (Velodrome V2) pool.
+interface IAeroSwapPool {
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+    function getAmountOut(uint256 amountIn, address tokenIn) external view returns (uint256);
+    function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external;
 }
 
 /// @title AnypairRouter
 /// @notice One-tap trading for Anypair coins in plain ETH, whatever the pair.
-///         Pair tokens live in scattered pools (Uniswap V3 and V4 on Base),
-///         so the ETH <-> pair leg follows a caller-supplied `route`:
+///         The ETH <-> pair leg follows a caller-supplied route of up to four
+///         hops through the pools the pair really trades in on Base:
 ///
-///           route = abi.encode(bytes v3Path, PoolKey v4Key)
+///           route = abi.encode(Hop[])   Hop = (dex, pool, v4Key)
 ///
-///         Buying: ETH -> WETH -[v3Path]-> X -[v4Key]-> pair -[coin's V4 pool]-> coin.
-///         Either leg may be empty (empty path, zeroed key); for a WETH pair the
-///         whole route is empty. Selling runs the same route backwards. The
-///         frontend picks the route per token; the contracts stay generic.
+///         dex 1 Uniswap V3, 2 PancakeSwap V3, 3 Aerodrome Slipstream (by
+///         pool address), 4 Aerodrome volatile/stable pool (by address),
+///         5 Uniswap V4 (by key; native-ETH pools work, the router wraps and
+///         unwraps). Buying walks WETH -> ... -> pair; selling walks the same
+///         hops backwards. A WETH pair needs no route. The frontend picks the
+///         route; the contracts stay generic.
 ///
 ///         The router also turns pair-asset fees into ETH for claimants (coins
-///         call {pairToEth}) and performs the factory's ETH first buy
-///         ({ethToPair}). It holds no funds between calls.
+///         call {pairToEth}), buys reward baskets ({pairToBasket}) and performs
+///         the factory's ETH first buy ({ethToPair}). It holds no funds
+///         between calls.
 contract AnypairRouter is IUnlockCallback, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    uint8 internal constant UNI_V3 = 1;
+    uint8 internal constant PANCAKE_V3 = 2;
+    uint8 internal constant SLIPSTREAM = 3;
+    uint8 internal constant AERO_V2 = 4;
+    uint8 internal constant UNI_V4 = 5;
+    uint256 internal constant MAX_HOPS = 4;
 
     IPoolManager public immutable poolManager;
     AnypairFactory public immutable factory;
     address public immutable weth;
-    ISwapRouter02 public immutable v3Router;
+
+    struct Hop {
+        uint8 dex;
+        address pool;
+        PoolKey key;
+    }
 
     struct V4Swap {
         PoolKey key;
@@ -61,6 +82,9 @@ contract AnypairRouter is IUnlockCallback, ReentrancyGuard {
         /// @dev The wallet the hook should credit (the trader), zero for routing legs.
         address user;
     }
+
+    /// @dev The V3-style pool this call is swapping in; only it may call back.
+    address private _activePool;
 
     event Bought(address indexed coin, address indexed buyer, uint256 ethIn, uint256 pairIn, uint256 coinOut);
     event Sold(address indexed coin, address indexed seller, uint256 coinIn, uint256 pairOut, uint256 ethOut);
@@ -72,12 +96,11 @@ contract AnypairRouter is IUnlockCallback, ReentrancyGuard {
     error BadRoute();
     error ZeroAddress();
 
-    constructor(IPoolManager pm, AnypairFactory factory_, address weth_, ISwapRouter02 v3Router_) {
-        if (address(pm) == address(0) || address(factory_) == address(0) || weth_ == address(0) || address(v3Router_) == address(0)) revert ZeroAddress();
+    constructor(IPoolManager pm, AnypairFactory factory_, address weth_) {
+        if (address(pm) == address(0) || address(factory_) == address(0) || weth_ == address(0)) revert ZeroAddress();
         poolManager = pm;
         factory = factory_;
         weth = weth_;
-        v3Router = v3Router_;
     }
 
     receive() external payable {}
@@ -213,9 +236,10 @@ contract AnypairRouter is IUnlockCallback, ReentrancyGuard {
     // Routing
     // ---------------------------------------------------------------------
 
-    function _decode(bytes calldata route) internal pure returns (bytes memory v3Path, PoolKey memory v4Key) {
-        if (route.length == 0) return (v3Path, v4Key);
-        (v3Path, v4Key) = abi.decode(route, (bytes, PoolKey));
+    function _hops(bytes calldata route) internal pure returns (Hop[] memory hops) {
+        if (route.length == 0) revert BadRoute();
+        hops = abi.decode(route, (Hop[]));
+        if (hops.length == 0 || hops.length > MAX_HOPS) revert BadRoute();
     }
 
     /// @dev Wrap `ethAmount` and route it into `pair`. Returns pair held here.
@@ -224,81 +248,77 @@ contract AnypairRouter is IUnlockCallback, ReentrancyGuard {
         return _wethToPair(pair, ethAmount, route);
     }
 
-    /// @dev Forward: WETH -[v3Path]-> X -[v4Key]-> pair. Returns pair held here.
+    /// @dev Forward: WETH -> hop[0] -> ... -> pair. Returns pair held here.
     function _wethToPair(address pair, uint256 wethAmount, bytes calldata route) internal returns (uint256 amount) {
         if (pair == weth || wethAmount == 0) return wethAmount;
-        (bytes memory v3Path, PoolKey memory v4Key) = _decode(route);
+        Hop[] memory hops = _hops(route);
         address held = weth;
         amount = wethAmount;
-        if (v3Path.length > 0) {
-            if (_first(v3Path) != weth) revert BadRoute();
-            IERC20(weth).forceApprove(address(v3Router), amount);
-            amount = v3Router.exactInput(ISwapRouter02.ExactInputParams({path: v3Path, recipient: address(this), amountIn: amount, amountOutMinimum: 0}));
-            held = _last(v3Path);
-        }
-        if (Currency.unwrap(v4Key.currency0) != address(0)) {
-            address other = _otherSide(v4Key, held);
-            if (other != pair) revert BadRoute();
-            amount = _v4Swap(v4Key, held, amount);
-            held = pair;
-        }
+        for (uint256 i; i < hops.length; i++) (held, amount) = _hop(hops[i], held, amount);
         if (held != pair) revert BadRoute();
     }
 
-    /// @dev Backward: pair -[v4Key]-> X -[reversed v3Path]-> WETH. Returns WETH held.
+    /// @dev Backward: pair -> hop[n-1] -> ... -> WETH. Returns WETH held.
     function _pairToWeth(address pair, uint256 pairAmount, bytes calldata route) internal returns (uint256 amount) {
         if (pair == weth || pairAmount == 0) return pairAmount;
-        (bytes memory v3Path, PoolKey memory v4Key) = _decode(route);
+        Hop[] memory hops = _hops(route);
         address held = pair;
         amount = pairAmount;
-        if (Currency.unwrap(v4Key.currency0) != address(0)) {
-            address other = _otherSide(v4Key, held);
-            amount = _v4Swap(v4Key, held, amount);
-            held = other;
-        }
-        if (v3Path.length > 0) {
-            if (_last(v3Path) != held || _first(v3Path) != weth) revert BadRoute();
-            bytes memory rev = _reverse(v3Path);
-            IERC20(held).forceApprove(address(v3Router), amount);
-            amount = v3Router.exactInput(ISwapRouter02.ExactInputParams({path: rev, recipient: address(this), amountIn: amount, amountOutMinimum: 0}));
-            held = weth;
-        }
+        for (uint256 i = hops.length; i > 0; i--) (held, amount) = _hop(hops[i - 1], held, amount);
         if (held != weth) revert BadRoute();
     }
 
-    function _otherSide(PoolKey memory key, address held) internal pure returns (address) {
-        address c0 = Currency.unwrap(key.currency0);
-        address c1 = Currency.unwrap(key.currency1);
-        if (held == c0) return c1;
-        if (held == c1) return c0;
-        revert BadRoute();
-    }
-
-    /// @dev First / last token of a V3 path (20-byte address, 3-byte fee, ...).
-    function _first(bytes memory path) internal pure returns (address a) {
-        assembly ("memory-safe") { a := shr(96, mload(add(path, 32))) }
-    }
-
-    function _last(bytes memory path) internal pure returns (address a) {
-        uint256 off = path.length - 20;
-        assembly ("memory-safe") { a := shr(96, mload(add(add(path, 32), off))) }
-    }
-
-    /// @dev Reverse a V3 path: tokenA fee tokenB fee tokenC -> tokenC fee tokenB fee tokenA.
-    function _reverse(bytes memory path) internal pure returns (bytes memory out) {
-        uint256 hops = (path.length - 20) / 23;
-        out = new bytes(path.length);
-        // copy tokens: token i at offset 23*i; fees at 23*i + 20
-        for (uint256 i = 0; i <= hops; i++) {
-            uint256 src = 23 * i;
-            uint256 dst = 23 * (hops - i);
-            for (uint256 b = 0; b < 20; b++) out[dst + b] = path[src + b];
+    /// @dev Swap `amountIn` of `tokenIn` through one pool; returns the token and amount out.
+    function _hop(Hop memory h, address tokenIn, uint256 amountIn) internal returns (address tokenOut, uint256 amountOut) {
+        if (h.dex == UNI_V4) {
+            // native ETH (currency 0) trades as WETH on this side of the router
+            address c0 = Currency.unwrap(h.key.currency0);
+            address c1 = Currency.unwrap(h.key.currency1);
+            address s0 = c0 == address(0) ? weth : c0;
+            bool zeroForOne;
+            if (tokenIn == s0) { zeroForOne = true; tokenOut = c1; }
+            else if (tokenIn == c1) { tokenOut = s0; }
+            else revert BadRoute();
+            amountOut = _v4SwapFor(h.key, zeroForOne, amountIn, address(0));
+            return (tokenOut, amountOut);
         }
-        for (uint256 i = 0; i < hops; i++) {
-            uint256 src = 23 * i + 20;
-            uint256 dst = 23 * (hops - 1 - i) + 20;
-            for (uint256 b = 0; b < 3; b++) out[dst + b] = path[src + b];
+        address t0 = IV3SwapPool(h.pool).token0();
+        address t1 = IV3SwapPool(h.pool).token1();
+        bool zfo;
+        if (tokenIn == t0) { zfo = true; tokenOut = t1; }
+        else if (tokenIn == t1) { tokenOut = t0; }
+        else revert BadRoute();
+        uint256 before = IERC20(tokenOut).balanceOf(address(this));
+        if (h.dex == AERO_V2) {
+            uint256 out = IAeroSwapPool(h.pool).getAmountOut(amountIn, tokenIn);
+            IERC20(tokenIn).safeTransfer(h.pool, amountIn);
+            IAeroSwapPool(h.pool).swap(zfo ? 0 : out, zfo ? out : 0, address(this), "");
+        } else if (h.dex == UNI_V3 || h.dex == PANCAKE_V3 || h.dex == SLIPSTREAM) {
+            _activePool = h.pool;
+            IV3SwapPool(h.pool).swap(
+                address(this), zfo, int256(amountIn), zfo ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1, abi.encode(tokenIn)
+            );
+            _activePool = address(0);
+        } else {
+            revert BadRoute();
         }
+        amountOut = IERC20(tokenOut).balanceOf(address(this)) - before;
+    }
+
+    /// @dev V3-style swap callback (Uniswap V3 and Slipstream name it this way).
+    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata data) external {
+        _v3Pay(amount0Delta, amount1Delta, data);
+    }
+
+    function pancakeV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata data) external {
+        _v3Pay(amount0Delta, amount1Delta, data);
+    }
+
+    function _v3Pay(int256 a0, int256 a1, bytes calldata data) internal {
+        if (msg.sender != _activePool || msg.sender == address(0)) revert BadRoute();
+        address tokenIn = abi.decode(data, (address));
+        uint256 owed = a0 > 0 ? uint256(a0) : uint256(a1);
+        IERC20(tokenIn).safeTransfer(msg.sender, owed);
     }
 
     // ---------------------------------------------------------------------
@@ -314,16 +334,12 @@ contract AnypairRouter is IUnlockCallback, ReentrancyGuard {
     ///      The caller is named in hook data so the ledger credits them even
     ///      when they trade from a contract wallet.
     function _coinSwap(address coin, address currencyIn, uint256 amountIn) internal returns (uint256) {
-        return _v4SwapFor(factory.poolKeyOf(coin), currencyIn, amountIn, msg.sender);
+        PoolKey memory key = factory.poolKeyOf(coin);
+        return _v4SwapFor(key, currencyIn == Currency.unwrap(key.currency0), amountIn, msg.sender);
     }
 
-    function _v4Swap(PoolKey memory key, address currencyIn, uint256 amountIn) internal returns (uint256 amountOut) {
-        return _v4SwapFor(key, currencyIn, amountIn, address(0));
-    }
-
-    function _v4SwapFor(PoolKey memory key, address currencyIn, uint256 amountIn, address user) internal returns (uint256 amountOut) {
+    function _v4SwapFor(PoolKey memory key, bool zeroForOne, uint256 amountIn, address user) internal returns (uint256 amountOut) {
         if (amountIn == 0) return 0;
-        bool zeroForOne = currencyIn == Currency.unwrap(key.currency0);
         bytes memory res = poolManager.unlock(abi.encode(V4Swap(key, zeroForOne, amountIn, user)));
         amountOut = abi.decode(res, (uint256));
     }
@@ -342,18 +358,26 @@ contract AnypairRouter is IUnlockCallback, ReentrancyGuard {
         );
         _resolve(a.key.currency0, delta.amount0());
         _resolve(a.key.currency1, delta.amount1());
-        uint256 out = a.zeroForOne ? uint256(uint128(delta.amount1())) : uint256(uint128(delta.amount0()));
-        return abi.encode(out);
+        int128 o = a.zeroForOne ? delta.amount1() : delta.amount0();
+        return abi.encode(o > 0 ? uint256(uint128(o)) : 0);
     }
 
     function _resolve(Currency currency, int128 amount) internal {
+        address c = Currency.unwrap(currency);
         if (amount < 0) {
             uint256 owed = uint256(uint128(-amount));
-            poolManager.sync(currency);
-            IERC20(Currency.unwrap(currency)).safeTransfer(address(poolManager), owed);
-            poolManager.settle();
+            if (c == address(0)) {
+                IWrappedNative(weth).withdraw(owed);
+                poolManager.settle{value: owed}();
+            } else {
+                poolManager.sync(currency);
+                IERC20(c).safeTransfer(address(poolManager), owed);
+                poolManager.settle();
+            }
         } else if (amount > 0) {
-            poolManager.take(currency, address(this), uint256(uint128(amount)));
+            uint256 got = uint256(uint128(amount));
+            poolManager.take(currency, address(this), got);
+            if (c == address(0)) IWrappedNative(weth).deposit{value: got}();
         }
     }
 }

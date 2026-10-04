@@ -2,7 +2,6 @@
 pragma solidity 0.8.26;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -21,6 +20,7 @@ import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmo
 import {AnypairToken} from "./AnypairToken.sol";
 import {AnypairTokenDeployer} from "./AnypairTokenDeployer.sol";
 import {AnypairHook} from "./AnypairHook.sol";
+import {AnypairOracle} from "./AnypairOracle.sol";
 
 /// @dev The launchpad router: turns ETH into a pair asset along a caller-
 ///      supplied route (Uniswap V3 path and/or a V4 pool) and back.
@@ -28,26 +28,14 @@ interface IPairRouter {
     function ethToPair(address pair, bytes calldata route, address to, uint256 minOut) external payable returns (uint256 pairOut);
 }
 
-interface IUniswapV3FactoryMin {
-    function getPool(address a, address b, uint24 fee) external view returns (address);
-}
-
-interface IUniswapV3PoolMin {
-    function observe(uint32[] calldata secondsAgos) external view returns (int56[] memory tickCumulatives, uint160[] memory);
-}
-
-interface IAggregatorV3 {
-    function decimals() external view returns (uint8);
-    function latestRoundData() external view returns (uint80, int256 answer, uint256, uint256 updatedAt, uint80);
-}
 
 /// @title AnypairFactory
 /// @notice One-transaction launcher on Base / Uniswap V4. A coin
 ///         pairs against WETH or any ERC-20 with a price; the whole 1B
 ///         supply seeds a single-sided, factory-held V4 position at a $3,000
-///         start cap. ETH is priced from Chainlink; any other pair from a
-///         listed price when the admin set one, else from a 30-minute TWAP of
-///         its deepest Uniswap V3 pool against WETH. Trading starts in the
+///         start cap, priced by the AnypairOracle from the pools the pair
+///         really trades in (Uniswap V3/V4, Aerodrome, PancakeSwap). The
+///         launcher can register those pools in the launch itself. Trading starts in the
 ///         same block; the AnypairHook takes a FIXED fee on every swap. No
 ///         function changes a coin's fee after launch. The creator decides at
 ///         launch whether holders share the fee (optionally paid as a basket
@@ -77,12 +65,6 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
     /// @notice Fee split of every trade fee, bps: creator / holders / platform.
     uint16 public immutable CREATOR_BPS;
     uint16 public immutable HOLDER_BPS;
-    /// @notice A Chainlink answer older than this falls back to the admin price.
-    uint256 public constant FEED_MAX_AGE = 7 days;
-    /// @notice TWAP window for pairs priced from a Uniswap V3 pool.
-    uint32 public constant TWAP_WINDOW = 1800;
-    /// @notice Most decimals a pair may have.
-    uint8 public constant MAX_DECIMALS = 30;
 
     IPoolManager public immutable poolManager;
     AnypairHook public immutable hook;
@@ -90,8 +72,8 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
     address public immutable admin;
     /// @notice Creates the coins, so this contract stays under the size limit.
     AnypairTokenDeployer public immutable tokenDeployer;
-    /// @notice Uniswap V3 factory, for TWAP pricing.
-    IUniswapV3FactoryMin public immutable v3Factory;
+    /// @notice Prices every pair and basket asset.
+    AnypairOracle public immutable oracle;
 
     /// @notice The launchpad router: ETH <-> pair routing for first buys and
     ///         for claimants who want ETH; set once.
@@ -100,22 +82,9 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
     address public feeRecipient;
     bool public launchesPaused;
 
-    /// @notice A listed pair asset: priced by the admin instead of a TWAP.
-    ///         `feed` (Chainlink, USD) wins over `usdPrice8` when set and fresh.
-    struct QuoteAsset {
-        bool approved;
-        uint64 usdPrice8;
-        address feed;
-    }
-    mapping(address => QuoteAsset) public quoteAssets;
-    address[] public quoteList;
     /// @notice Tokens that may not be a pair or a basket asset (fee-on-transfer,
     ///         rebasing, scams). Coins already launched keep trading.
     mapping(address => bool) public blocked;
-    /// @notice The V3 pool a pair's TWAP reads, fixed at its first launch.
-    mapping(address => address) public oraclePool;
-    /// @notice Least WETH a V3 pool must hold to price a pair.
-    uint256 public minOracleWeth = 1 ether;
 
     struct Listing {
         address creator;
@@ -156,27 +125,26 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
         ///      holder share goes to the creator instead and no basket is allowed.
         ///      Fixed in the coin forever.
         bool holderRewards;
+        /// @dev Pools to price the pair / basket assets from, registered with
+        ///      the oracle first (skipped when a token already has a source).
+        AnypairOracle.SourceParams[] sources;
     }
 
     event Launched(address indexed token, address indexed creator, address indexed pair, uint16 taxBps, bytes32 poolId, uint256 pairUsdPrice8, bool holderRewards);
     event HiddenSet(address indexed token, bool hidden);
     event CoinMetadataSet(address indexed token, string uri);
     event DevBought(address indexed token, address indexed creator, uint256 ethIn, uint256 pairIn, uint256 coinOut);
-    event QuoteAssetSet(address indexed pair, bool approved, uint64 usdPrice8, address feed);
     event LaunchesPausedSet(bool paused);
     event FeeRecipientSet(address indexed recipient);
     event ConverterSet(address indexed converter);
     event OwnershipRenounced();
     event TokenBlocked(address indexed token, bool blocked);
-    event OraclePoolSet(address indexed pair, address indexed pool);
-    event MinOracleWethSet(uint256 amount);
+
     event Collected(address indexed token, uint128 liquidity, uint256 tokenAmount, uint256 pairAmount, address indexed to);
 
     error LaunchesPaused();
     error InvalidParams();
     error NotAdmin();
-    error QuoteNotApproved();
-    error NoPrice();
     error ZeroAddress();
     error Blocked();
 
@@ -198,9 +166,7 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
         AnypairHook hook_,
         AnypairTokenDeployer tokenDeployer_,
         address weth_,
-        IUniswapV3FactoryMin v3Factory_,
-        address ethUsdFeed_,
-        uint64 ethUsd8_,
+        AnypairOracle oracle_,
         uint16 taxBps_,
         uint16 creatorBps_,
         uint16 holderBps_,
@@ -208,21 +174,17 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
     ) {
         tokenDeployer = tokenDeployer_;
         owner = owner_;
-        if (admin_ == address(0) || weth_ == address(0) || address(v3Factory_) == address(0)) revert ZeroAddress();
-        if (ethUsd8_ == 0 || taxBps_ == 0 || taxBps_ > 1_000 || uint256(creatorBps_) + holderBps_ > 10_000) revert InvalidParams();
+        if (admin_ == address(0) || weth_ == address(0) || address(oracle_) == address(0)) revert ZeroAddress();
+        if (taxBps_ == 0 || taxBps_ > 1_000 || uint256(creatorBps_) + holderBps_ > 10_000) revert InvalidParams();
         TAX_BPS = taxBps_;
         admin = admin_;
         feeRecipient = feeRecipient_ == address(0) ? admin_ : feeRecipient_;
         poolManager = poolManager_;
         hook = hook_;
         weth = weth_;
-        v3Factory = v3Factory_;
+        oracle = oracle_;
         CREATOR_BPS = creatorBps_;
         HOLDER_BPS = holderBps_;
-        if (ethUsdFeed_ != address(0) && IAggregatorV3(ethUsdFeed_).decimals() != 8) revert InvalidParams();
-        quoteAssets[weth_] = QuoteAsset({approved: true, usdPrice8: ethUsd8_, feed: ethUsdFeed_});
-        quoteList.push(weth_);
-        emit QuoteAssetSet(weth_, true, ethUsd8_, ethUsdFeed_);
     }
 
     // ---------------------------------------------------------------------
@@ -275,38 +237,11 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
         emit ConverterSet(converter_);
     }
 
-    /// @notice List, re-price, or unlist a pair asset's admin price. `usdPrice8`
-    ///         is USD per whole token (8 dp); `feed` an optional 8-decimal
-    ///         Chainlink USD feed. Unlisted tokens fall back to the TWAP.
-    function setQuoteAsset(address pair, bool approved, uint64 usdPrice8, address feed) external onlyAdminOrOwner {
-        if (pair == address(0)) revert ZeroAddress();
-        if (approved && usdPrice8 == 0 && feed == address(0)) revert InvalidParams();
-        if (pair != weth && approved && IERC20Metadata(pair).decimals() > MAX_DECIMALS) revert InvalidParams();
-        if (feed != address(0) && IAggregatorV3(feed).decimals() != 8) revert InvalidParams();
-        if (pair == weth && !approved) revert InvalidParams();
-        if (!quoteAssets[pair].approved && quoteAssets[pair].usdPrice8 == 0 && quoteAssets[pair].feed == address(0)) quoteList.push(pair);
-        quoteAssets[pair] = QuoteAsset({approved: approved, usdPrice8: usdPrice8, feed: feed});
-        emit QuoteAssetSet(pair, approved, usdPrice8, feed);
-    }
-
     /// @notice Block or unblock a token as a pair or basket asset.
     function setTokenBlocked(address token, bool blocked_) external onlyAdmin {
         if (token == address(0) || token == weth) revert InvalidParams();
         blocked[token] = blocked_;
         emit TokenBlocked(token, blocked_);
-    }
-
-    /// @notice Point a pair's TWAP at another V3 pool against WETH (zero
-    ///         clears it, so the next launch picks the deepest pool again).
-    function setOraclePool(address pair, address pool) external onlyAdmin {
-        if (pool != address(0) && !_isWethPool(pair, pool)) revert InvalidParams();
-        oraclePool[pair] = pool;
-        emit OraclePoolSet(pair, pool);
-    }
-
-    function setMinOracleWeth(uint256 amount) external onlyAdmin {
-        minOracleWeth = amount;
-        emit MinOracleWethSet(amount);
     }
 
     /// @notice Give up the deployer's setup rights; the admin keeps its own.
@@ -344,7 +279,8 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
         if (launchesPaused) revert LaunchesPaused();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert InvalidParams();
         pair = p.pair == address(0) ? weth : p.pair;
-        uint256 pairUsd18 = _priceAndPin(pair);
+        for (uint256 i; i < p.sources.length; i++) oracle.register(p.sources[i]);
+        uint256 pairUsd18 = _priced(pair);
         if (!p.holderRewards && p.basket.length != 0) revert InvalidParams();
         _checkBasket(p.basket);
 
@@ -395,23 +331,15 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
         for (uint256 i; i < n; i++) {
             address s = basket[i];
             if (s == weth || s == address(0)) revert InvalidParams();
-            _priceAndPin(s);
+            _priced(s);
             for (uint256 j; j < i; j++) if (basket[j] == s) revert InvalidParams();
         }
     }
 
-    /// @dev A launch's pair or basket asset: not blocked, priced, and with its
-    ///      TWAP pool pinned on first use.
-    function _priceAndPin(address token) internal returns (uint256 px) {
+    /// @dev A launch's pair or basket asset: not blocked, and priced now.
+    function _priced(address token) internal returns (uint256 px) {
         if (blocked[token]) revert Blocked();
-        if (token != weth && !quoteAssets[token].approved && oraclePool[token] == address(0)) {
-            address pool = _deepestPool(token);
-            if (pool == address(0)) revert NoPrice();
-            oraclePool[token] = pool;
-            emit OraclePoolSet(token, pool);
-        }
-        px = pairUsdPrice(token);
-        if (px == 0) revert NoPrice();
+        px = oracle.launchPrice(token);
     }
 
     // ---------------------------------------------------------------------
@@ -491,81 +419,9 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
     // Pricing: USD (18 dp) per 1e18 base units of the pair, whatever its decimals
     // ---------------------------------------------------------------------
 
-    /// @notice USD, 18 dp, per 1e18 base units of `pair` (for an 18-decimal
-    ///         token: per whole token). WETH and listed tokens use their feed
-    ///         when fresh, else the admin price; any other token a 30-minute
-    ///         TWAP of its V3 pool against WETH. Reverts NoPrice without one.
-    function pairUsdPrice(address pair) public view returns (uint256) {
-        QuoteAsset memory q = quoteAssets[pair];
-        if (pair == weth || q.approved) {
-            uint256 usd8 = _listedUsd8(q);
-            uint8 dec = pair == weth ? 18 : IERC20Metadata(pair).decimals();
-            return Math.mulDiv(usd8, 1e28, 10 ** dec);
-        }
-        address pool = oraclePool[pair];
-        if (pool == address(0)) revert NoPrice();
-        uint256 ethUsd8 = _listedUsd8(quoteAssets[weth]);
-        int24 tick = _twapTick(pool);
-        // ETH-wei per 1e18 pair units, scaled 1e18, then into USD 18 dp.
-        uint256 wei36 = _quoteAtTick(tick, 1e36, pair, weth);
-        uint256 px = Math.mulDiv(wei36, ethUsd8 * 1e10, 1e36);
-        if (px == 0) revert NoPrice();
-        return px;
-    }
-
-    function _listedUsd8(QuoteAsset memory q) internal view returns (uint256) {
-        if (q.feed != address(0)) {
-            try IAggregatorV3(q.feed).latestRoundData() returns (uint80, int256 answer, uint256, uint256 updatedAt, uint80) {
-                if (answer > 0 && updatedAt + FEED_MAX_AGE >= block.timestamp) return uint256(answer);
-            } catch {}
-        }
-        if (q.usdPrice8 == 0) revert NoPrice();
-        return q.usdPrice8;
-    }
-
-    function _twapTick(address pool) internal view returns (int24 tick) {
-        uint32[] memory ago = new uint32[](2);
-        ago[0] = TWAP_WINDOW;
-        (int56[] memory cum,) = IUniswapV3PoolMin(pool).observe(ago);
-        int56 d = cum[1] - cum[0];
-        tick = int24(d / int56(uint56(TWAP_WINDOW)));
-        if (d < 0 && d % int56(uint56(TWAP_WINDOW)) != 0) tick--;
-    }
-
-    /// @dev Uniswap's OracleLibrary.getQuoteAtTick.
-    function _quoteAtTick(int24 tick, uint128 baseAmount, address base, address quote) internal pure returns (uint256) {
-        uint160 s = TickMath.getSqrtPriceAtTick(tick);
-        if (s <= type(uint128).max) {
-            uint256 r = uint256(s) * s;
-            return base < quote ? Math.mulDiv(r, baseAmount, 1 << 192) : Math.mulDiv(1 << 192, baseAmount, r);
-        }
-        uint256 r128 = Math.mulDiv(s, s, 1 << 64);
-        return base < quote ? Math.mulDiv(r128, baseAmount, 1 << 128) : Math.mulDiv(1 << 128, baseAmount, r128);
-    }
-
-    /// @dev The V3 pool against WETH holding the most WETH (at least
-    ///      `minOracleWeth`) whose TWAP can be read; zero if none.
-    function _deepestPool(address token) internal view returns (address best) {
-        uint24[4] memory fees = [uint24(100), 500, 3000, 10000];
-        uint256 bestBal = minOracleWeth;
-        for (uint256 i; i < 4; i++) {
-            address pool = v3Factory.getPool(token, weth, fees[i]);
-            if (pool == address(0)) continue;
-            uint256 bal = IERC20(weth).balanceOf(pool);
-            if (bal < bestBal) continue;
-            uint32[] memory ago = new uint32[](2);
-            ago[0] = TWAP_WINDOW;
-            try IUniswapV3PoolMin(pool).observe(ago) returns (int56[] memory, uint160[] memory) {
-                best = pool;
-                bestBal = bal;
-            } catch {}
-        }
-    }
-
-    function _isWethPool(address token, address pool) internal view returns (bool) {
-        uint24[4] memory fees = [uint24(100), 500, 3000, 10000];
-        for (uint256 i; i < 4; i++) if (v3Factory.getPool(token, weth, fees[i]) == pool) return true;
-        return false;
+    /// @notice The oracle's price of `pair` (USD 18 dp per 1e18 base units).
+    function pairUsdPrice(address pair) external view returns (uint256) {
+        return oracle.price(pair);
     }
 
     function _priceQ(uint256 pairUsd18) internal pure returns (uint256 priceQ) {
@@ -644,10 +500,6 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
 
     function totalTokens() external view returns (uint256) {
         return allTokens.length;
-    }
-
-    function quoteCount() external view returns (uint256) {
-        return quoteList.length;
     }
 
     /// @notice The pool key of a launched coin (for routers and indexers).

@@ -16,15 +16,11 @@ pragma solidity 0.8.26;
 ///         without any transfer accounting in the coin.
 ///
 ///         Stats are kept per 3-day epoch: realized profit, fees paid and
-///         volume, converted to USD (8 decimals) at the pair's price in the
-///         factory, so coins on every pair rank on the same board. A pair
+///         volume, converted to USD (8 decimals) at the pair's price from the
+///         oracle, so coins on every pair rank on the same board. A pair
 ///         whose price can't be read keeps the position but adds nothing.
-interface IHookFactory {
-    function factory() external view returns (address);
-}
-
-interface IFactoryPrice {
-    function pairUsdPrice(address pair) external view returns (uint256);
+interface IPriceOracle {
+    function poke(address token) external returns (uint256);
 }
 
 contract AnypairLedger {
@@ -32,6 +28,8 @@ contract AnypairLedger {
 
     address public immutable hook;
     address public immutable weth;
+    /// @notice Prices pairs in USD (AnypairOracle).
+    address public immutable oracle;
     uint256 public immutable genesis;
 
     struct Position {
@@ -65,10 +63,11 @@ contract AnypairLedger {
     error NotHook();
     error ZeroAddress();
 
-    constructor(address hook_, address weth_) {
-        if (hook_ == address(0) || weth_ == address(0)) revert ZeroAddress();
+    constructor(address hook_, address weth_, address oracle_) {
+        if (hook_ == address(0) || weth_ == address(0) || oracle_ == address(0)) revert ZeroAddress();
         hook = hook_;
         weth = weth_;
+        oracle = oracle_;
         genesis = block.timestamp;
     }
 
@@ -80,12 +79,10 @@ contract AnypairLedger {
         return genesis + (epoch + 1) * EPOCH;
     }
 
-    /// @notice USD (18 dp) per 1e18 base units of the pair, from the factory; zero when unknown.
-    function pairUsd18(address pair) public view returns (uint256) {
-        address f;
-        try IHookFactory(hook).factory() returns (address a) { f = a; } catch { return 0; }
-        if (f == address(0)) return 0;
-        try IFactoryPrice(f).pairUsdPrice(pair) returns (uint256 px) { return px; } catch { return 0; }
+    /// @dev USD (18 dp) per 1e18 base units of the pair from the oracle
+    ///      (which also steps a Uniswap V4 source's slow price); zero when unknown.
+    function _pairUsd18(address pair) internal returns (uint256) {
+        try IPriceOracle(oracle).poke(pair) returns (uint256 px) { return px; } catch { return 0; }
     }
 
     /// @notice Hook only. `pairAmount` is what the wallet paid (buy, fee
@@ -110,7 +107,7 @@ contract AnypairLedger {
             }
         }
         uint256 epoch = currentEpoch();
-        uint256 px = pairUsd18(pair);
+        uint256 px = _pairUsd18(pair);
         if (px != 0) {
             int256 pnlUsd = (realized * int256(px)) / 1e28;
             uint256 feeUsd = (fee * px) / 1e28;
