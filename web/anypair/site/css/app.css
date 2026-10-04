@@ -1,34 +1,37 @@
 /* Anypair: launch a coin against any token on Base.
    Light-first, cobalt + tangerine (a coin and its pair), Bricolage Grotesque / IBM Plex. */
-/* Dark first: a trading floor at night. Base blue for actions, amber for the pair a coin trades against. */
+/* Light by default on a neutral ground. Orange marks actions (as the hard shadow under black buttons),
+   violet marks the pair a coin trades against. */
 :root {
-  --bg: #080b14; --bg-2: #0d1220; --surface: #0f1526; --surface-2: #131a2e; --hover: #19223a;
-  --ink: #eef2fa; --ink-2: #c4cce0; --muted: #8a94b0; --faint: #5b6582;
-  --line: #1d2640; --line-2: #283350;
-  --accent: #3a6bff; --accent-hover: #5683ff; --accent-ink: #ffffff; --accent-soft: #142352;
-  --pair: #ffb020; --pair-soft: #2b220f;
-  --up: #1fd396; --up-soft: #0b2b25; --down: #ff4f6a; --down-soft: #34121c; --warn: #ffb020; --warn-soft: #2b220f;
-  --glow: rgba(58, 107, 255, .14); --on-up: #03140e; --on-down: #1c0509;
-  --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 12px 32px -16px rgba(0, 0, 0, .7);
-  --shadow-pop: 0 24px 60px -20px rgba(0, 0, 0, .85);
+  --bg: #f4f4f1; --bg-2: #ebebe6; --surface: #ffffff; --surface-2: #f9f9f7; --hover: #f2f2ee;
+  --ink: #0d0e12; --ink-2: #34363d; --muted: #66686f; --faint: #9c9ea4;
+  --line: #e3e2dc; --line-2: #d2d0c8;
+  --accent: #ff5a1f; --accent-hover: #e84a10; --accent-ink: #ffffff; --accent-soft: #ffece4; --accent-text: #d9430c;
+  --pair: #7a4cff; --pair-ink: #5b33e0; --pair-soft: #efe9ff;
+  --up: #039e74; --up-soft: #ddf5ec; --down: #e0324e; --down-soft: #fde6ea; --warn: #b25d00; --warn-soft: #fff1df;
+  --on-up: #ffffff; --on-down: #ffffff;
+  --glow: rgba(255, 90, 31, .05);
+  --shadow: 0 1px 2px rgba(13, 14, 18, .05), 0 10px 28px -14px rgba(13, 14, 18, .14);
+  --shadow-pop: 0 22px 54px -20px rgba(13, 14, 18, .32);
   --r-sm: 6px; --r: 10px; --r-lg: 16px;
   --f-display: 'Bricolage Grotesque', 'IBM Plex Sans', system-ui, sans-serif;
   --f-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --f-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --side: 236px;
-  color-scheme: dark;
-}
-:root[data-theme="light"] {
-  --bg: #f4f6fb; --bg-2: #eaeef6; --surface: #ffffff; --surface-2: #f7f9fc; --hover: #eef2f8;
-  --ink: #0a1022; --ink-2: #2f3a55; --muted: #5f6a85; --faint: #9099b0;
-  --line: #e1e6f0; --line-2: #cfd6e4;
-  --accent: #0052ff; --accent-hover: #0044d6; --accent-ink: #ffffff; --accent-soft: #e3ebff;
-  --pair: #d98200; --pair-soft: #fff1d9;
-  --up: #04a777; --up-soft: #dcf5ec; --down: #e1324f; --down-soft: #fde4e8; --warn: #b26b00; --warn-soft: #fff0d6;
-  --glow: rgba(0, 82, 255, .08); --on-up: #ffffff; --on-down: #ffffff;
-  --shadow: 0 1px 2px rgba(10, 16, 34, .05), 0 10px 28px -14px rgba(10, 16, 34, .16);
-  --shadow-pop: 0 22px 54px -20px rgba(10, 16, 34, .35);
   color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #0e0e10; --bg-2: #151518; --surface: #18181b; --surface-2: #1d1d21; --hover: #232328;
+  --ink: #f2f1ee; --ink-2: #cfcdc8; --muted: #918f96; --faint: #63626a;
+  --line: #29292e; --line-2: #36363c;
+  --accent: #ff6a33; --accent-hover: #ff7f4f; --accent-ink: #ffffff; --accent-soft: #33190f; --accent-text: #ff7f4f;
+  --pair: #9a78ff; --pair-ink: #ad92ff; --pair-soft: #231a3d;
+  --up: #1fd396; --up-soft: #0b2b25; --down: #ff4f6a; --down-soft: #34121c; --warn: #ffb020; --warn-soft: #2b220f;
+  --on-up: #03140e; --on-down: #1c0509;
+  --glow: rgba(255, 106, 51, .08);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 12px 32px -16px rgba(0, 0, 0, .7);
+  --shadow-pop: 0 24px 60px -20px rgba(0, 0, 0, .85);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -156,7 +159,7 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 .chip.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .chip img, .chip .tl { width: 18px; height: 18px; border-radius: 50%; }
 .tag { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11.5px; font-weight: 600; background: var(--bg-2); color: var(--ink-2); white-space: nowrap; }
-.tag.pair { background: var(--pair-soft); color: color-mix(in oklab, var(--pair) 75%, var(--ink)); }
+.tag.pair { background: var(--pair-soft); color: var(--pair-ink); }
 .tag.acc { background: var(--accent-soft); color: var(--accent); }
 .tag.warn { background: var(--warn-soft); color: var(--warn); }
 .delta { display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border-radius: 6px; font: 600 12px var(--f-mono); }
@@ -192,7 +195,8 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 /* ---------------------------------------------------------------- explore */
 .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px 28px; align-items: end; padding: 10px 0 22px; }
 .hero h1 { font: 700 clamp(30px, 4.2vw, 46px)/1.02 var(--f-display); letter-spacing: -.035em; text-wrap: balance; }
-.hero h1 em { font-style: normal; color: var(--pair); }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.tag.acc { background: var(--accent-soft); color: var(--accent-text); }
 .hero p { margin-top: 10px; max-width: 560px; color: var(--muted); font-size: 15px; }
 .hero-stats { display: flex; gap: 26px; }
 .hero-stats div { display: flex; flex-direction: column; gap: 2px; }
@@ -214,7 +218,7 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 .card-name { min-width: 0; flex: 1; }
 .card-name b { display: block; font: 600 15.5px/1.25 var(--f-display); letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-name span { font-size: 12.5px; color: var(--muted); }
-.card-name span em { font-style: normal; color: color-mix(in oklab, var(--pair) 80%, var(--ink)); font-weight: 600; }
+.card-name span em { font-style: normal; color: var(--pair-ink); font-weight: 600; }
 .card-age { align-self: flex-start; font: 500 11.5px var(--f-mono); color: var(--faint); }
 .card-mid { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
 .card-mid .mc > span { display: block; font-size: 11.5px; color: var(--muted); }
@@ -244,7 +248,7 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 .coin-title { min-width: 0; flex: 1; }
 .coin-title h1 { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font: 700 30px/1.1 var(--f-display); letter-spacing: -.03em; }
 .coin-title h1 .pairing { font: 600 18px var(--f-mono); color: var(--muted); letter-spacing: -.02em; }
-.coin-title h1 .pairing em { font-style: normal; color: color-mix(in oklab, var(--pair) 85%, var(--ink)); }
+.coin-title h1 .pairing em { font-style: normal; color: var(--pair-ink); }
 .coin-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; font-size: 13px; color: var(--muted); }
 .copy { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 7px; background: var(--bg-2); font: 500 12px var(--f-mono); color: var(--ink-2); }
 .copy:hover { background: var(--hover); } .copy svg { width: 13px; height: 13px; }
@@ -430,13 +434,13 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 .nav .launch-cta.on svg { color: currentColor; }
 
 .notice { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; padding: 12px 16px; border-radius: 12px; background: var(--pair-soft); color: var(--ink); font-size: 13.5px; line-height: 1.5; }
-.notice > svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--pair); }
+.notice > svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--pair-ink); }
 .notice span { flex: 1; min-width: 0; } .notice b { font-weight: 600; }
 .notice a { flex-shrink: 0; height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; background: var(--ink); color: var(--bg); font-size: 12.5px; font-weight: 600; }
 @media (max-width: 640px) { .notice { flex-wrap: wrap; align-items: flex-start; } .notice > svg { margin-top: 2px; } .notice span { flex: 1 1 calc(100% - 32px); } .notice a { margin-left: 30px; } }
 
 /* depth on dark: cards and panels carry a faint top light */
-.card, .panel, .statline { background-image: linear-gradient(180deg, color-mix(in oklab, var(--ink) 2.5%, transparent), transparent 60%); }
+:root[data-theme="dark"] .card, :root[data-theme="dark"] .panel, :root[data-theme="dark"] .statline { background-image: linear-gradient(180deg, color-mix(in oklab, var(--ink) 2.5%, transparent), transparent 60%); }
 .card:hover { border-color: color-mix(in oklab, var(--accent) 45%, var(--line-2)); }
 .side { background: color-mix(in oklab, var(--bg) 92%, var(--surface)); }
 .tag.sample { background: var(--accent-soft); color: var(--accent); }
@@ -448,3 +452,17 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 .tl { line-height: 1; }
 .stack .tl, .pg .pr.tl, .chip .tl, .pairs-nav .tl { font-size: 6.5px; letter-spacing: -.04em; }
 .card-name span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* buttons: black, with the orange hard shadow underneath (a button and its pair) */
+.btn-primary, .nav .launch-cta, .nav .launch-cta.on { background: var(--ink); color: var(--surface); border: 1.5px solid var(--ink); border-radius: 10px; box-shadow: 3px 3px 0 var(--accent); transition: transform .08s, box-shadow .08s, background .12s; }
+.btn-primary:hover, .nav .launch-cta:hover { background: var(--ink); color: var(--surface); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--accent); }
+.btn-primary:active, .nav .launch-cta:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--accent); }
+.btn-primary[disabled] { box-shadow: 3px 3px 0 var(--line-2); }
+.btn-up, .btn-down { border: 1.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+.btn-up:active, .btn-down:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.btn-up[disabled], .btn-down[disabled] { opacity: .55; }
+.chip.on { box-shadow: 2px 2px 0 var(--accent); }
+.trade .seg button.on.buy, .trade .seg button.on.sell { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.switch[aria-checked="true"] { background: var(--accent); }
+.nav a.on svg { color: var(--accent); }
+.dexi { display: inline-block; width: 13px; height: 13px; border-radius: 50%; vertical-align: -2px; margin-left: 5px; }

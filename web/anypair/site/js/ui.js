@@ -81,7 +81,7 @@
   // ------------------------------------------------------------ theme
   const THEME_KEY = 'ap:theme';
   function applyTheme(t) { if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; }
-  function currentTheme() { return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'; }
+  function currentTheme() { return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'; }
   function toggleTheme() { const next = currentTheme() === 'dark' ? 'light' : 'dark'; applyTheme(next); try { localStorage.setItem(THEME_KEY, next); } catch {} paintThemeBtn(); window.apWallet && apWallet.setTheme && apWallet.setTheme(next); window.dispatchEvent(new CustomEvent('ap:theme')); }
   function paintThemeBtn() { $$('[data-theme-btn]').forEach(b => { b.innerHTML = ic(currentTheme() === 'dark' ? 'sun' : 'moon'); b.setAttribute('aria-label', currentTheme() === 'dark' ? 'Light theme' : 'Dark theme'); }); }
 

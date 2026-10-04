@@ -29,13 +29,13 @@
   function fmtPrice(v) { if (v == null || isNaN(v)) return ''; const sign = v < 0 ? '-' : ''; const a = Math.abs(v); if (a === 0) return '0';
     if (a >= 1000) return sign + a.toLocaleString('en-US', { maximumFractionDigits: 2 }); if (a >= 1) return sign + String(+a.toFixed(4)); if (a >= 0.001) return sign + String(+a.toFixed(8));
     const e = Math.floor(Math.log10(a)); const zeros = -e - 1; const d = String(Math.round(a * Math.pow(10, -e + 3))); return sign + '0.0' + String(zeros).replace(/\d/g, c => SUBS[c]) + d.replace(/0+$/, ''); }
-  function palette() { const light = document.documentElement.dataset.theme === 'light';
-    return light ? { bg: '#ffffff', grid: '#eef1f7', text: '#5f6a85', up: '#04a777', down: '#e1324f', accent: '#0052ff', ink: '#0a1022' } : { bg: '#0f1526', grid: '#182035', text: '#8a94b0', up: '#1fd396', down: '#ff4f6a', accent: '#3a6bff', ink: '#eef2fa' }; }
+  function palette() { const light = document.documentElement.dataset.theme !== 'dark';
+    return light ? { bg: '#ffffff', grid: '#f1f1ed', text: '#66686f', up: '#039e74', down: '#e0324e', accent: '#d9430c', ink: '#0d0e12' } : { bg: '#18181b', grid: '#222226', text: '#918f96', up: '#1fd396', down: '#ff4f6a', accent: '#ff7f4f', ink: '#f2f1ee' }; }
   function overrides(c) { return { 'paneProperties.background': c.bg, 'paneProperties.backgroundType': 'solid', 'paneProperties.vertGridProperties.color': c.grid, 'paneProperties.horzGridProperties.color': c.grid, 'paneProperties.legendProperties.showSeriesTitle': true, 'symbolWatermarkProperties.transparency': 100, 'scalesProperties.textColor': c.text, 'scalesProperties.lineColor': c.grid, 'scalesProperties.backgroundColor': c.bg,
     'mainSeriesProperties.candleStyle.upColor': c.up, 'mainSeriesProperties.candleStyle.downColor': c.down, 'mainSeriesProperties.candleStyle.borderUpColor': c.up, 'mainSeriesProperties.candleStyle.borderDownColor': c.down, 'mainSeriesProperties.candleStyle.wickUpColor': c.up, 'mainSeriesProperties.candleStyle.wickDownColor': c.down }; }
   let widget = null, box = null;
   function build() {
-    const c = palette(); const mobile = innerWidth < 768; const light = document.documentElement.dataset.theme === 'light';
+    const c = palette(); const mobile = innerWidth < 768; const light = document.documentElement.dataset.theme !== 'dark';
     const w = widget = new TradingView.widget({ symbol: symName(), interval: '5', container: box, datafeed, library_path: '/charting_library/', locale: 'en', timezone: 'Etc/UTC', theme: light ? 'light' : 'dark', autosize: true, fullscreen: false, header_widget_buttons_mode: 'fullsize',
       custom_css_url: 'tv-theme.css', custom_font_family: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       loading_screen: { backgroundColor: c.bg, foregroundColor: c.accent },

@@ -32,8 +32,8 @@ if (CFG.reownProjectId && !CFG.injectedOnly) {
   const modal = createAppKit({
     adapters: [new EthersAdapter()], networks: [base], defaultNetwork: base, projectId: CFG.reownProjectId,
     metadata: { name: 'Anypair', description: 'Launch a coin against any token on Base', url: location.origin, icons: [location.origin + '/img/icon-512.png'] },
-    themeMode: document.documentElement.dataset.theme === 'light' ? 'light' : 'dark',
-    themeVariables: { '--w3m-accent': '#3a6bff', '--w3m-font-family': "'IBM Plex Sans', system-ui, sans-serif", '--w3m-border-radius-master': '3px', '--w3m-z-index': 2000 },
+    themeMode: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light',
+    themeVariables: { '--w3m-accent': '#ff5a1f', '--w3m-font-family': "'IBM Plex Sans', system-ui, sans-serif", '--w3m-border-radius-master': '3px', '--w3m-z-index': 2000 },
     features: { analytics: false, email: false, socials: false, swaps: false, onramp: false, send: false, history: false }, allWallets: 'SHOW', enableWalletGuide: false,
   });
   api.kind = 'reown'; api.ready = true;
