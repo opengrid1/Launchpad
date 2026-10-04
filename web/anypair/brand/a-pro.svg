@@ -23,6 +23,9 @@
     <rect x="-3" y="-10" width="30" height="20" rx="10" stroke="#0a1b4d" stroke-width="12.5"/>
     <rect x="-27" y="-10" width="30" height="20" rx="10" stroke="url(#gw)" stroke-width="5.5"/>
     <rect x="-3" y="-10" width="30" height="20" rx="10" stroke="url(#gb)" stroke-width="5.5"/>
+    <!-- chain: the white link passes over the blue one at the top crossing (and under it at the bottom) -->
+    <path d="M-3.58 -9.4A10 10 0 0 1 2.4 -3.42" stroke="#0a1b4d" stroke-width="12.5" stroke-linecap="butt"/>
+    <path d="M-3.58 -9.4A10 10 0 0 1 2.4 -3.42" stroke="#f1f6ff" stroke-width="5.5" stroke-linecap="butt"/>
     <!-- glints -->
     <path d="M-20 -10h7" stroke="#ffffff" stroke-width="2" stroke-opacity=".9"/>
     <path d="M6 -10h6" stroke="#cfe0ff" stroke-width="2" stroke-opacity=".9"/>
