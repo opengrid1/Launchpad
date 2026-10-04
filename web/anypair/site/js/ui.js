@@ -47,7 +47,7 @@
   const delta = v => `<span class="delta ${!isFinite(v) || Math.abs(v) < .05 ? 'flat' : v > 0 ? 'up' : 'down'}">${pct(v)}</span>`;
   const ago = ts => { const s = Math.max(1, (window.AP ? AP.nowTs() : Date.now() / 1000) - ts); if (s < 60) return Math.floor(s) + 's'; if (s < 3600) return Math.floor(s / 60) + 'm'; if (s < 86400) return Math.floor(s / 3600) + 'h'; return Math.floor(s / 86400) + 'd'; };
   const short = a => a ? a.slice(0, 6) + '…' + a.slice(-4) : '';
-  const letter = (sym, cls, style) => `<span class="tl ${cls || ''}" style="${style || ''}">${esc((sym || '?').replace(/^\$/, '').slice(0, 3).toUpperCase())}</span>`;
+  const letter = (sym, cls, style) => `<span class="tl ${cls || ''}" style="${style || ''}">${esc((sym || '?').replace(/^\$/, '').slice(0, /pr|stack/.test(cls || '') ? 2 : 3).toUpperCase())}</span>`;
   const tokImg = (t, cls) => t && t.logo ? `<img class="${cls || ''}" src="${esc(t.logo)}" alt="" loading="lazy" onerror="this.outerHTML='${letter(t.symbol, cls).replace(/'/g, '&#39;').replace(/"/g, '&quot;')}'">` : letter(t && t.symbol, cls);
   const coinImg = (x, cls) => x.img ? `<img class="av ${cls || ''}" src="${esc(x.img)}" alt="">` : `<span class="av ${cls || ''}" style="display:grid;place-items:center;background:${hue(x.addr)};color:#fff;font:700 15px var(--f-display)">${esc(x.symbol.slice(0, 2).toUpperCase())}</span>`;
   const pairGlyph = (x, size) => `<span class="pg ${size || ''}" title="${esc(x.symbol)} / ${esc(x.pairSym)}">${coinImg(x)}${tokImg({ symbol: x.pairSym, logo: x.pairLogo }, 'pr')}</span>`;

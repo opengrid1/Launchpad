@@ -443,3 +443,8 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 .coin-price b { color: var(--ink); }
 .chart { height: 520px; }
 @media (max-width: 720px) { .chart { height: 420px; } }
+
+.toolbar .chips > * { flex-shrink: 0; }
+.tl { line-height: 1; }
+.stack .tl, .pg .pr.tl, .chip .tl, .pairs-nav .tl { font-size: 6.5px; letter-spacing: -.04em; }
+.card-name span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

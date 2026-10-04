@@ -22,6 +22,8 @@ const SUPPLY = 1e9;
 const BPS = 10000n;
 const Q96 = 1n << 96n;
 const BLOCK_SECS = 2;
+// where a coin's pair trades: ETH pairs and Uniswap pools count as Uniswap (the coin's own pool is Uniswap V4)
+const venueOf = dex => ({ 2: 'pancakeswap', 3: 'aerodrome', 4: 'aerodrome' }[dex] || 'uniswap');
 export const DEX_NAMES = { 1: 'Uniswap V3', 2: 'PancakeSwap V3', 3: 'Aerodrome Slipstream', 4: 'Aerodrome', 5: 'Uniswap V4' };
 const KEY_T = 'tuple(address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks)';
 const HOP_T = `tuple(uint8 dex,address pool,${KEY_T} key)[]`;
@@ -225,8 +227,9 @@ function coinStats(s, st, pUsd, list) {
 }
 async function loadOne(a, list) {
   const s = await loadStatic(a);
-  const [hidden, st, pUsd, thr, tcf] = await Promise.all([factory.hidden(a), poolState(s.poolId), usdOf(s.pair), coinOf(a).totalHolderRewards(), coinOf(a).totalCreatorFees()]);
-  return { ...s, hidden, sqrtPriceX96: st.sqrtPriceX96.toString(), ...coinStats(s, st, pUsd, list), totalHolderRewards: Number(thr) / 10 ** s.pairDec, totalCreatorFees: Number(tcf) / 10 ** s.pairDec };
+  const [hidden, st, pUsd, thr, tcf, hops] = await Promise.all([factory.hidden(a), poolState(s.poolId), usdOf(s.pair), coinOf(a).totalHolderRewards(), coinOf(a).totalCreatorFees(), hopsFor(s.pair).catch(() => [])]);
+  const last = hops[hops.length - 1];
+  return { ...s, hidden, dex: last ? last.dex : 0, venue: venueOf(s.pair === WETH ? 0 : last ? last.dex : 0), sqrtPriceX96: st.sqrtPriceX96.toString(), ...coinStats(s, st, pUsd, list), totalHolderRewards: Number(thr) / 10 ** s.pairDec, totalCreatorFees: Number(tcf) / 10 ** s.pairDec };
 }
 async function loadAll() {
   await headBlock(true);
@@ -425,7 +428,7 @@ api.demo = DEMO;
 if (DEMO) api.ready = fetch('/demo.json').then(r => r.json()).then(d => {
   // keep the sample recent: shift its clock so the last snapshot moment is now
   const shift = Math.floor(Date.now() / 1000) - d.head; head = { n: 0, ts: Math.floor(Date.now() / 1000), at: Date.now() };
-  for (const x of d.tokens) { x.createdAt += shift; x.lastTrade += shift; x.demo = true; statics[x.addr] = x; }
+  for (const x of d.tokens) { if (!x.venue) x.venue = venueOf(x.dex || 0); x.createdAt += shift; x.lastTrade += shift; x.demo = true; statics[x.addr] = x; }
   for (const t of d.trades) t.ts += shift;
   demo = d; trades = { last: 0, items: d.trades }; tokens = d.tokens; byAddr = Object.fromEntries(tokens.map(x => [x.addr, x]));
   window.dispatchEvent(new CustomEvent('ap:ready')); return tokens;
