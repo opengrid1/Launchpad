@@ -72,7 +72,7 @@ def shell(meta, body):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{title}</title>
-<meta name="description" content="{meta.get('desc', 'Launch a coin on Base paired with any token. Holders earn a share of every trade, paid in the tokens the creator picks.')}">
+<meta name="description" content="{meta.get('desc', 'Launch a coin on Base paired with any asset: ETH, stablecoins, BTC, real-world assets or any token with a real pool. Holders earn from every trade.')}">
 <meta name="theme-color" content="#f4f4f1">
 <meta property="og:title" content="{title}">
 <meta property="og:image" content="{SITE_URL}/img/og.png">
