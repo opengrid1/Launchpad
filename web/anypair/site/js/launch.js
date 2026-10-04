@@ -23,7 +23,7 @@
       const q = inp.value.trim().toLowerCase();
       const hits = known.filter(t => !q || t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q) || t.address.toLowerCase() === q);
       let extra = '';
-      if (AP.isAddress(q) && !hits.length && !exclude.includes(q)) { extra = `<div class="opt-group">Token at this address</div><button class="opt" data-a="${q}">${U.letter('?')}<span class="t"><b>Looking up…</b><span class="mono">${U.short(q)}</span></span></button>`;
+      if (AP.isAddress(q) && !hits.length && !exclude.includes(q)) { extra = `<div class="opt-group">Token at this address</div><button class="opt" data-a="${q}">${U.tokImg({})}<span class="t"><b>Looking up…</b><span class="mono">${U.short(q)}</span></span></button>`;
         AP.tokenInfo(q).then(i => { const b = out.querySelector(`[data-a="${q}"]`); if (b) b.innerHTML = `${U.tokImg(i)}<span class="t"><b>${U.esc(i.symbol)}</b><span>${U.esc(i.name)} · <span class="mono">${U.short(q)}</span></span></span><span class="r">Check pools</span>`; }).catch(() => {}); }
       out.innerHTML = extra + (hits.length ? `<div class="opt-group">${q ? 'Matches' : 'Popular on Base'}</div>` : '') + hits.map(t => `<button class="opt" data-a="${t.address.toLowerCase()}">${U.tokImg(t)}<span class="t"><b>${U.esc(t.symbol)}</b><span>${U.esc(t.name)}</span></span><span class="r">${used[t.address.toLowerCase()] ? `<b>${used[t.address.toLowerCase()]}</b>coins` : ''}</span></button>`).join('')
         + (!hits.length && !extra ? '<div class="empty" style="padding:30px"><p>Paste the token\'s contract address to use any token on Base.</p></div>' : '');
@@ -55,12 +55,12 @@
   function values() { return { name: $('#name').value.trim(), sym: $('#sym').value.trim().replace(/^\$/, '').toUpperCase(), desc: $('#desc').value.trim(), x: $('#lx').value.trim(), web: $('#lw').value.trim(), tg: $('#lt').value.trim(), dev: parseFloat($('#dev').value) || 0 }; }
   function paint() {
     const v = values(); const p = f.pair;
-    $('#pairBtn').innerHTML = p && p.info ? `${U.tokImg(p.info)}<span class="t"><b>${U.esc(p.info.symbol)}</b><span>${U.esc(p.info.name)} · <span class="mono">${U.short(p.addr)}</span></span></span>${U.ic('down')}` : `${U.letter('?')}<span class="t"><b>Choose a token</b><span>ETH, USDC, cbBTC, AERO or paste any address</span></span>${U.ic('down')}`;
+    $('#pairBtn').innerHTML = p && p.info ? `${U.tokImg(p.info)}<span class="t"><b>${U.esc(p.info.symbol)}</b><span>${U.esc(p.info.name)} · <span class="mono">${U.short(p.addr)}</span></span></span>${U.ic('down')}` : `${U.tokImg({})}<span class="t"><b>Choose a token</b><span>ETH, USDC, cbBTC, AERO or paste any address</span></span>${U.ic('down')}`;
     $('#pairStatus').innerHTML = statusHtml(p, true);
     $('#rw').setAttribute('aria-checked', String(f.rewards)); $('#basketBox').classList.toggle('hidden', !f.rewards);
     $('#rwNote').textContent = f.rewards ? 'You keep 0.7%, holders share 0.5%, the platform takes 0.8%.' : 'Holders earn nothing; you keep 1.2% and the platform takes 0.8%.';
     const pairChip = p && p.info ? `<span class="chip" title="Always available">${U.tokImg(p.info)}${U.esc(p.info.symbol)} <span class="faint">pair</span></span>` : '';
-    $('#basket').innerHTML = pairChip + f.basket.map((b, i) => `<span class="chip" style="${b.state === 'bad' ? 'border-color:var(--down)' : ''}">${b.info ? U.tokImg(b.info) : U.letter('…')}${U.esc(b.info ? b.info.symbol : '…')}${b.state === 'checking' ? ' <span class="faint">checking</span>' : ''}<button type="button" class="x" data-rm="${i}" aria-label="Remove">${U.ic('x')}</button></span>`).join('')
+    $('#basket').innerHTML = pairChip + f.basket.map((b, i) => `<span class="chip" style="${b.state === 'bad' ? 'border-color:var(--down)' : ''}">${U.tokImg(b.info || {})}${U.esc(b.info ? b.info.symbol : '…')}${b.state === 'checking' ? ' <span class="faint">checking</span>' : ''}<button type="button" class="x" data-rm="${i}" aria-label="Remove">${U.ic('x')}</button></span>`).join('')
       + (f.basket.length < 4 ? `<button type="button" class="chip" id="addB">${U.ic('plus')}Add a token</button>` : '');
     $$('#basket .x svg, #addB svg').forEach(s => { s.style.width = '14px'; s.style.height = '14px'; });
     const bad = f.basket.filter(b => b.state === 'bad'); if (bad.length) $('#basket').insertAdjacentHTML('afterend', '');

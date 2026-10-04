@@ -48,8 +48,10 @@
   const ago = ts => { const s = Math.max(1, (window.AP ? AP.nowTs() : Date.now() / 1000) - ts); if (s < 60) return Math.floor(s) + 's'; if (s < 3600) return Math.floor(s / 60) + 'm'; if (s < 86400) return Math.floor(s / 3600) + 'h'; return Math.floor(s / 86400) + 'd'; };
   const short = a => a ? a.slice(0, 6) + '…' + a.slice(-4) : '';
   const letter = (sym, cls, style) => `<span class="tl ${cls || ''}" style="${style || ''}">${esc((sym || '?').replace(/^\$/, '').slice(0, /pr|stack/.test(cls || '') ? 2 : 3).toUpperCase())}</span>`;
-  const tokImg = (t, cls) => t && t.logo ? `<img class="${cls || ''}" src="${esc(t.logo)}" alt="" loading="lazy" onerror="this.outerHTML='${letter(t.symbol, cls).replace(/'/g, '&#39;').replace(/"/g, '&quot;')}'">` : letter(t && t.symbol, cls);
-  const coinImg = (x, cls) => x.img ? `<img class="av ${cls || ''}" src="${esc(x.img)}" alt="">` : `<span class="av ${cls || ''}" style="display:grid;place-items:center;background:${hue(x.addr)};color:#fff;font:700 15px var(--f-display)">${esc(x.symbol.slice(0, 2).toUpperCase())}</span>`;
+  // tokens and coins without their own logo get the default one
+  const DEFAULT_LOGO = '/img/token-default.webp';
+  const tokImg = (t, cls) => `<img class="${cls || ''}" src="${esc(t && t.logo || DEFAULT_LOGO)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${DEFAULT_LOGO}'">`;
+  const coinImg = (x, cls) => `<img class="av ${cls || ''}" src="${esc(x.img || DEFAULT_LOGO)}" alt="" onerror="this.onerror=null;this.src='${DEFAULT_LOGO}'">`;
   const pairGlyph = (x, size) => `<span class="pg ${size || ''}" title="${esc(x.symbol)} / ${esc(x.pairSym)}">${coinImg(x)}${tokImg({ symbol: x.pairSym, logo: x.pairLogo }, 'pr')}</span>`;
   const hue = a => { let h = 0; for (const c of a || 'x') h = (h * 31 + c.charCodeAt(0)) % 360; return `hsl(${h} 62% 46%)`; };
   const ident = a => { const h1 = hue(a), h2 = hue((a || '').split('').reverse().join('')); return `linear-gradient(135deg, ${h1}, ${h2})`; };
@@ -135,5 +137,5 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
-  window.UI = { $, $$, esc, ic, LOGO, usd, num, pct, delta, ago, short, letter, tokImg, coinImg, pairGlyph, hue, ident, spark, coinHref, txLink, addrLink, isAdmin, toast, dialog, menu, copy, currentTheme, openSearch };
+  window.UI = { $, $$, esc, ic, LOGO, DEFAULT_LOGO, usd, num, pct, delta, ago, short, letter, tokImg, coinImg, pairGlyph, hue, ident, spark, coinHref, txLink, addrLink, isAdmin, toast, dialog, menu, copy, currentTheme, openSearch };
 })();

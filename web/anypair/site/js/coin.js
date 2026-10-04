@@ -49,7 +49,7 @@
   // ------------------------------------------------------------ trade
   function tradePanel() {
     const x = st.x; const { esc, tokImg, coinImg, ic } = U; const buy = st.mode === 'buy';
-    const unit = buy ? `<span class="unit">${tokImg({ symbol: 'ETH', logo: '/img/tokens/eth.webp' })}ETH</span>` : `<span class="unit">${x.img ? `<img src="${esc(x.img)}" alt="">` : U.letter(x.symbol)}${esc(x.symbol)}</span>`;
+    const unit = buy ? `<span class="unit">${tokImg({ symbol: 'ETH', logo: '/img/tokens/eth.webp' })}ETH</span>` : `<span class="unit"><img src="${esc(x.img || U.DEFAULT_LOGO)}" alt="">${esc(x.symbol)}</span>`;
     const quick = buy ? ['0.01', '0.05', '0.1', '0.5'].map(v => `<button data-q="${v}">${v}</button>`).join('') : ['25', '50', '75', '100'].map(v => `<button data-p="${v}">${v === '100' ? 'Max' : v + '%'}</button>`).join('');
     $('#trade').innerHTML = `<div class="seg"><button class="buy ${buy ? 'on' : ''}" data-mode="buy">Buy</button><button class="sell ${!buy ? 'on' : ''}" data-mode="sell">Sell</button></div>
       <div class="amount"><div class="amount-top"><span>${buy ? 'You pay' : 'You sell'}</span><span id="bal">Balance —</span></div><div class="amount-row"><input id="amt" inputmode="decimal" placeholder="0.0" autocomplete="off" aria-label="Amount">${unit}</div></div>

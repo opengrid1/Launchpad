@@ -47,7 +47,7 @@
   async function tape() {
     const { esc, usd, $ } = U();
     try { const t = await AP.trades(null, 24); if (!t.length) { $('#tape').classList.add('hidden'); return; }
-      const item = x => { const c = AP.token(x.token); if (!c) return ''; return `<a href="/coin/${c.addr}">${c.img ? `<img src="${esc(c.img)}" alt="">` : ''}<span class="${x.buy ? 'up' : 'down'}">${x.buy ? 'Buy' : 'Sell'}</span><b>${esc(c.symbol)}</b><span class="num">${usd(x.usd)}</span><span class="faint">in ${esc(c.pairSym)}</span></a>`; };
+      const item = x => { const c = AP.token(x.token); if (!c) return ''; return `<a href="/coin/${c.addr}"><img src="${esc(c.img || U().DEFAULT_LOGO)}" alt=""><span class="${x.buy ? 'up' : 'down'}">${x.buy ? 'Buy' : 'Sell'}</span><b>${esc(c.symbol)}</b><span class="num">${usd(x.usd)}</span><span class="faint">in ${esc(c.pairSym)}</span></a>`; };
       const html = t.map(item).join(''); $('#tapeTrack').innerHTML = html + html; } catch (e) { console.warn(e); }
   }
   function wire() {
