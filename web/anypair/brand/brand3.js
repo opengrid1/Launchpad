@@ -12,8 +12,9 @@ const pages = {
   'icon-192.png': [192, 192, `<svg width="192" height="192"><rect width="192" height="192" rx="42" fill="#0052ff"/>${mark(170, 11, 8)}</svg>`, true],
   'apple-touch-icon.png': [180, 180, `<svg width="180" height="180"><rect width="180" height="180" fill="#0052ff"/>${mark(160, 10, 8)}</svg>`],
   'favicon-64.png': [64, 64, mark(64), true],
-  'og.png': [1200, 630, `<svg width="1200" height="630"><rect width="1200" height="630" fill="#f4f4f1"/><circle cx="1090" cy="110" r="12" fill="#0052ff"/><circle cx="1040" cy="530" r="18" fill="#0052ff"/><circle cx="150" cy="520" r="7" fill="#0052ff"/>${mark(360, 150, 130)}
-     <text x="540" y="360" font-family="Bricolage Grotesque" font-weight="800" font-size="150" fill="#0a0b0d" letter-spacing="-6">any<tspan fill="#0052ff">pair</tspan></text></svg>`],
+  'og.png': [1200, 630, `<svg width="1200" height="630"><defs><radialGradient id="ob" cx=".5" cy=".45" r=".8"><stop offset="0" stop-color="#2a74ff"/><stop offset="1" stop-color="#0040d4"/></radialGradient></defs><rect width="1200" height="630" fill="url(#ob)"/>
+     ${[[110, 100, 9], [210, 520, 14], [1090, 110, 11], [1010, 540, 7], [600, 60, 5], [860, 590, 8], [1150, 360, 5]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#ffffff" opacity=".8"/>`).join('')}
+     ${mark(360, 150, 130)}<text x="540" y="360" font-family="Bricolage Grotesque" font-weight="800" font-size="150" fill="#ffffff" letter-spacing="-6">any<tspan fill="#0a1b4d">pair</tspan></text></svg>`],
   'banner-x.png': [1500, 500, `<svg width="1500" height="500"><defs><radialGradient id="bb" cx=".5" cy=".45" r=".8"><stop offset="0" stop-color="#2a74ff"/><stop offset="1" stop-color="#0040d4"/></radialGradient></defs><rect width="1500" height="500" fill="url(#bb)"/>
      ${[[120, 90, 8], [260, 400, 14], [1380, 120, 10], [1250, 420, 6], [700, 60, 5], [980, 450, 9], [1440, 300, 5]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#ffffff" opacity=".8"/>`).join('')}
      ${mark(300, 470, 95)}<text x="790" y="300" font-family="Bricolage Grotesque" font-weight="800" font-size="130" fill="#ffffff" letter-spacing="-5">any<tspan fill="#0a1b4d">pair</tspan></text></svg>`],
