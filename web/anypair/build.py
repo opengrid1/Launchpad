@@ -10,7 +10,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'fork'
-DESC = 'Launch a coin on Base paired with any asset. Holders earn from every trade, paid in any assets the creator picks: ETH, stablecoins, BTC, real-world assets or any token.'
+DESC = 'Launch a coin on Base paired with any asset from any DEX: Uniswap, Aerodrome or PancakeSwap. Holders earn from every trade, paid in any assets the creator picks.'
 SITE_URL = os.environ.get('SITE_URL', 'https://anypair-tau.vercel.app').rstrip('/')
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap'
