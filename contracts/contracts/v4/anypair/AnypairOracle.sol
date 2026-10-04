@@ -279,7 +279,7 @@ contract AnypairOracle {
     }
 
     /// @notice Bring a V4 source's slow price toward the pool, then price.
-    ///         Anyone (the ledger calls it on every trade).
+    ///         Anyone (the router calls it on every buy and sell).
     function poke(address token) public returns (uint256) {
         Source storage s = sources[token];
         if (s.dex == UNI_V4) _step(s);

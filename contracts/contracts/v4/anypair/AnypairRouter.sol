@@ -113,6 +113,7 @@ contract AnypairRouter is IUnlockCallback, ReentrancyGuard {
     function buy(address coin, bytes calldata route, uint256 minCoinOut) external payable nonReentrant returns (uint256 coinOut) {
         if (msg.value == 0) revert ZeroAmount();
         address pair = _pairOf(coin);
+        _poke(pair);
         uint256 pairIn = _ethToPair(pair, msg.value, route);
         coinOut = _coinSwap(coin, pair, pairIn);
         if (coinOut < minCoinOut) revert Slippage();
@@ -125,6 +126,7 @@ contract AnypairRouter is IUnlockCallback, ReentrancyGuard {
     function sell(address coin, uint256 amountIn, bytes calldata route, uint256 minEthOut) external nonReentrant returns (uint256 ethOut) {
         if (amountIn == 0) revert ZeroAmount();
         address pair = _pairOf(coin);
+        _poke(pair);
         IERC20(coin).safeTransferFrom(msg.sender, address(this), amountIn);
         uint256 pairOut = _coinSwap(coin, coin, amountIn);
         ethOut = _pairToWeth(pair, pairOut, route);
@@ -325,14 +327,18 @@ contract AnypairRouter is IUnlockCallback, ReentrancyGuard {
     // V4 swap plumbing (any pool, via PoolManager.unlock)
     // ---------------------------------------------------------------------
 
+    /// @dev Step the oracle's slow price for a Uniswap V4-priced pair; never fails a trade.
+    function _poke(address pair) internal {
+        if (pair == weth) return;
+        try factory.oracle().poke(pair) {} catch {}
+    }
+
     function _pairOf(address coin) internal view returns (address pair) {
         (, pair,,,) = factory.listings(coin);
         if (pair == address(0)) revert NotListed();
     }
 
     /// @dev Swap through the coin's own pool: `currencyIn` is the coin (sell) or its pair (buy).
-    ///      The caller is named in hook data so the ledger credits them even
-    ///      when they trade from a contract wallet.
     function _coinSwap(address coin, address currencyIn, uint256 amountIn) internal returns (uint256) {
         PoolKey memory key = factory.poolKeyOf(coin);
         return _v4SwapFor(key, currencyIn == Currency.unwrap(key.currency0), amountIn, msg.sender);

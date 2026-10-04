@@ -83,14 +83,9 @@ async function deployAll(admin: any) {
   const fAddr = await factory.getAddress();
   await (await td.setFactory(fAddr)).wait();
   await (await hook.setFactory(fAddr)).wait();
-  const ledger = await (await ethers.getContractFactory("AnypairLedger", deployer)).deploy(hookAddr, WETH, await oracle.getAddress());
-  await (await hook.setLedger(await ledger.getAddress())).wait();
   const router = await (await ethers.getContractFactory("AnypairRouter", deployer)).deploy(POOL_MANAGER, fAddr, WETH);
   await (await factory.setConverter(await router.getAddress())).wait();
-  const payout = await (await ethers.getContractFactory("AnypairPayout", deployer)).deploy(WETH, admin.address, await ledger.getAddress());
-  const treasury = await (await ethers.getContractFactory("AnypairTreasury", deployer)).deploy(WETH, admin.address, await payout.getAddress());
-  await (await factory.connect(admin).setFeeRecipient(await treasury.getAddress())).wait();
-  return { hook, oracle, factory, router, ledger, payout, treasury, deployer };
+  return { hook, oracle, factory, router, deployer };
 }
 
 type LaunchOpts = { ethIn?: bigint; basket?: string[]; holderRewards?: boolean; pair?: string; sources?: any[] };
@@ -104,8 +99,6 @@ async function launch(factory: any, creator: any, o: LaunchOpts = {}) {
   )).wait();
   return ethers.getContractAt("AnypairToken", await factory.allTokens(n));
 }
-// USD (8 dp) for an amount of pair base units at the oracle's 18-dp price per 1e18 units
-const usd8 = (amount: bigint, px18: bigint) => (amount * px18) / 10n ** 28n;
 const usdWhole = async (oracle: any, t: string) => {
   const dec = t === WETH ? 18n : BigInt(await (await ethers.getContractAt(ERC20, t)).decimals());
   return Number(((await oracle.price(t)) * 10n ** dec) / 10n ** 18n) / 1e18; // USD per whole token
@@ -161,7 +154,7 @@ describe("Anypair on Base (mainnet fork)", function () {
 
   it("USDC pair with a 4-DEX basket (cbBTC on Uniswap, AERO on Aerodrome, BRETT on Slipstream, CAKE on PancakeSwap): fees in USDC; claim USDC, ETH or the basket", async () => {
     const [admin, creator, trader] = await ethers.getSigners();
-    const { factory, router, ledger, oracle, treasury } = await deployAll(admin);
+    const { factory, router } = await deployAll(admin);
     const usdc = await ethers.getContractAt(ERC20, USDC);
     const basket = [CBBTC, AERO, BRETT, CAKE];
     const coin = await launch(factory, creator, { ethIn: E("0.01"), pair: USDC, basket });
@@ -172,13 +165,9 @@ describe("Anypair on Base (mainnet fork)", function () {
     await pastSnipe();
 
     const r = await routeFor(USDC);
-    const epoch = await ledger.currentEpoch();
     await (await router.connect(trader).buy(coinAddr, r, 0, { value: E("0.2") })).wait();
     const got = await coin.balanceOf(trader.address);
-    const pos = await ledger.positions(trader.address, coinAddr);
-    expect(pos.units).to.eq(got);
-    const st = await ledger.stats(epoch, trader.address);
-    expect(st.volume).to.eq(usd8(pos.basis, await oracle.price(USDC)));
+    expect(got).to.be.gt(0n);
     await (await coin.connect(trader).approve(await router.getAddress(), ethers.MaxUint256)).wait();
     await (await router.connect(trader).sell(coinAddr, got / 3n, r, 0)).wait();
 
@@ -189,9 +178,9 @@ describe("Anypair on Base (mainnet fork)", function () {
     expect((await usdc.balanceOf(trader.address)) - u0).to.eq(pending);
     await (await coin.payCreator()).wait();
     const p = await coin.totalPlatformFees();
+    const a0 = await usdc.balanceOf(admin.address);
     await (await factory.pushPlatformFees([coinAddr])).wait();
-    await (await treasury.sweep(USDC)).wait();
-    expect(await usdc.balanceOf(admin.address)).to.eq(p);
+    expect((await usdc.balanceOf(admin.address)) - a0).to.eq(p); // platform fees go straight to the admin wallet
 
     await (await router.connect(trader).buy(coinAddr, r, 0, { value: E("0.3") })).wait();
     await (await router.connect(trader).sell(coinAddr, (await coin.balanceOf(trader.address)) / 3n, r, 0)).wait();
@@ -212,7 +201,7 @@ describe("Anypair on Base (mainnet fork)", function () {
 
   it("Uniswap V4 pair (native-ETH pool): register in the launch, ETH first buy, trade, claim; launches wait while the pool's price runs away from the slow price", async () => {
     const [admin, creator, trader, whale] = await ethers.getSigners();
-    const { factory, router, ledger, oracle } = await deployAll(admin);
+    const { factory, router, oracle } = await deployAll(admin);
     const bloob = await ethers.getContractAt(ERC20, BLOOB);
     const coin = await launch(factory, creator, { ethIn: E("0.01"), pair: BLOOB, basket: [AERO] });
     const coinAddr = await coin.getAddress();
@@ -221,9 +210,7 @@ describe("Anypair on Base (mainnet fork)", function () {
     expect(await coin.balanceOf(creator.address)).to.be.gt(0n);
     await pastSnipe();
     const r = await routeFor(BLOOB);
-    const epoch = await ledger.currentEpoch();
     await (await router.connect(trader).buy(coinAddr, r, 0, { value: E("0.05") })).wait();
-    expect((await ledger.stats(epoch, trader.address)).volume).to.be.gt(0n);
     await (await coin.connect(trader).approve(await router.getAddress(), ethers.MaxUint256)).wait();
     const e0 = await ethers.provider.getBalance(trader.address);
     const rc = await (await router.connect(trader).sell(coinAddr, (await coin.balanceOf(trader.address)) / 2n, r, 0)).wait();
@@ -253,19 +240,15 @@ describe("Anypair on Base (mainnet fork)", function () {
     throw new Error("launch never resumed");
   });
 
-  it("WETH pair: 2% split 35/25/40, leaderboard in USD at the Chainlink price, treasury 1/8 to the payout pool", async () => {
+  it("WETH pair: 2% split 35/25/40; creator paid in WETH; platform fees go straight to the admin wallet; DEGEN basket", async () => {
     const [admin, creator, trader] = await ethers.getSigners();
-    const { factory, router, ledger, oracle, treasury, payout } = await deployAll(admin);
+    const { factory, router } = await deployAll(admin);
+    expect(await factory.feeRecipient()).to.eq(admin.address);
     const coin = await launch(factory, creator, { ethIn: E("0.02"), basket: [DEGEN] });
     const coinAddr = await coin.getAddress();
     await pastSnipe();
     const h0 = await coin.totalHolderRewards(), c0 = await coin.totalCreatorFees(), p0 = await coin.totalPlatformFees();
-    const epoch = await ledger.currentEpoch();
     await (await router.connect(trader).buy(coinAddr, NO_ROUTE, 0, { value: E("0.1") })).wait();
-    const st = await ledger.stats(epoch, trader.address);
-    const px = await oracle.price(WETH);
-    expect(st.volume).to.eq(usd8(E("0.1"), px));
-    expect(st.fees).to.eq(usd8(E("0.1") * TAX_BPS / 10_000n, px));
     await (await coin.connect(trader).approve(await router.getAddress(), ethers.MaxUint256)).wait();
     await (await router.connect(trader).sell(coinAddr, (await coin.balanceOf(trader.address)) / 2n, NO_ROUTE, 0)).wait();
     const h = (await coin.totalHolderRewards()) - h0, c = (await coin.totalCreatorFees()) - c0, p = (await coin.totalPlatformFees()) - p0;
@@ -277,16 +260,18 @@ describe("Anypair on Base (mainnet fork)", function () {
     const d0 = await degen.balanceOf(trader.address);
     await (await coin.connect(trader).claimRewardsAsBasket(NO_ROUTE, [await routeFor(DEGEN)], [1n])).wait();
     expect((await degen.balanceOf(trader.address)) - d0).to.be.gt(0n);
-    await (await factory.pushPlatformFees([coinAddr])).wait();
     const weth = await ethers.getContractAt(ERC20, WETH);
-    const tBal = await weth.balanceOf(await treasury.getAddress());
-    await (await treasury.sweep(WETH)).wait();
-    expect(await weth.balanceOf(await payout.getAddress())).to.eq((tBal * 1250n) / 10_000n);
+    const cw0 = await weth.balanceOf(creator.address);
+    await (await coin.payCreator()).wait();
+    expect((await weth.balanceOf(creator.address)) - cw0).to.eq(c + c0);
+    const aw0 = await weth.balanceOf(admin.address);
+    await (await factory.pushPlatformFees([coinAddr])).wait();
+    expect((await weth.balanceOf(admin.address)) - aw0).to.eq(p + p0);
   });
 
-  it("trades from any other app or router (no hook data) still pay the fee, feed holder rewards and count on the leaderboard", async () => {
+  it("trades from any other app or router (no hook data) still pay the fee and feed holder rewards", async () => {
     const [admin, creator, trader, holder] = await ethers.getSigners();
-    const { factory, router, ledger, deployer } = await deployAll(admin);
+    const { factory, router, deployer } = await deployAll(admin);
     const foreign = await (await ethers.getContractFactory("ForeignSwapper", deployer)).deploy(POOL_MANAGER);
     const coin = await launch(factory, creator, { pair: USDC });
     const coinAddr = await coin.getAddress();
@@ -298,13 +283,9 @@ describe("Anypair on Base (mainnet fork)", function () {
     const key = await factory.poolKeyOf(coinAddr);
     const half = (await coin.balanceOf(trader.address)) / 2n;
     await (await coin.connect(trader).approve(await foreign.getAddress(), half)).wait();
-    const st0 = await ledger.stats(await ledger.currentEpoch(), trader.address);
     await (await foreign.connect(trader).swap({ currency0: key.currency0, currency1: key.currency1, fee: key.fee, tickSpacing: key.tickSpacing, hooks: key.hooks }, coinAddr, half)).wait();
     expect(await coin.totalHolderRewards()).to.be.gt(h0);
     expect(await coin.pendingRewards(holder.address)).to.be.gt(pend0);
-    const st1 = await ledger.stats(await ledger.currentEpoch(), trader.address);
-    expect(st1.trades).to.eq(st0.trades + 1n);
-    expect(st1.volume).to.be.gt(st0.volume);
   });
 
   it("sources: unpriced, shallow, non-canonical and blocked tokens are refused; deeper time-weighted pools take over; the admin lists, clears and blocks", async () => {

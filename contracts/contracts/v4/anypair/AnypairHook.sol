@@ -18,10 +18,6 @@ interface IAnypairCoin {
     function sync() external returns (uint256);
 }
 
-interface IAnypairLedger {
-    function record(address wallet, address token, address pair, bool isBuy, uint256 coinAmount, uint256 pairAmount, uint256 fee) external;
-}
-
 /// @title AnypairHook
 /// @notice Fee engine for Anypair' Uniswap V4 pools. Every swap pays a FIXED
 ///         fee of the PAIR side (WETH or any priced token), whichever way the
@@ -48,13 +44,7 @@ interface IAnypairLedger {
 ///         SNIPE_START_BPS and decays linearly to the pool's fixed fee.
 ///         The factory's own first buy pays the base fee.
 ///
-///         Leaderboard: after every swap the hook reports the trade to the
-///         ledger, attributed to the wallet that signed the transaction, or
-///         to the wallet a router named in 20-byte hook data. Reporting can
-///         never fail a swap.
-///
-///         Two setters exist: wiring the factory and the ledger, once each,
-///         at deployment.
+///         One setter exists: wiring the factory, once, at deployment.
 contract AnypairHook is BaseHook, IUnlockCallback {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
@@ -66,7 +56,6 @@ contract AnypairHook is BaseHook, IUnlockCallback {
     /// @notice The deployer wires the factory once; nothing else is settable.
     address public immutable deployer;
     address public factory;
-    address public ledger;
 
     struct PoolConfig {
         address token;
@@ -86,7 +75,6 @@ contract AnypairHook is BaseHook, IUnlockCallback {
     event PoolRegistered(address indexed token, address indexed pair, PoolId indexed id, uint16 taxBps);
     event FeeTaken(address indexed token, uint256 fee);
     event FactorySet(address indexed factory);
-    event LedgerSet(address indexed ledger);
     event FeeHeld(address indexed token, uint256 amount);
     event FeeDelivered(address indexed token, uint256 amount);
 
@@ -107,15 +95,6 @@ contract AnypairHook is BaseHook, IUnlockCallback {
         if (factory_ == address(0)) revert ZeroAddress();
         factory = factory_;
         emit FactorySet(factory_);
-    }
-
-    /// @notice One-time wiring of the ledger that records every swap.
-    function setLedger(address ledger_) external {
-        if (msg.sender != deployer) revert NotDeployer();
-        if (ledger != address(0)) revert AlreadySet();
-        if (ledger_ == address(0)) revert ZeroAddress();
-        ledger = ledger_;
-        emit LedgerSet(ledger_);
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory p) {
@@ -214,7 +193,6 @@ contract AnypairHook is BaseHook, IUnlockCallback {
             fee = (amount * total) / BPS;
             ret = int128(int256(fee));
         }
-        _report(c, key, delta, fee, hookData);
         if (fee == 0) return (BaseHook.afterSwap.selector, ret);
 
         if (_deliver(pairCurrency, c.token, fee)) {
@@ -224,21 +202,6 @@ contract AnypairHook is BaseHook, IUnlockCallback {
         }
         emit FeeTaken(c.token, fee);
         return (BaseHook.afterSwap.selector, ret);
-    }
-
-    /// @dev Tell the ledger about this swap. The pair side is the pool's own
-    ///      delta: a buy paid that plus the fee, a sell received that minus it.
-    function _report(PoolConfig storage c, PoolKey calldata, BalanceDelta delta, uint256 fee, bytes calldata hookData) internal {
-        address l = ledger;
-        if (l == address(0)) return;
-        int128 pairDelta = c.pairIsCurrency0 ? delta.amount0() : delta.amount1();
-        int128 coinDelta = c.pairIsCurrency0 ? delta.amount1() : delta.amount0();
-        bool isBuy = pairDelta < 0;
-        uint256 pairAmt = pairDelta < 0 ? uint256(uint128(-pairDelta)) : uint256(uint128(pairDelta));
-        uint256 coinAmt = coinDelta < 0 ? uint256(uint128(-coinDelta)) : uint256(uint128(coinDelta));
-        uint256 paid = isBuy ? pairAmt + fee : (pairAmt > fee ? pairAmt - fee : 0);
-        address wallet = hookData.length == 20 ? address(bytes20(hookData)) : tx.origin;
-        try IAnypairLedger(l).record(wallet, c.token, c.pair, isBuy, coinAmt, paid, fee) {} catch {}
     }
 
     /// @dev Move `fee` (plus anything held from earlier swaps) to the coin when
