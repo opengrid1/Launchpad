@@ -22,7 +22,7 @@ ICON = {
     'shield': '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
     'x': '<path fill="currentColor" stroke="none" d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.77zm-1.08 16.18h1.7L7.4 4.73H5.58z"/>',
 }
-LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="7" width="18" height="18" rx="6" fill="var(--accent)"/><rect x="12" y="7" width="18" height="18" rx="6" fill="none" stroke="var(--pair)" stroke-width="3"/></svg>'
+LOGO = '<img src="/img/mark.svg" alt="" width="34" height="34">'
 
 
 def ic(n):
@@ -75,6 +75,10 @@ def shell(meta, body):
 <meta name="theme-color" content="#f4f4f1">
 <meta property="og:title" content="{title}">
 <meta property="og:image" content="/img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="/img/og.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="icon" href="/img/favicon-64.png" type="image/png" sizes="64x64">
 <link rel="icon" href="/img/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{FONTS}">
@@ -89,7 +93,7 @@ def shell(meta, body):
 <body>
 <div class="shell">
   <aside class="side">
-    <a class="brand" href="/" aria-label="Anypair home">{LOGO}<b>anypair</b></a>
+    <a class="brand" href="/" aria-label="Anypair home">{LOGO}<b>any<span>pair</span></b></a>
     <nav class="nav" aria-label="Main">{links}</nav>
     <div><div class="side-h">Browse by pair</div><div class="pairs-nav" id="pairsNav"></div></div>
     <div class="side-foot">

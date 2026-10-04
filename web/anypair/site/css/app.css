@@ -465,3 +465,7 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 .icon-link:hover { border-color: var(--ink); color: var(--ink); }
 .icon-link svg { width: 17px; height: 17px; }
 .notice .icon-link { flex-shrink: 0; background: var(--ink); border-color: var(--ink); color: var(--surface); }
+
+.brand img { width: 36px; height: 36px; flex-shrink: 0; }
+.top .m-brand img { width: 34px; height: 34px; }
+.brand b span { color: var(--accent); }

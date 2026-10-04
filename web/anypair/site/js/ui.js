@@ -32,7 +32,7 @@
     coins: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18M7 6h1v4M16.71 13.88l.7.71-2.82 2.82"/>',
   };
   const ic = (n, cls) => `<svg class="${cls || ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || ''}</svg>`;
-  const LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="7" width="18" height="18" rx="6" fill="var(--accent)"/><rect x="12" y="7" width="18" height="18" rx="6" fill="none" stroke="var(--pair)" stroke-width="3"/></svg>';
+  const LOGO = '<img src="/img/mark.svg" alt="" width="34" height="34">';
 
   // ------------------------------------------------------------ formatting
   const usd = (v, opt = {}) => { if (v == null || !isFinite(v)) return '—'; const a = Math.abs(v);
