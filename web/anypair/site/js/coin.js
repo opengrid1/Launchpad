@@ -20,7 +20,7 @@
       <div class="coin-grid">
         <div class="coin-main">
           <div class="statline" id="statline"></div>
-          <div class="panel chart-panel"><div class="chart-bar"><div class="seg" id="resSeg">${[[60, '1m'], [300, '5m'], [900, '15m'], [3600, '1h'], [14400, '4h']].map(([s, l]) => `<button data-res="${s}" class="${s === st.res ? 'on' : ''}">${l}</button>`).join('')}</div><span class="legend" id="legend"></span></div><div class="chart" id="chart"></div></div>
+          <div class="panel chart-panel"><div class="chart" id="chart"></div></div>
           <div class="panel"><div class="tabs" style="padding:0 18px" id="tabs"><button data-tab="trades" class="on">Trades</button><button data-tab="holders">Holders</button><button data-tab="about">About</button></div><div id="tabBody" class="panel-b" style="padding-top:6px"></div></div>
         </div>
         <aside class="coin-side">
@@ -31,7 +31,6 @@
         </aside>
       </div>`;
     $$('[data-copy]').forEach(b => b.onclick = () => U.copy(b.dataset.copy));
-    $('#resSeg').onclick = e => { const b = e.target.closest('[data-res]'); if (!b) return; st.res = +b.dataset.res; $$('#resSeg button').forEach(z => z.classList.toggle('on', z === b)); drawChart(); };
     $('#tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (!b) return; st.tab = b.dataset.tab; $$('#tabs button').forEach(z => z.classList.toggle('on', z === b)); paintTab(); };
     AP.hopsFor(x.pair).then(h => { const last = h[h.length - 1]; if (last) $('#srcTag').innerHTML = `<span class="tag pair">${esc(x.pairSym)} via ${esc(AP.DEX_NAMES[last.dex] || 'DEX')}</span>`; }).catch(() => {});
     tradePanel(); rewardsCard(); creatorCard(); adminCard(); initChart();
@@ -43,26 +42,9 @@
     $('#pxNow').textContent = usd(x.px); $('#pxChg').innerHTML = `${U.delta(x.c24)} <span class="muted">24h</span>`;
   }
 
-  // ------------------------------------------------------------ chart
-  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
-  function initChart() {
-    const el = $('#chart'); if (!window.LightweightCharts || !el) return;
-    st.chart = LightweightCharts.createChart(el, { autoSize: true, layout: { background: { color: 'transparent' }, textColor: css('--muted'), fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, attributionLogo: false },
-      grid: { vertLines: { color: 'transparent' }, horzLines: { color: css('--line') } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: .12, bottom: .24 } }, timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
-      crosshair: { mode: 0 }, localization: { priceFormatter: p => U.usd(p, { compact: false }).replace('$', '$') } });
-    st.series = st.chart.addCandlestickSeries({ upColor: css('--up'), downColor: css('--down'), borderVisible: false, wickUpColor: css('--up'), wickDownColor: css('--down'), priceFormat: { type: 'custom', minMove: 1e-12, formatter: p => U.usd(p, { compact: false }) } });
-    st.vol = st.chart.addHistogramSeries({ priceScaleId: 'v', priceFormat: { type: 'volume' }, color: css('--line-2'), lastValueVisible: false, priceLineVisible: false });
-    st.chart.priceScale('v').applyOptions({ scaleMargins: { top: .82, bottom: 0 }, visible: false });
-    st.chart.subscribeCrosshairMove(p => { const d = p && p.seriesData && p.seriesData.get(st.series); $('#legend').innerHTML = d ? `O ${U.usd(d.open)} H ${U.usd(d.high)} L ${U.usd(d.low)} C ${U.usd(d.close)}` : ''; });
-    window.addEventListener('ap:theme', () => { st.chart.applyOptions({ layout: { textColor: css('--muted') }, grid: { horzLines: { color: css('--line') } } }); st.series.applyOptions({ upColor: css('--up'), downColor: css('--down'), wickUpColor: css('--up'), wickDownColor: css('--down') }); drawChart(); });
-    drawChart();
-  }
-  async function drawChart() {
-    if (!st.series) return; const bars = await AP.bars(addr, st.res); const up = css('--up'), down = css('--down');
-    st.series.setData(bars.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close })));
-    st.vol.setData(bars.map(b => ({ time: b.time, value: b.value, color: (b.close >= b.open ? up : down) + '55' })));
-    if (bars.length > 120) st.chart.timeScale().setVisibleLogicalRange({ from: bars.length - 120, to: bars.length + 2 }); else st.chart.timeScale().fitContent();
-  }
+  // ------------------------------------------------------------ chart (TradingView, js/tv.js)
+  function initChart() { const el = $('#chart'); if (!el || !window.TradingView || !window.apChart) return; apChart.init(el, st.x); }
+  function drawChart() { if (window.apChart && st.x) apChart.reload(st.x); }
 
   // ------------------------------------------------------------ trade
   function tradePanel() {

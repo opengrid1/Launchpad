@@ -2,3 +2,4 @@ site/js/chain.js
 site/js/wallet.js
 dist/
 node_modules/
+site/charting_library/

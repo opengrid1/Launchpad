@@ -259,7 +259,7 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 .statline > div:first-child { border-left: 0; }
 .statline span { display: block; font-size: 12px; color: var(--muted); }
 .statline b { display: block; font: 600 16px/1.35 var(--f-mono); letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chart-panel { padding: 10px 10px 6px; }
+.chart-panel { padding: 0; overflow: hidden; }
 .chart-bar { display: flex; align-items: center; gap: 8px; padding: 4px 6px 10px; }
 .chart-bar .legend { margin-left: auto; font: 500 12px var(--f-mono); color: var(--muted); }
 .chart { height: 380px; }
@@ -441,5 +441,5 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 .side { background: color-mix(in oklab, var(--bg) 92%, var(--surface)); }
 .tag.sample { background: var(--accent-soft); color: var(--accent); }
 .coin-price b { color: var(--ink); }
-.chart { height: 420px; }
-@media (max-width: 720px) { .chart { height: 300px; } }
+.chart { height: 520px; }
+@media (max-width: 720px) { .chart { height: 420px; } }
