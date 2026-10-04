@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+<!-- Anypair mark (flat): a white A on Base blue whose crossbar is a pair of linked rings -->
+<path d="M33 101 64 25l31 76" fill="none" stroke="#0052ff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(64 77)" fill="none" stroke-linecap="round">
+  <!-- gap around the links so the legs read as passing behind them -->
+  <rect x="-27" y="-9" width="29" height="18" rx="9" stroke="#ffffff" stroke-width="12"/>
+  <rect x="-2" y="-9" width="29" height="18" rx="9" stroke="#ffffff" stroke-width="12"/>
+  <rect x="-27" y="-9" width="29" height="18" rx="9" stroke="#0a3ab8" stroke-width="5"/>
+  <rect x="-2" y="-9" width="29" height="18" rx="9" stroke="#5b9bff" stroke-width="5"/>
+  <!-- interlock: the white ring passes over the light one at the top crossing -->
+  <path d="M-2.2 -8.6A9 9 0 0 1 2 -6.2" stroke="#ffffff" stroke-width="11"/>
+  <path d="M-4 -9h2.2A9 9 0 0 1 2 -6.2" stroke="#0a3ab8" stroke-width="5"/>
+</g>
+</svg>

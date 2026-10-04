@@ -1,22 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- Anypair mark: an A whose crossbar is a pair of linked rings, in Base blue -->
-<g transform="rotate(-5 64 66)">
-<!-- sticker edge -->
-<path d="M30 104 64 24l34 80" fill="none" stroke="#ffffff" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
-<g transform="translate(64 80)" fill="#ffffff" stroke="#ffffff" stroke-width="22" stroke-linejoin="round"><rect x="-25" y="-9.5" width="50" height="19" rx="9.5"/></g>
-<!-- legs -->
-<path d="M30 104 64 24l34 80" fill="none" stroke="#0a0b0d" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M98 104 64 24" fill="none" stroke="#6aa5ff" stroke-width="17" stroke-linecap="round"/>
-<path d="M30 104 64 24" fill="none" stroke="#0052ff" stroke-width="17" stroke-linecap="round"/>
-<path d="M47 56l9-21" fill="none" stroke="#7fb1ff" stroke-width="4.5" stroke-linecap="round"/>
-<!-- linked rings: two overlapping links, the blue one passing through the white one -->
-<g transform="translate(64 80)" fill="none">
-  <rect x="-25" y="-9.5" width="28" height="19" rx="9.5" stroke="#0a0b0d" stroke-width="12"/>
-  <rect x="-3" y="-9.5" width="28" height="19" rx="9.5" stroke="#0a0b0d" stroke-width="12"/>
-  <rect x="-25" y="-9.5" width="28" height="19" rx="9.5" stroke="#ffffff" stroke-width="5"/>
-  <rect x="-3" y="-9.5" width="28" height="19" rx="9.5" stroke="#0052ff" stroke-width="5"/>
-  <path d="M-2 -9.5h4" stroke="#0a0b0d" stroke-width="12"/>
-  <path d="M-3 -9.5h6" stroke="#ffffff" stroke-width="5"/>
-</g>
+<!-- Anypair mark (flat): a white A on Base blue whose crossbar is a pair of linked rings -->
+<rect width="128" height="128" rx="32" fill="#0052ff"/>
+<path d="M33 101 64 25l31 76" fill="none" stroke="#ffffff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(64 77)" fill="none" stroke-linecap="round">
+  <!-- gap around the links so the legs read as passing behind them -->
+  <rect x="-27" y="-9" width="29" height="18" rx="9" stroke="#0052ff" stroke-width="12"/>
+  <rect x="-2" y="-9" width="29" height="18" rx="9" stroke="#0052ff" stroke-width="12"/>
+  <rect x="-27" y="-9" width="29" height="18" rx="9" stroke="#ffffff" stroke-width="5"/>
+  <rect x="-2" y="-9" width="29" height="18" rx="9" stroke="#9ec2ff" stroke-width="5"/>
+  <!-- interlock: the white ring passes over the light one at the top crossing -->
+  <path d="M-2.2 -8.6A9 9 0 0 1 2 -6.2" stroke="#0052ff" stroke-width="11"/>
+  <path d="M-4 -9h2.2A9 9 0 0 1 2 -6.2" stroke="#ffffff" stroke-width="5"/>
 </g>
 </svg>
