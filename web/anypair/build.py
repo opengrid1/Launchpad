@@ -10,6 +10,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'fork'
+SITE_URL = os.environ.get('SITE_URL', 'https://anypair-tau.vercel.app').rstrip('/')
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap'
 NAV = [('explore', '/', 'compass', 'Explore'), ('portfolio', '/portfolio', 'wallet', 'Portfolio'), ('docs', '/docs', 'book', 'How it works')]
@@ -74,9 +75,11 @@ def shell(meta, body):
 <meta name="description" content="{meta.get('desc', 'Launch a coin on Base paired with any token. Holders earn a share of every trade, paid in the tokens the creator picks.')}">
 <meta name="theme-color" content="#f4f4f1">
 <meta property="og:title" content="{title}">
-<meta property="og:image" content="/img/og.png">
+<meta property="og:image" content="{SITE_URL}/img/og.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Anypair">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="/img/og.png">
+<meta name="twitter:image" content="{SITE_URL}/img/og.png">
 <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
 <link rel="icon" href="/img/favicon-64.png" type="image/png" sizes="64x64">
 <link rel="icon" href="/img/icon.svg" type="image/svg+xml">
@@ -136,6 +139,18 @@ def build():
         m = re.match(r'<!--(\{.*?\})-->\s*', src, re.S)
         meta = json.loads(m.group(1))
         open(os.path.join(DIST, f), 'w').write(shell(meta, src[m.end():]))
+    # brand images change: give them a content version so browsers never show an old logo
+    import hashlib
+    ver = {n: hashlib.md5(open(os.path.join(DIST, 'img', n), 'rb').read()).hexdigest()[:8] for n in ('mark.svg', 'icon.svg', 'favicon-64.png', 'apple-touch-icon.png', 'og.png', 'icon-192.png', 'logo-512.png')}
+    for root, _, files in os.walk(DIST):
+        for f in files:
+            if not f.endswith(('.html', '.js')) or 'charting_library' in root or f in ('chain.js', 'wallet.js'):
+                continue
+            fp = os.path.join(root, f); txt = open(fp).read(); new = txt
+            for n, h in ver.items():
+                new = new.replace('/img/' + n + '"', '/img/' + n + '?v=' + h + '"').replace("/img/" + n + "'", "/img/" + n + "?v=" + h + "'")
+            if new != txt:
+                open(fp, 'w').write(new)
     json.dump({
         'cleanUrls': True, 'trailingSlash': False,
         'rewrites': [{'source': '/coin/:addr', 'destination': '/coin'}],
