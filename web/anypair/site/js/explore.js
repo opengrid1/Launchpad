@@ -37,7 +37,7 @@
     $('#pairChips').innerHTML = chips.map(p => `<button class="chip ${state.pair === p.addr ? 'on' : ''}" data-pair="${p.addr}" role="tab" aria-selected="${state.pair === p.addr}">${p.addr === 'all' ? '' : tokImg({ symbol: p.sym, logo: p.logo })}${esc(p.sym)} <span class="faint num">${p.n}</span></button>`).join('');
     const ps = pairs[state.pair]; $('#heroPair').textContent = ps ? ps.sym : 'anything';
     const list = sorted(); const box = $('#coins');
-    if (!all.length) { box.innerHTML = `<div class="panel empty"><h3>No coins yet</h3><p>Be the first: pick a name, pick a pair, launch.</p><a class="btn btn-primary" href="/launch">Launch a coin</a></div>`; return; }
+    if (!all.length) { $('#tape').classList.add('hidden'); box.innerHTML = AP.prelaunch ? `<div class="panel empty"><h3>Launches open soon</h3><p>Coins show up here the moment launches open. You can already try the launch form with any token on Base.</p><a class="btn btn-primary" href="/launch">Try the launch form</a></div>` : `<div class="panel empty"><h3>No coins yet</h3><p>Be the first: pick a name, pick a pair, launch.</p><a class="btn btn-primary" href="/launch">Launch a coin</a></div>`; return; }
     if (state.view === 'list') box.innerHTML = `<div class="list-wrap"><table class="list"><thead><tr><th>Coin</th><th>Price</th><th>1h</th><th>24h</th><th>Market cap</th><th>Volume</th><th>Liquidity</th><th>Trades</th><th style="text-align:left">Rewards</th><th>Age</th></tr></thead><tbody>${list.map(row).join('')}</tbody></table></div>`;
     else box.innerHTML = `<div class="grid">${list.map(card).join('')}</div>`;
     U().$$('tr[data-href]', box).forEach(tr => tr.onclick = () => location.href = tr.dataset.href);

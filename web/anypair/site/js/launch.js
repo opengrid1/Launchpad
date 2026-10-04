@@ -92,10 +92,11 @@
   function ready(v) {
     const pr = problems(v); const w = window.apWallet; const btn = $('#launchBtn');
     $('#readyNote').textContent = pr.length ? 'Waiting for ' + pr.join(', ') + '.' : `$${v.sym} / ${f.pair.info.symbol}, ${f.rewards ? 'holders earn ' + ((f.basket.length ? f.basket.map(b => b.info.symbol) : [f.pair.info.symbol]).join(' + ')) : 'no holder rewards'}${v.dev ? `, first buy ${v.dev} ETH` : ''}.`;
+    if (AP.prelaunch) { btn.disabled = true; btn.textContent = 'Launches open soon'; return; }
     btn.disabled = !!pr.length && !!(w && w.connected); btn.textContent = w && w.connected ? 'Launch coin' : 'Connect wallet to launch';
   }
   async function submit(e) {
-    e.preventDefault(); const w = apWallet; if (!w.connected) return w.open();
+    e.preventDefault(); if (AP.prelaunch) return; const w = apWallet; if (!w.connected) return w.open();
     const v = values(); if (problems(v).length) return; const btn = $('#launchBtn'); btn.disabled = true; btn.textContent = 'Confirm in your wallet…';
     try {
       const p = f.pair; const basket = f.rewards ? f.basket : [];

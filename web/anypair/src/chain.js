@@ -63,9 +63,13 @@ class RotatingProvider extends ethers.JsonRpcProvider {
 const provider = new RotatingProvider(RPCS);
 const I = Object.fromEntries(Object.entries(ABI).map(([k, v]) => [k, new ethers.Interface(v)]));
 const K = (addr, abi, runner) => new ethers.Contract(addr, ABI[abi], runner || provider);
-const factory = K(C.factory, 'AnypairFactory');
-const oracle = K(C.oracle, 'AnypairOracle');
-const hook = K(C.hook, 'AnypairHook');
+// before launch (no contracts yet) the site still reads real Base data: prices, pools
+const PRELAUNCH = !C.factory;
+const factory = PRELAUNCH ? null : K(C.factory, 'AnypairFactory');
+const oracle = PRELAUNCH ? null : K(C.oracle, 'AnypairOracle');
+const hook = PRELAUNCH ? null : K(C.hook, 'AnypairHook');
+const ETH_FEED = '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70';
+const MIN_DEPTH_PRE = 2500;
 const pm = K(PM, 'PoolManager');
 const stateView = K(STATE_VIEW, 'StateView');
 const coinOf = (a, r) => K(a, 'AnypairToken', r);
@@ -100,6 +104,7 @@ function twLogo(a) { try { return `https://raw.githubusercontent.com/trustwallet
 // oracle.price: USD with 18 dp per 1e18 base units. usdOf -> USD per whole token.
 async function usdOf(addr) {
   const a = lower(addr); const info = await tokenInfo(a);
+  if (PRELAUNCH) return cached('usd:' + a, 60000, async () => { if (a === USDC) return 1; if (a !== WETH) throw new Error('No price before launch'); const r = await new ethers.Contract(ETH_FEED, ['function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)'], provider).latestRoundData(); return Number(r[1]) / 1e8; });
   return cached('usd:' + a, a === WETH || a === USDC ? 60000 : 120000, async () => { const px = await oracle.price(a); return Number(px) / 1e18 * 10 ** info.decimals / 1e18; });
 }
 const ethUsd = () => usdOf(WETH);
@@ -284,7 +289,7 @@ const V4_KEYS = [[100, 1], [500, 10], [3000, 60], [10000, 200], [30000, 200]];
 async function discover(token, from) {
   const t = lower(token); const info = await tokenInfo(t);
   if (t === WETH) return { info, ready: true, listed: true, sources: [] };
-  const [listed, src] = await Promise.all([oracle.listed(t), oracle.sources(t)]);
+  const [listed, src] = PRELAUNCH ? [{ listed: t === USDC }, { dex: 0 }] : await Promise.all([oracle.listed(t), oracle.sources(t)]);
   if (listed.listed || Number(src.dex)) { const hops = await hopsFor(t).catch(() => []); return { info, ready: true, listed: listed.listed, current: Number(src.dex) ? { dex: Number(src.dex), pool: src.pool } : null, hops, sources: [] }; }
   const anchors = [WETH, USDC]; const cands = [];
   const v3 = K(UNI_V3, 'V3Factory'), pcs = K(PANCAKE, 'V3Factory'), aero = K(AERO_F, 'AeroFactory');
@@ -312,6 +317,7 @@ async function discover(token, from) {
   const okList = [];
   for (const c of cands.slice(0, 6)) {
     const src = { dex: c.dex, pool: c.dex === 5 ? ethers.ZeroAddress : c.pool, key: c.dex === 5 ? c.key : ZERO_KEY };
+    if (PRELAUNCH) { if (c.depth >= MIN_DEPTH_PRE) okList.push({ ...c, src }); else c.err = 'Its pools are too thin to price it safely'; continue; }
     try { await oracle.register.staticCall(src, { from: from || ethers.ZeroAddress }); okList.push({ ...c, src }); } catch (e) { c.err = errText(e); }
   }
   const best = okList[0];
@@ -393,7 +399,7 @@ const api = {
   ethBalance: async user => provider.getBalance(user),
   creatorFees: async addr => coinOf(addr).creatorFees(),
   platformFees: async addr => coinOf(addr).platformFees(),
-  async portfolio(user) { user = lower(user);
+  async portfolio(user) { user = lower(user); if (PRELAUNCH) return { holdings: [], created: [], claims: [] };
     const rows = await Promise.all(tokens.map(async x => { const [bal, pend] = await Promise.all([coinOf(x.addr).balanceOf(user), coinOf(x.addr).pendingRewards(user)]); return { x, bal: Number(bal) / 1e18, pend: Number(pend) / 10 ** x.pairDec, pendUsd: Number(pend) / 10 ** x.pairDec * x.pairUsd }; }));
     const created = await Promise.all(tokens.filter(x => x.creator === user).map(async x => { const f = await coinOf(x.addr).creatorFees(); return { x, fees: Number(f) / 10 ** x.pairDec, feesUsd: Number(f) / 10 ** x.pairDec * x.pairUsd }; }));
     let claims = []; try { const h = await headBlock(); claims = (await rpcLogs(undefined, [CLAIM_TOPIC, ethers.zeroPadValue(user, 32)], Math.max(CFG.deployBlock || 1, h.n - LOG_SPAN * 20), h.n)).filter(l => byAddr[l.address]).map(l => { const x = byAddr[l.address]; const d = I.AnypairToken.decodeEventLog('RewardsClaimed', l.data, l.topics); return { x, amount: Number(d.amount) / 10 ** x.pairDec, mode: Number(d.payout), ts: tsOf(l.block), tx: l.tx }; }).reverse(); } catch {}
@@ -407,4 +413,6 @@ const api = {
   },
 };
 window.AP = api;
-if (C.factory) api.ready = api.load().catch(e => { console.error('chain load failed', e); window.dispatchEvent(new CustomEvent('ap:error', { detail: String(e && e.message || e) })); });
+api.prelaunch = PRELAUNCH;
+if (PRELAUNCH) { api.ready = Promise.resolve([]); setTimeout(() => window.dispatchEvent(new CustomEvent('ap:ready')), 0); }
+else api.ready = api.load().catch(e => { console.error('chain load failed', e); window.dispatchEvent(new CustomEvent('ap:error', { detail: String(e && e.message || e) })); });

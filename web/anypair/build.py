@@ -31,6 +31,11 @@ def ic(n):
 
 def config():
     tokens = json.load(open(os.path.join(HERE, 'tokens.json')))
+    if MODE == 'preview':
+        cfg = {'chainId': 8453, 'rpc': 'https://mainnet.base.org', 'rpcs': ['https://base-rpc.publicnode.com', 'https://base.drpc.org'], 'blockscout': 'https://base.blockscout.com', 'logSpan': 9000, 'prelaunch': True,
+               'contracts': {}, 'deployBlock': 1, 'admin': '', 'explorer': 'https://basescan.org', 'weth': '0x4200000000000000000000000000000000000006', 'usdc': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+               'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'), 'tokens': tokens, 'social': {'x': 'https://x.com/anypairfun'}}
+        return 'window.ANYPAIR = ' + json.dumps(cfg, separators=(',', ':')) + ';\n'
     if MODE == 'fork':
         dep = json.load(open(os.environ.get('DEPLOY', os.path.join(HERE, '..', 'anypair-fork.json'))))
         cfg = {'chainId': 8453, 'rpc': 'http://127.0.0.1:8545', 'rpcs': [], 'blockscout': '', 'logSpan': 100000, 'injectedOnly': True, 'exactTimes': True}

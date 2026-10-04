@@ -131,6 +131,7 @@
     const top = $('.top'); const onScroll = () => top && top.classList.toggle('scrolled', window.scrollY > 4); window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
     window.addEventListener('ap:ready', sidebarPairs); window.addEventListener('ap:update', sidebarPairs);
     window.addEventListener('ap:error', e => toast('Could not reach Base: ' + e.detail, { err: true }));
+    if ((window.ANYPAIR || {}).prelaunch) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin', `<div class="notice">${ic('info')}<span><b>Anypair isn't live yet.</b> The contracts launch on Base soon. Until then you can look around and try the launch form with real Base tokens.</span><a href="https://x.com/anypairfun" target="_blank" rel="noopener">Follow for launch</a></div>`); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 

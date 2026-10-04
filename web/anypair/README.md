@@ -5,6 +5,7 @@ Static pages wrapped in one shell by `build.py`; `src/chain.js` (reads + transac
 `src/wallet.js` (Reown AppKit, or the browser wallet) are bundled into `site/js/`.
 
     npm install
+    python3 build.py preview  # before the contracts are live: real Base data, launches disabled
     npm run build:fork      # against a local Base fork on 127.0.0.1:8545 (deployment: ../anypair-fork.json)
     DEPLOY=../../contracts/deployments/base-anypair.json npm run build:live
     npm run serve           # http://127.0.0.1:8790 with clean URLs (/launch, /coin/0x…)
