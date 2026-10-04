@@ -10,6 +10,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'fork'
+DESC = 'Launch a coin on Base paired with any asset: ETH, stablecoins, BTC, real-world assets or any token with a real pool. Holders earn from every trade.'
 SITE_URL = os.environ.get('SITE_URL', 'https://anypair-tau.vercel.app').rstrip('/')
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap'
@@ -72,9 +73,13 @@ def shell(meta, body):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{title}</title>
-<meta name="description" content="{meta.get('desc', 'Launch a coin on Base paired with any asset: ETH, stablecoins, BTC, real-world assets or any token with a real pool. Holders earn from every trade.')}">
+<meta name="description" content="{meta.get('desc', DESC)}">
 <meta name="theme-color" content="#f4f4f1">
 <meta property="og:title" content="{title}">
+<meta property="og:description" content="{meta.get('desc', DESC)}">
+<meta property="og:url" content="{SITE_URL}">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{meta.get('desc', DESC)}">
 <meta property="og:image" content="{SITE_URL}/img/og.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Anypair">
