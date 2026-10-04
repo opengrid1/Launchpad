@@ -131,7 +131,7 @@
     const top = $('.top'); const onScroll = () => top && top.classList.toggle('scrolled', window.scrollY > 4); window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
     window.addEventListener('ap:ready', sidebarPairs); window.addEventListener('ap:update', sidebarPairs);
     window.addEventListener('ap:error', e => toast('Could not reach Base: ' + e.detail, { err: true }));
-    if ((window.ANYPAIR || {}).prelaunch && !location.pathname.startsWith('/coin/')) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin', `<div class="notice">${ic('info')}<span><b>Anypair isn't live yet.</b> ${(window.ANYPAIR || {}).demo ? 'The coins here are samples that show how it works. ' : ''}Contracts launch on Base soon; the launch form already checks real Base tokens.</span><a href="https://x.com/anypairfun" target="_blank" rel="noopener">Follow for launch</a></div>`); }
+    if ((window.ANYPAIR || {}).prelaunch && !location.pathname.startsWith('/coin/')) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin', `<div class="notice">${ic('info')}<span><b>Anypair isn't live yet.</b> ${(window.ANYPAIR || {}).demo ? 'The coins here are samples that show how it works. ' : ''}Contracts launch on Base soon; the launch form already checks real Base tokens.</span><a class="icon-link" href="https://x.com/anypairfun" target="_blank" rel="noopener" aria-label="Follow on X" title="Follow on X">${ic('xlogo')}</a></div>`); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 

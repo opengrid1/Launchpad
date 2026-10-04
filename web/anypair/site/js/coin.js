@@ -6,7 +6,7 @@
 
   function shell(x) {
     const { esc, pairGlyph, usd, delta, ago, short, ic, tokImg, addrLink } = U;
-    const links = [x.links.x && `<a class="btn btn-line btn-sm" href="${esc(x.links.x)}" target="_blank" rel="noopener">${ic('xlogo')}X</a>`, x.links.web && `<a class="btn btn-line btn-sm" href="${esc(x.links.web)}" target="_blank" rel="noopener">${ic('globe')}Website</a>`, x.links.tg && `<a class="btn btn-line btn-sm" href="${esc(x.links.tg)}" target="_blank" rel="noopener">${ic('send')}Telegram</a>`].filter(Boolean).join('');
+    const links = [x.links.x && `<a class="icon-link" href="${esc(x.links.x)}" target="_blank" rel="noopener" aria-label="X" title="X">${ic('xlogo')}</a>`, x.links.web && `<a class="icon-link" href="${esc(x.links.web)}" target="_blank" rel="noopener" aria-label="Website" title="Website">${ic('globe')}</a>`, x.links.tg && `<a class="icon-link" href="${esc(x.links.tg)}" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram">${ic('send')}</a>`].filter(Boolean).join('');
     document.title = `${x.symbol} / ${x.pairSym} · ${x.name} · Anypair`;
     $('#coinRoot').innerHTML = `
       <nav class="crumbs"><a href="/">Explore</a><span>/</span><a href="/?pair=${x.pair}">${esc(x.pairSym)} pairs</a><span>/</span><span>${esc(x.name)}</span></nav>
