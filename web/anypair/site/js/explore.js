@@ -12,7 +12,7 @@
   function card(x) {
     const { esc, pairGlyph, usd, delta, spark, ago, coinHref } = U();
     return `<a class="card" href="${coinHref(x.addr)}">
-      <div class="card-top">${pairGlyph(x)}<div class="card-name"><b>${esc(x.name)}</b><span>$${esc(x.symbol)} / <em>${esc(x.pairSym)}</em></span></div><span class="card-age">${ago(x.createdAt)}</span></div>
+      <div class="card-top">${pairGlyph(x)}<div class="card-name"><b>${esc(x.name)}</b><span>$${esc(x.symbol)} / <em>${esc(x.pairSym)}</em></span></div>${x.demo ? '<span class="tag sample">Sample</span>' : `<span class="card-age">${ago(x.createdAt)}</span>`}</div>
       <div class="card-mid"><div class="mc"><span>Market cap</span><b>${usd(x.mc)}</b><div style="margin-top:6px">${delta(x.c24)} <span class="faint" style="font-size:12px">24h</span></div></div>${spark(x.spark, x.c24 >= 0)}</div>
       <div class="card-foot">${earnLine(x)}<span class="num">${usd(x.vol24)} <span class="faint">vol</span></span></div></a>`;
   }
@@ -54,6 +54,6 @@
     $$('#sortSeg button').forEach(b => b.onclick = () => { state.sort = b.dataset.sort; $$('#sortSeg button').forEach(x => x.classList.toggle('on', x === b)); paint(); });
     $$('#viewSeg button').forEach(b => { b.classList.toggle('on', b.dataset.view === state.view); b.onclick = () => { state.view = b.dataset.view; try { localStorage.setItem('ap:view', state.view); } catch {} $$('#viewSeg button').forEach(x => x.classList.toggle('on', x === b)); paint(); }; });
   }
-  function start() { wire(); const go = () => { paint(); tape(); }; if (AP.tokens().length) go(); window.addEventListener('ap:ready', go); window.addEventListener('ap:update', go); setInterval(() => AP.refresh().catch(() => {}), 30000); }
+  function start() { wire(); const go = () => { paint(); tape(); }; if (AP.tokens().length) go(); window.addEventListener('ap:ready', go); window.addEventListener('ap:update', go); if (!AP.prelaunch) setInterval(() => AP.refresh().catch(() => {}), 30000); }
   window.addEventListener('DOMContentLoaded', () => { if (window.AP) start(); else window.addEventListener('load', start); });
 })();

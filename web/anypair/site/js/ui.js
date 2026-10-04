@@ -81,7 +81,7 @@
   // ------------------------------------------------------------ theme
   const THEME_KEY = 'ap:theme';
   function applyTheme(t) { if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; }
-  function currentTheme() { const t = document.documentElement.dataset.theme; return t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+  function currentTheme() { return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'; }
   function toggleTheme() { const next = currentTheme() === 'dark' ? 'light' : 'dark'; applyTheme(next); try { localStorage.setItem(THEME_KEY, next); } catch {} paintThemeBtn(); window.apWallet && apWallet.setTheme && apWallet.setTheme(next); window.dispatchEvent(new CustomEvent('ap:theme')); }
   function paintThemeBtn() { $$('[data-theme-btn]').forEach(b => { b.innerHTML = ic(currentTheme() === 'dark' ? 'sun' : 'moon'); b.setAttribute('aria-label', currentTheme() === 'dark' ? 'Light theme' : 'Dark theme'); }); }
 
@@ -96,7 +96,7 @@
   function paintWallet() {
     const w = window.apWallet; $$('[data-wallet-btn]').forEach(b => {
       if (w && w.connected) { const wrong = w.chainId && w.chainId !== ((window.ANYPAIR || {}).chainId || 8453); b.className = 'btn btn-line wallet-btn'; b.innerHTML = wrong ? `${ic('alert')}Switch to Base` : `<span class="dot"></span><span class="mono">${esc(w.short())}</span>${ic('down')}`; }
-      else { b.className = 'btn btn-ink wallet-btn'; b.innerHTML = 'Connect'; }
+      else { b.className = 'btn btn-primary wallet-btn'; b.innerHTML = 'Connect'; }
     });
     $$('[data-admin-link]').forEach(a => a.classList.toggle('hidden', !isAdmin()));
   }
@@ -131,7 +131,7 @@
     const top = $('.top'); const onScroll = () => top && top.classList.toggle('scrolled', window.scrollY > 4); window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
     window.addEventListener('ap:ready', sidebarPairs); window.addEventListener('ap:update', sidebarPairs);
     window.addEventListener('ap:error', e => toast('Could not reach Base: ' + e.detail, { err: true }));
-    if ((window.ANYPAIR || {}).prelaunch) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin', `<div class="notice">${ic('info')}<span><b>Anypair isn't live yet.</b> The contracts launch on Base soon. Until then you can look around and try the launch form with real Base tokens.</span><a href="https://x.com/anypairfun" target="_blank" rel="noopener">Follow for launch</a></div>`); }
+    if ((window.ANYPAIR || {}).prelaunch && !location.pathname.startsWith('/coin/')) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin', `<div class="notice">${ic('info')}<span><b>Anypair isn't live yet.</b> ${(window.ANYPAIR || {}).demo ? 'The coins here are samples that show how it works. ' : ''}Contracts launch on Base soon; the launch form already checks real Base tokens.</span><a href="https://x.com/anypairfun" target="_blank" rel="noopener">Follow for launch</a></div>`); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 

@@ -70,6 +70,9 @@ const oracle = PRELAUNCH ? null : K(C.oracle, 'AnypairOracle');
 const hook = PRELAUNCH ? null : K(C.hook, 'AnypairHook');
 const ETH_FEED = '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70';
 const MIN_DEPTH_PRE = 2500;
+// sample mode (preview only): coins, trades and holders from a snapshot, shown so the layout can be seen before launch
+const DEMO = PRELAUNCH && !!CFG.demo;
+let demo = null;
 const pm = K(PM, 'PoolManager');
 const stateView = K(STATE_VIEW, 'StateView');
 const coinOf = (a, r) => K(a, 'AnypairToken', r);
@@ -104,6 +107,7 @@ function twLogo(a) { try { return `https://raw.githubusercontent.com/trustwallet
 // oracle.price: USD with 18 dp per 1e18 base units. usdOf -> USD per whole token.
 async function usdOf(addr) {
   const a = lower(addr); const info = await tokenInfo(a);
+  if (DEMO && demo) { const x = demo.tokens.find(t => t.pair === a); if (x && a !== WETH && a !== USDC) return x.pairUsd; }
   if (PRELAUNCH) return cached('usd:' + a, 60000, async () => { if (a === USDC) return 1; if (a !== WETH) throw new Error('No price before launch'); const r = await new ethers.Contract(ETH_FEED, ['function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)'], provider).latestRoundData(); return Number(r[1]) / 1e8; });
   return cached('usd:' + a, a === WETH || a === USDC ? 60000 : 120000, async () => { const px = await oracle.price(a); return Number(px) / 1e18 * 10 ** info.decimals / 1e18; });
 }
@@ -112,6 +116,7 @@ const ethUsd = () => usdOf(WETH);
 // ---------------------------------------------------------------- pool state (V4 StateLibrary slot layout)
 function poolSlot(id) { return ethers.keccak256(ethers.concat([id, ethers.zeroPadValue('0x06', 32)])); }
 async function poolState(id) {
+  if (DEMO && demo) { const x = demo.tokens.find(t => t.poolId === id); if (x) return { sqrtPriceX96: BigInt(x.sqrtPriceX96), tick: 0, liquidity: BigInt(x.pos.liquidity) }; }
   const base = BigInt(poolSlot(id));
   const [s0, liq] = await Promise.all([pm.extsload(ethers.toBeHex(base, 32)), pm.extsload(ethers.toBeHex(base + 3n, 32))]);
   const v = BigInt(s0); const sqrtPriceX96 = v & ((1n << 160n) - 1n); let tick = Number((v >> 160n) & 0xffffffn); if (tick >= 0x800000) tick -= 0x1000000;
@@ -162,6 +167,7 @@ async function getLogs(address, topics, from, to) {
 let trades = LS.get('ap:trades:' + lower(C.factory)) || { last: (CFG.deployBlock || 1) - 1, items: [] };
 const tradersAt = {};
 async function syncTrades(ids) {
+  if (DEMO) return trades.items;
   return cached('trades', 8000, async () => {
     const h = await headBlock(); if (!ids.length || h.n <= trades.last) return trades.items;
     const byId = Object.fromEntries(Object.values(statics).map(s => [s.poolId, s]));
@@ -182,6 +188,7 @@ async function syncTrades(ids) {
 }
 // the wallet behind a trade is the transaction's signer (a router or bot shows as the wallet that sent it)
 async function tradersFor(list) {
+  if (DEMO) return list;
   const need = [...new Set(list.map(t => t.tx).filter(tx => !tradersAt[tx]))].slice(0, 60);
   const txs = await Promise.all(need.map(h => provider.getTransaction(h).catch(() => null)));
   need.forEach((h, i) => { if (txs[i]) tradersAt[h] = lower(txs[i].from); });
@@ -236,7 +243,7 @@ function loadSnapshot() { const s = LS.get('ap:snap:' + lower(C.factory)); if (!
 
 // holders: the explorer when there is one, else balances rebuilt from Transfer events
 async function holders(addr, limit = 40) {
-  const a = lower(addr);
+  const a = lower(addr); if (DEMO && demo) return (demo.holders[a] || []).slice(0, limit);
   if (SCOUT) { try { const r = await fetch(`${SCOUT}/api/v2/tokens/${a}/holders`, { cache: 'no-store' }); const j = await r.json(); return (j.items || []).slice(0, limit).map(h => ({ wallet: lower(h.address && h.address.hash), bal: Number(h.value) / 1e18 })); } catch {} }
   const x = byAddr[a]; const h = await headBlock(); const logs = await rpcLogs(a, [TRANSFER_TOPIC], (CFG.deployBlock || 1), h.n); const bal = {};
   for (const l of logs) { const d = I.ERC20.decodeEventLog('Transfer', l.data, l.topics); const v = Number(d.value) / 1e18; bal[lower(d.from)] = (bal[lower(d.from)] || 0) - v; bal[lower(d.to)] = (bal[lower(d.to)] || 0) + v; }
@@ -259,7 +266,7 @@ async function quotePairOut(x, coinIn) {
 // ETH <-> pair at oracle prices less the route's pool fees (a slippage guard covers the rest)
 async function ethToPairEst(x, wei) { if (x.pair === WETH) return wei; const [e, p] = await Promise.all([ethUsd(), usdOf(x.pair)]); const f = await routeFeeBps(x.pair); const whole = Number(wei) / 1e18 * e / p * (1 - f / 1e4); return BigInt(Math.floor(whole * 10 ** x.pairDec)); }
 async function pairToEthEst(x, amt) { if (x.pair === WETH) return amt; const [e, p] = await Promise.all([ethUsd(), usdOf(x.pair)]); const f = await routeFeeBps(x.pair); const eth = Number(amt) / 10 ** x.pairDec * p / e * (1 - f / 1e4); return BigInt(Math.floor(eth * 1e18)); }
-async function routeFeeBps(t) { return cached('rfee:' + t, 600000, async () => { const hops = await hopsFor(t); let f = 0; for (const h of hops) { if (h.dex === 5) f += Number(h.key.fee) / 100; else if (h.dex === 4) f += 30; else { try { f += Number(await K(h.pool, 'V3Pool').fee()) / 100; } catch { f += 30; } } } return f; }); }
+async function routeFeeBps(t) { if (DEMO) return 30; return cached('rfee:' + t, 600000, async () => { const hops = await hopsFor(t); let f = 0; for (const h of hops) { if (h.dex === 5) f += Number(h.key.fee) / 100; else if (h.dex === 4) f += 30; else { try { f += Number(await K(h.pool, 'V3Pool').fee()) / 100; } catch { f += 30; } } } return f; }); }
 
 // ---------------------------------------------------------------- routes: WETH -> token hops from the oracle's source
 const routeCache = LS.get('ap:routes') || {};
@@ -357,7 +364,7 @@ const api = {
     if (loadSnapshot()) { api.stale = true; full().catch(e => console.warn('refresh', e)); } else await full();
     window.dispatchEvent(new CustomEvent('ap:ready')); return tokens;
   },
-  refresh: () => { memo.trades = null; return loadAll().then(t => { window.dispatchEvent(new CustomEvent('ap:update')); return t; }); },
+  refresh: () => { if (PRELAUNCH) return Promise.resolve(tokens); memo.trades = null; return loadAll().then(t => { window.dispatchEvent(new CustomEvent('ap:update')); return t; }); },
   async trades(addr, limit = 50) { const x = byAddr[lower(addr)]; const list = await syncTrades(tokens.map(t => t.poolId)); const mine = list.filter(t => !addr || t.token === lower(addr)).slice(-limit).reverse(); return tradersFor(mine.map(t => { const s = byAddr[t.token]; const p = pairPerCoin(BigInt(t.sqrt), s.tokenIs0, s.pairDec); return { ...t, pairAmt: Number(t.pair) / 10 ** s.pairDec, coinAmt: Number(t.coin) / 1e18, price: p, usd: Number(t.pair) / 10 ** s.pairDec * s.pairUsd }; })); },
   async bars(addr, res) { // candles in USD per coin, continuous from launch
     const x = byAddr[lower(addr)]; if (!x) return []; const list = (await syncTrades(tokens.map(t => t.poolId))).filter(t => t.token === x.addr);
@@ -414,5 +421,14 @@ const api = {
 };
 window.AP = api;
 api.prelaunch = PRELAUNCH;
-if (PRELAUNCH) { api.ready = Promise.resolve([]); setTimeout(() => window.dispatchEvent(new CustomEvent('ap:ready')), 0); }
+api.demo = DEMO;
+if (DEMO) api.ready = fetch('/demo.json').then(r => r.json()).then(d => {
+  // keep the sample recent: shift its clock so the last snapshot moment is now
+  const shift = Math.floor(Date.now() / 1000) - d.head; head = { n: 0, ts: Math.floor(Date.now() / 1000), at: Date.now() };
+  for (const x of d.tokens) { x.createdAt += shift; x.lastTrade += shift; x.demo = true; statics[x.addr] = x; }
+  for (const t of d.trades) t.ts += shift;
+  demo = d; trades = { last: 0, items: d.trades }; tokens = d.tokens; byAddr = Object.fromEntries(tokens.map(x => [x.addr, x]));
+  window.dispatchEvent(new CustomEvent('ap:ready')); return tokens;
+}).catch(e => { console.warn('sample data', e); window.dispatchEvent(new CustomEvent('ap:ready')); return []; });
+else if (PRELAUNCH) { api.ready = Promise.resolve([]); setTimeout(() => window.dispatchEvent(new CustomEvent('ap:ready')), 0); }
 else api.ready = api.load().catch(e => { console.error('chain load failed', e); window.dispatchEvent(new CustomEvent('ap:error', { detail: String(e && e.message || e) })); });

@@ -10,6 +10,7 @@
     document.title = `${x.symbol} / ${x.pairSym} · ${x.name} · Anypair`;
     $('#coinRoot').innerHTML = `
       <nav class="crumbs"><a href="/">Explore</a><span>/</span><a href="/?pair=${x.pair}">${esc(x.pairSym)} pairs</a><span>/</span><span>${esc(x.name)}</span></nav>
+      ${x.demo ? `<div class="status wait" style="margin-bottom:14px">${ic('info')}<span><b>Sample coin.</b> It shows how a coin page works and isn't a real token. Trading opens when Anypair launches.</span></div>` : ''}
       ${x.hidden ? `<div class="status bad" style="margin-bottom:14px">${ic('alert')}<span>This coin is hidden from listings. It still trades.</span></div>` : ''}
       <div class="coin-head">${pairGlyph(x, 'lg')}
         <div class="coin-title"><h1>${esc(x.name)} <span class="pairing">${esc(x.symbol)}/<em>${esc(x.pairSym)}</em></span></h1>
@@ -50,7 +51,7 @@
       grid: { vertLines: { color: 'transparent' }, horzLines: { color: css('--line') } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: .12, bottom: .24 } }, timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
       crosshair: { mode: 0 }, localization: { priceFormatter: p => U.usd(p, { compact: false }).replace('$', '$') } });
     st.series = st.chart.addCandlestickSeries({ upColor: css('--up'), downColor: css('--down'), borderVisible: false, wickUpColor: css('--up'), wickDownColor: css('--down'), priceFormat: { type: 'custom', minMove: 1e-12, formatter: p => U.usd(p, { compact: false }) } });
-    st.vol = st.chart.addHistogramSeries({ priceScaleId: 'v', priceFormat: { type: 'volume' }, color: css('--line-2') });
+    st.vol = st.chart.addHistogramSeries({ priceScaleId: 'v', priceFormat: { type: 'volume' }, color: css('--line-2'), lastValueVisible: false, priceLineVisible: false });
     st.chart.priceScale('v').applyOptions({ scaleMargins: { top: .82, bottom: 0 }, visible: false });
     st.chart.subscribeCrosshairMove(p => { const d = p && p.seriesData && p.seriesData.get(st.series); $('#legend').innerHTML = d ? `O ${U.usd(d.open)} H ${U.usd(d.high)} L ${U.usd(d.low)} C ${U.usd(d.close)}` : ''; });
     window.addEventListener('ap:theme', () => { st.chart.applyOptions({ layout: { textColor: css('--muted') }, grid: { horzLines: { color: css('--line') } } }); st.series.applyOptions({ upColor: css('--up'), downColor: css('--down'), wickUpColor: css('--up'), wickDownColor: css('--down') }); drawChart(); });
@@ -91,6 +92,7 @@
   function amountWei() { const v = ($('#amt') || {}).value; if (!v || !(+v > 0)) return 0n; try { return AP.parseUnits(v, 18); } catch { return 0n; } }
   function paintGo() {
     const b = $('#go'); if (!b) return; const w = window.apWallet; const v = amountWei(); const sym = '$' + st.x.symbol;
+    if (st.x.demo) { b.textContent = 'Trading opens at launch'; b.disabled = true; return; }
     if (!w || !w.connected) { b.textContent = 'Connect wallet'; b.disabled = false; return; }
     if (!v) { b.textContent = st.mode === 'buy' ? `Buy ${sym}` : `Sell ${sym}`; b.disabled = true; return; }
     if (st.bal != null && v > st.bal) { b.textContent = st.mode === 'buy' ? 'Not enough ETH' : `Not enough ${sym}`; b.disabled = true; return; }
@@ -107,7 +109,7 @@
     } catch (e) { if (seq === st.quoteSeq) out.textContent = '—'; }
   }
   async function submit() {
-    const w = apWallet; if (!w.connected) return w.open(); const v = amountWei(); if (!v) return; const b = $('#go'); const label = b.textContent;
+    if (st.x.demo) return; const w = apWallet; if (!w.connected) return w.open(); const v = amountWei(); if (!v) return; const b = $('#go'); const label = b.textContent;
     b.disabled = true; b.textContent = st.mode === 'buy' ? 'Confirm in your wallet…' : 'Confirm in your wallet…';
     try { await quote(); const rc = st.mode === 'buy' ? await AP.buy(addr, v, st.minOut || 0n) : await AP.sell(addr, v, st.minOut || 0n);
       U.toast(st.mode === 'buy' ? `Bought $${st.x.symbol}` : `Sold $${st.x.symbol}`, { tx: rc.hash }); $('#amt').value = ''; await refresh(); }
@@ -127,6 +129,7 @@
       <p class="muted" style="margin-top:10px;font-size:12.5px">Paid in ${esc(x.pairSym)} as it comes in. ${x.basket.length ? `Claim it as is, as ETH, or split equally into ${esc(assets.map(a => a.symbol).join(', '))}.` : 'Claim it as is or as ETH.'}</p>
       <div id="myRewards"></div></div>`;
     const w = window.apWallet; const box = $('#myRewards');
+    if (x.demo) { box.innerHTML = `<div class="pending"><span>Your rewards</span><b>0 ${esc(x.pairSym)}</b></div><div class="claim-row"><button class="btn btn-primary btn-sm" disabled>Claim ${esc(x.pairSym)}</button><button class="btn btn-line btn-sm" disabled>As ETH</button>${x.basket.length ? '<button class="btn btn-line btn-sm" disabled>As basket</button>' : ''}</div>`; return; }
     if (!w || !w.connected) { box.innerHTML = `<div class="pending"><span>Your rewards</span><button class="btn btn-line btn-sm" data-connect>Connect to see</button></div>`; box.querySelector('[data-connect]').onclick = () => apWallet.open(); return; }
     try { const p = await AP.pending(x.addr, w.address); const v = Number(AP.formatUnits(p, x.pairDec));
       box.innerHTML = `<div class="pending"><span>Your rewards</span><div style="text-align:right"><b>${num(v, 6)} ${esc(x.pairSym)}</b><div class="muted" style="font-size:12px">${usd(v * x.pairUsd)}</div></div></div>
@@ -135,7 +138,7 @@
     } catch (e) { box.innerHTML = ''; }
   }
   async function creatorCard() {
-    const x = st.x; const w = window.apWallet; const el = $('#creator'); if (!w || !w.connected || w.address !== x.creator) { el.classList.add('hidden'); return; }
+    const x = st.x; const w = window.apWallet; const el = $('#creator'); if (x.demo || !w || !w.connected || w.address !== x.creator) { el.classList.add('hidden'); return; }
     el.classList.remove('hidden'); const f = await AP.creatorFees(x.addr); const v = Number(AP.formatUnits(f, x.pairDec));
     el.innerHTML = `<div class="panel-h">${U.ic('coins')}<h3>Your creator fees</h3></div><div class="panel-b"><div class="pending" style="margin-top:0"><span>Ready to claim</span><div style="text-align:right"><b>${U.num(v, 6)} ${U.esc(x.pairSym)}</b><div class="muted" style="font-size:12px">${U.usd(v * x.pairUsd)}</div></div></div><button class="btn btn-primary btn-block" style="margin-top:12px" id="payc" ${f > 0n ? '' : 'disabled'}>Claim creator fees</button></div>`;
     $('#payc').onclick = async () => { const b = $('#payc'); b.disabled = true; b.textContent = 'Confirm…'; try { const rc = await AP.payCreator(x.addr); U.toast('Creator fees sent to your wallet', { tx: rc.hash }); creatorCard(); } catch (e) { U.toast(e.message, { err: true }); b.disabled = false; b.textContent = 'Claim creator fees'; } };
@@ -181,7 +184,7 @@
       const first = !st.x; st.x = x; if (first) { shell(x); paintTab(); } stats(x); };
     if (AP.tokens().length) go(); window.addEventListener('ap:ready', go); window.addEventListener('ap:update', () => { go(); if (st.x) { drawChart(); } });
     window.addEventListener('ap:wallet', () => { if (!st.x) return; balance(); quote(); rewardsCard(); creatorCard(); adminCard(); });
-    setInterval(() => AP.refresh().catch(() => {}), 20000);
+    if (!AP.prelaunch) setInterval(() => AP.refresh().catch(() => {}), 20000);
   }
   window.addEventListener('DOMContentLoaded', start);
 })();

@@ -32,7 +32,7 @@ def ic(n):
 def config():
     tokens = json.load(open(os.path.join(HERE, 'tokens.json')))
     if MODE == 'preview':
-        cfg = {'chainId': 8453, 'rpc': 'https://mainnet.base.org', 'rpcs': ['https://base-rpc.publicnode.com', 'https://base.drpc.org'], 'blockscout': 'https://base.blockscout.com', 'logSpan': 9000, 'prelaunch': True,
+        cfg = {'chainId': 8453, 'rpc': 'https://mainnet.base.org', 'rpcs': ['https://base-rpc.publicnode.com', 'https://base.drpc.org'], 'blockscout': 'https://base.blockscout.com', 'logSpan': 9000, 'prelaunch': True, 'demo': True,
                'contracts': {}, 'deployBlock': 1, 'admin': '', 'explorer': 'https://basescan.org', 'weth': '0x4200000000000000000000000000000000000006', 'usdc': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
                'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'), 'tokens': tokens, 'social': {'x': 'https://x.com/anypairfun'}}
         return 'window.ANYPAIR = ' + json.dumps(cfg, separators=(',', ':')) + ';\n'
@@ -72,8 +72,7 @@ def shell(meta, body):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{title}</title>
 <meta name="description" content="{meta.get('desc', 'Launch a coin on Base paired with any token. Holders earn a share of every trade, paid in the tokens the creator picks.')}">
-<meta name="theme-color" content="#f1f1ed" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0e0f11" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#080b14">
 <meta property="og:title" content="{title}">
 <meta property="og:image" content="/img/og.png">
 <link rel="icon" href="/img/icon.svg" type="image/svg+xml">
@@ -122,6 +121,8 @@ def build():
     for d in ('css', 'js', 'img', 'vendor'):
         shutil.copytree(os.path.join(SITE, d), os.path.join(DIST, d))
     open(os.path.join(DIST, 'config.js'), 'w').write(config())
+    if MODE == 'preview' and os.path.exists(os.path.join(SITE, 'demo.json')):
+        shutil.copy(os.path.join(SITE, 'demo.json'), os.path.join(DIST, 'demo.json'))
     for f in sorted(os.listdir(os.path.join(SITE, 'pages'))):
         src = open(os.path.join(SITE, 'pages', f)).read()
         m = re.match(r'<!--(\{.*?\})-->\s*', src, re.S)
