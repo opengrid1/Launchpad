@@ -3,21 +3,21 @@
   --tv-color-platform-background:#ffffff; --tv-color-pane-background:#ffffff;
   --tv-color-toolbar-button-background-hover:#f2f2ee; --tv-color-toolbar-button-background-secondary-hover:#f2f2ee; --tv-color-toolbar-button-background-expanded:#ebebe6;
   --tv-color-toolbar-button-text:#66686f; --tv-color-toolbar-button-text-hover:#0d0e12; --tv-color-toolbar-button-text-active:#34363d; --tv-color-toolbar-button-text-active-hover:#0d0e12;
-  --tv-color-item-active-text:#d9430c; --tv-color-toolbar-toggle-button-background-active:#d9430c; --tv-color-toolbar-toggle-button-background-active-hover:#e84a10;
+  --tv-color-item-active-text:#0052ff; --tv-color-toolbar-toggle-button-background-active:#0052ff; --tv-color-toolbar-toggle-button-background-active-hover:#0043d1;
   --tv-color-toolbar-divider-background:#e3e2dc; --tv-color-toolbar-save-layout-loader:#66686f;
   --tv-color-popup-background:#ffffff; --tv-color-popup-element-text:#0d0e12; --tv-color-popup-element-text-hover:#0d0e12; --tv-color-popup-element-background-hover:#f2f2ee;
   --tv-color-popup-element-divider-background:#e3e2dc; --tv-color-popup-element-secondary-text:#66686f; --tv-color-popup-element-hint-text:#66686f;
-  --tv-color-popup-element-text-active:#d9430c; --tv-color-popup-element-background-active:#ffece4;
-  --tv-color-popup-element-toolbox-text:#66686f; --tv-color-popup-element-toolbox-text-hover:#0d0e12; --tv-color-popup-element-toolbox-text-active-hover:#e84a10;
+  --tv-color-popup-element-text-active:#0052ff; --tv-color-popup-element-background-active:#e6eeff;
+  --tv-color-popup-element-toolbox-text:#66686f; --tv-color-popup-element-toolbox-text-hover:#0d0e12; --tv-color-popup-element-toolbox-text-active-hover:#0043d1;
   --tv-color-popup-element-toolbox-background-hover:#f2f2ee; --tv-color-popup-element-toolbox-background-active-hover:#ebebe6;
 }
 .theme-dark:root{
   --tv-color-platform-background:#18181b; --tv-color-pane-background:#18181b;
   --tv-color-toolbar-button-background-hover:#232328; --tv-color-toolbar-button-background-secondary-hover:#232328; --tv-color-toolbar-button-background-expanded:#232328;
   --tv-color-toolbar-button-text:#918f96; --tv-color-toolbar-button-text-hover:#f2f1ee; --tv-color-toolbar-button-text-active:#cfcdc8; --tv-color-toolbar-button-text-active-hover:#f2f1ee;
-  --tv-color-item-active-text:#ff7f4f; --tv-color-toolbar-toggle-button-background-active:#ff7f4f; --tv-color-toolbar-toggle-button-background-active-hover:#ff9466;
+  --tv-color-item-active-text:#6a9bff; --tv-color-toolbar-toggle-button-background-active:#6a9bff; --tv-color-toolbar-toggle-button-background-active-hover:#8fb3ff;
   --tv-color-toolbar-divider-background:#29292e; --tv-color-popup-background:#18181b; --tv-color-popup-element-text:#f2f1ee; --tv-color-popup-element-text-hover:#f2f1ee;
   --tv-color-popup-element-background-hover:#232328; --tv-color-popup-element-divider-background:#29292e; --tv-color-popup-element-secondary-text:#918f96; --tv-color-popup-element-hint-text:#918f96;
-  --tv-color-popup-element-text-active:#ff7f4f; --tv-color-popup-element-background-active:#33190f;
+  --tv-color-popup-element-text-active:#6a9bff; --tv-color-popup-element-background-active:#14214a;
 }
 html, body { font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
