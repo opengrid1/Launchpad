@@ -39,16 +39,10 @@
     $('#pairChips').innerHTML = chips.map(([k, name, logo, n]) => `<button class="chip ${state.dex === k ? 'on' : ''}" data-dex="${k}" role="tab" aria-selected="${state.dex === k}">${logo ? `<img src="${logo}" alt="">` : ''}${esc(name)} <span class="faint num">${n}</span></button>`).join('');
     
     const list = sorted(); const box = $('#coins');
-    if (!all.length) { $('#tape').classList.add('hidden'); box.innerHTML = AP.prelaunch ? `<div class="panel empty"><h3>Launches open soon</h3><p>Coins show up here the moment launches open. You can already try the launch form with any token on Base.</p><a class="btn btn-primary" href="/launch">Try the launch form</a></div>` : `<div class="panel empty"><h3>No coins yet</h3><p>Be the first: pick a name, pick a pair, launch.</p><a class="btn btn-primary" href="/launch">Launch a coin</a></div>`; return; }
+    if (!all.length) { box.innerHTML = AP.prelaunch ? `<div class="panel empty"><h3>Launches open soon</h3><p>Coins show up here the moment launches open. You can already try the launch form with any token on Base.</p><a class="btn btn-primary" href="/launch">Try the launch form</a></div>` : `<div class="panel empty"><h3>No coins yet</h3><p>Be the first: pick a name, pick a pair, launch.</p><a class="btn btn-primary" href="/launch">Launch a coin</a></div>`; return; }
     if (state.view === 'list') box.innerHTML = `<div class="list-wrap"><table class="list"><thead><tr><th>Coin</th><th>Price</th><th>1h</th><th>24h</th><th>Market cap</th><th>Volume</th><th>Liquidity</th><th>Trades</th><th style="text-align:left">Rewards</th><th>Age</th></tr></thead><tbody>${list.map(row).join('')}</tbody></table></div>`;
     else box.innerHTML = `<div class="grid">${list.map(card).join('')}</div>`;
     U().$$('tr[data-href]', box).forEach(tr => tr.onclick = () => location.href = tr.dataset.href);
-  }
-  async function tape() {
-    const { esc, usd, $ } = U();
-    try { const t = await AP.trades(null, 24); if (!t.length) { $('#tape').classList.add('hidden'); return; }
-      const item = x => { const c = AP.token(x.token); if (!c) return ''; return `<a href="/coin/${c.addr}"><img src="${esc(c.img || U().DEFAULT_LOGO)}" alt=""><span class="${x.buy ? 'up' : 'down'}">${x.buy ? 'Buy' : 'Sell'}</span><b>${esc(c.symbol)}</b><span class="num">${usd(x.usd)}</span><span class="faint">in ${esc(c.pairSym)}</span></a>`; };
-      const html = t.map(item).join(''); $('#tapeTrack').innerHTML = html + html; } catch (e) { console.warn(e); }
   }
   function wire() {
     const { $, $$ } = U();
@@ -56,6 +50,6 @@
     $$('#sortSeg button').forEach(b => b.onclick = () => { state.sort = b.dataset.sort; $$('#sortSeg button').forEach(x => x.classList.toggle('on', x === b)); paint(); });
     $$('#viewSeg button').forEach(b => { b.classList.toggle('on', b.dataset.view === state.view); b.onclick = () => { state.view = b.dataset.view; try { localStorage.setItem('ap:view', state.view); } catch {} $$('#viewSeg button').forEach(x => x.classList.toggle('on', x === b)); paint(); }; });
   }
-  function start() { wire(); const go = () => { paint(); tape(); }; if (AP.tokens().length) go(); window.addEventListener('ap:ready', go); window.addEventListener('ap:update', go); if (!AP.prelaunch) setInterval(() => AP.refresh().catch(() => {}), 30000); }
+  function start() { wire(); const go = () => paint(); if (AP.tokens().length) go(); window.addEventListener('ap:ready', go); window.addEventListener('ap:update', go); if (!AP.prelaunch) setInterval(() => AP.refresh().catch(() => {}), 30000); }
   window.addEventListener('DOMContentLoaded', () => { if (window.AP) start(); else window.addEventListener('load', start); });
 })();

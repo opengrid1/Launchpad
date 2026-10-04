@@ -202,13 +202,6 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 .hero-stats div { display: flex; flex-direction: column; gap: 2px; }
 .hero-stats span { font-size: 12px; color: var(--muted); }
 .hero-stats b { font: 600 20px var(--f-mono); letter-spacing: -.02em; }
-.tape { display: flex; gap: 10px; overflow: hidden; margin: 0 -28px 22px; padding: 10px 28px; border-block: 1px solid var(--line); background: var(--surface-2); mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
-.tape-track { display: flex; gap: 26px; white-space: nowrap; animation: tape 60s linear infinite; }
-.tape:hover .tape-track { animation-play-state: paused; }
-@keyframes tape { to { transform: translateX(-50%); } }
-.tape a { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
-.tape a img { width: 18px; height: 18px; border-radius: 5px; }
-.tape a b { font-weight: 600; color: var(--ink); }
 .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .toolbar .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; padding: 2px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(276px, 1fr)); gap: 14px; }
@@ -415,7 +408,6 @@ kbd { font: 500 11px var(--f-mono); padding: 2px 6px; border: 1px solid var(--li
 @media (max-width: 720px) {
   .hero { grid-template-columns: 1fr; padding-top: 4px; }
   .hero-stats { gap: 18px; } .hero-stats b { font-size: 17px; }
-  .tape { margin: 0 -16px 16px; padding: 9px 16px; }
   .grid { grid-template-columns: 1fr; gap: 10px; }
   .coin-title h1 { font-size: 24px; } .coin-price { text-align: left; width: 100%; }
   .statline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
