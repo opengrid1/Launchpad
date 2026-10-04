@@ -1,0 +1,73 @@
+<!--{"title": "How it works · Anypair", "nav": "docs", "scripts": ["docs.js"], "desc": "How Anypair works: pairs, fees, holder rewards and trading on Base."}-->
+<div class="docs">
+  <nav aria-label="On this page">
+    <a href="#launch">Launching</a><a href="#pairs">Pairs</a><a href="#fees">Fees</a><a href="#rewards">Holder rewards</a><a href="#trading">Trading</a><a href="#rules">Rules in the contracts</a><a href="#faq">FAQ</a><a href="#contracts">Contracts</a>
+  </nav>
+  <article>
+    <h1>How Anypair works</h1>
+    <p class="lede">Most launchpads pair every coin with ETH. Here the creator picks the pair: ETH, USDC, cbBTC, AERO, a meme, anything with a real pool on Base. Holders get paid from every trade in the tokens the creator chose.</p>
+
+    <h2 id="launch">Launching</h2>
+    <ol>
+      <li>Give it a name, a ticker and a logo. Name and ticker are written into the coin and can't change.</li>
+      <li>Pick the pair. The site checks the token's pools on Uniswap, Aerodrome and PancakeSwap and tells you right away if it can be used.</li>
+      <li>Choose whether holders earn. If they do, you can add up to four tokens they can take their rewards in.</li>
+      <li>Optionally buy some in the same transaction, with ETH. Then sign.</li>
+    </ol>
+    <p>Every coin has a supply of 1,000,000,000, and all of it goes into a Uniswap V4 pool at a $3,000 market cap, whatever the pair. Nobody gets an allocation. The pool is open from the first block.</p>
+
+    <h2 id="pairs">Pairs</h2>
+    <p>A pair can be any ERC-20 on Base that trades against ETH or USDC in a pool deep enough to price it (at least $2,500 on its ETH or USDC side). The price used for the start cap and for USD figures comes from the pool the token really trades in:</p>
+    <table class="dex-table"><thead><tr><th>Where the token trades</th><th>How it's priced</th></tr></thead><tbody>
+      <tr><td>ETH, USDC</td><td>Chainlink</td></tr>
+      <tr><td>Uniswap V3</td><td>30-minute average price</td></tr>
+      <tr><td>PancakeSwap V3</td><td>30-minute average price</td></tr>
+      <tr><td>Aerodrome Slipstream</td><td>30-minute average price</td></tr>
+      <tr><td>Aerodrome (volatile pools)</td><td>Average reserves over the last 30 minutes or more</td></tr>
+      <tr><td>Uniswap V4</td><td>A slow price that follows the pool by about 1% a minute</td></tr>
+    </tbody></table>
+    <p>Averages mean one big trade can't fake a price. For tokens that only trade on Uniswap V4, new launches against that token wait if its price has just jumped or crashed, until the slow price catches up.</p>
+    <p>Fee-on-transfer and rebasing tokens don't work as pairs. Tokens known to misbehave are blocked.</p>
+
+    <h2 id="fees">Fees</h2>
+    <p>Every buy and sell pays 2%, taken in the pair token. The split is fixed when the coin launches:</p>
+    <table><thead><tr><th></th><th>Holder rewards on</th><th>Holder rewards off</th></tr></thead><tbody>
+      <tr><td>Creator</td><td>0.7%</td><td>1.2%</td></tr><tr><td>Holders</td><td>0.5%</td><td>—</td></tr><tr><td>Platform</td><td>0.8%</td><td>0.8%</td></tr>
+    </tbody></table>
+    <p>Creators claim their share from the coin page or their portfolio, paid in the pair token.</p>
+
+    <h2 id="rewards">Holder rewards</h2>
+    <p>Each trade's holder share is spread over every wallet holding the coin, in proportion to its balance, the moment the fee arrives. Pools and the launchpad's own contracts don't count as holders.</p>
+    <p>Rewards build up in the pair token. A holder can claim them:</p>
+    <ul><li><b>as the pair token</b>, for example USDC for a USDC pair;</li><li><b>as ETH</b>, swapped on the way out;</li><li><b>as the basket</b>, if the creator set one: an equal split across up to four tokens, bought when you claim.</li></ul>
+    <p>Selling or sending your coins doesn't lose rewards already earned. They stay claimable.</p>
+
+    <h2 id="trading">Trading</h2>
+    <p>On the site you always pay and receive ETH. If the pair is something else, the router swaps ETH into the pair on the way in and back to ETH on the way out, through the same pools that price it.</p>
+    <p>Trades from anywhere else (Uniswap, aggregators, bots) go through the same pool and pay the same 2%, so holders and creators earn from those too.</p>
+    <p>At launch, only the creator can buy in the launch block. For the next 20 seconds the fee starts at 99% and falls to 2%, and for the first few blocks no wallet can buy more than 3% of the supply. Sniping the start doesn't pay.</p>
+
+    <h2 id="rules">Rules in the contracts</h2>
+    <ul>
+      <li>The 2% fee and its split are set at launch. No function changes them.</li>
+      <li>Coins have no owner and no mint function. The supply is fixed at one billion.</li>
+      <li>Holder rewards are only ever paid to the holder they belong to.</li>
+      <li>The site can hide a coin from its listings, but the coin keeps trading on-chain.</li>
+    </ul>
+
+    <h2 id="faq">FAQ</h2>
+    <h3>Why pair with something other than ETH?</h3>
+    <p>A coin paired with USDC has a stable unit of account. One paired with cbBTC or AERO puts its trading volume into that community's token. Holders who believe in a token can be paid in it.</p>
+    <h3>What does a launch cost?</h3>
+    <p>Only gas. Base gas is a fraction of a cent to a few cents. A first buy is optional.</p>
+    <h3>Why was my pair refused?</h3>
+    <p>Usually because its pools are too thin to price it safely, it only trades against something other than ETH or USDC, or it has no price history yet. The launch form tells you which.</p>
+    <h3>What happens to the platform share?</h3>
+    <p>It pays for running the site and the infrastructure behind it.</p>
+
+    <h2 id="contracts">Contracts</h2>
+    <p>All on Base (chain 8453). Read them on Basescan.</p>
+    <div class="panel panel-b" style="margin-top:12px"><div class="kv" id="addrs"></div></div>
+    <p class="muted" style="margin-top:28px;font-size:13px">Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noopener" style="text-decoration:underline">TradingView</a> Lightweight Charts.</p>
+  </article>
+</div>
