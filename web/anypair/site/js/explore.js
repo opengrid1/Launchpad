@@ -37,7 +37,7 @@
     const by = {}; for (const x of all) by[x.venue] = (by[x.venue] || 0) + 1;
     const chips = [['all', 'All', '', all.length], ...Object.keys(VENUES).map(k => [k, VENUES[k][0], VENUES[k][1], by[k] || 0])];
     $('#pairChips').innerHTML = chips.map(([k, name, logo, n]) => `<button class="chip ${state.dex === k ? 'on' : ''}" data-dex="${k}" role="tab" aria-selected="${state.dex === k}">${logo ? `<img src="${logo}" alt="">` : ''}${esc(name)} <span class="faint num">${n}</span></button>`).join('');
-    const pp = all.find(x => x.pair === state.pair); $('#heroPair').textContent = pp ? pp.pairSym : 'any asset';
+    
     const list = sorted(); const box = $('#coins');
     if (!all.length) { $('#tape').classList.add('hidden'); box.innerHTML = AP.prelaunch ? `<div class="panel empty"><h3>Launches open soon</h3><p>Coins show up here the moment launches open. You can already try the launch form with any token on Base.</p><a class="btn btn-primary" href="/launch">Try the launch form</a></div>` : `<div class="panel empty"><h3>No coins yet</h3><p>Be the first: pick a name, pick a pair, launch.</p><a class="btn btn-primary" href="/launch">Launch a coin</a></div>`; return; }
     if (state.view === 'list') box.innerHTML = `<div class="list-wrap"><table class="list"><thead><tr><th>Coin</th><th>Price</th><th>1h</th><th>24h</th><th>Market cap</th><th>Volume</th><th>Liquidity</th><th>Trades</th><th style="text-align:left">Rewards</th><th>Age</th></tr></thead><tbody>${list.map(row).join('')}</tbody></table></div>`;
