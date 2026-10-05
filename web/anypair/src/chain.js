@@ -141,12 +141,13 @@ const CLAIM_TOPIC = I.AnypairToken.getEvent('RewardsClaimed').topicHash;
 const TRANSFER_TOPIC = I.ERC20.getEvent('Transfer').topicHash;
 const LOG_SPAN = CFG.logSpan || 1900; // mainnet.base.org caps eth_getLogs at 2,000 blocks
 async function rpcLogs(address, topics, from, to) {
+  // spans are capped by the RPCs (2,000 blocks on mainnet.base.org), so fetch them four at a time
+  const spans = []; for (let a = from; a <= to; a += LOG_SPAN) spans.push([a, Math.min(to, a + LOG_SPAN - 1)]);
+  const res = new Array(spans.length); let next = 0;
+  const worker = async () => { while (next < spans.length) { const k = next++; const [a, b] = spans[k]; res[k] = await retry(() => provider.getLogs({ address, topics, fromBlock: a, toBlock: b })); } };
+  await Promise.all([...Array(Math.min(4, spans.length))].map(worker));
   const out = [];
-  for (let a = from; a <= to; a += LOG_SPAN) {
-    const b = Math.min(to, a + LOG_SPAN - 1);
-    const ls = await retry(() => provider.getLogs({ address, topics, fromBlock: a, toBlock: b }));
-    for (const l of ls) out.push({ address: lower(l.address), topics: l.topics, data: l.data, block: l.blockNumber, tx: l.transactionHash, index: l.index });
-  }
+  for (const ls of res) for (const l of ls) out.push({ address: lower(l.address), topics: l.topics, data: l.data, block: l.blockNumber, tx: l.transactionHash, index: l.index });
   return out;
 }
 async function scoutLogs(address, topics, from, to) {
