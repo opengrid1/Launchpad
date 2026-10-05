@@ -449,8 +449,11 @@ const api = {
     return { holdings: rows.filter(r => r.bal > 0 || r.pend > 0), created, claims }; },
   // admin (the contracts enforce the admin wallet)
   admin: {
-    state: async () => { if (DEMO) return { paused: false, feeRecipient: lower(CFG.admin), admin: lower(CFG.admin), minDepth: MIN_DEPTH_PRE };
-      const [paused, feeRecipient, admin, minDepth] = await Promise.all([factory.launchesPaused(), factory.feeRecipient(), factory.admin(), oracle.minDepthUsd()]); return { paused, feeRecipient, admin: lower(admin), minDepth: Number(minDepth) / 1e18 }; },
+    state: async () => { if (DEMO) return { paused: false, feeRecipient: lower(CFG.admin), admin: lower(CFG.admin), minDepth: MIN_DEPTH_PRE, usdcListed: true };
+      const [paused, feeRecipient, admin, minDepth, usdc] = await Promise.all([factory.launchesPaused(), factory.feeRecipient(), factory.admin(), oracle.minDepthUsd(), oracle.listed(USDC)]);
+      return { paused, feeRecipient, admin: lower(admin), minDepth: Number(minDepth) / 1e18, usdcListed: usdc.listed }; },
+    // one-time setup: USDC priced by Chainlink USDC/USD, so it anchors USDC pairs like ETH does
+    usdcSetup: { token: USDC, usdPrice8: 10n ** 8n, feed: CFG.usdcUsdFeed || '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B' },
     blocked: a => DEMO ? false : factory.blocked(a),
     listed: a => DEMO ? { listed: lower(a) === USDC, usdPrice8: 10n ** 8n } : oracle.listed(a),
     source: a => { if (DEMO) { const x = tokens.find(t => t.pair === lower(a) && t.dex); return { dex: x ? x.dex : 0 }; } return oracle.sources(a); },

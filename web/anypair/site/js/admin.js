@@ -10,6 +10,7 @@
     const owed = fees.filter(r => r.f > 0n); const owedUsd = owed.reduce((a, r) => a + r.v * r.x.pairUsd, 0);
     const { esc, usd, num, short, pairGlyph, ago } = U;
     $('#adm').innerHTML = `<div class="hero" style="padding-bottom:16px"><div><h1>Admin</h1><p>${AP.demo ? 'Preview with the sample coins. Actions go live once the contracts are deployed on Base.' : 'Every action here is an on-chain transaction from the admin wallet.'}</p></div></div>
+      ${s.usdcListed ? '' : `<div class="panel setup"><div><b>One step left: list USDC</b><p>Prices USDC from Chainlink's USDC/USD feed, so USDC pairs are anchored like ETH. One transaction from this wallet.</p></div><button class="btn btn-primary" id="usdcgo">List USDC</button></div>`}
       <div class="pf-tiles"><div class="panel tile"><span>Launches</span><b style="font-size:20px">${s.paused ? '<span class="down">Paused</span>' : '<span class="up">Open</span>'}</b><button class="btn btn-line btn-sm" style="margin-top:10px" id="pz">${s.paused ? 'Resume launches' : 'Pause launches'}</button></div>
         <div class="panel tile"><span>Platform fees waiting</span><b>${usd(owedUsd)}</b><button class="btn btn-primary btn-sm" style="margin-top:10px" id="pf" ${owed.length ? '' : 'disabled'}>Send to fee wallet (${owed.length})</button></div>
         <div class="panel tile"><span>Fee wallet</span><b class="mono" style="font-size:16px;margin-top:8px">${short(s.feeRecipient)}</b><button class="btn btn-line btn-sm" style="margin-top:10px" id="fr">Change</button></div></div>
@@ -24,6 +25,7 @@
           <div style="display:flex;gap:8px"><button class="btn btn-line btn-sm" id="tl">List price</button><button class="btn btn-line btn-sm" id="tx">Unlist</button></div></div></div>
         <div class="panel"><div class="panel-h"><h3>Price safety</h3></div><div class="panel-b stack-v"><p class="muted" style="font-size:13px">A pool must hold at least this much on its ETH or USDC side to price a token. Raise it if thin pools get through.</p>
           <div class="field"><label>Minimum pool depth (USD)</label><input class="input num" id="md" value="${s.minDepth}"></div><button class="btn btn-line btn-sm" id="mds" style="align-self:flex-start">Save</button></div></div></div>`;
+    if ($('#usdcgo')) { const u = AP.admin.usdcSetup; $('#usdcgo').onclick = e => run(e.currentTarget, 'oracle', 'setListed', [u.token, true, u.usdPrice8, u.feed], 'USDC listed with Chainlink'); }
     $('#pz').onclick = e => run(e.currentTarget, 'factory', s.paused ? 'resume' : 'pause', [], s.paused ? 'Launches resumed' : 'Launches paused');
     $('#pf').onclick = e => run(e.currentTarget, 'factory', 'pushPlatformFees', [owed.map(r => r.x.addr)], 'Platform fees sent');
     $('#fr').onclick = e => { const a = prompt('New fee wallet address'); if (a && AP.isAddress(a)) run(e.currentTarget, 'factory', 'setFeeRecipient', [a], 'Fee wallet changed'); };
