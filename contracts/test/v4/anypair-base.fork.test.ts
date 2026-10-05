@@ -22,6 +22,9 @@ const BRETT = "0x532f27101965dd16442E59d40670FaF5eBB142E4";
 const CAKE = "0x3055913c90Fcc1A6CE9a358911721eEb942013A1";
 const DEGEN = "0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed";
 const BLOOB = "0x960fc5E59BC6055c825846cF2c41A124209b321b"; // trades only in a native-ETH Uniswap V4 pool
+const UNI_V3_NPM = "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1";
+const B20_FACTORY = "0xB20f000000000000000000000000000000000000";
+const POLICY_REGISTRY = "0x8453000000000000000000000000000000000002";
 const UNI = 1, PANCAKE = 2, SLIP = 3, AEROV2 = 4, V4 = 5;
 const EMPTY_KEY = { currency0: ethers.ZeroAddress, currency1: ethers.ZeroAddress, fee: 0, tickSpacing: 0, hooks: ethers.ZeroAddress };
 const BLOOB_KEY = { currency0: ethers.ZeroAddress, currency1: BLOOB, fee: 30000, tickSpacing: 200, hooks: ethers.ZeroAddress };
@@ -359,5 +362,108 @@ describe("Anypair on Base (mainnet fork)", function () {
     expect(tok).to.be.gt(0n);
     expect(await coin.balanceOf(admin.address)).to.eq(tok);
     expect(pair).to.eq(0n);
+  });
+
+  it("launch window is timed in seconds: the launch block is creator-only, then a 3% cap for 6 seconds whatever the block time", async () => {
+    const [admin, creator, sniper] = await ethers.getSigners();
+    const { factory, router } = await deployAll(admin);
+    const coin = await launch(factory, creator);
+    const coinAddr = await coin.getAddress();
+    expect(await coin.PROTECT_SECONDS()).to.eq(6n);
+    await expect(router.connect(sniper).buy(coinAddr, NO_ROUTE, 0, { value: E("1") })).to.be.revertedWithCustomError(coin, "BuyCap");
+    await (await router.connect(sniper).buy(coinAddr, NO_ROUTE, 0, { value: E("0.005") })).wait(); // small buys go through
+    await network.provider.send("evm_increaseTime", [6]);
+    await network.provider.send("evm_mine", []);
+    await (await router.connect(sniper).buy(coinAddr, NO_ROUTE, 0, { value: E("1") })).wait();
+    expect(await coin.balanceOf(sniper.address)).to.be.gt(SUPPLY * 3n / 100n);
+  });
+
+  it("B20 pairs and rewards: open B20 tokens launch, trade and pay out; paused or policy-gated ones are refused; an issuer blocking later still leaves pair claims working", async () => {
+    const [admin, creator, trader, issuer] = await ethers.getSigners();
+    const { factory, router, oracle, hook } = await deployAll(admin);
+    // Base's B20 precompiles can't run on a fork: put stand-ins at their addresses
+    for (const [name, at] of [["MockB20FactoryView", B20_FACTORY], ["MockPolicyRegistry", POLICY_REGISTRY]]) {
+      const m = await (await ethers.getContractFactory(name)).deploy();
+      await network.provider.send("hardhat_setCode", [at, await ethers.provider.getCode(await m.getAddress())]);
+    }
+    const b20f = await ethers.getContractAt("MockB20FactoryView", B20_FACTORY);
+    const reg = await ethers.getContractAt("MockPolicyRegistry", POLICY_REGISTRY);
+    const stock = await (await ethers.getContractFactory("MockB20Token", issuer)).deploy("Tokenized Stock", "tSTK", E("1000000"));
+    const stk = await stock.getAddress();
+    await (await b20f.setB20(stk, true)).wait();
+    expect(await b20f.isB20(USDC)).to.eq(false);
+
+    // a real Uniswap V3 tSTK/WETH pool: 1 tSTK = 0.01 ETH, 10 ETH deep
+    const v3 = await ethers.getContractAt(["function createPool(address,address,uint24) returns (address)", "function getPool(address,address,uint24) view returns (address)"], UNI_V3_FACTORY);
+    await (await v3.connect(issuer).createPool(stk, WETH, 3000)).wait();
+    const poolAddr = await v3.getPool(stk, WETH, 3000);
+    const pool = await ethers.getContractAt(["function initialize(uint160)", "function increaseObservationCardinalityNext(uint16)"], poolAddr, issuer);
+    const stkIs0 = BigInt(stk) < BigInt(WETH);
+    await (await pool.initialize(stkIs0 ? (1n << 96n) / 10n : (1n << 96n) * 10n)).wait();
+    await (await pool.increaseObservationCardinalityNext(64)).wait();
+    const weth = await ethers.getContractAt(["function deposit() payable", "function approve(address,uint256) returns (bool)"], WETH, issuer);
+    await (await weth.deposit({ value: E("10") })).wait();
+    await (await weth.approve(UNI_V3_NPM, ethers.MaxUint256)).wait();
+    await (await stock.approve(UNI_V3_NPM, ethers.MaxUint256)).wait();
+    const npm = await ethers.getContractAt(["function mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256)) payable returns (uint256,uint128,uint256,uint256)"], UNI_V3_NPM, issuer);
+    const [t0, t1] = stkIs0 ? [stk, WETH] : [WETH, stk];
+    const [a0, a1] = stkIs0 ? [E("1000"), E("10")] : [E("10"), E("1000")];
+    await (await npm.mint([t0, t1, 3000, -887220, 887220, a0, a1, 0, 0, issuer.address, 2n ** 40n])).wait();
+    await network.provider.send("evm_increaseTime", [31 * 60]);
+    await network.provider.send("evm_mine", []);
+    SRC[stk] = { dex: UNI, pool: poolAddr, key: EMPTY_KEY };
+    const usd = await usdWhole(oracle, WETH).catch(() => 0);
+    await (await oracle.register(SRC[stk])).wait();
+    console.log(`      tSTK priced from its Uniswap V3 pool: $${(await usdWhole(oracle, stk)).toFixed(2)} (ETH $${usd.toFixed(0)})`);
+
+    // paused transfers: refused as pair and as reward asset
+    await (await stock.setPaused(true)).wait();
+    await expect(launch(factory, creator, { pair: stk })).to.be.revertedWithCustomError(factory, "B20Restricted");
+    await expect(launch(factory, creator, { basket: [stk] })).to.be.revertedWithCustomError(factory, "B20Restricted");
+    await (await stock.setPaused(false)).wait();
+
+    // a receiver blocklist that names the router: refused
+    const RECEIVER = ethers.id("TRANSFER_RECEIVER_POLICY");
+    await (await reg.setPolicy(7, 2)).wait();
+    await (await reg.setListed(7, [await router.getAddress()], true)).wait();
+    await (await stock.updatePolicy(RECEIVER, 7)).wait();
+    await expect(launch(factory, creator, { pair: stk })).to.be.revertedWithCustomError(factory, "B20Restricted");
+    await expect(launch(factory, creator, { basket: [stk] })).to.be.revertedWithCustomError(factory, "B20Restricted");
+    // an executor allowlist that leaves out Anypair's contracts: refused
+    await (await stock.updatePolicy(RECEIVER, 0)).wait();
+    await (await reg.setPolicy(8, 1)).wait();
+    await (await reg.setListed(8, [issuer.address, poolAddr, UNI_V3_NPM], true)).wait();
+    await (await stock.updatePolicy(ethers.id("TRANSFER_EXECUTOR_POLICY"), 8)).wait();
+    await expect(launch(factory, creator, { pair: stk })).to.be.revertedWithCustomError(factory, "B20Restricted");
+    // ...and accepted once every contract that moves it is on the list
+    await (await reg.setListed(8, [POOL_MANAGER, await router.getAddress(), await hook.getAddress(), await factory.getAddress()], true)).wait();
+    await expect(launch(factory, creator, { pair: stk })).to.be.revertedWithCustomError(factory, "B20Restricted"); // the new coin itself isn't listed yet
+    await (await stock.updatePolicy(ethers.id("TRANSFER_EXECUTOR_POLICY"), 0)).wait();
+
+    // an open B20: launches as pair with a B20 reward asset, trades, pays out every way
+    const coin = await launch(factory, creator, { ethIn: E("0.01"), pair: stk, basket: [stk, AERO] });
+    const coinAddr = await coin.getAddress();
+    expect(await coin.pairAsset()).to.eq(stk);
+    await pastSnipe();
+    const r = await routeFor(stk);
+    await (await router.connect(trader).buy(coinAddr, r, 0, { value: E("0.2") })).wait();
+    await (await coin.connect(trader).approve(await router.getAddress(), ethers.MaxUint256)).wait();
+    await (await router.connect(trader).sell(coinAddr, (await coin.balanceOf(trader.address)) / 3n, r, 0)).wait();
+    const s0 = await stock.balanceOf(trader.address);
+    await (await coin.connect(trader).claimRewardsAsBasket(r, [r, await routeFor(AERO)], [1n, 1n])).wait();
+    expect((await stock.balanceOf(trader.address)) - s0).to.be.gt(0n);
+    await (await router.connect(trader).sell(coinAddr, (await coin.balanceOf(trader.address)) / 3n, r, 0)).wait();
+
+    // the issuer later blocks the router: trading through it stops, but pair claims still work
+    await (await stock.updatePolicy(RECEIVER, 7)).wait();
+    await expect(router.connect(trader).buy(coinAddr, r, 0, { value: E("0.05") })).to.be.reverted;
+    const pend = await coin.pendingRewards(trader.address);
+    expect(pend).to.be.gt(0n);
+    const s1 = await stock.balanceOf(trader.address);
+    await (await coin.connect(trader).claimRewards()).wait();
+    expect((await stock.balanceOf(trader.address)) - s1).to.eq(pend);
+    await (await coin.payCreator()).wait();
+    // plain ERC-20s are untouched by the B20 checks
+    await launch(factory, creator, { pair: USDC, basket: [AERO] });
   });
 });

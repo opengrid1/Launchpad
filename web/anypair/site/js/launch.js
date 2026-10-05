@@ -42,11 +42,12 @@
     if (!item) return '';
     if (item.state === 'checking') return `<div class="status wait">${U.ic('search')}<span>Checking ${U.esc(item.info ? item.info.symbol : 'the token')}'s pools on Uniswap, Aerodrome and PancakeSwap…</span></div>`;
     if (item.state === 'bad') return `<div class="status bad">${U.ic('alert')}<span>${U.esc(item.err)}. ${isPair ? 'Pick another pair.' : 'Remove it or pick another.'}</span></div>`;
-    const d = item.disc; if (item.addr === AP.weth) return `<div class="status ok">${U.ic('check')}<span>ETH, priced by Chainlink. Trades go straight through the pool.</span></div>`;
-    if (d.listed) return `<div class="status ok">${U.ic('check')}<span>${U.esc(item.info.symbol)} has a fixed price source. Ready.</span></div>`;
+    const d = item.disc; const b20 = d.b20 && d.b20.b20 ? ' B20 token: transfers are open to Anypair.' : '';
+    if (item.addr === AP.weth) return `<div class="status ok">${U.ic('check')}<span>ETH, priced by Chainlink. Trades go straight through the pool.</span></div>`;
+    if (d.listed) return `<div class="status ok">${U.ic('check')}<span>${U.esc(item.info.symbol)} has a fixed price source. Ready.${b20}</span></div>`;
     const last = (d.hops || [])[d.hops.length - 1]; const where = last ? AP.DEX_NAMES[last.dex] : 'its pool';
-    return d.best ? `<div class="status ok">${U.ic('check')}<span>Priced from its ${U.esc(where)} pool against ${d.best.anchor === AP.usdc ? 'USDC' : 'ETH'} (${U.usd(d.best.depth)} deep). Your launch registers it.</span></div>`
-      : `<div class="status ok">${U.ic('check')}<span>Already priced from ${U.esc(where)}. Ready.</span></div>`;
+    return d.best ? `<div class="status ok">${U.ic('check')}<span>Priced from its ${U.esc(where)} pool against ${d.best.anchor === AP.usdc ? 'USDC' : 'ETH'} (${U.usd(d.best.depth)} deep). Your launch registers it.${b20}</span></div>`
+      : `<div class="status ok">${U.ic('check')}<span>Already priced from ${U.esc(where)}. Ready.${b20}</span></div>`;
   }
   function pickPair(a) { a = a.toLowerCase(); f.pair = { addr: a, state: 'checking' }; f.basket = f.basket.filter(b => b.addr !== a); check(f.pair); }
   function addBasket(a) { a = a.toLowerCase(); if (f.basket.length >= 4 || f.basket.some(b => b.addr === a) || a === AP.weth) return; const it = { addr: a, state: 'checking' }; f.basket.push(it); check(it); }

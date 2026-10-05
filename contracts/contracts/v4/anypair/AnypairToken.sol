@@ -60,8 +60,10 @@ interface IAnypairHook {
 ///         as ETH always stays available.
 ///
 ///         Launch protection: in the launch block only the creator may receive
-///         coins from the pool; for the next PROTECT_BLOCKS every wallet is
-///         capped at MAX_BUY_BPS bought and MAX_HOLD_BPS held.
+///         coins from the pool; for PROTECT_SECONDS after launch every wallet is
+///         capped at MAX_BUY_BPS bought and MAX_HOLD_BPS held. The window is
+///         measured in seconds, not blocks, so it keeps its length when Base's
+///         block time changes.
 contract AnypairToken is ERC20, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -88,7 +90,7 @@ contract AnypairToken is ERC20, ReentrancyGuard {
     uint256 public immutable launchTime;
 
     // Launch protection.
-    uint256 public constant PROTECT_BLOCKS = 3;
+    uint256 public constant PROTECT_SECONDS = 6;
     uint16 public constant MAX_HOLD_BPS = 300; // 3% of supply
     uint16 public constant MAX_BUY_BPS = 300;
     mapping(address => uint256) private _boughtInWindow;
@@ -384,16 +386,14 @@ contract AnypairToken is ERC20, ReentrancyGuard {
         // router passing them on) during the launch window. Sells and system
         // transfers are unaffected.
         if ((from == poolManager || (from == converter && from != address(0))) && !excluded[to] && value > 0) {
-            if (block.number < launchBlock + PROTECT_BLOCKS) {
-                if (block.number == launchBlock) {
-                    if (to != creator) revert LaunchGuard();
-                } else {
-                    uint256 supply = totalSupply();
-                    uint256 bought = _boughtInWindow[to] + value;
-                    if (bought > (supply * MAX_BUY_BPS) / BPS) revert BuyCap();
-                    if (balanceOf(to) + value > (supply * MAX_HOLD_BPS) / BPS) revert HoldCap();
-                    _boughtInWindow[to] = bought;
-                }
+            if (block.number == launchBlock) {
+                if (to != creator) revert LaunchGuard();
+            } else if (block.timestamp < launchTime + PROTECT_SECONDS) {
+                uint256 supply = totalSupply();
+                uint256 bought = _boughtInWindow[to] + value;
+                if (bought > (supply * MAX_BUY_BPS) / BPS) revert BuyCap();
+                if (balanceOf(to) + value > (supply * MAX_HOLD_BPS) / BPS) revert HoldCap();
+                _boughtInWindow[to] = bought;
             }
         }
 

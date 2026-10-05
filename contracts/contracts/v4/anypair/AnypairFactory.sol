@@ -21,6 +21,7 @@ import {AnypairToken} from "./AnypairToken.sol";
 import {AnypairTokenDeployer} from "./AnypairTokenDeployer.sol";
 import {AnypairHook} from "./AnypairHook.sol";
 import {AnypairOracle} from "./AnypairOracle.sol";
+import {B20Check} from "./B20Check.sol";
 
 /// @dev The launchpad router: turns ETH into a pair asset along a caller-
 ///      supplied route (Uniswap V3 path and/or a V4 pool) and back.
@@ -304,6 +305,8 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
             })
         );
 
+        _checkB20(token, pair, p.basket);
+
         (key, tokenIsCurrency0) = _key(token, pair);
 
         uint256 priceQ = _priceQ(pairUsd18);
@@ -334,6 +337,21 @@ contract AnypairFactory is ReentrancyGuard, IUnlockCallback {
             _priced(s);
             for (uint256 j; j < i; j++) if (basket[j] == s) revert InvalidParams();
         }
+    }
+
+    /// @dev B20 pair and basket assets must be movable by every contract that
+    ///      handles them: the pair by the pool, router, hook, coin and factory;
+    ///      basket assets by the pool and the router that buys them on claim.
+    function _checkB20(address token, address pair, address[] calldata basket) internal view {
+        address[] memory parties = new address[](5);
+        parties[0] = address(poolManager);
+        parties[1] = converter;
+        parties[2] = address(hook);
+        parties[3] = token;
+        parties[4] = address(this);
+        B20Check.requireOpen(pair, parties);
+        assembly ("memory-safe") { mstore(parties, 2) } // basket assets: pool and router only
+        for (uint256 i; i < basket.length; i++) B20Check.requireOpen(basket[i], parties);
     }
 
     /// @dev A launch's pair or basket asset: not blocked, and priced now.

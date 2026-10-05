@@ -40,6 +40,9 @@
       </tbody></table></div>
       <p>Averages mean one big trade can't fake a price. For a token that only trades on Uniswap V4, new launches against it wait after a sharp jump or crash, until the slow price catches up.</p>
       <p>Fee-on-transfer and rebasing tokens don't work as pairs.</p>
+      <h3>B20 tokens</h3>
+      <p>B20 is Base's native token standard, used for stablecoins and real-world assets. B20 tokens work as pairs and as reward assets like any other token. Their issuers can pause transfers or limit who may hold them, so a launch checks that transfers are open to Anypair's contracts and is refused if they aren't.</p>
+      <p>An issuer can change those rules after launch. If they pause transfers or block Anypair's contracts, trading through Anypair stops until they lift it. Holders keep their rewards and can claim them in whatever form the issuer still allows.</p>
     </section>
 
     <section id="fees">
@@ -78,7 +81,7 @@
       <h3>The first seconds</h3>
       <ul class="timeline">
         <li><b>Launch block</b><span>Only the creator can buy.</span></li>
-        <li><b>Next 3 blocks</b><span>No wallet can buy or hold more than 3% of the supply.</span></li>
+        <li><b>First 6 seconds</b><span>No wallet can buy or hold more than 3% of the supply.</span></li>
         <li><b>First 20 seconds</b><span>The fee starts at 99% and falls to 2%.</span></li>
       </ul>
       <p>Sniping the start doesn't pay.</p>
@@ -99,8 +102,9 @@
       <div class="faq">
         <details open><summary>Why pair with something other than ETH?</summary><p>A coin paired with USDC has a stable unit of account. One paired with a tokenized stock ties it to a real-world asset. One paired with cbBTC or AERO puts its trading volume into that community's token. Holders who believe in an asset can be paid in it.</p></details>
         <details><summary>What does a launch cost?</summary><p>Only gas. Base gas is a fraction of a cent to a few cents. A first buy is optional.</p></details>
-        <details><summary>Why was my pair refused?</summary><p>Usually because its pools are too thin to price it safely, it only trades against something other than ETH or USDC, or it has no price history yet. The launch form tells you which.</p></details>
+        <details><summary>Why was my pair refused?</summary><p>Usually because its pools are too thin to price it safely, it only trades against something other than ETH or USDC, or it has no price history yet. A B20 token is also refused if its issuer has paused it or doesn't let Anypair's contracts move it. The launch form tells you which.</p></details>
         <details><summary>Can holders be paid in something other than the pair?</summary><p>Yes. The creator can pick up to four reward assets, any token with a real pool on Base. Holders can still always claim in the pair token or ETH instead.</p></details>
+        <details><summary>Can I pair with a B20 token?</summary><p>Yes. Stablecoins and tokenized stocks issued as B20 work as pairs and reward assets, as long as they trade in a pool deep enough to price them and their issuer lets Anypair's contracts move them.</p></details>
         <details><summary>What happens to the platform share?</summary><p>It pays for running the site and the infrastructure behind it.</p></details>
       </div>
     </section>

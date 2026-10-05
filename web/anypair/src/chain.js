@@ -296,9 +296,39 @@ async function routeFor(token) { const hops = await hopsFor(token); return hops.
 // Every canonical pool of `token` against WETH, native ETH (V4) or USDC, checked by the oracle itself.
 const V3_TIERS = [100, 500, 3000, 10000], PCS_TIERS = [100, 500, 2500, 10000];
 const V4_KEYS = [[100, 1], [500, 10], [3000, 60], [10000, 200], [30000, 200]];
+// B20 (Base's native token standard): the issuer can pause transfers or gate who
+// may send, receive or execute them. The factory refuses a B20 pair or reward
+// asset that Anypair's contracts can't move; this mirrors that check.
+const B20_FACTORY = '0xB20f000000000000000000000000000000000000', POLICY_REGISTRY = '0x8453000000000000000000000000000000000002';
+const B20_I = new ethers.Interface(['function isB20(address) view returns (bool)', 'function isPaused(uint8) view returns (bool)', 'function policyId(bytes32) view returns (uint64)', 'function isAuthorized(uint64,address) view returns (bool)']);
+const B20_SCOPES = ['TRANSFER_SENDER_POLICY', 'TRANSFER_RECEIVER_POLICY', 'TRANSFER_EXECUTOR_POLICY'].map(n => ethers.id(n));
+async function b20Status(token) {
+  const t = lower(token);
+  return cached('b20:' + t, 60000, async () => {
+    let is = false;
+    try { const r = await provider.call({ to: B20_FACTORY, data: B20_I.encodeFunctionData('isB20', [t]) }); is = !!r && r !== '0x' && B20_I.decodeFunctionResult('isB20', r)[0]; } catch {}
+    if (!is) return { b20: false, ok: true };
+    const tok = new ethers.Contract(t, B20_I, provider), reg = new ethers.Contract(POLICY_REGISTRY, B20_I, provider);
+    try {
+      if (await tok.isPaused(0)) return { b20: true, ok: false, why: 'Its issuer has paused transfers' };
+      // a fresh address stands in for the new coin, which no allowlist can name yet
+      const parties = [PM, C.router, C.hook, C.factory, ethers.Wallet.createRandom().address].filter(Boolean);
+      for (const scope of B20_SCOPES) {
+        const id = await tok.policyId(scope); if (id === 0n) continue;
+        for (const a of parties) if (!(await reg.isAuthorized(id, a))) return { b20: true, ok: false, why: "Its issuer limits who can hold or move it, and Anypair's contracts aren't on the list" };
+      }
+      return { b20: true, ok: true };
+    } catch { return { b20: true, ok: false, why: "Couldn't read its B20 transfer rules" }; }
+  });
+}
 async function discover(token, from) {
   const t = lower(token); const info = await tokenInfo(t);
   if (t === WETH) return { info, ready: true, listed: true, sources: [] };
+  const b20 = await b20Status(t);
+  if (!b20.ok) return { info, ready: false, b20, candidates: [{ err: b20.why }] };
+  return { ...(await discoverPools(t, from, info)), b20 };
+}
+async function discoverPools(t, from, info) {
   const [listed, src] = PRELAUNCH ? [{ listed: t === USDC }, { dex: 0 }] : await Promise.all([oracle.listed(t), oracle.sources(t)]);
   if (listed.listed || Number(src.dex)) { const hops = await hopsFor(t).catch(() => []); return { info, ready: true, listed: listed.listed, current: Number(src.dex) ? { dex: Number(src.dex), pool: src.pool } : null, hops, sources: [] }; }
   const anchors = [WETH, USDC]; const cands = [];
@@ -338,7 +368,7 @@ async function discover(token, from) {
 // ---------------------------------------------------------------- wallet + transactions
 function errText(e) {
   const raw = String(e && (e.shortMessage || e.reason || e.message) || e);
-  const map = { TooShallow: 'Its pools are too thin to price it safely', NoPrice: 'No price for this token yet', BadSource: 'Not a pool the launchpad can price from', PriceMoving: 'Its price is moving fast right now; try again in a few minutes', Blocked: 'This token is blocked', LaunchesPaused: 'Launches are paused', BuyCap: 'Buys are capped at 3% of supply for the first blocks', HoldCap: 'Wallets are capped at 3% of supply for the first blocks', Slippage: 'Price moved more than your slippage', NotAdmin: 'Only the admin wallet can do this' };
+  const map = { TooShallow: 'Its pools are too thin to price it safely', NoPrice: 'No price for this token yet', BadSource: 'Not a pool the launchpad can price from', PriceMoving: 'Its price is moving fast right now; try again in a few minutes', Blocked: 'This token is blocked', LaunchesPaused: 'Launches are paused', BuyCap: 'Buys are capped at 3% of supply for the first 6 seconds', HoldCap: 'Wallets are capped at 3% of supply for the first 6 seconds', B20Restricted: "A B20 token's issuer rules stop Anypair's contracts from moving it", Slippage: 'Price moved more than your slippage', NotAdmin: 'Only the admin wallet can do this' };
   const data = e && (e.data || (e.info && e.info.error && e.info.error.data) || (e.error && e.error.data));
   if (data && typeof data === 'string' && data.length >= 10) { for (const k of ['AnypairFactory', 'AnypairOracle', 'AnypairRouter', 'AnypairToken', 'AnypairHook']) { try { const p = I[k].parseError(data); if (p) return map[p.name] || p.name; } catch {} } }
   for (const k of Object.keys(map)) if (raw.includes(k)) return map[k];
@@ -359,7 +389,7 @@ function salt() { return ethers.hexlify(ethers.randomBytes(32)); }
 
 const api = {
   cfg: CFG, weth: WETH, usdc: USDC, explorer: EXPLORER, DEX_NAMES, ready: null, stale: false,
-  tokens: () => tokens, token: a => byAddr[lower(a)], nowTs, tokenInfo, usdOf, ethUsd, discover, hopsFor, routeFor, errText,
+  tokens: () => tokens, token: a => byAddr[lower(a)], nowTs, tokenInfo, usdOf, ethUsd, discover, b20Status, hopsFor, routeFor, errText,
   isAddress: a => ethers.isAddress(a || ''), checksum: a => { try { return ethers.getAddress(a); } catch { return a; } },
   parseUnits: (v, d) => ethers.parseUnits(String(v), d), formatUnits: (v, d) => ethers.formatUnits(v, d),
   async load() {
