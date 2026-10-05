@@ -34,7 +34,7 @@ def ic(n):
 def config():
     tokens = json.load(open(os.path.join(HERE, 'tokens.json')))
     if MODE == 'preview':
-        cfg = {'chainId': 8453, 'rpc': 'https://mainnet.base.org', 'rpcs': ['https://base-rpc.publicnode.com', 'https://base.drpc.org'], 'blockscout': 'https://base.blockscout.com', 'logSpan': 9000, 'prelaunch': True, 'demo': True,
+        cfg = {'chainId': 8453, 'rpc': 'https://mainnet.base.org', 'rpcs': ['https://base-rpc.publicnode.com', 'https://base.drpc.org'], 'blockscout': 'https://base.blockscout.com', 'logSpan': 1900, 'prelaunch': True, 'demo': True,
                'contracts': {}, 'deployBlock': 1, 'admin': os.environ.get('ADMIN', '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'), 'explorer': 'https://basescan.org', 'weth': '0x4200000000000000000000000000000000000006', 'usdc': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
                'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'), 'tokens': tokens, 'social': {'x': 'https://x.com/anypair_world'}}
         return 'window.ANYPAIR = ' + json.dumps(cfg, separators=(',', ':')) + ';\n'
@@ -43,7 +43,7 @@ def config():
         cfg = {'chainId': 8453, 'rpc': 'http://127.0.0.1:8545', 'rpcs': [], 'blockscout': '', 'logSpan': 100000, 'injectedOnly': True, 'exactTimes': True}
     else:
         dep = json.load(open(os.environ.get('DEPLOY', '/home/user/Launchpad/contracts/deployments/base-anypair.json')))
-        cfg = {'chainId': 8453, 'rpc': 'https://mainnet.base.org', 'rpcs': ['https://base-rpc.publicnode.com', 'https://base.drpc.org'], 'blockscout': 'https://base.blockscout.com', 'logSpan': 9000}
+        cfg = {'chainId': 8453, 'rpc': 'https://mainnet.base.org', 'rpcs': ['https://base-rpc.publicnode.com', 'https://base.drpc.org'], 'blockscout': 'https://base.blockscout.com', 'logSpan': 1900}
     c = dep['contracts']
     cfg.update({
         'contracts': {k: c[k] for k in ('factory', 'oracle', 'router', 'hook', 'tokenDeployer')},

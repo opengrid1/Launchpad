@@ -36,5 +36,17 @@
     "holderBps": 2500,
     "platformBps": 4000
   },
-  "deployedAt": "2026-10-05T02:27:41.792Z"
+  "deployedAt": "2026-10-05T02:27:41.792Z",
+  "testCoins": [
+    {
+      "token": "0x5a61313823ABEba0e2a5535163f2ca2F84882544",
+      "symbol": "APTEST",
+      "note": "test coin, WETH pair, 0.001 ETH first buy"
+    },
+    {
+      "token": "0x9e08dB783Ce8Da9ef1d9CFFfaa198eC56AF60CC1",
+      "symbol": "APTEST",
+      "note": "accidental duplicate; launcher sold its whole position; hide from the admin page"
+    }
+  ]
 }

@@ -40,9 +40,10 @@ class RotatingProvider extends ethers.JsonRpcProvider {
   constructor(urls) { super(urls[0], { chainId: CHAIN_ID, name: 'base' }, { staticNetwork: true, batchMaxCount: 20, batchStallTime: 12 }); this.urls = urls; }
   async _post(url, items) {
     const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(items.length === 1 ? items[0] : items) });
-    if (r.status === 429 || r.status >= 500) throw Object.assign(new Error('http ' + r.status), { limited: true });
+    if (!r.ok) throw Object.assign(new Error('http ' + r.status), { limited: true }); // 413/403/429/5xx: another RPC may take it
     const j = await r.json(); const arr = Array.isArray(j) ? j : [j];
-    if (arr.some(x => x && x.error && /limit|rate|too many|batch/i.test(String(x.error.message)))) throw Object.assign(new Error('rate limited'), { limited: true });
+    // provider-specific refusals (rate limits, block-range caps, free-plan limits): try the next RPC
+    if (arr.some(x => x && x.error && /limit|rate|too many|batch|range|plan|not supported|exceed|unavailable|archive|token|payload/i.test(String(x.error.message)))) throw Object.assign(new Error('provider refused: ' + String((arr.find(x => x && x.error) || {}).error.message).slice(0, 80)), { limited: true });
     return arr;
   }
   async _chunk(items) {
@@ -138,7 +139,7 @@ const SWAP_TOPIC = I.PoolManager.getEvent('Swap').topicHash;
 const INIT_TOPIC = I.PoolManager.getEvent('Initialize').topicHash;
 const CLAIM_TOPIC = I.AnypairToken.getEvent('RewardsClaimed').topicHash;
 const TRANSFER_TOPIC = I.ERC20.getEvent('Transfer').topicHash;
-const LOG_SPAN = CFG.logSpan || 9000;
+const LOG_SPAN = CFG.logSpan || 1900; // mainnet.base.org caps eth_getLogs at 2,000 blocks
 async function rpcLogs(address, topics, from, to) {
   const out = [];
   for (let a = from; a <= to; a += LOG_SPAN) {
