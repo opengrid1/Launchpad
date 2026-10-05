@@ -274,6 +274,19 @@ async function loadAll() {
   LS.set('ap:snap:' + lower(C.factory), { at: Date.now(), head, tokens });
   return tokens;
 }
+async function serverSnapshot() {
+  if (CFG.server || !CFG.snapUrl) return false;
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 5000);
+    const r = await fetch(CFG.snapUrl, { signal: ctl.signal }); clearTimeout(t); if (!r.ok) return false;
+    const d = await r.json(); if (!d || !Array.isArray(d.tokens) || !d.tokens.length || lower(d.factory) !== lower(C.factory)) return false;
+    tokens = d.tokens; byAddr = Object.fromEntries(tokens.map(x => [x.addr, x]));
+    Object.assign(statics, d.statics || {});
+    if (d.head && d.head.n > (head.n || 0)) head = { ...d.head, at: Date.now() - Math.max(0, Date.now() - d.at) };
+    if (Array.isArray(d.trades) && d.last > trades.last) trades = { last: d.last, items: d.trades };
+    return true;
+  } catch { return false; }
+}
 function loadSnapshot() { const s = LS.get('ap:snap:' + lower(C.factory)); if (!s || !Array.isArray(s.tokens) || !s.tokens.length) return false; tokens = s.tokens; byAddr = Object.fromEntries(tokens.map(x => [x.addr, x])); if (s.head && !head.at) head = { ...s.head, at: Date.now() - (Date.now() - s.at) }; return true; }
 
 // holders: the explorer when there is one, else balances rebuilt from Transfer events
@@ -426,7 +439,8 @@ const api = {
   parseUnits: (v, d) => ethers.parseUnits(String(v), d), formatUnits: (v, d) => ethers.formatUnits(v, d),
   async load() {
     const full = () => retry(loadAll, 2).then(t => { api.stale = false; window.dispatchEvent(new CustomEvent('ap:update')); return t; });
-    if (loadSnapshot()) { api.stale = true; full().catch(e => console.warn('refresh', e)); } else await full();
+    // the server's cached snapshot shows coins at once; this browser then refreshes from the chain in the background
+    if ((await serverSnapshot()) || loadSnapshot()) { api.stale = true; full().catch(e => console.warn('refresh', e)); } else await full();
     window.dispatchEvent(new CustomEvent('ap:ready')); return tokens;
   },
   refresh: () => { if (PRELAUNCH) return Promise.resolve(tokens); memo.trades = null; return loadAll().then(t => { window.dispatchEvent(new CustomEvent('ap:update')); return t; }); },
@@ -494,6 +508,8 @@ const api = {
       return send(g => K(addr, abi, s)[fn](...args, { gasLimit: g }), () => K(addr, abi)[fn].estimateGas(...args, { from: me })); },
   },
 };
+// what the server-side snapshot (/api/snap) serves: everything the pages need to draw at once
+api.snapshot = () => ({ factory: C.factory, at: Date.now(), head, tokens, statics, trades: trades.items, last: trades.last });
 window.AP = api;
 api.prelaunch = PRELAUNCH;
 api.demo = DEMO;

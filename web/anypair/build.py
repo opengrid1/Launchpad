@@ -50,7 +50,7 @@ def config():
         'deployBlock': dep.get('deployBlock', 1), 'admin': dep['admin'], 'explorer': 'https://basescan.org',
         'weth': '0x4200000000000000000000000000000000000006', 'usdc': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
         'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'),
-        'tokens': tokens, 'social': {'x': 'https://x.com/anypair_world'},
+        'tokens': tokens, 'social': {'x': 'https://x.com/anypair_world'}, 'snapUrl': '/api/snap',
     })
     return 'window.ANYPAIR = ' + json.dumps(cfg, separators=(',', ':')) + ';\n'
 
@@ -156,7 +156,17 @@ def build():
                 new = new.replace('/img/' + n + '"', '/img/' + n + '?v=' + h + '"').replace("/img/" + n + "'", "/img/" + n + "?v=" + h + "'")
             if new != txt:
                 open(fp, 'w').write(new)
+    # live: the server-side snapshot function (api/snap) and the node build of the chain code it runs
+    fns = {}
+    if MODE == 'live' and os.path.exists(os.path.join(SITE, 'server', 'chain.cjs')):
+        os.makedirs(os.path.join(DIST, 'api'))
+        shutil.copy(os.path.join(HERE, 'src', 'snap.js'), os.path.join(DIST, 'api', 'snap.js'))
+        shutil.copy(os.path.join(SITE, 'server', 'chain.cjs'), os.path.join(DIST, 'api', '_chain.js'))
+        cfg = json.loads(config()[len('window.ANYPAIR = '):].rstrip().rstrip(';'))
+        json.dump(cfg, open(os.path.join(DIST, 'api', '_config.json'), 'w'))
+        fns = {'functions': {'api/snap.js': {'maxDuration': 60}}}
     json.dump({
+        **fns,
         'cleanUrls': True, 'trailingSlash': False,
         'rewrites': [{'source': '/coin/:addr', 'destination': '/coin'}],
         'headers': [{'source': '/(.*)', 'headers': [{'key': 'X-Content-Type-Options', 'value': 'nosniff'}, {'key': 'Referrer-Policy', 'value': 'strict-origin-when-cross-origin'}]},
