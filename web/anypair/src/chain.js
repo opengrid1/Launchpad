@@ -36,14 +36,27 @@ const RPCS = [...new Set([CFG.rpc || 'https://mainnet.base.org', ...(CFG.rpcs ||
 const CAP = { 'mainnet.base.org': 10, 'base-rpc.publicnode.com': 20, 'base.drpc.org': 3, '127.0.0.1:8545': 50, 'localhost:8545': 50 };
 const capOf = u => { try { return CAP[new URL(u).host] || 10; } catch { return 10; } };
 let rr = 0; const cool = {};
+let spanCap = 1e9; // the smallest eth_getLogs block range an RPC has told us it accepts
+let injChecked = 0, injOk = null;
+async function injectedBase() {
+  const e = window.ethereum; if (!e || !e.request) return null;
+  if (Date.now() - injChecked > 30000) { injChecked = Date.now(); try { injOk = Number(await e.request({ method: 'eth_chainId' })) === CHAIN_ID ? e : null; } catch { injOk = null; } }
+  return injOk;
+}
 class RotatingProvider extends ethers.JsonRpcProvider {
   constructor(urls) { super(urls[0], { chainId: CHAIN_ID, name: 'base' }, { staticNetwork: true, batchMaxCount: 20, batchStallTime: 12 }); this.urls = urls; }
   async _post(url, items) {
     const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(items.length === 1 ? items[0] : items) });
     if (!r.ok) throw Object.assign(new Error('http ' + r.status), { limited: true }); // 413/403/429/5xx: another RPC may take it
     const j = await r.json(); const arr = Array.isArray(j) ? j : [j];
-    // provider-specific refusals (rate limits, block-range caps, free-plan limits): try the next RPC
-    if (arr.some(x => x && x.error && /limit|rate|too many|batch|range|plan|not supported|exceed|unavailable|archive|token|payload/i.test(String(x.error.message)))) throw Object.assign(new Error('provider refused: ' + String((arr.find(x => x && x.error) || {}).error.message).slice(0, 80)), { limited: true });
+    const bad = arr.find(x => x && x.error && /limit|rate|too many|batch|range|plan|not supported|exceed|unavailable|archive|token|payload/i.test(String(x.error.message)));
+    if (bad) {
+      // provider-specific refusals: a block-range cap teaches the span to use; the RPC stays usable for smaller calls
+      const msg = String(bad.error.message); const cap = msg.match(/(?:limited to a|up to a)\s+([\d,]+)\s*(?:block)?/i);
+      if (cap) spanCap = Math.max(10, Math.min(spanCap, Number(cap[1].replace(/,/g, '')) - 1));
+      const ranged = /range|block/i.test(msg) && !/rate|too many/i.test(msg);
+      throw Object.assign(new Error('provider refused: ' + msg.slice(0, 80)), { limited: !ranged, ranged });
+    }
     return arr;
   }
   async _chunk(items) {
@@ -54,6 +67,9 @@ class RotatingProvider extends ethers.JsonRpcProvider {
       const t = Date.now(); const live = order.filter(u => !(cool[u] > t) && capOf(u) >= items.length);
       for (const u of (live.length ? live : order)) { if (capOf(u) < items.length) continue; try { return await this._post(u, items); } catch (e) { last = e; if (e.limited) cool[u] = Date.now() + 15000; } }
     }
+    // every public RPC refused: inside a wallet app, read through the wallet's own Base connection
+    const inj = await injectedBase();
+    if (inj) return Promise.all(items.map(async it => { try { return { jsonrpc: '2.0', id: it.id, result: await inj.request({ method: it.method, params: it.params }) }; } catch (e) { return { jsonrpc: '2.0', id: it.id, error: { code: e.code || -32000, message: String(e.message || e), data: e.data } }; } }));
     throw last || new Error('all RPCs failed');
   }
   async _send(payload) {
@@ -140,11 +156,17 @@ const INIT_TOPIC = I.PoolManager.getEvent('Initialize').topicHash;
 const CLAIM_TOPIC = I.AnypairToken.getEvent('RewardsClaimed').topicHash;
 const TRANSFER_TOPIC = I.ERC20.getEvent('Transfer').topicHash;
 const LOG_SPAN = CFG.logSpan || 1900; // mainnet.base.org caps eth_getLogs at 2,000 blocks
+async function rangeLogs(address, topics, a, b) {
+  if (b - a + 1 > spanCap) { const m = a + spanCap - 1; return [...await rangeLogs(address, topics, a, m), ...await rangeLogs(address, topics, m + 1, b)]; }
+  try { return await retry(() => provider.getLogs({ address, topics, fromBlock: a, toBlock: b }), 2); }
+  catch (e) { if (b - a < 20) throw e; const m = (a + b) >> 1; return [...await rangeLogs(address, topics, a, m), ...await rangeLogs(address, topics, m + 1, b)]; }
+}
 async function rpcLogs(address, topics, from, to) {
-  // spans are capped by the RPCs (2,000 blocks on mainnet.base.org), so fetch them four at a time
-  const spans = []; for (let a = from; a <= to; a += LOG_SPAN) spans.push([a, Math.min(to, a + LOG_SPAN - 1)]);
+  // RPCs cap the block range (500 to 2,000 blocks, and it changes): spans follow the smallest cap seen, four at a time
+  const span = Math.min(LOG_SPAN, spanCap);
+  const spans = []; for (let a = from; a <= to; a += span) spans.push([a, Math.min(to, a + span - 1)]);
   const res = new Array(spans.length); let next = 0;
-  const worker = async () => { while (next < spans.length) { const k = next++; const [a, b] = spans[k]; res[k] = await retry(() => provider.getLogs({ address, topics, fromBlock: a, toBlock: b })); } };
+  const worker = async () => { while (next < spans.length) { const k = next++; const [a, b] = spans[k]; res[k] = await rangeLogs(address, topics, a, b); } };
   await Promise.all([...Array(Math.min(4, spans.length))].map(worker));
   const out = [];
   for (const ls of res) for (const l of ls) out.push({ address: lower(l.address), topics: l.topics, data: l.data, block: l.blockNumber, tx: l.transactionHash, index: l.index });
@@ -158,13 +180,21 @@ async function scoutLogs(address, topics, from, to) {
   if (j.status !== '1' || !Array.isArray(j.result)) throw new Error('explorer logs unavailable');
   return j.result.map(l => ({ address: lower(l.address), topics: l.topics.filter(Boolean), data: l.data, block: Number(l.blockNumber), tx: l.transactionHash, index: Number(l.logIndex || 0) }));
 }
+// the explorer returns at most 1,000 logs per call: split the range when a call comes back full
+async function scoutAll(address, topics, from, to) {
+  const r = await scoutLogs(address, topics, from, to);
+  if (r.length < 1000 || to - from < 2) return r;
+  const m = (from + to) >> 1; return [...await scoutAll(address, topics, from, m), ...await scoutAll(address, topics, m + 1, to)];
+}
+const RECENT = 300; // newest blocks come from the RPC: the explorer indexes a few seconds behind
 async function getLogs(address, topics, from, to) {
-  if (to - from <= LOG_SPAN * 6 || !SCOUT) return rpcLogs(address, topics, from, to);
-  // older history from the explorer, one topic set at a time; the last few hours from the RPC
-  const split = to - LOG_SPAN * 3; const multi = topics.find(Array.isArray);
+  if (to - from <= RECENT || !SCOUT) return rpcLogs(address, topics, from, to);
+  // history from the explorer, one topic set at a time; the newest blocks from the RPC
+  const split = to - RECENT; const multi = topics.find(Array.isArray);
   const sets = multi ? multi.map(v => topics.map(x => x === multi ? v : x)) : [topics];
-  const old = (await Promise.all(sets.map(ts => scoutLogs(address, ts, from, split).catch(() => rpcLogs(address, ts, from, split))))).flat();
-  return [...old, ...await rpcLogs(address, topics, split + 1, to)];
+  const old = (await Promise.all(sets.map(ts => scoutAll(address, ts, from, split).catch(() => rpcLogs(address, ts, from, split))))).flat();
+  const seen = new Set(); const all = [...old, ...await rpcLogs(address, topics, split + 1, to)].filter(l => { const k = l.tx + ':' + l.index; if (seen.has(k)) return false; seen.add(k); return true; });
+  return all.sort((x, y) => x.block - y.block || x.index - y.index);
 }
 
 // ---------------------------------------------------------------- trades from the PoolManager's Swap events

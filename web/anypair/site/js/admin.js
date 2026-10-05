@@ -2,11 +2,13 @@
 (function () {
   let U, $, $$;
   const run = async (btn, target, fn, args, ok) => { const t = btn.textContent; btn.disabled = true; btn.textContent = 'Confirm…'; try { const rc = await AP.admin.call(target, fn, args); U.toast(ok, { tx: rc.hash }); await AP.refresh(); paint(); } catch (e) { U.toast(e.message, { err: true }); btn.disabled = false; btn.textContent = t; } };
+  let gen = 0; // a slower, older paint must not overwrite a newer one
   async function paint() {
-    const w = window.apWallet;
+    const my = ++gen; const w = window.apWallet;
     if (!U.isAdmin()) { $('#adm').innerHTML = `<div class="panel empty" style="padding:72px 20px">${U.ic('shield')}<h3>Admin only</h3><p>${w && w.connected ? 'This wallet is not the admin.' : 'Connect the admin wallet.'}</p>${w && w.connected ? '' : '<button class="btn btn-primary" id="ac">Connect wallet</button>'}</div>`; const b = $('#ac'); if (b) b.onclick = () => apWallet.open(); return; }
     const s = await AP.admin.state(); const coins = AP.tokens();
     const fees = await Promise.all(coins.map(async x => { const f = await AP.platformFees(x.addr); return { x, f, v: Number(AP.formatUnits(f, x.pairDec)) }; }));
+    if (my !== gen) return;
     const owed = fees.filter(r => r.f > 0n); const owedUsd = owed.reduce((a, r) => a + r.v * r.x.pairUsd, 0);
     const { esc, usd, num, short, pairGlyph, ago } = U;
     $('#adm').innerHTML = `<div class="hero" style="padding-bottom:16px"><div><h1>Admin</h1><p>${AP.demo ? 'Preview with the sample coins. Actions go live once the contracts are deployed on Base.' : 'Every action here is an on-chain transaction from the admin wallet.'}</p></div></div>
@@ -52,6 +54,8 @@
     const ov = U.dialog('Collect liquidity · ' + x.symbol, `<div class="dialog-b" style="padding:18px"><div class="stack-v"><p class="muted" style="font-size:13px">Pulls part of the launch position (coins and ${U.esc(x.pairSym)}) out of the pool. Not reversible.</p><div class="row2"><div class="field"><label>Percent</label><input class="input num" id="cp" value="100"></div><div class="field"><label>Send to</label><input class="input mono" id="cr" value="${apWallet.address}"></div></div><button class="btn btn-primary" id="cgo">Collect</button></div></div>`);
     $('#cgo', ov).onclick = e => { const p = Math.round((parseFloat($('#cp', ov).value) || 0) * 100); const r = $('#cr', ov).value.trim(); if (!(p > 0 && p <= 10000) || !AP.isAddress(r)) return U.toast('Check the percent and address', { err: true }); run(e.currentTarget, 'factory', 'collect', [x.addr, p, r], 'Liquidity collected').then(() => ov.close()); };
   }
-  function start() { U = window.UI; $ = U.$; $$ = U.$$; const go = () => paint().catch(e => console.warn(e)); window.addEventListener('ap:wallet', go); window.addEventListener('ap:ready', go); go(); }
+  function start() { U = window.UI; $ = U.$; $$ = U.$$; const go = () => paint().catch(e => console.warn(e)); window.addEventListener('ap:wallet', go); window.addEventListener('ap:ready', go);
+    // the coin list can arrive after the wallet connects: repaint when it changes (not on every refresh, so typed fields survive)
+    let seen = -1; window.addEventListener('ap:update', () => { const n = AP.tokens().length; if (n !== seen) { seen = n; go(); } }); go(); }
   window.addEventListener('DOMContentLoaded', start);
 })();

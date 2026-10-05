@@ -5,10 +5,11 @@
     $('#pf').innerHTML = `<div class="panel empty" style="padding:72px 20px">${U.ic('wallet')}<h3>Connect a wallet</h3><p>See your coins, the rewards waiting for you, and the fees from coins you launched.</p><button class="btn btn-primary" id="pfc">Connect wallet</button></div>`;
     $('#pfc').onclick = () => apWallet.open();
   }
+  let gen = 0; // a slower, older load must not overwrite a newer one
   async function load() {
-    const w = window.apWallet; if (!w || !w.connected) return gate();
+    const my = ++gen; const w = window.apWallet; if (!w || !w.connected) return gate();
     if (!data) $('#pf').innerHTML = `<div class="pf-head"><div class="pf-id"><span class="ident skel"></span><div><h1 class="skel">0x0000…0000</h1></div></div></div><div class="pf-tiles">${'<div class="panel tile"><span class="skel">Loading</span><b class="skel">$0.00</b></div>'.repeat(3)}</div>`;
-    try { data = await AP.portfolio(w.address); paint(); } catch (e) { $('#pf').innerHTML = `<div class="panel empty"><h3>Could not load</h3><p>${U.esc(AP.errText(e))}</p></div>`; }
+    try { const d = await AP.portfolio(w.address); if (my !== gen) return; data = d; paint(); } catch (e) { if (my !== gen) return; $('#pf').innerHTML = `<div class="panel empty"><h3>Could not load</h3><p>${U.esc(AP.errText(e))}</p></div>`; }
   }
   function paint() {
     const w = apWallet; const { esc, usd, num, pairGlyph, short, ident, ago, txLink, addrLink, coinHref, ic } = U;
@@ -34,6 +35,6 @@
     $$('[data-claim]').forEach(b => b.onclick = async () => { b.disabled = true; b.textContent = 'Confirm…'; try { const rc = await AP.claim(b.dataset.claim, 'pair'); U.toast('Rewards claimed', { tx: rc.hash }); data = null; load(); } catch (e) { U.toast(e.message, { err: true }); b.disabled = false; b.textContent = 'Claim'; } });
     $$('[data-pay]').forEach(b => b.onclick = async () => { b.disabled = true; b.textContent = 'Confirm…'; try { const rc = await AP.payCreator(b.dataset.pay); U.toast('Creator fees sent to your wallet', { tx: rc.hash }); data = null; load(); } catch (e) { U.toast(e.message, { err: true }); b.disabled = false; b.textContent = 'Claim'; } });
   }
-  function start() { U = window.UI; $ = U.$; $$ = U.$$; gate(); const go = () => { data = null; load(); }; window.addEventListener('ap:wallet', go); window.addEventListener('ap:ready', go); if (AP.tokens().length) go(); }
+  function start() { U = window.UI; $ = U.$; $$ = U.$$; gate(); const go = () => { data = null; load(); }; window.addEventListener('ap:wallet', go); window.addEventListener('ap:ready', go); let seen = AP.tokens().length; window.addEventListener('ap:update', () => { if (AP.tokens().length !== seen) { seen = AP.tokens().length; go(); } }); if (AP.tokens().length) go(); }
   window.addEventListener('DOMContentLoaded', start);
 })();
