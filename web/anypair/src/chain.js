@@ -417,7 +417,7 @@ const api = {
   async buy(addr, ethWei, minOut) { const x = byAddr[lower(addr)]; const s = await signer(); const me = await s.getAddress(); const r = K(C.router, 'AnypairRouter', s); const route = await routeFor(x.pair);
     return send(g => r.buy(x.addr, route, minOut, { value: ethWei, gasLimit: g }), () => K(C.router, 'AnypairRouter').buy.estimateGas(x.addr, route, minOut, { from: me, value: ethWei })); },
   async sell(addr, coinWei, minOut) { const x = byAddr[lower(addr)]; const s = await signer(); const me = await s.getAddress(); const c = coinOf(x.addr, s);
-    if ((await coinOf(x.addr).allowance(me, C.router)) < coinWei) { const tx = await c.approve(C.router, ethers.MaxUint256); await tx.wait(); }
+    if ((await coinOf(x.addr).allowance(me, C.router)) < coinWei) { const tx = await c.approve(C.router, coinWei); await tx.wait(); } // exact amount, never unlimited
     const r = K(C.router, 'AnypairRouter', s); const route = await routeFor(x.pair);
     return send(g => r.sell(x.addr, coinWei, route, minOut, { gasLimit: g }), () => K(C.router, 'AnypairRouter').sell.estimateGas(x.addr, coinWei, route, minOut, { from: me })); },
   async launch(p) { // p: {name, symbol, meta (object), pair, basket[], holderRewards, sources[], devBuyWei}
