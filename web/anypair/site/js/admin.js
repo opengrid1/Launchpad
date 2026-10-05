@@ -9,7 +9,7 @@
     const fees = await Promise.all(coins.map(async x => { const f = await AP.platformFees(x.addr); return { x, f, v: Number(AP.formatUnits(f, x.pairDec)) }; }));
     const owed = fees.filter(r => r.f > 0n); const owedUsd = owed.reduce((a, r) => a + r.v * r.x.pairUsd, 0);
     const { esc, usd, num, short, pairGlyph, ago } = U;
-    $('#adm').innerHTML = `<div class="hero" style="padding-bottom:16px"><div><h1>Admin</h1><p>Every action here is an on-chain transaction from the admin wallet.</p></div></div>
+    $('#adm').innerHTML = `<div class="hero" style="padding-bottom:16px"><div><h1>Admin</h1><p>${AP.demo ? 'Preview with the sample coins. Actions go live once the contracts are deployed on Base.' : 'Every action here is an on-chain transaction from the admin wallet.'}</p></div></div>
       <div class="pf-tiles"><div class="panel tile"><span>Launches</span><b style="font-size:20px">${s.paused ? '<span class="down">Paused</span>' : '<span class="up">Open</span>'}</b><button class="btn btn-line btn-sm" style="margin-top:10px" id="pz">${s.paused ? 'Resume launches' : 'Pause launches'}</button></div>
         <div class="panel tile"><span>Platform fees waiting</span><b>${usd(owedUsd)}</b><button class="btn btn-primary btn-sm" style="margin-top:10px" id="pf" ${owed.length ? '' : 'disabled'}>Send to fee wallet (${owed.length})</button></div>
         <div class="panel tile"><span>Fee wallet</span><b class="mono" style="font-size:16px;margin-top:8px">${short(s.feeRecipient)}</b><button class="btn btn-line btn-sm" style="margin-top:10px" id="fr">Change</button></div></div>
@@ -31,8 +31,8 @@
     $$('[data-meta]').forEach(b => b.onclick = () => editMeta(AP.token(b.dataset.meta)));
     $$('[data-col]').forEach(b => b.onclick = () => collect(AP.token(b.dataset.col)));
     const ta = () => $('#ta').value.trim();
-    $('#ta').oninput = async () => { const a = ta(); if (!AP.isAddress(a)) { $('#tinfo').textContent = ''; return; } try { const [i, bl, li, src] = await Promise.all([AP.tokenInfo(a), AP.admin.blocked(a), AP.admin.listed(a), AP.admin.source(a)]);
-      $('#tinfo').innerHTML = `<b>${esc(i.symbol)}</b> · ${bl ? '<span class="down">blocked</span>' : 'not blocked'} · ${li.listed ? `listed at $${(Number(li.usdPrice8) / 1e8).toFixed(4)}` : 'not listed'} · ${Number(src.dex) ? 'priced from ' + esc(AP.DEX_NAMES[Number(src.dex)]) : 'no pool source'}`; } catch (e) { $('#tinfo').textContent = AP.errText(e); } };
+    $('#ta').oninput = async () => { const a = ta(); if (!AP.isAddress(a)) { $('#tinfo').textContent = ''; return; } try { const [i, bl, li, src, b2] = await Promise.all([AP.tokenInfo(a), AP.admin.blocked(a), AP.admin.listed(a), AP.admin.source(a), AP.admin.b20(a)]);
+      $('#tinfo').innerHTML = `<b>${esc(i.symbol)}</b> · ${bl ? '<span class="down">blocked</span>' : 'not blocked'} · ${li.listed ? `listed at $${(Number(li.usdPrice8) / 1e8).toFixed(4)}` : 'not listed'} · ${Number(src.dex) ? 'priced from ' + esc(AP.DEX_NAMES[Number(src.dex)]) : 'no pool source'}${b2.b20 ? ` · B20, ${b2.ok ? 'open to Anypair' : '<span class="down">' + esc(b2.why.toLowerCase()) + '</span>'}` : ''}`; } catch (e) { $('#tinfo').textContent = AP.errText(e); } };
     $('#tb').onclick = e => AP.isAddress(ta()) && run(e.currentTarget, 'factory', 'setTokenBlocked', [ta(), true], 'Token blocked');
     $('#tu').onclick = e => AP.isAddress(ta()) && run(e.currentTarget, 'factory', 'setTokenBlocked', [ta(), false], 'Token unblocked');
     $('#tc').onclick = e => AP.isAddress(ta()) && run(e.currentTarget, 'oracle', 'clearSource', [ta()], 'Price source cleared');

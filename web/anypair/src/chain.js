@@ -438,7 +438,10 @@ const api = {
   balanceOf: async (addr, user) => coinOf(addr).balanceOf(user),
   ethBalance: async user => provider.getBalance(user),
   creatorFees: async addr => coinOf(addr).creatorFees(),
-  platformFees: async addr => coinOf(addr).platformFees(),
+  platformFees: async addr => {
+    if (DEMO) { const x = byAddr[lower(addr)]; if (!x) return 0n; const v = (x.totalCreatorFees || 0) * (10000 - x.creatorBps - x.holderBps) / x.creatorBps; return ethers.parseUnits(v.toFixed(Math.min(x.pairDec, 12)), x.pairDec); } // sample: fees the platform's share implies
+    return coinOf(addr).platformFees();
+  },
   async portfolio(user) { user = lower(user); if (PRELAUNCH) return { holdings: [], created: [], claims: [] };
     const rows = await Promise.all(tokens.map(async x => { const [bal, pend] = await Promise.all([coinOf(x.addr).balanceOf(user), coinOf(x.addr).pendingRewards(user)]); return { x, bal: Number(bal) / 1e18, pend: Number(pend) / 10 ** x.pairDec, pendUsd: Number(pend) / 10 ** x.pairDec * x.pairUsd }; }));
     const created = await Promise.all(tokens.filter(x => x.creator === user).map(async x => { const f = await coinOf(x.addr).creatorFees(); return { x, fees: Number(f) / 10 ** x.pairDec, feesUsd: Number(f) / 10 ** x.pairDec * x.pairUsd }; }));
@@ -446,9 +449,13 @@ const api = {
     return { holdings: rows.filter(r => r.bal > 0 || r.pend > 0), created, claims }; },
   // admin (the contracts enforce the admin wallet)
   admin: {
-    state: async () => { const [paused, feeRecipient, admin, minDepth] = await Promise.all([factory.launchesPaused(), factory.feeRecipient(), factory.admin(), oracle.minDepthUsd()]); return { paused, feeRecipient, admin: lower(admin), minDepth: Number(minDepth) / 1e18 }; },
-    blocked: a => factory.blocked(a), listed: a => oracle.listed(a), source: a => oracle.sources(a),
-    async call(target, fn, args) { const s = await signer(); const me = await s.getAddress(); const addr = target === 'oracle' ? C.oracle : C.factory; const abi = target === 'oracle' ? 'AnypairOracle' : 'AnypairFactory';
+    state: async () => { if (DEMO) return { paused: false, feeRecipient: lower(CFG.admin), admin: lower(CFG.admin), minDepth: MIN_DEPTH_PRE };
+      const [paused, feeRecipient, admin, minDepth] = await Promise.all([factory.launchesPaused(), factory.feeRecipient(), factory.admin(), oracle.minDepthUsd()]); return { paused, feeRecipient, admin: lower(admin), minDepth: Number(minDepth) / 1e18 }; },
+    blocked: a => DEMO ? false : factory.blocked(a),
+    listed: a => DEMO ? { listed: lower(a) === USDC, usdPrice8: 10n ** 8n } : oracle.listed(a),
+    source: a => { if (DEMO) { const x = tokens.find(t => t.pair === lower(a) && t.dex); return { dex: x ? x.dex : 0 }; } return oracle.sources(a); },
+    b20: a => b20Status(a),
+    async call(target, fn, args) { if (DEMO) throw new Error('Admin actions go live once the contracts are deployed on Base'); const s = await signer(); const me = await s.getAddress(); const addr = target === 'oracle' ? C.oracle : C.factory; const abi = target === 'oracle' ? 'AnypairOracle' : 'AnypairFactory';
       return send(g => K(addr, abi, s)[fn](...args, { gasLimit: g }), () => K(addr, abi)[fn].estimateGas(...args, { from: me })); },
   },
 };
