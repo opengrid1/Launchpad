@@ -11,7 +11,7 @@ import "@nomicfoundation/hardhat-verify";
 import * as dotenv from "dotenv";
 
 dotenv.config();
-dotenv.config({ path: ".env.deployer" });
+dotenv.config({ path: process.env.DEPLOYER_ENV ?? ".env.deployer" }); // DEPLOYER_ENV=.env.anypair-deployer picks another key file
 
 const RPC = process.env.ROBINHOOD_RPC_URL ?? "";
 const CHAIN = Number(process.env.ROBINHOOD_CHAIN_ID ?? 0);
