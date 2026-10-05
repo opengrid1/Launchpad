@@ -12,6 +12,7 @@ DIST = os.path.join(HERE, 'dist')
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'fork'
 DESC = 'Launch a coin on Base paired with any asset from any DEX: Uniswap, Aerodrome or PancakeSwap. Holders earn from every trade, paid in any assets the creator picks.'
 SITE_URL = os.environ.get('SITE_URL', 'https://www.anypair.world').rstrip('/')
+OFFICIAL = {'symbol': 'ANY', 'address': '0x78c171589fD107e95638559fbC0A2a7c8D75f805'}  # the project's own coin, launched on Anypair
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap'
 NAV = [('explore', '/', 'compass', 'Explore'), ('portfolio', '/portfolio', 'wallet', 'Portfolio'), ('docs', '/docs', 'book', 'How it works')]
@@ -50,7 +51,7 @@ def config():
         'deployBlock': dep.get('deployBlock', 1), 'admin': dep['admin'], 'explorer': 'https://basescan.org',
         'weth': '0x4200000000000000000000000000000000000006', 'usdc': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
         'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'),
-        'tokens': tokens, 'social': {'x': 'https://x.com/anypair_world'}, 'snapUrl': '/api/snap',
+        'tokens': tokens, 'social': {'x': 'https://x.com/anypair_world'}, 'snapUrl': '/api/snap', 'official': OFFICIAL,
     })
     return 'window.ANYPAIR = ' + json.dumps(cfg, separators=(',', ':')) + ';\n'
 
@@ -106,6 +107,7 @@ def shell(meta, body):
     <div><div class="side-h">Browse by pair</div><div class="pairs-nav" id="pairsNav"></div></div>
     <div class="side-foot">
       <div class="row"><button class="icon-btn" data-theme-btn aria-label="Theme"></button><a class="icon-btn" href="https://x.com/anypair_world" target="_blank" rel="noopener" aria-label="X">{ic("x")}</a></div>
+      <a class="official" href="/coin/{OFFICIAL['address']}" title="Official token: {OFFICIAL['address']}"><b>${OFFICIAL['symbol']}</b><span class="mono">{OFFICIAL['address'][:6]}…{OFFICIAL['address'][-4:]}</span><span class="faint">Official token</span></a>
       <small>Coins on Base, paired with any token. 2% fee on every trade.</small>
     </div>
   </aside>

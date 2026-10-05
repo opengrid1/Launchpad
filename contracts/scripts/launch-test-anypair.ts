@@ -20,7 +20,7 @@ async function main() {
   const factory = await ethers.getContractAt("AnypairFactory", dep.contracts.factory);
   const buy = ethers.parseEther(process.env.BUY_ETH ?? "0.001");
   const meta = JSON.stringify({
-    description: "Test coin for checking Anypair on Base: launch, trading, charts and holder rewards. Not an investment.",
+    description: process.env.DESC ?? "Test coin for checking Anypair on Base: launch, trading, charts and holder rewards. Not an investment.",
     image: "https://www.anypair.world/img/logo-512.png",
     x: "https://x.com/anypair_world", website: "https://www.anypair.world", telegram: "",
   });
