@@ -28,7 +28,7 @@ async function main() {
   const basket = process.env.BASKET ? process.env.BASKET.split(",") : [];
   const sources = process.env.SOURCES ? JSON.parse(process.env.SOURCES) : [];
   const route = process.env.HOPS ? ethers.AbiCoder.defaultAbiCoder().encode([HOP_T], [JSON.parse(process.env.HOPS)]) : "0x";
-  const p = { name: process.env.NAME ?? "Anypair Test", symbol: process.env.SYMBOL ?? "APTEST", metadataURI: meta, pair, minPairOut: 0, basket, holderRewards: true, sources };
+  const p = { name: process.env.NAME ?? "Anypair Test", symbol: process.env.SYMBOL ?? "APTEST", metadataURI: meta, pair, minPairOut: 0, basket, holderRewards: process.env.HOLDER_REWARDS !== "0", sources };
   const salt = ethers.hexlify(ethers.randomBytes(32));
   if (process.env.SIMULATE === "1") {
     const [token] = await factory.launch.staticCall(p, salt, route, { value: buy });

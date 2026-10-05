@@ -12,7 +12,7 @@ DIST = os.path.join(HERE, 'dist')
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'fork'
 DESC = 'Launch a coin on Base paired with any asset from any DEX: Uniswap, Aerodrome or PancakeSwap. Holders earn from every trade, paid in any assets the creator picks.'
 SITE_URL = os.environ.get('SITE_URL', 'https://www.anypair.world').rstrip('/')
-OFFICIAL = {'symbol': 'ANY', 'address': '0x78c171589fD107e95638559fbC0A2a7c8D75f805'}  # the project's own coin, launched on Anypair
+OFFICIAL = {'symbol': 'ANY', 'address': '0x3f09F3d7D86B3bBEF0451309191aA403C6d8211a'}  # the project's own coin, launched on Anypair
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap'
 NAV = [('explore', '/', 'compass', 'Explore'), ('portfolio', '/portfolio', 'wallet', 'Portfolio'), ('docs', '/docs', 'book', 'How it works')]

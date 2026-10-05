@@ -50,6 +50,11 @@
       "token": "0x78c171589fD107e95638559fbC0A2a7c8D75f805",
       "symbol": "ANY",
       "tx": "0x9542e37ed5dbfd0bde6c63ea9ae3be95d7c45c467dc893c19b20de871fcd3dc7"
+    },
+    {
+      "token": "0x3f09F3d7D86B3bBEF0451309191aA403C6d8211a",
+      "symbol": "ANY",
+      "tx": "0x51ab0eb9182635b3d3d448b7de8c97a1cad595618c9a9aa0a7dc784869a5fe24"
     }
   ]
 }
