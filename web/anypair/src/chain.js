@@ -374,6 +374,22 @@ async function discover(token, from) {
   if (!b20.ok) return { info, ready: false, b20, candidates: [{ err: b20.why }] };
   return { ...(await discoverPools(t, from, info)), b20 };
 }
+// every Uniswap V4 pool of `t` against native ETH, WETH or USDC, hooked ones included (Bankr, Clanker,
+// Zora and other launchers use hooks): read from the PoolManager's Initialize events
+async function v4PoolsOf(t) {
+  if (!SCOUT) return [];
+  const pad = a => ethers.zeroPadValue(a, 32); const out = [];
+  await Promise.all([ethers.ZeroAddress, WETH, USDC].map(async an => {
+    const [c0, c1] = lower(an) < t ? [lower(an), t] : [t, lower(an)];
+    const r = await fetch(`${SCOUT}/api?module=logs&action=getLogs&fromBlock=0&toBlock=latest&address=${PM}&topic0=${INIT_TOPIC}&topic2=${pad(c0)}&topic3=${pad(c1)}&topic0_2_opr=and&topic0_3_opr=and&topic2_3_opr=and`);
+    const j = await r.json();
+    for (const l of (Array.isArray(j.result) ? j.result : [])) {
+      try { const d = I.PoolManager.decodeEventLog('Initialize', l.data, l.topics.filter(Boolean));
+        out.push({ id: d.id, key: { currency0: d.currency0, currency1: d.currency1, fee: Number(d.fee), tickSpacing: Number(d.tickSpacing), hooks: d.hooks }, anchor: an === ethers.ZeroAddress ? WETH : lower(an) }); } catch {}
+    }
+  }));
+  return out;
+}
 async function discoverPools(t, from, info) {
   const [listed, src] = PRELAUNCH ? [{ listed: t === USDC }, { dex: 0 }] : await Promise.all([oracle.listed(t), oracle.sources(t)]);
   if (listed.listed || Number(src.dex)) { const hops = await hopsFor(t).catch(() => []); return { info, ready: true, listed: listed.listed, current: Number(src.dex) ? { dex: Number(src.dex), pool: src.pool } : null, hops, sources: [] }; }
@@ -391,7 +407,13 @@ async function discoverPools(t, from, info) {
     const id = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(['address', 'address', 'uint24', 'int24', 'address'], [c0, c1, fee, ts, ethers.ZeroAddress]));
     jobs.push(stateView.getLiquidity(id).then(l => l > 0n ? { dex: 5, key, id, anchor: an === ethers.ZeroAddress ? WETH : USDC, v4liq: l } : { pool: ethers.ZeroAddress }).catch(() => ({ pool: ethers.ZeroAddress })));
   }
-  for (const r of await Promise.all(jobs.map(j => j.catch(() => ({ pool: ethers.ZeroAddress }))))) if ((r.pool && r.pool !== ethers.ZeroAddress) || r.dex === 5) cands.push(r);
+  jobs.push(v4PoolsOf(t).then(list => Promise.all(list.map(p => stateView.getLiquidity(p.id).then(l => (l > 0n ? { dex: 5, key: p.key, id: p.id, anchor: p.anchor, v4liq: l } : null)).catch(() => null)))).catch(() => []));
+  const seenV4 = new Set();
+  for (const r of (await Promise.all(jobs.map(j => j.catch(() => ({ pool: ethers.ZeroAddress }))))).flat()) {
+    if (!r) continue;
+    if (r.dex === 5) { if (seenV4.has(r.id)) continue; seenV4.add(r.id); cands.push(r); }
+    else if (r.pool && r.pool !== ethers.ZeroAddress) cands.push(r);
+  }
   // depth: the anchor balance the pool holds (V4: virtual reserve), in USD
   const usdAnchor = { [WETH]: await ethUsd(), [USDC]: 1 };
   await Promise.all(cands.map(async c => {
