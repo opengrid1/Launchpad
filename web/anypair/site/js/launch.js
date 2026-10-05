@@ -14,21 +14,35 @@
     }
   }
   // ------------------------------------------------------------ token picker (pair or basket)
+  // trending tokens on Base (server-cached from GeckoTerminal), fetched once per visit
+  let trending = null;
+  const loadTrending = () => trending || (trending = fetch('/api/trending').then(r => (r.ok ? r.json() : { tokens: [] })).then(d => d.tokens || []).catch(() => []));
   function picker(title, onPick, exclude) {
-    const known = (window.ANYPAIR.tokens || []).filter(t => !exclude.includes(t.address.toLowerCase()));
+    const all = (window.ANYPAIR.tokens || []).filter(t => !exclude.includes(t.address.toLowerCase()));
+    const popular = all.filter(t => !t.group), stocks = all.filter(t => t.group === 'Stocks');
     const used = {}; for (const x of AP.tokens()) used[x.pair] = (used[x.pair] || 0) + 1;
+    let hot = [];
     const ov = U.dialog(title, `<div class="dialog-search">${U.ic('search')}<input id="pq" placeholder="Search or paste a token address" autocomplete="off" spellcheck="false"></div><div class="dialog-b" id="pl"></div>`);
     const inp = $('#pq', ov), out = $('#pl', ov);
-    const render = async () => {
+    const right = t => { const n = used[t.address.toLowerCase()]; if (n) return `<b>${n}</b>coins`;
+      if (t.vol24 !== undefined) return `${t.isNew ? '<span class="tag acc">New</span>' : `<b>${U.usd(t.vol24)}</b>24h vol`}`; return ''; };
+    const row = t => `<button class="opt" data-a="${t.address.toLowerCase()}">${U.tokImg(t)}<span class="t"><b>${U.esc(t.symbol)}</b><span>${U.esc(t.name)}</span></span><span class="r">${right(t)}</span></button>`;
+    const section = (label, list) => (list.length ? `<div class="opt-group">${label}</div>` + list.map(row).join('') : '');
+    const render = () => {
       const q = inp.value.trim().toLowerCase();
-      const hits = known.filter(t => !q || t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q) || t.address.toLowerCase() === q);
+      const known = new Set(all.map(t => t.address.toLowerCase()));
+      const hotNew = hot.filter(t => !known.has(t.address) && !exclude.includes(t.address));
+      const match = t => !q || t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q) || t.address.toLowerCase() === q;
+      const hits = [...popular, ...stocks, ...hotNew].filter(match);
       let extra = '';
       if (AP.isAddress(q) && !hits.length && !exclude.includes(q)) { extra = `<div class="opt-group">Token at this address</div><button class="opt" data-a="${q}">${U.tokImg({})}<span class="t"><b>Looking up…</b><span class="mono">${U.short(q)}</span></span></button>`;
         AP.tokenInfo(q).then(i => { const b = out.querySelector(`[data-a="${q}"]`); if (b) b.innerHTML = `${U.tokImg(i)}<span class="t"><b>${U.esc(i.symbol)}</b><span>${U.esc(i.name)} · <span class="mono">${U.short(q)}</span></span></span><span class="r">Check pools</span>`; }).catch(() => {}); }
-      out.innerHTML = extra + (hits.length ? `<div class="opt-group">${q ? 'Matches' : 'Popular on Base'}</div>` : '') + hits.map(t => `<button class="opt" data-a="${t.address.toLowerCase()}">${U.tokImg(t)}<span class="t"><b>${U.esc(t.symbol)}</b><span>${U.esc(t.name)}</span></span><span class="r">${used[t.address.toLowerCase()] ? `<b>${used[t.address.toLowerCase()]}</b>coins` : ''}</span></button>`).join('')
+      out.innerHTML = extra + (q ? section('Matches', hits)
+        : section('Popular', popular.slice(0, 3)) + section('Stocks', stocks) + (hotNew.length ? section('Trending on Base', hotNew) : (trending ? '' : '<div class="opt-group">Trending on Base</div><div class="muted" style="padding:6px 10px 12px;font-size:13px">Loading…</div>')) + section('More on Base', popular.slice(3)))
         + (!hits.length && !extra ? '<div class="empty" style="padding:30px"><p>Paste the token\'s contract address to use any token on Base.</p></div>' : '');
       $$('[data-a]', out).forEach(b => b.onclick = () => { ov.close(); onPick(b.dataset.a); });
     };
+    loadTrending().then(list => { hot = list; render(); });
     inp.oninput = render; render(); setTimeout(() => inp.focus(), 20);
   }
   async function check(item) {

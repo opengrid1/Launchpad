@@ -164,7 +164,8 @@ def build():
         shutil.copy(os.path.join(SITE, 'server', 'chain.cjs'), os.path.join(DIST, 'api', '_chain.js'))
         cfg = json.loads(config()[len('window.ANYPAIR = '):].rstrip().rstrip(';'))
         json.dump(cfg, open(os.path.join(DIST, 'api', '_config.json'), 'w'))
-        fns = {'functions': {'api/snap.js': {'maxDuration': 60}}}
+        shutil.copy(os.path.join(HERE, 'src', 'trending.js'), os.path.join(DIST, 'api', 'trending.js'))
+        fns = {'functions': {'api/snap.js': {'maxDuration': 60}, 'api/trending.js': {'maxDuration': 15}}}
     json.dump({
         **fns,
         'cleanUrls': True, 'trailingSlash': False,
