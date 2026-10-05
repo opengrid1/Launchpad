@@ -10,6 +10,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const WETH = "0x4200000000000000000000000000000000000006";
+const HOP_T = "tuple(uint8 dex,address pool,tuple(address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key)[]";
+// optional: PAIR, BASKET (comma list), SOURCES and HOPS (JSON, as the launch form builds them), SIMULATE=1 for a dry call
 
 async function main() {
   if (network.name === "hardhat") await network.provider.send("evm_mine", []);
@@ -19,15 +21,26 @@ async function main() {
   const buy = ethers.parseEther(process.env.BUY_ETH ?? "0.001");
   const meta = JSON.stringify({
     description: "Test coin for checking Anypair on Base: launch, trading, charts and holder rewards. Not an investment.",
-    image: "https://anypair-tau.vercel.app/img/logo-512.png",
-    x: "https://x.com/anypair_world", website: "https://anypair-tau.vercel.app", telegram: "",
+    image: "https://www.anypair.world/img/logo-512.png",
+    x: "https://x.com/anypair_world", website: "https://www.anypair.world", telegram: "",
   });
-  const p = { name: process.env.NAME ?? "Anypair Test", symbol: process.env.SYMBOL ?? "APTEST", metadataURI: meta, pair: WETH, minPairOut: 0, basket: [], holderRewards: true, sources: [] };
+  const pair = process.env.PAIR ?? WETH;
+  const basket = process.env.BASKET ? process.env.BASKET.split(",") : [];
+  const sources = process.env.SOURCES ? JSON.parse(process.env.SOURCES) : [];
+  const route = process.env.HOPS ? ethers.AbiCoder.defaultAbiCoder().encode([HOP_T], [JSON.parse(process.env.HOPS)]) : "0x";
+  const p = { name: process.env.NAME ?? "Anypair Test", symbol: process.env.SYMBOL ?? "APTEST", metadataURI: meta, pair, minPairOut: 0, basket, holderRewards: true, sources };
+  const salt = ethers.hexlify(ethers.randomBytes(32));
+  if (process.env.SIMULATE === "1") {
+    const [token] = await factory.launch.staticCall(p, salt, route, { value: buy });
+    const gas = await factory.launch.estimateGas(p, salt, route, { value: buy });
+    console.log("simulation ok: would launch", token, "gas", gas.toString());
+    return;
+  }
   console.log("launcher", me.address, "bal", ethers.formatEther(await ethers.provider.getBalance(me.address)), "first buy", ethers.formatEther(buy), "ETH");
   // the new coin comes from the receipt's Launched event: a read right after the
   // tx can hit an RPC node that hasn't seen the block yet (and a blind retry
   // would launch a second coin)
-  const tx = await factory.launch(p, ethers.hexlify(ethers.randomBytes(32)), "0x", { value: buy });
+  const tx = await factory.launch(p, salt, route, { value: buy });
   console.log("sent", tx.hash);
   const rc = await tx.wait(2);
   const ev = rc!.logs.map((l) => { try { return factory.interface.parseLog(l); } catch { return null; } }).find((e) => e && e.name === "Launched");

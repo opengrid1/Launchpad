@@ -26,6 +26,7 @@ interface IV3FactoryLike {
 
 interface ISlipstreamFactory {
     function getPool(address a, address b, int24 tickSpacing) external view returns (address);
+    function voter() external view returns (address);
 }
 
 interface IAeroPool {
@@ -88,9 +89,13 @@ contract AnypairOracle {
     IPoolManager public immutable poolManager;
     address public immutable uniV3Factory;
     address public immutable pancakeV3Factory;
-    address public immutable slipstreamFactory;
-    address public immutable slipstreamFactory2;
     address public immutable aeroFactory;
+    /// @notice Aerodrome's Voter: every Slipstream factory accepted here answers to it.
+    address public immutable aeroVoter;
+    /// @dev Aerodrome Slipstream (CL) factories. Aerodrome runs more than one;
+    ///      the admin can add a new one only if it answers to the same Voter.
+    address[] internal _slipstreamFactories;
+    uint256 public constant MAX_SLIPSTREAM_FACTORIES = 8;
 
     /// @notice Admin-priced tokens (and ETH under `weth`). `feed` wins when fresh.
     struct Listed {
@@ -123,6 +128,7 @@ contract AnypairOracle {
     event SourceSet(address indexed token, uint8 dex, address pool, bytes32 v4Id, address anchor, uint256 depthUsd);
     event SourceCleared(address indexed token);
     event MinDepthSet(uint256 usd);
+    event SlipstreamFactoryAdded(address indexed factory);
 
     error NotAdmin();
     error NoPrice();
@@ -142,11 +148,12 @@ contract AnypairOracle {
         IPoolManager poolManager;
         address uniV3Factory;
         address pancakeV3Factory;
-        address slipstreamFactory;
-        address slipstreamFactory2;
+        address[] slipstreamFactories;
         address aeroFactory;
         address ethUsdFeed;
         uint64 ethUsd8;
+        address usdc; // optional: listed at deploy with its Chainlink USD feed, so USDC anchors pools from the start
+        address usdcUsdFeed;
     }
 
     constructor(Config memory c) {
@@ -156,12 +163,31 @@ contract AnypairOracle {
         poolManager = c.poolManager;
         uniV3Factory = c.uniV3Factory;
         pancakeV3Factory = c.pancakeV3Factory;
-        slipstreamFactory = c.slipstreamFactory;
-        slipstreamFactory2 = c.slipstreamFactory2;
         aeroFactory = c.aeroFactory;
+        if (c.slipstreamFactories.length > MAX_SLIPSTREAM_FACTORIES) revert InvalidParams();
+        address v;
+        for (uint256 i; i < c.slipstreamFactories.length; i++) {
+            address f = c.slipstreamFactories[i];
+            address fv = ISlipstreamFactory(f).voter();
+            if (f == address(0) || fv == address(0) || (i > 0 && fv != v)) revert InvalidParams();
+            v = fv;
+            _slipstreamFactories.push(f);
+            emit SlipstreamFactoryAdded(f);
+        }
+        aeroVoter = v;
         if (c.ethUsdFeed != address(0) && IAggregatorV3Min(c.ethUsdFeed).decimals() != 8) revert InvalidParams();
         listed[c.weth] = Listed({listed: true, usdPrice8: c.ethUsd8, feed: c.ethUsdFeed});
         emit Listing(c.weth, true, c.ethUsd8, c.ethUsdFeed);
+        if (c.usdc != address(0)) {
+            if (c.usdcUsdFeed == address(0) || IAggregatorV3Min(c.usdcUsdFeed).decimals() != 8) revert InvalidParams();
+            listed[c.usdc] = Listed({listed: true, usdPrice8: 1e8, feed: c.usdcUsdFeed});
+            emit Listing(c.usdc, true, 1e8, c.usdcUsdFeed);
+        }
+    }
+
+    /// @notice Aerodrome Slipstream factories pools are accepted from.
+    function slipstreamFactories() external view returns (address[] memory) {
+        return _slipstreamFactories;
     }
 
     // ---------------------------------------------------------------------
@@ -184,6 +210,16 @@ contract AnypairOracle {
     function clearSource(address token) external onlyAdmin {
         delete sources[token];
         emit SourceCleared(token);
+    }
+
+    /// @notice Accept pools from another Aerodrome Slipstream factory. It must
+    ///         answer to the same Aerodrome Voter as the factories set at deploy.
+    function addSlipstreamFactory(address f) external onlyAdmin {
+        if (f == address(0) || aeroVoter == address(0) || _slipstreamFactories.length >= MAX_SLIPSTREAM_FACTORIES) revert InvalidParams();
+        if (ISlipstreamFactory(f).voter() != aeroVoter) revert InvalidParams();
+        for (uint256 i; i < _slipstreamFactories.length; i++) if (_slipstreamFactories[i] == f) revert InvalidParams();
+        _slipstreamFactories.push(f);
+        emit SlipstreamFactoryAdded(f);
     }
 
     function setMinDepthUsd(uint256 usd18) external onlyAdmin {
@@ -247,8 +283,10 @@ contract AnypairOracle {
         }
         if (dex == SLIPSTREAM) {
             int24 ts = IV3PoolLike(pool).tickSpacing();
-            return (slipstreamFactory != address(0) && ISlipstreamFactory(slipstreamFactory).getPool(t0, t1, ts) == pool)
-                || (slipstreamFactory2 != address(0) && ISlipstreamFactory(slipstreamFactory2).getPool(t0, t1, ts) == pool);
+            for (uint256 i; i < _slipstreamFactories.length; i++) {
+                if (ISlipstreamFactory(_slipstreamFactories[i]).getPool(t0, t1, ts) == pool) return true;
+            }
+            return false;
         }
         if (dex == AERO_V2) {
             return aeroFactory != address(0) && !IAeroPool(pool).stable() && IAeroFactory(aeroFactory).getPool(t0, t1, false) == pool;

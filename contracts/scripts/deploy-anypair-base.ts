@@ -9,8 +9,6 @@
 //   ROBINHOOD_CHAIN_ID=8453 ADMIN=0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b \
 //     npx hardhat run scripts/deploy-anypair-base.ts --network robinhood
 //
-// ADMIN_TX=1 (or ADMIN equal to the deployer) also sends the admin's own setup
-// call (listing USDC); otherwise list it from the admin page.
 import { ethers, network } from "hardhat";
 import fs from "node:fs";
 import path from "node:path";
@@ -21,6 +19,7 @@ const UNI_V3_FACTORY = "0x33128a8fC17869897dcE68Ed026d694621f6FDfD";
 const PANCAKE_V3_FACTORY = "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865";
 const SLIPSTREAM_FACTORY = "0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A";
 const SLIPSTREAM_FACTORY2 = "0xaDe65c38CD4849aDBA595a4323a8C7DdfE89716a";
+const SLIPSTREAM_FACTORY3 = "0xf8f2eB4940CFE7d13603DDDD87f123820Fc061Ef"; // newer Aerodrome CL factory (Coinbase stock pools live here)
 const AERO_FACTORY = "0x420DD381b31aEf6683db6B902084cB0FFECe40Da";
 const ETH_USD_FEED = "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70";
 const USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
@@ -71,7 +70,8 @@ async function main() {
   if (!dep.contracts.oracle) {
     const o = await (await ethers.getContractFactory("AnypairOracle")).deploy({
       admin, weth: WETH, poolManager: POOL_MANAGER, uniV3Factory: UNI_V3_FACTORY, pancakeV3Factory: PANCAKE_V3_FACTORY,
-      slipstreamFactory: SLIPSTREAM_FACTORY, slipstreamFactory2: SLIPSTREAM_FACTORY2, aeroFactory: AERO_FACTORY, ethUsdFeed: ETH_USD_FEED, ethUsd8,
+      slipstreamFactories: [SLIPSTREAM_FACTORY, SLIPSTREAM_FACTORY2, SLIPSTREAM_FACTORY3], aeroFactory: AERO_FACTORY, ethUsdFeed: ETH_USD_FEED, ethUsd8,
+      usdc: USDC, usdcUsdFeed: USDC_USD_FEED, // USDC anchors pools from the first block: no admin step after deploy
     });
     await o.waitForDeployment();
     dep.contracts.oracle = await o.getAddress();
@@ -114,10 +114,8 @@ async function main() {
   console.log("router", dep.contracts.router);
   if ((await factory.converter()) === ethers.ZeroAddress) { await (await factory.setConverter(dep.contracts.router)).wait(); console.log("converter wired"); }
 
-  // 5. USDC as a price anchor (admin call).
-  if (admin === deployer.address || process.env.ADMIN_TX === "1") {
-    if (!(await oracle.listed(USDC)).listed) { await (await oracle.setListed(USDC, true, 10n ** 8n, USDC_USD_FEED)).wait(); console.log("USDC listed"); }
-  } else console.log("list USDC from the admin page: setListed(USDC, true, 1e8, " + USDC_USD_FEED + ")");
+  // 5. USDC is listed by the oracle's constructor (Chainlink USDC/USD): check it.
+  console.log("USDC anchor listed:", (await oracle.listed(USDC)).listed);
 
   // 6. Renounce setup rights.
   if (process.env.RENOUNCE !== "0" && (await factory.owner()).toLowerCase() === deployer.address.toLowerCase()) {
@@ -128,7 +126,7 @@ async function main() {
   Object.assign(dep, {
     network: "base", chainId: Number(net.chainId), admin, feeRecipient: await factory.feeRecipient(),
     uniswap: { poolManager: POOL_MANAGER, weth: WETH, v3Factory: UNI_V3_FACTORY },
-    dexes: { pancakeV3Factory: PANCAKE_V3_FACTORY, slipstreamFactory: SLIPSTREAM_FACTORY, slipstreamFactory2: SLIPSTREAM_FACTORY2, aeroFactory: AERO_FACTORY },
+    dexes: { pancakeV3Factory: PANCAKE_V3_FACTORY, slipstreamFactories: [SLIPSTREAM_FACTORY, SLIPSTREAM_FACTORY2, SLIPSTREAM_FACTORY3], aeroFactory: AERO_FACTORY },
     feeds: { ethUsd: ETH_USD_FEED, usdcUsd: USDC_USD_FEED }, usdc: USDC,
     fees: { taxBps: TAX_BPS, creatorBps: CREATOR_BPS, holderBps: HOLDER_BPS, platformBps: 10000 - CREATOR_BPS - HOLDER_BPS },
     deployedAt: dep.deployedAt ?? new Date().toISOString(),

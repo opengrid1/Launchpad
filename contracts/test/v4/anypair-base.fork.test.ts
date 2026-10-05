@@ -11,6 +11,7 @@ const UNI_V3_FACTORY = "0x33128a8fC17869897dcE68Ed026d694621f6FDfD";
 const PANCAKE_V3_FACTORY = "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865";
 const SLIPSTREAM_FACTORY = "0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A";
 const SLIPSTREAM_FACTORY2 = "0xaDe65c38CD4849aDBA595a4323a8C7DdfE89716a";
+const SLIPSTREAM_FACTORY3 = "0xf8f2eB4940CFE7d13603DDDD87f123820Fc061Ef";
 const AERO_FACTORY = "0x420DD381b31aEf6683db6B902084cB0FFECe40Da";
 const ETH_USD_FEED = "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70";
 const USDC_USD_FEED = "0x7e860098F58bBFC8648a4311b374B1D669a2bc6B";
@@ -76,9 +77,9 @@ async function deployAll(admin: any) {
   const hook = await ethers.getContractAt("AnypairHook", hookAddr, deployer);
   const oracle = await (await ethers.getContractFactory("AnypairOracle", deployer)).deploy({
     admin: admin.address, weth: WETH, poolManager: POOL_MANAGER, uniV3Factory: UNI_V3_FACTORY, pancakeV3Factory: PANCAKE_V3_FACTORY,
-    slipstreamFactory: SLIPSTREAM_FACTORY, slipstreamFactory2: SLIPSTREAM_FACTORY2, aeroFactory: AERO_FACTORY, ethUsdFeed: ETH_USD_FEED, ethUsd8: ETH_USD_8,
+    slipstreamFactories: [SLIPSTREAM_FACTORY, SLIPSTREAM_FACTORY2], aeroFactory: AERO_FACTORY, ethUsdFeed: ETH_USD_FEED, ethUsd8: ETH_USD_8,
+    usdc: USDC, usdcUsdFeed: USDC_USD_FEED,
   });
-  await (await oracle.connect(admin).setListed(USDC, true, 10n ** 8n, USDC_USD_FEED)).wait();
   const td = await (await ethers.getContractFactory("AnypairTokenDeployer", deployer)).deploy();
   const factory = await (await ethers.getContractFactory("AnypairFactory", deployer)).deploy(
     deployer.address, admin.address, POOL_MANAGER, hookAddr, await td.getAddress(), WETH, await oracle.getAddress(), TAX_BPS, CREATOR_BPS, HOLDER_BPS, ethers.ZeroAddress,
@@ -465,5 +466,32 @@ describe("Anypair on Base (mainnet fork)", function () {
     await (await coin.payCreator()).wait();
     // plain ERC-20s are untouched by the B20 checks
     await launch(factory, creator, { pair: USDC, basket: [AERO] });
+  });
+
+  it("Aerodrome's newer Slipstream factory: refused until the admin adds it (only factories under Aerodrome's Voter), then a VVV pair launches and trades through it; USDC is listed at deploy", async () => {
+    const [admin, creator, trader, stranger] = await ethers.getSigners();
+    const { factory, router, oracle } = await deployAll(admin);
+    expect((await oracle.listed(USDC)).listed).to.eq(true); // listed by the constructor, no admin step
+    const VVV = "0xacfe6019ed1a7dc6f7b508c02d1b04ec88cc21bf";
+    const src = { dex: SLIP, pool: "0xa135b59fe221c0c8d441294f97f96fbc37bc9fbe", key: EMPTY_KEY }; // VVV/WETH on factory 3
+    await expect(oracle.register(src)).to.be.revertedWithCustomError(oracle, "BadSource");
+    await expect(oracle.connect(stranger).addSlipstreamFactory(SLIPSTREAM_FACTORY3)).to.be.revertedWithCustomError(oracle, "NotAdmin");
+    await expect(oracle.connect(admin).addSlipstreamFactory(UNI_V3_FACTORY)).to.be.reverted; // not an Aerodrome factory
+    await expect(oracle.connect(admin).addSlipstreamFactory(SLIPSTREAM_FACTORY)).to.be.revertedWithCustomError(oracle, "InvalidParams"); // already there
+    await (await oracle.connect(admin).addSlipstreamFactory(SLIPSTREAM_FACTORY3)).wait();
+    expect(await oracle.slipstreamFactories()).to.deep.eq([SLIPSTREAM_FACTORY, SLIPSTREAM_FACTORY2, SLIPSTREAM_FACTORY3].map(ethers.getAddress));
+    SRC[ethers.getAddress(VVV)] = src;
+    const coin = await launch(factory, creator, { ethIn: E("0.01"), pair: ethers.getAddress(VVV) });
+    const coinAddr = await coin.getAddress();
+    expect((await oracle.sources(ethers.getAddress(VVV))).pool.toLowerCase()).to.eq(src.pool);
+    console.log(`      VVV priced from Slipstream factory 3: $${(await usdWhole(oracle, ethers.getAddress(VVV))).toFixed(3)}`);
+    await pastSnipe();
+    const r = await routeFor(ethers.getAddress(VVV));
+    await (await router.connect(trader).buy(coinAddr, r, 0, { value: E("0.05") })).wait();
+    await (await coin.connect(trader).approve(await router.getAddress(), ethers.MaxUint256)).wait();
+    const e0 = await ethers.provider.getBalance(trader.address);
+    const rc = await (await router.connect(trader).sell(coinAddr, (await coin.balanceOf(trader.address)) / 2n, r, 0)).wait();
+    expect((await ethers.provider.getBalance(trader.address)) + rc!.gasUsed * rc!.gasPrice).to.be.gt(e0);
+    expect(await coin.pendingRewards(trader.address)).to.be.gt(0n);
   });
 });

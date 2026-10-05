@@ -15,7 +15,8 @@ const STATE_VIEW = CFG.stateView || '0xA3c0c9b65baD0b08107Aa264b0f3dB444b867A71'
 const DEX = CFG.dexes || {};
 const UNI_V3 = DEX.uniV3Factory || '0x33128a8fC17869897dcE68Ed026d694621f6FDfD';
 const PANCAKE = DEX.pancakeV3Factory || '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865';
-const SLIP = [DEX.slipstreamFactory || '0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A', DEX.slipstreamFactory2 || '0xaDe65c38CD4849aDBA595a4323a8C7DdfE89716a'];
+// Aerodrome runs several Slipstream (CL) factories; the newest holds most stock and big-token pools
+const SLIP = DEX.slipstreamFactories || ['0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A', '0xaDe65c38CD4849aDBA595a4323a8C7DdfE89716a', '0xf8f2eB4940CFE7d13603DDDD87f123820Fc061Ef'];
 const AERO_F = DEX.aeroFactory || '0x420DD381b31aEf6683db6B902084cB0FFECe40Da';
 const USDC_WETH_POOL = '0xd0b53D9277642d899DF5C87A3966A349A798F224'; // Uniswap V3 0.05%, the WETH -> USDC first hop
 const SUPPLY = 1e9;
