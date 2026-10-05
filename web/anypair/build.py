@@ -36,7 +36,7 @@ def config():
     if MODE == 'preview':
         cfg = {'chainId': 8453, 'rpc': 'https://mainnet.base.org', 'rpcs': ['https://base-rpc.publicnode.com', 'https://base.drpc.org'], 'blockscout': 'https://base.blockscout.com', 'logSpan': 9000, 'prelaunch': True, 'demo': True,
                'contracts': {}, 'deployBlock': 1, 'admin': '', 'explorer': 'https://basescan.org', 'weth': '0x4200000000000000000000000000000000000006', 'usdc': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-               'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'), 'tokens': tokens, 'social': {'x': 'https://x.com/anypairfun'}}
+               'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'), 'tokens': tokens, 'social': {'x': 'https://x.com/anypair_world'}}
         return 'window.ANYPAIR = ' + json.dumps(cfg, separators=(',', ':')) + ';\n'
     if MODE == 'fork':
         dep = json.load(open(os.environ.get('DEPLOY', os.path.join(HERE, '..', 'anypair-fork.json'))))
@@ -50,7 +50,7 @@ def config():
         'deployBlock': dep.get('deployBlock', 1), 'admin': dep['admin'], 'explorer': 'https://basescan.org',
         'weth': '0x4200000000000000000000000000000000000006', 'usdc': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
         'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'),
-        'tokens': tokens, 'social': {'x': 'https://x.com/anypairfun'},
+        'tokens': tokens, 'social': {'x': 'https://x.com/anypair_world'},
     })
     return 'window.ANYPAIR = ' + json.dumps(cfg, separators=(',', ':')) + ';\n'
 
@@ -105,7 +105,7 @@ def shell(meta, body):
     <nav class="nav" aria-label="Main">{links}</nav>
     <div><div class="side-h">Browse by pair</div><div class="pairs-nav" id="pairsNav"></div></div>
     <div class="side-foot">
-      <div class="row"><button class="icon-btn" data-theme-btn aria-label="Theme"></button><a class="icon-btn" href="https://x.com/anypairfun" target="_blank" rel="noopener" aria-label="X">{ic("x")}</a></div>
+      <div class="row"><button class="icon-btn" data-theme-btn aria-label="Theme"></button><a class="icon-btn" href="https://x.com/anypair_world" target="_blank" rel="noopener" aria-label="X">{ic("x")}</a></div>
       <small>Coins on Base, paired with any token. 2% fee on every trade.</small>
     </div>
   </aside>

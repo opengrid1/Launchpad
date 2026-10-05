@@ -37,7 +37,7 @@ async function main() {
   const factory = await ethers.getContractAt("AnypairFactory", dep.contracts.factory);
   const router = await ethers.getContractAt("AnypairRouter", dep.contracts.router);
   const COINS = [
-    { name: "Pairwise", symbol: "PAIR", pair: WETH, basket: [CBBTC, AERO], rewards: true, desc: "The first coin on Anypair. Paired with ETH, pays holders in cbBTC and AERO.", x: "https://x.com/anypair" },
+    { name: "Pairwise", symbol: "PAIR", pair: WETH, basket: [CBBTC, AERO], rewards: true, desc: "The first coin on Anypair. Paired with ETH, pays holders in cbBTC and AERO.", x: "https://x.com/anypair_world" },
     { name: "Blue Cheese", symbol: "CHEESE", pair: USDC, basket: [], rewards: true, desc: "Stable pair, stinky coin. Holders earn USDC on every trade." },
     { name: "Satoshi Frog", symbol: "SFROG", pair: CBBTC, basket: [CBBTC], rewards: true, desc: "Paired with cbBTC. Holders stack sats." },
     { name: "Aero Ape", symbol: "AAPE", pair: AERO, basket: [AERO, VIRTUAL], rewards: true, desc: "Lives on Aerodrome liquidity. Rewards in AERO and VIRTUAL." },
