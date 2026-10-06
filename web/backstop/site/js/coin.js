@@ -67,39 +67,55 @@
   }
 
   // ------------------------------------------------------------ side: trade, fee split, about
+  // the order ticket: amount on top, a receipt of what the trade does underneath, including where its fee goes
   function tradePanel() {
-    return `<section class="panel trade"><div class="tabs2" role="tablist"><button data-side="buy" class="buy">Buy</button><button data-side="sell" class="sell">Sell</button></div><div class="body" id="tradeBody"></div></section>`;
+    return `<section class="panel ticket"><div class="tk-tabs" role="tablist"><button data-side="buy">Buy</button><button data-side="sell">Sell</button><button type="button" class="tk-slip" id="slipBtn" title="Slippage tolerance"></button></div><div id="tradeBody"></div></section>`;
   }
   const sampleBal = () => { const r = BS.samplePortfolio().rows.find(r => r.x.addr === x.addr); return r ? r.bal : 0; };
   function paintTrade() {
-    const { esc, usd, num, pct, tokImg, coinImg, $, $$, ic } = U(); const body = document.getElementById('tradeBody'); if (!body) return;
-    $$('.tabs2 button').forEach(b => b.classList.toggle('on', b.dataset.side === side));
+    const { esc, usd, num, tokImg, coinImg, $, $$, bps } = U(); const body = document.getElementById('tradeBody'); if (!body) return;
+    $$('.tk-tabs [data-side]').forEach(b => { b.classList.toggle('on', b.dataset.side === side); b.setAttribute('aria-selected', b.dataset.side === side); });
+    $('#slipBtn').innerHTML = `Slippage <b>${slip}%</b>`;
     const buy = side === 'buy'; const eth = { logo: BS.known(BS.weth).logo }; const w = window.bsWallet; const connected = w && w.connected;
     const bal = buy ? null : sampleBal();
-    const pill = isCoin => isCoin ? `<span class="tpill">${coinImg(x, 'ti')}${esc(x.symbol)}</span>` : `<span class="tpill">${tokImg(eth, 'ti')}ETH</span>`;
+    const unit = buy ? `${tokImg(eth, 'ti')}ETH` : `${coinImg(x, 'ti')}${esc(x.symbol)}`;
     const quick = buy ? [['0.01', '0.01'], ['0.05', '0.05'], ['0.1', '0.1'], ['0.5', '0.5']] : [['25', '25%'], ['50', '50%'], ['75', '75%'], ['100', 'Max']];
-    const route = x.pair === BS.weth ? `ETH → ${esc(x.symbol)}` : buy ? `ETH → ${esc(x.pairSym)} → ${esc(x.symbol)}` : `${esc(x.symbol)} → ${esc(x.pairSym)} → ETH`;
+    const route = x.pair === BS.weth ? ['ETH', x.symbol] : buy ? ['ETH', x.pairSym, x.symbol] : [x.symbol, x.pairSym, 'ETH'];
+    const sp = x.split; const parts = [['vault', 'Vault', sp.vault], ['bb', 'Buyback fund', sp.buyback], ['holders', 'Holders', sp.holders], ['creator', 'Creator', sp.creator], ['platform', 'Platform', sp.platform]].filter(p => p[2] > 0);
     body.innerHTML = `
-      <div class="tbox"><div class="tbox-h"><span>You pay</span><span>${buy ? '' : `Balance <b class="mono">${num(bal, 0)}</b> <span class="faint">sample</span>`}</span></div>
-        <div class="tbox-r"><input class="tin num" id="amt" inputmode="decimal" autocomplete="off" placeholder="0.0" value="${buy ? '0.1' : Math.round(bal / 2)}">${pill(!buy)}</div>
-        <div class="tbox-f" id="inUsd"></div></div>
-      <div class="quick q4">${quick.map(([v, l]) => `<button type="button" data-q="${v}">${l}</button>`).join('')}</div>
-      <div class="tbox recv"><div class="tbox-h"><span>You receive about</span></div>
-        <div class="tbox-r"><b class="tout num" id="out">—</b>${pill(buy)}</div>
-        <div class="tbox-f" id="outUsd"></div></div>
-      <div class="kv tdet" id="quote"></div>
-      <button class="btn btn-lg btn-block tbtn ${buy ? 'buy' : 'sell'}" id="tradeGo" ${connected ? 'disabled' : ''}>${connected ? 'Trading opens at launch' : 'Connect wallet'}</button>
-      <div class="tfoot"><span>${route}</span><button type="button" id="slipBtn">Slippage <b>${slip}%</b></button></div>`;
+      <div class="tk-amt">
+        <div class="tk-lbl"><span>${buy ? 'Spend' : 'Sell'}</span>${buy ? '' : `<span>Balance <b class="mono">${num(bal, 0)}</b> <span class="faint">sample</span></span>`}</div>
+        <div class="tk-in"><input class="num" id="amt" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Amount" value="${buy ? '0.1' : Math.round(bal / 2)}"><span class="tk-unit">${unit}</span></div>
+        <div class="tk-sub"><span id="inUsd" class="mono"></span><span class="tk-quick">${quick.map(([v, l]) => `<button type="button" data-q="${v}">${l}</button>`).join('')}</span></div>
+      </div>
+      <div class="tk-perf" aria-hidden="true"></div>
+      <div class="tk-rcpt">
+        <div class="ln big"><span>You get</span><i></i><b id="out">—</b></div>
+        <div class="ln"><span>At least, after ${slip}% slippage</span><i></i><b id="minOut">—</b></div>
+        <div class="ln"><span>Price impact</span><i></i><b id="imp">—</b></div>
+        <div class="ln"><span>Fee, 2%</span><i></i><b id="fee">—</b></div>
+        <div class="tk-split split" aria-hidden="true">${parts.map(p => `<i class="s-${p[0]}" style="flex:${p[2]}"></i>`).join('')}</div>
+        <div class="tk-fees">${parts.map(p => `<div class="ln sub"><span><i class="s-${p[0]}"></i>${p[1]} <span class="faint">${bps(p[2])}</span></span><i></i><b data-part="${p[2]}">—</b></div>`).join('')}</div>
+      </div>
+      <div class="tk-perf" aria-hidden="true"></div>
+      <div class="tk-go">
+        <button class="btn btn-ink btn-lg btn-block" id="tradeGo" ${connected ? 'disabled' : ''}>${connected ? 'Trading opens at launch' : 'Connect wallet to ' + (buy ? 'buy' : 'sell')}</button>
+        <div class="tk-route">${route.map(r => `<span>${esc(r)}</span>`).join('<i>→</i>')}</div>
+      </div>`;
     const inp = $('#amt');
-    const q = async () => { const e = await BS.ethUsd(); const v = Number(inp.value) || 0; const fee = 0.02;
-      const inUsd = buy ? v * e : v * x.px; const impact = Math.min(0.5, inUsd / (x.liq / 2)); const outUsd = inUsd * (1 - fee) * (1 - impact);
-      const out = buy ? outUsd / x.px : outUsd / e;
-      $('#inUsd').textContent = v ? usd(inUsd) : ''; $('#out').textContent = v ? num(out, buy ? 0 : 4) : '—'; $('#outUsd').textContent = v ? usd(outUsd) : '';
-      $('#quote').innerHTML = `<div><span>Price impact</span><b class="${impact > 0.05 ? 'down' : ''}">${v ? (impact * 100).toFixed(2) + '%' : '—'}</b></div><div><span>Trade fee (2%)</span><b>${v ? usd(inUsd * fee) : '—'}</b></div><div><span>Minimum received</span><b>${v ? num(out * (1 - slip / 100), buy ? 0 : 4) + ' ' + (buy ? esc(x.symbol) : 'ETH') : '—'}</b></div>`; };
+    const q = async () => { const e = await BS.ethUsd(); const v = Number(inp.value) || 0;
+      const inUsd = buy ? v * e : v * x.px; const impact = Math.min(0.5, inUsd / (x.liq / 2)); const feeUsd = inUsd * 0.02; const outUsd = (inUsd - feeUsd) * (1 - impact);
+      const out = buy ? outUsd / x.px : outUsd / e; const outUnit = buy ? x.symbol : 'ETH';
+      $('#inUsd').textContent = v ? '≈ ' + usd(inUsd) : '';
+      $('#out').textContent = v ? `${num(out, buy ? 0 : 4)} ${outUnit}` : '—';
+      $('#minOut').textContent = v ? `${num(out * (1 - slip / 100), buy ? 0 : 4)} ${outUnit}` : '—';
+      const im = $('#imp'); im.textContent = v ? (impact * 100).toFixed(2) + '%' : '—'; im.className = impact > 0.05 ? 'down' : '';
+      $('#fee').textContent = v ? usd(feeUsd) : '—';
+      const cents = n => n >= 1 ? usd(n) : '$' + n.toFixed(2);
+      $$('[data-part]', body).forEach(b => { b.textContent = v ? cents(inUsd * Number(b.dataset.part) / 1e4) : '—'; }); };
     inp.oninput = () => { inp.value = inp.value.replace(/[^0-9.]/g, ''); q(); };
     $$('[data-q]', body).forEach(b => b.onclick = () => { inp.value = buy ? b.dataset.q : String(Math.floor(bal * Number(b.dataset.q) / 100)); q(); });
     $('#tradeGo').onclick = () => { if (!(window.bsWallet && bsWallet.connected)) bsWallet.open(); };
-    $('#slipBtn').onclick = e => { const m = U().menu(e.currentTarget, [1, 3, 5, 10].map(n => `<button data-s="${n}">${n}%${n === slip ? ' ✓' : ''}</button>`).join('')); U().$$('[data-s]', m).forEach(b => b.onclick = () => { slip = Number(b.dataset.s); m.remove(); paintTrade(); }); };
     q();
   }
   function about() {
@@ -109,22 +125,15 @@
       <div class="kv"><div><span>Contract</span><b><span class="addr">${short(x.addr)}</span></b></div><div><span>Backing token</span><b><a class="addr" href="${addrLink(x.pair)}" target="_blank" rel="noopener">${esc(x.pairSym)} ${short(x.pair)}</a></b></div></div>
     </div></section>`;
   }
-  function feeSplit() {
-    const s = x.split; const parts = [['creator', 'Creator', s.creator], ['holders', 'Holders', s.holders], ['vault', 'Vault', s.vault], ['bb', 'Buyback', s.buyback], ['platform', 'Platform', s.platform]].filter(p => p[2] > 0);
-    return `<section class="panel fs"><div class="panel-h"><h3>Trade fee: 2%</h3></div><div class="panel-b">
-      <div class="split" role="img" aria-label="${parts.map(p => p[1] + ' ' + U().bps(p[2])).join(', ')}">${parts.map(p => `<i class="s-${p[0]}" style="flex:${p[2]}"></i>`).join('')}</div>
-      <div class="split-key">${parts.map(p => `<span><i class="s-${p[0]}"></i>${p[1]}<b>${U().bps(p[2])}</b></span>`).join('')}</div>
-</div></section>`;
-  }
-
   function render() {
     const { $, esc } = U(); const root = $('#coinRoot');
     if (!x) { root.innerHTML = `<div class="empty"><h3>Coin not found</h3><p>No Backstop coin at <span class="mono">${esc(addr || 'this address')}</span>.</p><a class="btn btn-ink" href="/">Back to explore</a></div>`; return; }
     document.title = `${x.name} ($${x.symbol}) · Backstop`;
-    root.innerHTML = head() + `<div class="coin-grid"><div class="coin-main">${kpis()}${chartPanel()}${strategies()}${activity()}</div><div class="coin-side">${tradePanel()}${feeSplit()}${about()}</div></div>`;
+    root.innerHTML = head() + `<div class="coin-grid"><div class="coin-main">${kpis()}${chartPanel()}${strategies()}${activity()}</div><div class="coin-side">${tradePanel()}${about()}</div></div>`;
     if (window.bsChart && window.TradingView) bsChart.init($('#tv'), x); paintActivity(); paintTrade();
     U().$$('#actTabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; paintActivity(); });
-    U().$$('.tabs2 button').forEach(b => b.onclick = () => { side = b.dataset.side; paintTrade(); });
+    U().$$('.tk-tabs [data-side]').forEach(b => b.onclick = () => { side = b.dataset.side; paintTrade(); });
+    $('#slipBtn').onclick = e => { const m = U().menu(e.currentTarget, [1, 3, 5, 10].map(n => `<button data-s="${n}">${n}%${n === slip ? ' ✓' : ''}</button>`).join('')); U().$$('[data-s]', m).forEach(b => b.onclick = () => { slip = Number(b.dataset.s); m.remove(); paintTrade(); }); };
     U().$$('[data-copy]').forEach(b => b.onclick = () => U().copy(b.dataset.copy, 'Contract address'));
     const rb = $('#rdBtn'); if (rb) rb.onclick = openRedeem;
   }
