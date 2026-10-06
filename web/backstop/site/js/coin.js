@@ -41,6 +41,7 @@
     if (x.tp && v) { const gain = (v.usd / v.cost - 1) * 100; const at = Math.max(0, Math.min(100, gain / x.tp * 100));
       rows.push(row('t', 'Take profit', 'at +' + x.tp + '%', pct(gain), `<span class="progress mini"><i style="width:${at.toFixed(0)}%"></i></span>`)); }
     if (x.redeem && v) rows.push(row('r', 'Redeem', 'burn for backing', usd(v.perCoin), 'per coin', '<button class="btn btn-line" id="rdBtn">Redeem</button>'));
+    if (x.lp) rows.push(row('l', 'Auto-LP', bps(x.split.lp) + ' of trades', usd(x.lp.usd), x.lp.adds ? `locked in ${x.lp.adds} adds · pool ${usd(x.liq)}` : `${usd(x.lp.pending)} of $250 to first add`));
     if (x.split.holders) rows.push(row('h', 'Holder rewards', bps(x.split.holders) + ' of trades', usd(x.fees.holders), 'paid in ' + esc(payoutLabel(x))));
     return `<section class="panel strat-panel"><div class="panel-h"><h2>Strategy</h2><a class="r link" href="/docs#split" style="font-size:13px">How it works</a></div><div class="slist">${rows.join('')}</div></section>`;
   }
@@ -81,7 +82,7 @@
     const unit = buy ? `${tokImg(eth, 'ti')}ETH` : `${coinImg(x, 'ti')}${esc(x.symbol)}`;
     const quick = buy ? [['0.01', '0.01'], ['0.05', '0.05'], ['0.1', '0.1'], ['0.5', '0.5']] : [['25', '25%'], ['50', '50%'], ['75', '75%'], ['100', 'Max']];
     const route = x.pair === BS.weth ? ['ETH', x.symbol] : buy ? ['ETH', x.pairSym, x.symbol] : [x.symbol, x.pairSym, 'ETH'];
-    const sp = x.split; const parts = [['vault', 'Vault', sp.vault], ['bb', 'Buyback fund', sp.buyback], ['holders', 'Holders', sp.holders], ['creator', 'Creator', sp.creator], ['platform', 'Platform', sp.platform]].filter(p => p[2] > 0);
+    const sp = x.split; const parts = [['vault', 'Vault', sp.vault], ['bb', 'Buyback fund', sp.buyback], ['lp', 'Auto-LP', sp.lp || 0], ['holders', 'Holders', sp.holders], ['creator', 'Creator', sp.creator], ['platform', 'Platform', sp.platform]].filter(p => p[2] > 0);
     body.innerHTML = `
       <div class="tk-amt">
         <div class="tk-lbl"><span>${buy ? 'Spend' : 'Sell'}</span>${buy ? '' : `<span>Balance <b class="mono">${num(bal, 0)}</b> <span class="faint">sample</span></span>`}</div>

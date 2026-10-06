@@ -2,7 +2,7 @@
 <div class="docs">
   <nav class="docs-nav" id="docsNav" aria-label="On this page">
     <span class="eyebrow">On this page</span>
-    <a href="#launch">Launching</a><a href="#split">The split</a><a href="#vault">Vault</a><a href="#dip">Dip buyback</a><a href="#tp">Take profit</a><a href="#redeem">Redeem</a><a href="#rewards">Holder rewards</a><a href="#trading">Trading</a><a href="#rules">Rules in the contracts</a><a href="#faq">FAQ</a><a href="#contracts">Contracts</a>
+    <a href="#launch">Launching</a><a href="#split">The split</a><a href="#vault">Vault</a><a href="#dip">Dip buyback</a><a href="#tp">Take profit</a><a href="#redeem">Redeem</a><a href="#lp">Auto-LP</a><a href="#rewards">Holder rewards</a><a href="#trading">Trading</a><a href="#rules">Rules in the contracts</a><a href="#faq">FAQ</a><a href="#contracts">Contracts</a>
   </nav>
   <article class="prose">
     <header>
@@ -22,7 +22,7 @@
       <ol>
         <li><b>Name it.</b> Name, ticker and logo. Name and ticker are written into the coin and can't change.</li>
         <li><b>Pick the backing token.</b> ETH, USDC, WBTC, staked ETH, tokenized gold, or any token with a Uniswap pool against ETH or USDC holding at least $10,000 on that side. The form checks it on Ethereum as you pick.</li>
-        <li><b>Split 1.5% of every trade</b> across the creator, holder rewards, the vault and the buyback fund, in steps of 0.05%.</li>
+        <li><b>Split 1.5% of every trade</b> across the creator, holder rewards, the vault, the buyback fund and auto-LP, in steps of 0.05%.</li>
         <li><b>Set the options:</b> take-profit target, redeem on or off, and what holders are paid in.</li>
         <li><b>Launch,</b> with an optional first buy in the same transaction.</li>
       </ol>
@@ -37,6 +37,7 @@
         <tr><td>Holder rewards</td><td>Spread across everyone holding the coin, by balance.</td></tr>
         <tr><td>Vault</td><td>Held in the backing token. Backs every coin and feeds take-profit and redeem.</td></tr>
         <tr><td>Buyback fund</td><td>Waits for a 20% dip, then buys the coin and burns it.</td></tr>
+        <tr><td>Auto-LP</td><td>Added to the coin's pool as liquidity that can never be removed.</td></tr>
       </tbody></table></div>
       <div class="example"><span class="eyebrow">Example</span>A PEPE strategy split 0.3% creator, 0.7% vault, 0.5% buyback. On $10,000 of trading: $30 to the creator, $70 of PEPE into the vault, $50 into the buyback fund, $50 to the platform.</div>
     </section>
@@ -68,6 +69,13 @@
       <p>This puts a floor under the price. If the coin trades below its backing, buying it and redeeming pays, and that buying pushes the price back up. While the price is above backing, selling pays more than redeeming.</p>
     </section>
 
+    <section id="lp">
+      <h2>Auto-LP</h2>
+      <p>The auto-LP share collects in the backing token. Each time it reaches $250, half of it buys the coin and both halves go into the coin's Uniswap V4 pool as full-range liquidity. The position belongs to the coin's contracts and has no withdraw function, so the liquidity stays forever.</p>
+      <p>A deeper pool means smaller price impact on every trade, in both directions: big buys move the price less, and so do big sells. The pool's trading fees on that liquidity stay in the position.</p>
+      <div class="example"><span class="eyebrow">Example</span>A coin with 0.3% auto-LP and $100,000 of daily volume adds about $300 of locked liquidity a day, roughly $9,000 a month.</div>
+    </section>
+
     <section id="rewards">
       <h2>Holder rewards</h2>
       <p>The holder share of each trade is spread across every wallet holding the coin, in proportion to its balance, the moment the fee arrives. Pools and Backstop's own contracts don't count as holders. Rewards already earned stay claimable after you sell.</p>
@@ -93,6 +101,7 @@
       <h2>Rules in the contracts</h2>
       <ul>
         <li>The 2% fee, the split and every strategy option are set at launch. No function changes them.</li>
+        <li>Liquidity added by auto-LP can't be removed.</li>
         <li>Nothing can withdraw from a vault or a buyback fund. Vault assets leave only through take-profit or redeem; fund assets leave only as buybacks.</li>
         <li>Coins bought back are burned, never kept.</li>
         <li>Coins have no owner and no mint function. Supply only goes down.</li>

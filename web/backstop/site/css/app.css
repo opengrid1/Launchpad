@@ -10,6 +10,7 @@
   --bb: #e8590c; --bb-strong: #c2410c; --bb-soft: #fdece2; --bb-line: #f6b48f;
   --holders: #6d5bd0; --holders-soft: #ece9fb;
   --creator: #475569; --platform: #c3ccd6;
+  --lp: #2f6fde; --lp-soft: #e5eefd;
   --up: #15803d; --up-soft: #e3f4e8; --down: #d92d20; --down-soft: #fde8e6;
   --warn: #a15c00; --warn-soft: #fff3df;
   --btn: #0b1220; --btn-ink: #ffffff; --btn-hover: #1d2a3e;
@@ -30,6 +31,7 @@
     --bb: #ff8a4c; --bb-strong: #ffa774; --bb-soft: #33190c; --bb-line: #6b3417;
     --holders: #a597ff; --holders-soft: #221d44;
     --creator: #94a3b8; --platform: #3a4757;
+    --lp: #6aa1ff; --lp-soft: #14233f;
     --up: #3ccf7a; --up-soft: #0d2a1a; --down: #ff6b5e; --down-soft: #351310;
     --warn: #f5b142; --warn-soft: #2e2210;
     --btn: #e8edf4; --btn-ink: #0a0f17; --btn-hover: #ffffff;
@@ -45,6 +47,7 @@
   --bb: #ff8a4c; --bb-strong: #ffa774; --bb-soft: #33190c; --bb-line: #6b3417;
   --holders: #a597ff; --holders-soft: #221d44;
   --creator: #94a3b8; --platform: #3a4757;
+  --lp: #6aa1ff; --lp-soft: #14233f;
   --up: #3ccf7a; --up-soft: #0d2a1a; --down: #ff6b5e; --down-soft: #351310;
   --warn: #f5b142; --warn-soft: #2e2210;
   --btn: #e8edf4; --btn-ink: #0a0f17; --btn-hover: #ffffff;
@@ -178,12 +181,13 @@ a.addr:hover, .link:hover { text-decoration: underline; text-underline-offset: 3
 .strat i { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 4px; font: 700 10.5px/1 var(--f-mono); font-style: normal; color: var(--faint); border: 1px solid var(--line); background: transparent; }
 .strat i.on.v, .strat i.on.r { background: var(--vault-soft); border-color: var(--vault-line); color: var(--vault-strong); }
 .strat i.on.d, .strat i.on.t { background: var(--bb-soft); border-color: var(--bb-line); color: var(--bb-strong); }
+.strat i.on.l { background: var(--lp-soft); border-color: color-mix(in srgb, var(--lp) 35%, transparent); color: var(--lp); }
 .strat i.on.e, .strat i.on.h { background: var(--holders-soft); border-color: color-mix(in srgb, var(--holders) 35%, transparent); color: var(--holders); }
 
 /* fee split bar */
 .split { display: flex; height: 10px; border-radius: 3px; overflow: hidden; gap: 2px; }
 .split i { display: block; min-width: 3px; }
-.s-creator { background: var(--creator); } .s-holders { background: var(--holders); } .s-vault { background: var(--vault); } .s-bb { background: var(--bb); } .s-platform { background: var(--platform); }
+.s-creator { background: var(--creator); } .s-holders { background: var(--holders); } .s-vault { background: var(--vault); } .s-bb { background: var(--bb); } .s-lp { background: var(--lp); } .s-platform { background: var(--platform); }
 .split-key { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 14px; margin-top: 12px; font-size: 12.5px; }
 .split-key span { display: flex; align-items: center; gap: 7px; color: var(--muted); }
 .split-key span b { margin-left: auto; color: var(--ink); font: 500 12.5px var(--f-mono); }

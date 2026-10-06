@@ -3,21 +3,23 @@
   const U = () => window.UI;
   const STEP = 5, POOL = 150; // basis points: 0.05% steps across 1.5%
   const PRESETS = [
-    { k: 'strategy', name: 'Strategy', d: 'Vault + dip buybacks', split: { creator: 30, holders: 0, vault: 70, buyback: 50 }, tp: 50, redeem: false },
-    { k: 'floor', name: 'Floor', d: 'Big vault, redeemable', split: { creator: 30, holders: 0, vault: 120, buyback: 0 }, tp: 0, redeem: true },
-    { k: 'dips', name: 'Dip defender', d: 'All buybacks', split: { creator: 40, holders: 0, vault: 0, buyback: 110 }, tp: 0, redeem: false },
-    { k: 'yield', name: 'Yield', d: 'Holders paid in ETH', split: { creator: 30, holders: 90, vault: 30, buyback: 0 }, tp: 0, redeem: true, payout: 'eth' },
+    { k: 'strategy', name: 'Strategy', d: 'Vault + dip buybacks', split: { creator: 30, holders: 0, vault: 70, buyback: 50, lp: 0 }, tp: 50, redeem: false },
+    { k: 'floor', name: 'Floor', d: 'Big vault, redeemable', split: { creator: 30, holders: 0, vault: 120, buyback: 0, lp: 0 }, tp: 0, redeem: true },
+    { k: 'dips', name: 'Dip defender', d: 'All buybacks', split: { creator: 40, holders: 0, vault: 0, buyback: 80, lp: 30 }, tp: 0, redeem: false },
+    { k: 'deep', name: 'Deep pool', d: 'Liquidity grows every trade', split: { creator: 30, holders: 0, vault: 40, buyback: 30, lp: 50 }, tp: 0, redeem: false },
+    { k: 'yield', name: 'Yield', d: 'Holders paid in ETH', split: { creator: 30, holders: 90, vault: 30, buyback: 0, lp: 0 }, tp: 0, redeem: true, payout: 'eth' },
   ];
   const ROWS = [
     ['creator', 'You', 'Paid to your wallet', 's-creator'],
     ['holders', 'Holders', 'Shared by balance', 's-holders'],
     ['vault', 'Vault', 'Holds the backing token', 's-vault'],
     ['buyback', 'Buyback', 'Buys and burns on 20% dips', 's-bb'],
+    ['lp', 'Auto-LP', 'Locked liquidity in the pool', 's-lp'],
   ];
   const st = { name: '', sym: '', desc: '', logo: '', pair: null, check: null, split: { ...PRESETS[0].split }, preset: 'strategy', tp: 50, redeem: false, payout: 'pair', basket: [], dev: 0 };
   let gas = null, eth = null;
 
-  const used = () => st.split.creator + st.split.holders + st.split.vault + st.split.buyback;
+  const used = () => st.split.creator + st.split.holders + st.split.vault + st.split.buyback + st.split.lp;
   const S = () => '$' + (st.sym || 'TICKER');
 
   // ------------------------------------------------------------ backing token
@@ -61,18 +63,19 @@
     U().$('#alloc').innerHTML = ROWS.map(([k, name, d, cls]) => `<div class="arow"><i class="${cls}"></i><div><b>${name}</b><small>${d}</small></div>
       <div class="stepper"><button type="button" data-k="${k}" data-d="-1" aria-label="Less to ${esc(name)}" ${st.split[k] <= 0 ? 'disabled' : ''}>−</button><output>${bps(st.split[k])}</output><button type="button" data-k="${k}" data-d="1" aria-label="More to ${esc(name)}" ${left <= 0 ? 'disabled' : ''}>+</button></div></div>`).join('')
       + `<div class="arow fixed"><i class="s-platform"></i><div><b>Platform</b><small>Fixed</small></div><div class="stepper"><span></span><output>0.5%</output><span></span></div></div>`;
-    const parts = [['creator', st.split.creator], ['holders', st.split.holders], ['vault', st.split.vault], ['bb', st.split.buyback], ['platform', 50]].filter(p => p[1] > 0);
+    const parts = [['creator', st.split.creator], ['holders', st.split.holders], ['vault', st.split.vault], ['bb', st.split.buyback], ['lp', st.split.lp], ['platform', 50]].filter(p => p[1] > 0);
     const m = U().$('#meter'); m.classList.toggle('short', left > 0);
     m.innerHTML = `<div class="split">${parts.map(p => `<i class="s-${p[0]}" style="flex:${p[1]}"></i>`).join('')}${left > 0 ? `<i style="flex:${left};background:repeating-linear-gradient(45deg,var(--line) 0 4px,transparent 4px 8px)"></i>` : ''}</div><b>${left > 0 ? bps(left) + ' left to assign' : '2% assigned'}</b>`;
   }
 
   // ------------------------------------------------------------ options
   function paintOpts() {
-    const { esc, tokImg } = U(); const v = st.split.vault > 0, h = st.split.holders > 0, bb = st.split.buyback > 0;
+    const { esc, tokImg } = U(); const v = st.split.vault > 0, h = st.split.holders > 0, bb = st.split.buyback > 0, lp = st.split.lp > 0;
     const pairSym = st.pair ? st.pair.symbol : 'the backing token';
     const basketChoices = BS.knownList().filter(t => !st.pair || t.address.toLowerCase() !== st.pair.address.toLowerCase()).filter(t => t.symbol !== 'DAI' && t.symbol !== 'USDe');
     U().$('#opts').innerHTML = `
       <div class="opt-row ${bb ? '' : 'dim'}"><div><b><span class="strat"><i class="d ${bb ? 'on' : ''}">D</i></span>Dip buyback ${bb ? '<span class="tag bb">On</span>' : '<span class="tag">Off</span>'}</b><small>${bb ? 'Every 20% dip, half the fund buys and burns.' : 'Give Buyback a share to turn on.'}</small></div></div>
+      <div class="opt-row ${lp ? '' : 'dim'}"><div><b><span class="strat"><i class="l ${lp ? 'on' : ''}">L</i></span>Auto-LP ${lp ? '<span class="tag" style="background:var(--lp-soft);color:var(--lp)">On</span>' : '<span class="tag">Off</span>'}</b><small>${lp ? 'Every $250 collected is added to the pool as liquidity nobody can remove.' : 'Give Auto-LP a share to turn on.'}</small></div></div>
       <div class="opt-row ${v ? '' : 'dim'}"><div><b><span class="strat"><i class="t ${v && st.tp ? 'on' : ''}">T</i></span>Take profit</b><small>${v ? 'Vault sells its gain and burns coins.' : 'Needs a vault share.'}</small>
         <div class="seg" id="tpSeg">${[0, 25, 50, 100].map(n => `<button type="button" data-tp="${n}" class="${st.tp === n ? 'on' : ''}" ${v ? '' : 'disabled'}>${n ? '+' + n + '%' : 'Off'}</button>`).join('')}</div></div></div>
       <div class="opt-row ${v ? '' : 'dim'}"><div><b><span class="strat"><i class="r ${v && st.redeem ? 'on' : ''}">R</i></span>Redeem at backing</b><small>${v ? 'Holders burn coins for their share of the vault.' : 'Needs a vault share.'}</small></div><button type="button" class="switch" id="rdSw" role="switch" aria-checked="${v && st.redeem}" aria-label="Redeem at backing" ${v ? '' : 'disabled'}></button></div>
@@ -92,10 +95,11 @@
   }
   function paintSum() {
     const { esc, usd, ic, bps } = U(); const s = st.split; const left = POOL - used(); const per = 10000;
-    const flows = [['creator', 'You', s.creator], ['holders', 'Holders', s.holders], ['vault', 'Vault', s.vault], ['bb', 'Buyback fund', s.buyback], ['platform', 'Platform', 50]].filter(f => f[2] > 0);
+    const flows = [['creator', 'You', s.creator], ['holders', 'Holders', s.holders], ['vault', 'Vault', s.vault], ['bb', 'Buyback fund', s.buyback], ['lp', 'Auto-LP', s.lp], ['platform', 'Platform', 50]].filter(f => f[2] > 0);
     const rules = [];
     const pairSym = st.pair ? st.pair.symbol : 'the backing token';
     if (s.vault) rules.push(['v', 'vault', `The vault buys ${esc(pairSym)} with ${bps(s.vault)} of every trade and never sells it${st.tp ? ' except for take-profit' : ''}.`]);
+    if (s.lp) rules.push(['v', 'lock', `${bps(s.lp)} of every trade deepens the pool with locked liquidity.`]);
     if (s.buyback) rules.push(['bb', 'flame', `On every 20% dip, half the buyback fund buys ${esc(S())} and burns it.`]);
     if (s.vault && st.tp) rules.push(['bb', 'flame', `At +${st.tp}% on the vault, the gain buys ${esc(S())} and burns it.`]);
     if (s.vault && st.redeem) rules.push(['v', 'lock', `Holders can redeem ${esc(S())} for its share of the vault.`]);

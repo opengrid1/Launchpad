@@ -59,6 +59,7 @@
     ['t', 'T', 'Take profit', x => x.tp > 0, 'When the vault is up by its target, the gain buys back and burns the coin'],
     ['r', 'R', 'Redeem', x => x.redeem, 'Holders can burn coins for their share of the vault'],
     ['h', 'H', 'Holder rewards', x => x.split.holders > 0, 'Holders earn a share of every trade'],
+    ['l', 'L', 'Auto-LP', x => x.split.lp > 0, 'Part of every trade is added to the pool as liquidity that can never be removed'],
   ];
   const stratBadges = x => `<span class="strat">${STRATS.map(([k, l, name, on, d]) => `<i class="${k}${on(x) ? ' on' : ''}" title="${esc(name + (on(x) ? '' : ' (off)') + ': ' + d)}">${l}</i>`).join('')}</span>`;
   const payoutLabel = x => !x.split.holders ? 'None' : x.rewards === 'eth' ? 'ETH' : x.rewards === 'basket' ? x.basket.map(b => b.symbol).join(' + ') : x.pairSym;
