@@ -1,0 +1,24 @@
+/* Backstop theme for TradingView Advanced Charts (loaded inside the chart iframe) */
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&display=swap');
+:root{
+  --tv-color-platform-background:#ffffff; --tv-color-pane-background:#ffffff;
+  --tv-color-toolbar-button-background-hover:#f0f3f6; --tv-color-toolbar-button-background-secondary-hover:#f0f3f6; --tv-color-toolbar-button-background-expanded:#e4e8ed;
+  --tv-color-toolbar-button-text:#5a6577; --tv-color-toolbar-button-text-hover:#0b1220; --tv-color-toolbar-button-text-active:#2c3747; --tv-color-toolbar-button-text-active-hover:#0b1220;
+  --tv-color-item-active-text:#0e7490; --tv-color-toolbar-toggle-button-background-active:#0e7490; --tv-color-toolbar-toggle-button-background-active-hover:#0b5f76;
+  --tv-color-toolbar-divider-background:#dbe1e8; --tv-color-toolbar-save-layout-loader:#5a6577;
+  --tv-color-popup-background:#ffffff; --tv-color-popup-element-text:#0b1220; --tv-color-popup-element-text-hover:#0b1220; --tv-color-popup-element-background-hover:#f0f3f6;
+  --tv-color-popup-element-divider-background:#dbe1e8; --tv-color-popup-element-secondary-text:#5a6577; --tv-color-popup-element-hint-text:#5a6577;
+  --tv-color-popup-element-text-active:#0e7490; --tv-color-popup-element-background-active:#dff1f5;
+  --tv-color-popup-element-toolbox-text:#5a6577; --tv-color-popup-element-toolbox-text-hover:#0b1220; --tv-color-popup-element-toolbox-text-active-hover:#0b5f76;
+  --tv-color-popup-element-toolbox-background-hover:#f0f3f6; --tv-color-popup-element-toolbox-background-active-hover:#e4e8ed;
+}
+.theme-dark:root{
+  --tv-color-platform-background:#111925; --tv-color-pane-background:#111925;
+  --tv-color-toolbar-button-background-hover:#1a2433; --tv-color-toolbar-button-background-secondary-hover:#1a2433; --tv-color-toolbar-button-background-expanded:#1a2433;
+  --tv-color-toolbar-button-text:#8d99aa; --tv-color-toolbar-button-text-hover:#e8edf4; --tv-color-toolbar-button-text-active:#c3ccd8; --tv-color-toolbar-button-text-active-hover:#e8edf4;
+  --tv-color-item-active-text:#3cc3dc; --tv-color-toolbar-toggle-button-background-active:#3cc3dc; --tv-color-toolbar-toggle-button-background-active-hover:#7fdcec;
+  --tv-color-toolbar-divider-background:#1f2a39; --tv-color-popup-background:#111925; --tv-color-popup-element-text:#e8edf4; --tv-color-popup-element-text-hover:#e8edf4;
+  --tv-color-popup-element-background-hover:#1a2433; --tv-color-popup-element-divider-background:#1f2a39; --tv-color-popup-element-secondary-text:#8d99aa; --tv-color-popup-element-hint-text:#8d99aa;
+  --tv-color-popup-element-text-active:#3cc3dc; --tv-color-popup-element-background-active:#0d2a33;
+}
+html, body { font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }

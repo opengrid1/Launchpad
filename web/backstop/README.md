@@ -14,4 +14,5 @@ Preview mode: sample coins, launching and trading closed. ETH price, gas and the
 on the launch form (Uniswap V2/V3 pools against ETH or USDC) read Ethereum mainnet live.
 
 Pages: Explore (`/`), coin (`/coin/0x…`), Launch, Portfolio, How it works (`/docs`), Admin (`/admin`).
+Charts use TradingView Advanced Charts, copied at build time from `../replica/charting_library` (or `$CHARTING_LIBRARY`).
 `brand/` renders the icon, OG card, X banner and sample coin logos (`node render.cjs out`).

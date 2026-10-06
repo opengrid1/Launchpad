@@ -58,7 +58,7 @@ def shell(meta, body):
     title = meta['title']
     desc = meta.get('desc', DESC)
     scripts = ''.join(f'<script src="/js/{s}" defer></script>' for s in meta.get('scripts', []))
-    vendor = ''.join(f'<script src="/vendor/{s}" defer></script>' for s in meta.get('vendor', []))
+    vendor = ''.join(f'<script src="/vendor/{s}" defer></script>' for s in meta.get('vendor', [])) + meta.get('head', '')
     return f'''<!doctype html>
 <html lang="en">
 <head>
@@ -123,8 +123,12 @@ def build():
     if os.path.exists(DIST):
         shutil.rmtree(DIST)
     os.makedirs(DIST)
-    for d in ('css', 'js', 'img', 'vendor'):
+    for d in ('css', 'js', 'img'):
         shutil.copytree(os.path.join(SITE, d), os.path.join(DIST, d))
+    # TradingView Advanced Charts: the same library as the Inkypump site (web/replica), with Backstop's theme
+    lib = next(p for p in (os.environ.get('CHARTING_LIBRARY', ''), os.path.join(SITE, 'charting_library'), os.path.join(HERE, '..', 'replica', 'charting_library')) if p and os.path.isdir(p))
+    shutil.copytree(lib, os.path.join(DIST, 'charting_library'))
+    shutil.copy(os.path.join(SITE, 'tv-theme.css'), os.path.join(DIST, 'charting_library', 'tv-theme.css'))
     open(os.path.join(DIST, 'config.js'), 'w').write(config())
     if MODE == 'preview':
         shutil.copy(os.path.join(SITE, 'demo.json'), os.path.join(DIST, 'demo.json'))

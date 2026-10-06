@@ -2,10 +2,7 @@
 (function () {
   const U = () => window.UI;
   const addr = (location.pathname.split('/coin/')[1] || new URLSearchParams(location.search).get('a') || '').toLowerCase().replace(/[^0-9a-fx]/g, '');
-  let x = null, chart = null, range = '7d', tab = 'trades', side = 'buy', showBacking = false;
-  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const alpha = (hex, a) => { const h = hex.replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
-  const barOf = ts => x.chart.t0 + Math.max(0, Math.min(x.chart.px.length - 1, Math.floor((ts - x.chart.t0) / x.chart.step))) * x.chart.step;
+  let x = null, tab = 'trades', side = 'buy', slip = 5;
   const pairAmt = (v) => U().num(v, v >= 100 ? 0 : 4) + ' ' + x.pairSym;
 
   // ------------------------------------------------------------ head
@@ -29,48 +26,10 @@
     </div>`;
   }
 
-  // ------------------------------------------------------------ chart
+  // ------------------------------------------------------------ chart: TradingView Advanced Charts (tv.js)
   function chartPanel() {
-    return `<section class="panel chart-panel"><div class="panel-h"><h2>Price</h2><div class="r" style="display:flex;gap:8px;flex-wrap:wrap">${x.vault ? `<button class="chip" id="bkBtn" aria-pressed="false" title="Show vault backing per coin (log scale)">Backing</button>` : ''}<div class="seg" id="rangeSeg"><button data-r="1d">24H</button><button data-r="7d">7D</button><button data-r="all">All</button></div></div></div>
-      <div class="chart" id="chart"></div>
-      <div class="legend">${x.vault ? '<span id="bkLegend" class="hidden"><i class="v"></i>Backing</span>' : ''}${x.fund ? '<span><i class="bb"></i>Buyback line (−20%)</span>' : ''}${x.events.length ? '<span><i class="dot"></i>Burn</span>' : ''}</div></section>`;
-  }
-  function drawChart() {
-    const el = document.getElementById('chart'); if (!el || !window.LightweightCharts) return;
-    if (chart) { chart.remove(); chart = null; }
-    const { usd } = U(); const ink = css('--ink'), muted = css('--muted'), line = css('--line'), vault = css('--vault'), bb = css('--bb');
-    chart = LightweightCharts.createChart(el, {
-      autoSize: true,
-      layout: { background: { type: 'solid', color: 'transparent' }, textColor: muted, fontFamily: 'JetBrains Mono, monospace', fontSize: 11 },
-      grid: { vertLines: { color: alpha(line.startsWith('#') ? line : '#dbe1e8', .6) }, horzLines: { color: alpha(line.startsWith('#') ? line : '#dbe1e8', .6) } },
-      rightPriceScale: { borderVisible: false, mode: showBacking ? 1 : 0, scaleMargins: { top: .12, bottom: .08 } },
-      timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 3 },
-      crosshair: { mode: 0, vertLine: { color: muted, labelBackgroundColor: ink }, horzLine: { color: muted, labelBackgroundColor: ink } },
-      localization: { priceFormatter: p => usd(p) },
-    });
-    const fmt = { type: 'custom', formatter: p => usd(p), minMove: 1e-12 };
-    const s = chart.addAreaSeries({ lineColor: ink, topColor: alpha(ink, .1), bottomColor: alpha(ink, 0), lineWidth: 2, priceFormat: fmt, priceLineVisible: false });
-    const c = x.chart; const data = c.px.map((p, i) => ({ time: c.t0 + i * c.step, value: p }));
-    s.setData(data);
-    if (x.vault && showBacking) {
-      const b = chart.addLineSeries({ color: vault, lineWidth: 2, priceFormat: fmt, priceLineVisible: false, lastValueVisible: true, crosshairMarkerVisible: false });
-      b.setData(c.backing.map((v, i) => ({ time: c.t0 + i * c.step, value: v })).filter(d => d.value > 0));
-    }
-    if (x.fund) {
-      s.createPriceLine({ price: x.fund.ref, color: muted, lineWidth: 1, lineStyle: 1, axisLabelVisible: false, title: 'High' });
-      s.createPriceLine({ price: x.fund.trigger, color: bb, lineWidth: 2, lineStyle: 2, axisLabelVisible: true, title: 'Buyback' });
-    }
-    const marks = x.events.map(e => ({ time: barOf(e.ts), position: e.kind === 'dip' ? 'belowBar' : 'aboveBar', color: e.kind === 'dip' ? bb : vault, shape: 'circle', size: 1 })).sort((a, b) => a.time - b.time);
-    s.setMarkers(marks);
-    setRange();
-    const bk = document.getElementById('bkBtn'); if (bk) { bk.classList.toggle('on', showBacking); bk.setAttribute('aria-pressed', showBacking); }
-    const lg = document.getElementById('bkLegend'); if (lg) lg.classList.toggle('hidden', !showBacking);
-  }
-  function setRange() {
-    if (!chart) return; const c = x.chart; const end = c.t0 + (c.px.length - 1) * c.step;
-    const span = { '1d': 86400, '7d': 7 * 86400 }[range];
-    if (!span || end - span <= c.t0) chart.timeScale().fitContent(); else chart.timeScale().setVisibleRange({ from: end - span, to: end });
-    U().$$('#rangeSeg button').forEach(b => b.classList.toggle('on', b.dataset.r === range));
+    return `<section class="panel chart-panel"><div class="tv" id="tv"></div>
+      <div class="legend">${x.fund ? '<span><i class="bb"></i>Next buyback</span>' : ''}${x.vault ? '<span><i class="v"></i>Vault backing</span>' : ''}${x.events.length ? '<span><i class="dot"></i>Burn (B on the bars)</span>' : ''}</div></section>`;
   }
 
   // ------------------------------------------------------------ strategy: one row per strategy the coin runs
@@ -83,7 +42,7 @@
       rows.push(row('t', 'Take profit', 'at +' + x.tp + '%', pct(gain), `<span class="progress mini"><i style="width:${at.toFixed(0)}%"></i></span>`)); }
     if (x.redeem && v) rows.push(row('r', 'Redeem', 'burn for backing', usd(v.perCoin), 'per coin', '<button class="btn btn-line" id="rdBtn">Redeem</button>'));
     if (x.split.holders) rows.push(row('h', 'Holder rewards', bps(x.split.holders) + ' of trades', usd(x.fees.holders), 'paid in ' + esc(payoutLabel(x))));
-    return `<section class="panel"><div class="panel-h"><h2>Strategy</h2><a class="r link" href="/docs#split" style="font-size:13px">How it works</a></div><div class="slist">${rows.join('')}</div></section>`;
+    return `<section class="panel strat-panel"><div class="panel-h"><h2>Strategy</h2><a class="r link" href="/docs#split" style="font-size:13px">How it works</a></div><div class="slist">${rows.join('')}</div></section>`;
   }
   function openRedeem() {
     const { usd, esc, dialog, $ } = U();
@@ -107,26 +66,40 @@
     else { const max = x.top[0] ? x.top[0].bal : 1; box.innerHTML = `<table class="list"><thead><tr><th>#</th><th class="l">Wallet</th><th>Balance</th><th class="l">Share of supply</th></tr></thead><tbody>${x.top.map((h, i) => `<tr><td class="l"><span class="num faint">${i + 1}</span></td><td class="l"><span class="addr">${short(h.addr)}</span>${h.addr === x.creator ? ' <span class="tag">Creator</span>' : ''}</td><td><span class="num">${num(h.bal, 0)}</span></td><td class="l"><span class="hbar"><i style="width:${(h.bal / max * 100).toFixed(1)}%"></i></span><span class="num">${(h.bal / BS.SUPPLY * 100).toFixed(2)}%</span></td></tr>`).join('')}</tbody></table>`; }
   }
 
-  // ------------------------------------------------------------ side: trade, about, fee split
+  // ------------------------------------------------------------ side: trade, fee split, about
   function tradePanel() {
     return `<section class="panel trade"><div class="tabs2" role="tablist"><button data-side="buy" class="buy">Buy</button><button data-side="sell" class="sell">Sell</button></div><div class="body" id="tradeBody"></div></section>`;
   }
-  async function paintTrade() {
-    const { esc, usd, num, $$ } = U(); const body = document.getElementById('tradeBody'); if (!body) return;
+  const sampleBal = () => { const r = BS.samplePortfolio().rows.find(r => r.x.addr === x.addr); return r ? r.bal : 0; };
+  function paintTrade() {
+    const { esc, usd, num, pct, tokImg, coinImg, $, $$, ic } = U(); const body = document.getElementById('tradeBody'); if (!body) return;
     $$('.tabs2 button').forEach(b => b.classList.toggle('on', b.dataset.side === side));
-    const unit = side === 'buy' ? 'ETH' : '$' + x.symbol;
-    const presets = side === 'buy' ? ['0.05', '0.1', '0.25', '0.5'] : ['25%', '50%', '75%', '100%'];
-    body.innerHTML = `<div class="field"><label for="amt">${side === 'buy' ? 'You pay' : 'You sell'}</label><div class="input-wrap"><input class="input num with-post" id="amt" inputmode="decimal" value="${side === 'buy' ? '0.1' : '1000000'}"><span class="post">${esc(unit)}</span></div></div>
-      <div class="quick">${presets.map(p => `<button type="button" data-q="${p}">${p}${side === 'buy' ? '' : ''}</button>`).join('')}</div>
-      <div class="quote"><div class="kv" id="quote"></div></div>
-      <button class="btn btn-ink btn-lg btn-block" disabled>${side === 'buy' ? 'Buy' : 'Sell'} $${esc(x.symbol)}</button>
-      <p class="faint" style="font-size:12px">Opens when the contracts are live.</p>`;
-    const inp = document.getElementById('amt');
+    const buy = side === 'buy'; const eth = { logo: BS.known(BS.weth).logo }; const w = window.bsWallet; const connected = w && w.connected;
+    const bal = buy ? null : sampleBal();
+    const pill = isCoin => isCoin ? `<span class="tpill">${coinImg(x, 'ti')}${esc(x.symbol)}</span>` : `<span class="tpill">${tokImg(eth, 'ti')}ETH</span>`;
+    const quick = buy ? [['0.01', '0.01'], ['0.05', '0.05'], ['0.1', '0.1'], ['0.5', '0.5']] : [['25', '25%'], ['50', '50%'], ['75', '75%'], ['100', 'Max']];
+    const route = x.pair === BS.weth ? `ETH → ${esc(x.symbol)}` : buy ? `ETH → ${esc(x.pairSym)} → ${esc(x.symbol)}` : `${esc(x.symbol)} → ${esc(x.pairSym)} → ETH`;
+    body.innerHTML = `
+      <div class="tbox"><div class="tbox-h"><span>You pay</span><span>${buy ? '' : `Balance <b class="mono">${num(bal, 0)}</b> <span class="faint">sample</span>`}</span></div>
+        <div class="tbox-r"><input class="tin num" id="amt" inputmode="decimal" autocomplete="off" placeholder="0.0" value="${buy ? '0.1' : Math.round(bal / 2)}">${pill(!buy)}</div>
+        <div class="tbox-f" id="inUsd"></div></div>
+      <div class="quick q4">${quick.map(([v, l]) => `<button type="button" data-q="${v}">${l}</button>`).join('')}</div>
+      <div class="tbox recv"><div class="tbox-h"><span>You receive about</span></div>
+        <div class="tbox-r"><b class="tout num" id="out">—</b>${pill(buy)}</div>
+        <div class="tbox-f" id="outUsd"></div></div>
+      <div class="kv tdet" id="quote"></div>
+      <button class="btn btn-lg btn-block tbtn ${buy ? 'buy' : 'sell'}" id="tradeGo" ${connected ? 'disabled' : ''}>${connected ? 'Trading opens at launch' : 'Connect wallet'}</button>
+      <div class="tfoot"><span>${route}</span><button type="button" id="slipBtn">Slippage <b>${slip}%</b></button></div>`;
+    const inp = $('#amt');
     const q = async () => { const e = await BS.ethUsd(); const v = Number(inp.value) || 0; const fee = 0.02;
-      const inUsd = side === 'buy' ? v * e : v * x.px; const impact = Math.min(0.5, inUsd / (x.liq / 2)); const outUsd = inUsd * (1 - fee) * (1 - impact);
-      const out = side === 'buy' ? outUsd / x.px : outUsd / e;
-      document.getElementById('quote').innerHTML = `<div><span>You get about</span><b>${num(out, side === 'buy' ? 0 : 4)} ${side === 'buy' ? '$' + esc(x.symbol) : 'ETH'}</b></div><div><span>Trade fee (2%)</span><b>${usd(inUsd * fee)}</b></div><div><span>Price impact</span><b>${(impact * 100).toFixed(2)}%</b></div>`; };
-    inp.oninput = q; U().$$('[data-q]', body).forEach(b => b.onclick = () => { inp.value = side === 'buy' ? b.dataset.q : String(Math.round(2.1e6 * parseInt(b.dataset.q) / 100)); q(); });
+      const inUsd = buy ? v * e : v * x.px; const impact = Math.min(0.5, inUsd / (x.liq / 2)); const outUsd = inUsd * (1 - fee) * (1 - impact);
+      const out = buy ? outUsd / x.px : outUsd / e;
+      $('#inUsd').textContent = v ? usd(inUsd) : ''; $('#out').textContent = v ? num(out, buy ? 0 : 4) : '—'; $('#outUsd').textContent = v ? usd(outUsd) : '';
+      $('#quote').innerHTML = `<div><span>Price impact</span><b class="${impact > 0.05 ? 'down' : ''}">${v ? (impact * 100).toFixed(2) + '%' : '—'}</b></div><div><span>Trade fee (2%)</span><b>${v ? usd(inUsd * fee) : '—'}</b></div><div><span>Minimum received</span><b>${v ? num(out * (1 - slip / 100), buy ? 0 : 4) + ' ' + (buy ? esc(x.symbol) : 'ETH') : '—'}</b></div>`; };
+    inp.oninput = () => { inp.value = inp.value.replace(/[^0-9.]/g, ''); q(); };
+    $$('[data-q]', body).forEach(b => b.onclick = () => { inp.value = buy ? b.dataset.q : String(Math.floor(bal * Number(b.dataset.q) / 100)); q(); });
+    $('#tradeGo').onclick = () => { if (!(window.bsWallet && bsWallet.connected)) bsWallet.open(); };
+    $('#slipBtn').onclick = e => { const m = U().menu(e.currentTarget, [1, 3, 5, 10].map(n => `<button data-s="${n}">${n}%${n === slip ? ' ✓' : ''}</button>`).join('')); U().$$('[data-s]', m).forEach(b => b.onclick = () => { slip = Number(b.dataset.s); m.remove(); paintTrade(); }); };
     q();
   }
   function about() {
@@ -149,14 +122,12 @@
     if (!x) { root.innerHTML = `<div class="empty"><h3>Coin not found</h3><p>No Backstop coin at <span class="mono">${esc(addr || 'this address')}</span>.</p><a class="btn btn-ink" href="/">Back to explore</a></div>`; return; }
     document.title = `${x.name} ($${x.symbol}) · Backstop`;
     root.innerHTML = head() + `<div class="coin-grid"><div class="coin-main">${kpis()}${chartPanel()}${strategies()}${activity()}</div><div class="coin-side">${tradePanel()}${feeSplit()}${about()}</div></div>`;
-    drawChart(); paintActivity(); paintTrade();
-    U().$$('#rangeSeg button').forEach(b => b.onclick = () => { range = b.dataset.r; setRange(); });
-    const bk = $('#bkBtn'); if (bk) bk.onclick = () => { showBacking = !showBacking; drawChart(); };
+    if (window.bsChart && window.TradingView) bsChart.init($('#tv'), x); paintActivity(); paintTrade();
     U().$$('#actTabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; paintActivity(); });
     U().$$('.tabs2 button').forEach(b => b.onclick = () => { side = b.dataset.side; paintTrade(); });
     U().$$('[data-copy]').forEach(b => b.onclick = () => U().copy(b.dataset.copy, 'Contract address'));
     const rb = $('#rdBtn'); if (rb) rb.onclick = openRedeem;
   }
   window.addEventListener('DOMContentLoaded', () => BS.ready.then(() => { x = BS.token(addr); render(); }));
-  window.addEventListener('bs:theme', () => { if (x) drawChart(); });
+  window.addEventListener('bs:wallet', () => { if (x) paintTrade(); });
 })();
