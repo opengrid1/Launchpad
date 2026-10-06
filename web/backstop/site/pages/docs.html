@@ -1,0 +1,122 @@
+<!--{"title": "How Backstop works", "nav": "docs", "scripts": ["docs.js"], "desc": "How Backstop strategy coins work: the fee split, vault backing, dip buybacks, take-profit burns, redeem at backing and holder rewards."}-->
+<div class="docs">
+  <nav class="docs-nav" id="docsNav" aria-label="On this page">
+    <span class="eyebrow">On this page</span>
+    <a href="#launch">Launching</a><a href="#split">The split</a><a href="#vault">Vault</a><a href="#dip">Dip buyback</a><a href="#tp">Take profit</a><a href="#redeem">Redeem</a><a href="#rewards">Holder rewards</a><a href="#trading">Trading</a><a href="#rules">Rules in the contracts</a><a href="#faq">FAQ</a><a href="#contracts">Contracts</a>
+  </nav>
+  <article class="prose">
+    <header>
+      <span class="eyebrow">Preview · contracts not deployed yet</span>
+      <h1 style="margin-top:12px">How Backstop works</h1>
+      <p class="lede">A Backstop coin is a normal ERC-20 on Ethereum with a strategy wired into its pool. Every trade pays 2%. The creator decides at launch where 1.5% of it goes: a vault that backs the coin, a fund that buys back on dips, holders, or themselves. Once launched, the strategy runs by itself and nobody can change it.</p>
+      <dl class="facts">
+        <div><dt>Supply</dt><dd>1,000,000,000</dd></div>
+        <div><dt>Start market cap</dt><dd>$5,000</dd></div>
+        <div><dt>Trade fee</dt><dd>2%</dd></div>
+        <div><dt>Creator decides</dt><dd>1.5%</dd></div>
+      </dl>
+    </header>
+
+    <section id="launch">
+      <h2>Launching</h2>
+      <ol>
+        <li><b>Name it.</b> Name, ticker and logo. Name and ticker are written into the coin and can't change.</li>
+        <li><b>Pick the backing token.</b> ETH, USDC, WBTC, staked ETH, tokenized gold, or any token with a Uniswap pool against ETH or USDC holding at least $10,000 on that side. The form checks it on Ethereum as you pick.</li>
+        <li><b>Split 1.5% of every trade</b> across the creator, holder rewards, the vault and the buyback fund, in steps of 0.05%.</li>
+        <li><b>Set the options:</b> take-profit target, redeem on or off, and what holders are paid in.</li>
+        <li><b>Launch,</b> with an optional first buy in the same transaction.</li>
+      </ol>
+      <p>All 1,000,000,000 coins go into a Uniswap V4 pool against the backing token at a $5,000 market cap. Nobody gets an allocation and the pool can't be withdrawn. The coin trades from the first block.</p>
+    </section>
+
+    <section id="split">
+      <h2>The split</h2>
+      <p>The fee is taken in the backing token on every buy and sell, through any app, router or bot. 0.5% goes to the platform. The other 1.5% is divided the way the creator chose:</p>
+      <div class="dtable-wrap"><table class="dtable"><thead><tr><th>Share</th><th>What it does</th></tr></thead><tbody>
+        <tr><td>Creator</td><td>Paid to the creator's wallet in the backing token, claimable any time.</td></tr>
+        <tr><td>Holder rewards</td><td>Spread across everyone holding the coin, by balance.</td></tr>
+        <tr><td>Vault</td><td>Held in the backing token. Backs every coin and feeds take-profit and redeem.</td></tr>
+        <tr><td>Buyback fund</td><td>Waits for a 20% dip, then buys the coin and burns it.</td></tr>
+      </tbody></table></div>
+      <div class="example"><span class="eyebrow">Example</span>A PEPE strategy split 0.3% creator, 0.7% vault, 0.5% buyback. On $10,000 of trading: $30 to the creator, $70 of PEPE into the vault, $50 into the buyback fund, $50 to the platform.</div>
+    </section>
+
+    <section id="vault">
+      <h2>Vault</h2>
+      <p>The vault's share of each trade stays in the backing token and sits in the coin's vault contract. There is no withdraw function: not for the creator, not for anyone. It leaves only through take-profit or redeem, if the coin has them.</p>
+      <p>Each coin page shows the vault's balance, what it paid, and the <b>backing per coin</b>: the vault's value divided by the coins still in circulation. Burns raise it, because the same vault is then shared by fewer coins.</p>
+      <div class="example v"><span class="eyebrow">Example</span>The vault holds $50,000 of PEPE and 987M coins are in circulation. Backing per coin is $0.0000507. If the price is $0.0019, the coin trades at 37× its backing.</div>
+    </section>
+
+    <section id="dip">
+      <h2>Dip buyback</h2>
+      <p>The buyback fund grows with every trade. The contract tracks the coin's 30-minute average price and the highest it has reached since the last buyback. When the average closes 20% under that high, <b>half the fund buys the coin and burns it</b>.</p>
+      <p>The high then resets to the price at the buyback, so the next one comes after another 20% fall: −20%, then −36%, then −49% from the original high, each spending half of what's left plus whatever trading added in between. On the way up the fund just grows.</p>
+      <p>Using the 30-minute average means a single large sell can't trigger a buyback and buy into its own dump.</p>
+      <div class="example o"><span class="eyebrow">Example</span>The fund holds $5,000. The price peaked at $0.0020 and the average falls to $0.0016. $2,500 buys coins at that price and they're burned. The next line is $0.00128.</div>
+    </section>
+
+    <section id="tp">
+      <h2>Take profit</h2>
+      <p>A coin with a vault can set a take-profit target of +25%, +50% or +100%. When the vault is worth that much more than it paid for its backing token, it sells the gain, buys the coin and burns it. What the vault paid stays in it, so the backing never drops below its cost.</p>
+      <div class="example v"><span class="eyebrow">Example</span>The vault paid $40,000 for its PEPE and the target is +50%. When the PEPE is worth $60,000, the vault sells $20,000 of it, buys the coin and burns it. $40,000 of PEPE stays.</div>
+    </section>
+
+    <section id="redeem">
+      <h2>Redeem at backing</h2>
+      <p>If redeem is on, any holder can burn coins and receive their share of the vault in the backing token: coins burned × backing per coin. Backing per coin stays the same for everyone else.</p>
+      <p>This puts a floor under the price. If the coin trades below its backing, buying it and redeeming pays, and that buying pushes the price back up. While the price is above backing, selling pays more than redeeming.</p>
+    </section>
+
+    <section id="rewards">
+      <h2>Holder rewards</h2>
+      <p>The holder share of each trade is spread across every wallet holding the coin, in proportion to its balance, the moment the fee arrives. Pools and Backstop's own contracts don't count as holders. Rewards already earned stay claimable after you sell.</p>
+      <p>The creator picks what holders are paid in:</p>
+      <ul>
+        <li><b>The backing token,</b> as is.</li>
+        <li><b>ETH,</b> whatever the backing token is. A coin backed by WBTC can still pay holders in ETH.</li>
+        <li><b>Up to four tokens,</b> split equally and bought when you claim.</li>
+      </ul>
+    </section>
+
+    <section id="trading">
+      <h2>Trading</h2>
+      <p>On the site you pay and receive ETH. If the backing token is something else, the router swaps through its Uniswap pool on the way in and out. Trades from anywhere else go through the same pool and pay the same 2%, so the vault, the buyback fund and holders earn from every one of them.</p>
+      <h3>The first minute</h3>
+      <ul>
+        <li><b>Launch block:</b> only the creator can buy.</li>
+        <li><b>First minute:</b> the fee starts at 99% and falls to 2%. What snipers pay goes through the same split, mostly into the vault and the buyback fund.</li>
+      </ul>
+    </section>
+
+    <section id="rules">
+      <h2>Rules in the contracts</h2>
+      <ul>
+        <li>The 2% fee, the split and every strategy option are set at launch. No function changes them.</li>
+        <li>Nothing can withdraw from a vault or a buyback fund. Vault assets leave only through take-profit or redeem; fund assets leave only as buybacks.</li>
+        <li>Coins bought back are burned, never kept.</li>
+        <li>Coins have no owner and no mint function. Supply only goes down.</li>
+        <li>The pool's liquidity can't be removed.</li>
+      </ul>
+    </section>
+
+    <section id="faq">
+      <h2>FAQ</h2>
+      <div class="faq">
+        <details open><summary>What's the point of backing a meme coin with another token?</summary><p>It turns the coin into a position in something real. A PEPE strategy coin piles up PEPE with every trade, and its holders can see exactly how much stands behind each coin. With redeem on, that backing is a floor you can actually exit at.</p></details>
+        <details><summary>Does the backing make the coin worth its price?</summary><p>No. Backing is usually a small part of the price, especially early. The coin page shows both so you can see the gap. Redeem only guarantees the backing, not the market price.</p></details>
+        <details><summary>Who triggers the buybacks?</summary><p>The pool does. The check runs inside trades, so the first trade after the average crosses the line fires the buyback. No keeper or team action is needed.</p></details>
+        <details><summary>Why half the fund, and why 20%?</summary><p>Spending half leaves ammunition for the next dip. 20% on a 30-minute average filters out noise but still catches real drawdowns. Both are the same for every coin, so buyers know what to expect.</p></details>
+        <details><summary>What does a launch cost?</summary><p>Gas only, shown on the launch form at the current gas price. A first buy is optional.</p></details>
+        <details><summary>Why was my backing token refused?</summary><p>It needs a Uniswap V2, V3 or V4 pool against ETH or USDC with at least $10,000 on that side, so its price can't be pushed around cheaply. Fee-on-transfer and rebasing tokens don't work.</p></details>
+      </div>
+    </section>
+
+    <section id="contracts">
+      <h2>Contracts</h2>
+      <p>All on Ethereum mainnet (chain 1). Readable on Etherscan.</p>
+      <div class="addr-list" id="addrs"></div>
+    </section>
+    <p class="docs-credit">Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView</a>.</p>
+  </article>
+</div>

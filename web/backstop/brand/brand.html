@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+body{margin:0;background:#888;font-family:'Public Sans'}
+.wrap{display:flex;flex-wrap:wrap;gap:20px;padding:20px}
+.tile{width:512px;height:512px;position:relative;overflow:hidden}
+.coin{width:256px;height:256px;display:grid;place-items:center;position:relative;overflow:hidden}
+.coin b{font-family:Archivo;font-weight:850;font-stretch:118%;font-size:104px;letter-spacing:-.04em;line-height:1;margin-top:-26px}
+.coin i{position:absolute;left:44px;right:44px;bottom:50px;height:20px;border-radius:3px}
+.coin svg{position:absolute;inset:0}
+.og{width:1200px;height:630px;background:#eef1f4;position:relative;overflow:hidden;font-family:'Public Sans';color:#0b1220}
+.og .grid{position:absolute;inset:0;background-image:linear-gradient(#0b12200d 1px,transparent 1px),linear-gradient(90deg,#0b12200d 1px,transparent 1px);background-size:40px 40px}
+.og .brand{position:absolute;left:72px;top:64px;display:flex;align-items:center;gap:18px}
+.og .brand b{font-family:Archivo;font-weight:800;font-stretch:112%;font-size:46px;letter-spacing:-.02em}
+.og h1{position:absolute;left:72px;top:170px;margin:0;font-family:Archivo;font-weight:800;font-stretch:108%;font-size:84px;line-height:.98;letter-spacing:-.03em;width:640px}
+.og p{position:absolute;left:72px;top:398px;margin:0;font-size:27px;line-height:1.38;color:#3d4a5c;width:600px}
+.og .foot{position:absolute;left:72px;bottom:54px;font-family:'JetBrains Mono';font-size:19px;color:#5a6577;letter-spacing:.02em}
+.og .chart{position:absolute;right:56px;top:96px;width:440px;height:440px}
+.banner{width:1500px;height:500px;background:#0b1220;position:relative;overflow:hidden}
+</style></head><body><div class="wrap" id="w"></div>
+<script>
+const MARK=(ink,bar,sw=3.6)=>`<path d="M3.6 14 9 7.2 16 21.2 28.2 9.6" fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/><rect x="3.5" y="23.2" width="25" height="5" rx="1.1" fill="${bar}"/>`;
+const w=document.getElementById('w');
+// app icon: navy tile, white line, teal bar
+w.insertAdjacentHTML('beforeend',`<div class="tile" id="icon" style="background:#0b1220"><svg viewBox="0 0 32 32" width="512" height="512"><g transform="translate(5.2 4.6) scale(.675)">${MARK('#ffffff','#2dd4bf',3.9)}</g></svg></div>`);
+const coins=[['frogr','FR','#1d6b3a','#d9f2c2'],['idx69','69','#f4cf3d','#1a1405'],['hard','HM','#f2911b','#1d1103'],['mogt','MT','#1c1c1f','#ffd23f'],['stkd','SS','#0f8fe0','#ffffff'],['dips','DE','#f05a22','#fff4ee'],['goldf','GF','#b8902a','#fff6dc'],['nvlt','NV','#ebe2d0','#3a2817'],['lstk','LS','#2a5ada','#ffffff'],['stbl','SF','#1f6fc4','#e6f0ff'],['shltr','SH','#d9661a','#fff3e6']];
+for(const [id,t,bg,fg] of coins) w.insertAdjacentHTML('beforeend',`<div class="coin" id="c-${id}" style="background:${bg};color:${fg}"><b>${t}</b><i style="background:${fg};opacity:.9"></i></div>`);
+// OG card
+const pts=[];let y=60;for(let i=0;i<=44;i++){const x=i*10;}
+w.insertAdjacentHTML('beforeend',`<div class="og" id="og"><div class="grid"></div>
+<div class="brand"><svg viewBox="0 0 32 32" width="58" height="58">${MARK('#0b1220','#0f766e')}</svg><b>Backstop</b></div>
+<h1>Coins that buy their own dips.</h1>
+<p>Launch a coin on Ethereum with a strategy built in: a vault that backs it, buybacks on every 20% dip, burns from take-profit.</p>
+<div class="foot">ETHEREUM MAINNET · UNISWAP V4</div>
+<svg class="chart" viewBox="0 0 440 440">
+ <g stroke="#0b122014">${[0,1,2,3,4,5,6,7,8].map(i=>`<line x1="0" x2="440" y1="${20+i*50}" y2="${20+i*50}"/>`).join('')}</g>
+ <line x1="0" x2="440" y1="128" y2="128" stroke="#0b1220" stroke-opacity=".35" stroke-dasharray="4 6"/>
+ <text x="436" y="118" text-anchor="end" font-family="JetBrains Mono" font-size="15" fill="#5a6577">HIGH</text>
+ <line x1="0" x2="440" y1="230" y2="230" stroke="#f05a22" stroke-width="2" stroke-dasharray="7 6"/>
+ <text x="436" y="220" text-anchor="end" font-family="JetBrains Mono" font-size="15" fill="#c2410c">BUYBACK −20%</text>
+ <rect x="0" y="352" width="440" height="40" fill="#0f766e" opacity=".14"/><line x1="0" x2="440" y1="352" y2="352" stroke="#0f766e" stroke-width="3"/>
+ <text x="436" y="380" text-anchor="end" font-family="JetBrains Mono" font-size="15" fill="#0f766e">VAULT BACKING</text>
+ <path d="M0 300 L40 262 L78 196 L110 150 L140 128 L170 168 L200 204 L228 232 L250 200 L282 170 L312 140 L338 158 L366 120 L398 96 L440 70" fill="none" stroke="#0b1220" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+ <circle cx="228" cy="232" r="9" fill="#f05a22"/><circle cx="228" cy="232" r="17" fill="none" stroke="#f05a22" stroke-opacity=".35" stroke-width="2"/>
+</svg></div>`);
+// X banner
+w.insertAdjacentHTML('beforeend',`<div class="banner" id="banner"><svg viewBox="0 0 1500 500" width="1500" height="500">
+ <g stroke="#ffffff10">${Array.from({length:13},(_,i)=>`<line x1="0" x2="1500" y1="${i*40}" y2="${i*40}"/>`).join('')}${Array.from({length:38},(_,i)=>`<line y1="0" y2="500" x1="${i*40}" x2="${i*40}"/>`).join('')}</g>
+ <rect x="0" y="392" width="1500" height="108" fill="#2dd4bf" opacity=".10"/><line x1="0" x2="1500" y1="392" y2="392" stroke="#2dd4bf" stroke-width="4"/>
+ <line x1="0" x2="1500" y1="250" y2="250" stroke="#f05a22" stroke-width="2.5" stroke-dasharray="10 9"/>
+ <path d="M0 330 L120 280 L230 190 L330 120 L420 96 L520 170 L600 230 L650 252 L720 200 L820 150 L900 172 L980 120 L1080 92 L1160 150 L1230 210 L1262 250 L1330 196 L1410 140 L1500 100" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+ ${[[650,252],[1262,250]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="11" fill="#f05a22"/><circle cx="${x}" cy="${y}" r="21" fill="none" stroke="#f05a22" stroke-opacity=".4" stroke-width="2.5"/>`).join('')}
+</svg></div>`);
+</script></body></html>

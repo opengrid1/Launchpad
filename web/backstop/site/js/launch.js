@@ -1,0 +1,145 @@
+/* Launch form: coin details, the backing token (checked live on Ethereum), the 1.5% split and the strategy options. */
+(function () {
+  const U = () => window.UI;
+  const STEP = 5, POOL = 150; // basis points: 0.05% steps across 1.5%
+  const PRESETS = [
+    { k: 'strategy', name: 'Strategy', d: 'Stacks the backing token and buys every dip', split: { creator: 30, holders: 0, vault: 70, buyback: 50 }, tp: 50, redeem: false },
+    { k: 'floor', name: 'Floor', d: 'Most of the fee backs coins holders can redeem', split: { creator: 30, holders: 0, vault: 120, buyback: 0 }, tp: 0, redeem: true },
+    { k: 'dips', name: 'Dip defender', d: 'No vault, everything waits for the next dip', split: { creator: 40, holders: 0, vault: 0, buyback: 110 }, tp: 0, redeem: false },
+    { k: 'yield', name: 'Yield', d: 'Holders paid in ETH, a small vault underneath', split: { creator: 30, holders: 90, vault: 30, buyback: 0 }, tp: 0, redeem: true, payout: 'eth' },
+  ];
+  const ROWS = [
+    ['creator', 'You, the creator', 'Paid to your wallet in the backing token. Claim any time.', 's-creator'],
+    ['holders', 'Holder rewards', 'Shared by everyone holding the coin, by balance.', 's-holders'],
+    ['vault', 'Vault', 'Buys the backing token and holds it. Nobody can withdraw it.', 's-vault'],
+    ['buyback', 'Buyback fund', 'Waits for a 20% dip, then buys the coin and burns it.', 's-bb'],
+  ];
+  const st = { name: '', sym: '', desc: '', logo: '', pair: null, check: null, split: { ...PRESETS[0].split }, preset: 'strategy', tp: 50, redeem: false, payout: 'pair', basket: [], dev: 0 };
+  let gas = null, eth = null;
+
+  const used = () => st.split.creator + st.split.holders + st.split.vault + st.split.buyback;
+  const S = () => '$' + (st.sym || 'TICKER');
+
+  // ------------------------------------------------------------ backing token
+  function paintPair() {
+    const { esc, tokImg, ic } = U(); const p = st.pair; const b = U().$('#pairBtn');
+    b.innerHTML = p ? `${tokImg(p, '')}<span><b>${esc(p.symbol)}</b><small>${esc(p.name || '')}${p.address ? ' · ' + U().short(p.address) : ''}</small></span>${ic('down')}` : `<span><b>Choose a token</b><small>Search or paste an Ethereum address</small></span>${ic('down')}`;
+    const box = U().$('#pairStatus'); const c = st.check;
+    if (!p) { box.innerHTML = ''; return; }
+    if (!c) { box.innerHTML = `<div class="check wait">${ic('info')}<span>Checking ${esc(p.symbol)} on Ethereum…</span></div>`; return; }
+    if (c.error) { box.innerHTML = `<div class="check bad">${ic('alert')}<span>${esc(c.error)}</span></div>`; return; }
+    const pools = (c.pools || []).filter(r => isFinite(r.depthUsd)).slice(0, 3);
+    const list = pools.length ? `<div class="pools">${pools.map(r => `<span><span>${esc(r.label)}</span><span>${U().usd(r.depthUsd)} ${esc(r.quote)}</span></span>`).join('')}</div>` : '';
+    box.innerHTML = c.ok ? `<div class="check ok">${ic('check')}<span><b>${esc(c.symbol)} can back a coin.</b> ${c.note ? esc(c.note) : `Priced at ${U().usd(c.priceUsd)} from its deepest pool.`}${list}</span></div>`
+      : `<div class="check bad">${ic('alert')}<span><b>${esc(c.symbol || 'This token')} can't back a coin yet.</b> ${esc(c.reason)}${list}</span></div>`;
+  }
+  async function setPair(t) {
+    st.pair = t; st.check = null; st.basket = st.basket.filter(a => a !== (t && t.address || '').toLowerCase()); paintPair(); paintAll();
+    const want = t.address;
+    try { const c = await BS.checkToken(t.address); if (st.pair && st.pair.address === want) { st.check = c; if (c.symbol && !t.logo) st.pair = { ...t, symbol: c.symbol, name: c.name }; } }
+    catch (e) { if (st.pair && st.pair.address === want) st.check = { error: 'Could not reach Ethereum to check this token. Try again in a moment.' }; }
+    paintPair(); paintAll();
+  }
+  function openPicker() {
+    const { esc, tokImg, dialog, $, $$ } = U();
+    const ov = dialog('Backing token', `<div class="dialog-search">${U().ic('search')}<input id="pq" placeholder="Search or paste an address" autocomplete="off" spellcheck="false"></div><div class="dialog-b" id="pr"></div>`);
+    const inp = $('#pq', ov), out = $('#pr', ov);
+    const render = () => { const q = inp.value.trim().toLowerCase(); const all = BS.knownList();
+      if (BS.isAddress(q)) { const k = BS.known(q); out.innerHTML = `<button class="opt" data-a="${q}">${tokImg(k || {}, 'ti')}<span class="t"><b>${esc(k ? k.symbol : 'Use this address')}</b><span class="mono">${esc(q)}</span></span></button>`; }
+      else { const hits = q ? all.filter(t => t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)) : all; const groups = [...new Set(hits.map(t => t.group))];
+        out.innerHTML = groups.map(g => `<div class="opt-group">${esc(g)}</div>` + hits.filter(t => t.group === g).map(t => `<button class="opt" data-a="${t.address.toLowerCase()}">${tokImg(t, 'ti')}<span class="t"><b>${esc(t.symbol)}</b><span>${esc(t.name)}</span></span></button>`).join('')).join('') || '<div class="empty" style="padding:30px"><p>No match. Paste the token address instead.</p></div>'; }
+      $$('[data-a]', out).forEach(b => b.onclick = () => { const a = b.dataset.a; const k = BS.known(a); setPair(k ? { ...k, address: a } : { address: a, symbol: U().short(a), name: 'Checking…', logo: '' }); ov.close(); }); };
+    inp.oninput = render; render(); setTimeout(() => inp.focus(), 20);
+  }
+
+  // ------------------------------------------------------------ split
+  function paintPresets() {
+    U().$('#presets').innerHTML = PRESETS.map(p => `<button type="button" data-p="${p.k}" class="${st.preset === p.k ? 'on' : ''}"><b>${p.name}</b><small>${p.d}</small></button>`).join('');
+  }
+  function paintAlloc() {
+    const { bps, esc } = U(); const left = POOL - used();
+    U().$('#alloc').innerHTML = ROWS.map(([k, name, d, cls]) => `<div class="arow"><i class="${cls}"></i><div><b>${name}</b><small>${d}</small></div>
+      <div class="stepper"><button type="button" data-k="${k}" data-d="-1" aria-label="Less to ${esc(name)}" ${st.split[k] <= 0 ? 'disabled' : ''}>−</button><output>${bps(st.split[k])}</output><button type="button" data-k="${k}" data-d="1" aria-label="More to ${esc(name)}" ${left <= 0 ? 'disabled' : ''}>+</button></div></div>`).join('')
+      + `<div class="arow fixed"><i class="s-platform"></i><div><b>Platform</b><small>Fixed. Pays for running the site and the infrastructure behind it.</small></div><div class="stepper"><span></span><output>0.5%</output><span></span></div></div>`;
+    const parts = [['creator', st.split.creator], ['holders', st.split.holders], ['vault', st.split.vault], ['bb', st.split.buyback], ['platform', 50]].filter(p => p[1] > 0);
+    const m = U().$('#meter'); m.classList.toggle('short', left > 0);
+    m.innerHTML = `<div class="split">${parts.map(p => `<i class="s-${p[0]}" style="flex:${p[1]}"></i>`).join('')}${left > 0 ? `<i style="flex:${left};background:repeating-linear-gradient(45deg,var(--line) 0 4px,transparent 4px 8px)"></i>` : ''}</div><b>${left > 0 ? bps(left) + ' left to assign' : '2% assigned'}</b>`;
+  }
+
+  // ------------------------------------------------------------ options
+  function paintOpts() {
+    const { esc, tokImg } = U(); const v = st.split.vault > 0, h = st.split.holders > 0, bb = st.split.buyback > 0;
+    const pairSym = st.pair ? st.pair.symbol : 'the backing token';
+    const basketChoices = BS.knownList().filter(t => !st.pair || t.address.toLowerCase() !== st.pair.address.toLowerCase()).filter(t => t.symbol !== 'DAI' && t.symbol !== 'USDe');
+    U().$('#opts').innerHTML = `
+      <div class="opt-row ${bb ? '' : 'dim'}"><div><b><span class="strat"><i class="d ${bb ? 'on' : ''}">D</i></span>Dip buyback ${bb ? '<span class="tag bb">On</span>' : '<span class="tag">Off</span>'}</b><small>${bb ? `Whenever the 30-minute average price falls 20% under its high, half the buyback fund buys ${esc(S())} and burns it. The high resets after each buyback.` : 'Give the buyback fund a share above to turn this on.'}</small></div></div>
+      <div class="opt-row ${v ? '' : 'dim'}"><div><b><span class="strat"><i class="t ${v && st.tp ? 'on' : ''}">T</i></span>Take profit</b><small>${v ? `When the vault is worth this much more than it paid for its ${esc(pairSym)}, it sells the gain, buys ${esc(S())} and burns it. What it paid stays in the vault.` : 'Needs a vault share.'}</small>
+        <div class="seg" id="tpSeg">${[0, 25, 50, 100].map(n => `<button type="button" data-tp="${n}" class="${st.tp === n ? 'on' : ''}" ${v ? '' : 'disabled'}>${n ? '+' + n + '%' : 'Off'}</button>`).join('')}</div></div></div>
+      <div class="opt-row ${v ? '' : 'dim'}"><div><b><span class="strat"><i class="r ${v && st.redeem ? 'on' : ''}">R</i></span>Redeem at backing</b><small>${v ? `Holders can burn ${esc(S())} at any time for their share of the vault in ${esc(pairSym)}. It puts a floor under the price.` : 'Needs a vault share.'}</small></div><button type="button" class="switch" id="rdSw" role="switch" aria-checked="${v && st.redeem}" aria-label="Redeem at backing" ${v ? '' : 'disabled'}></button></div>
+      <div class="opt-row ${h ? '' : 'dim'}"><div><b><span class="strat"><i class="h ${h ? 'on' : ''}">H</i></span>Pay holders in</b><small>${h ? 'Fees arrive in the backing token. Holders can be paid in it as is, in ETH, or in an equal split of up to four tokens.' : 'Give holder rewards a share to turn this on.'}</small>
+        <div class="seg" id="paySeg">${[['pair', st.pair ? st.pair.symbol : 'Backing token'], ['eth', 'ETH'], ['basket', 'Up to 4 tokens']].map(([k, l]) => `<button type="button" data-pay="${k}" class="${st.payout === k ? 'on' : ''}" ${h ? '' : 'disabled'}>${esc(l)}</button>`).join('')}</div>
+        ${h && st.payout === 'basket' ? `<div class="basket">${basketChoices.map(t => { const a = t.address.toLowerCase(); const on = st.basket.includes(a); return `<button type="button" data-b="${a}" class="${on ? 'on' : ''}" ${!on && st.basket.length >= 4 ? 'disabled' : ''}>${tokImg(t, '')}${esc(t.symbol)}</button>`; }).join('')}</div>` : ''}</div></div>`;
+  }
+
+  // ------------------------------------------------------------ first buy and the summary
+  function devEstimate() {
+    const a = st.dev; if (!a || !eth) return null;
+    const R = (BS.cfg.startCap || 5000) / eth; const inn = a * 0.98; const f = inn / (R + inn); return { f, coins: f * BS.SUPPLY, usd: a * eth };
+  }
+  function paintDev() {
+    const e = devEstimate(); const { num, usd } = U();
+    U().$('#devNote').innerHTML = (e ? `Buys about <b class="mono">${num(e.coins, 0)}</b> coins (${(e.f * 100).toFixed(2)}% of supply) for ${usd(e.usd)}. ` : '') + 'Only you can buy in the launch block. After that the fee starts at 99% and falls to 2% over the first minute, so sniping the start doesn\'t pay.';
+  }
+  function paintSum() {
+    const { esc, usd, ic, bps } = U(); const s = st.split; const left = POOL - used(); const per = 10000;
+    const flows = [['creator', 'You', s.creator], ['holders', 'Holders', s.holders], ['vault', 'Vault', s.vault], ['bb', 'Buyback fund', s.buyback], ['platform', 'Platform', 50]].filter(f => f[2] > 0);
+    const rules = [];
+    const pairSym = st.pair ? st.pair.symbol : 'the backing token';
+    if (s.vault) rules.push(['v', 'vault', `The vault buys ${esc(pairSym)} with ${bps(s.vault)} of every trade and never sells it${st.tp ? ' except for take-profit' : ''}.`]);
+    if (s.buyback) rules.push(['bb', 'flame', `On every 20% dip, half the buyback fund buys ${esc(S())} and burns it.`]);
+    if (s.vault && st.tp) rules.push(['bb', 'flame', `At +${st.tp}% on the vault, the gain buys ${esc(S())} and burns it.`]);
+    if (s.vault && st.redeem) rules.push(['v', 'lock', `Holders can redeem ${esc(S())} for its share of the vault.`]);
+    if (s.holders) rules.push(['v', 'check', `Holders earn ${bps(s.holders)} of every trade, paid in ${st.payout === 'eth' ? 'ETH' : st.payout === 'basket' ? (st.basket.length ? st.basket.map(a => (BS.known(a) || {}).symbol).join(', ') : 'the tokens you pick') : esc(pairSym)}.`]);
+    const missing = [];
+    if (!st.name.trim()) missing.push('a name'); if (!st.sym.trim()) missing.push('a ticker'); if (!st.pair || !st.check || !st.check.ok) missing.push('a backing token that passes the check');
+    if (left > 0) missing.push(`the last ${bps(left)} of the split`); if (s.holders && st.payout === 'basket' && !st.basket.length) missing.push('at least one reward token');
+    const gasEth = gas != null ? gas * (BS.cfg.launchGas || 4.2e6) / 1e9 : null;
+    U().$('#sum').innerHTML = `
+      <div class="head">${st.logo ? `<img class="av" src="${st.logo}" alt="" style="width:46px;height:46px">` : `<span class="av" style="width:46px;height:46px;display:grid;place-items:center;font:800 15px var(--f-display);color:var(--muted)">${esc((st.sym || '?').slice(0, 2).toUpperCase())}</span>`}
+        <div style="min-width:0"><b>${esc(st.name || 'Your coin')}</b><small>${esc(S())}${st.pair ? ' · backed by ' + esc(st.pair.symbol) : ''}</small></div></div>
+      <div class="flow"><span class="eyebrow" style="margin-bottom:4px">On every ${usd(per, { compact: false })} traded</span>${flows.map(f => `<div class="flow-row"><i class="s-${f[0]}"></i><span>${f[1]}</span><b>${usd(per * f[2] / 1e4, { compact: false })}</b></div>`).join('')}${left > 0 ? `<div class="flow-row"><i style="background:var(--line)"></i><span class="faint">Not assigned</span><b class="faint">${usd(per * left / 1e4, { compact: false })}</b></div>` : ''}</div>
+      <div class="rules">${rules.length ? rules.map(r => `<div class="${r[0]}">${ic(r[1])}<span>${r[2]}</span></div>`).join('') : '<div class="faint">Assign the split to see what your coin will do.</div>'}</div>
+      <div class="go">
+        <button class="btn btn-ink btn-lg btn-block" type="button" disabled>Launch ${esc(S())}</button>
+        <p>${missing.length ? `Still needed: ${missing.join(', ')}. ` : 'Everything is set. '}Launches open when the Backstop contracts are live on Ethereum.${gasEth != null ? ` A launch would cost about <b class="mono">${gasEth.toFixed(4)} ETH</b>${eth ? ` (${usd(gasEth * eth)})` : ''} in gas right now.` : ''}</p>
+      </div>`;
+  }
+  function paintAll() { paintPresets(); paintAlloc(); paintOpts(); paintDev(); paintSum(); }
+
+  function wire() {
+    const { $, $$ } = U(); const f = $('#lf');
+    $('#pairBtn').onclick = openPicker;
+    const text = () => { st.name = $('#name').value; st.sym = $('#sym').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); st.desc = $('#desc').value; paintOpts(); paintDev(); paintSum(); };
+    ['#name', '#sym', '#desc'].forEach(s => $(s).addEventListener('input', text));
+    $('#logo').onchange = e => { const file = e.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = () => { st.logo = r.result; $('#logoPv').innerHTML = `<img src="${r.result}" alt="">`; paintSum(); }; r.readAsDataURL(file); };
+    f.addEventListener('click', e => {
+      const p = e.target.closest('[data-p]'); if (p) { const pr = PRESETS.find(x => x.k === p.dataset.p); st.preset = pr.k; st.split = { ...pr.split }; st.tp = pr.tp; st.redeem = pr.redeem; if (pr.payout) st.payout = pr.payout; paintAll(); return; }
+      const sb = e.target.closest('[data-k]'); if (sb && !sb.disabled) { const k = sb.dataset.k, d = Number(sb.dataset.d) * STEP; const left = POOL - used(); if (d > 0 && left <= 0) return; st.split[k] = Math.max(0, st.split[k] + Math.min(d, left)); st.preset = null;
+        if (!st.split.vault) { st.tp = 0; st.redeem = false; } paintAll(); return; }
+      const tp = e.target.closest('[data-tp]'); if (tp && !tp.disabled) { st.tp = Number(tp.dataset.tp); st.preset = null; paintAll(); return; }
+      const pay = e.target.closest('[data-pay]'); if (pay && !pay.disabled) { st.payout = pay.dataset.pay; paintAll(); return; }
+      const bk = e.target.closest('[data-b]'); if (bk && !bk.disabled) { const a = bk.dataset.b; st.basket = st.basket.includes(a) ? st.basket.filter(x => x !== a) : [...st.basket, a].slice(0, 4); paintAll(); return; }
+      if (e.target.closest('#rdSw')) { st.redeem = !st.redeem; st.preset = null; paintAll(); return; }
+      const dv = e.target.closest('[data-dev]'); if (dv) { $('#dev').value = dv.dataset.dev === '0' ? '' : dv.dataset.dev; st.dev = Number(dv.dataset.dev) || 0; paintDev(); }
+    });
+    $('#dev').addEventListener('input', e => { st.dev = Math.max(0, Number(e.target.value) || 0); paintDev(); });
+  }
+  async function start() {
+    wire();
+    const q = new URLSearchParams(location.search).get('pair'); const k = q && BS.known(q);
+    paintAll(); setPair(k ? { ...k, address: q.toLowerCase() } : q && BS.isAddress(q) ? { address: q.toLowerCase(), symbol: U().short(q), name: 'Checking…' } : { ...BS.known(BS.weth), address: BS.weth });
+    BS.ethUsd().then(v => { eth = v; paintDev(); paintSum(); });
+    BS.gasGwei().then(g => { gas = g; paintSum(); }).catch(() => {});
+  }
+  window.addEventListener('DOMContentLoaded', () => BS.ready.then(start));
+})();
