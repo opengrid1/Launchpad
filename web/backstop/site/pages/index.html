@@ -2,19 +2,18 @@
 <section class="intro">
   <div>
     <h1>Coins that buy their own dips.</h1>
-    <p>Launch a coin on Ethereum backed by <u title="ETH, USDC, WBTC, staked ETH, tokenized gold, or any token with a deep Uniswap pool">any token you believe in</u>. Every trade pays 2%, and you decide where 1.5% of it goes: a <u title="Buys the backing token and holds it. Nobody can withdraw it, not even the creator">vault that backs every coin</u>, a fund that <u title="When the price falls 20% from its high, half the fund buys coins and burns them">buys back on every 20% dip</u>, <u title="When the vault is up by its target, it sells the gain and burns coins with it">take-profit burns</u>, <u title="Holders can burn coins for their share of the vault at any time">redeem at backing</u>, or <u title="Paid in the backing token, in ETH, or in up to four tokens of the creator's choice">holder rewards</u>.</p>
+    <p>Launch a coin on Ethereum backed by any token. Part of every trade fills a <u title="Holds the backing token. Nobody can withdraw it.">vault</u> behind the coin and a fund that <u title="When the price falls 20% from its high, half the fund buys coins and burns them.">buys back and burns on every 20% dip</u>.</p>
   </div>
   <div class="ledger" id="ledger">
-    <div><span class="eyebrow">Strategy coins</span><b class="skel">00</b><small>&nbsp;</small></div>
-    <div class="v"><span class="eyebrow">Held in vaults</span><b class="skel">$000K</b><small>&nbsp;</small></div>
-    <div class="o"><span class="eyebrow">Bought back &amp; burned</span><b class="skel">$000K</b><small>&nbsp;</small></div>
-    <div class="o"><span class="eyebrow">Waiting for a dip</span><b class="skel">$000K</b><small>&nbsp;</small></div>
+    <div><span class="eyebrow">Coins</span><b class="skel">00</b></div>
+    <div class="v"><span class="eyebrow">In vaults</span><b class="skel">$000K</b></div>
+    <div class="o"><span class="eyebrow">Burned</span><b class="skel">$000K</b></div>
+    <div class="o"><span class="eyebrow">Buyback funds</span><b class="skel">$000K</b></div>
   </div>
 </section>
 
-<div class="sec-h"><h2>Buyback watch</h2><p>Coins closest to their next 20% dip trigger</p></div>
+<div class="sec-h"><h2>Buyback watch</h2><p>Closest to their next buyback</p></div>
 <div class="watch" id="watch">
-  <div class="wcard"><div class="t"><span class="av skel"></span><div><b class="skel">Loading coin</b><small class="skel">$TICK</small></div></div><div class="ladder-mini skel"></div></div>
   <div class="wcard"><div class="t"><span class="av skel"></span><div><b class="skel">Loading coin</b><small class="skel">$TICK</small></div></div><div class="ladder-mini skel"></div></div>
   <div class="wcard"><div class="t"><span class="av skel"></span><div><b class="skel">Loading coin</b><small class="skel">$TICK</small></div></div><div class="ladder-mini skel"></div></div>
   <div class="wcard"><div class="t"><span class="av skel"></span><div><b class="skel">Loading coin</b><small class="skel">$TICK</small></div></div><div class="ladder-mini skel"></div></div>
@@ -24,7 +23,7 @@
 <div class="toolbar">
   <div class="chips" id="filters" role="tablist" aria-label="Filter by strategy"></div>
   <div class="seg" id="sortSeg" aria-label="Sort">
-    <button data-sort="trending" class="on">Trending</button><button data-sort="new">New</button><button data-sort="dip">Near a buyback</button><button data-sort="backed">Most backed</button>
+    <button data-sort="trending" class="on">Trending</button><button data-sort="new">New</button><button data-sort="backed">Most backed</button>
   </div>
 </div>
 <div class="table-wrap cards" id="coins"><div class="skel" style="height:420px"></div></div>

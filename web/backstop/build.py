@@ -110,7 +110,6 @@ def shell(meta, body):
 <footer class="foot">
   <div class="foot-in">
     <a class="brand" href="/" aria-label="Backstop home">{MARK}<b>Backstop</b></a>
-    <span>Strategy coins on Ethereum. 2% on every trade, 1.5% of it spent the way the creator chose.</span>
     <nav aria-label="Footer"><a href="/docs">How it works</a><a href="/docs#faq">FAQ</a><a href="/launch">Launch</a></nav>
   </div>
 </footer>

@@ -222,7 +222,7 @@ a.addr:hover, .link:hover { text-decoration: underline; text-underline-offset: 3
 .sec-h h2 { font-size: 18px; }
 .sec-h p { color: var(--muted); font-size: 13px; }
 .sec-h .r { margin-left: auto; }
-.watch { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 10px; margin-bottom: 30px; }
+.watch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 30px; }
 .wcard { display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); transition: border-color .12s; }
 .wcard:hover { border-color: var(--bb-line); }
 .wcard .t { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -359,6 +359,19 @@ table.list { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .hbar { display: inline-block; width: 70px; height: 5px; border-radius: 2px; background: var(--bg-2); vertical-align: middle; margin-right: 8px; position: relative; overflow: hidden; }
 .hbar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink-2); }
 
+/* strategy list on the coin page */
+.slist { display: flex; flex-direction: column; }
+.srow { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 13px 16px; border-top: 1px solid var(--line); }
+.srow:first-child { border-top: 0; }
+.srow .sname b { display: block; font-weight: 600; }
+.srow small { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
+.srow .sval { text-align: right; }
+.srow .sval b { font: 600 15px var(--f-mono); letter-spacing: -.03em; }
+.srow .sval small { display: flex; justify-content: flex-end; gap: 6px; font-family: var(--f-mono); }
+.progress.mini { display: inline-block; width: 90px; height: 5px; margin-top: 6px; }
+.progress.mini i { display: block; }
+.srow .btn { height: 32px; }
+
 /* ---------------------------------------------------------------- launch */
 .page-h { padding: 14px 0 22px; max-width: 70ch; }
 .page-h h1 { font-size: 34px; font-weight: 800; line-height: 1.05; letter-spacing: -.03em; }
@@ -372,6 +385,10 @@ table.list { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .step-b { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 14px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.more summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink-2); list-style: none; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary::before { content: '+ '; font-family: var(--f-mono); color: var(--muted); }
+.more[open] summary::before { content: '− '; }
 .logo-drop { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px dashed var(--line-2); border-radius: var(--r); cursor: pointer; transition: border-color .12s; }
 .logo-drop:hover { border-color: var(--ink); }
 .logo-drop .pv { width: 56px; height: 56px; border-radius: 9px; display: grid; place-items: center; background: var(--bg-2); color: var(--faint); overflow: hidden; flex-shrink: 0; }
@@ -394,9 +411,10 @@ table.list { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .pools { display: grid; gap: 4px; margin-top: 6px; font: 500 12px var(--f-mono); }
 .pools span { display: flex; justify-content: space-between; gap: 10px; }
 .presets { display: flex; gap: 6px; flex-wrap: wrap; }
-.presets button { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--r-sm); text-align: left; min-width: 0; flex: 1 1 150px; transition: border-color .12s; }
+.presets button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 11px; border: 1px solid var(--line); border-radius: var(--r-sm); text-align: left; min-width: 0; flex: 1 1 150px; transition: border-color .12s; }
 .presets button:hover { border-color: var(--line-2); }
 .presets button.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.presets button { flex: 1 1 120px; }
 .presets b { font-size: 13px; font-weight: 600; }
 .presets small { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
 .alloc { display: grid; gap: 2px; }
@@ -533,6 +551,7 @@ table.list { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .hide-l { display: none; }
 }
 @media (max-width: 960px) {
+  .watch { grid-template-columns: 1fr; }
   .nav, .search-trigger span, .search-trigger kbd { display: none; }
   .search-trigger { width: 36px; justify-content: center; padding: 0; }
   .intro { grid-template-columns: 1fr; gap: 22px; align-items: start; }
@@ -541,6 +560,7 @@ table.list { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   /* one column on phones: trade right under the chart */
   .coin-grid { display: flex; flex-direction: column; }
   .coin-main, .coin-side { display: contents; }
+  .coin-main > *, .coin-side > * { min-width: 0; max-width: 100%; }
   .coin-grid .kpis { order: 1; } .coin-grid .chart-panel { order: 2; } .coin-grid .trade { order: 3; } .coin-grid .strategies { order: 4; }
   .coin-grid .act { order: 5; } .coin-grid .fs { order: 6; } .coin-grid .about { order: 7; }
   .strategies { grid-template-columns: 1fr; }
@@ -580,11 +600,20 @@ table.list { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .facts > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
   .docs-nav { margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
   .prose h1 { font-size: 30px; }
+  /* filters: one swipeable row, sort under it */
+  .toolbar { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 10px; }
+  .chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 0 16px; scrollbar-width: none; flex: none; }
+  .chips::-webkit-scrollbar, .watch::-webkit-scrollbar { display: none; }
+  .chip { flex-shrink: 0; }
+  .toolbar .seg { align-self: flex-start; }
+  /* buyback watch: swipe sideways instead of stacking */
+  .watch { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78%; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 16px; margin: 0 -16px 26px; padding: 0 16px; scrollbar-width: none; }
+  .wcard { scroll-snap-align: start; }
   /* the coin table turns into stacked rows */
   .table-wrap.cards { border: 0; background: transparent; overflow: visible; }
   .cards table.list, .cards .list tbody { display: block; }
   .cards .list thead { display: none; }
-  .cards .list tr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; padding: 14px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+  .cards .list tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 14px; padding: 14px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
   .cards .list td { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 0; border: 0; text-align: left; white-space: normal; }
   .cards .list td::before { content: attr(data-l); font: 600 10px var(--f-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--faint); }
   .cards .list td:first-child { grid-column: 1 / -1; flex-direction: row; }

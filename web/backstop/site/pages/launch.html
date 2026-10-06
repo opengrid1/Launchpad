@@ -1,29 +1,29 @@
 <!--{"title": "Launch a strategy coin · Backstop", "nav": "launch", "scripts": ["launch.js"], "desc": "Launch a coin on Ethereum and choose its strategy: vault backing, dip buybacks, take-profit burns, redeem and holder rewards."}-->
 <header class="page-h">
   <h1>Launch a strategy coin</h1>
-  <p>Pick the token that backs your coin, then decide where 1.5% of every trade goes. The whole supply starts in a Uniswap V4 pool and the strategy runs on its own from the first trade.</p>
+  <p>Pick a backing token and split 1.5% of every trade. The strategy runs on its own after launch.</p>
 </header>
 <div class="launch-grid">
   <form id="lf" class="form-col" novalidate autocomplete="off">
     <section class="panel">
-      <div class="step-h"><span class="n">1</span><h2>The coin</h2><p>Name and ticker can't change later</p></div>
+      <div class="step-h"><span class="n">1</span><h2>The coin</h2></div>
       <div class="step-b">
-        <label class="logo-drop" for="logo"><span class="pv" id="logoPv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg></span><span><b>Logo</b><span>PNG, JPG, GIF or WebP, shown as a square.</span></span><input id="logo" type="file" accept="image/*" class="sr"></label>
+        <label class="logo-drop" for="logo"><span class="pv" id="logoPv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg></span><span><b>Logo</b><span>Square image</span></span><input id="logo" type="file" accept="image/*" class="sr"></label>
         <div class="row2">
           <div class="field"><label for="name">Name</label><input class="input" id="name" maxlength="32" placeholder="Frog Reserve"></div>
           <div class="field"><label for="sym">Ticker</label><div class="input-wrap"><span class="pre">$</span><input class="input with-pre" id="sym" maxlength="12" placeholder="FROGR" style="text-transform:uppercase"></div></div>
         </div>
-        <div class="field"><label for="desc">Description <span class="faint" style="font-weight:400">optional</span></label><textarea class="textarea" id="desc" maxlength="400" placeholder="What does the coin hold, and why?"></textarea></div>
-        <div class="row3">
+        <div class="field"><label for="desc">Description <span class="faint" style="font-weight:400">optional</span></label><textarea class="textarea" style="height:64px" id="desc" maxlength="400" placeholder="What does the coin hold, and why?"></textarea></div>
+        <details class="more"><summary>Links <span class="faint">optional</span></summary><div class="row3" style="margin-top:12px">
           <div class="field"><label for="lx">X</label><input class="input" id="lx" placeholder="https://x.com/…"></div>
           <div class="field"><label for="lw">Website</label><input class="input" id="lw" placeholder="https://…"></div>
           <div class="field"><label for="lt">Telegram</label><input class="input" id="lt" placeholder="https://t.me/…"></div>
-        </div>
+        </div></details>
       </div>
     </section>
 
     <section class="panel">
-      <div class="step-h"><span class="n">2</span><h2>Backing token</h2><p>The pair, and what the vault holds</p></div>
+      <div class="step-h"><span class="n">2</span><h2>Backing token</h2></div>
       <div class="step-b">
         <button type="button" class="picked" id="pairBtn"></button>
         <div id="pairStatus"></div>
@@ -31,7 +31,7 @@
     </section>
 
     <section class="panel">
-      <div class="step-h"><span class="n">3</span><h2>Split 1.5% of every trade</h2><p>Plus 0.5% to the platform: 2% in all</p></div>
+      <div class="step-h"><span class="n">3</span><h2>Split 1.5% of every trade</h2><p>+0.5% platform</p></div>
       <div class="step-b">
         <div class="presets" id="presets"></div>
         <div class="alloc" id="alloc"></div>
@@ -40,12 +40,12 @@
     </section>
 
     <section class="panel">
-      <div class="step-h"><span class="n">4</span><h2>Strategy options</h2><p>Locked at launch</p></div>
+      <div class="step-h"><span class="n">4</span><h2>Strategy options</h2></div>
       <div class="step-b" id="opts" style="gap:0"></div>
     </section>
 
     <section class="panel">
-      <div class="step-h"><span class="n">5</span><h2>First buy</h2><p>Optional, in the launch transaction</p></div>
+      <div class="step-h"><span class="n">5</span><h2>First buy</h2></div>
       <div class="step-b">
         <div class="row2" style="align-items:end">
           <div class="field"><label for="dev">Buy with ETH</label><div class="input-wrap"><input class="input num with-post" id="dev" inputmode="decimal" placeholder="0.0"><span class="post">ETH</span></div></div>

@@ -123,7 +123,7 @@
     window.addEventListener('bs:wallet', paintWallet);
     window.addEventListener('bs:nowallet', () => toast('No wallet found. Install a browser wallet or open this page in your wallet app.', { err: true }));
     const top = $('.top'); const onScroll = () => top && top.classList.toggle('scrolled', window.scrollY > 4); window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
-    if (CFG.prelaunch && !/^\/(docs|admin)/.test(location.pathname)) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin', `<div class="notice">${ic('info')}<span><b>Preview.</b> ${CFG.demo ? 'The coins here are samples that show how the strategies behave. ' : ''}Backstop contracts are not on Ethereum yet, so launching and trading are closed. Token checks on the launch form read Ethereum mainnet live.</span></div>`); }
+    if (CFG.prelaunch && !/^\/(docs|admin)/.test(location.pathname)) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin', `<div class="notice">${ic('info')}<span><b>Preview.</b> Sample coins. Launching and trading open when the contracts go live.</span></div>`); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
