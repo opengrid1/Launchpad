@@ -1,8 +1,9 @@
 # Backstop site
 
-Strategy coin launchpad on Ethereum. Every trade pays 2%: 0.5% to the platform, and 1.5% split the
-way the creator chose between themselves, holder rewards, a vault that holds the backing token, and a
-buyback fund that buys and burns on every 20% dip. Options per coin: take-profit burns, redeem at
+Strategy coin launchpad on Ethereum. Every trade pays a tax the creator sets at launch (1% to 10%):
+0.8% to the platform, and the rest split the way the creator chose between themselves, holder rewards,
+a vault that holds the backing token, a buyback fund that buys and burns on every 20% dip, and
+auto-LP that adds locked liquidity to the pool. Options per coin: take-profit burns, redeem at
 backing, and holder payouts in the backing token, ETH or up to four tokens.
 
     npm install

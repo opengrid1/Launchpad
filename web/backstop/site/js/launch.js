@@ -1,7 +1,11 @@
-/* Launch form: coin details, the backing token (checked live on Ethereum), the 1.5% split and the strategy options. */
+/* Launch form: coin details, the backing token (checked live on Ethereum), the tax and its split, and the strategy options. */
 (function () {
   const U = () => window.UI;
-  const STEP = 5, POOL = 150; // basis points: 0.05% steps across 1.5%
+  const STEP = 5, PLATFORM = 80, TAX_MIN = 100, TAX_MAX = 1000, TAX_STEP = 50; // basis points
+  const pool = () => st.tax - PLATFORM; // what the creator splits
+  // presets are shapes; scale one to the current tax in 0.05% steps
+  function scaled(split, to) { const keys = Object.keys(split); const tot = keys.reduce((a, k) => a + split[k], 0) || 1; const out = {};
+    keys.forEach(k => { out[k] = Math.round(split[k] * to / tot / STEP) * STEP; }); const big = keys.reduce((a, k) => out[k] > out[a] ? k : a, keys[0]); out[big] += to - keys.reduce((a, k) => a + out[k], 0); return out; }
   const PRESETS = [
     { k: 'strategy', name: 'Strategy', d: 'Vault + dip buybacks', split: { creator: 30, holders: 0, vault: 70, buyback: 50, lp: 0 }, tp: 50, redeem: false },
     { k: 'floor', name: 'Floor', d: 'Big vault, redeemable', split: { creator: 30, holders: 0, vault: 120, buyback: 0, lp: 0 }, tp: 0, redeem: true },
@@ -16,7 +20,7 @@
     ['buyback', 'Buyback', 'Buys and burns on 20% dips', 's-bb'],
     ['lp', 'Auto-LP', 'Locked liquidity in the pool', 's-lp'],
   ];
-  const st = { name: '', sym: '', desc: '', logo: '', pair: null, check: null, split: { ...PRESETS[0].split }, preset: 'strategy', tp: 50, redeem: false, payout: 'pair', basket: [], dev: 0 };
+  const st = { name: '', sym: '', desc: '', logo: '', pair: null, check: null, tax: 200, split: { ...PRESETS[0].split }, preset: 'strategy', tp: 50, redeem: false, payout: 'pair', basket: [], dev: 0 };
   let gas = null, eth = null;
 
   const used = () => st.split.creator + st.split.holders + st.split.vault + st.split.buyback + st.split.lp;
@@ -58,14 +62,23 @@
   function paintPresets() {
     U().$('#presets').innerHTML = PRESETS.map(p => `<button type="button" data-p="${p.k}" class="${st.preset === p.k ? 'on' : ''}"><b>${p.name}</b><small>${p.d}</small></button>`).join('');
   }
+  function paintTax() {
+    const { bps } = U(); const t = st.tax;
+    U().$('#taxBox').innerHTML = `<div class="tax-top"><div><b>Tax on every buy and sell</b><small>${bps(PLATFORM)} goes to the platform. You split the other <b class="mono">${bps(pool())}</b> below.</small></div>
+      <div class="stepper tax-step"><button type="button" data-tax="-1" aria-label="Lower tax" ${t <= TAX_MIN ? 'disabled' : ''}>−</button><output>${bps(t)}</output><button type="button" data-tax="1" aria-label="Higher tax" ${t >= TAX_MAX ? 'disabled' : ''}>+</button></div></div>
+      <input type="range" class="tax-range" id="taxRange" min="${TAX_MIN}" max="${TAX_MAX}" step="${TAX_STEP}" value="${t}" aria-label="Tax" style="--at:${((t - TAX_MIN) / (TAX_MAX - TAX_MIN) * 100).toFixed(1)}%">
+      <div class="tax-ticks"><span>1%</span><span>${t > 500 ? 'Over 5% is flagged by some scanners and aggregators' : 'Lower tax, easier to trade'}</span><span>10%</span></div>`;
+  }
+  function setTax(t) { t = Math.max(TAX_MIN, Math.min(TAX_MAX, Math.round(t / TAX_STEP) * TAX_STEP)); if (t === st.tax) return; st.tax = t;
+    const u = used(); st.split = u ? scaled(st.split, pool()) : { ...st.split, creator: pool() }; paintAll(); }
   function paintAlloc() {
-    const { bps, esc } = U(); const left = POOL - used();
+    const { bps, esc } = U(); const left = pool() - used();
     U().$('#alloc').innerHTML = ROWS.map(([k, name, d, cls]) => `<div class="arow"><i class="${cls}"></i><div><b>${name}</b><small>${d}</small></div>
       <div class="stepper"><button type="button" data-k="${k}" data-d="-1" aria-label="Less to ${esc(name)}" ${st.split[k] <= 0 ? 'disabled' : ''}>−</button><output>${bps(st.split[k])}</output><button type="button" data-k="${k}" data-d="1" aria-label="More to ${esc(name)}" ${left <= 0 ? 'disabled' : ''}>+</button></div></div>`).join('')
-      + `<div class="arow fixed"><i class="s-platform"></i><div><b>Platform</b><small>Fixed</small></div><div class="stepper"><span></span><output>0.5%</output><span></span></div></div>`;
-    const parts = [['creator', st.split.creator], ['holders', st.split.holders], ['vault', st.split.vault], ['bb', st.split.buyback], ['lp', st.split.lp], ['platform', 50]].filter(p => p[1] > 0);
+      + `<div class="arow fixed"><i class="s-platform"></i><div><b>Platform</b><small>Fixed</small></div><div class="stepper"><span></span><output>${bps(PLATFORM)}</output><span></span></div></div>`;
+    const parts = [['creator', st.split.creator], ['holders', st.split.holders], ['vault', st.split.vault], ['bb', st.split.buyback], ['lp', st.split.lp], ['platform', PLATFORM]].filter(p => p[1] > 0);
     const m = U().$('#meter'); m.classList.toggle('short', left > 0);
-    m.innerHTML = `<div class="split">${parts.map(p => `<i class="s-${p[0]}" style="flex:${p[1]}"></i>`).join('')}${left > 0 ? `<i style="flex:${left};background:repeating-linear-gradient(45deg,var(--line) 0 4px,transparent 4px 8px)"></i>` : ''}</div><b>${left > 0 ? bps(left) + ' left to assign' : '2% assigned'}</b>`;
+    m.innerHTML = `<div class="split">${parts.map(p => `<i class="s-${p[0]}" style="flex:${p[1]}"></i>`).join('')}${left > 0 ? `<i style="flex:${left};background:repeating-linear-gradient(45deg,var(--line) 0 4px,transparent 4px 8px)"></i>` : ''}</div><b>${left > 0 ? bps(left) + ' left to assign' : bps(st.tax) + ' assigned'}</b>`;
   }
 
   // ------------------------------------------------------------ options
@@ -87,15 +100,15 @@
   // ------------------------------------------------------------ first buy and the summary
   function devEstimate() {
     const a = st.dev; if (!a || !eth) return null;
-    const R = (BS.cfg.startCap || 5000) / eth; const inn = a * 0.98; const f = inn / (R + inn); return { f, coins: f * BS.SUPPLY, usd: a * eth };
+    const R = (BS.cfg.startCap || 5000) / eth; const inn = a * (1 - st.tax / 1e4); const f = inn / (R + inn); return { f, coins: f * BS.SUPPLY, usd: a * eth };
   }
   function paintDev() {
     const e = devEstimate(); const { num, usd } = U();
-    U().$('#devNote').innerHTML = (e ? `≈ <b class="mono">${(e.f * 100).toFixed(2)}%</b> of supply (${usd(e.usd)}). ` : '') + 'Only you can buy in the launch block.';
+    U().$('#devNote').innerHTML = (e ? `≈ <b class="mono">${(e.f * 100).toFixed(2)}%</b> of supply (${usd(e.usd)}). ` : '') + `Only you can buy in the launch block. After that the tax starts at 99% and falls to ${U().bps(st.tax)} over the first minute.`;
   }
   function paintSum() {
-    const { esc, usd, ic, bps } = U(); const s = st.split; const left = POOL - used(); const per = 10000;
-    const flows = [['creator', 'You', s.creator], ['holders', 'Holders', s.holders], ['vault', 'Vault', s.vault], ['bb', 'Buyback fund', s.buyback], ['lp', 'Auto-LP', s.lp], ['platform', 'Platform', 50]].filter(f => f[2] > 0);
+    const { esc, usd, ic, bps } = U(); const s = st.split; const left = pool() - used(); const per = 10000;
+    const flows = [['creator', 'You', s.creator], ['holders', 'Holders', s.holders], ['vault', 'Vault', s.vault], ['bb', 'Buyback fund', s.buyback], ['lp', 'Auto-LP', s.lp], ['platform', 'Platform', PLATFORM]].filter(f => f[2] > 0);
     const rules = [];
     const pairSym = st.pair ? st.pair.symbol : 'the backing token';
     if (s.vault) rules.push(['v', 'vault', `The vault buys ${esc(pairSym)} with ${bps(s.vault)} of every trade and never sells it${st.tp ? ' except for take-profit' : ''}.`]);
@@ -111,13 +124,13 @@
     U().$('#sum').innerHTML = `
       <div class="head">${st.logo ? `<img class="av" src="${st.logo}" alt="" style="width:46px;height:46px">` : `<span class="av" style="width:46px;height:46px;display:grid;place-items:center;font:800 15px var(--f-display);color:var(--muted)">${esc((st.sym || '?').slice(0, 2).toUpperCase())}</span>`}
         <div style="min-width:0"><b>${esc(st.name || 'Your coin')}</b><small>${esc(S())}${st.pair ? ' · backed by ' + esc(st.pair.symbol) : ''}</small></div></div>
-      <div class="flow"><span class="eyebrow" style="margin-bottom:4px">Per ${usd(per, { compact: false })} traded</span>${flows.map(f => `<div class="flow-row"><i class="s-${f[0]}"></i><span>${f[1]}</span><b>${usd(per * f[2] / 1e4, { compact: false })}</b></div>`).join('')}${left > 0 ? `<div class="flow-row"><i style="background:var(--line)"></i><span class="faint">Not assigned</span><b class="faint">${usd(per * left / 1e4, { compact: false })}</b></div>` : ''}</div>
+      <div class="flow"><span class="eyebrow" style="margin-bottom:4px">Tax ${bps(st.tax)} · per ${usd(per, { compact: false })} traded</span>${flows.map(f => `<div class="flow-row"><i class="s-${f[0]}"></i><span>${f[1]}</span><b>${usd(per * f[2] / 1e4, { compact: false })}</b></div>`).join('')}${left > 0 ? `<div class="flow-row"><i style="background:var(--line)"></i><span class="faint">Not assigned</span><b class="faint">${usd(per * left / 1e4, { compact: false })}</b></div>` : ''}</div>
       <div class="go">
         <button class="btn btn-ink btn-lg btn-block" type="button" disabled>Launch ${esc(S())}</button>
         <p>${missing.length ? `Needs ${missing.join(', ')}.` : 'Ready. Launches open when the contracts go live.'}${gasEth != null ? ` Gas ≈ <b class="mono">${gasEth.toFixed(4)} ETH</b>${eth ? ` (${usd(gasEth * eth)})` : ''}.` : ''}</p>
       </div>`;
   }
-  function paintAll() { paintPresets(); paintAlloc(); paintOpts(); paintDev(); paintSum(); }
+  function paintAll() { paintTax(); paintPresets(); paintAlloc(); paintOpts(); paintDev(); paintSum(); }
 
   function wire() {
     const { $, $$ } = U(); const f = $('#lf');
@@ -126,15 +139,17 @@
     ['#name', '#sym', '#desc'].forEach(s => $(s).addEventListener('input', text));
     $('#logo').onchange = e => { const file = e.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = () => { st.logo = r.result; $('#logoPv').innerHTML = `<img src="${r.result}" alt="">`; paintSum(); }; r.readAsDataURL(file); };
     f.addEventListener('click', e => {
-      const p = e.target.closest('[data-p]'); if (p) { const pr = PRESETS.find(x => x.k === p.dataset.p); st.preset = pr.k; st.split = { ...pr.split }; st.tp = pr.tp; st.redeem = pr.redeem; if (pr.payout) st.payout = pr.payout; paintAll(); return; }
-      const sb = e.target.closest('[data-k]'); if (sb && !sb.disabled) { const k = sb.dataset.k, d = Number(sb.dataset.d) * STEP; const left = POOL - used(); if (d > 0 && left <= 0) return; st.split[k] = Math.max(0, st.split[k] + Math.min(d, left)); st.preset = null;
+      const p = e.target.closest('[data-p]'); if (p) { const pr = PRESETS.find(x => x.k === p.dataset.p); st.preset = pr.k; st.split = scaled(pr.split, pool()); st.tp = pr.tp; st.redeem = pr.redeem; if (pr.payout) st.payout = pr.payout; paintAll(); return; }
+      const sb = e.target.closest('[data-k]'); if (sb && !sb.disabled) { const k = sb.dataset.k, d = Number(sb.dataset.d) * STEP; const left = pool() - used(); if (d > 0 && left <= 0) return; st.split[k] = Math.max(0, st.split[k] + Math.min(d, left)); st.preset = null;
         if (!st.split.vault) { st.tp = 0; st.redeem = false; } paintAll(); return; }
+      const tx = e.target.closest('[data-tax]'); if (tx && !tx.disabled) { setTax(st.tax + Number(tx.dataset.tax) * TAX_STEP); return; }
       const tp = e.target.closest('[data-tp]'); if (tp && !tp.disabled) { st.tp = Number(tp.dataset.tp); st.preset = null; paintAll(); return; }
       const pay = e.target.closest('[data-pay]'); if (pay && !pay.disabled) { st.payout = pay.dataset.pay; paintAll(); return; }
       const bk = e.target.closest('[data-b]'); if (bk && !bk.disabled) { const a = bk.dataset.b; st.basket = st.basket.includes(a) ? st.basket.filter(x => x !== a) : [...st.basket, a].slice(0, 4); paintAll(); return; }
       if (e.target.closest('#rdSw')) { st.redeem = !st.redeem; st.preset = null; paintAll(); return; }
       const dv = e.target.closest('[data-dev]'); if (dv) { $('#dev').value = dv.dataset.dev === '0' ? '' : dv.dataset.dev; st.dev = Number(dv.dataset.dev) || 0; paintDev(); }
     });
+    f.addEventListener('input', e => { if (e.target.id === 'taxRange') setTax(Number(e.target.value)); });
     $('#dev').addEventListener('input', e => { st.dev = Math.max(0, Number(e.target.value) || 0); paintDev(); });
   }
   async function start() {

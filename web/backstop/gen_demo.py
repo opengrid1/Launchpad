@@ -2,7 +2,7 @@
 """Sample strategy coins for the Backstop preview (site/demo.json).
 
 Each coin is simulated hour by hour so its numbers agree with each other: trading
-volume pays the 2% fee, the creator's split fills the vault and the buyback fund,
+volume pays the coin's tax (1-10%, 0.8% of it to the platform), the creator's split fills the vault and the buyback fund,
 every 20% dip in the price spends half the fund on coins that are burned, and a
 vault that is up by its take-profit target sells the gain into a buyback and burn.
 Pair prices end at their real price when this was generated (prices.json).
@@ -28,31 +28,42 @@ def usd_of(sym):
 
 COINS = [
     # name, symbol, pair, split (creator, holders, vault, buyback, auto-LP) in bps, take profit %, redeem, rewards, basket, age days, final mcap, vol, pair drift, seed
-    dict(name='Frog Reserve', symbol='FROGR', pair='PEPE', split=(30, 0, 70, 50, 0), tp=50, redeem=True, rewards='none', basket=[], age=12, mc=1_840_000, vol=0.055, drift=1.25, seed=7,
+    dict(name='Frog Reserve', symbol='FROGR', pair='PEPE', tax=500, split=(30, 0, 70, 50, 0), tp=50, redeem=True, rewards='none', basket=[], age=12, mc=1_840_000, vol=0.055, drift=1.25, seed=7,
          desc='A PEPE strategy. Half the fee stacks PEPE in a vault nobody can withdraw from, the rest buys FROGR back on every 20% dip and burns it.'),
-    dict(name='Index 6900', symbol='IDX69', pair='SPX', split=(30, 0, 50, 40, 30), tp=50, redeem=False, rewards='none', basket=[], age=8, mc=942_000, vol=0.06, drift=1.8, seed=11,
+    dict(name='Index 6900', symbol='IDX69', pair='SPX', tax=300, split=(30, 0, 50, 40, 30), tp=50, redeem=False, rewards='none', basket=[], age=8, mc=942_000, vol=0.06, drift=1.8, seed=11,
          desc='Holds SPX6900 and sells the gains into burns. The vault takes profit at +50% and keeps its principal.'),
-    dict(name='Hard Money', symbol='HARD', pair='WBTC', split=(20, 50, 80, 0, 0), tp=0, redeem=True, rewards='eth', basket=[], age=9, mc=618_000, vol=0.035, drift=1.04, seed=3,
+    dict(name='Hard Money', symbol='HARD', pair='WBTC', tax=200, split=(20, 50, 80, 0, 0), tp=0, redeem=True, rewards='eth', basket=[], age=9, mc=618_000, vol=0.035, drift=1.04, seed=3,
          desc='Every trade buys bitcoin for the vault. Holders are paid in ETH and can redeem their coins for their share of the WBTC at any time.'),
-    dict(name='Mog Treasury', symbol='MOGT', pair='MOG', split=(30, 20, 50, 30, 20), tp=100, redeem=False, rewards='pair', basket=[], age=10, mc=412_000, vol=0.07, drift=0.92, seed=5,
+    dict(name='Mog Treasury', symbol='MOGT', pair='MOG', tax=400, split=(30, 20, 50, 30, 20), tp=100, redeem=False, rewards='pair', basket=[], age=10, mc=412_000, vol=0.07, drift=0.92, seed=5,
          desc='A treasury of MOG that only grows. Takes profit once the vault doubles.'),
-    dict(name='Staked Strategy', symbol='STKD', pair='wstETH', split=(30, 60, 60, 0, 0), tp=0, redeem=True, rewards='eth', basket=[], age=7, mc=331_000, vol=0.04, drift=1.02, seed=21,
+    dict(name='Staked Strategy', symbol='STKD', pair='wstETH', tax=200, split=(30, 60, 60, 0, 0), tp=0, redeem=True, rewards='eth', basket=[], age=7, mc=331_000, vol=0.04, drift=1.02, seed=21,
          desc='Backs every coin with staked ETH that keeps earning staking yield inside the vault. Redeemable, holders paid in ETH.'),
-    dict(name='Dip Eater', symbol='DIPS', pair='ETH', split=(40, 0, 0, 90, 20), tp=0, redeem=False, rewards='none', basket=[], age=6, mc=286_000, vol=0.085, drift=1.0, seed=13,
+    dict(name='Dip Eater', symbol='DIPS', pair='ETH', tax=800, split=(40, 0, 0, 90, 20), tp=0, redeem=False, rewards='none', basket=[], age=6, mc=286_000, vol=0.085, drift=1.0, seed=13,
          desc='No vault, all buyback. Most of the fee waits in the fund for the next 20% dip.'),
-    dict(name='Gold Floor', symbol='GOLDF', pair='PAXG', split=(30, 40, 80, 0, 0), tp=0, redeem=True, rewards='basket', basket=['PAXG', 'XAUt'], age=5, mc=209_000, vol=0.03, drift=1.03, seed=17,
+    dict(name='Gold Floor', symbol='GOLDF', pair='PAXG', tax=200, split=(30, 40, 80, 0, 0), tp=0, redeem=True, rewards='basket', basket=['PAXG', 'XAUt'], age=5, mc=209_000, vol=0.03, drift=1.03, seed=17,
          desc='A coin backed by tokenized gold. Holders earn PAXG and XAUt; anyone can redeem coins for their share of the vault.'),
-    dict(name='Neiro Vault', symbol='NVLT', pair='NEIRO', split=(30, 30, 50, 40, 0), tp=25, redeem=False, rewards='pair', basket=[], age=4, mc=158_000, vol=0.075, drift=1.5, seed=29,
+    dict(name='Neiro Vault', symbol='NVLT', pair='NEIRO', tax=300, split=(30, 30, 50, 40, 0), tp=25, redeem=False, rewards='pair', basket=[], age=4, mc=158_000, vol=0.075, drift=1.5, seed=29,
          desc='Stacks NEIRO, takes profit at +25% and burns NVLT with it.'),
-    dict(name='Link Stack', symbol='LSTK', pair='LINK', split=(30, 50, 40, 0, 30), tp=0, redeem=False, rewards='basket', basket=['LINK', 'AAVE', 'UNI'], age=2, mc=124_000, vol=0.05, drift=1.06, seed=31,
+    dict(name='Link Stack', symbol='LSTK', pair='LINK', tax=300, split=(30, 50, 40, 0, 30), tp=0, redeem=False, rewards='basket', basket=['LINK', 'AAVE', 'UNI'], age=2, mc=124_000, vol=0.05, drift=1.06, seed=31,
          desc='Holder rewards paid in a DeFi basket: LINK, AAVE and UNI.'),
-    dict(name='Stable Floor', symbol='STBL', pair='USDC', split=(50, 0, 100, 0, 0), tp=0, redeem=True, rewards='none', basket=[], age=3, mc=96_400, vol=0.025, drift=1.0, seed=37,
+    dict(name='Stable Floor', symbol='STBL', pair='USDC', tax=150, split=(50, 0, 100, 0, 0), tp=0, redeem=True, rewards='none', basket=[], age=3, mc=96_400, vol=0.025, drift=1.0, seed=37,
          desc='Two thirds of the fee goes into a USDC vault. Burn coins any time to take your share.'),
-    dict(name='Shib Shelter', symbol='SHLTR', pair='SHIB', split=(40, 0, 40, 40, 30), tp=50, redeem=False, rewards='none', basket=[], age=1.2, mc=57_800, vol=0.09, drift=1.0, seed=41,
+    dict(name='Shib Shelter', symbol='SHLTR', pair='SHIB', tax=600, split=(40, 0, 40, 40, 30), tp=50, redeem=False, rewards='none', basket=[], age=1.2, mc=57_800, vol=0.09, drift=1.0, seed=41,
          desc='Fresh SHIB strategy: vault plus dip buybacks.'),
 ]
 
 WALLETS = [addr('wallet', i) for i in range(400)]
+
+
+PLATFORM = 80  # bps of every trade, whatever the tax
+
+
+def scale_split(split, pool):
+    # the split is written as a shape; scale it to what's left of the tax after the platform, in 0.05% steps
+    tot = sum(split) or 1
+    out = [int(round(v * pool / tot / 5)) * 5 for v in split]
+    out[out.index(max(out))] += pool - sum(out)
+    return tuple(out)
 
 
 def simulate(c):
@@ -81,7 +92,8 @@ def simulate(c):
     if c['pair'] == 'USDC':
         pair_px = [pair_now] * (hours + 1)
 
-    cr, ho, va, bb, al = c['split']
+    tax = c['tax']
+    cr, ho, va, bb, al = scale_split(c['split'], tax - PLATFORM)
     burned = 0.0
     vault_amt = 0.0  # pair units held
     vault_cost = 0.0  # USD paid for what is held
@@ -104,8 +116,7 @@ def simulate(c):
         cum_vol += v
         tx_total += max(1, int(v / (90 + rnd.random() * 400)))
         vols.append(round(v, 2))
-        fee = v * 0.02
-        fees['platform'] += v * 0.005
+        fees['platform'] += v * PLATFORM / 1e4
         fees['creator'] += v * cr / 1e4
         fees['holders'] += v * ho / 1e4
         fees['vault'] += v * va / 1e4
@@ -178,7 +189,7 @@ def simulate(c):
         addr=addr('coin', c['symbol']), name=c['name'], symbol=c['symbol'], desc=c['desc'], img=f"/img/coins/{c['symbol'].lower()}.webp",
         pair=pair['address'].lower(), pairSym=pair['symbol'], pairLogo=pair['logo'], pairDec=pair['decimals'], pairUsd=pp,
         creator=WALLETS[c['seed'] * 3 % len(WALLETS)], createdAt=t0, lastTrade=trades[0]['ts'],
-        split=dict(creator=cr, holders=ho, vault=va, buyback=bb, lp=al, platform=50),
+        tax=tax, split=dict(creator=cr, holders=ho, vault=va, buyback=bb, lp=al, platform=PLATFORM),
         tp=c['tp'], redeem=c['redeem'], rewards=c['rewards'], basket=[dict(symbol=TOK[s]['symbol'], logo=TOK[s]['logo'], address=TOK[s]['address'].lower()) for s in c['basket']],
         supply=SUPPLY, burned=burned, circ=circ,
         px=px, mc=px * circ, c1=(px / series[h1] - 1) * 100, c24=(px / series[h24] - 1) * 100,

@@ -8,12 +8,12 @@
     <header>
       <span class="eyebrow">Preview · contracts not deployed yet</span>
       <h1 style="margin-top:12px">How Backstop works</h1>
-      <p class="lede">A Backstop coin is a normal ERC-20 on Ethereum with a strategy wired into its pool. Every trade pays 2%. The creator decides at launch where 1.5% of it goes: a vault that backs the coin, a fund that buys back on dips, holders, or themselves. Once launched, the strategy runs by itself and nobody can change it.</p>
+      <p class="lede">A Backstop coin is a normal ERC-20 on Ethereum with a strategy wired into its pool. Every trade pays a tax the creator sets at launch, from 1% to 10%. The platform keeps 0.8%; the creator decides where the rest goes: a vault that backs the coin, a fund that buys back on dips, locked liquidity, holders, or themselves. Once launched, the strategy runs by itself and nobody can change it.</p>
       <dl class="facts">
         <div><dt>Supply</dt><dd>1,000,000,000</dd></div>
         <div><dt>Start market cap</dt><dd>$5,000</dd></div>
-        <div><dt>Trade fee</dt><dd>2%</dd></div>
-        <div><dt>Creator decides</dt><dd>1.5%</dd></div>
+        <div><dt>Tax</dt><dd>1% – 10%</dd></div>
+        <div><dt>Platform</dt><dd>0.8%</dd></div>
       </dl>
     </header>
 
@@ -22,7 +22,8 @@
       <ol>
         <li><b>Name it.</b> Name, ticker and logo. Name and ticker are written into the coin and can't change.</li>
         <li><b>Pick the backing token.</b> ETH, USDC, WBTC, staked ETH, tokenized gold, or any token with a Uniswap pool against ETH or USDC holding at least $10,000 on that side. The form checks it on Ethereum as you pick.</li>
-        <li><b>Split 1.5% of every trade</b> across the creator, holder rewards, the vault, the buyback fund and auto-LP, in steps of 0.05%.</li>
+        <li><b>Set the tax,</b> 1% to 10% in steps of 0.5%, the same on buys and sells.</li>
+        <li><b>Split it:</b> everything above the platform's 0.8% goes to the creator, holder rewards, the vault, the buyback fund and auto-LP, in steps of 0.05%.</li>
         <li><b>Set the options:</b> take-profit target, redeem on or off, and what holders are paid in.</li>
         <li><b>Launch,</b> with an optional first buy in the same transaction.</li>
       </ol>
@@ -31,7 +32,7 @@
 
     <section id="split">
       <h2>The split</h2>
-      <p>The fee is taken in the backing token on every buy and sell, through any app, router or bot. 0.5% goes to the platform. The other 1.5% is divided the way the creator chose:</p>
+      <p>The tax is taken in the backing token on every buy and sell, through any app, router or bot. The creator sets it at launch, anywhere from 1% to 10%. 0.8% goes to the platform; the rest is divided the way the creator chose:</p>
       <div class="dtable-wrap"><table class="dtable"><thead><tr><th>Share</th><th>What it does</th></tr></thead><tbody>
         <tr><td>Creator</td><td>Paid to the creator's wallet in the backing token, claimable any time.</td></tr>
         <tr><td>Holder rewards</td><td>Spread across everyone holding the coin, by balance.</td></tr>
@@ -39,7 +40,7 @@
         <tr><td>Buyback fund</td><td>Waits for a 20% dip, then buys the coin and burns it.</td></tr>
         <tr><td>Auto-LP</td><td>Added to the coin's pool as liquidity that can never be removed.</td></tr>
       </tbody></table></div>
-      <div class="example"><span class="eyebrow">Example</span>A PEPE strategy split 0.3% creator, 0.7% vault, 0.5% buyback. On $10,000 of trading: $30 to the creator, $70 of PEPE into the vault, $50 into the buyback fund, $50 to the platform.</div>
+      <div class="example"><span class="eyebrow">Example</span>A PEPE strategy with a 5% tax, split 0.6% creator, 2.2% vault, 1.4% buyback. On $10,000 of trading: $60 to the creator, $220 of PEPE into the vault, $140 into the buyback fund, $80 to the platform.</div>
     </section>
 
     <section id="vault">
@@ -89,18 +90,18 @@
 
     <section id="trading">
       <h2>Trading</h2>
-      <p>On the site you pay and receive ETH. If the backing token is something else, the router swaps through its Uniswap pool on the way in and out. Trades from anywhere else go through the same pool and pay the same 2%, so the vault, the buyback fund and holders earn from every one of them.</p>
+      <p>On the site you pay and receive ETH. If the backing token is something else, the router swaps through its Uniswap pool on the way in and out. Trades from anywhere else go through the same pool and pay the same tax, so the vault, the buyback fund and holders earn from every one of them.</p>
       <h3>The first minute</h3>
       <ul>
         <li><b>Launch block:</b> only the creator can buy.</li>
-        <li><b>First minute:</b> the fee starts at 99% and falls to 2%. What snipers pay goes through the same split, mostly into the vault and the buyback fund.</li>
+        <li><b>First minute:</b> the tax starts at 99% and falls to the coin's own tax. What snipers pay goes through the same split, mostly into the vault and the buyback fund.</li>
       </ul>
     </section>
 
     <section id="rules">
       <h2>Rules in the contracts</h2>
       <ul>
-        <li>The 2% fee, the split and every strategy option are set at launch. No function changes them.</li>
+        <li>The tax, its split and every strategy option are set at launch. No function changes them.</li>
         <li>Liquidity added by auto-LP can't be removed.</li>
         <li>Nothing can withdraw from a vault or a buyback fund. Vault assets leave only through take-profit or redeem; fund assets leave only as buybacks.</li>
         <li>Coins bought back are burned, never kept.</li>
@@ -116,6 +117,7 @@
         <details><summary>Does the backing make the coin worth its price?</summary><p>No. Backing is usually a small part of the price, especially early. The coin page shows both so you can see the gap. Redeem only guarantees the backing, not the market price.</p></details>
         <details><summary>Who triggers the buybacks?</summary><p>The pool does. The check runs inside trades, so the first trade after the average crosses the line fires the buyback. No keeper or team action is needed.</p></details>
         <details><summary>Why half the fund, and why 20%?</summary><p>Spending half leaves ammunition for the next dip. 20% on a 30-minute average filters out noise but still catches real drawdowns. Both are the same for every coin, so buyers know what to expect.</p></details>
+        <details><summary>What tax should I pick?</summary><p>Lower taxes trade more: bots, aggregators and scanners treat coins over 5% with suspicion, and every trader pays it twice, in and out. Higher taxes fill the vault and the buyback fund faster. Most strategy coins sit between 2% and 5%.</p></details>
         <details><summary>What does a launch cost?</summary><p>Gas only, shown on the launch form at the current gas price. A first buy is optional.</p></details>
         <details><summary>Why was my backing token refused?</summary><p>It needs a Uniswap V2, V3 or V4 pool against ETH or USDC with at least $10,000 on that side, so its price can't be pushed around cheaply. Fee-on-transfer and rebasing tokens don't work.</p></details>
       </div>

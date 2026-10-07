@@ -51,6 +51,7 @@
       <td data-l="Price"><span class="num">${usd(x.px)}</span></td>
       <td data-l="24h">${delta(x.c24)}</td>
       <td data-l="Market cap"><span class="num">${usd(x.mc)}</span></td>
+      <td data-l="Tax"><span class="num">${U().bps(x.tax)}</span></td>
       <td class="l" data-l="Backing">${backing(x)}</td>
       <td class="l" data-l="Next buyback">${nextBuyback(x)}</td>
       <td data-l="Volume" class="m-hide"><span class="num">${usd(x.vol24)}</span></td></tr>`;
@@ -67,7 +68,7 @@
     rows = [...rows].sort(by[state.sort]);
     const box = $('#coins');
     if (!rows.length) { box.innerHTML = '<div class="empty"><h3>No coins run this strategy yet</h3><p>Be the first to launch one.</p><a class="btn btn-ink" href="/launch">Launch a coin</a></div>'; return; }
-    box.innerHTML = `<table class="list"><thead><tr><th>Coin</th><th>Price</th><th>24h</th><th>Market cap</th><th class="l">Backing</th><th class="l">Next buyback</th><th>Volume</th></tr></thead><tbody>${rows.map(row).join('')}</tbody></table>`;
+    box.innerHTML = `<table class="list"><thead><tr><th>Coin</th><th>Price</th><th>24h</th><th>Market cap</th><th>Tax</th><th class="l">Backing</th><th class="l">Next buyback</th><th>Volume</th></tr></thead><tbody>${rows.map(row).join('')}</tbody></table>`;
     U().$$('tr[data-href]', box).forEach(tr => tr.onclick = e => { if (e.metaKey || e.ctrlKey) window.open(tr.dataset.href); else location.href = tr.dataset.href; });
   }
   function paint() { ledger(); watch(); filters(); list(); }

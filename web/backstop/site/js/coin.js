@@ -11,7 +11,7 @@
     return `<nav class="crumbs"><a href="/">Explore</a><span>/</span><span>${esc(x.name)}</span></nav>
     <div class="coin-head">${pairGlyph(x, 'lg')}
       <div class="coin-title"><h1>${esc(x.name)} <span class="sym">$${esc(x.symbol)}</span>${x.demo ? '<span class="tag sample">Sample</span>' : ''}</h1>
-        <div class="coin-meta"><span class="pairwith">${tokImg({ logo: x.pairLogo })}Backed by <b>${esc(x.pairSym)}</b></span><span>${ago(x.createdAt)} old</span>
+        <div class="coin-meta"><span class="pairwith">${tokImg({ logo: x.pairLogo })}Backed by <b>${esc(x.pairSym)}</b></span><span class="tag">Tax ${U().bps(x.tax)}</span><span>${ago(x.createdAt)} old</span>
         <button data-copy="${x.addr}" title="Copy contract address">${ic('copy')}<span class="mono">${short(x.addr)}</span></button></div></div>
       <div class="coin-price"><b>${usd(x.px)}</b><span>${delta(x.c24)} · ${usd(x.mc)} mcap</span></div>
     </div>`;
@@ -94,7 +94,7 @@
         <div class="ln big"><span>You get</span><i></i><b id="out">—</b></div>
         <div class="ln"><span>At least, after ${slip}% slippage</span><i></i><b id="minOut">—</b></div>
         <div class="ln"><span>Price impact</span><i></i><b id="imp">—</b></div>
-        <div class="ln"><span>Fee, 2%</span><i></i><b id="fee">—</b></div>
+        <div class="ln"><span>Tax, ${bps(x.tax)}</span><i></i><b id="fee">—</b></div>
         <div class="tk-split split" aria-hidden="true">${parts.map(p => `<i class="s-${p[0]}" style="flex:${p[2]}"></i>`).join('')}</div>
         <div class="tk-fees">${parts.map(p => `<div class="ln sub"><span><i class="s-${p[0]}"></i>${p[1]} <span class="faint">${bps(p[2])}</span></span><i></i><b data-part="${p[2]}">—</b></div>`).join('')}</div>
       </div>
@@ -105,7 +105,7 @@
       </div>`;
     const inp = $('#amt');
     const q = async () => { const e = await BS.ethUsd(); const v = Number(inp.value) || 0;
-      const inUsd = buy ? v * e : v * x.px; const impact = Math.min(0.5, inUsd / (x.liq / 2)); const feeUsd = inUsd * 0.02; const outUsd = (inUsd - feeUsd) * (1 - impact);
+      const inUsd = buy ? v * e : v * x.px; const impact = Math.min(0.5, inUsd / (x.liq / 2)); const feeUsd = inUsd * x.tax / 1e4; const outUsd = (inUsd - feeUsd) * (1 - impact);
       const out = buy ? outUsd / x.px : outUsd / e; const outUnit = buy ? x.symbol : 'ETH';
       $('#inUsd').textContent = v ? '≈ ' + usd(inUsd) : '';
       $('#out').textContent = v ? `${num(out, buy ? 0 : 4)} ${outUnit}` : '—';

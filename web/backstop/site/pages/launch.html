@@ -1,7 +1,7 @@
 <!--{"title": "Launch a strategy coin · Backstop", "nav": "launch", "scripts": ["launch.js"], "desc": "Launch a coin on Ethereum and choose its strategy: vault backing, dip buybacks, take-profit burns, redeem and holder rewards."}-->
 <header class="page-h">
   <h1>Launch a strategy coin</h1>
-  <p>Pick a backing token and split 1.5% of every trade. The strategy runs on its own after launch.</p>
+  <p>Pick a backing token, set the tax, and decide where it goes. The strategy runs on its own after launch.</p>
 </header>
 <div class="launch-grid">
   <form id="lf" class="form-col" novalidate autocomplete="off">
@@ -31,8 +31,9 @@
     </section>
 
     <section class="panel">
-      <div class="step-h"><span class="n">3</span><h2>Split 1.5% of every trade</h2><p>+0.5% platform</p></div>
+      <div class="step-h"><span class="n">3</span><h2>Tax and where it goes</h2></div>
       <div class="step-b">
+        <div class="tax" id="taxBox"></div>
         <div class="presets" id="presets"></div>
         <div class="alloc" id="alloc"></div>
         <div class="meter" id="meter"></div>
