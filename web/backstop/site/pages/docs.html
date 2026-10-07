@@ -8,12 +8,12 @@
     <header>
       <span class="eyebrow">Preview · contracts not deployed yet</span>
       <h1 style="margin-top:12px">How Backstop works</h1>
-      <p class="lede">A Backstop coin is a normal ERC-20 on Ethereum with a strategy wired into its pool. Every trade pays a tax the creator sets at launch, from 1% to 10%. The platform keeps 0.8%; the creator decides where the rest goes: a vault that backs the coin, a fund that buys back on dips, locked liquidity, holders, or themselves. Once launched, the strategy runs by itself and nobody can change it.</p>
+      <p class="lede">A Backstop coin is a normal ERC-20 on Ethereum with a strategy wired into its pool. Every trade pays a tax the creator sets at launch, from 1% to 10%. The platform keeps 1%; the creator decides where the rest goes: a vault that backs the coin, a fund that buys back on dips, locked liquidity, holders, or themselves. Once launched, the strategy runs by itself and nobody can change it.</p>
       <dl class="facts">
         <div><dt>Supply</dt><dd>1,000,000,000</dd></div>
         <div><dt>Start market cap</dt><dd>$5,000</dd></div>
         <div><dt>Tax</dt><dd>1% – 10%</dd></div>
-        <div><dt>Platform</dt><dd>0.8%</dd></div>
+        <div><dt>Platform</dt><dd>1%</dd></div>
       </dl>
     </header>
 
@@ -23,7 +23,7 @@
         <li><b>Name it.</b> Name, ticker and logo. Name and ticker are written into the coin and can't change.</li>
         <li><b>Pick the backing token.</b> ETH, USDC, WBTC, staked ETH, tokenized gold, or any token with a Uniswap pool against ETH or USDC holding at least $10,000 on that side. The form checks it on Ethereum as you pick.</li>
         <li><b>Set the tax,</b> 1% to 10% in steps of 0.5%, the same on buys and sells.</li>
-        <li><b>Split it:</b> everything above the platform's 0.8% goes to the creator, holder rewards, the vault, the buyback fund and auto-LP, in steps of 0.05%.</li>
+        <li><b>Split it:</b> everything above the platform's 1% goes to the creator, holder rewards, the vault, the buyback fund and auto-LP, in steps of 0.05%.</li>
         <li><b>Set the options:</b> take-profit target, redeem on or off, and what holders are paid in.</li>
         <li><b>Launch,</b> with an optional first buy in the same transaction.</li>
       </ol>
@@ -32,7 +32,7 @@
 
     <section id="split">
       <h2>The split</h2>
-      <p>The tax is taken in the backing token on every buy and sell, through any app, router or bot. The creator sets it at launch, anywhere from 1% to 10%. 0.8% goes to the platform; the rest is divided the way the creator chose:</p>
+      <p>The tax is taken in the backing token on every buy and sell, through any app, router or bot. The creator sets it at launch, anywhere from 1% to 10%. 1% goes to the platform; the rest is divided the way the creator chose:</p>
       <div class="dtable-wrap"><table class="dtable"><thead><tr><th>Share</th><th>What it does</th></tr></thead><tbody>
         <tr><td>Creator</td><td>Paid to the creator's wallet in the backing token, claimable any time.</td></tr>
         <tr><td>Holder rewards</td><td>Spread across everyone holding the coin, by balance.</td></tr>
@@ -40,7 +40,7 @@
         <tr><td>Buyback fund</td><td>Waits for a 20% dip, then buys the coin and burns it.</td></tr>
         <tr><td>Auto-LP</td><td>Added to the coin's pool as liquidity that can never be removed.</td></tr>
       </tbody></table></div>
-      <div class="example"><span class="eyebrow">Example</span>A PEPE strategy with a 5% tax, split 0.6% creator, 2.2% vault, 1.4% buyback. On $10,000 of trading: $60 to the creator, $220 of PEPE into the vault, $140 into the buyback fund, $80 to the platform.</div>
+      <div class="example"><span class="eyebrow">Example</span>A PEPE strategy with a 5% tax: 1% to the platform, and the creator splits the other 4% into 0.6% for themselves, 2% vault and 1.4% buyback. On $10,000 of trading: $100 to the platform, $60 to the creator, $200 of PEPE into the vault, $140 into the buyback fund.</div>
     </section>
 
     <section id="vault">

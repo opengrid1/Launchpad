@@ -2,7 +2,7 @@
 """Sample strategy coins for the Backstop preview (site/demo.json).
 
 Each coin is simulated hour by hour so its numbers agree with each other: trading
-volume pays the coin's tax (1-10%, 0.8% of it to the platform), the creator's split fills the vault and the buyback fund,
+volume pays the coin's tax (1-10%, 1% of it to the platform), the creator's split fills the vault and the buyback fund,
 every 20% dip in the price spends half the fund on coins that are burned, and a
 vault that is up by its take-profit target sells the gain into a buyback and burn.
 Pair prices end at their real price when this was generated (prices.json).
@@ -55,7 +55,7 @@ COINS = [
 WALLETS = [addr('wallet', i) for i in range(400)]
 
 
-PLATFORM = 80  # bps of every trade, whatever the tax
+PLATFORM = 100  # bps of every trade, whatever the tax
 
 
 def scale_split(split, pool):

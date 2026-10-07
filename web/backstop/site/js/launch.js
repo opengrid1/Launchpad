@@ -1,7 +1,7 @@
 /* Launch form: coin details, the backing token (checked live on Ethereum), the tax and its split, and the strategy options. */
 (function () {
   const U = () => window.UI;
-  const STEP = 5, PLATFORM = 80, TAX_MIN = 100, TAX_MAX = 1000, TAX_STEP = 50; // basis points
+  const STEP = 5, PLATFORM = 100, TAX_MIN = 100, TAX_MAX = 1000, TAX_STEP = 50; // basis points
   const pool = () => st.tax - PLATFORM; // what the creator splits
   // presets are shapes; scale one to the current tax in 0.05% steps
   function scaled(split, to) { const keys = Object.keys(split); const tot = keys.reduce((a, k) => a + split[k], 0) || 1; const out = {};
@@ -64,7 +64,7 @@
   }
   function paintTax() {
     const { bps } = U(); const t = st.tax;
-    U().$('#taxBox').innerHTML = `<div class="tax-top"><div><b>Tax on every buy and sell</b><small>${bps(PLATFORM)} goes to the platform. You split the other <b class="mono">${bps(pool())}</b> below.</small></div>
+    U().$('#taxBox').innerHTML = `<div class="tax-top"><div><b>Tax on every buy and sell</b><small>${bps(PLATFORM)} goes to the platform. ${pool() ? `You split the other <b class="mono">${bps(pool())}</b> below.` : 'Raise the tax above 1% to fund a strategy.'}</small></div>
       <div class="stepper tax-step"><button type="button" data-tax="-1" aria-label="Lower tax" ${t <= TAX_MIN ? 'disabled' : ''}>−</button><output>${bps(t)}</output><button type="button" data-tax="1" aria-label="Higher tax" ${t >= TAX_MAX ? 'disabled' : ''}>+</button></div></div>
       <input type="range" class="tax-range" id="taxRange" min="${TAX_MIN}" max="${TAX_MAX}" step="${TAX_STEP}" value="${t}" aria-label="Tax" style="--at:${((t - TAX_MIN) / (TAX_MAX - TAX_MIN) * 100).toFixed(1)}%">
       <div class="tax-ticks"><span>1%</span><span>${t > 500 ? 'Over 5% is flagged by some scanners and aggregators' : 'Lower tax, easier to trade'}</span><span>10%</span></div>`;
