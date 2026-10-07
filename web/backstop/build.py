@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Backstop site: wrap each page in the shared shell and write dist/.
+"""Build the Etherhook site: wrap each page in the shared shell and write dist/.
 
     python3 build.py preview   # Ethereum mainnet reads, sample strategy coins, launches closed
 """
@@ -10,7 +10,7 @@ SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'preview'
 DESC = 'Launch a coin on Ethereum with a strategy built in: a vault that backs every coin, buybacks on every 20% dip, burns from take-profit, and redeem at backing.'
-SITE_URL = os.environ.get('SITE_URL', 'https://backstop-preview.vercel.app').rstrip('/')
+SITE_URL = os.environ.get('SITE_URL', 'https://etherhook.fun').rstrip('/')
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=JetBrains+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap'
 NAV = [('explore', '/', 'Explore'), ('launch', '/launch', 'Launch'), ('portfolio', '/portfolio', 'Portfolio'), ('docs', '/docs', 'How it works')]
@@ -22,7 +22,7 @@ ICON = {
     'search': '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
 }
 # the mark: a price line that dips onto a bar and recovers; colours come from the theme
-MARK = '<svg viewBox="0 0 32 32" aria-hidden="true"><path class="mk-line" d="M3.6 14 9 7.2 16 21.2 28.2 9.6" fill="none" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><rect class="mk-bar" x="3.5" y="23.2" width="25" height="5" rx="1.1"/></svg>'
+MARK = '<svg viewBox="0 0 32 32" aria-hidden="true"><path class="mk-line" d="M9 3.6V13a7 7 0 0 0 14 0V8.6l-3.4 3.4" fill="none" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><rect class="mk-bar" x="3.5" y="23.2" width="25" height="5" rx="1.1"/></svg>'
 ETH_GLYPH = '<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M5 0 0 8.1 5 11l5-2.9z" fill="currentColor" opacity=".55"/><path d="M5 12 0 9.1 5 16l5-6.9z" fill="currentColor"/></svg>'
 
 
@@ -73,7 +73,7 @@ def shell(meta, body):
 <meta property="og:url" content="{SITE_URL}">
 <meta property="og:image" content="{SITE_URL}/img/og.png">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Backstop">
+<meta property="og:site_name" content="Etherhook">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{title}">
 <meta name="twitter:description" content="{desc}">
@@ -94,7 +94,7 @@ def shell(meta, body):
 <body>
 <header class="top">
   <div class="top-in">
-    <a class="brand" href="/" aria-label="Backstop home">{MARK}<b>Backstop</b></a>
+    <a class="brand" href="/" aria-label="Etherhook home">{MARK}<b>Etherhook</b></a>
     <nav class="nav" aria-label="Main">{links}</nav>
     <div class="top-r">
       <button class="search-trigger" data-search aria-label="Search coins">{ic("search")}<span>Search coins or paste an address</span><kbd>/</kbd></button>
@@ -109,7 +109,7 @@ def shell(meta, body):
 </main>
 <footer class="foot">
   <div class="foot-in">
-    <a class="brand" href="/" aria-label="Backstop home">{MARK}<b>Backstop</b></a>
+    <a class="brand" href="/" aria-label="Etherhook home">{MARK}<b>Etherhook</b></a>
     <nav aria-label="Footer"><a href="/docs">How it works</a><a href="/docs#faq">FAQ</a><a href="/launch">Launch</a></nav>
   </div>
 </footer>
@@ -125,7 +125,7 @@ def build():
     os.makedirs(DIST)
     for d in ('css', 'js', 'img'):
         shutil.copytree(os.path.join(SITE, d), os.path.join(DIST, d))
-    # TradingView Advanced Charts: the same library as the Inkypump site (web/replica), with Backstop's theme
+    # TradingView Advanced Charts: the same library as the Inkypump site (web/replica), with Etherhook's theme
     lib = next(p for p in (os.environ.get('CHARTING_LIBRARY', ''), os.path.join(SITE, 'charting_library'), os.path.join(HERE, '..', 'replica', 'charting_library')) if p and os.path.isdir(p))
     shutil.copytree(lib, os.path.join(DIST, 'charting_library'))
     shutil.copy(os.path.join(SITE, 'tv-theme.css'), os.path.join(DIST, 'charting_library', 'tv-theme.css'))

@@ -1,4 +1,4 @@
-/* Backstop shell: wallet button, search, theme, toasts, dialogs, menus and formatting. Exposes window.UI. */
+/* Etherhook shell: wallet button, search, theme, toasts, dialogs, menus and formatting. Exposes window.UI. */
 (function () {
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => [...(r || document).querySelectorAll(s)];

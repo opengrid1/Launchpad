@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sample strategy coins for the Backstop preview (site/demo.json).
+"""Sample strategy coins for the Etherhook preview (site/demo.json).
 
 Each coin is simulated hour by hour so its numbers agree with each other: trading
 volume pays the coin's tax (1-10%, 1% of it to the platform), the creator's split fills the vault and the buyback fund,

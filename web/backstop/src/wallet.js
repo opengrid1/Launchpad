@@ -1,4 +1,4 @@
-/* Backstop wallet layer: Reown AppKit (ethers adapter) when a project id is set, otherwise the
+/* Etherhook wallet layer: Reown AppKit (ethers adapter) when a project id is set, otherwise the
    browser's injected wallet (EIP-1193). Exposes window.bsWallet and fires 'bs:wallet' on changes. */
 import { createAppKit } from '@reown/appkit';
 import { EthersAdapter } from '@reown/appkit-adapter-ethers';
@@ -31,7 +31,7 @@ function injected() {
 if (CFG.reownProjectId && !CFG.injectedOnly) {
   const modal = createAppKit({
     adapters: [new EthersAdapter()], networks: [mainnet], defaultNetwork: mainnet, projectId: CFG.reownProjectId,
-    metadata: { name: 'Backstop', description: 'Strategy coins on Ethereum', url: location.origin, icons: [location.origin + '/img/logo-512.png'] },
+    metadata: { name: 'Etherhook', description: 'Strategy coins on Ethereum', url: location.origin, icons: [location.origin + '/img/logo-512.png'] },
     themeMode: dark() ? 'dark' : 'light',
     themeVariables: { '--w3m-accent': '#0e7490', '--w3m-font-family': "'Public Sans', system-ui, sans-serif", '--w3m-border-radius-master': '2px', '--w3m-z-index': 2000 },
     features: { analytics: false, email: false, socials: false, swaps: false, onramp: false, send: false, history: false }, allWallets: 'SHOW', enableWalletGuide: false,

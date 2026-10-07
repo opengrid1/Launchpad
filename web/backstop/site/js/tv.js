@@ -36,11 +36,11 @@
   function palette() { return { bg: css('--surface'), grid: css('--line'), text: css('--muted'), up: css('--up'), down: css('--down'), accent: css('--vault'), ink: css('--ink'), bb: css('--bb'), vault: css('--vault') }; }
 
   const datafeed = {
-    onReady(cb) { setTimeout(() => cb({ supported_resolutions: Object.keys(RES), supports_marks: true, supports_timescale_marks: false, supports_time: true, exchanges: [{ value: 'Backstop', name: 'Backstop', desc: 'Uniswap V4 on Ethereum' }], symbols_types: [{ name: 'crypto', value: 'crypto' }] }), 0); },
-    searchSymbols(q, ex, type, cb) { cb([{ symbol: symName(), full_name: 'Backstop:' + symName(), description: X ? X.name : '', exchange: 'Backstop', ticker: symName(), type: 'crypto' }]); },
+    onReady(cb) { setTimeout(() => cb({ supported_resolutions: Object.keys(RES), supports_marks: true, supports_timescale_marks: false, supports_time: true, exchanges: [{ value: 'Etherhook', name: 'Etherhook', desc: 'Uniswap V4 on Ethereum' }], symbols_types: [{ name: 'crypto', value: 'crypto' }] }), 0); },
+    searchSymbols(q, ex, type, cb) { cb([{ symbol: symName(), full_name: 'Etherhook:' + symName(), description: X ? X.name : '', exchange: 'Etherhook', ticker: symName(), type: 'crypto' }]); },
     resolveSymbol(name, ok) {
       mode = /·MCAP/.test(name) ? 'mcap' : 'price'; unit = /·PAIR/.test(name) ? 'PAIR' : 'USD';
-      setTimeout(() => ok({ ticker: name, name: symName(), description: (mode === 'mcap' ? X.symbol + ' market cap' : symName()) + (unit === 'PAIR' ? ' in ' + X.pairSym : ''), type: 'crypto', session: '24x7', timezone: 'Etc/UTC', exchange: 'Backstop', listed_exchange: 'Backstop', format: 'price', minmov: 1, pricescale: scaleFor(), has_intraday: true, intraday_multipliers: ['1', '5', '15', '30', '60', '240'], has_daily: true, has_weekly_and_monthly: true, supported_resolutions: Object.keys(RES), volume_precision: 2, data_status: 'streaming', visible_plots_set: 'ohlcv', currency_code: unit === 'USD' ? 'USD' : X.pairSym }), 0);
+      setTimeout(() => ok({ ticker: name, name: symName(), description: (mode === 'mcap' ? X.symbol + ' market cap' : symName()) + (unit === 'PAIR' ? ' in ' + X.pairSym : ''), type: 'crypto', session: '24x7', timezone: 'Etc/UTC', exchange: 'Etherhook', listed_exchange: 'Etherhook', format: 'price', minmov: 1, pricescale: scaleFor(), has_intraday: true, intraday_multipliers: ['1', '5', '15', '30', '60', '240'], has_daily: true, has_weekly_and_monthly: true, supported_resolutions: Object.keys(RES), volume_precision: 2, data_status: 'streaming', visible_plots_set: 'ohlcv', currency_code: unit === 'USD' ? 'USD' : X.pairSym }), 0);
     },
     getBars(info, res, params, ok, err) {
       try { if (!X || !params.firstDataRequest) { ok([], { noData: true }); return; }

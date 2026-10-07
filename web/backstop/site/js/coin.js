@@ -132,8 +132,8 @@
   }
   function render() {
     const { $, esc } = U(); const root = $('#coinRoot');
-    if (!x) { root.innerHTML = `<div class="empty"><h3>Coin not found</h3><p>No Backstop coin at <span class="mono">${esc(addr || 'this address')}</span>.</p><a class="btn btn-ink" href="/">Back to explore</a></div>`; return; }
-    document.title = `${x.name} ($${x.symbol}) · Backstop`;
+    if (!x) { root.innerHTML = `<div class="empty"><h3>Coin not found</h3><p>No Etherhook coin at <span class="mono">${esc(addr || 'this address')}</span>.</p><a class="btn btn-ink" href="/">Back to explore</a></div>`; return; }
+    document.title = `${x.name} ($${x.symbol}) · Etherhook`;
     root.innerHTML = head() + `<div class="coin-grid"><div class="coin-main">${kpis()}${chartPanel()}${strategies()}${activity()}</div><div class="coin-side">${tradePanel()}${about()}</div></div>`;
     if (window.bsChart && window.TradingView) bsChart.init($('#tv'), x); paintActivity(); paintTrade();
     U().$$('#actTabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; paintActivity(); });

@@ -1,4 +1,4 @@
-/* Backstop data: the sample strategy coins (until the contracts are live) and the few
+/* Etherhook data: the sample strategy coins (until the contracts are live) and the few
    live Ethereum reads the preview needs: ETH price, gas, and the pair check on the
    launch form, which looks for Uniswap V2 and V3 pools against ETH or USDC.
    Exposes window.BS and fires 'bs:ready'. */

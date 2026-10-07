@@ -1,54 +1,136 @@
 <!doctype html><html><head><meta charset="utf-8">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Archivo:wdth,wght@62..125,400..900&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
 <style>
-body{margin:0;background:#888;font-family:'Public Sans'}
-.wrap{display:flex;flex-wrap:wrap;gap:20px;padding:20px}
-.tile{width:512px;height:512px;position:relative;overflow:hidden}
-.coin{width:256px;height:256px;display:grid;place-items:center;position:relative;overflow:hidden}
+body{margin:0;background:#777;font-family:'Public Sans'}
+.wrap{display:flex;flex-wrap:wrap;gap:20px;padding:20px;align-items:flex-start}
+.wrap > div{position:relative;overflow:hidden;flex:none}
+.coin{width:256px;height:256px;display:grid;place-items:center}
 .coin b{font-family:Archivo;font-weight:850;font-stretch:118%;font-size:104px;letter-spacing:-.04em;line-height:1;margin-top:-26px}
 .coin i{position:absolute;left:44px;right:44px;bottom:50px;height:20px;border-radius:3px}
-.coin svg{position:absolute;inset:0}
-.og{width:1200px;height:630px;background:#eef1f4;position:relative;overflow:hidden;font-family:'Public Sans';color:#0b1220}
-.og .grid{position:absolute;inset:0;background-image:linear-gradient(#0b12200d 1px,transparent 1px),linear-gradient(90deg,#0b12200d 1px,transparent 1px);background-size:40px 40px}
-.og .brand{position:absolute;left:72px;top:64px;display:flex;align-items:center;gap:18px}
-.og .brand b{font-family:Archivo;font-weight:800;font-stretch:112%;font-size:46px;letter-spacing:-.02em}
-.og h1{position:absolute;left:72px;top:170px;margin:0;font-family:Archivo;font-weight:800;font-stretch:108%;font-size:84px;line-height:.98;letter-spacing:-.03em;width:640px}
-.og p{position:absolute;left:72px;top:398px;margin:0;font-size:27px;line-height:1.38;color:#3d4a5c;width:600px}
-.og .foot{position:absolute;left:72px;bottom:54px;font-family:'JetBrains Mono';font-size:19px;color:#5a6577;letter-spacing:.02em}
-.og .chart{position:absolute;right:56px;top:96px;width:440px;height:440px}
-.banner{width:1500px;height:500px;background:#0b1220;position:relative;overflow:hidden}
+svg text{font-family:'Lilita One'}
 </style></head><body><div class="wrap" id="w"></div>
 <script>
-const MARK=(ink,bar,sw=3.6)=>`<path d="M3.6 14 9 7.2 16 21.2 28.2 9.6" fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/><rect x="3.5" y="23.2" width="25" height="5" rx="1.1" fill="${bar}"/>`;
+// Etherhook brand sheet. Every asset is drawn from the same parts so they stay consistent:
+// the mascot (a glossy ETH diamond with an orange hook), the two-tone wordmark, and sticker badges.
+const NAVY='#0b1220', EDGE='#f3f6fa', MINT='#2ee6c5', MINT_L='#8af7e3', MINT_D='#16b49c', MINT_DD='#0e8f7f', HOOK='#ff7a3d', HOOK_L='#ffb08a';
+
+const BODY='M100 14 L160 104 L100 176 L40 104 Z';
+const HOOKP='M100 160 V208 a17 17 0 0 0 34 0 V193';
+const BARB='M134 192 l-10 9.5';
+// mascot in a 200x240 box; `edge` false drops the white sticker outline (for tiny sizes)
+function mascot(edge=true){
+  return `
+  ${edge?`<g fill="${EDGE}" stroke="${EDGE}" stroke-linejoin="round" stroke-linecap="round">
+    <path d="${BODY}" stroke-width="30"/>
+    <path d="${HOOKP}" fill="none" stroke-width="32"/><path d="${BARB}" fill="none" stroke-width="32"/>
+  </g>`:''}
+  <g fill="none" stroke="${NAVY}" stroke-linejoin="round" stroke-linecap="round">
+    <path d="${HOOKP}" stroke-width="18"/><path d="${BARB}" stroke-width="18"/>
+  </g>
+  <g fill="none" stroke="${HOOK}" stroke-linejoin="round" stroke-linecap="round">
+    <path d="${HOOKP}" stroke-width="8"/><path d="${BARB}" stroke-width="8"/>
+  </g>
+  <path d="M104 184 V204" stroke="${HOOK_L}" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>
+  <path d="${BODY}" fill="${NAVY}" stroke="${NAVY}" stroke-width="13" stroke-linejoin="round"/>
+  <path d="M100 14 L40 104 L100 130 Z" fill="${MINT_L}"/>
+  <path d="M100 14 L160 104 L100 130 Z" fill="${MINT}"/>
+  <path d="M40 104 L100 130 L100 176 Z" fill="${MINT_D}"/>
+  <path d="M160 104 L100 130 L100 176 Z" fill="${MINT_DD}"/>
+  <path d="M42 105 L100 131 L158 105" fill="none" stroke="${NAVY}" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M91 31 L62 75" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".7"/>
+  <circle cx="57" cy="85" r="3.6" fill="#fff" opacity=".7"/>
+  <ellipse cx="70" cy="99" rx="8" ry="4.4" fill="#ff8f6b" opacity=".75"/>
+  <ellipse cx="130" cy="99" rx="8" ry="4.4" fill="#ff8f6b" opacity=".75"/>
+  <ellipse cx="84" cy="84" rx="8.6" ry="10.4" fill="${NAVY}"/><ellipse cx="116" cy="84" rx="8.6" ry="10.4" fill="${NAVY}"/>
+  <circle cx="86.8" cy="79.6" r="3.3" fill="#fff"/><circle cx="118.8" cy="79.6" r="3.3" fill="#fff"/>
+  <path d="M91 99.5 Q100 108.5 109 99.5" fill="none" stroke="${NAVY}" stroke-width="5" stroke-linecap="round"/>`;
+}
+
+// two-tone sticker wordmark, baseline at y; size in px
+function wordmark(x,y,size,anchor='start'){
+  // all three layers use the same two tspans so kerning (and so glyph positions) match exactly
+  const t=(a,b)=>`<tspan fill="${a}">ether</tspan><tspan fill="${b}">hook</tspan>`;
+  return `<g font-size="${size}" text-anchor="${anchor}" letter-spacing="${size*0.01}">
+    <text x="${x}" y="${y}" stroke="${EDGE}" stroke-width="${size*0.36}" stroke-linejoin="round">${t(EDGE,EDGE)}</text>
+    <text x="${x}" y="${y}" stroke="${NAVY}" stroke-width="${size*0.18}" stroke-linejoin="round">${t(NAVY,NAVY)}</text>
+    <text x="${x}" y="${y}">${t('url(#gm)','url(#gh)')}</text>
+  </g>`;
+}
+const DEFS=`<defs>
+  <linearGradient id="gm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${MINT_L}"/><stop offset=".46" stop-color="${MINT_L}"/><stop offset=".47" stop-color="${MINT}"/><stop offset="1" stop-color="${MINT}"/></linearGradient>
+  <linearGradient id="gh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${HOOK_L}"/><stop offset=".46" stop-color="${HOOK_L}"/><stop offset=".47" stop-color="${HOOK}"/><stop offset="1" stop-color="${HOOK}"/></linearGradient>
+</defs>`;
+
+// rounded hexagon sticker badge with a label; (cx,cy) centre, r radius
+function badge(cx,cy,r,label,fill=MINT,fs=null,rot=0,ink=EDGE){
+  const pts=[...Array(6)].map((_,i)=>{const a=Math.PI/3*i+Math.PI/6;return [cx+r*Math.cos(a),cy+r*Math.sin(a)]});
+  const d='M'+pts.map(p=>p.map(v=>v.toFixed(1)).join(' ')).join(' L')+' Z';
+  fs=fs||r*0.62;
+  return `<g transform="rotate(${rot} ${cx} ${cy})">
+    <path d="${d}" fill="${EDGE}" stroke="${EDGE}" stroke-width="${r*0.36}" stroke-linejoin="round"/>
+    <path d="${d}" fill="${fill}" stroke="${NAVY}" stroke-width="${r*0.14}" stroke-linejoin="round"/>
+    <path d="M${cx-r*0.52} ${cy-r*0.42} Q${cx-r*0.2} ${cy-r*0.72} ${cx+r*0.18} ${cy-r*0.7}" fill="none" stroke="#fff" stroke-width="${r*0.09}" stroke-linecap="round" opacity=".6"/>
+    ${label?`<g font-size="${fs}" text-anchor="middle">
+      <text x="${cx}" y="${cy+fs*0.34}" fill="${NAVY}" stroke="${NAVY}" stroke-width="${fs*0.26}" stroke-linejoin="round">${label}</text>
+      <text x="${cx}" y="${cy+fs*0.34}" fill="${ink}">${label}</text></g>`:''}
+  </g>`;
+}
+const dots=(list)=>list.map(([x,y,r,c])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${c||MINT}"/>`).join('');
+const bubble=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${MINT}" stroke-opacity=".55" stroke-width="${Math.max(2,r*0.22)}"/><circle cx="${x-r*0.35}" cy="${y-r*0.35}" r="${r*0.18}" fill="${MINT}" fill-opacity=".55"/>`;
+
 const w=document.getElementById('w');
-// app icon: navy tile, white line, teal bar
-w.insertAdjacentHTML('beforeend',`<div class="tile" id="icon" style="background:#0b1220"><svg viewBox="0 0 32 32" width="512" height="512"><g transform="translate(5.2 4.6) scale(.675)">${MARK('#ffffff','#2dd4bf',3.9)}</g></svg></div>`);
+const add=(id,W,H,inner,bg=NAVY)=>w.insertAdjacentHTML('beforeend',`<div id="${id}" style="width:${W}px;height:${H}px;background:${bg}"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${DEFS}${inner}</svg></div>`);
+const place=(x,y,s,rot=0,edge=true)=>`<g transform="translate(${x} ${y}) scale(${s}) rotate(${rot} 100 120)">${mascot(edge)}</g>`;
+
+// mascot alone, transparent (logo.svg is exported from this markup)
+w.insertAdjacentHTML('beforeend',`<div id="logo" style="width:240px;height:256px;background:transparent"><svg id="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="-20 -8 240 256" width="240" height="256"><g transform="rotate(-6 100 120)">${mascot(true)}</g></svg></div>`);
+// app icon (favicon, apple touch, logo-512)
+add('icon',512,512,`<g transform="translate(66 34) scale(1.8) rotate(-6 100 120)">${mascot(true)}</g>`);
+// profile picture
+add('pfp',1000,1000,`
+  ${dots([[150,250,16],[860,760,13],[770,890,7,HOOK],[190,820,8],[880,170,7,HOOK],[110,560,6]])}
+  ${bubble(820,330,22)}${bubble(865,260,11)}${bubble(225,370,15)}
+  ${place(265,150,2.3,-7)}
+  ${badge(770,195,74,'ether',MINT,40,10)}
+  ${badge(215,800,70,'hook',HOOK,42,-9)}`);
+// X banner
+add('banner',1500,500,`
+  ${dots([[985,60,9],[1460,105,6,HOOK],[820,440,6],[1090,470,5,HOOK],[1420,455,10],[640,95,5]])}
+  ${bubble(1135,120,18)}${bubble(1180,70,9)}${bubble(560,420,12)}
+  ${wordmark(90,290,150)}
+  <text x="98" y="378" font-size="40" fill="#c9d6e6" letter-spacing="1">coins that buy their own dips</text>
+  ${badge(880,370,58,'vault',MINT,30,-8)}
+  ${badge(1010,300,64,'buyback',HOOK,22,6)}
+  ${badge(1005,440,46,'burn',MINT_L,24,-4)}
+  ${place(1140,40,1.75,8)}`);
+// default token image
+add('tdefault',512,512,`
+  ${dots([[430,92,14],[456,128,8],[78,430,11,HOOK]])}
+  ${badge(256,250,170,'',MINT,0,-6)}
+  <g transform="rotate(-6 256 250)" font-size="84" text-anchor="middle">
+    <text x="248" y="272" fill="${NAVY}" stroke="${NAVY}" stroke-width="28" stroke-linejoin="round">$???</text>
+    <text x="248" y="272" fill="${EDGE}">$???</text>
+  </g>
+  <g transform="translate(350 338) rotate(-6) scale(1.35)">
+    <path d="M0 0 V36 a16 16 0 0 0 32 0 V22 M32 22 l-9 9" fill="none" stroke="${EDGE}" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M0 0 V36 a16 16 0 0 0 32 0 V22 M32 22 l-9 9" fill="none" stroke="${NAVY}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M0 0 V36 a16 16 0 0 0 32 0 V22 M32 22 l-9 9" fill="none" stroke="${HOOK}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>`);
+// link preview card
+add('og',1200,630,`
+  <g stroke="#ffffff0c">${Array.from({length:17},(_,i)=>`<line x1="0" x2="1200" y1="${i*40}" y2="${i*40}"/>`).join('')}${Array.from({length:31},(_,i)=>`<line y1="0" y2="630" x1="${i*40}" x2="${i*40}"/>`).join('')}</g>
+  ${dots([[1120,80,10],[700,560,7,HOOK],[1150,560,8],[640,70,6,HOOK]])}
+  ${bubble(1080,150,20)}${bubble(1125,205,10)}
+  ${wordmark(72,160,100)}
+  <text x="78" y="290" font-size="70" fill="${EDGE}">Coins that buy</text>
+  <text x="78" y="368" font-size="70" fill="${EDGE}">their own <tspan fill="${HOOK}">dips.</tspan></text>
+  <text x="80" y="440" style="font-family:'Public Sans'" font-weight="500" font-size="26" fill="#a9b8cb">Vault backing, dip buybacks and burns, built into every coin.</text>
+  <text x="80" y="560" style="font-family:'JetBrains Mono'" font-weight="600" font-size="19" fill="#7f90a8" letter-spacing="1.5">ETHEREUM MAINNET · UNISWAP V4 HOOKS</text>
+  ${place(770,120,1.75,7)}`);
+// wordmark lockup on transparent ground
+add('lockup',900,240,`${place(20,20,0.82,-6)}${wordmark(220,160,112)}`,'transparent');
+
+// sample coin art for the preview coins (unchanged)
 const coins=[['frogr','FR','#1d6b3a','#d9f2c2'],['idx69','69','#f4cf3d','#1a1405'],['hard','HM','#f2911b','#1d1103'],['mogt','MT','#1c1c1f','#ffd23f'],['stkd','SS','#0f8fe0','#ffffff'],['dips','DE','#f05a22','#fff4ee'],['goldf','GF','#b8902a','#fff6dc'],['nvlt','NV','#ebe2d0','#3a2817'],['lstk','LS','#2a5ada','#ffffff'],['stbl','SF','#1f6fc4','#e6f0ff'],['shltr','SH','#d9661a','#fff3e6']];
 for(const [id,t,bg,fg] of coins) w.insertAdjacentHTML('beforeend',`<div class="coin" id="c-${id}" style="background:${bg};color:${fg}"><b>${t}</b><i style="background:${fg};opacity:.9"></i></div>`);
-// OG card
-const pts=[];let y=60;for(let i=0;i<=44;i++){const x=i*10;}
-w.insertAdjacentHTML('beforeend',`<div class="og" id="og"><div class="grid"></div>
-<div class="brand"><svg viewBox="0 0 32 32" width="58" height="58">${MARK('#0b1220','#0f766e')}</svg><b>Backstop</b></div>
-<h1>Coins that buy their own dips.</h1>
-<p>Launch a coin on Ethereum with a strategy built in: a vault that backs it, buybacks on every 20% dip, burns from take-profit.</p>
-<div class="foot">ETHEREUM MAINNET · UNISWAP V4</div>
-<svg class="chart" viewBox="0 0 440 440">
- <g stroke="#0b122014">${[0,1,2,3,4,5,6,7,8].map(i=>`<line x1="0" x2="440" y1="${20+i*50}" y2="${20+i*50}"/>`).join('')}</g>
- <line x1="0" x2="440" y1="128" y2="128" stroke="#0b1220" stroke-opacity=".35" stroke-dasharray="4 6"/>
- <text x="436" y="118" text-anchor="end" font-family="JetBrains Mono" font-size="15" fill="#5a6577">HIGH</text>
- <line x1="0" x2="440" y1="230" y2="230" stroke="#f05a22" stroke-width="2" stroke-dasharray="7 6"/>
- <text x="436" y="220" text-anchor="end" font-family="JetBrains Mono" font-size="15" fill="#c2410c">BUYBACK −20%</text>
- <rect x="0" y="352" width="440" height="40" fill="#0f766e" opacity=".14"/><line x1="0" x2="440" y1="352" y2="352" stroke="#0f766e" stroke-width="3"/>
- <text x="436" y="380" text-anchor="end" font-family="JetBrains Mono" font-size="15" fill="#0f766e">VAULT BACKING</text>
- <path d="M0 300 L40 262 L78 196 L110 150 L140 128 L170 168 L200 204 L228 232 L250 200 L282 170 L312 140 L338 158 L366 120 L398 96 L440 70" fill="none" stroke="#0b1220" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
- <circle cx="228" cy="232" r="9" fill="#f05a22"/><circle cx="228" cy="232" r="17" fill="none" stroke="#f05a22" stroke-opacity=".35" stroke-width="2"/>
-</svg></div>`);
-// X banner
-w.insertAdjacentHTML('beforeend',`<div class="banner" id="banner"><svg viewBox="0 0 1500 500" width="1500" height="500">
- <g stroke="#ffffff10">${Array.from({length:13},(_,i)=>`<line x1="0" x2="1500" y1="${i*40}" y2="${i*40}"/>`).join('')}${Array.from({length:38},(_,i)=>`<line y1="0" y2="500" x1="${i*40}" x2="${i*40}"/>`).join('')}</g>
- <rect x="0" y="392" width="1500" height="108" fill="#2dd4bf" opacity=".10"/><line x1="0" x2="1500" y1="392" y2="392" stroke="#2dd4bf" stroke-width="4"/>
- <line x1="0" x2="1500" y1="250" y2="250" stroke="#f05a22" stroke-width="2.5" stroke-dasharray="10 9"/>
- <path d="M0 330 L120 280 L230 190 L330 120 L420 96 L520 170 L600 230 L650 252 L720 200 L820 150 L900 172 L980 120 L1080 92 L1160 150 L1230 210 L1262 250 L1330 196 L1410 140 L1500 100" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
- ${[[650,252],[1262,250]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="11" fill="#f05a22"/><circle cx="${x}" cy="${y}" r="21" fill="none" stroke="#f05a22" stroke-opacity=".4" stroke-width="2.5"/>`).join('')}
-</svg></div>`);
 </script></body></html>

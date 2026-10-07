@@ -1,4 +1,4 @@
-# Backstop site
+# Etherhook site
 
 Strategy coin launchpad on Ethereum. Every trade pays a tax the creator sets at launch (1% to 10%):
 1% to the platform, and the rest split the way the creator chose between themselves, holder rewards,
