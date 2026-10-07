@@ -5,3 +5,5 @@ artifacts-size/
 .env.telegram
 .env.arc-deployer
 .smoke-note.json
+artifacts-backstop/
+cache-backstop/
