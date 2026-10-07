@@ -3,7 +3,7 @@
   const U = () => window.UI;
   const qs = new URLSearchParams(location.search);
   const state = { f: qs.get('s') || 'all', sort: 'trending' };
-  const FILTERS = [['all', 'All', null], ['v', 'Vault', x => x.split.vault > 0], ['d', 'Dip buyback', x => x.split.buyback > 0], ['t', 'Take profit', x => x.tp > 0], ['r', 'Redeem', x => x.redeem], ['h', 'Holder rewards', x => x.split.holders > 0], ['l', 'Auto-LP', x => x.split.lp > 0]];
+  const FILTERS = [['all', 'All', null], ['v', 'Vault', x => x.split.vault > 0], ['d', 'Dip buyback', x => x.split.buyback > 0], ['t', 'Take profit', x => x.tp > 0], ['r', 'Redeem', x => x.redeem], ['h', 'Holder rewards', x => x.split.holders > 0], ['b', 'Auto-burn', x => x.split.burn > 0], ['l', 'Auto-LP', x => x.split.lp > 0]];
 
   function ledger() {
     const { usd, num, $ } = U(); const s = BS.stats(); const all = BS.tokens();

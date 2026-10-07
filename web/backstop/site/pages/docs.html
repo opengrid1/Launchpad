@@ -2,7 +2,7 @@
 <div class="docs">
   <nav class="docs-nav" id="docsNav" aria-label="On this page">
     <span class="eyebrow">On this page</span>
-    <a href="#launch">Launching</a><a href="#split">The split</a><a href="#vault">Vault</a><a href="#dip">Dip buyback</a><a href="#tp">Take profit</a><a href="#redeem">Redeem</a><a href="#lp">Auto-LP</a><a href="#rewards">Holder rewards</a><a href="#trading">Trading</a><a href="#rules">Rules in the contracts</a><a href="#faq">FAQ</a><a href="#contracts">Contracts</a>
+    <a href="#launch">Launching</a><a href="#split">The split</a><a href="#vault">Vault</a><a href="#dip">Dip buyback</a><a href="#tp">Take profit</a><a href="#redeem">Redeem</a><a href="#lp">Auto-LP</a><a href="#burn">Auto-burn</a><a href="#protection">Protection</a><a href="#rewards">Holder rewards</a><a href="#trading">Trading</a><a href="#rules">Rules in the contracts</a><a href="#faq">FAQ</a><a href="#contracts">Contracts</a>
   </nav>
   <article class="prose">
     <header>
@@ -23,7 +23,8 @@
         <li><b>Name it.</b> Name, ticker and logo. Name and ticker are written into the coin and can't change.</li>
         <li><b>Pick the backing token.</b> ETH, USDC, WBTC, staked ETH, tokenized gold, or any token with a Uniswap pool against ETH or USDC holding at least $10,000 on that side. The form checks it on Ethereum as you pick.</li>
         <li><b>Set the tax,</b> 1% to 10% in steps of 0.5%, the same on buys and sells.</li>
-        <li><b>Split it:</b> everything above the platform's 1% goes to the creator, holder rewards, the vault, the buyback fund and auto-LP, in steps of 0.05%.</li>
+        <li><b>Split it:</b> everything above the platform's 1% goes to the creator, holder rewards, the vault, the buyback fund, auto-burn and auto-LP, in steps of 0.05%.</li>
+        <li><b>Pick protections:</b> anti-snipe, anti-MEV, a max per trade, and vesting for your own share.</li>
         <li><b>Set the options:</b> take-profit target, redeem on or off, and what holders are paid in.</li>
         <li><b>Launch,</b> with an optional first buy in the same transaction.</li>
       </ol>
@@ -38,6 +39,7 @@
         <tr><td>Holder rewards</td><td>Spread across everyone holding the coin, by balance.</td></tr>
         <tr><td>Vault</td><td>Held in the backing token. Backs every coin and feeds take-profit and redeem.</td></tr>
         <tr><td>Buyback fund</td><td>Waits for a 20% dip, then buys the coin and burns it.</td></tr>
+        <tr><td>Auto-burn</td><td>Buys the coin right after each trade and burns it.</td></tr>
         <tr><td>Auto-LP</td><td>Added to the coin's pool as liquidity that can never be removed.</td></tr>
       </tbody></table></div>
       <div class="example"><span class="eyebrow">Example</span>A PEPE strategy with a 5% tax: 1% to the platform, and the creator splits the other 4% into 0.6% for themselves, 2% vault and 1.4% buyback. On $10,000 of trading: $100 to the platform, $60 to the creator, $200 of PEPE into the vault, $140 into the buyback fund.</div>
@@ -77,6 +79,24 @@
       <div class="example"><span class="eyebrow">Example</span>A coin with 0.3% auto-LP and $100,000 of daily volume adds about $300 of locked liquidity a day, roughly $9,000 a month.</div>
     </section>
 
+    <section id="burn">
+      <h2>Auto-burn</h2>
+      <p>The auto-burn share buys the coin from its own pool right after each trade and burns what it buys. Unlike the dip buyback, it doesn't wait for a signal: supply shrinks a little with every trade, up or down.</p>
+      <p>The two work well together: auto-burn for steady pressure, the dip buyback for the moments that matter.</p>
+    </section>
+
+    <section id="protection">
+      <h2>Protection</h2>
+      <p>Chosen at launch, shown on the coin page, and fixed after that.</p>
+      <div class="dtable-wrap"><table class="dtable"><thead><tr><th>Setting</th><th>What it does</th></tr></thead><tbody>
+        <tr><td>Anti-snipe</td><td>Buys pay a heavy tax at open (50%, 90% or 99%) that falls in a straight line to the coin's normal tax over 30 seconds to 5 minutes. Sells are never taxed extra. What snipers pay goes through the coin's split.</td></tr>
+        <tr><td>Anti-MEV</td><td>One swap per wallet per block in the coin's pool. A sandwich or a buy-and-sell in the same block reverts.</td></tr>
+        <tr><td>Max per trade</td><td>No single trade can move more than 0.5%, 1% or 2.5% of the supply.</td></tr>
+        <tr><td>Creator vesting</td><td>The creator's share unlocks linearly over 7 days to 1 year from launch, instead of being claimable right away.</td></tr>
+        <tr><td>Dynamic tax</td><td>Small trades pay the coin's tax. Trades big enough to move the price about 5% pay up to a higher cap the creator sets, never more than 10%. The extra is split like the rest of the tax.</td></tr>
+      </tbody></table></div>
+    </section>
+
     <section id="rewards">
       <h2>Holder rewards</h2>
       <p>The holder share of each trade is spread across every wallet holding the coin, in proportion to its balance, the moment the fee arrives. Pools and Backstop's own contracts don't count as holders. Rewards already earned stay claimable after you sell.</p>
@@ -94,7 +114,7 @@
       <h3>The first minute</h3>
       <ul>
         <li><b>Launch block:</b> only the creator can buy.</li>
-        <li><b>First minute:</b> the tax starts at 99% and falls to the coin's own tax. What snipers pay goes through the same split, mostly into the vault and the buyback fund.</li>
+        <li><b>Opening window:</b> if the creator turned on anti-snipe, buys pay a high tax that falls to the coin's own tax over the window they picked. What snipers pay goes through the same split.</li>
       </ul>
     </section>
 
@@ -102,7 +122,8 @@
       <h2>Rules in the contracts</h2>
       <ul>
         <li>The tax, its split and every strategy option are set at launch. No function changes them.</li>
-        <li>Liquidity added by auto-LP can't be removed.</li>
+        <li>Liquidity added by auto-LP can't be removed. Coins bought by auto-burn are burned.</li>
+        <li>Total tax, dynamic or not, never goes above 10% after the opening window.</li>
         <li>Nothing can withdraw from a vault or a buyback fund. Vault assets leave only through take-profit or redeem; fund assets leave only as buybacks.</li>
         <li>Coins bought back are burned, never kept.</li>
         <li>Coins have no owner and no mint function. Supply only goes down.</li>

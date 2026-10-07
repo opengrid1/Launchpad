@@ -59,9 +59,18 @@
     ['t', 'T', 'Take profit', x => x.tp > 0, 'When the vault is up by its target, the gain buys back and burns the coin'],
     ['r', 'R', 'Redeem', x => x.redeem, 'Holders can burn coins for their share of the vault'],
     ['h', 'H', 'Holder rewards', x => x.split.holders > 0, 'Holders earn a share of every trade'],
+    ['b', 'B', 'Auto-burn', x => x.split.burn > 0, 'Part of every trade buys the coin right after the trade and burns it'],
     ['l', 'L', 'Auto-LP', x => x.split.lp > 0, 'Part of every trade is added to the pool as liquidity that can never be removed'],
   ];
   const stratBadges = x => `<span class="strat">${STRATS.map(([k, l, name, on, d]) => `<i class="${k}${on(x) ? ' on' : ''}" title="${esc(name + (on(x) ? '' : ' (off)') + ': ' + d)}">${l}</i>`).join('')}</span>`;
+  // the protections a coin launched with, as short labels
+  const protections = x => { const p = x.prot || {}; const out = [];
+    if (p.snipeBps) out.push(['Anti-snipe', `${p.snipeBps / 100}% buy tax at open, down to the normal tax over ${p.snipeSecs >= 60 ? p.snipeSecs / 60 + ' min' : p.snipeSecs + 's'}`]);
+    if (p.mev) out.push(['Anti-MEV', 'One swap per wallet per block: no same-block sandwich or flip']);
+    if (p.maxTx) out.push([`Max tx ${p.maxTx / 100}%`, `No single trade can move more than ${p.maxTx / 100}% of the supply`]);
+    if (p.dynMax) out.push([`Dynamic tax ${x.tax / 100}–${p.dynMax / 100}%`, 'Bigger trades, measured against pool depth, pay more tax']);
+    if (p.vestDays) out.push([`Creator vests ${p.vestDays >= 365 ? p.vestDays / 365 + 'y' : p.vestDays + 'd'}`, `The creator's share unlocks gradually over ${p.vestDays} days from launch`]);
+    return out; };
   const payoutLabel = x => !x.split.holders ? 'None' : x.rewards === 'eth' ? 'ETH' : x.rewards === 'basket' ? x.basket.map(b => b.symbol).join(' + ') : x.pairSym;
 
   // ------------------------------------------------------------ toasts, dialogs, menus
@@ -128,5 +137,5 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
-  window.UI = { $, $$, esc, ic, DEFAULT_LOGO, usd, num, pct, bps, delta, ago, short, tokImg, coinImg, pairGlyph, coinHref, txLink, addrLink, isAdmin, STRATS, stratBadges, payoutLabel, toast, dialog, menu, copy, currentTheme, openSearch };
+  window.UI = { $, $$, esc, ic, DEFAULT_LOGO, usd, num, pct, bps, delta, ago, short, tokImg, coinImg, pairGlyph, coinHref, txLink, addrLink, isAdmin, STRATS, stratBadges, payoutLabel, protections, toast, dialog, menu, copy, currentTheme, openSearch };
 })();

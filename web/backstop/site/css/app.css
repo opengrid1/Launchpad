@@ -11,6 +11,7 @@
   --holders: #6d5bd0; --holders-soft: #ece9fb;
   --creator: #475569; --platform: #c3ccd6;
   --lp: #2f6fde; --lp-soft: #e5eefd;
+  --burn: #b42318; --burn-soft: #fde7e4;
   --up: #15803d; --up-soft: #e3f4e8; --down: #d92d20; --down-soft: #fde8e6;
   --warn: #a15c00; --warn-soft: #fff3df;
   --btn: #0b1220; --btn-ink: #ffffff; --btn-hover: #1d2a3e;
@@ -32,6 +33,7 @@
     --holders: #a597ff; --holders-soft: #221d44;
     --creator: #94a3b8; --platform: #3a4757;
     --lp: #6aa1ff; --lp-soft: #14233f;
+    --burn: #ff7b6b; --burn-soft: #3a1512;
     --up: #3ccf7a; --up-soft: #0d2a1a; --down: #ff6b5e; --down-soft: #351310;
     --warn: #f5b142; --warn-soft: #2e2210;
     --btn: #e8edf4; --btn-ink: #0a0f17; --btn-hover: #ffffff;
@@ -48,6 +50,7 @@
   --holders: #a597ff; --holders-soft: #221d44;
   --creator: #94a3b8; --platform: #3a4757;
   --lp: #6aa1ff; --lp-soft: #14233f;
+  --burn: #ff7b6b; --burn-soft: #3a1512;
   --up: #3ccf7a; --up-soft: #0d2a1a; --down: #ff6b5e; --down-soft: #351310;
   --warn: #f5b142; --warn-soft: #2e2210;
   --btn: #e8edf4; --btn-ink: #0a0f17; --btn-hover: #ffffff;
@@ -181,13 +184,14 @@ a.addr:hover, .link:hover { text-decoration: underline; text-underline-offset: 3
 .strat i { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 4px; font: 700 10.5px/1 var(--f-mono); font-style: normal; color: var(--faint); border: 1px solid var(--line); background: transparent; }
 .strat i.on.v, .strat i.on.r { background: var(--vault-soft); border-color: var(--vault-line); color: var(--vault-strong); }
 .strat i.on.d, .strat i.on.t { background: var(--bb-soft); border-color: var(--bb-line); color: var(--bb-strong); }
+.strat i.on.b { background: var(--burn-soft); border-color: color-mix(in srgb, var(--burn) 35%, transparent); color: var(--burn); }
 .strat i.on.l { background: var(--lp-soft); border-color: color-mix(in srgb, var(--lp) 35%, transparent); color: var(--lp); }
 .strat i.on.e, .strat i.on.h { background: var(--holders-soft); border-color: color-mix(in srgb, var(--holders) 35%, transparent); color: var(--holders); }
 
 /* fee split bar */
 .split { display: flex; height: 10px; border-radius: 3px; overflow: hidden; gap: 2px; }
 .split i { display: block; min-width: 3px; }
-.s-creator { background: var(--creator); } .s-holders { background: var(--holders); } .s-vault { background: var(--vault); } .s-bb { background: var(--bb); } .s-lp { background: var(--lp); } .s-platform { background: var(--platform); }
+.s-creator { background: var(--creator); } .s-holders { background: var(--holders); } .s-vault { background: var(--vault); } .s-bb { background: var(--bb); } .s-lp { background: var(--lp); } .s-burn { background: var(--burn); } .s-platform { background: var(--platform); }
 .split-key { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 14px; margin-top: 12px; font-size: 12.5px; }
 .split-key span { display: flex; align-items: center; gap: 7px; color: var(--muted); }
 .split-key span b { margin-left: auto; color: var(--ink); font: 500 12.5px var(--f-mono); }
@@ -402,6 +406,21 @@ table.list { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .progress.mini { display: inline-block; width: 90px; height: 5px; margin-top: 6px; }
 .progress.mini i { display: block; }
 .srow .btn { height: 32px; }
+
+/* protections */
+.prot { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px 14px; border-top: 1px solid var(--line); }
+.prot .eyebrow { width: 100%; margin-bottom: 2px; }
+.pchip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; border: 1px solid var(--line); background: var(--surface-2); font-size: 12px; font-weight: 500; color: var(--ink-2); cursor: help; }
+.pchip svg { width: 12px; height: 12px; color: var(--vault); }
+.tk-warn { font-size: 12px; color: var(--down); }
+.opt-row .opt-ctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+.opt-row .opt-ctl .seg { margin-top: 0; }
+.opt-row .opt-ctl > span { font-size: 12px; color: var(--muted); }
+.tax-dyn { display: flex; align-items: center; gap: 12px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.tax-dyn > div:not(.stepper) { flex: 1; min-width: 0; }
+.tax-dyn b { font-weight: 600; font-size: 13.5px; }
+.tax-dyn small { display: block; font-size: 12px; color: var(--muted); }
+.tax-dyn .stepper { width: 120px; flex-shrink: 0; }
 
 /* order ticket */
 .ticket { overflow: hidden; }
