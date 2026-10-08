@@ -24,7 +24,8 @@ const config: HardhatUserConfig = {
         ? { hardfork: "cancun", chains: { 1: { hardforkHistory: { cancun: 0 } } }, forking: { url: RPC, ...(process.env.FORK_BLOCK ? { blockNumber: Number(process.env.FORK_BLOCK) } : {}) }, chainId: 1 }
         : {}),
     },
-    mainnet: { url: RPC, chainId: 1, accounts: PK ? [PK] : [] },
+    // GAS_PRICE_GWEI pins a fixed price; otherwise the default tip (1 gwei) can cost several times the base fee
+    mainnet: { url: RPC, chainId: 1, accounts: PK ? [PK] : [], ...(process.env.GAS_PRICE_GWEI ? { gasPrice: Math.round(Number(process.env.GAS_PRICE_GWEI) * 1e9) } : {}) },
   },
   etherscan: { apiKey: process.env.EXPLORER_API_KEY ?? "" },
   mocha: { timeout: 1_200_000 },
