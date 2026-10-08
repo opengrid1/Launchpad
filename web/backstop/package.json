@@ -3,8 +3,7 @@
   "private": true,
   "description": "Etherhook site: strategy coins on Ethereum. Static pages wrapped in one shell, plus the wallet bundle",
   "scripts": {
-    "bundle": "esbuild src/wallet.js --bundle --minify --format=iife --target=es2020 --outfile=site/js/wallet.js",
-    "demo": "python3 gen_demo.py",
+    "bundle": "esbuild src/index.js --bundle --minify --format=iife --target=es2020 --outfile=site/js/wallet.js",
     "build": "npm run bundle && python3 build.py preview",
     "serve": "python3 serve.py 8795"
   },

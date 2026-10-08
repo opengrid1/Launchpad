@@ -10,7 +10,7 @@
     const { esc, usd, delta, pairGlyph, tokImg, short, ago, ic } = U();
     return `<nav class="crumbs"><a href="/">Explore</a><span>/</span><span>${esc(x.name)}</span></nav>
     <div class="coin-head">${pairGlyph(x, 'lg')}
-      <div class="coin-title"><h1>${esc(x.name)} <span class="sym">$${esc(x.symbol)}</span>${x.demo ? '<span class="tag sample">Sample</span>' : ''}</h1>
+      <div class="coin-title"><h1>${esc(x.name)} <span class="sym">$${esc(x.symbol)}</span></h1>
         <div class="coin-meta"><span class="pairwith">${tokImg({ logo: x.pairLogo })}Backed by <b>${esc(x.pairSym)}</b></span><span class="tag">Tax ${U().bps(x.tax)}</span><span>${ago(x.createdAt)} old</span>
         <button data-copy="${x.addr}" title="Copy contract address">${ic('copy')}<span class="mono">${short(x.addr)}</span></button></div></div>
       <div class="coin-price"><b>${usd(x.px)}</b><span>${delta(x.c24)} · ${usd(x.mc)} mcap</span></div>
@@ -47,11 +47,16 @@
     return `<section class="panel strat-panel"><div class="panel-h"><h2>Strategy</h2><a class="r link" href="/docs#split" style="font-size:13px">How it works</a></div><div class="slist">${rows.join('')}</div>${prots.length ? `<div class="prot"><span class="eyebrow">Protection</span>${prots.map(([l, d]) => `<span class="pchip" title="${esc(d)}">${U().ic('shield')}${esc(l)}</span>`).join('')}</div>` : ''}</section>`;
   }
   function openRedeem() {
-    const { usd, esc, dialog, $ } = U();
-    const ov = dialog('Redeem at backing', `<div class="panel-b redeem-box"><div class="field"><label for="rdIn">Coins to burn</label><div class="input-wrap"><input class="input num with-post" id="rdIn" inputmode="decimal" value="1000000"><span class="post">$${esc(x.symbol)}</span></div></div>
-      <div class="redeem-out"><span>You receive</span><b id="rdOut"></b></div><button class="btn btn-ink btn-block" disabled>Redeem</button>
-      <p class="faint" style="font-size:12.5px">Opens when the contracts are live.</p></div>`);
-    const rd = $('#rdIn', ov); const go = () => { const n = Number(rd.value) || 0; $('#rdOut', ov).textContent = `${pairAmt(n * x.vault.perCoinPair)} · ${usd(n * x.vault.perCoin)}`; }; rd.oninput = go; go();
+    const { usd, esc, dialog, $, toast } = U();
+    const ov = dialog('Redeem at backing', `<div class="panel-b redeem-box"><div class="field"><label for="rdIn">Coins to burn</label><div class="input-wrap"><input class="input num with-post" id="rdIn" inputmode="decimal" placeholder="0"><span class="post">$${esc(x.symbol)}</span></div><small class="faint" id="rdBal"></small></div>
+      <div class="redeem-out"><span>You receive</span><b id="rdOut">—</b></div><button class="btn btn-ink btn-block" id="rdGo">Redeem</button></div>`);
+    const rd = $('#rdIn', ov), go = $('#rdGo', ov); let bal = 0n; const w = window.bsWallet;
+    const wei = () => { try { return EH.parseUnits(rd.value || '0', 18); } catch { return 0n; } };
+    const quote = async () => { const n = wei(); if (!n) { $('#rdOut', ov).textContent = '—'; return; } const out = await EH.redeemQuote(x.addr, n); const amt = Number(out) / 10 ** x.pairDec; $('#rdOut', ov).textContent = `${pairAmt(amt)} · ${usd(amt * x.pairUsd)}`; };
+    rd.oninput = () => { rd.value = rd.value.replace(/[^0-9.]/g, ''); quote(); };
+    if (w && w.connected) EH.balances(x.addr, w.address).then(b => { bal = b.coin; $('#rdBal', ov).innerHTML = `Balance ${U().num(Number(bal) / 1e18, 0)} · <button class="link" id="rdMax">Max</button>`; $('#rdMax', ov).onclick = () => { rd.value = EH.formatUnits(bal, 18); quote(); }; });
+    go.onclick = async () => { if (!(w && w.connected)) { w.open(); return; } const n = wei(); if (!n) return; go.disabled = true; go.textContent = 'Confirm in your wallet…';
+      try { const out = await EH.redeemQuote(x.addr, n); await EH.redeem(x.addr, n, out * 99n / 100n); toast('Redeemed'); ov.close(); refresh(); } catch (e) { toast(e.message, { err: true }); go.disabled = false; go.textContent = 'Redeem'; } };
   }
 
   // ------------------------------------------------------------ activity
@@ -62,9 +67,11 @@
   function paintActivity() {
     const { usd, num, ago, short, esc } = U(); const box = document.getElementById('act');
     U().$$('#actTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
-    if (tab === 'trades') box.innerHTML = `<table class="list"><thead><tr><th>Age</th><th class="l">Side</th><th>Value</th><th>$${esc(x.symbol)}</th><th>Wallet</th></tr></thead><tbody>${x.trades.slice(0, 15).map(t => `<tr><td class="l"><span class="num muted">${ago(t.ts)}</span></td><td class="l"><span class="ev ${t.side}"><i></i>${t.side === 'buy' ? 'Buy' : 'Sell'}</span></td><td><span class="num">${usd(t.usd)}</span></td><td><span class="num">${num(t.coins, 0)}</span></td><td><span class="addr muted">${short(t.who)}</span></td></tr>`).join('')}</tbody></table>`;
+    if (tab === 'trades' && !x.trades.length) box.innerHTML = '<div class="empty"><p>No trades yet.</p></div>';
+    else if (tab === 'trades') box.innerHTML = `<table class="list"><thead><tr><th>Age</th><th class="l">Side</th><th>Value</th><th>$${esc(x.symbol)}</th><th>Wallet</th></tr></thead><tbody>${x.trades.slice(0, 15).map(t => `<tr><td class="l"><span class="num muted">${ago(t.ts)}</span></td><td class="l"><span class="ev ${t.side}"><i></i>${t.side === 'buy' ? 'Buy' : 'Sell'}</span></td><td><span class="num">${usd(t.usd)}</span></td><td><span class="num">${num(t.coins, 0)}</span></td><td><span class="addr muted">${t.who ? short(t.who) : '…'}</span></td></tr>`).join('')}</tbody></table>`;
     else if (tab === 'events') box.innerHTML = x.events.length ? `<table class="list"><thead><tr><th>Age</th><th class="l">What</th><th>Spent</th><th>Burned</th></tr></thead><tbody>${x.events.map(e => `<tr><td class="l"><span class="num muted">${ago(e.ts)}</span></td><td class="l"><span class="ev ${e.kind}"><i></i>${e.kind === 'dip' ? 'Dip buyback' : 'Take profit'}</span></td><td><span class="num">${usd(e.usd)}</span></td><td><span class="num">${num(e.burned, 0)}</span></td></tr>`).join('')}</tbody></table>`
       : `<div class="empty"><p>No buybacks or burns yet.${x.fund ? ` The next one fires at ${usd(x.fund.trigger)}.` : ''}</p></div>`;
+    else if (!x.top.length) box.innerHTML = '<div class="empty"><p>Holder list loads from the explorer and can take a minute after launch.</p></div>';
     else { const max = x.top[0] ? x.top[0].bal : 1; box.innerHTML = `<table class="list"><thead><tr><th>#</th><th class="l">Wallet</th><th>Balance</th><th class="l">Share of supply</th></tr></thead><tbody>${x.top.map((h, i) => `<tr><td class="l"><span class="num faint">${i + 1}</span></td><td class="l"><span class="addr">${short(h.addr)}</span>${h.addr === x.creator ? ' <span class="tag">Creator</span>' : ''}</td><td><span class="num">${num(h.bal, 0)}</span></td><td class="l"><span class="hbar"><i style="width:${(h.bal / max * 100).toFixed(1)}%"></i></span><span class="num">${(h.bal / BS.SUPPLY * 100).toFixed(2)}%</span></td></tr>`).join('')}</tbody></table>`; }
   }
 
@@ -73,21 +80,27 @@
   function tradePanel() {
     return `<section class="panel ticket"><div class="tk-tabs" role="tablist"><button data-side="buy">Buy</button><button data-side="sell">Sell</button><button type="button" class="tk-slip" id="slipBtn" title="Slippage tolerance"></button></div><div id="tradeBody"></div></section>`;
   }
-  const sampleBal = () => { const r = BS.samplePortfolio().rows.find(r => r.x.addr === x.addr); return r ? r.bal : 0; };
+  // pay with ETH (routed to the backing token) or with the backing token itself
+  let pay = null, bal = null, qn = 0;
+  const canEth = () => x.pair === BS.weth || x.ethRoute !== false;
+  async function loadBal() { const w = window.bsWallet; bal = w && w.connected ? await EH.balances(x.addr, w.address).catch(() => null) : null; }
   function paintTrade() {
-    const { esc, usd, num, tokImg, coinImg, $, $$, bps } = U(); const body = document.getElementById('tradeBody'); if (!body) return;
+    const { esc, usd, num, tokImg, coinImg, $, $$, bps, toast } = U(); const body = document.getElementById('tradeBody'); if (!body) return;
+    if (pay == null) pay = canEth() ? 'eth' : 'pair';
     $$('.tk-tabs [data-side]').forEach(b => { b.classList.toggle('on', b.dataset.side === side); b.setAttribute('aria-selected', b.dataset.side === side); });
     $('#slipBtn').innerHTML = `Slippage <b>${slip}%</b>`;
-    const buy = side === 'buy'; const eth = { logo: BS.known(BS.weth).logo }; const w = window.bsWallet; const connected = w && w.connected;
-    const bal = buy ? null : sampleBal();
-    const unit = buy ? `${tokImg(eth, 'ti')}ETH` : `${coinImg(x, 'ti')}${esc(x.symbol)}`;
-    const quick = buy ? [['0.01', '0.01'], ['0.05', '0.05'], ['0.1', '0.1'], ['0.5', '0.5']] : [['25', '25%'], ['50', '50%'], ['75', '75%'], ['100', 'Max']];
-    const route = x.pair === BS.weth ? ['ETH', x.symbol] : buy ? ['ETH', x.pairSym, x.symbol] : [x.symbol, x.pairSym, 'ETH'];
+    const buy = side === 'buy'; const eth = pay === 'eth' || x.pair === BS.weth; const w = window.bsWallet; const connected = w && w.connected;
+    const payTok = eth ? { logo: (BS.known(BS.weth) || {}).logo, sym: 'ETH', dec: 18 } : { logo: x.pairLogo, sym: x.pairSym, dec: x.pairDec };
+    const balIn = !bal ? null : buy ? (eth ? bal.eth : bal.pair) : bal.coin; const decIn = buy ? payTok.dec : 18;
+    const unit = buy ? `${tokImg({ logo: payTok.logo }, 'ti')}${esc(payTok.sym)}` : `${coinImg(x, 'ti')}${esc(x.symbol)}`;
+    const quick = buy ? (eth ? [['0.01', '0.01'], ['0.05', '0.05'], ['0.1', '0.1'], ['0.5', '0.5']] : [['p25', '25%'], ['p50', '50%'], ['p75', '75%'], ['p100', 'Max']]) : [['p25', '25%'], ['p50', '50%'], ['p75', '75%'], ['p100', 'Max']];
+    const route = x.pair === BS.weth ? ['ETH', x.symbol] : eth ? (buy ? ['ETH', x.pairSym, x.symbol] : [x.symbol, x.pairSym, 'ETH']) : (buy ? [x.pairSym, x.symbol] : [x.symbol, x.pairSym]);
     const sp = x.split; const parts = [['vault', 'Vault', sp.vault], ['bb', 'Buyback fund', sp.buyback], ['burn', 'Auto-burn', sp.burn || 0], ['lp', 'Auto-LP', sp.lp || 0], ['holders', 'Holders', sp.holders], ['creator', 'Creator', sp.creator], ['platform', 'Platform', sp.platform]].filter(p => p[2] > 0);
-    body.innerHTML = `
+    const payPick = x.pair === BS.weth ? '' : `<div class="seg" id="paySeg" style="margin-bottom:10px">${[['eth', 'ETH'], ['pair', x.pairSym]].map(([k, l]) => `<button type="button" data-pay="${k}" class="${pay === k ? 'on' : ''}" ${k === 'eth' && !canEth() ? 'disabled title="No pool to route ETH into this token"' : ''}>${buy ? 'Pay' : 'Get'} ${esc(l)}</button>`).join('')}</div>`;
+    body.innerHTML = `${payPick}
       <div class="tk-amt">
-        <div class="tk-lbl"><span>${buy ? 'Spend' : 'Sell'}</span>${buy ? '' : `<span>Balance <b class="mono">${num(bal, 0)}</b> <span class="faint">sample</span></span>`}</div>
-        <div class="tk-in"><input class="num" id="amt" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Amount" value="${buy ? '0.1' : Math.round(bal / 2)}"><span class="tk-unit">${unit}</span></div>
+        <div class="tk-lbl"><span>${buy ? 'Spend' : 'Sell'}</span>${balIn != null ? `<span>Balance <b class="mono">${num(Number(balIn) / 10 ** decIn, buy && eth ? 4 : 0)}</b></span>` : ''}</div>
+        <div class="tk-in"><input class="num" id="amt" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Amount" value=""><span class="tk-unit">${unit}</span></div>
         <div class="tk-sub"><span id="inUsd" class="mono"></span><span class="tk-quick">${quick.map(([v, l]) => `<button type="button" data-q="${v}">${l}</button>`).join('')}</span></div>
       </div>
       <div class="tk-perf" aria-hidden="true"></div>
@@ -102,26 +115,45 @@
       <div class="tk-perf" aria-hidden="true"></div>
       <div class="tk-go">
         <div class="tk-warn" id="maxWarn"></div>
-        <button class="btn btn-ink btn-lg btn-block" id="tradeGo" ${connected ? 'disabled' : ''}>${connected ? 'Trading opens at launch' : 'Connect wallet to ' + (buy ? 'buy' : 'sell')}</button>
+        <button class="btn btn-ink btn-lg btn-block" id="tradeGo">${connected ? (buy ? 'Buy' : 'Sell') + ' ' + esc(x.symbol) : 'Connect wallet to ' + (buy ? 'buy' : 'sell')}</button>
         <div class="tk-route">${route.map(r => `<span>${esc(r)}</span>`).join('<i>→</i>')}</div>
       </div>`;
-    const inp = $('#amt');
-    const q = async () => { const e = await BS.ethUsd(); const v = Number(inp.value) || 0;
-      const inUsd = buy ? v * e : v * x.px; const impact = Math.min(0.5, inUsd / (x.liq / 2)); const p = x.prot || {}; const r = p.dynMax ? Math.min(1, inUsd / (x.liq * 0.05)) : 0; const taxBps = x.tax + (p.dynMax ? (p.dynMax - x.tax) * r : 0); const feeUsd = inUsd * taxBps / 1e4; const outUsd = (inUsd - feeUsd) * (1 - impact);
-      const out = buy ? outUsd / x.px : outUsd / e; const outUnit = buy ? x.symbol : 'ETH';
+    const inp = $('#amt'); let last = null;
+    const amountWei = () => { try { return EH.parseUnits(inp.value || '0', decIn); } catch { return 0n; } };
+    const q = async () => {
+      const my = ++qn; const v = amountWei(); const go = $('#tradeGo'); last = null;
+      const e = await BS.ethUsd(); const unitUsd = buy ? (eth ? e : x.pairUsd) : x.px; const inUsd = Number(v) / 10 ** decIn * unitUsd;
       $('#inUsd').textContent = v ? '≈ ' + usd(inUsd) : '';
-      $('#out').textContent = v ? `${num(out, buy ? 0 : 4)} ${outUnit}` : '—';
-      $('#minOut').textContent = v ? `${num(out * (1 - slip / 100), buy ? 0 : 4)} ${outUnit}` : '—';
-      const im = $('#imp'); im.textContent = v ? (impact * 100).toFixed(2) + '%' : '—'; im.className = impact > 0.05 ? 'down' : '';
-      $('#fee').textContent = v ? usd(feeUsd) : '—'; $('#taxLbl').textContent = `Tax, ${(taxBps / 100).toFixed(2).replace(/0$/, '')}%${p.dynMax ? ' (dynamic)' : ''}`;
-      const coins = buy ? out : v; const over = p.maxTx && coins > BS.SUPPLY * p.maxTx / 1e4; const go = $('#tradeGo'); const warn = $('#maxWarn');
-      warn.textContent = over ? `Over the ${p.maxTx / 100}% max per trade (${num(BS.SUPPLY * p.maxTx / 1e4, 0)} ${x.symbol}). Split it into smaller trades.` : ''; if (over) go.disabled = true; else if (!(window.bsWallet && bsWallet.connected)) go.disabled = false;
-      const cents = n => n >= 1 ? usd(n) : '$' + n.toFixed(2); const extra = taxBps - x.tax; // a dynamic surcharge is split like the rest
-      $$('[data-part]', body).forEach(b => { const part = Number(b.dataset.part); const share = b.dataset.plat ? part : part + extra * part / Math.max(1, x.tax - 100); b.textContent = v ? cents(inUsd * share / 1e4) : '—'; }); };
-    inp.oninput = () => { inp.value = inp.value.replace(/[^0-9.]/g, ''); q(); };
-    $$('[data-q]', body).forEach(b => b.onclick = () => { inp.value = buy ? b.dataset.q : String(Math.floor(bal * Number(b.dataset.q) / 100)); q(); });
-    $('#tradeGo').onclick = () => { if (!(window.bsWallet && bsWallet.connected)) bsWallet.open(); };
-    q();
+      if (!v) { ['#out', '#minOut', '#imp', '#fee'].forEach(s => $(s).textContent = '—'); $$('[data-part]', body).forEach(b => b.textContent = '—'); return; }
+      try {
+        const r = buy ? await EH.quoteBuy(x.addr, v, eth) : await EH.quoteSell(x.addr, v, eth); if (my !== qn) return; last = r;
+        const outDec = buy ? 18 : eth ? 18 : x.pairDec; const out = Number(r.out) / 10 ** outDec; const outUnit = buy ? x.symbol : eth ? 'ETH' : x.pairSym;
+        const outUsd = buy ? out * x.px : out * (eth ? e : x.pairUsd); const impact = Math.max(0, 1 - outUsd / Math.max(1e-12, inUsd * (1 - r.taxBps / 1e4)));
+        $('#out').textContent = `${num(out, buy ? 0 : 6)} ${outUnit}`; $('#minOut').textContent = `${num(out * (1 - slip / 100), buy ? 0 : 6)} ${outUnit}`;
+        const im = $('#imp'); im.textContent = (impact * 100).toFixed(2) + '%'; im.className = impact > 0.05 ? 'down' : '';
+        const feeUsd = Number(r.fee) / 10 ** x.pairDec * x.pairUsd; $('#fee').textContent = usd(feeUsd); $('#taxLbl').textContent = `Tax, ${(r.taxBps / 100).toFixed(2).replace(/0$/, '').replace(/\.0$/, '')}%${r.taxBps > x.tax ? (x.prot && x.prot.snipeBps && Date.now() / 1000 - x.createdAt < x.prot.snipeSecs ? ' (anti-snipe)' : ' (dynamic)') : ''}`;
+        const cents = n => n >= 1 ? usd(n) : '$' + n.toFixed(2); const extra = r.taxBps - x.tax;
+        $$('[data-part]', body).forEach(b => { const part = Number(b.dataset.part); const share = b.dataset.plat ? part : part + extra * part / Math.max(1, x.tax - 100); b.textContent = cents(feeUsd * share / Math.max(1, r.taxBps)); });
+        const p = x.prot || {}; const coins = buy ? out : Number(v) / 1e18; const over = p.maxTx && coins > BS.SUPPLY * p.maxTx / 1e4;
+        $('#maxWarn').textContent = over ? `Over the ${p.maxTx / 100}% max per trade (${num(BS.SUPPLY * p.maxTx / 1e4, 0)} ${x.symbol}). Split it into smaller trades.` : balIn != null && v > balIn ? 'More than your balance.' : '';
+        go.disabled = !!over || (balIn != null && v > balIn);
+      } catch (err) { if (my !== qn) return; $('#out').textContent = '—'; $('#maxWarn').textContent = EH.errText(err); }
+    };
+    let tmr; inp.oninput = () => { inp.value = inp.value.replace(/[^0-9.]/g, ''); clearTimeout(tmr); tmr = setTimeout(q, 250); };
+    $$('[data-q]', body).forEach(b => b.onclick = () => { const k = b.dataset.q;
+      if (k[0] === 'p') { if (balIn == null) { if (w) w.open(); return; } let amt = balIn * BigInt(k.slice(1)) / 100n; if (buy && eth && k === 'p100') amt = amt > 3000000000000000n ? amt - 3000000000000000n : 0n; inp.value = EH.formatUnits(amt, decIn); }
+      else inp.value = k; q(); });
+    $$('[data-pay]', body).forEach(b => b.onclick = () => { if (b.disabled) return; pay = b.dataset.pay; paintTrade(); });
+    $('#tradeGo').onclick = async () => {
+      if (!(w && w.connected)) { w.open(); return; } const v = amountWei(); if (!v) { inp.focus(); return; }
+      const go = $('#tradeGo'); go.disabled = true; go.textContent = 'Confirm in your wallet…';
+      try {
+        const r = last || (buy ? await EH.quoteBuy(x.addr, v, eth) : await EH.quoteSell(x.addr, v, eth));
+        const min = r.out * BigInt(Math.round((100 - slip) * 100)) / 10000n;
+        if (buy) await EH.buy(x.addr, v, min, eth); else await EH.sell(x.addr, v, min, eth);
+        toast(`${buy ? 'Bought' : 'Sold'} ${x.symbol}`); inp.value = ''; refresh();
+      } catch (err) { toast(err.message, { err: true }); go.disabled = false; go.textContent = (buy ? 'Buy ' : 'Sell ') + x.symbol; }
+    };
   }
   function about() {
     const { esc, short, addrLink, ic } = U();
@@ -142,6 +174,8 @@
     U().$$('[data-copy]').forEach(b => b.onclick = () => U().copy(b.dataset.copy, 'Contract address'));
     const rb = $('#rdBtn'); if (rb) rb.onclick = openRedeem;
   }
-  window.addEventListener('DOMContentLoaded', () => BS.ready.then(() => { x = BS.token(addr); render(); }));
-  window.addEventListener('bs:wallet', () => { if (x) paintTrade(); });
+  async function refresh() { await BS.reload().catch(() => {}); x = BS.token(addr); if (!x) return; render(); }
+  async function prep() { if (!x) return; if (x.pair !== BS.weth) x.ethRoute = (await EH.hopsFor(x.pair).catch(() => null)) !== null; await loadBal(); }
+  window.addEventListener('DOMContentLoaded', () => BS.ready.then(async () => { x = BS.token(addr); await prep(); render(); if (x) EH.trades(x.addr).then(() => paintActivity()).catch(() => {}); }));
+  window.addEventListener('bs:wallet', async () => { if (x) { await loadBal(); paintTrade(); } });
 })();

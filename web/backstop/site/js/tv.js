@@ -1,35 +1,27 @@
 /* TradingView Advanced Charts on the coin page (library in /charting_library), the same setup as Inkypump.
-   Candles in USD or the backing token, as price or market cap. Burns show as marks on the bars, and the
+   Candles from the coin's on-chain swaps, in USD or the backing token, as price or market cap. Burns show as marks on the bars, and the
    next buyback line and the vault backing are drawn as fixed horizontal lines. */
 (function () {
   const RES = { '1': 60, '5': 300, '15': 900, '30': 1800, '60': 3600, '240': 14400, '1D': 86400, '1W': 604800 };
   const SUPPLY = 1e9;
-  let X = null, unit = 'USD', mode = 'price', minutes = null;
+  let X = null, unit = 'USD', mode = 'price';
   const symName = () => X ? `${X.symbol}/${X.pairSym}` : 'COIN/ETH';
   const factor = () => (mode === 'mcap' ? SUPPLY : 1) * (unit === 'USD' ? 1 : 1 / (X.pairUsd || 1));
   const scaleFor = () => { const p = (X ? X.px : 1e-9) * factor(); if (!(p > 0)) return 100; return Math.pow(10, Math.min(16, Math.max(2, Math.ceil(-Math.log10(p)) + 3))); };
 
-  // sample coins carry hourly closes; fill each hour with a seeded random walk between its two closes,
-  // so every resolution down to one minute has real-looking candles that end on the same prices
-  function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
-  function minuteSeries() {
-    if (minutes) return minutes;
-    const c = X.chart; const r = rng(parseInt(X.addr.slice(2, 10), 16)); const out = [];
-    for (let i = 0; i < c.px.length - 1; i++) {
-      const a = Math.log(c.px[i]), b = Math.log(c.px[i + 1]); const vol = c.vol[i + 1] || 0;
-      let w = 0; const steps = []; for (let k = 0; k < 60; k++) { w += (r() - 0.5) * 0.012; steps.push(w); }
-      const wN = steps[59]; const weights = steps.map(() => r() ** 3); const wSum = weights.reduce((s, v) => s + v, 0) || 1;
-      for (let k = 0; k < 60; k++) { const t = (k + 1) / 60; const lp = a + (b - a) * t + steps[k] - wN * t; out.push({ t: c.t0 + i * c.step + k * 60, p: Math.exp(lp), v: vol * weights[k] / wSum }); }
-    }
-    return (minutes = out);
-  }
+  // candles from the coin's own swaps (x.swaps: time, USD price after the swap, USD volume), continuous from launch
   function bars(sec) {
-    const m = minuteSeries(); const out = []; let cur = null; let prev = X.chart.px[0];
-    for (const x of m) { const t = Math.floor(x.t / sec) * sec;
-      if (!cur || cur.time !== t) { if (cur) out.push(cur); cur = { time: t, open: prev, high: Math.max(prev, x.p), low: Math.min(prev, x.p), close: x.p, volume: x.v }; }
-      else { cur.high = Math.max(cur.high, x.p); cur.low = Math.min(cur.low, x.p); cur.close = x.p; cur.volume += x.v; }
-      prev = x.p; }
-    if (cur) out.push(cur); return out;
+    const sw = X.swaps || []; const start = Math.floor(X.createdAt / sec) * sec; const end = Math.floor((window.EH ? EH.nowTs() : Date.now() / 1000) / sec) * sec;
+    const first = Math.max(start, end - 3000 * sec); // at most 3,000 candles
+    let last = (BS.cfg.startCap || 5000) / SUPPLY; let i = 0;
+    for (; i < sw.length && sw[i].t < first; i++) last = sw[i].p;
+    const out = [];
+    for (let t = first; t <= end; t += sec) {
+      const bar = { time: t, open: last, high: last, low: last, close: last, volume: 0 };
+      for (; i < sw.length && sw[i].t < t + sec; i++) { const p = sw[i].p; bar.high = Math.max(bar.high, p); bar.low = Math.min(bar.low, p); bar.close = p; bar.volume += sw[i].v; last = p; }
+      out.push(bar);
+    }
+    return out;
   }
 
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -94,6 +86,6 @@
     w.onChartReady(() => drawLines(w));
   }
   window.bsChart = {
-    init(container, x) { X = x; box = container; minutes = null; build(); window.addEventListener('bs:theme', () => { try { widget.remove(); } catch (e) {} shapes = []; build(); }); },
+    init(container, x) { X = x; box = container; build(); window.addEventListener('bs:theme', () => { try { widget.remove(); } catch (e) {} shapes = []; build(); }); },
   };
 })();

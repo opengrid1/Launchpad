@@ -23,7 +23,16 @@
     ['lp', 'Auto-LP', 'Locked liquidity in the pool', 's-lp'],
   ];
   const st = { name: '', sym: '', desc: '', logo: '', pair: null, check: null, tax: 200, mev: true, snipeBps: 9000, snipeSecs: 60, maxTx: 0, vest: 0, dyn: false, dynMax: 500, split: { ...PRESETS[0].split }, preset: 'strategy', tp: 50, redeem: false, payout: 'pair', basket: [], dev: 0 };
-  let gas = null, eth = null;
+  let gas = null, eth = null, busy = false;
+  // the logo is stored on-chain with the coin: shrink it until the data URI is a few KB
+  async function shrink(file) {
+    const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file); });
+    for (const [px, q] of [[112, .8], [96, .75], [80, .7], [64, .62], [48, .6]]) {
+      const c = document.createElement('canvas'); c.width = c.height = px; const g = c.getContext('2d'); const sz = Math.min(img.width, img.height);
+      g.drawImage(img, (img.width - sz) / 2, (img.height - sz) / 2, sz, sz, 0, 0, px, px);
+      const url = c.toDataURL('image/webp', q); if (url.length <= 4500 || px === 48) return url;
+    }
+  }
 
   const used = () => st.split.creator + st.split.holders + st.split.vault + st.split.buyback + st.split.lp + st.split.burn;
   const S = () => '$' + (st.sym || 'TICKER');
@@ -139,6 +148,7 @@
     const missing = [];
     if (!st.name.trim()) missing.push('a name'); if (!st.sym.trim()) missing.push('a ticker'); if (!st.pair || !st.check || !st.check.ok) missing.push('a backing token');
     if (left > 0) missing.push(`the last ${bps(left)} of the split`); if (s.holders && st.payout === 'basket' && !st.basket.length) missing.push('at least one reward token');
+    if (st.dev && st.check && st.check.ok && st.check.ethRoute === false) missing.push(`no first buy (${esc(st.pair.symbol)} has no pool to buy it with ETH)`);
     const gasEth = gas != null ? gas * (BS.cfg.launchGas || 4.2e6) / 1e9 : null;
     U().$('#sum').innerHTML = `
       <div class="head"><img class="av" src="${st.logo || U().DEFAULT_LOGO}" alt="" style="width:46px;height:46px">
@@ -147,9 +157,30 @@
       ${(() => { const pr = []; if (st.dyn) pr.push(`Dynamic tax up to ${bps(st.dynMax)}`); if (st.snipeBps) pr.push(`Anti-snipe ${st.snipeBps / 100}%`); if (st.mev) pr.push('Anti-MEV'); if (st.maxTx) pr.push(`Max ${st.maxTx / 100}% per trade`); if (st.vest && s.creator) pr.push(`Vesting ${st.vest === 365 ? '1 year' : st.vest + ' days'}`);
         return pr.length ? `<div class="prot" style="border-top:0;padding-top:0">${pr.map(t => `<span class="pchip">${ic('shield')}${esc(t)}</span>`).join('')}</div>` : ''; })()}
       <div class="go">
-        <button class="btn btn-ink btn-lg btn-block" type="button" disabled>Launch ${esc(S())}</button>
-        <p>${missing.length ? `Needs ${missing.join(', ')}.` : 'Ready. Launches open when the contracts go live.'}${gasEth != null ? ` Gas ≈ <b class="mono">${gasEth.toFixed(4)} ETH</b>${eth ? ` (${usd(gasEth * eth)})` : ''}.` : ''}</p>
+        <button class="btn btn-ink btn-lg btn-block" type="button" id="launchGo" ${missing.length || busy ? 'disabled' : ''}>${busy ? 'Launching…' : window.bsWallet && bsWallet.connected ? 'Launch ' + esc(S()) : 'Connect wallet to launch'}</button>
+        <p>${missing.length ? `Needs ${missing.join(', ')}.` : 'Ready.'}${gasEth != null ? ` Gas ≈ <b class="mono">${gasEth.toFixed(4)} ETH</b>${eth ? ` (${usd(gasEth * eth)})` : ''}.` : ''}</p>
       </div>`;
+    const go = U().$('#launchGo'); if (go) go.onclick = launch;
+  }
+  async function launch() {
+    const { $, toast } = U(); const w = window.bsWallet;
+    if (!(w && w.connected)) { w.open(); return; }
+    busy = true; paintSum();
+    const s = st.split; const vault = s.vault > 0;
+    const v = id => ($('#' + id) || {}).value || '';
+    try {
+      const r = await EH.launch({
+        name: st.name.trim(), symbol: st.sym.trim(), pair: st.pair.address,
+        meta: { description: st.desc.trim(), image: st.logo || '', website: v('lw').trim(), x: v('lx').trim(), telegram: v('lt').trim() },
+        rules: { taxBps: st.tax, dynMaxBps: st.dyn ? st.dynMax : 0, snipeBps: st.snipeBps, snipeSecs: st.snipeBps ? st.snipeSecs : 0, maxTxBps: st.maxTx, mev: st.mev },
+        split: { creator: s.creator, holders: s.holders, vault: s.vault, buyback: s.buyback, lp: s.lp, burn: s.burn },
+        options: { tpBps: vault ? st.tp * 100 : 0, redeemable: vault && st.redeem, vestSecs: s.creator ? st.vest * 86400 : 0, payout: s.holders ? { pair: 0, eth: 1, basket: 2 }[st.payout] : 0 },
+        basket: s.holders && st.payout === 'basket' ? st.basket : [],
+        devBuyWei: st.dev ? EH.parseUnits(String(st.dev), 18) : 0n,
+      });
+      toast(`${st.sym} launched`);
+      if (r.token) location.href = '/coin/' + r.token; else location.href = '/';
+    } catch (e) { toast(e.message, { err: true }); busy = false; paintSum(); }
   }
   function paintAll() { paintTax(); paintPresets(); paintProt(); paintAlloc(); paintOpts(); paintDev(); paintSum(); }
 
@@ -158,7 +189,8 @@
     $('#pairBtn').onclick = openPicker;
     const text = () => { st.name = $('#name').value; st.sym = $('#sym').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); st.desc = $('#desc').value; paintOpts(); paintDev(); paintSum(); };
     ['#name', '#sym', '#desc'].forEach(s => $(s).addEventListener('input', text));
-    $('#logo').onchange = e => { const file = e.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = () => { st.logo = r.result; $('#logoPv').innerHTML = `<img src="${r.result}" alt="">`; paintSum(); }; r.readAsDataURL(file); };
+    $('#logo').onchange = async e => { const file = e.target.files[0]; if (!file) return;
+      try { st.logo = await shrink(file); $('#logoPv').innerHTML = `<img src="${st.logo}" alt="">`; paintSum(); } catch { U().toast('That image could not be read', { err: true }); } };
     f.addEventListener('click', e => {
       const p = e.target.closest('[data-p]'); if (p) { const pr = PRESETS.find(x => x.k === p.dataset.p); st.preset = pr.k; st.split = scaled(pr.split, pool()); st.tp = pr.tp; st.redeem = pr.redeem; if (pr.payout) st.payout = pr.payout; paintAll(); return; }
       const sb = e.target.closest('[data-k]'); if (sb && !sb.disabled) { const k = sb.dataset.k, d = Number(sb.dataset.d) * STEP; const left = pool() - used(); if (d > 0 && left <= 0) return; st.split[k] = Math.max(0, st.split[k] + Math.min(d, left)); st.preset = null;
@@ -183,6 +215,7 @@
     paintAll(); setPair(k ? { ...k, address: q.toLowerCase() } : q && BS.isAddress(q) ? { address: q.toLowerCase(), symbol: U().short(q), name: 'Checking…' } : { ...BS.known(BS.weth), address: BS.weth });
     BS.ethUsd().then(v => { eth = v; paintDev(); paintSum(); });
     BS.gasGwei().then(g => { gas = g; paintSum(); }).catch(() => {});
+    window.addEventListener('bs:wallet', paintSum);
   }
   window.addEventListener('DOMContentLoaded', () => BS.ready.then(start));
 })();

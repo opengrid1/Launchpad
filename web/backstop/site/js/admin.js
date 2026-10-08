@@ -1,14 +1,13 @@
-/* Admin: backing tokens on the live oracle (list USDT, Ondo stocks with Chainlink feeds, the rest
-   at a set price, and price refreshes), plus the coin list. Only shown to the admin wallet. */
+/* Admin: launches and platform fees, backing tokens on the live oracle (USDT, Ondo stocks with
+   Chainlink feeds, the rest at a set price, price refreshes) and listing coins on the site.
+   Everything is read from the contracts. Only shown to the admin wallet. */
 (function () {
   const U = () => window.UI;
-  const KEY = 'bs:hidden';
   const MULTICALL = '0xcA11bde05977b3631167028862bE2a173976CA11';
   const ORACLE_ABI = ['function listed(address) view returns (bool listed, uint64 usdPrice8, address feed)', 'function sources(address) view returns (uint8 dex, address pool, address anchor, int24, uint64, bytes32, uint256, uint32, uint256, uint32)', 'function setListed(address token, bool on, uint64 usdPrice8, address feed)'];
   const MC_ABI = ['function aggregate3((address target,bool allowFailure,bytes callData)[]) view returns ((bool success,bytes returnData)[])'];
   const DRIFT = 0.02; // refresh a set price once it is 2% off
   const GAS_EACH = 52000;
-  const hidden = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
   let backing = null; let state = null; let busy = false; let filter = ''; let progress = ''; let loadErr = '';
 
   const usd8 = v => BigInt(Math.round(v * 1e8));
@@ -137,24 +136,36 @@
     </section>`;
   }
 
+  // live platform state: launches paused, fees owed per coin
+  let plat = null;
+  async function loadPlatform() { try { const [st, owed] = await Promise.all([EH.admin.state(), Promise.all(EH.allTokens().map(x => EH.admin.owedOf(x).catch(() => 0)))]); plat = { ...st, owed }; } catch { plat = null; } }
+  async function adminTx(fn, args, done) { const { toast } = U(); try { await EH.admin.call(fn, args); toast(done); } catch (e) { toast(e.message, { err: true }); paint(); return; } await BS.reload().catch(() => {}); await loadPlatform(); paint(); }
+
   function paint() {
     const { esc, usd, short, addrLink, pairGlyph, $, $$, isAdmin } = U(); const cfg = BS.cfg;
     if (!isAdmin()) { $('#adm').innerHTML = `<div class="empty"><h3>Admin only</h3><p>Connect the admin wallet <span class="mono">${esc(short(cfg.admin))}</span> to see this page.</p><button class="btn btn-ink" data-wallet-open>Connect</button></div>`; const b = $('[data-wallet-open]'); if (b) b.onclick = () => window.bsWallet && bsWallet.open(); return; }
-    const all = BS.tokens(); const h = hidden(); const total = all.reduce((s, x) => s + x.fees.platform, 0); const C = cfg.contracts || {};
+    const all = EH.allTokens(); const C = cfg.contracts || {}; const earned = all.reduce((s, x) => s + (x.fees.platform || 0), 0);
+    const owedTotal = plat ? plat.owed.reduce((s, v) => s + v, 0) : 0; const hiddenN = all.filter(x => x.hidden).length;
     const focus = document.activeElement && document.activeElement.id === 'bkq' ? document.activeElement.selectionStart : null;
-    $('#adm').innerHTML = `<header class="page-h"><h1>Admin</h1><p>${C.factory ? 'Contracts are live on Ethereum. The coin list below still shows the sample coins.' : 'Contracts are not deployed yet. Numbers below come from the sample coins.'}</p></header>
-      <div class="kpis" style="margin-bottom:18px"><div><span>Platform fees</span><b>${usd(total)}</b><small>1% of all volume</small></div><div><span>Coins</span><b>${all.length}</b><small>${h.length} hidden</small></div><div><span>Admin</span><b style="font-size:14px"><a class="addr" href="${addrLink(cfg.admin)}" target="_blank" rel="noopener">${short(cfg.admin)}</a></b><small>Ethereum</small></div><div><span>Factory</span><b style="font-size:14px">${C.factory ? `<a class="addr" href="${addrLink(C.factory)}" target="_blank" rel="noopener">${short(C.factory)}</a>` : 'Not deployed'}</b><small>${C.factory ? 'renounced, admin kept' : 'launches closed'}</small></div></div>
+    $('#adm').innerHTML = `<header class="page-h"><h1>Admin</h1><p>Live on Ethereum. Every number here is read from the contracts.</p></header>
+      <div class="kpis" style="margin-bottom:18px"><div><span>Platform fees</span><b>${usd(earned)}</b><small>${usd(owedTotal)} waiting to be pushed</small></div><div><span>Coins</span><b>${all.length}</b><small>${hiddenN} hidden</small></div><div><span>Launches</span><b style="font-size:16px">${plat ? (plat.paused ? 'Paused' : 'Open') : '…'}</b><small>${plat ? `start cap ${usd(plat.startCap)}` : ''}</small></div><div><span>Factory</span><b style="font-size:14px"><a class="addr" href="${addrLink(C.factory)}" target="_blank" rel="noopener">${short(C.factory)}</a></b><small>renounced, admin kept</small></div></div>
+      <section class="panel" style="margin-bottom:18px"><div class="panel-h"><h2>Platform</h2></div>
+        <div class="srow" style="display:flex;align-items:center;gap:14px;padding:12px 16px"><div style="flex:1"><b>Launches</b><div class="faint" style="font-size:13px">${plat && plat.paused ? 'New launches are paused. Trading in existing coins is not affected.' : 'Anyone can launch a coin.'}</div></div><button class="btn btn-line" id="pauseBtn" ${plat ? '' : 'disabled'}>${plat && plat.paused ? 'Resume launches' : 'Pause launches'}</button></div>
+        <div class="srow" style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-top:1px solid var(--line)"><div style="flex:1"><b>Platform fees</b><div class="faint" style="font-size:13px">${usd(owedTotal)} sits in coin strategies. Pushing sends it to the fee recipient${plat ? ` <span class="mono">${esc(short(plat.feeRecipient))}</span>` : ''}.</div></div><button class="btn btn-line" id="pushBtn" ${owedTotal > 0 ? '' : 'disabled'}>Push fees</button></div>
+      </section>
       ${backingSection()}
-      <section class="panel"><div class="panel-h"><h2>Coins</h2><span class="r faint" style="font-size:12.5px">Preview: listing changes are kept in this browser only</span></div><div class="table-wrap" style="border:0"><table class="list"><thead><tr><th>Coin</th><th>Platform fees</th><th>Volume 24h</th><th>Listed</th></tr></thead><tbody>
-      ${all.map(x => `<tr><td><div class="coin-cell">${pairGlyph(x, 'sm')}<div><b>${esc(x.name)}</b><small>$${esc(x.symbol)}</small></div></div></td><td><span class="num">${usd(x.fees.platform)}</span></td><td><span class="num">${usd(x.vol24)}</span></td><td><button class="switch" role="switch" data-h="${x.addr}" aria-checked="${!h.includes(x.addr)}" aria-label="List ${esc(x.symbol)}" style="margin-left:auto;display:block"></button></td></tr>`).join('')}
-      </tbody></table></div></section>`;
-    $$('[data-h]').forEach(b => b.onclick = () => { const a = b.dataset.h; const cur = hidden(); const next = cur.includes(a) ? cur.filter(v => v !== a) : [...cur, a]; try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {} paint(); });
+      <section class="panel"><div class="panel-h"><h2>Coins</h2><span class="r faint" style="font-size:12.5px">Hiding takes a coin off the site; it keeps trading on-chain</span></div>${all.length ? `<div class="table-wrap" style="border:0"><table class="list"><thead><tr><th>Coin</th><th>Platform fees</th><th>Volume 24h</th><th>Listed</th></tr></thead><tbody>
+      ${all.map((x, i) => `<tr><td><div class="coin-cell">${pairGlyph(x, 'sm')}<div><b>${esc(x.name)}</b><small>$${esc(x.symbol)} · ${esc(x.pairSym)}</small></div></div></td><td><span class="num">${usd(x.fees.platform)}</span>${plat && plat.owed[i] ? `<small class="faint" style="display:block">${usd(plat.owed[i])} to push</small>` : ''}</td><td><span class="num">${usd(x.vol24)}</span></td><td><button class="switch" role="switch" data-h="${x.addr}" aria-checked="${!x.hidden}" aria-label="List ${esc(x.symbol)}" style="margin-left:auto;display:block"></button></td></tr>`).join('')}
+      </tbody></table></div>` : '<div class="empty"><p>No coins launched yet.</p></div>'}</section>`;
+    $$('[data-h]').forEach(b => b.onclick = () => { const x = EH.token(b.dataset.h); b.disabled = true; adminTx('setHidden', [x.addr, !x.hidden], x.hidden ? `${x.symbol} is listed again` : `${x.symbol} is hidden`); });
+    const pb = $('#pauseBtn'); if (pb) pb.onclick = () => { pb.disabled = true; adminTx(plat.paused ? 'resume' : 'pause', [], plat.paused ? 'Launches resumed' : 'Launches paused'); };
+    const fb = $('#pushBtn'); if (fb) fb.onclick = () => { fb.disabled = true; adminTx('pushPlatformFees', [EH.allTokens().map(x => x.addr)], 'Platform fees pushed'); };
     $$('[data-act]').forEach(b => b.onclick = () => { if (busy) return; const td = todo(); send(td[b.dataset.act], b.dataset.act === 'drift' ? 'prices' : b.dataset.act); });
     const rt = $('[data-retry]'); if (rt) rt.onclick = () => { loadErr = ''; paint(); start(); };
     const q = $('#bkq'); if (q) { q.oninput = () => { filter = q.value; paint(); }; if (focus !== null) { q.focus(); q.setSelectionRange(focus, focus); } }
   }
 
-  async function start() { paint(); if (U().isAdmin()) { loadErr = ''; try { await load(); } catch (e) { loadErr = (e && (e.shortMessage || e.message)) || 'no RPC answered'; } paint(); } }
+  async function start() { paint(); if (U().isAdmin()) { loadErr = ''; try { await Promise.all([load(), loadPlatform()]); } catch (e) { loadErr = (e && (e.shortMessage || e.message)) || 'no RPC answered'; } paint(); } }
   window.addEventListener('DOMContentLoaded', () => BS.ready.then(start));
   window.addEventListener('bs:wallet', () => BS.ready.then(start));
 })();

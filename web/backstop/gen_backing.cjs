@@ -78,7 +78,7 @@ async function feedState(addr) {
     const src = await oracle.sources(address);
     if (Number(src.dex) !== 0) row.kind = 'pool';
     const pool = pools.find(x => x.symbol === t.symbol);
-    if (pool) row.pool = { dex: pool.dex, label: pool.label };
+    if (pool) { row.pool = { dex: pool.dex, label: pool.label }; if (pool.dex === 3 && pool.key) { row.v4Id = pool.v4Id; row.v4Key = pool.key; } }
     if (FEEDS[t.symbol]) {
       for (const f of FEEDS[t.symbol]) {
         try { const st = await feedState(f); if (st.dec === 8 && st.answer > 0 && st.age < FEED_FRESH) { row.feed = f; row.feedUsd = +st.answer.toFixed(4); break; } } catch {}
