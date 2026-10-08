@@ -22,7 +22,7 @@ ICON = {
     'search': '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
 }
 # the mark: a price line that dips onto a bar and recovers; colours come from the theme
-MARK = '<img class="mark" src="/img/logo.svg" alt="" width="30" height="30">'
+MARK = '<img class="mark" src="/img/logo.png" alt="" width="20" height="34">'
 WORDMARK = '<b class="wm"><i>ether</i>hook</b>'
 ETH_GLYPH = '<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M5 0 0 8.1 5 11l5-2.9z" fill="currentColor" opacity=".55"/><path d="M5 12 0 9.1 5 16l5-6.9z" fill="currentColor"/></svg>'
 
@@ -82,7 +82,6 @@ def shell(meta, body):
 <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
 <link rel="icon" href="/img/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="icon" href="/img/favicon-64.png" type="image/png" sizes="64x64">
-<link rel="icon" href="/img/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{FONTS}">
 <link rel="stylesheet" href="/css/app.css">

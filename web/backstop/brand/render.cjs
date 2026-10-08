@@ -9,8 +9,7 @@ const fs = require('fs');
   await p.goto('file://' + path.resolve(__dirname, 'brand.html'), { waitUntil: 'networkidle' }); await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(400);
   const out = process.argv[2];
   for (const id of ['icon', 'pfp', 'banner', 'tdefault', 'og']) await (await p.$('#' + id)).screenshot({ path: `${out}/${id}.png` });
-  for (const id of ['logo', 'lockup']) await (await p.$('#' + id)).screenshot({ path: `${out}/${id}.png`, omitBackground: true });
-  fs.writeFileSync(`${out}/logo.svg`, await p.$eval('#logo-svg', (s) => s.outerHTML));
+  for (const id of ['lockup']) await (await p.$('#' + id)).screenshot({ path: `${out}/${id}.png`, omitBackground: true });
   if (process.env.COINS) for (const el of await p.$$('.coin')) { const id = (await el.getAttribute('id')).slice(2); await el.screenshot({ path: `${out}/coin-${id}.png` }); }
   await b.close();
 })();
