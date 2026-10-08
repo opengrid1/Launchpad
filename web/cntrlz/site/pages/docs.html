@@ -31,7 +31,7 @@
     <h3>The premiums</h3>
     <p>All of it buys the coin and burns it. The creator never touches a premium, and neither do we.</p>
     <h3>The pool</h3>
-    <p>All 1,000,000,000 coins go into the pool at launch. Liquidity only ever grows: when a buyer keeps a window, their ETH is added to the pool, and nobody, creator or platform, can take liquidity out.</p>
+    <p>All 1,000,000,000 coins go into the pool at launch. When a buyer keeps a window, their ETH is added to the pool as liquidity. The creator can never take liquidity out; the launchpad admin can collect a share of it (see <a class="link" href="#safety">below</a>).</p>
 
     <h2 id="pairs">Pairs and stocks</h2>
     <p>The creator picks what the coin trades against: ETH, tokenized gold (PAXG or XAUt), or any Ondo tokenized stock on Ethereum: Tesla, NVIDIA, Apple, the S&amp;P 500 and five hundred more. A stock pair makes a coin that moves with the stock underneath it. Nothing else: no stablecoins, no other memecoins.</p>
@@ -39,14 +39,15 @@
 
     <h2 id="launch">Launching</h2>
     <ol><li>Name, ticker, a line about it, a logo if you like.</li><li>Pick the pair.</li><li>Optionally buy first, in the launch transaction. The first buy has no window.</li></ol>
-    <p>All 1B coins go into the pool at a $5,000 starting market cap. There is no presale and no creator allocation. Launching costs only gas. Nothing about the coin can be changed afterwards, by the creator or by us.</p>
+    <p>All 1B coins go into the pool at a $5,000 starting market cap. There is no presale and no creator allocation. Launching costs only gas. The coin's rules can't be changed afterwards, by the creator or by us.</p>
     <p>Every coin launches with the same protections: a high buy tax for the first minute that falls to the normal 1%, so snipers can't front-run the launch, and one swap per wallet per block, so sandwich bots have nothing to work with.</p>
 
     <h2 id="kept">Kept rate</h2>
     <p>Every coin shows its <b>kept rate</b>: the share of window buys that were kept rather than cancelled. A coin at 95% is one people bought and were happy to hold. A coin at 40% is one people regret. Explore has a "Most kept" view.</p>
 
-    <h2 id="safety">What can't happen</h2>
-    <ul><li>The pool's liquidity can't be removed. Not by the creator, not by us.</li><li>The ETH inside an open window belongs to that buyer and only that buyer can move it, by cancelling or keeping.</li><li>After every buy, cancel and keep, the contract checks it still holds every coin and every ETH it owes to open windows, and reverts if not.</li><li>The tax and the window prices are fixed at launch.</li><li>Coins inside a window can't be sold, moved or used to sandwich anyone.</li></ul>
+    <h2 id="safety">What can't happen, and what the admin can do</h2>
+    <ul><li>The ETH (or pair token) inside an open window belongs to that buyer. Only they can move it, by cancelling or keeping. Not the creator, not the admin.</li><li>After every buy, cancel and keep, the contract checks it still holds every coin and every unit of pair it owes to open windows, and reverts if not.</li><li>The tax, the window prices and the launch protection are fixed in the contracts.</li><li>Coins inside a window can't be sold, moved or used to sandwich anyone.</li><li>Nobody can mint, pause trading, freeze a wallet or move anyone's coins.</li><li>Only the hook adds or removes pool liquidity. The creator can't pull liquidity.</li></ul>
+    <p>The launchpad has an admin wallet with a fixed, short list of powers: pause new launches, hide a coin from the site (it keeps trading), edit a coin's displayed description, block a token from being used as a pair, change where the platform's 0.3% goes, change the start cap for future coins, and <b>collect a share of a coin's pool liquidity</b>. That last one is the one to know about: the admin can take liquidity out of a pool, which lowers the price and makes trades thinner. It never touches open windows, and it shows on the coin page when it happens.</p>
 
     <h2 id="faq">FAQ</h2>
     <details><summary>Does a window cost anything if I keep the coins?</summary><p>Yes. The premium is paid when you buy and burned either way. It buys time, not a refund.</p></details>
