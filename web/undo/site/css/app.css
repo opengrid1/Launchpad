@@ -1,4 +1,4 @@
-/* undo.fun: a keyboard. Paper and ink, one yellow key. Kept = green, undone = red, reserve = blue. */
+/* undo.fun: a keyboard. Paper and ink, one yellow key. Light only. Kept = green, undone = red. */
 :root {
   --bg: #efeee8; --surface: #ffffff; --surface-2: #f7f6f1; --sunk: #e4e3dc;
   --ink: #15171a; --ink-2: #2f3338; --muted: #5e636b; --faint: #8b9098;
@@ -12,28 +12,6 @@
   --f-body: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --f-mono: 'Martian Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0f1012; --surface: #191b1e; --surface-2: #1f2226; --sunk: #121316;
-    --ink: #f1f2ec; --ink-2: #d4d6d0; --muted: #9399a1; --faint: #6c727a;
-    --line: #2a2d32; --line-2: #383c42; --edge: #0a0b0c;
-    --key: #ffd60a; --key-ink: #15171a; --key-edge: #a88a00; --key-soft: #3a3210; --key-strong: #ffe25c;
-    --kept: #2bc48a; --kept-soft: #10291f; --undone: #ff6369; --undone-soft: #331618; --reserve: #6b98f2; --reserve-soft: #142036;
-    --up: #2bc48a; --down: #ff6369;
-    --shadow-pop: 0 18px 50px -12px rgba(0, 0, 0, .7), 0 0 0 1px #2a2d32;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0f1012; --surface: #191b1e; --surface-2: #1f2226; --sunk: #121316;
-  --ink: #f1f2ec; --ink-2: #d4d6d0; --muted: #9399a1; --faint: #6c727a;
-  --line: #2a2d32; --line-2: #383c42; --edge: #0a0b0c;
-  --key: #ffd60a; --key-ink: #15171a; --key-edge: #a88a00; --key-soft: #3a3210; --key-strong: #ffe25c;
-  --kept: #2bc48a; --kept-soft: #10291f; --undone: #ff6369; --undone-soft: #331618; --reserve: #6b98f2; --reserve-soft: #142036;
-  --up: #2bc48a; --down: #ff6369;
-  --shadow-pop: 0 18px 50px -12px rgba(0, 0, 0, .7), 0 0 0 1px #2a2d32;
-  color-scheme: dark;
 }
 
 *, *::before, *::after { box-sizing: border-box; }

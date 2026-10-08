@@ -82,12 +82,7 @@
   async function copy(text, label) { try { await navigator.clipboard.writeText(text); toast((label || 'Address') + ' copied'); } catch { toast('Copy failed', { err: true }); } }
   const notLive = () => toast('Preview: buying, cancelling and launching open when the contracts go live.', { icon: 'info' });
 
-  // ------------------------------------------------------------ theme
-  const THEME_KEY = 'ud:theme';
-  const systemDark = () => window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
-  function currentTheme() { const t = document.documentElement.dataset.theme; return t === 'dark' || t === 'light' ? t : systemDark() ? 'dark' : 'light'; }
-  function toggleTheme() { const next = currentTheme() === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = next; try { localStorage.setItem(THEME_KEY, next); } catch {} paintThemeBtn(); window.bsWallet && bsWallet.setTheme && bsWallet.setTheme(next); window.dispatchEvent(new CustomEvent('ud:theme')); }
-  function paintThemeBtn() { $$('[data-theme-btn]').forEach(b => { const d = currentTheme() === 'dark'; b.innerHTML = ic(d ? 'sun' : 'moon'); b.setAttribute('aria-label', d ? 'Light theme' : 'Dark theme'); b.title = d ? 'Light theme' : 'Dark theme'; }); }
+  const currentTheme = () => 'light';
 
   // ------------------------------------------------------------ wallet button
   function paintWallet() {
@@ -118,8 +113,6 @@
   }
 
   function init() {
-    paintThemeBtn(); $$('[data-theme-btn]').forEach(b => b.onclick = toggleTheme);
-    if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { paintThemeBtn(); window.dispatchEvent(new CustomEvent('ud:theme')); });
     $$('[data-wallet-btn]').forEach(b => b.onclick = walletClick); paintWallet();
     $$('[data-search]').forEach(b => b.onclick = openSearch);
     document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); } if (e.key === '/' && !/input|textarea/i.test(document.activeElement.tagName)) { e.preventDefault(); openSearch(); } });

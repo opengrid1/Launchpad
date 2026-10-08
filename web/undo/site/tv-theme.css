@@ -12,13 +12,5 @@
   --tv-color-popup-element-toolbox-text:#5e636b; --tv-color-popup-element-toolbox-text-hover:#15171a; --tv-color-popup-element-toolbox-text-active-hover:#6b5500;
   --tv-color-popup-element-toolbox-background-hover:#f2f3ee; --tv-color-popup-element-toolbox-background-active-hover:#e9ebe4;
 }
-.theme-dark:root{
-  --tv-color-platform-background:#16181b; --tv-color-pane-background:#16181b;
-  --tv-color-toolbar-button-background-hover:#1b1e22; --tv-color-toolbar-button-background-secondary-hover:#1b1e22; --tv-color-toolbar-button-background-expanded:#1b1e22;
-  --tv-color-toolbar-button-text:#9399a1; --tv-color-toolbar-button-text-hover:#f1f2ec; --tv-color-toolbar-button-text-active:#d4d6d0; --tv-color-toolbar-button-text-active-hover:#f1f2ec;
-  --tv-color-item-active-text:#ffd60a; --tv-color-toolbar-toggle-button-background-active:#ffd60a; --tv-color-toolbar-toggle-button-background-active-hover:#ffe25c;
-  --tv-color-toolbar-divider-background:#26292e; --tv-color-popup-background:#16181b; --tv-color-popup-element-text:#f1f2ec; --tv-color-popup-element-text-hover:#f1f2ec;
-  --tv-color-popup-element-background-hover:#1b1e22; --tv-color-popup-element-divider-background:#26292e; --tv-color-popup-element-secondary-text:#9399a1; --tv-color-popup-element-hint-text:#9399a1;
-  --tv-color-popup-element-text-active:#ffd60a; --tv-color-popup-element-background-active:#3a3210;
-}
+
 html, body { font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }

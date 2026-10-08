@@ -65,8 +65,7 @@ def shell(meta, body):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{title}</title>
 <meta name="description" content="{desc}">
-<meta name="theme-color" content="#f2f3ee" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0e0f11" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#efeee8">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
 <meta property="og:url" content="{SITE_URL}">
@@ -84,7 +83,6 @@ def shell(meta, body):
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{FONTS}">
 <link rel="stylesheet" href="/css/app.css">
-<script>try{{var t=localStorage.getItem('ud:theme');if(t)document.documentElement.dataset.theme=t}}catch(e){{}}</script>
 <script src="/config.js"></script>
 {head}<script src="/js/ui.js" defer></script>
 <script src="/js/data.js" defer></script>
@@ -99,7 +97,6 @@ def shell(meta, body):
     <div class="top-r">
       <button class="key sq" data-search aria-label="Search coins" title="Search (/)">{ic("search")}</button>
       {x_link}
-      <button class="key sq" data-theme-btn aria-label="Theme"></button>
       <button class="key ink wallet-btn" data-wallet-btn>Connect</button>
     </div>
   </div>

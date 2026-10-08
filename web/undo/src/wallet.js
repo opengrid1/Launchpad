@@ -15,7 +15,7 @@ const api = {
 window.bsWallet = api;
 window.udEthers = { BrowserProvider, Contract, Interface, JsonRpcProvider, getAddress };
 const emit = () => window.dispatchEvent(new CustomEvent('bs:wallet', { detail: { connected: api.connected, address: api.address, chainId: api.chainId } }));
-const dark = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches; };
+const dark = () => false;
 
 function injected() {
   const eth = window.ethereum; if (!eth) { api.open = () => window.dispatchEvent(new CustomEvent('bs:nowallet')); api.ready = true; return; }
