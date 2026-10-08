@@ -55,26 +55,12 @@ const add=(id,W,H,inner,bg=NAVY)=>w.insertAdjacentHTML('beforeend',`<div id="${i
 
 // app icon (favicon, apple touch, logo-512)
 add('icon',512,512,art(123,31,450));
-// profile picture
-add('pfp',1000,1000,`
-  ${dots([[150,250,16],[860,760,13],[770,890,7,HOOK],[190,820,8],[880,170,7,HOOK],[110,560,6]])}
-  ${bubble(820,330,22)}${bubble(865,260,11)}${bubble(225,370,15)}
-  ${art(264,100,800)}
-  ${badge(835,190,64,'ether',MINT,36,10)}
-  ${badge(170,830,62,'hook',HOOK,38,-9)}`);
-// X banner
-add('banner',1500,500,`
-  ${dots([[985,60,9],[1460,105,6,HOOK],[820,440,6],[1090,470,5,HOOK],[1420,455,10],[640,95,5]])}
-  ${bubble(1135,120,18)}${bubble(1180,70,9)}${bubble(560,420,12)}
-  ${wordmark(90,290,150)}
-  <text x="98" y="378" font-size="40" fill="#c9d6e6" letter-spacing="1">coins that buy their own dips</text>
-  ${badge(880,370,58,'vault',MINT,30,-8)}
-  ${badge(1010,300,64,'buyback',HOOK,22,6)}
-  ${badge(1005,440,46,'burn',MINT_L,24,-4)}
-  ${art(1180,30,440)}`);
+// profile picture: the logo alone
+add('pfp',1000,1000,art(258,90,820));
+// X banner: logo and name, centred (the pfp covers the bottom-left corner on X)
+add('banner',1500,500,`${art(239,70,360)}${wordmark(501,300,150)}`);
 // default token image
 add('tdefault',512,512,`
-  ${dots([[430,92,14],[456,128,8],[78,430,11,HOOK]])}
   ${badge(256,250,170,'',MINT,0,-6)}
   <g transform="rotate(-6 256 250)" font-size="84" text-anchor="middle">
     <text x="248" y="272" fill="${NAVY}" stroke="${NAVY}" stroke-width="28" stroke-linejoin="round">$???</text>
@@ -85,16 +71,11 @@ add('tdefault',512,512,`
     <path d="M0 0 V36 a16 16 0 0 0 32 0 V22 M32 22 l-9 9" fill="none" stroke="${NAVY}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M0 0 V36 a16 16 0 0 0 32 0 V22 M32 22 l-9 9" fill="none" stroke="${HOOK}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
   </g>`);
-// link preview card
+// link preview card: name, one line, logo
 add('og',1200,630,`
-  <g stroke="#ffffff0c">${Array.from({length:17},(_,i)=>`<line x1="0" x2="1200" y1="${i*40}" y2="${i*40}"/>`).join('')}${Array.from({length:31},(_,i)=>`<line y1="0" y2="630" x1="${i*40}" x2="${i*40}"/>`).join('')}</g>
-  ${dots([[1120,80,10],[700,560,7,HOOK],[1150,560,8],[640,70,6,HOOK]])}
-  ${bubble(1080,150,20)}${bubble(1125,205,10)}
-  ${wordmark(72,160,100)}
-  <text x="78" y="290" font-size="70" fill="${EDGE}">Coins that buy</text>
-  <text x="78" y="368" font-size="70" fill="${EDGE}">their own <tspan fill="${HOOK}">dips.</tspan></text>
-  <text x="80" y="440" style="font-family:'Public Sans'" font-weight="500" font-size="26" fill="#a9b8cb">Vault backing, dip buybacks and burns, built into every coin.</text>
-  <text x="80" y="560" style="font-family:'JetBrains Mono'" font-weight="600" font-size="19" fill="#7f90a8" letter-spacing="1.5">ETHEREUM MAINNET · UNISWAP V4 HOOKS</text>
+  ${wordmark(80,200,100)}
+  <text x="86" y="330" font-size="70" fill="${EDGE}">Coins that buy</text>
+  <text x="86" y="408" font-size="70" fill="${EDGE}">their own <tspan fill="${HOOK}">dips.</tspan></text>
   ${art(850,45,540)}`);
 // wordmark lockup on transparent ground
 add('lockup',900,240,`${art(10,10,220)}${wordmark(160,160,112)}`,'transparent');
