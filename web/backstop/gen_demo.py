@@ -56,6 +56,8 @@ WALLETS = [addr('wallet', i) for i in range(400)]
 
 
 PLATFORM = 100  # bps of every trade, whatever the tax
+# sample coins launched without an image, so the default token image shows in the preview
+NO_IMAGE = {'STBL', 'SHLTR'}
 
 
 def scale_split(split, pool):
@@ -192,7 +194,7 @@ def simulate(c):
         trades.append(dict(ts=t, side=side, who=WALLETS[rnd.randrange(len(WALLETS))], usd=round(usd, 2), eth=usd / eth_usd, coins=usd / px))
     pair = TOK[c['pair']]
     out = dict(
-        addr=addr('coin', c['symbol']), name=c['name'], symbol=c['symbol'], desc=c['desc'], img=f"/img/coins/{c['symbol'].lower()}.webp",
+        addr=addr('coin', c['symbol']), name=c['name'], symbol=c['symbol'], desc=c['desc'], img='' if c['symbol'] in NO_IMAGE else f"/img/coins/{c['symbol'].lower()}.webp",
         pair=pair['address'].lower(), pairSym=pair['symbol'], pairLogo=pair['logo'], pairDec=pair['decimals'], pairUsd=pp,
         creator=WALLETS[c['seed'] * 3 % len(WALLETS)], createdAt=t0, lastTrade=trades[0]['ts'],
         tax=tax, split=dict(creator=cr, holders=ho, vault=va, buyback=bb, lp=al, burn=ab, platform=PLATFORM),

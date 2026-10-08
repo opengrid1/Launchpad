@@ -141,7 +141,7 @@
     if (left > 0) missing.push(`the last ${bps(left)} of the split`); if (s.holders && st.payout === 'basket' && !st.basket.length) missing.push('at least one reward token');
     const gasEth = gas != null ? gas * (BS.cfg.launchGas || 4.2e6) / 1e9 : null;
     U().$('#sum').innerHTML = `
-      <div class="head">${st.logo ? `<img class="av" src="${st.logo}" alt="" style="width:46px;height:46px">` : `<span class="av" style="width:46px;height:46px;display:grid;place-items:center;font:800 15px var(--f-display);color:var(--muted)">${esc((st.sym || '?').slice(0, 2).toUpperCase())}</span>`}
+      <div class="head"><img class="av" src="${st.logo || U().DEFAULT_LOGO}" alt="" style="width:46px;height:46px">
         <div style="min-width:0"><b>${esc(st.name || 'Your coin')}</b><small>${esc(S())}${st.pair ? ' · backed by ' + esc(st.pair.symbol) : ''}</small></div></div>
       <div class="flow"><span class="eyebrow" style="margin-bottom:4px">Tax ${bps(st.tax)} · per ${usd(per, { compact: false })} traded</span>${flows.map(f => `<div class="flow-row"><i class="s-${f[0]}"></i><span>${f[1]}</span><b>${usd(per * f[2] / 1e4, { compact: false })}</b></div>`).join('')}${left > 0 ? `<div class="flow-row"><i style="background:var(--line)"></i><span class="faint">Not assigned</span><b class="faint">${usd(per * left / 1e4, { compact: false })}</b></div>` : ''}</div>
       ${(() => { const pr = []; if (st.dyn) pr.push(`Dynamic tax up to ${bps(st.dynMax)}`); if (st.snipeBps) pr.push(`Anti-snipe ${st.snipeBps / 100}%`); if (st.mev) pr.push('Anti-MEV'); if (st.maxTx) pr.push(`Max ${st.maxTx / 100}% per trade`); if (st.vest && s.creator) pr.push(`Vesting ${st.vest === 365 ? '1 year' : st.vest + ' days'}`);
