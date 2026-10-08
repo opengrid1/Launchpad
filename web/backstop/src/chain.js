@@ -27,24 +27,30 @@ function lower(a) { return (a || '').toLowerCase(); }
 // ---------------------------------------------------------------- RPC: rotate public endpoints, cool down the ones that refuse
 const RPCS = [...new Set(CFG.rpcs || ['https://ethereum-rpc.publicnode.com'])];
 let rr = 0; const cool = {};
+// a reverted call is a real answer; anything else that fails a whole request means "try another node"
+const realError = x => x && x.error && (x.error.code === 3 || /revert/i.test(String(x.error.message)) || x.error.data);
+async function injected() { const e = window.ethereum; if (!e || !e.request) return null; try { return Number(await e.request({ method: 'eth_chainId' })) === CHAIN_ID ? e : null; } catch { return null; } }
 class RotatingProvider extends ethers.JsonRpcProvider {
-  constructor(urls) { super(urls[0], { chainId: CHAIN_ID, name: 'mainnet' }, { staticNetwork: true, batchMaxCount: 10, batchStallTime: 10 }); this.urls = urls; }
+  constructor(urls) { super(urls[0], { chainId: CHAIN_ID, name: 'mainnet' }, { staticNetwork: true, batchMaxCount: 5, batchStallTime: 10 }); this.urls = urls; }
   async _post(url, items) {
-    const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(items.length === 1 ? items[0] : items) });
+    const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 10000);
+    let r; try { r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(items.length === 1 ? items[0] : items), signal: ctl.signal }); } finally { clearTimeout(tm); }
     if (!r.ok) throw Object.assign(new Error('http ' + r.status), { limited: true });
     const j = await r.json(); const arr = Array.isArray(j) ? j : [j];
-    const bad = arr.find(x => x && x.error && /limit|rate|too many|batch|plan|not supported|exceed|unavailable|archive|token|payload/i.test(String(x.error.message)));
-    if (bad) throw Object.assign(new Error('provider refused: ' + String(bad.error.message).slice(0, 80)), { limited: true });
+    if (!arr.length || arr.some(x => x && x.error && !realError(x))) throw Object.assign(new Error('provider refused: ' + String((arr.find(x => x && x.error) || { error: {} }).error.message || 'empty').slice(0, 80)), { limited: true });
     return arr;
   }
   async _send(payload) {
     const items = Array.isArray(payload) ? payload : [payload]; let last;
     for (let round = 0; round < 3; round++) {
-      if (round) await new Promise(r => setTimeout(r, 400 * round));
+      if (round) await new Promise(r => setTimeout(r, 500 * round));
       const order = this.urls.map((_, i) => this.urls[(rr + i) % this.urls.length]); rr++;
       const t = Date.now(); const live = order.filter(u => !(cool[u] > t));
-      for (const u of (live.length ? live : order)) { try { return await this._post(u, items); } catch (e) { last = e; if (e.limited) cool[u] = Date.now() + 15000; } }
+      for (const u of (live.length ? live : order)) { try { return await this._post(u, items); } catch (e) { last = e; cool[u] = Date.now() + 20000; } }
     }
+    // every public RPC failed: inside a wallet app, read through the wallet's own Ethereum connection
+    const inj = await injected();
+    if (inj) return Promise.all(items.map(async it => { try { return { jsonrpc: '2.0', id: it.id, result: await inj.request({ method: it.method, params: it.params }) }; } catch (e) { return { jsonrpc: '2.0', id: it.id, error: { code: e.code || -32000, message: String(e.message || e), data: e.data } }; } }));
     throw last || new Error('No Ethereum RPC answered');
   }
 }
@@ -347,7 +353,12 @@ const api = {
   },
   // what a pair token needs to back a coin: an oracle price; an ETH route lets buyers pay in ETH
   async pairStatus(addr) {
-    const a = lower(addr); await loadBacking(); const info = await tokenInfo(a);
+    const a = lower(addr);
+    if (a === WETH) { let priceUsd = null; try { priceUsd = await ethUsd(); } catch {} return { ok: true, info: KNOWN[WETH], priceUsd, how: 'Chainlink ETH/USD', ethRoute: true }; } // ETH always backs a coin
+    return retry(() => api._pairStatus(a), 3);
+  },
+  async _pairStatus(a) {
+    await loadBacking(); const info = await tokenInfo(a);
     if (!LIVE) return { ok: false, info, reason: 'The contracts are not live yet.' };
     const [listed, src, blocked] = await Promise.all([oracle.listed(a), oracle.sources(a), factory.blocked(a)]);
     if (blocked) return { ok: false, info, reason: 'This token is blocked.' };

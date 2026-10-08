@@ -44,7 +44,7 @@
     const box = U().$('#pairStatus'); const c = st.check;
     if (!p) { box.innerHTML = ''; return; }
     if (!c) { box.innerHTML = `<div class="check wait">${ic('info')}<span>Checking ${esc(p.symbol)} on Ethereum…</span></div>`; return; }
-    if (c.error) { box.innerHTML = `<div class="check bad">${ic('alert')}<span>${esc(c.error)}</span></div>`; return; }
+    if (c.error) { box.innerHTML = `<div class="check bad">${ic('alert')}<span>${esc(c.error)}${c.retry ? ' <button type="button" class="link" id="pairRetry">Try again</button>' : ''}</span></div>`; const rb = U().$('#pairRetry'); if (rb) rb.onclick = () => setPair(st.pair); return; }
     const pools = (c.pools || []).filter(r => isFinite(r.depthUsd)).slice(0, 3);
     const list = pools.length ? `<div class="pools">${pools.map(r => `<span><span>${esc(r.label)}</span><span>${U().usd(r.depthUsd)} ${esc(r.quote)}</span></span>`).join('')}</div>` : '';
     box.innerHTML = c.ok ? `<div class="check ok">${ic('check')}<span><b>${esc(c.symbol)} can back a coin.</b> ${c.note ? esc(c.note) : `Priced at ${U().usd(c.priceUsd)} from its deepest pool.`}${list}</span></div>`
@@ -53,8 +53,10 @@
   async function setPair(t) {
     st.pair = t; st.check = null; st.basket = st.basket.filter(a => a !== (t && t.address || '').toLowerCase()); paintPair(); paintAll();
     const want = t.address;
-    try { const c = await BS.checkToken(t.address); if (st.pair && st.pair.address === want) { st.check = c; if (c.symbol && !t.logo) st.pair = { ...t, symbol: c.symbol, name: c.name }; } }
-    catch (e) { if (st.pair && st.pair.address === want) st.check = { error: 'Could not reach Ethereum to check this token. Try again in a moment.' }; }
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try { const c = await BS.checkToken(t.address); if (st.pair && st.pair.address === want) { st.check = c; if (c.symbol && !t.logo) st.pair = { ...t, symbol: c.symbol, name: c.name }; } break; }
+      catch (e) { if (attempt < 2) { await new Promise(r => setTimeout(r, 1500 * (attempt + 1))); continue; } if (st.pair && st.pair.address === want) st.check = { error: 'Could not reach Ethereum to check this token.', retry: true }; }
+    }
     paintPair(); paintAll();
   }
   function openPicker() {

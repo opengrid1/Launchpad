@@ -47,7 +47,7 @@ def config():
     tokens = json.load(open(os.path.join(HERE, 'tokens.json')))
     cfg = {
         'chainId': 1, 'chainName': 'Ethereum', 'explorer': 'https://etherscan.io',
-        'rpcs': os.environ['RPCS'].split(',') if os.environ.get('RPCS') else ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org', 'https://1rpc.io/eth', 'https://cloudflare-eth.com'],
+        'rpcs': os.environ['RPCS'].split(',') if os.environ.get('RPCS') else ['https://ethereum-rpc.publicnode.com', 'https://rpc.mevblocker.io', 'https://mainnet.gateway.tenderly.co', 'https://eth-pokt.nodies.app', 'https://ethereum.publicnode.com'],
         'weth': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 'usdc': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
         'ethUsdFeed': '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419', 'poolManager': '0x000000000004444c5dc75cB358380D2e3dE08A90',
         'uniV2Factory': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f', 'uniV3Factory': '0x1F98431c8aD98523631AE4a59f267346ea31F984',
