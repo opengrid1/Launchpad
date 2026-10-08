@@ -133,17 +133,22 @@ def build():
         m = re.match(r'<!--(\{.*?\})-->\s*', src, re.S)
         meta = json.loads(m.group(1))
         open(os.path.join(DIST, f), 'w').write(shell(meta, src[m.end():]))
-    # cache-bust our own css and js by content hash
+    # cache-bust our own css, js and brand images by content hash (images are cached for a day)
     ver = {}
     for d in ('css', 'js'):
         for n in os.listdir(os.path.join(DIST, d)):
             ver[f'/{d}/{n}'] = hashlib.md5(open(os.path.join(DIST, d, n), 'rb').read()).hexdigest()[:8]
+    for n in ('mark-128.png', 'favicon-32.png', 'favicon-64.png', 'apple-touch-icon.png', 'og.png', 'token-default.png'):
+        ver[f'/img/{n}'] = hashlib.md5(open(os.path.join(DIST, 'img', n), 'rb').read()).hexdigest()[:8]
     for f in os.listdir(DIST):
         if f.endswith('.html'):
             fp = os.path.join(DIST, f); txt = open(fp).read()
             for p, h in ver.items():
-                txt = txt.replace(f'"{p}"', f'"{p}?v={h}"')
+                txt = txt.replace(f'"{p}"', f'"{p}?v={h}"').replace(f'"{SITE_URL}{p}"', f'"{SITE_URL}{p}?v={h}"')
             open(fp, 'w').write(txt)
+    # the pages' scripts load the default coin image by its plain path; give them the hashed one
+    cfg = open(os.path.join(DIST, 'config.js')).read().replace('window.UNDO = {', 'window.UNDO = {"ver":' + json.dumps(ver) + ',', 1)
+    open(os.path.join(DIST, 'config.js'), 'w').write(cfg)
     json.dump({
         'cleanUrls': True, 'trailingSlash': False,
         'rewrites': [{'source': '/coin/:addr', 'destination': '/coin'}],

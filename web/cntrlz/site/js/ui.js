@@ -59,7 +59,7 @@
     return `<span class="ring ${cls}" title="${p == null ? 'No window buys yet' : v.toFixed(0) + '% of window buys were kept'}"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--sunk)" stroke-width="5"/><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${col}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(c * v / 100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${size / 2} ${size / 2})"/></svg><b style="color:${col}">${p == null ? '—' : v.toFixed(0) + '%'}</b></span>`; };
 
   // ------------------------------------------------------------ coin and pair glyphs
-  const DEFAULT_COIN = '/img/token-default.png';
+  const DEFAULT_COIN = '/img/token-default.png' + ((CFG.ver || {})['/img/token-default.png'] ? '?v=' + CFG.ver['/img/token-default.png'] : '');
   const coinAv = (x, cls) => `<span class="av ${cls || ''}${x.img ? '' : ' av-def'}"><img src="${esc(x.img || DEFAULT_COIN)}" alt="" onerror="this.onerror=null;this.src='${DEFAULT_COIN}'"></span>`;
   const pairIcon = (p, cls) => p.logo ? `<img class="${cls || 'tok'}${p.kind === 'stock' ? ' stocklogo' : ''}" src="${esc(p.logo)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;${cls === 'pr' ? 'pr stock' : 'stock-chip'}&quot;>${esc((p.ticker || p.symbol || '').replace(/on$/, '').slice(0, 4))}</span>'">` : `<span class="${cls === 'pr' ? 'pr stock' : 'stock-chip'}">${esc((p.ticker || p.symbol || '').replace(/on$/, '').slice(0, 4))}</span>`;
   const pairGlyph = (x, size) => `<span class="pg ${size || ''}" title="${esc(x.symbol)} paired with ${esc(x.pair.symbol)}">${coinAv(x)}${pairIcon(x.pair, 'pr')}</span>`;
