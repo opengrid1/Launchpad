@@ -19,38 +19,42 @@
   }
 
   // ------------------------------------------------------------ the trade keyboard
-  function buyEth() { const v = parseFloat(amt) || 0; return side === 'buy' ? v : 0; }
+  function buyEth() { return side === 'buy' ? parseFloat(amt) || 0 : 0; }
   function trade() {
-    const { esc, ic, eth, timeKeys, winLabel, premiumFor, maxHoursFor } = U(); const v = buyEth(); const maxH = v ? maxHoursFor(v) : null;
+    const { esc, ic, eth, timeKeys, winLabel, premiumFor, maxHoursFor } = U(); const v = buyEth(); const tooSmall = withWin && v > 0 && maxHoursFor(v) < hours;
     return `<section class="panel trade"><div class="tk-tabs"><button class="key ${side === 'buy' ? 'down yellow' : ''}" data-side="buy">Buy</button><button class="key ${side === 'sell' ? 'down' : ''}" data-side="sell">Sell</button></div>
       <div class="trade-b">
-        <div class="field"><label for="amt">${side === 'buy' ? 'Spend' : 'Sell'}</label><div class="amt"><input id="amt" inputmode="decimal" placeholder="0" autocomplete="off" value="${esc(amt)}"><span class="unit">${side === 'buy' ? `<img class="tok" src="/img/tokens/eth.webp" alt="">ETH` : `<span class="av" style="--h:${x.hue};width:22px;height:22px;font-size:10px;border-radius:6px">${esc(x.symbol[0])}</span>${esc(x.symbol)}`}</span></div>
+        <div class="field"><label for="amt">${side === 'buy' ? 'You pay' : 'You sell'}</label><div class="amt"><input id="amt" inputmode="decimal" placeholder="0" autocomplete="off" value="${esc(amt)}"><span class="unit">${side === 'buy' ? `<img class="tok" src="/img/tokens/eth.webp" alt="">ETH` : `<span class="av" style="--h:${x.hue};width:22px;height:22px;font-size:10px;border-radius:6px">${esc(x.symbol[0])}</span>${esc(x.symbol)}`}</span></div>
           <div class="quick">${(side === 'buy' ? ['0.05', '0.1', '0.25', '0.5', '1'] : ['25%', '50%', '75%', '100%']).map(q => `<button class="key sm" data-q="${q}">${q}</button>`).join('')}</div></div>
-        ${side === 'buy' ? `<div class="undo-opt ${withWin ? 'on' : ''}"><div class="row">${ic('undo')}<b>Rent an undo window</b><button class="switch" role="switch" aria-checked="${withWin}" id="winSw" aria-label="Undo window"></button></div>
-          ${withWin ? `${timeKeys(hours, v || null)}<p><b>${winLabel(hours)}</b> for <b>${eth(premiumFor(hours))}</b>, paid now and burned. Cancel any time before it closes and the whole buy comes back. Keep it, or let it close, and the coins are yours.${v && maxH < hours ? ` <span class="c-undone">This buy is too small for ${winLabel(hours)}: the window can cost at most 30% of it.</span>` : ''}</p>` : '<p>A plain buy. The coins land in your wallet now and there is no taking it back.</p>'}</div>`
-        : `<div class="undo-opt"><div class="row">${ic('lock')}<b>Coins inside a window can't be sold</b></div><p>Cancel the window instead, or press Keep to unlock them. Everything else sells like a normal swap.</p></div>`}
+        ${side === 'buy' ? `<div class="undo-opt ${withWin ? 'on' : ''}"><div class="row">${ic('undo')}<b>Undo window</b><span class="faint" style="font-size:12.5px">${withWin ? 'on' : 'off'}</span><button class="switch" role="switch" aria-checked="${withWin}" id="winSw" aria-label="Undo window"></button></div>
+          ${withWin ? `${timeKeys(hours, v || null)}<p>${tooSmall ? `<span class="c-undone">Too small for ${winLabel(hours)}. A window can cost at most 30% of the buy.</span>` : `<b>${winLabel(hours)}</b> costs <b>${eth(premiumFor(hours))}</b>, burned. Cancel before it closes and the whole buy comes back.`}</p>` : '<p>Coins land in your wallet now. No taking it back.</p>'}</div>`
+        : `<div class="undo-opt"><div class="row">${ic('lock')}<b>Coins in a window can't be sold</b></div><p>Cancel the window or press Keep first.</p></div>`}
         <div class="quote" id="quote"></div>
-        <button class="key lg wide ${side === 'buy' ? 'yellow' : 'ink'}" id="tradeGo">${side === 'buy' ? (withWin ? `Buy with ${winLabel(hours)} undo` : 'Buy') : 'Sell'}</button>
+        <button class="key lg wide ${side === 'buy' ? 'yellow' : 'ink'}" id="tradeGo" ${tooSmall ? 'disabled' : ''}>${side === 'buy' ? (withWin ? `Buy with ${winLabel(hours)} undo` : 'Buy') : 'Sell'}</button>
       </div></section>`;
   }
-  function quote() {
-    const { usd, num, eth, premiumFor, maxHoursFor, $ } = U(); const v = parseFloat(amt) || 0; const q = $('#quote'); if (!q) return;
+  function quote(root) {
+    const { usd, num, eth, premiumFor, $ } = U(); const v = parseFloat(amt) || 0; const q = $('#quote', root); if (!q) return;
     if (!v) { q.innerHTML = ''; return; }
     const tax = UD.cfg.taxBps / 10000; const ethUsd = UD.ethUsd();
-    if (side === 'buy') { const prem = withWin ? premiumFor(hours) : 0; const spend = v; const usdIn = spend * ethUsd; const coins = usdIn * (1 - tax) / x.px * (1 - Math.min(.3, usdIn / (x.mc * .6)));
-      q.innerHTML = `<div><span>You get</span><b>${num(coins, 0)} ${x.symbol}</b></div><div><span>Tax 1%</span><b>${eth(spend * tax)} · 0.7% creator, 0.3% platform</b></div><div><span>Price impact</span><b>${(Math.min(30, usdIn / (x.mc * .6) * 100)).toFixed(2)}%</b></div>${withWin ? `<div><span>Window premium, burned</span><b>${eth(prem)}</b></div><div><span>Total from your wallet</span><b>${eth(spend + prem)}</b></div><div><span>Cancel gets back</span><b>${eth(spend * (1 - tax))} · 100% of the buy</b></div>` : ''}`; }
+    if (side === 'buy') { const prem = withWin ? premiumFor(hours) : 0; const usdIn = v * ethUsd; const impact = Math.min(.3, usdIn / (x.mc * .6)); const coins = usdIn * (1 - tax) / x.px * (1 - impact);
+      q.innerHTML = `<div><span>You get</span><b>${num(coins, 0)} ${x.symbol}</b></div><div><span>Tax 1%</span><b>${eth(v * tax)}</b></div><div><span>Price impact</span><b>${(impact * 100).toFixed(2)}%</b></div>${withWin ? `<div><span>Window, burned</span><b>${eth(prem)}</b></div><div class="total"><span>Total</span><b>${eth(v + prem)}</b></div><div><span>If you cancel</span><b class="c-kept">${eth(v * (1 - tax))} back</b></div>` : ''}`; }
     else { const out = v * x.px * (1 - tax) / ethUsd; q.innerHTML = `<div><span>You get</span><b>${eth(out)} · ${usd(v * x.px * (1 - tax))}</b></div><div><span>Tax 1%</span><b>${usd(v * x.px * tax)}</b></div>`; }
-    const go = $('#tradeGo'); if (go && side === 'buy' && withWin) go.disabled = maxHoursFor(v) < hours;
   }
-  function bindTrade(root) {
+  function bindTrade(root, redraw) {
     const { $, $$, notLive } = U();
-    $$('.tk-tabs .key', root).forEach(b => b.onclick = () => { side = b.dataset.side; paint(); });
-    const sw = $('#winSw', root); if (sw) sw.onclick = () => { withWin = !withWin; paint(); };
-    $$('.timekeys .key', root).forEach(b => b.onclick = () => { hours = +b.dataset.h; paint(); });
-    const inp = $('#amt', root); inp.oninput = () => { amt = inp.value.replace(/[^0-9.]/g, ''); inp.value = amt; quote(); if (side === 'buy' && withWin) { const mh = U().maxHoursFor(parseFloat(amt) || 0); $$('.timekeys .key', root).forEach(b => { b.disabled = !!amt && +b.dataset.h > mh + 1e-9; }); } };
-    $$('.quick .key', root).forEach(b => b.onclick = () => { amt = b.dataset.q.replace('%', ''); paint(); });
+    $$('.tk-tabs .key', root).forEach(b => b.onclick = () => { side = b.dataset.side; redraw(); });
+    const sw = $('#winSw', root); if (sw) sw.onclick = () => { withWin = !withWin; redraw(); };
+    $$('.timekeys .key', root).forEach(b => b.onclick = () => { hours = +b.dataset.h; redraw(); });
+    const inp = $('#amt', root); inp.oninput = () => { amt = inp.value.replace(/[^0-9.]/g, ''); inp.value = amt; redraw(true); };
+    $$('.quick .key', root).forEach(b => b.onclick = () => { amt = b.dataset.q.replace('%', ''); redraw(); });
     $('#tradeGo', root).onclick = notLive;
-    quote();
+    quote(root);
+  }
+  // draw the keyboard into a container; keep the caret in the amount box when only the amount changed
+  function mountTrade(box) {
+    const draw = fromInput => { const inp = box.querySelector('#amt'); const pos = inp && fromInput ? inp.selectionStart : null; box.innerHTML = trade(); bindTrade(box, draw); if (pos != null) { const n = box.querySelector('#amt'); n.focus(); n.setSelectionRange(pos, pos); } };
+    draw();
   }
 
   // ------------------------------------------------------------ your windows on this coin (preview: the example wallet)
@@ -58,10 +62,10 @@
     const { esc, eth, num, ic, winLabel, ago } = U();
     const ws = UD.myWindows().filter(w => w.x.addr === x.addr); if (!ws.length) return '';
     return `<section class="panel"><div class="panel-h"><h2>Your open windows</h2><span class="r tag key">${ws.length}</span></div>${ws.map(w => `<div class="win" data-closes="${w.closes}" data-opened="${w.openedAt}">
-      <div class="row">${ic('clock')}<div class="t"><b>${eth(w.paidEth)} · ${num(w.coins, 0)} ${esc(x.symbol)}</b><small>${winLabel(w.hours)} window for ${eth(w.premium)} · bought ${ago(w.openedAt)} ago</small></div><span class="clock" data-c>—</span></div>
+      <div class="row"><div class="t"><b>${eth(w.paidEth)} · ${num(w.coins, 0)} ${esc(x.symbol)}</b><small>${winLabel(w.hours)} window · ${eth(w.premium)} burned · ${ago(w.openedAt)} ago</small></div><span class="clock"><span data-c>—</span></span></div>
       <div class="drain"><i data-d></i></div>
-      <div class="row"><small class="muted">Cancel gets back</small><b style="margin-left:auto">${eth(w.paidEth * (1 - UD.cfg.taxBps / 10000))}</b></div>
-      <div class="acts"><button class="key yellow" data-undo>${ic('undo')}Cancel buy</button><button class="key" data-keep>Keep now</button></div></div>`).join('')}</section>`;
+      <div class="row"><small class="muted">Cancel now and get back</small><b style="margin-left:auto">${eth(w.paidEth * (1 - UD.cfg.taxBps / 10000))}</b></div>
+      <div class="acts"><button class="key yellow" data-undo>${ic('undo')}Cancel buy</button><button class="key" data-keep>Keep</button></div></div>`).join('')}</section>`;
   }
   function about() {
     const { esc, usd, eth, short, addrLink, ic } = U(); const s = UD.cfg.split || { creator: 70, platform: 30 };
@@ -93,15 +97,15 @@
 
   function paint() {
     const { $, $$, notLive, copy, dialog } = U();
-    $('#coinRoot').innerHTML = `${bar()}<div class="chart" id="chart"></div>${keyrow()}<div class="coin-cols"><div class="coin-left">${activity()}</div><div class="coin-right">${trade()}${mine()}${about()}</div></div>
+    $('#coinRoot').innerHTML = `${bar()}<div class="chart" id="chart"></div>${keyrow()}<div class="coin-cols"><div class="coin-left">${activity()}</div><div class="coin-right"><div class="trade-slot"></div>${mine()}${about()}</div></div>
       <div class="dock"><button class="key lg yellow" data-dock="buy">Buy with undo</button><button class="key lg" data-dock="sell">Sell</button></div>`;
     document.title = `${x.name} ($${x.symbol}) · undo.fun`; $('#page').classList.add('has-dock');
     paintActivity();
     $$('#actTabs .key').forEach(b => b.onclick = () => { tab = b.dataset.t; paintActivity(); });
-    bindTrade($('.coin-right'));
+    mountTrade($('.coin-right .trade-slot'));
     $$('[data-undo],[data-keep]').forEach(b => b.onclick = notLive);
     $$('[data-copy]').forEach(b => b.onclick = () => copy(b.dataset.copy, 'Contract'));
-    $$('[data-dock]').forEach(b => b.onclick = () => { side = b.dataset.dock; const ov = dialog(side === 'buy' ? 'Buy ' + x.symbol : 'Sell ' + x.symbol, `<div class="dialog-b" id="sheet"></div>`); const sheet = $('#sheet', ov); const draw = () => { sheet.innerHTML = trade(); bindTrade(sheet); $$('.tk-tabs .key', sheet).forEach(k => k.onclick = () => { side = k.dataset.side; draw(); }); const sw = $('#winSw', sheet); if (sw) sw.onclick = () => { withWin = !withWin; draw(); }; $$('.timekeys .key', sheet).forEach(k => k.onclick = () => { hours = +k.dataset.h; draw(); }); $$('.quick .key', sheet).forEach(k => k.onclick = () => { amt = k.dataset.q.replace('%', ''); draw(); }); }; draw(); });
+    $$('[data-dock]').forEach(b => b.onclick = () => { side = b.dataset.dock; const ov = dialog(side === 'buy' ? 'Buy ' + x.symbol : 'Sell ' + x.symbol, `<div class="dialog-b sheet" id="sheet"></div>`); mountTrade($('#sheet', ov)); });
     if (window.TradingView && window.udChart) udChart.init($('#chart'), x); else window.addEventListener('load', () => window.udChart && udChart.init($('#chart'), x), { once: true });
     tick(); clearInterval(timer); timer = setInterval(tick, 1000);
   }

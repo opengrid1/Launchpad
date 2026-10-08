@@ -28,9 +28,9 @@
     $('#grid').innerHTML = rows.map(x => { const open = x.trades.filter(t => t.state === 'open'); const newest = open[0];
       return `<a class="card" href="${coinHref(x.addr)}">
         <div class="ct">${pairGlyph(x)}<div class="t"><b>${esc(x.name)}</b><small>$${esc(x.symbol)} · <em>${esc(x.pair.symbol)}</em> · ${ago(x.createdAt)} old</small></div>${x.pair.kind === 'stock' ? '<span class="tag">stock</span>' : ''}</div>
-        <div class="cm">${ring(x.keptPct, 52)}<div class="px"><b>${usd(x.px)}</b><small>${delta(x.c24)}<span>${usd(x.mc)} mcap</span></small></div></div>
-        <div class="cb">${newest ? `<div class="row" data-closes="${newest.closes}" data-opened="${newest.ts}"><span>${open.length} open window${open.length === 1 ? '' : 's'} · ${eth(x.openEth)}</span><span class="clock">closes in <span data-c>—</span></span></div><div class="drain thin" data-closes="${newest.closes}" data-opened="${newest.ts}"><i data-d></i></div>` : `<div class="row"><span>No open windows</span></div><div class="drain thin"><i style="width:0"></i></div>`}
-          <div class="stat"><span>Burned <b>${usd(x.burnedUsd)}</b></span><span>Vol 24h <b>${usd(x.vol24)}</b></span><span>Kept <b>${x.windowBuys - x.undos}/${x.windowBuys}</b></span></div></div></a>`; }).join('') || '<div class="empty" style="grid-column:1/-1"><p>No coins here yet.</p></div>';
+        <div class="cm">${ring(x.keptPct, 56)}<div class="px"><b>${usd(x.px)}</b><small>${delta(x.c24)}<span>${usd(x.mc)} mcap</span><span>${usd(x.vol24)} vol</span></small></div></div>
+        <div class="cb">${newest ? `<div class="row"><span>${open.length} open window${open.length === 1 ? '' : 's'} · ${eth(x.openEth)} held</span></div><div class="drain thin" data-closes="${newest.closes}" data-opened="${newest.ts}"><i data-d></i></div>` : `<div class="row"><span>No open windows</span></div><div class="drain thin"><i style="width:0"></i></div>`}
+          <div class="stat">${newest ? `<span data-closes="${newest.closes}" data-opened="${newest.ts}">Closes in <b class="clock" data-c>—</b></span>` : ''}<span>Burned <b>${usd(x.burnedUsd)}</b></span><span>Kept <b>${x.windowBuys - x.undos}/${x.windowBuys}</b></span></div></div></a>`; }).join('') || '<div class="empty" style="grid-column:1/-1"><p>No coins here yet.</p></div>';
     tick();
   }
 
