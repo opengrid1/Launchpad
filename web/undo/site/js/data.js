@@ -17,7 +17,8 @@
     QQQon: ['Invesco QQQ', '0x0e397938C1Aa0680954093495B70A9F5e2249aBa', 760.82], HOODon: ['Robinhood', '0x998f02A9E343EF6E3E6f28700d5A20F839fD74E6', 109.51],
     MSTRon: ['Strategy', '0xCabD955322dfbf94C084929ac5E9Eca3fEB5556F', 153.37], COINon: ['Coinbase', '0xF042cfa86cf1D598a75Bdb55c3507a1F39f9493b', 178.45],
   };
-  const stock = s => ({ symbol: s, ticker: s.replace(/on$/, ''), name: STOCKS[s][0] + ' (Ondo Tokenized)', address: STOCKS[s][1], usd: STOCKS[s][2], kind: 'stock', logo: '' });
+  const stockLogo = t => '/img/stocks/' + t + '.webp';
+  const stock = s => ({ symbol: s, ticker: s.replace(/on$/, ''), name: STOCKS[s][0] + ' (Ondo Tokenized)', address: STOCKS[s][1], usd: STOCKS[s][2], kind: 'stock', logo: stockLogo(s.replace(/on$/, '')) });
   const prices = { ETH: 2450, PAXG: 4000, XAUt: 4000 };
   const pairOf = s => STOCKS[s] ? stock(s) : { ...TOKENS[s], usd: prices[s] };
 
@@ -109,7 +110,7 @@
   // ------------------------------------------------------------ every pair a coin can launch with: popular tokens and the Ondo stocks
   let stockList = null;
   const pairsList = async () => {
-    if (!stockList) { try { const j = await fetch('/backing.json').then(r => r.json()); stockList = j.tokens.filter(t => !t.skip && t.usd).map(t => ({ symbol: t.symbol, ticker: t.ticker, name: t.name, address: t.address, usd: t.usd, kind: 'stock', logo: '' })); } catch { stockList = []; } }
+    if (!stockList) { try { const j = await fetch('/backing.json').then(r => r.json()); stockList = j.tokens.filter(t => !t.skip && t.usd).map(t => ({ symbol: t.symbol, ticker: t.ticker, name: t.name.replace(/ \(Ondo.*$/, ''), address: t.address, usd: t.usd, kind: 'stock', logo: stockLogo(t.ticker) })).sort((a, b) => a.ticker.localeCompare(b.ticker)); } catch { stockList = []; } }
     return { popular: (CFG.tokens || []).map(t => ({ ...t, kind: 'token', usd: prices[t.symbol] })), stocks: stockList };
   };
 

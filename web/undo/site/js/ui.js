@@ -60,7 +60,7 @@
 
   // ------------------------------------------------------------ coin and pair glyphs
   const coinAv = (x, cls) => `<span class="av ${cls || ''}" style="--h:${x.hue || 48}">${x.img ? `<img src="${esc(x.img)}" alt="">` : esc((x.symbol || '?').slice(0, 1))}</span>`;
-  const pairIcon = (p, cls) => p.logo ? `<img class="${cls || 'tok'}" src="${esc(p.logo)}" alt="" loading="lazy">` : `<span class="${cls === 'pr' ? 'pr stock' : 'stock-chip'}">${esc((p.ticker || p.symbol || '').replace(/on$/, '').slice(0, 4))}</span>`;
+  const pairIcon = (p, cls) => p.logo ? `<img class="${cls || 'tok'}${p.kind === 'stock' ? ' stocklogo' : ''}" src="${esc(p.logo)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;${cls === 'pr' ? 'pr stock' : 'stock-chip'}&quot;>${esc((p.ticker || p.symbol || '').replace(/on$/, '').slice(0, 4))}</span>'">` : `<span class="${cls === 'pr' ? 'pr stock' : 'stock-chip'}">${esc((p.ticker || p.symbol || '').replace(/on$/, '').slice(0, 4))}</span>`;
   const pairGlyph = (x, size) => `<span class="pg ${size || ''}" title="${esc(x.symbol)} paired with ${esc(x.pair.symbol)}">${coinAv(x)}${pairIcon(x.pair, 'pr')}</span>`;
   const coinHref = a => '/coin/' + a;
   const txLink = h => `${EXPLORER}/tx/${h}`;

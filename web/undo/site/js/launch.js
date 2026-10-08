@@ -7,25 +7,19 @@
 
   function paintPairs() {
     const { esc, usd, pairIcon, $, $$ } = U(); const p = st.pair;
-    const keyFor = t => `<button type="button" class="pairkey ${p && p.symbol === t.symbol ? 'down' : ''}" data-p="${esc(t.symbol)}">${pairIcon(t)}<span class="t"><b>${esc(t.symbol)}</b><small>${esc(t.symbol === 'ETH' ? 'Ether' : t.kind === 'stock' ? t.name.replace(/ \(Ondo.*$/, '') : t.symbol === 'PAXG' ? 'Gold, Paxos' : 'Gold, Tether')}</small></span></button>`;
-    const chosenStock = p && p.kind === 'stock' ? keyFor(p) : '';
-    $('#pairkeys').innerHTML = QUICK.map(s => popular.find(t => t.symbol === s)).filter(Boolean).map(keyFor).join('') + chosenStock + `<button type="button" class="pairkey" data-more><span class="stock-chip">…</span><span class="t"><b>${chosenStock ? 'Other stock' : 'Stocks'}</b><small>${stocks.length || 500} tokenized</small></span></button>`;
-    $$('[data-p]').forEach(b => b.onclick = () => { st.pair = [...popular, ...stocks].find(t => t.symbol === b.dataset.p); paintPairs(); paintPreview(); });
-    $('[data-more]').onclick = pickPair;
+    $('#pairkeys').innerHTML = QUICK.map(sym => popular.find(t => t.symbol === sym)).filter(Boolean).map(t => `<button type="button" class="pairkey ${p && p.symbol === t.symbol ? 'down' : ''}" data-p="${esc(t.symbol)}">${pairIcon(t)}<span class="t"><b>${esc(t.symbol)}</b><small>${esc(t.symbol === 'ETH' ? 'Ether' : t.symbol === 'PAXG' ? 'Gold, Paxos' : 'Gold, Tether')}</small></span></button>`).join('');
+    $$('#pairkeys [data-p]').forEach(b => b.onclick = () => { st.pair = popular.find(t => t.symbol === b.dataset.p); paintPairs(); paintStocks(); paintPreview(); });
     $('#pairNote').textContent = !p ? '' : p.kind === 'stock' ? `${p.name}, ${usd(p.usd)} a share. Refunds and sells come back in ${p.symbol}, swappable to ETH in one click.` : p.symbol === 'ETH' ? 'The simplest pair. Refunds come back in ETH.' : `Refunds and sells come back in ${p.symbol}.`;
     $('#s2').classList.toggle('done', !!p);
   }
-  function pickPair() {
-    const { dialog, ic, esc, usd, pairIcon, $, $$ } = U();
-    const ov = dialog('Pair', `<div class="dialog-search">${ic('search')}<input id="pq" placeholder="TSLA, NVDA, SPY, gold…" autocomplete="off" spellcheck="false"></div><div class="dialog-b" id="pr"></div>`);
-    const inp = $('#pq', ov), out = $('#pr', ov);
-    const row = t => `<button class="opt" data-pp="${esc(t.symbol)}">${pairIcon(t)}<span class="t"><b>${esc(t.symbol)}</b><span>${esc(t.name)}</span></span><span class="r"><b>${t.usd ? usd(t.usd) : ''}</b>${t.kind === 'stock' ? '<span class="faint">stock</span>' : ''}</span></button>`;
-    const render = () => { const q = inp.value.trim().toLowerCase();
-      const pop = popular.filter(t => !q || t.symbol.toLowerCase().includes(q) || (t.name || '').toLowerCase().includes(q));
-      const stk = stocks.filter(t => !q || t.symbol.toLowerCase().includes(q) || t.ticker.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, q ? 40 : 10);
-      out.innerHTML = (pop.length ? `<div class="opt-group">Ether and gold</div>${pop.map(row).join('')}` : '') + (stk.length ? `<div class="opt-group">Tokenized stocks · ${stocks.length} on Ethereum via Ondo</div>${stk.map(row).join('')}` : '') || '<div class="empty"><p>Nothing matches.</p></div>';
-      $$('[data-pp]', out).forEach(b => b.onclick = () => { st.pair = [...popular, ...stocks].find(t => t.symbol === b.dataset.pp); ov.close(); paintPairs(); paintPreview(); }); };
-    inp.oninput = render; render(); setTimeout(() => inp.focus(), 20);
+  // every tokenized stock, as a key with its logo; the grid scrolls, nothing is hidden behind a search
+  let filter = '';
+  function paintStocks() {
+    const { esc, usd, pairIcon, $, $$ } = U(); const p = st.pair; const q = filter.trim().toLowerCase();
+    const list = q ? stocks.filter(t => t.ticker.toLowerCase().startsWith(q) || t.name.toLowerCase().includes(q)) : stocks;
+    $('#stocksN').textContent = `Tokenized stocks · ${stocks.length}${q ? ` · ${list.length} match` : ''}`;
+    $('#stockgrid').innerHTML = list.map(t => `<button type="button" class="stockkey ${p && p.symbol === t.symbol ? 'down' : ''}" data-s="${esc(t.symbol)}" title="${esc(t.name)} · ${usd(t.usd)}">${pairIcon(t)}<b>${esc(t.ticker)}</b><small>${esc(t.name)}</small></button>`).join('') || '<div class="empty" style="grid-column:1/-1;padding:24px"><p>No ticker starts with that.</p></div>';
+    $$('#stockgrid [data-s]').forEach(b => b.onclick = () => { st.pair = stocks.find(t => t.symbol === b.dataset.s); paintPairs(); paintStocks(); paintPreview(); });
   }
   function paintPreview() {
     const { esc, usd, eth, ring, pairIcon, coinAv, $ } = U(); const p = st.pair; const ok = st.name.trim() && st.sym.trim() && p;
@@ -52,7 +46,8 @@
     paintPreview();
     ({ popular, stocks } = await UD.pairsList());
     const q = new URLSearchParams(location.search).get('pair'); if (q) st.pair = [...popular, ...stocks].find(t => t.symbol.toLowerCase() === q.toLowerCase()) || null;
-    paintPairs(); paintPreview();
+    paintPairs(); paintStocks(); paintPreview();
+    $('#stockq').oninput = () => { filter = $('#stockq').value; paintStocks(); };
   }
   window.addEventListener('DOMContentLoaded', () => UD.ready.then(start));
 })();
