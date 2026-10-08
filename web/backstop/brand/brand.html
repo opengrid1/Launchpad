@@ -59,18 +59,8 @@ add('icon',512,512,art(123,31,450));
 add('pfp',1000,1000,art(258,90,820));
 // X banner: logo and name, centred (the pfp covers the bottom-left corner on X)
 add('banner',1500,500,`${art(239,70,360)}${wordmark(501,300,150)}`);
-// default token image
-add('tdefault',512,512,`
-  ${badge(256,250,170,'',MINT,0,-6)}
-  <g transform="rotate(-6 256 250)" font-size="84" text-anchor="middle">
-    <text x="248" y="272" fill="${NAVY}" stroke="${NAVY}" stroke-width="28" stroke-linejoin="round">$???</text>
-    <text x="248" y="272" fill="${EDGE}">$???</text>
-  </g>
-  <g transform="translate(350 338) rotate(-6) scale(1.35)">
-    <path d="M0 0 V36 a16 16 0 0 0 32 0 V22 M32 22 l-9 9" fill="none" stroke="${EDGE}" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M0 0 V36 a16 16 0 0 0 32 0 V22 M32 22 l-9 9" fill="none" stroke="${NAVY}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M0 0 V36 a16 16 0 0 0 32 0 V22 M32 22 l-9 9" fill="none" stroke="${HOOK}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>`);
+// default token image (coins launched without an image): the logo, sized for a round crop
+add('tdefault',512,512,art(157,56,400));
 // link preview card: logo and name, centred, same as the banner
 add('og',1200,630,`${art(145,95,440)}${wordmark(444,357,120)}`);
 // wordmark lockup on transparent ground
