@@ -355,13 +355,22 @@ textarea.input { height: auto; min-height: 84px; padding: 11px 13px; resize: ver
 .prose { max-width: 720px; }
 .prose h1 { font-size: clamp(34px, 5vw, 44px); font-weight: 800; letter-spacing: -.04em; }
 .prose .lead { font-size: 18px; color: var(--muted); margin-top: 12px; }
-.prose h2 { font-size: 24px; margin: 44px 0 12px; scroll-margin-top: 90px; }
+.prose h2 { font-size: 24px; margin: 44px 0 12px; scroll-margin-top: 130px; padding-top: 14px; border-top: 1px solid var(--line); }
 .prose h3 { font-size: 17px; margin: 22px 0 8px; }
 .prose p, .prose li { color: var(--ink-2); max-width: 66ch; }
 .prose p + p { margin-top: 12px; }
 .prose ul, .prose ol { padding-left: 20px; display: grid; gap: 6px; margin: 12px 0; }
 .prose .box { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); padding: 16px 18px; margin: 16px 0; }
 .prose table.list { margin: 14px 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.prose table.list td, .prose table.list th { white-space: normal; vertical-align: top; }
+.prose .table-wrap { margin: 14px 0; }
+.prose .table-wrap table.list { margin: 0; }
+.prose .glance { margin: 22px 0 0; }
+.prose .glance .stat-key b { font-size: 20px; }
+.doc-jump { display: none; }
+.pricekeys { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.pricekeys .key { flex-direction: column; gap: 1px; height: 46px; padding: 0 6px; cursor: default; }
+.pricekeys .key kbd { font-size: 10px; }
 .prose details { border-top: 1px solid var(--line); padding: 14px 0; }
 .prose details summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
 .prose details summary::after { content: '+'; color: var(--muted); font-weight: 400; }
@@ -396,8 +405,14 @@ textarea.input { height: auto; min-height: 84px; padding: 11px 13px; resize: ver
 @media (max-width: 1020px) {
   .coin-cols { grid-template-columns: minmax(0, 1fr); }
   .coin-right { position: static; }
-  .doc { grid-template-columns: 1fr; }
+  .doc { grid-template-columns: minmax(0, 1fr); }
+  .prose { max-width: 100%; min-width: 0; }
   .doc-nav { display: none; }
+  .doc-jump { display: flex; gap: 6px; overflow-x: auto; margin: 16px -16px 0; padding: 4px 16px; scrollbar-width: none; }
+  .doc-jump::-webkit-scrollbar { display: none; }
+  .doc-jump .key { flex-shrink: 0; }
+  .prose .glance { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .pricekeys { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 860px) {
   /* phones: the nav is a second row of keys under the brand, one key per page, no bottom bar */
