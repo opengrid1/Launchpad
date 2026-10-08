@@ -10,7 +10,9 @@ SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'preview'
 DESC = 'Launch a coin on Ethereum with a strategy built in: a vault that backs every coin, buybacks on every 20% dip, burns from take-profit, and redeem at backing.'
-SITE_URL = os.environ.get('SITE_URL', 'https://etherhook.fun').rstrip('/')
+X_URL = 'https://x.com/etherhook_fun'
+X_GLYPH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.9-6.4L6.3 22H3.2l7.3-8.3L1 2h6.3l4.4 5.9L18.9 2Zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3Z"/></svg>'
+SITE_URL = os.environ.get('SITE_URL', 'https://www.etherhook.fun').rstrip('/')
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Lilita+One&family=Archivo:wdth,wght@62..125,400..900&family=JetBrains+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap'
 NAV = [('explore', '/', 'Explore'), ('launch', '/launch', 'Launch'), ('portfolio', '/portfolio', 'Portfolio'), ('docs', '/docs', 'How it works')]
@@ -56,7 +58,7 @@ def config():
         'admin': os.environ.get('ADMIN', '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'),
         'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'),
         'startCap': 5000, 'minDepth': 10000, 'launchGas': 4200000,
-        'tokens': tokens, 'social': {},
+        'tokens': tokens, 'social': {'x': X_URL},
     }
     return 'window.BACKSTOP = ' + json.dumps(cfg, separators=(',', ':')) + ';\n'
 
@@ -89,6 +91,7 @@ def shell(meta, body):
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Etherhook">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@etherhook_fun">
 <meta name="twitter:title" content="{title}">
 <meta name="twitter:description" content="{desc}">
 <meta name="twitter:image" content="{SITE_URL}/img/og.png">
@@ -113,6 +116,7 @@ def shell(meta, body):
     <div class="top-r">
       <button class="search-trigger" data-search aria-label="Search coins">{ic("search")}<span>Search coins or paste an address</span><kbd>/</kbd></button>
       <span class="net" title="Ethereum mainnet">{ETH_GLYPH}<span>Ethereum</span></span>
+      <a class="icon-btn x-link" href="{X_URL}" target="_blank" rel="noopener" aria-label="Etherhook on X">{X_GLYPH}</a>
       <button class="icon-btn" data-theme-btn aria-label="Theme"></button>
       <button class="btn btn-ink wallet-btn" data-wallet-btn>Connect</button>
     </div>
@@ -124,7 +128,7 @@ def shell(meta, body):
 <footer class="foot">
   <div class="foot-in">
     <a class="brand" href="/" aria-label="Etherhook home">{MARK}{WORDMARK}</a>
-    <nav aria-label="Footer"><a href="/docs">How it works</a><a href="/docs#faq">FAQ</a><a href="/launch">Launch</a></nav>
+    <nav aria-label="Footer"><a href="/docs">How it works</a><a href="/docs#faq">FAQ</a><a href="/launch">Launch</a><a href="{X_URL}" target="_blank" rel="noopener">X @etherhook_fun</a></nav>
   </div>
 </footer>
 <nav class="tabbar" aria-label="Main">{tabbar}</nav>

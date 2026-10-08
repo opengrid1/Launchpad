@@ -739,3 +739,6 @@ table.list { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 
 /* narrow phones: the network badge gives way so the wallet button fits */
 @media (max-width: 440px) { .top-r .net { display: none; } }
+
+.x-link svg { width: 15px; height: 15px; }
+@media (max-width: 440px) { .top-r .x-link { display: none; } }
