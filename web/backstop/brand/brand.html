@@ -14,43 +14,39 @@ svg text{font-family:'Lilita One'}
 // the mascot (a glossy ETH diamond with an orange hook), the two-tone wordmark, and sticker badges.
 const NAVY='#0b1220', EDGE='#f3f6fa', MINT='#2ee6c5', MINT_L='#8af7e3', MINT_D='#16b49c', MINT_DD='#0e8f7f', HOOK='#ff7a3d', HOOK_L='#ffb08a';
 
-const BODY='M100 14 L160 104 L100 176 L40 104 Z';
-const HOOKP='M100 160 V208 a17 17 0 0 0 34 0 V193';
-const BARB='M134 192 l-10 9.5';
-// mascot in a 200x240 box; `edge` false drops the white sticker outline (for tiny sizes)
-function mascot(edge=true){
-  return `
-  ${edge?`<g fill="${EDGE}" stroke="${EDGE}" stroke-linejoin="round" stroke-linecap="round">
-    <path d="${BODY}" stroke-width="30"/>
-    <path d="${HOOKP}" fill="none" stroke-width="32"/><path d="${BARB}" fill="none" stroke-width="32"/>
-  </g>`:''}
-  <g fill="none" stroke="${NAVY}" stroke-linejoin="round" stroke-linecap="round">
-    <path d="${HOOKP}" stroke-width="18"/><path d="${BARB}" stroke-width="18"/>
-  </g>
-  <g fill="none" stroke="${HOOK}" stroke-linejoin="round" stroke-linecap="round">
-    <path d="${HOOKP}" stroke-width="8"/><path d="${BARB}" stroke-width="8"/>
-  </g>
-  <path d="M104 184 V204" stroke="${HOOK_L}" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>
-  <path d="${BODY}" fill="${NAVY}" stroke="${NAVY}" stroke-width="13" stroke-linejoin="round"/>
-  <path d="M100 14 L40 104 L100 130 Z" fill="${MINT_L}"/>
-  <path d="M100 14 L160 104 L100 130 Z" fill="${MINT}"/>
-  <path d="M40 104 L100 130 L100 176 Z" fill="${MINT_D}"/>
-  <path d="M160 104 L100 130 L100 176 Z" fill="${MINT_DD}"/>
-  <path d="M42 105 L100 131 L158 105" fill="none" stroke="${NAVY}" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="M91 31 L62 75" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".7"/>
-  <circle cx="57" cy="85" r="3.6" fill="#fff" opacity=".7"/>
-  <ellipse cx="70" cy="99" rx="8" ry="4.4" fill="#ff8f6b" opacity=".75"/>
-  <ellipse cx="130" cy="99" rx="8" ry="4.4" fill="#ff8f6b" opacity=".75"/>
-  <ellipse cx="84" cy="84" rx="8.6" ry="10.4" fill="${NAVY}"/><ellipse cx="116" cy="84" rx="8.6" ry="10.4" fill="${NAVY}"/>
-  <circle cx="86.8" cy="79.6" r="3.3" fill="#fff"/><circle cx="118.8" cy="79.6" r="3.3" fill="#fff"/>
-  <path d="M91 99.5 Q100 108.5 109 99.5" fill="none" stroke="${NAVY}" stroke-width="5" stroke-linecap="round"/>`;
+// The hero object: a glossy fishing hook on a line, built as a sticker (white edge, navy outline, fills).
+// 200x300 box; the line runs off the top.
+const SHANK='M100 58 V182 a46 46 0 0 0 92 0 V138';
+const POINT='M178 142 L192 100 L206 142 Z';
+const BARB='M179 128 L158 156 L180 150 Z';
+function hookArt(edge=true, line=true){
+  const E=edge?`<g fill="${EDGE}" stroke="${EDGE}" stroke-linejoin="round" stroke-linecap="round">
+      ${line?`<path d="M100 -400 V16" fill="none" stroke-width="22"/>`:''}
+      <ellipse cx="100" cy="36" rx="13" ry="20" fill="none" stroke-width="46"/>
+      <path d="${SHANK}" fill="none" stroke-width="64"/><path d="${POINT}" stroke-width="36"/><path d="${BARB}" stroke-width="36"/>
+    </g>`:'';
+  return `${E}
+    <g fill="${NAVY}" stroke="${NAVY}" stroke-linejoin="round" stroke-linecap="round">
+      ${line?`<path d="M100 -400 V16" fill="none" stroke-width="8"/>`:''}
+      <ellipse cx="100" cy="36" rx="13" ry="20" fill="none" stroke-width="24"/>
+      <path d="${SHANK}" fill="none" stroke-width="42"/><path d="${POINT}" stroke-width="14"/><path d="${BARB}" stroke-width="14"/>
+    </g>
+    <ellipse cx="100" cy="36" rx="13" ry="20" fill="none" stroke="${HOOK}" stroke-width="11"/>
+    <path d="${SHANK}" fill="none" stroke="${HOOK}" stroke-width="28" stroke-linecap="round"/>
+    <path d="${POINT}" fill="${HOOK}"/><path d="${BARB}" fill="${HOOK}"/>
+    <path d="M110 66 V182 a36 36 0 0 0 4 16" fill="none" stroke="#c94a1c" stroke-width="7" stroke-linecap="round" opacity=".55"/>
+    <path d="M200 140 V182 a54 54 0 0 1 -6 22" fill="none" stroke="#c94a1c" stroke-width="5" stroke-linecap="round" opacity=".45"/>
+    <path d="M93 72 V168" stroke="${HOOK_L}" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="93" cy="184" r="3.6" fill="${HOOK_L}"/>
+    
+    <path d="M186 132 L192 112" stroke="${HOOK_L}" stroke-width="4" stroke-linecap="round"/>`;
 }
 
 // two-tone sticker wordmark, baseline at y; size in px
 function wordmark(x,y,size,anchor='start'){
   // all three layers use the same two tspans so kerning (and so glyph positions) match exactly
   const t=(a,b)=>`<tspan fill="${a}">ether</tspan><tspan fill="${b}">hook</tspan>`;
-  return `<g font-size="${size}" text-anchor="${anchor}" letter-spacing="${size*0.01}">
+  return `<g font-size="${size}" text-anchor="${anchor}" letter-spacing="${size*0.06}">
     <text x="${x}" y="${y}" stroke="${EDGE}" stroke-width="${size*0.36}" stroke-linejoin="round">${t(EDGE,EDGE)}</text>
     <text x="${x}" y="${y}" stroke="${NAVY}" stroke-width="${size*0.18}" stroke-linejoin="round">${t(NAVY,NAVY)}</text>
     <text x="${x}" y="${y}">${t('url(#gm)','url(#gh)')}</text>
@@ -80,17 +76,17 @@ const bubble=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="
 
 const w=document.getElementById('w');
 const add=(id,W,H,inner,bg=NAVY)=>w.insertAdjacentHTML('beforeend',`<div id="${id}" style="width:${W}px;height:${H}px;background:${bg}"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${DEFS}${inner}</svg></div>`);
-const place=(x,y,s,rot=0,edge=true)=>`<g transform="translate(${x} ${y}) scale(${s}) rotate(${rot} 100 120)">${mascot(edge)}</g>`;
+const place=(x,y,s,rot=0,edge=true,line=true)=>`<g transform="translate(${x} ${y}) scale(${s}) rotate(${rot} 150 150)">${hookArt(edge,line)}</g>`;
 
 // mascot alone, transparent (logo.svg is exported from this markup)
-w.insertAdjacentHTML('beforeend',`<div id="logo" style="width:240px;height:256px;background:transparent"><svg id="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="-20 -8 240 256" width="240" height="256"><g transform="rotate(-6 100 120)">${mascot(true)}</g></svg></div>`);
+w.insertAdjacentHTML('beforeend',`<div id="logo" style="width:256px;height:256px;background:transparent"><svg id="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><g transform="translate(28 4) scale(.98)">${hookArt(true,false)}</g></svg></div>`);
 // app icon (favicon, apple touch, logo-512)
-add('icon',512,512,`<g transform="translate(66 34) scale(1.8) rotate(-6 100 120)">${mascot(true)}</g>`);
+add('icon',512,512,`<g transform="translate(36 34) scale(1.58)">${hookArt(true,false)}</g>`);
 // profile picture
 add('pfp',1000,1000,`
   ${dots([[150,250,16],[860,760,13],[770,890,7,HOOK],[190,820,8],[880,170,7,HOOK],[110,560,6]])}
   ${bubble(820,330,22)}${bubble(865,260,11)}${bubble(225,370,15)}
-  ${place(265,150,2.3,-7)}
+  ${place(135,150,2.6,0)}
   ${badge(770,195,74,'ether',MINT,40,10)}
   ${badge(215,800,70,'hook',HOOK,42,-9)}`);
 // X banner
@@ -102,7 +98,7 @@ add('banner',1500,500,`
   ${badge(880,370,58,'vault',MINT,30,-8)}
   ${badge(1010,300,64,'buyback',HOOK,22,6)}
   ${badge(1005,440,46,'burn',MINT_L,24,-4)}
-  ${place(1140,40,1.75,8)}`);
+  ${place(1120,62,1.44,0)}`);
 // default token image
 add('tdefault',512,512,`
   ${dots([[430,92,14],[456,128,8],[78,430,11,HOOK]])}
@@ -126,9 +122,9 @@ add('og',1200,630,`
   <text x="78" y="368" font-size="70" fill="${EDGE}">their own <tspan fill="${HOOK}">dips.</tspan></text>
   <text x="80" y="440" style="font-family:'Public Sans'" font-weight="500" font-size="26" fill="#a9b8cb">Vault backing, dip buybacks and burns, built into every coin.</text>
   <text x="80" y="560" style="font-family:'JetBrains Mono'" font-weight="600" font-size="19" fill="#7f90a8" letter-spacing="1.5">ETHEREUM MAINNET · UNISWAP V4 HOOKS</text>
-  ${place(770,120,1.75,7)}`);
+  ${place(800,150,1.5,0)}`);
 // wordmark lockup on transparent ground
-add('lockup',900,240,`${place(20,20,0.82,-6)}${wordmark(220,160,112)}`,'transparent');
+add('lockup',900,240,`${place(10,8,0.72,0,true,false)}${wordmark(200,160,112)}`,'transparent');
 
 // sample coin art for the preview coins (unchanged)
 const coins=[['frogr','FR','#1d6b3a','#d9f2c2'],['idx69','69','#f4cf3d','#1a1405'],['hard','HM','#f2911b','#1d1103'],['mogt','MT','#1c1c1f','#ffd23f'],['stkd','SS','#0f8fe0','#ffffff'],['dips','DE','#f05a22','#fff4ee'],['goldf','GF','#b8902a','#fff6dc'],['nvlt','NV','#ebe2d0','#3a2817'],['lstk','LS','#2a5ada','#ffffff'],['stbl','SF','#1f6fc4','#e6f0ff'],['shltr','SH','#d9661a','#fff3e6']];

@@ -6,6 +6,7 @@
   --bg: #eef1f4; --bg-2: #e4e8ed; --surface: #ffffff; --surface-2: #f6f8fa; --hover: #f0f3f6;
   --ink: #0b1220; --ink-2: #2c3747; --muted: #5a6577; --faint: #8a95a5;
   --line: #dbe1e8; --line-2: #c5cdd7;
+  --wm-ether: #0f9d8a; --wm-hook: #ef5f1f;
   --vault: #0e7490; --vault-strong: #0b5f76; --vault-soft: #dff1f5; --vault-line: #9fd3df;
   --bb: #e8590c; --bb-strong: #c2410c; --bb-soft: #fdece2; --bb-line: #f6b48f;
   --holders: #6d5bd0; --holders-soft: #ece9fb;
@@ -28,7 +29,8 @@
     --bg: #0a0f17; --bg-2: #0f1520; --surface: #111925; --surface-2: #151e2b; --hover: #1a2433;
     --ink: #e8edf4; --ink-2: #c3ccd8; --muted: #8d99aa; --faint: #5f6b7c;
     --line: #1f2a39; --line-2: #2b3849;
-    --vault: #3cc3dc; --vault-strong: #7fdcec; --vault-soft: #0d2a33; --vault-line: #1d5866;
+    --wm-ether: #2ee6c5; --wm-hook: #ff7a3d;
+  --vault: #3cc3dc; --vault-strong: #7fdcec; --vault-soft: #0d2a33; --vault-line: #1d5866;
     --bb: #ff8a4c; --bb-strong: #ffa774; --bb-soft: #33190c; --bb-line: #6b3417;
     --holders: #a597ff; --holders-soft: #221d44;
     --creator: #94a3b8; --platform: #3a4757;
@@ -45,6 +47,7 @@
   --bg: #0a0f17; --bg-2: #0f1520; --surface: #111925; --surface-2: #151e2b; --hover: #1a2433;
   --ink: #e8edf4; --ink-2: #c3ccd8; --muted: #8d99aa; --faint: #5f6b7c;
   --line: #1f2a39; --line-2: #2b3849;
+  --wm-ether: #2ee6c5; --wm-hook: #ff7a3d;
   --vault: #3cc3dc; --vault-strong: #7fdcec; --vault-soft: #0d2a33; --vault-line: #1d5866;
   --bb: #ff8a4c; --bb-strong: #ffa774; --bb-soft: #33190c; --bb-line: #6b3417;
   --holders: #a597ff; --holders-soft: #221d44;
@@ -81,9 +84,9 @@ h1, h2, h3 { font-family: var(--f-display); font-stretch: 108%; letter-spacing: 
 .top.scrolled { border-bottom-color: var(--line); }
 .top-in { max-width: var(--wrap); margin: 0 auto; height: 60px; padding: 0 24px; display: flex; align-items: center; gap: 28px; }
 .brand { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
-.brand svg { width: 28px; height: 28px; }
-.brand b { font: 800 20px/1 var(--f-display); font-stretch: 112%; letter-spacing: -.025em; }
-.mk-line { stroke: var(--ink); } .mk-bar { fill: var(--vault); }
+.brand .mark { width: 30px; height: 30px; }
+.wm { font: 400 23px/1 'Lilita One', var(--f-display); letter-spacing: .03em; color: var(--wm-hook); }
+.wm i { font-style: normal; color: var(--wm-ether); }
 .nav { display: flex; align-items: center; gap: 2px; }
 .nav a { position: relative; display: flex; align-items: center; height: 60px; padding: 0 12px; color: var(--muted); font-weight: 500; transition: color .12s; }
 .nav a:hover { color: var(--ink); }
@@ -103,8 +106,8 @@ kbd { font: 500 11px var(--f-mono); padding: 1px 6px; border: 1px solid var(--li
 .page { flex: 1; width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 22px 24px 72px; }
 .foot { border-top: 1px solid var(--line); }
 .foot-in { max-width: var(--wrap); margin: 0 auto; padding: 22px 24px 28px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; color: var(--muted); font-size: 13px; }
-.foot-in .brand b { font-size: 16px; }
-.foot-in .brand svg { width: 22px; height: 22px; }
+.foot-in .wm { font-size: 18px; }
+.foot-in .brand .mark { width: 22px; height: 22px; }
 .foot-in nav { display: flex; gap: 18px; margin-left: auto; }
 .foot-in nav a:hover { color: var(--ink); }
 .tabbar { display: none; }

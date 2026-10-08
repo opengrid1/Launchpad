@@ -12,7 +12,7 @@ MODE = sys.argv[1] if len(sys.argv) > 1 else 'preview'
 DESC = 'Launch a coin on Ethereum with a strategy built in: a vault that backs every coin, buybacks on every 20% dip, burns from take-profit, and redeem at backing.'
 SITE_URL = os.environ.get('SITE_URL', 'https://etherhook.fun').rstrip('/')
 
-FONTS = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=JetBrains+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap'
+FONTS = 'https://fonts.googleapis.com/css2?family=Lilita+One&family=Archivo:wdth,wght@62..125,400..900&family=JetBrains+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap'
 NAV = [('explore', '/', 'Explore'), ('launch', '/launch', 'Launch'), ('portfolio', '/portfolio', 'Portfolio'), ('docs', '/docs', 'How it works')]
 ICON = {
     'compass': '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"/>',
@@ -22,7 +22,8 @@ ICON = {
     'search': '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
 }
 # the mark: a price line that dips onto a bar and recovers; colours come from the theme
-MARK = '<svg viewBox="0 0 32 32" aria-hidden="true"><path class="mk-line" d="M9 3.6V13a7 7 0 0 0 14 0V8.6l-3.4 3.4" fill="none" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><rect class="mk-bar" x="3.5" y="23.2" width="25" height="5" rx="1.1"/></svg>'
+MARK = '<img class="mark" src="/img/logo.svg" alt="" width="30" height="30">'
+WORDMARK = '<b class="wm"><i>ether</i>hook</b>'
 ETH_GLYPH = '<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M5 0 0 8.1 5 11l5-2.9z" fill="currentColor" opacity=".55"/><path d="M5 12 0 9.1 5 16l5-6.9z" fill="currentColor"/></svg>'
 
 
@@ -79,6 +80,7 @@ def shell(meta, body):
 <meta name="twitter:description" content="{desc}">
 <meta name="twitter:image" content="{SITE_URL}/img/og.png">
 <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="icon" href="/img/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="icon" href="/img/favicon-64.png" type="image/png" sizes="64x64">
 <link rel="icon" href="/img/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -94,7 +96,7 @@ def shell(meta, body):
 <body>
 <header class="top">
   <div class="top-in">
-    <a class="brand" href="/" aria-label="Etherhook home">{MARK}<b>Etherhook</b></a>
+    <a class="brand" href="/" aria-label="Etherhook home">{MARK}{WORDMARK}</a>
     <nav class="nav" aria-label="Main">{links}</nav>
     <div class="top-r">
       <button class="search-trigger" data-search aria-label="Search coins">{ic("search")}<span>Search coins or paste an address</span><kbd>/</kbd></button>
@@ -109,7 +111,7 @@ def shell(meta, body):
 </main>
 <footer class="foot">
   <div class="foot-in">
-    <a class="brand" href="/" aria-label="Etherhook home">{MARK}<b>Etherhook</b></a>
+    <a class="brand" href="/" aria-label="Etherhook home">{MARK}{WORDMARK}</a>
     <nav aria-label="Footer"><a href="/docs">How it works</a><a href="/docs#faq">FAQ</a><a href="/launch">Launch</a></nav>
   </div>
 </footer>

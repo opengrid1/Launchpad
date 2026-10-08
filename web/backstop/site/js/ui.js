@@ -43,7 +43,7 @@
   const delta = v => `<span class="delta ${!isFinite(v) || Math.abs(v) < .05 ? 'flat' : v > 0 ? 'up' : 'down'}">${pct(v)}</span>`;
   const ago = ts => { const s = Math.max(1, Date.now() / 1000 - ts); if (s < 60) return Math.floor(s) + 's'; if (s < 3600) return Math.floor(s / 60) + 'm'; if (s < 86400) return Math.floor(s / 3600) + 'h'; return Math.floor(s / 86400) + 'd'; };
   const short = a => a ? a.slice(0, 6) + '…' + a.slice(-4) : '';
-  const DEFAULT_LOGO = '/img/token-default.svg';
+  const DEFAULT_LOGO = '/img/token-default.png';
   const tokImg = (t, cls) => `<img class="${cls || 'tok'}" src="${esc(t && t.logo || DEFAULT_LOGO)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${DEFAULT_LOGO}'">`;
   const coinImg = (x, cls) => `<img class="av ${cls || ''}" src="${esc(x.img || DEFAULT_LOGO)}" alt="" onerror="this.onerror=null;this.src='${DEFAULT_LOGO}'">`;
   const pairGlyph = (x, size) => `<span class="pg ${size || ''}" title="${esc(x.symbol)} backed by ${esc(x.pairSym)}">${coinImg(x)}${tokImg({ logo: x.pairLogo }, 'pr')}</span>`;
