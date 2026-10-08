@@ -40,6 +40,14 @@ svg { flex-shrink: 0; }
 .key.yellow { background: var(--key); color: var(--key-ink); box-shadow: 0 3px 0 var(--key-edge), inset 0 0 0 1px var(--key-edge); }
 .key.yellow:hover { filter: brightness(1.03); }
 .key.yellow:active:not(:disabled), .key.yellow.down { box-shadow: 0 0 0 var(--key-edge), inset 0 0 0 1px var(--key-edge); }
+.key.green { background: var(--kept); color: #fff; box-shadow: 0 3px 0 #0a5c3f, inset 0 0 0 1px #0a5c3f; }
+.key.green:hover { filter: brightness(1.05); }
+.key.green:active:not(:disabled), .key.green.down { box-shadow: 0 0 0 #0a5c3f, inset 0 0 0 1px #0a5c3f; }
+.key.red { background: var(--undone); color: #fff; box-shadow: 0 3px 0 #96242a, inset 0 0 0 1px #96242a; }
+.key.red:hover { filter: brightness(1.05); }
+.key.red:active:not(:disabled), .key.red.down { box-shadow: 0 0 0 #96242a, inset 0 0 0 1px #96242a; }
+.key.lg.green { box-shadow: 0 4px 0 #0a5c3f, inset 0 0 0 1px #0a5c3f; }
+.key.lg.red { box-shadow: 0 4px 0 #96242a, inset 0 0 0 1px #96242a; }
 .key.ink { background: var(--ink); color: var(--bg); box-shadow: 0 3px 0 #000, inset 0 0 0 1px var(--ink); }
 .key.ink:hover { background: var(--ink-2); }
 .key.ink:active:not(:disabled), .key.ink.down { box-shadow: 0 0 0 #000, inset 0 0 0 1px var(--ink); }

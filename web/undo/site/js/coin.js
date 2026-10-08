@@ -22,7 +22,7 @@
   function buyEth() { return side === 'buy' ? parseFloat(amt) || 0 : 0; }
   function trade() {
     const { esc, ic, eth, timeKeys, winLabel, premiumFor, maxHoursFor } = U(); const v = buyEth(); const tooSmall = withWin && v > 0 && maxHoursFor(v) < hours;
-    return `<section class="panel trade"><div class="tk-tabs"><button class="key ${side === 'buy' ? 'down yellow' : ''}" data-side="buy">Buy</button><button class="key ${side === 'sell' ? 'down' : ''}" data-side="sell">Sell</button></div>
+    return `<section class="panel trade"><div class="tk-tabs"><button class="key ${side === 'buy' ? 'down green' : ''}" data-side="buy">Buy</button><button class="key ${side === 'sell' ? 'down red' : ''}" data-side="sell">Sell</button></div>
       <div class="trade-b">
         <div class="field"><label for="amt">${side === 'buy' ? 'You pay' : 'You sell'}</label><div class="amt"><input id="amt" inputmode="decimal" placeholder="0" autocomplete="off" value="${esc(amt)}"><span class="unit">${side === 'buy' ? `<img class="tok" src="/img/tokens/eth.webp" alt="">ETH` : `<span class="av" style="--h:${x.hue};width:22px;height:22px;font-size:10px;border-radius:6px">${esc(x.symbol[0])}</span>${esc(x.symbol)}`}</span></div>
           <div class="quick">${(side === 'buy' ? ['0.05', '0.1', '0.25', '0.5', '1'] : ['25%', '50%', '75%', '100%']).map(q => `<button class="key sm" data-q="${q}">${q}</button>`).join('')}</div></div>
@@ -30,7 +30,7 @@
           ${withWin ? `${timeKeys(hours, v || null)}<p>${tooSmall ? `<span class="c-undone">Too small for ${winLabel(hours)}. A window can cost at most 30% of the buy.</span>` : `<b>${winLabel(hours)}</b> costs <b>${eth(premiumFor(hours))}</b>, burned. Cancel before it closes and the whole buy comes back.`}</p>` : '<p>Coins land in your wallet now. No taking it back.</p>'}</div>`
         : `<div class="undo-opt"><div class="row">${ic('lock')}<b>Coins in a window can't be sold</b></div><p>Cancel the window or press Keep first.</p></div>`}
         <div class="quote" id="quote"></div>
-        <button class="key lg wide ${side === 'buy' ? 'yellow' : 'ink'}" id="tradeGo" ${tooSmall ? 'disabled' : ''}>${side === 'buy' ? (withWin ? `Buy with ${winLabel(hours)} undo` : 'Buy') : 'Sell'}</button>
+        <button class="key lg wide ${side === 'buy' ? 'green' : 'red'}" id="tradeGo" ${tooSmall ? 'disabled' : ''}>${side === 'buy' ? (withWin ? `Buy with ${winLabel(hours)} undo` : 'Buy') : 'Sell'}</button>
       </div></section>`;
   }
   function quote(root) {
@@ -98,7 +98,7 @@
   function paint() {
     const { $, $$, notLive, copy, dialog } = U();
     $('#coinRoot').innerHTML = `${bar()}<div class="chart" id="chart"></div>${keyrow()}<div class="coin-cols"><div class="coin-left">${activity()}</div><div class="coin-right"><div class="trade-slot"></div>${mine()}${about()}</div></div>
-      <div class="dock"><button class="key lg yellow" data-dock="buy">Buy with undo</button><button class="key lg" data-dock="sell">Sell</button></div>`;
+      <div class="dock"><button class="key lg green" data-dock="buy">Buy</button><button class="key lg red" data-dock="sell">Sell</button></div>`;
     document.title = `${x.name} ($${x.symbol}) · undo.fun`; $('#page').classList.add('has-dock');
     paintActivity();
     $$('#actTabs .key').forEach(b => b.onclick = () => { tab = b.dataset.t; paintActivity(); });
