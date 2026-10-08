@@ -8,7 +8,7 @@
     <header>
       <span class="eyebrow">Preview · contracts not deployed yet</span>
       <h1 style="margin-top:12px">How Etherhook works</h1>
-      <p class="lede">A Etherhook coin is a normal ERC-20 on Ethereum with a strategy wired into its pool. Every trade pays a tax the creator sets at launch, from 1% to 10%. The platform keeps 1%; the creator decides where the rest goes: a vault that backs the coin, a fund that buys back on dips, locked liquidity, holders, or themselves. Once launched, the strategy runs by itself and nobody can change it.</p>
+      <p class="lede">An Etherhook coin is a normal ERC-20 on Ethereum with a strategy wired into its pool. Every trade pays a tax the creator sets at launch, from 1% to 10%. The platform keeps 1%; the creator decides where the rest goes: a vault that backs the coin, a fund that buys back on dips, locked liquidity, holders, or themselves. Once launched, the strategy runs by itself and nobody can change it.</p>
       <dl class="facts">
         <div><dt>Supply</dt><dd>1,000,000,000</dd></div>
         <div><dt>Start market cap</dt><dd>$5,000</dd></div>
@@ -28,7 +28,7 @@
         <li><b>Set the options:</b> take-profit target, redeem on or off, and what holders are paid in.</li>
         <li><b>Launch,</b> with an optional first buy in the same transaction.</li>
       </ol>
-      <p>All 1,000,000,000 coins go into a Uniswap V4 pool against the backing token at a $5,000 market cap. Nobody gets an allocation and the pool can't be withdrawn. The coin trades from the first block.</p>
+      <p>All 1,000,000,000 coins go into a Uniswap V4 pool against the backing token at a $5,000 market cap. Nobody gets an allocation. The coin trades from the first block.</p>
     </section>
 
     <section id="split">
@@ -127,7 +127,6 @@
         <li>Nothing can withdraw from a vault or a buyback fund. Vault assets leave only through take-profit or redeem; fund assets leave only as buybacks.</li>
         <li>Coins bought back are burned, never kept.</li>
         <li>Coins have no owner and no mint function. Supply only goes down.</li>
-        <li>The pool's liquidity can't be removed.</li>
       </ul>
     </section>
 
