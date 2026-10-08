@@ -71,12 +71,8 @@ add('tdefault',512,512,`
     <path d="M0 0 V36 a16 16 0 0 0 32 0 V22 M32 22 l-9 9" fill="none" stroke="${NAVY}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M0 0 V36 a16 16 0 0 0 32 0 V22 M32 22 l-9 9" fill="none" stroke="${HOOK}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
   </g>`);
-// link preview card: name, one line, logo
-add('og',1200,630,`
-  ${wordmark(80,200,100)}
-  <text x="86" y="330" font-size="70" fill="${EDGE}">Coins that buy</text>
-  <text x="86" y="408" font-size="70" fill="${EDGE}">their own <tspan fill="${HOOK}">dips.</tspan></text>
-  ${art(850,45,540)}`);
+// link preview card: logo and name, centred, same as the banner
+add('og',1200,630,`${art(145,95,440)}${wordmark(444,357,120)}`);
 // wordmark lockup on transparent ground
 add('lockup',900,240,`${art(10,10,220)}${wordmark(160,160,112)}`,'transparent');
 
