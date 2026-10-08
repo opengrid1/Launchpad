@@ -416,6 +416,14 @@ const api = {
     state: async () => { const [paused, feeRecipient, startCap, lpThr] = await Promise.all([factory.launchesPaused(), factory.feeRecipient(), factory.startCapUsd8(), factory.lpThresholdUsd()]); return { paused, feeRecipient: lower(feeRecipient), startCap: Number(startCap) / 1e8, lpThreshold: Number(lpThr) / 1e18 }; },
     platformOwed: async () => { let total = 0; for (const x of tokens) { try { total += Number(await stratOf(x.strategy).platformOwed()) / 10 ** x.pairDec * x.pairUsd; } catch {} } return total; },
     owedOf: async x => Number(await stratOf(x.strategy).platformOwed()) / 10 ** x.pairDec * x.pairUsd,
+    // what collect(bps) would pull from a coin's launch position right now, simulated as the admin
+    async collectQuote(x, bps, to) {
+      const pos = await factory.positions(x.addr);
+      if (!pos.liquidity) return { liquidity: 0n, coin: 0, pair: 0, usd: 0 };
+      const [c, p] = await factory.collect.staticCall(x.addr, bps, to || CFG.admin, { from: CFG.admin });
+      const coin = Number(c) / 1e18, pair = Number(p) / 10 ** x.pairDec;
+      return { liquidity: pos.liquidity, coin, pair, usd: coin * x.px + pair * x.pairUsd };
+    },
     async call(fn, args) { const s = await signer(); const me = await s.getAddress(); return send(g => K(C.factory, 'Factory', s)[fn](...args, { gasLimit: g }), () => K(C.factory, 'Factory')[fn].estimateGas(...args, { from: me })); },
   },
 };

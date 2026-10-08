@@ -138,7 +138,26 @@
 
   // live platform state: launches paused, fees owed per coin
   let plat = null;
-  async function loadPlatform() { try { const [st, owed] = await Promise.all([EH.admin.state(), Promise.all(EH.allTokens().map(x => EH.admin.owedOf(x).catch(() => 0)))]); plat = { ...st, owed }; } catch { plat = null; } }
+  async function loadPlatform() { try { const all = EH.allTokens(); const [st, owed, lp] = await Promise.all([EH.admin.state(), Promise.all(all.map(x => EH.admin.owedOf(x).catch(() => 0))), Promise.all(all.map(x => EH.admin.collectQuote(x, 10000).catch(() => null)))]); plat = { ...st, owed, lp }; } catch { plat = null; } }
+
+  // pull part of a coin's launch position out of its pool (auto-LP liquidity is never touched)
+  function openCollect(x) {
+    const { usd, num, esc, dialog, $, $$, toast } = U(); const w = window.bsWallet; let bps = 10000;
+    const ov = dialog(`Collect ${x.symbol} launch liquidity`, `<div class="panel-b redeem-box">
+      <div class="field"><label>How much of the launch position</label><div class="seg" id="clSeg">${[2500, 5000, 10000].map(b => `<button data-b="${b}" class="${b === bps ? 'on' : ''}">${b / 100}%</button>`).join('')}</div></div>
+      <div class="field"><label for="clTo">Send to</label><input class="input mono" id="clTo" spellcheck="false" autocomplete="off" value="${esc(w && w.address || BS.cfg.admin || '')}"></div>
+      <div class="redeem-out"><span>You receive</span><b id="clOut">…</b></div>
+      <small class="faint">Removing liquidity moves the price down and makes trades thinner. Liquidity added by auto-LP stays in the pool.</small>
+      <button class="btn btn-ink btn-block" id="clGo">Collect</button></div>`);
+    const to = $('#clTo', ov), go = $('#clGo', ov), out = $('#clOut', ov);
+    const valid = () => /^0x[0-9a-fA-F]{40}$/.test(to.value.trim());
+    const quote = async () => { out.textContent = '…'; if (!valid()) { out.textContent = 'Enter a wallet address'; return; }
+      try { const q = await EH.admin.collectQuote(x, bps, to.value.trim()); out.textContent = q.liquidity ? `${num(q.coin, 0)} $${x.symbol} + ${num(q.pair, 6)} ${x.pairSym} · ${usd(q.usd)}` : 'Nothing left to collect'; go.disabled = !q.liquidity; }
+      catch (e) { out.textContent = e.shortMessage || e.message; go.disabled = true; } };
+    $$('#clSeg button', ov).forEach(b => b.onclick = () => { bps = +b.dataset.b; $$('#clSeg button', ov).forEach(o => o.classList.toggle('on', o === b)); quote(); });
+    to.oninput = quote; quote();
+    go.onclick = () => { if (!valid()) return; ov.close(); adminTx('collect', [x.addr, bps, to.value.trim()], `Collected ${bps / 100}% of ${x.symbol} launch liquidity`); };
+  }
   async function adminTx(fn, args, done) { const { toast } = U(); try { await EH.admin.call(fn, args); toast(done); } catch (e) { toast(e.message, { err: true }); paint(); return; } await BS.reload().catch(() => {}); await loadPlatform(); paint(); }
 
   function paint() {
@@ -154,10 +173,11 @@
         <div class="srow" style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-top:1px solid var(--line)"><div style="flex:1"><b>Platform fees</b><div class="faint" style="font-size:13px">${usd(owedTotal)} sits in coin strategies. Pushing sends it to the fee recipient${plat ? ` <span class="mono">${esc(short(plat.feeRecipient))}</span>` : ''}.</div></div><button class="btn btn-line" id="pushBtn" ${owedTotal > 0 ? '' : 'disabled'}>Push fees</button></div>
       </section>
       ${backingSection()}
-      <section class="panel"><div class="panel-h"><h2>Coins</h2><span class="r faint" style="font-size:12.5px">Hiding takes a coin off the site; it keeps trading on-chain</span></div>${all.length ? `<div class="table-wrap" style="border:0"><table class="list"><thead><tr><th>Coin</th><th>Platform fees</th><th>Volume 24h</th><th>Listed</th></tr></thead><tbody>
-      ${all.map((x, i) => `<tr><td><div class="coin-cell">${pairGlyph(x, 'sm')}<div><b>${esc(x.name)}</b><small>$${esc(x.symbol)} · ${esc(x.pairSym)}</small></div></div></td><td><span class="num">${usd(x.fees.platform)}</span>${plat && plat.owed[i] ? `<small class="faint" style="display:block">${usd(plat.owed[i])} to push</small>` : ''}</td><td><span class="num">${usd(x.vol24)}</span></td><td><button class="switch" role="switch" data-h="${x.addr}" aria-checked="${!x.hidden}" aria-label="List ${esc(x.symbol)}" style="margin-left:auto;display:block"></button></td></tr>`).join('')}
+      <section class="panel"><div class="panel-h"><h2>Coins</h2><span class="r faint" style="font-size:12.5px">Hiding takes a coin off the site; it keeps trading on-chain</span></div>${all.length ? `<div class="table-wrap" style="border:0"><table class="list"><thead><tr><th>Coin</th><th>Platform fees</th><th>Volume 24h</th><th>Launch LP</th><th>Listed</th></tr></thead><tbody>
+      ${all.map((x, i) => `<tr><td><div class="coin-cell">${pairGlyph(x, 'sm')}<div><b>${esc(x.name)}</b><small>$${esc(x.symbol)} · ${esc(x.pairSym)}</small></div></div></td><td><span class="num">${usd(x.fees.platform)}</span>${plat && plat.owed[i] ? `<small class="faint" style="display:block">${usd(plat.owed[i])} to push</small>` : ''}</td><td><span class="num">${usd(x.vol24)}</span></td><td><div style="display:flex;align-items:center;justify-content:flex-end;gap:10px"><span class="num ${plat && plat.lp[i] && plat.lp[i].liquidity ? '' : 'faint'}">${!plat || !plat.lp[i] ? '…' : plat.lp[i].liquidity ? usd(plat.lp[i].usd) : 'Collected'}</span><button class="btn btn-line" data-cl="${x.addr}" ${plat && plat.lp[i] && plat.lp[i].liquidity ? '' : 'disabled'}>Collect</button></div></td><td><button class="switch" role="switch" data-h="${x.addr}" aria-checked="${!x.hidden}" aria-label="List ${esc(x.symbol)}" style="margin-left:auto;display:block"></button></td></tr>`).join('')}
       </tbody></table></div>` : '<div class="empty"><p>No coins launched yet.</p></div>'}</section>`;
     $$('[data-h]').forEach(b => b.onclick = () => { const x = EH.token(b.dataset.h); b.disabled = true; adminTx('setHidden', [x.addr, !x.hidden], x.hidden ? `${x.symbol} is listed again` : `${x.symbol} is hidden`); });
+    $$('[data-cl]').forEach(b => b.onclick = () => openCollect(EH.token(b.dataset.cl)));
     const pb = $('#pauseBtn'); if (pb) pb.onclick = () => { pb.disabled = true; adminTx(plat.paused ? 'resume' : 'pause', [], plat.paused ? 'Launches resumed' : 'Launches paused'); };
     const fb = $('#pushBtn'); if (fb) fb.onclick = () => { fb.disabled = true; adminTx('pushPlatformFees', [EH.allTokens().map(x => x.addr)], 'Platform fees pushed'); };
     $$('[data-act]').forEach(b => b.onclick = () => { if (busy) return; const td = todo(); send(td[b.dataset.act], b.dataset.act === 'drift' ? 'prices' : b.dataset.act); });
