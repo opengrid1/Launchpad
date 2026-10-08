@@ -1,6 +1,6 @@
 <!doctype html>
 <html><head><meta charset="utf-8">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Martian+Mono:wght@600&display=swap">
 <style>
   body { margin: 0; background: transparent; }
   .art { position: absolute; left: 0; top: 0; display: none; }
@@ -8,14 +8,14 @@
 </style></head>
 <body>
 <script>
-// cntrl-z.fun brand renders: a keycap with an undo arrow. INK keycap, YEL arrow, PAPER ground.
+// cntrl-z.fun brand renders: a keycap that says cntrl Z. INK keycap, YEL arrow, PAPER ground.
 const INK = '#15171a', INK2 = '#2a2e34', YEL = '#ffd60a', PAPER = '#f2f3ee';
 const key = (x, y, s) => `<g transform="translate(${x},${y}) scale(${s / 64})">
   <rect x="2" y="4" width="60" height="58" rx="14" fill="${INK}"/>
   <rect x="2" y="2" width="60" height="54" rx="14" fill="${INK2}"/>
   <rect x="7" y="6" width="50" height="44" rx="10" fill="${INK}"/>
-  <path d="M24 21h14a9 9 0 0 1 0 18H27" fill="none" stroke="${YEL}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M29.5 13.5 22 21l7.5 7.5" fill="none" stroke="${YEL}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="32" y="26" text-anchor="middle" font-family="Martian Mono" font-weight="600" font-size="9.5" fill="#9399a1" letter-spacing="0.5">cntrl</text>
+  <text x="32" y="46" text-anchor="middle" font-family="Bricolage Grotesque" font-weight="800" font-size="26" fill="${YEL}">Z</text>
 </g>`;
 const wordmark = (x, y, size, ink, dim) => `<text x="${x}" y="${y}" class="wm" font-size="${size}" fill="${ink}">cntrl-z<tspan fill="${dim}">.fun</tspan></text>`;
 const add = (id, w, h, inner, bg) => document.body.insertAdjacentHTML('beforeend', `<svg class="art" id="${id}" xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${bg ? `<rect width="${w}" height="${h}" fill="${bg}"/>` : ''}${inner}</svg>`);
