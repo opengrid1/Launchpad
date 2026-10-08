@@ -1,36 +1,23 @@
 <!--{"title": "Launch · undo.fun", "nav": "launch", "scripts": ["launch.js"]}-->
-<header class="page-h"><h1>Launch a coin with an undo key</h1><p>Pick what it trades against, how long buyers can change their mind, and who gets paid when they do. 1B supply, all of it in the pool from a $5K start. No presale.</p></header>
-<div class="launch-grid">
-  <form class="form" id="lf" onsubmit="return false">
-    <section class="sec panel"><div class="panel-b" style="display:grid;gap:14px">
-      <div class="sec-h"><h2>The coin</h2></div>
-      <div class="row2"><div class="field"><label for="name">Name</label><input class="input" id="name" maxlength="32" placeholder="Ctrl Z" autocomplete="off"></div><div class="field"><label for="sym">Ticker</label><div class="input-wrap"><input class="input mono" id="sym" maxlength="10" placeholder="CTRLZ" autocomplete="off" style="padding-left:24px"><span class="post" style="left:13px;right:auto">$</span></div></div></div>
+<div class="steps">
+  <header class="page-h"><h1>Launch a coin with an undo key</h1><p>Three choices. Everything else is the same for every coin: 1B supply in the pool from a $5K start, a 1% tax, and windows buyers rent for 0.05 ETH per six hours.</p></header>
+  <form id="lf" onsubmit="return false" style="display:contents">
+    <section class="step" id="s1"><div class="no">1</div><div class="body">
+      <h2>The coin</h2>
+      <div class="row2"><div class="field"><label for="name">Name</label><input class="input" id="name" maxlength="32" placeholder="Ctrl Z" autocomplete="off"></div><div class="field"><label for="sym">Ticker</label><div class="input-wrap"><input class="input mono" id="sym" maxlength="10" placeholder="CTRLZ" autocomplete="off" style="padding-left:26px"><span class="post" style="left:13px;right:auto">$</span></div></div></div>
       <div class="field"><label for="desc">What is it</label><textarea class="input" id="desc" maxlength="280" placeholder="One or two lines. It shows on the coin page and in link previews."></textarea></div>
-      <div class="field"><span class="lbl">Logo</span><div class="logo-drop"><span class="av" id="logoPrev">C</span><div><input type="file" id="logo" accept="image/*" hidden><button type="button" class="btn btn-line btn-sm" id="logoBtn">Choose image</button><small style="display:block;margin-top:6px">Square, up to 4 KB after we shrink it. It lives on-chain with the coin. No image? You get the lettered disc.</small></div></div></div>
+      <div class="field"><span class="lbl">Logo</span><div class="logo-drop"><span class="av" id="logoPrev">C</span><div><input type="file" id="logo" accept="image/*" hidden><button type="button" class="key sm" id="logoBtn">Choose image</button><small style="display:block;margin-top:6px">Square, shrunk to under 4 KB; it lives on-chain with the coin. No image? You get the lettered tile.</small></div></div></div>
       <div class="row3"><div class="field"><label for="lw">Website</label><input class="input" id="lw" placeholder="https://"></div><div class="field"><label for="lx">X</label><input class="input" id="lx" placeholder="https://x.com/"></div><div class="field"><label for="lt">Telegram</label><input class="input" id="lt" placeholder="https://t.me/"></div></div>
     </div></section>
-
-    <section class="sec panel"><div class="panel-b" style="display:grid;gap:14px">
-      <div class="sec-h"><h2>Pair</h2><p>What the coin trades against. Tax, refunds and the reserve are all held in it.</p></div>
-      <button type="button" class="pair-btn" id="pairBtn"></button>
+    <section class="step" id="s2"><div class="no">2</div><div class="body">
+      <h2>The pair</h2><p class="hint">ETH, tokenized gold, or any tokenized stock. Buyers can always pay in ETH; the router swaps on the way in.</p>
+      <div class="pairkeys" id="pairkeys"></div>
       <small class="muted" id="pairNote"></small>
     </div></section>
-
-    <section class="sec panel"><div class="panel-b" style="display:grid;gap:16px">
-      <div class="sec-h"><h2>Undo window</h2><p>How long a buyer can take a buy back. The refund starts at 97% and falls to 0 when the window closes.</p></div>
-      <div class="choice" id="winPick"></div>
-      <div id="curveBox"></div>
-      <div class="field"><span class="lbl">Undo fees go to</span><div class="choice c3" id="feePick"><button type="button" data-f="holders"><b>Holders</b><small>Every undo pays the wallets that stayed</small></button><button type="button" data-f="burn"><b>Burn</b><small>Every undo buys the coin back and burns it</small></button></div></div>
-      <div class="field"><label for="budget">Undo budget <span class="faint" style="font-weight:400">(optional)</span></label><div class="input-wrap"><input class="input num" id="budget" inputmode="decimal" placeholder="0"><span class="post" id="budgetUnit">ETH</span></div><small>Seed the undo reserve so early buyers are covered before the tax has built it up. It can't be taken back; it only ever pays refunds.</small></div>
-    </div></section>
-
-    <section class="sec panel"><div class="panel-b" style="display:grid;gap:14px">
-      <div class="sec-h"><h2>First buy</h2><p>Buy in the launch transaction, before anyone else can.</p></div>
-      <div class="field"><div class="input-wrap"><input class="input num" id="dev" inputmode="decimal" placeholder="0"><span class="post">ETH</span></div><small id="devNote">Optional. Your buy goes through at the start price with no undo window.</small></div>
+    <section class="step" id="s3"><div class="no">3</div><div class="body">
+      <h2>Your first buy <span class="faint" style="font-weight:500;font-size:14px">optional</span></h2><p class="hint">Buy in the launch transaction, before anyone else can. It has no undo window.</p>
+      <div class="field"><div class="input-wrap"><input class="input num" id="dev" inputmode="decimal" placeholder="0"><span class="post">ETH</span></div></div>
     </div></section>
   </form>
-  <aside class="sum">
-    <section class="panel"><div class="panel-h"><h2>Summary</h2></div><div class="panel-b" id="sumBody"></div></section>
-    <div class="go"><button class="btn btn-key btn-lg btn-block" id="launchGo" disabled>Launch</button><p id="goNote"></p></div>
-  </aside>
+  <section class="step"><div class="no" id="noGo">↵</div><div class="body preview" id="preview"></div></section>
 </div>

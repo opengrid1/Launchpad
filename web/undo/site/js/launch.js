@@ -1,57 +1,58 @@
-/* Launch form: coin, pair (popular tokens or any Ondo stock), undo window, where undo fees go, undo budget, first buy. */
+/* Launch: coin, pair (four popular keys plus every Ondo stock), first buy; then the coin card as it will look. */
 (function () {
   const U = () => window.UI;
-  const st = { name: '', sym: '', desc: '', logo: '', pair: null, windowH: 6, feeTo: 'holders', budget: 0, dev: 0 };
-  const WINDOWS = [[1, '1 hour', 'Quick cooling-off'], [6, '6 hours', 'Sleep on it'], [24, '24 hours', 'A full day'], [0, 'No undo', 'A plain coin']];
+  const st = { name: '', sym: '', desc: '', logo: '', pair: null, dev: 0 };
+  const QUICK = ['ETH', 'PAXG', 'XAUt'];
+  let popular = [], stocks = [];
 
-  async function pickPair() {
+  function paintPairs() {
+    const { esc, usd, pairIcon, $, $$ } = U(); const p = st.pair;
+    const keyFor = t => `<button type="button" class="pairkey ${p && p.symbol === t.symbol ? 'down' : ''}" data-p="${esc(t.symbol)}">${pairIcon(t)}<span class="t"><b>${esc(t.symbol)}</b><small>${esc(t.symbol === 'ETH' ? 'Ether' : t.kind === 'stock' ? t.name.replace(/ \(Ondo.*$/, '') + ' stock' : 'Gold · ' + t.name)}</small></span></button>`;
+    const chosenStock = p && p.kind === 'stock' ? keyFor(p) : '';
+    $('#pairkeys').innerHTML = QUICK.map(s => popular.find(t => t.symbol === s)).filter(Boolean).map(keyFor).join('') + chosenStock + `<button type="button" class="pairkey" data-more><span class="stock-chip">…</span><span class="t"><b>${chosenStock ? 'Another stock' : 'Tokenized stocks'}</b><small>${stocks.length || 500}+ US stocks and ETFs via Ondo</small></span></button>`;
+    $$('[data-p]').forEach(b => b.onclick = () => { st.pair = [...popular, ...stocks].find(t => t.symbol === b.dataset.p); paintPairs(); paintPreview(); });
+    $('[data-more]').onclick = pickPair;
+    $('#pairNote').textContent = !p ? '' : p.kind === 'stock' ? `${p.name}, ${usd(p.usd)} a share. Refunds and sells come back in ${p.symbol}, swappable to ETH in one click.` : p.symbol === 'ETH' ? 'The simplest pair. Refunds come back in ETH.' : `Refunds and sells come back in ${p.symbol}.`;
+    $('#s2').classList.toggle('done', !!p);
+  }
+  function pickPair() {
     const { dialog, ic, esc, usd, pairIcon, $, $$ } = U();
-    const ov = dialog('Pair', `<div class="dialog-search">${ic('search')}<input id="pq" placeholder="ETH, gold, TSLA, NVDA, SPY…" autocomplete="off" spellcheck="false"></div><div class="dialog-b" id="pr"><div class="empty"><p>Loading…</p></div></div>`);
-    const { popular, stocks } = await UD.pairsList(); const inp = $('#pq', ov), out = $('#pr', ov);
-    const row = p => `<button class="opt" data-p="${esc(p.symbol)}">${pairIcon(p)}<span class="t"><b>${esc(p.symbol)}</b><span>${esc(p.name)}</span></span><span class="r"><b>${p.usd ? usd(p.usd) : ''}</b>${p.kind === 'stock' ? '<span class="faint">stock</span>' : ''}</span></button>`;
+    const ov = dialog('Pair', `<div class="dialog-search">${ic('search')}<input id="pq" placeholder="TSLA, NVDA, SPY, gold…" autocomplete="off" spellcheck="false"></div><div class="dialog-b" id="pr"></div>`);
+    const inp = $('#pq', ov), out = $('#pr', ov);
+    const row = t => `<button class="opt" data-pp="${esc(t.symbol)}">${pairIcon(t)}<span class="t"><b>${esc(t.symbol)}</b><span>${esc(t.name)}</span></span><span class="r"><b>${t.usd ? usd(t.usd) : ''}</b>${t.kind === 'stock' ? '<span class="faint">stock</span>' : ''}</span></button>`;
     const render = () => { const q = inp.value.trim().toLowerCase();
-      const pop = popular.filter(p => !q || p.symbol.toLowerCase().includes(q) || (p.name || '').toLowerCase().includes(q));
-      const stk = stocks.filter(p => !q || p.symbol.toLowerCase().includes(q) || p.ticker.toLowerCase().includes(q) || p.name.toLowerCase().includes(q)).slice(0, q ? 40 : 12);
-      out.innerHTML = (pop.length ? `<div class="opt-group">Popular</div>${pop.map(row).join('')}` : '') + (stk.length ? `<div class="opt-group">Tokenized stocks · ${stocks.length} on Ethereum via Ondo</div>${stk.map(row).join('')}${!q && stocks.length > 12 ? '<div class="faint" style="padding:8px 10px;font-size:12.5px">Search for the rest.</div>' : ''}` : '') || '<div class="empty"><p>Nothing matches.</p></div>';
-      $$('[data-p]', out).forEach(b => b.onclick = () => { st.pair = [...popular, ...stocks].find(p => p.symbol === b.dataset.p); ov.close(); paintPair(); paintSum(); }); };
+      const pop = popular.filter(t => !q || t.symbol.toLowerCase().includes(q) || (t.name || '').toLowerCase().includes(q));
+      const stk = stocks.filter(t => !q || t.symbol.toLowerCase().includes(q) || t.ticker.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, q ? 40 : 10);
+      out.innerHTML = (pop.length ? `<div class="opt-group">Ether and gold</div>${pop.map(row).join('')}` : '') + (stk.length ? `<div class="opt-group">Tokenized stocks · ${stocks.length} on Ethereum via Ondo</div>${stk.map(row).join('')}` : '') || '<div class="empty"><p>Nothing matches.</p></div>';
+      $$('[data-pp]', out).forEach(b => b.onclick = () => { st.pair = [...popular, ...stocks].find(t => t.symbol === b.dataset.pp); ov.close(); paintPairs(); paintPreview(); }); };
     inp.oninput = render; render(); setTimeout(() => inp.focus(), 20);
   }
-  function paintPair() {
-    const { esc, usd, pairIcon, $ } = U(); const p = st.pair;
-    $('#pairBtn').innerHTML = p ? `${pairIcon(p)}<span class="t"><b>${esc(p.symbol)}</b><small>${esc(p.name)} · ${usd(p.usd)}</small></span><span class="tag">Change</span>` : `<span class="stock-chip" style="width:34px;height:34px;background:var(--sunk)"></span><span class="t"><b>Choose a pair</b><small>ETH, USDC, BTC, gold, or any of 500+ tokenized stocks</small></span>`;
-    $('#pairNote').textContent = !p ? '' : p.kind === 'stock' ? `Buyers can pay in ETH; the router swaps it to ${p.symbol} on the way in. Refunds come back in ${p.symbol}.` : p.symbol === 'ETH' ? 'The simplest pair. Refunds come back in ETH.' : `Buyers can pay in ETH or ${p.symbol}. Refunds come back in ${p.symbol}.`;
-    $('#budgetUnit').textContent = p ? p.symbol : 'ETH';
+  function paintPreview() {
+    const { esc, usd, eth, ring, pairIcon, coinAv, $ } = U(); const p = st.pair; const ok = st.name.trim() && st.sym.trim() && p;
+    const fake = { symbol: st.sym || 'TICKER', hue: 48, img: st.logo };
+    $('#preview').innerHTML = `<h2>How it will look</h2>
+      <div class="card" style="pointer-events:none"><div class="ct"><span class="pg">${coinAv(fake)}${p ? pairIcon(p, 'pr') : ''}</span><div class="t"><b>${esc(st.name || 'Your coin')}</b><small>$${esc(st.sym || 'TICKER')} · <em>${p ? esc(p.symbol) : '—'}</em> · just launched</small></div></div>
+        <div class="cm">${ring(null, 52)}<div class="px"><b>${usd(5000 / 1e9)}</b><small><span class="delta flat">0%</span><span>$5.0K mcap</span></small></div></div>
+        <div class="cb"><div class="row"><span>No open windows</span></div><div class="drain thin"><i style="width:0"></i></div><div class="stat"><span>Burned <b>$0</b></span><span>Vol 24h <b>${st.dev ? usd(st.dev * UD.ethUsd()) : '$0'}</b></span><span>Kept <b>0/0</b></span></div></div></div>
+      <div class="facts"><div><span>Supply</span><b>1,000,000,000, all in the pool</b></div><div><span>Start</span><b>$5K market cap</b></div><div><span>Windows</span><b>30 min to 7 days, 0.05 ETH per 6h, burned</b></div><div><span>Tax</span><b>1%: 0.7% to you, 0.3% platform</b></div><div><span>Launch protection</span><b>High buy tax for the first minute, one swap per wallet per block</b></div><div><span>Your first buy</span><b>${st.dev ? eth(st.dev) + ' · no window' : 'None'}</b></div></div>
+      <div class="go"><button class="key lg wide yellow" id="launchGo" ${ok ? '' : 'disabled'}>${ok ? `Launch $${esc(st.sym.trim().toUpperCase())}` : 'Launch'}</button><p>${ok ? 'Costs gas only, about $2 today. Nothing about the coin can be changed after launch, by you or by anyone.' : 'A name, a ticker and a pair to go.'}</p></div>`;
+    $('#launchGo').onclick = U().notLive;
+    $('#s1').classList.toggle('done', !!(st.name.trim() && st.sym.trim())); $('#s3').classList.toggle('done', st.dev > 0); $('#noGo').classList.toggle('done', !!ok);
   }
-  function paintWindow() {
-    const { $, $$, curve } = U();
-    $('#winPick').innerHTML = WINDOWS.map(([h, l, d]) => `<button type="button" data-w="${h}" class="${h === st.windowH ? 'on' : ''}"><b>${l}</b><small>${d}</small></button>`).join('');
-    $$('#winPick button').forEach(b => b.onclick = () => { st.windowH = +b.dataset.w; paintWindow(); paintSum(); });
-    $('#curveBox').innerHTML = st.windowH ? curve(st.windowH, null) : '<small class="muted">Without a window, every buy is final. Buyers see "No undo" on the coin.</small>';
-    $$('#feePick button').forEach(b => { b.classList.toggle('on', b.dataset.f === st.feeTo); b.onclick = () => { st.feeTo = b.dataset.f; paintWindow(); paintSum(); }; });
-  }
-  function paintSum() {
-    const { esc, usd, winLabel, pairIcon, $ } = U(); const p = st.pair; const ok = st.name.trim() && st.sym.trim() && p;
-    $('#sumBody').innerHTML = `<div class="card-prev"><span class="pg">${st.logo ? `<span class="av"><img src="${st.logo}" alt=""></span>` : `<span class="av" style="--h:48">${esc((st.sym || st.name || '?')[0])}</span>`}${p ? pairIcon(p, 'pr') : ''}</span><div><b style="font-weight:600">${esc(st.name || 'Your coin')}</b><div class="muted" style="font-size:12.5px">$${esc(st.sym || 'TICKER')}${p ? ' · ' + esc(p.symbol) : ''}</div></div></div>
-      <div class="facts" style="margin-top:14px"><div><span>Pair</span><b>${p ? esc(p.symbol) : '—'}</b></div><div><span>Undo window</span><b>${winLabel(st.windowH)}</b></div><div><span>Undo fees go to</span><b>${st.windowH ? (st.feeTo === 'burn' ? 'Burned' : 'Holders') : '—'}</b></div><div><span>Tax</span><b>1% · 0.5% you, 0.3% platform, 0.2% reserve</b></div><div><span>Undo budget</span><b>${st.budget ? `${st.budget} ${esc(p ? p.symbol : 'ETH')}` : 'None'}</b></div><div><span>Start</span><b>$5K market cap, 1B supply</b></div><div><span>Your first buy</span><b>${st.dev ? st.dev + ' ETH' : 'None'}</b></div></div>`;
-    $('#launchGo').disabled = !ok; $('#launchGo').textContent = ok ? `Launch $${st.sym.trim().toUpperCase()}` : 'Launch';
-    $('#goNote').textContent = ok ? 'Launch costs gas only, about $2 at today\'s prices. The pool, the tax split and the window are fixed at launch and can\'t be changed.' : 'Name, ticker and a pair to go.';
-  }
-  // logo: shrink to a small square webp that fits in the coin's on-chain metadata
   function shrink(file) {
     return new Promise(res => { const img = new Image(); img.onload = () => { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'); const s = Math.min(img.width, img.height); g.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 96, 96);
       let q = .8, out = c.toDataURL('image/webp', q); while (out.length > 4500 && q > .2) { q -= .1; out = c.toDataURL('image/webp', q); } res(out); }; img.src = URL.createObjectURL(file); });
   }
 
-  function start() {
-    const { $, notLive } = U();
-    const bind = (id, k, fn) => { const el = $('#' + id); el.oninput = () => { st[k] = fn ? fn(el.value) : el.value; paintSum(); if (k === 'sym' || k === 'name') $('#logoPrev').textContent = (st.sym || st.name || 'C')[0].toUpperCase(); }; };
-    bind('name', 'name'); bind('sym', 'sym', v => v.replace(/[^a-z0-9]/gi, '').toUpperCase()); bind('desc', 'desc'); bind('budget', 'budget', v => parseFloat(v) || 0); bind('dev', 'dev', v => parseFloat(v) || 0);
-    $('#sym').addEventListener('input', () => { $('#sym').value = st.sym; });
-    $('#logoBtn').onclick = () => $('#logo').click(); $('#logo').onchange = async e => { const f = e.target.files[0]; if (!f) return; st.logo = await shrink(f); $('#logoPrev').innerHTML = `<img src="${st.logo}" alt="">`; paintSum(); };
-    $('#pairBtn').onclick = pickPair;
-    const q = new URLSearchParams(location.search).get('pair'); if (q) UD.pairsList().then(({ popular, stocks }) => { st.pair = [...popular, ...stocks].find(p => p.symbol.toLowerCase() === q.toLowerCase()) || null; paintPair(); paintSum(); });
-    $('#launchGo').onclick = notLive;
-    paintPair(); paintWindow(); paintSum();
+  async function start() {
+    const { $ } = U();
+    const bind = (id, k, fn) => { const el = $('#' + id); el.oninput = () => { st[k] = fn ? fn(el.value) : el.value; if (k === 'sym') el.value = st.sym; if (k === 'sym' || k === 'name') $('#logoPrev').textContent = (st.sym || st.name || 'C')[0].toUpperCase(); paintPreview(); }; };
+    bind('name', 'name'); bind('sym', 'sym', v => v.replace(/[^a-z0-9]/gi, '').toUpperCase()); bind('desc', 'desc'); bind('dev', 'dev', v => parseFloat(v) || 0);
+    $('#logoBtn').onclick = () => $('#logo').click(); $('#logo').onchange = async e => { const f = e.target.files[0]; if (!f) return; st.logo = await shrink(f); $('#logoPrev').innerHTML = `<img src="${st.logo}" alt="">`; paintPreview(); };
+    paintPreview();
+    ({ popular, stocks } = await UD.pairsList());
+    const q = new URLSearchParams(location.search).get('pair'); if (q) st.pair = [...popular, ...stocks].find(t => t.symbol.toLowerCase() === q.toLowerCase()) || null;
+    paintPairs(); paintPreview();
   }
   window.addEventListener('DOMContentLoaded', () => UD.ready.then(start));
 })();

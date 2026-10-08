@@ -8,7 +8,7 @@ import hashlib, json, os, re, shutil
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
-DESC = 'Launch a coin paired with ETH, gold or 500+ tokenized stocks, where every buy can be undone. Changed your mind? Get your money back inside the window. Jeets pay the holders who stayed.'
+DESC = 'Launch a coin paired with ETH, gold or 500+ tokenized stocks, where every buy can be undone. Rent a window of 30 minutes to 7 days, cancel inside it for a full refund. The rent is burned.'
 SITE_URL = os.environ.get('SITE_URL', 'https://undo.fun').rstrip('/')
 X_HANDLE = os.environ.get('X_HANDLE', '')
 
@@ -40,9 +40,9 @@ def config():
         'weth': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
         'contracts': {}, 'prelaunch': True,
         'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'),
-        # the rules every coin shares (see /docs)
-        'taxBps': 100, 'split': {'creator': 50, 'platform': 30, 'reserve': 20},
-        'refundStartBps': 9700, 'windows': [0, 1, 6, 24], 'startCap': 5000,
+        # the rules every coin shares (see /docs): a 1% tax, and a window premium of 0.05 ETH per 6 hours
+        'taxBps': 100, 'split': {'creator': 70, 'platform': 30},
+        'premium': {'refEth': 0.05, 'baseH': 6, 'minH': 0.5, 'maxH': 168, 'maxBps': 3000}, 'startCap': 5000,
         'tokens': json.load(open(os.path.join(HERE, 'tokens.json'))), 'social': {'x': X_HANDLE and f'https://x.com/{X_HANDLE}'},
     }
     return 'window.UNDO = ' + json.dumps(cfg, separators=(',', ':')) + ';\n'
@@ -50,7 +50,7 @@ def config():
 
 def shell(meta, body):
     nav = meta.get('nav', '')
-    links = ''.join(f'<a href="{href}" class="{"on" if key == nav else ""}">{label}</a>' for key, href, label in NAV)
+    links = ''.join(f'<a href="{href}" class="key {"down" if key == nav else ""}">{label}</a>' for key, href, label in NAV)
     tabbar = (f'<a href="/" class="{"on" if nav == "explore" else ""}">{ic("compass")}Explore</a>'
               f'<a href="/launch" class="{"on" if nav == "launch" else ""}">{ic("plus")}Launch</a>'
               f'<a href="/portfolio" class="{"on" if nav == "portfolio" else ""}">{ic("wallet")}Portfolio</a>'
@@ -59,7 +59,7 @@ def shell(meta, body):
     desc = meta.get('desc', DESC)
     scripts = ''.join(f'<script src="/js/{s}" defer></script>' for s in meta.get('scripts', []))
     head = meta.get('head', '')
-    x_link = f'<a class="icon-btn x-link" href="https://x.com/{X_HANDLE}" target="_blank" rel="noopener" aria-label="undo.fun on X">{X_GLYPH}</a>' if X_HANDLE else ''
+    x_link = f'<a class="key sq x-link" href="https://x.com/{X_HANDLE}" target="_blank" rel="noopener" aria-label="undo.fun on X">{X_GLYPH}</a>' if X_HANDLE else ''
     x_foot = f'<a href="https://x.com/{X_HANDLE}" target="_blank" rel="noopener">X @{X_HANDLE}</a>' if X_HANDLE else ''
     x_meta = f'<meta name="twitter:site" content="@{X_HANDLE}">' if X_HANDLE else ''
     return f'''<!doctype html>
@@ -101,11 +101,10 @@ def shell(meta, body):
     <a class="brand" href="/" aria-label="undo.fun home">{MARK}{WORDMARK}</a>
     <nav class="nav" aria-label="Main">{links}</nav>
     <div class="top-r">
-      <button class="search-trigger" data-search aria-label="Search coins">{ic("search")}<span>Search coins or paste an address</span><kbd>/</kbd></button>
-      <span class="net" title="Ethereum mainnet">{ETH_GLYPH}<span>Ethereum</span></span>
+      <button class="key sq" data-search aria-label="Search coins" title="Search (/)">{ic("search")}</button>
       {x_link}
-      <button class="icon-btn" data-theme-btn aria-label="Theme"></button>
-      <button class="btn btn-ink wallet-btn" data-wallet-btn>Connect</button>
+      <button class="key sq" data-theme-btn aria-label="Theme"></button>
+      <button class="key ink wallet-btn" data-wallet-btn>Connect</button>
     </div>
   </div>
 </header>
@@ -115,6 +114,7 @@ def shell(meta, body):
 <footer class="foot">
   <div class="foot-in">
     <a class="brand" href="/" aria-label="undo.fun home">{MARK}{WORDMARK}</a>
+    <span class="net" title="Ethereum mainnet">{ETH_GLYPH}Ethereum mainnet</span>
     <nav aria-label="Footer"><a href="/docs">How it works</a><a href="/docs#faq">FAQ</a><a href="/launch">Launch</a>{x_foot}</nav>
   </div>
 </footer>

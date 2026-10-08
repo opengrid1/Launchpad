@@ -1,5 +1,5 @@
 /* undo.fun shell: wallet button, search, theme, toasts, dialogs, menus, formatting and the undo
-   pieces every page shares (refund schedule, countdowns, kept-rate bar). Exposes window.UI. */
+   pieces every page shares (window pricing, clocks, kept ring). Exposes window.UI. */
 (function () {
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
@@ -20,7 +20,7 @@
     undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
     clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
     lock: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
-    shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+    flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
     globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/>',
     send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
     xlogo: '<path fill="currentColor" stroke="none" d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.77zm-1.08 16.18h1.7L7.4 4.73H5.58z"/>',
@@ -30,7 +30,6 @@
   const EXPLORER = CFG.explorer || 'https://etherscan.io';
 
   // ------------------------------------------------------------ formatting
-  // small prices keep 4 significant digits with the zero run as a subscript: $0.0₅3421
   const tiny = v => { if (v >= 0.01) return v.toFixed(4); const [m, e] = v.toExponential(3).split('e'); const zeros = -Number(e) - 1; const digits = m.replace('.', '').slice(0, 4);
     return zeros >= 4 ? '0.0' + String(zeros).split('').map(d => '₀₁₂₃₄₅₆₇₈₉'[d]).join('') + digits : '0.' + '0'.repeat(zeros) + digits; };
   const usd = (v, opt = {}) => { if (v == null || !isFinite(v)) return '—'; const a = Math.abs(v); const s = v < 0 ? '−$' : '$'; const c = opt.compact !== false;
@@ -38,34 +37,26 @@
     if (a >= 1) return s + a.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: a < 1000 ? 2 : 0 }); if (a === 0) return '$0'; return s + tiny(a); };
   const num = (v, d = 2) => { if (v == null || !isFinite(v)) return '—'; const a = Math.abs(v); if (a >= 1e9) return (v / 1e9).toFixed(2) + 'B'; if (a >= 1e6) return (v / 1e6).toFixed(2) + 'M'; if (a >= 1e4) return (v / 1e3).toFixed(1) + 'K';
     if (a >= 1) return v.toLocaleString('en-US', { maximumFractionDigits: d }); if (a === 0) return '0'; return a >= 0.0001 ? v.toPrecision(3) : tiny(a); };
+  const eth = (v, d) => v == null || !isFinite(v) ? '—' : (v >= 100 ? v.toFixed(1) : v >= 1 ? v.toFixed(3) : v >= 0.01 ? v.toFixed(4) : v.toFixed(d || 5)).replace(/\.?0+$/, '') + ' ETH';
   const pct = (v, d) => { if (v == null || !isFinite(v)) return '—'; const a = Math.abs(v); return (v > 0 ? '+' : v < 0 ? '−' : '') + (a >= 1000 ? (a / 1000).toFixed(1) + 'K' : a.toFixed(d != null ? d : a >= 100 ? 0 : 1)) + '%'; };
   const delta = v => `<span class="delta ${!isFinite(v) || Math.abs(v) < .05 ? 'flat' : v > 0 ? 'up' : 'down'}">${pct(v)}</span>`;
   const ago = ts => { const s = Math.max(1, Date.now() / 1000 - ts); if (s < 60) return Math.floor(s) + 's'; if (s < 3600) return Math.floor(s / 60) + 'm'; if (s < 86400) return Math.floor(s / 3600) + 'h'; return Math.floor(s / 86400) + 'd'; };
   const short = a => a ? a.slice(0, 6) + '…' + a.slice(-4) : '';
-  // 5h 12m 04s, or 12m 04s, or 04s
-  const clock = secs => { secs = Math.max(0, Math.floor(secs)); const h = Math.floor(secs / 3600), m = Math.floor(secs % 3600 / 60), s = secs % 60; const p = n => String(n).padStart(2, '0');
-    return h ? `${h}h ${p(m)}m ${p(s)}s` : m ? `${m}m ${p(s)}s` : `${p(s)}s`; };
-  const winLabel = h => !h ? 'No undo' : h < 1 ? Math.round(h * 60) + 'm' : h + 'h';
+  const clock = secs => { secs = Math.max(0, Math.floor(secs)); const d = Math.floor(secs / 86400), h = Math.floor(secs % 86400 / 3600), m = Math.floor(secs % 3600 / 60), s = secs % 60; const p = n => String(n).padStart(2, '0');
+    return d ? `${d}d ${p(h)}h ${p(m)}m` : h ? `${h}h ${p(m)}m ${p(s)}s` : m ? `${m}m ${p(s)}s` : `${p(s)}s`; };
+  const winLabel = h => h >= 24 ? (h / 24) + 'd' : h >= 1 ? h + 'h' : Math.round(h * 60) + 'm';
 
-  // ------------------------------------------------------------ the undo rule every coin shares
-  // refund share of what you paid: 97% right after the buy, falling in a straight line to 0 when the window closes
-  const START = (CFG.refundStartBps || 9700) / 10000;
-  const refundShare = (elapsed, windowSecs) => windowSecs > 0 ? Math.max(0, START * (1 - elapsed / windowSecs)) : 0;
-  // the schedule as a small SVG: the line from 97% to 0, with a dot where "now" is
-  function curve(windowH, nowFrac, opt = {}) {
-    const W = 320, H = opt.h || 74, padL = 30, padR = 8, padT = 8, padB = 18; const x = f => padL + f * (W - padL - padR), y = v => padT + (1 - v) * (H - padT - padB);
-    const label = opt.labels !== false;
-    const ticks = [0, .5, 1].map(f => `<text x="${x(f)}" y="${H - 4}" text-anchor="${f === 0 ? 'start' : f === 1 ? 'end' : 'middle'}" font-size="10" fill="var(--faint)" font-family="var(--f-mono)">${f === 0 ? 'buy' : f === 1 ? winLabel(windowH) : winLabel(windowH * f)}</text>`).join('');
-    const dot = nowFrac != null ? `<circle cx="${x(nowFrac)}" cy="${y(START * (1 - nowFrac))}" r="4.5" fill="var(--key)" stroke="var(--ink)" stroke-width="1.5"/>` : '';
-    return `<svg class="curve" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Refund falls from 97% to 0 over ${winLabel(windowH)}">
-      <line x1="${x(0)}" x2="${x(1)}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)"/>
-      <line x1="${x(0)}" x2="${x(1)}" y1="${y(.5)}" y2="${y(.5)}" stroke="var(--line)" stroke-dasharray="2 3"/>
-      ${label ? `<text x="${padL - 6}" y="${y(START) + 3}" text-anchor="end" font-size="10" fill="var(--faint)" font-family="var(--f-mono)">97%</text><text x="${padL - 6}" y="${y(0) + 3}" text-anchor="end" font-size="10" fill="var(--faint)" font-family="var(--f-mono)">0</text>` : ''}
-      <path d="M${x(0)} ${y(START)} L${x(1)} ${y(0)} L${x(0)} ${y(0)} Z" fill="var(--key)" opacity=".28"/>
-      <path d="M${x(0)} ${y(START)} L${x(1)} ${y(0)}" stroke="var(--key-strong)" stroke-width="2" fill="none"/>
-      ${dot}${label ? ticks : ''}</svg>`;
-  }
-  const keptBar = p => p == null ? '<span class="faint">—</span>' : `<span class="kept"><span class="bar"><i style="width:${Math.max(0, Math.min(100, p)).toFixed(1)}%"></i></span><b class="${p >= 80 ? 'c-kept' : p < 55 ? 'c-undone' : ''}">${p.toFixed(0)}%</b></span>`;
+  // ------------------------------------------------------------ the window rule every coin shares
+  // a window costs a fixed amount of ETH per hour (0.05 ETH per 6 hours), 30 minutes to 7 days, at most 30% of the buy
+  const PR = CFG.premium || { refEth: 0.05, baseH: 6, minH: 0.5, maxH: 168, maxBps: 3000 };
+  const premiumFor = hours => PR.refEth * hours / PR.baseH;
+  const hoursFor = premium => premium * PR.baseH / PR.refEth;
+  const maxHoursFor = buyEth => Math.max(0, Math.min(PR.maxH, hoursFor(buyEth * PR.maxBps / 10000)));
+  const WINDOWS = [0.5, 1, 6, 24, 72, 168];
+  // the six window lengths as keys, with their price; the ones the buy is too small for are disabled
+  const timeKeys = (sel, buyEth) => `<div class="keys timekeys">${WINDOWS.map(h => { const ok = buyEth == null || h <= maxHoursFor(buyEth) + 1e-9; return `<button type="button" class="key sm ${h === sel ? 'down yellow' : ''}" data-h="${h}" ${ok ? '' : 'disabled title="The window can cost at most 30% of the buy"'}><span>${winLabel(h)}</span><kbd>${eth(premiumFor(h))}</kbd></button>`; }).join('')}</div>`;
+  const ring = (p, size = 44, cls = '') => { const r = (size - 6) / 2, c = 2 * Math.PI * r; const v = p == null ? 0 : Math.max(0, Math.min(100, p)); const col = p == null ? 'var(--faint)' : v >= 80 ? 'var(--kept)' : v < 55 ? 'var(--undone)' : 'var(--key-strong)';
+    return `<span class="ring ${cls}" title="${p == null ? 'No window buys yet' : v.toFixed(0) + '% of window buys were kept'}"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--sunk)" stroke-width="5"/><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${col}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(c * v / 100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${size / 2} ${size / 2})"/></svg><b style="color:${col}">${p == null ? '—' : v.toFixed(0) + '%'}</b></span>`; };
 
   // ------------------------------------------------------------ coin and pair glyphs
   const coinAv = (x, cls) => `<span class="av ${cls || ''}" style="--h:${x.hue || 48}">${x.img ? `<img src="${esc(x.img)}" alt="">` : esc((x.symbol || '?').slice(0, 1))}</span>`;
@@ -80,7 +71,7 @@
     const el = document.createElement('div'); el.className = 'toast' + (opt.err ? ' err' : ''); el.innerHTML = ic(opt.err ? 'alert' : opt.icon || 'check') + `<div>${esc(msg)}${opt.tx ? ` <a href="${txLink(opt.tx)}" target="_blank" rel="noopener">View</a>` : ''}</div>`;
     box.appendChild(el); setTimeout(() => el.remove(), opt.err ? 7000 : 4600); }
   function dialog(title, body, opt = {}) {
-    const ov = document.createElement('div'); ov.className = 'overlay'; ov.innerHTML = `<div class="dialog" role="dialog" aria-modal="true" aria-label="${esc(title)}" style="${opt.wide ? 'max-width:640px' : ''}"><div class="dialog-h"><h3>${esc(title)}</h3><button class="icon-btn" data-close aria-label="Close">${ic('x')}</button></div>${body}</div>`;
+    const ov = document.createElement('div'); ov.className = 'overlay'; ov.innerHTML = `<div class="dialog" role="dialog" aria-modal="true" aria-label="${esc(title)}" style="${opt.wide ? 'max-width:640px' : ''}"><div class="dialog-h"><h3>${esc(title)}</h3><button class="key sq sm" data-close aria-label="Close">${ic('x')}</button></div>${body}</div>`;
     const close = () => { ov.remove(); document.removeEventListener('keydown', key); opt.onClose && opt.onClose(); };
     const key = e => { if (e.key === 'Escape') close(); };
     ov.addEventListener('mousedown', e => { if (e.target === ov) close(); }); ov.querySelector('[data-close]').onclick = close; document.addEventListener('keydown', key);
@@ -89,10 +80,9 @@
     const r = anchor.getBoundingClientRect(); m.style.top = (r.bottom + window.scrollY + 8) + 'px'; m.style.left = Math.max(12, Math.min(window.innerWidth - m.offsetWidth - 12, r.right - m.offsetWidth)) + 'px';
     setTimeout(() => document.addEventListener('mousedown', function off(e) { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('mousedown', off); } }), 0); return m; }
   async function copy(text, label) { try { await navigator.clipboard.writeText(text); toast((label || 'Address') + ' copied'); } catch { toast('Copy failed', { err: true }); } }
-  // every write action is closed until the contracts are deployed
-  const notLive = () => toast('Preview: buying, undoing and launching open when the contracts go live.', { icon: 'info' });
+  const notLive = () => toast('Preview: buying, cancelling and launching open when the contracts go live.', { icon: 'info' });
 
-  // ------------------------------------------------------------ theme: follows the system until the toggle is used
+  // ------------------------------------------------------------ theme
   const THEME_KEY = 'ud:theme';
   const systemDark = () => window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
   function currentTheme() { const t = document.documentElement.dataset.theme; return t === 'dark' || t === 'light' ? t : systemDark() ? 'dark' : 'light'; }
@@ -102,8 +92,8 @@
   // ------------------------------------------------------------ wallet button
   function paintWallet() {
     const w = window.bsWallet; $$('[data-wallet-btn]').forEach(b => {
-      if (w && w.connected) { const wrong = w.chainId && w.chainId !== (CFG.chainId || 1); b.className = 'btn btn-line wallet-btn'; b.innerHTML = wrong ? `${ic('alert')}Switch to Ethereum` : `<span class="dot"></span><span class="mono">${esc(w.short())}</span>${ic('down')}`; }
-      else { b.className = 'btn btn-ink wallet-btn'; b.innerHTML = 'Connect'; }
+      if (w && w.connected) { const wrong = w.chainId && w.chainId !== (CFG.chainId || 1); b.className = 'key wallet-btn'; b.innerHTML = wrong ? `${ic('alert')}Switch to Ethereum` : `<span class="dot"></span><span class="mono">${esc(w.short())}</span>${ic('down')}`; }
+      else { b.className = 'key ink wallet-btn'; b.innerHTML = 'Connect'; }
     });
   }
   function walletClick(e) {
@@ -114,13 +104,13 @@
     m.querySelector('[data-copy]').onclick = () => { copy(w.address); m.remove(); }; m.querySelector('[data-out]').onclick = () => { w.logout(); m.remove(); };
   }
 
-  // ------------------------------------------------------------ search: coins by name, ticker, address or pair
+  // ------------------------------------------------------------ search
   function openSearch() {
-    const ov = dialog('Search', `<div class="dialog-search">${ic('search')}<input id="sq" placeholder="Coin, ticker, pair (TSLA, gold…) or address" autocomplete="off" spellcheck="false"><kbd>ESC</kbd></div><div class="dialog-b" id="sr"></div>`);
+    const ov = dialog('Search', `<div class="dialog-search">${ic('search')}<input id="sq" placeholder="Coin, ticker, pair (ETH, TSLA, gold…) or address" autocomplete="off" spellcheck="false"><kbd>ESC</kbd></div><div class="dialog-b" id="sr"></div>`);
     const inp = $('#sq', ov), out = $('#sr', ov); let sel = 0;
     const render = () => { const q = inp.value.trim().toLowerCase(); const all = window.UD ? UD.tokens() : [];
       const hits = (q ? all.filter(x => x.name.toLowerCase().includes(q) || x.symbol.toLowerCase().includes(q) || x.addr === q || x.pair.symbol.toLowerCase().includes(q) || (x.pair.name || '').toLowerCase().includes(q)) : [...all].sort((a, b) => b.vol24 - a.vol24)).slice(0, 12);
-      out.innerHTML = (q ? '' : '<div class="opt-group">Most traded today</div>') + (hits.map((x, i) => `<a class="opt ${i === sel ? 'sel' : ''}" href="${coinHref(x.addr)}">${pairGlyph(x, 'sm')}<span class="t"><b>${esc(x.name)}</b><span>$${esc(x.symbol)} · ${esc(x.pair.symbol)} · ${winLabel(x.windowH)} undo</span></span><span class="r"><b>${usd(x.mc)}</b>${delta(x.c24)}</span></a>`).join('')
+      out.innerHTML = (q ? '' : '<div class="opt-group">Most traded today</div>') + (hits.map((x, i) => `<a class="opt ${i === sel ? 'sel' : ''}" href="${coinHref(x.addr)}">${pairGlyph(x, 'sm')}<span class="t"><b>${esc(x.name)}</b><span>$${esc(x.symbol)} · ${esc(x.pair.symbol)} · ${x.keptPct == null ? 'no windows yet' : x.keptPct.toFixed(0) + '% kept'}</span></span><span class="r"><b>${usd(x.mc)}</b>${delta(x.c24)}</span></a>`).join('')
         || '<div class="empty" style="padding:36px 10px"><p>No coin matches.</p></div>'); };
     inp.oninput = () => { sel = 0; render(); };
     inp.onkeydown = e => { const items = $$('.opt', out); if (e.key === 'ArrowDown') { sel = Math.min(items.length - 1, sel + 1); render(); e.preventDefault(); } else if (e.key === 'ArrowUp') { sel = Math.max(0, sel - 1); render(); e.preventDefault(); } else if (e.key === 'Enter' && items[sel]) location.href = items[sel].getAttribute('href'); };
@@ -135,10 +125,9 @@
     document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); } if (e.key === '/' && !/input|textarea/i.test(document.activeElement.tagName)) { e.preventDefault(); openSearch(); } });
     window.addEventListener('bs:wallet', paintWallet);
     window.addEventListener('bs:nowallet', () => toast('No wallet found. Install a browser wallet or open this page in your wallet app.', { err: true }));
-    const top = $('.top'); const onScroll = () => top && top.classList.toggle('scrolled', window.scrollY > 4); window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
-    if (CFG.prelaunch && !/^\/docs/.test(location.pathname)) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin', `<div class="notice">${ic('info')}<span><b>Preview.</b> The coins here are examples. Buying, undoing and launching open when the contracts go live.</span></div>`); }
+    if (CFG.prelaunch && !/^\/docs/.test(location.pathname)) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin', `<div class="notice">${ic('info')}<span><b>Preview.</b> The coins here are examples. Buying, cancelling and launching open when the contracts go live.</span></div>`); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
-  window.UI = { $, $$, esc, ic, usd, num, pct, delta, ago, short, clock, winLabel, refundShare, START, curve, keptBar, coinAv, pairIcon, pairGlyph, coinHref, txLink, addrLink, toast, dialog, menu, copy, notLive, currentTheme, openSearch };
+  window.UI = { $, $$, esc, ic, usd, num, eth, pct, delta, ago, short, clock, winLabel, PR, WINDOWS, premiumFor, hoursFor, maxHoursFor, timeKeys, ring, coinAv, pairIcon, pairGlyph, coinHref, txLink, addrLink, toast, dialog, menu, copy, notLive, currentTheme, openSearch };
 })();
