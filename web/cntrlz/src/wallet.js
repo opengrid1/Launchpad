@@ -29,7 +29,10 @@ function injected() {
   sync();
 }
 
-if (CFG.reownProjectId && !CFG.injectedOnly) {
+// inside a wallet app's own browser (OKX, MetaMask, Trust, Binance...) the wallet is already on the page:
+// connect to it directly instead of asking Reown to open an app we are already inside of
+const inWalletApp = () => /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) && window.ethereum && typeof window.ethereum.request === 'function';
+if (CFG.reownProjectId && !CFG.injectedOnly && !inWalletApp()) {
   const modal = createAppKit({
     adapters: [new EthersAdapter()], networks: [mainnet], defaultNetwork: mainnet, projectId: CFG.reownProjectId,
     metadata: { name: 'cntrl-z.fun', description: 'Coins where every buy can be cancelled inside a window', url: location.origin, icons: [location.origin + '/img/mark-512.png'] },
