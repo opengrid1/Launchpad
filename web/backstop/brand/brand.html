@@ -14,18 +14,19 @@ svg text{font-family:'Lilita One'}
 // the hooked ETH logo, the two-tone wordmark, and sticker badges.
 const NAVY='#0b1220', EDGE='#f3f6fa', MINT='#2ee6c5', MINT_L='#8af7e3', MINT_D='#16b49c', MINT_DD='#0e8f7f', HOOK='#ff7a3d', HOOK_L='#ffb08a';
 
-// The hero object: a glossy fishing hook with the ETH logo hanging from it, built as a sticker
-// (white edge, navy outline, flat fills). The hook is one unbroken piece drawn in front; the
-// logo hangs behind it with its tip inside the bend, so the bend runs through the logo.
-const SHANK='M60 40 V170 a70 70 0 0 0 140 0 V130';
-const POINT='M186 134 L200 92 L214 134 Z';
-const BARB='M187 120 L166 148 L188 142 Z';
+// The hero object: the ETH logo caught on a glossy fishing hook, built as a sticker
+// (white edge, navy outline, flat fills). The bend and the lower arm run behind the logo;
+// the arm comes out through a puncture in the logo's face, so the point and barb sit in front.
+const SHANK='M60 40 V230 a65 65 0 0 0 130 0 V204';
+const FRONT='M190 204 V112';
+const POINT='M175 116 L190 66 L205 116 Z';
+const BARB='M176 104 L154 132 L178 126 Z';
+const HX=190, HY=204;
 // ETH logo, centred on 0,0, 160 tall: upper piece and lower chevron
 const ETH_TOP='M0 -80 L50 4 L0 34 L-50 4 Z', ETH_BOT='M-50 18 L0 48 L50 18 L0 80 Z';
-const ETH_AT='translate(132 222) rotate(-4) scale(1.15)';
-function eth(edge){
+const ETH_AT='translate(165 190) scale(1.15)';
+function ethFill(){
   return `<g transform="${ETH_AT}">
-    ${edge?`<g fill="${EDGE}" stroke="${EDGE}" stroke-width="36" stroke-linejoin="round"><path d="${ETH_TOP}"/><path d="${ETH_BOT}"/></g>`:''}
     <g fill="${NAVY}" stroke="${NAVY}" stroke-width="14" stroke-linejoin="round"><path d="${ETH_TOP}"/><path d="${ETH_BOT}"/></g>
     <path d="M0 -80 L-50 4 L0 34 Z" fill="${MINT_L}"/><path d="M0 -80 L50 4 L0 34 Z" fill="${MINT}"/>
     <path d="M-50 4 L0 -18 L50 4 L0 34 Z" fill="#000" opacity=".12"/>
@@ -36,17 +37,26 @@ function eth(edge){
 }
 function hookArt(edge=true, line=true){
   const ring=(sw,c)=>`<ellipse cx="60" cy="20" rx="12" ry="18" fill="none" stroke="${c}" stroke-width="${sw}"/>`;
-  const tube=(sw,c)=>`<path d="${SHANK}" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const tube=(d,sw,c,cap='round')=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="${cap}" stroke-linejoin="round"/>`;
   const tip=(sw,c)=>`<path d="${POINT}" fill="${c}" stroke="${c}" stroke-width="${sw}" stroke-linejoin="round"/><path d="${BARB}" fill="${c}" stroke="${c}" stroke-width="${sw}" stroke-linejoin="round"/>`;
   return `
-    ${eth(edge)}
-    ${edge?`${line?`<path d="M60 -400 V2" stroke="${EDGE}" stroke-width="22"/>`:''}${ring(46,EDGE)}${tube(64,EDGE)}${tip(36,EDGE)}`:''}
-    ${line?`<path d="M60 -400 V2" stroke="${NAVY}" stroke-width="8"/>`:''}${ring(24,NAVY)}${tube(42,NAVY)}${tip(14,NAVY)}
-    ${ring(11,HOOK)}${tube(28,HOOK)}${tip(0,HOOK)}
-    <path d="M53 52 V166" stroke="${HOOK_L}" stroke-width="7" stroke-linecap="round"/>
-    <path d="M70 50 V170 a60 60 0 0 0 6 26" fill="none" stroke="#c94a1c" stroke-width="7" stroke-linecap="round" opacity=".55"/>
-    <path d="M194 126 L200 106" stroke="${HOOK_L}" stroke-width="4" stroke-linecap="round"/>
-    <path d="M208 136 V176" stroke="#c94a1c" stroke-width="5" stroke-linecap="round" opacity=".45"/>`;
+    ${edge?`<g>${line?`<path d="M60 -400 V2" stroke="${EDGE}" stroke-width="22"/>`:''}${ring(46,EDGE)}${tube(SHANK,64,EDGE)}${tip(36,EDGE)}
+      <g transform="${ETH_AT}" fill="${EDGE}" stroke="${EDGE}" stroke-width="32" stroke-linejoin="round"><path d="${ETH_TOP}"/><path d="${ETH_BOT}"/></g></g>`:''}
+    ${line?`<path d="M60 -400 V2" stroke="${NAVY}" stroke-width="8"/>`:''}${ring(24,NAVY)}${tube(SHANK,42,NAVY)}
+    ${ring(11,HOOK)}${tube(SHANK,28,HOOK)}
+    <path d="M53 52 V226" stroke="${HOOK_L}" stroke-width="7" stroke-linecap="round"/>
+    <path d="M70 50 V230 a55 55 0 0 0 6 25" fill="none" stroke="#c94a1c" stroke-width="7" stroke-linecap="round" opacity=".55"/>
+    ${ethFill()}
+    <ellipse cx="${HX}" cy="${HY+3}" rx="30" ry="15" fill="#000" opacity=".16"/>
+    <ellipse cx="${HX}" cy="${HY}" rx="24" ry="11" fill="${NAVY}"/>
+    <path d="M${HX-20} ${HY-6} l-12 -9 m4 3 l-2 -9 M${HX+20} ${HY-6} l10 -11 M${HX-6} ${HY-10} l-3 -12" fill="none" stroke="${NAVY}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${tube(FRONT,42,NAVY,'butt')}${tip(14,NAVY)}
+    ${tube(FRONT,28,HOOK,'butt')}${tip(0,HOOK)}
+    <path d="M184 196 L184 120" stroke="${HOOK_L}" stroke-width="5" stroke-linecap="round"/>
+    <path d="M198 196 V124" stroke="#c94a1c" stroke-width="5" stroke-linecap="round" opacity=".5"/>
+    <path d="M${HX-24} ${HY} a24 11 0 0 0 48 0 Z" fill="${MINT}"/>
+    <path d="M${HX-24} ${HY} a24 11 0 0 0 48 0" fill="none" stroke="${NAVY}" stroke-width="5" stroke-linecap="round"/>
+    <path d="M${HX-16} ${HY+10} a24 11 0 0 0 32 0" fill="none" stroke="${MINT_L}" stroke-width="3" stroke-linecap="round" opacity=".8"/>`;
 }
 
 // two-tone sticker wordmark, baseline at y; size in px
@@ -86,14 +96,14 @@ const add=(id,W,H,inner,bg=NAVY)=>w.insertAdjacentHTML('beforeend',`<div id="${i
 const place=(x,y,s,rot=0,edge=true,line=true)=>`<g transform="translate(${x} ${y}) scale(${s}) rotate(${rot} 150 150)">${hookArt(edge,line)}</g>`;
 
 // the hooked ETH logo alone, transparent (logo.svg is exported from this markup)
-w.insertAdjacentHTML('beforeend',`<div id="logo" style="width:256px;height:256px;background:transparent"><svg id="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><g transform="translate(40 13) scale(.7)">${hookArt(true,false)}</g></svg></div>`);
+w.insertAdjacentHTML('beforeend',`<div id="logo" style="width:256px;height:256px;background:transparent"><svg id="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><g transform="translate(32 14) scale(.71)">${hookArt(true,false)}</g></svg></div>`);
 // app icon (favicon, apple touch, logo-512)
-add('icon',512,512,`<g transform="translate(97 48) scale(1.27)">${hookArt(true,false)}</g>`);
+add('icon',512,512,`<g transform="translate(81 47) scale(1.3)">${hookArt(true,false)}</g>`);
 // profile picture
 add('pfp',1000,1000,`
   ${dots([[150,250,16],[860,760,13],[770,890,7,HOOK],[190,820,8],[880,170,7,HOOK],[110,560,6]])}
   ${bubble(820,330,22)}${bubble(865,260,11)}${bubble(225,370,15)}
-  ${place(213,123,2.3,0)}
+  ${place(191,131,2.3,0)}
   ${badge(770,195,74,'ether',MINT,40,10)}
   ${badge(215,800,70,'hook',HOOK,42,-9)}`);
 // X banner
@@ -105,7 +115,7 @@ add('banner',1500,500,`
   ${badge(880,370,58,'vault',MINT,30,-8)}
   ${badge(1010,300,64,'buyback',HOOK,22,6)}
   ${badge(1005,440,46,'burn',MINT_L,24,-4)}
-  ${place(1146,61,1.15,0)}`);
+  ${place(1131,60,1.18,0)}`);
 // default token image
 add('tdefault',512,512,`
   ${dots([[430,92,14],[456,128,8],[78,430,11,HOOK]])}
@@ -129,9 +139,9 @@ add('og',1200,630,`
   <text x="78" y="368" font-size="70" fill="${EDGE}">their own <tspan fill="${HOOK}">dips.</tspan></text>
   <text x="80" y="440" style="font-family:'Public Sans'" font-weight="500" font-size="26" fill="#a9b8cb">Vault backing, dip buybacks and burns, built into every coin.</text>
   <text x="80" y="560" style="font-family:'JetBrains Mono'" font-weight="600" font-size="19" fill="#7f90a8" letter-spacing="1.5">ETHEREUM MAINNET · UNISWAP V4 HOOKS</text>
-  ${place(839,77,1.45,0)}`);
+  ${place(825,82,1.45,0)}`);
 // wordmark lockup on transparent ground
-add('lockup',900,240,`${place(12,22,0.6,0,true,false)}${wordmark(165,160,112)}`,'transparent');
+add('lockup',900,240,`${place(0,21,0.62,0,true,false)}${wordmark(170,160,112)}`,'transparent');
 
 // sample coin art for the preview coins (unchanged)
 const coins=[['frogr','FR','#1d6b3a','#d9f2c2'],['idx69','69','#f4cf3d','#1a1405'],['hard','HM','#f2911b','#1d1103'],['mogt','MT','#1c1c1f','#ffd23f'],['stkd','SS','#0f8fe0','#ffffff'],['dips','DE','#f05a22','#fff4ee'],['goldf','GF','#b8902a','#fff6dc'],['nvlt','NV','#ebe2d0','#3a2817'],['lstk','LS','#2a5ada','#ffffff'],['stbl','SF','#1f6fc4','#e6f0ff'],['shltr','SH','#d9661a','#fff3e6']];
