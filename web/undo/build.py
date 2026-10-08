@@ -13,7 +13,7 @@ SITE_URL = os.environ.get('SITE_URL', 'https://undo.fun').rstrip('/')
 X_HANDLE = os.environ.get('X_HANDLE', '')
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wdth,wght@75..100,400..700&family=Martian+Mono:wght@400;500;600&display=swap'
-NAV = [('explore', '/', 'Explore'), ('launch', '/launch', 'Launch'), ('portfolio', '/portfolio', 'Portfolio'), ('docs', '/docs', 'How it works')]
+NAV = [('explore', '/', 'Explore', 'Explore'), ('launch', '/launch', 'Launch', 'Launch'), ('portfolio', '/portfolio', 'Portfolio', 'Portfolio'), ('docs', '/docs', 'How it works', 'Docs')]
 ICON = {
     'compass': '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"/>',
     'wallet': '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
@@ -50,11 +50,7 @@ def config():
 
 def shell(meta, body):
     nav = meta.get('nav', '')
-    links = ''.join(f'<a href="{href}" class="key {"down" if key == nav else ""}">{label}</a>' for key, href, label in NAV)
-    tabbar = (f'<a href="/" class="{"on" if nav == "explore" else ""}">{ic("compass")}Explore</a>'
-              f'<a href="/launch" class="{"on" if nav == "launch" else ""}">{ic("plus")}Launch</a>'
-              f'<a href="/portfolio" class="{"on" if nav == "portfolio" else ""}">{ic("wallet")}Portfolio</a>'
-              f'<a href="/docs" class="{"on" if nav == "docs" else ""}">{ic("book")}Docs</a>')
+    links = ''.join(f'<a href="{href}" class="key {"down" if key == nav else ""}"><span class="full">{label}</span><span class="short">{short}</span></a>' for key, href, label, short in NAV)
     title = meta['title']
     desc = meta.get('desc', DESC)
     scripts = ''.join(f'<script src="/js/{s}" defer></script>' for s in meta.get('scripts', []))
@@ -118,7 +114,6 @@ def shell(meta, body):
     <nav aria-label="Footer"><a href="/docs">How it works</a><a href="/docs#faq">FAQ</a><a href="/launch">Launch</a>{x_foot}</nav>
   </div>
 </footer>
-<nav class="tabbar" aria-label="Main">{tabbar}</nav>
 </body>
 </html>
 '''

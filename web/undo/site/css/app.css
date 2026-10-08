@@ -92,6 +92,7 @@ svg { flex-shrink: 0; }
 .nav { display: flex; gap: 8px; margin: 0 auto; }
 .nav .key { color: var(--muted); }
 .nav .key.down { color: var(--ink); background: var(--sunk); }
+.nav .short { display: none; }
 .top-r { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .wallet-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--kept); }
 
@@ -105,7 +106,6 @@ svg { flex-shrink: 0; }
 .foot nav a:hover { color: var(--ink); }
 .foot .net { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .foot .net svg { width: 9px; height: 14px; }
-.tabbar { display: none; }
 
 /* ---------------------------------------------------------------- shared bits */
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
@@ -406,14 +406,13 @@ textarea.input { height: auto; min-height: 84px; padding: 11px 13px; resize: ver
   .doc-nav { display: none; }
 }
 @media (max-width: 860px) {
-  .nav { display: none; }
-  .top-in { padding: 12px 16px; gap: 12px; }
-  .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--line); padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); }
-  .tabbar a { display: grid; justify-items: center; gap: 3px; padding: 7px 0 6px; border-radius: 10px; font-size: 11px; font-weight: 600; color: var(--muted); }
-  .tabbar a.on { color: var(--ink); background: var(--surface); box-shadow: 0 2px 0 var(--edge), inset 0 0 0 1px var(--line-2); }
-  .tabbar svg { width: 20px; height: 20px; }
-  .page { padding: 12px 16px 110px; }
-  .foot-in { padding: 18px 16px 100px; }
+  /* phones: the nav is a second row of keys under the brand, one key per page, no bottom bar */
+  .top-in { flex-wrap: wrap; row-gap: 10px; }
+  .nav { order: 3; width: 100%; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .nav .key { padding: 0 6px; font-size: 13px; height: 38px; }
+  .nav .full { display: none; } .nav .short { display: inline; }
+  .page { padding: 12px 16px 64px; }
+  .foot-in { padding: 18px 16px; }
   .board { padding: 10px 0 18px; }
   .tape-wrap { margin: 20px -16px 0; padding: 0 16px; }
   .grid { grid-template-columns: 1fr; }
@@ -427,9 +426,9 @@ textarea.input { height: auto; min-height: 84px; padding: 11px 13px; resize: ver
   .step .no { width: 36px; height: 36px; font-size: 15px; }
   /* the trade keyboard docks under the page on phones; the side copy is hidden */
   .coin-right .trade { display: none; }
-  .dock { display: flex; gap: 8px; position: fixed; left: 0; right: 0; bottom: calc(66px + env(safe-area-inset-bottom)); z-index: 59; padding: 10px 12px; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--line); }
+  .dock { display: flex; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 59; padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important; padding: 10px 12px; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--line); }
   .dock .key { flex: 1; }
-  .page.has-dock { padding-bottom: 180px; }
+  .page.has-dock { padding-bottom: 110px; }
   .cards table.list thead { display: none; }
   .cards table.list, .cards table.list tbody { display: block; }
   .cards table.list tr { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
