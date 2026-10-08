@@ -5,10 +5,19 @@
   {
    "symbol": "NVDAon",
    "token": "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
-   "dex": 2,
-   "pool": "0xc9b4bC7C15423FCFe6B75aB5118bA773945A3A46",
-   "label": "V3 USDC 3000",
-   "usdAtCheck": 237.84
+   "dex": 3,
+   "pool": "0x0000000000000000000000000000000000000000",
+   "label": "V4 USDC 5100",
+   "usdAtCheck": 237.84,
+   "key": {
+    "currency0": "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
+    "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "fee": 5100,
+    "tickSpacing": 51,
+    "hooks": "0x0000000000000000000000000000000000000000"
+   },
+   "v4Id": "0xa9a6651fba74df1aab94065ffaabe750d6ed835b94a9e28925ec79beec2d5f73",
+   "note": "moved from the V3 pool (one observation slot) by the admin"
   },
   {
    "symbol": "SLVon",
