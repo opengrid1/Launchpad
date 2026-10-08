@@ -1,4 +1,4 @@
-/* undo.fun: a keyboard. Paper and ink, one yellow key. Light only. Kept = green, undone = red. */
+/* cntrl-z.fun: a keyboard. Paper and ink, one yellow key. Light only. Kept = green, undone = red. */
 :root {
   --bg: #efeee8; --surface: #ffffff; --surface-2: #f7f6f1; --sunk: #e4e3dc;
   --ink: #15171a; --ink-2: #2f3338; --muted: #5e636b; --faint: #8b9098;

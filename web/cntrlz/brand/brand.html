@@ -8,7 +8,7 @@
 </style></head>
 <body>
 <script>
-// undo.fun brand renders: a keycap with an undo arrow. INK keycap, YEL arrow, PAPER ground.
+// cntrl-z.fun brand renders: a keycap with an undo arrow. INK keycap, YEL arrow, PAPER ground.
 const INK = '#15171a', INK2 = '#2a2e34', YEL = '#ffd60a', PAPER = '#f2f3ee';
 const key = (x, y, s) => `<g transform="translate(${x},${y}) scale(${s / 64})">
   <rect x="2" y="4" width="60" height="58" rx="14" fill="${INK}"/>
@@ -17,12 +17,12 @@ const key = (x, y, s) => `<g transform="translate(${x},${y}) scale(${s / 64})">
   <path d="M24 21h14a9 9 0 0 1 0 18H27" fill="none" stroke="${YEL}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M29.5 13.5 22 21l7.5 7.5" fill="none" stroke="${YEL}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 </g>`;
-const wordmark = (x, y, size, ink, dim) => `<text x="${x}" y="${y}" class="wm" font-size="${size}" fill="${ink}">undo<tspan fill="${dim}">.fun</tspan></text>`;
+const wordmark = (x, y, size, ink, dim) => `<text x="${x}" y="${y}" class="wm" font-size="${size}" fill="${ink}">cntrl-z<tspan fill="${dim}">.fun</tspan></text>`;
 const add = (id, w, h, inner, bg) => document.body.insertAdjacentHTML('beforeend', `<svg class="art" id="${id}" xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${bg ? `<rect width="${w}" height="${h}" fill="${bg}"/>` : ''}${inner}</svg>`);
 add('mark', 512, 512, key(0, 0, 512));
 add('icon', 512, 512, key(56, 56, 400), YEL);
 add('pfp', 1000, 1000, key(210, 210, 580), YEL);
-add('banner', 1500, 500, `${key(380, 130, 240)}${wordmark(660, 300, 150, INK, '#8a7a10')}`, YEL);
-add('og', 1200, 630, `${key(205, 175, 280)}${wordmark(535, 362, 150, INK, '#8f8f88')}`, PAPER);
+add('banner', 1500, 500, `${key(250, 130, 240)}${wordmark(530, 300, 140, INK, '#8a7a10')}`, YEL);
+add('og', 1200, 630, `${key(110, 175, 280)}${wordmark(430, 362, 136, INK, '#8f8f88')}`, PAPER);
 </script>
 </body></html>

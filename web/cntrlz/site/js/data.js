@@ -1,4 +1,4 @@
-/* undo.fun data for the pages. Until the contracts are deployed this is a preview: example coins,
+/* cntrl-z.fun data for the pages. Until the contracts are deployed this is a preview: example coins,
    generated the same way on every load (seeded), with real pair tokens and their real prices
    (Chainlink for ETH, BTC and gold; the Ondo stock list for stocks). Exposes window.UD, fires 'ud:ready'. */
 (function () {

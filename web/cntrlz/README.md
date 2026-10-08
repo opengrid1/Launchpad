@@ -1,4 +1,4 @@
-# undo.fun
+# cntrl-z.fun
 
 A launchpad on Ethereum where every buy can be undone inside a window the creator sets. Coins pair with ETH,
 stablecoins, bitcoin, gold or any Ondo tokenized stock. 1% tax (0.5% creator, 0.3% platform, 0.2% undo reserve);

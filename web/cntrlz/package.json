@@ -1,7 +1,7 @@
 {
-  "name": "undo-web",
+  "name": "cntrlz-web",
   "private": true,
-  "description": "undo.fun site: coins where every buy can be undone. Static pages wrapped in one shell, plus the wallet bundle",
+  "description": "cntrl-z.fun site: coins where every buy can be undone. Static pages wrapped in one shell, plus the wallet bundle",
   "scripts": {
     "bundle": "esbuild src/index.js --bundle --minify --format=iife --target=es2020 --outfile=site/js/wallet.js",
     "build": "npm run bundle && python3 build.py",

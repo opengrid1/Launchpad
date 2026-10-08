@@ -1,4 +1,4 @@
-/* undo.fun shell: wallet button, search, theme, toasts, dialogs, menus, formatting and the undo
+/* cntrl-z.fun shell: wallet button, search, theme, toasts, dialogs, menus, formatting and the undo
    pieces every page shares (window pricing, clocks, kept ring). Exposes window.UI. */
 (function () {
   const $ = (s, r) => (r || document).querySelector(s);

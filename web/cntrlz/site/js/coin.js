@@ -99,7 +99,7 @@
     const { $, $$, notLive, copy, dialog } = U();
     $('#coinRoot').innerHTML = `${bar()}<div class="chart" id="chart"></div>${keyrow()}<div class="coin-cols"><div class="coin-left">${activity()}</div><div class="coin-right"><div class="trade-slot"></div>${mine()}${about()}</div></div>
       <div class="dock"><button class="key lg green" data-dock="buy">Buy</button><button class="key lg red" data-dock="sell">Sell</button></div>`;
-    document.title = `${x.name} ($${x.symbol}) · undo.fun`; $('#page').classList.add('has-dock');
+    document.title = `${x.name} ($${x.symbol}) · cntrl-z.fun`; $('#page').classList.add('has-dock');
     paintActivity();
     $$('#actTabs .key').forEach(b => b.onclick = () => { tab = b.dataset.t; paintActivity(); });
     mountTrade($('.coin-right .trade-slot'));

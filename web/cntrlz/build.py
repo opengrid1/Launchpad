@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the undo.fun site: wrap each page in the shared shell and write dist/.
+"""Build the cntrl-z.fun site: wrap each page in the shared shell and write dist/.
 
     python3 build.py    # preview: sample coins until the contracts are deployed
 """
@@ -9,7 +9,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
 DESC = 'Launch a coin paired with ETH, gold or 500+ tokenized stocks, where every buy can be undone. Rent a window of 30 minutes to 7 days, cancel inside it for a full refund. The rent is burned.'
-SITE_URL = os.environ.get('SITE_URL', 'https://undo.fun').rstrip('/')
+SITE_URL = os.environ.get('SITE_URL', 'https://cntrl-z.fun').rstrip('/')
 X_HANDLE = os.environ.get('X_HANDLE', '')
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wdth,wght@75..100,400..700&family=Martian+Mono:wght@400;500;600&display=swap'
@@ -23,7 +23,7 @@ ICON = {
 }
 # the mark: a keycap with an undo arrow (brand/brand.html renders the PNGs)
 MARK = '<img class="mark" src="/img/mark-128.png" alt="" width="30" height="30">'
-WORDMARK = '<b class="wm">undo<i>.fun</i></b>'
+WORDMARK = '<b class="wm">cntrl-z<i>.fun</i></b>'
 ETH_GLYPH = '<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M5 0 0 8.1 5 11l5-2.9z" fill="currentColor" opacity=".55"/><path d="M5 12 0 9.1 5 16l5-6.9z" fill="currentColor"/></svg>'
 X_GLYPH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.9-6.4L6.3 22H3.2l7.3-8.3L1 2h6.3l4.4 5.9L18.9 2Zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3Z"/></svg>'
 
@@ -55,7 +55,7 @@ def shell(meta, body):
     desc = meta.get('desc', DESC)
     scripts = ''.join(f'<script src="/js/{s}" defer></script>' for s in meta.get('scripts', []))
     head = meta.get('head', '')
-    x_link = f'<a class="key sq x-link" href="https://x.com/{X_HANDLE}" target="_blank" rel="noopener" aria-label="undo.fun on X">{X_GLYPH}</a>' if X_HANDLE else ''
+    x_link = f'<a class="key sq x-link" href="https://x.com/{X_HANDLE}" target="_blank" rel="noopener" aria-label="cntrl-z.fun on X">{X_GLYPH}</a>' if X_HANDLE else ''
     x_foot = f'<a href="https://x.com/{X_HANDLE}" target="_blank" rel="noopener">X @{X_HANDLE}</a>' if X_HANDLE else ''
     x_meta = f'<meta name="twitter:site" content="@{X_HANDLE}">' if X_HANDLE else ''
     return f'''<!doctype html>
@@ -71,7 +71,7 @@ def shell(meta, body):
 <meta property="og:url" content="{SITE_URL}">
 <meta property="og:image" content="{SITE_URL}/img/og.png">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="undo.fun">
+<meta property="og:site_name" content="cntrl-z.fun">
 <meta name="twitter:card" content="summary_large_image">
 {x_meta}
 <meta name="twitter:title" content="{title}">
@@ -92,7 +92,7 @@ def shell(meta, body):
 <body>
 <header class="top">
   <div class="top-in">
-    <a class="brand" href="/" aria-label="undo.fun home">{MARK}{WORDMARK}</a>
+    <a class="brand" href="/" aria-label="cntrl-z.fun home">{MARK}{WORDMARK}</a>
     <nav class="nav" aria-label="Main">{links}</nav>
     <div class="top-r">
       <button class="key sq" data-search aria-label="Search coins" title="Search (/)">{ic("search")}</button>
@@ -106,7 +106,7 @@ def shell(meta, body):
 </main>
 <footer class="foot">
   <div class="foot-in">
-    <a class="brand" href="/" aria-label="undo.fun home">{MARK}{WORDMARK}</a>
+    <a class="brand" href="/" aria-label="cntrl-z.fun home">{MARK}{WORDMARK}</a>
     <span class="net" title="Ethereum mainnet">{ETH_GLYPH}Ethereum mainnet</span>
     <nav aria-label="Footer"><a href="/docs">How it works</a><a href="/docs#faq">FAQ</a><a href="/launch">Launch</a>{x_foot}</nav>
   </div>
