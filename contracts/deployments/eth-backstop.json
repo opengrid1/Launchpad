@@ -1,0 +1,22 @@
+{
+  "chainId": 1,
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "contracts": {
+    "hookDeployer": "0xd35851A341773419Ba1303A00D02bb3a0caBda4B",
+    "hook": "0xd87Fab0Ec14096D3787EcE1239EA491f33F540cC",
+    "hookSalt": "0x00000000000000000000000000000000000000000000000000000000000023d1",
+    "oracle": "0xD1Ca49bd44A447c48d2a1FAC5F35cF583D8a7b1b",
+    "tokenDeployer": "0xC7D3b33e2eFc4EE7b08F66Aa19fBa50e9733cfe2",
+    "strategyDeployer": "0xcB94EAE360A65461E4fD00cDe3aBB1029D4c1de2"
+  },
+  "gas": {
+    "hookDeployer": "144763",
+    "hook": "2543749",
+    "oracle": "2810923",
+    "tokenDeployer": "3025779",
+    "strategyDeployer": "3847199"
+  },
+  "oracleArgs": {
+    "ethUsd8": "256995000000"
+  }
+}
