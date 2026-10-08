@@ -1,0 +1,54 @@
+<!--{"title": "How it works · undo.fun", "nav": "docs", "scripts": ["docs.js"]}-->
+<div class="doc">
+  <nav class="doc-nav"><a href="#window">The undo window</a><a href="#refund">What you get back</a><a href="#money">Where the money goes</a><a href="#reserve">The undo reserve</a><a href="#pairs">Pairs and stocks</a><a href="#launch">Launching</a><a href="#kept">Kept rate</a><a href="#safety">What can't happen</a><a href="#faq">FAQ</a></nav>
+  <article class="prose">
+    <h1>How undo.fun works</h1>
+    <p class="lead">A launchpad where every buy comes with a window to take it back. Coins trade against ETH, stablecoins, bitcoin, gold or tokenized stocks, on Uniswap V4, with one rule set that every coin shares.</p>
+
+    <h2 id="window">The undo window</h2>
+    <p>When you buy a coin here you can choose to buy <b>with an undo window</b>. The coin's creator set how long it is: one hour, six hours or a day. For that long:</p>
+    <ul><li>Your coins are held for you. They count as yours, but you can't sell or move them yet.</li><li>What you paid is held too, in the coin's pair token.</li><li>You can press <b>Undo</b> at any moment and get most of it back.</li></ul>
+    <p>When the window closes the coins unlock into your wallet and the buy is final. You can also press <b>Keep</b> early to unlock them right away. A buy without a window is a normal swap: coins now, no taking it back.</p>
+    <div class="box" id="curveDoc"></div>
+
+    <h2 id="refund">What you get back</h2>
+    <p>The refund starts at <b>97%</b> of what you paid and falls in a straight line to <b>0%</b> at the end of the window. Undo after ten minutes of a six-hour window and you get about 94% back. Undo at the halfway mark and you get about 48%. The rest is the undo fee.</p>
+    <p>The refund is paid in the pair token and is measured against what you paid, not against the coin's price now. If the coin dumped after you bought, your refund is still based on your entry. If it pumped, the refund is still based on your entry: the upside stays in the pool.</p>
+
+    <h2 id="money">Where the money goes</h2>
+    <h3>The 1% tax</h3>
+    <p>Every buy and sell pays 1% in the pair token.</p>
+    <table class="list"><thead><tr><th class="l">Share</th><th class="l">Goes to</th></tr></thead><tbody><tr><td class="l">0.5%</td><td class="l">The creator</td></tr><tr><td class="l">0.3%</td><td class="l">The platform</td></tr><tr><td class="l">0.2%</td><td class="l">The coin's undo reserve</td></tr></tbody></table>
+    <h3>The undo fee</h3>
+    <p>Only people who undo pay it: the gap between what they paid and what they got back. Half of it goes to the <b>undo reserve</b>. The other half goes wherever the creator chose at launch:</p>
+    <ul><li><b>Holders.</b> Split across every wallet holding the coin outside a window, in the pair token, claimable from Portfolio. Jeets pay the people who stayed.</li><li><b>Burn.</b> It buys the coin from the pool and burns it. Jeets shrink the supply for everyone else.</li></ul>
+
+    <h2 id="reserve">The undo reserve</h2>
+    <p>Refunds have to come from somewhere. When you buy with a window, what you paid stays set aside, so a refund right after the buy is always covered. The reserve exists for the gap between the price you paid and where the pool is when you undo: it tops up what the pool returns so you get the full scheduled refund.</p>
+    <p>It's funded by 0.2% of every trade, half of every undo fee, and the <b>undo budget</b> a creator can add at launch. Every coin page shows its reserve and how much of the open windows it covers. If a coin's reserve ever can't cover a refund in full, the refund is capped at what's there, and the page says so before you buy. The reserve can only ever pay refunds; nobody can withdraw it.</p>
+
+    <h2 id="pairs">Pairs and stocks</h2>
+    <p>The creator picks what the coin trades against. ETH, USDC, USDT, wrapped bitcoin and gold are in the picker, and so is every Ondo tokenized stock on Ethereum: Tesla, NVIDIA, Apple, the S&amp;P 500 and five hundred more. Stock pairs make a coin that moves with the stock underneath it.</p>
+    <p>You can always pay in ETH. If the coin's pair is a stock, the router swaps your ETH into it on the way in. Refunds and holder payouts come back in the pair token, and you can swap them to ETH with one click.</p>
+    <p>Stock tokens trade around the clock, but their reference price only updates on market days. The undo rule doesn't depend on that price: refunds are measured against what you paid, in the pair token.</p>
+
+    <h2 id="launch">Launching</h2>
+    <ol><li>Name, ticker, a line about it, a logo if you like.</li><li>Pick the pair.</li><li>Pick the undo window: 1 hour, 6 hours, 24 hours, or none.</li><li>Pick where undo fees go: holders or burn.</li><li>Optionally seed the undo reserve, and optionally buy first in the launch transaction.</li></ol>
+    <p>All 1,000,000,000 coins go into the pool at a $5,000 starting market cap. There is no presale and no creator allocation; the creator's first buy, if any, goes through the pool at the start price like anyone's. Launching costs only gas. Nothing about the coin can be changed afterwards, by the creator or by us.</p>
+    <p>Every coin launches with the same protections: a high buy tax for the first minute that falls to the normal 1%, so snipers can't front-run the launch, and one swap per wallet per block, so sandwich bots have nothing to work with.</p>
+
+    <h2 id="kept">Kept rate</h2>
+    <p>Every coin shows its <b>kept rate</b>: the share of buys with a window that nobody undid. It's a trust signal no other launchpad has. A coin at 95% is one that people bought and were happy to keep. A coin at 40% is one that people regret. Explore has a "Most kept" view.</p>
+
+    <h2 id="safety">What can't happen</h2>
+    <ul><li>The pool's liquidity can't be removed. Not by the creator, not by us.</li><li>The undo reserve can only pay refunds.</li><li>The tax, the window and the fee split are fixed at launch.</li><li>Coins inside a window can't be sold, moved or used to sandwich anyone.</li><li>Refunds are measured against your own entry, so nobody can game them with a quick pump or dump.</li></ul>
+
+    <h2 id="faq">FAQ</h2>
+    <details><summary>Does undo cost anything if I don't use it?</summary><p>No. Buying with a window costs the same 1% tax as a plain buy. You only pay the undo fee if you undo.</p></details>
+    <details><summary>Why 97% and not 100%?</summary><p>The 3% at the start is what makes undo a decision instead of a free option. It also means a wallet can't buy and undo in a loop to wash-trade the chart for nothing.</p></details>
+    <details><summary>Can I undo part of a buy?</summary><p>Each buy is its own window, and each one is undone whole. Make two buys if you want two windows.</p></details>
+    <details><summary>What happens to my coins while the window is open?</summary><p>They're held for you by the coin's contract. They count as yours for the kept rate and they unlock into your wallet when the window closes or when you press Keep.</p></details>
+    <details><summary>Can the creator undo their first buy?</summary><p>No. The first buy at launch has no window.</p></details>
+    <details><summary>Which wallets work?</summary><p>Any Ethereum wallet: MetaMask, Rabby, Coinbase Wallet, Rainbow, and anything that connects through WalletConnect.</p></details>
+  </article>
+</div>
