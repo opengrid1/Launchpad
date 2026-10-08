@@ -9,7 +9,7 @@
   const DRIFT = 0.02; // refresh a set price once it is 2% off
   const GAS_EACH = 52000;
   const hidden = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
-  let backing = null; let state = null; let busy = false; let filter = ''; let progress = '';
+  let backing = null; let state = null; let busy = false; let filter = ''; let progress = ''; let loadErr = '';
 
   const usd8 = v => BigInt(Math.round(v * 1e8));
   const fmt = v => v >= 1000 ? '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '$' + v.toFixed(2);
@@ -18,11 +18,18 @@
     if (!backing) { const r = await fetch('/backing.json', { cache: 'no-store' }); backing = r.ok ? await r.json() : null; }
     if (!backing || !window.bsEthers) return;
     const { JsonRpcProvider, Contract, Interface } = window.bsEthers; const cfg = BS.cfg;
-    const p = new JsonRpcProvider(cfg.rpcs[0], 1, { staticNetwork: true });
-    const oi = new Interface(ORACLE_ABI); const mc = new Contract(MULTICALL, MC_ABI, p);
+    const oi = new Interface(ORACLE_ABI);
     const toks = [{ symbol: 'USDT', address: backing.usdt.address, usdt: true }, ...backing.tokens];
     const calls = []; toks.forEach(t => { calls.push({ target: backing.oracle, allowFailure: true, callData: oi.encodeFunctionData('listed', [t.address]) }); calls.push({ target: backing.oracle, allowFailure: true, callData: oi.encodeFunctionData('sources', [t.address]) }); });
-    const res = []; for (let i = 0; i < calls.length; i += 300) res.push(...await mc.aggregate3(calls.slice(i, i + 300)));
+    let res = null; let lastErr = null;
+    for (const url of cfg.rpcs) { // first RPC that answers every chunk
+      try {
+        const mc = new Contract(MULTICALL, MC_ABI, new JsonRpcProvider(url, 1, { staticNetwork: true }));
+        const r = []; for (let i = 0; i < calls.length; i += 300) r.push(...await mc.aggregate3(calls.slice(i, i + 300)));
+        res = r; break;
+      } catch (e) { lastErr = e; }
+    }
+    if (!res) throw lastErr || new Error('no RPC answered');
     state = {};
     toks.forEach((t, k) => {
       const l = res[2 * k].success ? oi.decodeFunctionResult('listed', res[2 * k].returnData) : [false, 0n, null];
@@ -97,7 +104,7 @@
   function backingSection() {
     const { esc, addrLink, short } = U();
     if (!backing) return `<section class="panel" style="margin-bottom:18px"><div class="panel-h"><h2>Backing tokens</h2></div><div class="panel-b"><p class="faint">backing.json is missing from this build.</p></div></section>`;
-    if (!state) return `<section class="panel" style="margin-bottom:18px"><div class="panel-h"><h2>Backing tokens</h2></div><div class="panel-b"><div class="skel" style="height:120px"></div></div></section>`;
+    if (!state) return `<section class="panel" style="margin-bottom:18px"><div class="panel-h"><h2>Backing tokens</h2></div><div class="panel-b">${loadErr ? `<p>Couldn't read the oracle: ${esc(loadErr)}</p><button class="btn btn-line" data-retry style="margin-top:10px">Retry</button>` : '<div class="skel" style="height:120px"></div>'}</div></section>`;
     const T = backing.tokens; const td = todo();
     const n = s => T.filter(t => status(t)[0] === s).length;
     const gas = c => `about ${(c * GAS_EACH / 1e6).toFixed(1)}M gas`;
@@ -115,8 +122,8 @@
       ${row('prices', 'All other Ondo stocks', `Listed at the underlying's last price times Ondo's share multiplier. Coins backed by these trade in the stock itself (no ETH route). ${td.prices.length ? gas(td.prices.length) + ', sent in batches of 50 where your wallet supports it.' : ''}`, td.prices)}
       ${row('drift', 'Refresh set prices', `Stocks whose set price is more than ${DRIFT * 100}% off the latest price. Rebuild the site to fetch new prices, then run this.`, td.drift)}
       <div style="padding:12px 16px;border-top:1px solid var(--line)"><input class="input" id="bkq" placeholder="Search ${T.length} stocks" value="${esc(filter)}" autocomplete="off" spellcheck="false"></div>
-      <div class="table-wrap" style="border:0"><table class="list"><thead><tr><th>Stock</th><th>Status</th><th>Oracle</th><th>Latest</th></tr></thead><tbody>
-      ${rows.map(t => { const [label, cls] = status(t); const s = st(t); return `<tr><td><div><b>${esc(t.symbol)}</b><small class="faint" style="display:block">${esc(t.name || '')}</small></div></td><td><span class="tag ${cls}">${label}</span></td><td><span class="num">${s.listed ? (s.feed ? 'feed' : fmt(s.price)) : s.dex ? 'pool' : '–'}</span></td><td><span class="num">${t.usd ? fmt(t.usd) : t.feedUsd ? fmt(t.feedUsd) : '–'}</span></td></tr>`; }).join('')}
+      <div class="table-wrap" style="border:0"><table class="list"><thead><tr><th>Stock</th><th>Oracle</th><th>Latest</th></tr></thead><tbody>
+      ${rows.map(t => { const [label, cls] = status(t); const s = st(t); return `<tr><td><div><b>${esc(t.symbol)}</b> <span class="tag ${cls}">${label}</span><small class="faint" style="display:block">${esc(t.name || '')}</small></div></td><td><span class="num">${s.listed ? (s.feed ? 'feed' : fmt(s.price)) : s.dex ? 'pool' : '–'}</span></td><td><span class="num">${t.usd ? fmt(t.usd) : t.feedUsd ? fmt(t.feedUsd) : '–'}</span></td></tr>`; }).join('')}
       </tbody></table></div>
       ${!q && T.length > 30 ? `<p class="faint" style="padding:10px 16px;font-size:12.5px">Showing 30 of ${T.length}. Search to find the rest.</p>` : ''}
     </section>`;
@@ -135,10 +142,11 @@
       </tbody></table></div></section>`;
     $$('[data-h]').forEach(b => b.onclick = () => { const a = b.dataset.h; const cur = hidden(); const next = cur.includes(a) ? cur.filter(v => v !== a) : [...cur, a]; try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {} paint(); });
     $$('[data-act]').forEach(b => b.onclick = () => { if (busy) return; const td = todo(); send(td[b.dataset.act], b.dataset.act === 'drift' ? 'prices' : b.dataset.act); });
+    const rt = $('[data-retry]'); if (rt) rt.onclick = () => { loadErr = ''; paint(); start(); };
     const q = $('#bkq'); if (q) { q.oninput = () => { filter = q.value; paint(); }; if (focus !== null) { q.focus(); q.setSelectionRange(focus, focus); } }
   }
 
-  async function start() { paint(); if (U().isAdmin()) { try { await load(); } catch (e) { progress = 'Could not read the oracle: ' + ((e && e.message) || 'error'); } paint(); } }
+  async function start() { paint(); if (U().isAdmin()) { loadErr = ''; try { await load(); } catch (e) { loadErr = (e && (e.shortMessage || e.message)) || 'no RPC answered'; } paint(); } }
   window.addEventListener('DOMContentLoaded', () => BS.ready.then(start));
   window.addEventListener('bs:wallet', () => BS.ready.then(start));
 })();

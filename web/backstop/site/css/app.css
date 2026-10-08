@@ -736,3 +736,6 @@ table.list { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .cards .coin-cell { min-width: 0; width: 100%; }
   .cards .coin-cell .strat { margin-left: auto; }
 }
+
+/* narrow phones: the network badge gives way so the wallet button fits */
+@media (max-width: 440px) { .top-r .net { display: none; } }
