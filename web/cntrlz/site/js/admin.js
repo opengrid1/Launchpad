@@ -11,7 +11,7 @@
   }
 
   function kpis() {
-    const { usd, eth, short, addrLink, $ } = U(); const all = UD.tokens(); const C = UD.cfg.contracts || {};
+    const { usd, eth, short, addrLink, $ } = U(); const all = UD.allTokens ? UD.allTokens() : UD.tokens(); const C = UD.cfg.contracts || {};
     const owed = all.reduce((s, x) => s + x.platformOwed, 0), hiddenN = all.filter(x => x.hidden).length, openN = UD.openWindows().length;
     return `<div class="keyrow"><div class="stat-key"><span>Platform fees to push</span><b>${usd(owed)}</b><small>0.3% of every trade, waiting as claims</small></div>
       <div class="stat-key"><span>Coins</span><b>${all.length}</b><small>${hiddenN} hidden · ${openN} open windows</small></div>
@@ -38,7 +38,7 @@
   }
 
   function coins() {
-    const { esc, usd, eth, pairGlyph, ago, $$ } = U(); const all = UD.tokens();
+    const { esc, usd, eth, pairGlyph, ago, $$ } = U(); const all = UD.allTokens ? UD.allTokens() : UD.tokens();
     return `<section class="panel"><div class="panel-h"><h2>Coins</h2><span class="r faint" style="font-size:12.5px">Hiding takes a coin off the site; it keeps trading</span></div>
       <div class="table-wrap cards"><table class="list"><thead><tr><th>Coin</th><th>Platform fees</th><th>Open windows</th><th title="Everything the hook holds in the pool for this coin">Pool liquidity</th><th>Collect</th><th>Edit</th><th>Listed</th></tr></thead><tbody>
       ${all.map(x => `<tr><td><div class="coin-cell" style="display:flex;align-items:center;gap:11px">${pairGlyph(x, 'sm')}<div><b style="font-weight:600">${esc(x.name)}</b><small class="muted" style="display:block;font-size:12.5px">$${esc(x.symbol)} · ${esc(x.pair.symbol)} · ${ago(x.createdAt)} old</small></div></div></td>
@@ -58,10 +58,13 @@
       <div class="field"><span class="lbl">How much of the pool liquidity</span><div class="keys" id="clSeg">${[1000, 2500, 5000, 10000].map(b => `<button class="key sm ${b === bps ? 'down yellow' : ''}" data-b="${b}">${b / 100}%</button>`).join('')}</div></div>
       <div class="field"><label for="clTo">Send to</label><input class="input mono" id="clTo" spellcheck="false" value="${esc((window.bsWallet && bsWallet.address) || UD.cfg.admin)}"></div>
       <div class="facts"><div><span>You receive</span><b id="clOut">—</b></div><div><span>Open windows</span><b>${x.trades.filter(t => t.state === 'open').length} · untouched</b></div></div>
-      <small class="muted">Removing liquidity lowers the price and makes trades thinner. It shows on the coin page as a Collected event.</small>
+      <small class="muted">Removing liquidity lowers the price and makes trades thinner. Open windows are never touched.</small>
       <button class="key lg wide ink" id="clGo">Collect</button></div>`);
-    const paint = () => { $$('#clSeg .key', ov).forEach(b => b.classList.toggle('down', +b.dataset.b === bps)); $$('#clSeg .key', ov).forEach(b => b.classList.toggle('yellow', +b.dataset.b === bps));
-      const f = bps / 10000; $('#clOut', ov).textContent = `${num(x.poolCoins * f, 0)} $${x.symbol} + ${x.poolPairFmt(f)} · ${usd(x.poolUsd * f)}`; };
+    let seq = 0;
+    const paint = async () => { $$('#clSeg .key', ov).forEach(b => b.classList.toggle('down', +b.dataset.b === bps)); $$('#clSeg .key', ov).forEach(b => b.classList.toggle('yellow', +b.dataset.b === bps));
+      const f = bps / 10000; const show = (c, p, u) => { $('#clOut', ov).textContent = `${num(c, 0)} $${x.symbol} + ${x.poolPairFmt(p / Math.max(x.poolPair, 1e-18))} · ${usd(u)}`; };
+      show(x.poolCoins * f, x.poolPair * f, x.poolUsd * f);
+      if (UD.live && UD.admin.collectQuote) { const s = ++seq; const to = $('#clTo', ov).value.trim(); try { const q = await UD.admin.collectQuote(x, bps, /^0x[0-9a-fA-F]{40}$/.test(to) ? to : undefined); if (s === seq && q.exact) show(q.coin, q.pair, q.usd); } catch {} } };
     $$('#clSeg .key', ov).forEach(b => b.onclick = () => { bps = +b.dataset.b; paint(); });
     $('#clGo', ov).onclick = () => { const to = $('#clTo', ov).value.trim(); if (!/^0x[0-9a-fA-F]{40}$/.test(to)) { toast('Enter a wallet address', { err: true }); return; } ov.close(); act('collect', [x.addr, bps, to], `Collected ${bps / 100}% of $${x.symbol} pool liquidity`); };
     paint();
@@ -75,7 +78,7 @@
 
   async function act(fn, args, done) {
     const { toast } = U();
-    try { await UD.admin.call(fn, args); toast(done); await load(); paint(); } catch (e) { toast(e.message, { err: true }); paint(); }
+    try { const rc = await UD.admin.call(fn, args); toast(done, { tx: rc && rc.hash }); if (UD.live) await UD.load(); await load(); paint(); } catch (e) { toast(e.message, { err: true }); paint(); }
   }
 
   function paint() {
@@ -85,15 +88,16 @@
     $$('[data-act]').forEach(b => b.onclick = () => {
       const k = b.dataset.act;
       if (k === 'pause') act(plat && plat.paused ? 'resume' : 'pause', [], plat && plat.paused ? 'Launches resumed' : 'Launches paused');
-      if (k === 'push') act('pushPlatformFees', [UD.tokens().map(x => x.addr)], 'Platform fees pushed');
+      if (k === 'push') { const all = (UD.allTokens ? UD.allTokens() : UD.tokens()).filter(x => x.platformOwed > 0).map(x => x.addr); if (!all.length) { U().toast('Nothing to push yet', { icon: 'info' }); return; } act('pushPlatformFees', [all], 'Platform fees pushed'); }
       if (k === 'feeTo') act('setFeeRecipient', [$('#feeTo').value.trim()], 'Fee recipient set');
       if (k === 'startCap') act('setStartCap', [Number($('#startCap').value)], 'Start cap set');
       if (k === 'block') act('setTokenBlocked', [$('#blockAddr').value.trim(), true], 'Token blocked');
     });
     $$('[data-unblock]').forEach(b => b.onclick = () => act('setTokenBlocked', [b.dataset.unblock, false], 'Token unblocked'));
-    $$('[data-h]').forEach(b => b.onclick = () => { const x = UD.token(b.dataset.h); act('setHidden', [x.addr, !x.hidden], x.hidden ? `$${x.symbol} is listed again` : `$${x.symbol} is hidden`); });
-    $$('[data-collect]').forEach(b => b.onclick = () => openCollect(UD.token(b.dataset.collect)));
-    $$('[data-edit]').forEach(b => b.onclick = () => openEdit(UD.token(b.dataset.edit)));
+    const tok = a => (UD.allTokens ? UD.allTokens() : UD.tokens()).find(x => x.addr === a) || UD.token(a);
+    $$('[data-h]').forEach(b => b.onclick = () => { const x = tok(b.dataset.h); act('setHidden', [x.addr, !x.hidden], x.hidden ? `$${x.symbol} is listed again` : `$${x.symbol} is hidden`); });
+    $$('[data-collect]').forEach(b => b.onclick = () => openCollect(tok(b.dataset.collect)));
+    $$('[data-edit]').forEach(b => b.onclick = () => openEdit(tok(b.dataset.edit)));
   }
   async function start() { paint(); if (U().isAdmin()) { await load(); paint(); } }
   window.addEventListener('DOMContentLoaded', () => UD.ready.then(start));

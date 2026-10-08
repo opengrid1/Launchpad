@@ -1,4 +1,4 @@
-/* cntrl-z.fun shell: wallet button, search, theme, toasts, dialogs, menus, formatting and the undo
+/* cntrl-z.fun shell: wallet button, search, theme, toasts, dialogs, menus, formatting and the window
    pieces every page shares (window pricing, clocks, kept ring). Exposes window.UI. */
 (function () {
   const $ = (s, r) => (r || document).querySelector(s);
@@ -51,7 +51,8 @@
   const PR = CFG.premium || { refEth: 0.05, baseH: 6, minH: 0.5, maxH: 168, maxBps: 3000 };
   const premiumFor = hours => PR.refEth * hours / PR.baseH;
   const hoursFor = premium => premium * PR.baseH / PR.refEth;
-  const maxHoursFor = buyEth => Math.max(0, Math.min(PR.maxH, hoursFor(buyEth * PR.maxBps / 10000)));
+  // the contract caps the premium at 30% of what the buy actually costs (after the premium and the 1% tax come off)
+  const maxHoursFor = buyEth => Math.max(0, Math.min(PR.maxH, hoursFor(buyEth * PR.maxBps / (10000 * (1 + (CFG.taxBps || 100) / 10000) + PR.maxBps))));
   const WINDOWS = [0.5, 1, 6, 24, 72, 168];
   // the six window lengths as keys, with their price; the ones the buy is too small for are disabled
   const timeKeys = (sel, buyEth) => `<div class="keys timekeys">${WINDOWS.map(h => { const ok = buyEth == null || h <= maxHoursFor(buyEth) + 1e-9; return `<button type="button" class="key sm ${h === sel ? 'down yellow' : ''}" data-h="${h}" ${ok ? '' : 'disabled title="The window can cost at most 30% of the buy"'}><span>${winLabel(h)}</span><kbd>${eth(premiumFor(h))}</kbd></button>`; }).join('')}</div>`;

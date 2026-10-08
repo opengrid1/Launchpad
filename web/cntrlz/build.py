@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Build the cntrl-z.fun site: wrap each page in the shared shell and write dist/.
 
-    python3 build.py    # preview: sample coins until the contracts are deployed
+    python3 build.py              # live: contracts from ../../contracts/deployments/eth-cntrlz.json
+    PREVIEW=1 python3 build.py    # preview: sample coins, no contracts
+    RPCS=http://127.0.0.1:8545 BLOCKSCOUT= INJECTED_ONLY=1 DEPLOY_JSON=... python3 build.py   # against a local fork
 """
 import hashlib, json, os, re, shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
-DESC = 'Launch a coin paired with ETH, gold or 500+ tokenized stocks, where every buy can be undone. Rent a window of 30 minutes to 7 days, cancel inside it for a full refund. The rent is burned.'
+DESC = 'Launch a coin paired with ETH, gold or 500+ tokenized stocks, where every buy can be cancelled. Rent a window of 30 minutes to 7 days, cancel inside it for a full refund. The rent is burned.'
 SITE_URL = os.environ.get('SITE_URL', 'https://cntrl-z.fun').rstrip('/')
 X_HANDLE = os.environ.get('X_HANDLE', 'cntrlz_fun')
 
@@ -21,7 +23,7 @@ ICON = {
     'plus': '<path d="M5 12h14M12 5v14"/>',
     'search': '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
 }
-# the mark: a keycap with an undo arrow (brand/brand.html renders the PNGs)
+# the mark: a keycap with cntrl Z (brand/brand.html renders the PNGs)
 MARK = '<img class="mark" src="/img/mark-128.png" alt="" width="30" height="30">'
 WORDMARK = '<b class="wm">cntrl-z<i>.fun</i></b>'
 ETH_GLYPH = '<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M5 0 0 8.1 5 11l5-2.9z" fill="currentColor" opacity=".55"/><path d="M5 12 0 9.1 5 16l5-6.9z" fill="currentColor"/></svg>'
@@ -32,14 +34,29 @@ def ic(n):
     return f'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{ICON[n]}</svg>'
 
 
+def deployed():
+    # live addresses from the mainnet deploy record, when the repo has it (PREVIEW=1 builds the sample-coin preview instead)
+    p = os.environ.get('DEPLOY_JSON') or os.path.join(HERE, '..', '..', 'contracts', 'deployments', 'eth-cntrlz.json')
+    if os.environ.get('PREVIEW') == '1' or not os.path.exists(p):
+        return {}
+    d = json.load(open(p)); c = d['contracts']
+    out = {k: c[k] for k in ('factory', 'router', 'hook') if k in c}
+    out['oracle'] = d.get('oracle', '0xD1Ca49bd44A447c48d2a1FAC5F35cF583D8a7b1b')
+    out['deployBlock'] = d.get('deployBlock', 0)
+    return out
+
+
 def config():
+    dep = deployed()
     cfg = {
         'chainId': 1, 'chainName': 'Ethereum', 'explorer': 'https://etherscan.io',
         'rpcs': os.environ['RPCS'].split(',') if os.environ.get('RPCS') else ['https://ethereum-rpc.publicnode.com', 'https://rpc.mevblocker.io', 'https://ethereum.publicnode.com'],
         'feeds': {'ETH': '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419', 'BTC': '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c', 'XAU': '0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6'},
-        'weth': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-        'contracts': {}, 'prelaunch': True, 'admin': os.environ.get('ADMIN', '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'),
-        'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'),
+        'weth': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 'poolManager': '0x000000000004444c5dc75cB358380D2e3dE08A90', 'stateView': '0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227',
+        'contracts': {k: v for k, v in dep.items() if k != 'deployBlock'}, 'deployBlock': dep.get('deployBlock', 0), 'prelaunch': not dep.get('factory'),
+        'blockscout': os.environ.get('BLOCKSCOUT', 'https://eth.blockscout.com'),
+        'admin': os.environ.get('ADMIN', '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'),
+        'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'), 'injectedOnly': os.environ.get('INJECTED_ONLY') == '1',
         # the rules every coin shares (see /docs): a 1% tax, and a window premium of 0.05 ETH per 6 hours
         'taxBps': 100, 'split': {'creator': 70, 'platform': 30},
         'premium': {'refEth': 0.05, 'baseH': 6, 'minH': 0.5, 'maxH': 168, 'maxBps': 3000}, 'startCap': 5000,

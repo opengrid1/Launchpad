@@ -1,2 +1,3 @@
-/* Wallet bundle: the wallet connection (window.bsWallet). The chain layer joins it when the contracts are deployed. */
+/* Wallet bundle: the wallet connection (window.bsWallet) and, once the contracts are configured, the chain layer (window.UD). */
 import './wallet.js';
+import './chain.js';

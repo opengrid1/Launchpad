@@ -32,7 +32,7 @@ function injected() {
 if (CFG.reownProjectId && !CFG.injectedOnly) {
   const modal = createAppKit({
     adapters: [new EthersAdapter()], networks: [mainnet], defaultNetwork: mainnet, projectId: CFG.reownProjectId,
-    metadata: { name: 'cntrl-z.fun', description: 'Coins where every buy can be undone', url: location.origin, icons: [location.origin + '/img/logo-512.png'] },
+    metadata: { name: 'cntrl-z.fun', description: 'Coins where every buy can be cancelled inside a window', url: location.origin, icons: [location.origin + '/img/logo-512.png'] },
     themeMode: dark() ? 'dark' : 'light',
     themeVariables: { '--w3m-accent': '#8a6d00', '--w3m-font-family': "'Instrument Sans', system-ui, sans-serif", '--w3m-border-radius-master': '3px', '--w3m-z-index': 2000 },
     features: { analytics: false, email: false, socials: false, swaps: false, onramp: false, send: false, history: false }, allWallets: 'SHOW', enableWalletGuide: false,

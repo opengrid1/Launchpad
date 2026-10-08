@@ -1,5 +1,5 @@
 /* TradingView Advanced Charts on the coin page (library in /charting_library), the same setup as the other sites.
-   Candles from the coin's swaps, in USD or the pair token, as price or market cap. Undos show as marks on the bars. */
+   Candles from the coin's swaps, in USD or the pair token, as price or market cap. Cancelled buys show as marks on the bars. */
 (function () {
   const RES = { '1': 60, '5': 300, '15': 900, '30': 1800, '60': 3600, '240': 14400, '1D': 86400, '1W': 604800 };
   const SUPPLY = 1e9;
@@ -41,7 +41,7 @@
     },
     getMarks(info, from, to, cb, res) {
       const c = palette(); const sec = RES[res] || 3600;
-      cb(X.trades.filter(e => e.side === 'undo' && e.ts >= from && e.ts <= to).slice(0, 60).map((e, i) => ({ id: i, time: Math.floor(e.ts / sec) * sec, color: { border: c.keyStrong, background: c.key }, text: `Undo: ${UI.usd(e.usd)} refunded (${(e.share * 100).toFixed(0)}%)`, label: 'U', labelFontColor: '#15171a', minSize: 15 })));
+      cb(X.trades.filter(e => e.side === 'undo' && e.ts >= from && e.ts <= to).slice(0, 60).map((e, i) => ({ id: i, time: Math.floor(e.ts / sec) * sec, color: { border: c.keyStrong, background: c.key }, text: `Cancelled: ${UI.usd(e.usd)} refunded, ${UI.eth(e.premium)} burned`, label: 'Z', labelFontColor: '#15171a', minSize: 15 })));
     },
     subscribeBars() {}, unsubscribeBars() {},
     getServerTime(cb) { cb(Math.floor(Date.now() / 1000)); },

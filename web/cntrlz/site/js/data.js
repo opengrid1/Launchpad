@@ -1,8 +1,10 @@
-/* cntrl-z.fun data for the pages. Until the contracts are deployed this is a preview: example coins,
+/* cntrl-z.fun preview data for the pages, used only while no contracts are configured: example coins,
    generated the same way on every load (seeded), with real pair tokens and their real prices
-   (Chainlink for ETH, BTC and gold; the Ondo stock list for stocks). Exposes window.UD, fires 'ud:ready'. */
+   (Chainlink for ETH and gold; the Ondo stock list for stocks). Exposes window.UD, fires 'ud:ready'.
+   With contracts configured the wallet bundle's chain layer provides window.UD instead. */
 (function () {
   const CFG = window.UNDO || {};
+  if (CFG.contracts && CFG.contracts.factory) return;
   const lower = a => (a || '').toLowerCase();
   const NOW = Math.floor(Date.now() / 1000);
   const SUPPLY = 1e9;
@@ -30,7 +32,7 @@
 
   // name, ticker, pair, age (h), market cap now, hue, kept %, description
   const EXAMPLES = [
-    ['Ctrl Z', 'CTRLZ', 'ETH', 30, 412000, 48, 88, 'Bought the top? Ctrl Z. The first coin where every buy comes with an undo key.'],
+    ['Ctrl Z', 'CTRLZ', 'ETH', 30, 412000, 48, 88, 'Bought the top? Ctrl Z. The first coin where every buy comes with a cntrl-z key.'],
     ['Regret Nothing', 'NOREGRET', 'ETH', 74, 1210000, 152, 94, 'Rent a day to think about it. Most people keep it.'],
     ['Gold Hands', 'GOLDH', 'PAXG', 120, 286000, 40, 91, 'Paired with tokenized gold. Every window burns a little more.'],
     ['Green Candle', 'GREEN', 'NVDAon', 20, 198000, 140, 79, 'A coin that trades against NVIDIA stock.'],
@@ -149,11 +151,20 @@
       throw new Error('Not wired yet');
     },
   };
+  const notLive = async () => { throw new Error('Preview: buying, cancelling and launching open when the contracts go live.'); };
   const api = {
     cfg: CFG, SUPPLY, live: false, preview: true, now: () => Math.floor(Date.now() / 1000), admin,
-    tokens: () => tokens, token: a => byAddr[lower(a)] || tokens.find(t => t.symbol.toLowerCase() === lower(a)),
+    tokens: () => tokens, allTokens: () => tokens, token: a => byAddr[lower(a)] || tokens.find(t => t.symbol.toLowerCase() === lower(a)),
     stats, myWindows, myHoldings, openWindows, pairsList, pairUsd: s => (STOCKS[s] ? STOCKS[s][2] : prices[s]), ethUsd: () => prices.ETH,
     ready: null,
+    // the same calls the chain layer answers, so the pages are written once
+    async portfolio() { const windows = myWindows().map(w => ({ ...w, state: 'open' })); const holdings = myHoldings(); return { windows, holdings, created: [], refunds: [] }; },
+    async trades(a) { const x = api.token(a); return x ? x.trades : []; },
+    async balances() { return { coin: 0, coinRaw: 0n, pair: 0, pairRaw: 0n, eth: 0 }; },
+    async quoteBuy(a, ethAmt, hours) { const x = api.token(a); const tax = TAX; const prem = hours ? PR.refEth * hours / PR.baseH : 0; const usdIn = ethAmt * prices.ETH; const impact = Math.min(.3, usdIn / (x.mc * .6)); const coins = usdIn * (1 - tax) / x.px * (1 - impact);
+      const ok = !hours || prem * 10000 <= ethAmt * PR.maxBps; return { coins, coinsRaw: 0n, costEth: ethAmt - ethAmt * tax, premiumEth: prem, feeEth: ethAmt * tax, refundEth: 0, taxBps: tax * 10000, ok, reason: ok ? '' : 'The window can cost at most 30% of the buy', impact: impact * 100, avgUsd: x.px * (1 + impact) }; },
+    async quoteSell(a, coins) { const x = api.token(a); const usd = coins * x.px * (1 - TAX); return { ethOut: usd / prices.ETH, ethOutRaw: 0n, pairOut: usd / x.pair.usd, usd, feeUsd: coins * x.px * TAX, taxBps: TAX * 10000 }; },
+    buy: notLive, sell: notLive, cancel: notLive, keep: notLive, payCreator: notLive, pairToEth: notLive, launch: notLive, refresh: async a => api.token(a),
   };
   api.ready = feeds().catch(() => {}).then(() => { tokens.forEach(x => { if (x.pair.kind === 'token') x.pair.usd = prices[x.pair.symbol]; }); window.dispatchEvent(new CustomEvent('ud:ready')); });
   window.UD = api;

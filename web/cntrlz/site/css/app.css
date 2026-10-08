@@ -162,7 +162,7 @@ table.list tbody tr:last-child td { border-bottom: 0; }
 .board h1 .k { display: inline-block; padding: 0 .16em .02em; border-radius: .18em; background: var(--key); color: var(--key-ink); box-shadow: 0 .09em 0 var(--key-edge); white-space: nowrap; }
 .board p { margin-top: 14px; font-size: 16.5px; color: var(--muted); max-width: 58ch; }
 .board .keys { margin-top: 20px; }
-/* the tape: every open undo window on the site, scrolling by */
+/* the tape: every open cntrl-z window on the site, scrolling by */
 .tape-wrap { margin: 26px -24px 0; padding: 0 24px; overflow: hidden; position: relative; }
 .tape-wrap::before, .tape-wrap::after { content: ''; position: absolute; top: 0; bottom: 0; width: 48px; z-index: 1; pointer-events: none; }
 .tape-wrap::before { left: 0; background: linear-gradient(90deg, var(--bg), transparent); }
@@ -496,3 +496,6 @@ textarea.input { height: auto; min-height: 84px; padding: 11px 13px; resize: ver
   .coin-bar h1 { font-size: 22px; }
   .coin-bar .px b { font-size: 26px; }
 }
+
+/* the small transaction link beside a trade's age */
+.txl{display:inline-block;vertical-align:-1px;margin-left:4px}.txi{width:12px;height:12px;display:block;opacity:.7}.txl:hover .txi{opacity:1}
