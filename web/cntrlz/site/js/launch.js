@@ -40,9 +40,9 @@
 
   async function start() {
     const { $ } = U();
-    const bind = (id, k, fn) => { const el = $('#' + id); el.oninput = () => { st[k] = fn ? fn(el.value) : el.value; if (k === 'sym') el.value = st.sym; if (k === 'sym' || k === 'name') $('#logoPrev').textContent = (st.sym || st.name || 'C')[0].toUpperCase(); paintPreview(); }; };
+    const bind = (id, k, fn) => { const el = $('#' + id); el.oninput = () => { st[k] = fn ? fn(el.value) : el.value; if (k === 'sym') el.value = st.sym; paintPreview(); }; };
     bind('name', 'name'); bind('sym', 'sym', v => v.replace(/[^a-z0-9]/gi, '').toUpperCase()); bind('desc', 'desc'); bind('dev', 'dev', v => parseFloat(v) || 0);
-    $('#logoBtn').onclick = () => $('#logo').click(); $('#logo').onchange = async e => { const f = e.target.files[0]; if (!f) return; st.logo = await shrink(f); $('#logoPrev').innerHTML = `<img src="${st.logo}" alt="">`; paintPreview(); };
+    $('#logoBtn').onclick = () => $('#logo').click(); $('#logo').onchange = async e => { const f = e.target.files[0]; if (!f) return; st.logo = await shrink(f); $('#logoPrev').innerHTML = `<img src="${st.logo}" alt="">`; $('#logoPrev').classList.remove('av-def'); paintPreview(); };
     paintPreview();
     ({ popular, stocks } = await UD.pairsList());
     const q = new URLSearchParams(location.search).get('pair'); if (q) st.pair = [...popular, ...stocks].find(t => t.symbol.toLowerCase() === q.toLowerCase()) || null;

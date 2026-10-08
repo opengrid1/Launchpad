@@ -23,6 +23,9 @@ add('mark', 512, 512, key(0, 0, 512));
 add('icon', 512, 512, key(56, 56, 400), PAPER);
 add('pfp', 1000, 1000, key(150, 150, 700), PAPER);
 add('banner', 1500, 500, `${key(250, 130, 240)}${wordmark(530, 300, 140, INK, '#8f8f88')}`, PAPER);
+// default coin image: a muted slate key with a dollar sign, so it never gets mistaken for the brand mark
+const keyMuted = (x, y, s) => `<g transform="translate(${x},${y}) scale(${s / 64})"><rect x="2" y="4" width="60" height="58" rx="14" fill="#4a4f56"/><rect x="2" y="2" width="60" height="54" rx="14" fill="#6c727a"/><rect x="7" y="6" width="50" height="44" rx="10" fill="#4a4f56"/><text x="32" y="41" text-anchor="middle" font-family="Bricolage Grotesque" font-weight="800" font-size="30" fill="#d4d6d0">$</text></g>`;
+add('tokdef', 512, 512, keyMuted(0, 0, 512));
 add('og', 1200, 630, `${key(110, 175, 280)}${wordmark(430, 362, 136, INK, '#8f8f88')}`, PAPER);
 </script>
 </body></html>
