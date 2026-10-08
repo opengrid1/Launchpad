@@ -31,15 +31,24 @@ def ic(n):
     return f'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{ICON[n]}</svg>'
 
 
+def deployed():
+    # live addresses from the mainnet deploy record, when the repo has it
+    p = os.environ.get('DEPLOY_JSON') or os.path.join(HERE, '..', '..', 'contracts', 'deployments', 'eth-backstop.json')
+    if not os.path.exists(p):
+        return {}
+    c = json.load(open(p))['contracts']
+    return {k: c[k] for k in ('factory', 'router', 'hook', 'oracle') if k in c}
+
+
 def config():
     tokens = json.load(open(os.path.join(HERE, 'tokens.json')))
     cfg = {
         'chainId': 1, 'chainName': 'Ethereum', 'explorer': 'https://etherscan.io',
-        'rpcs': ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org', 'https://1rpc.io/eth', 'https://cloudflare-eth.com'],
+        'rpcs': os.environ['RPCS'].split(',') if os.environ.get('RPCS') else ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org', 'https://1rpc.io/eth', 'https://cloudflare-eth.com'],
         'weth': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 'usdc': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
         'ethUsdFeed': '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419', 'poolManager': '0x000000000004444c5dc75cB358380D2e3dE08A90',
         'uniV2Factory': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f', 'uniV3Factory': '0x1F98431c8aD98523631AE4a59f267346ea31F984',
-        'contracts': {}, 'prelaunch': True, 'demo': MODE == 'preview',
+        'contracts': deployed(), 'prelaunch': True, 'demo': MODE == 'preview',
         'admin': os.environ.get('ADMIN', '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'),
         'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'),
         'startCap': 5000, 'minDepth': 10000, 'launchGas': 4200000,
@@ -133,6 +142,7 @@ def build():
     open(os.path.join(DIST, 'config.js'), 'w').write(config())
     if MODE == 'preview':
         shutil.copy(os.path.join(SITE, 'demo.json'), os.path.join(DIST, 'demo.json'))
+    shutil.copy(os.path.join(SITE, 'backing.json'), os.path.join(DIST, 'backing.json'))
     for f in sorted(os.listdir(os.path.join(SITE, 'pages'))):
         src = open(os.path.join(SITE, 'pages', f)).read()
         m = re.match(r'<!--(\{.*?\})-->\s*', src, re.S)

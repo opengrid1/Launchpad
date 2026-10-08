@@ -19,7 +19,7 @@ const config: HardhatUserConfig = {
   paths: { sources: "./contracts/v4/backstop", artifacts: "./artifacts-backstop", cache: "./cache-backstop" },
   networks: {
     hardhat: {
-      blockGasLimit: 60_000_000,
+      blockGasLimit: 16_777_216, // the per-transaction cap (EIP-7825); calls default to the block limit
       ...(process.env.FORK === "1"
         ? { hardfork: "cancun", chains: { 1: { hardforkHistory: { cancun: 0 } } }, forking: { url: RPC, ...(process.env.FORK_BLOCK ? { blockNumber: Number(process.env.FORK_BLOCK) } : {}) }, chainId: 1 }
         : {}),

@@ -3,7 +3,7 @@
 import { createAppKit } from '@reown/appkit';
 import { EthersAdapter } from '@reown/appkit-adapter-ethers';
 import { mainnet } from '@reown/appkit/networks';
-import { BrowserProvider } from 'ethers';
+import { BrowserProvider, Contract, Interface, JsonRpcProvider, getAddress } from 'ethers';
 
 const CFG = window.BACKSTOP || {};
 const CHAIN_ID = CFG.chainId || 1;
@@ -13,6 +13,8 @@ const api = {
   short() { return this.address ? this.address.slice(0, 6) + '…' + this.address.slice(-4) : ''; },
 };
 window.bsWallet = api;
+// contract helpers for the page scripts (admin page reads and writes the oracle)
+window.bsEthers = { BrowserProvider, Contract, Interface, JsonRpcProvider, getAddress };
 const emit = () => window.dispatchEvent(new CustomEvent('bs:wallet', { detail: { connected: api.connected, address: api.address, chainId: api.chainId } }));
 const dark = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches; };
 
