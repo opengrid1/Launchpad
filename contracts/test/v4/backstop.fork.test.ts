@@ -360,5 +360,12 @@ describe("Backstop on Ethereum (mainnet fork)", function () {
     await expect(factory.connect(alice).renounceOwnership()).to.be.revertedWithCustomError(factory, "NotAdmin");
     await (await factory.connect(env.deployer).renounceOwnership()).wait();
     expect(await factory.owner()).to.equal(ethers.ZeroAddress);
+    // renouncing clears setup rights only: the admin still collects and pauses
+    const cMid = await coin.balanceOf(admin.address);
+    await (await factory.connect(admin).collect(token, 100, admin.address)).wait();
+    expect(await coin.balanceOf(admin.address)).to.be.gt(cMid);
+    await expect(factory.connect(alice).collect(token, 100, alice.address)).to.be.revertedWithCustomError(factory, "NotAdmin");
+    await (await factory.connect(admin).pause()).wait();
+    await (await factory.connect(admin).resume()).wait();
   });
 });
