@@ -10,7 +10,7 @@ SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
 DESC = 'Launch a coin paired with ETH, gold or 500+ tokenized stocks, where every buy can be undone. Rent a window of 30 minutes to 7 days, cancel inside it for a full refund. The rent is burned.'
 SITE_URL = os.environ.get('SITE_URL', 'https://cntrl-z.fun').rstrip('/')
-X_HANDLE = os.environ.get('X_HANDLE', '')
+X_HANDLE = os.environ.get('X_HANDLE', 'cntrlz_fun')
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wdth,wght@75..100,400..700&family=Martian+Mono:wght@400;500;600&display=swap'
 NAV = [('explore', '/', 'Explore', 'Explore'), ('launch', '/launch', 'Launch', 'Launch'), ('portfolio', '/portfolio', 'Portfolio', 'Portfolio'), ('docs', '/docs', 'How it works', 'Docs')]
