@@ -4,9 +4,10 @@
 // already there. The price oracle is the Etherhook one already on mainnet.
 //
 //   fork rehearsal:  FORK=1 npx hardhat --config hardhat.config.cntrlz.ts run scripts/deploy-cntrlz-eth.ts
-//   mainnet:         GAS_PRICE_GWEI=0.2 npx hardhat --config hardhat.config.cntrlz.ts run scripts/deploy-cntrlz-eth.ts --network mainnet
+//   mainnet:         npx hardhat --config hardhat.config.cntrlz.ts run scripts/deploy-cntrlz-eth.ts --network mainnet
 //   then verify:     VERIFY=1 ... same command
 //
+// Mainnet txs use EIP-1559 (base fee + TIP_GWEI); GAS_PRICE_GWEI=x forces a flat legacy price instead.
 // Setup rights (the factory's `owner`) are renounced at the end; the admin keeps
 // its own functions.
 import { ethers, network, run } from "hardhat";
@@ -30,12 +31,19 @@ async function main() {
   const c = dep.contracts;
   const save = () => fs.writeFileSync(FILE, JSON.stringify(dep, null, 2));
   let total = 0n;
+  // EIP-1559 fees per tx: pay the current base fee plus a small tip (TIP_GWEI, default 0.05) instead of a flat legacy price
+  const fee = async () => {
+    if (network.name !== "mainnet" || process.env.GAS_PRICE_GWEI) return {};
+    const base = (await ethers.provider.getBlock("latest"))!.baseFeePerGas ?? 0n;
+    const tip = ethers.parseUnits(process.env.TIP_GWEI ?? "0.05", "gwei");
+    return { maxPriorityFeePerGas: tip, maxFeePerGas: (base * 115n) / 100n + tip };
+  };
   const track = async (label: string, p: any) => { const tx = await p; const rc = await (tx.wait ? tx.wait() : tx.deploymentTransaction().wait()); dep.gas[label] = rc.gasUsed.toString(); total += rc.gasUsed; console.log(`  ${label}: ${rc.gasUsed} gas`); return tx; };
   console.log("network", network.name, "deployer", me.address, "balance", ethers.formatEther(await ethers.provider.getBalance(me.address)), "ETH, admin", admin);
 
   if (process.env.VERIFY === "1") return verify(dep);
 
-  if (!c.hookDeployer) { const d = await track("hookDeployer", (await ethers.getContractFactory("HookDeployer")).deploy()); c.hookDeployer = await d.getAddress(); save(); }
+  if (!c.hookDeployer) { const d = await track("hookDeployer", (await ethers.getContractFactory("HookDeployer")).deploy(await fee())); c.hookDeployer = await d.getAddress(); save(); }
   if (!c.hook) {
     const Hook = await ethers.getContractFactory("CtrlzHook");
     const init = ethers.concat([Hook.bytecode, ethers.AbiCoder.defaultAbiCoder().encode(["address", "address", "address"], [POOL_MANAGER, WETH, ORACLE])]);
@@ -47,24 +55,24 @@ async function main() {
       if ((BigInt(a) & FLAG_MASK) === HOOK_FLAGS) { salt = s; addr = a; break; }
     }
     if (!addr) throw new Error("no hook salt");
-    await track("hook", (await ethers.getContractAt("HookDeployer", c.hookDeployer)).deploy(salt, init));
+    await track("hook", (await ethers.getContractAt("HookDeployer", c.hookDeployer)).deploy(salt, init, await fee()));
     c.hook = addr; c.hookSalt = salt; save();
   }
-  if (!c.tokenDeployer) { const d = await track("tokenDeployer", (await ethers.getContractFactory("CtrlzTokenDeployer")).deploy()); c.tokenDeployer = await d.getAddress(); save(); }
+  if (!c.tokenDeployer) { const d = await track("tokenDeployer", (await ethers.getContractFactory("CtrlzTokenDeployer")).deploy(await fee())); c.tokenDeployer = await d.getAddress(); save(); }
   if (!c.factory) {
-    const f = await track("factory", (await ethers.getContractFactory("CtrlzFactory")).deploy(me.address, admin, POOL_MANAGER, c.hook, c.tokenDeployer, WETH, ORACLE, admin));
+    const f = await track("factory", (await ethers.getContractFactory("CtrlzFactory")).deploy(me.address, admin, POOL_MANAGER, c.hook, c.tokenDeployer, WETH, ORACLE, admin, await fee()));
     c.factory = await f.getAddress(); dep.deployer = me.address; dep.deployBlock = await ethers.provider.getBlockNumber(); save();
   }
-  if (!c.router) { const r = await track("router", (await ethers.getContractFactory("CtrlzRouter")).deploy(POOL_MANAGER, c.factory, WETH)); c.router = await r.getAddress(); save(); }
+  if (!c.router) { const r = await track("router", (await ethers.getContractFactory("CtrlzRouter")).deploy(POOL_MANAGER, c.factory, WETH, await fee())); c.router = await r.getAddress(); save(); }
 
   // one-time wiring (each checks state first, so a rerun is safe)
   const td = await ethers.getContractAt("CtrlzTokenDeployer", c.tokenDeployer);
-  if ((await td.factory()) === ethers.ZeroAddress) await track("tokenDeployer.setFactory", td.setFactory(c.factory));
+  if ((await td.factory()) === ethers.ZeroAddress) await track("tokenDeployer.setFactory", td.setFactory(c.factory, await fee()));
   const hook = await ethers.getContractAt("CtrlzHook", c.hook);
-  if ((await hook.factory()) === ethers.ZeroAddress) await track("hook.setFactory", hook.setFactory(c.factory));
+  if ((await hook.factory()) === ethers.ZeroAddress) await track("hook.setFactory", hook.setFactory(c.factory, await fee()));
   const factory = await ethers.getContractAt("CtrlzFactory", c.factory);
-  if ((await factory.converter()) === ethers.ZeroAddress) await track("factory.setConverter", factory.setConverter(c.router));
-  if ((await factory.owner()) !== ethers.ZeroAddress && process.env.KEEP_OWNER !== "1") { await track("factory.renounceOwnership", factory.renounceOwnership()); dep.renounced = true; save(); }
+  if ((await factory.converter()) === ethers.ZeroAddress) await track("factory.setConverter", factory.setConverter(c.router, await fee()));
+  if ((await factory.owner()) !== ethers.ZeroAddress && process.env.KEEP_OWNER !== "1") { await track("factory.renounceOwnership", factory.renounceOwnership(await fee())); dep.renounced = true; save(); }
 
   const gp = (await ethers.provider.getFeeData()).gasPrice ?? 0n;
   console.log(`total ${total} gas this run (~${ethers.formatEther(total * gp)} ETH at ${ethers.formatUnits(gp, "gwei")} gwei)`);
