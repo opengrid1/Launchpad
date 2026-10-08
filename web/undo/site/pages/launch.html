@@ -1,23 +1,20 @@
 <!--{"title": "Launch · undo.fun", "nav": "launch", "scripts": ["launch.js"]}-->
-<div class="steps">
-  <header class="page-h"><h1>Launch a coin with an undo key</h1><p>Three choices. Everything else is the same for every coin: 1B supply in the pool from a $5K start, a 1% tax, and windows buyers rent for 0.05 ETH per six hours.</p></header>
-  <form id="lf" onsubmit="return false" style="display:contents">
-    <section class="step" id="s1"><div class="no">1</div><div class="body">
-      <h2>The coin</h2>
+<header class="page-h"><h1>Launch a coin with an undo key</h1><p>Three choices. Everything else is the same for every coin: 1B supply in the pool from a $5K start, a 1% tax, and windows buyers rent for 0.05 ETH per six hours.</p></header>
+<div class="launch">
+  <form id="lf" onsubmit="return false" class="lform">
+    <section class="panel lstep" id="s1"><div class="panel-h"><span class="no">1</span><h2>The coin</h2></div><div class="panel-b">
       <div class="row2"><div class="field"><label for="name">Name</label><input class="input" id="name" maxlength="32" placeholder="Ctrl Z" autocomplete="off"></div><div class="field"><label for="sym">Ticker</label><div class="input-wrap"><input class="input mono" id="sym" maxlength="10" placeholder="CTRLZ" autocomplete="off" style="padding-left:26px"><span class="post" style="left:13px;right:auto">$</span></div></div></div>
       <div class="field"><label for="desc">What is it</label><textarea class="input" id="desc" maxlength="280" placeholder="One or two lines. It shows on the coin page and in link previews."></textarea></div>
       <div class="field"><span class="lbl">Logo</span><div class="logo-drop"><span class="av" id="logoPrev">C</span><div><input type="file" id="logo" accept="image/*" hidden><button type="button" class="key sm" id="logoBtn">Choose image</button><small style="display:block;margin-top:6px">Square, shrunk to under 4 KB; it lives on-chain with the coin. No image? You get the lettered tile.</small></div></div></div>
-      <div class="row3"><div class="field"><label for="lw">Website</label><input class="input" id="lw" placeholder="https://"></div><div class="field"><label for="lx">X</label><input class="input" id="lx" placeholder="https://x.com/"></div><div class="field"><label for="lt">Telegram</label><input class="input" id="lt" placeholder="https://t.me/"></div></div>
+      <div class="field"><span class="lbl">Links <span class="faint" style="font-weight:400">(optional)</span></span><div class="row3"><input class="input" id="lw" placeholder="Website"><input class="input" id="lx" placeholder="X"><input class="input" id="lt" placeholder="Telegram"></div></div>
     </div></section>
-    <section class="step" id="s2"><div class="no">2</div><div class="body">
-      <h2>The pair</h2><p class="hint">ETH, tokenized gold, or any tokenized stock. Buyers can always pay in ETH; the router swaps on the way in.</p>
+    <section class="panel lstep" id="s2"><div class="panel-h"><span class="no">2</span><h2>The pair</h2><p class="hint">What the coin trades against: ETH, tokenized gold, or any tokenized stock. Buyers can always pay in ETH.</p></div><div class="panel-b">
       <div class="pairkeys" id="pairkeys"></div>
-      <small class="muted" id="pairNote"></small>
+      <small class="muted" id="pairNote" style="display:block;margin-top:10px"></small>
     </div></section>
-    <section class="step" id="s3"><div class="no">3</div><div class="body">
-      <h2>Your first buy <span class="faint" style="font-weight:500;font-size:14px">optional</span></h2><p class="hint">Buy in the launch transaction, before anyone else can. It has no undo window.</p>
-      <div class="field"><div class="input-wrap"><input class="input num" id="dev" inputmode="decimal" placeholder="0"><span class="post">ETH</span></div></div>
+    <section class="panel lstep" id="s3"><div class="panel-h"><span class="no">3</span><h2>Your first buy</h2><span class="tag">optional</span><p class="hint">Buy in the launch transaction, before anyone else can. The first buy has no undo window.</p></div><div class="panel-b">
+      <div class="input-wrap"><input class="input num" id="dev" inputmode="decimal" placeholder="0"><span class="post">ETH</span></div>
     </div></section>
   </form>
-  <section class="step"><div class="no" id="noGo">↵</div><div class="body preview" id="preview"></div></section>
+  <aside class="lside" id="preview"></aside>
 </div>
