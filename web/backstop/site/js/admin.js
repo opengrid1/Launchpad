@@ -59,46 +59,54 @@
     : kind === 'feeds' ? oi.encodeFunctionData('setListed', [t.address, true, usd8(t.usd || t.feedUsd), t.feed])
     : oi.encodeFunctionData('setListed', [t.address, true, usd8(t.usd), '0x0000000000000000000000000000000000000000']);
 
-  // EIP-5792 batches where the wallet supports them, otherwise one transaction at a time
+  // EIP-5792 batches where the wallet supports them (200 listings ~ 10.4M gas, under the 16.7M
+  // per-transaction cap; smaller if the wallet refuses), otherwise one transaction per listing
+  // sent back to back without waiting for each block.
+  const isReject = e => e && (e.code === 4001 || e.code === 'ACTION_REJECTED' || (e.error && e.error.code === 4001));
+  async function sendBatch(prov, from, part) {
+    const id = await prov.send('wallet_sendCalls', [{ version: '2.0.0', chainId: '0x1', from, atomicRequired: false, calls: part }]);
+    const bid = typeof id === 'string' ? id : id && id.id;
+    for (let w = 0; w < 200; w++) { // up to ~10 minutes
+      await new Promise(r => setTimeout(r, 3000));
+      let s; try { s = await prov.send('wallet_getCallsStatus', [bid]); } catch { return; }
+      if (s && (s.status === 200 || s.status === 'CONFIRMED')) return;
+      if (s && typeof s.status === 'number' && s.status >= 400) throw new Error('the batch failed on-chain');
+    }
+  }
   async function send(list, kind) {
     const { Interface } = window.bsEthers; const oi = new Interface(ORACLE_ABI); const { toast } = U();
     const signer = await bsWallet.getSigner(); if (!signer) { bsWallet.open(); return; }
     const from = await signer.getAddress(); const prov = signer.provider;
     const calls = list.map(t => ({ to: backing.oracle, data: callFor(oi, t, kind), value: '0x0' }));
-    busy = true; let done = 0; const CH = 50;
+    busy = true; let done = 0;
     try {
-      let batched = true;
-      for (let i = 0; i < calls.length && batched; i += CH) {
-        const part = calls.slice(i, i + CH);
-        progress = `Confirm batch ${i / CH + 1} of ${Math.ceil(calls.length / CH)} in your wallet (${part.length} listings)`; paint();
-        try {
-          const id = await prov.send('wallet_sendCalls', [{ version: '2.0.0', chainId: '0x1', from, atomicRequired: false, calls: part }]);
-          const bid = typeof id === 'string' ? id : id && id.id;
-          for (let w = 0; w < 120; w++) { // up to ~6 minutes per batch
-            await new Promise(r => setTimeout(r, 3000));
-            let s; try { s = await prov.send('wallet_getCallsStatus', [bid]); } catch { break; }
-            if (s && (s.status === 200 || s.status === 'CONFIRMED')) break;
-            if (s && typeof s.status === 'number' && s.status >= 400) throw new Error('batch failed');
-          }
-          done += part.length;
-        } catch (e) {
-          if (e && (e.code === 4001 || e.code === 'ACTION_REJECTED')) throw e;
-          if (done === 0) batched = false; else throw e; // wallet without batching: fall back below
-        }
+      let size = 0;
+      for (const tryN of [200, 50, 10]) { // find a batch size the wallet takes
+        const part = calls.slice(0, tryN);
+        progress = `Approve ${part.length} listing${part.length === 1 ? '' : 's'} in one wallet request (${Math.ceil(calls.length / tryN)} request${calls.length > tryN ? 's' : ''} in all)`; paint();
+        try { await sendBatch(prov, from, part); done = part.length; size = tryN; break; }
+        catch (e) { if (isReject(e)) throw e; }
       }
-      if (!batched) {
-        for (let i = 0; i < calls.length; i++) {
-          progress = `Transaction ${i + 1} of ${calls.length}: ${list[i].symbol}. Confirm in your wallet.`; paint();
-          const tx = await signer.sendTransaction({ to: calls[i].to, data: calls[i].data });
-          progress = `Transaction ${i + 1} of ${calls.length}: ${list[i].symbol} sent, waiting for the block`; paint();
-          await tx.wait(); done++;
+      if (size) {
+        for (let i = size; i < calls.length; i += size) {
+          const part = calls.slice(i, i + size);
+          progress = `Request ${i / size + 1} of ${Math.ceil(calls.length / size)}: approve ${part.length} listings in your wallet`; paint();
+          await sendBatch(prov, from, part); done += part.length;
         }
+      } else {
+        const txs = [];
+        for (let i = 0; i < calls.length; i++) {
+          progress = `Your wallet doesn't batch: approve ${i + 1} of ${calls.length} (${list[i].symbol}). The next one opens as soon as you confirm.`; paint();
+          txs.push(await signer.sendTransaction({ to: calls[i].to, data: calls[i].data })); done++;
+        }
+        progress = `Waiting for ${txs.length} transactions to land`; paint();
+        await txs[txs.length - 1].wait();
       }
       toast(`Listed ${done} token${done === 1 ? '' : 's'}`);
     } catch (e) {
-      toast(e && (e.code === 4001 || e.code === 'ACTION_REJECTED') ? `Stopped. ${done} listed before you cancelled.` : `Stopped after ${done}: ${(e && (e.shortMessage || e.message)) || 'error'}`);
+      toast(isReject(e) ? `Stopped. ${done} sent before you cancelled; press the button again to continue.` : `Stopped after ${done}: ${(e && (e.shortMessage || e.message)) || 'error'}`);
     }
-    busy = false; progress = 'Reading the oracle…'; paint(); await load(); progress = ''; paint();
+    busy = false; progress = 'Reading the oracle…'; paint(); try { await load(); } catch {} progress = ''; paint();
   }
 
   function backingSection() {
@@ -119,7 +127,7 @@
       ${progress ? `<div class="notice" style="margin:0 16px 12px">${esc(progress)}</div>` : ''}
       ${row('usdt', 'USDT', 'Lists USDT at $1 with its Chainlink feed, so stocks with USDT pools can price from them.', td.usdt)}
       ${row('feeds', 'Stocks with a Chainlink feed', `${td.feeds.map(t => esc(t.symbol)).join(', ') || 'All listed'}. Listed with the feed, the price follows Chainlink. ${td.feeds.length ? gas(td.feeds.length) + '.' : ''}`, td.feeds)}
-      ${row('prices', 'All other Ondo stocks', `Listed at the underlying's last price times Ondo's share multiplier. Coins backed by these trade in the stock itself (no ETH route). ${td.prices.length ? gas(td.prices.length) + ', sent in batches of 50 where your wallet supports it.' : ''}`, td.prices)}
+      ${row('prices', 'All other Ondo stocks', `Listed at the underlying's last price times Ondo's share multiplier. Coins backed by these trade in the stock itself (no ETH route). ${td.prices.length ? gas(td.prices.length) + ': 3 approvals in a wallet that batches (MetaMask smart account, Coinbase Wallet, Rabby), one per stock otherwise.' : ''}`, td.prices)}
       ${row('drift', 'Refresh set prices', `Stocks whose set price is more than ${DRIFT * 100}% off the latest price. Rebuild the site to fetch new prices, then run this.`, td.drift)}
       <div style="padding:12px 16px;border-top:1px solid var(--line)"><input class="input" id="bkq" placeholder="Search ${T.length} stocks" value="${esc(filter)}" autocomplete="off" spellcheck="false"></div>
       <div class="table-wrap" style="border:0"><table class="list"><thead><tr><th>Stock</th><th>Oracle</th><th>Latest</th></tr></thead><tbody>
