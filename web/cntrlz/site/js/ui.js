@@ -66,6 +66,7 @@
   const coinHref = a => '/coin/' + a;
   const txLink = h => `${EXPLORER}/tx/${h}`;
   const addrLink = a => `${EXPLORER}/address/${a}`;
+  const isAdmin = () => !!(window.bsWallet && bsWallet.connected && CFG.admin && bsWallet.address === CFG.admin.toLowerCase());
 
   // ------------------------------------------------------------ toasts, dialogs, menus
   function toast(msg, opt = {}) { let box = $('.toasts'); if (!box) { box = document.createElement('div'); box.className = 'toasts'; box.setAttribute('role', 'status'); document.body.appendChild(box); }
@@ -91,12 +92,13 @@
       if (w && w.connected) { const wrong = w.chainId && w.chainId !== (CFG.chainId || 1); b.className = 'key wallet-btn'; b.innerHTML = wrong ? `${ic('alert')}Switch to Ethereum` : `<span class="dot"></span><span class="mono">${esc(w.short())}</span>${ic('down')}`; }
       else { b.className = 'key ink wallet-btn'; b.innerHTML = 'Connect'; }
     });
+    $$('[data-admin-link]').forEach(a => a.classList.toggle('hidden', !isAdmin()));
   }
   function walletClick(e) {
     const w = window.bsWallet; if (!w) return; const b = e.currentTarget;
     if (!w.connected) return w.open();
     if (w.chainId && w.chainId !== (CFG.chainId || 1)) return w.switchChain().catch(err => toast(String(err && err.message || err).slice(0, 120), { err: true }));
-    const m = menu(b, `<a href="/portfolio">${ic('wallet')}Portfolio</a><button data-copy>${ic('copy')}Copy address</button><a href="${addrLink(w.address)}" target="_blank" rel="noopener">${ic('ext')}View on Etherscan</a><hr><button data-out>${ic('logout')}Disconnect</button>`);
+    const m = menu(b, `<a href="/portfolio">${ic('wallet')}Portfolio</a><button data-copy>${ic('copy')}Copy address</button><a href="${addrLink(w.address)}" target="_blank" rel="noopener">${ic('ext')}View on Etherscan</a>${isAdmin() ? `<a href="/admin">${ic('shield')}Admin</a>` : ''}<hr><button data-out>${ic('logout')}Disconnect</button>`);
     m.querySelector('[data-copy]').onclick = () => { copy(w.address); m.remove(); }; m.querySelector('[data-out]').onclick = () => { w.logout(); m.remove(); };
   }
 
@@ -119,9 +121,9 @@
     document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); } if (e.key === '/' && !/input|textarea/i.test(document.activeElement.tagName)) { e.preventDefault(); openSearch(); } });
     window.addEventListener('bs:wallet', paintWallet);
     window.addEventListener('bs:nowallet', () => toast('No wallet found. Install a browser wallet or open this page in your wallet app.', { err: true }));
-    if (CFG.prelaunch && !/^\/docs/.test(location.pathname)) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin', `<div class="notice">${ic('info')}<span><b>Preview.</b> The coins here are examples. Buying, cancelling and launching open when the contracts go live.</span></div>`); }
+    if (CFG.prelaunch && !/^\/(docs|admin)/.test(location.pathname)) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin', `<div class="notice">${ic('info')}<span><b>Preview.</b> The coins here are examples. Buying, cancelling and launching open when the contracts go live.</span></div>`); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
-  window.UI = { $, $$, esc, ic, usd, num, eth, pct, delta, ago, short, clock, winLabel, PR, WINDOWS, premiumFor, hoursFor, maxHoursFor, timeKeys, ring, coinAv, DEFAULT_COIN, pairIcon, pairGlyph, coinHref, txLink, addrLink, toast, dialog, menu, copy, notLive, currentTheme, openSearch };
+  window.UI = { $, $$, esc, ic, usd, num, eth, pct, delta, ago, short, clock, winLabel, PR, WINDOWS, premiumFor, hoursFor, maxHoursFor, timeKeys, ring, coinAv, DEFAULT_COIN, pairIcon, pairGlyph, coinHref, txLink, addrLink, isAdmin, toast, dialog, menu, copy, notLive, currentTheme, openSearch };
 })();

@@ -38,7 +38,7 @@ def config():
         'rpcs': os.environ['RPCS'].split(',') if os.environ.get('RPCS') else ['https://ethereum-rpc.publicnode.com', 'https://rpc.mevblocker.io', 'https://ethereum.publicnode.com'],
         'feeds': {'ETH': '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419', 'BTC': '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c', 'XAU': '0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6'},
         'weth': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-        'contracts': {}, 'prelaunch': True,
+        'contracts': {}, 'prelaunch': True, 'admin': os.environ.get('ADMIN', '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'),
         'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'),
         # the rules every coin shares (see /docs): a 1% tax, and a window premium of 0.05 ETH per 6 hours
         'taxBps': 100, 'split': {'creator': 70, 'platform': 30},
@@ -51,6 +51,7 @@ def config():
 def shell(meta, body):
     nav = meta.get('nav', '')
     links = ''.join(f'<a href="{href}" class="key {"down" if key == nav else ""}"><span class="full">{label}</span><span class="short">{short}</span></a>' for key, href, label, short in NAV)
+    links += f'<a href="/admin" class="key hidden {"down" if nav == "admin" else ""}" data-admin-link><span class="full">Admin</span><span class="short">Admin</span></a>'
     title = meta['title']
     desc = meta.get('desc', DESC)
     scripts = ''.join(f'<script src="/js/{s}" defer></script>' for s in meta.get('scripts', []))

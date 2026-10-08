@@ -86,7 +86,13 @@
       addr: '0x' + hex(r, 36) + 'd0e0', name, symbol, hue, desc, pair, createdAt, creator: addr(r),
       px, mc: px * SUPPLY, c24: (px / p24 - 1) * 100, vol24, volAll, swaps, trades, holders, top,
       windowBuys, undos, keptPct: kept, premiumsEth, burnedUsd, burnedCoins: burnedUsd / px, openUsd, openEth, refundedUsd,
-      creatorEarned: volAll * TAX * (CFG.split ? CFG.split.creator / 100 : .7) ,
+      creatorEarned: volAll * TAX * (CFG.split ? CFG.split.creator / 100 : .7),
+      platformOwed: volAll * TAX * .3 * (0.2 + r() * .5), hidden: false,
+      // what the hook holds in the pool: the coins not yet bought, and the pair from kept windows and plain buys
+      poolCoins: SUPPLY - top.reduce((s, h) => s + h.bal, 0) - burnedUsd / px, poolPair: volAll * .35 / pair.usd,
+      get poolUsd() { return this.poolCoins * this.px + this.poolPair * this.pair.usd; },
+      get poolPairDesc() { return `${this.poolPairFmt(1)} + ${(this.poolCoins / SUPPLY * 100).toFixed(0)}% of supply`; },
+      poolPairFmt(f) { const v = this.poolPair * f; return (v >= 100 ? v.toFixed(1) : v >= 1 ? v.toFixed(3) : v.toFixed(4)) + ' ' + this.pair.symbol; },
       links: { x: '', web: '', tg: '' },
     };
   }
@@ -131,8 +137,20 @@
     return { coins: tokens.length, vol24: sum(x => x.vol24), openUsd: sum(x => x.openUsd), openEth: sum(x => x.openEth), openCount: openWindows().length, kept: wb ? (wb - un) / wb * 100 : null, burnedUsd: sum(x => x.burnedUsd), premiumsEth: sum(x => x.premiumsEth), refundedUsd: sum(x => x.refundedUsd) };
   }
 
+  // admin reads and writes; in the preview the writes only explain themselves
+  const adminState = { paused: false, feeRecipient: CFG.admin, startCap: CFG.startCap || 5000, blocked: [] };
+  const admin = {
+    state: async () => ({ ...adminState, blocked: [...adminState.blocked] }),
+    async call(fn, args) {
+      if (!api.live) {
+        const what = { pause: 'pause new launches', resume: 'resume launches', pushPlatformFees: 'push the platform fees to the fee recipient', setFeeRecipient: 'change the fee recipient', setStartCap: 'change the start cap', setTokenBlocked: args[1] ? 'block that token as a pair' : 'unblock that token', setHidden: args[1] ? 'hide the coin from the site' : 'list the coin again', collect: `collect ${args[1] / 100}% of the pool liquidity`, setCoinMetadata: 'override the coin\'s description' }[fn];
+        throw new Error(`Preview: this would ${what} once the contracts are live.`);
+      }
+      throw new Error('Not wired yet');
+    },
+  };
   const api = {
-    cfg: CFG, SUPPLY, live: false, preview: true, now: () => Math.floor(Date.now() / 1000),
+    cfg: CFG, SUPPLY, live: false, preview: true, now: () => Math.floor(Date.now() / 1000), admin,
     tokens: () => tokens, token: a => byAddr[lower(a)] || tokens.find(t => t.symbol.toLowerCase() === lower(a)),
     stats, myWindows, myHoldings, openWindows, pairsList, pairUsd: s => (STOCKS[s] ? STOCKS[s][2] : prices[s]), ethUsd: () => prices.ETH,
     ready: null,
