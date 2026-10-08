@@ -7,16 +7,36 @@
     "hookSalt": "0x00000000000000000000000000000000000000000000000000000000000023d1",
     "oracle": "0xD1Ca49bd44A447c48d2a1FAC5F35cF583D8a7b1b",
     "tokenDeployer": "0xC7D3b33e2eFc4EE7b08F66Aa19fBa50e9733cfe2",
-    "strategyDeployer": "0xcB94EAE360A65461E4fD00cDe3aBB1029D4c1de2"
+    "strategyDeployer": "0xcB94EAE360A65461E4fD00cDe3aBB1029D4c1de2",
+    "factory": "0xBA27397f60CE7700C1d8CA7d9307098851554Df3",
+    "router": "0xB5Cf3E15199be26b14B35D82e6EE67aACc3844f6"
   },
   "gas": {
     "hookDeployer": "144763",
     "hook": "2543749",
     "oracle": "2810923",
     "tokenDeployer": "3025779",
-    "strategyDeployer": "3847199"
+    "strategyDeployer": "3847199",
+    "factory": "4235490",
+    "router": "2219766",
+    "tokenDeployer.setFactory": "44957",
+    "strategyDeployer.setFactory": "44957",
+    "hook.setFactory": "45235",
+    "factory.setConverter": "47957",
+    "oracle.register PEPE": "172096",
+    "oracle.register NEIRO": "172096",
+    "oracle.register WBTC": "134791",
+    "factory.renounceOwnership": "22618"
   },
   "oracleArgs": {
     "ethUsd8": "256995000000"
-  }
+  },
+  "deployer": "0xDF3732DA06A9Aed772d513Ac3176950978A272a3",
+  "deployBlock": 26144953,
+  "sources": {
+    "PEPE": "0xA43fe16908251ee70EF74718545e4FE6C5cCEc9f",
+    "NEIRO": "0xc555d55279023e732ccd32d812114caf5838fd46",
+    "WBTC": "0xCBCdF9626bC03E24f779434178A73a0B4bad62eD"
+  },
+  "renounced": true
 }
