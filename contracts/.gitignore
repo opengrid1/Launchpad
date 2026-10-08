@@ -7,3 +7,5 @@ artifacts-size/
 .smoke-note.json
 artifacts-backstop/
 cache-backstop/
+artifacts-cntrlz/
+cache-cntrlz/
