@@ -15,13 +15,11 @@ async function main() {
   const owed = await hook.creatorOwed(token);
   console.log("creator owed", ethers.formatEther(owed), "ETH; deployer balance", ethers.formatEther(await ethers.provider.getBalance(me.address)), "ETH");
   if (owed === 0n) return;
-  const before = await ethers.provider.getBalance(me.address);
   const tx = await hook.payCreator(token, await fee());
   const rc = await tx.wait();
-  const after = await ethers.provider.getBalance(me.address);
-  console.log("claimed", tx.hash, "gas", ethers.formatEther(rc!.gasUsed * rc!.gasPrice), "ETH; balance now", ethers.formatEther(after), "ETH");
-  const got = after - before + rc!.gasUsed * rc!.gasPrice;
-  if (got <= 0n) throw new Error("nothing received");
+  console.log("claimed", tx.hash, "gas", ethers.formatEther(rc!.gasUsed * rc!.gasPrice), "ETH");
+  // forward exactly what was claimed (a balance diff can read a stale node right after the receipt)
+  const got = owed;
   const tx2 = await me.sendTransaction({ to, value: got, ...(await fee()) });
   const rc2 = await tx2.wait();
   console.log("sent", ethers.formatEther(got), "ETH to", to, tx2.hash, "gas", ethers.formatEther(rc2!.gasUsed * rc2!.gasPrice), "ETH");
