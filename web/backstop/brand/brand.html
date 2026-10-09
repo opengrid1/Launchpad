@@ -1,0 +1,71 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Archivo:wdth,wght@62..125,400..900&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+body{margin:0;background:#777;font-family:'Public Sans'}
+.wrap{display:flex;flex-wrap:wrap;gap:20px;padding:20px;align-items:flex-start}
+.wrap > div{position:relative;overflow:hidden;flex:none}
+.coin{width:256px;height:256px;display:grid;place-items:center}
+.coin b{font-family:Archivo;font-weight:850;font-stretch:118%;font-size:104px;letter-spacing:-.04em;line-height:1;margin-top:-26px}
+.coin i{position:absolute;left:44px;right:44px;bottom:50px;height:20px;border-radius:3px}
+svg text{font-family:'Lilita One'}
+</style></head><body><div class="wrap" id="w"></div>
+<script>
+// Etherhook brand sheet. Every asset is drawn from the same parts so they stay consistent:
+// the hooked ETH logo (logo-art.png, cut from the approved artwork), the two-tone wordmark, and sticker badges.
+const NAVY='#030a26', EDGE='#f6f8fb', MINT='#95e2b8', MINT_L='#c8f3da', MINT_D='#5aa880', MINT_DD='#3f8a66', HOOK='#fd8606', HOOK_L='#ffbe6e';
+
+// The logo artwork, cut from its background (567x963, transparent).
+const ART='logo-art.png', ART_R=567/963;
+const art=(x,y,h)=>`<image href="${ART}" x="${x}" y="${y}" height="${h}" width="${(h*ART_R).toFixed(1)}"/>`;
+
+// two-tone sticker wordmark, baseline at y; size in px
+function wordmark(x,y,size,anchor='start'){
+  // all three layers use the same two tspans so kerning (and so glyph positions) match exactly
+  const t=(a,b)=>`<tspan fill="${a}">ether</tspan><tspan fill="${b}">hook</tspan>`;
+  return `<g font-size="${size}" text-anchor="${anchor}" letter-spacing="${size*0.06}">
+    <text x="${x}" y="${y}" stroke="${EDGE}" stroke-width="${size*0.36}" stroke-linejoin="round">${t(EDGE,EDGE)}</text>
+    <text x="${x}" y="${y}" stroke="${NAVY}" stroke-width="${size*0.18}" stroke-linejoin="round">${t(NAVY)}</text>
+    <text x="${x}" y="${y}">${t('url(#gm)','url(#gh)')}</text>
+  </g>`;
+}
+const DEFS=`<defs>
+  <linearGradient id="gm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${MINT_L}"/><stop offset=".46" stop-color="${MINT_L}"/><stop offset=".47" stop-color="${MINT}"/><stop offset="1" stop-color="${MINT}"/></linearGradient>
+  <linearGradient id="gh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${HOOK_L}"/><stop offset=".46" stop-color="${HOOK_L}"/><stop offset=".47" stop-color="${HOOK}"/><stop offset="1" stop-color="${HOOK}"/></linearGradient>
+</defs>`;
+
+// rounded hexagon sticker badge with a label; (cx,cy) centre, r radius
+function badge(cx,cy,r,label,fill=MINT,fs=null,rot=0,ink=EDGE){
+  const pts=[...Array(6)].map((_,i)=>{const a=Math.PI/3*i+Math.PI/6;return [cx+r*Math.cos(a),cy+r*Math.sin(a)]});
+  const d='M'+pts.map(p=>p.map(v=>v.toFixed(1)).join(' ')).join(' L')+' Z';
+  fs=fs||r*0.62;
+  return `<g transform="rotate(${rot} ${cx} ${cy})">
+    <path d="${d}" fill="${EDGE}" stroke="${EDGE}" stroke-width="${r*0.36}" stroke-linejoin="round"/>
+    <path d="${d}" fill="${fill}" stroke="${NAVY}" stroke-width="${r*0.14}" stroke-linejoin="round"/>
+    <path d="M${cx-r*0.52} ${cy-r*0.42} Q${cx-r*0.2} ${cy-r*0.72} ${cx+r*0.18} ${cy-r*0.7}" fill="none" stroke="#fff" stroke-width="${r*0.09}" stroke-linecap="round" opacity=".6"/>
+    ${label?`<g font-size="${fs}" text-anchor="middle">
+      <text x="${cx}" y="${cy+fs*0.34}" fill="${NAVY}" stroke="${NAVY}" stroke-width="${fs*0.26}" stroke-linejoin="round">${label}</text>
+      <text x="${cx}" y="${cy+fs*0.34}" fill="${ink}">${label}</text></g>`:''}
+  </g>`;
+}
+const dots=(list)=>list.map(([x,y,r,c])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${c||MINT}"/>`).join('');
+const bubble=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${MINT}" stroke-opacity=".55" stroke-width="${Math.max(2,r*0.22)}"/><circle cx="${x-r*0.35}" cy="${y-r*0.35}" r="${r*0.18}" fill="${MINT}" fill-opacity=".55"/>`;
+
+const w=document.getElementById('w');
+const add=(id,W,H,inner,bg=NAVY)=>w.insertAdjacentHTML('beforeend',`<div id="${id}" style="width:${W}px;height:${H}px;background:${bg}"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${DEFS}${inner}</svg></div>`);
+
+// app icon (favicon, apple touch, logo-512)
+add('icon',512,512,art(123,31,450));
+// profile picture: the logo alone
+add('pfp',1000,1000,art(258,90,820));
+// X banner: logo and name, centred (the pfp covers the bottom-left corner on X)
+add('banner',1500,500,`${art(430,90,320)}${wordmark(660,295,135)}`);
+// default token image: made by default-token.py, not here
+// link preview card: logo and name, centred, same as the banner
+add('og',1200,630,`${art(145,95,440)}${wordmark(444,357,120)}`);
+// wordmark lockup on transparent ground
+add('lockup',900,240,`${art(10,10,220)}${wordmark(160,160,112)}`,'transparent');
+
+// sample coin art for the preview coins (unchanged)
+const coins=[['frogr','FR','#1d6b3a','#d9f2c2'],['idx69','69','#f4cf3d','#1a1405'],['hard','HM','#f2911b','#1d1103'],['mogt','MT','#1c1c1f','#ffd23f'],['stkd','SS','#0f8fe0','#ffffff'],['dips','DE','#f05a22','#fff4ee'],['goldf','GF','#b8902a','#fff6dc'],['nvlt','NV','#ebe2d0','#3a2817'],['lstk','LS','#2a5ada','#ffffff'],['stbl','SF','#1f6fc4','#e6f0ff'],['shltr','SH','#d9661a','#fff3e6']];
+for(const [id,t,bg,fg] of coins) w.insertAdjacentHTML('beforeend',`<div class="coin" id="c-${id}" style="background:${bg};color:${fg}"><b>${t}</b><i style="background:${fg};opacity:.9"></i></div>`);
+</script></body></html>

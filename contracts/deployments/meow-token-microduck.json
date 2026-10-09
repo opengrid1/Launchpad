@@ -1,0 +1,11 @@
+{
+  "name": "microduck",
+  "symbol": "MICRODUCK",
+  "pair": "NVDAX",
+  "pairAddress": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+  "token": "0x29C873Fb01E0af7F6F52FB59720759d94Ce62AC0",
+  "pool": "0x8b4CDC934964127cdE54952544Ff6e71708B28F4",
+  "positionId": "185717",
+  "tx": "0xa8a478adc2e1302addfe4bd359b6a9fbe89a1c14dd37326bcbf54a593c846cd4",
+  "creator": "0x70263ae0b3b7C5b62f5A93b7893d86Ed986aD0aD"
+}

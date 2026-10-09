@@ -24,6 +24,11 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: false,
+      // Forking inherits the remote chain's block gas limit. HyperEVM's default
+      // "small blocks" cap at ~2-3M gas, far below a launch tx (token deploy +
+      // V3 pool CREATE2 + mint). Force a big-block-sized local limit so fork
+      // tests can seed pools; the real chain needs a HyperEVM big block per launch.
+      blockGasLimit: Number(process.env.BLOCK_GAS_LIMIT ?? 100_000_000),
       ...(process.env.FORK === "1" && ROBINHOOD_RPC_URL
         ? {
             hardfork: process.env.FORK_HARDFORK ?? "cancun",

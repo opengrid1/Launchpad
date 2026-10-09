@@ -1,0 +1,191 @@
+/* Admin: launches and platform fees, backing tokens on the live oracle (USDT, Ondo stocks with
+   Chainlink feeds, the rest at a set price, price refreshes) and listing coins on the site.
+   Everything is read from the contracts. Only shown to the admin wallet. */
+(function () {
+  const U = () => window.UI;
+  const MULTICALL = '0xcA11bde05977b3631167028862bE2a173976CA11';
+  const ORACLE_ABI = ['function listed(address) view returns (bool listed, uint64 usdPrice8, address feed)', 'function sources(address) view returns (uint8 dex, address pool, address anchor, int24, uint64, bytes32, uint256, uint32, uint256, uint32)', 'function setListed(address token, bool on, uint64 usdPrice8, address feed)'];
+  const MC_ABI = ['function aggregate3((address target,bool allowFailure,bytes callData)[]) view returns ((bool success,bytes returnData)[])'];
+  const DRIFT = 0.02; // refresh a set price once it is 2% off
+  const GAS_EACH = 52000;
+  let backing = null; let state = null; let busy = false; let filter = ''; let progress = ''; let loadErr = '';
+
+  const usd8 = v => BigInt(Math.round(v * 1e8));
+  const fmt = v => v >= 1000 ? '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '$' + v.toFixed(2);
+
+  async function load() {
+    if (!backing) { const r = await fetch('/backing.json', { cache: 'no-store' }); backing = r.ok ? await r.json() : null; }
+    if (!backing || !window.bsEthers) return;
+    const { JsonRpcProvider, Contract, Interface } = window.bsEthers; const cfg = BS.cfg;
+    const oi = new Interface(ORACLE_ABI);
+    const toks = [{ symbol: 'USDT', address: backing.usdt.address, usdt: true }, ...backing.tokens];
+    const calls = []; toks.forEach(t => { calls.push({ target: backing.oracle, allowFailure: true, callData: oi.encodeFunctionData('listed', [t.address]) }); calls.push({ target: backing.oracle, allowFailure: true, callData: oi.encodeFunctionData('sources', [t.address]) }); });
+    let res = null; let lastErr = null;
+    for (const url of cfg.rpcs) { // first RPC that answers every chunk
+      try {
+        const mc = new Contract(MULTICALL, MC_ABI, new JsonRpcProvider(url, 1, { staticNetwork: true }));
+        const r = []; for (let i = 0; i < calls.length; i += 300) r.push(...await mc.aggregate3(calls.slice(i, i + 300)));
+        res = r; break;
+      } catch (e) { lastErr = e; }
+    }
+    if (!res) throw lastErr || new Error('no RPC answered');
+    state = {};
+    toks.forEach((t, k) => {
+      const l = res[2 * k].success ? oi.decodeFunctionResult('listed', res[2 * k].returnData) : [false, 0n, null];
+      const s = res[2 * k + 1].success ? oi.decodeFunctionResult('sources', res[2 * k + 1].returnData) : [0];
+      state[t.address.toLowerCase()] = { listed: l[0], price: Number(l[1]) / 1e8, feed: l[2] && l[2] !== '0x0000000000000000000000000000000000000000' ? l[2] : null, dex: Number(s[0]) };
+    });
+  }
+
+  const st = t => (state && state[t.address.toLowerCase()]) || { listed: false, price: 0, feed: null, dex: 0 };
+  function status(t) {
+    const s = st(t);
+    if (s.listed && s.feed) return ['Chainlink', 'vault'];
+    if (s.listed) return ['Set price', ''];
+    if (s.dex) return ['Pool price', 'vault'];
+    return ['Not listed', 'sample'];
+  }
+  function todo() {
+    const T = backing.tokens;
+    return {
+      usdt: st(backing.usdt).listed ? [] : [backing.usdt],
+      feeds: T.filter(t => t.feed && !(st(t).listed && st(t).feed && st(t).feed.toLowerCase() === t.feed.toLowerCase())),
+      prices: T.filter(t => !t.feed && t.usd && !st(t).listed && !st(t).dex),
+      drift: T.filter(t => !t.feed && t.usd && st(t).listed && !st(t).feed && Math.abs(st(t).price - t.usd) / t.usd > DRIFT),
+    };
+  }
+  const callFor = (oi, t, kind) => kind === 'usdt' ? oi.encodeFunctionData('setListed', [t.address, true, 100000000n, t.feed])
+    : kind === 'feeds' ? oi.encodeFunctionData('setListed', [t.address, true, usd8(t.usd || t.feedUsd), t.feed])
+    : oi.encodeFunctionData('setListed', [t.address, true, usd8(t.usd), '0x0000000000000000000000000000000000000000']);
+
+  // EIP-5792 batches where the wallet supports them (200 listings ~ 10.4M gas, under the 16.7M
+  // per-transaction cap; smaller if the wallet refuses), otherwise one transaction per listing
+  // sent back to back without waiting for each block.
+  const isReject = e => e && (e.code === 4001 || e.code === 'ACTION_REJECTED' || (e.error && e.error.code === 4001));
+  async function sendBatch(prov, from, part) {
+    const id = await prov.send('wallet_sendCalls', [{ version: '2.0.0', chainId: '0x1', from, atomicRequired: false, calls: part }]);
+    const bid = typeof id === 'string' ? id : id && id.id;
+    for (let w = 0; w < 200; w++) { // up to ~10 minutes
+      await new Promise(r => setTimeout(r, 3000));
+      let s; try { s = await prov.send('wallet_getCallsStatus', [bid]); } catch { return; }
+      if (s && (s.status === 200 || s.status === 'CONFIRMED')) return;
+      if (s && typeof s.status === 'number' && s.status >= 400) throw new Error('the batch failed on-chain');
+    }
+  }
+  async function send(list, kind) {
+    const { Interface } = window.bsEthers; const oi = new Interface(ORACLE_ABI); const { toast } = U();
+    const signer = await bsWallet.getSigner(); if (!signer) { bsWallet.open(); return; }
+    const from = await signer.getAddress(); const prov = signer.provider;
+    const calls = list.map(t => ({ to: backing.oracle, data: callFor(oi, t, kind), value: '0x0' }));
+    busy = true; let done = 0;
+    try {
+      let size = 0;
+      for (const tryN of [200, 50, 10]) { // find a batch size the wallet takes
+        const part = calls.slice(0, tryN);
+        progress = `Approve ${part.length} listing${part.length === 1 ? '' : 's'} in one wallet request (${Math.ceil(calls.length / tryN)} request${calls.length > tryN ? 's' : ''} in all)`; paint();
+        try { await sendBatch(prov, from, part); done = part.length; size = tryN; break; }
+        catch (e) { if (isReject(e)) throw e; }
+      }
+      if (size) {
+        for (let i = size; i < calls.length; i += size) {
+          const part = calls.slice(i, i + size);
+          progress = `Request ${i / size + 1} of ${Math.ceil(calls.length / size)}: approve ${part.length} listings in your wallet`; paint();
+          await sendBatch(prov, from, part); done += part.length;
+        }
+      } else {
+        const txs = [];
+        for (let i = 0; i < calls.length; i++) {
+          progress = `Your wallet doesn't batch: approve ${i + 1} of ${calls.length} (${list[i].symbol}). The next one opens as soon as you confirm.`; paint();
+          txs.push(await signer.sendTransaction({ to: calls[i].to, data: calls[i].data })); done++;
+        }
+        progress = `Waiting for ${txs.length} transactions to land`; paint();
+        await txs[txs.length - 1].wait();
+      }
+      toast(`Listed ${done} token${done === 1 ? '' : 's'}`);
+    } catch (e) {
+      toast(isReject(e) ? `Stopped. ${done} sent before you cancelled; press the button again to continue.` : `Stopped after ${done}: ${(e && (e.shortMessage || e.message)) || 'error'}`);
+    }
+    busy = false; progress = 'Reading the oracle…'; paint(); try { await load(); } catch {} progress = ''; paint();
+  }
+
+  function backingSection() {
+    const { esc, addrLink, short } = U();
+    if (!backing) return `<section class="panel" style="margin-bottom:18px"><div class="panel-h"><h2>Backing tokens</h2></div><div class="panel-b"><p class="faint">backing.json is missing from this build.</p></div></section>`;
+    if (!state) return `<section class="panel" style="margin-bottom:18px"><div class="panel-h"><h2>Backing tokens</h2></div><div class="panel-b">${loadErr ? `<p>Couldn't read the oracle: ${esc(loadErr)}</p><button class="btn btn-line" data-retry style="margin-top:10px">Retry</button>` : '<div class="skel" style="height:120px"></div>'}</div></section>`;
+    const T = backing.tokens; const td = todo();
+    const n = s => T.filter(t => status(t)[0] === s).length;
+    const gas = c => `about ${(c * GAS_EACH / 1e6).toFixed(1)}M gas`;
+    const row = (kind, title, desc, list) => `<div class="srow" style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-top:1px solid var(--line)">
+        <div style="flex:1;min-width:0"><b>${title}</b><div class="faint" style="font-size:13px;margin-top:2px">${desc}</div></div>
+        <button class="btn ${list.length ? 'btn-ink' : 'btn-line'}" data-act="${kind}" ${!list.length || busy ? 'disabled' : ''}>${list.length ? `List ${list.length}` : 'Done'}</button></div>`;
+    const q = filter.trim().toLowerCase();
+    const rows = T.filter(t => !q || t.symbol.toLowerCase().includes(q) || (t.name || '').toLowerCase().includes(q)).slice(0, q ? 80 : 30);
+    return `<section class="panel" style="margin-bottom:18px">
+      <div class="panel-h"><h2>Backing tokens</h2><span class="r faint" style="font-size:12.5px">Oracle <a class="addr" href="${addrLink(backing.oracle)}" target="_blank" rel="noopener">${short(backing.oracle)}</a> · prices from ${esc(backing.generatedAt.slice(0, 10))}</span></div>
+      <div class="kpis" style="padding:14px 16px;margin:0"><div><span>Pool price</span><b>${n('Pool price')}</b><small>registered from Uniswap</small></div><div><span>Chainlink</span><b>${n('Chainlink')}</b><small>updates itself</small></div><div><span>Set price</span><b>${n('Set price')}</b><small>${td.drift.length} need a refresh</small></div><div><span>Not listed</span><b>${n('Not listed')}</b><small>of ${T.length} Ondo stocks</small></div></div>
+      ${progress ? `<div class="notice" style="margin:0 16px 12px">${esc(progress)}</div>` : ''}
+      ${row('usdt', 'USDT', 'Lists USDT at $1 with its Chainlink feed, so stocks with USDT pools can price from them.', td.usdt)}
+      ${row('feeds', 'Stocks with a Chainlink feed', `${td.feeds.map(t => esc(t.symbol)).join(', ') || 'All listed'}. Listed with the feed, the price follows Chainlink. ${td.feeds.length ? gas(td.feeds.length) + '.' : ''}`, td.feeds)}
+      ${row('prices', 'All other Ondo stocks', `Listed at the underlying's last price times Ondo's share multiplier. Coins backed by these trade in the stock itself (no ETH route). ${td.prices.length ? gas(td.prices.length) + ': 3 approvals in a wallet that batches (MetaMask smart account, Coinbase Wallet, Rabby), one per stock otherwise.' : ''}`, td.prices)}
+      ${row('drift', 'Refresh set prices', `Stocks whose set price is more than ${DRIFT * 100}% off the latest price. Rebuild the site to fetch new prices, then run this.`, td.drift)}
+      <div style="padding:12px 16px;border-top:1px solid var(--line)"><input class="input" id="bkq" placeholder="Search ${T.length} stocks" value="${esc(filter)}" autocomplete="off" spellcheck="false"></div>
+      <div class="table-wrap" style="border:0"><table class="list"><thead><tr><th>Stock</th><th>Oracle</th><th>Latest</th></tr></thead><tbody>
+      ${rows.map(t => { const [label, cls] = status(t); const s = st(t); return `<tr><td><div><b>${esc(t.symbol)}</b> <span class="tag ${cls}">${label}</span><small class="faint" style="display:block">${esc(t.name || '')}</small></div></td><td><span class="num">${s.listed ? (s.feed ? 'feed' : fmt(s.price)) : s.dex ? 'pool' : '–'}</span></td><td><span class="num">${t.usd ? fmt(t.usd) : t.feedUsd ? fmt(t.feedUsd) : '–'}</span></td></tr>`; }).join('')}
+      </tbody></table></div>
+      ${!q && T.length > 30 ? `<p class="faint" style="padding:10px 16px;font-size:12.5px">Showing 30 of ${T.length}. Search to find the rest.</p>` : ''}
+    </section>`;
+  }
+
+  // live platform state: launches paused, fees owed per coin
+  let plat = null;
+  async function loadPlatform() { try { const all = EH.allTokens(); const [st, owed, lp] = await Promise.all([EH.admin.state(), Promise.all(all.map(x => EH.admin.owedOf(x).catch(() => 0))), Promise.all(all.map(x => EH.admin.collectQuote(x, 10000).catch(() => null)))]); plat = { ...st, owed, lp }; } catch { plat = null; } }
+
+  // pull part of a coin's launch position out of its pool (auto-LP liquidity is never touched)
+  function openCollect(x) {
+    const { usd, num, esc, dialog, $, $$, toast } = U(); const w = window.bsWallet; let bps = 10000;
+    const ov = dialog(`Collect ${x.symbol} launch liquidity`, `<div class="panel-b redeem-box">
+      <div class="field"><label>How much of the launch position</label><div class="seg" id="clSeg">${[2500, 5000, 10000].map(b => `<button data-b="${b}" class="${b === bps ? 'on' : ''}">${b / 100}%</button>`).join('')}</div></div>
+      <div class="field"><label for="clTo">Send to</label><input class="input mono" id="clTo" spellcheck="false" autocomplete="off" value="${esc(w && w.address || BS.cfg.admin || '')}"></div>
+      <div class="redeem-out"><span>You receive</span><b id="clOut">…</b></div>
+      <small class="faint">The launch pool starts with coins only, so the ${esc(x.pairSym)} here is what buyers paid in. Removing it drops the price and leaves holders less to sell into; at 100% only auto-LP liquidity stays. Collected coins can't be sold for much once the liquidity is gone.</small>
+      <button class="btn btn-ink btn-block" id="clGo">Collect</button></div>`);
+    const to = $('#clTo', ov), go = $('#clGo', ov), out = $('#clOut', ov);
+    const valid = () => /^0x[0-9a-fA-F]{40}$/.test(to.value.trim());
+    const quote = async () => { out.textContent = '…'; if (!valid()) { out.textContent = 'Enter a wallet address'; return; }
+      try { const q = await EH.admin.collectQuote(x, bps, to.value.trim()); out.innerHTML = q.liquidity ? `${num(q.pair, 6)} ${esc(x.pairSym)} (${usd(q.pair * x.pairUsd)})<small style="display:block;font-weight:400;opacity:.8">+ ${num(q.coin, 0)} $${esc(x.symbol)}, worth ${usd(q.coin * x.px)} only at today's price</small>` : 'Nothing left to collect'; go.disabled = !q.liquidity; }
+      catch (e) { out.textContent = e.shortMessage || e.message; go.disabled = true; } };
+    $$('#clSeg button', ov).forEach(b => b.onclick = () => { bps = +b.dataset.b; $$('#clSeg button', ov).forEach(o => o.classList.toggle('on', o === b)); quote(); });
+    to.oninput = quote; quote();
+    go.onclick = () => { if (!valid()) return; ov.close(); adminTx('collect', [x.addr, bps, to.value.trim()], `Collected ${bps / 100}% of ${x.symbol} launch liquidity`); };
+  }
+  async function adminTx(fn, args, done) { const { toast } = U(); try { await EH.admin.call(fn, args); toast(done); } catch (e) { toast(e.message, { err: true }); paint(); return; } await BS.reload().catch(() => {}); await loadPlatform(); paint(); }
+
+  function paint() {
+    const { esc, usd, short, addrLink, pairGlyph, $, $$, isAdmin } = U(); const cfg = BS.cfg;
+    if (!isAdmin()) { $('#adm').innerHTML = `<div class="empty"><h3>Admin only</h3><p>Connect the admin wallet <span class="mono">${esc(short(cfg.admin))}</span> to see this page.</p><button class="btn btn-ink" data-wallet-open>Connect</button></div>`; const b = $('[data-wallet-open]'); if (b) b.onclick = () => window.bsWallet && bsWallet.open(); return; }
+    const all = EH.allTokens(); const C = cfg.contracts || {}; const earned = all.reduce((s, x) => s + (x.fees.platform || 0), 0);
+    const owedTotal = plat ? plat.owed.reduce((s, v) => s + v, 0) : 0; const hiddenN = all.filter(x => x.hidden).length;
+    const focus = document.activeElement && document.activeElement.id === 'bkq' ? document.activeElement.selectionStart : null;
+    $('#adm').innerHTML = `<header class="page-h"><h1>Admin</h1><p>Live on Ethereum. Every number here is read from the contracts.</p></header>
+      <div class="kpis" style="margin-bottom:18px"><div><span>Platform fees</span><b>${usd(earned)}</b><small>${usd(owedTotal)} waiting to be pushed</small></div><div><span>Coins</span><b>${all.length}</b><small>${hiddenN} hidden</small></div><div><span>Launches</span><b style="font-size:16px">${plat ? (plat.paused ? 'Paused' : 'Open') : '…'}</b><small>${plat ? `start cap ${usd(plat.startCap)}` : ''}</small></div><div><span>Factory</span><b style="font-size:14px"><a class="addr" href="${addrLink(C.factory)}" target="_blank" rel="noopener">${short(C.factory)}</a></b><small>renounced, admin kept</small></div></div>
+      <section class="panel" style="margin-bottom:18px"><div class="panel-h"><h2>Platform</h2></div>
+        <div class="srow" style="display:flex;align-items:center;gap:14px;padding:12px 16px"><div style="flex:1"><b>Launches</b><div class="faint" style="font-size:13px">${plat && plat.paused ? 'New launches are paused. Trading in existing coins is not affected.' : 'Anyone can launch a coin.'}</div></div><button class="btn btn-line" id="pauseBtn" ${plat ? '' : 'disabled'}>${plat && plat.paused ? 'Resume launches' : 'Pause launches'}</button></div>
+        <div class="srow" style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-top:1px solid var(--line)"><div style="flex:1"><b>Platform fees</b><div class="faint" style="font-size:13px">${usd(owedTotal)} sits in coin strategies. Pushing sends it to the fee recipient${plat ? ` <span class="mono">${esc(short(plat.feeRecipient))}</span>` : ''}.</div></div><button class="btn btn-line" id="pushBtn" ${owedTotal > 0 ? '' : 'disabled'}>Push fees</button></div>
+      </section>
+      ${backingSection()}
+      <section class="panel"><div class="panel-h"><h2>Coins</h2><span class="r faint" style="font-size:12.5px">Hiding takes a coin off the site; it keeps trading on-chain</span></div>${all.length ? `<div class="table-wrap" style="border:0"><table class="list"><thead><tr><th>Coin</th><th>Platform fees</th><th>Volume 24h</th><th>Launch LP</th><th>Listed</th></tr></thead><tbody>
+      ${all.map((x, i) => `<tr><td><div class="coin-cell">${pairGlyph(x, 'sm')}<div><b>${esc(x.name)}</b><small>$${esc(x.symbol)} · ${esc(x.pairSym)}</small></div></div></td><td><span class="num">${usd(x.fees.platform)}</span>${plat && plat.owed[i] ? `<small class="faint" style="display:block">${usd(plat.owed[i])} to push</small>` : ''}</td><td><span class="num">${usd(x.vol24)}</span></td><td><div style="display:flex;align-items:center;justify-content:flex-end;gap:10px"><span class="num ${plat && plat.lp[i] && plat.lp[i].liquidity ? '' : 'faint'}">${!plat || !plat.lp[i] ? '…' : plat.lp[i].liquidity ? `${usd(plat.lp[i].pair * x.pairUsd)} <small class="faint">${esc(x.pairSym)}</small>` : 'Collected'}</span><button class="btn btn-line" data-cl="${x.addr}" ${plat && plat.lp[i] && plat.lp[i].liquidity ? '' : 'disabled'}>Collect</button></div></td><td><button class="switch" role="switch" data-h="${x.addr}" aria-checked="${!x.hidden}" aria-label="List ${esc(x.symbol)}" style="margin-left:auto;display:block"></button></td></tr>`).join('')}
+      </tbody></table></div>` : '<div class="empty"><p>No coins launched yet.</p></div>'}</section>`;
+    $$('[data-h]').forEach(b => b.onclick = () => { const x = EH.token(b.dataset.h); b.disabled = true; adminTx('setHidden', [x.addr, !x.hidden], x.hidden ? `${x.symbol} is listed again` : `${x.symbol} is hidden`); });
+    $$('[data-cl]').forEach(b => b.onclick = () => openCollect(EH.token(b.dataset.cl)));
+    const pb = $('#pauseBtn'); if (pb) pb.onclick = () => { pb.disabled = true; adminTx(plat.paused ? 'resume' : 'pause', [], plat.paused ? 'Launches resumed' : 'Launches paused'); };
+    const fb = $('#pushBtn'); if (fb) fb.onclick = () => { fb.disabled = true; adminTx('pushPlatformFees', [EH.allTokens().map(x => x.addr)], 'Platform fees pushed'); };
+    $$('[data-act]').forEach(b => b.onclick = () => { if (busy) return; const td = todo(); send(td[b.dataset.act], b.dataset.act === 'drift' ? 'prices' : b.dataset.act); });
+    const rt = $('[data-retry]'); if (rt) rt.onclick = () => { loadErr = ''; paint(); start(); };
+    const q = $('#bkq'); if (q) { q.oninput = () => { filter = q.value; paint(); }; if (focus !== null) { q.focus(); q.setSelectionRange(focus, focus); } }
+  }
+
+  async function start() { paint(); if (U().isAdmin()) { loadErr = ''; try { await Promise.all([load(), loadPlatform()]); } catch (e) { loadErr = (e && (e.shortMessage || e.message)) || 'no RPC answered'; } paint(); } }
+  window.addEventListener('DOMContentLoaded', () => BS.ready.then(start));
+  window.addEventListener('bs:wallet', () => BS.ready.then(start));
+})();

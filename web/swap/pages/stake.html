@@ -1,0 +1,58 @@
+<div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-8 pb-10 pt-5 md:pt-7" id="stakePage">
+  <div class="flex min-w-0 items-start justify-between gap-3">
+    <div class="min-w-0"><h1 class="flex items-center gap-2.5 text-2xl font-bold leading-none tracking-[-0.01em] text-text-primary">Stake $INKY <span class="inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold leading-none md:text-[11px] bg-accent/10 text-accent">paid in ETH</span></h1><p class="mt-2 text-[13px] leading-5 text-text-secondary md:text-xs">0.05% of every swap on the AMM is collected, converted to ETH and split across stakers by share. No lockup, no vesting, claim whenever you like.</p></div>
+  </div>
+
+  <div class="mt-8 grid grid-cols-2 gap-2 lg:grid-cols-4">
+    <div class="rounded-2xl bg-bg-input px-4 py-3"><div class="flex h-7 items-center"><div class="text-lg font-semibold tabular-nums text-text-primary" id="skTotal">—</div></div><div class="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-text-muted"><span>Total staked</span></div></div>
+    <div class="rounded-2xl bg-bg-input px-4 py-3"><div class="flex h-7 items-center"><div class="text-lg font-semibold tabular-nums text-text-primary" id="skApr">—</div></div><div class="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-text-muted"><span>APR · from the last 7 days</span></div></div>
+    <div class="rounded-2xl bg-bg-input px-4 py-3"><div class="flex h-7 items-center"><div class="text-lg font-semibold tabular-nums text-text-primary" id="skPaid">—</div></div><div class="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-text-muted"><span>Paid to stakers · lifetime</span></div></div>
+    <div class="rounded-2xl bg-bg-input px-4 py-3"><div class="flex h-7 items-center"><div class="text-lg font-semibold tabular-nums text-text-primary" id="skPending">—</div></div><div class="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-text-muted"><span>Waiting to be collected</span></div></div>
+  </div>
+
+  <div class="sw-wrap mt-8">
+    <div class="sw-main">
+      <div class="rounded-[20px] bg-bg-card p-1.5">
+        <div class="min-w-0 px-3 py-4">
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-5" id="skTabs"><button class="text-lg font-bold text-text-primary" data-stab="stake">Stake</button><button class="text-lg font-bold text-text-muted hover:text-text-secondary" data-stab="unstake">Unstake</button></div>
+            <span class="sw-tier">no lockup</span>
+          </div>
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5">
+              <span class="text-[14px] font-medium leading-none text-text-muted" id="skLabel">Amount to stake</span>
+              <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0 flex-1"><input autocomplete="off" class="w-full min-w-0 border-0 bg-transparent p-0 text-[36px] font-semibold leading-10 tracking-[-0.02em] text-text-primary tabular-nums outline-none placeholder:text-text-disabled" id="skAmt" inputmode="decimal" placeholder="0" type="text"><div class="mt-0.5 h-4 text-[12px] font-medium leading-4 text-text-muted" id="skUsd"></div></div>
+                <div class="relative shrink-0"><span class="sw-asset" style="cursor:default"><span class="relative flex shrink-0 size-8"><span class="relative flex shrink-0 overflow-hidden bg-avatar-gradient ring-1 ring-inset ring-text-primary/10 size-full rounded-full"><img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/pfp.png"></span></span><span class="flex min-w-0 flex-1 flex-col leading-tight"><span class="truncate text-[16px] font-bold text-text-primary">INKY</span><span class="truncate text-[12px] font-medium text-text-muted">Ink</span></span></span></div>
+              </div>
+              <div class="flex min-h-6 items-center justify-between gap-2"><span class="truncate text-[12px] font-medium text-text-muted" id="skBal">Balance: 0</span><span class="flex shrink-0 items-center gap-1"><button class="sw-q" data-q="50%" data-for="skAmt">50%</button><button class="sw-q" data-q="MAX" data-for="skAmt">MAX</button></span></div>
+            </div>
+            <div class="sw-kv">
+              <div><span>Your stake</span><b id="skMine">0 INKY</b></div>
+              <div><span>Your share</span><b id="skShare">0%</b></div>
+              <div><span>Claimable now</span><b class="text-success" id="skClaim">0 ETH</b></div>
+              <div><span>Earned lifetime</span><b id="skLife">0 ETH</b></div>
+            </div>
+            <button class="inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:bg-bg-elevated disabled:text-text-muted bg-accent text-accent-ink hover:bg-accent-hover gap-2 px-5 text-base font-bold shadow-cta h-14 w-full rounded-full" id="skCta">Connect Wallet</button>
+            <button class="inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-bg-elevated text-text-primary hover:bg-bg-selector-hover gap-2 px-5 text-sm font-semibold h-11 w-full rounded-full" id="skClaimBtn" disabled>Claim rewards as ETH</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="sw-side">
+      <div class="sw-card sw-soon">
+        <img src="img/inky-anim.svg" alt="" class="sw-inky" width="140" height="144">
+        <div><h3>Staking opens after the audit</h3><p>$INKY is live on the launchpad today. Once the swap contracts clear audit and are deployed, this page turns on and the first fee collection pays whoever is staked at that moment.</p><a class="sw-link" href="https://www.inkypump.fun/token/0x5e6b13743ac666a68aa5c06bda61c79e9612a7ce" target="_blank" rel="noopener noreferrer">Get $INKY __EXT__</a></div>
+      </div>
+      <div class="sw-card">
+        <h3>How it works</h3>
+        <ol class="sw-steps">
+          <li><b>Swap fee</b> 0.3% on every trade. 0.05% of that is the protocol share, taken as LP tokens inside each pool.</li>
+          <li><b>Collect</b> Anyone can trigger it. The LP tokens are burned, both sides are sold for ETH on the AMM itself.</li>
+          <li><b>Split</b> The ETH is split across stakers by share at that moment. No admin in the loop, no owner key.</li>
+          <li><b>Claim</b> Rewards wait for you as ETH. Unstake any time; your rewards stay claimable.</li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+</div>

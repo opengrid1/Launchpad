@@ -16,7 +16,13 @@ import { StockLogo } from "../components/StockLogo";
 import { TokenLogo } from "../components/TokenLogo";
 import { TradePanel } from "../components/TradePanel";
 import { BaseTradePanel } from "../components/BaseTradePanel";
-import { IS_STOCK_BOARD } from "../lib/brand";
+import { IS_HYPER, IS_INK, IS_STOCK_BOARD } from "../lib/brand";
+
+// Fee split shown on the harvest strip. hyperstock (hyper) is 50% holders /
+// 40% creator / 10% platform; the other creator-fee deployments are 80/20.
+const HOLDER_SPLIT = IS_HYPER ? "50%" : null;
+const CREATOR_SPLIT = IS_HYPER ? "40%" : "80%";
+const PLATFORM_SPLIT = IS_HYPER ? "10%" : "20%";
 import { TradesList } from "../components/TradesList";
 import { Button, EmptyState, Skeleton } from "../components/ui";
 import { client, v4Client } from "../lib/client";
@@ -108,7 +114,13 @@ function HarvestStrip({ token, creator }: { token: Address; creator: string }) {
       const hash = await (client as any)[IS_STABLE ? "claimCreatorFees" : "harvest"](token);
       pushToast({ kind: "info", title: "Harvest submitted", txHash: hash });
       await client.publicClient.waitForTransactionReceipt({ hash });
-      pushToast({ kind: "success", title: "Fees distributed: 80% creator, 20% platform", txHash: hash });
+      pushToast({
+        kind: "success",
+        title: HOLDER_SPLIT
+          ? `Fees distributed: ${HOLDER_SPLIT} holders, ${CREATOR_SPLIT} creator, ${PLATFORM_SPLIT} platform`
+          : `Fees distributed: ${CREATOR_SPLIT} creator, ${PLATFORM_SPLIT} platform`,
+        txHash: hash,
+      });
     } catch (err) {
       pushToast({ kind: "error", title: "Harvest failed", body: errorText(err) });
     } finally {
@@ -123,8 +135,9 @@ function HarvestStrip({ token, creator }: { token: Address; creator: string }) {
           {isCreator ? "Your creator fees" : "Creator fees"}
         </p>
         <p className="mt-0.5 text-xs text-ink-3">
-          Every trade's 1% pool fee accrues here. Harvest anytime: 80% goes straight to the
-          creator's wallet, 20% to the platform.
+          {HOLDER_SPLIT
+            ? `Every trade's 1% pool fee accrues here. Harvest anytime: ${HOLDER_SPLIT} streams to holders as claimable rewards, ${CREATOR_SPLIT} goes straight to the creator's wallet, ${PLATFORM_SPLIT} to the platform.`
+            : `Every trade's 1% pool fee accrues here. Harvest anytime: ${CREATOR_SPLIT} goes straight to the creator's wallet, ${PLATFORM_SPLIT} to the platform.`}
         </p>
       </div>
       <button
@@ -224,10 +237,15 @@ export function TokenPage() {
   const rewardSym = rewardStock?.symbol ?? metaPair?.symbol;
   const hasReward = !!extra && !/^0x0+$/.test(extra.stock);
 
-  // The koi.fun (Base) flavor uses a dedicated mobile-first token view that
-  // mirrors the discovery board: price header, chart, tabbed activity and a
-  // sticky Buy/Sell bar. The default flavors keep the desktop two-column view.
-  if (IS_STOCK_BOARD) {
+  // The koi.fun (Base) flavor and hyperstock use the dedicated mobile-first
+  // token view that mirrors the discovery board: price header, chart, tabbed
+  // activity and a sticky Buy/Sell bar whose trade sheet is denominated in the
+  // coin's own pair (HYPE or a tokenized stock). The default flavors keep the
+  // desktop two-column view.
+  if (IS_INK) {
+    return <GmTokenView t={t} meta={meta} extra={extra} usdRate={usdRate} rewardSym={rewardSym} hasReward={hasReward} />;
+  }
+  if (IS_STOCK_BOARD || IS_HYPER) {
     return <BaseTokenView t={t} meta={meta} extra={extra} usdRate={usdRate} rewardSym={rewardSym} hasReward={hasReward} />;
   }
 
@@ -426,6 +444,13 @@ function BaseTokenView({
       {/* Holder rewards: claim the paired stock streamed from trades */}
       {hasReward ? <RewardClaimCard coin={t.address as Address} fallbackSym={rewardSym} /> : null}
 
+      {/* Creator-fee flavors (hyperstock): the permissionless harvest strip */}
+      {CREATOR_MODE ? (
+        <div style={{ margin: "10px 16px 2px" }}>
+          <HarvestStrip token={t.address as Address} creator={t.creator} />
+        </div>
+      ) : null}
+
       {/* Chart */}
       <div className="kf-tk-chart">
         <Suspense fallback={<Skeleton className="h-full w-full" />}>
@@ -451,6 +476,215 @@ function BaseTokenView({
       <div className="kf-tk-actions">
         <button className="kf-tk-buy" onClick={() => setSheet("buy")}>Buy</button>
         <button className="kf-tk-sell" onClick={() => setSheet("sell")}>Sell</button>
+      </div>
+
+      {sheet ? (
+        <div className="kf-sheet-backdrop" onClick={() => setSheet(null)}>
+          <div className="kf-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="kf-sheet-grip" />
+            <BaseTradePanel token={t} initialSide={sheet} />
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/* ========================= squidpad GMGN token view ========================= */
+
+/** One-tap dock buys in the native token, wired to the same buy path. */
+function DockBuys({ token, symbol }: { token: Address; symbol: string }) {
+  const { isConnected, connectFirst } = useWallet();
+  const pushToast = useUi((s) => s.pushToast);
+  const [busy, setBusy] = useState<number | null>(null);
+  const AMTS = [0.005, 0.01, 0.05, 0.1];
+  const buy = async (amt: number) => {
+    if (busy != null) return;
+    if (!isConnected) return connectFirst();
+    setBusy(amt);
+    try {
+      if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+      const hash = await (v4Client as any).buyToken(token, BigInt(Math.round(amt * 1e18)), 0n);
+      pushToast({ kind: "success", title: `Buying ${amt} ${env.nativeSymbol} of ${symbol}`, txHash: hash });
+    } catch (err) {
+      pushToast({ kind: "error", title: "Quick buy failed", body: errorText(err) });
+    } finally {
+      setBusy(null);
+    }
+  };
+  return (
+    <div className="gm-tk-presets">
+      {AMTS.map((a) => (
+        <button key={a} disabled={busy != null} onClick={() => buy(a)}>
+          {busy === a ? "…" : `${a}`}
+        </button>
+      ))}
+      <span className="u">{env.nativeSymbol}</span>
+    </div>
+  );
+}
+
+const SQUID_FEES_ABI = [
+  { type: "function", name: "creatorFeesInPair", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "rewardToken", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+  { type: "function", name: "claimCreatorFees", stateMutability: "nonpayable", inputs: [], outputs: [{ type: "uint256" }] },
+] as const;
+
+const ERC20_SYMBOL_ABI = [
+  { type: "function", name: "symbol", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+] as const;
+
+/** Dev-only card: the creator's accrued fees on their coin, quoted in and
+ *  claimed as the coin's pair asset (the stock). Invisible to everyone else. */
+function CreatorFeesCard({ token, creator }: { token: Address; creator: string; symbol: string }) {
+  const { address, isConnected, connectFirst } = useWallet();
+  const pushToast = useUi((s) => s.pushToast);
+  const [fees, setFees] = useState<bigint | null>(null);
+  const [paySym, setPaySym] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+  const isDev = !!address && address.toLowerCase() === creator?.toLowerCase();
+
+  useEffect(() => {
+    if (!isDev) return;
+    let alive = true;
+    const pc = (v4Client as any).publicClient;
+    const load = () =>
+      pc.readContract({ address: token, abi: SQUID_FEES_ABI, functionName: "creatorFeesInPair" })
+        .then((v: bigint) => { if (alive) setFees(v); })
+        .catch(() => undefined);
+    // Resolve the payout asset symbol once (the stock the fees are paid in).
+    pc.readContract({ address: token, abi: SQUID_FEES_ABI, functionName: "rewardToken" })
+      .then((pair: string) => pc.readContract({ address: pair, abi: ERC20_SYMBOL_ABI, functionName: "symbol" }))
+      .then((s: string) => { if (alive) setPaySym(String(s)); })
+      .catch(() => undefined);
+    load();
+    const id = setInterval(() => { if (!document.hidden) load(); }, 15_000);
+    return () => { alive = false; clearInterval(id); };
+  }, [isDev, token]);
+
+  if (!isDev) return null;
+  const amt = fees != null ? Number(fees) / 1e18 : null;
+
+  const claimFees = async () => {
+    setBusy(true);
+    try {
+      if (!isConnected) return connectFirst();
+      if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
+      const wc = (v4Client as any).wallet();
+      const hash = await wc.writeContract({ address: token, abi: SQUID_FEES_ABI, functionName: "claimCreatorFees", args: [], chain: wc.chain, account: wc.account });
+      pushToast({ kind: "success", title: "Creator fees claimed", txHash: hash });
+      await (v4Client as any).publicClient.waitForTransactionReceipt({ hash });
+      setFees(0n);
+    } catch (err) {
+      pushToast({ kind: "error", title: "Claim failed", body: errorText(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="gm-dev-card">
+      <div className="i">
+        <span className="l">Your creator fees</span>
+        <span className="v">{amt != null ? `${amt.toLocaleString(undefined, { maximumFractionDigits: amt < 1 ? 6 : 2 })}${paySym ? ` ${paySym}` : ""}` : "…"}</span>
+        <span className="s">0.4% of every buy accrues here automatically and is paid out{paySym ? ` in ${paySym}` : " in the pair asset"}. Only you can see and claim this.</span>
+      </div>
+      <button disabled={busy || !fees} onClick={claimFees}>{busy ? "Claiming…" : "Claim"}</button>
+    </div>
+  );
+}
+
+/**
+ * squidpad trading page, GMGN terminal style: identity bar, a monospace price
+ * hero with the day's move, ledger stat line, the live chart in a sharp
+ * panel, pill tabs over the activity feeds and a docked trade bar with
+ * one-tap preset buys next to Buy/Sell.
+ */
+function GmTokenView({
+  t, meta, extra, usdRate, rewardSym, hasReward,
+}: { t: TokenSummary; meta: any; extra: Extra | null; usdRate: number; rewardSym?: string; hasReward: boolean }) {
+  const [tab, setTab] = useState<"trades" | "holders" | "stats" | "info">("trades");
+  const [sheet, setSheet] = useState<null | "buy" | "sell">(null);
+  const chg = t.priceChange24hPct;
+  const has = chg != null && isFinite(chg);
+  const up = has && chg! >= 0;
+  const liqWei = String((t as any).liquidityWei ?? "0");
+  const price = Number(t.marketCapUsd) > 0 ? Number(t.marketCapUsd) / 1_000_000_000 : 0;
+  const priceStr = price <= 0 ? "—" : price >= 0.01 ? `$${price.toFixed(4)}` : `$${Number(price.toPrecision(3)).toString()}`;
+
+  const TABS = [
+    { id: "trades", label: "Trades" },
+    { id: "holders", label: "Holders" },
+    { id: "info", label: "Info" },
+  ] as const;
+  const earns = hasReward && rewardSym ? rewardSym : null;
+
+  return (
+    <div className="gm-tk">
+      {/* Identity bar */}
+      <div className="gm-tk-top">
+        <button className="gm-tk-back" aria-label="Back" onClick={() => window.history.length > 1 ? window.history.back() : (window.location.href = "/")}>{CHEV_L}</button>
+        <TokenLogo token={t} size={34} />
+        <span className="gm-tk-id">
+          <b>${t.symbol}</b>
+          <i>{t.name}</i>
+        </span>
+        {isOfficial(t.address) && <span className="gm-tag">OFFICIAL</span>}
+        <span className="gm-tk-right">
+          <CaChip address={t.address as Address} />
+          <ShareMenu address={t.address as Address} symbol={t.symbol} name={t.name} />
+        </span>
+      </div>
+
+      {/* Price hero: big price, 24h change, and the stock holders earn */}
+      <div className="gm-tk-hero">
+        <span className="p">{priceStr}</span>
+        <span className={`c ${has ? (up ? "up" : "down") : "flat"}`}>{has ? `${up ? "▲ +" : "▼ "}${chg!.toFixed(2)}%` : "0.00%"} <i>24h</i></span>
+        {earns ? <span className="gm-tk-earns">earns {earns}</span> : null}
+      </div>
+
+      {/* Chart leads the page */}
+      <div className="gm-tk-chart">
+        <Suspense fallback={<Skeleton className="h-full w-full" />}>
+          <TVChart token={t.address as Address} symbol={t.symbol} />
+        </Suspense>
+      </div>
+
+      {/* Centered stat strip: market cap, volume, liquidity, holders */}
+      <div className="gm-tk-stats">
+        <span><i>MCAP</i><b>{fmtUsd(t.marketCapUsd)}</b></span>
+        <span><i>VOL</i><b>{fmtWeiUsd(t.volumeTotalWei, usdRate)}</b></span>
+        <span><i>LIQ</i><b>{fmtWeiUsd(liqWei, usdRate)}</b></span>
+        <span><i>HOLDERS</i><b>{compact(t.holderCount)}</b></span>
+      </div>
+
+      {hasReward ? <RewardClaimCard coin={t.address as Address} fallbackSym={rewardSym} /> : null}
+      <CreatorFeesCard token={t.address as Address} creator={t.creator} symbol={t.symbol} />
+
+      {/* Underline tabs */}
+      <div className="gm-tk-tabs" role="tablist">
+        {TABS.map((x) => (
+          <button key={x.id} role="tab" aria-selected={tab === x.id} className={tab === x.id ? "on" : ""} onClick={() => setTab(x.id)}>{x.label}</button>
+        ))}
+      </div>
+
+      <div className="gm-tk-body">
+        {tab === "trades" ? <TradesList token={t.address as Address} symbol={t.symbol} usdRate={usdRate} /> : null}
+        {tab === "holders" ? <HoldersList token={t.address as Address} symbol={t.symbol} /> : null}
+        {tab === "info" ? (
+          <>
+            <BaseStats t={t} extra={extra} usdRate={usdRate} rewardSym={rewardSym} />
+            <InfoTab t={t} meta={meta} extra={extra} />
+          </>
+        ) : null}
+      </div>
+
+      {/* Docked trade bar: preset buys + Buy / Sell */}
+      <div className="gm-tk-dock">
+        <div className="gm-tk-cta">
+          <button className="b" onClick={() => setSheet("buy")}>Buy</button>
+          <button className="s" onClick={() => setSheet("sell")}>Sell</button>
+        </div>
       </div>
 
       {sheet ? (

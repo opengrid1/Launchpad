@@ -1,0 +1,12 @@
+artifacts-size/
+.env.meow-deployer
+.meow-tokendeployer
+.env.alchemy
+.env.telegram
+.env.arc-deployer
+.smoke-note.json
+artifacts-backstop/
+cache-backstop/
+artifacts-cntrlz/
+cache-cntrlz/
+.env.cntrlz-deployer

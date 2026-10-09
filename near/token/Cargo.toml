@@ -1,0 +1,18 @@
+[package]
+name = "launch-token"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "One launched coin on NEAR: the token, its bonding curve, its pool, its tax and its holder dividends in one contract."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = { workspace = true }
+near-contract-standards = { workspace = true }
+uint = { workspace = true }
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }

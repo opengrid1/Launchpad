@@ -1,0 +1,25 @@
+<div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-8 pb-10 pt-5 md:pt-7" id="poolsPage">
+  <div class="flex min-w-0 items-start justify-between gap-3">
+    <div class="min-w-0"><h1 class="text-2xl font-bold leading-none tracking-[-0.01em] text-text-primary">Pools</h1><p class="mt-2 text-[13px] leading-5 text-text-secondary md:text-xs">Constant-product pools on Ink. Liquidity providers earn 0.25% of every swap; $INKY stakers earn 0.05%.</p></div>
+    <button class="hidden shrink-0 md:inline-flex h-[34px] cursor-pointer items-center gap-1.5 rounded-full bg-accent px-3.5 text-xs font-semibold text-accent-ink transition-colors hover:bg-accent-hover" data-href="liquidity.html">__PLUS__<span>Add liquidity</span></button>
+  </div>
+
+  <div class="mt-8 grid grid-cols-2 gap-2 lg:grid-cols-4">
+    <div class="rounded-2xl bg-bg-input px-4 py-3"><div class="flex h-7 items-center"><div class="text-lg font-semibold tabular-nums text-text-primary" id="pTvl">—</div></div><div class="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-text-muted"><span>Total value locked</span></div></div>
+    <div class="rounded-2xl bg-bg-input px-4 py-3"><div class="flex h-7 items-center"><div class="text-lg font-semibold tabular-nums text-text-primary" id="pVol">—</div></div><div class="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-text-muted"><span>Volume 24h</span></div></div>
+    <div class="rounded-2xl bg-bg-input px-4 py-3"><div class="flex h-7 items-center"><div class="text-lg font-semibold tabular-nums text-text-primary" id="pFees">—</div></div><div class="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-text-muted"><span>Fees 24h</span></div></div>
+    <div class="rounded-2xl bg-bg-input px-4 py-3"><div class="flex h-7 items-center"><div class="text-lg font-semibold tabular-nums text-text-primary" id="pCount">—</div></div><div class="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-text-muted"><span>Pools</span></div></div>
+  </div>
+
+  <div class="mt-10">
+    <div class="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><div class="flex min-w-max items-center gap-7" id="ptabs">
+      <button class="flex shrink-0 cursor-pointer items-center gap-2 text-xl font-medium leading-tight tracking-[-0.005em] whitespace-nowrap transition-colors lg:text-2xl text-text-primary" data-ptab="all">All pools</button>
+      <button class="flex shrink-0 cursor-pointer items-center gap-2 text-xl font-medium leading-tight tracking-[-0.005em] whitespace-nowrap transition-colors lg:text-2xl text-text-muted hover:text-text-secondary" data-ptab="mine">My positions</button>
+      <span class="text-[13px] font-medium text-text-muted">0.3% fee tier · sorted by TVL</span>
+    </div></div>
+    <div class="mt-4 overflow-hidden"><div class="hidden md:block"><div class="overflow-auto"><table class="min-w-[920px] w-full table-fixed border-separate border-spacing-0 text-left text-sm [&_td]:overflow-hidden"><thead class="sticky top-0 z-10 bg-bg-card text-sm font-normal text-text-secondary"><tr>
+      <th class="h-12 whitespace-nowrap bg-bg-input px-3 align-middle font-normal first:rounded-l-2xl first:pl-4 last:rounded-r-2xl last:pr-5 w-[26%] text-left">Pool</th><th class="h-12 whitespace-nowrap bg-bg-input px-3 align-middle font-normal w-[14%] text-right">TVL</th><th class="h-12 whitespace-nowrap bg-bg-input px-3 align-middle font-normal w-[14%] text-right">Volume 24h</th><th class="h-12 whitespace-nowrap bg-bg-input px-3 align-middle font-normal w-[14%] text-right">Fees 24h</th><th class="h-12 whitespace-nowrap bg-bg-input px-3 align-middle font-normal w-[12%] text-right">APR</th><th class="h-12 whitespace-nowrap bg-bg-input px-3 align-middle font-normal first:rounded-l-2xl first:pl-4 last:rounded-r-2xl last:pr-5 w-[20%] text-right">Your position</th></tr></thead>
+      <tbody class="[&>tr:not(:last-child)>td]:border-b [&>tr:not(:last-child)>td]:border-border-default" id="poolRows"></tbody></table></div></div>
+    <div class="md:hidden" id="poolMob"></div></div>
+  </div>
+</div>

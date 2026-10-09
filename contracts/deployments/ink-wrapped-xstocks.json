@@ -1,0 +1,202 @@
+{
+ "checkedAt": "2026-10-01",
+ "source": "Ink explorer token search + on-chain creator and Uniswap V3 USDG pool balances",
+ "wrapperDeployer": "0x28b40fc9dDE267A91eD739961042cA34D5A1Db2A",
+ "tokens": [
+  {
+   "symbol": "wNVDAx",
+   "name": "Wrapped NVIDIA xStock",
+   "address": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+   "official": true,
+   "decimals": 18,
+   "supply": 2091.9001006408944,
+   "usdgPools": [
+    {
+     "fee": 500,
+     "pool": "0x01951ddb43a451500bfaf652d40c07309fad4727",
+     "usdg": 30339.735118,
+     "stock": 95.97826495599006
+    }
+   ]
+  },
+  {
+   "symbol": "wAAPLx",
+   "name": "Wrapped Apple xStock",
+   "address": "0x943bf64d566c32a2bcd41ac92fb63c111cc9de8f",
+   "official": true,
+   "decimals": 18,
+   "supply": 1722.3772670072385,
+   "usdgPools": [
+    {
+     "fee": 500,
+     "pool": "0x8986bb68391ad5b0afd7605e8075b273ca0189d6",
+     "usdg": 29043.094876,
+     "stock": 68.33831232289397
+    }
+   ]
+  },
+  {
+   "symbol": "wSPYx",
+   "name": "Wrapped SP500 xStock",
+   "address": "0xe7e553cd128f0011777323a0b44a7b96ea1cb540",
+   "official": true,
+   "decimals": 18,
+   "supply": 1845.3626999751834,
+   "usdgPools": [
+    {
+     "fee": 500,
+     "pool": "0x06fb000fe9c6505eb3b2cdf52445d8c7d5690f47",
+     "usdg": 24953.897363,
+     "stock": 33.4849395909407
+    },
+    {
+     "fee": 3000,
+     "pool": "0x383d9dd7f923dd967b23a419a9b912af8d96ca3b",
+     "usdg": 97897.122489,
+     "stock": 124.4258779801331
+    }
+   ]
+  },
+  {
+   "symbol": "wMSTRx",
+   "name": "Wrapped MicroStrategy xStock",
+   "address": "0x30987adf0b11dc698438a99ba04ec3a1ab2c7eab",
+   "official": true,
+   "decimals": 18,
+   "supply": 139.29321953004228,
+   "usdgPools": [
+    {
+     "fee": 500,
+     "pool": "0x169f2ab4d25aba4f9b2743658f8549641c9d069d",
+     "usdg": 45077.397693,
+     "stock": 64.01895193054438
+    }
+   ]
+  },
+  {
+   "symbol": "wSPCXx",
+   "name": "Wrapped SpaceX xStock",
+   "address": "0x8e2eed8b8b5e13ea7bf38e50d7821d2c57309072",
+   "official": true,
+   "decimals": 18,
+   "supply": 219.2101324424222,
+   "usdgPools": [
+    {
+     "fee": 500,
+     "pool": "0xdf1531451f6d97f847b27fac671738d113db1406",
+     "usdg": 32058.474078,
+     "stock": 131.21048694788507
+    }
+   ]
+  },
+  {
+   "symbol": "wTSLAx",
+   "name": "Wrapped Tesla xStock",
+   "address": "0xc3fdbe3a68ee5de461d30415a8165cf9aefe1171",
+   "official": true,
+   "decimals": 18,
+   "supply": 891.0753421950982,
+   "usdgPools": [
+    {
+     "fee": 500,
+     "pool": "0x09444cbdff5cd4437150a1f26865a3ed85d8ed5e",
+     "usdg": 23851.85948,
+     "stock": 72.06878781846497
+    }
+   ]
+  },
+  {
+   "symbol": "wNFLXx",
+   "name": "Wrapped Netflix xStock",
+   "address": "0x7d87fd6a379714194a797c0bbb8b40c30d250856",
+   "official": true,
+   "decimals": 18,
+   "supply": 60.23438383919235,
+   "usdgPools": [
+    {
+     "fee": 500,
+     "pool": "0x111d25ac72ad434d895f6f1ac8184ab5175e99ff",
+     "usdg": 16852.198728,
+     "stock": 42.12016827656805
+    }
+   ]
+  },
+  {
+   "symbol": "wMCDx",
+   "name": "Wrapped McDonald's xStock",
+   "address": "0xc6639026a3a862cd4fcbae3f67cb2d25a2959d37",
+   "official": true,
+   "decimals": 18,
+   "supply": 51.603547083153146,
+   "usdgPools": []
+  },
+  {
+   "symbol": "wPLTRx",
+   "name": "Wrapped Palantir xStock",
+   "address": "0x4a2df09536f62341c9f946427d16414c04e21342",
+   "official": true,
+   "decimals": 18,
+   "supply": 127.36867060343461,
+   "usdgPools": [
+    {
+     "fee": 500,
+     "pool": "0xe5d0eb7705889631adcb2550db0f8447d5cb6506",
+     "usdg": 27688.012064,
+     "stock": 119.13970670521051
+    }
+   ]
+  },
+  {
+   "symbol": "wGOOGLx",
+   "name": "Wrapped Alphabet xStock",
+   "address": "0xf8c5308f80e459bb53d9ebe689854d9cbb2caa6f",
+   "official": true,
+   "decimals": 18,
+   "supply": 1172.7202738133367,
+   "usdgPools": []
+  },
+  {
+   "symbol": "wQQQx",
+   "name": "Wrapped Nasdaq xStock",
+   "address": "0x4c1ae29c159838fc1b224636e28e086eb69101f7",
+   "official": true,
+   "decimals": 18,
+   "supply": 1314.923715227378,
+   "usdgPools": [
+    {
+     "fee": 3000,
+     "pool": "0x5f75cc89ba1da8883c5afc4f46bb3763c6d99f4c",
+     "usdg": 102198.465872,
+     "stock": 114.68347037369172
+    }
+   ]
+  },
+  {
+   "symbol": "wMETAx",
+   "name": "Wrapped Meta xStock",
+   "address": "0xe840946ffebcd66b7c4e95095effafadfa0d0e56",
+   "official": true,
+   "decimals": 18,
+   "supply": 561.1954416344788,
+   "usdgPools": []
+  },
+  {
+   "symbol": "wMSFTx",
+   "name": "Wrapped Microsoft xStock",
+   "address": "0x166fbe68274b6a47e025f4ba17388c539f1fa1d0",
+   "official": true,
+   "decimals": 18,
+   "supply": 465.1712401359738,
+   "usdgPools": []
+  },
+  {
+   "symbol": "wPALLx",
+   "name": "Wrapped abrdn Physical Palladium Shares xStock",
+   "address": "0xe503c8ebbafbc9fb3e90f128eb3c9f53fc67f242",
+   "official": true,
+   "decimals": 18,
+   "supply": 2e-08,
+   "usdgPools": []
+  }
+ ]
+}
