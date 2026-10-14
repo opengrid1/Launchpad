@@ -83,7 +83,7 @@
 
   const now0 = Math.floor(Date.now() / 1000);
   const GLOBAL_BLOCK0 = 24_500_000;             // a believable recent Base block
-  const COINS = SAMPLES.map(([name, symbol, dir, genes, color, freshMins]) => {
+  const COINS = SAMPLES.map(([name, symbol, dir, genes, color, freshMins], idx) => {
     const r = rngFor(symbol + name);
     const ageHrs = freshMins ? +(freshMins / 60).toFixed(3) : +(0.6 + r() * 220).toFixed(1);
     const createdTs = now0 - Math.round(ageHrs * 3600);
@@ -92,6 +92,7 @@
     const price = mc / 1e9;
     const params = geneParams(r, genes, mc);
     const c = {
+      id: idx + 1, spec: 'SPL-' + String(idx + 1).padStart(3, '0'),
       addr: addrFrom(r), name, symbol, color, dir,
       pair: { symbol: 'ETH', logo: '/img/eth.svg' },
       price, price0: price, mc, fdv: mc, c24,
@@ -102,7 +103,7 @@
       feeMode: params.fee.mode, feeBps: params.fee.baseBps,
       creator: addrFrom(r),
       launchBlock: GLOBAL_BLOCK0 - Math.round(ageHrs * 1800),   // ~2s blocks on Base
-      socials: { x: 'splice_' + symbol.toLowerCase() },
+      socials: { x: 'splice_' + symbol.toLowerCase(), tg: r() > 0.4 ? 'splice_' + symbol.toLowerCase() : null, web: r() > 0.7 ? symbol.toLowerCase() + '.xyz' : null },
       _seed: hash(symbol + name),
     };
     // max-wallet protection progress (lifts after liftHrs)

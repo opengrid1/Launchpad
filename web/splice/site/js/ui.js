@@ -53,10 +53,15 @@
 
   // ------------------------------------------------------------ gene chips & the DNA helix
   const GENES = () => (window.UD && UD.GENES) || {};
-  const geneColor = { fee: 'var(--accent)', snipe: 'var(--warn)', buyback: 'var(--up)', div: '#5aa9ff', maxw: '#b07cff', agent: 'var(--accent)' };
+  const geneColor = { fee: 'var(--accent)', snipe: 'var(--warn)', buyback: 'var(--up)', div: 'var(--g-div)', maxw: 'var(--g-maxw)', agent: 'var(--accent)' };
+  // two-letter base-pair codes: the genetic shorthand used everywhere a dot used to be
+  const geneCode = { fee: 'FE', snipe: 'AS', buyback: 'BB', div: 'DV', maxw: 'MW', agent: 'AG' };
+  const gc = k => `<b class="gc gc-${k}">${geneCode[k] || '??'}</b>`;
   function geneChip(key, withLabel) { const g = GENES()[key]; if (!g) return '';
-    return `<span class="gene ${g.cls}" title="${esc(g.name)}: ${esc(g.short)}"><span class="dot"></span>${withLabel === false ? '' : esc(g.name)}</span>`; }
+    return withLabel === false ? gc(key)
+      : `<span class="gene ${g.cls}" title="${esc(g.name)}: ${esc(g.short)}">${gc(key)}<span>${esc(g.name)}</span></span>`; }
   const geneChips = (keys, withLabel) => `<div class="genes">${(keys || []).map(k => geneChip(k, withLabel)).join('')}</div>`;
+  const spec = c => `<span class="spec">${esc(c.spec || '')}</span>`;
 
   // a double-helix that lights a rung per active gene (the brand anchor)
   function helix(activeKeys, opt = {}) {
@@ -169,5 +174,5 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
-  window.UI = { $, $$, esc, ic, usd, num, eth, pct, delta, ago, short, tick, flash, geneChip, geneChips, helix, geneColor, avatar, sparkSvg, coinSpark, coinHref, txLink, addrLink, isAdmin, toast, dialog, menu, copy, notLive, openSearch, applyTheme, currentTheme };
+  window.UI = { $, $$, esc, ic, usd, num, eth, pct, delta, ago, short, tick, flash, geneChip, geneChips, geneCode, gc, spec, helix, geneColor, avatar, sparkSvg, coinSpark, coinHref, txLink, addrLink, isAdmin, toast, dialog, menu, copy, notLive, openSearch, applyTheme, currentTheme };
 })();

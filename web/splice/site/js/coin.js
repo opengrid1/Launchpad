@@ -16,7 +16,7 @@
     else if (k === 'div') body = `${p.div.paidEth} ETH paid`;
     else if (k === 'maxw') body = c.protected ? `${p.maxw.pct}% · lifts ${(p.maxw.liftHrs - c.ageHrs).toFixed(1)}h` : 'lifted';
     else if (k === 'agent') body = `${p.agent.scheme}`;
-    return `<span class="rbadge ${g.cls}" title="${esc(g.name)}: ${esc(g.short)}"><span class="dot"></span><b>${esc(g.name)}</b><span>${body}</span></span>`;
+    return `<span class="rbadge ${g.cls}" title="${esc(g.name)}: ${esc(g.short)}">${window.UI.gc(k)}<b>${esc(g.name)}</b><span>${body}</span></span>`;
   }
   const geneRail = c => `<div class="generail live" id="rail">${c.genes.map(k => railBadge(c, k)).join('')}</div>`;
 
@@ -30,7 +30,7 @@
       else if (k === 'div') rows = row('Fee share', (p.div.feeShareBps / 100) + '%') + row('Paid to date', p.div.paidEth + ' ETH') + row('Unclaimed pool', p.div.poolEth.toFixed(4) + ' ETH');
       else if (k === 'maxw') rows = row('Cap', p.maxw.pct + '% of supply') + row('Lifts after', p.maxw.liftHrs + 'h') + row('Status', c.protected ? 'protecting' : 'lifted');
       else if (k === 'agent') rows = row('Scheme', p.agent.scheme + ' (post-quantum)') + row('Actions signed', num(p.agent.actions, 0)) + row('Status', 'phase 2');
-      return `<div class="gi"><b><span class="gene ${g.cls}" style="padding:0;border:none;background:none"><span class="dot"></span></span>${esc(g.name)} <span class="tag">${esc(g.short)}</span></b><div class="params">${rows}</div><p>${esc(g.desc)}</p></div>`;
+      return `<div class="gi"><b>${window.UI.gc(k)}${esc(g.name)} <span class="tag">${esc(g.short)}</span></b><div class="params">${rows}</div><p>${esc(g.desc)}</p></div>`;
     }).join('');
     const core = UD.CONSTITUTION.map(x => `<div class="gi"><b>${esc(x.name)} <span class="tag">always on</span></b><p>${esc(x.desc)}</p></div>`).join('');
     return `<div class="panel"><div class="panel-h"><h2>Genes</h2><span class="hint">${c.genes.length} spliced in</span></div><div class="panel-b"><div class="genelist">${items}</div><div class="lside-h" style="margin:18px 0 10px">Constitution — the immutable core</div><div class="genelist">${core}</div></div></div>`;
@@ -87,11 +87,17 @@
   let chart = null;
   function render(c) {
     document.title = `${c.name} ($${c.symbol}) — Splice`;
+    const soc = [
+      `<a class="btn ghost sm" href="https://x.com/${esc(c.socials.x)}" target="_blank" rel="noopener">X ↗</a>`,
+      c.socials.tg ? `<a class="btn ghost sm" href="https://t.me/${esc(c.socials.tg)}" target="_blank" rel="noopener">Telegram ↗</a>` : '',
+      c.socials.web ? `<a class="btn ghost sm" href="https://${esc(c.socials.web)}" target="_blank" rel="noopener">${esc(c.socials.web)} ↗</a>` : '',
+    ].join('');
     $('#coin-root').innerHTML = `
+      <a class="backlink" href="/">← Explore</a>
       <div class="coin-bar">
         ${avatar(c)}
         <div class="cb-id"><h1>${esc(c.name)} <small>$${esc(c.symbol)}</small></h1>
-          <div class="cb-meta"><button class="btn ghost sm" id="copyaddr"><span class="mono">${short(c.addr)}</span></button><a class="btn ghost sm" href="${addrLink(c.addr)}" target="_blank" rel="noopener">Basescan ↗</a><a class="btn ghost sm" href="https://x.com/${esc(c.socials.x)}" target="_blank" rel="noopener">X ↗</a></div>
+          <div class="cb-meta"><span class="spec tagline">${esc(c.spec)} · seq. block ${c.launchBlock.toLocaleString('en-US')}</span><button class="btn ghost sm" id="copyaddr"><span class="mono">${short(c.addr)}</span></button><a class="btn ghost sm" href="${addrLink(c.addr)}" target="_blank" rel="noopener">Basescan ↗</a>${soc}</div>
         </div>
         <div class="cb-helix">${helix(c.genes, { w: 150, h: 48 })}</div>
         <div class="px"><b class="num" data-price>${usd(c.price, { compact: false })}</b><span data-pxdelta>${delta(c.c24)}</span></div>

@@ -8,12 +8,25 @@
     <div class="panel">
       <div class="panel-h"><span class="no">1</span><h2>Identity</h2><span class="hint">on Base, paired with ETH</span></div>
       <div class="panel-b">
-        <div class="row2">
-          <div class="field"><label class="lbl" for="f-name">Name</label><input class="input" id="f-name" placeholder="Helix" maxlength="32" autocomplete="off"></div>
-          <div class="field"><label class="lbl" for="f-sym">Ticker</label><input class="input mono" id="f-sym" placeholder="HELIX" maxlength="10" autocomplete="off"></div>
+        <div class="idrow">
+          <button type="button" class="imgpick" id="imgpick" aria-label="Upload a coin image">
+            <span class="imgpick-ph" id="imgpick-ph">+<br><span>image</span></span>
+            <img id="imgpick-img" alt="" hidden>
+          </button>
+          <input type="file" id="f-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+          <div class="idrow-f">
+            <div class="row2">
+              <div class="field"><label class="lbl" for="f-name">Name</label><input class="input" id="f-name" placeholder="Helix" maxlength="32" autocomplete="off"></div>
+              <div class="field"><label class="lbl" for="f-sym">Ticker</label><input class="input mono" id="f-sym" placeholder="HELIX" maxlength="10" autocomplete="off"></div>
+            </div>
+            <div class="field"><label class="lbl" for="f-desc">Description <span class="faint" id="desc-count">0/280</span></label><textarea class="input" id="f-desc" placeholder="What is this coin?" maxlength="280"></textarea></div>
+          </div>
         </div>
-        <div class="field"><label class="lbl" for="f-desc">Description <span class="faint" id="desc-count">0/280</span></label><textarea class="input" id="f-desc" placeholder="What is this coin?" maxlength="280"></textarea></div>
-        <div class="field"><label class="lbl" for="f-img">Image URL</label><input class="input mono" id="f-img" placeholder="https://… (optional)" autocomplete="off"></div>
+        <div class="row2">
+          <div class="field"><label class="lbl" for="f-x">X / Twitter</label><input class="input mono" id="f-x" placeholder="@yourcoin (optional)" autocomplete="off"></div>
+          <div class="field"><label class="lbl" for="f-tg">Telegram</label><input class="input mono" id="f-tg" placeholder="t.me/yourcoin (optional)" autocomplete="off"></div>
+        </div>
+        <div class="field"><label class="lbl" for="f-web">Website</label><input class="input mono" id="f-web" placeholder="https://… (optional)" autocomplete="off"></div>
       </div>
     </div>
 

@@ -44,17 +44,17 @@
   function genecard(k) {
     const g = G[k], locked = k === 'fee', on = state.on.has(k);
     return `<div class="genecard ${on ? 'on' : ''} ${locked ? 'locked' : ''}" data-gene="${k}">
-      <div class="gh" data-toggle="${k}"><span class="gene ${g.cls}" style="padding:0;border:none;background:none"><span class="dot"></span></span><b>${esc(g.name)}</b>${g.phase ? '<span class="nb agent">PHASE 2</span>' : ''}<span class="sw"></span></div>
+      <div class="gh" data-toggle="${k}">${window.UI.gc(k)}<b>${esc(g.name)}</b>${g.phase ? '<span class="nb agent">PHASE 2</span>' : ''}<span class="sw"></span></div>
       <small>${esc(g.short)}</small>
       ${controls(k)}
     </div>`;
   }
 
+  let imgData = null; // data-URL of the uploaded coin image
   function previewCard() {
     const nm = ($('#f-name').value || '').trim() || 'Your coin';
     const sym = (($('#f-sym').value || '').trim() || 'COIN').toUpperCase();
-    const img = ($('#f-img').value || '').trim();
-    const c = { name: nm, symbol: sym, color: '#27e39a', img: img || null };
+    const c = { name: nm, symbol: sym, color: '#2ee5a2', img: imgData };
     const sp = sparkSvg(Array.from({ length: 24 }, (_, i) => 50 + Math.sin(i / 3) * 12 + i), 1, 300, 40);
     $('#preview-card').innerHTML = `<div class="card static">
       <div class="ct">${avatar(c)}<div class="t"><b>${esc(nm)} <span class="nb new">NEW</span></b><small>$${esc(sym)} · ETH · now</small></div></div>
@@ -92,11 +92,24 @@
     $('#pv-core').innerHTML = UD.CONSTITUTION.map(x => `<span class="gene" title="${esc(x.desc)}">${esc(x.name)}</span>`).join('');
   }
 
+  function bindUpload() {
+    const pick = $('#imgpick'), file = $('#f-file'), ph = $('#imgpick-ph'), img = $('#imgpick-img');
+    if (!pick) return;
+    pick.onclick = () => file.click();
+    file.onchange = () => {
+      const f = file.files && file.files[0]; if (!f) return;
+      if (f.size > 4 * 1024 * 1024) return toast('Image too large — keep it under 4 MB.', { err: true });
+      const rd = new FileReader();
+      rd.onload = () => { imgData = rd.result; img.src = imgData; img.hidden = false; ph.hidden = true; pick.classList.add('has'); previewCard(); };
+      rd.readAsDataURL(f);
+    };
+  }
+
   function init() {
     render();
+    bindUpload();
     $('#pv-core').innerHTML = UD.CONSTITUTION.map(x => `<span class="gene" title="${esc(x.desc)}">${esc(x.name)}</span>`).join('');
     $('#f-name').addEventListener('input', previewCard);
-    $('#f-img').addEventListener('input', previewCard);
     const sym = $('#f-sym'); sym.addEventListener('input', () => { const p = sym.selectionStart; sym.value = sym.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); sym.setSelectionRange(p, p); previewCard(); });
     const desc = $('#f-desc'); desc.addEventListener('input', () => $('#desc-count').textContent = desc.value.length + '/280');
     $('#launch-btn').onclick = () => { const nm = ($('#f-name').value || '').trim(), s = ($('#f-sym').value || '').trim();

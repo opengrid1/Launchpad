@@ -45,7 +45,7 @@
   function badge(c) { if (c.ageHrs < 1) return '<span class="nb new">NEW</span>'; if (c.params.agent) return '<span class="nb agent">AGENT</span>'; return ''; }
   function card(c) {
     return `<a class="card" href="${coinHref(c.addr)}" data-addr="${c.addr}">
-      <div class="ct">${avatar(c)}<div class="t"><b>${esc(c.name)} ${badge(c)}</b><small>$${esc(c.symbol)} · ${esc(c.pair.symbol)} · ${ago(c.createdTs)}</small></div></div>
+      <div class="ct">${avatar(c)}<div class="t"><b>${esc(c.name)} ${badge(c)}</b><small><span class="spec">${esc(c.spec)}</span> · $${esc(c.symbol)} · ${ago(c.createdTs)}</small></div></div>
       <div class="cm"><span class="px num" data-mc>${usd(c.mc)}</span><div class="r">mcap<br><span data-delta>${delta(c.c24)}</span></div></div>
       <div class="sparkbox" data-spark>${coinSpark(c)}</div>
       <div class="genes">${c.genes.map(k => geneChip(k)).join('')}</div>
@@ -72,7 +72,7 @@
   }
   function genefilter() {
     $('#genefilter').innerHTML = `<button class="gchip ${genes.size ? '' : 'on'}" data-g="all">All genes</button>` +
-      UD.GENE_ORDER.map(k => { const gd = UD.GENES[k]; return `<button class="gchip ${genes.has(k) ? 'on' : ''}" data-g="${k}"><span class="gene ${gd.cls}" style="padding:0;border:none;background:none"><span class="dot"></span></span>${esc(gd.name)}</button>`; }).join('');
+      UD.GENE_ORDER.map(k => { const gd = UD.GENES[k]; return `<button class="gchip ${genes.has(k) ? 'on' : ''}" data-g="${k}">${window.UI.gc(k)}${esc(gd.name)}</button>`; }).join('');
     $$('#genefilter .gchip').forEach(b => b.onclick = () => { const k = b.dataset.g; if (k === 'all') genes.clear(); else genes.has(k) ? genes.delete(k) : genes.add(k); genefilter(); grid(); });
   }
 
@@ -88,8 +88,15 @@
   let sparkN = 0;
   function sparkRefresh() { sparkN++; if (sparkN % 6) return; Object.entries(cardEls).forEach(([a, el]) => { const c = UD.coin(a); const box = el.querySelector('[data-spark]'); if (c && box) box.innerHTML = coinSpark(c); }); }
 
+  function herolab() {
+    const el = $('#herolab'); if (!el) return;
+    el.innerHTML = `${window.UI.helix(UD.GENE_ORDER, { w: 320, h: 92, turns: 1.8 })}
+      <div class="hero-genes">${UD.GENE_ORDER.map(k => `<span class="hg">${window.UI.gc(k)}<span>${window.UI.esc(UD.GENES[k].name)}</span></span>`).join('')}</div>
+      <span class="spec">THE SIX GENES · ONE IMMUTABLE HOOK</span>`;
+  }
+
   function init() {
-    statstrip(); tape(); genefilter(); grid();
+    herolab(); statstrip(); tape(); genefilter(); grid();
     $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return;
       $$('#tabs .sort').forEach(s => s.classList.toggle('on', s === b)); tab = b.dataset.tab; grid(); });
     UD.subscribe(ev => { if (ev.type === 'trade') onTrade(ev.trade); else { onTick(); sparkRefresh(); } });
