@@ -3,7 +3,7 @@
 
     python3 build.py              # preview: sample coins (contracts not deployed yet)
 
-Splice is a launchpad on Base where every coin is spliced from composable on-chain
+Splice is a launchpad on Ethereum where every coin is spliced from composable on-chain
 "genes" (fee, anti-snipe, buyback, dividends, MEV-tax, max-wallet, agent). One immutable
 hook enforces a constitution no gene can break; each launch picks the genes it wants.
 """
@@ -14,7 +14,7 @@ SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
 SITE_URL = os.environ.get('SITE_URL', 'https://splice.fun').rstrip('/')
 X_HANDLE = os.environ.get('X_HANDLE', 'splicefun')
-DESC = 'Launch a coin on Base spliced from composable on-chain genes: anti-snipe, buyback, dividends, MEV-tax, max-wallet, an optional AI agent. One immutable hook, a constitution no gene can break.'
+DESC = 'Launch a coin on Ethereum spliced from composable on-chain genes: anti-snipe, buyback, dividends, MEV-tax, max-wallet, an optional AI agent. One immutable hook, a constitution no gene can break.'
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap'
 NAV = [('explore', '/', 'Explore'), ('launch', '/launch', 'Launch'), ('portfolio', '/portfolio', 'Portfolio'), ('docs', '/docs', 'Docs')]
@@ -40,10 +40,10 @@ def ic(n):
 
 def config():
     cfg = {
-        'chainId': 8453, 'chainName': 'Base', 'explorer': 'https://basescan.org',
-        'rpcs': os.environ['RPCS'].split(',') if os.environ.get('RPCS') else ['https://base-rpc.publicnode.com', 'https://mainnet.base.org'],
-        'weth': '0x4200000000000000000000000000000000000006',
-        'poolManager': '0x498581fF718922c3f8e6A244956aF099B2652b2b',
+        'chainId': 1, 'chainName': 'Ethereum', 'explorer': 'https://etherscan.io',
+        'rpcs': os.environ['RPCS'].split(',') if os.environ.get('RPCS') else ['https://ethereum-rpc.publicnode.com', 'https://eth.llamarpc.com'],
+        'weth': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+        'poolManager': '0x000000000004444c5dc75cB358380D2e3dE08A90',
         'contracts': {}, 'prelaunch': True,
         'admin': os.environ.get('ADMIN', '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'),
         'reownProjectId': os.environ.get('REOWN_PROJECT_ID', '5b1ae833abd22d348cbf5d53cf58b3b2'),
@@ -112,7 +112,7 @@ def shell(meta, body):
 <footer class="foot">
   <div class="foot-in">
     <a class="brand sm" href="/">{MARK}{WORDMARK}</a>
-    <span class="net">{ETH_GLYPH}Base</span>
+    <span class="net">{ETH_GLYPH}Ethereum</span>
     <nav aria-label="Footer"><a href="/docs">Docs</a><a href="/docs#genes">Genes</a><a href="/launch">Launch</a>{x_foot}</nav>
   </div>
 </footer>

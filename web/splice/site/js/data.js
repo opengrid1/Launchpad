@@ -82,7 +82,7 @@
   ];
 
   const now0 = Math.floor(Date.now() / 1000);
-  const GLOBAL_BLOCK0 = 24_500_000;             // a believable recent Base block
+  const GLOBAL_BLOCK0 = 26_350_000;             // a believable recent Ethereum block
   const COINS = SAMPLES.map(([name, symbol, dir, genes, color, freshMins], idx) => {
     const r = rngFor(symbol + name);
     const ageHrs = freshMins ? +(freshMins / 60).toFixed(3) : +(0.6 + r() * 220).toFixed(1);
@@ -102,7 +102,7 @@
       createdTs, ageHrs, genes, params,
       feeMode: params.fee.mode, feeBps: params.fee.baseBps,
       creator: addrFrom(r),
-      launchBlock: GLOBAL_BLOCK0 - Math.round(ageHrs * 1800),   // ~2s blocks on Base
+      launchBlock: GLOBAL_BLOCK0 - Math.round(ageHrs * 300),    // ~12s blocks on Ethereum
       socials: { x: 'splice_' + symbol.toLowerCase(), tg: r() > 0.4 ? 'splice_' + symbol.toLowerCase() : null, web: r() > 0.7 ? symbol.toLowerCase() + '.xyz' : null },
       _seed: hash(symbol + name),
     };
@@ -263,7 +263,7 @@
   const tapeFeed = [];
   function step() {
     tickN++;
-    if (tickN % 2 === 0) BLOCK += 1;
+    if (tickN % 8 === 0) BLOCK += 1;   // ~12s blocks
     const touched = [];
     COINS.forEach(c => {
       const r = mulberry(c._seed ^ (tickN * 2654435761));
@@ -271,7 +271,7 @@
       const drift = (c.dir / 100) * 0.015 + (c.price0 - c.price) / c.price0 * 0.02;
       const move = (r() - 0.5) * 0.012 + drift;
       if (r() < 0.6) { c.price = Math.max(c.price0 * 0.3, c.price * (1 + move)); c.mc = Math.round(c.price * 1e9); c.fdv = c.mc; c.c24 = c.c24 * 0.995 + move * 100 * 0.6; touched.push(c); }
-      if (c.params.maxw) { c.protected = c.ageHrs + tickN / 1800 < c.params.maxw.liftHrs; }
+      if (c.params.maxw) { c.protected = c.ageHrs + tickN / 2400 < c.params.maxw.liftHrs; }
       if (c.params.buyback && r() < 0.1) c.params.buyback.poolEth = +Math.min(c.params.buyback.thresholdEth, c.params.buyback.poolEth + r() * 0.01).toFixed(4);
     });
     // occasionally emit a trade onto the tape

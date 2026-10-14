@@ -27,7 +27,7 @@
   });
 
   const datafeed = {
-    onReady(cb) { setTimeout(() => cb({ supported_resolutions: Object.keys(RES), supports_marks: false, supports_timescale_marks: false, supports_time: true, exchanges: [{ value: 'splice.fun', name: 'splice.fun', desc: 'Uniswap v4 on Base' }], symbols_types: [{ name: 'crypto', value: 'crypto' }] }), 0); },
+    onReady(cb) { setTimeout(() => cb({ supported_resolutions: Object.keys(RES), supports_marks: false, supports_timescale_marks: false, supports_time: true, exchanges: [{ value: 'splice.fun', name: 'splice.fun', desc: 'Uniswap v4 on Ethereum' }], symbols_types: [{ name: 'crypto', value: 'crypto' }] }), 0); },
     searchSymbols(q, ex, type, cb) { cb([{ symbol: symName(), full_name: 'splice.fun:' + symName(), description: X ? X.name : '', exchange: 'splice.fun', ticker: symName(), type: 'crypto' }]); },
     resolveSymbol(name, ok) {
       mode = /·MCAP/.test(name) ? 'mcap' : 'price'; unit = /·ETH/.test(name) ? 'ETH' : 'USD';

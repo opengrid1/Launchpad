@@ -120,7 +120,7 @@
       <div class="coin-bar">
         ${avatar(c)}
         <div class="cb-id"><h1>${esc(c.name)} <small>$${esc(c.symbol)}</small></h1>
-          <div class="cb-meta"><span class="spec tagline">${esc(c.spec)} · seq. block ${c.launchBlock.toLocaleString('en-US')}</span><button class="btn ghost sm" id="copyaddr"><span class="mono">${short(c.addr)}</span></button><a class="btn ghost sm" href="${addrLink(c.addr)}" target="_blank" rel="noopener">Basescan ↗</a>${soc}</div>
+          <div class="cb-meta"><span class="spec tagline">${esc(c.spec)} · seq. block ${c.launchBlock.toLocaleString('en-US')}</span><button class="btn ghost sm" id="copyaddr"><span class="mono">${short(c.addr)}</span></button><a class="btn ghost sm" href="${addrLink(c.addr)}" target="_blank" rel="noopener">Etherscan ↗</a>${soc}</div>
         </div>
         <div class="cb-helix">${helix(c.genes, { w: 150, h: 48 })}</div>
         <div class="px"><b class="num" data-price>${usd(c.price, { compact: false })}</b><span data-pxdelta>${delta(c.c24)}</span></div>
@@ -131,7 +131,7 @@
         <div class="stat-key"><span>Liquidity</span><b>${usd(c.liq)}</b><small>locked</small></div>
         <div class="stat-key"><span>Volume 24h</span><b class="num" data-vol>${usd(c.vol24)}</b></div>
         <div class="stat-key"><span>Holders</span><b>${num(c.holders, 0)}</b></div>
-        <div class="stat-key"><span>Age</span><b>${ago(c.createdTs)}</b><small>on Base</small></div>
+        <div class="stat-key"><span>Age</span><b>${ago(c.createdTs)}</b><small>on Ethereum</small></div>
       </div>
       <div class="coin-cols">
         <div class="cc-chart"><div class="bigchart" id="chart"></div></div>

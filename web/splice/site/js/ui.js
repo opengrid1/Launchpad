@@ -5,7 +5,7 @@
   const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const CFG = window.SPLICE || {};
-  const EXPLORER = CFG.explorer || 'https://basescan.org';
+  const EXPLORER = CFG.explorer || 'https://etherscan.io';
 
   const P = {
     search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
@@ -124,7 +124,7 @@
     const r = anchor.getBoundingClientRect(); m.style.top = (r.bottom + scrollY + 8) + 'px'; m.style.left = Math.max(12, Math.min(innerWidth - m.offsetWidth - 12, r.right - m.offsetWidth)) + 'px';
     setTimeout(() => document.addEventListener('mousedown', function off(e) { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('mousedown', off); } }), 0); return m; }
   async function copy(text, label) { try { await navigator.clipboard.writeText(text); toast((label || 'Address') + ' copied'); } catch { toast('Copy failed', { err: true }); } }
-  const notLive = () => toast('Preview: launching and trading open when the Splice hook goes live on Base.', {});
+  const notLive = () => toast('Preview: launching and trading open when the Splice hook goes live on Ethereum.', {});
 
   // ------------------------------------------------------------ theme
   function applyTheme(t) { const r = document.documentElement; if (t === 'light' || t === 'dark') r.setAttribute('data-theme', t); else r.removeAttribute('data-theme');
@@ -136,14 +136,14 @@
 
   // ------------------------------------------------------------ wallet button
   function paintWallet() { const w = window.spWallet; $$('[data-connect]').forEach(b => {
-    if (w && w.connected) { const wrong = w.chainId && w.chainId !== (CFG.chainId || 8453); b.classList.remove('accent');
-      b.innerHTML = wrong ? 'Switch to Base' : `<span class="mono">${esc(short(w.address))}</span>`; }
+    if (w && w.connected) { const wrong = w.chainId && w.chainId !== (CFG.chainId || 1); b.classList.remove('accent');
+      b.innerHTML = wrong ? 'Switch to Ethereum' : `<span class="mono">${esc(short(w.address))}</span>`; }
     else { b.classList.add('accent'); b.textContent = 'Connect'; } }); }
   function walletClick(e) { const w = window.spWallet; const b = e.currentTarget;
     if (!w) return notLive();
     if (!w.connected) return w.open ? w.open() : notLive();
-    if (w.chainId && w.chainId !== (CFG.chainId || 8453)) return w.switchChain && w.switchChain();
-    const m = menu(b, `<a href="/portfolio">${ic('wallet')}Portfolio</a><button data-copy>${ic('copy')}Copy address</button><a href="${addrLink(w.address)}" target="_blank" rel="noopener">${ic('ext')}Basescan</a><hr><button data-out>${ic('logout')}Disconnect</button>`);
+    if (w.chainId && w.chainId !== (CFG.chainId || 1)) return w.switchChain && w.switchChain();
+    const m = menu(b, `<a href="/portfolio">${ic('wallet')}Portfolio</a><button data-copy>${ic('copy')}Copy address</button><a href="${addrLink(w.address)}" target="_blank" rel="noopener">${ic('ext')}Etherscan</a><hr><button data-out>${ic('logout')}Disconnect</button>`);
     m.querySelector('[data-copy]').onclick = () => { copy(w.address); m.remove(); };
     m.querySelector('[data-out]').onclick = () => { w.logout && w.logout(); m.remove(); }; }
 
@@ -181,7 +181,7 @@
     document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); } });
     window.addEventListener('sp:wallet', paintWallet);
     if (CFG.prelaunch && !/^\/docs/.test(location.pathname)) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin',
-      `<div class="notice">${ic('info')}<span><b>Preview.</b> Coins, prices and trades here are a deterministic sample, not live chain data. Launching and trading open when the Splice hook goes live on Base.</span></div>`); }
+      `<div class="notice">${ic('info')}<span><b>Preview.</b> Coins, prices and trades here are a deterministic sample, not live chain data. Launching and trading open when the Splice hook goes live on Ethereum.</span></div>`); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
