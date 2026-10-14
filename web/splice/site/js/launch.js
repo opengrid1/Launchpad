@@ -98,7 +98,7 @@
     pick.onclick = () => file.click();
     file.onchange = () => {
       const f = file.files && file.files[0]; if (!f) return;
-      if (f.size > 4 * 1024 * 1024) return toast('Image too large — keep it under 4 MB.', { err: true });
+      if (f.size > 4 * 1024 * 1024) return toast('Image too large. Keep it under 4 MB.', { err: true });
       const rd = new FileReader();
       rd.onload = () => { imgData = rd.result; img.src = imgData; img.hidden = false; ph.hidden = true; pick.classList.add('has'); previewCard(); };
       rd.readAsDataURL(f);

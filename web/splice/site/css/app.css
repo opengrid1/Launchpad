@@ -330,6 +330,13 @@ table.list tbody tr:last-child td { border-bottom: none; }
 .bd-warn { font-size: 11.5px; color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, transparent); border: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line)); border-radius: 4px; padding: 6px 9px; margin: 3px 0 7px; }
 .bd-empty { font-size: 12px; padding: 8px 2px 2px; color: var(--faint); }
 
+/* ---------------- tabbed market panel + pager ---------------- */
+.panel-h.tabsrow { gap: 2px; padding: 6px 10px; }
+.ptab { font-size: 13px; font-weight: 600; padding: 6px 12px; border: none; border-radius: var(--radius-sm); background: none; color: var(--muted); cursor: pointer; transition: .12s; font-family: var(--body); }
+.ptab:hover { color: var(--ink); }
+.ptab.on { color: var(--ink); background: var(--surface-2); }
+.pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding-top: 12px; font-size: 12px; }
+
 /* ---------------- chart ---------------- */
 .chart { display: flex; flex-direction: column; }
 .chart-tabs { display: flex; align-items: center; gap: 2px; padding: 8px 12px 4px; }
@@ -389,11 +396,17 @@ table.list tbody tr:last-child td { border-bottom: none; }
 .menu a:hover, .menu button:hover { background: var(--surface-2); }
 .menu svg { width: 15px; height: 15px; color: var(--muted); } .menu hr { border: none; border-top: 1px solid var(--line); margin: 4px 4px; }
 
-/* ---------------- mobile nav ---------------- */
+/* ---------------- mobile nav: sheet under the header ---------------- */
 .navtoggle { display: none; }
-.navsheet { display: grid; gap: 3px; padding: 10px; }
-.navsheet a { padding: 10px 12px; border-radius: var(--radius-sm); font-weight: 600; }
-.navsheet a:hover { background: var(--surface-2); }
+.navdrop-ov { position: fixed; inset: 0; z-index: 139; background: rgba(2, 4, 6, .55); }
+.navdrop { position: fixed; left: 0; right: 0; z-index: 140; background: var(--surface); border-bottom: 1px solid var(--line-2); padding: 4px 16px 14px; box-shadow: var(--shadow); animation: navdown .16s ease-out; }
+@keyframes navdown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.navdrop nav { display: grid; }
+.navdrop nav a { padding: 13px 2px; font-size: 15px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); }
+.navdrop nav a.on { color: var(--ink); }
+.navdrop nav a:active { color: var(--ink); }
+.navdrop .btn { margin-top: 13px; padding: 11px; }
+@media (prefers-reduced-motion: reduce) { .navdrop { animation: none; } }
 
 @media (max-width: 900px) {
   .launch { grid-template-columns: 1fr; }

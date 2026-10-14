@@ -70,12 +70,12 @@
 
   function rowHtml(c, i) {
     return `<tr data-addr="${c.addr}">
-      <td class="rowidx l">${i + 1}</td>
+      <td class="rowidx l hide-s">${i + 1}</td>
       <td class="l"><span class="tk">${avatar(c, 'sm')}<span class="t"><b>${esc(c.name)} <span class="muted" style="font-weight:500">$${esc(c.symbol)}</span>${badge(c)}</b><small>${esc(c.spec)}</small><span class="tk-genes">${c.genes.map(k => gc(k)).join('')}</span></span></span></td>
       <td class="mono" data-price>${usd(c.price, { compact: false })}</td>
       <td data-delta>${delta(c.c24)}</td>
       <td class="hide-s muted">${ago(c.createdTs)}</td>
-      <td class="mono" data-vol>${usd(c.vol24)}</td>
+      <td class="mono hide-s" data-vol>${usd(c.vol24)}</td>
       <td class="hide-m muted">${usd(c.liq)}</td>
       <td class="mono" data-mc>${usd(c.mc)}</td>
       <td class="hide-m muted">${num(c.holders, 0)}</td>

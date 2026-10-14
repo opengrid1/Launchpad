@@ -124,7 +124,7 @@
     const r = anchor.getBoundingClientRect(); m.style.top = (r.bottom + scrollY + 8) + 'px'; m.style.left = Math.max(12, Math.min(innerWidth - m.offsetWidth - 12, r.right - m.offsetWidth)) + 'px';
     setTimeout(() => document.addEventListener('mousedown', function off(e) { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('mousedown', off); } }), 0); return m; }
   async function copy(text, label) { try { await navigator.clipboard.writeText(text); toast((label || 'Address') + ' copied'); } catch { toast('Copy failed', { err: true }); } }
-  const notLive = () => toast('Preview — launching and trading open when the Splice hook goes live on Base.', {});
+  const notLive = () => toast('Preview: launching and trading open when the Splice hook goes live on Base.', {});
 
   // ------------------------------------------------------------ theme
   function applyTheme(t) { const r = document.documentElement; if (t === 'light' || t === 'dark') r.setAttribute('data-theme', t); else r.removeAttribute('data-theme');
@@ -157,9 +157,20 @@
     inp.oninput = render; render(); setTimeout(() => inp.focus(), 20);
   }
 
-  // ------------------------------------------------------------ mobile nav
-  function openNav() { const links = $$('.nav .navlink').map(a => `<a href="${a.getAttribute('href')}">${a.textContent}</a>`).join('');
-    const ov = dialog('Menu', `<div class="dialog-b navsheet">${links}<a href="/launch" class="btn accent wide" style="margin-top:8px">Splice a coin</a></div>`); return ov; }
+  // ------------------------------------------------------------ mobile nav: a sheet attached under the header
+  function closeNav() { $$('.navdrop, .navdrop-ov').forEach(e => e.remove()); document.removeEventListener('keydown', navKey); }
+  function navKey(e) { if (e.key === 'Escape') closeNav(); }
+  function openNav() {
+    if ($('.navdrop')) return closeNav();
+    const top = ($('.top') ? $('.top').getBoundingClientRect().bottom : 52);
+    const links = $$('.nav .navlink').map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('on') ? 'on' : ''}">${a.textContent}</a>`).join('');
+    const ov = document.createElement('div'); ov.className = 'navdrop-ov'; ov.style.top = top + 'px';
+    const d = document.createElement('div'); d.className = 'navdrop'; d.style.top = top + 'px';
+    d.innerHTML = `<nav>${links}</nav><a href="/launch" class="btn accent wide">+ Launch a coin</a>`;
+    document.body.append(ov, d);
+    ov.onclick = closeNav; d.querySelectorAll('a').forEach(a => a.addEventListener('click', closeNav));
+    document.addEventListener('keydown', navKey);
+  }
 
   function init() {
     initTheme();

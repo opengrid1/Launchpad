@@ -14,7 +14,7 @@ SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
 SITE_URL = os.environ.get('SITE_URL', 'https://splice.fun').rstrip('/')
 X_HANDLE = os.environ.get('X_HANDLE', 'splicefun')
-DESC = 'Launch a coin on Base spliced from composable on-chain genes — anti-snipe, buyback, dividends, MEV-tax, max-wallet, an optional AI agent. One immutable hook, a constitution no gene can break.'
+DESC = 'Launch a coin on Base spliced from composable on-chain genes: anti-snipe, buyback, dividends, MEV-tax, max-wallet, an optional AI agent. One immutable hook, a constitution no gene can break.'
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap'
 NAV = [('explore', '/', 'Explore'), ('launch', '/launch', 'Launch'), ('portfolio', '/portfolio', 'Portfolio'), ('docs', '/docs', 'Docs')]

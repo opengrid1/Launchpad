@@ -33,26 +33,49 @@
       return `<div class="gi"><b>${window.UI.gc(k)}${esc(g.name)} <span class="tag">${esc(g.short)}</span></b><div class="params">${rows}</div><p>${esc(g.desc)}</p></div>`;
     }).join('');
     const core = UD.CONSTITUTION.map(x => `<div class="gi"><b>${esc(x.name)} <span class="tag">always on</span></b><p>${esc(x.desc)}</p></div>`).join('');
-    return `<div class="panel"><div class="panel-h"><h2>Genes</h2><span class="hint">${c.genes.length} spliced in</span></div><div class="panel-b"><div class="genelist">${items}</div><div class="lside-h" style="margin:18px 0 10px">Constitution — the immutable core</div><div class="genelist">${core}</div></div></div>`;
+    return `<div class="panel"><div class="panel-h"><h2>Genes</h2><span class="hint">${c.genes.length} spliced in</span></div><div class="panel-b"><div class="genelist">${items}</div><div class="lside-h" style="margin:18px 0 10px">Constitution: the immutable core</div><div class="genelist">${core}</div></div></div>`;
   }
   const row = (k, v, id) => `<div class="prow"><span>${esc(k)}</span><b${id ? ` data-${id}` : ''}>${esc(v)}</b></div>`;
 
-  // ---------- holders ----------
-  function holderBlock(c) {
-    const h = UD.holders(c.addr);
-    const seg = (w, cls, label) => w > 0.3 ? `<span class="hseg ${cls}" style="width:${w}%" title="${label}"></span>` : '';
-    return `<div class="panel"><div class="panel-h"><h2>Holders</h2><span class="hint">${num(h.total, 0)} · preview</span></div><div class="panel-b">
-      <div class="hbar">${seg(h.top1, 's1', 'Top holder ' + h.top1 + '%')}${seg(h.top10 - h.top1, 's2', 'Next 9 ' + (h.top10 - h.top1).toFixed(1) + '%')}${seg(h.others, 's3', 'Everyone else ' + h.others + '%')}${seg(h.lp, 's4', 'Locked LP ' + h.lp + '%')}</div>
-      <div class="hlegend"><span><i class="s1"></i>Top ${h.top1}%</span><span><i class="s2"></i>Top 10 ${h.top10}%</span><span><i class="s3"></i>Others ${h.others}%</span><span><i class="s4"></i>Locked LP ${h.lp}%</span></div>
-      <div class="table-wrap"><table class="list"><thead><tr><th class="l">Wallet</th><th>Share</th></tr></thead><tbody>${h.list.map(x => `<tr><td class="l mono"><a href="${addrLink(x.addr)}" target="_blank" rel="noopener">${short(x.addr)}</a>${x.tag ? ` <span class="tag">${x.tag}</span>` : ''}</td><td class="num">${x.pct}%</td></tr>`).join('')}</tbody></table></div>
-    </div></div>`;
+  // ---------- trades + holders: tabbed, paginated (per page, like a real venue) ----------
+  const PER = 10;
+  let mTab = 'trades', mPage = 1;
+  function marketBlock() {
+    return `<div class="panel"><div class="panel-h tabsrow">
+      <button class="ptab ${mTab === 'trades' ? 'on' : ''}" data-pt="trades">Trades</button>
+      <button class="ptab ${mTab === 'holders' ? 'on' : ''}" data-pt="holders">Holders</button>
+      <span class="hint" id="pt-hint"></span></div>
+      <div class="panel-b" id="pt-body"></div></div>`;
   }
-
-  // ---------- trades ----------
-  function tradesBlock(c) {
-    const t = UD.trades(c.addr, 16);
-    const rows = t.map(x => `<tr><td class="l"><span class="ev ${x.buy ? 'buy' : 'sell'}"><i></i>${x.buy ? 'Buy' : 'Sell'}</span></td><td class="mono num">${x.eth} ETH</td><td class="num">${usd(x.usd)}</td><td class="num">${num(x.tokens, 0)}</td><td class="l mono"><a href="${addrLink(x.maker)}" target="_blank" rel="noopener">${short(x.maker)}</a></td><td class="faint">${ago(x.ts)}</td></tr>`).join('');
-    return `<div class="panel"><div class="panel-h"><h2>Trades</h2><span class="hint">preview</span></div><div class="panel-b"><div class="table-wrap"><table class="list"><thead><tr><th class="l">Type</th><th>ETH</th><th>USD</th><th>Tokens</th><th class="l">Maker</th><th>Age</th></tr></thead><tbody id="tradesbody">${rows}</tbody></table></div></div></div>`;
+  function pager(page, pages) {
+    return `<div class="pager"><button class="btn ghost sm" data-pg="-1" ${page <= 1 ? 'disabled' : ''}>‹ Prev</button><span class="faint num">Page ${page} / ${pages}</span><button class="btn ghost sm" data-pg="1" ${page >= pages ? 'disabled' : ''}>Next ›</button></div>`;
+  }
+  function marketBody(c) {
+    const body = $('#pt-body'); if (!body) return;
+    if (mTab === 'trades') {
+      const all = UD.trades(c.addr, 60);
+      const pages = Math.max(1, Math.ceil(all.length / PER));
+      mPage = Math.min(mPage, pages);
+      const t = all.slice((mPage - 1) * PER, mPage * PER);
+      $('#pt-hint').textContent = all.length + ' trades · preview';
+      body.innerHTML = `<div class="table-wrap"><table class="list"><thead><tr><th class="l">Type</th><th>ETH</th><th>USD</th><th>Tokens</th><th class="l">Maker</th><th>Age</th></tr></thead><tbody>${t.map(x => `<tr><td class="l"><span class="ev ${x.buy ? 'buy' : 'sell'}"><i></i>${x.buy ? 'Buy' : 'Sell'}</span></td><td class="mono num">${x.eth} ETH</td><td class="num">${usd(x.usd)}</td><td class="num">${num(x.tokens, 0)}</td><td class="l mono"><a href="${addrLink(x.maker)}" target="_blank" rel="noopener">${short(x.maker)}</a></td><td class="faint">${ago(x.ts)}</td></tr>`).join('')}</tbody></table></div>${pager(mPage, pages)}`;
+    } else {
+      const h = UD.holders(c.addr);
+      const pages = Math.max(1, Math.ceil(h.list.length / PER));
+      mPage = Math.min(mPage, pages);
+      const rows = h.list.slice((mPage - 1) * PER, mPage * PER);
+      $('#pt-hint').textContent = num(h.total, 0) + ' holders · preview';
+      const seg = (w, cls, label) => w > 0.3 ? `<span class="hseg ${cls}" style="width:${w}%" title="${label}"></span>` : '';
+      body.innerHTML = `
+        <div class="hbar">${seg(h.top1, 's1', 'Top holder ' + h.top1 + '%')}${seg(h.top10 - h.top1, 's2', 'Next 9 ' + (h.top10 - h.top1).toFixed(1) + '%')}${seg(h.others, 's3', 'Everyone else ' + h.others + '%')}${seg(h.lp, 's4', 'Locked LP ' + h.lp + '%')}</div>
+        <div class="hlegend"><span><i class="s1"></i>Top ${h.top1}%</span><span><i class="s2"></i>Top 10 ${h.top10}%</span><span><i class="s3"></i>Others ${h.others}%</span><span><i class="s4"></i>Locked LP ${h.lp}%</span></div>
+        <div class="table-wrap"><table class="list"><thead><tr><th class="l">#</th><th class="l">Wallet</th><th>Share</th></tr></thead><tbody>${rows.map((x, i) => `<tr><td class="l faint num">${(mPage - 1) * PER + i + 1}</td><td class="l mono"><a href="${addrLink(x.addr)}" target="_blank" rel="noopener">${short(x.addr)}</a>${x.tag ? ` <span class="tag">${x.tag}</span>` : ''}</td><td class="num">${x.pct}%</td></tr>`).join('')}</tbody></table></div>${pager(mPage, pages)}`;
+    }
+    $$('#pt-body [data-pg]').forEach(b => b.onclick = () => { mPage += +b.dataset.pg; marketBody(c); });
+  }
+  function bindMarket(c) {
+    $$('.ptab').forEach(b => b.onclick = () => { mTab = b.dataset.pt; mPage = 1; $$('.ptab').forEach(x => x.classList.toggle('on', x === b)); marketBody(c); });
+    marketBody(c);
   }
 
   // ---------- order ticket ----------
@@ -78,7 +101,7 @@
     el.innerHTML = `<div class="bd">
       <div class="bd-top"><span>${side === 'buy' ? 'You get' : 'You receive'}</span><b class="mono">${side === 'buy' ? num(q.tokens, 0) + ' $' + esc(c.symbol) : eth(q.afterFee)}</b></div>
       ${q.clamped ? `<div class="bd-warn">Max-wallet caps this buy at ${num(q.clamped, 0)} $${esc(c.symbol)} (${c.params.maxw.pct}% of supply) while protection is on.</div>` : ''}
-      <div class="bd-h">Fee this trade — total ${(q.totalBps / 100).toFixed(2)}%</div>
+      <div class="bd-h">Fee this trade: total ${(q.totalBps / 100).toFixed(2)}%</div>
       ${q.parts.map(line).join('')}
     </div>`;
   }
@@ -86,7 +109,7 @@
   // ---------- render ----------
   // TradingView owns the chart; realtime bars stream via tv.js
   function render(c) {
-    document.title = `${c.name} ($${c.symbol}) — Splice`;
+    document.title = `${c.name} ($${c.symbol}) · Splice`;
     const soc = [
       `<a class="btn ghost sm" href="https://x.com/${esc(c.socials.x)}" target="_blank" rel="noopener">X ↗</a>`,
       c.socials.tg ? `<a class="btn ghost sm" href="https://t.me/${esc(c.socials.tg)}" target="_blank" rel="noopener">Telegram ↗</a>` : '',
@@ -115,8 +138,7 @@
         <div class="cc-side">${ticket(c)}</div>
         <div class="cc-rest">
           ${geneParamBlock(c)}
-          ${holderBlock(c)}
-          ${tradesBlock(c)}
+          ${marketBlock()}
         </div>
       </div>`;
 
@@ -124,6 +146,7 @@
     // the real TradingView terminal; waits for the standalone library if it is still loading
     const mountTV = () => { if (window.TradingView && window.spTV) spTV.init($('#chart'), c); else setTimeout(mountTV, 120); };
     mountTV();
+    bindMarket(c);
     bindTicket(c);
     UD.subscribe(ev => { if (ev.type === 'tick') onTick(c); });
   }

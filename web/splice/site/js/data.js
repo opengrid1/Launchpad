@@ -26,11 +26,11 @@
     snipe:   { key: 'snipe',   name: 'Anti-snipe',     cls: 'g-snipe',   short: 'decaying launch tax',
                desc: 'An extra tax on the first minutes of trading that decays block by block back to the base fee. Bots that pile into block zero pay it to every holder; by the time real buyers arrive it is gone.' },
     buyback: { key: 'buyback', name: 'Reflexive buyback', cls: 'g-buyback', short: 'fee-funded buy & burn',
-               desc: 'A slice of every fee accumulates and, past a threshold, market-buys the coin from its own pool and burns it. Volume tightens supply with no team discretion — the hook does it in the swap path.' },
+               desc: 'A slice of every fee accumulates and, past a threshold, market-buys the coin from its own pool and burns it. Volume tightens supply with no team discretion; the hook does it in the swap path.' },
     div:     { key: 'div',     name: 'Dividends',      cls: 'g-div',     short: 'fees paid to holders',
-               desc: 'Routes a share of fees back to holders pro-rata, claimable in ETH. No rebase, no transfer-tax games — the pool collects, the hook splits, holders claim.' },
+               desc: 'Routes a share of fees back to holders pro-rata, claimable in ETH. No rebase and no transfer-tax games: the pool collects, the hook splits, holders claim.' },
     maxw:    { key: 'maxw',    name: 'Max-wallet',     cls: 'g-maxw',    short: 'anti-whale cap',
-               desc: 'Caps how much any one wallet can hold for an opening window, then lifts. Keeps a single buyer from owning the launch before a community forms. A rule the hook can only loosen, never tighten — holders know the worst case at launch.' },
+               desc: 'Caps how much any one wallet can hold for an opening window, then lifts. Keeps a single buyer from owning the launch before a community forms. A rule the hook can only loosen, never tighten, so holders know the worst case at launch.' },
     agent:   { key: 'agent',   name: 'AI agent',       cls: 'g-agent',   short: 'post-quantum signed', phase: 2,
                desc: 'An optional off-chain agent proposes fee and buyback parameters within the constitution; the hook reads them read-only and clamps them. Agent instructions are authorised by a hash-based, post-quantum signature scheme, so the coin keeps running even against a quantum adversary.' },
   };
@@ -190,14 +190,17 @@
     const c = byAddr[addr.toLowerCase()]; if (!c) return null;
     const r = mulberry(c._seed ^ 0x484f4c44);
     const capPct = c.params.maxw ? c.params.maxw.pct : 100;
-    const list = []; let remaining = 92;         // ~8% sits in the locked LP position
+    let remaining = 92;                          // ~8% sits in the locked LP position
     const top = [];
-    for (let i = 0; i < 8; i++) {
-      let pct = (c.params.maxw && c.protected) ? Math.min(capPct, 0.3 + r() * capPct) : (i === 0 ? 1 + r() * 6 : 0.3 + r() * 3);
-      pct = Math.min(pct, remaining * 0.6); remaining -= pct;
+    const n = Math.min(40, Math.max(12, Math.round(c.holders / 40)));
+    for (let i = 0; i < n; i++) {
+      let pct = (c.params.maxw && c.protected) ? Math.min(capPct, 0.3 + r() * capPct)
+        : i === 0 ? 1 + r() * 6 : i < 10 ? 0.3 + r() * 3 : 0.04 + r() * 0.5;
+      pct = Math.min(pct, remaining * 0.5); remaining -= pct;
       top.push({ addr: addrFrom(r), pct: +pct.toFixed(2), tag: i === 0 ? 'creator' : '' });
     }
-    const top10 = top.reduce((a, b) => a + b.pct, 0);
+    top.sort((a, b) => b.pct - a.pct);
+    const top10 = top.slice(0, 10).reduce((a, b) => a + b.pct, 0);
     return { lp: 8, top1: top[0].pct, top10: +top10.toFixed(1), others: +(100 - 8 - top10).toFixed(1), list: top, total: c.holders, capPct };
   }
 
