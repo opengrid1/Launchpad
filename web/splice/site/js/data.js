@@ -1,8 +1,8 @@
-/* Splice data layer + a deterministic market simulation.
+/* Instinct data layer + a deterministic market simulation.
 
    There are no contracts yet, so every coin here is a believable PREVIEW generated from a seed —
    not live chain data. A shared clock (UD.subscribe) walks prices, streams trades and accrues
-   gene pools so the whole site breathes; it is seeded and reduced-motion aware. When the Splice
+   gene pools so the whole site breathes; it is seeded and reduced-motion aware. When the Instinct
    hook goes live this module is swapped for one that reads the chain and emits the same events,
    so nothing else on the site changes.
 
@@ -38,7 +38,7 @@
 
   const CONSTITUTION = [
     { name: 'Anti-sandwich', desc: 'One swap per address per block, enforced by the core. Sandwich attacks are prevented at the base, not taxed after the fact.' },
-    { name: 'Fee ceiling',   desc: 'No gene can push the total fee past the hard cap. Every fee result is clamped at the source.' },
+    { name: 'Fee ceiling',   desc: 'No instinct can push the total fee past the hard cap. Every fee result is clamped at the source.' },
     { name: 'Sells never block', desc: 'The hook can read a sell but can never revert one. No honeypots, no pausing, no blacklist.' },
     { name: 'Locked liquidity', desc: 'Launch liquidity is minted to a locker and can never be pulled. Only fees are ever collected.' },
     { name: 'No owner, no mint', desc: 'The token is fixed-supply, ownerless, with no mint, no pause and no transfer tax. Mechanics live in the pool, not the coin.' },
@@ -92,7 +92,7 @@
     const price = mc / 1e9;
     const params = geneParams(r, genes, mc);
     const c = {
-      id: idx + 1, spec: 'SPL-' + String(idx + 1).padStart(3, '0'),
+      id: idx + 1, spec: 'INS-' + String(idx + 1).padStart(3, '0'),
       addr: addrFrom(r), name, symbol, color, dir,
       pair: { symbol: 'ETH', logo: '/img/eth.svg' },
       price, price0: price, mc, fdv: mc, c24,

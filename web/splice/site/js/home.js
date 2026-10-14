@@ -44,7 +44,7 @@
     { k: 'liq', l: 'Liquidity', sort: 'liq', hide: 'hide-m' },
     { k: 'mc', l: 'Mcap', sort: 'mc' },
     { k: 'holders', l: 'Holders', sort: 'holders', hide: 'hide-m' },
-    { k: 'genes', l: 'Genes', cls: 'l', sort: null, hide: 'hide-s' },
+    { k: 'genes', l: 'Instincts', cls: 'l', sort: null, hide: 'hide-s' },
   ];
   let sortKey = 'trend', sortDir = -1;
   const genes = new Set();
@@ -103,7 +103,7 @@
   }
 
   function genefilter() {
-    $('#genefilter').innerHTML = `<button class="gchip ${genes.size ? '' : 'on'}" data-g="all">All genes</button>` +
+    $('#genefilter').innerHTML = `<button class="gchip ${genes.size ? '' : 'on'}" data-g="all">All instincts</button>` +
       UD.GENE_ORDER.map(k => { const gd = UD.GENES[k]; return `<button class="gchip ${genes.has(k) ? 'on' : ''}" data-g="${k}">${gc(k)}${esc(gd.name)}</button>`; }).join('');
     $$('#genefilter .gchip').forEach(b => b.onclick = () => { const k = b.dataset.g; if (k === 'all') genes.clear(); else genes.has(k) ? genes.delete(k) : genes.add(k); genefilter(); board(); });
   }

@@ -1,4 +1,4 @@
-/* Splice shell: formatting, gene chips, the DNA helix, sparklines, animated numbers, theme + mobile
+/* Instinct shell: formatting, gene chips, the DNA helix, sparklines, animated numbers, theme + mobile
    nav, search, wallet button, toasts, dialogs. Every page uses window.UI; data comes from window.UD. */
 (function () {
   const $ = (s, r) => (r || document).querySelector(s);
@@ -124,7 +124,7 @@
     const r = anchor.getBoundingClientRect(); m.style.top = (r.bottom + scrollY + 8) + 'px'; m.style.left = Math.max(12, Math.min(innerWidth - m.offsetWidth - 12, r.right - m.offsetWidth)) + 'px';
     setTimeout(() => document.addEventListener('mousedown', function off(e) { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('mousedown', off); } }), 0); return m; }
   async function copy(text, label) { try { await navigator.clipboard.writeText(text); toast((label || 'Address') + ' copied'); } catch { toast('Copy failed', { err: true }); } }
-  const notLive = () => toast('Preview: launching and trading open when the Splice hook goes live on Ethereum.', {});
+  const notLive = () => toast('Preview: launching and trading open when the Instinct hook goes live on Ethereum.', {});
 
   // ------------------------------------------------------------ theme
   function applyTheme(t) { const r = document.documentElement; if (t === 'light' || t === 'dark') r.setAttribute('data-theme', t); else r.removeAttribute('data-theme');
@@ -181,7 +181,7 @@
     document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); } });
     window.addEventListener('sp:wallet', paintWallet);
     if (CFG.prelaunch && !/^\/docs/.test(location.pathname)) { const pg = $('#page'); if (pg) pg.insertAdjacentHTML('afterbegin',
-      `<div class="notice">${ic('info')}<span><b>Preview.</b> Coins, prices and trades here are a deterministic sample, not live chain data. Launching and trading open when the Splice hook goes live on Ethereum.</span></div>`); }
+      `<div class="notice">${ic('info')}<span><b>Preview.</b> Coins, prices and trades here are a deterministic sample, not live chain data. Launching and trading open when the Instinct hook goes live on Ethereum.</span></div>`); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 

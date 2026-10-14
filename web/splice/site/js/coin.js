@@ -33,7 +33,7 @@
       return `<div class="gi"><b>${window.UI.gc(k)}${esc(g.name)} <span class="tag">${esc(g.short)}</span></b><div class="params">${rows}</div><p>${esc(g.desc)}</p></div>`;
     }).join('');
     const core = UD.CONSTITUTION.map(x => `<div class="gi"><b>${esc(x.name)} <span class="tag">always on</span></b><p>${esc(x.desc)}</p></div>`).join('');
-    return `<div class="panel"><div class="panel-h"><h2>Genes</h2><span class="hint">${c.genes.length} spliced in</span></div><div class="panel-b"><div class="genelist">${items}</div><div class="lside-h" style="margin:18px 0 10px">Constitution: the immutable core</div><div class="genelist">${core}</div></div></div>`;
+    return `<div class="panel"><div class="panel-h"><h2>Instincts</h2><span class="hint">${c.genes.length} built in</span></div><div class="panel-b"><div class="genelist">${items}</div><div class="lside-h" style="margin:18px 0 10px">Constitution: the immutable core</div><div class="genelist">${core}</div></div></div>`;
   }
   const row = (k, v, id) => `<div class="prow"><span>${esc(k)}</span><b${id ? ` data-${id}` : ''}>${esc(v)}</b></div>`;
 
@@ -109,7 +109,7 @@
   // ---------- render ----------
   // TradingView owns the chart; realtime bars stream via tv.js
   function render(c) {
-    document.title = `${c.name} ($${c.symbol}) · Splice`;
+    document.title = `${c.name} ($${c.symbol}) · Instinct`;
     const soc = [
       `<a class="btn ghost sm" href="https://x.com/${esc(c.socials.x)}" target="_blank" rel="noopener">X ↗</a>`,
       c.socials.tg ? `<a class="btn ghost sm" href="https://t.me/${esc(c.socials.tg)}" target="_blank" rel="noopener">Telegram ↗</a>` : '',

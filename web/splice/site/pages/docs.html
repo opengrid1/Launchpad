@@ -1,27 +1,27 @@
-<!--{"title": "How Splice works · Splice", "nav": "docs", "scripts": ["docs.js"]}-->
+<!--{"title": "How Instinct works · Instinct", "nav": "docs", "scripts": ["docs.js"]}-->
 <article class="doc">
-  <h1>How Splice works</h1>
-  <p class="lead">Splice is a launchpad on Ethereum. Every coin is spliced from composable on-chain mechanics called <b>genes</b>, and they live in one immutable Uniswap&nbsp;v4 hook. The hook enforces a constitution no coin can break; each launch then chooses which optional genes to carry.</p>
+  <h1>How Instinct works</h1>
+  <p class="lead">Instinct is a launchpad on Ethereum. Every coin is born with composable on-chain behaviours called <b>instincts</b>, and they live in one immutable Uniswap&nbsp;v4 hook. The hook enforces a constitution no coin can break; each launch then chooses which instincts to carry.</p>
 
   <h2>One hook, not one contract per idea</h2>
-  <p>Most launchpads ship a single fixed mechanic. Splice ships one audited hook that supports every mechanic as a per-coin option. A creator picks genes at launch; the hook reads them and clamps them to constitutional bounds in the swap path. Nothing about the safety core is upgradeable. The only choice is which genes a coin turns on.</p>
+  <p>Most launchpads ship a single fixed mechanic. Instinct ships one audited hook that supports every mechanic as a per-coin option. A creator picks instincts at launch; the hook reads them and clamps them to constitutional bounds in the swap path. Nothing about the safety core is upgradeable. The only choice is which instincts a coin turns on.</p>
 
   <h2 id="constitution">The constitution (always on)</h2>
-  <p>These hold for every coin, regardless of which genes it carries. No gene can switch them off.</p>
+  <p>These hold for every coin, regardless of which instincts it carries. No instinct can switch them off.</p>
   <div class="genelist" id="core"></div>
 
-  <h2 id="genes">The genes (pick per coin)</h2>
-  <p>Optional mechanics a launch can splice in. Each is read-only to the hook and bounded by the constitution.</p>
+  <h2 id="genes">The instincts (pick per coin)</h2>
+  <p>Optional behaviours a launch can build in. Each is read-only to the hook and bounded by the constitution.</p>
   <div class="genelist" id="genes-list"></div>
 
   <h2>The coin itself</h2>
-  <p>The token is a plain fixed-supply ERC-20: one billion units, minted once, <b>no owner, no mint, no pause, no transfer tax, no blacklist</b>. All market mechanics live in the pool hook, never in the coin. The coin can only enter or leave the pool as part of a swap in its own pool or through Splice’s own contracts, so nobody can stand up a shadow market for it, and the launch block only lets the creator’s first buy through so it can’t be sniped.</p>
+  <p>The token is a plain fixed-supply ERC-20: one billion units, minted once, <b>no owner, no mint, no pause, no transfer tax, no blacklist</b>. All market mechanics live in the pool hook, never in the coin. The coin can only enter or leave the pool as part of a swap in its own pool or through Instinct’s own contracts, so nobody can stand up a shadow market for it, and the launch block only lets the creator’s first buy through so it can’t be sniped.</p>
 
   <h2>Fees</h2>
-  <p>The fee gene sets the swap fee, clamped to a hard ceiling. By default it is a flat ~1%, split <b>60% to the creator, 40% to the platform</b>. A coin can instead carry dynamic or MEV-tax fees, and route part of its fees into a reflexive buyback or to holders as dividends.</p>
+  <p>The fee instinct sets the swap fee, clamped to a hard ceiling. By default it is a flat ~1%, split <b>60% to the creator, 40% to the platform</b>. A coin can instead carry dynamic or MEV-tax fees, and route part of its fees into a reflexive buyback or to holders as dividends.</p>
 
   <h2>Liquidity</h2>
   <p>Launch liquidity is paired with ETH and minted to a locker. It can never be pulled; only fees are ever collected. There is no bonding curve and no migration step: a coin trades in a real v4 pool from block zero.</p>
 
-  <p class="faint" style="margin-top:40px">Splice is in preview. Contracts, addresses and audits are published here before anything goes live on Ethereum.</p>
+  <p class="faint" style="margin-top:40px">Instinct is in preview. Contracts, addresses and audits are published here before anything goes live on Ethereum.</p>
 </article>
