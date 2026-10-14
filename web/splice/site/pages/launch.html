@@ -1,4 +1,8 @@
 <!--{"title": "Splice a coin — Splice", "nav": "launch", "scripts": ["launch.js"]}-->
+<div class="launchhead">
+  <h1>Splice a coin</h1>
+  <p class="muted">Compose your coin’s on-chain DNA. Toggle a gene to add it, then tune its parameters — the helix lights up and the preview updates live. One immutable hook enforces a constitution none of it can break.</p>
+</div>
 <div class="launch">
   <div>
     <div class="panel">
@@ -6,16 +10,17 @@
       <div class="panel-b">
         <div class="row2">
           <div class="field"><label class="lbl" for="f-name">Name</label><input class="input" id="f-name" placeholder="Helix" maxlength="32" autocomplete="off"></div>
-          <div class="field"><label class="lbl" for="f-sym">Ticker</label><input class="input" id="f-sym" placeholder="HELIX" maxlength="10" autocomplete="off"></div>
+          <div class="field"><label class="lbl" for="f-sym">Ticker</label><input class="input mono" id="f-sym" placeholder="HELIX" maxlength="10" autocomplete="off"></div>
         </div>
-        <div class="field"><label class="lbl" for="f-desc">Description</label><textarea class="input" id="f-desc" placeholder="What is this coin?" maxlength="280"></textarea></div>
+        <div class="field"><label class="lbl" for="f-desc">Description <span class="faint" id="desc-count">0/280</span></label><textarea class="input" id="f-desc" placeholder="What is this coin?" maxlength="280"></textarea></div>
         <div class="field"><label class="lbl" for="f-img">Image URL</label><input class="input mono" id="f-img" placeholder="https://… (optional)" autocomplete="off"></div>
       </div>
     </div>
 
     <div class="panel">
-      <div class="panel-h"><span class="no">2</span><h2>Genes</h2><span class="hint">pick the mechanics your coin carries</span></div>
+      <div class="panel-h"><span class="no">2</span><h2>Genes</h2><span class="hint">toggle, then tune</span></div>
       <div class="panel-b">
+        <div class="recipes" id="recipes"></div>
         <div class="genepick" id="genepick"></div>
       </div>
     </div>
@@ -30,18 +35,19 @@
 
   <aside class="lside">
     <div class="panel">
-      <div class="panel-h"><h2 id="pv-name">Your coin</h2></div>
+      <div class="panel-h"><h2>Live preview</h2><span class="hint">how it lands on the board</span></div>
       <div class="panel-b">
-        <div class="facts" style="margin-bottom:16px">
+        <div class="helixwrap" id="helixwrap"></div>
+        <div id="preview-card"></div>
+        <div class="facts" style="margin:16px 0">
           <div><span>Supply</span><b>1,000,000,000</b></div>
           <div><span>Pair</span><b>ETH · Base</b></div>
-          <div><span>Fee</span><b>~1%</b></div>
-          <div><span>Fee split</span><b id="pv-split">60 / 40</b></div>
+          <div><span>Fee</span><b id="pv-fee">~1%</b></div>
+          <div><span>Genes</span><b id="pv-genecount">1</b></div>
         </div>
-        <div class="lside-h">Genes spliced in</div>
-        <div class="genes" id="pv-genes" style="margin-bottom:16px"><span class="faint" style="font-size:13px">None yet — the constitution still applies.</span></div>
-        <div class="lside-h">Always on (constitution)</div>
-        <div class="genes" id="pv-core" style="margin-bottom:18px"></div>
+        <div class="splitbar-wrap"><div class="lside-h">Fee split</div><div class="splitbar"><span class="s-creator" style="width:60%">Creator 60%</span><span class="s-platform" style="width:40%">Platform 40%</span></div></div>
+        <div class="lside-h" style="margin-top:16px">Always on (constitution)</div>
+        <div class="genes" id="pv-core" style="margin-bottom:16px"></div>
         <button class="btn accent wide lg" id="launch-btn">Splice it</button>
         <p class="faint" style="font-size:12px;margin:12px 0 0;text-align:center">No owner, no mint, locked liquidity. The hook is immutable.</p>
       </div>

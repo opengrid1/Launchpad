@@ -30,6 +30,7 @@ X_GLYPH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor"
 ETH_GLYPH = '<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M5 0 0 8.1 5 11l5-2.9z" fill="currentColor" opacity=".55"/><path d="M5 12 0 9.1 5 16l5-6.9z" fill="currentColor"/></svg>'
 ICON = {
     'search': '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    'menu': '<path d="M3 12h18M3 6h18M3 18h18"/>',
 }
 
 
@@ -96,8 +97,10 @@ def shell(meta, body):
     <nav class="nav" aria-label="Main">{links}</nav>
     <div class="top-r">
       <button class="iconbtn" data-search aria-label="Search coins">{ic("search")}</button>
+      <button class="iconbtn" data-theme-btn aria-label="Toggle theme"></button>
       {x_link}
       <button class="btn accent connect" data-connect>Connect</button>
+      <button class="iconbtn navtoggle" data-nav-btn aria-label="Menu">{ic("menu")}</button>
     </div>
   </div>
 </header>

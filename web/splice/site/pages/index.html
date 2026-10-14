@@ -8,15 +8,19 @@
   </div>
 </section>
 
+<div class="statstrip" id="stats"></div>
+
 <div class="tape-wrap" id="tape"></div>
 
 <div class="sectionhead">
   <h2>Coins</h2>
-  <div class="sorts" id="sorts">
-    <button class="sort on" data-sort="vol24">Volume</button>
-    <button class="sort" data-sort="createdTs">New</button>
-    <button class="sort" data-sort="mc">Market cap</button>
-    <button class="sort" data-sort="c24">Gainers</button>
+  <div class="sorts" id="tabs">
+    <button class="sort on" data-tab="trending">Trending</button>
+    <button class="sort" data-tab="new">New</button>
+    <button class="sort" data-tab="mc">Market cap</button>
+    <button class="sort" data-tab="gainers">Gainers</button>
   </div>
 </div>
+<div class="generail" id="genefilter"></div>
 <div class="grid" id="grid"></div>
+<div class="empty" id="noresult" hidden><h3>No coins with those genes</h3><p>Clear a filter to see more.</p></div>
