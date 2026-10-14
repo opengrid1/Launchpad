@@ -35,12 +35,12 @@
 
   // ---------------- the board ----------------
   const COLS = [
-    { k: 'idx', l: '#', cls: 'rowidx l', sort: null },
+    { k: 'idx', l: '#', cls: 'rowidx l', sort: null, hide: 'hide-s' },
     { k: 'name', l: 'Token', cls: 'l', sort: 'name' },
     { k: 'price', l: 'Price', sort: 'price' },
     { k: 'c24', l: '24h %', sort: 'c24' },
     { k: 'ageHrs', l: 'Age', sort: 'ageHrs', hide: 'hide-s' },
-    { k: 'vol24', l: 'Volume', sort: 'vol24' },
+    { k: 'vol24', l: 'Volume', sort: 'vol24', hide: 'hide-s' },
     { k: 'liq', l: 'Liquidity', sort: 'liq', hide: 'hide-m' },
     { k: 'mc', l: 'Mcap', sort: 'mc' },
     { k: 'holders', l: 'Holders', sort: 'holders', hide: 'hide-m' },
@@ -71,7 +71,7 @@
   function rowHtml(c, i) {
     return `<tr data-addr="${c.addr}">
       <td class="rowidx l">${i + 1}</td>
-      <td class="l"><span class="tk">${avatar(c, 'sm')}<span class="t"><b>${esc(c.name)} <span class="muted" style="font-weight:500">$${esc(c.symbol)}</span>${badge(c)}</b><small>${esc(c.spec)}</small></span></span></td>
+      <td class="l"><span class="tk">${avatar(c, 'sm')}<span class="t"><b>${esc(c.name)} <span class="muted" style="font-weight:500">$${esc(c.symbol)}</span>${badge(c)}</b><small>${esc(c.spec)}</small><span class="tk-genes">${c.genes.map(k => gc(k)).join('')}</span></span></span></td>
       <td class="mono" data-price>${usd(c.price, { compact: false })}</td>
       <td data-delta>${delta(c.c24)}</td>
       <td class="hide-s muted">${ago(c.createdTs)}</td>

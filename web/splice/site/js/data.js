@@ -150,6 +150,41 @@
     return series;
   }
 
+  // ---- TradingView bars: any resolution in seconds, continuous from launch, <=3000 candles ----
+  const barCache = {};
+  function bars(addr, sec) {
+    const c = byAddr[(addr || '').toLowerCase()]; if (!c) return [];
+    const key = addr + ':' + sec;
+    if (!barCache[key]) {
+      const nowS = Math.floor(Date.now() / 1000);
+      const start = Math.floor(c.createdTs / sec) * sec;
+      const end = Math.floor(nowS / sec) * sec;
+      const first = Math.max(start, end - 2999 * sec);
+      const n = Math.max(1, Math.round((end - first) / sec) + 1);
+      const r = mulberry((c._seed ^ Math.imul(sec, 2654435761)) >>> 0);
+      const vols = sec >= 86400 ? 0.1 : sec >= 3600 ? 0.05 : sec >= 300 ? 0.025 : 0.015;
+      const closes = []; let w = 1;
+      for (let i = 0; i < n; i++) { w *= 1 + (r() - 0.485) * vols; closes.push(w); }
+      const windowDays = (end - first) / 86400;
+      const drift = 1 - (c.c24 / 100) * Math.min(1.4, Math.max(0.05, windowDays));
+      const lo = Math.min(...closes), hi = Math.max(...closes);
+      const base = c.price * Math.max(0.05, drift), top = c.price;
+      const norm = closes.map(x => (x - lo) / (hi - lo || 1));
+      const mapped = norm.map(x => base + (top - base) * x);
+      const out = []; const volBar = c.vol24 * sec / 86400;
+      for (let i = 1; i < n; i++) {
+        const o = mapped[i - 1], cl = mapped[i];
+        const wick = Math.abs(cl - o) * (0.5 + r() * 1.4) + c.price * 0.002;
+        out.push({ time: first + i * sec, open: o, close: cl, high: Math.max(o, cl) + wick * r(), low: Math.max(1e-12, Math.min(o, cl) - wick * r()), volume: Math.round(volBar * (0.2 + r() * 1.8)) });
+      }
+      if (!out.length) out.push({ time: end, open: c.price, close: c.price, high: c.price, low: c.price, volume: Math.round(volBar) });
+      barCache[key] = out;
+    }
+    const s = barCache[key]; const last = s[s.length - 1];
+    last.close = c.price; last.high = Math.max(last.high, c.price); last.low = Math.min(last.low, c.price);
+    return s;
+  }
+
   // ---- holder distribution (deterministic) -------------------------------------------------
   function holders(addr) {
     const c = byAddr[addr.toLowerCase()]; if (!c) return null;
@@ -262,7 +297,7 @@
     gene: k => GENES[k],
     block: () => BLOCK,
     snipeRemaining, snipeBps,
-    candles, holders, trades, quote, stats,
+    candles, bars, holders, trades, quote, stats,
     tape: () => tapeFeed.slice(),
     subscribe, reduceMotion,
   };

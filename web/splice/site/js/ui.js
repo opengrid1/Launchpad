@@ -129,7 +129,8 @@
   // ------------------------------------------------------------ theme
   function applyTheme(t) { const r = document.documentElement; if (t === 'light' || t === 'dark') r.setAttribute('data-theme', t); else r.removeAttribute('data-theme');
     try { t ? localStorage.setItem('sp-theme', t) : localStorage.removeItem('sp-theme'); } catch (e) {}
-    $$('[data-theme-btn]').forEach(b => b.innerHTML = currentTheme() === 'dark' ? ic('sun') : ic('moon')); }
+    $$('[data-theme-btn]').forEach(b => b.innerHTML = currentTheme() === 'dark' ? ic('sun') : ic('moon'));
+    window.dispatchEvent(new Event('sp:theme')); }
   function currentTheme() { return document.documentElement.getAttribute('data-theme') || 'dark'; } // the site is dark-first
   function initTheme() { let saved = null; try { saved = localStorage.getItem('sp-theme'); } catch (e) {} if (saved) applyTheme(saved); else applyTheme(null); }
 

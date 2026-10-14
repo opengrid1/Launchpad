@@ -121,7 +121,8 @@ table.coins tbody tr:hover { background: var(--surface-2); }
 table.coins tbody tr:last-child td { border-bottom: none; }
 .tk { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
 .tk .t b { display: block; font-weight: 600; font-size: 13px; line-height: 1.25; }
-.tk .t small { color: var(--faint); font-size: 11px; font-family: var(--mono); }
+.tk .t small { color: var(--faint); font-size: 11px; font-family: var(--mono); display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+.tk-genes { display: none; }
 .rowidx { color: var(--faint); font-size: 11px; font-family: var(--mono); width: 28px; }
 .mt { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; color: var(--faint); font-family: var(--mono); margin-top: 3px; }
 .mt .bar { width: 54px; }
@@ -282,12 +283,17 @@ textarea.input { resize: vertical; min-height: 64px; }
 .stat-key { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 13px; }
 .stat-key b { font-family: var(--mono); font-size: 15px; font-weight: 600; display: block; margin: 2px 0; }
 .stat-key small { font-size: 11px; color: var(--faint); }
-.coin-cols { display: grid; grid-template-columns: 1fr 350px; gap: 14px; align-items: start; }
-.bigchart { height: 340px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; position: relative; overflow: hidden; }
+.coin-cols { display: grid; grid-template-columns: 1fr 350px; grid-template-areas: "chart side" "rest side"; gap: 14px; align-items: start; }
+.cc-chart { grid-area: chart; min-width: 0; }
+.cc-side { grid-area: side; min-width: 0; }
+.cc-rest { grid-area: rest; min-width: 0; }
+.launch > div { min-width: 0; }
+.bigchart { height: 460px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; position: relative; overflow: hidden; }
 .table-wrap { overflow-x: auto; }
 table.list { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 table.list th { text-align: right; font-weight: 600; color: var(--faint); font-size: 11px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
 table.list th.l, table.list td.l { text-align: left; }
+table.list th, table.list td { white-space: nowrap; }
 table.list td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 table.list tbody tr:last-child td { border-bottom: none; }
 .ev { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; font-size: 11.5px; }
@@ -390,7 +396,8 @@ table.list tbody tr:last-child td { border-bottom: none; }
 .navsheet a:hover { background: var(--surface-2); }
 
 @media (max-width: 900px) {
-  .launch, .coin-cols { grid-template-columns: 1fr; }
+  .launch { grid-template-columns: 1fr; }
+  .coin-cols { grid-template-columns: 1fr; grid-template-areas: "chart" "side" "rest"; }
   .lside { position: static; }
   .nav { display: none; }
   .navtoggle { display: grid; }
@@ -400,12 +407,38 @@ table.list tbody tr:last-child td { border-bottom: none; }
   table.coins .hide-m { display: none; }
   table.coins { min-width: 0; }
 }
+/* real touch targets on coarse pointers */
+@media (pointer: coarse) {
+  .iconbtn { width: 38px; height: 38px; }
+  .sort { padding: 8px 12px; }
+  .gchip { padding: 8px 12px 8px 7px; }
+  .preset, .spill { padding: 8px 11px; font-size: 11.5px; }
+  .btn.sm { padding: 7px 11px; }
+  .seg button { padding: 10px; }
+  .menu a, .menu button { padding: 11px 12px; }
+  .navlink { padding: 9px 12px; }
+}
 @media (max-width: 560px) {
+  .top-in { gap: 8px; padding: 10px 12px; }
+  .x-link, [data-theme-btn] { display: none; }
+  .btn.connect { padding: 7px 11px; font-size: 13px; }
+  .wm { font-size: 17px; }
+  .dialog-search input, .input, .input.mono { font-size: 16px; } /* stop iOS focus zoom */
   .genepick, .facts { grid-template-columns: 1fr; }
   .page { padding: 14px 12px; }
   .idrow { flex-direction: column; }
   .imgpick { width: 92px; height: 92px; }
   table.coins .hide-s { display: none; }
-  .statstrip { gap: 14px; font-size: 12px; }
-  .bigchart { height: 280px; }
+  table.coins td { padding: 9px 9px; }
+  .tk .t small { max-width: 110px; }
+  .tk-genes { display: flex; gap: 3px; margin-top: 3px; }
+  .tbl-wrap { margin: 0 -12px; border-left: none; border-right: none; border-radius: 0; }
+  .gc { font-size: 10px; height: 17px; min-width: 23px; }
+  .spec { font-size: 10.5px; }
+  .nb { font-size: 9.5px; }
+  .statstrip { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 16px; font-size: 12px; }
+  .statstrip::-webkit-scrollbar { display: none; }
+  .statstrip .stat-cell, .statstrip .live { flex: none; white-space: nowrap; }
+  .coin-bar h1 { flex-wrap: wrap; min-width: 0; }
+  .bigchart { height: 380px; }
 }

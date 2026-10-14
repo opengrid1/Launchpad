@@ -84,7 +84,7 @@
   }
 
   // ---------- render ----------
-  let chart = null;
+  // TradingView owns the chart; realtime bars stream via tv.js
   function render(c) {
     document.title = `${c.name} ($${c.symbol}) — Splice`;
     const soc = [
@@ -111,34 +111,34 @@
         <div class="stat-key"><span>Age</span><b>${ago(c.createdTs)}</b><small>on Base</small></div>
       </div>
       <div class="coin-cols">
-        <div>
-          <div class="bigchart" id="chart"></div>
+        <div class="cc-chart"><div class="bigchart" id="chart"></div></div>
+        <div class="cc-side">${ticket(c)}</div>
+        <div class="cc-rest">
           ${geneParamBlock(c)}
           ${holderBlock(c)}
           ${tradesBlock(c)}
         </div>
-        <div>${ticket(c)}</div>
       </div>`;
 
     $('#copyaddr').onclick = () => copy(c.addr, 'Contract');
-    chart = window.SpliceChart.create($('#chart'), c);
+    // the real TradingView terminal; waits for the standalone library if it is still loading
+    const mountTV = () => { if (window.TradingView && window.spTV) spTV.init($('#chart'), c); else setTimeout(mountTV, 120); };
+    mountTV();
     bindTicket(c);
     UD.subscribe(ev => { if (ev.type === 'tick') onTick(c); });
   }
 
-  function bindTicket(c) {
-    const seg = $('#seg');
-    seg.onclick = e => { const b = e.target.closest('[data-side]'); if (!b) return; side = b.dataset.side; amount = 0; redrawTicket(c); };
-    bindTicketInner(c);
-  }
+  function bindTicket(c) { bindTicketInner(c); }
   function bindTicketInner(c) {
+    const seg = $('#seg');
+    if (seg) seg.onclick = e => { const b = e.target.closest('[data-side]'); if (!b) return; side = b.dataset.side; amount = 0; redrawTicket(c); };
     const amt = $('#amt'); if (amt) amt.oninput = () => { amount = parseFloat(amt.value) || 0; breakdown(c); };
     $$('.preset').forEach(b => b.onclick = () => { amount = parseFloat(b.dataset.amt || b.dataset.pct) || 0; $('#amt').value = amount; breakdown(c); });
     $$('.spill').forEach(b => b.onclick = () => { slip = parseFloat(b.dataset.slip); $$('.spill').forEach(x => x.classList.toggle('on', x === b)); });
     const tb = $('#trade-btn'); if (tb) tb.onclick = notLive;
     breakdown(c);
   }
-  function redrawTicket(c) { const host = $('.lside').parentElement; host.innerHTML = ticket(c); bindTicketInner(c); }
+  function redrawTicket(c) { const host = $('.cc-side'); host.innerHTML = ticket(c); bindTicketInner(c); }
 
   function onTick(c) {
     tick($('[data-price]'), c.price, v => usd(v, { compact: false }));
@@ -146,7 +146,6 @@
     tick($('[data-vol]'), c.vol24, v => usd(v));
     const d = $('[data-pxdelta]'); if (d) d.innerHTML = delta(c.c24);
     const rail = $('#rail'); if (rail) rail.innerHTML = c.genes.map(k => railBadge(c, k)).join('');
-    if (chart) chart.redraw();
     if (amount) breakdown(c);
   }
 
