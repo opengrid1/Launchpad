@@ -130,8 +130,7 @@
   function applyTheme(t) { const r = document.documentElement; if (t === 'light' || t === 'dark') r.setAttribute('data-theme', t); else r.removeAttribute('data-theme');
     try { t ? localStorage.setItem('sp-theme', t) : localStorage.removeItem('sp-theme'); } catch (e) {}
     $$('[data-theme-btn]').forEach(b => b.innerHTML = currentTheme() === 'dark' ? ic('sun') : ic('moon')); }
-  function currentTheme() { const set = document.documentElement.getAttribute('data-theme'); if (set) return set;
-    return (typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark'; }
+  function currentTheme() { return document.documentElement.getAttribute('data-theme') || 'dark'; } // the site is dark-first
   function initTheme() { let saved = null; try { saved = localStorage.getItem('sp-theme'); } catch (e) {} if (saved) applyTheme(saved); else applyTheme(null); }
 
   // ------------------------------------------------------------ wallet button

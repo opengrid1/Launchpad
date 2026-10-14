@@ -1,105 +1,130 @@
-/* Explore: a live market board. Market-stats strip, streaming trade tape, gene filters + sort
-   tabs, and animated coin cards that tick with the shared market clock (window.UD). */
+/* Explore: the board. A dense, sortable coin table (dexscreener-style) with a live stats strip,
+   streaming tape and gene filters. Rows tick with the shared market clock (window.UD). */
 (function () {
-  const { $, $$, esc, usd, num, delta, ago, geneChip, avatar, coinSpark, coinHref, tick } = window.UI;
+  const { $, $$, esc, usd, num, delta, ago, gc, avatar, coinHref, tick } = window.UI;
 
   // ---------------- market stats ----------------
   function statstrip() {
-    const s = UD.stats();
     const items = [
-      ['Coins spliced', () => num(UD.stats().coins, 0), 'coins'],
-      ['Volume 24h', () => usd(UD.stats().vol24), 'vol'],
-      ['Fees to creators', () => usd(UD.stats().feesCreatorsEth * UD.ETH_USD), 'fees'],
-      ['Block', () => num(UD.block(), 0), 'block'],
-      ['ETH', () => usd(UD.ETH_USD), 'eth'],
+      ['Coins', 'coins'], ['24h volume', 'vol'], ['Fees to creators', 'fees'], ['Block', 'block'], ['ETH', 'eth'],
     ];
-    $('#stats').innerHTML = `<span class="live"><i></i>LIVE <span class="faint">preview</span></span>` + items.map(([l, , k]) =>
-      `<div class="stat-cell"><span>${l}</span><b class="num" data-stat="${k}"></b></div>`).join('');
-    items.forEach(([, fn, k]) => { const el = $(`[data-stat="${k}"]`); if (el) el.textContent = fn(); el && (el.dataset.v = ''); });
+    $('#stats').innerHTML = `<span class="live"><i></i>LIVE <span class="faint">preview</span></span>` +
+      items.map(([l, k]) => `<div class="stat-cell"><span>${l}</span><b class="num" data-stat="${k}"></b></div>`).join('');
+    const s = UD.stats();
+    $('[data-stat="coins"]').textContent = num(s.coins, 0);
+    $('[data-stat="vol"]').textContent = usd(s.vol24);
+    $('[data-stat="fees"]').textContent = usd(s.feesCreatorsEth * UD.ETH_USD);
+    $('[data-stat="block"]').textContent = UD.block().toLocaleString('en-US');
+    $('[data-stat="eth"]').textContent = usd(UD.ETH_USD);
   }
   function statTick() {
     const s = UD.stats();
     tick($('[data-stat="vol"]'), s.vol24, v => usd(v));
     tick($('[data-stat="fees"]'), s.feesCreatorsEth * UD.ETH_USD, v => usd(v));
-    const b = $('[data-stat="block"]'); if (b) b.textContent = num(UD.block(), 0);
+    const b = $('[data-stat="block"]'); if (b) b.textContent = UD.block().toLocaleString('en-US');
   }
 
   // ---------------- tape ----------------
-  function tapeRow(t) {
-    return `<a class="tchip" href="${coinHref(t.coin.addr)}"><span class="delta ${t.buy ? 'up' : 'down'}">${t.buy ? 'BUY' : 'SELL'}</span><b>$${esc(t.coin.symbol)}</b><span class="muted mono">${t.eth} ETH</span><span class="faint">${ago(t.ts)}</span></a>`;
-  }
+  const tapeRow = t => `<a class="tchip" href="${coinHref(t.coin.addr)}"><span class="delta ${t.buy ? 'up' : 'down'}">${t.buy ? 'BUY' : 'SELL'}</span><b>$${esc(t.coin.symbol)}</b><span class="muted">${t.eth} ETH</span><span class="faint">${ago(t.ts)}</span></a>`;
   function tape() {
-    $('#tape').innerHTML = `<div class="tape-h"><i></i>Live trades <span class="faint">preview</span></div><div class="tape" id="tapebody">${UD.tape().map(tapeRow).join('')}</div>`;
+    $('#tape').innerHTML = `<div class="tape-h"><i></i>Live trades <span class="faint">· preview</span></div><div class="tape" id="tapebody">${UD.tape().map(tapeRow).join('')}</div>`;
   }
   function onTrade(t) { const body = $('#tapebody'); if (!body) return;
     body.insertAdjacentHTML('afterbegin', tapeRow(t)); body.firstElementChild.classList.add('tchip-new');
     while (body.children.length > 24) body.lastElementChild.remove(); }
 
-  // ---------------- cards ----------------
-  function meter(c) {
-    if (c.params.maxw && c.protected) return `<div class="meter maxw" title="Max-wallet lifts as the coin matures"><div class="meter-l"><span>Max-wallet · ${c.params.maxw.pct}%</span><span>${Math.round(c.protectPct)}%</span></div><div class="bar"><span style="width:${Math.round(c.protectPct)}%"></span></div></div>`;
-    const rem = UD.snipeRemaining(c);
-    if (rem > 0) return `<div class="meter snipe" title="Anti-snipe tax decaying to base"><div class="meter-l"><span>Anti-snipe decaying</span><span>${rem} blk</span></div><div class="bar snipe"><span style="width:${Math.round(100 - rem / c.params.snipe.decayBlocks * 100)}%"></span></div></div>`;
-    return '';
-  }
-  function badge(c) { if (c.ageHrs < 1) return '<span class="nb new">NEW</span>'; if (c.params.agent) return '<span class="nb agent">AGENT</span>'; return ''; }
-  function card(c) {
-    return `<a class="card" href="${coinHref(c.addr)}" data-addr="${c.addr}">
-      <div class="ct">${avatar(c)}<div class="t"><b>${esc(c.name)} ${badge(c)}</b><small><span class="spec">${esc(c.spec)}</span> · $${esc(c.symbol)} · ${ago(c.createdTs)}</small></div></div>
-      <div class="cm"><span class="px num" data-mc>${usd(c.mc)}</span><div class="r">mcap<br><span data-delta>${delta(c.c24)}</span></div></div>
-      <div class="sparkbox" data-spark>${coinSpark(c)}</div>
-      <div class="genes">${c.genes.map(k => geneChip(k)).join('')}</div>
-      ${meter(c)}
-      <div class="stat"><span>Vol <b>${usd(c.vol24)}</b></span><span>Liq <b>${usd(c.liq)}</b></span><span>Hold <b>${num(c.holders, 0)}</b></span></div>
-    </a>`;
-  }
+  // ---------------- the board ----------------
+  const COLS = [
+    { k: 'idx', l: '#', cls: 'rowidx l', sort: null },
+    { k: 'name', l: 'Token', cls: 'l', sort: 'name' },
+    { k: 'price', l: 'Price', sort: 'price' },
+    { k: 'c24', l: '24h %', sort: 'c24' },
+    { k: 'ageHrs', l: 'Age', sort: 'ageHrs', hide: 'hide-s' },
+    { k: 'vol24', l: 'Volume', sort: 'vol24' },
+    { k: 'liq', l: 'Liquidity', sort: 'liq', hide: 'hide-m' },
+    { k: 'mc', l: 'Mcap', sort: 'mc' },
+    { k: 'holders', l: 'Holders', sort: 'holders', hide: 'hide-m' },
+    { k: 'genes', l: 'Genes', cls: 'l', sort: null, hide: 'hide-s' },
+  ];
+  let sortKey = 'trend', sortDir = -1;
+  const genes = new Set();
 
-  // ---------------- filters + render ----------------
-  let tab = 'trending'; const genes = new Set();
   function list() {
-    let arr = tab === 'new' ? UD.newest() : tab === 'gainers' ? [...UD.tokens()].sort((a, b) => b.c24 - a.c24)
-      : tab === 'mc' ? [...UD.tokens()].sort((a, b) => b.mc - a.mc) : UD.trending();
+    let arr;
+    if (sortKey === 'trend') { arr = UD.trending(); if (sortDir === 1) arr = [...arr].reverse(); }
+    else arr = [...UD.tokens()].sort((a, b) => {
+      const asc = sortKey === 'name' ? a.name.localeCompare(b.name) : (a[sortKey] || 0) - (b[sortKey] || 0);
+      return sortDir === -1 ? -asc : asc; // -1 = descending (default)
+    });
     if (genes.size) arr = arr.filter(c => [...genes].every(g => c.genes.includes(g)));
     return arr;
   }
-  const cardEls = {};
-  function grid() {
-    const arr = list(); const g = $('#grid');
-    $('#noresult').hidden = arr.length > 0;
-    g.innerHTML = arr.map(card).join('');
-    Object.keys(cardEls).forEach(k => delete cardEls[k]);
-    $$('#grid .card').forEach(el => cardEls[el.dataset.addr] = el);
+
+  function protoTag(c) {
+    if (c.params.maxw && c.protected) return `<span class="mt" title="Max-wallet protection">MW <span class="bar"><span style="width:${Math.round(c.protectPct)}%"></span></span></span>`;
+    const rem = UD.snipeRemaining(c);
+    if (rem > 0) return `<span class="mt" title="Anti-snipe decaying">AS ${rem} blk <span class="bar snipe"><span style="width:${Math.round(100 - rem / c.params.snipe.decayBlocks * 100)}%"></span></span></span>`;
+    return '';
   }
+  const badge = c => c.ageHrs < 1 ? '<span class="nb new">NEW</span>' : (c.params.agent ? '<span class="nb agent">AGENT</span>' : '');
+
+  function rowHtml(c, i) {
+    return `<tr data-addr="${c.addr}">
+      <td class="rowidx l">${i + 1}</td>
+      <td class="l"><span class="tk">${avatar(c, 'sm')}<span class="t"><b>${esc(c.name)} <span class="muted" style="font-weight:500">$${esc(c.symbol)}</span>${badge(c)}</b><small>${esc(c.spec)}</small></span></span></td>
+      <td class="mono" data-price>${usd(c.price, { compact: false })}</td>
+      <td data-delta>${delta(c.c24)}</td>
+      <td class="hide-s muted">${ago(c.createdTs)}</td>
+      <td class="mono" data-vol>${usd(c.vol24)}</td>
+      <td class="hide-m muted">${usd(c.liq)}</td>
+      <td class="mono" data-mc>${usd(c.mc)}</td>
+      <td class="hide-m muted">${num(c.holders, 0)}</td>
+      <td class="l hide-s"><div class="genes">${c.genes.map(k => gc(k)).join('')}</div>${protoTag(c)}</td>
+    </tr>`;
+  }
+
+  const rowEls = {};
+  function board() {
+    const arr = list();
+    $('#noresult').hidden = arr.length > 0;
+    const head = COLS.map(col => {
+      const on = col.sort && col.sort === sortKey;
+      return `<th class="${col.cls || ''} ${col.hide || ''} ${on ? 'on' : ''}" ${col.sort ? `data-sort="${col.sort}"` : ''}>${col.l}${on ? `<span class="dir">${sortDir < 0 ? '▼' : '▲'}</span>` : ''}</th>`;
+    }).join('');
+    $('#board').innerHTML = `<table class="coins"><thead><tr>${head}</tr></thead><tbody>${arr.map(rowHtml).join('')}</tbody></table>`;
+    Object.keys(rowEls).forEach(k => delete rowEls[k]);
+    $$('#board tbody tr').forEach(el => { rowEls[el.dataset.addr] = el; el.onclick = () => location.href = coinHref(el.dataset.addr); });
+    $$('#board th[data-sort]').forEach(th => th.onclick = () => {
+      const k = th.dataset.sort;
+      if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = -1; }
+      $$('#tabs .sort').forEach(s => s.classList.remove('on'));
+      board();
+    });
+  }
+
   function genefilter() {
     $('#genefilter').innerHTML = `<button class="gchip ${genes.size ? '' : 'on'}" data-g="all">All genes</button>` +
-      UD.GENE_ORDER.map(k => { const gd = UD.GENES[k]; return `<button class="gchip ${genes.has(k) ? 'on' : ''}" data-g="${k}">${window.UI.gc(k)}${esc(gd.name)}</button>`; }).join('');
-    $$('#genefilter .gchip').forEach(b => b.onclick = () => { const k = b.dataset.g; if (k === 'all') genes.clear(); else genes.has(k) ? genes.delete(k) : genes.add(k); genefilter(); grid(); });
+      UD.GENE_ORDER.map(k => { const gd = UD.GENES[k]; return `<button class="gchip ${genes.has(k) ? 'on' : ''}" data-g="${k}">${gc(k)}${esc(gd.name)}</button>`; }).join('');
+    $$('#genefilter .gchip').forEach(b => b.onclick = () => { const k = b.dataset.g; if (k === 'all') genes.clear(); else genes.has(k) ? genes.delete(k) : genes.add(k); genefilter(); board(); });
   }
 
   function onTick() {
     statTick();
-    const arr = list();
-    arr.forEach(c => { const el = cardEls[c.addr]; if (!el) return;
+    UD.tokens().forEach(c => { const el = rowEls[c.addr]; if (!el) return;
+      tick(el.querySelector('[data-price]'), c.price, v => usd(v, { compact: false }));
       tick(el.querySelector('[data-mc]'), c.mc, v => usd(v));
       const d = el.querySelector('[data-delta]'); if (d) d.innerHTML = delta(c.c24);
-      const m = el.querySelector('[data-spark]'); // refresh sparkline occasionally handled below
     });
-  }
-  let sparkN = 0;
-  function sparkRefresh() { sparkN++; if (sparkN % 6) return; Object.entries(cardEls).forEach(([a, el]) => { const c = UD.coin(a); const box = el.querySelector('[data-spark]'); if (c && box) box.innerHTML = coinSpark(c); }); }
-
-  function herolab() {
-    const el = $('#herolab'); if (!el) return;
-    el.innerHTML = `${window.UI.helix(UD.GENE_ORDER, { w: 320, h: 92, turns: 1.8 })}
-      <div class="hero-genes">${UD.GENE_ORDER.map(k => `<span class="hg">${window.UI.gc(k)}<span>${window.UI.esc(UD.GENES[k].name)}</span></span>`).join('')}</div>
-      <span class="spec">THE SIX GENES · ONE IMMUTABLE HOOK</span>`;
   }
 
   function init() {
-    herolab(); statstrip(); tape(); genefilter(); grid();
+    statstrip(); tape(); genefilter(); board();
     $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return;
-      $$('#tabs .sort').forEach(s => s.classList.toggle('on', s === b)); tab = b.dataset.tab; grid(); });
-    UD.subscribe(ev => { if (ev.type === 'trade') onTrade(ev.trade); else { onTick(); sparkRefresh(); } });
+      $$('#tabs .sort').forEach(s => s.classList.toggle('on', s === b));
+      const t = b.dataset.tab;
+      sortKey = t === 'trending' ? 'trend' : t === 'new' ? 'createdTs' : t === 'gainers' ? 'c24' : 'mc';
+      sortDir = -1; board(); });
+    UD.subscribe(ev => { if (ev.type === 'trade') onTrade(ev.trade); else onTick(); });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
