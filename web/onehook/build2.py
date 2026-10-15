@@ -120,7 +120,7 @@ def frag(html):
 def appendall(el, html):
     for c in list(BeautifulSoup(html, 'html.parser').contents): el.append(c)
 
-BRAND_ICON = '<img src="img/wordmark-head.png" alt="OneHook" class="h-[21px] w-auto shrink-0">'
+BRAND_ICON = '<img src="img/wordmark-head.png?v=3" alt="OneHook" class="h-[21px] w-auto shrink-0">'
 INK_BADGE = '<img alt="Ink" class="size-full object-cover" src="img/ink.png">'
 
 def common_clean(root):
@@ -403,7 +403,7 @@ for c in chips[1:]: c.decompose()
 chips[0]['data-tpl'] = 'chip'; chips[0].parent['id'] = 'newchips'
 
 main = root.select_one('main')
-h1 = main.select_one('h1'); h1.clear(); h1.append(frag('<span class="hero-row"><img src="img/hero-wordmark.png" alt="OneHook" class="hero-wm" decoding="async"></span>'))
+h1 = main.select_one('h1'); h1.clear(); h1.append(frag('<span class="hero-row"><img src="img/hero-wordmark.png?v=3" alt="OneHook" class="hero-wm" decoding="async"></span>'))
 p = main.select_one('p.mt-5')
 u = p.select('span.inline')
 stack = p.select_one('span[role=list]')
