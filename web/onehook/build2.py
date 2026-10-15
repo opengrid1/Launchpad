@@ -14,11 +14,11 @@ OVERRIDE = '''
   --font-sans:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --font-geist:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  --color-bg-primary:#0a0c11;--color-bg-card:#0e1117;--color-bg-card-deep:#0a0c11;--color-bg-hover:#131720;--color-bg-card-hover:#161b25;
-  --color-bg-selector-hover:#222837;--color-bg-input:#1a1f2a;--color-bg-tile:#222837;--color-bg-raised:#262d3c;--color-bg-elevated:#222837;
-  --color-border-default:#1e2430;--color-border-hover:#2a3140;--color-border-strong:#2a3140;
-  --color-accent:#ff4fa3;--color-accent-hover:#ff6fb5;--color-accent-2:#ff8cc6;--color-accent-ink:#1a0511;
-  --color-text-primary:#f3f5f9;--color-text-secondary:#c3c9d6;--color-text-muted:#7c8498;--color-text-disabled:#4a5366;
+  --color-bg-primary:#0a0e18;--color-bg-card:#0e1424;--color-bg-card-deep:#0a0e18;--color-bg-hover:#141b2e;--color-bg-card-hover:#161e33;
+  --color-bg-selector-hover:#1f2942;--color-bg-input:#141b2e;--color-bg-tile:#1f2942;--color-bg-raised:#243150;--color-bg-elevated:#1f2942;
+  --color-border-default:#1d2740;--color-border-hover:#2a3755;--color-border-strong:#2a3755;
+  --color-accent:#3fbcff;--color-accent-hover:#5fc8ff;--color-accent-2:#8ad8ff;--color-accent-ink:#04121f;
+  --color-text-primary:#eef3fb;--color-text-secondary:#bcc6da;--color-text-muted:#7987a3;--color-text-disabled:#47516a;
   --color-tag-blue:#60a5fa;--color-tag-yellow:#f0b541;--color-success:#2fd36b;--color-success-soft:#2fd36b1a;--color-warning:#f0b541;--color-warning-soft:#f0b5411a;--color-burn:#fb923c;--color-error:#f24a5c;
 }
 .bg-avatar-gradient{background-image:linear-gradient(135deg,#232a36,#343d4c)}
@@ -26,7 +26,7 @@ OVERRIDE = '''
 open(OUT + '/o1.css', 'w').write(css + OVERRIDE)
 
 PRELAUNCH = False  # config.js decides at runtime; the markup carries no sample numbers either way
-HEAD = '''<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0c11">
+HEAD = '''<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0e18">
 <link rel="icon" href="img/favicon.ico" sizes="any"><link rel="icon" type="image/svg+xml" href="img/favicon.svg"><link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <meta property="og:site_name" content="OneHook"><meta property="og:type" content="website"><meta property="og:image" content="https://onehook.fun/img/og.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://onehook.fun/img/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
