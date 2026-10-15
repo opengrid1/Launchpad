@@ -143,7 +143,7 @@
     if (!w) return notLive();
     if (!w.connected) return w.open ? w.open() : notLive();
     if (w.chainId && w.chainId !== (CFG.chainId || 1)) return w.switchChain && w.switchChain();
-    const m = menu(b, `<a href="/portfolio">${ic('wallet')}Portfolio</a><button data-copy>${ic('copy')}Copy address</button><a href="${addrLink(w.address)}" target="_blank" rel="noopener">${ic('ext')}Etherscan</a><hr><button data-out>${ic('logout')}Disconnect</button>`);
+    const m = menu(b, `<a href="/portfolio">${ic('wallet')}Portfolio</a><button data-copy>${ic('copy')}Copy address</button><a href="${addrLink(w.address)}" target="_blank" rel="noopener">${ic('ext')}Etherscan</a>${isAdmin() ? `<a href="/admin">${ic('info')}Admin</a>` : ''}<hr><button data-out>${ic('logout')}Disconnect</button>`);
     m.querySelector('[data-copy]').onclick = () => { copy(w.address); m.remove(); };
     m.querySelector('[data-out]').onclick = () => { w.logout && w.logout(); m.remove(); }; }
 
