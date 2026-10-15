@@ -176,7 +176,9 @@
     b.id = 'demoBar';
     b.innerHTML = '<span><b>Preview</b> — these are example coins so you can try the OneHook interface. Nothing here is live; trading opens when the contracts deploy on Ethereum.</span><button aria-label="Dismiss">×</button>';
     b.querySelector('button').onclick = () => b.remove();
-    document.body.insertBefore(b, document.body.firstChild);
+    // inside the 100dvh app column (before the header) so body never scrolls — keeps position:fixed bars pinned on iOS
+    const host = document.getElementById('app') || document.body;
+    host.insertBefore(b, host.firstChild);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', banner); else banner();
 })();

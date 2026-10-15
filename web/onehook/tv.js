@@ -4,7 +4,7 @@
 (function(){
   const RES={ '1':60,'3':180,'5':300,'15':900,'30':1800,'60':3600,'120':7200,'240':14400,'1D':86400,'1W':604800 };
   let X=null; // the token shown (from app.js)
-  let unit='USD', mode='price';
+  let unit='USD', mode='mcap';
   const pairSym=()=>X?X.pair:'ETH';
   const factor=()=>(mode==='mcap'?SUPPLY:1)*(unit==='USD'?(X?X.pairUsd:1):1);
   const symName=()=>X?`${X.t}/${X.pair}`:'TOKEN/ETH';
@@ -38,9 +38,9 @@
       L.close=price; L.high=Math.max(L.high,price); L.low=Math.min(L.low,price); s.prevClose=price; s.cb({...L}); }); };
   window.initTV=function(container,x){
     X=x; const mobile=innerWidth<768; const lang=(typeof LANG!=='undefined'&&LANG!=='en')?(LANG==='zh'?'zh':'tr'):'en';
-    const w=new TradingView.widget({ symbol:symName(), interval:'5', container, datafeed, library_path:'/charting_library/', locale:lang, timezone:'Etc/UTC', theme:'dark', autosize:true, fullscreen:false, header_widget_buttons_mode:'fullsize',
+    const w=new TradingView.widget({ symbol:symName()+'·MCAP', interval:'5', container, datafeed, library_path:'/charting_library/', locale:lang, timezone:'Etc/UTC', theme:'dark', autosize:true, fullscreen:false, header_widget_buttons_mode:'fullsize',
       custom_css_url:'tv-theme.css', custom_font_family:"'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      loading_screen:{ backgroundColor:'#0e1117', foregroundColor:'#ff4fa3' },
+      loading_screen:{ backgroundColor:'#0e1117', foregroundColor:'#3fbcff' },
       disabled_features:['use_localstorage_for_settings','header_symbol_search','symbol_search_hot_key','header_compare','display_market_status','popup_hints','header_saveload','header_quick_search','header_fullscreen_button','go_to_date'].concat(mobile?['left_toolbar','header_undo_redo','header_screenshot','header_settings']:[]),
       enabled_features:['side_toolbar_in_fullscreen_mode'],
       time_frames:[{text:'3m',resolution:'60',description:'3 months'},{text:'1m',resolution:'30',description:'1 month'},{text:'5d',resolution:'5',description:'5 days'},{text:'1d',resolution:'1',description:'1 day'}],
@@ -50,7 +50,7 @@
     window.tvWidget=w;
     w.headerReady().then(()=>{ const group=(pairs,get,set)=>{ const b=w.createButton(); b.style.cursor='default'; b.style.padding='0 16px'; b.style.fontWeight='500'; b.style.whiteSpace='nowrap';
         b.innerHTML=pairs.map((p,i)=>(i?'<span style="color:#7c8498;padding:0 6px">/</span>':'')+`<span data-v="${p[0]}" style="cursor:pointer">${p[1]}</span>`).join('');
-        const paint=()=>b.querySelectorAll('[data-v]').forEach(x=>{ x.style.color=x.dataset.v===get()?'#ff4fa3':'#f3f5f9'; }); paint();
+        const paint=()=>b.querySelectorAll('[data-v]').forEach(x=>{ x.style.color=x.dataset.v===get()?'#3fbcff':'#f3f5f9'; }); paint();
         b.querySelectorAll('[data-v]').forEach(x=>x.onclick=()=>{ set(x.dataset.v); w.setSymbol(symName()+(mode==='mcap'?'·MCAP':'')+(unit==='PAIR'?'·PAIR':''), w.activeChart().resolution(), ()=>{}); paint(); }); return b; };
       group([['USD','USD'],['PAIR',pairSym()]],()=>unit,v=>{unit=v;}); group([['mcap','MarketCap'],['price','Price']],()=>mode,v=>{mode=v;});
       const fs=w.createButton(); fs.setAttribute('title','Fullscreen mode'); fs.style.padding='0 10px'; fs.style.cursor='pointer'; fs.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2.5 6.5v-4h4M11.5 2.5h4v4M15.5 11.5v4h-4M6.5 15.5h-4v-4"/></svg>'; fs.onclick=()=>{ try{ w.startFullscreen(); }catch(e){} }; });
