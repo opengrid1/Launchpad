@@ -134,6 +134,9 @@ def common_clean(root):
     if img: img.replace_with(frag(BRAND_ICON))
     for sp in root.select('button[aria-label="Launchpad"] span.max-sm\\:hidden'):
         sp.decompose()
+    # text logo: drop the brand dropdown chevron, keep just the wordmark
+    for sv in root.select('button[aria-label="Launchpad"] svg'):
+        sv.decompose()
     # avatar images: drop, keep the letter
     for img in root.select('img.object-cover'):
         if 'size-full' in img.get('class', []) and img.parent.name == 'span' and 'size-3' in img.parent.get('class', []):
