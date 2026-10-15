@@ -2,7 +2,7 @@
    live: read tokens, trades and prices from the Ethereum contracts (chain.js); prelaunch: preview only, no chain reads.
    reownProjectId: public project id from cloud.reown.com; empty keeps the demo wallet. */
 window.INKY = {
-  live: false, prelaunch: true,
+  live: false, prelaunch: true, demo: true,
   reownProjectId: '5b1ae833abd22d348cbf5d53cf58b3b2',
   chainId: 1, rpc: 'https://ethereum-rpc.publicnode.com', logsRpc: 'https://ethereum-rpc.publicnode.com', rpcs: ['https://eth.llamarpc.com', 'https://rpc.ankr.com/eth', 'https://ethereum.publicnode.com'], explorer: 'https://etherscan.io',
   deployBlock: 0,

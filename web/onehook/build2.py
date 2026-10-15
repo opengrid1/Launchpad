@@ -211,7 +211,7 @@ def page_shell(root, title, desc, extra_head=''):
 <body data-dynamic-theme="dark" data-dynamic-theme-brand="bold">
 %s
 <script>document.getElementById('prehide').remove()</script>
-<script src="config.js"></script><script src="data.js"></script><script src="avatar.js"></script><script src="i18n.js"></script><script src="chain.js"></script><script src="app.js"></script><script src="wallet.js" defer></script>
+<script src="config.js"></script><script src="data.js"></script><script src="avatar.js"></script><script src="i18n.js"></script><script src="chain.js"></script><script src="demo.js"></script><script src="app.js"></script><script src="wallet.js" defer></script>
 </body></html>''' % (title, desc, HEAD, extra_head, '<style id="prehide">main{visibility:hidden}</style>', str(root)))
 
 # =====================================================================
@@ -394,8 +394,16 @@ mnav = root.select_one('nav.h-14'); mnav['id'] = 'mnav'
 # modals / sheets / toasts root
 root.append(frag('<div id="layer"></div>'))
 
-open(OUT + '/token.html', 'w').write(page_shell(root, 'Token | OneHook', 'Price, chart, trades and holders for a coin launched on OneHook.',
-    '<script src="charting_library/charting_library.standalone.js" defer></script><script src="tv.js" defer></script>'))
+_tok = page_shell(root, 'Token | OneHook', 'Price, chart, trades and holders for a coin launched on OneHook.',
+    '<script src="charting_library/charting_library.standalone.js" defer></script><script src="tv.js" defer></script>')
+# scrub static inky defaults in the token shell (most are also overwritten by app.js at runtime)
+for a, b in [('>Holder rewards<', '>Dividends<'), ('id="infoFee">2.00%<', 'id="infoFee">1.00%<'),
+             ('id="d_fee">2.00%<', 'id="d_fee">1.00%<'), ('>Claim basket<', '>Claim dividends<'),
+             ('data-claim="basket"', 'data-claim="eth"'),
+             ('the basket in equal shares and sent as wrapped stock tokens', 'ETH to your wallet, pro-rata to balance'),
+             ('https://explorer.inkonchain.com', 'https://etherscan.io')]:
+    _tok = _tok.replace(a, b)
+open(OUT + '/token.html', 'w').write(_tok)
 print('token.html ok')
 
 # =====================================================================

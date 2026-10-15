@@ -13,13 +13,11 @@ const pct=v=>`<span class="${v>=0?'up':'dn'}">${v>=0?'+':''}${v.toFixed(1)}%</sp
 const shortAddr=a=>a?a.slice(0,6)+'…'+a.slice(-4):'';
 const cs=a=>{ try{ return window.CHAIN&&CHAIN.checksum?CHAIN.checksum(a):a; }catch{ return a; } };
 
-/* leaderboard payout tiers (bps of each board's half) */
-const LB_TIER=[40,25,15,12,8];
-const STOCKS=[['NVDAx','Nvidia','#76b900'],['SPYx','S&P 500','#1e6fff'],['QQQx','Nasdaq 100','#00a3e0'],['TSLAx','Tesla','#e82127'],['AAPLx','Apple','#a2aaad'],['MSTRx','Strategy','#f7931a'],['SPCXx','SpaceX','#8b949e'],['PLTRx','Palantir','#c9a227'],['NFLXx','Netflix','#e50914']];
-const STOCK_COLOR=Object.fromEntries(STOCKS.map(s=>[s[0],s[2]]));
-const STOCK_NAME=Object.fromEntries(STOCKS.map(s=>[s[0],s[1]]));
-const STOCK_ADDR=Object.fromEntries(((window.INKY&&INKY.stocks)||[]).map(s=>[s.symbol,s.address]));
-const FEE={tax:2,creator:0.7,holders:0.5,platform:0.8};
+/* OneHook pairs only against ETH — no stock baskets. These stay defined (empty) so legacy refs don't throw. */
+const STOCKS=[];
+const STOCK_COLOR={}, STOCK_NAME={}, STOCK_ADDR={};
+/* default fee model: ~1% (capped 3%), split 60/40 creator/platform after the buyback + dividend pots */
+const FEE={tax:1,creator:0.6,platform:0.4};
 
 /* the same token universe on every page; chain.js fills it before the pages initialise */
 let TOK=[];
@@ -31,3 +29,5 @@ const tokenUrl=x=>'/token/'+(x.addr||x);
 
 const PRE=!!(window.INKY&&window.INKY.prelaunch);
 const LIVE=!!(window.INKY&&window.INKY.live&&!PRE);
+/* demo: show example coins + a simulated trading interface before the contracts go live (read-only, no real chain) */
+const DEMO=!!(window.INKY&&window.INKY.demo&&!LIVE);
