@@ -164,6 +164,14 @@ def set_nav(root):
             b.insert(0, frag(svg('book', 'lucide-book-open size-4')))
             settext(b, 'Docs') if not b.select_one('span') else settext(b.select_one('span'), 'Docs'); label = 'Docs'
         if label in page_of: b['data-href'] = page_of[label]
+    # mobile bottom nav: make Launch a normal item, not a raised FAB circle
+    for b in root.select('nav.h-14 > button'):
+        if b.get_text(' ', strip=True).startswith('Launch'):
+            raised = b.select_one('span.-mt-5')
+            if raised: raised.replace_with(frag(svg('rocket', 'lucide-rocket size-5')))
+            b['class'] = [c for c in b.get('class', []) if c != 'gap-[3px]'] + ['gap-1']
+            lbls = b.select('span')
+            if lbls: settext(lbls[-1], 'Launch')
     # history label is fine; developers button -> docs
     dev = root.select_one('header button[aria-label="Developers"]')
     if dev: dev['data-href'] = 'docs/direct-integration.html'
