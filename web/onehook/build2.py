@@ -148,9 +148,12 @@ def common_clean(root):
         if img.get('src', '').startswith('img/'):
             continue
         if 'rounded-full' in cls:
-            img.replace_with(frag('<img alt="Ink" class="%s" src="img/ink.png">' % cls))
+            img.replace_with(frag('<img alt="Ethereum" class="%s" src="img/eth.png">' % cls))
         else:
             img.decompose()
+    # header: drop the single-language switcher and the (wrong-chain) network badge; prelaunch has neither
+    for b in root.select('header button[aria-label^="Language"], header button[aria-label^="Network"]'):
+        b.decompose()
 
 def set_nav(root):
     """header nav + mobile nav: Cooking -> Leaderboard, Staking -> Docs; make them links"""
@@ -461,7 +464,7 @@ for tg in tags: tg.decompose()   # Tax tag
 newtag = tpl.select_one('span.inline-flex.items-center.gap-1\\.5'); newtag['data-f'] = 'new'
 desk['id'] = 'rows'
 hdr = desk.select_one('div.sticky')
-labels = ['Token', 'Market cap', 'Liquidity', 'Volume 24h', 'Rewards 24h', 'Holders', 'Price']
+labels = ['Token', 'Market cap', 'Liquidity', 'Volume 24h', 'Fees 24h', 'Holders', 'Price']
 for sp, lab in zip(hdr.select('span.text-sm'), labels): sp.string = lab
 mobile = frag('''<div class="md:hidden" id="mrows"><div class="flex cursor-pointer items-center gap-3 border-b border-border-default py-3.5 last:border-b-0" data-tpl="mrow"><span class="relative flex shrink-0 overflow-hidden rounded-md bg-avatar-gradient ring-1 ring-inset ring-text-primary/10 size-11 text-sm"><span class="absolute inset-0 flex items-center justify-center rounded-md font-bold text-text-primary" data-f="av">M</span></span><div class="min-w-0 flex-1"><div class="flex min-w-0 items-center gap-2"><span class="min-w-0 shrink truncate text-sm font-bold leading-tight text-text-primary" data-f="sym">MOGCAT</span><span class="min-w-0 truncate text-sm font-medium text-text-muted" data-f="name">Mogcat</span></div><div class="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 text-[13px] leading-none text-text-muted"><span>ETH</span><span class="text-text-disabled">·</span><span data-f="age">3h ago</span><span data-f="vol"></span></div></div><div class="shrink-0 text-right"><div class="text-[17px] font-semibold tabular-nums text-text-primary" data-f="mc">$927.5K</div><div class="mt-1 text-xs tabular-nums" data-f="chg"></div></div></div></div>''')
 desk.insert_after(mobile)

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Build the Inkypump docs (Mintlify layout, as on docs.o1.exchange) from o1's
-rendered page shell plus our own content. Run from site2/docs: python3 build_docs.py"""
+"""Build the OneHook docs (Mintlify layout) from the rendered page shell plus our
+own content. Run from web/onehook/docs: python3 build_docs.py"""
 import html as H
 import re
 from bs4 import BeautifulSoup, NavigableString
 
-REF = '../../ref/o1-docs-launchpad.html'
+REF = '../ref/o1-docs-launchpad.html'
 OUT = '.'
-SITE = 'Inkypump'
+SITE = 'OneHook'
 
 # ---------------------------------------------------------------- icons
 I = {
@@ -47,18 +47,13 @@ def cicon(n):
     return f'<svg aria-hidden="true" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="24">{CI[n]}</svg>'
 
 # ---------------------------------------------------------------- addresses
-A = {
-    'pm': '0x360e68faccca8ca495c1b759fd9eee466db9fb32', 'weth': '0x4200000000000000000000000000000000000006',
-    'r02': '0x177778F19E89dD1012BdBe603F144088A95C4B53', 'usdg': '0xe343167631d89B6Ffc58B88d6b7fB0228795491D',
-}
-STOCKS = [('wNVDAx', 'Nvidia', '0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5', '0.05%'), ('wSPYx', 'S&amp;P 500', '0xE7E553Cd128F0011777323A0b44a7b96EA1CB540', '0.3%'),
-          ('wQQQx', 'Nasdaq 100', '0x4C1AE29c159838fC1b224636E28E086EB69101f7', '0.3%'), ('wTSLAx', 'Tesla', '0xc3FdBe3A68EE5dE461D30415a8165cf9Aefe1171', '0.05%'),
-          ('wAAPLx', 'Apple', '0x943BF64D566c32A2Bcd41AC92FB63C111cC9De8f', '0.05%'), ('wMSTRx', 'Strategy', '0x30987adF0B11dc698438a99BA04ec3a1AB2c7EaB', '0.05%'),
-          ('wSPCXx', 'SpaceX', '0x8e2eed8b8b5e13ea7bf38e50d7821d2c57309072', '0.05%'), ('wPLTRx', 'Palantir', '0x4A2df09536F62341C9f946427D16414C04e21342', '0.05%'),
-          ('wNFLXx', 'Netflix', '0x7d87fD6A379714194a797c0bBB8B40c30D250856', '0.05%')]
+# OneHook is not deployed to Ethereum mainnet yet. Addresses are published at
+# go-live; every contract below renders as a "— not deployed" placeholder.
+NA = '<code class="addr-na">— not deployed</code>'
 def ex(addr, label=None):
+    # kept for any future deployed address; links to Etherscan on Ethereum
     short = addr[:6] + '…' + addr[-4:]
-    return f'<a class="link" href="https://explorer.inkonchain.com/address/{addr}" target="_blank" rel="noopener"><code>{label or short}</code></a>'
+    return f'<a class="link" href="https://etherscan.io/address/{addr}" target="_blank" rel="noopener"><code>{label or short}</code></a>'
 
 # ---------------------------------------------------------------- content DSL
 def p(t): return ('p', t)
@@ -76,262 +71,248 @@ def code(t, lang=''): return ('code', t, lang)
 L = 'launchpad'; D = 'developers'
 PAGES = [
  # ---------------- Launchpad tab
- dict(tab=L, group='Overview', slug='introduction', title='Introduction', desc='Launch a fixed-supply memecoin on Ink with liquidity locked forever and a 2% fee that pays the creator, the holders and the platform on every trade.', body=[
-  note('<strong>Contracts are live.</strong> Inkypump is deployed and verified on Ink. Launch, trade and claim from the app, or integrate the contracts directly (see <a class="link" href="/docs/production-contracts">Production contracts</a>).'),
-  p('Inkypump turns a token idea into a live Uniswap V4 market on Ink in one transaction. You choose the name, the asset it is paired with (ETH or a tokenized stock), and whether holders share the trading fees. The factory does the rest and keeps the liquidity forever.'),
-  note('Every number below is a fixed rule of the contracts. Nothing here can change after a coin launches.'),
+ dict(tab=L, group='Overview', slug='introduction', title='Introduction', desc='Launch a fixed-supply memecoin on Ethereum, born with instincts under one immutable Uniswap v4 hook and a constitution none can break.', body=[
+  note('<strong>Contracts are not deployed yet.</strong> OneHook has not launched on Ethereum mainnet. Addresses are published here at go-live (see <a class="link" href="/docs/production-contracts">Contract addresses</a>). Everything below is a fixed rule of the contracts.'),
+  p('OneHook turns a token idea into a live Uniswap v4 market on Ethereum in one transaction. Every coin is a plain fixed-supply ERC-20 with no owner and no mint, born with the composable <em>instincts</em> its creator picks at launch. One immutable hook enforces those instincts, and a constitution that no coin, creator or admin can break.'),
   cards(2,
-   ('coins', '1 billion fixed supply', 'Every coin is created with exactly 1,000,000,000 tokens, 18 decimals, no mint function.'),
-   ('lock', 'Liquidity locked forever', 'The whole supply seeds a single-sided Uniswap V4 position owned by the factory, which has no function to withdraw it.'),
-   ('chart', '2% fee on every trade', 'Taken in the paired asset by the pool hook, wherever the trade happens: this site, Uniswap, aggregators or bots.'),
-   ('gift', 'Rewards in stocks', 'With holder rewards on, 0.5% of every trade goes to holders, claimable as a basket of wrapped xStocks, as the paired asset, or as ETH.')),
-  h2('What makes it different'),
-  p('Most launchpads pay nothing to the people holding the coin. Inkypump moves a share of every trade to holders and lets the creator decide, at launch, whether that share exists and which stocks it is paid in. A second share goes to the creator forever, and a slice of the platform share funds a 3-day trader leaderboard.'),
-  table(['Who', 'Share of every trade', 'Paid in'], [
-   ['Creator', '0.70% (1.20% when holder rewards are off)', 'the paired asset, claimable any time'],
-   ['Holders', '0.50% (0 when off)', 'the basket stocks, the paired asset, or ETH'],
-   ['Platform', '0.80%', 'the paired asset; one eighth funds the leaderboard']]),
+   ('coins', '1 billion fixed supply', 'Every coin is created with exactly 1,000,000,000 tokens, 18 decimals, no mint function, no owner.'),
+   ('lock', 'Liquidity locked in the hook', 'The whole supply seeds a single-sided Uniswap v4 position held under the hook, which has no function to withdraw it.'),
+   ('zap', 'One immutable hook', 'Every coin trades through the same OneHook v4 hook. It charges the fee, runs the instincts and enforces the constitution on every swap, wherever it happens.'),
+   ('shield', 'A constitution none can break', 'Anti-sandwich protection, sells that can never be blocked, a reserved launch block and a fixed, ownerless supply apply to every coin forever.')),
+  h2('Instincts a creator picks at launch'),
+  p('Instincts are the behaviours a creator composes into a coin at launch. They are fixed in the contracts the moment the coin is born and can never be changed.'),
+  cards(2,
+   ('scale', 'Fee engine', 'Flat, dynamic or MEV-tax. The fee is 1% by default, capped at 3% and never below 0.10%, charged in ETH on every swap.'),
+   ('shield', 'Anti-snipe', 'A decaying launch tax of up to 30% on buys only, over an opening block window. Snipers pay the coin, not the other way round.'),
+   ('zap', 'Reflexive buyback', 'A share of the fee buys the coin back and burns it in the pool, tightening supply as volume grows.'),
+   ('gift', 'Dividends', 'A share of the fee is paid to holders pro-rata in ETH, so holding earns from every trade.'),
+   ('users', 'Max-wallet', 'An opening-window per-wallet buy cap that spreads the first supply across more holders.')),
+  note('Buyback and dividend shares are each at most 50% of the fee, and at most 80% of the fee combined.'),
+  h2('Where the fee goes'),
+  p('The hook charges the fee in ETH on every swap. It first funds the buyback and dividend pots the creator chose; whatever remains splits 60% to the creator and 40% to the platform.'),
+  table(['Part of the fee', 'Share', 'Paid in'], [
+   ['Buyback pot', 'up to 50% of the fee (creator sets)', 'buys and burns the coin in the pool'],
+   ['Dividends pot', 'up to 50% of the fee (creator sets)', 'ETH, pro-rata to holders'],
+   ['Creator', '60% of what is left', 'ETH, claimable any time'],
+   ['Platform', '40% of what is left', 'ETH']]),
+  note('With both pots off, the whole fee simply splits 60% creator / 40% platform.'),
   h2('Where to go next'),
   cards(2,
    ('rocket', 'How it works', 'The launch transaction, the pool, the hook and the fee flow, step by step. <a class="link" href="/docs/how-it-works">Read</a>'),
-   ('wallet', 'Plan your launch', 'Pick a paired asset, decide on holder rewards and a basket, size your first buy. <a class="link" href="/docs/launch-planning">Read</a>'),
-   ('trophy', 'Leaderboard', 'How the 3-day prize pool is funded, ranked and paid. <a class="link" href="/docs/leaderboard">Read</a>'),
-   ('code', 'Developers', 'Contracts, routes, events and limits for integrators. <a class="link" href="/docs/direct-integration">Read</a>')),
+   ('wallet', 'Plan your launch', 'Pick a paired asset, choose your instincts and size your first buy. <a class="link" href="/docs/launch-planning">Read</a>'),
+   ('layers', 'Instincts', 'The fee engine, anti-snipe, buyback, dividends and max-wallet in detail. <a class="link" href="/docs/instincts">Read</a>'),
+   ('code', 'Developers', 'Contracts, trading, events and limits for integrators. <a class="link" href="/docs/direct-integration">Read</a>')),
  ]),
- dict(tab=L, group='Overview', slug='how-it-works', title='How it works', desc='From the launch transaction to the first claim: what the factory, the pool hook and the coin contract do.', body=[
+ dict(tab=L, group='Overview', slug='how-it-works', title='How it works', desc='From the launch transaction to the first dividend: what the factory, the hook and the coin contract do.', body=[
   h2('The launch transaction'),
   steps(
-   ('Deploy the coin', 'The factory asks the token deployer for a new coin with a CREATE2 salt: 1 billion supply minted to the factory, no owner, fee split fixed in the constructor.'),
-   ('Create the pool', 'A Uniswap V4 pool is initialised for coin / paired asset with the Inkypump hook attached, a 0 LP fee and a 60 tick spacing.'),
-   ('Seed the liquidity', 'The entire supply goes into a single-sided range starting at a $3,000 market cap, priced from the paired asset\'s USD price in the factory. The factory holds the position and has no function to remove it.'),
-   ('Register with the hook', 'The hook stores the pool, its paired asset and the fixed 2% fee. Nothing can change the fee afterwards.'),
-   ('Optional first buy', 'Any ETH sent with the launch is swapped into the paired asset along the supplied route and then into the fresh pool. The coins go to the creator and the buy is public on the token page.')),
+   ('Deploy the coin', 'The factory asks the token deployer for a new coin with a CREATE2 salt: 1 billion supply minted to the factory, no owner, no mint, the chosen instincts fixed in the constructor.'),
+   ('Create the pool', 'A Uniswap v4 pool is initialised for coin / paired asset with the OneHook hook attached, a 0 LP fee and a fixed tick spacing.'),
+   ('Seed the liquidity', 'The entire supply goes into a single-sided range starting at the opening market cap. The position is held under the hook, which has no function to remove it, so liquidity is locked.'),
+   ('Register instincts', 'The hook stores the pool, its paired asset, the fee engine and every instinct the creator picked. Nothing can change them afterwards.'),
+   ('Reserved first buy', 'The launch block is reserved for the creator. Any ETH sent with the launch is swapped into the fresh pool; the coins go to the creator and the buy is public on the token page.')),
   h2('Every trade after that'),
-  p('The hook runs on every swap in the pool. It takes 2% of the paired-asset side, sends it to the coin contract and calls the coin\'s permissionless <code>sync()</code>, which credits creator, holders and platform by the fixed split. It also reports the trade to the ledger, attributed to the wallet that signed the transaction, so trades through Uniswap, aggregators and bots count the same as trades on this site.'),
-  note('For the first 20 seconds after launch the fee starts at 99% and decays linearly to 2%. Snipers pay the coin, not the other way round. The creator\'s own first buy pays the base fee.'),
+  p('The hook runs on every swap in the pool. It charges the fee in ETH, funds the buyback and dividend pots the creator chose, then credits the rest 60% to the creator and 40% to the platform. It also applies the constitution on every swap: an MEV priority-fee tax deters sandwiching, and a sell can never be blocked. Because the fee and the instincts live in the hook, they are identical on this site, on Uniswap, through an aggregator or in a bot.'),
+  note('For the opening block window the anti-snipe instinct, if enabled, charges a decaying tax of up to 30% on buys only. The creator\'s own reserved first buy pays the base fee.'),
+  h2('Buyback and dividends'),
+  p('The buyback pot swaps its accrued ETH for the coin and burns it directly in the pool, so every eligible holder\'s share of supply grows. The dividend pot accrues to holders pro-rata and is paid in ETH; selling stops future credit but never takes away what was already earned.'),
   h2('Claiming'),
-  p('Holders accrue rewards per token held from the moment of each trade. A claim settles the holder, then pays in the paired asset, or routes through the launchpad router to deliver ETH or equal shares of the basket stocks, each bought at claim time with the holder\'s own minimum.'),
-  p('The creator\'s share and the platform\'s share sit in the coin until anyone pushes them to their fixed recipients. There is no lockup and no approval step.'),
+  p('Holders accrue dividends per token held from the moment of each trade. A claim settles the holder and pays them in ETH. The creator\'s share and the platform\'s share sit in the coin until anyone pushes them to their fixed recipients. There is no lockup and no approval step.'),
  ]),
- dict(tab=L, group='Overview', slug='launch-planning', title='Plan your launch', desc='The three decisions that cannot be changed after launch, and how to make them.', body=[
+ dict(tab=L, group='Overview', slug='launch-planning', title='Plan your launch', desc='The decisions that cannot be changed after launch, and how to make them.', body=[
   h2('Paired asset'),
-  p('Your coin is priced in the asset you pair it with, and every fee is collected in it. Pair with ETH for the deepest routes and the simplest story, or with a wrapped xStock when the stock is the meme: a Tesla coin that trades against TSLAx moves in Tesla terms.'),
-  table(['Pair', 'Price moves with', 'Fees and rewards paid in', 'Traders need'], [
-   ['ETH', 'ETH', 'WETH', 'ETH only'],
-   ['wNVDAx, wSPYx, wTSLAx, …', 'the stock', 'that stock', 'ETH only; the router walks the stock route']]),
-  h2('Holder rewards'),
-  p('On: 0.7% to you, 0.5% to holders, 0.8% to the platform. Off: 1.2% to you, 0 to holders, 0.8% to the platform. Holder rewards are a reason to hold rather than flip, and the basket is part of the coin\'s identity. Turning them off is right for a coin whose creator wants the full share, for example a community takeover where the creator is a multisig.'),
-  h2('Basket'),
-  p('With rewards on you may pick up to four wrapped xStocks. Holders claim their rewards as equal shares of them. No basket means rewards are paid in the paired asset, which only makes sense when that is itself a stock.'),
-  warn('Name, symbol, supply, paired asset, the rewards switch and the basket are immutable. Logo, description and links can be edited later.'),
+  p('Your coin is priced in the asset you pair it with, and every fee is collected in ETH. Pair with ETH for the deepest routes and the simplest story, or with any oracle-priced token when that token is the meme. The opening price is read from the paired asset\'s oracle price at launch.'),
+  table(['Pair', 'Price moves with', 'Traders need'], [
+   ['ETH', 'ETH', 'ETH only'],
+   ['Any oracle-priced token', 'that token', 'ETH only; the router walks the route']]),
+  h2('Instincts'),
+  p('Decide which instincts the coin is born with. All of them are optional except the constitution, which is always on.'),
+  ul('Fee engine: flat, dynamic or MEV-tax, 1% by default, capped at 3%, never below 0.10%.',
+     'Anti-snipe: a decaying launch tax of up to 30% on buys only, over an opening block window.',
+     'Reflexive buyback: a share of the fee buys and burns the coin in the pool.',
+     'Dividends: a share of the fee paid to holders pro-rata in ETH.',
+     'Max-wallet: an opening-window per-wallet buy cap.'),
+  warn('Name, symbol, supply, paired asset, the fee engine and every instinct are immutable. Logo, description and links can be edited later.'),
   h2('First buy'),
-  p('Up to 0.5 ETH in the launch transaction, at the floor price, before anyone else can buy. It is the only buy allowed in the launch block and it is shown on the token page, so size it like a public statement.'),
+  p('The launch block is reserved for you. A first buy in the launch transaction, at the opening price, is the only buy allowed in that block and is shown on the token page, so size it like a public statement.'),
  ]),
  dict(tab=L, group='Create', slug='token-creation', title='Token creation', desc='What you fill in on the launch form and what each field becomes on-chain.', body=[
   table(['Field', 'On-chain', 'Rules'], [
    ['Name, symbol', 'ERC-20 name and symbol', 'Required. Symbol 2 to 10 characters, A to Z and 0 to 9.'],
    ['Logo, description, links', 'metadataURI (JSON)', 'Editable after launch.'],
-   ['Paired asset', '<code>pair</code>', 'WETH or an approved wrapped xStock.'],
-   ['Holder rewards', '<code>holderRewards</code>', 'Fixed forever. Off means no basket.'],
-   ['Basket', '<code>basket[]</code>', 'Up to 4 approved stocks, no repeats, not WETH.'],
-   ['Dev buy', 'ETH sent with the call', 'Up to 0.5 ETH; <code>minPairOut</code> protects a stock-paired first buy from sandwiching.']]),
+   ['Paired asset', '<code>pair</code>', 'WETH or an approved oracle-priced token.'],
+   ['Fee engine', '<code>feeMode</code>, <code>feeBps</code>', 'Flat, dynamic or MEV-tax. 100 bps (1%) default, max 300 (3%), min 10 (0.10%).'],
+   ['Buyback', '<code>buybackBps</code>', 'Share of the fee, at most 50% and at most 80% combined with dividends.'],
+   ['Dividends', '<code>dividendBps</code>', 'Share of the fee, at most 50% and at most 80% combined with buyback.'],
+   ['Anti-snipe', '<code>snipeStartBps</code>, <code>snipeBlocks</code>', 'Decaying launch tax up to 30% on buys, over a block window.'],
+   ['Max-wallet', '<code>maxWalletBps</code>, <code>maxWalletBlocks</code>', 'Opening-window per-wallet buy cap.'],
+   ['Dev buy', 'ETH sent with the call', 'The reserved launch-block buy; <code>minCoinOut</code> protects it from sandwiching.']]),
   h2('Cost'),
-  p('There is no creation fee. You pay gas for one transaction, which on Ink is a fraction of a cent, plus the ETH of your optional first buy.'),
+  p('There is no creation fee. You pay gas for one transaction on Ethereum, plus the ETH of your optional first buy.'),
   h2('Launch protection'),
-  ul('In the launch block only the creator may receive coins from the pool.',
-     'For the next 3 blocks every wallet is capped at 3% of supply bought and 3% held.',
-     'For 20 seconds the fee decays from 99% to 2%.'),
+  p('The constitution and the instincts you enable protect the opening:'),
+  ul('The launch block is reserved: only the creator may receive coins from the pool in it.',
+     'If max-wallet is on, each wallet is capped at the chosen per-wallet amount for the opening window.',
+     'If anti-snipe is on, the buy tax decays from up to 30% back to the base fee over the opening block window.'),
  ]),
- dict(tab=L, group='Create', slug='stock-paired-launches', title='Stock-paired launches', desc='Pairing a coin with a wrapped xStock instead of ETH.', body=[
-  p('A stock-paired coin uses the stock as its quote asset. The pool is coin / stock, the price is in stock units, and the 2% fee is collected in the stock. Everything else, including liquidity lock, the fee split and the leaderboard, is identical.'),
-  h2('Supported stocks'),
-  p('Wrapped Backed xStocks with a funded USDG pool on Uniswap V3 on Ink. More are added as pools appear.'),
-  table(['Stock', 'Underlying', 'Contract', 'USDG pool'], [[s, n, ex(a), f] for s, n, a, f in STOCKS]),
-  h2('How traders pay in ETH'),
-  p('The launchpad router accepts a route: a Uniswap V3 path from WETH to the stock and an optional V4 pool key. Buying walks it forward (ETH to USDG to stock to coin); selling walks it backwards. Wallets that already hold the stock can trade the pool directly with <code>buyWithPair</code> and <code>sellForPair</code>.'),
-  code('route = abi.encode(bytes v3Path, PoolKey v4Key)\nv3Path = WETH (1%) USDG (0.05%) wNVDAx   // for a wNVDAx pair\nrouter.buy{value: 0.1 ether}(coin, route, minCoinOut);'),
-  h2('Rewards on a stock pair'),
-  p('Holders of a stock-paired coin are paid in that stock by default. A basket is optional: with one, the stock is first sold for WETH along the route backwards and the basket is bought from there. Claim as ETH works the same way for any pair.'),
- ]),
- dict(tab=L, group='Create', slug='holder-rewards', title='Holder rewards and baskets', desc='The switch, the accounting, and what a claim does.', body=[
-  h2('The switch'),
-  table(['', 'Creator', 'Holders', 'Platform'], [['Rewards on', '0.70%', '0.50%', '0.80%'], ['Rewards off', '1.20%', '0', '0.80%']]),
-  p('The coin stores the split as <code>creatorBps</code> and <code>holderBps</code>, both immutable. When holder rewards are off the holder share is simply added to the creator share; the platform share never changes.'),
-  h2('Accounting'),
-  p('Rewards use a per-share accumulator. Each fee increases <code>accRewardPerShare</code> by fee divided by the eligible supply; each holder\'s debt is reset on every transfer so they earn exactly for the balance they held between trades. The pool, the factory, the hook and the router are excluded and never earn.'),
-  ul('Selling stops future credit but never takes away what was already earned.',
-     'Rewards do not expire; they wait in the coin until claimed.',
-     'Anyone can <code>claimFor</code> a holder, paying them in the paired asset.',
-     'Anyone can <code>fund</code> a coin to reward its holders directly.'),
-  h2('Claim options'),
-  cards(3,
-   ('coins', 'Paired asset', '<code>claimRewards()</code>. WETH for an ETH pair, the stock for a stock pair.'),
-   ('gift', 'Basket', '<code>claimRewardsAsBasket(pairRoute, routes[], minOuts[])</code>. Equal shares of the basket, each with your own minimum.'),
-   ('wallet', 'ETH', '<code>claimRewardsAsEth(minEthOut, route)</code>. Routes the paired asset to native ETH.')),
-  note('Minimum claim on the site is $1 so swaps stay sensible. The contracts have no minimum; small amounts simply keep accruing.'),
- ]),
- dict(tab=L, group='Trading', slug='liquidity', title='Single-sided liquidity', desc='Why the whole supply sits in one position and what that means for price.', body=[
-  p('At launch the factory places all 1 billion coins in one Uniswap V4 range that starts at a $3,000 market cap and extends to the maximum tick. There is no paired asset in the pool at first; every buy adds some, every sell takes some back out. The curve is the only market maker.'),
-  h2('Properties'),
-  ul('No one can add a second position through the factory; traders may of course add their own liquidity on Uniswap.',
-     'The position is owned by the factory, which has no function to withdraw it.',
-     'LP fee is 0; the only fee is the hook\'s 2%.',
-     'Tick spacing 60; price moves in 0.6% steps at the tick level, continuously inside a tick.'),
-  h2('Start price'),
-  p('$3,000 divided by 1 billion is $0.000003 per coin. In pair units that is 3,000 divided by the pair\'s USD price in the factory, so about 0.0₈12 ETH or 0.0₈7 TSLAx at today\'s prices.'),
- ]),
- dict(tab=L, group='Trading', slug='fees', title='Fees and anti-snipe', desc='The fixed 2% hook fee, the launch surcharge, and where each part goes.', body=[
-  table(['Fee', 'Rate', 'Goes to'], [
-   ['Launch', '0', 'gas only'],
-   ['Trading, creator', '0.70% (1.20% with rewards off)', 'the creator, claimable any time'],
-   ['Trading, holders', '0.50% (0 with rewards off)', 'holders, in the basket, the paired asset or ETH'],
-   ['Trading, platform', '0.80%', 'the treasury; one eighth to the leaderboard pool'],
-   ['Claim', '0', 'gas, plus the Uniswap pool fees of any route']]),
-  h2('Where the fee is taken'),
-  p('The hook takes 2% of the paired-asset side of every swap, whichever direction. When the pair is the specified amount (exact-input buy, exact-output sell) it is returned from <code>beforeSwap</code> as a delta; otherwise from <code>afterSwap</code>. If the PoolManager does not yet physically hold the pair (a fresh stock pool), the fee is kept as an ERC-6909 claim and delivered on the next swap or by <code>flush</code>, which the coin calls before every payout.'),
+ dict(tab=L, group='Create', slug='instincts', title='Instincts', desc='The five behaviours a creator composes into a coin at launch, and the caps that bound them.', body=[
+  p('Instincts are the optional behaviours a coin is born with. Each is fixed in the contracts at launch and enforced by the one immutable hook on every swap. The constitution is separate: it is always on and covered on <a class="link" href="/docs/constitution">The constitution</a>.'),
+  h2('Fee engine'),
+  p('Every coin charges a fee in ETH on every swap. The creator picks the engine:'),
+  table(['Mode', 'How the rate is set'], [
+   ['Flat', 'A single rate for every swap.'],
+   ['Dynamic', 'The rate moves within the bounds with pool conditions.'],
+   ['MEV-tax', 'The rate rises with the swap\'s priority fee, taxing the trades that crowd the block.']]),
+  note('The fee is 1% by default, capped at 3% and never below 0.10% (10 bps), whichever engine is chosen.'),
   h2('Anti-snipe'),
-  p('For <code>SNIPE_SECONDS = 20</code> after launch the fee is 99% decaying linearly to 2%. A bot that buys in the first second pays almost everything to the coin, which splits it to the creator, the holders and the platform like any other fee.'),
-  h2('Wherever you trade'),
-  p('Because the fee lives in the hook, it is identical on this site, on Uniswap, through an aggregator or in a bot. No router can bypass it, and no router needs to implement it.'),
- ]),
- dict(tab=L, group='Trading', slug='claims', title='Claims', desc='Holders, creators and the platform all pull their share from the coin itself.', body=[
-  h2('Holders'),
-  p('Pending rewards are visible on the token page and in your profile. One claim per coin, or Claim all from the profile. Each claim is a single transaction to the coin contract.'),
-  h2('Creators'),
-  p('<code>payCreator()</code> pushes the creator\'s accrued share to the creator wallet in the paired asset. Anyone may call it; the destination is fixed in the coin.'),
-  h2('Platform'),
-  p('<code>payPlatform()</code> pushes the platform share to the factory\'s fee recipient, the treasury. <code>pushPlatformFees(tokens[])</code> on the factory does it for many coins at once. The treasury\'s <code>sweep</code> then sends one eighth to the leaderboard pool and the rest to the platform wallet. All permissionless.'),
-  h2('Routes'),
-  p('Claims that leave the paired asset (ETH or basket) need a route for a stock pair. The site keeps one route per stock and passes it for you; integrators find them under <a class="link" href="/docs/routes">Routes for stock pairs</a>.'),
- ]),
- dict(tab=L, group='Leaderboard', slug='leaderboard', title='How the leaderboard works', desc='Every 3 days the top traders split a prize pool funded by 0.1% of all volume.', body=[
-  p('One eighth of the platform\'s 0.8% is 0.1% of every trade. The treasury sends it to the payout contract, and after each 3-day epoch the pool is split evenly across two boards.'),
-  table(['Board', 'Ranked by', 'Why it cannot be gamed'], [
-   ['PnL', 'Realized profit in USD for the epoch, from average cost basis', 'Wash trades realize zero minus fees'],
-   ['Volume', 'Fees paid in USD (volume × 2%)', 'Washing costs 2% to compete for a share of a far smaller pool']]),
-  h2('Every trade counts'),
-  p('The hook reports each swap to the ledger with the wallet that signed the transaction, or the wallet a router named in 20 bytes of hook data. The ledger keeps an average-cost position per wallet and coin built only from that wallet\'s own buys, so coins received by transfer realize nothing when sold. Stats are converted to USD at the pair\'s price in the factory, so ETH-paired and stock-paired coins rank on the same board.'),
-  h2('Ranking rules'),
-  ul('Minimum $100 of volume in the epoch to rank.', 'Per board: 1st 40%, 2nd 25%, 3rd 15%, 4th 12%, 5th 8%.', 'Empty slots roll over to the next epoch.'),
- ]),
- dict(tab=L, group='Leaderboard', slug='payouts', title='Payouts', desc='Settlement after each epoch and how winners claim.', body=[
-  steps(
-   ('Epoch ends', 'Epochs are 3 days from the ledger\'s genesis timestamp. The current epoch and its end are public on the ledger.'),
-   ('Settlement', 'The top 5 per board are credited from the pool\'s own balance, once per epoch, with amounts fixed by the tiers.'),
-   ('Winners claim', '<code>claim()</code> on the payout contract sends ETH. Winnings never expire.')),
-  note('Rankings are computed from the ledger\'s public stats, so anyone can verify the winners before and after settlement.'),
- ]),
- dict(tab=L, group='Security', slug='security', title='Security model', desc='What can and cannot happen to a coin and its liquidity.', body=[
+  p('A decaying launch tax of up to 30% on buys only, charged over an opening block window and decaying back to the base fee. It applies to buys, never to sells, so a sniper pays the coin while ordinary sellers are untouched. The creator\'s reserved first buy pays the base fee.'),
+  h2('Reflexive buyback'),
+  p('A share of the fee is set aside and periodically swapped for the coin and burned in the pool. Burning supply lifts every remaining holder\'s share. The buyback share is at most 50% of the fee.'),
+  h2('Dividends'),
+  p('A share of the fee is paid to holders pro-rata in ETH, accrued per token held from the moment of each trade. Holders claim their ETH any time; the pool, the factory, the hook and the router are excluded and never earn. The dividend share is at most 50% of the fee.'),
+  h2('Max-wallet'),
+  p('An opening-window per-wallet buy cap. For the chosen number of opening blocks no wallet may buy past the cap, spreading the first supply across more holders. After the window it lifts automatically.'),
+  h2('The caps'),
   cards(2,
-   ('lock', 'Liquidity cannot be removed', 'The position is owned by the factory, which has no function to withdraw it.'),
-   ('shield', 'The coin has no owner', 'No mint, pause, blacklist, transfer tax or balance edit. The only state it keeps is reward accounting.'),
-   ('scale', 'Fees are fixed', 'Set once per pool at registration. No function changes them.'),
-   ('users', 'Payouts are permissionless', 'Creator, platform and holder shares are pushed by anyone to fixed recipients.')),
+   ('scale', 'Each pot at most half', 'The buyback share and the dividend share are each at most 50% of the fee.'),
+   ('scale', 'Together at most four fifths', 'Buyback and dividends together take at most 80% of the fee; the rest splits 60% creator / 40% platform.')),
+ ]),
+ dict(tab=L, group='Trading', slug='fees', title='Fees and anti-snipe', desc='The fee engine, the split after the pots, and the decaying launch tax.', body=[
+  h2('The fee'),
+  p('The hook charges the fee in ETH on every swap, in whichever direction. The rate comes from the fee engine the creator chose and is 1% by default, capped at 3% and never below 0.10%.'),
+  table(['Part of the fee', 'Share', 'Goes to'], [
+   ['Buyback pot', 'up to 50% of the fee', 'buys and burns the coin in the pool'],
+   ['Dividends pot', 'up to 50% of the fee', 'holders, pro-rata in ETH'],
+   ['Creator', '60% of what is left', 'the creator, claimable any time'],
+   ['Platform', '40% of what is left', 'the platform fee recipient']]),
+  note('Buyback and dividends are each at most 50% of the fee and at most 80% combined. With both off, the whole fee splits 60% creator / 40% platform.'),
+  h2('Where the fee is taken'),
+  p('The hook takes its share of the ETH side of every swap. When the ETH is the specified amount (exact-input buy, exact-output sell) it is returned from <code>beforeSwap</code> as a delta; otherwise from <code>afterSwap</code>. The accrued ETH funds the pots first, then credits the creator and the platform.'),
+  h2('Anti-snipe'),
+  p('If the anti-snipe instinct is on, the buy tax starts as high as 30% at launch and decays linearly to the base fee over the opening block window. It applies to buys only; sells always pay the base fee and can never be blocked. A bot that buys in the first block pays most of its buy to the coin, which routes it through the pots and the 60/40 split like any other fee.'),
+  h2('Wherever you trade'),
+  p('Because the fee and the instincts live in the hook, they are identical on this site, on Uniswap, through an aggregator or in a bot. No router can bypass them, and no router needs to implement them.'),
+ ]),
+ dict(tab=L, group='Trading', slug='constitution', title='The constitution', desc='The rules every OneHook coin obeys forever, that no creator, coin or admin can change.', body=[
+  p('The instincts are what a creator chooses. The constitution is what every coin obeys regardless. It is always on, immutable, and enforced by the one hook on every swap.'),
+  cards(2,
+   ('shield', 'Anti-sandwich', 'An MEV priority-fee tax makes sandwiching the pool uneconomic, protecting ordinary swaps.'),
+   ('zap', 'Sells can never be blocked', 'No instinct, creator or admin can stop a holder from selling. There is no blacklist and no transfer freeze on a coin.'),
+   ('rocket', 'The launch block is reserved', 'The first block after launch is reserved for the creator\'s first buy; no one can snipe it.'),
+   ('lock', 'Liquidity is locked in the hook', 'The single-sided position is held under the hook, which has no function to withdraw it.'),
+   ('coins', 'Fixed supply, no owner', 'Every coin is 1,000,000,000 tokens with no mint and no owner. The only state a coin keeps is its instinct accounting.')),
+  note('These rules hold for every coin launched through OneHook, forever. They are the floor beneath whatever instincts a creator adds.'),
+ ]),
+ dict(tab=L, group='Security', slug='security', title='Security model', desc='What can and cannot happen to a coin, its liquidity and its holders, and the limited powers of the admin.', body=[
+  cards(2,
+   ('lock', 'Liquidity cannot be removed', 'The position is held under the hook, which has no function to withdraw it. Only the disclosed admin collect can pull pool liquidity.'),
+   ('shield', 'Coins have no owner', 'No mint, no pause, no blacklist, no transfer tax edit, no balance edit. The only state a coin keeps is its instinct accounting.'),
+   ('scale', 'Instincts and fees are fixed', 'Set once at launch and enforced by the hook. No function, and no admin, can change a coin\'s fee or instincts.'),
+   ('users', 'Payouts are permissionless', 'Creator, platform, buyback and dividend flows are pushed by anyone to fixed recipients and holders.')),
+  h2('The admin'),
+  p('The admin is an immutable wallet. Its powers are deliberately narrow and operational; it can never touch a coin\'s rules, supply or balances.'),
+  table(['Admin can', 'What it does'], [
+   ['<code>pause</code> / <code>resume</code>', 'pause or resume new launches'],
+   ['<code>setHidden</code>', 'hide or unhide a coin in the app listing'],
+   ['<code>setCoinMetadata</code>', 'correct a coin\'s display metadata'],
+   ['<code>setFeeRecipient</code>', 'change the platform fee recipient'],
+   ['<code>setTokenBlocked</code>', 'block a token from being used as a new pair'],
+   ['<code>setStartCap</code>', 'set the opening market cap used for new launches'],
+   ['<code>renounceOwnership</code>', 'give up the admin role entirely'],
+   ['<code>collect</code>', 'pull pool liquidity (disclosed on-chain and in the app)'],
+   ['<code>pushPlatformFees</code>', 'push accrued platform fees to the recipient']]),
+  warn('The admin cannot mint, cannot change a coin\'s fee or instincts, cannot freeze transfers, and cannot move anyone\'s coins.'),
   h2('Testing'),
-  p('Unit, fuzz and fork tests run against the real Uniswap V4 PoolManager, Uniswap V3 router, WETH and the wrapped xStocks on an Ink mainnet fork: launch, ETH and stock-paired first buys, fee split, basket claim, claim as ETH, cost-basis transfers, leaderboard settlement. An external audit is planned before the first public launch.'),
+  p('Unit, fuzz and fork tests run against the real Uniswap v4 PoolManager and WETH on an Ethereum mainnet fork: launch, the reserved first buy, each fee engine, the buyback and dividend pots, max-wallet, anti-snipe decay and the admin surface. An external audit is planned before the first public launch.'),
   h2('Known limits'),
-  ul('Stock prices in the factory are fixed or Chainlink-fed; they only affect the launch price and the leaderboard\'s USD conversion, never fees or rewards.',
-     'Basket claims depend on Uniswap V3 liquidity for each stock on Ink. Thin pools mean worse prices; holders set their own minimums.',
-     'The router passes the swap route the caller supplies. A bad route reverts; it cannot lose funds.'),
+  ul('Oracle prices for a non-ETH pair only set the opening launch price; they never affect fees, instincts or dividends after launch.',
+     'The router passes the swap route the caller supplies. A bad route reverts; it cannot lose funds.',
+     'Contracts are not deployed to mainnet yet; addresses and audit results are published at go-live.'),
  ]),
  # ---------------- Developers tab
  dict(tab=D, group='Integration', slug='direct-integration', title='Direct contract integration', desc='Trade, launch and claim from your own contracts or bots.', body=[
-  p('Inkypump coins are plain ERC-20s and their pools are plain Uniswap V4 pools with a hook. Any V4-capable router on Ink can trade them. The launchpad router is a convenience for ETH-in, ETH-out trading on any pair.'),
-  h2('Trade through the launchpad router'),
+  p('OneHook coins are plain ERC-20s and their pools are plain Uniswap v4 pools with the OneHook hook. Any v4-capable router on Ethereum can trade them. The OneHook router is a convenience for ETH-in, ETH-out trading on any pair.'),
+  h2('Trade through the OneHook router'),
   code('// ETH in, coins out (route is empty for a WETH pair)\nrouter.buy{value: amountIn}(coin, route, minCoinOut);\n// coins in, ETH out\nIERC20(coin).approve(address(router), amountIn);\nrouter.sell(coin, amountIn, route, minEthOut);\n// already holding the paired asset\nrouter.buyWithPair(coin, pairIn, minCoinOut);\nrouter.sellForPair(coin, amountIn, minPairOut);', 'solidity'),
-  h2('Trade through any V4 router'),
-  p('Use <code>factory.poolKeyOf(coin)</code> for the PoolKey. The hook takes its fee from the paired-asset side of the delta. To have the trade attributed to your user on the leaderboard, pass the user\'s address as 20 bytes of hook data; with empty hook data the ledger credits <code>tx.origin</code>.'),
-  code('PoolKey memory key = factory.poolKeyOf(coin);\nbytes memory hookData = abi.encodePacked(user); // optional\npoolManager.swap(key, params, hookData);', 'solidity'),
+  h2('Trade through any v4 router'),
+  p('Use <code>factory.poolKeyOf(coin)</code> for the PoolKey. The hook takes its fee from the ETH side of the delta and runs the coin\'s instincts and the constitution. No router can bypass the hook.'),
+  code('PoolKey memory key = factory.poolKeyOf(coin);\npoolManager.swap(key, params, "");', 'solidity'),
   h2('Launch'),
-  code('factory.launch{value: devBuyEth}(\n  InkypumpFactory.LaunchParams({\n    name: "Mogcat", symbol: "MOGCAT", metadataURI: json,\n    pair: WETH, minPairOut: 0, basket: [wNVDAx, wSPYx], holderRewards: true\n  }), salt, route);', 'solidity'),
+  code('factory.launch{value: devBuyEth}(\n  OneHookFactory.LaunchParams({\n    name: "Mogcat", symbol: "MOGCAT", metadataURI: json,\n    pair: WETH, minCoinOut: 0,\n    feeMode: FeeMode.Flat, feeBps: 100,\n    buybackBps: 2000, dividendBps: 3000,\n    snipeStartBps: 3000, snipeBlocks: 5,\n    maxWalletBps: 100, maxWalletBlocks: 10\n  }), salt, route);', 'solidity'),
   h2('Claim'),
-  code('coin.claimRewards();\ncoin.claimRewardsAsEth(minEthOut, route);\ncoin.claimRewardsAsBasket(pairRoute, routes, minOuts);\ncoin.payCreator(); coin.payPlatform(); // anyone', 'solidity'),
- ]),
- dict(tab=D, group='Integration', slug='routes', title='Routes for stock pairs', desc='How the router moves between ETH and a wrapped xStock.', body=[
-  p('A route is <code>abi.encode(bytes v3Path, PoolKey v4Key)</code>. The V3 path runs from WETH to the stock through Uniswap V3 on Ink; the V4 key is an optional last hop. Either may be empty; for a WETH pair the whole route is empty. Selling and ETH claims walk the same route backwards.'),
-  table(['Stock', 'V3 path', 'Pool fee'], [[s, f'WETH → USDG → {s}', f'1% then {f}'] for s, n, a, f in STOCKS]),
-  code('bytes memory v3Path = abi.encodePacked(WETH, uint24(10000), USDG, uint24(500), wNVDAx);\nPoolKey memory none; // zeroed\nbytes memory route = abi.encode(v3Path, none);', 'solidity'),
-  note('The router checks that the path starts at WETH and ends at the pair and reverts otherwise. It never holds funds between calls.'),
+  code('coin.claimDividends();          // holder pulls their ETH dividends\ncoin.payCreator();              // anyone pushes the creator share\ncoin.payPlatform();             // anyone pushes the platform share', 'solidity'),
  ]),
  dict(tab=D, group='Integration', slug='data', title='Data access', desc='Everything the site shows is readable from the contracts and their events.', body=[
   table(['Need', 'Read'], [
    ['All coins', '<code>factory.allTokens(i)</code>, <code>totalTokens()</code>, <code>listings(token)</code>, <code>hidden(token)</code>'],
-   ['Metadata to display', '<code>factory.metadataOf(token)</code> (the metadata to display)'],
-   ['Fee split and basket', '<code>coin.creatorBps()</code>, <code>holderBps()</code>, <code>basketAssets()</code>, <code>pairAsset()</code>'],
-   ['A holder\'s pending rewards', '<code>coin.pendingRewards(holder)</code>'],
-   ['Trader stats', '<code>ledger.stats(epoch, wallet)</code> (USD, 8 decimals), <code>positions(wallet, token)</code>, <code>averageCost</code>'],
-   ['Epoch timing', '<code>ledger.currentEpoch()</code>, <code>epochEnd(epoch)</code>'],
-   ['Prize pool', '<code>payout.available()</code>, <code>claimable(wallet)</code>']]),
+   ['Metadata to display', '<code>factory.metadataOf(token)</code>'],
+   ['Fee and instincts', '<code>coin.feeBps()</code>, <code>feeMode()</code>, <code>buybackBps()</code>, <code>dividendBps()</code>, <code>pairAsset()</code>'],
+   ['A holder\'s pending dividends', '<code>coin.pendingDividends(holder)</code>'],
+   ['Current fee incl. anti-snipe', '<code>hook.feeBpsNow(poolId, isBuy)</code>'],
+   ['Buyback accrued', '<code>coin.buybackPending()</code>']]),
   h2('Events to index'),
-  ul('<code>Launched(token, creator, pair, taxBps, poolId, pairUsdPrice8, holderRewards)</code> on the factory',
-     '<code>FeeTaken(token, fee)</code> on the hook, <code>FeesAccrued(holder, creator, platform)</code> on each coin',
-     '<code>Trade(wallet, token, epoch, isBuy, coinAmount, pairAmount, fee, realized)</code> on the ledger',
-     '<code>RewardsClaimed</code>, <code>CreatorFeesPaid</code>, <code>PlatformFeesPaid</code> on each coin',
-     '<code>Settled</code> and <code>Claimed</code> on the payout contract'),
+  ul('<code>Launched(token, creator, pair, feeMode, feeBps, buybackBps, dividendBps, poolId)</code> on the factory',
+     '<code>FeeTaken(token, fee)</code> on the hook',
+     '<code>DividendsAccrued(token, amount)</code>, <code>BuybackBurned(token, coinBurned, ethSpent)</code> on each coin',
+     '<code>DividendsClaimed(holder, amount)</code>, <code>CreatorFeesPaid</code>, <code>PlatformFeesPaid</code> on each coin'),
  ]),
- dict(tab=D, group='Reference', slug='production-contracts', title='Production contracts', desc='Addresses on Ink (chain id 57073).', body=[
-  note('All Inkypump contracts are deployed and source-verified on the Ink explorer. Click an address to open it.'),
+ dict(tab=D, group='Reference', slug='production-contracts', title='Contract addresses', desc='OneHook is not deployed to Ethereum mainnet yet; addresses are published here at go-live.', body=[
+  note('OneHook has not launched. The addresses below are published and source-verified on Etherscan at go-live. Until then every entry reads <strong>— not deployed</strong>.'),
   table(['Contract', 'Address', 'Role'], [
-   ['InkypumpFactory', ex('0x0E4C3A944d86243c4463045Ba704645608C865f4', '0x0E4C3A944d86243c4463045Ba704645608C865f4'), 'launches coins, owns the locked positions'],
-   ['InkypumpHook', ex('0x115f272AC83a77c6214F97e1d34cD3fa7ee540cC', '0x115f272AC83a77c6214F97e1d34cD3fa7ee540cC'), 'takes the 2% fee, reports trades'],
-   ['InkypumpRouter', ex('0xcF3fa6c81a603dee91D4e2597A6b882d2B027F30', '0xcF3fa6c81a603dee91D4e2597A6b882d2B027F30'), 'ETH in / out trading on any pair, claim routing'],
-   ['InkypumpLedger', ex('0x07B9dDd3AfB7cD1dd9cc19510Acd04F847510d45', '0x07B9dDd3AfB7cD1dd9cc19510Acd04F847510d45'), 'cost basis, realized PnL, fees paid per epoch'],
-   ['InkypumpPayout', ex('0x58c710Ba32bA475C6EBeFa379a4B0e43fEd9fD2f', '0x58c710Ba32bA475C6EBeFa379a4B0e43fEd9fD2f'), 'leaderboard prize pool'],
-   ['InkypumpTreasury', ex('0xd0EAbfb642AF125D8C73c104ff075886BAB33002', '0xd0EAbfb642AF125D8C73c104ff075886BAB33002'), 'platform fee recipient, 1/8 to the pool'],
-   ['InkypumpTokenDeployer', ex('0xCf1DB06786298a7F5c55c5B0ece066b7592fd447', '0xCf1DB06786298a7F5c55c5B0ece066b7592fd447'), 'creates each coin for the factory'],
-   ['Uniswap V4 PoolManager', ex(A['pm']), 'Uniswap\'s, on Ink'],
-   ['Uniswap V3 SwapRouter02', ex(A['r02']), 'stock routes'],
-   ['WETH', ex(A['weth']), 'paired asset'],
-   ['USDG', ex(A['usdg']), 'route hop for stocks']]),
-  h2('Wrapped xStocks'),
-  table(['Stock', 'Address'], [[f'{s} ({n})', ex(a, a)] for s, n, a, f in STOCKS]),
+   ['OneHookFactory', NA, 'launches coins, holds the locked positions'],
+   ['OneHookHook', NA, 'charges the fee, runs the instincts, enforces the constitution'],
+   ['OneHookRouter', NA, 'ETH in / out trading on any pair, claim routing'],
+   ['OneHookTokenDeployer', NA, 'creates each coin for the factory'],
+   ['Uniswap v4 PoolManager', NA, 'Uniswap\'s, on Ethereum; address pinned at go-live'],
+   ['WETH', NA, 'paired asset; canonical WETH pinned at go-live']]),
  ]),
  dict(tab=D, group='Reference', slug='functions-events', title='Functions and events', desc='The public surface of each contract.', body=[
-  h2('InkypumpFactory'),
+  h2('OneHookFactory'),
   table(['Function', 'Who', 'Notes'], [
-   ['launch(params, salt, route) payable', 'anyone', 'returns (token, poolId); ETH sent is the first buy'],
+   ['launch(params, salt, route) payable', 'anyone', 'returns (token, poolId); ETH sent is the reserved first buy'],
    ['poolKeyOf(token), listings(token), allTokens(i)', 'view', ''],
-   ['pairUsdPrice(pair), quoteAssets(pair)', 'view', 'Chainlink feed when set and fresh, else the factory price'],
-   ['pushPlatformFees(tokens[])', 'anyone', 'pays the treasury'],
+   ['pairPrice(pair), quoteAssets(pair)', 'view', 'oracle feed used for the opening launch price'],
+   ['pushPlatformFees(tokens[])', 'anyone', 'pays the platform fee recipient'],
    ]),
-  h2('InkypumpToken'),
+  h2('OneHookToken'),
   table(['Function', 'Who', 'Notes'], [
-   ['sync()', 'anyone', 'credits the pair asset that arrived since the last sync'],
-   ['fund(amount)', 'anyone', 'rewards holders only'],
-   ['pendingRewards(holder), unsynced()', 'view', ''],
-   ['claimRewards, claimRewardsAsEth, claimRewardsAsBasket, claimFor', 'holder / anyone', ''],
+   ['sync()', 'anyone', 'credits the ETH that arrived since the last sync'],
+   ['pendingDividends(holder), unsynced()', 'view', ''],
+   ['claimDividends, claimFor', 'holder / anyone', 'pays ETH'],
    ['payCreator, payPlatform', 'anyone', 'fixed recipients'],
    ['burn(amount)', 'holder', '']]),
-  h2('InkypumpHook'),
+  h2('OneHookHook'),
   table(['Function', 'Who', 'Notes'], [
-   ['feeBpsNow(poolId, sender)', 'view', 'current total fee incl. anti-snipe, and the base'],
-   ['flush(token)', 'anyone', 'delivers fees held as V4 claims'],
+   ['feeBpsNow(poolId, isBuy)', 'view', 'current fee incl. anti-snipe decay, plus the base'],
+   ['flush(token)', 'anyone', 'delivers fees held as v4 claims and runs the buyback'],
    ['config(poolId), pairOf(token), owed(token)', 'view', '']]),
-  h2('Ledger and payout'),
+  h2('Admin'),
   table(['Function', 'Who', 'Notes'], [
-   ['ledger.stats(epoch, wallet)', 'view', 'pnl, fees, volume in USD (8 dp), trades'],
-   ['ledger.positions(wallet, token), averageCost', 'view', 'pair wei'],
-   ['payout.claim()', 'winner', 'ETH']]),
+   ['pause, resume', 'admin', 'new launches'],
+   ['setHidden, setCoinMetadata, setFeeRecipient', 'admin', 'listing and recipient'],
+   ['setTokenBlocked, setStartCap', 'admin', 'new pairs and opening cap'],
+   ['collect, pushPlatformFees, renounceOwnership', 'admin', 'collect is disclosed on-chain']]),
  ]),
  dict(tab=D, group='Reference', slug='limits', title='Limits and validation', desc='Constants and reverts you will meet.', body=[
   table(['Constant', 'Value'], [
-   ['TOTAL_SUPPLY', '1,000,000,000 × 10¹⁸'], ['INITIAL_MARKET_CAP_USD', '$3,000'], ['TAX_BPS', '200 (2%)'],
-   ['CREATOR_BPS / HOLDER_BPS of the fee', '3500 / 2500 (platform 4000)'], ['MAX_BASKET', '4'], ['SNIPE_START_BPS / SNIPE_SECONDS', '9900 / 20'],
-   ['PROTECT_BLOCKS, MAX_BUY_BPS, MAX_HOLD_BPS', '3 blocks, 3%, 3%'], ['TICK_SPACING / LP_FEE', '60 / 0'],
-   ['FEED_MAX_AGE', '7 days'], ['EPOCH', '3 days'], ['Payout tiers', '40 / 25 / 15 / 12 / 8 % per board']]),
+   ['TOTAL_SUPPLY', '1,000,000,000 × 10¹⁸'],
+   ['FEE_BPS default / max / min', '100 (1%) / 300 (3%) / 10 (0.10%)'],
+   ['BUYBACK_BPS, DIVIDEND_BPS max', '5000 each (50% of the fee)'],
+   ['BUYBACK + DIVIDEND combined max', '8000 (80% of the fee)'],
+   ['Fee split after the pots', '60% creator / 40% platform'],
+   ['SNIPE_START_BPS max', '3000 (30% on buys, decaying)'],
+   ['LP_FEE', '0 (the only fee is the hook\'s)']]),
   h2('Reverts'),
   table(['Error', 'Reason'], [
-   ['LaunchesPaused', 'new launches are paused'],
-   ['QuoteNotApproved', 'pair or basket asset not approved, or WETH in a basket'],
-   ['InvalidParams', 'empty name or symbol, basket with rewards off, repeats, more than 4, bad bps'],
-   ['NoPrice', 'the pair has no usable price'],
-   ['LaunchGuard / BuyCap / HoldCap', 'launch block and 3-block protection'],
-   ['Slippage / BadRoute', 'router minimums not met or a route that does not start at WETH and end at the pair'],
-   ['NoBasket', 'basket claim on a coin without a basket'],
-   ['EpochNotOver / AlreadySettled', 'an epoch is settled once, after it ends']]),
+   ['LaunchesPaused', 'new launches are paused by the admin'],
+   ['QuoteNotApproved', 'the paired asset is not an approved or oracle-priced token, or is blocked'],
+   ['InvalidParams', 'empty name or symbol, fee out of bounds, or buyback/dividend over the caps'],
+   ['NoPrice', 'the pair has no usable oracle price'],
+   ['LaunchGuard / WalletCap', 'reserved launch block or the max-wallet opening window'],
+   ['Slippage / BadRoute', 'router minimums not met or a route that does not start at WETH and end at the pair']]),
  ]),
 ]
-GROUP_ORDER = {L: ['Overview', 'Create', 'Trading', 'Leaderboard', 'Security'], D: ['Integration', 'Reference']}
+GROUP_ORDER = {L: ['Overview', 'Create', 'Trading', 'Security'], D: ['Integration', 'Reference']}
 TABS = [(L, 'Launchpad', '/docs/introduction'), (D, 'Developers', '/docs/direct-integration')]
 
 # ---------------------------------------------------------------- renderers
@@ -441,6 +422,11 @@ def frag(h):
 def build(page, prev, nxt):
     soup = BeautifulSoup(open(REF).read(), 'html.parser')
     for t in soup.select('script, noscript, link[rel="preload"], link[rel="stylesheet"], link[rel="icon"], link[rel="apple-touch-icon"], meta[property], meta[name="description"]'): t.decompose()
+    # strip leftover o1/Mintlify head metadata so it cannot leak into the OneHook docs
+    for t in soup.select('meta[name="generator"], meta[name="application-name"], meta[name="apple-mobile-web-app-title"], '
+                         'meta[name="msapplication-config"], meta[name="msapplication-TileColor"], meta[name="theme-color"], '
+                         'meta[name^="twitter:"], meta[name^="og:"], '
+                         'link[rel="canonical"], link[rel="alternate"], link[rel="manifest"], link[href*="mintlify-assets"]'): t.decompose()
     for t in soup.select('blockquote.sr-only, [data-assistant-bar], #theme-preference-menu-trigger'): t.decompose()
     for st in soup.find_all('style'):
         if '--primary' in st.get_text(): st.decompose()
@@ -449,6 +435,10 @@ def build(page, prev, nxt):
     head = soup.head
     for t in head.find_all('title'): t.decompose()
     head.insert(0, frag(f'<title>{page["title"]} | {SITE} docs</title><meta name="description" content="{H.escape(page["desc"])}">'
+                        f'<meta name="theme-color" content="#0a0e18">'
+                        f'<meta property="og:type" content="website"><meta property="og:site_name" content="{SITE}">'
+                        f'<meta property="og:title" content="{page["title"]} | {SITE} docs"><meta property="og:description" content="{H.escape(page["desc"])}">'
+                        f'<meta name="twitter:card" content="summary"><meta name="twitter:title" content="{page["title"]} | {SITE} docs"><meta name="twitter:description" content="{H.escape(page["desc"])}">'
                         '<link rel="icon" href="../img/favicon.ico" sizes="any"><link rel="icon" type="image/svg+xml" href="../img/favicon.svg">'
                         '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
                         '<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">'
@@ -457,7 +447,7 @@ def build(page, prev, nxt):
     nb = soup.select_one('#navbar')
     logo_a = nb.select_one('a.select-none')
     logo_a['href'] = '/'
-    logo_a.clear(); logo_a.append(frag(f'<span class="sr-only">{SITE} home page</span><img alt="{SITE}" class="nav-logo w-auto h-7 relative object-contain shrink-0 block" src="../img/wordmark-dark.png">'))
+    logo_a.clear(); logo_a.append(frag(f'<span class="sr-only">{SITE} home page</span><img alt="{SITE}" class="nav-logo w-auto h-7 relative object-contain shrink-0 block" src="../img/hero-wordmark.png">'))
     for a in nb.select('a[href="https://o1.exchange"]'):
         a['href'] = '/launch'; a['target'] = '_self'
         for s in a.find_all('span', string=re.compile('Start Trading')): s.string = 'Launch a token'
@@ -497,7 +487,7 @@ def build(page, prev, nxt):
     else: soup.select_one('#content-side-layout').decompose()
     # footer
     ft = soup.select_one('#footer')
-    ft.clear(); ft.append(frag(f'<div class="flex gap-6 flex-wrap"><a class="h-fit" href="https://x.com/inkypump" rel="noopener noreferrer" target="_blank"><span class="sr-only">x</span>{I["x"]}</a></div><div class="flex items-center justify-between"><div class="sm:flex"><span class="text-sm text-gray-400 dark:text-gray-500">{SITE} on Ink</span></div></div>'))
+    ft.clear(); ft.append(frag(f'<div class="flex gap-6 flex-wrap"><a class="h-fit" href="https://x.com/onehook" rel="noopener noreferrer" target="_blank"><span class="sr-only">x</span>{I["x"]}</a></div><div class="flex items-center justify-between"><div class="sm:flex"><span class="text-sm text-gray-400 dark:text-gray-500">{SITE} on Ethereum</span></div></div>'))
     # scripts
     soup.body.append(frag('<script src="docs.js"></script>'))
     html = str(soup)

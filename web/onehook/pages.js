@@ -8,52 +8,63 @@ async function runTx(btn,fn,okMsg){ const t=btn?btn.textContent:''; if(btn){ btn
 
 /* ======================= LAUNCH ======================= */
 function initLaunch(){
-  const g=id=>document.getElementById(id); const TAKEN=new Set((window.CHAIN&&LIVE?CHAIN.tokens():TOK).map(x=>x.t.toUpperCase())); let basket=['NVDAx','SPYx'], logoURL=null, dev=false, pair='ETH', rew=true, busy=false;
-  const PAIR_USD={ETH:ETH}; STOCKS.forEach(s=>PAIR_USD[s[0]]=0);
-  const PAIRS=[['ETH','Ethereum',ETH_IMG],...STOCKS.filter(s=>!LIVE||STOCK_ADDR[s[0]]).map(x=>[x[0],x[1],STOCK_IMG(x[0])])]; const pairImg2=()=>PAIRS.find(x=>x[0]===pair)[2]; const CAP_USD=3000;
-  const pairAddr=p=>p==='ETH'?((window.INKY&&INKY.weth)||'0x4200000000000000000000000000000000000006'):STOCK_ADDR[p];
-  function drawPairs(){ g('pairMenu').innerHTML=PAIRS.map(x=>`<button type="button" class="${x[0]===pair?'on':''}" data-p="${x[0]}"><img src="${x[2]}" alt=""><span>${x[0]}<small>${x[1]}${PAIR_USD[x[0]]?' · $'+PAIR_USD[x[0]].toLocaleString('en-US',{maximumFractionDigits:2}):''}</small></span></button>`).join(''); }
-  if(LIVE&&window.CHAIN) Promise.all(PAIRS.map(async p=>{ try{ PAIR_USD[p[0]]=await CHAIN.pairUsd(pairAddr(p[0])); }catch{} })).then(()=>{ drawPairs(); sync(); });
-  g('pairMenu').addEventListener('click',e=>{ const b=e.target.closest('[data-p]'); if(!b) return; pair=b.dataset.p; g('pairMenu').classList.remove('open'); g('pairBtn').classList.remove('open'); drawPairs(); sync(); val2(); }); drawPairs();
-  const COLORS=['var(--color-accent)','var(--color-success)','#fb923c','#60a5fa'];
+  const g=id=>document.getElementById(id); const TAKEN=new Set((window.CHAIN&&LIVE?CHAIN.tokens():TOK).map(x=>x.t.toUpperCase()));
+  let logoURL=null, dev=false, busy=false, pairUsd=ETH; const CAP_USD=3000;
+  const inst={ feeMode:'flat', feeBps:100, snipe:false, snipeBps:3000, snipeMin:30, buy:false, buyShare:2000, div:false, divShare:2000, max:false, maxBps:100, maxHrs:6 };
+  const WETH=(window.INKY&&INKY.weth)||'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  if(LIVE&&window.CHAIN){ CHAIN.pairUsd(WETH).then(v=>{ pairUsd=v||ETH; sync(); }).catch(()=>{}); }
   const letter=()=>((g('fTick').value.trim()||'T')[0]).toUpperCase();
-  function paint(){ const l=letter(); g('pLetter').textContent=l; const av4=g('pLogo4').querySelector('span'); av4.textContent=l; [g('pLogo2'),g('pLogo4')].forEach(el=>{ el.querySelectorAll('img').forEach(i=>i.remove()); el.insertAdjacentHTML('beforeend',`<img src="${logoURL||DEF_LOGO}" alt="">`); }); const lb=g('pLogo'); if(logoURL) lb.innerHTML=`<img src="${logoURL}" alt="">`; }
+  function paint(){ const l=letter(); g('pLetter').textContent=l; const av4=g('pLogo4').querySelector('span'); if(av4) av4.textContent=l; [g('pLogo2'),g('pLogo4')].forEach(el=>{ if(!el) return; el.querySelectorAll('img').forEach(i=>i.remove()); el.insertAdjacentHTML('beforeend',`<img src="${logoURL||DEF_LOGO}" alt="">`); }); const lb=g('pLogo'); if(logoURL) lb.innerHTML=`<img src="${logoURL}" alt="">`; }
+  function readInst(){ inst.feeBps=clamp(Math.round((parseFloat(g('feePct').value)||1)*100),10,300);
+    inst.snipeBps=clamp(Math.round((parseFloat(g('snipePct').value)||30)*100),inst.feeBps+1,3000); inst.snipeMin=clamp(Math.round(parseFloat(g('snipeMin').value)||30),1,1440);
+    inst.buyShare=clamp(Math.round(parseFloat(g('buyPct').value)||0),1,50)*100; inst.divShare=clamp(Math.round(parseFloat(g('divPct').value)||0),1,50)*100;
+    inst.maxBps=clamp(Math.round((parseFloat(g('maxPct').value)||1)*100),50,2000); inst.maxHrs=clamp(Math.round(parseFloat(g('maxHrs').value)||6),1,720); }
+  const feeDisp=()=>(inst.feeBps/100).toFixed(inst.feeBps%100?2:0)+'%';
+  const modeName=()=>inst.feeMode==='flat'?'Flat fee':inst.feeMode==='dynamic'?'Dynamic fee':'MEV-tax';
+  function instList(){ const a=[modeName()]; if(inst.snipe)a.push('Anti-snipe'); if(inst.buy)a.push('Buyback'); if(inst.div)a.push('Dividends'); if(inst.max)a.push('Max-wallet'); return a; }
   function val1(){ const n=g('fName').value.trim(), t=g('fTick').value.trim().toUpperCase(); let ok=true; g('nMsg').textContent=n?(n.length>32?'Name: 32 characters max':''):'Name is required'; if(!n||n.length>32) ok=false;
     if(!t){ g('tMsg').textContent=''; ok=false; } else if(!/^[A-Z0-9]{2,10}$/.test(t)){ g('tMsg').className='lf-err'; g('tMsg').textContent='Symbol: 2–10 characters, A–Z and 0–9'; ok=false; } else if(TAKEN.has(t)){ g('tMsg').className='lf-err'; g('tMsg').textContent='$'+t+' is already taken'; ok=false; } else { g('tMsg').className='lf-err ok'; g('tMsg').textContent='$'+t+' is available'; } return ok; }
-  function val2(){ const c=parseFloat(g('fCommit').value)||0; const ok=!dev||(c>=0&&c<=0.5); g('cMsg').textContent=ok?'':'Dev buy must be between 0 and 0.5 ETH'; const need=rew&&pair==='ETH'&&!basket.length; g('pkMsg').textContent=need?'Pick at least one stock, or pair the token with a stock':''; return ok&&!need; }
-  function donut(){ const n=basket.length, svg=g('donut'); const R=50, C=2*Math.PI*R; let off=0; svg.innerHTML=`<circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--color-bg-input)" stroke-width="14"/>`+basket.map((s,i)=>{ const len=C/n-3; const el=`<circle cx="60" cy="60" r="${R}" fill="none" stroke="${COLORS[i]}" stroke-width="14" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`; off+=C/n; return el; }).join('');
-    g('allocPct').textContent=n?Math.round(100/n)+'%':'0%'; g('allocLeft').textContent=n?`${n} of 4 picked · equal shares`:(pair==='ETH'?'Pick at least one stock':`No basket · paid in ${pair}`); g('allocLeft').style.color=n||pair!=='ETH'?'':'var(--color-error)';
-    g('allocLegend').innerHTML=basket.map((s,i)=>`<div><span class="dot" style="background:${COLORS[i]}"></span>${STOCK_NAME[s]} · ${s}<b>${Math.round(100/n)}%</b></div>`).join(''); }
-  function sync(){ const n=g('fName').value.trim()||'Your token', t=(g('fTick').value.trim()||'TOKEN').toUpperCase(), d=g('fDesc').value.trim(), c=parseFloat(g('fCommit').value)||0;
-    g('pName').textContent=n; g('dName').textContent=n; g('pTick').textContent=t; g('pDesc').textContent=d||'Fixed-supply token trading on a locked Uniswap V4 pool.'; paint();
-    const cUsd=c*ETH, out=cUsd/(CAP_USD+cUsd)*SUPPLY; g('fbOut').textContent=fmtAmt(out); g('dBuy').textContent=dev&&c?fmtAmt(out)+' tokens':'none'; g('sumDev').textContent=c+' ETH'; g('sumDevRow').style.display=dev?'':'none';
-    const px=PAIR_USD[pair]||0, capPair=px?CAP_USD/px:0, unit=px?CAP_USD/SUPPLY/px:0; g('pairCur').innerHTML=`<img src="${pairImg2()}" alt="" class="lf-coin">${pair}`; g('pPair').textContent=pair; g('pPairTag').innerHTML=`<img src="${pairImg2()}" alt="">${pair}`; g('sumPair').textContent=pair; g('mktPool').textContent=`Uniswap V4 · ${pair} · Ink`; g('dPool').textContent=`Uniswap V4 · ${pair} · locked`;
-    g('pvPrice').textContent=px?`${fmtPrice(unit)} ${pair} at the current ${pair} price.`:'Loading the '+pair+' price…'; g('pvCap').textContent=px?`${capPair>=100?capPair.toFixed(0):capPair.toFixed(2)} ${pair} at the current ${pair} price.`:'';
-    const cr=rew?'0.70%':'1.20%', hd=rew?'0.50%':'0%'; g('spCreator').textContent=cr; g('spHolder').textContent=hd; g('spHoldL').textContent=rew?(basket.length?'Holders · in the basket':`Holders · in ${pair}`):'Holders · off'; g('mktFee').textContent=`2.00% · ${rew?'0.7 creator · 0.5 holders':'1.2 creator · 0 holders'} · 0.8 platform`;
-    const rewTxt=rew?`0.5% · ${basket.join(', ')||pair}`:'Off · 1.2% to creator'; g('sumRew').textContent=rewTxt; g('dBasket').textContent=rewTxt; g('sumCreator').textContent=`${rew?'0.7':'1.2'}% of every trade`; g('dCreator').textContent=`${rew?'0.7':'1.2'}% of every trade`;
-    g('pBasket').innerHTML=rew?(basket.map(s=>`<img src="${STOCK_IMG(s)}" alt="" title="${STOCK_NAME[s]}">`).join('')+(basket.join(', ')||`Rewards in ${pair}`)):'No holder rewards'; donut(); }
-  function drawPick(){ g('pick').innerHTML=STOCKS.filter(s=>!LIVE||STOCK_ADDR[s[0]]).map(s=>{ const on=basket.includes(s[0]); const off=!on&&basket.length>=4; return `<button type="button" class="lf-pk${on?' on':''}${off?' off':''}" data-s="${s[0]}"><img src="${STOCK_IMG(s[0])}" alt=""><span class="t"><b>${s[0]}</b><span>${s[1]}${PAIR_USD[s[0]]?' · $'+PAIR_USD[s[0]].toLocaleString('en-US',{maximumFractionDigits:2}):''}</span></span><span class="lf-sw${on?' on':''}"></span></button>`; }).join(''); }
-  g('pick').addEventListener('click',e=>{ const b=e.target.closest('[data-s]'); if(!b||b.classList.contains('off')) return; const s=b.dataset.s; basket=basket.includes(s)?basket.filter(x=>x!==s):[...basket,s]; drawPick(); sync(); val2(); }); drawPick();
-  ['fName','fTick','fDesc','fCommit','fWeb','fX','fTg'].forEach(i=>g(i).addEventListener('input',()=>{ sync(); if(i==='fName'||i==='fTick') val1(); if(i==='fCommit') val2(); }));
-  g('pairBtn').onclick=()=>{ g('pairBtn').classList.toggle('open'); g('pairMenu').classList.toggle('open'); }; g('mktBtn').onclick=()=>{ g('mktBtn').classList.toggle('open'); g('mkt').classList.toggle('open'); };
+  function val2(){ const c=parseFloat(g('fCommit').value)||0; const ok=!dev||(c>=0&&c<=0.5); g('cMsg').textContent=ok?'':'Dev buy must be between 0 and 0.5 ETH';
+    let im=''; if((inst.buy?inst.buyShare:0)+(inst.div?inst.divShare:0)>8000) im='Buyback and dividends together can be at most 80% of the fee.'; g('instMsg').textContent=im; return ok&&!im; }
+  function sync(){ readInst();
+    const n=g('fName').value.trim()||'Your coin', t=(g('fTick').value.trim()||'TOKEN').toUpperCase(), d=g('fDesc').value.trim(), c=parseFloat(g('fCommit').value)||0;
+    g('pName').textContent=n; g('dName').textContent=n; g('pTick').textContent=t; g('pDesc').textContent=d||'A fixed-supply coin born with instincts, on one immutable hook.'; paint();
+    const cUsd=c*ETH, out=cUsd/(CAP_USD+cUsd)*SUPPLY; g('fbOut').textContent=fmtAmt(out); g('dBuy').textContent=dev&&c?fmtAmt(out)+' coins':'none'; g('sumDev').textContent=c+' ETH'; g('sumDevRow').style.display=dev?'':'none';
+    const px=pairUsd||0, capPair=px?CAP_USD/px:0, unit=px?CAP_USD/SUPPLY/px:0;
+    g('pPair').textContent='ETH'; g('pPairTag').innerHTML=`<img src="img/eth.png" alt="">ETH`; g('sumPair').textContent='ETH'; g('mktPool').textContent='Uniswap V4 · ETH · Ethereum'; g('dPool').textContent='Uniswap V4 · ETH · locked';
+    g('pvPrice').textContent=px?`${fmtPrice(unit)} ETH at the current ETH price.`:'Loading the ETH price…'; g('pvCap').textContent=px?`${capPair>=100?capPair.toFixed(0):capPair.toFixed(2)} ETH at the current ETH price.`:'';
+    g('feeHint').textContent=inst.feeMode==='flat'?'A fixed fee on every swap.':inst.feeMode==='dynamic'?'The fee widens while swaps cluster and relaxes block by block when they stop. Capped at 3%.':"The fee rises with the trader's priority fee, so snipers and sandwichers pay the pool, not the block builder.";
+    const fee=feeDisp(); g('mktFee').textContent=`${fee} · 60% creator · 40% platform`; g('feeSplitHd').textContent=`${fee} per swap, in ETH`; g('sumFee').textContent=`${fee} ${inst.feeMode==='flat'?'flat':inst.feeMode==='dynamic'?'dynamic':'MEV-tax'}`;
+    const bb=inst.buy?inst.buyShare/100:0, dv=inst.div?inst.divShare/100:0, rest=100-bb-dv, cr=Math.round(rest*0.6), pl=rest-cr;
+    g('srBuy').style.display=inst.buy?'':'none'; g('spBuy').textContent=bb+'%'; g('srDiv').style.display=inst.div?'':'none'; g('spDiv').textContent=dv+'%'; g('spCreator').textContent=cr+'%'; g('spPlat').textContent=pl+'%';
+    g('sumCreator').textContent=cr+'% of the fee'; g('dCreator').textContent=cr+'% of the fee';
+    const chips=instList(); g('sumInst').textContent=chips.join(', '); g('dInst').textContent=chips.join(', '); g('pInst').textContent=chips.slice(1).join(' · ')||'Constitution only'; }
+  g('feeSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-fee]'); if(!b) return; inst.feeMode=b.dataset.fee; g('feeSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); sync(); });
+  ['fName','fTick','fDesc','fCommit','fWeb','fX','fTg','feePct','snipePct','snipeMin','buyPct','divPct','maxPct','maxHrs'].forEach(i=>{ const el=g(i); if(el) el.addEventListener('input',()=>{ sync(); if(i==='fName'||i==='fTick') val1(); if(i!=='fName'&&i!=='fTick') val2(); }); });
+  g('mktBtn').onclick=()=>{ g('mktBtn').classList.toggle('open'); g('mkt').classList.toggle('open'); };
   const sw=(id,fn)=>{ const b=g(id); if(!b) return; b.onclick=()=>{ if(b.disabled) return; const on=!b.classList.contains('on'); b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); fn&&fn(on); }; };
-  sw('swDev',on=>{ dev=on; g('devBox').classList.toggle('open',on); sync(); val2(); }); sw('swRew',on=>{ rew=on; g('launchPage').classList.toggle('rew-off',!on); sync(); val2(); });
+  sw('swDev',on=>{ dev=on; g('devBox').classList.toggle('open',on); sync(); val2(); });
+  sw('swSnipe',on=>{ inst.snipe=on; g('snipeBox').classList.toggle('open',on); sync(); val2(); });
+  sw('swBuy',on=>{ inst.buy=on; g('buyBox').classList.toggle('open',on); sync(); val2(); });
+  sw('swDiv',on=>{ inst.div=on; g('divBox').classList.toggle('open',on); sync(); val2(); });
+  sw('swMax',on=>{ inst.max=on; g('maxBox').classList.toggle('open',on); sync(); val2(); });
   function loadLogo(file){ if(!file||!file.type.startsWith('image/')){ toast('Please choose an image file','x'); return; } if(file.size>4*1024*1024){ toast('Logo too big, max 4 MB','x'); return; }
-    // the logo lives on-chain in the coin's metadata, and storage is the expensive part of the launch: keep it under ~4 KB
-    const img=new Image(); img.onload=()=>{ const s=Math.min(img.width,img.height); let best=null; for(const size of [128,112,96,80,64]){ const c=document.createElement('canvas'); c.width=c.height=size; const x=c.getContext('2d'); x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size); for(let q=0.8;q>=0.35;q-=0.15){ const d=c.toDataURL('image/webp',q); if(!best||d.length<best.length) best=best&&best.length<=4200?best:d; if(d.length<=4200){ best=d; break; } } if(best&&best.length<=4200) break; } logoURL=best; sync(); toast('Logo ready · '+Math.round(logoURL.length/1024*10)/10+' KB on-chain'); }; img.src=URL.createObjectURL(file); }
+    const img=new Image(); img.onload=()=>{ const s=Math.min(img.width,img.height); let best=null; for(const size of [128,112,96,80,64]){ const c=document.createElement('canvas'); c.width=c.height=size; const x=c.getContext('2d'); x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size); for(let q=0.8;q>=0.35;q-=0.15){ const dd=c.toDataURL('image/webp',q); if(!best||dd.length<best.length) best=best&&best.length<=4200?best:dd; if(dd.length<=4200){ best=dd; break; } } if(best&&best.length<=4200) break; } logoURL=best; sync(); toast('Logo ready · '+Math.round(logoURL.length/1024*10)/10+' KB on-chain'); }; img.src=URL.createObjectURL(file); }
   g('fLogo').addEventListener('change',e=>loadLogo(e.target.files[0])); const dz=g('drop'); ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault(); dz.style.borderColor='var(--color-accent)';})); ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault(); dz.style.borderColor='';})); dz.addEventListener('drop',e=>loadLogo(e.dataTransfer.files[0]));
-  const cta=g('deploy'); const setCta=()=>{ if(busy) return; cta.disabled=false; cta.textContent=!W.connected?'Connect Wallet':!W.onInk?'Switch to Ink':'Launch token'; }; setCta(); document.addEventListener('wallet-change',setCta);
+  const cta=g('deploy'); const setCta=()=>{ if(busy) return; cta.disabled=false; cta.textContent=!W.connected?'Connect Wallet':!W.onInk?'Switch to Ethereum':'Launch coin'; }; setCta(); document.addEventListener('wallet-change',setCta);
   const link=v=>{ v=v.trim(); if(!v) return ''; if(!/^https?:\/\//i.test(v)) v='https://'+v; return v.slice(0,200); };
   cta.onclick=async()=>{ if(!W.connected){ openConnect(); return; } if(!W.onInk){ try{ await DYN().switchToInk(); }catch(e){ toast(errMsg(e),'x'); } return; } if(!val1()||!val2()){ toast('Fix the highlighted fields','x'); $('main').scrollTo({top:0,behavior:'smooth'}); return; } if(PRE||!LIVE||!window.CHAIN){ toast('Launches open when the contracts go live on Ethereum'); return; }
     const name=g('fName').value.trim(), sym=g('fTick').value.trim().toUpperCase(); const meta={description:g('fDesc').value.trim().slice(0,280)}; if(logoURL) meta.image=logoURL; if(link(g('fWeb').value)) meta.website=link(g('fWeb').value); if(link(g('fX').value)) meta.x=link(g('fX').value); if(link(g('fTg').value)) meta.telegram=link(g('fTg').value);
-    const devWei=dev?CHAIN.parseEther((parseFloat(g('fCommit').value)||0).toFixed(18)):0n; const bk=rew?basket.map(s=>STOCK_ADDR[s]).filter(Boolean):[];
+    const devWei=dev?CHAIN.parseEther((parseFloat(g('fCommit').value)||0).toFixed(18)):0n;
+    const genes={ feeMode:inst.feeMode==='flat'?0:inst.feeMode==='dynamic'?1:2, feeBps:inst.feeBps, snipeBps:inst.snipe?inst.snipeBps:0, snipeBlocks:inst.snipe?clamp(Math.round(inst.snipeMin*60/12),5,7200):0, buybackShareBps:inst.buy?inst.buyShare:0, buybackThreshold:inst.buy?CHAIN.parseEther('0.05'):0n, divShareBps:inst.div?inst.divShare:0, maxWalletBps:inst.max?inst.maxBps:0, maxWalletSecs:inst.max?inst.maxHrs*3600:0 };
     busy=true; cta.disabled=true; cta.textContent='Confirm in wallet…';
-    try{ const {rc,token}=await CHAIN.launch({name,symbol:sym,metadataURI:JSON.stringify(meta),pair:pairAddr(pair),minPairOut:0,basket:bk,holderRewards:rew},devWei);
+    try{ const {rc,token}=await CHAIN.launch({name,symbol:sym,metadataURI:JSON.stringify(meta),pair:WETH,minPairOut:0,genes},devWei);
       busy=false; setCta(); if(!token) throw new Error('Launched, but the token address was not found in the receipt');
-      g('dBlock').innerHTML=ic('check')+'Deployed · block #'+rc.blockNumber.toLocaleString(); g('dAddr').dataset.copy=cs(token); g('dAddrT').textContent=shortAddr(token); g('dOpen').href=tokenUrl(token.toLowerCase()); window._launched=token;
+      g('dBlock').innerHTML=ic('check')+'Deployed · block #'+rc.blockNumber.toLocaleString(); g('dAddr').dataset.copy=cs(token); g('dAddrT').textContent=shortAddr(token); g('dOpen').href=tokenUrl(token.toLowerCase()); window._launched=token; g('dInst').textContent=instList().join(', ');
       $('.lf-grid').classList.add('hidden'); g('doneBox').classList.remove('hidden'); toast(name+' is live on Ethereum'); $('main').scrollTo({top:0,behavior:'smooth'}); try{ await CHAIN.refresh(); syncTok(); }catch{} }
     catch(e){ busy=false; setCta(); toast(errMsg(e),'x'); } };
-  g('shareX').onclick=()=>{ const t=g('fTick').value.trim().toUpperCase(); const url=window._launched?SITE+'/token/'+window._launched.toLowerCase():SITE; open('https://x.com/intent/tweet?text='+encodeURIComponent('$'+t+' is live on OneHook (Ink), paired with '+pair+'. LP locked forever.'+(rew?' Holders earn '+(basket.join(' + ')||pair)+' on every trade.':'')+' '+url)); };
+  g('shareX').onclick=()=>{ const t=g('fTick').value.trim().toUpperCase(); const url=window._launched?SITE+'/token/'+window._launched.toLowerCase():SITE; open('https://x.com/intent/tweet?text='+encodeURIComponent('$'+t+' is live on OneHook — born with '+(instList().join(', '))+', on one immutable hook. '+url)); };
   sync();
 }
 
@@ -91,7 +102,7 @@ let PROFILE_HTML=null, profileSeq=0;
 async function initProfile(){
   { const pg=$('#profilePage'); if(PROFILE_HTML===null) PROFILE_HTML=pg.innerHTML; else pg.innerHTML=PROFILE_HTML; }
   const seq=++profileSeq; const g=id=>document.getElementById(id);
-  if(!W.connected){ const pg=$('#profilePage'); pg.innerHTML=`<div class="o-empty"><div class="ic">${ic('wallet')}</div><h2>Connect your wallet</h2><p>See your holdings, stock rewards, creator fees and leaderboard payouts in one place.</p><button id="pc">Connect Wallet</button></div>`; $('#pc').onclick=openConnect; return; }
+  if(!W.connected){ const pg=$('#profilePage'); pg.innerHTML=`<div class="o-empty"><div class="ic">${ic('wallet')}</div><h2>Connect your wallet</h2><p>See your holdings, dividends and creator fees in one place.</p><button id="pc">Connect Wallet</button></div>`; $('#pc').onclick=openConnect; return; }
   const a=W.address, me=a.toLowerCase();
   { const av=g('pfAv'); const wrap=av.parentElement; wrap.style.background=''; wrap.innerHTML=window.walletAvatar?walletAvatar(a,64).replace('width="64" height="64"','width="100%" height="100%"'):'<span class="absolute inset-0 flex items-center justify-center rounded-md font-bold text-white">'+a.slice(2,4).toUpperCase()+'</span>'; } g('pfAddrT').textContent=W.short; g('pfAddr').dataset.copy=a;
   const blocks=$$('#profilePage .items-stretch > div'); const setBlock=(i,v,s,cls)=>{ const vv=blocks[i].querySelector('.text-\\[26px\\]'), ss=blocks[i].querySelector('.font-mono'); vv.textContent=v; vv.className=vv.className.replace(/ text-(success|error|text-primary)/g,'')+' '+(cls||'text-text-primary'); if(ss){ ss.textContent=s; ss.className=ss.className.replace(/ text-(success|error|text-muted)/g,'')+' text-text-muted'; } };
@@ -144,7 +155,7 @@ function initDocs(){ const links=$$('#toc a'); const main=$('main'); const hs=li
 
 /* ======================= OPERATOR (unlisted /admin) ======================= */
 async function initAdmin(){
-  const b=$('#admBody'); if(!W.connected){ b.innerHTML=`<div class="o-empty"><div class="ic">${ic('shield')}</div><h2>Admin wallet only</h2><p>Connect the admin wallet to settle epochs, hide tokens and sweep the treasury.</p><button id="pc">Connect Wallet</button></div>`; $('#pc').onclick=openConnect; return; }
+  const b=$('#admBody'); if(!W.connected){ b.innerHTML=`<div class="o-empty"><div class="ic">${ic('shield')}</div><h2>Admin wallet only</h2><p>Connect the admin wallet to set the fee recipient, pause trading and run the OneHook controls.</p><button id="pc">Connect Wallet</button></div>`; $('#pc').onclick=openConnect; return; }
   if(!isAdmin()){ b.innerHTML=`<div class="o-empty"><div class="ic">${ic('shield')}</div><h2>Not the admin wallet</h2><p>${W.short} is not the admin of these contracts. Nothing here would go through.</p></div>`; return; }
   if(!LIVE||!window.CHAIN){ b.innerHTML=emptyBox('Contracts not live','Operator tools need the live contracts.',null,null,true); return; }
   b.innerHTML='<p class="text-sm text-text-muted">Loading…</p>';

@@ -404,3 +404,11 @@ button.text-accent-ink, a.text-accent-ink{
   box-shadow:0 10px 26px -8px rgba(63,188,255,.55), inset 0 1px 0 rgba(255,255,255,.35) !important;
 }
 button.text-accent-ink:hover, a.text-accent-ink:hover{filter:brightness(1.06)}
+
+/* ===== OneHook: launch instincts controls ===== */
+.lf-seg{display:flex;gap:6px;background:var(--color-bg-input);border:1px solid var(--color-border-default);border-radius:12px;padding:4px}
+.lf-seg button{flex:1;height:34px;border-radius:9px;font-size:13px;font-weight:600;color:var(--color-text-muted);cursor:pointer;transition:background .15s,color .15s;border:0;background:transparent}
+.lf-seg button:hover{color:var(--color-text-primary)}
+.lf-seg button.on{background:linear-gradient(180deg,#5cc6ff,#2a93df);color:var(--color-accent-ink)}
+.lf-hint{margin-top:8px;font-size:12px;color:var(--color-text-muted);line-height:1.5}
+.lf-in.ml8{margin-left:8px;max-width:88px}
