@@ -487,7 +487,7 @@ def build(page, prev, nxt):
     else: soup.select_one('#content-side-layout').decompose()
     # footer
     ft = soup.select_one('#footer')
-    ft.clear(); ft.append(frag(f'<div class="flex gap-6 flex-wrap"><a class="h-fit" href="https://x.com/onehook" rel="noopener noreferrer" target="_blank"><span class="sr-only">x</span>{I["x"]}</a></div><div class="flex items-center justify-between"><div class="sm:flex"><span class="text-sm text-gray-400 dark:text-gray-500">{SITE} on Ethereum</span></div></div>'))
+    ft.clear(); ft.append(frag(f'<div class="flex gap-6 flex-wrap"><a class="h-fit" href="https://x.com/onehook_fun" rel="noopener noreferrer" target="_blank"><span class="sr-only">x</span>{I["x"]}</a></div><div class="flex items-center justify-between"><div class="sm:flex"><span class="text-sm text-gray-400 dark:text-gray-500">{SITE} on Ethereum</span></div></div>'))
     # scripts
     soup.body.append(frag('<script src="docs.js"></script>'))
     html = str(soup)

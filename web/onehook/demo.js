@@ -73,7 +73,7 @@
       pxPair, px, mc: px * SUP, vol, volAll, liq, liqPair, h: holders,
       c1: (pxPair / prevH - 1) * 100, c24: (pxPair / prev24 - 1) * 100,
       age: ago(NOW - t0), createdAt: t0, creator,
-      desc, links: { web: '', x: 'https://x.com/onehookfun', tg: '' },
+      desc, links: { web: '', x: 'https://x.com/onehook_fun', tg: '' },
       rewards: !!inst.div, basket: [], feeBps, feeMode, feeLabel: MODE_LABEL[feeMode],
       creatorBps: Math.round(feeBps * 0.6), holderBps: Math.round(feeBps * divShare),
       feeUsd, rew24, totalCreatorFees, totalHolderRewards, instincts, inst,
