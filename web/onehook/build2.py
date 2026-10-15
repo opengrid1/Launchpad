@@ -158,9 +158,7 @@ def set_nav(root):
     for b in root.select('header nav button, nav.h-14 > button, header .hidden.sm\\:block > button'):
         label = b.get_text(' ', strip=True)
         if label == 'Cooking':
-            for s in b.select('svg'): s.decompose()
-            b.insert(0, frag(svg('trophy', 'lucide-trophy size-4')))
-            settext(b, 'Leaderboard') if not b.select_one('span') else settext(b.select_one('span'), 'Leaderboard'); label = 'Leaderboard'
+            b.decompose(); continue  # Leaderboard: not part of the OneHook concept
         elif label == 'Staking':
             for s in b.select('svg'): s.decompose()
             b.insert(0, frag(svg('book', 'lucide-book-open size-4')))
@@ -332,8 +330,8 @@ disc = grid.select_one('div.mt-12:not(.scroll-mt-4)')
 items = disc.select('li')
 texts = [('Locked liquidity and limited control', 'The Uniswap V4 position is permanently locked. The creator cannot mint additional tokens, pause or freeze trading, rebase the supply, remove liquidity, or otherwise control trading.'),
          ('No reserved supply', 'No tokens were sent directly to recipients or placed in a vesting vault at launch. The full fixed supply entered the pool; the creator bought 0.1 ETH in the launch transaction.'),
-         ('Anti-sniping protection', 'For the first 20 seconds after launch, the total fee falls linearly every second from 90.00% to 2.00%. This makes instant sniping expensive: exact-input swaps remain available, while exact-output swaps are disabled until the window ends. The surcharge goes to the holders.'),
-         ('Fee split', "The normal hook fee is 2.00%. Fees are always charged in ETH, the pool's paired asset. Buys use part of the ETH paid, and sells use part of the ETH received. It is split 35.00% creator, 25.00% holders (paid in NVDAx, SPYx, TSLAx and MSTRx) and 40.00% platform, of which an eighth funds the 3-day trader leaderboard.")]
+         ('Anti-sniping protection', 'If the creator switched on the anti-snipe instinct, buys in the opening window pay an extra tax that decays block by block from up to 30.00% back to the base fee. The launch block only accepts the creator\'s first buy. Sells are never taxed extra and can never be blocked.'),
+         ('Fee split', "The default hook fee is 1.00%, charged in ETH on every swap. After the coin's optional buyback and dividend shares, the rest is split 60.00% to the creator and 40.00% to the platform. The fee is capped by the constitution and can never be raised after launch.")]
 for i, (li, (h, p)) in enumerate(zip(items, texts)):
     sp = li.select('span.block'); settext(sp[0], h); settext(sp[1], p); sp[1]['data-disc'] = str(i)
 
@@ -364,7 +362,7 @@ for r, (k, v) in zip(rowsd, [('minr', '0 MOGCAT'), ('fee', '2.00%'), ('net', '< 
         pass
 cta = card.select_one('button.border-transparent'); cta['id'] = 'cta'
 foot = card.select_one('p.border-t'); foot.clear()
-appendall(foot, '<span class="font-medium">Need more advanced trading features?</span> Trade <span data-sym="1"></span> on <a class="inline-flex items-center gap-1 font-medium text-text-primary transition-colors hover:text-accent" href="https://app.uniswap.org" target="_blank" rel="noopener noreferrer" id="uniLink">Uniswap' + svg('ext', 'lucide-external-link size-3') + '</a> or any Ink terminal. Every trade still counts for holder rewards and the <a class="inline-flex items-center gap-1 font-medium text-text-primary transition-colors hover:text-accent" href="leaderboard.html">leaderboard</a>.')
+appendall(foot, '<span class="font-medium">Need more advanced trading features?</span> Trade <span data-sym="1"></span> on <a class="inline-flex items-center gap-1 font-medium text-text-primary transition-colors hover:text-accent" href="https://app.uniswap.org" target="_blank" rel="noopener noreferrer" id="uniLink">Uniswap' + svg('ext', 'lucide-external-link size-3') + '</a> or any Ethereum terminal. Every trade still runs through the coin\'s one immutable hook.')
 # gas "Auto" button label keep; slippage auto button
 for b in card.select('button'):
     if b.get_text(strip=True) == 'Auto' and 'rounded-full' in b.get('class', []): b['id'] = 'slipAuto'
@@ -484,8 +482,7 @@ def other(name, title, desc, active, connected_only=False):
     html = page_shell(r, title, desc).replace('<script src="/app.js"></script>', '<script src="/app.js"></script><script src="/pages.js"></script>')
     open(OUT + '/' + name, 'w').write(html); print(name, 'ok')
 other('launch.html', 'Launch a token | OneHook', 'Launch a coin on Ethereum with its instincts, under one immutable Uniswap V4 hook.', 'Launch Token')
-other('profile.html', 'Profile | OneHook', 'Your holdings, dividends, creator fees and leaderboard payouts.', 'Profile')
-other('leaderboard.html', 'Trader leaderboard | OneHook', 'Top 5 traders by PnL and volume every 3 days, paid in ETH.', 'Leaderboard')
+other('profile.html', 'Profile | OneHook', 'Your holdings, dividends and creator fees.', 'Profile')
 other('admin.html', 'Admin | OneHook', 'Operator tools.', '')
 
 import json
