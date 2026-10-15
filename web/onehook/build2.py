@@ -120,7 +120,7 @@ def frag(html):
 def appendall(el, html):
     for c in list(BeautifulSoup(html, 'html.parser').contents): el.append(c)
 
-BRAND_ICON = '<img src="img/logo.svg" alt="OneHook" width="26" height="26" class="size-[26px] shrink-0 rounded-lg">'
+BRAND_ICON = '<img src="img/wordmark-head.png" alt="OneHook" class="h-[21px] w-auto shrink-0">'
 INK_BADGE = '<img alt="Ink" class="size-full object-cover" src="img/ink.png">'
 
 def common_clean(root):
@@ -133,7 +133,7 @@ def common_clean(root):
     img = root.select_one('img[alt="o1"]')
     if img: img.replace_with(frag(BRAND_ICON))
     for sp in root.select('button[aria-label="Launchpad"] span.max-sm\\:hidden'):
-        sp.string = 'OneHook'
+        sp.decompose()
     # avatar images: drop, keep the letter
     for img in root.select('img.object-cover'):
         if 'size-full' in img.get('class', []) and img.parent.name == 'span' and 'size-3' in img.parent.get('class', []):
