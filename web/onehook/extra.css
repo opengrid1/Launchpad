@@ -424,3 +424,8 @@ button.text-accent-ink:hover:not(:disabled), a.text-accent-ink:hover{filter:brig
   background:color-mix(in srgb,var(--color-accent) 18%,transparent);color:var(--color-text-primary)}
 #demoBar button:hover{background:color-mix(in srgb,var(--color-accent) 30%,transparent)}
 @media(max-width:640px){#demoBar{font-size:11.5px;padding:7px 12px;gap:8px}}
+
+/* slimmer mobile Buy/Sell bar (less chunky) */
+#mbar{padding-top:0;padding-bottom:6px}
+#mbar > div{height:40px}
+#mbar button[data-side]{font-size:13px;letter-spacing:.02em}

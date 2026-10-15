@@ -394,6 +394,7 @@ mnav = root.select_one('nav.h-14'); mnav['id'] = 'mnav'
 # modals / sheets / toasts root
 root.append(frag('<div id="layer"></div>'))
 
+for c in root.select('div[data-info="proto"]'): c.decompose()   # don't disclose platform/protocol revenue publicly
 _tok = page_shell(root, 'Token | OneHook', 'Price, chart, trades and holders for a coin launched on OneHook.',
     '<script src="charting_library/charting_library.standalone.js" defer></script><script src="tv.js" defer></script>')
 # scrub static inky defaults in the token shell (most are also overwritten by app.js at runtime)
