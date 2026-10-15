@@ -64,6 +64,10 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -.01em; margin: 0; }
 .btn { font-family: var(--body); font-weight: 600; font-size: 13.5px; padding: 8px 14px; border-radius: var(--radius-sm); border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink); cursor: pointer; transition: .12s; display: inline-flex; align-items: center; gap: 7px; }
 .btn:hover { border-color: var(--faint); }
 .btn.accent { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 700; }
+.btn.buy { background: var(--up); color: #fff; border-color: transparent; font-weight: 700; }
+.btn.buy:hover { background: #0d8a56; }
+.btn.sell { background: var(--down); color: #fff; border-color: transparent; font-weight: 700; }
+.btn.sell:hover { background: #c93540; }
 .btn.accent:hover { background: var(--accent-hov); }
 .btn.lg { padding: 11px 18px; font-size: 14.5px; }
 .btn.wide { width: 100%; justify-content: center; }
@@ -312,7 +316,7 @@ table.list tbody tr:last-child td { border-bottom: none; }
 /* ---------------- order ticket ---------------- */
 .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 3px; }
 .seg button { border: none; background: none; color: var(--muted); font-size: 13px; font-weight: 700; padding: 7px; border-radius: 4px; cursor: pointer; transition: .12s; font-family: var(--body); }
-.seg button[data-side="buy"].on { background: var(--accent); color: var(--accent-ink); }
+.seg button[data-side="buy"].on { background: var(--up); color: #fff; }
 .seg button[data-side="sell"].on { background: var(--down); color: #fff; }
 .presets { display: flex; gap: 5px; flex-wrap: wrap; margin: -5px 0 10px; }
 .preset { font-family: var(--mono); font-size: 10.5px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); cursor: pointer; transition: .12s; }

@@ -89,13 +89,13 @@
       <div class="presets">${presets}</div>
       <div class="slip"><span class="lbl" style="margin:0">Max slippage</span>${[0.5, 1, 3].map(s => `<button class="spill ${s === slip ? 'on' : ''}" data-slip="${s}">${s}%</button>`).join('')}</div>
       <div id="breakdown"></div>
-      <button class="btn accent wide lg" id="trade-btn" style="margin-top:14px">${side === 'buy' ? 'Buy' : 'Sell'} $${esc(c.symbol)}</button>
+      <button class="btn ${side} wide lg" id="trade-btn" style="margin-top:14px">${side === 'buy' ? 'Buy' : 'Sell'} $${esc(c.symbol)}</button>
     </div></div>`;
   }
   function breakdown(c) {
     const el = $('#breakdown'); if (!el) return;
     const amtEth = side === 'buy' ? amount : amount / 100 * 2; // sell % mapped to a nominal size for preview
-    if (!amtEth) { el.innerHTML = `<div class="bd-empty faint">Enter an amount to see how this coin’s genes shape the trade.</div>`; return; }
+    if (!amtEth) { el.innerHTML = `<div class="bd-empty faint">Enter an amount to see how this coin’s instincts shape the trade.</div>`; return; }
     const q = UD.quote(c, side, amtEth);
     const line = (p) => `<div class="bd-row"><span>${esc(p.label)}${p.bps ? ` <span class="faint">${(p.bps / 100).toFixed(2)}%</span>` : ''}${p.note ? ` <span class="faint">${esc(p.note)}</span>` : ''}</span><b class="mono">${eth(p.eth)}</b></div>`;
     el.innerHTML = `<div class="bd">
