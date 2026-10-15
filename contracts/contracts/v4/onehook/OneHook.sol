@@ -166,6 +166,9 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     mapping(address token => uint256) public buybackPot;
     mapping(address token => uint256) public dividendPot;
     /// @notice Coins bought from the pool per wallet while a coin's max-wallet window runs.
+    ///         Gross cumulative per tx.origin: selling does not refill the allowance (that is
+    ///         what closes buy-sell-rebuy cycling), and smart-wallet buys relayed by a shared
+    ///         bundler EOA share that bundler's allowance for the few hours a window runs.
     mapping(PoolId => mapping(address => uint256)) public windowBought;
 
     event PoolRegistered(address indexed token, address indexed pair, PoolId indexed id, address creator);
@@ -567,8 +570,10 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         PoolId id = key.toId();
         PoolConfig storage c = _config[id];
         if (!c.registered) return (BaseHook.beforeSwap.selector, toBeforeSwapDelta(0, 0), 0);
-        // the launch block belongs to the creator: only the factory's dev-buy swap runs in it
-        if (block.number == c.launchBlock && sender != factory && sender != address(this)) revert LaunchBlockClosed();
+        // the launch block belongs to the creator: the only BUY the pool accepts in its first
+        // block is the factory's dev-buy swap. Sells are exempt, so a sell can never be
+        // reverted in any block (in the launch block only the creator holds coins anyway).
+        if (block.number == c.launchBlock && !params.zeroForOne && sender != factory && sender != address(this)) revert LaunchBlockClosed();
         uint16 bps = _swapTaxBps(id, sender, !params.zeroForOne);
         _tset(BPS_SLOT, bps);
         if (!_specifiedIsPair(params)) return (BaseHook.beforeSwap.selector, toBeforeSwapDelta(0, 0), 0);

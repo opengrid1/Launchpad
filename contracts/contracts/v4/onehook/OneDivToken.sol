@@ -24,6 +24,11 @@ interface IWrappedNativeToken {
 ///         (as ETH for a WETH pair). The bookkeeping never charges, blocks or
 ///         slows a transfer; the pool, the launchpad's own contracts and this
 ///         contract hold no claimable shares.
+///
+///         A contract that holds the coin but never calls {claimDividends}
+///         (say a third-party pool someone seeds) accrues its share like any
+///         holder; what it never claims simply stays here unclaimed. Nothing
+///         is taken from anyone else: every other holder's claim is unchanged.
 contract OneDivToken is OneToken {
     using SafeERC20 for IERC20;
 
