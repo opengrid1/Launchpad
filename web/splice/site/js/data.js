@@ -30,17 +30,17 @@
     div:     { key: 'div',     name: 'Dividends',      cls: 'g-div',     short: 'fees paid to holders',
                desc: 'Routes a share of fees back to holders pro-rata, claimable in ETH. No rebase and no transfer-tax games: the pool collects, the hook splits, holders claim.' },
     maxw:    { key: 'maxw',    name: 'Max-wallet',     cls: 'g-maxw',    short: 'anti-whale cap',
-               desc: 'Caps how much any one wallet can hold for an opening window, then lifts. Keeps a single buyer from owning the launch before a community forms. A rule the hook can only loosen, never tighten, so holders know the worst case at launch.' },
+               desc: 'Caps how much any one wallet can buy from the pool for an opening window, then lifts. Keeps a single buyer from owning the launch before a community forms. Enforced by the pool, never the coin: sells and transfers are untouched.' },
     agent:   { key: 'agent',   name: 'AI agent',       cls: 'g-agent',   short: 'post-quantum signed', phase: 2,
                desc: 'An optional off-chain agent proposes fee and buyback parameters within the constitution; the hook reads them read-only and clamps them. Agent instructions are authorised by a hash-based, post-quantum signature scheme, so the coin keeps running even against a quantum adversary.' },
   };
   const GENE_ORDER = ['fee', 'snipe', 'buyback', 'div', 'maxw', 'agent'];
 
   const CONSTITUTION = [
-    { name: 'Anti-sandwich', desc: 'One swap per address per block, enforced by the core. Sandwich attacks are prevented at the base, not taxed after the fact.' },
+    { name: 'Anti-sandwich', desc: 'Every pool taxes priority-fee bidding at the base: the harder a sandwich bot bids the block builder to bracket your trade, the more it pays the pool. Ordinary wallets pay nothing extra.' },
     { name: 'Fee ceiling',   desc: 'No instinct can push the total fee past the hard cap. Every fee result is clamped at the source.' },
     { name: 'Sells never block', desc: 'The hook can read a sell but can never revert one. No honeypots, no pausing, no blacklist.' },
-    { name: 'Locked liquidity', desc: 'Launch liquidity is minted to a locker and can never be pulled. Only fees are ever collected.' },
+    { name: 'Liquidity in the open', desc: 'All liquidity lives in the one hook and nobody can pull it on a whim: touching any of it takes a public on-chain notice 24 hours in advance, at most a fifth at a time, visible to every holder.' },
     { name: 'No owner, no mint', desc: 'The token is fixed-supply, ownerless, with no mint, no pause and no transfer tax. Mechanics live in the pool, not the coin.' },
   ];
 

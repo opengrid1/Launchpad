@@ -12,11 +12,13 @@ import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
 import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
+import {StateLibrary} from "@uniswap/v4-core/src/libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "@uniswap/v4-core/src/libraries/TransientStateLibrary.sol";
 import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 interface IOneCoin {
     function burn(uint256 amount) external;
@@ -44,37 +46,49 @@ interface IWrappedNativeMinimal {
 ///         the coin below its pair). Buying pushes the price up.
 ///
 ///         The constitution (every coin, always):
-///           - One swap per address (tx.origin) per pool per block, so a
-///             sandwich can't close inside the block it opened.
-///           - The configured swap fee is capped at {MAX_FEE_BPS}. The two
-///             deliberate, bounded exceptions a creator can opt into are
-///             anti-snipe (launch-window only, <= {MAX_SNIPE_BPS}, decaying)
-///             and the MEV-tax (scales only with the trader's own priority
-///             fee, <= base + {MEV_CAP_BPS}).
-///           - Sells never block: the hook reads a sell but cannot revert it.
-///           - Liquidity lives here; holders can never pull it. The immutable
-///             factory admin may collect from it (disclosed, see the factory).
-///           - The coin is fixed-supply and ownerless.
+///           - The coin is a plain ERC-20: fixed supply, no owner, and no
+///             transfer logic of any kind. Everything here acts on swaps in
+///             the coin's own pool, never on transfers.
+///           - A sell can never be reverted by this hook, and never pays more
+///             than the fee rules below. No code path blocks an exit.
+///           - MEV-tax at the base: every swap's fee grows with the
+///             transaction's priority fee above {MEV_FREE_PRIORITY}, capped at
+///             {MEV_CAP_BPS} extra. A sandwich bot has to outbid the block to
+///             bracket a victim, so the harder it bids, the more it pays the
+///             pool. Ordinary wallets and read-only simulations (priority 0)
+///             pay nothing extra.
+///           - The launch block belongs to the creator: the only swap the pool
+///             accepts in its first block is the creator's own first buy.
+///           - The configured swap fee is capped at {MAX_FEE_BPS}. The one
+///             further bounded exception a creator can opt into is anti-snipe
+///             (launch-window only, <= {MAX_SNIPE_BPS}, decaying, buys only).
+///           - Liquidity lives here and there is no path that hands it out,
+///             with one disclosed exception: the factory admin can collect
+///             from it only after a public on-chain announcement made 24
+///             hours in advance (see the factory).
 ///
 ///         The instincts (chosen per coin at launch, immutable afterwards):
 ///           - Fee engine: flat; dynamic (the fee widens while swaps cluster
-///             and relaxes block by block when they stop); or MEV-tax (the fee
-///             grows with the transaction's priority fee above 1 gwei, so
-///             snipers and sandwichers pay the pool, not the block builder).
-///           - Anti-snipe: an extra tax on the first blocks that decays
-///             linearly from snipeBps back to the base fee.
+///             and relaxes block by block when they stop); or MEV-tax (the
+///             constitutional priority-fee tax at double slope).
+///           - Anti-snipe: an extra tax on buys in the first blocks that
+///             decays linearly from snipeBps back to the base fee.
 ///           - Reflexive buyback: a share of every fee accumulates and, past
 ///             the coin's threshold, market-buys the coin in its own pool and
 ///             burns it, inside the swap that tipped it over.
 ///           - Dividends: a share of every fee accumulates and is pushed to
 ///             the coin for holders to claim pro-rata (as ETH on a WETH pair).
-///           - Max-wallet: enforced by the coin itself; recorded here.
+///           - Max-wallet: while the coin's opening window runs, one wallet
+///             (tx.origin) can buy at most its share of the supply from the
+///             pool; the ledger is forgotten when the window ends. Sells and
+///             plain transfers are never touched.
 ///
 ///         What's left of each fee splits 60% to the creator, 40% to the
 ///         platform, held as PoolManager claims until claimed by anyone.
 contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
+    using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;
     using SafeERC20 for IERC20;
 
@@ -84,7 +98,7 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     uint16 public constant MIN_FEE_BPS = 10;
     /// @notice Of what's left after the buyback and dividend shares, the creator's part.
     uint16 public constant CREATOR_SPLIT_BPS = 6_000;
-    uint16 public constant MAX_SNIPE_BPS = 9_000;
+    uint16 public constant MAX_SNIPE_BPS = 3_000;
     uint32 public constant MAX_SNIPE_BLOCKS = 7_200; // ~24h of Ethereum blocks
     /// @notice Buyback + dividend shares of the fee may take at most this much.
     uint16 public constant MAX_POT_SHARE_BPS = 8_000;
@@ -96,6 +110,9 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     /// @notice MEV-tax: at most this many bps on top of the base fee.
     uint16 public constant MEV_CAP_BPS = 2_000;
 
+    /// @notice A buyback burn stops once the price has moved ~3% up (sqrt 1.0149^2), per call.
+    uint256 public constant BUYBACK_SQRT_BPS = 10_149;
+
     int24 public constant TICK_SPACING = 10;
     uint256 public constant SUPPLY = 1_000_000_000 ether;
     /// @notice Coins the factory leaves here at launch to absorb rounding in the seed position.
@@ -103,7 +120,6 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
 
     bytes32 internal constant FEE_SLOT = keccak256("onehook.fee");
     bytes32 internal constant BPS_SLOT = keccak256("onehook.bps");
-    bytes32 internal constant GATE_SLOT = keccak256("onehook.gate");
 
     address public immutable deployer;
     address public immutable weth;
@@ -149,7 +165,8 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     mapping(address token => uint256) public platformOwed;
     mapping(address token => uint256) public buybackPot;
     mapping(address token => uint256) public dividendPot;
-    mapping(bytes32 => uint256) internal _lastSwap;
+    /// @notice Coins bought from the pool per wallet while a coin's max-wallet window runs.
+    mapping(PoolId => mapping(address => uint256)) public windowBought;
 
     event PoolRegistered(address indexed token, address indexed pair, PoolId indexed id, address creator);
     event FeeTaken(address indexed token, uint256 fee, uint16 bps);
@@ -164,7 +181,8 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     error NotFactory();
     error AlreadySet();
     error ZeroAddress();
-    error OneSwapPerBlock();
+    error LaunchBlockClosed();
+    error BuyCapExceeded();
     error NotThisPool();
     error LiquidityIsLocked();
     error OnlyFactoryOpensPools();
@@ -269,7 +287,8 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         PoolConfig storage c = _mustBeRegistered(token);
         amount = dividendPot[token];
         if (amount == 0) revert NothingToPush();
-        if (IOneCoin(token).totalShares() == 0) revert NoHolders();
+        // the coin refuses dust-level distributions; mirror it so the pot keeps accruing instead
+        if (IOneCoin(token).totalShares() < SUPPLY / 10_000) revert NoHolders();
         dividendPot[token] = 0;
         poolManager.unlock(abi.encode(uint8(4), abi.encode(c.pair, token, amount)));
         IOneCoin(token).distribute(amount);
@@ -343,14 +362,14 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         if (sender == factory) return g.feeBps;
         uint256 base = g.feeBps;
         if (g.feeMode == 1) base = _dynamicFee(c, g.feeBps);
-        else if (g.feeMode == 2) base = _mevFee(g.feeBps);
+        uint256 bps = base + _mevExtra(g.feeMode == 2);
         if (isBuy && g.snipeBps != 0) {
             uint256 elapsed = block.number - c.launchBlock;
-            if (elapsed < g.snipeBlocks && g.snipeBps > base) {
-                return uint16(g.snipeBps - ((g.snipeBps - base) * elapsed) / g.snipeBlocks);
+            if (elapsed < g.snipeBlocks && g.snipeBps > bps) {
+                return uint16(g.snipeBps - ((g.snipeBps - bps) * elapsed) / g.snipeBlocks);
             }
         }
-        return uint16(base);
+        return uint16(bps);
     }
 
     /// @dev Dynamic fee: swaps bump a surge that decays block by block; the
@@ -368,16 +387,15 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         c.surgeBlock = uint64(block.number);
     }
 
-    /// @dev MEV-tax: one bps per {MEV_PRIORITY_UNIT} of priority fee above the
-    ///      free band, capped. An ordinary wallet pays nothing extra; a sniper
-    ///      bidding the block pays the pool.
-    function _mevFee(uint16 baseBps) internal view returns (uint256 fee) {
-        fee = baseBps;
-        uint256 priority = tx.gasprice - block.basefee;
+    /// @dev The constitutional MEV-tax: one bps per {MEV_PRIORITY_UNIT} of
+    ///      priority fee above the free band (two with the mev-tax gene),
+    ///      capped at {MEV_CAP_BPS}. An ordinary wallet pays nothing extra; a
+    ///      sandwich bot bidding the block to bracket a victim pays the pool.
+    function _mevExtra(bool doubled) internal view returns (uint256 extra) {
+        uint256 priority = tx.gasprice > block.basefee ? tx.gasprice - block.basefee : 0;
         if (priority > MEV_FREE_PRIORITY) {
-            uint256 extra = (priority - MEV_FREE_PRIORITY) / MEV_PRIORITY_UNIT;
+            extra = (priority - MEV_FREE_PRIORITY) / (doubled ? MEV_PRIORITY_UNIT / 2 : MEV_PRIORITY_UNIT);
             if (extra > MEV_CAP_BPS) extra = MEV_CAP_BPS;
-            fee += extra;
         }
     }
 
@@ -434,12 +452,18 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
 
     /// @dev Spend the buyback pot in the coin's own pool and burn what it buys.
     ///      Runs inside an unlock: either afterSwap's (auto) or its own (manual).
+    ///      One call moves the price at most ~3%, so sandwiching the burn can
+    ///      never extract more than that from the pot; what the band leaves
+    ///      unspent stays in the pot for the next call.
     function _buybackBurn(PoolId id) internal returns (uint256 burned) {
         PoolConfig storage c = _config[id];
         uint256 amount = buybackPot[c.token];
         if (amount == 0) return 0;
         PoolKey memory key = _keyOf(c);
-        BalanceDelta d = poolManager.swap(key, SwapParams({zeroForOne: false, amountSpecified: -int256(amount), sqrtPriceLimitX96: TickMath.MAX_SQRT_PRICE - 1}), "");
+        (uint160 sqrtP,,,) = poolManager.getSlot0(id);
+        uint160 limit = uint160(Math.min((uint256(sqrtP) * BUYBACK_SQRT_BPS) / BPS, TickMath.MAX_SQRT_PRICE - 1));
+        if (limit <= sqrtP) return 0;
+        BalanceDelta d = poolManager.swap(key, SwapParams({zeroForOne: false, amountSpecified: -int256(amount), sqrtPriceLimitX96: limit}), "");
         uint256 used = d.amount1() < 0 ? uint256(uint128(-d.amount1())) : 0;
         burned = d.amount0() > 0 ? uint256(uint128(d.amount0())) : 0;
         buybackPot[c.token] = amount - used;
@@ -543,11 +567,8 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         PoolId id = key.toId();
         PoolConfig storage c = _config[id];
         if (!c.registered) return (BaseHook.beforeSwap.selector, toBeforeSwapDelta(0, 0), 0);
-        if (sender != address(this) && sender != factory) {
-            bytes32 k = keccak256(abi.encode(id, tx.origin));
-            if (_lastSwap[k] == block.number) revert OneSwapPerBlock();
-            _lastSwap[k] = block.number;
-        }
+        // the launch block belongs to the creator: only the factory's dev-buy swap runs in it
+        if (block.number == c.launchBlock && sender != factory && sender != address(this)) revert LaunchBlockClosed();
         uint16 bps = _swapTaxBps(id, sender, !params.zeroForOne);
         _tset(BPS_SLOT, bps);
         if (!_specifiedIsPair(params)) return (BaseHook.beforeSwap.selector, toBeforeSwapDelta(0, 0), 0);
@@ -565,10 +586,16 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         PoolId id = key.toId();
         PoolConfig storage c = _config[id];
         if (!c.registered) return (BaseHook.afterSwap.selector, 0);
-        // official-pool allowance for the coin's PoolManager transfers in this transaction
-        int128 coinDelta = delta.amount0();
-        if (coinDelta < 0) _allow(c.token, true, uint256(uint128(-coinDelta)));
-        else if (coinDelta > 0) _allow(c.token, false, uint256(uint128(coinDelta)));
+        // max-wallet window: cap what one wallet can buy from the pool while it runs
+        if (!params.zeroForOne && sender != address(this)) {
+            Genes storage mw = c.genes;
+            if (mw.maxWalletBps != 0 && block.timestamp < c.launchTime + mw.maxWalletSecs) {
+                uint256 got = delta.amount0() > 0 ? uint256(uint128(delta.amount0())) : 0;
+                uint256 total = windowBought[id][tx.origin] + got;
+                if (total > (SUPPLY * mw.maxWalletBps) / BPS) revert BuyCapExceeded();
+                windowBought[id][tx.origin] = total;
+            }
+        }
 
         uint16 bps = uint16(_tget(BPS_SLOT));
         _tset(BPS_SLOT, 0);
@@ -600,23 +627,6 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         bool exactInput = params.amountSpecified < 0;
         bool specifiedIsCurrency0 = exactInput ? params.zeroForOne : !params.zeroForOne;
         return !specifiedIsCurrency0;
-    }
-
-    /// @notice Called by a OneHook coin when it moves to (`intoPool`) or from the
-    ///         PoolManager: spends the allowance its own pool's swaps granted in
-    ///         this transaction, and reverts when there isn't one.
-    function spend(bool intoPool, uint256 amount) external {
-        if (!_config[_poolOf[msg.sender]].registered) revert NotThisPool();
-        bytes32 slot = keccak256(abi.encode(intoPool, msg.sender, GATE_SLOT));
-        uint256 a;
-        assembly ("memory-safe") { a := tload(slot) }
-        if (a < amount) revert NotThisPool();
-        assembly ("memory-safe") { tstore(slot, sub(a, amount)) }
-    }
-
-    function _allow(address token, bool intoPool, uint256 amount) internal {
-        bytes32 slot = keccak256(abi.encode(intoPool, token, GATE_SLOT));
-        assembly ("memory-safe") { tstore(slot, add(tload(slot), amount)) }
     }
 
     function _tset(bytes32 s, uint256 v) internal {

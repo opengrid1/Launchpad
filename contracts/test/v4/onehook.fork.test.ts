@@ -65,7 +65,7 @@ async function deployAll(admin: any) {
   return { hook, factory, router, deployer, hookAddr, routerAddr: await router.getAddress() };
 }
 
-async function launch(env: any, creator: any, o: { genes?: any; pair?: string; ethIn?: bigint; route?: string; name?: string } = {}) {
+async function launch(env: any, creator: any, o: { genes?: any; pair?: string; ethIn?: bigint; route?: string; name?: string; abi?: string } = {}) {
   const n = Number(await env.factory.totalTokens());
   const tx = await env.factory.connect(creator).launch(
     { name: o.name ?? "OneHook Test", symbol: "OHT", metadataURI: '{"description":"fork test"}', pair: o.pair ?? WETH, minPairOut: 0, genes: o.genes ?? G() },
@@ -75,7 +75,7 @@ async function launch(env: any, creator: any, o: { genes?: any; pair?: string; e
   );
   const rc = await tx.wait();
   const token = await env.factory.allTokens(n);
-  const coin = await ethers.getContractAt("OneToken", token);
+  const coin = await ethers.getContractAt(o.abi ?? ((o.genes?.divShareBps ?? 0) !== 0 ? "OneDivToken" : "OneToken"), token);
   return { coin, token, gas: rc!.gasUsed };
 }
 
@@ -127,16 +127,33 @@ describe("OneHook on Ethereum (mainnet fork)", function () {
     expect(out).to.be.lt(E("0.1"));
   });
 
-  it("constitution: one swap per address per pool per block", async () => {
+  it("constitution: a same-block buy and sell both pass (what a honeypot simulator runs)", async () => {
+    // get coins and approve first, in their own blocks
+    await (await env.router.connect(alice).buy(token, "0x", 0, { value: E("0.02") })).wait();
+    await (await coin.connect(alice).approve(env.routerAddr, ethers.MaxUint256)).wait();
+    const half = (await coin.balanceOf(alice.address)) / 2n;
     await network.provider.send("evm_setAutomine", [false]);
     const tx1 = await env.router.connect(alice).buy(token, "0x", 0, { value: E("0.01"), gasLimit: 1_500_000 });
-    const tx2 = await env.router.connect(alice).buy(token, "0x", 0, { value: E("0.01"), gasLimit: 1_500_000 });
+    const tx2 = await env.router.connect(alice).sell(token, half, "0x", 0, { gasLimit: 1_500_000 });
     await network.provider.send("evm_mine", []);
     await network.provider.send("evm_setAutomine", [true]);
     const r1 = await ethers.provider.getTransactionReceipt(tx1.hash);
     const r2 = await ethers.provider.getTransactionReceipt(tx2.hash);
     expect(r1!.status).to.equal(1);
-    expect(r2!.status).to.equal(0);
+    expect(r2!.status).to.equal(1);
+  });
+
+  it("constitution: the launch block belongs to the creator; a same-block snipe dies at the pool", async () => {
+    const sniper = await (await ethers.getContractFactory("LaunchSniper", alice)).deploy();
+    await expect(
+      sniper.connect(alice).snipe(
+        await env.factory.getAddress(),
+        env.routerAddr,
+        { name: "Snipe Me", symbol: "SNP", metadataURI: "{}", pair: WETH, minPairOut: 0, genes: G() },
+        nextSalt(),
+        { value: E("0.05") }
+      )
+    ).to.be.reverted; // LaunchBlockClosed, wrapped by the PoolManager's hook-call bubbling
   });
 
   it("the creator and the platform are paid their fee shares as ETH; anyone can push", async () => {
@@ -223,14 +240,16 @@ describe("OneHook on Ethereum (mainnet fork)", function () {
     console.log(`      pot ${fmt(pot).toFixed(6)} ETH; alice claimed ${fmt(wA).toFixed(6)} ETH`);
   });
 
-  it("max-wallet: caps buys for the opening window, never blocks a sell, lifts on time", async () => {
+  it("max-wallet: the hook caps what one wallet can buy in the opening window, never a sell; lifts on time", async () => {
     const r = await launch(env, creator, { genes: G({ maxWalletBps: 100, maxWalletSecs: 3600 }) });
-    expect(await r.coin.maxWalletAmount()).to.equal(SUPPLY / 100n);
     // ~1% of a $5k cap is ~$50 of coins: a 0.1 ETH buy blows through it
-    await expect(env.router.connect(alice).buy(r.token, "0x", 0, { value: E("0.1"), gasLimit: 1_500_000 })).to.be.revertedWithCustomError(r.coin, "MaxWallet");
+    await expect(env.router.connect(alice).buy(r.token, "0x", 0, { value: E("0.1"), gasLimit: 1_500_000 })).to.be.reverted; // BuyCapExceeded
     await (await env.router.connect(alice).buy(r.token, "0x", 0, { value: E("0.002") })).wait();
     const got = await r.coin.balanceOf(alice.address);
     expect(got).to.be.gt(0);
+    expect(await env.hook.windowBought(await env.hook.poolOf(r.token), alice.address)).to.equal(got);
+    // the cap is on buying from the pool, not on holding: plain transfers stay free
+    await (await r.coin.connect(alice).transfer(carol.address, got / 4n)).wait();
     // selling is never blocked
     await (await r.coin.connect(alice).approve(env.routerAddr, got)).wait();
     await (await env.router.connect(alice).sell(r.token, got / 2n, "0x", 0)).wait();
@@ -255,8 +274,8 @@ describe("OneHook on Ethereum (mainnet fork)", function () {
     console.log(`      fee after one swap ${after1} bps, after 40 quiet blocks 100 bps`);
   });
 
-  it("MEV-tax: the fee grows with the priority fee above 1 gwei, ordinary tips pay the base", async () => {
-    const r = await launch(env, creator, { genes: G({ feeMode: 2 }) });
+  it("MEV-tax is constitutional: on every coin the fee grows with the priority fee above 1 gwei", async () => {
+    const r = await launch(env, creator, { genes: G() }); // plain flat coin
     const fee1 = ethers.parseUnits("1", "gwei");
     const cB1 = await env.hook.creatorOwed(r.token);
     await (await env.router.connect(alice).buy(r.token, "0x", 0, { value: E("0.1"), maxPriorityFeePerGas: fee1, maxFeePerGas: ethers.parseUnits("1000", "gwei") })).wait();
@@ -264,17 +283,29 @@ describe("OneHook on Ethereum (mainnet fork)", function () {
     // 11 gwei tip: 10 gwei over the free band = 200 extra bps, 3% all in
     const cB2 = await env.hook.creatorOwed(r.token);
     await (await env.router.connect(bob).buy(r.token, "0x", 0, { value: E("0.1"), maxPriorityFeePerGas: ethers.parseUnits("11", "gwei"), maxFeePerGas: ethers.parseUnits("1000", "gwei") })).wait();
-    const paid = (await env.hook.creatorOwed(r.token)) - cB2;
-    expect(paid).to.equal(((E("0.1") * 300n) / BPS) * 6_000n / BPS);
-    console.log(`      1 gwei tip paid 100 bps, 11 gwei tip paid 300 bps`);
+    expect((await env.hook.creatorOwed(r.token)) - cB2).to.equal(((E("0.1") * 300n) / BPS) * 6_000n / BPS);
+    console.log(`      flat coin: 1 gwei tip paid 100 bps, 11 gwei tip paid 300 bps`);
   });
 
-  it("one pool: the coin refuses V2/V3 pools and raw PoolManager transfers", async () => {
+  it("the mev-tax gene doubles the slope", async () => {
+    const r = await launch(env, creator, { genes: G({ feeMode: 2 }) });
+    // 11 gwei tip at double slope: 400 extra bps, 5% all in
+    const cB = await env.hook.creatorOwed(r.token);
+    await (await env.router.connect(carol).buy(r.token, "0x", 0, { value: E("0.1"), maxPriorityFeePerGas: ethers.parseUnits("11", "gwei"), maxFeePerGas: ethers.parseUnits("1000", "gwei") })).wait();
+    expect((await env.hook.creatorOwed(r.token)) - cB).to.equal(((E("0.1") * 500n) / BPS) * 6_000n / BPS);
+    console.log(`      mev-tax coin: 11 gwei tip paid 500 bps`);
+  });
+
+  it("the coin is a plain ERC-20: no transfer can be blocked, permit works, nobody owns it", async () => {
+    // even a transfer to a V2 pair or the PoolManager is just a transfer
     const pairAddr = await (await v2Factory()).createPair.staticCall(token, WETH);
     await (await (await v2Factory()).createPair(token, WETH)).wait();
-    await expect(coin.connect(creator).transfer(pairAddr, 1000n)).to.be.revertedWithCustomError(coin, "OtherPool");
-    await expect(coin.connect(creator).transfer(POOL_MANAGER, 1000n)).to.be.revertedWithCustomError(env.hook, "NotThisPool");
-    // nobody else can open a pool with the hook or add liquidity
+    await (await coin.connect(creator).transfer(pairAddr, 1000n)).wait();
+    await (await coin.connect(creator).transfer(POOL_MANAGER, 1000n)).wait();
+    expect(await coin.owner()).to.equal(ethers.ZeroAddress);
+    expect(await coin.nonces(creator.address)).to.equal(0); // EIP-2612 surface exists
+    expect((await coin.DOMAIN_SEPARATOR()).length).to.equal(66);
+    // but nobody can open a second pool WITH the hook, or add liquidity to the real one
     const pm = await ethers.getContractAt(["function initialize((address,address,uint24,int24,address),uint160) returns (int24)"], POOL_MANAGER);
     await expect(pm.connect(alice).initialize([ethers.ZeroAddress, WETH, 0, 10, env.hookAddr], 2n ** 96n)).to.be.reverted;
   });
@@ -285,7 +316,7 @@ describe("OneHook on Ethereum (mainnet fork)", function () {
     await bad(G({ feeBps: 400 }));
     await bad(G({ feeMode: 3 }));
     await bad(G({ snipeBps: 3000 })); // no decay length
-    await bad(G({ snipeBps: 9500, snipeBlocks: 50 }));
+    await bad(G({ snipeBps: 3500, snipeBlocks: 50 })); // above the 30% snipe ceiling
     await bad(G({ buybackShareBps: 3000 })); // no threshold
     await bad(G({ buybackShareBps: 5500, buybackThreshold: E("0.01") }));
     await bad(G({ buybackShareBps: 5000, buybackThreshold: E("0.01"), divShareBps: 4000 })); // pots > 80%
@@ -298,15 +329,28 @@ describe("OneHook on Ethereum (mainnet fork)", function () {
     const cBefore = await coin.balanceOf(admin.address);
     const pBefore = await (await weth()).balanceOf(admin.address);
     const liqBefore = (await env.hook.positionOf(token)).liquidity;
-    await expect(env.factory.connect(alice).collect(token, 2500, alice.address)).to.be.revertedWithCustomError(env.factory, "NotAdmin");
-    await (await env.factory.connect(admin).collect(token, 2500, admin.address)).wait();
+    await expect(env.factory.connect(alice).collect(token, 2000, alice.address)).to.be.revertedWithCustomError(env.factory, "NotAdmin");
+    await expect(env.factory.connect(alice).announceCollect(token, 2000, alice.address)).to.be.revertedWithCustomError(env.factory, "NotAdmin");
+    // one announcement can name at most 20% of the liquidity
+    await expect(env.factory.connect(admin).announceCollect(token, 2500, admin.address)).to.be.revertedWithCustomError(env.factory, "InvalidParams");
+    // a collect only runs 24h after a public announcement naming share and recipient
+    await expect(env.factory.connect(admin).collect(token, 2000, admin.address)).to.be.revertedWithCustomError(env.factory, "CollectNotAnnounced");
+    await (await env.factory.connect(admin).announceCollect(token, 2000, admin.address)).wait();
+    await expect(env.factory.connect(admin).collect(token, 2000, admin.address)).to.be.revertedWithCustomError(env.factory, "CollectNotAnnounced");
+    await mins(23 * 60);
+    await expect(env.factory.connect(admin).collect(token, 2000, admin.address)).to.be.revertedWithCustomError(env.factory, "CollectNotAnnounced");
+    await mins(61);
+    await expect(env.factory.connect(admin).collect(token, 2000, alice.address)).to.be.revertedWithCustomError(env.factory, "CollectNotAnnounced"); // must match the announcement
+    await (await env.factory.connect(admin).collect(token, 2000, admin.address)).wait();
+    // and the announcement is consumed
+    await expect(env.factory.connect(admin).collect(token, 2000, admin.address)).to.be.revertedWithCustomError(env.factory, "CollectNotAnnounced");
     const coinsGot = (await coin.balanceOf(admin.address)) - cBefore;
     const pairGot = (await (await weth()).balanceOf(admin.address)) - pBefore;
-    console.log(`      collect 25%: ${fmt(coinsGot).toExponential(3)} coins + ${fmt(pairGot).toFixed(5)} WETH`);
+    console.log(`      collect 20%: ${fmt(coinsGot).toExponential(3)} coins + ${fmt(pairGot).toFixed(5)} WETH`);
     expect(coinsGot).to.be.gt(0);
     expect(pairGot).to.be.gt(0);
     const liqAfter = (await env.hook.positionOf(token)).liquidity;
-    expect(liqAfter * 4n).to.be.closeTo(liqBefore * 3n, liqBefore / 100n);
+    expect(liqAfter * 5n).to.be.closeTo(liqBefore * 4n, liqBefore / 100n);
     // trading still works after a collect
     await (await env.router.connect(carol).buy(token, "0x", 0, { value: E("0.05") })).wait();
 

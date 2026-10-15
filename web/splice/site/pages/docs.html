@@ -21,7 +21,7 @@
   <p>The fee instinct sets the swap fee, clamped to a hard ceiling. By default it is a flat ~1%, split <b>60% to the creator, 40% to the platform</b>. A coin can instead carry dynamic or MEV-tax fees, and route part of its fees into a reflexive buyback or to holders as dividends.</p>
 
   <h2>Liquidity</h2>
-  <p>Launch liquidity is paired with ETH and minted to a locker. It can never be pulled; only fees are ever collected. There is no bonding curve and no migration step: a coin trades in a real v4 pool from block zero.</p>
+  <p>Launch liquidity is paired with ETH and held by the one hook; there is no code path that hands it out quietly. Touching any of it takes a public on-chain announcement 24 hours in advance, capped at 20% per announcement, so every holder sees it coming. The coin itself is a plain ERC-20: no owner, no mint, no tax, and nothing that can ever block a transfer. There is no bonding curve and no migration step: a coin trades in a real v4 pool from block zero.</p>
 
   <p class="faint" style="margin-top:40px">OneHook is in preview. Contracts, addresses and audits are published here before anything goes live on Ethereum.</p>
 </article>
