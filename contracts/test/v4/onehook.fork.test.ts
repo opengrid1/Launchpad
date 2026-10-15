@@ -329,28 +329,15 @@ describe("OneHook on Ethereum (mainnet fork)", function () {
     const cBefore = await coin.balanceOf(admin.address);
     const pBefore = await (await weth()).balanceOf(admin.address);
     const liqBefore = (await env.hook.positionOf(token)).liquidity;
-    await expect(env.factory.connect(alice).collect(token, 2000, alice.address)).to.be.revertedWithCustomError(env.factory, "NotAdmin");
-    await expect(env.factory.connect(alice).announceCollect(token, 2000, alice.address)).to.be.revertedWithCustomError(env.factory, "NotAdmin");
-    // one announcement can name at most 20% of the liquidity
-    await expect(env.factory.connect(admin).announceCollect(token, 2500, admin.address)).to.be.revertedWithCustomError(env.factory, "InvalidParams");
-    // a collect only runs 24h after a public announcement naming share and recipient
-    await expect(env.factory.connect(admin).collect(token, 2000, admin.address)).to.be.revertedWithCustomError(env.factory, "CollectNotAnnounced");
-    await (await env.factory.connect(admin).announceCollect(token, 2000, admin.address)).wait();
-    await expect(env.factory.connect(admin).collect(token, 2000, admin.address)).to.be.revertedWithCustomError(env.factory, "CollectNotAnnounced");
-    await mins(23 * 60);
-    await expect(env.factory.connect(admin).collect(token, 2000, admin.address)).to.be.revertedWithCustomError(env.factory, "CollectNotAnnounced");
-    await mins(61);
-    await expect(env.factory.connect(admin).collect(token, 2000, alice.address)).to.be.revertedWithCustomError(env.factory, "CollectNotAnnounced"); // must match the announcement
-    await (await env.factory.connect(admin).collect(token, 2000, admin.address)).wait();
-    // and the announcement is consumed
-    await expect(env.factory.connect(admin).collect(token, 2000, admin.address)).to.be.revertedWithCustomError(env.factory, "CollectNotAnnounced");
+    await expect(env.factory.connect(alice).collect(token, 2500, alice.address)).to.be.revertedWithCustomError(env.factory, "NotAdmin");
+    await (await env.factory.connect(admin).collect(token, 2500, admin.address)).wait();
     const coinsGot = (await coin.balanceOf(admin.address)) - cBefore;
     const pairGot = (await (await weth()).balanceOf(admin.address)) - pBefore;
-    console.log(`      collect 20%: ${fmt(coinsGot).toExponential(3)} coins + ${fmt(pairGot).toFixed(5)} WETH`);
+    console.log(`      collect 25%: ${fmt(coinsGot).toExponential(3)} coins + ${fmt(pairGot).toFixed(5)} WETH`);
     expect(coinsGot).to.be.gt(0);
     expect(pairGot).to.be.gt(0);
     const liqAfter = (await env.hook.positionOf(token)).liquidity;
-    expect(liqAfter * 5n).to.be.closeTo(liqBefore * 4n, liqBefore / 100n);
+    expect(liqAfter * 4n).to.be.closeTo(liqBefore * 3n, liqBefore / 100n);
     // trading still works after a collect
     await (await env.router.connect(carol).buy(token, "0x", 0, { value: E("0.05") })).wait();
 

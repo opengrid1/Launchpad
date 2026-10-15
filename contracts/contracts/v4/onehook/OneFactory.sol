@@ -37,10 +37,8 @@ interface IOnePairRouter {
 ///         Ownership (setup rights) is renounced after deploy; the immutable
 ///         `admin` keeps: pause, listing visibility, metadata edits (stored
 ///         here; the coin stays immutable), token blocking, the fee recipient,
-///         the start cap, and collecting from a coin's pool liquidity, which
-///         only executes {COLLECT_DELAY} after a public on-chain announcement
-///         naming the coin, the share and the recipient, so every holder can
-///         see it coming and exit first. The admin cannot mint, change a
+///         the start cap, and collecting from a coin's pool liquidity (a
+///         disclosed power; see the docs). The admin cannot mint, change a
 ///         coin's fee or instincts, freeze transfers, move anyone's coins, or
 ///         touch the fee pots owed to creators, buybacks and dividends.
 contract OneFactory is ReentrancyGuard, IUnlockCallback {
@@ -51,10 +49,6 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
     uint256 public constant TOTAL_SUPPLY_WHOLE = 1_000_000_000;
     int24 public constant TICK_SPACING = 10;
     uint24 public constant LP_FEE = 0;
-    /// @notice Notice a collect announcement must give holders before it can execute.
-    uint64 public constant COLLECT_DELAY = 24 hours;
-    /// @notice Largest share of a coin's liquidity one announcement can name.
-    uint16 public constant MAX_COLLECT_BPS = 2_000;
 
     IPoolManager public immutable poolManager;
     OneHook public immutable hook;
@@ -83,14 +77,6 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
     address[] public allTokens;
     address public owner;
 
-    struct PendingCollect {
-        uint16 bps;
-        address recipient;
-        uint64 executableAt;
-    }
-    /// @notice The one announced, not-yet-executed collect per coin.
-    mapping(address token => PendingCollect) public pendingCollect;
-
     struct LaunchParams {
         string name;
         string symbol;
@@ -110,8 +96,6 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
     event OwnershipRenounced();
     event TokenBlocked(address indexed token, bool blocked);
     event StartCapSet(uint256 usd8);
-    event CollectAnnounced(address indexed token, uint16 bps, address indexed recipient, uint64 executableAt);
-    event CollectCancelled(address indexed token);
     event Collected(address indexed token, uint16 bps, uint256 coins, uint256 pair, address indexed to);
 
     error LaunchesPaused();
@@ -120,7 +104,6 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
     error NotAdmin();
     error ZeroAddress();
     error Blocked();
-    error CollectNotAnnounced();
 
     modifier onlyAdmin() {
         if (msg.sender != admin) revert NotAdmin();
@@ -211,32 +194,10 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
         emit OwnershipRenounced();
     }
 
-    /// @notice Announce a collect of `bps` of a coin's pool liquidity to
-    ///         `recipient`. It can execute no sooner than {COLLECT_DELAY} from
-    ///         now, so every holder sees it coming on-chain and can exit
-    ///         first. Announcing again replaces the pending one and restarts
-    ///         the clock.
-    function announceCollect(address token, uint16 bps, address recipient) external onlyAdmin {
-        if (listings[token].createdAt == 0 || bps == 0 || bps > MAX_COLLECT_BPS || recipient == address(0)) revert InvalidParams();
-        uint64 at = uint64(block.timestamp) + COLLECT_DELAY;
-        pendingCollect[token] = PendingCollect({bps: bps, recipient: recipient, executableAt: at});
-        emit CollectAnnounced(token, bps, recipient, at);
-    }
-
-    /// @notice Withdraw a pending collect announcement.
-    function cancelCollect(address token) external onlyAdmin {
-        delete pendingCollect[token];
-        emit CollectCancelled(token);
-    }
-
-    /// @notice Execute a collect announced at least {COLLECT_DELAY} ago, with
-    ///         exactly the announced share and recipient. The fee pots are
-    ///         never touched.
+    /// @notice Pull `bps` of a coin's pool liquidity (the position the hook
+    ///         holds for it) out to `recipient`. The fee pots are never touched.
     function collect(address token, uint16 bps, address recipient) external onlyAdmin nonReentrant returns (uint256 coins, uint256 pair) {
         if (listings[token].createdAt == 0) revert InvalidParams();
-        PendingCollect memory p = pendingCollect[token];
-        if (p.executableAt == 0 || block.timestamp < p.executableAt || p.bps != bps || p.recipient != recipient) revert CollectNotAnnounced();
-        delete pendingCollect[token];
         (coins, pair) = hook.collect(token, bps, recipient);
         emit Collected(token, bps, coins, pair, recipient);
     }

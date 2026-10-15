@@ -62,10 +62,10 @@ interface IWrappedNativeMinimal {
 ///           - The configured swap fee is capped at {MAX_FEE_BPS}. The one
 ///             further bounded exception a creator can opt into is anti-snipe
 ///             (launch-window only, <= {MAX_SNIPE_BPS}, decaying, buys only).
-///           - Liquidity lives here and there is no path that hands it out,
-///             with one disclosed exception: the factory admin can collect
-///             from it only after a public on-chain announcement made 24
-///             hours in advance (see the factory).
+///           - Liquidity lives here; holders and creators can never pull it.
+///             The one disclosed exception is the factory admin's collect
+///             (see the factory); every collect emits an event naming the
+///             coin, the share and the recipient.
 ///
 ///         The instincts (chosen per coin at launch, immutable afterwards):
 ///           - Fee engine: flat; dynamic (the fee widens while swaps cluster

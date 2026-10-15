@@ -40,7 +40,7 @@
     { name: 'Anti-sandwich', desc: 'Every pool taxes priority-fee bidding at the base: the harder a sandwich bot bids the block builder to bracket your trade, the more it pays the pool. Ordinary wallets pay nothing extra.' },
     { name: 'Fee ceiling',   desc: 'No instinct can push the total fee past the hard cap. Every fee result is clamped at the source.' },
     { name: 'Sells never block', desc: 'The hook can read a sell but can never revert one. No honeypots, no pausing, no blacklist.' },
-    { name: 'Liquidity in the open', desc: 'All liquidity lives in the one hook and nobody can pull it on a whim: touching any of it takes a public on-chain notice 24 hours in advance, at most a fifth at a time, visible to every holder.' },
+    { name: 'Liquidity in the open', desc: 'All liquidity lives in the one hook. Holders and creators can never pull it, and every platform collect is emitted on-chain naming the coin, the share and the recipient.' },
     { name: 'No owner, no mint', desc: 'The token is fixed-supply, ownerless, with no mint, no pause and no transfer tax. Mechanics live in the pool, not the coin.' },
   ];
 
