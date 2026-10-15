@@ -3,11 +3,11 @@
    dense sortable table as the front page. Colour is functional: green/red for price action,
    brand green only on primary actions. Mono for numbers and addresses, plain sans for labels. */
 :root {
-  --accent: #2bd480; --accent-hov: #25bd72; --accent-ink: #08130c; --accent-text: #2bd480;
+  --accent: #3fbcff; --accent-hov: #2ea9ec; --accent-ink: #04101c; --accent-text: #4fc3ff;
   --up: #2bd480; --down: #f6465d; --warn: #f0b90b;
   --g-div: #4b9eff; --g-maxw: #a06bff;
-  --bg: #0b0e11; --surface: #11151a; --surface-2: #1a2027; --line: #232b33; --line-2: #313b45;
-  --ink: #e8edf2; --muted: #8b949e; --faint: #5b646d;
+  --bg: #0b1120; --surface: #101828; --surface-2: #182236; --line: #22304d; --line-2: #31425f;
+  --ink: #eef2f8; --muted: #8f9bb3; --faint: #5d6a85;
   --radius: 8px; --radius-sm: 6px; --maxw: 1280px;
   --mono: 'Martian Mono', ui-monospace, SFMono-Regular, monospace;
   --body: 'Instrument Sans', system-ui, -apple-system, sans-serif;
@@ -17,7 +17,7 @@
 :root[data-theme="light"] {
   --bg: #f6f7f8; --surface: #ffffff; --surface-2: #eef1f4; --line: #dfe4e8; --line-2: #c9d1d9;
   --ink: #121518; --muted: #57606a; --faint: #8b949e;
-  --accent-text: #0a8f54; --up: #0f9d62; --down: #e03131; --warn: #b8860b;
+  --accent-text: #0073c4; --up: #0f9d62; --down: #e03131; --warn: #b8860b;
   --shadow: 0 8px 24px -14px rgba(20, 30, 40, .25);
 }
 * { box-sizing: border-box; }

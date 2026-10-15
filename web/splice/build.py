@@ -22,8 +22,8 @@ NAV = [('explore', '/', 'Explore'), ('launch', '/launch', 'Launch'), ('portfolio
 # the mark: a double-helix "S" splice glyph, inline so no image fetch
 MARK = ('<svg class="mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">'
         '<g transform="translate(8.3,4.9) scale(0.24)">'
-        '<path d="M34 30 62 8 V64 A20 20 0 0 1 22 64 V50" fill="none" stroke="var(--accent)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>'
-        '<path d="M14.6 52.8 H29.4 L22 37.2 Z" fill="var(--accent)"/></g></svg>')
+        '<path d="M34 30 62 8 V64 A20 20 0 0 1 22 64 V50" fill="none" stroke="var(--ink)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>'
+        '<path d="M14.6 52.8 H29.4 L22 37.2 Z" fill="var(--ink)"/></g></svg>')
 WORDMARK = '<b class="wm">onehook<i>.fun</i></b>'
 X_GLYPH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.9-6.4L6.3 22H3.2l7.3-8.3L1 2h6.3l4.4 5.9L18.9 2Zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3Z"/></svg>'
 ETH_GLYPH = '<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M5 0 0 8.1 5 11l5-2.9z" fill="currentColor" opacity=".55"/><path d="M5 12 0 9.1 5 16l5-6.9z" fill="currentColor"/></svg>'
@@ -69,7 +69,7 @@ def shell(meta, body):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{title}</title>
 <meta name="description" content="{desc}">
-<meta name="theme-color" content="#0b0e11">
+<meta name="theme-color" content="#0b1120">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
 <meta property="og:url" content="{SITE_URL}">

@@ -64,18 +64,18 @@
   // ---- build the sample coins --------------------------------------------------------------
   // [name, symbol, dir, genes, color, freshMins?]  freshMins = minutes since launch (active anti-snipe / "just spliced")
   const SAMPLES = [
-    ['Helix', 'HELIX', 3, ['fee', 'buyback', 'snipe'], '#27e39a', 2],
+    ['Helix', 'HELIX', 3, ['fee', 'buyback', 'snipe'], '#49d7ff', 2],
     ['Splicer', 'SPLCR', 1, ['fee', 'div', 'maxw'], '#5aa9ff'],
     ['Codon', 'CODON', 2, ['fee', 'snipe', 'maxw'], '#f5b74b', 6],
     ['Allele', 'ALLE', 3, ['fee', 'buyback', 'agent'], '#b07cff'],
     ['Plasmid', 'PLSMD', -2, ['fee', 'maxw'], '#ff8bbf'],
-    ['Ribo', 'RIBO', 1, ['fee', 'div', 'buyback'], '#27e39a'],
+    ['Ribo', 'RIBO', 1, ['fee', 'div', 'buyback'], '#49d7ff'],
     ['Enzyme', 'ENZ', 2, ['fee', 'snipe', 'maxw', 'buyback'], '#4ad7c6'],
     ['Vector', 'VECT', -1, ['fee', 'agent', 'buyback'], '#5aa9ff'],
     ['Mitosis', 'MITO', 4, ['fee', 'snipe', 'div'], '#f5b74b'],
     ['Strand', 'STRND', 1, ['fee', 'maxw'], '#b07cff'],
     ['Primer', 'PRIM', 1, ['fee', 'snipe', 'buyback'], '#ff5d6c', 9],
-    ['Nucleo', 'NUCL', 2, ['fee', 'buyback', 'div', 'maxw'], '#27e39a'],
+    ['Nucleo', 'NUCL', 2, ['fee', 'buyback', 'div', 'maxw'], '#49d7ff'],
     ['Operon', 'OPRN', 1, ['fee', 'div'], '#4ad7c6'],
     ['Telomere', 'TELO', 3, ['fee', 'buyback', 'snipe', 'agent'], '#b07cff', 4],
     ['Exon', 'EXON', -1, ['fee', 'maxw', 'snipe'], '#f5b74b'],

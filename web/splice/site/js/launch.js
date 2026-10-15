@@ -54,7 +54,7 @@
   function previewCard() {
     const nm = ($('#f-name').value || '').trim() || 'Your coin';
     const sym = (($('#f-sym').value || '').trim() || 'COIN').toUpperCase();
-    const c = { name: nm, symbol: sym, color: '#2ee5a2', img: imgData };
+    const c = { name: nm, symbol: sym, color: '#49d7ff', img: imgData };
     const sp = sparkSvg(Array.from({ length: 24 }, (_, i) => 50 + Math.sin(i / 3) * 12 + i), 1, 300, 40);
     $('#preview-card').innerHTML = `<div class="card static">
       <div class="ct">${avatar(c)}<div class="t"><b>${esc(nm)} <span class="nb new">NEW</span></b><small>$${esc(sym)} · ETH · now</small></div></div>
