@@ -10,3 +10,6 @@ cache-backstop/
 artifacts-cntrlz/
 cache-cntrlz/
 .env.cntrlz-deployer
+artifacts-onehook/
+cache-onehook/
+.env.onehook-deployer
