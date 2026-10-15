@@ -26,3 +26,4 @@ tgbot/.env
 tgbot/data/
 tgbot/node_modules/
 tgbot/dist/
+web/onehook/charting_library/
