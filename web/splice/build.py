@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build the Instinct site: wrap each page in the shared shell and write dist/.
+"""Build the OneHook site: wrap each page in the shared shell and write dist/.
 
     python3 build.py              # preview: sample coins (contracts not deployed yet)
 
-Instinct is a launchpad on Ethereum where every coin is born with composable on-chain
+OneHook is a launchpad on Ethereum where every coin is born with composable on-chain
 "instincts" (fee, anti-snipe, buyback, dividends, MEV-tax, max-wallet, agent). One immutable
 hook enforces a constitution no gene can break; each launch picks the genes it wants.
 """
@@ -12,20 +12,19 @@ import hashlib, json, os, re, shutil
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(HERE, 'site')
 DIST = os.path.join(HERE, 'dist')
-SITE_URL = os.environ.get('SITE_URL', 'https://instinct.fun').rstrip('/')
-X_HANDLE = os.environ.get('X_HANDLE', 'instinctfun')
-DESC = 'Coins born with instincts. Launch a coin on Ethereum that defends its launch, buys itself back, pays its holders, caps whales, even thinks. One immutable hook, a constitution no instinct can break.'
+SITE_URL = os.environ.get('SITE_URL', 'https://onehook.fun').rstrip('/')
+X_HANDLE = os.environ.get('X_HANDLE', 'onehookfun')
+DESC = 'One hook. Every instinct. Launch a coin on Ethereum that defends its launch, buys itself back, pays its holders, caps whales, even thinks. One immutable hook, a constitution no instinct can break.'
 
 FONTS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap'
 NAV = [('explore', '/', 'Explore'), ('launch', '/launch', 'Launch'), ('portfolio', '/portfolio', 'Portfolio'), ('docs', '/docs', 'Docs')]
 
 # the mark: a double-helix "S" splice glyph, inline so no image fetch
 MARK = ('<svg class="mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">'
-        '<path d="M8 5c0 6 16 6 16 11S8 21 8 27" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/>'
-        '<path d="M24 5c0 6-16 6-16 11s16 5 16 11" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>'
-        '<g stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" opacity=".8">'
-        '<path d="M10.5 8.5h11"/><path d="M11.5 12h9"/><path d="M11.5 20h9"/><path d="M10.5 23.5h11"/></g></svg>')
-WORDMARK = '<b class="wm">instinct<i>.fun</i></b>'
+        '<g transform="translate(8.3,4.9) scale(0.24)">'
+        '<path d="M34 30 62 8 V64 A20 20 0 0 1 22 64 V50" fill="none" stroke="var(--accent)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>'
+        '<path d="M14.6 52.8 H29.4 L22 37.2 Z" fill="var(--accent)"/></g></svg>')
+WORDMARK = '<b class="wm">onehook<i>.fun</i></b>'
 X_GLYPH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.9-6.4L6.3 22H3.2l7.3-8.3L1 2h6.3l4.4 5.9L18.9 2Zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3Z"/></svg>'
 ETH_GLYPH = '<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M5 0 0 8.1 5 11l5-2.9z" fill="currentColor" opacity=".55"/><path d="M5 12 0 9.1 5 16l5-6.9z" fill="currentColor"/></svg>'
 ICON = {
@@ -60,7 +59,7 @@ def shell(meta, body):
     desc = meta.get('desc', DESC)
     scripts = ''.join(f'<script src="/js/{s}" defer></script>' for s in meta.get('scripts', []))
     head = meta.get('head', '')
-    x_link = f'<a class="iconbtn x-link" href="https://x.com/{X_HANDLE}" target="_blank" rel="noopener" aria-label="Instinct on X">{X_GLYPH}</a>' if X_HANDLE else ''
+    x_link = f'<a class="iconbtn x-link" href="https://x.com/{X_HANDLE}" target="_blank" rel="noopener" aria-label="OneHook on X">{X_GLYPH}</a>' if X_HANDLE else ''
     x_foot = f'<a href="https://x.com/{X_HANDLE}" target="_blank" rel="noopener">@{X_HANDLE}</a>' if X_HANDLE else ''
     x_meta = f'<meta name="twitter:site" content="@{X_HANDLE}">' if X_HANDLE else ''
     return f'''<!doctype html>
@@ -76,7 +75,7 @@ def shell(meta, body):
 <meta property="og:url" content="{SITE_URL}">
 <meta property="og:image" content="{SITE_URL}/img/og.png">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="instinct.fun">
+<meta property="og:site_name" content="onehook.fun">
 <meta name="twitter:card" content="summary_large_image">
 {x_meta}
 <meta name="twitter:title" content="{title}">
@@ -95,7 +94,7 @@ def shell(meta, body):
 <body>
 <header class="top">
   <div class="top-in">
-    <a class="brand" href="/" aria-label="instinct.fun home">{MARK}{WORDMARK}</a>
+    <a class="brand" href="/" aria-label="onehook.fun home">{MARK}{WORDMARK}</a>
     <nav class="nav" aria-label="Main">{links}</nav>
     <div class="top-r">
       <button class="iconbtn" data-search aria-label="Search coins">{ic("search")}</button>

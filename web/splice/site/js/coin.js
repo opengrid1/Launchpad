@@ -109,7 +109,7 @@
   // ---------- render ----------
   // TradingView owns the chart; realtime bars stream via tv.js
   function render(c) {
-    document.title = `${c.name} ($${c.symbol}) · Instinct`;
+    document.title = `${c.name} ($${c.symbol}) · OneHook`;
     const soc = [
       `<a class="btn ghost sm" href="https://x.com/${esc(c.socials.x)}" target="_blank" rel="noopener">X ↗</a>`,
       c.socials.tg ? `<a class="btn ghost sm" href="https://t.me/${esc(c.socials.tg)}" target="_blank" rel="noopener">Telegram ↗</a>` : '',

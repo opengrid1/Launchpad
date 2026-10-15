@@ -22,7 +22,7 @@
     const claimEth = d.divCoins.reduce((a, x) => a + x.claim, 0);
     $('#pf-root').innerHTML = `
       <div class="pf-head">
-        <div><h1>Portfolio</h1><p class="muted">A sample view. Connect a wallet to see your own once Instinct is live.</p></div>
+        <div><h1>Portfolio</h1><p class="muted">A sample view. Connect a wallet to see your own once OneHook is live.</p></div>
         <div class="pf-total"><span>Est. value</span><b>${eth(totalEth)}</b><small>${usd(totalEth * UD.ETH_USD)}</small></div>
       </div>
 

@@ -1,8 +1,8 @@
-/* Instinct data layer + a deterministic market simulation.
+/* OneHook data layer + a deterministic market simulation.
 
    There are no contracts yet, so every coin here is a believable PREVIEW generated from a seed —
    not live chain data. A shared clock (UD.subscribe) walks prices, streams trades and accrues
-   gene pools so the whole site breathes; it is seeded and reduced-motion aware. When the Instinct
+   gene pools so the whole site breathes; it is seeded and reduced-motion aware. When the OneHook
    hook goes live this module is swapped for one that reads the chain and emits the same events,
    so nothing else on the site changes.
 
@@ -92,7 +92,7 @@
     const price = mc / 1e9;
     const params = geneParams(r, genes, mc);
     const c = {
-      id: idx + 1, spec: 'INS-' + String(idx + 1).padStart(3, '0'),
+      id: idx + 1, spec: 'OH-' + String(idx + 1).padStart(3, '0'),
       addr: addrFrom(r), name, symbol, color, dir,
       pair: { symbol: 'ETH', logo: '/img/eth.svg' },
       price, price0: price, mc, fdv: mc, c24,

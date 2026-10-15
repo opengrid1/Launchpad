@@ -27,11 +27,11 @@
   });
 
   const datafeed = {
-    onReady(cb) { setTimeout(() => cb({ supported_resolutions: Object.keys(RES), supports_marks: false, supports_timescale_marks: false, supports_time: true, exchanges: [{ value: 'instinct.fun', name: 'instinct.fun', desc: 'Uniswap v4 on Ethereum' }], symbols_types: [{ name: 'crypto', value: 'crypto' }] }), 0); },
-    searchSymbols(q, ex, type, cb) { cb([{ symbol: symName(), full_name: 'instinct.fun:' + symName(), description: X ? X.name : '', exchange: 'instinct.fun', ticker: symName(), type: 'crypto' }]); },
+    onReady(cb) { setTimeout(() => cb({ supported_resolutions: Object.keys(RES), supports_marks: false, supports_timescale_marks: false, supports_time: true, exchanges: [{ value: 'onehook.fun', name: 'onehook.fun', desc: 'Uniswap v4 on Ethereum' }], symbols_types: [{ name: 'crypto', value: 'crypto' }] }), 0); },
+    searchSymbols(q, ex, type, cb) { cb([{ symbol: symName(), full_name: 'onehook.fun:' + symName(), description: X ? X.name : '', exchange: 'onehook.fun', ticker: symName(), type: 'crypto' }]); },
     resolveSymbol(name, ok) {
       mode = /·MCAP/.test(name) ? 'mcap' : 'price'; unit = /·ETH/.test(name) ? 'ETH' : 'USD';
-      setTimeout(() => ok({ ticker: name, name: symName(), description: (mode === 'mcap' ? X.symbol + ' market cap' : symName()) + (unit === 'ETH' ? ' in ETH' : ''), type: 'crypto', session: '24x7', timezone: 'Etc/UTC', exchange: 'instinct.fun', listed_exchange: 'instinct.fun', format: 'price', minmov: 1, pricescale: scaleFor(), has_intraday: true, intraday_multipliers: ['1', '5', '15', '30', '60', '240'], has_daily: true, has_weekly_and_monthly: true, supported_resolutions: Object.keys(RES), volume_precision: 2, data_status: 'streaming', visible_plots_set: 'ohlcv', currency_code: unit === 'USD' ? 'USD' : 'ETH' }), 0);
+      setTimeout(() => ok({ ticker: name, name: symName(), description: (mode === 'mcap' ? X.symbol + ' market cap' : symName()) + (unit === 'ETH' ? ' in ETH' : ''), type: 'crypto', session: '24x7', timezone: 'Etc/UTC', exchange: 'onehook.fun', listed_exchange: 'onehook.fun', format: 'price', minmov: 1, pricescale: scaleFor(), has_intraday: true, intraday_multipliers: ['1', '5', '15', '30', '60', '240'], has_daily: true, has_weekly_and_monthly: true, supported_resolutions: Object.keys(RES), volume_precision: 2, data_status: 'streaming', visible_plots_set: 'ohlcv', currency_code: unit === 'USD' ? 'USD' : 'ETH' }), 0);
     },
     getBars(info, res, params, ok, err) {
       try {
