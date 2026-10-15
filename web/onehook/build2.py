@@ -121,7 +121,7 @@ def appendall(el, html):
     for c in list(BeautifulSoup(html, 'html.parser').contents): el.append(c)
 
 BRAND_ICON = '<img src="img/wordmark-head.png?v=3" alt="OneHook" class="h-[21px] w-auto shrink-0">'
-INK_BADGE = '<img alt="Ink" class="size-full object-cover" src="img/ink.png">'
+INK_BADGE = '<img alt="Ethereum" class="size-full object-cover" src="img/eth.png">'
 
 def common_clean(root):
     for t in root.select('script, style, noscript, iframe'): t.decompose()
@@ -349,7 +349,7 @@ for i, (li, (h, p)) in enumerate(zip(items, texts)):
 # --- swap card
 swap = [c for c in grid.children if getattr(c, 'name', None)][1]; swap['id'] = 'swapwrap'
 card = swap.select_one('div.rounded-\\[20px\\]'); card['id'] = 'swapcard'
-for n in card.find_all(string=lambda s: s and s.strip() == 'Base'): n.replace_with('Ink')
+for n in card.find_all(string=lambda s: s and s.strip() == 'Base'): n.replace_with('Ethereum')
 for n in card.find_all(string=lambda s: s and s.strip() == 'BLUECHIP'): n.parent['data-sym'] = '1'; n.replace_with('')
 avs = card.select('span.bg-avatar-gradient')
 avs[0].select_one('span').string = 'E'; avs[0]['data-av'] = 'in'; avs[0].append(frag('<img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/eth.png">'))
@@ -414,7 +414,7 @@ for c in chips[1:]: c.decompose()
 chips[0]['data-tpl'] = 'chip'; chips[0].parent['id'] = 'newchips'
 
 main = root.select_one('main')
-h1 = main.select_one('h1'); h1.clear(); h1.append(frag('<span class="hero-row"><img src="img/hero-wordmark.png?v=3" alt="OneHook" class="hero-wm" decoding="async"></span>'))
+h1 = main.select_one('h1'); h1.clear(); h1.append(frag('<span class="hero-row"><img src="img/hero-wordmark.png?v=4" alt="OneHook" class="hero-wm" decoding="async"></span>'))
 p = main.select_one('p.mt-5')
 u = p.select('span.inline')
 stack = p.select_one('span[role=list]')
@@ -451,7 +451,10 @@ for b in ft[2:]: b.decompose()
 for b in fb.select('div.rounded-full.bg-bg-input button, div.h-10 button'):
     tx = b.get_text(strip=True)
     b['data-sort'] = {'🔥 Trending': 'trend', '⚡ Vol 24h': 'vol', '🌱 New': 'new', '💧 Liquidity': 'liq'}.get(tx, '')
-for b in fb.select('button.flex.w-full'): b['data-dd'] = 'assets'
+for b in fb.select('button.flex.w-full'):
+    b['data-dd'] = 'assets'
+    sp = b.select_one('span.truncate')
+    if sp: sp.string = 'All instincts'   # OneHook filters by instinct, not paired asset
 # feed
 feedwrap = main.select_one('div.pb-20'); feedwrap['id'] = 'feedwrap'
 desk = feedwrap.select_one('div.hidden.md\\:block')
