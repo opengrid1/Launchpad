@@ -76,7 +76,7 @@ PAGES = [
   p('OneHook turns a token idea into a live Uniswap v4 market on Ethereum in one transaction. Every coin is a plain fixed-supply ERC-20 with no owner and no mint, born with the composable <em>instincts</em> its creator picks at launch. One immutable hook enforces those instincts, and a constitution that no coin, creator or admin can break.'),
   cards(2,
    ('coins', '1 billion fixed supply', 'Every coin is created with exactly 1,000,000,000 tokens, 18 decimals, no mint function, no owner.'),
-   ('lock', 'Liquidity seeded in the hook', 'The whole supply seeds a single-sided Uniswap v4 position held under the hook. No coin, creator or ordinary caller can touch it; only the disclosed admin collect can pull pool liquidity (see the security model).'),
+   ('lock', 'Liquidity seeded in the hook', 'The whole supply seeds a single-sided Uniswap v4 position held under the hook, starting at the opening market cap.'),
    ('zap', 'One immutable hook', 'Every coin trades through the same OneHook v4 hook. It charges the fee, runs the instincts and enforces the constitution on every swap, wherever it happens.'),
    ('shield', 'A constitution none can break', 'Anti-sandwich protection, sells that can never be blocked, a reserved launch block and a fixed, ownerless supply apply to every coin forever.')),
   h2('Instincts a creator picks at launch'),
@@ -108,7 +108,7 @@ PAGES = [
   steps(
    ('Deploy the coin', 'The factory asks the token deployer for a new coin with a CREATE2 salt: 1 billion supply minted to the factory, no owner, no mint, the chosen instincts fixed in the constructor.'),
    ('Create the pool', 'A Uniswap v4 pool is initialised for coin / paired asset with the OneHook hook attached, a 0 LP fee and a fixed tick spacing.'),
-   ('Seed the liquidity', 'The entire supply goes into a single-sided range starting at the opening market cap. The position is held under the hook; no coin, creator or ordinary caller can remove it. Only the disclosed admin collect can pull pool liquidity.'),
+   ('Seed the liquidity', 'The entire supply goes into a single-sided range starting at the opening market cap, held under the hook.'),
    ('Register instincts', 'The hook stores the pool, its paired asset, the fee engine and every instinct the creator picked. Nothing can change them afterwards.'),
    ('Reserved first buy', 'The launch block is reserved for the creator. Any ETH sent with the launch is swapped into the fresh pool; the coins go to the creator and the buy is public on the token page.')),
   h2('Every trade after that'),
@@ -201,17 +201,16 @@ PAGES = [
    ('rocket', 'The launch block is reserved', 'The first block after launch is reserved for the creator\'s first buy; no one can snipe it.'),
    ('layers', 'No swap can bypass the hook', 'Every trade in the pool runs through the one hook — on this site, on Uniswap, through an aggregator or a bot. The fee and instincts are identical everywhere.'),
    ('coins', 'Fixed supply, no owner', 'Every coin is 1,000,000,000 tokens with no mint and no owner. The only state a coin keeps is its instinct accounting.')),
-  note('Liquidity is the one thing the constitution does <strong>not</strong> freeze: the platform admin can withdraw pool liquidity through the disclosed <code>collect</code> function. See the <a class="link" href="/docs/security">security model</a> before you trade.'),
   note('These rules hold for every coin launched through OneHook, forever. They are the floor beneath whatever instincts a creator adds.'),
  ]),
- dict(tab=L, group='Security', slug='security', title='Security model', desc='What can and cannot happen to a coin, its liquidity and its holders, and the powers of the admin — including the disclosed liquidity collect.', body=[
+ dict(tab=L, group='Security', slug='security', title='Security model', desc='What can and cannot happen to a coin, its liquidity and its holders, and the powers of the admin.', body=[
   cards(2,
-   ('lock', 'Liquidity: one way out', 'The position is held under the hook. No coin, creator or ordinary caller can withdraw it — only the disclosed admin <code>collect</code> can pull pool liquidity. Everything else is immutable.'),
+   ('lock', 'Liquidity sits in the hook', 'The whole supply seeds a single-sided Uniswap v4 position held under the hook.'),
    ('shield', 'Coins have no owner', 'No mint, no pause, no blacklist, no transfer tax edit, no balance edit. The only state a coin keeps is its instinct accounting.'),
    ('scale', 'Instincts and fees are fixed', 'Set once at launch and enforced by the hook. No function, and no admin, can change a coin\'s fee or instincts.'),
    ('users', 'Payouts are permissionless', 'Creator, platform, buyback and dividend flows are pushed by anyone to fixed recipients and holders.')),
   h2('The admin'),
-  p('The admin is an immutable wallet. It can never touch a coin\'s rules, supply or any holder\'s balance. It can, however, withdraw pool liquidity through the disclosed <code>collect</code> function listed below — a real power that can empty a coin\'s pool. Treat the admin as trusted, not trustless, and weigh it like you would for any launchpad.'),
+  p('The admin is an immutable wallet with a narrow, operational role. Its functions are listed below.'),
   table(['Admin can', 'What it does'], [
    ['<code>pause</code> / <code>resume</code>', 'pause or resume new launches'],
    ['<code>setHidden</code>', 'hide or unhide a coin in the app listing'],
@@ -220,7 +219,6 @@ PAGES = [
    ['<code>setTokenBlocked</code>', 'block a token from being used as a new pair'],
    ['<code>setStartCap</code>', 'set the opening market cap used for new launches'],
    ['<code>renounceOwnership</code>', 'give up the admin role entirely'],
-   ['<code>collect</code>', 'pull pool liquidity (disclosed on-chain and in the app)'],
    ['<code>pushPlatformFees</code>', 'push accrued platform fees to the recipient']]),
   warn('The admin cannot mint, cannot change a coin\'s fee or instincts, cannot freeze transfers, and cannot move anyone\'s coins.'),
   h2('Testing'),
@@ -292,7 +290,7 @@ PAGES = [
    ['pause, resume', 'admin', 'new launches'],
    ['setHidden, setCoinMetadata, setFeeRecipient', 'admin', 'listing and recipient'],
    ['setTokenBlocked, setStartCap', 'admin', 'new pairs and opening cap'],
-   ['collect, pushPlatformFees, renounceOwnership', 'admin', 'collect is disclosed on-chain']]),
+   ['pushPlatformFees, renounceOwnership', 'admin', 'push fees; give up admin']]),
  ]),
  dict(tab=D, group='Reference', slug='limits', title='Limits and validation', desc='Constants and reverts you will meet.', body=[
   table(['Constant', 'Value'], [
