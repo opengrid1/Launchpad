@@ -84,6 +84,14 @@
 
   function ago(s) { return s < 60 ? s + 's' : s < 3600 ? Math.floor(s / 60) + 'm' : s < 86400 ? Math.floor(s / 3600) + 'h' : Math.floor(s / 86400) + 'd'; }
 
+  // evolution: pre-committed stages that activate at market-cap milestones, locked at launch (demo roadmap)
+  const EVO_STAGES = [
+    { name: 'Genesis', emoji: '⚡', at: 0, note: 'Boots and guards its launch', unlocks: ['Anti-snipe', 'Max-wallet', '3% opening fee'] },
+    { name: 'Training', emoji: '🧠', at: 25000, note: 'Learns its market', unlocks: ['Reflexive buyback', 'Fee eases to 1.5%'] },
+    { name: 'Autonomous', emoji: '🤖', at: 250000, note: 'Fully online', unlocks: ['ETH dividends', 'Fee settles at 1%'] },
+  ];
+  coins.forEach(x => { let s = 0; for (let i = 0; i < EVO_STAGES.length; i++) if (x.mc >= EVO_STAGES[i].at) s = i; x.evo = { metric: 'market cap', stages: EVO_STAGES, stage: s }; });
+
   // ---- generate a stable trade history per coin ----
   coins.forEach((x) => {
     const c = x._sim, rng = mul32(Math.floor(x.seed * 1000));

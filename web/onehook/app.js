@@ -151,6 +151,8 @@ function initToken(){
   $('#infoCreator').href=EXPLORER+'/address/'+X.creator; $('#infoCreator span').textContent=shortAddr(X.creator); $('#infoCreatorCopy').dataset.copy=cs(X.creator);
   { const c=$('#infoCreated'); c.firstChild.textContent=fmtDate(X.createdAt); c.querySelector('span').textContent='('+ageStr(X.age)+')'; }
   paintInfo();
+  // evolution roadmap (demo)
+  renderEvo();
   // chart
   initChart();
   // trades
@@ -191,6 +193,18 @@ function paintInfo(){ const pu=X.pairUsd; const cell=(k,usd,pair)=>{ const c=$(`
   const rw=(k,v,s)=>{ const c=$(`[data-rew="${k}"]`); if(!c) return; const d=c.querySelectorAll('div'); d[1].textContent=v; if(s!=null) d[2].textContent=s; };
   rw('all',fmtUsd(X.totalHolderRewards*pu),inPair(X.totalHolderRewards)); rw('day',fmtUsd(X.rew24),inPair(X.rew24/pu)); rw('rate',X.mc>0?fmtUsd(X.rew24/X.mc*1000):'$0.00');
   const rt=$('#rewText'); if(rt) rt.textContent=!X.rewards?'Dividends are off for this coin. The whole fee flows to the creator and platform (60/40); nothing is paid out to holders.':`A share of every fee is paid to holders in ${X.pair}, pro-rata to balance, automatically. Your dividends accrue as you hold and can be claimed anytime — there is nothing to stake and no lockup.`; }
+function renderEvo(){ const slot=$('#evoSlot'); if(!slot) return; if(!X||!X.evo){ slot.innerHTML=''; return; }
+  const e=X.evo, st=e.stages, cur=e.stage, mc=X.mc, next=st[cur+1];
+  const prog=next?Math.max(2,Math.min(100,(mc-st[cur].at)/(next.at-st[cur].at)*100)):100;
+  const track=st.map((s,i)=>`<div class="evo-stage ${i<cur?'done':i===cur?'on':''}"><span class="evo-emoji">${s.emoji}</span><b>${s.name}</b><small>${s.at===0?'launch':fmtUsd(s.at)}</small></div>`).join('');
+  slot.innerHTML=`<div class="evo-card">
+    <div class="evo-top"><span class="evo-tag">🧬 Evolution</span><span class="evo-now">${st[cur].emoji} ${esc(st[cur].name)} · stage ${cur+1} of ${st.length}</span></div>
+    <div class="evo-track">${track}</div>
+    ${next?`<div class="evo-bar"><div class="evo-fill" style="width:${prog.toFixed(0)}%"></div></div>
+    <div class="evo-next">Next: <b>${next.emoji} ${esc(next.name)}</b> at <b>${fmtUsd(next.at)}</b> market cap — <span>${fmtUsd(Math.max(0,next.at-mc))} to go</span>. Unlocks <b>${next.unlocks.map(esc).join(', ')}</b>.</div>`
+    :`<div class="evo-next">Fully evolved — <b>${esc(st[cur].name)}</b>, its final form.</div>`}
+    <p class="evo-note">The whole path is written on-chain at launch and never changes. The coin evolves by crossing milestones — no one decides it.</p>
+  </div>`; }
 function showTab(k){ $$('#tabs [data-tab]').forEach(b=>{ const on=b.dataset.tab===k; b.className=b.className.replace(/ text-text-primary| text-text-muted hover:text-text-secondary/g,'')+(on?' text-text-primary':' text-text-muted hover:text-text-secondary'); });
   $$('#panes [data-pane]').forEach(p=>{ const on=p.dataset.pane===k; if(p.classList.contains('md:hidden')) p.classList.toggle('hidden-i',!on); else { p.classList.toggle('hidden',!on); if(on&&p.classList.contains('md:block')) p.classList.remove('hidden'); } });
   $$('#panes [data-pane="tx"]').forEach(p=>{ if(p.classList.contains('md:block')){ p.classList.toggle('hidden-i',k!=='tx'); p.classList.add('hidden'); } });

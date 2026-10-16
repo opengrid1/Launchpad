@@ -236,6 +236,7 @@ wrap = main.select_one('div.relative.z-\\[1\\] > div')
 kids = [c for c in wrap.children if getattr(c, 'name', None)]
 back, warn, hero, stats, grid, spacer, mbar = kids
 back.select_one('button')['data-href'] = 'index.html'
+stats.insert_after(frag('<section id="evoSlot"></section>'))   # filled by app.js when the coin has an evolution path
 
 # --- warning
 warn['id'] = 'warn'
