@@ -76,7 +76,7 @@ PAGES = [
   p('OneHook turns a token idea into a live Uniswap v4 market on Ethereum in one transaction. Every coin is a plain fixed-supply ERC-20 with no owner and no mint, born with the composable <em>instincts</em> its creator picks at launch. One immutable hook enforces those instincts, and a constitution that no coin, creator or admin can break.'),
   cards(2,
    ('coins', '1 billion fixed supply', 'Every coin is created with exactly 1,000,000,000 tokens, 18 decimals, no mint function, no owner.'),
-   ('lock', 'Liquidity locked in the hook', 'The whole supply seeds a single-sided Uniswap v4 position held under the hook, which has no function to withdraw it.'),
+   ('lock', 'Liquidity seeded in the hook', 'The whole supply seeds a single-sided Uniswap v4 position held under the hook. No coin, creator or ordinary caller can touch it; only the disclosed admin collect can pull pool liquidity (see the security model).'),
    ('zap', 'One immutable hook', 'Every coin trades through the same OneHook v4 hook. It charges the fee, runs the instincts and enforces the constitution on every swap, wherever it happens.'),
    ('shield', 'A constitution none can break', 'Anti-sandwich protection, sells that can never be blocked, a reserved launch block and a fixed, ownerless supply apply to every coin forever.')),
   h2('Instincts a creator picks at launch'),
@@ -108,7 +108,7 @@ PAGES = [
   steps(
    ('Deploy the coin', 'The factory asks the token deployer for a new coin with a CREATE2 salt: 1 billion supply minted to the factory, no owner, no mint, the chosen instincts fixed in the constructor.'),
    ('Create the pool', 'A Uniswap v4 pool is initialised for coin / paired asset with the OneHook hook attached, a 0 LP fee and a fixed tick spacing.'),
-   ('Seed the liquidity', 'The entire supply goes into a single-sided range starting at the opening market cap. The position is held under the hook, which has no function to remove it, so liquidity is locked.'),
+   ('Seed the liquidity', 'The entire supply goes into a single-sided range starting at the opening market cap. The position is held under the hook; no coin, creator or ordinary caller can remove it. Only the disclosed admin collect can pull pool liquidity.'),
    ('Register instincts', 'The hook stores the pool, its paired asset, the fee engine and every instinct the creator picked. Nothing can change them afterwards.'),
    ('Reserved first buy', 'The launch block is reserved for the creator. Any ETH sent with the launch is swapped into the fresh pool; the coins go to the creator and the buy is public on the token page.')),
   h2('Every trade after that'),
@@ -199,18 +199,19 @@ PAGES = [
    ('shield', 'Anti-sandwich', 'An MEV priority-fee tax makes sandwiching the pool uneconomic, protecting ordinary swaps.'),
    ('zap', 'Sells can never be blocked', 'No instinct, creator or admin can stop a holder from selling. There is no blacklist and no transfer freeze on a coin.'),
    ('rocket', 'The launch block is reserved', 'The first block after launch is reserved for the creator\'s first buy; no one can snipe it.'),
-   ('lock', 'Liquidity is locked in the hook', 'The single-sided position is held under the hook, which has no function to withdraw it.'),
+   ('layers', 'No swap can bypass the hook', 'Every trade in the pool runs through the one hook — on this site, on Uniswap, through an aggregator or a bot. The fee and instincts are identical everywhere.'),
    ('coins', 'Fixed supply, no owner', 'Every coin is 1,000,000,000 tokens with no mint and no owner. The only state a coin keeps is its instinct accounting.')),
+  note('Liquidity is the one thing the constitution does <strong>not</strong> freeze: the platform admin can withdraw pool liquidity through the disclosed <code>collect</code> function. See the <a class="link" href="/docs/security">security model</a> before you trade.'),
   note('These rules hold for every coin launched through OneHook, forever. They are the floor beneath whatever instincts a creator adds.'),
  ]),
- dict(tab=L, group='Security', slug='security', title='Security model', desc='What can and cannot happen to a coin, its liquidity and its holders, and the limited powers of the admin.', body=[
+ dict(tab=L, group='Security', slug='security', title='Security model', desc='What can and cannot happen to a coin, its liquidity and its holders, and the powers of the admin — including the disclosed liquidity collect.', body=[
   cards(2,
-   ('lock', 'Liquidity cannot be removed', 'The position is held under the hook, which has no function to withdraw it. Only the disclosed admin collect can pull pool liquidity.'),
+   ('lock', 'Liquidity: one way out', 'The position is held under the hook. No coin, creator or ordinary caller can withdraw it — only the disclosed admin <code>collect</code> can pull pool liquidity. Everything else is immutable.'),
    ('shield', 'Coins have no owner', 'No mint, no pause, no blacklist, no transfer tax edit, no balance edit. The only state a coin keeps is its instinct accounting.'),
    ('scale', 'Instincts and fees are fixed', 'Set once at launch and enforced by the hook. No function, and no admin, can change a coin\'s fee or instincts.'),
    ('users', 'Payouts are permissionless', 'Creator, platform, buyback and dividend flows are pushed by anyone to fixed recipients and holders.')),
   h2('The admin'),
-  p('The admin is an immutable wallet. Its powers are deliberately narrow and operational; it can never touch a coin\'s rules, supply or balances.'),
+  p('The admin is an immutable wallet. It can never touch a coin\'s rules, supply or any holder\'s balance. It can, however, withdraw pool liquidity through the disclosed <code>collect</code> function listed below — a real power that can empty a coin\'s pool. Treat the admin as trusted, not trustless, and weigh it like you would for any launchpad.'),
   table(['Admin can', 'What it does'], [
    ['<code>pause</code> / <code>resume</code>', 'pause or resume new launches'],
    ['<code>setHidden</code>', 'hide or unhide a coin in the app listing'],
@@ -259,7 +260,7 @@ PAGES = [
  dict(tab=D, group='Reference', slug='production-contracts', title='Contract addresses', desc='OneHook is not deployed to Ethereum mainnet yet; addresses are published here at go-live.', body=[
   note('OneHook has not launched. The addresses below are published and source-verified on Etherscan at go-live. Until then every entry reads <strong>— not deployed</strong>.'),
   table(['Contract', 'Address', 'Role'], [
-   ['OneHookFactory', NA, 'launches coins, holds the locked positions'],
+   ['OneHookFactory', NA, 'launches coins, holds the launch liquidity positions'],
    ['OneHookHook', NA, 'charges the fee, runs the instincts, enforces the constitution'],
    ['OneHookRouter', NA, 'ETH in / out trading on any pair, claim routing'],
    ['OneHookTokenDeployer', NA, 'creates each coin for the factory'],
