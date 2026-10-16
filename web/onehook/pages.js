@@ -11,6 +11,7 @@ function initLaunch(){
   const g=id=>document.getElementById(id); const TAKEN=new Set((window.CHAIN&&LIVE?CHAIN.tokens():TOK).map(x=>x.t.toUpperCase()));
   let logoURL=null, dev=false, busy=false, pairUsd=ETH; const CAP_USD=3000;
   const inst={ feeMode:'flat', feeBps:100, snipe:false, snipeBps:3000, snipeMin:30, buy:false, buyShare:2000, div:false, divShare:2000, max:false, maxBps:100, maxHrs:6 };
+  const evo={ on:false, t1:10, t2:50 };
   const WETH=(window.INKY&&INKY.weth)||'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
   const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
   if(LIVE&&window.CHAIN){ CHAIN.pairUsd(WETH).then(v=>{ pairUsd=v||ETH; sync(); }).catch(()=>{}); }
@@ -39,9 +40,16 @@ function initLaunch(){
     const bb=inst.buy?inst.buyShare/100:0, dv=inst.div?inst.divShare/100:0, rest=100-bb-dv, cr=Math.round(rest*0.6), pl=rest-cr;
     g('srBuy').style.display=inst.buy?'':'none'; g('spBuy').textContent=bb+'%'; g('srDiv').style.display=inst.div?'':'none'; g('spDiv').textContent=dv+'%'; g('spCreator').textContent=cr+'%'; g('spPlat').textContent=pl+'%';
     g('sumCreator').textContent=cr+'% of the fee'; g('dCreator').textContent=cr+'% of the fee';
-    const chips=instList(); g('sumInst').textContent=chips.join(', '); g('dInst').textContent=chips.join(', '); g('pInst').textContent=chips.slice(1).join(' · ')||'Constitution only'; }
+    const chips=instList(); g('sumInst').textContent=chips.join(', '); g('dInst').textContent=chips.join(', '); g('pInst').textContent=chips.slice(1).join(' · ')||'Constitution only';
+    // evolution preview
+    const pe=g('pEvo');
+    if(evo.on){ const t1=parseFloat(g('evoT1').value)||0, t2=parseFloat(g('evoT2').value)||0; evo.t1=t1; evo.t2=t2;
+      g('evoMsg').textContent=(t1>0&&t2>t1)?'':'Milestones must increase — Training below Autonomous.';
+      g('sumEvoRow').style.display=''; g('sumEvo').textContent='3 stages · $'+(t1||'?')+'K → $'+(t2||'?')+'K';
+      pe.style.display=''; pe.innerHTML=`<span class="pe-s on">⚡ Genesis</span><span class="pe-a">→</span><span class="pe-s">🧠 $${t1||'?'}K</span><span class="pe-a">→</span><span class="pe-s">🤖 $${t2||'?'}K</span>`;
+    } else { g('sumEvoRow').style.display='none'; pe.style.display='none'; g('evoMsg').textContent=''; } }
   g('feeSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-fee]'); if(!b) return; inst.feeMode=b.dataset.fee; g('feeSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); sync(); });
-  ['fName','fTick','fDesc','fCommit','fWeb','fX','fTg','feePct','snipePct','snipeMin','buyPct','divPct','maxPct','maxHrs'].forEach(i=>{ const el=g(i); if(el) el.addEventListener('input',()=>{ sync(); if(i==='fName'||i==='fTick') val1(); if(i!=='fName'&&i!=='fTick') val2(); }); });
+  ['fName','fTick','fDesc','fCommit','fWeb','fX','fTg','feePct','snipePct','snipeMin','buyPct','divPct','maxPct','maxHrs','evoT1','evoT2'].forEach(i=>{ const el=g(i); if(el) el.addEventListener('input',()=>{ if(i==='evoT1'||i==='evoT2') g('evoPreset').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.ep==='custom')); sync(); if(i==='fName'||i==='fTick') val1(); if(i!=='fName'&&i!=='fTick') val2(); }); });
   g('mktBtn').onclick=()=>{ g('mktBtn').classList.toggle('open'); g('mkt').classList.toggle('open'); };
   const sw=(id,fn)=>{ const b=g(id); if(!b) return; b.onclick=()=>{ if(b.disabled) return; const on=!b.classList.contains('on'); b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); fn&&fn(on); }; };
   sw('swDev',on=>{ dev=on; g('devBox').classList.toggle('open',on); sync(); val2(); });
@@ -49,6 +57,8 @@ function initLaunch(){
   sw('swBuy',on=>{ inst.buy=on; g('buyBox').classList.toggle('open',on); sync(); val2(); });
   sw('swDiv',on=>{ inst.div=on; g('divBox').classList.toggle('open',on); sync(); val2(); });
   sw('swMax',on=>{ inst.max=on; g('maxBox').classList.toggle('open',on); sync(); val2(); });
+  sw('swEvo',on=>{ evo.on=on; g('evoBox').classList.toggle('open',on); sync(); });
+  g('evoPreset').addEventListener('click',e=>{ const b=e.target.closest('[data-ep]'); if(!b) return; g('evoPreset').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); if(b.dataset.ep==='degen'){ g('evoT1').value=5; g('evoT2').value=25; } else if(b.dataset.ep==='standard'){ g('evoT1').value=10; g('evoT2').value=50; } sync(); });
   function loadLogo(file){ if(!file||!file.type.startsWith('image/')){ toast('Please choose an image file','x'); return; } if(file.size>4*1024*1024){ toast('Logo too big, max 4 MB','x'); return; }
     const img=new Image(); img.onload=()=>{ const s=Math.min(img.width,img.height); let best=null; for(const size of [128,112,96,80,64]){ const c=document.createElement('canvas'); c.width=c.height=size; const x=c.getContext('2d'); x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size); for(let q=0.8;q>=0.35;q-=0.15){ const dd=c.toDataURL('image/webp',q); if(!best||dd.length<best.length) best=best&&best.length<=4200?best:dd; if(dd.length<=4200){ best=dd; break; } } if(best&&best.length<=4200) break; } logoURL=best; sync(); toast('Logo ready · '+Math.round(logoURL.length/1024*10)/10+' KB on-chain'); }; img.src=URL.createObjectURL(file); }
   g('fLogo').addEventListener('change',e=>loadLogo(e.target.files[0])); const dz=g('drop'); ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault(); dz.style.borderColor='var(--color-accent)';})); ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault(); dz.style.borderColor='';})); dz.addEventListener('drop',e=>loadLogo(e.dataTransfer.files[0]));
@@ -57,7 +67,7 @@ function initLaunch(){
   cta.onclick=async()=>{ if(!W.connected){ openConnect(); return; } if(!W.onInk){ try{ await DYN().switchToInk(); }catch(e){ toast(errMsg(e),'x'); } return; } if(!val1()||!val2()){ toast('Fix the highlighted fields','x'); $('main').scrollTo({top:0,behavior:'smooth'}); return; } if(PRE||!LIVE||!window.CHAIN){ toast('Launches open when the contracts go live on Ethereum'); return; }
     const name=g('fName').value.trim(), sym=g('fTick').value.trim().toUpperCase(); const meta={description:g('fDesc').value.trim().slice(0,280)}; if(logoURL) meta.image=logoURL; if(link(g('fWeb').value)) meta.website=link(g('fWeb').value); if(link(g('fX').value)) meta.x=link(g('fX').value); if(link(g('fTg').value)) meta.telegram=link(g('fTg').value);
     const devWei=dev?CHAIN.parseEther((parseFloat(g('fCommit').value)||0).toFixed(18)):0n;
-    const genes={ feeMode:inst.feeMode==='flat'?0:inst.feeMode==='dynamic'?1:2, feeBps:inst.feeBps, snipeBps:inst.snipe?inst.snipeBps:0, snipeBlocks:inst.snipe?clamp(Math.round(inst.snipeMin*60/12),5,7200):0, buybackShareBps:inst.buy?inst.buyShare:0, buybackThreshold:inst.buy?CHAIN.parseEther('0.05'):0n, divShareBps:inst.div?inst.divShare:0, maxWalletBps:inst.max?inst.maxBps:0, maxWalletSecs:inst.max?inst.maxHrs*3600:0 };
+    const genes={ feeMode:inst.feeMode==='flat'?0:inst.feeMode==='dynamic'?1:2, feeBps:inst.feeBps, snipeBps:inst.snipe?inst.snipeBps:0, snipeBlocks:inst.snipe?clamp(Math.round(inst.snipeMin*60/12),5,7200):0, buybackShareBps:inst.buy?inst.buyShare:0, buybackThreshold:inst.buy?CHAIN.parseEther('0.05'):0n, divShareBps:inst.div?inst.divShare:0, maxWalletBps:inst.max?inst.maxBps:0, maxWalletSecs:inst.max?inst.maxHrs*3600:0, evolution:{ enabled:evo.on, trainingMcapUsd:evo.on?Math.round(evo.t1*1000):0, autonomousMcapUsd:evo.on?Math.round(evo.t2*1000):0 } };
     busy=true; cta.disabled=true; cta.textContent='Confirm in wallet…';
     try{ const {rc,token}=await CHAIN.launch({name,symbol:sym,metadataURI:JSON.stringify(meta),pair:WETH,minPairOut:0,genes},devWei);
       busy=false; setCta(); if(!token) throw new Error('Launched, but the token address was not found in the receipt');

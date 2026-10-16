@@ -80,7 +80,23 @@
         <p>The 60/40 creator/platform split is of what's left after the buyback and dividend shares. Fees are charged by the hook, so they're the same wherever the coin trades.</p>
       </div>
 
-      <div class="lf-sec"><span class="lf-num">03</span><h2>Launch options</h2></div>
+      <div class="lf-sec"><span class="lf-num">03</span><h2>Evolution</h2></div>
+      <p class="lf-para">Switch every instinct on at launch, or let the coin grow into them. With evolution on, it advances through stages at market-cap milestones — locked at launch, enforced on-chain, and it can only ever get better for holders.</p>
+      <div class="lf-opt"><div class="lf-opt-h"><button type="button" class="lf-sw" id="swEvo" aria-checked="false"></button><b>Evolve over stages __INFO__</b></div>
+        <p>The coin boots guarded, learns its market, then goes fully autonomous — each stage unlocking the next instinct at a milestone you set.</p>
+        <div class="lf-dev" id="evoBox">
+          <div class="lf-seg" id="evoPreset"><button type="button" data-ep="degen">Degen</button><button type="button" data-ep="standard" class="on">Standard</button><button type="button" data-ep="custom">Custom</button></div>
+          <div class="evo-build">
+            <div class="evo-brow"><span class="evo-be">⚡</span><div class="evo-bt"><b>Genesis</b><span>at launch</span></div><em>Anti-snipe · Max-wallet · opening fee</em></div>
+            <div class="evo-brow"><span class="evo-be">🧠</span><div class="evo-bt"><b>Training</b><span>at market cap</span></div><div class="evo-bin"><span>$</span><input class="lf-in" id="evoT1" value="10" inputmode="decimal"><span>K</span></div><em>Reflexive buyback turns on</em></div>
+            <div class="evo-brow"><span class="evo-be">🤖</span><div class="evo-bt"><b>Autonomous</b><span>at market cap</span></div><div class="evo-bin"><span>$</span><input class="lf-in" id="evoT2" value="50" inputmode="decimal"><span>K</span></div><em>ETH dividends on · fee settles at 1%</em></div>
+          </div>
+          <p class="lf-hint" id="evoHint">Each stage can only improve for holders — fees only fall, rewards only switch on. The whole path is written on-chain at launch and never changes.</p>
+          <span class="lf-err" id="evoMsg"></span>
+        </div>
+      </div>
+
+      <div class="lf-sec"><span class="lf-num">04</span><h2>Launch options</h2></div>
       <div class="lf-opt"><div class="lf-opt-h"><button type="button" class="lf-sw" id="swDev" aria-checked="false"></button><b>Include dev buy __INFO__</b></div><p>Buy coins as part of the launch, in the same transaction. Up to 0.5 ETH, shown publicly on the coin page. The launch block is reserved for your dev buy, so no one can snipe the same block.</p>
         <div class="lf-dev" id="devBox"><input class="lf-in" id="fCommit" value="0.1" inputmode="decimal"><span class="lf-unit">ETH</span><span class="lf-devout">≈ <b id="fbOut">45.2M</b> coins</span></div><span class="lf-err" id="cMsg"></span></div>
 
@@ -104,9 +120,10 @@
           <div class="lf-kv"><span>Fixed supply</span><b>1B</b><small>Set by the factory for every launch.</small></div>
         </div>
         <div class="lf-tags"><span class="lf-tag" id="pPairTag"><img src="img/eth.png" alt="">ETH</span><span class="lf-tag ok">Immutable</span><span class="lf-tag" id="pInst">Constitution only</span></div>
+        <div class="lf-pv-evo" id="pEvo" style="display:none"></div>
       </div>
       <div class="lf-card">
-        <div class="lf-sum"><div><span>Fixed supply</span><b>1B</b></div><div><span>Pool model</span><b>Immutable hook</b></div><div><span>Launch market cap</span><b>≈ $3.00K</b></div><div><span>Creation fee</span><b>0 ETH</b></div><div><span>Paired asset</span><b id="sumPair">ETH</b></div><div><span>Fee</span><b id="sumFee">1.00% flat</b></div><div><span>Instincts</span><b id="sumInst">Flat fee</b></div><div><span>Creator share</span><b id="sumCreator">60% of the fee</b></div><div id="sumDevRow"><span>Dev buy</span><b id="sumDev">0.1 ETH</b></div></div>
+        <div class="lf-sum"><div><span>Fixed supply</span><b>1B</b></div><div><span>Pool model</span><b>Immutable hook</b></div><div><span>Launch market cap</span><b>≈ $3.00K</b></div><div><span>Creation fee</span><b>0 ETH</b></div><div><span>Paired asset</span><b id="sumPair">ETH</b></div><div><span>Fee</span><b id="sumFee">1.00% flat</b></div><div><span>Instincts</span><b id="sumInst">Flat fee</b></div><div id="sumEvoRow" style="display:none"><span>Evolution</span><b id="sumEvo">3 stages</b></div><div><span>Creator share</span><b id="sumCreator">60% of the fee</b></div><div id="sumDevRow"><span>Dev buy</span><b id="sumDev">0.1 ETH</b></div></div>
         <button type="button" class="lf-cta" id="deploy">Connect Wallet</button>
         <p class="lf-note">You'll confirm the transaction in your wallet. Nothing is minted until you submit.</p>
       </div>
