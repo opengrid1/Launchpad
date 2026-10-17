@@ -125,7 +125,7 @@ async function initProfile(){
   if(!LIVE||!window.CHAIN){ $('#rewards').innerHTML=em('Nothing to claim yet'); return; }
   let P, B; try{ [P,B]=await Promise.all([CHAIN.profile(me),CHAIN.board().catch(()=>null)]); }catch(e){ if(seq===profileSeq) toast('Could not load your profile: '+errMsg(e),'x'); return; } if(seq!==profileSeq) return;
   // header tags + stats
-  const tags=[tagHtml('Ink')]; if(B){ const ip=B.pnl.findIndex(x=>x.wallet===me), iv=B.vol.findIndex(x=>x.wallet===me); if(ip>=0) tags.push(tagHtml(ic('trophy','size-3')+'#'+(ip+1)+' PnL this epoch',true)); if(iv>=0) tags.push(tagHtml(ic('trophy','size-3')+'#'+(iv+1)+' volume this epoch',true)); }
+  const tags=[tagHtml('Ethereum')]; if(B){ const ip=B.pnl.findIndex(x=>x.wallet===me), iv=B.vol.findIndex(x=>x.wallet===me); if(ip>=0) tags.push(tagHtml(ic('trophy','size-3')+'#'+(ip+1)+' PnL this epoch',true)); if(iv>=0) tags.push(tagHtml(ic('trophy','size-3')+'#'+(iv+1)+' volume this epoch',true)); }
   P.created.forEach(c=>tags.push(tagHtml('Creator of '+esc(c.x.n)))); if(isAdmin()) tags.push(tagHtml('Operator',true)); g('pfTags').innerHTML=tags.join('');
   const total=P.holdings.reduce((s,h)=>s+h.bal*h.x.px,0); const pendUsd=P.holdings.reduce((s,h)=>s+h.pendUsd,0); const creFees=P.created.reduce((s,c)=>s+c.fees*c.x.pairUsd,0); const creEth=P.created.filter(c=>c.x.pair==='ETH').reduce((s,c)=>s+c.fees,0);
   setBlock(0,fmtUsd(total),(P.lifetimePnl>=0?'+':'-')+fmtUsd(Math.abs(P.lifetimePnl))+' realized lifetime'); setBlock(1,fmtUsd(pendUsd),'across '+P.holdings.filter(h=>h.pend>0).length+' coins',pendUsd>0?'text-success':'text-text-primary');
