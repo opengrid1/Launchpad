@@ -26,7 +26,7 @@
         <div><span>Supply</span><b>1,000,000,000 · all in the pool</b></div>
         <div><span>Pool</span><b id="mktPool">Uniswap V4 · ETH · Ethereum</b></div>
         <div><span>Trading fee</span><b id="mktFee">1.00% · 60% creator · 40% platform</b></div>
-        <div><span>Liquidity</span><b>Seeded in the pool at launch</b></div>
+        <div><span>Liquidity</span><b>Seeded in the hook · admin can collect</b></div>
       </div>
       <div class="lf-fee"><span>Creation fee</span><b>0 ETH <small>gas only</small></b></div>
 
@@ -102,7 +102,7 @@
 
       <ul class="lf-bullets">
         <li>The coin and its Uniswap V4 market go live together on Ethereum, priced in ETH.</li>
-        <li>The whole fixed supply is minted once into one immutable hook pool, priced in ETH.</li>
+        <li>The whole fixed supply is minted once into one immutable hook pool. No coin, creator or ordinary caller can pull it; the platform admin can, through a disclosed collect (see the docs).</li>
         <li>The coin is a plain ERC-20: no owner, no mint, no transfer tax. Every mechanic lives in the pool's one hook.</li>
         <li>The fee, the instincts, the name, symbol, logo and description are written on-chain at launch and never change.</li>
         <li>A sell can never be blocked, and the launch block is reserved for your first buy.</li>

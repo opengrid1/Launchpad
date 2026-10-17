@@ -244,7 +244,7 @@ ws = warn.select_one('span.min-w-0')
 for s in list(ws.contents):
     if isinstance(s, NavigableString): s.extract()
 strongs = ws.select('strong')
-strongs[0].insert_after(' Tokens launched here cannot mint more supply, pause or freeze trading. Always check holders, pool liquidity and a live sell quote before buying. Copycats may exist here; external honeypots may imitate legitimate launches. ')
+strongs[0].insert_after(' Tokens launched here cannot mint more supply, pause or freeze trading. Pool liquidity can be withdrawn by the platform admin (a disclosed power, see the docs). Always check holders, pool liquidity and a live sell quote before buying. Copycats may exist here; external honeypots may imitate legitimate launches. ')
 settext(strongs[1], 'DYOR!')
 
 # --- hero
@@ -340,7 +340,7 @@ rew.insert_after(upd)
 # --- disclosures
 disc = grid.select_one('div.mt-12:not(.scroll-mt-4)')
 items = disc.select('li')
-texts = [('Limited creator control', 'The creator cannot mint additional tokens, pause or freeze trading, rebase the supply, or otherwise control trading. Every mechanic lives in the pool\'s one immutable hook.'),
+texts = [('Liquidity and control', 'The Uniswap V4 position is held under the hook. The creator cannot mint additional tokens, pause or freeze trading, rebase the supply, remove liquidity, or otherwise control trading. The platform admin can withdraw pool liquidity through a disclosed collect function (see the docs), so treat the admin as trusted, not trustless.'),
          ('No reserved supply', 'No tokens were sent directly to recipients or placed in a vesting vault at launch. The full fixed supply entered the pool; the creator bought 0.1 ETH in the launch transaction.'),
          ('Anti-sniping protection', 'If the creator switched on the anti-snipe instinct, buys in the opening window pay an extra tax that decays block by block from up to 30.00% back to the base fee. The launch block only accepts the creator\'s first buy. Sells are never taxed extra and can never be blocked.'),
          ('Fee split', "The default hook fee is 1.00%, charged in ETH on every swap. After the coin's optional buyback and dividend shares, the rest is split 60.00% to the creator and 40.00% to the platform. The fee is capped by the constitution and can never be raised after launch.")]
