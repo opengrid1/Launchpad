@@ -13,21 +13,25 @@ each coin's launch position **inside the hook**: the hook had the
 the factory admin called through the factory. Scanners that audit the token
 and the pool hook flagged that as a critical "liquidity drain in the hook".
 
-This version moves the liquidity out of the hook entirely:
+This version moves the liquidity out of the hook entirely and removes the
+withdraw path altogether:
 
 | | v1 (hook-held) | v2 (this directory) |
 |---|---|---|
 | Hook permissions | 8 flags, address `…eaEC` | 4 swap flags only, address `…CC` |
-| Launch position | owned by the hook | owned by the factory (`positions[token]`) |
+| Launch position | owned by the hook | owned by the factory (`positions[token]`), permanent |
 | Seeding | `hook.registerPool` seeded | `OneFactory.launch` seeds via its own `unlockCallback` |
-| `collect` | hook (called by factory) | factory only, `onlyAdmin`, emits `Collected` |
+| `collect` | hook (called by factory) | **none**: no function on any contract removes liquidity |
 | Gene caps | factory only | factory **and** hook (`OneHook._checkGenes` in `registerPool`) |
 | Fee flow, pots, buyback, dividends, evolution | unchanged | unchanged |
 
 The hook can no longer gate pool initialization or liquidity changes, holds
-no coins, and has no code path that moves liquidity. The admin's `collect`
-still exists, in the factory, and is the one disclosed power over a coin's
-pool liquidity. It is admin-only and every call is logged.
+no coins, and has no code path that moves liquidity. The factory seeds the
+position and keeps it: there is no `collect`, no `Collected` event and no
+liquidity action in its `unlockCallback`, so nobody, the admin included, can
+withdraw launch liquidity. The only way coins leave the position is a buy.
+The admin keeps platform housekeeping only: pause, listings, metadata, fee
+recipient, pair blocklist and the opening cap.
 
 ## Files
 

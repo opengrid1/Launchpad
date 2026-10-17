@@ -39,7 +39,7 @@ interface IWrappedNativeMinimal {
 ///         mechanics chosen at launch and burned into the pool) under a
 ///         constitution nothing can break. It holds no liquidity and has no
 ///         liquidity permissions at all: the launch position belongs to the
-///         factory, and only the factory's disclosed admin `collect` can ever
+///         factory, which has no withdraw path either, so nobody can ever
 ///         move it. Nothing in this contract can add, remove or redirect pool
 ///         liquidity.
 ///
@@ -68,9 +68,8 @@ interface IWrappedNativeMinimal {
 ///             an anti-snipe above {MAX_SNIPE_BPS}, or pots above their caps,
 ///             whatever contract calls {registerPool}.
 ///           - This hook never touches liquidity. The launch position is held
-///             by the factory (see OneFactory.collect, the one disclosed admin
-///             power over it); every collect emits an event naming the coin,
-///             the share and the recipient.
+///             by the factory, which cannot remove it: the seed liquidity is
+///             permanent for every coin.
 ///
 ///         The instincts (chosen per coin at launch, immutable afterwards):
 ///           - Fee engine: flat; dynamic (the fee widens while swaps cluster

@@ -37,15 +37,18 @@ interface IOnePairRouter {
 ///         validated against the constitution, and nothing changes them
 ///         afterwards.
 ///
+///         The launch position never leaves the pool: this contract has no
+///         function that removes liquidity, the hook has no liquidity
+///         permissions, and nobody (admin included) can withdraw it. The only
+///         way coins leave the position is a buy.
+///
 ///         Ownership (setup rights) is renounced after deploy; the immutable
-///         `admin` keeps: pause, listing visibility, metadata edits (stored
-///         here; the coin stays immutable), token blocking, the fee recipient,
-///         the start cap, and `collect`: pulling a share of a coin's launch
-///         position out of its pool. That is a real, disclosed power over the
-///         pool's liquidity; it lives only here, is admin-only, and every use
-///         emits {Collected}. The admin cannot mint, change a coin's fee or
-///         instincts, freeze transfers, move anyone's coins, or touch the fee
-///         pots owed to creators, buybacks and dividends.
+///         `admin` keeps platform housekeeping only: pause, listing
+///         visibility, metadata edits (stored here; the coin stays immutable),
+///         token blocking, the fee recipient and the start cap. The admin
+///         cannot mint, change a coin's fee or instincts, freeze transfers,
+///         move anyone's coins, touch liquidity, or touch the fee pots owed to
+///         creators, buybacks and dividends.
 contract OneFactory is ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
@@ -82,7 +85,8 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
     }
     mapping(address token => Listing) public listings;
 
-    /// @dev The one V4 position this factory holds per coin: the launch liquidity.
+    /// @dev The one V4 position this factory holds per coin: the launch
+    ///      liquidity. Recorded for reads only; nothing can remove it.
     struct Position {
         int24 tickLower;
         int24 tickUpper;
@@ -123,7 +127,6 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
     event OwnershipRenounced();
     event TokenBlocked(address indexed token, bool blocked);
     event StartCapSet(uint256 usd8);
-    event Collected(address indexed token, uint16 bps, uint128 liquidity, uint256 coins, uint256 pair, address indexed to);
 
     error LaunchesPaused();
     error InvalidParams();
@@ -219,24 +222,6 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
         if (msg.sender != owner) revert NotAdmin();
         owner = address(0);
         emit OwnershipRenounced();
-    }
-
-    /// @notice Admin-only: pull `bps` of a coin's launch position (coins and
-    ///         pair) out of its pool to `recipient`. Not reversible. This is the
-    ///         one power anyone has over pool liquidity; the hook has none. The
-    ///         fee pots owed to creators, buybacks and dividends are never touched.
-    function collect(address token, uint16 bps, address recipient) external onlyAdmin nonReentrant returns (uint256 coins, uint256 pair) {
-        if (bps == 0 || bps > 10_000 || recipient == address(0)) revert InvalidParams();
-        Listing storage l = listings[token];
-        if (l.createdAt == 0) revert InvalidParams();
-        Position storage pos = positions[token];
-        uint128 removed = uint128((uint256(pos.liquidity) * bps) / 10_000);
-        if (removed == 0) revert InvalidParams();
-        pos.liquidity -= removed;
-        PoolKey memory key = _key(token, l.pair);
-        bytes memory res = poolManager.unlock(abi.encode(uint8(2), abi.encode(key, pos.tickLower, pos.tickUpper, removed, recipient)));
-        (coins, pair) = abi.decode(res, (uint256, uint256));
-        emit Collected(token, bps, removed, coins, pair, recipient);
     }
 
     /// @notice Push the platform's fee share on `tokens` to the fee recipient. Anyone.
@@ -390,7 +375,8 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
     }
 
     /// @dev PoolManager callback: seed the launch position (0), the creator's
-    ///      first buy (1), or the admin collect (2).
+    ///      first buy (1). There is no liquidity-removal action: the seed
+    ///      position is permanent.
     function unlockCallback(bytes calldata data) external override returns (bytes memory) {
         if (msg.sender != address(poolManager)) revert NotAdmin();
         (uint8 action, bytes memory payload) = abi.decode(data, (uint8, bytes));
@@ -409,12 +395,7 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
             if (coinOut != 0) poolManager.take(key.currency0, to, coinOut);
             return abi.encode(coinOut);
         }
-        if (action != 2) revert InvalidParams();
-        (PoolKey memory ck, int24 cl, int24 cu, uint128 removed, address recipient) = abi.decode(payload, (PoolKey, int24, int24, uint128, address));
-        (BalanceDelta cd,) = poolManager.modifyLiquidity(ck, ModifyLiquidityParams({tickLower: cl, tickUpper: cu, liquidityDelta: -int256(uint256(removed)), salt: bytes32(0)}), "");
-        uint256 coins = _takeTo(ck.currency0, cd.amount0(), recipient);
-        uint256 pairOut = _takeTo(ck.currency1, cd.amount1(), recipient);
-        return abi.encode(coins, pairOut);
+        revert InvalidParams();
     }
 
     /// @dev Settle what this contract owes the PoolManager for `currency` (a negative delta).
@@ -424,13 +405,6 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
         poolManager.sync(currency);
         IERC20(Currency.unwrap(currency)).safeTransfer(address(poolManager), due);
         poolManager.settle();
-    }
-
-    /// @dev Take a positive delta straight to `to`; returns the amount taken.
-    function _takeTo(Currency currency, int128 amount, address to) internal returns (uint256 value) {
-        if (amount <= 0) return 0;
-        value = uint256(uint128(amount));
-        poolManager.take(currency, to, value);
     }
 
     function _key(address token, address pair) internal view returns (PoolKey memory key) {

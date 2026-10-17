@@ -143,28 +143,31 @@ describe("OneHook: factory-held liquidity, swap-only hook (local)", function () 
     expect(await hook.creatorOwed(token)).to.equal(0n);
   });
 
-  it("only the factory admin can collect, and it pulls liquidity to the recipient", async () => {
-    const { factory, hook, admin, creator, trader, outsider, router, weth } = await deployStack();
+  it("nobody can withdraw the launch liquidity: no collect anywhere, position untouched by trading", async () => {
+    const { factory, hook, admin, creator, trader, router, pm, FACTORY } = await deployStack();
     const token = await launch(factory, creator, FLAT, ethers.parseEther("1"));
-    const coin = await ethers.getContractAt("OneToken", token);
     await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("2") })).wait();
 
-    await expect(factory.connect(outsider).collect(token, 5_000, outsider.address)).to.be.revertedWithCustomError(factory, "NotAdmin");
-    await expect(factory.connect(creator).collect(token, 5_000, creator.address)).to.be.revertedWithCustomError(factory, "NotAdmin");
+    // no withdraw surface on either contract
+    for (const c of [factory, hook]) {
+      const names = c.interface.fragments.filter((f: any) => f.type === "function").map((f: any) => f.name);
+      expect(names).to.not.include("collect");
+      expect(names).to.not.include("unwindPosition");
+      expect(names).to.not.include("removeLiquidity");
+    }
+    expect(factory.interface.fragments.some((f: any) => f.type === "event" && f.name === "Collected")).to.equal(false);
 
-    const posBefore = await factory.positionOf(token);
-    const coinsBefore = await coin.balanceOf(outsider.address);
-    const wethBefore = await weth.balanceOf(outsider.address);
-    await expect(factory.connect(admin).collect(token, 5_000, outsider.address)).to.emit(factory, "Collected");
-    const posAfter = await factory.positionOf(token);
-    expect(posAfter.liquidity).to.equal(posBefore.liquidity - posBefore.liquidity / 2n);
-    expect(await coin.balanceOf(outsider.address)).to.be.gt(coinsBefore);
-    expect(await weth.balanceOf(outsider.address)).to.be.gt(wethBefore); // the dev + trader buys put pair into the range
-    expect(await coin.balanceOf(await hook.getAddress())).to.equal(0n);
+    // the recorded position never changes: trading moves price, not liquidity
+    const pos = await factory.positionOf(token);
+    expect(pos.liquidity).to.be.gt(0n);
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("0.5") })).wait();
+    expect((await factory.positionOf(token)).liquidity).to.equal(pos.liquidity);
+    expect(FACTORY).to.equal(await factory.getAddress());
 
-    // the pool keeps trading on the remaining half
+    // the admin's unlock callback has no liquidity action: a direct unlock with any other action reverts
+    await expect(pm.connect(admin).unlock(ethers.AbiCoder.defaultAbiCoder().encode(["uint8", "bytes"], [2, "0x"]))).to.be.reverted;
+    // and the hook still taxes trades on the untouched pool
     await expect(router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("0.1") })).to.emit(hook, "FeeTaken");
-    await expect(factory.connect(admin).collect(token, 0, outsider.address)).to.be.revertedWithCustomError(factory, "InvalidParams");
   });
 
   it("buyback-burn and dividends still run from the hook", async () => {
