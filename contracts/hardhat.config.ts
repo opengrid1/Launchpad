@@ -20,17 +20,47 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const STABLE_RPC_URL = process.env.STABLE_RPC_URL ?? "https://rpc.stable.xyz";
 const STABLE_CHAIN_ID = Number(process.env.STABLE_CHAIN_ID ?? 988);
 
+// OneHook (Ethereum mainnet) uses transient storage, so it targets the Cancun
+// EVM; the rest of the repo stays on the default target for the chains that
+// lack those opcodes. Optimizer runs mirror the verified mainnet build.
+const ONEHOOK_FILES = [
+  "IOneOracle.sol",
+  "OneToken.sol",
+  "OneDivToken.sol",
+  "OneTokenDeployer.sol",
+  "OneHook.sol",
+  "OneFactory.sol",
+  "OneRouter.sol",
+  "mocks/MockOneOracle.sol",
+].map((f) => `contracts/v4/onehook/${f}`);
+const ONEHOOK_COMPILER = {
+  version: "0.8.26",
+  settings: { optimizer: { enabled: true, runs: 40 }, viaIR: true, evmVersion: "cancun" },
+};
+const ETH_RPC_URL = process.env.ETH_RPC_URL ?? "https://ethereum-rpc.publicnode.com";
+
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.26",
-    settings: {
-      optimizer: { enabled: true, runs: 400 },
-      viaIR: true,
-    },
+    compilers: [
+      {
+        version: "0.8.26",
+        settings: {
+          optimizer: { enabled: true, runs: 400 },
+          viaIR: true,
+          // OpenZeppelin 5.6 (pinned by the lockfile) emits MCOPY in Math.sol,
+          // which every v4 factory imports, so the whole tree must target Cancun.
+          // Ethereum, Base and Arbitrum Orbit (Robinhood) all run Cancun.
+          evmVersion: "cancun",
+        },
+      },
+    ],
+    overrides: Object.fromEntries(ONEHOOK_FILES.map((f) => [f, ONEHOOK_COMPILER])),
   },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: false,
+      // Local runs execute the Cancun opcodes OneHook needs.
+      hardfork: process.env.FORK_HARDFORK ?? "cancun",
       ...(process.env.FORK === "1" && ROBINHOOD_RPC_URL
         ? {
             // Pin a recent hardfork so view calls against the forked chain's
@@ -59,11 +89,18 @@ const config: HardhatUserConfig = {
       chainId: STABLE_CHAIN_ID,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
+    // Ethereum mainnet: the OneHook deployment target.
+    mainnet: {
+      url: ETH_RPC_URL,
+      chainId: 1,
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
+    },
   },
   etherscan: {
     // Blockscout instances accept any non-empty API key string.
     apiKey: {
       robinhood: process.env.BLOCKSCOUT_API_KEY ?? "blockscout",
+      mainnet: process.env.ETHERSCAN_API_KEY ?? "",
     },
     customChains: BLOCKSCOUT_URL
       ? [
