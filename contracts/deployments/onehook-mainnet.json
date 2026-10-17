@@ -1,0 +1,34 @@
+{
+  "network": "mainnet",
+  "chainId": 1,
+  "model": "onehook-v2: factory-held liquidity, swap-only hook (flags 0xCC)",
+  "deployedAt": "2026-10-17T17:31:37.219Z",
+  "deployer": "0x4a95250bAb1108B0A0B8331A2fa3BA04802FD3cB",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "contracts": {
+    "hookDeployer": "0x7D22d7D98fa4a50B10c37da1cd2D76564436EC64",
+    "hook": "0x0bcD3394Dffc047D146E76bCc461d8bEAC9fC0CC",
+    "hookSalt": "0x00000000000000000000000000000000000000000000000000000000000020c7",
+    "tokenDeployer": "0xEE03B300BBb2395b0de6e6AaEaE30432b81ef332",
+    "factory": "0xBaa02255Dc8419A4266Be406F72E11De1B901E39",
+    "router": "0xC7ED71a86754D6a3928225f613282Ac65B972678",
+    "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+    "weth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "oracle": "0xD1Ca49bd44A447c48d2a1FAC5F35cF583D8a7b1b"
+  },
+  "testCoins": [
+    {
+      "symbol": "OHSA",
+      "token": "0xB3DE27D60277de084F5cCDb6D27F3886e81Cf1B2",
+      "dividends": false,
+      "tx": "0xd7a7e407ac78105f23e37de14b5a53988e73fa5d26ec7532993363be02009f29"
+    },
+    {
+      "symbol": "OHSB",
+      "token": "0x8a195154e1127F7dd42D0d621110e97dd3ce9111",
+      "dividends": true,
+      "tx": "0xb3e738e24702fb1361d6aad9bfe53cb919fb4eaadbb7769a0bd4762050c5fb0d"
+    }
+  ]
+}

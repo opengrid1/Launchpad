@@ -97,11 +97,10 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    // Blockscout instances accept any non-empty API key string.
-    apiKey: {
-      robinhood: process.env.BLOCKSCOUT_API_KEY ?? "blockscout",
-      mainnet: process.env.ETHERSCAN_API_KEY ?? "",
-    },
+    // Etherscan API v2 takes one key for every Etherscan-backed chain. The
+    // Blockscout custom chain below accepts any non-empty string, so the same
+    // value serves it when no Etherscan key is set.
+    apiKey: process.env.ETHERSCAN_API_KEY ?? process.env.BLOCKSCOUT_API_KEY ?? "blockscout",
     customChains: BLOCKSCOUT_URL
       ? [
           {
@@ -115,7 +114,9 @@ const config: HardhatUserConfig = {
         ]
       : [],
   },
-  sourcify: { enabled: false },
+  // Sourcify alongside Etherscan, so every OneHook contract (and each coin a
+  // user launches, by similar match) is open source on both.
+  sourcify: { enabled: true },
   mocha: { timeout: 120_000 },
 };
 
