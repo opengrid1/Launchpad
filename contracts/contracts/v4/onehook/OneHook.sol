@@ -521,6 +521,10 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         if (next != cur) {
             c.currentStage = uint8(next);
             c.genes = _stages[id][next].genes;
+            // drop any inherited dynamic-fee surge: under the new (never-higher) base
+            // fee it would decay more slowly, so clearing it keeps evolution holder-favorable.
+            c.surgeBps = 0;
+            c.surgeBlock = uint64(block.number);
             emit Evolved(c.token, uint8(next), sqrtP);
         }
     }
@@ -669,8 +673,10 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         // reflexive buyback then evolution, both only on real (non-hook) swaps
         if (sender != address(this)) {
             Genes storage g = c.genes;
-            if (g.buybackShareBps != 0 && buybackPot[c.token] >= g.buybackThreshold) _buybackBurn(id);
-            if (c.stageCount > c.currentStage + 1) _maybeEvolve(id, c);
+            bool bought = g.buybackShareBps != 0 && buybackPot[c.token] >= g.buybackThreshold;
+            if (bought) _buybackBurn(id);
+            // evolution can only advance on a price rise: a buy, or a buyback that just pushed the price up
+            if ((!params.zeroForOne || bought) && c.stageCount > c.currentStage + 1) _maybeEvolve(id, c);
         }
         return (BaseHook.afterSwap.selector, ret);
     }

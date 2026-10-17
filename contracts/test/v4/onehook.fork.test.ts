@@ -498,9 +498,26 @@ describe("OneHook on Ethereum (mainnet fork)", function () {
     await bad(G({ feeBps: 100 }), [S(6_000, { feeBps: 100 }), S(6_000, { feeBps: 100 })]); // must strictly increase
     await bad(G({ feeBps: 100, feeMode: 0 }), [S(6_000, { feeMode: 1, feeBps: 100 })]); // fee engine can't change
     await bad(G({ feeBps: 100, divShareBps: 3000 }), [S(6_000, { feeBps: 100, divShareBps: 2000 })]); // dividends can't shrink
-    await bad(G({ feeBps: 100, snipeBps: 1000, snipeBlocks: 20 }), [S(6_000, { feeBps: 100, snipeBps: 2000, snipeBlocks: 20 })]); // anti-snipe can't grow
+    await bad(G({ feeBps: 100, snipeBps: 1000, snipeBlocks: 20 }), [S(6_000, { feeBps: 100, snipeBps: 2000, snipeBlocks: 20 })]); // anti-snipe peak can't grow
+    await bad(G({ feeBps: 100, snipeBps: 1000, snipeBlocks: 20 }), [S(6_000, { feeBps: 100, snipeBps: 1000, snipeBlocks: 200 })]); // anti-snipe window can't extend / re-arm
+    await bad(G({ feeBps: 100, buybackShareBps: 2000, buybackThreshold: E("0.01") }), [S(6_000, { feeBps: 100, buybackShareBps: 2000, buybackThreshold: E("1") })]); // buyback can't be neutered by raising the trigger
     await bad(G({ feeBps: 100 }), [S(6_000, { feeBps: 100, maxWalletBps: 500, maxWalletSecs: 600 })]); // max-wallet can't be re-enabled
     await bad(G({ feeBps: 100 }), [S(6_000, { feeBps: 100 }), S(7_000, { feeBps: 100 }), S(8_000, { feeBps: 100 }), S(9_000, { feeBps: 100 }), S(10_000, { feeBps: 100 }), S(11_000, { feeBps: 100 })]); // too many stages
     console.log(`      holder-hostile and non-rising evolution paths all revert`);
+  });
+
+  it("evolution: advancing a stage resets the dynamic-fee surge so the lower fee can't decay slower", async () => {
+    const r = await launch(env, creator, { genes: G({ feeMode: 1, feeBps: 50 }), stages: [S(7_000, { feeMode: 1, feeBps: 10 })] });
+    const poolId = await env.hook.poolOf(r.token);
+    // tiny buys build the dynamic surge (the bump is size-independent) without crossing the milestone
+    for (const b of [alice, bob, carol]) await (await env.router.connect(b).buy(r.token, "0x", 0, { value: E("0.02") })).wait();
+    expect((await env.hook.config(poolId)).currentStage).to.equal(0n); // not evolved yet
+    expect(await env.hook.feeBpsNow(r.token, true)).to.be.gt(50n); // surge is live on top of the base
+    // a big buy crosses the $7K milestone and evolves to feeBps 10
+    await (await env.router.connect(dave).buy(r.token, "0x", 0, { value: E("10") })).wait();
+    expect((await env.hook.config(poolId)).currentStage).to.equal(1n);
+    // the surge was cleared on the advance, so the live fee is the new base (10), not an inherited surge
+    expect(await env.hook.feeBpsNow(r.token, true)).to.equal(10n);
+    console.log(`      surge reset on evolve: dynamic fee dropped straight to 10 bps`);
   });
 });

@@ -326,11 +326,17 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
     ///      fee can only fall, the buyback and dividend shares can only grow, and
     ///      anti-snipe and max-wallet can only ease (never tighten or re-enable).
     ///      The fee engine stays the same so a coin can't flip to a harsher mode.
+    ///      Anti-snipe eases on BOTH axes (peak and window), so a later stage can
+    ///      never re-arm or lengthen the buy tax; and once a buyback is on, its
+    ///      trigger threshold can only fall, so a stage can never neuter the
+    ///      automatic buy-and-burn while keeping its share.
     function _checkEvolve(OneHook.Genes memory a, OneHook.Genes calldata b) internal pure {
         if (b.feeMode != a.feeMode) revert BadGenes();
         if (b.feeBps > a.feeBps) revert BadGenes();
         if (b.snipeBps > a.snipeBps) revert BadGenes();
+        if (b.snipeBlocks > a.snipeBlocks) revert BadGenes();
         if (b.buybackShareBps < a.buybackShareBps) revert BadGenes();
+        if (a.buybackShareBps != 0 && b.buybackThreshold > a.buybackThreshold) revert BadGenes();
         if (b.divShareBps < a.divShareBps) revert BadGenes();
         if (a.maxWalletBps == 0) {
             if (b.maxWalletBps != 0) revert BadGenes();
