@@ -53,6 +53,23 @@ and router, writes `deployments/onehook-mainnet.json`, and prints the
 `hardhat verify` commands. `ETHERSCAN_API_KEY` goes in the gitignored
 `contracts/.env`.
 
+### Open source, including every user-launched coin
+
+```bash
+# 1. one coin of each variant, from the deployer (no dev buy)
+npx hardhat run scripts/launch-onehook-test.ts --network mainnet
+# 2. Etherscan + Sourcify for the five core contracts and both coins
+npx hardhat run scripts/verify-onehook.ts --network mainnet --config hardhat.config.ts
+```
+
+`OneToken` and `OneDivToken` take no constructor arguments: a coin reads its
+name, symbol, metadata and supply back from `OneTokenDeployer` while it is
+being constructed, so every coin of a variant has byte-identical creation
+code. Once one `OneToken` and one `OneDivToken` are verified, Etherscan marks
+each coin a user launches afterwards as a verified similar match, and
+Sourcify matches them the same way. The two scan coins can be hidden from
+the listing with `factory.setHidden`.
+
 ## Frontend notes
 
 - `positionOf(token)` moved from the hook to the factory.
