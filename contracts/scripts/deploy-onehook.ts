@@ -43,6 +43,7 @@ function need(name: string): string {
 
 async function main() {
   const [deployer] = await ethers.getSigners();
+  const startBalance = await ethers.provider.getBalance(deployer.address);
   const admin = need("ONEHOOK_ADMIN");
   const oracle = need("ONEHOOK_ORACLE");
   const feeRecipient = process.env.ONEHOOK_FEE_RECIPIENT ? ethers.getAddress(process.env.ONEHOOK_FEE_RECIPIENT) : admin;
@@ -109,6 +110,9 @@ async function main() {
   const file = join(__dirname, `../deployments/onehook-${network.name}.json`);
   writeFileSync(file, JSON.stringify(out, null, 2) + "\n");
   console.log("wrote", file);
+
+  const spent = startBalance - (await ethers.provider.getBalance(deployer.address));
+  console.log(`deployer spent ${ethers.formatEther(spent)} ETH on gas`);
 
   console.log("\nVerify (full config, ETHERSCAN_API_KEY in contracts/.env):");
   console.log(`  npx hardhat verify --network ${network.name} ${c2Addr}`);
