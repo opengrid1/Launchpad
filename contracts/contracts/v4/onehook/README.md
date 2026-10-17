@@ -58,9 +58,27 @@ and router, writes `deployments/onehook-mainnet.json`, and prints the
 ```bash
 # 1. one coin of each variant, from the deployer (no dev buy)
 npx hardhat run scripts/launch-onehook-test.ts --network mainnet
-# 2. Etherscan + Sourcify for the five core contracts and both coins
+# 2. Etherscan for the five core contracts and both coins
 npx hardhat run scripts/verify-onehook.ts --network mainnet --config hardhat.config.ts
+# 3. Sourcify (v2 API; hardhat-verify still calls the retired v1 endpoint)
+node scripts/sourcify-onehook.mjs mainnet
 ```
+
+## Mainnet deployment (2026-10-17)
+
+| Contract | Address |
+|---|---|
+| OneHook (swap-only, flags `0xCC`) | `0x0bcD3394Dffc047D146E76bCc461d8bEAC9fC0CC` |
+| OneFactory (holds liquidity, admin `collect`) | `0xBaa02255Dc8419A4266Be406F72E11De1B901E39` |
+| OneTokenDeployer | `0xEE03B300BBb2395b0de6e6AaEaE30432b81ef332` |
+| OneRouter | `0xC7ED71a86754D6a3928225f613282Ac65B972678` |
+| HookDeployer (CREATE2) | `0x7D22d7D98fa4a50B10c37da1cd2D76564436EC64` |
+| Admin / fee recipient | `0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b` |
+| Scan coin OHSA (OneToken) | `0xB3DE27D60277de084F5cCDb6D27F3886e81Cf1B2` |
+| Scan coin OHSB (OneDivToken) | `0x8a195154e1127F7dd42D0d621110e97dd3ce9111` |
+
+All verified on Etherscan and Sourcify (exact match). Deployer setup rights
+renounced; see `deployments/onehook-mainnet.json`.
 
 `OneToken` and `OneDivToken` take no constructor arguments: a coin reads its
 name, symbol, metadata and supply back from `OneTokenDeployer` while it is
