@@ -48,7 +48,7 @@ const DYN=()=>window.inkyWallet&&window.inkyWallet.ready?window.inkyWallet:null;
 const DEMO_ADDR='0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b';
 const W={get connected(){ const d=DYN(); if(d) return d.connected; try{return localStorage.getItem('wallet')==='1';}catch{return false;} }, set(v){try{localStorage.setItem('wallet',v?'1':'0');}catch{} },
   get address(){ const d=DYN(); return d&&d.address?d.address:(this.connected?DEMO_ADDR:null); }, get short(){ const a=this.address; return a?a.slice(0,6)+'…'+a.slice(-4):''; },
-  get onInk(){ const d=DYN(); return !d||!d.chainId||d.chainId===57073; },
+  get onInk(){ const d=DYN(); return !d||!d.chainId||Number(d.chainId)===Number((window.INKY&&window.INKY.chainId)||1); },
   disconnect(){ const d=DYN(); if(d) return d.logout(); W.set(false); } };
 window.addEventListener('inky:wallet',()=>{ if(typeof renderWallet==='function') renderWallet(); document.dispatchEvent(new Event('wallet-change')); });
 const isAdmin=()=>!!(W.connected&&W.address&&window.INKY&&INKY.admin&&W.address.toLowerCase()===INKY.admin.toLowerCase());
