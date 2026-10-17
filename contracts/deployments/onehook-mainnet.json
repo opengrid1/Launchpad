@@ -29,6 +29,12 @@
       "token": "0x8a195154e1127F7dd42D0d621110e97dd3ce9111",
       "dividends": true,
       "tx": "0xb3e738e24702fb1361d6aad9bfe53cb919fb4eaadbb7769a0bd4762050c5fb0d"
+    },
+    {
+      "symbol": "INTEL",
+      "token": "0x1E204DF1440Cd6F53D09eAFdb72F74D75f23c60a",
+      "dividends": true,
+      "tx": "0x4cff6d7503ad7b092646af6b27d7432b5328d7b705fbecd95d2c86a0eb919532"
     }
   ]
 }
