@@ -33,6 +33,12 @@ jobs:
         run: |
           if [ -z "$VERCEL_TOKEN" ]; then echo "VERCEL_TOKEN not set"; exit 1; fi
           if [ -z "$VERCEL_PROJECT_ID" ]; then echo "VERCEL_ONEHOOK_PROJECT_ID variable not set"; exit 1; fi
+          # The TradingView charting library is licensed and gitignored; a deploy
+          # without it ships a site with broken charts. Restore it into
+          # onehook-site/charting_library before running this workflow.
+          if [ ! -f onehook-site/charting_library/charting_library.js ]; then
+            echo "onehook-site/charting_library/ is missing (gitignored, licensed). See onehook-site/README.md."; exit 1
+          fi
           npm i -g vercel@latest
           OUT=$(vercel deploy onehook-site --prod --yes --token="$VERCEL_TOKEN" --archive=tgz 2>&1) || { echo "$OUT"; exit 1; }
           echo "$OUT"
