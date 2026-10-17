@@ -117,6 +117,8 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     uint256 public constant SUPPLY = 1_000_000_000 ether;
     /// @notice Coins the factory leaves here at launch to absorb rounding in the seed position.
     uint256 public constant COIN_SLACK = 1e12;
+    /// @notice A coin can pre-commit at most this many evolution stages (stage 0 included).
+    uint8 public constant MAX_STAGES = 6;
 
     bytes32 internal constant FEE_SLOT = keccak256("onehook.fee");
     bytes32 internal constant BPS_SLOT = keccak256("onehook.bps");
@@ -138,6 +140,17 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         uint128 buybackThreshold; // pair units in the pot that trigger a buy & burn
     }
 
+    /// @notice A pre-committed evolution stage. A coin starts at stage 0 and
+    ///         advances, forward-only, to the next stage the first time the
+    ///         pool's price reaches that stage's threshold. The factory proves
+    ///         at launch that each advance only ever helps holders (lower fee,
+    ///         bigger buyback/dividend shares, looser caps, same fee engine).
+    struct Stage {
+        uint160 sqrtThreshold; // pool sqrtPriceX96 at/above which this stage activates; 0 for stage 0
+        uint64 mcapUsd8; // activation market cap, USD 8dp, frozen at launch (display only)
+        Genes genes;
+    }
+
     struct PoolConfig {
         address token;
         address pair;
@@ -145,9 +158,11 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         uint64 launchTime;
         uint64 launchBlock;
         bool registered;
+        uint8 currentStage; // index into the coin's stages; 0 at launch
+        uint8 stageCount; // number of pre-committed stages (1 = non-evolving)
         uint32 surgeBps; // dynamic fee state
         uint64 surgeBlock;
-        Genes genes;
+        Genes genes; // the active stage's genes
     }
 
     /// @dev The one V4 position the hook owns per pool.
@@ -159,6 +174,7 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
 
     mapping(PoolId => PoolConfig) internal _config;
     mapping(PoolId => Position) internal _position;
+    mapping(PoolId => Stage[]) internal _stages;
     mapping(address token => PoolId) internal _poolOf;
     /// @notice Fee shares waiting as PoolManager claims in the pair currency, per coin.
     mapping(address token => uint256) public creatorOwed;
@@ -179,6 +195,7 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     event PlatformPaid(address indexed token, address indexed to, uint256 amount);
     event BuybackBurned(address indexed token, uint256 pairIn, uint256 coinsBurned);
     event DividendsPushed(address indexed token, uint256 amount);
+    event Evolved(address indexed token, uint8 indexed stage, uint160 sqrtPriceX96);
 
     error NotDeployer();
     error NotFactory();
@@ -228,9 +245,10 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     /// @notice Register a freshly initialized pool and seed it with the whole
     ///         supply (already transferred here) as one position above the
     ///         start price. Factory only, once per pool.
-    function registerPool(PoolKey calldata key, address token, address pair, address creator, int24 tickLower, int24 tickUpper, Genes calldata genes) external {
+    function registerPool(PoolKey calldata key, address token, address pair, address creator, int24 tickLower, int24 tickUpper, Stage[] calldata stages) external {
         if (msg.sender != factory) revert NotFactory();
         if (Currency.unwrap(key.currency0) != token || Currency.unwrap(key.currency1) != pair) revert InvalidParams();
+        if (stages.length == 0 || stages.length > MAX_STAGES || stages[0].sqrtThreshold != 0) revert InvalidParams();
         PoolId id = key.toId();
         PoolConfig storage c = _config[id];
         if (c.registered) revert AlreadySet();
@@ -240,7 +258,14 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         c.launchTime = uint64(block.timestamp);
         c.launchBlock = uint64(block.number);
         c.registered = true;
-        c.genes = genes;
+        c.currentStage = 0;
+        c.stageCount = uint8(stages.length);
+        c.genes = stages[0].genes;
+        // store the pre-committed stages; thresholds strictly increase, stage 0 is 0
+        for (uint256 i; i < stages.length; i++) {
+            if (i != 0 && stages[i].sqrtThreshold <= stages[i - 1].sqrtThreshold) revert InvalidParams();
+            _stages[id].push(stages[i]);
+        }
         _poolOf[token] = id;
         uint256 coins = IERC20(token).balanceOf(address(this)) - COIN_SLACK;
         uint128 liquidity = LiquidityAmounts.getLiquidityForAmount0(TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), coins);
@@ -324,6 +349,11 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
 
     function genesOf(address token) external view returns (Genes memory) {
         return _config[_poolOf[token]].genes;
+    }
+
+    /// @notice The coin's full pre-committed evolution path (stage 0 first).
+    function stagesOf(address token) external view returns (Stage[] memory) {
+        return _stages[_poolOf[token]];
     }
 
     function positionOf(address token) external view returns (Position memory) {
@@ -478,6 +508,23 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         emit BuybackBurned(c.token, used, burned);
     }
 
+    /// @dev Advance the coin through its pre-committed stages: forward-only, to
+    ///      the highest stage whose price threshold the pool has reached, and
+    ///      swap in that stage's genes. Called on real swaps while more stages
+    ///      remain. A sell lowers the price, so it can never move a coin back.
+    function _maybeEvolve(PoolId id, PoolConfig storage c) internal {
+        (uint160 sqrtP,,,) = poolManager.getSlot0(id);
+        uint256 cur = c.currentStage;
+        uint256 n = c.stageCount;
+        uint256 next = cur;
+        while (next + 1 < n && sqrtP >= _stages[id][next + 1].sqrtThreshold) next++;
+        if (next != cur) {
+            c.currentStage = uint8(next);
+            c.genes = _stages[id][next].genes;
+            emit Evolved(c.token, uint8(next), sqrtP);
+        }
+    }
+
     /// @dev Admin collect: `bps` of the position's liquidity, to the hook. Returns (coins, pair) taken.
     function _collect(PoolId id, uint16 bps) internal returns (bytes memory) {
         Position storage p = _position[id];
@@ -619,10 +666,11 @@ contract OneHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         poolManager.mint(address(this), key.currency1.toId(), fee);
         _credit(c, fee);
         emit FeeTaken(c.token, fee, bps);
-        // reflexive buyback: past the threshold the pot buys the coin and burns it, right here
+        // reflexive buyback then evolution, both only on real (non-hook) swaps
         if (sender != address(this)) {
             Genes storage g = c.genes;
             if (g.buybackShareBps != 0 && buybackPot[c.token] >= g.buybackThreshold) _buybackBurn(id);
+            if (c.stageCount > c.currentStage + 1) _maybeEvolve(id, c);
         }
         return (BaseHook.afterSwap.selector, ret);
     }

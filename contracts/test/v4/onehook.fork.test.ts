@@ -40,6 +40,9 @@ const G = (o: any = {}) => ({
   ...o,
 });
 
+// a later evolution stage: a market-cap milestone (whole USD) and the genes it switches to
+const S = (mcapUsd: number | bigint, o: any = {}) => ({ mcapUsd8: BigInt(mcapUsd) * 10n ** 8n, genes: G(o) });
+
 async function deployAll(admin: any) {
   const deployer = (await ethers.getSigners())[9];
   const c2 = await (await ethers.getContractFactory("HookDeployer", deployer)).deploy();
@@ -65,17 +68,19 @@ async function deployAll(admin: any) {
   return { hook, factory, router, deployer, hookAddr, routerAddr: await router.getAddress() };
 }
 
-async function launch(env: any, creator: any, o: { genes?: any; pair?: string; ethIn?: bigint; route?: string; name?: string; abi?: string } = {}) {
+async function launch(env: any, creator: any, o: { genes?: any; stages?: any[]; pair?: string; ethIn?: bigint; route?: string; name?: string; abi?: string } = {}) {
   const n = Number(await env.factory.totalTokens());
+  const stages = o.stages ?? [];
   const tx = await env.factory.connect(creator).launch(
-    { name: o.name ?? "OneHook Test", symbol: "OHT", metadataURI: '{"description":"fork test"}', pair: o.pair ?? WETH, minPairOut: 0, genes: o.genes ?? G() },
+    { name: o.name ?? "OneHook Test", symbol: "OHT", metadataURI: '{"description":"fork test"}', pair: o.pair ?? WETH, minPairOut: 0, genes: o.genes ?? G(), stages },
     nextSalt(),
     o.route ?? "0x",
     { value: o.ethIn ?? 0n }
   );
   const rc = await tx.wait();
   const token = await env.factory.allTokens(n);
-  const coin = await ethers.getContractAt(o.abi ?? ((o.genes?.divShareBps ?? 0) !== 0 ? "OneDivToken" : "OneToken"), token);
+  const anyDiv = ((o.genes?.divShareBps ?? 0) !== 0) || stages.some((s: any) => (s.genes?.divShareBps ?? 0) !== 0);
+  const coin = await ethers.getContractAt(o.abi ?? (anyDiv ? "OneDivToken" : "OneToken"), token);
   return { coin, token, gas: rc!.gasUsed };
 }
 
@@ -92,6 +97,13 @@ describe("OneHook on Ethereum (mainnet fork)", function () {
     for (const s of [alice, bob, carol, dave, creator, admin]) await network.provider.send("hardhat_setBalance", [s.address, "0x" + E("500").toString(16)]);
     env = await deployAll(admin);
   });
+
+  // Evolved stages emitted in a tx, read from the receipt's logs (no eth_getLogs — public fork RPCs forbid it)
+  const evolvedStages = (rc: any): number[] => rc.logs
+    .filter((l: any) => l.address.toLowerCase() === env.hookAddr.toLowerCase())
+    .map((l: any) => { try { return env.hook.interface.parseLog(l); } catch { return null; } })
+    .filter((p: any) => p && p.name === "Evolved")
+    .map((p: any) => Number(p.args.stage));
 
   it("launches a flat-fee coin; the creator's first buy lands in the launch block", async () => {
     const r = await launch(env, creator, { ethIn: E("0.02") });
@@ -149,7 +161,7 @@ describe("OneHook on Ethereum (mainnet fork)", function () {
       sniper.connect(alice).snipe(
         await env.factory.getAddress(),
         env.routerAddr,
-        { name: "Snipe Me", symbol: "SNP", metadataURI: "{}", pair: WETH, minPairOut: 0, genes: G() },
+        { name: "Snipe Me", symbol: "SNP", metadataURI: "{}", pair: WETH, minPairOut: 0, genes: G(), stages: [] },
         nextSalt(),
         { value: E("0.05") }
       )
@@ -413,5 +425,82 @@ describe("OneHook on Ethereum (mainnet fork)", function () {
     const out = (await bal(alice.address)) - before + gas;
     console.log(`      alice's 0.2 ETH round trip came back as ${fmt(out).toFixed(5)} ETH`);
     expect(out).to.be.gt(E("0.15"));
+  });
+
+  it("evolution: a coin advances through its pre-committed stages as market cap climbs, swapping in holder-favorable genes", async () => {
+    const stages = [
+      S(5_500, { feeBps: 150, buybackShareBps: 2000, buybackThreshold: E("0.01") }),
+      S(7_000, { feeBps: 100, buybackShareBps: 2000, buybackThreshold: E("0.01"), divShareBps: 3000 }),
+    ];
+    const r = await launch(env, creator, { genes: G({ feeBps: 200 }), stages, abi: "OneDivToken" });
+    const poolId = await env.hook.poolOf(r.token);
+    // launches at stage 0 with the genesis genes; the whole path is stored and the token supports dividends
+    expect((await env.hook.config(poolId)).currentStage).to.equal(0n);
+    expect((await env.hook.config(poolId)).stageCount).to.equal(3n);
+    const g0 = await env.hook.genesOf(r.token);
+    expect(g0.feeBps).to.equal(200n);
+    expect(g0.divShareBps).to.equal(0n);
+    const path = await env.hook.stagesOf(r.token);
+    expect(path.length).to.equal(3);
+    expect(path[0].sqrtThreshold).to.equal(0n);
+    expect(path[1].mcapUsd8).to.equal(5_500n * 10n ** 8n);
+    expect(path[2].mcapUsd8).to.equal(7_000n * 10n ** 8n);
+    expect(path[2].sqrtThreshold).to.be.gt(path[1].sqrtThreshold);
+    expect(await r.coin.withdrawableDividends(creator.address)).to.equal(0n); // OneDivToken surface exists
+
+    // buys push the price up; the coin advances forward-only through the stages
+    const buyers = [alice, bob, carol, dave, creator];
+    const seen: number[] = [];
+    let stage = 0, i = 0;
+    while (stage < 2 && i < 80) {
+      const amt = E("0.1") * BigInt(1 + Math.floor(i / 8));
+      const rc = await (await env.router.connect(buyers[i % buyers.length]).buy(r.token, "0x", 0, { value: amt })).wait();
+      seen.push(...evolvedStages(rc));
+      const s = Number((await env.hook.config(poolId)).currentStage);
+      expect(s).to.be.gte(stage); // forward-only: never moves back
+      stage = s; i++;
+    }
+    expect(stage).to.equal(2);
+    const g2 = await env.hook.genesOf(r.token);
+    expect(g2.feeBps).to.equal(100n);
+    expect(g2.buybackShareBps).to.equal(2000n);
+    expect(g2.divShareBps).to.equal(3000n);
+    expect(seen.length).to.be.gte(1); // Evolved fired at least once
+    expect(seen[seen.length - 1]).to.equal(2); // the last advance reached the final stage
+    console.log(`      evolved to stage 2 after ${i} buys (Evolved: ${seen.join("→")}); fee 200→100 bps, dividends on`);
+
+    // a sell lowers the price but can never move the coin back a stage
+    const got = await r.coin.balanceOf(alice.address);
+    expect(got).to.be.gt(0n);
+    await (await r.coin.connect(alice).approve(env.routerAddr, got)).wait();
+    await (await env.router.connect(alice).sell(r.token, got, "0x", 0)).wait();
+    expect((await env.hook.config(poolId)).currentStage).to.equal(2n);
+  });
+
+  it("evolution: one large buy can cross several milestones in a single swap", async () => {
+    const stages = [S(5_500, { feeBps: 150 }), S(7_000, { feeBps: 100 })];
+    const r = await launch(env, creator, { genes: G({ feeBps: 200 }), stages });
+    const poolId = await env.hook.poolOf(r.token);
+    expect((await env.hook.config(poolId)).currentStage).to.equal(0n);
+    const rc = await (await env.router.connect(alice).buy(r.token, "0x", 0, { value: E("50") })).wait();
+    expect((await env.hook.config(poolId)).currentStage).to.equal(2n);
+    expect((await env.hook.genesOf(r.token)).feeBps).to.equal(100n);
+    const seen = evolvedStages(rc);
+    expect(seen[seen.length - 1]).to.equal(2); // one swap advanced straight to the final stage
+    console.log(`      one 50 ETH buy jumped straight to stage 2 (Evolved: ${seen.join("→")})`);
+  });
+
+  it("evolution: the factory rejects stages that would hurt holders or milestones that don't rise", async () => {
+    const bad = async (genes: any, stages: any[]) =>
+      expect(launch(env, creator, { genes, stages })).to.be.revertedWithCustomError(env.factory, "BadGenes");
+    await bad(G({ feeBps: 100 }), [S(6_000, { feeBps: 200 })]); // fee can't rise across a stage
+    await bad(G({ feeBps: 100 }), [S(5_000, { feeBps: 100 })]); // milestone must exceed the start cap
+    await bad(G({ feeBps: 100 }), [S(6_000, { feeBps: 100 }), S(6_000, { feeBps: 100 })]); // must strictly increase
+    await bad(G({ feeBps: 100, feeMode: 0 }), [S(6_000, { feeMode: 1, feeBps: 100 })]); // fee engine can't change
+    await bad(G({ feeBps: 100, divShareBps: 3000 }), [S(6_000, { feeBps: 100, divShareBps: 2000 })]); // dividends can't shrink
+    await bad(G({ feeBps: 100, snipeBps: 1000, snipeBlocks: 20 }), [S(6_000, { feeBps: 100, snipeBps: 2000, snipeBlocks: 20 })]); // anti-snipe can't grow
+    await bad(G({ feeBps: 100 }), [S(6_000, { feeBps: 100, maxWalletBps: 500, maxWalletSecs: 600 })]); // max-wallet can't be re-enabled
+    await bad(G({ feeBps: 100 }), [S(6_000, { feeBps: 100 }), S(7_000, { feeBps: 100 }), S(8_000, { feeBps: 100 }), S(9_000, { feeBps: 100 }), S(10_000, { feeBps: 100 }), S(11_000, { feeBps: 100 })]); // too many stages
+    console.log(`      holder-hostile and non-rising evolution paths all revert`);
   });
 });

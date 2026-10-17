@@ -49,6 +49,8 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
     uint256 public constant TOTAL_SUPPLY_WHOLE = 1_000_000_000;
     int24 public constant TICK_SPACING = 10;
     uint24 public constant LP_FEE = 0;
+    /// @notice A coin may pre-commit at most this many later evolution stages (on top of genesis).
+    uint8 public constant MAX_EVOLUTION_STAGES = 5;
 
     IPoolManager public immutable poolManager;
     OneHook public immutable hook;
@@ -77,13 +79,23 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
     address[] public allTokens;
     address public owner;
 
+    /// @notice A later evolution stage the coin pre-commits to at launch. It
+    ///         activates the first time the pool's market cap reaches `mcapUsd8`
+    ///         (frozen to a price threshold at launch). Each stage may only help
+    ///         holders relative to the one before it; the factory enforces that.
+    struct StageParam {
+        uint64 mcapUsd8; // activation market cap, USD 8dp; strictly above the start cap and each earlier stage
+        OneHook.Genes genes;
+    }
+
     struct LaunchParams {
         string name;
         string symbol;
         string metadataURI;
         address pair; // zero for WETH
         uint256 minPairOut;
-        OneHook.Genes genes;
+        OneHook.Genes genes; // genesis (stage 0) instincts
+        StageParam[] stages; // optional later stages; empty = a non-evolving coin
     }
 
     event Launched(address indexed token, address indexed creator, address indexed pair, bytes32 poolId, uint256 pairUsdPrice);
@@ -222,6 +234,15 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
         address pair = p.pair == address(0) ? weth : p.pair;
         if (blocked[pair]) revert Blocked();
         uint256 pairUsd18 = oracle.launchPrice(pair);
+        // validate + freeze the evolution path up front, before anything is deployed
+        OneHook.Stage[] memory stages = _buildStages(p.genes, p.stages, pairUsd18);
+        bool divs = p.genes.divShareBps != 0;
+        for (uint256 i; i < p.stages.length; i++) {
+            if (p.stages[i].genes.divShareBps != 0) {
+                divs = true;
+                break;
+            }
+        }
 
         token = tokenDeployer.deploy(
             salt,
@@ -235,14 +256,14 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
                 hook: address(hook),
                 converter: converter,
                 weth: weth,
-                dividends: p.genes.divShareBps != 0
+                dividends: divs
             })
         );
         PoolKey memory key = _key(token, pair);
         (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper) = _initialPosition(_priceQ(pairUsd18));
         poolManager.initialize(key, sqrtPriceX96);
         IERC20(token).safeTransfer(address(hook), TOTAL_SUPPLY);
-        hook.registerPool(key, token, pair, msg.sender, tickLower, tickUpper, p.genes);
+        hook.registerPool(key, token, pair, msg.sender, tickLower, tickUpper, stages);
 
         poolId = PoolId.unwrap(key.toId());
         listings[token] = Listing({creator: msg.sender, pair: pair, createdAt: uint64(block.timestamp), poolId: poolId});
@@ -268,6 +289,66 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
         if (g.buybackShareBps != 0 && g.buybackThreshold < 1_000) revert BadGenes();
         if ((g.maxWalletBps == 0) != (g.maxWalletSecs == 0)) revert BadGenes();
         if (g.maxWalletBps != 0 && (g.maxWalletBps < 50 || g.maxWalletBps > 2_000 || g.maxWalletSecs < 600 || g.maxWalletSecs > 30 days)) revert BadGenes();
+    }
+
+    /// @dev Validate and freeze a coin's evolution path. Stage 0 is genesis;
+    ///      each later stage must pass the constitution (`_checkGenes`), sit
+    ///      strictly above the start cap and every earlier stage in market cap,
+    ///      and only ever help holders (`_checkEvolve`). Its USD milestone is
+    ///      frozen to a pool price threshold with the launch oracle price, so
+    ///      the hook never needs an oracle after launch.
+    function _buildStages(OneHook.Genes calldata genesis, StageParam[] calldata later, uint256 pairUsd18)
+        internal
+        view
+        returns (OneHook.Stage[] memory stages)
+    {
+        uint256 n = later.length;
+        if (n > MAX_EVOLUTION_STAGES) revert BadGenes();
+        stages = new OneHook.Stage[](n + 1);
+        stages[0] = OneHook.Stage({sqrtThreshold: 0, mcapUsd8: 0, genes: genesis});
+        uint256 prevUsd = startCapUsd8;
+        uint160 prevSqrt = 0;
+        for (uint256 i; i < n; i++) {
+            OneHook.Genes calldata g = later[i].genes;
+            _checkGenes(g);
+            _checkEvolve(stages[i].genes, g);
+            uint256 usd = later[i].mcapUsd8;
+            if (usd <= prevUsd || usd > 1_000_000_000e8) revert BadGenes();
+            uint160 sqrtT = _sqrtPriceForCap(usd, pairUsd18);
+            if (sqrtT <= prevSqrt) revert BadGenes();
+            stages[i + 1] = OneHook.Stage({sqrtThreshold: sqrtT, mcapUsd8: uint64(usd), genes: g});
+            prevUsd = usd;
+            prevSqrt = sqrtT;
+        }
+    }
+
+    /// @dev A later stage may only help holders versus the one before it: the
+    ///      fee can only fall, the buyback and dividend shares can only grow, and
+    ///      anti-snipe and max-wallet can only ease (never tighten or re-enable).
+    ///      The fee engine stays the same so a coin can't flip to a harsher mode.
+    function _checkEvolve(OneHook.Genes memory a, OneHook.Genes calldata b) internal pure {
+        if (b.feeMode != a.feeMode) revert BadGenes();
+        if (b.feeBps > a.feeBps) revert BadGenes();
+        if (b.snipeBps > a.snipeBps) revert BadGenes();
+        if (b.buybackShareBps < a.buybackShareBps) revert BadGenes();
+        if (b.divShareBps < a.divShareBps) revert BadGenes();
+        if (a.maxWalletBps == 0) {
+            if (b.maxWalletBps != 0) revert BadGenes();
+        } else {
+            if (b.maxWalletBps != 0 && b.maxWalletBps < a.maxWalletBps) revert BadGenes();
+            if (b.maxWalletSecs > a.maxWalletSecs) revert BadGenes();
+        }
+    }
+
+    /// @dev The pool sqrtPriceX96 a coin reaches at `usd8` market cap, using the
+    ///      launch oracle price for the pair. Mirrors `_initialPosition`'s target
+    ///      so a stage threshold lines up with the price pipeline the pool uses.
+    function _sqrtPriceForCap(uint256 usd8, uint256 pairUsd18) internal pure returns (uint160) {
+        uint256 priceQ = Math.mulDiv(usd8 * 1e10, 1e36, TOTAL_SUPPLY_WHOLE * pairUsd18);
+        if (priceQ == 0) revert BadGenes();
+        uint256 s = Math.sqrt(Math.mulDiv(priceQ, 1 << 128, 1e36)) << 32;
+        if (s == 0 || s >= uint256(TickMath.MAX_SQRT_PRICE)) revert BadGenes();
+        return uint160(s);
     }
 
     /// @dev The creator's first buy: a plain swap, coins to the creator.
@@ -333,6 +414,11 @@ contract OneFactory is ReentrancyGuard, IUnlockCallback {
     /// @notice The instincts `token` was born with.
     function genesOf(address token) external view returns (OneHook.Genes memory) {
         return hook.genesOf(token);
+    }
+
+    /// @notice The coin's full pre-committed evolution path (stage 0 first).
+    function stagesOf(address token) external view returns (OneHook.Stage[] memory) {
+        return hook.stagesOf(token);
     }
 
     receive() external payable {}

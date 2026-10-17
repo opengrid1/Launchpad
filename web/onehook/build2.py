@@ -431,12 +431,14 @@ stack = p.select_one('span[role=list]')
 p.clear()
 def under(text, tip):
     s = copy.copy(u[0]); s.string = text; s['title'] = tip; return s
-p.append('One hook, every instinct. Launch ')
+p.append('One hook. Coins that ')
+p.append(under('evolve', 'Each coin advances through pre-committed stages at market-cap milestones — fixed at launch, enforced on-chain, and only ever better for holders'))
+p.append('. Launch ')
 p.append(under('coins', 'Fixed-supply ERC-20s with no owner, no mint and no tax'))
 p.append(' on ')
 p.append(under('Ethereum', 'Uniswap V4 pools, one immutable hook for every coin'))
-p.append(' that are born with ')
-p.append(under('instincts', 'A fee engine, anti-snipe, reflexive buyback, dividends and a whale cap, chosen at launch under a constitution none can break'))
+p.append(' that boot guarded and grow into their full ')
+p.append(under('instincts', 'A fee engine, anti-snipe, reflexive buyback, dividends and a whale cap — switched on across evolution stages under a constitution none can break'))
 p.append('.')
 stack.decompose()
 acts = main.select_one('div.mt-7')
@@ -483,7 +485,7 @@ mobile = frag('''<div class="md:hidden" id="mrows"><div class="flex cursor-point
 desk.insert_after(mobile)
 feedwrap.select_one('div.flex.w-full.justify-center button')['id'] = 'loadmore'
 root.append(frag('<div id="layer"></div>'))
-open(OUT + '/index.html', 'w').write(page_shell(root, 'OneHook', 'Launch coins on Ethereum, each born with instincts, under one immutable Uniswap V4 hook with a constitution none can break.'))
+open(OUT + '/index.html', 'w').write(page_shell(root, 'OneHook', 'Launch coins on Ethereum that evolve — advancing through pre-committed stages at market-cap milestones, under one immutable Uniswap V4 hook with a constitution none can break.'))
 print('index.html ok')
 
 # =====================================================================
