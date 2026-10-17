@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Address } from "@launchpad/sdk";
 
-import { BRAND } from "../lib/brand";
+import { BRAND, IS_HYPER, IS_MEOW } from "../lib/brand";
 import { env } from "../lib/env";
 import { Icon } from "./Icon";
 
@@ -32,13 +32,18 @@ export function ShareMenu({ address, symbol, name }: { address: Address; symbol:
   const pageUrl = typeof window !== "undefined" ? `${window.location.origin}/token/${address}` : "";
   const explorer = env.explorerUrl ? env.explorerUrl.replace(/\/$/, "") : "";
   const scanUrl = explorer ? `${explorer}/token/${address}` : "";
-  // Uniswap's hosted interface, pointed at this token's WETH pool.
-  const uniswapUrl = `https://app.uniswap.org/swap?chain=${env.chainId}&outputCurrency=${address}`;
+  // The chain's DEX interface, pointed at this token's pool: HyperSwap on
+  // HyperEVM, Uniswap's hosted app elsewhere.
+  const onHyperEvm = IS_HYPER || IS_MEOW;
+  const dexName = onHyperEvm ? "HyperSwap" : "Uniswap";
+  const dexUrl = onHyperEvm
+    ? `https://app.hyperswap.exchange/#/swap?outputCurrency=${address}`
+    : `https://app.uniswap.org/swap?chain=${env.chainId}&outputCurrency=${address}`;
   const tweet =
     `https://twitter.com/intent/tweet?` +
     `text=${encodeURIComponent(
       String(import.meta.env.VITE_PROTOCOL ?? "") === "stable-v3"
-        ? `$${symbol} · ${name}\nTrading live on ${BRAND.name}, the stable launchpad.`
+        ? `$${symbol} · ${name}\nTrading live on ${BRAND.name}, ${BRAND.tagline}.`
         : `$${symbol} · ${name}\nTrading live on ${BRAND.name}, holders earn real ${
             env.rewardMode === "dollar" ? "dollars" : "stock rewards"
           }.`,
@@ -76,9 +81,9 @@ export function ShareMenu({ address, symbol, name }: { address: Address; symbol:
           <Item icon={copied ? "verified" : "copy"} label={copied ? "Link copied" : "Copy link"} onClick={copyLink} />
           <Item
             icon="trade"
-            label="Trade on Uniswap"
+            label={`Trade on ${dexName}`}
             onClick={() => {
-              window.open(uniswapUrl, "_blank", "noopener,noreferrer");
+              window.open(dexUrl, "_blank", "noopener,noreferrer");
               setOpen(false);
             }}
           />

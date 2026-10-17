@@ -1,0 +1,20 @@
+{
+  "name": "anypair-web",
+  "private": true,
+  "description": "Anypair site: static pages + a browser bundle that reads Base and sends transactions through the wallet",
+  "scripts": {
+    "bundle": "esbuild src/chain.js --bundle --minify --format=iife --outfile=site/js/chain.js && esbuild src/chain.js --bundle --minify --platform=node --format=cjs --target=node18 --outfile=site/server/chain.cjs && esbuild src/wallet.js --bundle --minify --format=iife --outfile=site/js/wallet.js",
+    "build:fork": "npm run bundle && python3 build.py fork",
+    "build:live": "npm run bundle && python3 build.py live",
+    "serve": "python3 serve.py 8790"
+  },
+  "dependencies": {
+    "@reown/appkit": "^1.8.24",
+    "@reown/appkit-adapter-ethers": "^1.8.24",
+    "ethers": "^6.17.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "playwright": "^1.50.0"
+  }
+}

@@ -1,0 +1,29 @@
+<!--{"title": "Etherhook", "nav": "explore", "scripts": ["explore.js"]}-->
+<section class="intro">
+  <div>
+    <h1>Coins that buy their own dips.</h1>
+    <p>Launch a coin on Ethereum backed by any token. Part of every trade fills a <u title="Holds the backing token. Nobody can withdraw it.">vault</u> behind the coin and a fund that <u title="When the price falls 20% from its high, half the fund buys coins and burns them.">buys back and burns on every 20% dip</u>.</p>
+  </div>
+  <div class="ledger" id="ledger">
+    <div><span class="eyebrow">Coins</span><b class="skel">00</b></div>
+    <div class="v"><span class="eyebrow">In vaults</span><b class="skel">$000K</b></div>
+    <div class="o"><span class="eyebrow">Burned</span><b class="skel">$000K</b></div>
+    <div class="o"><span class="eyebrow">Buyback funds</span><b class="skel">$000K</b></div>
+  </div>
+</section>
+
+<div class="sec-h"><h2>Buyback watch</h2><p>Closest to their next buyback</p></div>
+<div class="watch" id="watch">
+  <div class="wcard"><div class="t"><span class="av skel"></span><div><b class="skel">Loading coin</b><small class="skel">$TICK</small></div></div><div class="ladder-mini skel"></div></div>
+  <div class="wcard"><div class="t"><span class="av skel"></span><div><b class="skel">Loading coin</b><small class="skel">$TICK</small></div></div><div class="ladder-mini skel"></div></div>
+  <div class="wcard"><div class="t"><span class="av skel"></span><div><b class="skel">Loading coin</b><small class="skel">$TICK</small></div></div><div class="ladder-mini skel"></div></div>
+</div>
+
+<div class="sec-h"><h2>All coins</h2></div>
+<div class="toolbar">
+  <div class="chips" id="filters" role="tablist" aria-label="Filter by strategy"></div>
+  <div class="seg" id="sortSeg" aria-label="Sort">
+    <button data-sort="trending" class="on">Trending</button><button data-sort="new">New</button><button data-sort="backed">Most backed</button>
+  </div>
+</div>
+<div class="table-wrap cards" id="coins"><div class="skel" style="height:420px"></div></div>

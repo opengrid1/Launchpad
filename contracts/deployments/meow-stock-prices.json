@@ -1,0 +1,131 @@
+{
+  "hypeUsd8": "8200000000",
+  "stocks": [
+    {
+      "ticker": "QQQ",
+      "address": "0x499e347174f237ad28687b947b94c0d49570d1b7",
+      "priceUsd": 795.26,
+      "usd8": "79526000000"
+    },
+    {
+      "ticker": "GLD",
+      "address": "0x08be08c37d93e689518ced744a89f113b4afaad4",
+      "priceUsd": 463.73,
+      "usd8": "46373000000"
+    },
+    {
+      "ticker": "HOOD",
+      "address": "0xc304a9d52cf9165024ebc7814250ef3a5013f924",
+      "priceUsd": 81.36,
+      "usd8": "8136000000"
+    },
+    {
+      "ticker": "MU",
+      "address": "0x173c83a71c1a9e254721a86b7512cd65bf92648d",
+      "priceUsd": 918.5,
+      "usd8": "91850000000"
+    },
+    {
+      "ticker": "SPY",
+      "address": "0xb7bf37783db41a2851b77c6917280c56312c833a",
+      "priceUsd": 769.35,
+      "usd8": "76935000000"
+    },
+    {
+      "ticker": "META",
+      "address": "0x5a9d2deee7d8782011695623f1c453f46b2b566e",
+      "priceUsd": 578.85,
+      "usd8": "57885000000"
+    },
+    {
+      "ticker": "CRCL",
+      "address": "0xe74aa6c4050a15790525eb11cc4562c664dc67c9",
+      "priceUsd": 95.3,
+      "usd8": "9530000000"
+    },
+    {
+      "ticker": "TSLA",
+      "address": "0x3727c797073840936e3c18b4088f3574cd1a72a3",
+      "priceUsd": 327.51,
+      "usd8": "32751000000"
+    },
+    {
+      "ticker": "SLV",
+      "address": "0x7ef4eba0c0200957e357627ced1884d6cb63e961",
+      "priceUsd": 62.31,
+      "usd8": "6231000000"
+    },
+    {
+      "ticker": "GOOGL",
+      "address": "0x35eeda03e55ff217a013892e9e2e37e792b264ea",
+      "priceUsd": 342.37,
+      "usd8": "34237000000"
+    },
+    {
+      "ticker": "AAPL",
+      "address": "0x7374dc1894fbd1bc6c42f6ebbc50b78c211a8606",
+      "priceUsd": 302.25,
+      "usd8": "30225000000"
+    },
+    {
+      "ticker": "AMZN",
+      "address": "0x4f2164c12d2d450a8b1d430492ef6670fe4cad8e",
+      "priceUsd": 267.28,
+      "usd8": "26728000000"
+    },
+    {
+      "ticker": "MSFT",
+      "address": "0x66520d8fd614487214a25af7babf27584f59f76b",
+      "priceUsd": 492.43,
+      "usd8": "49243000000"
+    },
+    {
+      "ticker": "ORCL",
+      "address": "0xca2156522638f597ffb3705857ffdc356efabe50",
+      "priceUsd": 151.94,
+      "usd8": "15194000000"
+    },
+    {
+      "ticker": "AVGO",
+      "address": "0xc2785563af80c05177fff006e3b380ac5d172602",
+      "priceUsd": 372.64,
+      "usd8": "37264000000"
+    },
+    {
+      "ticker": "SPCX",
+      "address": "0xe8c8afdf7e80be51e91afa28b6ac44404d270b5d",
+      "priceUsd": 140.87,
+      "usd8": "14087000000"
+    },
+    {
+      "ticker": "NVDAX",
+      "address": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+      "priceUsd": 224.09,
+      "usd8": "22409000000"
+    },
+    {
+      "ticker": "SPYX",
+      "address": "0xe7e553cd128f0011777323a0b44a7b96ea1cb540",
+      "priceUsd": 769.35,
+      "usd8": "76935000000"
+    },
+    {
+      "ticker": "QQQX",
+      "address": "0x4c1ae29c159838fc1b224636e28e086eb69101f7",
+      "priceUsd": 795.26,
+      "usd8": "79526000000"
+    },
+    {
+      "ticker": "SKHYX",
+      "address": "0x6215a58ed045d71f2561aaabe54f4c885c522998",
+      "priceUsd": 161.61,
+      "usd8": "16161000000"
+    },
+    {
+      "ticker": "MUX",
+      "address": "0xe2047ee3bddb5c99ae428ab83df63f8730698e30",
+      "priceUsd": 918.5,
+      "usd8": "91850000000"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+<!--{"title": "Launch · cntrl-z.fun", "nav": "launch", "scripts": ["launch.js"]}-->
+<header class="page-h"><h1>Launch a coin with a cntrl-z key</h1><p>Three choices. Everything else is the same for every coin: 1B supply in the pool from a $5K start, a 1% tax, and windows buyers rent for 0.05 ETH per six hours.</p></header>
+<div class="launch">
+  <form id="lf" onsubmit="return false" class="lform">
+    <section class="panel lstep" id="s1"><div class="panel-h"><span class="no">1</span><h2>The coin</h2></div><div class="panel-b">
+      <div class="row2"><div class="field"><label for="name">Name</label><input class="input" id="name" maxlength="32" placeholder="Ctrl Z" autocomplete="off"></div><div class="field"><label for="sym">Ticker</label><div class="input-wrap"><input class="input mono" id="sym" maxlength="10" placeholder="CTRLZ" autocomplete="off" style="padding-left:26px"><span class="post" style="left:13px;right:auto">$</span></div></div></div>
+      <div class="field"><label for="desc">What is it</label><textarea class="input" id="desc" maxlength="280" placeholder="One or two lines. It shows on the coin page and in link previews."></textarea></div>
+      <div class="field"><span class="lbl">Logo</span><div class="logo-drop"><span class="av av-def" id="logoPrev"><img src="/img/token-default.png" alt=""></span><div><input type="file" id="logo" accept="image/*" hidden><button type="button" class="key sm" id="logoBtn">Choose image</button><small style="display:block;margin-top:6px">Square, shrunk to under 4 KB; it lives on-chain with the coin. No image? Your coin gets the default key.</small></div></div></div>
+      <div class="field"><span class="lbl">Links <span class="faint" style="font-weight:400">(optional)</span></span><div class="row3"><input class="input" id="lw" placeholder="Website"><input class="input" id="lx" placeholder="X"><input class="input" id="lt" placeholder="Telegram"></div></div>
+    </div></section>
+    <section class="panel lstep" id="s2"><div class="panel-h"><span class="no">2</span><h2>The pair</h2><p class="hint">What the coin trades against: ETH, tokenized gold, or any tokenized stock. Buyers can always pay in ETH.</p></div><div class="panel-b">
+      <div class="pairkeys" id="pairkeys"></div>
+      <div class="stocks-h"><b id="stocksN">Tokenized stocks</b><input class="input" id="stockq" placeholder="Jump to a ticker" autocomplete="off" spellcheck="false"></div>
+      <div class="stockgrid" id="stockgrid"><div class="skel" style="height:200px"></div></div>
+      <small class="muted" id="pairNote" style="display:block"></small>
+    </div></section>
+    <section class="panel lstep" id="s3"><div class="panel-h"><span class="no">3</span><h2>Your first buy</h2><span class="tag">optional</span><p class="hint">Buy in the launch transaction, before anyone else can. The first buy has no cntrl-z window.</p></div><div class="panel-b">
+      <div class="input-wrap"><input class="input num" id="dev" inputmode="decimal" placeholder="0"><span class="post">ETH</span></div>
+    </div></section>
+  </form>
+  <aside class="lside" id="preview"></aside>
+</div>

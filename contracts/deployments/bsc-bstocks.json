@@ -1,0 +1,222 @@
+{
+  "note": "Binance bStocks on BNB Chain (chain id 56), checked 2026-10-01. Official tokens are beacon proxies sharing beacon 0x156d6dce9a4f6139a3406f1f021f1a4880de93a3; same-ticker tokens without it are fakes. liqUsd/vol24Usd: stable and BNB pools from GeckoTerminal. Ondo (\u2026on) and xStocks (\u2026x) on BNB have under $20k DEX liquidity each and are left out.",
+  "beacon": "0x156d6dce9a4f6139a3406f1f021f1a4880de93a3",
+  "stocks": [
+    {
+      "symbol": "NVDAB",
+      "name": "NVIDIA",
+      "address": "0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+      "liqUsd": 4225106,
+      "vol24Usd": 12623745,
+      "mainPool": "PancakeSwap v3 NVDAB/USDT 0.25%",
+      "mainPoolId": "0x8fb4243b553ac29ba088acf00b9b7da24bd6690c"
+    },
+    {
+      "symbol": "QQQB",
+      "name": "Invesco QQQ",
+      "address": "0x205812cdbed920aff76c6580abd681a46d11efc7",
+      "liqUsd": 3829569,
+      "vol24Usd": 14990246,
+      "mainPool": "Uniswap v3 QQQB/USDC 0.3%",
+      "mainPoolId": "0xfc4e77248b76fefc27c4cac7151a2ee5b5cc590e"
+    },
+    {
+      "symbol": "BABAB",
+      "name": "Alibaba",
+      "address": "0x4ef9d3062c7f6eba4aae4990c5036598c6eff4ec",
+      "liqUsd": 2529811,
+      "vol24Usd": 1089934,
+      "mainPool": "PancakeSwap v3 BABAB/USDT 0.25%",
+      "mainPoolId": "0xfd95cb1391999006eb91797a7c62acfe88b20292"
+    },
+    {
+      "symbol": "TSLAB",
+      "name": "Tesla",
+      "address": "0x5b1910eaad6450e50f816082aa078c41f10c292f",
+      "liqUsd": 2134339,
+      "vol24Usd": 1034415,
+      "mainPool": "PancakeSwap v3 TSLAB/USDT 0.25%",
+      "mainPoolId": "0xb0f5e5400e8f0f7c242f2b7740c004f020579c41"
+    },
+    {
+      "symbol": "GOOGLB",
+      "name": "Alphabet",
+      "address": "0x3f53de71c126bdabae20f9cd64848d317f6c3238",
+      "liqUsd": 1953238,
+      "vol24Usd": 3198092,
+      "mainPool": "PancakeSwap v3 GOOGLB/USDT 0.25%",
+      "mainPoolId": "0x89001d846f7ca36ee089f73eefc25657e1798144"
+    },
+    {
+      "symbol": "CRCLB",
+      "name": "Circle",
+      "address": "0x80f3d493ebce97e343c53d29a137942416b4ffc0",
+      "liqUsd": 946618,
+      "vol24Usd": 595741,
+      "mainPool": "PancakeSwap v3 CRCLB/USDT 0.25%",
+      "mainPoolId": "0x29967c54c5bf12e8158c8894376064b30ebab297"
+    },
+    {
+      "symbol": "AAPLB",
+      "name": "Apple",
+      "address": "0x431a3bee82e2ca41e49895cbece5bb0f76a89b7a",
+      "liqUsd": 883607,
+      "vol24Usd": 2784084,
+      "mainPool": "PancakeSwap v3 AAPLB/USDT 0.25%",
+      "mainPoolId": "0xe9b9998b2ec5430d2246c7f1f8d9f298c97d7365"
+    },
+    {
+      "symbol": "INTCB",
+      "name": "Intel",
+      "address": "0xe614e2fc6c787035ff51f452e8e826bfd32d5283",
+      "liqUsd": 541894,
+      "vol24Usd": 94255,
+      "mainPool": "PancakeSwap v3 INTCB/USDT 0.25%",
+      "mainPoolId": "0x4dd8e7c67033ef4a745bb9f82a7c57c676eb2481"
+    },
+    {
+      "symbol": "SPYB",
+      "name": "S&P 500 (SPY)",
+      "address": "0x7138b48df7d98d7e3cc221bfe7192d0a178182d8",
+      "liqUsd": 394096,
+      "vol24Usd": 864459,
+      "mainPool": "PancakeSwap v3 SPYB/USDT 0.01%",
+      "mainPoolId": "0x7aa6d92fc369a8c1edc631a3aac44efb0808ddbf"
+    },
+    {
+      "symbol": "MSTRB",
+      "name": "Strategy",
+      "address": "0xe87afb3076aeb0f9b14e368de8145ae6a2826a14",
+      "liqUsd": 376589,
+      "vol24Usd": 276080,
+      "mainPool": "PancakeSwap v3 MSTRB/USDT 0.25%",
+      "mainPoolId": "0x692081209619735f25700557078ab084d3e5d007"
+    },
+    {
+      "symbol": "HOODB",
+      "name": "Robinhood",
+      "address": "0xa394dcea3fd3847fd793afbfd163e2e3858b7c65",
+      "liqUsd": 328589,
+      "vol24Usd": 319987,
+      "mainPool": "PancakeSwap v3 HOODB/USDT 0.25%",
+      "mainPoolId": "0xfeef70ff6f58f0a900e28a77e5a8945afb343923"
+    },
+    {
+      "symbol": "MSFTB",
+      "name": "Microsoft",
+      "address": "0x80106cb3ead06659a5ad19df39d9b4733863b9b0",
+      "liqUsd": 283877,
+      "vol24Usd": 98124,
+      "mainPool": "PancakeSwap v3 MSFTB/USDT 0.25%",
+      "mainPoolId": "0x5018b018ceb7645c927c5cf246786f89ebcbe7ea"
+    },
+    {
+      "symbol": "AMZNB",
+      "name": "Amazon",
+      "address": "0x1a4b499833a79a09ad7cf1d42d7dacf71e92eb00",
+      "liqUsd": 253267,
+      "vol24Usd": 83193,
+      "mainPool": "PancakeSwap v3 AMZNB/USDT 0.25%",
+      "mainPoolId": "0x7530beb7bde5843f668cf31b996fa1f748c9b6b1"
+    },
+    {
+      "symbol": "SNDKB",
+      "name": "Sandisk",
+      "address": "0x3ee4df61bd4f867e349beae8bfe07bc31b4850fb",
+      "liqUsd": 215823,
+      "vol24Usd": 345355,
+      "mainPool": "PancakeSwap v3 SNDKB/USDT 0.25%",
+      "mainPoolId": "0xe4b5403f5103b02d1e8193b0d7d76d49f3f8ad77"
+    },
+    {
+      "symbol": "METAB",
+      "name": "Meta",
+      "address": "0x7425889fe94f9d693e8daefe88bcced6acfef4c0",
+      "liqUsd": 213247,
+      "vol24Usd": 353050,
+      "mainPool": "PancakeSwap v3 METAB/USDT 0.25%",
+      "mainPoolId": "0xc2151a561e928d16576d75ea88544543ac63d80b"
+    },
+    {
+      "symbol": "NFLXB",
+      "name": "Netflix",
+      "address": "0xd6829ea836b6fa224d099d40e54b31262f874631",
+      "liqUsd": 164674,
+      "vol24Usd": 36386,
+      "mainPool": "PancakeSwap v3 NFLXB/USDT 0.25%",
+      "mainPoolId": "0xafab4441d8b354bba790229c0e235e7e6187b3d0"
+    },
+    {
+      "symbol": "TQQQB",
+      "name": "ProShares UltraPro QQQ",
+      "address": "0x462b5f13b7c7748279358962925c5de83bb9e598",
+      "liqUsd": 50068,
+      "vol24Usd": 14509,
+      "mainPool": "PancakeSwap v3 TQQQB/USDT 0.25%",
+      "mainPoolId": "0xf6a5f768f583a695b6cdd772fb138921c5bae4e9"
+    },
+    {
+      "symbol": "AVGOB",
+      "name": "Broadcom",
+      "address": "0x76682c454467b3a1150ad8b6a92fc5ee2c21d7ed",
+      "liqUsd": 38900,
+      "vol24Usd": 0,
+      "mainPool": "Uniswap v4 AVGOB/USDT",
+      "mainPoolId": "0x5769229774064f01babd3b7bbee50f9b6a49fa6a"
+    },
+    {
+      "symbol": "AMDB",
+      "name": "AMD",
+      "address": "0x75fd4cf6f8392e41e70391d60c90c0d5211603a1",
+      "liqUsd": 17864,
+      "vol24Usd": 963,
+      "mainPool": "Uniswap v4 AMDB/USDT",
+      "mainPoolId": "0x5e1c94b7b15a740a8606c37cedd680bc33e4e025"
+    },
+    {
+      "symbol": "ORCLB",
+      "name": "Oracle",
+      "address": "0x4684d9887fc1c71cba7bab8e88835cec217eb598",
+      "liqUsd": 16786,
+      "vol24Usd": 15156,
+      "mainPool": "Uniswap v3 ORCLB/USDT 0.3%",
+      "mainPoolId": "0x5a3a37abd365f750a5d2e78ec7294b8c70c1a436"
+    },
+    {
+      "symbol": "MUUB",
+      "name": "Direxion MU Bull 2X",
+      "address": "0x0bb3fa77e0809f42948e435f04883c25415e8263",
+      "liqUsd": 9890,
+      "vol24Usd": 0,
+      "mainPool": "Uniswap v4 MUUB/wUSDT",
+      "mainPoolId": "0x9124033cfe1922486b44963dca0e318b49a2a06d"
+    },
+    {
+      "symbol": "COINB",
+      "name": "Coinbase",
+      "address": "0x585bde7c54abb5ccd7791f923d6c2187635f3952",
+      "liqUsd": 2792,
+      "vol24Usd": 4909,
+      "mainPool": "PancakeSwap v3 COINB/USDT 0.25%",
+      "mainPoolId": "0x9e9df2c9053864abfa5bf773f9770f08710c8a10"
+    },
+    {
+      "symbol": "EWYB",
+      "name": "iShares MSCI South Korea",
+      "address": "0xbe82f76637dba2c114c41df856c2c51e522e2cb8",
+      "liqUsd": 429,
+      "vol24Usd": 0,
+      "mainPool": "Uniswap v4 EWYB/USDT",
+      "mainPoolId": "0xdd9128d57398ff5834d26b19362bd61ac8fc72f7"
+    },
+    {
+      "symbol": "PLTRB",
+      "name": "Palantir",
+      "address": "0x0ca5d51d0277bd006fd9607d3e560785ebad8222",
+      "liqUsd": 325,
+      "vol24Usd": 0,
+      "mainPool": "Uniswap v4 PLTRB/USDT",
+      "mainPoolId": "0x1e18aa7b542615396db7b902f8e4ac527703e087"
+    }
+  ]
+}

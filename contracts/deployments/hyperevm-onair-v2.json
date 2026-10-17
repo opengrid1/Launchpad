@@ -1,0 +1,388 @@
+{
+  "chainId": 999,
+  "version": 2,
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "hypeUsd8": "8673000000",
+  "hyperswapV3": {
+    "factory": "0xb1c0fa0b789320044a6f623cfe5ebda9562602e3",
+    "positionManager": "0x6eda206207c09e5428f281761ddc0d300851fbc8",
+    "swapRouter": "0x6d99e7f6747af2cdbb5164b6dd50e40d4fde1e77",
+    "whype": "0x5555555555555555555555555555555555555555"
+  },
+  "contracts": {
+    "tokenDeployer": "0xCd92A0D7BE5B34019Ca41ddAd29a9F0e9a4E8aeF",
+    "factory": "0xA56dC806CAf3866D2c831A0455f5a214d7A27F1D",
+    "auctionHouse": "0x41Dd552c84595A201244913d23E51A4EB4A2c99a"
+  },
+  "v1": {
+    "factory": "0x469D1F86485720c60e17538cEf44071E4f299ACe",
+    "auctionHouse": "0xad1e5800cde9D3A7aabbfD4D1aD7Ef4ce0941c3e",
+    "tokenDeployer": "0xD175CcE73949CB1Db283f64383D148bcb0B49058"
+  },
+  "auction": {
+    "supplyBps": 5000,
+    "durationBlocks": 14400,
+    "floorMcapUsd8": "300000000000",
+    "minRaiseWei": "220000000000000000000",
+    "minBidWei": "50000000000000000"
+  },
+  "fees": {
+    "poolFeeTier": 10000,
+    "holderBps": 0,
+    "creatorBps": 7000,
+    "platformBps": 3000
+  },
+  "quotes": [
+    {
+      "ticker": "QQQ",
+      "address": "0x499e347174f237ad28687b947b94c0d49570d1b7",
+      "usd": 1017,
+      "usd8": "101700000000"
+    },
+    {
+      "ticker": "GLD",
+      "address": "0x08be08c37d93e689518ced744a89f113b4afaad4",
+      "usd": 545.215,
+      "usd8": "54521500000"
+    },
+    {
+      "ticker": "HOOD",
+      "address": "0xc304a9d52cf9165024ebc7814250ef3a5013f924",
+      "usd": 87.0595,
+      "usd8": "8705950000"
+    },
+    {
+      "ticker": "SPCX",
+      "address": "0xe8c8afdf7e80be51e91afa28b6ac44404d270b5d",
+      "usd": 0.0696225,
+      "usd8": "6962250"
+    },
+    {
+      "ticker": "MU",
+      "address": "0x173c83a71c1a9e254721a86b7512cd65bf92648d",
+      "usd": 0.073586,
+      "usd8": "7358600"
+    },
+    {
+      "ticker": "META",
+      "address": "0x5a9d2deee7d8782011695623f1c453f46b2b566e",
+      "usd": 107.8905,
+      "usd8": "10789050000"
+    },
+    {
+      "ticker": "SPCXD",
+      "address": "0x95687557c66bc799a850ba7037673528238ae763",
+      "usd": 0.003665,
+      "usd8": "366500"
+    },
+    {
+      "ticker": "SPY",
+      "address": "0xb7bf37783db41a2851b77c6917280c56312c833a",
+      "usd": 773.17,
+      "usd8": "77317000000"
+    },
+    {
+      "ticker": "TSLA",
+      "address": "0x3727c797073840936e3c18b4088f3574cd1a72a3",
+      "usd": 376.365,
+      "usd8": "37636500000"
+    },
+    {
+      "ticker": "AAPL",
+      "address": "0x7374dc1894fbd1bc6c42f6ebbc50b78c211a8606",
+      "usd": 328.21,
+      "usd8": "32821000000"
+    },
+    {
+      "ticker": "AMZN",
+      "address": "0x4f2164c12d2d450a8b1d430492ef6670fe4cad8e",
+      "usd": 258.9,
+      "usd8": "25890000000"
+    },
+    {
+      "ticker": "AVGO",
+      "address": "0xc2785563af80c05177fff006e3b380ac5d172602",
+      "usd": 357.16,
+      "usd8": "35716000000"
+    },
+    {
+      "ticker": "BNB1",
+      "address": "0xfd6f06d323f6cb08ee9eeb2d201e9ec0e9112c88",
+      "usd": 716.82,
+      "usd8": "71682000000"
+    },
+    {
+      "ticker": "CRCL",
+      "address": "0xe74aa6c4050a15790525eb11cc4562c664dc67c9",
+      "usd": 103.23,
+      "usd8": "10323000000"
+    },
+    {
+      "ticker": "GOOGL",
+      "address": "0x35eeda03e55ff217a013892e9e2e37e792b264ea",
+      "usd": 342.48,
+      "usd8": "34248000000"
+    },
+    {
+      "ticker": "MSFT",
+      "address": "0x66520d8fd614487214a25af7babf27584f59f76b",
+      "usd": 510.12,
+      "usd8": "51012000000"
+    },
+    {
+      "ticker": "MUX",
+      "address": "0xe2047ee3bddb5c99ae428ab83df63f8730698e30",
+      "usd": 958.16,
+      "usd8": "95816000000"
+    },
+    {
+      "ticker": "NVDAX",
+      "address": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+      "usd": 228.45,
+      "usd8": "22845000000"
+    },
+    {
+      "ticker": "ORCL",
+      "address": "0xca2156522638f597ffb3705857ffdc356efabe50",
+      "usd": 154.04,
+      "usd8": "15404000000"
+    },
+    {
+      "ticker": "QQQX",
+      "address": "0x4c1ae29c159838fc1b224636e28e086eb69101f7",
+      "usd": 717.67,
+      "usd8": "71767000000"
+    },
+    {
+      "ticker": "SKHYX",
+      "address": "0x6215a58ed045d71f2561aaabe54f4c885c522998",
+      "usd": 1218.7631810681014,
+      "usd8": "121876318107"
+    },
+    {
+      "ticker": "SLV",
+      "address": "0x7ef4eba0c0200957e357627ced1884d6cb63e961",
+      "usd": 60.55,
+      "usd8": "6055000000"
+    },
+    {
+      "ticker": "SPYX",
+      "address": "0xe7e553cd128f0011777323a0b44a7b96ea1cb540",
+      "usd": 773.17,
+      "usd8": "77317000000"
+    },
+    {
+      "ticker": "AAPLon",
+      "address": "0x81db0DF77669b3BE563e7a0591685a2C8C3EE1c5",
+      "usd": 328.21,
+      "usd8": "32821000000"
+    },
+    {
+      "ticker": "AMDon",
+      "address": "0x33706203A7a7c82B6F6c09dd9Ae4E6e881d36386",
+      "usd": 456.16,
+      "usd8": "45616000000"
+    },
+    {
+      "ticker": "AMZNon",
+      "address": "0xeD68F063264a01fd7f93087DC19CC1E0D614e8De",
+      "usd": 258.9,
+      "usd8": "25890000000"
+    },
+    {
+      "ticker": "BABAon",
+      "address": "0x799Bf997B733CAb2e1377D0411b63E35133991eb",
+      "usd": 111.81,
+      "usd8": "11181000000"
+    },
+    {
+      "ticker": "COINon",
+      "address": "0x639Bcd00422facAcA534063e3d860e8fcf78B46F",
+      "usd": 192.7,
+      "usd8": "19270000000"
+    },
+    {
+      "ticker": "COPXon",
+      "address": "0x86E33197369a3560CeE2Ab6Bb12376AC7b29f3dD",
+      "usd": 91.25,
+      "usd8": "9125000000"
+    },
+    {
+      "ticker": "CRCLon",
+      "address": "0x13a81c5e8b4AB05Fc721DfF7bA95e250b29458F8",
+      "usd": 103.23,
+      "usd8": "10323000000"
+    },
+    {
+      "ticker": "CRWVon",
+      "address": "0xd616dDC3a9e13e12533d7124d5BD94B53Fb60A3f",
+      "usd": 84.56,
+      "usd8": "8456000000"
+    },
+    {
+      "ticker": "EWYon",
+      "address": "0xed871e0D99369AB869Fc38255a284361A137746B",
+      "usd": 180.56,
+      "usd8": "18056000000"
+    },
+    {
+      "ticker": "FCXon",
+      "address": "0xA019295D44677dd2f5B066245453938B1b1C483B",
+      "usd": 72.56,
+      "usd8": "7256000000"
+    },
+    {
+      "ticker": "GLDon",
+      "address": "0x95FebDd6f447B5278c9b98743B4254eB02c6EA1d",
+      "usd": 410.22,
+      "usd8": "41022000000"
+    },
+    {
+      "ticker": "GOOGLon",
+      "address": "0x4D34798f18Eb747F7225663F0553eA2D880cf75D",
+      "usd": 342.48,
+      "usd8": "34248000000"
+    },
+    {
+      "ticker": "HOODon",
+      "address": "0xF1Df92AC8E22763A16bf4Bd9a966EEBcD70fA5a3",
+      "usd": 124.72,
+      "usd8": "12472000000"
+    },
+    {
+      "ticker": "IAUon",
+      "address": "0x83b01AC9e2D1632A70Dd1C813c5B8eDF29cd707f",
+      "usd": 84.1,
+      "usd8": "8410000000"
+    },
+    {
+      "ticker": "INTCon",
+      "address": "0x7bf529bb5Db370D679F33f4fe5420F48eE234bB7",
+      "usd": 91.67,
+      "usd8": "9167000000"
+    },
+    {
+      "ticker": "IVVon",
+      "address": "0xAd26B6048cc3682f67Fe4C829b7Ac99dbF95920e",
+      "usd": 777.13,
+      "usd8": "77713000000"
+    },
+    {
+      "ticker": "METAon",
+      "address": "0x46FA18Ffe2707bbecc46D457D40EFBE6B932f711",
+      "usd": 610.68,
+      "usd8": "61068000000"
+    },
+    {
+      "ticker": "MSFTon",
+      "address": "0xD53471f6D493f7eD766181D88Ba9c2Bfc371399A",
+      "usd": 510.12,
+      "usd8": "51012000000"
+    },
+    {
+      "ticker": "MSTRon",
+      "address": "0x8a64FDf0857c1C734A594cd1DB20B3f8E3f133f6",
+      "usd": 144.82,
+      "usd8": "14482000000"
+    },
+    {
+      "ticker": "MUon",
+      "address": "0x0f8E33F5CdefAE9C2E59de8fB61feD347046D046",
+      "usd": 958.16,
+      "usd8": "95816000000"
+    },
+    {
+      "ticker": "NFLXon",
+      "address": "0x81Ebb420a81855f1Bf1B0fF95eCa9d3Bd736ea89",
+      "usd": 82.67,
+      "usd8": "8267000000"
+    },
+    {
+      "ticker": "NVDAon",
+      "address": "0xB989ad9b91886b1Aaed8DaADb26F028b29b40945",
+      "usd": 228.45,
+      "usd8": "22845000000"
+    },
+    {
+      "ticker": "ORCLon",
+      "address": "0x4775e99a13651B1D077c2fa04Eb9BF007f684af5",
+      "usd": 154.04,
+      "usd8": "15404000000"
+    },
+    {
+      "ticker": "PALLon",
+      "address": "0x5Ff6E08A0Bdbc1ff11004FfB62B7aC7CdCf101Bd",
+      "usd": 25.79,
+      "usd8": "2579000000"
+    },
+    {
+      "ticker": "PLTRon",
+      "address": "0x039358AB6919159f6026Ea4428595a5AaF12A35C",
+      "usd": 182.53,
+      "usd8": "18253000000"
+    },
+    {
+      "ticker": "PPLTon",
+      "address": "0xB4C0eaf28Ae7f667D9dabAA995F7A6E75e094770",
+      "usd": 16.49,
+      "usd8": "1649000000"
+    },
+    {
+      "ticker": "QQQon",
+      "address": "0x911e2dCD2b70F44231F3F0f1C6ec9aF75068FD85",
+      "usd": 717.67,
+      "usd8": "71767000000"
+    },
+    {
+      "ticker": "RIVNon",
+      "address": "0x353D347bb7bc1C812E3a131d9b5193b3618029e5",
+      "usd": 15.91,
+      "usd8": "1591000000"
+    },
+    {
+      "ticker": "SLVon",
+      "address": "0xd53d98d13D93C817011645442c2e4d46E499B460",
+      "usd": 60.55,
+      "usd8": "6055000000"
+    },
+    {
+      "ticker": "SNDKon",
+      "address": "0xB8927cfF399E23328eEC0e457e75c709DCfcF382",
+      "usd": 1554.99,
+      "usd8": "155499000000"
+    },
+    {
+      "ticker": "SPYon",
+      "address": "0x32eC2792aeC02122eDD9f28866B720db1e1c1B54",
+      "usd": 773.17,
+      "usd8": "77317000000"
+    },
+    {
+      "ticker": "TSLAon",
+      "address": "0x417883b1709545f1211A25b00ad13455fC7F1bc5",
+      "usd": 376.365,
+      "usd8": "37636500000"
+    },
+    {
+      "ticker": "TSMon",
+      "address": "0x3254cdffDDEDdb1F61B9eF6f67e178615CCb0E85",
+      "usd": 417.01,
+      "usd8": "41701000000"
+    },
+    {
+      "ticker": "UNGon",
+      "address": "0x2c81466C9B144E3B6e9D6e8858Bc0973a953Fb0A",
+      "usd": 10.49,
+      "usd8": "1049000000"
+    },
+    {
+      "ticker": "USOon",
+      "address": "0xA4dB50bB345151f3649539300523e83a8b8A6BC7",
+      "usd": 142.09,
+      "usd8": "14209000000"
+    }
+  ],
+  "deployBlock": 44998591,
+  "deployedAt": "2026-09-04T10:19:01.936Z"
+}

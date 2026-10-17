@@ -3,7 +3,7 @@ import { useTokens } from "@launchpad/sdk/react";
 import type { TokenSummary } from "@launchpad/sdk";
 
 import { client } from "../lib/client";
-import { BRAND } from "../lib/brand";
+import { BRAND, IS_HYPER } from "../lib/brand";
 import { env } from "../lib/env";
 import { fmtUsd, shortAddr } from "../lib/format";
 import { isHidden, isImpersonator } from "../lib/hiddenTokens";
@@ -63,7 +63,11 @@ export function BaseLeaderboard() {
       <section className="kf-hero">
         <h1 className="kf-hero-title-xl">Leaderboard</h1>
         <p className="kf-hero-copy">Every creator on {BRAND.name}, ranked by the trading volume of the coins they launch.</p>
-        <p className="kf-hero-note">More volume means more rewards streamed to holders — this is who's driving it.</p>
+        <p className="kf-hero-note">
+          {IS_HYPER
+            ? "More volume means more fees earned by creators - this is who's driving it."
+            : "More volume means more rewards streamed to holders — this is who's driving it."}
+        </p>
         <div className="kf-pod-scroll">
           {podium.length === 0
             ? [...Array(2)].map((_, i) => <div key={i} className="kf-pod-card" style={{ height: 128 }} />)

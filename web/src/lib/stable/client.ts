@@ -4,12 +4,15 @@ import {
   type WalletClient,
   decodeEventLog,
   encodeFunctionData,
+  encodePacked,
   parseAbi,
   toEventSelector,
   zeroAddress,
 } from "viem";
 import type { Candle, CandleInterval, PriceUpdate, TokenSummary, TradeRecord } from "@launchpad/sdk";
 import { INTERVAL_SECONDS } from "@launchpad/sdk";
+import { env } from "../env";
+import { STOCKS } from "../hyper/stocks";
 
 /**
  * Backend-free client for the StableLaunchpadFactory (Uniswap V3 on Stable
@@ -24,13 +27,14 @@ import { INTERVAL_SECONDS } from "@launchpad/sdk";
  */
 
 const FACTORY_ABI = parseAbi([
-  "struct CreateParams { string name; string symbol; string metadataURI; address quote; uint256 marketCapUsd8; }",
-  "function createToken(CreateParams p) returns (address token, address pool, uint256 positionId)",
+  "struct CreateParams { string name; string symbol; string metadataURI; address quote; uint256 marketCapUsd8; uint256 devBuyQuote; }",
+  "function createToken(CreateParams p) payable returns (address token, address pool, uint256 positionId)",
   "function harvestFees(address token) returns (uint256, uint256, uint256, uint256)",
   "function tokenCount() view returns (uint256)",
   "function allTokens(uint256) view returns (address)",
   "function listings(address) view returns (address creator, address quote, address pool, uint256 positionId, uint64 createdAt, bool tokenIsToken0)",
   "function quoteAssets(address) view returns (bool approved, uint64 usdPrice8, uint8 decimals)",
+  "function uniswapFactory() view returns (address)",
   // Owner console
   "function owner() view returns (address)",
   "function feeRecipient() view returns (address)",
@@ -54,6 +58,15 @@ const ERC20_ABI = parseAbi([
   "function allowance(address, address) view returns (uint256)",
 ]);
 
+// LaunchpadRewardToken's holder dividend tracker (rewards factory coins only;
+// these calls revert on older LaunchpadERC20 coins and the UI degrades).
+const REWARD_TRACKER_ABI = parseAbi([
+  "function rewardToken() view returns (address)",
+  "function totalRewardsDistributed() view returns (uint256)",
+  "function pendingRewards(address) view returns (uint256)",
+  "function claim() returns (uint256)",
+]);
+
 const POOL_ABI = parseAbi([
   "function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16, uint16, uint16, uint8, bool)",
   "function liquidity() view returns (uint128)",
@@ -63,8 +76,14 @@ const POOL_ABI = parseAbi([
 const ROUTER_ABI = parseAbi([
   "struct ExactInputSingleParams { address tokenIn; address tokenOut; uint24 fee; address recipient; uint256 amountIn; uint256 amountOutMinimum; uint160 sqrtPriceLimitX96; }",
   "function exactInputSingle(ExactInputSingleParams params) payable returns (uint256 amountOut)",
+  "struct ExactInputParams { bytes path; address recipient; uint256 amountIn; uint256 amountOutMinimum; }",
+  "function exactInput(ExactInputParams params) payable returns (uint256 amountOut)",
   "function multicall(bytes[] data) payable returns (bytes[] results)",
   "function unwrapWETH9(uint256 amountMinimum, address recipient) payable",
+]);
+
+const V3_CORE_ABI = parseAbi([
+  "function getPool(address, address, uint24) view returns (address)",
 ]);
 
 /** Arc flavor: ArcLaunchpadFactory + ArcSwapRouter on DyorSwap V3 pools with
@@ -91,6 +110,10 @@ const DEC_GAP = 10n ** BigInt(18 - Number(import.meta.env.VITE_QUOTE_DECIMALS ??
 /** True when the quote asset is the chain's wrapped native (e.g. WETH on
  *  Robinhood): buys pay native value and sells unwrap back to native. */
 const QUOTE_IS_WNATIVE = String(import.meta.env.VITE_QUOTE_IS_WNATIVE ?? "") === "true";
+/** The fee tier the factory opens every coin pool at, so router paths hit the
+ *  real pool. hyperstock/HyperSwap uses 1% (10000); squidpad/Ink uses 0.05%
+ *  (500). Set VITE_POOL_FEE_TIER to match the deployed factory. */
+const POOL_FEE_TIER = Number(import.meta.env.VITE_POOL_FEE_TIER ?? 10_000);
 /** Max block span of one getLogs request (RPC-dependent; Stable caps at 500,
  *  Robinhood accepts millions). */
 const LOGS_WINDOW = Number(import.meta.env.VITE_LOGS_WINDOW ?? 500);
@@ -144,6 +167,17 @@ export class StableV3Client {
    *  Stable, live ETH price on Robinhood). */
   private quoteUsd = 1;
   private quoteUsdLoaded = false;
+  /** Raw factory USD price (8-dec) for the DEFAULT quote, reused by
+   *  resolveQuote so a default-paired coin skips a second registry read. */
+  private quoteUsd8 = 0n;
+  /** Per-coin pair (quote) asset resolved from the factory, keyed by token.
+   *  Single-quote flavors resolve every coin to the same default quote, so
+   *  behavior is unchanged; multi-quote flavors (e.g. stonkliquid) get each
+   *  coin's own stock/native pair for trading and USD pricing. */
+  private quoteOf = new Map<string, { addr: Address; usdPrice8: bigint; decimals: number }>();
+  /** Wrapped-native route to a non-native quote: the WHYPE/quote pool's fee
+   *  tier when a funded pool exists, else null. Keyed by quote address. */
+  private hypeRoutes = new Map<string, number | null>();
   /** Observed seconds per block, refreshed by each trade scan. Stable is a
    *  steady 0.7s; Orbit chains mint blocks on demand so this varies. */
   private avgBlockTime = 0.7;
@@ -262,6 +296,142 @@ export class StableV3Client {
     return this.walletClient;
   }
 
+  // -- per-coin quote resolution ----------------------------------------
+  //
+  // Each coin records its own pair (quote) asset in the factory listing. For
+  // single-quote flavors that quote is always the configured default, so this
+  // returns the same value for every coin and behavior is unchanged. For
+  // multi-quote flavors it returns the coin's actual pair (native or a stock)
+  // so trades route through the right token and prices convert with the right
+  // USD rate.
+
+  private async resolveQuote(token: Address): Promise<{ addr: Address; usdPrice8: bigint; decimals: number }> {
+    const key = token.toLowerCase();
+    const hit = this.quoteOf.get(key);
+    if (hit) return hit;
+    let addr = this.addresses.quote;
+    try {
+      const listing = await this.publicClient.readContract({
+        address: this.addresses.factory,
+        abi: ARC_V3 ? ARC_FACTORY_ABI : FACTORY_ABI,
+        functionName: "listings",
+        args: [token],
+      });
+      // `quote` is the second field in both listing shapes.
+      const q = (listing as unknown as unknown[])[1] as Address;
+      if (q && q !== zeroAddress) addr = q;
+    } catch { /* factory unreadable; fall back to the default quote */ }
+    let usdPrice8 = 0n;
+    let decimals = Number(import.meta.env.VITE_QUOTE_DECIMALS ?? 6);
+    if (addr.toLowerCase() === this.addresses.quote.toLowerCase() && this.quoteUsd8 > 0n) {
+      // Default quote: reuse the already-loaded registry entry.
+      usdPrice8 = this.quoteUsd8;
+    } else {
+      try {
+        const qa = await this.publicClient.readContract({
+          address: this.addresses.factory,
+          abi: FACTORY_ABI,
+          functionName: "quoteAssets",
+          args: [addr],
+        });
+        const [, price8, dec] = qa as unknown as [boolean, bigint, number];
+        if (price8 > 0n) usdPrice8 = price8;
+        if (Number(dec) > 0) decimals = Number(dec);
+      } catch { /* registry unavailable (e.g. Arc); keep the USD fallback */ }
+    }
+    const resolved = { addr, usdPrice8, decimals };
+    this.quoteOf.set(key, resolved);
+    return resolved;
+  }
+
+  /** USD per whole quote token for a coin's pair, falling back to the default
+   *  quote's rate when the coin's pair has no registered price. */
+  private async quoteUsdOf(token: Address): Promise<number> {
+    const q = await this.resolveQuote(token);
+    return q.usdPrice8 > 0n ? Number(q.usdPrice8) / 1e8 : this.quoteUsd;
+  }
+
+  /** Wrapped-native route to a non-native quote: the fee tier of a FUNDED
+   *  WHYPE/quote pool on the underlying V3 factory, or null when none exists.
+   *  When a route exists, buys and sells of that coin can be paid in plain
+   *  native via a two-hop exactInput, so holders never need the stock. The
+   *  result is cached; it self-activates the day someone seeds the pool. */
+  private async hypeRouteFor(quote: Address): Promise<number | null> {
+    if (!QUOTE_IS_WNATIVE || quote.toLowerCase() === this.addresses.quote.toLowerCase()) return null;
+    const key = quote.toLowerCase();
+    const hit = this.hypeRoutes.get(key);
+    if (hit !== undefined) return hit;
+    let route: number | null = null;
+    try {
+      const v3 = (await this.publicClient.readContract({
+        address: this.addresses.factory, abi: FACTORY_ABI, functionName: "uniswapFactory",
+      })) as Address;
+      for (const fee of [3000, 500, 10_000, 100]) {
+        const pool = (await this.publicClient.readContract({
+          address: v3, abi: V3_CORE_ABI, functionName: "getPool", args: [this.addresses.quote, quote, fee],
+        })) as Address;
+        if (pool === zeroAddress) continue;
+        const liq = (await this.publicClient.readContract({
+          address: pool, abi: POOL_ABI, functionName: "liquidity",
+        })) as bigint;
+        if (liq > 0n) { route = fee; break; }
+      }
+    } catch { /* factory or pools unreadable; treat as no route */ }
+    this.hypeRoutes.set(key, route);
+    return route;
+  }
+
+  /** The coin's pay token for the UI to label buys/sells. Resolves the coin's
+   *  pair: the wrapped native shows the chain's native symbol; a tokenized
+   *  stock shows its ticker; anything else a short address. `usd` is the
+   *  pair's factory-registered USD price (0 when unknown) and `isNative` is
+   *  true when the pair is paid as the chain's native currency. A stock pair
+   *  with a live wrapped-native route reports as native: the user pays plain
+   *  native and the client routes through the stock pool automatically. */
+  async pairOf(token: Address): Promise<{ address: Address; symbol: string; decimals: number; usd: number; isNative: boolean }> {
+    const q = await this.resolveQuote(token);
+    const usd = q.usdPrice8 > 0n ? Number(q.usdPrice8) / 1e8 : 0;
+    if (QUOTE_IS_WNATIVE && q.addr.toLowerCase() === this.addresses.quote.toLowerCase()) {
+      return { address: q.addr, symbol: env.nativeSymbol, decimals: q.decimals, usd, isNative: true };
+    }
+    if ((await this.hypeRouteFor(q.addr)) != null) {
+      const nativeUsd = this.quoteUsd8 > 0n ? Number(this.quoteUsd8) / 1e8 : this.quoteUsd;
+      return { address: this.addresses.quote, symbol: env.nativeSymbol, decimals: 18, usd: nativeUsd, isNative: true };
+    }
+    const stock = STOCKS.find((s) => s.address.toLowerCase() === q.addr.toLowerCase());
+    if (stock) return { address: q.addr, symbol: stock.ticker, decimals: q.decimals, usd, isNative: false };
+    const short = `${q.addr.slice(0, 6)}…${q.addr.slice(-4)}`;
+    return { address: q.addr, symbol: short, decimals: q.decimals, usd, isNative: false };
+  }
+
+  /** Same as pairOf, under the name the shared trade panel calls on the V4
+   *  clients, so BaseTradePanel works unchanged against this client. */
+  async basePairInfo(token: Address): Promise<{ address: Address; symbol: string; decimals: number; usd: number; isNative: boolean }> {
+    return this.pairOf(token);
+  }
+
+  /** Wallet-sheet helper: balance of an asset for an owner. The zero address
+   *  means the chain's native currency. */
+  async assetBalance(asset: Address, owner: Address): Promise<bigint> {
+    if (/^0x0+$/.test(asset)) return this.publicClient.getBalance({ address: owner });
+    return this.publicClient.readContract({
+      address: asset, abi: ERC20_ABI, functionName: "balanceOf", args: [owner],
+    }) as Promise<bigint>;
+  }
+
+  /** Wallet-sheet helper: USD per whole unit of an asset, from the factory's
+   *  quote registry. The zero address (native) prices as the wrapped native. */
+  async assetUsdPrice(asset: Address): Promise<number> {
+    const addr = /^0x0+$/.test(asset) ? this.addresses.quote : asset;
+    try {
+      const qa = await this.publicClient.readContract({
+        address: this.addresses.factory, abi: FACTORY_ABI, functionName: "quoteAssets", args: [addr],
+      });
+      const [, price8] = qa as unknown as [boolean, bigint, number];
+      return price8 > 0n ? Number(price8) / 1e8 : 0;
+    } catch { return 0; }
+  }
+
   // -- reads ------------------------------------------------------------
 
   private loadCores(): Promise<Core[]> {
@@ -283,6 +453,7 @@ export class StableV3Client {
           const [, usdPrice8] = q as unknown as [boolean, bigint, number];
           if (usdPrice8 > 0n) {
             this.quoteUsd = Number(usdPrice8) / 1e8;
+            this.quoteUsd8 = usdPrice8;
             this.quoteUsdLoaded = true;
           }
         })
@@ -394,6 +565,42 @@ export class StableV3Client {
     return { volTotal, vol24, tx24, holders: this.holdersCache.get(key)?.count };
   }
 
+  /** 24h price change, as a percent, from the cached trade prices: current
+   *  price vs the most recent trade at least 24h old, or the oldest trade we
+   *  have when the coin is younger than a day (change since launch). Null
+   *  when no trades are known yet. */
+  private change24hFromCache(key: string, currentPrice: bigint): number | null {
+    if (currentPrice <= 0n) return null;
+    const trades = (this.tradesCache.get(key) ?? this.loadPersistedTrades(key))?.trades ?? [];
+    if (trades.length === 0) return null;
+    const dayAgo = Math.floor(Date.now() / 1000) - 86_400;
+    // trades are newest-first: the first one at or before 24h ago is the
+    // 24h baseline; if none is that old, the oldest known trade stands in.
+    let baseline = 0n;
+    for (const t of trades) {
+      if (t.timestamp <= dayAgo) { baseline = BigInt(t.priceWei); break; }
+    }
+    if (baseline === 0n) baseline = BigInt(trades[trades.length - 1].priceWei);
+    if (baseline <= 0n) return null;
+    return ((Number(currentPrice) - Number(baseline)) / Number(baseline)) * 100;
+  }
+
+  /** A small price series (oldest to newest) for a card sparkline, sampled
+   *  from cached trades. Empty when nothing has traded yet. */
+  private sparkFromCache(key: string): number[] {
+    const trades = (this.tradesCache.get(key) ?? this.loadPersistedTrades(key))?.trades ?? [];
+    if (trades.length === 0) return [];
+    // trades are newest-first; walk oldest to newest and pull the price.
+    const prices = trades.map((t) => Number(t.priceWei)).filter((n) => n > 0).reverse();
+    if (prices.length <= 24) return prices;
+    // Downsample to ~24 evenly spaced points.
+    const step = prices.length / 24;
+    const out: number[] = [];
+    for (let i = 0; i < 24; i++) out.push(prices[Math.floor(i * step)]);
+    out.push(prices[prices.length - 1]);
+    return out;
+  }
+
   /** Count holders among addresses we've seen trade (Swap `recipient`), the
    *  creator, and the pool. The RPC's 500-block getLogs cap rules out a full
    *  Transfer-history scan, so this converges as trading is observed; traders
@@ -430,14 +637,78 @@ export class StableV3Client {
     return count;
   }
 
+  /** Top holders for the token page's Holders tab: candidates are every
+   *  trader we've observed plus the creator and the pool, verified against
+   *  live balances so the list is exact for the addresses shown. */
+  async getHolders(token: string, opts?: { limit?: number }): Promise<{ address: Address; balance: string; pct: number }[]> {
+    await this.loadCores();
+    const core = this.cores.get(token.toLowerCase());
+    if (!core) return [];
+    await this.getTrades(token, { limit: 200 }).catch(() => {});
+    const key = core.address.toLowerCase();
+    const trades = (this.tradesCache.get(key) ?? this.loadPersistedTrades(key))?.trades ?? [];
+    const candidates = new Set<string>();
+    for (const t of trades) {
+      if (t.trader && t.trader !== zeroAddress) candidates.add(t.trader.toLowerCase());
+    }
+    try {
+      for (const a of JSON.parse(localStorage.getItem(`steady:holdercands:${key}`) ?? "[]") as string[]) candidates.add(a);
+    } catch { /* corrupt entry */ }
+    candidates.add(core.creator.toLowerCase());
+    if (core.pool) candidates.add(core.pool.toLowerCase());
+    const addrs = [...candidates].slice(0, 80) as Address[];
+    const balances = await Promise.all(
+      addrs.map((a) =>
+        this.publicClient
+          .readContract({ address: core.address, abi: ERC20_ABI, functionName: "balanceOf", args: [a] })
+          .catch(() => 0n),
+      ),
+    );
+    const supply = 1_000_000_000 * 1e18;
+    return addrs
+      .map((address, i) => ({ address, bal: balances[i] as bigint }))
+      .filter((h) => h.bal > 0n)
+      .sort((a, b) => (b.bal > a.bal ? 1 : -1))
+      .slice(0, opts?.limit ?? 50)
+      .map((h) => ({ address: h.address, balance: h.bal.toString(), pct: (Number(h.bal) / supply) * 100 }));
+  }
+
   private async summary(core: Core): Promise<TokenSummary> {
     const price = await this.priceWei(core).catch(() => 0n);
     const supply = 1_000_000_000n * 10n ** 18n;
     const mcapWei = (price * supply) / 10n ** 18n;
-    const usd = (Number(mcapWei) / 1e18) * this.quoteUsd;
+    // USD conversion uses THIS coin's pair rate (a stock-paired coin prices off
+    // the stock's USD, not the default quote's).
+    const quoteUsd = await this.quoteUsdOf(core.address).catch(() => this.quoteUsd);
+    const usd = (Number(mcapWei) / 1e18) * quoteUsd;
     const stats = this.statsFromCache(core.address.toLowerCase());
     let metadata: Record<string, unknown> = {};
     try { metadata = JSON.parse(core.metadataURI || "{}"); } catch { /* opaque URI */ }
+    // Stamp the coin's real pair asset so the board/card shows the actual pair
+    // (a stock, or the native token) instead of falling back to native.
+    let quoteAddr: Address | null = null;
+    try {
+      const q = await this.resolveQuote(core.address);
+      if (q.addr && !/^0x0+$/.test(q.addr)) {
+        quoteAddr = q.addr;
+        (metadata as Record<string, unknown>).pairAddress = q.addr;
+      }
+    } catch { /* keep whatever the metadata JSON carried */ }
+
+    // Real pool liquidity (TVL) in quote-token wei: the pool's quote reserve
+    // plus its coin reserve valued at the current price. The UI multiplies by
+    // the quote's USD rate to render LIQ in dollars. Single-sided at launch, so
+    // it starts near the market cap and the quote side fills in as people buy.
+    let liquidityWei = 0n;
+    if (quoteAddr && core.pool && !/^0x0+$/.test(core.pool) && price > 0n) {
+      try {
+        const [coinBal, quoteBal] = (await Promise.all([
+          this.publicClient.readContract({ address: core.address, abi: ERC20_ABI, functionName: "balanceOf", args: [core.pool as Address] }).catch(() => 0n),
+          this.publicClient.readContract({ address: quoteAddr, abi: ERC20_ABI, functionName: "balanceOf", args: [core.pool as Address] }).catch(() => 0n),
+        ])) as [bigint, bigint];
+        liquidityWei = quoteBal + (coinBal * price) / 10n ** 18n;
+      } catch { /* leave 0 */ }
+    }
     return {
       address: core.address,
       name: core.name,
@@ -451,16 +722,17 @@ export class StableV3Client {
       metadata: metadata as TokenSummary["metadata"],
       totalSupply: supply.toString(),
       priceWei: price.toString(),
-      priceUsd: String((Number(price) / 1e18) * this.quoteUsd),
+      priceUsd: String((Number(price) / 1e18) * quoteUsd),
       marketCapUsd: String(usd),
-      liquidityWei: "0",
+      liquidityWei: liquidityWei.toString(),
       volume24hWei: stats.vol24.toString(),
       volumeTotalWei: stats.volTotal.toString(),
       txCount24h: stats.tx24,
       holderCount: stats.holders ?? 0,
       limitsActive: false,
       remainingToGraduationUsd: "0",
-      priceChange24hPct: null,
+      priceChange24hPct: this.change24hFromCache(core.address.toLowerCase(), price),
+      sparkline: this.sparkFromCache(core.address.toLowerCase()),
       creatorFeesWei: "0",
     } as unknown as TokenSummary;
   }
@@ -751,30 +1023,95 @@ export class StableV3Client {
 
   // -- writes -----------------------------------------------------------
 
-  /** Launch a token on the Stable factory (default $3,000 market cap). */
-  async createToken(p: { name: string; symbol: string; metadataURI: string }): Promise<`0x${string}`> {
+  /** Launch a token on the factory (default ~$3,000 market cap). `quote` lets a
+   *  flavor with multiple approved pairs (e.g. hyperstock: WHYPE or a tokenized
+   *  stock) choose the pair per launch; it defaults to the configured quote.
+   *  `devBuyQuote` (quote units, 18d) rides in the same transaction as an
+   *  atomic first buy: native value for the wrapped-native pair, a factory
+   *  allowance (set here if missing) for any other pair. */
+  async createToken(p: {
+    name: string;
+    symbol: string;
+    metadataURI: string;
+    quote?: Address;
+    marketCapUsd8?: bigint;
+    devBuyQuote?: bigint;
+  }): Promise<`0x${string}`> {
     const wc = this.wallet();
+    const quote = (p.quote ?? this.addresses.quote) as Address;
+    const devBuy = p.devBuyQuote ?? 0n;
+    const payNative = QUOTE_IS_WNATIVE && quote.toLowerCase() === this.addresses.quote.toLowerCase();
+    if (devBuy > 0n && !payNative) {
+      await this.ensureAllowance(wc.account!.address as Address, quote, devBuy, this.addresses.factory);
+    }
     return wc.writeContract({
       address: this.addresses.factory,
       abi: FACTORY_ABI,
       functionName: "createToken",
-      args: [{ name: p.name, symbol: p.symbol, metadataURI: p.metadataURI, quote: this.addresses.quote, marketCapUsd8: 0n }],
+      args: [{
+        name: p.name,
+        symbol: p.symbol,
+        metadataURI: p.metadataURI,
+        quote,
+        marketCapUsd8: p.marketCapUsd8 ?? 0n,
+        devBuyQuote: devBuy,
+      }],
+      value: devBuy > 0n && payNative ? devBuy : undefined,
       chain: wc.chain,
       account: wc.account!,
     });
   }
 
-  private async ensureAllowance(owner: Address, tokenAddr: Address, amount: bigint) {
+  private async ensureAllowance(owner: Address, tokenAddr: Address, amount: bigint, spender?: Address) {
     const wc = this.wallet();
+    const spend = spender ?? this.addresses.swapRouter;
     const allowance = (await this.publicClient.readContract({
-      address: tokenAddr, abi: ERC20_ABI, functionName: "allowance", args: [owner, this.addresses.swapRouter],
+      address: tokenAddr, abi: ERC20_ABI, functionName: "allowance", args: [owner, spend],
     })) as bigint;
     if (allowance < amount) {
       const hash = await wc.writeContract({
         address: tokenAddr, abi: ERC20_ABI, functionName: "approve",
-        args: [this.addresses.swapRouter, amount], chain: wc.chain, account: wc.account!,
+        args: [spend, amount], chain: wc.chain, account: wc.account!,
       });
       await this.publicClient.waitForTransactionReceipt({ hash });
+    }
+  }
+
+  /** Exact impact-aware output by simulating the real router swap (zero floor)
+   *  from the connected account. These single-sided V3 pools are highly
+   *  concentrated, so constant-product on the raw reserves overstates depth by
+   *  10x+ — only a real simulation gives a true quote. Used for the "you
+   *  receive" readout and the slippage floor so large buys on a thin pool don't
+   *  revert. Native-quote (WHYPE) single-hop only; returns null otherwise (the
+   *  UI then falls back to the spot estimate). `amountInWei` is quote wei for a
+   *  buy / coin wei for a sell; the return is the pool's gross output wei. */
+  async previewSwapOut(token: Address, side: "buy" | "sell", amountInWei: bigint): Promise<bigint | null> {
+    if (amountInWei <= 0n) return 0n;
+    let me: Address | undefined;
+    try { me = this.wallet().account?.address as Address; } catch { me = undefined; }
+    if (!me) return null; // need an account holding the input to simulate
+    try {
+      const quote = await this.resolveQuote(token);
+      const payNative = QUOTE_IS_WNATIVE && quote.addr.toLowerCase() === this.addresses.quote.toLowerCase();
+      if (side === "buy") {
+        if (!payNative) return null; // stock two-hop: skip, fall back to spot
+        const amountIn = amountInWei / DEC_GAP;
+        if (amountIn <= 0n) return 0n;
+        const { result } = (await this.publicClient.simulateContract({
+          address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
+          args: [{ tokenIn: quote.addr, tokenOut: token, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }],
+          value: amountInWei, account: me,
+        } as never)) as { result: bigint };
+        return result;
+      }
+      const { result } = (await this.publicClient.simulateContract({
+        address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
+        args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: me, amountIn: amountInWei, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }],
+        account: me,
+      } as never)) as { result: bigint };
+      return result;
+    } catch {
+      return null;
     }
   }
 
@@ -792,15 +1129,61 @@ export class StableV3Client {
         args: [token, minOut], value: nativeWei, chain: wc.chain, account: wc.account!,
       });
     }
+    // Pay with the coin's OWN pair asset. When that pair is the wrapped native
+    // the router wraps plain native value (no approval); a stock/ERC-20 pair is
+    // pulled after an allowance. amountIn keeps the default-quote DEC_GAP
+    // scaling (a no-op where all quotes share the default's decimals).
+    const quote = await this.resolveQuote(token);
     const amountIn = nativeWei / DEC_GAP;
     if (amountIn === 0n) throw new Error("Amount too small.");
-    if (!QUOTE_IS_WNATIVE) await this.ensureAllowance(me, this.addresses.quote, amountIn);
+    const payNative = QUOTE_IS_WNATIVE && quote.addr.toLowerCase() === this.addresses.quote.toLowerCase();
+    if (!payNative) {
+      // Stock pair with a funded wrapped-native route: pay plain native and
+      // hop native -> stock -> coin in one swap. No stock needed, ever.
+      const route = await this.hypeRouteFor(quote.addr);
+      if (route != null) {
+        const path = encodePacked(
+          ["address", "uint24", "address", "uint24", "address"],
+          [this.addresses.quote, route, quote.addr, POOL_FEE_TIER, token],
+        );
+        return wc.writeContract({
+          address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInput",
+          args: [{ path, recipient: me, amountIn: nativeWei, amountOutMinimum: minOut }],
+          value: nativeWei, chain: wc.chain, account: wc.account!,
+        });
+      }
+      await this.ensureAllowance(me, quote.addr, amountIn);
+    }
+    // Simulate the real swap to learn the exact fill, then never let the
+    // slippage floor sit above it (99.5% cap). A naive spot floor is far too
+    // high for a large buy on a thin pool and would revert; this keeps the
+    // caller's floor when it is already realistic, and lowers it only when the
+    // pool cannot deliver that much.
+    const floor = await this.cappedFloor(
+      minOut,
+      { address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
+        args: [{ tokenIn: quote.addr, tokenOut: token, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }],
+        value: payNative ? nativeWei : undefined, account: me },
+    );
     return wc.writeContract({
       address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
-      args: [{ tokenIn: this.addresses.quote, tokenOut: token, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
-      value: QUOTE_IS_WNATIVE ? nativeWei : undefined,
+      args: [{ tokenIn: quote.addr, tokenOut: token, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: floor, sqrtPriceLimitX96: 0n }],
+      value: payNative ? nativeWei : undefined,
       chain: wc.chain, account: wc.account!,
     });
+  }
+
+  /** Simulate a router swap (with a zero floor) and return a slippage floor
+   *  that never exceeds 99.5% of the real fill, so the actual tx cannot revert
+   *  on amountOutMinimum. Falls back to the caller's floor if the sim fails. */
+  private async cappedFloor(minOut: bigint, sim: Record<string, unknown>): Promise<bigint> {
+    try {
+      const { result } = (await this.publicClient.simulateContract(sim as never)) as { result: bigint };
+      const cap = (result * 995n) / 1000n;
+      return minOut > cap ? cap : minOut;
+    } catch {
+      return minOut;
+    }
   }
 
   /** Sell `amountIn` token wei for the quote; `minOut` is native wei (18d).
@@ -817,20 +1200,57 @@ export class StableV3Client {
         args: [token, amountIn, minOut], chain: wc.chain, account: wc.account!,
       });
     }
-    if (!QUOTE_IS_WNATIVE) {
+    // Swap into the coin's OWN pair asset. A stock/ERC-20 pair goes straight to
+    // the seller; the wrapped native lands in the router and a second multicall
+    // step unwraps it to native for the seller.
+    const quote = await this.resolveQuote(token);
+    const isWnative = QUOTE_IS_WNATIVE && quote.addr.toLowerCase() === this.addresses.quote.toLowerCase();
+    if (!isWnative) {
+      // Stock pair with a funded wrapped-native route: hop coin -> stock ->
+      // native in one swap and unwrap straight to the seller.
+      const route = await this.hypeRouteFor(quote.addr);
+      if (route != null) {
+        const path = encodePacked(
+          ["address", "uint24", "address", "uint24", "address"],
+          [token, POOL_FEE_TIER, quote.addr, route, this.addresses.quote],
+        );
+        const hop = encodeFunctionData({
+          abi: ROUTER_ABI, functionName: "exactInput",
+          args: [{ path, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: minOut }],
+        });
+        const unwrapHop = encodeFunctionData({
+          abi: ROUTER_ABI, functionName: "unwrapWETH9", args: [minOut, me],
+        });
+        return wc.writeContract({
+          address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "multicall",
+          args: [[hop, unwrapHop]], chain: wc.chain, account: wc.account!,
+        });
+      }
+      const floorS = await this.cappedFloor(minOut / DEC_GAP, {
+        address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
+        args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }],
+        account: me,
+      });
       return wc.writeContract({
         address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
-        args: [{ tokenIn: token, tokenOut: this.addresses.quote, fee: 10_000, recipient: me, amountIn, amountOutMinimum: minOut / DEC_GAP, sqrtPriceLimitX96: 0n }],
+        args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: me, amountIn, amountOutMinimum: floorS, sqrtPriceLimitX96: 0n }],
         chain: wc.chain, account: wc.account!,
       });
     }
+    // Cap the native-sell floor to the simulated fill (swap leg into the
+    // router) so a large sell into a thin pool cannot revert on the floor.
+    const floor = await this.cappedFloor(minOut, {
+      address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "exactInputSingle",
+      args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }],
+      account: me,
+    });
     const swap = encodeFunctionData({
       abi: ROUTER_ABI, functionName: "exactInputSingle",
-      args: [{ tokenIn: token, tokenOut: this.addresses.quote, fee: 10_000, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n }],
+      args: [{ tokenIn: token, tokenOut: quote.addr, fee: POOL_FEE_TIER, recipient: ADDRESS_THIS, amountIn, amountOutMinimum: floor, sqrtPriceLimitX96: 0n }],
     });
     const unwrap = encodeFunctionData({
       abi: ROUTER_ABI, functionName: "unwrapWETH9",
-      args: [minOut, me],
+      args: [floor, me],
     });
     return wc.writeContract({
       address: this.addresses.swapRouter, abi: ROUTER_ABI, functionName: "multicall",
@@ -839,7 +1259,7 @@ export class StableV3Client {
     });
   }
 
-  /** Distribute accrued pool fees 80/20 creator/platform (permissionless). */
+  /** Distribute accrued pool fees per the factory's split (permissionless). */
   async claimCreatorFees(token: Address): Promise<`0x${string}`> {
     const wc = this.wallet();
     return wc.writeContract({
@@ -908,15 +1328,59 @@ export class StableV3Client {
     });
   }
 
-  // -- V4-only surface, degraded gracefully -----------------------------
+  // -- Holder rewards (LaunchpadRewardToken dividend tracker) ------------
 
-  async tokenExtra(): Promise<null> { return null; }
+  /** Reward info for a coin: the pair asset rewards are paid in and the
+   *  lifetime total streamed to holders. Older coins launched before the
+   *  rewards factory have no tracker; those return null and the UI hides
+   *  every reward affordance. */
+  async tokenExtra(token: Address): Promise<{ stock: Address; taxBps: number; totalRewards: bigint; creatorFees: bigint } | null> {
+    try {
+      const [stock, totalRewards] = await Promise.all([
+        this.publicClient.readContract({ address: token, abi: REWARD_TRACKER_ABI, functionName: "rewardToken" }),
+        this.publicClient.readContract({ address: token, abi: REWARD_TRACKER_ABI, functionName: "totalRewardsDistributed" }),
+      ]);
+      return { stock: stock as Address, taxBps: 0, totalRewards: totalRewards as bigint, creatorFees: 0n };
+    } catch {
+      return null; // pre-rewards token: no tracker on the contract
+    }
+  }
+
+  /** The connected wallet's claimable rewards on a coin, in the pair asset. */
+  async baseRewards(coin: Address, account: Address): Promise<{ claimable: bigint; stock: Address } | null> {
+    try {
+      const [claimable, stock] = await Promise.all([
+        this.publicClient.readContract({ address: coin, abi: REWARD_TRACKER_ABI, functionName: "pendingRewards", args: [account] }),
+        this.publicClient.readContract({ address: coin, abi: REWARD_TRACKER_ABI, functionName: "rewardToken" }),
+      ]);
+      return { claimable: claimable as bigint, stock: stock as Address };
+    } catch {
+      return null;
+    }
+  }
+
+  /** Manual claim: pull the wallet's accrued rewards from the coin's tracker. */
+  async claimBaseRewards(coin: Address, account: Address): Promise<`0x${string}`[]> {
+    const info = await this.baseRewards(coin, account);
+    if (!info || info.claimable <= 0n) return [];
+    const wc = this.wallet();
+    const hash = await wc.writeContract({
+      address: coin, abi: REWARD_TRACKER_ABI, functionName: "claim",
+      args: [], chain: wc.chain, account: wc.account!,
+    });
+    await this.publicClient.waitForTransactionReceipt({ hash });
+    return [hash];
+  }
+
+  // -- V4-only surface, degraded gracefully -----------------------------
   /** USD market cap per whole-unit price, same contract as the V4 client:
    *  mcap = (priceWei/1e18) × scale. Supply is 1e9 whole tokens at $1 USDT0. */
-  async mcapScale(): Promise<number> {
+  async mcapScale(token?: Address): Promise<number> {
     // Ensure the quote's USD price is loaded (kicked off by loadCores).
     await this.loadCores().catch(() => {});
-    return 1e9 * this.quoteUsd;
+    // With a token, scale by ITS pair's USD rate; without one, the default.
+    const quoteUsd = token ? await this.quoteUsdOf(token).catch(() => this.quoteUsd) : this.quoteUsd;
+    return 1e9 * quoteUsd;
   }
   async harvest(): Promise<never> { throw new Error("Not available on Stable."); }
   async claimDividends(): Promise<never> { throw new Error("Not available on Stable."); }
@@ -1000,7 +1464,7 @@ export class StableV3Client {
         this.priceCache.delete(key);
         const price = await this.priceWei(core).catch(() => null);
         if (price !== null) {
-          const update = this.buildPriceUpdate(core, price);
+          const update = await this.buildPriceUpdate(core, price);
           for (const cb of w.priceCbs) cb(update);
         }
       }
@@ -1009,17 +1473,33 @@ export class StableV3Client {
     }
   }
 
-  private buildPriceUpdate(core: Core, price: bigint): PriceUpdate {
+  private async buildPriceUpdate(core: Core, price: bigint): Promise<PriceUpdate> {
     const key = core.address.toLowerCase();
     const supply = 1_000_000_000n * 10n ** 18n;
     const mcapWei = (price * supply) / 10n ** 18n;
     const stats = this.statsFromCache(key);
+    const quoteUsd = await this.quoteUsdOf(core.address).catch(() => this.quoteUsd);
+    // Refresh pool liquidity (TVL, quote-wei) on every price push so LIQ tracks
+    // buys/sells instead of snapping back to zero.
+    let liquidityWei = 0n;
+    if (core.pool && !/^0x0+$/.test(core.pool) && price > 0n) {
+      try {
+        const q = await this.resolveQuote(core.address);
+        if (q.addr && !/^0x0+$/.test(q.addr)) {
+          const [coinBal, quoteBal] = (await Promise.all([
+            this.publicClient.readContract({ address: core.address, abi: ERC20_ABI, functionName: "balanceOf", args: [core.pool as Address] }).catch(() => 0n),
+            this.publicClient.readContract({ address: q.addr, abi: ERC20_ABI, functionName: "balanceOf", args: [core.pool as Address] }).catch(() => 0n),
+          ])) as [bigint, bigint];
+          liquidityWei = quoteBal + (coinBal * price) / 10n ** 18n;
+        }
+      } catch { /* leave 0 */ }
+    }
     return {
       token: core.address,
       priceWei: price.toString(),
-      priceUsd: String((Number(price) / 1e18) * this.quoteUsd),
-      marketCapUsd: String((Number(mcapWei) / 1e18) * this.quoteUsd),
-      liquidityWei: "0",
+      priceUsd: String((Number(price) / 1e18) * quoteUsd),
+      marketCapUsd: String((Number(mcapWei) / 1e18) * quoteUsd),
+      liquidityWei: liquidityWei.toString(),
       limitsActive: false,
       remainingToGraduationUsd: "0",
       creatorFeesWei: "0",

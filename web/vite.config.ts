@@ -33,6 +33,11 @@ const FLAVOR_META: Record<string, { title: string; description: string; icon?: s
     icon: "/stonk-logo.jpg",
     ogImage: "https://basedstonk.vercel.app/basedstonk-banner.jpg",
   },
+  hyper: {
+    title: "liquidstock | launch a coin, earn the fees",
+    description:
+      "liquidstock.fun. Launch a coin on HyperEVM paired with HYPE or a tokenized stock. It opens a real HyperSwap market and every trade pays you, the creator, 1% forever.",
+  },
 };
 
 function brandHtml(): Plugin {

@@ -1,0 +1,411 @@
+{
+  "checkedAt": "2026-09-04T09:59:50.751Z",
+  "baseUsd": {
+    "WHYPE": 0.002083,
+    "USDT0": 1,
+    "USDe": 1,
+    "USDHL": 1,
+    "USDC": 1,
+    "feUSD": 1,
+    "UBTC": 0.00006,
+    "UETH": 0.000406
+  },
+  "method": "Core spot universe (stock-looking tokens with evmContract) + stored Ondo/dStock/xStock lists; HyperSwap V3 (all tiers) and V2 pools against WHYPE/USDT0/USDe/USDHL/USDC/feUSD/UBTC/UETH valued in USD; Core spot mid + 24h volume.",
+  "liquid": [
+    {
+      "ticker": "QQQ",
+      "issuer": "dStock",
+      "fullName": null,
+      "coreMid": 795.255,
+      "coreVol": 22526715.22777,
+      "corePair": "@288",
+      "address": "0x499e347174f237ad28687b947b94c0d49570d1b7",
+      "evmSymbol": "QQQd",
+      "evmName": "Invesco QQQ (dStock)",
+      "decimals": 18,
+      "hasCode": true,
+      "pools": [],
+      "dexTvlUsd": 0
+    },
+    {
+      "ticker": "GLD",
+      "issuer": "dStock",
+      "fullName": null,
+      "coreMid": 463.725,
+      "coreVol": 2105311.082,
+      "corePair": "@276",
+      "address": "0x08be08c37d93e689518ced744a89f113b4afaad4",
+      "evmSymbol": "GLDd",
+      "evmName": "SPDR Gold Shares (dStock)",
+      "decimals": 18,
+      "hasCode": true,
+      "pools": [],
+      "dexTvlUsd": 0
+    },
+    {
+      "ticker": "HOOD",
+      "issuer": "dStock",
+      "fullName": null,
+      "coreMid": 81.3635,
+      "coreVol": 68016.7204,
+      "corePair": "@271",
+      "address": "0xc304a9d52cf9165024ebc7814250ef3a5013f924",
+      "evmSymbol": "HOODd",
+      "evmName": "Robinhood Markets (dStock)",
+      "decimals": 18,
+      "hasCode": true,
+      "pools": [],
+      "dexTvlUsd": 0
+    },
+    {
+      "ticker": "MU",
+      "issuer": "dStock",
+      "fullName": null,
+      "coreMid": 0.085704,
+      "coreVol": 17503.63021468,
+      "corePair": "@333",
+      "address": "0x173c83a71c1a9e254721a86b7512cd65bf92648d",
+      "evmSymbol": "MUd",
+      "evmName": "Micron Technology (dStock)",
+      "decimals": 18,
+      "hasCode": true,
+      "pools": [],
+      "dexTvlUsd": 0
+    },
+    {
+      "ticker": "SPY",
+      "issuer": "dStock",
+      "fullName": null,
+      "coreMid": 87.4405,
+      "coreVol": 1724.05778,
+      "corePair": "@279",
+      "address": "0xb7bf37783db41a2851b77c6917280c56312c833a",
+      "evmSymbol": "SPYd",
+      "evmName": "SPDR S&P 500 ETF (dStock)",
+      "decimals": 18,
+      "hasCode": true,
+      "pools": [],
+      "dexTvlUsd": 0
+    }
+  ],
+  "dry": [
+    {
+      "ticker": "TSLA",
+      "issuer": "Wagyu",
+      "address": "0x3727c797073840936e3c18b4088f3574cd1a72a3",
+      "hasCode": true
+    },
+    {
+      "ticker": "CRCL",
+      "issuer": "dStock",
+      "address": "0xe74aa6c4050a15790525eb11cc4562c664dc67c9",
+      "hasCode": true
+    },
+    {
+      "ticker": "SLV",
+      "issuer": "dStock",
+      "address": "0x7ef4eba0c0200957e357627ced1884d6cb63e961",
+      "hasCode": true
+    },
+    {
+      "ticker": "GOOGL",
+      "issuer": "dStock",
+      "address": "0x35eeda03e55ff217a013892e9e2e37e792b264ea",
+      "hasCode": true
+    },
+    {
+      "ticker": "AAPL",
+      "issuer": "dStock",
+      "address": "0x7374dc1894fbd1bc6c42f6ebbc50b78c211a8606",
+      "hasCode": true
+    },
+    {
+      "ticker": "BNB1",
+      "issuer": "dStock",
+      "address": "0xfd6f06d323f6cb08ee9eeb2d201e9ec0e9112c88",
+      "hasCode": true
+    },
+    {
+      "ticker": "AMZN",
+      "issuer": "dStock",
+      "address": "0x4f2164c12d2d450a8b1d430492ef6670fe4cad8e",
+      "hasCode": true
+    },
+    {
+      "ticker": "META",
+      "issuer": "dStock",
+      "address": "0x5a9d2deee7d8782011695623f1c453f46b2b566e",
+      "hasCode": true
+    },
+    {
+      "ticker": "MSFT",
+      "issuer": "dStock",
+      "address": "0x66520d8fd614487214a25af7babf27584f59f76b",
+      "hasCode": true
+    },
+    {
+      "ticker": "ORCL",
+      "issuer": "dStock",
+      "address": "0xca2156522638f597ffb3705857ffdc356efabe50",
+      "hasCode": true
+    },
+    {
+      "ticker": "AVGO",
+      "issuer": "dStock",
+      "address": "0xc2785563af80c05177fff006e3b380ac5d172602",
+      "hasCode": true
+    },
+    {
+      "ticker": "DIME",
+      "issuer": "dStock",
+      "address": "0xa72ae85ca2340ff74cc45c423f2a85a062a4fb4c",
+      "hasCode": true
+    },
+    {
+      "ticker": "SPCX",
+      "issuer": "xStock",
+      "address": "0xe8c8AFDf7E80bE51E91AFA28B6aC44404d270B5d",
+      "hasCode": true
+    },
+    {
+      "ticker": "NVDAX",
+      "issuer": "xStock",
+      "address": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+      "hasCode": true
+    },
+    {
+      "ticker": "SPYX",
+      "issuer": "xStock",
+      "address": "0xe7e553cd128f0011777323a0b44a7b96ea1cb540",
+      "hasCode": true
+    },
+    {
+      "ticker": "QQQX",
+      "issuer": "xStock",
+      "address": "0x4c1ae29c159838fc1b224636e28e086eb69101f7",
+      "hasCode": true
+    },
+    {
+      "ticker": "SKHYX",
+      "issuer": "xStock",
+      "address": "0x6215a58ed045d71f2561aaabe54f4c885c522998",
+      "hasCode": true
+    },
+    {
+      "ticker": "MUX",
+      "issuer": "xStock",
+      "address": "0xe2047ee3bddb5c99ae428ab83df63f8730698e30",
+      "hasCode": true
+    },
+    {
+      "ticker": "AAPLon",
+      "issuer": "Ondo",
+      "address": "0x81db0DF77669b3BE563e7a0591685a2C8C3EE1c5",
+      "hasCode": true
+    },
+    {
+      "ticker": "AMDon",
+      "issuer": "Ondo",
+      "address": "0x33706203A7a7c82B6F6c09dd9Ae4E6e881d36386",
+      "hasCode": true
+    },
+    {
+      "ticker": "AMZNon",
+      "issuer": "Ondo",
+      "address": "0xeD68F063264a01fd7f93087DC19CC1E0D614e8De",
+      "hasCode": true
+    },
+    {
+      "ticker": "BABAon",
+      "issuer": "Ondo",
+      "address": "0x799Bf997B733CAb2e1377D0411b63E35133991eb",
+      "hasCode": true
+    },
+    {
+      "ticker": "COINon",
+      "issuer": "Ondo",
+      "address": "0x639Bcd00422facAcA534063e3d860e8fcf78B46F",
+      "hasCode": true
+    },
+    {
+      "ticker": "COPXon",
+      "issuer": "Ondo",
+      "address": "0x86E33197369a3560CeE2Ab6Bb12376AC7b29f3dD",
+      "hasCode": true
+    },
+    {
+      "ticker": "CRCLon",
+      "issuer": "Ondo",
+      "address": "0x13a81c5e8b4AB05Fc721DfF7bA95e250b29458F8",
+      "hasCode": true
+    },
+    {
+      "ticker": "CRWVon",
+      "issuer": "Ondo",
+      "address": "0xd616dDC3a9e13e12533d7124d5BD94B53Fb60A3f",
+      "hasCode": true
+    },
+    {
+      "ticker": "EWYon",
+      "issuer": "Ondo",
+      "address": "0xed871e0D99369AB869Fc38255a284361A137746B",
+      "hasCode": true
+    },
+    {
+      "ticker": "FCXon",
+      "issuer": "Ondo",
+      "address": "0xA019295D44677dd2f5B066245453938B1b1C483B",
+      "hasCode": true
+    },
+    {
+      "ticker": "GLDon",
+      "issuer": "Ondo",
+      "address": "0x95FebDd6f447B5278c9b98743B4254eB02c6EA1d",
+      "hasCode": true
+    },
+    {
+      "ticker": "GOOGLon",
+      "issuer": "Ondo",
+      "address": "0x4D34798f18Eb747F7225663F0553eA2D880cf75D",
+      "hasCode": true
+    },
+    {
+      "ticker": "HOODon",
+      "issuer": "Ondo",
+      "address": "0xF1Df92AC8E22763A16bf4Bd9a966EEBcD70fA5a3",
+      "hasCode": true
+    },
+    {
+      "ticker": "IAUon",
+      "issuer": "Ondo",
+      "address": "0x83b01AC9e2D1632A70Dd1C813c5B8eDF29cd707f",
+      "hasCode": true
+    },
+    {
+      "ticker": "INTCon",
+      "issuer": "Ondo",
+      "address": "0x7bf529bb5Db370D679F33f4fe5420F48eE234bB7",
+      "hasCode": true
+    },
+    {
+      "ticker": "IVVon",
+      "issuer": "Ondo",
+      "address": "0xAd26B6048cc3682f67Fe4C829b7Ac99dbF95920e",
+      "hasCode": true
+    },
+    {
+      "ticker": "METAon",
+      "issuer": "Ondo",
+      "address": "0x46FA18Ffe2707bbecc46D457D40EFBE6B932f711",
+      "hasCode": true
+    },
+    {
+      "ticker": "MSFTon",
+      "issuer": "Ondo",
+      "address": "0xD53471f6D493f7eD766181D88Ba9c2Bfc371399A",
+      "hasCode": true
+    },
+    {
+      "ticker": "MSTRon",
+      "issuer": "Ondo",
+      "address": "0x8a64FDf0857c1C734A594cd1DB20B3f8E3f133f6",
+      "hasCode": true
+    },
+    {
+      "ticker": "MUon",
+      "issuer": "Ondo",
+      "address": "0x0f8E33F5CdefAE9C2E59de8fB61feD347046D046",
+      "hasCode": true
+    },
+    {
+      "ticker": "NFLXon",
+      "issuer": "Ondo",
+      "address": "0x81Ebb420a81855f1Bf1B0fF95eCa9d3Bd736ea89",
+      "hasCode": true
+    },
+    {
+      "ticker": "NVDAon",
+      "issuer": "Ondo",
+      "address": "0xB989ad9b91886b1Aaed8DaADb26F028b29b40945",
+      "hasCode": true
+    },
+    {
+      "ticker": "ORCLon",
+      "issuer": "Ondo",
+      "address": "0x4775e99a13651B1D077c2fa04Eb9BF007f684af5",
+      "hasCode": true
+    },
+    {
+      "ticker": "PALLon",
+      "issuer": "Ondo",
+      "address": "0x5Ff6E08A0Bdbc1ff11004FfB62B7aC7CdCf101Bd",
+      "hasCode": true
+    },
+    {
+      "ticker": "PLTRon",
+      "issuer": "Ondo",
+      "address": "0x039358AB6919159f6026Ea4428595a5AaF12A35C",
+      "hasCode": true
+    },
+    {
+      "ticker": "PPLTon",
+      "issuer": "Ondo",
+      "address": "0xB4C0eaf28Ae7f667D9dabAA995F7A6E75e094770",
+      "hasCode": true
+    },
+    {
+      "ticker": "QQQon",
+      "issuer": "Ondo",
+      "address": "0x911e2dCD2b70F44231F3F0f1C6ec9aF75068FD85",
+      "hasCode": true
+    },
+    {
+      "ticker": "RIVNon",
+      "issuer": "Ondo",
+      "address": "0x353D347bb7bc1C812E3a131d9b5193b3618029e5",
+      "hasCode": true
+    },
+    {
+      "ticker": "SLVon",
+      "issuer": "Ondo",
+      "address": "0xd53d98d13D93C817011645442c2e4d46E499B460",
+      "hasCode": true
+    },
+    {
+      "ticker": "SNDKon",
+      "issuer": "Ondo",
+      "address": "0xB8927cfF399E23328eEC0e457e75c709DCfcF382",
+      "hasCode": true
+    },
+    {
+      "ticker": "SPYon",
+      "issuer": "Ondo",
+      "address": "0x32eC2792aeC02122eDD9f28866B720db1e1c1B54",
+      "hasCode": true
+    },
+    {
+      "ticker": "TSLAon",
+      "issuer": "Ondo",
+      "address": "0x417883b1709545f1211A25b00ad13455fC7F1bc5",
+      "hasCode": true
+    },
+    {
+      "ticker": "TSMon",
+      "issuer": "Ondo",
+      "address": "0x3254cdffDDEDdb1F61B9eF6f67e178615CCb0E85",
+      "hasCode": true
+    },
+    {
+      "ticker": "UNGon",
+      "issuer": "Ondo",
+      "address": "0x2c81466C9B144E3B6e9D6e8858Bc0973a953Fb0A",
+      "hasCode": true
+    },
+    {
+      "ticker": "USOon",
+      "issuer": "Ondo",
+      "address": "0xA4dB50bB345151f3649539300523e83a8b8A6BC7",
+      "hasCode": true
+    }
+  ]
+}

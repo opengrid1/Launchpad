@@ -1,0 +1,27 @@
+{
+  "chainId": 1,
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "oracle": "0xD1Ca49bd44A447c48d2a1FAC5F35cF583D8a7b1b",
+  "contracts": {
+    "hookDeployer": "0x5c7a4f6Eb5FFbb55C0400e3d24438dA0dea08F38",
+    "hook": "0x5BdF79a5DE577f1911834d44069a361D3550EaEc",
+    "hookSalt": "0x000000000000000000000000000000000000000000000000000000000000091d",
+    "tokenDeployer": "0x92A5aD573270e271ad970FE32e072F4c0A8D3703",
+    "factory": "0x9568a86fa52527b0e39F5b2e363559F98034CED6",
+    "router": "0x02721Bc74c156bca0c85E464459A19b8f2666cB9"
+  },
+  "gas": {
+    "hookDeployer": "144125",
+    "hook": "5364446",
+    "tokenDeployer": "1903795",
+    "factory": "2735247",
+    "router": "2023603",
+    "tokenDeployer.setFactory": "44991",
+    "hook.setFactory": "45432",
+    "factory.setConverter": "47814",
+    "factory.renounceOwnership": "22493"
+  },
+  "deployer": "0x3349461feE846713D43e5cd5AFA7858A542dA18d",
+  "deployBlock": 26149421,
+  "renounced": true
+}

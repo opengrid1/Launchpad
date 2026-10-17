@@ -1,0 +1,8 @@
+node_modules
+dist
+dist-*
+.vercel
+dist
+dist-test
+deploy
+node_modules

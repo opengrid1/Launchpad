@@ -1,0 +1,54 @@
+<!--{"title": "Launch a coin · Anypair", "nav": "launch", "scripts": ["launch.js"], "desc": "Launch a coin on Base paired with any token. Pick who earns from every trade."}-->
+<div class="hero" style="padding-bottom:18px"><div><h1>Launch a coin</h1><p>Pick a pair, pick what holders earn. The whole supply goes into a Uniswap V4 pool at a $3,000 start cap and trades from the first block.</p></div></div>
+<div class="launch-grid">
+  <form id="lf" class="stack-col" novalidate autocomplete="off">
+    <section class="panel step">
+      <div class="step-h"><span class="n">01</span><h2>The coin</h2><p>Name and ticker can't change later</p></div>
+      <div class="stack-v">
+        <label class="logo-drop" for="logo"><span class="pv" id="logoPv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg></span><span><b>Logo</b><span id="logoNote">PNG, JPG, GIF or WebP. Stored on-chain, so it's shrunk to a small square.</span></span><input id="logo" type="file" accept="image/*" class="sr"></label>
+        <div class="row2">
+          <div class="field"><label for="name">Name</label><input class="input" id="name" maxlength="32" placeholder="Blue Cheese"></div>
+          <div class="field"><label for="sym">Ticker</label><div class="input-wrap"><span class="pre">$</span><input class="input with-pre" id="sym" maxlength="12" placeholder="CHEESE" style="text-transform:uppercase"></div></div>
+        </div>
+        <div class="field"><label for="desc">Description <span class="faint" style="font-weight:400">optional</span></label><textarea class="textarea" id="desc" maxlength="400" placeholder="What is it, and why now?"></textarea></div>
+        <div class="row3">
+          <div class="field"><label for="lx">X</label><input class="input" id="lx" placeholder="https://x.com/…"></div>
+          <div class="field"><label for="lw">Website</label><input class="input" id="lw" placeholder="https://…"></div>
+          <div class="field"><label for="lt">Telegram</label><input class="input" id="lt" placeholder="https://t.me/…"></div>
+        </div>
+      </div>
+    </section>
+    <section class="panel step">
+      <div class="step-h"><span class="n">02</span><h2>Pair it with</h2><p>Any token with a real pool on Base</p></div>
+      <button type="button" class="picked" id="pairBtn"></button>
+      <div id="pairStatus"></div>
+    </section>
+    <section class="panel step">
+      <div class="step-h"><span class="n">03</span><h2>Who earns from trades</h2><p>2% fee on every trade, fixed forever</p></div>
+      <div class="toggle-row"><button type="button" class="switch" role="switch" id="rw" aria-checked="true" aria-label="Holder rewards"></button><div><b>Pay holders 0.5% of every trade</b><span id="rwNote">You keep 0.7%, holders share 0.5%, the platform takes 0.8%.</span></div></div>
+      <div id="basketBox" style="margin-top:16px">
+        <div class="label" style="margin-bottom:8px">Holders can claim their share as</div>
+        <div class="basket-list" id="basket"></div>
+        <p class="hint muted" style="font-size:12.5px;margin-top:10px">Rewards build up in the pair token. Add up to 4 tokens and holders can also take them as an equal split of those, bought at claim time.</p>
+      </div>
+    </section>
+    <section class="panel step">
+      <div class="step-h"><span class="n">04</span><h2>First buy</h2><p>Optional, in the launch transaction</p></div>
+      <div class="row2" style="align-items:end">
+        <div class="field"><label for="dev">Buy with ETH</label><div class="input-wrap"><input class="input num" id="dev" inputmode="decimal" placeholder="0.0"></div></div>
+        <div class="quick" style="margin:0"><button type="button" data-dev="0">None</button><button type="button" data-dev="0.005">0.005</button><button type="button" data-dev="0.01">0.01</button><button type="button" data-dev="0.02">0.02</button></div>
+      </div>
+      <p class="hint muted" id="devNote" style="font-size:12.5px;margin-top:10px">Only you can buy in the launch block. Everyone else pays a fee that starts at 99% and falls to 2% over 20 seconds, so bots can't snipe the start.</p>
+    </section>
+    <div class="panel step" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px"><b style="font-family:var(--f-display);font-size:17px">Ready?</b><p class="muted" style="font-size:13px" id="readyNote">Fill in a name, a ticker and a pair.</p></div>
+      <button type="submit" class="btn btn-primary btn-lg" id="launchBtn">Launch coin</button>
+    </div>
+  </form>
+  <aside class="preview">
+    <div class="label">Preview</div>
+    <div id="pv"></div>
+    <div class="panel panel-b"><div class="kv" id="sum"></div></div>
+    <p class="note">Launching costs only gas. Supply is 1,000,000,000 and nobody gets an allocation: every coin starts in the pool.</p>
+  </aside>
+</div>

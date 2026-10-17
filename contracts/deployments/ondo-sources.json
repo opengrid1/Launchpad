@@ -1,0 +1,151 @@
+{
+ "note": "Ondo tokenized stocks with a Uniswap pool deep enough for the Etherhook oracle (>= $10k anchor side), each checked by calling register on a mainnet fork. Prices are from that check.",
+ "checkedAt": "2026-10-08T03:42:37.999Z",
+ "sources": [
+  {
+   "symbol": "NVDAon",
+   "token": "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
+   "dex": 3,
+   "pool": "0x0000000000000000000000000000000000000000",
+   "label": "V4 USDC 5100",
+   "usdAtCheck": 237.84,
+   "key": {
+    "currency0": "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE",
+    "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "fee": 5100,
+    "tickSpacing": 51,
+    "hooks": "0x0000000000000000000000000000000000000000"
+   },
+   "v4Id": "0xa9a6651fba74df1aab94065ffaabe750d6ed835b94a9e28925ec79beec2d5f73",
+   "note": "moved from the V3 pool (one observation slot) by the admin"
+  },
+  {
+   "symbol": "SLVon",
+   "token": "0xF3e4872e6a4cF365888D93b6146a2bAA7348F1A4",
+   "dex": 2,
+   "pool": "0xEeb8F880EAd7281A301ef2E6791A6bBe790603eD",
+   "label": "V3 USDC 10000",
+   "usdAtCheck": 53.97
+  },
+  {
+   "symbol": "SPCXon",
+   "token": "0xc9eef266834730340A55B6CC24621B31BAF55581",
+   "dex": 2,
+   "pool": "0x0461c60Ad5fC24cB1fc075b7f202095819De6944",
+   "label": "V3 USDC 10000",
+   "usdAtCheck": null
+  },
+  {
+   "symbol": "TSLAon",
+   "token": "0xf6b1117ec07684D3958caD8BEb1b302bfD21103f",
+   "dex": 2,
+   "pool": "0x31227b50eCCDC9C589826AA2D9E7C5619B1895Da",
+   "label": "V3 USDC 10000",
+   "usdAtCheck": 378.94
+  },
+  {
+   "symbol": "SPYon",
+   "token": "0xFeDC5f4a6c38211c1338aa411018DFAf26612c08",
+   "dex": 2,
+   "pool": "0x5638bbDE046EC2EFC7C8f3fd8DC5A9A1016f7EEB",
+   "label": "V3 USDC 3000",
+   "usdAtCheck": 783.8
+  },
+  {
+   "symbol": "GOOGLon",
+   "token": "0xbA47214eDd2bb43099611b208f75E4b42FDcfEDc",
+   "dex": 2,
+   "pool": "0x39FCB1935f6Ccb0A106D05eB928205C59646af57",
+   "label": "V3 USDC 10000",
+   "usdAtCheck": 348.2
+  },
+  {
+   "symbol": "AAPLon",
+   "token": "0x14c3abF95Cb9C93a8b82C1CdCB76D72Cb87b2d4c",
+   "dex": 2,
+   "pool": "0xad82C9EB065a5CFed71DB087e4a52C8a09c69921",
+   "label": "V3 USDC 10000",
+   "usdAtCheck": 334.82
+  },
+  {
+   "symbol": "GMEon",
+   "token": "0x71d24Baeb0A033ec5F90FF65C4210545AF378D97",
+   "dex": 3,
+   "pool": "0x0000000000000000000000000000000000000000",
+   "label": "V4 USDC 50000",
+   "usdAtCheck": 24.73,
+   "key": {
+    "currency0": "0x71d24Baeb0A033ec5F90FF65C4210545AF378D97",
+    "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "fee": 50000,
+    "tickSpacing": 500,
+    "hooks": "0x0000000000000000000000000000000000000000"
+   },
+   "v4Id": "0x6951864e6273a4dbf84bd7c145f920c205d3f6a7d63905f7439499e169bf3acd"
+  },
+  {
+   "symbol": "MCDon",
+   "token": "0x4C82c8cD9a218612DCe60b156B73A36705645e3b",
+   "dex": 3,
+   "pool": "0x0000000000000000000000000000000000000000",
+   "label": "V4 USDC 50000",
+   "usdAtCheck": 247.85,
+   "key": {
+    "currency0": "0x4C82c8cD9a218612DCe60b156B73A36705645e3b",
+    "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "fee": 50000,
+    "tickSpacing": 500,
+    "hooks": "0x0000000000000000000000000000000000000000"
+   },
+   "v4Id": "0x1bd04e4d45aa98bbeb4f783480c231a68b3e55476b9c68ff64b08fbc1a7841f4"
+  },
+  {
+   "symbol": "METAon",
+   "token": "0x59644165402b611b350645555B50Afb581C71EB2",
+   "dex": 3,
+   "pool": "0x0000000000000000000000000000000000000000",
+   "label": "V4 USDC 50000",
+   "usdAtCheck": 745.65,
+   "key": {
+    "currency0": "0x59644165402b611b350645555B50Afb581C71EB2",
+    "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "fee": 50000,
+    "tickSpacing": 500,
+    "hooks": "0x0000000000000000000000000000000000000000"
+   },
+   "v4Id": "0x7dcb0d2751cee9117b5dbeae953a0e835ecefc0472056c7877da4f835c970176"
+  },
+  {
+   "symbol": "QQQon",
+   "token": "0x0e397938C1Aa0680954093495B70A9F5e2249aBa",
+   "dex": 3,
+   "pool": "0x0000000000000000000000000000000000000000",
+   "label": "V4 USDC 6500",
+   "usdAtCheck": 756.99,
+   "key": {
+    "currency0": "0x0e397938C1Aa0680954093495B70A9F5e2249aBa",
+    "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "fee": 6500,
+    "tickSpacing": 65,
+    "hooks": "0x0000000000000000000000000000000000000000"
+   },
+   "v4Id": "0x2e5561232dd48a18f60ea547e6b5f3ce676b774c0050b9bc195314ffbb85e17c"
+  },
+  {
+   "symbol": "SGOVon",
+   "token": "0x8De5D49725550f7b318b2FA0f1B1F118E98E8D0F",
+   "dex": 3,
+   "pool": "0x0000000000000000000000000000000000000000",
+   "label": "V4 USDC 38000",
+   "usdAtCheck": 106.14,
+   "key": {
+    "currency0": "0x8De5D49725550f7b318b2FA0f1B1F118E98E8D0F",
+    "currency1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "fee": 38000,
+    "tickSpacing": 380,
+    "hooks": "0x0000000000000000000000000000000000000000"
+   },
+   "v4Id": "0x5c53168c5055092d427bdeb309d76e1e5042128a441d3ca68be67f9cbaa6ed53"
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-import { BRAND, IS_STOCK_BOARD } from "../lib/brand";
+import { BRAND, IS_HYPER, IS_STOCK_BOARD } from "../lib/brand";
 import { env } from "../lib/env";
 import { BaseFooter } from "./BaseFooter";
 
@@ -10,7 +10,7 @@ import { BaseFooter } from "./BaseFooter";
  * above it, so links stay reachable via the page end.
  */
 export function Footer() {
-  if (IS_STOCK_BOARD) return <BaseFooter />;
+  if (IS_STOCK_BOARD || IS_HYPER) return <BaseFooter />;
   return (
     <footer className="border-t border-edge">
       <div className="mx-auto flex h-12 max-w-6xl items-center gap-4 px-4 text-[12px] text-ink-3 sm:px-5">

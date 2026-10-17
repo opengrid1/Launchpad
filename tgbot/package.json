@@ -1,0 +1,23 @@
+{
+  "name": "chipfi-tgbot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Chipfi Telegram trading bot: a NEAR wallet per user, buy and sell Chipfi coins from chat.",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "grammy": "^1.36.0",
+    "near-api-js": "^6.5.1",
+    "tsx": "^4.19.0",
+    "@near-js/transactions": "^2.5.1",
+    "sharp": "^0.34.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

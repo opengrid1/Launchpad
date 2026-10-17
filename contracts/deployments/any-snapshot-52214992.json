@@ -1,0 +1,102 @@
+{
+  "token": "0x78c171589fD107e95638559fbC0A2a7c8D75f805",
+  "symbol": "ANY",
+  "block": 52214992,
+  "timestamp": 1791219331,
+  "transfers": 148,
+  "totalSupply": "1000000000000000000000000000",
+  "heldByHolders": "76724491941049794328889542",
+  "heldByHoldersWhole": 76724491.9410498,
+  "holders": [
+    {
+      "address": "0xe5B498A00596ab2fa0E8A86cDDe15502b2552208",
+      "balance": "34203616637042871926193277",
+      "balanceWhole": 34203616.63704287,
+      "isContract": false,
+      "pendingEthRewards": "0.000319550257254792",
+      "shareOfHeld": 0.445797890239
+    },
+    {
+      "address": "0xaAd5f333dFBD6c5561C9D41E624A12069b337B46",
+      "balance": "30780029934226364652154062",
+      "balanceWhole": 30780029.934226364,
+      "isContract": false,
+      "pendingEthRewards": "0.002308951649616911",
+      "shareOfHeld": 0.401176067192
+    },
+    {
+      "address": "0xd91982173f6F08AAC60BEf4DEB21c487E9B91AF0",
+      "balance": "5832612928145624082105727",
+      "balanceWhole": 5832612.928145624,
+      "isContract": false,
+      "pendingEthRewards": "0.000435914417082024",
+      "shareOfHeld": 0.076020222233
+    },
+    {
+      "address": "0x935Ba902e12A043239756b940D07984ca10D66Ef",
+      "balance": "5026406679707236402180677",
+      "balanceWhole": 5026406.679707237,
+      "isContract": false,
+      "pendingEthRewards": "0.000402125511864879",
+      "shareOfHeld": 0.065512413996
+    },
+    {
+      "address": "0x99Fc7a400D038f4A6Bdc8eCeE31c41450Bc249BF",
+      "balance": "878641509690705905125735",
+      "balanceWhole": 878641.5096907059,
+      "isContract": false,
+      "pendingEthRewards": "0.000394103928536606",
+      "shareOfHeld": 0.011451903915
+    },
+    {
+      "address": "0x1111110f0f73C0b2eF09eC012Eae758b3E03A902",
+      "balance": "3184252236991361130063",
+      "balanceWhole": 3184.2522369913613,
+      "isContract": true,
+      "pendingEthRewards": "0.000000071366465309",
+      "shareOfHeld": 0.000041502421
+    },
+    {
+      "address": "0x8F10B468b06c6FD214B65F87778827F7D113f996",
+      "balance": "1",
+      "balanceWhole": 1e-18,
+      "isContract": true,
+      "pendingEthRewards": "0.0",
+      "shareOfHeld": 0
+    }
+  ],
+  "excluded": [
+    {
+      "address": "0x498581ff718922c3f8e6a244956af099b2652b2b",
+      "why": "Uniswap V4 PoolManager (both pools' liquidity)",
+      "balance": "923275508058950205671099274"
+    },
+    {
+      "address": "0x4adca6c4e9aa0dbc8b26da334ea36df3f410c0cc",
+      "why": "Anypair hook",
+      "balance": "0"
+    },
+    {
+      "address": "0xeb0905ff25886e1c4fc317d505161480ecc2434b",
+      "why": "Anypair factory",
+      "balance": "11184"
+    },
+    {
+      "address": "0x456f9a4f5f4dffbaa79878fb9fd095fb48f41960",
+      "why": "Anypair router",
+      "balance": "0"
+    },
+    {
+      "address": "0x78c171589fd107e95638559fbc0a2a7c8d75f805",
+      "why": "the token itself",
+      "balance": "0"
+    },
+    {
+      "address": "0x0000000000000000000000000000000000000000",
+      "why": "zero address",
+      "balance": "-1000000000000000000000000000"
+    }
+  ],
+  "checkedOnChain": 7,
+  "mismatches": 0
+}

@@ -1,0 +1,68 @@
+<!--{"title": "Launch a strategy coin · Etherhook", "nav": "launch", "scripts": ["launch.js"], "desc": "Launch a coin on Ethereum and choose its strategy: vault backing, dip buybacks, take-profit burns, redeem and holder rewards."}-->
+<header class="page-h">
+  <h1>Launch a strategy coin</h1>
+  <p>Pick a backing token, set the tax, and decide where it goes. The strategy runs on its own after launch.</p>
+</header>
+<div class="launch-grid">
+  <form id="lf" class="form-col" novalidate autocomplete="off">
+    <section class="panel">
+      <div class="step-h"><span class="n">1</span><h2>The coin</h2></div>
+      <div class="step-b">
+        <label class="logo-drop" for="logo"><span class="pv" id="logoPv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg></span><span><b>Logo</b><span>Square image, optional</span></span><input id="logo" type="file" accept="image/*" class="sr"></label>
+        <div class="row2">
+          <div class="field"><label for="name">Name</label><input class="input" id="name" maxlength="32" placeholder="Frog Reserve"></div>
+          <div class="field"><label for="sym">Ticker</label><div class="input-wrap"><span class="pre">$</span><input class="input with-pre" id="sym" maxlength="12" placeholder="FROGR" style="text-transform:uppercase"></div></div>
+        </div>
+        <div class="field"><label for="desc">Description <span class="faint" style="font-weight:400">optional</span></label><textarea class="textarea" style="height:64px" id="desc" maxlength="400" placeholder="What does the coin hold, and why?"></textarea></div>
+        <details class="more"><summary>Links <span class="faint">optional</span></summary><div class="row3" style="margin-top:12px">
+          <div class="field"><label for="lx">X</label><input class="input" id="lx" placeholder="https://x.com/…"></div>
+          <div class="field"><label for="lw">Website</label><input class="input" id="lw" placeholder="https://…"></div>
+          <div class="field"><label for="lt">Telegram</label><input class="input" id="lt" placeholder="https://t.me/…"></div>
+        </div></details>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="step-h"><span class="n">2</span><h2>Backing token</h2></div>
+      <div class="step-b">
+        <button type="button" class="picked" id="pairBtn"></button>
+        <div id="pairStatus"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="step-h"><span class="n">3</span><h2>Tax and where it goes</h2></div>
+      <div class="step-b">
+        <div class="tax" id="taxBox"></div>
+        <div class="presets" id="presets"></div>
+        <div class="alloc" id="alloc"></div>
+        <div class="meter" id="meter"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="step-h"><span class="n">4</span><h2>Strategy options</h2></div>
+      <div class="step-b" id="opts" style="gap:0"></div>
+    </section>
+
+    <section class="panel">
+      <div class="step-h"><span class="n">5</span><h2>Protection</h2></div>
+      <div class="step-b" id="prot" style="gap:0"></div>
+    </section>
+
+    <section class="panel">
+      <div class="step-h"><span class="n">6</span><h2>First buy</h2></div>
+      <div class="step-b">
+        <div class="row2" style="align-items:end">
+          <div class="field"><label for="dev">Buy with ETH</label><div class="input-wrap"><input class="input num with-post" id="dev" inputmode="decimal" placeholder="0.0"><span class="post">ETH</span></div></div>
+          <div class="quick"><button type="button" data-dev="0">None</button><button type="button" data-dev="0.05">0.05</button><button type="button" data-dev="0.1">0.1</button><button type="button" data-dev="0.25">0.25</button></div>
+        </div>
+        <p class="muted" id="devNote" style="font-size:12.5px;line-height:1.5"></p>
+      </div>
+    </section>
+  </form>
+
+  <aside class="summary">
+    <section class="panel sum-card" id="sum"></section>
+  </aside>
+</div>

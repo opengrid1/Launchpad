@@ -9,7 +9,35 @@ import "./styles.css";
 // and theme scope in sync with the flavor selected at build time (VITE_BRAND).
 document.title = BRAND.title;
 document.querySelector('meta[name="description"]')?.setAttribute("content", BRAND.description);
-document.documentElement.dataset.brand = BRAND_FLAVOR;
+// squidpad (ink), meowstock (meow) and the Robinhood Chain flavor share the ink
+// theme scope (teal, chart-first, cat mark).
+const INK_STYLE =
+  BRAND_FLAVOR === "ink" || BRAND_FLAVOR === "meow" || BRAND_FLAVOR === "robinhood";
+document.documentElement.dataset.brand = INK_STYLE ? "hyper" : BRAND_FLAVOR;
+if (INK_STYLE) document.documentElement.dataset.flavor = "ink";
+// The Robinhood Chain flavor rides the ink layout but repaints it with the
+// "cartoon" skin: bright comic palette, thick black outlines, sticker cards
+// with hard offset shadows, a rounded playful display font.
+if (BRAND_FLAVOR === "robinhood") document.documentElement.dataset.skin = "cartoon";
+
+// hyperstock ships its own mark; the other flavors keep the icons index.html
+// declares. Swapped here because all flavors build from one index.html.
+if (BRAND_FLAVOR === "hyper" || INK_STYLE) {
+  const font = document.createElement("link");
+  font.rel = "stylesheet";
+  font.href = "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@500;600;700&family=Rock+Salt&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Fredoka:wght@500;600;700&family=Baloo+2:wght@600;700;800&display=swap";
+  document.head.appendChild(font);
+  const icon = INK_STYLE ? undefined : "/hyperstock-favicon.png";
+  if (icon) {
+    document.querySelector('link[rel="icon"][sizes="64x64"]')?.setAttribute("href", icon);
+    document.querySelector('link[rel="icon"][sizes="32x32"]')?.setAttribute("href", "/hyperstock-favicon-32.png");
+    document.querySelector('link[rel="apple-touch-icon"]')?.setAttribute("href", "/hyperstock-touch.png");
+  } else {
+    import("./lib/hyper/defaultLogo").then(({ BRAND_MARK }) => {
+      document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach((l) => l.setAttribute("href", BRAND_MARK));
+    });
+  }
+}
 
 // After a redeploy, a stale tab can request lazy chunks that no longer exist
 // (hashed filenames changed) and blank out. Vite signals that as

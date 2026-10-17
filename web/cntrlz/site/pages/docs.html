@@ -1,0 +1,58 @@
+<!--{"title": "How it works · cntrl-z.fun", "nav": "docs", "scripts": ["docs.js"]}-->
+<div class="doc">
+  <nav class="doc-nav"><a href="#window">The cntrl-z window</a><a href="#price">What a window costs</a><a href="#cancel">Cancel or keep</a><a href="#money">Where the money goes</a><a href="#pairs">Pairs and stocks</a><a href="#launch">Launching</a><a href="#kept">Kept rate</a><a href="#safety">What can't happen</a><a href="#faq">FAQ</a></nav>
+  <article class="prose">
+    <h1>How cntrl-z.fun works</h1>
+    <p class="lead">A launchpad where every buy can come with a window to take it back. Coins trade against ETH, tokenized gold or tokenized stocks, on Uniswap V4, with one rule set that every coin shares.</p>
+    <div class="keyrow glance"><div class="stat-key"><span>Window</span><b>0.05 ETH</b><small>per 6 hours, 30m to 7d</small></div><div class="stat-key"><span>Cancel</span><b class="c-kept">100% back</b><small>of the buy, any time inside</small></div><div class="stat-key"><span>Premium</span><b class="c-undone">Burned</b><small>cancel or keep</small></div><div class="stat-key"><span>Tax</span><b>1%</b><small>0.7% creator, 0.3% platform</small></div></div>
+    <nav class="doc-jump" aria-label="Sections"><a class="key sm" href="#window">Window</a><a class="key sm" href="#price">Price</a><a class="key sm" href="#cancel">Cancel or keep</a><a class="key sm" href="#money">Money</a><a class="key sm" href="#pairs">Pairs</a><a class="key sm" href="#launch">Launching</a><a class="key sm" href="#kept">Kept rate</a><a class="key sm" href="#safety">Safety</a><a class="key sm" href="#faq">FAQ</a></nav>
+
+    <h2 id="window">The cntrl-z window</h2>
+    <p>When you buy a coin here you can <b>rent a window</b>: anything from thirty minutes to seven days. For that long:</p>
+    <ul><li>The ETH you paid for the coins is <b>not spent on the pool</b>. The contract takes the slice of liquidity your buy would have used out of the pool and holds your ETH and your coins side by side. The price moves as if you bought.</li><li>You can press <b>Cancel</b> at any moment and get all of that ETH back, whatever the chart did.</li><li>Your coins are yours but can't be sold or moved until the window closes.</li></ul>
+    <p>When the window closes the coins unlock into your wallet and the buy is final. You can also press <b>Keep</b> early. A buy without a window is a normal swap: coins now, no taking it back.</p>
+
+    <h2 id="price">What a window costs</h2>
+    <div class="box" id="priceBox"></div>
+    <p>The premium is paid when you buy, on top of the buy itself, and it is <b>never refunded</b>. Cancel or keep, it is spent buying the coin from the pool and burning it. Every window makes the coin a little scarcer.</p>
+    <p>A window can cost at most <b>30% of the buy</b>, so small buys get short windows: 0.05 ETH of coins can rent about 1.8 hours, and a six-hour window needs a buy of at least 0.167 ETH.</p>
+
+    <h2 id="cancel">Cancel or keep</h2>
+    <div class="table-wrap"><table class="list"><thead><tr><th class="l">You press</th><th class="l">Your ETH</th><th class="l">Your coins</th><th class="l">Premium</th></tr></thead><tbody>
+      <tr><td class="l"><b>Cancel</b></td><td class="l">All of it comes back</td><td class="l">Back into the pool</td><td class="l">Burned</td></tr>
+      <tr><td class="l"><b>Keep</b>, or the window closes</td><td class="l">Into the pool as liquidity</td><td class="l">Unlock into your wallet</td><td class="l">Burned</td></tr>
+    </tbody></table></div>
+    <p>The 1% tax on the buy is taken either way, like any trade. So a cancelled 1 ETH buy with a six-hour window costs you 0.01 ETH of tax and 0.05 ETH of premium, and 0.99 ETH comes back.</p>
+
+    <h2 id="money">Where the money goes</h2>
+    <h3>The 1% tax</h3>
+    <p>Every buy and sell pays 1%, in the coin's pair token.</p>
+    <table class="list"><thead><tr><th class="l">Share</th><th class="l">Goes to</th></tr></thead><tbody><tr><td class="l">0.7%</td><td class="l">The creator</td></tr><tr><td class="l">0.3%</td><td class="l">The platform</td></tr></tbody></table>
+    <h3>The premiums</h3>
+    <p>All of it buys the coin and burns it. The creator never touches a premium, and neither do we.</p>
+    <h3>The pool</h3>
+    <p>All 1,000,000,000 coins go into the pool at launch. When a buyer keeps a window, their ETH is added to the pool as liquidity. Nobody can take liquidity out of the pool.</p>
+
+    <h2 id="pairs">Pairs and stocks</h2>
+    <p>The creator picks what the coin trades against: ETH, tokenized gold (PAXG or XAUt), or any Ondo tokenized stock on Ethereum: Tesla, NVIDIA, Apple, the S&amp;P 500 and five hundred more. A stock pair makes a coin that moves with the stock underneath it. Nothing else: no stablecoins, no other memecoins.</p>
+    <p>You can always pay in ETH, and the window premium is always in ETH. If the coin's pair is a stock, the router swaps your ETH into it on the way in. A cancelled buy on a stock-paired coin gives you back the stock tokens that were held for you, and you can swap them to ETH in one click.</p>
+
+    <h2 id="launch">Launching</h2>
+    <ol><li>Name, ticker, a line about it, a logo if you like.</li><li>Pick the pair.</li><li>Optionally buy first, in the launch transaction. The first buy has no window.</li></ol>
+    <p>All 1B coins go into the pool at a $5,000 starting market cap. There is no presale and no creator allocation. Launching costs only gas. The coin's rules can't be changed afterwards, by the creator or by us.</p>
+    <p>Every coin launches with the same protections: a high buy tax for the first minute that falls to the normal 1%, so snipers can't front-run the launch, and one swap per wallet per block, so sandwich bots have nothing to work with.</p>
+
+    <h2 id="kept">Kept rate</h2>
+    <p>Every coin shows its <b>kept rate</b>: the share of window buys that were kept rather than cancelled. A coin at 95% is one people bought and were happy to hold. A coin at 40% is one people regret. Explore has a "Most kept" view.</p>
+
+    <h2 id="safety">What can't happen</h2>
+    <ul><li>The ETH (or pair token) inside an open window belongs to that buyer. Only they can move it, by cancelling or keeping. Nobody else.</li><li>After every buy, cancel and keep, the contract checks it still holds every coin and every unit of pair it owes to open windows, and reverts if not.</li><li>The tax, the window prices and the launch protection are fixed in the contracts.</li><li>Coins inside a window can't be sold, moved or used to sandwich anyone.</li><li>Nobody can mint, pause trading, freeze a wallet or move anyone's coins.</li><li>Only the hook adds or removes pool liquidity. Nobody can pull liquidity out of a coin's pool.</li></ul>
+
+    <h2 id="faq">FAQ</h2>
+    <details><summary>Does a window cost anything if I keep the coins?</summary><p>Yes. The premium is paid when you buy and burned either way. It buys time, not a refund.</p></details>
+    <details><summary>Why is the premium a fixed amount of ETH and not a percentage?</summary><p>Because time costs the same whoever is buying. A fixed price per hour also means a wallet can't spam tiny windows to wash-trade the chart for nothing. The 30% cap keeps it in proportion for small buys.</p></details>
+    <details><summary>Can I cancel part of a buy?</summary><p>Each buy is its own window, and each one is cancelled whole. Make two buys if you want two windows.</p></details>
+    <details><summary>What if the price moved while my window was open?</summary><p>Cancel gives you back the ETH you put in, whatever the price did. Keep gives you the coins you bought at the price you bought them.</p></details>
+    <details><summary>Which wallets work?</summary><p>Any Ethereum wallet: MetaMask, Rabby, Coinbase Wallet, Rainbow, and anything that connects through WalletConnect.</p></details>
+  </article>
+</div>
