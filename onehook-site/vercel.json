@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/docs", "destination": "/docs/introduction", "statusCode": 307 }
+  ],
+  "rewrites": [
+    { "source": "/((?!docs/|img/|.*\\..*).*)", "destination": "/index.html" }
+  ]
+}

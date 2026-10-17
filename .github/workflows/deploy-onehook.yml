@@ -1,0 +1,38 @@
+name: Deploy onehook.vercel.app
+
+# Deploys the static site in onehook-site/ to the Vercel project that owns
+# onehook.vercel.app. Manual only: run it from the Actions tab after a change.
+#
+# Required repo secret:
+#   VERCEL_TOKEN               a Vercel token with access to the project
+# Required repo variable:
+#   VERCEL_ONEHOOK_PROJECT_ID  the project's id (Vercel > project > Settings)
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-onehook
+  cancel-in-progress: true
+
+env:
+  VERCEL_ORG_ID: team_lk1ckVdpYplOMlYBlWsSZ5u2
+  VERCEL_PROJECT_ID: ${{ vars.VERCEL_ONEHOOK_PROJECT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then echo "VERCEL_TOKEN not set"; exit 1; fi
+          if [ -z "$VERCEL_PROJECT_ID" ]; then echo "VERCEL_ONEHOOK_PROJECT_ID variable not set"; exit 1; fi
+          npm i -g vercel@latest
+          OUT=$(vercel deploy onehook-site --prod --yes --token="$VERCEL_TOKEN" --archive=tgz 2>&1) || { echo "$OUT"; exit 1; }
+          echo "$OUT"
