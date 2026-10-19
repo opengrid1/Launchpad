@@ -157,6 +157,8 @@ function initToken(){
   initChart();
   // trades
   tradesInit();
+  // holder count from the coin's Transfer history (the holders tab reuses the same index)
+  if(LIVE&&window.CHAIN&&CHAIN.holders) CHAIN.holders(X.addr,100000).then(H=>{ if(!X) return; X.h=H.filter(h=>h.wallet!==PM).length; paintStats(); }).catch(()=>{});
   // tabs
   $$('#tabs [data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
   // swap
