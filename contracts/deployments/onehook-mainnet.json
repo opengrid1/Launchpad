@@ -35,6 +35,12 @@
       "token": "0x1E204DF1440Cd6F53D09eAFdb72F74D75f23c60a",
       "dividends": true,
       "tx": "0x4cff6d7503ad7b092646af6b27d7432b5328d7b705fbecd95d2c86a0eb919532"
+    },
+    {
+      "symbol": "ONEHOOK",
+      "token": "0x215185fFBDDB64FAa7E8B461Cd708EeDc36d04DF",
+      "dividends": true,
+      "tx": "0x1278e71446593c298a78b08ca99819aec060330948f6a4c98d1ced5625cd0b0a"
     }
   ]
 }
