@@ -46,7 +46,7 @@ function initLaunch(){
     if(evo.on){ const t1=parseFloat(g('evoT1').value)||0, t2=parseFloat(g('evoT2').value)||0; evo.t1=t1; evo.t2=t2;
       g('evoMsg').textContent=(t1>0&&t2>t1)?'':'Milestones must increase — Training below Autonomous.';
       g('sumEvoRow').style.display=''; g('sumEvo').textContent='3 stages · $'+(t1||'?')+'K → $'+(t2||'?')+'K';
-      pe.style.display=''; pe.innerHTML=`<span class="pe-s on">⚡ Genesis</span><span class="pe-a">→</span><span class="pe-s">🧠 $${t1||'?'}K</span><span class="pe-a">→</span><span class="pe-s">🤖 $${t2||'?'}K</span>`;
+      pe.style.display=''; pe.innerHTML=`<span class="pe-s on">1 · Genesis · launch</span><span class="pe-a">→</span><span class="pe-s">2 · Training · $${t1||'?'}K</span><span class="pe-a">→</span><span class="pe-s">3 · Autonomous · $${t2||'?'}K</span>`;
     } else { g('sumEvoRow').style.display='none'; pe.style.display='none'; g('evoMsg').textContent=''; } }
   g('feeSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-fee]'); if(!b) return; inst.feeMode=b.dataset.fee; g('feeSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); sync(); });
   ['fName','fTick','fDesc','fCommit','fWeb','fX','fTg','feePct','snipePct','snipeMin','buyPct','divPct','maxPct','maxHrs','evoT1','evoT2'].forEach(i=>{ const el=g(i); if(el) el.addEventListener('input',()=>{ if(i==='evoT1'||i==='evoT2') g('evoPreset').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.ep==='custom')); sync(); if(i==='fName'||i==='fTick') val1(); if(i!=='fName'&&i!=='fTick') val2(); }); });

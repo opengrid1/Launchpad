@@ -193,18 +193,14 @@ function paintInfo(){ const pu=X.pairUsd; const cell=(k,usd,pair)=>{ const c=$(`
   const rw=(k,v,s)=>{ const c=$(`[data-rew="${k}"]`); if(!c) return; const d=c.querySelectorAll('div'); d[1].textContent=v; if(s!=null) d[2].textContent=s; };
   rw('all',fmtUsd(X.totalHolderRewards*pu),inPair(X.totalHolderRewards)); rw('day',fmtUsd(X.rew24),inPair(X.rew24/pu)); rw('rate',X.mc>0?fmtUsd(X.rew24/X.mc*1000):'$0.00');
   const rt=$('#rewText'); if(rt) rt.textContent=!X.rewards?'Dividends are off for this coin. The whole fee flows to the creator and platform (60/40); nothing is paid out to holders.':`A share of every fee is paid to holders in ${X.pair}, pro-rata to balance, automatically. Your dividends accrue as you hold and can be claimed anytime — there is nothing to stake and no lockup.`; }
-function renderEvo(){ const slot=$('#evoSlot'); if(!slot) return; if(!X||!X.evo){ slot.innerHTML=''; return; }
-  const e=X.evo, st=e.stages, cur=e.stage, mc=X.mc, next=st[cur+1];
-  const prog=next?Math.max(2,Math.min(100,(mc-st[cur].at)/(next.at-st[cur].at)*100)):100;
-  const track=st.map((s,i)=>`<div class="evo-stage ${i<cur?'done':i===cur?'on':''}"><span class="evo-emoji">${s.emoji}</span><b>${s.name}</b><small>${s.at===0?'launch':fmtUsd(s.at)}</small></div>`).join('');
-  slot.innerHTML=`<div class="evo-card">
-    <div class="evo-top"><span class="evo-tag">🧬 Evolution</span><span class="evo-now">${st[cur].emoji} ${esc(st[cur].name)} · stage ${cur+1} of ${st.length}</span></div>
-    <div class="evo-track">${track}</div>
-    ${next?`<div class="evo-bar"><div class="evo-fill" style="width:${prog.toFixed(0)}%"></div></div>
-    <div class="evo-next">Next: <b>${next.emoji} ${esc(next.name)}</b> at <b>${fmtUsd(next.at)}</b> market cap — <span>${fmtUsd(Math.max(0,next.at-mc))} to go</span>. Unlocks <b>${next.unlocks.map(esc).join(', ')}</b>.</div>`
-    :`<div class="evo-next">Fully evolved — <b>${esc(st[cur].name)}</b>, its final form.</div>`}
-    <p class="evo-note">The whole path is written on-chain at launch and never changes. The coin evolves by crossing milestones — no one decides it.</p>
-  </div>`; }
+/* Evolution: the coin's stage schedule, rendered in the same flat style as the stats row.
+   One cell per stage (number or check, name, milestone, what it switches on); no emoji, no bar. */
+function renderEvo(){ const slot=$('#evoSlot'); if(!slot) return; if(!X||!X.evo||!X.evo.stages||X.evo.stages.length<2){ slot.innerHTML=''; return; }
+  const st=X.evo.stages, cur=X.evo.stage, mc=X.mc, next=st[cur+1], usd=v=>fmtUsd(v).replace(/\.0([KMB])$/,'$1');
+  const cells=st.map((s,i)=>{ const k=i<cur?'done':i===cur?'on':'todo';
+    return `<li class="evo-cell ${k}"><div class="evo-k"><span class="evo-n font-mono">${k==='done'?ic('check','size-3'):i+1}</span><b>${esc(s.name)}</b><span class="evo-at font-mono">${s.at===0?'at launch':'at '+usd(s.at)}</span></div><div class="evo-d">${(s.unlocks||[]).map(esc).join(' · ')}</div></li>`; }).join('');
+  const pos=next?`Stage ${cur+1} of ${st.length} · ${usd(Math.max(0,next.at-mc))} to ${esc(next.name)}`:`Stage ${st.length} of ${st.length}`;
+  slot.innerHTML=`<div class="evo"><div class="evo-head"><span class="evo-title">Evolution</span><span class="evo-pos font-mono">${pos}</span></div><ol class="evo-grid">${cells}</ol><p class="evo-note">Milestones are market cap in USD and are fixed at launch. The coin moves to the next stage on its own once a milestone is crossed.</p></div>`; }
 function showTab(k){ $$('#tabs [data-tab]').forEach(b=>{ const on=b.dataset.tab===k; b.className=b.className.replace(/ text-text-primary| text-text-muted hover:text-text-secondary/g,'')+(on?' text-text-primary':' text-text-muted hover:text-text-secondary'); });
   $$('#panes [data-pane]').forEach(p=>{ const on=p.dataset.pane===k; if(p.classList.contains('md:hidden')) p.classList.toggle('hidden-i',!on); else { p.classList.toggle('hidden',!on); if(on&&p.classList.contains('md:block')) p.classList.remove('hidden'); } });
   $$('#panes [data-pane="tx"]').forEach(p=>{ if(p.classList.contains('md:block')){ p.classList.toggle('hidden-i',k!=='tx'); p.classList.add('hidden'); } });
