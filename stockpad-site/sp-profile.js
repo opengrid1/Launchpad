@@ -31,7 +31,7 @@ window.SP_PAGE=function(){
     $('#pf-av').innerHTML=SP.avatar(who,56);
     const full=cs(who); $('#pf-addr').textContent=shortAddr(full); $('#pf-addr').title=full;
     $('#pf-copy').onclick=()=>SP.copy(full,'Address copied'); $('#pf-ext').href=EXP+'/address/'+who;
-    const tags=[]; if(readOnly) tags.push('<span class="badge">View only</span>'); if(!readOnly&&SP.isAdmin()) tags.push('<span class="badge ac">Operator</span>'); if(P&&P.created.length) tags.push(`<span class="badge">Creator of ${P.created.length===1?esc(P.created[0].x.t):P.created.length+' coins'}</span>`);
+    const tags=[]; if(readOnly) tags.push('<span class="badge">View only</span>'); if(!readOnly&&SP.isAdmin()) tags.push('<span class="badge acl">Operator</span>'); if(P&&P.created.length) tags.push(`<span class="badge">Creator of ${P.created.length===1?esc(P.created[0].x.t):P.created.length+' coins'}</span>`);
     $('#pf-tags').innerHTML=tags.join('');
     const acts=[]; const claimable=P?P.holdings.filter(h=>h.pend>0):[];
     if(!readOnly&&claimable.length) acts.push(`<button class="btn pri" id="pf-claimall">${ic('coins')}<span>Claim all rewards</span></button>`);

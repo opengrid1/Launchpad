@@ -28,14 +28,15 @@ function launchInit(){
   function snipeBlocks(){ return clamp(Math.round(fields.snipeMin()*60/12),5,7200); }
 
   /* ---------- step 1: pairs ---------- */
-  function paintPairs(){ const counts={}; TOK.forEach(x=>{ counts[x.pair]=(counts[x.pair]||0)+1; }); const mk=SP.market(); g('mk-status').textContent=mk.label+' · '+mk.detail;
+  function paintPairs(){ const counts={}; TOK.forEach(x=>{ counts[x.pair]=(counts[x.pair]||0)+1; }); const mk=SP.market(); g('mk-status').textContent=S.pair?`${S.pair.ticker} ${mk.open?'is trading on NYSE now':'market is closed, '+mk.detail.toLowerCase()}. The pool trades around the clock.`:'';
     g('pairs').innerHTML=PAIRS.map(p=>{ const px=SP.prices[p.address], n=counts[p.symbol]||0; return `<button type="button" class="pc${S.pair&&S.pair.address===p.address?' on':''}" data-p="${p.address}"><img src="${p.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span class="nm"><b>${esc(p.ticker)} <span class="muted" style="font-weight:400">${esc(p.name)}</span></b><small>${esc(p.symbol)}</small></span><span class="ft"><span>${p.eth?'TRADES 24/7':`<i class="dot ${mk.open?'open':''}"></i>${mk.open?'NYSE OPEN':'NYSE CLOSED'}`}</span><span class="cnt">${n} ${n===1?'coin':'coins'}</span></span><span class="px" data-px="${p.address}">${px?fmtPx(px):'…'}</span><span class="tick">${ic('check')}</span></button>`; }).join('');
-    $$('#pairs [data-p]').forEach(b=>b.onclick=()=>{ setPair(PAIRS.find(p=>p.address===b.dataset.p)); }); }
+    $$('#pairs [data-p]').forEach(b=>b.onclick=()=>{ setPair(PAIRS.find(p=>p.address===b.dataset.p)); g('pair-dd').classList.remove('open'); });
+    const pv=g('pair-pv'); if(pv){ pv.innerHTML=S.pair?`<img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.ticker)} <small>${esc(S.pair.name)} · ${esc(S.pair.symbol)}</small>`:'Select'; } }
   function setPair(p){ S.pair=p||null; g('pair-err').textContent=''; $$('#pairs .pc').forEach(b=>b.classList.toggle('on',!!S.pair&&b.dataset.p===S.pair.address)); if(S.pair){ const u=new URL(location.href); u.searchParams.set('pair',S.pair.symbol); history.replaceState(null,'',u); SP.pairUsd(S.pair.address).then(()=>{ paintPairs(); sync(); }).catch(()=>{}); } sync(); }
   function preselect(){ const q=(new URLSearchParams(location.search).get('pair')||'').trim().toLowerCase(); if(!q) return; const p=PAIRS.find(x=>x.symbol.toLowerCase()===q||x.ticker.toLowerCase()===q||x.address===q); if(p) S.pair=p; }
 
   /* ---------- step 2: identity ---------- */
-  function paintLogo(){ const d=g('drop'), inn=g('drop-in'); d.classList.toggle('has',!!S.logo); inn.innerHTML=S.logo?`<img src="${S.logo}" alt="">`:IMG_IC+'<span>Drop a logo or click to choose</span>'; }
+  function paintLogo(){ const d=g('drop'), inn=g('drop-in'); d.classList.toggle('has',!!S.logo); inn.innerHTML=S.logo?`<img src="${S.logo}" alt="">`:'<span>Upload<br>image</span>'; }
   function loadLogo(file){ if(!file||!file.type||!file.type.startsWith('image/')){ SP.toast('Please choose an image file','err'); return; } if(file.size>4*1024*1024){ SP.toast('Logo too big, max 4 MB','err'); return; }
     const img=new Image(), url=URL.createObjectURL(file);
     img.onload=()=>{ URL.revokeObjectURL(url); const s=Math.min(img.width,img.height); let best=null;
@@ -68,13 +69,13 @@ function launchInit(){
 
   /* ---------- summary card ---------- */
   function sync(){ readFee(); const n=fields.name(), t=fields.sym(), sp=split(); const letter=(t||n||'?')[0].toUpperCase();
-    g('sm-step').textContent=S.launched?'Launched':'Step '+S.step+' of 3';
-    g('sm-logo').innerHTML=S.logo?`<img src="${S.logo}" alt="">`:esc(letter); g('sm-name').textContent=n||'Your coin'; g('sm-sym').textContent=t||'SYMBOL';
-    g('sm-pair').innerHTML=S.pair?`<img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.symbol)}${!S.pair.eth?' <span class="muted">'+esc(S.pair.ticker)+'</span>':''}`:'Not picked';
+    g('sm-step').textContent=S.launched?'Launched':S.pair?'Ready':'Pick a pair';
+    g('sm-logo').innerHTML=S.logo?`<img src="${S.logo}" alt="">`:esc((t||n||'TOK').slice(0,3).toUpperCase()); g('sm-name').textContent=n||'Token name'; g('sm-sym').textContent='$'+(t||'TOKEN');
+    g('sm-pair').innerHTML=S.pair?`Paired with <img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.symbol)}`:'Pick a pair';
     g('sm-fee').textContent=feePct()+(S.snipe?' · anti-snipe':''); const opts=optList(); g('sm-opts').textContent=opts.length?opts.join(', '):'None';
-    const px=pairPx(); g('sm-cap').textContent=fmtCap(S.capUsd)+(S.pair&&px?' · '+fmtInPair(S.capUsd/px):'');
-    const dv=S.dev?clamp(fields.devEth(),0,0.5):0; g('sm-dev').textContent=dv>0?`${dv} ETH · ${fmtAmt(devCoins())} coins`:'None';
-    g('sm-cr').textContent=`${sp.creator}% of every fee`; g('sm-note').textContent=(S.pair?`Fees and holder rewards are paid in ${S.pair.symbol}. `:'')+'Liquidity cannot be withdrawn. Everything here is fixed at launch.';
+    const px=pairPx(); g('sm-cap').textContent=fmtCap(S.capUsd);
+    const dv=S.dev?clamp(fields.devEth(),0,0.5):0; g('sm-dev').textContent=dv>0?`${dv} ETH`:'None'; const dh=g('dev-hdr'); if(dh) dh.textContent=!S.pair?'Pick a pair first':dv>0?`${dv} ETH · ${fmtAmt(devCoins())} coins`:'Optional · paid in ETH';
+    g('sm-cr').textContent=`${sp.creator}%`; g('sm-note').textContent=(S.pair?`Fees are paid in ${S.pair.symbol}. `:'')+'Liquidity cannot be withdrawn. Nobody can pull it, including you.';
     if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.dev) devMsg(); paintReview(); }
 
   /* ---------- steps ---------- */
@@ -83,12 +84,12 @@ function launchInit(){
     if(n===3){ const a=feeMsg(), b=snipeMsg(), c=divMsg(), d=devMsg(); return a&&b&&c&&d; } return true; }
   function show(n){ S.step=n; S.maxStep=Math.max(S.maxStep,n); $$('#pg-launch .pane').forEach(p=>p.classList.toggle('on',+p.dataset.pane===n));
     $$('#steps button').forEach(b=>{ const k=+b.dataset.step; b.classList.toggle('on',k===n); b.classList.toggle('done',k<n); b.querySelector('.n').innerHTML=k<n?ic('check'):String(k); });
-    sync(); if(n===3) paintCta(); const y=g('steps').getBoundingClientRect().top+scrollY-70; if(scrollY>y) scrollTo({top:Math.max(0,y),behavior:'smooth'}); }
+    sync(); if(n===3) paintCta(); }
   function go(n){ n=clamp(n,1,3); if(S.launched) return; if(n<=S.step){ show(n); return; } for(let i=S.step;i<n;i++){ if(!validate(i)){ if(i!==S.step) show(i); SP.toast('Fix the highlighted fields first','err'); return; } } show(n); }
 
   /* ---------- launch ---------- */
   const cta=g('cta');
-  function paintCta(){ if(S.busy){ cta.disabled=true; cta.textContent='Confirm in wallet…'; return; } cta.disabled=S.paused; cta.textContent=S.paused?'Launches paused':!SP.W.connected?'Connect wallet':!SP.W.chainOk?'Switch to Ethereum':'Launch coin'; }
+  function paintCta(){ if(S.busy){ cta.disabled=true; cta.textContent='Confirm in wallet…'; return; } cta.disabled=S.paused; cta.textContent=S.paused?'Launches paused':!SP.W.connected?'Connect a wallet':!SP.W.chainOk?'Switch to Ethereum':'Create token'; }
   function launchErr(e){ let m=SP.errMsg(e); if(/instincts|evolution|BadGenes/i.test(m)) m='The fee or options are out of bounds; adjust them and try again.'; return m; }
   async function doLaunch(){ if(S.busy||S.paused) return;
     if(!SP.W.connected){ SP.W.connect(); return; }
@@ -106,7 +107,7 @@ function launchInit(){
     catch(e){ SP.toast(launchErr(e),'err'); }
     finally{ S.busy=false; paintCta(); } }
   function showDone(){ const L=S.launched; $$('#pg-launch .pane').forEach(p=>p.classList.remove('on')); $$('#steps button').forEach(b=>{ b.classList.add('done'); b.classList.remove('on'); b.querySelector('.n').innerHTML=ic('check'); b.disabled=true; });
-    const dn=g('done'); dn.classList.remove('hidden'); g('dn-block').textContent=L.block?'Block #'+L.block.toLocaleString('en-US'):'Mined'; g('dn-logo').src=S.logo||DEF_LOGO; g('dn-name').textContent=L.name+' · '+L.symbol; g('dn-sub').textContent=`Paired with ${S.pair.symbol}. Trading is open on Uniswap v4; fees settle in ${S.pair.symbol}.`;
+    const dn=g('done'); dn.classList.remove('hidden'); $$('#pg-launch .pane').forEach(p=>p.classList.add('hidden')); g('dn-block').textContent=L.block?'Block #'+L.block.toLocaleString('en-US'):'Mined'; g('dn-logo').src=S.logo||DEF_LOGO; g('dn-name').textContent=L.name+' · '+L.symbol; g('dn-sub').textContent=`Paired with ${S.pair.symbol}. Trading is open on Uniswap v4; fees settle in ${S.pair.symbol}.`;
     g('dn-addr').textContent=cs(L.addr); g('dn-copy').innerHTML=ic('copy'); g('dn-copy').onclick=()=>SP.copy(cs(L.addr),'Address copied');
     g('dn-pair').innerHTML=`<img src="${S.pair.logo}" alt="" style="width:14px;height:14px;border-radius:50%;background:#fff;display:inline-block;vertical-align:-2px;margin-right:6px" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.symbol)}`; const sp=split(); g('dn-fee').textContent=`${feePct()} · ${sp.creator}% to you`;
     g('dn-open').href=tokenUrl(L.addr); g('dn-scan').href=EXPLORER+'/token/'+L.addr;
@@ -115,6 +116,7 @@ function launchInit(){
 
   /* ---------- wiring ---------- */
   preselect(); paintPairs(); paintLogo();
+  g('pair-btn').onclick=e=>{ e.stopPropagation(); g('pair-dd').classList.toggle('open'); }; document.addEventListener('click',e=>{ if(!e.target.closest('#pair-dd')) g('pair-dd').classList.remove('open'); });
   $$('#steps button').forEach(b=>b.onclick=()=>go(+b.dataset.step));
   $$('#pg-launch [data-next]').forEach(b=>b.onclick=()=>go(S.step+1)); $$('#pg-launch [data-back]').forEach(b=>b.onclick=()=>go(S.step-1));
   g('f-logo').addEventListener('change',e=>{ loadLogo(e.target.files[0]); e.target.value=''; });

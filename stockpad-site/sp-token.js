@@ -27,7 +27,7 @@ window.SP_PAGE=function(){
     $('#tk-head').innerHTML=`<img class="lg" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'">
       <div class="id">
         <div class="t1"><h1>${esc(X.n)}</h1><span class="sym">$${esc(X.t)}</span></div>
-        <div class="t2"><span class="cpb" data-copy="${cs(X.addr)}" title="Copy address">${shortAddr(cs(X.addr))}${ic('copy')}</span><a class="cpb" href="${EXPLORER}/token/${X.addr}" target="_blank" rel="noopener" title="View on Etherscan">${ic('ext')}</a><span title="${esc(SP.fmtDate(X.createdAt))}">${ageStr(X.age||'0s')}</span><span class="badge">${feePct()}% fee</span>${X.rewards?`<span class="badge ac">${ic('star')}Holder rewards</span>`:''}${links.map(l=>`<a class="lk" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</div>
+        <div class="t2"><span class="cpb" data-copy="${cs(X.addr)}" title="Copy address">${shortAddr(cs(X.addr))}${ic('copy')}</span><a class="cpb" href="${EXPLORER}/token/${X.addr}" target="_blank" rel="noopener" title="View on Etherscan">${ic('ext')}</a><span title="${esc(SP.fmtDate(X.createdAt))}">${ageStr(X.age||'0s')}</span><span class="badge">${feePct()}% fee</span>${X.rewards?`<span class="badge acl">★ Holder rewards</span>`:''}${links.map(l=>`<a class="lk" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</div>
         ${X.desc?`<p class="desc">${esc(X.desc)}</p>`:''}
         <div class="by">Created by ${wl(X.creator)}</div>
       </div>

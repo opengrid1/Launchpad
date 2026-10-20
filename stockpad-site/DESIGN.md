@@ -4,9 +4,9 @@ StockPad is a launchpad on Ethereum where every coin is paired with a tokenized 
 
 ## Look
 
-Benchmark: stockereum.com (dense, visual, data-rich), not pump.fun. Dark trading-floor look: near-black page (`--bg #050506`), bordered panels (`.panel`, `--s1 #0c0c0f`), mono uppercase labels (`.lab`, "MCAP / VOL 24H"), mini stat boxes (`.sbox`), badges (`.badge`, `.badge.ac`), filter pills (`.pill`), a single mint accent with a glow on the primary action (`.btn.pri`), green/red for gains, losses, buys and sells. Space Grotesk for display headings, Geist for text, Geist Mono for every number, label, address and symbol. Coin images are circles with a hairline border. Every coin card carries its own area sparkline (`.spark`) built from the trade index, a 24h buy/sell flow bar (`.split`) and three stat boxes.
+Benchmark: stockereum.com, matched element for element; StockPad keeps its own name, logo and wording. Black page (`--bg #000`), bordered panels (`.panel`, `#0a0a0b` with `#1e1e23` hairlines, 16px radius), mono uppercase labels (`.lab`, "MCAP / VOL 24H"), mini stat boxes (`.sbox`), badges (`.badge`, gold `.badge.ac`, tinted `.badge.acl`), filter pills (`.pill`, 38px, gold border when on), gold accent `#f2be54` with ink `#1a1204` on buttons, green `#2ebd85` and red `#f6465d` for gains, losses, buys and sells. Inter for text (13px base), Space Grotesk for headings, buttons and pills, JetBrains Mono for numbers, labels, addresses and badges. Coin images are circles. Every coin card has an area sparkline built from the trade index, a 24h buy/sell flow bar and MCAP / VOL 24H / TRADES boxes.
 
-Shell: top bar (brand wordmark, nav, search, NYSE pill, glowing Launch, wallet), a stock price tape, a 1320px column (`.wrap`), a thin footer bar with contract addresses and the ETH price. Below 640px the nav becomes a bottom tab bar (`.tabbar`) plus a sheet with the stock list; tables drop `.hm` columns.
+Shell: a 64px icon rail on the left (Home, Launch, Profile, Docs with hover tooltips), a 57px top bar with the NYSE pill, a gold Create button and the wallet button, content in a full-width column with 16px gutters, a thin footer bar with the factory and hook addresses, the X link and the ETH price. Below 900px the rail becomes a bottom tab bar and the brand shows in the top bar. The launch page is a single gold-outlined form next to a live preview card, not a wizard.
 
 All classes live in `ui.css` (read it; use its classes before inventing new ones). Page-specific CSS goes in a `<style>` block at the top of that page's HTML, scoped with the page's root id.
 
@@ -16,20 +16,20 @@ All classes live in `ui.css` (read it; use its classes before inventing new ones
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>... | StockPad</title><meta name="description" content="...">
-<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=9"><meta name="theme-color" content="#050506">
-<meta property="og:image" content="/img/og.png?v=9">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=3">
+<link rel="icon" href="/img/favicon.svg?v=10" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=10"><meta name="theme-color" content="#000000">
+<meta property="og:image" content="/img/og.png?v=10">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=4">
 <style>/* page css, scoped under #pg-<name> */</style>
 </head><body data-page="<name>">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-<name>">...page markup...</div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=3"></script><script src="/sp-<name>.js?v=3"></script>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=4"></script><script src="/sp-<name>.js?v=4"></script>
 </body></html>
 ```
 
-`core.js` renders the top bar, the tape, the footer bar, the mobile tab bar and the sheet (nav plus stock list) on every page, boots the chain layer, and then calls `window.SP_PAGE()` which each page script defines. Pages never touch the shell elements.
+`core.js` renders the icon rail, the top bar, the footer bar and the mobile tab bar on every page (the `#sp-tape` element stays in the skeleton but is unused), boots the chain layer, and then calls `window.SP_PAGE()` which each page script defines. Pages never touch the shell elements.
 
 The token page also loads `/tv.js` and `/charting_library/charting_library.js` (see token page notes).
 

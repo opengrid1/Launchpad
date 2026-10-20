@@ -1,62 +1,62 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>StockPad · Launch coins paired with real stocks on Ethereum</title><meta name="description" content="Launch and trade coins paired with tokenized stocks on Ethereum. One Uniswap v4 pool per coin, fixed supply, liquidity that cannot be withdrawn, fees paid in the stock.">
-<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=9"><meta name="theme-color" content="#050506">
-<meta property="og:title" content="StockPad"><meta property="og:description" content="Launch coins paired with real stocks on Ethereum."><meta property="og:image" content="/img/og.png?v=9"><meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=3">
+<link rel="icon" href="/img/favicon.svg?v=10" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=10"><meta name="theme-color" content="#000000">
+<meta property="og:title" content="StockPad"><meta property="og:description" content="Launch coins paired with real stocks on Ethereum."><meta property="og:image" content="/img/og.png?v=10"><meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=4">
 <style>
 /* hero banner */
-#pg-markets .hero{position:relative;overflow:hidden;padding:36px 36px 32px;border-radius:var(--r-xl);background:radial-gradient(1200px 400px at 85% 0%,rgba(47,211,138,.10),transparent 60%),var(--s1)}
+#pg-markets .hero{position:relative;overflow:hidden;padding:30px 30px 28px;border-radius:var(--r-xl);background:radial-gradient(1100px 380px at 80% 0%,rgba(242,190,84,.08),transparent 60%),var(--s1);min-height:330px}
 #pg-markets .hero .art{position:absolute;right:-40px;bottom:-10px;width:760px;height:320px;pointer-events:none;opacity:.9;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 45%),linear-gradient(180deg,transparent 0,#000 30%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent 0,#000 45%),linear-gradient(180deg,transparent 0,#000 30%);mask-composite:intersect}
 #pg-markets .hero .hl{position:relative;z-index:2;max-width:560px}
-#pg-markets .hero .lab{margin-bottom:12px;color:var(--fg-2)}
-#pg-markets .hero h1{font-size:46px;letter-spacing:-.03em;line-height:1.05} #pg-markets .hero h1 em{font-style:normal;color:var(--ac)}
+#pg-markets .hero .lab{margin-bottom:10px;color:var(--fg-3);font-size:11px}
+#pg-markets .hero h1{font-size:44px;letter-spacing:-.48px;line-height:1.05} #pg-markets .hero h1 em{font-style:normal;color:var(--ac)}
 #pg-markets .hstocks{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
-#pg-markets .hs{display:flex;align-items:center;gap:10px;height:52px;padding:0 14px 0 10px;border:1px solid var(--line-2);border-radius:var(--r);background:rgba(18,18,22,.9)} #pg-markets .hs img{width:26px;height:26px;border-radius:50%;background:#fff} #pg-markets .hs b{display:block;font:600 12px var(--mono);letter-spacing:.04em} #pg-markets .hs small{display:block;font:12px var(--mono);color:var(--fg-2);margin-top:1px} #pg-markets .hs small .cnt{color:var(--ac);margin-left:6px} #pg-markets .hs small .mk{color:var(--fg-3);margin-left:6px}
-#pg-markets .hacts{display:flex;gap:14px;margin-top:24px;flex-wrap:wrap;align-items:center} #pg-markets .chev{font:700 22px var(--disp);color:var(--ac);opacity:.55;letter-spacing:-.1em;user-select:none}
-#pg-markets .hfloat{position:absolute;right:36px;top:34px;z-index:2;display:flex;flex-direction:column;gap:12px;width:320px}
-#pg-markets .hf{display:block;position:relative;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:rgba(12,12,15,.92);backdrop-filter:blur(6px);transition:border-color .12s} #pg-markets .hf:hover{border-color:var(--ac-line)} #pg-markets .hf:nth-child(2){margin-left:36px}
+#pg-markets .hs{display:flex;align-items:center;gap:10px;height:49px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--s2);min-width:175px} #pg-markets .hs img{width:26px;height:26px;border-radius:50%;background:#fff} #pg-markets .hs b{display:block;font:600 12px var(--mono)} #pg-markets .hs small{display:block;font:12px var(--mono);color:var(--fg-2);margin-top:1px} #pg-markets .hs small .cnt{color:var(--up);margin-left:6px} #pg-markets .hs small .mk{color:var(--fg-3);margin-left:6px}
+#pg-markets .hacts{display:flex;gap:18px;margin-top:22px;flex-wrap:wrap;align-items:center} #pg-markets .chev{font:700 24px var(--disp);color:var(--ac);opacity:.45;letter-spacing:-.12em;user-select:none}
+#pg-markets .hfloat{position:absolute;right:120px;top:64px;z-index:2;display:flex;flex-direction:column;gap:14px;width:330px}
+#pg-markets .hf{display:block;position:relative;padding:12px 14px;border:1px solid var(--line-2);border-radius:14px;background:rgba(10,10,11,.92);backdrop-filter:blur(6px);transition:border-color .12s} #pg-markets .hf:hover{border-color:var(--ac-line)} #pg-markets .hf:nth-child(2){margin-left:210px;margin-top:-6px}
 #pg-markets .hf .t{display:flex;align-items:center;gap:10px} #pg-markets .hf .t img{width:34px;height:34px;border-radius:50%;background:var(--s3);border:1px solid var(--line-2);object-fit:cover} #pg-markets .hf .t b{display:block;font:600 14px var(--mono)} #pg-markets .hf .t b span{color:var(--fg-3);font-weight:400;margin-left:6px;font-family:var(--sans)} #pg-markets .hf .t small{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--fg-3);margin-top:2px} #pg-markets .hf .t small img{width:14px;height:14px;border:0}
 #pg-markets .hf .b{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)} #pg-markets .hf .b b{font:600 17px var(--mono)} #pg-markets .hf .b b small{font:12px var(--sans);color:var(--fg-3);margin-left:6px;font-weight:400}
-#pg-markets .hf .badge{position:absolute;right:12px;top:-10px;background:var(--s1)}
-#pg-markets .figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+#pg-markets .hf .badge{position:absolute;right:-30px;top:-12px}
+#pg-markets .figs{display:none}
 /* filter bar */
-#pg-markets .fbar{display:flex;align-items:center;gap:8px;margin-top:22px;flex-wrap:wrap}
+#pg-markets .fbar{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
 #pg-markets .fbar .sep{width:1px;height:24px;background:var(--line-2);margin:0 4px}
-#pg-markets .fbar .q{margin-left:auto;display:flex;align-items:center;gap:8px;height:36px;min-width:260px;padding:0 12px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--s1);color:var(--fg-3)} #pg-markets .fbar .q input{flex:1;background:none;border:0;outline:0;color:var(--fg);min-width:0;font-size:13.5px}
+#pg-markets .fbar .q{margin-left:auto;display:flex;align-items:center;gap:8px;height:38px;min-width:334px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--s1);color:var(--fg-3)} #pg-markets .fbar .q input{flex:1;background:none;border:0;outline:0;color:var(--fg);min-width:0;font-size:12px}
 /* coin cards */
-#pg-markets .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
-#pg-markets .cc{display:block;position:relative;padding:16px;transition:border-color .12s,transform .12s} #pg-markets .cc:hover{border-color:var(--line-3);transform:translateY(-1px)}
+#pg-markets .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
+#pg-markets .cc{display:block;position:relative;padding:16px;transition:border-color .12s,box-shadow .12s} #pg-markets .cc:hover{border-color:rgba(242,190,84,.5);box-shadow:0 0 24px rgba(242,190,84,.08)}
 #pg-markets .cc .top{display:flex;align-items:flex-start;gap:12px}
 #pg-markets .cc .lg{width:44px;height:44px;border-radius:50%;background:var(--s3);border:1px solid var(--line-2);object-fit:cover;flex:none}
-#pg-markets .cc .nm{flex:1;min-width:0} #pg-markets .cc .nm .t{display:flex;align-items:center;gap:8px;flex-wrap:wrap} #pg-markets .cc .nm b{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%} #pg-markets .cc .nm .sym{font:500 12.5px var(--mono);color:var(--fg-3)}
-#pg-markets .cc .meta{display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;font:12px var(--mono);color:var(--fg-3)} #pg-markets .cc .meta .cpb{display:inline-flex;align-items:center;gap:4px;color:var(--fg-3)} #pg-markets .cc .meta .cpb:hover{color:var(--fg)} #pg-markets .cc .meta .cpb svg{width:12px;height:12px}
-#pg-markets .cc .age{font:12px var(--mono);color:var(--fg-3);white-space:nowrap}
-#pg-markets .cc .rb{position:absolute;right:14px;top:-10px;background:var(--s1)}
+#pg-markets .cc .nm{flex:1;min-width:0} #pg-markets .cc .nm .t{display:flex;align-items:center;gap:8px;flex-wrap:wrap} #pg-markets .cc .nm b{font:600 15px var(--disp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%} #pg-markets .cc .nm .sym{font:400 12px var(--mono);color:var(--fg-3)}
+#pg-markets .cc .meta{display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;font:11px var(--mono);color:var(--fg-3)} #pg-markets .cc .meta .cpb{display:inline-flex;align-items:center;gap:4px;color:var(--fg-3)} #pg-markets .cc .meta .cpb:hover{color:var(--fg)} #pg-markets .cc .meta .cpb svg{width:12px;height:12px}
+#pg-markets .cc .age{font:11px var(--sans);color:var(--fg-3);white-space:nowrap}
+#pg-markets .cc .rb{position:absolute;right:12px;top:-11px}
 #pg-markets .cc .spark{margin:14px 0 6px;height:72px}
 #pg-markets .cc .flow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0 6px} #pg-markets .cc .flow .num{font-size:11.5px;color:var(--fg-2)}
 #pg-markets .cc .sboxes{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:12px}
-#pg-markets .empty{grid-column:1/-1;border:1px dashed var(--line-2);border-radius:var(--r-lg)}
+#pg-markets .empty{grid-column:1/-1;border:1px dashed var(--line-2);border-radius:var(--r-xl)}
 @media(max-width:1100px){#pg-markets .cards{grid-template-columns:repeat(2,minmax(0,1fr))} #pg-markets .hfloat{display:none} #pg-markets .hero .art{opacity:.5}}
-@media(max-width:640px){#pg-markets .hfloat{display:flex}}
+@media(max-width:640px){#pg-markets .hfloat{display:flex} #pg-markets .hf .badge{right:10px}}
 @media(max-width:640px){#pg-markets .hero{padding:22px 16px 20px} #pg-markets .hero h1{font-size:30px} #pg-markets .hero .art{width:520px;right:-120px;opacity:.35} #pg-markets .hs{height:46px;flex:1;min-width:calc(50% - 4px)} #pg-markets .hacts{justify-content:center} #pg-markets .hfloat{display:flex;position:static;width:auto;margin-top:16px} #pg-markets .hf:nth-child(2){margin-left:0} #pg-markets .figs{grid-template-columns:1fr 1fr} #pg-markets .cards{grid-template-columns:1fr} #pg-markets .fbar .q{min-width:0;width:100%;margin:0} #pg-markets .fbar .sep{display:none}}
 </style>
 </head><body data-page="markets">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-markets">
   <section class="hero panel">
-    <svg class="art" viewBox="0 0 760 320" fill="none" aria-hidden="true"><defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fd38a" stop-opacity=".35"/><stop offset="1" stop-color="#2fd38a" stop-opacity="0"/></linearGradient></defs>
-      <g stroke="#1e1e25" stroke-width="1"><path d="M0 60H760M0 120H760M0 180H760M0 240H760M0 300H760"/><path d="M100 0V320M200 0V320M300 0V320M400 0V320M500 0V320M600 0V320M700 0V320"/></g>
+    <svg class="art" viewBox="0 0 760 320" fill="none" aria-hidden="true"><defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2be54" stop-opacity=".35"/><stop offset="1" stop-color="#f2be54" stop-opacity="0"/></linearGradient></defs>
+      <g stroke="#1a1a1f" stroke-width="1"><path d="M0 60H760M0 120H760M0 180H760M0 240H760M0 300H760"/><path d="M100 0V320M200 0V320M300 0V320M400 0V320M500 0V320M600 0V320M700 0V320"/></g>
       <path d="M0 250L60 240L120 252L180 222L240 230L300 196L360 206L420 170L480 184L540 140L600 150L660 104L720 112L760 70V320H0Z" fill="url(#ga)"/>
-      <path d="M0 250L60 240L120 252L180 222L240 230L300 196L360 206L420 170L480 184L540 140L600 150L660 104L720 112L760 70" stroke="#2fd38a" stroke-width="2" stroke-linejoin="round"/>
-      <circle cx="760" cy="70" r="5" fill="#2fd38a"/><circle cx="760" cy="70" r="12" fill="#2fd38a" opacity=".25"/>
+      <path d="M0 250L60 240L120 252L180 222L240 230L300 196L360 206L420 170L480 184L540 140L600 150L660 104L720 112L760 70" stroke="#f2be54" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="760" cy="70" r="5" fill="#f2be54"/><circle cx="760" cy="70" r="12" fill="#f2be54" opacity=".25"/>
       </svg>
     <div class="hl">
-      <span class="lab">Create coins and pair them with real stocks on Ethereum</span>
+      <span class="lab">Create coins and pair them with real stocks on Ethereum chain.</span>
       <h1>Launch coins paired<br>with <em>real stocks</em></h1>
       <div class="hstocks" id="hero-stocks"></div>
-      <div class="hacts"><span class="chev">›››</span><a class="btn pri lg" href="/launch">Launch a coin</a><span class="chev">‹‹‹</span></div>
+      <div class="hacts"><span class="chev">›››</span><a class="btn cta" href="/launch">Create Token</a><span class="chev">‹‹‹</span></div>
     </div>
     <div class="hfloat" id="hero-top"></div>
   </section>
@@ -67,5 +67,5 @@
 
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=3"></script><script src="/sp-home.js?v=3"></script>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=4"></script><script src="/sp-home.js?v=4"></script>
 </body></html>
