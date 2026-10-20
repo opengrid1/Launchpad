@@ -49,7 +49,7 @@ a{color:inherit;text-decoration:none} button{font:inherit;color:inherit;backgrou
 .btn.pri{background:var(--mint);border-color:var(--mint);color:var(--mint-ink)} .btn.pri:hover{background:var(--mint-2)}
 .btn.red{background:var(--red);border-color:var(--red);color:#fff} .btn.ghost{background:none;border-color:transparent;color:var(--fg-2)} .btn.ghost:hover{background:var(--bg-3);color:var(--fg)}
 .btn.sm{height:30px;padding:0 10px;font-size:13px} .btn.lg{height:46px;padding:0 20px;font-size:15px} .btn.block{width:100%}
-.wbtn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 10px 0 6px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--bg-3);font-family:var(--mono);font-size:13px}
+.wbtn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 10px 0 6px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--bg-3);font-family:var(--mono);font-size:13px;white-space:nowrap}
 .wbtn svg,.wbtn .av{width:22px;height:22px;border-radius:6px;overflow:hidden}
 .ticker-track{display:flex;gap:28px;align-items:center;height:var(--tick);padding:0 20px;white-space:nowrap;animation:tick 70s linear infinite;width:max-content}
 #sp-ticker::before,#sp-ticker::after{content:"";position:absolute;top:0;bottom:0;width:40px;z-index:1;pointer-events:none} #sp-ticker::before{left:0;background:linear-gradient(90deg,var(--bg-2),transparent)} #sp-ticker::after{right:0;background:linear-gradient(270deg,var(--bg-2),transparent)}
@@ -73,7 +73,7 @@ a{color:inherit;text-decoration:none} button{font:inherit;color:inherit;backgrou
 .tag.mint{background:var(--mint-dim);border-color:transparent;color:var(--mint)} .tag.red{background:var(--red-dim);border-color:transparent;color:var(--red)} .tag img{width:14px;height:14px;border-radius:50%;background:#fff}
 .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line)} .tabs button{height:40px;padding:0 14px;color:var(--fg-3);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px} .tabs button.on{color:var(--fg);border-bottom-color:var(--mint)}
 table.tb{width:100%;border-collapse:collapse;font-size:13px} .tb th{text-align:left;font-weight:500;color:var(--fg-3);font-size:12px;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
-.tb td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap} .tb tr:last-child td{border-bottom:0} .tb tr.row:hover td{background:var(--bg-3);cursor:pointer}
+.tb td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap} .tb tr:last-child td{border-bottom:0} .tb tr.go:hover td{background:var(--bg-3);cursor:pointer}
 .tb .r{text-align:right} .tb .num{font-family:var(--mono)} .tb td small{display:block;color:var(--fg-3);font-size:11px;font-weight:400}
 .coin{display:flex;align-items:center;gap:10px;min-width:0} .coin .lg{width:36px;height:36px;border-radius:8px;background:var(--bg-3);object-fit:cover;flex:none} .coin b{display:block;font-weight:600;line-height:1.15} .coin small{display:block;color:var(--fg-3);font-size:12px}
 .pairchip{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--fg-2)} .pairchip img{width:14px;height:14px;border-radius:50%;background:#fff}
