@@ -32,7 +32,10 @@ const ONEHOOK_FILES = [
   "OneFactory.sol",
   "OneRouter.sol",
   "mocks/MockOneOracle.sol",
-].map((f) => `contracts/v4/onehook/${f}`);
+].map((f) => `contracts/v4/onehook/${f}`).concat(
+  // Equo (v3 of the OneHook design): same compiler settings
+  ["EquoToken.sol", "EquoDivToken.sol", "EquoTokenDeployer.sol", "EquoHook.sol", "EquoFactory.sol", "EquoRouter.sol"].map((f) => `contracts/v4/equo/${f}`),
+);
 const ONEHOOK_COMPILER = {
   version: "0.8.26",
   settings: { optimizer: { enabled: true, runs: 40 }, viaIR: true, evmVersion: "cancun" },
