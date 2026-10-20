@@ -143,3 +143,31 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px} .tb th{text-align:l
 .pnlimg img{width:100%;border-radius:10px;border:1px solid var(--line-2)}
 .pnlbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px} .pnlbtns .btn{flex:1;min-width:120px}
 .soon{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:6px;border:1px dashed var(--line-3);font:500 10.5px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--fg-3)}
+
+/* ===== More menu (desktop) and the mobile menu sheet ===== */
+.nav .morebtn{display:inline-flex;align-items:center;gap:5px;height:36px;padding:0 9px 0 12px;border-radius:9px;color:var(--fg-2);font:500 13.5px var(--sans);white-space:nowrap}
+.nav .morebtn svg{width:14px;height:14px}
+.nav .morebtn:hover,.nav .morebtn.on{color:var(--fg);background:var(--s3)}
+.menu .mh,.sheet .mh{padding:8px 10px 4px;font:400 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
+.menu .mi,.sheet .mi{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:6px;font-size:13px;color:var(--fg)}
+.menu .mi svg,.sheet .mi svg{width:16px;height:16px;color:var(--fg-3)}
+.menu a.mi:hover,.sheet a.mi:hover{background:var(--s3)}
+.menu .mi.soon-i,.sheet .mi.soon-i{color:var(--fg-3);cursor:default}
+.menu .mi .soon,.sheet .mi .soon{margin-left:auto}
+.menu.more{min-width:220px}
+.burger{display:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:9px;border:1px solid var(--line-2);background:var(--s2);color:var(--fg-2)}
+.burger svg{width:18px;height:18px}
+.sheet-ov{align-items:stretch;justify-content:flex-end;padding:0}
+.sheet{width:min(340px,100%);height:100%;overflow-y:auto;background:var(--s1);border-left:1px solid var(--line-2);padding:0 12px calc(16px + env(safe-area-inset-bottom));display:flex;flex-direction:column;animation:shin .18s ease-out}
+@keyframes shin{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+.sheet .sh-top{display:flex;align-items:center;justify-content:space-between;height:var(--top);padding:0 4px;border-bottom:1px solid var(--line);margin:0 -12px 12px;padding:0 16px}
+.sheet .sh-top .brand{margin:0}
+.sheet .sh-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px} .sheet .sh-acts .btn{width:100%} .sheet .sh-acts>span{display:block}
+.sheet .sh-nav{display:flex;flex-direction:column;gap:2px;padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.sheet .sh-nav>a:not(.mi){display:flex;align-items:center;gap:12px;height:42px;padding:0 10px;border-radius:8px;font:500 15px var(--sans);color:var(--fg-2)}
+.sheet .sh-nav>a:not(.mi) svg{width:18px;height:18px;color:var(--fg-3)}
+.sheet .sh-nav>a.on{background:var(--s3);color:var(--fg)} .sheet .sh-nav>a.on svg{color:var(--ac)}
+.sheet .sh-nav .mi{height:42px;gap:12px;font:500 15px var(--sans);color:var(--fg-2)} .sheet .sh-nav .mi svg{width:18px;height:18px} .sheet .sh-nav .mi.soon-i{color:var(--fg-3)}
+.sheet .sh-foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding:14px 10px 0;font:11.5px var(--mono);color:var(--fg-3)}
+.sheet .sh-foot .mkt{display:inline-flex!important}
+@media(max-width:900px){.burger{display:inline-flex} .topr{gap:8px}}
