@@ -4,9 +4,15 @@ StockPad is a launchpad on Ethereum where every coin is paired with a tokenized 
 
 ## Look
 
-Benchmark: stockereum.com for structure and density, with StockPad's own twist: a terminal-blue accent instead of gold, candlestick artwork (the logo motif) in the hero, and the paired stock's logo pinned to the corner of every coin avatar (`.av2` + `.stb`) with the NYSE status beside the pair. Black page (`--bg #000`), bordered panels (`.panel`, `#0a0a0b` with `#1e1e23` hairlines, 16px radius), mono uppercase labels (`.lab`, "MCAP / VOL 24H"), mini stat boxes (`.sbox`), badges (`.badge`, solid `.badge.ac`, tinted `.badge.acl`), filter pills (`.pill`, 38px, accent border when on), terminal-blue accent `#3fbcff` with ink `#06202e` on buttons, green `#2ebd85` and red `#f6465d` for gains, losses, buys and sells. Inter for text (13px base), Space Grotesk for headings, buttons and pills, JetBrains Mono for numbers, labels, addresses and badges. Coin images are circles. Every coin card has an area sparkline built from the trade index, a 24h buy/sell flow bar and MCAP / VOL 24H / TRADES boxes.
+Original design, "The Exchange": an editorial-finance look that no launchpad uses. Cream type (`--fg #f1ede6`) on graphite (`--bg #0a0a0b`), Instrument Serif for headlines (italic coral for the emphasised word), Inter for UI, JetBrains Mono for every figure, label, address and symbol. One coral accent (`--ac #ff5a3c`) for actions and emphasis; green and red only for market direction.
 
-Shell: a 64px icon rail on the left (Home, Launch, Profile, Docs with hover tooltips), a 57px top bar with the NYSE pill, a blue Create button and the wallet button, content in a full-width column with 16px gutters, a thin footer bar with the factory and hook addresses, the X link and the ETH price. Below 900px the rail becomes a bottom tab bar and the brand shows in the top bar. The launch page is a single accent-outlined form next to a live preview card, not a wizard.
+Data is laid out as ledgers and boards, never as grids of stat boxes or cards:
+- `.ledger` / `.lr`: label, dotted leader, mono value, optional `small` sub-value. Used for the session panel, token stats, order ticket details, the launch prospectus and the statement totals.
+- `.strip` / `.ti`: the ticker strip of stocks under the masthead, which doubles as the stock filter.
+- `.board` / `.bh` / `.br`: the coin board, one row per coin with the avatar (`.av2`, the paired stock's logo pinned to its corner), the pair with the live stock price and NYSE status, price, market cap, volume, holders, a 24h sparkline and a Trade button.
+- `.steps3` numbered serif steps, `.band` coral call-to-action band.
+
+Shell: 64px top bar with the serif wordmark, text navigation with an underline, the NYSE clock with a countdown (`.clock`), Launch and Connect wallet. A three-column footer with the contract addresses. Below 640px the navigation becomes a bottom tab bar (`.tabbar`). Token page: serif masthead with a big mono price, two ledgers of stats, flow and fee-split bars, chart, text tabs, and an "order ticket" on the right. Launch page: numbered sections (Identity, Pair, Terms) next to a "prospectus" ledger. Portfolio is a "statement".
 
 All classes live in `ui.css` (read it; use its classes before inventing new ones). Page-specific CSS goes in a `<style>` block at the top of that page's HTML, scoped with the page's root id.
 
@@ -16,20 +22,20 @@ All classes live in `ui.css` (read it; use its classes before inventing new ones
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>... | StockPad</title><meta name="description" content="...">
-<link rel="icon" href="/img/favicon.svg?v=11" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=11"><meta name="theme-color" content="#000000">
-<meta property="og:image" content="/img/og.png?v=11">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=5">
+<link rel="icon" href="/img/favicon.svg?v=12" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=12"><meta name="theme-color" content="#0a0a0b">
+<meta property="og:image" content="/img/og.png?v=12">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=6">
 <style>/* page css, scoped under #pg-<name> */</style>
 </head><body data-page="<name>">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-<name>">...page markup...</div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=5"></script><script src="/sp-<name>.js?v=5"></script>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=6"></script><script src="/sp-<name>.js?v=6"></script>
 </body></html>
 ```
 
-`core.js` renders the icon rail, the top bar, the footer bar and the mobile tab bar on every page (the `#sp-tape` element stays in the skeleton but is unused), boots the chain layer, and then calls `window.SP_PAGE()` which each page script defines. Pages never touch the shell elements.
+`core.js` renders the top bar, the footer and the mobile tab bar on every page (the `#sp-tape` element stays in the skeleton but is unused), boots the chain layer, and then calls `window.SP_PAGE()` which each page script defines. Pages never touch the shell elements.
 
 The token page also loads `/tv.js` and `/charting_library/charting_library.js` (see token page notes).
 

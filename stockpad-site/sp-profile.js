@@ -31,7 +31,7 @@ window.SP_PAGE=function(){
     $('#pf-av').innerHTML=SP.avatar(who,56);
     const full=cs(who); $('#pf-addr').textContent=shortAddr(full); $('#pf-addr').title=full;
     $('#pf-copy').onclick=()=>SP.copy(full,'Address copied'); $('#pf-ext').href=EXP+'/address/'+who;
-    const tags=[]; if(readOnly) tags.push('<span class="badge">View only</span>'); if(!readOnly&&SP.isAdmin()) tags.push('<span class="badge acl">Operator</span>'); if(P&&P.created.length) tags.push(`<span class="badge">Creator of ${P.created.length===1?esc(P.created[0].x.t):P.created.length+' coins'}</span>`);
+    const tags=[]; if(readOnly) tags.push('<span class="badge">View only</span>'); if(!readOnly&&SP.isAdmin()) tags.push('<span class="badge ac">Operator</span>'); if(P&&P.created.length) tags.push(`<span class="badge">Creator of ${P.created.length===1?esc(P.created[0].x.t):P.created.length+' coins'}</span>`);
     $('#pf-tags').innerHTML=tags.join('');
     const acts=[]; const claimable=P?P.holdings.filter(h=>h.pend>0):[];
     if(!readOnly&&claimable.length) acts.push(`<button class="btn pri" id="pf-claimall">${ic('coins')}<span>Claim all rewards</span></button>`);
@@ -49,7 +49,7 @@ window.SP_PAGE=function(){
       ['Holder rewards claimable',rw,P?(n?'across '+n+(n===1?' coin':' coins')+', paid in the pair asset':'nothing pending'):'loading',P&&n?'up':''],
       ['Creator fees claimable',cf,P?(nf?'from '+nf+(nf===1?' coin':' coins'):P.created.length?'nothing pending':'no coins created'):'loading',P&&nf?'up':''],
       ['Coins created',nc,P?'by this wallet':'loading'],
-    ].map(s=>`<div class="sbox lg"><span class="lab">${s[0]}</span><b class="${s[3]||''}">${s[1]}</b><i>${esc(s[2])}</i></div>`).join(''); }
+    ].map(s=>`<div class="lr"><span>${s[0]}</span><i></i><b class="${s[3]||''}">${s[1]}<small>${esc(s[2])}</small></b></div>`).join(''); }
 
   function loadingState(){ strip(null); Object.keys(T).forEach(k=>{ T[k].innerHTML=msgRow(k,'Loading…'); $('#pf-n-'+k).textContent=''; }); $('#pf-notice').innerHTML=''; }
 

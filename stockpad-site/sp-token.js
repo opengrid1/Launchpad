@@ -20,25 +20,24 @@ window.SP_PAGE=function(){
   const fmtStockPx=p=>p?'$'+(p>=100?p.toFixed(0):p>=1?p.toFixed(2):fmtPrice(p)):'…';
   pg.addEventListener('click',e=>{ const b=e.target.closest('[data-copy]'); if(b){ e.preventDefault(); SP.copy(b.dataset.copy,'Address copied'); } });
 
-  /* ---------- header ---------- */
+  /* ---------- masthead ---------- */
   function head(){ const mk=SP.market();
     const links=[['Website',X.links&&X.links.web,'globe'],['X',X.links&&X.links.x,'ext'],['Telegram',X.links&&X.links.tg,'ext']].filter(l=>l[1]&&/^https?:\/\//i.test(l[1]));
     $('#tk-crumb').innerHTML=`<a href="/">Markets</a>${ic('chevr')}<a href="/?stock=${esc(X.pair)}">${esc(isStock&&stock?stock.ticker+' coins':'ETH coins')}</a>${ic('chevr')}<span class="dim">$${esc(X.t)}</span>`;
-    $('#tk-head').innerHTML=`<span class="av2 big"><img class="lg" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><img class="stb" src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"></span>
-      <div class="id">
-        <div class="t1"><h1>${esc(X.n)}</h1><span class="sym">$${esc(X.t)}</span></div>
-        <div class="t2"><span class="cpb" data-copy="${cs(X.addr)}" title="Copy address">${shortAddr(cs(X.addr))}${ic('copy')}</span><a class="cpb" href="${EXPLORER}/token/${X.addr}" target="_blank" rel="noopener" title="View on Etherscan">${ic('ext')}</a><span title="${esc(SP.fmtDate(X.createdAt))}">${ageStr(X.age||'0s')}</span><span class="badge">${feePct()}% fee</span>${X.rewards?`<span class="badge acl">★ Holder rewards</span>`:''}${links.map(l=>`<a class="lk" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</div>
+    $('#tk-head').innerHTML=`<div class="who"><span class="av2 big"><img class="lg" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><img class="stb" src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"></span>
+      <div class="id"><h1>${esc(X.n)}<small>$${esc(X.t)}</small></h1>
+        <div class="meta"><a class="pc" href="/?stock=${esc(X.pair)}" title="Paired with ${esc(X.pair)}"><img src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(isStock&&stock?stock.ticker:'ETH')}</a><span>paired with ${esc(X.pair)}</span><span class="num" id="tk-stock-px">${fmtStockPx(isStock?stockPx():ethUsd())}</span><span id="tk-stock-mk">${isStock?(mk.open?'NYSE open':'NYSE closed'):'trades 24/7'}</span><span class="badge">${feePct()}% fee</span>${X.rewards?'<span class="badge ac">Holder rewards</span>':''}<span class="cpb" data-copy="${cs(X.addr)}" title="Copy address">${shortAddr(cs(X.addr))}${ic('copy')}</span><a class="cpb" href="${EXPLORER}/token/${X.addr}" target="_blank" rel="noopener" title="View on Etherscan">${ic('ext')}</a><span title="${esc(SP.fmtDate(X.createdAt))}">${ageStr(X.age||'0s')}</span>${links.map(l=>`<a class="lk" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</div>
         ${X.desc?`<p class="desc">${esc(X.desc)}</p>`:''}
-        <div class="by">Created by ${wl(X.creator)}</div>
-      </div>
-      <a class="pairbig" href="/?stock=${esc(X.pair)}" title="Paired with ${esc(X.pair)}"><img class="cl" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span><b>${esc(X.t)}</b></span><span class="sl">/</span><img src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span><b class="st">${esc(X.pair)}</b><small><span id="tk-stock-px">${fmtStockPx(isStock?stockPx():ethUsd())}</span> · <span id="tk-stock-mk">${isStock?(mk.open?'NYSE open':'NYSE closed'):'24/7'}</span></small></span></a>`; }
+        <div class="by">Created by ${wl(X.creator)}</div></div></div>
+      <div class="pxb"><span class="lab">Price</span><b id="tk-px">$${fmtPrice(X.px)}</b><small>${SP.fmtPct(X.c24||0)} 24h · <span id="tk-pxpair">${fmtPrice(X.pxPair)} ${esc(X.pair)}</span></small></div>`; }
   function headLive(){ const p=$('#tk-stock-px'); if(p) p.textContent=fmtStockPx(isStock?stockPx():ethUsd()); if(isStock){ const mk=SP.market(); const m=$('#tk-stock-mk'); if(m) m.textContent=mk.open?'NYSE open':'NYSE closed'; }
+    const px=$('#tk-px'); if(px) px.textContent='$'+fmtPrice(X.px); const pp=$('#tk-pxpair'); if(pp) pp.textContent=fmtPrice(X.pxPair)+' '+X.pair;
     $('#tk-chart-t').textContent=`${X.t} / ${X.pair}`; $('#tk-chart-r').textContent=`${fmtPrice(X.pxPair)} ${X.pair} · ${X.pair} at ${fmtStockPx(isStock?stockPx():ethUsd())}`; }
 
-  /* ---------- stats ---------- */
-  function stats(){ const pu=pairUsd(); const fees=X.totalCreatorFees||0;
-    const S=[['Price','$'+fmtPrice(X.px)+SP.fmtPct(X.c24||0).replace('class="num','class="pc num'),`${fmtPrice(X.pxPair)} ${esc(X.pair)}`],['Market cap',fmtUsd(X.mc),inPair(X.pxPair*SUPPLY)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Trades',(X.trades||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders')],['Holders',(X.h||0).toLocaleString(),'wallets'],['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)]];
-    $('#tk-stats').innerHTML=S.map(s=>`<div class="sbox lg"><span class="lab">${s[0]}</span><b>${s[1]}</b><i>${s[2]}</i></div>`).join('');
+  /* ---------- stats ledgers ---------- */
+  function stats(){ const pu=pairUsd(); const fees=X.totalCreatorFees||0; const lr=(l,v,sub)=>`<div class="lr"><span>${l}</span><i></i><b>${v}${sub?`<small>${sub}</small>`:''}</b></div>`;
+    $('#tk-stats').innerHTML=lr('Market cap',fmtUsd(X.mc),inPair(X.pxPair*SUPPLY))+lr('Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'')+lr('Liquidity',fmtUsd(X.liq),inPair(X.liqPair))+lr('Holders',(X.h||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders'));
+    $('#tk-stats2').innerHTML=lr('Trades',(X.trades||0).toLocaleString(),'')+lr('Fees paid, all time',fmtUsd(fees*pu),inPair(fees))+lr('Trading fee',feePct()+'%','in '+esc(X.pair))+lr('Listed',SP.fmtDate(X.createdAt),ageStr(X.age||'0s'));
     const g=X.genes||{}; const dv=(g.divShareBps||0)/100, rest=100-dv, cr=Math.round(rest*0.6), pl=rest-cr;
     $('#tk-feespaid').textContent=`${feePct()}% · ${dv?dv+'% holders · ':''}${cr}% creator · ${pl}% platform`; $('#tk-feebar').innerHTML=(dv?`<i class="h" style="width:${dv}%"></i>`:'')+`<i class="c" style="width:${cr}%"></i><i class="p" style="flex:1"></i>`; }
   function flow(){ const t0=Math.floor(Date.now()/1000)-86400; const day=TR.filter(v=>v.ts>=t0); const bv=day.filter(v=>v.buy).reduce((s,v)=>s+v.pair,0), sv=day.filter(v=>!v.buy).reduce((s,v)=>s+v.pair,0);
@@ -99,7 +98,7 @@ window.SP_PAGE=function(){
   function paintSide(){ $$('#tk-sides button').forEach(b=>b.classList.toggle('on',b.dataset.side===side));
     const coin=`<img src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span>${esc(X.t)}</span>`, eth=`<img src="/img/eth.png" alt=""><span>ETH</span>`;
     $('#tk-asset-in').innerHTML=side==='buy'?eth:coin; $('#tk-asset-out').innerHTML=side==='buy'?coin:eth; amtEl.placeholder='0'; ctaEl.classList.toggle('s',side==='sell');
-    $('#tk-note').textContent=isStock?`Routes ETH → USDC → ${X.pair} → ${X.t} on Uniswap. The ${feePct()}% fee is charged in ${X.pair}.`:`Trades go through the ${X.t}/ETH pool on Uniswap v4; the fee is charged in ETH.`; $('#tk-payw').textContent=side==='buy'?'ETH':X.t; $('#tk-payw-note').textContent=side==='buy'?(isStock?'converted to '+X.pair+' by the router':''):'you receive ETH';
+    $('#tk-note').textContent=isStock?`Routes ETH → USDC → ${X.pair} → ${X.t} on Uniswap. The ${feePct()}% fee is charged in ${X.pair}.`:`Trades go through the ${X.t}/ETH pool on Uniswap v4; the fee is charged in ETH.`; $('#tk-payw').textContent=side==='buy'?'ETH':X.t; $('#tk-payw-note').textContent=side==='buy'?(isStock?'routed through '+X.pair:''):'you receive ETH'; const rl=$('#tk-route-l'); if(rl) rl.textContent=isStock?'ETH → USDC → '+X.pair+' → '+X.t:'Uniswap v4';
     paintBal(); updQuote(); }
   function resetQuote(){ qOut=0n; quoting=false; const o=$('#tk-out'); o.textContent='0'; o.classList.add('dim'); $('#tk-out-usd').textContent=''; $('#tk-amt-usd').textContent=''; $('#tk-min').textContent='—'; $('#tk-fee-l').textContent=`Fee ${feePct()}%`; $('#tk-fee').textContent='—'; const im=$('#tk-imp'); im.textContent='—'; im.className=''; }
   async function updQuote(){ const v=amtVal(); if(!v){ qSeq++; resetQuote(); cta(); return; }
@@ -115,7 +114,7 @@ window.SP_PAGE=function(){
     }catch(e){ if(seq!==qSeq) return; quoting=false; qOut=0n; const oe=$('#tk-out'); oe.textContent='—'; oe.classList.add('dim'); $('#tk-out-usd').textContent=''; $('#tk-min').textContent='—'; $('#tk-fee').textContent='—'; $('#tk-imp').textContent='—'; console.warn('quote',e); }
     cta(); }
   function cta(){ if(ctaEl.dataset.busy) return; const v=amtVal(); const W=SP.W; let t, dis=false;
-    if(!W.connected) t='Connect a wallet'; else if(!W.chainOk) t='Switch to Ethereum'; else if(!v){ t='Enter amount'; dis=true; } else if(side==='buy'&&v>balEth){ t='Insufficient ETH'; dis=true; } else if(side==='sell'&&v>balCoin*1.000001){ t='Insufficient '+X.t; dis=true; } else if(quoting){ t='Fetching quote…'; dis=true; } else if(!(qOut>0n)){ t='No quote available'; dis=true; } else t=(side==='buy'?'Buy ':'Sell ')+X.t;
+    if(!W.connected) t='Connect wallet'; else if(!W.chainOk) t='Switch to Ethereum'; else if(!v){ t='Enter amount'; dis=true; } else if(side==='buy'&&v>balEth){ t='Insufficient ETH'; dis=true; } else if(side==='sell'&&v>balCoin*1.000001){ t='Insufficient '+X.t; dis=true; } else if(quoting){ t='Fetching quote…'; dis=true; } else if(!(qOut>0n)){ t='No quote available'; dis=true; } else t=(side==='buy'?'Place buy order · ':'Place sell order · ')+X.t;
     ctaEl.textContent=t; ctaEl.disabled=dis; }
   async function doSwap(){ const W=SP.W; if(!W.connected) return SP.W.connect(); if(!W.chainOk){ try{ await SP.W.switchChain(); }catch(e){ SP.toast(SP.errMsg(e),'err'); } return; }
     const v=amtVal(); if(!v) return SP.toast('Enter an amount','err'); if(quoting||!(qOut>0n)) return SP.toast('Fetching the quote, try again in a second','info');
@@ -145,11 +144,11 @@ window.SP_PAGE=function(){
       if(seq!==posSeq||SP.W.address!==u) return; balEth=Number(eb)/1e18; balCoinWei=BigInt(cb||0); balCoin=Number(balCoinWei)/1e18; paintBal(); cta();
       const pu=pairUsd(); const pendV=Number(pend||0)/1e18; const avg=p&&p.avg>0?p.avg:0; const pc=avg>0&&X.pxPair>0?(X.pxPair/avg-1)*100:null;
       $('#tk-pos-sym').textContent=X.t;
-      $('#tk-pos-body').innerHTML=`<div class="kv"><span>Balance</span><b>${fmtAmt(balCoin)} ${esc(X.t)}</b></div><div class="kv"><span>Value</span><b>${fmtUsd(balCoin*X.px)} <span class="muted">${inPair(balCoin*X.pxPair)}</span></b></div><div class="kv"><span>Average entry</span><b>${avg>0?'$'+fmtPrice(avg*pu)+' <span class="muted">'+fmtPrice(avg)+' '+esc(X.pair)+'</span>':'—'}</b></div>${pc!=null&&balCoin>0?`<div class="kv"><span>Since entry</span><b class="${pc>=0?'up':'dn'}">${pc>=0?'+':''}${pc.toFixed(1)}%</b></div>`:''}
-        <div class="kv"><span>Holder rewards</span><b>${X.rewards?inPair(pendV)+' <span class="muted">'+fmtUsd(pendV*pu)+'</span>':'<span class="muted">not enabled for this coin</span>'}</b></div>${X.rewards?`<button class="btn block" style="margin-top:10px" id="tk-claim" ${pendV>0?'':'disabled'}>Claim ${esc(X.pair)}</button>`:''}`;
+      $('#tk-pos-body').innerHTML=`<div class="ledger"><div class="lr"><span>Balance</span><i></i><b>${fmtAmt(balCoin)} ${esc(X.t)}</b></div><div class="lr"><span>Value</span><i></i><b>${fmtUsd(balCoin*X.px)}<small>${inPair(balCoin*X.pxPair)}</small></b></div><div class="lr"><span>Average entry</span><i></i><b>${avg>0?'$'+fmtPrice(avg*pu)+'<small>'+fmtPrice(avg)+' '+esc(X.pair)+'</small>':'—'}</b></div>${pc!=null&&balCoin>0?`<div class="lr"><span>Since entry</span><i></i><b class="${pc>=0?'up':'dn'}">${pc>=0?'+':''}${pc.toFixed(1)}%</b></div>`:''}
+        <div class="lr"><span>Holder rewards</span><i></i><b>${X.rewards?inPair(pendV)+'<small>'+fmtUsd(pendV*pu)+'</small>':'<span class="muted">not enabled</span>'}</b></div></div>${X.rewards?`<button class="btn line block" id="tk-claim" ${pendV>0?'':'disabled'}>Claim ${esc(X.pair)}</button>`:''}`;
       const cb2=$('#tk-claim'); if(cb2) cb2.onclick=()=>doClaim(cb2,()=>CHAIN.claim(X.addr),'Rewards claimed');
       pos.classList.remove('hidden');
-      if(u===X.creator){ const owed=X.creatorOwed||0; $('#tk-cre-body').innerHTML=`<div class="sboxes"><div class="sbox"><span class="lab">Claimable</span><b>${inPair(owed)}</b><i>${fmtUsd(owed*pu)}</i></div><div class="sbox"><span class="lab">Your share</span><b>60%</b><i>of every fee</i></div></div><button class="btn pri block" id="tk-paycre" ${owed>0?'':'disabled'}>Claim fees</button>`;
+      if(u===X.creator){ const owed=X.creatorOwed||0; $('#tk-cre-body').innerHTML=`<div class="ledger"><div class="lr"><span>Claimable</span><i></i><b>${inPair(owed)}<small>${fmtUsd(owed*pu)}</small></b></div><div class="lr"><span>Your share</span><i></i><b>60%<small>of every fee</small></b></div></div><button class="btn pri block" id="tk-paycre" ${owed>0?'':'disabled'}>Claim fees</button>`;
         $('#tk-paycre').onclick=e=>doClaim(e.currentTarget,()=>CHAIN.payCreator(X.addr),'Creator fees claimed'); cre.classList.remove('hidden'); }
       else cre.classList.add('hidden');
     }catch(e){ console.warn('position',e); } }

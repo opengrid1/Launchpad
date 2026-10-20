@@ -1,132 +1,116 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Create a token | StockPad</title><meta name="description" content="Launch a coin on Ethereum paired with a tokenized stock in one transaction. Fixed supply, liquidity that cannot be withdrawn, your fee paid in the stock.">
-<link rel="icon" href="/img/favicon.svg?v=11" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=11"><meta name="theme-color" content="#000000">
-<meta property="og:title" content="Create a token | StockPad"><meta property="og:description" content="Launch a coin paired with a real stock on Ethereum."><meta property="og:image" content="/img/og.png?v=11"><meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=5">
+<title>Launch a coin | StockPad</title><meta name="description" content="Launch a coin on Ethereum paired with a tokenized stock in one transaction. Fixed supply, liquidity that cannot be withdrawn, your fee paid in the stock.">
+<link rel="icon" href="/img/favicon.svg?v=12" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=12"><meta name="theme-color" content="#0a0a0b">
+<meta property="og:title" content="Launch a coin | StockPad"><meta property="og:description" content="Launch a coin paired with a real stock on Ethereum."><meta property="og:image" content="/img/og.png?v=12"><meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=6">
 <style>
-#pg-launch{max-width:1100px;margin:0 auto}
-#pg-launch .wiz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
-#pg-launch .form{padding:28px;border-color:rgba(63,188,255,.55);box-shadow:0 0 40px rgba(63,188,255,.08)}
-#pg-launch .eyebrow{display:block;font:400 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
-#pg-launch h1,#pg-launch h2{font-size:30px;margin-top:4px} #pg-launch h1 em,#pg-launch h2 em{font-style:normal;color:var(--ac)}
-#pg-launch #steps{display:none}
-#pg-launch .idrow{display:grid;grid-template-columns:74px minmax(0,1fr);gap:16px;align-items:start;margin-top:14px}
-#pg-launch .drop{display:flex;align-items:center;justify-content:center;width:74px;height:74px;border:1px dashed var(--line-2);border-radius:50%;background:var(--s2);color:var(--fg-3);font-size:10.5px;line-height:1.3;cursor:pointer;text-align:center;overflow:hidden;transition:border-color .15s;margin-top:18px}
+#pg-launch .ph{padding:40px 0 28px;border-bottom:1px solid var(--line)} #pg-launch .ph h1{font-size:52px}
+#pg-launch .wiz{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:56px;align-items:start;margin-top:8px}
+#pg-launch .wiz-side{position:sticky;top:calc(var(--top) + 24px)}
+#pg-launch #steps{display:none} #pg-launch .pane{display:block}
+/* numbered sections */
+#pg-launch .fs{display:grid;grid-template-columns:72px minmax(0,1fr);gap:16px;padding:30px 0;border-bottom:1px solid var(--line)}
+#pg-launch .fs .fn{font:400 40px/1 var(--serif);color:var(--ac)} #pg-launch .fs h3{font-size:26px;margin-bottom:4px} #pg-launch .fs .fb>.hint:first-of-type{margin:0 0 6px}
+#pg-launch .idrow{display:grid;grid-template-columns:84px minmax(0,1fr);gap:18px;align-items:start;margin-top:12px}
+#pg-launch .drop{display:flex;align-items:center;justify-content:center;width:84px;height:84px;border:1px dashed var(--line-3);border-radius:50%;background:var(--s1);color:var(--fg-3);font-size:11px;line-height:1.3;cursor:pointer;text-align:center;overflow:hidden;transition:border-color .15s;margin-top:28px}
 #pg-launch .drop:hover,#pg-launch .drop.over{border-color:var(--ac);color:var(--fg)} #pg-launch .drop svg{display:none}
 #pg-launch .drop img{width:100%;height:100%;object-fit:cover;border-radius:50%} #pg-launch .drop.has{border-style:solid;border-color:var(--line-2)}
-#pg-launch .two{display:grid;grid-template-columns:1fr 1fr;gap:10px} #pg-launch .two .lbl{margin-top:0}
+#pg-launch .two{display:grid;grid-template-columns:1fr 1fr;gap:12px} #pg-launch .two .lbl{margin-top:0}
 #pg-launch input.num{font-family:var(--mono)} #pg-launch input.up{text-transform:uppercase;font-family:var(--mono)}
-#pg-launch .links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#pg-launch .links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 #pg-launch .cnt-hint{display:flex;justify-content:space-between;gap:10px}
 /* pair dropdown */
-#pg-launch .pairhd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 6px} #pg-launch .pairhd .lbl{margin:0} #pg-launch .pairhd .seg button{height:30px;padding:0 12px;font-family:var(--disp)}
-#pg-launch .dd{position:relative} #pg-launch .ddb{display:flex;align-items:center;justify-content:space-between;width:100%;height:42px;padding:0 12px;border:1px solid var(--line-2);border-radius:10px;background:var(--s1);font:500 13px var(--disp);color:var(--fg);text-align:left} #pg-launch .ddb:hover{border-color:var(--line-3)} #pg-launch .ddb .pv{display:flex;align-items:center;gap:8px} #pg-launch .ddb .pv img{width:20px;height:20px;border-radius:50%;background:#fff} #pg-launch .ddb .pv small{font:11px var(--mono);color:var(--fg-3)} #pg-launch .ddb .ar{color:var(--fg-2);font-size:14px}
-#pg-launch .pairs{display:none;position:absolute;left:0;right:0;top:46px;z-index:20;max-height:360px;overflow:auto;flex-direction:column;border:1px solid var(--line-2);border-radius:10px;background:var(--s1);box-shadow:0 16px 40px rgba(0,0,0,.6)} #pg-launch .dd.open .pairs{display:flex}
-#pg-launch .pc{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto 20px;align-items:center;gap:12px;padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;background:transparent}
-#pg-launch .pc:last-child{border-bottom:0} #pg-launch .pc:hover{background:var(--s3)} #pg-launch .pc.on{background:var(--ac-dim)}
-#pg-launch .pc .tick{width:18px;height:18px;border-radius:50%;border:1px solid var(--line-3);display:inline-flex;align-items:center;justify-content:center;color:var(--ac-ink)} #pg-launch .pc.on .tick{background:var(--ac);border-color:var(--ac)} #pg-launch .pc .tick svg{width:11px;height:11px;display:none} #pg-launch .pc.on .tick svg{display:block}
+#pg-launch .dd{position:relative;margin-top:12px} #pg-launch .ddb{display:flex;align-items:center;justify-content:space-between;width:100%;height:48px;padding:0 14px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--bg);font:500 14px var(--sans);color:var(--fg);text-align:left} #pg-launch .ddb:hover{border-color:var(--line-3)} #pg-launch .ddb .pv{display:flex;align-items:center;gap:10px} #pg-launch .ddb .pv img{width:22px;height:22px;border-radius:50%;background:#fff} #pg-launch .ddb .pv small{font:12px var(--mono);color:var(--fg-3)} #pg-launch .ddb .ar{color:var(--fg-3);font-size:12px}
+#pg-launch .pairs{display:none;position:absolute;left:0;right:0;top:52px;z-index:20;max-height:380px;overflow:auto;flex-direction:column;border:1px solid var(--line-2);border-radius:var(--r);background:var(--s1);box-shadow:0 16px 40px rgba(0,0,0,.6)} #pg-launch .dd.open .pairs{display:flex}
+#pg-launch .pc{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto 20px;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;background:transparent}
+#pg-launch .pc:last-child{border-bottom:0} #pg-launch .pc:hover{background:var(--s2)} #pg-launch .pc.on{background:var(--ac-dim)}
+#pg-launch .pc .tick{width:18px;height:18px;border-radius:50%;border:1px solid var(--line-3);display:inline-flex;align-items:center;justify-content:center;color:#fff} #pg-launch .pc.on .tick{background:var(--ac);border-color:var(--ac)} #pg-launch .pc .tick svg{width:11px;height:11px;display:none} #pg-launch .pc.on .tick svg{display:block}
 #pg-launch .pc img{width:28px;height:28px;border-radius:50%;background:#fff}
-#pg-launch .pc .nm b{display:block;font:600 13px var(--disp);line-height:1.2} #pg-launch .pc .nm small{display:block;color:var(--fg-3);font:11px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-launch .pc .nm b{display:block;font:600 13px var(--sans);line-height:1.2} #pg-launch .pc .nm small{display:block;color:var(--fg-3);font:11px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #pg-launch .pc .px{font:500 13px var(--mono);text-align:right}
 #pg-launch .pc .ft{display:flex;flex-direction:column;align-items:flex-end;gap:1px;font:10.5px var(--mono);color:var(--fg-3);white-space:nowrap}
-/* rows: dev buy, fee, options */
-#pg-launch .orow{border:1px solid var(--line-2);border-radius:10px;background:var(--s1);margin-top:10px;padding:0 14px}
-#pg-launch .orow .oh{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:46px;cursor:pointer;font:500 13px var(--disp)} #pg-launch .orow .oh .r{display:flex;align-items:center;gap:10px;font:400 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
-#pg-launch .obox{border:1px solid var(--line-2);border-radius:10px;background:var(--s1);margin-top:10px;padding:0 14px}
-#pg-launch .feerow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;font:500 13px var(--disp);flex-wrap:wrap} #pg-launch .feerow .seg button{font-family:var(--disp);height:30px;padding:0 12px}
-#pg-launch .obox .opt{border-top:1px solid var(--line)}
-#pg-launch .opt .oh{display:flex;align-items:center;gap:10px;padding:12px 0;cursor:pointer;flex-wrap:wrap} #pg-launch .opt .oh b{font:500 13px var(--disp)} #pg-launch .opt .oh small{display:block;width:100%;color:var(--fg-3);font-size:12.5px;line-height:1.5;margin-top:2px} #pg-launch .opt .oh .sw{margin-left:auto}
-#pg-launch .ob{display:none;padding:0 0 14px} #pg-launch .opt.on .ob{display:block} #pg-launch .ob .lbl:first-child{margin-top:0} #pg-launch .ob .grid{gap:10px}
+/* terms rows */
+#pg-launch .trow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);flex-wrap:wrap} #pg-launch .trow:last-child{border-bottom:0} #pg-launch .trow .tl b{display:block;font-weight:600} #pg-launch .trow .tl small{display:block;color:var(--fg-3);font-size:12.5px;margin-top:2px;line-height:1.5;max-width:52ch}
+#pg-launch .opt .oh{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;cursor:pointer;flex-wrap:wrap} #pg-launch .opt .oh .tl{flex:1;min-width:200px} #pg-launch .opt .oh b{display:block;font-weight:600} #pg-launch .opt .oh small{display:block;color:var(--fg-3);font-size:12.5px;margin-top:2px;line-height:1.5;max-width:52ch}
+#pg-launch .opt{border-bottom:1px solid var(--line)} #pg-launch .opt:last-child{border-bottom:0}
+#pg-launch .ob{display:none;padding:0 0 16px} #pg-launch .opt.on .ob{display:block} #pg-launch .ob .lbl:first-child{margin-top:0} #pg-launch .ob .grid{gap:12px}
+#pg-launch .feerow .seg button{height:30px;padding:0 13px;font-size:13px}
 #pg-launch .rev{display:none}
-#pg-launch #cta{margin-top:16px;height:44px;font:600 14px var(--disp);border-radius:10px;box-shadow:0 0 22px rgba(63,188,255,.35)}
+#pg-launch #cta{margin-top:22px;height:50px;font-size:15px}
 #pg-launch .notice{margin-top:12px}
-/* preview card */
-#pg-launch .prev{padding:28px}
-#pg-launch .pcard{margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--s2)}
-#pg-launch .pcard .top{display:flex;align-items:center;gap:12px} #pg-launch .sm-logo{width:42px;height:42px;border-radius:50%;background:rgba(46,189,133,.15);border:1px solid rgba(46,189,133,.5);display:flex;align-items:center;justify-content:center;font:600 12px var(--mono);color:var(--up);overflow:hidden;flex:none} #pg-launch .sm-logo img{width:100%;height:100%;object-fit:cover}
-#pg-launch .pcard .nm{flex:1;min-width:0} #pg-launch .pcard .nm b{font:600 15px var(--disp)} #pg-launch .pcard .nm small{font:400 12px var(--mono);color:var(--fg-3);margin-left:8px} #pg-launch .pcard .nm .pr{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;color:var(--fg-2)} #pg-launch .pcard .nm .pr img{width:14px;height:14px;border-radius:50%;background:#fff}
-#pg-launch .pcard .age{font:11px var(--sans);color:var(--fg-3)}
-#pg-launch .pcard .spark{height:80px;margin:14px 0 10px}
-#pg-launch .pcard .flow{display:flex;justify-content:space-between;margin-bottom:6px} #pg-launch .pcard .flow .num{font-size:11px;color:var(--fg-3)}
-#pg-launch .pcard .sboxes{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:12px}
-#pg-launch .kboxes{margin-top:12px;grid-template-columns:repeat(4,minmax(0,1fr))}
-#pg-launch .pnote{margin-top:14px;text-align:center;font-size:12px;color:var(--fg-3)}
+/* prospectus */
+#pg-launch .prosp{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--s1);padding:22px 24px}
+#pg-launch .prosp .kicker{display:block;margin-bottom:10px}
+#pg-launch .pid{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--line)} #pg-launch .sm-logo{width:52px;height:52px;border-radius:50%;background:var(--s3);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font:500 14px var(--mono);color:var(--fg-2);overflow:hidden;flex:none} #pg-launch .sm-logo img{width:100%;height:100%;object-fit:cover}
+#pg-launch .pid b{display:block;font:400 26px var(--serif);line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #pg-launch .pid small{display:block;font:12.5px var(--mono);color:var(--fg-3);margin-top:3px} #pg-launch .pid>div{min-width:0}
+#pg-launch .prosp .ledger{margin-top:8px} #pg-launch .prosp .lr>b{display:inline-flex;align-items:center;gap:6px} #pg-launch .prosp .lr img{width:14px;height:14px;border-radius:50%;background:#fff}
+#pg-launch .prosp .pnote{margin-top:14px;font-size:12.5px;color:var(--fg-3);line-height:1.5}
 /* done */
-#pg-launch #done .ch{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);font:600 15px var(--disp)} #pg-launch #done .cb{padding:16px}
+#pg-launch #done{padding:30px 0} #pg-launch #done .ch{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px} #pg-launch #done .ch span:first-child{font:400 32px var(--serif)}
 #pg-launch .dn-hd{display:flex;align-items:center;gap:14px;margin-bottom:14px} #pg-launch .dn-hd img{width:56px;height:56px;border-radius:50%;background:var(--s3);object-fit:cover;border:1px solid var(--line-2)}
-#pg-launch .dn-hd b{display:block;font:600 18px var(--disp)} #pg-launch .dn-hd small{display:block;color:var(--fg-2);font-size:13px;margin-top:3px}
+#pg-launch .dn-hd b{display:block;font-size:18px;font-weight:600} #pg-launch .dn-hd small{display:block;color:var(--fg-2);font-size:13px;margin-top:3px}
 #pg-launch .dn-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 #pg-launch .dn-addr{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;word-break:break-all}
-@media(max-width:1000px){#pg-launch .wiz{grid-template-columns:1fr}}
-@media(max-width:640px){#pg-launch .form,#pg-launch .prev{padding:18px} #pg-launch h1,#pg-launch h2{font-size:26px} #pg-launch .links{grid-template-columns:1fr} #pg-launch .kboxes{grid-template-columns:1fr 1fr} #pg-launch .pc .ft{display:none} #pg-launch .pc{grid-template-columns:28px minmax(0,1fr) auto 20px}}
+@media(max-width:1000px){#pg-launch .wiz{grid-template-columns:1fr;gap:28px} #pg-launch .wiz-side{position:static}}
+@media(max-width:640px){#pg-launch .ph h1{font-size:38px} #pg-launch .fs{grid-template-columns:1fr;gap:8px;padding:22px 0} #pg-launch .fs .fn{font-size:28px} #pg-launch .links{grid-template-columns:1fr} #pg-launch .two{grid-template-columns:1fr} #pg-launch .idrow{grid-template-columns:1fr} #pg-launch .drop{margin-top:0} #pg-launch .pc .ft{display:none} #pg-launch .pc{grid-template-columns:28px minmax(0,1fr) auto 20px} #pg-launch .prosp{padding:18px}}
 </style>
 </head><body data-page="launch">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-launch">
+  <div class="ph"><div><p class="kicker">New listing · Ethereum mainnet</p><h1>Launch a <em>coin</em>.</h1><p>Name it, pick the stock it trades against, set the terms. One transaction opens the market. Supply is fixed at 1,000,000,000 and the liquidity cannot be withdrawn by anyone.</p></div></div>
   <div class="wiz" id="wiz">
-    <div class="wiz-main panel form">
-      <span class="eyebrow">Launch on Ethereum · Liquidity cannot be withdrawn</span><h1>Create a <em>token</em></h1>
+    <div class="wiz-main">
       <div id="steps"><button type="button" data-step="1" class="on"><span class="n">1</span></button><button type="button" data-step="2"><span class="n">2</span></button><button type="button" data-step="3"><span class="n">3</span></button></div>
 
-      <div class="pane on" data-pane="2">
+      <section class="fs pane on" data-pane="2"><div class="fn">01</div><div class="fb"><h3>Identity</h3><p class="hint">The name, symbol and image are written on-chain and cannot be changed.</p>
         <div class="idrow">
           <label class="drop" id="drop" for="f-logo"><input id="f-logo" type="file" accept="image/*" hidden><span id="drop-in"></span></label>
           <div class="two">
-            <div><label class="lbl" for="f-name">Token name</label><input class="inp" id="f-name" maxlength="32" placeholder="Token name" autocomplete="off"><p class="err" id="name-msg"></p></div>
-            <div><label class="lbl" for="f-sym">Token symbol</label><input class="inp num up" id="f-sym" maxlength="10" placeholder="TOKEN" autocomplete="off" spellcheck="false"><p class="hint" id="sym-msg"></p></div>
+            <div><label class="lbl" for="f-name">Name</label><input class="inp" id="f-name" maxlength="32" placeholder="Tesla Moon" autocomplete="off"><p class="err" id="name-msg"></p></div>
+            <div><label class="lbl" for="f-sym">Symbol</label><input class="inp num up" id="f-sym" maxlength="10" placeholder="TSLAMOON" autocomplete="off" spellcheck="false"><p class="hint" id="sym-msg"></p></div>
           </div>
         </div>
-      </div>
+        <label class="lbl" for="f-desc">Description</label>
+        <textarea class="inp" id="f-desc" maxlength="280" placeholder="What is this coin about?"></textarea>
+        <div class="cnt-hint"><span class="hint">Shown on the coin page.</span><span class="hint num" id="desc-cnt">0 / 280</span></div>
+        <div class="links"><div><label class="lbl" for="f-web">Website</label><input class="inp" id="f-web" placeholder="yourweb.com" autocomplete="off"></div><div><label class="lbl" for="f-x">X</label><input class="inp" id="f-x" placeholder="x.com/yourX" autocomplete="off"></div><div><label class="lbl" for="f-tg">Telegram</label><input class="inp" id="f-tg" placeholder="t.me/yourTG" autocomplete="off"></div></div>
+      </div></section>
 
-      <div class="pane on" data-pane="1">
-        <div class="pairhd"><label class="lbl">Pair</label><div class="seg"><button type="button" class="on">Stocks</button><button type="button" disabled title="This launchpad pairs with stocks only">Crypto</button></div></div>
-        <div class="dd" id="pair-dd"><button type="button" class="ddb" id="pair-btn"><span class="pv" id="pair-pv">Select</span><span class="ar">▼</span></button><div class="pairs" id="pairs"></div></div>
+      <section class="fs pane on" data-pane="1"><div class="fn">02</div><div class="fb"><h3>Pair</h3><p class="hint">The tokenized stock your coin trades against. Every fee and every trade settles in it. Buyers still pay in ETH; the router converts.</p>
+        <div class="dd" id="pair-dd"><button type="button" class="ddb" id="pair-btn"><span class="pv" id="pair-pv">Select a stock</span><span class="ar">▼</span></button><div class="pairs" id="pairs"></div></div>
         <p class="err" id="pair-err"></p><p class="hint" id="mk-status"></p>
-        <label class="lbl" for="f-desc">Description (optional)</label>
-        <textarea class="inp" id="f-desc" maxlength="280" placeholder=""></textarea>
-        <div class="cnt-hint"><span class="hint"></span><span class="hint num" id="desc-cnt">0 / 280</span></div>
-        <div class="links"><div><label class="lbl" for="f-web">Web (optional)</label><input class="inp" id="f-web" placeholder="yourweb.com" autocomplete="off"></div><div><label class="lbl" for="f-x">X (optional)</label><input class="inp" id="f-x" placeholder="x.com/yourX" autocomplete="off"></div><div><label class="lbl" for="f-tg">TG (optional)</label><input class="inp" id="f-tg" placeholder="t.me/yourTG" autocomplete="off"></div></div>
-      </div>
+      </div></section>
 
-      <div class="pane on" data-pane="3">
+      <section class="fs pane on" data-pane="3"><div class="fn">03</div><div class="fb"><h3>Terms</h3><p class="hint">Fixed at launch. Nothing here can be changed afterwards, by you or by us.</p>
         <div class="notice warn hidden" id="paused"></div>
-        <div class="opt orow" id="opt-dev"><div class="oh" data-sw="dev"><span>Dev buy</span><span class="r"><span id="dev-hdr">Optional · paid in ETH</span><button type="button" class="sw" role="switch" aria-checked="false" id="sw-dev"></button></span></div><div class="ob"><label class="lbl" for="f-dev">ETH to spend</label><input class="inp num" id="f-dev" type="number" min="0" max="0.5" step="0.01" value="0.1" style="max-width:200px"><p class="hint" id="dev-hint"></p><p class="err" id="dev-msg"></p></div></div>
-        <div class="obox">
-          <div class="feerow"><span>Trade fee</span><div class="row"><div class="seg" id="fee-seg"><button type="button" data-fee="100" class="on">1%</button><button type="button" data-fee="200">2%</button><button type="button" data-fee="300">3%</button><button type="button" data-fee="custom">Custom</button></div><div class="row hidden" id="fee-custom"><input class="inp num" id="f-fee" type="number" min="0.1" max="3" step="0.1" value="1" style="width:84px;height:30px"><span class="muted">%</span></div></div></div>
-          <p class="hint" id="fee-hint" style="margin:-6px 0 10px">Charged on every swap, paid in the paired stock. Fixed at launch.</p><p class="err" id="fee-msg"></p>
-          <div class="opt" id="opt-div"><div class="oh" data-sw="div"><b>Creator fees go to holders</b><span class="badge acl">★ Holder rewards</span><button type="button" class="sw" role="switch" aria-checked="false" id="sw-div"></button><small>Off: your share of every fee goes to your wallet and is claimable any time. On: a share of every fee is routed to everyone who holds the token instead, permanently.</small></div><div class="ob"><label class="lbl" for="f-div">Share of the fee to holders, %</label><input class="inp num" id="f-div" type="number" min="10" max="50" step="1" value="20" style="max-width:200px"><p class="hint" id="div-hint"></p><p class="err" id="div-msg"></p></div></div>
-          <div class="opt" id="opt-snipe"><div class="oh" data-sw="snipe"><b>Anti-snipe</b><button type="button" class="sw" role="switch" aria-checked="false" id="sw-snipe"></button><small>Start with a higher fee that falls back to the base fee after a set time. Discourages bots in the first minutes.</small></div><div class="ob"><div class="grid g2"><div><label class="lbl" for="f-snipe">Starting fee, %</label><input class="inp num" id="f-snipe" type="number" min="5" max="30" step="1" value="30"></div><div><label class="lbl" for="f-snipemin">Duration, minutes</label><input class="inp num" id="f-snipemin" type="number" min="1" max="1440" step="1" value="30"></div></div><p class="hint" id="snipe-hint"></p><p class="err" id="snipe-msg"></p></div></div>
-        </div>
+        <div class="trow feerow"><div class="tl"><b>Trading fee</b><small>Charged on every swap, paid in the stock. 60% of it goes to you, 40% to the platform.</small></div><div class="row"><div class="seg" id="fee-seg"><button type="button" data-fee="100" class="on">1%</button><button type="button" data-fee="200">2%</button><button type="button" data-fee="300">3%</button><button type="button" data-fee="custom">Custom</button></div><div class="row hidden" id="fee-custom"><input class="inp num" id="f-fee" type="number" min="0.1" max="3" step="0.1" value="1" style="width:84px;height:30px"><span class="muted">%</span></div></div></div>
+        <p class="err" id="fee-msg"></p><p class="hint hidden" id="fee-hint"></p>
+        <div class="opt" id="opt-div"><div class="oh" data-sw="div"><div class="tl"><b>Holder rewards</b><small>Route a share of every fee to everyone who holds the coin, paid in the stock, claimable any time. Permanent once on.</small></div><button type="button" class="sw" role="switch" aria-checked="false" id="sw-div"></button></div><div class="ob"><label class="lbl" for="f-div">Share of the fee to holders, %</label><input class="inp num" id="f-div" type="number" min="10" max="50" step="1" value="20" style="max-width:200px"><p class="hint" id="div-hint"></p><p class="err" id="div-msg"></p></div></div>
+        <div class="opt" id="opt-snipe"><div class="oh" data-sw="snipe"><div class="tl"><b>Anti-snipe</b><small>Open with a higher fee that decays to the base fee over the first minutes. Discourages bots at launch.</small></div><button type="button" class="sw" role="switch" aria-checked="false" id="sw-snipe"></button></div><div class="ob"><div class="grid g2"><div><label class="lbl" for="f-snipe">Starting fee, %</label><input class="inp num" id="f-snipe" type="number" min="5" max="30" step="1" value="30"></div><div><label class="lbl" for="f-snipemin">Duration, minutes</label><input class="inp num" id="f-snipemin" type="number" min="1" max="1440" step="1" value="30"></div></div><p class="hint" id="snipe-hint"></p><p class="err" id="snipe-msg"></p></div></div>
+        <div class="opt" id="opt-dev"><div class="oh" data-sw="dev"><div class="tl"><b>Dev buy</b><small id="dev-hdr">Buy the first coins inside the launch transaction. Paid in ETH on top of gas.</small></div><button type="button" class="sw" role="switch" aria-checked="false" id="sw-dev"></button></div><div class="ob"><label class="lbl" for="f-dev">ETH to spend</label><input class="inp num" id="f-dev" type="number" min="0" max="0.5" step="0.01" value="0.1" style="max-width:200px"><p class="hint" id="dev-hint"></p><p class="err" id="dev-msg"></p></div></div>
         <div class="rev"><div class="kv"><span>Fee split</span><b id="rv-split"></b></div><div class="split2" id="rv-bar"></div><div class="legend" id="rv-legend"></div><div class="kv"><span>Opening market cap</span><b id="rv-cap"></b></div></div>
-        <button type="button" class="btn pri lg block" id="cta">Connect a wallet</button>
-      </div>
+        <button type="button" class="btn pri lg block" id="cta">Connect wallet</button>
+        <p class="hint">You pay gas, the dev buy if enabled, and nothing else.</p>
+      </div></section>
 
       <div class="hidden" id="done">
-        <div class="ch"><span>Your coin is live</span><span class="badge acl" id="dn-block"></span></div>
-        <div class="cb">
-          <div class="dn-hd"><img id="dn-logo" alt=""><div><b id="dn-name"></b><small id="dn-sub"></small></div></div>
-          <div class="kv"><span>Address</span><b><span class="dn-addr"><span id="dn-addr"></span><button type="button" class="cp" id="dn-copy" title="Copy address"></button></span></b></div>
-          <div class="kv"><span>Pair</span><b id="dn-pair"></b></div>
-          <div class="kv"><span>Fee</span><b id="dn-fee"></b></div>
-          <div class="dn-acts"><a class="btn pri" id="dn-open">Open coin page</a><a class="btn" id="dn-x" target="_blank" rel="noopener">Share on X</a><a class="btn" id="dn-scan" target="_blank" rel="noopener">Etherscan</a></div>
-        </div>
+        <div class="ch"><span>Your coin is live.</span><span class="badge ac" id="dn-block"></span></div>
+        <div class="dn-hd"><img id="dn-logo" alt=""><div><b id="dn-name"></b><small id="dn-sub"></small></div></div>
+        <div class="ledger"><div class="lr"><span>Address</span><i></i><b><span class="dn-addr"><span id="dn-addr"></span><button type="button" class="cp" id="dn-copy" title="Copy address"></button></span></b></div><div class="lr"><span>Pair</span><i></i><b id="dn-pair"></b></div><div class="lr"><span>Fee</span><i></i><b id="dn-fee"></b></div></div>
+        <div class="dn-acts"><a class="btn pri" id="dn-open">Open coin page</a><a class="btn line" id="dn-x" target="_blank" rel="noopener">Share on X</a><a class="btn line" id="dn-scan" target="_blank" rel="noopener">Etherscan</a></div>
       </div>
     </div>
 
-    <aside class="wiz-side panel prev" id="sum">
-      <span class="eyebrow">Live preview</span><h2>How it will <em>look</em></h2>
-      <div class="pcard"><div class="top"><div class="sm-logo" id="sm-logo">TOK</div><div class="nm"><div><b id="sm-name">Token name</b><small id="sm-sym">$TOKEN</small></div><div class="pr" id="sm-pair">Pick a pair</div></div><span class="age">new</span></div>
-        <svg class="spark" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fbcff" stop-opacity=".35"/><stop offset="1" stop-color="#3fbcff" stop-opacity="0"/></linearGradient></defs><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16 L297 80 L3 80 Z" fill="url(#pg)"/><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16" fill="none" stroke="#3fbcff" stroke-width="1.5" stroke-linejoin="round"/></svg>
-        <div class="flow"><span class="lab">Flow 24h</span><span class="num">no trades yet</span></div><div class="split"><i class="b" style="width:0"></i></div>
-        <div class="sboxes"><div class="sbox"><span class="lab">Mcap</span><b id="sm-cap">$5,000</b></div><div class="sbox"><span class="lab">Volume</span><b>$0</b></div><div class="sbox"><span class="lab">Trades</span><b>0</b></div></div></div>
-      <div class="sboxes kboxes"><div class="sbox"><span class="lab">Trade fee</span><b id="sm-fee">1%</b></div><div class="sbox"><span class="lab">Supply</span><b>1B</b></div><div class="sbox"><span class="lab">Dev buy</span><b id="sm-dev">None</b></div><div class="sbox"><span class="lab">Creator share</span><b id="sm-cr">60%</b></div></div>
-      <div class="sboxes kboxes" style="grid-template-columns:1fr 1fr"><div class="sbox"><span class="lab">Options</span><b id="sm-opts">None</b></div><div class="sbox"><span class="lab">Status</span><b id="sm-step">Ready</b></div></div>
+    <aside class="wiz-side"><div class="prosp" id="sum">
+      <span class="kicker">Prospectus</span>
+      <div class="pid"><div class="sm-logo" id="sm-logo">?</div><div><b id="sm-name">Your coin</b><small id="sm-sym">$SYMBOL</small></div></div>
+      <div class="ledger"><div class="lr"><span>Pair</span><i></i><b id="sm-pair">Not picked</b></div><div class="lr"><span>Trading fee</span><i></i><b id="sm-fee">1%</b></div><div class="lr"><span>Supply</span><i></i><b>1,000,000,000</b></div><div class="lr"><span>Opening market cap</span><i></i><b id="sm-cap"></b></div><div class="lr"><span>Dev buy</span><i></i><b id="sm-dev">None</b></div><div class="lr"><span>Creator share</span><i></i><b id="sm-cr">60%</b></div><div class="lr"><span>Options</span><i></i><b id="sm-opts">None</b></div><div class="lr"><span>Status</span><i></i><b id="sm-step">Draft</b></div></div>
       <p class="pnote" id="sm-note">Liquidity cannot be withdrawn. Nobody can pull it, including you.</p>
-    </aside>
+    </div></aside>
   </div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=5"></script><script src="/sp-launch.js?v=5"></script>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=6"></script><script src="/sp-launch.js?v=6"></script>
 </body></html>
