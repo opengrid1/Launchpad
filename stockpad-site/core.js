@@ -60,7 +60,7 @@ SP.W.switchChain=async()=>{ const d=window.inkyWallet; if(d&&d.switchChain) awai
 addEventListener('inky:wallet',syncWallet); document.addEventListener('wallet-change',()=>{ /* re-entrancy guard: syncWallet only dispatches on change */ });
 
 /* ---------- shell ---------- */
-const NAV=[['markets','/','Home'],['launch','/launch','Launch'],['analytics','/analytics','Analytics'],['portfolio','/profile','Profile'],['docs','/docs','Docs']];
+const NAV=[['markets','/','Home'],['analytics','/analytics','Analytics'],['launch','/launch','Launch'],['portfolio','/profile','Profile'],['docs','/docs','Docs']];
 function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP.W;
   if(!W.connected){ el.innerHTML=`<button class="btn pri" id="wconnect">Connect wallet</button>`; $('#wconnect',el).onclick=SP.W.connect; return; }
   el.innerHTML=`<button class="wbtn" id="wmenu"><span class="av">${SP.avatar(W.address,22)}</span>${esc(W.short)}${!W.chainOk?'<span class="tag red">Wrong network</span>':''}</button>`;
@@ -76,7 +76,7 @@ function renderShell(){ const page=document.body.dataset.page||'markets'; const 
     <div class="topr">${clockHtml()}<span class="vsep"></span><span id="sp-wallet"></span></div></div>`;
     const q=$('#sp-q'); q.addEventListener('input',()=>searchMenu(q)); q.addEventListener('focus',()=>searchMenu(q)); addEventListener('keydown',e=>{ if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){ e.preventDefault(); q.focus(); } }); }
   let tb=$('#sp-tabbar'); if(!tb){ tb=document.createElement('nav'); tb.id='sp-tabbar'; tb.className='tabbar'; document.body.appendChild(tb); }
-  tb.innerHTML=NAV.map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${ic(NAV_IC[n[0]])}${n[2]}</a>`).join('');
+  tb.innerHTML=NAV.map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''} ${n[0]==='launch'?'lnch':''}">${n[0]==='launch'?`<span class="lb">${ic('rocket')}</span>`:ic(NAV_IC[n[0]])}${n[2]}</a>`).join('');
   const ft=$('#sp-foot'); if(ft) ft.innerHTML=`<div class="wrap"><a class="brand" href="/"><img src="/img/logo.svg?v=13" alt=""><span class="wm">Stock<em>Pad</em></span></a><span>Ethereum</span>${C.factory?`<a href="${EXPLORER}/address/${C.factory}" target="_blank" rel="noopener" title="Factory">factory ${shortAddr(C.factory)}</a>`:''}${C.hook?`<a href="${EXPLORER}/address/${C.hook}" target="_blank" rel="noopener" title="Hook">hook ${shortAddr(C.hook)}</a>`:''}<span class="sp"></span><div class="fl"><a href="/docs/introduction">Docs</a><a href="/docs/fees">Fees</a><a href="/docs/security">Security</a><a href="https://x.com/stockpad" target="_blank" rel="noopener">${ic('xlogo')} @stockpad</a><span class="num" id="sp-ethpx"><img src="/img/eth.png" alt="" style="width:14px;height:14px;border-radius:50%;display:inline-block;vertical-align:-2px;margin-right:6px">${SP.prices[WETH]?stockPx(SP.prices[WETH]):''}</span></div></div>`;
   renderWalletBtn(); }
 function searchMenu(q){ const v=q.value.trim().toLowerCase(); $$('.menu.srch').forEach(m=>m.remove()); if(!v) return;

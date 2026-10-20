@@ -130,4 +130,5 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px} .tb th{text-align:l
   #sp-foot{display:none}
   .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.94);border-top:1px solid var(--line);backdrop-filter:blur(12px);padding:6px 0 calc(6px + env(safe-area-inset-bottom))}
   .tabbar a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 2px;font:500 10.5px var(--sans);color:var(--fg-3)} .tabbar a svg{width:20px;height:20px} .tabbar a.on{color:var(--ac)}
+  .tabbar a.lnch{color:var(--fg-2)} .tabbar a.lnch .lb{display:flex;align-items:center;justify-content:center;width:46px;height:46px;margin-top:-22px;border-radius:50%;background:var(--ac);color:var(--ac-ink);box-shadow:var(--glow),0 0 0 5px var(--bg)} .tabbar a.lnch .lb svg{width:21px;height:21px} .tabbar a.lnch.on{color:var(--ac)}
 }
