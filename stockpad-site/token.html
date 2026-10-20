@@ -1,10 +1,10 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Token | Equo</title><meta name="description" content="Price, chart, trades and holders for a coin launched on Equo, paired with a tokenized stock on Ethereum.">
-<link rel="icon" href="/img/favicon.svg?v=15" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=15"><meta name="theme-color" content="#000000">
-<meta property="og:image" content="/img/og.png?v=15">
+<link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
+<meta property="og:image" content="/img/og.png?v=16">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=15">
+<link rel="stylesheet" href="/ui.css?v=16">
 <style>
 /* token page, scoped under #pg-token */
 #pg-token .cols{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:14px;align-items:start}
@@ -43,7 +43,7 @@
 /* trade panel */
 #pg-token .trade .pb{padding:14px}
 #pg-token .sides{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:var(--r);background:var(--s2)}
-#pg-token .sides button{height:32px;padding:0 18px;border-radius:7px;font-weight:600;color:var(--fg-3);border:1px solid transparent} #pg-token .sides button.on.b{background:var(--s1);border-color:var(--line-2);color:var(--fg)} #pg-token .sides button.on.s{background:var(--s1);border-color:var(--line-2);color:var(--dn)}
+#pg-token .sides button{height:32px;padding:0 18px;border-radius:7px;font-weight:600;color:var(--fg-3);border:1px solid transparent} #pg-token .sides button.on.b{background:var(--up-dim);border-color:rgba(46,189,133,.45);color:var(--up)} #pg-token .sides button.on.s{background:var(--dn-dim);border-color:rgba(246,70,93,.45);color:var(--dn)}
 #pg-token .payw{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--fg-3);flex-wrap:wrap} #pg-token .payw .badge{height:22px;font-size:11px}
 #pg-token .box{margin-top:10px;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--s2)} #pg-token .box.out{border-color:var(--line);background:var(--s1)} #pg-token .box:focus-within{border-color:var(--ac)}
 #pg-token .box .lr{display:flex;justify-content:space-between;gap:10px} #pg-token .box .lr .num{font-size:11.5px;color:var(--fg-3)}
@@ -55,7 +55,7 @@
 #pg-token .slip{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;font:12px var(--mono);color:var(--fg-3);flex-wrap:wrap}
 #pg-token .slip .seg button{height:24px;padding:0 8px;font-size:12px;font-family:var(--mono)} #pg-token .slip input{width:64px;height:28px;padding:0 8px;border:1px solid var(--line-2);border-radius:6px;background:var(--s1);color:var(--fg);font:12px var(--mono);outline:0}
 #pg-token .det{margin-top:8px} #pg-token .det .kv{padding:7px 0;font-size:12.5px} #pg-token .det .kv b.warn{color:var(--amber)} #pg-token .det .kv b.bad{color:var(--dn)}
-#pg-token .cta{margin-top:12px;height:44px;font:600 14px var(--disp);box-shadow:0 0 22px rgba(63,188,255,.35)} #pg-token .cta.s{background:var(--dn);border-color:var(--dn);color:#fff;box-shadow:0 0 22px rgba(246,70,93,.3)} #pg-token .cta.s:hover{background:#f75b70;border-color:#f75b70}
+#pg-token .cta{margin-top:12px;height:44px;font:600 14px var(--disp);background:var(--up);border-color:var(--up);color:#03170e} #pg-token .cta:hover{background:#3fd197;border-color:#3fd197} #pg-token .cta:disabled{opacity:.55} #pg-token .cta.s{background:var(--dn);border-color:var(--dn);color:#fff} #pg-token .cta.s:hover{background:#f75b70;border-color:#f75b70}
 #pg-token .note{margin:10px 0 0;font-size:12px;color:var(--fg-3);line-height:1.5}
 #pg-token .sidep .ph2{font-size:14px} #pg-token .sidep .pb{padding:12px 14px} #pg-token .sidep .kv{font-size:12.5px}
 #pg-token .sidep .sboxes{grid-template-columns:1fr 1fr;margin-bottom:10px}
@@ -118,5 +118,5 @@
   <div class="empty panel hidden" id="tk-empty"></div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/charting_library/charting_library.js"></script><script src="/tv.js"></script><script src="/core.js?v=15"></script><script src="/sp-token.js?v=15"></script>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/charting_library/charting_library.js"></script><script src="/tv.js"></script><script src="/core.js?v=16"></script><script src="/sp-token.js?v=16"></script>
 </body></html>
