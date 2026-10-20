@@ -33,7 +33,7 @@ function setAv(span,src,letter){ if(!span) return; span.style.background=''; con
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const layer=()=>$('#layer')||document.body;
 const EXPLORER=(window.INKY&&INKY.explorer)||'https://etherscan.io';
-const SITE=(window.INKY&&INKY.site)||'https://stockpad.vercel.app';
+const SITE=(window.INKY&&INKY.site)||'https://stockpad-v2.vercel.app';
 const go=u=>{ location.href=u; };
 const errMsg=e=>{ const m=String(e&&(e.shortMessage||e.reason||e.message)||e); if(/user rejected|denied|rejected the request/i.test(m)) return 'Transaction cancelled'; if(/coalesce|missing revert data/i.test(m)) return 'The wallet could not simulate this transaction. Try a smaller logo or a smaller amount.'; if(/insufficient funds/i.test(m)) return 'Not enough ETH for this transaction'; if(/Connect your wallet/i.test(m)) return m; return m.length>140?m.slice(0,140)+'…':m; };
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));

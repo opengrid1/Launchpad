@@ -38,6 +38,6 @@ window.INKY = {
   })(),
   /* StockPad: list only stock-paired coins; ETH-paired coins on the same factory stay on their own site. */
   stocksOnly: true,
-  site: 'https://stockpad.vercel.app',
+  site: 'https://stockpad-v2.vercel.app',
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'
 };
