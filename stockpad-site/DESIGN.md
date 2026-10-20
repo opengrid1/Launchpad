@@ -4,15 +4,11 @@ StockPad is a launchpad on Ethereum where every coin is paired with a tokenized 
 
 ## Look
 
-Original design, "The Exchange": an editorial-finance look that no launchpad uses. Cream type (`--fg #f1ede6`) on graphite (`--bg #0a0a0b`), Instrument Serif for headlines (italic coral for the emphasised word), Inter for UI, JetBrains Mono for every figure, label, address and symbol. One coral accent (`--ac #ff5a3c`) for actions and emphasis; green and red only for market direction.
+Dense dark trading-floor look, StockPad's own: black page (`--bg #000`), bordered panels (`.panel`), mono uppercase labels (`.lab`), mini stat boxes (`.sbox`), badges (`.badge`), filter pills (`.pill`), one terminal-blue accent (`--ac #3fbcff`) with a glow on the primary action, green and red only for market direction. Inter for text, Space Grotesk for headings, buttons and pills, JetBrains Mono for numbers, labels, addresses and badges.
 
-Data is laid out as ledgers and boards, never as grids of stat boxes or cards:
-- `.ledger` / `.lr`: label, dotted leader, mono value, optional `small` sub-value. Used for the session panel, token stats, order ticket details, the launch prospectus and the statement totals.
-- `.strip` / `.ti`: the ticker strip of stocks under the masthead, which doubles as the stock filter.
-- `.board` / `.bh` / `.br`: the coin board, one row per coin with the avatar (`.av2`, the paired stock's logo pinned to its corner), the pair with the live stock price and NYSE status, price, market cap, volume, holders, a 24h sparkline and a Trade button.
-- `.steps3` numbered serif steps, `.band` coral call-to-action band.
+Signature pieces: every coin avatar carries the paired stock's logo pinned to its corner (`.av2` + `.stb`); coin cards show an area sparkline built from the trade index, a 24h buy/sell flow bar, the NYSE status and MCAP / VOL 24H / TRADES boxes; the top bar carries an NYSE clock with a countdown to open or close.
 
-Shell: 64px top bar with the serif wordmark, text navigation with an underline, the NYSE clock with a countdown (`.clock`), Launch and Connect wallet. A three-column footer with the contract addresses. Below 640px the navigation becomes a bottom tab bar (`.tabbar`). Token page: serif masthead with a big mono price, two ledgers of stats, flow and fee-split bars, chart, text tabs, and an "order ticket" on the right. Launch page: numbered sections (Identity, Pair, Terms) next to a "prospectus" ledger. Portfolio is a "statement".
+Shell: a 60px top bar with the wordmark, text navigation (underline on the active page), a search field, the NYSE clock, Launch and Connect; content in a 1320px column; a thin footer bar with the factory and hook addresses, docs links, the X handle and the ETH price. Below 900px the navigation and search hide and a bottom tab bar (`.tabbar`) appears. Home opens with a headline, a sentence, two buttons and four stat boxes, then the filter bar (sort pills, stock pills with counts, search) and the coin cards with a pager. Launch is a single outlined form next to a live preview card.
 
 All classes live in `ui.css` (read it; use its classes before inventing new ones). Page-specific CSS goes in a `<style>` block at the top of that page's HTML, scoped with the page's root id.
 
@@ -22,20 +18,20 @@ All classes live in `ui.css` (read it; use its classes before inventing new ones
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>... | StockPad</title><meta name="description" content="...">
-<link rel="icon" href="/img/favicon.svg?v=12" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=12"><meta name="theme-color" content="#0a0a0b">
-<meta property="og:image" content="/img/og.png?v=12">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=6">
+<link rel="icon" href="/img/favicon.svg?v=13" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=13"><meta name="theme-color" content="#000000">
+<meta property="og:image" content="/img/og.png?v=13">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=7">
 <style>/* page css, scoped under #pg-<name> */</style>
 </head><body data-page="<name>">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-<name>">...page markup...</div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=6"></script><script src="/sp-<name>.js?v=6"></script>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=7"></script><script src="/sp-<name>.js?v=7"></script>
 </body></html>
 ```
 
-`core.js` renders the top bar, the footer and the mobile tab bar on every page (the `#sp-tape` element stays in the skeleton but is unused), boots the chain layer, and then calls `window.SP_PAGE()` which each page script defines. Pages never touch the shell elements.
+`core.js` renders the top bar, the footer bar and the mobile tab bar on every page (the `#sp-tape` element stays in the skeleton but is unused), boots the chain layer, and then calls `window.SP_PAGE()` which each page script defines. Pages never touch the shell elements.
 
 The token page also loads `/tv.js` and `/charting_library/charting_library.js` (see token page notes).
 

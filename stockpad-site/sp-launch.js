@@ -28,10 +28,10 @@ function launchInit(){
   function snipeBlocks(){ return clamp(Math.round(fields.snipeMin()*60/12),5,7200); }
 
   /* ---------- step 1: pairs ---------- */
-  function paintPairs(){ const counts={}; TOK.forEach(x=>{ counts[x.pair]=(counts[x.pair]||0)+1; }); const mk=SP.market(); g('mk-status').textContent=S.pair?`${S.pair.ticker} ${mk.open?'is trading on NYSE now':'is closed on NYSE, '+mk.detail.toLowerCase()}. Your pool trades around the clock either way.`:'';
+  function paintPairs(){ const counts={}; TOK.forEach(x=>{ counts[x.pair]=(counts[x.pair]||0)+1; }); const mk=SP.market(); g('mk-status').textContent=S.pair?`${S.pair.ticker} ${mk.open?'is trading on NYSE now':'market is closed, '+mk.detail.toLowerCase()}. The pool trades around the clock.`:'';
     g('pairs').innerHTML=PAIRS.map(p=>{ const px=SP.prices[p.address], n=counts[p.symbol]||0; return `<button type="button" class="pc${S.pair&&S.pair.address===p.address?' on':''}" data-p="${p.address}"><img src="${p.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span class="nm"><b>${esc(p.ticker)} <span class="muted" style="font-weight:400">${esc(p.name)}</span></b><small>${esc(p.symbol)}</small></span><span class="ft"><span>${p.eth?'TRADES 24/7':`<i class="dot ${mk.open?'open':''}"></i>${mk.open?'NYSE OPEN':'NYSE CLOSED'}`}</span><span class="cnt">${n} ${n===1?'coin':'coins'}</span></span><span class="px" data-px="${p.address}">${px?fmtPx(px):'…'}</span><span class="tick">${ic('check')}</span></button>`; }).join('');
     $$('#pairs [data-p]').forEach(b=>b.onclick=()=>{ setPair(PAIRS.find(p=>p.address===b.dataset.p)); g('pair-dd').classList.remove('open'); });
-    const pv=g('pair-pv'); if(pv){ pv.innerHTML=S.pair?`<img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.name)} <small>${esc(S.pair.ticker)} · ${esc(S.pair.symbol)}</small>`:'Select a stock'; } }
+    const pv=g('pair-pv'); if(pv){ pv.innerHTML=S.pair?`<img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.ticker)} <small>${esc(S.pair.name)} · ${esc(S.pair.symbol)}</small>`:'Select'; } }
   function setPair(p){ S.pair=p||null; g('pair-err').textContent=''; $$('#pairs .pc').forEach(b=>b.classList.toggle('on',!!S.pair&&b.dataset.p===S.pair.address)); if(S.pair){ const u=new URL(location.href); u.searchParams.set('pair',S.pair.symbol); history.replaceState(null,'',u); SP.pairUsd(S.pair.address).then(()=>{ paintPairs(); sync(); }).catch(()=>{}); } sync(); }
   function preselect(){ const q=(new URLSearchParams(location.search).get('pair')||'').trim().toLowerCase(); if(!q) return; const p=PAIRS.find(x=>x.symbol.toLowerCase()===q||x.ticker.toLowerCase()===q||x.address===q); if(p) S.pair=p; }
 
@@ -69,12 +69,12 @@ function launchInit(){
 
   /* ---------- summary card ---------- */
   function sync(){ readFee(); const n=fields.name(), t=fields.sym(), sp=split(); const letter=(t||n||'?')[0].toUpperCase();
-    g('sm-step').textContent=S.launched?'Launched':S.pair&&fields.name()&&fields.sym()?'Ready to launch':'Draft';
-    g('sm-logo').innerHTML=S.logo?`<img src="${S.logo}" alt="">`:esc((t||n||'?').slice(0,3).toUpperCase()); g('sm-name').textContent=n||'Your coin'; g('sm-sym').textContent='$'+(t||'SYMBOL');
-    g('sm-pair').innerHTML=S.pair?`<img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.ticker)} <span class="muted">${esc(S.pair.symbol)}</span>`:'Not picked';
+    g('sm-step').textContent=S.launched?'Launched':S.pair?'Ready':'Pick a pair';
+    g('sm-logo').innerHTML=S.logo?`<img src="${S.logo}" alt="">`:esc((t||n||'TOK').slice(0,3).toUpperCase()); g('sm-name').textContent=n||'Token name'; g('sm-sym').textContent='$'+(t||'TOKEN');
+    g('sm-pair').innerHTML=S.pair?`Paired with <img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.symbol)}`:'Pick a pair';
     g('sm-fee').textContent=feePct()+(S.snipe?' · anti-snipe':''); const opts=optList(); g('sm-opts').textContent=opts.length?opts.join(', '):'None';
-    const px=pairPx(); g('sm-cap').textContent=fmtCap(S.capUsd)+(S.pair&&px?' · '+fmtInPair(S.capUsd/px):'');
-    const dv=S.dev?clamp(fields.devEth(),0,0.5):0; g('sm-dev').textContent=dv>0?`${dv} ETH`:'None'; 
+    const px=pairPx(); g('sm-cap').textContent=fmtCap(S.capUsd);
+    const dv=S.dev?clamp(fields.devEth(),0,0.5):0; g('sm-dev').textContent=dv>0?`${dv} ETH`:'None'; const dh=g('dev-hdr'); if(dh) dh.textContent=!S.pair?'Pick a pair first':dv>0?`${dv} ETH · ${fmtAmt(devCoins())} coins`:'Optional · paid in ETH';
     g('sm-cr').textContent=`${sp.creator}%`; g('sm-note').textContent=(S.pair?`Fees are paid in ${S.pair.symbol}. `:'')+'Liquidity cannot be withdrawn. Nobody can pull it, including you.';
     if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.dev) devMsg(); paintReview(); }
 
@@ -89,7 +89,7 @@ function launchInit(){
 
   /* ---------- launch ---------- */
   const cta=g('cta');
-  function paintCta(){ if(S.busy){ cta.disabled=true; cta.textContent='Confirm in wallet…'; return; } cta.disabled=S.paused; cta.textContent=S.paused?'Launches paused':!SP.W.connected?'Connect wallet':!SP.W.chainOk?'Switch to Ethereum':'Launch coin'; }
+  function paintCta(){ if(S.busy){ cta.disabled=true; cta.textContent='Confirm in wallet…'; return; } cta.disabled=S.paused; cta.textContent=S.paused?'Launches paused':!SP.W.connected?'Connect a wallet':!SP.W.chainOk?'Switch to Ethereum':'Create token'; }
   function launchErr(e){ let m=SP.errMsg(e); if(/instincts|evolution|BadGenes/i.test(m)) m='The fee or options are out of bounds; adjust them and try again.'; return m; }
   async function doLaunch(){ if(S.busy||S.paused) return;
     if(!SP.W.connected){ SP.W.connect(); return; }
