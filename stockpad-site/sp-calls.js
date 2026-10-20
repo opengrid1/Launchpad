@@ -1,5 +1,5 @@
 /* Calls page: post a call on a coin (bull or bear, up to 280 characters) and see how each call did since it was posted.
-   Calls are stored by the StockPad server (INKY.api). Until that server is live the composer stays disabled and the feed shows
+   Calls are stored by the Equo server (INKY.api). Until that server is live the composer stays disabled and the feed shows
    an example card, clearly labelled. Trending uses on-chain data and works today. */
 window.SP_PAGE=function(){
   const pg=$('#pg-calls'); if(!pg) return;

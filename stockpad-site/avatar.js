@@ -1,4 +1,4 @@
-/* Wallet avatars: a deterministic StockPad mark per address. The rising
+/* Wallet avatars: a deterministic Equo mark per address. The rising
    candlestick glyph from the logo on a rounded tile whose gradient, tilt and
    accent are derived from the address, so every wallet gets its own tile while
    staying on brand. */

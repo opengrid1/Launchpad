@@ -1,4 +1,4 @@
-/* StockPad core: shell (rail, top bar, ticker), wallet state, chain boot, shared UI helpers. See DESIGN.md. */
+/* Equo core: shell (rail, top bar, ticker), wallet state, chain boot, shared UI helpers. See DESIGN.md. */
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ICONS={
@@ -78,7 +78,7 @@ const navHtml=page=>{ const L=NAV.filter(n=>n[0]!=='launch'); const half=Math.ce
 const toolRow=t=>t[4]?`<span class="mi soon-i">${ic(t[3])}<span>${t[2]}</span><span class="soon">Soon</span></span>`:`<a class="mi" href="${t[1]}">${ic(t[3])}<span>${t[2]}</span></a>`;
 function openMore(btn){ const m=SP.menu(btn,`<div class="mh">Tools</div>${TOOLS.map(toolRow).join('')}<div class="d"></div>${MORE_LINKS.map(toolRow).join('')}`); m.classList.add('more'); }
 function openSheet(){ SP.closeDialogs(); const page=document.body.dataset.page||'markets'; const ov=document.createElement('div'); ov.className='ov sheet-ov';
-  ov.innerHTML=`<div class="sheet" role="dialog" aria-label="Menu"><div class="sh-top"><a class="brand" href="/"><img src="/img/logo.svg?v=13" alt=""><span class="wm">Stock<em>Pad</em></span></a><button class="btn ghost sm ic" data-close aria-label="Close menu">${ic('x')}</button></div>
+  ov.innerHTML=`<div class="sheet" role="dialog" aria-label="Menu"><div class="sh-top"><a class="brand" href="/"><img src="/img/logo.svg?v=14" alt=""><span class="wm">Equo</span></a><button class="btn ghost sm ic" data-close aria-label="Close menu">${ic('x')}</button></div>
     <div class="sh-acts"><a class="btn pri" href="/launch">${ic('rocket')}Launch a coin</a><span id="sh-wallet"></span></div>
     <nav class="sh-nav">${NAV.filter(n=>n[0]!=='launch').map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${ic(NAV_IC[n[0]])}${n[2]}</a>`).join('')}</nav>
     <div class="mh">Tools</div><nav class="sh-nav">${TOOLS.map(toolRow).join('')}</nav>
@@ -88,14 +88,14 @@ function openSheet(){ SP.closeDialogs(); const page=document.body.dataset.page||
   const w=$('#sh-wallet',ov); if(SP.W.connected){ w.innerHTML=`<a class="btn" href="/profile"><span class="av" style="width:18px;height:18px;border-radius:5px;overflow:hidden;display:inline-block">${SP.avatar(SP.W.address,18)}</span>${esc(SP.W.short)}</a>`; } else { w.innerHTML=`<button class="btn">${ic('wallet')}Connect</button>`; w.firstChild.onclick=()=>{ ov.remove(); SP.W.connect(); }; } }
 function clockHtml(){ const mk=SP.market(); return `<span class="mkt ${mk.open?'open':''}" id="sp-clock" title="${esc(mk.detail)}"><i></i><span>${mk.open?'NYSE open':'NYSE closed'}<b>${esc(mk.until)}</b></span></span>`; }
 function renderShell(){ const page=document.body.dataset.page||'markets'; const C=(window.INKY&&INKY.contracts)||{};
-  const top=$('#sp-top'); if(top){ top.innerHTML=`<div class="wrap"><a class="brand" href="/"><img src="/img/logo.svg?v=13" alt=""><span class="wm">Stock<em>Pad</em></span></a><nav class="nav">${navHtml(page)}</nav>
+  const top=$('#sp-top'); if(top){ top.innerHTML=`<div class="wrap"><a class="brand" href="/"><img src="/img/logo.svg?v=14" alt=""><span class="wm">Equo</span></a><nav class="nav">${navHtml(page)}</nav>
     <label class="search">${ic('search')}<input id="sp-q" placeholder="Search name, ticker or address" autocomplete="off"><kbd>/</kbd></label>
     <div class="topr">${clockHtml()}<span class="vsep"></span><span id="sp-wallet"></span><button type="button" class="burger" id="sp-burger" aria-label="Open menu">${ic('menu')}</button></div></div>`;
     $('#sp-more').onclick=e=>{ e.stopPropagation(); openMore(e.currentTarget); }; $('#sp-burger').onclick=openSheet;
     const q=$('#sp-q'); q.addEventListener('input',()=>searchMenu(q)); q.addEventListener('focus',()=>searchMenu(q)); addEventListener('keydown',e=>{ if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){ e.preventDefault(); q.focus(); } }); }
   let tb=$('#sp-tabbar'); if(!tb){ tb=document.createElement('nav'); tb.id='sp-tabbar'; tb.className='tabbar'; document.body.appendChild(tb); }
   tb.innerHTML=TABS.map(k=>NAV.find(n=>n[0]===k)).map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''} ${n[0]==='launch'?'lnch':''}">${n[0]==='launch'?`<span class="lb">${ic('rocket')}</span>`:ic(NAV_IC[n[0]])}${n[2]}</a>`).join('');
-  const ft=$('#sp-foot'); if(ft) ft.innerHTML=`<div class="wrap"><a class="brand" href="/"><img src="/img/logo.svg?v=13" alt=""><span class="wm">Stock<em>Pad</em></span></a><span>Ethereum</span>${C.factory?`<a href="${EXPLORER}/address/${C.factory}" target="_blank" rel="noopener" title="Factory">factory ${shortAddr(C.factory)}</a>`:''}${C.hook?`<a href="${EXPLORER}/address/${C.hook}" target="_blank" rel="noopener" title="Hook">hook ${shortAddr(C.hook)}</a>`:''}<span class="sp"></span><div class="fl"><a href="/docs/introduction">Docs</a><a href="/docs/fees">Fees</a><a href="/docs/security">Security</a><a href="https://x.com/stockpad" target="_blank" rel="noopener">${ic('xlogo')} @stockpad</a><span class="num" id="sp-ethpx"><img src="/img/eth.png" alt="" style="width:14px;height:14px;border-radius:50%;display:inline-block;vertical-align:-2px;margin-right:6px">${SP.prices[WETH]?stockPx(SP.prices[WETH]):''}</span></div></div>`;
+  const ft=$('#sp-foot'); if(ft) ft.innerHTML=`<div class="wrap"><a class="brand" href="/"><img src="/img/logo.svg?v=14" alt=""><span class="wm">Equo</span></a><span>Ethereum</span>${C.factory?`<a href="${EXPLORER}/address/${C.factory}" target="_blank" rel="noopener" title="Factory">factory ${shortAddr(C.factory)}</a>`:''}${C.hook?`<a href="${EXPLORER}/address/${C.hook}" target="_blank" rel="noopener" title="Hook">hook ${shortAddr(C.hook)}</a>`:''}<span class="sp"></span><div class="fl"><a href="/docs/introduction">Docs</a><a href="/docs/fees">Fees</a><a href="/docs/security">Security</a><a href="https://x.com/equofun" target="_blank" rel="noopener">${ic('xlogo')} @equofun</a><span class="num" id="sp-ethpx"><img src="/img/eth.png" alt="" style="width:14px;height:14px;border-radius:50%;display:inline-block;vertical-align:-2px;margin-right:6px">${SP.prices[WETH]?stockPx(SP.prices[WETH]):''}</span></div></div>`;
   renderWalletBtn(); }
 function searchMenu(q){ const v=q.value.trim().toLowerCase(); $$('.menu.srch').forEach(m=>m.remove()); if(!v) return;
   const hits=TOK.filter(x=>x.n.toLowerCase().includes(v)||x.t.toLowerCase().includes(v)||x.addr.includes(v)||(x.pair||'').toLowerCase().includes(v)).slice(0,8);
@@ -123,7 +123,7 @@ SP.pnl=(trades,x,bal,units)=>{ let spent=0,recv=0,bought=0,sold=0; const k=units
 SP.pnlCard=async({x,pnl,wallet})=>{ const pu=x.pairUsd||0, up=pnl.pnl>=0; const W=1200,H=675; const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d');
   try{ await Promise.all(['700 64px "Space Grotesk"','600 20px "JetBrains Mono"','500 20px Inter'].map(f=>document.fonts.load(f))); }catch{}
   const img=src=>new Promise(r=>{ if(!src) return r(null); const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>r(i); i.onerror=()=>r(null); i.src=src; });
-  const [logo,coin,pair]=await Promise.all([img('/img/logo.svg?v=13'),img(SP.coinLogo(x)),img(pairImg(x.pair))]);
+  const [logo,coin,pair]=await Promise.all([img('/img/logo.svg?v=14'),img(SP.coinLogo(x)),img(pairImg(x.pair))]);
   const C={bg:'#000',s:'#0d0d0f',line:'#1e1e23',fg:'#ededef',fg3:'#8e8e97',ac:'#3fbcff',res:up?'#2ebd85':'#f6465d'};
   g.fillStyle=C.bg; g.fillRect(0,0,W,H);
   g.strokeStyle='rgba(255,255,255,.035)'; g.lineWidth=1; for(let gx=0;gx<=W;gx+=60){ g.beginPath(); g.moveTo(gx+.5,0); g.lineTo(gx+.5,H); g.stroke(); } for(let gy=0;gy<=H;gy+=60){ g.beginPath(); g.moveTo(0,gy+.5); g.lineTo(W,gy+.5); g.stroke(); }
@@ -131,7 +131,7 @@ SP.pnlCard=async({x,pnl,wallet})=>{ const pu=x.pairUsd||0, up=pnl.pnl>=0; const 
   try{ const tr=(await CHAIN.trades(x.addr)).slice().sort((a,b)=>a.ts-b.ts).map(t=>CHAIN.tradePrice(t)).filter(v=>v>0).slice(-80); if(tr.length>1){ const mn=Math.min(...tr), mx=Math.max(...tr), rg=(mx-mn)||mn||1; const X0=560,X1=W-40,Y0=170,Y1=520; g.beginPath(); tr.forEach((v,i)=>{ const px=X0+(X1-X0)*i/(tr.length-1), py=Y1-(v-mn)/rg*(Y1-Y0); i?g.lineTo(px,py):g.moveTo(px,py); }); g.strokeStyle=C.res; g.globalAlpha=.35; g.lineWidth=3; g.stroke(); g.lineTo(X1,Y1+60); g.lineTo(X0,Y1+60); g.closePath(); const gr=g.createLinearGradient(0,Y0,0,Y1+60); gr.addColorStop(0,up?'rgba(46,189,133,.25)':'rgba(246,70,93,.25)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.globalAlpha=1; g.fill(); } }catch{}
   g.globalAlpha=1;
   // brand
-  if(logo) g.drawImage(logo,64,56,44,44); g.font='700 30px "Space Grotesk"'; g.fillStyle=C.fg; g.textBaseline='middle'; g.fillText('Stock',122,79); const sw=g.measureText('Stock').width; g.fillStyle=C.ac; g.fillText('Pad',122+sw,79);
+  if(logo) g.drawImage(logo,64,56,44,44); g.font='700 30px "Space Grotesk"'; g.fillStyle=C.fg; g.textBaseline='middle'; g.fillText('Equo',122,79);
   g.font='500 18px "JetBrains Mono"'; g.fillStyle=C.fg3; g.textAlign='right'; g.fillText(new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),W-64,79); g.textAlign='left';
   // coin
   const circ=(im,cx,cy,r,bg)=>{ g.save(); g.beginPath(); g.arc(cx,cy,r,0,Math.PI*2); g.closePath(); g.fillStyle=bg; g.fill(); g.clip(); if(im) g.drawImage(im,cx-r,cy-r,r*2,r*2); g.restore(); };
@@ -146,14 +146,14 @@ SP.pnlCard=async({x,pnl,wallet})=>{ const pu=x.pairUsd||0, up=pnl.pnl>=0; const 
   box(0,'BOUGHT',fmtUsd(pnl.spent*pu)); box(1,'SOLD',fmtUsd(pnl.recv*pu)); box(2,'HOLDING',fmtUsd(pnl.hold*pu));
   g.textAlign='right'; g.textBaseline='middle'; g.font='500 18px "JetBrains Mono"'; g.fillStyle=C.fg3; g.fillText(wallet?shortAddr(cs(wallet)):'',W-64,572); g.fillStyle=C.ac; g.fillText(location.host,W-64,604); g.textAlign='left';
   let url=''; try{ url=cv.toDataURL('image/png'); }catch{}
-  const text=`${up?'+':''}${pnl.pct.toFixed(1)}% on $${x.t} (paired with ${x.pair}) on StockPad`; const link=SITE+tokenUrl(x);
+  const text=`${up?'+':''}${pnl.pct.toFixed(1)}% on $${x.t} (paired with ${x.pair}) on Equo`; const link=SITE+tokenUrl(x);
   const ov=SP.dialog('Share PnL',`<div class="pnlimg">${url?`<img src="${url}" alt="PnL card">`:'<div class="empty">Could not draw the card in this browser.</div>'}</div><div class="pnlbtns"><button class="btn pri" data-pa="dl" ${url?'':'disabled'}>${ic('dl')}Download</button><button class="btn" data-pa="cp" ${url?'':'disabled'}>${ic('copy')}Copy image</button><a class="btn" target="_blank" rel="noopener" href="https://x.com/intent/tweet?text=${encodeURIComponent(text+' '+link)}">${ic('xlogo')}Post</a>${navigator.share?`<button class="btn" data-pa="sh" ${url?'':'disabled'}>${ic('share')}Share</button>`:''}</div><p class="hint" style="margin-top:10px">Bought and sold use your trades in this coin. Holding uses the price now.</p>`);
   ov.querySelector('.dlg').classList.add('wide');
   const blob=()=>new Promise(r=>cv.toBlob(r,'image/png'));
   $$('[data-pa]',ov).forEach(b=>b.onclick=async()=>{ const a=b.dataset.pa; try{
-    if(a==='dl'){ const l=document.createElement('a'); l.href=url; l.download=`stockpad-${x.t.toLowerCase()}-pnl.png`; l.click(); }
+    if(a==='dl'){ const l=document.createElement('a'); l.href=url; l.download=`equo-${x.t.toLowerCase()}-pnl.png`; l.click(); }
     if(a==='cp'){ await navigator.clipboard.write([new ClipboardItem({'image/png':await blob()})]); SP.toast('Image copied'); }
-    if(a==='sh'){ const f=new File([await blob()],`stockpad-${x.t.toLowerCase()}-pnl.png`,{type:'image/png'}); await navigator.share({files:[f],text,url:link}); }
+    if(a==='sh'){ const f=new File([await blob()],`equo-${x.t.toLowerCase()}-pnl.png`,{type:'image/png'}); await navigator.share({files:[f],text,url:link}); }
   }catch(e){ if(!/abort/i.test(String(e))) SP.toast(a==='cp'?'Copy is not supported here; use Download':SP.errMsg(e),'err'); } }); };
 
 /* ---------- boot ---------- */

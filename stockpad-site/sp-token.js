@@ -6,7 +6,7 @@ window.SP_PAGE=function(){
     const addrFromUrl=()=>{ const m=location.pathname.match(/\/token\/(0x[0-9a-fA-F]{40})/); if(m) return m[1].toLowerCase(); const q=new URLSearchParams(location.search).get('t')||''; return /^0x[0-9a-fA-F]{40}$/.test(q)?q.toLowerCase():''; };
   const addr=addrFromUrl(); let X=addr?SP.token(addr):null;
   if(!X||!window.CHAIN){ $('#tk-page').classList.add('hidden'); const e=$('#tk-empty'); e.classList.remove('hidden');
-    $('#tk-crumb').innerHTML=`<a href="/">Markets</a>`; e.innerHTML=`<b>${addr?'Token not found':'No token selected'}</b>${addr?'No coin with that address was launched on StockPad, or it is not listed here.':'Open a coin from the markets page.'}<div style="margin-top:14px"><a class="btn" href="/">${ic('back')}Back to markets</a></div>`; return; }
+    $('#tk-crumb').innerHTML=`<a href="/">Markets</a>`; e.innerHTML=`<b>${addr?'Token not found':'No token selected'}</b>${addr?'No coin with that address was launched on Equo, or it is not listed here.':'Open a coin from the markets page.'}<div style="margin-top:14px"><a class="btn" href="/">${ic('back')}Back to markets</a></div>`; return; }
   X={...X};
   const C=(window.INKY&&INKY.contracts)||{}; const PM=String(C.poolManager||'').toLowerCase();
   const stock=SP.stockBySym(X.pair); const isStock=X.pair!=='ETH';
@@ -159,7 +159,7 @@ window.SP_PAGE=function(){
 
   /* ---------- live refresh ---------- */
   let ticking=false;
-  function paintAll(){ stats(); headLive(); flow(); document.title=`${X.t} $${fmtPrice(X.px)} | StockPad`; if(activeTab==='info') info(); }
+  function paintAll(){ stats(); headLive(); flow(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; if(activeTab==='info') info(); }
   async function sync(force){ if(ticking||(!force&&document.hidden)) return; ticking=true; const oldPx=X.pxPair;
     try{ const nx=await CHAIN.refresh(X.addr); if(nx) Object.assign(X,nx); const tr=await CHAIN.trades(X.addr); const fresh=tr.filter(t=>!seen.has(key(t)));
       if(fresh.length){ fresh.forEach(t=>seen.add(key(t))); TR=[...fresh.map(view),...TR]; sortTr(); renderTrades(new Set(fresh.map(key))); holdersAt=0; topAt=0; if(activeTab==='holders') holders(true); if(activeTab==='top') top(true); }
@@ -173,5 +173,5 @@ window.SP_PAGE=function(){
   setInterval(headLive,60000);
 
   /* ---------- boot ---------- */
-  head(); stats(); headLive(); document.title=`${X.t} $${fmtPrice(X.px)} | StockPad`; chart(); paintSide(); resetQuote(); cta(); loadTrades(); position();
+  head(); stats(); headLive(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; chart(); paintSide(); resetQuote(); cta(); loadTrades(); position();
 };

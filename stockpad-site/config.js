@@ -1,4 +1,4 @@
-/* StockPad site configuration (internal object name kept as INKY so the shared JS needs no rename).
+/* Equo site configuration (internal object name kept as INKY so the shared JS needs no rename).
    live: read tokens, trades and prices from the Ethereum contracts (chain.js); prelaunch: preview only, no chain reads.
    reownProjectId: public project id from cloud.reown.com; empty keeps the demo wallet. */
 window.INKY = {
@@ -36,7 +36,7 @@ window.INKY = {
       {symbol:'SGOVon', ticker:'SGOV', name:'0-3 Month Treasury',  address:'0x8de5d49725550f7b318b2fa0f1b1f118e98e8d0f', decimals:18, logo:logo('SGOV'),  route:v4('0x8de5d49725550f7b318b2fa0f1b1f118e98e8d0f',38000,380)}
     ];
   })(),
-  /* StockPad: list only stock-paired coins; ETH-paired coins on the same factory stay on their own site. */
+  /* Equo: list only stock-paired coins; ETH-paired coins on the same factory stay on their own site. */
   stocksOnly: true,
   site: 'https://stockpad-v2.vercel.app',
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'

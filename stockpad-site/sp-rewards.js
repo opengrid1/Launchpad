@@ -41,7 +41,7 @@ window.SP_PAGE=function(){
   /* ---------- referral and cashback (next contract update) ---------- */
   function soon(){ const a=SP.W.connected?SP.W.address:'';
     g('rw-ref').innerHTML=`<p>Share your link. When a trader you bring buys or sells, part of their fee goes to you.</p><div class="lnk"><span>${a?esc(location.host+'/?ref='+shortAddr(cs(a))):'Connect a wallet to get your link'}</span><button class="btn sm" disabled>${ic('copy')}Copy</button></div><div class="mini"><div class="sbox"><span class="lab">Traders</span><b>—</b></div><div class="sbox"><span class="lab">Volume</span><b>—</b></div><div class="sbox"><span class="lab">Earned</span><b>—</b></div></div><p class="hint" style="margin-top:12px">Comes with the next contract update.</p>`;
-    g('rw-cb').innerHTML=`<p>Part of the fee on every buy and sell comes back to you.</p><div class="steps"><div><em>1</em><span>Trade any coin on StockPad.</span></div><div><em>2</em><span>Cashback adds up with each trade, paid in the coin's pair.</span></div><div><em>3</em><span>Claim it here whenever you want.</span></div></div><p class="hint" style="margin-top:12px">Comes with the next contract update.</p>`; }
+    g('rw-cb').innerHTML=`<p>Part of the fee on every buy and sell comes back to you.</p><div class="steps"><div><em>1</em><span>Trade any coin on Equo.</span></div><div><em>2</em><span>Cashback adds up with each trade, paid in the coin's pair.</span></div><div><em>3</em><span>Claim it here whenever you want.</span></div></div><p class="hint" style="margin-top:12px">Comes with the next contract update.</p>`; }
 
   /* ---------- burns ---------- */
   const BURN={};

@@ -13,7 +13,7 @@ const pct=v=>`<span class="${v>=0?'up':'dn'}">${v>=0?'+':''}${v.toFixed(1)}%</sp
 const shortAddr=a=>a?a.slice(0,6)+'…'+a.slice(-4):'';
 const cs=a=>{ try{ return window.CHAIN&&CHAIN.checksum?CHAIN.checksum(a):a; }catch{ return a; } };
 
-/* StockPad pairs only against ETH — no stock baskets. These stay defined (empty) so legacy refs don't throw. */
+/* Equo pairs only against ETH — no stock baskets. These stay defined (empty) so legacy refs don't throw. */
 const STOCKS=[];
 const STOCK_COLOR={}, STOCK_NAME={}, STOCK_ADDR={};
 /* default fee model: ~1% (capped 3%), split 60/40 creator/platform after the buyback + dividend pots */

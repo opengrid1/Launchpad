@@ -120,7 +120,7 @@ function launchInit(){
     g('dn-addr').textContent=cs(L.addr); g('dn-copy').innerHTML=ic('copy'); g('dn-copy').onclick=()=>SP.copy(cs(L.addr),'Address copied');
     g('dn-pair').innerHTML=`<img src="${S.pair.logo}" alt="" style="width:14px;height:14px;border-radius:50%;background:#fff;display:inline-block;vertical-align:-2px;margin-right:6px" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.symbol)}`; const sp=split(); g('dn-fee').textContent=`${feePct()} · ${sp.creator}% to you`;
     g('dn-open').href=tokenUrl(L.addr); g('dn-scan').href=EXPLORER+'/token/'+L.addr;
-    const url=SITE+tokenUrl(L.addr); g('dn-x').href='https://x.com/intent/tweet?text='+encodeURIComponent(`$${L.symbol} is live on StockPad, paired with ${S.pair.symbol}. Fees settle in ${S.pair.symbol}, liquidity cannot be withdrawn. ${url}`);
+    const url=SITE+tokenUrl(L.addr); g('dn-x').href='https://x.com/intent/tweet?text='+encodeURIComponent(`$${L.symbol} is live on Equo, paired with ${S.pair.symbol}. Fees settle in ${S.pair.symbol}, liquidity cannot be withdrawn. ${url}`);
     sync(); scrollTo({top:0,behavior:'smooth'}); }
 
   /* ---------- wiring ---------- */

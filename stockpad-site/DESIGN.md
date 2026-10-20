@@ -1,10 +1,10 @@
-# StockPad front end: design and conventions
+# Equo front end: design and conventions
 
-StockPad is a launchpad on Ethereum where every coin is paired with a tokenized real stock (TSLAon, NVDAon, ...) or ETH. The front end is static HTML + vanilla JS. This file is the contract every page follows. It is deliberately not the OneHook layout: no hero wordmark page, no trending sidebar, no sticker chips.
+Equo is a launchpad on Ethereum where every coin is paired with a tokenized real stock (TSLAon, NVDAon, ...) or ETH. The front end is static HTML + vanilla JS. This file is the contract every page follows. It is deliberately not the OneHook layout: no hero wordmark page, no trending sidebar, no sticker chips.
 
 ## Look
 
-Dense dark trading-floor look, StockPad's own: black page (`--bg #000`), bordered panels (`.panel`), mono uppercase labels (`.lab`), mini stat boxes (`.sbox`), badges (`.badge`), filter pills (`.pill`), one terminal-blue accent (`--ac #3fbcff`) with a glow on the primary action, green and red only for market direction. Inter for text, Space Grotesk for headings, buttons and pills, JetBrains Mono for numbers, labels, addresses and badges.
+Dense dark trading-floor look, Equo's own: black page (`--bg #000`), bordered panels (`.panel`), mono uppercase labels (`.lab`), mini stat boxes (`.sbox`), badges (`.badge`), filter pills (`.pill`), one terminal-blue accent (`--ac #3fbcff`) with a glow on the primary action, green and red only for market direction. Inter for text, Space Grotesk for headings, buttons and pills, JetBrains Mono for numbers, labels, addresses and badges.
 
 Signature pieces: every coin avatar carries the paired stock's logo pinned to its corner (`.av2` + `.stb`); coin cards show an area sparkline built from the trade index, a 24h buy/sell flow bar, the NYSE status and MCAP / VOL 24H / TRADES boxes; the top bar carries an NYSE clock with a countdown to open or close.
 
@@ -19,17 +19,17 @@ Pages: `index.html` (Home), `launch.html`, `calls.html` (composer, feed with ret
 ```html
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>... | StockPad</title><meta name="description" content="...">
-<link rel="icon" href="/img/favicon.svg?v=13" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=13"><meta name="theme-color" content="#000000">
-<meta property="og:image" content="/img/og.png?v=13">
+<title>... | Equo</title><meta name="description" content="...">
+<link rel="icon" href="/img/favicon.svg?v=14" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=14"><meta name="theme-color" content="#000000">
+<meta property="og:image" content="/img/og.png?v=14">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=11">
+<link rel="stylesheet" href="/ui.css?v=12">
 <style>/* page css, scoped under #pg-<name> */</style>
 </head><body data-page="<name>">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-<name>">...page markup...</div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=11"></script><script src="/sp-<name>.js?v=9"></script>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=12"></script><script src="/sp-<name>.js?v=9"></script>
 </body></html>
 ```
 

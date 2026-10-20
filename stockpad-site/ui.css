@@ -1,4 +1,4 @@
-/* StockPad design system, v3.
+/* Equo design system, v3.
    Dark trading-floor look: near-black page, bordered panels, mono uppercase labels, a single mint accent with a glow on the
    primary action, green/red for gains and losses. Space Grotesk for display headings, Geist for text, Geist Mono for numbers.
    Shell: top bar (brand, nav, search, market pill, Launch, wallet), stock tape, 1320px content column, footer bar. Mobile: bottom tab bar. */
@@ -104,7 +104,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px} .tb th{text-align:l
 .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fg-3);vertical-align:1px;margin-right:6px} .dot.open{background:var(--up)}
 .w{display:inline-flex;align-items:center;gap:7px} .w .av{width:20px;height:20px;border-radius:6px;overflow:hidden;flex:none} .w .av svg{display:block} .w a{font-family:var(--mono);font-size:12.5px} .w a:hover{color:var(--ac)}
 .side{display:inline-flex;align-items:center;font:600 11px var(--mono);letter-spacing:.05em;text-transform:uppercase} .side.b{color:var(--up)} .side.s{color:var(--dn)}
-/* coin avatar with the paired stock pinned to the corner: the StockPad mark */
+/* coin avatar with the paired stock pinned to the corner: the Equo mark */
 .av2{position:relative;display:inline-block;flex:none} .av2 img.lg{display:block} .av2 .stb{position:absolute;right:-3px;bottom:-3px;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--s2);object-fit:cover} .av2.big .stb{width:28px;height:28px;right:-2px;bottom:-2px;border-width:3px}
 /* area sparkline */
 .spark{width:100%;height:64px;display:block} .spark path.l{fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round} .spark path.a{stroke:none;opacity:.18}
