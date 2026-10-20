@@ -9,7 +9,7 @@ async function runTx(btn,fn,okMsg){ const t=btn?btn.textContent:''; if(btn){ btn
 /* ======================= LAUNCH ======================= */
 function initLaunch(){
   const g=id=>document.getElementById(id); const TAKEN=new Set((window.CHAIN&&LIVE?CHAIN.tokens():TOK).map(x=>x.t.toUpperCase()));
-  let logoURL=null, dev=false, busy=false, pairUsd=ETH; const CAP_USD=3000;
+  let logoURL=null, dev=false, busy=false, pairUsd=ETH; let CAP_USD=5000; if(LIVE&&window.CHAIN&&CHAIN.startCapUsd) CHAIN.startCapUsd().then(v=>{ if(v){ CAP_USD=v; sync(); } }).catch(()=>{});
   // StockPad launches use the flat fee; the hook's other instincts stay out of the form
   ['swBuy','swMax','swEvo'].forEach(id=>{ const el=g(id); const box=el&&el.closest('.lf-opt'); if(box) box.style.display='none'; }); { const fs=g('feeSeg'); if(fs) fs.style.display='none'; const fh=g('feeHint'); if(fh) fh.style.display='none'; }
   const inst={ feeMode:'flat', feeBps:100, snipe:false, snipeBps:3000, snipeMin:30, buy:false, buyShare:2000, div:false, divShare:2000, max:false, maxBps:100, maxHrs:6 };
@@ -43,7 +43,7 @@ function initLaunch(){
     let im=''; if((inst.buy?inst.buyShare:0)+(inst.div?inst.divShare:0)>8000) im='Buyback and holder rewards together can be at most 80% of the fee.'; g('instMsg').textContent=im; return ok&&!im; }
   function sync(){ readInst();
     const n=g('fName').value.trim()||'Your coin', t=(g('fTick').value.trim()||'TOKEN').toUpperCase(), d=g('fDesc').value.trim(), c=parseFloat(g('fCommit').value)||0;
-    g('pName').textContent=n; g('dName').textContent=n; g('pTick').textContent=t; g('pDesc').textContent=d||'A fixed-supply coin born with instincts, on one immutable hook.'; paint();
+    g('pName').textContent=n; g('dName').textContent=n; g('pTick').textContent=t; g('pDesc').textContent=d||'A fixed-supply coin paired with a real stock, on one immutable hook.'; paint();
     const cUsd=c*ETH, out=cUsd/(CAP_USD+cUsd)*SUPPLY; g('fbOut').textContent=fmtAmt(out); g('dBuy').textContent=dev&&c?fmtAmt(out)+' coins':'none'; g('sumDev').textContent=c+' ETH'; g('sumDevRow').style.display=dev?'':'none';
     const px=pairUsd||0, capPair=px?CAP_USD/px:0, unit=px?CAP_USD/SUPPLY/px:0;
     const ps=pair.symbol, isStock=pair.address!==WETH;
@@ -54,7 +54,7 @@ function initLaunch(){
     const bb=inst.buy?inst.buyShare/100:0, dv=inst.div?inst.divShare/100:0, rest=100-bb-dv, cr=Math.round(rest*0.6), pl=rest-cr;
     g('srBuy').style.display=inst.buy?'':'none'; g('spBuy').textContent=bb+'%'; g('srDiv').style.display=inst.div?'':'none'; g('spDiv').textContent=dv+'%'; g('spCreator').textContent=cr+'%'; g('spPlat').textContent=pl+'%';
     g('sumCreator').textContent=cr+'% of the fee'; g('dCreator').textContent=cr+'% of the fee';
-    const chips=instList(); g('sumInst').textContent=chips.join(', '); g('dInst').textContent=chips.join(', '); g('pInst').textContent=chips.slice(1).join(' · ')||'Constitution only';
+    const chips=instList(); g('sumInst').textContent=chips.join(', '); g('dInst').textContent=chips.join(', '); g('pInst').textContent=chips.slice(1).join(' · ')||'Flat fee';
     // evolution preview
     const pe=g('pEvo');
     if(evo.on){ const t1=parseFloat(g('evoT1').value)||0, t2=parseFloat(g('evoT2').value)||0; evo.t1=t1; evo.t2=t2;
