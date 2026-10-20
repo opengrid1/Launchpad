@@ -30,7 +30,8 @@
 #pg-token .right{position:sticky;top:calc(var(--top) + 16px);display:flex;flex-direction:column;gap:16px}
 #pg-token .chart{overflow:hidden} #pg-token #tv{min-height:460px;height:460px;width:100%} #pg-token #tv .tvno{height:100%;min-height:460px;display:flex;align-items:center;justify-content:center;color:var(--fg-3);font-size:13px}
 #pg-token .panel .tabs{padding:0 8px;overflow-x:auto;scrollbar-width:none} #pg-token .panel .tabs button{white-space:nowrap}
-#pg-token .pane{display:none} #pg-token .pane.on{display:block}
+#pg-token .pane{display:none} #pg-token .pane.on{display:block} #pg-token .tw{overflow-x:auto} #pg-token .panel .tb th,#pg-token .panel .tb td{padding:10px 12px}
+#pg-token .stats .stat b .pc{font-size:12px;font-weight:500;margin-left:4px}
 #pg-token .ptools{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:12px;color:var(--fg-3)}
 #pg-token .tb td.r small{text-align:right}
 #pg-token .w{display:inline-flex;align-items:center;gap:7px} #pg-token .w .av{width:20px;height:20px;border-radius:6px;overflow:hidden;flex:none} #pg-token .w .av svg{display:block} #pg-token .w a{font-family:var(--mono);font-size:12px} #pg-token .w a:hover{color:var(--mint)}
@@ -62,9 +63,10 @@
 @media(max-width:1100px){#pg-token .stats{grid-template-columns:repeat(3,minmax(0,1fr))} #pg-token .cols{grid-template-columns:minmax(0,1fr) 340px}}
 @media(max-width:860px){
   #pg-token .stats{grid-template-columns:repeat(2,minmax(0,1fr))} #pg-token .stats .stat{padding:12px}
-  #pg-token .cols{display:flex;flex-direction:column} #pg-token .left,#pg-token .right{display:contents}
+  #pg-token .cols{display:flex;flex-direction:column;align-items:stretch} #pg-token .left,#pg-token .right{display:contents}
   #pg-token .chart{order:1} #pg-token .right>*{order:2} #pg-token .panel{order:3}
-  #pg-token .hd .lg{width:48px;height:48px} #pg-token .stockpill{height:40px}
+  #pg-token .hd{gap:12px} #pg-token .hd .lg{width:48px;height:48px} #pg-token .hd .id{flex:1 1 200px}
+  #pg-token .stockpill{height:42px;flex:1 0 100%;justify-content:space-between;padding-right:12px}
   #pg-token .info{grid-template-columns:1fr}
   #pg-token .mbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;position:fixed;left:0;right:0;bottom:0;z-index:40;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(11,15,20,.94);border-top:1px solid var(--line);backdrop-filter:blur(10px)}
   #pg-token .mbar .btn.s{background:var(--red);border-color:var(--red);color:#fff}
@@ -83,14 +85,14 @@
           <div class="tabs" id="tk-tabs"><button data-tab="trades" class="on">Trades</button><button data-tab="holders">Holders</button><button data-tab="top">Top traders</button><button data-tab="info">Info</button></div>
           <div class="pane on" data-pane="trades">
             <div class="ptools"><div class="seg" id="tk-filter"><button data-f="all" class="on">All</button><button data-f="buy">Buy</button><button data-f="sell">Sell</button></div><span class="num" id="tk-trades-n"></span></div>
-            <table class="tb"><thead><tr><th>Time</th><th>Side</th><th class="r" id="tk-th-coin">Amount</th><th class="r" id="tk-th-pair">Paid</th><th class="r">USD</th><th class="r">Price</th><th>Wallet</th><th class="r">Tx</th></tr></thead><tbody id="tk-trades"></tbody></table>
+            <div class="tw"><table class="tb"><thead><tr><th>Time</th><th>Side</th><th class="r" id="tk-th-coin">Amount</th><th class="r" id="tk-th-pair">Paid</th><th class="r">USD</th><th class="r">Price</th><th>Wallet</th><th class="r">Tx</th></tr></thead><tbody id="tk-trades"></tbody></table></div>
             <div class="more" id="tk-more"><button class="btn sm" id="tk-more-btn">Load more</button></div>
           </div>
           <div class="pane" data-pane="holders">
-            <table class="tb"><thead><tr><th>#</th><th>Wallet</th><th class="r">Balance</th><th class="r">Share</th><th class="r">Value</th></tr></thead><tbody id="tk-holders"></tbody></table>
+            <div class="tw"><table class="tb"><thead><tr><th>#</th><th>Wallet</th><th class="r">Balance</th><th class="r">Share</th><th class="r">Value</th></tr></thead><tbody id="tk-holders"></tbody></table></div>
           </div>
           <div class="pane" data-pane="top">
-            <table class="tb"><thead><tr><th>#</th><th>Wallet</th><th class="r">Volume</th><th class="r">Trades</th><th class="r">Holding</th></tr></thead><tbody id="tk-top"></tbody></table>
+            <div class="tw"><table class="tb"><thead><tr><th>#</th><th>Wallet</th><th class="r">Volume</th><th class="r">Trades</th><th class="r">Holding</th></tr></thead><tbody id="tk-top"></tbody></table></div>
           </div>
           <div class="pane" data-pane="info"><div class="info" id="tk-info"></div></div>
         </div>

@@ -11,7 +11,7 @@ window.SP_PAGE=function(){
   X={...X};
   const C=(window.INKY&&INKY.contracts)||{}; const PM=String(C.poolManager||'').toLowerCase();
   const stock=SP.stockBySym(X.pair); const isStock=X.pair!=='ETH';
-  const inPair=v=>SP.fmtPair(v,X), pairUsd=()=>X.pairUsd||SP.prices[String(X.pairAddr||'').toLowerCase()]||0, ethUsd=()=>SP.prices[WETH]||ETH||0;
+  const inPair=v=>(X.pair!=='ETH'&&v>0&&v<0.001)?fmtPrice(v)+' '+X.pair:SP.fmtPair(v,X), pairUsd=()=>X.pairUsd||SP.prices[String(X.pairAddr||'').toLowerCase()]||0, ethUsd=()=>SP.prices[WETH]||ETH||0;
   const feePct=()=>((X.feeBps||100)/100).toFixed(2), feeR=()=>(X.feeBps||100)/10000;
   const youTag=a=>SP.W.connected&&a===SP.W.address?'<span class="tag mint">you</span>':'';
   const wl=(a,tags='')=>`<span class="w"><span class="av">${SP.avatar(a,20)}</span><a href="${EXPLORER}/address/${a}" target="_blank" rel="noopener">${shortAddr(cs(a))}</a>${tags}${youTag(a)}</span>`;
