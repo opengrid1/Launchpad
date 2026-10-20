@@ -25,18 +25,20 @@
 #pg-markets .fbar{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
 #pg-markets .fbar .sep{width:1px;height:24px;background:var(--line-2);margin:0 4px}
 #pg-markets .fbar .q{margin-left:auto;display:flex;align-items:center;gap:8px;height:38px;min-width:334px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--s1);color:var(--fg-3)} #pg-markets .fbar .q input{flex:1;background:none;border:0;outline:0;color:var(--fg);min-width:0;font-size:12px}
-/* coin cards */
+/* coin cards, measured from the reference: 442x232, 16px padding, 12px radius */
 #pg-markets .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
-#pg-markets .cc{display:block;position:relative;padding:16px;transition:border-color .12s,box-shadow .12s} #pg-markets .cc:hover{border-color:rgba(242,190,84,.5);box-shadow:0 0 24px rgba(242,190,84,.08)}
+#pg-markets .cc{display:block;position:relative;padding:16px;border-radius:12px;background:var(--s2);transition:border-color .12s,box-shadow .12s} #pg-markets .cc:hover{border-color:rgba(242,190,84,.5);box-shadow:0 0 24px rgba(242,190,84,.08)}
 #pg-markets .cc .top{display:flex;align-items:flex-start;gap:12px}
-#pg-markets .cc .lg{width:44px;height:44px;border-radius:50%;background:var(--s3);border:1px solid var(--line-2);object-fit:cover;flex:none}
-#pg-markets .cc .nm{flex:1;min-width:0} #pg-markets .cc .nm .t{display:flex;align-items:center;gap:8px;flex-wrap:wrap} #pg-markets .cc .nm b{font:600 15px var(--disp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%} #pg-markets .cc .nm .sym{font:400 12px var(--mono);color:var(--fg-3)}
-#pg-markets .cc .meta{display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;font:11px var(--mono);color:var(--fg-3)} #pg-markets .cc .meta .cpb{display:inline-flex;align-items:center;gap:4px;color:var(--fg-3)} #pg-markets .cc .meta .cpb:hover{color:var(--fg)} #pg-markets .cc .meta .cpb svg{width:12px;height:12px}
-#pg-markets .cc .age{font:11px var(--sans);color:var(--fg-3);white-space:nowrap}
+#pg-markets .cc .lg{width:42px;height:42px;border-radius:50%;background:var(--s3);border:1px solid var(--line-2);object-fit:cover;flex:none}
+#pg-markets .cc .nm{flex:1;min-width:0} #pg-markets .cc .nm .t{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;min-height:22px} #pg-markets .cc .nm b{font:600 15px/1.5 var(--disp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #pg-markets .cc .nm .sym{font:400 12px var(--mono);color:var(--fg-3);white-space:nowrap}
+#pg-markets .cc .meta{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:nowrap;font:11px var(--mono);color:var(--fg-3);min-width:0} #pg-markets .cc .meta .cpb{display:inline-flex;align-items:center;gap:4px;color:var(--fg-3);white-space:nowrap} #pg-markets .cc .meta .cpb:hover{color:var(--fg)} #pg-markets .cc .meta .cpb svg{width:12px;height:12px}
+#pg-markets .cc .pairline{font:600 12px var(--disp);color:var(--fg);gap:6px} #pg-markets .cc .pairline img{width:18px;height:18px} #pg-markets .cc .pairline .sl{color:var(--line-2)} #pg-markets .cc .pairline .st{color:var(--ac)}
+#pg-markets .cc .age{font:11px/1.5 var(--sans);color:var(--fg-3);white-space:nowrap}
 #pg-markets .cc .rb{position:absolute;right:12px;top:-11px}
-#pg-markets .cc .spark{margin:14px 0 6px;height:72px}
-#pg-markets .cc .flow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0 6px} #pg-markets .cc .flow .num{font-size:11.5px;color:var(--fg-2)}
-#pg-markets .cc .sboxes{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:12px}
+#pg-markets .cc .sp{margin-top:14px} #pg-markets .cc .spark{height:40px;margin:0}
+#pg-markets .cc .flow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 4px;min-height:15px} #pg-markets .cc .flow .lab{font:400 10px/15px var(--sans);letter-spacing:0;text-transform:none} #pg-markets .cc .flow .lab::first-letter{text-transform:uppercase} #pg-markets .cc .flow .num{font:400 10px/15px var(--mono);color:var(--fg-3)}
+#pg-markets .cc .split{height:6px;background:var(--line-2)}
+#pg-markets .cc .sboxes{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px} #pg-markets .cc .sbox{padding:6px 8px;border-radius:10px;background:rgba(10,10,11,.8);border:1px solid rgba(255,255,255,.05)} #pg-markets .cc .sbox .lab{font:400 10px/15px var(--sans);letter-spacing:0;text-transform:none} #pg-markets .cc .sbox .lab::first-letter{text-transform:uppercase} #pg-markets .cc .sbox b{font:600 13px/19.5px var(--mono);margin:0}
 #pg-markets .empty{grid-column:1/-1;border:1px dashed var(--line-2);border-radius:var(--r-xl)}
 @media(max-width:1100px){#pg-markets .cards{grid-template-columns:repeat(2,minmax(0,1fr))} #pg-markets .hfloat{display:none} #pg-markets .hero .art{opacity:.5}}
 @media(max-width:640px){#pg-markets .hfloat{display:flex} #pg-markets .hf .badge{right:10px}}

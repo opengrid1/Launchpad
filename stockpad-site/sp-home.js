@@ -18,14 +18,14 @@ window.SP_PAGE=function(){
   async function tradeInfo(x){ const k=x.addr; const c=TRC[k]; if(c&&Date.now()-c.at<60000) return c;
     let out={at:Date.now(),svg:'',buyPct:null}; try{ const tr=(await CHAIN.trades(k)).slice().sort((a,b)=>a.ts-b.ts); const t0=now()-86400; const day=tr.filter(t=>t.ts>=t0);
       let pts=day.map(t=>CHAIN.tradePrice(t)); if(pts.length<2) pts=tr.slice(-40).map(t=>CHAIN.tradePrice(t)); pts=pts.filter(v=>v>0); if(x.pxPair>0) pts.push(x.pxPair); if(pts.length===1) pts=[pts[0],pts[0]];
-      if(pts.length>=2){ const W=300,H=72,P=3; const mn=Math.min(...pts), mx=Math.max(...pts), rg=(mx-mn)||mn||1; const step=(W-2*P)/(pts.length-1); const Y=v=>(H-P-((v-mn)/rg)*(H-2*P)).toFixed(1);
+      if(pts.length>=2){ const W=300,H=40,P=2; const mn=Math.min(...pts), mx=Math.max(...pts), rg=(mx-mn)||mn||1; const step=(W-2*P)/(pts.length-1); const Y=v=>(H-P-((v-mn)/rg)*(H-2*P)).toFixed(1);
         const line=pts.map((v,i)=>(i?'L':'M')+(P+i*step).toFixed(1)+' '+Y(v)).join(' '); const dir=pts[pts.length-1]>pts[0]*1.0005?'up':pts[pts.length-1]<pts[0]*0.9995?'dn':'flat';
         out.svg=`<svg class="spark ${dir}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="a" d="${line} L${(P+(pts.length-1)*step).toFixed(1)} ${H} L${P} ${H} Z"/><path class="l" d="${line}"/></svg>`; }
       const bv=day.filter(t=>t.buy).reduce((s,t)=>s+Number(t.pair)/1e18,0), sv=day.filter(t=>!t.buy).reduce((s,t)=>s+Number(t.pair)/1e18,0); if(bv+sv>0) out.buyPct=Math.round(bv/(bv+sv)*100);
     }catch(e){ console.warn('trades',e); }
     TRC[k]=out; return out; }
   function paintTradeBits(){ $$('[data-tr]',pg).forEach(async el=>{ const x=SP.token(el.dataset.tr); if(!x) return; const t=await tradeInfo(x); const sp=$('.sp',el), fl=$('.flow .num',el), sb=$('.split',el);
-    if(sp) sp.innerHTML=t.svg||'<svg class="spark flat" viewBox="0 0 300 72" preserveAspectRatio="none"><path class="l" d="M3 36 L297 36"/></svg>';
+    if(sp) sp.innerHTML=t.svg||'<svg class="spark flat" viewBox="0 0 300 40" preserveAspectRatio="none"><path class="l" d="M2 20 L298 20"/></svg>';
     if(fl) fl.textContent=t.buyPct==null?'no trades in 24h':`${t.buyPct}% buys · ${100-t.buyPct}% sells`; if(sb) sb.innerHTML=t.buyPct==null?'<i class="b" style="width:0"></i>':`<i class="b" style="width:${t.buyPct}%"></i><i class="s" style="flex:1"></i>`; }); }
 
   /* ---------- hero ---------- */
@@ -49,7 +49,7 @@ window.SP_PAGE=function(){
   function card(x){ return `<a class="cc panel" href="${tokenUrl(x)}" data-tr="${x.addr}">${x.rewards?`<span class="badge acl rb">${ic('star')}Holder rewards</span>`:''}
     <div class="top"><img class="lg" src="${SP.coinLogo(x)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><div class="nm"><div class="t"><b>${esc(x.n)}</b><span class="sym">$${esc(x.t)}</span><span class="badge">${feeTxt(x)}</span></div>
       <div class="meta"><span class="cpb" data-copy="${cs(x.addr)}" title="Copy address">${shortAddr(cs(x.addr))}${ic('copy')}</span><span class="pairline"><img src="${SP.coinLogo(x)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'">${esc(x.t)}<span class="sl">/</span><img src="${pairImg(x.pair)}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span class="st">${esc(x.pair)}</span></span></div></div><span class="age">${ageStr(x.age||'0s')}</span></div>
-    <div class="sp"><svg class="spark flat" viewBox="0 0 300 72" preserveAspectRatio="none"><path class="l" d="M3 36 L297 36" opacity=".3"/></svg></div>
+    <div class="sp"><svg class="spark flat" viewBox="0 0 300 40" preserveAspectRatio="none"><path class="l" d="M2 20 L298 20" opacity=".3"/></svg></div>
     <div class="flow"><span class="lab">Flow 24h</span><span class="num">…</span></div><div class="split"></div>
     <div class="sboxes"><div class="sbox"><span class="lab">Mcap</span><b>${fmtUsd(x.mc)}</b></div><div class="sbox"><span class="lab">Vol 24h</span><b>${fmtUsd(x.vol)}</b></div><div class="sbox"><span class="lab">Trades</span><b>${(x.trades||0).toLocaleString()}</b></div></div></a>`; }
   function render(){ hero(); figs(); pills(); const l=sorted(); const pages=Math.max(1,Math.ceil(l.length/PER)); if(page>pages) page=pages; const st=SP.stockBySym(stock);
