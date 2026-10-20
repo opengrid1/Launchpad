@@ -1,0 +1,69 @@
+{
+ "cleanUrls": true,
+ "trailingSlash": false,
+ "rewrites": [
+  {
+   "source": "/token/:addr",
+   "destination": "/token"
+  }
+ ],
+ "redirects": [
+  {
+   "source": "/portfolio",
+   "destination": "/profile",
+   "permanent": true
+  },
+  {
+   "source": "/docs",
+   "destination": "/docs/introduction",
+   "permanent": false
+  },
+  {
+   "source": "/token",
+   "destination": "/",
+   "permanent": false
+  }
+ ],
+ "headers": [
+  {
+   "source": "/(.*)",
+   "headers": [
+    {
+     "key": "X-Content-Type-Options",
+     "value": "nosniff"
+    },
+    {
+     "key": "Referrer-Policy",
+     "value": "strict-origin-when-cross-origin"
+    }
+   ]
+  },
+  {
+   "source": "/(chain|wallet|app|pages|tv|avatar|i18n|data).js",
+   "headers": [
+    {
+     "key": "Cache-Control",
+     "value": "public, max-age=0, must-revalidate"
+    }
+   ]
+  },
+  {
+   "source": "/img/(.*)",
+   "headers": [
+    {
+     "key": "Cache-Control",
+     "value": "public, max-age=86400"
+    }
+   ]
+  },
+  {
+   "source": "/charting_library/(.*)",
+   "headers": [
+    {
+     "key": "Cache-Control",
+     "value": "public, max-age=604800, immutable"
+    }
+   ]
+  }
+ ]
+}
