@@ -1,0 +1,42 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Analytics | StockPad</title><meta name="description" content="Volume, fees, trades and launches per day on StockPad, by stock and by coin.">
+<link rel="icon" href="/img/favicon.svg?v=13" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=13"><meta name="theme-color" content="#000000">
+<meta property="og:title" content="Analytics | StockPad"><meta property="og:image" content="/img/og.png?v=13"><meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=7">
+<style>
+#pg-analytics .ph{padding:6px 0 18px;margin:0}
+#pg-analytics .kp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#pg-analytics .kpi{padding:16px 18px 12px} #pg-analytics .kpi .top{display:flex;align-items:baseline;justify-content:space-between;gap:10px} #pg-analytics .kpi b{display:block;font:600 24px/1.1 var(--mono);margin-top:6px;letter-spacing:-.01em} #pg-analytics .kpi .d{font:11.5px var(--mono);color:var(--fg-3);text-align:right;line-height:1.5} #pg-analytics .kpi .d em{font-style:normal;color:var(--fg-2)}
+#pg-analytics .ch{margin-top:14px;height:84px} #pg-analytics .ch svg{width:100%;height:84px;display:block} #pg-analytics .ch rect{fill:var(--ac);opacity:.55} #pg-analytics .ch rect.last{opacity:1} #pg-analytics .ch rect:hover{opacity:1} #pg-analytics .ch line{stroke:var(--line-2);stroke-dasharray:3 3}
+#pg-analytics .ax{display:flex;justify-content:space-between;font:10.5px var(--mono);color:var(--fg-3);margin-top:6px}
+#pg-analytics .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+#pg-analytics .panel .ph2{font:600 15px var(--disp)} #pg-analytics .panel .ph2 .seg button{font-family:var(--disp)}
+#pg-analytics .tb th:first-child,#pg-analytics .tb td:first-child{padding-left:16px} #pg-analytics .tb th:last-child,#pg-analytics .tb td:last-child{padding-right:16px}
+#pg-analytics .sc{display:flex;align-items:center;gap:10px} #pg-analytics .sc img{width:28px;height:28px;border-radius:50%;background:#fff} #pg-analytics .sc b{display:block;font-weight:600} #pg-analytics .sc small{display:block;color:var(--fg-3);font:11px var(--mono)}
+#pg-analytics .feed{display:flex;flex-direction:column} #pg-analytics .fr{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13px} #pg-analytics .fr:last-child{border-bottom:0}
+#pg-analytics .fr .coin .lg{width:28px;height:28px} #pg-analytics .fr .coin b{font-size:13px} #pg-analytics .fr .coin small{font-size:11px}
+#pg-analytics .fr .v{font:500 13px var(--mono);text-align:right} #pg-analytics .fr .v small{display:block;font-size:11px;color:var(--fg-3);font-weight:400} #pg-analytics .fr .t{font:11px var(--mono);color:var(--fg-3);text-align:right;white-space:nowrap}
+#pg-analytics tr.new td{animation:akflash 1.2s ease-out} @keyframes akflash{from{background:var(--ac-dim)}to{background:transparent}}
+#pg-analytics .bar.h{height:4px;margin-top:6px;background:var(--s4)} #pg-analytics .bar.h i{background:var(--ac)}
+@media(max-width:1100px){#pg-analytics .kp{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){#pg-analytics .kp{grid-template-columns:1fr} #pg-analytics .two{grid-template-columns:1fr} #pg-analytics .ph{flex-direction:column;align-items:flex-start}}
+</style>
+</head><body data-page="analytics">
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-analytics">
+  <div class="ph"><div><h1>Analytics</h1></div><div class="seg" id="an-range"><button data-r="7" >7d</button><button data-r="30" class="on">30d</button><button data-r="0">All</button></div></div>
+  <div class="kp" id="an-kpis"></div>
+  <div class="two">
+    <section class="panel"><div class="ph2" style="padding:12px 16px;border-bottom:1px solid var(--line)">By stock</div><div style="overflow-x:auto"><table class="tb" id="an-stocks"><thead><tr><th>Stock</th><th class="r">Coins</th><th class="r">Volume</th><th class="r">Fees paid</th><th class="r hm">Trades</th><th class="r hm">Holders</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="panel"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line)"><span>Top coins</span><div class="seg" id="an-topby"><button data-k="vol" class="on">Volume</button><button data-k="fees">Fees</button><button data-k="h">Holders</button></div></div><div style="overflow-x:auto"><table class="tb" id="an-top"><thead><tr><th>#</th><th>Coin</th><th>Pair</th><th class="r" id="an-top-h">Volume</th><th class="r hm">Mcap</th></tr></thead><tbody></tbody></table></div></section>
+  </div>
+  <div class="two">
+    <section class="panel"><div class="ph2" style="padding:12px 16px;border-bottom:1px solid var(--line)">Top creators</div><div style="overflow-x:auto"><table class="tb" id="an-creators"><thead><tr><th>#</th><th>Creator</th><th class="r">Coins</th><th class="r">Fees earned</th><th class="r hm">Volume</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="panel"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)"><span>Recent trades</span><span class="num muted" id="an-feed-n" style="font-size:12px"></span></div><div class="feed" id="an-feed"></div></section>
+  </div>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=7"></script><script src="/sp-analytics.js?v=7"></script>
+</body></html>

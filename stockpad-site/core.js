@@ -60,13 +60,13 @@ SP.W.switchChain=async()=>{ const d=window.inkyWallet; if(d&&d.switchChain) awai
 addEventListener('inky:wallet',syncWallet); document.addEventListener('wallet-change',()=>{ /* re-entrancy guard: syncWallet only dispatches on change */ });
 
 /* ---------- shell ---------- */
-const NAV=[['markets','/','Home'],['launch','/launch','Launch'],['portfolio','/profile','Profile'],['docs','/docs','Docs']];
+const NAV=[['markets','/','Home'],['launch','/launch','Launch'],['analytics','/analytics','Analytics'],['portfolio','/profile','Profile'],['docs','/docs','Docs']];
 function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP.W;
   if(!W.connected){ el.innerHTML=`<button class="btn pri" id="wconnect">Connect wallet</button>`; $('#wconnect',el).onclick=SP.W.connect; return; }
   el.innerHTML=`<button class="wbtn" id="wmenu"><span class="av">${SP.avatar(W.address,22)}</span>${esc(W.short)}${!W.chainOk?'<span class="tag red">Wrong network</span>':''}</button>`;
   $('#wmenu',el).onclick=e=>{ const m=SP.menu(e.currentTarget,`<button data-a="copy">${ic('copy')}Copy address</button><button data-a="pf">${ic('user')}Portfolio</button>${SP.isAdmin()?`<button data-a="adm">${ic('shield')}Operator</button>`:''}<button data-a="ex">${ic('globe')}View on Etherscan</button>${!W.chainOk?`<button data-a="sw">${ic('swap')}Switch to Ethereum</button>`:''}<div class="d"></div><button data-a="out">${ic('logout')}Disconnect</button>`);
     $$('[data-a]',m).forEach(b=>b.onclick=()=>{ const a=b.dataset.a; m.remove(); if(a==='copy') SP.copy(cs(W.address),'Address copied'); if(a==='pf') SP.go('/profile'); if(a==='adm') SP.go('/admin'); if(a==='ex') open(EXPLORER+'/address/'+W.address,'_blank'); if(a==='sw') SP.W.switchChain().catch(err=>SP.toast(SP.errMsg(err),'err')); if(a==='out') SP.W.disconnect(); }); }; }
-const NAV_IC={markets:'home',launch:'rocket',portfolio:'user',docs:'book'};
+const NAV_IC={markets:'home',launch:'rocket',analytics:'trend',portfolio:'user',docs:'book'};
 const stockPx=v=>v?'$'+(v>=100?v.toFixed(0):v>=1?v.toFixed(2):fmtPrice(v)):'';
 const navHtml=page=>NAV.map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${n[2]}</a>`).join('');
 function clockHtml(){ const mk=SP.market(); return `<span class="mkt ${mk.open?'open':''}" id="sp-clock" title="${esc(mk.detail)}"><i></i><span>${mk.open?'NYSE open':'NYSE closed'}<b>${esc(mk.until)}</b></span></span>`; }

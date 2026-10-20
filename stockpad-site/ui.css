@@ -127,6 +127,6 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px} .tb th{text-align:l
   :root{--gut:14px;--top:56px} #sp-main{padding:14px 0 90px} .g2,.g3,.g4{grid-template-columns:1fr}
   .tb{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch} .hm{display:none!important} .ph h1{font-size:22px}
   #sp-foot{display:none}
-  .tabbar{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.94);border-top:1px solid var(--line);backdrop-filter:blur(12px);padding:6px 0 calc(6px + env(safe-area-inset-bottom))}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.94);border-top:1px solid var(--line);backdrop-filter:blur(12px);padding:6px 0 calc(6px + env(safe-area-inset-bottom))}
   .tabbar a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 2px;font:500 10.5px var(--sans);color:var(--fg-3)} .tabbar a svg{width:20px;height:20px} .tabbar a.on{color:var(--ac)}
 }

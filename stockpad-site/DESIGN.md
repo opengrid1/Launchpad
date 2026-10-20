@@ -12,6 +12,8 @@ Shell: a 60px top bar with the wordmark, text navigation (underline on the activ
 
 All classes live in `ui.css` (read it; use its classes before inventing new ones). Page-specific CSS goes in a `<style>` block at the top of that page's HTML, scoped with the page's root id.
 
+Pages: `index.html` (Home), `launch.html`, `analytics.html` (volume, fees, trades and launches per day with bar charts, breakdown by stock, top coins, top creators, live trade feed), `token.html`, `profile.html`, `admin.html`, `docs/`.
+
 ## Page skeleton
 
 ```html
