@@ -64,7 +64,7 @@ addEventListener('inky:wallet',syncWallet); document.addEventListener('wallet-ch
 /* ---------- shell ---------- */
 const NAV=[['markets','/','Home'],['calls','/calls','Calls'],['analytics','/analytics','Analytics'],['launch','/launch','Launch'],['rewards','/rewards','Rewards'],['portfolio','/profile','Profile']];
 /* More menu (desktop) and Tools in the mobile menu: [key, href, label, icon, soon] */
-const TOOLS=[['pools','/pools','Pools','drop'],['burns','/rewards#burns','Burns','flame'],['watch','/?watch=1','Watchlist','star'],['swap','','Swap','swap',1],['cto','','Takeover','users',1]];
+const TOOLS=[['pools','/pools','Pools','drop'],['burns','/rewards#burns','Burns','flame'],['watch','/?watch=1','Watchlist','star'],['cto','','Takeover','users',1]];
 const MORE_LINKS=[['docs','/docs','Docs','book'],['how','/docs/how-it-works','How it works','info']];
 const TABS=['markets','calls','launch','rewards','analytics'];
 function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP.W;
