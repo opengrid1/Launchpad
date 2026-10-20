@@ -135,7 +135,10 @@ function initToken(){
   price=X.px; document.title=`${X.t} $${fmtPrice(X.px)} | OneHook`;
   // hero
   setAv($('#hAv'),X.img,X.t[0]); $('#hName').textContent=X.n; $('#hSym').textContent=X.t; $$('.hAddrT').forEach(e=>e.textContent=shortAddr(X.addr)); $$('.hAddr').forEach(e=>e.dataset.copy=cs(X.addr)); $('#hShare').dataset.copy=SITE+tokenUrl(X);
-  const tags=$('#tags'); const base=tags.children[0]; { const pa=$('.bg-avatar-gradient',base); setAv(pa,pairImg(X.pair),X.pair[0]); const inner=base.querySelector('span.inline-flex'); inner.lastChild.textContent=X.pair; base.title='Paired asset: '+X.pair+' on Uniswap V4'; }
+  const tags=$('#tags'); const base=tags.children[0]; { const pa=$('.bg-avatar-gradient',base); setAv(pa,pairImg(X.pair),X.pair[0]); const inner=base.querySelector('span.inline-flex'); inner.lastChild.textContent=X.pair; base.title='Paired asset: '+X.pair+' on Uniswap V4';
+    // stock pair: name the stock and show its live price on the chip
+    const st=X.pair!=='ETH'&&window.CHAIN&&CHAIN.stocks?CHAIN.stocks.find(s=>s.symbol===X.pair):null;
+    if(st){ base.title='Paired with '+st.name+' ('+X.pair+'), a tokenized stock. Fees and trades settle in '+X.pair+'.'; if(LIVE&&CHAIN.pairUsd) CHAIN.pairUsd(X.pairAddr).then(v=>{ if(v) inner.lastChild.textContent=X.pair+' · $'+(v>=100?v.toFixed(0):v.toFixed(2)); }).catch(()=>{}); } }
   if(X.rewards){ const c=base.cloneNode(true); setAv($('.bg-avatar-gradient',c),pairImg('ETH'),'E'); c.title='Dividends paid in ETH to holders, pro-rata to balance'; const inner=c.querySelector('span.inline-flex'); inner.lastChild.textContent='ETH dividends'; tags.insertBefore(c,tags.lastElementChild); }
   else { const c=base.cloneNode(true); c.querySelector('.bg-avatar-gradient').remove(); c.title='Dividends are off · the fee stays ~1%, split 60/40 creator/platform'; const inner=c.querySelector('span.inline-flex'); inner.lastChild.textContent='No dividends'; tags.insertBefore(c,tags.lastElementChild); }
   { const iF=$('#infoFee'); if(iF) iF.textContent=(X.feeBps/100).toFixed(2)+'%'+(X.feeMode&&X.feeMode!=='flat'?' ('+X.feeLabel+')':''); }

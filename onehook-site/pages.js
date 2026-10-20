@@ -14,7 +14,18 @@ function initLaunch(){
   const evo={ on:false, t1:10, t2:50 };
   const WETH=(window.INKY&&INKY.weth)||'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
   const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
-  if(LIVE&&window.CHAIN){ CHAIN.pairUsd(WETH).then(v=>{ pairUsd=v||ETH; sync(); }).catch(()=>{}); }
+  // paired asset: ETH or one of the tokenized stocks the factory's oracle prices
+  const ETH_PAIR={address:WETH,symbol:'ETH',name:'Ether',logo:'img/eth.png'};
+  let pair=ETH_PAIR; const pairPrices={[WETH]:ETH};
+  const pairList=()=>[ETH_PAIR,...(((LIVE&&window.CHAIN&&CHAIN.stocks)||(window.INKY&&INKY.stocks)||[]).map(s=>({address:s.address,symbol:s.symbol,name:s.name,logo:s.logo,ticker:s.ticker})))];
+  const fmtPairUsd=v=>v?'$'+(v>=100?v.toFixed(0):v>=1?v.toFixed(2):fmtPrice(v)):'';
+  function loadPairUsd(){ if(!(LIVE&&window.CHAIN)) return; CHAIN.pairUsd(pair.address).then(v=>{ pairPrices[pair.address]=v||0; pairUsd=v||0; sync(); paintPairMenu(); }).catch(()=>{}); }
+  function paintPairMenu(){ const m=g('pairMenu'); if(!m) return; m.innerHTML=pairList().map(p=>`<button type="button" class="lf-pair${p.address===pair.address?' on':''}" data-p="${p.address}"><img class="lf-coin" src="${p.logo}" alt="" onerror="this.onerror=null;this.src='img/eth.png'"><span class="lf-pair-s"><b>${esc(p.symbol)}</b><small>${esc(p.name)}</small></span><span class="lf-pair-px">${fmtPairUsd(pairPrices[p.address])}</span></button>`).join(''); }
+  function setPair(p){ pair=p; pairUsd=pairPrices[p.address]||0; g('pairCur').innerHTML=`<img alt="" class="lf-coin" src="${p.logo}" onerror="this.onerror=null;this.src='img/eth.png'">${esc(p.symbol)}`; const pill=g('pairBtn').querySelector('.lf-pill'); if(pill) pill.textContent=p.address===WETH?'ETH':'Stock'; g('pairBtn').classList.remove('open'); g('pairMenu').classList.remove('open'); loadPairUsd(); sync(); }
+  g('pairBtn').onclick=()=>{ g('pairBtn').classList.toggle('open'); g('pairMenu').classList.toggle('open'); paintPairMenu(); };
+  g('pairMenu').addEventListener('click',e=>{ const b=e.target.closest('[data-p]'); if(!b) return; const p=pairList().find(x=>x.address===b.dataset.p); if(p) setPair(p); });
+  paintPairMenu();
+  if(LIVE&&window.CHAIN){ loadPairUsd(); pairList().slice(1).forEach(p=>CHAIN.pairUsd(p.address).then(v=>{ pairPrices[p.address]=v||0; paintPairMenu(); }).catch(()=>{})); }
   const letter=()=>((g('fTick').value.trim()||'T')[0]).toUpperCase();
   function paint(){ const l=letter(); g('pLetter').textContent=l; const av4=g('pLogo4').querySelector('span'); if(av4) av4.textContent=l; [g('pLogo2'),g('pLogo4')].forEach(el=>{ if(!el) return; el.querySelectorAll('img').forEach(i=>i.remove()); el.insertAdjacentHTML('beforeend',`<img src="${logoURL||DEF_LOGO}" alt="">`); }); const lb=g('pLogo'); if(logoURL) lb.innerHTML=`<img src="${logoURL}" alt="">`; }
   function readInst(){ inst.feeBps=clamp(Math.round((parseFloat(g('feePct').value)||1)*100),10,300);
@@ -33,10 +44,11 @@ function initLaunch(){
     g('pName').textContent=n; g('dName').textContent=n; g('pTick').textContent=t; g('pDesc').textContent=d||'A fixed-supply coin born with instincts, on one immutable hook.'; paint();
     const cUsd=c*ETH, out=cUsd/(CAP_USD+cUsd)*SUPPLY; g('fbOut').textContent=fmtAmt(out); g('dBuy').textContent=dev&&c?fmtAmt(out)+' coins':'none'; g('sumDev').textContent=c+' ETH'; g('sumDevRow').style.display=dev?'':'none';
     const px=pairUsd||0, capPair=px?CAP_USD/px:0, unit=px?CAP_USD/SUPPLY/px:0;
-    g('pPair').textContent='ETH'; g('pPairTag').innerHTML=`<img src="img/eth.png" alt="">ETH`; g('sumPair').textContent='ETH'; g('mktPool').textContent='Uniswap V4 · ETH · Ethereum'; g('dPool').textContent='Uniswap V4 · ETH · locked';
-    g('pvPrice').textContent=px?`${fmtPrice(unit)} ETH at the current ETH price.`:'Loading the ETH price…'; g('pvCap').textContent=px?`${capPair>=100?capPair.toFixed(0):capPair.toFixed(2)} ETH at the current ETH price.`:'';
+    const ps=pair.symbol, isStock=pair.address!==WETH;
+    g('pPair').textContent=ps; g('pPairTag').innerHTML=`<img src="${pair.logo}" alt="" onerror="this.onerror=null;this.src='img/eth.png'">${esc(ps)}`; g('sumPair').textContent=isStock?`${ps} (${pair.name})`:'ETH'; g('mktPool').textContent=`Uniswap V4 · ${ps} · Ethereum`; g('dPool').textContent=`Uniswap V4 · ${ps} · locked`;
+    g('pvPrice').textContent=px?`${fmtPrice(unit)} ${ps} at the current ${ps} price${isStock?' ('+fmtPairUsd(px)+')':''}.`:`Loading the ${ps} price…`; g('pvCap').textContent=px?`${capPair>=100?capPair.toFixed(0):capPair.toFixed(2)} ${ps} at the current ${ps} price.`:'';
     g('feeHint').textContent=inst.feeMode==='flat'?'A fixed fee on every swap.':inst.feeMode==='dynamic'?'The fee widens while swaps cluster and relaxes block by block when they stop. Capped at 3%.':"The fee rises with the trader's priority fee, so snipers and sandwichers pay the pool, not the block builder.";
-    const fee=feeDisp(); g('mktFee').textContent=`${fee} · 60% creator · 40% platform`; g('feeSplitHd').textContent=`${fee} per swap, in ETH`; g('sumFee').textContent=`${fee} ${inst.feeMode==='flat'?'flat':inst.feeMode==='dynamic'?'dynamic':'MEV-tax'}`;
+    const fee=feeDisp(); g('mktFee').textContent=`${fee} · 60% creator · 40% platform`; g('feeSplitHd').textContent=`${fee} per swap, in ${pair.symbol}`; g('sumFee').textContent=`${fee} ${inst.feeMode==='flat'?'flat':inst.feeMode==='dynamic'?'dynamic':'MEV-tax'}`;
     const bb=inst.buy?inst.buyShare/100:0, dv=inst.div?inst.divShare/100:0, rest=100-bb-dv, cr=Math.round(rest*0.6), pl=rest-cr;
     g('srBuy').style.display=inst.buy?'':'none'; g('spBuy').textContent=bb+'%'; g('srDiv').style.display=inst.div?'':'none'; g('spDiv').textContent=dv+'%'; g('spCreator').textContent=cr+'%'; g('spPlat').textContent=pl+'%';
     g('sumCreator').textContent=cr+'% of the fee'; g('dCreator').textContent=cr+'% of the fee';
@@ -69,7 +81,7 @@ function initLaunch(){
     const devWei=dev?CHAIN.parseEther((parseFloat(g('fCommit').value)||0).toFixed(18)):0n;
     const genes={ feeMode:inst.feeMode==='flat'?0:inst.feeMode==='dynamic'?1:2, feeBps:inst.feeBps, snipeBps:inst.snipe?inst.snipeBps:0, snipeBlocks:inst.snipe?clamp(Math.round(inst.snipeMin*60/12),5,7200):0, buybackShareBps:inst.buy?inst.buyShare:0, buybackThreshold:inst.buy?CHAIN.parseEther('0.05'):0n, divShareBps:inst.div?inst.divShare:0, maxWalletBps:inst.max?inst.maxBps:0, maxWalletSecs:inst.max?inst.maxHrs*3600:0, evolution:{ enabled:evo.on, trainingMcapUsd:evo.on?Math.round(evo.t1*1000):0, autonomousMcapUsd:evo.on?Math.round(evo.t2*1000):0 } };
     busy=true; cta.disabled=true; cta.textContent='Confirm in wallet…';
-    try{ const {rc,token}=await CHAIN.launch({name,symbol:sym,metadataURI:JSON.stringify(meta),pair:WETH,minPairOut:0,genes},devWei);
+    try{ const {rc,token}=await CHAIN.launch({name,symbol:sym,metadataURI:JSON.stringify(meta),pair:pair.address,minPairOut:0,genes},devWei);
       busy=false; setCta(); if(!token) throw new Error('Launched, but the token address was not found in the receipt');
       g('dBlock').innerHTML=ic('check')+'Deployed · block #'+rc.blockNumber.toLocaleString(); g('dAddr').dataset.copy=cs(token); g('dAddrT').textContent=shortAddr(token); g('dOpen').href=tokenUrl(token.toLowerCase()); window._launched=token; g('dInst').textContent=instList().join(', ');
       $('.lf-grid').classList.add('hidden'); g('doneBox').classList.remove('hidden'); toast(name+' is live on Ethereum'); $('main').scrollTo({top:0,behavior:'smooth'}); try{ await CHAIN.refresh(); syncTok(); }catch{} }

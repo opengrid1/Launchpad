@@ -23,7 +23,7 @@ const FEE={tax:1,creator:0.6,platform:0.4};
 let TOK=[];
 const ageStr=a=>a.endsWith('s')?'just now':a==='1d'?'yesterday':a+' ago';
 const ageMin=a=>{const n=parseInt(a); return a.endsWith('s')?0:a.endsWith('m')?n:a.endsWith('h')?n*60:n*1440;};
-const STOCK_IMG=s=>'/img/s-'+s+'.png'; const INK_IMG='/img/ink.png', ETH_IMG='/img/eth.png';
+const STOCK_IMG=s=>{ const st=((window.INKY&&INKY.stocks)||[]).find(x=>x.symbol===s); return st?st.logo:'/img/s-'+s+'.png'; }; const INK_IMG='/img/ink.png', ETH_IMG='/img/eth.png';
 const pairImg=p=>p==='ETH'?ETH_IMG:STOCK_IMG(p);
 const tokenUrl=x=>'/token/'+(x.addr||x);
 
