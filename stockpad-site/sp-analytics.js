@@ -2,7 +2,7 @@
    Everything comes from the trade index (CHAIN.allTrades) and the token list; USD uses each coin's pair price. */
 window.SP_PAGE=function(){
   const pg=$('#pg-analytics'); if(!pg) return;
-  let range=30, topBy='vol', TR=[], seen=new Set();
+  let range=30, topBy='vol', trBy='pnl', TR=[], seen=new Set();
   const DAY=86400, now=()=>Math.floor(Date.now()/1000), day0=ts=>Math.floor(ts/DAY)*DAY;
   const tok=a=>TOK.find(x=>x.addr===String(a||'').toLowerCase())||null;
   const usdOf=t=>{ const x=tok(t.token); return x?Number(t.pair)/1e18*(x.pairUsd||0):0; };
@@ -61,13 +61,21 @@ window.SP_PAGE=function(){
     $('#an-creators tbody').innerHTML=l.length?l.map((r,i)=>`<tr class="go" data-go="/profile?a=${r.w}"><td class="num muted">${i+1}</td><td><span class="w"><span class="av">${SP.avatar(r.w,20)}</span><a href="/profile?a=${r.w}">${shortAddr(cs(r.w))}</a></span></td><td class="r num">${r.n}</td><td class="r num">${fmtUsd(r.fees)}</td><td class="r num hm">${fmtUsd(r.vol)}</td></tr>`).join(''):'<tr><td colspan="5"><div class="empty">No creators yet</div></td></tr>';
     $$('#an-creators tr[data-go]').forEach(r=>r.onclick=e=>{ if(e.target.closest('a')) return; SP.go(r.dataset.go); }); }
 
+  /* ---------- top traders: per wallet, cash in and out per coin plus net coins at today's price ---------- */
+  function traders(){ const W={}; TR.forEach(t=>{ const x=tok(t.token); if(!x) return; const w=String(t.wallet).toLowerCase(); const r=W[w]||(W[w]={w,pos:{},vol:0,n:0}); const p=r.pos[x.addr]||(r.pos[x.addr]={x,cash:0,net:0}); const pair=Number(t.pair)/1e18, coin=Number(t.coin)/1e18;
+      if(t.buy){ p.cash-=pair; p.net+=coin; } else { p.cash+=pair; p.net-=coin; } r.vol+=pair*(x.pairUsd||0); r.n++; });
+    const l=Object.values(W).map(r=>{ const ps=Object.values(r.pos); const pnl=ps.reduce((s,p)=>s+p.cash*(p.x.pairUsd||0)+Math.max(0,p.net)*(p.x.px||0),0); return {...r,pnl,coins:ps.length}; }).sort((a,b)=>trBy==='pnl'?b.pnl-a.pnl:b.vol-a.vol).slice(0,10);
+    $('#an-traders tbody').innerHTML=l.length?l.map((r,i)=>`<tr class="go" data-go="/profile?a=${r.w}"><td class="num muted">${i+1}</td><td><span class="w"><span class="av">${SP.avatar(r.w,20)}</span><a href="/profile?a=${r.w}">${shortAddr(cs(r.w))}</a></span></td><td class="r num ${r.pnl>=0?'up':'dn'}">${r.pnl>=0?'+':'-'}${fmtUsd(Math.abs(r.pnl))}</td><td class="r num">${fmtUsd(r.vol)}</td><td class="r num hm">${r.n.toLocaleString()}</td><td class="r num hm">${r.coins}</td></tr>`).join(''):'<tr><td colspan="6"><div class="empty">No trades yet</div></td></tr>';
+    $$('#an-traders tr[data-go]').forEach(r=>r.onclick=e=>{ if(e.target.closest('a')) return; SP.go(r.dataset.go); }); }
+
   /* ---------- feed ---------- */
   function feed(fresh){ const l=TR.slice().sort((a,b)=>b.ts-a.ts||(b.index||0)-(a.index||0)).slice(0,20); $('#an-feed-n').textContent=TR.length?TR.length.toLocaleString()+' trades':'';
     $('#an-feed').innerHTML=l.length?l.map(t=>{ const x=tok(t.token); if(!x) return ''; const k=t.tx+':'+t.index; const pair=Number(t.pair)/1e18; return `<a class="fr ${fresh&&fresh.has(k)?'new':''}" href="${tokenUrl(x)}"><span class="side ${t.buy?'b':'s'}">${t.buy?'Buy':'Sell'}</span><div class="coin"><img class="lg" src="${SP.coinLogo(x)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><div><b>${esc(x.n)}</b><small>$${esc(x.t)} · ${shortAddr(cs(String(t.wallet)))}</small></div></div><span class="v">${fmtUsd(usdOf(t))}<small>${SP.fmtPair(pair,x)}</small></span><span class="t">${ago(Math.max(0,now()-t.ts))} ago</span></a>`; }).join(''):'<div class="empty">No trades yet</div>'; }
 
   async function load(first){ try{ const tr=(await CHAIN.allTrades()).filter(t=>tok(t.token)); const fresh=new Set(tr.filter(t=>!seen.has(t.tx+':'+t.index)).map(t=>t.tx+':'+t.index)); tr.forEach(t=>seen.add(t.tx+':'+t.index)); TR=tr; render(first?null:fresh); }catch(e){ console.warn('analytics',e); if(first) $('#an-kpis').innerHTML=`<div class="notice warn" style="grid-column:1/-1">${ic('warn')}<span>Could not load the trade index (${esc(SP.errMsg(e))}).</span></div>`; } }
-  function render(fresh){ kpis(); fees(); byStock(); topCoins(); creators(); feed(fresh); }
+  function render(fresh){ kpis(); fees(); byStock(); topCoins(); traders(); creators(); feed(fresh); }
   $$('#an-range button').forEach(b=>b.onclick=()=>{ range=+b.dataset.r; $$('#an-range button').forEach(x=>x.classList.toggle('on',x===b)); kpis(); });
+  $$('#an-trby button').forEach(b=>b.onclick=()=>{ trBy=b.dataset.k; $$('#an-trby button').forEach(x=>x.classList.toggle('on',x===b)); traders(); });
   $$('#an-topby button').forEach(b=>b.onclick=()=>{ topBy=b.dataset.k; $$('#an-topby button').forEach(x=>x.classList.toggle('on',x===b)); topCoins(); });
   $('#an-kpis').innerHTML='<div class="panel kpi"><span class="sk w6"></span></div>'.repeat(4);
   load(true); SP.onUpdate(()=>load(false)); setInterval(()=>{ if(!document.hidden) load(false); },15000);

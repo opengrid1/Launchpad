@@ -56,7 +56,7 @@ window.SP_PAGE=function(){
     strip([fmtUsd(hv),fmtUsd(rw),fmtUsd(cf),String(C.length)]);
     $('#pf-n-hold').textContent=H.length||''; $('#pf-n-made').textContent=C.length||''; $('#pf-n-act').textContent=A.length||'';
     // holdings
-    T.hold.innerHTML=H.length?H.map(h=>{ const x=h.x; return `<tr class="go" data-go="${tokenUrl(x)}">${cell(coinCell(x))}${cell(pairCell(x))}${cell(fmtAmt(h.bal)+`<small>${esc(x.t)}</small>`,'r num')}${cell(fmtUsd(h.bal*(x.px||0))+`<small>${SP.fmtPair(h.bal*(x.pxPair||0),x)}</small>`,'r num')}${cell(h.pend>0?`<span class="up">${fmtUsd(h.pendUsd)}</span><small>${SP.fmtPair(h.pend,x)}</small>`:`<span class="muted">—</span>`,'r num')}${cell(!readOnly&&h.pend>0?`<button class="btn sm" data-claim="${x.addr}">Claim</button>`:'','act')}</tr>`; }).join('')
+    T.hold.innerHTML=H.length?H.map(h=>{ const x=h.x; return `<tr class="go" data-go="${tokenUrl(x)}">${cell(coinCell(x))}${cell(pairCell(x))}${cell(fmtAmt(h.bal)+`<small>${esc(x.t)}</small>`,'r num')}${cell(fmtUsd(h.bal*(x.px||0))+`<small>${SP.fmtPair(h.bal*(x.pxPair||0),x)}</small>`,'r num')}${cell(h.pend>0?`<span class="up">${fmtUsd(h.pendUsd)}</span><small>${SP.fmtPair(h.pend,x)}</small>`:`<span class="muted">—</span>`,'r num')}${cell((P.trades.some(t=>t.token===x.addr)?`<button class="btn sm ghost" data-pnl="${x.addr}" title="Share PnL">${ic('share')}</button>`:'')+(!readOnly&&h.pend>0?`<button class="btn sm" data-claim="${x.addr}">Claim</button>`:''),'act')}</tr>`; }).join('')
       :msgRow('hold',`<b>No holdings</b>${readOnly?'This wallet holds no StockPad coins.':'Coins you buy show up here with their pending rewards.'}${readOnly?'':'<div style="margin-top:12px"><a class="btn" href="/">Browse markets</a></div>'}`);
     // created
     T.made.innerHTML=C.length?C.map(c=>{ const x=c.x; return `<tr class="go" data-go="${tokenUrl(x)}">${cell(coinCell(x))}${cell(pairCell(x))}${cell(fmtUsd(x.mc||0),'r num')}${cell(fmtUsd(x.vol||0),'r num')}${cell(c.fees>0?`<span class="up">${fmtUsd(c.fees*(x.pairUsd||0))}</span><small>${SP.fmtPair(c.fees,x)}</small>`:`<span class="muted">—</span>`,'r num')}${cell(!readOnly&&c.fees>0?`<button class="btn sm" data-pay="${x.addr}">Claim</button>`:'','act')}</tr>`; }).join('')
@@ -68,6 +68,7 @@ window.SP_PAGE=function(){
     $$('#pg-portfolio tr[data-go]').forEach(r=>r.onclick=e=>{ if(e.target.closest('button,a')) return; SP.go(r.dataset.go); });
     $$('#pg-portfolio [data-claim]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); claimOne(b,b.dataset.claim); });
     $$('#pg-portfolio [data-pay]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); payOne(b,b.dataset.pay); });
+    $$('#pg-portfolio [data-pnl]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const h=P.holdings.find(h=>h.x.addr===b.dataset.pnl); if(!h) return; SP.pnlCard({x:h.x,pnl:SP.pnl(P.trades.filter(t=>t.token===h.x.addr),h.x,h.bal),wallet:who}); });
     header();
   }
 

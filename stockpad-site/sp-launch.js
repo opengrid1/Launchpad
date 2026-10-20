@@ -9,7 +9,7 @@ function launchInit(){
   const IMG_IC='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>';
   const ETH_PAIR={address:WETH,symbol:'ETH',ticker:'ETH',name:'Ether',logo:'/img/eth.png',eth:true};
   const PAIRS=[...SP.stocks.map(s=>({address:s.address.toLowerCase(),symbol:s.symbol,ticker:s.ticker||s.symbol,name:s.name,logo:s.logo,eth:false})),...((window.INKY&&INKY.stocksOnly)?[]:[ETH_PAIR])];
-  const S={step:1,maxStep:1,pair:null,logo:null,feeBps:100,feeCustom:false,snipe:false,div:false,dev:false,capUsd:5000,paused:false,busy:false,launched:null};
+  const S={step:1,maxStep:1,pair:null,logo:null,feeBps:100,feeCustom:false,snipe:false,div:false,bb:false,mw:false,dev:false,capUsd:5000,paused:false,busy:false,launched:null};
   const taken=()=>new Set(((window.CHAIN&&LIVE)?CHAIN.tokens():TOK).map(x=>String(x.t||'').toUpperCase()));
   const ethPx=()=>SP.prices[WETH]||ETH||0;
   const pairPx=()=>S.pair?(SP.prices[S.pair.address]||0):0;
@@ -19,12 +19,13 @@ function launchInit(){
   const fmtInPair=v=>{ if(!S.pair) return ''; if(S.pair.eth) return fmtEth(v); return (v>=100?v.toFixed(0):v>=1?v.toFixed(2):fmtPrice(v))+' '+S.pair.symbol; };
   const link=v=>{ v=String(v||'').trim(); if(!v) return ''; if(!/^https?:\/\//i.test(v)) v='https://'+v; return v.slice(0,200); };
   const fields={ name:()=>g('f-name').value.trim(), sym:()=>g('f-sym').value.trim().toUpperCase(), desc:()=>g('f-desc').value.trim().slice(0,280),
-    snipePct:()=>num('f-snipe',30), snipeMin:()=>num('f-snipemin',30), divPct:()=>num('f-div',20), devEth:()=>num('f-dev',0) };
+    snipePct:()=>num('f-snipe',30), snipeMin:()=>num('f-snipemin',30), divPct:()=>num('f-div',20), devEth:()=>num('f-dev',0),
+    bbPct:()=>num('f-bb',20), bbUsd:()=>num('f-bbusd',50), mwPct:()=>num('f-mw',2), mwH:()=>num('f-mwh',1) };
 
   /* ---------- derived numbers ---------- */
-  function split(){ const dv=S.div?clamp(Math.round(fields.divPct()),10,50):0; const rest=100-dv, cr=Math.round(rest*0.6), pl=rest-cr; return {holders:dv,creator:cr,platform:pl}; }
+  function split(){ const dv=S.div?clamp(Math.round(fields.divPct()),10,50):0, bb=S.bb?clamp(Math.round(fields.bbPct()),10,50):0; const rest=Math.max(0,100-dv-bb), cr=Math.round(rest*0.6), pl=rest-cr; return {holders:dv,buyback:bb,creator:cr,platform:pl}; }
   function devCoins(){ const eth=S.dev?clamp(fields.devEth(),0,0.5):0; const usd=eth*ethPx(); return usd>0?usd/(S.capUsd+usd)*SUPPLY:0; }
-  function optList(){ const a=[]; if(S.snipe) a.push('Anti-snipe'); if(S.div) a.push('Holder rewards'); return a; }
+  function optList(){ const a=[]; if(S.snipe) a.push('Anti-snipe'); if(S.div) a.push('Holder rewards'); if(S.bb) a.push('Buyback and burn'); if(S.mw) a.push('Max wallet'); return a; }
   function snipeBlocks(){ return clamp(Math.round(fields.snipeMin()*60/12),5,7200); }
 
   /* ---------- step 1: pairs ---------- */
@@ -58,13 +59,20 @@ function launchInit(){
   function snipeMsg(){ const el=g('snipe-msg'); if(!S.snipe){ el.textContent=''; return true; } const p=fields.snipePct(), m=fields.snipeMin(); let e='';
     if(!(p>=5&&p<=30)) e='Starting fee: 5% to 30%'; else if(p*100<=S.feeBps) e='Starting fee must be above the base fee'; else if(!(m>=1&&m<=1440)) e='Duration: 1 to 1440 minutes';
     el.textContent=e; g('snipe-hint').textContent=e?'':`${p}% → ${feePct()} over ${m} min (${snipeBlocks()} blocks)`; return !e; }
-  function divMsg(){ const el=g('div-msg'); if(!S.div){ el.textContent=''; return true; } const v=fields.divPct(); const ok=v>=10&&v<=50&&Math.round(v)===v; el.textContent=ok?'':'Share: a whole number from 10% to 50%'; if(ok){ const sp=split(); g('div-hint').textContent=`${sp.holders}% holders · ${sp.creator}% you · ${sp.platform}% platform`; } return ok; }
+  function divMsg(){ const el=g('div-msg'); if(!S.div){ el.textContent=''; return true; } const v=fields.divPct(); const ok=v>=10&&v<=50&&Math.round(v)===v; el.textContent=ok?'':'Share: a whole number from 10% to 50%'; if(ok){ const sp=split(); g('div-hint').textContent=`${sp.holders}% holders · ${sp.buyback?sp.buyback+'% buyback · ':''}${sp.creator}% you · ${sp.platform}% platform`; } return ok; }
+  function bbMsg(){ const el=g('bb-msg'); if(!S.bb){ el.textContent=''; return true; } const v=fields.bbPct(), u=fields.bbUsd(); let e='';
+    if(!(v>=10&&v<=50&&Math.round(v)===v)) e='Share: a whole number from 10% to 50%'; else if(S.div&&Math.round(fields.divPct())+v>80) e='Holders and buyback together: 80% max'; else if(!(u>=5&&u<=10000)) e='Burn every: $5 to $10,000';
+    el.textContent=e; if(!e){ const sp=split(); g('bb-hint').textContent=`${sp.buyback}% of fees pile up, then buy and burn ${S.pair?'the coin':'it'} each time $${Math.round(u).toLocaleString('en-US')} is reached`; } else g('bb-hint').textContent=''; return !e; }
+  function bbThreshold(){ const px=pairPx(); if(!(px>0)) return 0n; const units=BigInt(Math.max(1,Math.round(fields.bbUsd()/px*1e6))); return units*10n**12n; }
+  function mwMsg(){ const el=g('mw-msg'); if(!S.mw){ el.textContent=''; return true; } const p=fields.mwPct(), h=fields.mwH(); let e='';
+    if(!(p>=0.5&&p<=20)) e='Max per wallet: 0.5% to 20%'; else if(!(h>=0.25&&h<=720)) e='Duration: 0.25 to 720 hours';
+    el.textContent=e; g('mw-hint').textContent=e?'':`No wallet can hold more than ${fmtAmt(SUPPLY*p/100)} coins (${p}%) for the first ${h>=24?(h/24).toFixed(h%24?1:0)+' days':h+' h'}`; return !e; }
   function devMsg(){ const el=g('dev-msg'); if(!S.dev){ el.textContent=''; return true; } const v=fields.devEth(); const ok=v>=0&&v<=0.5; el.textContent=ok?'':'Dev buy: 0 to 0.5 ETH';
     if(ok){ const c=devCoins(); g('dev-hint').textContent=v>0?`≈ ${fmtAmt(c)} coins (${(c/SUPPLY*100).toFixed(2)}%) · ${fmtUsd(v*ethPx())}`:''; } return ok; }
   function paintReview(){ const sp=split(); const px=pairPx(); const inPair=S.pair?(px?fmtInPair(S.capUsd/px):'loading the '+S.pair.symbol+' price'):'';
-    g('rv-split').textContent=`${feePct()} per swap: ${sp.holders?sp.holders+'% holders, ':''}${sp.creator}% creator, ${sp.platform}% platform`;
-    g('rv-bar').innerHTML=(sp.holders?`<i class="h" style="width:${sp.holders}%"></i>`:'')+`<i class="c" style="width:${sp.creator}%"></i><i class="p" style="width:${sp.platform}%"></i>`;
-    g('rv-legend').innerHTML=(sp.holders?`<span><i style="background:var(--amber)"></i>Holders ${sp.holders}%</span>`:'')+`<span><i style="background:var(--mint)"></i>Creator ${sp.creator}%</span><span><i style="background:var(--fg-3)"></i>Platform ${sp.platform}%</span>`+(S.pair?`<span>paid in ${esc(S.pair.symbol)}</span>`:'');
+    g('rv-split').textContent=`${feePct()} per swap: ${sp.holders?sp.holders+'% holders, ':''}${sp.buyback?sp.buyback+'% buyback, ':''}${sp.creator}% creator, ${sp.platform}% platform`;
+    g('rv-bar').innerHTML=(sp.holders?`<i class="h" style="width:${sp.holders}%"></i>`:'')+(sp.buyback?`<i style="width:${sp.buyback}%;background:var(--dn)"></i>`:'')+`<i class="c" style="width:${sp.creator}%"></i><i class="p" style="width:${sp.platform}%"></i>`;
+    g('rv-legend').innerHTML=(sp.holders?`<span><i style="background:var(--amber)"></i>Holders ${sp.holders}%</span>`:'')+(sp.buyback?`<span><i style="background:var(--dn)"></i>Buyback ${sp.buyback}%</span>`:'')+`<span><i style="background:var(--mint)"></i>Creator ${sp.creator}%</span><span><i style="background:var(--fg-3)"></i>Platform ${sp.platform}%</span>`+(S.pair?`<span>paid in ${esc(S.pair.symbol)}</span>`:'');
     g('rv-cap').textContent=fmtCap(S.capUsd)+(inPair?' · '+inPair:''); }
 
   /* ---------- summary card ---------- */
@@ -76,12 +84,12 @@ function launchInit(){
     const px=pairPx(); g('sm-cap').textContent=fmtCap(S.capUsd);
     const dv=S.dev?clamp(fields.devEth(),0,0.5):0; g('sm-dev').textContent=dv>0?`${dv} ETH`:'None';
     g('sm-cr').textContent=`${sp.creator}%`; g('sm-note').textContent=(S.pair?`Fees paid in ${S.pair.symbol}. `:'')+'Liquidity cannot be withdrawn.';
-    if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.dev) devMsg(); paintReview(); }
+    if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.bb) bbMsg(); if(S.mw) mwMsg(); if(S.dev) devMsg(); paintReview(); }
 
   /* ---------- steps ---------- */
   function validate(n){ if(n===1){ const ok=!!S.pair; g('pair-err').textContent=ok?'':'Pick a stock or ETH to continue'; return ok; }
     if(n===2){ const a=nameMsg(), b=symMsg()&&!!fields.sym(); if(!fields.sym()){ const el=g('sym-msg'); el.className='err'; el.textContent='Symbol is required'; } if(!fields.name()) g('name-msg').textContent='Name is required'; return a&&b; }
-    if(n===3){ const a=feeMsg(), b=snipeMsg(), c=divMsg(), d=devMsg(); return a&&b&&c&&d; } return true; }
+    if(n===3){ const a=feeMsg(), b=snipeMsg(), c=divMsg(), d=devMsg(), e=bbMsg(), f=mwMsg(); return a&&b&&c&&d&&e&&f; } return true; }
   function show(n){ S.step=n; S.maxStep=Math.max(S.maxStep,n); $$('#pg-launch .pane').forEach(p=>p.classList.toggle('on',+p.dataset.pane===n));
     $$('#steps button').forEach(b=>{ const k=+b.dataset.step; b.classList.toggle('on',k===n); b.classList.toggle('done',k<n); b.querySelector('.n').innerHTML=k<n?ic('check'):String(k); });
     sync(); if(n===3) paintCta(); }
@@ -98,7 +106,8 @@ function launchInit(){
     if(!LIVE||!window.CHAIN){ SP.toast('Launches open when the contracts are live','info'); return; }
     const name=fields.name(), symbol=fields.sym(); const meta={description:fields.desc()}; if(S.logo) meta.image=S.logo; const w=link(g('f-web').value), x=link(g('f-x').value), tg=link(g('f-tg').value); if(w) meta.website=w; if(x) meta.x=x; if(tg) meta.telegram=tg;
     const devEth=S.dev?clamp(fields.devEth(),0,0.5):0; const devWei=devEth>0?CHAIN.parseEther(devEth.toFixed(18)):0n;
-    const genes={ feeMode:0, feeBps:S.feeBps, snipeBps:S.snipe?clamp(Math.round(fields.snipePct()*100),S.feeBps+1,3000):0, snipeBlocks:S.snipe?snipeBlocks():0, buybackShareBps:0, buybackThreshold:0n, divShareBps:S.div?clamp(Math.round(fields.divPct()),10,50)*100:0, maxWalletBps:0, maxWalletSecs:0, evolution:{enabled:false} };
+    const bbT=S.bb?bbThreshold():0n; if(S.bb&&bbT<1000n){ SP.toast('Waiting for the '+S.pair.symbol+' price to set the burn size. Try again in a moment.','err'); return; }
+    const genes={ feeMode:0, feeBps:S.feeBps, snipeBps:S.snipe?clamp(Math.round(fields.snipePct()*100),S.feeBps+1,3000):0, snipeBlocks:S.snipe?snipeBlocks():0, buybackShareBps:S.bb?clamp(Math.round(fields.bbPct()),10,50)*100:0, buybackThreshold:bbT, divShareBps:S.div?clamp(Math.round(fields.divPct()),10,50)*100:0, maxWalletBps:S.mw?clamp(Math.round(fields.mwPct()*100),50,2000):0, maxWalletSecs:S.mw?clamp(Math.round(fields.mwH()*3600),600,2592000):0, evolution:{enabled:false} };
     S.busy=true; paintCta();
     try{ const {rc,token}=await CHAIN.launch({name,symbol,metadataURI:JSON.stringify(meta),pair:S.pair.address,minPairOut:0,genes},devWei);
       if(!token) throw new Error('Launched, but the coin address was not found in the receipt. Check your wallet activity.');
@@ -127,7 +136,7 @@ function launchInit(){
   $$('#fee-seg button').forEach(b=>b.onclick=()=>{ $$('#fee-seg button').forEach(x=>x.classList.toggle('on',x===b)); S.feeCustom=b.dataset.fee==='custom'; g('fee-custom').classList.toggle('hidden',!S.feeCustom); if(!S.feeCustom) S.feeBps=+b.dataset.fee; else g('f-fee').value=(S.feeBps/100).toString(); feeMsg(); sync(); });
   g('f-fee').addEventListener('input',()=>{ feeMsg(); sync(); });
   $$('#pg-launch [data-sw]').forEach(h=>h.addEventListener('click',e=>{ if(e.target.closest('input')) return; const k=h.dataset.sw, on=!S[k]; S[k]=on; const sw=g('sw-'+k); sw.classList.toggle('on',on); sw.setAttribute('aria-checked',String(on)); g('opt-'+k).classList.toggle('on',on); if(on){ const f=g('opt-'+k).querySelector('input'); if(f) setTimeout(()=>f.focus(),0); } sync(); }));
-  ['f-snipe','f-snipemin','f-div','f-dev'].forEach(id=>g(id).addEventListener('input',sync));
+  ['f-snipe','f-snipemin','f-div','f-dev','f-bb','f-bbusd','f-mw','f-mwh'].forEach(id=>g(id).addEventListener('input',sync));
   cta.onclick=doLaunch; SP.onWallet(paintCta);
   launchRepaint=()=>{ paintPairs(); if(fields.sym()) symMsg(); sync(); paintCta(); }; SP.onUpdate(launchRepaint);
   sync(); paintCta();

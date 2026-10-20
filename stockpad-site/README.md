@@ -6,7 +6,7 @@ It runs against the OneHook v2 contracts on mainnet (see `config.js`); `stocksOn
 
 ## Layout
 
-- `index.html` (Home), `launch.html`, `analytics.html`, `token.html`, `profile.html` (Portfolio), `admin.html` (Operator): pages, each with its own `sp-<page>.js`. `docs/`: documentation (static HTML).
+- `index.html` (Home), `calls.html`, `analytics.html`, `launch.html`, `rewards.html`, `token.html`, `profile.html` (Portfolio), `admin.html` (Operator): pages, each with its own `sp-<page>.js`. Calls need the StockPad server (`INKY.api` in `config.js`); until it is set the composer is disabled and the feed shows a labelled example. Referral and cashback on Rewards are marked Soon until the next contract update. `docs/`: documentation (static HTML).
 - `DESIGN.md`: the front-end contract (layout, `core.js` API, `chain.js` API, token fields). Read it before adding a page.
 - `ui.css`: the design system. `core.js`: shell (top bar, stock tape, footer, mobile sheet), wallet state, chain boot, shared helpers.
 - `config.js`: chain, contracts, RPCs, stock list with routes, admin. `chain.js`: contract reads, trade index, routes, wallet calls. `wallet.js`: wallet connection (Reown AppKit). `tv.js`: TradingView chart. `avatar.js`: wallet avatars. `data.js`: formatting helpers.

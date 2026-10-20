@@ -8,11 +8,11 @@ Dense dark trading-floor look, StockPad's own: black page (`--bg #000`), bordere
 
 Signature pieces: every coin avatar carries the paired stock's logo pinned to its corner (`.av2` + `.stb`); coin cards show an area sparkline built from the trade index, a 24h buy/sell flow bar, the NYSE status and MCAP / VOL 24H / TRADES boxes; the top bar carries an NYSE clock with a countdown to open or close.
 
-Shell: a 60px top bar with the wordmark, text navigation (underline on the active page), a search field, the NYSE clock, Launch and Connect; content in a 1320px column; a thin footer bar with the factory and hook addresses, docs links, the X handle and the ETH price. Below 900px the navigation and search hide and a bottom tab bar (`.tabbar`) appears. Home opens with a headline, a sentence, two buttons and four stat boxes, then the filter bar (sort pills, stock pills with counts, search) and the coin cards with a pager. Launch is a single outlined form next to a live preview card.
+Shell: a 60px top bar with the wordmark, text navigation (underline on the active page), a search field, the NYSE clock, Launch and Connect; content in a 1320px column; a thin footer bar with the factory and hook addresses, docs links, the X handle and the ETH price. Navigation: Home, Calls, Analytics, Launch (centre, filled), Rewards, Profile, Docs. The header search hides below 1340px. Below 900px the navigation hides and a bottom tab bar (`.tabbar`) shows Home, Calls, Launch, Rewards and Analytics; Profile is in the wallet menu. Home opens with a headline, a sentence, two buttons and four stat boxes, then the filter bar (sort pills, stock pills with counts, search) and the coin cards with a pager. Launch is a single outlined form next to a live preview card.
 
 All classes live in `ui.css` (read it; use its classes before inventing new ones). Page-specific CSS goes in a `<style>` block at the top of that page's HTML, scoped with the page's root id.
 
-Pages: `index.html` (Home), `launch.html`, `analytics.html` (volume, fees, trades and launches per day with bar charts, breakdown by stock, top coins, top creators, live trade feed), `token.html`, `profile.html`, `admin.html`, `docs/`.
+Pages: `index.html` (Home), `launch.html`, `calls.html` (composer, feed with return since each call, trending, top callers), `analytics.html` (volume, fees, trades and launches per day with bar charts, fee flows, breakdown by stock, top coins, top traders, top creators, live trade feed), `rewards.html` (holder rewards and creator fees across coins, buyback burns, referral and cashback marked Soon), `token.html`, `profile.html`, `admin.html`, `docs/`.
 
 ## Page skeleton
 
@@ -23,17 +23,17 @@ Pages: `index.html` (Home), `launch.html`, `analytics.html` (volume, fees, trade
 <link rel="icon" href="/img/favicon.svg?v=13" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=13"><meta name="theme-color" content="#000000">
 <meta property="og:image" content="/img/og.png?v=13">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=8">
+<link rel="stylesheet" href="/ui.css?v=9">
 <style>/* page css, scoped under #pg-<name> */</style>
 </head><body data-page="<name>">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-<name>">...page markup...</div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=8"></script><script src="/sp-<name>.js?v=8"></script>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=9"></script><script src="/sp-<name>.js?v=9"></script>
 </body></html>
 ```
 
-`core.js` renders the top bar, the footer bar and the mobile tab bar on every page (the `#sp-tape` element stays in the skeleton but is unused), boots the chain layer, and then calls `window.SP_PAGE()` which each page script defines. Pages never touch the shell elements.
+`core.js` renders the top bar, the footer bar and the mobile tab bar on every page (the `#sp-tape` element stays in the skeleton but is unused), boots the chain layer, and then calls `window.SP_PAGE()` which each page script defines. Pages never touch the shell elements. `core.js` also provides the watchlist (`SP.watch`, `SP.star(addr)`, stored per browser) and the shareable PnL image (`SP.pnl`, `SP.pnlCard`).
 
 The token page also loads `/tv.js` and `/charting_library/charting_library.js` (see token page notes).
 
