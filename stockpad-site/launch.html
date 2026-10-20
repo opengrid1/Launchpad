@@ -1,99 +1,101 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Launch a coin | StockPad</title><meta name="description" content="Launch a coin on Ethereum paired with a tokenized stock or ETH in one transaction. Fixed supply, liquidity that cannot be withdrawn, your fee paid in the paired asset.">
-<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=9"><meta name="theme-color" content="#0b0f14">
+<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=9"><meta name="theme-color" content="#0a0a0b">
 <meta property="og:title" content="Launch a coin | StockPad"><meta property="og:description" content="Launch a coin paired with a real stock on Ethereum."><meta property="og:image" content="/img/og.png?v=9"><meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=2">
 <style>
-#pg-launch .wiz{display:grid;grid-template-columns:minmax(0,1fr) 332px;gap:20px;align-items:start}
-#pg-launch .wiz-side{position:sticky;top:calc(var(--top) + 16px)}
-/* progress header */
-#pg-launch .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
-#pg-launch .steps button{display:flex;align-items:center;gap:10px;min-height:54px;padding:8px 12px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--bg-2);color:var(--fg-3);text-align:left;transition:border-color .15s}
-#pg-launch .steps button:hover{border-color:var(--line-2)}
-#pg-launch .steps .n{width:26px;height:26px;border-radius:50%;border:1px solid var(--line-2);display:inline-flex;align-items:center;justify-content:center;font:600 12px var(--mono);flex:none}
-#pg-launch .steps .n svg{width:14px;height:14px}
-#pg-launch .steps b{display:block;font-size:13px;font-weight:600;line-height:1.2} #pg-launch .steps small{display:block;font-size:11px;color:var(--fg-3);margin-top:2px}
-#pg-launch .steps button.on{border-color:rgba(47,211,138,.45);color:var(--fg)} #pg-launch .steps button.on .n{background:var(--mint);border-color:var(--mint);color:var(--mint-ink)}
+#pg-launch{max-width:1040px;margin:0 auto}
+#pg-launch .ph{margin-bottom:26px} #pg-launch .ph h1{font-size:30px;letter-spacing:-.03em}
+#pg-launch .wiz{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:48px;align-items:start}
+#pg-launch .wiz-side{position:sticky;top:calc(var(--top) + 24px)}
+/* step indicator */
+#pg-launch .steps{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+#pg-launch .steps button{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 10px 0 6px;border-radius:999px;color:var(--fg-3);font-weight:500;font-size:13px;border:1px solid transparent}
+#pg-launch .steps .n{width:20px;height:20px;border-radius:50%;border:1px solid var(--line-3);display:inline-flex;align-items:center;justify-content:center;font:500 11px var(--mono);flex:none} #pg-launch .steps .n svg{width:12px;height:12px}
+#pg-launch .steps button.on{color:var(--fg);border-color:var(--line-2);background:var(--bg-2)} #pg-launch .steps button.on .n{background:var(--fg);border-color:var(--fg);color:var(--bg)}
 #pg-launch .steps button.done{color:var(--fg-2)} #pg-launch .steps button.done .n{background:var(--mint-dim);border-color:transparent;color:var(--mint)}
+#pg-launch .steps small{display:none} #pg-launch .steps .ln{flex:1;height:1px;background:var(--line);max-width:40px}
 #pg-launch .pane{display:none} #pg-launch .pane.on{display:block}
-#pg-launch .wnav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-top:1px solid var(--line)}
+#pg-launch .pane .ch{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 0 14px;font-size:18px;font-weight:600;letter-spacing:-.02em} #pg-launch .pane .cb{padding:0}
+#pg-launch .wnav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:20px 0 0;margin-top:22px;border-top:1px solid var(--line)}
 #pg-launch .wnav .r{display:flex;align-items:center;gap:10px;margin-left:auto}
-/* step 1: pair grid */
-#pg-launch .pairs{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
-#pg-launch .pc{position:relative;display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--bg);text-align:left;transition:border-color .15s,background .15s}
-#pg-launch .pc:hover{border-color:var(--line-2);background:var(--bg-3)}
-#pg-launch .pc.on{border-color:var(--mint);background:var(--mint-dim)}
-#pg-launch .pc .tick{position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:var(--mint);color:var(--mint-ink);display:none;align-items:center;justify-content:center} #pg-launch .pc.on .tick{display:inline-flex} #pg-launch .pc .tick svg{width:12px;height:12px}
-#pg-launch .pc img{width:34px;height:34px;border-radius:50%;background:#fff}
-#pg-launch .pc .nm b{display:block;font-weight:600;line-height:1.2} #pg-launch .pc .nm small{display:block;color:var(--fg-3);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#pg-launch .pc .px{font:600 14px var(--mono)}
-#pg-launch .pc .ft{display:flex;align-items:center;justify-content:space-between;gap:4px 8px;flex-wrap:wrap;font-size:11px;color:var(--fg-3)} #pg-launch .pc .ft span{white-space:nowrap}
-#pg-launch .pc .ft i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fg-3);margin-right:5px;vertical-align:1px} #pg-launch .pc .ft i.open{background:var(--mint)}
-#pg-launch .pc .ft .cnt{font-family:var(--mono)}
+/* step 1: pair rows */
+#pg-launch .pairs{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+#pg-launch .pc{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr) auto auto 24px;align-items:center;gap:14px;padding:11px 8px 11px 6px;border-bottom:1px solid var(--line);text-align:left;transition:background .12s;border-radius:0}
+#pg-launch .pc:hover{background:var(--bg-1)} #pg-launch .pc.on{background:var(--mint-dim)}
+#pg-launch .pc .tick{width:20px;height:20px;border-radius:50%;border:1px solid var(--line-3);display:inline-flex;align-items:center;justify-content:center;color:var(--mint-ink)} #pg-launch .pc.on .tick{background:var(--mint);border-color:var(--mint)} #pg-launch .pc .tick svg{width:12px;height:12px;display:none} #pg-launch .pc.on .tick svg{display:block}
+#pg-launch .pc img{width:32px;height:32px;border-radius:50%;background:#fff}
+#pg-launch .pc .nm b{display:block;font-weight:600;line-height:1.2} #pg-launch .pc .nm small{display:block;color:var(--fg-3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-launch .pc .px{font:500 14px var(--mono);text-align:right}
+#pg-launch .pc .ft{display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:11.5px;color:var(--fg-3);min-width:96px;white-space:nowrap} #pg-launch .pc .ft .cnt{font-family:var(--mono)}
 /* step 2: identity */
-#pg-launch .idrow{display:grid;grid-template-columns:132px minmax(0,1fr);gap:18px}
-#pg-launch .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:132px;height:132px;border:1px dashed var(--line-2);border-radius:var(--r-lg);background:var(--bg);color:var(--fg-3);font-size:12px;cursor:pointer;text-align:center;padding:10px;overflow:hidden;transition:border-color .15s}
+#pg-launch .idrow{display:grid;grid-template-columns:132px minmax(0,1fr);gap:20px}
+#pg-launch .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:132px;height:132px;border:1px dashed var(--line-3);border-radius:var(--r-lg);background:var(--bg-1);color:var(--fg-3);font-size:12px;cursor:pointer;text-align:center;padding:10px;overflow:hidden;transition:border-color .15s}
 #pg-launch .drop:hover,#pg-launch .drop.over{border-color:var(--mint);color:var(--fg)} #pg-launch .drop svg{width:22px;height:22px}
-#pg-launch .drop img{width:100%;height:100%;object-fit:cover;border-radius:10px}
-#pg-launch .drop.has{padding:0;border-style:solid}
+#pg-launch .drop img{width:100%;height:100%;object-fit:cover;border-radius:10px} #pg-launch .drop.has{padding:0;border-style:solid}
 #pg-launch .idrow .lbl:first-child{margin-top:0}
 #pg-launch .cnt-hint{display:flex;justify-content:space-between;gap:10px}
 #pg-launch .links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 #pg-launch input.num{font-family:var(--mono)} #pg-launch input.up{text-transform:uppercase}
 /* step 3: fee and options */
 #pg-launch .feerow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-#pg-launch .opt{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--bg);margin-top:10px}
-#pg-launch .oh{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;cursor:pointer} #pg-launch .oh b{display:block;font-weight:600} #pg-launch .oh small{display:block;color:var(--fg-3);font-size:12px;margin-top:2px}
+#pg-launch .opt{border-top:1px solid var(--line);margin-top:4px} #pg-launch .opt:first-of-type{margin-top:18px}
+#pg-launch .oh{display:flex;align-items:flex-start;gap:14px;padding:14px 0;cursor:pointer} #pg-launch .oh b{display:block;font-weight:600} #pg-launch .oh small{display:block;color:var(--fg-3);font-size:12.5px;margin-top:2px;line-height:1.5}
 #pg-launch .oh .sw{margin-top:1px}
-#pg-launch .ob{display:none;padding:0 14px 14px;border-top:1px solid var(--line);padding-top:2px} #pg-launch .opt.on .ob{display:block}
+#pg-launch .ob{display:none;padding:0 0 16px 52px} #pg-launch .opt.on .ob{display:block} #pg-launch .ob .lbl:first-child{margin-top:0}
 #pg-launch .ob .grid{gap:12px}
-#pg-launch .rev{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--bg);padding:4px 14px}
+#pg-launch .rev{border-top:1px solid var(--line);padding-top:4px}
 #pg-launch .rev .kv b{text-align:right}
 #pg-launch .split{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--bg-4);margin:12px 0 8px}
 #pg-launch .split i{display:block;height:100%} #pg-launch .split .c{background:var(--mint)} #pg-launch .split .p{background:var(--fg-3)} #pg-launch .split .h{background:var(--amber)}
-#pg-launch .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--fg-3)} #pg-launch .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:0}
+#pg-launch .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--fg-3);padding-bottom:8px} #pg-launch .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:0}
 /* summary */
-#pg-launch .sm-id{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-#pg-launch .sm-logo{width:48px;height:48px;border-radius:10px;background:var(--bg-3);display:flex;align-items:center;justify-content:center;font:600 18px var(--mono);color:var(--fg-2);overflow:hidden;flex:none} #pg-launch .sm-logo img{width:100%;height:100%;object-fit:cover}
+#pg-launch .sum .ch{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 0 12px;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)} #pg-launch .sum .cb{padding:0}
+#pg-launch .sm-id{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+#pg-launch .sm-logo{width:48px;height:48px;border-radius:12px;background:var(--bg-3);display:flex;align-items:center;justify-content:center;font:500 18px var(--mono);color:var(--fg-2);overflow:hidden;flex:none} #pg-launch .sm-logo img{width:100%;height:100%;object-fit:cover}
 #pg-launch .sm-id b{display:block;font-size:15px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #pg-launch .sm-id small{display:block;font:12px var(--mono);color:var(--fg-3);margin-top:2px}
 #pg-launch .sm-id > div{min-width:0}
 #pg-launch .sum .kv b{display:inline-flex;align-items:center;gap:6px;text-align:right;justify-content:flex-end} #pg-launch .sum .kv img{width:14px;height:14px;border-radius:50%;background:#fff}
 #pg-launch .sum .hint{margin-top:12px}
 /* done */
+#pg-launch #done .ch{display:flex;align-items:center;justify-content:space-between;padding:0 0 14px;font-size:18px;font-weight:600} #pg-launch #done .cb{padding:0}
 #pg-launch .dn-hd{display:flex;align-items:center;gap:14px;margin-bottom:14px} #pg-launch .dn-hd img{width:56px;height:56px;border-radius:12px;background:var(--bg-3);object-fit:cover}
 #pg-launch .dn-hd b{display:block;font-size:18px} #pg-launch .dn-hd small{display:block;color:var(--fg-2);font-size:13px;margin-top:3px}
 #pg-launch .dn-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 #pg-launch .dn-addr{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;word-break:break-all}
-@media(max-width:1000px){#pg-launch .wiz{grid-template-columns:1fr} #pg-launch .wiz-side{position:static}}
-@media(max-width:640px){#pg-launch .steps{gap:6px} #pg-launch .steps button{min-height:auto;padding:8px;flex-direction:column;align-items:flex-start;gap:6px} #pg-launch .steps small{display:none}
-  #pg-launch .idrow{grid-template-columns:1fr} #pg-launch .drop{width:112px;height:112px} #pg-launch .links{grid-template-columns:1fr} #pg-launch .pairs{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:1000px){#pg-launch .wiz{grid-template-columns:1fr;gap:28px} #pg-launch .wiz-side{position:static;border-top:1px solid var(--line);padding-top:20px}}
+@media(max-width:640px){#pg-launch .ph h1{font-size:24px} #pg-launch .steps{gap:6px} #pg-launch .steps .ln{max-width:16px} #pg-launch .steps button{padding:0 8px 0 5px;font-size:12px}
+  #pg-launch .idrow{grid-template-columns:1fr} #pg-launch .drop{width:112px;height:112px} #pg-launch .links{grid-template-columns:1fr}
+  #pg-launch .pc{grid-template-columns:28px minmax(0,1fr) auto 24px;gap:10px} #pg-launch .pc img{width:28px;height:28px} #pg-launch .pc .ft{display:none}
+  #pg-launch .ob{padding-left:0}
   #pg-launch .wnav{flex-wrap:wrap} #pg-launch .wnav .r{width:100%;margin-left:0} #pg-launch .wnav .r .btn:last-child{flex:1}
   #pg-launch .rev .kv{flex-direction:column;align-items:flex-start;gap:3px} #pg-launch .rev .kv b{text-align:left}}
 </style>
 </head><body data-page="launch">
-<div id="sp-app"><aside id="sp-side"></aside><div id="sp-body"><header id="sp-top"></header><div id="sp-ticker"></div><main id="sp-main"><div id="pg-launch">
-  <div class="ph"><div><h1>Launch a coin</h1><p>Pick a stock or ETH to pair with, set the identity and the fee, and seed the pool in one transaction. Supply is fixed at 1,000,000,000 and the liquidity cannot be withdrawn.</p></div></div>
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-launch">
+  <div class="ph"><div><h1>Launch a coin</h1><p>Pick the stock to pair with, name the coin, set the fee. One transaction seeds the pool. Supply is fixed at 1,000,000,000 and the liquidity cannot be withdrawn.</p></div></div>
   <div class="wiz" id="wiz">
     <div class="wiz-main">
       <div class="steps" id="steps">
-        <button type="button" data-step="1" class="on"><span class="n">1</span><span><b>Pick the pair</b><small>A stock or ETH</small></span></button>
-        <button type="button" data-step="2"><span class="n">2</span><span><b>Identity</b><small>Logo, name, symbol</small></span></button>
-        <button type="button" data-step="3"><span class="n">3</span><span><b>Fee and launch</b><small>Fee, options, review</small></span></button>
+        <button type="button" data-step="1" class="on"><span class="n">1</span><span>Pair</span></button><span class="ln"></span>
+        <button type="button" data-step="2"><span class="n">2</span><span>Identity</span></button><span class="ln"></span>
+        <button type="button" data-step="3"><span class="n">3</span><span>Fee and launch</span></button>
       </div>
 
-      <div class="pane on card" data-pane="1">
-        <div class="ch"><span>Pick the pair</span><span class="muted" id="mk-status" style="font-weight:500;font-size:12px"></span></div>
+      <div class="pane on" data-pane="1">
+        <div class="ch"><span>Pick the stock</span><span class="muted" id="mk-status" style="font-weight:500;font-size:12px"></span></div>
         <div class="cb">
           <div class="pairs" id="pairs"></div>
           <p class="err" id="pair-err"></p>
-          <p class="hint">Your fee and every trade settle in the asset you pick. Buyers pay in ETH; the router converts.</p>
+          <p class="hint">Your fee and every trade settle in the stock you pick. Buyers still pay in ETH; the router converts.</p>
         </div>
         <div class="wnav"><span class="muted" style="font-size:12px">Step 1 of 3</span><div class="r"><button type="button" class="btn pri" data-next>Next: Identity</button></div></div>
       </div>
 
-      <div class="pane card" data-pane="2">
+      <div class="pane" data-pane="2">
         <div class="ch"><span>Identity</span></div>
         <div class="cb">
           <div class="idrow">
@@ -119,7 +121,7 @@
         <div class="wnav"><button type="button" class="btn ghost" data-back>Back</button><div class="r"><button type="button" class="btn pri" data-next>Next: Fee and launch</button></div></div>
       </div>
 
-      <div class="pane card" data-pane="3">
+      <div class="pane" data-pane="3">
         <div class="ch"><span>Fee and launch</span></div>
         <div class="cb">
           <div class="notice warn hidden" id="paused" style="margin-bottom:14px"></div>
@@ -158,7 +160,7 @@
         <div class="wnav"><button type="button" class="btn ghost" data-back>Back</button><div class="r"><button type="button" class="btn pri lg" id="cta">Connect wallet</button></div></div>
       </div>
 
-      <div class="card hidden" id="done">
+      <div class="hidden" id="done">
         <div class="ch"><span>Your coin is live</span><span class="tag mint" id="dn-block"></span></div>
         <div class="cb">
           <div class="dn-hd"><img id="dn-logo" alt=""><div><b id="dn-name"></b><small id="dn-sub"></small></div></div>
@@ -171,7 +173,7 @@
     </div>
 
     <aside class="wiz-side">
-      <div class="card sum" id="sum">
+      <div class="sum" id="sum">
         <div class="ch"><span>Summary</span><span class="tag" id="sm-step">Step 1 of 3</span></div>
         <div class="cb">
           <div class="sm-id"><div class="sm-logo" id="sm-logo">?</div><div><b id="sm-name">Your coin</b><small id="sm-sym">SYMBOL</small></div></div>
@@ -186,6 +188,7 @@
       </div>
     </aside>
   </div>
-</div></main></div></div>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=1"></script><script src="/sp-launch.js?v=1"></script>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=2"></script><script src="/sp-launch.js?v=2"></script>
 </body></html>

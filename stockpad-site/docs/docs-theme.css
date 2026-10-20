@@ -1,32 +1,32 @@
-/* StockPad docs: azure-on-navy palette and fonts over the Mintlify layout (dark only) */
+/* StockPad docs: mint-on-black palette and fonts over the Mintlify layout (dark only) */
 :root {
-  --primary: 63 188 255;
-  --primary-light: 95 200 255;
-  --primary-dark: 63 188 255;
+  --primary: 47 211 138;
+  --primary-light: 92 227 165;
+  --primary-dark: 47 211 138;
   --tooltip-foreground: 255 255 255;
   --background-light: 255 255 255;
-  --background-dark: 10 14 24;
-  --gray-50: 238 243 251;
-  --gray-100: 226 232 244;
-  --gray-200: 188 198 218;
-  --gray-300: 150 162 188;
-  --gray-400: 121 135 163;
-  --gray-500: 95 108 136;
-  --gray-600: 62 73 100;
-  --gray-700: 42 55 85;
-  --gray-800: 22 30 51;
-  --gray-900: 14 20 36;
-  --gray-950: 10 14 24;
+  --background-dark: 10 10 11;
+  --gray-50: 244 244 245;
+  --gray-100: 228 228 232;
+  --gray-200: 200 200 208;
+  --gray-300: 161 161 170;
+  --gray-400: 140 140 150;
+  --gray-500: 110 110 120;
+  --gray-600: 70 70 80;
+  --gray-700: 43 43 50;
+  --gray-800: 30 30 35;
+  --gray-900: 19 19 22;
+  --gray-950: 10 10 11;
   --banner-height: 0px !important;
   --topbar-tabs-height: 3rem;
 }
-html { color-scheme: dark; --font-inter: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; --font-paper-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+html { color-scheme: dark; --font-inter: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; --font-paper-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
 html, body { background: rgb(var(--background-dark)); font-family: var(--font-inter); }
 /* undeployed-address placeholder */
 code.addr-na { color: rgb(var(--gray-400)); font-style: normal; }
 /* callouts in our azure accent instead of blue */
-.callout[data-callout-type="note"] { border-color: rgba(63, 188, 255, .3) !important; background: rgba(63, 188, 255, .08) !important; }
-.callout[data-callout-type="note"] [data-component-part="callout-content"] { color: #bfe6ff !important; }
+.callout[data-callout-type="note"] { border-color: rgba(47,211,138, .3) !important; background: rgba(47,211,138, .08) !important; }
+.callout[data-callout-type="note"] [data-component-part="callout-content"] { color: #bff3dc !important; }
 .callout[data-callout-type="note"] [data-component-part="callout-icon"] { color: #4fe0a0; }
 .callout[data-callout-type="warning"] [data-component-part="callout-icon"] { color: #f59e0b; }
 /* tables and headings */
@@ -57,7 +57,7 @@ code.addr-na { color: rgb(var(--gray-400)); font-style: normal; }
 .ip-search ul { list-style: none; margin: 0; padding: .5rem; max-height: 50vh; overflow-y: auto; }
 .ip-search li a { display: block; padding: .6rem .85rem; border-radius: .6rem; color: rgb(var(--gray-200)); text-decoration: none; }
 .ip-search li a small { display: block; color: rgb(var(--gray-400)); font-size: .8125rem; }
-.ip-search li a:hover, .ip-search li a[data-sel] { background: rgba(63,188,255,.1); color: rgb(var(--primary-light)); }
+.ip-search li a:hover, .ip-search li a[data-sel] { background: rgba(47,211,138,.1); color: rgb(var(--primary-light)); }
 .ip-search .ip-empty { padding: 1rem; color: rgb(var(--gray-400)); font-size: .875rem; }
 
 #sidebar .sticky.top-0.h-8{display:none}

@@ -1,43 +1,44 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Portfolio | StockPad</title><meta name="description" content="Your coin holdings, claimable holder rewards, creator fees and trade history on StockPad.">
-<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=9"><meta name="theme-color" content="#0b0f14">
+<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=9"><meta name="theme-color" content="#0a0a0b">
 <meta property="og:title" content="Portfolio | StockPad"><meta property="og:description" content="Holdings, holder rewards and creator fees in one place."><meta property="og:image" content="/img/og.png?v=9"><meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=2">
 <style>
-#pg-portfolio .who{display:flex;align-items:center;gap:16px;padding:18px 20px;margin-bottom:16px;flex-wrap:wrap}
+#pg-portfolio .who{display:flex;align-items:center;gap:16px;margin-bottom:22px;flex-wrap:wrap}
 #pg-portfolio .who .av{width:56px;height:56px;border-radius:14px;overflow:hidden;flex:none;background:var(--bg-3)} #pg-portfolio .who .av svg{width:100%;height:100%;display:block}
-#pg-portfolio .who .id{flex:1;min-width:0} #pg-portfolio .who .id h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-#pg-portfolio .who .id .addrline{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}
-#pg-portfolio .who .id .addrline .addr{font-size:13px;color:var(--fg)} #pg-portfolio .who .id .addrline .cp{font-size:12px} #pg-portfolio .who .id .addrline .cp svg{width:14px;height:14px}
+#pg-portfolio .who .id{flex:1;min-width:0} #pg-portfolio .who .id h1{font-size:24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#pg-portfolio .who .id .addrline{display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;font-size:13px}
+#pg-portfolio .who .id .addrline .addr{color:var(--fg-2)} #pg-portfolio .who .id .addrline .cp{font-size:12.5px} #pg-portfolio .who .id .addrline .cp svg{width:14px;height:14px}
 #pg-portfolio .who .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-#pg-portfolio .strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
-#pg-portfolio .stat b.up{color:var(--mint)}
-#pg-portfolio .tabs{margin-bottom:14px;overflow-x:auto;scrollbar-width:none} #pg-portfolio .tabs::-webkit-scrollbar{display:none} #pg-portfolio .tabs button{white-space:nowrap} #pg-portfolio .tabs button .num{font-size:11px;color:var(--fg-3);margin-left:6px}
+#pg-portfolio .strip{padding:18px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:22px}
+#pg-portfolio .figs b.up{color:var(--mint)}
+#pg-portfolio .tabs{margin-bottom:4px;overflow-x:auto;scrollbar-width:none} #pg-portfolio .tabs::-webkit-scrollbar{display:none} #pg-portfolio .tabs button{white-space:nowrap}
 #pg-portfolio .pane{display:none} #pg-portfolio .pane.on{display:block}
-#pg-portfolio .tb .side{font-weight:600} #pg-portfolio .tb .coin .lg{width:30px;height:30px;border-radius:7px}
-#pg-portfolio .tb tr.go:hover td{background:var(--bg-3);cursor:pointer} #pg-portfolio .tb td.act{text-align:right;width:1%} #pg-portfolio .tb tr.go td.act{cursor:default}
+#pg-portfolio .tb .side{font-weight:600} #pg-portfolio .tb .coin .lg{width:36px;height:36px;border-radius:9px}
+#pg-portfolio .tb td.act{text-align:right;width:1%} #pg-portfolio .tb tr.go td.act{cursor:default}
 #pg-portfolio .tb a.tx{display:inline-flex;align-items:center;gap:4px;color:var(--fg-3)} #pg-portfolio .tb a.tx:hover{color:var(--fg)} #pg-portfolio .tb a.tx svg{width:14px;height:14px}
-#pg-portfolio .gate{max-width:520px;margin:48px auto;padding:36px 28px;text-align:center}
-#pg-portfolio .gate .ico{width:52px;height:52px;margin:0 auto 14px;border-radius:14px;background:var(--mint-dim);color:var(--mint);display:flex;align-items:center;justify-content:center} #pg-portfolio .gate .ico svg{width:24px;height:24px}
-#pg-portfolio .gate h1{margin:0 0 6px;font-size:20px;font-weight:700} #pg-portfolio .gate p{margin:0 0 18px;color:var(--fg-2)}
+#pg-portfolio .gate{max-width:440px;margin:56px auto;text-align:center}
+#pg-portfolio .gate .ico{width:52px;height:52px;margin:0 auto 16px;border-radius:14px;background:var(--mint-dim);color:var(--mint);display:flex;align-items:center;justify-content:center} #pg-portfolio .gate .ico svg{width:24px;height:24px}
+#pg-portfolio .gate h1{margin:0 0 8px;font-size:24px} #pg-portfolio .gate p{margin:0 0 20px;color:var(--fg-2);font-size:15px}
 #pg-portfolio .viewonly{margin-bottom:16px}
-@media(max-width:1100px){#pg-portfolio .strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){#pg-portfolio .strip{grid-template-columns:1fr 1fr;gap:8px} #pg-portfolio .stat{padding:12px 12px} #pg-portfolio .stat b{font-size:17px} #pg-portfolio .who{padding:14px} #pg-portfolio .who .acts{width:100%} #pg-portfolio .who .acts .btn{flex:1}}
+@media(max-width:640px){#pg-portfolio .who{gap:12px} #pg-portfolio .who .av{width:48px;height:48px} #pg-portfolio .who .id h1{font-size:20px} #pg-portfolio .who .acts{width:100%} #pg-portfolio .who .acts .btn{flex:1}}
 </style>
 </head><body data-page="portfolio">
-<div id="sp-app"><aside id="sp-side"></aside><div id="sp-body"><header id="sp-top"></header><div id="sp-ticker"></div><main id="sp-main"><div id="pg-portfolio">
-  <div id="pf-gate" class="card gate hidden"><div class="ico"></div><h1>Portfolio</h1><p>Connect your wallet to see holdings, rewards and creator fees</p><button class="btn pri lg" id="pf-connect">Connect wallet</button></div>
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-portfolio">
+  <div id="pf-gate" class="gate hidden"><div class="ico"></div><h1>Portfolio</h1><p>Connect your wallet to see holdings, rewards and creator fees</p><button class="btn pri lg" id="pf-connect">Connect wallet</button></div>
   <div id="pf-body" class="hidden">
-    <div class="card who"><div class="av" id="pf-av"></div><div class="id"><h1>Portfolio <span id="pf-tags"></span></h1><div class="addrline"><span class="addr" id="pf-addr"></span><button class="cp" id="pf-copy" title="Copy address"></button><a class="cp" id="pf-ext" target="_blank" rel="noopener noreferrer" title="View on Etherscan"></a></div></div><div class="acts" id="pf-acts"></div></div>
+    <div class="who"><div class="av" id="pf-av"></div><div class="id"><h1>Portfolio <span id="pf-tags"></span></h1><div class="addrline"><span class="addr" id="pf-addr"></span><button class="cp" id="pf-copy" title="Copy address"></button><a class="cp" id="pf-ext" target="_blank" rel="noopener noreferrer" title="View on Etherscan"></a></div></div><div class="acts" id="pf-acts"></div></div>
     <div id="pf-notice"></div>
-    <div class="strip" id="pf-strip"></div>
+    <div class="strip"><div class="figs sm" id="pf-strip"></div></div>
     <div class="tabs" id="pf-tabs"><button data-t="hold" class="on">Holdings<span class="num" id="pf-n-hold"></span></button><button data-t="made">Created<span class="num" id="pf-n-made"></span></button><button data-t="act">Activity<span class="num" id="pf-n-act"></span></button></div>
-    <div class="pane on card" data-p="hold"><table class="tb" id="pf-hold"><thead><tr><th>Coin</th><th>Pair</th><th class="r">Balance</th><th class="r">Value</th><th class="r">Pending rewards</th><th class="act"></th></tr></thead><tbody></tbody></table></div>
-    <div class="pane card" data-p="made"><table class="tb" id="pf-made"><thead><tr><th>Coin</th><th>Pair</th><th class="r">Market cap</th><th class="r">Volume 24h</th><th class="r">Fees claimable</th><th class="act"></th></tr></thead><tbody></tbody></table></div>
-    <div class="pane card" data-p="act"><table class="tb" id="pf-act"><thead><tr><th>Time</th><th>Side</th><th>Coin</th><th class="r">Amount</th><th class="r">Paid / received</th><th class="r">Value</th><th class="act">Tx</th></tr></thead><tbody></tbody></table></div>
+    <div class="pane on" data-p="hold"><table class="tb lg" id="pf-hold"><thead><tr><th>Coin</th><th>Pair</th><th class="r">Balance</th><th class="r">Value</th><th class="r">Pending rewards</th><th class="act"></th></tr></thead><tbody></tbody></table></div>
+    <div class="pane" data-p="made"><table class="tb lg" id="pf-made"><thead><tr><th>Coin</th><th>Pair</th><th class="r">Market cap</th><th class="r">Volume 24h</th><th class="r">Fees claimable</th><th class="act"></th></tr></thead><tbody></tbody></table></div>
+    <div class="pane" data-p="act"><table class="tb" id="pf-act"><thead><tr><th>Time</th><th>Side</th><th>Coin</th><th class="r">Amount</th><th class="r">Paid / received</th><th class="r">Value</th><th class="act">Tx</th></tr></thead><tbody></tbody></table></div>
   </div>
-</div></main></div></div>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=1"></script><script src="/sp-profile.js?v=1"></script>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=2"></script><script src="/sp-profile.js?v=2"></script>
 </body></html>

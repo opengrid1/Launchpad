@@ -3,11 +3,10 @@
    Reads the coin address from /token/<addr> (cleanUrls rewrite) or /token.html?t=<addr>. */
 window.SP_PAGE=function(){
   const pg=$('#pg-token'); if(!pg) return;
-  $('#tk-back').innerHTML=ic('back')+'Markets';
-  const addrFromUrl=()=>{ const m=location.pathname.match(/\/token\/(0x[0-9a-fA-F]{40})/); if(m) return m[1].toLowerCase(); const q=new URLSearchParams(location.search).get('t')||''; return /^0x[0-9a-fA-F]{40}$/.test(q)?q.toLowerCase():''; };
+    const addrFromUrl=()=>{ const m=location.pathname.match(/\/token\/(0x[0-9a-fA-F]{40})/); if(m) return m[1].toLowerCase(); const q=new URLSearchParams(location.search).get('t')||''; return /^0x[0-9a-fA-F]{40}$/.test(q)?q.toLowerCase():''; };
   const addr=addrFromUrl(); let X=addr?SP.token(addr):null;
   if(!X||!window.CHAIN){ $('#tk-page').classList.add('hidden'); const e=$('#tk-empty'); e.classList.remove('hidden');
-    e.innerHTML=`<b>${addr?'Token not found':'No token selected'}</b>${addr?'No coin with that address was launched on StockPad, or it is not listed here.':'Open a coin from the markets page.'}<div style="margin-top:14px"><a class="btn" href="/">${ic('back')}Back to markets</a></div>`; return; }
+    $('#tk-crumb').innerHTML=`<a href="/">Markets</a>`; e.innerHTML=`<b>${addr?'Token not found':'No token selected'}</b>${addr?'No coin with that address was launched on StockPad, or it is not listed here.':'Open a coin from the markets page.'}<div style="margin-top:14px"><a class="btn" href="/">${ic('back')}Back to markets</a></div>`; return; }
   X={...X};
   const C=(window.INKY&&INKY.contracts)||{}; const PM=String(C.poolManager||'').toLowerCase();
   const stock=SP.stockBySym(X.pair); const isStock=X.pair!=='ETH';
@@ -24,21 +23,23 @@ window.SP_PAGE=function(){
   /* ---------- header ---------- */
   function head(){ const mk=SP.market();
     const links=[['Website',X.links&&X.links.web,'globe'],['X',X.links&&X.links.x,'ext'],['Telegram',X.links&&X.links.tg,'ext']].filter(l=>l[1]&&/^https?:\/\//i.test(l[1]));
-    const pill=isStock&&stock?`<a class="stockpill" href="/?stock=${esc(X.pair)}" title="${esc(stock.name)} (${esc(X.pair)}), the paired stock"><img src="${stock.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span class="sp1"><b>${esc(stock.ticker)}</b><small>${esc(stock.name)}</small></span><span class="sp2"><b class="num" id="tk-stock-px">${fmtStockPx(stockPx())}</b><small class="${mk.open?'open':''}" id="tk-stock-mk"><i></i>${mk.open?'market open':'market closed'}</small></span></a>`
-      :`<a class="stockpill" href="/?stock=ETH" title="Paired with ETH"><img src="/img/eth.png" alt=""><span class="sp1"><b>ETH</b><small>Ether</small></span><span class="sp2"><b class="num" id="tk-stock-px">${fmtStockPx(ethUsd())}</b><small class="open" id="tk-stock-mk"><i></i>trades 24/7</small></span></a>`;
+    $('#tk-crumb').innerHTML=`<a href="/">Markets</a>${ic('chevr')}<a href="/?stock=${esc(X.pair)}">${esc(isStock&&stock?stock.ticker+' coins':'ETH coins')}</a>${ic('chevr')}<span class="dim">${esc(X.t)}</span>`;
+    const pc=isStock&&stock?`<a class="pc" href="/?stock=${esc(X.pair)}" title="${esc(stock.name)} (${esc(X.pair)}), the paired stock"><img src="${stock.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(stock.ticker)}</a><span class="num" id="tk-stock-px">${fmtStockPx(stockPx())}</span><span id="tk-stock-mk"><i class="dot ${mk.open?'open':''}"></i>${mk.open?'Market open':'Market closed'}</span>`
+      :`<a class="pc" href="/?stock=ETH"><img src="/img/eth.png" alt="">ETH</a><span class="num" id="tk-stock-px">${fmtStockPx(ethUsd())}</span><span id="tk-stock-mk"><i class="dot open"></i>Trades 24/7</span>`;
     $('#tk-head').innerHTML=`<img class="lg" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'">
       <div class="id">
-        <div class="t1"><h1>${esc(X.n)}</h1><span class="sym">${esc(X.t)}</span><span class="addr"><span class="mono muted" style="font-size:12px">${shortAddr(cs(X.addr))}</span><button data-copy="${cs(X.addr)}" title="Copy address" aria-label="Copy address">${ic('copy')}</button><a href="${EXPLORER}/token/${X.addr}" target="_blank" rel="noopener" title="View on Etherscan" aria-label="View on Etherscan">${ic('ext')}</a></span></div>
-        <div class="t2"><span class="muted" style="font-size:12px">Created by</span>${wl(X.creator)}<span class="num muted" style="font-size:12px">· ${SP.fmtDate(X.createdAt)} · ${ageStr(X.age||'0s')}</span></div>
-        <div class="tags"><span class="tag">${ic('coins')}Fee ${feePct()}% in ${esc(X.pair)}</span>${X.rewards?'<span class="tag mint">'+ic('check')+'Holder rewards</span>':''}<span class="tag">${ic('lock')}Liquidity: cannot be withdrawn</span></div>
-        ${X.desc||links.length?`<div class="meta">${X.desc?`<div class="desc">${esc(X.desc)}</div>`:''}${links.length?`<div class="ln">${links.map(l=>`<a href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</div>`:''}</div>`:''}
-      </div>${pill}`; }
-  function headLive(){ const p=$('#tk-stock-px'); if(p) p.textContent=fmtStockPx(isStock?stockPx():ethUsd()); if(isStock){ const mk=SP.market(); const m=$('#tk-stock-mk'); if(m){ m.classList.toggle('open',mk.open); m.innerHTML='<i></i>'+(mk.open?'market open':'market closed'); } } }
+        <div class="t1"><h1>${esc(X.n)}</h1><span class="sym">${esc(X.t)}</span></div>
+        <div class="t2"><span>Paired with</span>${pc}<span>·</span><span>by</span>${wl(X.creator)}<span>·</span><span class="num" title="${esc(SP.fmtDate(X.createdAt))}">${ageStr(X.age||'0s')}</span><span>·</span><span class="addr"><span class="mono">${shortAddr(cs(X.addr))}</span> <button data-copy="${cs(X.addr)}" title="Copy address" aria-label="Copy address">${ic('copy')}</button> <a href="${EXPLORER}/token/${X.addr}" target="_blank" rel="noopener" title="View on Etherscan" aria-label="View on Etherscan">${ic('ext')}</a></span></div>
+      </div>
+      <div class="pxb"><b id="tk-px">$${fmtPrice(X.px)}</b><small>${SP.fmtPct(X.c24||0)} <span class="muted">24h</span> · <span id="tk-pxpair">${fmtPrice(X.pxPair)} ${esc(X.pair)}</span></small></div>
+      ${X.desc||links.length?`<p class="desc">${esc(X.desc||'')}${links.length?`<span class="ln">${links.map(l=>`<a href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</span>`:''}</p>`:''}`; }
+  function headLive(){ const p=$('#tk-stock-px'); if(p) p.textContent=fmtStockPx(isStock?stockPx():ethUsd()); if(isStock){ const mk=SP.market(); const m=$('#tk-stock-mk'); if(m) m.innerHTML=`<i class="dot ${mk.open?'open':''}"></i>${mk.open?'Market open':'Market closed'}`; }
+    const px=$('#tk-px'); if(px) px.textContent='$'+fmtPrice(X.px); const pp=$('#tk-pxpair'); if(pp) pp.textContent=fmtPrice(X.pxPair)+' '+X.pair; }
 
   /* ---------- stats ---------- */
   function stats(){ const pu=pairUsd(); const fees=X.totalCreatorFees||0;
-    const S=[['Price','$'+fmtPrice(X.px)+SP.fmtPct(X.c24||0).replace('class="num','class="pc num'),`${fmtPrice(X.pxPair)} ${esc(X.pair)}`],['Market cap',fmtUsd(X.mc),inPair(X.pxPair*SUPPLY)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)],['Holders',(X.h||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders')],['Fees paid',fmtUsd(fees*pu),inPair(fees)]];
-    $('#tk-stats').innerHTML=S.map(s=>`<div class="stat"><small>${s[0]}</small><b>${s[1]}</b><i>${s[2]}</i></div>`).join(''); }
+    const S=[['Market cap',fmtUsd(X.mc),inPair(X.pxPair*SUPPLY)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)],['Holders',(X.h||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders')],['Fee',feePct()+'%','paid in '+esc(X.pair)],['Fees paid',fmtUsd(fees*pu),inPair(fees)]];
+    $('#tk-stats').innerHTML=S.map(s=>`<div><small>${s[0]}</small><b>${s[1]}</b><i>${s[2]}</i></div>`).join(''); }
 
   /* ---------- chart ---------- */
   let tvOn=false;

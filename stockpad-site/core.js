@@ -59,34 +59,37 @@ SP.W.switchChain=async()=>{ const d=window.inkyWallet; if(d&&d.switchChain) awai
 addEventListener('inky:wallet',syncWallet); document.addEventListener('wallet-change',()=>{ /* re-entrancy guard: syncWallet only dispatches on change */ });
 
 /* ---------- shell ---------- */
-const NAV=[['markets','/','Markets','candle'],['launch','/launch','Launch','rocket'],['portfolio','/profile','Portfolio','user'],['docs','/docs','Docs','book']];
+const NAV=[['markets','/','Markets'],['launch','/launch','Launch'],['portfolio','/profile','Portfolio'],['docs','/docs','Docs']];
 function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP.W;
-  if(!W.connected){ el.innerHTML=`<button class="btn pri" id="wconnect">${ic('wallet')}<span>Connect</span></button>`; $('#wconnect',el).onclick=SP.W.connect; return; }
+  if(!W.connected){ el.innerHTML=`<button class="btn pri" id="wconnect">Connect</button>`; $('#wconnect',el).onclick=SP.W.connect; return; }
   el.innerHTML=`<button class="wbtn" id="wmenu"><span class="av">${SP.avatar(W.address,22)}</span>${esc(W.short)}${!W.chainOk?'<span class="tag red">Wrong network</span>':''}</button>`;
   $('#wmenu',el).onclick=e=>{ const m=SP.menu(e.currentTarget,`<button data-a="copy">${ic('copy')}Copy address</button><button data-a="pf">${ic('user')}Portfolio</button>${SP.isAdmin()?`<button data-a="adm">${ic('shield')}Operator</button>`:''}<button data-a="ex">${ic('globe')}View on Etherscan</button>${!W.chainOk?`<button data-a="sw">${ic('swap')}Switch to Ethereum</button>`:''}<div class="d"></div><button data-a="out">${ic('logout')}Disconnect</button>`);
     $$('[data-a]',m).forEach(b=>b.onclick=()=>{ const a=b.dataset.a; m.remove(); if(a==='copy') SP.copy(cs(W.address),'Address copied'); if(a==='pf') SP.go('/profile'); if(a==='adm') SP.go('/admin'); if(a==='ex') open(EXPLORER+'/address/'+W.address,'_blank'); if(a==='sw') SP.W.switchChain().catch(err=>SP.toast(SP.errMsg(err),'err')); if(a==='out') SP.W.disconnect(); }); }; }
-function renderShell(){ const page=document.body.dataset.page||'markets';
-  const side=$('#sp-side'); if(side) side.innerHTML=`<a class="brand" href="/"><img src="/img/logo.svg?v=9" alt=""><b>Stock<span>Pad</span></b></a>
-    <nav class="nav">${NAV.map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${ic(n[3])}${n[2]}</a>`).join('')}</nav>
-    <div class="side-h">Stocks</div><div class="stocklist" id="sp-stocks">${SP.stocks.map(s=>`<a href="/?stock=${s.symbol}" data-s="${s.symbol}"><img src="${s.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span><b>${esc(s.ticker||s.symbol)}</b><small>${esc(s.name)}</small></span><span class="px" data-px="${s.address.toLowerCase()}"><span class="sk"></span></span></a>`).join('')}</div>
-    <div class="side-foot"><span>Ethereum · Uniswap v4</span><a href="/docs/production-contracts" class="dim">Contracts</a></div>`;
-  const top=$('#sp-top'); if(top){ const mk=SP.market(); top.innerHTML=`<button class="btn ghost sm ham" id="sp-ham" aria-label="Menu">${ic('menu')}</button><a class="brand ham" href="/" style="border:0;padding:0;height:auto"><img src="/img/logo.svg?v=9" alt="" style="width:24px;height:24px"></a>
-    <label class="search">${ic('search')}<input id="sp-q" placeholder="Search coins, stocks, addresses" autocomplete="off"><kbd>/</kbd></label>
-    <div class="topr"><span class="mkt ${mk.open?'open':''}" title="${esc(mk.detail)}"><i></i><span>${mk.label}</span></span><a class="btn" href="/launch">${ic('plus')}<span>Launch</span></a><span id="sp-wallet"></span></div>`;
-    $('#sp-ham').onclick=()=>$('#sp-side').classList.toggle('open'); document.addEventListener('click',e=>{ const s=$('#sp-side'); if(s&&s.classList.contains('open')&&!s.contains(e.target)&&!e.target.closest('#sp-ham')) s.classList.remove('open'); });
+const navHtml=page=>NAV.map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${n[2]}</a>`).join('');
+const stockPx=v=>v?'$'+(v>=100?v.toFixed(0):v>=1?v.toFixed(2):fmtPrice(v)):'';
+function renderShell(){ const page=document.body.dataset.page||'markets'; const mk=SP.market();
+  const top=$('#sp-top'); if(top){ top.innerHTML=`<div class="wrap"><button class="btn ghost sm ic ham" id="sp-ham" aria-label="Menu">${ic('menu')}</button><a class="brand" href="/"><img src="/img/logo.svg?v=9" alt="">StockPad</a><nav class="nav">${navHtml(page)}</nav>
+    <label class="search">${ic('search')}<input id="sp-q" placeholder="Search coins or stocks" autocomplete="off"><kbd>/</kbd></label>
+    <div class="topr"><span class="mkt ${mk.open?'open':''}" title="${esc(mk.detail)}"><i></i><span>${mk.label}</span></span><span id="sp-wallet"></span></div></div>`;
     const q=$('#sp-q'); q.addEventListener('input',()=>searchMenu(q)); q.addEventListener('focus',()=>searchMenu(q)); addEventListener('keydown',e=>{ if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){ e.preventDefault(); q.focus(); } }); }
-  renderWalletBtn(); renderTicker(); }
+  // mobile sheet: nav plus the stock list
+  let sh=$('#sp-sheet'); if(!sh){ sh=document.createElement('div'); sh.id='sp-sheet'; sh.className='sheet'; document.body.appendChild(sh); }
+  sh.innerHTML=`<div class="in"><div class="hd"><a class="brand" href="/"><img src="/img/logo.svg?v=9" alt="">StockPad</a><button class="btn ghost sm ic" data-close aria-label="Close">${ic('x')}</button></div><nav class="nav">${navHtml(page)}</nav><div class="sh">Stocks</div><div class="stl" id="sp-stocks">${SP.stocks.map(s=>`<a href="/?stock=${s.symbol}" data-s="${s.symbol}"><img src="${s.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span><b>${esc(s.ticker||s.symbol)}</b><small>${esc(s.name)}</small></span><span class="px" data-px="${s.address.toLowerCase()}">${stockPx(SP.prices[s.address.toLowerCase()])||'<span class="sk"></span>'}</span></a>`).join('')}</div></div>`;
+  const ham=$('#sp-ham'); if(ham) ham.onclick=()=>sh.classList.add('open'); sh.addEventListener('click',e=>{ if(e.target===sh||e.target.closest('[data-close]')) sh.classList.remove('open'); });
+  const ft=$('#sp-foot'); if(ft) ft.innerHTML=`<div class="wrap"><div class="fb"><a class="brand" href="/"><img src="/img/logo.svg?v=9" alt="">StockPad</a><span>Coins paired with tokenized stocks. Ethereum mainnet, Uniswap v4, Ondo stock tokens.</span><span>Launch liquidity cannot be withdrawn. Nothing here is investment advice.</span></div>
+    <div class="fl"><a href="/docs/introduction">Docs</a><a href="/docs/fees">Fees</a><a href="/docs/production-contracts">Contracts</a><a href="/docs/security">Security</a><a href="${EXPLORER}/address/${(window.INKY&&INKY.contracts&&INKY.contracts.factory)||''}" target="_blank" rel="noopener">Factory on Etherscan</a></div></div>`;
+  renderWalletBtn(); renderTape(); }
 function searchMenu(q){ const v=q.value.trim().toLowerCase(); $$('.menu.srch').forEach(m=>m.remove()); if(!v) return;
   const hits=TOK.filter(x=>x.n.toLowerCase().includes(v)||x.t.toLowerCase().includes(v)||x.addr.includes(v)||(x.pair||'').toLowerCase().includes(v)).slice(0,8);
   const st=SP.stocks.filter(s=>s.symbol.toLowerCase().includes(v)||s.name.toLowerCase().includes(v)||(s.ticker||'').toLowerCase().includes(v)).slice(0,3);
   const m=document.createElement('div'); m.className='menu srch'; m.innerHTML=(hits.map(x=>`<button data-go="${tokenUrl(x)}"><img src="${SP.coinLogo(x)}" style="width:22px;height:22px;border-radius:6px"><span><b>${esc(x.t)}</b> <span class="muted">${esc(x.n)}</span></span><span class="num" style="margin-left:auto">${fmtUsd(x.mc)}</span></button>`).join('')+st.map(s=>`<button data-go="/?stock=${s.symbol}"><img src="${s.logo}" style="width:22px;height:22px;border-radius:50%;background:#fff"><span><b>${esc(s.ticker)}</b> <span class="muted">${esc(s.name)}</span></span></button>`).join(''))||'<div class="empty" style="padding:14px">No matches</div>';
   document.body.appendChild(m); const r=q.closest('.search').getBoundingClientRect(); m.style.top=(r.bottom+scrollY+6)+'px'; m.style.left=(r.left+scrollX)+'px'; m.style.minWidth=r.width+'px'; $$('[data-go]',m).forEach(b=>b.onclick=()=>SP.go(b.dataset.go));
   setTimeout(()=>document.addEventListener('click',function h(e){ if(!m.contains(e.target)&&e.target!==q){ m.remove(); document.removeEventListener('click',h); } }),0); }
-function renderTicker(){ const t=$('#sp-ticker'); if(!t) return; const items=[{sym:'ETH',name:'Ether',addr:WETH,logo:'/img/eth.png'},...SP.stocks.map(s=>({sym:s.ticker||s.symbol,name:s.name,addr:s.address.toLowerCase(),logo:s.logo}))];
-  const one=items.map(i=>`<span class="tk"><img src="${i.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><b>${esc(i.sym)}</b><span class="num" data-px="${i.addr}">${SP.prices[i.addr]?'$'+fmtPrice(SP.prices[i.addr]):'<span class="sk"></span>'}</span></span>`).join('');
-  t.innerHTML=`<div class="ticker-track">${one}${one}</div>`; }
-function paintPrices(){ $$('[data-px]').forEach(el=>{ const v=SP.prices[el.dataset.px]; if(v){ const c=el.querySelector('.cnt'); el.textContent='$'+(v>=100?v.toFixed(0):v>=1?v.toFixed(2):fmtPrice(v)); if(c) el.appendChild(c); } });
-  const counts={}; TOK.forEach(x=>{ counts[x.pair]=(counts[x.pair]||0)+1; }); $$('#sp-stocks a').forEach(a=>{ const n=counts[a.dataset.s]||0; let c=a.querySelector('.cnt'); if(n){ if(!c){ c=document.createElement('small'); c.className='cnt'; a.querySelector('.px').appendChild(c); } c.textContent=n+(n===1?' coin':' coins'); } }); }
+function renderTape(){ const t=$('#sp-tape'); if(!t) return; const counts={}; TOK.forEach(x=>{ counts[x.pair]=(counts[x.pair]||0)+1; });
+  const items=SP.stocks.map(s=>({sym:s.ticker||s.symbol,key:s.symbol,addr:s.address.toLowerCase(),logo:s.logo}));
+  const one=items.map(i=>`<a class="tk" href="/?stock=${i.key}"><img src="${i.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><b>${esc(i.sym)}</b><span class="num" data-px="${i.addr}">${stockPx(SP.prices[i.addr])||'<span class="sk"></span>'}</span>${counts[i.key]?`<span class="cnt">${counts[i.key]} ${counts[i.key]===1?'coin':'coins'}</span>`:''}</a>`).join('');
+  t.innerHTML=`<div class="tape-track">${one}${one}</div>`; }
+function paintPrices(){ $$('[data-px]').forEach(el=>{ const v=SP.prices[el.dataset.px]; if(v) el.textContent=stockPx(v); }); }
 async function loadPrices(){ const addrs=[WETH,...SP.stocks.map(s=>s.address.toLowerCase())]; await Promise.all(addrs.map(a=>SP.pairUsd(a).catch(()=>0))); if(SP.prices[WETH]) ETH=SP.prices[WETH]; paintPrices(); }
 
 /* ---------- boot ---------- */
@@ -97,8 +100,8 @@ SP._readyP=new Promise(resolve=>{ document.addEventListener('DOMContentLoaded',a
   loadPrices();
   try{ const ok=await Promise.race([CHAIN.ready,new Promise(r=>setTimeout(()=>r(null),40000))]); if(!ok) throw new Error('timeout'); syncTok(); }
   catch(e){ console.warn('chain load',e); if(main) main.insertAdjacentHTML('afterbegin',`<div class="notice warn" style="margin-bottom:16px">${ic('warn')}<span>Could not load on-chain data (${esc(SP.errMsg(e))}). Prices and coins may be stale; reload to retry.</span></div>`); }
-  paintPrices(); resolve(true);
-  addEventListener('chain-update',()=>{ syncTok(); paintPrices(); SP._upd.forEach(f=>{ try{ f(); }catch(err){ console.warn(err); } }); });
+  paintPrices(); renderTape(); resolve(true);
+  addEventListener('chain-update',()=>{ syncTok(); paintPrices(); renderTape(); SP._upd.forEach(f=>{ try{ f(); }catch(err){ console.warn(err); } }); });
   setInterval(()=>{ const mk=SP.market(); const el=$('.mkt'); if(el){ el.classList.toggle('open',mk.open); el.title=mk.detail; const s=el.querySelector('span'); if(s) s.textContent=mk.label; } },60000);
 }); });
 SP.ready().then(()=>{ if(typeof window.SP_PAGE==='function') { try{ window.SP_PAGE(); }catch(e){ console.error('page init',e); SP.toast('Page failed to initialise: '+SP.errMsg(e),'err'); } } });

@@ -1,37 +1,55 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>StockPad · Markets</title><meta name="description" content="Launch and trade coins paired with real stocks on Ethereum. Fixed supply, permanent liquidity, fees paid in the stock.">
-<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=9"><meta name="theme-color" content="#0b0f14">
+<title>StockPad · Coins paired with real stocks</title><meta name="description" content="Launch and trade coins paired with tokenized stocks on Ethereum. One Uniswap v4 pool per coin, fixed supply, liquidity that cannot be withdrawn, fees paid in the stock.">
+<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=9"><meta name="theme-color" content="#0a0a0b">
 <meta property="og:title" content="StockPad"><meta property="og:description" content="Launch coins paired with real stocks on Ethereum."><meta property="og:image" content="/img/og.png?v=9"><meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=2">
 <style>
-#pg-markets .strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px}
-#pg-markets .tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-#pg-markets .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
-#pg-markets .cc{display:block;padding:14px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-lg);transition:border-color .15s,transform .15s}
-#pg-markets .cc:hover{border-color:var(--line-2);transform:translateY(-1px)}
-#pg-markets .cc .hd{display:flex;align-items:center;gap:10px} #pg-markets .cc .lg{width:40px;height:40px;border-radius:9px;object-fit:cover;background:var(--bg-3);flex:none}
-#pg-markets .cc .nm{min-width:0;flex:1} #pg-markets .cc .nm b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #pg-markets .cc .nm small{display:flex;align-items:center;gap:6px;color:var(--fg-3);font-size:12px;margin-top:2px}
-#pg-markets .cc .px{text-align:right} #pg-markets .cc .px b{display:block;font:600 15px var(--mono)} #pg-markets .cc .px span{font:12px var(--mono)}
-#pg-markets .cc .kv4{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
-#pg-markets .cc .kv4 small{display:block;font-size:11px;color:var(--fg-3)} #pg-markets .cc .kv4 b{display:block;font:500 13px var(--mono);margin-top:2px}
-#pg-markets .cc .ft{display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:12px;color:var(--fg-3)}
-#pg-markets .stocksec{margin-top:34px} #pg-markets .sc{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-lg)}
-#pg-markets .sc img{width:34px;height:34px;border-radius:50%;background:#fff} #pg-markets .sc .nm{flex:1;min-width:0} #pg-markets .sc .nm b{display:block} #pg-markets .sc .nm small{color:var(--fg-3);font-size:12px}
-#pg-markets .sc .px{text-align:right;font-family:var(--mono)} #pg-markets .sc .px b{display:block;font-weight:600} #pg-markets .sc .px small{color:var(--fg-3);font-size:11px}
+#pg-markets .hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:40px;align-items:end;padding:16px 0 36px;border-bottom:1px solid var(--line)}
+#pg-markets .hero h1{font-size:40px;letter-spacing:-.03em;max-width:12ch} #pg-markets .hero h1 em{font-style:normal;color:var(--mint)}
+#pg-markets .hero p{margin-top:14px;color:var(--fg-2);font-size:16px;line-height:1.55;max-width:52ch}
+#pg-markets .hero .acts{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+#pg-markets .hero .figs{justify-content:flex-end}
+#pg-markets .strow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin:0 calc(var(--gut) * -1);padding-left:var(--gut);padding-right:var(--gut)} #pg-markets .strow::-webkit-scrollbar{display:none}
+#pg-markets .st{flex:0 0 auto;width:160px;padding:12px;border-radius:var(--r-lg);background:var(--bg-2);border:1px solid transparent;transition:border-color .12s,background .12s}
+#pg-markets .st:hover{background:var(--bg-3)} #pg-markets .st.on{border-color:var(--mint-line);background:var(--mint-dim)}
+#pg-markets .st .t{display:flex;align-items:center;gap:8px} #pg-markets .st img{width:24px;height:24px;border-radius:50%;background:#fff} #pg-markets .st b{font-size:13px;font-weight:600;display:block;line-height:1.1} #pg-markets .st .t small{display:block;font-size:11px;color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-markets .st .px{display:block;margin-top:12px;font:500 17px var(--mono);letter-spacing:-.01em} #pg-markets .st .ft{display:flex;justify-content:space-between;gap:6px;margin-top:4px;font-size:11px;color:var(--fg-3);white-space:nowrap}
+#pg-markets .st.all{display:flex;flex-direction:column;justify-content:space-between;width:120px} #pg-markets .st.all .px{margin-top:16px}
+#pg-markets .tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px} #pg-markets .tools .tabs{border-bottom:0} #pg-markets .tools .tabs button{height:36px;padding:0 10px} #pg-markets .tools .tabs button.on::after{bottom:0}
 #pg-markets .view{display:none} #pg-markets .view.on{display:block}
-@media(max-width:1100px){#pg-markets .strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:860px){#pg-markets .cards{grid-template-columns:1fr}}
+#pg-markets .tb th:first-child,#pg-markets .tb td:first-child{width:28px;color:var(--fg-3)}
+#pg-markets .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin-top:10px}
+#pg-markets .cc{display:block;padding:16px;background:var(--bg-2);border-radius:var(--r-xl);transition:background .12s} #pg-markets .cc:hover{background:var(--bg-3)}
+#pg-markets .cc .hd{display:flex;align-items:center;gap:12px} #pg-markets .cc .lg{width:48px;height:48px;border-radius:12px;object-fit:cover;background:var(--bg-3);flex:none}
+#pg-markets .cc .nm{min-width:0;flex:1} #pg-markets .cc .nm b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #pg-markets .cc .nm small{display:block;color:var(--fg-3);font-size:12px;margin-top:2px;font-family:var(--mono)}
+#pg-markets .cc .px{text-align:right} #pg-markets .cc .px b{display:block;font:500 15px var(--mono)} #pg-markets .cc .px .num{font-size:12px}
+#pg-markets .cc .kv3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px} #pg-markets .cc .kv3 small{display:block;font-size:11px;color:var(--fg-3)} #pg-markets .cc .kv3 b{display:block;font:500 13px var(--mono);margin-top:2px}
+#pg-markets .cc .ft{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--fg-3)}
+#pg-markets .dir .tb td:first-child{padding-left:4px} #pg-markets .dir .sc{display:flex;align-items:center;gap:12px} #pg-markets .dir .sc img{width:32px;height:32px;border-radius:50%;background:#fff} #pg-markets .dir .sc b{display:block;font-weight:600} #pg-markets .dir .sc small{display:block;color:var(--fg-3);font-size:12px}
+#pg-markets .empty{border:1px dashed var(--line-2);border-radius:var(--r-lg)}
+@media(max-width:900px){#pg-markets .hero{grid-template-columns:1fr;gap:28px;align-items:start} #pg-markets .hero .figs{justify-content:flex-start} #pg-markets .hero h1{font-size:32px}}
+@media(max-width:640px){#pg-markets .hero{padding:4px 0 24px} #pg-markets .hero h1{font-size:28px;max-width:none} #pg-markets .hero p{font-size:15px} #pg-markets .hero .acts .btn{flex:1} #pg-markets .cards{grid-template-columns:1fr} #pg-markets .tools .seg{display:none} #mk-table th:first-child,#mk-table td:first-child{display:none} #pg-markets .tools .tabs{overflow-x:auto;scrollbar-width:none}}
 </style>
 </head><body data-page="markets">
-<div id="sp-app"><aside id="sp-side"></aside><div id="sp-body"><header id="sp-top"></header><div id="sp-ticker"></div><main id="sp-main"><div id="pg-markets">
-  <div class="ph"><div><h1 id="mk-title">Markets</h1><p id="mk-sub">Coins paired with real stocks on Ethereum. Fees settle in the stock.</p></div><a class="btn pri" href="/launch">Launch a coin</a></div>
-  <div class="strip" id="mk-strip"></div>
-  <div class="tools"><div class="chips" id="mk-chips"></div><div class="row"><div class="seg" id="mk-sort"><button data-s="trend" class="on">Trending</button><button data-s="new">New</button><button data-s="vol">Volume</button><button data-s="mc">Market cap</button></div><div class="seg" id="mk-view"><button data-v="grid" class="on" title="Cards">${grid}</button><button data-v="list" title="Table">${list}</button></div></div></div>
-  <div class="view on" id="mk-grid"><div class="cards" id="mk-cards"></div></div>
-  <div class="view" id="mk-list"><div class="card"><table class="tb" id="mk-table"><thead><tr><th>Coin</th><th>Stock</th><th class="r">Price</th><th class="r">24h</th><th class="r">Market cap</th><th class="r">Volume 24h</th><th class="r">Liquidity</th><th class="r">Fee</th><th class="r">Holders</th><th class="r">Age</th></tr></thead><tbody></tbody></table></div></div>
-  <div class="stocksec"><div class="ph"><div><h1 style="font-size:17px">Stocks you can pair with</h1><p>Tokenized by Ondo, priced by Chainlink. Pick one on the launch page.</p></div></div><div class="grid g3" id="mk-stocks"></div></div>
-</div></main></div></div>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=1"></script><script src="/sp-home.js?v=1"></script>
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-markets">
+  <section class="hero">
+    <div><h1>Coins paired with <em>real stocks</em>.</h1><p>Launch a coin against Tesla, NVIDIA, the S&amp;P 500 or any listed stock. One Uniswap v4 pool, fixed supply, liquidity that cannot be withdrawn. Every trading fee is paid in the stock.</p>
+      <div class="acts"><a class="btn pri lg" href="/launch">Launch a coin</a><a class="btn lg" href="/docs/how-it-works">How it works</a></div></div>
+    <div class="figs" id="mk-figs"></div>
+  </section>
+  <section class="sec"><div class="sec-h"><h2>Stocks</h2><p>Tokenized by Ondo, priced by Chainlink. Pick one to filter the coins below.</p></div><div class="strow" id="mk-stockrow"></div></section>
+  <section class="sec" id="mk-coins">
+    <div class="sec-h"><h2 id="mk-title">All coins</h2><p id="mk-sub"></p></div>
+    <div class="tools"><div class="tabs" id="mk-sort"><button data-s="trend" class="on">Trending</button><button data-s="new">New</button><button data-s="mc">Top</button><button data-s="gain">Gainers</button></div><div class="seg" id="mk-view"><button data-v="list" class="on" title="List"></button><button data-v="grid" title="Cards"></button></div></div>
+    <div class="view on" id="mk-list"><table class="tb lg" id="mk-table"><thead><tr><th>#</th><th>Coin</th><th class="r hm">Price</th><th class="r">Market cap</th><th class="r">24h</th><th class="r hm">Volume 24h</th><th class="r hm">Holders</th><th class="r hm">Age</th><th>Paired with</th><th class="r hm">Last 24h</th></tr></thead><tbody></tbody></table></div>
+    <div class="view" id="mk-grid"><div class="cards" id="mk-cards"></div></div>
+  </section>
+  <section class="sec dir"><div class="sec-h"><h2>Launch on a stock</h2><p>Each stock is an ERC-20 on Ethereum backed one to one by the share. Trades route through its USDC pool.</p></div>
+    <table class="tb" id="mk-stocks"><thead><tr><th>Stock</th><th class="hm">Token</th><th class="r">Price</th><th class="hm">Market</th><th class="r">Coins</th><th class="r hm">Volume 24h</th><th class="r"></th></tr></thead><tbody></tbody></table></section>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=2"></script><script src="/sp-home.js?v=2"></script>
 </body></html>

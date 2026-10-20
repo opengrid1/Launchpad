@@ -4,7 +4,11 @@ StockPad is a launchpad on Ethereum where every coin is paired with a tokenized 
 
 ## Look
 
-Dark market terminal. Fixed left rail (brand, nav, the stock list with live prices), a top bar (search, market status, Launch, wallet), a scrolling stock ticker under it, then the page. Inter for text, JetBrains Mono for every number, address and symbol-price. Mint accent `#2fd38a` on near-black `#0b0f14`. Cards have 12px radius and 1px `#1f2a36` borders; buttons 8px. Dense tables, right-aligned numbers, no emoji anywhere, no gradients except the brand tile. Green `.up` / red `.dn` for change. Every number goes in a `.num` or `.mono` element.
+Reference points: Zora (image-led coin rows with a "Paired with" column), Pools by Uniswap (calm hero, stock tiles, lime-on-black restraint), Virtuals (dense table with sparklines). Not pump.fun.
+
+Top navigation only, no sidebar: brand, Markets / Launch / Portfolio / Docs, a search field, the market-hours pill and the wallet button. Under it a thin stock price tape. Content sits in a 1200px column (`.wrap`), then a footer. Geist for text, Geist Mono for every number, symbol, price and address. Headings are weight 600 with tight tracking; body copy is 14px.
+
+Neutral near-black surfaces (`--bg #0a0a0b`, `--bg-2 #131316`) with hairlines (`--line #1e1e23`). Mint `#2fd38a` is for primary actions, gains and the active stock tile only; red for losses and sells. Figures go in `.figs` (label over value, hairline dividers), never in a grid of boxed stat cards. Boxes (`.card`) are reserved for the chart, the trade card, dialogs and menus; everything else is sections separated by whitespace and hairlines. Tables are `table.tb`: hairline rows, right-aligned mono numbers, an image-led first column (`.coin`), secondary columns carry `.hm` so they hide below 640px. Coin images are 40 to 64px rounded squares. No emoji, no gradients, no filler sub-captions.
 
 All classes live in `ui.css` (read it; use its classes before inventing new ones). Page-specific CSS goes in a `<style>` block at the top of that page's HTML, scoped with the page's root id.
 
@@ -14,18 +18,20 @@ All classes live in `ui.css` (read it; use its classes before inventing new ones
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>... | StockPad</title><meta name="description" content="...">
-<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=9">
+<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=9"><meta name="theme-color" content="#0a0a0b">
 <meta property="og:image" content="/img/og.png?v=9">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=2">
 <style>/* page css, scoped under #pg-<name> */</style>
 </head><body data-page="<name>">
-<div id="sp-app"><aside id="sp-side"></aside><div id="sp-body"><header id="sp-top"></header><div id="sp-ticker"></div><main id="sp-main"><div id="pg-<name>">...page markup...</div></main></div></div>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=1"></script><script src="/sp-<name>.js?v=1"></script>
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-<name>">...page markup...</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=2"></script><script src="/sp-<name>.js?v=2"></script>
 </body></html>
 ```
 
-`core.js` renders the rail, top bar and ticker into those three elements on every page, boots the chain layer, and then calls `window.SP_PAGE()` which each page script defines. Pages never touch the shell elements.
+`core.js` renders the top bar, the tape, the footer and the mobile sheet (nav plus stock list) on every page, boots the chain layer, and then calls `window.SP_PAGE()` which each page script defines. Pages never touch the shell elements.
 
 The token page also loads `/tv.js` and `/charting_library/charting_library.js` (see token page notes).
 
@@ -58,4 +64,4 @@ Trade item: `{token, wallet, buy, coin (wei string), pair (wei string), fee (wei
 
 ## Writing rules
 
-Plain, factual copy. Never say liquidity is burned or locked; say it cannot be withdrawn. Fees are paid in the paired asset. Do not mention OneHook, instincts, evolution or AI. Mobile first for every page: the rail collapses to a drawer below 860px, tables scroll horizontally, cards stack.
+Plain, factual copy. Never say liquidity is burned or locked; say it cannot be withdrawn. Fees are paid in the paired asset. Do not mention OneHook, instincts, evolution or AI. Mobile first for every page: the nav collapses to a sheet below 900px, tables drop their `.hm` columns below 640px and scroll for the rest, grids stack.

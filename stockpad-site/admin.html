@@ -1,14 +1,15 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Operator | StockPad</title><meta name="description" content="Operator tools."><meta name="robots" content="noindex">
-<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><meta name="theme-color" content="#0b0f14">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=1">
-<style>#pg-admin .grid{align-items:start} #pg-admin .card .cb{display:flex;flex-direction:column;gap:10px} #pg-admin .inline{display:flex;gap:8px} #pg-admin .inline .inp{flex:1} #pg-admin .coinrow td .row{gap:8px}</style>
+<link rel="icon" href="/img/favicon.svg?v=9" type="image/svg+xml"><meta name="theme-color" content="#0a0a0b">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=2">
+<style>#pg-admin .grid{align-items:start} #pg-admin .card .cb{display:flex;flex-direction:column;gap:10px} #pg-admin .inline{display:flex;gap:8px} #pg-admin .inline .inp{flex:1} #pg-admin .coinrow td .row{gap:8px} #pg-admin .coins{margin-top:28px} #pg-admin .coins .sec-h{margin-bottom:6px}</style>
 </head><body data-page="admin">
-<div id="sp-app"><aside id="sp-side"></aside><div id="sp-body"><header id="sp-top"></header><div id="sp-ticker"></div><main id="sp-main"><div id="pg-admin">
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-admin">
   <div class="ph"><div><h1>Operator</h1><p>Housekeeping only. Nothing here can touch an open market's fee, pair, liquidity or price.</p></div></div>
-  <div id="adm-gate" class="card"><div class="empty"><b>Operator wallet required</b>Connect the operator wallet to use these tools.</div></div>
+  <div id="adm-gate" class="empty"><b>Operator wallet required</b>Connect the operator wallet to use these tools.</div>
   <div id="adm-body" class="hidden">
     <div class="grid g2">
       <div class="card"><div class="ch">Launches</div><div class="cb"><div class="kv"><span>Status</span><b id="adm-paused">…</b></div><div class="inline"><button class="btn" id="adm-pause">Pause new launches</button><button class="btn" id="adm-resume">Resume</button></div><div class="hint">Pausing stops new launches only. Trading on every coin continues.</div></div></div>
@@ -16,8 +17,9 @@
       <div class="card"><div class="ch">Platform fee recipient</div><div class="cb"><div class="kv"><span>Current</span><b id="adm-fee" class="addr">…</b></div><div class="inline"><input class="inp mono" id="adm-fee-in" placeholder="0x…"><button class="btn" id="adm-fee-set">Set</button></div><div class="kv"><span>Platform fees claimable</span><b id="adm-owed">…</b></div><button class="btn" id="adm-push">Push platform fees to the recipient</button></div></div>
       <div class="card"><div class="ch">Pair tokens</div><div class="cb"><div class="inline"><input class="inp mono" id="adm-blk-in" placeholder="token address"><button class="btn" id="adm-blk-check">Check</button></div><div class="kv"><span>Blocked as a pair</span><b id="adm-blk">—</b></div><div class="inline"><button class="btn" id="adm-blk-on">Block</button><button class="btn" id="adm-blk-off">Unblock</button></div><div class="hint">Blocking stops new launches against that token. Coins already paired with it keep trading.</div></div></div>
     </div>
-    <div class="card" style="margin-top:14px"><div class="ch">Coins <span class="muted" id="adm-count"></span></div><table class="tb" id="adm-coins"><thead><tr><th>Coin</th><th>Pair</th><th class="r">Market cap</th><th class="r">Platform owed</th><th>Listing</th><th></th></tr></thead><tbody></tbody></table></div>
+    <div class="coins"><div class="sec-h"><h2>Coins</h2><p id="adm-count"></p></div><table class="tb" id="adm-coins"><thead><tr><th>Coin</th><th>Pair</th><th class="r">Market cap</th><th class="r">Platform owed</th><th>Listing</th><th></th></tr></thead><tbody></tbody></table></div>
   </div>
-</div></main></div></div>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=1"></script><script src="/sp-admin.js?v=1"></script>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=2"></script><script src="/sp-admin.js?v=2"></script>
 </body></html>
