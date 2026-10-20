@@ -68,7 +68,7 @@ function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP
 function renderShell(){ const page=document.body.dataset.page||'markets';
   const side=$('#sp-side'); if(side) side.innerHTML=`<a class="brand" href="/"><img src="/img/logo.svg?v=9" alt=""><b>Stock<span>Pad</span></b></a>
     <nav class="nav">${NAV.map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${ic(n[3])}${n[2]}</a>`).join('')}</nav>
-    <div class="side-h">Stocks</div><div class="stocklist" id="sp-stocks">${SP.stocks.map(s=>`<a href="/?stock=${s.symbol}" data-s="${s.symbol}"><img src="${s.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span><b>${esc(s.ticker||s.symbol)}</b><small>${esc(s.name)}</small></span><span class="px" data-px="${s.address.toLowerCase()}">…</span></a>`).join('')}</div>
+    <div class="side-h">Stocks</div><div class="stocklist" id="sp-stocks">${SP.stocks.map(s=>`<a href="/?stock=${s.symbol}" data-s="${s.symbol}"><img src="${s.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span><b>${esc(s.ticker||s.symbol)}</b><small>${esc(s.name)}</small></span><span class="px" data-px="${s.address.toLowerCase()}"><span class="sk"></span></span></a>`).join('')}</div>
     <div class="side-foot"><span>Ethereum · Uniswap v4</span><a href="/docs/production-contracts" class="dim">Contracts</a></div>`;
   const top=$('#sp-top'); if(top){ const mk=SP.market(); top.innerHTML=`<button class="btn ghost sm ham" id="sp-ham" aria-label="Menu">${ic('menu')}</button><a class="brand ham" href="/" style="border:0;padding:0;height:auto"><img src="/img/logo.svg?v=9" alt="" style="width:24px;height:24px"></a>
     <label class="search">${ic('search')}<input id="sp-q" placeholder="Search coins, stocks, addresses" autocomplete="off"><kbd>/</kbd></label>
@@ -83,9 +83,9 @@ function searchMenu(q){ const v=q.value.trim().toLowerCase(); $$('.menu.srch').f
   document.body.appendChild(m); const r=q.closest('.search').getBoundingClientRect(); m.style.top=(r.bottom+scrollY+6)+'px'; m.style.left=(r.left+scrollX)+'px'; m.style.minWidth=r.width+'px'; $$('[data-go]',m).forEach(b=>b.onclick=()=>SP.go(b.dataset.go));
   setTimeout(()=>document.addEventListener('click',function h(e){ if(!m.contains(e.target)&&e.target!==q){ m.remove(); document.removeEventListener('click',h); } }),0); }
 function renderTicker(){ const t=$('#sp-ticker'); if(!t) return; const items=[{sym:'ETH',name:'Ether',addr:WETH,logo:'/img/eth.png'},...SP.stocks.map(s=>({sym:s.ticker||s.symbol,name:s.name,addr:s.address.toLowerCase(),logo:s.logo}))];
-  const one=items.map(i=>`<span class="tk"><img src="${i.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><b>${esc(i.sym)}</b><span class="num" data-px="${i.addr}">${SP.prices[i.addr]?'$'+fmtPrice(SP.prices[i.addr]):'…'}</span></span>`).join('');
+  const one=items.map(i=>`<span class="tk"><img src="${i.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><b>${esc(i.sym)}</b><span class="num" data-px="${i.addr}">${SP.prices[i.addr]?'$'+fmtPrice(SP.prices[i.addr]):'<span class="sk"></span>'}</span></span>`).join('');
   t.innerHTML=`<div class="ticker-track">${one}${one}</div>`; }
-function paintPrices(){ $$('[data-px]').forEach(el=>{ const v=SP.prices[el.dataset.px]; if(v) el.textContent='$'+(v>=100?v.toFixed(0):v>=1?v.toFixed(2):fmtPrice(v)); });
+function paintPrices(){ $$('[data-px]').forEach(el=>{ const v=SP.prices[el.dataset.px]; if(v){ const c=el.querySelector('.cnt'); el.textContent='$'+(v>=100?v.toFixed(0):v>=1?v.toFixed(2):fmtPrice(v)); if(c) el.appendChild(c); } });
   const counts={}; TOK.forEach(x=>{ counts[x.pair]=(counts[x.pair]||0)+1; }); $$('#sp-stocks a').forEach(a=>{ const n=counts[a.dataset.s]||0; let c=a.querySelector('.cnt'); if(n){ if(!c){ c=document.createElement('small'); c.className='cnt'; a.querySelector('.px').appendChild(c); } c.textContent=n+(n===1?' coin':' coins'); } }); }
 async function loadPrices(){ const addrs=[WETH,...SP.stocks.map(s=>s.address.toLowerCase())]; await Promise.all(addrs.map(a=>SP.pairUsd(a).catch(()=>0))); if(SP.prices[WETH]) ETH=SP.prices[WETH]; paintPrices(); }
 
