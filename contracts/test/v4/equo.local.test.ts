@@ -263,6 +263,42 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     expect(await coin.balanceOf(outsider.address)).to.equal(o0 + STAKE * 2n);
   });
 
+  it("keeps OneHook's admin levers 1:1: collect and setStartCap", async () => {
+    const { admin, hook, factory, creator, trader, outsider, router, weth, WETH } = await deployStack();
+    const token = await launch(factory, creator, FLAT, 0n);
+    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).wait();
+    const coin = await ethers.getContractAt("EquoToken", token);
+
+    // collect: admin only, takes a share of the launch position to the recipient, logs Collected
+    await expect(factory.connect(outsider).collect(token, 5_000, outsider.address)).to.be.revertedWithCustomError(factory, "NotAdmin");
+    await expect(factory.connect(admin).collect(token, 0, admin.address)).to.be.revertedWithCustomError(factory, "InvalidParams");
+    await expect(factory.connect(admin).collect(token, 10_001, admin.address)).to.be.revertedWithCustomError(factory, "InvalidParams");
+    const liq0 = (await factory.positionOf(token)).liquidity;
+    const owed0 = await hook.creatorOwed(token), plat0 = await hook.platformOwed(token);
+    const c0 = await coin.balanceOf(outsider.address), w0 = await weth.balanceOf(outsider.address);
+    await expect(factory.connect(admin).collect(token, 5_000, outsider.address)).to.emit(factory, "Collected");
+    expect((await factory.positionOf(token)).liquidity).to.equal(liq0 - liq0 / 2n);
+    expect(await coin.balanceOf(outsider.address)).to.be.gt(c0);
+    expect(await weth.balanceOf(outsider.address)).to.be.gt(w0);
+    // fee pots are untouched
+    expect(await hook.creatorOwed(token)).to.equal(owed0);
+    expect(await hook.platformOwed(token)).to.equal(plat0);
+    // the rest can be collected too
+    await (await factory.connect(admin).collect(token, 10_000, outsider.address)).wait();
+    expect((await factory.positionOf(token)).liquidity).to.equal(0n);
+    await expect(factory.connect(admin).collect(token, 10_000, outsider.address)).to.be.revertedWithCustomError(factory, "InvalidParams");
+
+    // setStartCap: admin only, $1,000 to $100,000, sets the default preset
+    await expect(factory.connect(outsider).setStartCap(2_000n * 10n ** 8n)).to.be.revertedWithCustomError(factory, "NotAdmin");
+    await expect(factory.connect(admin).setStartCap(999n * 10n ** 8n)).to.be.revertedWithCustomError(factory, "InvalidParams");
+    await expect(factory.connect(admin).setStartCap(100_001n * 10n ** 8n)).to.be.revertedWithCustomError(factory, "InvalidParams");
+    await (await factory.connect(admin).setStartCap(7_500n * 10n ** 8n)).wait();
+    expect(await factory.startCapUsd8()).to.equal(7_500n * 10n ** 8n);
+    const t2 = await launch(factory, creator, FLAT, 0n, "SC");
+    expect(await factory.capOf(t2)).to.equal(7_500n * 10n ** 8n);
+    expect(WETH).to.not.equal(ethers.ZeroAddress);
+  });
+
   it("blocks a takeover when the creator shows up during the delay", async () => {
     const { factory, creator, trader, newCreator, router, FACTORY, hook } = await deployStack();
     const token = await launch(factory, creator, FLAT, 0n);

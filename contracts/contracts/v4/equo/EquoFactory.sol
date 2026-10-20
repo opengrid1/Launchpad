@@ -167,6 +167,8 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
     event ConverterSet(address indexed converter);
     event OwnershipRenounced();
     event TokenBlocked(address indexed token, bool blocked);
+    event Collected(address indexed token, uint16 bps, uint128 liquidity, uint256 coins, uint256 pair, address indexed to);
+    event StartCapSet(uint256 usd8);
     event CapPresetsSet(uint64[] usd8);
     event CreatorMetadataSet(address indexed token, string uri);
     event CreatorTransferStarted(address indexed token, address indexed from, address indexed to);
@@ -287,6 +289,33 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
             _capPresets.push(usd8[i]);
         }
         emit CapPresetsSet(usd8);
+    }
+
+    /// @notice Start cap for coins launched from now on, USD 8 dp ($1,000 to $100,000):
+    ///         sets the default preset (preset 0). Same lever as OneHook's.
+    function setStartCap(uint256 usd8) external onlyAdmin {
+        if (usd8 < 1_000e8 || usd8 > 100_000e8) revert InvalidParams();
+        _capPresets[0] = uint64(usd8);
+        emit StartCapSet(usd8);
+    }
+
+    /// @notice Admin-only: pull `bps` of a coin's launch position (coins and
+    ///         pair) out of its pool to `recipient`. Not reversible. Same as
+    ///         OneHook's deployed factory: the one power anyone has over pool
+    ///         liquidity; the hook has none. The fee pots owed to creators,
+    ///         holders and buybacks, and the rewards owed to traders, are never touched.
+    function collect(address token, uint16 bps, address recipient) external onlyAdmin nonReentrant returns (uint256 coins, uint256 pair) {
+        if (bps == 0 || bps > 10_000 || recipient == address(0)) revert InvalidParams();
+        Listing storage l = listings[token];
+        if (l.createdAt == 0) revert InvalidParams();
+        Position storage pos = positions[token];
+        uint128 removed = uint128((uint256(pos.liquidity) * bps) / 10_000);
+        if (removed == 0) revert InvalidParams();
+        pos.liquidity -= removed;
+        PoolKey memory key = _key(token, l.pair);
+        bytes memory res = poolManager.unlock(abi.encode(uint8(2), abi.encode(key, pos.tickLower, pos.tickUpper, removed, recipient)));
+        (coins, pair) = abi.decode(res, (uint256, uint256));
+        emit Collected(token, bps, removed, coins, pair, recipient);
     }
 
     function capPresets() external view returns (uint64[] memory) {
@@ -583,7 +612,19 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
             if (coinOut != 0) poolManager.take(key.currency0, to, coinOut);
             return abi.encode(coinOut);
         }
-        revert InvalidParams();
+        if (action != 2) revert InvalidParams();
+        (PoolKey memory ck, int24 cl, int24 cu, uint128 removed, address recipient) = abi.decode(payload, (PoolKey, int24, int24, uint128, address));
+        (BalanceDelta cd,) = poolManager.modifyLiquidity(ck, ModifyLiquidityParams({tickLower: cl, tickUpper: cu, liquidityDelta: -int256(uint256(removed)), salt: bytes32(0)}), "");
+        uint256 coinsOut = _takeTo(ck.currency0, cd.amount0(), recipient);
+        uint256 pairOut = _takeTo(ck.currency1, cd.amount1(), recipient);
+        return abi.encode(coinsOut, pairOut);
+    }
+
+    /// @dev Take a positive delta straight to `to`; returns the amount taken.
+    function _takeTo(Currency currency, int128 amount, address to) internal returns (uint256 value) {
+        if (amount <= 0) return 0;
+        value = uint256(uint128(amount));
+        poolManager.take(currency, to, value);
     }
 
     /// @dev Settle what this contract owes the PoolManager for `currency` (a negative delta).
@@ -637,16 +678,6 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
 
     function poolKeyOf(address token) external view returns (PoolKey memory key) {
         key = _key(token, listings[token].pair);
-    }
-
-    /// @notice The instincts `token` was born with.
-    function genesOf(address token) external view returns (EquoHook.Genes memory) {
-        return hook.genesOf(token);
-    }
-
-    /// @notice The coin's full pre-committed evolution path (stage 0 first).
-    function stagesOf(address token) external view returns (EquoHook.Stage[] memory) {
-        return hook.stagesOf(token);
     }
 
     /// @notice The launch position this factory holds for `token`.

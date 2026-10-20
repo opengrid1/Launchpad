@@ -143,19 +143,19 @@ describe("Equo: v2 invariants carried over (local)", function () {
     expect(await hook.creatorOwed(token)).to.equal(0n);
   });
 
-  it("nobody can withdraw the launch liquidity: no collect anywhere, position untouched by trading", async () => {
+  it("only the admin's disclosed collect touches liquidity (as on OneHook's deployed factory); the hook has none; trading never moves it", async () => {
     const { factory, hook, admin, creator, trader, router, pm, FACTORY } = await deployStack();
     const token = await launch(factory, creator, FLAT, ethers.parseEther("1"));
     await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("2") })).wait();
 
-    // no withdraw surface on either contract
-    for (const c of [factory, hook]) {
-      const names = c.interface.fragments.filter((f: any) => f.type === "function").map((f: any) => f.name);
-      expect(names).to.not.include("collect");
-      expect(names).to.not.include("unwindPosition");
-      expect(names).to.not.include("removeLiquidity");
-    }
-    expect(factory.interface.fragments.some((f: any) => f.type === "event" && f.name === "Collected")).to.equal(false);
+    // the hook has no withdraw surface; the factory's only one is the admin's collect, logged as Collected
+    const hookNames = hook.interface.fragments.filter((f: any) => f.type === "function").map((f: any) => f.name);
+    for (const n of ["collect", "unwindPosition", "removeLiquidity"]) expect(hookNames).to.not.include(n);
+    const facNames = factory.interface.fragments.filter((f: any) => f.type === "function").map((f: any) => f.name);
+    expect(facNames).to.include("collect");
+    for (const n of ["unwindPosition", "removeLiquidity"]) expect(facNames).to.not.include(n);
+    expect(factory.interface.fragments.some((f: any) => f.type === "event" && f.name === "Collected")).to.equal(true);
+    await expect(factory.connect(trader).collect(token, 10_000, trader.address)).to.be.revertedWithCustomError(factory, "NotAdmin");
 
     // the recorded position never changes: trading moves price, not liquidity
     const pos = await factory.positionOf(token);
@@ -164,7 +164,7 @@ describe("Equo: v2 invariants carried over (local)", function () {
     expect((await factory.positionOf(token)).liquidity).to.equal(pos.liquidity);
     expect(FACTORY).to.equal(await factory.getAddress());
 
-    // the admin's unlock callback has no liquidity action: a direct unlock with any other action reverts
+    // nobody can call the factory's unlock callback directly: a direct unlock from the admin reverts
     await expect(pm.connect(admin).unlock(ethers.AbiCoder.defaultAbiCoder().encode(["uint8", "bytes"], [2, "0x"]))).to.be.reverted;
     // and the hook still taxes trades on the untouched pool
     await expect(router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("0.1") })).to.emit(hook, "FeeTaken");

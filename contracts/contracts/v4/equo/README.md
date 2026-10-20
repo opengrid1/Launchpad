@@ -5,7 +5,8 @@ Equo is the next version of the OneHook contracts that run the launchpad on Ethe
 are untouched: they are what is verified on Etherscan. Equo lives here as a separate set of contracts
 with new names, so both can compile side by side.
 
-Nothing here is deployed. Deploying is a separate, explicit step (see "Deploying").
+An earlier build of these contracts was deployed on 2026-10-20 (`deployments/equo-mainnet.json`)
+without `collect` and `setStartCap`. The current source is not deployed; using it needs a new deployment.
 
 ## What the live v2 contracts do
 
@@ -30,7 +31,9 @@ Other findings (no change needed):
 
 - `payCreator` can be called by anyone and always pays the current creator, so creator fees are never stuck.
 - Max wallet counts per `tx.origin`; smart wallets relayed by one bundler share its allowance for the window. Documented in the hook.
-- Liquidity stays permanent: nothing in v3 adds a liquidity action.
+- The deployed OneHook factory (`0xBaa0…1E39`) has an admin-only `collect` that pulls a share of a
+  coin's launch position to a recipient. The repo's OneHook source had it removed after that deploy,
+  so the source and the live bytecode differ. Equo restores it 1:1 (see below).
 
 ## What v3 adds
 
@@ -65,6 +68,13 @@ Other findings (no change needed):
   - The creator can cancel at any time during the 7 days, and any creator action blocks execution.
   - After 7 days anyone calls `executeTakeover`: the old creator is paid, the role moves, the stake returns.
 - **Reward split.** `setRewardSplit` (admin) forwards to the hook.
+- **OneHook admin levers, 1:1 with the deployed OneHook factory.** `pause`, `resume`, `setHidden`,
+  `setCoinMetadata`, `setFeeRecipient`, `setTokenBlocked`, `pushPlatformFees`, `setConverter`,
+  `renounceOwnership`, `setStartCap` (sets the default preset, $1,000 to $100,000), and `collect`
+  (admin-only, pulls `bps` of a coin's launch position to a recipient, emits `Collected`, never
+  touches fee pots or rewards).
+- `genesOf` and `stagesOf` are read from the hook only; the factory no longer duplicates them, to stay
+  under the contract size limit.
 
 ## Not in v3, and why
 
@@ -112,7 +122,7 @@ run against the Equo contracts.
 | Contract | Bytes (limit 24,576) |
 |---|---|
 | EquoHook | 17,319 |
-| EquoFactory | 23,492 |
+| EquoFactory | 24,084 |
 | EquoRouter | 8,313 |
 | EquoTokenDeployer | 19,357 |
 
