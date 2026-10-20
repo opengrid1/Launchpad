@@ -6,8 +6,8 @@
   --bg:#000000; --s1:#0a0a0b; --s2:#0d0d0f; --s3:#141417; --s4:#1e1e23;
   --line:#1e1e23; --line-2:#2c2c33; --line-3:#3a3a44;
   --fg:#ededef; --fg-2:#b4b4bb; --fg-3:#8e8e97;
-  --ac:#f2be54; --ac-2:#f7cc73; --ac-ink:#1a1204; --ac-dim:rgba(242,190,84,.12); --ac-line:rgba(242,190,84,.55);
-  --glow:0 0 0 1px rgba(242,190,84,.45),0 6px 26px rgba(242,190,84,.28);
+  --ac:#3fbcff; --ac-2:#6fccff; --ac-ink:#06202e; --ac-dim:rgba(63,188,255,.12); --ac-line:rgba(63,188,255,.55);
+  --glow:0 0 0 1px rgba(63,188,255,.45),0 6px 26px rgba(63,188,255,.28);
   --up:#2ebd85; --dn:#f6465d; --up-dim:rgba(46,189,133,.14); --dn-dim:rgba(246,70,93,.14); --amber:#f2be54;
   --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   --disp:"Space Grotesk",Inter,sans-serif;
@@ -52,7 +52,7 @@ body.rail{padding-left:var(--rail)}
 .btn.ghost{background:none;border-color:transparent;color:var(--fg-2)} .btn.ghost:hover{background:var(--s2);color:var(--fg);border-color:transparent}
 .btn.line{background:transparent} .btn.line:hover{background:var(--s2)}
 .btn.sm{height:30px;padding:0 10px;font-size:12px} .btn.lg{height:46px;padding:0 22px;font-size:15px;border-radius:12px} .btn.block{width:100%}
-.btn.cta{height:54px;padding:0 34px;border-radius:6px;border:1px solid rgba(242,190,84,.85);background:linear-gradient(180deg,rgba(242,190,84,.08),rgba(242,190,84,.02));color:var(--ac);font:700 22px var(--disp);letter-spacing:.02em;box-shadow:0 0 22px rgba(242,190,84,.35),inset 0 0 18px rgba(242,190,84,.08)} .btn.cta:hover{background:rgba(242,190,84,.14);border-color:var(--ac)}
+.btn.cta{height:54px;padding:0 34px;border-radius:6px;border:1px solid rgba(63,188,255,.85);background:linear-gradient(180deg,rgba(63,188,255,.08),rgba(63,188,255,.02));color:var(--ac);font:700 22px var(--disp);letter-spacing:.02em;box-shadow:0 0 22px rgba(63,188,255,.35),inset 0 0 18px rgba(63,188,255,.08)} .btn.cta:hover{background:rgba(63,188,255,.14);border-color:var(--ac)}
 .btn.ic{width:36px;padding:0} .btn.sm.ic{width:30px}
 .wbtn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 10px 0 6px;border:1px solid var(--line-2);border-radius:10px;background:var(--s2);font:500 13px var(--mono);white-space:nowrap}
 .wbtn:hover{background:var(--s3)} .wbtn svg,.wbtn .av{width:22px;height:22px;border-radius:6px;overflow:hidden}
@@ -109,6 +109,8 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px} .tb th{text-align:l
 .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fg-3);vertical-align:1px;margin-right:6px} .dot.open{background:var(--up)}
 .w{display:inline-flex;align-items:center;gap:7px} .w .av{width:20px;height:20px;border-radius:6px;overflow:hidden;flex:none} .w .av svg{display:block} .w a{font-family:var(--mono);font-size:12.5px} .w a:hover{color:var(--ac)}
 .side{display:inline-flex;align-items:center;font:600 11px var(--mono);letter-spacing:.05em;text-transform:uppercase} .side.b{color:var(--up)} .side.s{color:var(--dn)}
+/* coin avatar with the paired stock pinned to the corner: the StockPad mark */
+.av2{position:relative;display:inline-block;flex:none} .av2 img.lg{display:block} .av2 .stb{position:absolute;right:-3px;bottom:-3px;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--s2);object-fit:cover} .av2.big .stb{width:28px;height:28px;right:-2px;bottom:-2px;border-width:3px}
 /* area sparkline */
 .spark{width:100%;height:64px;display:block} .spark path.l{fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round} .spark path.a{stroke:none;opacity:.18}
 .spark.up path.l{stroke:var(--up)} .spark.up path.a{fill:var(--up)} .spark.dn path.l{stroke:var(--dn)} .spark.dn path.a{fill:var(--dn)} .spark.flat path.l{stroke:var(--fg-3)} .spark.flat path.a{fill:var(--fg-3)}

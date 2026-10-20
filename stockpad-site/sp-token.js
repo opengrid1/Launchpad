@@ -24,7 +24,7 @@ window.SP_PAGE=function(){
   function head(){ const mk=SP.market();
     const links=[['Website',X.links&&X.links.web,'globe'],['X',X.links&&X.links.x,'ext'],['Telegram',X.links&&X.links.tg,'ext']].filter(l=>l[1]&&/^https?:\/\//i.test(l[1]));
     $('#tk-crumb').innerHTML=`<a href="/">Markets</a>${ic('chevr')}<a href="/?stock=${esc(X.pair)}">${esc(isStock&&stock?stock.ticker+' coins':'ETH coins')}</a>${ic('chevr')}<span class="dim">$${esc(X.t)}</span>`;
-    $('#tk-head').innerHTML=`<img class="lg" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'">
+    $('#tk-head').innerHTML=`<span class="av2 big"><img class="lg" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><img class="stb" src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"></span>
       <div class="id">
         <div class="t1"><h1>${esc(X.n)}</h1><span class="sym">$${esc(X.t)}</span></div>
         <div class="t2"><span class="cpb" data-copy="${cs(X.addr)}" title="Copy address">${shortAddr(cs(X.addr))}${ic('copy')}</span><a class="cpb" href="${EXPLORER}/token/${X.addr}" target="_blank" rel="noopener" title="View on Etherscan">${ic('ext')}</a><span title="${esc(SP.fmtDate(X.createdAt))}">${ageStr(X.age||'0s')}</span><span class="badge">${feePct()}% fee</span>${X.rewards?`<span class="badge acl">★ Holder rewards</span>`:''}${links.map(l=>`<a class="lk" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</div>

@@ -1,14 +1,14 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Create a token | StockPad</title><meta name="description" content="Launch a coin on Ethereum paired with a tokenized stock in one transaction. Fixed supply, liquidity that cannot be withdrawn, your fee paid in the stock.">
-<link rel="icon" href="/img/favicon.svg?v=10" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=10"><meta name="theme-color" content="#000000">
-<meta property="og:title" content="Create a token | StockPad"><meta property="og:description" content="Launch a coin paired with a real stock on Ethereum."><meta property="og:image" content="/img/og.png?v=10"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/favicon.svg?v=11" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=11"><meta name="theme-color" content="#000000">
+<meta property="og:title" content="Create a token | StockPad"><meta property="og:description" content="Launch a coin paired with a real stock on Ethereum."><meta property="og:image" content="/img/og.png?v=11"><meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=4">
+<link rel="stylesheet" href="/ui.css?v=5">
 <style>
 #pg-launch{max-width:1100px;margin:0 auto}
 #pg-launch .wiz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
-#pg-launch .form{padding:28px;border-color:rgba(242,190,84,.55);box-shadow:0 0 40px rgba(242,190,84,.08)}
+#pg-launch .form{padding:28px;border-color:rgba(63,188,255,.55);box-shadow:0 0 40px rgba(63,188,255,.08)}
 #pg-launch .eyebrow{display:block;font:400 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
 #pg-launch h1,#pg-launch h2{font-size:30px;margin-top:4px} #pg-launch h1 em,#pg-launch h2 em{font-style:normal;color:var(--ac)}
 #pg-launch #steps{display:none}
@@ -40,7 +40,7 @@
 #pg-launch .opt .oh{display:flex;align-items:center;gap:10px;padding:12px 0;cursor:pointer;flex-wrap:wrap} #pg-launch .opt .oh b{font:500 13px var(--disp)} #pg-launch .opt .oh small{display:block;width:100%;color:var(--fg-3);font-size:12.5px;line-height:1.5;margin-top:2px} #pg-launch .opt .oh .sw{margin-left:auto}
 #pg-launch .ob{display:none;padding:0 0 14px} #pg-launch .opt.on .ob{display:block} #pg-launch .ob .lbl:first-child{margin-top:0} #pg-launch .ob .grid{gap:10px}
 #pg-launch .rev{display:none}
-#pg-launch #cta{margin-top:16px;height:44px;font:600 14px var(--disp);border-radius:10px;box-shadow:0 0 22px rgba(242,190,84,.35)}
+#pg-launch #cta{margin-top:16px;height:44px;font:600 14px var(--disp);border-radius:10px;box-shadow:0 0 22px rgba(63,188,255,.35)}
 #pg-launch .notice{margin-top:12px}
 /* preview card */
 #pg-launch .prev{padding:28px}
@@ -118,7 +118,7 @@
     <aside class="wiz-side panel prev" id="sum">
       <span class="eyebrow">Live preview</span><h2>How it will <em>look</em></h2>
       <div class="pcard"><div class="top"><div class="sm-logo" id="sm-logo">TOK</div><div class="nm"><div><b id="sm-name">Token name</b><small id="sm-sym">$TOKEN</small></div><div class="pr" id="sm-pair">Pick a pair</div></div><span class="age">new</span></div>
-        <svg class="spark" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2be54" stop-opacity=".35"/><stop offset="1" stop-color="#f2be54" stop-opacity="0"/></linearGradient></defs><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16 L297 80 L3 80 Z" fill="url(#pg)"/><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16" fill="none" stroke="#f2be54" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <svg class="spark" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fbcff" stop-opacity=".35"/><stop offset="1" stop-color="#3fbcff" stop-opacity="0"/></linearGradient></defs><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16 L297 80 L3 80 Z" fill="url(#pg)"/><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16" fill="none" stroke="#3fbcff" stroke-width="1.5" stroke-linejoin="round"/></svg>
         <div class="flow"><span class="lab">Flow 24h</span><span class="num">no trades yet</span></div><div class="split"><i class="b" style="width:0"></i></div>
         <div class="sboxes"><div class="sbox"><span class="lab">Mcap</span><b id="sm-cap">$5,000</b></div><div class="sbox"><span class="lab">Volume</span><b>$0</b></div><div class="sbox"><span class="lab">Trades</span><b>0</b></div></div></div>
       <div class="sboxes kboxes"><div class="sbox"><span class="lab">Trade fee</span><b id="sm-fee">1%</b></div><div class="sbox"><span class="lab">Supply</span><b>1B</b></div><div class="sbox"><span class="lab">Dev buy</span><b id="sm-dev">None</b></div><div class="sbox"><span class="lab">Creator share</span><b id="sm-cr">60%</b></div></div>
@@ -128,5 +128,5 @@
   </div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=4"></script><script src="/sp-launch.js?v=4"></script>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=5"></script><script src="/sp-launch.js?v=5"></script>
 </body></html>
