@@ -10,9 +10,10 @@ window.INKY = {
      older than ~36 hours; rpc.flashbots.net answers but silently drops logs, so it is not listed).
      Later scans are incremental and small, so publicnode works as the fallback for those. */
   logsRpcs: ['https://rpc.mevblocker.io', 'https://ethereum-rpc.publicnode.com'],
-  deployBlock: 26213781,
+  deployBlock: 26235330,
   weth: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', usdg: '',
-  contracts: {"factory": "0xBaa02255Dc8419A4266Be406F72E11De1B901E39", "hook": "0x0bcD3394Dffc047D146E76bCc461d8bEAC9fC0CC", "router": "0xC7ED71a86754D6a3928225f613282Ac65B972678", "tokenDeployer": "0xEE03B300BBb2395b0de6e6AaEaE30432b81ef332", "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90"},
+  /* Equo contracts (v3), deployed 2026-10-20: see contracts/deployments/equo-mainnet.json */
+  contracts: {"factory": "0x7Eb4CC330866Af46b2fDfBce41686CC74778d325", "hook": "0xbe1FF9acc59F73Ae311810Cb74e162a47E2e40Cc", "router": "0x4055F9abd07caBC16788d499A935a297968E09c8", "tokenDeployer": "0x9289DD47cfb34acE7a3a97666542aBa18f7c5e48", "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90"},
   /* stocks: tokenized stocks a coin can be paired with instead of ETH (Ondo "on" tokens on mainnet).
      The factory prices launches through its oracle, which already lists these; `route` is how the
      OneRouter turns ETH into the stock for buys and back for sells: hop 1 WETH -> USDC on the

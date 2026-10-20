@@ -52,6 +52,10 @@ const SP={
   ready(){ return SP._readyP; },
 };
 
+/* ---------- referral: a ?ref=0x... link is remembered in this browser and sent with every trade ---------- */
+(function(){ try{ const q=(new URLSearchParams(location.search).get('ref')||'').trim(); if(/^0x[0-9a-fA-F]{40}$/.test(q)&&!localStorage.getItem('equo-ref')) localStorage.setItem('equo-ref',q.toLowerCase()); window.EQUO_REF=localStorage.getItem('equo-ref')||''; }catch{ window.EQUO_REF=''; } })();
+SP.refLink=a=>`${location.origin}/?ref=${cs(a)}`;
+
 /* ---------- wallet ---------- */
 function syncWallet(){ const d=window.inkyWallet; const W=SP.W; const was=W.connected+':'+W.address+':'+W.chainOk;
   W.connected=!!(d&&d.connected&&d.address); W.address=W.connected?String(d.address).toLowerCase():null; W.short=W.address?shortAddr(cs(W.address)):''; W.chainOk=!d||!d.chainId||Number(d.chainId)===Number((window.INKY&&INKY.chainId)||1);
@@ -64,7 +68,7 @@ addEventListener('inky:wallet',syncWallet); document.addEventListener('wallet-ch
 /* ---------- shell ---------- */
 const NAV=[['markets','/','Home'],['calls','/calls','Calls'],['analytics','/analytics','Analytics'],['launch','/launch','Launch'],['rewards','/rewards','Rewards'],['portfolio','/profile','Profile']];
 /* More menu (desktop) and Tools in the mobile menu: [key, href, label, icon, soon] */
-const TOOLS=[['pools','/pools','Pools','drop'],['burns','/rewards#burns','Burns','flame'],['watch','/?watch=1','Watchlist','star'],['cto','','Takeover','users',1]];
+const TOOLS=[['pools','/pools','Pools','drop'],['burns','/rewards#burns','Burns','flame'],['watch','/?watch=1','Watchlist','star'],['takeover','/takeover','Takeover','users']];
 const MORE_LINKS=[['docs','/docs','Docs','book'],['how','/docs/how-it-works','How it works','info']];
 const TABS=['markets','calls','launch','rewards','analytics'];
 function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP.W;

@@ -9,7 +9,7 @@ function launchInit(){
   const IMG_IC='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>';
   const ETH_PAIR={address:WETH,symbol:'ETH',ticker:'ETH',name:'Ether',logo:'/img/eth.png',eth:true};
   const PAIRS=[...SP.stocks.map(s=>({address:s.address.toLowerCase(),symbol:s.symbol,ticker:s.ticker||s.symbol,name:s.name,logo:s.logo,eth:false})),...((window.INKY&&INKY.stocksOnly)?[]:[ETH_PAIR])];
-  const S={step:1,maxStep:1,pair:null,logo:null,feeBps:100,feeCustom:false,snipe:false,div:false,bb:false,mw:false,dev:false,capUsd:5000,paused:false,busy:false,launched:null};
+  const S={step:1,maxStep:1,pair:null,logo:null,preset:0,presets:[],feeBps:100,feeCustom:false,snipe:false,div:false,bb:false,mw:false,dev:false,capUsd:5000,paused:false,busy:false,launched:null};
   const taken=()=>new Set(((window.CHAIN&&LIVE)?CHAIN.tokens():TOK).map(x=>String(x.t||'').toUpperCase()));
   const ethPx=()=>SP.prices[WETH]||ETH||0;
   const pairPx=()=>S.pair?(SP.prices[S.pair.address]||0):0;
@@ -75,6 +75,13 @@ function launchInit(){
     g('rv-legend').innerHTML=(sp.holders?`<span><i style="background:var(--amber)"></i>Holders ${sp.holders}%</span>`:'')+(sp.buyback?`<span><i style="background:var(--dn)"></i>Buyback ${sp.buyback}%</span>`:'')+`<span><i style="background:var(--mint)"></i>Creator ${sp.creator}%</span><span><i style="background:var(--fg-3)"></i>Platform ${sp.platform}%</span>`+(S.pair?`<span>paid in ${esc(S.pair.symbol)}</span>`:'');
     g('rv-cap').textContent=fmtCap(S.capUsd)+(inPair?' · '+inPair:''); }
 
+  /* ---------- starting market cap presets (Equo factory) ---------- */
+  const capLabel=v=>'$'+(v>=1000?(v/1000).toFixed(v%1000?1:0)+'K':Math.round(v));
+  function paintCaps(){ const seg=g('cap-seg'); if(!seg||!S.presets.length) return;
+    seg.innerHTML=S.presets.map((v,i)=>`<button type="button" data-cap="${i}" class="${i===S.preset?'on':''}">${capLabel(v)}</button>`).join('');
+    $$('#cap-seg button').forEach(b=>b.onclick=()=>{ S.preset=+b.dataset.cap; S.capUsd=S.presets[S.preset]; paintCaps(); sync(); });
+    const px=pairPx(); g('cap-hint').textContent=`The coin opens at ${fmtCap(S.capUsd)} market cap${S.pair&&px?' ('+fmtInPair(S.capUsd/px)+')':''}. A higher start means the first buys move the price less.`; }
+
   /* ---------- summary card ---------- */
   function sync(){ readFee(); const n=fields.name(), t=fields.sym(), sp=split(); const letter=(t||n||'?')[0].toUpperCase();
     g('sm-step').textContent=S.launched?'Launched':S.pair?'Ready':'Pick a pair';
@@ -84,7 +91,7 @@ function launchInit(){
     const px=pairPx(); g('sm-cap').textContent=fmtCap(S.capUsd);
     const dv=S.dev?clamp(fields.devEth(),0,0.5):0; g('sm-dev').textContent=dv>0?`${dv} ETH`:'None';
     g('sm-cr').textContent=`${sp.creator}%`; g('sm-note').textContent=(S.pair?`Fees paid in ${S.pair.symbol}. `:'')+'Liquidity cannot be withdrawn.';
-    if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.bb) bbMsg(); if(S.mw) mwMsg(); if(S.dev) devMsg(); paintReview(); }
+    if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.bb) bbMsg(); if(S.mw) mwMsg(); if(S.dev) devMsg(); paintReview(); if(S.presets.length){ const px=pairPx(); g('cap-hint').textContent=`The coin opens at ${fmtCap(S.capUsd)} market cap${S.pair&&px?' ('+fmtInPair(S.capUsd/px)+')':''}. A higher start means the first buys move the price less.`; } }
 
   /* ---------- steps ---------- */
   function validate(n){ if(n===1){ const ok=!!S.pair; g('pair-err').textContent=ok?'':'Pick a stock or ETH to continue'; return ok; }
@@ -109,7 +116,7 @@ function launchInit(){
     const bbT=S.bb?bbThreshold():0n; if(S.bb&&bbT<1000n){ SP.toast('Waiting for the '+S.pair.symbol+' price to set the burn size. Try again in a moment.','err'); return; }
     const genes={ feeMode:0, feeBps:S.feeBps, snipeBps:S.snipe?clamp(Math.round(fields.snipePct()*100),S.feeBps+1,3000):0, snipeBlocks:S.snipe?snipeBlocks():0, buybackShareBps:S.bb?clamp(Math.round(fields.bbPct()),10,50)*100:0, buybackThreshold:bbT, divShareBps:S.div?clamp(Math.round(fields.divPct()),10,50)*100:0, maxWalletBps:S.mw?clamp(Math.round(fields.mwPct()*100),50,2000):0, maxWalletSecs:S.mw?clamp(Math.round(fields.mwH()*3600),600,2592000):0, evolution:{enabled:false} };
     S.busy=true; paintCta();
-    try{ const {rc,token}=await CHAIN.launch({name,symbol,metadataURI:JSON.stringify(meta),pair:S.pair.address,minPairOut:0,genes},devWei);
+    try{ const {rc,token}=await CHAIN.launch({name,symbol,metadataURI:JSON.stringify(meta),pair:S.pair.address,minPairOut:0,capPreset:S.preset,genes},devWei);
       if(!token) throw new Error('Launched, but the coin address was not found in the receipt. Check your wallet activity.');
       S.launched={addr:String(token).toLowerCase(),block:rc&&rc.blockNumber?Number(rc.blockNumber):0,name,symbol}; showDone(); SP.toast(name+' is live on Ethereum');
       try{ await CHAIN.refresh(); if(typeof syncTok==='function') syncTok(); }catch{} }
@@ -140,7 +147,7 @@ function launchInit(){
   cta.onclick=doLaunch; SP.onWallet(paintCta);
   launchRepaint=()=>{ paintPairs(); if(fields.sym()) symMsg(); sync(); paintCta(); }; SP.onUpdate(launchRepaint);
   sync(); paintCta();
-  if(LIVE&&window.CHAIN){ CHAIN.startCapUsd().then(v=>{ if(v>0){ S.capUsd=v; sync(); } }).catch(()=>{});
+  if(LIVE&&window.CHAIN){ (CHAIN.equo?CHAIN.equo.capPresets():CHAIN.startCapUsd().then(v=>[v])).then(v=>{ v=(v||[]).filter(x=>x>0); if(v.length){ S.presets=v; if(S.preset>=v.length) S.preset=0; S.capUsd=v[S.preset]; paintCaps(); sync(); } }).catch(()=>{});
     CHAIN.launchesPaused().then(p=>{ S.paused=!!p; const el=g('paused'); el.classList.toggle('hidden',!p); if(p) el.innerHTML=ic('warn')+'<span>Launches are paused by the operator right now. You can prepare the coin; the Launch button opens again when launches resume.</span>'; paintCta(); }).catch(()=>{});
     if(S.pair) SP.pairUsd(S.pair.address).then(()=>{ paintPairs(); sync(); }).catch(()=>{}); }
 }

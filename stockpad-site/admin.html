@@ -3,7 +3,7 @@
 <title>Operator | Equo</title><meta name="description" content="Operator tools."><meta name="robots" content="noindex">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><meta name="theme-color" content="#0a0a0b">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=16">
+<link rel="stylesheet" href="/ui.css?v=17">
 <style>#pg-admin .grid{align-items:start} #pg-admin .card .cb{display:flex;flex-direction:column;gap:10px} #pg-admin .inline{display:flex;gap:8px} #pg-admin .inline .inp{flex:1} #pg-admin .coinrow td .row{gap:8px} #pg-admin .coins{margin-top:28px} #pg-admin .coins .sec-h{margin-bottom:6px}</style>
 </head><body data-page="admin">
 <header id="sp-top"></header><div id="sp-tape"></div>
@@ -13,7 +13,8 @@
   <div id="adm-body" class="hidden">
     <div class="grid g2">
       <div class="card"><div class="ch">Launches</div><div class="cb"><div class="kv"><span>Status</span><b id="adm-paused">…</b></div><div class="inline"><button class="btn" id="adm-pause">Pause new launches</button><button class="btn" id="adm-resume">Resume</button></div><div class="hint">Pausing stops new launches only. Trading on every coin continues.</div></div></div>
-      <div class="card"><div class="ch">Opening market cap</div><div class="cb"><div class="kv"><span>Current</span><b id="adm-cap">…</b></div><div class="inline"><input class="inp num" id="adm-cap-in" inputmode="numeric" placeholder="USD, e.g. 5000"><button class="btn" id="adm-cap-set">Set</button></div><div class="hint">Applies to future launches only.</div></div></div>
+      <div class="card"><div class="ch">Starting market cap presets</div><div class="cb"><div class="kv"><span>Current</span><b id="adm-cap">…</b></div><div class="inline"><input class="inp num" id="adm-cap-in" placeholder="USD, comma separated, e.g. 5000,12500,25000"><button class="btn" id="adm-cap-set">Set</button></div><div class="hint">1 to 4 values, $1,000 to $1,000,000 each. Creators pick one at launch. Applies to future launches only.</div></div></div>
+      <div class="card"><div class="ch">Cashback and referral</div><div class="cb"><div class="kv"><span>Current</span><b id="adm-split">…</b></div><div class="inline"><input class="inp num" id="adm-cb-in" placeholder="Cashback %"><input class="inp num" id="adm-rf-in" placeholder="Referral %"><button class="btn" id="adm-split-set">Set</button></div><div class="hint">Each is a share of the platform's part of a fee, 0 to 50%. The creator's share and the holder and buyback pots never change.</div></div></div>
       <div class="card"><div class="ch">Platform fee recipient</div><div class="cb"><div class="kv"><span>Current</span><b id="adm-fee" class="addr">…</b></div><div class="inline"><input class="inp mono" id="adm-fee-in" placeholder="0x…"><button class="btn" id="adm-fee-set">Set</button></div><div class="kv"><span>Platform fees claimable</span><b id="adm-owed">…</b></div><button class="btn" id="adm-push">Push platform fees to the recipient</button></div></div>
       <div class="card"><div class="ch">Pair tokens</div><div class="cb"><div class="inline"><input class="inp mono" id="adm-blk-in" placeholder="token address"><button class="btn" id="adm-blk-check">Check</button></div><div class="kv"><span>Blocked as a pair</span><b id="adm-blk">—</b></div><div class="inline"><button class="btn" id="adm-blk-on">Block</button><button class="btn" id="adm-blk-off">Unblock</button></div><div class="hint">Blocking stops new launches against that token. Coins already paired with it keep trading.</div></div></div>
     </div>
@@ -21,5 +22,5 @@
   </div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=16"></script><script src="/sp-admin.js?v=16"></script>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js?v=20"></script><script src="/equo.js?v=2"></script><script src="/wallet.js"></script><script src="/core.js?v=17"></script><script src="/sp-admin.js?v=17"></script>
 </body></html>

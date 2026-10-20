@@ -157,6 +157,11 @@ window.SP_PAGE=function(){
   async function doClaim(btn,fn,msg){ if(!SP.W.connected) return SP.W.connect(); const t=btn.textContent; btn.disabled=true; btn.textContent='Confirm in wallet…';
     try{ await fn(); SP.toast(msg); await sync(true); }catch(e){ SP.toast(SP.errMsg(e),'err'); btn.disabled=false; btn.textContent=t; } }
 
+  /* ---------- creator and takeover (Equo factory) ---------- */
+  let crtBusy=false;
+  async function creatorCard(){ const el=$('#tk-crt-body'); if(!el||!window.SPC||crtBusy) return; crtBusy=true; try{ await SPC.render(el,X,creatorCard); }finally{ crtBusy=false; } }
+  SP.onWallet(()=>creatorCard()); setInterval(()=>{ if(!document.hidden) creatorCard(); },60000);
+
   /* ---------- live refresh ---------- */
   let ticking=false;
   function paintAll(){ stats(); headLive(); flow(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; if(activeTab==='info') info(); }
@@ -173,5 +178,5 @@ window.SP_PAGE=function(){
   setInterval(headLive,60000);
 
   /* ---------- boot ---------- */
-  head(); stats(); headLive(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; chart(); paintSide(); resetQuote(); cta(); loadTrades(); position();
+  creatorCard(); head(); stats(); headLive(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; chart(); paintSide(); resetQuote(); cta(); loadTrades(); position();
 };
