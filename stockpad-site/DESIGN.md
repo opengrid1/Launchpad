@@ -23,13 +23,13 @@ Pages: `index.html` (Home), `launch.html`, `calls.html` (composer, feed with ret
 <link rel="icon" href="/img/favicon.svg?v=15" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=15"><meta name="theme-color" content="#000000">
 <meta property="og:image" content="/img/og.png?v=15">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=13">
+<link rel="stylesheet" href="/ui.css?v=14">
 <style>/* page css, scoped under #pg-<name> */</style>
 </head><body data-page="<name>">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-<name>">...page markup...</div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=13"></script><script src="/sp-<name>.js?v=9"></script>
+<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js"></script><script src="/wallet.js"></script><script src="/core.js?v=14"></script><script src="/sp-<name>.js?v=9"></script>
 </body></html>
 ```
 

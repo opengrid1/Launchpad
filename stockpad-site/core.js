@@ -17,7 +17,15 @@ const ICONS={
   coins:'<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
 };
 const ic=(n,cls='ic')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${cls}" aria-hidden="true">${ICONS[n]||''}</svg>`;
-const DEF_LOGO='/img/t-default.png?v=15';
+const DEF_LOGO='/img/t-default.png?v=16';
+/* Coins without an uploaded image get a generated logo: the ticker's first character on a two-tone gradient whose hue
+   comes from the coin address, so every coin looks different and none looks like the Equo mark. Cached per address. */
+const GEN_LOGO={};
+function genLogo(x){ const k=String((x&&(x.addr||x.t))||''); if(GEN_LOGO[k]) return GEN_LOGO[k];
+  let h=2166136261; for(const c of k.toLowerCase()) h=Math.imul(h^c.charCodeAt(0),16777619)>>>0; const hue=h%360, hue2=(hue+38)%360;
+  const t=(String((x&&x.t)||'').replace(/[^A-Za-z0-9]/g,'')[0]||'?').toUpperCase();
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${hue},68%,60%)"/><stop offset="1" stop-color="hsl(${hue2},70%,36%)"/></linearGradient><radialGradient id="s" cx="30%" cy="22%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><rect width="64" height="64" fill="url(#g)"/><rect width="64" height="64" fill="url(#s)"/><text x="32" y="34" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black,Arial,Helvetica,sans-serif" font-weight="900" font-size="30" fill="#fff">${t}</text></svg>`;
+  return GEN_LOGO[k]='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); }
 const WETH=((window.INKY&&INKY.weth)||'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2').toLowerCase();
 const EXPLORER=(window.INKY&&INKY.explorer)||'https://etherscan.io';
 const SITE=(window.INKY&&INKY.site)||location.origin;
@@ -28,7 +36,7 @@ const SP={
   stockBySym(s){ return SP.stocks.find(x=>x.symbol===s)||null; },
   stockByAddr(a){ a=String(a||'').toLowerCase(); return SP.stocks.find(x=>x.address.toLowerCase()===a)||null; },
   tokens(){ return TOK; }, token(a){ a=String(a||'').toLowerCase(); return TOK.find(x=>x.addr===a)||(window.CHAIN&&CHAIN.token(a))||null; },
-  coinLogo(x){ return (x&&x.img)||DEF_LOGO; }, stockLogo(sym){ return pairImg(sym); },
+  coinLogo(x){ return (x&&x.img)||genLogo(x); }, stockLogo(sym){ return pairImg(sym); },
   avatar(a,s){ return window.walletAvatar?walletAvatar(a,s):''; },
   usd:v=>fmtUsd(v), fmtPct:v=>`<span class="num ${v>=0?'up':'dn'}">${v>=0?'+':''}${(v||0).toFixed(1)}%</span>`,
   fmtPair:(v,x)=>(x&&x.pair!=='ETH')?fmtAmt(v)+' '+x.pair:fmtEth(v),

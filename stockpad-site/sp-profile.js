@@ -4,7 +4,7 @@ window.SP_PAGE=function(){
   const pg=$('#pg-portfolio'); if(!pg) return;
   /* locals (not part of the documented core.js API) */
   const EXP=(window.INKY&&INKY.explorer)||'https://etherscan.io';
-  const LOGO_FALLBACK='/img/t-default.png?v=15';
+  const LOGO_FALLBACK='/img/t-default.png?v=16';
   const nowS=()=>Math.floor(Date.now()/1000);
   const isAddr=a=>window.CHAIN&&CHAIN.isAddress?CHAIN.isAddress(a):/^0x[0-9a-fA-F]{40}$/.test(a||'');
 
