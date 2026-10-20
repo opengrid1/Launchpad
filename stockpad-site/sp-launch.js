@@ -28,7 +28,7 @@ function launchInit(){
   function snipeBlocks(){ return clamp(Math.round(fields.snipeMin()*60/12),5,7200); }
 
   /* ---------- step 1: pairs ---------- */
-  function paintPairs(){ const counts={}; TOK.forEach(x=>{ counts[x.pair]=(counts[x.pair]||0)+1; }); const mk=SP.market(); g('mk-status').textContent=S.pair?`${S.pair.ticker} ${mk.open?'is trading on NYSE now':'market is closed, '+mk.detail.toLowerCase()}. The pool trades around the clock.`:'';
+  function paintPairs(){ const counts={}; TOK.forEach(x=>{ counts[x.pair]=(counts[x.pair]||0)+1; }); const mk=SP.market(); g('mk-status').textContent=S.pair?`${S.pair.ticker} · NYSE ${mk.open?'open':'closed'} · ${mk.detail}`:'';
     g('pairs').innerHTML=PAIRS.map(p=>{ const px=SP.prices[p.address], n=counts[p.symbol]||0; return `<button type="button" class="pc${S.pair&&S.pair.address===p.address?' on':''}" data-p="${p.address}"><img src="${p.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span class="nm"><b>${esc(p.ticker)} <span class="muted" style="font-weight:400">${esc(p.name)}</span></b><small>${esc(p.symbol)}</small></span><span class="ft"><span>${p.eth?'TRADES 24/7':`<i class="dot ${mk.open?'open':''}"></i>${mk.open?'NYSE OPEN':'NYSE CLOSED'}`}</span><span class="cnt">${n} ${n===1?'coin':'coins'}</span></span><span class="px" data-px="${p.address}">${px?fmtPx(px):'…'}</span><span class="tick">${ic('check')}</span></button>`; }).join('');
     $$('#pairs [data-p]').forEach(b=>b.onclick=()=>{ setPair(PAIRS.find(p=>p.address===b.dataset.p)); g('pair-dd').classList.remove('open'); });
     const pv=g('pair-pv'); if(pv){ pv.innerHTML=S.pair?`<img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.ticker)} <small>${esc(S.pair.name)} · ${esc(S.pair.symbol)}</small>`:'Select'; } }
@@ -46,10 +46,10 @@ function launchInit(){
       S.logo=best; paintLogo(); sync(); SP.toast('Logo ready, '+(best.length/1024).toFixed(1)+' KB on-chain'+(best.length>4200?' (large; the launch may cost more gas)':'')); };
     img.onerror=()=>{ URL.revokeObjectURL(url); SP.toast('Could not read this image','err'); };
     img.src=url; }
-  function symMsg(){ const t=fields.sym(), el=g('sym-msg'); el.className='hint'; if(!t){ el.textContent='2 to 10 characters, A-Z and 0-9.'; return true; }
+  function symMsg(){ const t=fields.sym(), el=g('sym-msg'); el.className='hint'; if(!t){ el.textContent=''; return true; }
     if(!/^[A-Z0-9]{2,10}$/.test(t)){ el.className='err'; el.textContent='Symbol: 2 to 10 characters, A-Z and 0-9 only'; return false; }
     if(taken().has(t)){ el.className='err'; el.textContent=t+' is already taken by another coin'; return false; }
-    el.className='hint ok'; el.textContent=t+' is available'; return true; }
+    el.className='hint ok'; el.textContent=t+' available'; return true; }
   function nameMsg(){ const n=fields.name(), el=g('name-msg'); el.textContent=!n?'':n.length>32?'Name: 32 characters max':''; return !!n&&n.length<=32; }
 
   /* ---------- step 3: fee and options ---------- */
@@ -57,10 +57,10 @@ function launchInit(){
   function feeMsg(){ const el=g('fee-msg'); if(S.feeCustom){ const v=num('f-fee',NaN); if(!(v>=0.1&&v<=3)){ el.textContent='Fee: 0.1% to 3% in steps of 0.1'; return false; } } el.textContent=''; return true; }
   function snipeMsg(){ const el=g('snipe-msg'); if(!S.snipe){ el.textContent=''; return true; } const p=fields.snipePct(), m=fields.snipeMin(); let e='';
     if(!(p>=5&&p<=30)) e='Starting fee: 5% to 30%'; else if(p*100<=S.feeBps) e='Starting fee must be above the base fee'; else if(!(m>=1&&m<=1440)) e='Duration: 1 to 1440 minutes';
-    el.textContent=e; g('snipe-hint').textContent=e?'':`Starts at ${p}% and reaches ${feePct()} after about ${snipeBlocks()} blocks (${m} min at 12 s per block).`; return !e; }
-  function divMsg(){ const el=g('div-msg'); if(!S.div){ el.textContent=''; return true; } const v=fields.divPct(); const ok=v>=10&&v<=50&&Math.round(v)===v; el.textContent=ok?'':'Share: a whole number from 10% to 50%'; if(ok){ const sp=split(); g('div-hint').textContent=`${sp.holders}% of every fee to holders${S.pair?', paid in '+S.pair.symbol:''}; the rest splits ${sp.creator}% to you and ${sp.platform}% to the platform.`; } return ok; }
+    el.textContent=e; g('snipe-hint').textContent=e?'':`${p}% → ${feePct()} over ${m} min (${snipeBlocks()} blocks)`; return !e; }
+  function divMsg(){ const el=g('div-msg'); if(!S.div){ el.textContent=''; return true; } const v=fields.divPct(); const ok=v>=10&&v<=50&&Math.round(v)===v; el.textContent=ok?'':'Share: a whole number from 10% to 50%'; if(ok){ const sp=split(); g('div-hint').textContent=`${sp.holders}% holders · ${sp.creator}% you · ${sp.platform}% platform`; } return ok; }
   function devMsg(){ const el=g('dev-msg'); if(!S.dev){ el.textContent=''; return true; } const v=fields.devEth(); const ok=v>=0&&v<=0.5; el.textContent=ok?'':'Dev buy: 0 to 0.5 ETH';
-    if(ok){ const c=devCoins(); g('dev-hint').textContent=v>0?`About ${fmtAmt(c)} coins (${(c/SUPPLY*100).toFixed(2)}% of supply) for ${fmtUsd(v*ethPx())} at the ${fmtCap(S.capUsd)} opening cap.`:'Enter an amount of ETH.'; } return ok; }
+    if(ok){ const c=devCoins(); g('dev-hint').textContent=v>0?`≈ ${fmtAmt(c)} coins (${(c/SUPPLY*100).toFixed(2)}%) · ${fmtUsd(v*ethPx())}`:''; } return ok; }
   function paintReview(){ const sp=split(); const px=pairPx(); const inPair=S.pair?(px?fmtInPair(S.capUsd/px):'loading the '+S.pair.symbol+' price'):'';
     g('rv-split').textContent=`${feePct()} per swap: ${sp.holders?sp.holders+'% holders, ':''}${sp.creator}% creator, ${sp.platform}% platform`;
     g('rv-bar').innerHTML=(sp.holders?`<i class="h" style="width:${sp.holders}%"></i>`:'')+`<i class="c" style="width:${sp.creator}%"></i><i class="p" style="width:${sp.platform}%"></i>`;
@@ -74,8 +74,8 @@ function launchInit(){
     g('sm-pair').innerHTML=S.pair?`Paired with <img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.symbol)}`:'Pick a pair';
     g('sm-fee').textContent=feePct()+(S.snipe?' · anti-snipe':''); const opts=optList(); g('sm-opts').textContent=opts.length?opts.join(', '):'None';
     const px=pairPx(); g('sm-cap').textContent=fmtCap(S.capUsd);
-    const dv=S.dev?clamp(fields.devEth(),0,0.5):0; g('sm-dev').textContent=dv>0?`${dv} ETH`:'None'; const dh=g('dev-hdr'); if(dh) dh.textContent=!S.pair?'Pick a pair first':dv>0?`${dv} ETH · ${fmtAmt(devCoins())} coins`:'Optional · paid in ETH';
-    g('sm-cr').textContent=`${sp.creator}%`; g('sm-note').textContent=(S.pair?`Fees are paid in ${S.pair.symbol}. `:'')+'Liquidity cannot be withdrawn. Nobody can pull it, including you.';
+    const dv=S.dev?clamp(fields.devEth(),0,0.5):0; g('sm-dev').textContent=dv>0?`${dv} ETH`:'None';
+    g('sm-cr').textContent=`${sp.creator}%`; g('sm-note').textContent=(S.pair?`Fees paid in ${S.pair.symbol}. `:'')+'Liquidity cannot be withdrawn.';
     if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.dev) devMsg(); paintReview(); }
 
   /* ---------- steps ---------- */
@@ -107,7 +107,7 @@ function launchInit(){
     catch(e){ SP.toast(launchErr(e),'err'); }
     finally{ S.busy=false; paintCta(); } }
   function showDone(){ const L=S.launched; $$('#pg-launch .pane').forEach(p=>p.classList.remove('on')); $$('#steps button').forEach(b=>{ b.classList.add('done'); b.classList.remove('on'); b.querySelector('.n').innerHTML=ic('check'); b.disabled=true; });
-    const dn=g('done'); dn.classList.remove('hidden'); $$('#pg-launch .pane').forEach(p=>p.classList.add('hidden')); g('dn-block').textContent=L.block?'Block #'+L.block.toLocaleString('en-US'):'Mined'; g('dn-logo').src=S.logo||DEF_LOGO; g('dn-name').textContent=L.name+' · '+L.symbol; g('dn-sub').textContent=`Paired with ${S.pair.symbol}. Trading is open on Uniswap v4; fees settle in ${S.pair.symbol}.`;
+    const dn=g('done'); dn.classList.remove('hidden'); $$('#pg-launch .pane').forEach(p=>p.classList.add('hidden')); g('dn-block').textContent=L.block?'Block #'+L.block.toLocaleString('en-US'):'Mined'; g('dn-logo').src=S.logo||DEF_LOGO; g('dn-name').textContent=L.name+' · '+L.symbol; g('dn-sub').textContent=`Paired with ${S.pair.symbol} · live on Uniswap v4`;
     g('dn-addr').textContent=cs(L.addr); g('dn-copy').innerHTML=ic('copy'); g('dn-copy').onclick=()=>SP.copy(cs(L.addr),'Address copied');
     g('dn-pair').innerHTML=`<img src="${S.pair.logo}" alt="" style="width:14px;height:14px;border-radius:50%;background:#fff;display:inline-block;vertical-align:-2px;margin-right:6px" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.symbol)}`; const sp=split(); g('dn-fee').textContent=`${feePct()} · ${sp.creator}% to you`;
     g('dn-open').href=tokenUrl(L.addr); g('dn-scan').href=EXPLORER+'/token/'+L.addr;

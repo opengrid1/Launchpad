@@ -62,18 +62,18 @@ addEventListener('inky:wallet',syncWallet); document.addEventListener('wallet-ch
 /* ---------- shell ---------- */
 const NAV=[['markets','/','Home'],['launch','/launch','Launch'],['portfolio','/profile','Profile'],['docs','/docs','Docs']];
 function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP.W;
-  if(!W.connected){ el.innerHTML=`<button class="btn pri" id="wconnect">Connect</button>`; $('#wconnect',el).onclick=SP.W.connect; return; }
+  if(!W.connected){ el.innerHTML=`<button class="btn pri" id="wconnect">Connect wallet</button>`; $('#wconnect',el).onclick=SP.W.connect; return; }
   el.innerHTML=`<button class="wbtn" id="wmenu"><span class="av">${SP.avatar(W.address,22)}</span>${esc(W.short)}${!W.chainOk?'<span class="tag red">Wrong network</span>':''}</button>`;
   $('#wmenu',el).onclick=e=>{ const m=SP.menu(e.currentTarget,`<button data-a="copy">${ic('copy')}Copy address</button><button data-a="pf">${ic('user')}Portfolio</button>${SP.isAdmin()?`<button data-a="adm">${ic('shield')}Operator</button>`:''}<button data-a="ex">${ic('globe')}View on Etherscan</button>${!W.chainOk?`<button data-a="sw">${ic('swap')}Switch to Ethereum</button>`:''}<div class="d"></div><button data-a="out">${ic('logout')}Disconnect</button>`);
     $$('[data-a]',m).forEach(b=>b.onclick=()=>{ const a=b.dataset.a; m.remove(); if(a==='copy') SP.copy(cs(W.address),'Address copied'); if(a==='pf') SP.go('/profile'); if(a==='adm') SP.go('/admin'); if(a==='ex') open(EXPLORER+'/address/'+W.address,'_blank'); if(a==='sw') SP.W.switchChain().catch(err=>SP.toast(SP.errMsg(err),'err')); if(a==='out') SP.W.disconnect(); }); }; }
 const NAV_IC={markets:'home',launch:'rocket',portfolio:'user',docs:'book'};
 const stockPx=v=>v?'$'+(v>=100?v.toFixed(0):v>=1?v.toFixed(2):fmtPrice(v)):'';
 const navHtml=page=>NAV.map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${n[2]}</a>`).join('');
-function clockHtml(){ const mk=SP.market(); return `<span class="mkt ${mk.open?'open':''}" id="sp-clock" title="${esc(mk.detail)}"><i></i><span>${mk.open?'NYSE OPEN':'NYSE CLOSED'} · ${esc(mk.until)}</span></span>`; }
+function clockHtml(){ const mk=SP.market(); return `<span class="mkt ${mk.open?'open':''}" id="sp-clock" title="${esc(mk.detail)}"><i></i><span>${mk.open?'NYSE open':'NYSE closed'}<b>${esc(mk.until)}</b></span></span>`; }
 function renderShell(){ const page=document.body.dataset.page||'markets'; const C=(window.INKY&&INKY.contracts)||{};
   const top=$('#sp-top'); if(top){ top.innerHTML=`<div class="wrap"><a class="brand" href="/"><img src="/img/logo.svg?v=13" alt=""><span class="wm">Stock<em>Pad</em></span></a><nav class="nav">${navHtml(page)}</nav>
     <label class="search">${ic('search')}<input id="sp-q" placeholder="Search name, ticker or address" autocomplete="off"><kbd>/</kbd></label>
-    <div class="topr">${clockHtml()}<a class="btn pri hm" href="/launch">Launch</a><span id="sp-wallet"></span></div></div>`;
+    <div class="topr">${clockHtml()}<span class="vsep"></span><a class="btn line hm" href="/launch">Launch a coin</a><span id="sp-wallet"></span></div></div>`;
     const q=$('#sp-q'); q.addEventListener('input',()=>searchMenu(q)); q.addEventListener('focus',()=>searchMenu(q)); addEventListener('keydown',e=>{ if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){ e.preventDefault(); q.focus(); } }); }
   let tb=$('#sp-tabbar'); if(!tb){ tb=document.createElement('nav'); tb.id='sp-tabbar'; tb.className='tabbar'; document.body.appendChild(tb); }
   tb.innerHTML=NAV.map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${ic(NAV_IC[n[0]])}${n[2]}</a>`).join('');

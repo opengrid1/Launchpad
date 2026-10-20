@@ -30,7 +30,7 @@ window.SP_PAGE=function(){
 
   /* ---------- hero ---------- */
   function figs(){ const l=TOK; const vol=l.reduce((s,x)=>s+(x.vol||0),0), fees=l.reduce((s,x)=>s+(x.vol||0)*fee(x)/100,0), holders=l.reduce((s,x)=>s+(x.h||0),0), trades=l.reduce((s,x)=>s+(x.trades||0),0);
-    $('#mk-figs').innerHTML=[['Volume 24h',fmtUsd(vol),'across all coins'],['Fees paid 24h',fmtUsd(fees),'in the paired stocks'],['Coins',l.length.toLocaleString(),SP.stocks.length+' stocks to pair with'],['Holders',holders.toLocaleString(),trades.toLocaleString()+' trades']].map(s=>`<div class="sbox lg"><span class="lab">${s[0]}</span><b>${s[1]}</b><i>${s[2]}</i></div>`).join(''); }
+    $('#mk-figs').innerHTML=[['Volume 24h',fmtUsd(vol)],['Fees 24h',fmtUsd(fees)],['Coins',l.length.toLocaleString()],['Trades',trades.toLocaleString()]].map(s=>`<div class="sbox lg"><span class="lab">${s[0]}</span><b>${s[1]}</b></div>`).join(''); }
 
   /* ---------- filter bar ---------- */
   function pills(){ const c=counts(); const all=SP.stocks.slice().sort((a,b)=>(c[b.symbol]||0)-(c[a.symbol]||0)); const show=all.slice(0,4), more=all.slice(4);
@@ -50,7 +50,7 @@ window.SP_PAGE=function(){
     <div class="sboxes"><div class="sbox"><span class="lab">Mcap</span><b>${fmtUsd(x.mc)}</b></div><div class="sbox"><span class="lab">Vol 24h</span><b>${fmtUsd(x.vol)}</b></div><div class="sbox"><span class="lab">Trades</span><b>${(x.trades||0).toLocaleString()}</b></div></div></a>`; }
   function render(){ figs(); pills(); const l=sorted(); const pages=Math.max(1,Math.ceil(l.length/PER)); if(page>pages) page=pages; const st=SP.stockBySym(stock);
     const slice=l.slice((page-1)*PER,page*PER);
-    $('#mk-cards').innerHTML=slice.length?slice.map(card).join(''):`<div class="empty"><b>No coins ${stock?'paired with '+esc(st?st.ticker:stock):''}${q?' matching "'+esc(q)+'"':''} yet</b>Be the first: a launch is one transaction.<div style="margin-top:14px"><a class="btn pri" href="/launch${stock?'?pair='+stock:''}">Launch a coin</a></div></div>`;
+    $('#mk-cards').innerHTML=slice.length?slice.map(card).join(''):`<div class="empty"><b>No coins${stock?' on '+esc(st?st.ticker:stock):''} yet</b><div style="margin-top:14px"><a class="btn pri" href="/launch${stock?'?pair='+stock:''}">Launch a coin</a></div></div>`;
     $('#mk-pager').innerHTML=`<button class="btn sm line" id="pg-prev" ${page<=1?'disabled':''}>Prev</button><span>${page} / ${pages}</span><button class="btn sm line" id="pg-next" ${page>=pages?'disabled':''}>Next</button>`;
     const pv=$('#pg-prev'), nx=$('#pg-next'); if(pv) pv.onclick=()=>{ page--; render(); scrollTo({top:$('#mk-fbar').offsetTop-80,behavior:'smooth'}); }; if(nx) nx.onclick=()=>{ page++; render(); scrollTo({top:$('#mk-fbar').offsetTop-80,behavior:'smooth'}); };
     $$('#mk-sort button').forEach(b=>b.classList.toggle('on',b.dataset.s===sort)); if(window.CHAIN) paintTradeBits(); }

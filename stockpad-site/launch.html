@@ -67,7 +67,7 @@
 <main id="sp-main"><div class="wrap"><div id="pg-launch">
   <div class="wiz" id="wiz">
     <div class="wiz-main panel form">
-      <span class="eyebrow">Launch on Ethereum · Liquidity cannot be withdrawn</span><h1>Create a <em>token</em></h1>
+      <h1>Launch a <em>coin</em></h1>
       <div id="steps"><button type="button" data-step="1" class="on"><span class="n">1</span></button><button type="button" data-step="2"><span class="n">2</span></button><button type="button" data-step="3"><span class="n">3</span></button></div>
 
       <div class="pane on" data-pane="2">
@@ -86,18 +86,18 @@
         <p class="err" id="pair-err"></p><p class="hint" id="mk-status"></p>
         <label class="lbl" for="f-desc">Description (optional)</label>
         <textarea class="inp" id="f-desc" maxlength="280" placeholder=""></textarea>
-        <div class="cnt-hint"><span class="hint"></span><span class="hint num" id="desc-cnt">0 / 280</span></div>
+        <div class="cnt-hint"><span></span><span class="hint num" id="desc-cnt">0 / 280</span></div>
         <div class="links"><div><label class="lbl" for="f-web">Web (optional)</label><input class="inp" id="f-web" placeholder="yourweb.com" autocomplete="off"></div><div><label class="lbl" for="f-x">X (optional)</label><input class="inp" id="f-x" placeholder="x.com/yourX" autocomplete="off"></div><div><label class="lbl" for="f-tg">TG (optional)</label><input class="inp" id="f-tg" placeholder="t.me/yourTG" autocomplete="off"></div></div>
       </div>
 
       <div class="pane on" data-pane="3">
         <div class="notice warn hidden" id="paused"></div>
-        <div class="opt orow" id="opt-dev"><div class="oh" data-sw="dev"><span>Dev buy</span><span class="r"><span id="dev-hdr">Optional · paid in ETH</span><button type="button" class="sw" role="switch" aria-checked="false" id="sw-dev"></button></span></div><div class="ob"><label class="lbl" for="f-dev">ETH to spend</label><input class="inp num" id="f-dev" type="number" min="0" max="0.5" step="0.01" value="0.1" style="max-width:200px"><p class="hint" id="dev-hint"></p><p class="err" id="dev-msg"></p></div></div>
+        <div class="opt orow" id="opt-dev"><div class="oh" data-sw="dev"><span>Dev buy</span><span class="r"><span id="dev-hdr">Paid in ETH</span><button type="button" class="sw" role="switch" aria-checked="false" id="sw-dev"></button></span></div><div class="ob"><label class="lbl" for="f-dev">ETH to spend</label><input class="inp num" id="f-dev" type="number" min="0" max="0.5" step="0.01" value="0.1" style="max-width:200px"><p class="hint" id="dev-hint"></p><p class="err" id="dev-msg"></p></div></div>
         <div class="obox">
           <div class="feerow"><span>Trade fee</span><div class="row"><div class="seg" id="fee-seg"><button type="button" data-fee="100" class="on">1%</button><button type="button" data-fee="200">2%</button><button type="button" data-fee="300">3%</button><button type="button" data-fee="custom">Custom</button></div><div class="row hidden" id="fee-custom"><input class="inp num" id="f-fee" type="number" min="0.1" max="3" step="0.1" value="1" style="width:84px;height:30px"><span class="muted">%</span></div></div></div>
-          <p class="hint" id="fee-hint" style="margin:-6px 0 10px">Charged on every swap, paid in the paired stock. Fixed at launch.</p><p class="err" id="fee-msg"></p>
-          <div class="opt" id="opt-div"><div class="oh" data-sw="div"><b>Creator fees go to holders</b><span class="badge acl">★ Holder rewards</span><button type="button" class="sw" role="switch" aria-checked="false" id="sw-div"></button><small>Off: your share of every fee goes to your wallet and is claimable any time. On: a share of every fee is routed to everyone who holds the token instead, permanently.</small></div><div class="ob"><label class="lbl" for="f-div">Share of the fee to holders, %</label><input class="inp num" id="f-div" type="number" min="10" max="50" step="1" value="20" style="max-width:200px"><p class="hint" id="div-hint"></p><p class="err" id="div-msg"></p></div></div>
-          <div class="opt" id="opt-snipe"><div class="oh" data-sw="snipe"><b>Anti-snipe</b><button type="button" class="sw" role="switch" aria-checked="false" id="sw-snipe"></button><small>Start with a higher fee that falls back to the base fee after a set time. Discourages bots in the first minutes.</small></div><div class="ob"><div class="grid g2"><div><label class="lbl" for="f-snipe">Starting fee, %</label><input class="inp num" id="f-snipe" type="number" min="5" max="30" step="1" value="30"></div><div><label class="lbl" for="f-snipemin">Duration, minutes</label><input class="inp num" id="f-snipemin" type="number" min="1" max="1440" step="1" value="30"></div></div><p class="hint" id="snipe-hint"></p><p class="err" id="snipe-msg"></p></div></div>
+          <p class="hint hidden" id="fee-hint"></p><p class="err" id="fee-msg"></p>
+          <div class="opt" id="opt-div"><div class="oh" data-sw="div"><b>Creator fees go to holders</b><span class="badge acl">★ Holder rewards</span><button type="button" class="sw" role="switch" aria-checked="false" id="sw-div"></button><small>A share of every fee goes to holders instead of you. Permanent.</small></div><div class="ob"><label class="lbl" for="f-div">Share of the fee to holders, %</label><input class="inp num" id="f-div" type="number" min="10" max="50" step="1" value="20" style="max-width:200px"><p class="hint" id="div-hint"></p><p class="err" id="div-msg"></p></div></div>
+          <div class="opt" id="opt-snipe"><div class="oh" data-sw="snipe"><b>Anti-snipe</b><button type="button" class="sw" role="switch" aria-checked="false" id="sw-snipe"></button><small>Higher fee for the first minutes after launch.</small></div><div class="ob"><div class="grid g2"><div><label class="lbl" for="f-snipe">Starting fee, %</label><input class="inp num" id="f-snipe" type="number" min="5" max="30" step="1" value="30"></div><div><label class="lbl" for="f-snipemin">Duration, minutes</label><input class="inp num" id="f-snipemin" type="number" min="1" max="1440" step="1" value="30"></div></div><p class="hint" id="snipe-hint"></p><p class="err" id="snipe-msg"></p></div></div>
         </div>
         <div class="rev"><div class="kv"><span>Fee split</span><b id="rv-split"></b></div><div class="split2" id="rv-bar"></div><div class="legend" id="rv-legend"></div><div class="kv"><span>Opening market cap</span><b id="rv-cap"></b></div></div>
         <button type="button" class="btn pri lg block" id="cta">Connect a wallet</button>
@@ -116,14 +116,14 @@
     </div>
 
     <aside class="wiz-side panel prev" id="sum">
-      <span class="eyebrow">Live preview</span><h2>How it will <em>look</em></h2>
+      <h2>Preview</h2>
       <div class="pcard"><div class="top"><div class="sm-logo" id="sm-logo">TOK</div><div class="nm"><div><b id="sm-name">Token name</b><small id="sm-sym">$TOKEN</small></div><div class="pr" id="sm-pair">Pick a pair</div></div><span class="age">new</span></div>
         <svg class="spark" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fbcff" stop-opacity=".35"/><stop offset="1" stop-color="#3fbcff" stop-opacity="0"/></linearGradient></defs><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16 L297 80 L3 80 Z" fill="url(#pg)"/><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16" fill="none" stroke="#3fbcff" stroke-width="1.5" stroke-linejoin="round"/></svg>
         <div class="flow"><span class="lab">Flow 24h</span><span class="num">no trades yet</span></div><div class="split"><i class="b" style="width:0"></i></div>
         <div class="sboxes"><div class="sbox"><span class="lab">Mcap</span><b id="sm-cap">$5,000</b></div><div class="sbox"><span class="lab">Volume</span><b>$0</b></div><div class="sbox"><span class="lab">Trades</span><b>0</b></div></div></div>
       <div class="sboxes kboxes"><div class="sbox"><span class="lab">Trade fee</span><b id="sm-fee">1%</b></div><div class="sbox"><span class="lab">Supply</span><b>1B</b></div><div class="sbox"><span class="lab">Dev buy</span><b id="sm-dev">None</b></div><div class="sbox"><span class="lab">Creator share</span><b id="sm-cr">60%</b></div></div>
       <div class="sboxes kboxes" style="grid-template-columns:1fr 1fr"><div class="sbox"><span class="lab">Options</span><b id="sm-opts">None</b></div><div class="sbox"><span class="lab">Status</span><b id="sm-step">Ready</b></div></div>
-      <p class="pnote" id="sm-note">Liquidity cannot be withdrawn. Nobody can pull it, including you.</p>
+      <p class="pnote" id="sm-note">Liquidity cannot be withdrawn.</p>
     </aside>
   </div>
 </div></div></main>

@@ -44,12 +44,7 @@ window.SP_PAGE=function(){
 
   function strip(vals){ const [hv,rw,cf,nc]=vals||['…','…','…','…'];
     const n=P?P.holdings.filter(h=>h.pend>0).length:0, nf=P?P.created.filter(c=>c.fees>0).length:0;
-    $('#pf-strip').innerHTML=[
-      ['Holdings value',hv,P?(n=>n+(n===1?' coin held':' coins held'))(P.holdings.filter(h=>h.bal>0).length):'loading'],
-      ['Holder rewards claimable',rw,P?(n?'across '+n+(n===1?' coin':' coins')+', paid in the pair asset':'nothing pending'):'loading',P&&n?'up':''],
-      ['Creator fees claimable',cf,P?(nf?'from '+nf+(nf===1?' coin':' coins'):P.created.length?'nothing pending':'no coins created'):'loading',P&&nf?'up':''],
-      ['Coins created',nc,P?'by this wallet':'loading'],
-    ].map(s=>`<div class="sbox lg"><span class="lab">${s[0]}</span><b class="${s[3]||''}">${s[1]}</b><i>${esc(s[2])}</i></div>`).join(''); }
+    $('#pf-strip').innerHTML=[['Holdings value',hv,''],['Rewards claimable',rw,'',P&&n?'up':''],['Creator fees claimable',cf,'',P&&nf?'up':''],['Coins created',nc,'']].map(s=>`<div class="sbox lg"><span class="lab">${s[0]}</span><b class="${s[3]||''}">${s[1]}</b></div>`).join(''); }
 
   function loadingState(){ strip(null); Object.keys(T).forEach(k=>{ T[k].innerHTML=msgRow(k,'Loading…'); $('#pf-n-'+k).textContent=''; }); $('#pf-notice').innerHTML=''; }
 
