@@ -148,6 +148,7 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
   it("launches at the start cap preset the creator picks", async () => {
     const { admin, factory, creator } = await deployStack();
     await expect(factory.connect(creator).setCapPresets([1_000n * 10n ** 8n])).to.be.revertedWithCustomError(factory, "NotAdmin");
+    await expect(factory.connect(creator).setRewardSplit(1, 1)).to.be.revertedWithCustomError(factory, "NotAdmin");
     await expect(factory.connect(admin).setCapPresets([])).to.be.reverted;
     await expect(factory.connect(admin).setCapPresets([999n * 10n ** 8n])).to.be.reverted;
     await (await factory.connect(admin).setCapPresets([5_000n * 10n ** 8n, 12_500n * 10n ** 8n, 25_000n * 10n ** 8n])).wait();

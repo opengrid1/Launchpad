@@ -116,13 +116,10 @@ async function main() {
   // 5. Admin settings (only when the deployer is the admin; otherwise print them for the admin to send).
   const cb = Number(process.env.EQUO_CASHBACK_BPS ?? 0), rf = Number(process.env.EQUO_REFERRAL_BPS ?? 0);
   const presets = (process.env.EQUO_CAP_PRESETS ?? "").split(",").map((v) => v.trim()).filter(Boolean).map((v) => BigInt(v) * 10n ** 8n);
-  if (ethers.getAddress(admin) === deployer.address) {
+  // the deployer is still the factory owner here, so it can set the launch values before renouncing
+  {
     if (cb || rf) { await (await factory.setRewardSplit(cb, rf)).wait(); console.log(`reward split: cashback ${cb} bps, referral ${rf} bps of the platform part`); }
     if (presets.length) { await (await factory.setCapPresets(presets)).wait(); console.log("cap presets:", presets.map((p) => `$${p / 10n ** 8n}`).join(", ")); }
-  } else if (cb || rf || presets.length) {
-    console.log("admin to send from", admin, ":");
-    if (cb || rf) console.log(`  factory.setRewardSplit(${cb}, ${rf})`);
-    if (presets.length) console.log(`  factory.setCapPresets([${presets.join(", ")}])`);
   }
 
   if (process.env.RENOUNCE === "1") {

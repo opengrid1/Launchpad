@@ -265,7 +265,8 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
     }
 
     /// @notice Cashback and referral shares, each in bps of the platform's part of a fee.
-    function setRewardSplit(uint16 cashbackBps, uint16 referralBps) external onlyAdmin {
+    ///         The deployer can set the launch values until it renounces; the admin always can.
+    function setRewardSplit(uint16 cashbackBps, uint16 referralBps) external onlyAdminOrOwner {
         hook.setRewardSplit(cashbackBps, referralBps);
     }
 
@@ -278,7 +279,7 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
 
     /// @notice Start caps a launch can pick from, USD 8 dp ($1,000 to $1,000,000 each,
     ///         1 to {MAX_PRESETS} of them). Coins already launched are unaffected.
-    function setCapPresets(uint64[] calldata usd8) external onlyAdmin {
+    function setCapPresets(uint64[] calldata usd8) external onlyAdminOrOwner {
         if (usd8.length == 0 || usd8.length > MAX_PRESETS) revert InvalidParams();
         delete _capPresets;
         for (uint256 i; i < usd8.length; i++) {
