@@ -48,7 +48,7 @@
 #pg-token .box{margin-top:12px;padding:12px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--bg)} #pg-token .box.out{border-color:var(--line)} #pg-token .box:focus-within{border-color:var(--mint)}
 #pg-token .box .lr{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--fg-3)} #pg-token .box .lr .num{font-size:12px}
 #pg-token .box .ir{display:flex;align-items:center;gap:10px;margin-top:6px} #pg-token .box input{flex:1;min-width:0;background:none;border:0;outline:0;font:600 24px var(--mono);color:var(--fg);padding:0} #pg-token .box input::placeholder{color:var(--fg-3)}
-#pg-token .box .ov{flex:1;min-width:0;font:600 24px var(--mono);color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #pg-token .box .ov.dim{color:var(--fg-3)}
+#pg-token .box .outv{flex:1;min-width:0;font:600 24px var(--mono);color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #pg-token .box .outv.dim{color:var(--fg-3)}
 #pg-token .asset{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 10px 0 6px;border:1px solid var(--line);border-radius:999px;background:var(--bg-3);font-weight:600;font-size:13px;flex:none;max-width:140px} #pg-token .asset img{width:22px;height:22px;border-radius:50%;background:#fff;object-fit:cover} #pg-token .asset span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #pg-token .box .br{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;font-size:12px;color:var(--fg-3);min-height:24px}
 #pg-token .quick{display:flex;gap:4px} #pg-token .quick button{height:24px;padding:0 8px;border:1px solid var(--line);border-radius:6px;font:600 11px var(--mono);color:var(--fg-2)} #pg-token .quick button:hover{border-color:var(--line-2);color:var(--fg)}
@@ -105,7 +105,7 @@
           </div>
           <div class="box out">
             <div class="lr"><span>You receive</span><span class="num" id="tk-bal-out"></span></div>
-            <div class="ir"><div class="ov dim" id="tk-out">0</div><span class="asset" id="tk-asset-out"></span></div>
+            <div class="ir"><div class="outv dim" id="tk-out">0</div><span class="asset" id="tk-asset-out"></span></div>
             <div class="br"><span class="num" id="tk-out-usd"></span></div>
           </div>
           <div class="slip"><span>Slippage</span><div class="row"><div class="seg" id="tk-slip"><button data-sl="auto" class="on">Auto</button><button data-sl="0.5">0.5%</button><button data-sl="1">1%</button><button data-sl="3">3%</button><button data-sl="custom">Custom</button></div><input id="tk-slip-in" class="hidden" inputmode="decimal" placeholder="%" aria-label="Custom slippage"></div></div>

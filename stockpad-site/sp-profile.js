@@ -11,7 +11,7 @@ window.SP_PAGE=function(){
   const gate=$('#pf-gate'), body=$('#pf-body');
   const T={hold:$('#pf-hold tbody'),made:$('#pf-made tbody'),act:$('#pf-act tbody')};
   const COLS={hold:6,made:6,act:7};
-  let seq=0, P=null, who=null, readOnly=false, busy=false, tab='hold';
+  let seq=0, P=null, who=null, readOnly=false, busy=false, inflight=false, tab='hold';
   $('#pf-gate .ico').innerHTML=ic('wallet'); $('#pf-copy').innerHTML=ic('copy')+'Copy'; $('#pf-ext').innerHTML=ic('ext')+'Etherscan';
   $('#pf-connect').onclick=()=>SP.W.connect();
 
@@ -102,12 +102,12 @@ window.SP_PAGE=function(){
     if(changed){ P=null; header(); }
     if(showLoading||changed) loadingState();
     if(!LIVE||!window.CHAIN){ $('#pf-notice').innerHTML=`<div class="notice warn viewonly">${ic('warn')}<span>On-chain data is not available right now.</span></div>`; P={trades:[],holdings:[],created:[]}; render(); return; }
-    let r; try{ r=await CHAIN.profile(w); }catch(e){ if(my!==seq) return; $('#pf-notice').innerHTML=`<div class="notice warn viewonly">${ic('warn')}<span>Could not load this portfolio (${esc(SP.errMsg(e))}). <a href="#" id="pf-retry" style="color:var(--fg);text-decoration:underline">Retry</a></span></div>`; $('#pf-retry').onclick=ev=>{ ev.preventDefault(); load(true); }; if(!P){ P={trades:[],holdings:[],created:[]}; render(); } return; }
+    let r; inflight=true; try{ r=await CHAIN.profile(w); }catch(e){ if(my!==seq) return; $('#pf-notice').innerHTML=`<div class="notice warn viewonly">${ic('warn')}<span>Could not load this portfolio (${esc(SP.errMsg(e))}). <a href="#" id="pf-retry" style="color:var(--fg);text-decoration:underline">Retry</a></span></div>`; $('#pf-retry').onclick=ev=>{ ev.preventDefault(); load(true); }; if(!P){ P={trades:[],holdings:[],created:[]}; render(); } return; }finally{ if(my===seq) inflight=false; }
     if(my!==seq) return; $('#pf-notice').innerHTML='';
     P={trades:r.trades||[],holdings:(r.holdings||[]).filter(h=>h.x),created:(r.created||[]).filter(c=>c.x)}; render();
   }
 
   load(true);
   SP.onWallet(()=>load(true));
-  SP.onUpdate(()=>{ if(!busy&&who) load(false); });
+  SP.onUpdate(()=>{ if(!busy&&!inflight&&who) load(false); });
 };
