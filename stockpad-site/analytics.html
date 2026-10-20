@@ -20,14 +20,26 @@
 #pg-analytics .fr .v{font:500 13px var(--mono);text-align:right} #pg-analytics .fr .v small{display:block;font-size:11px;color:var(--fg-3);font-weight:400} #pg-analytics .fr .t{font:11px var(--mono);color:var(--fg-3);text-align:right;white-space:nowrap}
 #pg-analytics tr.new td{animation:akflash 1.2s ease-out} @keyframes akflash{from{background:var(--ac-dim)}to{background:transparent}}
 #pg-analytics .bar.h{height:4px;margin-top:6px;background:var(--s4)} #pg-analytics .bar.h i{background:var(--ac)}
+#pg-analytics .fsplit{display:flex;height:8px;margin:14px 16px 0;border-radius:999px;overflow:hidden;background:var(--s4)} #pg-analytics .fsplit i{display:block;height:100%} #pg-analytics .fsplit .c{background:var(--ac)} #pg-analytics .fsplit .h{background:var(--amber)} #pg-analytics .fsplit .p{background:var(--fg-3)} #pg-analytics .fsplit .b{background:var(--dn)}
+#pg-analytics .fboxes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 16px 16px}
+#pg-analytics .fbox{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--s2)} #pg-analytics .fbox .lab{display:flex;align-items:center;gap:7px} #pg-analytics .fbox .lab i{width:8px;height:8px;border-radius:2px;display:inline-block} #pg-analytics .fbox b{display:block;font:600 20px/1.1 var(--mono);margin-top:8px} #pg-analytics .fbox small{display:block;font:11.5px var(--mono);color:var(--fg-3);margin-top:6px;line-height:1.5}
+#pg-analytics .sp4{display:inline-flex;height:6px;width:110px;border-radius:999px;overflow:hidden;background:var(--s4);vertical-align:middle} #pg-analytics .sp4 i{display:block;height:100%} #pg-analytics .sp4 .c{background:var(--ac)} #pg-analytics .sp4 .h{background:var(--amber)} #pg-analytics .sp4 .p{background:var(--fg-3)} #pg-analytics .sp4 .b{background:var(--dn)}
+#pg-analytics .tb td .sp4{margin-right:8px}
 @media(max-width:1100px){#pg-analytics .kp{grid-template-columns:1fr 1fr}}
-@media(max-width:700px){#pg-analytics .kp{grid-template-columns:1fr} #pg-analytics .two{grid-template-columns:1fr} #pg-analytics .ph{flex-direction:column;align-items:flex-start}}
+@media(max-width:1100px){#pg-analytics .fboxes{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){#pg-analytics .kp{grid-template-columns:1fr} #pg-analytics .fboxes{grid-template-columns:1fr} #pg-analytics .two{grid-template-columns:1fr} #pg-analytics .ph{flex-direction:column;align-items:flex-start}}
 </style>
 </head><body data-page="analytics">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-analytics">
   <div class="ph"><div><h1>Analytics</h1></div><div class="seg" id="an-range"><button data-r="7" >7d</button><button data-r="30" class="on">30d</button><button data-r="0">All</button></div></div>
   <div class="kp" id="an-kpis"></div>
+  <section class="panel fees" style="margin-top:12px">
+    <div class="ph2" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)"><span>Fees</span><span class="num muted" id="an-fees-total" style="font-size:12px"></span></div>
+    <div class="fsplit" id="an-fsplit"></div>
+    <div class="fboxes" id="an-fboxes"></div>
+    <div style="overflow-x:auto;border-top:1px solid var(--line)"><table class="tb" id="an-fees"><thead><tr><th>Coin</th><th class="r">Fee</th><th>Split</th><th class="r">Fees paid</th><th class="r">Creator owed</th><th class="r hm">Holders pending</th><th class="r hm">Buyback pot</th><th class="r hm">Burned</th></tr></thead><tbody></tbody></table></div>
+  </section>
   <div class="two">
     <section class="panel"><div class="ph2" style="padding:12px 16px;border-bottom:1px solid var(--line)">By stock</div><div style="overflow-x:auto"><table class="tb" id="an-stocks"><thead><tr><th>Stock</th><th class="r">Coins</th><th class="r">Volume</th><th class="r">Fees paid</th><th class="r hm">Trades</th><th class="r hm">Holders</th></tr></thead><tbody></tbody></table></div></section>
     <section class="panel"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line)"><span>Top coins</span><div class="seg" id="an-topby"><button data-k="vol" class="on">Volume</button><button data-k="fees">Fees</button><button data-k="h">Holders</button></div></div><div style="overflow-x:auto"><table class="tb" id="an-top"><thead><tr><th>#</th><th>Coin</th><th>Pair</th><th class="r" id="an-top-h">Volume</th><th class="r hm">Mcap</th></tr></thead><tbody></tbody></table></div></section>

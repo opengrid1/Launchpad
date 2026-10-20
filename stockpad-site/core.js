@@ -68,12 +68,12 @@ function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP
     $$('[data-a]',m).forEach(b=>b.onclick=()=>{ const a=b.dataset.a; m.remove(); if(a==='copy') SP.copy(cs(W.address),'Address copied'); if(a==='pf') SP.go('/profile'); if(a==='adm') SP.go('/admin'); if(a==='ex') open(EXPLORER+'/address/'+W.address,'_blank'); if(a==='sw') SP.W.switchChain().catch(err=>SP.toast(SP.errMsg(err),'err')); if(a==='out') SP.W.disconnect(); }); }; }
 const NAV_IC={markets:'home',launch:'rocket',analytics:'trend',portfolio:'user',docs:'book'};
 const stockPx=v=>v?'$'+(v>=100?v.toFixed(0):v>=1?v.toFixed(2):fmtPrice(v)):'';
-const navHtml=page=>NAV.map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${n[2]}</a>`).join('');
+const navHtml=page=>{ const L=NAV.filter(n=>n[0]!=='launch'); const half=Math.ceil(L.length/2); const a=x=>`<a href="${x[1]}" class="${page===x[0]?'on':''}">${x[2]}</a>`; return L.slice(0,half).map(a).join('')+`<a href="/launch" class="btn pri lnch ${page==='launch'?'on':''}">${ic('rocket')}Launch a coin</a>`+L.slice(half).map(a).join(''); };
 function clockHtml(){ const mk=SP.market(); return `<span class="mkt ${mk.open?'open':''}" id="sp-clock" title="${esc(mk.detail)}"><i></i><span>${mk.open?'NYSE open':'NYSE closed'}<b>${esc(mk.until)}</b></span></span>`; }
 function renderShell(){ const page=document.body.dataset.page||'markets'; const C=(window.INKY&&INKY.contracts)||{};
   const top=$('#sp-top'); if(top){ top.innerHTML=`<div class="wrap"><a class="brand" href="/"><img src="/img/logo.svg?v=13" alt=""><span class="wm">Stock<em>Pad</em></span></a><nav class="nav">${navHtml(page)}</nav>
     <label class="search">${ic('search')}<input id="sp-q" placeholder="Search name, ticker or address" autocomplete="off"><kbd>/</kbd></label>
-    <div class="topr">${clockHtml()}<span class="vsep"></span><a class="btn line hm" href="/launch">Launch a coin</a><span id="sp-wallet"></span></div></div>`;
+    <div class="topr">${clockHtml()}<span class="vsep"></span><span id="sp-wallet"></span></div></div>`;
     const q=$('#sp-q'); q.addEventListener('input',()=>searchMenu(q)); q.addEventListener('focus',()=>searchMenu(q)); addEventListener('keydown',e=>{ if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){ e.preventDefault(); q.focus(); } }); }
   let tb=$('#sp-tabbar'); if(!tb){ tb=document.createElement('nav'); tb.id='sp-tabbar'; tb.className='tabbar'; document.body.appendChild(tb); }
   tb.innerHTML=NAV.map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${ic(NAV_IC[n[0]])}${n[2]}</a>`).join('');
