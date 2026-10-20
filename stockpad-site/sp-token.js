@@ -11,7 +11,7 @@ window.SP_PAGE=function(){
   X={...X};
   const C=(window.INKY&&INKY.contracts)||{}; const PM=String(C.poolManager||'').toLowerCase();
   const stock=SP.stockBySym(X.pair); const isStock=X.pair!=='ETH';
-  const inPair=v=>(X.pair!=='ETH'&&v>0&&v<0.001)?fmtPrice(v)+' '+X.pair:SP.fmtPair(v,X), pairUsd=()=>X.pairUsd||SP.prices[String(X.pairAddr||'').toLowerCase()]||0, ethUsd=()=>SP.prices[WETH]||ETH||0;
+  const inPair=v=>(X.pair!=='ETH'&&v>0&&v<1e-4)?fmtPrice(v)+' '+X.pair:SP.fmtPair(v,X), pairUsd=()=>X.pairUsd||SP.prices[String(X.pairAddr||'').toLowerCase()]||0, ethUsd=()=>SP.prices[WETH]||ETH||0;
   const feePct=()=>((X.feeBps||100)/100).toFixed(2), feeR=()=>(X.feeBps||100)/10000;
   const youTag=a=>SP.W.connected&&a===SP.W.address?'<span class="tag mint">you</span>':'';
   const wl=(a,tags='')=>`<span class="w"><span class="av">${SP.avatar(a,20)}</span><a href="${EXPLORER}/address/${a}" target="_blank" rel="noopener">${shortAddr(cs(a))}</a>${tags}${youTag(a)}</span>`;
@@ -29,7 +29,7 @@ window.SP_PAGE=function(){
     $('#tk-head').innerHTML=`<img class="lg" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'">
       <div class="id">
         <div class="t1"><h1>${esc(X.n)}</h1><span class="sym">${esc(X.t)}</span><span class="addr"><span class="mono muted" style="font-size:12px">${shortAddr(cs(X.addr))}</span><button data-copy="${cs(X.addr)}" title="Copy address" aria-label="Copy address">${ic('copy')}</button><a href="${EXPLORER}/token/${X.addr}" target="_blank" rel="noopener" title="View on Etherscan" aria-label="View on Etherscan">${ic('ext')}</a></span></div>
-        <div class="t2"><span class="muted" style="font-size:12px">Created by</span>${wl(X.creator)}<span class="muted">·</span><span class="num muted" style="font-size:12px">${SP.fmtDate(X.createdAt)} · ${ageStr(X.age||'0s')}</span></div>
+        <div class="t2"><span class="muted" style="font-size:12px">Created by</span>${wl(X.creator)}<span class="num muted" style="font-size:12px">· ${SP.fmtDate(X.createdAt)} · ${ageStr(X.age||'0s')}</span></div>
         <div class="tags"><span class="tag">${ic('coins')}Fee ${feePct()}% in ${esc(X.pair)}</span>${X.rewards?'<span class="tag mint">'+ic('check')+'Holder rewards</span>':''}<span class="tag">${ic('lock')}Liquidity: cannot be withdrawn</span></div>
         ${X.desc||links.length?`<div class="meta">${X.desc?`<div class="desc">${esc(X.desc)}</div>`:''}${links.length?`<div class="ln">${links.map(l=>`<a href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</div>`:''}</div>`:''}
       </div>${pill}`; }
@@ -37,7 +37,7 @@ window.SP_PAGE=function(){
 
   /* ---------- stats ---------- */
   function stats(){ const pu=pairUsd(); const fees=X.totalCreatorFees||0;
-    const S=[['Price','$'+fmtPrice(X.px),`${fmtPrice(X.pxPair)} ${esc(X.pair)} · ${SP.fmtPct(X.c24||0)}`],['Market cap',fmtUsd(X.mc),inPair(X.pxPair*SUPPLY)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)+' in the pool'],['Holders',(X.h||0).toLocaleString(),(X.traders||0).toLocaleString()+' traders'],['Fees paid',inPair(fees),fmtUsd(fees*pu)+' to the creator']];
+    const S=[['Price','$'+fmtPrice(X.px)+SP.fmtPct(X.c24||0).replace('class="num','class="pc num'),`${fmtPrice(X.pxPair)} ${esc(X.pair)}`],['Market cap',fmtUsd(X.mc),inPair(X.pxPair*SUPPLY)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)],['Holders',(X.h||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders')],['Fees paid',fmtUsd(fees*pu),inPair(fees)]];
     $('#tk-stats').innerHTML=S.map(s=>`<div class="stat"><small>${s[0]}</small><b>${s[1]}</b><i>${s[2]}</i></div>`).join(''); }
 
   /* ---------- chart ---------- */
@@ -146,7 +146,7 @@ window.SP_PAGE=function(){
         <div class="kv"><span>Holder rewards</span><b>${X.rewards?inPair(pendV)+' <span class="muted">'+fmtUsd(pendV*pu)+'</span>':'<span class="muted">not enabled for this coin</span>'}</b></div>${X.rewards?`<button class="btn block" style="margin-top:10px" id="tk-claim" ${pendV>0?'':'disabled'}>Claim ${esc(X.pair)}</button>`:''}`;
       const cb2=$('#tk-claim'); if(cb2) cb2.onclick=()=>doClaim(cb2,()=>CHAIN.claim(X.addr),'Rewards claimed');
       pos.classList.remove('hidden');
-      if(u===X.creator){ const owed=X.creatorOwed||0; $('#tk-cre-body').innerHTML=`<div class="kv"><span>Claimable</span><b>${inPair(owed)} <span class="muted">${fmtUsd(owed*pu)}</span></b></div><div class="kv"><span>Paid to you</span><b>60% of each fee after holder rewards</b></div><button class="btn pri block" style="margin-top:10px" id="tk-paycre" ${owed>0?'':'disabled'}>Claim fees</button>`;
+      if(u===X.creator){ const owed=X.creatorOwed||0; $('#tk-cre-body').innerHTML=`<div class="kv"><span>Claimable</span><b>${inPair(owed)} <span class="muted">${fmtUsd(owed*pu)}</span></b></div><div class="kv"><span>Your share</span><b>60% of each fee</b></div><button class="btn pri block" style="margin-top:10px" id="tk-paycre" ${owed>0?'':'disabled'}>Claim fees</button>`;
         $('#tk-paycre').onclick=e=>doClaim(e.currentTarget,()=>CHAIN.payCreator(X.addr),'Creator fees claimed'); cre.classList.remove('hidden'); }
       else cre.classList.add('hidden');
     }catch(e){ console.warn('position',e); } }

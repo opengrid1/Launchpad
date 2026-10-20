@@ -6,8 +6,10 @@ It runs against the OneHook v2 contracts on mainnet (see `config.js`); `stocksOn
 
 ## Layout
 
-- `index.html`, `launch.html`, `token.html`, `profile.html`, `admin.html`: pages. `docs/`: documentation (static HTML).
-- `config.js`: chain, contracts, RPCs, stock list, admin. `chain.js`: contract reads, trade index, routes, wallet calls. `app.js`, `pages.js`: UI. `wallet.js`: wallet connection. `tv.js`: chart. `avatar.js`: wallet avatars. `data.js`, `i18n.js`: static data.
+- `index.html` (Markets), `launch.html`, `token.html`, `profile.html` (Portfolio), `admin.html` (Operator): pages, each with its own `sp-<page>.js`. `docs/`: documentation (static HTML).
+- `DESIGN.md`: the front-end contract (layout, `core.js` API, `chain.js` API, token fields). Read it before adding a page.
+- `ui.css`: the design system. `core.js`: shell (rail, top bar, ticker), wallet state, chain boot, shared helpers.
+- `config.js`: chain, contracts, RPCs, stock list with routes, admin. `chain.js`: contract reads, trade index, routes, wallet calls. `wallet.js`: wallet connection (Reown AppKit). `tv.js`: TradingView chart. `avatar.js`: wallet avatars. `data.js`: formatting helpers.
 - `charting_library/` (gitignored): TradingView Charting Library, licensed, not in this repo. The deploy needs it next to `tv.js`.
 
 ## Deploy
