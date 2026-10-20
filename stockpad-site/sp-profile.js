@@ -48,7 +48,7 @@ window.SP_PAGE=function(){
       ['Holdings value',hv,P?P.holdings.filter(h=>h.bal>0).length+' coins held':'loading'],
       ['Holder rewards claimable',rw,P?(n?'across '+n+(n===1?' coin':' coins')+', paid in the pair asset':'nothing pending'):'loading',P&&n?'up':''],
       ['Creator fees claimable',cf,P?(nf?'from '+nf+(nf===1?' coin':' coins'):P.created.length?'nothing pending':'no coins created'):'loading',P&&nf?'up':''],
-      ['Coins created',nc,P?'launched by this wallet':'loading'],
+      ['Coins created',nc,P?'by this wallet':'loading'],
     ].map(s=>`<div class="stat"><small>${s[0]}</small><b class="${s[3]||''}">${s[1]}</b><i>${esc(s[2])}</i></div>`).join(''); }
 
   function loadingState(){ strip(null); Object.keys(T).forEach(k=>{ T[k].innerHTML=msgRow(k,'Loading…'); $('#pf-n-'+k).textContent=''; }); $('#pf-notice').innerHTML=''; }
@@ -56,19 +56,19 @@ window.SP_PAGE=function(){
   function render(){
     const H=P.holdings.slice().sort((a,b)=>(b.bal*b.x.px+b.pendUsd)-(a.bal*a.x.px+a.pendUsd));
     const C=P.created.slice().sort((a,b)=>(b.x.mc||0)-(a.x.mc||0));
-    const A=P.trades.slice().sort((a,b)=>(b.ts-a.ts)||((b.index||0)-(a.index||0)));
+    const A=P.trades.filter(t=>SP.token(t.token)).sort((a,b)=>(b.ts-a.ts)||((b.index||0)-(a.index||0)));
     const hv=H.reduce((s,h)=>s+h.bal*(h.x.px||0),0), rw=H.reduce((s,h)=>s+(h.pendUsd||0),0), cf=C.reduce((s,c)=>s+c.fees*(c.x.pairUsd||0),0);
     strip([fmtUsd(hv),fmtUsd(rw),fmtUsd(cf),String(C.length)]);
     $('#pf-n-hold').textContent=H.length||''; $('#pf-n-made').textContent=C.length||''; $('#pf-n-act').textContent=A.length||'';
     // holdings
-    T.hold.innerHTML=H.length?H.map(h=>{ const x=h.x; return `<tr class="row" data-go="${tokenUrl(x)}">${cell(coinCell(x))}${cell(pairCell(x))}${cell(fmtAmt(h.bal)+`<small>${esc(x.t)}</small>`,'r num')}${cell(fmtUsd(h.bal*(x.px||0))+`<small>${SP.fmtPair(h.bal*(x.pxPair||0),x)}</small>`,'r num')}${cell(h.pend>0?`<span class="up">${fmtUsd(h.pendUsd)}</span><small>${SP.fmtPair(h.pend,x)}</small>`:`<span class="muted">—</span>`,'r num')}${cell(!readOnly&&h.pend>0?`<button class="btn sm" data-claim="${x.addr}">Claim</button>`:'','act')}</tr>`; }).join('')
+    T.hold.innerHTML=H.length?H.map(h=>{ const x=h.x; return `<tr class="go" data-go="${tokenUrl(x)}">${cell(coinCell(x))}${cell(pairCell(x))}${cell(fmtAmt(h.bal)+`<small>${esc(x.t)}</small>`,'r num')}${cell(fmtUsd(h.bal*(x.px||0))+`<small>${SP.fmtPair(h.bal*(x.pxPair||0),x)}</small>`,'r num')}${cell(h.pend>0?`<span class="up">${fmtUsd(h.pendUsd)}</span><small>${SP.fmtPair(h.pend,x)}</small>`:`<span class="muted">—</span>`,'r num')}${cell(!readOnly&&h.pend>0?`<button class="btn sm" data-claim="${x.addr}">Claim</button>`:'','act')}</tr>`; }).join('')
       :msgRow('hold',`<b>No holdings</b>${readOnly?'This wallet holds no StockPad coins.':'Coins you buy show up here with their pending rewards.'}${readOnly?'':'<div style="margin-top:12px"><a class="btn" href="/">Browse markets</a></div>'}`);
     // created
-    T.made.innerHTML=C.length?C.map(c=>{ const x=c.x; return `<tr class="row" data-go="${tokenUrl(x)}">${cell(coinCell(x))}${cell(pairCell(x))}${cell(fmtUsd(x.mc||0),'r num')}${cell(fmtUsd(x.vol||0),'r num')}${cell(c.fees>0?`<span class="up">${fmtUsd(c.fees*(x.pairUsd||0))}</span><small>${SP.fmtPair(c.fees,x)}</small>`:`<span class="muted">—</span>`,'r num')}${cell(!readOnly&&c.fees>0?`<button class="btn sm" data-pay="${x.addr}">Claim</button>`:'','act')}</tr>`; }).join('')
+    T.made.innerHTML=C.length?C.map(c=>{ const x=c.x; return `<tr class="go" data-go="${tokenUrl(x)}">${cell(coinCell(x))}${cell(pairCell(x))}${cell(fmtUsd(x.mc||0),'r num')}${cell(fmtUsd(x.vol||0),'r num')}${cell(c.fees>0?`<span class="up">${fmtUsd(c.fees*(x.pairUsd||0))}</span><small>${SP.fmtPair(c.fees,x)}</small>`:`<span class="muted">—</span>`,'r num')}${cell(!readOnly&&c.fees>0?`<button class="btn sm" data-pay="${x.addr}">Claim</button>`:'','act')}</tr>`; }).join('')
       :msgRow('made',`<b>No coins created</b>${readOnly?'This wallet has not launched a coin.':'Launch a coin and its creator fees are tracked here.'}${readOnly?'':'<div style="margin-top:12px"><a class="btn pri" href="/launch">Launch a coin</a></div>'}`);
     // activity
-    T.act.innerHTML=A.length?A.map(t=>{ const x=SP.token(t.token); if(!x) return ''; const coin=Number(t.coin)/1e18, pair=Number(t.pair)/1e18, usd=pair*(x.pairUsd||0);
-      return `<tr class="row" data-go="${tokenUrl(x)}">${cell(timeCell(t.ts))}${cell(`<span class="side ${t.buy?'up':'dn'}">${t.buy?'Buy':'Sell'}</span>`)}${cell(coinCell(x))}${cell(fmtAmt(coin)+' '+esc(x.t),'r num')}${cell(SP.fmtPair(pair,x),'r num')}${cell(fmtUsd(usd),'r num')}${cell(t.tx?`<a class="tx" href="${EXP}/tx/${t.tx}" target="_blank" rel="noopener noreferrer" title="View transaction">${ic('ext')}</a>`:'','act')}</tr>`; }).join('')
+    T.act.innerHTML=A.length?A.map(t=>{ const x=SP.token(t.token); const coin=Number(t.coin)/1e18, pair=Number(t.pair)/1e18, usd=pair*(x.pairUsd||0);
+      return `<tr class="go" data-go="${tokenUrl(x)}">${cell(timeCell(t.ts))}${cell(`<span class="side ${t.buy?'up':'dn'}">${t.buy?'Buy':'Sell'}</span>`)}${cell(coinCell(x))}${cell(fmtAmt(coin)+' '+esc(x.t),'r num')}${cell(SP.fmtPair(pair,x),'r num')}${cell(fmtUsd(usd),'r num')}${cell(t.tx?`<a class="tx" href="${EXP}/tx/${t.tx}" target="_blank" rel="noopener noreferrer" title="View transaction">${ic('ext')}</a>`:'','act')}</tr>`; }).join('')
       :msgRow('act',`<b>No trades yet</b>${readOnly?'This wallet has not traded a StockPad coin.':'Your buys and sells across coins are listed here.'}`);
     $$('#pg-portfolio tr[data-go]').forEach(r=>r.onclick=e=>{ if(e.target.closest('button,a')) return; SP.go(r.dataset.go); });
     $$('#pg-portfolio [data-claim]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); claimOne(b,b.dataset.claim); });
