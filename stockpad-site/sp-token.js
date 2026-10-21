@@ -37,7 +37,7 @@ window.SP_PAGE=function(){
 
   /* ---------- stats ---------- */
   function stats(){ const pu=pairUsd(); const fees=X.totalCreatorFees||0;
-    const S=[['Price','$'+fmtPrice(X.px)+SP.fmtPct(X.c24||0).replace('class="num','class="pc num'),`${fmtPrice(X.pxPair)} ${esc(X.pair)}`],['Market cap',fmtUsd(X.mc),inPair(X.pxPair*SUPPLY)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Trades',(X.trades||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders')],['Holders',(X.h||0).toLocaleString(),'wallets'],['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)]];
+    const S=[['Price','$'+fmtPrice(X.px)+SP.fmtPct(X.c24||0).replace('class="num','class="pc num'),`${fmtPrice(X.pxPair)} ${esc(X.pair)}`],['Market cap',fmtUsd(X.mc),inPair(X.pxPair*SUPPLY*SP.coinChains(X).length)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Trades',(X.trades||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders')],['Holders',(X.h||0).toLocaleString(),'wallets'],['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)]];
     $('#tk-stats').innerHTML=S.map(s=>`<div class="sbox lg"><span class="lab">${s[0]}</span><b>${s[1]}</b><i>${s[2]}</i></div>`).join('');
     const g=X.genes||{}; const dv=(g.divShareBps||0)/100, bb=(g.buybackShareBps||0)/100, rest=100-dv-bb, cr=Math.round(rest*0.6), pl=rest-cr;
     $('#tk-feespaid').textContent=`${feePct()}% · ${dv?dv+'% holders · ':''}${bb?bb+'% buyback · ':''}${cr}% creator · ${pl}% platform`; $('#tk-feebar').innerHTML=(dv?`<i class="h" style="width:${dv}%"></i>`:'')+(bb?`<i style="width:${bb}%;background:var(--dn)"></i>`:'')+`<i class="c" style="width:${cr}%"></i><i class="p" style="flex:1"></i>`; }
@@ -170,7 +170,7 @@ window.SP_PAGE=function(){
   function chainsCard(){ const el=$('#tk-chains-body'); if(!el) return; const on=SP.coinChains(X);
     $('#tk-bridge').href='/bridge?coin='+X.addr;
     el.innerHTML=SP.chains.map(c=>{ const has=on.includes(c.key);
-      return `<div class="chr${has?'':' off'}"><img src="${c.logo}" alt=""><span class="cn"><b>${esc(c.name)} ${has?'<span class="liveb">Live</span>':c.live?'':'<span class="soonb">Soon</span>'}</b><small>${has?'Pool vs '+esc(X.pair)+' · 1B supply':'Not on this chain yet'}</small></span><span class="cv">${has?'$'+fmtPrice(X.px)+'<small>'+fmtUsd(X.mc/on.length)+' mcap</small>':'—'}</span></div>`; }).join('')
+      return `<div class="chr${has?'':' off'}"><img src="${c.logo}" alt=""><span class="cn"><b>${esc(c.name)} ${has?'<span class="liveb">Live</span>':c.live?'':'<span class="soonb">Soon</span>'}</b><small>${has?'Pool vs '+esc(X.pair)+' · 1B supply':'Not on this chain yet'}</small></span><span class="cv">${has?'$'+fmtPrice(((X.byChain||{})[c.key]||{}).px||X.px)+'<small>'+(((X.byChain||{})[c.key]||{}).vol!=null?fmtUsd(X.byChain[c.key].vol)+' vol':fmtUsd(X.mc/on.length)+' mcap')+'</small>':'—'}</span></div>`; }).join('')
       +`<p class="chnote">${on.length>1?'Each chain has its own pool; arbitrage keeps the prices in line. ':''}Coins launched on several chains move between them on the <a href="/bridge?coin=${X.addr}">Bridge</a>.</p>`; }
   function paintAll(){ stats(); headLive(); flow(); chainsCard(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; if(activeTab==='info') info(); }
   async function sync(force){ if(ticking||(!force&&document.hidden)) return; ticking=true; const oldPx=X.pxPair;

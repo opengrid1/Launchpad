@@ -6,9 +6,10 @@
   let X=null; // the token shown (from app.js)
   let unit='USD', mode='mcap';
   const pairSym=()=>X?X.pair:'ETH';
-  const factor=()=>(mode==='mcap'?SUPPLY:1)*(unit==='USD'?(X?X.pairUsd:1):1);
+  const nChains=()=>(window.SP&&SP.coinChains&&X)?SP.coinChains(X).length:1;
+  const factor=()=>(mode==='mcap'?SUPPLY*nChains():1)*(unit==='USD'?(X?X.pairUsd:1):1);
   const symName=()=>X?`${X.t}/${X.pair}`:'TOKEN/ETH';
-  const scaleFor=(u,m)=>{ const p=(X?X.pxPair:1e-9)*(m==='mcap'?SUPPLY:1)*(u==='USD'?(X?X.pairUsd:1):1); if(!(p>0)) return 100; const digits=Math.max(2,Math.ceil(-Math.log10(p))+3); return Math.pow(10,Math.min(16,digits)); };
+  const scaleFor=(u,m)=>{ const p=(X?X.pxPair:1e-9)*(m==='mcap'?SUPPLY*nChains():1)*(u==='USD'?(X?X.pairUsd:1):1); if(!(p>0)) return 100; const digits=Math.max(2,Math.ceil(-Math.log10(p))+3); return Math.pow(10,Math.min(16,digits)); };
   const subs={};
   const datafeed={
     onReady(cb){ setTimeout(()=>cb({ supported_resolutions:['1','5','15','30','60','240','1D','1W'], supports_marks:false, supports_timescale_marks:false, supports_time:true, exchanges:[{value:'Equo',name:'Equo',desc:'Uniswap v4 on Ethereum'}], symbols_types:[{name:'crypto',value:'crypto'}] }),0); },

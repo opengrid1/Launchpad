@@ -50,7 +50,7 @@ window.SP_PAGE=function(){
     <div class="sboxes"><div class="sbox"><span class="lab">Mcap</span><b>${fmtUsd(x.mc)}</b></div><div class="sbox"><span class="lab">Vol 24h</span><b>${fmtUsd(x.vol)}</b></div><div class="sbox"><span class="lab">Trades</span><b>${(x.trades||0).toLocaleString()}</b></div></div></a>`; }
   /* ---------- chains: filter coins by the chains they live on ---------- */
   function chains(){ const box=$('#mk-chains'); if(!box) return; const c={}; TOK.forEach(x=>SP.coinChains(x).forEach(k=>{ c[k]=(c[k]||0)+1; }));
-    box.innerHTML=`<button class="cchip ${!chain?'on':''}" data-ch=""><span class="all">${ic('globe')}</span>All chains<span class="n">${TOK.length}</span></button>`+SP.chains.map(ch=>`<button class="cchip ${chain===ch.key?'on':''}" data-ch="${ch.key}"><img src="${ch.logo}" alt="">${esc(ch.name)}${ch.live?`<span class="n">${c[ch.key]||0}</span>`:'<span class="soonb">Soon</span>'}</button>`).join('');
+    box.innerHTML=`<button class="cchip ${!chain?'on':''}" data-ch=""><span class="all">${ic('globe')}</span>All chains<span class="n">${TOK.length}</span></button>`+SP.chains.map(ch=>`<button class="cchip ${chain===ch.key?'on':''}" data-ch="${ch.key}"><img src="${ch.logo}" alt="">${esc(ch.name)}${ch.live||c[ch.key]?`<span class="n">${c[ch.key]||0}</span>`:'<span class="soonb">Soon</span>'}</button>`).join('');
     $$('#mk-chains [data-ch]').forEach(b=>b.onclick=()=>setChain(b.dataset.ch));
     const live=SP.chains.filter(x=>x.live), soon=SP.chains.filter(x=>!x.live);
     $('#mk-chain-h').innerHTML=`Live on <b>${live.map(x=>esc(x.name)).join(', ')}</b>${soon.length?` · ${soon.length} more chains next`:''}`; }

@@ -190,3 +190,6 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px} .tb th{text-align:l
 .liveb::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
 .mainb{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;font:600 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ac);background:var(--ac-dim)}
 .fch{display:inline-flex;align-items:center;gap:8px}
+.pvbar{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:8px 16px;background:linear-gradient(90deg,rgba(242,190,84,.14),rgba(63,188,255,.12));border-bottom:1px solid rgba(242,190,84,.28);font-size:12.5px;color:var(--fg-2);text-align:center}
+.pvbar b{display:inline-flex;align-items:center;height:18px;padding:0 6px;margin-right:6px;border-radius:5px;background:rgba(242,190,84,.18);color:var(--amber);font:600 10px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.pvbar a{color:var(--ac);font-weight:500;white-space:nowrap}
