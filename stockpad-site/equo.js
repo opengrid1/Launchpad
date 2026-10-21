@@ -42,6 +42,7 @@
     "function executeTakeover(address token)",
     "function setCapPresets(uint64[] usd8)",
     "function setRewardSplit(uint16 cashbackBps, uint16 referralBps)",
+    "function oracle() view returns (address)",
   ];
   const ERC20_ABI = ["function allowance(address,address) view returns (uint256)", "function approve(address,uint256) returns (bool)", "function balanceOf(address) view returns (uint256)"];
   const ROUTER_ABI = [
@@ -224,6 +225,18 @@
     multi, routeOut,
     /** true when ETH can be swapped into `pair` (WETH, or a stock with a route) */
     hasRoute: (pair) => lc(pair) === WETH || !!(stockOf(pair) && stockOf(pair).route),
+    /** whether a launch on `pair` would get a price from the oracle right now; `why` says what blocks it */
+    async launchable(pair) {
+      const O = new E.Contract(await factR.oracle(), ["function launchPrice(address) returns (uint256)", "error NoPrice()", "error TooShallow()", "error PriceMoving()"], provider);
+      try { await O.launchPrice.staticCall(pair); return { ok: true, why: "" }; }
+      catch (e) {
+        const n = (e.revert && e.revert.name) || "", t = pairSym(pair).replace(/on$/, "");
+        const why = n === "TooShallow" ? `${t}'s price pool is too shallow right now, so the oracle won't price a launch. Pick another stock or try later.`
+          : n === "PriceMoving" ? `${t}'s price is moving fast right now. Try again in a few minutes.`
+          : n === "NoPrice" ? `The oracle has no price for ${t}.` : "";
+        return { ok: !why, why };
+      }
+    },
     /** USD prices (per whole token) for many pairs in a few calls, from the factory's oracle */
     async pairPrices(list) {
       const f = new E.Interface(["function pairUsdPrice(address pair) view returns (uint256)"]);

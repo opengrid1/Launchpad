@@ -39,8 +39,8 @@ function launchInit(){
   /** the dev buy is paid in ETH, so it needs an ETH route into the pair */
   function devRoute(){ const ok=!S.pair||S.pair.route; if(!ok&&S.dev){ S.dev=false; const sw=g('sw-dev'); sw.classList.remove('on'); sw.setAttribute('aria-checked','false'); g('opt-dev').classList.remove('on'); }
     g('opt-dev').classList.toggle('off',!ok); g('dev-hdr').textContent=ok?'Paid in ETH':`Off: ${S.pair.ticker} has no ETH route`; }
-  function setPair(p){ S.pair=p||null; g('pair-err').textContent=''; devRoute(); $$('#pairs .pc').forEach(b=>b.classList.toggle('on',!!S.pair&&b.dataset.p===S.pair.address)); if(S.pair){ const u=new URL(location.href); u.searchParams.set('pair',S.pair.symbol); history.replaceState(null,'',u); SP.pairUsd(S.pair.address).then(()=>{ paintPairs(); sync(); }).catch(()=>{}); } sync(); }
-  function preselect(){ const q=(new URLSearchParams(location.search).get('pair')||'').trim().toLowerCase(); if(!q) return; const p=PAIRS.find(x=>x.symbol.toLowerCase()===q||x.ticker.toLowerCase()===q||x.address===q); if(p) S.pair=p; }
+  function setPair(p){ S.pair=p||null; S.pairBad=''; g('pair-err').textContent=''; devRoute(); if(S.pair&&window.CHAIN&&CHAIN.equo&&CHAIN.equo.launchable) CHAIN.equo.launchable(S.pair.address).then(r=>{ if(S.pair!==p) return; S.pairBad=r.why; g('pair-err').textContent=r.why; sync(); }).catch(()=>{}); $$('#pairs .pc').forEach(b=>b.classList.toggle('on',!!S.pair&&b.dataset.p===S.pair.address)); if(S.pair){ const u=new URL(location.href); u.searchParams.set('pair',S.pair.symbol); history.replaceState(null,'',u); SP.pairUsd(S.pair.address).then(()=>{ paintPairs(); sync(); }).catch(()=>{}); } sync(); }
+  function preselect(){ const q=(new URLSearchParams(location.search).get('pair')||'').trim().toLowerCase(); if(!q) return; const p=PAIRS.find(x=>x.symbol.toLowerCase()===q||x.ticker.toLowerCase()===q||x.address===q); if(p){ S.pair=p; S.pairBad=''; devRoute(); if(window.CHAIN&&CHAIN.equo&&CHAIN.equo.launchable) CHAIN.equo.launchable(p.address).then(r=>{ if(S.pair!==p) return; S.pairBad=r.why; g('pair-err').textContent=r.why; }).catch(()=>{}); } }
 
   /* ---------- step 2: identity ---------- */
   function paintLogo(){ const d=g('drop'), inn=g('drop-in'); d.classList.toggle('has',!!S.logo); inn.innerHTML=S.logo?`<img src="${S.logo}" alt="">`:'<span>Upload<br>image</span>'; }
@@ -100,7 +100,7 @@ function launchInit(){
     if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.bb) bbMsg(); if(S.mw) mwMsg(); if(S.dev) devMsg(); paintReview(); if(S.presets.length){ const px=pairPx(); g('cap-hint').textContent=`The coin opens at ${fmtCap(S.capUsd)} market cap${S.pair&&px?' ('+fmtInPair(S.capUsd/px)+')':''}. A higher start means the first buys move the price less.`; } }
 
   /* ---------- steps ---------- */
-  function validate(n){ if(n===1){ const ok=!!S.pair; g('pair-err').textContent=ok?'':'Pick a stock or ETH to continue'; return ok; }
+  function validate(n){ if(n===1){ const ok=!!S.pair&&!S.pairBad; g('pair-err').textContent=!S.pair?'Pick a stock or ETH to continue':S.pairBad; return ok; }
     if(n===2){ const a=nameMsg(), b=symMsg()&&!!fields.sym(); if(!fields.sym()){ const el=g('sym-msg'); el.className='err'; el.textContent='Symbol is required'; } if(!fields.name()) g('name-msg').textContent='Name is required'; return a&&b; }
     if(n===3){ const a=feeMsg(), b=snipeMsg(), c=divMsg(), d=devMsg(), e=bbMsg(), f=mwMsg(); return a&&b&&c&&d&&e&&f; } return true; }
   function show(n){ S.step=n; S.maxStep=Math.max(S.maxStep,n); $$('#pg-launch .pane').forEach(p=>p.classList.toggle('on',+p.dataset.pane===n));
