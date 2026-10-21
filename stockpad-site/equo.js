@@ -166,6 +166,29 @@
       return { cashback: sum(asTrader, "cashback"), referral: sum(asRef, "referral"), traders: new Set(refs.map((l) => lc(iface.parseLog(l).args.trader))).size };
     },
 
+    /** platform-wide cashback and referral totals from the hook's events, in USD at today's pair prices */
+    async rewardStats(prices) {
+      const iface = new E.Interface(HOOK_ABI);
+      const tc = iface.getEvent("RewardsCredited").topicHash, tb = iface.getEvent("ReferrerBound").topicHash, tl = iface.getEvent("RewardsClaimed").topicHash;
+      const logs = await getLogs({ address: addr.hook, topics: [[tc, tb, tl]] });
+      const px = (p) => (prices && prices[lc(p)]) || 0;
+      const pairOfToken = (t) => { const x = (C.token && C.token(lc(t))) || null; return x ? lc(x.pairAddr || WETH) : WETH; };
+      const s = { cashback: 0, referral: 0, claimed: 0, earners: new Set(), referrers: {}, referred: 0, events: 0 };
+      for (const l of logs) {
+        const ev = iface.parseLog(l); if (!ev) continue; s.events++;
+        if (ev.name === "RewardsCredited") {
+          const p = px(pairOfToken(ev.args.token)), cb = (Number(ev.args.cashback) / 1e18) * p, rf = (Number(ev.args.referral) / 1e18) * p;
+          s.cashback += cb; s.referral += rf;
+          if (cb > 0) s.earners.add(lc(ev.args.trader));
+          if (lc(ev.args.referrer) !== ZERO) { const r = s.referrers[lc(ev.args.referrer)] || (s.referrers[lc(ev.args.referrer)] = { earned: 0, traders: new Set(), volTrades: 0 }); r.earned += rf; r.traders.add(lc(ev.args.trader)); r.volTrades++; }
+        } else if (ev.name === "ReferrerBound") {
+          s.referred++; const r = s.referrers[lc(ev.args.referrer)] || (s.referrers[lc(ev.args.referrer)] = { earned: 0, traders: new Set(), volTrades: 0 }); r.traders.add(lc(ev.args.trader));
+        } else s.claimed += (Number(ev.args.amount) / 1e18) * px(ev.args.pair);
+      }
+      const top = Object.entries(s.referrers).map(([w, r]) => ({ w, earned: r.earned, traders: r.traders.size, trades: r.volTrades })).sort((a, b) => b.earned - a.earned || b.traders - a.traders);
+      return { cashback: s.cashback, referral: s.referral, claimed: s.claimed, unclaimed: Math.max(0, s.cashback + s.referral - s.claimed), earners: s.earners.size, referrers: top.length, referred: s.referred, top, events: s.events };
+    },
+
     // creator
     creatorOf: (token) => hookR.creatorOf(token).then(lc),
     async creatorInfo(token) {

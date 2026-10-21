@@ -27,7 +27,7 @@
 #pg-analytics .tb td .sp4{margin-right:8px}
 @media(max-width:1100px){#pg-analytics .kp{grid-template-columns:1fr 1fr}}
 @media(max-width:1100px){#pg-analytics .fboxes{grid-template-columns:1fr 1fr}}
-@media(max-width:700px){#pg-analytics .kp{grid-template-columns:1fr} #pg-analytics .fboxes{grid-template-columns:1fr} #pg-analytics .two{grid-template-columns:1fr} #pg-analytics .ph{flex-direction:column;align-items:flex-start}}
+@media(max-width:700px){#pg-analytics #an-rwk{grid-template-columns:1fr 1fr} #pg-analytics #an-rwk .fbox b{font-size:17px} #pg-analytics .kp{grid-template-columns:1fr} #pg-analytics .fboxes{grid-template-columns:1fr} #pg-analytics .two{grid-template-columns:1fr} #pg-analytics .ph{flex-direction:column;align-items:flex-start}}
 </style>
 </head><body data-page="analytics">
 <header id="sp-top"></header><div id="sp-tape"></div>
@@ -40,6 +40,12 @@
     <div class="fboxes" id="an-fboxes"></div>
     <div style="overflow-x:auto;border-top:1px solid var(--line)"><table class="tb" id="an-fees"><thead><tr><th>Coin</th><th class="r">Fee</th><th>Split</th><th class="r">Fees paid</th><th class="r">Creator owed</th><th class="r hm">Holders pending</th><th class="r hm">Buyback pot</th><th class="r hm">Burned</th></tr></thead><tbody></tbody></table></div>
   </section>
+  <section class="panel" style="margin-top:12px" id="an-rw">
+    <div class="ph2" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)"><span>Cashback and referrals</span><span class="num muted" id="an-rw-split" style="font-size:12px"></span></div>
+    <div class="fboxes" id="an-rwk"></div>
+    <div style="overflow-x:auto;border-top:1px solid var(--line)"><table class="tb" id="an-refs"><thead><tr><th>#</th><th>Referrer</th><th class="r">Earned</th><th class="r">Traders referred</th><th class="r hm">Paid trades</th></tr></thead><tbody></tbody></table></div>
+    <p class="hint" style="margin:0;padding:10px 16px;border-top:1px solid var(--line)">Read from the hook's on-chain events (<a href="#" id="an-rw-hook" target="_blank" rel="noopener">RewardsCredited, ReferrerBound, RewardsClaimed</a>). USD at today's pair prices. Cashback and referral come out of the platform's share only; creator, holder and buyback shares are not touched.</p>
+  </section>
   <div class="two">
     <section class="panel"><div class="ph2" style="padding:12px 16px;border-bottom:1px solid var(--line)">By stock</div><div style="overflow-x:auto"><table class="tb" id="an-stocks"><thead><tr><th>Stock</th><th class="r">Coins</th><th class="r">Volume</th><th class="r">Fees paid</th><th class="r hm">Trades</th><th class="r hm">Holders</th></tr></thead><tbody></tbody></table></div></section>
     <section class="panel"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line)"><span>Top coins</span><div class="seg" id="an-topby"><button data-k="vol" class="on">Volume</button><button data-k="fees">Fees</button><button data-k="h">Holders</button></div></div><div style="overflow-x:auto"><table class="tb" id="an-top"><thead><tr><th>#</th><th>Coin</th><th>Pair</th><th class="r" id="an-top-h">Volume</th><th class="r hm">Mcap</th></tr></thead><tbody></tbody></table></div></section>
@@ -51,5 +57,5 @@
   <section class="panel" style="margin-top:12px"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)"><span>Recent trades</span><span class="num muted" id="an-feed-n" style="font-size:12px"></span></div><div class="feed" id="an-feed"></div></section>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=2"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=3"></script><script src="/wallet.js"></script><script src="/core.js?v=18"></script><script src="/sp-analytics.js?v=18"></script>
+<script src="/config.js?v=2"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=4"></script><script src="/wallet.js"></script><script src="/core.js?v=18"></script><script src="/sp-analytics.js?v=19"></script>
 </body></html>

@@ -1,4 +1,4 @@
-/* Analytics page: platform totals with per-day bars, breakdown by stock, top coins, top creators, live trade feed.
+/* Analytics page: platform totals with per-day bars, fees, cashback and referrals, breakdown by stock, top coins, top creators, live trade feed.
    Everything comes from the trade index (CHAIN.allTrades) and the token list; USD uses each coin's pair price. */
 window.SP_PAGE=function(){
   const pg=$('#pg-analytics'); if(!pg) return;
@@ -72,8 +72,21 @@ window.SP_PAGE=function(){
   function feed(fresh){ const l=TR.slice().sort((a,b)=>b.ts-a.ts||(b.index||0)-(a.index||0)).slice(0,20); $('#an-feed-n').textContent=TR.length?TR.length.toLocaleString()+' trades':'';
     $('#an-feed').innerHTML=l.length?l.map(t=>{ const x=tok(t.token); if(!x) return ''; const k=t.tx+':'+t.index; const pair=Number(t.pair)/1e18; return `<a class="fr ${fresh&&fresh.has(k)?'new':''}" href="${tokenUrl(x)}"><span class="side ${t.buy?'b':'s'}">${t.buy?'Buy':'Sell'}</span><div class="coin"><img class="lg" src="${SP.coinLogo(x)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><div><b>${esc(x.n)}</b><small>$${esc(x.t)} · ${shortAddr(cs(String(t.wallet)))}</small></div></div><span class="v">${fmtUsd(usdOf(t))}<small>${SP.fmtPair(pair,x)}</small></span><span class="t">${ago(Math.max(0,now()-t.ts))} ago</span></a>`; }).join(''):'<div class="empty">No trades yet</div>'; }
 
+  /* ---------- cashback and referrals, from the hook's events ---------- */
+  let rwAt=0;
+  async function rewards(){ const EQ=window.CHAIN&&CHAIN.equo; const box=$('#an-rwk'); if(!EQ||!box) return; if(Date.now()-rwAt<60000) return; rwAt=Date.now();
+    if(!box.innerHTML) box.innerHTML='<div class="fbox"><span class="sk w6"></span></div>'.repeat(4);
+    const hk=(window.INKY&&INKY.contracts&&INKY.contracts.hook)||''; const hl=$('#an-rw-hook'); if(hl&&hk) hl.href=EXPLORER+'/address/'+hk+'#events';
+    EQ.split().then(sp=>{ $('#an-rw-split').textContent=`Cashback ${sp.cashbackBps/100}% · referral ${sp.referralBps/100}% of the platform share`; }).catch(()=>{});
+    try{ const r=await EQ.rewardStats(SP.prices); const tot=r.cashback+r.referral;
+      box.innerHTML=[['Cashback paid','var(--up)',fmtUsd(r.cashback),`${r.earners.toLocaleString()} trader${r.earners===1?'':'s'} earned it`],['Referral paid','var(--ac)',fmtUsd(r.referral),`${r.referrers.toLocaleString()} referrer${r.referrers===1?'':'s'} · ${r.referred.toLocaleString()} referred`],['Claimed','var(--fg-3)',fmtUsd(r.claimed),tot?`${Math.min(100,r.claimed/tot*100).toFixed(0)}% of all rewards`:'nothing earned yet'],['Unclaimed','var(--amber)',fmtUsd(r.unclaimed),'held by the hook for the earners']].map(f=>`<div class="fbox"><span class="lab"><i style="background:${f[1]}"></i>${f[0]}</span><b>${f[2]}</b><small>${f[3]}</small></div>`).join('');
+      const l=r.top.slice(0,10);
+      $('#an-refs tbody').innerHTML=l.length?l.map((x,i)=>`<tr class="go" data-go="/profile?a=${x.w}"><td class="num muted">${i+1}</td><td><span class="w"><span class="av">${SP.avatar(x.w,20)}</span><a href="/profile?a=${x.w}">${shortAddr(cs(x.w))}</a></span></td><td class="r num">${fmtUsd(x.earned)}</td><td class="r num">${x.traders.toLocaleString()}</td><td class="r num hm">${x.trades.toLocaleString()}</td></tr>`).join(''):'<tr><td colspan="5"><div class="empty">No referrals yet</div></td></tr>';
+      $$('#an-refs tr[data-go]').forEach(t=>t.onclick=e=>{ if(e.target.closest('a')) return; SP.go(t.dataset.go); });
+    }catch(e){ rwAt=0; box.innerHTML=`<div class="notice warn" style="grid-column:1/-1">${ic('warn')}<span>Could not load rewards (${esc(SP.errMsg(e))}).</span></div>`; } }
+
   async function load(first){ try{ const tr=(await CHAIN.allTrades()).filter(t=>tok(t.token)); const fresh=new Set(tr.filter(t=>!seen.has(t.tx+':'+t.index)).map(t=>t.tx+':'+t.index)); tr.forEach(t=>seen.add(t.tx+':'+t.index)); TR=tr; render(first?null:fresh); }catch(e){ console.warn('analytics',e); if(first) $('#an-kpis').innerHTML=`<div class="notice warn" style="grid-column:1/-1">${ic('warn')}<span>Could not load the trade index (${esc(SP.errMsg(e))}).</span></div>`; } }
-  function render(fresh){ kpis(); fees(); byStock(); topCoins(); traders(); creators(); feed(fresh); }
+  function render(fresh){ kpis(); fees(); rewards(); byStock(); topCoins(); traders(); creators(); feed(fresh); }
   $$('#an-range button').forEach(b=>b.onclick=()=>{ range=+b.dataset.r; $$('#an-range button').forEach(x=>x.classList.toggle('on',x===b)); kpis(); });
   $$('#an-trby button').forEach(b=>b.onclick=()=>{ trBy=b.dataset.k; $$('#an-trby button').forEach(x=>x.classList.toggle('on',x===b)); traders(); });
   $$('#an-topby button').forEach(b=>b.onclick=()=>{ topBy=b.dataset.k; $$('#an-topby button').forEach(x=>x.classList.toggle('on',x===b)); topCoins(); });
