@@ -96,18 +96,30 @@ window.SP_PAGE=function(){
   const coinWei=v=>{ let w=CHAIN.parseEther(v.toFixed(18)); if(balCoinWei>0n&&w>balCoinWei&&v<=balCoin*1.000001) w=balCoinWei; return w; };
   const minOut=()=>qOut-qOut*BigInt(Math.round(slipPct()*100))/10000n;
   /* a stock with no ETH route trades in the stock itself: `bal` and amounts in are that stock, not ETH */
-  const via=()=>!!(window.CHAIN&&CHAIN.equo&&X.pairAddr&&!CHAIN.equo.hasRoute(X.pairAddr)), payUsd=()=>via()?pairUsd():ethUsd(), payFmt=v=>via()?inPair(v):fmtEth(v);
+  /* multichain coins: each chain has its own pool; the trader picks which one to trade on and pays in that chain's coin */
+  let tChain=SP.coinChains(X).includes('eth')?'eth':SP.coinChains(X)[0], CC=null;
+  const onEth=()=>tChain==='eth', tc=()=>SP.chain(tChain)||SP.chain('eth'), chainPx=k=>((X.byChain||{})[k]||{}).px||X.px, natUsd=()=>(CC&&CC[tChain]&&CC[tChain].nativeUsd)||0;
+  const natImg=()=>['ETH'].includes(tc().native)?'/img/eth.png':tc().logo;
+  const via=()=>onEth()&&!!(window.CHAIN&&CHAIN.equo&&X.pairAddr&&!CHAIN.equo.hasRoute(X.pairAddr)), payUsd=()=>!onEth()?natUsd():via()?pairUsd():ethUsd(), payFmt=v=>!onEth()?fmtAmt(v)+' '+tc().native:via()?inPair(v):fmtEth(v);
+  function paintTChain(){ const box=$('#tk-tchain'), on=SP.coinChains(X); if(!box) return; box.classList.toggle('hidden',on.length<2); if(on.length<2) return;
+    const best=on.reduce((a,k)=>(side==='buy'?chainPx(k)<chainPx(a):chainPx(k)>chainPx(a))?k:a,on[0]);
+    box.innerHTML=`<button type="button" class="tcb" id="tk-tcb"><span class="l">${side==='buy'?'Buy on':'Sell on'}</span><img src="${tc().logo}" alt=""><b>${esc(tc().name)}</b>${best===tChain?'<span class="bestb">Best price</span>':''}<span class="px">$${fmtPrice(chainPx(tChain))}</span>${ic('down')}</button>`;
+    $('#tk-tcb').onclick=e=>{ e.stopPropagation(); const m=SP.menu(e.currentTarget,`<div class="mh">${on.length} pools · pick where to ${side}</div>`+on.map(k=>{ const c=SP.chain(k), d=(chainPx(k)/chainPx(best)-1)*100;
+      return `<button data-tk="${k}" class="${k===tChain?'on':''}"><img src="${c.logo}" alt="" style="width:20px;height:20px;border-radius:50%"><span>${esc(c.name)} <span class="muted">${esc(c.native)}</span></span><span style="margin-left:auto;display:inline-flex;align-items:center;gap:8px">${k===best?'<span class="bestb">Best</span>':`<span class="muted num" style="font-size:11px">${d>=0?'+':''}${d.toFixed(2)}%</span>`}<span class="num">$${fmtPrice(chainPx(k))}</span>${c.live?'':'<span class="soonb">Soon</span>'}</span></button>`; }).join(''));
+      $$('[data-tk]',m).forEach(b=>b.onclick=()=>{ m.remove(); tChain=b.dataset.tk; amtEl.value=''; resetQuote(); paintTChain(); paintSide(); position(); }); }; }
+  async function quoteFor(v){ if(!onEth()){ const nu=natUsd(), px=chainPx(tChain), r=1-feeR(); if(!nu||!px) return 0n; return side==='buy'?BigInt(Math.floor(v*nu/px*r*1e6))*10n**12n:BigInt(Math.floor(v*px*r/nu*1e9))*10n**9n; }
+    const vp=via(); return side==='buy'?await (vp?CHAIN.quoteBuy:CHAIN.quoteBuyEth)(X.addr,CHAIN.parseEther(v.toFixed(18))):await (vp?CHAIN.quoteSell:CHAIN.quoteSellEth)(X.addr,coinWei(v)); }
   function paintBal(){ const e=SP.W.connected?payFmt(balEth):'—', c=SP.W.connected?fmtAmt(balCoin)+' '+X.t:'—'; $('#tk-bal-in').textContent='Balance: '+(side==='buy'?e:c); $('#tk-bal-out').textContent='Balance: '+(side==='buy'?c:e); }
   function paintSide(){ $$('#tk-sides button').forEach(b=>b.classList.toggle('on',b.dataset.side===side));
-    const coin=`<img src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span>${esc(X.t)}</span>`, eth=via()?`<img src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span>${esc(X.pair)}</span>`:`<img src="/img/eth.png" alt=""><span>ETH</span>`;
+    const coin=`<img src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span>${esc(X.t)}</span>`, eth=!onEth()?`<img src="${natImg()}" alt=""><span>${esc(tc().native)}</span>`:via()?`<img src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span>${esc(X.pair)}</span>`:`<img src="/img/eth.png" alt=""><span>ETH</span>`;
     $('#tk-asset-in').innerHTML=side==='buy'?eth:coin; $('#tk-asset-out').innerHTML=side==='buy'?coin:eth; amtEl.placeholder='0'; ctaEl.classList.toggle('s',side==='sell');
-    $('#tk-note').textContent=`Fee ${feePct()}% in ${X.pair}`; $('#tk-payw').textContent=side==='buy'?(via()?X.pair:'ETH'):X.t; $('#tk-payw-note').textContent=via()?`No ETH route for ${X.pair}; you ${side==='buy'?'pay':'receive'} ${X.pair}`:'';
+    $('#tk-note').textContent=`Fee ${feePct()}% in ${X.pair}`; $('#tk-payw').textContent=side==='buy'?(!onEth()?tc().native:via()?X.pair:'ETH'):X.t; paintTChain(); $('#tk-payw-note').textContent=via()?`No ETH route for ${X.pair}; you ${side==='buy'?'pay':'receive'} ${X.pair}`:'';
     paintBal(); updQuote(); }
   function resetQuote(){ qOut=0n; quoting=false; const o=$('#tk-out'); o.textContent='0'; o.classList.add('dim'); $('#tk-out-usd').textContent=''; $('#tk-amt-usd').textContent=''; $('#tk-min').textContent='—'; $('#tk-fee-l').textContent=`Fee ${feePct()}%`; $('#tk-fee').textContent='—'; const im=$('#tk-imp'); im.textContent='—'; im.className=''; }
   async function updQuote(){ const v=amtVal(); if(!v){ qSeq++; resetQuote(); cta(); return; }
     const seq=++qSeq; quoting=true; cta(); const pu=pairUsd(), eu=payUsd(), fr=feeR(), vp=via();
     $('#tk-amt-usd').textContent=side==='buy'?(eu?fmtUsd(v*eu):''):fmtUsd(v*X.px);
-    try{ const out=side==='buy'?await (vp?CHAIN.quoteBuy:CHAIN.quoteBuyEth)(X.addr,CHAIN.parseEther(v.toFixed(18))):await (vp?CHAIN.quoteSell:CHAIN.quoteSellEth)(X.addr,coinWei(v));
+    try{ const out=await quoteFor(v);
       if(seq!==qSeq) return; qOut=BigInt(out||0); quoting=false; const o=Number(qOut)/1e18; const mn=Number(minOut())/1e18; const oe=$('#tk-out'); oe.classList.toggle('dim',!(o>0));
       let fee=0, spot=0;
       if(side==='buy'){ oe.textContent=o>0?fmtAmt(o):'0'; $('#tk-out-usd').textContent=o>0?fmtUsd(o*X.px):''; $('#tk-min').textContent=fmtAmt(mn)+' '+X.t; fee=pu&&eu?v*eu/pu*fr:0; spot=eu&&X.px>0?v*eu/X.px:0; }
@@ -116,7 +128,7 @@ window.SP_PAGE=function(){
       const im=$('#tk-imp'); if(spot>0&&o>0){ const imp=Math.max(0,(1-o/(spot*(1-fr)))*100); im.textContent=imp.toFixed(2)+'%'; im.className=imp>15?'bad':imp>5?'warn':''; } else { im.textContent='—'; im.className=''; }
     }catch(e){ if(seq!==qSeq) return; quoting=false; qOut=0n; const oe=$('#tk-out'); oe.textContent='—'; oe.classList.add('dim'); $('#tk-out-usd').textContent=''; $('#tk-min').textContent='—'; $('#tk-fee').textContent='—'; $('#tk-imp').textContent='—'; console.warn('quote',e); }
     cta(); }
-  function cta(){ if(ctaEl.dataset.busy) return; const v=amtVal(); const W=SP.W; let t, dis=false;
+  function cta(){ if(ctaEl.dataset.busy) return; if(!tc().live){ ctaEl.textContent=`Trading on ${tc().name} opens soon`; ctaEl.disabled=true; return; } const v=amtVal(); const W=SP.W; let t, dis=false;
     if(!W.connected) t='Connect a wallet'; else if(!W.chainOk) t='Switch to Ethereum'; else if(!v){ t='Enter amount'; dis=true; } else if(side==='buy'&&v>balEth){ t='Insufficient '+(via()?X.pair:'ETH'); dis=true; } else if(side==='sell'&&v>balCoin*1.000001){ t='Insufficient '+X.t; dis=true; } else if(quoting){ t='Fetching quote…'; dis=true; } else if(!(qOut>0n)){ t='No quote available'; dis=true; } else t=(side==='buy'?'Buy ':'Sell ')+X.t;
     ctaEl.textContent=t; ctaEl.disabled=dis; }
   async function doSwap(){ const W=SP.W; if(!W.connected) return SP.W.connect(); if(!W.chainOk){ try{ await SP.W.switchChain(); }catch(e){ SP.toast(SP.errMsg(e),'err'); } return; }
@@ -137,13 +149,14 @@ window.SP_PAGE=function(){
   $('#tk-slip-in').addEventListener('input',()=>updQuote());
   ctaEl.onclick=doSwap;
   if(/[?&]side=sell/.test(location.search)) side='sell';
+  SP.chainCosts().then(c=>{ CC=c; if(!onEth()) updQuote(); }).catch(()=>{});
 
   /* ---------- position and creator cards ---------- */
   let posSeq=0;
   async function position(){ const W=SP.W; const pos=$('#tk-pos'), cre=$('#tk-cre'); const seq=++posSeq;
     if(!W.connected){ balEth=0; balCoin=0; balCoinWei=0n; paintBal(); pos.classList.add('hidden'); cre.classList.add('hidden'); cta(); return; }
     const u=W.address;
-    try{ const [eb,cb,pend,p]=await Promise.all([(via()?CHAIN.equo.balanceOf(X.pairAddr,u):CHAIN.ethBalance(u)).catch(()=>0n),CHAIN.balance(X.addr,u).catch(()=>0n),X.rewards?CHAIN.pending(X.addr,u).catch(()=>0n):Promise.resolve(0n),CHAIN.position(X.addr,u).catch(()=>null)]);
+    try{ if(!onEth()){ balEth=0; balCoin=0; balCoinWei=0n; paintBal(); cta(); } const [eb,cb,pend,p]=await Promise.all([(!onEth()?Promise.resolve(0n):via()?CHAIN.equo.balanceOf(X.pairAddr,u):CHAIN.ethBalance(u)).catch(()=>0n),CHAIN.balance(X.addr,u).catch(()=>0n),X.rewards?CHAIN.pending(X.addr,u).catch(()=>0n):Promise.resolve(0n),CHAIN.position(X.addr,u).catch(()=>null)]);
       if(seq!==posSeq||SP.W.address!==u) return; balEth=Number(eb)/1e18; balCoinWei=BigInt(cb||0); balCoin=Number(balCoinWei)/1e18; paintBal(); cta();
       const pu=pairUsd(); const pendV=Number(pend||0)/1e18; const mine=TR.filter(v=>v.wallet===u); const pn=SP.pnl(mine,X,balCoin,true); const avg=p&&p.avg>0?p.avg:0; const pc=avg>0&&X.pxPair>0?(X.pxPair/avg-1)*100:null;
       $('#tk-pos-sym').textContent=X.t;

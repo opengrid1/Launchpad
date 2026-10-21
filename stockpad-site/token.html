@@ -44,6 +44,7 @@
 #pg-token .trade .pb{padding:14px}
 #pg-token .sides{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:var(--r);background:var(--s2)}
 #pg-token .sides button{height:32px;padding:0 18px;border-radius:7px;font-weight:600;color:var(--fg-3);border:1px solid transparent} #pg-token .sides button.on.b{background:var(--up-dim);border-color:rgba(46,189,133,.45);color:var(--up)} #pg-token .sides button.on.s{background:var(--dn-dim);border-color:rgba(246,70,93,.45);color:var(--dn)}
+#pg-token .tchain{margin-top:12px} #pg-token .tcb{display:flex;align-items:center;gap:9px;width:100%;height:44px;padding:0 12px 0 8px;border:1px solid var(--line-2);border-radius:12px;background:var(--s2);text-align:left;transition:border-color .15s} #pg-token .tcb:hover{border-color:var(--line-3)} #pg-token .tcb .l{font:500 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--fg-3)} #pg-token .tcb img{width:24px;height:24px;border-radius:50%} #pg-token .tcb b{font:600 13.5px var(--disp)} #pg-token .tcb .px{margin-left:auto;font:500 12.5px var(--mono);color:var(--fg-2)} #pg-token .tcb svg{width:14px;height:14px;color:var(--fg-3)} #pg-token .bestb{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;font:600 9.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--up);background:var(--up-dim)}
 #pg-token .payw{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--fg-3);flex-wrap:wrap} #pg-token .payw .badge{height:22px;font-size:11px}
 #pg-token .box{margin-top:10px;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--s2)} #pg-token .box.out{border-color:var(--line);background:var(--s1)} #pg-token .box:focus-within{border-color:var(--ac)}
 #pg-token .box .lr{display:flex;justify-content:space-between;gap:10px} #pg-token .box .lr .num{font-size:11.5px;color:var(--fg-3)}
@@ -99,6 +100,7 @@
     <aside class="right">
       <section class="panel trade" id="tk-trade"><div class="pb">
         <div class="sides" id="tk-sides"><button data-side="buy" class="b on">Buy</button><button data-side="sell" class="s">Sell</button></div>
+        <div class="tchain hidden" id="tk-tchain"></div>
         <div class="payw"><span>Pay with</span><span class="badge ac" id="tk-payw">ETH</span><span class="muted" id="tk-payw-note"></span></div>
         <div class="box">
           <div class="lr"><span class="lab">Amount</span><span class="num" id="tk-bal-in"></span></div>
@@ -124,5 +126,5 @@
   <div class="empty panel hidden" id="tk-empty"></div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=4"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/preview.js?v=1"></script><script src="/wallet.js"></script><script src="/charting_library/charting_library.js"></script><script src="/tv.js?v=2"></script><script src="/core.js?v=20"></script><script src="/sp-creator.js?v=2"></script><script src="/sp-token.js?v=21"></script>
+<script src="/config.js?v=4"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/preview.js?v=1"></script><script src="/wallet.js"></script><script src="/charting_library/charting_library.js"></script><script src="/tv.js?v=2"></script><script src="/core.js?v=20"></script><script src="/sp-creator.js?v=2"></script><script src="/sp-token.js?v=22"></script>
 </body></html>
