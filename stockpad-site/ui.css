@@ -171,3 +171,22 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px} .tb th{text-align:l
 .sheet .sh-foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding:14px 10px 0;font:11.5px var(--mono);color:var(--fg-3)}
 .sheet .sh-foot .mkt{display:inline-flex!important}
 @media(max-width:900px){.burger{display:inline-flex} .topr{gap:8px}}
+/* chains: logo stack, tag, filter chips */
+.chs{display:inline-flex;align-items:center;flex:none}
+.chs img{width:var(--s);height:var(--s);border-radius:50%;background:var(--s3);box-shadow:0 0 0 2px var(--s1);margin-left:calc(var(--s) * -.32)}
+.chs img:first-child{margin-left:0}
+.ctag{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px 0 4px;border-radius:999px;border:1px solid var(--line-2);background:var(--s2);font:500 12px var(--sans);color:var(--fg-2);white-space:nowrap}
+.ctag img{width:16px;height:16px;border-radius:50%}
+.cchips{display:flex;gap:6px;flex-wrap:wrap}
+.cchip{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px 0 6px;border-radius:999px;border:1px solid var(--line-2);background:var(--s1);font:500 13px var(--disp);color:var(--fg-2);transition:border-color .15s,background .15s,color .15s}
+.cchip img{width:20px;height:20px;border-radius:50%}
+.cchip .n{font:500 11px var(--mono);color:var(--fg-3)}
+.cchip:hover{border-color:var(--line-3);color:var(--fg)}
+.cchip.on{border-color:var(--ac-line);background:var(--ac-dim);color:var(--fg)}
+.cchip .all{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--s3);color:var(--fg-2)}
+.cchip .all svg{width:12px;height:12px}
+.soonb{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;font:600 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--amber);background:rgba(242,190,84,.12)}
+.liveb{display:inline-flex;align-items:center;gap:5px;height:18px;padding:0 6px;border-radius:5px;font:600 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--up);background:var(--up-dim)}
+.liveb::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.mainb{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;font:600 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ac);background:var(--ac-dim)}
+.fch{display:inline-flex;align-items:center;gap:8px}

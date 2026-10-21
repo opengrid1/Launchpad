@@ -166,7 +166,13 @@ window.SP_PAGE=function(){
 
   /* ---------- live refresh ---------- */
   let ticking=false;
-  function paintAll(){ stats(); headLive(); flow(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; if(activeTab==='info') info(); }
+  /* ---------- chains: where this coin lives; HyperEVM and BNB Chain open with multichain launches ---------- */
+  function chainsCard(){ const el=$('#tk-chains-body'); if(!el) return; const on=SP.coinChains(X);
+    $('#tk-bridge').href='/bridge?coin='+X.addr;
+    el.innerHTML=SP.chains.map(c=>{ const has=on.includes(c.key);
+      return `<div class="chr${has?'':' off'}"><img src="${c.logo}" alt=""><span class="cn"><b>${esc(c.name)} ${has?'<span class="liveb">Live</span>':c.live?'':'<span class="soonb">Soon</span>'}</b><small>${has?'Pool vs '+esc(X.pair)+' · 1B supply':'Not on this chain yet'}</small></span><span class="cv">${has?'$'+fmtPrice(X.px)+'<small>'+fmtUsd(X.mc/on.length)+' mcap</small>':'—'}</span></div>`; }).join('')
+      +`<p class="chnote">${on.length>1?'Each chain has its own pool; arbitrage keeps the prices in line. ':''}Coins launched on several chains move between them on the <a href="/bridge?coin=${X.addr}">Bridge</a>.</p>`; }
+  function paintAll(){ stats(); headLive(); flow(); chainsCard(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; if(activeTab==='info') info(); }
   async function sync(force){ if(ticking||(!force&&document.hidden)) return; ticking=true; const oldPx=X.pxPair;
     try{ const nx=await CHAIN.refresh(X.addr); if(nx) Object.assign(X,nx); const tr=await CHAIN.trades(X.addr); const fresh=tr.filter(t=>!seen.has(key(t)));
       if(fresh.length){ fresh.forEach(t=>seen.add(key(t))); TR=[...fresh.map(view),...TR]; sortTr(); renderTrades(new Set(fresh.map(key))); holdersAt=0; topAt=0; if(activeTab==='holders') holders(true); if(activeTab==='top') top(true); }
@@ -180,5 +186,5 @@ window.SP_PAGE=function(){
   setInterval(headLive,60000);
 
   /* ---------- boot ---------- */
-  creatorCard(); head(); stats(); headLive(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; chart(); paintSide(); resetQuote(); cta(); loadTrades(); position();
+  creatorCard(); head(); stats(); headLive(); chainsCard(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; chart(); paintSide(); resetQuote(); cta(); loadTrades(); position();
 };

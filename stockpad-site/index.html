@@ -4,7 +4,7 @@
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
 <meta property="og:title" content="Equo"><meta property="og:description" content="Launch coins paired with real stocks on Ethereum."><meta property="og:image" content="/img/og.png?v=16"><meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=17">
+<link rel="stylesheet" href="/ui.css?v=18">
 <style>
 /* opener */
 #pg-markets .opener{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(320px,.9fr);gap:40px;align-items:center;padding:22px 0 26px;border-bottom:1px solid var(--line)}
@@ -35,6 +35,9 @@
 #pg-markets .empty{grid-column:1/-1;border:1px dashed var(--line-2);border-radius:var(--r-xl)}
 @media(max-width:1100px){#pg-markets .cards{grid-template-columns:repeat(2,minmax(0,1fr))} #pg-markets .opener{grid-template-columns:1fr;gap:22px;align-items:start}}
 @media(max-width:640px){#pg-markets .opener{padding:14px 0 20px} #pg-markets .opener h1{font-size:32px} #pg-markets .hacts .btn{flex:1} #pg-markets .cards{grid-template-columns:1fr} #pg-markets .fbar .q{min-width:0;width:100%;margin:0} #pg-markets .fbar .sep{display:none}}
+#pg-markets .chainbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:6px 0 12px} #pg-markets .cbh{font:12px var(--mono);color:var(--fg-3)} #pg-markets .cbh b{color:var(--fg-2);font-weight:500}
+#pg-markets .cc .cch{display:inline-flex;margin-left:2px;vertical-align:middle}
+@media(max-width:640px){#pg-markets #mk-chains{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:0 14px} #pg-markets #mk-chains::-webkit-scrollbar{display:none} #pg-markets .cchip{flex:none}}
 </style>
 </head><body data-page="markets">
 <header id="sp-top"></header><div id="sp-tape"></div>
@@ -43,11 +46,12 @@
     <div class="ol"><h1>Launch coins paired<br>with <em>real stocks</em></h1><div class="hacts"><a class="btn pri lg" href="/launch">Launch a coin</a><a class="btn lg line" href="/docs/how-it-works">How it works</a></div></div>
     <div class="figs" id="mk-figs"></div>
   </section>
+  <div class="chainbar"><div class="cchips" id="mk-chains"></div><span class="cbh" id="mk-chain-h"></span></div>
   <div class="fbar" id="mk-fbar"><button class="pill wpill" id="mk-watch"></button><span class="sep"></span><div class="pills" id="mk-sort"><button class="pill on" data-s="trend">Trending</button><button class="pill" data-s="vol">Volume</button><button class="pill" data-s="mc">Market cap</button><button class="pill" data-s="new">New</button></div><span class="sep"></span><div class="pills" id="mk-stockpills"></div><label class="q" id="mk-q-wrap"><input id="mk-q" placeholder="Search name, ticker or address" autocomplete="off"></label></div>
   <div class="cards" id="mk-cards"></div>
   <div class="pager" id="mk-pager"></div>
 
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=2"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/wallet.js"></script><script src="/core.js?v=18"></script><script src="/sp-home.js?v=18"></script>
+<script src="/config.js?v=3"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/wallet.js"></script><script src="/core.js?v=19"></script><script src="/sp-home.js?v=19"></script>
 </body></html>

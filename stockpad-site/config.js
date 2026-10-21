@@ -608,6 +608,20 @@ window.INKY = {
   })(),
   /* Equo: list only stock-paired coins; ETH-paired coins on the same factory stay on their own site. */
   stocksOnly: true,
+  /* chains: one coin, live on several chains at the same opening price, bridged with LayerZero.
+     Ethereum is the main chain. `live` is false until that chain's contracts are deployed; the site
+     shows those chains but only Ethereum launches and trades today. launchGas is the gas one launch
+     uses on that chain (factory + pool + wiring), used for the launch cost quote. */
+  chains: [
+    {key:'eth',   name:'Ethereum',  short:'Ethereum', chainId:1,   native:'ETH',  cg:'ethereum',    logo:'/img/chains/eth.png',   color:'#8c9eff', main:true,  live:true,
+     rpc:'https://ethereum-rpc.publicnode.com', explorer:'https://etherscan.io', lzEid:30101, poolManager:'0x000000000004444c5dc75cB358380D2e3dE08A90', launchGas:7290000, eta:'~12 s'},
+    {key:'hyper', name:'HyperEVM',  short:'Hyper',    chainId:999, native:'HYPE', cg:'hyperliquid', logo:'/img/chains/hyper.png', color:'#97fce4', main:false, live:false,
+     rpc:'https://rpc.hyperliquid.xyz/evm', explorer:'https://hyperevmscan.io', lzEid:30367, poolManager:'0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', launchGas:7290000, eta:'~1 min'},
+    {key:'bsc',   name:'BNB Chain', short:'BNB',      chainId:56,  native:'BNB',  cg:'binancecoin', logo:'/img/chains/bsc.png',   color:'#f0b90b', main:false, live:false,
+     rpc:'https://bsc-rpc.publicnode.com', explorer:'https://bscscan.com', lzEid:30102, poolManager:'0x28e2Ea090877bF75740558f6BFB36A5ffeE9e9dF', launchGas:7290000, eta:'~3 s'}
+  ],
+  /* launch fee: gas on every chosen chain plus this margin; bridge: LayerZero fees */
+  launchMarginBps: 2000, bridgeFeeBps: 20, fastFeeBps: 20,
   site: 'https://stockpad-v2.vercel.app',
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'
 };

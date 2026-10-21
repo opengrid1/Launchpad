@@ -14,6 +14,7 @@ const ICONS={
   clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>', filter:'<path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>', grid:'<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>', list:'<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>',
   xlogo:'<path d="M4 4l16 16"/><path d="M20 4 4 20"/>', home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>', star:'<path d="M11.5 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L2.8 8.8l6.1-.7z"/>', menu:'<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/>', warn:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>', chat:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>', gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/>', flame:'<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>', share:'<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/>', dl:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>', link:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>', bull:'<path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>', bear:'<path d="m22 17-8.5-8.5-5 5L2 7"/><path d="M16 17h6v-6"/>',
   drop:'<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>', users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>', more:'<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  bridge:'<path d="M2 17h20"/><path d="M4 17v-5"/><path d="M20 17v-5"/><path d="M3 12a9 7 0 0 1 18 0"/><path d="M8 17v-3"/><path d="M12 17v-4"/><path d="M16 17v-3"/>',
   coins:'<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
 };
 const ic=(n,cls='ic')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${cls}" aria-hidden="true">${ICONS[n]||''}</svg>`;
@@ -52,6 +53,23 @@ const SP={
   ready(){ return SP._readyP; },
 };
 
+/* ---------- chains: Ethereum is the main chain; a chain with live:false is shown but not usable yet ---------- */
+SP.chains=(window.INKY&&INKY.chains)||[];
+SP.chain=k=>SP.chains.find(c=>c.key===k)||null;
+SP.coinChains=x=>(x&&x.chains&&x.chains.length)?x.chains:['eth'];
+SP.chainStack=(keys,s=18)=>`<span class="chs" style="--s:${s}px">${keys.map(k=>{ const c=SP.chain(k); return c?`<img src="${c.logo}" alt="${esc(c.name)}" title="${esc(c.name)}">`:''; }).join('')}</span>`;
+SP.chainTag=(k,extra='')=>{ const c=SP.chain(k); return c?`<span class="ctag"><img src="${c.logo}" alt="">${esc(c.name)}${extra}</span>`:''; };
+/** gas price, native USD price and the cost of one launch on every chain, cached for a minute */
+let chainCostP=null, chainCostAt=0;
+SP.chainCosts=()=>{ if(chainCostP&&Date.now()-chainCostAt<60000) return chainCostP; chainCostAt=Date.now();
+  chainCostP=(async()=>{ let usd={}; try{ const ids=SP.chains.map(c=>c.cg).join(','); const r=await fetch('https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids='+ids); if(r.ok){ const j=await r.json(); SP.chains.forEach(c=>{ if(j[c.cg]) usd[c.key]=j[c.cg].usd; }); } }catch{}
+    if(!usd.eth&&SP.prices[WETH]) usd.eth=SP.prices[WETH];
+    const out={}; await Promise.all(SP.chains.map(async c=>{ let gp=0; try{ const r=await fetch(c.rpc,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_gasPrice',params:[]})}); gp=parseInt((await r.json()).result,16)||0; }catch{}
+      const nat=gp*c.launchGas/1e18, m=1+((window.INKY&&INKY.launchMarginBps)||2000)/10000; out[c.key]={gwei:gp/1e9,nativeUsd:usd[c.key]||0,launchNative:nat*m,launchUsd:nat*m*(usd[c.key]||0)}; }));
+    return out; })().catch(e=>{ chainCostP=null; throw e; });
+  return chainCostP; };
+SP.fmtNative=(v,sym)=>{ if(!(v>0)) return '0 '+sym; const d=v>=100?0:v>=1?2:v>=0.01?4:6; return (+v.toFixed(d)).toLocaleString('en-US',{maximumFractionDigits:d})+' '+sym; };
+
 /* ---------- referral: a ?ref=0x... link is remembered in this browser and sent with every trade ---------- */
 (function(){ try{ const q=(new URLSearchParams(location.search).get('ref')||'').trim(); if(/^0x[0-9a-fA-F]{40}$/.test(q)&&!localStorage.getItem('equo-ref')) localStorage.setItem('equo-ref',q.toLowerCase()); window.EQUO_REF=localStorage.getItem('equo-ref')||''; }catch{ window.EQUO_REF=''; } })();
 SP.refLink=a=>`${location.origin}/?ref=${cs(a)}`;
@@ -66,7 +84,7 @@ SP.W.switchChain=async()=>{ const d=window.inkyWallet; if(d&&d.switchChain) awai
 addEventListener('inky:wallet',syncWallet); document.addEventListener('wallet-change',()=>{ /* re-entrancy guard: syncWallet only dispatches on change */ });
 
 /* ---------- shell ---------- */
-const NAV=[['markets','/','Home'],['calls','/calls','Calls'],['analytics','/analytics','Analytics'],['launch','/launch','Launch'],['rewards','/rewards','Rewards'],['portfolio','/profile','Profile']];
+const NAV=[['markets','/','Home'],['calls','/calls','Calls'],['analytics','/analytics','Analytics'],['launch','/launch','Launch'],['bridge','/bridge','Bridge'],['rewards','/rewards','Rewards'],['portfolio','/profile','Profile']];
 /* More menu (desktop) and Tools in the mobile menu: [key, href, label, icon, soon] */
 const TOOLS=[['pools','/pools','Pools','drop'],['burns','/rewards#burns','Burns','flame'],['watch','/?watch=1','Watchlist','star'],['takeover','/takeover','Takeover','users']];
 const MORE_LINKS=[['docs','/docs','Docs','book'],['how','/docs/how-it-works','How it works','info']];
@@ -76,7 +94,7 @@ function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP
   el.innerHTML=`<button class="wbtn" id="wmenu"><span class="av">${SP.avatar(W.address,22)}</span>${esc(W.short)}${!W.chainOk?'<span class="tag red">Wrong network</span>':''}</button>`;
   $('#wmenu',el).onclick=e=>{ const m=SP.menu(e.currentTarget,`<button data-a="copy">${ic('copy')}Copy address</button><button data-a="pf">${ic('user')}Profile</button><button data-a="rw">${ic('gift')}Rewards</button>${SP.isAdmin()?`<button data-a="adm">${ic('shield')}Operator</button>`:''}<button data-a="ex">${ic('globe')}View on Etherscan</button>${!W.chainOk?`<button data-a="sw">${ic('swap')}Switch to Ethereum</button>`:''}<div class="d"></div><button data-a="out">${ic('logout')}Disconnect</button>`);
     $$('[data-a]',m).forEach(b=>b.onclick=()=>{ const a=b.dataset.a; m.remove(); if(a==='copy') SP.copy(cs(W.address),'Address copied'); if(a==='pf') SP.go('/profile'); if(a==='rw') SP.go('/rewards'); if(a==='adm') SP.go('/admin'); if(a==='ex') open(EXPLORER+'/address/'+W.address,'_blank'); if(a==='sw') SP.W.switchChain().catch(err=>SP.toast(SP.errMsg(err),'err')); if(a==='out') SP.W.disconnect(); }); }; }
-const NAV_IC={markets:'home',calls:'chat',launch:'rocket',analytics:'trend',rewards:'gift',portfolio:'user',docs:'book'};
+const NAV_IC={markets:'home',calls:'chat',launch:'rocket',analytics:'trend',bridge:'bridge',rewards:'gift',portfolio:'user',docs:'book'};
 const stockPx=v=>v?'$'+(v>=100?v.toFixed(0):v>=1?v.toFixed(2):fmtPrice(v)):'';
 const navHtml=page=>{ const L=NAV.filter(n=>n[0]!=='launch'); const half=Math.ceil(L.length/2); const a=x=>`<a href="${x[1]}" class="${page===x[0]?'on':''}">${x[2]}</a>`; const moreOn=TOOLS.concat(MORE_LINKS).some(t=>t[0]===page)||page==='docs'; return L.slice(0,half).map(a).join('')+`<a href="/launch" class="btn pri lnch ${page==='launch'?'on':''}">${ic('rocket')}Launch a coin</a>`+L.slice(half).map(a).join('')+`<button type="button" class="morebtn ${moreOn?'on':''}" id="sp-more" aria-haspopup="true">More${ic('down')}</button>`; };
 const toolRow=t=>t[4]?`<span class="mi soon-i">${ic(t[3])}<span>${t[2]}</span><span class="soon">Soon</span></span>`:`<a class="mi" href="${t[1]}">${ic(t[3])}<span>${t[2]}</span></a>`;
@@ -87,7 +105,7 @@ function openSheet(){ SP.closeDialogs(); const page=document.body.dataset.page||
     <nav class="sh-nav">${NAV.filter(n=>n[0]!=='launch').map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${ic(NAV_IC[n[0]])}${n[2]}</a>`).join('')}</nav>
     <div class="mh">Tools</div><nav class="sh-nav">${TOOLS.map(toolRow).join('')}</nav>
     <div class="mh">Learn</div><nav class="sh-nav">${MORE_LINKS.map(toolRow).join('')}</nav>
-    <div class="sh-foot">${clockHtml().replace('id="sp-clock"','')}<span>Ethereum</span></div></div>`;
+    <div class="sh-foot">${clockHtml().replace('id="sp-clock"','')}<span class="fch">${SP.chainStack(SP.chains.map(c=>c.key),16)}</span></div></div>`;
   ov.addEventListener('click',e=>{ if(e.target===ov||e.target.closest('[data-close]')) ov.remove(); }); document.body.appendChild(ov);
   const w=$('#sh-wallet',ov); if(SP.W.connected){ w.innerHTML=`<a class="btn" href="/profile"><span class="av" style="width:18px;height:18px;border-radius:5px;overflow:hidden;display:inline-block">${SP.avatar(SP.W.address,18)}</span>${esc(SP.W.short)}</a>`; } else { w.innerHTML=`<button class="btn">${ic('wallet')}Connect</button>`; w.firstChild.onclick=()=>{ ov.remove(); SP.W.connect(); }; } }
 function clockHtml(){ const mk=SP.market(); return `<span class="mkt ${mk.open?'open':''}" id="sp-clock" title="${esc(mk.detail)}"><i></i><span>${mk.open?'NYSE open':'NYSE closed'}<b>${esc(mk.until)}</b></span></span>`; }
@@ -99,7 +117,7 @@ function renderShell(){ const page=document.body.dataset.page||'markets'; const 
     const q=$('#sp-q'); q.addEventListener('input',()=>searchMenu(q)); q.addEventListener('focus',()=>searchMenu(q)); addEventListener('keydown',e=>{ if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){ e.preventDefault(); q.focus(); } }); }
   let tb=$('#sp-tabbar'); if(!tb){ tb=document.createElement('nav'); tb.id='sp-tabbar'; tb.className='tabbar'; document.body.appendChild(tb); }
   tb.innerHTML=TABS.map(k=>NAV.find(n=>n[0]===k)).map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''} ${n[0]==='launch'?'lnch':''}">${n[0]==='launch'?`<span class="lb">${ic('rocket')}</span>`:ic(NAV_IC[n[0]])}${n[2]}</a>`).join('');
-  const ft=$('#sp-foot'); if(ft) ft.innerHTML=`<div class="wrap"><a class="brand" href="/"><img src="/img/logo.svg?v=15" alt=""><span class="wm">Equo</span></a><span>Ethereum</span>${C.factory?`<a href="${EXPLORER}/address/${C.factory}" target="_blank" rel="noopener" title="Factory">factory ${shortAddr(C.factory)}</a>`:''}${C.hook?`<a href="${EXPLORER}/address/${C.hook}" target="_blank" rel="noopener" title="Hook">hook ${shortAddr(C.hook)}</a>`:''}<span class="sp"></span><div class="fl"><a href="/docs/introduction">Docs</a><a href="/docs/fees">Fees</a><a href="/docs/security">Security</a><a href="https://x.com/equofun" target="_blank" rel="noopener">${ic('xlogo')} @equofun</a><span class="num" id="sp-ethpx"><img src="/img/eth.png" alt="" style="width:14px;height:14px;border-radius:50%;display:inline-block;vertical-align:-2px;margin-right:6px">${SP.prices[WETH]?stockPx(SP.prices[WETH]):''}</span></div></div>`;
+  const ft=$('#sp-foot'); if(ft) ft.innerHTML=`<div class="wrap"><a class="brand" href="/"><img src="/img/logo.svg?v=15" alt=""><span class="wm">Equo</span></a><span class="fch">${SP.chainStack(SP.chains.map(c=>c.key),16)}<span>${SP.chains.map(c=>esc(c.short)).join(' · ')}</span></span>${C.factory?`<a href="${EXPLORER}/address/${C.factory}" target="_blank" rel="noopener" title="Factory">factory ${shortAddr(C.factory)}</a>`:''}${C.hook?`<a href="${EXPLORER}/address/${C.hook}" target="_blank" rel="noopener" title="Hook">hook ${shortAddr(C.hook)}</a>`:''}<span class="sp"></span><div class="fl"><a href="/docs/introduction">Docs</a><a href="/docs/fees">Fees</a><a href="/docs/security">Security</a><a href="https://x.com/equofun" target="_blank" rel="noopener">${ic('xlogo')} @equofun</a><span class="num" id="sp-ethpx"><img src="/img/eth.png" alt="" style="width:14px;height:14px;border-radius:50%;display:inline-block;vertical-align:-2px;margin-right:6px">${SP.prices[WETH]?stockPx(SP.prices[WETH]):''}</span></div></div>`;
   renderWalletBtn(); }
 function searchMenu(q){ const v=q.value.trim().toLowerCase(); $$('.menu.srch').forEach(m=>m.remove()); if(!v) return;
   const hits=TOK.filter(x=>x.n.toLowerCase().includes(v)||x.t.toLowerCase().includes(v)||x.addr.includes(v)||(x.pair||'').toLowerCase().includes(v)).slice(0,8);

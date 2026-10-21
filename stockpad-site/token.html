@@ -4,7 +4,7 @@
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
 <meta property="og:image" content="/img/og.png?v=16">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/ui.css?v=17">
+<link rel="stylesheet" href="/ui.css?v=18">
 <style>
 /* token page, scoped under #pg-token */
 #pg-token .cols{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:14px;align-items:start}
@@ -68,6 +68,10 @@
   #pg-token .pairbig{grid-column:1/-1;justify-content:center} #pg-token .stats{grid-template-columns:1fr 1fr} #pg-token .fl2{grid-template-columns:1fr}
   #pg-token .info{grid-template-columns:1fr} #pg-token .right{position:static} #pg-token #tv{height:380px;min-height:380px}
 }
+#pg-token .chr{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)} #pg-token .chr:last-of-type{border-bottom:0}
+#pg-token .chr img{width:28px;height:28px;border-radius:50%} #pg-token .chr .cn b{display:block;font:600 13.5px var(--disp)} #pg-token .chr .cn small{display:block;margin-top:2px;font:11px var(--mono);color:var(--fg-3)}
+#pg-token .chr .cv{text-align:right;font:500 13px var(--mono)} #pg-token .chr .cv small{display:block;margin-top:2px;font-size:11px;color:var(--fg-3);font-weight:400}
+#pg-token .chr.off{opacity:.62} #pg-token .chnote{margin:10px 0 0;font-size:12px;line-height:1.5;color:var(--fg-3)}
 </style>
 </head><body data-page="token">
 <header id="sp-top"></header><div id="sp-tape"></div>
@@ -113,11 +117,12 @@
       </div></section>
       <section class="panel sidep hidden" id="tk-pos"><div class="ph2"><span>Your position</span><span class="num muted" id="tk-pos-sym"></span></div><div class="pb" id="tk-pos-body"></div></section>
       <section class="panel sidep hidden" id="tk-cre"><div class="ph2"><span>Creator fees</span><span class="badge acl">Your coin</span></div><div class="pb" id="tk-cre-body"></div></section>
+      <section class="panel sidep" id="tk-chains"><div class="ph2"><span>Chains</span><a class="num muted" id="tk-bridge" href="/bridge" style="font-size:11.5px">Bridge</a></div><div class="pb" id="tk-chains-body"></div></section>
       <section class="panel sidep" id="tk-crt"><div class="ph2"><span>Creator</span><a class="num muted" href="/takeover" style="font-size:11.5px">How takeovers work</a></div><div class="pb" id="tk-crt-body"><div class="empty" style="padding:14px">Loading…</div></div></section>
     </aside>
   </div>
   <div class="empty panel hidden" id="tk-empty"></div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=2"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/wallet.js"></script><script src="/charting_library/charting_library.js"></script><script src="/tv.js"></script><script src="/core.js?v=18"></script><script src="/sp-creator.js?v=2"></script><script src="/sp-token.js?v=18"></script>
+<script src="/config.js?v=3"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/wallet.js"></script><script src="/charting_library/charting_library.js"></script><script src="/tv.js"></script><script src="/core.js?v=19"></script><script src="/sp-creator.js?v=2"></script><script src="/sp-token.js?v=19"></script>
 </body></html>

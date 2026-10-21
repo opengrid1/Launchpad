@@ -10,7 +10,7 @@ function launchInit(){
   const ETH_PAIR={address:WETH,symbol:'ETH',ticker:'ETH',name:'Ether',logo:'/img/eth.png',eth:true,route:true};
   const PAIRS=[...SP.stocks.map(s=>({address:s.address.toLowerCase(),symbol:s.symbol,ticker:s.ticker||s.symbol,name:s.name,logo:s.logo,eth:false,route:!!s.route})),...((window.INKY&&INKY.stocksOnly)?[]:[ETH_PAIR])];
   const PAIR_ROWS=60;
-  const S={step:1,maxStep:1,pair:null,logo:null,preset:0,presets:[],feeBps:100,feeCustom:false,snipe:false,div:false,bb:false,mw:false,dev:false,capUsd:3000,paused:false,busy:false,launched:null};
+  const S={chains:SP.chains.filter(c=>c.live).map(c=>c.key),pay:(SP.chains.find(c=>c.main)||SP.chains[0]||{}).key,step:1,maxStep:1,pair:null,logo:null,preset:0,presets:[],feeBps:100,feeCustom:false,snipe:false,div:false,bb:false,mw:false,dev:false,capUsd:3000,paused:false,busy:false,launched:null};
   const taken=()=>new Set(((window.CHAIN&&LIVE)?CHAIN.tokens():TOK).map(x=>String(x.t||'').toUpperCase()));
   const ethPx=()=>SP.prices[WETH]||ETH||0;
   const pairPx=()=>S.pair?(SP.prices[S.pair.address]||0):0;
@@ -97,7 +97,7 @@ function launchInit(){
     const px=pairPx(); g('sm-cap').textContent=fmtCap(S.capUsd);
     const dv=S.dev?clamp(fields.devEth(),0,0.5):0; g('sm-dev').textContent=dv>0?`${dv} ETH`:'None';
     g('sm-cr').textContent=`${sp.creator}%`; g('sm-note').textContent=(S.pair?`Fees paid in ${S.pair.symbol}. `:'')+'Liquidity cannot be withdrawn.';
-    if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.bb) bbMsg(); if(S.mw) mwMsg(); if(S.dev) devMsg(); paintReview(); if(S.presets.length){ const px=pairPx(); g('cap-hint').textContent=`The coin opens at ${fmtCap(S.capUsd)} market cap${S.pair&&px?' ('+fmtInPair(S.capUsd/px)+')':''}. A higher start means the first buys move the price less.`; } }
+    if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.bb) bbMsg(); if(S.mw) mwMsg(); if(S.dev) devMsg(); paintReview(); if(S.presets.length){ const px=pairPx(); g('cap-hint').textContent=`The coin opens at ${fmtCap(S.capUsd)} market cap${S.pair&&px?' ('+fmtInPair(S.capUsd/px)+')':''}. A higher start means the first buys move the price less.`; } chainPreview(); }
 
   /* ---------- steps ---------- */
   function validate(n){ if(n===1){ const ok=!!S.pair&&!S.pairBad; g('pair-err').textContent=!S.pair?'Pick a stock or ETH to continue':S.pairBad; return ok; }
@@ -108,11 +108,39 @@ function launchInit(){
     sync(); if(n===3) paintCta(); }
   function go(n){ n=clamp(n,1,3); if(S.launched) return; if(n<=S.step){ show(n); return; } for(let i=S.step;i<n;i++){ if(!validate(i)){ if(i!==S.step) show(i); SP.toast('Fix the highlighted fields first','err'); return; } } show(n); }
 
+
+  /* ---------- chains: pick where the coin goes live and where to pay; only live chains launch today ---------- */
+  let CC=null;
+  const chainNames=keys=>{ const n=keys.map(k=>SP.chain(k).name); return n.length<2?n.join(''):n.slice(0,-1).join(', ')+' and '+n[n.length-1]; };
+  const multiOnly=()=>S.chains.some(k=>!(SP.chain(k)||{}).live);
+  function costTotal(){ if(!CC) return null; const p=CC[S.pay]; if(!p||!p.nativeUsd) return null; const usd=S.chains.reduce((a,k)=>a+((CC[k]||{}).launchUsd||0),0); return {usd,native:usd/p.nativeUsd}; }
+  function paintChains(){ const box=g('ctiles'); if(!box) return;
+    box.innerHTML=SP.chains.map(c=>{ const on=S.chains.includes(c.key), q=CC&&CC[c.key];
+      return `<button type="button" class="ctile${on?' on':''}" data-ck="${c.key}" style="--cc:${c.color}" aria-pressed="${on}">
+        <span class="th"><img src="${c.logo}" alt=""><span class="tk">${ic('check')}</span></span>
+        <span class="nm"><b>${esc(c.name)}</b><small>Pool vs ${esc(c.native)}</small></span>
+        <span class="bd">${c.main?'<span class="mainb">Main</span>':''}${c.live?'<span class="liveb">Live</span>':'<span class="soonb">Soon</span>'}</span>
+        <span class="cc">${q&&q.launchUsd?'$'+q.launchUsd.toFixed(2):'…'}<i>gas / launch</i></span></button>`; }).join('');
+    $$('#ctiles [data-ck]').forEach(b=>b.onclick=()=>{ const k=b.dataset.ck; if(S.chains.includes(k)){ if(S.chains.length===1){ SP.toast('A coin needs at least one chain','info'); return; } S.chains=S.chains.filter(x=>x!==k); } else S.chains=SP.chains.map(c=>c.key).filter(x=>x===k||S.chains.includes(x)); if(!S.chains.includes(S.pay)) S.pay=S.chains[0]; paintChains(); sync(); paintCta(); });
+    g('pay-seg').innerHTML=S.chains.map(k=>{ const c=SP.chain(k); return `<button type="button" data-pk="${k}" class="${S.pay===k?'on':''}"><img src="${c.logo}" alt="">${esc(c.native)}</button>`; }).join('');
+    $$('#pay-seg [data-pk]').forEach(b=>b.onclick=()=>{ S.pay=b.dataset.pk; paintChains(); sync(); });
+    const n=S.chains.length, t=costTotal(), pc=SP.chain(S.pay);
+    g('cs-sum').textContent=`${n} ${n===1?'chain':'chains'} · ${n}B supply · ${fmtCap(S.capUsd*n)} opening cap`;
+    g('cs-cost').innerHTML=t?`${SP.fmtNative(t.native,pc.native)}<small>≈ $${t.usd.toFixed(2)}</small>`:'<small>estimating…</small>';
+    const soon=S.chains.filter(k=>!SP.chain(k).live);
+    g('cs-note').innerHTML=n>1?`One coin, ${n} chains: 1B on each, all opening at ${fmtCap(S.capUsd)}, bridged 1:1 with LayerZero. You pay once on ${esc(pc.name)}; gas on the other chains is covered.${soon.length?` <b>${esc(chainNames(soon))} ${soon.length===1?'opens':'open'} soon</b>; for now pick Ethereum alone to launch.`:''}`
+      :soon.length?`<b>${esc(chainNames(soon))} opens soon.</b> Pick Ethereum to launch today.`:''; }
+  function chainPreview(){ const n=S.chains.length, el=g('sm-chs'); if(!el) return;
+    el.innerHTML=SP.chainStack(S.chains,20); g('sm-sup').textContent=n+'B'; g('sm-cap').textContent=fmtCap(S.capUsd*n);
+    const t=costTotal(), pc=SP.chain(S.pay);
+    g('sm-lfee').innerHTML=`<span class="lh">Launch fee · paid on ${esc(pc.name)}</span>`+S.chains.map(k=>{ const c=SP.chain(k), q=CC&&CC[k]; return `<div class="lr"><span><img src="${c.logo}" alt="">${esc(c.name)}</span><b>${q&&q.launchUsd?'$'+q.launchUsd.toFixed(2):'…'}</b></div>`; }).join('')+`<div class="lt"><span>Total</span><b>${t?SP.fmtNative(t.native,pc.native):'…'}</b></div>`; }
+  SP.chainCosts().then(c=>{ CC=c; paintChains(); chainPreview(); }).catch(()=>{});
+
   /* ---------- launch ---------- */
   const cta=g('cta');
-  function paintCta(){ if(S.busy){ cta.disabled=true; cta.textContent='Confirm in wallet…'; return; } cta.disabled=S.paused; cta.textContent=S.paused?'Launches paused':!SP.W.connected?'Connect a wallet':!SP.W.chainOk?'Switch to Ethereum':'Create token'; }
+  function paintCta(){ if(S.busy){ cta.disabled=true; cta.textContent='Confirm in wallet…'; return; } if(multiOnly()){ cta.disabled=true; cta.textContent=`Launching on ${chainNames(S.chains.filter(k=>!SP.chain(k).live))} opens soon`; return; } cta.disabled=S.paused; cta.textContent=S.paused?'Launches paused':!SP.W.connected?'Connect a wallet':!SP.W.chainOk?'Switch to Ethereum':'Create token'; }
   function launchErr(e){ let m=SP.errMsg(e); if(/instincts|evolution|BadGenes/i.test(m)) m='The fee or options are out of bounds; adjust them and try again.'; return m; }
-  async function doLaunch(){ if(S.busy||S.paused) return;
+  async function doLaunch(){ if(S.busy||S.paused||multiOnly()) return;
     if(!SP.W.connected){ SP.W.connect(); return; }
     if(!SP.W.chainOk){ try{ await SP.W.switchChain(); }catch(e){ SP.toast(SP.errMsg(e),'err'); } return; }
     for(const i of [1,2,3]) if(!validate(i)){ show(i); SP.toast('Fix the highlighted fields first','err'); return; }
@@ -137,7 +165,7 @@ function launchInit(){
     sync(); scrollTo({top:0,behavior:'smooth'}); }
 
   /* ---------- wiring ---------- */
-  preselect(); paintPairs(); paintLogo();
+  preselect(); paintChains(); paintPairs(); paintLogo();
   g('pair-btn').onclick=e=>{ e.stopPropagation(); const open=g('pair-dd').classList.toggle('open'); if(open) setTimeout(()=>g('pair-q').focus(),0); }; g('pair-q').addEventListener('input',paintPairs); g('pair-q').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); const b=$('#pairs-list [data-p]'); if(b) b.click(); } }); document.addEventListener('click',e=>{ if(!e.target.closest('#pair-dd')) g('pair-dd').classList.remove('open'); });
   $$('#steps button').forEach(b=>b.onclick=()=>go(+b.dataset.step));
   $$('#pg-launch [data-next]').forEach(b=>b.onclick=()=>go(S.step+1)); $$('#pg-launch [data-back]').forEach(b=>b.onclick=()=>go(S.step-1));

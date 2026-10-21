@@ -1,0 +1,115 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bridge | Equo</title><meta name="description" content="Move an Equo coin between HyperEVM, Ethereum and BNB Chain. Same coin, 1:1, through LayerZero.">
+<link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
+<meta property="og:title" content="Bridge | Equo"><meta property="og:image" content="/img/og.png?v=16"><meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=18">
+<style>
+#pg-bridge{position:relative;padding:8px 0 40px}
+#pg-bridge .glow{position:absolute;inset:-60px 0 auto;height:420px;pointer-events:none;background:radial-gradient(40% 60% at 22% 30%,rgba(151,252,228,.10),transparent 70%),radial-gradient(38% 55% at 78% 25%,rgba(140,158,255,.10),transparent 70%),radial-gradient(30% 45% at 55% 70%,rgba(240,185,11,.06),transparent 70%);filter:blur(10px)}
+#pg-bridge .hero{position:relative;text-align:center;margin:18px auto 26px;max-width:620px}
+#pg-bridge .hero .eyebrow{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px 0 6px;border:1px solid var(--line-2);border-radius:999px;background:rgba(10,10,11,.7);font:500 12px var(--mono);color:var(--fg-2)}
+#pg-bridge .hero h1{margin:14px 0 8px;font:700 40px/1.08 var(--disp);letter-spacing:-.02em}
+#pg-bridge .hero h1 em{font-style:normal;background:linear-gradient(90deg,#97fce4,#3fbcff 45%,#8c9eff 75%,#f0b90b);-webkit-background-clip:text;background-clip:text;color:transparent}
+#pg-bridge .hero p{margin:0;color:var(--fg-2);font-size:15px;line-height:1.55}
+#pg-bridge .bgrid{position:relative;display:grid;grid-template-columns:minmax(0,520px) minmax(0,380px);gap:18px;justify-content:center;align-items:start}
+/* card */
+#pg-bridge .bcard{border:1px solid var(--line-2);border-radius:20px;background:linear-gradient(180deg,rgba(20,20,23,.92),rgba(10,10,11,.96));box-shadow:0 30px 80px -40px rgba(63,188,255,.25);padding:16px}
+#pg-bridge .bcard .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 4px 12px}
+#pg-bridge .bcard .hd b{font:600 17px var(--disp)}
+#pg-bridge .speed button{height:30px;padding:0 12px;font-family:var(--disp)} #pg-bridge .speed button svg{width:13px;height:13px}
+#pg-bridge .leg{position:relative;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--s1)}
+#pg-bridge .leg .lt{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+#pg-bridge .leg .lt .lab{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
+#pg-bridge .chainbtn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 10px 0 5px;border:1px solid var(--line-2);border-radius:999px;background:var(--s2);font:600 13px var(--disp);color:var(--fg);transition:border-color .15s}
+#pg-bridge .chainbtn:hover{border-color:var(--line-3)} #pg-bridge .chainbtn img{width:24px;height:24px;border-radius:50%} #pg-bridge .chainbtn svg{width:14px;height:14px;color:var(--fg-3)}
+#pg-bridge .brow{display:flex;align-items:center;gap:10px}
+#pg-bridge .amt{flex:1;min-width:0;border:0;background:none;outline:0;font:600 32px/1.1 var(--disp);color:var(--fg);padding:0}
+#pg-bridge .amt::placeholder{color:var(--fg-3)}
+#pg-bridge .out{flex:1;min-width:0;font:600 32px/1.1 var(--disp);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #pg-bridge .out.dim{color:var(--fg-3)}
+#pg-bridge .coinbtn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 10px 0 6px;border:1px solid var(--line-2);border-radius:12px;background:var(--s3);font:600 14px var(--disp);color:var(--fg);flex:none;max-width:52%}
+#pg-bridge .coinbtn img{width:26px;height:26px;border-radius:50%;object-fit:cover;background:var(--s4)} #pg-bridge .coinbtn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #pg-bridge .coinbtn svg{width:14px;height:14px;color:var(--fg-3);flex:none}
+#pg-bridge .coinbtn.static{cursor:default} #pg-bridge .coinbtn.static:empty{display:none}
+#pg-bridge .lb{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font:12px var(--mono);color:var(--fg-3)}
+#pg-bridge .lb button{font:600 11px var(--mono);color:var(--ac);letter-spacing:.04em}
+#pg-bridge .flip{position:relative;z-index:2;display:flex;justify-content:center;height:12px;margin:-2px 0}
+#pg-bridge .flip button{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:12px;border:4px solid #0b0b0d;background:var(--s3);color:var(--fg-2);display:flex;align-items:center;justify-content:center;transition:color .15s,transform .25s}
+#pg-bridge .flip button:hover{color:var(--ac);transform:translateY(-50%) rotate(180deg)} #pg-bridge .flip svg{width:17px;height:17px}
+/* route */
+#pg-bridge .route{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;margin:14px 2px 4px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--s2)}
+#pg-bridge .route .end{display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11px var(--mono);color:var(--fg-3);min-width:62px}
+#pg-bridge .route .end img{width:30px;height:30px;border-radius:50%}
+#pg-bridge .route .wire{position:relative;height:30px}
+#pg-bridge .route .wire::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px dashed var(--line-3)}
+#pg-bridge .route .wire i{position:absolute;top:50%;left:0;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--ac);box-shadow:0 0 12px 3px rgba(63,188,255,.55);animation:bw 2.4s cubic-bezier(.6,0,.4,1) infinite}
+#pg-bridge .route .wire i:nth-child(2){animation-delay:1.2s;opacity:.6}
+@keyframes bw{0%{left:0;opacity:0}12%{opacity:1}88%{opacity:1}100%{left:calc(100% - 10px);opacity:0}}
+@media(prefers-reduced-motion:reduce){#pg-bridge .route .wire i{animation:none;left:calc(50% - 5px)}}
+#pg-bridge .route .lz{position:absolute;left:50%;top:-6px;transform:translateX(-50%);padding:0 8px;background:var(--s2);font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-2);white-space:nowrap}
+#pg-bridge .route .eta{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);padding:0 8px;background:var(--s2);font:11px var(--mono);color:var(--fg-3);white-space:nowrap}
+#pg-bridge .det{margin:12px 2px 14px}
+#pg-bridge .det .kv{display:flex;justify-content:space-between;gap:10px;padding:6px 2px;font-size:13px;color:var(--fg-3)} #pg-bridge .det .kv b{font:500 13px var(--mono);color:var(--fg);text-align:right}
+#pg-bridge .note{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:11px 12px;border:1px solid rgba(242,190,84,.25);border-radius:12px;background:rgba(242,190,84,.06);font-size:12.5px;line-height:1.5;color:var(--fg-2)} #pg-bridge .note svg{width:16px;height:16px;color:var(--amber);flex:none;margin-top:1px}
+/* side */
+#pg-bridge .bside{display:flex;flex-direction:column;gap:14px}
+#pg-bridge .sp{border:1px solid var(--line);border-radius:18px;background:var(--s1);padding:16px}
+#pg-bridge .sp h3{margin:0 0 12px;font:600 15px var(--disp)}
+#pg-bridge .steps{display:flex;flex-direction:column;gap:12px;counter-reset:s}
+#pg-bridge .steps div{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px;align-items:start}
+#pg-bridge .steps i{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--ac-dim);color:var(--ac);font:600 13px var(--mono);font-style:normal}
+#pg-bridge .steps b{display:block;font:600 13.5px var(--disp);margin-top:1px} #pg-bridge .steps p{margin:3px 0 0;font-size:12.5px;line-height:1.5;color:var(--fg-3)}
+#pg-bridge .sup .sr{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0}
+#pg-bridge .sup .sr img{width:22px;height:22px;border-radius:50%} #pg-bridge .sup .sr .nm{font-size:13px;color:var(--fg-2)} #pg-bridge .sup .sr .v{font:500 12.5px var(--mono);color:var(--fg)}
+#pg-bridge .sup .bar{grid-column:2/-1;height:6px;border-radius:99px;background:var(--s4);overflow:hidden;margin-top:-3px} #pg-bridge .sup .bar i{display:block;height:100%;border-radius:99px}
+#pg-bridge .sup .hint{margin:8px 0 0}
+#pg-bridge .fees .kv{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:var(--fg-3);border-bottom:1px dashed var(--line)} #pg-bridge .fees .kv:last-child{border-bottom:0} #pg-bridge .fees .kv b{font:500 12.5px var(--mono);color:var(--fg)}
+#pg-bridge .recent{margin:18px auto 0;max-width:918px}
+#pg-bridge .recent .empty{padding:26px 16px;text-align:center;color:var(--fg-3);font-size:13px}
+#pg-bridge .menu-chain button{display:flex;align-items:center;gap:10px;width:100%} #pg-bridge .menu-chain img{width:22px;height:22px;border-radius:50%}
+@media(max-width:960px){#pg-bridge .bgrid{grid-template-columns:minmax(0,560px)} #pg-bridge .recent{max-width:560px}}
+@media(max-width:640px){#pg-bridge .hero h1{font-size:30px} #pg-bridge .hero p{font-size:14px} #pg-bridge .bcard{padding:12px;border-radius:18px} #pg-bridge .amt,#pg-bridge .out{font-size:26px}}
+</style>
+</head><body data-page="bridge">
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-bridge">
+  <div class="glow" aria-hidden="true"></div>
+  <div class="hero">
+    <span class="eyebrow" id="br-eyebrow"></span>
+    <h1>One coin, <em>every chain</em></h1>
+    <p>Move an Equo coin between chains. It is burned where it leaves and minted where it lands, 1:1, so it stays one coin with one supply.</p>
+  </div>
+  <div class="bgrid">
+    <section class="bcard" aria-label="Bridge">
+      <div class="hd"><b>Bridge</b><div class="seg speed" id="br-speed"><button type="button" data-s="std" class="on">Standard</button><button type="button" data-s="fast"></button></div></div>
+      <div class="leg">
+        <div class="lt"><span class="lab">From</span><button type="button" class="chainbtn" id="br-from"></button></div>
+        <div class="brow"><input class="amt num" id="br-amt" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Amount"><button type="button" class="coinbtn" id="br-coin"></button></div>
+        <div class="lb"><span id="br-usd"></span><span>Balance <span id="br-bal">—</span> <button type="button" id="br-max">MAX</button></span></div>
+      </div>
+      <div class="flip"><button type="button" id="br-flip" aria-label="Swap direction"></button></div>
+      <div class="leg">
+        <div class="lt"><span class="lab">To</span><button type="button" class="chainbtn" id="br-to"></button></div>
+        <div class="brow"><span class="out dim num" id="br-out">0</span><span class="coinbtn static" id="br-coin2"></span></div>
+        <div class="lb"><span id="br-out-usd"></span><span>Recipient: your wallet</span></div>
+      </div>
+      <div class="route" id="br-route"></div>
+      <div class="det" id="br-det"></div>
+      <button type="button" class="btn pri lg block" id="br-cta" disabled></button>
+      <div class="note" id="br-note"></div>
+    </section>
+    <aside class="bside">
+      <section class="sp"><h3>How it works</h3><div class="steps">
+        <div><i>1</i><span><b>Burned on the source chain</b><p>Your coins leave the chain you send from. Nothing is wrapped or locked in a vault.</p></span></div>
+        <div><i>2</i><span><b>Verified by independent checkers</b><p>LayerZero needs 2 of 4 verifiers (LayerZero Labs, Nethermind, Canary, Horizen) to confirm the transfer.</p></span></div>
+        <div><i>3</i><span><b>Minted on the destination</b><p>The same amount, less the 0.2% fee, arrives in your wallet on the other chain.</p></span></div>
+      </div></section>
+      <section class="sp sup"><h3 id="br-sup-h">Supply by chain</h3><div id="br-sup"></div><p class="hint" id="br-sup-hint"></p></section>
+      <section class="sp fees"><h3>Fees</h3><div id="br-fees"></div></section>
+    </aside>
+  </div>
+  <section class="panel recent"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)"><span>Your transfers</span><span class="num muted" style="font-size:12px" id="br-rc"></span></div><div class="empty" id="br-recent">Transfers you make show up here with their status on both chains.</div></section>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js?v=3"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/wallet.js"></script><script src="/core.js?v=19"></script><script src="/sp-bridge.js?v=1"></script>
+</body></html>
