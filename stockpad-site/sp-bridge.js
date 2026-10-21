@@ -34,7 +34,7 @@ window.SP_PAGE=function(){
     cta.textContent=!live()?`Bridging to ${(!t.live?t:f).name} opens soon`:!S.coin?'Select a coin':!v?'Enter an amount':!SP.W.connected?'Connect a wallet':'Bridge '+S.coin.t;
     if(live()&&S.coin&&v&&!SP.W.connected){ cta.disabled=false; cta.onclick=()=>SP.W.connect(); }
     const soon=CH.filter(c=>!c.live).map(c=>c.name);
-    g('br-note').innerHTML=`${ic('info')}<span>${soon.length?`${esc(soon.join(' and '))} ${soon.length===1?'opens':'open'} with multichain launches. Coins launched on several chains will move here in one step; coins launched on Ethereum alone can be bridged once their other chains are added.`:'Every transfer is verified by 2 of 4 independent verifiers before it lands.'}</span>`;
+    g('br-note').innerHTML=`${ic('info')}<span>${soon.length?`${soon.length>2?'The other '+soon.length+' chains':esc(soon.join(' and '))} ${soon.length===1?'opens':'open'} with multichain launches. Coins launched on several chains will move here in one step; coins launched on Ethereum alone can be bridged once their other chains are added.`:'Every transfer is verified by 2 of 4 independent verifiers before it lands.'}</span>`;
     supply(); }
 
   function supply(){ const x=S.coin, on=x?SP.coinChains(x):[];
@@ -46,7 +46,7 @@ window.SP_PAGE=function(){
 
   function fees(){ g('br-fees').innerHTML=[['Standard transfer','0.2%'],['Fast lane','+0.2% + relayer'],['Relayer price','max 10%'],['No relayer fills','standard route, fee back']].map(r=>`<div class="kv"><span>${r[0]}</span><b>${r[1]}</b></div>`).join(''); }
 
-  g('br-eyebrow').innerHTML=`${SP.chainStack(CH.map(c=>c.key),20)}<span>${CH.map(c=>c.short).join(' · ')}</span>`;
+  g('br-eyebrow').innerHTML=`${SP.chainStack(CH.map(c=>c.key),20)}<span>${CH.length} chains with stocks</span>`;
   $$('#br-speed button')[1].innerHTML=`${ic('flame')}Fast`;
   g('br-flip').innerHTML=ic('swap');
   g('br-from').onclick=e=>{ e.stopPropagation(); pickChain(e.currentTarget,'from'); };

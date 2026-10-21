@@ -53,7 +53,7 @@ window.SP_PAGE=function(){
     box.innerHTML=`<button class="cchip ${!chain?'on':''}" data-ch=""><span class="all">${ic('globe')}</span>All chains<span class="n">${TOK.length}</span></button>`+SP.chains.map(ch=>`<button class="cchip ${chain===ch.key?'on':''}" data-ch="${ch.key}"><img src="${ch.logo}" alt="">${esc(ch.name)}${ch.live?`<span class="n">${c[ch.key]||0}</span>`:'<span class="soonb">Soon</span>'}</button>`).join('');
     $$('#mk-chains [data-ch]').forEach(b=>b.onclick=()=>setChain(b.dataset.ch));
     const live=SP.chains.filter(x=>x.live), soon=SP.chains.filter(x=>!x.live);
-    $('#mk-chain-h').innerHTML=`Live on <b>${live.map(x=>esc(x.name)).join(', ')}</b>${soon.length?` · ${soon.map(x=>esc(x.name)).join(' and ')} next`:''}`; }
+    $('#mk-chain-h').innerHTML=`Live on <b>${live.map(x=>esc(x.name)).join(', ')}</b>${soon.length?` · ${soon.length} more chains next`:''}`; }
   function setChain(k){ chain=k; page=1; const u=new URL(location.href); if(chain) u.searchParams.set('chain',chain); else u.searchParams.delete('chain'); history.replaceState(null,'',u); render(); }
   function render(){ figs(); pills(); chains(); const l=sorted(); const pages=Math.max(1,Math.ceil(l.length/PER)); if(page>pages) page=pages; const st=SP.stockBySym(stock);
     const slice=l.slice((page-1)*PER,page*PER);

@@ -111,18 +111,18 @@ function launchInit(){
 
   /* ---------- chains: pick where the coin goes live and where to pay; only live chains launch today ---------- */
   let CC=null;
-  const chainNames=keys=>{ const n=keys.map(k=>SP.chain(k).name); return n.length<2?n.join(''):n.slice(0,-1).join(', ')+' and '+n[n.length-1]; };
+  const chainNames=keys=>{ const n=keys.map(k=>SP.chain(k).name); return n.length>3?n.length+' chains':n.length<2?n.join(''):n.slice(0,-1).join(', ')+' and '+n[n.length-1]; };
   const multiOnly=()=>S.chains.some(k=>!(SP.chain(k)||{}).live);
   function costTotal(){ if(!CC) return null; const p=CC[S.pay]; if(!p||!p.nativeUsd) return null; const usd=S.chains.reduce((a,k)=>a+((CC[k]||{}).launchUsd||0),0); return {usd,native:usd/p.nativeUsd}; }
   function paintChains(){ const box=g('ctiles'); if(!box) return;
     box.innerHTML=SP.chains.map(c=>{ const on=S.chains.includes(c.key), q=CC&&CC[c.key];
       return `<button type="button" class="ctile${on?' on':''}" data-ck="${c.key}" style="--cc:${c.color}" aria-pressed="${on}">
         <span class="th"><img src="${c.logo}" alt=""><span class="tk">${ic('check')}</span></span>
-        <span class="nm"><b>${esc(c.name)}</b><small>Pool vs ${esc(c.native)}</small></span>
-        <span class="bd">${c.main?'<span class="mainb">Main</span>':''}${c.live?'<span class="liveb">Live</span>':'<span class="soonb">Soon</span>'}</span>
-        <span class="cc">${q&&q.launchUsd?'$'+q.launchUsd.toFixed(2):'…'}<i>gas / launch</i></span></button>`; }).join('');
+        <span class="nm"><b>${esc(c.name)}</b>${c.main?'<span class="mainb">Main</span>':''}</span>
+        <span class="bd">${c.live?'<span class="liveb">Live</span>':'<span class="soonb">Soon</span>'}<span class="st">${esc(c.stocks||'')}</span></span>
+        <span class="cc">${q&&q.launchUsd?'$'+q.launchUsd.toFixed(2):'…'}<i>gas</i></span></button>`; }).join('');
     $$('#ctiles [data-ck]').forEach(b=>b.onclick=()=>{ const k=b.dataset.ck; if(S.chains.includes(k)){ if(S.chains.length===1){ SP.toast('A coin needs at least one chain','info'); return; } S.chains=S.chains.filter(x=>x!==k); } else S.chains=SP.chains.map(c=>c.key).filter(x=>x===k||S.chains.includes(x)); if(!S.chains.includes(S.pay)) S.pay=S.chains[0]; paintChains(); sync(); paintCta(); });
-    g('pay-seg').innerHTML=S.chains.map(k=>{ const c=SP.chain(k); return `<button type="button" data-pk="${k}" class="${S.pay===k?'on':''}"><img src="${c.logo}" alt="">${esc(c.native)}</button>`; }).join('');
+    g('pay-seg').innerHTML=S.chains.map(k=>{ const c=SP.chain(k); return `<button type="button" data-pk="${k}" class="${S.pay===k?'on':''}" title="Pay in ${esc(c.native)} on ${esc(c.name)}"><img src="${c.logo}" alt="">${esc(c.short)}</button>`; }).join('');
     $$('#pay-seg [data-pk]').forEach(b=>b.onclick=()=>{ S.pay=b.dataset.pk; paintChains(); sync(); });
     const n=S.chains.length, t=costTotal(), pc=SP.chain(S.pay);
     g('cs-sum').textContent=`${n} ${n===1?'chain':'chains'} · ${n}B supply · ${fmtCap(S.capUsd*n)} opening cap`;
