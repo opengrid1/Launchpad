@@ -207,7 +207,7 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         weth = weth_;
         oracle = oracle_;
         feeRecipient = feeRecipient_ == address(0) ? admin_ : feeRecipient_;
-        _capPresets.push(5_000e8);
+        _capPresets.push(3_000e8);
     }
 
     modifier onlyCreator(address token) {

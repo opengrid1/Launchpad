@@ -93,7 +93,7 @@ Other findings (no change needed):
 |---|---|---|
 | Cashback | 25% of the platform part | 0.1% of a 1% fee with no pots. |
 | Referral | 25% of the platform part | Same. |
-| Start cap presets | $5,000, $12,500, $25,000 | Admin can change later. |
+| Start cap | $3,000 (default preset) | Admin can change later with `setStartCap` or `setCapPresets`. |
 | Takeover idle time | 30 days | Constant. |
 | Takeover delay | 7 days | Constant. |
 | Takeover minimum stake | 5% of supply | Constant. |

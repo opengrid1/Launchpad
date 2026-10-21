@@ -9,7 +9,7 @@ function launchInit(){
   const IMG_IC='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>';
   const ETH_PAIR={address:WETH,symbol:'ETH',ticker:'ETH',name:'Ether',logo:'/img/eth.png',eth:true};
   const PAIRS=[...SP.stocks.map(s=>({address:s.address.toLowerCase(),symbol:s.symbol,ticker:s.ticker||s.symbol,name:s.name,logo:s.logo,eth:false})),...((window.INKY&&INKY.stocksOnly)?[]:[ETH_PAIR])];
-  const S={step:1,maxStep:1,pair:null,logo:null,preset:0,presets:[],feeBps:100,feeCustom:false,snipe:false,div:false,bb:false,mw:false,dev:false,capUsd:5000,paused:false,busy:false,launched:null};
+  const S={step:1,maxStep:1,pair:null,logo:null,preset:0,presets:[],feeBps:100,feeCustom:false,snipe:false,div:false,bb:false,mw:false,dev:false,capUsd:3000,paused:false,busy:false,launched:null};
   const taken=()=>new Set(((window.CHAIN&&LIVE)?CHAIN.tokens():TOK).map(x=>String(x.t||'').toUpperCase()));
   const ethPx=()=>SP.prices[WETH]||ETH||0;
   const pairPx=()=>S.pair?(SP.prices[S.pair.address]||0):0;

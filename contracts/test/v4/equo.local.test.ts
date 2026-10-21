@@ -86,7 +86,7 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     const coin = await ethers.getContractAt("EquoToken", token);
     expect(await coin.balanceOf(hookAddr)).to.equal(0n);
     expect((await factory.positionOf(token)).liquidity).to.be.gt(0n);
-    expect(await factory.capOf(token)).to.equal(5_000n * 10n ** 8n);
+    expect(await factory.capOf(token)).to.equal(3_000n * 10n ** 8n);
   });
 
   it("pays cashback and referral out of the platform part only, binds the referrer once, and lets users claim", async () => {
