@@ -23,9 +23,9 @@
 /* pair dropdown */
 #pg-launch .pairhd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 6px} #pg-launch .pairhd .lbl{margin:0} #pg-launch .pairhd .seg button{height:30px;padding:0 12px;font-family:var(--disp)}
 #pg-launch .dd{position:relative} #pg-launch .ddb{display:flex;align-items:center;justify-content:space-between;width:100%;height:42px;padding:0 12px;border:1px solid var(--line-2);border-radius:10px;background:var(--s1);font:500 13px var(--disp);color:var(--fg);text-align:left} #pg-launch .ddb:hover{border-color:var(--line-3)} #pg-launch .ddb .pv{display:flex;align-items:center;gap:8px} #pg-launch .ddb .pv img{width:20px;height:20px;border-radius:50%;background:#fff} #pg-launch .ddb .pv small{font:11px var(--mono);color:var(--fg-3)} #pg-launch .ddb .ar{color:var(--fg-2);font-size:14px}
-#pg-launch .pairs{display:none;position:absolute;left:0;right:0;top:46px;z-index:20;max-height:360px;overflow:auto;flex-direction:column;border:1px solid var(--line-2);border-radius:10px;background:var(--s1);box-shadow:0 16px 40px rgba(0,0,0,.6)} #pg-launch .dd.open .pairs{display:flex}
+#pg-launch .pairs{display:none;position:absolute;left:0;right:0;top:46px;z-index:20;max-height:420px;overflow:auto;flex-direction:column;border:1px solid var(--line-2);border-radius:10px;background:var(--s1);box-shadow:0 16px 40px rgba(0,0,0,.6)} #pg-launch .dd.open .pairs{display:flex}
 #pg-launch .pc{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto 20px;align-items:center;gap:12px;padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;background:transparent}
-#pg-launch .pc:last-child{border-bottom:0} #pg-launch .pc:hover{background:var(--s3)} #pg-launch .pc.on{background:var(--ac-dim)}
+#pg-launch #pairs-list{display:flex;flex-direction:column} #pg-launch .psrch{position:sticky;top:0;z-index:1;padding:8px;background:var(--s1);border-bottom:1px solid var(--line)} #pg-launch .psrch .inp{height:36px} #pg-launch .pempty{padding:12px;text-align:center;color:var(--fg-3);font:12px var(--mono)} #pg-launch .opt.off .oh{opacity:.55} #pg-launch .pc:last-child{border-bottom:0} #pg-launch .pc:hover{background:var(--s3)} #pg-launch .pc.on{background:var(--ac-dim)}
 #pg-launch .pc .tick{width:18px;height:18px;border-radius:50%;border:1px solid var(--line-3);display:inline-flex;align-items:center;justify-content:center;color:var(--ac-ink)} #pg-launch .pc.on .tick{background:var(--ac);border-color:var(--ac)} #pg-launch .pc .tick svg{width:11px;height:11px;display:none} #pg-launch .pc.on .tick svg{display:block}
 #pg-launch .pc img{width:28px;height:28px;border-radius:50%;background:#fff}
 #pg-launch .pc .nm b{display:block;font:600 13px var(--disp);line-height:1.2} #pg-launch .pc .nm small{display:block;color:var(--fg-3);font:11px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -82,7 +82,7 @@
 
       <div class="pane on" data-pane="1">
         <div class="pairhd"><label class="lbl">Pair</label><div class="seg"><button type="button" class="on">Stocks</button><button type="button" disabled title="This launchpad pairs with stocks only">Crypto</button></div></div>
-        <div class="dd" id="pair-dd"><button type="button" class="ddb" id="pair-btn"><span class="pv" id="pair-pv">Select</span><span class="ar">▼</span></button><div class="pairs" id="pairs"></div></div>
+        <div class="dd" id="pair-dd"><button type="button" class="ddb" id="pair-btn"><span class="pv" id="pair-pv">Select</span><span class="ar">▼</span></button><div class="pairs" id="pairs"><div class="psrch"><input class="inp" id="pair-q" type="search" placeholder="Search 573 stocks: ticker or name" autocomplete="off" aria-label="Search stocks"></div><div id="pairs-list"></div></div></div>
         <p class="err" id="pair-err"></p><p class="hint" id="mk-status"></p>
         <label class="lbl" for="f-desc">Description (optional)</label>
         <textarea class="inp" id="f-desc" maxlength="280" placeholder=""></textarea>
@@ -134,5 +134,5 @@
   </div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js?v=20"></script><script src="/equo.js?v=2"></script><script src="/wallet.js"></script><script src="/core.js?v=17"></script><script src="/sp-launch.js?v=17"></script>
+<script src="/config.js?v=2"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=3"></script><script src="/wallet.js"></script><script src="/core.js?v=18"></script><script src="/sp-launch.js?v=18"></script>
 </body></html>

@@ -7,8 +7,9 @@ function launchInit(){
   const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
   const num=(id,d)=>{ const v=parseFloat(g(id).value); return isFinite(v)?v:d; };
   const IMG_IC='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>';
-  const ETH_PAIR={address:WETH,symbol:'ETH',ticker:'ETH',name:'Ether',logo:'/img/eth.png',eth:true};
-  const PAIRS=[...SP.stocks.map(s=>({address:s.address.toLowerCase(),symbol:s.symbol,ticker:s.ticker||s.symbol,name:s.name,logo:s.logo,eth:false})),...((window.INKY&&INKY.stocksOnly)?[]:[ETH_PAIR])];
+  const ETH_PAIR={address:WETH,symbol:'ETH',ticker:'ETH',name:'Ether',logo:'/img/eth.png',eth:true,route:true};
+  const PAIRS=[...SP.stocks.map(s=>({address:s.address.toLowerCase(),symbol:s.symbol,ticker:s.ticker||s.symbol,name:s.name,logo:s.logo,eth:false,route:!!s.route})),...((window.INKY&&INKY.stocksOnly)?[]:[ETH_PAIR])];
+  const PAIR_ROWS=60;
   const S={step:1,maxStep:1,pair:null,logo:null,preset:0,presets:[],feeBps:100,feeCustom:false,snipe:false,div:false,bb:false,mw:false,dev:false,capUsd:3000,paused:false,busy:false,launched:null};
   const taken=()=>new Set(((window.CHAIN&&LIVE)?CHAIN.tokens():TOK).map(x=>String(x.t||'').toUpperCase()));
   const ethPx=()=>SP.prices[WETH]||ETH||0;
@@ -30,10 +31,15 @@ function launchInit(){
 
   /* ---------- step 1: pairs ---------- */
   function paintPairs(){ const counts={}; TOK.forEach(x=>{ counts[x.pair]=(counts[x.pair]||0)+1; }); const mk=SP.market(); g('mk-status').textContent=S.pair?`${S.pair.ticker} · NYSE ${mk.open?'open':'closed'} · ${mk.detail}`:'';
-    g('pairs').innerHTML=PAIRS.map(p=>{ const px=SP.prices[p.address], n=counts[p.symbol]||0; return `<button type="button" class="pc${S.pair&&S.pair.address===p.address?' on':''}" data-p="${p.address}"><img src="${p.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span class="nm"><b>${esc(p.ticker)} <span class="muted" style="font-weight:400">${esc(p.name)}</span></b><small>${esc(p.symbol)}</small></span><span class="ft"><span>${p.eth?'TRADES 24/7':`<i class="dot ${mk.open?'open':''}"></i>${mk.open?'NYSE OPEN':'NYSE CLOSED'}`}</span><span class="cnt">${n} ${n===1?'coin':'coins'}</span></span><span class="px" data-px="${p.address}">${px?fmtPx(px):'…'}</span><span class="tick">${ic('check')}</span></button>`; }).join('');
+    const q=String(g('pair-q').value||'').trim().toLowerCase(), hit=p=>!q||p.ticker.toLowerCase().startsWith(q)||p.symbol.toLowerCase().startsWith(q)||p.name.toLowerCase().includes(q)||p.address===q;
+    const list=PAIRS.filter(hit).sort((a,b)=>(counts[b.symbol]||0)-(counts[a.symbol]||0)||(q?(a.ticker.toLowerCase()===q?-1:b.ticker.toLowerCase()===q?1:0):0)), shown=list.slice(0,PAIR_ROWS);
+    g('pairs-list').innerHTML=(shown.length?'':`<div class="pempty">No stock matches "${esc(q)}"</div>`)+shown.map(p=>{ const px=SP.prices[p.address], n=counts[p.symbol]||0; return `<button type="button" class="pc${S.pair&&S.pair.address===p.address?' on':''}" data-p="${p.address}"><img src="${p.logo}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span class="nm"><b>${esc(p.ticker)} <span class="muted" style="font-weight:400">${esc(p.name)}</span></b><small>${esc(p.symbol)} · ${p.route?'buy with ETH':'trades in '+esc(p.symbol)}</small></span><span class="ft"><span>${p.eth?'TRADES 24/7':`<i class="dot ${mk.open?'open':''}"></i>${mk.open?'NYSE OPEN':'NYSE CLOSED'}`}</span><span class="cnt">${n} ${n===1?'coin':'coins'}</span></span><span class="px" data-px="${p.address}">${px?fmtPx(px):'…'}</span><span class="tick">${ic('check')}</span></button>`; }).join('')+(list.length>shown.length?`<div class="pempty">${list.length-shown.length} more · type to search</div>`:'');
     $$('#pairs [data-p]').forEach(b=>b.onclick=()=>{ setPair(PAIRS.find(p=>p.address===b.dataset.p)); g('pair-dd').classList.remove('open'); });
     const pv=g('pair-pv'); if(pv){ pv.innerHTML=S.pair?`<img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.ticker)} <small>${esc(S.pair.name)} · ${esc(S.pair.symbol)}</small>`:'Select'; } }
-  function setPair(p){ S.pair=p||null; g('pair-err').textContent=''; $$('#pairs .pc').forEach(b=>b.classList.toggle('on',!!S.pair&&b.dataset.p===S.pair.address)); if(S.pair){ const u=new URL(location.href); u.searchParams.set('pair',S.pair.symbol); history.replaceState(null,'',u); SP.pairUsd(S.pair.address).then(()=>{ paintPairs(); sync(); }).catch(()=>{}); } sync(); }
+  /** the dev buy is paid in ETH, so it needs an ETH route into the pair */
+  function devRoute(){ const ok=!S.pair||S.pair.route; if(!ok&&S.dev){ S.dev=false; const sw=g('sw-dev'); sw.classList.remove('on'); sw.setAttribute('aria-checked','false'); g('opt-dev').classList.remove('on'); }
+    g('opt-dev').classList.toggle('off',!ok); g('dev-hdr').textContent=ok?'Paid in ETH':`Off: ${S.pair.ticker} has no ETH route`; }
+  function setPair(p){ S.pair=p||null; g('pair-err').textContent=''; devRoute(); $$('#pairs .pc').forEach(b=>b.classList.toggle('on',!!S.pair&&b.dataset.p===S.pair.address)); if(S.pair){ const u=new URL(location.href); u.searchParams.set('pair',S.pair.symbol); history.replaceState(null,'',u); SP.pairUsd(S.pair.address).then(()=>{ paintPairs(); sync(); }).catch(()=>{}); } sync(); }
   function preselect(){ const q=(new URLSearchParams(location.search).get('pair')||'').trim().toLowerCase(); if(!q) return; const p=PAIRS.find(x=>x.symbol.toLowerCase()===q||x.ticker.toLowerCase()===q||x.address===q); if(p) S.pair=p; }
 
   /* ---------- step 2: identity ---------- */
@@ -132,7 +138,7 @@ function launchInit(){
 
   /* ---------- wiring ---------- */
   preselect(); paintPairs(); paintLogo();
-  g('pair-btn').onclick=e=>{ e.stopPropagation(); g('pair-dd').classList.toggle('open'); }; document.addEventListener('click',e=>{ if(!e.target.closest('#pair-dd')) g('pair-dd').classList.remove('open'); });
+  g('pair-btn').onclick=e=>{ e.stopPropagation(); const open=g('pair-dd').classList.toggle('open'); if(open) setTimeout(()=>g('pair-q').focus(),0); }; g('pair-q').addEventListener('input',paintPairs); g('pair-q').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); const b=$('#pairs-list [data-p]'); if(b) b.click(); } }); document.addEventListener('click',e=>{ if(!e.target.closest('#pair-dd')) g('pair-dd').classList.remove('open'); });
   $$('#steps button').forEach(b=>b.onclick=()=>go(+b.dataset.step));
   $$('#pg-launch [data-next]').forEach(b=>b.onclick=()=>go(S.step+1)); $$('#pg-launch [data-back]').forEach(b=>b.onclick=()=>go(S.step-1));
   g('f-logo').addEventListener('change',e=>{ loadLogo(e.target.files[0]); e.target.value=''; });
@@ -142,7 +148,7 @@ function launchInit(){
   g('f-desc').addEventListener('input',e=>{ g('desc-cnt').textContent=e.target.value.length+' / 280'; });
   $$('#fee-seg button').forEach(b=>b.onclick=()=>{ $$('#fee-seg button').forEach(x=>x.classList.toggle('on',x===b)); S.feeCustom=b.dataset.fee==='custom'; g('fee-custom').classList.toggle('hidden',!S.feeCustom); if(!S.feeCustom) S.feeBps=+b.dataset.fee; else g('f-fee').value=(S.feeBps/100).toString(); feeMsg(); sync(); });
   g('f-fee').addEventListener('input',()=>{ feeMsg(); sync(); });
-  $$('#pg-launch [data-sw]').forEach(h=>h.addEventListener('click',e=>{ if(e.target.closest('input')) return; const k=h.dataset.sw, on=!S[k]; S[k]=on; const sw=g('sw-'+k); sw.classList.toggle('on',on); sw.setAttribute('aria-checked',String(on)); g('opt-'+k).classList.toggle('on',on); if(on){ const f=g('opt-'+k).querySelector('input'); if(f) setTimeout(()=>f.focus(),0); } sync(); }));
+  $$('#pg-launch [data-sw]').forEach(h=>h.addEventListener('click',e=>{ if(e.target.closest('input')) return; const k=h.dataset.sw, on=!S[k]; if(k==='dev'&&on&&S.pair&&!S.pair.route){ SP.toast(`${S.pair.ticker} has no ETH route, so the dev buy is off. Buy after launch with ${S.pair.symbol}.`,'info'); return; } S[k]=on; const sw=g('sw-'+k); sw.classList.toggle('on',on); sw.setAttribute('aria-checked',String(on)); g('opt-'+k).classList.toggle('on',on); if(on){ const f=g('opt-'+k).querySelector('input'); if(f) setTimeout(()=>f.focus(),0); } sync(); }));
   ['f-snipe','f-snipemin','f-div','f-dev','f-bb','f-bbusd','f-mw','f-mwh'].forEach(id=>g(id).addEventListener('input',sync));
   cta.onclick=doLaunch; SP.onWallet(paintCta);
   launchRepaint=()=>{ paintPairs(); if(fields.sym()) symMsg(); sync(); paintCta(); }; SP.onUpdate(launchRepaint);

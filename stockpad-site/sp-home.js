@@ -38,7 +38,7 @@ window.SP_PAGE=function(){
     const sel=more.find(s=>s.symbol===stock);
     $('#mk-stockpills').innerHTML=`<button class="pill ${!stock?'on':''}" data-st="">All stocks</button>`+show.map(pill).join('')+(sel?pill(sel):'')+(more.length?`<button class="pill" id="mk-more">More ${ic('down')}</button>`:'');
     $$('#mk-stockpills [data-st]').forEach(b=>b.onclick=()=>setStock(b.dataset.st));
-    const m=$('#mk-more'); if(m) m.onclick=e=>{ const menu=SP.menu(e.currentTarget,more.map(s=>`<button data-st="${s.symbol}"><img src="${s.logo}" style="width:18px;height:18px;border-radius:50%;background:#fff" alt=""><span>${esc(s.ticker)} <span class="muted">${esc(s.name)}</span></span><span class="num muted" style="margin-left:auto">${c[s.symbol]||0}</span></button>`).join('')); $$('[data-st]',menu).forEach(b=>b.onclick=()=>{ menu.remove(); setStock(b.dataset.st); }); }; }
+    const m=$('#mk-more'); if(m) m.onclick=e=>{ const menu=SP.menu(e.currentTarget,more.filter(s=>c[s.symbol]||s.route).map(s=>`<button data-st="${s.symbol}"><img src="${s.logo}" style="width:18px;height:18px;border-radius:50%;background:#fff" alt=""><span>${esc(s.ticker)} <span class="muted">${esc(s.name)}</span></span><span class="num muted" style="margin-left:auto">${c[s.symbol]||0}</span></button>`).join('')); $$('[data-st]',menu).forEach(b=>b.onclick=()=>{ menu.remove(); setStock(b.dataset.st); }); }; }
   function setStock(s){ stock=s; page=1; const u=new URL(location.href); if(stock) u.searchParams.set('stock',stock); else u.searchParams.delete('stock'); history.replaceState(null,'',u); render(); }
 
   /* ---------- cards ---------- */

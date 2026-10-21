@@ -108,7 +108,7 @@ function searchMenu(q){ const v=q.value.trim().toLowerCase(); $$('.menu.srch').f
   document.body.appendChild(m); const r=q.closest('.search').getBoundingClientRect(); m.style.top=(r.bottom+scrollY+6)+'px'; m.style.left=(r.left+scrollX)+'px'; m.style.minWidth=r.width+'px'; $$('[data-go]',m).forEach(b=>b.onclick=()=>SP.go(b.dataset.go));
   setTimeout(()=>document.addEventListener('click',function h(e){ if(!m.contains(e.target)&&e.target!==q){ m.remove(); document.removeEventListener('click',h); } }),0); }
 function paintPrices(){ $$('[data-px]').forEach(el=>{ const v=SP.prices[el.dataset.px]; if(v) el.textContent=stockPx(v); }); const e=$('#sp-ethpx'); if(e&&SP.prices[WETH]) e.innerHTML='<img src="/img/eth.png" alt="" style="width:14px;height:14px;border-radius:50%;display:inline-block;vertical-align:-2px;margin-right:6px">'+stockPx(SP.prices[WETH]); }
-async function loadPrices(){ const addrs=[WETH,...SP.stocks.map(s=>s.address.toLowerCase())]; await Promise.all(addrs.map(a=>SP.pairUsd(a).catch(()=>0))); if(SP.prices[WETH]) ETH=SP.prices[WETH]; paintPrices(); }
+async function loadPrices(){ const addrs=[WETH,...SP.stocks.map(s=>s.address.toLowerCase())]; const EQ=window.CHAIN&&CHAIN.equo; if(EQ&&EQ.pairPrices){ try{ Object.assign(SP.prices,await EQ.pairPrices(addrs)); }catch{ await SP.pairUsd(WETH).catch(()=>0); } } else await Promise.all(addrs.map(a=>SP.pairUsd(a).catch(()=>0))); if(SP.prices[WETH]) ETH=SP.prices[WETH]; paintPrices(); }
 
 /* ---------- watchlist: per-browser list of coin addresses (localStorage; works without storage too) ---------- */
 SP.watch={ _m:null,

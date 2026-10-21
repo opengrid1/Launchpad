@@ -8,7 +8,7 @@
 <style>
 #pg-pools .ph{padding:6px 0 4px;margin-bottom:14px}
 #pg-pools .kp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px} #pg-pools .kp .sbox{padding:16px 18px} #pg-pools .kp .sbox b{display:block;font:600 24px/1.1 var(--mono);margin-top:10px}
-#pg-pools .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 10px}
+#pg-pools .fbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 10px}
 #pg-pools .q{display:flex;align-items:center;gap:8px;height:34px;width:300px;max-width:100%;padding:0 12px;border:1px solid var(--line);border-radius:9px;background:var(--s1);color:var(--fg-3)} #pg-pools .q input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--fg);font-size:12.5px}
 #pg-pools .tb th:first-child,#pg-pools .tb td:first-child{padding-left:16px} #pg-pools .tb th:last-child,#pg-pools .tb td:last-child{padding-right:16px}
 #pg-pools .pp{display:flex;align-items:center;gap:12px;min-width:0} #pg-pools .pp .ic2{position:relative;width:52px;height:34px;flex:none} #pg-pools .pp .ic2 img{position:absolute;top:0;width:34px;height:34px;border-radius:50%;object-fit:cover;background:var(--s3);border:2px solid var(--s1)} #pg-pools .pp .ic2 img+img{left:20px;background:#fff}
@@ -23,9 +23,9 @@
 <main id="sp-main"><div class="wrap"><div id="pg-pools">
   <div class="ph"><h1>Pools</h1></div>
   <div class="kp" id="pl-kpis"></div>
-  <div class="bar"><div class="seg" id="pl-sort"><button data-k="liq" class="on">Liquidity</button><button data-k="vol">Volume 24h</button><button data-k="new">Newest</button></div><label class="q"><input id="pl-q" placeholder="Search coin or stock" autocomplete="off"></label></div>
+  <div class="fbar"><div class="seg" id="pl-sort"><button data-k="liq" class="on">Liquidity</button><button data-k="vol">Volume 24h</button><button data-k="new">Newest</button></div><label class="q"><input id="pl-q" placeholder="Search coin or stock" autocomplete="off"></label></div>
   <section class="panel"><div style="overflow-x:auto"><table class="tb" id="pl-t"><thead><tr><th>Pool</th><th class="r">Fee</th><th class="r">Liquidity</th><th class="r">Volume 24h</th><th class="r hm">Fees 24h</th><th class="r hm">Trades</th><th class="r hm">Age</th><th></th></tr></thead><tbody></tbody></table></div><p class="hint foot">One Uniswap v4 pool per coin. Liquidity in every pool cannot be withdrawn.</p></section>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js"></script><script src="/data.js"></script><script src="/avatar.js"></script><script src="/chain.js?v=20"></script><script src="/equo.js?v=2"></script><script src="/wallet.js"></script><script src="/core.js?v=17"></script><script src="/sp-pools.js?v=17"></script>
+<script src="/config.js?v=2"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=3"></script><script src="/wallet.js"></script><script src="/core.js?v=18"></script><script src="/sp-pools.js?v=18"></script>
 </body></html>

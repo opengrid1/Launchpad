@@ -95,32 +95,34 @@ window.SP_PAGE=function(){
   const slipPct=()=>{ if(slipMode==='custom'){ const v=parseFloat($('#tk-slip-in').value); return isFinite(v)?Math.min(50,Math.max(0.01,v)):1; } return slipMode==='auto'?1:parseFloat(slipMode); };
   const coinWei=v=>{ let w=CHAIN.parseEther(v.toFixed(18)); if(balCoinWei>0n&&w>balCoinWei&&v<=balCoin*1.000001) w=balCoinWei; return w; };
   const minOut=()=>qOut-qOut*BigInt(Math.round(slipPct()*100))/10000n;
-  function paintBal(){ const e=SP.W.connected?fmtEth(balEth):'—', c=SP.W.connected?fmtAmt(balCoin)+' '+X.t:'—'; $('#tk-bal-in').textContent='Balance: '+(side==='buy'?e:c); $('#tk-bal-out').textContent='Balance: '+(side==='buy'?c:e); }
+  /* a stock with no ETH route trades in the stock itself: `bal` and amounts in are that stock, not ETH */
+  const via=()=>!!(window.CHAIN&&CHAIN.equo&&X.pairAddr&&!CHAIN.equo.hasRoute(X.pairAddr)), payUsd=()=>via()?pairUsd():ethUsd(), payFmt=v=>via()?inPair(v):fmtEth(v);
+  function paintBal(){ const e=SP.W.connected?payFmt(balEth):'—', c=SP.W.connected?fmtAmt(balCoin)+' '+X.t:'—'; $('#tk-bal-in').textContent='Balance: '+(side==='buy'?e:c); $('#tk-bal-out').textContent='Balance: '+(side==='buy'?c:e); }
   function paintSide(){ $$('#tk-sides button').forEach(b=>b.classList.toggle('on',b.dataset.side===side));
-    const coin=`<img src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span>${esc(X.t)}</span>`, eth=`<img src="/img/eth.png" alt=""><span>ETH</span>`;
+    const coin=`<img src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span>${esc(X.t)}</span>`, eth=via()?`<img src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span>${esc(X.pair)}</span>`:`<img src="/img/eth.png" alt=""><span>ETH</span>`;
     $('#tk-asset-in').innerHTML=side==='buy'?eth:coin; $('#tk-asset-out').innerHTML=side==='buy'?coin:eth; amtEl.placeholder='0'; ctaEl.classList.toggle('s',side==='sell');
-    $('#tk-note').textContent=`Fee ${feePct()}% in ${X.pair}`; $('#tk-payw').textContent=side==='buy'?'ETH':X.t; $('#tk-payw-note').textContent='';
+    $('#tk-note').textContent=`Fee ${feePct()}% in ${X.pair}`; $('#tk-payw').textContent=side==='buy'?(via()?X.pair:'ETH'):X.t; $('#tk-payw-note').textContent=via()?`No ETH route for ${X.pair}; you ${side==='buy'?'pay':'receive'} ${X.pair}`:'';
     paintBal(); updQuote(); }
   function resetQuote(){ qOut=0n; quoting=false; const o=$('#tk-out'); o.textContent='0'; o.classList.add('dim'); $('#tk-out-usd').textContent=''; $('#tk-amt-usd').textContent=''; $('#tk-min').textContent='—'; $('#tk-fee-l').textContent=`Fee ${feePct()}%`; $('#tk-fee').textContent='—'; const im=$('#tk-imp'); im.textContent='—'; im.className=''; }
   async function updQuote(){ const v=amtVal(); if(!v){ qSeq++; resetQuote(); cta(); return; }
-    const seq=++qSeq; quoting=true; cta(); const pu=pairUsd(), eu=ethUsd(), fr=feeR();
+    const seq=++qSeq; quoting=true; cta(); const pu=pairUsd(), eu=payUsd(), fr=feeR(), vp=via();
     $('#tk-amt-usd').textContent=side==='buy'?(eu?fmtUsd(v*eu):''):fmtUsd(v*X.px);
-    try{ const out=side==='buy'?await CHAIN.quoteBuyEth(X.addr,CHAIN.parseEther(v.toFixed(18))):await CHAIN.quoteSellEth(X.addr,coinWei(v));
+    try{ const out=side==='buy'?await (vp?CHAIN.quoteBuy:CHAIN.quoteBuyEth)(X.addr,CHAIN.parseEther(v.toFixed(18))):await (vp?CHAIN.quoteSell:CHAIN.quoteSellEth)(X.addr,coinWei(v));
       if(seq!==qSeq) return; qOut=BigInt(out||0); quoting=false; const o=Number(qOut)/1e18; const mn=Number(minOut())/1e18; const oe=$('#tk-out'); oe.classList.toggle('dim',!(o>0));
       let fee=0, spot=0;
       if(side==='buy'){ oe.textContent=o>0?fmtAmt(o):'0'; $('#tk-out-usd').textContent=o>0?fmtUsd(o*X.px):''; $('#tk-min').textContent=fmtAmt(mn)+' '+X.t; fee=pu&&eu?v*eu/pu*fr:0; spot=eu&&X.px>0?v*eu/X.px:0; }
-      else { oe.textContent=o>0?fmtEth(o):'0'; $('#tk-out-usd').textContent=o>0?fmtUsd(o*eu):''; $('#tk-min').textContent=fmtEth(mn); fee=pu&&eu?o*eu/pu*fr/(1-fr):0; spot=eu&&X.px>0?v*X.px/eu:0; }
+      else { oe.textContent=o>0?payFmt(o):'0'; $('#tk-out-usd').textContent=o>0?fmtUsd(o*eu):''; $('#tk-min').textContent=payFmt(mn); fee=pu&&eu?o*eu/pu*fr/(1-fr):0; spot=eu&&X.px>0?v*X.px/eu:0; }
       $('#tk-fee-l').textContent=`Fee ${feePct()}%`; $('#tk-fee').innerHTML=fee>0?`${inPair(fee)} <span class="muted">${fmtUsd(fee*pu)}</span>`:'—';
       const im=$('#tk-imp'); if(spot>0&&o>0){ const imp=Math.max(0,(1-o/(spot*(1-fr)))*100); im.textContent=imp.toFixed(2)+'%'; im.className=imp>15?'bad':imp>5?'warn':''; } else { im.textContent='—'; im.className=''; }
     }catch(e){ if(seq!==qSeq) return; quoting=false; qOut=0n; const oe=$('#tk-out'); oe.textContent='—'; oe.classList.add('dim'); $('#tk-out-usd').textContent=''; $('#tk-min').textContent='—'; $('#tk-fee').textContent='—'; $('#tk-imp').textContent='—'; console.warn('quote',e); }
     cta(); }
   function cta(){ if(ctaEl.dataset.busy) return; const v=amtVal(); const W=SP.W; let t, dis=false;
-    if(!W.connected) t='Connect a wallet'; else if(!W.chainOk) t='Switch to Ethereum'; else if(!v){ t='Enter amount'; dis=true; } else if(side==='buy'&&v>balEth){ t='Insufficient ETH'; dis=true; } else if(side==='sell'&&v>balCoin*1.000001){ t='Insufficient '+X.t; dis=true; } else if(quoting){ t='Fetching quote…'; dis=true; } else if(!(qOut>0n)){ t='No quote available'; dis=true; } else t=(side==='buy'?'Buy ':'Sell ')+X.t;
+    if(!W.connected) t='Connect a wallet'; else if(!W.chainOk) t='Switch to Ethereum'; else if(!v){ t='Enter amount'; dis=true; } else if(side==='buy'&&v>balEth){ t='Insufficient '+(via()?X.pair:'ETH'); dis=true; } else if(side==='sell'&&v>balCoin*1.000001){ t='Insufficient '+X.t; dis=true; } else if(quoting){ t='Fetching quote…'; dis=true; } else if(!(qOut>0n)){ t='No quote available'; dis=true; } else t=(side==='buy'?'Buy ':'Sell ')+X.t;
     ctaEl.textContent=t; ctaEl.disabled=dis; }
   async function doSwap(){ const W=SP.W; if(!W.connected) return SP.W.connect(); if(!W.chainOk){ try{ await SP.W.switchChain(); }catch(e){ SP.toast(SP.errMsg(e),'err'); } return; }
     const v=amtVal(); if(!v) return SP.toast('Enter an amount','err'); if(quoting||!(qOut>0n)) return SP.toast('Fetching the quote, try again in a second','info');
     const min=minOut(); ctaEl.dataset.busy='1'; ctaEl.disabled=true; ctaEl.textContent='Confirm in wallet…';
-    try{ if(side==='buy') await CHAIN.buy(X.addr,CHAIN.parseEther(v.toFixed(18)),min); else await CHAIN.sell(X.addr,coinWei(v),min);
+    try{ const vp=via(); if(side==='buy') await (vp?CHAIN.equo.buyWithPair(X.addr,X.pairAddr,CHAIN.parseEther(v.toFixed(18)),min):CHAIN.buy(X.addr,CHAIN.parseEther(v.toFixed(18)),min)); else await (vp?CHAIN.equo.sellForPair(X.addr,coinWei(v),min):CHAIN.sell(X.addr,coinWei(v),min));
       SP.toast((side==='buy'?'Bought ':'Sold ')+X.t+' · confirmed'); amtEl.value=''; delete ctaEl.dataset.busy; resetQuote(); await sync(true); }
     catch(e){ delete ctaEl.dataset.busy; SP.toast(SP.errMsg(e),'err'); }
     ctaEl.disabled=false; cta(); updQuote(); }
@@ -128,7 +130,7 @@ window.SP_PAGE=function(){
   $$('#tk-sides button').forEach(b=>b.onclick=()=>setSide(b.dataset.side));
     amtEl.addEventListener('input',()=>{ clearTimeout(qTimer); cta(); qTimer=setTimeout(updQuote,160); });
   $$('#tk-quick button').forEach(b=>b.onclick=()=>{ if(!SP.W.connected) return SP.W.connect(); const q=+b.dataset.q; let v;
-    if(side==='buy'){ const max=Math.max(0,balEth-0.003); v=max*q/100; amtEl.value=v>0?String(+v.toFixed(6)):''; }
+    if(side==='buy'){ const max=via()?balEth:Math.max(0,balEth-0.003); v=max*q/100; amtEl.value=v>0?String(+v.toFixed(6)):''; }
     else { v=balCoin*q/100; amtEl.value=v>0?(q===100?CHAIN.formatEther(balCoinWei):String(+v.toFixed(6))):''; }
     updQuote(); });
   $$('#tk-slip button').forEach(b=>b.onclick=()=>{ slipMode=b.dataset.sl; $$('#tk-slip button').forEach(x=>x.classList.toggle('on',x===b)); const inp=$('#tk-slip-in'); inp.classList.toggle('hidden',slipMode!=='custom'); if(slipMode==='custom'){ inp.focus(); } updQuote(); });
@@ -141,7 +143,7 @@ window.SP_PAGE=function(){
   async function position(){ const W=SP.W; const pos=$('#tk-pos'), cre=$('#tk-cre'); const seq=++posSeq;
     if(!W.connected){ balEth=0; balCoin=0; balCoinWei=0n; paintBal(); pos.classList.add('hidden'); cre.classList.add('hidden'); cta(); return; }
     const u=W.address;
-    try{ const [eb,cb,pend,p]=await Promise.all([CHAIN.ethBalance(u).catch(()=>0n),CHAIN.balance(X.addr,u).catch(()=>0n),X.rewards?CHAIN.pending(X.addr,u).catch(()=>0n):Promise.resolve(0n),CHAIN.position(X.addr,u).catch(()=>null)]);
+    try{ const [eb,cb,pend,p]=await Promise.all([(via()?CHAIN.equo.balanceOf(X.pairAddr,u):CHAIN.ethBalance(u)).catch(()=>0n),CHAIN.balance(X.addr,u).catch(()=>0n),X.rewards?CHAIN.pending(X.addr,u).catch(()=>0n):Promise.resolve(0n),CHAIN.position(X.addr,u).catch(()=>null)]);
       if(seq!==posSeq||SP.W.address!==u) return; balEth=Number(eb)/1e18; balCoinWei=BigInt(cb||0); balCoin=Number(balCoinWei)/1e18; paintBal(); cta();
       const pu=pairUsd(); const pendV=Number(pend||0)/1e18; const mine=TR.filter(v=>v.wallet===u); const pn=SP.pnl(mine,X,balCoin,true); const avg=p&&p.avg>0?p.avg:0; const pc=avg>0&&X.pxPair>0?(X.pxPair/avg-1)*100:null;
       $('#tk-pos-sym').textContent=X.t;

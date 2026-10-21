@@ -44,14 +44,72 @@
     "function setRewardSplit(uint16 cashbackBps, uint16 referralBps)",
   ];
   const ERC20_ABI = ["function allowance(address,address) view returns (uint256)", "function approve(address,uint256) returns (bool)", "function balanceOf(address) view returns (uint256)"];
+  const ROUTER_ABI = [
+    "function buyWithPair(address coin, uint256 pairIn, uint256 minCoinOut, address referrer) returns (uint256)",
+    "function sellForPair(address coin, uint256 amountIn, uint256 minPairOut, address referrer) returns (uint256)",
+  ];
+  // Uniswap's quoters (mainnet), used to price ETH <-> stock along a pair's route
+  const Q3 = new E.Contract("0x61fFE014bA17989E743c5F6cB21bF9697530B21e", ["function quoteExactInputSingle((address tokenIn,address tokenOut,uint256 amountIn,uint24 fee,uint160 sqrtPriceLimitX96) params) returns (uint256 amountOut,uint160,uint32,uint256)"], provider);
+  const Q4 = new E.Contract("0x52F0E24D1c21C8A0cB1e5a5dD6198556BD9E1203", ["function quoteExactInputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData) params) returns (uint256 amountOut,uint256 gasEstimate)"], provider);
+  const MC = new E.Contract("0xcA11bde05977b3631167028862bE2a173976CA11", ["function aggregate3((address target,bool allowFailure,bytes callData)[] calls) view returns ((bool success,bytes returnData)[])"], provider);
 
   const hookR = new E.Contract(addr.hook, HOOK_ABI, provider);
   const factR = new E.Contract(addr.factory, FACTORY_ABI, provider);
   const W = async (a, abi) => new E.Contract(a, abi, await signer());
   const lc = (a) => String(a || "").toLowerCase();
   const ZERO = "0x0000000000000000000000000000000000000000";
-  const pairs = () => [cfg.weth || "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", ...(cfg.stocks || []).map((s) => s.address)].map(lc);
-  const pairSym = (p) => { p = lc(p); if (p === lc(cfg.weth)) return "ETH"; const s = (cfg.stocks || []).find((x) => lc(x.address) === p); return s ? s.symbol : "?"; };
+  const WETH = lc(cfg.weth || "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
+  const pairs = () => [WETH, ...(cfg.stocks || []).map((s) => s.address)].map(lc);
+  const stockOf = (p) => (cfg.stocks || []).find((x) => lc(x.address) === lc(p)) || null;
+  const pairSym = (p) => { p = lc(p); if (p === WETH) return "ETH"; const s = stockOf(p); return s ? s.symbol : "?"; };
+
+  /** one eth_call per chunk: `calls` are [target, iface, fn, args]; failed calls come back null */
+  async function multi(calls, size = 150) {
+    const out = [];
+    for (let i = 0; i < calls.length; i += size) {
+      const part = calls.slice(i, i + size);
+      const res = await MC.aggregate3(part.map(([t, f, fn, a]) => ({ target: t, allowFailure: true, callData: f.encodeFunctionData(fn, a) })));
+      res.forEach((r, j) => { const [, f, fn] = part[j]; try { out.push(r.success ? f.decodeFunctionResult(fn, r.returnData) : null); } catch { out.push(null); } });
+    }
+    return out;
+  }
+
+  // route quoting: walk the pair's hops with the v3 / v4 quoters
+  const v3Meta = {};
+  async function v3Pool(pool) {
+    if (!v3Meta[pool]) {
+      const c = new E.Contract(pool, ["function token0() view returns (address)", "function token1() view returns (address)", "function fee() view returns (uint24)"], provider);
+      v3Meta[pool] = Promise.all([c.token0(), c.token1(), c.fee()]).then(([a, b, f]) => ({ t0: lc(a), t1: lc(b), fee: Number(f) })).catch((e) => { delete v3Meta[pool]; throw e; });
+    }
+    return v3Meta[pool];
+  }
+  async function hopOut(h, tokenIn, amountIn) {
+    if (h.dex === 3) {
+      const k = h.key, c0 = lc(k.currency0), c1 = lc(k.currency1), s0 = c0 === ZERO ? WETH : c0;
+      const zeroForOne = tokenIn === s0;
+      if (!zeroForOne && tokenIn !== c1) throw new Error("bad route");
+      const [out] = await Q4.quoteExactInputSingle.staticCall({ poolKey: { currency0: k.currency0, currency1: k.currency1, fee: k.fee, tickSpacing: k.tickSpacing, hooks: k.hooks || ZERO }, zeroForOne, exactAmount: amountIn, hookData: "0x" });
+      return [zeroForOne ? c1 : s0, out];
+    }
+    if (h.dex === 2) {
+      const m = await v3Pool(h.pool), tokenOut = tokenIn === m.t0 ? m.t1 : m.t0;
+      const [out] = await Q3.quoteExactInputSingle.staticCall({ tokenIn, tokenOut, amountIn, fee: m.fee, sqrtPriceLimitX96: 0 });
+      return [tokenOut, out];
+    }
+    throw new Error("unsupported hop");
+  }
+  /** ETH -> pair (buy) or pair -> ETH (sell) along the pair's route, in base units */
+  async function routeOut(pair, amountIn, buy) {
+    pair = lc(pair);
+    if (pair === WETH || !amountIn) return BigInt(amountIn || 0);
+    const s = stockOf(pair);
+    if (!s || !s.route) throw new Error("No ETH route for " + pairSym(pair));
+    const hops = buy ? s.route : s.route.slice().reverse();
+    let held = buy ? WETH : pair, amt = BigInt(amountIn);
+    for (const h of hops) [held, amt] = await hopOut(h, held, amt);
+    if (held !== (buy ? pair : WETH)) throw new Error("bad route");
+    return amt;
+  }
 
   // logs from the deploy block, through the log-capable RPCs, in chunks
   const logRpcs = (cfg.logsRpcs || []).concat(cfg.rpcs || []).filter(Boolean);
@@ -89,7 +147,7 @@
     /** claimable rewards per pair asset (cashback and referral share one balance per pair) */
     async rewards(user) {
       const ps = pairs();
-      const v = await Promise.all(ps.map((p) => hookR.rewardsOwed(user, p).catch(() => 0n)));
+      const v = (await multi(ps.map((p) => [addr.hook, hookR.interface, "rewardsOwed", [user, p]]))).map((r) => (r ? r[0] : 0n));
       return ps.map((p, i) => ({ pair: p, symbol: pairSym(p), amount: Number(v[i]) / 1e18, raw: v[i] })).filter((r) => r.raw > 0n);
     },
     async claimRewards(pairList) { const h = await W(addr.hook, HOOK_ABI); return tx(() => h.claimRewards(pairList)); },
@@ -139,6 +197,30 @@
     async setCapPresets(usd) { const f = await W(addr.factory, FACTORY_ABI); return tx(() => f.setCapPresets(usd.map((u) => BigInt(Math.round(u)) * 10n ** 8n))); },
     async setRewardSplit(cb, rf) { const f = await W(addr.factory, FACTORY_ABI); splitP = null; return tx(() => f.setRewardSplit(cb, rf)); },
   };
+  Object.assign(EQ, {
+    multi, routeOut,
+    /** true when ETH can be swapped into `pair` (WETH, or a stock with a route) */
+    hasRoute: (pair) => lc(pair) === WETH || !!(stockOf(pair) && stockOf(pair).route),
+    /** USD prices (per whole token) for many pairs in a few calls, from the factory's oracle */
+    async pairPrices(list) {
+      const f = new E.Interface(["function pairUsdPrice(address pair) view returns (uint256)"]);
+      const r = await multi(list.map((p) => [addr.factory, f, "pairUsdPrice", [p]]));
+      const out = {}; list.forEach((p, i) => { if (r[i]) out[lc(p)] = Number(r[i][0]) / 1e18; }); return out;
+    },
+    // trades paid in the pair itself, for stocks without an ETH route
+    async buyWithPair(coin, pair, pairIn, minOut) {
+      const s = await signer(), me = await s.getAddress(), p = new E.Contract(pair, ERC20_ABI, s);
+      if ((await p.allowance(me, addr.router)) < pairIn) await (await p.approve(addr.router, E.MaxUint256)).wait();
+      const r = new E.Contract(addr.router, ROUTER_ABI, s);
+      return tx(() => r.buyWithPair(coin, pairIn, minOut, window.EQUO_REF && E.isAddress(window.EQUO_REF) ? window.EQUO_REF : ZERO));
+    },
+    async sellForPair(coin, amountIn, minOut) {
+      const s = await signer(), me = await s.getAddress(), c = new E.Contract(coin, ERC20_ABI, s);
+      if ((await c.allowance(me, addr.router)) < amountIn) await (await c.approve(addr.router, E.MaxUint256)).wait();
+      const r = new E.Contract(addr.router, ROUTER_ABI, s);
+      return tx(() => r.sellForPair(coin, amountIn, minOut, window.EQUO_REF && E.isAddress(window.EQUO_REF) ? window.EQUO_REF : ZERO));
+    },
+  });
   C.equo = EQ;
 
   // creator fee claims go through the factory when the caller is the creator, so they count as activity
