@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Takeover | Liqio</title><meta name="description" content="Community takeovers on Liqio: when a creator goes idle, holders can propose a new one.">
+<link rel="icon" href="/img/favicon.svg?v=1" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=1"><meta name="theme-color" content="#030605">
+<meta property="og:title" content="Takeover | Liqio"><meta property="og:image" content="/img/og.png?v=1"><meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=1">
+<style>
+#pg-tko .ph{padding:6px 0 4px;margin-bottom:14px}
+#pg-tko .how{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#pg-tko .how .sbox{padding:14px 16px} #pg-tko .how em{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;background:var(--ac-dim);color:var(--ac);font:600 12px var(--mono);font-style:normal} #pg-tko .how b{display:block;margin-top:10px;font:600 14px var(--disp)} #pg-tko .how p{margin-top:6px;color:var(--fg-2);font-size:12.5px;line-height:1.5}
+#pg-tko .fbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 10px}
+#pg-tko .tb th:first-child,#pg-tko .tb td:first-child{padding-left:16px} #pg-tko .tb th:last-child,#pg-tko .tb td:last-child{padding-right:16px}
+#pg-tko .coin .lg{width:32px;height:32px}
+#pg-tko .st{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;font:600 11px var(--mono);letter-spacing:.04em;text-transform:uppercase}
+#pg-tko .st.active{background:var(--s3);color:var(--fg-3)} #pg-tko .st.open{background:var(--ac-dim);color:var(--ac)} #pg-tko .st.running{background:rgba(242,190,84,.12);color:var(--amber)} #pg-tko .st.ready{background:var(--up-dim);color:var(--up)} #pg-tko .st.blocked{background:var(--dn-dim);color:var(--dn)}
+@media(max-width:1000px){#pg-tko .how{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){#pg-tko .how{grid-template-columns:1fr}}
+</style>
+</head><body data-page="takeover">
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-tko">
+  <div class="ph"><h1>Takeover</h1></div>
+  <div class="how">
+    <div class="sbox panel"><em>1</em><b>Creator goes idle</b><p>After 30 days without any creator action, a coin opens for takeover.</p></div>
+    <div class="sbox panel"><em>2</em><b>Stake to propose</b><p>Lock at least 5% of the supply and name a new creator. A bigger stake replaces a running proposal.</p></div>
+    <div class="sbox panel"><em>3</em><b>7 days to object</b><p>The creator can cancel at any time. Any creator action blocks it.</p></div>
+    <div class="sbox panel"><em>4</em><b>Execute</b><p>Anyone executes it. The old creator is paid what they earned, every stake goes back.</p></div>
+  </div>
+  <div class="fbar"><div class="seg" id="tk-f"><button data-k="all" class="on">All coins</button><button data-k="open">Open</button><button data-k="live">Running</button></div><span class="num muted" id="tk-n" style="font-size:12px"></span></div>
+  <section class="panel"><div style="overflow-x:auto"><table class="tb" id="tk-t"><thead><tr><th>Coin</th><th>Creator</th><th class="r">Last active</th><th>Status</th><th class="r"></th></tr></thead><tbody></tbody></table></div></section>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js?v=1"></script><script src="/data.js?v=1"></script><script src="/avatar.js"></script><script src="/chain.js?v=1"></script><script src="/equo.js?v=1"></script><script src="/hl.js?v=1"></script><script src="/api.js?v=1"></script><script src="/preview.js?v=1"></script><script src="/wallet.js?v=1"></script><script src="/core.js?v=1"></script><script src="/sp-creator.js?v=1"></script><script src="/sp-takeover.js?v=1"></script>
+</body></html>

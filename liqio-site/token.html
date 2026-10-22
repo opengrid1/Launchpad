@@ -1,0 +1,142 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Token | Liqio</title><meta name="description" content="Price, chart, trades and holders for a coin launched on Liqio, paired with HYPE or a tokenized stock on HyperEVM.">
+<link rel="icon" href="/img/favicon.svg?v=1" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=1"><meta name="theme-color" content="#030605">
+<meta property="og:image" content="/img/og.png?v=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=1">
+<style>
+/* token page, scoped under #pg-token */
+#pg-token .cols{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:14px;align-items:start}
+#pg-token .left{min-width:0;display:flex;flex-direction:column;gap:14px}
+#pg-token .right{position:sticky;top:calc(var(--top) + 14px);display:flex;flex-direction:column;gap:14px}
+/* head panel */
+#pg-token .head{padding:20px}
+#pg-token .hd{display:grid;grid-template-columns:84px minmax(0,1fr) auto;gap:18px;align-items:start}
+#pg-token .hd .av2 .stb{border-color:var(--s1)} #pg-token .hd .lg{width:84px;height:84px;border-radius:50%;background:var(--s3);border:1px solid var(--line-2);object-fit:cover}
+#pg-token .hd .t1{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap} #pg-token .hd .t1 .wstar{align-self:center} #pg-token .hd h1{font-size:26px} #pg-token .hd .sym{font:500 15px var(--mono);color:var(--fg-3)}
+#pg-token .hd .t2{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-top:8px;font:12px var(--mono);color:var(--fg-3)}
+#pg-token .hd .t2 .cpb{display:inline-flex;align-items:center;gap:4px;color:var(--fg-3)} #pg-token .hd .t2 .cpb:hover{color:var(--fg)} #pg-token .hd .t2 .cpb svg,#pg-token .hd .t2 .lk svg{width:12px;height:12px}
+#pg-token .hd .t2 .lk{display:inline-flex;align-items:center;gap:4px;color:var(--fg-2);font-family:var(--sans)} #pg-token .hd .t2 .lk:hover{color:var(--fg)}
+#pg-token .hd .desc{margin-top:10px;color:var(--fg-2);font-size:13.5px;line-height:1.55;max-width:70ch}
+#pg-token .hd .by{margin-top:8px;font-size:12px;color:var(--fg-3);display:flex;align-items:center;gap:6px}
+#pg-token .pairbig{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--s2);white-space:nowrap}
+#pg-token .pairbig img{width:34px;height:34px;border-radius:50%;background:#fff;object-fit:cover} #pg-token .pairbig .cl{border:1px solid var(--line-2);background:var(--s3)} #pg-token .pairbig b{font:600 18px var(--disp);letter-spacing:-.01em} #pg-token .pairbig .sl{color:var(--fg-3);font-size:18px} #pg-token .pairbig .st{color:var(--ac)}
+#pg-token .pairbig small{display:block;font:11px var(--mono);color:var(--fg-3);margin-top:2px}
+#pg-token .stats{margin-top:18px;grid-template-columns:repeat(6,minmax(0,1fr))} #pg-token .stats .sbox b{white-space:normal;overflow:visible} #pg-token .stats .sbox b .pc{display:inline-block;margin-left:6px}
+#pg-token .fl2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px} #pg-token .fl2 .flow{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px} #pg-token .fl2 .flow .num{font-size:11.5px;color:var(--fg-2)}
+#pg-token .fl2 .split .c{background:var(--ac)} #pg-token .fl2 .split .h{background:var(--amber)} #pg-token .fl2 .split .p{background:var(--fg-3)}
+/* chart panel */
+#pg-token .chart .ph2{font-family:var(--mono);font-size:13px} #pg-token .chart .ph2 .r{font-size:12px;color:var(--fg-3);font-weight:400}
+#pg-token #tv{min-height:460px;height:460px;width:100%} #pg-token #tv .tvno{height:100%;min-height:460px;display:flex;align-items:center;justify-content:center;color:var(--fg-3);font-size:13px}
+/* tabs panel */
+#pg-token .ptabs .ph2{padding:10px 12px}
+#pg-token .pane{display:none} #pg-token .pane.on{display:block} #pg-token .tw{overflow-x:auto}
+#pg-token .tb th:first-child,#pg-token .tb td:first-child{padding-left:16px} #pg-token .tb th:last-child,#pg-token .tb td:last-child{padding-right:16px}
+#pg-token .tb td.r small{text-align:right}
+#pg-token .txl{color:var(--fg-3)} #pg-token .txl:hover{color:var(--fg)}
+#pg-token .more{display:flex;justify-content:center;padding:12px}
+#pg-token tr.new td{animation:tkflash 1.2s ease-out} @keyframes tkflash{from{background:var(--ac-dim)}to{background:transparent}}
+#pg-token .info{padding:18px 16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px} #pg-token .info h4{margin:0 0 8px;font:500 10.5px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--fg-3)}
+#pg-token .info p{margin:0 0 10px;font-size:13.5px;color:var(--fg-2);line-height:1.55} #pg-token .info .kv b{display:inline-flex;align-items:center;gap:6px;min-width:0} #pg-token .info .kv b a,#pg-token .info .kv b button{color:var(--fg-3)} #pg-token .info .kv b a:hover,#pg-token .info .kv b button:hover{color:var(--fg)}
+#pg-token .info .kv b .mono{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* trade panel */
+#pg-token .trade .pb{padding:14px}
+#pg-token .sides{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:var(--r);background:var(--s2)}
+#pg-token .sides button{height:32px;padding:0 18px;border-radius:7px;font-weight:600;color:var(--fg-3);border:1px solid transparent} #pg-token .sides button.on.b{background:var(--up-dim);border-color:rgba(46,189,133,.45);color:var(--up)} #pg-token .sides button.on.s{background:var(--dn-dim);border-color:rgba(246,70,93,.45);color:var(--dn)}
+#pg-token .tchain{margin-top:12px} #pg-token .tcb{display:flex;align-items:center;gap:9px;width:100%;height:44px;padding:0 12px 0 8px;border:1px solid var(--line-2);border-radius:12px;background:var(--s2);text-align:left;transition:border-color .15s} #pg-token .tcb:hover{border-color:var(--line-3)} #pg-token .tcb .l{font:500 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--fg-3)} #pg-token .tcb img{width:24px;height:24px;border-radius:50%} #pg-token .tcb b{font:600 13.5px var(--disp)} #pg-token .tcb .px{margin-left:auto;font:500 12.5px var(--mono);color:var(--fg-2)} #pg-token .tcb svg{width:14px;height:14px;color:var(--fg-3)} #pg-token .bestb{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;font:600 9.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--up);background:var(--up-dim)}
+#pg-token .cheap{display:flex;align-items:flex-start;gap:8px;margin-top:8px;font-size:12px;color:var(--fg-3);cursor:pointer;line-height:1.4} #pg-token .cheap input{margin:2px 0 0;accent-color:var(--ac)} #pg-token .cheap b{color:var(--fg-2);font-weight:600}
+#pg-token .chc{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px 0 3px;border:1px solid var(--line-2);border-radius:10px;font:600 10px var(--mono);letter-spacing:.04em;color:var(--fg-2)} #pg-token .chc img{width:14px;height:14px;border-radius:50%}
+#pg-token .payw{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--fg-3);flex-wrap:wrap} #pg-token .payw .badge{height:22px;font-size:11px}
+#pg-token .box{margin-top:10px;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--s2)} #pg-token .box.out{border-color:var(--line);background:var(--s1)} #pg-token .box:focus-within{border-color:var(--ac)}
+#pg-token .box .lr{display:flex;justify-content:space-between;gap:10px} #pg-token .box .lr .num{font-size:11.5px;color:var(--fg-3)}
+#pg-token .box .ir{display:flex;align-items:center;gap:10px;margin-top:6px} #pg-token .box input{flex:1;min-width:0;background:none;border:0;outline:0;font:500 26px var(--mono);color:var(--fg);padding:0;letter-spacing:-.01em} #pg-token .box input::placeholder{color:var(--fg-3)}
+#pg-token .box .outv{flex:1;min-width:0;font:500 26px var(--mono);color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em} #pg-token .box .outv.dim{color:var(--fg-3)}
+#pg-token .asset{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 10px 0 6px;border:1px solid var(--line-2);border-radius:999px;background:var(--s1);font:600 13px var(--mono);flex:none;max-width:150px} #pg-token .asset img{width:22px;height:22px;border-radius:50%;background:#fff;object-fit:cover} #pg-token .asset span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pg-token .box .br{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;font:12px var(--mono);color:var(--fg-3);min-height:24px}
+#pg-token .quick{display:flex;gap:4px} #pg-token .quick button{height:24px;padding:0 8px;border:1px solid var(--line-2);border-radius:6px;font:500 11px var(--mono);color:var(--fg-2)} #pg-token .quick button:hover{border-color:var(--line-3);color:var(--fg)}
+#pg-token .slip{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;font:12px var(--mono);color:var(--fg-3);flex-wrap:wrap}
+#pg-token .slip .seg button{height:24px;padding:0 8px;font-size:12px;font-family:var(--mono)} #pg-token .slip input{width:64px;height:28px;padding:0 8px;border:1px solid var(--line-2);border-radius:6px;background:var(--s1);color:var(--fg);font:12px var(--mono);outline:0}
+#pg-token .det{margin-top:8px} #pg-token .det .kv{padding:7px 0;font-size:12.5px} #pg-token .det .kv b.warn{color:var(--amber)} #pg-token .det .kv b.bad{color:var(--dn)}
+#pg-token .cta{margin-top:12px;height:44px;font:600 14px var(--disp);background:var(--up);border-color:var(--up);color:#03170e} #pg-token .cta:hover{background:#3fd197;border-color:#3fd197} #pg-token .cta:disabled{opacity:.55} #pg-token .cta.s{background:var(--dn);border-color:var(--dn);color:#fff} #pg-token .cta.s:hover{background:#f75b70;border-color:#f75b70}
+#pg-token .note{margin:10px 0 0;font-size:12px;color:var(--fg-3);line-height:1.5}
+#pg-token .sidep .ph2{font-size:14px} #pg-token .sidep .pb{padding:12px 14px} #pg-token .sidep .kv{font-size:12.5px}
+#pg-token .sidep .sboxes{grid-template-columns:1fr 1fr;margin-bottom:10px}
+#pg-token .empty.panel{padding:60px 20px}
+@media(max-width:1100px){#pg-token .cols{grid-template-columns:minmax(0,1fr) 350px} #pg-token .stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){
+  #pg-token .cols{display:flex;flex-direction:column;align-items:stretch} #pg-token .left,#pg-token .right{display:contents}
+  #pg-token .head{order:1} #pg-token .trade{order:2} #pg-token .chart{order:3} #pg-token .sidep{order:4} #pg-token .ptabs{order:5}
+  #pg-token .head{padding:16px} #pg-token .hd{grid-template-columns:64px minmax(0,1fr);gap:14px} #pg-token .hd .lg{width:64px;height:64px;box-shadow:none} #pg-token .hd h1{font-size:22px}
+  #pg-token .pairbig{grid-column:1/-1;justify-content:center} #pg-token .stats{grid-template-columns:1fr 1fr} #pg-token .fl2{grid-template-columns:1fr}
+  #pg-token .info{grid-template-columns:1fr} #pg-token .right{position:static} #pg-token #tv{height:380px;min-height:380px}
+}
+#pg-token .chr{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)} #pg-token .chr:last-of-type{border-bottom:0}
+#pg-token .chr img{width:28px;height:28px;border-radius:50%} #pg-token .chr .cn b{display:block;font:600 13.5px var(--disp)} #pg-token .chr .cn small{display:block;margin-top:2px;font:11px var(--mono);color:var(--fg-3)}
+#pg-token .chr .cv{text-align:right;font:500 13px var(--mono)} #pg-token .chr .cv small{display:block;margin-top:2px;font-size:11px;color:var(--fg-3);font-weight:400}
+#pg-token .chx{display:inline-flex;align-items:center;gap:2px;color:var(--fg-2)} #pg-token .chx button,#pg-token .chx a{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;color:var(--fg-3)} #pg-token .chx button:hover,#pg-token .chx a:hover{color:var(--ac);background:var(--s3)} #pg-token .chx svg{width:12px;height:12px}
+#pg-token .chr.off{opacity:.62} #pg-token .chnote{margin:10px 0 0;font-size:12px;line-height:1.5;color:var(--fg-3)}
+#pg-token .cabar{display:flex;align-items:center;gap:6px;width:100%;max-width:440px;margin-top:10px;padding:4px;border:1px solid var(--line-2);border-radius:10px;background:var(--s2)}
+#pg-token .cabar:empty{display:none}
+#pg-token .cach{flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px;border:1px solid var(--line-2);border-radius:7px;background:var(--s3);font:600 12px var(--disp);color:var(--fg)} #pg-token .cach i{width:8px;height:8px;border-radius:50%} #pg-token .cach svg{width:12px;height:12px;color:var(--fg-3)} #pg-token .cach:hover{border-color:var(--line-3)}
+#pg-token .cabar .cav{flex:1;min-width:0;padding-left:4px;font:500 12.5px var(--mono);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-token .cabar .cac{flex:none;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:7px;background:var(--ac-dim);color:var(--ac);font:600 12px var(--disp)} #pg-token .cabar .cac svg{width:13px;height:13px} #pg-token .cabar .cac.ok{background:var(--up-dim);color:var(--up)}
+#pg-token .cabar .cax{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;color:var(--fg-3)} #pg-token .cabar .cax:hover{color:var(--ac);background:var(--s3)} #pg-token .cabar .cax svg{width:13px;height:13px}
+#pg-token .pools{display:flex;align-items:center;gap:5px;margin-top:7px;font:12px var(--mono);color:var(--fg-3)} #pg-token .pools:empty{display:none} #pg-token .pools b{color:var(--fg);font-weight:500;margin-right:3px} #pg-token .pools i{width:8px;height:8px;border-radius:50%}
+#pg-token.one .hc{display:none}
+#pg-token .cabar .sm2{display:none} @media(max-width:640px){#pg-token .cabar .lg2{display:none} #pg-token .cabar .sm2{display:inline} #pg-token .cabar{gap:4px} #pg-token .cabar .cac{padding:0 8px} #pg-token .cabar .cac .cl{display:none}}
+</style>
+</head><body data-page="token">
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-token">
+  <div class="crumb" id="tk-crumb"></div>
+  <div id="tk-page" class="cols">
+    <div class="left">
+      <section class="panel head">
+        <div class="hd" id="tk-head"></div>
+        <div class="sboxes stats" id="tk-stats"></div>
+        <div class="fl2"><div><div class="flow"><span class="lab">Flow 24h</span><span class="num" id="tk-flow">…</span></div><div class="split" id="tk-split"></div></div><div><div class="flow"><span class="lab">Fee split</span><span class="num" id="tk-feespaid">…</span></div><div class="split" id="tk-feebar"></div></div></div>
+      </section>
+      <section class="panel chart"><div class="ph2"><span id="tk-chart-t"></span><span class="r" id="tk-chart-r"></span></div><div id="tv"></div></section>
+      <section class="panel ptabs">
+        <div class="ph2"><div class="tabs" id="tk-tabs"><button data-tab="trades" class="on">Trades<span class="num" id="tk-trades-n"></span></button><button data-tab="holders">Holders</button><button data-tab="top">Top traders</button><button data-tab="info">About</button></div><div class="seg" id="tk-filter"><button data-f="all" class="on">All</button><button data-f="buy">Buys</button><button data-f="sell">Sells</button></div></div>
+        <div class="pane on" data-pane="trades">
+          <div class="tw"><table class="tb"><thead><tr><th>Side</th><th>Trader</th><th class="r" id="tk-th-coin">Amount</th><th class="r" id="tk-th-pair">Paid</th><th class="r">USD</th><th class="r">Price</th><th>Time</th><th class="hc">Chain</th><th class="r">Tx</th></tr></thead><tbody id="tk-trades"></tbody></table></div>
+          <div class="more" id="tk-more"><button class="btn sm" id="tk-more-btn">Load more</button></div>
+        </div>
+        <div class="pane" data-pane="holders"><div class="tw"><table class="tb"><thead><tr><th>#</th><th>Wallet</th><th class="r">Balance</th><th class="r">Share</th><th class="r">Value</th></tr></thead><tbody id="tk-holders"></tbody></table></div></div>
+        <div class="pane" data-pane="top"><div class="tw"><table class="tb"><thead><tr><th>#</th><th>Wallet</th><th class="r">Volume</th><th class="r">Trades</th><th class="r">Holding</th></tr></thead><tbody id="tk-top"></tbody></table></div></div>
+        <div class="pane" data-pane="info"><div class="info" id="tk-info"></div></div>
+      </section>
+    </div>
+    <aside class="right">
+      <section class="panel trade" id="tk-trade"><div class="pb">
+        <div class="sides" id="tk-sides"><button data-side="buy" class="b on">Buy</button><button data-side="sell" class="s">Sell</button></div>
+        <div class="tchain hidden" id="tk-tchain"></div>
+        <div class="payw"><span>Pay with</span><span class="badge ac" id="tk-payw">HYPE</span><span class="muted" id="tk-payw-note"></span></div>
+        <div class="box">
+          <div class="lr"><span class="lab">Amount</span><span class="num" id="tk-bal-in"></span></div>
+          <div class="ir"><input id="tk-amt" inputmode="decimal" autocomplete="off" placeholder="0.0" aria-label="Amount"><span class="asset" id="tk-asset-in"></span></div>
+          <div class="br"><span id="tk-amt-usd"></span><div class="quick" id="tk-quick"><button data-q="25">25%</button><button data-q="50">50%</button><button data-q="100">MAX</button></div></div>
+        </div>
+        <div class="box out">
+          <div class="lr"><span class="lab">You receive</span><span class="num" id="tk-bal-out"></span></div>
+          <div class="ir"><div class="outv dim" id="tk-out">0</div><span class="asset" id="tk-asset-out"></span></div>
+          <div class="br"><span id="tk-out-usd"></span></div>
+        </div>
+        <div class="slip"><span>Slippage</span><div class="row"><div class="seg" id="tk-slip"><button data-sl="auto" class="on">Auto</button><button data-sl="0.5">0.5%</button><button data-sl="1">1%</button><button data-sl="3">3%</button><button data-sl="custom">Custom</button></div><input id="tk-slip-in" class="hidden" inputmode="decimal" placeholder="%" aria-label="Custom slippage"></div></div>
+        <div class="det"><div class="kv"><span>Minimum received</span><b id="tk-min">—</b></div><div class="kv"><span id="tk-fee-l">Fee</span><b id="tk-fee">—</b></div><div class="kv"><span>Price impact</span><b id="tk-imp">—</b></div></div>
+        <button class="btn pri lg block cta" id="tk-cta">Connect a wallet</button>
+        <p class="note" id="tk-note"></p>
+      </div></section>
+      <section class="panel sidep hidden" id="tk-pos"><div class="ph2"><span>Your position</span><span class="num muted" id="tk-pos-sym"></span></div><div class="pb" id="tk-pos-body"></div></section>
+      <section class="panel sidep hidden" id="tk-cre"><div class="ph2"><span>Creator fees</span><span class="badge acl">Your coin</span></div><div class="pb" id="tk-cre-body"></div></section>
+      <section class="panel sidep hidden" id="tk-chains"><div class="ph2"><span>Chains</span></div><div class="pb" id="tk-chains-body"></div></section>
+      <section class="panel sidep" id="tk-crt"><div class="ph2"><span>Creator</span><a class="num muted" href="/takeover" style="font-size:11.5px">How takeovers work</a></div><div class="pb" id="tk-crt-body"><div class="empty" style="padding:14px">Loading…</div></div></section>
+    </aside>
+  </div>
+  <div class="empty panel hidden" id="tk-empty"></div>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js?v=1"></script><script src="/data.js?v=1"></script><script src="/avatar.js"></script><script src="/chain.js?v=1"></script><script src="/equo.js?v=1"></script><script src="/hl.js?v=1"></script><script src="/api.js?v=1"></script><script src="/preview.js?v=1"></script><script src="/wallet.js?v=1"></script><script src="/charting_library/charting_library.js"></script><script src="/tv.js?v=1"></script><script src="/core.js?v=1"></script><script src="/sp-creator.js?v=1"></script><script src="/sp-token.js?v=1"></script>
+</body></html>

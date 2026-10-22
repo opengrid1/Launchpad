@@ -1,0 +1,5 @@
+{
+  "name": "liqio-site",
+  "private": true,
+  "description": "Liqio site: static pages for the HyperEVM launchpad (coins paired with HYPE, USDC or xStocks)"
+}

@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Analytics | Liqio</title><meta name="description" content="Volume, fees, trades and launches per day on Liqio, by pair and by coin.">
+<link rel="icon" href="/img/favicon.svg?v=1" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=1"><meta name="theme-color" content="#030605">
+<meta property="og:title" content="Analytics | Liqio"><meta property="og:image" content="/img/og.png?v=1"><meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=1">
+<style>
+#pg-analytics .ph{padding:6px 0 18px;margin:0}
+#pg-analytics .kp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#pg-analytics .kpi{padding:16px 18px 12px} #pg-analytics .kpi .top{display:flex;align-items:baseline;justify-content:space-between;gap:10px} #pg-analytics .kpi b{display:block;font:600 24px/1.1 var(--mono);margin-top:6px;letter-spacing:-.01em} #pg-analytics .kpi .d{font:11.5px var(--mono);color:var(--fg-3);text-align:right;line-height:1.5} #pg-analytics .kpi .d em{font-style:normal;color:var(--fg-2)}
+#pg-analytics .ch{margin-top:14px;height:84px} #pg-analytics .ch svg{width:100%;height:84px;display:block} #pg-analytics .ch rect{fill:var(--ac);opacity:.55} #pg-analytics .ch rect.last{opacity:1} #pg-analytics .ch rect:hover{opacity:1} #pg-analytics .ch line{stroke:var(--line-2);stroke-dasharray:3 3}
+#pg-analytics .ax{display:flex;justify-content:space-between;font:10.5px var(--mono);color:var(--fg-3);margin-top:6px}
+#pg-analytics .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+#pg-analytics .panel .ph2{font:600 15px var(--disp)} #pg-analytics .panel .ph2 .seg button{font-family:var(--disp)}
+#pg-analytics .tb th:first-child,#pg-analytics .tb td:first-child{padding-left:16px} #pg-analytics .tb th:last-child,#pg-analytics .tb td:last-child{padding-right:16px}
+#pg-analytics .sc{display:flex;align-items:center;gap:10px} #pg-analytics .sc img{width:28px;height:28px;border-radius:50%;background:#fff} #pg-analytics .sc b{display:block;font-weight:600} #pg-analytics .sc small{display:block;color:var(--fg-3);font:11px var(--mono)}
+#pg-analytics .feed{display:flex;flex-direction:column} #pg-analytics .fr{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13px} #pg-analytics .fr:last-child{border-bottom:0}
+#pg-analytics .fr .coin .lg{width:28px;height:28px} #pg-analytics .fr .coin b{font-size:13px} #pg-analytics .fr .coin small{font-size:11px}
+#pg-analytics .fr .v{font:500 13px var(--mono);text-align:right} #pg-analytics .fr .v small{display:block;font-size:11px;color:var(--fg-3);font-weight:400} #pg-analytics .fr .t{font:11px var(--mono);color:var(--fg-3);text-align:right;white-space:nowrap}
+#pg-analytics tr.new td{animation:akflash 1.2s ease-out} @keyframes akflash{from{background:var(--ac-dim)}to{background:transparent}}
+#pg-analytics .bar.h{height:4px;margin-top:6px;background:var(--s4)} #pg-analytics .bar.h i{background:var(--ac)}
+#pg-analytics .fsplit{display:flex;height:8px;margin:14px 16px 0;border-radius:999px;overflow:hidden;background:var(--s4)} #pg-analytics .fsplit i{display:block;height:100%} #pg-analytics .fsplit .c{background:var(--ac)} #pg-analytics .fsplit .h{background:var(--amber)} #pg-analytics .fsplit .p{background:var(--fg-3)} #pg-analytics .fsplit .b{background:var(--dn)}
+#pg-analytics .fboxes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 16px 16px}
+#pg-analytics .fbox{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--s2)} #pg-analytics .fbox .lab{display:flex;align-items:center;gap:7px} #pg-analytics .fbox .lab i{width:8px;height:8px;border-radius:2px;display:inline-block} #pg-analytics .fbox b{display:block;font:600 20px/1.1 var(--mono);margin-top:8px} #pg-analytics .fbox small{display:block;font:11.5px var(--mono);color:var(--fg-3);margin-top:6px;line-height:1.5}
+#pg-analytics .sp4{display:inline-flex;height:6px;width:110px;border-radius:999px;overflow:hidden;background:var(--s4);vertical-align:middle} #pg-analytics .sp4 i{display:block;height:100%} #pg-analytics .sp4 .c{background:var(--ac)} #pg-analytics .sp4 .h{background:var(--amber)} #pg-analytics .sp4 .p{background:var(--fg-3)} #pg-analytics .sp4 .b{background:var(--dn)}
+#pg-analytics .tb td .sp4{margin-right:8px}
+@media(max-width:1100px){#pg-analytics .kp{grid-template-columns:1fr 1fr}}
+@media(max-width:1100px){#pg-analytics .fboxes{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){#pg-analytics #an-rwk{grid-template-columns:1fr 1fr} #pg-analytics #an-rwk .fbox b{font-size:17px} #pg-analytics .kp{grid-template-columns:1fr} #pg-analytics .fboxes{grid-template-columns:1fr} #pg-analytics .two{grid-template-columns:1fr} #pg-analytics .ph{flex-direction:column;align-items:flex-start}}
+</style>
+</head><body data-page="analytics">
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-analytics">
+  <div class="ph"><div><h1>Analytics</h1></div><div class="seg" id="an-range"><button data-r="7" >7d</button><button data-r="30" class="on">30d</button><button data-r="0">All</button></div></div>
+  <div class="kp" id="an-kpis"></div>
+  <section class="panel fees" style="margin-top:12px">
+    <div class="ph2" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)"><span>Fees</span><span class="num muted" id="an-fees-total" style="font-size:12px"></span></div>
+    <div class="fsplit" id="an-fsplit"></div>
+    <div class="fboxes" id="an-fboxes"></div>
+    <div style="overflow-x:auto;border-top:1px solid var(--line)"><table class="tb" id="an-fees"><thead><tr><th>Coin</th><th class="r">Fee</th><th>Split</th><th class="r">Fees paid</th><th class="r">Creator owed</th><th class="r hm">Holders pending</th><th class="r hm">Buyback pot</th><th class="r hm">Burned</th></tr></thead><tbody></tbody></table></div>
+  </section>
+  <section class="panel" style="margin-top:12px" id="an-rw">
+    <div class="ph2" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)"><span>Cashback and referrals</span><span class="num muted" id="an-rw-split" style="font-size:12px"></span></div>
+    <div class="fboxes" id="an-rwk"></div>
+    <div style="overflow-x:auto;border-top:1px solid var(--line)"><table class="tb" id="an-refs"><thead><tr><th>#</th><th>Referrer</th><th class="r">Earned</th><th class="r">Traders referred</th><th class="r hm">Paid trades</th></tr></thead><tbody></tbody></table></div>
+    <p class="hint" style="margin:0;padding:10px 16px;border-top:1px solid var(--line)">Read from the hook's on-chain events (<a href="#" id="an-rw-hook" target="_blank" rel="noopener">RewardsCredited, ReferrerBound, RewardsClaimed</a>). USD at today's pair prices. Cashback and referral come out of the platform's share only; creator, holder and buyback shares are not touched.</p>
+  </section>
+  <div class="two">
+    <section class="panel"><div class="ph2" style="padding:12px 16px;border-bottom:1px solid var(--line)">By stock</div><div style="overflow-x:auto"><table class="tb" id="an-stocks"><thead><tr><th>Stock</th><th class="r">Coins</th><th class="r">Volume</th><th class="r">Fees paid</th><th class="r hm">Trades</th><th class="r hm">Holders</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="panel"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line)"><span>Top coins</span><div class="seg" id="an-topby"><button data-k="vol" class="on">Volume</button><button data-k="fees">Fees</button><button data-k="h">Holders</button></div></div><div style="overflow-x:auto"><table class="tb" id="an-top"><thead><tr><th>#</th><th>Coin</th><th>Pair</th><th class="r" id="an-top-h">Volume</th><th class="r hm">Mcap</th></tr></thead><tbody></tbody></table></div></section>
+  </div>
+  <div class="two">
+    <section class="panel"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line)"><span>Top traders</span><div class="seg" id="an-trby"><button data-k="pnl" class="on">PnL</button><button data-k="vol">Volume</button></div></div><div style="overflow-x:auto"><table class="tb" id="an-traders"><thead><tr><th>#</th><th>Trader</th><th class="r">PnL</th><th class="r">Volume</th><th class="r hm">Trades</th><th class="r hm">Coins</th></tr></thead><tbody></tbody></table></div><p class="hint" style="margin:0;padding:10px 16px;border-top:1px solid var(--line)">PnL is cash in and out of trades plus coins still held at today's price. Transfers are not counted.</p></section>
+    <section class="panel"><div class="ph2" style="padding:12px 16px;border-bottom:1px solid var(--line)">Top creators</div><div style="overflow-x:auto"><table class="tb" id="an-creators"><thead><tr><th>#</th><th>Creator</th><th class="r">Coins</th><th class="r">Fees earned</th><th class="r hm">Volume</th></tr></thead><tbody></tbody></table></div></section>
+  </div>
+  <section class="panel" style="margin-top:12px"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)"><span>Recent trades</span><span class="num muted" id="an-feed-n" style="font-size:12px"></span></div><div class="feed" id="an-feed"></div></section>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js?v=1"></script><script src="/data.js?v=1"></script><script src="/avatar.js"></script><script src="/chain.js?v=1"></script><script src="/equo.js?v=1"></script><script src="/hl.js?v=1"></script><script src="/api.js?v=1"></script><script src="/preview.js?v=1"></script><script src="/wallet.js?v=1"></script><script src="/core.js?v=1"></script><script src="/sp-analytics.js?v=1"></script>
+</body></html>

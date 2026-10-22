@@ -1,0 +1,5 @@
+charting_library
+charting_library/
+api/_indexer/
+node_modules/
+.vercel/

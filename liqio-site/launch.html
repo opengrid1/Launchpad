@@ -1,0 +1,175 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Create a token | Liqio</title><meta name="description" content="Launch a coin on HyperEVM paired with HYPE, USDC or a tokenized stock in one transaction. Fixed supply, liquidity that cannot be withdrawn, your fee paid in the pair.">
+<link rel="icon" href="/img/favicon.svg?v=1" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=1"><meta name="theme-color" content="#030605">
+<meta property="og:title" content="Create a token | Liqio"><meta property="og:description" content="Launch a coin paired with HYPE or a real stock on Hyperliquid's EVM."><meta property="og:image" content="/img/og.png?v=1"><meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=1">
+<style>
+#pg-launch{max-width:1100px;margin:0 auto}
+#pg-launch .wiz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+#pg-launch .form{padding:28px;border-color:var(--ac-line);box-shadow:0 0 40px rgba(51,229,194,.08)}
+#pg-launch .eyebrow{display:block;font:400 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
+#pg-launch h1,#pg-launch h2{font-size:30px;margin-top:4px} #pg-launch h1 em,#pg-launch h2 em{font-style:normal;color:var(--ac)}
+#pg-launch #steps{display:none}
+#pg-launch .idrow{display:grid;grid-template-columns:74px minmax(0,1fr);gap:16px;align-items:start;margin-top:14px}
+#pg-launch .drop{display:flex;align-items:center;justify-content:center;width:74px;height:74px;border:1px dashed var(--line-2);border-radius:50%;background:var(--s2);color:var(--fg-3);font-size:10.5px;line-height:1.3;cursor:pointer;text-align:center;overflow:hidden;transition:border-color .15s;margin-top:18px}
+#pg-launch .drop:hover,#pg-launch .drop.over{border-color:var(--ac);color:var(--fg)} #pg-launch .drop svg{display:none}
+#pg-launch .drop img{width:100%;height:100%;object-fit:cover;border-radius:50%} #pg-launch .drop.has{border-style:solid;border-color:var(--line-2)}
+#pg-launch .two{display:grid;grid-template-columns:1fr 1fr;gap:10px} #pg-launch .two .lbl{margin-top:0}
+#pg-launch input.num{font-family:var(--mono)} #pg-launch input.up{text-transform:uppercase;font-family:var(--mono)}
+#pg-launch .links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#pg-launch .cnt-hint{display:flex;justify-content:space-between;gap:10px}
+/* pair dropdown */
+#pg-launch .pairhd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 6px} #pg-launch .pairhd .lbl{margin:0} #pg-launch .pairhd .seg button{height:30px;padding:0 12px;font-family:var(--disp)}
+#pg-launch .dd{position:relative} #pg-launch .ddb{display:flex;align-items:center;justify-content:space-between;width:100%;height:42px;padding:0 12px;border:1px solid var(--line-2);border-radius:10px;background:var(--s1);font:500 13px var(--disp);color:var(--fg);text-align:left} #pg-launch .ddb:hover{border-color:var(--line-3)} #pg-launch .ddb .pv{display:flex;align-items:center;gap:8px} #pg-launch .ddb .pv img{width:20px;height:20px;border-radius:50%;background:#fff} #pg-launch .ddb .pv small{font:11px var(--mono);color:var(--fg-3)} #pg-launch .ddb .ar{color:var(--fg-2);font-size:14px}
+#pg-launch .pairs{display:none;position:absolute;left:0;right:0;top:46px;z-index:20;max-height:420px;overflow:auto;flex-direction:column;border:1px solid var(--line-2);border-radius:10px;background:var(--s1);box-shadow:0 16px 40px rgba(0,0,0,.6)} #pg-launch .dd.open .pairs{display:flex}
+#pg-launch .pc{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto 20px;align-items:center;gap:12px;padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;background:transparent}
+#pg-launch #pairs-list{display:flex;flex-direction:column} #pg-launch .psrch{position:sticky;top:0;z-index:1;padding:8px;background:var(--s1);border-bottom:1px solid var(--line)} #pg-launch .psrch .inp{height:36px} #pg-launch .pempty{padding:12px;text-align:center;color:var(--fg-3);font:12px var(--mono)} #pg-launch .opt.off .oh{opacity:.55} #pg-launch .pc:last-child{border-bottom:0} #pg-launch .pc:hover{background:var(--s3)} #pg-launch .pc.on{background:var(--ac-dim)}
+#pg-launch .pc .tick{width:18px;height:18px;border-radius:50%;border:1px solid var(--line-3);display:inline-flex;align-items:center;justify-content:center;color:var(--ac-ink)} #pg-launch .pc.on .tick{background:var(--ac);border-color:var(--ac)} #pg-launch .pc .tick svg{width:11px;height:11px;display:none} #pg-launch .pc.on .tick svg{display:block}
+#pg-launch .pc img{width:28px;height:28px;border-radius:50%;background:#fff}
+#pg-launch .pc .nm b{display:block;font:600 13px var(--disp);line-height:1.2} #pg-launch .pc .nm small{display:block;color:var(--fg-3);font:11px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-launch .pc .px{font:500 13px var(--mono);text-align:right}
+#pg-launch .pc .ft{display:flex;flex-direction:column;align-items:flex-end;gap:1px;font:10.5px var(--mono);color:var(--fg-3);white-space:nowrap}
+/* rows: dev buy, fee, options */
+#pg-launch .orow{border:1px solid var(--line-2);border-radius:10px;background:var(--s1);margin-top:10px;padding:0 14px}
+#pg-launch .orow .oh{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:46px;cursor:pointer;font:500 13px var(--disp)} #pg-launch .orow .oh .r{display:flex;align-items:center;gap:10px;font:400 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
+#pg-launch .obox{border:1px solid var(--line-2);border-radius:10px;background:var(--s1);margin-top:10px;padding:0 14px}
+#pg-launch .feerow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;font:500 13px var(--disp);flex-wrap:wrap} #pg-launch .feerow .seg button{font-family:var(--disp);height:30px;padding:0 12px}
+#pg-launch .obox .opt{border-top:1px solid var(--line)}
+#pg-launch .opt .oh{display:flex;align-items:center;gap:10px;padding:12px 0;cursor:pointer;flex-wrap:wrap} #pg-launch .opt .oh b{font:500 13px var(--disp)} #pg-launch .opt .oh small{display:block;width:100%;color:var(--fg-3);font-size:12.5px;line-height:1.5;margin-top:2px} #pg-launch .opt .oh .sw{margin-left:auto}
+#pg-launch .ob{display:none;padding:0 0 14px} #pg-launch .opt.on .ob{display:block} #pg-launch .ob .lbl:first-child{margin-top:0} #pg-launch .ob .grid{gap:10px}
+#pg-launch .rev{display:none}
+#pg-launch #cta{margin-top:16px;height:44px;font:600 14px var(--disp);border-radius:10px;box-shadow:0 0 22px rgba(51,229,194,.35)}
+#pg-launch .notice{margin-top:12px}
+/* preview card */
+#pg-launch .prev{padding:28px}
+#pg-launch .pcard{margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--s2)}
+#pg-launch .pcard .top{display:flex;align-items:center;gap:12px} #pg-launch .sm-logo{width:42px;height:42px;border-radius:50%;background:rgba(46,189,133,.15);border:1px solid rgba(46,189,133,.5);display:flex;align-items:center;justify-content:center;font:600 12px var(--mono);color:var(--up);overflow:hidden;flex:none} #pg-launch .sm-logo img{width:100%;height:100%;object-fit:cover}
+#pg-launch .pcard .nm{flex:1;min-width:0} #pg-launch .pcard .nm b{font:600 15px var(--disp)} #pg-launch .pcard .nm small{font:400 12px var(--mono);color:var(--fg-3);margin-left:8px} #pg-launch .pcard .nm .pr{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;color:var(--fg-2)} #pg-launch .pcard .nm .pr img{width:14px;height:14px;border-radius:50%;background:#fff}
+#pg-launch .pcard .age{font:11px var(--sans);color:var(--fg-3)}
+#pg-launch .pcard .spark{height:80px;margin:14px 0 10px}
+#pg-launch .pcard .flow{display:flex;justify-content:space-between;margin-bottom:6px} #pg-launch .pcard .flow .num{font-size:11px;color:var(--fg-3)}
+#pg-launch .pcard .sboxes{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:12px}
+#pg-launch .kboxes{margin-top:12px;grid-template-columns:repeat(4,minmax(0,1fr))}
+#pg-launch .pnote{margin-top:14px;text-align:center;font-size:12px;color:var(--fg-3)}
+/* done */
+#pg-launch #done .ch{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);font:600 15px var(--disp)} #pg-launch #done .cb{padding:16px}
+#pg-launch .dn-hd{display:flex;align-items:center;gap:14px;margin-bottom:14px} #pg-launch .dn-hd img{width:56px;height:56px;border-radius:50%;background:var(--s3);object-fit:cover;border:1px solid var(--line-2)}
+#pg-launch .dn-hd b{display:block;font:600 18px var(--disp)} #pg-launch .dn-hd small{display:block;color:var(--fg-2);font-size:13px;margin-top:3px}
+#pg-launch .dn-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+#pg-launch .dn-addr{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;word-break:break-all}
+/* chains */
+#pg-launch .chainsel{position:relative;margin:2px 0 22px;padding:16px;border:1px solid var(--line);border-radius:16px;background:radial-gradient(120% 90% at 0% 0%,rgba(51,229,194,.07),transparent 55%),var(--s1);overflow:hidden}
+#pg-launch .cs-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+#pg-launch .cs-t{display:block;font:600 15px var(--disp);color:var(--fg)} #pg-launch .cs-s{display:block;margin-top:3px;font:12px var(--mono);color:var(--fg-3)}
+#pg-launch .cs-how{display:inline-flex;align-items:center;gap:4px;font:500 12px var(--sans);color:var(--fg-3);white-space:nowrap} #pg-launch .cs-how:hover{color:var(--ac)} #pg-launch .cs-how svg{width:13px;height:13px}
+#pg-launch .ctiles{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+#pg-launch .ctile{--cc:#33e5c2;position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-areas:"lg nm cc tk" "lg bd cc tk";gap:2px 12px;align-items:center;padding:9px 12px;border:1px solid var(--line-2);border-radius:12px;background:var(--s2);text-align:left;transition:border-color .18s,background .18s,box-shadow .18s}
+#pg-launch .ctile:hover{border-color:var(--line-3)}
+#pg-launch .ctile.on{border-color:color-mix(in srgb,var(--cc) 70%,transparent);background:radial-gradient(120% 140% at 0% 50%,color-mix(in srgb,var(--cc) 15%,transparent),transparent 60%),var(--s2);box-shadow:0 0 0 1px color-mix(in srgb,var(--cc) 28%,transparent),0 8px 24px -14px color-mix(in srgb,var(--cc) 50%,transparent)}
+#pg-launch .ctile .th{display:contents}
+#pg-launch .ctile .th img{grid-area:lg;width:32px;height:32px;border-radius:50%;box-shadow:0 0 0 3px color-mix(in srgb,var(--cc) 16%,transparent)}
+#pg-launch .ctile .nm{grid-area:nm;min-width:0;display:flex;align-items:baseline;gap:6px} #pg-launch .ctile .nm b{font:600 13.5px var(--disp);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-launch .ctile .nm small{display:none}
+#pg-launch .ctile .bd{grid-area:bd;display:flex;align-items:center;gap:5px;min-width:0;font:11px var(--mono);color:var(--fg-3);white-space:nowrap;overflow:hidden}
+#pg-launch .ctile .bd .st{overflow:hidden;text-overflow:ellipsis}
+#pg-launch .ctile .liveb,#pg-launch .ctile .soonb,#pg-launch .ctile .mainb{height:16px;padding:0 5px;font-size:9px;flex:none}
+#pg-launch .ctile .cc{grid-area:cc;text-align:right;font:500 12.5px var(--mono);color:var(--fg)} #pg-launch .ctile .cc i{display:block;font:normal 9.5px var(--mono);color:var(--fg-3);margin-top:1px}
+#pg-launch .ctile .tk{grid-area:tk;width:18px;height:18px;border-radius:50%;border:1px solid var(--line-3);display:flex;align-items:center;justify-content:center;color:#05060a;transition:background .15s,border-color .15s}
+#pg-launch .ctile .tk svg{width:11px;height:11px;opacity:0} #pg-launch .ctile.on .tk{background:var(--cc);border-color:var(--cc)} #pg-launch .ctile.on .tk svg{opacity:1}
+#pg-launch .cs-pay{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line-2)}
+#pg-launch .cs-pl{font:500 12px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--fg-3)}
+#pg-launch #pay-seg button{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;font-family:var(--disp)} #pg-launch #pay-seg img{width:16px;height:16px;border-radius:50%}
+#pg-launch .cs-cost{margin-left:auto;font:500 13px var(--mono);color:var(--fg)} #pg-launch .cs-cost small{color:var(--fg-3);font-size:11.5px;margin-left:6px}
+#pg-launch .cs-note{margin:10px 0 0;font-size:12.5px;line-height:1.5;color:var(--fg-3)} #pg-launch .cs-note:empty{display:none} #pg-launch .cs-note b{color:var(--fg-2);font-weight:600;white-space:normal;display:inline}
+#pg-launch .pch{margin-left:auto}
+#pg-launch .lfee{margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--s2)} #pg-launch .lfee:empty{display:none}
+#pg-launch .lfee .lr{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--fg-2);padding:3px 0} #pg-launch .lfee .lr span{display:inline-flex;align-items:center;gap:7px} #pg-launch .lfee .lr img{width:16px;height:16px;border-radius:50%} #pg-launch .lfee .lr b{font:500 12.5px var(--mono);color:var(--fg)}
+#pg-launch .lfee .lt{display:flex;align-items:baseline;justify-content:space-between;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);font:600 13px var(--disp)} #pg-launch .lfee .lt b{font:600 14px var(--mono)} #pg-launch .lfee .lh{display:block;font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3);margin-bottom:6px}
+@media(max-width:640px){#pg-launch .ctiles{grid-template-columns:minmax(0,1fr)} #pg-launch .chainsel{padding:14px} #pg-launch .cs-cost{margin-left:0;width:100%}}
+@media(max-width:1000px){#pg-launch .wiz{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){#pg-launch .form,#pg-launch .prev{padding:18px} #pg-launch h1,#pg-launch h2{font-size:26px} #pg-launch .links{grid-template-columns:1fr} #pg-launch .kboxes{grid-template-columns:1fr 1fr} #pg-launch .pc .ft{display:none} #pg-launch .pc{grid-template-columns:28px minmax(0,1fr) auto 20px}}
+</style>
+</head><body data-page="launch">
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-launch">
+  <div class="wiz" id="wiz">
+    <div class="wiz-main panel form">
+      <h1>Launch a <em>coin</em></h1>
+      <div id="steps"><button type="button" data-step="1" class="on"><span class="n">1</span></button><button type="button" data-step="2"><span class="n">2</span></button><button type="button" data-step="3"><span class="n">3</span></button></div>
+
+      <section class="chainsel hidden" id="chainsel" aria-label="Chains">
+        <div class="cs-hd"><div><span class="cs-t">Chains</span><span class="cs-s" id="cs-sum"></span></div></div>
+        <div class="ctiles" id="ctiles"></div>
+        <div class="cs-pay"><span class="cs-pl">Pay once on</span><div class="seg" id="pay-seg"></div><span class="cs-cost" id="cs-cost"></span></div>
+        <p class="cs-note" id="cs-note"></p>
+      </section>
+
+      <div class="pane on" data-pane="2">
+        <div class="idrow">
+          <label class="drop" id="drop" for="f-logo"><input id="f-logo" type="file" accept="image/*" hidden><span id="drop-in"></span></label>
+          <div class="two">
+            <div><label class="lbl" for="f-name">Token name</label><input class="inp" id="f-name" maxlength="32" placeholder="Token name" autocomplete="off"><p class="err" id="name-msg"></p></div>
+            <div><label class="lbl" for="f-sym">Token symbol</label><input class="inp num up" id="f-sym" maxlength="10" placeholder="TOKEN" autocomplete="off" spellcheck="false"><p class="hint" id="sym-msg"></p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane on" data-pane="1">
+        <div class="pairhd"><label class="lbl">Pair</label><div class="seg" id="pair-kind"><button type="button" data-k="crypto" class="on">Crypto</button><button type="button" data-k="stock">Stocks</button></div></div>
+        <div class="dd" id="pair-dd"><button type="button" class="ddb" id="pair-btn"><span class="pv" id="pair-pv">Select</span><span class="ar">▼</span></button><div class="pairs" id="pairs"><div class="psrch"><input class="inp" id="pair-q" type="search" placeholder="Search stocks: ticker or name" autocomplete="off" aria-label="Search stocks"></div><div id="pairs-list"></div></div></div>
+        <p class="err" id="pair-err"></p><p class="hint" id="mk-status"></p>
+        <label class="lbl" for="f-desc">Description (optional)</label>
+        <textarea class="inp" id="f-desc" maxlength="280" placeholder=""></textarea>
+        <div class="cnt-hint"><span></span><span class="hint num" id="desc-cnt">0 / 280</span></div>
+        <div class="links"><div><label class="lbl" for="f-web">Web (optional)</label><input class="inp" id="f-web" placeholder="yourweb.com" autocomplete="off"></div><div><label class="lbl" for="f-x">X (optional)</label><input class="inp" id="f-x" placeholder="x.com/yourX" autocomplete="off"></div><div><label class="lbl" for="f-tg">TG (optional)</label><input class="inp" id="f-tg" placeholder="t.me/yourTG" autocomplete="off"></div></div>
+      </div>
+
+      <div class="pane on" data-pane="3">
+        <div class="notice warn hidden" id="paused"></div>
+        <div class="opt orow" id="opt-dev"><div class="oh" data-sw="dev"><span>Dev buy</span><span class="r"><span id="dev-hdr">Paid in HYPE</span><button type="button" class="sw" role="switch" aria-checked="false" id="sw-dev"></button></span></div><div class="ob"><label class="lbl" for="f-dev">HYPE to spend</label><input class="inp num" id="f-dev" type="number" min="0" max="50" step="0.5" value="5" style="max-width:200px"><p class="hint" id="dev-hint"></p><p class="err" id="dev-msg"></p></div></div>
+        <div class="obox">
+          <div class="feerow"><span>Starting market cap</span><div class="seg" id="cap-seg"><button type="button" class="on" data-cap="0">$3K</button></div></div>
+          <p class="hint" id="cap-hint" style="margin:0 0 6px"></p>
+        </div>
+        <div class="obox">
+          <div class="feerow"><span>Trade fee</span><div class="row"><div class="seg" id="fee-seg"><button type="button" data-fee="100" class="on">1%</button><button type="button" data-fee="200">2%</button><button type="button" data-fee="300">3%</button><button type="button" data-fee="custom">Custom</button></div><div class="row hidden" id="fee-custom"><input class="inp num" id="f-fee" type="number" min="0.1" max="3" step="0.1" value="1" style="width:84px;height:30px"><span class="muted">%</span></div></div></div>
+          <p class="hint hidden" id="fee-hint"></p><p class="err" id="fee-msg"></p>
+          <div class="opt" id="opt-div"><div class="oh" data-sw="div"><b>Creator fees go to holders</b><span class="badge acl">★ Holder rewards</span><button type="button" class="sw" role="switch" aria-checked="false" id="sw-div"></button><small>A share of every fee goes to holders instead of you. Permanent.</small></div><div class="ob"><label class="lbl" for="f-div">Share of the fee to holders, %</label><input class="inp num" id="f-div" type="number" min="10" max="50" step="1" value="20" style="max-width:200px"><p class="hint" id="div-hint"></p><p class="err" id="div-msg"></p></div></div>
+          <div class="opt" id="opt-bb"><div class="oh" data-sw="bb"><b>Buyback and burn</b><span class="badge acl">Burn</span><button type="button" class="sw" role="switch" aria-checked="false" id="sw-bb"></button><small>A share of every fee buys the coin back and burns it. Permanent.</small></div><div class="ob"><div class="grid g2"><div><label class="lbl" for="f-bb">Share of the fee, %</label><input class="inp num" id="f-bb" type="number" min="10" max="50" step="1" value="20"></div><div><label class="lbl" for="f-bbusd">Burn every, USD</label><input class="inp num" id="f-bbusd" type="number" min="5" max="10000" step="1" value="50"></div></div><p class="hint" id="bb-hint"></p><p class="err" id="bb-msg"></p></div></div>
+          <div class="opt" id="opt-mw"><div class="oh" data-sw="mw"><b>Max wallet</b><button type="button" class="sw" role="switch" aria-checked="false" id="sw-mw"></button><small>Caps how much one wallet can buy in the first hours.</small></div><div class="ob"><div class="grid g2"><div><label class="lbl" for="f-mw">Max per wallet, % of supply</label><input class="inp num" id="f-mw" type="number" min="0.5" max="20" step="0.5" value="2"></div><div><label class="lbl" for="f-mwh">For how long, hours</label><input class="inp num" id="f-mwh" type="number" min="0.25" max="720" step="0.25" value="1"></div></div><p class="hint" id="mw-hint"></p><p class="err" id="mw-msg"></p></div></div>
+          <div class="opt" id="opt-snipe"><div class="oh" data-sw="snipe"><b>Anti-snipe</b><button type="button" class="sw" role="switch" aria-checked="false" id="sw-snipe"></button><small>Higher fee for the first minutes after launch.</small></div><div class="ob"><div class="grid g2"><div><label class="lbl" for="f-snipe">Starting fee, %</label><input class="inp num" id="f-snipe" type="number" min="5" max="30" step="1" value="30"></div><div><label class="lbl" for="f-snipemin">Duration, minutes</label><input class="inp num" id="f-snipemin" type="number" min="1" max="120" step="1" value="30"></div></div><p class="hint" id="snipe-hint"></p><p class="err" id="snipe-msg"></p></div></div>
+        </div>
+        <div class="rev"><div class="kv"><span>Fee split</span><b id="rv-split"></b></div><div class="split2" id="rv-bar"></div><div class="legend" id="rv-legend"></div><div class="kv"><span>Opening market cap</span><b id="rv-cap"></b></div></div>
+        <button type="button" class="btn pri lg block" id="cta">Connect a wallet</button>
+      </div>
+
+      <div class="hidden" id="done">
+        <div class="ch"><span>Your coin is live</span><span class="badge acl" id="dn-block"></span></div>
+        <div class="cb">
+          <div class="dn-hd"><img id="dn-logo" alt=""><div><b id="dn-name"></b><small id="dn-sub"></small></div></div>
+          <div class="kv"><span>Address</span><b><span class="dn-addr"><span id="dn-addr"></span><button type="button" class="cp" id="dn-copy" title="Copy address"></button></span></b></div>
+          <div class="kv"><span>Pair</span><b id="dn-pair"></b></div>
+          <div class="kv"><span>Fee</span><b id="dn-fee"></b></div>
+          <div class="dn-acts"><a class="btn pri" id="dn-open">Open coin page</a><a class="btn" id="dn-x" target="_blank" rel="noopener">Share on X</a><a class="btn" id="dn-scan" target="_blank" rel="noopener">HyperEVMScan</a></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="wiz-side panel prev" id="sum">
+      <h2>Preview</h2>
+      <div class="pcard"><div class="top"><div class="sm-logo" id="sm-logo">TOK</div><div class="nm"><div><b id="sm-name">Token name</b><small id="sm-sym">$TOKEN</small></div><div class="pr" id="sm-pair">Pick a pair</div></div><span class="pch" id="sm-chs"></span></div>
+        <svg class="spark" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#33e5c2" stop-opacity=".35"/><stop offset="1" stop-color="#33e5c2" stop-opacity="0"/></linearGradient></defs><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16 L297 80 L3 80 Z" fill="url(#pg)"/><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16" fill="none" stroke="#33e5c2" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <div class="flow"><span class="lab">Flow 24h</span><span class="num">no trades yet</span></div><div class="split"><i class="b" style="width:0"></i></div>
+        <div class="sboxes"><div class="sbox"><span class="lab">Mcap</span><b id="sm-cap">$3,000</b></div><div class="sbox"><span class="lab">Volume</span><b>$0</b></div><div class="sbox"><span class="lab">Trades</span><b>0</b></div></div></div>
+      <div class="sboxes kboxes"><div class="sbox"><span class="lab">Trade fee</span><b id="sm-fee">1%</b></div><div class="sbox"><span class="lab">Supply</span><b id="sm-sup">1B</b></div><div class="sbox"><span class="lab">Dev buy</span><b id="sm-dev">None</b></div><div class="sbox"><span class="lab">Creator share</span><b id="sm-cr">60%</b></div></div>
+      <div class="sboxes kboxes" style="grid-template-columns:1fr 1fr"><div class="sbox"><span class="lab">Options</span><b id="sm-opts">None</b></div><div class="sbox"><span class="lab">Status</span><b id="sm-step">Ready</b></div></div>
+      <div class="lfee" id="sm-lfee"></div>
+      <p class="pnote" id="sm-note">Liquidity cannot be withdrawn.</p>
+    </aside>
+  </div>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js?v=1"></script><script src="/data.js?v=1"></script><script src="/avatar.js"></script><script src="/chain.js?v=1"></script><script src="/equo.js?v=1"></script><script src="/hl.js?v=1"></script><script src="/api.js?v=1"></script><script src="/preview.js?v=1"></script><script src="/wallet.js?v=1"></script><script src="/core.js?v=1"></script><script src="/sp-launch.js?v=1"></script>
+</body></html>
