@@ -38,7 +38,7 @@ window.SP_PAGE=function(){
 
   /* ---------- stats ---------- */
   function stats(){ const pu=pairUsd(); const fees=X.totalCreatorFees||0;
-    const S=[['Price','$'+fmtPrice(X.px)+SP.fmtPct(X.c24||0).replace('class="num','class="pc num'),`${fmtPrice(X.pxPair)} ${esc(X.pair)}`],['Market cap',fmtUsd(X.mc),inPair(X.pxPair*SUPPLY*SP.coinChains(X).length)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Trades',(X.trades||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders')],['Holders',(X.h||0).toLocaleString(),'wallets'],['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)]];
+    const S=[['Price','$'+fmtPrice(X.px)+SP.fmtPct(X.c24||0).replace('class="num','class="pc num'),`${fmtPrice(X.pxPair)} ${esc(X.pair)}`],['Market cap',fmtUsd(X.mc),SP.coinChains(X).length>1?`${SP.coinChains(X).length} chains × 1B`:inPair(X.pxPair*SUPPLY)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Trades',(X.trades||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders')],['Holders',(X.h||0).toLocaleString(),'wallets'],['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)]];
     $('#tk-stats').innerHTML=S.map(s=>`<div class="sbox lg"><span class="lab">${s[0]}</span><b>${s[1]}</b><i>${s[2]}</i></div>`).join('');
     const g=X.genes||{}; const dv=(g.divShareBps||0)/100, bb=(g.buybackShareBps||0)/100, rest=100-dv-bb, cr=Math.round(rest*0.6), pl=rest-cr;
     $('#tk-feespaid').textContent=`${feePct()}% · ${dv?dv+'% holders · ':''}${bb?bb+'% buyback · ':''}${cr}% creator · ${pl}% platform`; $('#tk-feebar').innerHTML=(dv?`<i class="h" style="width:${dv}%"></i>`:'')+(bb?`<i style="width:${bb}%;background:var(--dn)"></i>`:'')+`<i class="c" style="width:${cr}%"></i><i class="p" style="flex:1"></i>`; }
@@ -52,17 +52,18 @@ window.SP_PAGE=function(){
   /* ---------- trades ---------- */
   let TR=[], seen=new Set(), filter='all', shown=25, launchTrade=null;
   const key=t=>t.tx+':'+t.index;
-  const view=t=>({k:key(t),ts:Number(t.ts),buy:!!t.buy,coin:Number(t.coin)/1e18,pair:Number(t.pair)/1e18,pxPair:CHAIN.tradePrice(t),fee:Number(t.fee)/1e18,wallet:String(t.wallet).toLowerCase(),tx:t.tx,block:t.block,index:t.index});
+  const view=t=>({k:key(t),ts:Number(t.ts),buy:!!t.buy,coin:Number(t.coin)/1e18,pair:Number(t.pair)/1e18,pxPair:CHAIN.tradePrice(t),fee:Number(t.fee)/1e18,wallet:String(t.wallet).toLowerCase(),tx:t.tx,block:t.block,index:t.index,chain:t.chain||(SP.coinChains(X)[0]||'eth')});
   const sortTr=()=>TR.sort((a,b)=>(b.ts-a.ts)||((b.block||0)-(a.block||0))||((b.index||0)-(a.index||0)));
-  function row(v,fresh){ const pu=pairUsd(); return `<tr data-k="${v.buy?'buy':'sell'}" class="${fresh&&fresh.has(v.k)?'new':''}"><td><span class="side ${v.buy?'b':'s'}">${v.buy?'Buy':'Sell'}</span></td><td>${wl(v.wallet,v.wallet===X.creator?'<span class="tag">creator</span>':'')}</td><td class="r num">${fmtAmt(v.coin)} <span class="muted">${esc(X.t)}</span></td><td class="r num">${inPair(v.pair)}<small>fee ${inPair(v.fee)}</small></td><td class="r num">${fmtUsd(v.pair*pu)}</td><td class="r num">$${fmtPrice(v.pxPair*pu)}<small>${fmtPrice(v.pxPair)} ${esc(X.pair)}</small></td><td><span class="num muted" data-ts="${v.ts}" title="${new Date(v.ts*1000).toLocaleString()}">${agoTxt(v.ts)}</span></td><td class="r"><a class="txl" href="${EXPLORER}/tx/${v.tx}" target="_blank" rel="noopener" title="View transaction">${ic('ext')}</a></td></tr>`; }
+  function row(v,fresh){ const pu=pairUsd(); return `<tr data-k="${v.buy?'buy':'sell'}" class="${fresh&&fresh.has(v.k)?'new':''}"><td><span class="side ${v.buy?'b':'s'}">${v.buy?'Buy':'Sell'}</span></td><td>${wl(v.wallet,v.wallet===X.creator?'<span class="tag">creator</span>':'')}</td><td class="r num">${fmtAmt(v.coin)} <span class="muted">${esc(X.t)}</span></td><td class="r num">${inPair(v.pair)}<small>fee ${inPair(v.fee)}</small></td><td class="r num">${fmtUsd(v.pair*pu)}</td><td class="r num">$${fmtPrice(v.pxPair*pu)}<small>${fmtPrice(v.pxPair)} ${esc(X.pair)}</small></td><td><span class="num muted" data-ts="${v.ts}" title="${new Date(v.ts*1000).toLocaleString()}">${agoTxt(v.ts)}</span></td><td>${chainCell(v.chain)}</td><td class="r"><a class="txl" href="${(SP.chain(v.chain)||{}).explorer||EXPLORER}/tx/${v.tx}" target="_blank" rel="noopener" title="View transaction">${ic('ext')}</a></td></tr>`; }
+  function chainCell(k){ const c=SP.chain(k)||{}; return `<span class="chc" title="${esc(c.name||k)}"><img src="${c.logo||'/img/eth.png'}" alt="">${esc(c.code||k)}</span>`; }
   function renderTrades(fresh){ const tb=$('#tk-trades'); const L=TR.filter(v=>filter==='all'||(filter==='buy')===v.buy);
-    $('#tk-th-coin').textContent='Amount'; $('#tk-th-pair').textContent='Paid / received'; $('#tk-trades-n').textContent=TR.length?'('+TR.length.toLocaleString()+')':''; flow();
-    if(!L.length){ tb.innerHTML=emptyRow(8,TR.length?'No '+filter+'s yet.':'No trades yet. The first buy shows up here within seconds.'); $('#tk-more').classList.add('hidden'); return; }
+    $('#tk-th-coin').textContent='Amount'; $('#tk-th-pair').textContent='Paid / received'; $('#tk-trades-n').textContent=TR.length?'('+TR.length.toLocaleString()+(SP.coinChains(X).length>1?' · all chains':'')+')':''; flow();
+    if(!L.length){ tb.innerHTML=emptyRow(9,TR.length?'No '+filter+'s yet.':'No trades yet. The first buy shows up here within seconds.'); $('#tk-more').classList.add('hidden'); return; }
     tb.innerHTML=L.slice(0,shown).map(v=>row(v,fresh)).join(''); $('#tk-more').classList.toggle('hidden',L.length<=shown); }
   $('#tk-more-btn').onclick=()=>{ shown+=25; renderTrades(); };
   $$('#tk-filter button').forEach(b=>b.onclick=()=>{ filter=b.dataset.f; $$('#tk-filter button').forEach(x=>x.classList.toggle('on',x===b)); shown=25; renderTrades(); });
   setInterval(()=>{ const now=Math.floor(Date.now()/1000); $$('[data-ts]',pg).forEach(e=>e.textContent=ago(Math.max(0,now-+e.dataset.ts))+' ago'); },10000);
-  async function loadTrades(){ const tb=$('#tk-trades'); tb.innerHTML=emptyRow(8,'Loading trades…'); try{ const tr=await CHAIN.trades(X.addr); TR=tr.map(view); TR.forEach(v=>seen.add(v.k)); sortTr(); launchTrade=TR.slice().reverse().find(v=>v.wallet===X.creator&&v.buy&&v.ts<=X.createdAt+2)||null; renderTrades(); if(activeTab==='info') info(); }catch(e){ tb.innerHTML=emptyRow(8,'Could not load trades: '+esc(SP.errMsg(e))); } }
+  async function loadTrades(){ const tb=$('#tk-trades'); tb.innerHTML=emptyRow(9,'Loading trades…'); try{ const tr=await CHAIN.trades(X.addr); TR=tr.map(view); TR.forEach(v=>seen.add(v.k)); sortTr(); launchTrade=TR.slice().reverse().find(v=>v.wallet===X.creator&&v.buy&&v.ts<=X.createdAt+2)||null; renderTrades(); if(activeTab==='info') info(); }catch(e){ tb.innerHTML=emptyRow(9,'Could not load trades: '+esc(SP.errMsg(e))); } }
 
   /* ---------- holders, top traders ---------- */
   let holdersAt=0, topAt=0;
@@ -98,20 +99,25 @@ window.SP_PAGE=function(){
   const minOut=()=>qOut-qOut*BigInt(Math.round(slipPct()*100))/10000n;
   /* a stock with no ETH route trades in the stock itself: `bal` and amounts in are that stock, not ETH */
   /* multichain coins: each chain has its own pool; the trader picks which one to trade on and pays in that chain's coin */
-  let tChain=SP.coinChains(X).includes('eth')?'eth':SP.coinChains(X)[0], CC=null;
+  let tChain=SP.coinChains(X).includes('eth')?'eth':SP.coinChains(X)[0], CC=null, cheapest=false;
   const onEth=()=>tChain==='eth', tc=()=>SP.chain(tChain)||SP.chain('eth'), chainPx=k=>((X.byChain||{})[k]||{}).px||X.px, natUsd=()=>(CC&&CC[tChain]&&CC[tChain].nativeUsd)||0;
   const natImg=()=>['ETH'].includes(tc().native)?'/img/eth.png':tc().logo;
   const via=()=>onEth()&&!!(window.CHAIN&&CHAIN.equo&&X.pairAddr&&!CHAIN.equo.hasRoute(X.pairAddr)), payUsd=()=>!onEth()?natUsd():via()?pairUsd():ethUsd(), payFmt=v=>!onEth()?fmtAmt(v)+' '+tc().native:via()?inPair(v):fmtEth(v);
+  /** the pool that pays the most for this side: lowest price to buy, highest to sell */
+  const bestChain=()=>{ const on=SP.coinChains(X); return on.reduce((a,k)=>(side==='buy'?chainPx(k)<chainPx(a):chainPx(k)>chainPx(a))?k:a,on[0]); };
+  /** with "Cheapest chain" on, follow the best pool; true when that moved the trade to another chain */
+  function autoChain(){ if(!cheapest||SP.coinChains(X).length<2) return false; const b=bestChain(); if(b===tChain) return false; tChain=b; return true; }
   function paintTChain(){ const box=$('#tk-tchain'), on=SP.coinChains(X); if(!box) return; box.classList.toggle('hidden',on.length<2); if(on.length<2) return;
-    const best=on.reduce((a,k)=>(side==='buy'?chainPx(k)<chainPx(a):chainPx(k)>chainPx(a))?k:a,on[0]);
-    box.innerHTML=`<button type="button" class="tcb" id="tk-tcb"><span class="l">${side==='buy'?'Buy on':'Sell on'}</span><img src="${tc().logo}" alt=""><b>${esc(tc().name)}</b>${best===tChain?'<span class="bestb">Best price</span>':''}<span class="px">$${fmtPrice(chainPx(tChain))}</span>${ic('down')}</button>`;
+    const best=bestChain();
+    box.innerHTML=`<button type="button" class="tcb" id="tk-tcb"><span class="l">${side==='buy'?'Buy on':'Sell on'}</span><img src="${tc().logo}" alt=""><b>${esc(tc().name)}</b>${best===tChain?'<span class="bestb">Best price</span>':''}<span class="px">$${fmtPrice(chainPx(tChain))}</span>${ic('down')}</button><label class="cheap"><input type="checkbox" id="tk-cheap"${cheapest?' checked':''}><span><b>Cheapest chain</b> · ${side==='buy'?'buy':'sell'} on the pool with the best price</span></label>`;
+    $('#tk-cheap').onchange=e=>{ cheapest=e.target.checked; if(autoChain()){ amtEl.value=''; resetQuote(); paintSide(); position(); } else paintTChain(); };
     $('#tk-tcb').onclick=e=>{ e.stopPropagation(); const m=SP.menu(e.currentTarget,`<div class="mh">${on.length} pools · pick where to ${side}</div>`+on.map(k=>{ const c=SP.chain(k), d=(chainPx(k)/chainPx(best)-1)*100;
       return `<button data-tk="${k}" class="${k===tChain?'on':''}"><img src="${c.logo}" alt="" style="width:20px;height:20px;border-radius:50%"><span>${esc(c.name)} <span class="muted">${esc(c.native)}</span></span><span style="margin-left:auto;display:inline-flex;align-items:center;gap:8px">${k===best?'<span class="bestb">Best</span>':`<span class="muted num" style="font-size:11px">${d>=0?'+':''}${d.toFixed(2)}%</span>`}<span class="num">$${fmtPrice(chainPx(k))}</span>${c.live?'':'<span class="soonb">Soon</span>'}</span></button>`; }).join(''));
-      $$('[data-tk]',m).forEach(b=>b.onclick=()=>{ m.remove(); tChain=b.dataset.tk; amtEl.value=''; resetQuote(); paintTChain(); paintSide(); position(); }); }; }
+      $$('[data-tk]',m).forEach(b=>b.onclick=()=>{ m.remove(); tChain=b.dataset.tk; cheapest=false; amtEl.value=''; resetQuote(); paintTChain(); paintSide(); position(); }); }; }
   async function quoteFor(v){ if(!onEth()){ const nu=natUsd(), px=chainPx(tChain), r=1-feeR(); if(!nu||!px) return 0n; return side==='buy'?BigInt(Math.floor(v*nu/px*r*1e6))*10n**12n:BigInt(Math.floor(v*px*r/nu*1e9))*10n**9n; }
     const vp=via(); return side==='buy'?await (vp?CHAIN.quoteBuy:CHAIN.quoteBuyEth)(X.addr,CHAIN.parseEther(v.toFixed(18))):await (vp?CHAIN.quoteSell:CHAIN.quoteSellEth)(X.addr,coinWei(v)); }
   function paintBal(){ const e=SP.W.connected?payFmt(balEth):'—', c=SP.W.connected?fmtAmt(balCoin)+' '+X.t:'—'; $('#tk-bal-in').textContent='Balance: '+(side==='buy'?e:c); $('#tk-bal-out').textContent='Balance: '+(side==='buy'?c:e); }
-  function paintSide(){ $$('#tk-sides button').forEach(b=>b.classList.toggle('on',b.dataset.side===side));
+  function paintSide(){ if(autoChain()) resetQuote(); $$('#tk-sides button').forEach(b=>b.classList.toggle('on',b.dataset.side===side));
     const coin=`<img src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span>${esc(X.t)}</span>`, eth=!onEth()?`<img src="${natImg()}" alt=""><span>${esc(tc().native)}</span>`:via()?`<img src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span>${esc(X.pair)}</span>`:`<img src="/img/eth.png" alt=""><span>ETH</span>`;
     $('#tk-asset-in').innerHTML=side==='buy'?eth:coin; $('#tk-asset-out').innerHTML=side==='buy'?coin:eth; amtEl.placeholder='0'; ctaEl.classList.toggle('s',side==='sell');
     $('#tk-note').textContent=`Fee ${feePct()}% in ${X.pair}`; $('#tk-payw').textContent=side==='buy'?(!onEth()?tc().native:via()?X.pair:'ETH'):X.t; paintTChain(); $('#tk-payw-note').textContent=via()?`No ETH route for ${X.pair}; you ${side==='buy'?'pay':'receive'} ${X.pair}`:'';

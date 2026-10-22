@@ -37,24 +37,32 @@
     const capPx = (cap) => cap / (SUP * n);
     const trades = [], wallets = Array.from({ length: Math.max(12, Math.round(s.trades / 4)) }, wallet);
     let px = capPx(s.p0);
+    // each chain's pool drifts a little from the others (arbitrage through the bridge keeps the gap small)
+    const gap = Object.fromEntries(s.chains.map((k, i) => [k, i ? (rnd() - 0.5) * 0.03 : 0]));
     for (let i = 0; i < s.trades; i++) {
       const f = (i + 1) / s.trades, target = capPx(s.p0 * Math.pow(s.p1 / s.p0, f));
       const buy = rnd() < 0.62 + (target > px ? 0.1 : -0.1);
       px = Math.max(capPx(s.p0) * 0.6, target * (0.9 + rnd() * 0.2));
-      const usd = 20 + Math.pow(rnd(), 2) * 1800, pairAmt = usd / pairUsd, coinAmt = usd / px;
-      trades.push({ token: s.addr, wallet: wallets[Math.floor(rnd() * wallets.length)], buy, coin: String(BigInt(Math.round(coinAmt * 1e6)) * 10n ** 12n), pair: String(BigInt(Math.round(pairAmt * 1e9)) * 10n ** 9n), fee: String(BigInt(Math.round(pairAmt * s.fee / 1e4 * 1e9)) * 10n ** 9n), realized: '0', block: 0, ts: Math.round(created + f * (NOW - created) - rnd() * 60), tx: '0x' + s.addr.slice(2, 10) + i.toString(16).padStart(56, '0'), index: i, chain: s.chains[Math.floor(rnd() * n)] });
+      const ch = s.chains[Math.floor(rnd() * n)];
+      gap[ch] = ch === s.chains[0] ? 0 : Math.max(-0.025, Math.min(0.025, gap[ch] * 0.85 + (rnd() - 0.5) * 0.012));
+      const cpx = px * (1 + gap[ch]);
+      const usd = 20 + Math.pow(rnd(), 2) * 1800, pairAmt = usd / pairUsd, coinAmt = usd / cpx;
+      trades.push({ token: s.addr, wallet: wallets[Math.floor(rnd() * wallets.length)], buy, coin: String(BigInt(Math.round(coinAmt * 1e6)) * 10n ** 12n), pair: String(BigInt(Math.round(pairAmt * 1e9)) * 10n ** 9n), fee: String(BigInt(Math.round(pairAmt * s.fee / 1e4 * 1e9)) * 10n ** 9n), realized: '0', block: 0, ts: Math.round(created + f * (NOW - created) - rnd() * 60), tx: '0x' + s.addr.slice(2, 10) + i.toString(16).padStart(56, '0'), index: i, chain: ch });
     }
     TR[s.addr] = trades;
     const last = trades[trades.length - 1], day = trades.filter((t) => t.ts >= NOW - 86400);
     const pxNow = Number(last.pair) / Number(last.coin) * pairUsd, first24 = day.length ? Number(day[0].pair) / Number(day[0].coin) * pairUsd : pxNow;
     const vol = day.reduce((a, t) => a + Number(t.pair) / 1e18 * pairUsd, 0);
-    const byChain = {}; s.chains.forEach((k, i) => { byChain[k] = { px: pxNow * (1 + (i ? (rnd() - 0.5) * 0.012 : 0)), vol: vol / n * (0.6 + rnd() * 0.8) }; });
+    const byChain = {}; s.chains.forEach((k) => { const own = trades.filter((t) => t.chain === k), lt = own[own.length - 1];
+      byChain[k] = { px: lt ? Number(lt.pair) / Number(lt.coin) * pairUsd : pxNow, vol: own.filter((t) => t.ts >= NOW - 86400).reduce((a, t) => a + Number(t.pair) / 1e18 * pairUsd, 0), trades: own.length, supply: SUP }; });
+    // market cap across chains: each chain's supply at that chain's price; the headline price is that cap per coin
+    const mcAll = s.chains.reduce((a, k) => a + byChain[k].supply * byChain[k].px, 0), pxAvg = mcAll / (SUP * n);
     const age = s.ageH >= 24 ? Math.round(s.ageH / 24) + 'd' : s.ageH + 'h';
     return {
       addr: s.addr, n: s.n, t: s.t, img: s.img, desc: s.desc, pair: s.pair, pairAddr: String(st.address || '').toLowerCase(), pairUsd,
-      px: pxNow, pxPair: pxNow / pairUsd, mc: pxNow * SUP * n, c24: (pxNow / first24 - 1) * 100, vol, trades: trades.length, traders: wallets.length, h: wallets.length,
+      px: pxAvg, pxPair: pxAvg / pairUsd, mc: mcAll, c24: (pxAvg / first24 - 1) * 100, vol, trades: trades.length, traders: wallets.length, h: wallets.length,
       createdAt: created, age, feeBps: s.fee, rewards: s.rewards, genes: s.genes, creator: wallets[0], links: { x: 'https://x.com/equofun' },
-      liq: pxNow * SUP * n * 0.42, liqPair: pxNow * SUP * n * 0.42 / pairUsd, totalCreatorFees: vol * s.fee / 1e4 * 0.6 / pairUsd * 3, creatorOwed: 0, buybackPot: 0, dividendPot: 0,
+      liq: mcAll * 0.42, liqPair: mcAll * 0.42 / pairUsd, totalCreatorFees: vol * s.fee / 1e4 * 0.6 / pairUsd * 3, creatorOwed: 0, buybackPot: 0, dividendPot: 0,
       poolId: '0x' + s.addr.slice(2).padEnd(64, '0'), chains: s.chains, addrs: Object.fromEntries(s.chains.map((k) => [k, k === 'eth' ? s.addr : wallet()])), byChain, mock: true, hidden: false,
     };
   });
@@ -72,9 +80,10 @@
   w('position', async () => null);
   w('pending', async () => 0n);
   w('balance', async () => 0n);
-  w('bars', async (m, step, from, to) => {
+  // `chain`: one chain's pool; leave it out for every chain merged into one series
+  w('bars', async (m, step, from, to, chain) => {
     const out = []; let o = null;
-    TR[m.addr].filter((t) => t.ts >= from && t.ts < to).forEach((t) => { const p = Number(t.pair) / Number(t.coin), b = Math.floor(t.ts / step) * step;
+    TR[m.addr].filter((t) => t.ts >= from && t.ts < to && (!chain || t.chain === chain)).forEach((t) => { const p = Number(t.pair) / Number(t.coin), b = Math.floor(t.ts / step) * step;
       if (!o || o.time !== b) { if (o) out.push(o); o = { time: b, open: o ? o.close : p, high: p, low: p, close: p, volume: 0 }; }
       o.high = Math.max(o.high, p); o.low = Math.min(o.low, p); o.close = p; o.volume += Number(t.pair) / 1e18; });
     if (o) out.push(o); return out;
