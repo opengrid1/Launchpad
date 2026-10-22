@@ -7,7 +7,7 @@ import {EnforcedOptionParam} from "@layerzerolabs/oapp-evm/contracts/oapp/interf
 
 interface IEquoCreator {
     function create(bytes32 s) external returns (address);
-    function predict(bytes32 s) external view returns (address);
+    function initCodeHash() external view returns (bytes32);
 }
 
 interface IEquoOFT {
@@ -30,11 +30,14 @@ interface IEquoOFT {
 ///         owner, and the only thing it can do later is add a peer for a chain that has none: an existing peer, its
 ///         libraries and its verifiers can never be changed.
 contract EquoTokenDeployer {
-    uint256 internal constant MAX_TRIES = 128;
+    uint256 internal constant MAX_TRIES = 512;
     uint16 internal constant MSG_SEND = 1;
 
-    /// @notice Sets up creators, the factory and chain routes; nothing about a launched coin.
+    /// @notice Sets up creators, the factory and chain routes, and adds peers for new chains; nothing else about
+    ///         a launched coin.
     address public immutable admin;
+    /// @notice The account that deployed this contract may also do the setup below until it calls {endSetup}.
+    address public setupBy;
     ILayerZeroEndpointV2 public immutable endpoint;
     address public factory;
     address public tokenCreator;
@@ -71,6 +74,7 @@ contract EquoTokenDeployer {
     Init private _pending;
 
     event FactorySet(address indexed factory);
+    event SetupEnded();
     event CreatorsSet(address tokenCreator, address divTokenCreator);
     event RouteSet(uint32 indexed eid, address sendLib, address receiveLib);
     event LzReceiveGasSet(uint128 gas);
@@ -90,6 +94,7 @@ contract EquoTokenDeployer {
         if (admin_ == address(0) || endpoint_ == address(0)) revert ZeroAddress();
         admin = admin_;
         endpoint = ILayerZeroEndpointV2(endpoint_);
+        setupBy = msg.sender;
     }
 
     modifier onlyAdmin() {
@@ -97,18 +102,29 @@ contract EquoTokenDeployer {
         _;
     }
 
+    modifier onlySetup() {
+        if (msg.sender != admin && (msg.sender != setupBy || setupBy == address(0))) revert NotAdmin();
+        _;
+    }
+
+    /// @notice The deploying account gives up its setup rights; from here on only the admin sets routes.
+    function endSetup() external onlySetup {
+        setupBy = address(0);
+        emit SetupEnded();
+    }
+
     // ---------------------------------------------------------------------
     // One-time setup and chain routes (admin)
     // ---------------------------------------------------------------------
 
-    function setFactory(address factory_) external onlyAdmin {
+    function setFactory(address factory_) external onlySetup {
         if (factory != address(0)) revert AlreadySet();
         if (factory_ == address(0)) revert ZeroAddress();
         factory = factory_;
         emit FactorySet(factory_);
     }
 
-    function setCreators(address plain, address div) external onlyAdmin {
+    function setCreators(address plain, address div) external onlySetup {
         if (tokenCreator != address(0)) revert AlreadySet();
         if (plain == address(0) || div == address(0)) revert ZeroAddress();
         tokenCreator = plain;
@@ -118,12 +134,12 @@ contract EquoTokenDeployer {
 
     /// @notice Pin the libraries and verifier setup used for `eid`. Applies to coins wired from now on; coins
     ///         already wired keep what they were given.
-    function setRoute(uint32 eid, Route calldata r) external onlyAdmin {
+    function setRoute(uint32 eid, Route calldata r) external onlySetup {
         _routes[eid] = r;
         emit RouteSet(eid, r.sendLib, r.receiveLib);
     }
 
-    function setLzReceiveGas(uint128 gas) external onlyAdmin {
+    function setLzReceiveGas(uint128 gas) external onlySetup {
         if (gas < 50_000 || gas > 1_000_000) revert BadPeers();
         lzReceiveGas = gas;
         emit LzReceiveGasSet(gas);
@@ -168,10 +184,11 @@ contract EquoTokenDeployer {
     /// @notice The address a coin with launch salt `salt` gets on this chain for pair `pairAsset`. Mirrors
     ///         {deploy}; off-chain code computes the same thing for every chain before a multichain launch.
     function predict(bytes32 salt, address pairAsset, bool dividends) public view returns (address a, bytes32 s) {
-        IEquoCreator c = IEquoCreator(dividends ? divTokenCreator : tokenCreator);
+        address c = dividends ? divTokenCreator : tokenCreator;
+        bytes32 h = IEquoCreator(c).initCodeHash();
         for (uint256 i; i < MAX_TRIES; i++) {
             s = keccak256(abi.encode(salt, i));
-            a = c.predict(s);
+            a = address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), c, s, h)))));
             if (a < pairAsset && a.code.length == 0) return (a, s);
         }
         revert NoSalt();

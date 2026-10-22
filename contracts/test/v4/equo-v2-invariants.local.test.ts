@@ -59,7 +59,12 @@ describe("Equo: v2 invariants carried over (local)", function () {
     await (await c2.deploy(salt, initCode)).wait();
     const hook = await ethers.getContractAt("EquoHook", hookAddr);
 
-    const tokenDeployer = await (await ethers.getContractFactory("EquoTokenDeployer")).deploy();
+    const endpoint = await (await ethers.getContractFactory("EndpointV2Mock")).deploy(30101);
+    const tokenDeployer = await (await ethers.getContractFactory("EquoTokenDeployer")).deploy(admin.address, await endpoint.getAddress());
+    const TD = await tokenDeployer.getAddress();
+    const plainCreator = await (await ethers.getContractFactory("EquoTokenCreator")).deploy(TD);
+    const divCreator = await (await ethers.getContractFactory("EquoDivTokenCreator")).deploy(TD);
+    await (await tokenDeployer.setCreators(await plainCreator.getAddress(), await divCreator.getAddress())).wait();
     await tokenDeployer.waitForDeployment();
     const oracle = await (await ethers.getContractFactory("MockOneOracle")).deploy();
     await oracle.waitForDeployment();
@@ -83,7 +88,7 @@ describe("Equo: v2 invariants carried over (local)", function () {
 
   async function launch(factory: any, creator: any, genes: any, value: bigint, tag = "A") {
     const p = { name: `Coin ${tag}`, symbol: `C${tag}`, metadataURI: "ipfs://x", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [] as any[] };
-    const tx = await factory.connect(creator).launch(p, ethers.id(`salt-${tag}`), "0x", { value });
+    const tx = await factory.connect(creator).launch(p, ethers.id(`salt-${tag}`), "0x", "0x", { value });
     const rc = await tx.wait();
     const ev = rc!.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "Launched");
     return ev!.args.token as string;

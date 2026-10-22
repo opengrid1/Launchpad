@@ -496,8 +496,9 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
             }
         }
 
+        // the salt is the creator's: nobody else can take a coin's address on a chain it has not launched on yet
         token = tokenDeployer.deploy(
-            salt,
+            keccak256(abi.encode(creator, salt)),
             EquoTokenDeployer.Init({
                 name: p.name,
                 symbol: p.symbol,
