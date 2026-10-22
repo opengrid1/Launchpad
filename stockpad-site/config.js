@@ -607,7 +607,7 @@ window.INKY = {
     ];
   })(),
   /* Equo: list only stock-paired coins; ETH-paired coins on the same factory stay on their own site. */
-  stocksOnly: true,
+  stocksOnly: false,
   /* chains: one coin, live on several chains at the same opening price, bridged with LayerZero.
      Ethereum is the main chain. `live` is false until that chain's contracts are deployed; the site
      shows those chains but only Ethereum launches and trades today. launchGas is the gas one launch

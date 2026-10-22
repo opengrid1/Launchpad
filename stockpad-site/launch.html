@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Create a token | Equo</title><meta name="description" content="Launch a coin on Ethereum paired with a tokenized stock in one transaction. Fixed supply, liquidity that cannot be withdrawn, your fee paid in the stock.">
+<title>Create a token | Equo</title><meta name="description" content="Launch a coin paired with ETH or a tokenized stock in one transaction. Fixed supply, liquidity that cannot be withdrawn, your fee paid in the stock.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
 <meta property="og:title" content="Create a token | Equo"><meta property="og:description" content="Launch a coin paired with a real stock on Ethereum."><meta property="og:image" content="/img/og.png?v=16"><meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -117,7 +117,7 @@
       </div>
 
       <div class="pane on" data-pane="1">
-        <div class="pairhd"><label class="lbl">Pair</label><div class="seg"><button type="button" class="on">Stocks</button><button type="button" disabled title="This launchpad pairs with stocks only">Crypto</button></div></div>
+        <div class="pairhd"><label class="lbl">Pair</label><div class="seg" id="pair-kind"><button type="button" data-k="crypto" class="on">Crypto</button><button type="button" data-k="stock">Stocks</button></div></div>
         <div class="dd" id="pair-dd"><button type="button" class="ddb" id="pair-btn"><span class="pv" id="pair-pv">Select</span><span class="ar">▼</span></button><div class="pairs" id="pairs"><div class="psrch"><input class="inp" id="pair-q" type="search" placeholder="Search 573 stocks: ticker or name" autocomplete="off" aria-label="Search stocks"></div><div id="pairs-list"></div></div></div>
         <p class="err" id="pair-err"></p><p class="hint" id="mk-status"></p>
         <label class="lbl" for="f-desc">Description (optional)</label>
@@ -171,5 +171,5 @@
   </div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=5"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/preview.js?v=3"></script><script src="/wallet.js"></script><script src="/core.js?v=24"></script><script src="/sp-launch.js?v=23"></script>
+<script src="/config.js?v=6"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/preview.js?v=3"></script><script src="/wallet.js"></script><script src="/core.js?v=24"></script><script src="/sp-launch.js?v=24"></script>
 </body></html>
