@@ -20,8 +20,13 @@
   },
   {
    "source": "/token",
-   "destination": "/",
+   "destination": "/markets",
    "permanent": false
+  },
+  {
+   "source": "/landing",
+   "destination": "/",
+   "permanent": true
   }
  ],
  "headers": [

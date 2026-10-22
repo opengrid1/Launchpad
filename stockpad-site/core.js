@@ -88,10 +88,10 @@ SP.W.switchChain=async()=>{ const d=window.inkyWallet; if(d&&d.switchChain) awai
 addEventListener('inky:wallet',syncWallet); document.addEventListener('wallet-change',()=>{ /* re-entrancy guard: syncWallet only dispatches on change */ });
 
 /* ---------- shell ---------- */
-const NAV=[['markets','/','Home'],['calls','/calls','Calls'],['analytics','/analytics','Analytics'],['launch','/launch','Launch'],['bridge','/bridge','Bridge'],['rewards','/rewards','Rewards'],['portfolio','/profile','Profile']];
+const NAV=[['markets','/markets','Home'],['calls','/calls','Calls'],['analytics','/analytics','Analytics'],['launch','/launch','Launch'],['bridge','/bridge','Bridge'],['rewards','/rewards','Rewards'],['portfolio','/profile','Profile']];
 /* More menu (desktop) and Tools in the mobile menu: [key, href, label, icon, soon] */
-const TOOLS=[['pools','/pools','Pools','drop'],['burns','/rewards#burns','Burns','flame'],['watch','/?watch=1','Watchlist','star'],['takeover','/takeover','Takeover','users']];
-const MORE_LINKS=[['landing','/landing','About Equo','globe'],['docs','/docs','Docs','book'],['how','/docs/how-it-works','How it works','info']];
+const TOOLS=[['pools','/pools','Pools','drop'],['burns','/rewards#burns','Burns','flame'],['watch','/markets?watch=1','Watchlist','star'],['takeover','/takeover','Takeover','users']];
+const MORE_LINKS=[['landing','/','About Equo','globe'],['docs','/docs','Docs','book'],['how','/docs/how-it-works','How it works','info']];
 const TABS=['markets','calls','launch','rewards','analytics'];
 function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP.W;
   if(!W.connected){ el.innerHTML=`<button class="btn pri" id="wconnect">Connect wallet</button>`; $('#wconnect',el).onclick=SP.W.connect; return; }
@@ -104,7 +104,7 @@ const navHtml=page=>{ const L=NAV.filter(n=>n[0]!=='launch'); const half=Math.ce
 const toolRow=t=>t[4]?`<span class="mi soon-i">${ic(t[3])}<span>${t[2]}</span><span class="soon">Soon</span></span>`:`<a class="mi" href="${t[1]}">${ic(t[3])}<span>${t[2]}</span></a>`;
 function openMore(btn){ const m=SP.menu(btn,`<div class="mh">Tools</div>${TOOLS.map(toolRow).join('')}<div class="d"></div>${MORE_LINKS.map(toolRow).join('')}`); m.classList.add('more'); }
 function openSheet(){ SP.closeDialogs(); const page=document.body.dataset.page||'markets'; const ov=document.createElement('div'); ov.className='ov sheet-ov';
-  ov.innerHTML=`<div class="sheet" role="dialog" aria-label="Menu"><div class="sh-top"><a class="brand" href="/"><img src="/img/logo.svg?v=15" alt=""><span class="wm">Equo</span></a><button class="btn ghost sm ic" data-close aria-label="Close menu">${ic('x')}</button></div>
+  ov.innerHTML=`<div class="sheet" role="dialog" aria-label="Menu"><div class="sh-top"><a class="brand" href="/markets"><img src="/img/logo.svg?v=15" alt=""><span class="wm">Equo</span></a><button class="btn ghost sm ic" data-close aria-label="Close menu">${ic('x')}</button></div>
     <div class="sh-acts"><a class="btn pri" href="/launch">${ic('rocket')}Launch a coin</a><span id="sh-wallet"></span></div>
     <nav class="sh-nav">${NAV.filter(n=>n[0]!=='launch').map(n=>`<a href="${n[1]}" class="${page===n[0]?'on':''}">${ic(NAV_IC[n[0]])}${n[2]}</a>`).join('')}</nav>
     <div class="mh">Tools</div><nav class="sh-nav">${TOOLS.map(toolRow).join('')}</nav>
@@ -114,7 +114,7 @@ function openSheet(){ SP.closeDialogs(); const page=document.body.dataset.page||
   const w=$('#sh-wallet',ov); if(SP.W.connected){ w.innerHTML=`<a class="btn" href="/profile"><span class="av" style="width:18px;height:18px;border-radius:5px;overflow:hidden;display:inline-block">${SP.avatar(SP.W.address,18)}</span>${esc(SP.W.short)}</a>`; } else { w.innerHTML=`<button class="btn">${ic('wallet')}Connect</button>`; w.firstChild.onclick=()=>{ ov.remove(); SP.W.connect(); }; } }
 function clockHtml(){ const mk=SP.market(); return `<span class="mkt ${mk.open?'open':''}" id="sp-clock" title="${esc(mk.detail)}"><i></i><span>${mk.open?'NYSE open':'NYSE closed'}<b>${esc(mk.until)}</b></span></span>`; }
 function renderShell(){ const page=document.body.dataset.page||'markets'; const C=(window.INKY&&INKY.contracts)||{};
-  const top=$('#sp-top'); if(top){ top.innerHTML=`<div class="wrap"><a class="brand" href="/"><img src="/img/logo.svg?v=15" alt=""><span class="wm">Equo</span></a><nav class="nav">${navHtml(page)}</nav>
+  const top=$('#sp-top'); if(top){ top.innerHTML=`<div class="wrap"><a class="brand" href="/markets"><img src="/img/logo.svg?v=15" alt=""><span class="wm">Equo</span></a><nav class="nav">${navHtml(page)}</nav>
     <label class="search">${ic('search')}<input id="sp-q" placeholder="Search name, ticker or address" autocomplete="off"><kbd>/</kbd></label>
     <div class="topr">${clockHtml()}<span class="vsep"></span><span id="sp-wallet"></span><button type="button" class="burger" id="sp-burger" aria-label="Open menu">${ic('menu')}</button></div></div>`;
     $('#sp-more').onclick=e=>{ e.stopPropagation(); openMore(e.currentTarget); }; $('#sp-burger').onclick=openSheet;
@@ -126,7 +126,7 @@ function renderShell(){ const page=document.body.dataset.page||'markets'; const 
 function searchMenu(q){ const v=q.value.trim().toLowerCase(); $$('.menu.srch').forEach(m=>m.remove()); if(!v) return;
   const hits=TOK.filter(x=>x.n.toLowerCase().includes(v)||x.t.toLowerCase().includes(v)||x.addr.includes(v)||(x.pair||'').toLowerCase().includes(v)).slice(0,8);
   const st=SP.stocks.filter(s=>s.symbol.toLowerCase().includes(v)||s.name.toLowerCase().includes(v)||(s.ticker||'').toLowerCase().includes(v)).slice(0,3);
-  const m=document.createElement('div'); m.className='menu srch'; m.innerHTML=(hits.map(x=>`<button data-go="${tokenUrl(x)}"><img src="${SP.coinLogo(x)}" style="width:22px;height:22px;border-radius:50%"><span><b>${esc(x.t)}</b> <span class="muted">${esc(x.n)}</span></span><span class="num" style="margin-left:auto">${fmtUsd(x.mc)}</span></button>`).join('')+st.map(s=>`<button data-go="/?stock=${s.symbol}"><img src="${s.logo}" style="width:22px;height:22px;border-radius:50%;background:#fff"><span><b>${esc(s.ticker)}</b> <span class="muted">${esc(s.name)}</span></span></button>`).join(''))||'<div class="empty" style="padding:14px">No matches</div>';
+  const m=document.createElement('div'); m.className='menu srch'; m.innerHTML=(hits.map(x=>`<button data-go="${tokenUrl(x)}"><img src="${SP.coinLogo(x)}" style="width:22px;height:22px;border-radius:50%"><span><b>${esc(x.t)}</b> <span class="muted">${esc(x.n)}</span></span><span class="num" style="margin-left:auto">${fmtUsd(x.mc)}</span></button>`).join('')+st.map(s=>`<button data-go="/markets?stock=${s.symbol}"><img src="${s.logo}" style="width:22px;height:22px;border-radius:50%;background:#fff"><span><b>${esc(s.ticker)}</b> <span class="muted">${esc(s.name)}</span></span></button>`).join(''))||'<div class="empty" style="padding:14px">No matches</div>';
   document.body.appendChild(m); const r=q.closest('.search').getBoundingClientRect(); m.style.top=(r.bottom+scrollY+6)+'px'; m.style.left=(r.left+scrollX)+'px'; m.style.minWidth=r.width+'px'; $$('[data-go]',m).forEach(b=>b.onclick=()=>SP.go(b.dataset.go));
   setTimeout(()=>document.addEventListener('click',function h(e){ if(!m.contains(e.target)&&e.target!==q){ m.remove(); document.removeEventListener('click',h); } }),0); }
 function paintPrices(){ $$('[data-px]').forEach(el=>{ const v=SP.prices[el.dataset.px]; if(v) el.textContent=stockPx(v); }); const e=$('#sp-ethpx'); if(e&&SP.prices[WETH]) e.innerHTML='<img src="/img/eth.png" alt="" style="width:14px;height:14px;border-radius:50%;display:inline-block;vertical-align:-2px;margin-right:6px">'+stockPx(SP.prices[WETH]); }
