@@ -44,10 +44,11 @@ interface IEquoV2Pair {
 ///
 ///           route = abi.encode(Hop[])   Hop = (dex, pool, v4Key)
 ///
-///         dex 1 Uniswap V2 (by pair address), 2 Uniswap V3 (by pool address),
-///         3 Uniswap V4 (by key). Buying walks WETH -> ... -> pair; selling
-///         walks the same hops backwards. A WETH-paired coin needs no route.
-///         It holds no funds between calls.
+///         dex 1 Uniswap V2 (by pair address), 2 Uniswap V3 or a V3 fork (by
+///         pool address), 3 Uniswap V4 (by key), 4 Algebra (by pool address;
+///         KittenSwap and Nest on HyperEVM). Buying walks WETH -> ... -> pair;
+///         selling walks the same hops backwards. A WETH-paired coin needs no
+///         route. It holds no funds between calls.
 ///
 ///         Every coin swap tells the hook who the trader is (msg.sender) and an
 ///         optional referrer, so the trader earns cashback and the referrer its
@@ -58,6 +59,7 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
     uint8 internal constant UNI_V2 = 1;
     uint8 internal constant UNI_V3 = 2;
     uint8 internal constant UNI_V4 = 3;
+    uint8 internal constant ALGEBRA = 4;
     uint256 internal constant MAX_HOPS = 4;
 
     IPoolManager public immutable poolManager;
@@ -87,6 +89,8 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
     error ZeroAmount();
     error BadRoute();
     error ZeroAddress();
+    /// @dev Carries a simulated amount out of {quoteEthToPair}.
+    error QuoteResult(uint256 amount);
 
     constructor(IPoolManager pm, EquoFactory factory_, address weth_) {
         if (address(pm) == address(0) || address(factory_) == address(0) || weth_ == address(0)) revert ZeroAddress();
@@ -179,6 +183,13 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
         require(ok, "eth xfer");
     }
 
+    /// @notice Simulate the ETH -> pair leg for the ETH sent: always reverts with QuoteResult(pairOut).
+    ///         For eth_call only (a wallet simulating with a balance override needs no funds); it works for
+    ///         every dex kind a route can contain, with no quoter contract.
+    function quoteEthToPair(address pair, bytes calldata route) external payable {
+        revert QuoteResult(_ethToPair(pair, msg.value, route));
+    }
+
     // ---------------------------------------------------------------------
     // Routing
     // ---------------------------------------------------------------------
@@ -239,7 +250,8 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
             uint256 inFee = got * 997;
             uint256 out = (inFee * rout) / (rin * 1000 + inFee);
             IEquoV2Pair(h.pool).swap(zfo ? 0 : out, zfo ? out : 0, address(this), "");
-        } else if (h.dex == UNI_V3) {
+        } else if (h.dex == UNI_V3 || h.dex == ALGEBRA) {
+            // the same swap call; Algebra pools answer through a differently named callback
             _activePool = h.pool;
             IEquoV3Pool(h.pool).swap(address(this), zfo, int256(amountIn), zfo ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1, abi.encode(tokenIn));
             _activePool = address(0);
@@ -250,6 +262,14 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
     }
 
     function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata data) external {
+        _payPool(amount0Delta, amount1Delta, data);
+    }
+
+    function algebraSwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata data) external {
+        _payPool(amount0Delta, amount1Delta, data);
+    }
+
+    function _payPool(int256 amount0Delta, int256 amount1Delta, bytes calldata data) internal {
         if (msg.sender != _activePool || msg.sender == address(0)) revert BadRoute();
         address tokenIn = abi.decode(data, (address));
         uint256 owed = amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
