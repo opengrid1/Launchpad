@@ -1,0 +1,154 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Landing Concepts | Equo</title><meta name="robots" content="noindex">
+<link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#000;--s1:#0a0a0b;--s2:#0f0f12;--s3:#16161a;--line:#1e1e23;--line2:#2c2c33;--fg:#ededef;--fg2:#b4b4bb;--fg3:#8e8e97;--ac:#3fbcff;--up:#2ebd85;--amber:#f2be54;--disp:"Space Grotesk",Inter,sans-serif;--sans:Inter,system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;padding:14px 24px;background:rgba(0,0,0,.8);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.top img{width:28px;height:28px}.top b{font:600 18px var(--disp)}.top .tabs{margin-left:auto;display:flex;gap:6px}
+.top .tabs a{height:32px;padding:0 12px;display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:999px;font:500 12.5px var(--mono);color:var(--fg2)} .top .tabs a:hover{color:var(--fg);border-color:#3a3a44}
+section{position:relative;min-height:calc(100vh - 61px);padding:64px 24px;display:flex;align-items:center;border-bottom:1px solid var(--line);overflow:hidden}
+.wrap{width:100%;max-width:1240px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:48px;align-items:center}
+.tag{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border:1px solid var(--line2);border-radius:999px;font:500 12px var(--mono);color:var(--fg2);background:var(--s1)}
+.tag i{width:6px;height:6px;border-radius:50%;background:var(--ac)}
+h1{margin:18px 0 16px;font:700 clamp(40px,6vw,76px)/1 var(--disp);letter-spacing:-.035em}
+h1 em{font-style:normal;color:var(--ac)}
+.lead{margin:0 0 26px;max-width:520px;font-size:18px;color:var(--fg2);line-height:1.55}
+.ctas{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 22px;border-radius:12px;font:600 15px var(--disp);border:1px solid var(--line2)}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:#05202d;box-shadow:0 8px 30px -10px rgba(63,188,255,.7)}
+.chains{display:flex;align-items:center;gap:8px;margin-top:26px;font:12px var(--mono);color:var(--fg3)} .chains img{width:22px;height:22px;border-radius:50%;margin-left:-6px;box-shadow:0 0 0 2px #000} .chains img:first-child{margin-left:0}
+.cnum{position:absolute;top:22px;left:24px;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--fg3)}
+
+/* ---------- 1. equalizer ---------- */
+#eq .stage{position:relative;padding:22px 22px 18px;border:1px solid var(--line2);border-radius:22px;background:radial-gradient(120% 80% at 50% 0%,rgba(63,188,255,.08),transparent 60%),var(--s1)}
+#eq .hd{display:flex;justify-content:space-between;align-items:center;font:12px var(--mono);color:var(--fg3);margin-bottom:10px}
+#eq .hd b{font:600 13px var(--disp);color:var(--fg)}
+#eq .bars{position:relative;height:340px;display:grid;grid-template-columns:repeat(7,1fr);gap:12px;align-items:end;padding-top:30px}
+#eq .bar{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+#eq .col{width:100%;border-radius:10px 10px 4px 4px;background:linear-gradient(180deg,var(--c),color-mix(in srgb,var(--c) 25%,transparent));box-shadow:0 0 28px -6px color-mix(in srgb,var(--c) 70%,transparent);transition:height .08s linear}
+#eq .px{position:absolute;left:50%;transform:translate(-50%,-26px);font:600 12px var(--mono);color:var(--fg);white-space:nowrap;transition:bottom .08s linear,opacity .2s}
+#eq .lg{margin-top:10px;width:30px;height:30px;border-radius:50%}
+#eq .nm{margin-top:6px;font:11px var(--mono);color:var(--fg3);white-space:nowrap}
+#eq .line{position:absolute;left:0;right:0;border-top:2px dashed rgba(63,188,255,.7);opacity:0;transition:opacity .2s} #eq .line span{position:absolute;left:50%;transform:translateX(-50%);top:-30px;padding:2px 8px;border-radius:6px;background:var(--ac);color:#05202d;font:600 11px var(--mono)}
+#eq .slide{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;margin-top:22px;font:500 12.5px var(--mono);color:var(--fg3)}
+#eq input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;background:linear-gradient(90deg,var(--ac) var(--p,0%),#2c2c33 var(--p,0%));outline:0}
+#eq input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:6px solid var(--ac);box-shadow:0 0 0 6px rgba(63,188,255,.18);cursor:grab}
+#eq input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:6px solid var(--ac)}
+#eq .say{margin-top:14px;min-height:44px;font-size:14px;color:var(--fg2)} #eq .say b{color:var(--fg)}
+
+/* ---------- 2. board ---------- */
+#board .stage{border:1px solid #2a2a2a;border-radius:18px;background:#070707;padding:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 30px 80px -40px rgba(242,190,84,.25)}
+#board .bh{display:flex;justify-content:space-between;align-items:center;padding:4px 6px 14px;font:600 13px var(--mono);letter-spacing:.14em;color:var(--amber)} #board .bh .open{display:inline-flex;align-items:center;gap:8px;color:var(--up);letter-spacing:.06em} #board .bh .open i{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 10px var(--up);animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.35}}
+#board .row{display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:9px 6px;border-top:1px solid #161616}
+#board .row img{width:28px;height:28px;border-radius:50%}
+#board .rn{font:600 14px var(--disp)} #board .rn small{display:block;font:11px var(--mono);color:var(--fg3)}
+#board .flaps{display:flex;gap:3px}
+#board .f{position:relative;width:22px;height:34px;border-radius:4px;background:linear-gradient(180deg,#1b1b1b 50%,#141414 50%);display:flex;align-items:center;justify-content:center;font:600 20px var(--mono);color:#f4f4f4;box-shadow:inset 0 -1px 0 rgba(0,0,0,.6)}
+#board .f::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#000}
+#board .f.flip{animation:flip .26s ease-in}
+@keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg);color:#777}100%{transform:rotateX(0)}}
+#board .chg{font:600 13px var(--mono);color:var(--up);min-width:64px;text-align:right}
+#board .foot{display:flex;justify-content:space-between;padding:12px 6px 2px;font:11.5px var(--mono);color:var(--fg3)}
+
+/* ---------- 3. orbit ---------- */
+#orbit .stage{position:relative;aspect-ratio:1;max-width:560px;width:100%;margin:0 auto}
+#orbit svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#orbit .core{position:absolute;left:50%;top:50%;width:26%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 35% 30%,#7fd4ff,#1a6fae 55%,#06243a);box-shadow:0 0 80px 10px rgba(63,188,255,.35),inset 0 0 30px rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-direction:column;font:700 22px var(--disp)}
+#orbit .core small{font:500 11px var(--mono);opacity:.8}
+#orbit .pl{position:absolute;width:13%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;box-shadow:0 0 0 4px #000,0 0 30px -4px var(--c)}
+#orbit .pl img{width:100%;height:100%;border-radius:50%}
+#orbit .pl span{position:absolute;top:108%;left:50%;transform:translateX(-50%);font:11px var(--mono);color:var(--fg3);white-space:nowrap}
+#orbit .pulse{fill:var(--ac)}
+
+@media(max-width:900px){.wrap{grid-template-columns:1fr;gap:34px} section{padding:56px 16px} #eq .bars{height:260px;gap:6px} #eq .lg{width:24px;height:24px} #eq .nm{display:none} #eq .px{font-size:10px} #board .f{width:16px;height:26px;font-size:15px} #board .row{grid-template-columns:28px minmax(0,1fr) auto} #board .chg{display:none} .top .tabs a{padding:0 9px}}
+@media(max-width:600px){.top .sub,.top .tl{display:none} .top .tabs a{width:32px;justify-content:center;padding:0} #eq .line span{white-space:nowrap}}
+#eq .line span{white-space:nowrap}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head><body>
+<div class="top"><img src="/img/logo.svg?v=15" alt=""><b>Equo</b><span class="sub" style="font:12px var(--mono);color:var(--fg3)">landing concepts</span><nav class="tabs"><a href="#eq">1<span class="tl"> Equalizer</span></a><a href="#board">2<span class="tl"> Price board</span></a><a href="#orbit">3<span class="tl"> Orbit</span></a></nav></div>
+
+<!-- 1 -->
+<section id="eq"><span class="cnum">Concept 1 · Equalizer</span><div class="wrap">
+  <div>
+    <span class="tag"><i></i>7 chains · stock-paired coins</span>
+    <h1>One coin.<br>One price.<br><em>Every chain.</em></h1>
+    <p class="lead">Launch once and your coin is live on seven chains at the same price, paired with a real stock. Buy on whichever chain you already use.</p>
+    <div class="ctas"><a class="btn pri" href="/launch">Launch a coin →</a><a class="btn" href="/docs">How it works</a></div>
+    <div class="chains" id="eq-ch"></div>
+  </div>
+  <div class="stage">
+    <div class="hd"><b>$PIE price by chain</b><span id="eq-st">7 copies, 7 prices</span></div>
+    <div class="bars" id="eq-bars"><div class="line" id="eq-line"><span id="eq-one"></span></div></div>
+    <div class="slide"><span>Copies</span><input type="range" id="eq-r" min="0" max="100" value="0" aria-label="From copies to Equo"><span style="color:var(--ac)">Equo</span></div>
+    <div class="say" id="eq-say"></div>
+  </div>
+</div></section>
+
+<!-- 2 -->
+<section id="board"><span class="cnum">Concept 2 · Price board</span><div class="wrap">
+  <div>
+    <span class="tag"><i style="background:var(--amber)"></i>Wall Street, onchain</span>
+    <h1>Same price on<br><em style="color:var(--amber)">every board.</em></h1>
+    <p class="lead">Every Equo coin trades next to a real stock, on seven chains at once. Each row is a chain. Watch them move together.</p>
+    <div class="ctas"><a class="btn pri" href="/launch">Launch a coin →</a><a class="btn" href="/?preview=1">See coins</a></div>
+  </div>
+  <div class="stage"><div class="bh"><span>EQUO · $PIE / AAPL</span><span class="open"><i></i>NYSE OPEN</span></div><div id="bd-rows"></div><div class="foot"><span>Arbitrage keeps every row in line</span><span id="bd-t"></span></div></div>
+</div></section>
+
+<!-- 3 -->
+<section id="orbit"><span class="cnum">Concept 3 · Orbit</span><div class="wrap">
+  <div>
+    <span class="tag"><i></i>One coin at the center</span>
+    <h1>Launch once.<br><em>It orbits seven chains.</em></h1>
+    <p class="lead">One coin, one supply, connected by LayerZero. Move it between chains in seconds; it burns where it leaves and mints where it lands.</p>
+    <div class="ctas"><a class="btn pri" href="/launch">Launch a coin →</a><a class="btn" href="/bridge">Bridge</a></div>
+  </div>
+  <div class="stage" id="or-stage"><svg id="or-svg" viewBox="0 0 100 100" aria-hidden="true"></svg><div class="core">PIE<small>1 coin</small></div></div>
+</div></section>
+
+<script>
+const CH=[['eth','Ethereum','#8c9eff'],['hyper','HyperEVM','#97fce4'],['bsc','BNB Chain','#f0b90b'],['base','Base','#3c6bff'],['arbitrum','Arbitrum','#4aa3ff'],['robinhood','Robinhood','#ccff00'],['ink','Ink','#a77bff']];
+const logo=k=>`/img/chains/${k}.png`;
+/* 1. equalizer: uneven copies settle into one price */
+(function(){ const bars=document.getElementById('eq-bars'), r=document.getElementById('eq-r'), line=document.getElementById('eq-line');
+  document.getElementById('eq-ch').innerHTML=CH.map(c=>`<img src="${logo(c[0])}" alt="">`).join('')+'<span>Ethereum, HyperEVM, BNB, Base, Arbitrum, Robinhood, Ink</span>';
+  const start=[0.62,0.35,0.88,0.22,0.54,0.73,0.41], P=0.0231, EQ=0.66;
+  bars.insertAdjacentHTML('beforeend',CH.map((c,i)=>`<div class="bar" style="--c:${c[2]}"><span class="px" id="px${i}"></span><div class="col" id="col${i}"></div><img class="lg" src="${logo(c[0])}" alt=""><span class="nm">${c[1]}</span></div>`).join(''));
+  function paint(v){ const t=v/100, e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2; r.style.setProperty('--p',v+'%');
+    CH.forEach((c,i)=>{ const h=start[i]+(EQ-start[i])*e; document.getElementById('col'+i).style.height=(h*78)+'%'; const p=P*(0.45+h*0.83); const el=document.getElementById('px'+i); el.style.bottom=`calc(${h*78}% + 56px)`; el.textContent='$'+p.toFixed(4); el.style.opacity=v>96?0:1; });
+    document.getElementById('eq-one').textContent='$'+(P*(0.45+EQ*0.83)).toFixed(4)+' on every chain';
+    line.style.bottom=`calc(${EQ*78}% + 56px)`; line.style.opacity=v>96?1:0;
+    document.getElementById('eq-st').textContent=v>96?'1 coin, 1 price':'7 copies, 7 prices';
+    document.getElementById('eq-say').innerHTML=v>96?'<b>Equo:</b> one coin on every chain. The pools trade as one market, so the price is the same wherever you buy.':v<5?'<b>Copies:</b> a coin takes off on one chain and copies appear on the others. Buyers split, prices drift, holders trade against each other.':'Drag to the end…'; }
+  r.oninput=()=>paint(+r.value); paint(0);
+  let v=0, auto=setInterval(()=>{ v+=1.4; if(v>=100){ v=100; clearInterval(auto); } r.value=v; paint(v); },28);
+  r.addEventListener('pointerdown',()=>clearInterval(auto),{once:true});
+})();
+/* 2. board: split-flap rows that move together */
+(function(){ const rows=document.getElementById('bd-rows'); let p=0.02310;
+  rows.innerHTML=CH.map((c,i)=>`<div class="row"><img src="${logo(c[0])}" alt=""><span class="rn">${c[1]}<small>PIE / AAPL</small></span><span class="flaps" id="fl${i}"></span><span class="chg" id="ch${i}"></span></div>`).join('');
+  const fmt=v=>('$'+v.toFixed(5)).split('');
+  function show(first){ const s=fmt(p), up=Math.random()>.4; CH.forEach((c,i)=>{ const box=document.getElementById('fl'+i); if(first){ box.innerHTML=s.map(ch=>`<span class="f">${ch}</span>`).join(''); } else { [...box.children].forEach((f,j)=>{ if(f.textContent!==s[j]){ setTimeout(()=>{ f.classList.remove('flip'); void f.offsetWidth; f.classList.add('flip'); setTimeout(()=>f.textContent=s[j],130); },i*70+j*25); } }); }
+      const el=document.getElementById('ch'+i); el.textContent=(up?'+':'')+(up?2.4:-0.8).toFixed(1)+'%'; el.style.color=up?'var(--up)':'#f6465d'; });
+    document.getElementById('bd-t').textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+  show(true); setInterval(()=>{ p=Math.max(0.01,p*(1+(Math.random()-.42)*0.04)); show(false); },2600);
+})();
+/* 3. orbit: seven chains around one coin, transfers pulse between them */
+(function(){ const st=document.getElementById('or-stage'), svg=document.getElementById('or-svg'); const R=38, pts=CH.map((c,i)=>{ const a=-Math.PI/2+i*2*Math.PI/CH.length; return [50+R*Math.cos(a),50+R*Math.sin(a)]; });
+  svg.innerHTML=`<circle cx="50" cy="50" r="${R}" fill="none" stroke="#2c2c33" stroke-dasharray="1 1.4" stroke-width=".35"/>`+pts.map(p=>`<line x1="50" y1="50" x2="${p[0]}" y2="${p[1]}" stroke="#1f2a33" stroke-width=".3"/>`).join('')+'<g id="or-p"></g>';
+  st.insertAdjacentHTML('beforeend',CH.map((c,i)=>`<div class="pl" style="left:${pts[i][0]}%;top:${pts[i][1]}%;--c:${c[2]}"><img src="${logo(c[0])}" alt=""><span>${c[1]}</span></div>`).join(''));
+  const g=document.getElementById('or-p');
+  function hop(){ const a=Math.floor(Math.random()*7); let b=Math.floor(Math.random()*6); if(b>=a) b++; const A=pts[a], B=pts[b];
+    const path=`M${A[0]},${A[1]} Q50,50 ${B[0]},${B[1]}`; const id='h'+Math.random().toString(36).slice(2);
+    g.insertAdjacentHTML('beforeend',`<path id="${id}" d="${path}" fill="none" stroke="${CH[a][2]}" stroke-width=".5" stroke-opacity=".55"/><circle r="1.3" class="pulse" fill="${CH[b][2]}"><animateMotion dur="1.4s" fill="freeze" path="${path}"/></circle>`);
+    setTimeout(()=>{ const p=document.getElementById(id); if(p){ p.nextElementSibling&&p.nextElementSibling.remove(); p.remove(); } },1500); }
+  setInterval(hop,700); hop();
+})();
+</script>
+</body></html>

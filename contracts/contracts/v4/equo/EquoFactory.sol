@@ -116,6 +116,8 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
     mapping(address token => Takeover) public takeovers;
 
     mapping(address => bool) public blocked;
+    /// @notice Operators allowed to launch for a creator (the multichain launch service).
+    mapping(address => bool) public launchers;
 
     struct Listing {
         address creator;
@@ -158,6 +160,7 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         StageParam[] stages; // optional later stages; empty = a non-evolving coin
     }
 
+    event LauncherSet(address indexed launcher, bool allowed);
     event Launched(address indexed token, address indexed creator, address indexed pair, bytes32 poolId, uint256 pairUsdPrice);
     event DevBought(address indexed token, address indexed creator, uint256 ethIn, uint256 pairIn, uint256 coinOut);
     event HiddenSet(address indexed token, bool hidden);
@@ -273,6 +276,11 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
     }
 
     /// @notice Block or unblock a token as a pair. Coins already launched keep trading.
+    function setLauncher(address launcher, bool allowed) external onlyAdmin {
+        launchers[launcher] = allowed;
+        emit LauncherSet(launcher, allowed);
+    }
+
     function setTokenBlocked(address token, bool blocked_) external onlyAdmin {
         if (token == address(0) || token == weth) revert InvalidParams();
         blocked[token] = blocked_;
@@ -450,7 +458,26 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
     ///         first buy: the router turns it into the pair token along `route`
     ///         (empty for WETH), it is swapped in the fresh pool and the coins
     ///         go to the creator.
-    function launch(LaunchParams calldata p, bytes32 salt, bytes calldata route) external payable nonReentrant returns (address token, bytes32 poolId) {
+    function launch(LaunchParams calldata p, bytes32 salt, bytes calldata route, bytes calldata peers) external payable nonReentrant returns (address token, bytes32 poolId) {
+        return _launch(msg.sender, p, salt, route, peers);
+    }
+
+    /// @notice Launch for `creator` (an approved launcher only): how a coin goes live on the chains its creator
+    ///         did not pay on. The creator gets the role, the fees and any first-buy coins.
+    function launchFor(address creator, LaunchParams calldata p, bytes32 salt, bytes calldata route, bytes calldata peers)
+        external
+        payable
+        nonReentrant
+        returns (address token, bytes32 poolId)
+    {
+        if (!launchers[msg.sender] || creator == address(0)) revert NotAdmin();
+        return _launch(creator, p, salt, route, peers);
+    }
+
+    function _launch(address creator, LaunchParams calldata p, bytes32 salt, bytes calldata route, bytes calldata peers)
+        internal
+        returns (address token, bytes32 poolId)
+    {
         if (launchesPaused) revert LaunchesPaused();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0 || converter == address(0)) revert InvalidParams();
         _checkGenes(p.genes);
@@ -481,17 +508,19 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
                 hook: address(hook),
                 converter: converter,
                 weth: weth,
+                bridgeFeeTo: feeRecipient,
                 dividends: divs
-            })
+            }),
+            peers
         );
         PoolKey memory key = _key(token, pair);
         (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper) = _initialPosition(_priceQ(pairUsd18, capUsd8));
         poolManager.initialize(key, sqrtPriceX96);
         // the hook records the instincts; the liquidity stays ours
-        hook.registerPool(key, token, pair, msg.sender, stages);
+        hook.registerPool(key, token, pair, creator, stages);
 
         poolId = PoolId.unwrap(key.toId());
-        listings[token] = Listing({creator: msg.sender, pair: pair, createdAt: uint64(block.timestamp), poolId: poolId});
+        listings[token] = Listing({creator: creator, pair: pair, createdAt: uint64(block.timestamp), poolId: poolId});
         allTokens.push(token);
         capOf[token] = uint64(capUsd8);
         creatorActiveAt[token] = uint64(block.timestamp);
@@ -502,12 +531,12 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         );
         positions[token] = Position({tickLower: tickLower, tickUpper: tickUpper, liquidity: liquidity});
         poolManager.unlock(abi.encode(uint8(0), abi.encode(key, tickLower, tickUpper, liquidity)));
-        emit Launched(token, msg.sender, pair, poolId, pairUsd18);
+        emit Launched(token, creator, pair, poolId, pairUsd18);
 
         if (msg.value > 0) {
             uint256 pairIn = IEquoPairRouter(converter).ethToPair{value: msg.value}(pair, route, address(this), p.minPairOut);
-            bytes memory res = poolManager.unlock(abi.encode(uint8(1), abi.encode(key, pairIn, msg.sender)));
-            emit DevBought(token, msg.sender, msg.value, pairIn, abi.decode(res, (uint256)));
+            bytes memory res = poolManager.unlock(abi.encode(uint8(1), abi.encode(key, pairIn, creator)));
+            emit DevBought(token, creator, msg.value, pairIn, abi.decode(res, (uint256)));
         }
     }
 
