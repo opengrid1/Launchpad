@@ -1,24 +1,25 @@
 import pg from "pg";
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { Pool as NeonPool, neonConfig, types as neonTypes } from "@neondatabase/serverless";
 import { settings } from "./config.js";
-
-const here = dirname(fileURLToPath(import.meta.url));
+import { SCHEMA } from "./schema.js";
 
 // numeric comes back as a string (no precision loss); bigint (int8) as a JS number, which is safe for blocks and timestamps
 pg.types.setTypeParser(20, (v) => Number(v));
+neonTypes.setTypeParser(20, (v) => Number(v));
 
-const needsSsl = (url) => /sslmode=require|neon\.tech|supabase\.co|render\.com/.test(url);
+const url = settings.databaseUrl;
+// Neon speaks Postgres over a WebSocket on 443 too: used for Neon so it works where port 5432 is closed
+// (serverless functions, locked-down networks); any other Postgres goes through `pg`
+const isNeon = /neon\.tech/.test(url);
+if (isNeon && typeof WebSocket !== "undefined") neonConfig.webSocketConstructor = WebSocket;
+const needsSsl = /sslmode=require|supabase\.co|render\.com/.test(url);
 
-export const pool = new pg.Pool({
-  connectionString: settings.databaseUrl,
-  ssl: needsSsl(settings.databaseUrl) ? { rejectUnauthorized: false } : undefined,
-  max: Number(process.env.DB_POOL || 10),
-});
+export const pool = isNeon
+  ? new NeonPool({ connectionString: url, max: Number(process.env.DB_POOL || 5) })
+  : new pg.Pool({ connectionString: url, ssl: needsSsl ? { rejectUnauthorized: false } : undefined, max: Number(process.env.DB_POOL || 10) });
 
 export async function migrate() {
-  await pool.query(readFileSync(join(here, "..", "schema.sql"), "utf8"));
+  await pool.query(SCHEMA);
 }
 
 export const q = (text, params) => pool.query(text, params);

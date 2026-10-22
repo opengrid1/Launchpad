@@ -4,8 +4,9 @@
    Loaded after equo.js and before preview.js. */
 (function () {
   const cfg = window.INKY || {}, C = window.CHAIN;
-  const base = String(cfg.api || '').replace(/\/$/, '');
-  if (!base || !C) return;
+  if (!cfg.api || !C) return;
+  // 'self': this site serves the API (the Vercel function in api/)
+  const base = cfg.api === 'self' ? '' : String(cfg.api).replace(/\/$/, '');
   const RES = [60, 300, 900, 1800, 3600, 14400, 86400, 604800];
 
   async function get(path) {
@@ -46,4 +47,10 @@
   });
 
   C.api = { base, get };
+
+  // the indexer runs in short bursts: while someone has the site open, ask for one now and then
+  // (the server runs at most one at a time and skips a request that comes too soon)
+  const tick = () => { if (document.visibilityState !== 'hidden') fetch(base + '/api/tick', { keepalive: true }).catch(() => {}); };
+  setTimeout(tick, 4000);
+  setInterval(tick, 30000);
 })();

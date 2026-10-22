@@ -1,3 +1,4 @@
 # TradingView charting library: licensed, not redistributable in a public repo.
 # Restore it from the private source before deploying (see README.md).
 charting_library/
+api/_indexer/

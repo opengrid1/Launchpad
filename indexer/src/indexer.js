@@ -240,24 +240,35 @@ export class ChainIndexer {
 
   // ---------------------------------------------------------------- loop
 
+  /** Index batches until the chain is caught up or `deadline` (ms) is near. Returns what was done. */
+  async catchUp(deadline = Infinity) {
+    const c = this.c, done = { from: null, to: null, launches: 0, trades: 0, bridges: 0, caughtUp: false };
+    if (Date.now() - (this.lastPrice || 0) > (this.priceEveryMs || 60_000)) { await this.refreshPrices(); this.lastPrice = Date.now(); }
+    const head = await this.rpc.blockNumber();
+    const safe = head - c.confirmations;
+    await q("update chain_state set head_block = $2 where chain = $1", [c.key, head]);
+    let from = (await q("select last_block from chain_state where chain = $1", [c.key])).rows[0].last_block + 1;
+    while (from <= safe && !this.stopped) {
+      if (Date.now() > deadline - 8000) return done; // leave room to finish cleanly
+      const to = Math.min(safe, from + this.batch - 1);
+      const r = await this.process(from, to);
+      if (r.launches || r.trades || r.bridges) this.log.info(`[${c.key}] ${from}-${to}: ${r.launches} launches, ${r.trades} trades, ${r.bridges} bridge events`);
+      done.from ??= from; done.to = to; done.launches += r.launches; done.trades += r.trades; done.bridges += r.bridges;
+      from = to + 1;
+    }
+    done.caughtUp = from > safe;
+    return done;
+  }
+
   async run() {
     const c = this.c;
     await this.init();
-    let lastPrice = Date.now();
+    this.lastPrice = Date.now();
     this.log.info(`[${c.key}] indexing ${c.factory} from block ${c.startBlock}`);
     while (!this.stopped) {
       try {
-        const head = await this.rpc.blockNumber();
-        const safe = head - c.confirmations;
-        const st = (await q("select last_block from chain_state where chain = $1", [c.key])).rows[0];
-        await q("update chain_state set head_block = $2 where chain = $1", [c.key, head]);
-        const from = st.last_block + 1;
-        if (Date.now() - lastPrice > (this.priceEveryMs || 60_000)) { await this.refreshPrices(); lastPrice = Date.now(); }
-        if (from > safe) { await sleep(c.pollMs); continue; }
-        const to = Math.min(safe, from + this.batch - 1);
-        const r = await this.process(from, to);
-        if (r.launches || r.trades || r.bridges) this.log.info(`[${c.key}] ${from}-${to}: ${r.launches} launches, ${r.trades} trades, ${r.bridges} bridge events`);
-        if (to === safe) await sleep(c.pollMs);
+        const r = await this.catchUp();
+        if (r.caughtUp) await sleep(c.pollMs);
       } catch (e) {
         this.log.warn(`[${c.key}] ${e.message}`);
         await sleep(Math.max(5000, c.pollMs));

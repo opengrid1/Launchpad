@@ -59,7 +59,7 @@ async function coins(ids) {
   return ids.map((i) => by.get(i)).filter(Boolean);
 }
 
-export function makeApi(chains) {
+export function makeHandler(chains) {
   const SYSTEM = systemAddrs(chains);
   const routes = {
     async "/api/health"() {
@@ -128,6 +128,14 @@ export function makeApi(chains) {
       return { coin: id, supply: tot.rows[0].s || "0", holders: r.rows.map((h) => ({ wallet: h.wallet, balance: h.balance, share: supply ? (Number(h.balance) / supply) * 100 : 0, byChain: h.by_chain })) };
     },
 
+    /** Serverless hosting only (TICK=1): index new blocks in a short burst. Never alongside an always-on worker,
+     *  which would apply the same transfers twice. */
+    async "/api/tick"() {
+      if (process.env.TICK !== "1") throw new HttpError(404, "not found");
+      const { tick } = await import("./tick.js");
+      return tick();
+    },
+
     async "/api/bridges"(p) {
       const id = await coinIdOf(p.get("coin")), limit = Math.min(200, Number(p.get("limit") || 50));
       const r = await q(`select chain, tx, direction, guid, peer_eid, wallet, amount_sent::text sent, amount_received::text received, block, ts from bridges where coin_id = $1 order by ts desc, block desc limit $2`, [id, limit]);
@@ -135,8 +143,11 @@ export function makeApi(chains) {
     },
   };
 
-  return http.createServer(async (req, res) => {
+  /** Node-style request handler: used by the HTTP server below and by serverless functions. `path` overrides
+   *  the request path (a function behind a rewrite gets it as a query parameter). */
+  async function handle(req, res, path) {
     const u = new URL(req.url, "http://x");
+    if (path) u.pathname = path;
     res.setHeader("access-control-allow-origin", settings.corsOrigin);
     res.setHeader("access-control-allow-methods", "GET, OPTIONS");
     res.setHeader("content-type", "application/json");
@@ -146,12 +157,18 @@ export function makeApi(chains) {
     if (!fn) { res.writeHead(404).end(JSON.stringify({ error: "not found" })); return; }
     try {
       const body = await fn(u.searchParams);
-      res.setHeader("cache-control", u.pathname === "/api/health" ? "no-store" : "public, max-age=2, s-maxage=2");
+      res.setHeader("cache-control", u.pathname === "/api/health" || u.pathname === "/api/tick" ? "no-store" : "public, max-age=2, s-maxage=2");
       res.writeHead(200).end(JSON.stringify(body));
     } catch (e) {
       const code = e instanceof HttpError ? e.code : 500;
       if (code === 500) console.error(u.pathname, e);
       res.writeHead(code).end(JSON.stringify({ error: code === 500 ? "internal error" : e.message }));
     }
-  });
+  }
+  return { handle, routes };
+}
+
+export function makeApi(chains) {
+  const { handle } = makeHandler(chains);
+  return http.createServer((req, res) => handle(req, res));
 }

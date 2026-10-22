@@ -1,14 +1,10 @@
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const here = dirname(fileURLToPath(import.meta.url));
+import CHAINS from "../chains.json" with { type: "json" };
 
 /** Chain settings from chains.json (or CHAINS_FILE), with per-chain overrides from the environment:
  *  RPC_<KEY> (comma separated), FACTORY_<KEY>, HOOK_<KEY>, START_BLOCK_<KEY>, MAX_RANGE_<KEY>. */
 export function loadChains() {
-  const file = process.env.CHAINS_FILE || join(here, "..", "chains.json");
-  const all = JSON.parse(readFileSync(file, "utf8")).chains;
+  const all = process.env.CHAINS_FILE ? JSON.parse(readFileSync(process.env.CHAINS_FILE, "utf8")).chains : CHAINS.chains;
   return all.map((c) => {
     const K = c.key.toUpperCase();
     const env = (n) => process.env[`${n}_${K}`];

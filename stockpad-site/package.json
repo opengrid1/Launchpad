@@ -1,0 +1,10 @@
+{
+  "name": "equo-site",
+  "private": true,
+  "description": "Equo site: static pages plus the indexer API as one Vercel function (api/index.mjs)",
+  "dependencies": {
+    "@neondatabase/serverless": "0.10.4",
+    "ethers": "6.17.0",
+    "pg": "8.13.1"
+  }
+}

@@ -13,7 +13,7 @@ window.INKY = {
   deployBlock: 26235330,
   weth: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', usdg: '',
   /* Equo indexer (indexer/ in the repo): history for every chain. Empty = read history from the chains directly. */
-  api: '',
+  api: 'self',
   /* Equo contracts (v3), deployed 2026-10-20: see contracts/deployments/equo-mainnet.json */
   contracts: {"factory": "0x7Eb4CC330866Af46b2fDfBce41686CC74778d325", "hook": "0xbe1FF9acc59F73Ae311810Cb74e162a47E2e40Cc", "router": "0x4055F9abd07caBC16788d499A935a297968E09c8", "tokenDeployer": "0x9289DD47cfb34acE7a3a97666542aBa18f7c5e48", "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90"},
   /* stocks: every Ondo tokenized stock on Ethereum the factory's oracle can price (573). A coin can

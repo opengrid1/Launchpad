@@ -24,6 +24,7 @@ All `GET`, JSON, CORS open (set `CORS_ORIGIN` to lock it). `coin` is any of the 
 | `/api/candles?coin=&res=&from=&to=&chain=&unit=` | OHLCV; no `chain` = every chain merged; `unit=pair` (one chain) for pair units |
 | `/api/holders?coin=&limit=` | wallets across chains, with the balance on each chain |
 | `/api/bridges?coin=` | bridge sends and receipts |
+| `/api/tick` | serverless hosting only (`TICK=1`): index new blocks in a short burst |
 
 `res` is one of 60, 300, 900, 1800, 3600, 14400, 86400, 604800 seconds. Prices are USD per whole coin; market cap
 is the sum over chains of the supply on that chain times that chain's last price.
@@ -54,13 +55,20 @@ Environment overrides per chain (`<KEY>` is `ETH`, `HYPER`, `BSC`, `BASE`, `ARBI
 
 Other settings: `PORT`, `CORS_ORIGIN`, `POLL_MS`, `PRICE_EVERY_MS`, `DB_POOL`, `BATCH_RANGES`.
 
-### Hosting (one database, one service)
+### Hosting
 
-1. **Database**: create a Postgres database (for example on neon.tech, free tier) and copy its connection string.
-2. **Service**: deploy this folder as a Docker service (for example on railway.app or fly.io): point it at the repo with
-   `indexer` as the root directory; it builds from the `Dockerfile`.
-3. Set `DATABASE_URL` (and any `RPC_<KEY>`) as environment variables on the service, never in the repo.
-4. Give the service a public URL and put it in the site's `config.js` as `api`.
+**As it runs now (no extra server):** the API is a Vercel function in the site's own project
+(`stockpad-site/api/index.mjs`, with this folder copied to `stockpad-site/api/_indexer` at deploy). Indexing runs in
+short bursts: `/api/tick` takes a lease in `tick_lock` and lets every chain catch up for up to ~45 s; the site calls
+it every 30 s while someone has a page open, and a daily Vercel cron covers quiet days. The Vercel project's
+environment holds `DATABASE_URL` (Neon) and `TICK=1`. With nobody on the site, indexing waits and catches up on the
+next visit.
+
+**Always on (when traffic grows):** run this folder as a Docker service (Railway, Fly.io…) with `DATABASE_URL`, and
+remove `TICK` from the Vercel project so only one indexer writes. Never run both: the same transfers would be applied
+twice.
+
+Neon URLs connect over a WebSocket on port 443 (`@neondatabase/serverless`); any other Postgres uses `pg`.
 
 ## Test
 

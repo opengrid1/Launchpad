@@ -1,3 +1,5 @@
+// Equo indexer schema (applied by migrate()). Safe to run again: every statement is idempotent.
+export const SCHEMA = `
 -- Equo indexer schema. Safe to run again: every statement is idempotent.
 -- Amounts are raw base units (numeric); USD values are computed when a row is written.
 
@@ -88,3 +90,12 @@ create table if not exists pair_prices (
   usd18  numeric not null,
   primary key (chain, pair, ts)
 );
+
+-- one tick at a time when indexing runs in short bursts (serverless): a lease, not a session lock,
+-- so it also works through a transaction-pooling connection
+create table if not exists tick_lock (
+  id        int primary key,
+  until     timestamptz not null,
+  last_done timestamptz
+);
+`;
