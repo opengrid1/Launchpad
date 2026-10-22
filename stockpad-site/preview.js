@@ -13,6 +13,8 @@
   window.EQUO_PREVIEW = on;
   const C = window.CHAIN;
   if (!on || !C) return;
+  // show every chain as live; `deployed` keeps the real state so launches and bridging stay blocked where nothing is deployed
+  ((window.INKY && INKY.chains) || []).forEach((c) => { c.deployed = c.live; c.live = true; });
 
   const NOW = Math.floor(Date.now() / 1000), H = 3600, SUP = 1e9;
   const cfg = window.INKY || {};

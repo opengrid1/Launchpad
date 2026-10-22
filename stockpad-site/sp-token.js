@@ -129,7 +129,7 @@ window.SP_PAGE=function(){
       const im=$('#tk-imp'); if(spot>0&&o>0){ const imp=Math.max(0,(1-o/(spot*(1-fr)))*100); im.textContent=imp.toFixed(2)+'%'; im.className=imp>15?'bad':imp>5?'warn':''; } else { im.textContent='—'; im.className=''; }
     }catch(e){ if(seq!==qSeq) return; quoting=false; qOut=0n; const oe=$('#tk-out'); oe.textContent='—'; oe.classList.add('dim'); $('#tk-out-usd').textContent=''; $('#tk-min').textContent='—'; $('#tk-fee').textContent='—'; $('#tk-imp').textContent='—'; console.warn('quote',e); }
     cta(); }
-  function cta(){ if(ctaEl.dataset.busy) return; if(!tc().live){ ctaEl.textContent=`Trading on ${tc().name} opens soon`; ctaEl.disabled=true; return; } const v=amtVal(); const W=SP.W; let t, dis=false;
+  function cta(){ if(ctaEl.dataset.busy) return; if(!SP.chainDeployed(tChain)&&!X.mock){ ctaEl.textContent=`Trading on ${tc().name} opens soon`; ctaEl.disabled=true; return; } const v=amtVal(); const W=SP.W; let t, dis=false;
     if(!W.connected) t='Connect a wallet'; else if(!W.chainOk) t='Switch to Ethereum'; else if(!v){ t='Enter amount'; dis=true; } else if(side==='buy'&&v>balEth){ t='Insufficient '+(via()?X.pair:'ETH'); dis=true; } else if(side==='sell'&&v>balCoin*1.000001){ t='Insufficient '+X.t; dis=true; } else if(quoting){ t='Fetching quote…'; dis=true; } else if(!(qOut>0n)){ t='No quote available'; dis=true; } else t=(side==='buy'?'Buy ':'Sell ')+X.t;
     ctaEl.textContent=t; ctaEl.disabled=dis; }
   async function doSwap(){ const W=SP.W; if(!W.connected) return SP.W.connect(); if(!W.chainOk){ try{ await SP.W.switchChain(); }catch(e){ SP.toast(SP.errMsg(e),'err'); } return; }

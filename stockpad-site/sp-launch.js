@@ -10,7 +10,7 @@ function launchInit(){
   const ETH_PAIR={address:WETH,symbol:'ETH',ticker:'ETH',name:'Ether',logo:'/img/eth.png',eth:true,route:true};
   const PAIRS=[...SP.stocks.map(s=>({address:s.address.toLowerCase(),symbol:s.symbol,ticker:s.ticker||s.symbol,name:s.name,logo:s.logo,eth:false,route:!!s.route})),...((window.INKY&&INKY.stocksOnly)?[]:[ETH_PAIR])];
   const PAIR_ROWS=60;
-  const S={chains:SP.chains.filter(c=>c.live).map(c=>c.key),pay:(SP.chains.find(c=>c.main)||SP.chains[0]||{}).key,step:1,maxStep:1,pair:null,logo:null,preset:0,presets:[],feeBps:100,feeCustom:false,snipe:false,div:false,bb:false,mw:false,dev:false,capUsd:3000,paused:false,busy:false,launched:null};
+  const S={chains:SP.chains.filter(c=>SP.chainDeployed(c.key)).map(c=>c.key),pay:(SP.chains.find(c=>c.main)||SP.chains[0]||{}).key,step:1,maxStep:1,pair:null,logo:null,preset:0,presets:[],feeBps:100,feeCustom:false,snipe:false,div:false,bb:false,mw:false,dev:false,capUsd:3000,paused:false,busy:false,launched:null};
   const taken=()=>new Set(((window.CHAIN&&LIVE)?CHAIN.tokens():TOK).map(x=>String(x.t||'').toUpperCase()));
   const ethPx=()=>SP.prices[WETH]||ETH||0;
   const pairPx=()=>S.pair?(SP.prices[S.pair.address]||0):0;
@@ -112,7 +112,7 @@ function launchInit(){
   /* ---------- chains: pick where the coin goes live and where to pay; only live chains launch today ---------- */
   let CC=null;
   const chainNames=keys=>{ const n=keys.map(k=>SP.chain(k).name); return n.length>3?n.length+' chains':n.length<2?n.join(''):n.slice(0,-1).join(', ')+' and '+n[n.length-1]; };
-  const multiOnly=()=>S.chains.some(k=>!(SP.chain(k)||{}).live);
+  const multiOnly=()=>S.chains.some(k=>!SP.chainDeployed(k));
   function costTotal(){ if(!CC) return null; const p=CC[S.pay]; if(!p||!p.nativeUsd) return null; const usd=S.chains.reduce((a,k)=>a+((CC[k]||{}).launchUsd||0),0); return {usd,native:usd/p.nativeUsd}; }
   function paintChains(){ const box=g('ctiles'); if(!box) return;
     box.innerHTML=SP.chains.map(c=>{ const on=S.chains.includes(c.key), q=CC&&CC[c.key];
@@ -127,7 +127,7 @@ function launchInit(){
     const n=S.chains.length, t=costTotal(), pc=SP.chain(S.pay);
     g('cs-sum').textContent=`${n} ${n===1?'chain':'chains'} · ${n}B supply · ${fmtCap(S.capUsd*n)} opening cap`;
     g('cs-cost').innerHTML=t?`${SP.fmtNative(t.native,pc.native)}<small>≈ $${t.usd.toFixed(2)}</small>`:'<small>estimating…</small>';
-    const soon=S.chains.filter(k=>!SP.chain(k).live);
+    const soon=S.chains.filter(k=>!SP.chainDeployed(k));
     g('cs-note').innerHTML=n>1?`One coin, ${n} chains: 1B on each, all opening at ${fmtCap(S.capUsd)}, bridged 1:1 with LayerZero. You pay once on ${esc(pc.name)}; gas on the other chains is covered.${soon.length?` <b>${esc(chainNames(soon))} ${soon.length===1?'opens':'open'} soon</b>; for now pick Ethereum alone to launch.`:''}`
       :soon.length?`<b>${esc(chainNames(soon))} opens soon.</b> Pick Ethereum to launch today.`:''; }
   function chainPreview(){ const n=S.chains.length, el=g('sm-chs'); if(!el) return;
@@ -138,7 +138,7 @@ function launchInit(){
 
   /* ---------- launch ---------- */
   const cta=g('cta');
-  function paintCta(){ if(S.busy){ cta.disabled=true; cta.textContent='Confirm in wallet…'; return; } if(multiOnly()){ cta.disabled=true; cta.textContent=`Launching on ${chainNames(S.chains.filter(k=>!SP.chain(k).live))} opens soon`; return; } cta.disabled=S.paused; cta.textContent=S.paused?'Launches paused':!SP.W.connected?'Connect a wallet':!SP.W.chainOk?'Switch to Ethereum':'Create token'; }
+  function paintCta(){ if(S.busy){ cta.disabled=true; cta.textContent='Confirm in wallet…'; return; } if(multiOnly()){ cta.disabled=true; cta.textContent=window.EQUO_PREVIEW?'Preview: multichain launches open soon':`Launching on ${chainNames(S.chains.filter(k=>!SP.chainDeployed(k)))} opens soon`; return; } cta.disabled=S.paused; cta.textContent=S.paused?'Launches paused':!SP.W.connected?'Connect a wallet':!SP.W.chainOk?'Switch to Ethereum':'Create token'; }
   function launchErr(e){ let m=SP.errMsg(e); if(/instincts|evolution|BadGenes/i.test(m)) m='The fee or options are out of bounds; adjust them and try again.'; return m; }
   async function doLaunch(){ if(S.busy||S.paused||multiOnly()) return;
     if(!SP.W.connected){ SP.W.connect(); return; }

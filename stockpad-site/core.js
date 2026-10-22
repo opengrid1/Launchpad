@@ -57,6 +57,8 @@ const SP={
 SP.chains=(window.INKY&&INKY.chains)||[];
 SP.chain=k=>SP.chains.find(c=>c.key===k)||null;
 SP.coinChains=x=>(x&&x.chains&&x.chains.length)?x.chains:['eth'];
+/** whether chain k has Equo contracts deployed (preview mode shows every chain as live, but only deployed ones can transact) */
+SP.chainDeployed=k=>{ const c=SP.chain(k); return !!c&&(c.deployed!==undefined?c.deployed:c.live); };
 /** a coin's contract address on chain k: each chain has its own (x.addrs), the main-chain one is x.addr */
 SP.coinAddr=(x,k)=>(x&&x.addrs&&x.addrs[k])||(x&&x.addr)||'';
 SP.chainStack=(keys,s=18)=>`<span class="chs" style="--s:${s}px">${keys.map(k=>{ const c=SP.chain(k); return c?`<img src="${c.logo}" alt="${esc(c.name)}" title="${esc(c.name)}">`:''; }).join('')}</span>`;
