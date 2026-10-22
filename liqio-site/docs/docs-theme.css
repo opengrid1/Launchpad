@@ -1,8 +1,8 @@
 /* Equo docs: blue-on-black palette and fonts over the Mintlify layout (dark only) */
 :root {
-  --primary: 63 188 255;
-  --primary-light: 111 204 255;
-  --primary-dark: 63 188 255;
+  --primary: 51 229 194;
+  --primary-light: 111 240 214;
+  --primary-dark: 51 229 194;
   --tooltip-foreground: 255 255 255;
   --background-light: 255 255 255;
   --background-dark: 0 0 0;
@@ -25,7 +25,7 @@ html, body { background: rgb(var(--background-dark)); font-family: var(--font-in
 /* undeployed-address placeholder */
 code.addr-na { color: rgb(var(--gray-400)); font-style: normal; }
 /* callouts in our azure accent instead of blue */
-.callout[data-callout-type="note"] { border-color: rgba(63,188,255, .3) !important; background: rgba(63,188,255, .08) !important; }
+.callout[data-callout-type="note"] { border-color: rgba(51,229,194, .3) !important; background: rgba(51,229,194, .08) !important; }
 .callout[data-callout-type="note"] [data-component-part="callout-content"] { color: #bfe6ff !important; }
 .callout[data-callout-type="note"] [data-component-part="callout-icon"] { color: #4fe0a0; }
 .callout[data-callout-type="warning"] [data-component-part="callout-icon"] { color: #f59e0b; }
@@ -57,7 +57,7 @@ code.addr-na { color: rgb(var(--gray-400)); font-style: normal; }
 .ip-search ul { list-style: none; margin: 0; padding: .5rem; max-height: 50vh; overflow-y: auto; }
 .ip-search li a { display: block; padding: .6rem .85rem; border-radius: .6rem; color: rgb(var(--gray-200)); text-decoration: none; }
 .ip-search li a small { display: block; color: rgb(var(--gray-400)); font-size: .8125rem; }
-.ip-search li a:hover, .ip-search li a[data-sel] { background: rgba(63,188,255,.1); color: rgb(var(--primary-light)); }
+.ip-search li a:hover, .ip-search li a[data-sel] { background: rgba(51,229,194,.1); color: rgb(var(--primary-light)); }
 .ip-search .ip-empty { padding: 1rem; color: rgb(var(--gray-400)); font-size: .875rem; }
 
 #sidebar .sticky.top-0.h-8{display:none}
