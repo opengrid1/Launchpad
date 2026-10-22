@@ -18,7 +18,7 @@ window.SP_PAGE=function(){
   const agoTxt=ts=>ago(Math.max(0,Math.floor(Date.now()/1000)-ts))+' ago';
   const stockPx=()=>SP.prices[String(X.pairAddr||'').toLowerCase()]||X.pairUsd||0;
   const fmtStockPx=p=>p?'$'+(p>=100?p.toFixed(0):p>=1?p.toFixed(2):fmtPrice(p)):'…';
-  pg.addEventListener('click',e=>{ const b=e.target.closest('[data-copy]'); if(b){ e.preventDefault(); SP.copy(b.dataset.copy,'Address copied'); } });
+  pg.addEventListener('click',e=>{ const b=e.target.closest('[data-copy]'); if(b){ e.preventDefault(); SP.copy(b.dataset.copy,'Address copied'); if(b.classList.contains('cabar')){ const c=b.querySelector('.cac'); b.classList.add('ok'); c.innerHTML=ic('check')+'Copied'; setTimeout(()=>{ b.classList.remove('ok'); c.innerHTML=ic('copy')+'Copy'; },1600); } } });
 
   /* ---------- header ---------- */
   function head(){ const mk=SP.market();
@@ -28,6 +28,7 @@ window.SP_PAGE=function(){
       <div class="id">
         <div class="t1"><h1>${esc(X.n)}</h1><span class="sym">$${esc(X.t)}</span>${SP.star(X.addr)}</div>
         <div class="t2"><span class="cpb" data-copy="${cs(X.addr)}" title="Copy address">${shortAddr(cs(X.addr))}${ic('copy')}</span><a class="cpb" href="${EXPLORER}/token/${X.addr}" target="_blank" rel="noopener" title="View on Etherscan">${ic('ext')}</a><span title="${esc(SP.fmtDate(X.createdAt))}">${ageStr(X.age||'0s')}</span><span class="badge">${feePct()}% fee</span>${X.rewards?`<span class="badge acl">★ Holder rewards</span>`:''}${(X.genes||{}).buybackShareBps?`<span class="badge">${ic('flame')}Buyback ${((X.genes.buybackShareBps)/100).toFixed(0)}%</span>`:''}${links.map(l=>`<a class="lk" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</div>
+        <button type="button" class="cabar" data-copy="${cs(X.addr)}" title="Copy contract address"><span class="cal">CA</span><span class="cav"><span class="lg2">${cs(X.addr).slice(0,12)}…${cs(X.addr).slice(-10)}</span><span class="sm2">${cs(X.addr).slice(0,8)}…${cs(X.addr).slice(-6)}</span></span><span class="cac">${ic('copy')}Copy</span></button>${SP.coinChains(X).length>1?`<div class="casame">${SP.chainStack(SP.coinChains(X),14)}<span>Same address on all ${SP.coinChains(X).length} chains</span></div>`:''}
         ${X.desc?`<p class="desc">${esc(X.desc)}</p>`:''}
         <div class="by">Created by ${wl(X.creator)}</div>
       </div>
