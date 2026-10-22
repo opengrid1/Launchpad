@@ -18,7 +18,7 @@ window.SP_PAGE=function(){
   const agoTxt=ts=>ago(Math.max(0,Math.floor(Date.now()/1000)-ts))+' ago';
   const stockPx=()=>SP.prices[String(X.pairAddr||'').toLowerCase()]||X.pairUsd||0;
   const fmtStockPx=p=>p?'$'+(p>=100?p.toFixed(0):p>=1?p.toFixed(2):fmtPrice(p)):'…';
-  pg.addEventListener('click',e=>{ const b=e.target.closest('[data-copy]'); if(b){ e.preventDefault(); SP.copy(b.dataset.copy,'Address copied'); if(b.classList.contains('cabar')){ const c=b.querySelector('.cac'); b.classList.add('ok'); c.innerHTML=ic('check')+'Copied'; setTimeout(()=>{ b.classList.remove('ok'); c.innerHTML=ic('copy')+'Copy'; },1600); } } });
+  pg.addEventListener('click',e=>{ const b=e.target.closest('[data-copy]'); if(b){ e.preventDefault(); SP.copy(b.dataset.copy,'Address copied'); if(b.classList.contains('cac')){ b.classList.add('ok'); b.innerHTML=ic('check')+'<span class="cl">Copied</span>'; setTimeout(()=>{ b.classList.remove('ok'); b.innerHTML=ic('copy')+'<span class="cl">Copy</span>'; },1600); } } });
 
   /* ---------- header ---------- */
   function head(){ const mk=SP.market();
@@ -27,8 +27,8 @@ window.SP_PAGE=function(){
     $('#tk-head').innerHTML=`<span class="av2 big"><img class="lg" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><img class="stb" src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"></span>
       <div class="id">
         <div class="t1"><h1>${esc(X.n)}</h1><span class="sym">$${esc(X.t)}</span>${SP.star(X.addr)}</div>
-        <div class="t2"><span class="cpb" data-copy="${cs(X.addr)}" title="Copy address">${shortAddr(cs(X.addr))}${ic('copy')}</span><a class="cpb" href="${EXPLORER}/token/${X.addr}" target="_blank" rel="noopener" title="View on Etherscan">${ic('ext')}</a><span title="${esc(SP.fmtDate(X.createdAt))}">${ageStr(X.age||'0s')}</span><span class="badge">${feePct()}% fee</span>${X.rewards?`<span class="badge acl">★ Holder rewards</span>`:''}${(X.genes||{}).buybackShareBps?`<span class="badge">${ic('flame')}Buyback ${((X.genes.buybackShareBps)/100).toFixed(0)}%</span>`:''}${links.map(l=>`<a class="lk" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</div>
-        <button type="button" class="cabar" data-copy="${cs(X.addr)}" title="Copy contract address"><span class="cal">CA</span><span class="cav"><span class="lg2">${cs(X.addr).slice(0,12)}…${cs(X.addr).slice(-10)}</span><span class="sm2">${cs(X.addr).slice(0,8)}…${cs(X.addr).slice(-6)}</span></span><span class="cac">${ic('copy')}Copy</span></button>${SP.coinChains(X).length>1?`<div class="casame">${SP.chainStack(SP.coinChains(X),14)}<span>Works on all ${SP.coinChains(X).length} chains</span></div>`:''}
+        <div class="t2"><span title="${esc(SP.fmtDate(X.createdAt))}">${ageStr(X.age||'0s')}</span><span class="badge">${feePct()}% fee</span>${X.rewards?`<span class="badge acl">★ Holder rewards</span>`:''}${(X.genes||{}).buybackShareBps?`<span class="badge">${ic('flame')}Buyback ${((X.genes.buybackShareBps)/100).toFixed(0)}%</span>`:''}${links.map(l=>`<a class="lk" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</div>
+        <div class="cabar" id="tk-ca"></div><div class="pools" id="tk-pools"></div>
         ${X.desc?`<p class="desc">${esc(X.desc)}</p>`:''}
         <div class="by">Created by ${wl(X.creator)}</div>
       </div>
@@ -180,12 +180,18 @@ window.SP_PAGE=function(){
 
   /* ---------- live refresh ---------- */
   let ticking=false;
+  /* ---------- contract address: one per chain, like each chain's own pool; pick the chain to copy its address ---------- */
+  let caChain=SP.coinChains(X).includes('eth')?'eth':SP.coinChains(X)[0];
+  function caBar(){ const el=$('#tk-ca'); if(!el) return; const on=SP.coinChains(X), c=SP.chain(caChain), a=cs(SP.coinAddr(X,caChain));
+    el.innerHTML=`<button type="button" class="cach" id="tk-cach" title="Pick a chain"><i style="background:${c.color}"></i>${esc(c.code||c.short)}${ic('down')}</button><span class="cav"><span class="lg2">${a.slice(0,12)}…${a.slice(-10)}</span><span class="sm2">${a.slice(0,6)}…${a.slice(-4)}</span></span><button type="button" class="cac" data-copy="${a}" title="Copy the ${esc(c.name)} address">${ic('copy')}<span class="cl">Copy</span></button><a class="cax" href="${c.explorer}/token/${a}" target="_blank" rel="noopener" title="View on the ${esc(c.name)} explorer">${ic('ext')}</a>`;
+    $('#tk-cach').onclick=e=>{ e.stopPropagation(); const m=SP.menu(e.currentTarget,`<div class="mh">Contract on</div>`+on.map(k=>{ const ch=SP.chain(k), ad=cs(SP.coinAddr(X,k)); return `<button data-ck="${k}" class="${k===caChain?'on':''}"><i style="width:8px;height:8px;border-radius:50%;background:${ch.color};flex:none"></i><span style="min-width:96px">${esc(ch.name)}</span><span class="num muted" style="margin-left:auto">${ad.slice(0,6)}…${ad.slice(-4)}</span><span style="width:16px;display:inline-flex">${k===caChain?ic('check'):''}</span></button>`; }).join(''));
+      $$('[data-ck]',m).forEach(b=>b.onclick=()=>{ m.remove(); caChain=b.dataset.ck; caBar(); }); };
+    const pl=$('#tk-pools'); if(pl) pl.innerHTML=on.length>1?`<span>Pools live</span><b>${on.length}/${on.length}</b>${on.map(k=>`<i style="background:${SP.chain(k).color}" title="${esc(SP.chain(k).name)}"></i>`).join('')}`:''; }
   /* ---------- chains: where this coin lives; HyperEVM and BNB Chain open with multichain launches ---------- */
   function chainsCard(){ const el=$('#tk-chains-body'); if(!el) return; const on=SP.coinChains(X);
     $('#tk-bridge').href='/bridge?coin='+X.addr;
     el.innerHTML=SP.chains.map(c=>{ const has=on.includes(c.key);
-      return `<div class="chr${has?'':' off'}"><img src="${c.logo}" alt=""><span class="cn"><b>${esc(c.name)} ${has?'<span class="liveb">Live</span>':c.live?'':'<span class="soonb">Soon</span>'}</b><small>${has?`<span class="chx">${shortAddr(cs(X.addr))}<button type="button" data-copy="${cs(X.addr)}" title="Copy the ${esc(c.name)} address">${ic('copy')}</button><a href="${c.explorer}/token/${X.addr}" target="_blank" rel="noopener" title="View on the ${esc(c.name)} explorer">${ic('ext')}</a></span> · 1B supply`:'Not on this chain yet'}</small></span><span class="cv">${has?'$'+fmtPrice(((X.byChain||{})[c.key]||{}).px||X.px)+'<small>'+(((X.byChain||{})[c.key]||{}).vol!=null?fmtUsd(X.byChain[c.key].vol)+' vol':fmtUsd(X.mc/on.length)+' mcap')+'</small>':'—'}</span></div>`; }).join('')
-      +(on.length>1?`<div class="chca"><span>Same address on every chain</span><button type="button" class="cpb" data-copy="${cs(X.addr)}">${shortAddr(cs(X.addr))}${ic('copy')}</button></div>`:'')
+      return `<div class="chr${has?'':' off'}"><img src="${c.logo}" alt=""><span class="cn"><b>${esc(c.name)} ${has?'<span class="liveb">Live</span>':c.live?'':'<span class="soonb">Soon</span>'}</b><small>${has?`<span class="chx">${shortAddr(cs(SP.coinAddr(X,c.key)))}<button type="button" data-copy="${cs(SP.coinAddr(X,c.key))}" title="Copy the ${esc(c.name)} address">${ic('copy')}</button><a href="${c.explorer}/token/${SP.coinAddr(X,c.key)}" target="_blank" rel="noopener" title="View on the ${esc(c.name)} explorer">${ic('ext')}</a></span> · 1B supply`:'Not on this chain yet'}</small></span><span class="cv">${has?'$'+fmtPrice(((X.byChain||{})[c.key]||{}).px||X.px)+'<small>'+(((X.byChain||{})[c.key]||{}).vol!=null?fmtUsd(X.byChain[c.key].vol)+' vol':fmtUsd(X.mc/on.length)+' mcap')+'</small>':'—'}</span></div>`; }).join('')
       +`<p class="chnote">${on.length>1?'Each chain has its own pool; arbitrage keeps the prices in line. ':''}Coins launched on several chains move between them on the <a href="/bridge?coin=${X.addr}">Bridge</a>.</p>`; }
   function paintAll(){ stats(); headLive(); flow(); chainsCard(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; if(activeTab==='info') info(); }
   async function sync(force){ if(ticking||(!force&&document.hidden)) return; ticking=true; const oldPx=X.pxPair;
@@ -201,5 +207,5 @@ window.SP_PAGE=function(){
   setInterval(headLive,60000);
 
   /* ---------- boot ---------- */
-  creatorCard(); head(); stats(); headLive(); chainsCard(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; chart(); paintSide(); resetQuote(); cta(); loadTrades(); position();
+  creatorCard(); head(); caBar(); stats(); headLive(); chainsCard(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; chart(); paintSide(); resetQuote(); cta(); loadTrades(); position();
 };

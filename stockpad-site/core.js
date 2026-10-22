@@ -57,6 +57,8 @@ const SP={
 SP.chains=(window.INKY&&INKY.chains)||[];
 SP.chain=k=>SP.chains.find(c=>c.key===k)||null;
 SP.coinChains=x=>(x&&x.chains&&x.chains.length)?x.chains:['eth'];
+/** a coin's contract address on chain k: each chain has its own (x.addrs), the main-chain one is x.addr */
+SP.coinAddr=(x,k)=>(x&&x.addrs&&x.addrs[k])||(x&&x.addr)||'';
 SP.chainStack=(keys,s=18)=>`<span class="chs" style="--s:${s}px">${keys.map(k=>{ const c=SP.chain(k); return c?`<img src="${c.logo}" alt="${esc(c.name)}" title="${esc(c.name)}">`:''; }).join('')}</span>`;
 SP.chainTag=(k,extra='')=>{ const c=SP.chain(k); return c?`<span class="ctag"><img src="${c.logo}" alt="">${esc(c.name)}${extra}</span>`:''; };
 /** gas price, native USD price and the cost of one launch on every chain, cached for a minute */

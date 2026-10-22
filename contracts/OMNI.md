@@ -44,14 +44,12 @@ tokens), Mantle (xStocks but no Uniswap v4).
 
 ## Contract addresses
 
-- **The same coin address on every chain, with no vanity ending.** The token deployer sits at the same
-  address on every chain, deployed through the CREATE2 deployer `0x4e59b44847b379578588920cA78FbF26c0B4956C`
-  (present on all 7 chains, as is CreateX `0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed`). Each coin uses one
-  salt for every chain, and its creation code holds no chain-specific values: the LayerZero endpoint and the
-  other per-chain settings are read from the deployer during construction, so the init code hash is
-  identical everywhere.
-- Only the admin can wire the token deployer on a chain (no first-caller setup). Otherwise anyone could
-  deploy the same init code on a new chain first and point it at their own factory.
+- **Each chain has its own coin address, with no vanity ending** (Pangea does the same, ending theirs in
+  `6ea`; we skip the ending). The coin page shows a chain picker next to the CA ("Contract on") with every
+  chain's address, a copy button and an explorer link, plus "Pools live N/N".
+- The factory records the coin's address on every chain and wires the LayerZero peers to them at launch,
+  then hands the coin to a sealed owner, as Pangea does.
+- Only the admin can register factories and peers; nothing is first-caller.
 
 ## Chain-specific notes
 

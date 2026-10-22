@@ -53,10 +53,10 @@
       px: pxNow, pxPair: pxNow / pairUsd, mc: pxNow * SUP * n, c24: (pxNow / first24 - 1) * 100, vol, trades: trades.length, traders: wallets.length, h: wallets.length,
       createdAt: created, age, feeBps: s.fee, rewards: s.rewards, genes: s.genes, creator: wallets[0], links: { x: 'https://x.com/equofun' },
       liq: pxNow * SUP * n * 0.42, liqPair: pxNow * SUP * n * 0.42 / pairUsd, totalCreatorFees: vol * s.fee / 1e4 * 0.6 / pairUsd * 3, creatorOwed: 0, buybackPot: 0, dividendPot: 0,
-      poolId: '0x' + s.addr.slice(2).padEnd(64, '0'), chains: s.chains, byChain, mock: true, hidden: false,
+      poolId: '0x' + s.addr.slice(2).padEnd(64, '0'), chains: s.chains, addrs: Object.fromEntries(s.chains.map((k) => [k, k === 'eth' ? s.addr : wallet()])), byChain, mock: true, hidden: false,
     };
   });
-  const isMock = (a) => MOCK.find((x) => x.addr === String(a || '').toLowerCase()) || null;
+  const isMock = (a) => { a = String(a || '').toLowerCase(); return MOCK.find((x) => x.addr === a || Object.values(x.addrs || {}).includes(a)) || null; };
 
   // the chain layer answers for the example coins; everything else passes through
   const w = (name, fn) => { const orig = C[name]; C[name] = function (a, ...rest) { const m = isMock(a); return m ? fn(m, ...rest) : orig ? orig.apply(this, arguments) : undefined; }; };

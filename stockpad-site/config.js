@@ -613,19 +613,19 @@ window.INKY = {
      shows those chains but only Ethereum launches and trades today. launchGas is the gas one launch
      uses on that chain (factory + pool + wiring), used for the launch cost quote. */
   chains: [
-    {key:'eth',       name:'Ethereum',        short:'Ethereum',  chainId:1,     native:'ETH',  cg:'ethereum',    logo:'/img/chains/eth.png',       color:'#8c9eff', main:true,  live:true,  stocks:'Ondo · 573 stocks',
+    {key:'eth', code:'ETH',       name:'Ethereum',        short:'Ethereum',  chainId:1,     native:'ETH',  cg:'ethereum',    logo:'/img/chains/eth.png',       color:'#8c9eff', main:true,  live:true,  stocks:'Ondo · 573 stocks',
      rpc:'https://ethereum-rpc.publicnode.com', explorer:'https://etherscan.io',       lzEid:30101, poolManager:'0x000000000004444c5dc75cB358380D2e3dE08A90', launchGas:7290000},
-    {key:'hyper',     name:'HyperEVM',        short:'Hyper',     chainId:999,   native:'HYPE', cg:'hyperliquid', logo:'/img/chains/hyper.png',     color:'#97fce4', main:false, live:false, stocks:'Ondo · ~35 stocks',
+    {key:'hyper', code:'HYPE',     name:'HyperEVM',        short:'Hyper',     chainId:999,   native:'HYPE', cg:'hyperliquid', logo:'/img/chains/hyper.png',     color:'#97fce4', main:false, live:false, stocks:'Ondo · ~35 stocks',
      rpc:'https://rpc.hyperliquid.xyz/evm',     explorer:'https://hyperevmscan.io',    lzEid:30367, poolManager:'0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', launchGas:7290000},
-    {key:'bsc',       name:'BNB Chain',       short:'BNB',       chainId:56,    native:'BNB',  cg:'binancecoin', logo:'/img/chains/bsc.png',       color:'#f0b90b', main:false, live:false, stocks:'Ondo, xStocks',
+    {key:'bsc', code:'BSC',       name:'BNB Chain',       short:'BNB',       chainId:56,    native:'BNB',  cg:'binancecoin', logo:'/img/chains/bsc.png',       color:'#f0b90b', main:false, live:false, stocks:'Ondo, xStocks',
      rpc:'https://bsc-rpc.publicnode.com',      explorer:'https://bscscan.com',        lzEid:30102, poolManager:'0x28e2Ea090877bF75740558f6BFB36A5ffeE9e9dF', launchGas:7290000},
-    {key:'base',      name:'Base',            short:'Base',      chainId:8453,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/base.png',      color:'#3c6bff', main:false, live:false, stocks:'Coinbase stocks',
+    {key:'base', code:'BASE',      name:'Base',            short:'Base',      chainId:8453,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/base.png',      color:'#3c6bff', main:false, live:false, stocks:'Coinbase stocks',
      rpc:'https://base-rpc.publicnode.com',     explorer:'https://basescan.org',       lzEid:30184, poolManager:'0x498581fF718922c3f8e6A244956aF099B2652b2b', launchGas:7290000},
-    {key:'arbitrum',  name:'Arbitrum',        short:'Arbitrum',  chainId:42161, native:'ETH',  cg:'ethereum',    logo:'/img/chains/arbitrum.png',  color:'#4aa3ff', main:false, live:false, stocks:'xStocks',
+    {key:'arbitrum', code:'ARB',  name:'Arbitrum',        short:'Arbitrum',  chainId:42161, native:'ETH',  cg:'ethereum',    logo:'/img/chains/arbitrum.png',  color:'#4aa3ff', main:false, live:false, stocks:'xStocks',
      rpc:'https://arbitrum-one-rpc.publicnode.com', explorer:'https://arbiscan.io',    lzEid:30110, poolManager:'0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32', launchGas:7290000},
-    {key:'robinhood', name:'Robinhood Chain', short:'Robinhood', chainId:4663,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/robinhood.png', color:'#ccff00', main:false, live:false, stocks:'Robinhood stocks',
+    {key:'robinhood', code:'HOOD', name:'Robinhood Chain', short:'Robinhood', chainId:4663,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/robinhood.png', color:'#ccff00', main:false, live:false, stocks:'Robinhood stocks',
      rpc:'https://rpc.mainnet.chain.robinhood.com', explorer:'https://robin.etherscan.io', lzEid:30416, poolManager:'0x8366a39CC670B4001A1121B8F6A443A643e40951', launchGas:7290000},
-    {key:'ink',       name:'Ink',             short:'Ink',       chainId:57073, native:'ETH',  cg:'ethereum',    logo:'/img/chains/ink.png',       color:'#a77bff', main:false, live:false, stocks:'xStocks',
+    {key:'ink', code:'INK',       name:'Ink',             short:'Ink',       chainId:57073, native:'ETH',  cg:'ethereum',    logo:'/img/chains/ink.png',       color:'#a77bff', main:false, live:false, stocks:'xStocks',
      rpc:'https://rpc-qnd.inkonchain.com',      explorer:'https://explorer.inkonchain.com', lzEid:30339, poolManager:'0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32', launchGas:7290000}
   ],
   /* launch fee: gas on every chosen chain plus this margin; bridge: LayerZero fees */

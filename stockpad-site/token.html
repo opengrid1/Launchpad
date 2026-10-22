@@ -73,15 +73,15 @@
 #pg-token .chr img{width:28px;height:28px;border-radius:50%} #pg-token .chr .cn b{display:block;font:600 13.5px var(--disp)} #pg-token .chr .cn small{display:block;margin-top:2px;font:11px var(--mono);color:var(--fg-3)}
 #pg-token .chr .cv{text-align:right;font:500 13px var(--mono)} #pg-token .chr .cv small{display:block;margin-top:2px;font-size:11px;color:var(--fg-3);font-weight:400}
 #pg-token .chx{display:inline-flex;align-items:center;gap:2px;color:var(--fg-2)} #pg-token .chx button,#pg-token .chx a{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;color:var(--fg-3)} #pg-token .chx button:hover,#pg-token .chx a:hover{color:var(--ac);background:var(--s3)} #pg-token .chx svg{width:12px;height:12px}
-#pg-token .chca{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:9px 11px;border:1px dashed var(--line-2);border-radius:10px;font-size:12px;color:var(--fg-3)} #pg-token .chca .cpb{display:inline-flex;align-items:center;gap:6px;font:500 12px var(--mono);color:var(--fg)} #pg-token .chca .cpb svg{width:13px;height:13px;color:var(--fg-3)}
 #pg-token .chr.off{opacity:.62} #pg-token .chnote{margin:10px 0 0;font-size:12px;line-height:1.5;color:var(--fg-3)}
-#pg-token .cabar{display:flex;align-items:center;gap:10px;width:100%;max-width:420px;margin-top:10px;padding:5px 5px 5px 6px;border:1px solid var(--line-2);border-radius:10px;background:var(--s2);text-align:left;transition:border-color .15s}
-#pg-token .cabar:hover{border-color:var(--ac-line)} #pg-token .cabar .cal{flex:none;height:22px;padding:0 7px;border-radius:6px;display:inline-flex;align-items:center;background:var(--s4);font:600 10.5px var(--mono);letter-spacing:.06em;color:var(--fg-2)}
-#pg-token .cabar .cav{flex:1;min-width:0;font:500 12.5px var(--mono);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#pg-token .cabar .cac{flex:none;display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border-radius:7px;background:var(--ac-dim);color:var(--ac);font:600 12px var(--disp)} #pg-token .cabar .cac svg{width:13px;height:13px}
-#pg-token .cabar.ok .cac{background:var(--up-dim);color:var(--up)}
-#pg-token .casame{display:flex;align-items:center;gap:7px;margin-top:6px;font:11.5px var(--mono);color:var(--fg-3)}
-#pg-token .cabar .sm2{display:none} @media(max-width:640px){#pg-token .cabar .lg2{display:none} #pg-token .cabar .sm2{display:inline} #pg-token .cabar{gap:8px} #pg-token .cabar .cac{padding:0 8px}}
+#pg-token .cabar{display:flex;align-items:center;gap:6px;width:100%;max-width:440px;margin-top:10px;padding:4px;border:1px solid var(--line-2);border-radius:10px;background:var(--s2)}
+#pg-token .cabar:empty{display:none}
+#pg-token .cach{flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px;border:1px solid var(--line-2);border-radius:7px;background:var(--s3);font:600 12px var(--disp);color:var(--fg)} #pg-token .cach i{width:8px;height:8px;border-radius:50%} #pg-token .cach svg{width:12px;height:12px;color:var(--fg-3)} #pg-token .cach:hover{border-color:var(--line-3)}
+#pg-token .cabar .cav{flex:1;min-width:0;padding-left:4px;font:500 12.5px var(--mono);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-token .cabar .cac{flex:none;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:7px;background:var(--ac-dim);color:var(--ac);font:600 12px var(--disp)} #pg-token .cabar .cac svg{width:13px;height:13px} #pg-token .cabar .cac.ok{background:var(--up-dim);color:var(--up)}
+#pg-token .cabar .cax{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;color:var(--fg-3)} #pg-token .cabar .cax:hover{color:var(--ac);background:var(--s3)} #pg-token .cabar .cax svg{width:13px;height:13px}
+#pg-token .pools{display:flex;align-items:center;gap:5px;margin-top:7px;font:12px var(--mono);color:var(--fg-3)} #pg-token .pools:empty{display:none} #pg-token .pools b{color:var(--fg);font-weight:500;margin-right:3px} #pg-token .pools i{width:8px;height:8px;border-radius:50%}
+#pg-token .cabar .sm2{display:none} @media(max-width:640px){#pg-token .cabar .lg2{display:none} #pg-token .cabar .sm2{display:inline} #pg-token .cabar{gap:4px} #pg-token .cabar .cac{padding:0 8px} #pg-token .cabar .cac .cl{display:none}}
 </style>
 </head><body data-page="token">
 <header id="sp-top"></header><div id="sp-tape"></div>
@@ -135,5 +135,5 @@
   <div class="empty panel hidden" id="tk-empty"></div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=4"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/preview.js?v=1"></script><script src="/wallet.js"></script><script src="/charting_library/charting_library.js"></script><script src="/tv.js?v=2"></script><script src="/core.js?v=20"></script><script src="/sp-creator.js?v=2"></script><script src="/sp-token.js?v=29"></script>
+<script src="/config.js?v=5"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/preview.js?v=2"></script><script src="/wallet.js"></script><script src="/charting_library/charting_library.js"></script><script src="/tv.js?v=2"></script><script src="/core.js?v=21"></script><script src="/sp-creator.js?v=2"></script><script src="/sp-token.js?v=32"></script>
 </body></html>
