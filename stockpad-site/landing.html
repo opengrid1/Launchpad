@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Equo | One coin, every chain</title><meta name="robots" content="noindex">
+<title>Equo | One coin, every chain</title>
 <meta name="description" content="Launch a coin paired with a real stock, live on seven chains at once.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -22,6 +22,7 @@
 #pg-land .ctas .btn{height:52px;padding:0 24px;border-radius:14px;font-size:15.5px}
 #pg-land .ctas .btn.pri{box-shadow:0 10px 34px -10px rgba(63,188,255,.75)}
 #pg-land .ctas .btn svg{width:17px;height:17px}
+@media(max-width:560px){#pg-land .ctas .btn.pri{flex:1 1 100%;justify-content:center}#pg-land .ctas .btn.line{flex:1 1 0;justify-content:center;padding:0 12px}}
 #pg-land .chainrow{display:flex;align-items:center;gap:12px;margin-top:30px;font:12px var(--mono);color:var(--fg-3)}
 #pg-land .chainrow .chs img{box-shadow:0 0 0 2px #000}
 /* stage */
@@ -52,7 +53,7 @@
 @media(max-width:1000px){#pg-land .hero{grid-template-columns:minmax(0,1fr);min-height:0;gap:10px;padding-top:18px} #pg-land .stage{margin:0 auto;max-width:560px} #pg-land .stats{grid-template-columns:1fr 1fr} #pg-land .stats div:nth-child(2){border-right:0} #pg-land .stats div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
 @media(max-width:640px){#pg-land .lead{font-size:16px} #pg-land .pl{width:50px;height:50px;margin:-25px 0 0 -25px} #pg-land .pl .nm{font-size:10px;padding:2px 7px} #pg-land .stats b{font-size:24px} #pg-land .stats div{padding:16px}}
 </style>
-</head><body data-page="markets">
+</head><body data-page="landing">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-land">
   <section class="hero">
@@ -60,7 +61,7 @@
       <span class="eyebrow"><span class="live">New</span>Stock-paired coins on 7 chains</span>
       <h1>Launch once.<br><span class="g">Live on every chain.</span></h1>
       <p class="lead">Your coin goes live on <b>seven chains at the same price</b>, paired with a real stock. One coin, one supply: it moves between chains in about a minute, burned where it leaves and minted where it lands.</p>
-      <div class="ctas"><a class="btn pri lg" href="/launch" id="ld-launch"></a><a class="btn lg line" href="/bridge">See the bridge</a></div>
+      <div class="ctas"><a class="btn pri lg" href="/launch" id="ld-launch"></a><a class="btn lg line" href="/">Open markets</a><a class="btn lg line" href="/bridge">See the bridge</a></div>
       <div class="chainrow" id="ld-chains"></div>
     </div>
     <div class="stage" id="ld-stage" aria-label="One coin connected to seven chains">
@@ -79,7 +80,7 @@
   </section>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=5"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/preview.js?v=3"></script><script src="/wallet.js"></script><script src="/core.js?v=22"></script>
+<script src="/config.js?v=5"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/preview.js?v=3"></script><script src="/wallet.js"></script><script src="/core.js?v=23"></script>
 <script>
 (function(){
   const CH=(window.INKY&&INKY.chains)||[], stage=document.getElementById('ld-stage'), cv=document.getElementById('ld-cv'), cx=cv.getContext('2d'), tip=document.getElementById('ld-tip');

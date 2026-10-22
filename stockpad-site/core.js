@@ -91,7 +91,7 @@ addEventListener('inky:wallet',syncWallet); document.addEventListener('wallet-ch
 const NAV=[['markets','/','Home'],['calls','/calls','Calls'],['analytics','/analytics','Analytics'],['launch','/launch','Launch'],['bridge','/bridge','Bridge'],['rewards','/rewards','Rewards'],['portfolio','/profile','Profile']];
 /* More menu (desktop) and Tools in the mobile menu: [key, href, label, icon, soon] */
 const TOOLS=[['pools','/pools','Pools','drop'],['burns','/rewards#burns','Burns','flame'],['watch','/?watch=1','Watchlist','star'],['takeover','/takeover','Takeover','users']];
-const MORE_LINKS=[['docs','/docs','Docs','book'],['how','/docs/how-it-works','How it works','info']];
+const MORE_LINKS=[['landing','/landing','About Equo','globe'],['docs','/docs','Docs','book'],['how','/docs/how-it-works','How it works','info']];
 const TABS=['markets','calls','launch','rewards','analytics'];
 function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP.W;
   if(!W.connected){ el.innerHTML=`<button class="btn pri" id="wconnect">Connect wallet</button>`; $('#wconnect',el).onclick=SP.W.connect; return; }
