@@ -1,0 +1,21 @@
+{
+  "name": "equo-indexer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Indexes Equo launches, trades, fees and holders on every Equo chain into Postgres and serves them over HTTP",
+  "type": "module",
+  "main": "src/main.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/main.js",
+    "worker": "MODE=worker node src/main.js",
+    "api": "MODE=api node src/main.js",
+    "migrate": "MODE=migrate node src/main.js"
+  },
+  "dependencies": {
+    "ethers": "6.17.0",
+    "pg": "8.13.1"
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "_note": "One entry per Equo chain. A chain with no factory is skipped until its contracts are deployed. rpcs are tried in order; RPC_<KEY> in the environment (comma separated) replaces them, e.g. RPC_ARBITRUM. maxRange is the most blocks one eth_getLogs may span on these RPCs.",
+  "chains": [
+    {
+      "key": "eth",
+      "name": "Ethereum",
+      "chainId": 1,
+      "lzEid": 30101,
+      "native": "ETH",
+      "rpcs": [
+        "https://ethereum-rpc.publicnode.com",
+        "https://rpc.mevblocker.io"
+      ],
+      "maxRange": 4000,
+      "confirmations": 2,
+      "pollMs": 6000,
+      "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+      "wrappedNative": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "factory": "0x7Eb4CC330866Af46b2fDfBce41686CC74778d325",
+      "hook": "0xbe1FF9acc59F73Ae311810Cb74e162a47E2e40Cc",
+      "tokenDeployer": "0x9289DD47cfb34acE7a3a97666542aBa18f7c5e48",
+      "router": "0x4055F9abd07caBC16788d499A935a297968E09c8",
+      "startBlock": 26235330
+    },
+    {
+      "key": "hyper",
+      "name": "HyperEVM",
+      "chainId": 999,
+      "lzEid": 30367,
+      "native": "HYPE",
+      "rpcs": [
+        "https://rpc.hyperliquid.xyz/evm"
+      ],
+      "maxRange": 1000,
+      "confirmations": 1,
+      "pollMs": 4000,
+      "poolManager": "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F",
+      "wrappedNative": "0x5555555555555555555555555555555555555555",
+      "factory": "",
+      "hook": "",
+      "tokenDeployer": "",
+      "router": "",
+      "startBlock": 0
+    },
+    {
+      "key": "bsc",
+      "name": "BNB Chain",
+      "chainId": 56,
+      "lzEid": 30102,
+      "native": "BNB",
+      "rpcs": [
+        "https://bsc-rpc.publicnode.com",
+        "https://bsc-dataseed.bnbchain.org"
+      ],
+      "maxRange": 5000,
+      "confirmations": 3,
+      "pollMs": 4000,
+      "poolManager": "0x28e2Ea090877bF75740558f6BFB36A5ffeE9e9dF",
+      "wrappedNative": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+      "factory": "",
+      "hook": "",
+      "tokenDeployer": "",
+      "router": "",
+      "startBlock": 0
+    },
+    {
+      "key": "base",
+      "name": "Base",
+      "chainId": 8453,
+      "lzEid": 30184,
+      "native": "ETH",
+      "rpcs": [
+        "https://base-rpc.publicnode.com",
+        "https://mainnet.base.org"
+      ],
+      "maxRange": 1000,
+      "confirmations": 2,
+      "pollMs": 4000,
+      "poolManager": "0x498581fF718922c3f8e6A244956aF099B2652b2b",
+      "wrappedNative": "0x4200000000000000000000000000000000000006",
+      "factory": "",
+      "hook": "",
+      "tokenDeployer": "",
+      "router": "",
+      "startBlock": 0
+    },
+    {
+      "key": "arbitrum",
+      "name": "Arbitrum",
+      "chainId": 42161,
+      "lzEid": 30110,
+      "native": "ETH",
+      "rpcs": [
+        "https://arb1.arbitrum.io/rpc"
+      ],
+      "maxRange": 10000,
+      "confirmations": 5,
+      "pollMs": 4000,
+      "poolManager": "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32",
+      "wrappedNative": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "factory": "",
+      "hook": "",
+      "tokenDeployer": "",
+      "router": "",
+      "startBlock": 0
+    },
+    {
+      "key": "robinhood",
+      "name": "Robinhood Chain",
+      "chainId": 4663,
+      "lzEid": 30416,
+      "native": "ETH",
+      "rpcs": [
+        "https://rpc.mainnet.chain.robinhood.com"
+      ],
+      "maxRange": 5000,
+      "confirmations": 2,
+      "pollMs": 4000,
+      "poolManager": "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+      "wrappedNative": "",
+      "factory": "",
+      "hook": "",
+      "tokenDeployer": "",
+      "router": "",
+      "startBlock": 0
+    },
+    {
+      "key": "ink",
+      "name": "Ink",
+      "chainId": 57073,
+      "lzEid": 30339,
+      "native": "ETH",
+      "rpcs": [
+        "https://rpc-qnd.inkonchain.com"
+      ],
+      "maxRange": 5000,
+      "confirmations": 2,
+      "pollMs": 4000,
+      "poolManager": "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32",
+      "wrappedNative": "0x4200000000000000000000000000000000000006",
+      "factory": "",
+      "hook": "",
+      "tokenDeployer": "",
+      "router": "",
+      "startBlock": 0
+    }
+  ]
+}
