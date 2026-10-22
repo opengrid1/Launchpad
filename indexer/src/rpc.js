@@ -4,7 +4,9 @@
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const hex = (n) => "0x" + Number(n).toString(16);
 
-const TOO_BIG = /range|exceed|too many (results|logs|blocks)|10,?000|response size|query returned more/i;
+const TOO_BIG = /range|exceed|limit exceeded|too many (results|logs|blocks)|10,?000|response size|query returned more/i;
+// this RPC's node is a block or two behind: wait, do not shrink the range
+const BEHIND = /beyond (the )?current head|block not found|unknown block|after last accepted|future block|not yet available/i;
 // this RPC keeps no old state or logs: ask the next one
 const NO_HISTORY = /archive|personal token|pruned|missing trie|header not found|not available/i;
 
@@ -15,6 +17,16 @@ export class Rpc {
     this.i = 0;
     this.id = 0;
     this.range = chain.maxRange;
+    this.gap = Number(chain.minGapMs || 0); // some public RPCs allow only so many requests a minute
+    this.next = 0;
+    this.ok = 0;
+  }
+
+  async pace() {
+    if (!this.gap) return;
+    const now = Date.now(), at = Math.max(now, this.next);
+    this.next = at + this.gap;
+    if (at > now) await sleep(at - now);
   }
 
   async call(method, params, tries = Math.max(5, this.urls.length * 2)) {
@@ -22,6 +34,7 @@ export class Rpc {
     for (let a = 0; a < tries; a++) {
       const url = this.urls[(this.i + a) % this.urls.length];
       try {
+        await this.pace();
         const r = await fetch(url, {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -35,10 +48,12 @@ export class Rpc {
         return j.result;
       } catch (e) {
         last = e;
-        if (NO_HISTORY.test(e.message)) continue;
+        if (NO_HISTORY.test(e.message) && !BEHIND.test(e.message)) continue;
+        if (BEHIND.test(e.message)) { await sleep(1500); continue; }
         // a "range too big" answer is not worth retrying as is: the caller splits the range
         if (method === "eth_getLogs" && TOO_BIG.test(e.message) && !e.rate && !/rate/i.test(e.message)) throw Object.assign(e, { tooBig: true });
-        await sleep(Math.min(8000, 400 * 2 ** a));
+        const rate = e.rate || /rate|too many requests|429/i.test(e.message);
+        await sleep(rate ? Math.min(30_000, 2000 * 2 ** a) : Math.min(8000, 400 * 2 ** a));
       }
     }
     throw last;
@@ -70,9 +85,12 @@ export class Rpc {
         const r = await this.call("eth_getLogs", [{ ...filter, fromBlock: hex(a), toBlock: hex(b) }]);
         out.push(...r);
         a = b + 1;
+        // after a run of good answers, try a bigger range again (up to the chain's limit)
+        if (this.range < this.chain.maxRange && ++this.ok >= 20) { this.range = Math.min(this.chain.maxRange, this.range * 2); this.ok = 0; }
       } catch (e) {
         if (e.tooBig && this.range > 1) {
           this.range = Math.max(1, Math.floor(this.range / 2));
+          this.ok = 0;
           continue;
         }
         throw e;

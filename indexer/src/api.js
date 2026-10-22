@@ -106,13 +106,17 @@ export function makeHandler(chains) {
       const pairUnit = p.get("unit") === "pair";
       if (pairUnit && !chain) throw new HttpError(400, "unit=pair needs one chain");
       const px = pairUnit ? "(pair_amt / nullif(coin_amt, 0))::float8" : "price_usd";
+      // each candle opens where the one before it closed (as on the chain reader), so a lone trade still shows its move
       const r = await q(
-        `select (ts / $2) * $2 t,
-                (array_agg(${px} order by ts, block, log_index))[1] o, max(${px}) h, min(${px}) l,
-                (array_agg(${px} order by ts desc, block desc, log_index desc))[1] c,
-                coalesce(sum(value_usd), 0) v, count(*)::int n
-         from trades where coin_id = $1 and ($3::text is null or chain = $3) and ts >= $4 and ts < $5 and ${pairUnit ? "coin_amt > 0" : "price_usd is not null"}
-         group by 1 order by 1`, [id, res, chain, from, to]);
+        `with k as (
+           select (ts / $2) * $2 t,
+                  (array_agg(${px} order by ts, block, log_index))[1] o, max(${px}) h, min(${px}) l,
+                  (array_agg(${px} order by ts desc, block desc, log_index desc))[1] c,
+                  coalesce(sum(value_usd), 0) v, count(*)::int n
+           from trades where coin_id = $1 and ($3::text is null or chain = $3) and ts >= $4 and ts < $5 and ${pairUnit ? "coin_amt > 0" : "price_usd is not null"}
+           group by 1)
+         select t, coalesce(lag(c) over w, o) o, greatest(h, coalesce(lag(c) over w, h)) h, least(l, coalesce(lag(c) over w, l)) l, c, v, n
+         from k window w as (order by t) order by t`, [id, res, chain, from, to]);
       return { coin: id, chain: chain || "merged", res, unit: pairUnit ? "pair" : "usd", candles: r.rows };
     },
 

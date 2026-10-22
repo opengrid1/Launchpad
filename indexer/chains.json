@@ -1,5 +1,5 @@
 {
-  "_note": "One entry per Equo chain. A chain with no factory is skipped until its contracts are deployed. rpcs are tried in order; RPC_<KEY> in the environment (comma separated) replaces them, e.g. RPC_ARBITRUM. maxRange is the most blocks one eth_getLogs may span on these RPCs.",
+  "_note": "One entry per Equo chain. A chain with no factory is skipped until its contracts are deployed. rpcs are tried in order; RPC_<KEY> in the environment (comma separated) replaces them, e.g. RPC_ARBITRUM. maxRange is the most blocks one eth_getLogs may span on these RPCs. minGapMs spaces requests for RPCs that limit requests per minute.",
   "chains": [
     {
       "key": "eth",
@@ -40,7 +40,8 @@
       "hook": "",
       "tokenDeployer": "",
       "router": "",
-      "startBlock": 0
+      "startBlock": 0,
+      "minGapMs": 700
     },
     {
       "key": "bsc",
@@ -50,7 +51,7 @@
       "native": "BNB",
       "rpcs": [
         "https://bsc-rpc.publicnode.com",
-        "https://bsc-dataseed.bnbchain.org"
+        "https://rpc-bsc.48.club"
       ],
       "maxRange": 5000,
       "confirmations": 3,

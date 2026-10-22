@@ -18,6 +18,7 @@ export function loadChains() {
       wrappedNative: lc(c.wrappedNative),
       startBlock: Number(env("START_BLOCK") || c.startBlock || 0),
       maxRange: Number(env("MAX_RANGE") || c.maxRange || 1000),
+      minGapMs: Number(env("MIN_GAP_MS") || c.minGapMs || 0),
       confirmations: Number(c.confirmations ?? 2),
       pollMs: Number(process.env.POLL_MS || c.pollMs || 5000),
     };

@@ -18,7 +18,9 @@ const PORT = process.env.PORT || "8093";
 const api = (p) => fetch(`http://127.0.0.1:${PORT}${p}`).then(async (r) => ({ status: r.status, body: await r.json() }));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const child = spawn(process.execPath, ["src/main.js"], { env: { ...process.env, CHAINS_FILE: FIX, PORT, PRICE_EVERY_MS: "2000" }, stdio: ["ignore", "pipe", "pipe"] });
+// E2E_TICK=1 runs the indexer the way the serverless host does: API only, indexing through /api/tick
+const TICK = process.env.E2E_TICK === "1";
+const child = spawn(process.execPath, ["src/main.js"], { env: { ...process.env, CHAINS_FILE: FIX, PORT, PRICE_EVERY_MS: "2000", ...(TICK ? { MODE: "api", TICK: "1" } : {}) }, stdio: ["ignore", "pipe", "pipe"] });
 let logs = "";
 child.stdout.on("data", (d) => (logs += d));
 child.stderr.on("data", (d) => (logs += d));
@@ -32,7 +34,8 @@ try {
   // wait for the API, then for every chain to reach the head
   let h;
   for (let i = 0; i < 120; i++) {
-    await sleep(1000);
+    await sleep(TICK ? 9000 : 1000);
+    if (TICK) console.log("tick:", JSON.stringify((await api("/api/tick").catch((e) => ({ body: e.message }))).body).slice(0, 200));
     h = await api("/api/health").catch(() => null);
     if (h && h.body.chains.length === fx.chains.length && h.body.chains.every((c) => c.behind === 0)) break;
   }
