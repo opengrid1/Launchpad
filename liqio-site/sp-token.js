@@ -6,7 +6,10 @@ window.SP_PAGE=function(){
     const addrFromUrl=()=>{ const m=location.pathname.match(/\/token\/(0x[0-9a-fA-F]{40})/); if(m) return m[1].toLowerCase(); const q=new URLSearchParams(location.search).get('t')||''; return /^0x[0-9a-fA-F]{40}$/.test(q)?q.toLowerCase():''; };
   const addr=addrFromUrl(); let X=addr?SP.token(addr):null;
   if(!X||!window.CHAIN){ $('#tk-page').classList.add('hidden'); const e=$('#tk-empty'); e.classList.remove('hidden');
-    $('#tk-crumb').innerHTML=`<a href="/markets">Markets</a>`; e.innerHTML=`<b>${addr?'Token not found':'No token selected'}</b>${addr?'No coin with that address was launched on Liqio, or it is not listed here.':'Open a coin from the markets page.'}<div style="margin-top:14px"><a class="btn" href="/markets">${ic('back')}Back to markets</a></div>`; return; }
+    $('#tk-crumb').innerHTML=`<a href="/markets">Markets</a>`; e.innerHTML=`<b>${addr?'Token not found':'No token selected'}</b>${addr?'No coin with that address was launched on Liqio, or it is not listed here.':'Open a coin from the markets page.'}<div style="margin-top:14px"><a class="btn" href="/markets">${ic('back')}Back to markets</a></div>`;
+    // the coin list may still be loading from the chain (or refreshing a cached list): re-run once it holds this coin
+    if(addr&&window.CHAIN&&!pg.dataset.retry){ pg.dataset.retry='1'; const again=()=>{ if(SP.token(addr)){ window.removeEventListener('chain-update',again); window.removeEventListener('chain-ready',again); delete pg.dataset.retry; try{ window.SP_PAGE(); }catch(e){ console.error('page init',e); } } }; window.addEventListener('chain-update',again); window.addEventListener('chain-ready',again); }
+    return; }
   X={...X};
   const C=(window.INKY&&INKY.contracts)||{}; const PM=String(C.poolManager||'').toLowerCase();
   const stock=SP.stockBySym(X.pair), cpair=PAIR_LIST().find(p=>p.symbol===X.pair)||null; const isStock=!!stock, isNative=X.pair===NATIVE; if(SP.chains.length<2) pg.classList.add('one');
