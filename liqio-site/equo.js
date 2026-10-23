@@ -61,6 +61,13 @@
   const hookR = new E.Contract(addr.hook, HOOK_ABI, provider);
   const factR = new E.Contract(addr.factory, FACTORY_ABI, provider);
   const W = async (a, abi) => new E.Contract(a, abi, await signer());
+  const ORACLE_ABI = [
+    "function sources(address token) view returns (uint8 kind, uint32 index, uint8 szDecimals, uint8 decimals, bool erc4626, uint256 multiplierE18, uint256 fixedUsd18)",
+    "function price(address token) view returns (uint256)",
+    "function setFixed(address token, uint256 usd18)",
+    "function setCore(address token, uint32 index, uint8 szDecimals, uint256 multiplierE18, bool erc4626)",
+    "function remove(address token)",
+  ];
   const lc = (a) => String(a || "").toLowerCase();
   const ZERO = "0x0000000000000000000000000000000000000000";
   const WETH = lc(cfg.weth || "0x5555555555555555555555555555555555555555");
@@ -231,6 +238,18 @@
     capOf: (token) => factR.capOf(token).then((x) => Number(x) / 1e8),
     async setCapPresets(usd) { const f = await W(addr.factory, FACTORY_ABI); return tx(() => f.setCapPresets(usd.map((u) => BigInt(Math.round(u)) * 10n ** 8n))); },
     async setRewardSplit(cb, rf) { const f = await W(addr.factory, FACTORY_ABI); splitP = null; return tx(() => f.setRewardSplit(cb, rf)); },
+
+    // oracle price sources (Liqio: HyperCore markets behind each pair token; admin only)
+    oracleAddr: async () => addr.oracle || factR.oracle(),
+    decimalsOf: (token) => new E.Contract(token, ["function decimals() view returns (uint8)"], provider).decimals().then(Number),
+    async oracleSource(token) {
+      const o = new E.Contract(await EQ.oracleAddr(), ORACLE_ABI, provider);
+      const [s, px] = await Promise.all([o.sources(token), o.price(token).catch(() => 0n)]);
+      return { kind: Number(s.kind), index: Number(s.index), szDecimals: Number(s.szDecimals), decimals: Number(s.decimals), erc4626: !!s.erc4626, multiplier: Number(s.multiplierE18) / 1e18, fixedUsd: Number(s.fixedUsd18) / 1e18, usd: Number(px) / 1e18 };
+    },
+    async setFixed(token, usd18) { const o = await W(await EQ.oracleAddr(), ORACLE_ABI); return tx(() => o.setFixed(token, usd18)); },
+    async setCore(token, index, sz, multE18, erc4626) { const o = await W(await EQ.oracleAddr(), ORACLE_ABI); return tx(() => o.setCore(token, index, sz, multE18, erc4626)); },
+    async removeSource(token) { const o = await W(await EQ.oracleAddr(), ORACLE_ABI); return tx(() => o.remove(token)); },
   };
   Object.assign(EQ, {
     multi, routeOut,
