@@ -16,8 +16,8 @@ import { join } from "path";
  *   PRIVATE_KEY            deployer (pays gas; keeps setup rights only until RENOUNCE)
  *   ONEHOOK_ADMIN          immutable admin of factory and oracle: pause, listings, metadata, fee recipient, collect, price sources
  *   ONEHOOK_FEE_RECIPIENT  platform fee sink (default: admin)
- *   POOL_MANAGER           Uniswap v4 PoolManager (default: HyperEVM's)
- *   WETH_ADDRESS           WHYPE (default: 0x5555…5555)
+ *   LIQIO_POOL_MANAGER     Uniswap v4 PoolManager (default: HyperEVM's)
+ *   LIQIO_WETH             WHYPE (default: 0x5555…5555)
  *   RENOUNCE=1             renounce the deployer's setup rights at the end (factory owner)
  *   EQUO_CASHBACK_BPS      cashback share of the platform part, bps (owner step, before RENOUNCE)
  *   EQUO_REFERRAL_BPS      referral share of the platform part, bps (same)
@@ -57,6 +57,13 @@ function mine(deployer: string, initCodeHash: string): { addr: string; salt: str
   throw new Error("hook salt not found");
 }
 
+/// mining the hook salt can outlast the node's idle keep-alive, so the first call after it may hit a closed socket
+async function retry<T>(f: () => Promise<T>, tries = 3): Promise<T> {
+  let last: any;
+  for (let i = 0; i < tries; i++) { try { return await f(); } catch (e: any) { last = e; if (!/socket|ECONNRESET|other side closed|fetch failed/i.test(String(e?.message ?? e))) throw e; await new Promise((r) => setTimeout(r, 1000)); } }
+  throw last;
+}
+
 function need(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`${name} is required`);
@@ -86,10 +93,12 @@ async function main() {
     sources = [{ symbol: "WHYPE", token: weth, kind: "core", index: 159, sz: 2, mult: E18, erc4626: false }, { symbol: "USDC", token: await usdc.getAddress(), kind: "fixed", usd18: 10n ** 30n }];
   } else {
     admin = need("ONEHOOK_ADMIN");
-    poolManager = ethers.getAddress(process.env.POOL_MANAGER ?? "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F");
-    weth = ethers.getAddress(process.env.WETH_ADDRESS ?? "0x5555555555555555555555555555555555555555");
+    // LIQIO_* names on purpose: contracts/.env carries POOL_MANAGER and WETH_ADDRESS for the Ethereum deployments
+    poolManager = ethers.getAddress(process.env.LIQIO_POOL_MANAGER ?? "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F");
+    weth = ethers.getAddress(process.env.LIQIO_WETH ?? "0x5555555555555555555555555555555555555555");
     const net = await ethers.provider.getNetwork();
     if (net.chainId !== 999n) throw new Error(`expected HyperEVM (999), connected to ${net.chainId}`);
+    for (const [name, a] of [["PoolManager", poolManager], ["WHYPE", weth]]) if ((await ethers.provider.getCode(a)).length <= 2) throw new Error(`${name} ${a} has no code on this chain`);
     // sanity: the precompile answers for HYPE, so this really is HyperEVM and the market index is right
     const raw = await ethers.provider.call({ to: ORACLE_PX, data: ethers.zeroPadValue(ethers.toBeHex(159), 32) });
     if (raw.length !== 66 || BigInt(raw) === 0n) throw new Error("HyperCore price precompile did not answer for HYPE");
@@ -109,7 +118,7 @@ async function main() {
   const hookInit = ethers.concat([Hook.bytecode, ethers.AbiCoder.defaultAbiCoder().encode(["address", "address"], [poolManager, weth])]);
   console.log("mining hook flags 0x..CC …");
   const { addr: hookAddr, salt } = mine(c2Addr, ethers.keccak256(hookInit));
-  await (await c2.deploy(salt, hookInit)).wait();
+  await (await retry(() => c2.deploy(salt, hookInit))).wait();
   const hook = await ethers.getContractAt("EquoHook", hookAddr);
   console.log("EquoHook:", hookAddr);
 
