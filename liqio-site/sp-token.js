@@ -36,7 +36,7 @@ window.SP_PAGE=function(){
         ${X.desc?`<p class="desc">${esc(X.desc)}</p>`:''}
         <div class="by">Created by ${wl(X.creator)}</div>
       </div>
-      <a class="pairbig" href="/markets?stock=${esc(X.pair)}" title="Paired with ${esc(X.pair)}"><img class="cl" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span><b>${esc(X.t)}</b></span><span class="sl">/</span><img src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span><b class="st">${esc(X.pair)}</b><small><span id="tk-stock-px">${fmtStockPx(pairPx())}</span> · <span id="tk-stock-mk">${mkTxt(mk)}</span></small></span></a>`; }
+      <a class="pairbig" href="/markets?stock=${esc(X.pair)}" title="Paired with ${esc(X.pair)}"><img class="cl" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span><b>${esc(X.t)}</b></span><span class="sl">/</span><img src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span><b class="st">${esc(X.pair)}</b><small><span id="tk-stock-px">${fmtStockPx(pairPx())}</span>${isStock?` · <span id="tk-stock-mk">${mkTxt(mk)}</span>`:''}</small></span></a>`; }
   function headLive(){ const p=$('#tk-stock-px'); if(p) p.textContent=fmtStockPx(pairPx()); if(isStock){ const mk=SP.market(); const m=$('#tk-stock-mk'); if(m) m.textContent=mkTxt(mk); }
     $('#tk-chart-t').textContent=`${X.t} / ${X.pair}`; $('#tk-chart-r').textContent=`${fmtPrice(X.pxPair)} ${X.pair} · ${X.pair} at ${fmtStockPx(pairPx())}`; }
 
