@@ -4,7 +4,7 @@
    are deployed, `preview` keeps example coins on every page and the launch form in rehearsal mode.
    reownProjectId: public project id from cloud.reown.com; empty keeps the demo wallet. */
 window.INKY = {
-  live: true, prelaunch: false, demo: false, preview: true,
+  live: true, prelaunch: false, demo: false, preview: false,
   reownProjectId: '5b1ae833abd22d348cbf5d53cf58b3b2',
   chainId: 999, native: 'HYPE', chainName: 'HyperEVM',
   rpc: 'https://rpc.hyperliquid.xyz/evm', rpcs: ['https://rpc.hyperliquid.xyz/evm', 'https://rpc.hyperlend.finance'],
@@ -12,13 +12,13 @@ window.INKY = {
   /* logsRpcs: event scans (trades, launches, holders). The official RPC serves 1,000 blocks per eth_getLogs, so the
      wide scans go to HyperLend's RPC first (up to a million blocks a call); the official one is the fallback. */
   logsRpcs: ['https://rpc.hyperlend.finance', 'https://rpc.hyperliquid.xyz/evm'],
-  deployBlock: 0,
+  deployBlock: 49322241,
   /* WHYPE: the canonical wrapped HYPE (deposit/withdraw like WETH9); the site shows it as HYPE */
   weth: '0x5555555555555555555555555555555555555555', usdg: '',
   /* Liqio indexer: empty = read history from the chain directly */
   api: '',
   /* Liqio contracts on HyperEVM: filled in at deploy (see contracts/deployments/liqio-hyperevm.json) */
-  contracts: {"factory": "", "hook": "", "router": "", "tokenDeployer": "", "oracle": "", "poolManager": "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F"},
+  contracts: {"factory":"0x749261Bf054389a380FD0e24D9aCf25538A60313","hook":"0x746301d1924933a5454f30a2828F2b3F63cC80cc","router":"0x6D02009F27a69efeC5b523439fAc684D6e89Ed52","tokenDeployer":"0x8ad94FA70580C3AeAe98b3fd00A170965d7f0086","oracle":"0xC82Af4EC3DB61BF8fb8953d6EACEC08025C4bBA1","poolManager":"0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F"},
   /* quoters on HyperEVM, used to price HYPE <-> pair along a route: Uniswap V4Quoter, PRJX QuoterV2 (V3 fork), Multicall3 */
   quoters: {v4: '0x108Bfe38532C98f8Cd8D7Ab49c9dDAa3675a1c5e', v3: '0x239F11a7A3E08f2B8110D4CA9F6B95d4c8865258', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11'},
   /* crypto pairs besides HYPE: a coin can also pair with a stablecoin. `hl` is the Hyperliquid market the site reads
