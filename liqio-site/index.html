@@ -29,15 +29,19 @@ body[data-page="landing"] .chs img{box-shadow:0 0 0 2px var(--bg)}
 #pg-land .viz{position:relative;width:100%;max-width:640px;margin-left:auto}
 #pg-land .plate{position:relative;aspect-ratio:1/0.76;border-radius:50%/42%;background:#e9e8e1;overflow:hidden}
 #pg-land .plate::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 50% at 50% 48%,rgba(255,255,255,.55),transparent 70%);pointer-events:none}
-#pg-land .orb{position:absolute;top:50%;width:40%;aspect-ratio:1;transform:translateY(-50%);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2}
-#pg-land .orb.coin{left:11%;background:radial-gradient(circle at 36% 30%,#9ff5e3,#33e5c2 45%,#0e9a7c 100%);box-shadow:0 30px 60px -30px rgba(14,154,124,.6),inset 0 -20px 40px rgba(0,0,0,.12),inset 0 12px 24px rgba(255,255,255,.35)}
+#pg-land .orb{position:absolute;top:46%;width:34%;aspect-ratio:1;transform:translateY(-50%);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2}
+#pg-land .orb::before{content:"";position:absolute;left:8%;right:8%;bottom:-9%;height:14%;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.22),rgba(0,0,0,0) 70%);z-index:-1}
+#pg-land .link{position:absolute;left:44%;right:44%;top:46%;height:2px;background:repeating-linear-gradient(90deg,#9aa39d 0 6px,transparent 6px 12px);z-index:1}
+#pg-land .link::after{content:"";position:absolute;left:50%;top:50%;width:26px;height:26px;transform:translate(-50%,-50%);border-radius:50%;background:#121414;color:#fff;font:700 15px/26px var(--disp);text-align:center}
+#pg-land .link i{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1;color:#fff;font:700 15px/1 var(--disp);font-style:normal}
+#pg-land .orb.coin{left:12%;background:radial-gradient(circle at 36% 30%,#9ff5e3,#33e5c2 45%,#0e9a7c 100%);box-shadow:0 30px 60px -30px rgba(14,154,124,.6),inset 0 -20px 40px rgba(0,0,0,.12),inset 0 12px 24px rgba(255,255,255,.35)}
 #pg-land .orb.coin b{font:800 clamp(18px,2.6vw,30px) var(--disp);letter-spacing:-.03em;color:#042e25;text-align:center;line-height:1.05}
-#pg-land .orb.pair{right:11%;background:#fff;box-shadow:0 30px 60px -30px rgba(0,0,0,.35),inset 0 0 0 1px rgba(0,0,0,.06);overflow:hidden}
+#pg-land .orb.pair{right:12%;background:#fff;box-shadow:0 30px 60px -30px rgba(0,0,0,.35),inset 0 0 0 1px rgba(0,0,0,.06);overflow:hidden}
 #pg-land .orb.pair img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 #pg-land .orb.pair.sel{animation:pop .5s cubic-bezier(.2,.8,.2,1)} @keyframes pop{0%{transform:translateY(-50%) scale(.86)}100%{transform:translateY(-50%) scale(1)}}
-#pg-land .pool{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;border-radius:14px;background:rgba(18,20,20,.92);color:#fff;font:600 12px var(--disp);box-shadow:0 14px 30px -14px rgba(0,0,0,.6);white-space:nowrap}
-#pg-land .pool small{font:500 10.5px var(--mono);color:#9fb0aa;letter-spacing:.04em}
-#pg-land .tag{position:absolute;z-index:3;padding:5px 10px;border-radius:999px;background:#fff;border:1px solid var(--line-2);font:500 12px var(--mono);color:var(--fg);white-space:nowrap} #pg-land .tag.l{left:19%;bottom:15%} #pg-land .tag.r{right:19%;bottom:15%}
+#pg-land .pool{position:absolute;left:50%;top:76%;transform:translate(-50%,0);z-index:3;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 16px;border-radius:999px;background:#121414;color:#fff;font:600 12px var(--disp);box-shadow:0 14px 30px -14px rgba(0,0,0,.6);white-space:nowrap}
+#pg-land .pool small{font:500 10.5px var(--mono);color:#9fb0aa}
+#pg-land .tag{position:absolute;z-index:3;padding:5px 10px;border-radius:999px;background:#fff;border:1px solid var(--line-2);font:500 12px var(--mono);color:var(--fg);white-space:nowrap} #pg-land .tag.l{left:17%;top:13%} #pg-land .tag.r{right:17%;top:13%}
 #pg-land .tag .up{color:var(--up)} #pg-land .tag .dn{color:var(--dn)}
 #pg-land .sl{margin-top:22px;padding:0 6px}
 #pg-land .sl .cap{text-align:center;font:400 14px var(--sans);color:var(--fg-2);min-height:22px} #pg-land .sl .cap b{font:600 15px var(--mono);color:var(--fg);margin-right:8px}
@@ -72,7 +76,7 @@ body[data-page="landing"] .chs img{box-shadow:0 0 0 2px var(--bg)}
 #pg-land .cta2 h2{font:800 clamp(30px,3.6vw,46px) var(--disp);letter-spacing:-.045em} #pg-land .cta2 p{margin:12px auto 24px;max-width:56ch;color:#b3bdb9;font-size:16px;line-height:1.55} #pg-land .cta2 .ctas{justify-content:center}
 #pg-land .cta2 .btn.pri{background:#33e5c2;border-color:#33e5c2;color:#03231c} #pg-land .cta2 .btn.line{background:transparent;border-color:#3a4441;color:#fff}
 @media(max-width:1000px){#pg-land .hero{grid-template-columns:minmax(0,1fr);gap:26px;padding-top:28px} #pg-land .viz{margin:0 auto} #pg-land .why3{grid-template-columns:1fr 1fr} #pg-land .steps,#pg-land .why{grid-template-columns:1fr}}
-@media(max-width:640px){#pg-land .lead{font-size:17px} #pg-land .ctas .btn{height:50px;flex:1 1 auto;justify-content:center} #pg-land .why3{grid-template-columns:1fr;gap:18px} #pg-land .tag{font-size:11px} #pg-land .pool{padding:8px 10px;font-size:11px} #pg-land .sl .row{font-size:12px} #pg-land .cta2{padding:34px 20px}}
+@media(max-width:640px){#pg-land .lead{font-size:17px} #pg-land .ctas .btn{height:50px;flex:1 1 auto;justify-content:center} #pg-land .why3{grid-template-columns:1fr;gap:18px} #pg-land .tag{font-size:11px;padding:4px 8px} #pg-land .pool{padding:7px 12px;font-size:11px} #pg-land .orb.coin b{font-size:17px} #pg-land .sl .row{font-size:12px} #pg-land .cta2{padding:34px 20px}}
 </style>
 </head><body data-page="landing">
 <header id="sp-top"></header><div id="sp-tape"></div>
@@ -87,8 +91,9 @@ body[data-page="landing"] .chs img{box-shadow:0 0 0 2px var(--bg)}
     <div class="viz" aria-label="Your coin and the pair it trades against, sharing one pool">
       <div class="plate">
         <div class="orb coin"><b>Your<br>coin</b></div>
+        <div class="link"><i>+</i></div>
         <div class="orb pair" id="ld-orb"><img id="ld-orb-img" alt=""></div>
-        <div class="pool"><span id="ld-pool">Uniswap v4 pool</span><small id="ld-fee">FEE PAID IN HYPE</small></div>
+        <div class="pool"><span id="ld-pool">Uniswap v4 pool</span><small id="ld-fee">fee paid in HYPE</small></div>
         <span class="tag l">1B supply · fixed</span><span class="tag r" id="ld-tag"></span>
       </div>
       <div class="sl"><div class="cap" id="ld-cap"></div><div class="row"><span>HYPE</span><input type="range" id="ld-range" min="0" max="8" value="0" step="1" aria-label="Pick a pair"><span id="ld-last">QQQ</span></div></div>
@@ -154,7 +159,7 @@ body[data-page="landing"] .chs img{box-shadow:0 0 0 2px var(--bg)}
   function show(i,anim){ idx=i; const p=P[i], a=String(p.address).toLowerCase(), m=mkt(), v=px[a], c=ch[a];
     const img=document.getElementById('ld-orb-img'); img.src=p.logo; img.onerror=()=>{ img.onerror=null; img.src='/img/t-default.png'; };
     const orb=document.getElementById('ld-orb'); if(anim){ orb.classList.remove('sel'); void orb.offsetWidth; orb.classList.add('sel'); }
-    document.getElementById('ld-fee').textContent=`FEE PAID IN ${p.symbol.toUpperCase()}`;
+    document.getElementById('ld-fee').textContent=`fee paid in ${p.symbol}`;
     document.getElementById('ld-tag').innerHTML=`${p.ticker} ${fmt(v)}${c==null?'':` <span class="${c>=0?'up':'dn'}">${c>=0?'+':''}${(c*100).toFixed(1)}%</span>`}`;
     document.getElementById('ld-cap').innerHTML=`<b>${p.ticker}</b>${p.kind==='stock'?`${p.name} · ${p.symbol} · NYSE ${m.open?'open':'closed'}`:`${p.name} · trades 24/7`}`;
     range.value=String(i); range.style.setProperty('--p',(i/(P.length-1)*100)+'%'); }
