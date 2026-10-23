@@ -21,7 +21,7 @@ so the two share their shell, pages and conventions (see `DESIGN.md`).
 
 ## Running it
 
-Any static server with clean URLs works for the pages (`/markets` → `markets.html`, `/token/<addr>` → `token.html`).
+The site has no landing page: `/` redirects to `/markets`. Any static server with clean URLs works for the pages (`/markets` → `markets.html`, `/token/<addr>` → `token.html`).
 `charting_library/` is the TradingView library (licensed, not in the repo; here it is a symlink to the Equo copy).
 
 Deploy: a Vercel project (`vercel.json` has the rewrites); copy `charting_library/` into the upload.

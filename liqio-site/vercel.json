@@ -9,6 +9,11 @@
  ],
  "redirects": [
   {
+   "source": "/",
+   "destination": "/markets",
+   "permanent": false
+  },
+  {
    "source": "/portfolio",
    "destination": "/profile",
    "permanent": true
