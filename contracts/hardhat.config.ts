@@ -69,6 +69,14 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: false,
       // Local runs execute the Cancun opcodes OneHook needs.
       hardfork: process.env.FORK_HARDFORK ?? "cancun",
+      ...(process.env.HYPEREVM_FORK === "1"
+        ? {
+            // HyperEVM fork for the Liqio fork test: real WHYPE, USDC, xStocks, PRJX pools and PoolManager.
+            hardfork: process.env.FORK_HARDFORK ?? "cancun",
+            forking: { url: HYPEREVM_RPC_URL, ...(process.env.HYPEREVM_FORK_BLOCK ? { blockNumber: Number(process.env.HYPEREVM_FORK_BLOCK) } : {}) },
+            chainId: 999,
+          }
+        : {}),
       ...(process.env.FORK === "1" && ROBINHOOD_RPC_URL
         ? {
             // Pin a recent hardfork so view calls against the forked chain's
