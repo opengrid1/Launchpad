@@ -25,27 +25,16 @@ body[data-page="landing"] .chs img{box-shadow:0 0 0 2px var(--bg)}
 #pg-land .lead{max-width:520px;margin:0 0 28px;font-size:19px;line-height:1.55;color:var(--fg-2)}
 #pg-land .ctas{display:flex;gap:10px;flex-wrap:wrap}
 #pg-land .ctas .btn{height:54px;padding:0 24px;border-radius:999px;font-size:16px} #pg-land .ctas .btn.line{background:var(--s1)} #pg-land .ctas .btn svg{width:17px;height:17px}
-/* the illustration: a pool of water with the pair tokens floating on it; the chosen one rises */
-#pg-land .viz{position:relative;width:100%;max-width:640px;margin-left:auto}
-#pg-land .plate{position:relative;aspect-ratio:1/0.8;border-radius:36px;background:#ebe9e2;overflow:hidden}
-#pg-land .plate svg{position:absolute;inset:0;width:100%;height:100%}
-#pg-land .tok{position:absolute;left:0;top:0;width:13.5%;aspect-ratio:1;transform:translate(-50%,-50%) scale(.92);border-radius:50%;background:#fff;box-shadow:0 10px 22px -10px rgba(0,0,0,.45),0 0 0 3px #fff;overflow:visible;cursor:pointer;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .4s;z-index:2;animation:bob 3.6s ease-in-out infinite}
-#pg-land .tok img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
-#pg-land .tok.on{transform:translate(-50%,-50%) scale(1.4);z-index:4;box-shadow:0 22px 40px -16px rgba(0,0,0,.5),0 0 0 4px #fff;animation:none}
-#pg-land .tok .lb{position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%) scale(.64);transform-origin:bottom center;white-space:nowrap;padding:5px 9px;border-radius:999px;background:#121414;color:#fff;font:500 11.5px var(--mono);opacity:0;transition:opacity .3s;pointer-events:none}
-#pg-land .tok .lb .up{color:#5fe3a3} #pg-land .tok .lb .dn{color:#ff7a86}
-#pg-land .tok.on .lb{opacity:1}
-#pg-land .tok.dim{opacity:.8}
-@keyframes bob{0%,100%{margin-top:0}50%{margin-top:-5px}}
-#pg-land .coinhint{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);z-index:3;display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:#fff;border:1px solid var(--line-2);font:500 12px var(--sans);color:var(--fg-2);white-space:nowrap}
-#pg-land .coinhint img{width:20px;height:20px;border-radius:50%} #pg-land .coinhint b{color:var(--fg)}
-#pg-land .sl{margin-top:22px;padding:0 6px}
-#pg-land .sl .cap{text-align:center;font:400 14px var(--sans);color:var(--fg-2);min-height:22px} #pg-land .sl .cap b{font:600 15px var(--mono);color:var(--fg);margin-right:8px} #pg-land .sl .pool2{margin-top:4px;font:500 12.5px var(--mono);color:var(--fg-3)}
-#pg-land .sl .row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;margin-top:6px;font:500 14px var(--sans);color:var(--fg-3)}
-#pg-land input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0}
-#pg-land input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(90deg,#121414 var(--p,0%),#dddbd4 var(--p,0%))}
-#pg-land input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;margin-top:-10.5px;border-radius:50%;background:#fff;border:3px solid #121414;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
-#pg-land input[type=range]::-moz-range-track{height:5px;border-radius:999px;background:#dddbd4} #pg-land input[type=range]::-moz-range-progress{height:5px;border-radius:999px;background:#121414} #pg-land input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid #121414;cursor:pointer}
+/* pairs card: the real list, nothing decorative */
+#pg-land .pc{width:100%;max-width:560px;margin-left:auto;border:1px solid var(--line-2);border-radius:20px;background:var(--s1);box-shadow:0 24px 60px -36px rgba(0,0,0,.25);overflow:hidden}
+#pg-land .pc-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);font:600 13px var(--disp)} #pg-land .pc-hd span{font:500 11px var(--mono);color:var(--fg-3)}
+#pg-land .pc-hd .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--up);margin-right:7px;vertical-align:1px}
+#pg-land .pr{display:grid;grid-template-columns:36px minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid var(--line);color:var(--fg);transition:background .12s} #pg-land .pr:last-child{border-bottom:0} #pg-land .pr:hover{background:var(--s2)}
+#pg-land .pr img{width:36px;height:36px;border-radius:50%;background:#fff;object-fit:cover;border:1px solid var(--line)}
+#pg-land .pr .nm b{display:block;font:600 14px var(--disp)} #pg-land .pr .nm small{display:block;font:11.5px var(--mono);color:var(--fg-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-land .pr .px{font:600 14px var(--mono);text-align:right}
+#pg-land .pr .ch{min-width:72px;text-align:right;font:500 12px var(--mono);color:var(--fg-3)} #pg-land .pr .ch.up{color:var(--up)} #pg-land .pr .ch.dn{color:var(--dn)}
+#pg-land .pc-ft{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 18px;background:var(--s2);font:12.5px var(--sans);color:var(--fg-2)} #pg-land .pc-ft a{font-weight:600;color:var(--fg)}
 /* trending strip */
 #pg-land .trend{margin-top:34px}
 #pg-land .trend .th{display:flex;align-items:center;gap:10px;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--fg-3);margin-bottom:10px}
@@ -71,8 +60,8 @@ body[data-page="landing"] .chs img{box-shadow:0 0 0 2px var(--bg)}
 #pg-land .cta2{margin:84px 0 20px;padding:48px 36px;border-radius:28px;background:#121414;color:#fff;text-align:center}
 #pg-land .cta2 h2{font:800 clamp(30px,3.6vw,46px) var(--disp);letter-spacing:-.045em} #pg-land .cta2 p{margin:12px auto 24px;max-width:56ch;color:#b3bdb9;font-size:16px;line-height:1.55} #pg-land .cta2 .ctas{justify-content:center}
 #pg-land .cta2 .btn.pri{background:#33e5c2;border-color:#33e5c2;color:#03231c} #pg-land .cta2 .btn.line{background:transparent;border-color:#3a4441;color:#fff}
-@media(max-width:1000px){#pg-land .hero{grid-template-columns:minmax(0,1fr);gap:26px;padding-top:28px} #pg-land .viz{margin:0 auto} #pg-land .why3{grid-template-columns:1fr 1fr} #pg-land .steps,#pg-land .why{grid-template-columns:1fr}}
-@media(max-width:640px){#pg-land .lead{font-size:17px} #pg-land .ctas .btn{height:50px;flex:1 1 auto;justify-content:center} #pg-land .why3{grid-template-columns:1fr;gap:18px} #pg-land .tag{font-size:10px;padding:3px 7px} #pg-land .orb.coin b{font-size:17px} #pg-land .sl .row{font-size:12px} #pg-land .cta2{padding:34px 20px}}
+@media(max-width:1000px){#pg-land .hero{grid-template-columns:minmax(0,1fr);gap:26px;padding-top:28px} #pg-land .pc{margin:0 auto} #pg-land .why3{grid-template-columns:1fr 1fr} #pg-land .steps,#pg-land .why{grid-template-columns:1fr}}
+@media(max-width:640px){#pg-land .lead{font-size:17px} #pg-land .ctas .btn{height:50px;flex:1 1 auto;justify-content:center} #pg-land .why3{grid-template-columns:1fr;gap:18px} #pg-land .cta2{padding:34px 20px}}
 </style>
 </head><body data-page="landing">
 <header id="sp-top"></header><div id="sp-tape"></div>
@@ -84,17 +73,10 @@ body[data-page="landing"] .chs img{box-shadow:0 0 0 2px var(--bg)}
       <p class="lead">Launch a coin on HyperEVM and pair it with HYPE, USDC or a tokenized stock. It trades in its own Uniswap v4 pool, the fee is paid in the pair, and the opening price comes from Hyperliquid.</p>
       <div class="ctas"><a class="btn pri lg" href="/launch" id="ld-launch"></a><a class="btn lg line" href="/docs/introduction">Docs</a></div>
     </div>
-    <div class="viz" aria-label="Your coin and the pair it trades against, sharing one pool">
-      <div class="plate" id="ld-plate">
-        <svg viewBox="0 0 640 512" preserveAspectRatio="none" aria-hidden="true"><defs><pattern id="dots" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="6" cy="6" r="2.3" fill="#1fc9a6"/></pattern><pattern id="dots2" width="12" height="12" patternUnits="userSpaceOnUse" x="6" y="6"><circle cx="6" cy="6" r="1.6" fill="#0e9a7c"/></pattern><linearGradient id="wfade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity=".25"/></linearGradient><mask id="wm"><rect width="640" height="512" fill="url(#wfade)"/></mask></defs>
-          <path id="ld-water" d="M0 110 C80 90 120 130 200 150 S320 170 400 150 S540 130 640 150 V512 H0 Z" fill="#bff3e6"/>
-          <g mask="url(#wm)"><path d="M0 110 C80 90 120 90 200 110 S320 130 400 110 S540 90 640 110 V512 H0 Z" fill="url(#dots)"/><path d="M0 134 C80 114 120 114 200 134 S320 154 400 134 S540 114 640 134 V512 H0 Z" fill="url(#dots2)" opacity=".8"/></g>
-          <path d="M0 110 C80 90 120 90 200 110 S320 130 400 110 S540 90 640 110" fill="none" stroke="#0e9a7c" stroke-width="3" stroke-linecap="round"/>
-        </svg>
-        <span class="coinhint" id="ld-hint"></span>
-        <div id="ld-toks"></div>
-      </div>
-      <div class="sl"><div class="cap" id="ld-cap"></div><div class="cap pool2" id="ld-pool2"></div><div class="row"><span>HYPE</span><input type="range" id="ld-range" min="0" max="8" value="0" step="1" aria-label="Pick a pair"><span id="ld-last">QQQ</span></div></div>
+    <div class="pc" aria-label="Pairs on Liqio with live prices">
+      <div class="pc-hd"><div><i class="dot"></i>Pairs</div><span id="ld-nyse">Priced by Hyperliquid</span></div>
+      <div id="ld-rows"></div>
+      <div class="pc-ft"><span id="ld-foot">Every pair opens a coin at Hyperliquid's price.</span><a href="/launch">Launch on any pair →</a></div>
     </div>
   </section>
 
@@ -150,31 +132,20 @@ body[data-page="landing"] .chs img{box-shadow:0 0 0 2px var(--bg)}
   const px={}, ch={};
   document.getElementById('ld-chs').innerHTML=P.slice(0,6).map(p=>`<img src="${p.logo}" alt="${p.ticker}" title="${p.ticker}" onerror="this.onerror=null;this.src='/img/t-default.png'">`).join('');
   document.getElementById('ld-mini').innerHTML=P.map(p=>`<span><img src="${p.logo}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'">${p.ticker}</span>`).join('');
-  document.getElementById('ld-last').textContent=P[P.length-1].ticker;
-  const range=document.getElementById('ld-range'); range.max=String(P.length-1);
-  /* the illustration follows the slider: tokens float on the water at their slot; the chosen one rises */
-  const SLOTS=[[50,30],[24,36],[76,36],[12,58],[37,55],[63,55],[88,58],[26,78],[50,76],[74,78]];
-  const toks=document.getElementById('ld-toks');
-  toks.innerHTML=P.map((p,i)=>{ const [x,y]=SLOTS[i%SLOTS.length]; return `<a class="tok" data-i="${i}" href="/launch?pair=${encodeURIComponent(p.symbol)}" style="left:${x}%;top:${y}%;animation-delay:${(i*.37).toFixed(2)}s"><img src="${p.logo}" alt="${p.ticker}" onerror="this.onerror=null;this.src='/img/t-default.png'"><span class="lb"></span></a>`; }).join('');
-  let idx=0, auto=true;
-  function show(i,anim){ idx=i; const p=P[i], a=String(p.address).toLowerCase(), m=mkt(), v=px[a], c=ch[a];
-    document.querySelectorAll('#ld-toks .tok').forEach(t=>{ const k=+t.dataset.i; t.classList.toggle('on',k===i); t.classList.toggle('dim',k!==i); if(k===i) t.querySelector('.lb').innerHTML=`${p.ticker} ${fmt(v)}${c==null?'':` <span class="${c>=0?'up':'dn'}">${c>=0?'+':''}${(c*100).toFixed(1)}%</span>`}`; });
-    const coins=(typeof TOK!=='undefined'?TOK:[]).filter(x=>x.pair===p.symbol).sort((a,b)=>(b.vol||0)-(a.vol||0)), x=coins[0]||null;
-    document.getElementById('ld-hint').innerHTML=x?`<img src="${SP.coinLogo(x)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><b>${esc(x.n)}</b> trades on ${p.ticker} · <span class="${(x.c24||0)>=0?'up':'dn'}">${(x.c24||0)>=0?'+':''}${(x.c24||0).toFixed(1)}%</span>`:`<b>No coin on ${p.ticker} yet.</b> Launch the first one`;
-    document.getElementById('ld-cap').innerHTML=`<b>${p.ticker}</b>${p.kind==='stock'?`${p.name} · ${p.symbol} · NYSE ${m.open?'open':'closed'}`:`${p.name} · trades 24/7`}`;
-    document.getElementById('ld-pool2').textContent=(x?`${x.t} / ${p.ticker} · Uniswap v4 pool · `:'Uniswap v4 pool · ')+`fee paid in ${p.symbol}`;
-    range.value=String(i); range.style.setProperty('--p',(i/(P.length-1)*100)+'%'); }
-  document.querySelectorAll('#ld-toks .tok').forEach(t=>t.addEventListener('click',e=>{ e.preventDefault(); auto=false; show(+t.dataset.i,true); }));
-  range.addEventListener('input',()=>{ auto=false; show(+range.value,true); });
-  setInterval(()=>{ if(auto) show((idx+1)%P.length,true); },3200);
+  const nyse=()=>{ const m=mkt(); return m.detail?`NYSE ${m.open?'open':'closed'} · ${m.detail}`:'Priced by Hyperliquid'; };
+  function rows(){ const open=mkt().open; document.getElementById('ld-nyse').textContent=nyse();
+    document.getElementById('ld-rows').innerHTML=P.map(p=>{ const a=String(p.address).toLowerCase(), v=px[a], c=ch[a]; const sub=p.kind==='stock'?`${p.name} · ${p.symbol}`:p.name;
+      const chs=p.fixed?'<span class="ch">stable</span>':c==null?'<span class="ch">…</span>':`<span class="ch ${c>=0?'up':'dn'}">${c>=0?'+':''}${(c*100).toFixed(2)}%</span>`;
+      return `<a class="pr" href="/launch?pair=${encodeURIComponent(p.symbol)}"><img src="${p.logo}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span class="nm"><b>${p.ticker}</b><small>${sub}</small></span><span class="px">${fmt(v)}</span>${chs}</a>`; }).join(''); }
+  rows(); setInterval(rows,30000);
   async function prices(){ if(!window.HL) return; try{ const got=await HL.prices(); Object.assign(px,got); P.forEach(p=>{ const c=HL.chg(p.address); if(c!=null) ch[String(p.address).toLowerCase()]=c; });
-    const h=px[W]; document.getElementById('ld-hype').textContent=h?`HYPE ${fmt(h)}`:'HYPE'; show(idx,false); }catch(e){ console.warn('prices',e); } }
-  show(0,false); prices(); setInterval(prices,30000); document.addEventListener('hl-prices',prices);
+    const h=px[W]; document.getElementById('ld-hype').textContent=h?`HYPE ${fmt(h)}`:'HYPE'; rows(); }catch(e){ console.warn('prices',e); } }
+  prices(); setInterval(prices,30000); document.addEventListener('hl-prices',prices);
   /* trending: the coins on the markets page */
   function strip(){ const el=document.getElementById('ld-strip'); const list=(typeof TOK!=='undefined'?TOK:[]).slice().sort((a,b)=>(b.vol||0)-(a.vol||0)).slice(0,10);
     if(!list.length){ el.innerHTML='<div class="tc ph">No coins yet. Yours could be first.</div>'; return; }
     el.innerHTML=list.map(x=>`<a class="tc" href="${tokenUrl(x)}"><span class="av2"><img class="lg" src="${SP.coinLogo(x)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><img class="stb" src="${pairImg(x.pair)}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"></span><span class="t"><b>${esc(x.t)}<span class="pc ${(x.c24||0)>=0?'up':'dn'}">${(x.c24||0)>=0?'+':''}${(x.c24||0).toFixed(2)}%</span></b><small><span>$${fmtPrice(x.px)}</span><span>MC ${fmtUsd(x.mc)}</span></small></span></a>`).join(''); }
-  if(typeof SP!=='undefined'&&SP.ready){ SP.ready().then(()=>{ strip(); show(idx,false); SP.onUpdate(()=>{ strip(); show(idx,false); }); }); } else strip();
+  if(typeof SP!=='undefined'&&SP.ready){ SP.ready().then(()=>{ strip(); SP.onUpdate(strip); }); } else strip();
 })();
 </script>
 </body></html>
