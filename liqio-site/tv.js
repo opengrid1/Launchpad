@@ -12,7 +12,7 @@
   const chains=()=>(typeof SP!=='undefined'&&SP.coinChains&&X)?SP.coinChains(X):[MAIN()];
   const nChains=()=>chains().length;
   const multi=()=>nChains()>1;
-  const chainOf=k=>(typeof SP!=='undefined'&&SP.chain&&SP.chain(k))||{name:k,color:'#8a9690'};
+  const chainOf=k=>(typeof SP!=='undefined'&&SP.chain&&SP.chain(k))||{name:k,color:'#948e9b'};
   /** the pair's USD price on a chain (each chain can pair with its own coin); merged series use the coin's main pair */
   const pairUsdFor=k=>(X&&X.byChain&&X.byChain[k]&&X.byChain[k].pairUsd)||(X?X.pairUsd:1);
   const factorFor=(k,u,m)=>(m==='mcap'?SUPPLY*nChains():1)*(u==='USD'?pairUsdFor(k):1);
@@ -58,14 +58,14 @@
       L.close=price; L.high=Math.max(L.high,price); L.low=Math.min(L.low,price); s.prevClose=price; s.cb({...L}); }); };
   window.initTV=function(container,x){
     X=x; draw=multi()?'all':chains()[0]; const mobile=innerWidth<768; const lang=(typeof LANG!=='undefined'&&LANG!=='en')?(LANG==='zh'?'zh':'tr'):'en';
-    const w=new TradingView.widget({ symbol:symFor(mainKey()), interval:'5', container, datafeed, library_path:'/charting_library/', locale:lang, timezone:'Etc/UTC', theme:'dark', autosize:true, fullscreen:false, header_widget_buttons_mode:'fullsize',
-      custom_css_url:'tv-theme.css', custom_font_family:"Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      loading_screen:{ backgroundColor:'#090d0c', foregroundColor:'#33e5c2' },
+    const w=new TradingView.widget({ symbol:symFor(mainKey()), interval:'5', container, datafeed, library_path:'/charting_library/', locale:lang, timezone:'Etc/UTC', theme:'light', autosize:true, fullscreen:false, header_widget_buttons_mode:'fullsize',
+      custom_css_url:'/tv-light.css', custom_font_family:"'Instrument Sans', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      loading_screen:{ backgroundColor:'#ffffff', foregroundColor:'#17131c' },
       disabled_features:['use_localstorage_for_settings','header_symbol_search','symbol_search_hot_key','header_compare','display_market_status','popup_hints','header_saveload','header_quick_search','header_fullscreen_button','go_to_date'].concat(mobile?['left_toolbar','header_undo_redo','header_screenshot','header_settings']:[]),
       enabled_features:['side_toolbar_in_fullscreen_mode'],
       time_frames:[{text:'3m',resolution:'60',description:'3 months'},{text:'1m',resolution:'30',description:'1 month'},{text:'5d',resolution:'5',description:'5 days'},{text:'1d',resolution:'1',description:'1 day'}],
-      overrides:{ 'paneProperties.background':'#090d0c','paneProperties.backgroundType':'solid','paneProperties.backgroundGradientStartColor':'#090d0c','paneProperties.backgroundGradientEndColor':'#090d0c','paneProperties.vertGridProperties.color':'#1b2420','paneProperties.horzGridProperties.color':'#1b2420','paneProperties.legendProperties.showSeriesTitle':true,'symbolWatermarkProperties.transparency':100,'scalesProperties.textColor':'#8a9690','scalesProperties.lineColor':'#1b2420','scalesProperties.backgroundColor':'#090d0c','mainSeriesProperties.candleStyle.upColor':'#3ccf8e','mainSeriesProperties.candleStyle.downColor':'#f6465d','mainSeriesProperties.candleStyle.borderUpColor':'#3ccf8e','mainSeriesProperties.candleStyle.borderDownColor':'#f6465d','mainSeriesProperties.candleStyle.wickUpColor':'#3ccf8e','mainSeriesProperties.candleStyle.wickDownColor':'#f6465d' },
-      studies_overrides:{ 'volume.volume.color.0':'#f6465d','volume.volume.color.1':'#3ccf8e','volume.volume.transparency':65 },
+      overrides:{ 'paneProperties.background':'#ffffff','paneProperties.backgroundType':'solid','paneProperties.backgroundGradientStartColor':'#ffffff','paneProperties.backgroundGradientEndColor':'#ffffff','paneProperties.vertGridProperties.color':'#ebe7df','paneProperties.horzGridProperties.color':'#ebe7df','paneProperties.legendProperties.showSeriesTitle':true,'symbolWatermarkProperties.transparency':100,'scalesProperties.textColor':'#948e9b','scalesProperties.lineColor':'#ebe7df','scalesProperties.backgroundColor':'#ffffff','mainSeriesProperties.candleStyle.upColor':'#08794f','mainSeriesProperties.candleStyle.downColor':'#c2351c','mainSeriesProperties.candleStyle.borderUpColor':'#08794f','mainSeriesProperties.candleStyle.borderDownColor':'#c2351c','mainSeriesProperties.candleStyle.wickUpColor':'#08794f','mainSeriesProperties.candleStyle.wickDownColor':'#c2351c' },
+      studies_overrides:{ 'volume.volume.color.0':'#c2351c','volume.volume.color.1':'#08794f','volume.volume.transparency':65 },
       custom_formatters:{ priceFormatterFactory:()=>({ format:fmtPrice }) } });
     window.tvWidget=w;
     // multichain: the merged series is the main one; in "all" mode each chain gets its own line on the same scale
@@ -73,7 +73,7 @@
     const apply=()=>{ const ch=w.activeChart(), my=++gen; overlays.forEach(id=>{ try{ ch.removeEntity(id,{disableUndo:true}); }catch(e){} }); overlays=[];
       if(!single()) unit='USD';
       ch.setSymbol(symFor(mainKey()),()=>{ if(my!==gen) return;
-        if(draw==='all'){ ch.setChartType(2,()=>{ const st={colorType:'solid',color:'rgba(237,237,239,0.55)',linewidth:1,linestyle:2}; try{ ch.getSeries().setChartStyleProperties(2,st); }catch(e){ w.applyOverrides({'mainSeriesProperties.lineStyle.color':st.color,'mainSeriesProperties.lineStyle.linewidth':1,'mainSeriesProperties.lineStyle.linestyle':2}); } });
+        if(draw==='all'){ ch.setChartType(2,()=>{ const st={colorType:'solid',color:'rgba(23,19,28,0.5)',linewidth:1,linestyle:2}; try{ ch.getSeries().setChartStyleProperties(2,st); }catch(e){ w.applyOverrides({'mainSeriesProperties.lineStyle.color':st.color,'mainSeriesProperties.lineStyle.linewidth':1,'mainSeriesProperties.lineStyle.linestyle':2}); } });
           chains().forEach(k=>{ ch.createStudy('Overlay',true,false,{symbol:symFor(k)},{'style':2,'lineStyle.color':chainOf(k).color,'lineStyle.linewidth':2},{priceScale:'as-series',disableUndo:true}).then(id=>{ if(!id) return; if(my!==gen){ try{ ch.removeEntity(id,{disableUndo:true}); }catch(e){} return; } overlays.push(id); }).catch(()=>{}); }); }
         else ch.setChartType(1); });
       if(dd) dd.applyOptions({title:drawTitle()}); if(window.tvDrawChanged) window.tvDrawChanged(draw); };
@@ -81,8 +81,8 @@
     window.tvDraw=k=>{ if(!multi()||k===draw) return; draw=k; apply(); };
     if(multi()) w.onChartReady(()=>apply());
     w.headerReady().then(()=>{ const group=(pairs,get,set)=>{ const b=w.createButton(); b.style.cursor='default'; b.style.padding='0 16px'; b.style.fontWeight='500'; b.style.whiteSpace='nowrap';
-        b.innerHTML=pairs.map((p,i)=>(i?'<span style="color:#8e8e97;padding:0 6px">/</span>':'')+`<span data-v="${p[0]}" style="cursor:pointer">${p[1]}</span>`).join('');
-        const paint=()=>b.querySelectorAll('[data-v]').forEach(x=>{ x.style.color=x.dataset.v===get()?'#33e5c2':'#eef3f1'; }); paint();
+        b.innerHTML=pairs.map((p,i)=>(i?'<span style="color:#948e9b;padding:0 6px">/</span>':'')+`<span data-v="${p[0]}" style="cursor:pointer">${p[1]}</span>`).join('');
+        const paint=()=>b.querySelectorAll('[data-v]').forEach(x=>{ x.style.color=x.dataset.v===get()?'#0e9a7c':'#17131c'; }); paint();
         b.querySelectorAll('[data-v]').forEach(x=>x.onclick=()=>{ set(x.dataset.v); if(multi()) apply(); else w.setSymbol(symFor(mainKey()), w.activeChart().resolution(), ()=>{}); paint(); }); return b; };
       if(multi()){ const cnt=k=>{ const n=X.byChain&&X.byChain[k]&&X.byChain[k].trades; return n!=null?` · ${n.toLocaleString('en-US')} trades`:''; };
         w.createDropdown({ title:drawTitle(), tooltip:'Which pools to draw', align:'left', items:[

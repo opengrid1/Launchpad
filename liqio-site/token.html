@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Token | Liqio</title><meta name="description" content="Price, chart, trades and holders for a coin launched on Liqio, paired with HYPE or a tokenized stock on HyperEVM.">
-<link rel="icon" href="/img/favicon.svg?v=3" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=3"><meta name="theme-color" content="#030605">
+<link rel="icon" href="/img/favicon.svg?v=3" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=3"><meta name="theme-color" content="#f8f6f2">
 <meta property="og:image" content="/img/og.png?v=3">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/ui.css?v=1">
 <style>
 /* token page, scoped under #pg-token */
@@ -43,7 +43,7 @@
 /* trade panel */
 #pg-token .trade .pb{padding:14px}
 #pg-token .sides{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:var(--r);background:var(--s2)}
-#pg-token .sides button{height:32px;padding:0 18px;border-radius:7px;font-weight:600;color:var(--fg-3);border:1px solid transparent} #pg-token .sides button.on.b{background:var(--up-dim);border-color:rgba(46,189,133,.45);color:var(--up)} #pg-token .sides button.on.s{background:var(--dn-dim);border-color:rgba(246,70,93,.45);color:var(--dn)}
+#pg-token .sides button{height:32px;padding:0 18px;border-radius:7px;font-weight:600;color:var(--fg-3);border:1px solid transparent} #pg-token .sides button.on.b{background:var(--up-dim);border-color:rgba(21,147,79,.45);color:var(--up)} #pg-token .sides button.on.s{background:var(--dn-dim);border-color:rgba(216,48,63,.45);color:var(--dn)}
 #pg-token .tchain{margin-top:12px} #pg-token .tcb{display:flex;align-items:center;gap:9px;width:100%;height:44px;padding:0 12px 0 8px;border:1px solid var(--line-2);border-radius:12px;background:var(--s2);text-align:left;transition:border-color .15s} #pg-token .tcb:hover{border-color:var(--line-3)} #pg-token .tcb .l{font:500 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--fg-3)} #pg-token .tcb img{width:24px;height:24px;border-radius:50%} #pg-token .tcb b{font:600 13.5px var(--disp)} #pg-token .tcb .px{margin-left:auto;font:500 12.5px var(--mono);color:var(--fg-2)} #pg-token .tcb svg{width:14px;height:14px;color:var(--fg-3)} #pg-token .bestb{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;font:600 9.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--up);background:var(--up-dim)}
 #pg-token .cheap{display:flex;align-items:flex-start;gap:8px;margin-top:8px;font-size:12px;color:var(--fg-3);cursor:pointer;line-height:1.4} #pg-token .cheap input{margin:2px 0 0;accent-color:var(--ac)} #pg-token .cheap b{color:var(--fg-2);font-weight:600}
 #pg-token .chc{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px 0 3px;border:1px solid var(--line-2);border-radius:10px;font:600 10px var(--mono);letter-spacing:.04em;color:var(--fg-2)} #pg-token .chc img{width:14px;height:14px;border-radius:50%}
@@ -58,7 +58,7 @@
 #pg-token .slip{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;font:12px var(--mono);color:var(--fg-3);flex-wrap:wrap}
 #pg-token .slip .seg button{height:24px;padding:0 8px;font-size:12px;font-family:var(--mono)} #pg-token .slip input{width:64px;height:28px;padding:0 8px;border:1px solid var(--line-2);border-radius:6px;background:var(--s1);color:var(--fg);font:12px var(--mono);outline:0}
 #pg-token .det{margin-top:8px} #pg-token .det .kv{padding:7px 0;font-size:12.5px} #pg-token .det .kv b.warn{color:var(--amber)} #pg-token .det .kv b.bad{color:var(--dn)}
-#pg-token .cta{margin-top:12px;height:44px;font:600 14px var(--disp);background:var(--up);border-color:var(--up);color:#03170e} #pg-token .cta:hover{background:#3fd197;border-color:#3fd197} #pg-token .cta:disabled{opacity:.55} #pg-token .cta.s{background:var(--dn);border-color:var(--dn);color:#fff} #pg-token .cta.s:hover{background:#f75b70;border-color:#f75b70}
+#pg-token .cta{margin-top:12px;height:44px;font:600 14px var(--disp);background:var(--up);border-color:var(--up);color:#fff} #pg-token .cta:hover{background:#3fd197;border-color:#3fd197} #pg-token .cta:disabled{opacity:.55} #pg-token .cta.s{background:var(--dn);border-color:var(--dn);color:#fff} #pg-token .cta.s:hover{background:#f75b70;border-color:#f75b70}
 #pg-token .note{margin:10px 0 0;font-size:12px;color:var(--fg-3);line-height:1.5}
 #pg-token .sidep .ph2{font-size:14px} #pg-token .sidep .pb{padding:12px 14px} #pg-token .sidep .kv{font-size:12.5px}
 #pg-token .sidep .sboxes{grid-template-columns:1fr 1fr;margin-bottom:10px}

@@ -8,11 +8,12 @@ has one chain, so the chain selector, chain filter, chain column and bridge page
 
 ## Look
 
-Deep-water look, Liqio's own: a near-black page with a faint green cast (`--bg #030605`), bordered panels
-(`.panel`), mono uppercase labels (`.lab`), mini stat boxes (`.sbox`), badges (`.badge`), filter pills (`.pill`),
-one aqua accent (`--ac #33e5c2`) with a glow on the primary action, green and red only for market direction.
-Inter for text, Sora for headings, buttons and pills, JetBrains Mono for numbers, labels, addresses and badges.
-Radii are a little rounder than Liqio's (10/14/16 → 12/16/20).
+Paper look: a warm cream page (`--bg #f8f6f2`), white panels with a hairline ring (`.panel`, `--line #e3ded6`),
+mono uppercase labels (`.lab`), mini stat boxes (`.sbox`), badges (`.badge`), filter pills (`.pill`), ink as the
+primary action (`--ac #17131c`, pill buttons with cream text), green `#08794f` and red `#c2351c` only for market
+direction. Instrument Sans for text, buttons and pills, Archivo for headings, JetBrains Mono for numbers, labels,
+addresses and badges. Buttons and search are full pills (999px); cards 16px. The TradingView chart runs in its
+light theme with `tv-light.css` loaded inside the iframe.
 
 Signature pieces: every coin avatar carries the paired stock's logo pinned to its corner (`.av2` + `.stb`); coin cards show an area sparkline built from the trade index, a 24h buy/sell flow bar, the NYSE status and MCAP / VOL 24H / TRADES boxes; the top bar carries an NYSE clock with a countdown to open or close.
 
@@ -28,9 +29,9 @@ Pages: `index.html` (Home), `launch.html`, `calls.html` (composer, feed with ret
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>... | Liqio</title><meta name="description" content="...">
-<link rel="icon" href="/img/favicon.svg?v=17" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=17"><meta name="theme-color" content="#000000">
+<link rel="icon" href="/img/favicon.svg?v=17" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=17"><meta name="theme-color" content="#f8f6f2">
 <meta property="og:image" content="/img/og.png?v=17">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/ui.css?v=17">
 <style>/* page css, scoped under #pg-<name> */</style>
 </head><body data-page="<name>">
