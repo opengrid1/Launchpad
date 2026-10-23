@@ -19,6 +19,8 @@ contract LiqioTokenDeployer {
 
     /// @notice Sets the factory, once.
     address public immutable admin;
+    /// @notice Setup right of the deployer: wires the factory at deploy time, then renounces. The admin keeps its own.
+    address public owner;
     address public immutable tokenImpl;
     address public immutable divTokenImpl;
     address public factory;
@@ -42,6 +44,7 @@ contract LiqioTokenDeployer {
     mapping(address => bool) public isCoin;
 
     event FactorySet(address indexed factory);
+    event OwnershipRenounced(address indexed owner);
     event CoinCreated(address indexed coin, bytes32 salt, bool dividends);
 
     error NotFactory();
@@ -54,16 +57,24 @@ contract LiqioTokenDeployer {
     constructor(address admin_) {
         if (admin_ == address(0)) revert ZeroAddress();
         admin = admin_;
+        owner = msg.sender;
         tokenImpl = address(new LiqioToken());
         divTokenImpl = address(new LiqioDivToken());
     }
 
     function setFactory(address factory_) external {
-        if (msg.sender != admin) revert NotAdmin();
+        if (msg.sender != admin && msg.sender != owner) revert NotAdmin();
         if (factory != address(0)) revert AlreadySet();
         if (factory_ == address(0)) revert ZeroAddress();
         factory = factory_;
         emit FactorySet(factory_);
+    }
+
+    /// @notice Give up the deployer's setup right. Irreversible.
+    function renounceOwnership() external {
+        if (msg.sender != owner) revert NotAdmin();
+        owner = address(0);
+        emit OwnershipRenounced(msg.sender);
     }
 
     /// @notice The address a coin with launch salt `salt` gets for pair `pairAsset`. Mirrors {deploy}, so the

@@ -23,9 +23,9 @@ import { join } from "path";
  *   EQUO_REFERRAL_BPS      referral share of the platform part, bps (same)
  *   EQUO_CAP_PRESETS       start cap presets in whole USD, comma separated, e.g. 3000,10000,25000 (same)
  *
- * Price sources are set on the oracle when the deployer is the admin; otherwise the calls are printed for
- * the admin. Each HyperCore market is checked against the precompile before it is listed (setCore reverts
- * when the market has no price).
+ * The deployer holds a setup right on the factory, oracle and token deployer (wiring, price sources, presets,
+ * reward split) and gives it up with RENOUNCE=1; the admin keeps its rights. Each HyperCore market is checked
+ * against the precompile before it is listed (setCore reverts when the market has no price).
  */
 
 const HOOK_FLAGS = (1n << 7n) | (1n << 6n) | (1n << 3n) | (1n << 2n);
@@ -141,25 +141,22 @@ async function main() {
   console.log("EquoRouter:", routerAddr);
 
   // 4. Wiring (each one-time). The token deployer's setFactory is admin-only.
-  if (admin === deployer.address) await (await tokenDeployer.setFactory(factoryAddr)).wait();
-  else console.log(`admin step: tokenDeployer.setFactory(${factoryAddr})`);
+  await (await tokenDeployer.setFactory(factoryAddr)).wait();
   await (await hook.setFactory(factoryAddr)).wait();
   await (await factory.setConverter(routerAddr)).wait();
-  console.log("wired: hook.factory, factory.converter (+ hook.router)" + (admin === deployer.address ? ", tokenDeployer.factory" : ""));
+  console.log("wired: tokenDeployer.factory, hook.factory, factory.converter (+ hook.router)");
 
-  // 5. Price sources (admin-only on the oracle).
+  // 5. Price sources (the deployer holds the oracle's setup right until it renounces below).
   const calls: string[] = [];
   for (const s of sources) {
     if (s.kind === "fixed") {
-      if (admin === deployer.address) await (await oracle.setFixed(s.token, s.usd18!)).wait();
-      else calls.push(`oracle.setFixed(${s.token}, ${s.usd18})  // ${s.symbol}`);
+      await (await oracle.setFixed(s.token, s.usd18!)).wait();
     } else {
       const raw = await ethers.provider.call({ to: ORACLE_PX, data: ethers.zeroPadValue(ethers.toBeHex(s.index!), 32) });
       const px = raw.length === 66 ? BigInt(raw) : 0n;
       if (px === 0n) { console.log(`skip ${s.symbol}: market ${s.index} has no oracle price`); continue; }
       console.log(`${s.symbol}: market ${s.index} at $${Number(px) / 10 ** (6 - s.sz!)}${s.mult !== E18 ? ` × ${Number(s.mult) / 1e18}` : ""}${s.erc4626 ? " × share ratio" : ""}`);
-      if (admin === deployer.address) await (await oracle.setCore(s.token, s.index!, s.sz!, s.mult!, s.erc4626!)).wait();
-      else calls.push(`oracle.setCore(${s.token}, ${s.index}, ${s.sz}, ${s.mult}, ${s.erc4626})  // ${s.symbol}`);
+      await (await oracle.setCore(s.token, s.index!, s.sz!, s.mult!, s.erc4626!)).wait();
     }
   }
   if (calls.length) { console.log("admin steps on the oracle:"); for (const c of calls) console.log("  " + c); }
@@ -170,7 +167,12 @@ async function main() {
   const presets = (process.env.EQUO_CAP_PRESETS ?? "").split(",").map((v) => v.trim()).filter(Boolean).map((v) => BigInt(v) * 10n ** 8n);
   if (cb || rf) { await (await factory.setRewardSplit(cb, rf)).wait(); console.log(`reward split: cashback ${cb} bps, referral ${rf} bps of the platform part`); }
   if (presets.length) { await (await factory.setCapPresets(presets)).wait(); console.log("cap presets:", presets.map((p) => `$${p / 10n ** 8n}`).join(", ")); }
-  if (process.env.RENOUNCE === "1") { await (await factory.renounceOwnership()).wait(); console.log("factory setup rights renounced; the admin keeps its own"); }
+  if (process.env.RENOUNCE === "1") {
+    await (await factory.renounceOwnership()).wait();
+    await (await oracle.renounceOwnership()).wait();
+    await (await tokenDeployer.renounceOwnership()).wait();
+    console.log("setup rights renounced on factory, oracle and token deployer; the admin keeps its own");
+  }
 
   const out = {
     network: network.name,

@@ -46,10 +46,13 @@ contract LiqioOracle is IOneOracle {
     }
 
     address public immutable admin;
+    /// @notice Setup right of the deployer: sets sources at deploy time, then renounces. The admin keeps its own.
+    address public owner;
     mapping(address token => Source) public sources;
 
     event SourceSet(address indexed token, Kind kind, uint32 index, uint256 multiplierE18, bool erc4626);
     event SourceRemoved(address indexed token);
+    event OwnershipRenounced(address indexed owner);
 
     error NotAdmin();
     error NoPrice();
@@ -58,11 +61,19 @@ contract LiqioOracle is IOneOracle {
     constructor(address admin_) {
         if (admin_ == address(0)) revert InvalidParams();
         admin = admin_;
+        owner = msg.sender;
     }
 
     modifier onlyAdmin() {
-        if (msg.sender != admin) revert NotAdmin();
+        if (msg.sender != admin && msg.sender != owner) revert NotAdmin();
         _;
+    }
+
+    /// @notice Give up the deployer's setup right. Irreversible.
+    function renounceOwnership() external {
+        if (msg.sender != owner) revert NotAdmin();
+        owner = address(0);
+        emit OwnershipRenounced(msg.sender);
     }
 
     // ---------------------------------------------------------------------
