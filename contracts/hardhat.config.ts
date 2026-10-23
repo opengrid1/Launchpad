@@ -36,13 +36,16 @@ const ONEHOOK_FILES = [
   // Equo (v3 of the OneHook design): same compiler settings
   ["EquoToken.sol", "EquoDivToken.sol", "EquoTokenCreators.sol", "EquoTokenDeployer.sol", "EquoPriceBook.sol", "EquoHook.sol", "EquoFactory.sol", "EquoRouter.sol"].map((f) => `contracts/v4/equo/${f}`),
   // Liqio (Equo on HyperEVM): same compiler settings
-  ["LiqioToken.sol", "LiqioDivToken.sol", "LiqioTokenDeployer.sol", "LiqioOracle.sol", "mocks/LiqioMocks.sol"].map((f) => `contracts/v4/liqio/${f}`),
+  ["LiqioToken.sol", "LiqioDivToken.sol", "LiqioTokenDeployer.sol", "LiqioOracle.sol", "LiqioFactory.sol", "mocks/LiqioMocks.sol"].map((f) => `contracts/v4/liqio/${f}`),
 );
 const ONEHOOK_COMPILER = {
   version: "0.8.26",
   settings: { optimizer: { enabled: true, runs: 40 }, viaIR: true, evmVersion: "cancun" },
 };
 const ETH_RPC_URL = process.env.ETH_RPC_URL ?? "https://ethereum-rpc.publicnode.com";
+// HyperEVM (Hyperliquid's EVM, chain 999): the Liqio deployment target. Contract deployments need big
+// blocks (30M gas) turned on for the deployer; launches run in the 3M-gas small blocks.
+const HYPEREVM_RPC_URL = process.env.HYPEREVM_RPC_URL ?? "https://rpc.hyperliquid.xyz/evm";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -92,6 +95,11 @@ const config: HardhatUserConfig = {
     stable: {
       url: STABLE_RPC_URL,
       chainId: STABLE_CHAIN_ID,
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
+    },
+    hyperevm: {
+      url: HYPEREVM_RPC_URL,
+      chainId: 999,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
     // Ethereum mainnet: the OneHook deployment target.
