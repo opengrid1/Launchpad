@@ -24,7 +24,7 @@ const EXPLORER=(window.INKY&&INKY.explorer)||'https://hyperevmscan.io';
 const EXPLORER_NAME=(window.INKY&&INKY.explorerName)||'Explorer';
 const CHAIN_NAME=(window.INKY&&INKY.chainName)||'HyperEVM';
 const X_HANDLE=(window.INKY&&INKY.x)||'liqiofun';
-const LOGO='/img/logo.svg?v=1';
+const LOGO='/img/logo.svg?v=3';
 const SITE=(window.INKY&&INKY.site)||location.origin;
 
 const SP={

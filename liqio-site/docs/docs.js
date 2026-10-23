@@ -6,7 +6,7 @@
   // mobile sidebar drawer: a copy of the sidebar navigation
   const ov = document.createElement('div'); ov.className = 'ip-ov';
   const tabs = $$('.nav-tabs a').map(a => `<a href="${a.getAttribute('href')}"${a.dataset.active ? ' data-active="1"' : ''}>${a.textContent.trim()}</a>`).join('');
-  ov.innerHTML = `<div class="ip-drawer"><div class="ip-dh"><img src="../img/hero-wordmark.png" alt="Liqio"><button type="button" class="ip-x" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div class="ip-tabs">${tabs}</div><div class="ip-nav lg:text-sm lg:leading-6"></div></div>`;
+  ov.innerHTML = `<div class="ip-drawer"><div class="ip-dh"><img src="../img/hero-wordmark.png?v=3" alt="Liqio"><button type="button" class="ip-x" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div class="ip-tabs">${tabs}</div><div class="ip-nav lg:text-sm lg:leading-6"></div></div>`;
   document.body.appendChild(ov);
   const nav = $('#navigation-items'); if (nav) $('.ip-nav', ov).innerHTML = nav.innerHTML;
   const openDrawer = () => { ov.classList.add('open'); document.body.style.overflow = 'hidden'; };
