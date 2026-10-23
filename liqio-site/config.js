@@ -61,5 +61,7 @@ window.INKY = {
   devBuyMax: 50,
   site: 'https://liqio.fun',
   x: 'liqio_fun',
-  admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'
+  admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
+  /* coins created by these wallets carry the Official tag (the team's own launches); a metadata flag could be faked, a creator address cannot */
+  officialCreators: ['0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b', '0x4E3862c6f000911Bf81F159ee0114B0a1184d68f']
 };

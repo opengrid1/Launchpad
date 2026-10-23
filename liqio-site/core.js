@@ -63,6 +63,8 @@ SP.chain=k=>SP.chains.find(c=>c.key===k)||null;
 SP.mainKey=((SP.chains.find(c=>c.main)||SP.chains[0]||{}).key)||'hyper';
 SP.coinChains=x=>(x&&x.chains&&x.chains.length)?x.chains:[SP.mainKey];
 /** whether chain k has Liqio contracts deployed (preview mode shows every chain as live, but only deployed ones can transact) */
+/** the team's own coins: creator in INKY.officialCreators */
+SP.isOfficial=x=>{ const L=((window.INKY&&INKY.officialCreators)||[]).map(a=>String(a).toLowerCase()); const c=String((x&&x.creator)||'').toLowerCase(); return !!c&&L.includes(c); };
 SP.chainDeployed=k=>{ const c=SP.chain(k); return !!c&&(c.deployed!==undefined?c.deployed:c.live); };
 /** a coin's contract address on chain k: each chain has its own (x.addrs), the main-chain one is x.addr */
 SP.coinAddr=(x,k)=>(x&&x.addrs&&x.addrs[k])||(x&&x.addr)||'';

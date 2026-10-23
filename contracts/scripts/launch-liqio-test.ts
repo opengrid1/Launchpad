@@ -21,7 +21,8 @@ async function main() {
   const divShareBps = Number(process.env.LIQIO_DIV_BPS ?? 0), buybackShareBps = Number(process.env.LIQIO_BB_BPS ?? 0);
   const buybackThreshold = buybackShareBps ? ethers.parseEther(process.env.LIQIO_BB_THRESHOLD_HYPE ?? "0.05") : 0n;
   const genes = { feeMode: 0, feeBps: 100, snipeBps: 0, snipeBlocks: 0, buybackShareBps, divShareBps, maxWalletBps: 0, maxWalletSecs: 0, buybackThreshold };
-  const meta = JSON.stringify({ description: process.env.LIQIO_TEST_DESC ?? "First coin on Liqio: a plain HYPE-paired test launch from the deployer." });
+  // LIQIO_META_FILE: a JSON file with description, image (data URI), website, x, telegram, as the launch form writes it
+  const meta = process.env.LIQIO_META_FILE ? readFileSync(process.env.LIQIO_META_FILE, "utf8").trim() : JSON.stringify({ description: process.env.LIQIO_TEST_DESC ?? "First coin on Liqio: a plain HYPE-paired test launch from the deployer." });
   const p = { name, symbol, metadataURI: meta, pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [] as any[] };
   const salt = ethers.id(`liqio-test-${Date.now()}`);
   const before = await ethers.provider.getBalance(deployer.address);
