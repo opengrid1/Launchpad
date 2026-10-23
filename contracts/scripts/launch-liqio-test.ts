@@ -17,8 +17,11 @@ async function main() {
   const name = process.env.LIQIO_TEST_NAME ?? "Liqio Test";
   const symbol = process.env.LIQIO_TEST_SYMBOL ?? "LQT";
   const dev = ethers.parseEther(process.env.LIQIO_DEV_HYPE ?? "0.02");
-  const genes = { feeMode: 0, feeBps: 100, snipeBps: 0, snipeBlocks: 0, buybackShareBps: 0, divShareBps: 0, maxWalletBps: 0, maxWalletSecs: 0, buybackThreshold: 0n };
-  const meta = JSON.stringify({ description: "First coin on Liqio: a plain HYPE-paired test launch from the deployer." });
+  // optional instincts: LIQIO_DIV_BPS (holder rewards share), LIQIO_BB_BPS and LIQIO_BB_THRESHOLD_HYPE (buyback share and trigger)
+  const divShareBps = Number(process.env.LIQIO_DIV_BPS ?? 0), buybackShareBps = Number(process.env.LIQIO_BB_BPS ?? 0);
+  const buybackThreshold = buybackShareBps ? ethers.parseEther(process.env.LIQIO_BB_THRESHOLD_HYPE ?? "0.05") : 0n;
+  const genes = { feeMode: 0, feeBps: 100, snipeBps: 0, snipeBlocks: 0, buybackShareBps, divShareBps, maxWalletBps: 0, maxWalletSecs: 0, buybackThreshold };
+  const meta = JSON.stringify({ description: process.env.LIQIO_TEST_DESC ?? "First coin on Liqio: a plain HYPE-paired test launch from the deployer." });
   const p = { name, symbol, metadataURI: meta, pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [] as any[] };
   const salt = ethers.id(`liqio-test-${Date.now()}`);
   const before = await ethers.provider.getBalance(deployer.address);
@@ -29,7 +32,7 @@ async function main() {
   const ev = rc!.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "Launched");
   const token = ev!.args.token as string;
   console.log(`launched ${token} in block ${rc!.blockNumber}, gas used ${rc!.gasUsed}, pair price $${ethers.formatUnits(ev!.args.pairUsdPrice, 18)}`);
-  const coin = await ethers.getContractAt("LiqioToken", token);
+  const coin = await ethers.getContractAt(divShareBps ? "LiqioDivToken" : "LiqioToken", token);
   console.log("name/symbol", await coin.name(), await coin.symbol(), "supply", ethers.formatEther(await coin.totalSupply()));
   console.log("creator holds", ethers.formatEther(await coin.balanceOf(deployer.address)), "cap", (await factory.capOf(token)).toString(), "creator", await hook.creatorOf(token));
   console.log("position liquidity", (await factory.positionOf(token)).liquidity.toString(), "total coins", (await factory.totalTokens()).toString());
