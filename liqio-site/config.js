@@ -7,11 +7,13 @@ window.INKY = {
   live: true, prelaunch: false, demo: false, preview: false,
   reownProjectId: '5b1ae833abd22d348cbf5d53cf58b3b2',
   chainId: 999, native: 'HYPE', chainName: 'HyperEVM',
-  rpc: 'https://rpc.hyperliquid.xyz/evm', rpcs: ['https://rpc.hyperliquid.xyz/evm', 'https://rpc.hyperlend.finance'],
+  rpc: 'https://rpc.hyperliquid.xyz/evm', rpcs: ['https://rpc.hyperliquid.xyz/evm', 'https://hyperliquid-json-rpc.stakely.io'],
   explorer: 'https://hyperevmscan.io', explorerName: 'HyperEVMScan',
-  /* logsRpcs: event scans (trades, launches, holders). The official RPC serves 1,000 blocks per eth_getLogs, so the
-     wide scans go to HyperLend's RPC first (up to a million blocks a call); the official one is the fallback. */
-  logsRpcs: ['https://rpc.hyperlend.finance', 'https://rpc.hyperliquid.xyz/evm'],
+  /* logsRpcs: event scans (trades, launches, holders), tried in order. HyperLend's RPC rate-limits log scans, so the
+     official node goes first with two public mirrors behind it. */
+  logsRpcs: ['https://rpc.hyperliquid.xyz/evm', 'https://hyperliquid-json-rpc.stakely.io', 'https://rpc.hypurrscan.io'],
+  /* every public HyperEVM node caps eth_getLogs at 1,000 blocks a call; the scanners chunk to this and run chunks in parallel */
+  logsChunk: 1000,
   deployBlock: 49322241,
   /* WHYPE: the canonical wrapped HYPE (deposit/withdraw like WETH9); the site shows it as HYPE */
   weth: '0x5555555555555555555555555555555555555555', usdg: '',

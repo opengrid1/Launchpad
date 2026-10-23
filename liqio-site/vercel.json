@@ -49,7 +49,7 @@
    ]
   },
   {
-   "source": "/(chain|wallet|app|pages|tv|avatar|i18n|data).js",
+   "source": "/(chain|wallet|app|pages|tv|avatar|i18n|data|config|equo|hl|preview|core|api|sp-[a-z]+).js",
    "headers": [
     {
      "key": "Cache-Control",

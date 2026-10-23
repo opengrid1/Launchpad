@@ -126,9 +126,14 @@
       try {
         const p = new E.JsonRpcProvider(url, Number(cfg.chainId || 999), { staticNetwork: true });
         const latest = await p.getBlockNumber();
+        // chunk to the RPC's eth_getLogs range (HyperEVM's public nodes serve 1,000 blocks a call), a few chunks at a time
+        const chunk = Number(cfg.logsChunk || 50_000), par = cfg.logsChunk ? 8 : 1;
+        const starts = [];
+        for (let from = Number(cfg.deployBlock || 0); from <= latest; from += chunk) starts.push(from);
         const out = [];
-        for (let from = Number(cfg.deployBlock || 0); from <= latest; from += 50_000) {
-          out.push(...(await p.getLogs({ ...filter, fromBlock: from, toBlock: Math.min(latest, from + 49_999) })));
+        for (let i = 0; i < starts.length; i += par) {
+          const got = await Promise.all(starts.slice(i, i + par).map((from) => p.getLogs({ ...filter, fromBlock: from, toBlock: Math.min(latest, from + chunk - 1) })));
+          for (const g of got) out.push(...g);
         }
         return out;
       } catch (e) { last = e; }
