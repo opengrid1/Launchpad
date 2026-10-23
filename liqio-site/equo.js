@@ -244,8 +244,10 @@
     decimalsOf: (token) => new E.Contract(token, ["function decimals() view returns (uint8)"], provider).decimals().then(Number),
     async oracleSource(token) {
       const o = new E.Contract(await EQ.oracleAddr(), ORACLE_ABI, provider);
-      const [s, px] = await Promise.all([o.sources(token), o.price(token).catch(() => 0n)]);
-      return { kind: Number(s.kind), index: Number(s.index), szDecimals: Number(s.szDecimals), decimals: Number(s.decimals), erc4626: !!s.erc4626, multiplier: Number(s.multiplierE18) / 1e18, fixedUsd: Number(s.fixedUsd18) / 1e18, usd: Number(px) / 1e18 };
+      const [s, px, dec] = await Promise.all([o.sources(token), o.price(token).catch(() => 0n), EQ.decimalsOf(token).catch(() => 18)]);
+      // the oracle quotes USD per 1e18 base units; show USD per whole token
+      const scale = 1e18 * 10 ** (18 - dec);
+      return { kind: Number(s.kind), index: Number(s.index), szDecimals: Number(s.szDecimals), decimals: dec, erc4626: !!s.erc4626, multiplier: Number(s.multiplierE18) / 1e18, fixedUsd: Number(s.fixedUsd18) / scale, usd: Number(px) / scale };
     },
     async setFixed(token, usd18) { const o = await W(await EQ.oracleAddr(), ORACLE_ABI); return tx(() => o.setFixed(token, usd18)); },
     async setCore(token, index, sz, multE18, erc4626) { const o = await W(await EQ.oracleAddr(), ORACLE_ABI); return tx(() => o.setCore(token, index, sz, multE18, erc4626)); },
