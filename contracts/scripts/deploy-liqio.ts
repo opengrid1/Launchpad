@@ -3,7 +3,7 @@ import { writeFileSync, mkdirSync, readFileSync } from "fs";
 import { join } from "path";
 
 /**
- * Deploy Liqio (Equo on HyperEVM: clone coins, HyperCore oracle, factory without collect) to HyperEVM.
+ * Deploy Liqio (Equo on HyperEVM: clone coins, HyperCore oracle, the Equo factory with its admin collect) to HyperEVM.
  *
  *   npx hardhat run scripts/deploy-liqio.ts --network hyperevm   (needs LIQIO_CONFIRM_DEPLOY=1)
  *   DRY_RUN=1 npx hardhat run scripts/deploy-liqio.ts            (local rehearsal: own PoolManager, WHYPE, mocked precompile)
@@ -14,7 +14,7 @@ import { join } from "path";
  *
  * Env:
  *   PRIVATE_KEY            deployer (pays gas; keeps setup rights only until RENOUNCE)
- *   ONEHOOK_ADMIN          immutable admin of factory and oracle: pause, listings, metadata, fee recipient, price sources
+ *   ONEHOOK_ADMIN          immutable admin of factory and oracle: pause, listings, metadata, fee recipient, collect, price sources
  *   ONEHOOK_FEE_RECIPIENT  platform fee sink (default: admin)
  *   POOL_MANAGER           Uniswap v4 PoolManager (default: HyperEVM's)
  *   WETH_ADDRESS           WHYPE (default: 0x5555…5555)
@@ -166,7 +166,7 @@ async function main() {
   const out = {
     network: network.name,
     chainId: Number((await ethers.provider.getNetwork()).chainId),
-    model: "liqio-v1: equo hook + router, clone coins, HyperCore oracle, factory without collect (flags 0xCC)",
+    model: "liqio-v1: equo hook + router + factory (admin collect), clone coins, HyperCore oracle (flags 0xCC)",
     deployedAt: new Date().toISOString(),
     deployer: deployer.address,
     admin,

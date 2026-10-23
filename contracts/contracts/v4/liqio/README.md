@@ -1,6 +1,6 @@
 # Liqio contracts (v1)
 
-Liqio is Equo on HyperEVM: the same hook and router, a factory without the admin `collect`, coins that are
+Liqio is Equo on HyperEVM: the same hook, router and factory (admin `collect` included), coins that are
 EIP-1167 clones so a launch fits HyperEVM's 3M-gas small block, and an oracle that reads HyperCore's prices
 from the precompile instead of a keeper.
 
@@ -8,7 +8,7 @@ from the precompile instead of a keeper.
 
 | File | What it is |
 |---|---|
-| `LiqioFactory.sol` | `EquoFactory` minus `collect`, the `Collected` event and the unlock action behind them. Nothing on any Liqio contract removes launch liquidity. |
+| `LiqioFactory.sol` | `EquoFactory` speaking to the clone deployer and the HyperCore oracle. The admin keeps the disclosed `collect` (pulls a share of a launch position, logs `Collected`, never touches fee pots). The hook has no liquidity surface. |
 | `LiqioToken.sol`, `LiqioDivToken.sol` | The coin, as an initialisable implementation behind minimal proxies. Same surface as the Equo coins (permit, burn, holder rewards). |
 | `LiqioTokenDeployer.sol` | Clones a coin at the first salt whose address sorts below the pair token and mints the supply to the factory. Same `deploy` / `predict` interface the factory already speaks. |
 | `LiqioOracle.sol` | `IOneOracle` over HyperCore's oracle price precompile (`0x…0807`): perps by index, HIP-3 markets at `10000 * dex + index`, a multiplier (SPY at a tenth of the S&P 500) and the ERC-4626 share ratio of a wrapped xStock. Stablecoins are fixed. |
@@ -19,7 +19,7 @@ from the precompile instead of a keeper.
 
 | Contract | Bytes (limit 24,576) |
 |---|---|
-| LiqioFactory | 23,040 |
+| LiqioFactory | 24,435 |
 | EquoHook | 17,319 |
 | EquoRouter | 8,424 |
 | LiqioTokenDeployer | 2,407 |

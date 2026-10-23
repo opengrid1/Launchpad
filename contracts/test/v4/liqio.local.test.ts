@@ -8,7 +8,8 @@ import { join } from "path";
  * Liqio (Equo on HyperEVM) on a fresh local chain with a real Uniswap v4 PoolManager.
  *
  * What this proves on top of the Equo suite:
- *   - the Liqio factory has no collect: no function and no unlock action removes launch liquidity;
+ *   - liquidity: the hook has none, trading never moves it, and the only function that touches a launch
+ *     position is the admin's disclosed collect, as on Equo;
  *   - a coin is an EIP-1167 clone whose implementation can never be initialised, and a launch (clone + pool +
  *     wiring + dev buy) fits HyperEVM's 3M-gas small block;
  *   - the oracle reads HyperCore's price precompile (mocked at 0x…0807): szDecimals scaling, HIP-3 market
@@ -37,7 +38,7 @@ const NO_KEY = { currency0: ethers.ZeroAddress, currency1: ethers.ZeroAddress, f
 const HOP_T = "tuple(uint8 dex,address pool,tuple(address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key)[]";
 const route = (dex: number, pool: string) => ethers.AbiCoder.defaultAbiCoder().encode([HOP_T], [[{ dex, pool, key: NO_KEY }]]);
 
-describe("Liqio: clone coins, HyperCore oracle, stock pairs, no collect (local)", function () {
+describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (local)", function () {
   this.timeout(600_000);
 
   async function deployStack() {
@@ -121,11 +122,12 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, no collect (local)"
     return ev ? { fee: ev.args.fee as bigint, bps: ev.args.bps as bigint } : { fee: 0n, bps: 0n };
   }
 
-  it("has no collect: no function, no event, no unlock action removes the launch position", async () => {
-    const { factory, hook, hookAddr, admin, creator, trader, router, pm } = await deployStack();
+  it("only the admin's disclosed collect touches liquidity (as on Equo); the hook has none; trading never moves it", async () => {
+    const { factory, hook, hookAddr, admin, creator, trader, router, pm, whype } = await deployStack();
     const facNames = factory.interface.fragments.filter((f: any) => f.type === "function").map((f: any) => f.name);
-    for (const n of ["collect", "unwindPosition", "removeLiquidity", "withdraw"]) expect(facNames).to.not.include(n);
-    expect(factory.interface.fragments.some((f: any) => f.type === "event" && f.name === "Collected")).to.equal(false);
+    expect(facNames).to.include("collect");
+    for (const n of ["unwindPosition", "removeLiquidity", "withdraw"]) expect(facNames).to.not.include(n);
+    expect(factory.interface.fragments.some((f: any) => f.type === "event" && f.name === "Collected")).to.equal(true);
     const hookNames = hook.interface.fragments.filter((f: any) => f.type === "function").map((f: any) => f.name);
     for (const n of ["collect", "removeLiquidity"]) expect(hookNames).to.not.include(n);
     const perms = await hook.getHookPermissions();
@@ -136,10 +138,20 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, no collect (local)"
     const { token } = await launch(factory, creator, FLAT, ethers.parseEther("1"));
     const pos = await factory.positionOf(token);
     expect(pos.liquidity).to.be.gt(0n);
-    // the action the Equo factory used for collect is rejected here, from anyone, admin included
+    await expect(factory.connect(trader).collect(token, 10_000, trader.address)).to.be.revertedWithCustomError(factory, "NotAdmin");
     await expect(pm.connect(admin).unlock(ethers.AbiCoder.defaultAbiCoder().encode(["uint8", "bytes"], [2, "0x"]))).to.be.reverted;
     await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("2") })).wait();
     expect((await factory.positionOf(token)).liquidity).to.equal(pos.liquidity);
+
+    // the admin's collect pulls the share it names, logs it, and leaves the fee pots alone
+    const owedBefore = await hook.creatorOwed(token);
+    const coin = await ethers.getContractAt("LiqioToken", token);
+    const w0 = await whype.balanceOf(admin.address), c0 = await coin.balanceOf(admin.address);
+    await expect(factory.connect(admin).collect(token, 1_000, admin.address)).to.emit(factory, "Collected");
+    expect((await factory.positionOf(token)).liquidity).to.equal(pos.liquidity - pos.liquidity / 10n);
+    expect((await whype.balanceOf(admin.address)) + (await coin.balanceOf(admin.address))).to.be.gt(w0 + c0);
+    expect(await hook.creatorOwed(token)).to.equal(owedBefore);
+    await expect(router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("0.1") })).to.emit(hook, "FeeTaken");
   });
 
   it("launches a clone coin on HYPE inside a small block, implementation sealed, creator paid in HYPE", async () => {
@@ -329,7 +341,7 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, no collect (local)"
     expect(await coin.balanceOf(outsider.address)).to.be.gt(SUPPLY / 100n);
   });
 
-  it("keeps the Equo admin surface minus collect: pause, hidden, blocked pair, presets, fee recipient", async () => {
+  it("keeps the Equo admin surface: pause, hidden, blocked pair, presets, fee recipient", async () => {
     const { factory, admin, creator, trader, feeWallet, USDC, POOL_USDC, whype, hook, router } = await deployStack();
     await (await factory.connect(admin).pause()).wait();
     await expect(launch(factory, creator, FLAT, 0n, "X")).to.be.revertedWithCustomError(factory, "LaunchesPaused");

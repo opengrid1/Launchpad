@@ -27,8 +27,8 @@ interface ILiqioPairRouter {
 }
 
 /// @title LiqioFactory
-/// @notice One-transaction launcher for Liqio coins on HyperEVM / Uniswap v4. The Equo factory without the
-///         admin `collect`: no function on this contract removes launch liquidity.
+/// @notice One-transaction launcher for Liqio coins on HyperEVM / Uniswap v4: the Equo factory speaking to the
+///         clone token deployer and the HyperCore oracle. The admin keeps the same disclosed `collect`.
 ///         A coin is paired with WETH or any token the oracle can price
 ///         (tokenized gold, every Ondo tokenized stock). The whole 1B supply
 ///         goes into the pool at the start cap as a single position that THIS
@@ -171,6 +171,7 @@ contract LiqioFactory is ReentrancyGuard, IUnlockCallback {
     event ConverterSet(address indexed converter);
     event OwnershipRenounced();
     event TokenBlocked(address indexed token, bool blocked);
+    event Collected(address indexed token, uint16 bps, uint128 liquidity, uint256 coins, uint256 pair, address indexed to);
     event StartCapSet(uint256 usd8);
     event CapPresetsSet(uint64[] usd8);
     event CreatorMetadataSet(address indexed token, string uri);
@@ -305,6 +306,25 @@ contract LiqioFactory is ReentrancyGuard, IUnlockCallback {
         if (usd8 < 1_000e8 || usd8 > 100_000e8) revert InvalidParams();
         _capPresets[0] = uint64(usd8);
         emit StartCapSet(usd8);
+    }
+
+    /// @notice Admin-only: pull `bps` of a coin's launch position (coins and
+    ///         pair) out of its pool to `recipient`. Not reversible. Same as
+    ///         OneHook's deployed factory: the one power anyone has over pool
+    ///         liquidity; the hook has none. The fee pots owed to creators,
+    ///         holders and buybacks, and the rewards owed to traders, are never touched.
+    function collect(address token, uint16 bps, address recipient) external onlyAdmin nonReentrant returns (uint256 coins, uint256 pair) {
+        if (bps == 0 || bps > 10_000 || recipient == address(0)) revert InvalidParams();
+        Listing storage l = listings[token];
+        if (l.createdAt == 0) revert InvalidParams();
+        Position storage pos = positions[token];
+        uint128 removed = uint128((uint256(pos.liquidity) * bps) / 10_000);
+        if (removed == 0) revert InvalidParams();
+        pos.liquidity -= removed;
+        PoolKey memory key = _key(token, l.pair);
+        bytes memory res = poolManager.unlock(abi.encode(uint8(2), abi.encode(key, pos.tickLower, pos.tickUpper, removed, recipient)));
+        (coins, pair) = abi.decode(res, (uint256, uint256));
+        emit Collected(token, bps, removed, coins, pair, recipient);
     }
 
     function capPresets() external view returns (uint64[] memory) {
@@ -623,7 +643,19 @@ contract LiqioFactory is ReentrancyGuard, IUnlockCallback {
             if (coinOut != 0) poolManager.take(key.currency0, to, coinOut);
             return abi.encode(coinOut);
         }
-        revert InvalidParams();
+        if (action != 2) revert InvalidParams();
+        (PoolKey memory ck, int24 cl, int24 cu, uint128 removed, address recipient) = abi.decode(payload, (PoolKey, int24, int24, uint128, address));
+        (BalanceDelta cd,) = poolManager.modifyLiquidity(ck, ModifyLiquidityParams({tickLower: cl, tickUpper: cu, liquidityDelta: -int256(uint256(removed)), salt: bytes32(0)}), "");
+        uint256 coinsOut = _takeTo(ck.currency0, cd.amount0(), recipient);
+        uint256 pairOut = _takeTo(ck.currency1, cd.amount1(), recipient);
+        return abi.encode(coinsOut, pairOut);
+    }
+
+    /// @dev Take a positive delta straight to `to`; returns the amount taken.
+    function _takeTo(Currency currency, int128 amount, address to) internal returns (uint256 value) {
+        if (amount <= 0) return 0;
+        value = uint256(uint128(amount));
+        poolManager.take(currency, to, value);
     }
 
     /// @dev Settle what this contract owes the PoolManager for `currency` (a negative delta).
