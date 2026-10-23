@@ -58,7 +58,7 @@
     return {
       addr: s.addr, n: s.n, t: s.t, img: s.img, desc: s.desc, pair: s.pair, pairAddr: String(st.address || '').toLowerCase(), pairUsd,
       px: pxNow, pxPair: pxNow / pairUsd, mc: pxNow * SUP, c24: (pxNow / first24 - 1) * 100, vol, trades: trades.length, traders: wallets.length, h: wallets.length,
-      createdAt: created, age, feeBps: s.fee, rewards: s.rewards, genes: s.genes, creator: wallets[0], links: { x: 'https://x.com/' + (cfg.x || 'liqiofun') },
+      createdAt: created, age, feeBps: s.fee, rewards: s.rewards, genes: s.genes, creator: wallets[0], links: { x: 'https://x.com/' + (cfg.x || 'liqio_fun') },
       liq: pxNow * SUP * 0.42, liqPair: pxNow * SUP * 0.42 / pairUsd, totalCreatorFees: vol * s.fee / 1e4 * 0.6 / pairUsd * 3, creatorOwed: 0, buybackPot: 0, dividendPot: 0,
       poolId: '0x' + s.addr.slice(2).padEnd(64, '0'), chains, addrs: { [MAIN]: s.addr }, byChain, mock: true, hidden: false,
     };

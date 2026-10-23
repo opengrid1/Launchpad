@@ -23,7 +23,7 @@ const WETH=((window.INKY&&INKY.weth)||'0x555555555555555555555555555555555555555
 const EXPLORER=(window.INKY&&INKY.explorer)||'https://hyperevmscan.io';
 const EXPLORER_NAME=(window.INKY&&INKY.explorerName)||'Explorer';
 const CHAIN_NAME=(window.INKY&&INKY.chainName)||'HyperEVM';
-const X_HANDLE=(window.INKY&&INKY.x)||'liqiofun';
+const X_HANDLE=(window.INKY&&INKY.x)||'liqio_fun';
 const LOGO='/img/logo.svg?v=3';
 const SITE=(window.INKY&&INKY.site)||location.origin;
 

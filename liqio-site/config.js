@@ -60,6 +60,6 @@ window.INKY = {
   /* the creator's first buy, in HYPE: the form caps it here */
   devBuyMax: 50,
   site: 'https://liqio.fun',
-  x: 'liqiofun',
+  x: 'liqio_fun',
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'
 };
