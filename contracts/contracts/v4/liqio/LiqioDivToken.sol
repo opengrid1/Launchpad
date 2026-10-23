@@ -68,6 +68,7 @@ contract LiqioDivToken is LiqioToken {
         address converter_,
         address weth_
     ) external initializer {
+        if (msg.sender != deployer) revert NotDeployer();
         if (pairAsset_ == address(0) || hook_ == address(0) || weth_ == address(0) || factory_ == address(0)) revert InvalidParams();
         pairAsset = pairAsset_;
         poolManager = poolManager_;

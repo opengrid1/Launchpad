@@ -174,6 +174,9 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     const impl = await ethers.getContractAt("LiqioToken", await tokenDeployer.tokenImpl());
     await expect(impl.initialize("x", "x", "x", 1, creator.address)).to.be.reverted;
     await expect(coin.initialize("x", "x", "x", 1, creator.address)).to.be.reverted;
+    expect(await coin.deployer()).to.equal(await tokenDeployer.getAddress()); // only the token deployer may initialise a clone
+    const fresh = await (await ethers.getContractFactory("LiqioToken")).deploy();
+    await expect(fresh.connect(trader).initialize("x", "x", "x", 1, trader.address)).to.be.reverted;
     expect(await coin.balanceOf(creator.address)).to.be.gt(0n); // dev buy
 
     // trades pay the fee in WHYPE; the creator is paid in HYPE

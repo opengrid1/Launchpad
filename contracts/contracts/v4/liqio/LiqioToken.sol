@@ -14,13 +14,20 @@ import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/
 ///         of code instead of 13 KB and fits inside HyperEVM's 3M-gas small blocks. A clone is initialized in
 ///         the same transaction that creates it, by the token deployer; the implementation itself can never be.
 contract LiqioToken is Initializable, ERC20Upgradeable, ERC20PermitUpgradeable {
+    /// @notice The token deployer that created this implementation: the only caller allowed to initialise a clone.
+    ///         A clone is initialised in the transaction that creates it, so no stranger can ever claim one.
+    address public immutable deployer;
     string private _metadataURI;
 
+    error NotDeployer();
+
     constructor() {
+        deployer = msg.sender;
         _disableInitializers();
     }
 
     function initialize(string calldata name_, string calldata symbol_, string calldata uri, uint256 supply, address to) external virtual initializer {
+        if (msg.sender != deployer) revert NotDeployer();
         _init(name_, symbol_, uri, supply, to);
     }
 
