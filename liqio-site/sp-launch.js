@@ -3,7 +3,7 @@
 let launchRepaint=null;
 function launchInit(){
   const pg=$('#pg-launch'); if(!pg||launchRepaint) return;
-  const g=id=>document.getElementById(id);
+  const NIL=document.createElement('div'); const g=id=>document.getElementById(id)||NIL; /* the summary panel is gone; writes to its ids land on a detached node */
   const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
   const num=(id,d)=>{ const v=parseFloat(g(id).value); return isFinite(v)?v:d; };
   const IMG_IC='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>';

@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="/ui.css?v=1">
 <style>
 #pg-launch{max-width:1100px;margin:0 auto}
-#pg-launch .wiz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+#pg-launch .wiz{display:grid;grid-template-columns:minmax(0,1fr);max-width:640px;margin:0 auto;gap:20px;align-items:start}
 #pg-launch .form{padding:28px;border-color:var(--ac-line);box-shadow:0 0 40px rgba(23,19,28,.06)}
 #pg-launch .eyebrow{display:block;font:400 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
 #pg-launch h1,#pg-launch h2{font-size:30px;margin-top:4px} #pg-launch h1 em,#pg-launch h2 em{font-style:normal;color:var(--ac)}
@@ -157,17 +157,6 @@
       </div>
     </div>
 
-    <aside class="wiz-side panel prev" id="sum">
-      <h2>Preview</h2>
-      <div class="pcard"><div class="top"><div class="sm-logo" id="sm-logo">TOK</div><div class="nm"><div><b id="sm-name">Token name</b><small id="sm-sym">$TOKEN</small></div><div class="pr" id="sm-pair">Pick a pair</div></div><span class="pch" id="sm-chs"></span></div>
-        <svg class="spark" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#33e5c2" stop-opacity=".35"/><stop offset="1" stop-color="#33e5c2" stop-opacity="0"/></linearGradient></defs><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16 L297 80 L3 80 Z" fill="url(#pg)"/><path d="M3 70 L30 66 L55 68 L80 58 L105 60 L130 50 L155 52 L180 40 L205 44 L230 30 L255 34 L280 20 L297 16" fill="none" stroke="#33e5c2" stroke-width="1.5" stroke-linejoin="round"/></svg>
-        <div class="flow"><span class="lab">Flow 24h</span><span class="num">no trades yet</span></div><div class="split"><i class="b" style="width:0"></i></div>
-        <div class="sboxes"><div class="sbox"><span class="lab">Mcap</span><b id="sm-cap">$3,000</b></div><div class="sbox"><span class="lab">Volume</span><b>$0</b></div><div class="sbox"><span class="lab">Trades</span><b>0</b></div></div></div>
-      <div class="sboxes kboxes"><div class="sbox"><span class="lab">Trade fee</span><b id="sm-fee">1%</b></div><div class="sbox"><span class="lab">Supply</span><b id="sm-sup">1B</b></div><div class="sbox"><span class="lab">Dev buy</span><b id="sm-dev">None</b></div><div class="sbox"><span class="lab">Creator share</span><b id="sm-cr">60%</b></div></div>
-      <div class="sboxes kboxes" style="grid-template-columns:1fr 1fr"><div class="sbox"><span class="lab">Options</span><b id="sm-opts">None</b></div><div class="sbox"><span class="lab">Status</span><b id="sm-step">Ready</b></div></div>
-      <div class="lfee" id="sm-lfee"></div>
-      <p class="pnote" id="sm-note">Liquidity cannot be withdrawn.</p>
-    </aside>
   </div>
 </div></div></main>
 <footer id="sp-foot"></footer>
