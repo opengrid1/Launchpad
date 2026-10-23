@@ -9,15 +9,20 @@
   const pairs = (cfg.cryptoPairs || []).concat(cfg.stocks || []);
   const C = window.CHAIN;
   const ratios = {};
-  let cache = {}, at = 0, inflight = null;
+  let cache = {}, chg = {}, at = 0, inflight = null;
 
   async function mids() {
     const out = {};
     const q = async (body) => { const r = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); if (!r.ok) throw new Error('hl ' + r.status); return r.json(); };
     const want = new Set(pairs.map((p) => p.hl).filter(Boolean));
     const dexes = new Set([...want].map((k) => (k.includes(':') ? k.split(':')[0] : '')));
-    await Promise.all([...dexes].map(async (dex) => { try { Object.assign(out, await q(dex ? { type: 'allMids', dex } : { type: 'allMids' })); } catch (e) { console.warn('hl mids', dex, e); } }));
+    const prev = {};
+    await Promise.all([...dexes].map(async (dex) => {
+      try { Object.assign(out, await q(dex ? { type: 'allMids', dex } : { type: 'allMids' })); } catch (e) { console.warn('hl mids', dex, e); }
+      try { const m = await q(dex ? { type: 'metaAndAssetCtxs', dex } : { type: 'metaAndAssetCtxs' }); (m[0].universe || []).forEach((u, i) => { const k = (dex && !u.name.includes(':') ? dex + ':' : '') + u.name; prev[k] = Number(m[1][i].prevDayPx) || 0; }); } catch (e) { console.warn('hl ctx', dex, e); }
+    }));
     if (!('HYPE' in out)) { try { Object.assign(out, await q({ type: 'allMids' })); } catch {} }
+    out.__prev = prev;
     return out;
   }
   async function ratioOf(p) {
@@ -32,20 +37,23 @@
   }
   async function load() {
     const m = await mids();
-    const next = {};
-    if (m.HYPE) next[WETH] = Number(m.HYPE);
+    const next = {}, nchg = {}, prev = m.__prev || {};
+    if (m.HYPE) { next[WETH] = Number(m.HYPE); if (prev.HYPE) nchg[WETH] = Number(m.HYPE) / prev.HYPE - 1; }
     await Promise.all(pairs.map(async (p) => {
       let v = 0;
       if (p.fixed) v = Number(p.fixed);
       else if (p.hl && m[p.hl]) v = Number(m[p.hl]) * (p.mult || 1) * (await ratioOf(p));
       if (v > 0) next[String(p.address).toLowerCase()] = v;
+      if (p.hl && m[p.hl] && prev[p.hl]) nchg[String(p.address).toLowerCase()] = Number(m[p.hl]) / prev[p.hl] - 1;
     }));
-    cache = next; at = Date.now();
+    cache = next; chg = nchg; at = Date.now();
     return next;
   }
   const HL = {
     prices() { if (inflight) return inflight; if (at && Date.now() - at < 20000) return Promise.resolve(cache); inflight = load().finally(() => { inflight = null; }); return inflight; },
     usd(a) { return cache[String(a || '').toLowerCase()] || 0; },
+    /** 24h change as a fraction (0.021 = +2.1%), or null when unknown */
+    chg(a) { const v = chg[String(a || '').toLowerCase()]; return v == null ? null : v; },
     /** the Hyperliquid market behind a pair, for labels */
     market(a) { const p = pairs.find((x) => String(x.address).toLowerCase() === String(a || '').toLowerCase()); return p ? (p.hl || (p.fixed ? 'fixed' : '')) : (String(a || '').toLowerCase() === WETH ? 'HYPE' : ''); },
   };

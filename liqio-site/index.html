@@ -27,22 +27,19 @@
 @media(max-width:560px){#pg-land .ctas .btn.pri{flex:1 1 100%;justify-content:center}#pg-land .ctas .btn.line{flex:1 1 0;justify-content:center;padding:0 12px}}
 #pg-land .pairrow{display:flex;align-items:center;gap:12px;margin-top:30px;font:12px var(--mono);color:var(--fg-3);flex-wrap:wrap}
 #pg-land .pairrow .chs img{background:#fff;box-shadow:0 0 0 2px var(--bg)}
-/* stage: a tank of liquid with the pairs floating in it */
-#pg-land .stage{position:relative;aspect-ratio:1/0.9;width:100%;max-width:640px;margin-left:auto;border:1px solid var(--line-2);border-radius:28px;background:linear-gradient(180deg,rgba(12,17,16,.9),rgba(6,10,9,.95));overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05);touch-action:pan-y;user-select:none}
-#pg-land canvas{position:absolute;inset:0;width:100%;height:100%}
-#pg-land .st-hd{position:absolute;left:18px;top:16px;z-index:5;display:flex;align-items:center;gap:10px;font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-3)}
-#pg-land .st-hd i{width:6px;height:6px;border-radius:50%;background:var(--ac);box-shadow:0 0 8px var(--ac);animation:lp 1.8s infinite}
-#pg-land .st-ft{position:absolute;right:18px;top:16px;z-index:5;font:500 11px var(--mono);color:var(--fg-3)}
-#pg-land .bub{position:absolute;left:0;top:0;z-index:10;display:flex;align-items:center;gap:9px;height:44px;padding:0 14px 0 6px;border:1px solid var(--line-2);border-radius:999px;background:rgba(9,13,12,.86);backdrop-filter:blur(8px);box-shadow:0 10px 30px -12px rgba(0,0,0,.9),0 0 0 1px rgba(51,229,194,.06);transform:translate(-50%,-50%);cursor:pointer;will-change:transform;transition:border-color .15s,box-shadow .15s;white-space:nowrap}
-#pg-land .bub:hover,#pg-land .bub.on{border-color:var(--ac-line);box-shadow:0 0 0 1px var(--ac-line),0 0 36px -4px rgba(51,229,194,.45)}
-#pg-land .bub img{width:32px;height:32px;border-radius:50%;background:#fff;object-fit:cover}
-#pg-land .bub b{font:600 13px var(--disp);color:var(--fg)} #pg-land .bub small{display:block;font:11px var(--mono);color:var(--fg-3);margin-top:1px}
-#pg-land .bub .px{margin-left:4px;font:500 12.5px var(--mono);color:var(--ac)} #pg-land .bub .px.n{color:var(--fg)}
-#pg-land .bub.big{height:56px;padding-right:18px} #pg-land .bub.big img{width:42px;height:42px} #pg-land .bub.big b{font-size:15px}
-#pg-land .tip{position:absolute;z-index:20;min-width:220px;padding:12px 14px;border:1px solid var(--line-2);border-radius:14px;background:rgba(9,13,12,.94);backdrop-filter:blur(12px);box-shadow:0 20px 50px -20px rgba(0,0,0,.9);pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .18s,transform .18s}
-#pg-land .tip.on{opacity:1;transform:none}
-#pg-land .tip .th{display:flex;align-items:center;gap:9px;font:600 14px var(--disp)} #pg-land .tip .th img{width:22px;height:22px;border-radius:50%;background:#fff}
-#pg-land .tip .kv{display:flex;justify-content:space-between;gap:14px;margin-top:7px;font-size:12px;color:var(--fg-3)} #pg-land .tip .kv b{font:500 12px var(--mono);color:var(--fg)}
+/* board: the pairs with live prices, flow lines behind */
+#pg-land .board{position:relative;width:100%;max-width:640px;margin-left:auto;border:1px solid var(--line-2);border-radius:24px;background:var(--s1);overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.9)}
+#pg-land .board canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.9}
+#pg-land .bd-hd{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 20px 10px;font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-3)}
+#pg-land .bd-hd i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ac);box-shadow:0 0 8px var(--ac);margin-right:9px;animation:lp 1.8s infinite;vertical-align:1px}
+#pg-land .bd-hd .ny{text-transform:none;letter-spacing:0;font-weight:500}
+#pg-land .bd-rows{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr;gap:0 22px;padding:0 14px 10px}
+#pg-land .pr{display:flex;align-items:center;gap:11px;min-height:54px;padding:6px 6px;border-bottom:1px solid var(--line);border-radius:10px;transition:background .15s}
+#pg-land .pr:hover{background:rgba(51,229,194,.06)}
+#pg-land .pr img{width:32px;height:32px;border-radius:50%;background:#fff;object-fit:cover;flex:none}
+#pg-land .pr .nm{flex:1;min-width:0} #pg-land .pr .nm b{display:block;font:600 14px var(--disp);color:var(--fg)} #pg-land .pr .nm small{display:block;font:11px var(--mono);color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+#pg-land .pr .px{text-align:right;font:500 14px var(--mono);color:var(--fg)} #pg-land .pr .px small{display:block;font:11px var(--mono);margin-top:2px;color:var(--fg-3)} #pg-land .pr .px small.up{color:var(--up)} #pg-land .pr .px small.dn{color:var(--dn)}
+#pg-land .pr.hy{grid-column:1/-1;min-height:64px;border-bottom:1px solid var(--line-2);margin-bottom:4px} #pg-land .pr.hy img{width:40px;height:40px} #pg-land .pr.hy .nm b{font-size:16px} #pg-land .pr.hy .px{font-size:16px}
 /* stats */
 #pg-land .stats{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:18px 0 8px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg,rgba(19,26,24,.7),rgba(9,13,12,.7));overflow:hidden}
 #pg-land .stats div{padding:20px 22px;border-right:1px solid var(--line)} #pg-land .stats div:last-child{border-right:0}
@@ -55,16 +52,12 @@
 #pg-land .step::before{content:attr(data-n);position:absolute;right:16px;top:8px;font:700 64px var(--disp);letter-spacing:-.05em;color:var(--ac);opacity:.08}
 #pg-land .step .ic2{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:12px;background:var(--ac-dim);color:var(--ac)} #pg-land .step .ic2 svg{width:18px;height:18px}
 #pg-land .step h3{margin-top:14px;font-size:17px} #pg-land .step p{margin-top:8px;color:var(--fg-2);font-size:13.5px;line-height:1.55}
-#pg-land .pairs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}
-#pg-land .pc{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--s1);transition:border-color .15s,background .15s} #pg-land .pc:hover{border-color:var(--ac-line);background:var(--s2)}
-#pg-land .pc img{width:38px;height:38px;border-radius:50%;background:#fff;object-fit:cover;flex:none} #pg-land .pc .nm{flex:1;min-width:0} #pg-land .pc .nm b{display:block;font:600 14px var(--disp)} #pg-land .pc .nm small{display:block;font:11px var(--mono);color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-#pg-land .pc .px{text-align:right;font:500 13px var(--mono)} #pg-land .pc .px small{display:block;font-size:10.5px;color:var(--fg-3);margin-top:2px}
 #pg-land .why{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
 #pg-land .why div{padding:22px;border:1px solid var(--line);border-radius:20px;background:radial-gradient(120% 100% at 0% 0%,rgba(51,229,194,.06),transparent 55%),var(--s1)} #pg-land .why h3{font-size:16px} #pg-land .why p{margin-top:8px;color:var(--fg-2);font-size:13.5px;line-height:1.55}
 #pg-land .cta2{margin:64px 0 10px;padding:36px;border:1px solid var(--ac-line);border-radius:24px;text-align:center;background:radial-gradient(60% 100% at 50% 0%,rgba(51,229,194,.14),transparent 70%),var(--s1)}
 #pg-land .cta2 h2{font-size:30px} #pg-land .cta2 p{margin:10px auto 20px;max-width:56ch;color:var(--fg-2);font-size:15px;line-height:1.55} #pg-land .cta2 .ctas{justify-content:center}
-@media(max-width:1000px){#pg-land .hero{grid-template-columns:minmax(0,1fr);min-height:0;gap:18px;padding-top:18px} #pg-land .stage{margin:0 auto;max-width:560px} #pg-land .stats{grid-template-columns:1fr 1fr} #pg-land .stats div:nth-child(2){border-right:0} #pg-land .stats div:nth-child(-n+2){border-bottom:1px solid var(--line)} #pg-land .steps,#pg-land .why{grid-template-columns:1fr} #pg-land .pairs{grid-template-columns:1fr 1fr}}
-@media(max-width:640px){#pg-land .lead{font-size:16px} #pg-land .st-ft{top:auto;bottom:14px;left:18px;right:auto} #pg-land .stage{aspect-ratio:1/1.05} #pg-land .stats b{font-size:24px} #pg-land .stats div{padding:16px} #pg-land .bub{height:38px;padding:0 10px 0 4px;gap:7px} #pg-land .bub img{width:28px;height:28px} #pg-land .bub small{display:none} #pg-land .bub.big{height:46px} #pg-land .bub.big img{width:34px;height:34px} #pg-land .pairs{grid-template-columns:1fr} #pg-land .sec h2,#pg-land .cta2 h2{font-size:24px} #pg-land .cta2{padding:26px 18px}}
+@media(max-width:1000px){#pg-land .hero{grid-template-columns:minmax(0,1fr);min-height:0;gap:18px;padding-top:18px} #pg-land .board{margin:0 auto;max-width:560px} #pg-land .stats{grid-template-columns:1fr 1fr} #pg-land .stats div:nth-child(2){border-right:0} #pg-land .stats div:nth-child(-n+2){border-bottom:1px solid var(--line)} #pg-land .steps,#pg-land .why{grid-template-columns:1fr}}
+@media(max-width:640px){#pg-land .lead{font-size:16px} #pg-land .stats b{font-size:24px} #pg-land .stats div{padding:16px} #pg-land .bd-rows{grid-template-columns:1fr;gap:0} #pg-land .bd-hd{flex-wrap:wrap;gap:4px 10px} #pg-land .sec h2,#pg-land .cta2 h2{font-size:24px} #pg-land .cta2{padding:26px 18px}}
 </style>
 </head><body data-page="landing">
 <header id="sp-top"></header><div id="sp-tape"></div>
@@ -77,10 +70,10 @@
       <div class="ctas"><a class="btn pri lg" href="/launch" id="ld-launch"></a><a class="btn lg line" href="/markets">Open markets</a><a class="btn lg line" href="/docs/how-it-works">How it works</a></div>
       <div class="pairrow" id="ld-pairs"></div>
     </div>
-    <div class="stage" id="ld-stage" aria-label="Pairs on Liqio with live prices from Hyperliquid">
+    <div class="board" id="ld-board" aria-label="Pairs on Liqio with live prices from Hyperliquid">
       <canvas id="ld-cv"></canvas>
-      <div class="st-hd"><i></i>Priced by Hyperliquid</div><div class="st-ft" id="ld-nyse"></div>
-      <div class="tip" id="ld-tip"></div>
+      <div class="bd-hd"><span><i></i>Priced by Hyperliquid</span><span class="ny" id="ld-nyse"></span></div>
+      <div class="bd-rows" id="ld-rows"></div>
     </div>
   </section>
   <section class="stats">
@@ -100,11 +93,6 @@
     </div>
   </section>
 
-  <section class="sec">
-    <h2>Pairs <em>live now</em></h2>
-    <p class="sub">Prices from Hyperliquid's markets, the same ones the Liqio oracle reads. Stocks move with NYSE hours; the pools never close.</p>
-    <div class="pairs" id="ld-pairgrid"></div>
-  </section>
 
   <section class="sec">
     <h2>Why <em>Hyperliquid</em></h2>
@@ -126,52 +114,35 @@
 <script>
 (function(){
   const cfg=window.INKY||{}, NAT=cfg.native||'HYPE', W=String(cfg.weth||'').toLowerCase();
-  const stage=document.getElementById('ld-stage'), cv=document.getElementById('ld-cv'), cx=cv.getContext('2d'), tip=document.getElementById('ld-tip');
-  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const I=n=>(typeof ic==='function'?ic(n):'');
   document.getElementById('ld-launch').innerHTML=I('rocket')+'Launch a coin';
   document.getElementById('ld-i1').innerHTML=I('coins'); document.getElementById('ld-i2').innerHTML=I('candle'); document.getElementById('ld-i3').innerHTML=I('gift');
-  // the pairs: HYPE first, then the stocks with a route, then the rest
-  const P=[{symbol:NAT,ticker:NAT,name:"Hyperliquid's coin",address:W,logo:'/img/hype.png',kind:'crypto',big:true,hl:'HYPE'}]
+  const P=[{symbol:NAT,ticker:NAT,name:"Hyperliquid's coin",address:W,logo:'/img/hype.png',kind:'crypto',hl:'HYPE'}]
     .concat((cfg.cryptoPairs||[]).map(p=>({...p,kind:'crypto'})))
     .concat((cfg.stocks||[]).map(p=>({...p,kind:'stock'})));
   const nyse=()=>{ const m=(typeof SP!=='undefined'&&SP.market)?SP.market():null; return m?`NYSE ${m.open?'open':'closed'} · ${m.detail}`:''; };
   document.getElementById('ld-nyse').textContent=nyse(); setInterval(()=>{ document.getElementById('ld-nyse').textContent=nyse(); },30000);
   document.getElementById('ld-pairs').innerHTML=`<span class="chs" style="--s:22px">${P.slice(0,6).map(p=>`<img src="${p.logo}" alt="${p.ticker}" title="${p.ticker}" onerror="this.onerror=null;this.src='/img/t-default.png'">`).join('')}</span><span>${P.length} pairs · HYPE, USDC and ${P.filter(p=>p.kind==='stock').length} stocks</span>`;
   const fmt=v=>!(v>0)?'…':'$'+(v>=1000?v.toLocaleString('en-US',{maximumFractionDigits:0}):v>=100?v.toFixed(1):v>=1?v.toFixed(2):v.toFixed(4));
-  const px={};
-  async function prices(){ if(!window.HL) return; try{ const got=await HL.prices(); Object.assign(px,got); paint(); }catch(e){ console.warn('prices',e); } }
-  // floating bubbles
-  const B=P.map((p,i)=>{ const el=document.createElement('a'); el.className='bub'+(p.big?' big':''); el.href='/launch?pair='+encodeURIComponent(p.symbol); el.innerHTML=`<img src="${p.logo}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span><b>${p.ticker}</b><small>${p.kind==='stock'?p.symbol:p.name}</small></span><span class="px" data-px="${p.address}">…</span>`; stage.appendChild(el);
-    // HYPE in the middle, the others on a ring around it
-    const n=P.length-1, a=-Math.PI/2+(i-1)/Math.max(1,n)*Math.PI*2; return {p,el,x:i?0.5+Math.cos(a)*0.36:0.5,y:i?0.5+Math.sin(a)*0.3:0.47,ph:Math.random()*6.28,sp:0.6+Math.random()*0.5,amp:0.01+Math.random()*0.01}; });
-  function paint(){ B.forEach(b=>{ const v=px[String(b.p.address).toLowerCase()]; const e=b.el.querySelector('.px'); e.textContent=fmt(v); e.classList.toggle('n',!(v>0)); });
-    const g=document.getElementById('ld-pairgrid'); g.innerHTML=P.map(p=>{ const v=px[String(p.address).toLowerCase()]; const mk=p.kind==='stock'?((typeof SP!=='undefined'&&SP.market&&SP.market().open)?'NYSE open':'NYSE closed'):'24/7'; return `<a class="pc" href="/launch?pair=${encodeURIComponent(p.symbol)}"><img src="${p.logo}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span class="nm"><b>${p.ticker}</b><small>${p.kind==='stock'?p.name+' · '+p.symbol:p.name}</small></span><span class="px">${fmt(v)}<small>${p.hl&&p.hl!=='HYPE'?p.hl:mk}</small></span></a>`; }).join(''); }
-  paint(); prices(); setInterval(prices,30000); document.addEventListener('hl-prices',()=>{ if(window.HL){ P.forEach(p=>{ const v=HL.usd(p.address); if(v) px[String(p.address).toLowerCase()]=v; }); paint(); } });
+  const px={}, ch={};
+  function rows(){ const open=(typeof SP!=='undefined'&&SP.market&&SP.market().open);
+    document.getElementById('ld-rows').innerHTML=P.map(p=>{ const a=String(p.address).toLowerCase(), v=px[a], c=ch[a]; const sub=p.kind==='stock'?`${p.symbol} · NYSE ${open?'open':'closed'}`:p.kind==='crypto'&&p.symbol!==NAT?`${p.name} · 24/7`:`${p.name} · 24/7`;
+      const chs=c==null?(p.fixed?'<small>stable</small>':'<small>…</small>'):`<small class="${c>=0?'up':'dn'}">${c>=0?'+':''}${(c*100).toFixed(2)}% 24h</small>`;
+      return `<a class="pr${p.symbol===NAT?' hy':''}" href="/launch?pair=${encodeURIComponent(p.symbol)}"><img src="${p.logo}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span class="nm"><b>${p.ticker}</b><small>${sub}</small></span><span class="px">${fmt(v)}${chs}</span></a>`; }).join(''); }
+  async function prices(){ if(!window.HL) return; try{ const got=await HL.prices(); Object.assign(px,got); P.forEach(p=>{ const c=HL.chg(p.address); if(c!=null) ch[String(p.address).toLowerCase()]=c; }); rows(); }catch(e){ console.warn('prices',e); } }
+  rows(); prices(); setInterval(prices,30000); document.addEventListener('hl-prices',prices);
+  // flow lines behind the board
+  const board=document.getElementById('ld-board'), cv=document.getElementById('ld-cv'), cx=cv.getContext('2d');
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   let Wd=0,H=0,dpr=1;
-  function size(){ const r=stage.getBoundingClientRect(); Wd=r.width; H=r.height; dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Wd*dpr; cv.height=H*dpr; cx.setTransform(dpr,0,0,dpr,0,0); }
-  size(); addEventListener('resize',size);
-  // liquid: layered waves rising from the bottom, bubbles drifting up
-  const bubbles=Array.from({length:26},()=>({x:Math.random(),y:Math.random(),r:1+Math.random()*2.2,s:0.00004+Math.random()*0.00008,t:Math.random()*6.28}));
-  let last=performance.now(), mx=0, my=0, hover=null;
-  function wave(now,k,level,amp,alpha,len){ cx.beginPath(); cx.moveTo(0,H); for(let x=0;x<=Wd;x+=6){ const y=H*level+Math.sin(x/len+now*0.0007*k+k)*amp+Math.sin(x/(len*0.55)-now*0.0011*k)*amp*0.5; cx.lineTo(x,y); } cx.lineTo(Wd,H); cx.closePath(); const gr=cx.createLinearGradient(0,H*level-amp,0,H); gr.addColorStop(0,`rgba(51,229,194,${alpha})`); gr.addColorStop(1,'rgba(51,229,194,0)'); cx.fillStyle=gr; cx.fill(); }
-  function frame(now){ const dt=Math.min(50,now-last); last=now; cx.clearRect(0,0,Wd,H);
-    const t=reduce?0:now;
-    // grid
-    cx.strokeStyle='rgba(255,255,255,.035)'; cx.lineWidth=1; for(let gx=0;gx<=Wd;gx+=40){ cx.beginPath(); cx.moveTo(gx+.5,0); cx.lineTo(gx+.5,H); cx.stroke(); } for(let gy=0;gy<=H;gy+=40){ cx.beginPath(); cx.moveTo(0,gy+.5); cx.lineTo(Wd,gy+.5); cx.stroke(); }
-    wave(t,1,0.62,10,0.10,90); wave(t,1.6,0.68,8,0.12,70); wave(t,2.3,0.75,7,0.16,55);
-    // bubbles in the liquid
-    bubbles.forEach(b=>{ if(!reduce){ b.y-=b.s*dt*10; b.x+=Math.sin(t*0.001+b.t)*0.0004; if(b.y<0.6){ b.y=1.02; b.x=Math.random(); } } cx.beginPath(); cx.arc(b.x*Wd,b.y*H,b.r,0,6.283); cx.strokeStyle='rgba(159,245,227,.35)'; cx.lineWidth=1; cx.stroke(); });
-    // floating pair bubbles bob on the surface
-    B.forEach((b,i)=>{ const yy=b.y+(reduce?0:Math.sin(t*0.001*b.sp+b.ph)*b.amp), xx=b.x+(reduce?0:Math.cos(t*0.0007*b.sp+b.ph)*b.amp*0.6); const x=xx*Wd+mx*10, y=yy*H+my*8; b.px=x; b.py=y; b.el.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%)`; });
-    if(hover) placeTip(hover);
+  function size(){ const r=board.getBoundingClientRect(); Wd=r.width; H=r.height; dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Wd*dpr; cv.height=H*dpr; cx.setTransform(dpr,0,0,dpr,0,0); }
+  size(); addEventListener('resize',size); new ResizeObserver(size).observe(board);
+  let last=performance.now(), ph=0;
+  function frame(now){ const dt=Math.min(50,now-last); last=now; if(!reduce) ph+=dt*0.00012; cx.clearRect(0,0,Wd,H);
+    const n=Math.max(18,Math.round(H/14)), gap=H/n*1.15, amp=H*.06;
+    for(let i=0;i<n;i++){ const y0=-H*.1+i*gap; cx.beginPath(); for(let x=0;x<=Wd;x+=10){ const y=y0+Math.sin(x/(Wd*.19)+i*.18+ph)*amp+Math.sin(x/(Wd*.07)-i*.1-ph*1.6)*amp*.25+(x/Wd)*H*.22; i?cx.lineTo(x,y):cx.moveTo(x,y); if(!i&&x===0) cx.moveTo(x,y); }
+      const g=cx.createLinearGradient(0,0,Wd,0); g.addColorStop(0,'rgba(51,229,194,.04)'); g.addColorStop(.5,`rgba(51,229,194,${(.10+(i%7)*.03).toFixed(2)})`); g.addColorStop(1,'rgba(51,229,194,.03)'); cx.strokeStyle=g; cx.lineWidth=1; cx.stroke(); }
     requestAnimationFrame(frame); }
-  function placeTip(b){ const r=stage.getBoundingClientRect(); let x=b.px+30, y=b.py-70; if(x+230>r.width) x=b.px-250; if(y<0) y=b.py+30; tip.style.left=Math.max(0,x)+'px'; tip.style.top=Math.max(0,y)+'px'; }
-  B.forEach(b=>{ const p=b.p; const show=()=>{ hover=b; B.forEach(o=>o.el.classList.toggle('on',o===b)); const v=px[String(p.address).toLowerCase()]; tip.innerHTML=`<div class="th"><img src="${p.logo}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'">${p.ticker} <span class="muted" style="font-weight:400">${p.kind==='stock'?p.symbol:''}</span></div><div class="kv"><span>${p.kind==='stock'?'Stock':'Pair'}</span><b>${p.kind==='stock'?p.name:p.name}</b></div><div class="kv"><span>Price</span><b>${fmt(v)}</b></div><div class="kv"><span>Priced by</span><b>${p.hl?'Hyperliquid '+(p.hl==='HYPE'?'HYPE':p.hl):p.fixed?'fixed $1':'pool'}</b></div><div class="kv"><span>Trades</span><b>${p.kind==='stock'?'24/7 · NYSE '+((typeof SP!=='undefined'&&SP.market().open)?'open':'closed'):'24/7'}</b></div><div class="kv"><span>Fees paid in</span><b>${p.symbol}</b></div>`; tip.classList.add('on'); placeTip(b); };
-    const hide=()=>{ hover=null; b.el.classList.remove('on'); tip.classList.remove('on'); };
-    b.el.addEventListener('mouseenter',show); b.el.addEventListener('mouseleave',hide); });
-  stage.addEventListener('mousemove',e=>{ const r=stage.getBoundingClientRect(); mx=(e.clientX-r.left)/r.width-.5; my=(e.clientY-r.top)/r.height-.5; });
-  stage.addEventListener('mouseleave',()=>{ mx=0; my=0; });
   requestAnimationFrame(frame);
 })();
 </script>
