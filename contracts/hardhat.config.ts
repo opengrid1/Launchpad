@@ -122,18 +122,22 @@ const config: HardhatUserConfig = {
     // Blockscout custom chain below accepts any non-empty string, so the same
     // value serves it when no Etherscan key is set.
     apiKey: process.env.ETHERSCAN_API_KEY ?? process.env.BLOCKSCOUT_API_KEY ?? "blockscout",
-    customChains: BLOCKSCOUT_URL
-      ? [
-          {
-            network: "robinhood",
-            chainId: ROBINHOOD_CHAIN_ID,
-            urls: {
-              apiURL: `${BLOCKSCOUT_URL.replace(/\/$/, "")}/api`,
-              browserURL: BLOCKSCOUT_URL,
+    customChains: [
+      // HyperEVMScan is an Etherscan-family explorer: the v2 API with chainid 999 and the same key
+      { network: "hyperevm", chainId: 999, urls: { apiURL: "https://api.etherscan.io/v2/api?chainid=999", browserURL: "https://hyperevmscan.io" } },
+      ...(BLOCKSCOUT_URL
+        ? [
+            {
+              network: "robinhood",
+              chainId: ROBINHOOD_CHAIN_ID,
+              urls: {
+                apiURL: `${BLOCKSCOUT_URL.replace(/\/$/, "")}/api`,
+                browserURL: BLOCKSCOUT_URL,
+              },
             },
-          },
-        ]
-      : [],
+          ]
+        : []),
+    ],
   },
   // Sourcify alongside Etherscan, so every OneHook contract (and each coin a
   // user launches, by similar match) is open source on both.
