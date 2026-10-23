@@ -35,7 +35,12 @@
       const name=info.ticker||info.name, k=keyOf(name), u=/·PAIR/.test(name)?'PAIR':'USD', m=/·MCAP/.test(name)?'mcap':'price';
       const bars=await CHAIN.bars(X.addr,step,params.from,params.to,multi()&&k!=='merged'?k:undefined); const f=factorFor(k,u,m), vu=pairUsdFor(k)||1;
       if(!bars.length){ ok([],{noData:true}); return; }
-      ok(bars.map(b=>({time:b.time*1000,open:b.open*f,high:b.high*f,low:b.low*f,close:b.close*f,volume:b.volume*vu})),{noData:false}); }catch(e){ err(String(e)); } },
+      // a young coin has trades in only a few intervals: carry the last close through the empty intervals up to now, so the
+      // chart draws a continuous line instead of one lonely bar on a zoomed-in scale
+      const out=[]; const end=Math.min(params.to,Math.floor(Date.now()/1000)); let prev=null;
+      for(const b of bars){ if(prev) for(let t=prev.time+step;t<b.time;t+=step) out.push({time:t,open:prev.close,high:prev.close,low:prev.close,close:prev.close,volume:0}); out.push(b); prev=b; }
+      if(prev) for(let t=prev.time+step;t<=end;t+=step) out.push({time:t,open:prev.close,high:prev.close,low:prev.close,close:prev.close,volume:0});
+      ok(out.map(b=>({time:b.time*1000,open:b.open*f,high:b.high*f,low:b.low*f,close:b.close*f,volume:b.volume*vu})),{noData:false}); }catch(e){ err(String(e)); } },
     subscribeBars(info,res,cb,uid){ const name=info.ticker||info.name; subs[uid]={res:RES[res]||3600,cb,k:keyOf(name),u:/·PAIR/.test(name)?'PAIR':'USD',m:/·MCAP/.test(name)?'mcap':'price'}; },
     getServerTime(cb){ cb(Math.floor(Date.now()/1000)); },
     unsubscribeBars(uid){ delete subs[uid]; },
