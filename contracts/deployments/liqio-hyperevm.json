@@ -1,0 +1,93 @@
+{
+  "network": "hyperevm",
+  "chainId": 999,
+  "model": "liqio-v1: equo hook + router + factory (admin collect), clone coins, HyperCore oracle (flags 0xCC)",
+  "deployedAt": "2026-10-23T15:54:38.783Z",
+  "deployer": "0x4E3862c6f000911Bf81F159ee0114B0a1184d68f",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "contracts": {
+    "hookDeployer": "0x708bac866888d940367d9755eE63cF05367de163",
+    "hook": "0x746301d1924933a5454f30a2828F2b3F63cC80cc",
+    "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000000fb1",
+    "oracle": "0xC82Af4EC3DB61BF8fb8953d6EACEC08025C4bBA1",
+    "tokenDeployer": "0x8ad94FA70580C3AeAe98b3fd00A170965d7f0086",
+    "tokenImpl": "0x633FC209d784c750A7bCE8a6507F9432Ed182871",
+    "divTokenImpl": "0xabCF7AC2Bca6f75b887AC53d871a324a6DAA6f14",
+    "factory": "0x749261Bf054389a380FD0e24D9aCf25538A60313",
+    "router": "0x6D02009F27a69efeC5b523439fAc684D6e89Ed52",
+    "poolManager": "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F",
+    "weth": "0x5555555555555555555555555555555555555555"
+  },
+  "sources": [
+    {
+      "symbol": "WHYPE",
+      "token": "0x5555555555555555555555555555555555555555",
+      "kind": "core",
+      "index": 159,
+      "sz": 2,
+      "mult": "1000000000000000000",
+      "erc4626": false
+    },
+    {
+      "symbol": "USDC",
+      "token": "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
+      "kind": "fixed",
+      "usd18": "1000000000000000000000000000000"
+    },
+    {
+      "symbol": "wNVDAx",
+      "token": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5",
+      "kind": "core",
+      "index": 10002,
+      "sz": 3,
+      "mult": "1000000000000000000",
+      "erc4626": true
+    },
+    {
+      "symbol": "wSPYx",
+      "token": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540",
+      "kind": "core",
+      "index": 10052,
+      "sz": 3,
+      "mult": "100000000000000000",
+      "erc4626": true
+    },
+    {
+      "symbol": "wSPCXx",
+      "token": "0x8e2eeD8b8B5E13Ea7BF38e50d7821d2C57309072",
+      "kind": "core",
+      "index": 10076,
+      "sz": 2,
+      "mult": "1000000000000000000",
+      "erc4626": true
+    },
+    {
+      "symbol": "wGMEx",
+      "token": "0x459D3ae62B86cC6125e06260DddFd3AFED24A877",
+      "kind": "core",
+      "index": 10041,
+      "sz": 2,
+      "mult": "1000000000000000000",
+      "erc4626": true
+    },
+    {
+      "symbol": "wMUx",
+      "token": "0xe2047ee3bdDb5C99ae428AB83df63f8730698e30",
+      "kind": "core",
+      "index": 10015,
+      "sz": 3,
+      "mult": "1000000000000000000",
+      "erc4626": true
+    },
+    {
+      "symbol": "wSKHYx",
+      "token": "0x6215a58ed045d71F2561AaAbe54f4C885C522998",
+      "kind": "core",
+      "index": 10099,
+      "sz": 2,
+      "mult": "1000000000000000000",
+      "erc4626": true
+    }
+  ]
+}
