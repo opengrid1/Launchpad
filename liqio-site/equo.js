@@ -273,7 +273,9 @@
     async pairPrices(list) {
       const f = new E.Interface(["function pairUsdPrice(address pair) view returns (uint256)"]);
       const r = await multi(list.map((p) => [addr.factory, f, "pairUsdPrice", [p]]));
-      const out = {}; list.forEach((p, i) => { if (r[i]) out[lc(p)] = Number(r[i][0]) / 1e18; }); return out;
+      // the oracle quotes USD per 1e18 base units; a 6-decimal stablecoin needs the extra 10^12
+      const decOf = (p) => ((cfg.cryptoPairs || []).find((c) => c.address && lc(c.address) === lc(p)) || {}).decimals || 18;
+      const out = {}; list.forEach((p, i) => { if (r[i]) out[lc(p)] = Number(r[i][0]) / 1e18 / 10 ** (18 - decOf(p)); }); return out;
     },
     // trades paid in the pair itself, for pairs without a HYPE route
     async buyWithPair(coin, pair, pairIn, minOut) {
