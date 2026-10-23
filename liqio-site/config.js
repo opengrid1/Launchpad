@@ -51,7 +51,7 @@ window.INKY = {
   /* chains: Liqio lives on HyperEVM only. launchGas is the gas one launch uses (clone coin + pool + wiring). */
   chains: [
     {key:'hyper', code:'HYPE', name:'HyperEVM', short:'HyperEVM', chainId:999, native:'HYPE', cg:'hyperliquid', logo:'/img/chains/hyper.png', color:'#33e5c2', main:true, live:true, stocks:'xStocks',
-     rpc:'https://rpc.hyperliquid.xyz/evm', explorer:'https://hyperevmscan.io', poolManager:'0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', launchGas:1200000}
+     rpc:'https://rpc.hyperliquid.xyz/evm', explorer:'https://hyperevmscan.io', poolManager:'0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', launchGas:1700000}
   ],
   /* launch fee: gas plus this margin */
   launchMarginBps: 2000,
