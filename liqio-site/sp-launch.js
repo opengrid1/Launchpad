@@ -50,10 +50,11 @@ function launchInit(){
   function loadLogo(file){ if(!file||!file.type||!file.type.startsWith('image/')){ SP.toast('Please choose an image file','err'); return; } if(file.size>4*1024*1024){ SP.toast('Logo too big, max 4 MB','err'); return; }
     const img=new Image(), url=URL.createObjectURL(file);
     img.onload=()=>{ URL.revokeObjectURL(url); const s=Math.min(img.width,img.height); let best=null;
-      outer: for(const size of [128,112,96,80,64]){ const c=document.createElement('canvas'); c.width=c.height=size; const x=c.getContext('2d'); x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size);
-        for(let q=0.8;q>=0.35;q-=0.15){ const dd=c.toDataURL('image/webp',q); if(!best||dd.length<best.length) best=dd; if(dd.length<=4200) break outer; } }
+      // the metadata is stored on-chain and the whole launch must fit HyperEVM's 3M-gas small block, so the logo is kept near 1.5 KB
+      outer: for(const size of [96,80,64,56,48]){ const c=document.createElement('canvas'); c.width=c.height=size; const x=c.getContext('2d'); x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size);
+        for(let q=0.8;q>=0.3;q-=0.1){ const dd=c.toDataURL('image/webp',q); if(!best||dd.length<best.length) best=dd; if(dd.length<=1500) break outer; } }
       if(!best||!best.startsWith('data:image/webp')){ SP.toast('Could not process this image','err'); return; }
-      S.logo=best; paintLogo(); sync(); SP.toast('Logo ready, '+(best.length/1024).toFixed(1)+' KB on-chain'+(best.length>4200?' (large; the launch may cost more gas)':'')); };
+      S.logo=best; paintLogo(); sync(); SP.toast('Logo ready, '+(best.length/1024).toFixed(1)+' KB on-chain'+(best.length>1800?' (detailed image; a simpler logo compresses better)':'')); };
     img.onerror=()=>{ URL.revokeObjectURL(url); SP.toast('Could not read this image','err'); };
     img.src=url; }
   function symMsg(){ const t=fields.sym(), el=g('sym-msg'); el.className='hint'; if(!t){ el.textContent=''; return true; }
