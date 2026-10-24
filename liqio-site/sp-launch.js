@@ -192,7 +192,7 @@ function launchInit(){
   launchRepaint=()=>{ paintPairs(); if(fields.sym()) symMsg(); sync(); paintCta(); }; SP.onUpdate(launchRepaint);
   sync(); paintCta();
   if(LIVE&&window.CHAIN){ (CHAIN.equo?CHAIN.equo.capPresets():CHAIN.startCapUsd().then(v=>[v])).then(v=>{ v=(v||[]).filter(x=>x>0); if(v.length){ S.presets=v; if(S.preset>=v.length) S.preset=0; S.capUsd=v[S.preset]; paintCaps(); sync(); } }).catch(()=>{});
-    if(DEV_MIN>0){ S.dev=true; const sw=g('sw-dev'); sw.classList.add('on'); sw.setAttribute('aria-checked','true'); sw.classList.add('locked'); g('opt-dev').classList.add('on'); const f=g('f-dev'); f.min=String(DEV_MIN); f.step='0.01'; if(!(parseFloat(f.value)>=DEV_MIN)) f.value=String(Math.max(DEV_MIN,0.05)); devRoute(); sync(); }
+    if(DEV_MIN>0){ S.dev=true; const sw=g('sw-dev'); sw.classList.add('on'); sw.setAttribute('aria-checked','true'); sw.classList.add('locked'); g('opt-dev').classList.add('on'); const f=g('f-dev'); f.min=String(DEV_MIN); f.step='0.01'; f.value=String(Math.max(DEV_MIN,0.05)); devRoute(); sync(); }
     CHAIN.launchesPaused().then(p=>{ S.paused=!!p; const el=g('paused'); el.classList.toggle('hidden',!p); if(p) el.innerHTML=ic('warn')+'<span>Launches are paused by the operator right now. You can prepare the coin; the Launch button opens again when launches resume.</span>'; paintCta(); }).catch(()=>{});
     if(S.pair) SP.pairUsd(S.pair.address).then(()=>{ paintPairs(); sync(); }).catch(()=>{}); }
 }
