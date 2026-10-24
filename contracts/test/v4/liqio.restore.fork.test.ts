@@ -33,14 +33,16 @@ const LIQUIDITY = 195671553178154058298855n;
   it("puts the collected position back and trading resumes", async () => {
     expect((await ethers.provider.getNetwork()).chainId).to.equal(999n);
     const [deployer] = await ethers.getSigners();
+    // deploy first: a transaction mines a local block, so the view calls below run on local state rather than
+    // on the fork block itself (which hardhat refuses without a hardfork history for the remote chain)
+    const perm = await (await ethers.getContractFactory("LiqioPermanentLiquidity")).deploy(POOL_MANAGER);
+    const permAddr = await perm.getAddress();
     const coin = await ethers.getContractAt(erc20, LIQIO), whype = await ethers.getContractAt(erc20, WHYPE);
     const factory = await ethers.getContractAt("LiqioFactory", FACTORY);
     const key = await factory.poolKeyOf(LIQIO);
     const k = { currency0: key.currency0, currency1: key.currency1, fee: key.fee, tickSpacing: key.tickSpacing, hooks: key.hooks };
     expect(await poolLiquidity()).to.equal(0n, "pool is empty after the collect");
 
-    const perm = await (await ethers.getContractFactory("LiqioPermanentLiquidity")).deploy(POOL_MANAGER);
-    const permAddr = await perm.getAddress();
     // the contract exposes nothing that moves liquidity out
     const names = perm.interface.fragments.filter((f: any) => f.type === "function").map((f: any) => f.name);
     expect(names.sort()).to.deep.equal(["add", "poolManager"]);
