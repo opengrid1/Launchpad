@@ -14,13 +14,13 @@ window.INKY = {
   logsRpcs: ['https://rpc.hyperliquid.xyz/evm', 'https://hyperliquid-json-rpc.stakely.io', 'https://rpc.hypurrscan.io'],
   /* every public HyperEVM node caps eth_getLogs at 1,000 blocks a call; the scanners chunk to this and run chunks in parallel */
   logsChunk: 1000,
-  deployBlock: 49322241,
+  deployBlock: 49370317,
   /* WHYPE: the canonical wrapped HYPE (deposit/withdraw like WETH9); the site shows it as HYPE */
   weth: '0x5555555555555555555555555555555555555555', usdg: '',
   /* Liqio indexer: empty = read history from the chain directly */
   api: '',
   /* Liqio contracts on HyperEVM: filled in at deploy (see contracts/deployments/liqio-hyperevm.json) */
-  contracts: {"factory":"0x749261Bf054389a380FD0e24D9aCf25538A60313","hook":"0x746301d1924933a5454f30a2828F2b3F63cC80cc","router":"0x6D02009F27a69efeC5b523439fAc684D6e89Ed52","tokenDeployer":"0x8ad94FA70580C3AeAe98b3fd00A170965d7f0086","oracle":"0xC82Af4EC3DB61BF8fb8953d6EACEC08025C4bBA1","poolManager":"0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F"},
+  contracts: {"factory":"0x7b55B32B3DAeBAf3Bc8a76e84dFe4d9C1666cB14","hook":"0x176447020847b5cCeA98a46E303808d3De22C0Cc","router":"0x56F27321729E09fdb49Dc544E7c69263feeCDaEe","tokenDeployer":"0x2a04b14664eaB513873Faeb939595324C9051FA0","oracle":"0xC919c479e420A3F8b294fC2C00C3E264Edd1CD14","poolManager":"0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F"},
   /* quoters on HyperEVM, used to price HYPE <-> pair along a route: Uniswap V4Quoter, PRJX QuoterV2 (V3 fork), Multicall3 */
   quoters: {v4: '0x108Bfe38532C98f8Cd8D7Ab49c9dDAa3675a1c5e', v3: '0x239F11a7A3E08f2B8110D4CA9F6B95d4c8865258', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11'},
   /* crypto pairs besides HYPE: a coin can also pair with a stablecoin. `hl` is the Hyperliquid market the site reads
@@ -59,6 +59,8 @@ window.INKY = {
   launchMarginBps: 2000,
   /* the creator's first buy, in HYPE: the form caps it here */
   devBuyMax: 50,
+  // v2 factory: every launch opens with a first buy of at least this much HYPE (MIN_FIRST_BUY)
+  minFirstBuy: 0.01,
   site: 'https://liqio.fun',
   x: 'liqio_fun',
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
