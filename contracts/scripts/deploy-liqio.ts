@@ -177,7 +177,7 @@ async function main() {
   const out = {
     network: network.name,
     chainId: Number((await ethers.provider.getNetwork()).chainId),
-    model: "liqio-v1: equo hook + router + factory (admin collect), clone coins, HyperCore oracle (flags 0xCC)",
+    model: "liqio-v2: equo hook + router + factory (admin collect, MIN_FIRST_BUY), clone coins with deployer-only initializers, HyperCore oracle (flags 0xCC)",
     deployedAt: new Date().toISOString(),
     deployer: deployer.address,
     admin,
@@ -188,6 +188,14 @@ async function main() {
   if (dry) { console.log("dry run: nothing written"); return; }
   mkdirSync(join(__dirname, "../deployments"), { recursive: true });
   const file = join(__dirname, `../deployments/liqio-${network.name}.json`);
+  // keep the previous version's record: coins launched on it keep trading there and the site lists both
+  try {
+    const prev = JSON.parse(readFileSync(file, "utf8"));
+    const tag = String(prev.model ?? "").startsWith("liqio-v2") ? "v2" : "v1";
+    const keep = join(__dirname, `../deployments/liqio-${network.name}-${tag}.json`);
+    writeFileSync(keep, JSON.stringify(prev, null, 2) + "\n");
+    console.log("kept previous deployment as", keep);
+  } catch {}
   writeFileSync(file, JSON.stringify(out, null, 2) + "\n");
   console.log("wrote", file);
   const spent = startBalance - (await ethers.provider.getBalance(deployer.address));
