@@ -75,6 +75,8 @@ const config: HardhatUserConfig = {
             hardfork: process.env.FORK_HARDFORK ?? "cancun",
             forking: { url: HYPEREVM_RPC_URL, ...(process.env.HYPEREVM_FORK_BLOCK ? { blockNumber: Number(process.env.HYPEREVM_FORK_BLOCK) } : {}) },
             chainId: 999,
+            // view calls at the fork block itself need a hardfork history for the remote chain
+            chains: { 999: { hardforkHistory: { cancun: 0 } } },
           }
         : {}),
       ...(process.env.FORK === "1" && ROBINHOOD_RPC_URL
