@@ -159,8 +159,12 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     const { token, pairUsd, gas } = await launch(factory, creator, FLAT, ethers.parseEther("0.5"));
     console.log(`      launch with dev buy: ${gas} gas (small block ${SMALL_BLOCK_GAS})`);
     expect(gas).to.be.lt(SMALL_BLOCK_GAS);
-    const { gas: gasPlain } = await launch(factory, creator, FLAT, 0n, "P");
-    console.log(`      launch without dev buy: ${gasPlain} gas`);
+    const { gas: gasPlain } = await launch(factory, creator, FLAT, ethers.parseEther("0.01"), "P");
+    console.log(`      launch with the minimum first buy: ${gasPlain} gas`);
+    // no pool starts empty: a launch with less than the minimum first buy is refused
+    await expect(launch(factory, creator, FLAT, 0n, "Z")).to.be.revertedWithCustomError(factory, "FirstBuyTooSmall");
+    await expect(launch(factory, creator, FLAT, ethers.parseEther("0.009"), "Z")).to.be.revertedWithCustomError(factory, "FirstBuyTooSmall");
+    expect(await factory.MIN_FIRST_BUY()).to.equal(ethers.parseEther("0.01"));
     expect(pairUsd).to.equal(7_764n * 10n ** 16n); // $77.64 per HYPE from the precompile
     expect(await factory.capOf(token)).to.equal(3_000n * 10n ** 8n);
     expect(BigInt(token) < BigInt(WHYPE)).to.equal(true); // the coin is currency0
@@ -325,7 +329,7 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
   it("applies anti-snipe for the first blocks and the max wallet for the first hours", async () => {
     const { factory, hook, creator, trader, outsider, router } = await deployStack();
     const genes = { ...FLAT, snipeBps: 2_000, snipeBlocks: 20, maxWalletBps: 100, maxWalletSecs: 3_600 };
-    const { token } = await launch(factory, creator, genes, 0n, "S");
+    const { token } = await launch(factory, creator, genes, ethers.parseEther("0.01"), "S");
     const coin = await ethers.getContractAt("LiqioToken", token);
 
     // in the snipe window a buy pays more than the 1% base fee; after the window it pays the base fee
@@ -350,10 +354,10 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     await expect(launch(factory, creator, FLAT, 0n, "X")).to.be.revertedWithCustomError(factory, "LaunchesPaused");
     await (await factory.connect(admin).resume()).wait();
     await (await factory.connect(admin).setTokenBlocked(USDC, true)).wait();
-    await expect(launch(factory, creator, FLAT, 0n, "X", USDC, route(2, POOL_USDC))).to.be.revertedWithCustomError(factory, "Blocked");
+    await expect(launch(factory, creator, FLAT, ethers.parseEther("0.01"), "X", USDC, route(2, POOL_USDC))).to.be.revertedWithCustomError(factory, "Blocked");
     await (await factory.connect(admin).setTokenBlocked(USDC, false)).wait();
     await (await factory.connect(admin).setCapPresets([5_000n * 10n ** 8n, 25_000n * 10n ** 8n])).wait();
-    const { token } = await launch(factory, creator, FLAT, 0n, "X", ethers.ZeroAddress, "0x", 1);
+    const { token } = await launch(factory, creator, FLAT, ethers.parseEther("0.01"), "X", ethers.ZeroAddress, "0x", 1);
     expect(await factory.capOf(token)).to.equal(25_000n * 10n ** 8n);
     await expect(factory.connect(trader).pause()).to.be.revertedWithCustomError(factory, "NotAdmin");
     await expect(factory.connect(trader).setCapPresets([1n])).to.be.reverted;

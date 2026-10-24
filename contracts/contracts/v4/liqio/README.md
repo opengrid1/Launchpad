@@ -25,8 +25,14 @@ from the precompile instead of a keeper.
 | LiqioTokenDeployer | 2,407 |
 | LiqioOracle | 2,500 |
 
-One launch (clone + pool + position + wiring), measured locally: 0.92M gas plain, 1.17M with a dev buy,
-1.23M with a routed dev buy on USDC or an xStock, 1.46M for a rewards coin. HyperEVM small blocks hold 3M.
+One launch (clone + pool + position + wiring), measured locally: 1.12M gas with the minimum first buy, 1.17M with
+a larger dev buy, 1.23M with a routed dev buy on USDC or an xStock, 1.46M for a rewards coin. HyperEVM small
+blocks hold 3M.
+
+Every launch opens with a first buy from the creator of at least `MIN_FIRST_BUY` (0.01 HYPE); a launch sent with
+less reverts `FirstBuyTooSmall`. The first buy is paid in HYPE and routed into the pair, so a pair with no HYPE
+route cannot be launched on. This is what keeps a fresh pool from starting empty: there is always pair in it to
+sell into, so sell simulations by scanners and trading bots succeed from the first block.
 
 ## HyperCore markets (verified on chain 2026-10-23)
 

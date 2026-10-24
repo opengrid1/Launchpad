@@ -79,6 +79,10 @@ contract LiqioFactory is ReentrancyGuard, IUnlockCallback {
     uint8 public constant MAX_EVOLUTION_STAGES = 5;
     /// @notice Coins kept out of the seed position to absorb rounding in the liquidity math.
     uint256 public constant COIN_SLACK = 1e12;
+    /// @notice Every launch opens with a first buy of at least this much HYPE from the creator, so no pool
+    ///         ever starts empty: there is always pair in it to sell into, and a sell simulation never fails
+    ///         on a fresh coin.
+    uint256 public constant MIN_FIRST_BUY = 0.01 ether;
     uint256 public constant MAX_PRESETS = 4;
     /// @notice A creator must have done nothing for this long before a takeover can be proposed.
     uint256 public constant TAKEOVER_IDLE = 30 days;
@@ -183,6 +187,7 @@ contract LiqioFactory is ReentrancyGuard, IUnlockCallback {
     event TakeoverExecuted(address indexed token, address indexed from, address indexed to);
 
     error LaunchesPaused();
+    error FirstBuyTooSmall();
     error InvalidParams();
     error BadGenes();
     error NotAdmin();
@@ -480,6 +485,7 @@ contract LiqioFactory is ReentrancyGuard, IUnlockCallback {
         returns (address token, bytes32 poolId)
     {
         if (launchesPaused) revert LaunchesPaused();
+        if (msg.value < MIN_FIRST_BUY) revert FirstBuyTooSmall();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0 || converter == address(0)) revert InvalidParams();
         _checkGenes(p.genes);
         address pair = p.pair == address(0) ? weth : p.pair;
