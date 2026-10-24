@@ -24,6 +24,7 @@ import { join } from "path";
  *   EQUO_CASHBACK_BPS      cashback share of the platform part, bps (admin step; applied here only if deployer is admin)
  *   EQUO_REFERRAL_BPS      referral share of the platform part, bps (same)
  *   EQUO_CAP_PRESETS       start cap presets in whole USD, comma separated, e.g. 5000,12500,25000 (same)
+ *   EQUO_MIN_FIRST_BUY     minimum first buy per launch in the chain's native coin (factory immutable; default 0.001)
  *
  * The hook address must encode exactly beforeSwap | afterSwap |
  * beforeSwapReturnDelta | afterSwapReturnDelta (0x..CC): the hook has no
@@ -80,6 +81,8 @@ async function main() {
     endpoint = mainnet ? ethers.getAddress(process.env.LZ_ENDPOINT ?? "0x1a44076050125825900e736c501f859c50fE728c") : need("LZ_ENDPOINT");
   }
   const feeRecipient = !dry && process.env.ONEHOOK_FEE_RECIPIENT ? ethers.getAddress(process.env.ONEHOOK_FEE_RECIPIENT) : admin;
+  // every launch on this chain opens with at least this much native in its pool (factory immutable); per chain
+  const minFirstBuy = ethers.parseEther(process.env.EQUO_MIN_FIRST_BUY ?? "0.001");
 
   console.log(`network ${network.name}, deployer ${deployer.address}, admin ${admin}`);
 
@@ -117,7 +120,7 @@ async function main() {
   console.log("EquoTokenCreator:", plainCreatorAddr, " EquoDivTokenCreator:", divCreatorAddr);
 
   const factory = await (await ethers.getContractFactory("EquoFactory")).deploy(
-    deployer.address, admin, poolManager, hookAddr, tokenDeployerAddr, weth, oracle, feeRecipient,
+    deployer.address, admin, poolManager, hookAddr, tokenDeployerAddr, weth, oracle, feeRecipient, minFirstBuy,
   );
   await factory.waitForDeployment();
   const factoryAddr = await factory.getAddress();
@@ -164,6 +167,7 @@ async function main() {
     admin,
     feeRecipient,
     contracts: { hookDeployer: c2Addr, hook: hookAddr, hookSalt: salt, tokenDeployer: tokenDeployerAddr, tokenCreator: plainCreatorAddr, divTokenCreator: divCreatorAddr, factory: factoryAddr, router: routerAddr, poolManager, weth, oracle, lzEndpoint: endpoint },
+    minFirstBuy: minFirstBuy.toString(),
   };
   if (dry) { console.log("dry run: nothing written"); return; }
   mkdirSync(join(__dirname, "../deployments"), { recursive: true });

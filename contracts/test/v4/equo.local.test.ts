@@ -58,7 +58,7 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     const oracle = await (await ethers.getContractFactory("MockOneOracle")).deploy();
     await (await oracle.set(WETH, ETH_USD_18)).wait();
     const factory = await (await ethers.getContractFactory("EquoFactory")).deploy(
-      admin.address, admin.address, POOL_MANAGER, hookAddr, await tokenDeployer.getAddress(), WETH, await oracle.getAddress(), feeWallet.address,
+      admin.address, admin.address, POOL_MANAGER, hookAddr, await tokenDeployer.getAddress(), WETH, await oracle.getAddress(), feeWallet.address, ethers.parseEther("0.001"),
     );
     const FACTORY = await factory.getAddress();
     const router = await (await ethers.getContractFactory("EquoRouter")).deploy(POOL_MANAGER, FACTORY, WETH);
@@ -70,10 +70,12 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
 
   async function launch(factory: any, creator: any, genes: any, value: bigint, tag = "A", capPreset = 0) {
     const p = { name: `Coin ${tag}`, symbol: `C${tag}`, metadataURI: "ipfs://x", pair: ethers.ZeroAddress, minPairOut: 0, capPreset, genes, stages: [] as any[] };
-    const rc = await (await factory.connect(creator).launch(p, ethers.id(`salt-${tag}`), "0x", "0x", { value })).wait();
+    // every launch opens with at least the factory's minimum first buy (0.001 ETH in these tests)
+    const rc = await (await factory.connect(creator).launch(p, ethers.id(`salt-${tag}`), "0x", "0x", { value: value < MIN_FIRST_BUY ? MIN_FIRST_BUY : value })).wait();
     const ev = rc!.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "Launched");
     return ev!.args.token as string;
   }
+  const MIN_FIRST_BUY = ethers.parseEther("0.001");
 
   function feeOf(rc: any, hook: any): bigint {
     const ev = rc.logs.map((l: any) => { try { return hook.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "FeeTaken");

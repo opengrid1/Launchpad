@@ -64,7 +64,7 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     const book = await (await ethers.getContractFactory("EquoPriceBook")).deploy(admin.address);
     await (await book.setPrices([WETH], [ETH_USD_18])).wait();
     const factory = await (await ethers.getContractFactory("EquoFactory")).deploy(
-      admin.address, admin.address, POOL_MANAGER, hookAddr, TD, WETH, await book.getAddress(), feeWallet.address,
+      admin.address, admin.address, POOL_MANAGER, hookAddr, TD, WETH, await book.getAddress(), feeWallet.address, ethers.parseEther("0.001"),
     );
     const FACTORY = await factory.getAddress();
     const router = await (await ethers.getContractFactory("EquoRouter")).deploy(POOL_MANAGER, FACTORY, WETH);
@@ -105,7 +105,7 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
       const f = chains[i].factory;
       const tx = i === 0
         ? await f.connect(creator).launch(p, salt, "0x", peers, { value: devBuy })
-        : await f.connect(launcher).launchFor(creator.address, p, salt, "0x", peers);
+        : await f.connect(launcher).launchFor(creator.address, p, salt, "0x", peers, { value: ethers.parseEther("0.001") }); // the launch service seeds each chain's pool with the minimum first buy
       const rc = await tx.wait();
       const ev = rc!.logs.map((l: any) => { try { return f.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "Launched");
       expect(ev!.args.token).to.equal(addrs[i]);
@@ -140,7 +140,7 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     }
     // the creator's paid launch included the first buy; the service launches did not
     expect(await coins[0].balanceOf(env.creator.address)).to.be.gt(0n);
-    expect(await coins[1].balanceOf(env.creator.address)).to.equal(0n);
+    expect(await coins[1].balanceOf(env.creator.address)).to.be.gt(0n); // the service's seed buy on the other chains goes to the creator too
   });
 
   it("bridges: burns out, mints in, keeps the total, takes 0.2% for the platform, and the coins trade on arrival", async () => {
@@ -186,10 +186,11 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     const bal = await coins[0].balanceOf(creator.address);
     const shares0 = await coins[0].totalShares();
     expect(shares0).to.equal(bal);
+    const shares2 = await coins[2].totalShares(); // the creator's seed buy on chain two
     await bridge(coins[0], creator, EIDS[2], trader.address, bal / 2n);
     const got = await coins[2].balanceOf(trader.address);
     expect(got).to.be.gt(0n);
-    expect(await coins[2].totalShares()).to.equal(got);
+    expect(await coins[2].totalShares()).to.equal(shares2 + got);
     // what left chain one: the creator's burn, minus the fee that stayed as the platform's shares
     expect(await coins[0].totalShares()).to.equal(shares0 - got);
   });
@@ -201,7 +202,7 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     const bound = ethers.keccak256(coder.encode(["address", "bytes32"], [creator.address, salt]));
     const want = (await chains[1].tokenDeployer.predict(bound, chains[1].WETH, false))[0];
     const p = { name: "Squat", symbol: "SQ", metadataURI: "", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes: FLAT, stages: [] as any[] };
-    const rc = await (await chains[1].factory.connect(outsider).launch(p, salt, "0x", "0x")).wait();
+    const rc = await (await chains[1].factory.connect(outsider).launch(p, salt, "0x", "0x", { value: ethers.parseEther("0.001") })).wait();
     const ev = rc!.logs.map((l: any) => { try { return chains[1].factory.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "Launched");
     expect(ev!.args.token).to.not.equal(want);
     expect((await chains[1].tokenDeployer.predict(bound, chains[1].WETH, false))[0]).to.equal(want);
@@ -247,12 +248,12 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
 
     await expect(c.book.connect(outsider).setPrices([c.WETH], [1n])).to.be.revertedWithCustomError(c.book, "NotUpdater");
     await time.increase(3601);
-    await expect(c.factory.connect(creator).launch(p, ethers.id("l2"), "0x", "0x")).to.be.revertedWithCustomError(c.book, "Stale");
+    await expect(c.factory.connect(creator).launch(p, ethers.id("l2"), "0x", "0x", { value: ethers.parseEther("0.001") })).to.be.revertedWithCustomError(c.book, "Stale");
     await (await c.book.setUpdater(launcher.address, true)).wait();
     await (await c.book.connect(launcher).setPrices([c.WETH], [ETH_USD_18])).wait();
-    await (await c.factory.connect(creator).launch(p, ethers.id("l2"), "0x", "0x")).wait();
+    await (await c.factory.connect(creator).launch(p, ethers.id("l2"), "0x", "0x", { value: ethers.parseEther("0.001") })).wait();
 
     await (await c.factory.connect(admin).setLauncher(launcher.address, false)).wait();
-    await expect(c.factory.connect(launcher).launchFor(creator.address, p, ethers.id("l3"), "0x", "0x")).to.be.revertedWithCustomError(c.factory, "NotAdmin");
+    await expect(c.factory.connect(launcher).launchFor(creator.address, p, ethers.id("l3"), "0x", "0x", { value: ethers.parseEther("0.001") })).to.be.revertedWithCustomError(c.factory, "NotAdmin");
   });
 });

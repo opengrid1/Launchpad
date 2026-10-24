@@ -57,7 +57,7 @@ async function deployChain(key: string, eid: number) {
   const book = await (await ethers.getContractFactory("EquoPriceBook")).deploy(admin.address);
   await (await book.setPrices([WETH], [ETH_USD_18])).wait();
   await (await book.setMaxAge(86400)).wait();
-  const factory = await (await ethers.getContractFactory("EquoFactory")).deploy(admin.address, admin.address, POOL_MANAGER, hookAddr, TD, WETH, await book.getAddress(), feeWallet.address);
+  const factory = await (await ethers.getContractFactory("EquoFactory")).deploy(admin.address, admin.address, POOL_MANAGER, hookAddr, TD, WETH, await book.getAddress(), feeWallet.address, ethers.parseEther("0.001"));
   const FACTORY = await factory.getAddress();
   const router = await (await ethers.getContractFactory("EquoRouter")).deploy(POOL_MANAGER, FACTORY, WETH);
   await (await tokenDeployer.setFactory(FACTORY)).wait();
@@ -86,7 +86,7 @@ async function main() {
       const i = idx[n], others = idx.filter((x) => x !== i);
       const peers = coder.encode(["uint32[]", "bytes32[]"], [others.map((x) => chains[x].eid), others.map((x) => pad(addrs[idx.indexOf(x)]))]);
       if (n === 0) await (await chains[i].factory.connect(creator).launch(p, salt, "0x", peers, { value: ethers.parseEther("1") })).wait();
-      else await (await chains[i].factory.connect(launcher).launchFor(creator.address, p, salt, "0x", peers)).wait();
+      else await (await chains[i].factory.connect(launcher).launchFor(creator.address, p, salt, "0x", peers, { value: ethers.parseEther("0.001") })).wait();
     }
     return Object.fromEntries(idx.map((i, n) => [chains[i].key, addrs[n]]));
   }

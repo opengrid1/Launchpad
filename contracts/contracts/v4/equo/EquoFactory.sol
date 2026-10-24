@@ -91,6 +91,11 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
     address public immutable weth;
     address public immutable admin;
     EquoTokenDeployer public immutable tokenDeployer;
+    /// @notice Every launch on this chain opens with a first buy of at least this much of the native coin, paid by
+    ///         the creator (or, on the chains the creator did not pay on, by the launch service out of the launch
+    ///         fee). No pool ever starts empty: there is always pair in it to sell into, so scanners and trading
+    ///         bots that simulate a sell on a fresh coin never read it as a honeypot. Set per chain at deployment.
+    uint256 public immutable minFirstBuy;
     IOneOracle public immutable oracle;
 
     address public converter;
@@ -182,6 +187,7 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
     event TakeoverExecuted(address indexed token, address indexed from, address indexed to);
 
     error LaunchesPaused();
+    error FirstBuyTooSmall();
     error InvalidParams();
     error BadGenes();
     error NotAdmin();
@@ -200,8 +206,10 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         _;
     }
 
-    constructor(address owner_, address admin_, IPoolManager poolManager_, EquoHook hook_, EquoTokenDeployer tokenDeployer_, address weth_, IOneOracle oracle_, address feeRecipient_) {
+    constructor(address owner_, address admin_, IPoolManager poolManager_, EquoHook hook_, EquoTokenDeployer tokenDeployer_, address weth_, IOneOracle oracle_, address feeRecipient_, uint256 minFirstBuy_) {
         if (admin_ == address(0) || weth_ == address(0) || address(oracle_) == address(0)) revert ZeroAddress();
+        if (minFirstBuy_ == 0) revert InvalidParams();
+        minFirstBuy = minFirstBuy_;
         owner = owner_;
         admin = admin_;
         poolManager = poolManager_;
@@ -479,6 +487,7 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         returns (address token, bytes32 poolId)
     {
         if (launchesPaused) revert LaunchesPaused();
+        if (msg.value < minFirstBuy) revert FirstBuyTooSmall();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0 || converter == address(0)) revert InvalidParams();
         _checkGenes(p.genes);
         address pair = p.pair == address(0) ? weth : p.pair;

@@ -94,6 +94,7 @@ Other findings (no change needed):
 | Cashback | 25% of the platform part | 0.1% of a 1% fee with no pots. |
 | Referral | 25% of the platform part | Same. |
 | Start cap | $3,000 (default preset) | Admin can change later with `setStartCap` or `setCapPresets`. |
+| Minimum first buy | 0.001 ETH on Ethereum; per chain elsewhere (`EQUO_MIN_FIRST_BUY`) | Factory immutable. A launch with less reverts `FirstBuyTooSmall`, on `launch` and on `launchFor` alike, so the launch service seeds every chain's pool. No pool ever starts empty, which is what made scanners and trading bots read fresh coins as honeypots on Liqio. |
 | Takeover idle time | 30 days | Constant. |
 | Takeover delay | 7 days | Constant. |
 | Takeover minimum stake | 5% of supply | Constant. |

@@ -71,7 +71,7 @@ describe("Equo: v2 invariants carried over (local)", function () {
     await (await oracle.set(WETH, ETH_USD_18)).wait();
 
     const factory = await (await ethers.getContractFactory("EquoFactory")).deploy(
-      admin.address, admin.address, POOL_MANAGER, hookAddr, await tokenDeployer.getAddress(), WETH, await oracle.getAddress(), feeWallet.address,
+      admin.address, admin.address, POOL_MANAGER, hookAddr, await tokenDeployer.getAddress(), WETH, await oracle.getAddress(), feeWallet.address, ethers.parseEther("0.001"),
     );
     await factory.waitForDeployment();
     const FACTORY = await factory.getAddress();
@@ -88,7 +88,8 @@ describe("Equo: v2 invariants carried over (local)", function () {
 
   async function launch(factory: any, creator: any, genes: any, value: bigint, tag = "A") {
     const p = { name: `Coin ${tag}`, symbol: `C${tag}`, metadataURI: "ipfs://x", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [] as any[] };
-    const tx = await factory.connect(creator).launch(p, ethers.id(`salt-${tag}`), "0x", "0x", { value });
+    const MIN_FIRST_BUY = ethers.parseEther("0.001"); // the factory refuses a launch under its minimum first buy
+    const tx = await factory.connect(creator).launch(p, ethers.id(`salt-${tag}`), "0x", "0x", { value: value < MIN_FIRST_BUY ? MIN_FIRST_BUY : value });
     const rc = await tx.wait();
     const ev = rc!.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "Launched");
     return ev!.args.token as string;

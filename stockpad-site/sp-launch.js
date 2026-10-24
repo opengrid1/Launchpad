@@ -26,7 +26,9 @@ function launchInit(){
 
   /* ---------- derived numbers ---------- */
   function split(){ const dv=S.div?clamp(Math.round(fields.divPct()),10,50):0, bb=S.bb?clamp(Math.round(fields.bbPct()),10,50):0; const rest=Math.max(0,100-dv-bb), cr=Math.round(rest*0.6), pl=rest-cr; return {holders:dv,buyback:bb,creator:cr,platform:pl}; }
-  function devCoins(){ const eth=S.dev?clamp(fields.devEth(),0,0.5):0; const usd=eth*ethPx(); return usd>0?usd/(S.capUsd+usd)*SUPPLY:0; }
+  // factories with a minimum first buy (config minFirstBuy, from the factory's immutable) refuse a launch without one
+  const DEV_MIN=(window.INKY&&INKY.minFirstBuy)||0, DEV_MAX=0.5;
+  function devCoins(){ const eth=S.dev?clamp(fields.devEth(),DEV_MIN,DEV_MAX):0; const usd=eth*ethPx(); return usd>0?usd/(S.capUsd+usd)*SUPPLY:0; }
   function optList(){ const a=[]; if(S.snipe) a.push('Anti-snipe'); if(S.div) a.push('Holder rewards'); if(S.bb) a.push('Buyback and burn'); if(S.mw) a.push('Max wallet'); return a; }
   function snipeBlocks(){ return clamp(Math.round(fields.snipeMin()*60/12),5,7200); }
 
@@ -38,7 +40,11 @@ function launchInit(){
     $$('#pairs [data-p]').forEach(b=>b.onclick=()=>{ setPair(PAIRS.find(p=>p.address===b.dataset.p)); g('pair-dd').classList.remove('open'); });
     const pv=g('pair-pv'); if(pv){ pv.innerHTML=S.pair&&S.pair.eth?`<img src="/img/eth.png" alt="">${esc(natives.join(' / ')||'ETH')} <small>Native coin</small>`:S.pair?`<img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.ticker)} <small>${esc(S.pair.name)} · ${esc(S.pair.symbol)}</small>`:'Select'; } }
   /** the dev buy is paid in ETH, so it needs an ETH route into the pair */
-  function devRoute(){ const ok=!S.pair||S.pair.route; if(!ok&&S.dev){ S.dev=false; const sw=g('sw-dev'); sw.classList.remove('on'); sw.setAttribute('aria-checked','false'); g('opt-dev').classList.remove('on'); }
+  function devRoute(){ const ok=!S.pair||S.pair.route;
+    if(DEV_MIN>0){ // the first buy is required: a pair with no ETH route cannot be launched at all
+      if(!ok){ S.pairBad=`${S.pair.ticker} has no ETH route, so the required first buy cannot be paid. Pick a pair with an ETH route.`; g('pair-err').textContent=S.pairBad; }
+      g('opt-dev').classList.remove('off'); g('dev-hdr').textContent=`Required · at least ${DEV_MIN} ETH`; return; }
+    if(!ok&&S.dev){ S.dev=false; const sw=g('sw-dev'); sw.classList.remove('on'); sw.setAttribute('aria-checked','false'); g('opt-dev').classList.remove('on'); }
     g('opt-dev').classList.toggle('off',!ok); g('dev-hdr').textContent=ok?'Paid in ETH':`Off: ${S.pair.ticker} has no ETH route`; }
   function paintKind(){ $$('#pair-kind button').forEach(b=>b.classList.toggle('on',b.dataset.k===S.kind)); g('pair-q').placeholder=S.kind==='stock'?`Search ${SP.stocks.length} stocks: ticker or name`:'Search pairs'; }
   function setPair(p){ S.pair=p||null; S.pairBad=''; g('pair-err').textContent=''; devRoute(); if(S.pair&&window.CHAIN&&CHAIN.equo&&CHAIN.equo.launchable) CHAIN.equo.launchable(S.pair.address).then(r=>{ if(S.pair!==p) return; S.pairBad=r.why; g('pair-err').textContent=r.why; sync(); }).catch(()=>{}); paintPairs(); if(S.pair){ const u=new URL(location.href); u.searchParams.set('pair',S.pair.symbol); history.replaceState(null,'',u); SP.pairUsd(S.pair.address).then(()=>{ paintPairs(); sync(); }).catch(()=>{}); } sync(); }
@@ -75,7 +81,7 @@ function launchInit(){
   function mwMsg(){ const el=g('mw-msg'); if(!S.mw){ el.textContent=''; return true; } const p=fields.mwPct(), h=fields.mwH(); let e='';
     if(!(p>=0.5&&p<=20)) e='Max per wallet: 0.5% to 20%'; else if(!(h>=0.25&&h<=720)) e='Duration: 0.25 to 720 hours';
     el.textContent=e; g('mw-hint').textContent=e?'':`No wallet can hold more than ${fmtAmt(SUPPLY*p/100)} coins (${p}%) for the first ${h>=24?(h/24).toFixed(h%24?1:0)+' days':h+' h'}`; return !e; }
-  function devMsg(){ const el=g('dev-msg'); if(!S.dev){ el.textContent=''; return true; } const v=fields.devEth(); const ok=v>=0&&v<=0.5; el.textContent=ok?'':'Dev buy: 0 to 0.5 ETH';
+  function devMsg(){ const el=g('dev-msg'); if(!S.dev){ el.textContent=''; return true; } const v=fields.devEth(); const ok=v>=DEV_MIN&&v<=DEV_MAX; el.textContent=ok?'':DEV_MIN>0?`First buy: at least ${DEV_MIN} and up to ${DEV_MAX} ETH`:'Dev buy: 0 to 0.5 ETH';
     if(ok){ const c=devCoins(); g('dev-hint').textContent=v>0?`≈ ${fmtAmt(c)} coins (${(c/SUPPLY*100).toFixed(2)}%) · ${fmtUsd(v*ethPx())}`:''; } return ok; }
   function paintReview(){ const sp=split(); const px=pairPx(); const inPair=S.pair?(px?fmtInPair(S.capUsd/px):'loading the '+S.pair.symbol+' price'):'';
     g('rv-split').textContent=`${feePct()} per swap: ${sp.holders?sp.holders+'% holders, ':''}${sp.buyback?sp.buyback+'% buyback, ':''}${sp.creator}% creator, ${sp.platform}% platform`;
@@ -97,7 +103,7 @@ function launchInit(){
     g('sm-pair').innerHTML=S.pair?`Paired with <img src="${S.pair.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.symbol)}`:'Pick a pair';
     g('sm-fee').textContent=feePct()+(S.snipe?' · anti-snipe':''); const opts=optList(); g('sm-opts').textContent=opts.length?opts.join(', '):'None';
     const px=pairPx(); g('sm-cap').textContent=fmtCap(S.capUsd);
-    const dv=S.dev?clamp(fields.devEth(),0,0.5):0; g('sm-dev').textContent=dv>0?`${dv} ETH`:'None';
+    const dv=S.dev?clamp(fields.devEth(),DEV_MIN,DEV_MAX):0; g('sm-dev').textContent=dv>0?`${dv} ETH`:'None';
     g('sm-cr').textContent=`${sp.creator}%`; g('sm-note').textContent=(S.pair?`Fees paid in ${S.pair.symbol}. `:'')+'Liquidity cannot be withdrawn.';
     if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.bb) bbMsg(); if(S.mw) mwMsg(); if(S.dev) devMsg(); paintReview(); if(S.presets.length){ const px=pairPx(); g('cap-hint').textContent=`The coin opens at ${fmtCap(S.capUsd)} market cap${S.pair&&px?' ('+fmtInPair(S.capUsd/px)+')':''}. A higher start means the first buys move the price less.`; } chainPreview(); }
 
@@ -141,14 +147,14 @@ function launchInit(){
   /* ---------- launch ---------- */
   const cta=g('cta');
   function paintCta(){ if(S.busy){ cta.disabled=true; cta.textContent='Confirm in wallet…'; return; } if(multiOnly()){ cta.disabled=true; cta.textContent=window.EQUO_PREVIEW?'Preview: multichain launches open soon':`Launching on ${chainNames(S.chains.filter(k=>!SP.chainDeployed(k)))} opens soon`; return; } cta.disabled=S.paused; cta.textContent=S.paused?'Launches paused':!SP.W.connected?'Connect a wallet':!SP.W.chainOk?'Switch to Ethereum':'Create token'; }
-  function launchErr(e){ let m=SP.errMsg(e); if(/instincts|evolution|BadGenes/i.test(m)) m='The fee or options are out of bounds; adjust them and try again.'; return m; }
+  function launchErr(e){ let m=SP.errMsg(e); if(/instincts|evolution|BadGenes/i.test(m)) m='The fee or options are out of bounds; adjust them and try again.'; if(/FirstBuyTooSmall/i.test(m)) m=`A first buy of at least ${DEV_MIN||0.001} ETH is required.`; return m; }
   async function doLaunch(){ if(S.busy||S.paused||multiOnly()) return;
     if(!SP.W.connected){ SP.W.connect(); return; }
     if(!SP.W.chainOk){ try{ await SP.W.switchChain(); }catch(e){ SP.toast(SP.errMsg(e),'err'); } return; }
     for(const i of [1,2,3]) if(!validate(i)){ show(i); SP.toast('Fix the highlighted fields first','err'); return; }
     if(!LIVE||!window.CHAIN){ SP.toast('Launches open when the contracts are live','info'); return; }
     const name=fields.name(), symbol=fields.sym(); const meta={description:fields.desc()}; if(S.logo) meta.image=S.logo; const w=link(g('f-web').value), x=link(g('f-x').value), tg=link(g('f-tg').value); if(w) meta.website=w; if(x) meta.x=x; if(tg) meta.telegram=tg;
-    const devEth=S.dev?clamp(fields.devEth(),0,0.5):0; const devWei=devEth>0?CHAIN.parseEther(devEth.toFixed(18)):0n;
+    const devEth=S.dev?clamp(fields.devEth(),DEV_MIN,DEV_MAX):0; const devWei=devEth>0?CHAIN.parseEther(devEth.toFixed(18)):0n;
     const bbT=S.bb?bbThreshold():0n; if(S.bb&&bbT<1000n){ SP.toast('Waiting for the '+S.pair.symbol+' price to set the burn size. Try again in a moment.','err'); return; }
     const genes={ feeMode:0, feeBps:S.feeBps, snipeBps:S.snipe?clamp(Math.round(fields.snipePct()*100),S.feeBps+1,3000):0, snipeBlocks:S.snipe?snipeBlocks():0, buybackShareBps:S.bb?clamp(Math.round(fields.bbPct()),10,50)*100:0, buybackThreshold:bbT, divShareBps:S.div?clamp(Math.round(fields.divPct()),10,50)*100:0, maxWalletBps:S.mw?clamp(Math.round(fields.mwPct()*100),50,2000):0, maxWalletSecs:S.mw?clamp(Math.round(fields.mwH()*3600),600,2592000):0, evolution:{enabled:false} };
     S.busy=true; paintCta();
@@ -179,12 +185,13 @@ function launchInit(){
   g('f-desc').addEventListener('input',e=>{ g('desc-cnt').textContent=e.target.value.length+' / 280'; });
   $$('#fee-seg button').forEach(b=>b.onclick=()=>{ $$('#fee-seg button').forEach(x=>x.classList.toggle('on',x===b)); S.feeCustom=b.dataset.fee==='custom'; g('fee-custom').classList.toggle('hidden',!S.feeCustom); if(!S.feeCustom) S.feeBps=+b.dataset.fee; else g('f-fee').value=(S.feeBps/100).toString(); feeMsg(); sync(); });
   g('f-fee').addEventListener('input',()=>{ feeMsg(); sync(); });
-  $$('#pg-launch [data-sw]').forEach(h=>h.addEventListener('click',e=>{ if(e.target.closest('input')) return; const k=h.dataset.sw, on=!S[k]; if(k==='dev'&&on&&S.pair&&!S.pair.route){ SP.toast(`${S.pair.ticker} has no ETH route, so the dev buy is off. Buy after launch with ${S.pair.symbol}.`,'info'); return; } S[k]=on; const sw=g('sw-'+k); sw.classList.toggle('on',on); sw.setAttribute('aria-checked',String(on)); g('opt-'+k).classList.toggle('on',on); if(on){ const f=g('opt-'+k).querySelector('input'); if(f) setTimeout(()=>f.focus(),0); } sync(); }));
+  $$('#pg-launch [data-sw]').forEach(h=>h.addEventListener('click',e=>{ if(e.target.closest('input')) return; const k=h.dataset.sw, on=!S[k]; if(k==='dev'&&DEV_MIN>0){ SP.toast(`Every launch opens with a first buy of at least ${DEV_MIN} ETH, so the pool never starts empty.`,'info'); return; } if(k==='dev'&&on&&S.pair&&!S.pair.route){ SP.toast(`${S.pair.ticker} has no ETH route, so the dev buy is off. Buy after launch with ${S.pair.symbol}.`,'info'); return; } S[k]=on; const sw=g('sw-'+k); sw.classList.toggle('on',on); sw.setAttribute('aria-checked',String(on)); g('opt-'+k).classList.toggle('on',on); if(on){ const f=g('opt-'+k).querySelector('input'); if(f) setTimeout(()=>f.focus(),0); } sync(); }));
   ['f-snipe','f-snipemin','f-div','f-dev','f-bb','f-bbusd','f-mw','f-mwh'].forEach(id=>g(id).addEventListener('input',sync));
   cta.onclick=doLaunch; SP.onWallet(paintCta);
   launchRepaint=()=>{ paintPairs(); if(fields.sym()) symMsg(); sync(); paintCta(); }; SP.onUpdate(launchRepaint);
   sync(); paintCta();
   if(LIVE&&window.CHAIN){ (CHAIN.equo?CHAIN.equo.capPresets():CHAIN.startCapUsd().then(v=>[v])).then(v=>{ v=(v||[]).filter(x=>x>0); if(v.length){ S.presets=v; if(S.preset>=v.length) S.preset=0; S.capUsd=v[S.preset]; paintCaps(); sync(); } }).catch(()=>{});
+    if(DEV_MIN>0){ S.dev=true; const sw=g('sw-dev'); sw.classList.add('on'); sw.setAttribute('aria-checked','true'); sw.classList.add('locked'); g('opt-dev').classList.add('on'); const f=g('f-dev'); f.min=String(DEV_MIN); f.step='0.001'; f.value=String(Math.max(DEV_MIN,0.005)); devRoute(); sync(); }
     CHAIN.launchesPaused().then(p=>{ S.paused=!!p; const el=g('paused'); el.classList.toggle('hidden',!p); if(p) el.innerHTML=ic('warn')+'<span>Launches are paused by the operator right now. You can prepare the coin; the Launch button opens again when launches resume.</span>'; paintCta(); }).catch(()=>{});
     if(S.pair) SP.pairUsd(S.pair.address).then(()=>{ paintPairs(); sync(); }).catch(()=>{}); }
 }

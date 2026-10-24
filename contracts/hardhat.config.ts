@@ -34,7 +34,7 @@ const ONEHOOK_FILES = [
   "mocks/MockOneOracle.sol",
 ].map((f) => `contracts/v4/onehook/${f}`).concat(
   // Equo (v3 of the OneHook design): same compiler settings
-  ["EquoToken.sol", "EquoDivToken.sol", "EquoTokenCreators.sol", "EquoTokenDeployer.sol", "EquoPriceBook.sol", "EquoHook.sol", "EquoFactory.sol", "EquoRouter.sol"].map((f) => `contracts/v4/equo/${f}`),
+  ["EquoToken.sol", "EquoDivToken.sol", "EquoTokenCreators.sol", "EquoTokenDeployer.sol", "EquoPriceBook.sol", "EquoHook.sol", "EquoLaunchRules.sol", "EquoFactory.sol", "EquoRouter.sol"].map((f) => `contracts/v4/equo/${f}`),
   // Liqio (Equo on HyperEVM): same compiler settings
   ["LiqioToken.sol", "LiqioDivToken.sol", "LiqioTokenDeployer.sol", "LiqioOracle.sol", "LiqioFactory.sol", "mocks/LiqioMocks.sol"].map((f) => `contracts/v4/liqio/${f}`),
 );
