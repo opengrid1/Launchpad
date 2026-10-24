@@ -23,13 +23,19 @@ async function main() {
   const genes = { feeMode: 0, feeBps: 100, snipeBps: 0, snipeBlocks: 0, buybackShareBps, divShareBps, maxWalletBps: 0, maxWalletSecs: 0, buybackThreshold };
   // LIQIO_META_FILE: a JSON file with description, image (data URI), website, x, telegram, as the launch form writes it
   const meta = process.env.LIQIO_META_FILE ? readFileSync(process.env.LIQIO_META_FILE, "utf8").trim() : JSON.stringify({ description: process.env.LIQIO_TEST_DESC ?? "First coin on Liqio: a plain HYPE-paired test launch from the deployer." });
-  const p = { name, symbol, metadataURI: meta, pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [] as any[] };
+  // LIQIO_PAIR: pair token (default HYPE). LIQIO_ROUTE_POOL: the PRJX pool WHYPE/<pair> the first buy is routed through
+  // (dex 2 = V3-style), e.g. wNVDAx 0xa8dd…50D5 via 0x4bc0…2687.
+  const pair = process.env.LIQIO_PAIR ? ethers.getAddress(process.env.LIQIO_PAIR) : ethers.ZeroAddress;
+  const NO_KEY = { currency0: ethers.ZeroAddress, currency1: ethers.ZeroAddress, fee: 0, tickSpacing: 0, hooks: ethers.ZeroAddress };
+  const HOP_T = "tuple(uint8 dex,address pool,tuple(address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key)[]";
+  const route = process.env.LIQIO_ROUTE_POOL ? ethers.AbiCoder.defaultAbiCoder().encode([HOP_T], [[{ dex: 2, pool: ethers.getAddress(process.env.LIQIO_ROUTE_POOL), key: NO_KEY }]]) : "0x";
+  const p = { name, symbol, metadataURI: meta, pair, minPairOut: 0, capPreset: 0, genes, stages: [] as any[] };
   const salt = ethers.id(`liqio-test-${Date.now()}`);
   const before = await ethers.provider.getBalance(deployer.address);
-  console.log(`launching ${name} (${symbol}) on ${network.name} from ${deployer.address}, dev buy ${ethers.formatEther(dev)} HYPE`);
-  const gas = await factory.launch.estimateGas(p, salt, "0x", "0x", { value: dev });
+  console.log(`launching ${name} (${symbol}) on ${network.name} from ${deployer.address}, pair ${pair === ethers.ZeroAddress ? "HYPE" : pair}, dev buy ${ethers.formatEther(dev)} HYPE`);
+  const gas = await factory.launch.estimateGas(p, salt, route, "0x", { value: dev });
   console.log("estimated gas", gas.toString());
-  const rc = await (await factory.launch(p, salt, "0x", "0x", { value: dev, gasLimit: (gas * 12n) / 10n })).wait();
+  const rc = await (await factory.launch(p, salt, route, "0x", { value: dev, gasLimit: (gas * 12n) / 10n })).wait();
   const ev = rc!.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "Launched");
   const token = ev!.args.token as string;
   console.log(`launched ${token} in block ${rc!.blockNumber}, gas used ${rc!.gasUsed}, pair price $${ethers.formatUnits(ev!.args.pairUsdPrice, 18)}`);
