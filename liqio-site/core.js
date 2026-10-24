@@ -202,7 +202,12 @@ SP._readyP=new Promise(resolve=>{ document.addEventListener('DOMContentLoaded',a
   // pair prices first (a few hundred ms from Hyperliquid), so the pages open with real numbers
   await Promise.race([loadPrices().catch(()=>{}),new Promise(r=>setTimeout(r,3000))]);
   try{ const ok=await Promise.race([CHAIN.ready,new Promise(r=>setTimeout(()=>r(null),40000))]); if(!ok) throw new Error('timeout'); syncTok(); }
-  catch(e){ console.warn('chain load',e); if(main) main.insertAdjacentHTML('afterbegin',`<div class="notice warn" style="margin-bottom:16px">${ic('warn')}<span>Could not load on-chain data (${esc(SP.errMsg(e))}). Prices and coins may be stale; reload to retry.</span></div>`); }
+  catch(e){ console.warn('chain load',e);
+    // the load keeps running after the cap: show a quiet notice and drop it when the data lands (chain-ready), or
+    // turn it into a warning if the load really fails (chain-error)
+    if(main&&!$('#sp-chain-notice')){ main.insertAdjacentHTML('afterbegin',`<div class="notice" id="sp-chain-notice" style="margin-bottom:16px">${ic('clock')}<span>Still loading on-chain data from HyperEVM. Coins and prices fill in as soon as it arrives.</span></div>`);
+      const done=()=>{ const n=$('#sp-chain-notice'); if(n) n.remove(); }; addEventListener('chain-ready',done,{once:true});
+      addEventListener('chain-error',ev=>{ const n=$('#sp-chain-notice'); if(n){ n.className='notice warn'; n.innerHTML=`${ic('warn')}<span>Could not load on-chain data (${esc((ev.detail||'error').slice(0,80))}). Prices and coins may be stale; reload to retry.</span>`; } },{once:true}); } }
   paintPrices(); resolve(true);
   addEventListener('chain-update',()=>{ syncTok(); paintPrices(); SP._upd.forEach(f=>{ try{ f(); }catch(err){ console.warn(err); } }); });
   setInterval(()=>{ const el=$('#sp-clock'); if(el) el.outerHTML=clockHtml(); },30000);
