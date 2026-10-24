@@ -18,7 +18,9 @@ const LIQIO = "0x04A208834CC5A8682537A266E0B38C4e5E159422";
 const ADMIN = "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b";
 const POOL_ID = "0xb9aa00d3f0d2d46a7faf3f67508316c9e5c613835819f85ede52f3b0525b2a40";
 const TICK_LOWER = -170790, TICK_UPPER = 887270;
-const LIQUIDITY = 195671553178154058298855n;
+// the launch position's liquidity, less a sliver: the PoolManager rounds deposits up by a wei, and the admin
+// wallet holds exactly what the collect paid out
+const LIQUIDITY = 195671553178154058298855n - 1_000_000n;
 
 (ON ? describe : describe.skip)("LIQIO liquidity restore on a HyperEVM fork", function () {
   this.timeout(900_000);
@@ -45,7 +47,7 @@ const LIQUIDITY = 195671553178154058298855n;
 
     // the contract exposes nothing that moves liquidity out
     const names = perm.interface.fragments.filter((f: any) => f.type === "function").map((f: any) => f.name);
-    expect(names.sort()).to.deep.equal(["add", "poolManager"]);
+    expect(names.sort()).to.deep.equal(["add", "poolManager", "unlockCallback"]); // unlockCallback is PoolManager-only
 
     await network.provider.send("hardhat_impersonateAccount", [ADMIN]);
     await network.provider.send("hardhat_setBalance", [ADMIN, "0x8AC7230489E80000"]);
