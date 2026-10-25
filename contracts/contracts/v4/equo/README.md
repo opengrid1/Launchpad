@@ -123,9 +123,16 @@ run against the Equo contracts.
 | Contract | Bytes (limit 24,576) |
 |---|---|
 | EquoHook | 17,319 |
-| EquoFactory | 24,084 |
-| EquoRouter | 8,313 |
-| EquoTokenDeployer | 19,357 |
+| EquoFactory | 23,793 (links EquoLaunchRules) |
+| EquoLaunchRules (library) | 2,178 |
+| EquoRouter | 8,424 |
+| EquoTokenDeployer | 9,246 |
+| EquoTokenCreator / EquoDivTokenCreator | 17,769 / 21,604 |
+| EquoPriceBook | 1,697 |
+
+`EquoLaunchRules` holds the factory's launch-time rules on a coin's instincts (the pairing rules between
+settings, thresholds, and the one-way evolution path) as a linked library, deployed once per chain before the
+factory. Verification of the factory passes the library address (`libraries: { EquoLaunchRules }`).
 
 ## Deploying
 

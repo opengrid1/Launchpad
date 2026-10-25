@@ -70,7 +70,8 @@ describe("Equo: v2 invariants carried over (local)", function () {
     await oracle.waitForDeployment();
     await (await oracle.set(WETH, ETH_USD_18)).wait();
 
-    const factory = await (await ethers.getContractFactory("EquoFactory")).deploy(
+    const rules = await (await ethers.getContractFactory("EquoLaunchRules")).deploy();
+    const factory = await (await ethers.getContractFactory("EquoFactory", { libraries: { EquoLaunchRules: await rules.getAddress() } })).deploy(
       admin.address, admin.address, POOL_MANAGER, hookAddr, await tokenDeployer.getAddress(), WETH, await oracle.getAddress(), feeWallet.address, ethers.parseEther("0.001"),
     );
     await factory.waitForDeployment();

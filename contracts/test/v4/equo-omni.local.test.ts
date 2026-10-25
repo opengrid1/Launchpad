@@ -63,7 +63,8 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
 
     const book = await (await ethers.getContractFactory("EquoPriceBook")).deploy(admin.address);
     await (await book.setPrices([WETH], [ETH_USD_18])).wait();
-    const factory = await (await ethers.getContractFactory("EquoFactory")).deploy(
+    const rules = await (await ethers.getContractFactory("EquoLaunchRules")).deploy();
+    const factory = await (await ethers.getContractFactory("EquoFactory", { libraries: { EquoLaunchRules: await rules.getAddress() } })).deploy(
       admin.address, admin.address, POOL_MANAGER, hookAddr, TD, WETH, await book.getAddress(), feeWallet.address, ethers.parseEther("0.001"),
     );
     const FACTORY = await factory.getAddress();

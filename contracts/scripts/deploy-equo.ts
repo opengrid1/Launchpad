@@ -119,7 +119,11 @@ async function main() {
   const plainCreatorAddr = await plainCreator.getAddress(), divCreatorAddr = await divCreator.getAddress();
   console.log("EquoTokenCreator:", plainCreatorAddr, " EquoDivTokenCreator:", divCreatorAddr);
 
-  const factory = await (await ethers.getContractFactory("EquoFactory")).deploy(
+  const rules = await (await ethers.getContractFactory("EquoLaunchRules")).deploy();
+  await rules.waitForDeployment();
+  const rulesAddr = await rules.getAddress();
+  console.log("EquoLaunchRules (linked library):", rulesAddr);
+  const factory = await (await ethers.getContractFactory("EquoFactory", { libraries: { EquoLaunchRules: rulesAddr } })).deploy(
     deployer.address, admin, poolManager, hookAddr, tokenDeployerAddr, weth, oracle, feeRecipient, minFirstBuy,
   );
   await factory.waitForDeployment();
@@ -166,7 +170,7 @@ async function main() {
     deployer: deployer.address,
     admin,
     feeRecipient,
-    contracts: { hookDeployer: c2Addr, hook: hookAddr, hookSalt: salt, tokenDeployer: tokenDeployerAddr, tokenCreator: plainCreatorAddr, divTokenCreator: divCreatorAddr, factory: factoryAddr, router: routerAddr, poolManager, weth, oracle, lzEndpoint: endpoint },
+    contracts: { hookDeployer: c2Addr, hook: hookAddr, hookSalt: salt, tokenDeployer: tokenDeployerAddr, tokenCreator: plainCreatorAddr, divTokenCreator: divCreatorAddr, launchRules: rulesAddr, factory: factoryAddr, router: routerAddr, poolManager, weth, oracle, lzEndpoint: endpoint },
     minFirstBuy: minFirstBuy.toString(),
   };
   if (dry) { console.log("dry run: nothing written"); return; }
@@ -185,7 +189,9 @@ async function main() {
   console.log(`  npx hardhat verify --network ${network.name} ${tokenDeployerAddr} ${admin} ${endpoint}`);
   console.log(`  npx hardhat verify --network ${network.name} ${plainCreatorAddr} ${tokenDeployerAddr}`);
   console.log(`  npx hardhat verify --network ${network.name} ${divCreatorAddr} ${tokenDeployerAddr}`);
-  console.log(`  npx hardhat verify --network ${network.name} ${factoryAddr} ${deployer.address} ${admin} ${poolManager} ${hookAddr} ${tokenDeployerAddr} ${weth} ${oracle} ${feeRecipient}`);
+  console.log(`  npx hardhat verify --network ${network.name} ${rulesAddr}`);
+  // the factory links EquoLaunchRules; hardhat-verify detects the linked address from the deployed bytecode
+  console.log(`  npx hardhat verify --network ${network.name} ${factoryAddr} ${deployer.address} ${admin} ${poolManager} ${hookAddr} ${tokenDeployerAddr} ${weth} ${oracle} ${feeRecipient} ${minFirstBuy}`);
   console.log(`  npx hardhat verify --network ${network.name} ${routerAddr} ${poolManager} ${factoryAddr} ${weth}`);
 }
 

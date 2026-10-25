@@ -57,7 +57,8 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     await (await tokenDeployer.setCreators(await plainCreator.getAddress(), await divCreator.getAddress())).wait();
     const oracle = await (await ethers.getContractFactory("MockOneOracle")).deploy();
     await (await oracle.set(WETH, ETH_USD_18)).wait();
-    const factory = await (await ethers.getContractFactory("EquoFactory")).deploy(
+    const rules = await (await ethers.getContractFactory("EquoLaunchRules")).deploy();
+    const factory = await (await ethers.getContractFactory("EquoFactory", { libraries: { EquoLaunchRules: await rules.getAddress() } })).deploy(
       admin.address, admin.address, POOL_MANAGER, hookAddr, await tokenDeployer.getAddress(), WETH, await oracle.getAddress(), feeWallet.address, ethers.parseEther("0.001"),
     );
     const FACTORY = await factory.getAddress();

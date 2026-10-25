@@ -20,6 +20,7 @@ import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmo
 import {EquoToken} from "./EquoToken.sol";
 import {EquoTokenDeployer} from "./EquoTokenDeployer.sol";
 import {EquoHook} from "./EquoHook.sol";
+import {EquoLaunchRules} from "./EquoLaunchRules.sol";
 import {IOneOracle} from "../onehook/IOneOracle.sol";
 
 interface IEquoPairRouter {
@@ -489,7 +490,6 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         if (launchesPaused) revert LaunchesPaused();
         if (msg.value < minFirstBuy) revert FirstBuyTooSmall();
         if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0 || converter == address(0)) revert InvalidParams();
-        _checkGenes(p.genes);
         address pair = p.pair == address(0) ? weth : p.pair;
         if (blocked[pair]) revert Blocked();
         uint256 pairUsd18 = oracle.launchPrice(pair);
@@ -497,32 +497,7 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         uint256 capUsd8 = _capPresets[p.capPreset];
         // validate + freeze the evolution path up front, before anything is deployed
         EquoHook.Stage[] memory stages = _buildStages(p.genes, p.stages, pairUsd18, capUsd8);
-        bool divs = p.genes.divShareBps != 0;
-        for (uint256 i; i < p.stages.length; i++) {
-            if (p.stages[i].genes.divShareBps != 0) {
-                divs = true;
-                break;
-            }
-        }
-
-        // the salt is the creator's: nobody else can take a coin's address on a chain it has not launched on yet
-        token = tokenDeployer.deploy(
-            keccak256(abi.encode(creator, salt)),
-            EquoTokenDeployer.Init({
-                name: p.name,
-                symbol: p.symbol,
-                metadataURI: p.metadataURI,
-                supply: TOTAL_SUPPLY,
-                pairAsset: pair,
-                poolManager: address(poolManager),
-                hook: address(hook),
-                converter: converter,
-                weth: weth,
-                bridgeFeeTo: feeRecipient,
-                dividends: divs
-            }),
-            peers
-        );
+        token = _createToken(creator, p, salt, pair, peers);
         PoolKey memory key = _key(token, pair);
         (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper) = _initialPosition(_priceQ(pairUsd18, capUsd8));
         poolManager.initialize(key, sqrtPriceX96);
@@ -543,25 +518,41 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         poolManager.unlock(abi.encode(uint8(0), abi.encode(key, tickLower, tickUpper, liquidity)));
         emit Launched(token, creator, pair, poolId, pairUsd18);
 
-        if (msg.value > 0) {
-            uint256 pairIn = IEquoPairRouter(converter).ethToPair{value: msg.value}(pair, route, address(this), p.minPairOut);
-            bytes memory res = poolManager.unlock(abi.encode(uint8(1), abi.encode(key, pairIn, creator)));
-            emit DevBought(token, creator, msg.value, pairIn, abi.decode(res, (uint256)));
-        }
+        if (msg.value > 0) _firstBuy(token, key, pair, route, creator, p.minPairOut);
     }
 
-    /// @dev The constitution's bounds on a coin's instincts.
-    function _checkGenes(EquoHook.Genes calldata g) internal view {
-        if (g.feeMode > 2) revert BadGenes();
-        if (g.feeBps < hook.MIN_FEE_BPS() || g.feeBps > hook.MAX_FEE_BPS()) revert BadGenes();
-        if ((g.snipeBps == 0) != (g.snipeBlocks == 0)) revert BadGenes();
-        if (g.snipeBps != 0 && (g.snipeBps <= g.feeBps || g.snipeBps > hook.MAX_SNIPE_BPS() || g.snipeBlocks < 5 || g.snipeBlocks > hook.MAX_SNIPE_BLOCKS())) revert BadGenes();
-        if ((g.buybackShareBps == 0) != (g.buybackThreshold == 0)) revert BadGenes();
-        if (g.buybackShareBps > hook.MAX_POT_EACH_BPS() || g.divShareBps > hook.MAX_POT_EACH_BPS()) revert BadGenes();
-        if (uint256(g.buybackShareBps) + g.divShareBps > hook.MAX_POT_SHARE_BPS()) revert BadGenes();
-        if (g.buybackShareBps != 0 && g.buybackThreshold < 1_000) revert BadGenes();
-        if ((g.maxWalletBps == 0) != (g.maxWalletSecs == 0)) revert BadGenes();
-        if (g.maxWalletBps != 0 && (g.maxWalletBps < 50 || g.maxWalletBps > 2_000 || g.maxWalletSecs < 600 || g.maxWalletSecs > 30 days)) revert BadGenes();
+    /// @dev Create the coin through the token deployer. The salt is the creator's: nobody else can take a coin's
+    ///      address on a chain it has not launched on yet. Kept out of {_launch} for stack depth.
+    function _createToken(address creator, LaunchParams calldata p, bytes32 salt, address pair, bytes calldata peers) internal returns (address) {
+        bool divs = p.genes.divShareBps != 0;
+        for (uint256 i; i < p.stages.length && !divs; i++) {
+            if (p.stages[i].genes.divShareBps != 0) divs = true;
+        }
+        return tokenDeployer.deploy(
+            keccak256(abi.encode(creator, salt)),
+            EquoTokenDeployer.Init({
+                name: p.name,
+                symbol: p.symbol,
+                metadataURI: p.metadataURI,
+                supply: TOTAL_SUPPLY,
+                pairAsset: pair,
+                poolManager: address(poolManager),
+                hook: address(hook),
+                converter: converter,
+                weth: weth,
+                bridgeFeeTo: feeRecipient,
+                dividends: divs
+            }),
+            peers
+        );
+    }
+
+    /// @dev The creator's first buy: the attached native coin becomes the pair token along `route` and is swapped in
+    ///      the fresh pool; the coins go to the creator.
+    function _firstBuy(address token, PoolKey memory key, address pair, bytes calldata route, address creator, uint256 minPairOut) internal {
+        uint256 pairIn = IEquoPairRouter(converter).ethToPair{value: msg.value}(pair, route, address(this), minPairOut);
+        bytes memory res = poolManager.unlock(abi.encode(uint8(1), abi.encode(key, pairIn, creator)));
+        emit DevBought(token, creator, msg.value, pairIn, abi.decode(res, (uint256)));
     }
 
     /// @dev Validate and freeze a coin's evolution path. Stage 0 is genesis;
@@ -575,6 +566,7 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         view
         returns (EquoHook.Stage[] memory stages)
     {
+        EquoLaunchRules.checkGenes(genesis, hook); // genesis passes the constitution first; later stages below
         uint256 n = later.length;
         if (n > MAX_EVOLUTION_STAGES) revert BadGenes();
         stages = new EquoHook.Stage[](n + 1);
@@ -583,8 +575,8 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         uint160 prevSqrt = 0;
         for (uint256 i; i < n; i++) {
             EquoHook.Genes calldata g = later[i].genes;
-            _checkGenes(g);
-            _checkEvolve(stages[i].genes, g);
+            EquoLaunchRules.checkGenes(g, hook);
+            EquoLaunchRules.checkEvolve(stages[i].genes, g);
             uint256 usd = later[i].mcapUsd8;
             if (usd <= prevUsd || usd > 1_000_000_000e8) revert BadGenes();
             uint160 sqrtT = _sqrtPriceForCap(usd, pairUsd18);
@@ -592,30 +584,6 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
             stages[i + 1] = EquoHook.Stage({sqrtThreshold: sqrtT, mcapUsd8: uint64(usd), genes: g});
             prevUsd = usd;
             prevSqrt = sqrtT;
-        }
-    }
-
-    /// @dev A later stage may only help holders versus the one before it: the
-    ///      fee can only fall, the buyback and dividend shares can only grow, and
-    ///      anti-snipe and max-wallet can only ease (never tighten or re-enable).
-    ///      The fee engine stays the same so a coin can't flip to a harsher mode.
-    ///      Anti-snipe eases on BOTH axes (peak and window), so a later stage can
-    ///      never re-arm or lengthen the buy tax; and once a buyback is on, its
-    ///      trigger threshold can only fall, so a stage can never neuter the
-    ///      automatic buy-and-burn while keeping its share.
-    function _checkEvolve(EquoHook.Genes memory a, EquoHook.Genes calldata b) internal pure {
-        if (b.feeMode != a.feeMode) revert BadGenes();
-        if (b.feeBps > a.feeBps) revert BadGenes();
-        if (b.snipeBps > a.snipeBps) revert BadGenes();
-        if (b.snipeBlocks > a.snipeBlocks) revert BadGenes();
-        if (b.buybackShareBps < a.buybackShareBps) revert BadGenes();
-        if (a.buybackShareBps != 0 && b.buybackThreshold > a.buybackThreshold) revert BadGenes();
-        if (b.divShareBps < a.divShareBps) revert BadGenes();
-        if (a.maxWalletBps == 0) {
-            if (b.maxWalletBps != 0) revert BadGenes();
-        } else {
-            if (b.maxWalletBps != 0 && b.maxWalletBps < a.maxWalletBps) revert BadGenes();
-            if (b.maxWalletSecs > a.maxWalletSecs) revert BadGenes();
         }
     }
 
