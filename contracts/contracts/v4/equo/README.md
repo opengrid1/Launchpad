@@ -93,6 +93,14 @@ chain's wallets, explorers and trading bots.
 - `test/v4/equo-same-address.local.test.ts` deploys two chains with different endpoints, WETH, PoolManagers and hooks
   and gets the same coin address on both, plain and with holder rewards.
 
+## Peers sealed at launch
+
+A bridge peer is an address allowed to make the coin mint on this chain, so peers are where a mint risk would live.
+The token deployer wires every peer at launch and then renounces the coin's ownership in the same transaction:
+nobody, the admin included, can add, change or remove a peer, or change the coin's options or LayerZero delegate.
+The chains a coin launched on are the chains it will ever live on. The token deployer has no function that touches a
+coin after launch.
+
 ## The supply trackers read
 
 `totalSupply()` on each chain reports that chain's launch slice (`launchSlice`: 1B, or 1B / N in split mode) less

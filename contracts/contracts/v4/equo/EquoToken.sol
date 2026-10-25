@@ -23,9 +23,9 @@ interface IEquoTokenPending {
 ///         mints on the destination, so the total across chains never changes. 0.2% of a bridged amount goes to
 ///         the platform. No mint beyond the launch supply, no pause, no blacklist, no tax on transfers.
 ///
-///         The owner is the Equo token deployer contract. It wires the coin's peers on the other chains at launch
-///         and can later add a peer for a chain that has none; it has no function that changes an existing peer,
-///         the verifier setup or anything else. Every instinct the coin was born with lives in its pool hook.
+///         The Equo token deployer wires the coin's peers on the other chains at launch and then gives up ownership
+///         in the same call: the coin has no owner, so its peers, options and delegate are sealed for good. Every
+///         instinct the coin was born with lives in its pool hook.
 ///
 /// @dev    Name, symbol, metadata, supply and LayerZero settings are read back from the deploying contract during
 ///         construction, which keeps the init code constant so every coin's address is predictable with CREATE2.

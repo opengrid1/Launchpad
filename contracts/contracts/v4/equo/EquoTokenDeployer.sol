@@ -15,6 +15,7 @@ interface IEquoOFT {
     function peers(uint32 eid) external view returns (bytes32);
     function setEnforcedOptions(EnforcedOptionParam[] calldata options) external;
     function transfer(address to, uint256 amount) external returns (bool);
+    function renounceOwnership() external;
 }
 
 /// @title EquoTokenDeployer
@@ -33,10 +34,12 @@ interface IEquoOFT {
 ///         The ceiling sits below every chain's wrapped native token, so the coin is still always currency0 in its
 ///         pool; {deploy} checks that against the actual pair too.
 ///
-///         Right after creation the coin is linked to its peers on the other chains, with the executor gas and the
-///         message library and verifier setup the admin pinned for each chain. This contract stays the coin's
-///         owner, and the only thing it can do later is add a peer for a chain that has none: an existing peer, its
-///         libraries and its verifiers can never be changed.
+///         PEERS ARE SEALED AT LAUNCH. Right after creation the coin is linked to its peers on the other chains,
+///         with the executor gas and the message library and verifier setup the admin pinned for each chain, and
+///         then this contract gives up the coin's ownership in the same call. A peer is an address allowed to make
+///         the coin mint, so from then on nobody can add, change or remove one, or change the coin's options or
+///         delegate: the chains a coin launched on are the chains it will ever live on. This contract stays the
+///         coin's endpoint delegate but has no function that touches a coin after {deploy}.
 contract EquoTokenDeployer {
     uint256 internal constant MAX_TRIES = 512;
     uint16 internal constant MSG_SEND = 1;
@@ -67,7 +70,7 @@ contract EquoTokenDeployer {
     }
 
     mapping(uint32 eid => Route) internal _routes;
-    /// @notice Coins created here (only these can get a peer added later).
+    /// @notice Coins created here.
     mapping(address => bool) public isCoin;
 
     struct Init {
@@ -102,7 +105,6 @@ contract EquoTokenDeployer {
     error NoSalt();
     error BadPeers();
     error PeerExists();
-    error NotCoin();
 
     /// @param admin_ The admin, the same on every chain.
     /// @param setupBy_ The deploying account, the same on every chain: it does the one-time setup until
@@ -241,12 +243,8 @@ contract EquoTokenDeployer {
             if (eids.length != addrs.length) revert BadPeers();
             for (uint256 i; i < eids.length; i++) _wire(a, eids[i], addrs[i]);
         }
-    }
-
-    /// @notice Link a launched coin to its copy on a chain it has no peer on yet (a chain added later).
-    function addPeer(address coin, uint32 eid, bytes32 peer) external onlyAdmin {
-        if (!isCoin[coin]) revert NotCoin();
-        _wire(coin, eid, peer);
+        // seal: with no owner, no peer, option or delegate can ever be set on this coin again
+        IEquoOFT(a).renounceOwnership();
     }
 
     function _wire(address coin, uint32 eid, bytes32 peer) internal {

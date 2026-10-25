@@ -136,7 +136,7 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
       expect(addrs[i].toLowerCase() < c.WETH.toLowerCase()).to.equal(true); // the coin is currency0 in its pool
       expect((await c.factory.listings(addrs[i])).creator).to.equal(env.creator.address);
       expect(await coins[i].totalSupply()).to.equal(SUPPLY);
-      expect(await coins[i].owner()).to.equal(await c.tokenDeployer.getAddress());
+      expect(await coins[i].owner()).to.equal(ethers.ZeroAddress); // sealed at launch
       expect(await coins[i].bridgeFeeTo()).to.equal(env.feeWallet.address);
       for (let j = 0; j < 3; j++) {
         if (i === j) continue;
@@ -259,21 +259,25 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     expect(addrs[1]).to.equal(want);
   });
 
-  it("seals peers: no one can change one; the admin can only add a chain the coin has none for", async () => {
+  it("seals peers at launch: no owner, so nobody can add, change or remove a peer, options or delegate", async () => {
     const env = await deployAll();
     const { addrs, coins } = await launchEverywhere(env, FLAT, "S");
     const { admin, outsider, chains } = env;
     const td = chains[0].tokenDeployer;
-    await expect(coins[0].connect(admin).setPeer(EIDS[1], pad(outsider.address))).to.be.revertedWithCustomError(coins[0], "OwnableUnauthorizedAccount");
-    await expect(td.connect(admin).addPeer(addrs[0], EIDS[1], pad(outsider.address))).to.be.revertedWithCustomError(td, "PeerExists");
-    await expect(td.connect(outsider).addPeer(addrs[0], 30184, pad(outsider.address))).to.be.revertedWithCustomError(td, "NotAdmin");
-    await expect(td.connect(admin).addPeer(outsider.address, 30184, pad(outsider.address))).to.be.revertedWithCustomError(td, "NotCoin");
-    await expect(td.connect(admin).addPeer(addrs[0], EIDS[0], pad(outsider.address))).to.be.revertedWithCustomError(td, "BadPeers");
-    // a chain added later (Base) can be linked once
-    const base = pad(ethers.Wallet.createRandom().address);
-    await (await td.connect(admin).addPeer(addrs[0], 30184, base)).wait();
-    expect(await coins[0].peers(30184)).to.equal(base);
-    await expect(td.connect(admin).addPeer(addrs[0], 30184, pad(outsider.address))).to.be.revertedWithCustomError(td, "PeerExists");
+    for (let i = 0; i < 3; i++) {
+      expect(await coins[i].owner()).to.equal(ethers.ZeroAddress);
+      for (let j = 0; j < 3; j++) if (i !== j) expect(await coins[i].peers(EIDS[j])).to.equal(pad(addrs[j])); // wired before sealing
+    }
+    const opts = [{ eid: 30184, msgType: 1, options: "0x0003" }];
+    for (const who of [admin, outsider]) {
+      await expect(coins[0].connect(who).setPeer(EIDS[1], pad(outsider.address))).to.be.revertedWithCustomError(coins[0], "OwnableUnauthorizedAccount");
+      await expect(coins[0].connect(who).setPeer(30184, pad(outsider.address))).to.be.revertedWithCustomError(coins[0], "OwnableUnauthorizedAccount");
+      await expect(coins[0].connect(who).setDelegate(outsider.address)).to.be.revertedWithCustomError(coins[0], "OwnableUnauthorizedAccount");
+      await expect(coins[0].connect(who).setEnforcedOptions(opts)).to.be.revertedWithCustomError(coins[0], "OwnableUnauthorizedAccount");
+    }
+    // the token deployer has no function that touches a launched coin
+    expect(td.interface.getFunction("addPeer")).to.equal(null);
+    expect(await td.isCoin(addrs[0])).to.equal(true);
     // the deploying account can set routes only until it ends its setup; the admin always can
     const fresh = await (await ethers.getContractFactory("EquoTokenDeployer")).connect(outsider).deploy(admin.address, outsider.address);
     const route = { sendLib: ethers.ZeroAddress, receiveLib: ethers.ZeroAddress, sendConfig: "0x", receiveConfig: "0x" };
