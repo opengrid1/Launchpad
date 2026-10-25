@@ -85,7 +85,9 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
     /// @notice The creator's window to cancel a takeover before anyone can execute it.
     uint256 public constant TAKEOVER_DELAY = 7 days;
     /// @notice The least a proposer locks here while a takeover runs (5% of supply); always returned.
-    uint256 public constant TAKEOVER_STAKE = TOTAL_SUPPLY / 20;
+    uint256 public constant TAKEOVER_STAKE = TOTAL_SUPPLY / 20; // for a full-supply coin; see takeoverStakeOf
+    /// @notice The most chains a coin's supply can be split across.
+    uint8 public constant MAX_SPLIT = 20;
 
     IPoolManager public immutable poolManager;
     EquoHook public immutable hook;
@@ -132,6 +134,8 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         bytes32 poolId;
     }
     mapping(address token => Listing) public listings;
+    /// @notice The coin supply this chain launched with: 1B, or 1B / split for a coin that shares its supply.
+    mapping(address token => uint256) public launchSupplyOf;
 
     /// @dev The one V4 position this factory holds per coin: the launch
     ///      liquidity. Recorded for reads only; nothing can remove it.
@@ -164,6 +168,10 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         uint8 capPreset; // index into capPresets()
         EquoHook.Genes genes; // genesis (stage 0) instincts
         StageParam[] stages; // optional later stages; empty = a non-evolving coin
+        // How many chains share the coin's 1B supply. 1: this chain's pool holds the full 1B (each chain its own
+        // 1B). N > 1 (split mode): the coin has 1B in total and each of its N chains holds 1B / N. Every chain of a
+        // coin launches with the same value, so the market cap reads the same everywhere.
+        uint8 split;
     }
 
     event LauncherSet(address indexed launcher, bool allowed);
@@ -406,7 +414,8 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
     ///         replaced by a bigger stake; the earlier one is returned and the
     ///         delay restarts. Every stake comes back when its proposal ends.
     function proposeTakeover(address token, address newCreator, uint256 stake) external nonReentrant {
-        if (listings[token].createdAt == 0 || newCreator == address(0) || stake < TAKEOVER_STAKE || stake > TOTAL_SUPPLY) revert InvalidParams();
+        uint256 chainSupply = launchSupplyOf[token];
+        if (listings[token].createdAt == 0 || newCreator == address(0) || stake < chainSupply / 20 || stake > TOTAL_SUPPLY) revert InvalidParams();
         if (block.timestamp < uint256(creatorActiveAt[token]) + TAKEOVER_IDLE) revert TakeoverClosed();
         if (stake <= takeovers[token].stake) revert TakeoverClosed();
         IERC20(token).safeTransferFrom(msg.sender, address(this), stake);
@@ -510,9 +519,10 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
         capOf[token] = uint64(capUsd8);
         creatorActiveAt[token] = uint64(block.timestamp);
 
-        // seed the whole supply as one single-sided position above the start price, held here
+        // seed this chain's whole supply as one single-sided position above the start price, held here. The price is
+        // always set against the coin's 1B total, so a split coin opens at the same price and market cap as any other.
         uint128 liquidity = LiquidityAmounts.getLiquidityForAmount0(
-            TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), TOTAL_SUPPLY - COIN_SLACK
+            TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), launchSupplyOf[token] - COIN_SLACK
         );
         positions[token] = Position({tickLower: tickLower, tickUpper: tickUpper, liquidity: liquidity});
         poolManager.unlock(abi.encode(uint8(0), abi.encode(key, tickLower, tickUpper, liquidity)));
@@ -523,18 +533,20 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
 
     /// @dev Create the coin through the token deployer. The salt is the creator's: nobody else can take a coin's
     ///      address on a chain it has not launched on yet. Kept out of {_launch} for stack depth.
-    function _createToken(address creator, LaunchParams calldata p, bytes32 salt, address pair, bytes calldata peers) internal returns (address) {
+    function _createToken(address creator, LaunchParams calldata p, bytes32 salt, address pair, bytes calldata peers) internal returns (address token) {
+        if (p.split == 0 || p.split > MAX_SPLIT) revert InvalidParams();
+        uint256 supply = TOTAL_SUPPLY / p.split;
         bool divs = p.genes.divShareBps != 0;
         for (uint256 i; i < p.stages.length && !divs; i++) {
             if (p.stages[i].genes.divShareBps != 0) divs = true;
         }
-        return tokenDeployer.deploy(
+        token = tokenDeployer.deploy(
             keccak256(abi.encode(creator, salt)),
             EquoTokenDeployer.Init({
                 name: p.name,
                 symbol: p.symbol,
                 metadataURI: p.metadataURI,
-                supply: TOTAL_SUPPLY,
+                supply: supply,
                 pairAsset: pair,
                 poolManager: address(poolManager),
                 hook: address(hook),
@@ -545,6 +557,7 @@ contract EquoFactory is ReentrancyGuard, IUnlockCallback {
             }),
             peers
         );
+        launchSupplyOf[token] = supply;
     }
 
     /// @dev The creator's first buy: the attached native coin becomes the pair token along `route` and is swapped in

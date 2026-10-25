@@ -17,7 +17,8 @@ interface IEquoTokenPending {
 
 /// @title EquoToken
 /// @notice An Equo coin: an ERC-20 with EIP-2612 permits that also lives on other chains as a LayerZero OFT.
-///         On each chain the coin has its own contract and its own 1B supply, minted once at construction to
+///         On each chain the coin has its own contract and its own launch supply (1B, or 1B / N when the coin's
+///         1B is split across N chains), minted once at construction to
 ///         the factory, which puts it into that chain's Uniswap v4 pool. Bridging burns on the source chain and
 ///         mints on the destination, so the total across chains never changes. 0.2% of a bridged amount goes to
 ///         the platform. No mint beyond the launch supply, no pause, no blacklist, no tax on transfers.

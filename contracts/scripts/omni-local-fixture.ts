@@ -82,7 +82,7 @@ async function main() {
     const addrs: string[] = [];
     for (const i of idx) addrs.push((await chains[i].tokenDeployer.predict(bound, chains[i].WETH, divs))[0]);
     for (const a of idx) for (const b of idx) if (a !== b) await (await chains[a].endpoint.setDestLzEndpoint(addrs[idx.indexOf(b)], await chains[b].endpoint.getAddress())).wait();
-    const p = { name: "Fixture " + tag, symbol: "FX" + tag, metadataURI: "", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [] as any[] };
+    const p = { name: "Fixture " + tag, symbol: "FX" + tag, metadataURI: "", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [] as any[], split: 1 };
     for (let n = 0; n < idx.length; n++) {
       const i = idx[n], others = idx.filter((x) => x !== i);
       const peers = coder.encode(["uint32[]", "bytes32[]"], [others.map((x) => chains[x].eid), others.map((x) => pad(addrs[idx.indexOf(x)]))]);

@@ -88,7 +88,7 @@ describe("Equo: v2 invariants carried over (local)", function () {
   }
 
   async function launch(factory: any, creator: any, genes: any, value: bigint, tag = "A") {
-    const p = { name: `Coin ${tag}`, symbol: `C${tag}`, metadataURI: "ipfs://x", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [] as any[] };
+    const p = { name: `Coin ${tag}`, symbol: `C${tag}`, metadataURI: "ipfs://x", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [] as any[], split: 1 };
     const MIN_FIRST_BUY = ethers.parseEther("0.001"); // the factory refuses a launch under its minimum first buy
     const tx = await factory.connect(creator).launch(p, ethers.id(`salt-${tag}`), "0x", "0x", { value: value < MIN_FIRST_BUY ? MIN_FIRST_BUY : value });
     const rc = await tx.wait();

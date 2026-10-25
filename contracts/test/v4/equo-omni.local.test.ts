@@ -85,7 +85,7 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
 
   /** Predict the coin on every chain, then launch it everywhere: paid by the creator on the first chain, by the
    *  launch service on the rest. Mirrors what the site and backend do. */
-  async function launchEverywhere(env: any, genes: any, tag: string, devBuy = ethers.parseEther("1")) {
+  async function launchEverywhere(env: any, genes: any, tag: string, devBuy = ethers.parseEther("1"), split = 1) {
     const { creator, launcher, chains } = env;
     const salt = ethers.id(`omni-${tag}`);
     const divs = genes.divShareBps !== 0;
@@ -98,7 +98,7 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
       for (let j = 0; j < chains.length; j++)
         if (i !== j) await (await chains[i].endpoint.setDestLzEndpoint(addrs[j], await chains[j].endpoint.getAddress())).wait();
 
-    const p = { name: `Omni ${tag}`, symbol: `O${tag}`, metadataURI: "ipfs://omni", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [] as any[] };
+    const p = { name: `Omni ${tag}`, symbol: `O${tag}`, metadataURI: "ipfs://omni", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [] as any[], split };
     const coins = [];
     for (let i = 0; i < chains.length; i++) {
       const others = chains.map((c: any, j: number) => j).filter((j: number) => j !== i);
@@ -142,6 +142,44 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     // the creator's paid launch included the first buy; the service launches did not
     expect(await coins[0].balanceOf(env.creator.address)).to.be.gt(0n);
     expect(await coins[1].balanceOf(env.creator.address)).to.be.gt(0n); // the service's seed buy on the other chains goes to the creator too
+  });
+
+  it("split mode: one 1B supply shared by three chains, same opening price, total kept across a bridge", async () => {
+    const env = await deployAll();
+    const full = await launchEverywhere(env, FLAT, "F");
+    const { coins, addrs } = await launchEverywhere(env, FLAT, "S", ethers.parseEther("1"), 3);
+    const third = SUPPLY / 3n;
+    let total = 0n;
+    for (let i = 0; i < 3; i++) {
+      const f = env.chains[i].factory;
+      expect(await coins[i].totalSupply()).to.equal(third);
+      expect(await f.launchSupplyOf(addrs[i])).to.equal(third);
+      // same price range as a full-supply coin on the same chain, a third of its liquidity
+      const ps = await f.positionOf(addrs[i]), pf = await f.positionOf(full.addrs[i]);
+      expect(ps.tickLower).to.equal(pf.tickLower);
+      expect(ps.tickUpper).to.equal(pf.tickUpper);
+      const ratio = Number(pf.liquidity) / Number(ps.liquidity);
+      expect(ratio).to.be.closeTo(3, 0.001);
+      total += await coins[i].totalSupply();
+    }
+    expect(SUPPLY - total).to.be.lt(3n); // 1B total, less the integer rounding of a third
+    // a bridge moves coins between chains and never changes the total
+    const bal = await coins[0].balanceOf(env.creator.address);
+    await bridge(coins[0], env.creator, EIDS[1], env.trader.address, bal / 2n);
+    let after = 0n;
+    for (const c of coins) after += await c.totalSupply();
+    expect(after).to.equal(total);
+    // the takeover stake follows the chain's supply: 5% of a third
+    expect(await env.chains[0].factory.launchSupplyOf(addrs[0]) / 20n).to.equal(third / 20n);
+  });
+
+  it("split mode: refuses a split of zero or above MAX_SPLIT", async () => {
+    const env = await deployAll();
+    const c = env.chains[0];
+    const p = { name: "Bad", symbol: "BAD", metadataURI: "", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes: FLAT, stages: [] as any[], split: 0 };
+    await expect(c.factory.connect(env.creator).launch(p, ethers.id("s0"), "0x", "0x", { value: ethers.parseEther("0.001") })).to.be.revertedWithCustomError(c.factory, "InvalidParams");
+    await expect(c.factory.connect(env.creator).launch({ ...p, split: 21 }, ethers.id("s21"), "0x", "0x", { value: ethers.parseEther("0.001") })).to.be.revertedWithCustomError(c.factory, "InvalidParams");
+    expect(await c.factory.MAX_SPLIT()).to.equal(20);
   });
 
   it("bridges: burns out, mints in, keeps the total, takes 0.2% for the platform, and the coins trade on arrival", async () => {
@@ -202,7 +240,7 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     const salt = ethers.id("omni-Q");
     const bound = ethers.keccak256(coder.encode(["address", "bytes32"], [creator.address, salt]));
     const want = (await chains[1].tokenDeployer.predict(bound, chains[1].WETH, false))[0];
-    const p = { name: "Squat", symbol: "SQ", metadataURI: "", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes: FLAT, stages: [] as any[] };
+    const p = { name: "Squat", symbol: "SQ", metadataURI: "", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes: FLAT, stages: [] as any[], split: 1 };
     const rc = await (await chains[1].factory.connect(outsider).launch(p, salt, "0x", "0x", { value: ethers.parseEther("0.001") })).wait();
     const ev = rc!.logs.map((l: any) => { try { return chains[1].factory.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "Launched");
     expect(ev!.args.token).to.not.equal(want);
@@ -243,7 +281,7 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     const env = await deployAll();
     const { admin, creator, outsider, launcher, chains } = env;
     const c = chains[0];
-    const p = { name: "Late", symbol: "LATE", metadataURI: "", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes: FLAT, stages: [] as any[] };
+    const p = { name: "Late", symbol: "LATE", metadataURI: "", pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes: FLAT, stages: [] as any[], split: 1 };
     await expect(c.factory.connect(outsider).launchFor(creator.address, p, ethers.id("l1"), "0x", "0x")).to.be.revertedWithCustomError(c.factory, "NotAdmin");
     await expect(c.factory.connect(launcher).launchFor(ethers.ZeroAddress, p, ethers.id("l1"), "0x", "0x")).to.be.revertedWithCustomError(c.factory, "NotAdmin");
 

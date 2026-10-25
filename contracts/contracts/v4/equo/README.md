@@ -94,6 +94,7 @@ Other findings (no change needed):
 | Cashback | 25% of the platform part | 0.1% of a 1% fee with no pots. |
 | Referral | 25% of the platform part | Same. |
 | Start cap | $3,000 (default preset) | Admin can change later with `setStartCap` or `setCapPresets`. |
+| Supply split | Per launch, `LaunchParams.split` (1 to 20) | 1: each chain's pool holds the full 1B, so N chains mean N billion in total. N: the coin has 1B in total and each of its N chains holds 1B / N (Pangea's "degen mode"). The price is always set against 1B, so both modes open at the same price and market cap. Every chain of a coin must launch with the same value. The takeover stake is 5% of the chain's launch supply (`launchSupplyOf`). Max wallet stays a share of the coin's 1B, counted per chain. |
 | Minimum first buy | 0.001 ETH on Ethereum; per chain elsewhere (`EQUO_MIN_FIRST_BUY`) | Factory immutable. A launch with less reverts `FirstBuyTooSmall`, on `launch` and on `launchFor` alike, so the launch service seeds every chain's pool. No pool ever starts empty, which is what made scanners and trading bots read fresh coins as honeypots on Liqio. |
 | Takeover idle time | 30 days | Constant. |
 | Takeover delay | 7 days | Constant. |

@@ -70,7 +70,7 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
   }
 
   async function launch(factory: any, creator: any, genes: any, value: bigint, tag = "A", capPreset = 0) {
-    const p = { name: `Coin ${tag}`, symbol: `C${tag}`, metadataURI: "ipfs://x", pair: ethers.ZeroAddress, minPairOut: 0, capPreset, genes, stages: [] as any[] };
+    const p = { name: `Coin ${tag}`, symbol: `C${tag}`, metadataURI: "ipfs://x", pair: ethers.ZeroAddress, minPairOut: 0, capPreset, genes, stages: [] as any[], split: 1 };
     // every launch opens with at least the factory's minimum first buy (0.001 ETH in these tests)
     const rc = await (await factory.connect(creator).launch(p, ethers.id(`salt-${tag}`), "0x", "0x", { value: value < MIN_FIRST_BUY ? MIN_FIRST_BUY : value })).wait();
     const ev = rc!.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "Launched");
