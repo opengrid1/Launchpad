@@ -215,7 +215,7 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     const r1 = chains[1].router;
     await (await coins[1].connect(trader).approve(await r1.getAddress(), received)).wait();
     const before = await ethers.provider.getBalance(trader.address);
-    await (await r1.connect(trader).sell(await coins[1].getAddress(), received / 2n, "0x", 0, ethers.ZeroAddress)).wait();
+    await (await r1.connect(trader).sell(await coins[1].getAddress(), received / 2n, "0x", 0)).wait();
     expect(await ethers.provider.getBalance(trader.address)).to.be.gt(before - ethers.parseEther("0.01"));
     expect(await coins[1].balanceOf(trader.address)).to.equal(received - received / 2n);
 

@@ -16,7 +16,7 @@ import { join } from "path";
  *     indices, the ERC-4626 ratio of a wrapped xStock and a multiplier (SPY at a tenth of the S&P 500);
  *   - launches against HYPE, USDC (through a Uniswap V3-style pool) and a wrapped xStock (through an Algebra
  *     pool) open at the chosen cap, and buys and sells go in and out of HYPE through the same routes;
- *   - the fee engine, cashback and referral, holder rewards, buyback, anti-snipe and max wallet all run on
+ *   - the fee engine, cashback, holder rewards, buyback, anti-snipe and max wallet all run on
  *     clone coins exactly as on Equo.
  */
 
@@ -42,7 +42,7 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
   this.timeout(600_000);
 
   async function deployStack() {
-    const [admin, creator, trader, feeWallet, referrer, outsider] = await ethers.getSigners();
+    const [admin, creator, trader, feeWallet, , outsider] = await ethers.getSigners();
     const whype = await (await ethers.getContractFactory("WETH9")).deploy();
     const WHYPE = await whype.getAddress();
     const art = JSON.parse(readFileSync(join(__dirname, "../../../node_modules/@uniswap/v4-core/out/PoolManager.sol/PoolManager.json"), "utf8"));
@@ -107,7 +107,7 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     await (await tokenDeployer.setFactory(FACTORY)).wait();
     await (await hook.setFactory(FACTORY)).wait();
     await (await factory.setConverter(await router.getAddress())).wait();
-    return { admin, creator, trader, feeWallet, referrer, outsider, whype, WHYPE, usdc, USDC, wnvda, WNVDA, wspy, WSPY, core, oracle, pm, hook, hookAddr, tokenDeployer, factory, FACTORY, router, POOL_USDC, POOL_NVDA };
+    return { admin, creator, trader, feeWallet, outsider, whype, WHYPE, usdc, USDC, wnvda, WNVDA, wspy, WSPY, core, oracle, pm, hook, hookAddr, tokenDeployer, factory, FACTORY, router, POOL_USDC, POOL_NVDA };
   }
 
   async function launch(factory: any, creator: any, genes: any, value: bigint, tag = "A", pair = ethers.ZeroAddress, routeBytes = "0x", capPreset = 0) {
@@ -140,7 +140,7 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     expect(pos.liquidity).to.be.gt(0n);
     await expect(factory.connect(trader).collect(token, 10_000, trader.address)).to.be.revertedWithCustomError(factory, "NotAdmin");
     await expect(pm.connect(admin).unlock(ethers.AbiCoder.defaultAbiCoder().encode(["uint8", "bytes"], [2, "0x"]))).to.be.reverted;
-    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("2") })).wait();
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("2") })).wait();
     expect((await factory.positionOf(token)).liquidity).to.equal(pos.liquidity);
 
     // the admin's collect pulls the share it names, logs it, and leaves the fee pots alone
@@ -151,7 +151,7 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     expect((await factory.positionOf(token)).liquidity).to.equal(pos.liquidity - pos.liquidity / 10n);
     expect((await whype.balanceOf(admin.address)) + (await coin.balanceOf(admin.address))).to.be.gt(w0 + c0);
     expect(await hook.creatorOwed(token)).to.equal(owedBefore);
-    await expect(router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("0.1") })).to.emit(hook, "FeeTaken");
+    await expect(router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("0.1") })).to.emit(hook, "FeeTaken");
   });
 
   it("launches a clone coin on HYPE inside a small block, implementation sealed, creator paid in HYPE", async () => {
@@ -184,10 +184,10 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     expect(await coin.balanceOf(creator.address)).to.be.gt(0n); // dev buy
 
     // trades pay the fee in WHYPE; the creator is paid in HYPE
-    await expect(router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).to.emit(hook, "FeeTaken");
+    await expect(router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("1") })).to.emit(hook, "FeeTaken");
     const bought = await coin.balanceOf(trader.address);
     await (await coin.connect(trader).approve(await router.getAddress(), bought)).wait();
-    await expect(router.connect(trader).sell(token, bought / 2n, "0x", 0, ethers.ZeroAddress)).to.emit(hook, "FeeTaken");
+    await expect(router.connect(trader).sell(token, bought / 2n, "0x", 0)).to.emit(hook, "FeeTaken");
     const owed = await hook.creatorOwed(token);
     expect(owed).to.be.gt(0n);
     const before = await ethers.provider.getBalance(creator.address);
@@ -223,8 +223,8 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
   });
 
   it("launches on USDC through a V3-style pool and trades in and out of HYPE along the same route", async () => {
-    const { factory, hook, creator, trader, referrer, router, usdc, USDC, POOL_USDC, admin } = await deployStack();
-    await (await factory.connect(admin).setRewardSplit(2_500, 2_500)).wait();
+    const { factory, hook, creator, trader, router, usdc, USDC, POOL_USDC, admin } = await deployStack();
+    await (await factory.connect(admin).setCashback(2_500)).wait();
     const r = route(2, POOL_USDC);
     const { token, pairUsd, gas } = await launch(factory, creator, FLAT, ethers.parseEther("0.5"), "U", USDC, r);
     console.log(`      launch on USDC with routed dev buy: ${gas} gas`);
@@ -236,18 +236,17 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     const key = await factory.poolKeyOf(token);
     expect(key.currency1).to.equal(USDC);
 
-    // a buy with HYPE: router hops HYPE -> USDC, fee taken in USDC, split 60/40 with cashback and referral from the platform part
+    // a buy with HYPE: router hops HYPE -> USDC, fee taken in USDC, split creator/platform with cashback from the platform part
     const c0 = await hook.creatorOwed(token), p0 = await hook.platformOwed(token); // the dev buy already paid a fee
-    const rc = await (await router.connect(trader).buy(token, r, 0, referrer.address, { value: ethers.parseEther("1") })).wait();
+    const rc = await (await router.connect(trader).buy(token, r, 0, { value: ethers.parseEther("1") })).wait();
     const { fee, bps } = feeEvent(rc, hook);
     expect(bps).to.equal(100n);
     expect(fee).to.be.gt(0n);
     expect(fee).to.be.lt(2n * 10n ** 6n); // about 1% of ~$77 in USDC units
     const creatorPart = (fee * BigInt(await hook.CREATOR_SPLIT_BPS())) / 10_000n, platformPart = fee - creatorPart;
     expect((await hook.creatorOwed(token)) - c0).to.equal(creatorPart);
-    expect((await hook.platformOwed(token)) - p0).to.equal(platformPart - 2n * ((platformPart * 2_500n) / 10_000n));
+    expect((await hook.platformOwed(token)) - p0).to.equal(platformPart - (platformPart * 2_500n) / 10_000n);
     expect(await hook.rewardsOwed(trader.address, USDC)).to.equal((platformPart * 2_500n) / 10_000n);
-    expect(await hook.rewardsOwed(referrer.address, USDC)).to.equal((platformPart * 2_500n) / 10_000n);
     const bought = await coin.balanceOf(trader.address);
     expect(bought).to.be.gt(0n);
 
@@ -260,14 +259,14 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     // a sell back to HYPE: coin -> USDC in the v4 pool, USDC -> HYPE through the same route reversed
     await (await coin.connect(trader).approve(await router.getAddress(), bought)).wait();
     const before = await ethers.provider.getBalance(trader.address);
-    const src = await (await router.connect(trader).sell(token, bought, r, 0, ethers.ZeroAddress)).wait();
+    const src = await (await router.connect(trader).sell(token, bought, r, 0)).wait();
     const gasCost = src!.gasUsed * src!.gasPrice;
     expect((await ethers.provider.getBalance(trader.address)) + gasCost).to.be.gt(before);
     expect(await coin.balanceOf(trader.address)).to.equal(0n);
     // and a trade paid directly in the pair asset
     await (await usdc.mint(trader.address, 50n * 10n ** 6n)).wait();
     await (await usdc.connect(trader).approve(await router.getAddress(), 50n * 10n ** 6n)).wait();
-    await (await router.connect(trader).buyWithPair(token, 50n * 10n ** 6n, 0, ethers.ZeroAddress)).wait();
+    await (await router.connect(trader).buyWithPair(token, 50n * 10n ** 6n, 0)).wait();
     expect(await coin.balanceOf(trader.address)).to.be.gt(0n);
   });
 
@@ -284,7 +283,7 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
 
     // the pool opened at the cap: 1B coins worth $3,000 at $183.6 per wNVDAx is about 16.34 wNVDAx for the supply
     const coin = await ethers.getContractAt("LiqioToken", token);
-    const rc = await (await router.connect(trader).buy(token, r, 0, ethers.ZeroAddress, { value: ethers.parseEther("0.1") })).wait();
+    const rc = await (await router.connect(trader).buy(token, r, 0, { value: ethers.parseEther("0.1") })).wait();
     const { fee } = feeEvent(rc, hook);
     expect(fee).to.be.gt(0n);
     const got = await coin.balanceOf(trader.address);
@@ -294,9 +293,9 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     expect(await wnvda.balanceOf(await pm.getAddress())).to.be.gt(0n);
 
     await (await coin.connect(trader).approve(await router.getAddress(), got)).wait();
-    await (await router.connect(trader).sellForPair(token, got / 2n, 0, ethers.ZeroAddress)).wait();
+    await (await router.connect(trader).sellForPair(token, got / 2n, 0)).wait();
     expect(await wnvda.balanceOf(trader.address)).to.be.gt(0n);
-    await (await router.connect(trader).sell(token, got / 2n, r, 0, ethers.ZeroAddress)).wait();
+    await (await router.connect(trader).sell(token, got / 2n, r, 0)).wait();
     expect(await coin.balanceOf(trader.address)).to.equal(0n);
   });
 
@@ -312,9 +311,9 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     await expect(impl.initialize("x", "x", "x", 1, creator.address)).to.be.revertedWithCustomError(impl, "WrongInit");
     const supplyBefore = await coin.totalSupply();
 
-    await expect(router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).to.emit(hook, "BuybackBurned");
+    await expect(router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("1") })).to.emit(hook, "BuybackBurned");
     expect(await coin.totalSupply()).to.be.lt(supplyBefore);
-    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).wait();
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("1") })).wait();
     expect(await hook.dividendPot(token)).to.be.gt(0n);
     await expect(hook.pushDividends(token)).to.emit(hook, "DividendsPushed");
     const owed = await coin.withdrawableDividends(trader.address);
@@ -333,18 +332,18 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     const coin = await ethers.getContractAt("LiqioToken", token);
 
     // in the snipe window a buy pays more than the 1% base fee; after the window it pays the base fee
-    const rc1 = await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("0.05") })).wait();
+    const rc1 = await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("0.05") })).wait();
     expect(feeEvent(rc1, hook).bps).to.be.gt(100n);
     await mine(25);
-    const rc2 = await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("0.05") })).wait();
+    const rc2 = await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("0.05") })).wait();
     expect(feeEvent(rc2, hook).bps).to.equal(100n);
 
     // 1% of the supply is the cap for the first hour: a buy that would take a wallet past it fails, a smaller one passes
-    await expect(router.connect(outsider).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("2") })).to.be.reverted;
-    await (await router.connect(outsider).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("0.05") })).wait();
+    await expect(router.connect(outsider).buy(token, "0x", 0, { value: ethers.parseEther("2") })).to.be.reverted;
+    await (await router.connect(outsider).buy(token, "0x", 0, { value: ethers.parseEther("0.05") })).wait();
     expect(await coin.balanceOf(outsider.address)).to.be.lt(SUPPLY / 100n);
     await time.increase(3_601);
-    await (await router.connect(outsider).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("2") })).wait();
+    await (await router.connect(outsider).buy(token, "0x", 0, { value: ethers.parseEther("2") })).wait();
     expect(await coin.balanceOf(outsider.address)).to.be.gt(SUPPLY / 100n);
   });
 
@@ -363,7 +362,7 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     await expect(factory.connect(trader).setCapPresets([1n])).to.be.reverted;
 
     // platform fees reach the fee recipient in the pair asset (HYPE unwrapped from WHYPE)
-    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).wait();
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("1") })).wait();
     const owed = await hook.platformOwed(token);
     expect(owed).to.be.gt(0n);
     const before = await ethers.provider.getBalance(feeWallet.address);

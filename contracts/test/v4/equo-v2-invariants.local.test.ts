@@ -136,7 +136,7 @@ describe("Equo: v2 invariants carried over (local)", function () {
     const token = await launch(factory, creator, FLAT, ethers.parseEther("0.5"));
     const coin = await ethers.getContractAt("EquoToken", token);
 
-    await expect(router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).to.emit(hook, "FeeTaken");
+    await expect(router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("1") })).to.emit(hook, "FeeTaken");
     const bought = await coin.balanceOf(trader.address);
     expect(bought).to.be.gt(0n);
     const owedAfterBuy = await hook.creatorOwed(token);
@@ -144,7 +144,7 @@ describe("Equo: v2 invariants carried over (local)", function () {
     expect(await hook.platformOwed(token)).to.be.gt(0n);
 
     await (await coin.connect(trader).approve(await router.getAddress(), bought)).wait();
-    await expect(router.connect(trader).sell(token, bought / 2n, "0x", 0, ethers.ZeroAddress)).to.emit(hook, "FeeTaken");
+    await expect(router.connect(trader).sell(token, bought / 2n, "0x", 0)).to.emit(hook, "FeeTaken");
     expect(await hook.creatorOwed(token)).to.be.gt(owedAfterBuy);
 
     const before = await ethers.provider.getBalance(creator.address);
@@ -156,7 +156,7 @@ describe("Equo: v2 invariants carried over (local)", function () {
   it("only the admin's disclosed collect touches liquidity (as on OneHook's deployed factory); the hook has none; trading never moves it", async () => {
     const { factory, hook, admin, creator, trader, router, pm, FACTORY } = await deployStack();
     const token = await launch(factory, creator, FLAT, ethers.parseEther("1"));
-    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("2") })).wait();
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("2") })).wait();
 
     // the hook has no withdraw surface; the factory's only one is the admin's collect, logged as Collected
     const hookNames = hook.interface.fragments.filter((f: any) => f.type === "function").map((f: any) => f.name);
@@ -170,14 +170,14 @@ describe("Equo: v2 invariants carried over (local)", function () {
     // the recorded position never changes: trading moves price, not liquidity
     const pos = await factory.positionOf(token);
     expect(pos.liquidity).to.be.gt(0n);
-    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("0.5") })).wait();
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("0.5") })).wait();
     expect((await factory.positionOf(token)).liquidity).to.equal(pos.liquidity);
     expect(FACTORY).to.equal(await factory.getAddress());
 
     // nobody can call the factory's unlock callback directly: a direct unlock from the admin reverts
     await expect(pm.connect(admin).unlock(ethers.AbiCoder.defaultAbiCoder().encode(["uint8", "bytes"], [2, "0x"]))).to.be.reverted;
     // and the hook still taxes trades on the untouched pool
-    await expect(router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("0.1") })).to.emit(hook, "FeeTaken");
+    await expect(router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("0.1") })).to.emit(hook, "FeeTaken");
   });
 
   it("buyback-burn and dividends still run from the hook", async () => {
@@ -188,14 +188,14 @@ describe("Equo: v2 invariants carried over (local)", function () {
     const supplyBefore = await coin.totalSupply(), burnedBefore = await coin.burned(); // the launch's own first buy may already burn
 
     // the first taxed buy tips the pot past its 1000-wei threshold: an automatic buy-and-burn
-    await expect(router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).to.emit(hook, "BuybackBurned");
+    await expect(router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("1") })).to.emit(hook, "BuybackBurned");
     expect(await coin.totalSupply()).to.be.lt(supplyBefore);
     // the burn shows in what trackers read, and matches the coins actually destroyed on this chain
     expect((await coin.burned()) - burnedBefore).to.equal(supplyBefore - (await coin.totalSupply()));
     expect(await coin.totalSupply()).to.equal((await coin.launchSlice()) - (await coin.burned()));
     expect(await coin.localSupply()).to.equal(await coin.totalSupply());
 
-    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).wait();
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("1") })).wait();
     expect(await hook.dividendPot(token)).to.be.gt(0n);
     await expect(hook.pushDividends(token)).to.emit(hook, "DividendsPushed");
     expect(await coin.withdrawableDividends(trader.address)).to.be.gt(0n);

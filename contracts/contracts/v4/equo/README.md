@@ -20,7 +20,6 @@ without `collect` and `setStartCap`. The current source is not deployed; using i
 
 | Site feature | v2 status | Why |
 |---|---|---|
-| Referral earnings | Missing | The hook has no notion of who traded or who referred them. |
 | Cashback | Missing | Same: no trader identity, no per-user balance. |
 | Takeover | Missing | The creator is fixed at launch; no function changes it. |
 | Creator transfer | Missing | Same. |
@@ -39,18 +38,17 @@ Other findings (no change needed):
 
 ### Hook (`EquoHook`)
 
-- **Cashback and referral.** Out of the platform's 30% only, `cashbackBps` goes to the trader and
-  `referralBps` to the trader's referrer. Creator share, buyback and dividends are unchanged. Each is
-  capped at 50% of the platform part. Rewards accrue per user and pair asset as PoolManager claims and
-  are paid by `claimRewards(pairs)` (ETH on a WETH pair).
-- **Trader identity.** The router (and the factory, for the creator's first buy) names the trader and
-  referrer in hookData. Anyone else trades as `tx.origin`, with no referrer binding.
-- **Referrer binding.** Once per trader, only through the router, never to the trader themselves.
+- **Cashback.** Out of the platform's 30% only, `cashbackBps` goes back to the trader. Creator share,
+  buyback and dividends are unchanged. Capped at 50% of the platform part. Cashback accrues per user and
+  pair asset as PoolManager claims and is paid by `claimRewards(pairs)` (ETH on a WETH pair).
+  There are no referrals: an earlier draft had them and they were removed.
+- **Trader identity.** The router (and the factory, for the creator's first buy) names the trader in
+  hookData. Anyone else trades as `tx.origin`.
 - **Mutable creator.** `setCreator` exists but only the factory can call it.
 
 ### Router (`EquoRouter`)
 
-- `buy`, `sell`, `buyWithPair`, `sellForPair` take a `referrer` (zero for none) and pass the trader to the hook.
+- `buy`, `sell`, `buyWithPair`, `sellForPair` and `buyFor` pass the trader to the hook.
 
 ### Factory (`EquoFactory`)
 
@@ -67,7 +65,7 @@ Other findings (no change needed):
     earlier stake is returned and the 7-day clock restarts.
   - The creator can cancel at any time during the 7 days, and any creator action blocks execution.
   - After 7 days anyone calls `executeTakeover`: the old creator is paid, the role moves, the stake returns.
-- **Reward split.** `setRewardSplit` (admin) forwards to the hook.
+- **Cashback.** `setCashback` (admin) forwards to the hook.
 - **OneHook admin levers, 1:1 with the deployed OneHook factory.** `pause`, `resume`, `setHidden`,
   `setCoinMetadata`, `setFeeRecipient`, `setTokenBlocked`, `pushPlatformFees`, `setConverter`,
   `renounceOwnership`, `setStartCap` (sets the default preset, $1,000 to $100,000), and `collect`
@@ -115,9 +113,7 @@ Every coin has one pool, on Ethereum. Traders on other EVM chains reach it witho
 
 - **Buy.** The trader pays in their own chain's coin through a cross-chain payment service (Relay: one deposit
   transaction, the Ethereum call runs in seconds). The service calls `EquoRouter.buyFor(coin, route, minOut,
-  referrer, trader)` with the ETH. The coins and the cashback are the trader's. A referrer only binds when the caller
-  is the trader, so nobody can bind another trader's referrer by buying in their name; a trader's existing binding
-  still earns on these buys.
+  trader)` with the ETH. The coins and the cashback are the trader's.
 - **Sell.** The trader signs a `SellIntent` (EIP-712, domain `EquoRouter` v1): coin, amount, minimum payout, maximum
   relayer fee, payout address, nonce, deadline, plus the coin's EIP-2612 permit. Any relayer submits
   `sellWithSig`, pays the Ethereum gas and takes at most the signed fee from the proceeds; the payout address gets the
@@ -143,7 +139,6 @@ transaction, about 4 seconds, 7 to 10 cents of Relay fee on top of the Ethereum 
 | Setting | Proposed | Notes |
 |---|---|---|
 | Cashback | 25% of the platform part | 0.1% of a 1% fee with no pots. |
-| Referral | 25% of the platform part | Same. |
 | Start cap | $3,000 (default preset) | Admin can change later with `setStartCap` or `setCapPresets`. |
 | Supply split | Per launch, `LaunchParams.split` (1 to 20) | 1: each chain's pool holds the full 1B, so N chains mean N billion in total. N: the coin has 1B in total and each of its N chains holds 1B / N (Pangea's "degen mode"). The price is always set against 1B, so both modes open at the same price and market cap. Every chain of a coin must launch with the same value. The takeover stake is 5% of the chain's launch supply (`launchSupplyOf`). Max wallet stays a share of the coin's 1B, counted per chain. |
 | Minimum first buy | 0.001 ETH on Ethereum; per chain elsewhere (`EQUO_MIN_FIRST_BUY`) | Factory immutable. A launch with less reverts `FirstBuyTooSmall`, on `launch` and on `launchFor` alike, so the launch service seeds every chain's pool. No pool ever starts empty, which is what made scanners and trading bots read fresh coins as honeypots on Liqio. |
@@ -153,11 +148,8 @@ transaction, about 4 seconds, 7 to 10 cents of Relay fee on top of the Ethereum 
 
 ## Known trade-offs
 
-- A trader can refer themselves through a second wallet. The most they gain is the referral share of
-  the platform's part of their own fee.
 - The proposer with the biggest stake wins a takeover. A staked coin earns no dividends while locked.
-- The admin can move the cashback and referral shares within the caps. It only re-splits the
-  platform's own part.
+- The admin can move the cashback share within its cap. It only gives away the platform's own part.
 - The creator must act through the factory (`claimCreatorFees`, `poke`) for the idle clock to reset.
   Claiming directly on the hook still pays them but does not count as activity.
 
@@ -191,7 +183,7 @@ factory. Verification of the factory passes the library address (`libraries: { E
 Rehearse locally first:
 
 ```
-DRY_RUN=1 EQUO_CASHBACK_BPS=2500 EQUO_REFERRAL_BPS=2500 EQUO_CAP_PRESETS=5000,12500,25000 npx hardhat run scripts/deploy-equo.ts
+DRY_RUN=1 EQUO_CASHBACK_BPS=2500 EQUO_CAP_PRESETS=5000,12500,25000 npx hardhat run scripts/deploy-equo.ts
 ```
 
 Mainnet needs `EQUO_CONFIRM_MAINNET=1` plus the usual `ONEHOOK_ADMIN`, `ONEHOOK_ORACLE` and deployer key.

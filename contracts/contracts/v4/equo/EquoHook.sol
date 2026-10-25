@@ -39,9 +39,9 @@ interface IEquoWrappedNative {
 ///         mechanics chosen at launch and burned into the pool) under a
 ///         constitution nothing can break. It holds no liquidity and has no
 ///         liquidity permissions at all: the launch position belongs to the
-///         factory, which has no withdraw path either, so nobody can ever
-///         move it. Nothing in this contract can add, remove or redirect pool
-///         liquidity.
+///         factory, whose one lever over it is the admin's disclosed
+///         {EquoFactory-collect}. Nothing in this contract can add, remove or
+///         redirect pool liquidity.
 ///
 ///         Every pool: coin = currency0, pair = currency1 (the deployer places
 ///         the coin below its pair). Buying pushes the price up.
@@ -68,8 +68,7 @@ interface IEquoWrappedNative {
 ///             an anti-snipe above {MAX_SNIPE_BPS}, or pots above their caps,
 ///             whatever contract calls {registerPool}.
 ///           - This hook never touches liquidity. The launch position is held
-///             by the factory, which cannot remove it: the seed liquidity is
-///             permanent for every coin.
+///             by the factory; only the factory's admin `collect` can remove it.
 ///
 ///         The instincts (chosen per coin at launch, immutable afterwards):
 ///           - Fee engine: flat; dynamic (the fee widens while swaps cluster
@@ -91,14 +90,14 @@ interface IEquoWrappedNative {
 ///         platform, held as PoolManager claims until claimed by anyone.
 ///
 ///         Equo additions (v3):
-///           - Cashback and referral: out of the platform's 30% only, a share
-///             goes back to the trader (cashback) and a share to the trader's
-///             referrer. The creator's 70% and the buyback and dividend pots
-///             never change. Rewards are held as PoolManager claims per user
-///             and pair asset and claimed with {claimRewards}.
+///           - Cashback: out of the platform's 30% only, a share goes back to
+///             the trader. The creator's 70% and the buyback and dividend pots
+///             never change. Cashback is held as PoolManager claims per user
+///             and pair asset and claimed with {claimRewards}. There are no
+///             referrals.
 ///           - The trader is named by the trusted router (or the factory for
 ///             the creator's first buy) in hookData; any other swapper is
-///             tx.origin. A referrer binds once per trader, through the router.
+///             tx.origin.
 ///           - The creator role can move: the factory changes it for a
 ///             two-step transfer or a community takeover. Fees already owed
 ///             are paid to the old creator first, by the factory.
@@ -125,8 +124,8 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     uint256 public constant MEV_PRIORITY_UNIT = 0.05 gwei;
     /// @notice MEV-tax: at most this many bps on top of the base fee.
     uint16 public constant MEV_CAP_BPS = 2_000;
-    /// @notice Cashback and referral may each take at most this share of the platform part.
-    uint16 public constant MAX_REWARD_EACH_BPS = 5_000;
+    /// @notice Cashback may take at most this share of the platform part.
+    uint16 public constant MAX_CASHBACK_BPS = 5_000;
 
     /// @notice A buyback burn stops once the price has moved ~3% up (sqrt 1.0149^2), per call.
     uint256 public constant BUYBACK_SQRT_BPS = 10_149;
@@ -142,12 +141,10 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     address public immutable deployer;
     address public immutable weth;
     address public factory;
-    /// @notice The router whose hookData names the trader and referrer. Set once, by the factory.
+    /// @notice The router whose hookData names the trader. Set once, by the factory.
     address public router;
     /// @notice Share of the platform part paid back to the trader, in bps of that part.
     uint16 public cashbackBps;
-    /// @notice Share of the platform part paid to the trader's referrer, in bps of that part.
-    uint16 public referralBps;
 
     /// @notice A coin's instincts, fixed at launch. feeMode: 0 flat, 1 dynamic, 2 MEV-tax.
     struct Genes {
@@ -200,9 +197,7 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     ///         what closes buy-sell-rebuy cycling), and smart-wallet buys relayed by a shared
     ///         bundler EOA share that bundler's allowance for the few hours a window runs.
     mapping(PoolId => mapping(address => uint256)) public windowBought;
-    /// @notice A trader's referrer, bound once on their first referred trade through the router.
-    mapping(address trader => address) public referrerOf;
-    /// @notice Cashback and referral rewards waiting per user, in each pair asset.
+    /// @notice Cashback waiting per user, in each pair asset.
     mapping(address user => mapping(address pair => uint256)) public rewardsOwed;
 
     event PoolRegistered(address indexed token, address indexed pair, PoolId indexed id, address creator);
@@ -214,10 +209,9 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     event DividendsPushed(address indexed token, uint256 amount);
     event Evolved(address indexed token, uint8 indexed stage, uint160 sqrtPriceX96);
     event RouterSet(address indexed router);
-    event RewardSplitSet(uint16 cashbackBps, uint16 referralBps);
+    event CashbackSet(uint16 cashbackBps);
     event CreatorChanged(address indexed token, address indexed from, address indexed to);
-    event ReferrerBound(address indexed trader, address indexed referrer);
-    event RewardsCredited(address indexed token, address indexed trader, uint256 cashback, address indexed referrer, uint256 referral);
+    event CashbackCredited(address indexed token, address indexed trader, uint256 amount);
     event RewardsClaimed(address indexed user, address indexed pair, uint256 amount);
 
     error NotDeployer();
@@ -248,7 +242,7 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         emit FactorySet(factory_);
     }
 
-    /// @notice One-time: the router trusted to name traders and referrers. Factory only.
+    /// @notice One-time: the router trusted to name traders. Factory only.
     function setRouter(address router_) external {
         if (msg.sender != factory) revert NotFactory();
         if (router != address(0)) revert AlreadySet();
@@ -257,14 +251,13 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         emit RouterSet(router_);
     }
 
-    /// @notice How the platform part is shared with traders and referrers. Factory only
-    ///         (the admin's lever). It can only re-split the platform's own share.
-    function setRewardSplit(uint16 cashbackBps_, uint16 referralBps_) external {
+    /// @notice How much of the platform part goes back to traders as cashback. Factory only
+    ///         (the admin's lever). It can only give away the platform's own share.
+    function setCashback(uint16 cashbackBps_) external {
         if (msg.sender != factory) revert NotFactory();
-        if (cashbackBps_ > MAX_REWARD_EACH_BPS || referralBps_ > MAX_REWARD_EACH_BPS) revert InvalidParams();
+        if (cashbackBps_ > MAX_CASHBACK_BPS) revert InvalidParams();
         cashbackBps = cashbackBps_;
-        referralBps = referralBps_;
-        emit RewardSplitSet(cashbackBps_, referralBps_);
+        emit CashbackSet(cashbackBps_);
     }
 
     /// @notice Move a coin's creator role. Factory only: it runs the two-step
@@ -372,7 +365,7 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         burned = abi.decode(poolManager.unlock(abi.encode(uint8(3), abi.encode(_poolOf[token]))), (uint256));
     }
 
-    /// @notice Claim your cashback and referral rewards in each of `pairs`.
+    /// @notice Claim your cashback in each of `pairs`.
     function claimRewards(address[] calldata pairs) external nonReentrant returns (uint256 total) {
         for (uint256 i; i < pairs.length; i++) {
             address pair = pairs[i];
@@ -496,9 +489,9 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     }
 
     /// @dev Split a fee: the buyback and dividend shares into their pots, the
-    ///      rest 70/30 creator/platform; cashback and referral come out of the
-    ///      platform's 30% only.
-    function _credit(PoolConfig storage c, uint256 fee, address trader, address ref) internal {
+    ///      rest 70/30 creator/platform; cashback comes out of the platform's
+    ///      30% only.
+    function _credit(PoolConfig storage c, uint256 fee, address trader) internal {
         Genes storage g = c.genes;
         uint256 bb = (fee * g.buybackShareBps) / BPS;
         uint256 dv = (fee * g.divShareBps) / BPS;
@@ -509,30 +502,22 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         creatorOwed[c.token] += creatorPart;
         uint256 platformPart = rest - creatorPart;
         uint256 cb = trader != address(0) ? (platformPart * cashbackBps) / BPS : 0;
-        uint256 rf = ref != address(0) ? (platformPart * referralBps) / BPS : 0;
-        if (cb != 0) rewardsOwed[trader][c.pair] += cb;
-        if (rf != 0) rewardsOwed[ref][c.pair] += rf;
-        if (cb != 0 || rf != 0) emit RewardsCredited(c.token, trader, cb, ref, rf);
-        platformOwed[c.token] += platformPart - cb - rf;
+        if (cb != 0) {
+            rewardsOwed[trader][c.pair] += cb;
+            emit CashbackCredited(c.token, trader, cb);
+        }
+        platformOwed[c.token] += platformPart - cb;
     }
 
     /// @dev Who this swap is for. The trusted router (and the factory, for the
-    ///      creator's first buy) name the trader and an optional referrer in
-    ///      hookData; anyone else trades as tx.origin. A referrer binds once per
-    ///      trader and only through the router, so nobody can rebind someone
-    ///      else's referrer by swapping in their name.
-    function _traderOf(address sender, bytes calldata hookData) internal returns (address trader, address ref) {
+    ///      creator's first buy) name the trader in hookData; anyone else
+    ///      trades as tx.origin.
+    function _traderOf(address sender, bytes calldata hookData) internal view returns (address trader) {
         trader = tx.origin;
-        if ((sender == router || sender == factory) && hookData.length == 64) {
-            address named;
-            (named, ref) = abi.decode(hookData, (address, address));
+        if ((sender == router || sender == factory) && hookData.length == 32) {
+            address named = abi.decode(hookData, (address));
             if (named != address(0)) trader = named;
-            if (sender == router && ref != address(0) && ref != trader && referrerOf[trader] == address(0)) {
-                referrerOf[trader] = ref;
-                emit ReferrerBound(trader, ref);
-            }
         }
-        ref = referrerOf[trader];
     }
 
     // ---------------------------------------------------------------------
@@ -693,10 +678,7 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         }
         if (fee == 0) return (BaseHook.afterSwap.selector, ret);
         poolManager.mint(address(this), key.currency1.toId(), fee);
-        {
-            (address trader, address ref) = _traderOf(sender, hookData);
-            _credit(c, fee, trader, ref);
-        }
+        _credit(c, fee, _traderOf(sender, hookData));
         emit FeeTaken(c.token, fee, bps);
         // reflexive buyback then evolution, both only on real (non-hook) swaps
         if (sender != address(this)) {

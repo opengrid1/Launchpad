@@ -108,21 +108,21 @@ async function main() {
   await step();
 
   // trades: 1 ETH dev buys already happened on eth for A and B
-  await (await at("hyper").router.connect(trader).buy(A.hyper, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("0.5") })).wait();
+  await (await at("hyper").router.connect(trader).buy(A.hyper, "0x", 0, { value: ethers.parseEther("0.5") })).wait();
   await step();
   const aHyper = await coin("hyper", A.hyper);
   const half = (await aHyper.balanceOf(trader.address)) / 2n;
   await (await aHyper.connect(trader).approve(await at("hyper").router.getAddress(), half)).wait();
-  await (await at("hyper").router.connect(trader).sell(A.hyper, half, "0x", 0, ethers.ZeroAddress)).wait();
+  await (await at("hyper").router.connect(trader).sell(A.hyper, half, "0x", 0)).wait();
   await step();
-  await (await at("bsc").router.connect(trader2).buy(A.bsc, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("0.2") })).wait();
+  await (await at("bsc").router.connect(trader2).buy(A.bsc, "0x", 0, { value: ethers.parseEther("0.2") })).wait();
   await step();
   const aEth = await coin("eth", A.eth);
   const sellAmt = (await aEth.balanceOf(creator.address)) / 5n;
   await (await aEth.connect(creator).approve(await at("eth").router.getAddress(), sellAmt)).wait();
-  await (await at("eth").router.connect(creator).sell(A.eth, sellAmt, "0x", 0, ethers.ZeroAddress)).wait();
+  await (await at("eth").router.connect(creator).sell(A.eth, sellAmt, "0x", 0)).wait();
   await step();
-  await (await at("bsc").router.connect(trader).buy(B.bsc, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("0.3") })).wait();
+  await (await at("bsc").router.connect(trader).buy(B.bsc, "0x", 0, { value: ethers.parseEther("0.3") })).wait();
   await step();
 
   // bridges: creator eth -> hyper (to trader), trader hyper -> bsc

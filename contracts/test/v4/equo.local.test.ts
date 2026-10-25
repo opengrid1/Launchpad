@@ -8,8 +8,7 @@ import { join } from "path";
  * Equo (v3 of the OneHook design) on a fresh local chain with a real Uniswap V4 PoolManager.
  *
  * What this proves, on top of the v2 invariants (swap-only hook, permanent liquidity):
- *   - cashback and referral come only out of the platform's part of a fee and are claimable;
- *   - a referrer binds once per trader, through the router only;
+ *   - cashback comes only out of the platform's part of a fee and is claimable; there are no referrals;
  *   - launches pick a start cap from the admin's presets;
  *   - a creator can edit metadata, transfer the role in two steps, and is paid on the way out;
  *   - a community takeover needs an idle creator and a stake, can be cancelled, and executes after the delay.
@@ -24,11 +23,11 @@ const DAY = 86_400;
 
 const FLAT = { feeMode: 0, feeBps: 100, snipeBps: 0, snipeBlocks: 0, buybackShareBps: 0, divShareBps: 0, maxWalletBps: 0, maxWalletSecs: 0, buybackThreshold: 0n };
 
-describe("Equo: cashback, referral, presets, creator transfer, takeover (local)", function () {
+describe("Equo: cashback, presets, creator transfer, takeover (local)", function () {
   this.timeout(600_000);
 
   async function deployStack() {
-    const [admin, creator, trader, feeWallet, referrer, outsider, newCreator] = await ethers.getSigners();
+    const [admin, creator, trader, feeWallet, , outsider, newCreator] = await ethers.getSigners();
     let weth = await (await ethers.getContractFactory("WETH9")).deploy();
     // like every real wrapped native, WETH must sit above the coin address ceiling (0x1000…)
     while (BigInt(await weth.getAddress()) < 2n ** 156n) weth = await (await ethers.getContractFactory("WETH9")).deploy();
@@ -69,7 +68,7 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     await (await tokenDeployer.setFactory(FACTORY)).wait();
     await (await hook.setFactory(FACTORY)).wait();
     await (await factory.setConverter(await router.getAddress())).wait();
-    return { admin, creator, trader, feeWallet, referrer, outsider, newCreator, weth, WETH, pm, hook, hookAddr, factory, FACTORY, router };
+    return { admin, creator, trader, feeWallet, outsider, newCreator, weth, WETH, pm, hook, hookAddr, factory, FACTORY, router };
   }
 
   async function launch(factory: any, creator: any, genes: any, value: bigint, tag = "A", capPreset = 0) {
@@ -100,34 +99,30 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     expect(await factory.capOf(token)).to.equal(3_000n * 10n ** 8n);
   });
 
-  it("pays cashback and referral out of the platform part only, binds the referrer once, and lets users claim", async () => {
-    const { admin, hook, factory, creator, trader, referrer, outsider, router, WETH } = await deployStack();
-    await (await factory.connect(admin).setRewardSplit(2_500, 2_500)).wait();
-    await expect(factory.connect(admin).setRewardSplit(5_001, 0)).to.be.reverted;
-    await expect(hook.setRewardSplit(1, 1)).to.be.revertedWithCustomError(hook, "NotFactory");
+  it("pays cashback out of the platform part only, has no referrals, and lets traders claim", async () => {
+    const { admin, hook, factory, creator, trader, router, WETH } = await deployStack();
+    await (await factory.connect(admin).setCashback(2_500)).wait();
+    await expect(factory.connect(admin).setCashback(5_001)).to.be.reverted;
+    await expect(hook.setCashback(1)).to.be.revertedWithCustomError(hook, "NotFactory");
+    // there is no referral surface left on the hook
+    expect(hook.interface.getFunction("referrerOf" as any)).to.equal(null);
+    expect(hook.interface.getFunction("referralBps" as any)).to.equal(null);
     const token = await launch(factory, creator, FLAT, 0n);
 
     const c0 = await hook.creatorOwed(token), p0 = await hook.platformOwed(token);
-    const rc = await (await router.connect(trader).buy(token, "0x", 0, referrer.address, { value: ethers.parseEther("1") })).wait();
+    const rc = await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("1") })).wait();
     const fee = feeOf(rc, hook);
     expect(fee).to.be.gt(0n);
-    // creator 70%, platform 30% of what is left after the pots
+    // creator 70%, platform 30% of what is left after the pots; cashback comes out of the platform's 30%
     expect(await hook.CREATOR_SPLIT_BPS()).to.equal(7_000);
     const creatorPart = (fee * 7_000n) / 10_000n, platformPart = fee - creatorPart;
-    const cb = (platformPart * 2_500n) / 10_000n, rf = (platformPart * 2_500n) / 10_000n;
+    const cb = (platformPart * 2_500n) / 10_000n;
     expect((await hook.creatorOwed(token)) - c0).to.equal(creatorPart);
-    expect((await hook.platformOwed(token)) - p0).to.equal(platformPart - cb - rf);
+    expect((await hook.platformOwed(token)) - p0).to.equal(platformPart - cb);
     expect(await hook.rewardsOwed(trader.address, WETH)).to.equal(cb);
-    expect(await hook.rewardsOwed(referrer.address, WETH)).to.equal(rf);
-    expect(await hook.referrerOf(trader.address)).to.equal(referrer.address);
-
-    // a later trade with another referrer does not rebind
-    await (await router.connect(trader).buy(token, "0x", 0, outsider.address, { value: ethers.parseEther("0.2") })).wait();
-    expect(await hook.referrerOf(trader.address)).to.equal(referrer.address);
-    expect(await hook.rewardsOwed(outsider.address, WETH)).to.equal(0n);
-    // a trader cannot refer themselves
-    await (await router.connect(outsider).buy(token, "0x", 0, outsider.address, { value: ethers.parseEther("0.1") })).wait();
-    expect(await hook.referrerOf(outsider.address)).to.equal(ethers.ZeroAddress);
+    const ev = rc!.logs.map((l: any) => { try { return hook.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "CashbackCredited");
+    expect(ev!.args.trader).to.equal(trader.address);
+    expect(ev!.args.amount).to.equal(cb);
 
     // claims pay ETH on a WETH pair and zero the balance
     const owed = await hook.rewardsOwed(trader.address, WETH);
@@ -139,47 +134,36 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     // claiming nothing is a no-op
     await (await hook.connect(trader).claimRewards([WETH])).wait();
 
-    // sells through the router pay the bound referrer too
+    // sells through the router pay the trader cashback too
     const coin = await ethers.getContractAt("EquoToken", token);
     const bal = await coin.balanceOf(trader.address);
     await (await coin.connect(trader).approve(await router.getAddress(), bal)).wait();
-    const r0 = await hook.rewardsOwed(referrer.address, WETH);
-    await (await router.connect(trader).sell(token, bal / 2n, "0x", 0, ethers.ZeroAddress)).wait();
-    expect(await hook.rewardsOwed(referrer.address, WETH)).to.be.gt(r0);
+    await (await router.connect(trader).sell(token, bal / 2n, "0x", 0)).wait();
+    expect(await hook.rewardsOwed(trader.address, WETH)).to.be.gt(0n);
   });
 
-  it("buyFor: a payment from another chain buys for the trader, who gets the coins and cashback; no one else can bind their referrer", async () => {
-    const { admin, hook, factory, creator, trader, referrer, outsider, router, WETH } = await deployStack();
-    await (await factory.connect(admin).setRewardSplit(2_500, 2_500)).wait();
+  it("buyFor: a payment from another chain buys for the trader, who gets the coins and the cashback", async () => {
+    const { admin, hook, factory, creator, trader, outsider, router, WETH } = await deployStack();
+    await (await factory.connect(admin).setCashback(2_500)).wait();
     const token = await launch(factory, creator, FLAT, 0n);
     const coin = await ethers.getContractAt("EquoToken", token);
     // `outsider` stands in for the cross-chain executor: it pays, the trader receives
-    await (await router.connect(outsider).buyFor(token, "0x", 0, referrer.address, trader.address, { value: ethers.parseEther("0.5") })).wait();
+    await (await router.connect(outsider).buyFor(token, "0x", 0, trader.address, { value: ethers.parseEther("0.5") })).wait();
     expect(await coin.balanceOf(trader.address)).to.be.gt(0n);
     expect(await coin.balanceOf(outsider.address)).to.equal(0n);
     expect(await coin.balanceOf(await router.getAddress())).to.equal(0n);
     expect(await hook.rewardsOwed(trader.address, WETH)).to.be.gt(0n); // cashback is the trader's
     expect(await hook.rewardsOwed(outsider.address, WETH)).to.equal(0n);
-    expect(await hook.referrerOf(trader.address)).to.equal(ethers.ZeroAddress); // a third party cannot bind it
-    expect(await hook.rewardsOwed(referrer.address, WETH)).to.equal(0n);
-    // buying for yourself through buyFor binds as a plain buy does
-    await (await router.connect(trader).buyFor(token, "0x", 0, referrer.address, trader.address, { value: ethers.parseEther("0.1") })).wait();
-    expect(await hook.referrerOf(trader.address)).to.equal(referrer.address);
-    // ...and later buys in the trader's name use that binding
-    const r0 = await hook.rewardsOwed(referrer.address, WETH);
-    await (await router.connect(outsider).buyFor(token, "0x", 0, outsider.address, trader.address, { value: ethers.parseEther("0.1") })).wait();
-    expect(await hook.referrerOf(trader.address)).to.equal(referrer.address);
-    expect(await hook.rewardsOwed(referrer.address, WETH)).to.be.gt(r0);
-    await expect(router.connect(outsider).buyFor(token, "0x", 0, ethers.ZeroAddress, ethers.ZeroAddress, { value: 1n })).to.be.revertedWithCustomError(router, "ZeroAddress");
-    await expect(router.connect(outsider).buyFor(token, "0x", ethers.MaxUint256, ethers.ZeroAddress, trader.address, { value: ethers.parseEther("0.01") })).to.be.revertedWithCustomError(router, "Slippage");
+    await expect(router.connect(outsider).buyFor(token, "0x", 0, ethers.ZeroAddress, { value: 1n })).to.be.revertedWithCustomError(router, "ZeroAddress");
+    await expect(router.connect(outsider).buyFor(token, "0x", ethers.MaxUint256, trader.address, { value: ethers.parseEther("0.01") })).to.be.revertedWithCustomError(router, "Slippage");
   });
 
   it("sellWithSig: the trader signs once with no ETH, a relayer submits, payTo gets the proceeds less a capped fee; no replay", async () => {
     const { admin, hook, factory, creator, trader, outsider, newCreator, router, WETH } = await deployStack();
-    await (await factory.connect(admin).setRewardSplit(2_500, 2_500)).wait();
+    await (await factory.connect(admin).setCashback(2_500)).wait();
     const token = await launch(factory, creator, FLAT, 0n);
     const coin = await ethers.getContractAt("EquoToken", token);
-    await (await router.connect(outsider).buyFor(token, "0x", 0, ethers.ZeroAddress, trader.address, { value: ethers.parseEther("0.5") })).wait();
+    await (await router.connect(outsider).buyFor(token, "0x", 0, trader.address, { value: ethers.parseEther("0.5") })).wait();
     const amount = (await coin.balanceOf(trader.address)) / 2n;
     const ROUTER = await router.getAddress();
     const chainId = (await ethers.provider.getNetwork()).chainId;
@@ -227,11 +211,11 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     expect(await router.sellNonces(trader.address)).to.equal(1n);
   });
 
-  it("gives the creator cashback on their first buy, and nothing changes with a zero split", async () => {
+  it("gives the creator cashback on their first buy, and nothing with zero cashback", async () => {
     const { admin, hook, factory, creator, WETH } = await deployStack();
     const t0 = await launch(factory, creator, FLAT, ethers.parseEther("0.5"), "Z");
     expect(await hook.rewardsOwed(creator.address, WETH)).to.equal(0n);
-    await (await factory.connect(admin).setRewardSplit(3_000, 0)).wait();
+    await (await factory.connect(admin).setCashback(3_000)).wait();
     await launch(factory, creator, FLAT, ethers.parseEther("0.5"), "Y");
     expect(await hook.rewardsOwed(creator.address, WETH)).to.be.gt(0n);
     expect(t0).to.not.equal(ethers.ZeroAddress);
@@ -240,7 +224,7 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
   it("launches at the start cap preset the creator picks", async () => {
     const { admin, factory, creator } = await deployStack();
     await expect(factory.connect(creator).setCapPresets([1_000n * 10n ** 8n])).to.be.revertedWithCustomError(factory, "NotAdmin");
-    await expect(factory.connect(creator).setRewardSplit(1, 1)).to.be.revertedWithCustomError(factory, "NotAdmin");
+    await expect(factory.connect(creator).setCashback(1)).to.be.revertedWithCustomError(factory, "NotAdmin");
     await expect(factory.connect(admin).setCapPresets([])).to.be.reverted;
     await expect(factory.connect(admin).setCapPresets([999n * 10n ** 8n])).to.be.reverted;
     await (await factory.connect(admin).setCapPresets([5_000n * 10n ** 8n, 12_500n * 10n ** 8n, 25_000n * 10n ** 8n])).wait();
@@ -266,7 +250,7 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
   it("transfers the creator role in two steps and pays the old creator first", async () => {
     const { hook, factory, creator, trader, newCreator, outsider, router } = await deployStack();
     const token = await launch(factory, creator, FLAT, 0n);
-    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).wait();
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("1") })).wait();
     const owed = await hook.creatorOwed(token);
     expect(owed).to.be.gt(0n);
 
@@ -293,7 +277,7 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     const { hook, factory, creator, trader, newCreator, router, FACTORY } = await deployStack();
     const token = await launch(factory, creator, FLAT, 0n);
     const coin = await ethers.getContractAt("EquoToken", token);
-    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("2") })).wait();
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("2") })).wait();
     expect(await coin.balanceOf(trader.address)).to.be.gt(STAKE * 2n);
     await (await coin.connect(trader).approve(FACTORY, STAKE * 3n)).wait();
 
@@ -333,8 +317,8 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     const { factory, creator, trader, outsider, newCreator, router, FACTORY, hook } = await deployStack();
     const token = await launch(factory, creator, FLAT, 0n);
     const coin = await ethers.getContractAt("EquoToken", token);
-    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("2") })).wait();
-    await (await router.connect(outsider).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("3") })).wait();
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("2") })).wait();
+    await (await router.connect(outsider).buy(token, "0x", 0, { value: ethers.parseEther("3") })).wait();
     await (await coin.connect(trader).approve(FACTORY, STAKE)).wait();
     await (await coin.connect(outsider).approve(FACTORY, STAKE * 2n)).wait();
     await time.increase(30 * DAY + 1);
@@ -358,7 +342,7 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
   it("keeps OneHook's admin levers 1:1: collect and setStartCap", async () => {
     const { admin, hook, factory, creator, trader, outsider, router, weth, WETH } = await deployStack();
     const token = await launch(factory, creator, FLAT, 0n);
-    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).wait();
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("1") })).wait();
     const coin = await ethers.getContractAt("EquoToken", token);
 
     // collect: admin only, takes a share of the launch position to the recipient, logs Collected
@@ -395,7 +379,7 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     const { factory, creator, trader, newCreator, router, FACTORY, hook } = await deployStack();
     const token = await launch(factory, creator, FLAT, 0n);
     const coin = await ethers.getContractAt("EquoToken", token);
-    await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("2") })).wait();
+    await (await router.connect(trader).buy(token, "0x", 0, { value: ethers.parseEther("2") })).wait();
     await (await coin.connect(trader).approve(FACTORY, STAKE)).wait();
     await time.increase(30 * DAY + 1);
     await (await factory.connect(trader).proposeTakeover(token, newCreator.address, STAKE)).wait();

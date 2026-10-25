@@ -68,7 +68,7 @@ seeded from live values (a fork cannot execute native precompiles).
 python -m venv .hlvenv && .hlvenv/bin/pip install hyperliquid-python-sdk
 .hlvenv/bin/python scripts/liqio-big-blocks.py on
 # 2. deploy, wire, set price sources, presets and reward split, renounce setup rights
-LIQIO_CONFIRM_DEPLOY=1 ONEHOOK_ADMIN=0x… EQUO_CAP_PRESETS=3000,10000,25000 EQUO_CASHBACK_BPS=2500 EQUO_REFERRAL_BPS=2500 RENOUNCE=1 \
+LIQIO_CONFIRM_DEPLOY=1 ONEHOOK_ADMIN=0x… EQUO_CAP_PRESETS=3000,10000,25000 EQUO_CASHBACK_BPS=2500 RENOUNCE=1 \
   npx hardhat run scripts/deploy-liqio.ts --network hyperevm
 # 3. big blocks off, then the verify commands the script prints
 .hlvenv/bin/python scripts/liqio-big-blocks.py off

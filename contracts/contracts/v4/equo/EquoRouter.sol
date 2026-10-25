@@ -53,14 +53,12 @@ interface IEquoV2Pair {
 ///         selling walks the same hops backwards. A WETH-paired coin needs no
 ///         route. It holds no funds between calls.
 ///
-///         Every coin swap tells the hook who the trader is (msg.sender) and an
-///         optional referrer, so the trader earns cashback and the referrer its
-///         share. A referrer binds to a trader once, on their first referred trade.
+///         Every coin swap tells the hook who the trader is (msg.sender), so the
+///         trader earns cashback.
 ///
 ///         Trading from any chain, against the one pool on Ethereum:
 ///           - {buyFor}: a cross-chain payment service (the trader paid on their own chain) buys for the trader.
-///             The coins and the cashback go to the trader. A referrer only binds when the trader buys for
-///             themselves, so nobody can set another trader's referrer by buying in their name.
+///             The coins and the cashback go to the trader.
 ///           - {sellWithSig}: the trader signs a sell once (amount, minimum payout, maximum gas fee, payout address,
 ///             deadline) and any relayer submits it, paying the gas and taking at most the signed fee out of the
 ///             proceeds. The trader needs no ETH on Ethereum to sell.
@@ -149,22 +147,20 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard, EIP712 {
     // ---------------------------------------------------------------------
 
     /// @notice Buy `coin` with the ETH sent, along `route` (empty for a WETH pair).
-    ///         `referrer` (zero for none) binds to the buyer on their first referred trade.
-    function buy(address coin, bytes calldata route, uint256 minCoinOut, address referrer) external payable nonReentrant returns (uint256 coinOut) {
+    function buy(address coin, bytes calldata route, uint256 minCoinOut) external payable nonReentrant returns (uint256 coinOut) {
         if (msg.value == 0) revert ZeroAmount();
         address pair = _pairOf(coin);
         _poke(pair);
         uint256 pairIn = _ethToPair(pair, msg.value, route);
-        coinOut = _coinSwap(coin, pair, pairIn, msg.sender, referrer);
+        coinOut = _coinSwap(coin, pair, pairIn, msg.sender);
         if (coinOut < minCoinOut) revert Slippage();
         IERC20(coin).safeTransfer(msg.sender, coinOut);
         emit Bought(coin, msg.sender, msg.value, pairIn, coinOut);
     }
 
     /// @notice Buy `coin` with the ETH sent, for `recipient`: the coins and the cashback are theirs. How a payment
-    ///         made on another chain buys in the one pool. `referrer` only binds when the caller is the recipient;
-    ///         anyone else buying in their name trades under the recipient's existing referrer, if any.
-    function buyFor(address coin, bytes calldata route, uint256 minCoinOut, address referrer, address recipient)
+    ///         made on another chain buys in the one pool.
+    function buyFor(address coin, bytes calldata route, uint256 minCoinOut, address recipient)
         external
         payable
         nonReentrant
@@ -175,7 +171,7 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard, EIP712 {
         address pair = _pairOf(coin);
         _poke(pair);
         uint256 pairIn = _ethToPair(pair, msg.value, route);
-        coinOut = _coinSwap(coin, pair, pairIn, recipient, msg.sender == recipient ? referrer : address(0));
+        coinOut = _coinSwap(coin, pair, pairIn, recipient);
         if (coinOut < minCoinOut) revert Slippage();
         IERC20(coin).safeTransfer(recipient, coinOut);
         emit Bought(coin, recipient, msg.value, pairIn, coinOut);
@@ -205,7 +201,7 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard, EIP712 {
         address pair = _pairOf(it.coin);
         _poke(pair);
         IERC20(it.coin).safeTransferFrom(it.owner, address(this), it.amountIn);
-        uint256 pairOut = _coinSwap(it.coin, it.coin, it.amountIn, it.owner, address(0));
+        uint256 pairOut = _coinSwap(it.coin, it.coin, it.amountIn, it.owner);
         ethOut = _pairToWeth(pair, pairOut, route);
         if (ethOut < fee || ethOut - fee < it.minEthOut) revert Slippage();
         IEquoWrapped(weth).withdraw(ethOut);
@@ -225,12 +221,12 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard, EIP712 {
     }
 
     /// @notice Sell `amountIn` of `coin` for ETH along `route` (the buy route, walked backwards).
-    function sell(address coin, uint256 amountIn, bytes calldata route, uint256 minEthOut, address referrer) external nonReentrant returns (uint256 ethOut) {
+    function sell(address coin, uint256 amountIn, bytes calldata route, uint256 minEthOut) external nonReentrant returns (uint256 ethOut) {
         if (amountIn == 0) revert ZeroAmount();
         address pair = _pairOf(coin);
         _poke(pair);
         IERC20(coin).safeTransferFrom(msg.sender, address(this), amountIn);
-        uint256 pairOut = _coinSwap(coin, coin, amountIn, msg.sender, referrer);
+        uint256 pairOut = _coinSwap(coin, coin, amountIn, msg.sender);
         ethOut = _pairToWeth(pair, pairOut, route);
         if (ethOut < minEthOut) revert Slippage();
         IEquoWrapped(weth).withdraw(ethOut);
@@ -243,21 +239,21 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard, EIP712 {
     // Pair in / pair out (for wallets that hold the pair)
     // ---------------------------------------------------------------------
 
-    function buyWithPair(address coin, uint256 pairIn, uint256 minCoinOut, address referrer) external nonReentrant returns (uint256 coinOut) {
+    function buyWithPair(address coin, uint256 pairIn, uint256 minCoinOut) external nonReentrant returns (uint256 coinOut) {
         if (pairIn == 0) revert ZeroAmount();
         address pair = _pairOf(coin);
         IERC20(pair).safeTransferFrom(msg.sender, address(this), pairIn);
-        coinOut = _coinSwap(coin, pair, pairIn, msg.sender, referrer);
+        coinOut = _coinSwap(coin, pair, pairIn, msg.sender);
         if (coinOut < minCoinOut) revert Slippage();
         IERC20(coin).safeTransfer(msg.sender, coinOut);
         emit Bought(coin, msg.sender, 0, pairIn, coinOut);
     }
 
-    function sellForPair(address coin, uint256 amountIn, uint256 minPairOut, address referrer) external nonReentrant returns (uint256 pairOut) {
+    function sellForPair(address coin, uint256 amountIn, uint256 minPairOut) external nonReentrant returns (uint256 pairOut) {
         if (amountIn == 0) revert ZeroAmount();
         address pair = _pairOf(coin);
         IERC20(coin).safeTransferFrom(msg.sender, address(this), amountIn);
-        pairOut = _coinSwap(coin, coin, amountIn, msg.sender, referrer);
+        pairOut = _coinSwap(coin, coin, amountIn, msg.sender);
         if (pairOut < minPairOut) revert Slippage();
         IERC20(pair).safeTransfer(msg.sender, pairOut);
         emit Sold(coin, msg.sender, amountIn, pairOut, 0);
@@ -397,10 +393,10 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard, EIP712 {
     }
 
     /// @dev Swap through the coin's own pool: `currencyIn` is the coin (sell) or its pair (buy).
-    ///      The hook learns the trader (the buyer, seller or named recipient) and the referrer from hookData.
-    function _coinSwap(address coin, address currencyIn, uint256 amountIn, address trader, address referrer) internal returns (uint256) {
+    ///      The hook learns the trader (the buyer, seller or named recipient) from hookData.
+    function _coinSwap(address coin, address currencyIn, uint256 amountIn, address trader) internal returns (uint256) {
         PoolKey memory key = factory.poolKeyOf(coin);
-        return _v4Swap(key, currencyIn == Currency.unwrap(key.currency0), amountIn, abi.encode(trader, referrer));
+        return _v4Swap(key, currencyIn == Currency.unwrap(key.currency0), amountIn, abi.encode(trader));
     }
 
     function _v4Swap(PoolKey memory key, bool zeroForOne, uint256 amountIn, bytes memory hookData) internal returns (uint256 amountOut) {

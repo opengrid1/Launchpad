@@ -20,7 +20,6 @@ import { join } from "path";
  *   LIQIO_WETH             WHYPE (default: 0x5555…5555)
  *   RENOUNCE=1             renounce the deployer's setup rights at the end (factory owner)
  *   EQUO_CASHBACK_BPS      cashback share of the platform part, bps (owner step, before RENOUNCE)
- *   EQUO_REFERRAL_BPS      referral share of the platform part, bps (same)
  *   EQUO_CAP_PRESETS       start cap presets in whole USD, comma separated, e.g. 3000,10000,25000 (same)
  *
  * The deployer holds a setup right on the factory, oracle and token deployer (wiring, price sources, presets,
@@ -163,9 +162,9 @@ async function main() {
   else for (const s of sources) console.log(`  ${s.symbol} priced at $${ethers.formatUnits(await oracle.price(s.token), 18)} per 1e18 base units`);
 
   // 6. Owner settings (the deployer is the factory owner until RENOUNCE).
-  const cb = Number(process.env.EQUO_CASHBACK_BPS ?? 0), rf = Number(process.env.EQUO_REFERRAL_BPS ?? 0);
+  const cb = Number(process.env.EQUO_CASHBACK_BPS ?? 0);
   const presets = (process.env.EQUO_CAP_PRESETS ?? "").split(",").map((v) => v.trim()).filter(Boolean).map((v) => BigInt(v) * 10n ** 8n);
-  if (cb || rf) { await (await factory.setRewardSplit(cb, rf)).wait(); console.log(`reward split: cashback ${cb} bps, referral ${rf} bps of the platform part`); }
+  if (cb) { await (await factory.setCashback(cb)).wait(); console.log(`cashback: ${cb} bps of the platform part`); }
   if (presets.length) { await (await factory.setCapPresets(presets)).wait(); console.log("cap presets:", presets.map((p) => `$${p / 10n ** 8n}`).join(", ")); }
   if (process.env.RENOUNCE === "1") {
     await (await factory.renounceOwnership()).wait();

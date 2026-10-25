@@ -3,7 +3,7 @@ import { writeFileSync, mkdirSync, readFileSync } from "fs";
 import { join } from "path";
 
 /**
- * Deploy Equo (v3 of the OneHook design: cashback, referral, start cap presets,
+ * Deploy Equo (v3 of the OneHook design: cashback, start cap presets,
  * creator transfer and community takeover; coins are LayerZero OFTs that live on
  * every Equo chain) to one chain. Run it once per chain.
  *
@@ -22,7 +22,6 @@ import { join } from "path";
  *   EQUO_LAUNCHER          launch service allowed to call launchFor (admin step; applied here only if deployer is admin)
  *   RENOUNCE=1             renounce the deployer's setup rights at the end (factory owner + token deployer setup)
  *   EQUO_CASHBACK_BPS      cashback share of the platform part, bps (admin step; applied here only if deployer is admin)
- *   EQUO_REFERRAL_BPS      referral share of the platform part, bps (same)
  *   EQUO_CAP_PRESETS       start cap presets in whole USD, comma separated, e.g. 5000,12500,25000 (same)
  *   EQUO_MIN_FIRST_BUY     minimum first buy per launch in the chain's native coin (factory immutable; default 0.001)
  *
@@ -167,11 +166,11 @@ async function main() {
   console.log("wired: tokenDeployer.creators, tokenDeployer.factory, hook.factory, factory.converter (+ hook.router)");
 
   // 5. Admin settings (only when the deployer is the admin; otherwise print them for the admin to send).
-  const cb = Number(process.env.EQUO_CASHBACK_BPS ?? 0), rf = Number(process.env.EQUO_REFERRAL_BPS ?? 0);
+  const cb = Number(process.env.EQUO_CASHBACK_BPS ?? 0);
   const presets = (process.env.EQUO_CAP_PRESETS ?? "").split(",").map((v) => v.trim()).filter(Boolean).map((v) => BigInt(v) * 10n ** 8n);
   // the deployer is still the factory owner here, so it can set the launch values before renouncing
   {
-    if (cb || rf) { await (await factory.setRewardSplit(cb, rf)).wait(); console.log(`reward split: cashback ${cb} bps, referral ${rf} bps of the platform part`); }
+    if (cb) { await (await factory.setCashback(cb)).wait(); console.log(`cashback: ${cb} bps of the platform part`); }
     if (presets.length) { await (await factory.setCapPresets(presets)).wait(); console.log("cap presets:", presets.map((p) => `$${p / 10n ** 8n}`).join(", ")); }
   }
   const launcher = process.env.EQUO_LAUNCHER ? ethers.getAddress(process.env.EQUO_LAUNCHER) : "";
@@ -189,7 +188,7 @@ async function main() {
   const out = {
     network: network.name,
     chainId: Number((await ethers.provider.getNetwork()).chainId),
-    model: "equo-v3-omni: onehook-v2 + cashback, referral, cap presets, creator transfer, takeover (flags 0xCC); OFT coins, 0.2% bridge fee",
+    model: "equo-v3-omni: onehook-v2 + cashback (no referrals), 70/30 split, cap presets, creator transfer, takeover (flags 0xCC); OFT coins, 0.2% bridge fee",
     deployedAt: new Date().toISOString(),
     deployer: deployer.address,
     admin,

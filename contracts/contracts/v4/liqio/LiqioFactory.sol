@@ -65,8 +65,8 @@ interface ILiqioPairRouter {
 ///             at any time during {TAKEOVER_DELAY}; after it, anyone executes.
 ///             Fees the old creator earned are paid to them first; every stake
 ///             goes back to its proposer.
-///           - Reward split: the admin sets the cashback and referral shares,
-///             which only ever come out of the platform's own part of a fee.
+///           - Cashback: the admin sets the share of the platform's own part of
+///             a fee that goes back to traders. There are no referrals.
 contract LiqioFactory is ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
@@ -267,7 +267,7 @@ contract LiqioFactory is ReentrancyGuard, IUnlockCallback {
     }
 
     /// @notice One-time: the router (ETH <-> pair token routing). The hook trusts
-    ///         it to name the trader and referrer of each swap.
+    ///         it to name the trader of each swap.
     function setConverter(address converter_) external onlyAdminOrOwner {
         if (converter != address(0) || converter_ == address(0)) revert InvalidParams();
         converter = converter_;
@@ -275,10 +275,10 @@ contract LiqioFactory is ReentrancyGuard, IUnlockCallback {
         emit ConverterSet(converter_);
     }
 
-    /// @notice Cashback and referral shares, each in bps of the platform's part of a fee.
+    /// @notice Cashback, in bps of the platform's part of a fee.
     ///         The deployer can set the launch values until it renounces; the admin always can.
-    function setRewardSplit(uint16 cashbackBps, uint16 referralBps) external onlyAdminOrOwner {
-        hook.setRewardSplit(cashbackBps, referralBps);
+    function setCashback(uint16 cashbackBps) external onlyAdminOrOwner {
+        hook.setCashback(cashbackBps);
     }
 
     /// @notice Block or unblock a token as a pair. Coins already launched keep trading.
@@ -643,7 +643,7 @@ contract LiqioFactory is ReentrancyGuard, IUnlockCallback {
         }
         if (action == 1) {
             (PoolKey memory key, uint256 pairIn, address to) = abi.decode(payload, (PoolKey, uint256, address));
-            BalanceDelta d = poolManager.swap(key, SwapParams({zeroForOne: false, amountSpecified: -int256(pairIn), sqrtPriceLimitX96: TickMath.MAX_SQRT_PRICE - 1}), abi.encode(to, address(0)));
+            BalanceDelta d = poolManager.swap(key, SwapParams({zeroForOne: false, amountSpecified: -int256(pairIn), sqrtPriceLimitX96: TickMath.MAX_SQRT_PRICE - 1}), abi.encode(to));
             _pay(key.currency1, d.amount1());
             uint256 coinOut = d.amount0() > 0 ? uint256(uint128(d.amount0())) : 0;
             if (coinOut != 0) poolManager.take(key.currency0, to, coinOut);
