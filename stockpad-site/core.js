@@ -112,11 +112,11 @@ function openSheet(){ SP.closeDialogs(); const page=document.body.dataset.page||
     <div class="sh-foot">${clockHtml().replace('id="sp-clock"','')}<span class="fch">${SP.chainStack(SP.chains.map(c=>c.key),16)}</span></div></div>`;
   ov.addEventListener('click',e=>{ if(e.target===ov||e.target.closest('[data-close]')) ov.remove(); }); document.body.appendChild(ov);
   const w=$('#sh-wallet',ov); if(SP.W.connected){ w.innerHTML=`<a class="btn" href="/profile"><span class="av" style="width:18px;height:18px;border-radius:5px;overflow:hidden;display:inline-block">${SP.avatar(SP.W.address,18)}</span>${esc(SP.W.short)}</a>`; } else { w.innerHTML=`<button class="btn">${ic('wallet')}Connect</button>`; w.firstChild.onclick=()=>{ ov.remove(); SP.W.connect(); }; } }
-function clockHtml(){ const mk=SP.market(); return `<span class="mkt ${mk.open?'open':''}" id="sp-clock" title="${esc(mk.detail)}"><i></i><span>${mk.open?'NYSE open':'NYSE closed'}<b>${esc(mk.until)}</b></span></span>`; }
+function clockHtml(){ if(!SP.stocks.length) return ''; /* the NYSE clock only matters with stock pairs */ const mk=SP.market(); return `<span class="mkt ${mk.open?'open':''}" id="sp-clock" title="${esc(mk.detail)}"><i></i><span>${mk.open?'NYSE open':'NYSE closed'}<b>${esc(mk.until)}</b></span></span>`; }
 function renderShell(){ const page=document.body.dataset.page||'markets'; const C=(window.INKY&&INKY.contracts)||{};
   const top=$('#sp-top'); if(top){ top.innerHTML=`<div class="wrap"><a class="brand" href="/markets"><img src="/img/logo.svg?v=15" alt=""><span class="wm">Equo</span></a><nav class="nav">${navHtml(page)}</nav>
     <label class="search">${ic('search')}<input id="sp-q" placeholder="Search name, ticker or address" autocomplete="off"><kbd>/</kbd></label>
-    <div class="topr">${clockHtml()}<span class="vsep"></span><span id="sp-wallet"></span><button type="button" class="burger" id="sp-burger" aria-label="Open menu">${ic('menu')}</button></div></div>`;
+    <div class="topr">${clockHtml()}${SP.stocks.length?'<span class="vsep"></span>':''}<span id="sp-wallet"></span><button type="button" class="burger" id="sp-burger" aria-label="Open menu">${ic('menu')}</button></div></div>`;
     $('#sp-more').onclick=e=>{ e.stopPropagation(); openMore(e.currentTarget); }; $('#sp-burger').onclick=openSheet;
     const q=$('#sp-q'); q.addEventListener('input',()=>searchMenu(q)); q.addEventListener('focus',()=>searchMenu(q)); addEventListener('keydown',e=>{ if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){ e.preventDefault(); q.focus(); } }); }
   let tb=$('#sp-tabbar'); if(!tb){ tb=document.createElement('nav'); tb.id='sp-tabbar'; tb.className='tabbar'; document.body.appendChild(tb); }

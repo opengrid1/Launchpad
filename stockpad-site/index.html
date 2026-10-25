@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><script>if(/[?&](stock|watch|chain)=/.test(location.search))location.replace('/markets'+location.search+location.hash)</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Equo | One coin, every chain</title>
-<meta name="description" content="Launch a coin paired with a real stock, live on seven chains at once.">
+<meta name="description" content="Launch a coin on up to eight chains at once: one address on every chain, one pool per chain, the same opening price.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/ui.css?v=19">
@@ -59,13 +59,13 @@
 <main id="sp-main"><div class="wrap"><div id="pg-land">
   <section class="hero">
     <div>
-      <span class="eyebrow"><span class="live">New</span>Stock-paired coins on 7 chains</span>
+      <span class="eyebrow"><span class="live">New</span>One coin on 8 chains</span>
       <h1>Launch once.<br><span class="g">Live on every chain.</span></h1>
-      <p class="lead">Your coin goes live on <b>seven chains at the same price</b>, paired with a real stock. One coin, one supply: it moves between chains in about a minute, burned where it leaves and minted where it lands.</p>
+      <p class="lead">Your coin goes live on <b>up to eight chains at the same price</b>, at the same address on every one. One coin, one supply: it moves between chains in about a minute, burned where it leaves and minted where it lands.</p>
       <div class="ctas"><a class="btn pri lg" href="/launch" id="ld-launch"></a><a class="btn lg line" href="/markets">Open markets</a><a class="btn lg line" href="/bridge">See the bridge</a></div>
       <div class="chainrow" id="ld-chains"></div>
     </div>
-    <div class="stage" id="ld-stage" aria-label="One coin connected to seven chains">
+    <div class="stage" id="ld-stage" aria-label="One coin connected to eight chains">
       <canvas id="ld-cv"></canvas>
       <div class="core"><span class="halo"></span><span class="halo h2"></span><div class="orb"></div>
         <svg viewBox="0 0 128 128" aria-hidden="true"><defs><linearGradient id="lg1" x1="0" y1="36" x2="0" y2="92" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#b9ecff"/><stop offset="1" stop-color="#6fd0ff"/></linearGradient></defs><g fill="url(#lg1)"><rect x="26" y="72" width="56" height="18" rx="9"/><rect x="46" y="38" width="56" height="18" rx="9"/></g></svg>
@@ -129,7 +129,7 @@
     if(hover) placeTip(hover);
     requestAnimationFrame(frame); }
   function placeTip(p){ const r=stage.getBoundingClientRect(); let x=p.x+40, y=p.y-40; if(x+220>r.width) x=p.x-250; tip.style.left=Math.max(0,x)+'px'; tip.style.top=Math.max(0,y)+'px'; }
-  P.forEach(p=>{ const show=()=>{ hover=p; paused=true; P.forEach(o=>o.el.classList.toggle('on',o===p)); tip.innerHTML=`<div class="th"><img src="${p.c.logo}" alt="">${p.c.name}${p.c.main?' <span class="mainb">Main</span>':''}</div><div class="kv"><span>Stocks</span><b>${p.c.stocks||'—'}</b></div><div class="kv"><span>Pays in</span><b>${quote[p.c.key]||p.c.native}</b></div><div class="kv"><span>Supply</span><b>1B</b></div>`; tip.classList.add('on'); placeTip(p); };
+  P.forEach(p=>{ const show=()=>{ hover=p; paused=true; P.forEach(o=>o.el.classList.toggle('on',o===p)); tip.innerHTML=`<div class="th"><img src="${p.c.logo}" alt="">${p.c.name}${p.c.main?' <span class="mainb">Main</span>':''}</div><div class="kv"><span>Native</span><b>${p.c.native||'—'}</b></div><div class="kv"><span>Pays in</span><b>${quote[p.c.key]||p.c.native}</b></div><div class="kv"><span>Supply</span><b>1B</b></div>`; tip.classList.add('on'); placeTip(p); };
     const hide=()=>{ hover=null; paused=false; p.el.classList.remove('on'); tip.classList.remove('on'); };
     p.el.addEventListener('mouseenter',show); p.el.addEventListener('mouseleave',hide); p.el.addEventListener('click',e=>{ e.stopPropagation(); hover===p?hide():show(); }); });
   document.addEventListener('click',()=>{ if(hover){ hover.el.classList.remove('on'); hover=null; paused=false; tip.classList.remove('on'); } });

@@ -104,11 +104,11 @@ function launchInit(){
     g('sm-fee').textContent=feePct()+(S.snipe?' · anti-snipe':''); const opts=optList(); g('sm-opts').textContent=opts.length?opts.join(', '):'None';
     const px=pairPx(); g('sm-cap').textContent=fmtCap(S.capUsd);
     const dv=S.dev?clamp(fields.devEth(),DEV_MIN,DEV_MAX):0; g('sm-dev').textContent=dv>0?`${dv} ETH`:'None';
-    g('sm-cr').textContent=`${sp.creator}%`; g('sm-note').textContent=(S.pair?`Fees paid in ${S.pair.symbol}. `:'')+'Liquidity cannot be withdrawn.';
+    g('sm-cr').textContent=`${sp.creator}%`; g('sm-note').textContent=S.pair?`Fees paid in ${S.pair.symbol}.`:'';
     if(S.snipe) snipeMsg(); if(S.div) divMsg(); if(S.bb) bbMsg(); if(S.mw) mwMsg(); if(S.dev) devMsg(); paintReview(); if(S.presets.length){ const px=pairPx(); g('cap-hint').textContent=`The coin opens at ${fmtCap(S.capUsd)} market cap${S.pair&&px?' ('+fmtInPair(S.capUsd/px)+')':''}. A higher start means the first buys move the price less.`; } chainPreview(); }
 
   /* ---------- steps ---------- */
-  function validate(n){ if(n===1){ const ok=!!S.pair&&!S.pairBad; g('pair-err').textContent=!S.pair?'Pick a stock or ETH to continue':S.pairBad; return ok; }
+  function validate(n){ if(n===1){ const ok=!!S.pair&&!S.pairBad; g('pair-err').textContent=!S.pair?'Pick a pair to continue':S.pairBad; return ok; }
     if(n===2){ const a=nameMsg(), b=symMsg()&&!!fields.sym(); if(!fields.sym()){ const el=g('sym-msg'); el.className='err'; el.textContent='Symbol is required'; } if(!fields.name()) g('name-msg').textContent='Name is required'; return a&&b; }
     if(n===3){ const a=feeMsg(), b=snipeMsg(), c=divMsg(), d=devMsg(), e=bbMsg(), f=mwMsg(); return a&&b&&c&&d&&e&&f; } return true; }
   function show(n){ S.step=n; S.maxStep=Math.max(S.maxStep,n); $$('#pg-launch .pane').forEach(p=>p.classList.toggle('on',+p.dataset.pane===n));
@@ -169,7 +169,7 @@ function launchInit(){
     g('dn-addr').textContent=cs(L.addr); g('dn-copy').innerHTML=ic('copy'); g('dn-copy').onclick=()=>SP.copy(cs(L.addr),'Address copied');
     g('dn-pair').innerHTML=`<img src="${S.pair.logo}" alt="" style="width:14px;height:14px;border-radius:50%;background:#fff;display:inline-block;vertical-align:-2px;margin-right:6px" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(S.pair.symbol)}`; const sp=split(); g('dn-fee').textContent=`${feePct()} · ${sp.creator}% to you`;
     g('dn-open').href=tokenUrl(L.addr); g('dn-scan').href=EXPLORER+'/token/'+L.addr;
-    const url=SITE+tokenUrl(L.addr); g('dn-x').href='https://x.com/intent/tweet?text='+encodeURIComponent(`$${L.symbol} is live on Equo, paired with ${S.pair.symbol}. Fees settle in ${S.pair.symbol}, liquidity cannot be withdrawn. ${url}`);
+    const url=SITE+tokenUrl(L.addr); g('dn-x').href='https://x.com/intent/tweet?text='+encodeURIComponent(`$${L.symbol} is live on Equo, paired with ${S.pair.symbol}. Fees settle in ${S.pair.symbol}. ${url}`);
     sync(); scrollTo({top:0,behavior:'smooth'}); }
 
   /* ---------- wiring ---------- */

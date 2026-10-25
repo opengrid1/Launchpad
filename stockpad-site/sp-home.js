@@ -33,7 +33,7 @@ window.SP_PAGE=function(){
     $('#mk-figs').innerHTML=[['Volume 24h',fmtUsd(vol)],['Fees 24h',fmtUsd(fees)],['Coins',l.length.toLocaleString()],['Trades',trades.toLocaleString()]].map(s=>`<div class="sbox lg"><span class="lab">${s[0]}</span><b>${s[1]}</b></div>`).join(''); }
 
   /* ---------- filter bar ---------- */
-  function pills(){ const c=counts(); const all=SP.stocks.slice().sort((a,b)=>(c[b.symbol]||0)-(c[a.symbol]||0)); const show=all.slice(0,4), more=all.slice(4);
+  function pills(){ if(!SP.stocks.length){ const el=$('#mk-stockpills'); if(el) el.classList.add('hidden'); return; } const c=counts(); const all=SP.stocks.slice().sort((a,b)=>(c[b.symbol]||0)-(c[a.symbol]||0)); const show=all.slice(0,4), more=all.slice(4);
     const pill=s=>`<button class="pill ${stock===s.symbol?'on':''}" data-st="${s.symbol}"><img src="${s.logo}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'">${esc(s.ticker)}<span class="n">${c[s.symbol]||0}</span></button>`;
     const sel=more.find(s=>s.symbol===stock);
     $('#mk-stockpills').innerHTML=`<button class="pill ${!stock?'on':''}" data-st="">All stocks</button>`+show.map(pill).join('')+(sel?pill(sel):'')+(more.length?`<button class="pill" id="mk-more">More ${ic('down')}</button>`:'');

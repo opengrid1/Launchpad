@@ -46,7 +46,7 @@ window.SP_PAGE=function(){
 
   function fees(){ g('br-fees').innerHTML=[['Standard transfer','0.2%'],['Fast lane','+0.2% + relayer'],['Relayer price','max 10%'],['No relayer fills','standard route, fee back']].map(r=>`<div class="kv"><span>${r[0]}</span><b>${r[1]}</b></div>`).join(''); }
 
-  g('br-eyebrow').innerHTML=`${SP.chainStack(CH.map(c=>c.key),20)}<span>${CH.length} chains with stocks</span>`;
+  g('br-eyebrow').innerHTML=`${SP.chainStack(CH.map(c=>c.key),20)}<span>${CH.length} chains</span>`;
   $$('#br-speed button')[1].innerHTML=`${ic('flame')}Fast`;
   g('br-flip').innerHTML=ic('swap');
   g('br-from').onclick=e=>{ e.stopPropagation(); pickChain(e.currentTarget,'from'); };
