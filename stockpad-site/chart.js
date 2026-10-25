@@ -9,7 +9,7 @@
   const RANGES=[['1H',3600],['6H',21600],['1D',86400],['1W',604800],['1M',2592000],['All',0]];
   const RNAME={'1H':'Past hour','6H':'Past 6 hours','1D':'Past day','1W':'Past week','1M':'Past month','All':'All time'};
   let X=null, el=null, cv=null, ctx=null, dot=null, W=0, H=0, dpr=1, bgc='rgb(10,10,11)';
-  let rng='1D', kind='line', mode='mcap', unit='USD', pick='all'; // pick: 'all' merged, 'cmp' a line per chain, or a chain key
+  let rng='All', kind='line', mode='mcap', unit='USD', pick='all'; // pick: 'all' merged, 'cmp' a line per chain, or a chain key
   let S={}, vol=[], dom=null, view=null, step=900, hover=null, reveal=1, gen=0, raf=0, G=null;
   const chains=()=>(typeof SP!=='undefined'&&SP.coinChains&&X)?SP.coinChains(X):['eth'];
   const multi=()=>chains().length>1;
@@ -130,7 +130,7 @@
   function ticks(lo,hi,n){ const r=hi-lo; if(!(r>0)) return [lo]; const raw=r/n, p=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/p, st=(f<1.5?1:f<3?2:f<7?5:10)*p; const out=[]; for(let v=Math.ceil(lo/st)*st;v<=hi+st*1e-9;v+=st) out.push(v); return out; }
   function tlabel(t,full){ const d=new Date(t*1000), s=view.b-view.a;
     if(full) return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-    return s<=2*86400?d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):d.toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
+    return s<=2*86400?d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):s<=10*86400?d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric'}):d.toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
   function round(x,y,w,h,r){ ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x,y,w,h,r); else ctx.rect(x,y,w,h); }
   function pill(txt,x,y,bg,fg,font){ ctx.font=`600 11px ${font}`; const w=ctx.measureText(txt).width+12; ctx.fillStyle=bg; round(x,y-10,w,20,6); ctx.fill(); ctx.fillStyle=fg; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(txt,x+6,y+.5); return w; }
 
