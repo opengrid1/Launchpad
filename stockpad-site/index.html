@@ -7,18 +7,17 @@
 <link rel="stylesheet" href="/ui.css?v=19">
 <style>
 #sp-main{overflow-x:hidden;overflow-x:clip}
-/* landing header: a floating glass capsule */
-body[data-page="landing"] #sp-top{height:auto;padding:12px 0 0;background:transparent;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+/* landing header: flat and plain, like a site header rather than an app bar */
+body[data-page="landing"] #sp-top{position:relative;height:auto;padding:18px 0 0;background:transparent;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
 body[data-page="landing"] #sp-top .wrap{display:block;height:auto}
-#sp-top .lhdr{display:flex;align-items:center;gap:6px;height:62px;padding:0 9px 0 18px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(16,17,21,.5);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 40px -24px rgba(0,0,0,.9);transition:background .25s,border-color .25s}
-#sp-top.scrolled .lhdr{background:rgba(12,13,16,.93);border-color:rgba(255,255,255,.11)}
-#sp-top .lhdr .brand{display:flex;align-items:center;gap:10px;font:700 21px var(--disp);letter-spacing:-.02em;color:var(--fg)} #sp-top .lhdr .brand img{width:34px;height:34px;border-radius:10px}
-#sp-top .lnk{margin-left:auto;display:flex;align-items:center;gap:2px}
-#sp-top .lnk a{display:inline-flex;align-items:center;height:42px;padding:0 15px;border-radius:999px;font:500 14.5px var(--sans,Inter);color:var(--fg-2);text-decoration:none;transition:color .15s,background .15s}
-#sp-top .lnk a:hover{color:var(--fg);background:rgba(255,255,255,.06)}
-#sp-top .lnk a.xl{width:42px;padding:0;justify-content:center} #sp-top .lnk a.xl svg{width:17px;height:17px}
-#sp-top .lapp{height:44px;padding:0 20px;margin-left:6px;border-radius:999px;font-size:15px;box-shadow:0 8px 26px -10px rgba(63,188,255,.8)} #sp-top .lapp svg{width:17px;height:17px}
-@media(max-width:700px){#sp-top .lnk a.wide{display:none} body[data-page="landing"] #sp-top{padding-top:10px} #sp-top .lhdr{height:56px;padding:0 7px 0 12px} #sp-top .lhdr .brand{font-size:19px;gap:8px} #sp-top .lhdr .brand img{width:30px;height:30px} #sp-top .lapp{height:42px;padding:0 16px;font-size:14.5px}}
+#sp-top .lhdr{display:flex;align-items:center;gap:10px;height:56px}
+#sp-top .lhdr .brand{display:flex;align-items:center;gap:11px;font:700 26px var(--disp);letter-spacing:-.03em;color:var(--fg);text-decoration:none} #sp-top .lhdr .brand img{width:38px;height:38px;border-radius:11px}
+#sp-top .lnk{margin-left:auto;display:flex;align-items:center;gap:10px}
+#sp-top .lnk a{display:inline-flex;align-items:center;justify-content:center;height:46px;padding:0 20px;border:1px solid var(--line-2);border-radius:999px;font:500 15px var(--sans,Inter);color:var(--fg);text-decoration:none;transition:border-color .15s,background .15s}
+#sp-top .lnk a:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.03)}
+#sp-top .lnk a.xl{width:46px;padding:0} #sp-top .lnk a.xl svg{width:17px;height:17px}
+#sp-top .lnk a.lapp{gap:8px;padding:0 22px;border:0;background:#fff;color:#0a0a0b;font-weight:600} #sp-top .lnk a.lapp:hover{background:#e6e6e8} #sp-top .lnk a.lapp svg{width:16px;height:16px}
+@media(max-width:700px){#sp-top .lnk a.wide{display:none} body[data-page="landing"] #sp-top{padding-top:12px} #sp-top .lhdr{height:50px;gap:8px} #sp-top .lhdr .brand{font-size:22px;gap:9px} #sp-top .lhdr .brand img{width:34px;height:34px} #sp-top .lnk{gap:8px} #sp-top .lnk a{height:42px} #sp-top .lnk a.xl{width:42px} #sp-top .lnk a.lapp{padding:0 18px;font-size:14.5px}}
 #pg-land{position:relative}
 #pg-land .hero{position:relative;display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:28px 48px;align-items:center;min-height:min(760px,calc(100vh - 140px));padding:28px 0 12px}
 #pg-land .sky{position:absolute;left:-40vw;right:-40vw;top:-60px;bottom:-20px;width:auto;height:auto;pointer-events:none;z-index:0}
@@ -38,7 +37,7 @@ body[data-page="landing"] #sp-top .wrap{display:block;height:auto}
 #pg-land .lead{position:relative;max-width:520px;margin:0 0 30px;font-size:19px;line-height:1.55;color:var(--fg-2)}
 #pg-land .ctas{position:relative;display:flex;gap:10px;align-items:center}
 #pg-land .ctas .btn{height:56px;padding:0 26px;border-radius:999px;font-size:16px}
-#pg-land .ctas .btn.pri{padding:0 30px;box-shadow:0 10px 34px -10px rgba(63,188,255,.75)}
+#pg-land .ctas .btn.pri{padding:0 30px;background:#fff;color:#0a0a0b;border-color:#fff;box-shadow:none} #pg-land .ctas .btn.pri:hover{background:#e6e6e8}
 #pg-land .ctas .btn svg{width:18px;height:18px}
 #pg-land .ctas .btn.ic{width:56px;padding:0;justify-content:center}
 /* map: one oval world, every chain holding its own region */
@@ -107,7 +106,7 @@ body[data-page="landing"] #sp-top .wrap{display:block;height:auto}
   </section>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=8"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=4"></script><script src="/wallet.js"></script><script src="/core.js?v=26"></script>
+<script src="/config.js?v=8"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=4"></script><script src="/wallet.js"></script><script src="/core.js?v=27"></script>
 <script>
 (function(){
   const CH=(window.INKY&&INKY.chains)||[], map=document.getElementById('ld-map'), cv=document.getElementById('ld-cv'), cx=cv.getContext('2d'), tip=document.getElementById('ld-tip'), hint=document.getElementById('ld-hint');
