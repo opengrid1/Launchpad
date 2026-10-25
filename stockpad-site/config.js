@@ -16,11 +16,11 @@ window.INKY = {
   api: 'self',
   /* Equo contracts (v3), deployed 2026-10-20: see contracts/deployments/equo-mainnet.json */
   contracts: {"factory": "0x7Eb4CC330866Af46b2fDfBce41686CC74778d325", "hook": "0xbe1FF9acc59F73Ae311810Cb74e162a47E2e40Cc", "router": "0x4055F9abd07caBC16788d499A935a297968E09c8", "tokenDeployer": "0x9289DD47cfb34acE7a3a97666542aBa18f7c5e48", "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90"},
-  /* stocks: none. Equo pairs every coin with its chain's native coin (ETH, BNB, HYPE, MON). */
+  /* stocks: none. Equo pairs every coin with its chain's native coin (ETH, BNB, HYPE, MON, SOL). */
   stocks: [],
   stocksOnly: false,
   /* chains: one coin, live on several chains at the same opening price, one pool per chain, the same coin
-     address on every chain, bridged with LayerZero. Ethereum is the main chain. `live` is false until that
+     address on every EVM chain, bridged with LayerZero. Ethereum is the main chain. `live` is false until that
      chain's contracts are deployed; the site shows those chains, but only live chains launch and trade.
      launchGas is the gas one launch uses on that chain (factory + pool + wiring), for the launch cost quote.
      Explorers from Etherscan's chain list; pool managers from Uniswap's v4 deployments; endpoint ids from
@@ -41,7 +41,11 @@ window.INKY = {
     {key:'megaeth',  code:'MEGA', name:'MegaETH',   short:'MegaETH',  chainId:4326,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/megaeth.png',  color:'#ff7aa2', main:false, live:false,
      rpc:'https://mainnet.megaeth.com/rpc',          explorer:'https://mega.etherscan.io', lzEid:30398, poolManager:'0xacB7e78fa05d562e0A5d3089Ec896d57D057D38e', launchGas:7290000},
     {key:'unichain', code:'UNI',  name:'Unichain',  short:'Unichain', chainId:130,   native:'ETH',  cg:'ethereum',    logo:'/img/chains/unichain.png', color:'#f50db4', main:false, live:false,
-     rpc:'https://mainnet.unichain.org',             explorer:'https://uniscan.xyz',      lzEid:30320, poolManager:'0x1F98400000000000000000000000000000000004', launchGas:7290000}
+     rpc:'https://mainnet.unichain.org',             explorer:'https://uniscan.xyz',      lzEid:30320, poolManager:'0x1F98400000000000000000000000000000000004', launchGas:7290000},
+    /* Solana is not an EVM chain: no Uniswap v4 and no shared address. A coin there is its own Solana token with its
+       own address, linked to the EVM chains through LayerZero. Shown as coming; nothing on the site sends to it. */
+    {key:'sol',      code:'SOL',  name:'Solana',    short:'Solana',   chainId:null,  native:'SOL',  cg:'solana',      logo:'/img/chains/sol.png',      color:'#14f195', main:false, live:false, evm:false,
+     rpc:'https://api.mainnet-beta.solana.com',      explorer:'https://solscan.io',       lzEid:30168, poolManager:'',                                           launchGas:0}
   ],
   /* launch fee: gas on every chosen chain plus this margin; bridge: LayerZero fees */
   launchMarginBps: 2000, bridgeFeeBps: 20, fastFeeBps: 20,

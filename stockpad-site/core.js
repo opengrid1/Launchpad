@@ -68,7 +68,7 @@ let chainCostP=null, chainCostAt=0;
 SP.chainCosts=()=>{ if(chainCostP&&Date.now()-chainCostAt<60000) return chainCostP; chainCostAt=Date.now();
   chainCostP=(async()=>{ let usd={}; try{ const ids=SP.chains.map(c=>c.cg).join(','); const r=await fetch('https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids='+ids); if(r.ok){ const j=await r.json(); SP.chains.forEach(c=>{ if(j[c.cg]) usd[c.key]=j[c.cg].usd; }); } }catch{}
     if(!usd.eth&&SP.prices[WETH]) usd.eth=SP.prices[WETH];
-    const out={}; await Promise.all(SP.chains.map(async c=>{ let gp=0; try{ const r=await fetch(c.rpc,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_gasPrice',params:[]})}); gp=parseInt((await r.json()).result,16)||0; }catch{}
+    const out={}; await Promise.all(SP.chains.map(async c=>{ let gp=0; if(c.evm!==false) try{ const r=await fetch(c.rpc,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_gasPrice',params:[]})}); gp=parseInt((await r.json()).result,16)||0; }catch{}
       const nat=gp*c.launchGas/1e18, m=1+((window.INKY&&INKY.launchMarginBps)||2000)/10000; out[c.key]={gwei:gp/1e9,nativeUsd:usd[c.key]||0,launchNative:nat*m,launchUsd:nat*m*(usd[c.key]||0)}; }));
     return out; })().catch(e=>{ chainCostP=null; throw e; });
   return chainCostP; };

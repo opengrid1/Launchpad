@@ -128,7 +128,7 @@ function launchInit(){
         <span class="th"><img src="${c.logo}" alt=""><span class="tk">${ic('check')}</span></span>
         <span class="nm"><b>${esc(c.name)}</b>${c.main?'<span class="mainb">Main</span>':''}</span>
         <span class="bd">${c.live?'<span class="liveb">Live</span>':'<span class="soonb">Soon</span>'}<span class="st">${esc(c.stocks||'')}</span></span>
-        <span class="cc">${q&&q.launchUsd?'$'+q.launchUsd.toFixed(2):'…'}<i>gas</i></span></button>`; }).join('');
+        <span class="cc">${c.evm===false?'—':q&&q.launchUsd?'$'+q.launchUsd.toFixed(2):'…'}<i>gas</i></span></button>`; }).join('');
     $$('#ctiles [data-ck]').forEach(b=>b.onclick=()=>{ const k=b.dataset.ck; if(S.chains.includes(k)){ if(S.chains.length===1){ SP.toast('A coin needs at least one chain','info'); return; } S.chains=S.chains.filter(x=>x!==k); } else S.chains=SP.chains.map(c=>c.key).filter(x=>x===k||S.chains.includes(x)); if(!S.chains.includes(S.pay)) S.pay=S.chains[0]; paintChains(); paintPairs(); sync(); paintCta(); });
     g('pay-seg').innerHTML=S.chains.map(k=>{ const c=SP.chain(k); return `<button type="button" data-pk="${k}" class="${S.pay===k?'on':''}" title="Pay in ${esc(c.native)} on ${esc(c.name)}"><img src="${c.logo}" alt="">${esc(c.short)}</button>`; }).join('');
     $$('#pay-seg [data-pk]').forEach(b=>b.onclick=()=>{ S.pay=b.dataset.pk; paintChains(); sync(); });
