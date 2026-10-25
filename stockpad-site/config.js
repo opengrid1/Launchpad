@@ -26,29 +26,33 @@ window.INKY = {
      Explorers from Etherscan's chain list; pool managers from Uniswap's v4 deployments; endpoint ids from
      LayerZero's deployments (checked 2026-10-25). */
   chains: [
-    {key:'eth',      code:'ETH',  name:'Ethereum',  short:'Ethereum', chainId:1,     native:'ETH',  cg:'ethereum',    logo:'/img/chains/eth.png',      color:'#8c9eff', main:true,  live:true,
+    {key:'eth', blockSec:12,      code:'ETH',  name:'Ethereum',  short:'Ethereum', chainId:1,     native:'ETH',  cg:'ethereum',    logo:'/img/chains/eth.png',      color:'#8c9eff', main:true,  live:true,
      rpc:'https://ethereum-rpc.publicnode.com',      explorer:'https://etherscan.io',     lzEid:30101, poolManager:'0x000000000004444c5dc75cB358380D2e3dE08A90', launchGas:7290000},
-    {key:'base',     code:'BASE', name:'Base',      short:'Base',     chainId:8453,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/base.png',     color:'#3c6bff', main:false, live:false,
+    {key:'base', blockSec:2,     code:'BASE', name:'Base',      short:'Base',     chainId:8453,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/base.png',     color:'#3c6bff', main:false, live:false,
      rpc:'https://base-rpc.publicnode.com',          explorer:'https://basescan.org',     lzEid:30184, poolManager:'0x498581fF718922c3f8e6A244956aF099B2652b2b', launchGas:7290000},
-    {key:'bsc',      code:'BSC',  name:'BNB Chain', short:'BNB',      chainId:56,    native:'BNB',  cg:'binancecoin', logo:'/img/chains/bsc.png',      color:'#f0b90b', main:false, live:false,
+    {key:'bsc', blockSec:0.75,      code:'BSC',  name:'BNB Chain', short:'BNB',      chainId:56,    native:'BNB',  cg:'binancecoin', logo:'/img/chains/bsc.png',      color:'#f0b90b', main:false, live:false,
      rpc:'https://bsc-rpc.publicnode.com',           explorer:'https://bscscan.com',      lzEid:30102, poolManager:'0x28e2Ea090877bF75740558f6BFB36A5ffeE9e9dF', launchGas:7290000},
-    {key:'arbitrum', code:'ARB',  name:'Arbitrum',  short:'Arbitrum', chainId:42161, native:'ETH',  cg:'ethereum',    logo:'/img/chains/arbitrum.png', color:'#4aa3ff', main:false, live:false,
+    {key:'arbitrum', blockSec:0.25, code:'ARB',  name:'Arbitrum',  short:'Arbitrum', chainId:42161, native:'ETH',  cg:'ethereum',    logo:'/img/chains/arbitrum.png', color:'#4aa3ff', main:false, live:false,
      rpc:'https://arbitrum-one-rpc.publicnode.com',  explorer:'https://arbiscan.io',      lzEid:30110, poolManager:'0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32', launchGas:7290000},
-    {key:'hyper',    code:'HYPE', name:'HyperEVM',  short:'Hyper',    chainId:999,   native:'HYPE', cg:'hyperliquid', logo:'/img/chains/hyper.png',    color:'#97fce4', main:false, live:false,
+    {key:'hyper', blockSec:1,    code:'HYPE', name:'HyperEVM',  short:'Hyper',    chainId:999,   native:'HYPE', cg:'hyperliquid', logo:'/img/chains/hyper.png',    color:'#97fce4', main:false, live:false,
      rpc:'https://rpc.hyperliquid.xyz/evm',          explorer:'https://hyperevmscan.io',  lzEid:30367, poolManager:'0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', launchGas:7290000},
-    {key:'monad',    code:'MON',  name:'Monad',     short:'Monad',    chainId:143,   native:'MON',  cg:'monad',       logo:'/img/chains/monad.png',    color:'#836ef9', main:false, live:false,
+    {key:'monad', blockSec:0.4,    code:'MON',  name:'Monad',     short:'Monad',    chainId:143,   native:'MON',  cg:'monad',       logo:'/img/chains/monad.png',    color:'#836ef9', main:false, live:false,
      rpc:'https://rpc.monad.xyz',                    explorer:'https://monadscan.com',    lzEid:30390, poolManager:'0x188d586Ddcf52439676Ca21A244753fA19F9Ea8e', launchGas:7290000},
-    {key:'megaeth',  code:'MEGA', name:'MegaETH',   short:'MegaETH',  chainId:4326,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/megaeth.png',  color:'#ff7aa2', main:false, live:false,
+    {key:'megaeth', blockSec:1,  code:'MEGA', name:'MegaETH',   short:'MegaETH',  chainId:4326,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/megaeth.png',  color:'#ff7aa2', main:false, live:false,
      rpc:'https://mainnet.megaeth.com/rpc',          explorer:'https://mega.etherscan.io', lzEid:30398, poolManager:'0xacB7e78fa05d562e0A5d3089Ec896d57D057D38e', launchGas:7290000},
-    {key:'unichain', code:'UNI',  name:'Unichain',  short:'Unichain', chainId:130,   native:'ETH',  cg:'ethereum',    logo:'/img/chains/unichain.png', color:'#f50db4', main:false, live:false,
+    {key:'unichain', blockSec:1, code:'UNI',  name:'Unichain',  short:'Unichain', chainId:130,   native:'ETH',  cg:'ethereum',    logo:'/img/chains/unichain.png', color:'#f50db4', main:false, live:false,
      rpc:'https://mainnet.unichain.org',             explorer:'https://uniscan.xyz',      lzEid:30320, poolManager:'0x1F98400000000000000000000000000000000004', launchGas:7290000},
     /* Solana is not an EVM chain: no Uniswap v4 and no shared address. A coin there is its own Solana token with its
        own address, linked to the EVM chains through LayerZero. Shown as coming; nothing on the site sends to it. */
-    {key:'sol',      code:'SOL',  name:'Solana',    short:'Solana',   chainId:null,  native:'SOL',  cg:'solana',      logo:'/img/chains/sol.png',      color:'#14f195', main:false, live:false, evm:false,
+    {key:'sol', blockSec:0.4,      code:'SOL',  name:'Solana',    short:'Solana',   chainId:null,  native:'SOL',  cg:'solana',      logo:'/img/chains/sol.png',      color:'#14f195', main:false, live:false, evm:false,
      rpc:'https://api.mainnet-beta.solana.com',      explorer:'https://solscan.io',       lzEid:30168, poolManager:'',                                           launchGas:0}
   ],
   /* launch fee: gas on every chosen chain plus this margin; bridge: LayerZero fees */
   launchMarginBps: 2000, bridgeFeeBps: 20, fastFeeBps: 20,
+  /* every chain's pool opens with a first buy (the factory's minFirstBuy): the creator's dev buy on the chain they pay
+     on, a seed buy of about this much on each other chain, paid in the launch fee. blockSec turns anti-snipe minutes
+     into each chain's blocks (approximate block times). */
+  minFirstBuyEth: 0.001, seedUsd: 4,
   site: 'https://stockpad-v2.vercel.app',
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'
 };
