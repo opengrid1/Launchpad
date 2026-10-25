@@ -31,6 +31,13 @@
 #pg-land .map canvas{position:absolute;inset:0;width:100%;height:100%}
 #pg-land .map .mh{position:absolute;left:18px;top:16px;z-index:20;display:flex;align-items:center;gap:10px;font:500 12px var(--mono);color:var(--fg-3)} #pg-land .map .mh b{color:var(--fg);font-weight:600}
 #pg-land .map .lg{position:absolute;right:18px;bottom:14px;z-index:20;display:flex;gap:14px;font:500 11px var(--mono);color:var(--fg-3)} #pg-land .map .lg span{display:inline-flex;align-items:center;gap:6px} #pg-land .map .lg i{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 8px var(--up)} #pg-land .map .lg i.s{background:transparent;border:1px solid var(--fg-3);box-shadow:none}
+#pg-land .core{position:absolute;left:50%;top:50%;width:84px;aspect-ratio:1;transform:translate(-50%,-50%);z-index:40;pointer-events:none}
+#pg-land .core .orb{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 30%),radial-gradient(circle at 50% 55%,#2aa8ec 0%,#0f5f99 46%,#062a47 78%,#020c16 100%);box-shadow:0 0 0 1px rgba(127,212,255,.35),0 0 60px 6px rgba(63,188,255,.45),0 0 160px 30px rgba(63,188,255,.18),inset 0 -18px 40px rgba(0,0,0,.55),inset 0 10px 30px rgba(185,236,255,.25)}
+#pg-land .core .halo{position:absolute;inset:-22%;border-radius:50%;border:1px solid rgba(63,188,255,.28);animation:halo 3.6s ease-out infinite}
+#pg-land .core .halo.h2{animation-delay:1.8s}
+#pg-land .core svg{position:absolute;left:50%;top:50%;width:52%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 10px rgba(185,236,255,.65))}
+#pg-land .core .cl{position:absolute;left:50%;top:calc(100% + 14px);transform:translateX(-50%);white-space:nowrap;font:600 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#9fdcff;text-shadow:0 0 12px rgba(63,188,255,.6)}
+@keyframes halo{0%{transform:scale(.78);opacity:.9}100%{transform:scale(1.35);opacity:0}}
 #pg-land .pl{position:absolute;z-index:30;width:46px;height:46px;margin:-23px 0 0 -23px;cursor:pointer}
 #pg-land .pl .ring{position:absolute;inset:0;border-radius:50%;padding:3px;background:conic-gradient(from 210deg,color-mix(in srgb,var(--c) 90%,#fff),color-mix(in srgb,var(--c) 25%,transparent),color-mix(in srgb,var(--c) 90%,#fff));box-shadow:0 0 0 1px rgba(255,255,255,.06),0 0 26px -2px color-mix(in srgb,var(--c) 70%,transparent),0 10px 24px -8px rgba(0,0,0,.9);transition:transform .18s}
 #pg-land .pl img{width:100%;height:100%;border-radius:50%;display:block;background:#0b0b0d}
@@ -47,8 +54,8 @@
 #pg-land .stats b{display:block;font:600 30px/1.1 var(--disp);letter-spacing:-.02em} #pg-land .stats b em{font-style:normal;color:var(--ac)}
 #pg-land .stats span{display:block;margin-top:6px;font:12px var(--mono);color:var(--fg-3)}
 @media(max-width:1000px){#pg-land .hero{grid-template-columns:minmax(0,1fr);gap:4px;padding-top:20px} #pg-land .stats{grid-template-columns:1fr 1fr} #pg-land .stats div:nth-child(2){border-right:0} #pg-land .stats div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
-@media(max-width:820px){#pg-land .pl{width:32px;height:32px;margin:-16px 0 0 -16px} #pg-land .pl .ring{padding:2px} #pg-land .pl .dot{width:9px;height:9px} #pg-land .pl .nm{display:none} #pg-land .map .lg{display:none}}
-@media(max-width:640px){#pg-land .lead{font-size:16px} #pg-land .map{border-radius:16px;aspect-ratio:145/84} #pg-land .map .mh{left:12px;top:10px;font-size:10.5px} #pg-land .pl{width:24px;height:24px;margin:-12px 0 0 -12px} #pg-land .pl .dot{width:8px;height:8px;border-width:1.5px} #pg-land .stats b{font-size:24px} #pg-land .stats div{padding:16px}}
+@media(max-width:820px){#pg-land .core{width:56px} #pg-land .core .cl{display:none} #pg-land .pl{width:32px;height:32px;margin:-16px 0 0 -16px} #pg-land .pl .ring{padding:2px} #pg-land .pl .dot{width:9px;height:9px} #pg-land .pl .nm{display:none} #pg-land .map .lg{display:none}}
+@media(max-width:640px){#pg-land .lead{font-size:16px} #pg-land .map{border-radius:16px;aspect-ratio:145/84} #pg-land .core{width:38px} #pg-land .map .mh{left:12px;top:10px;font-size:10.5px} #pg-land .pl{width:24px;height:24px;margin:-12px 0 0 -12px} #pg-land .pl .dot{width:8px;height:8px;border-width:1.5px} #pg-land .stats b{font-size:24px} #pg-land .stats div{padding:16px}}
 </style>
 </head><body data-page="landing">
 <header id="sp-top"></header><div id="sp-tape"></div>
@@ -65,6 +72,9 @@
   </section>
   <section class="map" id="ld-map" aria-label="One coin across every chain">
     <canvas id="ld-cv"></canvas>
+    <div class="core" id="ld-core"><span class="halo"></span><span class="halo h2"></span><div class="orb"></div>
+        <svg viewBox="0 0 128 128" aria-hidden="true"><defs><linearGradient id="lg1" x1="0" y1="36" x2="0" y2="92" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#b9ecff"/><stop offset="1" stop-color="#6fd0ff"/></linearGradient></defs><g fill="url(#lg1)"><rect x="26" y="72" width="56" height="18" rx="9"/><rect x="46" y="38" width="56" height="18" rx="9"/></g></svg><span class="cl">Your coin</span>
+        </div>
     <div class="mh" id="ld-mh"></div>
     <div class="lg"><span><i></i>Live</span><span><i class="s"></i>Coming soon</span></div>
     <div class="tip" id="ld-tip"></div>
@@ -100,13 +110,14 @@
   const P=CH.map((c,i)=>{ const ll=POS[c.key]||[LON0+(i+.5)/N*(LON1-LON0),10]; const u=(ll[0]-LON0)/(LON1-LON0), v=(LAT1-ll[1])/(LAT1-LAT0);
     const el=document.createElement('div'); el.className='pl'+(c.live?' live':''); el.style.setProperty('--c',c.color);
     el.innerHTML=`<div class="ring"><img src="${c.logo}" alt="${c.name}"></div><span class="dot"></span><span class="nm">${c.name}</span>`; map.appendChild(el); return {c,el,u,v,x:0,y:0}; });
-  const hub=P.find(p=>p.c.main)||P[0];
+  // the coin itself sits in the middle of the map, linked to every chain
+  const CORE=[-28,16], core=document.getElementById('ld-core'), hub={c:{color:'#3fbcff',key:'equo'},u:(CORE[0]-LON0)/(LON1-LON0),v:(LAT1-CORE[1])/(LAT1-LAT0),x:0,y:0};
   const hexA=(h,a)=>{ const n=parseInt(h.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; };
   let W=0,H=0,dpr=1,dots=null,A={x:0,y:0,w:0,h:0};
   // the map is drawn inside an inset of the card, so edge chains, their labels and the heading all stay clear
   function size(){ const r=map.getBoundingClientRect(); W=r.width; H=r.height; dpr=Math.min(2,window.devicePixelRatio||1); cv.width=W*dpr; cv.height=H*dpr; cx.setTransform(dpr,0,0,dpr,0,0);
     const sm=W<640, px=sm?16:Math.max(28,W*.035), top=sm?30:48, bot=sm?14:34; A={x:px,y:top,w:W-2*px,h:H-top-bot};
-    P.forEach(p=>{ p.x=A.x+p.u*A.w; p.y=A.y+p.v*A.h; p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; }); paintDots(); }
+    P.forEach(p=>{ p.x=A.x+p.u*A.w; p.y=A.y+p.v*A.h; p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; }); hub.x=A.x+hub.u*A.w; hub.y=A.y+hub.v*A.h; core.style.left=hub.x+'px'; core.style.top=hub.y+'px'; paintDots(); }
   // the dotted continents, drawn once per size; dots near a chain take its colour
   function paintDots(){ dots=document.createElement('canvas'); dots.width=W*dpr; dots.height=H*dpr; const d=dots.getContext('2d'); d.setTransform(dpr,0,0,dpr,0,0);
     const sx=A.w/COLS, sy=A.h/ROWS, r=Math.max(.7,Math.min(sx,sy)*.3), R=sx*8;
@@ -117,10 +128,10 @@
   const ctl=(A,B)=>{ const dx=B.x-A.x, dy=B.y-A.y, dist=Math.hypot(dx,dy); return {x:(A.x+B.x)/2, y:(A.y+B.y)/2-dist*.3}; };
   const at=(A,B,C,u)=>({x:(1-u)*(1-u)*A.x+2*(1-u)*u*C.x+u*u*B.x, y:(1-u)*(1-u)*A.y+2*(1-u)*u*C.y+u*u*B.y});
   const F=[]; let nextF=0, hover=null;
-  function spawn(now){ if(N<2) return; let a=Math.floor(Math.random()*N), b=Math.floor(Math.random()*(N-1)); if(b>=a) b++; if(Math.random()<.45){ a=P.indexOf(hub); b=Math.floor(Math.random()*(N-1)); if(b>=a) b++; if(Math.random()<.5) [a,b]=[b,a]; } F.push({A:P[a],B:P[b],t0:now,d:1500+Math.random()*700}); }
+  function spawn(now){ if(N<2) return; let a=Math.floor(Math.random()*N), b=Math.floor(Math.random()*(N-1)); if(b>=a) b++; if(Math.random()<.45){ const p=P[Math.floor(Math.random()*N)]; F.push(Math.random()<.5?{A:hub,B:p,t0:now,d:1300+Math.random()*600}:{A:p,B:hub,t0:now,d:1300+Math.random()*600}); return; } F.push({A:P[a],B:P[b],t0:now,d:1500+Math.random()*700}); }
   function frame(now){ cx.clearRect(0,0,W,H); if(dots) cx.drawImage(dots,0,0,W,H);
-    // the main chain's routes to every other chain
-    P.forEach(p=>{ if(p===hub) return; const C=ctl(hub,p), g=cx.createLinearGradient(hub.x,hub.y,p.x,p.y); g.addColorStop(0,hexA(hub.c.color,.32)); g.addColorStop(1,hexA(p.c.color,.32));
+    // the coin's routes to every chain
+    P.forEach(p=>{ const C=ctl(hub,p), g=cx.createLinearGradient(hub.x,hub.y,p.x,p.y); g.addColorStop(0,hexA(hub.c.color,.32)); g.addColorStop(1,hexA(p.c.color,.32));
       cx.strokeStyle=g; cx.lineWidth=1; cx.setLineDash(p.c.evm===false?[3,5]:[]); cx.beginPath(); cx.moveTo(hub.x,hub.y); cx.quadraticCurveTo(C.x,C.y,p.x,p.y); cx.stroke(); });
     cx.setLineDash([]);
     // live chains pulse
