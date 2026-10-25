@@ -8,88 +8,83 @@
 <style>
 #sp-main{overflow-x:hidden;overflow-x:clip}
 #pg-land{position:relative}
-#pg-land .hero{position:relative;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:16px 48px;align-items:end;padding:34px 0 26px}
-#pg-land .hero::before{content:"";position:absolute;inset:-80px -40vw auto;height:760px;pointer-events:none;background:radial-gradient(50% 55% at 72% 46%,rgba(63,188,255,.13),transparent 70%),radial-gradient(30% 40% at 20% 20%,rgba(151,252,228,.05),transparent 70%)}
-/* copy */
-#pg-land .eyebrow{display:inline-flex;align-items:center;gap:10px;height:30px;padding:0 13px 0 5px;border:1px solid var(--line-2);border-radius:999px;background:rgba(10,10,11,.75);backdrop-filter:blur(8px);font:500 12px var(--mono);color:var(--fg-2)}
-#pg-land .eyebrow .live{display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 8px;border-radius:999px;background:var(--up-dim);color:var(--up);font:600 10.5px var(--mono);letter-spacing:.05em;text-transform:uppercase}
-#pg-land .eyebrow .live::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;animation:lp 1.8s infinite}
+#pg-land .hero{position:relative;display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:28px 48px;align-items:center;min-height:min(760px,calc(100vh - 140px));padding:28px 0 12px}
+#pg-land .hero::before{content:"";position:absolute;inset:-80px -40vw auto;height:760px;pointer-events:none;background:radial-gradient(45% 55% at 70% 50%,rgba(63,188,255,.10),transparent 70%)}
+/* top row: Equo and its chains, then a status pill */
+#pg-land .top{position:relative;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#pg-land .stack{display:flex;align-items:center}
+#pg-land .stack img{width:30px;height:30px;border-radius:50%;margin-left:-9px;box-shadow:0 0 0 2px #000;background:#0b0b0d}
+#pg-land .stack img:first-child{margin-left:0;width:34px;height:34px;border-radius:10px}
+#pg-land .pill{display:inline-flex;align-items:center;gap:9px;height:36px;padding:0 14px;border:1px solid var(--line-2);border-radius:999px;background:rgba(12,12,14,.8);font:500 13.5px var(--sans,Inter);color:var(--fg);text-decoration:none;white-space:nowrap}
+#pg-land .pill i{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 10px var(--up);animation:lp 1.8s infinite}
+#pg-land .pill em{font-style:normal;color:var(--up);font-weight:600}
 @keyframes lp{50%{opacity:.35}}
-#pg-land h1{position:relative;margin:22px 0 18px;font:700 clamp(44px,5.6vw,82px)/.98 var(--disp);letter-spacing:-.04em}
-#pg-land h1 .g{display:inline-block;background:linear-gradient(100deg,#e9f8ff 0%,#7fd4ff 30%,#3fbcff 55%,#8c9eff 80%,#c4b5ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.06em}
-#pg-land .lead{max-width:520px;margin:0 0 30px;font-size:18px;line-height:1.6;color:var(--fg-2)}
-#pg-land .lead b{color:var(--fg);font-weight:600}
-#pg-land .ctas{display:flex;gap:10px;flex-wrap:wrap}
-#pg-land .ctas .btn{height:52px;padding:0 24px;border-radius:14px;font-size:15.5px}
-#pg-land .ctas .btn.pri{box-shadow:0 10px 34px -10px rgba(63,188,255,.75)}
-#pg-land .ctas .btn svg{width:17px;height:17px}
-@media(max-width:560px){#pg-land .ctas .btn.pri{flex:1 1 100%;justify-content:center}#pg-land .ctas .btn.line{flex:1 1 0;justify-content:center;padding:0 12px}}
-#pg-land .chainrow{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:8px;margin-top:12px}
-#pg-land .chainrow .cc{display:flex;align-items:center;gap:8px;min-width:0;height:40px;padding:0 10px;border:1px solid var(--line);border-radius:12px;background:rgba(14,14,17,.7);font:500 12px var(--mono);color:var(--fg-2)}
-#pg-land .chainrow .cc img{width:20px;height:20px;border-radius:50%;flex:none}
-#pg-land .chainrow .cc span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#pg-land .chainrow .cc i{width:6px;height:6px;margin-left:auto;border-radius:50%;flex:none;background:#3a3a42} #pg-land .chainrow .cc.live i{background:var(--up);box-shadow:0 0 6px var(--up)}
-@media(max-width:1200px){#pg-land .chainrow{grid-template-columns:repeat(5,minmax(0,1fr))}}
-@media(max-width:640px){#pg-land .chainrow{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px} #pg-land .chainrow .cc{height:36px;padding:0 8px;gap:6px;font-size:11px} #pg-land .chainrow .cc img{width:18px;height:18px}}
-/* world map */
-#pg-land .map{position:relative;aspect-ratio:145/66;margin-top:4px;border:1px solid var(--line);border-radius:22px;background:radial-gradient(60% 80% at 52% 40%,rgba(63,188,255,.07),transparent 70%),linear-gradient(180deg,rgba(16,17,20,.85),rgba(8,8,10,.85));overflow:hidden;touch-action:pan-y;user-select:none}
+#pg-land h1{position:relative;margin:26px 0 20px;font:700 clamp(46px,6vw,88px)/.95 var(--disp);letter-spacing:-.045em}
+#pg-land h1 .g{background:linear-gradient(100deg,#e9f8ff 0%,#7fd4ff 30%,#3fbcff 55%,#8c9eff 80%,#c4b5ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+#pg-land .lead{position:relative;max-width:520px;margin:0 0 30px;font-size:19px;line-height:1.55;color:var(--fg-2)}
+#pg-land .ctas{position:relative;display:flex;gap:10px;align-items:center}
+#pg-land .ctas .btn{height:56px;padding:0 26px;border-radius:999px;font-size:16px}
+#pg-land .ctas .btn.pri{padding:0 30px;box-shadow:0 10px 34px -10px rgba(63,188,255,.75)}
+#pg-land .ctas .btn svg{width:18px;height:18px}
+#pg-land .ctas .btn.ic{width:56px;padding:0;justify-content:center}
+/* map: one oval world, every chain holding its own region */
+#pg-land .map{position:relative;width:calc(100% + 40px);margin-right:-40px;aspect-ratio:292/140;touch-action:pan-y;user-select:none;cursor:grab}
+#pg-land .map.drag{cursor:grabbing} #pg-land .map.drag .pl{pointer-events:none}
 #pg-land .map canvas{position:absolute;inset:0;width:100%;height:100%}
-#pg-land .map{cursor:grab} #pg-land .map.drag{cursor:grabbing} #pg-land .map.drag .pl{pointer-events:none}
-#pg-land .map .hint{position:absolute;right:16px;top:13px;z-index:20;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border:1px solid var(--line-2);border-radius:999px;background:rgba(10,10,12,.7);font:500 11px var(--mono);color:var(--fg-3);pointer-events:none;transition:opacity .4s} #pg-land .map .hint.off{opacity:0} #pg-land .map .hint svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#pg-land .map .mh{position:absolute;left:18px;top:16px;z-index:20;display:flex;align-items:center;gap:10px;font:500 12px var(--mono);color:var(--fg-3)} #pg-land .map .mh b{color:var(--fg);font-weight:600}
-#pg-land .map .lg{position:absolute;right:18px;bottom:14px;z-index:20;display:flex;gap:14px;font:500 11px var(--mono);color:var(--fg-3)} #pg-land .map .lg span{display:inline-flex;align-items:center;gap:6px} #pg-land .map .lg i{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 8px var(--up)} #pg-land .map .lg i.s{background:transparent;border:1px solid var(--fg-3);box-shadow:none}
-#pg-land .core{position:absolute;left:50%;top:50%;width:84px;aspect-ratio:1;transform:translate(-50%,-50%);z-index:40;pointer-events:none}
-#pg-land .core .orb{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 30%),radial-gradient(circle at 50% 55%,#2aa8ec 0%,#0f5f99 46%,#062a47 78%,#020c16 100%);box-shadow:0 0 0 1px rgba(127,212,255,.35),0 0 60px 6px rgba(63,188,255,.45),0 0 160px 30px rgba(63,188,255,.18),inset 0 -18px 40px rgba(0,0,0,.55),inset 0 10px 30px rgba(185,236,255,.25)}
-#pg-land .core .halo{position:absolute;inset:-22%;border-radius:50%;border:1px solid rgba(63,188,255,.28);animation:halo 3.6s ease-out infinite}
-#pg-land .core .halo.h2{animation-delay:1.8s}
-#pg-land .core svg{position:absolute;left:50%;top:50%;width:52%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 10px rgba(185,236,255,.65))}
-#pg-land .core .cl{position:absolute;left:50%;top:calc(100% + 14px);transform:translateX(-50%);white-space:nowrap;font:600 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#9fdcff;text-shadow:0 0 12px rgba(63,188,255,.6)}
-@keyframes halo{0%{transform:scale(.78);opacity:.9}100%{transform:scale(1.35);opacity:0}}
-#pg-land .pl{position:absolute;z-index:30;width:46px;height:46px;margin:-23px 0 0 -23px;cursor:pointer}
-#pg-land .pl .ring{position:absolute;inset:0;border-radius:50%;padding:3px;background:conic-gradient(from 210deg,color-mix(in srgb,var(--c) 90%,#fff),color-mix(in srgb,var(--c) 25%,transparent),color-mix(in srgb,var(--c) 90%,#fff));box-shadow:0 0 0 1px rgba(255,255,255,.06),0 0 26px -2px color-mix(in srgb,var(--c) 70%,transparent),0 10px 24px -8px rgba(0,0,0,.9);transition:transform .18s}
-#pg-land .pl img{width:100%;height:100%;border-radius:50%;display:block;background:#0b0b0d}
-#pg-land .pl .dot{position:absolute;right:-1px;top:-1px;width:11px;height:11px;border-radius:50%;border:2px solid #0a0a0c;background:#3a3a42} #pg-land .pl.live .dot{background:var(--up);box-shadow:0 0 8px var(--up)}
-#pg-land .pl .nm{position:absolute;left:50%;top:calc(100% + 7px);transform:translateX(-50%);padding:2px 8px;border-radius:999px;background:rgba(10,10,12,.85);border:1px solid var(--line-2);font:500 10.5px var(--mono);color:var(--fg-2);white-space:nowrap;pointer-events:none}
-#pg-land .pl:hover .ring,#pg-land .pl.on .ring{transform:scale(1.12);box-shadow:0 0 0 2px #fff,0 0 40px 4px color-mix(in srgb,var(--c) 85%,transparent)}
-#pg-land .tip{position:absolute;z-index:80;min-width:210px;padding:12px 14px;border:1px solid var(--line-2);border-radius:14px;background:rgba(12,12,15,.94);backdrop-filter:blur(12px);box-shadow:0 20px 50px -20px rgba(0,0,0,.9);pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .18s,transform .18s}
+#pg-land .pl{position:absolute;z-index:30;left:0;top:0;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 4px;border-radius:999px;background:rgba(8,8,10,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 0 0 1px rgba(255,255,255,.08);transform:translate(-50%,-50%);font:600 12.5px var(--disp);color:#fff;white-space:nowrap;cursor:pointer;transition:box-shadow .15s}
+#pg-land .pl img{width:20px;height:20px;border-radius:50%;background:#0b0b0d}
+#pg-land .pl .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3)} #pg-land .pl.live .dot{background:var(--up);box-shadow:0 0 8px var(--up);animation:lp 1.8s infinite}
+#pg-land .pl:hover,#pg-land .pl.on{box-shadow:0 0 0 1.5px #fff}
+#pg-land .hint{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:6px;font:500 11px var(--mono);color:var(--fg-3);pointer-events:none;transition:opacity .4s} #pg-land .hint.off{opacity:0}
+#pg-land .hint svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#pg-land .tip{position:absolute;z-index:80;min-width:210px;padding:12px 14px;border:1px solid var(--line-2);border-radius:14px;background:rgba(12,12,15,.95);backdrop-filter:blur(12px);box-shadow:0 20px 50px -20px rgba(0,0,0,.9);pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .18s,transform .18s}
 #pg-land .tip.on{opacity:1;transform:none}
 #pg-land .tip .th{display:flex;align-items:center;gap:9px;font:600 14px var(--disp)} #pg-land .tip .th img{width:22px;height:22px;border-radius:50%}
 #pg-land .tip .kv{display:flex;justify-content:space-between;gap:14px;margin-top:7px;font-size:12px;color:var(--fg-3)} #pg-land .tip .kv b{font:500 12px var(--mono);color:var(--fg)}
+/* trending */
+#pg-land .trend{position:relative;margin:18px 0 6px}
+#pg-land .trend .th2{display:flex;align-items:center;gap:12px;margin-bottom:12px;font:600 12px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--fg-3)}
+#pg-land .trend .th2 button{width:30px;height:30px;border:1px solid var(--line-2);border-radius:50%;background:transparent;color:var(--fg-2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+#pg-land .trend .th2 button svg{width:12px;height:12px}
+#pg-land .rail{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+#pg-land .belt{display:flex;gap:10px;width:max-content;animation:belt var(--dur,40s) linear infinite}
+#pg-land .trend.paused .belt,#pg-land .rail:hover .belt{animation-play-state:paused}
+@keyframes belt{to{transform:translateX(-50%)}}
+#pg-land .tc{display:flex;align-items:center;gap:12px;min-width:250px;height:76px;padding:0 16px 0 10px;border:1px solid var(--line);border-radius:18px;background:rgba(14,14,17,.8);text-decoration:none;color:var(--fg)}
+#pg-land .tc img{width:52px;height:52px;border-radius:12px;object-fit:cover;background:#0b0b0d}
+#pg-land .tc .a{display:flex;flex-direction:column;gap:4px;min-width:0} #pg-land .tc .a b{font:600 15px var(--disp);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #pg-land .tc .a span{font:12px var(--mono);color:var(--fg-3)}
+#pg-land .tc .b{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font:500 13px var(--mono)} #pg-land .tc .b span{color:var(--fg-3);font-size:12px}
 /* stats */
-#pg-land .stats{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:18px 0 8px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(20,20,23,.7),rgba(10,10,11,.7));overflow:hidden}
+#pg-land .stats{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:22px 0 8px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(20,20,23,.7),rgba(10,10,11,.7));overflow:hidden}
 #pg-land .stats div{padding:20px 22px;border-right:1px solid var(--line)} #pg-land .stats div:last-child{border-right:0}
 #pg-land .stats b{display:block;font:600 30px/1.1 var(--disp);letter-spacing:-.02em} #pg-land .stats b em{font-style:normal;color:var(--ac)}
 #pg-land .stats span{display:block;margin-top:6px;font:12px var(--mono);color:var(--fg-3)}
-@media(max-width:1000px){#pg-land .hero{grid-template-columns:minmax(0,1fr);gap:4px;padding-top:20px} #pg-land .stats{grid-template-columns:1fr 1fr} #pg-land .stats div:nth-child(2){border-right:0} #pg-land .stats div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
-@media(max-width:820px){#pg-land .core{width:56px} #pg-land .core .cl{display:none} #pg-land .pl{width:32px;height:32px;margin:-16px 0 0 -16px} #pg-land .pl .ring{padding:2px} #pg-land .pl .dot{width:9px;height:9px} #pg-land .pl .nm{display:none} #pg-land .map .lg{display:none}}
-@media(max-width:640px){#pg-land h1{font-size:clamp(34px,10.4vw,46px);margin:18px 0 14px} #pg-land .hero{padding-bottom:18px} #pg-land .lead{font-size:15.5px;margin-bottom:22px} #pg-land .map{border-radius:16px;aspect-ratio:145/92} #pg-land .map .hint{right:10px;top:7px;height:22px;font-size:10px} #pg-land .core{width:40px} #pg-land .map .mh{left:12px;top:10px;font-size:10.5px} #pg-land .pl{width:30px;height:30px;margin:-15px 0 0 -15px} #pg-land .pl .dot{width:8px;height:8px;border-width:1.5px} #pg-land .stats b{font-size:24px} #pg-land .stats div{padding:16px}}
+@media(max-width:1000px){#pg-land .map{width:100%;margin-right:0} #pg-land .hero{grid-template-columns:minmax(0,1fr);min-height:0;gap:26px;padding-top:22px} #pg-land .stats{grid-template-columns:1fr 1fr} #pg-land .stats div:nth-child(2){border-right:0} #pg-land .stats div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+@media(max-width:640px){#pg-land h1{font-size:clamp(44px,13.4vw,60px);margin:22px 0 16px} #pg-land .lead{font-size:17px;margin-bottom:24px} #pg-land .ctas .btn{height:54px;font-size:15.5px} #pg-land .ctas .btn.pri{flex:1;justify-content:center;padding:0 18px} #pg-land .ctas .btn.ic{width:54px} #pg-land .pill{font-size:12.5px;height:32px;padding:0 12px} #pg-land .stack img{width:26px;height:26px} #pg-land .stack img:first-child{width:30px;height:30px}
+  #pg-land .pl{height:auto;padding:2px;gap:0;background:rgba(8,8,10,.55)} #pg-land .pl span:not(.dot){display:none} #pg-land .pl img{width:20px;height:20px} #pg-land .pl .dot{position:absolute;right:-1px;top:-1px;width:7px;height:7px;border:1.5px solid #0a0a0c} #pg-land .tc{min-width:220px;height:68px} #pg-land .tc img{width:46px;height:46px} #pg-land .stats b{font-size:24px} #pg-land .stats div{padding:16px}}
 </style>
 </head><body data-page="landing">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-land">
   <section class="hero">
     <div>
-      <span class="eyebrow"><span class="live">New</span><span id="ld-eyebrow">One coin on every chain</span></span>
+      <div class="top"><span class="stack" id="ld-stack"></span><a class="pill" href="/markets" id="ld-pill"></a></div>
       <h1>Launch once.<br><span class="g">Live on every chain.</span></h1>
+      <p class="lead" id="ld-lead">Launch a coin once and it opens on up to nine chains at the same price, with one address on every EVM chain. Holders move it between chains in about a minute.</p>
+      <div class="ctas"><a class="btn pri lg" href="/markets" id="ld-app">Launch app</a><a class="btn lg line" href="/docs">Docs</a><a class="btn lg line ic" href="https://x.com/equofun" target="_blank" rel="noopener" aria-label="Equo on X" id="ld-x"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23zm-1.16 17.52h1.83L7.08 4.13H5.12z"/></svg></a></div>
     </div>
-    <div>
-      <p class="lead" id="ld-lead">Your coin goes live on <b>up to nine chains at the same price</b>, at the same address on every EVM chain, with Solana alongside. One coin, one supply: it moves between chains in about a minute, burned where it leaves and minted where it lands.</p>
-      <div class="ctas"><a class="btn pri lg" href="/markets" id="ld-app">Launch app</a></div>
+    <div class="map" id="ld-map" aria-label="Every chain on one map">
+      <canvas id="ld-cv"></canvas>
+      <div class="tip" id="ld-tip"></div>
+      <div class="hint" id="ld-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M3 12h18"/></svg>Drag to turn</div>
     </div>
   </section>
-  <section class="map" id="ld-map" aria-label="One coin across every chain">
-    <canvas id="ld-cv"></canvas>
-    <div class="core" id="ld-core"><span class="halo"></span><span class="halo h2"></span><div class="orb"></div>
-        <svg viewBox="0 0 128 128" aria-hidden="true"><defs><linearGradient id="lg1" x1="0" y1="36" x2="0" y2="92" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#b9ecff"/><stop offset="1" stop-color="#6fd0ff"/></linearGradient></defs><g fill="url(#lg1)"><rect x="26" y="72" width="56" height="18" rx="9"/><rect x="46" y="38" width="56" height="18" rx="9"/></g></svg><span class="cl">Your coin</span>
-        </div>
-    <div class="mh" id="ld-mh"></div>
-    <div class="hint" id="ld-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M3 12h18"/></svg>Drag to turn</div>
-    <div class="lg"><span><i></i>Live</span><span><i class="s"></i>Coming soon</span></div>
-    <div class="tip" id="ld-tip"></div>
+  <section class="trend hidden" id="ld-trend">
+    <div class="th2">Trending<button type="button" id="ld-pause" aria-label="Pause"></button></div>
+    <div class="rail"><div class="belt" id="ld-belt"></div></div>
   </section>
-  <div class="chainrow" id="ld-chains"></div>
   <section class="stats">
-    <div><b id="ld-nchains">8</b><span>chains, one coin</span></div>
+    <div><b id="ld-nchains">9</b><span>chains, one coin</span></div>
     <div><b>1B</b><span>supply on every chain</span></div>
     <div><b>0.2<em>%</em></b><span>to bridge, nothing hidden</span></div>
     <div><b>~1<em>m</em></b><span>to move between chains</span></div>
@@ -99,70 +94,47 @@
 <script src="/config.js?v=8"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=4"></script><script src="/wallet.js"></script><script src="/core.js?v=24"></script>
 <script>
 (function(){
-  const CH=(window.INKY&&INKY.chains)||[], map=document.getElementById('ld-map'), cv=document.getElementById('ld-cv'), cx=cv.getContext('2d'), tip=document.getElementById('ld-tip');
-  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches, N=CH.length, nLive=CH.filter(c=>c.live).length;
+  const CH=(window.INKY&&INKY.chains)||[], map=document.getElementById('ld-map'), cv=document.getElementById('ld-cv'), cx=cv.getContext('2d'), tip=document.getElementById('ld-tip'), hint=document.getElementById('ld-hint');
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches, N=CH.length, nLive=CH.filter(c=>c.live).length, has=typeof ic==='function';
   const words=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'], word=n=>words[n]||String(n);
-  if(typeof ic==='function') document.getElementById('ld-app').innerHTML='Launch app'+ic('arrow');
+  if(has){ document.getElementById('ld-app').innerHTML='Launch app'+ic('arrow');  }
   document.getElementById('ld-nchains').textContent=N;
-  document.getElementById('ld-eyebrow').textContent=`One coin on ${N} chains`;
+  document.getElementById('ld-stack').innerHTML=`<img src="/img/logo.svg?v=15" alt="Equo">`+CH.slice(0,5).map(c=>`<img src="${c.logo}" alt="${c.name}" title="${c.name}">`).join('');
+  document.getElementById('ld-pill').innerHTML=nLive===N?`<i></i>All ${N} chains live <em>Trade →</em>`:`<i></i>${CH.filter(c=>c.live).map(c=>c.name).join(', ')||'Equo'} is live <em>Trade →</em>`;
   const sol=CH.some(c=>c.evm===false);
-  document.getElementById('ld-lead').innerHTML=`Your coin goes live on <b>up to ${word(N)} chains at the same price</b>, at the same address on every EVM chain${sol?', with Solana alongside':''}. One coin, one supply: it moves between chains in about a minute, burned where it leaves and minted where it lands.`;
-  document.getElementById('ld-mh').innerHTML=nLive===N?`<b>All ${N} chains</b> live`:`<b>${CH.filter(c=>c.live).map(c=>c.name).join(', ')||'Coming soon'}</b>${nLive?` live · ${N-nLive} more coming`:''}`;
-  document.getElementById('ld-chains').innerHTML=CH.map(c=>`<span class="cc${c.live?' live':''}" title="${c.name}: ${c.live?'live':'coming soon'}"><img src="${c.logo}" alt=""><span>${c.short}</span><i></i></span>`).join('');
+  document.getElementById('ld-lead').textContent=`Launch a coin once and it opens on up to ${word(N)} chains at the same price, with one address on every EVM chain${sol?' and its own on Solana':''}. Holders move it between chains in about a minute.`;
 
   // land on a 2-degree grid over the whole world: longitude -180..180, latitude 72..-48, row by row, one bit per cell
-  const COLS=180, ROWS=60, LAT0=-48, LAT1=72;
+  const COLS=180, ROWS=60, LAT1=72;
   const raw=atob('gBgACfwz/AD/+gAAA4AEHf///+/8gBAP/7/nJdjwD/+AAAH/AA7f///////f4P//////h8H/gAAAf/6//f////////Mf/////9H4D8AeAA+ev///////////AP/////4A0B4AAAD5/////////////Af3////gHgA4AAAH5///////////LwAHgH///gHkAAAAAH4/////////+CIAABAB///4D+AAAAGCx/////////4A8AAIAAf///n/gAAAOCD/////////wA4AAAAAf///n/wAAAbP///////////AgAAAAAP/////wAAADf//////////9AAAAAAAF////0YAAAB///////////9AAAAAAAD////8EAAAB///////////5AAAAAAAD////2AAAAB/f5fP//////wAAAAAAAD////gAAAAfxnwPP//////jAAAAAAAD////AAAAAPCb3/n/////+CAAAAAAAD///8AAAAAfALf/n////+ECAAAAAAAB///8AAAAAGHQP/n/////mMAAAAAAAA///8AAAAAH+Ai///////E8AAAAAAAAf//wAAAAAP/AA///////BgAAAAAAAAP//gAAAAAf/73///////gAAAAAAAAAD/AQAAAAAf////f/////gAAAAAAAAAF+AQAAAAB///+/n/////AAAAAAAAAAC+AAAAAAB///+f0H////AAAAAAAAAAAeAwAAAAD////f/B///8gAAAAAAAAAAeGEAAAAH////v+B/z/AAAAAAAAAAAAPMAgAAAD////n+A/B+gAAAAAAAAAAAD8AAAAAD////n4AeB/AgAAAAAAAAAAAPAAAAAH////3gAcAfAgAAAAAAAAAAADAAAAAD////6AAcAfggAAAAAAAAAAABDwAAAD////8wAMATAIAAAAAAAAAAAAr/AAAB/////gAKASAAAAAAAAAAAAAAH/gAAA/////gACAAAIAAAAAAAAAAAAH/8AAAaH///AAAAsGAAAAAAAAAAAAAH/+AAAAB//+AAAAUOAAAAAAAAAAAAAP/+AAAAB//8AAAAYegAAAAAAAAAAAAP//gAAAD//4AAAAMeBgAAAAAAAAAAAP//8AAAB//wAAAAGdiuAAAAAAAAAAAf///AAAA//wAAAACAQHgAAAAAAAAAAP///gAAA//wAAAABwAHwgAAAAAAAAAH///AAAA//wAAAAACIDQIAAAAAAAAAH//+AAAAf/wAAAAAAAAAAAAAAAAAAAD//+AAAA//wgAAAAABxAAAAAAAAAAAD//+AAAA//wgAAAAAPxgBAAAAAAAAAA//8AAAA//jgAAAAAf5gAAAAAAAAAAAf/8AAAA//DgAAAAAf/gAAAAAAAAAAAf/8AAAAf/DAAAAAD//4CAAAAAAAAAAf/wAAAAf/DAAAAAH//4AAAAAAAAAAAf/AAAAAf+CAAAAAH//8AAAAAAAAAAAf/AAAAAP8AAAAAAH//+AAAAAAAAAAA/+AAAAAP8AAAAAAH//+AAAAAAAAAAA/+AAAAAH4AAAAAAD//+AAAAAAAAAAA/8AAAAAHwAAAAAADwf8AAAAAAAAAAA/gAAAAAAAAAAAAACAH4AIAAAAAAAAB/wAAAAAAAAAAAAAAAD4AEAAAAAAAAB+AAAAAAAAAAAAAAAAAAAGAAAAAAAAB6AAAAAAAAAAAAAAAAAwAMAAAAAAAAA8AAAAAAAAAAAAAAAAAQAYAAAAAAAAB4AAAAAAAAAAAAAAAAAAAwAAAAAAAAB4AAAAAAAAAAAAAAAAAAAA'), land=i=>(raw.charCodeAt(i>>3)>>(7-(i&7)))&1;
-  // where each chain sits on the map: spread across the world
-  const POS={base:[-122.4,37.8],arbitrum:[-74,40.7],unichain:[-46.6,-23.5],eth:[8.5,47.2],megaeth:[18.4,-33.9],bsc:[55.3,25.2],hyper:[103.8,1.35],monad:[139.7,35.7],sol:[151.2,-33.9]};
-  const P=CH.map((c,i)=>{ const ll=POS[c.key]||[-180+(i+.5)/N*360,10];
-    const el=document.createElement('div'); el.className='pl'+(c.live?' live':''); el.style.setProperty('--c',c.color);
-    el.innerHTML=`<div class="ring"><img src="${c.logo}" alt="${c.name}"></div><span class="dot"></span><span class="nm">${c.name}</span>`; map.appendChild(el); return {c,el,lon:ll[0],v:(LAT1-ll[1])/(LAT1-LAT0),x:0,y:0,vis:1}; });
-  // the coin stays in the middle of the view, linked to every chain, while the world turns under it
-  const CORE_LAT=13, core=document.getElementById('ld-core'), hub={c:{color:'#3fbcff'},x:0,y:0,vis:1};
-  const hexA=(h,a)=>{ const n=parseInt(h.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; };
+  // each chain's region of the world: the land closest to its centres; the first centre carries the label
+  const REG={base:[[-100,45],[-45,70]],unichain:[[-60,-15]],eth:[[15,52]],bsc:[[20,5]],hyper:[[66,25]],arbitrum:[[95,62]],monad:[[112,35]],megaeth:[[110,4]],sol:[[134,-25]]};
+  const LBL={base:[-102,44],unichain:[-58,-12],eth:[2,47],bsc:[18,6],hyper:[70,21],arbitrum:[108,64],monad:[118,40],megaeth:[118,4],sol:[134,-26]};
   const wrap=d=>((d%360)+540)%360-180;
-  // view: SPAN degrees of longitude across the drawing area, centred on `off`; dragging moves `off`, letting go keeps the swing
-  let W=0,H=0,dpr=1,strip=null,SW=0,SPAN=290,A={x:0,y:0,w:0,h:0}, off=15, vel=0, drag=null, dragged=0, onScreen=true;
+  const P=CH.map((c,i)=>{ const cs=REG[c.key]||[[-180+(i+.5)/N*360,15]];
+    const el=document.createElement('div'); el.className='pl'+(c.live?' live':''); el.innerHTML=`<img src="${c.logo}" alt=""><span>${c.name}</span><span class="dot"></span>`; map.appendChild(el);
+    const lb=LBL[c.key]||cs[0]; return {c,el,cs,lon:lb[0],lat:lb[1],x:0,y:0,vis:1}; });
+  // every land cell, with the chain it belongs to
+  const D=[]; for(let i=0;i<COLS*ROWS;i++){ if(!land(i)) continue; const lon=-180+(i%COLS+.5)*2, lat=LAT1-(Math.floor(i/COLS)+.5)*2; let best=0, bd=1e9;
+    P.forEach((p,k)=>p.cs.forEach(([a,b])=>{ const dx=wrap(lon-a)*Math.cos((lat+b)/2*Math.PI/180), dy=lat-b, d=dx*dx+dy*dy; if(d<bd){ bd=d; best=k; } }));
+    D.push({lon,lat,k:best,s:Math.sqrt(Math.max(0,1-(lat/90)**2))}); }
+  const hexA=(h,a)=>{ const n=parseInt(h.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; };
+  // an oval projection, cut flat at the top and bottom; `off` is the longitude at the centre, and dragging turns it
+  let W=0,H=0,dpr=1,k=1,cxp=0,cyp=0,Rx=0,Ry=0,off=10,vel=0,drag=null,dragged=0,onScreen=true,hover=null,last=performance.now();
   function size(){ const r=map.getBoundingClientRect(); W=r.width; H=r.height; dpr=Math.min(2,window.devicePixelRatio||1); cv.width=W*dpr; cv.height=H*dpr; cx.setTransform(dpr,0,0,dpr,0,0);
-    const sm=W<640; SPAN=sm?210:290; const px=sm?14:Math.max(28,W*.035), top=sm?30:48, bot=sm?12:34, aw=W-2*px, ah=Math.min(H-top-bot,aw*ROWS/(SPAN/2));
-    // keep the land's proportions; any spare height goes evenly above and below it
-    A={x:px,y:top+(H-top-bot-ah)/2,w:aw,h:ah};
-    hub.x=A.x+A.w/2; hub.y=A.y+(LAT1-CORE_LAT)/(LAT1-LAT0)*A.h; core.style.left=hub.x+'px'; core.style.top=hub.y+'px'; paintStrip(); place(); }
-  // the dotted world, one full turn wide, drawn once per size; dots near a chain take its colour
-  function paintStrip(){ const sx=A.w/(SPAN/2), sy=A.h/ROWS; SW=sx*COLS; strip=document.createElement('canvas'); strip.width=Math.ceil(SW*dpr); strip.height=Math.ceil(H*dpr); const d=strip.getContext('2d'); d.setTransform(dpr,0,0,dpr,0,0);
-    const r=Math.max(.7,Math.min(sx,sy)*.3), R=sx*8, at=P.map(p=>({p,x:(p.lon+180)/360*SW,y:A.y+p.v*A.h}));
-    for(let i=0;i<COLS*ROWS;i++){ if(!land(i)) continue; const x=(i%COLS+.5)*sx, y=A.y+(Math.floor(i/COLS)+.5)*sy;
-      let best=null, bd=R; at.forEach(q=>{ let dx=Math.abs(q.x-x); dx=Math.min(dx,SW-dx); const dd=Math.hypot(dx,q.y-y); if(dd<bd){ bd=dd; best=q.p; } });
-      d.fillStyle=best?hexA(best.c.color,.22+.5*(1-bd/R)):'rgba(150,176,214,.2)'; d.beginPath(); d.arc(x,y,r,0,6.283); d.fill(); } }
-  // chains follow the view; near the card's edges they fade out, and they come back round from the other side
-  function place(){ P.forEach(p=>{ p.x=hub.x+wrap(p.lon-off)/SPAN*A.w; p.y=A.y+p.v*A.h; p.vis=Math.max(0,Math.min(1,(Math.min(p.x,W-p.x)-6)/34));
-    p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; p.el.style.opacity=p.vis.toFixed(3); p.el.style.visibility=p.vis>0?'visible':'hidden'; p.el.style.pointerEvents=p.vis>.5?'auto':'none'; }); }
-  // arcs bow upwards like flight paths
-  const ctl=(A,B)=>{ const dx=B.x-A.x, dy=B.y-A.y, dist=Math.hypot(dx,dy); return {x:(A.x+B.x)/2, y:(A.y+B.y)/2-dist*.3}; };
-  const at=(A,B,C,u)=>({x:(1-u)*(1-u)*A.x+2*(1-u)*u*C.x+u*u*B.x, y:(1-u)*(1-u)*A.y+2*(1-u)*u*C.y+u*u*B.y});
-  const F=[]; let nextF=0, hover=null, last=performance.now();
-  function spawn(now){ const V=P.filter(p=>p.vis>.8); if(!V.length) return; const pick=()=>V[Math.floor(Math.random()*V.length)];
-    if(V.length<2||Math.random()<.45){ const p=pick(); F.push(Math.random()<.5?{A:hub,B:p,t0:now,d:1300+Math.random()*600}:{A:p,B:hub,t0:now,d:1300+Math.random()*600}); return; }
-    const a=pick(); let b=pick(); while(b===a) b=pick(); F.push({A:a,B:b,t0:now,d:1500+Math.random()*700}); }
-  function frame(now){ const dt=Math.min(50,now-last); last=now; requestAnimationFrame(frame); if(!onScreen||!strip) return;
-    if(!drag){ off+=(vel+(reduce||hover?0:.004))*dt; vel*=Math.pow(.93,dt/16); if(Math.abs(vel)<1e-4) vel=0; }
-    off=wrap(off); place();
-    cx.clearRect(0,0,W,H); const x0=hub.x-(off+180)/360*SW; for(let k=-1;k<=1;k++) cx.drawImage(strip,x0+k*SW,0,SW,H);
-    // the coin's routes to every chain
-    P.forEach(p=>{ if(p.vis<=0) return; const C=ctl(hub,p), g=cx.createLinearGradient(hub.x,hub.y,p.x,p.y); g.addColorStop(0,hexA(hub.c.color,.32*p.vis)); g.addColorStop(1,hexA(p.c.color,.32*p.vis));
-      cx.strokeStyle=g; cx.lineWidth=1; cx.setLineDash(p.c.evm===false?[3,5]:[]); cx.beginPath(); cx.moveTo(hub.x,hub.y); cx.quadraticCurveTo(C.x,C.y,p.x,p.y); cx.stroke(); });
-    cx.setLineDash([]);
-    // live chains pulse
-    const r0=W<640?10:14, rr=W<640?22:40; P.forEach((p,i)=>{ if(!p.c.live||p.vis<=0) return; const k=reduce?.4:((now/2400+i*.37)%1); cx.strokeStyle=hexA(p.c.color,.45*(1-k)*p.vis); cx.lineWidth=1.2; cx.beginPath(); cx.arc(p.x,p.y,r0+k*rr,0,6.283); cx.stroke(); });
-    // coins in flight between chains
-    if(!reduce&&now>nextF){ spawn(now); nextF=now+600+Math.random()*500; }
-    for(let i=F.length-1;i>=0;i--){ const f=F[i], t=(now-f.t0)/f.d, fade=Math.min(f.A.vis,f.B.vis); if(t>=1.3||fade<.15){ F.splice(i,1); continue; } const C=ctl(f.A,f.B), head=Math.min(1,t), tail=Math.max(0,head-.3);
-      for(let j=0;j<16;j++){ const u0=tail+(head-tail)*j/16, u1=tail+(head-tail)*(j+1)/16, p0=at(f.A,f.B,C,u0), p1=at(f.A,f.B,C,u1), w=(j+1)/16; cx.strokeStyle=hexA(w<.5?f.A.c.color:f.B.c.color,.85*w*fade*(t>1?Math.max(0,1-(t-1)*4):1)); cx.lineWidth=.6+2*w; cx.lineCap='round'; cx.beginPath(); cx.moveTo(p0.x,p0.y); cx.lineTo(p1.x,p1.y); cx.stroke(); }
-      if(t<1){ const h=at(f.A,f.B,C,head), gl=cx.createRadialGradient(h.x,h.y,0,h.x,h.y,9); gl.addColorStop(0,`rgba(255,255,255,${.95*fade})`); gl.addColorStop(.35,hexA(f.B.c.color,.75*fade)); gl.addColorStop(1,hexA(f.B.c.color,0)); cx.fillStyle=gl; cx.beginPath(); cx.arc(h.x,h.y,9,0,6.283); cx.fill(); }
-      else { const rr=10+(t-1)*110, al=Math.max(0,.6-(t-1)*2.2)*fade; cx.strokeStyle=hexA(f.B.c.color,al); cx.lineWidth=2; cx.beginPath(); cx.arc(f.B.x,f.B.y,rr,0,6.283); cx.stroke(); } }
+    k=Math.min(W/292,H/140); Ry=90*k; Rx=146*k; cxp=W/2; cyp=H/2+10*k; }
+  const proj=(lon,lat)=>{ const l=wrap(lon-off), s=Math.sqrt(Math.max(0,1-(lat/90)**2)); return {x:cxp+l/180*Rx*s, y:cyp-lat*k, l}; };
+  function draw(){ cx.clearRect(0,0,W,H);
+    cx.save(); cx.beginPath(); cx.rect(0,cyp-80*k,W,140*k); cx.clip();
+    cx.beginPath(); cx.ellipse(cxp,cyp,Rx,Ry,0,0,6.283); cx.fillStyle='rgba(255,255,255,.045)'; cx.fill(); cx.strokeStyle='rgba(255,255,255,.07)'; cx.lineWidth=1; cx.stroke(); cx.restore();
+    const r=Math.max(.75,2*k*.34);
+    P.forEach((p,i)=>{ cx.fillStyle=hexA(p.c.color,hover&&hover!==p?.35:.92); cx.beginPath(); D.forEach(d=>{ if(d.k!==i) return; const q=proj(d.lon,d.lat), rr=Math.max(.6,Math.min(r,2*k*d.s*.42)); cx.moveTo(q.x+rr,q.y); cx.arc(q.x,q.y,rr,0,6.283); }); cx.fill(); });
+    P.forEach(p=>{ const q=proj(p.lon,p.lat); p.x=q.x; p.y=q.y; p.vis=Math.max(0,Math.min(1,(150-Math.abs(q.l))/30));
+      p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; p.el.style.opacity=p.vis.toFixed(3); p.el.style.visibility=p.vis>0?'visible':'hidden'; p.el.style.pointerEvents=p.vis>.5?'auto':'none'; });
     if(hover){ if(hover.vis<.5) hideTip(); else placeTip(hover); } }
-  function placeTip(p){ const tw=tip.offsetWidth||220, th=tip.offsetHeight||140; let x=p.x+30, y=p.y-30; if(x+tw>W-6) x=p.x-30-tw; if(y+th>H-6) y=p.y-th-14; tip.style.left=Math.max(6,Math.min(W-tw-6,x))+'px'; tip.style.top=Math.max(6,y)+'px'; }
+  function frame(now){ const dt=Math.min(50,now-last); last=now; requestAnimationFrame(frame); if(!onScreen) return;
+    if(!drag){ off+=(vel+(reduce||hover?0:.003))*dt; vel*=Math.pow(.93,dt/16); if(Math.abs(vel)<1e-4) vel=0; } off=wrap(off); draw(); }
+  function placeTip(p){ const tw=tip.offsetWidth||220, th=tip.offsetHeight||140; let x=p.x+24, y=p.y-20; if(x+tw>W-6) x=p.x-24-tw; if(y+th>H-6) y=p.y-th-14; tip.style.left=Math.max(6,Math.min(W-tw-6,x))+'px'; tip.style.top=Math.max(6,y)+'px'; }
   function hideTip(){ if(hover) hover.el.classList.remove('on'); hover=null; tip.classList.remove('on'); }
   P.forEach(p=>{ const c=p.c; const show=()=>{ hover=p; P.forEach(o=>o.el.classList.toggle('on',o===p));
       tip.innerHTML=`<div class="th"><img src="${c.logo}" alt="">${c.name}${c.main?' <span class="mainb">Main</span>':''}</div><div class="kv"><span>Status</span><b>${c.live?'Live':'Coming soon'}</b></div><div class="kv"><span>Pays in</span><b>${c.native||'ETH'}</b></div><div class="kv"><span>Address</span><b>${c.evm===false?'its own, on Solana':'same on every EVM chain'}</b></div><div class="kv"><span>Pool</span><b>${c.evm===false?'its own, on Solana':'Uniswap v4'}</b></div>`;
@@ -173,14 +145,25 @@
   // drag sideways to turn the world (vertical swipes still scroll the page)
   map.addEventListener('pointerdown',e=>{ if(e.button!==0) return; drag={id:e.pointerId,x:e.clientX,off0:off,lx:e.clientX,lt:performance.now(),moved:false}; vel=0; });
   map.addEventListener('pointermove',e=>{ if(!drag||e.pointerId!==drag.id) return; const dx=e.clientX-drag.x;
-    if(!drag.moved&&Math.abs(dx)>5){ drag.moved=true; map.classList.add('drag'); hideTip(); try{ map.setPointerCapture(e.pointerId); }catch(_){} hint&&hint.classList.add('off'); }
-    if(!drag.moved) return; const now=performance.now(), deg=-(e.clientX-drag.lx)/A.w*SPAN; off=drag.off0-dx/A.w*SPAN; if(now>drag.lt) vel=.7*vel+.3*deg/(now-drag.lt); drag.lx=e.clientX; drag.lt=now; });
+    if(!drag.moved&&Math.abs(dx)>5){ drag.moved=true; map.classList.add('drag'); hideTip(); try{ map.setPointerCapture(e.pointerId); }catch(_){} hint.classList.add('off'); }
+    if(!drag.moved) return; const now=performance.now(), deg=-(e.clientX-drag.lx)/Rx*180; off=drag.off0-dx/Rx*180; if(now>drag.lt) vel=.7*vel+.3*deg/(now-drag.lt); drag.lx=e.clientX; drag.lt=now; });
   const end=e=>{ if(!drag||(e&&e.pointerId!==drag.id)) return; if(drag.moved){ dragged=performance.now(); if(performance.now()-drag.lt>80) vel=0; vel=Math.max(-.6,Math.min(.6,vel)); } else vel=0; drag=null; map.classList.remove('drag'); };
   map.addEventListener('pointerup',end); map.addEventListener('pointercancel',end); map.addEventListener('lostpointercapture',e=>{ if(e.target===map) end(e); });
-  const hint=document.getElementById('ld-hint');
   if('IntersectionObserver' in window) new IntersectionObserver(es=>{ onScreen=es[0].isIntersecting; }).observe(map);
-  size(); addEventListener('resize',size);
-  requestAnimationFrame(frame);
+  size(); addEventListener('resize',size); requestAnimationFrame(frame);
+
+  // trending: the busiest coins, sliding past; hidden until there are coins to show
+  const trend=document.getElementById('ld-trend'), belt=document.getElementById('ld-belt'), pause=document.getElementById('ld-pause');
+  const PAUSE='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>', PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>';
+  pause.innerHTML=PAUSE; pause.onclick=()=>{ const p=trend.classList.toggle('paused'); pause.innerHTML=p?PLAY:PAUSE; pause.setAttribute('aria-label',p?'Play':'Pause'); };
+  let seen='';
+  function trending(){ const L=(typeof TOK!=='undefined'?TOK:[]).filter(x=>!x.hidden).slice().sort((a,b)=>(b.vol||0)-(a.vol||0)||(b.mc||0)-(a.mc||0)).slice(0,12);
+    if(!L.length||typeof SP==='undefined'){ trend.classList.add('hidden'); return; }
+    const key=L.map(x=>x.addr+':'+Math.round(x.mc||0)+':'+Math.round((x.c24||0)*10)).join(','); if(key===seen) return; seen=key;
+    const card=x=>{ const ch=x.c24||0; return `<a class="tc" href="/token/${x.addr}"><img src="${SP.coinLogo(x)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span class="a"><b>${esc(x.n)}</b><span>$${esc(x.t)}</span></span><span class="b"><b class="${ch>=0?'up':'dn'}">${ch>=0?'+':''}${ch.toFixed(2)}%</b><span>MC ${fmtUsd(x.mc||0)}</span></span></a>`; };
+    // the list twice, so the belt can loop without a gap
+    const one=L.map(card).join(''); belt.innerHTML=one+one; belt.style.setProperty('--dur',Math.max(20,L.length*5)+'s'); trend.classList.remove('hidden'); }
+  if(typeof SP!=='undefined'&&SP.onUpdate) SP.onUpdate(trending); setTimeout(trending,1500); setInterval(trending,30000);
 })();
 </script>
 </body></html>
