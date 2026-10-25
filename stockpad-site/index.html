@@ -89,7 +89,7 @@
   document.getElementById('ld-eyebrow').textContent=`One coin on ${N} chains`;
   const sol=CH.some(c=>c.evm===false);
   document.getElementById('ld-lead').innerHTML=`Your coin goes live on <b>up to ${word(N)} chains at the same price</b>, at the same address on every EVM chain${sol?', with Solana alongside':''}. One coin, one supply: it moves between chains in about a minute, burned where it leaves and minted where it lands.`;
-  document.getElementById('ld-mh').innerHTML=`<b>${CH.filter(c=>c.live).map(c=>c.name).join(', ')||'Coming soon'}</b>${nLive<N?` live · ${N-nLive} more coming`:''}`;
+  document.getElementById('ld-mh').innerHTML=nLive===N?`<b>All ${N} chains</b> live`:`<b>${CH.filter(c=>c.live).map(c=>c.name).join(', ')||'Coming soon'}</b>${nLive?` live · ${N-nLive} more coming`:''}`;
   document.getElementById('ld-chains').innerHTML=(typeof SP!=='undefined'?SP.chainStack(CH.map(c=>c.key),22):'')+`<span>${CH.map(c=>c.short).join(' · ')}</span>`;
 
   // land on a 2-degree grid, longitude -130..160, latitude 72..-48 (row by row, one bit per cell)
@@ -124,7 +124,7 @@
       cx.strokeStyle=g; cx.lineWidth=1; cx.setLineDash(p.c.evm===false?[3,5]:[]); cx.beginPath(); cx.moveTo(hub.x,hub.y); cx.quadraticCurveTo(C.x,C.y,p.x,p.y); cx.stroke(); });
     cx.setLineDash([]);
     // live chains pulse
-    P.forEach(p=>{ if(!p.c.live) return; const k=reduce?.4:((now/2400)%1); cx.strokeStyle=hexA(p.c.color,.5*(1-k)); cx.lineWidth=1.5; cx.beginPath(); cx.arc(p.x,p.y,14+k*46,0,6.283); cx.stroke(); });
+    const r0=W<640?8:14, rr=W<640?18:40; P.forEach((p,i)=>{ if(!p.c.live) return; const k=reduce?.4:((now/2400+i*.37)%1); cx.strokeStyle=hexA(p.c.color,.45*(1-k)); cx.lineWidth=1.2; cx.beginPath(); cx.arc(p.x,p.y,r0+k*rr,0,6.283); cx.stroke(); });
     // coins in flight between chains
     if(!reduce&&now>nextF){ spawn(now); nextF=now+600+Math.random()*500; }
     for(let i=F.length-1;i>=0;i--){ const f=F[i], t=(now-f.t0)/f.d; if(t>=1.3){ F.splice(i,1); continue; } const C=ctl(f.A,f.B), head=Math.min(1,t), tail=Math.max(0,head-.3);

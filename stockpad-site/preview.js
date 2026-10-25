@@ -108,7 +108,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     const b = document.createElement('div');
     b.className = 'pvbar';
-    b.innerHTML = `<span><b>Preview</b> Example coins are shown (Apple Pie, Tesla Coil, Green Team). They are made up and cannot be traded.</span><a href="?preview=0">Hide examples</a>`;
+    b.innerHTML = `<span><b>Preview</b> Every chain is shown as live, with example coins (Eight Ball, Base Jumper, Purple Rain). They are made up and cannot be traded.</span><a href="?preview=0">Hide examples</a>`;
     const top = document.getElementById('sp-top'); if (top) top.insertAdjacentElement('afterend', b); else document.body.prepend(b);
   });
 })();
