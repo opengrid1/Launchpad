@@ -46,11 +46,25 @@
     return j.candles.map((c) => ({ time: c.t, open: c.o / p, high: c.h / p, low: c.l / p, close: c.c / p, volume: c.v / p }));
   });
 
-  // holder count across chains (the chain reader only counts the chain it scans)
-  const rf = C.refresh;
+  // holder count across chains (the chain reader only counts the chain it scans), and every chain's pool read live
+  // by the indexer: `pools` per chain key and `liqAll`, both sides of every pool in USD. The coin call reads each
+  // chain's RPC, so it is asked at most every 20 s per coin; refreshes in between reuse the last answer.
+  const rf = C.refresh, coinAt = new Map();
+  const coinInfo = async (addr) => {
+    const c = coinAt.get(addr);
+    if (c && Date.now() - c.at < 20000) return c.j;
+    const j = await get(`/api/coin?coin=${addr}`);
+    coinAt.set(addr, { at: Date.now(), j });
+    return j;
+  };
+  const apply = (o, j) => {
+    if (!o) return;
+    if (j.holders != null) o.h = j.holders;
+    if (j.chains) { o.pools = Object.fromEntries(Object.entries(j.chains).map(([k, v]) => [k, v.pool || null])); o.liqAll = j.liquidity; o.poolsLive = j.poolsLive; }
+  };
   if (rf) C.refresh = async function (addr, ...rest) {
     const x = await rf.call(this, addr, ...rest);
-    try { const j = await get(`/api/coin?coin=${addr}`); if (j && j.holders != null) { if (x) x.h = j.holders; const t = C.token && C.token(addr); if (t) t.h = j.holders; } } catch (e) {}
+    try { const j = await coinInfo(addr); if (j) { apply(x, j); apply(C.token && C.token(addr), j); } } catch (e) {}
     return x;
   };
 

@@ -25,9 +25,9 @@
   const logo = (txt, a, b) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="64" height="64" rx="32" fill="url(#g)"/><text x="32" y="${txt.length > 3 ? 37 : 39}" font-family="Arial,Helvetica,sans-serif" font-size="${txt.length > 3 ? 15 : 19}" font-weight="700" fill="#fff" text-anchor="middle">${txt}</text></svg>`);
 
   const SPECS = [
-    { addr: '0xe900000000000000000000000000000000000001', n: 'Apple Pie', t: 'PIE', pair: 'AAPLon', chains: ['eth', 'hyper', 'bsc', 'base', 'arbitrum', 'robinhood', 'ink'], fee: 100, ageH: 70, trades: 220, p0: 5000, p1: 168000, pairUsd: 342, img: logo('PIE', '#ff6a3d', '#ffb347'), desc: 'The first coin live on all seven chains. Paired with Apple stock.', genes: { divShareBps: 2000 }, rewards: true },
-    { addr: '0xe900000000000000000000000000000000000002', n: 'Tesla Coil', t: 'COIL', pair: 'TSLAon', chains: ['eth', 'hyper', 'base'], fee: 200, ageH: 20, trades: 120, p0: 5000, p1: 41000, pairUsd: 380, img: logo('COIL', '#3f7bff', '#97fce4'), desc: 'High voltage, three chains. Paired with Tesla stock.', genes: {}, rewards: false },
-    { addr: '0xe900000000000000000000000000000000000003', n: 'Green Team', t: 'GPU', pair: 'NVDAon', chains: ['eth', 'bsc', 'arbitrum', 'ink'], fee: 100, ageH: 5, trades: 70, p0: 5000, p1: 23500, pairUsd: 238, img: logo('GPU', '#16a34a', '#9ef01a'), desc: 'Compute for the people. Paired with NVIDIA stock.', genes: { buybackShareBps: 2000 }, rewards: false },
+    { addr: '0xe900000000000000000000000000000000000001', n: 'Eight Ball', t: 'EIGHT', pair: 'ETH', chains: ['eth', 'base', 'bsc', 'arbitrum', 'hyper', 'monad', 'megaeth', 'unichain'], fee: 100, ageH: 70, trades: 240, p0: 5000, p1: 168000, pairUsd: 3900, img: logo('8', '#8c9eff', '#97fce4'), desc: 'One coin on all eight chains, the same address on each.', genes: { divShareBps: 2000 }, rewards: true },
+    { addr: '0xe900000000000000000000000000000000000002', n: 'Base Jumper', t: 'JUMP', pair: 'ETH', chains: ['eth', 'base', 'arbitrum'], fee: 200, ageH: 20, trades: 120, p0: 5000, p1: 41000, pairUsd: 3900, img: logo('JUMP', '#3f7bff', '#97fce4'), desc: 'Three chains, one address.', genes: {}, rewards: false },
+    { addr: '0xe900000000000000000000000000000000000003', n: 'Purple Rain', t: 'RAIN', pair: 'ETH', chains: ['eth', 'monad', 'megaeth', 'bsc'], fee: 100, ageH: 5, trades: 70, p0: 5000, p1: 23500, pairUsd: 3900, img: logo('RAIN', '#836ef9', '#ff7aa2'), desc: 'Four chains, buyback and burn on every trade.', genes: { buybackShareBps: 2000 }, rewards: false },
   ];
 
   const TR = {}, MOCK = SPECS.map((s) => {
@@ -57,13 +57,16 @@
       byChain[k] = { px: lt ? Number(lt.pair) / Number(lt.coin) * pairUsd : pxNow, vol: own.filter((t) => t.ts >= NOW - 86400).reduce((a, t) => a + Number(t.pair) / 1e18 * pairUsd, 0), trades: own.length, supply: SUP }; });
     // market cap across chains: each chain's supply at that chain's price; the headline price is that cap per coin
     const mcAll = s.chains.reduce((a, k) => a + byChain[k].supply * byChain[k].px, 0), pxAvg = mcAll / (SUP * n);
+    // each chain's pool, the shape the indexer's /api/coin gives: both sides at the pool's own price, half each
+    const vAll = s.chains.reduce((a, k) => a + byChain[k].vol + 1, 0), pools = {};
+    s.chains.forEach((k) => { const l = mcAll * 0.42 * (byChain[k].vol + 1) / vAll; pools[k] = { state: 'live', priceUsd: byChain[k].px, liquidityUsd: l, pairUsd: l / 2, coinsInPool: l / 2 / byChain[k].px, pairInPool: k === 'eth' ? l / 2 / pairUsd : null, priceInPair: k === 'eth' ? byChain[k].px / pairUsd : null }; });
     const age = s.ageH >= 24 ? Math.round(s.ageH / 24) + 'd' : s.ageH + 'h';
     return {
-      addr: s.addr, n: s.n, t: s.t, img: s.img, desc: s.desc, pair: s.pair, pairAddr: String(st.address || '').toLowerCase(), pairUsd,
+      addr: s.addr, n: s.n, t: s.t, img: s.img, desc: s.desc, pair: s.pair, pairAddr: String(st.address || (s.pair === 'ETH' ? cfg.weth : '') || '').toLowerCase(), pairUsd,
       px: pxAvg, pxPair: pxAvg / pairUsd, mc: mcAll, c24: (pxAvg / first24 - 1) * 100, vol, trades: trades.length, traders: wallets.length, h: wallets.length,
       createdAt: created, age, feeBps: s.fee, rewards: s.rewards, genes: s.genes, creator: wallets[0], links: { x: 'https://x.com/equofun' },
       liq: mcAll * 0.42, liqPair: mcAll * 0.42 / pairUsd, totalCreatorFees: vol * s.fee / 1e4 * 0.6 / pairUsd * 3, creatorOwed: 0, buybackPot: 0, dividendPot: 0,
-      poolId: '0x' + s.addr.slice(2).padEnd(64, '0'), chains: s.chains, addrs: Object.fromEntries(s.chains.map((k) => [k, k === 'eth' ? s.addr : wallet()])), byChain, mock: true, hidden: false,
+      pools, liqAll: mcAll * 0.42, poolsLive: n, poolId: '0x' + s.addr.slice(2).padEnd(64, '0'), chains: s.chains, addrs: Object.fromEntries(s.chains.map((k) => [k, k === 'eth' ? s.addr : wallet()])), byChain, mock: true, hidden: false,
     };
   });
   const isMock = (a) => { a = String(a || '').toLowerCase(); return MOCK.find((x) => x.addr === a || Object.values(x.addrs || {}).includes(a)) || null; };

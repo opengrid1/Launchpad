@@ -98,12 +98,13 @@
       </section>
       <section class="panel chart"><div class="ph2"><span id="tk-chart-t"></span><span class="r" id="tk-chart-r"></span></div><div id="tv"></div></section>
       <section class="panel ptabs">
-        <div class="ph2"><div class="tabs" id="tk-tabs"><button data-tab="trades" class="on">Trades<span class="num" id="tk-trades-n"></span></button><button data-tab="holders">Holders</button><button data-tab="top">Top traders</button><button data-tab="info">About</button></div><div class="seg" id="tk-filter"><button data-f="all" class="on">All</button><button data-f="buy">Buys</button><button data-f="sell">Sells</button></div></div>
+        <div class="ph2"><div class="tabs" id="tk-tabs"><button data-tab="trades" class="on">Trades<span class="num" id="tk-trades-n"></span></button><button data-tab="holders">Holders</button><button data-tab="pools">Pools</button><button data-tab="top">Top traders</button><button data-tab="info">About</button></div><div class="seg" id="tk-filter"><button data-f="all" class="on">All</button><button data-f="buy">Buys</button><button data-f="sell">Sells</button></div></div>
         <div class="pane on" data-pane="trades">
           <div class="tw"><table class="tb"><thead><tr><th>Side</th><th>Trader</th><th class="r" id="tk-th-coin">Amount</th><th class="r" id="tk-th-pair">Paid</th><th class="r">USD</th><th class="r">Price</th><th>Time</th><th>Chain</th><th class="r">Tx</th></tr></thead><tbody id="tk-trades"></tbody></table></div>
           <div class="more" id="tk-more"><button class="btn sm" id="tk-more-btn">Load more</button></div>
         </div>
         <div class="pane" data-pane="holders"><div class="tw"><table class="tb"><thead><tr><th>#</th><th>Wallet</th><th class="r">Balance</th><th class="r">Share</th><th class="r">Value</th></tr></thead><tbody id="tk-holders"></tbody></table></div></div>
+        <div class="pane" data-pane="pools"><div class="tw"><table class="tb"><thead><tr><th>Chain</th><th>Venue</th><th class="r">Price</th><th class="r">Liquidity</th><th class="r">In pool</th><th class="r">Coins in pool</th><th>State</th></tr></thead><tbody id="tk-poolrows"></tbody></table></div><p class="chnote" id="tk-poolnote" style="padding:0 12px"></p></div>
         <div class="pane" data-pane="top"><div class="tw"><table class="tb"><thead><tr><th>#</th><th>Wallet</th><th class="r">Volume</th><th class="r">Trades</th><th class="r">Holding</th></tr></thead><tbody id="tk-top"></tbody></table></div></div>
         <div class="pane" data-pane="info"><div class="info" id="tk-info"></div></div>
       </section>

@@ -38,10 +38,13 @@ window.SP_PAGE=function(){
 
   /* ---------- stats ---------- */
   function stats(){ const pu=pairUsd(); const fees=X.totalCreatorFees||0;
-    const S=[['Price','$'+fmtPrice(X.px)+SP.fmtPct(X.c24||0).replace('class="num','class="pc num'),`${fmtPrice(X.pxPair)} ${esc(X.pair)}`],['Market cap',fmtUsd(X.mc),SP.coinChains(X).length>1?`${SP.coinChains(X).length} chains × 1B`:inPair(X.pxPair*SUPPLY)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Trades',(X.trades||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders')],['Holders',(X.h||0).toLocaleString(),'wallets'],['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)]];
+    const S=[['Price','$'+fmtPrice(X.px)+SP.fmtPct(X.c24||0).replace('class="num','class="pc num'),`${fmtPrice(X.pxPair)} ${esc(X.pair)}`],['Market cap',fmtUsd(X.mc),SP.coinChains(X).length>1?`${SP.coinChains(X).length} chains × 1B`:inPair(X.pxPair*SUPPLY)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Trades',(X.trades||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders')],['Holders',(X.h||0).toLocaleString(),'wallets'],liqStat()];
     $('#tk-stats').innerHTML=S.map(s=>`<div class="sbox lg"><span class="lab">${s[0]}</span><b>${s[1]}</b><i>${s[2]}</i></div>`).join('');
     const g=X.genes||{}; const dv=(g.divShareBps||0)/100, bb=(g.buybackShareBps||0)/100, rest=100-dv-bb, cr=Math.round(rest*0.6), pl=rest-cr;
     $('#tk-feespaid').textContent=`${feePct()}% · ${dv?dv+'% holders · ':''}${bb?bb+'% buyback · ':''}${cr}% creator · ${pl}% platform`; $('#tk-feebar').innerHTML=(dv?`<i class="h" style="width:${dv}%"></i>`:'')+(bb?`<i style="width:${bb}%;background:var(--dn)"></i>`:'')+`<i class="c" style="width:${cr}%"></i><i class="p" style="flex:1"></i>`; }
+  /** one chain: the Ethereum pool as the chain reader sees it; several: every pool added up by the indexer */
+  function liqStat(){ const n=SP.coinChains(X).length; if(n<2) return ['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)];
+    return ['Liquidity',X.liqAll!=null?fmtUsd(X.liqAll):'…',`${n} pools combined`]; }
   function flow(){ const t0=Math.floor(Date.now()/1000)-86400; const day=TR.filter(v=>v.ts>=t0); const bv=day.filter(v=>v.buy).reduce((s,v)=>s+v.pair,0), sv=day.filter(v=>!v.buy).reduce((s,v)=>s+v.pair,0);
     const el=$('#tk-flow'), sp=$('#tk-split'); if(!(bv+sv>0)){ el.textContent='no trades in 24h'; sp.innerHTML=''; return; } const b=Math.round(bv/(bv+sv)*100); el.textContent=`${b}% buys · ${100-b}% sells`; sp.innerHTML=`<i class="b" style="width:${b}%"></i><i class="s" style="flex:1"></i>`; }
 
@@ -76,6 +79,19 @@ window.SP_PAGE=function(){
       tb.innerHTML=T.slice(0,25).map((r,i)=>{ const w=String(r.wallet).toLowerCase(); return `<tr><td class="num muted">${i+1}</td><td>${wl(w,w===X.creator?'<span class="tag">creator</span>':'')}</td><td class="r num">${fmtUsd(r.volume||0)}<small>${pu?inPair((r.volume||0)/pu):''}</small></td><td class="r num">${r.trades||0}</td><td class="r">${r.holding?'<span class="up">Yes</span>':'<span class="muted">No</span>'}</td></tr>`; }).join(''); }
     catch(e){ topAt=0; tb.innerHTML=emptyRow(5,'Could not load traders: '+esc(SP.errMsg(e))); } }
 
+  /* ---------- pools: one per chain, each with its own price and liquidity ---------- */
+  const STATE={live:['liveb','Live'],empty:['soonb','Empty'],'not initialized':['soonb','Not set up'],'not answering':['soonb','No answer']};
+  function pools(){ const tb=$('#tk-poolrows'); if(!tb) return; const on=SP.coinChains(X), P=X.pools||{}; let tl=0, tc=0, any=false;
+    const rows=on.map(k=>{ const c=SP.chain(k)||{}, p=P[k], bc=(X.byChain||{})[k]||{};
+      // a single-chain coin with no indexer answer still has the chain reader's own numbers
+      const liq=p&&p.liquidityUsd!=null?p.liquidityUsd:(on.length===1?X.liq:null), px=p&&p.priceUsd!=null?p.priceUsd:(bc.px||X.px);
+      if(liq!=null){ tl+=liq; any=true; } if(p&&p.coinsInPool!=null) tc+=p.coinsInPool;
+      const st=p?(STATE[p.state]||['soonb',p.state]):c.live?['soonb','Loading']:['soonb','Soon'];
+      return `<tr><td><span class="chc"><img src="${c.logo||'/img/eth.png'}" alt="">${esc(c.name||k)}</span></td><td>Uniswap v4</td><td class="r num">$${fmtPrice(px)}${p&&p.priceInPair!=null?`<small>${fmtPrice(p.priceInPair)} ${esc(c.native||'ETH')}</small>`:''}</td><td class="r num">${liq!=null?fmtUsd(liq):'—'}</td><td class="r num">${p&&p.pairInPool!=null?fmtAmt(p.pairInPool)+' '+esc(c.native||'ETH')+(p.pairUsd!=null?`<small>${fmtUsd(p.pairUsd)}</small>`:''):p&&p.pairUsd!=null?fmtUsd(p.pairUsd):'—'}</td><td class="r num">${p&&p.coinsInPool!=null?fmtAmt(p.coinsInPool)+' '+esc(X.t):'—'}</td><td><span class="${st[0]}">${esc(st[1])}</span></td></tr>`; });
+    if(on.length>1) rows.push(`<tr class="tot"><td><b>All chains</b></td><td>${on.length} pools</td><td></td><td class="r num"><b>${any?fmtUsd(tl):'—'}</b></td><td></td><td class="r num">${tc?fmtAmt(tc)+' '+esc(X.t):'—'}</td><td>${X.poolsLive!=null?`<span class="num">${X.poolsLive}/${on.length} live</span>`:''}</td></tr>`);
+    tb.innerHTML=rows.join('')||emptyRow(7,'No pools yet.');
+    $('#tk-poolnote').textContent=on.length>1?'Each chain has its own Uniswap v4 pool. Liquidity is both sides of a pool at its own price; the total adds every chain. Arbitrage keeps the prices in line.':'Liquidity is both sides of the pool at its current price.'; }
+
   /* ---------- info ---------- */
   function info(){ const g=X.genes||{}; const div=(g.divShareBps||0)/100, bbk=(g.buybackShareBps||0)/100; const mk=SP.market();
     const arow=(label,a,href)=>`<div class="kv"><span>${label}</span><b><span class="mono">${shortAddr(a.length>42?a:cs(a))}</span><button data-copy="${a.length>42?a:cs(a)}" title="Copy" aria-label="Copy">${ic('copy')}</button>${href?`<a href="${href}" target="_blank" rel="noopener" title="Open" aria-label="Open">${ic('ext')}</a>`:''}</b></div>`;
@@ -88,7 +104,7 @@ window.SP_PAGE=function(){
 
   /* ---------- tabs ---------- */
   let activeTab='trades';
-  $$('#tk-tabs button').forEach(b=>b.onclick=()=>{ activeTab=b.dataset.tab; $$('#tk-tabs button').forEach(x=>x.classList.toggle('on',x===b)); $$('.pane',pg).forEach(p=>p.classList.toggle('on',p.dataset.pane===activeTab)); if(activeTab==='holders') holders(); if(activeTab==='top') top(); if(activeTab==='info') info(); });
+  $$('#tk-tabs button').forEach(b=>b.onclick=()=>{ activeTab=b.dataset.tab; $$('#tk-tabs button').forEach(x=>x.classList.toggle('on',x===b)); $$('.pane',pg).forEach(p=>p.classList.toggle('on',p.dataset.pane===activeTab)); if(activeTab==='holders') holders(); if(activeTab==='top') top(); if(activeTab==='pools') pools(); if(activeTab==='info') info(); });
 
   /* ---------- trade card ---------- */
   let side='buy', balEth=0, balCoin=0, balCoinWei=0n, slipMode='auto', qSeq=0, quoting=false, qOut=0n, qTimer=null;
@@ -192,14 +208,15 @@ window.SP_PAGE=function(){
     el.innerHTML=`<button type="button" class="cach" id="tk-cach" title="Pick a chain"><i style="background:${c.color}"></i>${esc(c.code||c.short)}${ic('down')}</button><span class="cav"><span class="lg2">${a.slice(0,12)}…${a.slice(-10)}</span><span class="sm2">${a.slice(0,6)}…${a.slice(-4)}</span></span><button type="button" class="cac" data-copy="${a}" title="Copy the ${esc(c.name)} address">${ic('copy')}<span class="cl">Copy</span></button><a class="cax" href="${c.explorer}/token/${a}" target="_blank" rel="noopener" title="View on the ${esc(c.name)} explorer">${ic('ext')}</a>`;
     $('#tk-cach').onclick=e=>{ e.stopPropagation(); const m=SP.menu(e.currentTarget,`<div class="mh">Contract on</div>`+on.map(k=>{ const ch=SP.chain(k), ad=cs(SP.coinAddr(X,k)); return `<button data-ck="${k}" class="${k===caChain?'on':''}"><i style="width:8px;height:8px;border-radius:50%;background:${ch.color};flex:none"></i><span style="min-width:96px">${esc(ch.name)}</span><span class="num muted" style="margin-left:auto">${ad.slice(0,6)}…${ad.slice(-4)}</span><span style="width:16px;display:inline-flex">${k===caChain?ic('check'):''}</span></button>`; }).join(''));
       $$('[data-ck]',m).forEach(b=>b.onclick=()=>{ m.remove(); caChain=b.dataset.ck; caBar(); }); };
-    const pl=$('#tk-pools'); if(pl) pl.innerHTML=on.length>1?`<span>Pools live</span><b>${on.length}/${on.length}</b>${on.map(k=>`<i style="background:${SP.chain(k).color}" title="${esc(SP.chain(k).name)}"></i>`).join('')}`:''; }
+    poolPill(); }
+  function poolPill(){ const pl=$('#tk-pools'), on=SP.coinChains(X); if(pl) pl.innerHTML=on.length>1?`<span>Pools live</span><b>${X.poolsLive!=null?X.poolsLive:on.length}/${on.length}</b>${on.map(k=>`<i style="background:${SP.chain(k).color}" title="${esc(SP.chain(k).name)}"></i>`).join('')}`:''; }
   /* ---------- chains: where this coin lives; HyperEVM and BNB Chain open with multichain launches ---------- */
   function chainsCard(){ const el=$('#tk-chains-body'); if(!el) return; const on=SP.coinChains(X);
     $('#tk-bridge').href='/bridge?coin='+X.addr;
     el.innerHTML=SP.chains.map(c=>{ const has=on.includes(c.key);
       return `<div class="chr${has?'':' off'}"><img src="${c.logo}" alt=""><span class="cn"><b>${esc(c.name)} ${has?'<span class="liveb">Live</span>':c.live?'':'<span class="soonb">Soon</span>'}</b><small>${has?`<span class="chx">${shortAddr(cs(SP.coinAddr(X,c.key)))}<button type="button" data-copy="${cs(SP.coinAddr(X,c.key))}" title="Copy the ${esc(c.name)} address">${ic('copy')}</button><a href="${c.explorer}/token/${SP.coinAddr(X,c.key)}" target="_blank" rel="noopener" title="View on the ${esc(c.name)} explorer">${ic('ext')}</a></span> · 1B supply`:'Not on this chain yet'}</small></span><span class="cv">${has?'$'+fmtPrice(((X.byChain||{})[c.key]||{}).px||X.px)+'<small>'+(((X.byChain||{})[c.key]||{}).vol!=null?fmtUsd(X.byChain[c.key].vol)+' vol':fmtUsd(X.mc/on.length)+' mcap')+'</small>':'—'}</span></div>`; }).join('')
       +`<p class="chnote">${on.length>1?'Each chain has its own pool; arbitrage keeps the prices in line. ':''}Coins launched on several chains move between them on the <a href="/bridge?coin=${X.addr}">Bridge</a>.</p>`; }
-  function paintAll(){ stats(); headLive(); flow(); chainsCard(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; if(activeTab==='info') info(); }
+  function paintAll(){ stats(); headLive(); flow(); chainsCard(); poolPill(); if(activeTab==='pools') pools(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; if(activeTab==='info') info(); }
   async function sync(force){ if(ticking||(!force&&document.hidden)) return; ticking=true; const oldPx=X.pxPair;
     try{ const nx=await CHAIN.refresh(X.addr); if(nx) Object.assign(X,nx); const tr=await CHAIN.trades(X.addr); const fresh=tr.filter(t=>!seen.has(key(t)));
       if(fresh.length){ fresh.forEach(t=>seen.add(key(t))); TR=[...fresh.map(view),...TR]; sortTr(); renderTrades(new Set(fresh.map(key))); holdersAt=0; topAt=0; if(activeTab==='holders') holders(true); if(activeTab==='top') top(true); }
