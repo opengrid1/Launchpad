@@ -49,7 +49,7 @@ window.SP_PAGE=function(){
     const m=SP.menu(e.currentTarget,`<button data-ch="" class="${!chain?'on':''}">${ic('globe')}<span>All chains</span><span class="num muted" style="margin-left:auto">${TOK.length}</span></button>`+SP.chains.map(c=>`<button data-ch="${c.key}" class="${chain===c.key?'on':''}"><img src="${c.logo}" alt="" style="width:20px;height:20px;border-radius:50%"><span>${esc(c.name)}</span><span style="margin-left:auto">${c.live||cnt[c.key]?`<span class="num muted">${cnt[c.key]||0}</span>`:'<span class="soonb">Soon</span>'}</span></button>`).join(''));
     $$('[data-ch]',m).forEach(b=>b.onclick=()=>{ m.remove(); setChain(b.dataset.ch); }); };
   function setChain(k){ chain=k; page=1; const u=new URL(location.href); if(chain) u.searchParams.set('chain',chain); else u.searchParams.delete('chain'); history.replaceState(null,'',u); render(); }
-  function setWatch(on){ watchOnly=on; page=1; const u=new URL(location.href); if(on) u.searchParams.set('watch','1'); else u.searchParams.delete('watch'); history.replaceState(null,'',u); render(); }
+  function setWatch(on){ watchOnly=on; page=1; const u=new URL(location.href); if(on) u.searchParams.set('watch','1'); else u.searchParams.delete('watch'); history.replaceState(null,'',u); render(); document.dispatchEvent(new Event('nav-sync')); }
   $('#mk-watch').onclick=()=>setWatch(!watchOnly);
   const watchN=()=>SP.watch.list().filter(a=>TOK.some(x=>x.addr===a)).length;
   document.addEventListener('watch-change',()=>{ if(watchOnly) render(); else { const n=$('#mk-watch .n'); if(n) n.textContent=watchN(); } });
