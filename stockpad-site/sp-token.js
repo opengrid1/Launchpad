@@ -59,7 +59,7 @@ window.SP_PAGE=function(){
 
   /* ---------- chart ---------- */
   let tvOn=false;
-  function chart(){ const tv=$('#tv'); if(window.TradingView&&window.initTV){ try{ initTV('tv',X); tvOn=true; return; }catch(e){ console.warn('tv',e); } } tv.innerHTML='<div class="tvno">Chart unavailable: the charting library did not load.</div>'; }
+  function chart(){ const tv=$('#tv'); if(window.initTV){ try{ initTV('tv',X); tvOn=true; return; }catch(e){ console.warn('chart',e); } } tv.innerHTML='<div class="tvno">Chart unavailable right now.</div>'; }
 
   /* ---------- trades ---------- */
   let TR=[], seen=new Set(), filter='all', shown=25, launchTrade=null;
