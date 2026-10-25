@@ -74,7 +74,7 @@
     </div>
     <div>
       <p class="lead" id="ld-lead">Your coin goes live on <b>up to nine chains at the same price</b>, at the same address on every EVM chain, with Solana alongside. One coin, one supply: it moves between chains in about a minute, burned where it leaves and minted where it lands.</p>
-      <div class="ctas"><a class="btn pri lg" href="/launch" id="ld-launch"></a><a class="btn lg line" href="/markets">Open markets</a><a class="btn lg line" href="/bridge">See the bridge</a></div>
+      <div class="ctas"><a class="btn pri lg" href="/markets" id="ld-app">Launch app</a><a class="btn lg line" href="/launch" id="ld-launch">Launch a coin</a><a class="btn lg line" href="/bridge">See the bridge</a></div>
     </div>
   </section>
   <section class="map" id="ld-map" aria-label="One coin across every chain">
@@ -102,7 +102,7 @@
   const CH=(window.INKY&&INKY.chains)||[], map=document.getElementById('ld-map'), cv=document.getElementById('ld-cv'), cx=cv.getContext('2d'), tip=document.getElementById('ld-tip');
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches, N=CH.length, nLive=CH.filter(c=>c.live).length;
   const words=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'], word=n=>words[n]||String(n);
-  document.getElementById('ld-launch').innerHTML=(typeof ic==='function'?ic('rocket'):'')+'Launch a coin';
+  if(typeof ic==='function'){ document.getElementById('ld-app').innerHTML='Launch app'+ic('arrow'); document.getElementById('ld-launch').innerHTML=ic('rocket')+'Launch a coin'; }
   document.getElementById('ld-nchains').textContent=N;
   document.getElementById('ld-eyebrow').textContent=`One coin on ${N} chains`;
   const sol=CH.some(c=>c.evm===false);
