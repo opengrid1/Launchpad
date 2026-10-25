@@ -46,7 +46,16 @@
 .eqc-seg button,.eqc-rg button{all:unset;cursor:pointer;height:26px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;font-size:12px;font-weight:600;color:var(--fg-3);transition:color .15s,background .15s}
 .eqc-seg button:hover,.eqc-rg button:hover{color:var(--fg)} .eqc-seg button.on,.eqc-rg button.on{background:var(--s4);color:var(--fg)}
 .eqc-seg svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.eqc-box{position:relative;height:340px;touch-action:pan-y;cursor:crosshair} .eqc-box canvas{position:absolute;inset:0;display:block}
+.eqc-box{position:relative;height:340px;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none} .eqc-box canvas{position:absolute;inset:0;display:block} .eqc.grab .eqc-box{cursor:grabbing}
+.eqc-ib{all:unset;cursor:pointer;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;background:var(--s3);border:1px solid var(--line);color:var(--fg-3);transition:color .15s,border-color .15s} .eqc-ib:hover{color:var(--fg);border-color:var(--line-3)}
+.eqc-ib svg,.eqc-zm svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.eqc-l{display:flex;align-items:center;gap:8px}
+.eqc-zm{display:flex;gap:2px;padding-left:8px;border-left:1px solid var(--line)}
+.eqc-zm button{all:unset;cursor:pointer;width:28px;height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;color:var(--fg-3);transition:color .15s,background .15s} .eqc-zm button:hover{color:var(--fg);background:var(--s4)}
+.eqc.zoomed .eqc-zm [data-z="fit"]{color:var(--ac)}
+.eqc.full{position:fixed;inset:0;z-index:1000;background:var(--s1);padding:20px 24px 16px} .eqc.full .eqc-box{height:auto;flex:1;min-height:0} html.eqc-lock{overflow:hidden}
+@media (hover:none){ .eqc-zm{display:none} .eqc.zoomed .eqc-zm{display:flex} }
+.eqc-leg .ohlc{min-height:17px}
 .eqc-dot{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c);pointer-events:none;box-shadow:0 0 0 3px rgba(10,10,11,.9)}
 .eqc-dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--c);opacity:0;animation:eqcPulse 1.8s ease-out infinite}
 @keyframes eqcPulse{0%{transform:scale(.4);opacity:.8}100%{transform:scale(1.6);opacity:0}}
@@ -196,5 +205,5 @@
   <div class="empty panel hidden" id="tk-empty"></div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=8"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=4"></script><script src="/wallet.js"></script><script src="/chart.js?v=1"></script><script src="/core.js?v=33"></script><script src="/sp-creator.js?v=2"></script><script src="/sp-token.js?v=37"></script>
+<script src="/config.js?v=8"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=4"></script><script src="/wallet.js"></script><script src="/chart.js?v=4"></script><script src="/core.js?v=33"></script><script src="/sp-creator.js?v=2"></script><script src="/sp-token.js?v=37"></script>
 </body></html>
