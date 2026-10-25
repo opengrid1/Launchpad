@@ -7,6 +7,18 @@
 <link rel="stylesheet" href="/ui.css?v=19">
 <style>
 #sp-main{overflow-x:hidden;overflow-x:clip}
+/* landing header: a floating glass capsule */
+body[data-page="landing"] #sp-top{height:auto;padding:12px 0 0;background:transparent;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+body[data-page="landing"] #sp-top .wrap{display:block;height:auto}
+#sp-top .lhdr{display:flex;align-items:center;gap:6px;height:62px;padding:0 9px 0 18px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(16,17,21,.5);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 40px -24px rgba(0,0,0,.9);transition:background .25s,border-color .25s}
+#sp-top.scrolled .lhdr{background:rgba(12,13,16,.93);border-color:rgba(255,255,255,.11)}
+#sp-top .lhdr .brand{display:flex;align-items:center;gap:10px;font:700 21px var(--disp);letter-spacing:-.02em;color:var(--fg)} #sp-top .lhdr .brand img{width:34px;height:34px;border-radius:10px}
+#sp-top .lnk{margin-left:auto;display:flex;align-items:center;gap:2px}
+#sp-top .lnk a{display:inline-flex;align-items:center;height:42px;padding:0 15px;border-radius:999px;font:500 14.5px var(--sans,Inter);color:var(--fg-2);text-decoration:none;transition:color .15s,background .15s}
+#sp-top .lnk a:hover{color:var(--fg);background:rgba(255,255,255,.06)}
+#sp-top .lnk a.xl{width:42px;padding:0;justify-content:center} #sp-top .lnk a.xl svg{width:17px;height:17px}
+#sp-top .lapp{height:44px;padding:0 20px;margin-left:6px;border-radius:999px;font-size:15px;box-shadow:0 8px 26px -10px rgba(63,188,255,.8)} #sp-top .lapp svg{width:17px;height:17px}
+@media(max-width:700px){#sp-top .lnk a.wide{display:none} body[data-page="landing"] #sp-top{padding-top:10px} #sp-top .lhdr{height:56px;padding:0 7px 0 12px} #sp-top .lhdr .brand{font-size:19px;gap:8px} #sp-top .lhdr .brand img{width:30px;height:30px} #sp-top .lapp{height:42px;padding:0 16px;font-size:14.5px}}
 #pg-land{position:relative}
 #pg-land .hero{position:relative;display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:28px 48px;align-items:center;min-height:min(760px,calc(100vh - 140px));padding:28px 0 12px}
 #pg-land .sky{position:absolute;left:-40vw;right:-40vw;top:-60px;bottom:-20px;width:auto;height:auto;pointer-events:none;z-index:0}
@@ -95,7 +107,7 @@
   </section>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=8"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=4"></script><script src="/wallet.js"></script><script src="/core.js?v=25"></script>
+<script src="/config.js?v=8"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=4"></script><script src="/wallet.js"></script><script src="/core.js?v=26"></script>
 <script>
 (function(){
   const CH=(window.INKY&&INKY.chains)||[], map=document.getElementById('ld-map'), cv=document.getElementById('ld-cv'), cx=cv.getContext('2d'), tip=document.getElementById('ld-tip'), hint=document.getElementById('ld-hint');
