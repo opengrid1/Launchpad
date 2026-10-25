@@ -31,21 +31,30 @@ window.SP_PAGE=function(){
         <div class="cabar" id="tk-ca"></div><div class="pools" id="tk-pools"></div>
         ${X.desc?`<p class="desc">${esc(X.desc)}</p>`:''}
         <div class="by">Created by ${wl(X.creator)}</div>
-      </div>
-      <a class="pairbig" href="/markets?stock=${esc(X.pair)}" title="Paired with ${esc(X.pair)}"><img class="cl" src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span><b>${esc(X.t)}</b></span><span class="sl">/</span><img src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/eth.png'"><span><b class="st">${esc(X.pair)}</b><small><span id="tk-stock-px">${fmtStockPx(isStock?stockPx():ethUsd())}</span> · <span id="tk-stock-mk">${isStock?(mk.open?'NYSE open':'NYSE closed'):'24/7'}</span></small></span></a>`; }
+      </div>`; }
   function headLive(){ const p=$('#tk-stock-px'); if(p) p.textContent=fmtStockPx(isStock?stockPx():ethUsd()); if(isStock){ const mk=SP.market(); const m=$('#tk-stock-mk'); if(m) m.textContent=mk.open?'NYSE open':'NYSE closed'; }
     $('#tk-chart-t').textContent=`${X.t} / ${X.pair}`; $('#tk-chart-r').textContent=`${fmtPrice(X.pxPair)} ${X.pair} · ${X.pair} at ${fmtStockPx(isStock?stockPx():ethUsd())}`; }
 
   /* ---------- stats ---------- */
   function stats(){ const pu=pairUsd(); const fees=X.totalCreatorFees||0;
     const S=[['Price','$'+fmtPrice(X.px)+SP.fmtPct(X.c24||0).replace('class="num','class="pc num'),`${fmtPrice(X.pxPair)} ${esc(X.pair)}`],['Market cap',fmtUsd(X.mc),SP.coinChains(X).length>1?`${SP.coinChains(X).length} chains × 1B`:inPair(X.pxPair*SUPPLY)],['Volume 24h',fmtUsd(X.vol),pu?inPair(X.vol/pu):'—'],['Trades',(X.trades||0).toLocaleString(),(X.traders||0).toLocaleString()+(X.traders===1?' trader':' traders')],['Holders',(X.h||0).toLocaleString(),'wallets'],liqStat()];
-    $('#tk-stats').innerHTML=S.map(s=>`<div class="sbox lg"><span class="lab">${s[0]}</span><b>${s[1]}</b><i>${s[2]}</i></div>`).join('');
+    const c24=X.c24||0, n=SP.coinChains(X).length, liq=liqStat();
+    $('#tk-mcap').textContent=fmtUsd(X.mc); $('#tk-px').textContent='$'+fmtPrice(X.px);
+    $('#tk-stats').innerHTML=[['24h',`<b class="${c24>=0?'up':'dn'}">${c24>=0?'+':''}${c24.toFixed(2)}%</b>`],['Liquidity',`<b>${liq[1]}</b>`],['Supply',`<b>${n>1?n+'B':'1B'}</b>`],['24h vol',`<b>${fmtUsd(X.vol)}</b>`],['Holders',`<b>${(X.h||0).toLocaleString()}</b>`],['Pools live',`<b>${X.poolsLive!=null?X.poolsLive:n}/${n}<span class="pdots">${SP.coinChains(X).map(k=>`<i style="background:${SP.chain(k).color}"></i>`).join('')}</span></b>`]].map(x=>`<div><span>${x[0]}</span>${x[1]}</div>`).join('');
     const g=X.genes||{}; const dv=(g.divShareBps||0)/100, bb=(g.buybackShareBps||0)/100, rest=100-dv-bb, cr=Math.round(rest*0.6), pl=rest-cr;
     $('#tk-feespaid').textContent=`${feePct()}% · ${dv?dv+'% holders · ':''}${bb?bb+'% buyback · ':''}${cr}% creator · ${pl}% platform`; $('#tk-feebar').innerHTML=(dv?`<i class="h" style="width:${dv}%"></i>`:'')+(bb?`<i style="width:${bb}%;background:var(--dn)"></i>`:'')+`<i class="c" style="width:${cr}%"></i><i class="p" style="flex:1"></i>`; }
   /** one chain: the Ethereum pool as the chain reader sees it; several: every pool added up by the indexer */
   function liqStat(){ const n=SP.coinChains(X).length; if(n<2) return ['Liquidity',fmtUsd(X.liq),inPair(X.liqPair)];
     return ['Liquidity',X.liqAll!=null?fmtUsd(X.liqAll):'…',`${n} pools combined`]; }
-  function flow(){ const t0=Math.floor(Date.now()/1000)-86400; const day=TR.filter(v=>v.ts>=t0); const bv=day.filter(v=>v.buy).reduce((s,v)=>s+v.pair,0), sv=day.filter(v=>!v.buy).reduce((s,v)=>s+v.pair,0);
+  /* ---------- activity: volume, buys and sells over a window ---------- */
+  let tfW=86400; const TFS=[[300,'5m'],[3600,'1h'],[21600,'6h'],[86400,'24h']];
+  function act(){ const now=Math.floor(Date.now()/1000), pu=pairUsd(), win=w=>TR.filter(v=>v.ts>=now-w), usd=l=>l.reduce((s,v)=>s+v.pair*pu,0);
+    $('#tk-tf').innerHTML=TFS.map(([w,l])=>`<button type="button" data-tf="${w}" class="${w===tfW?'on':''}">${l}<b>${fmtUsd(usd(win(w)))}</b></button>`).join('');
+    const L=win(tfW), B=L.filter(v=>v.buy), Sl=L.filter(v=>!v.buy), bu=usd(B), su=usd(Sl), net=bu-su;
+    $('#tk-am').innerHTML=`<div><span>Vol</span><b>${fmtUsd(bu+su)}</b></div><div><span>Buys</span><b>${B.length} <small>/ ${fmtUsd(bu)}</small></b></div><div><span>Sells</span><b>${Sl.length} <small>/ ${fmtUsd(su)}</small></b></div><div class="r"><span>Net buy</span><b class="${net>=0?'up':'dn'}">${net>=0?'':'-'}${fmtUsd(Math.abs(net))}</b></div>`;
+    $('#tk-abar').innerHTML=bu+su>0?`<i style="width:${bu/(bu+su)*100}%;background:var(--up)"></i><i style="flex:1;background:var(--dn)"></i>`:'<i style="flex:1;background:var(--line-2)"></i>'; }
+  $('#tk-tf').addEventListener('click',e=>{ const b=e.target.closest('[data-tf]'); if(b){ tfW=+b.dataset.tf; act(); } });
+  function flow(){ act(); const t0=Math.floor(Date.now()/1000)-86400; const day=TR.filter(v=>v.ts>=t0); const bv=day.filter(v=>v.buy).reduce((s,v)=>s+v.pair,0), sv=day.filter(v=>!v.buy).reduce((s,v)=>s+v.pair,0);
     const el=$('#tk-flow'), sp=$('#tk-split'); if(!(bv+sv>0)){ el.textContent='no trades in 24h'; sp.innerHTML=''; return; } const b=Math.round(bv/(bv+sv)*100); el.textContent=`${b}% buys · ${100-b}% sells`; sp.innerHTML=`<i class="b" style="width:${b}%"></i><i class="s" style="flex:1"></i>`; }
 
   /* ---------- chart ---------- */
@@ -124,12 +133,16 @@ window.SP_PAGE=function(){
   /** with "Cheapest chain" on, follow the best pool; true when that moved the trade to another chain */
   function autoChain(){ if(!cheapest||SP.coinChains(X).length<2) return false; const b=bestChain(); if(b===tChain) return false; tChain=b; return true; }
   function paintTChain(){ const box=$('#tk-tchain'), on=SP.coinChains(X); if(!box) return; box.classList.toggle('hidden',on.length<2); if(on.length<2) return;
-    const best=bestChain();
-    box.innerHTML=`<button type="button" class="tcb" id="tk-tcb"><span class="l">${side==='buy'?'Buy on':'Sell on'}</span><img src="${tc().logo}" alt=""><b>${esc(tc().name)}</b>${best===tChain?'<span class="bestb">Best price</span>':''}<span class="px">$${fmtPrice(chainPx(tChain))}</span>${ic('down')}</button><label class="cheap"><input type="checkbox" id="tk-cheap"${cheapest?' checked':''}><span><b>Cheapest chain</b> · ${side==='buy'?'buy':'sell'} on the pool with the best price</span></label>`;
+    const best=bestChain(), p=X.pools&&X.pools[tChain];
+    box.innerHTML=`<div class="tchips">${on.map(k=>{ const c=SP.chain(k); return `<button type="button" class="tchip ${k===tChain?'on':''} ${SP.chainDeployed(k)||X.mock?'':'off'}" data-tk="${k}" style="--cc:${c.color}" title="${esc(c.name)} · $${fmtPrice(chainPx(k))}"><i></i>${esc(c.code||c.short)}</button>`; }).join('')}</div>
+      <div class="tcinfo"><span><b>${esc(tc().name)}</b>'s pool${best===tChain?' · best price':''}</span><span>$${fmtPrice(chainPx(tChain))}</span></div>
+      <label class="cheap2"><span><b>Cheapest chain</b> · use another chain's pool if it pays more</span><input type="checkbox" id="tk-cheap"${cheapest?' checked':''}></label>`;
     $('#tk-cheap').onchange=e=>{ cheapest=e.target.checked; if(autoChain()){ amtEl.value=''; resetQuote(); paintSide(); position(); } else paintTChain(); };
-    $('#tk-tcb').onclick=e=>{ e.stopPropagation(); const m=SP.menu(e.currentTarget,`<div class="mh">${on.length} pools · pick where to ${side}</div>`+on.map(k=>{ const c=SP.chain(k), d=(chainPx(k)/chainPx(best)-1)*100;
-      return `<button data-tk="${k}" class="${k===tChain?'on':''}"><img src="${c.logo}" alt="" style="width:20px;height:20px;border-radius:50%"><span>${esc(c.name)} <span class="muted">${esc(c.native)}</span></span><span style="margin-left:auto;display:inline-flex;align-items:center;gap:8px">${k===best?'<span class="bestb">Best</span>':`<span class="muted num" style="font-size:11px">${d>=0?'+':''}${d.toFixed(2)}%</span>`}<span class="num">$${fmtPrice(chainPx(k))}</span>${c.live?'':'<span class="soonb">Soon</span>'}</span></button>`; }).join(''));
-      $$('[data-tk]',m).forEach(b=>b.onclick=()=>{ m.remove(); tChain=b.dataset.tk; cheapest=false; amtEl.value=''; resetQuote(); paintTChain(); paintSide(); position(); }); }; }
+    $$('[data-tk]',box).forEach(b=>b.onclick=()=>{ tChain=b.dataset.tk; cheapest=false; amtEl.value=''; resetQuote(); paintTChain(); paintSide(); position(); }); }
+  /* dollar buttons on the buy side: each sets the amount in the paying coin and shows the coins it gets at this pool's price */
+  function paintQusd(){ const el=$('#tk-qusd'); if(!el) return; if(side!=='buy'){ el.innerHTML=''; return; } const px=chainPx(tChain), r=1-feeR();
+    el.innerHTML=[10,50,100,500].map(u=>`<button type="button" data-u="${u}">$${u}<small>${px?fmtAmt(u/px*r)+' '+esc(X.t):''}</small></button>`).join(''); }
+  function poolHolds(){ const p=X.pools&&X.pools[tChain], el=$('#tk-poolh'); if(!el) return; el.textContent=p&&p.coinsInPool!=null?`${fmtAmt(p.coinsInPool)} ${X.t}${p.pairInPool!=null?' and '+fmtAmt(p.pairInPool)+' '+tc().native:p.pairUsd!=null?' and '+fmtUsd(p.pairUsd):''}`:'—'; }
   async function quoteFor(v){ if(!onEth()){ const nu=natUsd(), px=chainPx(tChain), r=1-feeR(); if(!nu||!px) return 0n; return side==='buy'?BigInt(Math.floor(v*nu/px*r*1e6))*10n**12n:BigInt(Math.floor(v*px*r/nu*1e9))*10n**9n; }
     const vp=via(); return side==='buy'?await (vp?CHAIN.quoteBuy:CHAIN.quoteBuyEth)(X.addr,CHAIN.parseEther(v.toFixed(18))):await (vp?CHAIN.quoteSell:CHAIN.quoteSellEth)(X.addr,coinWei(v)); }
   function paintBal(){ const e=SP.W.connected?payFmt(balEth):'—', c=SP.W.connected?fmtAmt(balCoin)+' '+X.t:'—'; $('#tk-bal-in').textContent='Balance: '+(side==='buy'?e:c); $('#tk-bal-out').textContent='Balance: '+(side==='buy'?c:e); }
@@ -137,7 +150,7 @@ window.SP_PAGE=function(){
     const coin=`<img src="${SP.coinLogo(X)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'"><span>${esc(X.t)}</span>`, eth=!onEth()?`<img src="${natImg()}" alt=""><span>${esc(tc().native)}</span>`:via()?`<img src="${pairImg(X.pair)}" alt="" onerror="this.onerror=null;this.src='/img/t-default.png'"><span>${esc(X.pair)}</span>`:`<img src="/img/eth.png" alt=""><span>ETH</span>`;
     $('#tk-asset-in').innerHTML=side==='buy'?eth:coin; $('#tk-asset-out').innerHTML=side==='buy'?coin:eth; amtEl.placeholder='0'; ctaEl.classList.toggle('s',side==='sell');
     $('#tk-note').textContent=`Fee ${feePct()}% in ${X.pair}`; $('#tk-payw').textContent=side==='buy'?(!onEth()?tc().native:via()?X.pair:'ETH'):X.t; paintTChain(); $('#tk-payw-note').textContent=via()?`No ETH route for ${X.pair}; you ${side==='buy'?'pay':'receive'} ${X.pair}`:'';
-    paintBal(); updQuote(); }
+    paintQusd(); poolHolds(); paintBal(); updQuote(); }
   function resetQuote(){ qOut=0n; quoting=false; const o=$('#tk-out'); o.textContent='0'; o.classList.add('dim'); $('#tk-out-usd').textContent=''; $('#tk-amt-usd').textContent=''; $('#tk-min').textContent='—'; $('#tk-fee-l').textContent=`Fee ${feePct()}%`; $('#tk-fee').textContent='—'; const im=$('#tk-imp'); im.textContent='—'; im.className=''; }
   async function updQuote(){ const v=amtVal(); if(!v){ qSeq++; resetQuote(); cta(); return; }
     const seq=++qSeq; quoting=true; cta(); const pu=pairUsd(), eu=payUsd(), fr=feeR(), vp=via();
@@ -170,6 +183,7 @@ window.SP_PAGE=function(){
     updQuote(); });
   $$('#tk-slip button').forEach(b=>b.onclick=()=>{ slipMode=b.dataset.sl; $$('#tk-slip button').forEach(x=>x.classList.toggle('on',x===b)); const inp=$('#tk-slip-in'); inp.classList.toggle('hidden',slipMode!=='custom'); if(slipMode==='custom'){ inp.focus(); } updQuote(); });
   $('#tk-slip-in').addEventListener('input',()=>updQuote());
+  $('#tk-qusd').addEventListener('click',e=>{ const b=e.target.closest('[data-u]'); if(!b) return; const eu=payUsd(); if(!eu){ SP.toast('Loading prices, try again in a second','info'); return; } amtEl.value=String(+(+b.dataset.u/eu).toFixed(6)); updQuote(); });
   ctaEl.onclick=doSwap;
   if(/[?&]side=sell/.test(location.search)) side='sell';
   SP.chainCosts().then(c=>{ CC=c; if(!onEth()) updQuote(); }).catch(()=>{});
@@ -229,6 +243,11 @@ window.SP_PAGE=function(){
   SP.onWallet(()=>{ position(); cta(); updQuote(); });
   setInterval(headLive,60000);
 
+  /* ---------- safety: what the contracts guarantee, stated plainly ---------- */
+  function safety(){ const n=SP.coinChains(X).length, chk=ic('check');
+    $('#tk-safe').innerHTML=`<div class="sh3">Safety<span>by the contracts</span></div><div class="sg">${n>1?`<div>${chk}Peers sealed<small>at launch</small></div><div>${chk}New supply<small>bridge only</small></div><div>${chk}Same address<small>every EVM chain</small></div>`:`<div>${chk}Supply<small>fixed at 1B</small></div><div>${chk}No mint<small>after launch</small></div>`}<div>${chk}Trading fee<small>set at launch</small></div></div>`;
+    $('#tk-bridge2').href='/bridge?coin='+X.addr; }
+
   /* ---------- boot ---------- */
-  creatorCard(); head(); caBar(); stats(); headLive(); chainsCard(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; chart(); paintSide(); resetQuote(); cta(); loadTrades(); position();
+  safety(); creatorCard(); head(); caBar(); stats(); headLive(); chainsCard(); document.title=`${X.t} $${fmtPrice(X.px)} | Equo`; chart(); paintSide(); resetQuote(); cta(); loadTrades(); position();
 };

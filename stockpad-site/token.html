@@ -66,7 +66,7 @@
 @media(max-width:1100px){#pg-token .cols{grid-template-columns:minmax(0,1fr) 350px} #pg-token .stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:900px){
   #pg-token .cols{display:flex;flex-direction:column;align-items:stretch} #pg-token .left,#pg-token .right{display:contents}
-  #pg-token .head{order:1} #pg-token .trade{order:2} #pg-token .chart{order:3} #pg-token .sidep{order:4} #pg-token .ptabs{order:5}
+  #pg-token .head{order:1} #pg-token .chart{order:2} #pg-token .trade{order:3} #pg-token .act{order:4} #pg-token .safe{order:5} #pg-token .sidep{order:6} #pg-token .ptabs{order:7}
   #pg-token .head{padding:16px} #pg-token .hd{grid-template-columns:64px minmax(0,1fr);gap:14px} #pg-token .hd .lg{width:64px;height:64px;box-shadow:none} #pg-token .hd h1{font-size:22px}
   #pg-token .pairbig{grid-column:1/-1;justify-content:center} #pg-token .stats{grid-template-columns:1fr 1fr} #pg-token .fl2{grid-template-columns:1fr}
   #pg-token .info{grid-template-columns:1fr} #pg-token .right{position:static} #pg-token #tv{height:380px;min-height:380px}
@@ -84,6 +84,33 @@
 #pg-token .cabar .cax{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;color:var(--fg-3)} #pg-token .cabar .cax:hover{color:var(--ac);background:var(--s3)} #pg-token .cabar .cax svg{width:13px;height:13px}
 #pg-token .pools{display:flex;align-items:center;gap:5px;margin-top:7px;font:12px var(--mono);color:var(--fg-3)} #pg-token .pools:empty{display:none} #pg-token .pools b{color:var(--fg);font-weight:500;margin-right:3px} #pg-token .pools i{width:8px;height:8px;border-radius:50%}
 #pg-token .cabar .sm2{display:none} @media(max-width:640px){#pg-token .cabar .lg2{display:none} #pg-token .cabar .sm2{display:inline} #pg-token .cabar{gap:4px} #pg-token .cabar .cac{padding:0 8px} #pg-token .cabar .cac .cl{display:none}}
+
+/* ===== trading interface ===== */
+#pg-token .h2x{padding:18px 20px}
+#pg-token .hrow{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+#pg-token .hrow .hd{flex:1;min-width:0;padding:0;border:0}
+#pg-token .hrow .big{display:flex;gap:26px;align-items:flex-end;flex:none;text-align:right} #pg-token .hrow .big span{display:block;font:500 11px var(--mono);color:var(--fg-3);letter-spacing:.04em} #pg-token .hrow .big b{display:block;font:700 30px var(--disp);letter-spacing:-.02em;line-height:1.1} #pg-token .hrow .big div+div b{font:600 18px var(--mono);color:var(--fg-2)}
+#pg-token .srow{display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+#pg-token .srow div span{display:block;font:500 11px var(--mono);color:var(--fg-3)} #pg-token .srow div b{display:block;margin-top:2px;font:600 15px var(--mono)} #pg-token .srow .up{color:var(--up)} #pg-token .srow .dn{color:var(--dn)} #pg-token .srow .pdots{display:inline-flex;gap:3px;margin-left:6px;vertical-align:1px} #pg-token .srow .pdots i{width:7px;height:7px;border-radius:50%}
+/* activity */
+#pg-token .act{overflow:hidden}
+#pg-token .tf{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)} #pg-token .tf button{padding:10px 4px;background:none;border:0;border-right:1px solid var(--line);color:var(--fg-3);font:500 11.5px var(--mono);cursor:pointer;text-align:center} #pg-token .tf button:last-child{border-right:0} #pg-token .tf button b{display:block;margin-top:2px;font:600 13px var(--mono);color:var(--fg-2)} #pg-token .tf button.on{background:rgba(63,188,255,.08);color:var(--ac)} #pg-token .tf button.on b{color:var(--fg)}
+#pg-token .am{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:12px 14px 10px} #pg-token .am span{display:block;font:500 10.5px var(--mono);color:var(--fg-3)} #pg-token .am b{display:block;margin-top:3px;font:600 12.5px var(--mono);white-space:nowrap} #pg-token .am b small{font-weight:500;color:var(--fg-3)} #pg-token .am .r{text-align:right}
+#pg-token .abar{display:flex;height:3px} #pg-token .abar i{display:block;height:100%}
+/* trade card */
+#pg-token .ttab{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)} #pg-token .ttab>*{display:flex;align-items:center;justify-content:center;height:44px;background:none;border:0;color:var(--fg-3);font:600 13.5px var(--disp);text-decoration:none} #pg-token .ttab .on{color:var(--fg);box-shadow:inset 0 -2px 0 var(--ac)} #pg-token .ttab a:hover{color:var(--fg)}
+#pg-token .tchain{margin-top:12px}
+#pg-token .tchips{display:flex;flex-wrap:wrap;gap:6px}
+#pg-token .tchip{--cc:#3fbcff;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid var(--line-2);border-radius:999px;background:var(--s1);color:var(--fg-2);font:600 12px var(--mono);cursor:pointer} #pg-token .tchip i{width:7px;height:7px;border-radius:50%;background:var(--cc)} #pg-token .tchip:hover{border-color:var(--line-3);color:var(--fg)}
+#pg-token .tchip.on{border-color:var(--cc);color:var(--fg);background:color-mix(in srgb,var(--cc) 14%,var(--s1));box-shadow:0 0 0 1px color-mix(in srgb,var(--cc) 35%,transparent)} #pg-token .tchip.off{opacity:.45}
+#pg-token .tcinfo{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:12px;color:var(--fg-3)} #pg-token .tcinfo b{color:var(--fg-2);font-weight:600}
+#pg-token .cheap2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:12.5px;color:var(--fg-3);cursor:pointer} #pg-token .cheap2 b{color:var(--fg);font-weight:600} #pg-token .cheap2 input{width:16px;height:16px;flex:none}
+#pg-token .qusd{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px} #pg-token .qusd:empty{display:none}
+#pg-token .qusd button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border:1px solid var(--line-2);border-radius:10px;background:var(--s1);color:var(--fg);font:600 13px var(--mono);cursor:pointer} #pg-token .qusd button small{font:500 10px var(--mono);color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%} #pg-token .qusd button:hover{border-color:var(--ac)}
+/* safety */
+#pg-token .safe{padding:12px 14px} #pg-token .safe .sh3{display:flex;justify-content:space-between;font:600 13px var(--disp);margin-bottom:8px} #pg-token .safe .sh3 span{font:500 11px var(--mono);color:var(--fg-3)}
+#pg-token .safe .sg{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px} #pg-token .safe .sg div{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-2)} #pg-token .safe .sg svg{width:14px;height:14px;color:var(--up);flex:none} #pg-token .safe .sg small{margin-left:auto;font:500 10.5px var(--mono);color:var(--fg-3)}
+@media(max-width:700px){#pg-token .hrow{flex-direction:column;gap:10px} #pg-token .hrow .big{text-align:left} #pg-token .hrow .big b{font-size:26px} #pg-token .srow{gap:10px 18px} #pg-token .safe .sg{grid-template-columns:1fr}}
 </style>
 </head><body data-page="token">
 <header id="sp-top"></header><div id="sp-tape"></div>
@@ -91,14 +118,14 @@
   <div class="crumb" id="tk-crumb"></div>
   <div id="tk-page" class="cols">
     <div class="left">
-      <section class="panel head">
-        <div class="hd" id="tk-head"></div>
-        <div class="sboxes stats" id="tk-stats"></div>
-        <div class="fl2"><div><div class="flow"><span class="lab">Flow 24h</span><span class="num" id="tk-flow">…</span></div><div class="split" id="tk-split"></div></div><div><div class="flow"><span class="lab">Fee split</span><span class="num" id="tk-feespaid">…</span></div><div class="split" id="tk-feebar"></div></div></div>
+      <section class="panel head h2x">
+        <div class="hrow"><div class="hd" id="tk-head"></div><div class="big"><div><span>MCap</span><b id="tk-mcap">…</b></div><div><span>Price</span><b id="tk-px">…</b></div></div></div>
+        <div class="srow" id="tk-stats"></div>
+        <div class="hidden"><span id="tk-flow"></span><div id="tk-split"></div><span id="tk-feespaid"></span><div id="tk-feebar"></div></div>
       </section>
       <section class="panel chart"><div class="ph2"><span id="tk-chart-t"></span><span class="r" id="tk-chart-r"></span></div><div id="tv"></div></section>
       <section class="panel ptabs">
-        <div class="ph2"><div class="tabs" id="tk-tabs"><button data-tab="trades" class="on">Trades<span class="num" id="tk-trades-n"></span></button><button data-tab="holders">Holders</button><button data-tab="pools">Pools</button><button data-tab="top">Top traders</button><button data-tab="info">About</button></div><div class="seg" id="tk-filter"><button data-f="all" class="on">All</button><button data-f="buy">Buys</button><button data-f="sell">Sells</button></div></div>
+        <div class="ph2"><div class="tabs" id="tk-tabs"><button data-tab="trades" class="on">Trades<span class="num" id="tk-trades-n"></span></button><button data-tab="holders">Holders</button><button data-tab="pools">Pools</button><button data-tab="top">Top traders</button><button data-tab="info">Token</button></div><div class="seg" id="tk-filter"><button data-f="all" class="on">All</button><button data-f="buy">Buys</button><button data-f="sell">Sells</button></div></div>
         <div class="pane on" data-pane="trades">
           <div class="tw"><table class="tb"><thead><tr><th>Side</th><th>Trader</th><th class="r" id="tk-th-coin">Amount</th><th class="r" id="tk-th-pair">Paid</th><th class="r">USD</th><th class="r">Price</th><th>Time</th><th>Chain</th><th class="r">Tx</th></tr></thead><tbody id="tk-trades"></tbody></table></div>
           <div class="more" id="tk-more"><button class="btn sm" id="tk-more-btn">Load more</button></div>
@@ -110,7 +137,8 @@
       </section>
     </div>
     <aside class="right">
-      <section class="panel trade" id="tk-trade"><div class="pb">
+      <section class="panel act" id="tk-act"><div class="tf" id="tk-tf"></div><div class="am" id="tk-am"></div><div class="abar" id="tk-abar"></div></section>
+      <section class="panel trade" id="tk-trade"><div class="ttab"><button type="button" class="on">Buy / Sell</button><a id="tk-bridge2" href="/bridge">Bridge</a></div><div class="pb">
         <div class="sides" id="tk-sides"><button data-side="buy" class="b on">Buy</button><button data-side="sell" class="s">Sell</button></div>
         <div class="tchain hidden" id="tk-tchain"></div>
         <div class="payw"><span>Pay with</span><span class="badge ac" id="tk-payw">ETH</span><span class="muted" id="tk-payw-note"></span></div>
@@ -119,24 +147,25 @@
           <div class="ir"><input id="tk-amt" inputmode="decimal" autocomplete="off" placeholder="0.0" aria-label="Amount"><span class="asset" id="tk-asset-in"></span></div>
           <div class="br"><span id="tk-amt-usd"></span><div class="quick" id="tk-quick"><button data-q="25">25%</button><button data-q="50">50%</button><button data-q="100">MAX</button></div></div>
         </div>
+        <div class="qusd" id="tk-qusd"></div>
         <div class="box out">
           <div class="lr"><span class="lab">You receive</span><span class="num" id="tk-bal-out"></span></div>
           <div class="ir"><div class="outv dim" id="tk-out">0</div><span class="asset" id="tk-asset-out"></span></div>
           <div class="br"><span id="tk-out-usd"></span></div>
         </div>
         <div class="slip"><span>Slippage</span><div class="row"><div class="seg" id="tk-slip"><button data-sl="auto" class="on">Auto</button><button data-sl="0.5">0.5%</button><button data-sl="1">1%</button><button data-sl="3">3%</button><button data-sl="custom">Custom</button></div><input id="tk-slip-in" class="hidden" inputmode="decimal" placeholder="%" aria-label="Custom slippage"></div></div>
-        <div class="det"><div class="kv"><span>Minimum received</span><b id="tk-min">—</b></div><div class="kv"><span id="tk-fee-l">Fee</span><b id="tk-fee">—</b></div><div class="kv"><span>Price impact</span><b id="tk-imp">—</b></div></div>
+        <div class="det"><div class="kv"><span>Minimum received</span><b id="tk-min">—</b></div><div class="kv"><span>Pool holds</span><b id="tk-poolh">—</b></div><div class="kv"><span id="tk-fee-l">Fee</span><b id="tk-fee">—</b></div><div class="kv"><span>Price impact</span><b id="tk-imp">—</b></div></div>
         <button class="btn pri lg block cta" id="tk-cta">Connect a wallet</button>
         <p class="note" id="tk-note"></p>
       </div></section>
+      <section class="panel safe" id="tk-safe"></section>
       <section class="panel sidep hidden" id="tk-pos"><div class="ph2"><span>Your position</span><span class="num muted" id="tk-pos-sym"></span></div><div class="pb" id="tk-pos-body"></div></section>
       <section class="panel sidep hidden" id="tk-cre"><div class="ph2"><span>Creator fees</span><span class="badge acl">Your coin</span></div><div class="pb" id="tk-cre-body"></div></section>
-      <section class="panel sidep" id="tk-chains"><div class="ph2"><span>Chains</span><a class="num muted" id="tk-bridge" href="/bridge" style="font-size:11.5px">Bridge</a></div><div class="pb" id="tk-chains-body"></div></section>
       <section class="panel sidep" id="tk-crt"><div class="ph2"><span>Creator</span><a class="num muted" href="/takeover" style="font-size:11.5px">How takeovers work</a></div><div class="pb" id="tk-crt-body"><div class="empty" style="padding:14px">Loading…</div></div></section>
     </aside>
   </div>
   <div class="empty panel hidden" id="tk-empty"></div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=8"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=4"></script><script src="/wallet.js"></script><script src="/charting_library/charting_library.js"></script><script src="/tv.js?v=3"></script><script src="/core.js?v=33"></script><script src="/sp-creator.js?v=2"></script><script src="/sp-token.js?v=35"></script>
+<script src="/config.js?v=8"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=4"></script><script src="/wallet.js"></script><script src="/charting_library/charting_library.js"></script><script src="/tv.js?v=3"></script><script src="/core.js?v=33"></script><script src="/sp-creator.js?v=2"></script><script src="/sp-token.js?v=36"></script>
 </body></html>
