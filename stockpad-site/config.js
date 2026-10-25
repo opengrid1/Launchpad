@@ -44,7 +44,7 @@ window.INKY = {
      rpc:'https://mainnet.unichain.org',             explorer:'https://uniscan.xyz',      lzEid:30320, poolManager:'0x1F98400000000000000000000000000000000004', launchGas:7290000},
     /* Solana is not an EVM chain: no Uniswap v4 and no shared address. A coin there is its own Solana token with its
        own address, linked to the EVM chains through LayerZero. Shown as coming; nothing on the site sends to it. */
-    {key:'sol', blockSec:0.4,      code:'SOL',  name:'Solana',    short:'Solana',   chainId:null,  native:'SOL',  cg:'solana',      logo:'/img/chains/sol.png',      color:'#14f195', main:false, live:false, evm:false,
+    {key:'sol', blockSec:0.4,      code:'SOL',  name:'Solana',    short:'Solana',   chainId:null,  native:'SOL',  cg:'solana',      logo:'/img/chains/sol.png',      color:'#14f195', main:false, live:false, evm:false, dex:'Meteora',
      rpc:'https://api.mainnet-beta.solana.com',      explorer:'https://solscan.io',       lzEid:30168, poolManager:'',                                           launchGas:0}
   ],
   /* launch fee: gas on every chosen chain plus this margin; bridge: LayerZero fees */

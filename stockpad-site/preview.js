@@ -22,12 +22,15 @@
   let seed = 7;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
   const wallet = () => '0x' + Array.from({ length: 40 }, () => '0123456789abcdef'[Math.floor(rnd() * 16)]).join('');
+  // Solana keys and signatures are base58
+  const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz', b58 = (n) => Array.from({ length: n }, () => B58[Math.floor(rnd() * 58)]).join('');
+  const isSol = (k) => k === 'sol';
   const logo = (txt, a, b) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="64" height="64" rx="32" fill="url(#g)"/><text x="32" y="${txt.length > 3 ? 37 : 39}" font-family="Arial,Helvetica,sans-serif" font-size="${txt.length > 3 ? 15 : 19}" font-weight="700" fill="#fff" text-anchor="middle">${txt}</text></svg>`);
 
   const SPECS = [
-    { addr: '0xe900000000000000000000000000000000000001', n: 'Eight Ball', t: 'EIGHT', pair: 'ETH', chains: ['eth', 'base', 'bsc', 'arbitrum', 'hyper', 'monad', 'megaeth', 'unichain'], fee: 100, ageH: 70, trades: 240, p0: 5000, p1: 168000, pairUsd: 3900, img: logo('8', '#8c9eff', '#97fce4'), desc: 'One coin on all eight chains, the same address on each.', genes: { divShareBps: 2000 }, rewards: true },
+    { addr: '0xe900000000000000000000000000000000000001', n: 'Eight Ball', t: 'EIGHT', pair: 'ETH', chains: ['eth', 'base', 'bsc', 'arbitrum', 'hyper', 'monad', 'megaeth', 'unichain', 'sol'], fee: 100, ageH: 70, trades: 270, p0: 5000, p1: 168000, pairUsd: 3900, img: logo('8', '#8c9eff', '#97fce4'), desc: 'One coin on all nine chains: the same address on every EVM chain, its own on Solana.', genes: { divShareBps: 2000 }, rewards: true },
     { addr: '0xe900000000000000000000000000000000000002', n: 'Base Jumper', t: 'JUMP', pair: 'ETH', chains: ['eth', 'base', 'arbitrum'], fee: 200, ageH: 20, trades: 120, p0: 5000, p1: 41000, pairUsd: 3900, img: logo('JUMP', '#3f7bff', '#97fce4'), desc: 'Three chains, one address.', genes: {}, rewards: false },
-    { addr: '0xe900000000000000000000000000000000000003', n: 'Purple Rain', t: 'RAIN', pair: 'ETH', chains: ['eth', 'monad', 'megaeth', 'bsc'], fee: 100, ageH: 5, trades: 70, p0: 5000, p1: 23500, pairUsd: 3900, img: logo('RAIN', '#836ef9', '#ff7aa2'), desc: 'Four chains, buyback and burn on every trade.', genes: { buybackShareBps: 2000 }, rewards: false },
+    { addr: '0xe900000000000000000000000000000000000003', n: 'Purple Rain', t: 'RAIN', pair: 'ETH', chains: ['eth', 'monad', 'megaeth', 'bsc', 'sol'], fee: 100, ageH: 5, trades: 80, p0: 5000, p1: 23500, pairUsd: 3900, img: logo('RAIN', '#836ef9', '#ff7aa2'), desc: 'Five chains with Solana, buyback and burn on every trade.', genes: { buybackShareBps: 2000 }, rewards: false },
   ];
 
   const TR = {}, MOCK = SPECS.map((s) => {
@@ -35,7 +38,7 @@
     const created = NOW - s.ageH * H, n = s.chains.length;
     // price path per coin (USD per coin), market cap from p0 to p1 across all its chains
     const capPx = (cap) => cap / (SUP * n);
-    const trades = [], wallets = Array.from({ length: Math.max(12, Math.round(s.trades / 4)) }, wallet);
+    const trades = [], wallets = Array.from({ length: Math.max(12, Math.round(s.trades / 4)) }, wallet), solWallets = Array.from({ length: 10 }, () => b58(44));
     let px = capPx(s.p0);
     // each chain's pool drifts a little from the others (arbitrage through the bridge keeps the gap small)
     const gap = Object.fromEntries(s.chains.map((k, i) => [k, i ? (rnd() - 0.5) * 0.03 : 0]));
@@ -47,7 +50,7 @@
       gap[ch] = ch === s.chains[0] ? 0 : Math.max(-0.025, Math.min(0.025, gap[ch] * 0.85 + (rnd() - 0.5) * 0.012));
       const cpx = px * (1 + gap[ch]);
       const usd = 20 + Math.pow(rnd(), 2) * 1800, pairAmt = usd / pairUsd, coinAmt = usd / cpx;
-      trades.push({ token: s.addr, wallet: wallets[Math.floor(rnd() * wallets.length)], buy, coin: String(BigInt(Math.round(coinAmt * 1e6)) * 10n ** 12n), pair: String(BigInt(Math.round(pairAmt * 1e9)) * 10n ** 9n), fee: String(BigInt(Math.round(pairAmt * s.fee / 1e4 * 1e9)) * 10n ** 9n), realized: '0', block: 0, ts: Math.round(created + f * (NOW - created) - rnd() * 60), tx: '0x' + s.addr.slice(2, 10) + i.toString(16).padStart(56, '0'), index: i, chain: ch });
+      trades.push({ token: s.addr, wallet: isSol(ch) ? solWallets[Math.floor(rnd() * solWallets.length)] : wallets[Math.floor(rnd() * wallets.length)], buy, coin: String(BigInt(Math.round(coinAmt * 1e6)) * 10n ** 12n), pair: String(BigInt(Math.round(pairAmt * 1e9)) * 10n ** 9n), fee: String(BigInt(Math.round(pairAmt * s.fee / 1e4 * 1e9)) * 10n ** 9n), realized: '0', block: 0, ts: Math.round(created + f * (NOW - created) - rnd() * 60), tx: isSol(ch) ? b58(88) : '0x' + s.addr.slice(2, 10) + i.toString(16).padStart(56, '0'), index: i, chain: ch });
     }
     TR[s.addr] = trades;
     const last = trades[trades.length - 1], day = trades.filter((t) => t.ts >= NOW - 86400);
@@ -66,10 +69,10 @@
       px: pxAvg, pxPair: pxAvg / pairUsd, mc: mcAll, c24: (pxAvg / first24 - 1) * 100, vol, trades: trades.length, traders: wallets.length, h: wallets.length,
       createdAt: created, age, feeBps: s.fee, rewards: s.rewards, genes: s.genes, creator: wallets[0], links: { x: 'https://x.com/equofun' },
       liq: mcAll * 0.42, liqPair: mcAll * 0.42 / pairUsd, totalCreatorFees: vol * s.fee / 1e4 * 0.6 / pairUsd * 3, creatorOwed: 0, buybackPot: 0, dividendPot: 0,
-      pools, liqAll: mcAll * 0.42, poolsLive: n, poolId: '0x' + s.addr.slice(2).padEnd(64, '0'), chains: s.chains, addrs: Object.fromEntries(s.chains.map((k) => [k, k === 'eth' ? s.addr : wallet()])), byChain, mock: true, hidden: false,
+      pools, liqAll: mcAll * 0.42, poolsLive: n, poolId: '0x' + s.addr.slice(2).padEnd(64, '0'), chains: s.chains, addrs: Object.fromEntries(s.chains.map((k) => [k, k === 'eth' ? s.addr : isSol(k) ? b58(44) : wallet()])), byChain, mock: true, hidden: false,
     };
   });
-  const isMock = (a) => { a = String(a || '').toLowerCase(); return MOCK.find((x) => x.addr === a || Object.values(x.addrs || {}).includes(a)) || null; };
+  const isMock = (a) => { a = String(a || '').toLowerCase(); return MOCK.find((x) => x.addr === a || Object.values(x.addrs || {}).some((v) => String(v).toLowerCase() === a)) || null; };
 
   // the chain layer answers for the example coins; everything else passes through
   const w = (name, fn) => { const orig = C[name]; C[name] = function (a, ...rest) { const m = isMock(a); return m ? fn(m, ...rest) : orig ? orig.apply(this, arguments) : undefined; }; };
