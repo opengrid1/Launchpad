@@ -18,6 +18,11 @@ body[data-page="landing"] #sp-top .lhdr .brand{font-family:var(--land);font-weig
 body[data-page="landing"] #pg-land .stats b{font-family:var(--land);font-weight:800;letter-spacing:-.04em}
 body[data-page="landing"] #pg-land .tc .a b{font-family:var(--land);font-weight:700}
 body[data-page="landing"] #pg-land .pl{font-family:var(--land);font-weight:700;letter-spacing:-.01em}
+/* button sizes: header 40px, hero 48px (phones 36px and 44px) */
+body[data-page="landing"] #sp-top .lnk a{height:40px;padding:0 16px;font-size:14.5px} body[data-page="landing"] #sp-top .lnk a.xl{width:40px;padding:0} body[data-page="landing"] #sp-top .lnk a.xl svg{width:15px;height:15px} body[data-page="landing"] #sp-top .lnk a.lapp{padding:0 18px}
+body[data-page="landing"] #pg-land .ctas .btn{height:48px;padding:0 22px;font-size:15px} body[data-page="landing"] #pg-land .ctas .btn.pri{padding:0 24px} body[data-page="landing"] #pg-land .ctas .btn.ic{width:48px;padding:0} body[data-page="landing"] #pg-land .ctas .btn svg{width:16px;height:16px}
+@media(max-width:700px){body[data-page="landing"] #sp-top .lnk a{height:36px;padding:0 14px;font-size:14px} body[data-page="landing"] #sp-top .lnk a.xl{width:36px} body[data-page="landing"] #sp-top .lnk a.lapp{padding:0 15px}}
+@media(max-width:640px){body[data-page="landing"] #pg-land .ctas .btn{height:44px;font-size:14.5px} body[data-page="landing"] #pg-land .ctas .btn.ic{width:44px} body[data-page="landing"] #pg-land .ctas .btn.pri{flex:0 0 auto;padding:0 22px}}
 @media(max-width:640px){body[data-page="landing"] #pg-land h1{font-size:clamp(46px,14.2vw,64px);margin:22px 0 18px} body[data-page="landing"] #pg-land .lead{font-size:18px} body[data-page="landing"] #sp-top .lhdr .brand{font-size:24px}}
 /* landing header: flat and plain, like a site header rather than an app bar */
 body[data-page="landing"] #sp-top{position:relative;height:auto;padding:18px 0 0;background:transparent;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
