@@ -88,17 +88,17 @@ SP.W.switchChain=async()=>{ const d=window.inkyWallet; if(d&&d.switchChain) awai
 addEventListener('inky:wallet',syncWallet); document.addEventListener('wallet-change',()=>{ /* re-entrancy guard: syncWallet only dispatches on change */ });
 
 /* ---------- shell ---------- */
-const NAV=[['markets','/markets','Home'],['calls','/calls','Calls'],['analytics','/analytics','Analytics'],['launch','/launch','Launch'],['bridge','/bridge','Bridge'],['rewards','/rewards','Rewards'],['portfolio','/profile','Profile']];
+const NAV=[['markets','/markets','Home'],['analytics','/analytics','Analytics'],['launch','/launch','Launch'],['bridge','/bridge','Bridge'],['rewards','/rewards','Rewards'],['portfolio','/profile','Profile']];
 /* More menu (desktop) and Tools in the mobile menu: [key, href, label, icon, soon] */
 const TOOLS=[['pools','/pools','Pools','drop'],['burns','/rewards#burns','Burns','flame'],['watch','/markets?watch=1','Watchlist','star'],['takeover','/takeover','Takeover','users']];
 const MORE_LINKS=[['landing','/','About Equo','globe'],['docs','/docs','Docs','book'],['how','/docs/how-it-works','How it works','info']];
-const TABS=['markets','calls','launch','rewards','analytics'];
+const TABS=['markets','bridge','launch','rewards','analytics'];
 function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP.W;
   if(!W.connected){ el.innerHTML=`<button class="btn pri" id="wconnect">Connect wallet</button>`; $('#wconnect',el).onclick=SP.W.connect; return; }
   el.innerHTML=`<button class="wbtn" id="wmenu"><span class="av">${SP.avatar(W.address,22)}</span>${esc(W.short)}${!W.chainOk?'<span class="tag red">Wrong network</span>':''}</button>`;
   $('#wmenu',el).onclick=e=>{ const m=SP.menu(e.currentTarget,`<button data-a="copy">${ic('copy')}Copy address</button><button data-a="pf">${ic('user')}Profile</button><button data-a="rw">${ic('gift')}Rewards</button>${SP.isAdmin()?`<button data-a="adm">${ic('shield')}Operator</button>`:''}<button data-a="ex">${ic('globe')}View on Etherscan</button>${!W.chainOk?`<button data-a="sw">${ic('swap')}Switch to Ethereum</button>`:''}<div class="d"></div><button data-a="out">${ic('logout')}Disconnect</button>`);
     $$('[data-a]',m).forEach(b=>b.onclick=()=>{ const a=b.dataset.a; m.remove(); if(a==='copy') SP.copy(cs(W.address),'Address copied'); if(a==='pf') SP.go('/profile'); if(a==='rw') SP.go('/rewards'); if(a==='adm') SP.go('/admin'); if(a==='ex') open(EXPLORER+'/address/'+W.address,'_blank'); if(a==='sw') SP.W.switchChain().catch(err=>SP.toast(SP.errMsg(err),'err')); if(a==='out') SP.W.disconnect(); }); }; }
-const NAV_IC={markets:'home',calls:'chat',launch:'rocket',analytics:'trend',bridge:'bridge',rewards:'gift',portfolio:'user',docs:'book'};
+const NAV_IC={markets:'home',launch:'rocket',analytics:'trend',bridge:'bridge',rewards:'gift',portfolio:'user',docs:'book'};
 const stockPx=v=>v?'$'+(v>=100?v.toFixed(0):v>=1?v.toFixed(2):fmtPrice(v)):'';
 const navHtml=page=>{ const L=NAV.filter(n=>n[0]!=='launch'); const half=Math.ceil(L.length/2); const a=x=>`<a href="${x[1]}" class="${page===x[0]?'on':''}">${x[2]}</a>`; const moreOn=TOOLS.concat(MORE_LINKS).some(t=>t[0]===page)||page==='docs'; return L.slice(0,half).map(a).join('')+`<a href="/launch" class="btn pri lnch ${page==='launch'?'on':''}">${ic('rocket')}Launch a coin</a>`+L.slice(half).map(a).join('')+`<button type="button" class="morebtn ${moreOn?'on':''}" id="sp-more" aria-haspopup="true">More${ic('down')}</button>`; };
 const toolRow=t=>t[4]?`<span class="mi soon-i">${ic(t[3])}<span>${t[2]}</span><span class="soon">Soon</span></span>`:`<a class="mi" href="${t[1]}">${ic(t[3])}<span>${t[2]}</span></a>`;
