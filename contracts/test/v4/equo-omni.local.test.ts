@@ -165,14 +165,16 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
       expect(ps.tickUpper).to.equal(pf.tickUpper);
       const ratio = Number(pf.liquidity) / Number(ps.liquidity);
       expect(ratio).to.be.closeTo(3, 0.001);
-      total += await coins[i].totalSupply();
+      total += await coins[i].localSupply();
     }
     expect(SUPPLY - total).to.be.lt(3n); // 1B total, less the integer rounding of a third
     // a bridge moves coins between chains and never changes the total
     const bal = await coins[0].balanceOf(env.creator.address);
     await bridge(coins[0], env.creator, EIDS[1], env.trader.address, bal / 2n);
     let after = 0n;
-    for (const c of coins) after += await c.totalSupply();
+    for (const c of coins) after += await c.localSupply();
+    // trackers keep reading each chain's launch slice, however the coins moved
+    for (const c of coins) expect(await c.totalSupply()).to.equal(third);
     expect(after).to.equal(total);
     // the takeover stake follows the chain's supply: 5% of a third
     expect(await env.chains[0].factory.launchSupplyOf(addrs[0]) / 20n).to.equal(third / 20n);
@@ -196,15 +198,18 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     const sent = (amount / 10n ** 12n) * 10n ** 12n; // shared decimals 6: dust stays with the sender
     const received = ((sent - (sent * 20n) / 10_000n) / 10n ** 12n) * 10n ** 12n;
 
-    const total0 = (await coins[0].totalSupply()) + (await coins[1].totalSupply());
+    const total0 = (await coins[0].localSupply()) + (await coins[1].localSupply());
     await bridge(coins[0], creator, EIDS[1], trader.address, amount);
 
     expect(await coins[0].balanceOf(creator.address)).to.equal(bal - sent);
     expect(await coins[0].balanceOf(feeWallet.address)).to.equal(sent - received);
     expect(await coins[1].balanceOf(trader.address)).to.equal(received);
-    expect(await coins[0].totalSupply()).to.equal(SUPPLY - received);
-    expect(await coins[1].totalSupply()).to.equal(SUPPLY + received);
-    expect((await coins[0].totalSupply()) + (await coins[1].totalSupply())).to.equal(total0);
+    expect(await coins[0].localSupply()).to.equal(SUPPLY - received);
+    expect(await coins[1].localSupply()).to.equal(SUPPLY + received);
+    // what trackers read stays at each chain's 1B launch slice
+    expect(await coins[0].totalSupply()).to.equal(SUPPLY);
+    expect(await coins[1].totalSupply()).to.equal(SUPPLY);
+    expect((await coins[0].localSupply()) + (await coins[1].localSupply())).to.equal(total0);
 
     // sell the bridged coins into the destination chain's own pool
     const r1 = chains[1].router;

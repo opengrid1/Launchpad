@@ -185,11 +185,15 @@ describe("Equo: v2 invariants carried over (local)", function () {
     const genes = { ...FLAT, buybackShareBps: 2_000, buybackThreshold: 1_000n, divShareBps: 3_000 };
     const token = await launch(factory, creator, genes, ethers.parseEther("1"), "B");
     const coin = await ethers.getContractAt("EquoDivToken", token);
-    const supplyBefore = await coin.totalSupply();
+    const supplyBefore = await coin.totalSupply(), burnedBefore = await coin.burned(); // the launch's own first buy may already burn
 
     // the first taxed buy tips the pot past its 1000-wei threshold: an automatic buy-and-burn
     await expect(router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).to.emit(hook, "BuybackBurned");
     expect(await coin.totalSupply()).to.be.lt(supplyBefore);
+    // the burn shows in what trackers read, and matches the coins actually destroyed on this chain
+    expect((await coin.burned()) - burnedBefore).to.equal(supplyBefore - (await coin.totalSupply()));
+    expect(await coin.totalSupply()).to.equal((await coin.launchSlice()) - (await coin.burned()));
+    expect(await coin.localSupply()).to.equal(await coin.totalSupply());
 
     await (await router.connect(trader).buy(token, "0x", 0, ethers.ZeroAddress, { value: ethers.parseEther("1") })).wait();
     expect(await hook.dividendPot(token)).to.be.gt(0n);

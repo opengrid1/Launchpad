@@ -93,6 +93,14 @@ chain's wallets, explorers and trading bots.
 - `test/v4/equo-same-address.local.test.ts` deploys two chains with different endpoints, WETH, PoolManagers and hooks
   and gets the same coin address on both, plain and with holder rewards.
 
+## The supply trackers read
+
+`totalSupply()` on each chain reports that chain's launch slice (`launchSlice`: 1B, or 1B / N in split mode) less
+the coins burned there by buybacks (`burned`). It does not follow bridging: the sum of balances on a chain moves
+every time coins cross, and price times that figure would give every chain a different, drifting market cap at one
+price. What is actually on the chain is `localSupply()`. Across all chains the `localSupply()` figures always sum
+to the total launched, less burns; the bridge burns on one side exactly what it mints on the other.
+
 ## One pool, trade from any chain
 
 Every coin has one pool, on Ethereum. Traders on other EVM chains reach it without holding ETH on Ethereum:

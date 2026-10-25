@@ -35,6 +35,10 @@ contract EquoToken is OFT, ERC20Permit {
     string private _metadataURI;
     /// @notice Receives the 0.2% bridge fee.
     address public immutable bridgeFeeTo;
+    /// @notice What this chain minted at launch: 1B, or 1B / N for a coin whose supply is split across N chains.
+    uint256 public immutable launchSlice;
+    /// @notice Coins burned on this chain with {burn} (the hook's buyback burns). Bridge transfers are not counted.
+    uint256 public burned;
 
     event BridgeFee(address indexed from, uint256 amount);
 
@@ -45,7 +49,22 @@ contract EquoToken is OFT, ERC20Permit {
     {
         (,, bridgeFeeTo) = IEquoTokenPending(msg.sender).pendingLz();
         _metadataURI = IEquoTokenPending(msg.sender).pendingMetadataURI();
-        _mint(_wiringOwner(), IEquoTokenPending(msg.sender).pendingSupply());
+        launchSlice = IEquoTokenPending(msg.sender).pendingSupply();
+        _mint(_wiringOwner(), launchSlice);
+    }
+
+    /// @notice The supply trackers and explorers read: this chain's launch slice, less what was burned here.
+    /// @dev Not the sum of the balances on this chain, which moves every time coins bridge in or out: price times
+    ///      that figure would give every chain a different, drifting market cap at one price. Reporting the launch
+    ///      slice keeps each chain's figure steady (1B per chain, or 1B / N in split mode), while real burns still
+    ///      show. What is actually on this chain right now is {localSupply}.
+    function totalSupply() public view override returns (uint256) {
+        return launchSlice - burned;
+    }
+
+    /// @notice The coins on this chain right now: the sum of its balances. Moves as coins bridge in and out.
+    function localSupply() external view returns (uint256) {
+        return super.totalSupply();
     }
 
     function _endpoint() private view returns (address e) {
@@ -63,6 +82,7 @@ contract EquoToken is OFT, ERC20Permit {
     /// @notice Burn coins you hold. The hook burns buyback coins this way.
     function burn(uint256 amount) external {
         _burn(msg.sender, amount);
+        burned += amount;
     }
 
     /// @dev Quote side of a bridge transfer: 0.2% of the amount stays behind as the bridge fee.
