@@ -31,7 +31,9 @@ describe("Equo: v2 invariants carried over (local)", function () {
   async function deployStack() {
     const [admin, creator, trader, feeWallet, outsider] = await ethers.getSigners();
 
-    const weth = await (await ethers.getContractFactory("WETH9")).deploy();
+    let weth = await (await ethers.getContractFactory("WETH9")).deploy();
+    // like every real wrapped native, WETH must sit above the coin address ceiling (0x1000…)
+    while (BigInt(await weth.getAddress()) < 2n ** 156n) weth = await (await ethers.getContractFactory("WETH9")).deploy();
     await weth.waitForDeployment();
     const WETH = await weth.getAddress();
 
@@ -60,7 +62,8 @@ describe("Equo: v2 invariants carried over (local)", function () {
     const hook = await ethers.getContractAt("EquoHook", hookAddr);
 
     const endpoint = await (await ethers.getContractFactory("EndpointV2Mock")).deploy(30101);
-    const tokenDeployer = await (await ethers.getContractFactory("EquoTokenDeployer")).deploy(admin.address, await endpoint.getAddress());
+    const tokenDeployer = await (await ethers.getContractFactory("EquoTokenDeployer")).deploy(admin.address, admin.address);
+    await (await tokenDeployer.setEndpoint(await endpoint.getAddress())).wait();
     const TD = await tokenDeployer.getAddress();
     const plainCreator = await (await ethers.getContractFactory("EquoTokenCreator")).deploy(TD);
     const divCreator = await (await ethers.getContractFactory("EquoDivTokenCreator")).deploy(TD);

@@ -20,10 +20,18 @@ interface IEquoOFT {
 /// @title EquoTokenDeployer
 /// @notice Creates Equo coins for the factory and wires them to their copies on the other chains.
 ///
-///         A coin is created by one of two creator contracts (plain, or with holder rewards), at the first salt
-///         derived from the launch salt whose address sorts below the pair token, so the coin is always currency0
-///         in its pool. The address is predictable off-chain with the same loop, which is how a launch on several
-///         chains knows every chain's address before any of them exists.
+///         ONE COIN, ONE ADDRESS ON EVERY CHAIN. A coin is created by one of two creator contracts (plain, or with
+///         holder rewards) with CREATE2, so its address depends only on the creator's address, the salt and the
+///         coin's creation code:
+///           - the coin's creation code is the same everywhere: everything that differs per chain (endpoint,
+///             supply slice, pair, wiring) is read back from the deployer during construction;
+///           - this contract and the creators sit at the same address on every chain: deployed through the
+///             deterministic CREATE2 deployer with constructor arguments that are the same everywhere (the
+///             endpoint, which differs, is set once afterwards with {setEndpoint});
+///           - the salt is the first one derived from the launch salt whose address is below {ADDRESS_CEILING},
+///             a constant, rather than below the chain's own pair token, so every chain picks the same salt.
+///         The ceiling sits below every chain's wrapped native token, so the coin is still always currency0 in its
+///         pool; {deploy} checks that against the actual pair too.
 ///
 ///         Right after creation the coin is linked to its peers on the other chains, with the executor gas and the
 ///         message library and verifier setup the admin pinned for each chain. This contract stays the coin's
@@ -32,13 +40,18 @@ interface IEquoOFT {
 contract EquoTokenDeployer {
     uint256 internal constant MAX_TRIES = 512;
     uint16 internal constant MSG_SEND = 1;
+    /// @notice Every coin's address is below this on every chain (one in sixteen addresses qualify). Below every
+    ///         wrapped native token Equo pairs with, so the coin is always currency0.
+    address public constant ADDRESS_CEILING = 0x1000000000000000000000000000000000000000;
 
     /// @notice Sets up creators, the factory and chain routes, and adds peers for new chains; nothing else about
     ///         a launched coin.
     address public immutable admin;
     /// @notice The account that deployed this contract may also do the setup below until it calls {endSetup}.
     address public setupBy;
-    ILayerZeroEndpointV2 public immutable endpoint;
+    /// @notice This chain's LayerZero endpoint. Set once by {setEndpoint}, not in the constructor, so the
+    ///         constructor arguments, and with them this contract's address, are the same on every chain.
+    ILayerZeroEndpointV2 public endpoint;
     address public factory;
     address public tokenCreator;
     address public divTokenCreator;
@@ -73,6 +86,7 @@ contract EquoTokenDeployer {
 
     Init private _pending;
 
+    event EndpointSet(address indexed endpoint);
     event FactorySet(address indexed factory);
     event SetupEnded();
     event CreatorsSet(address tokenCreator, address divTokenCreator);
@@ -90,11 +104,13 @@ contract EquoTokenDeployer {
     error PeerExists();
     error NotCoin();
 
-    constructor(address admin_, address endpoint_) {
-        if (admin_ == address(0) || endpoint_ == address(0)) revert ZeroAddress();
+    /// @param admin_ The admin, the same on every chain.
+    /// @param setupBy_ The deploying account, the same on every chain: it does the one-time setup until
+    ///        {endSetup}. Passed in rather than read from msg.sender, which is the CREATE2 deployer.
+    constructor(address admin_, address setupBy_) {
+        if (admin_ == address(0)) revert ZeroAddress();
         admin = admin_;
-        endpoint = ILayerZeroEndpointV2(endpoint_);
-        setupBy = msg.sender;
+        setupBy = setupBy_;
     }
 
     modifier onlyAdmin() {
@@ -116,6 +132,14 @@ contract EquoTokenDeployer {
     // ---------------------------------------------------------------------
     // One-time setup and chain routes (admin)
     // ---------------------------------------------------------------------
+
+    /// @notice This chain's LayerZero endpoint, once.
+    function setEndpoint(address endpoint_) external onlySetup {
+        if (address(endpoint) != address(0)) revert AlreadySet();
+        if (endpoint_ == address(0)) revert ZeroAddress();
+        endpoint = ILayerZeroEndpointV2(endpoint_);
+        emit EndpointSet(endpoint_);
+    }
 
     function setFactory(address factory_) external onlySetup {
         if (factory != address(0)) revert AlreadySet();
@@ -181,15 +205,20 @@ contract EquoTokenDeployer {
     // Create and wire
     // ---------------------------------------------------------------------
 
-    /// @notice The address a coin with launch salt `salt` gets on this chain for pair `pairAsset`. Mirrors
-    ///         {deploy}; off-chain code computes the same thing for every chain before a multichain launch.
+    /// @notice The address a coin with launch salt `salt` gets. The same on every chain where this contract and
+    ///         its creators sit at their shared addresses: the rule does not depend on the chain. `pairAsset` is
+    ///         only checked, never part of the choice. Mirrors {deploy}.
     function predict(bytes32 salt, address pairAsset, bool dividends) public view returns (address a, bytes32 s) {
         address c = dividends ? divTokenCreator : tokenCreator;
         bytes32 h = IEquoCreator(c).initCodeHash();
         for (uint256 i; i < MAX_TRIES; i++) {
             s = keccak256(abi.encode(salt, i));
             a = address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), c, s, h)))));
-            if (a < pairAsset && a.code.length == 0) return (a, s);
+            if (a < ADDRESS_CEILING) {
+                // the coin must sort below its pair to be currency0; every wrapped native sits above the ceiling
+                if (a >= pairAsset) revert NoSalt();
+                return (a, s);
+            }
         }
         revert NoSalt();
     }
@@ -198,7 +227,7 @@ contract EquoTokenDeployer {
     ///         (abi.encode(uint32[] eids, bytes32[] peers); empty for a coin on this chain only).
     function deploy(bytes32 salt, Init calldata p, bytes calldata peers) external returns (address a) {
         if (msg.sender != factory) revert NotFactory();
-        if (p.bridgeFeeTo == address(0)) revert ZeroAddress();
+        if (p.bridgeFeeTo == address(0) || address(endpoint) == address(0)) revert ZeroAddress();
         (address predicted, bytes32 s) = predict(salt, p.pairAsset, p.dividends);
         _pending = p;
         a = IEquoCreator(p.dividends ? divTokenCreator : tokenCreator).create(s);

@@ -34,7 +34,9 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
 
   async function deployChain(eid: number) {
     const [admin, , , feeWallet] = await ethers.getSigners();
-    const weth = await (await ethers.getContractFactory("WETH9")).deploy();
+    let weth = await (await ethers.getContractFactory("WETH9")).deploy();
+    // like every real wrapped native, WETH must sit above the coin address ceiling (0x1000…)
+    while (BigInt(await weth.getAddress()) < 2n ** 156n) weth = await (await ethers.getContractFactory("WETH9")).deploy();
     const WETH = await weth.getAddress();
     const art = JSON.parse(readFileSync(join(__dirname, "../../../node_modules/@uniswap/v4-core/out/PoolManager.sol/PoolManager.json"), "utf8"));
     const pm = await new ethers.ContractFactory(art.abi, art.bytecode.object, admin).deploy(admin.address);
@@ -55,7 +57,8 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     const hook = await ethers.getContractAt("EquoHook", hookAddr);
 
     const endpoint = await (await ethers.getContractFactory("EndpointV2Mock")).deploy(eid);
-    const tokenDeployer = await (await ethers.getContractFactory("EquoTokenDeployer")).deploy(admin.address, await endpoint.getAddress());
+    const tokenDeployer = await (await ethers.getContractFactory("EquoTokenDeployer")).deploy(admin.address, admin.address);
+    await (await tokenDeployer.setEndpoint(await endpoint.getAddress())).wait();
     const TD = await tokenDeployer.getAddress();
     const plain = await (await ethers.getContractFactory("EquoTokenCreator")).deploy(TD);
     const div = await (await ethers.getContractFactory("EquoDivTokenCreator")).deploy(TD);
@@ -122,7 +125,9 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     return (await coin.connect(from).send(sp, fee, from.address, { value: fee.nativeFee })).wait();
   }
 
-  it("gives each chain its own coin address, launches on all three and wires every peer at birth", async () => {
+  // the three "chains" here share one EVM, so their token deployers (and coin addresses) differ; on real chains the
+  // deployer sits at one address everywhere and the coin does too (equo-same-address.local.test.ts)
+  it("launches on all three chains and wires every peer at birth", async () => {
     const env = await deployAll();
     const { addrs, coins } = await launchEverywhere(env, FLAT, "A");
     expect(new Set(addrs.map((a) => a.toLowerCase())).size).to.equal(3);
@@ -265,7 +270,7 @@ describe("Equo omnichain: one coin on three chains (local)", function () {
     expect(await coins[0].peers(30184)).to.equal(base);
     await expect(td.connect(admin).addPeer(addrs[0], 30184, pad(outsider.address))).to.be.revertedWithCustomError(td, "PeerExists");
     // the deploying account can set routes only until it ends its setup; the admin always can
-    const fresh = await (await ethers.getContractFactory("EquoTokenDeployer")).connect(outsider).deploy(admin.address, await chains[0].endpoint.getAddress());
+    const fresh = await (await ethers.getContractFactory("EquoTokenDeployer")).connect(outsider).deploy(admin.address, outsider.address);
     const route = { sendLib: ethers.ZeroAddress, receiveLib: ethers.ZeroAddress, sendConfig: "0x", receiveConfig: "0x" };
     await (await fresh.connect(outsider).setRoute(30184, route)).wait();
     await (await fresh.connect(outsider).endSetup()).wait();

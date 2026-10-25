@@ -45,6 +45,25 @@ function mine(deployer: string, initCodeHash: string): { addr: string; salt: str
   throw new Error("hook salt not found");
 }
 
+/// The deterministic CREATE2 deployer (present on every Equo chain; checked 2026-10-25). Calldata is the 32-byte salt
+/// followed by the init code; the contract lands at create2(proxy, salt, keccak(initCode)).
+const CREATE2_PROXY = "0x4e59b44847b379578588920cA78FbF26c0B4956C";
+const CREATE2_PROXY_RUNTIME =
+  "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3";
+
+/// Deploy `name` through the CREATE2 deployer, or reuse it if it is already there (the same address on every chain).
+async function create2Deploy(name: string, argTypes: string[], args: any[], saltLabel: string): Promise<string> {
+  const f = await ethers.getContractFactory(name);
+  const initCode = ethers.concat([f.bytecode, ethers.AbiCoder.defaultAbiCoder().encode(argTypes, args)]);
+  const salt = ethers.id(saltLabel);
+  const addr = ethers.getCreate2Address(CREATE2_PROXY, salt, ethers.keccak256(initCode));
+  if ((await ethers.provider.getCode(addr)).length > 2) { console.log(`${name}: already at ${addr}`); return addr; }
+  const [signer] = await ethers.getSigners();
+  await (await signer.sendTransaction({ to: CREATE2_PROXY, data: ethers.concat([salt, initCode]) })).wait();
+  if ((await ethers.provider.getCode(addr)).length <= 2) throw new Error(`${name}: CREATE2 deploy did not land at ${addr}`);
+  return addr;
+}
+
 function need(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`${name} is required`);
@@ -63,7 +82,8 @@ async function main() {
   if (dry) {
     // a self-contained local stack so the exact deploy steps can be rehearsed
     admin = deployer.address;
-    const w = await (await ethers.getContractFactory("WETH9")).deploy();
+    let w = await (await ethers.getContractFactory("WETH9")).deploy();
+    while (BigInt(await w.getAddress()) < 2n ** 156n) w = await (await ethers.getContractFactory("WETH9")).deploy(); // above the coin address ceiling, like every real wrapped native
     weth = await w.getAddress();
     const art = JSON.parse(readFileSync(join(__dirname, "../../node_modules/@uniswap/v4-core/out/PoolManager.sol/PoolManager.json"), "utf8"));
     const pm = await new ethers.ContractFactory(art.abi, art.bytecode.object, deployer).deploy(deployer.address);
@@ -73,7 +93,10 @@ async function main() {
     oracle = await o.getAddress();
     const ep = await (await ethers.getContractFactory("EndpointV2Mock")).deploy(30101);
     endpoint = await ep.getAddress();
+    // the local chain has no CREATE2 deployer: put the standard one at its usual address
+    await network.provider.send("hardhat_setCode", [CREATE2_PROXY, CREATE2_PROXY_RUNTIME]);
   } else {
+    if ((await ethers.provider.getCode(CREATE2_PROXY)).length <= 2) throw new Error(`no CREATE2 deployer at ${CREATE2_PROXY} on this chain`);
     admin = need("ONEHOOK_ADMIN");
     oracle = process.env.EQUO_PRICE_BOOK === "1" ? "" : need("ONEHOOK_ORACLE");
     poolManager = mainnet ? ethers.getAddress(process.env.POOL_MANAGER ?? "0x000000000004444c5dc75cB358380D2e3dE08A90") : need("POOL_MANAGER");
@@ -108,16 +131,17 @@ async function main() {
     oracle = await book.getAddress();
     console.log("EquoPriceBook:", oracle);
   }
-  const tokenDeployer = await (await ethers.getContractFactory("EquoTokenDeployer")).deploy(admin, endpoint);
-  await tokenDeployer.waitForDeployment();
-  const tokenDeployerAddr = await tokenDeployer.getAddress();
-  console.log("EquoTokenDeployer:", tokenDeployerAddr);
-  const plainCreator = await (await ethers.getContractFactory("EquoTokenCreator")).deploy(tokenDeployerAddr);
-  await plainCreator.waitForDeployment();
-  const divCreator = await (await ethers.getContractFactory("EquoDivTokenCreator")).deploy(tokenDeployerAddr);
-  await divCreator.waitForDeployment();
-  const plainCreatorAddr = await plainCreator.getAddress(), divCreatorAddr = await divCreator.getAddress();
-  console.log("EquoTokenCreator:", plainCreatorAddr, " EquoDivTokenCreator:", divCreatorAddr);
+  // The token deployer and the two creators go through the deterministic CREATE2 deployer with fixed salts and
+  // constructor arguments that are the same on every chain (admin, deployer), so they sit at the same addresses
+  // everywhere, and with them every coin. The deployer key must be the same on every chain.
+  const TD_ADDR = await create2Deploy("EquoTokenDeployer", ["address", "address"], [admin, deployer.address], "equo.tokenDeployer.v1");
+  const tokenDeployer = await ethers.getContractAt("EquoTokenDeployer", TD_ADDR);
+  const tokenDeployerAddr = TD_ADDR;
+  console.log("EquoTokenDeployer:", tokenDeployerAddr, "(same address on every chain)");
+  if ((await tokenDeployer.endpoint()) === ethers.ZeroAddress) await (await tokenDeployer.setEndpoint(endpoint)).wait();
+  const plainCreatorAddr = await create2Deploy("EquoTokenCreator", ["address"], [tokenDeployerAddr], "equo.tokenCreator.v1");
+  const divCreatorAddr = await create2Deploy("EquoDivTokenCreator", ["address"], [tokenDeployerAddr], "equo.divTokenCreator.v1");
+  console.log("EquoTokenCreator:", plainCreatorAddr, " EquoDivTokenCreator:", divCreatorAddr, "(same on every chain)");
 
   const rules = await (await ethers.getContractFactory("EquoLaunchRules")).deploy();
   await rules.waitForDeployment();
@@ -136,7 +160,7 @@ async function main() {
   console.log("EquoRouter:", routerAddr);
 
   // 4. Wiring (each one-time).
-  await (await tokenDeployer.setCreators(plainCreatorAddr, divCreatorAddr)).wait();
+  if ((await tokenDeployer.tokenCreator()) === ethers.ZeroAddress) await (await tokenDeployer.setCreators(plainCreatorAddr, divCreatorAddr)).wait();
   await (await tokenDeployer.setFactory(factoryAddr)).wait();
   await (await hook.setFactory(factoryAddr)).wait();
   await (await factory.setConverter(routerAddr)).wait();
@@ -186,7 +210,7 @@ async function main() {
   console.log(`  npx hardhat verify --network ${network.name} ${c2Addr}`);
   console.log(`  npx hardhat verify --network ${network.name} ${hookAddr} ${poolManager} ${weth}`);
   if (process.env.EQUO_PRICE_BOOK === "1") console.log(`  npx hardhat verify --network ${network.name} ${oracle} ${admin}`);
-  console.log(`  npx hardhat verify --network ${network.name} ${tokenDeployerAddr} ${admin} ${endpoint}`);
+  console.log(`  npx hardhat verify --network ${network.name} ${tokenDeployerAddr} ${admin} ${deployer.address}`);
   console.log(`  npx hardhat verify --network ${network.name} ${plainCreatorAddr} ${tokenDeployerAddr}`);
   console.log(`  npx hardhat verify --network ${network.name} ${divCreatorAddr} ${tokenDeployerAddr}`);
   console.log(`  npx hardhat verify --network ${network.name} ${rulesAddr}`);

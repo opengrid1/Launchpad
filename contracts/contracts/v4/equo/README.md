@@ -76,6 +76,23 @@ Other findings (no change needed):
 - `genesOf` and `stagesOf` are read from the hook only; the factory no longer duplicates them, to stay
   under the contract size limit.
 
+## One coin, one address on every chain
+
+A coin launched on several chains has the same contract address on all of them, so one address works in every
+chain's wallets, explorers and trading bots.
+
+- The coin's creation code is identical everywhere: everything that differs per chain (endpoint, supply slice, pair,
+  wiring) is read back from the token deployer during construction.
+- `EquoTokenDeployer` and the two creators are deployed through the deterministic CREATE2 deployer
+  (`0x4e59b44847b379578588920cA78FbF26c0B4956C`, present on all eight target chains) with fixed salts and constructor
+  arguments that are the same everywhere: the admin and the deploying account. The chain's LayerZero endpoint is set
+  once afterwards with `setEndpoint`. The same deployer key must be used on every chain.
+- The salt is the first one derived from the creator-bound launch salt whose address is below
+  `ADDRESS_CEILING` (`0x1000…0000`), a constant, so every chain picks the same one. Every wrapped native sits above
+  the ceiling, so the coin is always currency0 in its pool; `predict` also checks against the actual pair.
+- `test/v4/equo-same-address.local.test.ts` deploys two chains with different endpoints, WETH, PoolManagers and hooks
+  and gets the same coin address on both, plain and with holder rewards.
+
 ## One pool, trade from any chain
 
 Every coin has one pool, on Ethereum. Traders on other EVM chains reach it without holding ETH on Ethereum:
