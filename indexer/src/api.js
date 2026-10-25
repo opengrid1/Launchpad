@@ -1,6 +1,7 @@
 import http from "node:http";
 import { q } from "./db.js";
 import { settings } from "./config.js";
+import { poolOf } from "./pools.js";
 
 /* Read-only HTTP API over the indexed data. Every coin can be addressed by any of its contract addresses
    (on any chain) or by its coin id. Prices are USD per whole coin; volumes are USD. */
@@ -82,6 +83,27 @@ export function makeHandler(chains) {
       if (!c) throw new HttpError(404, "unknown coin");
       const h = await q(`select count(distinct b.wallet)::int n from balances b join tokens t on t.chain = b.chain and t.token = b.token where t.coin_id = $1 and b.balance > 0 and not (b.wallet = any($2))`, [id, SYSTEM]);
       c.holders = h.rows[0].n;
+      // each chain's pool, read live: the coin page's combined liquidity and its Pools tab
+      const px = await q(`select distinct on (chain, pair) chain, pair, usd18 from pair_prices where pair = any($1) order by chain, pair, ts desc`, [Object.values(c.chains).map((x) => x.pair)]);
+      const usdOf = (k, pair) => { const r = px.rows.find((p) => p.chain === k && p.pair === pair); return r ? Number(r.usd18) / 1e18 : null; };
+      const byKey = Object.fromEntries(chains.map((ch) => [ch.key, ch]));
+      const pools = await Promise.allSettled(Object.entries(c.chains).map(([k, x]) => {
+        const ch = byKey[k];
+        if (!ch || !ch.factory || !ch.poolManager) return Promise.reject(new Error("no chain settings"));
+        return Promise.race([poolOf(ch, x.token, x.poolId, usdOf(k, x.pair)), new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 6000))]).then((p) => [k, p]);
+      }));
+      let liq = 0, pairUsdAll = 0, live = 0;
+      for (const r of pools) {
+        if (r.status !== "fulfilled") continue;
+        const [k, p] = r.value;
+        c.chains[k].pool = p;
+        if (p.liquidityUsd != null) { liq += p.liquidityUsd; pairUsdAll += p.pairUsd || 0; }
+        if (p.state === "live") live++;
+      }
+      for (const k of Object.keys(c.chains)) if (!c.chains[k].pool) c.chains[k].pool = { state: "not answering" };
+      c.liquidity = liq || null; // both sides of every pool, in USD
+      c.liquidityPair = pairUsdAll || null; // the native side only, in USD
+      c.poolsLive = live;
       return c;
     },
 
