@@ -1,61 +1,119 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Analytics | Equo</title><meta name="description" content="Volume, fees, trades and launches per day on Equo, by coin.">
+<title>Analytics | Equo</title><meta name="description" content="Volume, fees, trades and launches on Equo, on every chain, read live.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
 <meta property="og:title" content="Analytics | Equo"><meta property="og:image" content="/img/og.png?v=16"><meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Bowlby+One&family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/ui.css?v=22">
 <style>
-#pg-analytics .ph{padding:6px 0 18px;margin:0}
-#pg-analytics .kp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-#pg-analytics .kpi{padding:16px 18px 12px} #pg-analytics .kpi .top{display:flex;align-items:baseline;justify-content:space-between;gap:10px} #pg-analytics .kpi b{display:block;font:600 24px/1.1 var(--mono);margin-top:6px;letter-spacing:-.01em} #pg-analytics .kpi .d{font:11.5px var(--mono);color:var(--fg-3);text-align:right;line-height:1.5} #pg-analytics .kpi .d em{font-style:normal;color:var(--fg-2)}
-#pg-analytics .ch{margin-top:14px;height:84px} #pg-analytics .ch svg{width:100%;height:84px;display:block} #pg-analytics .ch rect{fill:var(--ac);opacity:.55} #pg-analytics .ch rect.last{opacity:1} #pg-analytics .ch rect:hover{opacity:1} #pg-analytics .ch line{stroke:var(--line-2);stroke-dasharray:3 3}
-#pg-analytics .ax{display:flex;justify-content:space-between;font:10.5px var(--mono);color:var(--fg-3);margin-top:6px}
-#pg-analytics .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-#pg-analytics .panel .ph2{font:600 15px var(--disp)} #pg-analytics .panel .ph2 .seg button{font-family:var(--disp)}
-#pg-analytics .tb th:first-child,#pg-analytics .tb td:first-child{padding-left:16px} #pg-analytics .tb th:last-child,#pg-analytics .tb td:last-child{padding-right:16px}
-#pg-analytics .sc{display:flex;align-items:center;gap:10px} #pg-analytics .sc img{width:28px;height:28px;border-radius:50%;background:#fff} #pg-analytics .sc b{display:block;font-weight:600} #pg-analytics .sc small{display:block;color:var(--fg-3);font:11px var(--mono)}
-#pg-analytics .feed{display:flex;flex-direction:column} #pg-analytics .fr{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13px} #pg-analytics .fr:last-child{border-bottom:0}
-#pg-analytics .fr .coin .lg{width:28px;height:28px} #pg-analytics .fr .coin b{font-size:13px} #pg-analytics .fr .coin small{font-size:11px}
-#pg-analytics .fr .v{font:500 13px var(--mono);text-align:right} #pg-analytics .fr .v small{display:block;font-size:11px;color:var(--fg-3);font-weight:400} #pg-analytics .fr .t{font:11px var(--mono);color:var(--fg-3);text-align:right;white-space:nowrap}
-#pg-analytics tr.new td{animation:akflash 1.2s ease-out} @keyframes akflash{from{background:var(--ac-dim)}to{background:transparent}}
-#pg-analytics .bar.h{height:4px;margin-top:6px;background:var(--s4)} #pg-analytics .bar.h i{background:var(--ac)}
-#pg-analytics .fsplit{display:flex;height:8px;margin:14px 16px 0;border-radius:999px;overflow:hidden;background:var(--s4)} #pg-analytics .fsplit i{display:block;height:100%} #pg-analytics .fsplit .c{background:var(--ac)} #pg-analytics .fsplit .h{background:var(--amber)} #pg-analytics .fsplit .p{background:var(--fg-3)} #pg-analytics .fsplit .b{background:var(--dn)}
-#pg-analytics .fboxes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 16px 16px}
-#pg-analytics .fbox{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--s2)} #pg-analytics .fbox .lab{display:flex;align-items:center;gap:7px} #pg-analytics .fbox .lab i{width:8px;height:8px;border-radius:2px;display:inline-block} #pg-analytics .fbox b{display:block;font:600 20px/1.1 var(--mono);margin-top:8px} #pg-analytics .fbox small{display:block;font:11.5px var(--mono);color:var(--fg-3);margin-top:6px;line-height:1.5}
-#pg-analytics .sp4{display:inline-flex;height:6px;width:110px;border-radius:999px;overflow:hidden;background:var(--s4);vertical-align:middle} #pg-analytics .sp4 i{display:block;height:100%} #pg-analytics .sp4 .c{background:var(--ac)} #pg-analytics .sp4 .h{background:var(--amber)} #pg-analytics .sp4 .p{background:var(--fg-3)} #pg-analytics .sp4 .b{background:var(--dn)}
-#pg-analytics .tb td .sp4{margin-right:8px}
-@media(max-width:1100px){#pg-analytics .kp{grid-template-columns:1fr 1fr}}
-@media(max-width:1100px){#pg-analytics .fboxes{grid-template-columns:1fr 1fr}}
-@media(max-width:700px){#pg-analytics #an-rwk{grid-template-columns:1fr 1fr} #pg-analytics #an-rwk .fbox b{font-size:17px} #pg-analytics .kp{grid-template-columns:1fr} #pg-analytics .fboxes{grid-template-columns:1fr} #pg-analytics .two{grid-template-columns:1fr} #pg-analytics .ph{flex-direction:column;align-items:flex-start}}
+#pg-analytics{--chunk:"Bowlby One","Inter Tight",Impact,sans-serif;--tight:"Inter Tight",Inter,sans-serif;font-variant-numeric:tabular-nums;padding-top:8px}
+/* head */
+#pg-analytics .hd{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:10px 0 22px}
+#pg-analytics .live{display:inline-flex;align-items:center;gap:8px;font:600 12px var(--tight);color:var(--up);background:var(--up-dim);border:1px solid rgba(46,189,133,.3);padding:4px 10px;border-radius:999px;letter-spacing:.02em}
+#pg-analytics .live i{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 0 rgba(46,189,133,.6);animation:anPing 1.8s infinite}
+@keyframes anPing{0%{box-shadow:0 0 0 0 rgba(46,189,133,.55)}80%,100%{box-shadow:0 0 0 7px rgba(46,189,133,0)}}
+#pg-analytics h1{margin:12px 0 0;font:400 clamp(36px,4.2vw,58px)/.95 var(--chunk);text-transform:uppercase;color:#bfeaff;text-shadow:0 1px 0 #8fd8ff,0 3px 0 #3fbcff,0 5px 0 #2aa3ea,0 7px 0 #1b86cf,0 9px 0 #136cb0,0 20px 26px rgba(0,0,0,.6)}
+#pg-analytics .hd p{margin:16px 0 0;color:var(--fg-2);font:500 15px var(--tight)}
+#pg-analytics .sg{display:inline-flex;background:var(--s2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
+#pg-analytics .sg button{all:unset;cursor:pointer;padding:0 14px;height:32px;display:inline-flex;align-items:center;border-radius:9px;font:600 13px var(--tight);color:var(--fg-3);transition:color .15s,background .15s}
+#pg-analytics .sg button:hover{color:var(--fg)} #pg-analytics .sg button.on{background:var(--s4);color:var(--fg)}
+#pg-analytics .sg.sm button{height:28px;padding:0 11px;font-size:12px}
+#pg-analytics .hd .sg button.on{background:var(--ac);color:var(--ac-ink)}
+/* cards */
+#pg-analytics .card{background:var(--s1);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+#pg-analytics .ch2{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 18px 0}
+#pg-analytics .ch2 h2{margin:0;font:700 17px var(--tight);letter-spacing:-.01em}
+#pg-analytics .tot{display:flex;align-items:baseline;gap:8px;padding:4px 18px 0} #pg-analytics .tot b{font:700 30px/1.15 var(--tight);letter-spacing:-.02em} #pg-analytics .tot span{color:var(--fg-3);font-size:13px}
+/* band */
+#pg-analytics .band{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:var(--s1);border:1px solid var(--line);border-radius:18px;overflow:hidden;position:relative}
+#pg-analytics .band::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 160px at 10% 0%,rgba(63,188,255,.10),transparent 70%);pointer-events:none}
+#pg-analytics .st{padding:18px 20px;border-right:1px solid var(--line);min-width:0;position:relative} #pg-analytics .st:last-child{border-right:0}
+#pg-analytics .st .l{font:600 12.5px var(--tight);color:var(--fg-3)} #pg-analytics .st b{display:block;font:700 30px/1.15 var(--tight);letter-spacing:-.02em;margin:6px 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-analytics .st .d{display:flex;align-items:center;gap:6px;min-height:20px} #pg-analytics .st .d small{font-size:11.5px;color:var(--fg-3)}
+#pg-analytics em{font-style:normal;font:600 12px var(--tight);padding:2px 7px;border-radius:6px} #pg-analytics em.up{color:var(--up);background:var(--up-dim)} #pg-analytics em.dn{color:var(--dn);background:var(--dn-dim)}
+#pg-analytics .up{color:var(--up)} #pg-analytics .dn{color:var(--dn)}
+/* grid */
+#pg-analytics .g2{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:14px;margin-top:14px} #pg-analytics .feedc{position:relative;min-height:440px} #pg-analytics .feedc .feed{position:absolute;top:58px;left:0;right:0;bottom:0;max-height:none}
+/* chart */
+#pg-analytics #an-chart{position:relative;flex:1;min-height:300px;margin:6px 10px 10px 14px;cursor:crosshair}
+#pg-analytics #an-chart svg{display:block} #pg-analytics #an-chart .g{stroke:var(--line);stroke-dasharray:2 5} #pg-analytics #an-chart .base{stroke:var(--line-2)}
+#pg-analytics #an-chart text{fill:var(--fg-3);font:500 11px var(--tight)} #pg-analytics #an-chart .hl{fill:rgba(255,255,255,.04)} #pg-analytics #an-chart .z{fill:var(--s4)}
+#pg-analytics .tip{position:absolute;top:8px;min-width:170px;background:rgba(20,20,23,.96);border:1px solid var(--line-2);border-radius:12px;padding:10px 12px;pointer-events:none;box-shadow:0 12px 30px rgba(0,0,0,.45);backdrop-filter:blur(8px)}
+#pg-analytics .tip .tt{font:500 11.5px var(--tight);color:var(--fg-3)} #pg-analytics .tip .tv{font:700 20px var(--tight);margin:2px 0 6px} #pg-analytics .tip .tv small{font:500 11.5px var(--tight);color:var(--fg-3);margin-left:6px}
+#pg-analytics .tip .tr{display:flex;align-items:center;gap:7px;font:500 12px var(--tight);color:var(--fg-2);padding:2px 0} #pg-analytics .tip .tr i{width:8px;height:8px;border-radius:3px} #pg-analytics .tip .tr b{margin-left:auto;color:var(--fg);font-weight:600}
+#pg-analytics .lgd{display:flex;flex-wrap:wrap;gap:6px 14px;padding:0 18px 16px} #pg-analytics .lgd span{display:inline-flex;align-items:center;gap:6px;font:500 12px var(--tight);color:var(--fg-3)} #pg-analytics .lgd i{width:8px;height:8px;border-radius:3px}
+/* chains */
+#pg-analytics .chbar{display:flex;gap:2px;height:10px;margin:14px 18px 8px;border-radius:999px;overflow:hidden} #pg-analytics .chbar i{display:block;height:100%;min-width:3px}
+#pg-analytics .chl{display:flex;flex-direction:column;padding:4px 8px 10px}
+#pg-analytics .cr{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 10px 13px;border-radius:12px;transition:background .15s}
+#pg-analytics .cr:hover{background:var(--s2)} #pg-analytics .cr img{width:28px;height:28px;border-radius:50%}
+#pg-analytics .cr .nm b{display:block;font:600 14px var(--tight)} #pg-analytics .cr .nm small{display:block;font-size:11.5px;color:var(--fg-3);margin-top:1px}
+#pg-analytics .cr .v{text-align:right} #pg-analytics .cr .v b{display:block;font:700 15px var(--tight)} #pg-analytics .cr .v small{font-size:11.5px;color:var(--fg-3)}
+#pg-analytics .cr .br{position:absolute;left:48px;right:10px;bottom:5px;height:3px;border-radius:9px;background:var(--s3);overflow:hidden} #pg-analytics .cr .br i{display:block;height:100%;background:var(--c);border-radius:9px;box-shadow:0 0 10px var(--c)}
+/* leaderboards */
+#pg-analytics .tabs2{display:flex;gap:4px;padding:14px 18px 0;border-bottom:1px solid var(--line)}
+#pg-analytics .tabs2 button{all:unset;cursor:pointer;padding:0 4px 12px;margin-right:16px;font:600 14px var(--tight);color:var(--fg-3);border-bottom:2px solid transparent;margin-bottom:-1px} #pg-analytics .tabs2 button:hover{color:var(--fg)} #pg-analytics .tabs2 button.on{color:var(--fg);border-color:var(--ac)}
+#pg-analytics .bh{display:flex;justify-content:flex-end;padding:12px 18px 4px}
+#pg-analytics .board{display:flex;flex-direction:column;padding:2px 8px 10px}
+#pg-analytics .lr{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:12px;padding:9px 10px;border-radius:12px;transition:background .15s} #pg-analytics .lr:hover{background:var(--s2)}
+#pg-analytics .rk{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:700 12px var(--tight);color:var(--fg-3);background:var(--s3)}
+#pg-analytics .rk.r1{background:linear-gradient(135deg,#ffe08a,#f2be54);color:#3a2700} #pg-analytics .rk.r2{background:linear-gradient(135deg,#f1f3f8,#aab2c0);color:#20242c} #pg-analytics .rk.r3{background:linear-gradient(135deg,#f3b98a,#c9814e);color:#2e1606}
+#pg-analytics .who{display:flex;align-items:center;gap:10px;min-width:0} #pg-analytics .who .lg,#pg-analytics .who .av{width:34px;height:34px;border-radius:50%;flex:none;overflow:hidden;display:inline-flex}
+#pg-analytics .who b{display:block;font:600 14px var(--tight);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #pg-analytics .who small{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-3);margin-top:2px}
+#pg-analytics .lr .v{text-align:right} #pg-analytics .lr .v b{display:block;font:700 15px var(--tight)} #pg-analytics .lr .v small{font-size:11.5px;color:var(--fg-3)}
+/* live trades */
+#pg-analytics .feed{display:flex;flex-direction:column;padding:6px 8px 10px;max-height:520px;overflow:auto;scrollbar-width:thin}
+#pg-analytics .fr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 10px;border-radius:12px} #pg-analytics .fr:hover{background:var(--s2)}
+#pg-analytics .fr .cl{position:relative;width:34px;height:34px} #pg-analytics .fr .cl .lg{width:34px;height:34px;border-radius:50%} #pg-analytics .fr .cb{position:absolute;right:-3px;bottom:-3px;width:16px;height:16px;border-radius:50%;border:2px solid var(--s1)}
+#pg-analytics .fr .nm b{display:block;font:600 13.5px var(--tight);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #pg-analytics .fr .nm small{font-size:12px;color:var(--fg-3)} #pg-analytics .fr .nm small span{font-weight:600}
+#pg-analytics .fr .v{text-align:right} #pg-analytics .fr .v b{display:block;font:700 14px var(--tight)} #pg-analytics .fr .v small{font-size:11.5px;color:var(--fg-3)}
+#pg-analytics .fr.new{animation:anNew 1.4s ease-out} @keyframes anNew{from{background:var(--ac-dim)}to{background:transparent}}
+/* fees */
+#pg-analytics .fees{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1.1fr);gap:26px;padding:18px;align-items:start}
+#pg-analytics #an-donut{width:190px;height:190px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;filter:drop-shadow(0 10px 30px rgba(63,188,255,.12))}
+#pg-analytics #an-donut::before{content:"";position:absolute;inset:22px;border-radius:50%;background:var(--s1)} #pg-analytics #an-donut span{position:relative;text-align:center} #pg-analytics #an-donut b{display:block;font:700 22px var(--tight)} #pg-analytics #an-donut small{font-size:11.5px;color:var(--fg-3)}
+#pg-analytics .fl{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)} #pg-analytics .fl:last-child{border-bottom:0}
+#pg-analytics .fl i{width:10px;height:10px;border-radius:3px} #pg-analytics .fl .n b{display:block;font:600 14px var(--tight)} #pg-analytics .fl .n small{font-size:12px;color:var(--fg-3)} #pg-analytics .fl .v{text-align:right} #pg-analytics .fl .v b{display:block;font:700 15px var(--tight)} #pg-analytics .fl .v small{font-size:11.5px;color:var(--fg-3)}
+#pg-analytics .fct{font:600 12.5px var(--tight);color:var(--fg-3);margin:0 0 6px}
+#pg-analytics .fc{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)} #pg-analytics .fc:last-child{border-bottom:0}
+#pg-analytics .fc .who .lg{width:28px;height:28px} #pg-analytics .fc .v{font:700 14px var(--tight);text-align:right;min-width:64px}
+#pg-analytics .sp4{display:flex;gap:2px;height:7px;border-radius:999px;overflow:hidden;background:var(--s4)} #pg-analytics .sp4 i{display:block;height:100%}
+#pg-analytics .rwk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line)}
+#pg-analytics .rwk>div{padding:14px 18px;border-right:1px solid var(--line)} #pg-analytics .rwk>div:last-child{border-right:0} #pg-analytics .rwk .wide{grid-column:1/-1}
+#pg-analytics .rwk span{font:600 12px var(--tight);color:var(--fg-3)} #pg-analytics .rwk b{display:block;font:700 18px var(--tight);margin:4px 0 2px} #pg-analytics .rwk small{font-size:11.5px;color:var(--fg-3)}
+#pg-analytics .rwh{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 18px 0;border-top:1px solid var(--line);font:600 13px var(--tight)} #pg-analytics .rwh span{color:var(--fg-3);font-weight:500;font-size:12px}
+#pg-analytics .empty{padding:36px 12px;text-align:center;color:var(--fg-3);font-size:13px}
+@media(max-width:1100px){ #pg-analytics .band{grid-template-columns:repeat(3,minmax(0,1fr))} #pg-analytics .st:nth-child(3){border-right:0} #pg-analytics .st:nth-child(n+4){border-top:1px solid var(--line)}
+  #pg-analytics .g2{grid-template-columns:1fr} #pg-analytics .feedc{min-height:0} #pg-analytics .feedc .feed{position:static;max-height:520px} #pg-analytics .fees{grid-template-columns:auto minmax(0,1fr)} #pg-analytics .fees .fcw{grid-column:1/-1} }
+@media(max-width:700px){ #pg-analytics .hd{align-items:flex-start;flex-direction:column} #pg-analytics .band{grid-template-columns:1fr 1fr} #pg-analytics .st{padding:14px 16px;border-top:1px solid var(--line)} #pg-analytics .st:nth-child(-n+2){border-top:0} #pg-analytics .st:nth-child(odd){border-right:1px solid var(--line)} #pg-analytics .st:nth-child(even){border-right:0} #pg-analytics .st:last-child{grid-column:1/-1;border-right:0}
+  #pg-analytics .st b{font-size:24px} #pg-analytics .st .d small{display:none} #pg-analytics #an-chart{min-height:220px;height:220px;margin:6px 4px 8px 8px} #pg-analytics .fees{grid-template-columns:1fr;justify-items:stretch} #pg-analytics #an-donut{margin:0 auto}
+  #pg-analytics .rwk{grid-template-columns:1fr 1fr} #pg-analytics .rwk>div:nth-child(2){border-right:0} #pg-analytics .rwk>div:nth-child(n+3){border-top:1px solid var(--line)} #pg-analytics .tabs2{overflow-x:auto} #pg-analytics .tabs2 button{margin-right:10px;white-space:nowrap} }
 </style>
 </head><body data-page="analytics">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-analytics">
-  <div class="ph"><div><h1>Analytics</h1></div><div class="seg" id="an-range"><button data-r="7" >7d</button><button data-r="30" class="on">30d</button><button data-r="0">All</button></div></div>
-  <div class="kp" id="an-kpis"></div>
-  <section class="panel fees" style="margin-top:12px">
-    <div class="ph2" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)"><span>Fees</span><span class="num muted" id="an-fees-total" style="font-size:12px"></span></div>
-    <div class="fsplit" id="an-fsplit"></div>
-    <div class="fboxes" id="an-fboxes"></div>
-    <div style="overflow-x:auto;border-top:1px solid var(--line)"><table class="tb" id="an-fees"><thead><tr><th>Coin</th><th class="r">Fee</th><th>Split</th><th class="r">Fees paid</th><th class="r">Creator owed</th><th class="r hm">Holders pending</th><th class="r hm">Buyback pot</th><th class="r hm">Burned</th></tr></thead><tbody></tbody></table></div>
-  </section>
-  <section class="panel" style="margin-top:12px" id="an-rw">
-    <div class="ph2" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)"><span>Cashback and referrals</span><span class="num muted" id="an-rw-split" style="font-size:12px"></span></div>
-    <div class="fboxes" id="an-rwk"></div>
-    <div style="overflow-x:auto;border-top:1px solid var(--line)"><table class="tb" id="an-refs"><thead><tr><th>#</th><th>Referrer</th><th class="r">Earned</th><th class="r">Traders referred</th><th class="r hm">Paid trades</th></tr></thead><tbody></tbody></table></div>
-    <p class="hint" style="margin:0;padding:10px 16px;border-top:1px solid var(--line)">Read from the hook's on-chain events (<a href="#" id="an-rw-hook" target="_blank" rel="noopener">RewardsCredited, ReferrerBound, RewardsClaimed</a>). USD at today's pair prices. Cashback and referral come out of the platform's share only; creator, holder and buyback shares are not touched.</p>
-  </section>
-  <div class="two">
-    <section class="panel"><div class="ph2" style="padding:12px 16px;border-bottom:1px solid var(--line)">By stock</div><div style="overflow-x:auto"><table class="tb" id="an-stocks"><thead><tr><th>Stock</th><th class="r">Coins</th><th class="r">Volume</th><th class="r">Fees paid</th><th class="r hm">Trades</th><th class="r hm">Holders</th></tr></thead><tbody></tbody></table></div></section>
-    <section class="panel"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line)"><span>Top coins</span><div class="seg" id="an-topby"><button data-k="vol" class="on">Volume</button><button data-k="fees">Fees</button><button data-k="h">Holders</button></div></div><div style="overflow-x:auto"><table class="tb" id="an-top"><thead><tr><th>#</th><th>Coin</th><th>Pair</th><th class="r" id="an-top-h">Volume</th><th class="r hm">Mcap</th></tr></thead><tbody></tbody></table></div></section>
+  <div class="hd"><div><span class="live"><i></i>Live on every chain</span><h1>Analytics</h1><p>Volume, fees and launches across every chain, read from the chains as they happen.</p></div>
+    <div class="sg" id="an-range"><button data-v="24h">24H</button><button data-v="7d" class="on">7D</button><button data-v="30d">30D</button><button data-v="all">All</button></div></div>
+
+  <div class="band" id="an-band"></div>
+
+  <div class="g2">
+    <section class="card"><div class="ch2"><h2>Activity</h2><div class="sg sm" id="an-metric"><button data-v="vol" class="on">Volume</button><button data-v="trades">Trades</button><button data-v="fees">Fees</button><button data-v="new">Launches</button></div></div>
+      <div class="tot" id="an-ch-tot"></div><div id="an-chart"></div><div class="lgd" id="an-lgd"></div></section>
+    <section class="card"><div class="ch2"><h2>Across chains</h2><div class="sg sm" id="an-chby"><button data-v="liq" class="on">Liquidity</button><button data-v="vol">Volume</button><button data-v="trades">Trades</button></div></div>
+      <div class="tot" id="an-cht"></div><div class="chbar" id="an-chbar"></div><div class="chl" id="an-chl"></div></section>
   </div>
-  <div class="two">
-    <section class="panel"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line)"><span>Top traders</span><div class="seg" id="an-trby"><button data-k="pnl" class="on">PnL</button><button data-k="vol">Volume</button></div></div><div style="overflow-x:auto"><table class="tb" id="an-traders"><thead><tr><th>#</th><th>Trader</th><th class="r">PnL</th><th class="r">Volume</th><th class="r hm">Trades</th><th class="r hm">Coins</th></tr></thead><tbody></tbody></table></div><p class="hint" style="margin:0;padding:10px 16px;border-top:1px solid var(--line)">PnL is cash in and out of trades plus coins still held at today's price. Transfers are not counted.</p></section>
-    <section class="panel"><div class="ph2" style="padding:12px 16px;border-bottom:1px solid var(--line)">Top creators</div><div style="overflow-x:auto"><table class="tb" id="an-creators"><thead><tr><th>#</th><th>Creator</th><th class="r">Coins</th><th class="r">Fees earned</th><th class="r hm">Volume</th></tr></thead><tbody></tbody></table></div></section>
+
+  <div class="g2">
+    <section class="card"><div class="tabs2" id="an-btabs"><button data-b="coins" class="on">Top coins</button><button data-b="traders">Traders</button><button data-b="creators">Creators</button><button data-b="refs">Referrers</button></div>
+      <div class="bh"><div class="sg sm" id="an-bsort"></div></div><div class="board" id="an-board"></div></section>
+    <section class="card feedc"><div class="ch2"><h2>Live trades</h2><span class="live"><i></i>Live</span></div><div class="feed" id="an-feed"></div></section>
   </div>
-  <section class="panel" style="margin-top:12px"><div class="ph2" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)"><span>Recent trades</span><span class="num muted" id="an-feed-n" style="font-size:12px"></span></div><div class="feed" id="an-feed"></div></section>
+
+  <section class="card" style="margin-top:14px"><div class="ch2"><h2>Where the fees go</h2></div>
+    <div class="fees"><div id="an-donut"></div><div id="an-flegend"></div><div class="fcw"><div class="fct">Top coins by fees</div><div id="an-fcoins"></div></div></div>
+    <div class="rwh">Cashback and referrals<span id="an-rw-split">paid from the platform share</span></div><div class="rwk" id="an-rwk"></div></section>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=10"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=5"></script><script src="/wallet.js"></script><script src="/core.js?v=33"></script><script src="/sp-analytics.js?v=20"></script>
+<script src="/config.js?v=10"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=5"></script><script src="/wallet.js"></script><script src="/core.js?v=33"></script><script src="/sp-analytics.js?v=23"></script>
 </body></html>
