@@ -1,44 +1,59 @@
-/* Equo docs: mobile sidebar, search, table-of-contents highlight, copy buttons */
+/* Equo docs: phone menu, search over the pages and this page's headings, heading links, copy buttons,
+   and the table of contents following the scroll */
 (function () {
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let IC = {};
+  const ic = (n) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IC[n] || ''}</svg>`;
 
-  // mobile sidebar drawer: a copy of the sidebar navigation
-  const ov = document.createElement('div'); ov.className = 'ip-ov';
-  const tabs = $$('.nav-tabs a').map(a => `<a href="${a.getAttribute('href')}"${a.dataset.active ? ' data-active="1"' : ''}>${a.textContent.trim()}</a>`).join('');
-  ov.innerHTML = `<div class="ip-drawer"><div class="ip-dh"><img src="../img/hero-wordmark.png" alt="Equo"><button type="button" class="ip-x" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div class="ip-tabs">${tabs}</div><div class="ip-nav lg:text-sm lg:leading-6"></div></div>`;
-  document.body.appendChild(ov);
-  const nav = $('#navigation-items'); if (nav) $('.ip-nav', ov).innerHTML = nav.innerHTML;
-  const openDrawer = () => { ov.classList.add('open'); document.body.style.overflow = 'hidden'; };
-  const closeDrawer = () => { ov.classList.remove('open'); document.body.style.overflow = ''; };
-  const mb = $('#mobile-nav-button'); if (mb) mb.addEventListener('click', openDrawer);
-  ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('.ip-x') || e.target.closest('a')) closeDrawer(); });
+  /* phone menu */
+  const open = () => document.body.classList.add('side-open'), close = () => document.body.classList.remove('side-open');
+  const mb = $('#dmenu'); if (mb) mb.onclick = open;
+  const cb = $('#dclose'); if (cb) cb.onclick = close;
+  document.addEventListener('click', (e) => { if (document.body.classList.contains('side-open') && !e.target.closest('.dside') && !e.target.closest('#dmenu')) close(); });
 
-  // search
-  const sb = document.createElement('div'); sb.className = 'ip-search';
-  sb.innerHTML = '<div class="ip-box"><input type="search" placeholder="Search the docs…" autocomplete="off"><ul></ul></div>';
-  document.body.appendChild(sb);
-  const input = $('input', sb), list = $('ul', sb); let idx = null, sel = 0;
-  const openSearch = async () => { sb.classList.add('open'); input.value = ''; input.focus(); if (!idx) { try { idx = await (await fetch('search.json')).json(); } catch { idx = []; } } render(''); };
-  const closeSearch = () => sb.classList.remove('open');
-  const render = q => { q = q.trim().toLowerCase(); const hits = (idx || []).filter(p => !q || (p.t + ' ' + p.g + ' ' + p.d).toLowerCase().includes(q)).slice(0, 12); sel = 0;
-    list.innerHTML = hits.length ? hits.map((p, i) => `<li><a href="${p.u}"${i === 0 ? ' data-sel="1"' : ''}>${p.t}<small>${p.g} · ${p.d}</small></a></li>`).join('') : '<li class="ip-empty">No results</li>'; };
-  input.addEventListener('input', () => render(input.value));
-  input.addEventListener('keydown', e => { const as = $$('li a', list); if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); as.forEach(a => a.removeAttribute('data-sel')); sel = (sel + (e.key === 'ArrowDown' ? 1 : -1) + as.length) % as.length; if (as[sel]) as[sel].setAttribute('data-sel', '1'); } if (e.key === 'Enter' && as[sel]) location.href = as[sel].getAttribute('href'); if (e.key === 'Escape') closeSearch(); });
-  sb.addEventListener('click', e => { if (e.target === sb) closeSearch(); });
-  ['#search-bar-entry', '#search-bar-entry-mobile'].forEach(s => { const b = $(s); if (b) b.addEventListener('click', openSearch); });
-  document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); } if (e.key === 'Escape') { closeSearch(); closeDrawer(); } });
+  /* heading links and copy buttons, once the icons are in */
+  fetch('/docs/icons.json').then((r) => r.json()).then((j) => { IC = j;
+    $$('.dx-body h2[id], .dx-body h3[id]').forEach((h) => { const a = document.createElement('a'); a.className = 'ha'; a.href = '#' + h.id; a.setAttribute('aria-label', 'Link to this section'); a.innerHTML = ic('link-round'); h.prepend(a); });
+    $$('.dx-body pre').forEach((pre) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'cp'; b.setAttribute('aria-label', 'Copy code'); b.innerHTML = ic('copy'); pre.appendChild(b);
+      b.onclick = () => { const t = (pre.querySelector('code') || pre).innerText; navigator.clipboard.writeText(t).then(() => { b.classList.add('ok'); b.innerHTML = ic('check-circle'); setTimeout(() => { b.classList.remove('ok'); b.innerHTML = ic('copy'); }, 1400); }).catch(() => {}); }; });
+  }).catch(() => {});
 
-  // table of contents: highlight the section in view
-  const toc = $$('#table-of-contents-content li');
-  const heads = toc.map(li => $('#' + CSS.escape($('a', li).getAttribute('href').slice(1)))).filter(Boolean);
-  if (heads.length) {
-    const update = () => { let i = 0; for (let k = 0; k < heads.length; k++) if (heads[k].getBoundingClientRect().top < 160) i = k; toc.forEach((li, k) => k === i ? li.setAttribute('data-active', '') : li.removeAttribute('data-active')); };
-    update(); document.addEventListener('scroll', update, { passive: true });
+  /* the table of contents follows the section in view */
+  const toc = $$('.dtoc a'); if (toc.length) {
+    const hs = toc.map((a) => document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)))).filter(Boolean);
+    const mark = () => { let cur = hs[0]; for (const h of hs) { if (h.getBoundingClientRect().top < 120) cur = h; } toc.forEach((a) => a.classList.toggle('on', cur && a.getAttribute('href') === '#' + cur.id)); };
+    addEventListener('scroll', mark, { passive: true }); mark();
   }
 
-  // copy page / copy code
-  const flash = (b, t) => { const s = $('.col-start-1:not(.invisible)', b) || b; const o = s.textContent; s.textContent = t; setTimeout(() => { s.textContent = o; }, 1200); };
-  $$('[data-copy-page]').forEach(b => b.addEventListener('click', () => { const txt = '# ' + $('#page-title').textContent + '\n\n' + $('#content').innerText; navigator.clipboard?.writeText(txt); flash(b, 'Copied'); }));
-  $$('.ip-copy').forEach(b => b.addEventListener('click', () => { navigator.clipboard?.writeText($('code', b.parentElement).textContent); b.style.color = '#5fc8ff'; setTimeout(() => { b.style.color = ''; }, 1200); }));
+  /* search: every page by title and summary, and this page's sections */
+  let PAGES = null;
+  const load = () => PAGES ? Promise.resolve(PAGES) : fetch('/docs/search.json').then((r) => r.json()).then((j) => (PAGES = j)).catch(() => (PAGES = []));
+  function openSearch() {
+    if ($('.sov')) return;
+    const ov = document.createElement('div'); ov.className = 'sov';
+    ov.innerHTML = `<div class="sbx" role="dialog" aria-label="Search the docs"><div class="sin">${ic('magnifer')}<input placeholder="Search the docs" autocomplete="off"><kbd>Esc</kbd></div><div class="sres"></div></div>`;
+    document.body.appendChild(ov);
+    const inp = $('input', ov), res = $('.sres', ov); let sel = 0, items = [];
+    const here = $$('.dx-body h2[id], .dx-body h3[id]').map((h) => ({ t: h.textContent.trim(), g: 'On this page', u: '#' + h.id, d: '' }));
+    const hl = (s, q) => { if (!q) return esc(s); const i = s.toLowerCase().indexOf(q); return i < 0 ? esc(s) : esc(s.slice(0, i)) + '<em>' + esc(s.slice(i, i + q.length)) + '</em>' + esc(s.slice(i + q.length)); };
+    const render = () => { const q = inp.value.trim().toLowerCase();
+      items = (PAGES || []).concat(here).filter((p) => !q || (p.t + ' ' + p.d + ' ' + p.g).toLowerCase().includes(q)).slice(0, 14);
+      sel = Math.min(sel, Math.max(0, items.length - 1));
+      res.innerHTML = items.length ? items.map((p, i) => `<a href="${p.u}" class="${i === sel ? 'on' : ''}"><span class="g">${esc(p.g)}</span><b>${hl(p.t, q)}</b>${p.d ? `<small>${hl(p.d, q)}</small>` : ''}</a>`).join('') : '<div class="none">Nothing matches that.</div>'; };
+    load().then(render); render(); inp.focus();
+    inp.addEventListener('input', () => { sel = 0; render(); });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(items.length - 1, sel + 1); render(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(0, sel - 1); render(); }
+      else if (e.key === 'Enter' && items[sel]) { location.href = items[sel].u; ov.remove(); }
+    });
+    ov.addEventListener('click', (e) => { if (e.target === ov || e.target.closest('.sres a')) ov.remove(); });
+  }
+  const sb = $('#dsearch'); if (sb) sb.onclick = openSearch;
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { const o = $('.sov'); if (o) o.remove(); close(); }
+    else if ((e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) { e.preventDefault(); openSearch(); }
+  });
 })();
