@@ -108,7 +108,7 @@ function launchInit(){
   function paintCost(){ const c=costs(), pc=ch(S.pay);
     g('cost').innerHTML=c.rows.map(r=>`<div class="row"><div class="t"><img src="${ch(r.k).logo}" alt="">${esc(ch(r.k).name)}<small>${r.k===S.pay?'Gas and your dev buy':'Gas and the opening seed buy'}</small></div><div class="v">${r.known?usd(r.gas+r.buy):'…'}</div></div>`).join('')
       +`<div class="row total"><div class="t">Total, paid on ${esc(pc.name)}</div><div class="v">${c.pu?`${fmtNum(c.native)} ${esc(pc.native)} · ${usd(c.tot)}`:'…'}</div></div>`;
-    g('cost-note').innerHTML=`One payment on ${esc(pc.name)}. Your coin goes live on ${S.chains.length===1?esc(pc.name):`all ${S.chains.length} chains`} with the same ${evmChains().length>1?'address and ':''}opening price${S.chains.length>1?'; the other chains are launched for you within minutes':''}. A launch that fails is refunded.`; }
+    g('cost-note').innerHTML=`One payment on ${esc(pc.name)}. Your coin goes live on ${S.chains.length===1?esc(pc.name):`all ${S.chains.length} chains`} with the same ${evmChains().length>1?'address and ':''}opening price${S.chains.length>1?'; the other chains are launched for you within minutes':''}.`; }
 
   /* ---------- what the live contracts can take today ---------- */
   function blocker(){ const x=[];
