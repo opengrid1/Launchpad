@@ -3,44 +3,86 @@
 <title>Rewards | Equo</title><meta name="description" content="Claim cashback, referral rewards, holder rewards and creator fees across every Equo coin.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
 <meta property="og:title" content="Rewards | Equo"><meta property="og:image" content="/img/og.png?v=17"><meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Bowlby+One&family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/ui.css?v=23">
 <style>
-#pg-rewards .ph{padding:6px 0 4px;margin-bottom:14px}
-#pg-rewards .kp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-#pg-rewards .kp .sbox{padding:16px 18px} #pg-rewards .kp .sbox .lab{display:flex;align-items:center;gap:8px;min-height:20px} #pg-rewards .kp .sbox .lab .soon{margin-left:auto} #pg-rewards .kp .sbox b{display:block;font:600 24px/1.1 var(--mono);margin-top:10px} #pg-rewards .kp .sbox i{display:block;font:normal 11.5px var(--mono);color:var(--fg-3);margin-top:6px}
-#pg-rewards .grid2{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:12px;margin-top:12px;align-items:start}
-#pg-rewards .col{display:flex;flex-direction:column;gap:12px}
-#pg-rewards .hh{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:8px 16px;border-bottom:1px solid var(--line);font:600 15px var(--disp)} #pg-rewards .hh .l{display:flex;align-items:center;gap:9px} #pg-rewards .hh .l svg{width:16px;height:16px;color:var(--fg-3)}
-#pg-rewards .tb th:first-child,#pg-rewards .tb td:first-child{padding-left:16px} #pg-rewards .tb th:last-child,#pg-rewards .tb td:last-child{padding-right:16px}
-#pg-rewards .tb td.act{text-align:right;width:1%;white-space:nowrap}
-#pg-rewards .coin .lg{width:32px;height:32px}
-#pg-rewards .gate{padding:28px 16px;text-align:center;color:var(--fg-3)} #pg-rewards .gate b{display:block;color:var(--fg);font-size:15px;margin-bottom:6px} #pg-rewards .gate .btn{margin-top:14px}
-#pg-rewards .rbody{padding:16px} #pg-rewards .rbody p{color:var(--fg-2);font-size:13px;line-height:1.55}
-#pg-rewards .lnk{display:flex;align-items:center;gap:8px;margin-top:14px;height:40px;padding:0 6px 0 12px;border:1px dashed var(--line-3);border-radius:10px;background:var(--s2);font:12.5px var(--mono);color:var(--fg-3)} #pg-rewards .lnk span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#pg-rewards .mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px} #pg-rewards .mini .sbox{padding:8px 10px} #pg-rewards .mini .sbox b{font:600 14px var(--mono);margin-top:4px} #pg-rewards .lnk.on{border-style:solid;color:var(--fg)} #pg-rewards .claimrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--s2)} #pg-rewards .claimrow b{display:block;font:600 18px var(--mono)} #pg-rewards .claimrow small{display:block;font:11.5px var(--mono);color:var(--fg-3);margin-top:2px}
-#pg-rewards .steps{display:flex;flex-direction:column;gap:10px;margin-top:14px} #pg-rewards .steps div{display:flex;gap:10px;font-size:12.5px;color:var(--fg-2);line-height:1.5} #pg-rewards .steps em{flex:none;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;background:var(--s3);font:600 11px var(--mono);font-style:normal;color:var(--fg-3)}
-#pg-rewards .burns{margin-top:12px} #pg-rewards .bt{display:flex;align-items:baseline;gap:10px;font:600 13px var(--mono);color:var(--fg-3)} #pg-rewards .bt b{font-size:15px;color:var(--fg)}
-@media(max-width:1100px){#pg-rewards .kp{grid-template-columns:1fr 1fr} #pg-rewards .grid2{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:560px){#pg-rewards .kp{grid-template-columns:1fr 1fr;gap:8px} #pg-rewards .kp .sbox{padding:12px} #pg-rewards .kp .sbox b{font-size:18px} #pg-rewards .kp .sbox .lab .soon{display:none} #pg-rewards .lnk span{font-size:11.5px}}
+#pg-rewards{--chunk:"Bowlby One","Inter Tight",Impact,sans-serif;--tight:"Inter Tight",Inter,sans-serif;font-variant-numeric:tabular-nums;padding-top:8px}
+/* head */
+#pg-rewards .hd{margin:10px 0 22px}
+#pg-rewards .pill{display:inline-flex;align-items:center;gap:8px;font:600 12px var(--tight);color:var(--amber);background:rgba(242,190,84,.12);border:1px solid rgba(242,190,84,.3);padding:4px 10px;border-radius:999px}
+#pg-rewards .pill svg{width:14px;height:14px}
+#pg-rewards h1{margin:12px 0 0;font:400 clamp(36px,4.2vw,58px)/.95 var(--chunk);text-transform:uppercase;color:#ffe9b8;text-shadow:0 1px 0 #ffd98a,0 3px 0 #f2be54,0 5px 0 #dca23c,0 7px 0 #c3862a,0 9px 0 #a46b1c,0 20px 26px rgba(0,0,0,.6)}
+#pg-rewards .hd p{margin:16px 0 0;color:var(--fg-2);font:500 15px var(--tight)}
+/* cards */
+#pg-rewards .card{background:var(--s1);border:1px solid var(--line);border-radius:18px;overflow:hidden;scroll-margin-top:84px}
+#pg-rewards .ch2{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 18px 14px;border-bottom:1px solid var(--line)}
+#pg-rewards .ch2 h2{display:flex;align-items:center;gap:10px;margin:0;font:700 17px var(--tight);letter-spacing:-.01em}
+#pg-rewards .ch2 h2 .ib{width:30px;height:30px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c)} #pg-rewards .ch2 h2 .ib svg{width:18px;height:18px}
+#pg-rewards .ch2 .rt{font:600 12.5px var(--tight);color:var(--fg-3)}
+/* hero */
+#pg-rewards .hero{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr);position:relative}
+#pg-rewards .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(520px 220px at 0% 0%,rgba(242,190,84,.13),transparent 70%),radial-gradient(520px 260px at 100% 100%,rgba(63,188,255,.10),transparent 70%);pointer-events:none}
+#pg-rewards .tot{position:relative;padding:26px 26px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+#pg-rewards .tot .l{font:600 13px var(--tight);color:var(--fg-3)} #pg-rewards .tot b{display:block;font:800 52px/1.05 var(--tight);letter-spacing:-.03em;margin:8px 0 6px} #pg-rewards .tot small{color:var(--fg-3);font-size:13px;line-height:1.5}
+#pg-rewards .tot .btn{margin-top:18px;align-self:flex-start}
+#pg-rewards .ways{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+#pg-rewards .way{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;padding:20px 22px;border-bottom:1px solid var(--line);transition:background .15s} #pg-rewards .way:hover{background:rgba(255,255,255,.02)}
+#pg-rewards .way:nth-child(odd){border-right:1px solid var(--line)} #pg-rewards .way:nth-last-child(-n+2){border-bottom:0}
+#pg-rewards .way .ib{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 30%,transparent)} #pg-rewards .way .ib svg{width:24px;height:24px}
+#pg-rewards .way .n b{display:block;font:700 15px var(--tight)} #pg-rewards .way .n small{display:block;font-size:12.5px;color:var(--fg-3);margin-top:3px;line-height:1.4}
+#pg-rewards .way .v{text-align:right} #pg-rewards .way .v b{display:block;font:700 18px var(--tight)} #pg-rewards .way .v small{font-size:11.5px;color:var(--fg-3)}
+#pg-rewards .way .v b.on{color:var(--up)}
+/* layout */
+#pg-rewards .g2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-top:14px;align-items:start}
+#pg-rewards .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+/* rows */
+#pg-rewards .rows{display:flex;flex-direction:column;padding:6px 8px 8px}
+#pg-rewards .rr{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:16px;align-items:center;padding:10px;border-radius:12px;transition:background .15s;cursor:pointer} #pg-rewards .rr:hover{background:var(--s2)}
+#pg-rewards .who{display:flex;align-items:center;gap:11px;min-width:0} #pg-rewards .who .lg{width:38px;height:38px;border-radius:50%;flex:none}
+#pg-rewards .who b{display:block;font:600 14.5px var(--tight);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #pg-rewards .who small{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-3);margin-top:2px}
+#pg-rewards .rr .m{text-align:right;min-width:90px} #pg-rewards .rr .m b{display:block;font:700 15px var(--tight)} #pg-rewards .rr .m small{font-size:11.5px;color:var(--fg-3)}
+#pg-rewards .rr .m b.up{color:var(--up)} #pg-rewards .rr .m b.z{color:var(--fg-3);font-weight:600}
+#pg-rewards .rr .a{min-width:72px;text-align:right}
+#pg-rewards .gate{padding:34px 18px;text-align:center;color:var(--fg-3);font-size:13.5px;line-height:1.5} #pg-rewards .gate b{display:block;color:var(--fg);font:700 16px var(--tight);margin-bottom:6px} #pg-rewards .gate .btn{margin-top:14px}
+#pg-rewards .gate .ib{width:52px;height:52px;margin:0 auto 14px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)} #pg-rewards .gate .ib svg{width:28px;height:28px}
+/* referral and cashback */
+#pg-rewards .rbody{padding:16px 18px 18px} #pg-rewards .rbody p{margin:0;color:var(--fg-2);font-size:13.5px;line-height:1.55}
+#pg-rewards .lnk{display:flex;align-items:center;gap:8px;margin-top:14px;height:46px;padding:0 6px 0 14px;border:1px dashed var(--line-3);border-radius:12px;background:var(--s2);font:500 13px var(--tight);color:var(--fg-3)} #pg-rewards .lnk span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pg-rewards .lnk.on{border-style:solid;border-color:rgba(63,188,255,.4);background:var(--ac-dim);color:var(--fg)}
+#pg-rewards .mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+#pg-rewards .mini>div{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--s2);min-width:0} #pg-rewards .mini span{display:block;font:600 11.5px var(--tight);color:var(--fg-3)} #pg-rewards .mini b{display:block;font:700 15px var(--tight);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-rewards .claimrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--s2)} #pg-rewards .claimrow b{display:block;font:800 22px var(--tight)} #pg-rewards .claimrow small{display:block;font-size:12px;color:var(--fg-3);margin-top:2px}
+/* burns */
+#pg-rewards .burns{margin-top:14px} #pg-rewards .bt{display:flex;align-items:baseline;gap:8px;font:600 12.5px var(--tight);color:var(--fg-3)} #pg-rewards .bt b{font:800 20px var(--tight);color:var(--fg)}
+#pg-rewards .brow{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) auto auto;gap:18px;align-items:center;padding:10px;border-radius:12px;cursor:pointer} #pg-rewards .brow:hover{background:var(--s2)}
+#pg-rewards .bbar{height:6px;border-radius:9px;background:var(--s3);overflow:hidden} #pg-rewards .bbar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#f2be54,#f6465d);box-shadow:0 0 10px rgba(246,70,93,.5)}
+#pg-rewards .brow .m b,#pg-rewards .brow .m small{display:block} #pg-rewards .bpc{font:600 12px var(--tight);color:var(--fg-3);margin-top:5px}
+#pg-rewards .empty{padding:30px 16px;text-align:center;color:var(--fg-3);font-size:13.5px;line-height:1.5} #pg-rewards .empty b{display:block;color:var(--fg);font:700 15px var(--tight);margin-bottom:4px}
+@media(max-width:1100px){ #pg-rewards .hero{grid-template-columns:minmax(0,1fr)} #pg-rewards .tot{border-right:0;border-bottom:1px solid var(--line)} #pg-rewards .g2{grid-template-columns:minmax(0,1fr)} }
+@media(max-width:700px){ #pg-rewards .ways{grid-template-columns:1fr} #pg-rewards .way{border-right:0!important;border-bottom:1px solid var(--line)!important;padding:16px 18px} #pg-rewards .way:last-child{border-bottom:0!important}
+  #pg-rewards .tot{padding:20px 18px} #pg-rewards .tot b{font-size:40px} #pg-rewards .rr{grid-template-columns:minmax(0,1fr) auto auto;gap:10px} #pg-rewards .rr .hm{display:none}
+  #pg-rewards .brow{grid-template-columns:minmax(0,1fr) auto;gap:10px} #pg-rewards .brow .hm{display:none} #pg-rewards .mini{grid-template-columns:1fr 1fr} }
 </style>
 </head><body data-page="rewards">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-rewards">
-  <div class="ph"><h1>Rewards</h1></div>
-  <div class="kp" id="rw-kpis"></div>
-  <div class="grid2">
+  <div class="hd"><span class="pill" id="rw-pill"></span><h1>Rewards</h1><p>Four ways to earn from every trade on Equo, on every chain.</p></div>
+
+  <section class="card hero"><div class="tot" id="rw-tot"></div><div class="ways" id="rw-ways"></div></section>
+
+  <div class="g2">
     <div class="col">
-      <section class="panel"><div class="hh"><span class="l" id="rw-h-hold"></span><span id="rw-claimall"></span></div><div id="rw-hold"></div></section>
-      <section class="panel"><div class="hh"><span class="l" id="rw-h-cre"></span></div><div id="rw-cre"></div></section>
+      <section class="card" id="hold"><div class="ch2"><h2 id="rw-h-hold"></h2><span id="rw-claimall"></span></div><div id="rw-hold"></div></section>
+      <section class="card" id="cre"><div class="ch2"><h2 id="rw-h-cre"></h2><span class="rt">60% of every fee after the pots</span></div><div id="rw-cre"></div></section>
     </div>
     <div class="col">
-      <section class="panel"><div class="hh"><span class="l" id="rw-h-ref"></span><span class="num muted" id="rw-ref-rate" style="font:500 12px var(--mono)"></span></div><div class="rbody" id="rw-ref"></div></section>
-      <section class="panel"><div class="hh"><span class="l" id="rw-h-cb"></span><span class="num muted" id="rw-cb-rate" style="font:500 12px var(--mono)"></span></div><div class="rbody" id="rw-cb"></div></section>
+      <section class="card" id="ref"><div class="ch2"><h2 id="rw-h-ref"></h2><span class="rt" id="rw-ref-rate"></span></div><div class="rbody" id="rw-ref"></div></section>
+      <section class="card" id="cb"><div class="ch2"><h2 id="rw-h-cb"></h2><span class="rt" id="rw-cb-rate"></span></div><div class="rbody" id="rw-cb"></div></section>
     </div>
   </div>
-  <section class="panel burns" id="burns"><div class="hh"><span class="l" id="rw-h-burn"></span><span class="bt" id="rw-burn-t"></span></div><div id="rw-burn-empty"></div><div style="overflow-x:auto" id="rw-burn-wrap"><table class="tb" id="rw-burns"><thead><tr><th>Coin</th><th class="r">Buyback share</th><th class="r">Burned</th><th class="r hm">Of supply</th><th class="r">Value now</th><th class="r hm">In the pot</th></tr></thead><tbody></tbody></table></div></section>
+
+  <section class="card burns" id="burns"><div class="ch2"><h2 id="rw-h-burn"></h2><span class="bt" id="rw-burn-t"></span></div><div class="rows" id="rw-burns"></div></section>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=10"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=5"></script><script src="/wallet.js"></script><script src="/core.js?v=35"></script><script src="/sp-rewards.js?v=18"></script>
+<script src="/config.js?v=10"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=5"></script><script src="/wallet.js"></script><script src="/core.js?v=36"></script><script src="/sp-rewards.js?v=20"></script>
 </body></html>
