@@ -11,7 +11,8 @@ window.SP_PAGE=function(){
   function sorted(){ const l=list().slice();
     if(sort==='new') l.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)); else if(sort==='vol') l.sort((a,b)=>(b.vol||0)-(a.vol||0)); else if(sort==='mc') l.sort((a,b)=>(b.mc||0)-(a.mc||0)); else l.sort((a,b)=>score(b)-score(a)); return l; }
   const chg=x=>{ const c=x.c24||0; return `<span class="ch ${c>=0?'up':'dn'}">${c>=0?'▲':'▼'} ${Math.abs(c).toFixed(1)}%</span>`; };
-  const logo=x=>`<img class="lg" src="${SP.coinLogo(x)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${DEF_LOGO}'">`;
+  // the coin's logo, centred over a blurred copy of itself
+  const logo=x=>{ const src=SP.coinLogo(x), err=`onerror="this.onerror=null;this.src='${DEF_LOGO}'"`; return `<img class="bg" src="${src}" alt="" loading="lazy" aria-hidden="true" ${err}><img class="lg" src="${src}" alt="" loading="lazy" ${err}>`; };
 
   /* ---------- sparkline from the last day of trades ---------- */
   const TRC={};
