@@ -74,7 +74,7 @@
     </div>
   </section>
   <section class="stats">
-    <div><b>7</b><span>chains, one coin</span></div>
+    <div><b id="ld-nchains">8</b><span>chains, one coin</span></div>
     <div><b>1B</b><span>supply on every chain</span></div>
     <div><b>0.2<em>%</em></b><span>to bridge, nothing hidden</span></div>
     <div><b>~1<em>m</em></b><span>to move between chains</span></div>
@@ -87,8 +87,9 @@
   const CH=(window.INKY&&INKY.chains)||[], stage=document.getElementById('ld-stage'), cv=document.getElementById('ld-cv'), cx=cv.getContext('2d'), tip=document.getElementById('ld-tip');
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.getElementById('ld-launch').innerHTML=(typeof ic==='function'?ic('rocket'):'')+'Launch a coin';
+  document.getElementById('ld-nchains').textContent=CH.length;
   document.getElementById('ld-chains').innerHTML=(typeof SP!=='undefined'?SP.chainStack(CH.map(c=>c.key),22):'')+`<span>${CH.map(c=>c.short).join(' · ')}</span>`;
-  const quote={eth:'ETH',hyper:'HYPE',bsc:'BNB',base:'ETH',arbitrum:'ETH',robinhood:'ETH',ink:'ETH'};
+  const quote=Object.fromEntries(CH.map(c=>[c.key,c.native||'ETH']));
   // planets
   const P=CH.map((c,i)=>{ const el=document.createElement('div'); el.className='pl'; el.style.setProperty('--c',c.color); el.innerHTML=`<div class="ring"><img src="${c.logo}" alt="${c.name}"></div><span class="nm">${c.name}</span>`; stage.appendChild(el); return {c,el,a0:i/CH.length*Math.PI*2,x:0,y:0,z:0,s:1}; });
   let W=0,H=0,dpr=1;
