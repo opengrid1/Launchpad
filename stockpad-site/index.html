@@ -3,10 +3,22 @@
 <title>Equo | One launch, every chain</title>
 <meta name="description" content="One launch, every chain: launch a coin on up to nine chains at once, Solana included, all at the same opening price.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter+Tight:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/ui.css?v=19">
 <style>
 #sp-main{overflow-x:hidden;overflow-x:clip}
+/* landing type: one tight grotesk for the wordmark, headline, copy and buttons */
+body[data-page="landing"]{--land:"Inter Tight",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body[data-page="landing"] #pg-land h1{font-family:var(--land);font-weight:800;font-size:clamp(52px,6.6vw,104px);line-height:.9;letter-spacing:-.05em;word-spacing:.06em;color:var(--fg);margin:28px 0 24px}
+body[data-page="landing"] #pg-land h1 .pd{color:var(--ac)}
+body[data-page="landing"] #pg-land .lead{font-family:var(--land);font-weight:400;font-size:21px;line-height:1.45;letter-spacing:-.01em;color:var(--fg-2);max-width:540px}
+body[data-page="landing"] #pg-land .pill{font-family:var(--land);font-weight:600;font-size:14.5px;letter-spacing:-.01em}
+body[data-page="landing"] #pg-land .ctas .btn,body[data-page="landing"] #sp-top .lnk a{font-family:var(--land);font-weight:600;font-size:16px;letter-spacing:-.01em}
+body[data-page="landing"] #sp-top .lhdr .brand{font-family:var(--land);font-weight:800;font-size:28px;letter-spacing:-.045em}
+body[data-page="landing"] #pg-land .stats b{font-family:var(--land);font-weight:800;letter-spacing:-.04em}
+body[data-page="landing"] #pg-land .tc .a b{font-family:var(--land);font-weight:700}
+body[data-page="landing"] #pg-land .pl{font-family:var(--land);font-weight:700;letter-spacing:-.01em}
+@media(max-width:640px){body[data-page="landing"] #pg-land h1{font-size:clamp(46px,14.2vw,64px);margin:22px 0 18px} body[data-page="landing"] #pg-land .lead{font-size:18px} body[data-page="landing"] #sp-top .lhdr .brand{font-size:24px}}
 /* light theme (the landing's default): warm paper background, ink text; the ◐ button in the header switches */
 html[data-theme="light"]{--bg:#f5f3ef;--s1:#ffffff;--s2:#efece6;--s3:#e8e4dd;--s4:#ddd8cf;--line:#e4e0d8;--line-2:#d8d3c9;--line-3:#c6c0b4;--fg:#121214;--fg-2:#46464e;--fg-3:#6f6f77;--up:#0f9d63;--up-dim:rgba(15,157,99,.12);--ac:#1e90e6;--ac-dim:rgba(30,144,230,.12);color-scheme:light}
 html[data-theme="light"] #pg-land .pill{background:#fff}
@@ -97,7 +109,7 @@ body[data-page="landing"] #sp-top .wrap{display:block;height:auto}
     <canvas class="sky" id="ld-sky" aria-hidden="true"></canvas>
     <div>
       <div class="top"><span class="stack" id="ld-stack"></span><a class="pill" href="/markets" id="ld-pill"></a></div>
-      <h1>One launch.<br><span class="g">Every chain.</span></h1>
+      <h1>One launch.<br>Every chain<span class="pd">.</span></h1>
       <p class="lead" id="ld-lead">Launch your coin on up to nine chains at once, all at the same price. Holders move it between chains in about a minute.</p>
       <div class="ctas"><a class="btn pri lg" href="/markets" id="ld-app">Launch app</a><a class="btn lg line" href="/docs">Docs</a><a class="btn lg line ic" href="https://x.com/equofun" target="_blank" rel="noopener" aria-label="Equo on X" id="ld-x"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23zm-1.16 17.52h1.83L7.08 4.13H5.12z"/></svg></a></div>
     </div>
