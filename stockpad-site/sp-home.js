@@ -31,13 +31,14 @@ window.SP_PAGE=function(){
     $('#mk-figs').innerHTML=[['Vol 24h',fmtUsd(vol)],['Fees 24h',fmtUsd(fees)],['Coins',l.length.toLocaleString()],['Trades',trades.toLocaleString()]].map(s=>`<span>${s[0]}<b>${s[1]}</b></span>`).join(''); }
   let beltKey=null;
   function belt(){ const top=TOK.slice().sort((a,b)=>score(b)-score(a)).slice(0,10);
-    // the belt always has something on it: the busiest coins, and an open slot that leads to the launch page
-    const slot=`<a class="fc slot" href="/launch"><i>${ic('rocket')}</i><b>Your coin here</b><small>Launch on every chain</small></a>`;
+    // the busiest coins slide past; with no coins yet, one still card leads to the launch page
     const tilt=i=>['-3deg','2deg','-1.5deg','3deg','-2deg'][i%5];
-    const items=top.map((x,i)=>`<a class="fc" href="${tokenUrl(x)}" style="--r:${tilt(i)}"><span class="im">${logo(x)}</span><span class="tx"><span style="min-width:0"><b>${esc(x.n)}</b><small>$${esc(x.t)}</small></span><span class="mc">${fmtUsd(x.mc||0)}</span></span></a>`);
-    const all=items.length?[...items.slice(0,3),slot,...items.slice(3),slot]:[slot,slot,slot,slot];
     const key=top.map(x=>x.addr+Math.round(x.mc||0)).join(); if(key===beltKey) return; beltKey=key;
-    const one=all.join(''); $('#mk-belt').innerHTML=one+one; $('#mk-belt').style.setProperty('--dur',Math.max(24,all.length*6)+'s'); }
+    const bl=$('#mk-belt'); bl.classList.toggle('still',!top.length);
+    if(!top.length){ bl.innerHTML=`<a class="fc slot" href="/launch"><i>${ic('rocket')}</i><b>Be the first to launch</b><small>Live on every chain at once</small></a>`; return; }
+    const one=top.map((x,i)=>`<a class="fc" href="${tokenUrl(x)}" style="--r:${tilt(i)}"><span class="im">${logo(x)}</span><span class="tx"><span style="min-width:0"><b>${esc(x.n)}</b><small>$${esc(x.t)}</small></span><span class="mc">${fmtUsd(x.mc||0)}</span></span></a>`).join('');
+    // repeated to fill the width, then twice over, so the belt loops without a gap
+    const fill=one.repeat(Math.ceil(6/top.length)); bl.innerHTML=fill+fill; bl.style.setProperty('--dur',Math.max(24,Math.ceil(6/top.length)*top.length*6)+'s'); }
 
   /* ---------- toolbar ---------- */
   const SORTS={trend:['flame','Trending'],mc:['coins','Top'],vol:['trend','Volume'],new:['clock','New']};
