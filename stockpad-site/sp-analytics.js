@@ -78,8 +78,7 @@ window.SP_PAGE=function(){
     $('#an-chl').innerHTML=L.map(r=>{ const sh=tot?val(r)/tot*100:0; return `<a class="cr" href="/markets?chain=${r.k}" style="--c:${r.c.color}"><img src="${r.c.logo}" alt=""><span class="nm"><b>${esc(r.c.name)}</b><small>${r.pools?`${r.pools} pool${r.pools===1?'':'s'} · ${r.trades.toLocaleString()} trades`:'No pools yet'}</small></span><span class="v"><b>${f(val(r))}</b><small>${sh.toFixed(sh&&sh<1?1:0)}%</small></span><span class="br"><i style="width:${sh.toFixed(2)}%"></i></span></a>`; }).join(''); }
 
   /* ---------- leaderboards ---------- */
-  const BOARDS={ coins:[['vol','Volume'],['fees','Fees'],['mc','Market cap'],['h','Holders']], traders:[['pnl','PnL'],['vol','Volume']], creators:[['fees','Fees earned'],['vol','Volume']], refs:[] };
-  let REFS=[];
+  const BOARDS={ coins:[['vol','Volume'],['fees','Fees'],['mc','Market cap'],['h','Holders']], traders:[['pnl','PnL'],['vol','Volume']], creators:[['fees','Fees earned'],['vol','Volume']] };
   function boards(W){ const cur=TR.filter(t=>inW(W,t)); const by=BOARDS[board];
     $('#an-bsort').innerHTML=by.map(b=>`<button data-k="${b[0]}" class="${b[0]===boardBy?'on':''}">${b[1]}</button>`).join(''); $('#an-bsort').hidden=!by.length;
     $$('#an-bsort button').forEach(b=>b.onclick=()=>{ boardBy=b.dataset.k; render(); });
@@ -94,8 +93,7 @@ window.SP_PAGE=function(){
       TOK.forEach(x=>{ const c=C[x.creator]||(C[x.creator]={w:x.creator,n:0,fees:0,vol:0}); c.n++; c.vol+=vb[x.addr]||0; c.fees+=(x.totalCreatorFees||0)*(x.pairUsd||0); });
       rows=Object.values(C).filter(r=>r.w).sort((a,b)=>b[boardBy]-a[boardBy]).slice(0,10)
         .map((r,i)=>`<a class="lr" href="/profile?a=${r.w}">${rank(i)}<span class="who"><span class="av">${SP.avatar(r.w,32)}</span><span><b>${shortAddr(cs(r.w))}</b><small>${r.n} coin${r.n===1?'':'s'}</small></span></span><span class="v"><b>${fmtUsd(r[boardBy])}</b><small>${boardBy==='fees'?fmtUsd(r.vol)+' vol':fmtUsd(r.fees)+' earned'}</small></span></a>`); }
-    else rows=REFS.slice(0,10).map((r,i)=>`<a class="lr" href="/profile?a=${r.w}">${rank(i)}<span class="who"><span class="av">${SP.avatar(r.w,32)}</span><span><b>${shortAddr(cs(r.w))}</b><small>${r.traders.toLocaleString()} referred · ${r.trades.toLocaleString()} trades</small></span></span><span class="v"><b>${fmtUsd(r.earned)}</b><small>earned</small></span></a>`);
-    const empty={coins:'No coins yet',traders:'No trades in this range',creators:'No creators yet',refs:'No referrals yet'}[board];
+    const empty={coins:'No coins yet',traders:'No trades in this range',creators:'No creators yet'}[board];
     $('#an-board').innerHTML=rows.join('')||`<div class="empty">${empty}</div>`; }
   $$('#an-btabs button').forEach(b=>b.onclick=()=>{ board=b.dataset.b; boardBy=(BOARDS[board][0]||[''])[0]; $$('#an-btabs button').forEach(x=>x.classList.toggle('on',x===b)); render(); });
 
@@ -116,13 +114,12 @@ window.SP_PAGE=function(){
     const rows=per.filter(r=>r.paid>0).sort((a,b)=>b.paid-a.paid).slice(0,8);
     $('#an-fcoins').innerHTML=rows.length?rows.map(r=>{ const sp=r.sp; return `<a class="fc" href="${tokenUrl(r.x)}"><span class="who">${logo(r.x)}<span><b>${esc(r.x.n)}</b><small>${((r.x.feeBps||100)/100).toFixed(2)}% fee</small></span></span><span class="sp4" title="Creator ${Math.round(sp.c*100)}% · holders ${Math.round(sp.h*100)}% · buyback ${Math.round(sp.b*100)}% · platform ${Math.round(sp.p*100)}%">${FC.map(f=>`<i style="flex:${sp[f[0]]};background:${f[2]}"></i>`).join('')}</span><b class="v">${fmtUsd(r.paid)}</b></a>`; }).join(''):'<div class="empty">No fees in this range</div>'; }
 
-  /* ---------- cashback and referrals, from the hook's events (the platform's share pays them) ---------- */
+  /* ---------- cashback, from the hook's events (the platform's share pays it) ---------- */
   let rwAt=0;
   async function rewards(){ const EQ=window.CHAIN&&CHAIN.equo, box=$('#an-rwk'); if(!EQ||!box||!EQ.rewardStats) return; if(Date.now()-rwAt<60000) return; rwAt=Date.now();
-    if(EQ.split) EQ.split().then(sp=>{ $('#an-rw-split').textContent=`cashback ${sp.cashbackBps/100}% · referral ${sp.referralBps/100}% of the platform share`; }).catch(()=>{});
-    try{ const r=await EQ.rewardStats(SP.prices); REFS=r.top||[];
-      box.innerHTML=[['Cashback paid',fmtUsd(r.cashback),`${r.earners.toLocaleString()} trader${r.earners===1?'':'s'}`],['Referral paid',fmtUsd(r.referral),`${r.referrers.toLocaleString()} referrer${r.referrers===1?'':'s'}`],['Claimed',fmtUsd(r.claimed),'by the earners'],['Unclaimed',fmtUsd(r.unclaimed),'held by the hook']].map(f=>`<div><span>${f[0]}</span><b>${f[1]}</b><small>${f[2]}</small></div>`).join('');
-      if(board==='refs') boards(win()); }
+    if(EQ.split) EQ.split().then(sp=>{ $('#an-rw-split').textContent=`${sp.cashbackBps/100}% of the platform share`; }).catch(()=>{});
+    try{ const r=await EQ.rewardStats(SP.prices);
+      box.innerHTML=[['Cashback paid',fmtUsd(r.cashback),`${r.earners.toLocaleString()} trader${r.earners===1?'':'s'}`],['Claimed',fmtUsd(r.claimed),'by the earners'],['Unclaimed',fmtUsd(r.unclaimed),'held by the hook']].map(f=>`<div><span>${f[0]}</span><b>${f[1]}</b><small>${f[2]}</small></div>`).join(''); }
     catch(e){ rwAt=0; box.innerHTML=`<div class="wide muted">Could not load rewards (${esc(SP.errMsg(e))}).</div>`; } }
 
   async function load(first){ try{ const tr=(await CHAIN.allTrades()).filter(t=>tok(t.token)); const fresh=new Set(tr.filter(t=>!seen.has(t.tx+':'+t.index)).map(t=>t.tx+':'+t.index)); tr.forEach(t=>seen.add(t.tx+':'+t.index)); TR=tr; render(first?null:fresh); }
@@ -131,6 +128,6 @@ window.SP_PAGE=function(){
   const seg=(id,set)=>$$('#'+id+' button').forEach(b=>b.onclick=()=>{ set(b.dataset.v); $$('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b)); render(); });
   seg('an-range',v=>{ range=v; }); seg('an-metric',v=>{ metric=v; }); seg('an-chby',v=>{ chBy=v; });
   $('#an-band').innerHTML='<div class="st"><span class="sk w6"></span></div>'.repeat(5);
-  $('#an-rwk').innerHTML=['Cashback paid','Referral paid','Claimed','Unclaimed'].map(l=>`<div><span>${l}</span><b>—</b><small>reading the hook…</small></div>`).join('');
+  $('#an-rwk').innerHTML=['Cashback paid','Claimed','Unclaimed'].map(l=>`<div><span>${l}</span><b>—</b><small>reading the hook…</small></div>`).join('');
   load(true); SP.onUpdate(()=>load(false)); setInterval(()=>{ if(!document.hidden) load(false); },15000);
 };

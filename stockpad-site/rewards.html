@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Rewards | Equo</title><meta name="description" content="Claim cashback, referral rewards, holder rewards and creator fees across every Equo coin.">
+<title>Rewards | Equo</title><meta name="description" content="Claim holder rewards, creator fees and cashback across every Equo coin, on every chain.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
 <meta property="og:title" content="Rewards | Equo"><meta property="og:image" content="/img/og.png?v=17"><meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Bowlby+One&family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -25,9 +25,9 @@
 #pg-rewards .tot{position:relative;padding:26px 26px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
 #pg-rewards .tot .l{font:600 13px var(--tight);color:var(--fg-3)} #pg-rewards .tot b{display:block;font:800 52px/1.05 var(--tight);letter-spacing:-.03em;margin:8px 0 6px} #pg-rewards .tot small{color:var(--fg-3);font-size:13px;line-height:1.5}
 #pg-rewards .tot .btn{margin-top:18px;align-self:flex-start}
-#pg-rewards .ways{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+#pg-rewards .ways{position:relative;display:grid;grid-template-columns:minmax(0,1fr)}
 #pg-rewards .way{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;padding:20px 22px;border-bottom:1px solid var(--line);transition:background .15s} #pg-rewards .way:hover{background:rgba(255,255,255,.02)}
-#pg-rewards .way:nth-child(odd){border-right:1px solid var(--line)} #pg-rewards .way:nth-last-child(-n+2){border-bottom:0}
+#pg-rewards .way:last-child{border-bottom:0}
 #pg-rewards .way .ib{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 30%,transparent)} #pg-rewards .way .ib svg{width:24px;height:24px}
 #pg-rewards .way .n b{display:block;font:700 15px var(--tight)} #pg-rewards .way .n small{display:block;font-size:12.5px;color:var(--fg-3);margin-top:3px;line-height:1.4}
 #pg-rewards .way .v{text-align:right} #pg-rewards .way .v b{display:block;font:700 18px var(--tight)} #pg-rewards .way .v small{font-size:11.5px;color:var(--fg-3)}
@@ -45,7 +45,7 @@
 #pg-rewards .rr .a{min-width:72px;text-align:right}
 #pg-rewards .gate{padding:34px 18px;text-align:center;color:var(--fg-3);font-size:13.5px;line-height:1.5} #pg-rewards .gate b{display:block;color:var(--fg);font:700 16px var(--tight);margin-bottom:6px} #pg-rewards .gate .btn{margin-top:14px}
 #pg-rewards .gate .ib{width:52px;height:52px;margin:0 auto 14px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)} #pg-rewards .gate .ib svg{width:28px;height:28px}
-/* referral and cashback */
+/* cashback */
 #pg-rewards .rbody{padding:16px 18px 18px} #pg-rewards .rbody p{margin:0;color:var(--fg-2);font-size:13.5px;line-height:1.55}
 #pg-rewards .lnk{display:flex;align-items:center;gap:8px;margin-top:14px;height:46px;padding:0 6px 0 14px;border:1px dashed var(--line-3);border-radius:12px;background:var(--s2);font:500 13px var(--tight);color:var(--fg-3)} #pg-rewards .lnk span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #pg-rewards .lnk.on{border-style:solid;border-color:rgba(63,188,255,.4);background:var(--ac-dim);color:var(--fg)}
@@ -66,7 +66,7 @@
 </head><body data-page="rewards">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-rewards">
-  <div class="hd"><span class="pill" id="rw-pill"></span><h1>Rewards</h1><p>Four ways to earn from every trade on Equo, on every chain.</p></div>
+  <div class="hd"><span class="pill" id="rw-pill"></span><h1>Rewards</h1><p>Three ways to earn from every trade on Equo, on every chain.</p></div>
 
   <section class="card hero"><div class="tot" id="rw-tot"></div><div class="ways" id="rw-ways"></div></section>
 
@@ -76,7 +76,6 @@
       <section class="card" id="cre"><div class="ch2"><h2 id="rw-h-cre"></h2><span class="rt">60% of every fee after the pots</span></div><div id="rw-cre"></div></section>
     </div>
     <div class="col">
-      <section class="card" id="ref"><div class="ch2"><h2 id="rw-h-ref"></h2><span class="rt" id="rw-ref-rate"></span></div><div class="rbody" id="rw-ref"></div></section>
       <section class="card" id="cb"><div class="ch2"><h2 id="rw-h-cb"></h2><span class="rt" id="rw-cb-rate"></span></div><div class="rbody" id="rw-cb"></div></section>
     </div>
   </div>
@@ -84,5 +83,5 @@
   <section class="card burns" id="burns"><div class="ch2"><h2 id="rw-h-burn"></h2><span class="bt" id="rw-burn-t"></span></div><div class="rows" id="rw-burns"></div></section>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=10"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=5"></script><script src="/wallet.js"></script><script src="/core.js?v=36"></script><script src="/sp-rewards.js?v=20"></script>
+<script src="/config.js?v=10"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=5"></script><script src="/wallet.js"></script><script src="/core.js?v=37"></script><script src="/sp-rewards.js?v=21"></script>
 </body></html>

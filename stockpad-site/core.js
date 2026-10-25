@@ -110,9 +110,8 @@ SP.chainCosts=()=>{ if(chainCostP&&Date.now()-chainCostAt<60000) return chainCos
   return chainCostP; };
 SP.fmtNative=(v,sym)=>{ if(!(v>0)) return '0 '+sym; const d=v>=100?0:v>=1?2:v>=0.01?4:6; return (+v.toFixed(d)).toLocaleString('en-US',{maximumFractionDigits:d})+' '+sym; };
 
-/* ---------- referral: a ?ref=0x... link is remembered in this browser and sent with every trade ---------- */
-(function(){ try{ const q=(new URLSearchParams(location.search).get('ref')||'').trim(); if(/^0x[0-9a-fA-F]{40}$/.test(q)&&!localStorage.getItem('equo-ref')) localStorage.setItem('equo-ref',q.toLowerCase()); window.EQUO_REF=localStorage.getItem('equo-ref')||''; }catch{ window.EQUO_REF=''; } })();
-SP.refLink=a=>`${location.origin}/?ref=${cs(a)}`;
+/* no referrals: trades go out with no referrer, and a referrer kept by an older version of the site is dropped */
+window.EQUO_REF=''; try{ localStorage.removeItem('equo-ref'); }catch{}
 
 /* ---------- wallet ---------- */
 function syncWallet(){ const d=window.inkyWallet; const W=SP.W; const was=W.connected+':'+W.address+':'+W.chainOk;

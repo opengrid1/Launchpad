@@ -1,4 +1,4 @@
-/* Rewards page: what you can claim now and the four ways to earn (holder rewards, creator fees, referrals, cashback),
+/* Rewards page: what you can claim now and the three ways to earn (holder rewards, creator fees, cashback),
    each with its own card, and what buybacks have burned. Everything is read from chain; claims are transactions from
    the connected wallet. */
 window.SP_PAGE=function(){
@@ -10,10 +10,10 @@ window.SP_PAGE=function(){
   const usdOf=(pair,amt)=>{ const p=String(pair).toLowerCase(); return amt*(SP.prices[p]||0); };
   const owedUsd=()=>R?R.owed.reduce((s,o)=>s+usdOf(o.pair,o.amount),0):0;
   const owedTxt=()=>R&&R.owed.length?R.owed.map(o=>`${fmtAmt(o.amount)} ${esc(o.symbol)}`).join(' · '):'nothing yet';
-  const WAYS={ hold:['coins','Holder rewards','var(--amber)'], cre:['rocket','Creator fees','var(--ac)'], ref:['link','Referrals','#8c9eff'], cb:['gift','Cashback','var(--up)'] };
+  const WAYS={ hold:['coins','Holder rewards','var(--amber)'], cre:['rocket','Creator fees','var(--ac)'], cb:['gift','Cashback','var(--up)'] };
   const head=k=>`<span class="ib" style="--c:${WAYS[k][2]}">${ic(WAYS[k][0])}</span>${WAYS[k][1]}`;
   g('rw-pill').innerHTML=ic('star')+'Earn on every chain';
-  g('rw-h-hold').innerHTML=head('hold'); g('rw-h-cre').innerHTML=head('cre'); g('rw-h-ref').innerHTML=head('ref').replace('Referrals','Refer traders'); g('rw-h-cb').innerHTML=head('cb');
+  g('rw-h-hold').innerHTML=head('hold'); g('rw-h-cre').innerHTML=head('cre'); g('rw-h-cb').innerHTML=head('cb');
   g('rw-h-burn').innerHTML=`<span class="ib" style="--c:var(--dn)">${ic('flame')}</span>Buyback burns`;
   const logo=x=>`<img class="lg" src="${SP.coinLogo(x)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'">`;
   const who=x=>`<span class="who">${logo(x)}<span><b>${esc(x.n)}</b><small>$${esc(x.t)} ${SP.chainStack(SP.coinChains(x),14)}</small></span></span>`;
@@ -24,12 +24,12 @@ window.SP_PAGE=function(){
   function hero(){ const c=SP.W.connected;
     const hold=P?P.holdings.reduce((s,h)=>s+(h.pendUsd||0),0):0, cre=P?P.created.reduce((s,c)=>s+c.fees*(c.x.pairUsd||0),0):0, rw=owedUsd();
     const ready=c&&P, total=hold+cre+rw;
-    g('rw-tot').innerHTML=c?`<span class="l">Claimable now</span><b>${ready?fmtUsd(total):'…'}</b><small>${ready?(total>0?'Holder rewards, creator fees, cashback and referrals together. Claim each below.':'Nothing to claim yet. Hold, launch, refer or trade and it adds up here.'):'Reading your rewards on every chain…'}</small>`
+    g('rw-tot').innerHTML=c?`<span class="l">Claimable now</span><b>${ready?fmtUsd(total):'…'}</b><small>${ready?(total>0?'Holder rewards, creator fees and cashback together. Claim each below.':'Nothing to claim yet. Hold, launch or trade and it adds up here.'):'Reading your rewards on every chain…'}</small>`
       :`<span class="l">Your rewards</span><b>$0.00</b><small>Connect a wallet to see what you can claim across every coin and every chain.</small><button class="btn pri" data-connect>Connect wallet</button>`;
     const sp=R&&R.split;
     const W=[['hold','Hold coins with the Holder rewards badge','up to 50% of fees',c&&P?hold:null,'#hold'],['cre','Launch a coin and earn from every trade','up to 60% of fees',c&&P?cre:null,'#cre'],
-      ['ref','Bring traders with your link, for life',sp?`up to ${pct(sp.referralBps)} of fees`:'a share of fees',c&&R&&R.hist?R.hist.referral._usd||0:null,'#ref'],['cb','Part of every fee comes back on your trades',sp?`up to ${pct(sp.cashbackBps)} of fees`:'a share of fees',c&&R&&R.hist?R.hist.cashback._usd||0:null,'#cb']];
-    g('rw-ways').innerHTML=W.map(w=>`<a class="way" href="${w[4]}"><span class="ib" style="--c:${WAYS[w[0]][2]}">${ic(WAYS[w[0]][0])}</span><span class="n"><b>${WAYS[w[0]][1]}</b><small>${w[1]} · ${w[2]}</small></span><span class="v"><b class="${w[3]>0?'on':''}">${w[3]==null?'—':fmtUsd(w[3])}</b><small>${w[0]==='ref'||w[0]==='cb'?'earned':'claimable'}</small></span></a>`).join('');
+      ['cb','Part of every fee comes back on your trades',sp?`up to ${pct(sp.cashbackBps)} of fees`:'a share of fees',c&&R&&R.hist?R.hist.cashback._usd||0:null,'#cb']];
+    g('rw-ways').innerHTML=W.map(w=>`<a class="way" href="${w[4]}"><span class="ib" style="--c:${WAYS[w[0]][2]}">${ic(WAYS[w[0]][0])}</span><span class="n"><b>${WAYS[w[0]][1]}</b><small>${w[1]} · ${w[2]}</small></span><span class="v"><b class="${w[3]>0?'on':''}">${w[3]==null?'—':fmtUsd(w[3])}</b><small>${w[0]==='cb'?'earned':'claimable'}</small></span></a>`).join('');
     wire(); }
 
   /* ---------- holder rewards, creator fees ---------- */
@@ -55,20 +55,16 @@ window.SP_PAGE=function(){
     try{ for(let i=0;i<l.length;i++){ btn.textContent=`Claiming ${i+1} of ${l.length}…`; try{ await CHAIN.claim(l[i].x.addr); done++; }catch(e){ const m=SP.errMsg(e); SP.toast(`$${l[i].x.t}: ${m}`,'err'); if(m==='Transaction cancelled') break; } } }
     finally{ busy=false; } if(done) SP.toast(done===l.length?'All rewards claimed':`${done} of ${l.length} claimed`,'info'); load(); }
 
-  /* ---------- referral and cashback (Equo hook: a share of the platform's part of every fee) ---------- */
+  /* ---------- cashback (Equo hook: a share of the platform's part of every fee) ---------- */
   function refcb(){ const a=SP.W.connected?SP.W.address:''; const sp=R&&R.split;
-    g('rw-ref-rate').textContent=sp?`up to ${pct(sp.referralBps)} of fees`:''; g('rw-cb-rate').textContent=sp?`up to ${pct(sp.cashbackBps)} of fees`:'';
-    const link=a?SP.refLink(a):'';
-    g('rw-ref').innerHTML=`<p>Share your link. Every trader who comes through it is yours for life: part of every fee they pay goes to you, on every coin and every chain.</p><div class="lnk ${a?'on':''}"><span>${a?esc(link.replace(/^https?:\/\//,'')):'Connect a wallet to get your link'}</span>${a?`<button class="btn sm" id="rw-copy">${ic('copy')}Copy</button><a class="btn sm" target="_blank" rel="noopener" aria-label="Share on X" href="https://x.com/intent/tweet?text=${encodeURIComponent('One launch, every chain. Trade coins on up to nine chains at once on Equo '+link)}">${ic('xlogo')}</a>`:''}</div>
-      <div class="mini"><div><span>Traders</span><b>${R&&R.hist?R.hist.traders:'—'}</b></div><div><span>Earned</span><b>${R&&R.hist?fmtUsd(R.hist.referral._usd||0):'—'}</b></div><div><span>Your referrer</span><b>${R&&R.myRef?shortAddr(cs(R.myRef)):'none'}</b></div></div>`;
-    g('rw-cb').innerHTML=`<p>Part of the fee on every buy and sell comes back to you, in the coin's pair. Referral rewards land in the same balance.</p>
+    g('rw-cb-rate').textContent=sp?`up to ${pct(sp.cashbackBps)} of fees`:'';
+    g('rw-cb').innerHTML=`<p>Part of the fee on every buy and sell comes back to you, in the coin's pair, on every chain.</p>
       <div class="mini"><div><span>Cashback earned</span><b>${R&&R.hist?fmtUsd(R.hist.cashback._usd||0):'—'}</b></div><div style="grid-column:span 2"><span>Claimable</span><b>${a?(R?owedTxt():'…'):'—'}</b></div></div>
-      ${a?`<div class="claimrow"><div><b>${R?fmtUsd(owedUsd()):'…'}</b><small>cashback and referrals, claimable now</small></div><button class="btn pri" id="rw-claimrw" ${R&&R.owed.length?'':'disabled'}>Claim</button></div>`:`<div style="margin-top:14px"><button class="btn pri" data-connect>Connect wallet</button></div>`}`;
-    const cp=g('rw-copy'); if(cp) cp.onclick=()=>SP.copy(link,'Referral link copied');
+      ${a?`<div class="claimrow"><div><b>${R?fmtUsd(owedUsd()):'…'}</b><small>cashback, claimable now</small></div><button class="btn pri" id="rw-claimrw" ${R&&R.owed.length?'':'disabled'}>Claim</button></div>`:`<div style="margin-top:14px"><button class="btn pri" data-connect>Connect wallet</button></div>`}`;
     const cl=g('rw-claimrw'); if(cl) cl.onclick=()=>tx(cl,()=>EQ().claimRewards(R.owed.map(o=>o.pair)),'Rewards claimed');
     wire(); }
   async function loadRewards(){ const w=SP.W.connected?SP.W.address:null; if(!w||!EQ()){ R=R&&R.split?{owed:[],split:R.split}:null; refcb(); hero(); return; }
-    try{ const [split,owed,myRef]=await Promise.all([EQ().split(),EQ().rewards(w),EQ().referrerOf(w).catch(()=>'')]); R={split,owed,myRef:myRef&&!/^0x0+$/.test(myRef)?myRef:'',hist:R&&R.hist}; refcb(); hero();
+    try{ const [split,owed]=await Promise.all([EQ().split(),EQ().rewards(w)]); R={split,owed,hist:R&&R.hist}; refcb(); hero();
       R.hist=await EQ().history(w).catch(()=>({cashback:{},referral:{},traders:0})); refcb(); hero(); }
     catch(e){ console.warn('rewards',e); } }
 

@@ -78,7 +78,7 @@
 #pg-analytics .fc{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)} #pg-analytics .fc:last-child{border-bottom:0}
 #pg-analytics .fc .who .lg{width:28px;height:28px} #pg-analytics .fc .v{font:700 14px var(--tight);text-align:right;min-width:64px}
 #pg-analytics .sp4{display:flex;gap:2px;height:7px;border-radius:999px;overflow:hidden;background:var(--s4)} #pg-analytics .sp4 i{display:block;height:100%}
-#pg-analytics .rwk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line)}
+#pg-analytics .rwk{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line)}
 #pg-analytics .rwk>div{padding:14px 18px;border-right:1px solid var(--line)} #pg-analytics .rwk>div:last-child{border-right:0} #pg-analytics .rwk .wide{grid-column:1/-1}
 #pg-analytics .rwk span{font:600 12px var(--tight);color:var(--fg-3)} #pg-analytics .rwk b{display:block;font:700 18px var(--tight);margin:4px 0 2px} #pg-analytics .rwk small{font-size:11.5px;color:var(--fg-3)}
 #pg-analytics .rwh{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 18px 0;border-top:1px solid var(--line);font:600 13px var(--tight)} #pg-analytics .rwh span{color:var(--fg-3);font-weight:500;font-size:12px}
@@ -87,7 +87,7 @@
   #pg-analytics .g2{grid-template-columns:1fr} #pg-analytics .feedc{min-height:0} #pg-analytics .feedc .feed{position:static;max-height:520px} #pg-analytics .fees{grid-template-columns:auto minmax(0,1fr)} #pg-analytics .fees .fcw{grid-column:1/-1} }
 @media(max-width:700px){ #pg-analytics .hd{align-items:flex-start;flex-direction:column} #pg-analytics .band{grid-template-columns:1fr 1fr} #pg-analytics .st{padding:14px 16px;border-top:1px solid var(--line)} #pg-analytics .st:nth-child(-n+2){border-top:0} #pg-analytics .st:nth-child(odd){border-right:1px solid var(--line)} #pg-analytics .st:nth-child(even){border-right:0} #pg-analytics .st:last-child{grid-column:1/-1;border-right:0}
   #pg-analytics .st b{font-size:24px} #pg-analytics .st .d small{display:none} #pg-analytics #an-chart{min-height:220px;height:220px;margin:6px 4px 8px 8px} #pg-analytics .fees{grid-template-columns:1fr;justify-items:stretch} #pg-analytics #an-donut{margin:0 auto}
-  #pg-analytics .rwk{grid-template-columns:1fr 1fr} #pg-analytics .rwk>div:nth-child(2){border-right:0} #pg-analytics .rwk>div:nth-child(n+3){border-top:1px solid var(--line)} #pg-analytics .tabs2{overflow-x:auto} #pg-analytics .tabs2 button{margin-right:10px;white-space:nowrap} }
+  #pg-analytics .rwk{grid-template-columns:1fr 1fr} #pg-analytics .rwk>div:nth-child(2){border-right:0} #pg-analytics .rwk>div:nth-child(n+3){border-top:1px solid var(--line)} #pg-analytics .rwk>div:last-child{grid-column:1/-1;border-right:0} #pg-analytics .tabs2{overflow-x:auto} #pg-analytics .tabs2 button{margin-right:10px;white-space:nowrap} }
 </style>
 </head><body data-page="analytics">
 <header id="sp-top"></header><div id="sp-tape"></div>
@@ -105,15 +105,15 @@
   </div>
 
   <div class="g2">
-    <section class="card"><div class="tabs2" id="an-btabs"><button data-b="coins" class="on">Top coins</button><button data-b="traders">Traders</button><button data-b="creators">Creators</button><button data-b="refs">Referrers</button></div>
+    <section class="card"><div class="tabs2" id="an-btabs"><button data-b="coins" class="on">Top coins</button><button data-b="traders">Traders</button><button data-b="creators">Creators</button></div>
       <div class="bh"><div class="sg sm" id="an-bsort"></div></div><div class="board" id="an-board"></div></section>
     <section class="card feedc"><div class="ch2"><h2>Live trades</h2><span class="live"><i></i>Live</span></div><div class="feed" id="an-feed"></div></section>
   </div>
 
   <section class="card" style="margin-top:14px"><div class="ch2"><h2>Where the fees go</h2></div>
     <div class="fees"><div id="an-donut"></div><div id="an-flegend"></div><div class="fcw"><div class="fct">Top coins by fees</div><div id="an-fcoins"></div></div></div>
-    <div class="rwh">Cashback and referrals<span id="an-rw-split">paid from the platform share</span></div><div class="rwk" id="an-rwk"></div></section>
+    <div class="rwh">Cashback<span id="an-rw-split">paid from the platform share</span></div><div class="rwk" id="an-rwk"></div></section>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=10"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=5"></script><script src="/wallet.js"></script><script src="/core.js?v=36"></script><script src="/sp-analytics.js?v=23"></script>
+<script src="/config.js?v=10"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=5"></script><script src="/wallet.js"></script><script src="/core.js?v=37"></script><script src="/sp-analytics.js?v=24"></script>
 </body></html>
