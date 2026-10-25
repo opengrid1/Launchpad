@@ -23,25 +23,25 @@
       "startBlock": 26235330
     },
     {
-      "key": "hyper",
-      "name": "HyperEVM",
-      "chainId": 999,
-      "lzEid": 30367,
-      "native": "HYPE",
+      "key": "base",
+      "name": "Base",
+      "chainId": 8453,
+      "lzEid": 30184,
+      "native": "ETH",
       "rpcs": [
-        "https://rpc.hyperliquid.xyz/evm"
+        "https://base-rpc.publicnode.com",
+        "https://mainnet.base.org"
       ],
       "maxRange": 1000,
-      "confirmations": 1,
+      "confirmations": 2,
       "pollMs": 4000,
-      "poolManager": "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F",
-      "wrappedNative": "0x5555555555555555555555555555555555555555",
+      "poolManager": "0x498581fF718922c3f8e6A244956aF099B2652b2b",
+      "wrappedNative": "0x4200000000000000000000000000000000000006",
       "factory": "",
       "hook": "",
       "tokenDeployer": "",
       "router": "",
-      "startBlock": 0,
-      "minGapMs": 700
+      "startBlock": 0
     },
     {
       "key": "bsc",
@@ -58,27 +58,6 @@
       "pollMs": 4000,
       "poolManager": "0x28e2Ea090877bF75740558f6BFB36A5ffeE9e9dF",
       "wrappedNative": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-      "factory": "",
-      "hook": "",
-      "tokenDeployer": "",
-      "router": "",
-      "startBlock": 0
-    },
-    {
-      "key": "base",
-      "name": "Base",
-      "chainId": 8453,
-      "lzEid": 30184,
-      "native": "ETH",
-      "rpcs": [
-        "https://base-rpc.publicnode.com",
-        "https://mainnet.base.org"
-      ],
-      "maxRange": 1000,
-      "confirmations": 2,
-      "pollMs": 4000,
-      "poolManager": "0x498581fF718922c3f8e6A244956aF099B2652b2b",
-      "wrappedNative": "0x4200000000000000000000000000000000000006",
       "factory": "",
       "hook": "",
       "tokenDeployer": "",
@@ -106,19 +85,40 @@
       "startBlock": 0
     },
     {
-      "key": "robinhood",
-      "name": "Robinhood Chain",
-      "chainId": 4663,
-      "lzEid": 30416,
-      "native": "ETH",
+      "key": "hyper",
+      "name": "HyperEVM",
+      "chainId": 999,
+      "lzEid": 30367,
+      "native": "HYPE",
       "rpcs": [
-        "https://rpc.mainnet.chain.robinhood.com"
+        "https://rpc.hyperliquid.xyz/evm"
       ],
-      "maxRange": 5000,
-      "confirmations": 2,
+      "maxRange": 1000,
+      "confirmations": 1,
       "pollMs": 4000,
-      "poolManager": "0x8366a39CC670B4001A1121B8F6A443A643e40951",
-      "wrappedNative": "",
+      "poolManager": "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F",
+      "wrappedNative": "0x5555555555555555555555555555555555555555",
+      "factory": "",
+      "hook": "",
+      "tokenDeployer": "",
+      "router": "",
+      "startBlock": 0,
+      "minGapMs": 700
+    },
+    {
+      "key": "monad",
+      "name": "Monad",
+      "chainId": 143,
+      "lzEid": 30390,
+      "native": "MON",
+      "rpcs": [
+        "https://rpc.monad.xyz"
+      ],
+      "maxRange": 100,
+      "confirmations": 2,
+      "pollMs": 2000,
+      "poolManager": "0x188d586Ddcf52439676Ca21A244753fA19F9Ea8e",
+      "wrappedNative": "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A",
       "factory": "",
       "hook": "",
       "tokenDeployer": "",
@@ -126,18 +126,38 @@
       "startBlock": 0
     },
     {
-      "key": "ink",
-      "name": "Ink",
-      "chainId": 57073,
-      "lzEid": 30339,
+      "key": "megaeth",
+      "name": "MegaETH",
+      "chainId": 4326,
+      "lzEid": 30398,
       "native": "ETH",
       "rpcs": [
-        "https://rpc-qnd.inkonchain.com"
+        "https://mainnet.megaeth.com/rpc"
       ],
-      "maxRange": 5000,
+      "maxRange": 1000,
       "confirmations": 2,
-      "pollMs": 4000,
-      "poolManager": "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32",
+      "pollMs": 2000,
+      "poolManager": "0xacB7e78fa05d562e0A5d3089Ec896d57D057D38e",
+      "wrappedNative": "0x4200000000000000000000000000000000000006",
+      "factory": "",
+      "hook": "",
+      "tokenDeployer": "",
+      "router": "",
+      "startBlock": 0
+    },
+    {
+      "key": "unichain",
+      "name": "Unichain",
+      "chainId": 130,
+      "lzEid": 30320,
+      "native": "ETH",
+      "rpcs": [
+        "https://mainnet.unichain.org"
+      ],
+      "maxRange": 2000,
+      "confirmations": 2,
+      "pollMs": 2000,
+      "poolManager": "0x1F98400000000000000000000000000000000004",
       "wrappedNative": "0x4200000000000000000000000000000000000006",
       "factory": "",
       "hook": "",

@@ -43,11 +43,11 @@ DATABASE_URL=postgres://user:pass@host/db npm start    # worker + API on $PORT (
 
 ### Chains
 
-`chains.json` lists the seven chains. A chain without a `factory` is skipped, so after deploying Equo on a chain, fill in
+`chains.json` lists the eight chains. A chain without a `factory` is skipped, so after deploying Equo on a chain, fill in
 its `factory`, `hook`, `tokenDeployer`, `router` and `startBlock` (the factory's deploy block) and restart. The worker
 then reads that chain from its start block and keeps following it.
 
-Environment overrides per chain (`<KEY>` is `ETH`, `HYPER`, `BSC`, `BASE`, `ARBITRUM`, `ROBINHOOD`, `INK`):
+Environment overrides per chain (`<KEY>` is `ETH`, `BASE`, `BSC`, `ARBITRUM`, `HYPER`, `MONAD`, `MEGAETH`, `UNICHAIN`):
 
 - `RPC_<KEY>`: comma-separated RPC URLs, tried in order. Use a provider key here (Alchemy, QuickNode, dRPC…) for
   speed and full history; the public RPCs in `chains.json` work but are slow and some keep only recent logs.
