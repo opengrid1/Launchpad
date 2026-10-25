@@ -143,6 +143,85 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     expect(await hook.rewardsOwed(referrer.address, WETH)).to.be.gt(r0);
   });
 
+  it("buyFor: a payment from another chain buys for the trader, who gets the coins and cashback; no one else can bind their referrer", async () => {
+    const { admin, hook, factory, creator, trader, referrer, outsider, router, WETH } = await deployStack();
+    await (await factory.connect(admin).setRewardSplit(2_500, 2_500)).wait();
+    const token = await launch(factory, creator, FLAT, 0n);
+    const coin = await ethers.getContractAt("EquoToken", token);
+    // `outsider` stands in for the cross-chain executor: it pays, the trader receives
+    await (await router.connect(outsider).buyFor(token, "0x", 0, referrer.address, trader.address, { value: ethers.parseEther("0.5") })).wait();
+    expect(await coin.balanceOf(trader.address)).to.be.gt(0n);
+    expect(await coin.balanceOf(outsider.address)).to.equal(0n);
+    expect(await coin.balanceOf(await router.getAddress())).to.equal(0n);
+    expect(await hook.rewardsOwed(trader.address, WETH)).to.be.gt(0n); // cashback is the trader's
+    expect(await hook.rewardsOwed(outsider.address, WETH)).to.equal(0n);
+    expect(await hook.referrerOf(trader.address)).to.equal(ethers.ZeroAddress); // a third party cannot bind it
+    expect(await hook.rewardsOwed(referrer.address, WETH)).to.equal(0n);
+    // buying for yourself through buyFor binds as a plain buy does
+    await (await router.connect(trader).buyFor(token, "0x", 0, referrer.address, trader.address, { value: ethers.parseEther("0.1") })).wait();
+    expect(await hook.referrerOf(trader.address)).to.equal(referrer.address);
+    // ...and later buys in the trader's name use that binding
+    const r0 = await hook.rewardsOwed(referrer.address, WETH);
+    await (await router.connect(outsider).buyFor(token, "0x", 0, outsider.address, trader.address, { value: ethers.parseEther("0.1") })).wait();
+    expect(await hook.referrerOf(trader.address)).to.equal(referrer.address);
+    expect(await hook.rewardsOwed(referrer.address, WETH)).to.be.gt(r0);
+    await expect(router.connect(outsider).buyFor(token, "0x", 0, ethers.ZeroAddress, ethers.ZeroAddress, { value: 1n })).to.be.revertedWithCustomError(router, "ZeroAddress");
+    await expect(router.connect(outsider).buyFor(token, "0x", ethers.MaxUint256, ethers.ZeroAddress, trader.address, { value: ethers.parseEther("0.01") })).to.be.revertedWithCustomError(router, "Slippage");
+  });
+
+  it("sellWithSig: the trader signs once with no ETH, a relayer submits, payTo gets the proceeds less a capped fee; no replay", async () => {
+    const { admin, hook, factory, creator, trader, outsider, newCreator, router, WETH } = await deployStack();
+    await (await factory.connect(admin).setRewardSplit(2_500, 2_500)).wait();
+    const token = await launch(factory, creator, FLAT, 0n);
+    const coin = await ethers.getContractAt("EquoToken", token);
+    await (await router.connect(outsider).buyFor(token, "0x", 0, ethers.ZeroAddress, trader.address, { value: ethers.parseEther("0.5") })).wait();
+    const amount = (await coin.balanceOf(trader.address)) / 2n;
+    const ROUTER = await router.getAddress();
+    const chainId = (await ethers.provider.getNetwork()).chainId;
+    const deadline = BigInt((await ethers.provider.getBlock("latest"))!.timestamp + 3600);
+    // EIP-2612 permit for the router, so the trader needs no approve transaction either
+    const pSig = ethers.Signature.from(await trader.signTypedData(
+      { name: await coin.name(), version: "1", chainId, verifyingContract: token },
+      { Permit: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }, { name: "value", type: "uint256" }, { name: "nonce", type: "uint256" }, { name: "deadline", type: "uint256" }] },
+      { owner: trader.address, spender: ROUTER, value: amount, nonce: await coin.nonces(trader.address), deadline },
+    ));
+    const permit = { deadline, v: pSig.v, r: pSig.r, s: pSig.s };
+    const types = { SellIntent: [{ name: "owner", type: "address" }, { name: "coin", type: "address" }, { name: "amountIn", type: "uint256" }, { name: "minEthOut", type: "uint256" }, { name: "maxFee", type: "uint256" }, { name: "payTo", type: "address" }, { name: "nonce", type: "uint256" }, { name: "deadline", type: "uint256" }] };
+    const domain = { name: "EquoRouter", version: "1", chainId, verifyingContract: ROUTER };
+    // `newCreator` stands in for the payout address (the trader, or a cross-chain deposit address)
+    const it_ = { owner: trader.address, coin: token, amountIn: amount, minEthOut: ethers.parseEther("0.1"), maxFee: ethers.parseEther("0.002"), payTo: newCreator.address, nonce: 0n, deadline };
+    const sig = await trader.signTypedData(domain, types, it_);
+    const fee = ethers.parseEther("0.0015");
+    // a fee above the signed cap is refused
+    await expect(router.connect(outsider).sellWithSig(it_, "0x", ethers.parseEther("0.003"), sig, permit)).to.be.revertedWithCustomError(router, "FeeTooHigh");
+    // someone else's signature is refused
+    const bad = await outsider.signTypedData(domain, types, it_);
+    await expect(router.connect(outsider).sellWithSig(it_, "0x", fee, bad, permit)).to.be.revertedWithCustomError(router, "BadSignature");
+    const payBefore = await ethers.provider.getBalance(newCreator.address), relBefore = await ethers.provider.getBalance(outsider.address);
+    const cb0 = await hook.rewardsOwed(trader.address, WETH);
+    const rc = await (await router.connect(outsider).sellWithSig(it_, "0x", fee, sig, permit)).wait();
+    const ev = rc!.logs.map((l: any) => { try { return router.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "SoldWithSig");
+    expect(ev!.args.fee).to.equal(fee);
+    const paid = (await ethers.provider.getBalance(newCreator.address)) - payBefore;
+    expect(paid).to.equal(ev!.args.ethOut - fee);
+    expect(paid).to.be.gte(it_.minEthOut);
+    const gas = rc!.gasUsed * rc!.gasPrice;
+    expect((await ethers.provider.getBalance(outsider.address)) - relBefore + gas).to.equal(fee); // the relayer is repaid exactly the fee
+    expect(await coin.balanceOf(trader.address)).to.equal(amount); // the other half is untouched
+    expect(await hook.rewardsOwed(trader.address, WETH)).to.be.gt(cb0); // the sell's cashback is the trader's
+    expect(await router.sellNonces(trader.address)).to.equal(1n);
+    // the same signature never works twice
+    await expect(router.connect(outsider).sellWithSig(it_, "0x", fee, sig, { deadline: 0n, v: 0, r: ethers.ZeroHash, s: ethers.ZeroHash })).to.be.revertedWithCustomError(router, "BadSignature");
+    // an expired intent is refused
+    const late = { ...it_, nonce: 1n, deadline: 1n };
+    await expect(router.connect(outsider).sellWithSig(late, "0x", 0n, await trader.signTypedData(domain, types, late), { deadline: 0n, v: 0, r: ethers.ZeroHash, s: ethers.ZeroHash })).to.be.revertedWithCustomError(router, "Expired");
+    // a minimum the pool cannot meet is refused and nothing moves
+    const greedy = { ...it_, nonce: 1n, amountIn: 1000n * 10n ** 18n, minEthOut: ethers.parseEther("100") };
+    await (await coin.connect(trader).approve(ROUTER, ethers.MaxUint256)).wait();
+    await expect(router.connect(outsider).sellWithSig(greedy, "0x", 0n, await trader.signTypedData(domain, types, greedy), { deadline: 0n, v: 0, r: ethers.ZeroHash, s: ethers.ZeroHash })).to.be.revertedWithCustomError(router, "Slippage");
+    expect(await router.sellNonces(trader.address)).to.equal(1n);
+  });
+
   it("gives the creator cashback on their first buy, and nothing changes with a zero split", async () => {
     const { admin, hook, factory, creator, WETH } = await deployStack();
     const t0 = await launch(factory, creator, FLAT, ethers.parseEther("0.5"), "Z");

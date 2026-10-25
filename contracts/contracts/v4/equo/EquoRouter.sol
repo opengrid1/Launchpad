@@ -4,6 +4,9 @@ pragma solidity 0.8.26;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "@uniswap/v4-core/src/interfaces/callback/IUnlockCallback.sol";
@@ -53,7 +56,15 @@ interface IEquoV2Pair {
 ///         Every coin swap tells the hook who the trader is (msg.sender) and an
 ///         optional referrer, so the trader earns cashback and the referrer its
 ///         share. A referrer binds to a trader once, on their first referred trade.
-contract EquoRouter is IUnlockCallback, ReentrancyGuard {
+///
+///         Trading from any chain, against the one pool on Ethereum:
+///           - {buyFor}: a cross-chain payment service (the trader paid on their own chain) buys for the trader.
+///             The coins and the cashback go to the trader. A referrer only binds when the trader buys for
+///             themselves, so nobody can set another trader's referrer by buying in their name.
+///           - {sellWithSig}: the trader signs a sell once (amount, minimum payout, maximum gas fee, payout address,
+///             deadline) and any relayer submits it, paying the gas and taking at most the signed fee out of the
+///             proceeds. The trader needs no ETH on Ethereum to sell.
+contract EquoRouter is IUnlockCallback, ReentrancyGuard, EIP712 {
     using SafeERC20 for IERC20;
 
     uint8 internal constant UNI_V2 = 1;
@@ -81,9 +92,41 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
 
     address private _activePool;
 
+    /// @notice A sell the owner signed once, for anyone to submit. `minEthOut` is what `payTo` must receive after
+    ///         the relayer's fee; `maxFee` caps that fee; `nonce` is the owner's next {sellNonces} value.
+    struct SellIntent {
+        address owner;
+        address coin;
+        uint256 amountIn;
+        uint256 minEthOut;
+        uint256 maxFee;
+        address payTo;
+        uint256 nonce;
+        uint256 deadline;
+    }
+
+    /// @notice An optional EIP-2612 permit for the coin, so the owner needs no approve transaction. `deadline`
+    ///         zero means none: the owner approved the router already.
+    struct Permit {
+        uint256 deadline;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    }
+
+    bytes32 public constant SELL_TYPEHASH = keccak256(
+        "SellIntent(address owner,address coin,uint256 amountIn,uint256 minEthOut,uint256 maxFee,address payTo,uint256 nonce,uint256 deadline)"
+    );
+    /// @notice The next sell nonce of each owner; a signed sell is good once.
+    mapping(address owner => uint256) public sellNonces;
+
     event Bought(address indexed coin, address indexed buyer, uint256 ethIn, uint256 pairIn, uint256 coinOut);
     event Sold(address indexed coin, address indexed seller, uint256 coinIn, uint256 pairOut, uint256 ethOut);
+    event SoldWithSig(address indexed coin, address indexed owner, address indexed payTo, uint256 coinIn, uint256 ethOut, uint256 fee, address relayer);
 
+    error Expired();
+    error BadSignature();
+    error FeeTooHigh();
     error NotListed();
     error Slippage();
     error ZeroAmount();
@@ -92,7 +135,7 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
     /// @dev Carries a simulated amount out of {quoteEthToPair}.
     error QuoteResult(uint256 amount);
 
-    constructor(IPoolManager pm, EquoFactory factory_, address weth_) {
+    constructor(IPoolManager pm, EquoFactory factory_, address weth_) EIP712("EquoRouter", "1") {
         if (address(pm) == address(0) || address(factory_) == address(0) || weth_ == address(0)) revert ZeroAddress();
         poolManager = pm;
         factory = factory_;
@@ -112,10 +155,73 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
         address pair = _pairOf(coin);
         _poke(pair);
         uint256 pairIn = _ethToPair(pair, msg.value, route);
-        coinOut = _coinSwap(coin, pair, pairIn, referrer);
+        coinOut = _coinSwap(coin, pair, pairIn, msg.sender, referrer);
         if (coinOut < minCoinOut) revert Slippage();
         IERC20(coin).safeTransfer(msg.sender, coinOut);
         emit Bought(coin, msg.sender, msg.value, pairIn, coinOut);
+    }
+
+    /// @notice Buy `coin` with the ETH sent, for `recipient`: the coins and the cashback are theirs. How a payment
+    ///         made on another chain buys in the one pool. `referrer` only binds when the caller is the recipient;
+    ///         anyone else buying in their name trades under the recipient's existing referrer, if any.
+    function buyFor(address coin, bytes calldata route, uint256 minCoinOut, address referrer, address recipient)
+        external
+        payable
+        nonReentrant
+        returns (uint256 coinOut)
+    {
+        if (msg.value == 0) revert ZeroAmount();
+        if (recipient == address(0)) revert ZeroAddress();
+        address pair = _pairOf(coin);
+        _poke(pair);
+        uint256 pairIn = _ethToPair(pair, msg.value, route);
+        coinOut = _coinSwap(coin, pair, pairIn, recipient, msg.sender == recipient ? referrer : address(0));
+        if (coinOut < minCoinOut) revert Slippage();
+        IERC20(coin).safeTransfer(recipient, coinOut);
+        emit Bought(coin, recipient, msg.value, pairIn, coinOut);
+    }
+
+    /// @notice Submit a sell the owner signed (see {SellIntent}). The caller pays the gas and takes `fee` (at most the
+    ///         signed `maxFee`) out of the ETH proceeds; `payTo` receives the rest, at least the signed `minEthOut`.
+    ///         `permit` (optional) approves the router with the coin's EIP-2612 permit in the same call.
+    function sellWithSig(SellIntent calldata it, bytes calldata route, uint256 fee, bytes calldata signature, Permit calldata permit)
+        external
+        nonReentrant
+        returns (uint256 ethOut)
+    {
+        if (block.timestamp > it.deadline) revert Expired();
+        if (fee > it.maxFee) revert FeeTooHigh();
+        if (it.amountIn == 0) revert ZeroAmount();
+        if (it.payTo == address(0)) revert ZeroAddress();
+        if (it.nonce != sellNonces[it.owner]++) revert BadSignature();
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(abi.encode(SELL_TYPEHASH, it.owner, it.coin, it.amountIn, it.minEthOut, it.maxFee, it.payTo, it.nonce, it.deadline))
+        );
+        if (ECDSA.recover(digest, signature) != it.owner) revert BadSignature();
+        if (permit.deadline != 0) {
+            // a front-run permit has already set the allowance; the transfer below is what must succeed
+            try IERC20Permit(it.coin).permit(it.owner, address(this), it.amountIn, permit.deadline, permit.v, permit.r, permit.s) {} catch {}
+        }
+        address pair = _pairOf(it.coin);
+        _poke(pair);
+        IERC20(it.coin).safeTransferFrom(it.owner, address(this), it.amountIn);
+        uint256 pairOut = _coinSwap(it.coin, it.coin, it.amountIn, it.owner, address(0));
+        ethOut = _pairToWeth(pair, pairOut, route);
+        if (ethOut < fee || ethOut - fee < it.minEthOut) revert Slippage();
+        IEquoWrapped(weth).withdraw(ethOut);
+        _sendEth(it.payTo, ethOut - fee);
+        if (fee != 0) _sendEth(msg.sender, fee);
+        emit SoldWithSig(it.coin, it.owner, it.payTo, it.amountIn, ethOut, fee, msg.sender);
+    }
+
+    /// @notice The EIP-712 domain separator signed sells use.
+    function domainSeparator() external view returns (bytes32) {
+        return _domainSeparatorV4();
+    }
+
+    function _sendEth(address to, uint256 amount) internal {
+        (bool ok,) = to.call{value: amount}("");
+        require(ok, "eth xfer");
     }
 
     /// @notice Sell `amountIn` of `coin` for ETH along `route` (the buy route, walked backwards).
@@ -124,7 +230,7 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
         address pair = _pairOf(coin);
         _poke(pair);
         IERC20(coin).safeTransferFrom(msg.sender, address(this), amountIn);
-        uint256 pairOut = _coinSwap(coin, coin, amountIn, referrer);
+        uint256 pairOut = _coinSwap(coin, coin, amountIn, msg.sender, referrer);
         ethOut = _pairToWeth(pair, pairOut, route);
         if (ethOut < minEthOut) revert Slippage();
         IEquoWrapped(weth).withdraw(ethOut);
@@ -141,7 +247,7 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
         if (pairIn == 0) revert ZeroAmount();
         address pair = _pairOf(coin);
         IERC20(pair).safeTransferFrom(msg.sender, address(this), pairIn);
-        coinOut = _coinSwap(coin, pair, pairIn, referrer);
+        coinOut = _coinSwap(coin, pair, pairIn, msg.sender, referrer);
         if (coinOut < minCoinOut) revert Slippage();
         IERC20(coin).safeTransfer(msg.sender, coinOut);
         emit Bought(coin, msg.sender, 0, pairIn, coinOut);
@@ -151,7 +257,7 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
         if (amountIn == 0) revert ZeroAmount();
         address pair = _pairOf(coin);
         IERC20(coin).safeTransferFrom(msg.sender, address(this), amountIn);
-        pairOut = _coinSwap(coin, coin, amountIn, referrer);
+        pairOut = _coinSwap(coin, coin, amountIn, msg.sender, referrer);
         if (pairOut < minPairOut) revert Slippage();
         IERC20(pair).safeTransfer(msg.sender, pairOut);
         emit Sold(coin, msg.sender, amountIn, pairOut, 0);
@@ -291,10 +397,10 @@ contract EquoRouter is IUnlockCallback, ReentrancyGuard {
     }
 
     /// @dev Swap through the coin's own pool: `currencyIn` is the coin (sell) or its pair (buy).
-    ///      The hook learns the trader (msg.sender) and the referrer from hookData.
-    function _coinSwap(address coin, address currencyIn, uint256 amountIn, address referrer) internal returns (uint256) {
+    ///      The hook learns the trader (the buyer, seller or named recipient) and the referrer from hookData.
+    function _coinSwap(address coin, address currencyIn, uint256 amountIn, address trader, address referrer) internal returns (uint256) {
         PoolKey memory key = factory.poolKeyOf(coin);
-        return _v4Swap(key, currencyIn == Currency.unwrap(key.currency0), amountIn, abi.encode(msg.sender, referrer));
+        return _v4Swap(key, currencyIn == Currency.unwrap(key.currency0), amountIn, abi.encode(trader, referrer));
     }
 
     function _v4Swap(PoolKey memory key, bool zeroForOne, uint256 amountIn, bytes memory hookData) internal returns (uint256 amountOut) {

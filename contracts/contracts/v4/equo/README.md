@@ -76,6 +76,24 @@ Other findings (no change needed):
 - `genesOf` and `stagesOf` are read from the hook only; the factory no longer duplicates them, to stay
   under the contract size limit.
 
+## One pool, trade from any chain
+
+Every coin has one pool, on Ethereum. Traders on other EVM chains reach it without holding ETH on Ethereum:
+
+- **Buy.** The trader pays in their own chain's coin through a cross-chain payment service (Relay: one deposit
+  transaction, the Ethereum call runs in seconds). The service calls `EquoRouter.buyFor(coin, route, minOut,
+  referrer, trader)` with the ETH. The coins and the cashback are the trader's. A referrer only binds when the caller
+  is the trader, so nobody can bind another trader's referrer by buying in their name; a trader's existing binding
+  still earns on these buys.
+- **Sell.** The trader signs a `SellIntent` (EIP-712, domain `EquoRouter` v1): coin, amount, minimum payout, maximum
+  relayer fee, payout address, nonce, deadline, plus the coin's EIP-2612 permit. Any relayer submits
+  `sellWithSig`, pays the Ethereum gas and takes at most the signed fee from the proceeds; the payout address gets the
+  rest, at least the signed minimum. Each signature works once (`sellNonces`). The payout address can be the trader
+  on Ethereum or a cross-chain deposit address that pays them out on their own chain.
+
+Measured Relay quotes for a call on Ethereum, paid from BNB Chain, Base, Monad and HyperEVM: one deposit
+transaction, about 4 seconds, 7 to 10 cents of Relay fee on top of the Ethereum gas.
+
 ## Not in v3, and why
 
 - **Fees into liquidity.** Adding pair tokens to the pool needs a single-sided position below the
