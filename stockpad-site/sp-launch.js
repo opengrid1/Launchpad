@@ -45,14 +45,14 @@ function launchInit(){
 
   /* ---------- 2. fee and tokenomics ---------- */
   const feeBtn=(b,on,k)=>`<button type="button" data-f="${b}"${k?` data-k="${k}"`:''} class="${on?'on':''}">${b/100}%</button>`;
-  function paintFee(){ g('fee-pills').innerHTML=FEES.map(b=>feeBtn(b,S.fee===b)).join('');
+  function paintFee(){ g('fee-pills').innerHTML=FEES.map(b=>`<button type="button" data-f="${b}" class="${S.fee===b?'on':''}">${b/100}%<small>you ${pct(youKeep(b))}</small></button>`).join('');
     g('keep-you').textContent=pct(youKeep(S.fee)); g('keep-pf').textContent=pct(pfKeep(S.fee));
     const box=g('perfee'); box.classList.toggle('hidden',!S.perFee); g('opt-perfee').querySelector('.sw').classList.toggle('on',S.perFee);
     if(S.perFee) box.innerHTML=S.chains.map(k=>`<div class="pcrow"><span class="cn"><img src="${ch(k).logo}" alt="">${esc(ch(k).name)}</span><div class="pills">${FEES.map(b=>feeBtn(b,feeOf(k)===b,k)).join('')}</div></div>`).join('')+`<p class="note">You keep ${pct(CREATOR*100)} of the fee on each chain; the platform keeps the rest.</p>`; }
   function allocTotal(a){ return ALLOC.reduce((s,[k])=>s+(+a[k]||0),0); }
   function paintSplit(){ g('tok-pre').innerHTML=Object.keys(PRESETS).concat('Custom').map(p=>`<button type="button" data-p="${p}" class="${S.preset===p?'on':''}">${p}</button>`).join('');
-    const a=S.alloc; g('split').innerHTML=ALLOC.map(([k,n,d])=>`<div class="sl"><span><b>${n}</b><small>${d}</small></span><span class="pi"><input class="inp" data-a="${k}" type="number" min="0" max="100" step="1" value="${+a[k]||0}"><span class="muted">%</span></span></div>`).join('')
-      +`<div class="sl"><span><b>Different split on each chain</b><small>Pick a preset per chain instead.</small></span><span class="pi" style="justify-content:flex-end"><button type="button" class="sw ${S.perSplit?'on':''}" role="switch" aria-checked="${S.perSplit}" data-sw="perSplit"></button></span></div>`
+    const a=S.alloc; g('split').innerHTML=ALLOC.map(([k,n,d,c])=>`<div class="sl"><span><b><i style="background:${c}"></i>${n}</b><small>${d}</small></span><input type="range" min="0" max="100" step="5" data-a="${k}" value="${+a[k]||0}" style="--c:${c}"><span class="pi"><input class="inp" data-a="${k}" type="number" min="0" max="100" step="1" value="${+a[k]||0}"><span class="muted">%</span></span></div>`).join('')
+      +`<div class="sl full"><span><b>Different split on each chain</b><small>Pick a preset per chain instead.</small></span><span class="pi" style="justify-content:flex-end"><button type="button" class="sw ${S.perSplit?'on':''}" role="switch" aria-checked="${S.perSplit}" data-sw="perSplit"></button></span></div>`
       +(S.perSplit?S.chains.map(k=>`<div class="pcrow"><span class="cn"><img src="${ch(k).logo}" alt="">${esc(ch(k).name)}</span><div class="pills">${Object.keys(PRESETS).map(p=>`<button type="button" data-sp="${p}" data-k="${k}" class="${(S.splitBy[k]||'')===p?'on':''}">${p}</button>`).join('')}</div></div>`).join(''):'')
       +(a.hold>0?`<div class="sl"><span><b>Treasury wallet</b><small>Where buy-and-hold coins go.</small></span><span></span></div><input class="inp" id="f-treas" placeholder="0x… treasury wallet" value="${esc(S.treas||'')}" autocomplete="off">`:'')
       +(a.comm>0?`<div class="sl" style="margin-top:8px"><span><b>Community wallet</b><small>Where the community share is paid.</small></span><span></span></div><input class="inp" id="f-comm" placeholder="0x… community wallet" value="${esc(S.comm||'')}" autocomplete="off">`:'');
@@ -61,7 +61,11 @@ function launchInit(){
     g('split-you').textContent=`${pct(tot)} allocated · you receive ${pct(fee*(+a.creator||0)/100)} of every trade`;
     g('sbar').innerHTML=ALLOC.filter(([k])=>a[k]>0).map(([k,,,c])=>`<i style="width:${a[k]}%;background:${c}"></i>`).join('');
     g('slg').innerHTML=ALLOC.filter(([k])=>a[k]>0).map(([k,n,,c])=>`<span><i style="background:${c}"></i>${n} ${a[k]}%</span>`).join('');
-    g('split-msg').textContent=Math.abs(tot-100)>0.001?`The split must add up to 100% (now ${pct(tot)})`:''; }
+    g('split-msg').textContent=Math.abs(tot-100)>0.001?`The split must add up to 100% (now ${pct(tot)})`:'';
+    let at=0; const stops=ALLOC.filter(([k])=>a[k]>0).map(([k,,,c])=>{ const s0=at; at+=+a[k]; return `${c} ${s0*3.6}deg ${Math.min(at,100)*3.6}deg`; });
+    g('donut').style.background=stops.length?`conic-gradient(${stops.join(',')}${at<100?`,#22252d ${at*3.6}deg 360deg`:''})`:'#22252d';
+    g('donut').innerHTML=`<span>${pct(fee*(+a.creator||0)/100)}<small>to you</small></span>`;
+    $$('#split [data-a]').forEach(el=>{ if(document.activeElement!==el) el.value=+a[el.dataset.a]||0; }); }
   const snipeMaxMin=()=>Math.floor(Math.min(...S.chains.filter(k=>ch(k).evm!==false).map(k=>7200*(ch(k).blockSec||12)/60)));
   function v2(){ let ok=true; const a=S.alloc;
     if(Math.abs(allocTotal(a)-100)>0.001) ok=false;
@@ -81,17 +85,19 @@ function launchInit(){
 
   /* ---------- 3. review ---------- */
   function paintReview(){ const n=val('f-name'), t=val('f-sym').toUpperCase(); g('rv-sym').textContent='$'+(t||'TICKER'); g('rv-name').textContent=n||'Coin name';
+    if(!g('rv-img')){ const hd=g('rv-sym').parentElement; hd.classList.add('rva'); hd.insertAdjacentHTML('afterbegin','<div class="rvi" id="rv-img"></div>'); const w=document.createElement('div'); w.append(g('rv-sym'),g('rv-name')); hd.append(w); }
+    g('rv-img').innerHTML=S.logo?`<img src="${S.logo}" alt="">`:esc((t||n||'?')[0].toUpperCase());
     g('rv-art').textContent=S.logo?'Uploaded':'Monogram'; const L=[['Website','f-web'],['X','f-x'],['Telegram','f-tg']].filter(x=>val(x[1])).map(x=>x[0]); g('rv-links').textContent=L.length?L.join(', '):'None';
     const fees=[...new Set(S.chains.map(feeOf))]; g('rv-feel').textContent=S.perFee&&fees.length>1?'Per chain':'Every chain';
     g('rv-fee').textContent=fees.length>1?S.chains.map(k=>`${ch(k).code} ${feeOf(k)/100}%`).join(' · '):`${fees[0]/100}% · you keep ${pct(youKeep(fees[0]))}`;
     g('rv-tok').textContent=S.perSplit?'Per chain':ALLOC.filter(([k])=>S.alloc[k]>0).map(([k,nm])=>`${nm} ${S.alloc[k]}%`).join(' · ');
-    g('chips').innerHTML=SP.chains.map(c=>`<button type="button" class="chip ${S.chains.includes(c.key)?'on':''}" data-ck="${c.key}" style="--cc:${c.color}"><i></i>${esc(c.name)}${SP.chainDeployed(c.key)?'':'<span class="soonb">Opens soon</span>'}</button>`).join('');
+    g('chips').innerHTML=SP.chains.map(c=>`<button type="button" class="chip ${S.chains.includes(c.key)?'on':''}" data-ck="${c.key}" style="--cc:${c.color}"><img src="${c.logo}" alt=""><span class="cm">${esc(c.name)}<small>${SP.chainDeployed(c.key)?`${feeOf(c.key)/100}% fee · ${esc(c.native)}`:'<span class="sn">Opens soon</span>'}</small></span><span class="tick">${ic('check')}</span></button>`).join('');
     const N=S.chains.length; g('ch-note').innerHTML=S.shared?`${N} ${N===1?'chain':'chains'}, <b>1B tokens in total</b>: ${fmtAmt(1e9/N)} on each. Chains cannot be added after launch.`:`${N} ${N===1?'chain':'chains'}, <b>1B tokens on each</b>. Chains cannot be added after launch.`;
     g('sw-shared').classList.toggle('on',S.shared); g('sw-shared').setAttribute('aria-checked',S.shared);
     g('split-note').textContent=S.shared?`On: 1B in total, ${fmtAmt(1e9/N)} on each chain. Same opening price either way.`:`Off: every chain has its own 1B (${N}B in total). Turn on to share 1B across the chains.`;
     g('cap-pills').innerHTML=S.caps.map((v,i)=>`<button type="button" data-cap="${i}" class="${i===S.capI?'on':''}">$${v>=1000?(v/1000)+'K':v}</button>`).join('');
     g('cap-note').textContent=`The price every chain opens at, set against the coin's 1B${S.shared?' total':''}.`;
-    g('pay').innerHTML=S.chains.map(k=>`<button type="button" class="chip ${S.pay===k?'on':''}" data-pk="${k}" style="--cc:${ch(k).color}"><img src="${ch(k).logo}" alt="">${esc(ch(k).name)} <small>${esc(ch(k).native)}</small></button>`).join('');
+    g('pay').innerHTML=S.chains.map(k=>`<button type="button" class="chip ${S.pay===k?'on':''}" data-pk="${k}" style="--cc:${ch(k).color}"><img src="${ch(k).logo}" alt=""><span class="cm">${esc(ch(k).name)}<small>pay in ${esc(ch(k).native)}</small></span><span class="tick">${ic('check')}</span></button>`).join('');
     const pc=ch(S.pay), mn=minBuy(S.pay); g('dev-sym').textContent=pc.native; const di=g('f-dev'); di.min=String(mn);
     g('dev-note').innerHTML=`Bought on ${esc(pc.name)} only, the chain you pay on; the coins go to your wallet there. At least ${fmtNum(mn)} ${esc(pc.native)}: every pool opens with a first buy${N>1?`, and the other ${N-1} ${N-1===1?'chain is':'chains are'} seeded for you in the launch fee`:''}.`;
     g('addr-note').textContent=`${evmChains().length} EVM ${evmChains().length===1?'chain':'chains'}, one address${hasSol()?'; Solana gets its own':''}.`;
@@ -107,7 +113,7 @@ function launchInit(){
     const tot=rows.reduce((s,r)=>s+r.gas+r.buy,0); return {rows,tot,native:pu?tot/pu:0,pu}; }
   function paintCost(){ const c=costs(), pc=ch(S.pay);
     g('cost').innerHTML=c.rows.map(r=>`<div class="row"><div class="t"><img src="${ch(r.k).logo}" alt="">${esc(ch(r.k).name)}<small>${r.k===S.pay?'Gas and your dev buy':'Gas and the opening seed buy'}</small></div><div class="v">${r.known?usd(r.gas+r.buy):'…'}</div></div>`).join('')
-      +`<div class="row total"><div class="t">Total, paid on ${esc(pc.name)}</div><div class="v">${c.pu?`${fmtNum(c.native)} ${esc(pc.native)} · ${usd(c.tot)}`:'…'}</div></div>`;
+      +`<div class="row total"><div class="t">Total, paid on ${esc(pc.name)}</div><div class="v">${c.pu?`${fmtNum(c.native)} ${esc(pc.native)}<small>≈ ${usd(c.tot)}</small>`:'…'}</div></div>`;
     g('cost-note').innerHTML=`One payment on ${esc(pc.name)}. Your coin goes live on ${S.chains.length===1?esc(pc.name):`all ${S.chains.length} chains`} with the same ${evmChains().length>1?'address and ':''}opening price${S.chains.length>1?'; the other chains are launched for you within minutes':''}.`; }
 
   /* ---------- what the live contracts can take today ---------- */
@@ -123,7 +129,7 @@ function launchInit(){
   /* ---------- steps and footer ---------- */
   const valid=[null,()=>v1(true),()=>v2(),()=>v3(),()=>true];
   function show(n){ S.step=n; S.max=Math.max(S.max,n); $$('#pg-launch .step').forEach(s=>s.classList.toggle('on',+s.dataset.step===n));
-    $$('#tabs button').forEach(b=>{ const k=+b.dataset.s; b.classList.toggle('on',k===n); b.classList.toggle('done',k<n); });
+    $$('#tabs button').forEach(b=>{ const k=+b.dataset.s; b.classList.toggle('on',k===n); b.classList.toggle('done',k<n); $('.n',b).innerHTML=k<n?ic('check'):String(k); }); g('prog').style.setProperty('--p',((n-1)/3*100)+'%');
     g('back').classList.toggle('hidden',n===1); paint(); window.scrollTo({top:Math.min(scrollY,g('wiz').offsetTop-90),behavior:'smooth'}); }
   function go(n){ if(S.launched) return; n=clamp(n,1,4); if(n<=S.step){ show(n); return; } for(let i=S.step;i<n;i++){ if(!valid[i]()){ if(i!==S.step) show(i); SP.toast('Fix the highlighted fields first','err'); return; } } show(n); }
   function paintFoot(){ const nx=g('next'), msg=g('foot-msg');
@@ -138,7 +144,9 @@ function launchInit(){
   function paintPreview(){ const n=val('f-name'), t=val('f-sym').toUpperCase(), d=val('f-desc');
     g('pv-sym').textContent='$'+(t||'TICKER'); const fees=[...new Set(S.chains.map(feeOf))]; g('pv-fee').textContent=fees.length>1?fees.map(f=>f/100+'%').join('/'):fees[0]/100+'%';
     g('pv-im').innerHTML=S.logo?`<img src="${S.logo}" alt="">`:`<span>${esc((t||n||'?')[0].toUpperCase())}</span>`; g('pv-name').textContent=n||'Coin name'; g('pv-desc').textContent=d||'Your description shows here.';
-    g('pv-dots').innerHTML=S.chains.map(k=>`<i style="background:${ch(k).color}" title="${esc(ch(k).name)}"></i>`).join(''); g('pv-ready').textContent=`READY FOR ${S.chains.length} ${S.chains.length===1?'CHAIN':'CHAINS'}`;
+    g('pv-dots').innerHTML=S.chains.map(k=>`<i style="background:${ch(k).color}" title="${esc(ch(k).name)}"></i>`).join('');
+    const N=S.chains.length, seg=360/N; g('pv-ring').style.background=`conic-gradient(${S.chains.map((k,i)=>`${ch(k).color} ${i*seg+2}deg ${(i+1)*seg-2}deg, transparent ${(i+1)*seg-2}deg ${(i+1)*seg+2}deg`).join(',')})`;
+    const cap=S.caps[S.capI]||0; g('pv-st').innerHTML=[['Fee',fees.length>1?'per chain':fees[0]/100+'%'],['Chains',N],['Supply',S.shared?'1B':N+'B'],['Opens at','$'+(cap>=1000?(cap/1000)+'K':cap)]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join(''); g('pv-ready').textContent=`READY FOR ${S.chains.length} ${S.chains.length===1?'CHAIN':'CHAINS'}`;
     g('lt-dots').innerHTML=S.chains.map(k=>`<span><i style="background:${ch(k).color}"></i>${esc(ch(k).name)}</span>`).join('');
     g('name-cnt').textContent=new TextEncoder().encode(n).length+'/32'; g('sym-cnt').textContent=t.length+'/10'; g('desc-cnt').textContent=d.length+'/280'; }
   function paint(){ paintLogo(); paintFee(); paintSplitTotals(); g('sol-row').classList.toggle('hidden',!hasSol()); g('evm-w').textContent=SP.W.connected?shortAddr(cs(SP.W.address)):'Connect a wallet';
@@ -166,6 +174,7 @@ function launchInit(){
     d.innerHTML=`<img src="${S.logo||DEF_LOGO}" alt=""><h2>$${esc(L.symbol)} is live</h2><p>${esc(L.name)} · <span class="mono">${shortAddr(cs(L.addr))}</span></p><div class="acts"><a class="btn pri" href="${tokenUrl(L.addr)}">Open coin page</a><a class="btn" target="_blank" rel="noopener" href="https://x.com/intent/tweet?text=${encodeURIComponent(`$${L.symbol} is live on Equo. ${url}`)}">Share on X</a><a class="btn" target="_blank" rel="noopener" href="${EXPLORER}/token/${L.addr}">Explorer</a></div>`; }
 
   /* ---------- wiring ---------- */
+  $$('#pg-launch [data-ic]').forEach(el=>{ el.innerHTML=ic(el.dataset.ic); });
   g('tabs').onclick=e=>{ const b=e.target.closest('[data-s]'); if(b) go(+b.dataset.s); };
   g('next').onclick=()=>S.step<4?go(S.step+1):doLaunch(); g('back').onclick=()=>go(S.step-1);
   g('f-logo').addEventListener('change',e=>{ loadLogo(e.target.files[0]); e.target.value=''; });
@@ -182,7 +191,7 @@ function launchInit(){
     const ck=t.closest('#chips [data-ck]'); if(ck){ const k=ck.dataset.ck; if(S.chains.includes(k)){ if(S.chains.length===1){ SP.toast('A coin needs at least one chain','info'); return; } S.chains=S.chains.filter(x=>x!==k); } else S.chains=SP.chains.map(c=>c.key).filter(x=>x===k||S.chains.includes(x)); if(!S.chains.includes(S.pay)) S.pay=S.chains[0]; if(S.perSplit) paintSplit(); paint(); return; }
     const pk=t.closest('#pay [data-pk]'); if(pk){ S.pay=pk.dataset.pk; const d=g('f-dev'); if(num('f-dev',0)<minBuy(S.pay)) d.value=fmtNum(minBuy(S.pay)*2); paint(); return; }
     const cp=t.closest('#cap-pills [data-cap]'); if(cp){ S.capI=+cp.dataset.cap; paint(); return; } });
-  g('split').addEventListener('input',e=>{ const a=e.target.closest('[data-a]'); if(a){ S.alloc[a.dataset.a]=clamp(Math.round(+a.value||0),0,100); S.preset='Custom'; $$('#tok-pre button').forEach(b=>b.classList.toggle('on',b.dataset.p==='Custom')); paintSplitTotals(); paintFoot(); }
+  g('split').addEventListener('input',e=>{ const a=e.target.closest('[data-a]'); if(a){ S.alloc[a.dataset.a]=clamp(Math.round(+a.value||0),0,100); $$(`#split [data-a="${a.dataset.a}"]`).forEach(o=>{ if(o!==a) o.value=S.alloc[a.dataset.a]; }); S.preset='Custom'; $$('#tok-pre button').forEach(b=>b.classList.toggle('on',b.dataset.p==='Custom')); paintSplitTotals(); paintFoot(); }
     if(e.target.id==='f-treas') S.treas=e.target.value.trim(); if(e.target.id==='f-comm') S.comm=e.target.value.trim(); });
   g('split').addEventListener('change',e=>{ if(e.target.closest('[data-a]')) paintSplit(); });
   SP.onWallet(paint); SP.chainCosts().then(c=>{ CC=c; paint(); }).catch(()=>{});
