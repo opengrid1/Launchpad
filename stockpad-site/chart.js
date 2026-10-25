@@ -15,7 +15,18 @@
   const multi=()=>chains().length>1;
   const chainOf=k=>(typeof SP!=='undefined'&&SP.chain&&SP.chain(k))||{name:k,color:'#8e8e97',logo:''};
   const pairUsdFor=k=>(X&&X.byChain&&X.byChain[k]&&X.byChain[k].pairUsd)||(X?X.pairUsd:1);
-  const factor=k=>(mode==='mcap'?SUPPLY*chains().length:1)*(unit==='USD'?pairUsdFor(k):1);
+  const supplyOf=k=>(X&&X.byChain&&X.byChain[k]&&X.byChain[k].supply)||SUPPLY;
+  const supplyAll=()=>chains().reduce((s,k)=>s+supplyOf(k),0);
+  /** one chain's market cap is its own supply at its own price; "All chains" adds every chain up (see sumBars) */
+  const factor=k=>(mode==='mcap'?supplyOf(k):1)*(unit==='USD'?pairUsdFor(k):1);
+  /** all chains together: market caps added up; the price is that total per coin across every chain */
+  const share=k=>mode==='price'?supplyOf(k)/supplyAll():1;
+  const liveFor=k=>k==='merged'?chains().reduce((s,c)=>s+livePx(c)*factor(c)*share(c),0):livePx(k)*factor(k);
+  // every chain's bars added up at each bar time; a chain with no trade in a bar holds its last close
+  function sumBars(ks,Bk){ const ts=[...new Set(ks.flatMap(k=>Bk[k].map(b=>b.t)))].sort((a,b)=>a-b), held={}, ix={};
+    ks.forEach(k=>{ held[k]=Bk[k].length?Bk[k][0].o:livePx(k)*factor(k); ix[k]=0; });
+    return ts.map(t=>{ const r={t,o:0,h:0,l:0,c:0,v:0}; ks.forEach(k=>{ const w=share(k), b=Bk[k][ix[k]];
+      if(b&&b.t===t){ r.o+=b.o*w; r.h+=b.h*w; r.l+=b.l*w; r.c+=b.c*w; r.v+=b.v; held[k]=b.c; ix[k]++; } else { const v=held[k]*w; r.o+=v; r.h+=v; r.l+=v; r.c+=v; } }); return r; }); }
   const keys=()=>!multi()?[chains()[0]]:pick==='all'?['merged']:pick==='cmp'?chains():[pick];
   const livePx=k=>{ if(k!=='merged'&&multi()&&X.byChain&&X.byChain[k]&&X.byChain[k].px) return X.byChain[k].px/pairUsdFor(k); return X.pxPair; };
   const css=(v,d)=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||d;
@@ -99,19 +110,20 @@
     if(born&&born>t0) t0=born; if(t1-t0<600) t0=t1-600; return [t0,t1]; }
   // keep: hold the zoomed window (same range, other view of it)
   async function load(anim,keep){ if(!X||!window.CHAIN) return; const my=++gen; const [t0,t1]=span(), old=keep&&zoomed()?{...view}:null, wasPinned=pinned();
-    step=RES.find(s=>(t1-t0)/s<=240)||86400; const ks=keys(), merged=ks.length>1;
-    const fetchK=k=>CHAIN.bars(X.addr,step,t0-step,t1+step,(multi()&&k!=='merged')?k:undefined).catch(e=>{ console.warn('bars',e); return []; });
-    const got=await Promise.all(ks.map(fetchK)), vb=merged?await fetchK('merged'):null;
+    step=RES.find(s=>(t1-t0)/s<=240)||86400; const ks=keys(), per=multi()?chains():[chains()[0]], need=ks.includes('merged')||ks.length>1?per:ks;
+    const got=await Promise.all(need.map(k=>CHAIN.bars(X.addr,step,t0-step,t1+step,multi()?k:undefined).catch(e=>{ console.warn('bars',e); return []; })));
     if(my!==gen) return; S={};
-    ks.forEach((k,i)=>{ const f=factor(k), rows=dedupe(got[i]).filter(b=>b.time+step>=t0);
-      const bars=rows.map(b=>({t:Math.max(b.time,t0),o:b.open*f,h:Math.max(b.high,b.open,b.close)*f,l:Math.min(b.low,b.open,b.close)*f,c:b.close*f,v:b.volume*(pairUsdFor(k)||1)}));
-      // the line runs edge to edge: from the first bar's open at the left, to the live price now;
+    // each chain's bars, as that chain's market cap (its own supply at its own price) or price
+    const Bk={}; need.forEach((k,i)=>{ const f=factor(k); Bk[k]=dedupe(got[i]).filter(b=>b.time+step>=t0).map(b=>({t:Math.max(b.time,t0),o:b.open*f,h:Math.max(b.high,b.open,b.close)*f,l:Math.min(b.low,b.open,b.close)*f,c:b.close*f,v:b.volume*(pairUsdFor(k)||1)})); });
+    const M=need.length>1?sumBars(need,Bk):null;
+    ks.forEach(k=>{ const bars=k==='merged'?M:Bk[k], live=liveFor(k);
+      // the line runs edge to edge: from the first bar's open at the left, to the live value now;
       // between trades the price holds: a gap keeps the last close flat until the bar before the next trade
-      const live=livePx(k)*f, pts=[]; bars.forEach(b=>{ const L=pts[pts.length-1]; if(L&&b.t-L.t>step*1.5) pts.push({t:b.t-step,v:L.v}); pts.push({t:b.t,v:b.c,real:1}); });
+      const pts=[]; bars.forEach(b=>{ const L=pts[pts.length-1]; if(L&&b.t-L.t>step*1.5) pts.push({t:b.t-step,v:L.v}); pts.push({t:b.t,v:b.c,real:1}); });
       if(!pts.length) pts.push({t:t0,v:live}); else if(pts[0].t>t0) pts.unshift({t:t0,v:bars[0].o});
       if(live>0&&pts[pts.length-1].t<t1){ const L=pts[pts.length-1]; if(t1-L.t>step*1.5) pts.push({t:t1-step,v:L.v}); pts.push({t:t1,v:live}); }
       S[k]={bars,pts,live,color:ks.length>1?chainOf(k).color:null}; });
-    vol=(merged?dedupe(vb).map(b=>({t:b.time,o:b.open,c:b.close,v:b.volume*(pairUsdFor('merged')||1)})):S[ks[0]].bars).filter(b=>b.t>=t0-step);
+    vol=(M||Bk[ks[0]]).filter(b=>b.t>=t0-step);
     dom={t0,t1}; view=old?{a:Math.max(t0,old.a),b:wasPinned?t1:Math.min(t1,old.b)}:{a:t0,b:t1}; el.classList.toggle('zoomed',zoomed());
     const no=el.querySelector('#eqc-no'); no.hidden=ks.some(k=>S[k].bars.length); no.textContent=`No trades ${rng==='All'?'yet':'in the '+RNAME[rng].toLowerCase().replace('past ','last ')}`;
     if(anim){ const a0=performance.now(); const tick=t=>{ reveal=Math.min(1,(t-a0)/650); reveal=1-Math.pow(1-reveal,3); draw(); if(reveal<1) requestAnimationFrame(tick); }; reveal=0; requestAnimationFrame(tick); } else { reveal=1; draw(); } }
@@ -215,12 +227,15 @@
       const nm=ks[0]==='merged'?'All chains':multi()?chainOf(ks[0]).name:'';
       const sub=p?`${p.b?`O <b>${axis(p.b.o)}</b> H <b>${axis(p.b.h)}</b> L <b>${axis(p.b.l)}</b> C <b>${axis(p.b.c)}</b> · `:''}Vol <b>${usd(at.vol)}</b>`:`Volume <b>${usd(G.vsum)}</b>`;
       lg.innerHTML=`<span class="t">${what}${nm?' · '+esc2(nm):''}</span><span class="v"><b>${money(v)}</b><em class="${c>=0?'up':'dn'}">${c>=0?'▲':'▼'} ${Math.abs(c*100).toFixed(2)}%</em><small>${p?esc2(tlabel(Math.min(dom.t1,p.t),true)):esc2(when)}</small></span><span class="ohlc">${sub}</span>`; return; }
-    lg.innerHTML=`<span class="t">${what} by chain · ${at?esc2(tlabel(Math.min(dom.t1,at.t),true)):esc2(when)}</span><span class="ls">${ks.map(k=>{ const s=S[k]; if(!s) return ''; const p=at&&at.vals[k], v=p?p.v:(pinned()&&s.live>0?s.live:interp(s.pts,view.b)); return `<span style="--c:${chainOf(k).color}"><i></i>${esc2(chainOf(k).short||chainOf(k).name)}<b>${money(v)}</b></span>`; }).join('')}</span>`; }
+    // with a cursor, every chain is read at the cursor's time (a chain holds its last trade), so they add up
+    const t=at?Math.min(dom.t1,at.t):null, vals=ks.map(k=>{ const s=S[k]; return !s?0:t!=null?interp(s.pts.filter(p=>p.t<=t).slice(-1).concat(s.pts.filter(p=>p.t>t).slice(0,1)),t):(pinned()&&s.live>0?s.live:interp(s.pts,view.b)); });
+    const tot=vals.reduce((a,v)=>a+(v||0),0);
+    lg.innerHTML=`<span class="t">${what} by chain · ${at?esc2(tlabel(t,true)):esc2(when)}</span>${mode==='mcap'?`<span class="v"><b>${money(tot)}</b><small>all chains</small></span>`:''}<span class="ls">${ks.map((k,i)=>`<span style="--c:${chainOf(k).color}"><i></i>${esc2(chainOf(k).short||chainOf(k).name)}<b>${money(vals[i])}</b></span>`).join('')}</span>`; }
 
   /* ---------- live: called after every refresh with the latest pair price and the trades since the last call ---------- */
   window.tvTick=function(pxPair,newTrades){ if(!X||!dom) return; if(newTrades&&newTrades.length){ load(false,true); return; }
     const t1=now(), wasPinned=pinned(); dom.t1=t1; if(wasPinned) view.b=t1;
-    keys().forEach(k=>{ const s=S[k]; if(!s) return; const v=livePx(k)*factor(k); if(!(v>0)) return; s.live=v;
+    keys().forEach(k=>{ const s=S[k]; if(!s) return; const v=liveFor(k); if(!(v>0)) return; s.live=v;
       const L=s.pts[s.pts.length-1]; if(L&&s.pts.length>1&&!L.real&&L.t>=t1-step){ L.t=t1; L.v=v; } else s.pts.push({t:t1,v}); });
     draw(); };
 
