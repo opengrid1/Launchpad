@@ -87,13 +87,13 @@ interface IEquoWrappedNative {
 ///             pool; the ledger is forgotten when the window ends. Sells and
 ///             plain transfers are never touched.
 ///
-///         What's left of each fee splits 60% to the creator, 40% to the
+///         What's left of each fee splits 70% to the creator, 30% to the
 ///         platform, held as PoolManager claims until claimed by anyone.
 ///
 ///         Equo additions (v3):
-///           - Cashback and referral: out of the platform's 40% only, a share
+///           - Cashback and referral: out of the platform's 30% only, a share
 ///             goes back to the trader (cashback) and a share to the trader's
-///             referrer. The creator's 60% and the buyback and dividend pots
+///             referrer. The creator's 70% and the buyback and dividend pots
 ///             never change. Rewards are held as PoolManager claims per user
 ///             and pair asset and claimed with {claimRewards}.
 ///           - The trader is named by the trusted router (or the factory for
@@ -113,7 +113,7 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     uint16 public constant MAX_FEE_BPS = 300;
     uint16 public constant MIN_FEE_BPS = 10;
     /// @notice Of what's left after the buyback and dividend shares, the creator's part.
-    uint16 public constant CREATOR_SPLIT_BPS = 6_000;
+    uint16 public constant CREATOR_SPLIT_BPS = 7_000;
     uint16 public constant MAX_SNIPE_BPS = 3_000;
     uint32 public constant MAX_SNIPE_BLOCKS = 7_200; // ~24h of Ethereum blocks
     /// @notice Buyback + dividend shares of the fee may take at most this much.
@@ -496,8 +496,8 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     }
 
     /// @dev Split a fee: the buyback and dividend shares into their pots, the
-    ///      rest 60/40 creator/platform; cashback and referral come out of the
-    ///      platform's 40% only.
+    ///      rest 70/30 creator/platform; cashback and referral come out of the
+    ///      platform's 30% only.
     function _credit(PoolConfig storage c, uint256 fee, address trader, address ref) internal {
         Genes storage g = c.genes;
         uint256 bb = (fee * g.buybackShareBps) / BPS;

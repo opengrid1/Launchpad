@@ -102,7 +102,7 @@ window.SP_PAGE=function(){
     $('#an-feed').innerHTML=l.length?l.map(t=>{ const x=tok(t.token); if(!x) return ''; const k=t.tx+':'+t.index, c=SP.chain(chOf(t))||{}; return `<a class="fr ${fresh&&fresh.has(k)?'new':''}" href="${tokenUrl(x)}"><span class="cl">${logo(x)}<img class="cb" src="${c.logo||'/img/eth.png'}" alt="" title="${esc(c.name||'')}"></span><span class="nm"><b>${esc(x.n)}</b><small><span class="${t.buy?'up':'dn'}">${t.buy?'Buy':'Sell'}</span> · ${shortAddr(cs(String(t.wallet)))}</small></span><span class="v"><b>${fmtUsd(usdOf(t))}</b><small>${ago(Math.max(0,now()-t.ts))} ago</small></span></a>`; }).join(''):'<div class="empty">No trades yet</div>'; }
 
   /* ---------- where the fees went: each coin's genes split its fees ---------- */
-  const splitOf=x=>{ const g=x.genes||{}; const h=(g.divShareBps||0)/10000, b=(g.buybackShareBps||0)/10000; const rest=Math.max(0,1-h-b); return {h,b,c:rest*0.6,p:rest*0.4}; };
+  const splitOf=x=>{ const g=x.genes||{}; const h=(g.divShareBps||0)/10000, b=(g.buybackShareBps||0)/10000; const rest=Math.max(0,1-h-b); const cs=SP.creatorSplit(); return {h,b,c:rest*cs,p:rest*(1-cs)}; };
   const FC=[['c','Creators','var(--ac)'],['h','Holder rewards','var(--amber)'],['b','Buyback & burn','var(--dn)'],['p','Platform','#8e8e97']];
   function fees(W){ const cur=TR.filter(t=>inW(W,t)); const per=TOK.map(x=>{ const sp=splitOf(x), paid=sum(cur.filter(t=>t.token===x.addr),feeUsd); return {x,sp,paid,c:paid*sp.c,h:paid*sp.h,b:paid*sp.b,p:paid*sp.p}; });
     const T={paid:0,c:0,h:0,b:0,p:0}; per.forEach(r=>{ for(const k in T) T[k]+=r[k]; }); const pu=x=>x.pairUsd||0;

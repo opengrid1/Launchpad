@@ -237,6 +237,10 @@ SP.pnlCard=async({x,pnl,wallet})=>{ const pu=x.pairUsd||0, up=pnl.pnl>=0; const 
 
 /* ---------- boot ---------- */
 function syncTok(){ if(!window.CHAIN) return; TOK=CHAIN.tokens().filter(x=>!x.hidden); }
+/* the creator's part of each fee after the pots, the platform keeping the rest: the deployed hook's own constant,
+   read once; config gives it until then. Pages read it at render, so a refresh follows the read */
+SP._cs=((window.INKY&&INKY.creatorSplitBps)||7000)/1e4; SP.creatorSplit=()=>SP._cs; SP.splitPct=()=>({c:Math.round(SP._cs*100),p:100-Math.round(SP._cs*100)});
+document.addEventListener('DOMContentLoaded',()=>{ const E=window.CHAIN&&CHAIN.equo; if(E&&E.creatorSplitBps) E.creatorSplitBps().then(b=>{ if(b>0&&b<=10000&&b/1e4!==SP._cs){ SP._cs=b/1e4; (SP._upd||[]).forEach(f=>{ try{ f(); }catch(e){} }); } }).catch(()=>{}); });
 SP._readyP=new Promise(resolve=>{ document.addEventListener('DOMContentLoaded',async()=>{ renderShell(); syncWallet();
   const main=$('#sp-main');
   if(!LIVE||!window.CHAIN){ TOK=[]; resolve(false); return; }

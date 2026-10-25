@@ -10,7 +10,7 @@ function launchInit(){
   const g=id=>document.getElementById(id), cfg=window.INKY||{};
   const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v)), num=(id,d)=>{ const v=parseFloat(g(id).value); return isFinite(v)?v:d; };
   const pct=v=>(+v.toFixed(2)).toString()+'%', usd=v=>'$'+(v>=100?Math.round(v).toLocaleString('en-US'):v.toFixed(2));
-  const CREATOR=0.6; // of what is left of each fee after the platform cut: creator 60%, platform 40%
+  const CREATOR=()=>SP.creatorSplit(); // of what is left of each fee after the pots: the creator's part, the platform keeping the rest
   const FEES=[30,50,100,200,300,500];
   /* how the creator's share of every fee is spent; each preset adds up to 100 */
   const ALLOC=[['burn','Burn','Buys the coin back and burns it.','#f6465d'],['holders','Holder rewards','Paid to holders, pro rata, in the chain\'s coin.','#f2be54'],['hold','Buy and hold','Buys the coin and sends it to a treasury wallet.','#8c9eff'],['lp','Add to liquidity','Buys the coin and adds it to the pool, locked for good.','#2ebd85'],['creator','Creator','Paid to you, in the chain\'s coin.','#3fbcff'],['comm','Community wallet','Paid to a community wallet, in the chain\'s coin.','#c084fc']];
@@ -23,7 +23,7 @@ function launchInit(){
   const isEvm=a=>/^0x[0-9a-fA-F]{40}$/.test(a), isSol=a=>/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a);
   const taken=()=>new Set(((window.CHAIN&&LIVE)?CHAIN.tokens():TOK).map(x=>String(x.t||'').toUpperCase()));
   const feeOf=k=>S.perFee&&S.feeBy[k]!=null?S.feeBy[k]:S.fee, allocOf=k=>S.perSplit&&S.splitBy[k]?PRESETS[S.splitBy[k]]:S.alloc;
-  const youKeep=bps=>bps/100*CREATOR, pfKeep=bps=>bps/100*(1-CREATOR);
+  const youKeep=bps=>bps/100*CREATOR(), pfKeep=bps=>bps/100*(1-CREATOR());
 
   /* ---------- 1. identity ---------- */
   function paintLogo(){ g('drop').classList.toggle('has',!!S.logo); g('drop-in').innerHTML=S.logo?`<img src="${S.logo}" alt="">`:esc((val('f-sym')||val('f-name')||'?')[0].toUpperCase()); }
@@ -57,7 +57,7 @@ function launchInit(){
       +(a.hold>0?`<div class="sl"><span><b>Treasury wallet</b><small>Where buy-and-hold coins go.</small></span><span></span></div><input class="inp" id="f-treas" placeholder="0x… treasury wallet" value="${esc(S.treas||'')}" autocomplete="off">`:'')
       +(a.comm>0?`<div class="sl" style="margin-top:8px"><span><b>Community wallet</b><small>Where the community share is paid.</small></span><span></span></div><input class="inp" id="f-comm" placeholder="0x… community wallet" value="${esc(S.comm||'')}" autocomplete="off">`:'');
     paintSplitTotals(); }
-  function paintSplitTotals(){ const a=S.alloc, tot=allocTotal(a), fee=S.fee/100*CREATOR;
+  function paintSplitTotals(){ const a=S.alloc, tot=allocTotal(a), fee=S.fee/100*CREATOR();
     g('split-you').textContent=`${pct(tot)} allocated · you receive ${pct(fee*(+a.creator||0)/100)} of every trade`;
     g('sbar').innerHTML=ALLOC.filter(([k])=>a[k]>0).map(([k,,,c])=>`<i style="width:${a[k]}%;background:${c}"></i>`).join('');
     g('slg').innerHTML=ALLOC.filter(([k])=>a[k]>0).map(([k,n,,c])=>`<span><i style="background:${c}"></i>${n} ${a[k]}%</span>`).join('');
@@ -160,7 +160,7 @@ function launchInit(){
     if(!LIVE||!window.CHAIN){ SP.toast('Launches open when the contracts are live','info'); return; }
     const name=val('f-name'), symbol=val('f-sym').toUpperCase(), meta={description:val('f-desc')}; if(S.logo) meta.image=S.logo; const w=link(val('f-web')), x=link(val('f-x')), tg=link(val('f-tg')); if(w) meta.website=w; if(x) meta.x=x; if(tg) meta.telegram=tg;
     // the live hook takes burn and holder shares out of the whole fee; scale the creator-share split to that
-    const a=S.alloc, k=CREATOR, bb=Math.round((+a.burn||0)*k)*100, dv=Math.round((+a.holders||0)*k)*100, ethUsd=SP.prices[WETH]||ETH||0;
+    const a=S.alloc, k=CREATOR(), bb=Math.round((+a.burn||0)*k)*100, dv=Math.round((+a.holders||0)*k)*100, ethUsd=SP.prices[WETH]||ETH||0;
     const thr=bb&&ethUsd?BigInt(Math.max(1,Math.round(50/ethUsd*1e6)))*10n**12n:0n;
     const genes={feeMode:0,feeBps:S.fee,snipeBps:S.snipe?clamp(Math.round(num('f-snipe',20)*100),S.fee+1,3000):0,snipeBlocks:S.snipe?clamp(Math.round(num('f-snipemin',10)*60/12),5,7200):0,buybackShareBps:bb,buybackThreshold:thr,divShareBps:dv,maxWalletBps:S.mw?clamp(Math.round(num('f-mw',2)*100),50,2000):0,maxWalletSecs:S.mw?clamp(Math.round(num('f-mwh',1)*3600),600,2592000):0,evolution:{enabled:false}};
     S.busy=true; paintFoot();

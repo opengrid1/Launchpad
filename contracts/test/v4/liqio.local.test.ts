@@ -243,7 +243,7 @@ describe("Liqio: clone coins, HyperCore oracle, stock pairs, admin collect (loca
     expect(bps).to.equal(100n);
     expect(fee).to.be.gt(0n);
     expect(fee).to.be.lt(2n * 10n ** 6n); // about 1% of ~$77 in USDC units
-    const creatorPart = (fee * 6_000n) / 10_000n, platformPart = fee - creatorPart;
+    const creatorPart = (fee * BigInt(await hook.CREATOR_SPLIT_BPS())) / 10_000n, platformPart = fee - creatorPart;
     expect((await hook.creatorOwed(token)) - c0).to.equal(creatorPart);
     expect((await hook.platformOwed(token)) - p0).to.equal(platformPart - 2n * ((platformPart * 2_500n) / 10_000n));
     expect(await hook.rewardsOwed(trader.address, USDC)).to.equal((platformPart * 2_500n) / 10_000n);

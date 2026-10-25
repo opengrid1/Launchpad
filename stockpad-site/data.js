@@ -16,7 +16,7 @@ const cs=a=>{ try{ return window.CHAIN&&CHAIN.checksum?CHAIN.checksum(a):a; }cat
 /* Equo pairs only against ETH — no stock baskets. These stay defined (empty) so legacy refs don't throw. */
 const STOCKS=[];
 const STOCK_COLOR={}, STOCK_NAME={}, STOCK_ADDR={};
-/* default fee model: ~1% (capped 3%), split 60/40 creator/platform after the buyback + dividend pots */
+/* default fee model: ~1% (capped 3%), split creator/platform after the buyback + dividend pots (70/30 on the new hook, read from chain) */
 const FEE={tax:1,creator:0.6,platform:0.4};
 
 /* the same token universe on every page; chain.js fills it before the pages initialise */

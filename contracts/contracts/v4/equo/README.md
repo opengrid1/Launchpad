@@ -14,7 +14,7 @@ without `collect` and `setStartCap`. The current source is not deployed; using i
   holds and can never remove.
 - One hook for every pool: fee engine (flat, dynamic, MEV-tax), anti-snipe, buyback and burn,
   holder dividends, max wallet, evolution stages. Fee caps are enforced in the hook itself.
-- Fee split: buyback and dividend shares first, then 60% creator and 40% platform.
+- Fee split: buyback and dividend shares first, then 70% creator and 30% platform.
 
 ## Review of v2: what the site needs that v2 cannot do
 
@@ -39,7 +39,7 @@ Other findings (no change needed):
 
 ### Hook (`EquoHook`)
 
-- **Cashback and referral.** Out of the platform's 40% only, `cashbackBps` goes to the trader and
+- **Cashback and referral.** Out of the platform's 30% only, `cashbackBps` goes to the trader and
   `referralBps` to the trader's referrer. Creator share, buyback and dividends are unchanged. Each is
   capped at 50% of the platform part. Rewards accrue per user and pair asset as PoolManager claims and
   are paid by `claimRewards(pairs)` (ETH on a WETH pair).

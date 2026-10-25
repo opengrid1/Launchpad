@@ -18,16 +18,16 @@ window.SP_PAGE=function(){
   const logo=x=>`<img class="lg" src="${SP.coinLogo(x)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'">`;
   const who=x=>`<span class="who">${logo(x)}<span><b>${esc(x.n)}</b><small>$${esc(x.t)} ${SP.chainStack(SP.coinChains(x),14)}</small></span></span>`;
   const gate=(k,t,s,btn)=>`<div class="gate"><span class="ib" style="--c:${WAYS[k][2]}">${ic(WAYS[k][0])}</span><b>${t}</b>${s}<div>${btn||'<button class="btn pri" data-connect>Connect wallet</button>'}</div></div>`;
-  const pct=b=>R&&R.split?(0.4*b/100).toFixed(0)+'%':'…';
+  const pct=b=>R&&R.split?((1-SP.creatorSplit())*b/100).toFixed(0)+'%':'…';
 
   /* ---------- the hero: claimable now, and the four ways to earn ---------- */
-  function hero(){ const c=SP.W.connected;
+  function hero(){ const c=SP.W.connected; const crt=g('rw-cre-rate'); if(crt) crt.textContent=`${SP.splitPct().c}% of every fee after the pots`;
     const hold=P?P.holdings.reduce((s,h)=>s+(h.pendUsd||0),0):0, cre=P?P.created.reduce((s,c)=>s+c.fees*(c.x.pairUsd||0),0):0, rw=owedUsd();
     const ready=c&&P, total=hold+cre+rw;
     g('rw-tot').innerHTML=c?`<span class="l">Claimable now</span><b>${ready?fmtUsd(total):'…'}</b><small>${ready?(total>0?'Holder rewards, creator fees and cashback together. Claim each below.':'Nothing to claim yet. Hold, launch or trade and it adds up here.'):'Reading your rewards on every chain…'}</small>`
       :`<span class="l">Your rewards</span><b>$0.00</b><small>Connect a wallet to see what you can claim across every coin and every chain.</small><button class="btn pri" data-connect>Connect wallet</button>`;
     const sp=R&&R.split;
-    const W=[['hold','Hold coins with the Holder rewards badge','up to 50% of fees',c&&P?hold:null,'#hold'],['cre','Launch a coin and earn from every trade','up to 60% of fees',c&&P?cre:null,'#cre'],
+    const W=[['hold','Hold coins with the Holder rewards badge','up to 50% of fees',c&&P?hold:null,'#hold'],['cre','Launch a coin and earn from every trade',`up to ${SP.splitPct().c}% of fees`,c&&P?cre:null,'#cre'],
       ['cb','Part of every fee comes back on your trades',sp?`up to ${pct(sp.cashbackBps)} of fees`:'a share of fees',c&&R&&R.hist?R.hist.cashback._usd||0:null,'#cb']];
     g('rw-ways').innerHTML=W.map(w=>`<a class="way" href="${w[4]}"><span class="ib" style="--c:${WAYS[w[0]][2]}">${ic(WAYS[w[0]][0])}</span><span class="n"><b>${WAYS[w[0]][1]}</b><small>${w[1]} · ${w[2]}</small></span><span class="v"><b class="${w[3]>0?'on':''}">${w[3]==null?'—':fmtUsd(w[3])}</b><small>${w[0]==='cb'?'earned':'claimable'}</small></span></a>`).join('');
     wire(); }

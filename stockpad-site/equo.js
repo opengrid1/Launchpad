@@ -16,6 +16,7 @@
     "function rewardsOwed(address user, address pair) view returns (uint256)",
     "function creatorOf(address token) view returns (address)",
     "function creatorOwed(address token) view returns (uint256)",
+    "function CREATOR_SPLIT_BPS() view returns (uint16)",
     "function claimRewards(address[] pairs) returns (uint256)",
     "function payCreator(address token) returns (uint256)",
     "event RewardsCredited(address indexed token, address indexed trader, uint256 cashback, address indexed referrer, uint256 referral)",
@@ -192,6 +193,8 @@
 
     // creator
     creatorOf: (token) => hookR.creatorOf(token).then(lc),
+    /** the creator's part of each fee after the pots, in bps (a constant of the hook) */
+    creatorSplitBps: () => hookR.CREATOR_SPLIT_BPS().then(Number),
     async creatorInfo(token) {
       const [creator, pending, activeAt, t, owed] = await Promise.all([hookR.creatorOf(token), factR.pendingCreator(token), factR.creatorActiveAt(token), factR.takeovers(token), hookR.creatorOwed(token)]);
       const takeover = lc(t.proposer) === ZERO ? null : { proposer: lc(t.proposer), newCreator: lc(t.newCreator), startedAt: Number(t.startedAt), stake: t.stake };

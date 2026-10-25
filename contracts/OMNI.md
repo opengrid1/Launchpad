@@ -38,7 +38,7 @@ tokens), Mantle (xStocks but no Uniswap v4).
 ## Where Equo differs on purpose
 
 - Pools pair with a stock (Ondo, Coinbase, Robinhood or xStocks depending on the chain), not the native coin.
-- Fee split as in Equo v3: holder rewards and buyback first, then 60% creator and 40% platform; cashback and
+- Fee split as in Equo v3: holder rewards and buyback first, then 70% creator and 30% platform; cashback and
   referral come out of the platform part. Takeover and creator tools stay.
 - The admin `collect` lever stays (1:1 with OneHook).
 

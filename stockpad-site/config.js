@@ -2,6 +2,9 @@
    live: read tokens, trades and prices from the Ethereum contracts (chain.js); prelaunch: preview only, no chain reads.
    reownProjectId: public project id from cloud.reown.com; empty keeps the demo wallet. */
 window.INKY = {
+  // the creator's part of each fee after the holder and buyback pots (the platform keeps the rest); the hook's
+  // CREATOR_SPLIT_BPS constant is read from chain and wins, this is only the value until it is read
+  creatorSplitBps: 7000,
   live: true, prelaunch: false, demo: false,
   reownProjectId: '5b1ae833abd22d348cbf5d53cf58b3b2',
   chainId: 1, rpc: 'https://ethereum-rpc.publicnode.com', rpcs: ['https://ethereum-rpc.publicnode.com', 'https://rpc.mevblocker.io'], explorer: 'https://etherscan.io',

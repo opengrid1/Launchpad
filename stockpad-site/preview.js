@@ -68,7 +68,7 @@
       addr: s.addr, n: s.n, t: s.t, img: s.img, desc: s.desc, pair: s.pair, pairAddr: String(st.address || (s.pair === 'ETH' ? cfg.weth : '') || '').toLowerCase(), pairUsd,
       px: pxAvg, pxPair: pxAvg / pairUsd, mc: mcAll, c24: (pxAvg / first24 - 1) * 100, vol, trades: trades.length, traders: wallets.length, h: wallets.length,
       createdAt: created, age, feeBps: s.fee, rewards: s.rewards, genes: s.genes, creator: wallets[0], links: { x: 'https://x.com/equofun' },
-      liq: mcAll * 0.42, liqPair: mcAll * 0.42 / pairUsd, totalCreatorFees: vol * s.fee / 1e4 * 0.6 / pairUsd * 3, creatorOwed: 0, buybackPot: 0, dividendPot: 0,
+      liq: mcAll * 0.42, liqPair: mcAll * 0.42 / pairUsd, totalCreatorFees: vol * s.fee / 1e4 * ((cfg.creatorSplitBps || 7000) / 1e4) / pairUsd * 3, creatorOwed: 0, buybackPot: 0, dividendPot: 0,
       pools, liqAll: mcAll * 0.42, poolsLive: n, poolId: '0x' + s.addr.slice(2).padEnd(64, '0'), chains: s.chains, addrs: Object.fromEntries(s.chains.map((k) => [k, k === 'eth' ? s.addr : isSol(k) ? b58(44) : wallet()])), byChain, mock: true, hidden: false,
     };
   });

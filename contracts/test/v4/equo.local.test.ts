@@ -111,7 +111,9 @@ describe("Equo: cashback, referral, presets, creator transfer, takeover (local)"
     const rc = await (await router.connect(trader).buy(token, "0x", 0, referrer.address, { value: ethers.parseEther("1") })).wait();
     const fee = feeOf(rc, hook);
     expect(fee).to.be.gt(0n);
-    const creatorPart = (fee * 6_000n) / 10_000n, platformPart = fee - creatorPart;
+    // creator 70%, platform 30% of what is left after the pots
+    expect(await hook.CREATOR_SPLIT_BPS()).to.equal(7_000);
+    const creatorPart = (fee * 7_000n) / 10_000n, platformPart = fee - creatorPart;
     const cb = (platformPart * 2_500n) / 10_000n, rf = (platformPart * 2_500n) / 10_000n;
     expect((await hook.creatorOwed(token)) - c0).to.equal(creatorPart);
     expect((await hook.platformOwed(token)) - p0).to.equal(platformPart - cb - rf);
