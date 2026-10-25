@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><script>if(/[?&](stock|watch|chain)=/.test(location.search))location.replace('/markets'+location.search+location.hash)</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Equo | One coin, every chain</title>
-<meta name="description" content="Launch a coin on up to nine chains at once, Solana included: one address on every EVM chain, one pool per chain, the same opening price.">
+<title>Equo | One launch, every chain</title>
+<meta name="description" content="One launch, every chain: launch a coin on up to nine chains at once, Solana included, all at the same opening price.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/ui.css?v=19">
@@ -73,8 +73,8 @@
     <canvas class="sky" id="ld-sky" aria-hidden="true"></canvas>
     <div>
       <div class="top"><span class="stack" id="ld-stack"></span><a class="pill" href="/markets" id="ld-pill"></a></div>
-      <h1>Launch once.<br><span class="g">Live on every chain.</span></h1>
-      <p class="lead" id="ld-lead">Launch a coin once and it opens on up to nine chains at the same price, with one address on every EVM chain. Holders move it between chains in about a minute.</p>
+      <h1>One launch.<br><span class="g">Every chain.</span></h1>
+      <p class="lead" id="ld-lead">Launch your coin on up to nine chains at once, all at the same price. Holders move it between chains in about a minute.</p>
       <div class="ctas"><a class="btn pri lg" href="/markets" id="ld-app">Launch app</a><a class="btn lg line" href="/docs">Docs</a><a class="btn lg line ic" href="https://x.com/equofun" target="_blank" rel="noopener" aria-label="Equo on X" id="ld-x"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23zm-1.16 17.52h1.83L7.08 4.13H5.12z"/></svg></a></div>
     </div>
     <div class="map" id="ld-map" aria-label="Every chain on one map">
@@ -105,8 +105,7 @@
   document.getElementById('ld-nchains').textContent=N;
   document.getElementById('ld-stack').innerHTML=`<img src="/img/logo.svg?v=15" alt="Equo">`+CH.slice(0,5).map(c=>`<img src="${c.logo}" alt="${c.name}" title="${c.name}">`).join('');
   document.getElementById('ld-pill').innerHTML=nLive===N?`<i></i>All ${N} chains live <em>Trade →</em>`:`<i></i>${CH.filter(c=>c.live).map(c=>c.name).join(', ')||'Equo'} is live <em>Trade →</em>`;
-  const sol=CH.some(c=>c.evm===false);
-  document.getElementById('ld-lead').textContent=`Launch a coin once and it opens on up to ${word(N)} chains at the same price, with one address on every EVM chain${sol?' and its own on Solana':''}. Holders move it between chains in about a minute.`;
+  document.getElementById('ld-lead').textContent=`Launch your coin on up to ${word(N)} chains at once, all at the same price. Holders move it between chains in about a minute.`;
 
   // land on a 2-degree grid over the whole world: longitude -180..180, latitude 72..-48, row by row, one bit per cell
   const COLS=180, ROWS=60, LAT1=72;
