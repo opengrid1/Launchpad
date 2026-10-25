@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head>
-<meta charset="utf-8"><script>if(/[?&](stock|watch|chain)=/.test(location.search))location.replace('/markets'+location.search+location.hash)</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta charset="utf-8"><script>(function(){var t="light";try{t=localStorage.getItem("equo-theme")||"light"}catch(e){}document.documentElement.dataset.theme=t})()</script><script>if(/[?&](stock|watch|chain)=/.test(location.search))location.replace('/markets'+location.search+location.hash)</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Equo | One launch, every chain</title>
 <meta name="description" content="One launch, every chain: launch a coin on up to nine chains at once, Solana included, all at the same opening price.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
@@ -7,6 +7,19 @@
 <link rel="stylesheet" href="/ui.css?v=19">
 <style>
 #sp-main{overflow-x:hidden;overflow-x:clip}
+/* light theme (the landing's default): warm paper background, ink text; the ◐ button in the header switches */
+html[data-theme="light"]{--bg:#f5f3ef;--s1:#ffffff;--s2:#efece6;--s3:#e8e4dd;--s4:#ddd8cf;--line:#e4e0d8;--line-2:#d8d3c9;--line-3:#c6c0b4;--fg:#121214;--fg-2:#46464e;--fg-3:#6f6f77;--up:#0f9d63;--up-dim:rgba(15,157,99,.12);--ac:#1e90e6;--ac-dim:rgba(30,144,230,.12);color-scheme:light}
+html[data-theme="light"] #pg-land .pill{background:#fff}
+html[data-theme="light"] #pg-land .stack img{box-shadow:0 0 0 2px var(--bg)}
+html[data-theme="light"] #pg-land h1 .g{background-image:linear-gradient(100deg,#0b63c9 0%,#1e90e6 40%,#5b6cf5 75%,#8a5cf6 100%)}
+html[data-theme="light"] #pg-land .hero::before{opacity:.5}
+html[data-theme="light"] #pg-land .ctas .btn.pri,html[data-theme="light"] #sp-top .lnk a.lapp{background:#121214;border-color:#121214;color:#fff} html[data-theme="light"] #pg-land .ctas .btn.pri:hover,html[data-theme="light"] #sp-top .lnk a.lapp:hover{background:#2a2a2f}
+html[data-theme="light"] #sp-top .lnk a:hover{border-color:var(--line-3);background:rgba(0,0,0,.03)}
+html[data-theme="light"] #pg-land .pl{background:rgba(255,255,255,.9);color:#121214;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 4px 14px -6px rgba(0,0,0,.25)} html[data-theme="light"] #pg-land .pl:hover,html[data-theme="light"] #pg-land .pl.on{box-shadow:0 0 0 1.5px #121214} html[data-theme="light"] #pg-land .pl .dot{background:rgba(0,0,0,.2)}
+html[data-theme="light"] #pg-land .tip{background:#fff;box-shadow:0 20px 50px -24px rgba(0,0,0,.35)}
+html[data-theme="light"] #pg-land .tc,html[data-theme="light"] #pg-land .stats{background:#fff}
+#sp-top .lnk button.thm{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;border:1px solid var(--line-2);border-radius:999px;background:transparent;color:var(--fg);cursor:pointer} #sp-top .lnk button.thm svg{width:18px;height:18px}
+@media(max-width:700px){#sp-top .lnk button.thm{width:42px;height:42px}}
 /* landing header: flat and plain, like a site header rather than an app bar */
 body[data-page="landing"] #sp-top{position:relative;height:auto;padding:18px 0 0;background:transparent;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
 body[data-page="landing"] #sp-top .wrap{display:block;height:auto}
@@ -106,7 +119,7 @@ body[data-page="landing"] #sp-top .wrap{display:block;height:auto}
   </section>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=8"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=4"></script><script src="/wallet.js"></script><script src="/core.js?v=27"></script>
+<script src="/config.js?v=8"></script><script src="/data.js?v=2"></script><script src="/avatar.js"></script><script src="/chain.js?v=21"></script><script src="/equo.js?v=5"></script><script src="/api.js?v=3"></script><script src="/preview.js?v=4"></script><script src="/wallet.js"></script><script src="/core.js?v=28"></script>
 <script>
 (function(){
   const CH=(window.INKY&&INKY.chains)||[], map=document.getElementById('ld-map'), cv=document.getElementById('ld-cv'), cx=cv.getContext('2d'), tip=document.getElementById('ld-tip'), hint=document.getElementById('ld-hint');
@@ -140,7 +153,7 @@ body[data-page="landing"] #sp-top .wrap{display:block;height:auto}
   const proj=(lon,lat)=>{ const l=wrap(lon-off), s=Math.sqrt(Math.max(0,1-(lat/90)**2)); return {x:cxp+l/180*Rx*s, y:cyp-lat*k, l}; };
   function draw(){ cx.clearRect(0,0,W,H);
     cx.save(); cx.beginPath(); cx.rect(0,cyp-80*k,W,140*k); cx.clip();
-    cx.beginPath(); cx.ellipse(cxp,cyp,Rx,Ry,0,0,6.283); cx.fillStyle='rgba(255,255,255,.045)'; cx.fill(); cx.strokeStyle='rgba(255,255,255,.07)'; cx.lineWidth=1; cx.stroke(); cx.restore();
+    const lt=document.documentElement.dataset.theme==='light'; cx.beginPath(); cx.ellipse(cxp,cyp,Rx,Ry,0,0,6.283); cx.fillStyle=lt?'#e8e4dc':'rgba(255,255,255,.045)'; cx.fill(); cx.strokeStyle=lt?'rgba(0,0,0,.04)':'rgba(255,255,255,.07)'; cx.lineWidth=1; cx.stroke(); cx.restore();
     const r=Math.max(.75,2*k*.34);
     P.forEach((p,i)=>{ cx.fillStyle=hexA(p.c.color,hover&&hover!==p?.35:.92); cx.beginPath(); D.forEach(d=>{ if(d.k!==i) return; const q=proj(d.lon,d.lat), rr=Math.max(.6,Math.min(r,2*k*d.s*.42)); cx.moveTo(q.x+rr,q.y); cx.arc(q.x,q.y,rr,0,6.283); }); cx.fill(); });
     P.forEach(p=>{ const q=proj(p.lon,p.lat); p.x=q.x; p.y=q.y; p.vis=Math.max(0,Math.min(1,(150-Math.abs(q.l))/30));
@@ -183,7 +196,7 @@ body[data-page="landing"] #sp-top .wrap{display:block;height:auto}
   (function(){ const sky=document.getElementById('ld-sky'), g=sky.getContext('2d'); let w=0,h=0,r=1,next=performance.now()+1200; const S=[], M=[];
     function fit(){ const b=sky.getBoundingClientRect(); w=b.width; h=b.height; r=Math.min(2,window.devicePixelRatio||1); sky.width=w*r; sky.height=h*r; g.setTransform(r,0,0,r,0,0);
       S.length=0; for(let i=0;i<Math.round(w*h/9000);i++) S.push({x:Math.random()*w,y:Math.random()*h,s:Math.random()*1.1+.25,t:Math.random()*6.28,v:.5+Math.random()*1.4}); }
-    function tick(now){ requestAnimationFrame(tick); if(!w) return; g.clearRect(0,0,w,h);
+    function tick(now){ requestAnimationFrame(tick); if(!w) return; g.clearRect(0,0,w,h); if(document.documentElement.dataset.theme==='light') return;
       S.forEach(p=>{ const a=reduce?.45:.18+.45*(.5+.5*Math.sin(now*.0012*p.v+p.t)); g.fillStyle=`rgba(205,228,255,${a})`; g.beginPath(); g.arc(p.x,p.y,p.s,0,6.283); g.fill(); });
       if(reduce) return;
       if(now>next){ const ang=(Math.PI/180)*(18+Math.random()*22), sp=.9+Math.random()*.6; M.push({x:w*(.25+Math.random()*.7),y:Math.random()*h*.45,dx:-Math.cos(ang)*sp,dy:Math.sin(ang)*sp,t0:now,d:1000+Math.random()*700,len:170+Math.random()*170}); next=now+1200+Math.random()*2200; }
