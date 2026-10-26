@@ -1,20 +1,29 @@
 {
   "network": "mainnet",
   "chainId": 1,
-  "model": "equo-v3: onehook-v2 + cashback, referral, cap presets, creator transfer, takeover (flags 0xCC)",
-  "deployedAt": "2026-10-20T17:39:01.520Z",
-  "deployer": "0x4a95250bAb1108B0A0B8331A2fa3BA04802FD3cB",
+  "model": "equo-v3-omni: onehook-v2 + cashback (no referrals), 70/30 split, cap presets, creator transfer, takeover (flags 0xCC); OFT coins, 0.2% bridge fee",
+  "deployedAt": "2026-10-26T03:42:49.494Z",
+  "deployer": "0x54Ee4998B3309b20daf07F082B9ad8d8De380D0F",
   "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
   "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
   "contracts": {
-    "hookDeployer": "0x32C17B662f8613FCDC1d1868545C16E9B6e89D40",
-    "hook": "0xbe1FF9acc59F73Ae311810Cb74e162a47E2e40Cc",
-    "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000000071",
-    "tokenDeployer": "0x9289DD47cfb34acE7a3a97666542aBa18f7c5e48",
-    "factory": "0x7Eb4CC330866Af46b2fDfBce41686CC74778d325",
-    "router": "0x4055F9abd07caBC16788d499A935a297968E09c8",
+    "hookDeployer": "0x14627317afFDb8426715BD3fe0a90f8a9b9b585C",
+    "hook": "0x8b54AaFdCE7BD99e6d9E815510658210355cC0CC",
+    "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000002e89",
+    "tokenDeployer": "0x502Dc911055B057aBBE9605d72462A66fC2885a5",
+    "tokenCreator": "0x931939Ea61E4D3B2A16b486C8d3a656C718b9b07",
+    "divTokenCreator": "0x84BAfF09BB72A468d4387a6111259BEAb6d7633b",
+    "launchRules": "0xc89655A42A85748DbCb9692dD651dA31218C54Cf",
+    "factory": "0x6b82ddCc081CB2bA668C5190139D16A4dBb2ef52",
+    "router": "0x4f91CbFc45e76256Cd350A21Fe68Ec630731f492",
     "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
     "weth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    "oracle": "0xD1Ca49bd44A447c48d2a1FAC5F35cF583D8a7b1b"
+    "oracle": "0xD1Ca49bd44A447c48d2a1FAC5F35cF583D8a7b1b",
+    "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c"
+  },
+  "minFirstBuy": "1000000000000000",
+  "mevBand": {
+    "freePriorityGwei": "1",
+    "priorityUnitGwei": "0.05"
   }
 }

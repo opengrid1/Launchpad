@@ -1,0 +1,20 @@
+{
+  "network": "mainnet",
+  "chainId": 1,
+  "model": "equo-v3: onehook-v2 + cashback, referral, cap presets, creator transfer, takeover (flags 0xCC)",
+  "deployedAt": "2026-10-20T17:39:01.520Z",
+  "deployer": "0x4a95250bAb1108B0A0B8331A2fa3BA04802FD3cB",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "contracts": {
+    "hookDeployer": "0x32C17B662f8613FCDC1d1868545C16E9B6e89D40",
+    "hook": "0xbe1FF9acc59F73Ae311810Cb74e162a47E2e40Cc",
+    "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000000071",
+    "tokenDeployer": "0x9289DD47cfb34acE7a3a97666542aBa18f7c5e48",
+    "factory": "0x7Eb4CC330866Af46b2fDfBce41686CC74778d325",
+    "router": "0x4055F9abd07caBC16788d499A935a297968E09c8",
+    "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+    "weth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "oracle": "0xD1Ca49bd44A447c48d2a1FAC5F35cF583D8a7b1b"
+  }
+}
