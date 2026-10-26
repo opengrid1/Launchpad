@@ -1,0 +1,23 @@
+[package]
+name = "equo-sol"
+version = "0.1.0"
+edition = "2021"
+description = "Equo launchpad on Solana: Token-2022 coin, Meteora DAMM v2 pool, 70/30 fee split, admin collect"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "equo_sol"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "1.2.1", features = ["init-if-needed"] }
+anchor-spl = { version = "1.2.1", features = ["token_2022", "token_2022_extensions", "associated_token"] }
+ruint = { version = "1.12", default-features = false }
