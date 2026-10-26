@@ -2,7 +2,7 @@
 name = "equo-sol"
 version = "0.2.0"
 edition = "2021"
-description = "Equo launchpad on Solana: Token-2022 coin, Raydium CLMM pool (SOL or xStock pair, Pyth-priced \$3,000 start), Pangea-style fee split, admin collect"
+description = "Equo launchpad on Solana: Token-2022 coin, Raydium CLMM pool (SOL or xStock pair, Pyth-priced 3,000 USD start), Pangea-style fee split, admin collect"
 license = "MIT"
 
 [lib]
