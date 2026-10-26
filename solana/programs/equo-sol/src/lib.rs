@@ -1,41 +1,35 @@
-//! Equo on Solana.
+//! Equo on Solana (v2): the Solana leg of a launch that spans several chains.
 //!
-//! A launch makes a Token-2022 coin (metadata on the mint, no mint authority,
-//! no freeze authority, immutable metadata) and opens a Meteora DAMM v2 pool
-//! for it against wrapped SOL, priced so the coins on Solana open at the same
-//! dollar market cap as the coin's pools on the EVM chains.
+//! A launch is authorised by the same EIP-712 snapshot the EVM factories take: signed once by the launch service
+//! for every chain, it names the coin and, per chain, the coin's address, its share of the 1B supply and the USD
+//! price of that chain's pair. This program checks the signature (secp256k1, as on the EVM chains), the Solana
+//! leg, and that the snapshot is fresh and unused (post_snapshot), then at launch:
+//!   - makes the Token-2022 coin (9 decimals, metadata on the mint, no freeze authority, immutable metadata),
+//!   - mints the Solana slice and opens a Meteora DAMM v2 pool against wrapped SOL at a $3,000 value for the
+//!     coin's 1B, with the coin's fixed fee and a floor at the opening price,
+//!   - hands the mint authority to the coin's LayerZero OFT store, so bridging mints and burns the coin like every
+//!     other chain's copy. The launch service then initialises the OFT store and wires its EVM peers.
 //!
-//! The pool position belongs to the coin's PDA, never to a person:
-//!   - Trading fees are taken in SOL only. Anyone can call `claim_fees`,
-//!     which pulls the position's fees and pays 70% to the coin's creator
-//!     and 30% to the platform. Meteora keeps its own protocol share of the
-//!     pool fee before that, as it does on every DAMM v2 pool.
-//!   - `collect` lets the admin remove a share of the position's liquidity,
-//!     the same admin-only collect the EVM factory has. Nothing else can move
-//!     the liquidity.
+//! The Solana leg of a snapshot: eid 30168, `coin` = the OFT store (PDA of the OFT program over the store's
+//! escrow), `legSalt` = the creator's Solana wallet, which receives the creator's fees and launch-buy coins.
 //!
-//! The creator's first buy is built into the pool's opening price: the pool
-//! opens at the price a fee-free buy of that much SOL would reach, so the
-//! creator pays the curve price, nobody can trade before it, and no fee is
-//! charged on it.
+//! The pool position belongs to the coin's PDA:
+//!   - fees are taken in SOL; anyone can call `claim_fees`, which pays the platform the larger of 20% of the fee
+//!     and 0.2% of the volume it came from, and the creator the rest (Meteora keeps its own protocol share first);
+//!   - `collect` lets the admin remove a share of the position's liquidity, as on the EVM chains.
 //!
-//! Anti-snipe uses DAMM v2's fee scheduler: the fee starts at the coin's
-//! snipe fee and falls linearly to its base fee over the snipe window.
+//! The creator's launch buy is built into the opening price (fee-free), so nobody trades before it.
 //!
-//! Written on Pinocchio rather than Anchor to keep the program small (its
-//! rent is paid per byte). Instructions, accounts, account layouts and events
-//! use Anchor's encoding (sha256 discriminators, borsh), so Anchor-style
-//! clients and indexers read it unchanged.
+//! Written on Pinocchio to keep the program small; instruction, account and event encodings follow Anchor's.
 
 #![cfg_attr(not(test), no_std)]
 
 use pinocchio::{
     account_info::AccountInfo,
     cpi::slice_invoke_signed,
-    no_allocator, nostd_panic_handler, program_entrypoint,
     instruction::{AccountMeta, Instruction, Seed, Signer},
     log::sol_log_data,
-    msg,
+    msg, no_allocator, nostd_panic_handler, program_entrypoint,
     program_error::ProgramError,
     pubkey::{create_program_address, find_program_address, Pubkey},
     sysvars::{clock::Clock, rent::Rent, Sysvar},
@@ -48,6 +42,8 @@ pub mod math;
 pub const ID: Pubkey = [85, 185, 122, 72, 204, 62, 38, 139, 255, 139, 164, 242, 55, 203, 199, 48, 217, 155, 7, 38, 245, 10, 245, 11, 2, 244, 160, 66, 100, 199, 88, 184];
 /// Meteora DAMM v2, cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG
 pub const DAMM: Pubkey = [9, 45, 33, 53, 101, 122, 21, 156, 43, 135, 212, 182, 106, 112, 219, 142, 151, 82, 56, 159, 247, 106, 175, 32, 108, 237, 6, 58, 56, 249, 90, 237];
+/// Equo's instance of the LayerZero OFT program, DoxcCwT4ChjfNgNK6RcYthCga51tDjpWSCiHet4dLjs2
+pub const OFT_PROGRAM: Pubkey = [190, 83, 213, 218, 138, 166, 104, 221, 147, 32, 250, 163, 246, 234, 15, 83, 0, 185, 242, 74, 133, 135, 198, 91, 198, 96, 209, 42, 117, 144, 60, 149];
 /// TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb
 pub const TOKEN_2022: Pubkey = [6, 221, 246, 225, 238, 117, 143, 222, 24, 66, 93, 188, 228, 108, 205, 218, 182, 26, 252, 77, 131, 185, 13, 39, 254, 189, 249, 40, 216, 161, 139, 252];
 /// TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA
@@ -61,71 +57,67 @@ pub const NATIVE_MINT: Pubkey = [6, 155, 136, 87, 254, 171, 129, 132, 251, 104, 
 /// BPFLoaderUpgradeab1e11111111111111111111111
 pub const BPF_UPGRADEABLE: Pubkey = [2, 168, 246, 145, 78, 136, 161, 176, 226, 16, 21, 62, 247, 99, 174, 43, 0, 194, 185, 61, 22, 193, 36, 210, 192, 83, 122, 16, 4, 128, 0, 0];
 
-pub const COIN_DECIMALS: u8 = 6;
+/// LayerZero's endpoint id for Solana mainnet.
+pub const SOL_EID: u32 = 30168;
+pub const COIN_DECIMALS: u8 = 9;
 /// 1B coins across every chain the coin lives on.
-pub const TOTAL_SUPPLY: u64 = 1_000_000_000 * 1_000_000;
+pub const TOTAL_SUPPLY: u64 = 1_000_000_000 * 1_000_000_000;
+pub const WHOLE: u64 = 1_000_000_000;
+/// Every coin opens at this value for its 1B (USD, 18 decimals), on every chain.
+pub const START_FDV_USD18: u128 = 3_000 * 1_000_000_000_000_000_000;
 pub const BPS: u64 = 10_000;
-/// The creator's share of the pool's fees; the platform takes the rest.
-pub const CREATOR_SPLIT_BPS: u64 = 7_000;
-pub const MIN_FEE_BPS: u16 = 10;
-pub const MAX_FEE_BPS: u16 = 300;
-pub const MAX_SNIPE_BPS: u16 = 3_000;
-/// DAMM v2 caps a fee schedule at one day.
-pub const MAX_SNIPE_SECS: u32 = 86_400;
-/// The snipe fee falls in this many equal steps.
-pub const SNIPE_STEPS: u16 = 100;
-pub const MAX_SPLIT: u8 = 20;
-pub const MAX_CAP_PRESETS: usize = 8;
+pub const MIN_FEE_BPS: u16 = 30;
+pub const MAX_FEE_BPS: u16 = 500;
+/// The platform's part of a fee: the larger of this share of the fee...
+pub const PLATFORM_FEE_SHARE_BPS: u64 = 2_000;
+/// ...and this share of the volume the fee came from.
+pub const PLATFORM_VOLUME_BPS: u64 = 20;
+pub const MAX_SNAPSHOT_LIFE: i64 = 3_600;
+pub const MAX_LEGS: usize = 16;
 pub const MAX_NAME: usize = 32;
 pub const MAX_SYMBOL: usize = 10;
 pub const MAX_URI: usize = 200;
 
-pub const CONFIG_SEED: &[u8] = b"config";
-pub const COIN_SEED: &[u8] = b"coin";
+pub const CONFIG_SEED: &[u8] = b"config2";
+pub const COIN_SEED: &[u8] = b"coin2";
+pub const LAUNCH_SEED: &[u8] = b"launch";
+pub const OFT_SEED: &[u8] = b"OFT";
 
 /// Meteora DAMM v2 (cp-amm) constants.
 pub mod damm {
-    // sha256("global:<name>")[..8]
     pub const IX_INIT_CUSTOMIZABLE_POOL: [u8; 8] = [20, 161, 241, 24, 189, 221, 180, 2];
     pub const IX_CLAIM_POSITION_FEE: [u8; 8] = [180, 38, 154, 17, 133, 33, 162, 211];
     pub const IX_REMOVE_LIQUIDITY: [u8; 8] = [80, 85, 209, 72, 24, 206, 177, 108];
-    /// `BaseFeeMode::FeeTimeSchedulerLinear`
     pub const FEE_MODE_TIME_LINEAR: u8 = 0;
-    /// `ActivationType::Timestamp`
     pub const ACTIVATION_TIMESTAMP: u8 = 1;
-    /// `CollectFeeMode::OnlyB`: fees are taken in token B (SOL) only
     pub const COLLECT_FEE_ONLY_B: u8 = 1;
-    /// fee numerator per basis point (FEE_DENOMINATOR = 1e9)
     pub const NUMERATOR_PER_BPS: u64 = 100_000;
-    /// `Position::unlocked_liquidity` offset, discriminator included
     pub const POSITION_UNLOCKED_LIQUIDITY_OFFSET: usize = 8 + 32 + 32 + 32 + 32 + 8 + 8;
 }
 
 // sha256("global:<name>")[..8]
 const IX_INITIALIZE: [u8; 8] = [175, 175, 109, 31, 13, 152, 155, 237];
 const IX_SET_FEE_RECIPIENT: [u8; 8] = [227, 18, 215, 42, 237, 246, 151, 66];
-const IX_SET_PRICE_UPDATER: [u8; 8] = [252, 252, 11, 157, 146, 253, 124, 49];
-const IX_SET_LAUNCH_TERMS: [u8; 8] = [224, 63, 204, 56, 119, 26, 120, 83];
-const IX_SET_CAP_PRESETS: [u8; 8] = [132, 157, 210, 8, 76, 137, 240, 247];
-const IX_SET_PAUSED: [u8; 8] = [91, 60, 125, 192, 176, 225, 166, 218];
-const IX_SET_SOL_PRICE: [u8; 8] = [151, 237, 70, 191, 232, 81, 138, 214];
+const IX_SET_SIGNER: [u8; 8] = [127, 120, 252, 184, 97, 4, 88, 68];
+const IX_SET_LAUNCHER: [u8; 8] = [245, 86, 152, 150, 200, 12, 231, 155];
+const IX_SET_QUOTE_BAND: [u8; 8] = [22, 150, 142, 80, 140, 249, 82, 75];
+const IX_POST_SNAPSHOT: [u8; 8] = [44, 200, 134, 75, 104, 188, 11, 73];
 const IX_LAUNCH: [u8; 8] = [153, 241, 93, 225, 22, 69, 74, 61];
 const IX_CLAIM_FEES: [u8; 8] = [82, 251, 233, 156, 12, 52, 184, 202];
 const IX_SET_CREATOR: [u8; 8] = [254, 148, 255, 112, 207, 142, 170, 165];
 const IX_COLLECT: [u8; 8] = [208, 47, 194, 155, 17, 98, 82, 236];
 
 // sha256("account:<Name>")[..8]
-const CONFIG_DISC: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
-const COIN_DISC: [u8; 8] = [215, 195, 53, 238, 217, 196, 213, 51];
+const CONFIG_DISC: [u8; 8] = [2, 19, 141, 11, 71, 106, 211, 166];
+const COIN_DISC: [u8; 8] = [176, 212, 7, 162, 207, 250, 138, 206];
+const SNAP_DISC: [u8; 8] = [179, 90, 89, 154, 14, 253, 29, 198];
 
 // sha256("event:<Name>")[..8]
 const EV_INITIALIZED: [u8; 8] = [208, 213, 115, 98, 115, 82, 201, 209];
 const EV_FEE_RECIPIENT_SET: [u8; 8] = [99, 140, 80, 35, 245, 176, 179, 110];
-const EV_PRICE_UPDATER_SET: [u8; 8] = [122, 231, 184, 224, 20, 230, 93, 149];
-const EV_LAUNCH_TERMS_SET: [u8; 8] = [45, 221, 168, 108, 108, 197, 145, 58];
-const EV_CAP_PRESETS_SET: [u8; 8] = [80, 255, 251, 254, 213, 49, 15, 254];
-const EV_PAUSED_SET: [u8; 8] = [171, 125, 127, 156, 233, 81, 68, 66];
-const EV_SOL_PRICE_SET: [u8; 8] = [227, 223, 41, 124, 44, 9, 23, 34];
+const EV_SIGNER_SET: [u8; 8] = [137, 203, 187, 74, 141, 187, 226, 95];
+const EV_LAUNCHER_SET: [u8; 8] = [180, 188, 168, 150, 212, 107, 49, 116];
+const EV_QUOTE_BAND_SET: [u8; 8] = [65, 152, 205, 25, 214, 235, 252, 163];
 const EV_LAUNCHED: [u8; 8] = [209, 127, 29, 152, 129, 212, 189, 183];
 const EV_FEES_CLAIMED: [u8; 8] = [22, 104, 110, 222, 38, 157, 14, 62];
 const EV_CREATOR_SET: [u8; 8] = [95, 242, 20, 222, 81, 81, 181, 66];
@@ -135,9 +127,14 @@ const EV_COLLECTED: [u8; 8] = [67, 109, 138, 167, 168, 239, 2, 207];
 const META_INITIALIZE: [u8; 8] = [210, 225, 30, 162, 88, 184, 77, 141];
 const META_UPDATE_AUTHORITY: [u8; 8] = [215, 228, 166, 228, 84, 100, 86, 123];
 
-/// Token-2022 mint with the MetadataPointer extension, before the metadata
-/// TLV entry: 165 (mint + padding) + 1 (account type) + 4 + 64.
+/// Token-2022 mint with the MetadataPointer extension, before the metadata TLV entry.
 const MINT_WITH_POINTER_LEN: usize = 234;
+
+/// secp256k1 group order / 2: signatures with a higher s are refused (no malleable twins).
+const SECP_HALF_N: [u8; 32] = [
+    0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x5d, 0x57, 0x6e, 0x73, 0x57, 0xa4, 0x50, 0x1d,
+    0xdf, 0xe9, 0x2f, 0x46, 0x68, 0x1b, 0x20, 0xa0,
+];
 
 // -------------------------------------------------------------------------
 // Errors
@@ -148,15 +145,14 @@ const MINT_WITH_POINTER_LEN: usize = 234;
 pub enum E {
     NotUpgradeAuthority,
     NotAdmin,
-    NotPriceUpdater,
-    Paused,
+    NotAllowed,
     BadMetadata,
     BadFee,
-    BadSnipe,
-    BadSplit,
-    FirstBuyTooSmall,
-    BadPreset,
-    StalePrice,
+    BadSnapshot,
+    BadSignature,
+    Expired,
+    AlreadyLaunched,
+    PriceOutOfBand,
     BadPrice,
     Math,
     BadFeeRecipient,
@@ -168,18 +164,17 @@ pub enum E {
     BadInstruction,
 }
 
-const ERR_LOG: [&str; 20] = [
+const ERR_LOG: [&str; 19] = [
     "Error: NotUpgradeAuthority. Signer is not the program's upgrade authority",
     "Error: NotAdmin. Signer is not the admin",
-    "Error: NotPriceUpdater. Signer may not set the SOL price",
-    "Error: Paused. Launches are paused",
+    "Error: NotAllowed. Only the creator or the launcher may launch",
     "Error: BadMetadata. Name, symbol or URI is empty or too long",
-    "Error: BadFee. Fee must be 10 to 300 bps",
-    "Error: BadSnipe. Anti-snipe must be above the fee, at most 3000 bps, over at most one day",
-    "Error: BadSplit. Split must be 1 to 20",
-    "Error: FirstBuyTooSmall. First buy is below the minimum",
-    "Error: BadPreset. Unknown or invalid cap preset",
-    "Error: StalePrice. SOL price is missing or stale",
+    "Error: BadFee. Fee must be 30 to 500 bps",
+    "Error: BadSnapshot. Legs, slices or the Solana leg are wrong",
+    "Error: BadSignature. The snapshot is not signed by the signer",
+    "Error: Expired. The snapshot is past its deadline or more than an hour ahead",
+    "Error: AlreadyLaunched. This launch id already launched here",
+    "Error: PriceOutOfBand. The SOL price is outside the admin's band",
     "Error: BadPrice",
     "Error: Math. Math overflow",
     "Error: BadFeeRecipient. Wrong fee recipient",
@@ -232,6 +227,9 @@ impl<'a> Rd<'a> {
     fn u64(&mut self) -> Result<u64, ProgramError> {
         Ok(u64::from_le_bytes(self.take(8)?.try_into().unwrap()))
     }
+    fn u128(&mut self) -> Result<u128, ProgramError> {
+        Ok(u128::from_le_bytes(self.take(16)?.try_into().unwrap()))
+    }
     fn key(&mut self) -> Result<Pubkey, ProgramError> {
         Ok(self.take(32)?.try_into().unwrap())
     }
@@ -239,27 +237,19 @@ impl<'a> Rd<'a> {
         let n = self.u32()? as usize;
         self.take(n)
     }
-    fn presets(&mut self) -> Result<([u64; MAX_CAP_PRESETS], u8), ProgramError> {
-        let n = self.u32()? as usize;
-        req!(n >= 1 && n <= MAX_CAP_PRESETS, E::BadPreset);
-        let mut p = [0u64; MAX_CAP_PRESETS];
-        for v in p.iter_mut().take(n) {
-            *v = self.u64()?;
-            req!(*v > 0, E::BadPreset);
-        }
-        Ok((p, n as u8))
-    }
 }
 
 fn rd_u64(d: &[u8], o: usize) -> u64 {
     u64::from_le_bytes(d[o..o + 8].try_into().unwrap())
 }
+fn rd_u128(d: &[u8], o: usize) -> u128 {
+    u128::from_le_bytes(d[o..o + 16].try_into().unwrap())
+}
 fn rd_key(d: &[u8], o: usize) -> Pubkey {
     d[o..o + 32].try_into().unwrap()
 }
 
-/// Borsh writer for instruction data and events, on the stack (the program
-/// has no heap).
+/// Borsh writer for instruction data and events, on the stack (the program has no heap).
 struct Wr<const N: usize> {
     b: [u8; N],
     n: usize,
@@ -300,6 +290,64 @@ impl<const N: usize> Wr<N> {
     fn emit(&self) {
         sol_log_data(&[self.out()]);
     }
+}
+
+// -------------------------------------------------------------------------
+// Hashing and signatures (the EVM chains' EIP-712, on Solana's syscalls)
+// -------------------------------------------------------------------------
+
+#[cfg(target_os = "solana")]
+fn keccak(parts: &[&[u8]]) -> [u8; 32] {
+    let mut out = [0u8; 32];
+    unsafe {
+        pinocchio::syscalls::sol_keccak256(parts as *const _ as *const u8, parts.len() as u64, out.as_mut_ptr());
+    }
+    out
+}
+
+#[cfg(not(target_os = "solana"))]
+fn keccak(_parts: &[&[u8]]) -> [u8; 32] {
+    [0u8; 32]
+}
+
+/// The Ethereum address that signed `digest` (65-byte r, s, v), or None.
+#[cfg(target_os = "solana")]
+fn recover(digest: &[u8; 32], sig: &[u8]) -> Option<[u8; 20]> {
+    if sig.len() != 65 || sig[32..64] > SECP_HALF_N[..] {
+        return None;
+    }
+    let v = sig[64];
+    let rid = if v >= 27 { v - 27 } else { v };
+    if rid > 1 {
+        return None;
+    }
+    let mut pk = [0u8; 64];
+    let rc = unsafe { pinocchio::syscalls::sol_secp256k1_recover(digest.as_ptr(), rid as u64, sig.as_ptr(), pk.as_mut_ptr()) };
+    if rc != 0 {
+        return None;
+    }
+    let h = keccak(&[&pk]);
+    let mut a = [0u8; 20];
+    a.copy_from_slice(&h[12..]);
+    Some(a)
+}
+
+#[cfg(not(target_os = "solana"))]
+fn recover(_digest: &[u8; 32], _sig: &[u8]) -> Option<[u8; 20]> {
+    let _ = SECP_HALF_N;
+    None
+}
+
+fn word_u64(v: u64) -> [u8; 32] {
+    let mut w = [0u8; 32];
+    w[24..].copy_from_slice(&v.to_be_bytes());
+    w
+}
+
+fn word_u128(v: u128) -> [u8; 32] {
+    let mut w = [0u8; 32];
+    w[16..].copy_from_slice(&v.to_be_bytes());
+    w
 }
 
 // -------------------------------------------------------------------------
@@ -350,20 +398,7 @@ fn sys_create(payer: &AccountInfo, new: &AccountInfo, lamports: u64, space: u64,
     )
 }
 
-fn sys_transfer(from: &AccountInfo, to: &AccountInfo, lamports: u64) -> ProgramResult {
-    let mut d = Wr::<80>::new(&2u32.to_le_bytes());
-    d.u64(lamports);
-    call(
-        &SYSTEM,
-        &[AccountMeta::writable_signer(from.key()), AccountMeta::writable(to.key())],
-        &[from, to],
-        d.out(),
-        &[],
-    )
-}
-
-/// Creates `ata` (owner's associated account for `mint`) if it is missing.
-/// The ATA program checks that the address is the derived one.
+/// Creates `ata` (owner's associated account for `mint`) if it is missing. The ATA program checks the address.
 fn ata_idempotent(payer: &AccountInfo, ata: &AccountInfo, owner: &AccountInfo, mint: &AccountInfo, system: &AccountInfo, token_program: &AccountInfo) -> ProgramResult {
     call(
         &ATA,
@@ -397,47 +432,38 @@ fn token_transfer(token_program: &Pubkey, from: &AccountInfo, to: &AccountInfo, 
 // State
 // -------------------------------------------------------------------------
 
-/// Config, after the 8-byte discriminator.
+/// ConfigV2, after the 8-byte discriminator.
 mod cfg {
     pub const ADMIN: usize = 8;
     pub const FEE_RECIPIENT: usize = 40;
-    pub const PRICE_UPDATER: usize = 72;
-    pub const MIN_FIRST_BUY: usize = 104;
-    pub const LAUNCH_FEE: usize = 112;
-    pub const MAX_PRICE_AGE: usize = 120;
-    pub const PRESET_COUNT: usize = 124;
-    pub const PRESETS: usize = 125;
-    pub const SOL_USD8: usize = 189;
-    pub const PRICE_AT: usize = 197;
-    pub const PAUSED: usize = 205;
-    pub const LAUNCHES: usize = 206;
-    pub const BUMP: usize = 214;
-    pub const LEN: usize = 215;
+    pub const LAUNCHER: usize = 72;
+    pub const SIGNER: usize = 104; // Ethereum address, 20 bytes
+    pub const MIN_QUOTE: usize = 124; // u128, USD per SOL, 18 decimals
+    pub const MAX_QUOTE: usize = 140;
+    pub const LAUNCHES: usize = 156;
+    pub const BUMP: usize = 164;
+    pub const LEN: usize = 165;
 }
 
-/// Coin, after the 8-byte discriminator. Same layout as the borsh struct
-/// `Coin { mint, creator, pool, position, position_nft_account, fee_bps,
-/// snipe_bps, snipe_secs, split, cap_usd8, created_at, creator_fees,
-/// platform_fees, bump }`.
+/// CoinV2, after the 8-byte discriminator.
 mod coin {
     pub const MINT: usize = 8;
     pub const CREATOR: usize = 40;
     pub const POOL: usize = 72;
     pub const POSITION: usize = 104;
     pub const NFT_ACCOUNT: usize = 136;
-    pub const FEE_BPS: usize = 168;
-    pub const SNIPE_BPS: usize = 170;
-    pub const SNIPE_SECS: usize = 172;
-    pub const SPLIT: usize = 176;
-    pub const CAP_USD8: usize = 177;
-    pub const CREATED_AT: usize = 185;
-    pub const CREATOR_FEES: usize = 193;
-    pub const PLATFORM_FEES: usize = 201;
-    pub const BUMP: usize = 209;
-    pub const LEN: usize = 210;
+    pub const OFT_STORE: usize = 168;
+    pub const LAUNCH_ID: usize = 200;
+    pub const FEE_BPS: usize = 232;
+    pub const SLICE: usize = 234;
+    pub const QUOTE_USD18: usize = 242;
+    pub const CREATED_AT: usize = 258;
+    pub const CREATOR_FEES: usize = 266;
+    pub const PLATFORM_FEES: usize = 274;
+    pub const BUMP: usize = 282;
+    pub const LEN: usize = 283;
 }
 
-/// Checks the config account and returns a copy of its data.
 fn load_config(a: &AccountInfo) -> Result<[u8; cfg::LEN], ProgramError> {
     req!(a.is_owned_by(&ID), E::BadAccount);
     let d = a.try_borrow_data()?;
@@ -455,7 +481,6 @@ fn write(a: &AccountInfo, o: usize, b: &[u8]) -> ProgramResult {
     Ok(())
 }
 
-/// Checks a coin account against its mint and returns a copy of its data.
 fn load_coin(a: &AccountInfo, mint: &Pubkey) -> Result<[u8; coin::LEN], ProgramError> {
     req!(a.is_owned_by(&ID), E::BadAccount);
     let d = a.try_borrow_data()?;
@@ -468,7 +493,7 @@ fn load_coin(a: &AccountInfo, mint: &Pubkey) -> Result<[u8; coin::LEN], ProgramE
     Ok(out)
 }
 
-fn admin_config<'a>(accounts: &'a [AccountInfo]) -> Result<(&'a AccountInfo, [u8; cfg::LEN]), ProgramError> {
+fn admin_config<'a>(accounts: &'a [AccountInfo]) -> Result<&'a AccountInfo, ProgramError> {
     let [admin, config, ..] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -476,7 +501,7 @@ fn admin_config<'a>(accounts: &'a [AccountInfo]) -> Result<(&'a AccountInfo, [u8
     let c = load_config(config)?;
     req!(rd_key(&c, cfg::ADMIN) == *admin.key(), E::NotAdmin);
     req!(config.is_writable(), E::BadAccount);
-    Ok((config, c))
+    Ok(config)
 }
 
 // -------------------------------------------------------------------------
@@ -495,53 +520,37 @@ pub fn process(program_id: &Pubkey, accounts: &[AccountInfo], data: &[u8]) -> Pr
     match <[u8; 8]>::try_from(tag).unwrap() {
         IX_INITIALIZE => initialize(accounts, &mut r),
         IX_SET_FEE_RECIPIENT => {
-            let (config, _) = admin_config(accounts)?;
+            let config = admin_config(accounts)?;
             let k = r.key()?;
             write(config, cfg::FEE_RECIPIENT, &k)?;
             Wr::<80>::new(&EV_FEE_RECIPIENT_SET).raw(&k).emit();
             Ok(())
         }
-        IX_SET_PRICE_UPDATER => {
-            let (config, _) = admin_config(accounts)?;
+        IX_SET_LAUNCHER => {
+            let config = admin_config(accounts)?;
             let k = r.key()?;
-            write(config, cfg::PRICE_UPDATER, &k)?;
-            Wr::<80>::new(&EV_PRICE_UPDATER_SET).raw(&k).emit();
+            write(config, cfg::LAUNCHER, &k)?;
+            Wr::<80>::new(&EV_LAUNCHER_SET).raw(&k).emit();
             Ok(())
         }
-        IX_SET_LAUNCH_TERMS => {
-            let (config, _) = admin_config(accounts)?;
-            let (min_first_buy, launch_fee, max_age) = (r.u64()?, r.u64()?, r.u32()?);
-            write(config, cfg::MIN_FIRST_BUY, &min_first_buy.to_le_bytes())?;
-            write(config, cfg::LAUNCH_FEE, &launch_fee.to_le_bytes())?;
-            write(config, cfg::MAX_PRICE_AGE, &max_age.to_le_bytes())?;
-            Wr::<80>::new(&EV_LAUNCH_TERMS_SET).u64(min_first_buy).u64(launch_fee).u32(max_age).emit();
+        IX_SET_SIGNER => {
+            let config = admin_config(accounts)?;
+            let k = r.take(20)?;
+            req!(k != [0u8; 20], E::BadInstruction);
+            write(config, cfg::SIGNER, k)?;
+            Wr::<80>::new(&EV_SIGNER_SET).raw(k).emit();
             Ok(())
         }
-        IX_SET_CAP_PRESETS => {
-            let (config, _) = admin_config(accounts)?;
-            let (p, n) = r.presets()?;
-            let mut b = [0u8; 8 * MAX_CAP_PRESETS];
-            let mut ev = Wr::<80>::new(&EV_CAP_PRESETS_SET);
-            ev.u32(n as u32);
-            for (i, v) in p.iter().enumerate() {
-                b[i * 8..i * 8 + 8].copy_from_slice(&v.to_le_bytes());
-                if i < n as usize {
-                    ev.u64(*v);
-                }
-            }
-            write(config, cfg::PRESET_COUNT, &[n])?;
-            write(config, cfg::PRESETS, &b)?;
-            ev.emit();
+        IX_SET_QUOTE_BAND => {
+            let config = admin_config(accounts)?;
+            let (lo, hi) = (r.u128()?, r.u128()?);
+            req!(lo > 0 && hi > lo, E::BadInstruction);
+            write(config, cfg::MIN_QUOTE, &lo.to_le_bytes())?;
+            write(config, cfg::MAX_QUOTE, &hi.to_le_bytes())?;
+            Wr::<80>::new(&EV_QUOTE_BAND_SET).u128(lo).u128(hi).emit();
             Ok(())
         }
-        IX_SET_PAUSED => {
-            let (config, _) = admin_config(accounts)?;
-            let p = r.u8()? != 0;
-            write(config, cfg::PAUSED, &[p as u8])?;
-            Wr::<80>::new(&EV_PAUSED_SET).u8(p as u8).emit();
-            Ok(())
-        }
-        IX_SET_SOL_PRICE => set_sol_price(accounts, &mut r),
+        IX_POST_SNAPSHOT => post_snapshot(accounts, &mut r),
         IX_LAUNCH => launch(accounts, &mut r),
         IX_CLAIM_FEES => claim_fees(accounts),
         IX_SET_CREATOR => set_creator(accounts, &mut r),
@@ -550,8 +559,7 @@ pub fn process(program_id: &Pubkey, accounts: &[AccountInfo], data: &[u8]) -> Pr
     }
 }
 
-/// One-time setup, signed by the program's upgrade authority. The admin set
-/// here can never change.
+/// One-time setup, signed by the program's upgrade authority. The admin set here can never change.
 #[inline(never)]
 fn initialize(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
     let [authority, config, prog, program_data, system, ..] = accounts else {
@@ -560,7 +568,6 @@ fn initialize(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
     signer(authority)?;
     program(system, &SYSTEM)?;
     program(prog, &ID)?;
-    // the upgrade authority recorded in the program's ProgramData account
     req!(find_program_address(&[&ID], &BPF_UPGRADEABLE).0 == *program_data.key(), E::NotUpgradeAuthority);
     req!(program_data.is_owned_by(&BPF_UPGRADEABLE), E::NotUpgradeAuthority);
     {
@@ -573,11 +580,10 @@ fn initialize(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
 
     let admin = r.key()?;
     let fee_recipient = r.key()?;
-    let price_updater = r.key()?;
-    let min_first_buy = r.u64()?;
-    let launch_fee = r.u64()?;
-    let max_age = r.u32()?;
-    let (presets, n) = r.presets()?;
+    let launcher = r.key()?;
+    let signer_eth = r.take(20)?;
+    let (lo, hi) = (r.u128()?, r.u128()?);
+    req!(lo > 0 && hi > lo && signer_eth != [0u8; 20], E::BadInstruction);
 
     let b = [bump];
     let seeds = [Seed::from(CONFIG_SEED), Seed::from(&b)];
@@ -586,66 +592,159 @@ fn initialize(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
     d[..8].copy_from_slice(&CONFIG_DISC);
     d[cfg::ADMIN..cfg::ADMIN + 32].copy_from_slice(&admin);
     d[cfg::FEE_RECIPIENT..cfg::FEE_RECIPIENT + 32].copy_from_slice(&fee_recipient);
-    d[cfg::PRICE_UPDATER..cfg::PRICE_UPDATER + 32].copy_from_slice(&price_updater);
-    d[cfg::MIN_FIRST_BUY..cfg::MIN_FIRST_BUY + 8].copy_from_slice(&min_first_buy.to_le_bytes());
-    d[cfg::LAUNCH_FEE..cfg::LAUNCH_FEE + 8].copy_from_slice(&launch_fee.to_le_bytes());
-    d[cfg::MAX_PRICE_AGE..cfg::MAX_PRICE_AGE + 4].copy_from_slice(&max_age.to_le_bytes());
-    d[cfg::PRESET_COUNT] = n;
-    for (i, v) in presets.iter().enumerate() {
-        let o = cfg::PRESETS + i * 8;
-        d[o..o + 8].copy_from_slice(&v.to_le_bytes());
-    }
+    d[cfg::LAUNCHER..cfg::LAUNCHER + 32].copy_from_slice(&launcher);
+    d[cfg::SIGNER..cfg::SIGNER + 20].copy_from_slice(signer_eth);
+    d[cfg::MIN_QUOTE..cfg::MIN_QUOTE + 16].copy_from_slice(&lo.to_le_bytes());
+    d[cfg::MAX_QUOTE..cfg::MAX_QUOTE + 16].copy_from_slice(&hi.to_le_bytes());
     d[cfg::BUMP] = bump;
     Wr::<80>::new(&EV_INITIALIZED).raw(&admin).raw(&fee_recipient).emit();
     Ok(())
 }
 
-/// SOL/USD with 8 decimals, used to turn the dollar cap presets into SOL.
-#[inline(never)]
-fn set_sol_price(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
-    let [who, config, ..] = accounts else {
-        return Err(ProgramError::NotEnoughAccountKeys);
-    };
-    signer(who)?;
-    let c = load_config(config)?;
-    req!(rd_key(&c, cfg::PRICE_UPDATER) == *who.key() || rd_key(&c, cfg::ADMIN) == *who.key(), E::NotPriceUpdater);
-    let price = r.u64()?;
-    req!(price > 0, E::BadPrice);
-    let now = Clock::get()?.unix_timestamp;
-    write(config, cfg::SOL_USD8, &price.to_le_bytes())?;
-    write(config, cfg::PRICE_AT, &now.to_le_bytes())?;
-    Wr::<80>::new(&EV_SOL_PRICE_SET).u64(price).raw(&now.to_le_bytes()).emit();
-    Ok(())
-}
-
-/// Borsh `PoolFeeParameters`: a linear time-scheduled base fee (anti-snipe
-/// decaying to the coin's fee), no compounding, no dynamic fee.
-pub fn pool_fee_params(fee_bps: u16, snipe_bps: u16, snipe_secs: u32) -> [u8; 31] {
+/// Borsh `PoolFeeParameters`: one flat base fee, no schedule, no dynamic fee.
+pub fn pool_fee_params(fee_bps: u16) -> [u8; 31] {
     let base = fee_bps as u64 * damm::NUMERATOR_PER_BPS;
-    let (cliff, periods, freq, reduction) = if snipe_bps == 0 {
-        (base, 0u16, 0u64, 0u64)
-    } else {
-        let cliff = snipe_bps as u64 * damm::NUMERATOR_PER_BPS;
-        let steps = SNIPE_STEPS.min(snipe_secs as u16).max(1);
-        let freq = (snipe_secs as u64).div_ceil(steps as u64);
-        (cliff, steps, freq, (cliff - base) / steps as u64)
-    };
     let mut v = [0u8; 31];
-    v[0..8].copy_from_slice(&cliff.to_le_bytes());
-    v[8..10].copy_from_slice(&periods.to_le_bytes());
-    v[10..18].copy_from_slice(&freq.to_le_bytes());
-    v[18..26].copy_from_slice(&reduction.to_le_bytes());
+    v[0..8].copy_from_slice(&base.to_le_bytes());
     v[26] = damm::FEE_MODE_TIME_LINEAR;
-    // [27..29] compounding_fee_bps = 0, [29] padding, [30] dynamic_fee = None
     v
 }
 
-/// Makes the coin and opens its pool. `first_buy` lamports of wrapped SOL
-/// must already sit in the payer's WSOL account (plus 1 lamport when
-/// `first_buy` is 0: DAMM v2 takes at least one unit of each token).
+/// The platform's share of a claimed fee, in bps: the larger of 20% of the fee and 0.2% of the volume it came
+/// from (with a flat fee, the volume is the fee over the fee rate), capped at the whole fee.
+pub fn platform_share_bps(fee_bps: u16) -> u64 {
+    let by_volume = PLATFORM_VOLUME_BPS * BPS / fee_bps.max(1) as u64;
+    by_volume.max(PLATFORM_FEE_SHARE_BPS).min(BPS)
+}
+
+/// LaunchSnapshot (the launch marker PDA ["launch", launch_id]), after the 8-byte discriminator: the Solana leg
+/// of a verified snapshot, waiting for (or done with) its launch.
+mod snap {
+    pub const STATE: usize = 8; // 0 posted, 1 launched
+    pub const LAUNCH_ID: usize = 9;
+    pub const CREATOR_ETH: usize = 41;
+    pub const CREATOR: usize = 61;
+    pub const COIN: usize = 93;
+    pub const FEE_BPS: usize = 125;
+    pub const DEADLINE: usize = 127;
+    pub const SLICE: usize = 135;
+    pub const QUOTE: usize = 143;
+    pub const NAME: usize = 159; // u8 len + 32
+    pub const SYMBOL: usize = 192; // u8 len + 10
+    pub const URI: usize = 203; // u8 len + 200
+    pub const LEN: usize = 404;
+}
+
+/// Verifies a launch snapshot and records its Solana leg in the launch marker, so the launch itself fits in one
+/// transaction. The creator or the launcher posts it.
+///
+/// Data: launch_id[32], creator_eth[20], name, symbol, uri (u32-prefixed), fee_bps u16, deadline u64, legs u32, then
+/// per leg a tag: 0 + the leg's EIP-712 hash[32] (another chain's leg), or 1 + eid u32, coin[32], leg_salt[32],
+/// slice u64, quote_usd18 u128 (the Solana leg, exactly one), then the signature[65].
+///
+/// Only the Solana leg is spelled out (the full snapshot does not fit a Solana transaction); the signature still
+/// covers every leg, and every EVM chain checks that the slices add up to the 1B.
+#[inline(never)]
+fn post_snapshot(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
+    let [payer, config, marker, system, ..] = accounts else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+    signer(payer)?;
+    program(system, &SYSTEM)?;
+    let c = load_config(config)?;
+
+    let launch_id = r.take(32)?;
+    let creator_eth = r.take(20)?;
+    let name = r.bytes()?;
+    let symbol = r.bytes()?;
+    let uri = r.bytes()?;
+    let fee_bps = r.u16()?;
+    let deadline = r.u64()?;
+    let n = r.u32()? as usize;
+    req!(n >= 1 && n <= MAX_LEGS, E::BadSnapshot);
+    req!(!name.is_empty() && name.len() <= MAX_NAME && core::str::from_utf8(name).is_ok(), E::BadMetadata);
+    req!(!symbol.is_empty() && symbol.len() <= MAX_SYMBOL && core::str::from_utf8(symbol).is_ok(), E::BadMetadata);
+    req!(uri.len() <= MAX_URI && core::str::from_utf8(uri).is_ok(), E::BadMetadata);
+    req!(fee_bps >= MIN_FEE_BPS && fee_bps <= MAX_FEE_BPS, E::BadFee);
+
+    let leg_type = keccak(&[b"Leg(uint32 eid,bytes32 coin,bytes32 legSalt,uint256 slice,uint256 quoteUsd18)"]);
+    let mut leg_hashes = [0u8; 32 * MAX_LEGS];
+    let mut sol: Option<(u64, u128, Pubkey, Pubkey)> = None;
+    for i in 0..n {
+        if r.u8()? == 0 {
+            leg_hashes[i * 32..i * 32 + 32].copy_from_slice(r.take(32)?);
+            continue;
+        }
+        let eid = r.u32()?;
+        let coin_b = r.take(32)?;
+        let salt_b = r.take(32)?;
+        let slice = r.u64()?;
+        let quote = r.u128()?;
+        req!(eid == SOL_EID && sol.is_none(), E::BadSnapshot);
+        req!(slice > 0 && slice % WHOLE == 0 && slice <= TOTAL_SUPPLY, E::BadSnapshot);
+        let h = keccak(&[&leg_type, &word_u64(eid as u64), coin_b, salt_b, &word_u64(slice), &word_u128(quote)]);
+        leg_hashes[i * 32..i * 32 + 32].copy_from_slice(&h);
+        sol = Some((slice, quote, coin_b.try_into().unwrap(), salt_b.try_into().unwrap()));
+    }
+    let (slice, quote, coin, creator) = sol.ok_or_else(|| fail(E::BadSnapshot))?;
+    let sig = r.take(65)?;
+
+    let snap_type = keccak(&[
+        b"Snapshot(bytes32 launchId,address creator,string name,string symbol,string metadataURI,uint16 feeBps,uint64 deadline,Leg[] legs)",
+        b"Leg(uint32 eid,bytes32 coin,bytes32 legSalt,uint256 slice,uint256 quoteUsd18)",
+    ]);
+    let mut creator_word = [0u8; 32];
+    creator_word[12..].copy_from_slice(creator_eth);
+    let struct_hash = keccak(&[
+        &snap_type,
+        launch_id,
+        &creator_word,
+        &keccak(&[name]),
+        &keccak(&[symbol]),
+        &keccak(&[uri]),
+        &word_u64(fee_bps as u64),
+        &word_u64(deadline),
+        &keccak(&[&leg_hashes[..n * 32]]),
+    ]);
+    let domain = keccak(&[&keccak(&[b"EIP712Domain(string name,string version)"]), &keccak(&[b"Equo"]), &keccak(&[b"2"])]);
+    let digest = keccak(&[b"\x19\x01", &domain, &struct_hash]);
+    req!(recover(&digest, sig).map(|a| a[..] == c[cfg::SIGNER..cfg::SIGNER + 20]).unwrap_or(false), E::BadSignature);
+
+    let now = Clock::get()?.unix_timestamp;
+    req!(now <= deadline as i64 && (deadline as i64) <= now + MAX_SNAPSHOT_LIFE, E::Expired);
+    req!(quote >= rd_u128(&c, cfg::MIN_QUOTE) && quote <= rd_u128(&c, cfg::MAX_QUOTE), E::PriceOutOfBand);
+    req!(*payer.key() == creator || *payer.key() == rd_key(&c, cfg::LAUNCHER), E::NotAllowed);
+
+    let (marker_key, marker_bump) = find_program_address(&[LAUNCH_SEED, launch_id], &ID);
+    req!(*marker.key() == marker_key, E::BadAccount);
+    req!(marker.data_is_empty(), E::AlreadyLaunched);
+    let mb = [marker_bump];
+    let seeds = [Seed::from(LAUNCH_SEED), Seed::from(launch_id), Seed::from(&mb)];
+    sys_create(payer, marker, Rent::get()?.minimum_balance(snap::LEN), snap::LEN as u64, &ID, &[Signer::from(&seeds)])?;
+    let mut d = marker.try_borrow_mut_data()?;
+    d[..8].copy_from_slice(&SNAP_DISC);
+    d[snap::LAUNCH_ID..snap::LAUNCH_ID + 32].copy_from_slice(launch_id);
+    d[snap::CREATOR_ETH..snap::CREATOR_ETH + 20].copy_from_slice(creator_eth);
+    d[snap::CREATOR..snap::CREATOR + 32].copy_from_slice(&creator);
+    d[snap::COIN..snap::COIN + 32].copy_from_slice(&coin);
+    d[snap::FEE_BPS..snap::FEE_BPS + 2].copy_from_slice(&fee_bps.to_le_bytes());
+    d[snap::DEADLINE..snap::DEADLINE + 8].copy_from_slice(&deadline.to_le_bytes());
+    d[snap::SLICE..snap::SLICE + 8].copy_from_slice(&slice.to_le_bytes());
+    d[snap::QUOTE..snap::QUOTE + 16].copy_from_slice(&quote.to_le_bytes());
+    d[snap::NAME] = name.len() as u8;
+    d[snap::NAME + 1..snap::NAME + 1 + name.len()].copy_from_slice(name);
+    d[snap::SYMBOL] = symbol.len() as u8;
+    d[snap::SYMBOL + 1..snap::SYMBOL + 1 + symbol.len()].copy_from_slice(symbol);
+    d[snap::URI] = uri.len() as u8;
+    d[snap::URI + 1..snap::URI + 1 + uri.len()].copy_from_slice(uri);
+    Ok(())
+}
+
+/// Makes the coin and opens its pool from a posted snapshot. `first_buy` lamports of wrapped SOL must already sit
+/// in the payer's WSOL account (plus 1 lamport when `first_buy` is 0: DAMM v2 takes at least one unit of each token).
 #[inline(never)]
 fn launch(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
-    let [payer, config, fee_recipient, mint, coin_acc, payer_coin, payer_wsol, wsol_mint, nft_mint, nft_account, pool, position, coin_vault, sol_vault, pool_authority, damm_events, damm_program, t22, token, ata_program, system, ..] =
+    let [payer, config, mint, coin_acc, payer_coin, payer_wsol, wsol_mint, nft_mint, nft_account, pool, position, coin_vault, sol_vault, pool_authority, damm_events, damm_program, t22, token, ata_program, system, marker, oft_escrow, creator, creator_coin, ..] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -659,50 +758,49 @@ fn launch(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
     program(ata_program, &ATA)?;
     program(system, &SYSTEM)?;
     req!(is_key(wsol_mint, &NATIVE_MINT), E::BadAccount);
-    req!(config.is_writable(), E::BadAccount);
+    req!(config.is_writable() && marker.is_writable(), E::BadAccount);
     let c = load_config(config)?;
-    req!(c[cfg::PAUSED] == 0, E::Paused);
-
-    let name = r.bytes()?;
-    let symbol = r.bytes()?;
-    let uri = r.bytes()?;
-    let fee_bps = r.u16()?;
-    let snipe_bps = r.u16()?;
-    let snipe_secs = r.u32()?;
-    let split = r.u8()?;
-    let cap_preset = r.u8()?;
     let first_buy = r.u64()?;
-    req!(!name.is_empty() && name.len() <= MAX_NAME && core::str::from_utf8(name).is_ok(), E::BadMetadata);
-    req!(!symbol.is_empty() && symbol.len() <= MAX_SYMBOL && core::str::from_utf8(symbol).is_ok(), E::BadMetadata);
-    req!(uri.len() <= MAX_URI && core::str::from_utf8(uri).is_ok(), E::BadMetadata);
-    req!(fee_bps >= MIN_FEE_BPS && fee_bps <= MAX_FEE_BPS, E::BadFee);
-    req!(snipe_bps == 0 || (snipe_bps > fee_bps && snipe_bps <= MAX_SNIPE_BPS), E::BadSnipe);
-    req!((snipe_bps == 0) == (snipe_secs == 0) && snipe_secs <= MAX_SNIPE_SECS, E::BadSnipe);
-    req!(split >= 1 && split <= MAX_SPLIT, E::BadSplit);
-    req!(first_buy >= rd_u64(&c, cfg::MIN_FIRST_BUY), E::FirstBuyTooSmall);
-    req!(cap_preset < c[cfg::PRESET_COUNT], E::BadPreset);
-    req!(is_key(fee_recipient, &rd_key(&c, cfg::FEE_RECIPIENT)), E::BadFeeRecipient);
 
-    // opening price: the dollar cap preset in SOL, for the coin's 1B total
+    // the posted snapshot
+    let mut m = [0u8; snap::LEN];
+    {
+        req!(marker.is_owned_by(&ID), E::BadAccount);
+        let d = marker.try_borrow_data()?;
+        req!(d.len() == snap::LEN && d[..8] == SNAP_DISC, E::BadAccount);
+        m.copy_from_slice(&d);
+    }
+    req!(m[snap::STATE] == 0, E::AlreadyLaunched);
+    req!(find_program_address(&[LAUNCH_SEED, &m[snap::LAUNCH_ID..snap::LAUNCH_ID + 32]], &ID).0 == *marker.key(), E::BadAccount);
+    let creator_key = rd_key(&m, snap::CREATOR);
+    let coin_store = rd_key(&m, snap::COIN);
+    let fee_bps = u16::from_le_bytes([m[snap::FEE_BPS], m[snap::FEE_BPS + 1]]);
+    let deadline = rd_u64(&m, snap::DEADLINE) as i64;
+    let slice = rd_u64(&m, snap::SLICE);
+    let quote = rd_u128(&m, snap::QUOTE);
+    let name = &m[snap::NAME + 1..snap::NAME + 1 + m[snap::NAME] as usize];
+    let symbol = &m[snap::SYMBOL + 1..snap::SYMBOL + 1 + m[snap::SYMBOL] as usize];
+    let uri = &m[snap::URI + 1..snap::URI + 1 + m[snap::URI] as usize];
     let now = Clock::get()?.unix_timestamp;
-    let sol_usd8 = rd_u64(&c, cfg::SOL_USD8);
-    let price_at = rd_u64(&c, cfg::PRICE_AT) as i64;
-    let max_age = rd_u64(&c, cfg::MAX_PRICE_AGE) as u32;
-    req!(sol_usd8 > 0 && now.saturating_sub(price_at) <= max_age as i64, E::StalePrice);
-    let cap_usd8 = rd_u64(&c, cfg::PRESETS + cap_preset as usize * 8);
-    let cap_lamports = math::mul_div(cap_usd8 as u128, 1_000_000_000, sol_usd8 as u128)
+    req!(now <= deadline, E::Expired);
+    req!(*payer.key() == creator_key || *payer.key() == rd_key(&c, cfg::LAUNCHER), E::NotAllowed);
+    req!(is_key(creator, &creator_key), E::BadCreator);
+    // the Solana leg's coin is the OFT store over this escrow
+    req!(find_program_address(&[OFT_SEED, oft_escrow.key()], &OFT_PROGRAM).0 == coin_store, E::BadSnapshot);
+    write(marker, snap::STATE, &[1])?;
+
+    // opening price: the coin's 1B at $3,000, in SOL
+    let cap_lamports = math::mul_div(START_FDV_USD18, 1_000_000_000, quote)
         .and_then(|v| u64::try_from(v).ok())
         .ok_or_else(|| fail(E::BadPrice))?;
     let sqrt_min = math::sqrt_price_for_cap(cap_lamports, TOTAL_SUPPLY).ok_or_else(|| fail(E::BadPrice))?;
     let sqrt_max = math::MAX_SQRT_PRICE;
-    let slice = TOTAL_SUPPLY / split as u64;
     let liquidity = math::liquidity_for_coins(slice, sqrt_min, sqrt_max).ok_or_else(|| fail(E::Math))?;
     let sqrt_price = math::sqrt_price_after_buy(sqrt_min, liquidity, first_buy).ok_or_else(|| fail(E::Math))?;
     req!(sqrt_price < sqrt_max, E::Math);
     let pool_coins = math::coins_in_pool(liquidity, sqrt_price, sqrt_max).ok_or_else(|| fail(E::Math))?;
     req!(pool_coins <= slice, E::Math);
 
-    // the payer's WSOL account funds the pool's SOL side
     let (wmint, wowner, _) = token_account(payer_wsol, &TOKEN)?;
     req!(wmint == NATIVE_MINT && wowner == *payer.key(), E::BadAccount);
 
@@ -712,55 +810,12 @@ fn launch(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
     let cb = [coin_bump];
     let coin_seeds = [Seed::from(COIN_SEED), Seed::from(&mint_key), Seed::from(&cb)];
     let coin_signer = [Signer::from(&coin_seeds)];
-
-    // launch fee
-    let launch_fee = rd_u64(&c, cfg::LAUNCH_FEE);
-    if launch_fee > 0 {
-        sys_transfer(payer, fee_recipient, launch_fee)?;
-    }
-
-    // the coin's state account, which is also the PDA that owns the pool position
     let rent = Rent::get()?;
     sys_create(payer, coin_acc, rent.minimum_balance(coin::LEN), coin::LEN as u64, &ID, &coin_signer)?;
 
-    // the mint, funded for its metadata entry up front
-    let meta_len = 4 + 32 + 32 + (4 + name.len()) + (4 + symbol.len()) + (4 + uri.len()) + 4;
-    sys_create(payer, mint, rent.minimum_balance(MINT_WITH_POINTER_LEN + meta_len), MINT_WITH_POINTER_LEN as u64, &TOKEN_2022, &[])?;
-    // MetadataPointer::Initialize { authority: coin, metadata_address: mint }
-    let mut d = Wr::<80>::new(&[39, 0]);
-    d.raw(&coin_key).raw(&mint_key);
-    call(&TOKEN_2022, &[AccountMeta::writable(&mint_key)], &[mint], d.out(), &[])?;
-    // InitializeMint2 { decimals, mint_authority: coin, freeze_authority: None }
-    let mut d = Wr::<80>::new(&[20, COIN_DECIMALS]);
-    d.raw(&coin_key).u8(0);
-    call(&TOKEN_2022, &[AccountMeta::writable(&mint_key)], &[mint], d.out(), &[])?;
-    // token metadata, then drop its update authority so it can never change
-    let mut d = Wr::<288>::new(&META_INITIALIZE);
-    d.str(name).str(symbol).str(uri);
-    call(
-        &TOKEN_2022,
-        &[
-            AccountMeta::writable(&mint_key),
-            AccountMeta::readonly(&coin_key),
-            AccountMeta::readonly(&mint_key),
-            AccountMeta::readonly_signer(&coin_key),
-        ],
-        &[mint, coin_acc, mint, coin_acc],
-        d.out(),
-        &coin_signer,
-    )?;
-    let mut d = Wr::<80>::new(&META_UPDATE_AUTHORITY);
-    d.raw(&[0u8; 32]);
-    call(
-        &TOKEN_2022,
-        &[AccountMeta::writable(&mint_key), AccountMeta::readonly_signer(&coin_key)],
-        &[mint, coin_acc],
-        d.out(),
-        &coin_signer,
-    )?;
+    make_mint(payer, mint, coin_acc, &coin_key, &coin_signer, name, symbol, uri, &rent)?;
 
-    // this chain's slice of the supply goes to the payer, the pool pulls its
-    // coins from there, and the remainder is the creator's first buy
+    // the slice goes to the payer; the pool pulls its coins from there and the rest is the launch buy
     call(
         &ATA,
         &[
@@ -784,18 +839,109 @@ fn launch(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
         d.out(),
         &coin_signer,
     )?;
-    // SetAuthority { MintTokens, None }
+    // SetAuthority { MintTokens, Some(oft_store) }: from here only bridging mints, and only what was burned elsewhere
+    let mut d = Wr::<80>::new(&[6, 0, 1]);
+    d.raw(&coin_store);
+    call(&TOKEN_2022, &[AccountMeta::writable(&mint_key), AccountMeta::readonly_signer(&coin_key)], &[mint, coin_acc], d.out(), &coin_signer)?;
+
+    open_pool(
+        &[coin_acc, nft_mint, nft_account, payer, pool_authority, pool, position, mint, wsol_mint, coin_vault, sol_vault, payer_coin, payer_wsol, t22, token, system, damm_events, damm_program],
+        &coin_signer,
+        fee_bps,
+        sqrt_min,
+        sqrt_max,
+        liquidity,
+        sqrt_price,
+    )?;
+    req!(pool.is_owned_by(&DAMM), E::BadPool);
+
+    // the launch buy's coins go to the creator
+    let bought = slice - pool_coins;
+    if bought > 0 && *payer.key() != creator_key {
+        ata_idempotent(payer, creator_coin, creator, mint, system, t22)?;
+        let mut d = Wr::<80>::new(&[12]);
+        d.u64(bought).u8(COIN_DECIMALS);
+        call(
+            &TOKEN_2022,
+            &[AccountMeta::writable(payer_coin.key()), AccountMeta::readonly(&mint_key), AccountMeta::writable(creator_coin.key()), AccountMeta::readonly_signer(payer.key())],
+            &[payer_coin, mint, creator_coin, payer],
+            d.out(),
+            &[],
+        )?;
+    }
+
+    {
+        let mut st = coin_acc.try_borrow_mut_data()?;
+        st[..8].copy_from_slice(&COIN_DISC);
+        st[coin::MINT..coin::MINT + 32].copy_from_slice(&mint_key);
+        st[coin::CREATOR..coin::CREATOR + 32].copy_from_slice(&creator_key);
+        st[coin::POOL..coin::POOL + 32].copy_from_slice(pool.key());
+        st[coin::POSITION..coin::POSITION + 32].copy_from_slice(position.key());
+        st[coin::NFT_ACCOUNT..coin::NFT_ACCOUNT + 32].copy_from_slice(nft_account.key());
+        st[coin::OFT_STORE..coin::OFT_STORE + 32].copy_from_slice(&coin_store);
+        st[coin::LAUNCH_ID..coin::LAUNCH_ID + 32].copy_from_slice(&m[snap::LAUNCH_ID..snap::LAUNCH_ID + 32]);
+        st[coin::FEE_BPS..coin::FEE_BPS + 2].copy_from_slice(&fee_bps.to_le_bytes());
+        st[coin::SLICE..coin::SLICE + 8].copy_from_slice(&slice.to_le_bytes());
+        st[coin::QUOTE_USD18..coin::QUOTE_USD18 + 16].copy_from_slice(&quote.to_le_bytes());
+        st[coin::CREATED_AT..coin::CREATED_AT + 8].copy_from_slice(&now.to_le_bytes());
+        st[coin::BUMP] = coin_bump;
+    }
+    let launches = rd_u64(&c, cfg::LAUNCHES) + 1;
+    write(config, cfg::LAUNCHES, &launches.to_le_bytes())?;
+
+    Wr::<512>::new(&EV_LAUNCHED)
+        .raw(&mint_key)
+        .raw(&creator_key)
+        .raw(pool.key())
+        .raw(&coin_store)
+        .raw(&m[snap::LAUNCH_ID..snap::LAUNCH_ID + 32])
+        .raw(&m[snap::CREATOR_ETH..snap::CREATOR_ETH + 20])
+        .str(name)
+        .str(symbol)
+        .str(uri)
+        .u16(fee_bps)
+        .u64(slice)
+        .u128(quote)
+        .u64(first_buy)
+        .u64(bought)
+        .emit();
+    Ok(())
+}
+
+/// The Token-2022 mint: metadata pointer and metadata on the mint, 9 decimals, the coin PDA as the temporary mint
+/// authority, no freeze authority, and metadata whose update authority is dropped at once.
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn make_mint(payer: &AccountInfo, mint: &AccountInfo, coin_acc: &AccountInfo, coin_key: &Pubkey, coin_signer: &[Signer], name: &[u8], symbol: &[u8], uri: &[u8], rent: &Rent) -> ProgramResult {
+    let mint_key = *mint.key();
+    let meta_len = 4 + 32 + 32 + (4 + name.len()) + (4 + symbol.len()) + (4 + uri.len()) + 4;
+    sys_create(payer, mint, rent.minimum_balance(MINT_WITH_POINTER_LEN + meta_len), MINT_WITH_POINTER_LEN as u64, &TOKEN_2022, &[])?;
+    let mut d = Wr::<80>::new(&[39, 0]);
+    d.raw(coin_key).raw(&mint_key);
+    call(&TOKEN_2022, &[AccountMeta::writable(&mint_key)], &[mint], d.out(), &[])?;
+    let mut d = Wr::<80>::new(&[20, COIN_DECIMALS]);
+    d.raw(coin_key).u8(0);
+    call(&TOKEN_2022, &[AccountMeta::writable(&mint_key)], &[mint], d.out(), &[])?;
+    let mut d = Wr::<288>::new(&META_INITIALIZE);
+    d.str(name).str(symbol).str(uri);
     call(
         &TOKEN_2022,
-        &[AccountMeta::writable(&mint_key), AccountMeta::readonly_signer(&coin_key)],
-        &[mint, coin_acc],
-        &[6, 0, 0],
-        &coin_signer,
+        &[AccountMeta::writable(&mint_key), AccountMeta::readonly(coin_key), AccountMeta::readonly(&mint_key), AccountMeta::readonly_signer(coin_key)],
+        &[mint, coin_acc, mint, coin_acc],
+        d.out(),
+        coin_signer,
     )?;
+    let mut d = Wr::<80>::new(&META_UPDATE_AUTHORITY);
+    d.raw(&[0u8; 32]);
+    call(&TOKEN_2022, &[AccountMeta::writable(&mint_key), AccountMeta::readonly_signer(coin_key)], &[mint, coin_acc], d.out(), coin_signer)
+}
 
-    // the pool, with the coin PDA as the position owner
+/// The DAMM v2 pool, with the coin PDA as the position owner. Its price floor is the opening price.
+#[inline(never)]
+fn open_pool(a: &[&AccountInfo; 18], coin_signer: &[Signer], fee_bps: u16, sqrt_min: u128, sqrt_max: u128, liquidity: u128, sqrt_price: u128) -> ProgramResult {
+    let [coin_acc, nft_mint, nft_account, payer, pool_authority, pool, position, mint, wsol_mint, coin_vault, sol_vault, payer_coin, payer_wsol, t22, token, system, damm_events, damm_program] = *a;
     let mut d = Wr::<112>::new(&damm::IX_INIT_CUSTOMIZABLE_POOL);
-    d.raw(&pool_fee_params(fee_bps, snipe_bps, snipe_secs))
+    d.raw(&pool_fee_params(fee_bps))
         .u128(sqrt_min)
         .u128(sqrt_max)
         .u8(0) // has_alpha_vault
@@ -807,14 +953,14 @@ fn launch(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
     call(
         &DAMM,
         &[
-            AccountMeta::readonly(&coin_key),
+            AccountMeta::readonly(coin_acc.key()),
             AccountMeta::writable_signer(nft_mint.key()),
             AccountMeta::writable(nft_account.key()),
             AccountMeta::writable_signer(payer.key()),
             AccountMeta::readonly(pool_authority.key()),
             AccountMeta::writable(pool.key()),
             AccountMeta::writable(position.key()),
-            AccountMeta::readonly(&mint_key),
+            AccountMeta::readonly(mint.key()),
             AccountMeta::readonly(&NATIVE_MINT),
             AccountMeta::writable(coin_vault.key()),
             AccountMeta::writable(sol_vault.key()),
@@ -828,55 +974,15 @@ fn launch(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
             AccountMeta::readonly(&DAMM),
         ],
         &[
-            coin_acc, nft_mint, nft_account, payer, pool_authority, pool, position, mint, wsol_mint, coin_vault, sol_vault,
-            payer_coin, payer_wsol, t22, token, t22, system, damm_events, damm_program,
+            coin_acc, nft_mint, nft_account, payer, pool_authority, pool, position, mint, wsol_mint, coin_vault, sol_vault, payer_coin, payer_wsol, t22, token,
+            t22, system, damm_events, damm_program,
         ],
         d.out(),
-        &coin_signer,
-    )?;
-    // DAMM v2 derives the pool from the two mints; it is the only pool it allows
-    req!(pool.is_owned_by(&DAMM), E::BadPool);
-
-    {
-        let mut s = coin_acc.try_borrow_mut_data()?;
-        s[..8].copy_from_slice(&COIN_DISC);
-        s[coin::MINT..coin::MINT + 32].copy_from_slice(&mint_key);
-        s[coin::CREATOR..coin::CREATOR + 32].copy_from_slice(payer.key());
-        s[coin::POOL..coin::POOL + 32].copy_from_slice(pool.key());
-        s[coin::POSITION..coin::POSITION + 32].copy_from_slice(position.key());
-        s[coin::NFT_ACCOUNT..coin::NFT_ACCOUNT + 32].copy_from_slice(nft_account.key());
-        s[coin::FEE_BPS..coin::FEE_BPS + 2].copy_from_slice(&fee_bps.to_le_bytes());
-        s[coin::SNIPE_BPS..coin::SNIPE_BPS + 2].copy_from_slice(&snipe_bps.to_le_bytes());
-        s[coin::SNIPE_SECS..coin::SNIPE_SECS + 4].copy_from_slice(&snipe_secs.to_le_bytes());
-        s[coin::SPLIT] = split;
-        s[coin::CAP_USD8..coin::CAP_USD8 + 8].copy_from_slice(&cap_usd8.to_le_bytes());
-        s[coin::CREATED_AT..coin::CREATED_AT + 8].copy_from_slice(&now.to_le_bytes());
-        s[coin::BUMP] = coin_bump;
-    }
-    let launches = rd_u64(&c, cfg::LAUNCHES) + 1;
-    write(config, cfg::LAUNCHES, &launches.to_le_bytes())?;
-
-    Wr::<416>::new(&EV_LAUNCHED)
-        .raw(&mint_key)
-        .raw(payer.key())
-        .raw(pool.key())
-        .str(name)
-        .str(symbol)
-        .str(uri)
-        .u16(fee_bps)
-        .u16(snipe_bps)
-        .u32(snipe_secs)
-        .u8(split)
-        .u64(cap_usd8)
-        .u64(sol_usd8)
-        .u64(first_buy)
-        .u64(slice - pool_coins)
-        .emit();
-    Ok(())
+        coin_signer,
+    )
 }
 
-/// Checks the DAMM v2 accounts shared by `claim_fees` and `collect` against
-/// the coin's record.
+/// Checks the DAMM v2 accounts shared by `claim_fees` and `collect` against the coin's record.
 fn check_position(s: &[u8], pool: &AccountInfo, position: &AccountInfo, nft_account: &AccountInfo) -> ProgramResult {
     req!(is_key(pool, &rd_key(s, coin::POOL)), E::BadPool);
     req!(is_key(position, &rd_key(s, coin::POSITION)), E::BadAccount);
@@ -885,8 +991,8 @@ fn check_position(s: &[u8], pool: &AccountInfo, position: &AccountInfo, nft_acco
     Ok(())
 }
 
-/// Pulls the position's trading fees (SOL) and pays 70% to the creator and
-/// 30% to the platform. Anyone can call it.
+/// Pulls the position's trading fees (SOL) and splits them: the platform the larger of 20% of the fee and 0.2% of
+/// the volume, the creator the rest. Anyone can call it.
 #[inline(never)]
 fn claim_fees(accounts: &[AccountInfo]) -> ProgramResult {
     let [payer, config, coin_acc, mint, wsol_mint, coin_coin, coin_wsol, creator, creator_wsol, fee_recipient, platform_wsol, pool, position, nft_account, coin_vault, sol_vault, pool_authority, damm_events, damm_program, t22, token, ata_program, system, ..] =
@@ -910,7 +1016,6 @@ fn claim_fees(accounts: &[AccountInfo]) -> ProgramResult {
     req!(is_key(creator, &rd_key(&s, coin::CREATOR)), E::BadCreator);
     req!(is_key(fee_recipient, &rd_key(&c, cfg::FEE_RECIPIENT)), E::BadFeeRecipient);
 
-    // the ATA program checks each address is the owner's associated account
     ata_idempotent(payer, coin_coin, coin_acc, mint, system, t22)?;
     ata_idempotent(payer, coin_wsol, coin_acc, wsol_mint, system, token)?;
     ata_idempotent(payer, creator_wsol, creator, wsol_mint, system, token)?;
@@ -939,21 +1044,18 @@ fn claim_fees(accounts: &[AccountInfo]) -> ProgramResult {
             AccountMeta::readonly(damm_events.key()),
             AccountMeta::readonly(&DAMM),
         ],
-        &[
-            pool_authority, pool, position, coin_coin, coin_wsol, coin_vault, sol_vault, mint, wsol_mint, nft_account, coin_acc, t22,
-            token, damm_events, damm_program,
-        ],
+        &[pool_authority, pool, position, coin_coin, coin_wsol, coin_vault, sol_vault, mint, wsol_mint, nft_account, coin_acc, t22, token, damm_events, damm_program],
         &damm::IX_CLAIM_POSITION_FEE,
         &coin_signer,
     )?;
-    // everything in the coin's WSOL account is unsplit fees; it holds nothing else
     let total = token_amount(coin_wsol)?;
     let claimed = total.saturating_sub(before);
     if total == 0 {
         return Ok(());
     }
-    let to_creator = math::mul_div(total as u128, CREATOR_SPLIT_BPS as u128, BPS as u128).ok_or_else(|| fail(E::Math))? as u64;
-    let to_platform = total - to_creator;
+    let fee_bps = u16::from_le_bytes([s[coin::FEE_BPS], s[coin::FEE_BPS + 1]]);
+    let to_platform = math::mul_div(total as u128, platform_share_bps(fee_bps) as u128, BPS as u128).ok_or_else(|| fail(E::Math))? as u64;
+    let to_creator = total - to_platform;
     if to_creator > 0 {
         token_transfer(&TOKEN, coin_wsol, creator_wsol, coin_acc, to_creator, &coin_signer)?;
     }
@@ -990,9 +1092,8 @@ fn set_creator(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
     Ok(())
 }
 
-/// Admin only: removes `bps` of the position's liquidity and sends the coins
-/// and SOL to the given accounts. Fees already earned stay in the position
-/// for `claim_fees`.
+/// Admin only: removes `bps` of the position's liquidity and sends the coins and SOL to the given accounts.
+/// Fees already earned stay in the position for `claim_fees`.
 #[inline(never)]
 fn collect(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
     let [admin, config, coin_acc, mint, wsol_mint, to_coin, to_wsol, pool, position, nft_account, coin_vault, sol_vault, pool_authority, damm_events, damm_program, t22, token, ..] =
@@ -1049,23 +1150,31 @@ fn collect(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
             AccountMeta::readonly(damm_events.key()),
             AccountMeta::readonly(&DAMM),
         ],
-        &[
-            pool_authority, pool, position, to_coin, to_wsol, coin_vault, sol_vault, mint, wsol_mint, nft_account, coin_acc, t22, token,
-            damm_events, damm_program,
-        ],
+        &[pool_authority, pool, position, to_coin, to_wsol, coin_vault, sol_vault, mint, wsol_mint, nft_account, coin_acc, t22, token, damm_events, damm_program],
         d.out(),
         &[Signer::from(&coin_seeds)],
     )?;
     let coins = token_amount(to_coin)?.saturating_sub(coins_before);
     let sol = token_amount(to_wsol)?.saturating_sub(sol_before);
-    Wr::<160>::new(&EV_COLLECTED)
-        .raw(&mint_key)
-        .u16(bps)
-        .u128(delta)
-        .u64(coins)
-        .u64(sol)
-        .raw(to_coin.key())
-        .raw(to_wsol.key())
-        .emit();
+    Wr::<160>::new(&EV_COLLECTED).raw(&mint_key).u16(bps).u128(delta).u64(coins).u64(sol).raw(to_coin.key()).raw(to_wsol.key()).emit();
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn platform_share_follows_the_fee() {
+        assert_eq!(platform_share_bps(100), 2_000); // 1%: 20% of the fee = 0.2% of volume
+        assert_eq!(platform_share_bps(500), 2_000); // 5%: 20% of the fee is more
+        assert_eq!(platform_share_bps(30), 6_666); // 0.3%: 0.2% of volume is two thirds of the fee
+    }
+
+    #[test]
+    fn flat_fee_params() {
+        let p = pool_fee_params(100);
+        assert_eq!(u64::from_le_bytes(p[0..8].try_into().unwrap()), 100 * damm::NUMERATOR_PER_BPS);
+        assert_eq!(&p[8..26], &[0u8; 18]);
+    }
 }
