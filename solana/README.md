@@ -1,76 +1,76 @@
 # Equo on Solana
 
-`programs/equo-sol` is the Solana side of Equo. It is written with Pinocchio rather than Anchor, to keep the program small: its rent is charged per byte. Like the EVM factory, one call launches a coin and opens its pool. On Solana the pool is Meteora DAMM v2 instead of Uniswap v4.
+`programs/equo-sol` launches a coin straight into a **Raydium CLMM** pool. It is written with Pinocchio rather than Anchor, to keep the program small: its rent is charged per byte.
+
+Equo is Solana-only for now. The multichain version (LayerZero coin on Meteora DAMM v2) is parked in `archive/equo-sol-v2-omni`, and the first deployed version in `archive/equo-sol-v1-damm`.
 
 ## What a launch does
 
-1. **Coin.** It creates a Token-2022 mint with 6 decimals and its name, symbol and image link stored on the mint.
-   - The mint authority and freeze authority are removed, so nobody can mint more or freeze a wallet.
-   - The metadata update authority is removed, so the name and image can never change.
-2. **Supply.** It mints this chain's slice: 1B coins divided by `split`, the same rule the EVM factory uses.
-3. **Pool.** It opens a DAMM v2 pool against wrapped SOL.
-   - The opening price is the chosen dollar cap preset for 1B coins, so Solana opens at the same market cap as the EVM chains.
-   - The position belongs to the coin's PDA, not to a person.
-4. **First buy.** The creator's first buy is built into the pool's opening price. They get exactly what a fee-free buy of `first_buy` SOL would give, and nobody can trade before them.
-5. **Anti-snipe** (optional). The fee starts at `snipe_bps` and falls linearly to `fee_bps` over `snipe_secs`, in 100 steps, using DAMM v2's fee scheduler.
+One transaction, signed by the creator:
+
+1. **Coin.** A Token-2022 mint: 1B coins, 9 decimals, name, symbol and image link on the mint.
+   - No freeze authority. The metadata update authority is removed, so the name and image never change.
+   - The mint authority is removed once the 1B exists, so nobody can mint more.
+2. **Pair and price.** The pair is SOL or one of a fixed list of xStocks (SPYx, QQQx, NVDAx, TSLAx, AAPLx, GOOGLx, METAx, CRCLx, MSTRx, COINx). The list is in the program; there is no admin setting for it.
+   - The opening market cap is **$3,000**, priced from the pair's Pyth USD feed. The price must be fully verified and at most 10 minutes old.
+   - The client sends the start tick; the program checks it is the first tick at or past $3,000. So a coin opens at $3,000 to $3,000 plus one tick spacing (1.2% at the 1% tier).
+3. **Pool.** A Raydium CLMM pool against the pair, with the fee tier the creator picks: **0.25% to 4%**.
+   - Fees are taken in the **pair token only** (CLMM's "collect fee on" setting).
+   - The pool is created by a PDA of this program. A CLMM pool's creator may add reward programs to it, so that role stays with the program.
+4. **Position.** All 1B coins go into one position, from the opening price to the end of the price range. At the start the pool holds only coins (single sided). The position NFT belongs to the coin's PDA.
+   - A few millionths of a coin are left out for the pool's rounding; they go to the creator.
+5. **Launch buy** (optional). It is built into the opening price: the pool opens at the price a fee-free buy of that much would reach. The creator gets those coins, and nobody can trade before them.
+
+Sells can bring the price back to the opening price but not below it: there is no pair token in the pool below that point.
 
 ## Fees
 
-- Trading fees are taken in SOL only.
-- `claim_fees` can be called by anyone. It pulls the position's fees and pays **70% to the creator and 30% to the platform**, in wrapped SOL.
-- Meteora keeps its protocol share of each pool fee (20%) before that, as on every DAMM v2 pool.
+Raydium keeps its protocol and fund shares of each trading fee (16% today) before the rest reaches the position.
+
+- `claim_fees` can be called by anyone. It pulls the position's fees (pair token) and pays:
+  - the platform: the larger of **20% of the trading fee** and **0.2% of the volume**;
+  - the creator: the rest.
+- Worked out on what reaches the position, the platform's share is 23.8% at 1% to 4% fees, and 95.2% at 0.25%.
 - The creator can hand the creator share to another wallet with `set_creator`.
 
 ## Admin
 
 The admin is set once, in `initialize`, which only the program's upgrade authority can call. The admin can:
 
-- `collect`: remove a share (1 to 10000 bps) of a coin's liquidity, sending the coins and SOL to the given accounts. It works like `collect` on the EVM factory. Fees already earned stay claimable.
-- Change the fee recipient, the price updater, the minimum first buy, the launch fee, the dollar cap presets, and pause new launches.
+- `collect`: remove a share (1 to 10000 bps) of a coin's liquidity, sending the coins and pair tokens to the given accounts. Fees earned so far stay with the coin, for `claim_fees`.
+- `set_fee_recipient`: change where the platform's fees go.
 
-The price updater, or the admin, sets SOL/USD with `set_sol_price`. A launch refuses a price older than `max_price_age`.
+## Costs
 
-Limits checked on chain:
-
-| Setting | Allowed range |
-|---|---|
-| Fee | 10 to 300 bps |
-| Anti-snipe | above the fee, at most 3000 bps, over at most 1 day |
-| Split | 1 to 20 |
+- **Each launch:** about **0.22 SOL** of rent, paid by the creator, plus the launch buy. Most of it (0.144 SOL) is Raydium's two tick-array accounts, which every CLMM position needs; the pool's own accounts are about 0.05 SOL and the coin about 0.02 SOL.
+- **Program upgrade:** the program is 98 KB and the deployed program data holds 86 KB, so the upgrade extends it by about 12 KB (about 0.08 SOL). The upload buffer needs about 0.5 SOL while it runs; that comes back when the upgrade completes.
 
 ## Build and test
 
 ```sh
 export PATH=$HOME/.local/share/solana/install/active_release/bin:$PATH
-cargo build-sbf                      # target/deploy/equo_sol.so, ~86 KB
-cargo test -p equo-sol --lib         # price math
+cargo build-sbf --manifest-path programs/equo-sol/Cargo.toml   # target/deploy/equo_sol.so
+cargo test -p equo-sol --lib                                    # price and tick math, fee share
 npm install
-solana-test-validator --reset --url https://api.mainnet-beta.solana.com \
-  --clone-upgradeable-program cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG \
-  --upgradeable-program 6mdh7toDGpPEk8CYokVLi2aQMLDnB9jVkzhP5n9Dt4wR target/deploy/equo_sol.so \
-  $(solana-keygen pubkey ~/.config/solana/id.json)
-npm test                             # end to end against the real DAMM v2 program (fresh validator each run)
+node scripts/test-accounts.mjs      # once: Pyth price accounts and an SPYx account, copied from mainnet
+scripts/test-validator.sh &         # the real Raydium CLMM, cloned from mainnet; restart before each run
+npm test                            # end to end
 ```
+
+A launch names 28 accounts, so it is sent as a versioned transaction with an address lookup table holding the fixed ones (programs, config, fee tiers, pairs, price accounts). The tests build one; the site needs one on mainnet.
 
 ## Deploy
 
-The program id keypair is in `.keys/equo_sol-program.json`. It is gitignored and is needed for the first deploy only.
-
 ```sh
+solana -u mainnet-beta -k <deployer.json> program extend 6mdh7toDGpPEk8CYokVLi2aQMLDnB9jVkzhP5n9Dt4wR 11700
 solana -u mainnet-beta -k <deployer.json> program deploy target/deploy/equo_sol.so \
-  --program-id .keys/equo_sol-program.json
+  --program-id 6mdh7toDGpPEk8CYokVLi2aQMLDnB9jVkzhP5n9Dt4wR
 RPC=https://api.mainnet-beta.solana.com AUTHORITY=<deployer.json> \
-  ADMIN=<solana pubkey> FEE_RECIPIENT=<solana pubkey> PRICE_UPDATER=<solana pubkey> \
-  node scripts/init.mjs                 # dry run, then EQUO_CONFIRM=1
+  ADMIN=<solana pubkey> FEE_RECIPIENT=<solana pubkey> node scripts/init.mjs   # dry run, then EQUO_CONFIRM=1
 ```
 
-Costs:
+## Known limits
 
-- **Deploy:** about 0.60 SOL of rent for the program and 0.002 SOL in fees. A test deploy from a wallet holding 0.7 SOL succeeded.
-- **Setup:** about 0.003 SOL for the config account and transactions.
-- **Each launch:** about 0.03 SOL of rent, plus the first buy and the launch fee.
-
-## Not on Solana yet
-
-- **Bridge to the EVM chains.** The coin has no mint authority, so a LayerZero bridge would have to lock and release coins rather than mint and burn them. It is planned with the EVM bridge.
-- **Holder rewards, buyback and cashback.** DAMM v2 has no swap hook, so these EVM features have no equivalent here.
+- **xStocks are controlled by their issuer.** They can be paused, and their issuer can move tokens (permanent delegate), including out of a pool. A coin paired with an xStock carries that risk.
+- **xStock prices ignore the token's UI multiplier.** Pyth prices one xStock as shown in wallets; after a dividend the raw-unit price can drift from that by a few percent, and the opening cap with it.
+- **xStock Pyth feeds are not kept fresh on Solana.** Unlike SOL/USD, nobody pays to push them, so a launch on an xStock first posts a fresh Pyth update in the same flow.
