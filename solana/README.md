@@ -1,6 +1,6 @@
 # Equo on Solana
 
-`programs/equo-sol` is the Solana side of Equo. Like the EVM factory, one call launches a coin and opens its pool. On Solana the pool is Meteora DAMM v2 instead of Uniswap v4.
+`programs/equo-sol` is the Solana side of Equo. It is written with Pinocchio rather than Anchor, to keep the program small: its rent is charged per byte. Like the EVM factory, one call launches a coin and opens its pool. On Solana the pool is Meteora DAMM v2 instead of Uniswap v4.
 
 ## What a launch does
 
@@ -42,14 +42,14 @@ Limits checked on chain:
 
 ```sh
 export PATH=$HOME/.local/share/solana/install/active_release/bin:$PATH
-cargo build-sbf                      # target/deploy/equo_sol.so, ~420 KB
+cargo build-sbf                      # target/deploy/equo_sol.so, ~86 KB
 cargo test -p equo-sol --lib         # price math
 npm install
 solana-test-validator --reset --url https://api.mainnet-beta.solana.com \
   --clone-upgradeable-program cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG \
   --upgradeable-program 6mdh7toDGpPEk8CYokVLi2aQMLDnB9jVkzhP5n9Dt4wR target/deploy/equo_sol.so \
   $(solana-keygen pubkey ~/.config/solana/id.json)
-npm test                             # end to end against the real DAMM v2 program
+npm test                             # end to end against the real DAMM v2 program (fresh validator each run)
 ```
 
 ## Deploy
@@ -66,7 +66,8 @@ RPC=https://api.mainnet-beta.solana.com AUTHORITY=<deployer.json> \
 
 Costs:
 
-- **Deploy:** about 2.93 SOL of rent for the program, plus a buffer of the same size during the deploy (refunded).
+- **Deploy:** about 0.60 SOL of rent for the program and 0.002 SOL in fees. A test deploy from a wallet holding 0.7 SOL succeeded.
+- **Setup:** about 0.003 SOL for the config account and transactions.
 - **Each launch:** about 0.03 SOL of rent, plus the first buy and the launch fee.
 
 ## Not on Solana yet

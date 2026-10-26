@@ -349,3 +349,44 @@ test('admin settings are admin only', async () => {
   await launch(creator);
   assert.equal(await cx.getBalance(feeRecipient.publicKey) - before, LAMPORTS_PER_SOL / 50);
 });
+
+test('wrong accounts are refused', async () => {
+  const other = await launch(creator);
+  const fake = Keypair.generate().publicKey;
+  // launch through a fake DAMM program, or with someone else's WSOL account
+  {
+    const mint = Keypair.generate(); const nft = Keypair.generate();
+    const args = { name: 'X', symbol: 'X', uri: '', fee_bps: 100, snipe_bps: 0, snipe_secs: 0, split: 1, cap_preset: 0, first_buy: LAMPORTS_PER_SOL / 10 };
+    const bad = launchIx(creator, mint, nft, args);
+    bad.keys[16] = r(fake);
+    await expectFail(send([...wrapIxs(creator.publicKey, args.first_buy), bad], [creator, mint, nft], 1_000_000), /BadAccount/);
+    const theirs = launchIx(creator, mint, nft, args);
+    theirs.keys[6] = w(ata(trader.publicKey, NATIVE_MINT, TOKEN_PROGRAM_ID));
+    await expectFail(send([theirs], [creator, mint, nft], 1_000_000), /BadAccount/);
+  }
+  // claim: another coin's pool, or fees routed to someone who is not the creator
+  {
+    const crossed = claimIx(stranger, s1);
+    crossed.keys[11] = r(other.pool);
+    await expectFail(send([crossed], [stranger]), /BadPool/);
+    const thief = claimIx(stranger, s1);
+    thief.keys[7] = r(stranger.publicKey);
+    thief.keys[8] = w(ata(stranger.publicKey, NATIVE_MINT, TOKEN_PROGRAM_ID));
+    await expectFail(send([thief], [stranger]), /BadCreator/);
+    const platform = claimIx(stranger, s1);
+    platform.keys[9] = r(stranger.publicKey);
+    platform.keys[10] = w(ata(stranger.publicKey, NATIVE_MINT, TOKEN_PROGRAM_ID));
+    await expectFail(send([platform], [stranger]), /BadFeeRecipient/);
+  }
+  // collect into an account of the wrong mint
+  {
+    const toWsol = ata(admin.publicKey, NATIVE_MINT, TOKEN_PROGRAM_ID);
+    const wrongCoin = ata(admin.publicKey, other.mint, TOKEN_2022_PROGRAM_ID);
+    await send([createAssociatedTokenAccountIdempotentInstruction(admin.publicKey, wrongCoin, admin.publicKey, other.mint, TOKEN_2022_PROGRAM_ID)], [admin]);
+    const st = await coinState(other.mint);
+    const bad = collectIx(admin, st, ata(admin.publicKey, s1.mint, TOKEN_2022_PROGRAM_ID), toWsol, 100);
+    await expectFail(send([bad], [admin]), /BadAccount/);
+  }
+  // set_creator on an account that is not a coin
+  await expectFail(send([ix('set_creator', [r(creator.publicKey, true), w(CONFIG)], pk(creator.publicKey))], [creator]), /BadAccount/);
+});
