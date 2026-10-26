@@ -38,18 +38,19 @@ interface ILiqioPairRouter {
 ///         validated against the constitution, and nothing changes them
 ///         afterwards.
 ///
-///         The launch position never leaves the pool: this contract has no
-///         function that removes liquidity, the hook has no liquidity
-///         permissions, and nobody (admin included) can withdraw it. The only
-///         way coins leave the position is a buy.
+///         The launch position is held here. The hook has no liquidity
+///         permissions; trading never moves the position except by buys and
+///         sells against it. The one function that removes liquidity is the
+///         admin's {collect}, disclosed below: it can pull a share of a coin's
+///         position to a recipient. Nothing else, and nobody else, can.
 ///
 ///         Ownership (setup rights) is renounced after deploy; the immutable
 ///         `admin` keeps platform housekeeping only: pause, listing
 ///         visibility, metadata edits (stored here; the coin stays immutable),
-///         token blocking, the fee recipient and the start cap. The admin
-///         cannot mint, change a coin's fee or instincts, freeze transfers,
-///         move anyone's coins, touch liquidity, or touch the fee pots owed to
-///         creators, buybacks and dividends.
+///         token blocking, the fee recipient, the start cap, and {collect}
+///         over a coin's launch position. The admin cannot mint, change a
+///         coin's fee or instincts, freeze transfers, move anyone's coins, or
+///         touch the fee pots owed to creators, buybacks and dividends.
 ///
 ///         Equo additions (v3):
 ///           - Start cap presets: the admin keeps a short list of start caps and
@@ -629,8 +630,8 @@ contract LiqioFactory is ReentrancyGuard, IUnlockCallback {
     }
 
     /// @dev PoolManager callback: seed the launch position (0), the creator's
-    ///      first buy (1). There is no liquidity-removal action: the seed
-    ///      position is permanent.
+    ///      first buy (1), and the admin's {collect} (2), the one action that
+    ///      removes liquidity.
     function unlockCallback(bytes calldata data) external override returns (bytes memory) {
         if (msg.sender != address(poolManager)) revert NotAdmin();
         (uint8 action, bytes memory payload) = abi.decode(data, (uint8, bytes));
