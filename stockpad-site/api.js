@@ -112,7 +112,12 @@
   };
   const t0 = C.tokens, tk = C.token;
   if (t0) C.tokens = (...a) => t0(...a).map(enrich);
-  if (tk) C.token = (...a) => enrich(tk(...a));
+  // any of a coin's addresses finds it (each chain can have its own)
+  if (tk) C.token = (a, ...r) => {
+    let x = tk(a, ...r);
+    if (!x) { const j = MULTI.get(lc(a)), e = j && j.chains.eth && j.chains.eth.token; if (e && e !== lc(a)) x = tk(e, ...r); }
+    return enrich(x);
+  };
   setTimeout(loadCoins, 300);
   setInterval(() => { if (document.visibilityState !== 'hidden') loadCoins(); }, 30000);
   if (rf) C.refresh = async function (addr, ...rest) {

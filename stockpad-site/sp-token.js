@@ -6,6 +6,8 @@ window.SP_PAGE=function(){
     const SOLADDR=/^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
     const addrFromUrl=()=>{ const m=location.pathname.match(/\/token\/(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})(?:$|[/?#])/); if(m) return SOLADDR.test(m[1])?m[1]:m[1].toLowerCase(); const q=new URLSearchParams(location.search).get('t')||''; return /^0x[0-9a-fA-F]{40}$/.test(q)?q.toLowerCase():SOLADDR.test(q)?q:''; };
   const addr=addrFromUrl(); let X=addr?SP.token(addr):null;
+  // a multichain coin has its own address on each chain: one opened by another chain's address goes to its main page
+  if(!X&&/^0x/.test(addr)&&window.CHAIN&&CHAIN.api&&!SP_PAGE._looked){ SP_PAGE._looked=1; CHAIN.api.get('/api/coin?coin='+addr).then(j=>{ const a=j&&j.chains&&(j.chains.eth||Object.values(j.chains)[0]); if(a&&a.token&&a.token!==addr) location.replace('/token/'+a.token+location.search); else SP_PAGE(); }).catch(()=>SP_PAGE()); return; }
   if(!X||!window.CHAIN){ $('#tk-page').classList.add('hidden'); const e=$('#tk-empty'); e.classList.remove('hidden');
     $('#tk-crumb').innerHTML=`<a href="/markets">Markets</a>`; e.innerHTML=`<b>${addr?'Token not found':'No token selected'}</b>${addr?'No coin with that address was launched on Equo, or it is not listed here.':'Open a coin from the markets page.'}<div style="margin-top:14px"><a class="btn" href="/markets">${ic('back')}Back to markets</a></div>`; return; }
   X={...X};
