@@ -1,8 +1,8 @@
 # Equo multichain: decisions so far
 
 Equo coins live on several EVM chains at once, modeled on Pangea (pangea.trade): one coin, its own pool on
-each chain, bridged 1:1 with LayerZero. Nothing here is deployed yet. The site shows the design, and
-`/?preview=1` shows example coins.
+each chain, bridged 1:1 with LayerZero. Deployed on all eight EVM chains and Solana on 2026-10-26 (addresses in
+`deployments/equo-*.json` and `solana/deployments/mainnet.json`). The site shows only real coins.
 
 ## Chains
 

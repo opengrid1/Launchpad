@@ -31,7 +31,7 @@ window.SP_PAGE=function(){
     rows.push(['Network fee',`paid in ${esc(f.native)} on ${esc(f.name)}`],['Arrives',eta()],['Verified by','2 of 4 verifiers']);
     g('br-det').innerHTML=rows.map(r=>`<div class="kv"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
     const cta=g('br-cta'); cta.disabled=true;
-    cta.textContent=!live()?(window.EQUO_PREVIEW?'Preview: bridging opens with multichain launches':`Bridging to ${(!SP.chainDeployed(t.key)?t:f).name} opens soon`):!S.coin?'Select a coin':!v?'Enter an amount':!SP.W.connected?'Connect a wallet':'Bridge '+S.coin.t;
+    cta.textContent=!live()?(`Bridging to ${(!SP.chainDeployed(t.key)?t:f).name} opens soon`):!S.coin?'Select a coin':!v?'Enter an amount':!SP.W.connected?'Connect a wallet':'Bridge '+S.coin.t;
     if(live()&&S.coin&&v&&!SP.W.connected){ cta.disabled=false; cta.onclick=()=>SP.W.connect(); }
     const soon=CH.filter(c=>!SP.chainDeployed(c.key)).map(c=>c.name);
     g('br-note').innerHTML=`${ic('info')}<span>${soon.length?`${soon.length>2?'The other '+soon.length+' chains':esc(soon.join(' and '))} ${soon.length===1?'opens':'open'} with multichain launches. Coins launched on several chains will move here in one step; coins launched on Ethereum alone can be bridged once their other chains are added.`:'Every transfer is verified by 2 of 4 independent verifiers before it lands.'}</span>`;

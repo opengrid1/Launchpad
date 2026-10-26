@@ -5,7 +5,7 @@ window.INKY = {
   // the creator's part of each fee after the holder and buyback pots (the platform keeps the rest); the hook's
   // CREATOR_SPLIT_BPS constant is read from chain and wins, this is only the value until it is read
   creatorSplitBps: 7000,
-  live: true, prelaunch: false, demo: false,
+  live: true, prelaunch: false,
   reownProjectId: '5b1ae833abd22d348cbf5d53cf58b3b2',
   chainId: 1, rpc: 'https://ethereum-rpc.publicnode.com', rpcs: ['https://ethereum-rpc.publicnode.com', 'https://rpc.mevblocker.io'], explorer: 'https://etherscan.io',
   /* logsRpcs: event scans (trades, launches, holders) go here. The first full scan needs an RPC that

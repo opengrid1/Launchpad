@@ -136,7 +136,7 @@ function launchInit(){
     if(S.step<4){ nx.disabled=false; nx.textContent='Next'; msg.textContent=S.step===3?'Next: the launch fee, chain by chain.':''; return; }
     const b=blocker(); msg.textContent='';
     if(S.busy){ nx.disabled=true; nx.textContent='Confirm in wallet…'; return; }
-    if(b.length){ nx.disabled=true; nx.textContent=window.EQUO_PREVIEW?'Preview only':'Opens soon'; msg.textContent=b.join('; ')+'.'; return; }
+    if(b.length){ nx.disabled=true; nx.textContent='Opens soon'; msg.textContent=b.join('; ')+'.'; return; }
     if(S.paused){ nx.disabled=true; nx.textContent='Launches paused'; return; }
     nx.disabled=false; nx.textContent=!SP.W.connected?'Connect a wallet':!SP.W.chainOk?'Switch to Ethereum':`Launch on ${ch(S.pay).name}`; }
 

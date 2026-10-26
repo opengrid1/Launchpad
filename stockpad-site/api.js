@@ -1,7 +1,7 @@
 /* History from the Equo indexer (indexer/ in the repo): trades, holders and chart candles for a coin on every
    chain. On when config.js has `api` (the indexer's URL); each call falls back to reading the chain directly if
    the indexer does not answer. Live numbers (prices, balances, quotes) always come from the chains.
-   Loaded after equo.js and before preview.js. */
+   Loaded after equo.js. */
 (function () {
   const cfg = window.INKY || {}, C = window.CHAIN;
   if (!cfg.api || !C) return;

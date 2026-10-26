@@ -29,5 +29,4 @@ const tokenUrl=x=>'/token/'+(x.addr||x);
 
 const PRE=!!(window.INKY&&window.INKY.prelaunch);
 const LIVE=!!(window.INKY&&window.INKY.live&&!PRE);
-/* demo: show example coins + a simulated trading interface before the contracts go live (read-only, no real chain) */
-const DEMO=!!(window.INKY&&window.INKY.demo&&!LIVE);
+
