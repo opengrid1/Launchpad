@@ -161,6 +161,19 @@ async function main() {
   // 4. Wiring (each one-time).
   if ((await tokenDeployer.tokenCreator()) === ethers.ZeroAddress) await (await tokenDeployer.setCreators(plainCreatorAddr, divCreatorAddr)).wait();
   await (await tokenDeployer.setFactory(factoryAddr)).wait();
+  // This chain's MEV-tax band, fixed before the factory is wired. Priority fees differ by orders of magnitude
+  // between chains: on Monad (base fee 100 gwei) wallets tip 2 gwei by default and busy blocks see 60+, so
+  // Ethereum's 1 gwei band would tax ordinary trades there. Override with EQUO_MEV_FREE_GWEI / EQUO_MEV_UNIT_GWEI.
+  const chainIdNow = Number((await ethers.provider.getNetwork()).chainId);
+  const MEV_BANDS: Record<number, [string, string]> = { 143: ["100", "5"] };
+  const [freeG, unitG] = [
+    process.env.EQUO_MEV_FREE_GWEI ?? MEV_BANDS[chainIdNow]?.[0] ?? "1",
+    process.env.EQUO_MEV_UNIT_GWEI ?? MEV_BANDS[chainIdNow]?.[1] ?? "0.05",
+  ];
+  if (freeG !== "1" || unitG !== "0.05") {
+    await (await hook.setMevBand(ethers.parseUnits(freeG, "gwei"), ethers.parseUnits(unitG, "gwei"))).wait();
+  }
+  console.log(`MEV-tax band: free to ${freeG} gwei of priority, then 1 bps per ${unitG} gwei`);
   await (await hook.setFactory(factoryAddr)).wait();
   await (await factory.setConverter(routerAddr)).wait();
   console.log("wired: tokenDeployer.creators, tokenDeployer.factory, hook.factory, factory.converter (+ hook.router)");
@@ -195,6 +208,7 @@ async function main() {
     feeRecipient,
     contracts: { hookDeployer: c2Addr, hook: hookAddr, hookSalt: salt, tokenDeployer: tokenDeployerAddr, tokenCreator: plainCreatorAddr, divTokenCreator: divCreatorAddr, launchRules: rulesAddr, factory: factoryAddr, router: routerAddr, poolManager, weth, oracle, lzEndpoint: endpoint },
     minFirstBuy: minFirstBuy.toString(),
+    mevBand: { freePriorityGwei: freeG, priorityUnitGwei: unitG },
   };
   if (dry) { console.log("dry run: nothing written"); return; }
   mkdirSync(join(__dirname, "../deployments"), { recursive: true });

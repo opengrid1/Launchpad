@@ -390,4 +390,45 @@ describe("Equo: cashback, presets, creator transfer, takeover (local)", function
     expect(await hook.creatorOf(token)).to.equal(creator.address);
     await (await factory.connect(trader).cancelTakeover(token)).wait();
   });
+
+  it("MEV-tax band: Ethereum's by default, set once per chain by the deployer before the factory is wired", async () => {
+    const { hook, factory, creator, trader, router, outsider } = await deployStack();
+    expect(await hook.MEV_FREE_PRIORITY()).to.equal(ethers.parseUnits("1", "gwei"));
+    expect(await hook.MEV_PRIORITY_UNIT()).to.equal(ethers.parseUnits("0.05", "gwei"));
+    // wired already: the band is fixed
+    await expect(hook.setMevBand(1n, 2n)).to.be.revertedWithCustomError(hook, "AlreadySet");
+
+    // the default band in action: 1.5 gwei of priority is 0.5 gwei over the free band = 10 bps extra
+    const token = await launch(factory, creator, FLAT, 0n);
+    const base = await hook.feeBpsNow(token, true);
+    const rc = await (await router.connect(trader).buy(token, "0x", 0, {
+      value: ethers.parseEther("0.1"), maxPriorityFeePerGas: ethers.parseUnits("1.5", "gwei"), maxFeePerGas: ethers.parseUnits("100", "gwei"),
+    })).wait();
+    const ev = rc!.logs.map((l: any) => { try { return hook.interface.parseLog(l); } catch { return null; } }).find((l: any) => l && l.name === "FeeTaken");
+    expect(ev!.args.bps).to.equal(base + 10n);
+
+    // a fresh hook (not wired yet): only its deployer may set the band, within bounds
+    const c2 = await (await ethers.getContractFactory("HookDeployer")).deploy();
+    const c2Addr = await c2.getAddress();
+    const initCode = ethers.concat([(await ethers.getContractFactory("EquoHook")).bytecode, ethers.AbiCoder.defaultAbiCoder().encode(["address", "address"], [await hook.poolManager(), await hook.weth()])]);
+    const hash = ethers.keccak256(initCode);
+    let salt = "", addr = "";
+    for (let i = 0n; ; i++) {
+      salt = ethers.zeroPadValue(ethers.toBeHex(i), 32);
+      addr = ethers.getCreate2Address(c2Addr, salt, hash);
+      if ((BigInt(addr) & FLAG_MASK) === HOOK_FLAGS) break;
+    }
+    await (await c2.deploy(salt, initCode)).wait();
+    const fresh = await ethers.getContractAt("EquoHook", addr);
+    const g = 10n ** 9n;
+    await expect(fresh.connect(outsider).setMevBand(100n * g, 5n * g)).to.be.revertedWithCustomError(fresh, "NotDeployer");
+    await expect(fresh.setMevBand(10_001n * g, 5n * g)).to.be.revertedWithCustomError(fresh, "InvalidParams");
+    await expect(fresh.setMevBand(100n * g, 1n)).to.be.revertedWithCustomError(fresh, "InvalidParams");
+    await expect(fresh.setMevBand(100n * g, 1_001n * g)).to.be.revertedWithCustomError(fresh, "InvalidParams");
+    await expect(fresh.setMevBand(100n * g, 5n * g)).to.emit(fresh, "MevBandSet").withArgs(100n * g, 5n * g);
+    expect(await fresh.MEV_FREE_PRIORITY()).to.equal(100n * g);
+    expect(await fresh.MEV_PRIORITY_UNIT()).to.equal(5n * g);
+    await (await fresh.setFactory(outsider.address)).wait();
+    await expect(fresh.setMevBand(1n, 2n)).to.be.revertedWithCustomError(fresh, "AlreadySet");
+  });
 });

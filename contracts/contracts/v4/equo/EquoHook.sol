@@ -54,7 +54,9 @@ interface IEquoWrappedNative {
 ///             than the fee rules below. No code path blocks an exit.
 ///           - MEV-tax at the base: every swap's fee grows with the
 ///             transaction's priority fee above {MEV_FREE_PRIORITY}, capped at
-///             {MEV_CAP_BPS} extra. A sandwich bot has to outbid the block to
+///             {MEV_CAP_BPS} extra. The free band and its step are set once per
+///             chain before the factory is wired (priority fees differ by
+///             orders of magnitude between chains) and are fixed after that. A sandwich bot has to outbid the block to
 ///             bracket a victim, so the harder it bids, the more it pays the
 ///             pool. Ordinary wallets and read-only simulations (priority 0)
 ///             pay nothing extra.
@@ -118,10 +120,13 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     /// @notice Buyback + dividend shares of the fee may take at most this much.
     uint16 public constant MAX_POT_SHARE_BPS = 8_000;
     uint16 public constant MAX_POT_EACH_BPS = 5_000;
-    /// @notice MEV-tax: priority fee up to this is free.
-    uint256 public constant MEV_FREE_PRIORITY = 1 gwei;
-    /// @notice MEV-tax: one bps per this much priority fee above the free band.
-    uint256 public constant MEV_PRIORITY_UNIT = 0.05 gwei;
+    /// @notice MEV-tax: the free band and its step can never exceed these.
+    uint256 public constant MAX_MEV_FREE_PRIORITY = 10_000 gwei;
+    uint256 public constant MAX_MEV_PRIORITY_UNIT = 1_000 gwei;
+    /// @dev MEV-tax band, one slot: priority fee up to `_mevFree` is free, then
+    ///      one bps per `_mevUnit`. Ethereum's values by default; see {setMevBand}.
+    uint128 internal _mevFree = 1 gwei;
+    uint128 internal _mevUnit = 0.05 gwei;
     /// @notice MEV-tax: at most this many bps on top of the base fee.
     uint16 public constant MEV_CAP_BPS = 2_000;
     /// @notice Cashback may take at most this share of the platform part.
@@ -210,6 +215,7 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     event Evolved(address indexed token, uint8 indexed stage, uint160 sqrtPriceX96);
     event RouterSet(address indexed router);
     event CashbackSet(uint16 cashbackBps);
+    event MevBandSet(uint256 freePriority, uint256 priorityUnit);
     event CreatorChanged(address indexed token, address indexed from, address indexed to);
     event CashbackCredited(address indexed token, address indexed trader, uint256 amount);
     event RewardsClaimed(address indexed user, address indexed pair, uint256 amount);
@@ -240,6 +246,27 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         if (factory_ == address(0)) revert ZeroAddress();
         factory = factory_;
         emit FactorySet(factory_);
+    }
+
+    /// @notice MEV-tax: priority fee up to this is free.
+    function MEV_FREE_PRIORITY() external view returns (uint256) {
+        return _mevFree;
+    }
+
+    /// @notice MEV-tax: one bps per this much priority fee above the free band.
+    function MEV_PRIORITY_UNIT() external view returns (uint256) {
+        return _mevUnit;
+    }
+
+    /// @notice Sets this chain's MEV-tax band. Deployer only, and only before
+    ///         the factory is wired, so it is fixed before any pool exists.
+    function setMevBand(uint256 freePriority, uint256 priorityUnit) external {
+        if (msg.sender != deployer) revert NotDeployer();
+        if (factory != address(0)) revert AlreadySet();
+        if (freePriority > MAX_MEV_FREE_PRIORITY || priorityUnit < 2 || priorityUnit > MAX_MEV_PRIORITY_UNIT) revert InvalidParams();
+        _mevFree = uint128(freePriority);
+        _mevUnit = uint128(priorityUnit);
+        emit MevBandSet(freePriority, priorityUnit);
     }
 
     /// @notice One-time: the router trusted to name traders. Factory only.
@@ -482,8 +509,10 @@ contract EquoHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     ///      sandwich bot bidding the block to bracket a victim pays the pool.
     function _mevExtra(bool doubled) internal view returns (uint256 extra) {
         uint256 priority = tx.gasprice > block.basefee ? tx.gasprice - block.basefee : 0;
-        if (priority > MEV_FREE_PRIORITY) {
-            extra = (priority - MEV_FREE_PRIORITY) / (doubled ? MEV_PRIORITY_UNIT / 2 : MEV_PRIORITY_UNIT);
+        uint256 free = _mevFree;
+        if (priority > free) {
+            uint256 unit = _mevUnit;
+            extra = (priority - free) / (doubled ? unit / 2 : unit);
             if (extra > MEV_CAP_BPS) extra = MEV_CAP_BPS;
         }
     }
