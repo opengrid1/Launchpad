@@ -1,0 +1,16 @@
+{
+  "status": "planned, not deployed",
+  "cluster": "mainnet-beta",
+  "program": "6mdh7toDGpPEk8CYokVLi2aQMLDnB9jVkzhP5n9Dt4wR",
+  "config": "9UtTwTMw5vGcfj1RL1SXhvym4XRvwNWpkbJpDp7dWQgg",
+  "deployer": "8ijJ63dttUjWgR82FiyrKjgymaWLhDrMVLNmkkNwD8nH",
+  "admin": "J5UToKRtUypmd58DPP3s1ENQSAwNmSd4xnNbmUiEvyui",
+  "feeRecipient": "J5UToKRtUypmd58DPP3s1ENQSAwNmSd4xnNbmUiEvyui",
+  "priceUpdater": "8ijJ63dttUjWgR82FiyrKjgymaWLhDrMVLNmkkNwD8nH",
+  "upgradeAuthorityAfterDeploy": "J5UToKRtUypmd58DPP3s1ENQSAwNmSd4xnNbmUiEvyui",
+  "minFirstBuySol": 0.01,
+  "launchFeeSol": 0,
+  "maxPriceAgeSecs": 3600,
+  "capPresetsUsd": [5000, 12500, 25000],
+  "damm": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+}
