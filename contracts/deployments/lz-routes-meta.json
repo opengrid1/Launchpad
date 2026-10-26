@@ -1,0 +1,977 @@
+{
+ "30101": {
+  "chain": "ethereum",
+  "by": {
+   "google-cloud": [
+    "0xd56e4eab23cb81f43168f9f45211eb027b9ac7cc"
+   ],
+   "layerzero-labs": [
+    "0x589dedbd617e0cbcb916a9223f4d1300c294236b"
+   ],
+   "pearlnet": [
+    "0xd24972c11f91c1bb9eaee97ec96bb9c33cf7af24"
+   ],
+   "stablelab": [
+    "0x5fddd320a1e29bb466fa635661b125d51d976f92"
+   ],
+   "nethermind": [
+    "0xa59ba433ac34d2927232918ef5b2eaafcf130ba5"
+   ],
+   "mim": [
+    "0x0ae4e6a9a8b01ee22c6a49af22b674a4e033a23d"
+   ],
+   "horizen-labs": [
+    "0x380275805876ff19055ea900cdb2b46a94ecf20d"
+   ],
+   "nodes-guru": [
+    "0x9f45834f0c8042e36935781b944443e906886a87"
+   ],
+   "planetarium-labs": [
+    "0x972ed7bd3d42d9c0bea3632992ebf7e97186ea4a"
+   ],
+   "lagrange-labs": [
+    "0x95729ea44326f8add8a9b1d987279dbdc1dd3dff"
+   ],
+   "blockhunters": [
+    "0x6e70fcdc42d3d63748b7d8883399dcb16bbb5c8c"
+   ],
+   "p2p": [
+    "0x06559ee34d85a88317bf0bfe307444116c631b67"
+   ],
+   "portal": [
+    "0x92ef4381a03372985985e70fb15e9f081e2e8d14"
+   ],
+   "delegate": [
+    "0x87048402c32632b7c4d0a892d82bc1160e8b2393"
+   ],
+   "01node": [
+    "0x58dff8622759ea75910a08dba5d060579271dcd7"
+   ],
+   "restake": [
+    "0xe4193136b92ba91402313e95347c8e9fad8d27d0"
+   ],
+   "bcw": [
+    "0xe552485d02edd3067fe7fcbd4dd56bb1d3a998d2"
+   ],
+   "switchboard": [
+    "0x276e6b1138d2d49c0cda86658765d12ef84550c1"
+   ],
+   "gitcoin": [
+    "0x15fadad87913c3bb95f8f9f2e2b287e71ba7817d"
+   ],
+   "animoca-blockdaemon": [
+    "0x7e65bdd15c8db8995f80abf0d6593b57dc8be437"
+   ],
+   "luganodes": [
+    "0x58249a2ec05c1978bf21df1f5ec1847e42455cf4"
+   ],
+   "mercury": [
+    "0xce97511db880571a7c31821eb026ef12fcac892e"
+   ],
+   "stakingcabin": [
+    "0xcd0ca0619fc8db4d47b19a1f04105312952e5f6d"
+   ],
+   "p-ops-team": [
+    "0x94aafe0a92a8300f0a2100a7f3de47d6845747a9"
+   ],
+   "omni-x": [
+    "0xaf75bfd402f3d4ee84978179a6c87d16c4bd1724"
+   ],
+   "ubisoft": [
+    "0xcc9da5b157ed87e24a9cf562e6a7c05d3c3decd3"
+   ],
+   "paxos": [
+    "0xb0b2ef168f52f6d1e42f461e11117295ef992daf"
+   ],
+   "ondo-staging": [
+    "0xf34d1b07c64c4f4d492ae3ddd0aab0658a2975eb"
+   ],
+   "superform": [
+    "0x7518f30bd5867b5fa86702556245dead173afe46"
+   ],
+   "canary": [
+    "0xa4fe5a5b9a846458a70cd0748228aed3bf65c2cd"
+   ],
+   "flowdesk": [
+    "0x2fdbb1e2419e13a7e043d07eaf412934b73ad7a8"
+   ],
+   "ondo": [
+    "0x241c66a979125f230c239e79d103e0c2128c6618"
+   ],
+   "usdt0": [
+    "0x3b0531eb02ab4ad72e7a531180beef9493a00dd2"
+   ],
+   "nansen": [
+    "0x3a4636e9ab975d28d3af808b4e1c9fd936374e30"
+   ],
+   "mantle-bank": [
+    "0x868e6393aea25e8c7e58bc5d4c90a5237c573ff6"
+   ],
+   "deutsche-telekom": [
+    "0x373a6e5c0c4e89e24819f00aa37ea370917aaff4"
+   ],
+   "bera": [
+    "0xe2e558c85e00b4d7529433c1cc78ab678cf62538"
+   ],
+   "frax": [
+    "0x38654142f5e672ae86a1b21523aafc765e6a1e08"
+   ],
+   "zeeve": [
+    "0x02041731cb8cbae90838bb8632c359fc0c2b0775"
+   ],
+   "canary-wbtc": [
+    "0x89ca15937e1033af26fe4c5e976216e8c8179408"
+   ],
+   "nodit": [
+    "0x0cea5a94f8cd3330c4f84944bf4500f8dacd440c"
+   ],
+   "wyoming": [
+    "0x6c70db9ce65fa37499c1f1a150a6440fc9c7273a"
+   ],
+   "brale": [
+    "0x707f480a30fa724658640b65bc233a2a6180f887"
+   ],
+   "stablecoinx": [
+    "0x394fe81886baf6e2d5bee37ffa24b07133c320c6"
+   ],
+   "worldpay": [
+    "0x28abf64947496a34dcbd1e65983f445e0d6d6e09"
+   ],
+   "fidelity": [
+    "0xc61af5706b80ca941a0aab1c7b3d7a953e4dd8c4"
+   ],
+   "republic-crypto": [
+    "0xa1bc1b9af01a0ec78883aa5dc7decdce897e1e76"
+   ],
+   "ccip": [
+    "0x771d10d0c86e26ea8d3b778ad4d31b30533b9cbf"
+   ],
+   "eigenzero": [
+    "0x4184dd22692c8b50d8d7ee0d7b6028e45dbf8108"
+   ],
+   "citrea": [
+    "0x3f965b507a3ab2dd945c1796c973b206af4e5fcb"
+   ],
+   "mantle03": [
+    "0x554833698ae0fb22ecc90b01222903fd62ca4b47"
+   ],
+   "conflux": [
+    "0x53bc8c65bcc9850247b1586389d59744bd28fe6a"
+   ],
+   "mantle01": [
+    "0x7cc59b5062a8291804a21a2a793c6ce9ea2f0eb9"
+   ],
+   "mantle02": [
+    "0xdd907f5af01a829cd65c99a132e8720d3e990d02"
+   ],
+   "fbtc": [
+    "0x45c09dc691b0ad798e10d38b97e9dfd917d4b680"
+   ],
+   "predicate": [
+    "0x006e1248be5e40b4a4e7099397719df7ab872de7"
+   ],
+   "quantoz": [
+    "0x4066b6e7bfd761b579902e7e8d03f4feb9b9536e"
+   ],
+   "mysten-labs": [
+    "0x3d68029e411b181fefa1a8ba60aaf27dbe68636c"
+   ],
+   "mantlecross": [
+    "0x96a2894042dfec802a23b1ad02f0314ac24b6010"
+   ],
+   "bharvest": [
+    "0x98b2e2aa4694680ed610d4f0a9bb78e8f7f1f200"
+   ],
+   "fbtc-new": [
+    "0x53af943a880b93eb53c8e39def519ae4dcaab0ef"
+   ],
+   "bridge": [
+    "0x28deced567a4477e214e15780d345139d0186142"
+   ],
+   "FurtherFP": [
+    "0xc81f832841b11ea2a3f20792fae897bb3420ba20"
+   ],
+   "anchorage": [
+    "0x231a5c32e8792c327f4ecdc15aa3b6e82bc7f105"
+   ],
+   "apedvn": [
+    "0xc3d74be06eedd78b540ee5df73bac13dc6ca338a"
+   ],
+   "canary-sponsored": [
+    "0xf9d2c0915cac4c75b7ae359089333c8ac258e12c"
+   ],
+   "canary-subsidized": [
+    "0x8bd47cbd47980cc6f3f8451fa7586548014b10db"
+   ]
+  },
+  "send": "0xbb2ea70c9e858123480642cf96acbcce1372dce1",
+  "recv": "0xc02ab410f0734efa3f14628780e6e695156024c2",
+  "exec": "0x173272739bd7aa6e4e214714048a9fe699453059",
+  "ep": "0x1a44076050125825900e736c501f859c50fe728c"
+ },
+ "30102": {
+  "chain": "bsc",
+  "by": {
+   "google-cloud": [
+    "0xd56e4eab23cb81f43168f9f45211eb027b9ac7cc"
+   ],
+   "layerzero-labs": [
+    "0xfd6865c841c2d64565562fcc7e05e619a30615f0"
+   ],
+   "stablelab": [
+    "0xabc9b1819cc4d9846550f928b985993cf6240439"
+   ],
+   "nethermind": [
+    "0x31f748a368a893bdb5abb67ec95f232507601a73"
+   ],
+   "mim": [
+    "0x25e0e650a78e6304a3983fc4b7ffc6544b1beea6"
+   ],
+   "horizen-labs": [
+    "0x247624e2143504730aec22912ed41f092498bef2"
+   ],
+   "nodes-guru": [
+    "0x1bab20e7fdc79257729cb596bef85db76c44915e"
+   ],
+   "planetarium-labs": [
+    "0x05aaefdf9db6e0f7d27fa3b6ee099edb33da029e"
+   ],
+   "blockhunters": [
+    "0x547bf6889b1095b7cc6e525a1f8e8fdb26134a38"
+   ],
+   "p2p": [
+    "0x439264fb87581a70bb6d7befd16b636521b0ad2d"
+   ],
+   "portal": [
+    "0xbd40c9047980500c46b8aed4462e2f889299febe"
+   ],
+   "delegate": [
+    "0x9eeee79f5dbc4d99354b5cb547c138af432f937b"
+   ],
+   "01node": [
+    "0x8fc629aa400d4d9c0b118f2685a49316552abf27"
+   ],
+   "restake": [
+    "0x4d52f5bc932cf1a854381a85ad9ed79b8497c153"
+   ],
+   "bcw": [
+    "0xd36246c322ee102a2203bca9cafb84c179d306f6"
+   ],
+   "switchboard": [
+    "0xf0809f6e760a5452ee567975eda7a28da4a83d38"
+   ],
+   "gitcoin": [
+    "0xe4b64c3a70cd7f7c38d48f66ba5db9a41c485f64"
+   ],
+   "animoca-blockdaemon": [
+    "0x313328609a9c38459cae56625fff7f2ad6dcde3b"
+   ],
+   "luganodes": [
+    "0x2c7185f5b0976397d9eb5c19d639d4005e6708f0"
+   ],
+   "mercury": [
+    "0xb4fa7f1c67e5ec99b556ec92cbddbcdd384106f2"
+   ],
+   "stakingcabin": [
+    "0xccf6ee53aa0b7c7f190d2a7b273e7b04cce14d21"
+   ],
+   "p-ops-team": [
+    "0x33e5fcc13d7439cc62d54c41aa966197145b3cd7"
+   ],
+   "omni-x": [
+    "0x5a4c666e9c7aa86fd4fbfdfbfd04646dcc45c6c5"
+   ],
+   "ondo-staging": [
+    "0x089e70bc883ad0b6551e513bf7a71ffd2059f9f1"
+   ],
+   "superform": [
+    "0xf4c489afd83625f510947e63ff8f90dfee0ae46c"
+   ],
+   "canary": [
+    "0xfa9ba83c102283958b997adc8b44ed3a3cdb5dda"
+   ],
+   "flowdesk": [
+    "0x00e91548787caf130d811ef1872f2bc2c0583d90"
+   ],
+   "ondo": [
+    "0x00efecf8714c2bc9376f8391f47a2ffce8bcdfea"
+   ],
+   "usdt0": [
+    "0x72f697797ac173f09eda73dd9c11a141376d2b57"
+   ],
+   "muon": [
+    "0xa3858e2a9860c935fc9586a617e9b2a674c3e4c8"
+   ],
+   "nansen": [
+    "0x534c6b3e6805e9287ff1d49c349d5f7a01b9b7f5"
+   ],
+   "mantle-bank": [
+    "0x0a25b9aaa98c26c1cfd0f20ef40db5ba21369055"
+   ],
+   "deutsche-telekom": [
+    "0xf0a5c5306adbfd4e3dfd5d4b148b451c411d3878"
+   ],
+   "bera": [
+    "0x8ed0a851964604bb1b6b1a703f4c8234ee684d76"
+   ],
+   "frax": [
+    "0xd4bf35ce3bfc7f7d7dfc0694a7d4aa8b8c60a38c"
+   ],
+   "zeeve": [
+    "0x92453ce02159f774f1c846a4a0693008ed020f59"
+   ],
+   "canary-wbtc": [
+    "0xd29dcf66e264aa7d6833bdac6b9279791a7c246b"
+   ],
+   "nodit": [
+    "0xeece50190806fa57016028d31d8631419882401c"
+   ],
+   "brale": [
+    "0xbc625fc2db9754fd4cd3cfb7dbaa81b9c6f6e2e2"
+   ],
+   "stablecoinx": [
+    "0x0cea5a94f8cd3330c4f84944bf4500f8dacd440c"
+   ],
+   "fidelity": [
+    "0xee412dc75e4244d45e5820544411ede5af6e16d1"
+   ],
+   "republic-crypto": [
+    "0xf7ddee427507cdb6885e53caaaa1973b1fe29357"
+   ],
+   "ccip": [
+    "0x53561bcfe6b3f23bc72e5b9919c12322729942e8"
+   ],
+   "eigenzero": [
+    "0x9188b373378d284c9174ae474c2b0a937924b34b"
+   ],
+   "citrea": [
+    "0xe48a3dd4d207338a8fabe4e929d78d78c38cadea"
+   ],
+   "mantle03": [
+    "0xec65a0245c19a084650cb5b85fd1a2bc7b0fd452"
+   ],
+   "FurtherFP": [
+    "0xb7485cac48e809276f63d7ad93ec3206070775c2"
+   ],
+   "anchorage": [
+    "0x8e2248f0137e8d3c628de5d6376089e0b8541400"
+   ],
+   "apedvn": [
+    "0x68389e9d2a1a015f25850d13fd7b2df59bd40a87"
+   ],
+   "canary-sponsored": [
+    "0x97e19088d0c9d490a99b57fb52ad3636d7c3612c"
+   ],
+   "canary-subsidized": [
+    "0x165bcb144efe79a955c608a3d69e08e21c91c79d"
+   ]
+  },
+  "send": "0x9f8c645f2d0b2159767bd6e0839de4be49e823de",
+  "recv": "0xb217266c3a98c8b2709ee26836c98cf12f6ccec1",
+  "exec": "0x3ebd570ed38b1b3b4bc886999fcf507e9d584859",
+  "ep": "0x1a44076050125825900e736c501f859c50fe728c"
+ },
+ "30110": {
+  "chain": "arbitrum",
+  "by": {
+   "google-cloud": [
+    "0xd56e4eab23cb81f43168f9f45211eb027b9ac7cc"
+   ],
+   "layerzero-labs": [
+    "0x2f55c492897526677c5b68fb199ea31e2c126416"
+   ],
+   "pearlnet": [
+    "0xabc9b1819cc4d9846550f928b985993cf6240439"
+   ],
+   "stablelab": [
+    "0xcd37ca043f8479064e10635020c65ffc005d36f6"
+   ],
+   "nethermind": [
+    "0xa7b5189bca84cd304d8553977c7c614329750d99"
+   ],
+   "mim": [
+    "0x9e930731cb4a6bf7ecc11f695a295c60bdd212eb"
+   ],
+   "horizen-labs": [
+    "0x19670df5e16bea2ba9b9e68b48c054c5baea06b8"
+   ],
+   "nodes-guru": [
+    "0xd954bf7968ef68875c9100c9ec890f969504d120"
+   ],
+   "planetarium-labs": [
+    "0xe6cd8c2e46ef396df88048449e5b1c75172b40c3"
+   ],
+   "lagrange-labs": [
+    "0x021e401c2a1a60618c5e6353a40524971eba1e8d"
+   ],
+   "blockhunters": [
+    "0xd074b6bbcbec2f2b4c4265de3d95e521f82bf669"
+   ],
+   "p2p": [
+    "0xb3ce0a5d132cd9bf965aba435e650c55edce0062"
+   ],
+   "portal": [
+    "0x539008c98b17803a273edf98aba2d4414ee3f4d7"
+   ],
+   "delegate": [
+    "0xdf30c9f6a70ce65a152c5bd09826525d7e97ba49"
+   ],
+   "01node": [
+    "0x7a205ed4e3d7f9d0777594501705d8cd405c3b05"
+   ],
+   "restake": [
+    "0x969a0bdd86a230345ad87a6a381de5ed9e6cda85"
+   ],
+   "bcw": [
+    "0x78203678d264063815dac114ea810e9837cd80f7"
+   ],
+   "switchboard": [
+    "0xcced05c3667877b545285b25f19f794436a1c481"
+   ],
+   "gitcoin": [
+    "0x82c1d3209e32beb7a55069b2c8af5b6f62e2dbd1"
+   ],
+   "animoca-blockdaemon": [
+    "0xddaa92ce2d2fac3f7c5eae19136e438902ab46cc"
+   ],
+   "luganodes": [
+    "0x54dd79f5ce72b51fcbbcb170dd01e32034323565"
+   ],
+   "mercury": [
+    "0x7b8a0fd9d6ae5011d5cbd3e85ed6d5510f98c9bf"
+   ],
+   "stakingcabin": [
+    "0xb0646fb9028364ac1f04477271375ef32a8a5e62"
+   ],
+   "p-ops-team": [
+    "0x8fa9eef18c2a1459024f0b44714e5acc1ce7f5e8"
+   ],
+   "omni-x": [
+    "0xabea0b6b9237b589e676dc16f6d74bf7612591f4"
+   ],
+   "ubisoft": [
+    "0x77aaf86b4466a67869667babe02c6ebe7e7791d6"
+   ],
+   "paxos": [
+    "0x8e5f5825602bc5db725974bb9e60677d4adc5fbe"
+   ],
+   "ondo-staging": [
+    "0x2f2f1c6025e8da125e2afd73ba17d3cbdfe3d093"
+   ],
+   "superform": [
+    "0x5496d03d9065b08e5677e1c5d1107110bb05d445"
+   ],
+   "canary": [
+    "0xf2e380c90e6c09721297526dbc74f870e114dfcb"
+   ],
+   "flowdesk": [
+    "0xc07125d75bfa05a0108de0f64c4d6ebb12b357f6"
+   ],
+   "ondo": [
+    "0x4708a19824bfe71262a91cdefa36ce21cbffafe1"
+   ],
+   "usdt0": [
+    "0xa8b8575fa41c305953f519c7d288cd7741727c7b"
+   ],
+   "muon": [
+    "0xa3858e2a9860c935fc9586a617e9b2a674c3e4c8"
+   ],
+   "nansen": [
+    "0x01f9aad7c53626bf8807d640d9ddf852254d6f63"
+   ],
+   "mantle-bank": [
+    "0x50ff206140cadada2d9d510f1a184be9221d86cf"
+   ],
+   "deutsche-telekom": [
+    "0xeae839784e5f6c79bbaf34b6023a2f62e134ab39"
+   ],
+   "bera": [
+    "0xf2e89ed7e342c708ba8cd79b293ad9244f5fccb3"
+   ],
+   "frax": [
+    "0xb42726e41dbe96fc4ea6d73cd792167608353698"
+   ],
+   "zeeve": [
+    "0x7151c89f6ba70d6ab845289e4ec706530ffaf3cb"
+   ],
+   "canary-wbtc": [
+    "0xecb3ac94976f11a53ae74af1f36fb89e247faeef"
+   ],
+   "nodit": [
+    "0x4c41b4edf85dee828c2cfcc80019cb2bbcfb69a5"
+   ],
+   "wyoming": [
+    "0xcb1b1d524d013a32e976a5963bd541c388ec0517"
+   ],
+   "brale": [
+    "0x66228c260b0edf66ae74d127251102a5f146ae5e"
+   ],
+   "stablecoinx": [
+    "0x790a1946893df8cf85412e9b088c66c3ee1f5747"
+   ],
+   "worldpay": [
+    "0x6eb08810138317aa2af560c174c1390de6c413d4"
+   ],
+   "fidelity": [
+    "0x40a341b4d69d7b2981cb5029f14701a5d3886964"
+   ],
+   "FurtherFP": [
+    "0x1acff1ac63a77b48dc1186985cb36192599c9a6a"
+   ],
+   "apedvn": [
+    "0x7ebbe1305304f24c7d343d31a331aaf0ada64da7"
+   ],
+   "canary-sponsored": [
+    "0xbacfe8d53f8728b8980b9f99e897d8b29334c922"
+   ],
+   "canary-subsidized": [
+    "0x4b61abbf0248a564c02fc252a22739d33b76dcf6"
+   ]
+  },
+  "send": "0x975bcd720be66659e3eb3c0e4f1866a3020e493a",
+  "recv": "0x7b9e184e07a6ee1ac23eae0fe8d6be2f663f05e6",
+  "exec": "0x31cae3b7fb82d847621859fb1585353c5720660d",
+  "ep": "0x1a44076050125825900e736c501f859c50fe728c"
+ },
+ "30168": {
+  "chain": "solana",
+  "by": {
+   "google-cloud": [
+    "F7gu9kLcpn4bSTZn183mhn2RXUuMy7zckdxJZdUjuALw"
+   ],
+   "layerzero-labs": [
+    "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb"
+   ],
+   "nethermind": [
+    "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab"
+   ],
+   "horizen-labs": [
+    "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+   ],
+   "p2p": [
+    "29EKzmCscUg8mf4f5uskwMqvu2SXM8hKF1gWi1cCBoKT"
+   ],
+   "01node": [
+    "8sF9yQhUcHpEte29L2ofvd9TNCB9M57YeWHQpn3E46K7"
+   ],
+   "luganodes": [
+    "41QAdzUraTcvk1P2B6fcs5nQ4EeEKEGnQy5EPpCQ5AdX"
+   ],
+   "p-ops-team": [
+    "CratyHhkQXbRAgck3sooXFYbBADsCtjoxhjVbPKAAhK2"
+   ],
+   "paxos": [
+    "4HxXbLv37XrivKukEbofybpHr7C8HUGJzd4B5T9USpGh"
+   ],
+   "ondo-staging": [
+    "4npJTMgVbLn2jAiLGg7pNEBv4RjQ5HScjLeSQPZAdJdq"
+   ],
+   "canary": [
+    "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3"
+   ],
+   "ondo": [
+    "D1A8NPP4S5RX5jFLprNQGytLFCrV9ZiaFykLmat4WGA7"
+   ],
+   "usdt0": [
+    "JBt34GkVns6VSoP2dCPpViW28eqE4GNgKaoZPRP63wZs"
+   ],
+   "nansen": [
+    "Fn8yyjaLbqw9FZyyLaTkb8o8RWp3vztxNChtPxcV1cLV"
+   ],
+   "mantle-bank": [
+    "GfG8FCkhxmkgXd2yZQbogUV669jX5t9RK87jL2bWBkKK"
+   ],
+   "deutsche-telekom": [
+    "FxFxe8j7e2xgpP9bw8LUehmz7DoQXaNFadJMEUKwBcRs"
+   ],
+   "frax": [
+    "6YB63FDuyYLt5gnJeiVmYRE4c6tFid5SrBZzMLQFfexm"
+   ],
+   "wyoming": [
+    "6bdMfqghzhFpMsbrfy6qiyXnGkYGcamn3WYxeKx8Muik"
+   ],
+   "brale": [
+    "4EsNicsBtbNE2ZQqB24DVjjqgKh1sWjSKNcdxEgD5d8b"
+   ],
+   "worldpay": [
+    "SzcKuPbuMGwMqd9pWTRQDEyL3qZT8YJU4Q5DY9M2aee"
+   ],
+   "fidelity": [
+    "AQGjhJcqEVZP5WHd3NhidpbL743eiTti2Mxgc6XZeKPV"
+   ],
+   "mantlecross": [
+    "AKPKvgSvx4XocG7rMBv3qycKpZWaSCE4gZUCaTZp3J5W"
+   ],
+   "bharvest": [
+    "F8tr3GMivioYFEvJAR2WW5CKjPtgMQtM5CEuSjjVkjWL"
+   ],
+   "fbtc-new": [
+    "9VnAW2RcRbGUGKMCnbEpdS5miJoozcWJvVghDJQVX5ws"
+   ],
+   "bridge": [
+    "BhMKkFMTTS1DWgazTjUZBe2BYft2GwoEUqgBGAH7Bp3p"
+   ],
+   "FurtherFP": [
+    "EqkXVEeapm7JqrS1W3AGeN5ZwCRLDUHtr1XY9TuVr4rD"
+   ],
+   "stablecoinx": [
+    "5EfaXYCJKiVi3jcgeacmJXaQCHcQDWT3qMDGCt2bBPRt"
+   ],
+   "apedvn": [
+    "H5d1R6zC2vYpa5a7Sjh1yFpFthDjkLTfgbrMhmXkfy6x"
+   ],
+   "canary-sponsored": [
+    "FGfRUbiNjXJ5FaVzWj7gcnUJMYTiCLPmgTVeeozWooZB"
+   ],
+   "canary-subsidized": [
+    "GboeFWxah4JAiuXU7urRVkbNuiMiSrAbTtAT4X3T1JVv"
+   ]
+  },
+  "send": "7a4WjyR8VZ7yZz5XJAKm39BUGn5iT9CKcv2pmG9tdXVH",
+  "recv": "7a4WjyR8VZ7yZz5XJAKm39BUGn5iT9CKcv2pmG9tdXVH",
+  "exec": "6doghB248px58JSSwG4qejQ46kFMW4AMj7vzJnWZHNZn",
+  "ep": "76y77prsiCMvXMjuoZ5VRrhG5qYBrUMYTE5WgHqgjEn6"
+ },
+ "30184": {
+  "chain": "base",
+  "by": {
+   "google-cloud": [
+    "0xd56e4eab23cb81f43168f9f45211eb027b9ac7cc"
+   ],
+   "layerzero-labs": [
+    "0x9e059a54699a285714207b43b055483e78faac25"
+   ],
+   "nethermind": [
+    "0xcd37ca043f8479064e10635020c65ffc005d36f6"
+   ],
+   "horizen-labs": [
+    "0xa7b5189bca84cd304d8553977c7c614329750d99"
+   ],
+   "lagrange-labs": [
+    "0xc50a49186aa80427aa3b0d3c2cec19ba64222a29"
+   ],
+   "p2p": [
+    "0x5b6735c66d97479ccd18294fc96b3084ecb2fa3f"
+   ],
+   "01node": [
+    "0x922827caf098837cfbc2196cf65814e2e1160a38"
+   ],
+   "bcw": [
+    "0xb3ce0a5d132cd9bf965aba435e650c55edce0062"
+   ],
+   "luganodes": [
+    "0xa0af56164f02bdf9d75287ee77c568889f11d5f2"
+   ],
+   "p-ops-team": [
+    "0xa9d11632ec5f9502d39aff28d66415f6cca37544"
+   ],
+   "omni-x": [
+    "0xeede111103535e473451311e26c3e6660b0f77e1"
+   ],
+   "ubisoft": [
+    "0x505e855810cb243b2f23e95fdbb8f28d22f87a8c"
+   ],
+   "superform": [
+    "0xeb62f578497bdc351dd650853a751135212faf49"
+   ],
+   "canary": [
+    "0x554833698ae0fb22ecc90b01222903fd62ca4b47"
+   ],
+   "muon": [
+    "0xa3858e2a9860c935fc9586a617e9b2a674c3e4c8"
+   ],
+   "nansen": [
+    "0x93ac538152e1bc4f093ae5666ee9fd1d84f4f4bf"
+   ],
+   "mantle-bank": [
+    "0x761bc869351293c5572ed5581e23e7d5d9c6d3d1"
+   ],
+   "deutsche-telekom": [
+    "0xc2a0c36f5939a14966705c7cec813163faeea1f0"
+   ],
+   "frax": [
+    "0x187cf227f81c287303ee765ee001e151347faaa2"
+   ],
+   "zeeve": [
+    "0x6b34e842175c701f488e2dd335a98caaec49593f"
+   ],
+   "canary-wbtc": [
+    "0x4873d56816f45ef341a8819d7039e4746ed77c21"
+   ],
+   "wyoming": [
+    "0xf80285efb7518d5c79f4e98e3baa59da5ee79621"
+   ],
+   "brale": [
+    "0x2d0d29f7c5225e0bbd8b7deeea2ee005f82cc219"
+   ],
+   "stablecoinx": [
+    "0x8b4874a130d7f1f702d59115f6d31bcc3e0972c3"
+   ],
+   "worldpay": [
+    "0x3acc906ca13fe210c98d8f75edd7db60e129d7fc"
+   ],
+   "fidelity": [
+    "0xeae72c81f3fce1313eeee26717f42af91e178516"
+   ],
+   "citrea": [
+    "0x99afc2a3b8f5cb86a4c4e1320ede1e8c34273854"
+   ],
+   "FurtherFP": [
+    "0xd863f288d3bb1947dfa13d7ccce80bc56974fa22"
+   ],
+   "apedvn": [
+    "0xb4001056811f032f6224140af2ada6118e33080b"
+   ],
+   "paxos": [
+    "0x4fb4d1a9d7197248bce8954dd9d3427b944fb97f"
+   ],
+   "canary-subsidized": [
+    "0xdcacd7e37f392ffad4b2703a21f6a0c8e2451e96"
+   ]
+  },
+  "send": "0xb5320b0b3a13cc860893e2bd79fcd7e13484dda2",
+  "recv": "0xc70ab6f32772f59fbfc23889caf4ba3376c84baf",
+  "exec": "0x2cca08ae69e0c44b18a57ab2a87644234daebae4",
+  "ep": "0x1a44076050125825900e736c501f859c50fe728c"
+ },
+ "30320": {
+  "chain": "unichain",
+  "by": {
+   "layerzero-labs": [
+    "0x282b3386571f7f794450d5789911a9804fa346b4"
+   ],
+   "nethermind": [
+    "0x25e0e650a78e6304a3983fc4b7ffc6544b1beea6"
+   ],
+   "horizen-labs": [
+    "0xc6a6324932b399d6a673b7ed0af671f28033e046"
+   ],
+   "p2p": [
+    "0xab82e9b24004b954985528dac14d1b020722a3c8"
+   ],
+   "01node": [
+    "0xfcd362de25b72955268bf28c1c2620cd0b7d04f4"
+   ],
+   "animoca-blockdaemon": [
+    "0x1337834fd822065af36a13657d2e847616129f3f"
+   ],
+   "luganodes": [
+    "0xf02d0f9acc2870e12c34aa3816dd86fac1339f38"
+   ],
+   "canary": [
+    "0x00a979a5d306e9c5f8cf473659e75f8002e06fc8"
+   ],
+   "usdt0": [
+    "0x208894346d2995a26493f8c2a5b04fb1ee41a899"
+   ],
+   "nansen": [
+    "0x144c6a7a17781e165f430b18f0680c5b3e3713e2"
+   ],
+   "deutsche-telekom": [
+    "0xe47a381dacdb5c42b32ac4b47508ea935b4cb0b8"
+   ],
+   "frax": [
+    "0x97faa2a9c9bf8b4082b175a5b894ce6bac6697a8"
+   ],
+   "canary-wbtc": [
+    "0x148ae5e1df44cf8b6d258430eab79b28d0da4aa6"
+   ],
+   "canary-sponsored": [
+    "0x06bd01bfa19ac2c1974cb7a36dde44ce1068a8c5"
+   ],
+   "canary-subsidized": [
+    "0xbf46508b127aca0890fd4e00f3a42a2aeeb63273"
+   ]
+  },
+  "send": "0xc39161c743d0307eb9bcc9fef03eeb9dc4802de7",
+  "recv": "0xe1844c5d63a9543023008d332bd3d2e6f1fe1043",
+  "exec": "0x4208d6e27538189bb48e603d6123a94b8abe0a0b",
+  "ep": "0x6f475642a6e85809b1c36fa62763669b1b48dd5b"
+ },
+ "30367": {
+  "chain": "hyperliquid",
+  "by": {
+   "layerzero-labs": [
+    "0xc097ab8cd7b053326dfe9fb3e3a31a0cce3b526f"
+   ],
+   "nethermind": [
+    "0x8e49ef1dfae17e547ca0e7526ffda81fbaca810a"
+   ],
+   "mim": [
+    "0x32b29d6b6cd4a851548a6e888cc25e39e8a16d86"
+   ],
+   "horizen-labs": [
+    "0xbb83ecf372cbb6daa629ea9a9a53bec6d601f229"
+   ],
+   "p2p": [
+    "0xc7423626016bc40375458bc0277f28681ec91c8e"
+   ],
+   "luganodes": [
+    "0x9e451905f65ef78d62b93dac3513486da8429d0a"
+   ],
+   "omni-x": [
+    "0x3e3a9bc9149ddf1d3a3ea51c0a49eb9fe6347043"
+   ],
+   "ondo-staging": [
+    "0x3dd571f159076d5ae006bac1d4326d05df691cf1"
+   ],
+   "superform": [
+    "0x8024cb9ef7ac7bd51994baf25f52bd43d924a331"
+   ],
+   "canary": [
+    "0x83342ec538df0460e730a8f543fe63063e2d44c4"
+   ],
+   "ondo": [
+    "0x8614fb9ed4b75d83f781ce836c785eff04379a37"
+   ],
+   "usdt0": [
+    "0xae016a939935d6fe6185900d4c7c7c9b27366cac"
+   ],
+   "nansen": [
+    "0xcfe987ebff7612b53d145dd70ee24d00e12d6a1f"
+   ],
+   "deutsche-telekom": [
+    "0x32ffd21260172518a8844fec76a88c8f239c384b"
+   ],
+   "frax": [
+    "0x082a08f524c043ec7f6b9a42bae79a1990d8499a"
+   ],
+   "stablecoinx": [
+    "0x69610f5d788c56b4f313f4a94bc2625f9b5bd8e4"
+   ],
+   "fidelity": [
+    "0x7ad38050156d4c03f766f536fa12dcf13dd18851"
+   ],
+   "mantle03": [
+    "0xbbd228fa47a8e80fbbfb778abc56031fa2c038ce"
+   ],
+   "conflux": [
+    "0x0276f431ccbd38f913e86e4bce8e41ed17d5e274"
+   ],
+   "mysten-labs": [
+    "0xb42726e41dbe96fc4ea6d73cd792167608353698"
+   ],
+   "mantlecross": [
+    "0x96b2ed9ad07ef550148b7e98f35ad201d993259a"
+   ],
+   "bridge": [
+    "0xe9d8f20ae42e4634b07b9c994e23ce71c266d205"
+   ],
+   "FurtherFP": [
+    "0xd3333aa4fa669d3eb036676ec01cb0acaaec0cc0"
+   ],
+   "apedvn": [
+    "0x5c9b14282e534cea3efb64d2588adcc3acd4c31d"
+   ],
+   "canary-sponsored": [
+    "0x0e330b859441d6172e41591ad6a2448268840456"
+   ],
+   "canary-subsidized": [
+    "0x705d38395b0a3757ca399b047e9f5934c0530ca4"
+   ]
+  },
+  "send": "0xfd76d9cb0bac839725ab79127e7411fe71b1e3ca",
+  "recv": "0x7cacbe439ead55fa1c22790330b12835c6884a91",
+  "exec": "0x41bdb4aa4a63a5b2efc531858d3118392b1a1c3d",
+  "ep": "0x3a73033c0b1407574c76bdbac67f126f6b4a9aa9"
+ },
+ "30390": {
+  "chain": "monad",
+  "by": {
+   "layerzero-labs": [
+    "0x282b3386571f7f794450d5789911a9804fa346b4"
+   ],
+   "nethermind": [
+    "0xacde1f22eeab249d3ca6ba8805c8fee9f52a16e7"
+   ],
+   "horizen-labs": [
+    "0xdcdd4628f858b45260c31d6ad076bd2c3d3c2f73"
+   ],
+   "p2p": [
+    "0x05ef739dde35407a421ef1b3011283f92c2b30dc"
+   ],
+   "canary": [
+    "0x493626c5d852b9b187a9eb709d0b0978a3877238"
+   ],
+   "usdt0": [
+    "0x2dcbd79f38d6871232422db88ec29e8d97135ac7"
+   ],
+   "nansen": [
+    "0xd2750419b4a663c8ff8f7b6067885d82f299ace9"
+   ],
+   "mantle-bank": [
+    "0xe00ff3ebb0cd942d846fb27e4739d2da66989b4f"
+   ],
+   "deutsche-telekom": [
+    "0x2c7185f5b0976397d9eb5c19d639d4005e6708f0"
+   ],
+   "frax": [
+    "0x5ec52fb644072247c3264f0ac3db981cdebe3eca"
+   ],
+   "canary-wbtc": [
+    "0x6398e91001cc1682bba103e6b2489fa5675a5a64"
+   ],
+   "luganodes": [
+    "0x0e4e83077c09cf194ac6080d7dc699e82c7ea29b"
+   ],
+   "stablecoinx": [
+    "0x4d09c99ed8788b191144d6cdd129014fde70326f"
+   ],
+   "apedvn": [
+    "0xefa6237fd9bc99e0cfaec9bddac9a2e55fa336b9"
+   ],
+   "canary-sponsored": [
+    "0xb9cf787a811649d157a1ca4aef1a2bf071776040"
+   ],
+   "canary-subsidized": [
+    "0x3b3c3ad540829d57af7b22c6cdff83fe7d43a8b6"
+   ]
+  },
+  "send": "0xc39161c743d0307eb9bcc9fef03eeb9dc4802de7",
+  "recv": "0xe1844c5d63a9543023008d332bd3d2e6f1fe1043",
+  "exec": "0x4208d6e27538189bb48e603d6123a94b8abe0a0b",
+  "ep": "0x6f475642a6e85809b1c36fa62763669b1b48dd5b"
+ },
+ "30398": {
+  "chain": "megaeth",
+  "by": {
+   "layerzero-labs": [
+    "0x282b3386571f7f794450d5789911a9804fa346b4"
+   ],
+   "nethermind": [
+    "0xeede111103535e473451311e26c3e6660b0f77e1"
+   ],
+   "horizen-labs": [
+    "0x8ede21203e062d7d1eaec11c4c72ad04cdc15658"
+   ],
+   "p2p": [
+    "0x43b4a08ec8dbbfdfb1c8d7d453a0c57ed75a9ac1"
+   ],
+   "canary": [
+    "0x7decc6df3af9cfc275e25d2f9703ecf7ad800d5d"
+   ],
+   "usdt0": [
+    "0xefa6237fd9bc99e0cfaec9bddac9a2e55fa336b9"
+   ],
+   "nansen": [
+    "0xdab6e6ecb3513a8d2614ad75199b4b264a731050"
+   ],
+   "deutsche-telekom": [
+    "0x5d1953d83838c1f19c77b98d5098cede229ec91c"
+   ],
+   "stablecoinx": [
+    "0x521b8fdd95328bed07abd2844464f26414ef4131"
+   ],
+   "canary-sponsored": [
+    "0x399a42ec7dd702e4f4cd95193a908fe4905996e3"
+   ],
+   "canary-subsidized": [
+    "0xd29dcf66e264aa7d6833bdac6b9279791a7c246b"
+   ]
+  },
+  "send": "0xc39161c743d0307eb9bcc9fef03eeb9dc4802de7",
+  "recv": "0xe1844c5d63a9543023008d332bd3d2e6f1fe1043",
+  "exec": "0x4208d6e27538189bb48e603d6123a94b8abe0a0b",
+  "ep": "0x6f475642a6e85809b1c36fa62763669b1b48dd5b"
+ }
+}
