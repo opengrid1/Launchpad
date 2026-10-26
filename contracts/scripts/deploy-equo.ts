@@ -59,7 +59,11 @@ async function create2Deploy(name: string, argTypes: string[], args: any[], salt
   if ((await ethers.provider.getCode(addr)).length > 2) { console.log(`${name}: already at ${addr}`); return addr; }
   const [signer] = await ethers.getSigners();
   await (await signer.sendTransaction({ to: CREATE2_PROXY, data: ethers.concat([salt, initCode]) })).wait();
-  if ((await ethers.provider.getCode(addr)).length <= 2) throw new Error(`${name}: CREATE2 deploy did not land at ${addr}`);
+  // load-balanced public RPCs can answer from a node a block or two behind the receipt
+  for (let i = 0; (await ethers.provider.getCode(addr)).length <= 2; i++) {
+    if (i === 15) throw new Error(`${name}: CREATE2 deploy did not land at ${addr}`);
+    await new Promise((r) => setTimeout(r, 2000));
+  }
   return addr;
 }
 

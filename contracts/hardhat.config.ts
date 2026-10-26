@@ -118,6 +118,13 @@ const config: HardhatUserConfig = {
       chainId: 1,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
+    // The other Equo chains. RPCs can be replaced with <NAME>_RPC_URL.
+    base: { url: process.env.BASE_RPC_URL ?? "https://mainnet.base.org", chainId: 8453, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    bsc: { url: process.env.BSC_RPC_URL ?? "https://bsc-rpc.publicnode.com", chainId: 56, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    arbitrum: { url: process.env.ARBITRUM_RPC_URL ?? "https://arb1.arbitrum.io/rpc", chainId: 42161, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    monad: { url: process.env.MONAD_RPC_URL ?? "https://rpc.monad.xyz", chainId: 143, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    megaeth: { url: process.env.MEGAETH_RPC_URL ?? "https://mainnet.megaeth.com/rpc", chainId: 4326, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    unichain: { url: process.env.UNICHAIN_RPC_URL ?? "https://mainnet.unichain.org", chainId: 130, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
   },
   etherscan: {
     // Etherscan API v2 takes one key for every Etherscan-backed chain. The

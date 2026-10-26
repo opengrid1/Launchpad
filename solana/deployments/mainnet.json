@@ -1,5 +1,5 @@
 {
-  "status": "planned, not deployed",
+  "status": "deployed",
   "cluster": "mainnet-beta",
   "program": "6mdh7toDGpPEk8CYokVLi2aQMLDnB9jVkzhP5n9Dt4wR",
   "config": "9UtTwTMw5vGcfj1RL1SXhvym4XRvwNWpkbJpDp7dWQgg",
@@ -7,10 +7,20 @@
   "admin": "J5UToKRtUypmd58DPP3s1ENQSAwNmSd4xnNbmUiEvyui",
   "feeRecipient": "J5UToKRtUypmd58DPP3s1ENQSAwNmSd4xnNbmUiEvyui",
   "priceUpdater": "8ijJ63dttUjWgR82FiyrKjgymaWLhDrMVLNmkkNwD8nH",
-  "upgradeAuthorityAfterDeploy": "J5UToKRtUypmd58DPP3s1ENQSAwNmSd4xnNbmUiEvyui",
-  "minFirstBuySol": 0.01,
+  "minFirstBuySol": 0.02,
   "launchFeeSol": 0,
   "maxPriceAgeSecs": 3600,
-  "capPresetsUsd": [5000, 12500, 25000],
-  "damm": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+  "capPresetsUsd": [
+    5000,
+    12500,
+    25000
+  ],
+  "damm": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+  "deployedAt": "2026-10-26",
+  "deploySignature": "4afLYHaGiNTuJMNMLSqrSRT5HyenQDx6bwa6o1KJynEgL8c1WQYSrULQH5fE2QmeVSPyJFKwp1iSqbJKrEbB1e1m",
+  "initSignature": "WEKHutWT37hvZbu8EqqTJEKwUu9dkQ86ATr6ahsBafEP9NJ758JCtYF4Mebchv6QA8xfKNAY3r5xTMMpr4f6wH4",
+  "programDataRentSol": 0.43958764,
+  "soSha256": "9fc8352770f76ade734fbee65af5d98da6ec8b41bfa70e3dab3dffccc276869f",
+  "upgradeAuthority": "8ijJ63dttUjWgR82FiyrKjgymaWLhDrMVLNmkkNwD8nH",
+  "upgradeAuthorityNext": "J5UToKRtUypmd58DPP3s1ENQSAwNmSd4xnNbmUiEvyui"
 }
