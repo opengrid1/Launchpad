@@ -99,7 +99,7 @@ const TYPES = {
     { name: 'deadline', type: 'uint64' }, { name: 'legs', type: 'Leg[]' },
   ],
   Leg: [
-    { name: 'eid', type: 'uint32' }, { name: 'coin', type: 'bytes32' }, { name: 'legSalt', type: 'bytes32' },
+    { name: 'eid', type: 'uint32' }, { name: 'coin', type: 'bytes32' }, { name: 'legSalt', type: 'bytes32' }, { name: 'pair', type: 'bytes32' },
     { name: 'slice', type: 'uint256' }, { name: 'quoteUsd18', type: 'uint256' },
   ],
 };
@@ -115,10 +115,10 @@ async function snapshot(creatorSol, opts = {}) {
   const rest = CHAIN_SUPPLY;
   const evm = () => ethers.zeroPadValue(ethers.hexlify(ethers.randomBytes(20)), 32);
   const legs = [
-    { eid: 30101, coin: evm(), legSalt: ethers.hexlify(ethers.randomBytes(32)), slice: rest, quoteUsd18: 3000n * 10n ** 18n },
-    { eid: 30102, coin: evm(), legSalt: ethers.hexlify(ethers.randomBytes(32)), slice: rest, quoteUsd18: 700n * 10n ** 18n },
-    { eid: SOL_EID, coin: ethers.hexlify(store.toBuffer()), legSalt: ethers.hexlify(creatorSol.toBuffer()), slice: solSlice, quoteUsd18: opts.quote ?? SOL_USD18 },
-    { eid: 30367, coin: evm(), legSalt: ethers.hexlify(ethers.randomBytes(32)), slice: rest, quoteUsd18: 40n * 10n ** 18n },
+    { eid: 30101, coin: evm(), legSalt: ethers.hexlify(ethers.randomBytes(32)), pair: ethers.ZeroHash, slice: rest, quoteUsd18: 3000n * 10n ** 18n },
+    { eid: 30102, coin: evm(), legSalt: ethers.hexlify(ethers.randomBytes(32)), pair: ethers.ZeroHash, slice: rest, quoteUsd18: 700n * 10n ** 18n },
+    { eid: SOL_EID, coin: ethers.hexlify(store.toBuffer()), legSalt: ethers.hexlify(creatorSol.toBuffer()), pair: ethers.ZeroHash, slice: solSlice, quoteUsd18: opts.quote ?? SOL_USD18 },
+    { eid: 30367, coin: evm(), legSalt: ethers.hexlify(ethers.randomBytes(32)), pair: ethers.ZeroHash, slice: rest, quoteUsd18: 40n * 10n ** 18n },
   ];
   const now = (await cx.getBlockTime(await cx.getSlot('confirmed'))) ?? Math.floor(Date.now() / 1000);
   const snap = {
@@ -132,7 +132,7 @@ async function snapshot(creatorSol, opts = {}) {
 
 function postIx(payer, { snap, sig }) {
   const legs = snap.legs.map((l) => l.eid === SOL_EID
-    ? Buffer.concat([u8(1), u32(l.eid), hex(l.coin), hex(l.legSalt), u64(l.slice), u128(l.quoteUsd18)])
+    ? Buffer.concat([u8(1), u32(l.eid), hex(l.coin), hex(l.legSalt), hex(l.pair), u64(l.slice), u128(l.quoteUsd18)])
     : Buffer.concat([u8(0), hex(ethers.TypedDataEncoder.from({ Leg: TYPES.Leg }).hashStruct('Leg', l))]));
   return ix('post_snapshot', [w(payer.publicKey, true), r(CONFIG), w(markerPda(snap.launchId)), r(SystemProgram.programId)],
     hex(snap.launchId), hex(snap.creator), str(snap.name), str(snap.symbol), str(snap.metadataURI), u16(snap.feeBps), u64(snap.deadline),

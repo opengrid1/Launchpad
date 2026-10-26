@@ -639,7 +639,7 @@ mod snap {
 ///
 /// Data: launch_id[32], creator_eth[20], name, symbol, uri (u32-prefixed), fee_bps u16, deadline u64, legs u32, then
 /// per leg a tag: 0 + the leg's EIP-712 hash[32] (another chain's leg), or 1 + eid u32, coin[32], leg_salt[32],
-/// slice u64, quote_usd18 u128 (the Solana leg, exactly one), then the signature[65].
+/// pair[32] (zero: SOL), slice u64, quote_usd18 u128 (the Solana leg, exactly one), then the signature[65].
 ///
 /// Only the Solana leg is spelled out (the full snapshot does not fit a Solana transaction); the signature still
 /// covers every leg, and every chain checks its own leg is 1B.
@@ -666,7 +666,7 @@ fn post_snapshot(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
     req!(uri.len() <= MAX_URI && core::str::from_utf8(uri).is_ok(), E::BadMetadata);
     req!(fee_bps >= MIN_FEE_BPS && fee_bps <= MAX_FEE_BPS, E::BadFee);
 
-    let leg_type = keccak(&[b"Leg(uint32 eid,bytes32 coin,bytes32 legSalt,uint256 slice,uint256 quoteUsd18)"]);
+    let leg_type = keccak(&[b"Leg(uint32 eid,bytes32 coin,bytes32 legSalt,bytes32 pair,uint256 slice,uint256 quoteUsd18)"]);
     let mut leg_hashes = [0u8; 32 * MAX_LEGS];
     let mut sol: Option<(u64, u128, Pubkey, Pubkey)> = None;
     for i in 0..n {
@@ -677,11 +677,13 @@ fn post_snapshot(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
         let eid = r.u32()?;
         let coin_b = r.take(32)?;
         let salt_b = r.take(32)?;
+        let pair_b = r.take(32)?;
         let slice = r.u64()?;
         let quote = r.u128()?;
-        req!(eid == SOL_EID && sol.is_none(), E::BadSnapshot);
+        // the Solana leg pairs against SOL (zero): the only pair this program opens pools with
+        req!(eid == SOL_EID && sol.is_none() && pair_b == [0u8; 32], E::BadSnapshot);
         req!(slice == CHAIN_SUPPLY, E::BadSnapshot);
-        let h = keccak(&[&leg_type, &word_u64(eid as u64), coin_b, salt_b, &word_u64(slice), &word_u128(quote)]);
+        let h = keccak(&[&leg_type, &word_u64(eid as u64), coin_b, salt_b, pair_b, &word_u64(slice), &word_u128(quote)]);
         leg_hashes[i * 32..i * 32 + 32].copy_from_slice(&h);
         sol = Some((slice, quote, coin_b.try_into().unwrap(), salt_b.try_into().unwrap()));
     }
@@ -690,7 +692,7 @@ fn post_snapshot(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
 
     let snap_type = keccak(&[
         b"Snapshot(bytes32 launchId,address creator,string name,string symbol,string metadataURI,uint16 feeBps,uint64 deadline,Leg[] legs)",
-        b"Leg(uint32 eid,bytes32 coin,bytes32 legSalt,uint256 slice,uint256 quoteUsd18)",
+        b"Leg(uint32 eid,bytes32 coin,bytes32 legSalt,bytes32 pair,uint256 slice,uint256 quoteUsd18)",
     ]);
     let mut creator_word = [0u8; 32];
     creator_word[12..].copy_from_slice(creator_eth);

@@ -47,6 +47,7 @@ const TYPES = {
     { name: "eid", type: "uint32" },
     { name: "coin", type: "bytes32" },
     { name: "legSalt", type: "bytes32" },
+    { name: "pair", type: "bytes32" },
     { name: "slice", type: "uint256" },
     { name: "quoteUsd18", type: "uint256" },
   ],
@@ -96,14 +97,19 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
       const lib = ethers.getAddress(ethers.toBeHex(0x51b, 20));
       await (await deployer.setRoute(o.eid, { sendLib: lib, receiveLib: lib, sendConfig: ulnConfig(o.eid, 2), receiveConfig: ulnConfig(o.eid, 2), receiveGas: 100_000, composeGas: 0 })).wait();
     }
+    // a stand-in for a tokenized stock: an asset the factory lists besides the native coin (6 decimals, ~$1)
+    let stock = await (await ethers.getContractFactory("MockUSD")).deploy();
+    while (BigInt(await stock.getAddress()) < CEILING) stock = await (await ethers.getContractFactory("MockUSD")).deploy();
+    const STOCK = await stock.getAddress();
     const factory = await (await ethers.getContractFactory("EquoLaunchFactory")).deploy(
-      admin.address, PM, hookAddr, DEP, WETH, eid, signer, feeWallet.address, ethers.parseEther("1"), ethers.parseEther("1000000"),
+      admin.address, PM, hookAddr, DEP, WETH, eid, signer, feeWallet.address,
+      [{ token: WETH, minUsd18: ethers.parseEther("1"), maxUsd18: ethers.parseEther("1000000") }, { token: STOCK, minUsd18: ethers.parseEther("0.5"), maxUsd18: ethers.parseEther("2") }],
     );
     const FACTORY = await factory.getAddress();
     await (await deployer.setFactory(FACTORY)).wait();
     await (await hook.setFactory(FACTORY)).wait();
     const router = await (await ethers.getContractFactory("EquoSwapRouter")).deploy(PM, FACTORY, WETH);
-    return { eid, WETH, weth, pm, endpoint, deployer, creatorC, hook, factory, router };
+    return { eid, WETH, weth, pm, endpoint, deployer, creatorC, hook, factory, router, stock, STOCK };
   }
 
   async function deployAll() {
@@ -116,7 +122,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
   }
 
   /** Mine each leg's salt so its coin address ends in e9 below the ceiling, the way the launch service does. */
-  async function buildSnapshot(env: any, opts: { tag: string; feeBps?: number; slices?: bigint[]; deadline?: number; creator?: string }) {
+  async function buildSnapshot(env: any, opts: { tag: string; feeBps?: number; slices?: bigint[]; deadline?: number; creator?: string; pairs?: (string | null)[] }) {
     const launchId = ethers.id(`launch-${opts.tag}`);
     const creator = opts.creator ?? env.creator.address;
     const slices = opts.slices ?? [CHAIN_SUPPLY, CHAIN_SUPPLY, CHAIN_SUPPLY];
@@ -131,7 +137,8 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
         coin = ethers.getCreate2Address(cc, s, h);
         if (BigInt(coin) < CEILING && (BigInt(coin) & 0xffn) === 0xe9n) break;
       }
-      legs.push({ eid: c.eid, coin: pad(coin), legSalt, slice: slices[i], quoteUsd18: CHAINS[i].usd * 10n ** 18n });
+      const pair = opts.pairs?.[i] ?? null;
+      legs.push({ eid: c.eid, coin: pad(coin), legSalt, pair: pair ? pad(pair) : ethers.ZeroHash, slice: slices[i], quoteUsd18: pair ? 10n ** 18n : CHAINS[i].usd * 10n ** 18n });
     }
     const deadline = opts.deadline ?? (await time.latest()) + 1800;
     const snap = { launchId, creator, name: `Equo ${opts.tag}`, symbol: `E${opts.tag}`, metadataURI: "ipfs://equo", feeBps: opts.feeBps ?? 100, deadline, legs };
@@ -147,7 +154,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     for (let i = 0; i < 3; i++) {
       const f = env.chains[i].factory;
       const who = i === 0 ? env.creator : env.launcher;
-      await (await f.connect(who).launch(snap, sig, { value: i === 0 ? devBuy : 0n })).wait();
+      await (await f.connect(who).launch(snap, sig, 0n, { value: i === 0 ? devBuy : 0n })).wait();
     }
     const coins = addrs.map((a: string) => ethers.getContractAt("EquoCoin", a));
     return { snap, sig, addrs, coins: await Promise.all(coins) };
@@ -276,7 +283,43 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     let local = 0n;
     for (const c of coins) local += await c.localSupply();
     expect(local).to.equal(3n * CHAIN_SUPPLY); // every chain's coins together: nothing created or lost
-    expect(await coins[0].totalSupply()).to.equal((await env.chains[0].factory.listings(addrs[0]))[5]);
+    expect(await coins[0].totalSupply()).to.equal((await env.chains[0].factory.listings(addrs[0]))[6]);
+  });
+
+  it("pairs one chain's leg with a listed asset (a stock) and the rest with native coins, at the same USD price", async () => {
+    const env = await deployAll();
+    const c0 = env.chains[0];
+    const { snap, sig } = await buildSnapshot(env, { tag: "ST", pairs: [c0.STOCK, null, null] });
+    const addrs = snap.legs.map((l: any) => ethers.getAddress("0x" + l.coin.slice(26)));
+    // the launch buy on the stock leg is paid in the stock (pulled from the caller), never in native coin
+    await (await c0.stock.transfer(env.creator.address, 10_000n * 10n ** 6n)).wait();
+    await (await c0.stock.connect(env.creator).approve(await c0.factory.getAddress(), 1_000n * 10n ** 6n)).wait();
+    await expect(c0.factory.connect(env.creator).launch(snap, sig, 0n, { value: 1n })).to.be.revertedWithCustomError(c0.factory, "InvalidParams");
+    await (await c0.factory.connect(env.creator).launch(snap, sig, 0n)).wait();
+    for (let i = 1; i < 3; i++) await (await env.chains[i].factory.connect(env.launcher).launch(snap, sig, 0n)).wait();
+    expect((await c0.factory.listings(addrs[0])).pair).to.equal(c0.STOCK);
+    // $3,000 for the 1B against a $1 stock of 6 decimals: the same USD price as the native-paired legs
+    const p0 = await usdPrice(c0, addrs[0], 1n) * 1e12; // pair units are 1e6 here, not 1e18
+    const p1 = await usdPrice(env.chains[1], addrs[1], CHAINS[1].usd);
+    expect(Math.abs(p0 / p1 - 1)).to.be.lt(0.0061);
+    // a launch buy on a stock leg is pulled in the stock, fee-free, coins to the creator
+    const b = await buildSnapshot(env, { tag: "ST3", pairs: [c0.STOCK, null, null] });
+    await (await c0.factory.connect(env.creator).launch(b.snap, b.sig, 100n * 10n ** 6n)).wait();
+    const coinB = await ethers.getContractAt("EquoCoin", ethers.getAddress("0x" + b.snap.legs[0].coin.slice(26)));
+    expect(await coinB.balanceOf(env.creator.address)).to.be.gt(0n);
+    expect(await c0.hook.feesTotal(await coinB.getAddress())).to.equal(0n);
+    // trade with the stock directly; fees accrue in the stock and pay out in it
+    await (await c0.stock.transfer(env.trader.address, 1_000n * 10n ** 6n)).wait();
+    await (await c0.stock.connect(env.trader).approve(await c0.router.getAddress(), 500n * 10n ** 6n)).wait();
+    await (await c0.router.connect(env.trader).buyWithPair(addrs[0], 500n * 10n ** 6n, 0n)).wait();
+    expect(await c0.hook.creatorOwed(addrs[0])).to.equal((500n * 10n ** 6n) / 100n * 8n / 10n);
+    const before = await c0.stock.balanceOf(env.creator.address);
+    await (await c0.hook.payCreator(addrs[0])).wait();
+    expect((await c0.stock.balanceOf(env.creator.address)) - before).to.equal((500n * 10n ** 6n) / 100n * 8n / 10n);
+    // an asset the factory was not deployed with is refused
+    const other = await (await ethers.getContractFactory("MockUSD")).deploy();
+    const bad = await buildSnapshot(env, { tag: "ST2", pairs: [await other.getAddress(), null, null] });
+    await expect(c0.factory.connect(env.creator).launch(bad.snap, bad.sig, 0n)).to.be.revertedWithCustomError(c0.factory, "PairNotListed");
   });
 
   it("peers and options are sealed: nobody can rewire a coin", async () => {
@@ -301,22 +344,22 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     // wrong signer
     const a = await buildSnapshot(env, { tag: "W1" });
     const bad = await ethers.Wallet.createRandom().signTypedData(DOMAIN, TYPES, a.snap);
-    await expect(f.connect(env.creator).launch(a.snap, bad)).to.be.revertedWithCustomError(f, "BadSignature");
+    await expect(f.connect(env.creator).launch(a.snap, bad, 0n)).to.be.revertedWithCustomError(f, "BadSignature");
     // outsider may not launch for the creator
-    await expect(f.connect(env.outsider).launch(a.snap, a.sig)).to.be.revertedWithCustomError(f, "NotAllowed");
+    await expect(f.connect(env.outsider).launch(a.snap, a.sig, 0n)).to.be.revertedWithCustomError(f, "NotAllowed");
     // every leg is 1B
     const b = await buildSnapshot(env, { tag: "W2", slices: [CHAIN_SUPPLY, CHAIN_SUPPLY / 2n, CHAIN_SUPPLY] });
-    await expect(f.connect(env.creator).launch(b.snap, b.sig)).to.be.revertedWithCustomError(f, "BadSnapshot");
+    await expect(f.connect(env.creator).launch(b.snap, b.sig, 0n)).to.be.revertedWithCustomError(f, "BadSnapshot");
     // more than an hour ahead, or past its deadline
     const c = await buildSnapshot(env, { tag: "W3", deadline: (await time.latest()) + 7200 });
-    await expect(f.connect(env.creator).launch(c.snap, c.sig)).to.be.revertedWithCustomError(f, "Expired");
+    await expect(f.connect(env.creator).launch(c.snap, c.sig, 0n)).to.be.revertedWithCustomError(f, "Expired");
     const d = await buildSnapshot(env, { tag: "W4" });
     await time.increase(3600);
-    await expect(f.connect(env.creator).launch(d.snap, d.sig)).to.be.revertedWithCustomError(f, "Expired");
+    await expect(f.connect(env.creator).launch(d.snap, d.sig, 0n)).to.be.revertedWithCustomError(f, "Expired");
     // launches once
     const e = await buildSnapshot(env, { tag: "W5" });
-    await (await f.connect(env.creator).launch(e.snap, e.sig)).wait();
-    await expect(f.connect(env.creator).launch(e.snap, e.sig)).to.be.revertedWithCustomError(f, "AlreadyLaunched");
+    await (await f.connect(env.creator).launch(e.snap, e.sig, 0n)).wait();
+    await expect(f.connect(env.creator).launch(e.snap, e.sig, 0n)).to.be.revertedWithCustomError(f, "AlreadyLaunched");
   });
 
   it("anyone can submit a launch the creator signed", async () => {
@@ -324,7 +367,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     const { snap, sig } = await buildSnapshot(env, { tag: "CS" });
     const creatorSig = await env.creator.signTypedData(DOMAIN, TYPES, snap);
     const f = env.chains[0].factory;
-    await (await f.connect(env.outsider).launchSigned(snap, sig, creatorSig)).wait();
+    await (await f.connect(env.outsider).launchSigned(snap, sig, creatorSig, 0n)).wait();
     expect((await f.listings(ethers.getAddress("0x" + snap.legs[0].coin.slice(26)))).creator).to.equal(env.creator.address);
   });
 
