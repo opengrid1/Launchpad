@@ -137,7 +137,7 @@
       "maxRange": 1000,
       "confirmations": 2,
       "pollMs": 2000,
-      "poolManager": "0xacB7e78fa05d562e0A5d3089Ec896d57D057D38e",
+      "poolManager": "0xaCB7e78fa05D562e0A5D3089ec896D57D057d38E",
       "wrappedNative": "0x4200000000000000000000000000000000000006",
       "factory": "",
       "hook": "",
