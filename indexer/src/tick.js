@@ -1,5 +1,5 @@
 import { loadChains } from "./config.js";
-import { q } from "./db.js";
+import { migrate, q } from "./db.js";
 import { ChainIndexer } from "./indexer.js";
 
 /* Indexing in short bursts, for hosts that run code per request (serverless functions): each tick takes a
@@ -7,6 +7,7 @@ import { ChainIndexer } from "./indexer.js";
    until the time budget runs out. The next tick continues where this one stopped. */
 
 const workers = new Map(); // kept while the function instance stays warm
+let migrated = null; // the schema is applied once per function instance (every statement is idempotent)
 
 export async function tick(budgetMs = Number(process.env.TICK_BUDGET_MS || 45_000)) {
   const t0 = Date.now();
@@ -16,6 +17,8 @@ export async function tick(budgetMs = Number(process.env.TICK_BUDGET_MS || 45_00
      where tick_lock.until < now() and (tick_lock.last_done is null or tick_lock.last_done < now() - interval '8 seconds')
      returning id`, [Math.ceil(budgetMs / 1000) + 30]);
   if (!got.rows.length) return { skipped: true };
+  migrated = migrated || migrate().catch((e) => { migrated = null; throw e; });
+  await migrated;
   const chains = loadChains(), out = {};
   try {
     await Promise.all(chains.filter((c) => c.factory).map(async (c) => {
