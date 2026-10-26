@@ -10,6 +10,8 @@ create table if not exists chain_state (
   head_block  bigint,
   updated_at  timestamptz not null default now()
 );
+-- the factory a chain's rows came from; a new factory (a redeploy) starts that chain's index over
+alter table chain_state add column if not exists factory text;
 
 -- one row per coin contract on one chain (the factory's Launched event)
 create table if not exists tokens (

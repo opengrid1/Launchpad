@@ -67,7 +67,14 @@ export class ChainIndexer {
   async init() {
     const c = this.c;
     if (!c.wrappedNative) c.wrappedNative = lc(abi.decode(["address"], await this.rpc.ethCall(c.factory, FACTORY.encodeFunctionData("weth")))[0]);
-    await q("insert into chain_state (chain, last_block) values ($1, $2) on conflict (chain) do nothing", [c.key, c.startBlock - 1]);
+    await q("insert into chain_state (chain, last_block, factory) values ($1, $2, $3) on conflict (chain) do nothing", [c.key, c.startBlock - 1, c.factory]);
+    // a redeploy: the rows on this chain belong to the old factory's coins, so drop them and index the new one
+    const st = (await q("select factory from chain_state where chain = $1", [c.key])).rows[0];
+    if (st.factory !== c.factory) {
+      this.log.info(`[${c.key}] factory changed (${st.factory || "unknown"} -> ${c.factory}): reindexing from block ${c.startBlock}`);
+      for (const t of ["tokens", "trades", "balances", "bridges", "pair_prices"]) await q(`delete from ${t} where chain = $1`, [c.key]);
+      await q("update chain_state set last_block = $2, head_block = null, factory = $3, updated_at = now() where chain = $1", [c.key, c.startBlock - 1, c.factory]);
+    }
     const r = await q("select token, coin_id, pair, pool_id from tokens where chain = $1", [c.key]);
     for (const t of r.rows) { this.pools.set(t.pool_id, { token: t.token, pair: t.pair, coinId: t.coin_id }); this.tokens.set(t.token, { coinId: t.coin_id, pair: t.pair }); }
     const p = await q("select distinct on (pair) pair, usd18 from pair_prices where chain = $1 order by pair, ts desc", [c.key]);

@@ -1,4 +1,4 @@
-/* Equo contract features on top of the bundled chain layer (chain.js): cashback and referral rewards,
+/* Equo contract features on top of the bundled chain layer (chain.js): cashback rewards,
    creator tools (metadata, transfer, activity, fee claims), community takeover, and the admin's start cap
    presets and reward split. Exposes window.CHAIN.equo. Loaded right after chain.js on every page. */
 (function () {
@@ -11,16 +11,13 @@
 
   const HOOK_ABI = [
     "function cashbackBps() view returns (uint16)",
-    "function referralBps() view returns (uint16)",
-    "function referrerOf(address trader) view returns (address)",
     "function rewardsOwed(address user, address pair) view returns (uint256)",
     "function creatorOf(address token) view returns (address)",
     "function creatorOwed(address token) view returns (uint256)",
     "function CREATOR_SPLIT_BPS() view returns (uint16)",
     "function claimRewards(address[] pairs) returns (uint256)",
     "function payCreator(address token) returns (uint256)",
-    "event RewardsCredited(address indexed token, address indexed trader, uint256 cashback, address indexed referrer, uint256 referral)",
-    "event ReferrerBound(address indexed trader, address indexed referrer)",
+    "event CashbackCredited(address indexed token, address indexed trader, uint256 amount)",
     "event RewardsClaimed(address indexed user, address indexed pair, uint256 amount)",
   ];
   const FACTORY_ABI = [
@@ -42,13 +39,13 @@
     "function cancelTakeover(address token)",
     "function executeTakeover(address token)",
     "function setCapPresets(uint64[] usd8)",
-    "function setRewardSplit(uint16 cashbackBps, uint16 referralBps)",
+    "function setCashback(uint16 cashbackBps)",
     "function oracle() view returns (address)",
   ];
   const ERC20_ABI = ["function allowance(address,address) view returns (uint256)", "function approve(address,uint256) returns (bool)", "function balanceOf(address) view returns (uint256)"];
   const ROUTER_ABI = [
-    "function buyWithPair(address coin, uint256 pairIn, uint256 minCoinOut, address referrer) returns (uint256)",
-    "function sellForPair(address coin, uint256 amountIn, uint256 minPairOut, address referrer) returns (uint256)",
+    "function buyWithPair(address coin, uint256 pairIn, uint256 minCoinOut) returns (uint256)",
+    "function sellForPair(address coin, uint256 amountIn, uint256 minPairOut) returns (uint256)",
   ];
   // Uniswap's quoters (mainnet), used to price ETH <-> stock along a pair's route
   const Q3 = new E.Contract("0x61fFE014bA17989E743c5F6cB21bF9697530B21e", ["function quoteExactInputSingle((address tokenIn,address tokenOut,uint256 amountIn,uint24 fee,uint160 sqrtPriceLimitX96) params) returns (uint256 amountOut,uint160,uint32,uint256)"], provider);
@@ -141,54 +138,46 @@
     DAY, SUPPLY,
     IDLE: 30 * DAY, DELAY: 7 * DAY, STAKE: SUPPLY / 20n,
     pairSym,
-    /** cashback and referral shares, bps of the platform part, plus the fee share they are of */
+    /** the cashback share, bps of the platform part (there are no referrals; referralBps stays 0 for callers) */
     split() {
-      if (!splitP) splitP = Promise.all([hookR.cashbackBps(), hookR.referralBps()]).then(([c, r]) => ({ cashbackBps: Number(c), referralBps: Number(r) })).catch((e) => { splitP = null; throw e; });
+      if (!splitP) splitP = hookR.cashbackBps().then((c) => ({ cashbackBps: Number(c), referralBps: 0 })).catch((e) => { splitP = null; throw e; });
       return splitP;
     },
-    /** claimable rewards per pair asset (cashback and referral share one balance per pair) */
+    /** claimable cashback per pair asset */
     async rewards(user) {
       const ps = pairs();
       const v = (await multi(ps.map((p) => [addr.hook, hookR.interface, "rewardsOwed", [user, p]]))).map((r) => (r ? r[0] : 0n));
       return ps.map((p, i) => ({ pair: p, symbol: pairSym(p), amount: Number(v[i]) / 1e18, raw: v[i] })).filter((r) => r.raw > 0n);
     },
     async claimRewards(pairList) { const h = await W(addr.hook, HOOK_ABI); return tx(() => h.claimRewards(pairList)); },
-    referrerOf: (user) => hookR.referrerOf(user).then(lc),
-    /** lifetime cashback earned, referral earned and referred traders, from the hook's events */
+    referrerOf: async () => ZERO,
+    /** lifetime cashback earned, from the hook's events (no referrals: those fields stay empty for callers) */
     async history(user) {
       const iface = new E.Interface(HOOK_ABI);
-      const credited = iface.getEvent("RewardsCredited").topicHash, bound = iface.getEvent("ReferrerBound").topicHash;
-      const u = E.zeroPadValue(user, 32);
-      const [asTrader, asRef, refs] = await Promise.all([
-        getLogs({ address: addr.hook, topics: [credited, null, u] }),
-        getLogs({ address: addr.hook, topics: [credited, null, null, u] }),
-        getLogs({ address: addr.hook, topics: [bound, null, u] }),
-      ]);
-      const sum = (logs, field) => { const by = {}; logs.forEach((l) => { const ev = iface.parseLog(l); const tok = lc(ev.args.token); const x = (C.token && C.token(tok)) || null; const p = x ? lc(x.pairAddr || "") : ""; const amt = Number(ev.args[field]) / 1e18; by[p] = (by[p] || 0) + amt; by._usd = (by._usd || 0) + amt * ((x && x.pairUsd) || 0); }); return by; };
-      return { cashback: sum(asTrader, "cashback"), referral: sum(asRef, "referral"), traders: new Set(refs.map((l) => lc(iface.parseLog(l).args.trader))).size };
+      const credited = iface.getEvent("CashbackCredited").topicHash;
+      const asTrader = await getLogs({ address: addr.hook, topics: [credited, null, E.zeroPadValue(user, 32)] });
+      const by = {};
+      asTrader.forEach((l) => { const ev = iface.parseLog(l); const x = (C.token && C.token(lc(ev.args.token))) || null; const p = x ? lc(x.pairAddr || "") : ""; const amt = Number(ev.args.amount) / 1e18; by[p] = (by[p] || 0) + amt; by._usd = (by._usd || 0) + amt * ((x && x.pairUsd) || 0); });
+      return { cashback: by, referral: {}, traders: 0 };
     },
 
-    /** platform-wide cashback and referral totals from the hook's events, in USD at today's pair prices */
+    /** platform-wide cashback totals from the hook's events, in USD at today's pair prices */
     async rewardStats(prices) {
       const iface = new E.Interface(HOOK_ABI);
-      const tc = iface.getEvent("RewardsCredited").topicHash, tb = iface.getEvent("ReferrerBound").topicHash, tl = iface.getEvent("RewardsClaimed").topicHash;
-      const logs = await getLogs({ address: addr.hook, topics: [[tc, tb, tl]] });
+      const tc = iface.getEvent("CashbackCredited").topicHash, tl = iface.getEvent("RewardsClaimed").topicHash;
+      const logs = await getLogs({ address: addr.hook, topics: [[tc, tl]] });
       const px = (p) => (prices && prices[lc(p)]) || 0;
       const pairOfToken = (t) => { const x = (C.token && C.token(lc(t))) || null; return x ? lc(x.pairAddr || WETH) : WETH; };
-      const s = { cashback: 0, referral: 0, claimed: 0, earners: new Set(), referrers: {}, referred: 0, events: 0 };
+      const s = { cashback: 0, claimed: 0, earners: new Set(), events: 0 };
       for (const l of logs) {
         const ev = iface.parseLog(l); if (!ev) continue; s.events++;
-        if (ev.name === "RewardsCredited") {
-          const p = px(pairOfToken(ev.args.token)), cb = (Number(ev.args.cashback) / 1e18) * p, rf = (Number(ev.args.referral) / 1e18) * p;
-          s.cashback += cb; s.referral += rf;
+        if (ev.name === "CashbackCredited") {
+          const cb = (Number(ev.args.amount) / 1e18) * px(pairOfToken(ev.args.token));
+          s.cashback += cb;
           if (cb > 0) s.earners.add(lc(ev.args.trader));
-          if (lc(ev.args.referrer) !== ZERO) { const r = s.referrers[lc(ev.args.referrer)] || (s.referrers[lc(ev.args.referrer)] = { earned: 0, traders: new Set(), volTrades: 0 }); r.earned += rf; r.traders.add(lc(ev.args.trader)); r.volTrades++; }
-        } else if (ev.name === "ReferrerBound") {
-          s.referred++; const r = s.referrers[lc(ev.args.referrer)] || (s.referrers[lc(ev.args.referrer)] = { earned: 0, traders: new Set(), volTrades: 0 }); r.traders.add(lc(ev.args.trader));
         } else s.claimed += (Number(ev.args.amount) / 1e18) * px(ev.args.pair);
       }
-      const top = Object.entries(s.referrers).map(([w, r]) => ({ w, earned: r.earned, traders: r.traders.size, trades: r.volTrades })).sort((a, b) => b.earned - a.earned || b.traders - a.traders);
-      return { cashback: s.cashback, referral: s.referral, claimed: s.claimed, unclaimed: Math.max(0, s.cashback + s.referral - s.claimed), earners: s.earners.size, referrers: top.length, referred: s.referred, top, events: s.events };
+      return { cashback: s.cashback, referral: 0, claimed: s.claimed, unclaimed: Math.max(0, s.cashback - s.claimed), earners: s.earners.size, referrers: 0, referred: 0, top: [], events: s.events };
     },
 
     // creator
@@ -222,7 +211,9 @@
     capPresets: () => factR.capPresets().then((v) => v.map((x) => Number(x) / 1e8)),
     capOf: (token) => factR.capOf(token).then((x) => Number(x) / 1e8),
     async setCapPresets(usd) { const f = await W(addr.factory, FACTORY_ABI); return tx(() => f.setCapPresets(usd.map((u) => BigInt(Math.round(u)) * 10n ** 8n))); },
-    async setRewardSplit(cb, rf) { const f = await W(addr.factory, FACTORY_ABI); splitP = null; return tx(() => f.setRewardSplit(cb, rf)); },
+    async setCashback(cb) { const f = await W(addr.factory, FACTORY_ABI); splitP = null; return tx(() => f.setCashback(cb)); },
+    /** kept for older callers: the referral share no longer exists */
+    async setRewardSplit(cb) { return EQ.setCashback(cb); },
   };
   Object.assign(EQ, {
     multi, routeOut,
@@ -251,13 +242,13 @@
       const s = await signer(), me = await s.getAddress(), p = new E.Contract(pair, ERC20_ABI, s);
       if ((await p.allowance(me, addr.router)) < pairIn) await (await p.approve(addr.router, E.MaxUint256)).wait();
       const r = new E.Contract(addr.router, ROUTER_ABI, s);
-      return tx(() => r.buyWithPair(coin, pairIn, minOut, window.EQUO_REF && E.isAddress(window.EQUO_REF) ? window.EQUO_REF : ZERO));
+      return tx(() => r.buyWithPair(coin, pairIn, minOut));
     },
     async sellForPair(coin, amountIn, minOut) {
       const s = await signer(), me = await s.getAddress(), c = new E.Contract(coin, ERC20_ABI, s);
       if ((await c.allowance(me, addr.router)) < amountIn) await (await c.approve(addr.router, E.MaxUint256)).wait();
       const r = new E.Contract(addr.router, ROUTER_ABI, s);
-      return tx(() => r.sellForPair(coin, amountIn, minOut, window.EQUO_REF && E.isAddress(window.EQUO_REF) ? window.EQUO_REF : ZERO));
+      return tx(() => r.sellForPair(coin, amountIn, minOut));
     },
   });
   C.equo = EQ;

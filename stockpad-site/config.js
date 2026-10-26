@@ -13,12 +13,12 @@ window.INKY = {
      older than ~36 hours; rpc.flashbots.net answers but silently drops logs, so it is not listed).
      Later scans are incremental and small, so publicnode works as the fallback for those. */
   logsRpcs: ['https://rpc.mevblocker.io', 'https://ethereum-rpc.publicnode.com'],
-  deployBlock: 26235330,
+  deployBlock: 26274031,
   weth: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', usdg: '',
   /* Equo indexer (indexer/ in the repo): history for every chain. Empty = read history from the chains directly. */
   api: 'self',
-  /* Equo contracts (v3), deployed 2026-10-20: see contracts/deployments/equo-mainnet.json */
-  contracts: {"factory": "0x7Eb4CC330866Af46b2fDfBce41686CC74778d325", "hook": "0xbe1FF9acc59F73Ae311810Cb74e162a47E2e40Cc", "router": "0x4055F9abd07caBC16788d499A935a297968E09c8", "tokenDeployer": "0x9289DD47cfb34acE7a3a97666542aBa18f7c5e48", "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90"},
+  /* Equo contracts, deployed 2026-10-26 (70/30, cashback, collect): see contracts/deployments/equo-mainnet.json */
+  contracts: {"factory": "0x6b82ddCc081CB2bA668C5190139D16A4dBb2ef52", "hook": "0x8b54AaFdCE7BD99e6d9E815510658210355cC0CC", "router": "0x4f91CbFc45e76256Cd350A21Fe68Ec630731f492", "tokenDeployer": "0x502Dc911055B057aBBE9605d72462A66fC2885a5", "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90"},
   /* stocks: none. Equo pairs every coin with its chain's native coin (ETH, BNB, HYPE, MON, SOL). */
   stocks: [],
   stocksOnly: false,
@@ -30,24 +30,26 @@ window.INKY = {
      LayerZero's deployments (checked 2026-10-25). */
   chains: [
     {key:'eth', blockSec:12,      code:'ETH',  name:'Ethereum',  short:'Ethereum', chainId:1,     native:'ETH',  cg:'ethereum',    logo:'/img/chains/eth.png',      color:'#8c9eff', main:true,  live:true,
-     rpc:'https://ethereum-rpc.publicnode.com',      explorer:'https://etherscan.io',     lzEid:30101, poolManager:'0x000000000004444c5dc75cB358380D2e3dE08A90', launchGas:7290000},
+     rpc:'https://ethereum-rpc.publicnode.com',      explorer:'https://etherscan.io',     lzEid:30101, poolManager:'0x000000000004444c5dc75cB358380D2e3dE08A90', launchGas:4000000, factory:'0x6b82ddCc081CB2bA668C5190139D16A4dBb2ef52', hook:'0x8b54AaFdCE7BD99e6d9E815510658210355cC0CC', router:'0x4f91CbFc45e76256Cd350A21Fe68Ec630731f492'},
     {key:'base', blockSec:2,     code:'BASE', name:'Base',      short:'Base',     chainId:8453,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/base.png',     color:'#3c6bff', main:false, live:false,
-     rpc:'https://base-rpc.publicnode.com',          explorer:'https://basescan.org',     lzEid:30184, poolManager:'0x498581fF718922c3f8e6A244956aF099B2652b2b', launchGas:7290000},
+     rpc:'https://base-rpc.publicnode.com',          explorer:'https://basescan.org',     lzEid:30184, poolManager:'0x498581fF718922c3f8e6A244956aF099B2652b2b', launchGas:4000000, factory:'0x3258C1D4473e9b91ddD6d92517F0929f49F5E1da', hook:'0x3C9c1a3f5c4D34D00fFeAc85d002f63BAc41C0cC', router:'0x917D12Ff9674290935a75b657Cd48CF64c23a099'},
     {key:'bsc', blockSec:0.75,      code:'BSC',  name:'BNB Chain', short:'BNB',      chainId:56,    native:'BNB',  cg:'binancecoin', logo:'/img/chains/bsc.png',      color:'#f0b90b', main:false, live:false,
-     rpc:'https://bsc-rpc.publicnode.com',           explorer:'https://bscscan.com',      lzEid:30102, poolManager:'0x28e2Ea090877bF75740558f6BFB36A5ffeE9e9dF', launchGas:7290000},
+     rpc:'https://bsc-rpc.publicnode.com',           explorer:'https://bscscan.com',      lzEid:30102, poolManager:'0x28e2Ea090877bF75740558f6BFB36A5ffeE9e9dF', launchGas:4000000, factory:'0x0d0c4f86375a8361CDD2B5Df04Cf6540a2896c6d', hook:'0xa282b881B290eAb4BAdEB049Af4B1822811180cc', router:'0x9E679424bc13A466aAe79DF17fC76506695B5bbf'},
     {key:'arbitrum', blockSec:0.25, code:'ARB',  name:'Arbitrum',  short:'Arbitrum', chainId:42161, native:'ETH',  cg:'ethereum',    logo:'/img/chains/arbitrum.png', color:'#4aa3ff', main:false, live:false,
-     rpc:'https://arbitrum-one-rpc.publicnode.com',  explorer:'https://arbiscan.io',      lzEid:30110, poolManager:'0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32', launchGas:7290000},
+     rpc:'https://arbitrum-one-rpc.publicnode.com',  explorer:'https://arbiscan.io',      lzEid:30110, poolManager:'0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32', launchGas:4000000, factory:'0x4f91CbFc45e76256Cd350A21Fe68Ec630731f492', hook:'0xfecB10aD45782011d125f44B85da47EC9B5940CC', router:'0x0d0c4f86375a8361CDD2B5Df04Cf6540a2896c6d'},
     {key:'hyper', blockSec:1,    code:'HYPE', name:'HyperEVM',  short:'Hyper',    chainId:999,   native:'HYPE', cg:'hyperliquid', logo:'/img/chains/hyper.png',    color:'#97fce4', main:false, live:false,
-     rpc:'https://rpc.hyperliquid.xyz/evm',          explorer:'https://hyperevmscan.io',  lzEid:30367, poolManager:'0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', launchGas:7290000},
+     rpc:'https://rpc.hyperliquid.xyz/evm',          explorer:'https://hyperevmscan.io',  lzEid:30367, poolManager:'0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', launchGas:4000000, factory:'0x0d0c4f86375a8361CDD2B5Df04Cf6540a2896c6d', hook:'0xF215685b8e9ddc0e31a9aA9f43C51042C7d080cC', router:'0x9E679424bc13A466aAe79DF17fC76506695B5bbf'},
     {key:'monad', blockSec:0.4,    code:'MON',  name:'Monad',     short:'Monad',    chainId:143,   native:'MON',  cg:'monad',       logo:'/img/chains/monad.png',    color:'#836ef9', main:false, live:false,
-     rpc:'https://rpc.monad.xyz',                    explorer:'https://monadscan.com',    lzEid:30390, poolManager:'0x188d586Ddcf52439676Ca21A244753fA19F9Ea8e', launchGas:7290000},
+     rpc:'https://rpc.monad.xyz',                    explorer:'https://monadscan.com',    lzEid:30390, poolManager:'0x188d586Ddcf52439676Ca21A244753fA19F9Ea8e', launchGas:4000000, factory:'0x4f91CbFc45e76256Cd350A21Fe68Ec630731f492', hook:'0x1aA99bACdfaC82C488BC4c2756da24d618c380cC', router:'0x0d0c4f86375a8361CDD2B5Df04Cf6540a2896c6d'},
     {key:'megaeth', blockSec:1,  code:'MEGA', name:'MegaETH',   short:'MegaETH',  chainId:4326,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/megaeth.png',  color:'#ff7aa2', main:false, live:false,
-     rpc:'https://mainnet.megaeth.com/rpc',          explorer:'https://mega.etherscan.io', lzEid:30398, poolManager:'0xaCB7e78fa05D562e0A5D3089ec896D57D057d38E', launchGas:7290000},
+     rpc:'https://mainnet.megaeth.com/rpc',          explorer:'https://mega.etherscan.io', lzEid:30398, poolManager:'0xaCB7e78fa05D562e0A5D3089ec896D57D057d38E', launchGas:4000000, factory:'0x9E679424bc13A466aAe79DF17fC76506695B5bbf', hook:'0x47a94C1cAceF22027756687F1Bf20031d44E00cc', router:'0x245EBB207bb18bB4E7E3A81aF9f7E69a43b63DD0'},
     {key:'unichain', blockSec:1, code:'UNI',  name:'Unichain',  short:'Unichain', chainId:130,   native:'ETH',  cg:'ethereum',    logo:'/img/chains/unichain.png', color:'#f50db4', main:false, live:false,
-     rpc:'https://mainnet.unichain.org',             explorer:'https://uniscan.xyz',      lzEid:30320, poolManager:'0x1F98400000000000000000000000000000000004', launchGas:7290000},
-    /* Solana is not an EVM chain: no Uniswap v4 and no shared address. A coin there is its own Solana token with its
-       own address, linked to the EVM chains through LayerZero. Shown as coming; nothing on the site sends to it. */
+     rpc:'https://mainnet.unichain.org',             explorer:'https://uniscan.xyz',      lzEid:30320, poolManager:'0x1F98400000000000000000000000000000000004', launchGas:4000000, factory:'0x0d0c4f86375a8361CDD2B5Df04Cf6540a2896c6d', hook:'0xb12DB7Ae3CaBc9eD9e46908B4c49a1A92e1240cC', router:'0x9E679424bc13A466aAe79DF17fC76506695B5bbf'},
+    /* Solana is not an EVM chain: no Uniswap v4 and no shared address. A coin there is its own Token-2022 mint with its
+       own address and a Meteora DAMM v2 pool (solana/ in the repo; program deployed 2026-10-26). Not bridged yet, and
+       the site has no Solana wallet yet, so nothing on the site sends to it. */
     {key:'sol', blockSec:0.4,      code:'SOL',  name:'Solana',    short:'Solana',   chainId:null,  native:'SOL',  cg:'solana',      logo:'/img/chains/sol.png',      color:'#14f195', main:false, live:false, evm:false, dex:'Meteora',
+     program:'6mdh7toDGpPEk8CYokVLi2aQMLDnB9jVkzhP5n9Dt4wR', config:'9UtTwTMw5vGcfj1RL1SXhvym4XRvwNWpkbJpDp7dWQgg',
      rpc:'https://api.mainnet-beta.solana.com',      explorer:'https://solscan.io',       lzEid:30168, poolManager:'',                                           launchGas:0}
   ],
   /* launch fee: gas on every chosen chain plus this margin; bridge: LayerZero fees */
