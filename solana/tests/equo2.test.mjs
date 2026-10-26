@@ -31,7 +31,7 @@ const PROGRAM = new PublicKey(process.env.EQUO_SOL || '6mdh7toDGpPEk8CYokVLi2aQM
 const DAMM = new PublicKey('cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG');
 const OFT_PROGRAM = new PublicKey('DoxcCwT4ChjfNgNK6RcYthCga51tDjpWSCiHet4dLjs2');
 const BPF_UPGRADEABLE = new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111');
-const TOTAL = 1_000_000_000n * 1_000_000_000n;
+const CHAIN_SUPPLY = 1_000_000_000n * 1_000_000_000n; // 1B on every chain
 const SOL_EID = 30168;
 
 const wallet = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(`${homedir()}/.config/solana/id.json`, 'utf8'))));
@@ -111,11 +111,11 @@ const SOL_USD18 = 150n * 10n ** 18n;
 async function snapshot(creatorSol, opts = {}) {
   const escrow = Keypair.generate();
   const store = pda([Buffer.from('OFT'), escrow.publicKey.toBuffer()], OFT_PROGRAM);
-  const solSlice = opts.solSlice ?? 250_000_000n * 10n ** 9n;
-  const rest = (TOTAL - solSlice) / 3n / 10n ** 9n * 10n ** 9n;
+  const solSlice = opts.solSlice ?? CHAIN_SUPPLY;
+  const rest = CHAIN_SUPPLY;
   const evm = () => ethers.zeroPadValue(ethers.hexlify(ethers.randomBytes(20)), 32);
   const legs = [
-    { eid: 30101, coin: evm(), legSalt: ethers.hexlify(ethers.randomBytes(32)), slice: TOTAL - solSlice - 2n * rest, quoteUsd18: 3000n * 10n ** 18n },
+    { eid: 30101, coin: evm(), legSalt: ethers.hexlify(ethers.randomBytes(32)), slice: rest, quoteUsd18: 3000n * 10n ** 18n },
     { eid: 30102, coin: evm(), legSalt: ethers.hexlify(ethers.randomBytes(32)), slice: rest, quoteUsd18: 700n * 10n ** 18n },
     { eid: SOL_EID, coin: ethers.hexlify(store.toBuffer()), legSalt: ethers.hexlify(creatorSol.toBuffer()), slice: solSlice, quoteUsd18: opts.quote ?? SOL_USD18 },
     { eid: 30367, coin: evm(), legSalt: ethers.hexlify(ethers.randomBytes(32)), slice: rest, quoteUsd18: 40n * 10n ** 18n },
@@ -268,11 +268,11 @@ test('launch: 9-decimal coin, its slice, mint authority with the OFT store, no f
   await expectFail(send([launchIx(launcher, mint2, nft2, s1.s, creator.publicKey, 0)], [launcher, mint2, nft2], 1_000_000), /AlreadyLaunched/);
 });
 
-test('launch buy: fee-free, priced on the curve from $3,000 for the 1B, coins to the creator', async () => {
-  // the 1B at $3,000 and $150/SOL is 20 SOL; the Solana slice is a quarter, so the curve starts at 5 SOL for it
+test('launch buy: fee-free, priced on the curve from $3,000 for the chain\'s 1B, coins to the creator', async () => {
+  // 1B at $3,000 and $150/SOL is 20 SOL
   const got = await coinsOf(creator.publicKey, s1.mint);
   const slice = Number(s1.s.snap.legs[2].slice);
-  const capSol = 20 * slice / Number(TOTAL);
+  const capSol = 20;
   const want = slice * 1 / (1 + capSol);
   assert.ok(Math.abs(Number(got) - want) / want < 1e-6, `got ${got}, want ${want}`);
   assert.equal(await coinsOf(launcher.publicKey, s1.mint), 0n);

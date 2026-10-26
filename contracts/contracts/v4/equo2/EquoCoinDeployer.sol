@@ -28,7 +28,7 @@ contract EquoCoinCreator {
         deployer = deployer_;
     }
 
-    function pendingCoin() external view returns (string memory, string memory, string memory, uint256, address) {
+    function pendingCoin() external view returns (string memory, string memory, string memory, uint256, uint256, address) {
         return EquoCoinDeployer(deployer).pendingCoin();
     }
 
@@ -99,6 +99,7 @@ contract EquoCoinDeployer {
         string symbol;
         string metadataURI;
         uint256 slice;
+        uint256 launchTotal;
         address creator;
         address bridgeFeeTo;
     }
@@ -203,9 +204,9 @@ contract EquoCoinDeployer {
     // What a coin under construction reads back
     // ---------------------------------------------------------------------
 
-    function pendingCoin() external view returns (string memory, string memory, string memory, uint256, address) {
+    function pendingCoin() external view returns (string memory, string memory, string memory, uint256, uint256, address) {
         Init storage p = _pending;
-        return (p.name, p.symbol, p.metadataURI, p.slice, p.creator);
+        return (p.name, p.symbol, p.metadataURI, p.slice, p.launchTotal, p.creator);
     }
 
     function pendingLz() external view returns (address, address, address) {

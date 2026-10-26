@@ -31,9 +31,9 @@ interface IWrappedNativeDeposit {
 ///
 ///         ONE SIGNED SNAPSHOT FOR EVERY CHAIN. The launch service signs a snapshot of the whole launch once (EIP-712,
 ///         no chain in the domain, so the same signature works on every chain): the coin's name, symbol, metadata
-///         and fee, and one leg per chain with that chain's coin address, salt, supply slice and the USD price of its
-///         pair. Each chain's factory checks the signature, its own leg, and that the slices add up to the coin's 1B,
-///         then opens its pool at the same USD price as every other leg. A snapshot is good for at most an hour and
+///         and fee, and one leg per chain with that chain's coin address, salt, supply (1B on every chain, so a coin on
+///         N chains has N billion in all) and the USD price of its pair. Each chain's factory checks the signature, its
+///         own leg and that every leg is 1B, then opens its pool at $3,000 for its 1B: the same price on every chain. A snapshot is good for at most an hour and
 ///         each launch id launches once per chain.
 ///
 ///         WHO LAUNCHES. The creator, an approved launcher (the launch service, which completes the legs the
@@ -50,11 +50,10 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
 
-    /// @notice Every coin's supply across all its chains: 1B coins of 9 decimals.
-    uint256 public constant TOTAL_SUPPLY = 1_000_000_000 * 1e9;
-    uint256 internal constant WHOLE = 1e9;
-    /// @notice Every coin opens at this fully diluted value (its 1B at the opening price), on every chain.
-    uint256 public constant START_FDV_USD18 = 3_000e18;
+    /// @notice A coin's supply on each of its chains: 1B coins of 9 decimals. A coin on N chains has N billion.
+    uint256 public constant CHAIN_SUPPLY = 1_000_000_000 * 1e9;
+    /// @notice Every chain's 1B opens at this market cap, so every chain opens at the same price.
+    uint256 public constant START_MCAP_USD18 = 3_000e18;
     int24 public constant TICK_SPACING = 60;
     uint64 public constant MAX_SNAPSHOT_LIFE = 1 hours;
     uint256 public constant MAX_LEGS = 16;
@@ -72,7 +71,7 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
         uint32 eid; // LayerZero endpoint id of the leg's chain
         bytes32 coin; // the coin's address on that chain (a Solana leg: its OFT store)
         bytes32 legSalt; // the salt that gives that address (zero for a non-EVM leg)
-        uint256 slice; // the leg's share of the 1B, 9 decimals, whole coins
+        uint256 slice; // the leg's supply: always 1B (9 decimals)
         uint256 quoteUsd18; // the USD price of one whole pair token on that chain, 18 decimals
     }
 
@@ -292,7 +291,15 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
         if (leg.quoteUsd18 < minQuoteUsd18 || leg.quoteUsd18 > maxQuoteUsd18) revert PriceOutOfBand();
         token = coinDeployer.deploy(
             coinSalt(s.launchId, s.creator, leg.legSalt),
-            EquoCoinDeployer.Init({name: s.name, symbol: s.symbol, metadataURI: s.metadataURI, slice: leg.slice, creator: s.creator, bridgeFeeTo: feeRecipient}),
+            EquoCoinDeployer.Init({
+                name: s.name,
+                symbol: s.symbol,
+                metadataURI: s.metadataURI,
+                slice: leg.slice,
+                launchTotal: leg.slice * s.legs.length,
+                creator: s.creator,
+                bridgeFeeTo: feeRecipient
+            }),
             eids,
             peers
         );
@@ -320,12 +327,10 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
         }
     }
 
-    /// @dev Check the legs (ascending chains, whole-coin slices adding up to the 1B) and find this chain's; the
-    ///      others become the coin's peers.
+    /// @dev Check the legs (ascending chains, 1B each) and find this chain's; the others become the coin's peers.
     function _legs(Leg[] calldata legs) internal view returns (uint256 me, uint32[] memory eids, bytes32[] memory peers) {
         uint256 n = legs.length;
         if (n == 0 || n > MAX_LEGS) revert BadSnapshot();
-        uint256 total;
         bool found;
         eids = new uint32[](n - 1);
         peers = new bytes32[](n - 1);
@@ -333,8 +338,7 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
         for (uint256 i; i < n; i++) {
             Leg calldata l = legs[i];
             if (i > 0 && l.eid <= legs[i - 1].eid) revert BadSnapshot();
-            if (l.slice == 0 || l.slice % WHOLE != 0 || l.coin == bytes32(0)) revert BadSnapshot();
-            total += l.slice;
+            if (l.slice != CHAIN_SUPPLY || l.coin == bytes32(0)) revert BadSnapshot();
             if (l.eid == eid) {
                 me = i;
                 found = true;
@@ -345,15 +349,15 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
                 k++;
             }
         }
-        if (!found || total != TOTAL_SUPPLY) revert BadSnapshot();
+        if (!found) revert BadSnapshot();
     }
 
     /// @dev The opening price: the snapshot's USD price as pair units per coin unit, rounded up to a usable tick so
     ///      the pool never opens cheaper than the snapshot. The position spans from there to the top of the range.
     function _opening(uint256 quoteUsd18) internal view returns (uint160 sqrtStart, int24 lower, int24 upper) {
         uint256 pairUnit = 10 ** IERC20Metadata(weth).decimals();
-        // pair units per coin unit, 1e36 fixed point: (FDV / total coin units) / (USD per pair unit)
-        uint256 priceQ = Math.mulDiv(START_FDV_USD18 * pairUnit, 1e36, quoteUsd18 * TOTAL_SUPPLY);
+        // pair units per coin unit, 1e36 fixed point: (start cap / the chain's coin units) / (USD per pair unit)
+        uint256 priceQ = Math.mulDiv(START_MCAP_USD18 * pairUnit, 1e36, quoteUsd18 * CHAIN_SUPPLY);
         if (priceQ == 0) revert PriceOutOfBand();
         uint160 target = uint160(Math.sqrt(Math.mulDiv(priceQ, 1 << 128, 1e36)) << 32);
         if (target < TickMath.MIN_SQRT_PRICE || target >= TickMath.MAX_SQRT_PRICE) revert PriceOutOfBand();

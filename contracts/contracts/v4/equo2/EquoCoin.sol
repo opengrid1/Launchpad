@@ -10,15 +10,15 @@ interface IEquoCoinPending {
     function pendingCoin()
         external
         view
-        returns (string memory name, string memory symbol, string memory metadataURI, uint256 slice, address creator);
+        returns (string memory name, string memory symbol, string memory metadataURI, uint256 slice, uint256 launchTotal, address creator);
     /// @dev LayerZero endpoint on this chain, the wiring owner (the coin deployer) and the bridge fee recipient.
     function pendingLz() external view returns (address endpoint, address owner, address bridgeFeeTo);
 }
 
 /// @title EquoCoin
 /// @notice An Equo coin: an ERC-20 with 9 decimals and EIP-2612 permits that lives on several chains as one
-///         LayerZero OFT. Each chain mints its own slice of the coin's 1B once, at construction, to the factory,
-///         which puts it into that chain's pool. Bridging burns on the way out and mints on the way in (Solana
+///         LayerZero OFT. Each chain mints its own 1B once, at construction, to the factory, which puts it into that
+///         chain's pool; a coin on N chains has N billion in all ({launchTotal}). Bridging burns on the way out and mints on the way in (Solana
 ///         included), so the total across chains never changes; 0.2% of a bridged amount goes to the platform.
 ///         No further mint, no burn, no pause, no blacklist, no tax on transfers.
 ///
@@ -34,8 +34,10 @@ contract EquoCoin is OFT, ERC20Permit {
 
     /// @notice Receives the 0.2% bridge fee.
     address public immutable bridgeFeeTo;
-    /// @notice What this chain minted at launch.
+    /// @notice What this chain minted at launch (1B).
     uint256 public immutable launchSlice;
+    /// @notice What every chain of the coin minted at launch together: 1B times its chain count.
+    uint256 public immutable launchTotal;
     /// @notice The coin's creator, recorded for good.
     address public immutable creator;
 
@@ -57,10 +59,11 @@ contract EquoCoin is OFT, ERC20Permit {
         ERC20Permit(_name())
         Ownable(_wiringOwner())
     {
-        (,, string memory uri, uint256 slice, address creator_) = IEquoCoinPending(msg.sender).pendingCoin();
+        (,, string memory uri, uint256 slice, uint256 total, address creator_) = IEquoCoinPending(msg.sender).pendingCoin();
         (,, bridgeFeeTo) = IEquoCoinPending(msg.sender).pendingLz();
         _metadataURI = uri;
         launchSlice = slice;
+        launchTotal = total;
         creator = creator_;
         metadataAuthority = creator_;
         _mint(_wiringOwner(), slice);
@@ -106,11 +109,11 @@ contract EquoCoin is OFT, ERC20Permit {
     }
 
     function _name() private view returns (string memory n) {
-        (n,,,,) = IEquoCoinPending(msg.sender).pendingCoin();
+        (n,,,,,) = IEquoCoinPending(msg.sender).pendingCoin();
     }
 
     function _symbol() private view returns (string memory s) {
-        (, s,,,) = IEquoCoinPending(msg.sender).pendingCoin();
+        (, s,,,,) = IEquoCoinPending(msg.sender).pendingCoin();
     }
 
     function _endpoint() private view returns (address e) {

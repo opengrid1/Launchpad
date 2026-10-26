@@ -5,8 +5,8 @@
 //! price of that chain's pair. This program checks the signature (secp256k1, as on the EVM chains), the Solana
 //! leg, and that the snapshot is fresh and unused (post_snapshot), then at launch:
 //!   - makes the Token-2022 coin (9 decimals, metadata on the mint, no freeze authority, immutable metadata),
-//!   - mints the Solana slice and opens a Meteora DAMM v2 pool against wrapped SOL at a $3,000 value for the
-//!     coin's 1B, with the coin's fixed fee and a floor at the opening price,
+//!   - mints Solana's 1B and opens a Meteora DAMM v2 pool against wrapped SOL at $3,000 for it (the same price as
+//!     every other chain), with the coin's fixed fee and a floor at the opening price,
 //!   - hands the mint authority to the coin's LayerZero OFT store, so bridging mints and burns the coin like every
 //!     other chain's copy. The launch service then initialises the OFT store and wires its EVM peers.
 //!
@@ -60,11 +60,10 @@ pub const BPF_UPGRADEABLE: Pubkey = [2, 168, 246, 145, 78, 136, 161, 176, 226, 1
 /// LayerZero's endpoint id for Solana mainnet.
 pub const SOL_EID: u32 = 30168;
 pub const COIN_DECIMALS: u8 = 9;
-/// 1B coins across every chain the coin lives on.
-pub const TOTAL_SUPPLY: u64 = 1_000_000_000 * 1_000_000_000;
-pub const WHOLE: u64 = 1_000_000_000;
-/// Every coin opens at this value for its 1B (USD, 18 decimals), on every chain.
-pub const START_FDV_USD18: u128 = 3_000 * 1_000_000_000_000_000_000;
+/// A coin's supply on each of its chains: 1B. A coin on N chains has N billion.
+pub const CHAIN_SUPPLY: u64 = 1_000_000_000 * 1_000_000_000;
+/// Every chain's 1B opens at this market cap (USD, 18 decimals), so every chain opens at the same price.
+pub const START_MCAP_USD18: u128 = 3_000 * 1_000_000_000_000_000_000;
 pub const BPS: u64 = 10_000;
 pub const MIN_FEE_BPS: u16 = 30;
 pub const MAX_FEE_BPS: u16 = 500;
@@ -643,7 +642,7 @@ mod snap {
 /// slice u64, quote_usd18 u128 (the Solana leg, exactly one), then the signature[65].
 ///
 /// Only the Solana leg is spelled out (the full snapshot does not fit a Solana transaction); the signature still
-/// covers every leg, and every EVM chain checks that the slices add up to the 1B.
+/// covers every leg, and every chain checks its own leg is 1B.
 #[inline(never)]
 fn post_snapshot(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
     let [payer, config, marker, system, ..] = accounts else {
@@ -681,7 +680,7 @@ fn post_snapshot(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
         let slice = r.u64()?;
         let quote = r.u128()?;
         req!(eid == SOL_EID && sol.is_none(), E::BadSnapshot);
-        req!(slice > 0 && slice % WHOLE == 0 && slice <= TOTAL_SUPPLY, E::BadSnapshot);
+        req!(slice == CHAIN_SUPPLY, E::BadSnapshot);
         let h = keccak(&[&leg_type, &word_u64(eid as u64), coin_b, salt_b, &word_u64(slice), &word_u128(quote)]);
         leg_hashes[i * 32..i * 32 + 32].copy_from_slice(&h);
         sol = Some((slice, quote, coin_b.try_into().unwrap(), salt_b.try_into().unwrap()));
@@ -789,11 +788,11 @@ fn launch(accounts: &[AccountInfo], r: &mut Rd) -> ProgramResult {
     req!(find_program_address(&[OFT_SEED, oft_escrow.key()], &OFT_PROGRAM).0 == coin_store, E::BadSnapshot);
     write(marker, snap::STATE, &[1])?;
 
-    // opening price: the coin's 1B at $3,000, in SOL
-    let cap_lamports = math::mul_div(START_FDV_USD18, 1_000_000_000, quote)
+    // opening price: the chain's 1B at $3,000, in SOL
+    let cap_lamports = math::mul_div(START_MCAP_USD18, 1_000_000_000, quote)
         .and_then(|v| u64::try_from(v).ok())
         .ok_or_else(|| fail(E::BadPrice))?;
-    let sqrt_min = math::sqrt_price_for_cap(cap_lamports, TOTAL_SUPPLY).ok_or_else(|| fail(E::BadPrice))?;
+    let sqrt_min = math::sqrt_price_for_cap(cap_lamports, CHAIN_SUPPLY).ok_or_else(|| fail(E::BadPrice))?;
     let sqrt_max = math::MAX_SQRT_PRICE;
     let liquidity = math::liquidity_for_coins(slice, sqrt_min, sqrt_max).ok_or_else(|| fail(E::Math))?;
     let sqrt_price = math::sqrt_price_after_buy(sqrt_min, liquidity, first_buy).ok_or_else(|| fail(E::Math))?;

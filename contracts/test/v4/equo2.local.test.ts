@@ -9,7 +9,7 @@ import { join } from "path";
  * PoolManager, LayerZero endpoint mock, coin deployer, fee hook, factory and router.
  *
  * What this proves:
- *   - one signed snapshot launches a coin on every chain; each chain's coin has its own address ending in e9;
+ *   - one signed snapshot launches a coin on every chain, 1B on each; each chain's coin has its own address ending in e9;
  *   - every leg opens at the same USD price whatever its pair costs, never cheaper than the snapshot;
  *   - peers are wired at birth and sealed; bridging burns, mints, keeps the total and takes 0.2%;
  *   - the fee is fixed per coin and splits max(20% of the fee, 0.2% of volume) to the platform, the rest to the
@@ -20,7 +20,7 @@ import { join } from "path";
 
 const HOOK_FLAGS = (1n << 13n) | (1n << 11n) | (1n << 7n) | (1n << 6n) | (1n << 3n) | (1n << 2n);
 const FLAG_MASK = (1n << 14n) - 1n;
-const TOTAL = 1_000_000_000n * 10n ** 9n;
+const CHAIN_SUPPLY = 1_000_000_000n * 10n ** 9n; // 1B on every chain
 const CEILING = 1n << 156n;
 const coder = ethers.AbiCoder.defaultAbiCoder();
 const pad = (a: string) => ethers.zeroPadValue(a, 32);
@@ -119,11 +119,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
   async function buildSnapshot(env: any, opts: { tag: string; feeBps?: number; slices?: bigint[]; deadline?: number; creator?: string }) {
     const launchId = ethers.id(`launch-${opts.tag}`);
     const creator = opts.creator ?? env.creator.address;
-    const slices = opts.slices ?? [TOTAL / 3n * 1n - (TOTAL / 3n) % 10n ** 9n, 0n, 0n];
-    if (!opts.slices) {
-      const each = (TOTAL / 3n / 10n ** 9n) * 10n ** 9n;
-      slices[0] = TOTAL - 2n * each; slices[1] = each; slices[2] = each;
-    }
+    const slices = opts.slices ?? [CHAIN_SUPPLY, CHAIN_SUPPLY, CHAIN_SUPPLY];
     const legs = [];
     for (let i = 0; i < env.chains.length; i++) {
       const c = env.chains[i];
@@ -174,7 +170,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     return sqrtP * sqrtP * 1e9 / 1e18 * Number(usd);
   }
 
-  it("launches one coin on three chains from one signature, each with its own e9 address", async () => {
+  it("launches one coin on three chains from one signature, 1B each, each with its own e9 address", async () => {
     const env = await deployAll();
     const { addrs, coins, snap } = await launchAll(env, "A");
     expect(new Set(addrs.map((a: string) => a.toLowerCase())).size).to.equal(3);
@@ -188,10 +184,11 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
       expect(await coin.creator()).to.equal(env.creator.address);
       expect(await coin.metadataAuthority()).to.equal(env.creator.address);
       for (let j = 0; j < 3; j++) if (j !== i) expect(await coin.peers(CHAINS[j].eid)).to.equal(pad(addrs[j]));
+      expect(await coin.launchTotal()).to.equal(3n * CHAIN_SUPPLY);
       total += await coin.totalSupply();
       expect((await env.chains[i].factory.listings(addrs[i])).creator).to.equal(env.creator.address);
     }
-    expect(total).to.equal(TOTAL);
+    expect(total).to.equal(3n * CHAIN_SUPPLY);
   });
 
   it("opens every chain at the same USD price, never cheaper than the snapshot and within 0.6%", async () => {
@@ -278,7 +275,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     expect(await coins[0].balanceOf(env.feeWallet.address)).to.equal(fee);
     let local = 0n;
     for (const c of coins) local += await c.localSupply();
-    expect(local).to.equal(TOTAL - 0n); // every chain's coins together: nothing created or lost
+    expect(local).to.equal(3n * CHAIN_SUPPLY); // every chain's coins together: nothing created or lost
     expect(await coins[0].totalSupply()).to.equal((await env.chains[0].factory.listings(addrs[0]))[5]);
   });
 
@@ -298,7 +295,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     await expect(c.pm.connect(env.outsider).initialize(fake, 2n ** 96n)).to.be.reverted;
   });
 
-  it("refuses a bad snapshot: wrong signer, expired, reused, slices not adding up, outsider caller", async () => {
+  it("refuses a bad snapshot: wrong signer, expired, reused, a leg that is not 1B, outsider caller", async () => {
     const env = await deployAll();
     const f = env.chains[0].factory;
     // wrong signer
@@ -307,8 +304,8 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     await expect(f.connect(env.creator).launch(a.snap, bad)).to.be.revertedWithCustomError(f, "BadSignature");
     // outsider may not launch for the creator
     await expect(f.connect(env.outsider).launch(a.snap, a.sig)).to.be.revertedWithCustomError(f, "NotAllowed");
-    // slices not adding up to the 1B
-    const b = await buildSnapshot(env, { tag: "W2", slices: [TOTAL / 2n, TOTAL / 4n, TOTAL / 8n] });
+    // every leg is 1B
+    const b = await buildSnapshot(env, { tag: "W2", slices: [CHAIN_SUPPLY, CHAIN_SUPPLY / 2n, CHAIN_SUPPLY] });
     await expect(f.connect(env.creator).launch(b.snap, b.sig)).to.be.revertedWithCustomError(f, "BadSnapshot");
     // more than an hour ahead, or past its deadline
     const c = await buildSnapshot(env, { tag: "W3", deadline: (await time.latest()) + 7200 });
