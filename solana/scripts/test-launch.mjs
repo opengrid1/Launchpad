@@ -1,6 +1,8 @@
 // Mainnet smoke test: launch one coin, buy and sell straight on its DAMM v2 pool, then claim the fees
 // and print the 70/30 split. Signs with PAYER (default ~/.config/solana/id.json).
 //   RPC=https://api.mainnet-beta.solana.com PAYER=.keys/deployer.json EQUO_CONFIRM_TEST=1 node scripts/test-launch.mjs
+// For the Solana side of a multichain coin: NAME, SYMBOL, SPLIT (the coin's chain count) and EVM (the coin's EVM
+// address, written into the metadata as "equo" so the site shows one coin); TRADE=0 skips the trades and claim.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -21,6 +23,9 @@ const keyPath = (process.env.PAYER || `${homedir()}/.config/solana/id.json`).rep
 const payer = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(keyPath, 'utf8'))));
 const FIRST_BUY = BigInt(Math.round(Number(process.env.TEST_FIRST_BUY_SOL || '0.02') * LAMPORTS_PER_SOL));
 const TRADE = BigInt(Math.round(Number(process.env.TEST_TRADE_SOL || '0.005') * LAMPORTS_PER_SOL));
+const NAME = process.env.NAME || 'Equo Test', SYMBOL = process.env.SYMBOL || 'EQTEST', SPLIT = Number(process.env.SPLIT || '1');
+const EVM = process.env.EVM || '', DO_TRADES = process.env.TRADE !== '0';
+if (EVM && !/^0x[0-9a-fA-F]{40}$/.test(EVM)) throw new Error('EVM must be a 0x address');
 
 const disc = (n) => createHash('sha256').update(`global:${n}`).digest().subarray(0, 8);
 const u8 = (v) => Buffer.from([v]);
@@ -63,7 +68,8 @@ const mint = Keypair.generate();
 const nft = Keypair.generate();
 const pool = poolOf(mint.publicKey, NATIVE_MINT);
 const coin = pda([Buffer.from('coin'), mint.publicKey.toBuffer()]);
-const uri = 'data:application/json,' + JSON.stringify({ name: 'Equo Test', symbol: 'EQTEST', image: 'https://equo-fun.vercel.app/img/apple-touch-icon.png' });
+const uri = 'data:application/json,' + JSON.stringify({ name: NAME, symbol: SYMBOL, image: 'https://equo-fun.vercel.app/img/apple-touch-icon.png', ...(EVM ? { equo: EVM.toLowerCase() } : {}) });
+if (uri.length > 200) throw new Error('metadata URI over 200 bytes');
 const launch = new TransactionInstruction({
   programId: PROGRAM,
   keys: [
@@ -74,12 +80,13 @@ const launch = new TransactionInstruction({
     w(vaultOf(mint.publicKey, pool)), w(vaultOf(NATIVE_MINT, pool)), r(POOL_AUTH), r(DAMM_EVENTS), r(DAMM),
     r(TOKEN_2022_PROGRAM_ID), r(TOKEN_PROGRAM_ID), r(ASSOCIATED_TOKEN_PROGRAM_ID), r(SystemProgram.programId),
   ],
-  data: Buffer.concat([disc('launch'), str('Equo Test'), str('EQTEST'), str(uri), u16(100), u16(0), u32(0), u8(1), u8(0), u64(FIRST_BUY)]),
+  data: Buffer.concat([disc('launch'), str(NAME), str(SYMBOL), str(uri), u16(100), u16(0), u32(0), u8(SPLIT), u8(0), u64(FIRST_BUY)]),
 });
 const sig = await send([...wrapIxs(payer.publicKey, FIRST_BUY), launch], [payer, mint, nft]);
 const myCoin = ata(payer.publicKey, mint.publicKey, TOKEN_2022_PROGRAM_ID);
 console.log(`launched ${mint.publicKey.toBase58()} (pool ${pool.toBase58()}) in ${sig}`);
-console.log(`  first buy ${Number(FIRST_BUY) / 1e9} SOL -> ${Number(await bal(myCoin, TOKEN_2022_PROGRAM_ID)) / 1e6} EQTEST`);
+console.log(`  first buy ${Number(FIRST_BUY) / 1e9} SOL -> ${Number(await bal(myCoin, TOKEN_2022_PROGRAM_ID)) / 1e6} ${SYMBOL}`);
+if (!DO_TRADES) { console.log(`done. ${(await cx.getBalance(payer.publicKey)) / 1e9} SOL left`); process.exit(0); }
 
 // buy and sell straight on the pool (DAMM v2 swap2, exact in)
 const swap = (buy, amountIn) => new TransactionInstruction({

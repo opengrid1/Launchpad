@@ -176,8 +176,48 @@
     await Promise.all(states.map(async (s, i) => {
       const meta = parseMeta(raw[i * 2]), info = await readUri(meta.uri);
       const vA = Number(u64(vaults[i * 2], 64)), vB = Number(u64(vaults[i * 2 + 1], 64));
-      COINS.set(s.mint, build(s.mint, s, meta, info, pools[i], vA, vB));
+      const x = build(s.mint, s, meta, info, pools[i], vA, vB);
+      const evm = String(info.equo || info.evm || '').toLowerCase();
+      x._claim = /^0x[0-9a-f]{40}$/.test(evm) ? evm : '';
+      COINS.set(s.mint, x);
     }));
+    await checkLinks();
+  }
+
+  // ---------------------------------------------------------------- one coin on every chain
+  /* A multichain launch makes the EVM coins (one address on every EVM chain) and a Solana coin whose metadata names
+     that address ("equo": "0x…"). The site shows them as one coin only when the Solana coin was launched by a
+     trusted launcher (config: chains.sol.linkers, the launch service), so nobody can attach a Solana coin to
+     someone else's coin by naming it. */
+  const LINKED = new Map(); // evm address -> Solana coin
+  const linkers = new Set((S.linkers || []).map(String));
+  async function launchPayer(x) {
+    const ck = 'equo-sol-payer:' + x.coinPda;
+    try { const c = localStorage.getItem(ck); if (c) return c; } catch { }
+    const sigs = await rpc('getSignaturesForAddress', [x.coinPda, { limit: 1000 }]);
+    const first = sigs[sigs.length - 1]; if (!first) return '';
+    const t = await rpc('getTransaction', [first.signature, { encoding: 'json', maxSupportedTransactionVersion: 0 }]);
+    const payer = t && t.transaction.message.accountKeys[0];
+    try { if (payer) localStorage.setItem(ck, payer); } catch { }
+    return payer || '';
+  }
+  async function checkLinks() {
+    LINKED.clear();
+    await Promise.all([...COINS.values()].filter((x) => x._claim).map(async (x) => {
+      try { if (linkers.has(await launchPayer(x))) { x.link = x._claim; LINKED.set(x._claim, x); } } catch { }
+    }));
+  }
+  /** an EVM coin with its Solana pool added: chains, addresses, pools, and market cap, volume and liquidity summed */
+  function merge(ev, x) {
+    if (!ev || !x) return ev;
+    const supSol = (x.byChain.sol || {}).supply || 0, mcSol = x.px * supSol;
+    const chains = [...new Set([...(ev.chains && ev.chains.length ? ev.chains : ['eth']), 'sol'])];
+    const pools = { ...(ev.pools || {}), sol: x.pools.sol };
+    return {
+      ...ev, chains, addrs: { ...(ev.addrs || { eth: ev.addr }), sol: x.addr }, byChain: { ...(ev.byChain || {}), sol: x.byChain.sol }, pools,
+      poolsLive: (ev.poolsLive || 1) + 1, mc: (ev.mc || 0) + mcSol, liqAll: (ev.liqAll || ev.liq || 0) + x.liq,
+      vol: (ev.vol || 0) + (x.vol || 0), trades: (ev.trades || 0) + (x.trades || 0), h: (ev.h || 0) + (x.h || 0), solCoin: x.addr,
+    };
   }
 
   // ---------------------------------------------------------------- trades
@@ -382,8 +422,22 @@
   // ---------------------------------------------------------------- hook into the chain layer
   const solOf = (a) => byKey(a);
   const wrap = (name, fn) => { const orig = C[name]; C[name] = function (a, ...rest) { const x = solOf(a); return x ? fn(x, ...rest) : orig ? orig.apply(this, arguments) : undefined; }; };
-  const t0 = C.tokens; C.tokens = () => (t0 ? t0() : []).concat([...COINS.values()]);
-  const tk = C.token; C.token = (a) => solOf(a) || (tk ? tk(a) : null);
+  const t0 = C.tokens;
+  C.tokens = () => {
+    const ev = (t0 ? t0() : []).map((t) => (LINKED.has(lc(t.addr)) ? merge(t, LINKED.get(lc(t.addr))) : t));
+    const shown = new Set(ev.map((t) => lc(t.addr)));
+    const hide = new Set((cfg.hiddenCoins || []).map(lc));
+    return ev.concat([...COINS.values()].filter((x) => !(x.link && shown.has(x.link))))
+      .map((t) => (hide.has(lc(t.addr)) ? { ...t, hidden: true } : t));
+  };
+  const tk = C.token;
+  C.token = (a) => {
+    const x = solOf(a);
+    if (x && x.link) { const ev = tk ? tk(x.link) : null; if (ev) return merge(ev, x); }
+    if (x) return x;
+    const ev = tk ? tk(a) : null;
+    return ev && LINKED.has(lc(a)) ? merge(ev, LINKED.get(lc(a))) : ev;
+  };
   const at = C.allTrades; C.allTrades = async (...a) => (at ? await at(...a).catch(() => []) : []).concat(...[...TR.values()]);
   wrap('trades', async (x) => (await loadTrades(x).catch(() => TR.get(x.addr) || [])).slice());
   wrap('refresh', async (x) => { await refreshOne(x).catch(() => { }); return x; });
@@ -414,6 +468,11 @@
   wrap('sell', async (x, wei, minWei) => { const sig = await sell(x, BigInt(wei) / W12, BigInt(minWei || 0) / W9); await refreshOne(x).catch(() => { }); return { hash: sig }; });
   wrap('payCreator', async (x) => { const sig = await claimFees(x); await refreshOne(x).catch(() => { }); return { hash: sig }; });
   wrap('claim', async () => { throw new Error('Solana coins have no holder rewards'); });
+  const withSol = (name, join) => { const orig = C[name]; C[name] = async function (a, ...rest) { const x = LINKED.get(lc(a)); const ev = await orig.call(this, a, ...rest); return x ? join(ev, x, rest) : ev; }; };
+  withSol('refresh', async (ev, x) => { await refreshOne(x).catch(() => { }); return ev ? merge(ev, x) : ev; });
+  withSol('trades', async (ev, x) => (ev || []).concat(await loadTrades(x).catch(() => TR.get(x.addr) || [])).sort((p, q) => p.ts - q.ts));
+  withSol('holders', async (ev, x, [n]) => (ev || []).concat(await holders(x, n).catch(() => [])).sort((p, q) => q.bal - p.bal));
+  { const ob = C.bars; C.bars = async function (a, step, from, to, chain) { const x = LINKED.get(lc(a)); return x && chain === 'sol' ? C.bars(x.addr, step, from, to) : ob.apply(this, arguments); }; }
   const eb = C.ethBalance; C.ethBalance = async (a) => (a && !/^0x/i.test(a) ? BigInt(await rpc('getBalance', [a]).then((r) => r.value)) * W9 : eb ? eb(a) : 0n);
   if (C.equo) {
     const E = C.equo, ci = E.creatorInfo, bo = E.balanceOf;

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Equo admin setup</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/img/favicon-32.png">
+<style>
+  :root { --bg: #07090d; --card: #0e1117; --line: #1c212b; --text: #e8ecf3; --dim: #8b93a3; --pri: #4cc3ff; --up: #2fd08f; --dn: #ff5d6c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 Inter, system-ui, -apple-system, Segoe UI, sans-serif; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 32px 16px 60px; }
+  h1 { font-size: 24px; margin: 0 0 6px; }
+  p { color: var(--dim); margin: 0 0 14px; }
+  code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); word-break: break-all; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 16px 0; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .row:first-child { border-top: 0; }
+  .row img { width: 26px; height: 26px; border-radius: 50%; }
+  .row b { min-width: 110px; }
+  .st { flex: 1; color: var(--dim); font-size: 13px; min-width: 160px; }
+  .st.ok { color: var(--up); } .st.err { color: var(--dn); }
+  button { background: var(--pri); color: #001018; border: 0; border-radius: 10px; padding: 9px 14px; font-weight: 600; cursor: pointer; }
+  button.line { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  button:disabled { opacity: .5; cursor: default; }
+  .top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  #who { color: var(--dim); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Admin setup: price updater</h1>
+  <p>Equo's price book on each of these chains only accepts prices from addresses its admin approves. This page asks your
+    admin wallet to approve Equo's launch service, <code id="upd"></code>, once per chain. It is one transaction per chain,
+    paid in that chain's gas coin; your wallet switches networks for each.</p>
+  <p>Only the admin wallet <code id="adm"></code> can do this. You can revoke an approval any time from the same contract.</p>
+  <div class="card">
+    <div class="top"><button id="connect">Connect admin wallet</button><button class="line" id="all" disabled>Approve all</button><span id="who"></span></div>
+  </div>
+  <div class="card" id="rows"></div>
+</div>
+<script src="/config.js?v=14"></script>
+<script>
+(function () {
+  const cfg = window.INKY || {};
+  const UPDATER = '0x54Ee4998B3309b20daf07F082B9ad8d8De380D0F';
+  const ADMIN = cfg.admin;
+  // the price book on each chain without an oracle of its own (contracts/deployments/equo-<chain>.json: contracts.oracle)
+  const BOOKS = {
+    base: '0xE4490a0E0cB8aa41aa42BC2FC7c2C1396F5d0D52', bsc: '0x0a13233D9ace390408D150250B2Ff8fD2F3B7003',
+    arbitrum: '0x5612b52BE6e5ba305862252BFaBfBa5Dc94213Db', hyper: '0x0a13233D9ace390408D150250B2Ff8fD2F3B7003',
+    monad: '0x5612b52BE6e5ba305862252BFaBfBa5Dc94213Db', megaeth: '0x6e71d7A0B3a5f168eBd86B7EcAD1A43D74AAc1D3',
+    unichain: '0x0a13233D9ace390408D150250B2Ff8fD2F3B7003',
+  };
+  const SEL_SET = '0x1a153391', SEL_GET = '0x54a055c1'; // setUpdater(address,bool), updaters(address)
+  const $ = (s) => document.querySelector(s);
+  const pad = (a) => a.toLowerCase().replace(/^0x/, '').padStart(64, '0');
+  // RPCs that answer receipts right after a transaction (some public ones treat that as an archive call)
+  const RPCS = { base: 'https://mainnet.base.org', bsc: 'https://bsc-dataseed.bnbchain.org', arbitrum: 'https://arb1.arbitrum.io/rpc', unichain: 'https://mainnet.unichain.org' };
+  const chains = (cfg.chains || []).filter((c) => BOOKS[c.key]).map((c) => ({ ...c, rpc: RPCS[c.key] || c.rpc }));
+  $('#upd').textContent = UPDATER; $('#adm').textContent = ADMIN;
+  let me = null;
+  const eth = () => window.ethereum;
+
+  $('#rows').innerHTML = chains.map((c) => `<div class="row" data-k="${c.key}"><img src="${c.logo}" alt=""><b>${c.name}</b><span class="st">checking…</span><button data-go="${c.key}" disabled>Approve</button></div>`).join('');
+  const st = (k, t, cls) => { const e = $(`[data-k="${k}"] .st`); e.textContent = t; e.className = 'st ' + (cls || ''); };
+
+  async function rpcCall(c, data) {
+    const r = await fetch(c.rpc, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: BOOKS[c.key], data }, 'latest'] }) });
+    return (await r.json()).result;
+  }
+  async function check(c) {
+    try { const r = await rpcCall(c, SEL_GET + pad(UPDATER)); const on = r && BigInt(r) === 1n; st(c.key, on ? 'Approved' : 'Not approved yet', on ? 'ok' : ''); return on; }
+    catch (e) { st(c.key, 'Could not read the chain', 'err'); return false; }
+  }
+  chains.forEach(check);
+
+  async function toChain(c) {
+    const hex = '0x' + c.chainId.toString(16);
+    try { await eth().request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hex }] }); }
+    catch (e) {
+      if (e && (e.code === 4902 || /unrecognized|not added|unknown chain/i.test(e.message || ''))) {
+        await eth().request({ method: 'wallet_addEthereumChain', params: [{ chainId: hex, chainName: c.name, nativeCurrency: { name: c.native, symbol: c.native, decimals: 18 }, rpcUrls: [c.rpc], blockExplorerUrls: [c.explorer] }] });
+      } else throw e;
+    }
+  }
+  async function waitTx(c, hash) {
+    for (let i = 0; i < 90; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const r = await fetch(c.rpc, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionReceipt', params: [hash] }) });
+      const x = (await r.json()).result;
+      if (x) return x.status === '0x1';
+    }
+    return false;
+  }
+  async function approve(c) {
+    if (await check(c)) return true;
+    st(c.key, 'Switching network…');
+    await toChain(c);
+    st(c.key, 'Confirm in your wallet…');
+    const hash = await eth().request({ method: 'eth_sendTransaction', params: [{ from: me, to: BOOKS[c.key], data: SEL_SET + pad(UPDATER) + pad('0x1') }] });
+    st(c.key, 'Waiting for the chain…');
+    const ok = await waitTx(c, hash);
+    if (!ok) { st(c.key, 'Transaction failed', 'err'); return false; }
+    return check(c);
+  }
+  const run = async (c, btn) => { if (btn) btn.disabled = true; try { await approve(c); } catch (e) { st(c.key, (e && (e.message || e.code)) ? String(e.message || e.code).slice(0, 90) : 'Cancelled', 'err'); } if (btn) btn.disabled = false; };
+
+  $('#connect').onclick = async () => {
+    if (!eth()) { alert('No browser wallet found. Open this page in the wallet app or a browser with your wallet extension.'); return; }
+    const [a] = await eth().request({ method: 'eth_requestAccounts' });
+    me = a;
+    const isAdmin = a.toLowerCase() === ADMIN.toLowerCase();
+    $('#who').textContent = isAdmin ? 'Connected: admin ' + a.slice(0, 6) + '…' + a.slice(-4) : 'Connected ' + a.slice(0, 6) + '…' + a.slice(-4) + ' is not the admin wallet';
+    document.querySelectorAll('[data-go]').forEach((b) => (b.disabled = !isAdmin));
+    $('#all').disabled = !isAdmin;
+  };
+  document.querySelectorAll('[data-go]').forEach((b) => (b.onclick = () => run(chains.find((c) => c.key === b.dataset.go), b)));
+  $('#all').onclick = async (e) => { e.target.disabled = true; for (const c of chains) await run(c); e.target.disabled = false; };
+})();
+</script>
+</body>
+</html>

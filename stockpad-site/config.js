@@ -50,6 +50,8 @@ window.INKY = {
        the site has no Solana wallet yet, so nothing on the site sends to it. */
     {key:'sol', blockSec:0.4,      code:'SOL',  name:'Solana',    short:'Solana',   chainId:null,  native:'SOL',  cg:'solana',      logo:'/img/chains/sol.png',      color:'#14f195', main:false, live:false, evm:false, dex:'Meteora',
      program:'6mdh7toDGpPEk8CYokVLi2aQMLDnB9jVkzhP5n9Dt4wR', config:'9UtTwTMw5vGcfj1RL1SXhvym4XRvwNWpkbJpDp7dWQgg',
+     /* launchers whose Solana coins may name their EVM coin ("equo": "0x…" in the metadata) and show as one coin with it */
+     linkers:['8ijJ63dttUjWgR82FiyrKjgymaWLhDrMVLNmkkNwD8nH'],
      rpc:'https://api.mainnet-beta.solana.com',      explorer:'https://solscan.io',       lzEid:30168, poolManager:'',                                           launchGas:0}
   ],
   /* launch fee: gas on every chosen chain plus this margin; bridge: LayerZero fees */
@@ -59,5 +61,7 @@ window.INKY = {
      into each chain's blocks (approximate block times). */
   minFirstBuyEth: 0.001, seedUsd: 4,
   site: 'https://stockpad-v2.vercel.app',
-  admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b'
+  admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
+  /* coins kept out of the lists (still open by direct link): the single-chain mainnet test coins of 2026-10-26 */
+  hiddenCoins: ['0x090bd18754e76305b6c1847e8bdc62470706614f', 'BvytGttNQJhoi9djKBhFPooD8pehMPVVpkE9dERGaSQb', 'AMN7mYEAHt8uohutUQSi8VTn1FgCiBJcZyhzS11DuBhe']
 };
