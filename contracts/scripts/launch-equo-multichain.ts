@@ -5,7 +5,7 @@
 // approved updater). Plain ethers, one provider per chain; the key comes from contracts/.env.deployer.
 //
 //   EQUO_CONFIRM_MULTI=1 npx ts-node --transpile-only scripts/launch-equo-multichain.ts \
-//     --name "Equo Nine" --symbol NINE --split 9 [--chains eth,base,...] [--salt <text>] [--check]
+//     --name "Equo Nine" --symbol NINE --split 9 [--chains eth,base,...] [--only base,...] [--salt <text>] [--check]
 //
 // --check only predicts the address and checks prices, balances and updater rights; nothing is sent.
 import { ethers } from "ethers";
@@ -16,7 +16,7 @@ const arg = (k: string, d = "") => { const i = process.argv.indexOf("--" + k); r
 const flag = (k: string) => process.argv.includes("--" + k);
 
 type Chain = { key: string; net: string; rpc: string; cg: string; eid: number; minFirstBuy: string };
-const CHAINS: Chain[] = [
+const CHAINS_: Chain[] = [
   { key: "eth", net: "mainnet", rpc: "https://ethereum-rpc.publicnode.com", cg: "ethereum", eid: 30101, minFirstBuy: "0.001" },
   { key: "base", net: "base", rpc: "https://mainnet.base.org", cg: "ethereum", eid: 30184, minFirstBuy: "0.001" },
   { key: "bsc", net: "bsc", rpc: "https://bsc-dataseed.bnbchain.org", cg: "binancecoin", eid: 30102, minFirstBuy: "0.003" },
@@ -26,6 +26,8 @@ const CHAINS: Chain[] = [
   { key: "megaeth", net: "megaeth", rpc: "https://megaeth.drpc.org", cg: "ethereum", eid: 30398, minFirstBuy: "0.001" },
   { key: "unichain", net: "unichain", rpc: "https://mainnet.unichain.org", cg: "ethereum", eid: 30320, minFirstBuy: "0.001" },
 ];
+// <KEY>_RPC overrides a chain's RPC (e.g. UNICHAIN_RPC, MEGAETH_RPC)
+const CHAINS = CHAINS_.map((c) => ({ ...c, rpc: process.env[`${c.key.toUpperCase()}_RPC`] || c.rpc }));
 
 const FACTORY_ABI = [
   "function launch((string name,string symbol,string metadataURI,address pair,uint256 minPairOut,uint8 capPreset,(uint8 feeMode,uint16 feeBps,uint16 snipeBps,uint32 snipeBlocks,uint16 buybackShareBps,uint16 divShareBps,uint16 maxWalletBps,uint32 maxWalletSecs,uint128 buybackThreshold) genes,(uint64 mcapUsd8,(uint8 feeMode,uint16 feeBps,uint16 snipeBps,uint32 snipeBlocks,uint16 buybackShareBps,uint16 divShareBps,uint16 maxWalletBps,uint32 maxWalletSecs,uint128 buybackThreshold) genes)[] stages,uint8 split) p, bytes32 salt, bytes route, bytes peers) payable returns (address token, bytes32 poolId)",
@@ -58,7 +60,10 @@ async function main() {
   const [coin] = await new ethers.Contract(tdAddr, TD_ABI, p0).predict(creatorSalt, dep(chains[0]).contracts.weth, false);
   console.log(`${name} ($${symbol}), split ${split}, coin ${coin} on ${chains.map((c) => c.key).join(", ")}`);
 
+  // --only re-runs a subset (same --salt) while the peers stay the full --chains set
+  const only = arg("only") ? arg("only").split(",") : null;
   for (const c of chains) {
+    if (only && !only.includes(c.key)) continue;
     const d = dep(c), p = new ethers.JsonRpcProvider(c.rpc, d.chainId, { staticNetwork: true }), w = new ethers.Wallet(key, p);
     if (d.contracts.tokenDeployer.toLowerCase() !== tdAddr.toLowerCase()) throw new Error(`${c.key}: token deployer differs`);
     const factory = new ethers.Contract(d.contracts.factory, FACTORY_ABI, w);
@@ -75,9 +80,24 @@ async function main() {
       if (!ok) { if (check) continue; throw new Error(`${c.key}: ${w.address} is not an approved price updater (admin: /admin-setup)`); }
     } else console.log(`${c.key.padEnd(9)} balance ${ethers.formatEther(bal)}, first buy ${c.minFirstBuy}, oracle price`);
     if (check) continue;
-    if (book) await (await new ethers.Contract(book, BOOK_ABI, w).setPrices([d.contracts.weth], [usd18])).wait();
+    if (book) {
+      await (await new ethers.Contract(book, BOOK_ABI, w).setPrices([d.contracts.weth], [usd18])).wait();
+      await new Promise((r) => setTimeout(r, 5000)); // load-balanced RPCs can lag the price behind the receipt
+    }
     const p_ = { name, symbol, metadataURI: meta, pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [], split };
-    const tx = await factory.launch(p_, salt, "0x", peerData, { value: first });
+    // ethers caps the fee at twice the base fee, which a balance sized for the launch may not cover; when it
+    // doesn't, lower the cap to what the balance pays, as long as it still clears the base fee with room
+    const gas = ((await factory.launch.estimateGas(p_, salt, "0x", peerData, { value: first })) * 11n) / 10n;
+    const fd = await p.getFeeData();
+    const ov: any = { value: first, gasLimit: gas };
+    if (fd.maxFeePerGas && gas * fd.maxFeePerGas + first > (await p.getBalance(w.address))) {
+      const base = (await p.getBlock("latest"))!.baseFeePerGas ?? 0n;
+      const cap = ((await p.getBalance(w.address)) - first) / gas;
+      if (cap < (base * 12n) / 10n) throw new Error(`${c.key}: balance too low for gas (cap ${cap}, base fee ${base})`);
+      ov.maxFeePerGas = cap;
+      ov.maxPriorityFeePerGas = fd.maxPriorityFeePerGas! < cap - base ? fd.maxPriorityFeePerGas : cap - base;
+    }
+    const tx = await factory.launch(p_, salt, "0x", peerData, ov);
     const rc = await tx.wait();
     const ev = rc!.logs.map((l: any) => { try { return factory.interface.parseLog(l); } catch { return null; } }).find((e: any) => e && e.name === "Launched") as any;
     const got = ev.args.token as string;

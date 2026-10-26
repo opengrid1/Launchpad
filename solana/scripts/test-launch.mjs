@@ -68,7 +68,8 @@ const mint = Keypair.generate();
 const nft = Keypair.generate();
 const pool = poolOf(mint.publicKey, NATIVE_MINT);
 const coin = pda([Buffer.from('coin'), mint.publicKey.toBuffer()]);
-const uri = 'data:application/json,' + JSON.stringify({ name: NAME, symbol: SYMBOL, image: 'https://equo-fun.vercel.app/img/apple-touch-icon.png', ...(EVM ? { equo: EVM.toLowerCase() } : {}) });
+// name and symbol already sit in the on-chain metadata; the URI only carries what is not (a launch tx has ~1232 bytes)
+const uri = 'data:application/json,' + JSON.stringify({ image: process.env.IMAGE || 'https://equo-fun.vercel.app/img/icon-192.png', ...(EVM ? { equo: EVM.toLowerCase() } : {}) });
 if (uri.length > 200) throw new Error('metadata URI over 200 bytes');
 const launch = new TransactionInstruction({
   programId: PROGRAM,

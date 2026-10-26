@@ -60,8 +60,61 @@
   const apply = (o, j) => {
     if (!o) return;
     if (j.holders != null) o.h = j.holders;
-    if (j.chains) { o.pools = Object.fromEntries(Object.entries(j.chains).map(([k, v]) => [k, v.pool || null])); o.liqAll = j.liquidity; o.poolsLive = j.poolsLive; }
+    if (j.chains) {
+      o.pools = Object.fromEntries(Object.entries(j.chains).map(([k, v]) => [k, v.pool || null])); o.liqAll = j.liquidity; o.poolsLive = j.poolsLive;
+      MULTI.set(lc(o.addr), j);
+      enrich(o);
+    }
   };
+
+  /* One coin on many chains: the chain reader reads Ethereum, the indexer every chain the coin launched on (one
+     address on all of them). A coin on more than one chain gets `chains`, `addrs` and `byChain` from it, and its
+     market cap, volume and trades across all of them. */
+  const lc = (a) => String(a || '').toLowerCase();
+  const MULTI = new Map(); // address -> the indexer's coin
+  const ORDER = (cfg.chains || []).map((c) => c.key);
+  function enrich(o) {
+    const j = o && o.addr && MULTI.get(lc(o.addr));
+    if (!j || !j.chains) return o;
+    const keys = ORDER.filter((k) => j.chains[k]);
+    if (keys.length < 2) return o;
+    o.chains = keys;
+    o.addrs = Object.fromEntries(keys.map((k) => [k, j.chains[k].token]));
+    o.byChain = { ...(o.byChain || {}) };
+    for (const k of keys) {
+      const c = j.chains[k], p = c.pool || {}, b = { ...(o.byChain[k] || {}) };
+      if (c.price) b.px = c.price;
+      if (c.supply) b.supply = Number(c.supply) / 1e18;
+      b.vol = c.vol24 || 0; b.trades = c.trades24 || 0;
+      if (p.priceUsd && p.priceInPair) b.pairUsd = p.priceUsd / p.priceInPair;
+      if (p.liquidityUsd != null) b.liq = p.liquidityUsd;
+      o.byChain[k] = b;
+    }
+    if (j.mc) o.mc = j.mc;
+    if (j.vol24 != null) o.vol = j.vol24;
+    if (j.trades != null) o.trades = j.trades;
+    if (j.liquidity) o.liqAll = j.liquidity;
+    if (j.poolsLive != null) o.poolsLive = j.poolsLive;
+    return o;
+  }
+  const loadCoins = async () => {
+    try {
+      const j = await get('/api/coins?limit=200');
+      for (const c of j.coins || []) if (Object.keys(c.chains || {}).length > 1) {
+        const old = MULTI.get(lc(c.chains.eth ? c.chains.eth.token : Object.values(c.chains)[0].token));
+        // the list has no pools; keep the ones a coin call already read
+        if (old && old.chains) for (const k of Object.keys(c.chains)) if (old.chains[k] && old.chains[k].pool) c.chains[k].pool = old.chains[k].pool;
+        if (old && old.liquidity) { c.liquidity = old.liquidity; c.poolsLive = old.poolsLive; }
+        for (const v of Object.values(c.chains)) MULTI.set(lc(v.token), c);
+      }
+      dispatchEvent(new Event('chain-update'));
+    } catch (e) { console.warn('indexer coins', e.message); }
+  };
+  const t0 = C.tokens, tk = C.token;
+  if (t0) C.tokens = (...a) => t0(...a).map(enrich);
+  if (tk) C.token = (...a) => enrich(tk(...a));
+  setTimeout(loadCoins, 300);
+  setInterval(() => { if (document.visibilityState !== 'hidden') loadCoins(); }, 30000);
   if (rf) C.refresh = async function (addr, ...rest) {
     const x = await rf.call(this, addr, ...rest);
     try { const j = await coinInfo(addr); if (j) { apply(x, j); apply(C.token && C.token(addr), j); } } catch (e) {}

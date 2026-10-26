@@ -61,7 +61,7 @@ export class ChainIndexer {
     this.blockTs = new Map();
     this.txFrom = new Map();
     this.stopped = false;
-    this.batch = chain.maxRange * Number(process.env.BATCH_RANGES || 10);
+    this.batch = chain.maxRange * Number(chain.batchRanges || process.env.BATCH_RANGES || 10); // slow RPCs take smaller batches so one fits in a tick
   }
 
   async init() {
@@ -75,6 +75,8 @@ export class ChainIndexer {
       for (const t of ["tokens", "trades", "balances", "bridges", "pair_prices"]) await q(`delete from ${t} where chain = $1`, [c.key]);
       await q("update chain_state set last_block = $2, head_block = null, factory = $3, updated_at = now() where chain = $1", [c.key, c.startBlock - 1, c.factory]);
     }
+    // a later startBlock skips blocks the chain's RPCs no longer serve (nothing launched on the factory before it)
+    await q("update chain_state set last_block = $2 where chain = $1 and last_block < $2", [c.key, c.startBlock - 1]);
     const r = await q("select token, coin_id, pair, pool_id from tokens where chain = $1", [c.key]);
     for (const t of r.rows) { this.pools.set(t.pool_id, { token: t.token, pair: t.pair, coinId: t.coin_id }); this.tokens.set(t.token, { coinId: t.coin_id, pair: t.pair }); }
     const p = await q("select distinct on (pair) pair, usd18 from pair_prices where chain = $1 order by pair, ts desc", [c.key]);

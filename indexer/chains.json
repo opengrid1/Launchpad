@@ -50,8 +50,7 @@
       "lzEid": 30102,
       "native": "BNB",
       "rpcs": [
-        "https://bsc-rpc.publicnode.com",
-        "https://rpc-bsc.48.club"
+        "https://bsc-rpc.publicnode.com"
       ],
       "maxRange": 5000,
       "confirmations": 3,
@@ -62,7 +61,7 @@
       "hook": "0xa282b881B290eAb4BAdEB049Af4B1822811180cc",
       "tokenDeployer": "0x502Dc911055B057aBBE9605d72462A66fC2885a5",
       "router": "0x9E679424bc13A466aAe79DF17fC76506695B5bbf",
-      "startBlock": 129821833
+      "startBlock": 129845000
     },
     {
       "key": "arbitrum",
@@ -91,9 +90,13 @@
       "lzEid": 30367,
       "native": "HYPE",
       "rpcs": [
-        "https://rpc.hyperliquid.xyz/evm"
+        "https://rpc.hyperliquid.xyz/evm",
+        "https://rpc.hypurrscan.io",
+        "https://hyperliquid-json-rpc.stakely.io"
       ],
       "maxRange": 1000,
+      "batchRanges": 2,
+      "minGapMs": 250,
       "confirmations": 1,
       "pollMs": 4000,
       "poolManager": "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F",
@@ -102,7 +105,7 @@
       "hook": "0xF215685b8e9ddc0e31a9aA9f43C51042C7d080cC",
       "tokenDeployer": "0x502Dc911055B057aBBE9605d72462A66fC2885a5",
       "router": "0x9E679424bc13A466aAe79DF17fC76506695B5bbf",
-      "startBlock": 49538986,
+      "startBlock": 49549700,
       "minGapMs": 700
     },
     {
