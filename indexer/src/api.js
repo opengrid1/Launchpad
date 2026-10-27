@@ -16,7 +16,10 @@ class HttpError extends Error { constructor(code, msg) { super(msg); this.code =
 /** Contracts that hold coins without being holders: per chain, plus the zero and dead addresses. */
 function systemAddrs(chains) {
   const s = new Set(["0x0000000000000000000000000000000000000000", "0x000000000000000000000000000000000000dead"]);
-  for (const c of chains) for (const k of ["poolManager", "factory", "hook", "tokenDeployer", "router"]) if (c[k]) s.add(lc(c[k]));
+  for (const c of chains) {
+    for (const k of ["poolManager", "factory", "hook", "tokenDeployer", "router"]) if (c[k]) s.add(lc(c[k]));
+    for (const v of Object.values(c.v2 || {})) s.add(lc(v));
+  }
   return [...s];
 }
 
@@ -31,7 +34,7 @@ async function coinIdOf(v) {
 
 async function coins(ids) {
   const now = Math.floor(Date.now() / 1000);
-  const m = await q(`select coin_id, chain, token, creator, pair, pool_id, name, symbol, launch_ts, launch_block from tokens where coin_id = any($1) order by launch_ts`, [ids]);
+  const m = await q(`select coin_id, chain, token, creator, pair, pool_id, name, symbol, launch_ts, launch_block, gen, fee_bps, launch_id, metadata_uri from tokens where coin_id = any($1) order by launch_ts`, [ids]);
   const last = await q(`select distinct on (coin_id, chain) coin_id, chain, price_usd, ts from trades where coin_id = any($1) and price_usd is not null order by coin_id, chain, ts desc, block desc, log_index desc`, [ids]);
   const day = await q(`select coin_id, chain, count(*)::int n, coalesce(sum(value_usd),0) vol, sum(case when buy then 1 else 0 end)::int buys from trades where coin_id = any($1) and ts >= $2 group by 1, 2`, [ids, now - DAY]);
   const open = await q(`select distinct on (coin_id) coin_id, price_usd from trades where coin_id = any($1) and ts >= $2 and price_usd is not null order by coin_id, ts, block, log_index`, [ids, now - DAY]);
@@ -39,7 +42,7 @@ async function coins(ids) {
   const sup = await q(`select t.coin_id, b.chain, sum(b.balance)::text supply from balances b join tokens t on t.chain = b.chain and t.token = b.token where t.coin_id = any($1) group by 1, 2`, [ids]);
   const by = new Map();
   for (const r of m.rows) {
-    if (!by.has(r.coin_id)) by.set(r.coin_id, { id: r.coin_id, name: r.name, symbol: r.symbol, creator: r.creator, createdAt: r.launch_ts, chains: {}, trades: 0, trades24: 0, buys24: 0, vol24: 0 });
+    if (!by.has(r.coin_id)) by.set(r.coin_id, { id: r.coin_id, name: r.name, symbol: r.symbol, creator: r.creator, createdAt: r.launch_ts, gen: r.gen || 1, feeBps: r.fee_bps, launchId: r.launch_id, metadataURI: r.metadata_uri, chains: {}, trades: 0, trades24: 0, buys24: 0, vol24: 0 });
     by.get(r.coin_id).chains[r.chain] = { token: r.token, pair: r.pair, poolId: r.pool_id, launchedAt: r.launch_ts, launchBlock: r.launch_block, price: null, vol24: 0, trades24: 0, supply: null };
   }
   for (const r of last.rows) { const x = by.get(r.coin_id); if (x && x.chains[r.chain]) { x.chains[r.chain].price = r.price_usd; x.chains[r.chain].lastTradeAt = r.ts; } }
@@ -70,10 +73,11 @@ export function makeHandler(chains) {
 
     async "/api/coins"(p) {
       const limit = Math.min(200, Number(p.get("limit") || 100)), sort = p.get("sort") || "new", chain = p.get("chain");
+      const gen = p.get("gen") ? Number(p.get("gen")) : null; // 2: Equo v2 coins only
       const now = Math.floor(Date.now() / 1000);
       let ids;
-      if (sort === "vol") ids = (await q(`select t.coin_id from tokens t left join trades r on r.coin_id = t.coin_id and r.ts >= $1 where ($3::text is null or t.chain = $3) group by 1 order by coalesce(sum(r.value_usd),0) desc limit $2`, [now - DAY, limit, chain])).rows;
-      else ids = (await q(`select coin_id from tokens where ($2::text is null or chain = $2) group by 1 order by min(launch_ts) desc limit $1`, [limit, chain])).rows;
+      if (sort === "vol") ids = (await q(`select t.coin_id from tokens t left join trades r on r.coin_id = t.coin_id and r.ts >= $1 where ($3::text is null or t.chain = $3) and ($4::int is null or t.gen = $4) group by 1 order by coalesce(sum(r.value_usd),0) desc limit $2`, [now - DAY, limit, chain, gen])).rows;
+      else ids = (await q(`select coin_id from tokens where ($2::text is null or chain = $2) and ($3::int is null or gen = $3) group by 1 order by min(launch_ts) desc limit $1`, [limit, chain, gen])).rows;
       return { coins: await coins(ids.map((r) => r.coin_id)) };
     },
 
@@ -90,7 +94,7 @@ export function makeHandler(chains) {
       const pools = await Promise.allSettled(Object.entries(c.chains).map(([k, x]) => {
         const ch = byKey[k];
         if (!ch || !ch.factory || !ch.poolManager) return Promise.reject(new Error("no chain settings"));
-        return Promise.race([poolOf(ch, x.token, x.poolId, usdOf(k, x.pair)), new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 6000))]).then((p) => [k, p]);
+        return Promise.race([poolOf(ch, x.token, x.poolId, usdOf(k, x.pair), c.gen), new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 6000))]).then((p) => [k, p]);
       }));
       let liq = 0, pairUsdAll = 0, live = 0;
       for (const r of pools) {

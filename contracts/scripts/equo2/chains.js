@@ -6,7 +6,7 @@ const CHAINS = [
     poolManager: "0x000000000004444c5dc75cb358380d2e3de08a90", weth: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
     endpoint: "0x1a44076050125825900e736c501f859c50fe728c",
     dvns: ["0x589dedbd617e0cbcb916a9223f4d1300c294236b", "0xa59ba433ac34d2927232918ef5b2eaafcf130ba5"] },
-  { name: "bsc", chainId: 56, eid: 30102, rpc: "https://bsc-rpc.publicnode.com",
+  { name: "bsc", chainId: 56, eid: 30102, rpc: "https://bsc-dataseed.bnbchain.org",
     poolManager: "0x28e2ea090877bf75740558f6bfb36a5ffee9e9df", weth: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
     endpoint: "0x1a44076050125825900e736c501f859c50fe728c",
     dvns: ["0xfd6865c841c2d64565562fcc7e05e619a30615f0", "0x31f748a368a893bdb5abb67ec95f232507601a73"] },

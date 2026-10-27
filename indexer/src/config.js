@@ -14,6 +14,7 @@ export function loadChains() {
       rpcs: env("RPC") ? env("RPC").split(",").map((s) => s.trim()).filter(Boolean) : c.rpcs,
       factory: lc(env("FACTORY") || c.factory),
       hook: lc(env("HOOK") || c.hook),
+      priceFrom: lc(c.priceFrom),
       poolManager: lc(c.poolManager),
       wrappedNative: lc(c.wrappedNative),
       startBlock: Number(env("START_BLOCK") || c.startBlock || 0),
@@ -21,6 +22,8 @@ export function loadChains() {
       minGapMs: Number(env("MIN_GAP_MS") || c.minGapMs || 0),
       confirmations: Number(c.confirmations ?? 2),
       pollMs: Number(process.env.POLL_MS || c.pollMs || 5000),
+      // the Equo v2 contracts on this chain, indexed next to the first factory's
+      v2: c.v2 ? Object.fromEntries(Object.entries(c.v2).map(([k, v]) => [k, lc(v)])) : null,
     };
   });
 }

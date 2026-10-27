@@ -12,16 +12,23 @@ const FACTORY = new Interface([
   "function pairUsdPrice(address pair) view returns (uint256)",
   "function weth() view returns (address)",
 ]);
+// Equo v2: the factory's launch event (one leg of a launch on several chains) and the hook's fee event
+const FACTORY2 = new Interface([
+  "event Launched(address indexed token, address indexed creator, bytes32 indexed launchId, bytes32 poolId, uint256 slice, uint16 feeBps, uint256 quoteUsd18)",
+]);
 const TOKEN = new Interface([
   "function name() view returns (string)",
   "function symbol() view returns (string)",
   "function peers(uint32 eid) view returns (bytes32)",
+  "function metadataURI() view returns (string)",
   "event Transfer(address indexed from, address indexed to, uint256 value)",
   "event OFTSent(bytes32 indexed guid, uint32 dstEid, address indexed fromAddress, uint256 amountSentLD, uint256 amountReceivedLD)",
   "event OFTReceived(bytes32 indexed guid, uint32 srcEid, address indexed toAddress, uint256 amountReceivedLD)",
 ]);
 const T = {
   launched: FACTORY.getEvent("Launched").topicHash,
+  launched2: FACTORY2.getEvent("Launched").topicHash,
+  feeTaken2: topicId("FeeTaken(address,uint256,uint256,uint256,uint256,uint256)"),
   swap: topicId("Swap(bytes32,address,int128,int128,uint160,uint128,int24,uint24)"),
   feeTaken: topicId("FeeTaken(address,uint256,uint16)"),
   transfer: TOKEN.getEvent("Transfer").topicHash,
@@ -30,6 +37,8 @@ const T = {
 };
 const abi = AbiCoder.defaultAbiCoder();
 const ZERO = "0x0000000000000000000000000000000000000000";
+// v2 coins have 9 decimals; their amounts are stored times this so every coin reads as 18 decimals
+const V2_SCALE = 10n ** 9n;
 const lc = (a) => String(a || "").toLowerCase();
 const addrOf = (topic) => lc("0x" + topic.slice(26));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -56,7 +65,7 @@ export class ChainIndexer {
     this.rpc = new Rpc(chain);
     this.log = log;
     this.pools = new Map(); // poolId -> { token, pair, coinId }
-    this.tokens = new Map(); // token -> { coinId, pair }
+    this.tokens = new Map(); // token -> { coinId, pair, scale }
     this.prices = new Map(); // pair -> usd18 (string)
     this.blockTs = new Map();
     this.txFrom = new Map();
@@ -77,8 +86,12 @@ export class ChainIndexer {
     }
     // a later startBlock skips blocks the chain's RPCs no longer serve (nothing launched on the factory before it)
     await q("update chain_state set last_block = $2 where chain = $1 and last_block < $2", [c.key, c.startBlock - 1]);
-    const r = await q("select token, coin_id, pair, pool_id from tokens where chain = $1", [c.key]);
-    for (const t of r.rows) { this.pools.set(t.pool_id, { token: t.token, pair: t.pair, coinId: t.coin_id }); this.tokens.set(t.token, { coinId: t.coin_id, pair: t.pair }); }
+    const r = await q("select token, coin_id, pair, pool_id, gen from tokens where chain = $1", [c.key]);
+    for (const t of r.rows) {
+      const scale = t.gen === 2 ? V2_SCALE : 1n;
+      this.pools.set(t.pool_id, { token: t.token, pair: t.pair, coinId: t.coin_id, scale });
+      this.tokens.set(t.token, { coinId: t.coin_id, pair: t.pair, scale });
+    }
     const p = await q("select distinct on (pair) pair, usd18 from pair_prices where chain = $1 order by pair, ts desc", [c.key]);
     for (const x of p.rows) this.prices.set(x.pair, x.usd18);
     await this.refreshPrices();
@@ -87,7 +100,8 @@ export class ChainIndexer {
   // ---------------------------------------------------------------- prices
 
   async pairUsd(pair) {
-    const r = await this.rpc.ethCall(this.c.factory, FACTORY.encodeFunctionData("pairUsdPrice", [pair]));
+    // the v2 factory keeps no prices: the first Equo factory on the chain (priceFrom) still reads its oracle
+    const r = await this.rpc.ethCall(this.c.priceFrom || this.c.factory, FACTORY.encodeFunctionData("pairUsdPrice", [pair]));
     return abi.decode(["uint256"], r)[0].toString();
   }
 
@@ -131,8 +145,8 @@ export class ChainIndexer {
     return this.txFrom.get(hash);
   }
 
-  async str(token, fn) {
-    try { return abi.decode(["string"], await this.rpc.ethCall(token, TOKEN.encodeFunctionData(fn)))[0].slice(0, 64); } catch { return null; }
+  async str(token, fn, max = 64) {
+    try { return abi.decode(["string"], await this.rpc.ethCall(token, TOKEN.encodeFunctionData(fn)))[0].slice(0, max); } catch { return null; }
   }
 
   /** The coin's id across chains: its Ethereum address when it has one there, else the smallest chain:address
@@ -156,15 +170,21 @@ export class ChainIndexer {
     const c = this.c;
     // 1. launches
     const launches = [];
-    for (const l of await this.rpc.logs({ address: c.factory, topics: [T.launched] }, from, to)) {
-      const ev = FACTORY.parseLog(l);
-      const token = lc(ev.args.token), pair = lc(ev.args.pair), poolId = lc(ev.args.poolId);
+    const factories = [...new Set([c.factory, c.v2 && c.v2.factory].filter(Boolean))];
+    for (const l of await this.rpc.logs({ address: factories, topics: [[T.launched, T.launched2]] }, from, to)) {
+      const v2 = l.topics[0] === T.launched2 && c.v2 && lc(l.address) === c.v2.factory;
+      if (!v2 && lc(l.address) !== c.factory) continue;
+      const ev = (v2 ? FACTORY2 : FACTORY).parseLog(l);
+      const token = lc(ev.args.token), pair = v2 ? c.wrappedNative : lc(ev.args.pair), poolId = lc(ev.args.poolId);
+      const usd = v2 ? ev.args.quoteUsd18 : ev.args.pairUsdPrice;
       const coinId = await this.coinIdFor(token);
-      const [name, symbol, ts] = await Promise.all([this.str(token, "name"), this.str(token, "symbol"), this.ts(Number(l.blockNumber))]);
-      launches.push({ token, creator: lc(ev.args.creator), pair, poolId, coinId, name, symbol, block: Number(l.blockNumber), ts, tx: l.transactionHash, usd18: ev.args.pairUsdPrice.toString() });
-      this.pools.set(poolId, { token, pair, coinId });
-      this.tokens.set(token, { coinId, pair });
-      if (!this.prices.has(pair) && ev.args.pairUsdPrice > 0n) this.prices.set(pair, ev.args.pairUsdPrice.toString());
+      const [name, symbol, ts, metadataUri] = await Promise.all([this.str(token, "name"), this.str(token, "symbol"), this.ts(Number(l.blockNumber)), v2 ? this.str(token, "metadataURI", 400) : null]);
+      launches.push({ metadataUri, token, creator: lc(ev.args.creator), pair, poolId, coinId, name, symbol, block: Number(l.blockNumber), ts, tx: l.transactionHash, usd18: usd.toString(),
+        gen: v2 ? 2 : 1, feeBps: v2 ? Number(ev.args.feeBps) : null, launchId: v2 ? lc(ev.args.launchId) : null });
+      const scale = v2 ? V2_SCALE : 1n;
+      this.pools.set(poolId, { token, pair, coinId, scale });
+      this.tokens.set(token, { coinId, pair, scale });
+      if (!this.prices.has(pair) && usd > 0n) this.prices.set(pair, usd.toString());
     }
 
     // 2. swaps in our pools, and the hook's fee for each
@@ -173,8 +193,10 @@ export class ChainIndexer {
       const swaps = [];
       for (const ids of chunks([...this.pools.keys()], 100)) swaps.push(...(await this.rpc.logs({ address: c.poolManager, topics: [T.swap, ids] }, from, to)));
       const fees = {};
-      if (c.hook && swaps.length) {
-        for (const l of await this.rpc.logs({ address: c.hook, topics: [T.feeTaken] }, from, to)) {
+      const hooks = [...new Set([c.hook, c.v2 && c.v2.hook].filter(Boolean))];
+      if (hooks.length && swaps.length) {
+        // both hooks' fee events carry the coin as the first topic and the fee as the first word
+        for (const l of await this.rpc.logs({ address: hooks, topics: [[T.feeTaken, T.feeTaken2]] }, from, to)) {
           const k = l.transactionHash + ":" + addrOf(l.topics[1]);
           (fees[k] = fees[k] || []).push({ index: Number(l.logIndex), fee: BigInt(l.data.slice(0, 66)).toString(), used: false });
         }
@@ -185,7 +207,7 @@ export class ChainIndexer {
         if (!p) continue;
         let d;
         try { d = abi.decode(["int128", "int128", "uint160", "uint128", "int24", "uint24"], l.data); } catch { continue; }
-        const coinIs0 = p.token < p.pair, coinD = coinIs0 ? d[0] : d[1], pairD = coinIs0 ? d[1] : d[0];
+        const coinIs0 = p.token < p.pair, coinD = (coinIs0 ? d[0] : d[1]) * (p.scale || 1n), pairD = coinIs0 ? d[1] : d[0];
         const idx = Number(l.logIndex);
         const f = (fees[l.transactionHash + ":" + p.token] || []).find((x) => x.index > idx && !x.used);
         if (f) f.used = true;
@@ -202,13 +224,14 @@ export class ChainIndexer {
       for (const l of await this.rpc.logs({ address: addrs, topics: [[T.transfer, T.oftSent, T.oftReceived]] }, from, to)) {
         const token = lc(l.address);
         if (l.topics[0] === T.transfer) {
-          const fromA = addrOf(l.topics[1]), toA = addrOf(l.topics[2]), v = BigInt(l.data);
+          const fromA = addrOf(l.topics[1]), toA = addrOf(l.topics[2]), v = BigInt(l.data) * (this.tokens.get(token).scale || 1n);
           if (fromA !== ZERO) deltas.set(token + "|" + fromA, (deltas.get(token + "|" + fromA) || 0n) - v);
           if (toA !== ZERO) deltas.set(token + "|" + toA, (deltas.get(token + "|" + toA) || 0n) + v);
         } else {
           const out = l.topics[0] === T.oftSent;
           const ev = TOKEN.parseLog(l);
-          bridges.push({ token, coinId: this.tokens.get(token).coinId, dir: out ? "out" : "in", guid: lc(ev.args.guid), eid: Number(out ? ev.args.dstEid : ev.args.srcEid), wallet: lc(out ? ev.args.fromAddress : ev.args.toAddress), sent: out ? ev.args.amountSentLD.toString() : null, received: ev.args.amountReceivedLD.toString(), block: Number(l.blockNumber), tx: l.transactionHash, index: Number(l.logIndex) });
+          const sc = this.tokens.get(token).scale || 1n;
+          bridges.push({ token, coinId: this.tokens.get(token).coinId, dir: out ? "out" : "in", guid: lc(ev.args.guid), eid: Number(out ? ev.args.dstEid : ev.args.srcEid), wallet: lc(out ? ev.args.fromAddress : ev.args.toAddress), sent: out ? (ev.args.amountSentLD * sc).toString() : null, received: (ev.args.amountReceivedLD * sc).toString(), block: Number(l.blockNumber), tx: l.transactionHash, index: Number(l.logIndex) });
         }
       }
     }
@@ -218,9 +241,9 @@ export class ChainIndexer {
     await tx(async (db) => {
       for (const t of launches) {
         await db.query(
-          `insert into tokens (chain, token, coin_id, creator, pair, pool_id, name, symbol, launch_block, launch_ts, launch_tx, launch_pair_usd)
-           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) on conflict (chain, token) do nothing`,
-          [c.key, t.token, t.coinId, t.creator, t.pair, t.poolId, t.name, t.symbol, t.block, t.ts, t.tx, t.usd18]);
+          `insert into tokens (chain, token, coin_id, creator, pair, pool_id, name, symbol, launch_block, launch_ts, launch_tx, launch_pair_usd, gen, fee_bps, launch_id, metadata_uri)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) on conflict (chain, token) do nothing`,
+          [c.key, t.token, t.coinId, t.creator, t.pair, t.poolId, t.name, t.symbol, t.block, t.ts, t.tx, t.usd18, t.gen, t.feeBps, t.launchId, t.metadataUri]);
       }
       for (const part of chunks(trades, 500)) {
         const vals = [], params = [];

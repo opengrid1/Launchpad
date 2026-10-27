@@ -8,6 +8,7 @@
 // pass; SOLANA_RPC in the environment replaces the public endpoint.
 import { loadChains } from "./_indexer/src/config.js";
 import { makeHandler } from "./_indexer/src/api.js";
+import { handleV2 } from "./_v2.mjs";
 
 const SOL_RPC = process.env.SOLANA_RPC || "https://api.mainnet-beta.solana.com";
 const SOL_METHODS = new Set([
@@ -51,6 +52,7 @@ async function sol(req, res) {
 let h;
 export default async function handler(req, res) {
   const path = new URL(req.url, "http://x").searchParams.get("__p") || "";
+  if (path.startsWith("v2/")) return handleV2(req, res, path);
   if (path === "sol") return sol(req, res);
   h = h || makeHandler(loadChains());
   await h.handle(req, res, "/api/" + path);

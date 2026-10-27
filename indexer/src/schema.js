@@ -30,6 +30,11 @@ create table if not exists tokens (
   primary key (chain, token)
 );
 create index if not exists tokens_coin on tokens (coin_id);
+-- which Equo contracts launched the coin: 1 the first factory, 2 Equo v2 (9-decimal coins, stored scaled to 18)
+alter table tokens add column if not exists gen int not null default 1;
+alter table tokens add column if not exists fee_bps int;
+alter table tokens add column if not exists launch_id text;
+alter table tokens add column if not exists metadata_uri text;
 create index if not exists tokens_pool on tokens (chain, pool_id);
 
 -- swaps in a coin's pool (PoolManager Swap + the hook's FeeTaken in the same tx)
@@ -91,6 +96,19 @@ create table if not exists pair_prices (
   ts     bigint not null,
   usd18  numeric not null,
   primary key (chain, pair, ts)
+);
+
+-- Equo v2 launch service: a coin's metadata (description, image, links) by content id, and one row per launch
+-- the service completed (so two requests do not send the same legs twice)
+create table if not exists coin_meta (
+  id         text primary key,
+  body       jsonb not null,
+  created_at timestamptz not null default now()
+);
+create table if not exists launch_jobs (
+  launch_id  text primary key,
+  started_at timestamptz not null default now(),
+  txs        jsonb
 );
 
 -- one tick at a time when indexing runs in short bursts (serverless): a lease, not a session lock,

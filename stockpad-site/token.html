@@ -1,209 +1,105 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Token | Equo</title><meta name="description" content="Price, chart, trades, holders and pools for a coin launched on Equo, across every chain it lives on.">
+<title>Coin | Equo</title><meta name="description" content="Price, chart, trades, holders, the last-buyer pot and the crash shield for an Equo coin on every chain it lives on.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
 <meta property="og:image" content="/img/og.png?v=17">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/ui.css?v=23">
 <style>
-/* token page, scoped under #pg-token */
-#pg-token .cols{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:14px;align-items:start}
-#pg-token .left{min-width:0;display:flex;flex-direction:column;gap:14px}
-#pg-token .right{position:sticky;top:calc(var(--top) + 14px);display:flex;flex-direction:column;gap:14px}
-/* head panel */
-#pg-token .head{padding:20px}
-#pg-token .hd{display:grid;grid-template-columns:84px minmax(0,1fr) auto;gap:18px;align-items:start}
-#pg-token .hd .av2 .stb{border-color:var(--s1)} #pg-token .hd .lg{width:84px;height:84px;border-radius:50%;background:var(--s3);border:1px solid var(--line-2);object-fit:cover}
-#pg-token .hd .t1{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap} #pg-token .hd .t1 .wstar{align-self:center} #pg-token .hd h1{font-size:26px} #pg-token .hd .sym{font:500 15px var(--mono);color:var(--fg-3)}
-#pg-token .hd .t2{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-top:8px;font:12px var(--mono);color:var(--fg-3)}
-#pg-token .hd .t2 .cpb{display:inline-flex;align-items:center;gap:4px;color:var(--fg-3)} #pg-token .hd .t2 .cpb:hover{color:var(--fg)} #pg-token .hd .t2 .cpb svg,#pg-token .hd .t2 .lk svg{width:12px;height:12px}
-#pg-token .hd .t2 .lk{display:inline-flex;align-items:center;gap:4px;color:var(--fg-2);font-family:var(--sans)} #pg-token .hd .t2 .lk:hover{color:var(--fg)}
-#pg-token .hd .desc{margin-top:10px;color:var(--fg-2);font-size:13.5px;line-height:1.55;max-width:70ch}
-#pg-token .hd .by{margin-top:8px;font-size:12px;color:var(--fg-3);display:flex;align-items:center;gap:6px}
-#pg-token .pairbig{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--s2);white-space:nowrap}
-#pg-token .pairbig img{width:34px;height:34px;border-radius:50%;background:#fff;object-fit:cover} #pg-token .pairbig .cl{border:1px solid var(--line-2);background:var(--s3)} #pg-token .pairbig b{font:600 18px var(--disp);letter-spacing:-.01em} #pg-token .pairbig .sl{color:var(--fg-3);font-size:18px} #pg-token .pairbig .st{color:var(--ac)}
-#pg-token .pairbig small{display:block;font:11px var(--mono);color:var(--fg-3);margin-top:2px}
-#pg-token .stats{margin-top:18px;grid-template-columns:repeat(6,minmax(0,1fr))} #pg-token .stats .sbox b{white-space:normal;overflow:visible} #pg-token .stats .sbox b .pc{display:inline-block;margin-left:6px}
-#pg-token .fl2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px} #pg-token .fl2 .flow{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px} #pg-token .fl2 .flow .num{font-size:11.5px;color:var(--fg-2)}
-#pg-token .fl2 .split .c{background:var(--ac)} #pg-token .fl2 .split .h{background:var(--amber)} #pg-token .fl2 .split .p{background:var(--fg-3)}
-/* chart panel */
-#pg-token .chart .ph2{font-family:var(--mono);font-size:13px} #pg-token .chart .ph2 .r{font-size:12px;color:var(--fg-3);font-weight:400}
-#pg-token .chart>.ph2{display:none}
-#pg-token #tv{width:100%} #pg-token #tv .tvno{min-height:420px;display:flex;align-items:center;justify-content:center;color:var(--fg-3);font-size:13px}
-/* our own chart (chart.js) */
-.eqc{display:flex;flex-direction:column;padding:16px 16px 12px;gap:10px;font-variant-numeric:tabular-nums}
-.eqc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:58px}
-.eqc-leg{display:flex;flex-direction:column;gap:3px;min-width:0}
-.eqc-leg .t{font-size:12px;color:var(--fg-3);font-weight:500}
-.eqc-leg .v{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.eqc-leg .v b{font:700 28px/1.1 var(--sans);letter-spacing:-.02em;color:var(--fg)}
-.eqc-leg .v em{font-style:normal;font-size:13px;font-weight:600;padding:2px 7px;border-radius:6px} .eqc-leg .v em.up{color:var(--up);background:var(--up-dim)} .eqc-leg .v em.dn{color:var(--dn);background:var(--dn-dim)}
-.eqc-leg .v small{font-size:12px;color:var(--fg-3)}
-.eqc-leg .ohlc{font-size:11.5px;color:var(--fg-3)} .eqc-leg .ohlc b{color:var(--fg-2);font-weight:500;margin-right:6px}
-.eqc-leg .ls{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px} .eqc-leg .ls>span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-3)} .eqc-leg .ls i{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)} .eqc-leg .ls b{color:var(--fg);font-weight:600}
-.eqc-r{display:flex;gap:6px;flex-wrap:wrap}
-.eqc-seg{display:inline-flex;background:var(--s3);border:1px solid var(--line);border-radius:9px;padding:2px}
-.eqc-seg button,.eqc-rg button{all:unset;cursor:pointer;height:26px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;font-size:12px;font-weight:600;color:var(--fg-3);transition:color .15s,background .15s}
-.eqc-seg button:hover,.eqc-rg button:hover{color:var(--fg)} .eqc-seg button.on,.eqc-rg button.on{background:var(--s4);color:var(--fg)}
-.eqc-seg svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.eqc-box{position:relative;height:340px;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none} .eqc-box canvas{position:absolute;inset:0;display:block} .eqc.grab .eqc-box{cursor:grabbing}
-.eqc-ib{all:unset;cursor:pointer;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;background:var(--s3);border:1px solid var(--line);color:var(--fg-3);transition:color .15s,border-color .15s} .eqc-ib:hover{color:var(--fg);border-color:var(--line-3)}
-.eqc-ib svg,.eqc-zm svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.eqc-l{display:flex;align-items:center;gap:8px}
-.eqc-zm{display:flex;gap:2px;padding-left:8px;border-left:1px solid var(--line)}
-.eqc-zm button{all:unset;cursor:pointer;width:28px;height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;color:var(--fg-3);transition:color .15s,background .15s} .eqc-zm button:hover{color:var(--fg);background:var(--s4)}
-.eqc.zoomed .eqc-zm [data-z="fit"]{color:var(--ac)}
-.eqc.full{position:fixed;inset:0;z-index:1000;background:var(--s1);padding:20px 24px 16px} .eqc.full .eqc-box{height:auto;flex:1;min-height:0} html.eqc-lock{overflow:hidden}
-@media (hover:none){ .eqc-zm{display:none} .eqc.zoomed .eqc-zm{display:flex} }
-.eqc-leg .ohlc{min-height:17px}
-.eqc-dot{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c);pointer-events:none;box-shadow:0 0 0 3px rgba(10,10,11,.9)}
-.eqc-dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--c);opacity:0;animation:eqcPulse 1.8s ease-out infinite}
-@keyframes eqcPulse{0%{transform:scale(.4);opacity:.8}100%{transform:scale(1.6);opacity:0}}
-.eqc-no{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-size:12px;color:var(--fg-3);background:var(--s3);border:1px solid var(--line);padding:5px 11px;border-radius:999px;pointer-events:none}
-.eqc-bot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.eqc-rg{display:flex;gap:2px}
-.eqc-ch{display:flex;gap:4px;align-items:center;overflow-x:auto;scrollbar-width:none;max-width:100%} .eqc-ch::-webkit-scrollbar{display:none}
-.eqc-ch button{all:unset;cursor:pointer;flex:none;height:28px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--fg-3);transition:border-color .15s,color .15s,background .15s}
-.eqc-ch button.tx{padding:0 11px} .eqc-ch button.lg{width:28px} .eqc-ch button img{width:18px;height:18px;border-radius:50%;filter:saturate(.5) opacity(.7);transition:filter .15s}
-.eqc-ch button:hover{color:var(--fg);border-color:var(--line-3)} .eqc-ch button:hover img{filter:none}
-.eqc-ch button.on{color:var(--fg);background:var(--s3);border-color:var(--line-3)} .eqc-ch button.lg.on{border-color:var(--c);box-shadow:0 0 0 1px var(--c) inset} .eqc-ch button.on img{filter:none}
-/* tabs panel */
-#pg-token .ptabs .ph2{padding:10px 12px}
-#pg-token .pane{display:none} #pg-token .pane.on{display:block} #pg-token .tw{overflow-x:auto}
-#pg-token .tb th:first-child,#pg-token .tb td:first-child{padding-left:16px} #pg-token .tb th:last-child,#pg-token .tb td:last-child{padding-right:16px}
-#pg-token .tb td.r small{text-align:right}
-#pg-token .txl{color:var(--fg-3)} #pg-token .txl:hover{color:var(--fg)}
-#pg-token .more{display:flex;justify-content:center;padding:12px}
-#pg-token tr.new td{animation:tkflash 1.2s ease-out} @keyframes tkflash{from{background:var(--ac-dim)}to{background:transparent}}
-#pg-token .info{padding:18px 16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px} #pg-token .info h4{margin:0 0 8px;font:500 10.5px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--fg-3)}
-#pg-token .info p{margin:0 0 10px;font-size:13.5px;color:var(--fg-2);line-height:1.55} #pg-token .info .kv b{display:inline-flex;align-items:center;gap:6px;min-width:0} #pg-token .info .kv b a,#pg-token .info .kv b button{color:var(--fg-3)} #pg-token .info .kv b a:hover,#pg-token .info .kv b button:hover{color:var(--fg)}
-#pg-token .info .kv b .mono{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* trade panel */
-#pg-token .trade .pb{padding:14px}
-#pg-token .sides{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:var(--r);background:var(--s2)}
-#pg-token .sides button{height:32px;padding:0 18px;border-radius:7px;font-weight:600;color:var(--fg-3);border:1px solid transparent} #pg-token .sides button.on.b{background:var(--up-dim);border-color:rgba(46,189,133,.45);color:var(--up)} #pg-token .sides button.on.s{background:var(--dn-dim);border-color:rgba(246,70,93,.45);color:var(--dn)}
-#pg-token .tchain{margin-top:12px} #pg-token .tcb{display:flex;align-items:center;gap:9px;width:100%;height:44px;padding:0 12px 0 8px;border:1px solid var(--line-2);border-radius:12px;background:var(--s2);text-align:left;transition:border-color .15s} #pg-token .tcb:hover{border-color:var(--line-3)} #pg-token .tcb .l{font:500 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--fg-3)} #pg-token .tcb img{width:24px;height:24px;border-radius:50%} #pg-token .tcb b{font:600 13.5px var(--disp)} #pg-token .tcb .px{margin-left:auto;font:500 12.5px var(--mono);color:var(--fg-2)} #pg-token .tcb svg{width:14px;height:14px;color:var(--fg-3)} #pg-token .bestb{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;font:600 9.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--up);background:var(--up-dim)}
-#pg-token .cheap{display:flex;align-items:flex-start;gap:8px;margin-top:8px;font-size:12px;color:var(--fg-3);cursor:pointer;line-height:1.4} #pg-token .cheap input{margin:2px 0 0;accent-color:var(--ac)} #pg-token .cheap b{color:var(--fg-2);font-weight:600}
-#pg-token .chc{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px 0 3px;border:1px solid var(--line-2);border-radius:10px;font:600 10px var(--mono);letter-spacing:.04em;color:var(--fg-2)} #pg-token .chc img{width:14px;height:14px;border-radius:50%}
-#pg-token .payw{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--fg-3);flex-wrap:wrap} #pg-token .payw .badge{height:22px;font-size:11px}
-#pg-token .box{margin-top:10px;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--s2)} #pg-token .box.out{border-color:var(--line);background:var(--s1)} #pg-token .box:focus-within{border-color:var(--ac)}
-#pg-token .box .lr{display:flex;justify-content:space-between;gap:10px} #pg-token .box .lr .num{font-size:11.5px;color:var(--fg-3)}
-#pg-token .box .ir{display:flex;align-items:center;gap:10px;margin-top:6px} #pg-token .box input{flex:1;min-width:0;background:none;border:0;outline:0;font:500 26px var(--mono);color:var(--fg);padding:0;letter-spacing:-.01em} #pg-token .box input::placeholder{color:var(--fg-3)}
-#pg-token .box .outv{flex:1;min-width:0;font:500 26px var(--mono);color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em} #pg-token .box .outv.dim{color:var(--fg-3)}
-#pg-token .asset{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 10px 0 6px;border:1px solid var(--line-2);border-radius:999px;background:var(--s1);font:600 13px var(--mono);flex:none;max-width:150px} #pg-token .asset img{width:22px;height:22px;border-radius:50%;background:#fff;object-fit:cover} #pg-token .asset span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#pg-token .box .br{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;font:12px var(--mono);color:var(--fg-3);min-height:24px}
-#pg-token .quick{display:flex;gap:4px} #pg-token .quick button{height:24px;padding:0 8px;border:1px solid var(--line-2);border-radius:6px;font:500 11px var(--mono);color:var(--fg-2)} #pg-token .quick button:hover{border-color:var(--line-3);color:var(--fg)}
-#pg-token .slip{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;font:12px var(--mono);color:var(--fg-3);flex-wrap:wrap}
-#pg-token .slip .seg button{height:24px;padding:0 8px;font-size:12px;font-family:var(--mono)} #pg-token .slip input{width:64px;height:28px;padding:0 8px;border:1px solid var(--line-2);border-radius:6px;background:var(--s1);color:var(--fg);font:12px var(--mono);outline:0}
-#pg-token .det{margin-top:8px} #pg-token .det .kv{padding:7px 0;font-size:12.5px} #pg-token .det .kv b.warn{color:var(--amber)} #pg-token .det .kv b.bad{color:var(--dn)}
-#pg-token .cta{margin-top:12px;height:44px;font:600 14px var(--disp);background:var(--up);border-color:var(--up);color:#03170e} #pg-token .cta:hover{background:#3fd197;border-color:#3fd197} #pg-token .cta:disabled{opacity:.55} #pg-token .cta.s{background:var(--dn);border-color:var(--dn);color:#fff} #pg-token .cta.s:hover{background:#f75b70;border-color:#f75b70}
-#pg-token .note{margin:10px 0 0;font-size:12px;color:var(--fg-3);line-height:1.5}
-#pg-token .sidep .ph2{font-size:14px} #pg-token .sidep .pb{padding:12px 14px} #pg-token .sidep .kv{font-size:12.5px}
-#pg-token .sidep .sboxes{grid-template-columns:1fr 1fr;margin-bottom:10px}
-#pg-token .empty.panel{padding:60px 20px}
-@media(max-width:1100px){#pg-token .cols{grid-template-columns:minmax(0,1fr) 350px} #pg-token .stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:900px){
-  #pg-token .cols{display:flex;flex-direction:column;align-items:stretch} #pg-token .left,#pg-token .right{display:contents}
-  #pg-token .head{order:1} #pg-token .chart{order:2} #pg-token .trade{order:3} #pg-token .act{order:4} #pg-token .safe{order:5} #pg-token .sidep{order:6} #pg-token .ptabs{order:7}
-  #pg-token .head{padding:16px} #pg-token .hd{grid-template-columns:64px minmax(0,1fr);gap:14px} #pg-token .hd .lg{width:64px;height:64px;box-shadow:none} #pg-token .hd h1{font-size:22px}
-  #pg-token .pairbig{grid-column:1/-1;justify-content:center} #pg-token .stats{grid-template-columns:1fr 1fr} #pg-token .fl2{grid-template-columns:1fr}
-  #pg-token .info{grid-template-columns:1fr} #pg-token .right{position:static} .eqc{padding:12px 12px 10px} .eqc-box{height:280px} .eqc-leg .v b{font-size:24px} .eqc-top{flex-direction:column;gap:10px}
-}
-#pg-token .chr{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)} #pg-token .chr:last-of-type{border-bottom:0}
-#pg-token .chr img{width:28px;height:28px;border-radius:50%} #pg-token .chr .cn b{display:block;font:600 13.5px var(--disp)} #pg-token .chr .cn small{display:block;margin-top:2px;font:11px var(--mono);color:var(--fg-3)}
-#pg-token .chr .cv{text-align:right;font:500 13px var(--mono)} #pg-token .chr .cv small{display:block;margin-top:2px;font-size:11px;color:var(--fg-3);font-weight:400}
-#pg-token .chx{display:inline-flex;align-items:center;gap:2px;color:var(--fg-2)} #pg-token .chx button,#pg-token .chx a{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;color:var(--fg-3)} #pg-token .chx button:hover,#pg-token .chx a:hover{color:var(--ac);background:var(--s3)} #pg-token .chx svg{width:12px;height:12px}
-#pg-token .chr.off{opacity:.62} #pg-token .chnote{margin:10px 0 0;font-size:12px;line-height:1.5;color:var(--fg-3)}
-#pg-token .cabar{display:flex;align-items:center;gap:6px;width:100%;max-width:440px;margin-top:10px;padding:4px;border:1px solid var(--line-2);border-radius:10px;background:var(--s2)}
-#pg-token .cabar:empty{display:none}
-#pg-token .cach{flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px;border:1px solid var(--line-2);border-radius:7px;background:var(--s3);font:600 12px var(--disp);color:var(--fg)} #pg-token .cach i{width:8px;height:8px;border-radius:50%} #pg-token .cach svg{width:12px;height:12px;color:var(--fg-3)} #pg-token .cach:hover{border-color:var(--line-3)}
-#pg-token .cabar .cav{flex:1;min-width:0;padding-left:4px;font:500 12.5px var(--mono);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#pg-token .cabar .cac{flex:none;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:7px;background:var(--ac-dim);color:var(--ac);font:600 12px var(--disp)} #pg-token .cabar .cac svg{width:13px;height:13px} #pg-token .cabar .cac.ok{background:var(--up-dim);color:var(--up)}
-#pg-token .cabar .cax{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;color:var(--fg-3)} #pg-token .cabar .cax:hover{color:var(--ac);background:var(--s3)} #pg-token .cabar .cax svg{width:13px;height:13px}
-#pg-token .pools{display:flex;align-items:center;gap:5px;margin-top:7px;font:12px var(--mono);color:var(--fg-3)} #pg-token .pools:empty{display:none} #pg-token .pools b{color:var(--fg);font-weight:500;margin-right:3px} #pg-token .pools i{width:8px;height:8px;border-radius:50%}
-#pg-token .cabar .sm2{display:none} @media(max-width:640px){#pg-token .cabar .lg2{display:none} #pg-token .cabar .sm2{display:inline} #pg-token .cabar{gap:4px} #pg-token .cabar .cac{padding:0 8px} #pg-token .cabar .cac .cl{display:none}}
-
-/* ===== trading interface ===== */
-#pg-token .h2x{padding:18px 20px}
-#pg-token .hrow{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
-#pg-token .hrow .hd{flex:1;min-width:0;padding:0;border:0}
-#pg-token .hrow .big{display:flex;gap:26px;align-items:flex-end;flex:none;text-align:right} #pg-token .hrow .big span{display:block;font:500 11px var(--mono);color:var(--fg-3);letter-spacing:.04em} #pg-token .hrow .big b{display:block;font:700 30px var(--disp);letter-spacing:-.02em;line-height:1.1} #pg-token .hrow .big div+div b{font:600 18px var(--mono);color:var(--fg-2)}
-#pg-token .srow{display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
-#pg-token .srow div span{display:block;font:500 11px var(--mono);color:var(--fg-3)} #pg-token .srow div b{display:block;margin-top:2px;font:600 15px var(--mono)} #pg-token .srow .up{color:var(--up)} #pg-token .srow .dn{color:var(--dn)} #pg-token .srow .pdots{display:inline-flex;gap:3px;margin-left:6px;vertical-align:1px} #pg-token .srow .pdots i{width:7px;height:7px;border-radius:50%}
-/* activity */
-#pg-token .act{overflow:hidden}
-#pg-token .tf{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)} #pg-token .tf button{padding:10px 4px;background:none;border:0;border-right:1px solid var(--line);color:var(--fg-3);font:500 11.5px var(--mono);cursor:pointer;text-align:center} #pg-token .tf button:last-child{border-right:0} #pg-token .tf button b{display:block;margin-top:2px;font:600 13px var(--mono);color:var(--fg-2)} #pg-token .tf button.on{background:rgba(63,188,255,.08);color:var(--ac)} #pg-token .tf button.on b{color:var(--fg)}
-#pg-token .am{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:12px 14px 10px} #pg-token .am span{display:block;font:500 10.5px var(--mono);color:var(--fg-3)} #pg-token .am b{display:block;margin-top:3px;font:600 12.5px var(--mono);white-space:nowrap} #pg-token .am b small{font-weight:500;color:var(--fg-3)} #pg-token .am .r{text-align:right}
-#pg-token .abar{display:flex;height:3px} #pg-token .abar i{display:block;height:100%}
+/* coin page, scoped under #pg-coin */
+#pg-coin .cols{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:14px;align-items:start}
+#pg-coin .left{min-width:0;display:flex;flex-direction:column;gap:14px}
+#pg-coin .right{position:sticky;top:calc(var(--top) + 14px);display:flex;flex-direction:column;gap:14px}
+#pg-coin .head{padding:18px 20px}
+#pg-coin .hd{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:16px;align-items:start}
+#pg-coin .hd .lg{width:72px;height:72px;border-radius:50%;background:var(--s3);border:1px solid var(--line-2);object-fit:cover}
+#pg-coin .t1{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap} #pg-coin .t1 h1{font-size:24px;margin:0} #pg-coin .t1 .sym{font:500 15px var(--mono);color:var(--fg-3)} #pg-coin .t1 .wstar{align-self:center}
+#pg-coin .t2{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-top:7px;font:12px var(--mono);color:var(--fg-3)}
+#pg-coin .t2 .lk{display:inline-flex;align-items:center;gap:4px;color:var(--fg-2);font-family:var(--sans)} #pg-coin .t2 .lk:hover{color:var(--fg)} #pg-coin .t2 .lk svg{width:12px;height:12px}
+#pg-coin .desc{margin:10px 0 0;color:var(--fg-2);font-size:13.5px;line-height:1.55;max-width:70ch}
+#pg-coin .by{margin-top:8px;font-size:12px;color:var(--fg-3);display:flex;align-items:center;gap:6px}
+#pg-coin .big{text-align:right;white-space:nowrap} #pg-coin .big span{display:block;font:500 11px var(--mono);color:var(--fg-3)} #pg-coin .big b{display:block;font:700 22px var(--mono);margin-top:2px} #pg-coin .big small{font:12px var(--mono)}
+#pg-coin .srow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+#pg-coin .srow span{display:block;font:500 11px var(--mono);color:var(--fg-3)} #pg-coin .srow b{display:block;margin-top:2px;font:600 15px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-coin .cas{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+#pg-coin .ca{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 4px;border:1px solid var(--line-2);border-radius:8px;background:var(--s2);font:500 11.5px var(--mono);color:var(--fg-2);cursor:pointer}
+#pg-coin .ca img{width:18px;height:18px;border-radius:50%} #pg-coin .ca:hover{color:var(--fg);border-color:var(--line-3)} #pg-coin .ca.off{opacity:.45}
+#pg-coin .chart{overflow:hidden}
+#pg-coin .tabs2{display:flex;gap:2px;padding:8px 10px;border-bottom:1px solid var(--line)} #pg-coin .tabs2 button{height:30px;padding:0 12px;border-radius:7px;font-weight:600;color:var(--fg-3)} #pg-coin .tabs2 button.on{background:var(--s3);color:var(--fg)}
+#pg-coin .pane{display:none} #pg-coin .pane.on{display:block} #pg-coin .tw{overflow-x:auto}
+#pg-coin table{width:100%;border-collapse:collapse;font-size:12.5px} #pg-coin th{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+#pg-coin td{padding:9px 10px;border-bottom:1px solid var(--line);font-family:var(--mono);white-space:nowrap} #pg-coin td.r,#pg-coin th.r{text-align:right}
+#pg-coin td .cimg{width:16px;height:16px;border-radius:50%;vertical-align:-3px;margin-right:6px} #pg-coin .b{color:var(--up)} #pg-coin .s{color:var(--dn)}
 /* trade card */
-#pg-token .ttab{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)} #pg-token .ttab>*{display:flex;align-items:center;justify-content:center;height:44px;background:none;border:0;color:var(--fg-3);font:600 13.5px var(--disp);text-decoration:none} #pg-token .ttab .on{color:var(--fg);box-shadow:inset 0 -2px 0 var(--ac)} #pg-token .ttab a:hover{color:var(--fg)}
-#pg-token .tchain{margin-top:12px}
-#pg-token .tchips{display:flex;flex-wrap:wrap;gap:6px}
-#pg-token .tchip{--cc:#3fbcff;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid var(--line-2);border-radius:999px;background:var(--s1);color:var(--fg-2);font:600 12px var(--mono);cursor:pointer} #pg-token .tchip i{width:7px;height:7px;border-radius:50%;background:var(--cc)} #pg-token .tchip:hover{border-color:var(--line-3);color:var(--fg)}
-#pg-token .tchip.on{border-color:var(--cc);color:var(--fg);background:color-mix(in srgb,var(--cc) 14%,var(--s1));box-shadow:0 0 0 1px color-mix(in srgb,var(--cc) 35%,transparent)} #pg-token .tchip.off{opacity:.45}
-#pg-token .tcinfo{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:12px;color:var(--fg-3)} #pg-token .tcinfo b{color:var(--fg-2);font-weight:600}
-#pg-token .cheap2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:12.5px;color:var(--fg-3);cursor:pointer} #pg-token .cheap2 b{color:var(--fg);font-weight:600} #pg-token .cheap2 input{width:16px;height:16px;flex:none}
-#pg-token .qusd{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px} #pg-token .qusd:empty{display:none}
-#pg-token .qusd button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border:1px solid var(--line-2);border-radius:10px;background:var(--s1);color:var(--fg);font:600 13px var(--mono);cursor:pointer} #pg-token .qusd button small{font:500 10px var(--mono);color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%} #pg-token .qusd button:hover{border-color:var(--ac)}
-/* safety */
-#pg-token .safe{padding:12px 14px} #pg-token .safe .sh3{display:flex;justify-content:space-between;font:600 13px var(--disp);margin-bottom:8px} #pg-token .safe .sh3 span{font:500 11px var(--mono);color:var(--fg-3)}
-#pg-token .safe .sg{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px} #pg-token .safe .sg div{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-2)} #pg-token .safe .sg svg{width:14px;height:14px;color:var(--up);flex:none} #pg-token .safe .sg small{margin-left:auto;font:500 10.5px var(--mono);color:var(--fg-3)}
-@media(max-width:700px){#pg-token .hrow{flex-direction:column;gap:10px} #pg-token .hrow .big{text-align:left} #pg-token .hrow .big b{font-size:26px} #pg-token .srow{gap:10px 18px} #pg-token .safe .sg{grid-template-columns:1fr}}
+#pg-coin .trade .pb{padding:14px}
+#pg-coin .sides{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid var(--line);border-radius:var(--r);background:var(--s2)}
+#pg-coin .sides button{height:34px;border-radius:7px;font-weight:600;color:var(--fg-3)} #pg-coin .sides button.on.bu{background:var(--up-dim);color:var(--up)} #pg-coin .sides button.on.se{background:var(--dn-dim,rgba(240,80,80,.14));color:var(--dn)}
+#pg-coin .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+#pg-coin .chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 9px 0 4px;border:1px solid var(--line-2);border-radius:999px;font:600 11.5px var(--mono);color:var(--fg-2)}
+#pg-coin .chip img{width:18px;height:18px;border-radius:50%} #pg-coin .chip.on{border-color:var(--cc,var(--ac));color:var(--fg);box-shadow:0 0 0 1px var(--cc,var(--ac)) inset}
+#pg-coin .box{margin-top:10px;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--s2)} #pg-coin .box.out{background:var(--s1)}
+#pg-coin .box .lr{display:flex;justify-content:space-between;gap:10px;font:11.5px var(--mono);color:var(--fg-3)}
+#pg-coin .box .ir{display:flex;align-items:center;gap:10px;margin-top:6px} #pg-coin .box input{flex:1;min-width:0;background:none;border:0;outline:0;font:500 24px var(--mono);color:var(--fg);padding:0}
+#pg-coin .box .outv{flex:1;min-width:0;font:500 24px var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #pg-coin .box .outv.dim{color:var(--fg-3)}
+#pg-coin .asset{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 10px 0 5px;border:1px solid var(--line-2);border-radius:999px;background:var(--s1);font:600 13px var(--mono);flex:none}
+#pg-coin .asset img{width:22px;height:22px;border-radius:50%;object-fit:cover}
+#pg-coin .quick{display:flex;gap:4px;margin-top:8px} #pg-coin .quick button{height:24px;padding:0 8px;border:1px solid var(--line-2);border-radius:6px;font:500 11px var(--mono);color:var(--fg-2)} #pg-coin .quick button:hover{border-color:var(--line-3);color:var(--fg)}
+#pg-coin .det{margin-top:10px} #pg-coin .det .kv{padding:6px 0;font-size:12.5px}
+#pg-coin .cta{margin-top:12px;width:100%;height:44px;font:600 14px var(--disp)} #pg-coin .cta.bu{background:var(--up);border-color:var(--up);color:#03170e} #pg-coin .cta.se{background:var(--dn);border-color:var(--dn);color:#fff} #pg-coin .cta:disabled{opacity:.55;cursor:not-allowed}
+#pg-coin .note{margin:10px 0 0;font-size:12px;color:var(--fg-3);line-height:1.5}
+/* pot and shield */
+#pg-coin .pot .pb,#pg-coin .shield .pb,#pg-coin .crt .pb{padding:14px}
+#pg-coin .potv{display:flex;align-items:baseline;justify-content:space-between;gap:10px} #pg-coin .potv b{font:700 26px var(--mono)} #pg-coin .potv small{font:12px var(--mono);color:var(--fg-3)}
+#pg-coin .timer{margin-top:10px;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:var(--s2)}
+#pg-coin .timer b{font:700 22px var(--mono);letter-spacing:.02em} #pg-coin .timer.hot b{color:var(--amber)} #pg-coin .timer span{font-size:12px;color:var(--fg-3)}
+#pg-coin .sbar{height:6px;border-radius:3px;background:var(--s3);overflow:hidden;margin-top:10px} #pg-coin .sbar i{display:block;height:100%;background:var(--amber)}
+#pg-coin .shield.up{border-color:rgba(255,183,77,.5)}
+#pg-coin .empty.panel{padding:60px 20px}
+@media(max-width:1100px){#pg-coin .cols{grid-template-columns:minmax(0,1fr) 340px} #pg-coin .srow{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){
+  #pg-coin .cols{display:flex;flex-direction:column;align-items:stretch} #pg-coin .left,#pg-coin .right{display:contents}
+  #pg-coin .head{order:1} #pg-coin .chart{order:2} #pg-coin .trade{order:3} #pg-coin .pot{order:4} #pg-coin .shield{order:5} #pg-coin .crt{order:6} #pg-coin .ptabs{order:7}
+  #pg-coin .hd{grid-template-columns:56px minmax(0,1fr)} #pg-coin .hd .lg{width:56px;height:56px} #pg-coin .big{grid-column:1/-1;text-align:left} #pg-coin .srow{grid-template-columns:1fr 1fr}
+  #pg-coin .right{position:static} .eqc-box{height:280px}
+}
 </style>
 </head><body data-page="token">
 <header id="sp-top"></header><div id="sp-tape"></div>
-<main id="sp-main"><div class="wrap"><div id="pg-token">
-  <div class="crumb" id="tk-crumb"></div>
-  <div id="tk-page" class="cols">
+<main id="sp-main"><div class="wrap"><div id="pg-coin">
+  <div class="crumb" id="cn-crumb"></div>
+  <div id="cn-empty" class="empty panel hidden"></div>
+  <div class="cols" id="cn-page">
     <div class="left">
-      <section class="panel head h2x">
-        <div class="hrow"><div class="hd" id="tk-head"></div><div class="big"><div><span>MCap</span><b id="tk-mcap">…</b></div><div><span>Price</span><b id="tk-px">…</b></div></div></div>
-        <div class="srow" id="tk-stats"></div>
-        <div class="hidden"><span id="tk-flow"></span><div id="tk-split"></div><span id="tk-feespaid"></span><div id="tk-feebar"></div></div>
-      </section>
-      <section class="panel chart"><div class="ph2"><span id="tk-chart-t"></span><span class="r" id="tk-chart-r"></span></div><div id="tv"></div></section>
+      <section class="panel head" id="cn-head"></section>
+      <section class="panel chart"><div id="tv"></div></section>
       <section class="panel ptabs">
-        <div class="ph2"><div class="tabs" id="tk-tabs"><button data-tab="trades" class="on">Trades<span class="num" id="tk-trades-n"></span></button><button data-tab="holders">Holders</button><button data-tab="pools">Pools</button><button data-tab="top">Top traders</button><button data-tab="info">Token</button></div><div class="seg" id="tk-filter"><button data-f="all" class="on">All</button><button data-f="buy">Buys</button><button data-f="sell">Sells</button></div></div>
-        <div class="pane on" data-pane="trades">
-          <div class="tw"><table class="tb"><thead><tr><th>Side</th><th>Trader</th><th class="r" id="tk-th-coin">Amount</th><th class="r" id="tk-th-pair">Paid</th><th class="r">USD</th><th class="r">Price</th><th>Time</th><th>Chain</th><th class="r">Tx</th></tr></thead><tbody id="tk-trades"></tbody></table></div>
-          <div class="more" id="tk-more"><button class="btn sm" id="tk-more-btn">Load more</button></div>
-        </div>
-        <div class="pane" data-pane="holders"><div class="tw"><table class="tb"><thead><tr><th>#</th><th>Wallet</th><th class="r">Balance</th><th class="r">Share</th><th class="r">Value</th></tr></thead><tbody id="tk-holders"></tbody></table></div></div>
-        <div class="pane" data-pane="pools"><div class="tw"><table class="tb"><thead><tr><th>Chain</th><th>Venue</th><th class="r">Price</th><th class="r">Liquidity</th><th class="r">In pool</th><th class="r">Coins in pool</th><th>State</th></tr></thead><tbody id="tk-poolrows"></tbody></table></div><p class="chnote" id="tk-poolnote" style="padding:0 12px"></p></div>
-        <div class="pane" data-pane="top"><div class="tw"><table class="tb"><thead><tr><th>#</th><th>Wallet</th><th class="r">Volume</th><th class="r">Trades</th><th class="r">Holding</th></tr></thead><tbody id="tk-top"></tbody></table></div></div>
-        <div class="pane" data-pane="info"><div class="info" id="tk-info"></div></div>
+        <div class="tabs2" id="cn-tabs"><button data-t="trades" class="on">Trades</button><button data-t="holders">Holders</button><button data-t="pools">Pools</button></div>
+        <div class="pane on tw" id="cn-trades"></div><div class="pane tw" id="cn-holders"></div><div class="pane tw" id="cn-pools"></div>
       </section>
     </div>
-    <aside class="right">
-      <section class="panel act" id="tk-act"><div class="tf" id="tk-tf"></div><div class="am" id="tk-am"></div><div class="abar" id="tk-abar"></div></section>
-      <section class="panel trade" id="tk-trade"><div class="ttab"><button type="button" class="on">Buy / Sell</button><a id="tk-bridge2" href="/bridge">Bridge</a></div><div class="pb">
-        <div class="sides" id="tk-sides"><button data-side="buy" class="b on">Buy</button><button data-side="sell" class="s">Sell</button></div>
-        <div class="tchain hidden" id="tk-tchain"></div>
-        <div class="payw"><span>Pay with</span><span class="badge ac" id="tk-payw">ETH</span><span class="muted" id="tk-payw-note"></span></div>
-        <div class="box">
-          <div class="lr"><span class="lab">Amount</span><span class="num" id="tk-bal-in"></span></div>
-          <div class="ir"><input id="tk-amt" inputmode="decimal" autocomplete="off" placeholder="0.0" aria-label="Amount"><span class="asset" id="tk-asset-in"></span></div>
-          <div class="br"><span id="tk-amt-usd"></span><div class="quick" id="tk-quick"><button data-q="25">25%</button><button data-q="50">50%</button><button data-q="100">MAX</button></div></div>
+    <div class="right">
+      <section class="panel trade"><div class="pb">
+        <div class="sides" id="cn-sides"><button data-side="buy" class="bu on">Buy</button><button data-side="sell" class="se">Sell</button></div>
+        <div class="chips" id="cn-chips"></div>
+        <div class="box"><div class="lr"><span>You pay</span><span id="cn-bal-in">Balance: —</span></div>
+          <div class="ir"><input id="cn-amt" inputmode="decimal" placeholder="0" autocomplete="off"><span class="asset" id="cn-asset-in"></span></div>
+          <div class="quick" id="cn-quick"></div></div>
+        <div class="box out"><div class="lr"><span>You get</span><span id="cn-bal-out">Balance: —</span></div>
+          <div class="ir"><span class="outv dim" id="cn-out">0</span><span class="asset" id="cn-asset-out"></span></div></div>
+        <div class="det">
+          <div class="kv"><span>Minimum received</span><b id="cn-min">—</b></div>
+          <div class="kv"><span id="cn-fee-l">Fee</span><b id="cn-fee">—</b></div>
+          <div class="kv"><span>Slippage</span><b><span class="seg" id="cn-slip"><button data-s="1" class="on">1%</button><button data-s="3">3%</button><button data-s="10">10%</button></span></b></div>
         </div>
-        <div class="qusd" id="tk-qusd"></div>
-        <div class="box out">
-          <div class="lr"><span class="lab">You receive</span><span class="num" id="tk-bal-out"></span></div>
-          <div class="ir"><div class="outv dim" id="tk-out">0</div><span class="asset" id="tk-asset-out"></span></div>
-          <div class="br"><span id="tk-out-usd"></span></div>
-        </div>
-        <div class="slip"><span>Slippage</span><div class="row"><div class="seg" id="tk-slip"><button data-sl="auto" class="on">Auto</button><button data-sl="0.5">0.5%</button><button data-sl="1">1%</button><button data-sl="3">3%</button><button data-sl="custom">Custom</button></div><input id="tk-slip-in" class="hidden" inputmode="decimal" placeholder="%" aria-label="Custom slippage"></div></div>
-        <div class="det"><div class="kv"><span>Minimum received</span><b id="tk-min">—</b></div><div class="kv"><span>Pool holds</span><b id="tk-poolh">—</b></div><div class="kv"><span id="tk-fee-l">Fee</span><b id="tk-fee">—</b></div><div class="kv"><span>Price impact</span><b id="tk-imp">—</b></div></div>
-        <button class="btn pri lg block cta" id="tk-cta">Connect a wallet</button>
-        <p class="note" id="tk-note"></p>
+        <button class="btn cta bu" id="cn-cta">Connect a wallet</button>
+        <p class="note" id="cn-note"></p>
       </div></section>
-      <section class="panel safe" id="tk-safe"></section>
-      <section class="panel sidep hidden" id="tk-pos"><div class="ph2"><span>Your position</span><span class="num muted" id="tk-pos-sym"></span></div><div class="pb" id="tk-pos-body"></div></section>
-      <section class="panel sidep hidden" id="tk-cre"><div class="ph2"><span>Creator fees</span><span class="badge acl">Your coin</span></div><div class="pb" id="tk-cre-body"></div></section>
-      <section class="panel sidep" id="tk-crt"><div class="ph2"><span>Creator</span><a class="num muted" href="/takeover" style="font-size:11.5px">How takeovers work</a></div><div class="pb" id="tk-crt-body"><div class="empty" style="padding:14px">Loading…</div></div></section>
-    </aside>
+      <section class="panel pot"><div class="ph"><h3>Last-buyer pot</h3><span class="lbl" id="cn-pot-ch"></span></div><div class="pb" id="cn-pot"></div></section>
+      <section class="panel shield" id="cn-shield-p"><div class="ph"><h3>Crash shield</h3></div><div class="pb" id="cn-shield"></div></section>
+      <section class="panel crt"><div class="ph"><h3>Creator fees</h3></div><div class="pb" id="cn-crt"></div></section>
+    </div>
   </div>
-  <div class="empty panel hidden" id="tk-empty"></div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=14"></script><script src="/data.js?v=4"></script><script src="/avatar.js"></script><script src="/chain.js?v=22"></script><script src="/equo.js?v=7"></script><script src="/api.js?v=6"></script><script src="/sol.js?v=5"></script><script src="/wallet.js"></script><script src="/chart.js?v=6"></script><script src="/core.js?v=39"></script><script src="/sp-creator.js?v=2"></script><script src="/sp-token.js?v=46"></script>
+<script src="/config.js?v=15"></script><script src="/data.js?v=4"></script><script src="/avatar.js"></script><script src="/chain.js?v=23"></script><script src="/equo.js?v=7"></script><script src="/api.js?v=6"></script><script src="/v2.js?v=1"></script><script src="/wallet.js"></script><script src="/chart.js?v=6"></script><script src="/core.js?v=39"></script><script src="/sp-coin.js?v=1"></script>
 </body></html>
