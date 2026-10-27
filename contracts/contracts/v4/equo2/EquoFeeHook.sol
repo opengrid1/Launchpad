@@ -46,7 +46,8 @@ interface IWrappedNative {
 ///         LAST-BUYER POT. {POT_VOLUME_BPS} of every swap's volume comes out of its fee into the coin's pot. A buy of
 ///         at least the coin's minimum ($50 of the pair at launch) makes its wallet (the transaction's sender, so it
 ///         works from any terminal or router) the last buyer and sets a {ROUND} timer. When the timer runs out the
-///         last buyer wins the pot less {ROLLOVER_BPS}, which starts the next round. Winnings are paid out by anyone.
+///         last buyer wins the pot less {ROLLOVER_BPS}, which starts the next round. The first swap after the timer
+///         sends the prize straight to the winner's wallet; with no swap, anyone can send it with {settleRound}.
 ///
 ///         CRASH SHIELD. When the price falls {SHIELD_DROP_PCT}% or more below its high of the last {SHIELD_WINDOW},
 ///         the shield goes up: sells pay up to {SHIELD_SELL_BPS} extra (into the pot) and buys pay up to half the fee
@@ -72,6 +73,9 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     uint64 public constant SHIELD_WINDOW = 10 minutes;
     uint64 public constant SHIELD_DECAY = 30 minutes;
     uint16 public constant SHIELD_SELL_BPS = 500;
+    /// @dev Gas for sending a prize from inside a swap, and for the winner's wallet to take native coin.
+    uint256 internal constant PRIZE_GAS = 200_000;
+    uint256 internal constant PRIZE_ETH_GAS = 30_000;
     bytes32 internal constant FEE_SLOT = keccak256("equo.fee.pending");
     bytes32 internal constant VOL_SLOT = keccak256("equo.fee.volume");
     bytes32 internal constant EXTRA_SLOT = keccak256("equo.fee.extra");
@@ -105,7 +109,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     mapping(PoolId => PoolConfig) internal _config;
     mapping(address token => Pot) public pots;
     mapping(address token => Shield) public shields;
-    /// @notice Pot winnings not yet sent (a round a swap ended), per coin and winner, in the coin's pair token.
+    /// @notice Pot winnings a swap could not send, per coin and winner, in the coin's pair token.
     mapping(address token => mapping(address winner => uint256)) public wonOf;
     mapping(address token => PoolId) internal _poolOf;
     mapping(address token => address) public creatorOf;
@@ -132,6 +136,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     error NotThisPool();
     error BelowFloor();
     error InvalidParams();
+    error LowGas();
 
     constructor(IPoolManager poolManager_, address weth_) BaseHook(poolManager_) {
         if (weth_ == address(0)) revert InvalidParams();
@@ -210,15 +215,15 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     }
 
     /// @notice End the round if its timer has run out and send the prize straight to the last buyer's wallet (the
-    ///         native coin for a native pair). Anyone: a keeper calls it when the timer ends. A swap after the timer
-    ///         ends the round too, without paying; pass that winner to {payWinner}.
+    ///         native coin for a native pair). Anyone; the first swap after the timer does the same, so this is only
+    ///         needed when nobody trades.
     function settleRound(address token) external nonReentrant returns (address winner, uint256 amount) {
         PoolConfig storage c = _mustBeRegistered(token);
         winner = _settleRound(token);
         if (winner != address(0)) amount = _payWon(token, c.pair, winner);
     }
 
-    /// @notice Send `winner` what they won on `token`'s pot. Anyone; the prize always goes to the winner.
+    /// @notice Send `winner` a prize a swap could not send. Anyone; the prize always goes to the winner.
     function payWinner(address token, address winner) external nonReentrant returns (uint256) {
         PoolConfig storage c = _mustBeRegistered(token);
         _settleRound(token);
@@ -260,12 +265,25 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
         if (msg.sender != address(poolManager)) revert NotPoolManager();
         (address pair, address to, uint256 amount) = abi.decode(data, (address, address, uint256));
+        _send(pair, to, amount, gasleft());
+        return "";
+    }
+
+    /// @dev The swap that ends a round sends the prize through here, so a send that fails leaves the prize in
+    ///         {wonOf} instead of failing the swap. Only this hook calls it.
+    function sendPrize(address pair, address to, uint256 amount) external {
+        if (msg.sender != address(this)) revert InvalidParams();
+        _send(pair, to, amount, PRIZE_ETH_GAS);
+    }
+
+    /// @dev Inside an unlock: burn `amount` of fee claims and send it to `to`, as native coin for a native pair.
+    function _send(address pair, address to, uint256 amount, uint256 ethGas) internal {
         Currency cur = Currency.wrap(pair);
         poolManager.burn(address(this), cur.toId(), amount);
         poolManager.take(cur, address(this), amount);
         if (pair == weth) {
             IWrappedNative(weth).withdraw(amount);
-            (bool ok,) = to.call{value: amount}("");
+            (bool ok,) = to.call{value: amount, gas: ethGas}("");
             if (!ok) {
                 // a contract that refuses ETH gets the wrapped coin instead
                 IWrappedNative(weth).deposit{value: amount}();
@@ -274,7 +292,6 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         } else {
             IERC20(pair).safeTransfer(to, amount);
         }
-        return "";
     }
 
     // ---------------------------------------------------------------------
@@ -382,7 +399,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
             poolManager.mint(address(this), key.currency1.toId(), fee);
             _book(c.token, fee, extra, volume);
         }
-        _afterTrade(c.token, params.zeroForOne, delta, sqrtP);
+        _afterTrade(c.token, c.pair, params.zeroForOne, delta, sqrtP);
         return (BaseHook.afterSwap.selector, ret);
     }
 
@@ -407,9 +424,11 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         emit FeeTaken(token, fee, volume, creatorPart, platformPart, potPart + extra);
     }
 
-    /// @dev After every swap: end a finished round, let a big enough buy take the pot's timer, move the shield.
-    function _afterTrade(address token, bool sell, BalanceDelta delta, uint160 sqrtP) internal {
-        _settleRound(token);
+    /// @dev After every swap: end a finished round and send its prize, let a big enough buy take the pot's timer,
+    ///      move the shield.
+    function _afterTrade(address token, address pair, bool sell, BalanceDelta delta, uint160 sqrtP) internal {
+        address winner = _settleRound(token);
+        if (winner != address(0)) _sendFromSwap(token, pair, winner);
         if (!sell) {
             int128 paid = delta.amount1();
             uint256 spent = paid < 0 ? uint256(uint128(-paid)) : 0;
@@ -427,6 +446,18 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         } else if (uint256(sqrtP) * 1e6 <= uint256(sh.peakSqrtPriceX96) * SHIELD_SQRT_PPM) {
             sh.until = uint64(block.timestamp) + SHIELD_DECAY;
             emit ShieldUp(token, sqrtP, sh.peakSqrtPriceX96, sh.until);
+        }
+    }
+
+    function _sendFromSwap(address token, address pair, address winner) internal {
+        // the send must get its full gas, so a wallet's gas estimate never settles on a send that runs out
+        if (gasleft() < (PRIZE_GAS * 64) / 63 + 20_000) revert LowGas();
+        uint256 amount = wonOf[token][winner];
+        wonOf[token][winner] = 0;
+        try this.sendPrize{gas: PRIZE_GAS}(pair, winner, amount) {
+            emit PotPaid(token, winner, amount);
+        } catch {
+            wonOf[token][winner] = amount;
         }
     }
 
