@@ -42,7 +42,7 @@ h1,h2,h3{margin:0;font-family:var(--disp);font-weight:700;letter-spacing:-.02em;
 .tlaunch{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 16px 0 12px;border-radius:12px;background:var(--ac);color:var(--ac-ink);font:700 13.5px var(--sans);white-space:nowrap;box-shadow:0 6px 22px rgba(63,188,255,.22);transition:background .15s,transform .15s}
 .tlaunch .di{width:20px;height:20px;transform:rotate(-6deg);transition:transform .25s} .tlaunch:hover{background:var(--ac-2)} .tlaunch:hover .di{transform:rotate(-6deg) translate(2px,-2px)}
 .tlaunch.on{box-shadow:var(--glow)}
-.topr #wconnect{background:#fff;border-color:#fff;color:#000} .topr #wconnect:hover{background:#e6e6ea;border-color:#e6e6ea}
+.topr #wconnect{height:38px;border-radius:12px;padding:0 16px;font-weight:700}
 .sh-nav .ni,.sh-acts .ni{width:20px;height:20px;flex:none} .sh-nav a.on .ni{color:var(--ac)}
 .search{display:flex;align-items:center;gap:8px;width:200px;height:38px;margin-left:0;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--s1);color:var(--fg-3);transition:width .18s,border-color .12s}
 .search:focus-within{width:340px;border-color:var(--line-3);color:var(--fg-2)} .search svg{width:15px;height:15px} .search input{flex:1;background:none;border:0;outline:0;color:var(--fg);min-width:0;font-size:13px} .search input::placeholder{color:var(--fg-3)} .search kbd{font:10.5px var(--mono);padding:1px 6px;border:1px solid var(--line-2);border-radius:4px;color:var(--fg-3)}
