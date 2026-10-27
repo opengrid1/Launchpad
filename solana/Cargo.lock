@@ -3,6 +3,14 @@
 version = 4
 
 [[package]]
+name = "equo-omni"
+version = "0.3.0"
+dependencies = [
+ "pinocchio",
+ "ruint",
+]
+
+[[package]]
 name = "equo-sol"
 version = "0.2.0"
 dependencies = [
