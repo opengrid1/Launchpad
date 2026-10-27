@@ -1,0 +1,30 @@
+{
+  "contracts": {
+    "hook": "0x13b9595c0691871f62a01F5C5A8341635eda28CC",
+    "hookSalt": "0x00000000000000000000000000000000000000000000000000000000000011ff",
+    "coinDeployer": "0x8E86939fC6f6bBDB4aff213f87B512246e7926E9"
+  },
+  "gas": {
+    "hook": 2865061,
+    "coinDeployer": 2263021
+  },
+  "network": "hyperevm",
+  "chainId": 999,
+  "eid": 30367,
+  "deployer": "0x54Ee4998B3309b20daf07F082B9ad8d8De380D0F",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "signer": "0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6",
+  "launcher": "0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67",
+  "poolManager": "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F",
+  "weth": "0x5555555555555555555555555555555555555555",
+  "lzEndpoint": "0x3A73033C0b1407574C76BdBAc67f126f6b4a9AA9",
+  "dvns": [
+    "0x8E49eF1DfAe17e547CA0E7526FfDA81FbaCA810A",
+    "0xc097ab8CD7b053326DFe9fB3E3a31a0CCe3B526f"
+  ],
+  "nativeUsdBand": [
+    "5",
+    "1000"
+  ]
+}

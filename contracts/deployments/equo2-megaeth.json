@@ -1,0 +1,33 @@
+{
+  "contracts": {
+    "hook": "0x6ccc4F076B9B5650be6e09Dd7b646310292B68cC",
+    "hookSalt": "0x000000000000000000000000000000000000000000000000000000000000102c",
+    "coinDeployer": "0x867b598dFD5A889628766e53C563f71B4Fd5Ce44",
+    "coinCreator": "0xa0F44EC6f3c32e2f2CaC9ad3a133b9150D4668D6"
+  },
+  "gas": {
+    "hook": 133385645,
+    "coinDeployer": 104980021,
+    "setEndpoint": 98332,
+    "coinCreator": 198996160
+  },
+  "network": "megaeth",
+  "chainId": 4326,
+  "eid": 30398,
+  "deployer": "0x54Ee4998B3309b20daf07F082B9ad8d8De380D0F",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "signer": "0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6",
+  "launcher": "0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67",
+  "poolManager": "0xaCB7e78fa05D562e0A5D3089ec896D57D057d38E",
+  "weth": "0x4200000000000000000000000000000000000006",
+  "lzEndpoint": "0x6F475642a6e85809B1c36Fa62763669b1b48DD5B",
+  "dvns": [
+    "0x282b3386571f7f794450d5789911a9804FA346b4",
+    "0xeEdE111103535e473451311e26C3E6660b0F77e1"
+  ],
+  "nativeUsdBand": [
+    "300",
+    "30000"
+  ]
+}

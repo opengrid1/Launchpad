@@ -1,0 +1,58 @@
+{
+  "contracts": {
+    "hook": "0xeb0aeB3c55D0594A5Add43ce808198470b15e8cc",
+    "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000000925",
+    "coinDeployer": "0xDd503B4C388331EfE0fC1c1914ee70159263def8",
+    "coinCreator": "0xb37ff7b0cCE93a2989596024C5D7972E998828db",
+    "factory": "0x1091BD5933582DFe867B948ca1470C925aa0F994",
+    "router": "0xc1eB59F1B13f19A08b9Ac2daE4fED1EA273AC917"
+  },
+  "gas": {
+    "hook": 2864845,
+    "coinDeployer": 2263021,
+    "setEndpoint": 47512,
+    "coinCreator": 4410440,
+    "setCreatorContract": 50672,
+    "route mainnet": 993580,
+    "route bsc": 993580,
+    "route arbitrum": 993580,
+    "route unichain": 993580,
+    "route hyperevm": 993580,
+    "route monad": 993580,
+    "route megaeth": 993592,
+    "factory": 4138668,
+    "coinDeployer.setFactory": 47292,
+    "hook.setFactory": 45441,
+    "router": 1932807,
+    "coinDeployer.endSetup": 22582
+  },
+  "network": "base",
+  "chainId": 8453,
+  "eid": 30184,
+  "deployer": "0x54Ee4998B3309b20daf07F082B9ad8d8De380D0F",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "signer": "0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6",
+  "launcher": "0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67",
+  "poolManager": "0x498581fF718922c3f8e6A244956aF099B2652b2b",
+  "weth": "0x4200000000000000000000000000000000000006",
+  "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+  "dvns": [
+    "0x9e059a54699a285714207b43B055483E78FAac25",
+    "0xcd37CA043f8479064e10635020c65FfC005d36f6"
+  ],
+  "nativeUsdBand": [
+    "300",
+    "30000"
+  ],
+  "routes": {
+    "mainnet": 30101,
+    "bsc": 30102,
+    "arbitrum": 30110,
+    "unichain": 30320,
+    "hyperevm": 30367,
+    "monad": 30390,
+    "megaeth": 30398
+  },
+  "deployedAt": "2026-10-27T17:37:36.208Z"
+}

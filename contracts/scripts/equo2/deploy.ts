@@ -121,9 +121,18 @@ async function main() {
     gasTotal += r!.gasUsed;
     state.gas[label] = Number(r!.gasUsed);
     console.log(`  ${label}: ${r!.gasUsed} gas`);
-    return c.getAddress();
+    const a = await c.getAddress();
+    await until(`${label} code`, () => codeAt(a));
+    return a;
   };
   const codeAt = async (a: string) => (await ethers.provider.getCode(a)).length > 2;
+  // load-balanced public RPCs can answer from a node a block or two behind the receipt
+  const until = async (what: string, ok: () => Promise<boolean>) => {
+    for (let i = 0; !(await ok().catch(() => false)); i++) {
+      if (i === 20) throw new Error(`timed out waiting for ${what}`);
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  };
   const balance0 = await ethers.provider.getBalance(deployer.address);
   console.log(`${fork ? "REHEARSAL on a fork of" : "LIVE"} ${chain.name} (${chainId}), deployer ${deployer.address}, balance ${ethers.formatEther(balance0)}`);
   for (const k of ["poolManager", "weth", "endpoint"]) if (!(await codeAt(chain[k]))) throw new Error(`no ${k} at ${chain[k]}`);
@@ -140,7 +149,8 @@ async function main() {
       addr = ethers.getCreate2Address(CREATE2_PROXY, salt, hash);
       if ((BigInt(addr) & FLAG_MASK) === HOOK_FLAGS) break;
     }
-    await sent("hook", deployer.sendTransaction({ to: CREATE2_PROXY, data: ethers.concat([salt, init]) }));
+    // a rerun after a lost receipt finds the hook already there (its owner is checked below)
+    if (!(await codeAt(addr))) await sent("hook", deployer.sendTransaction({ to: CREATE2_PROXY, data: ethers.concat([salt, init]) }));
     for (let i = 0; !(await codeAt(addr)); i++) {
       if (i === 15) throw new Error(`hook did not land at ${addr}`);
       await new Promise((r) => setTimeout(r, 2000));
@@ -160,12 +170,14 @@ async function main() {
   const dep = await ethers.getContractAt("EquoCoinDeployer", C.coinDeployer);
   console.log("EquoCoinDeployer", C.coinDeployer);
   if ((await dep.endpoint()) === ethers.ZeroAddress) await sent("setEndpoint", dep.setEndpoint(chain.endpoint));
+  await until("endpoint", async () => (await dep.endpoint()) === chain.endpoint);
   if (!C.coinCreator) {
     C.coinCreator = await deployC("coinCreator", "EquoCoinCreator", [C.coinDeployer]);
     save();
   }
   console.log("EquoCoinCreator", C.coinCreator);
   if ((await dep.creatorContract()) === ethers.ZeroAddress) await sent("setCreatorContract", dep.setCreatorContract(C.coinCreator));
+  await until("creator contract", async () => (await dep.creatorContract()) === C.coinCreator);
 
   // 3. A pinned route to every other chain.
   for (const remote of CHAINS) {
@@ -174,6 +186,7 @@ async function main() {
     if (have.sendLib !== ethers.ZeroAddress) continue;
     await sent(`route ${remote.name}`, dep.setRoute(remote.eid, routeFor(chain, remote)));
   }
+  for (const remote of CHAINS) if (remote !== chain) await until(`route ${remote.name}`, async () => (await dep.route(remote.eid)).sendLib !== ethers.ZeroAddress);
   state.routes = Object.fromEntries(CHAINS.filter((c: any) => c !== chain).map((c: any) => [c.name, c.eid]));
   save();
 
@@ -187,6 +200,7 @@ async function main() {
   const hook = await ethers.getContractAt("EquoFeeHook", C.hook);
   if ((await dep.factory()) === ethers.ZeroAddress) await sent("coinDeployer.setFactory", dep.setFactory(C.factory));
   if ((await hook.factory()) === ethers.ZeroAddress) await sent("hook.setFactory", hook.setFactory(C.factory));
+  await until("factory wiring", async () => (await hook.factory()) !== ethers.ZeroAddress && (await dep.factory()) !== ethers.ZeroAddress);
   if ((await hook.factory()) !== C.factory || (await dep.factory()) !== C.factory) throw new Error("hook or coin deployer wired to another factory");
   if (!C.router) {
     C.router = await deployC("router", "EquoSwapRouter", [chain.poolManager, C.factory, chain.weth]);

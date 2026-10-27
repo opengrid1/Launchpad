@@ -89,7 +89,7 @@ const config: HardhatUserConfig = {
             // A fork of one Equo v2 chain for the deploy rehearsal (scripts/equo2/deploy.ts): real PoolManager,
             // LayerZero endpoint, libraries and DVNs.
             hardfork: "cancun",
-            forking: { url: EQUO2_FORK.rpc },
+            forking: { url: process.env.EQUO2_FORK_RPC ?? EQUO2_FORK.rpc },
             chainId: EQUO2_FORK.chainId,
             chains: { [EQUO2_FORK.chainId]: { hardforkHistory: { cancun: 0 } } },
           }
