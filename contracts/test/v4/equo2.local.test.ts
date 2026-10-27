@@ -41,6 +41,8 @@ const TYPES = {
     { name: "metadataURI", type: "string" },
     { name: "feeBps", type: "uint16" },
     { name: "deadline", type: "uint64" },
+    { name: "feeEid", type: "uint32" },
+    { name: "launchFeeUsd18", type: "uint256" },
     { name: "legs", type: "Leg[]" },
   ],
   Leg: [
@@ -75,7 +77,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     const c2 = await (await ethers.getContractFactory("HookDeployer")).deploy();
     const c2Addr = await c2.getAddress();
     const Hook = await ethers.getContractFactory("EquoFeeHook");
-    const initCode = ethers.concat([Hook.bytecode, coder.encode(["address", "address"], [PM, WETH])]);
+    const initCode = ethers.concat([Hook.bytecode, coder.encode(["address", "address", "address"], [PM, WETH, admin.address])]);
     const hash = ethers.keccak256(initCode);
     let salt = "", hookAddr = "";
     for (let i = 0n; i < 4_000_000n; i++) {
@@ -121,7 +123,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
   }
 
   /** Mine each leg's salt so its coin address ends in e9 below the ceiling, the way the launch service does. */
-  async function buildSnapshot(env: any, opts: { tag: string; feeBps?: number; slices?: bigint[]; deadline?: number; creator?: string; pairs?: (string | null)[] }) {
+  async function buildSnapshot(env: any, opts: { tag: string; feeBps?: number; slices?: bigint[]; deadline?: number; creator?: string; pairs?: (string | null)[]; feeEid?: number; launchFeeUsd18?: bigint }) {
     const launchId = ethers.id(`launch-${opts.tag}`);
     const creator = opts.creator ?? env.creator.address;
     const slices = opts.slices ?? [CHAIN_SUPPLY, CHAIN_SUPPLY, CHAIN_SUPPLY];
@@ -140,7 +142,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
       legs.push({ eid: c.eid, coin: pad(coin), legSalt, pair: pair ? pad(pair) : ethers.ZeroHash, slice: slices[i], quoteUsd18: pair ? 10n ** 18n : CHAINS[i].usd * 10n ** 18n });
     }
     const deadline = opts.deadline ?? (await time.latest()) + 1800;
-    const snap = { launchId, creator, name: `Equo ${opts.tag}`, symbol: `E${opts.tag}`, metadataURI: "ipfs://equo", feeBps: opts.feeBps ?? 100, deadline, legs };
+    const snap = { launchId, creator, name: `Equo ${opts.tag}`, symbol: `E${opts.tag}`, metadataURI: "ipfs://equo", feeBps: opts.feeBps ?? 100, deadline, feeEid: opts.feeEid ?? 0, launchFeeUsd18: opts.launchFeeUsd18 ?? 0n, legs };
     const sig = await env.signer.signTypedData(DOMAIN, TYPES, snap);
     return { snap, sig };
   }
@@ -391,12 +393,45 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     const before = await coins[0].balanceOf(env.admin.address);
     await (await f.connect(env.admin).collect(addrs[0], 5000, env.admin.address)).wait();
     expect(await coins[0].balanceOf(env.admin.address)).to.be.gt(before);
+    // the launch service may collect too, but only ever to the admin, whatever recipient it names
+    expect(await f.collectors(env.launcher.address)).to.equal(true);
+    const mid = await coins[0].balanceOf(env.admin.address);
+    await (await f.connect(env.launcher).collect(addrs[0], 5000, env.launcher.address)).wait();
+    expect(await coins[0].balanceOf(env.admin.address)).to.be.gt(mid);
+    expect(await coins[0].balanceOf(env.launcher.address)).to.equal(0n);
+    await (await f.connect(env.admin).setCollector(env.launcher.address, false)).wait();
+    await expect(f.connect(env.launcher).collect(addrs[0], 5000, env.admin.address)).to.be.revertedWithCustomError(f, "NotAdmin");
     await expect(coins[0].connect(env.outsider).setMetadataURI("x")).to.be.revertedWithCustomError(coins[0], "NotMetadataAuthority");
     await (await coins[0].connect(env.creator).offerMetadataAuthority(env.trader.address)).wait();
     await (await coins[0].connect(env.trader).acceptMetadataAuthority()).wait();
     await (await coins[0].connect(env.trader).setMetadataURI("ipfs://new")).wait();
     expect(await coins[0].metadataURI()).to.equal("ipfs://new");
   });
+  it("launch fee: the fee leg pays it in native coin to the launch service, the rest is the launch buy; other legs pay none", async () => {
+    const env = await deployAll();
+    const fee = 8n * 10n ** 18n; // $8; ETH at $3,000
+    const feeWei = (fee * 10n ** 18n + 3000n * 10n ** 18n - 1n) / (3000n * 10n ** 18n);
+    const { snap, sig } = await buildSnapshot(env, { tag: "FEE", feeEid: CHAINS[0].eid, launchFeeUsd18: fee });
+    const addrs = snap.legs.map((l: any) => ethers.getAddress("0x" + l.coin.slice(26)));
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (i !== j) await (await env.chains[i].endpoint.setDestLzEndpoint(addrs[j], await env.chains[j].endpoint.getAddress())).wait();
+    const f0 = env.chains[0].factory;
+    expect(await f0.launchFeeTo()).to.equal(env.launcher.address);
+    // too little for the fee
+    await expect(f0.connect(env.creator).launch(snap, sig, 0n, { value: feeWei - 1n })).to.be.revertedWithCustomError(f0, "FeeUnpaid");
+    // the fee to the launch service, the rest bought for the creator
+    const before = await ethers.provider.getBalance(env.launcher.address);
+    const devBuy = ethers.parseEther("0.1");
+    const r = await (await f0.connect(env.creator).launch(snap, sig, 0n, { value: feeWei + devBuy })).wait();
+    expect((await ethers.provider.getBalance(env.launcher.address)) - before).to.equal(feeWei);
+    const bought = r!.logs.map((l: any) => { try { return f0.interface.parseLog(l); } catch { return null; } }).find((e: any) => e?.name === "LaunchBought");
+    expect(bought!.args.pairIn).to.equal(devBuy);
+    // the launch service's legs pay nothing
+    for (let i = 1; i < 3; i++) await (await env.chains[i].factory.connect(env.launcher).launch(snap, sig, 0n)).wait();
+    // a fee above $50 is refused even when signed
+    const big = await buildSnapshot(env, { tag: "FEE2", feeEid: CHAINS[0].eid, launchFeeUsd18: 51n * 10n ** 18n });
+    await expect(f0.connect(env.creator).launch(big.snap, big.sig, 0n, { value: ethers.parseEther("1") })).to.be.revertedWithCustomError(f0, "BadSnapshot");
+  });
+
   it("a snapshot can carry a Solana leg: EVM coins peer it from launch, with Solana's executor options", async () => {
     const env = await deployAll();
     const SOL_EID = 30168;
@@ -507,6 +542,18 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     expect(paid).to.be.gt((pot * 8000n) / 10_000n); // plus the sell's own pot share
     expect(await c.hook.wonOf(coin, env.trader.address)).to.equal(0n);
     expect((await c.hook.pots(coin)).round).to.equal(1n);
+    // the last buyer must hold: selling gives the timer up, and the round waits for the next $50 buy
+    await (await c.router.connect(env.trader).buy(coin, "0x", 0n, { value: ethers.parseEther("1") })).wait();
+    expect((await c.hook.pots(coin)).lastBuyer).to.equal(env.trader.address);
+    const tb = await token.balanceOf(env.trader.address);
+    await (await token.connect(env.trader).approve(await c.router.getAddress(), tb)).wait();
+    await (await c.router.connect(env.trader).sell(coin, tb / 100n, "0x", 0n)).wait();
+    expect((await c.hook.pots(coin)).lastBuyer).to.equal(ethers.ZeroAddress);
+    await time.increase(21 * 60);
+    await (await c.router.connect(env.outsider).buy(coin, "0x", 0n, { value: ethers.parseEther("0.001") })).wait();
+    expect((await c.hook.pots(coin)).round).to.equal(1n); // nobody won
+    await (await c.router.connect(env.outsider).buy(coin, "0x", 0n, { value: ethers.parseEther("1") })).wait();
+    expect((await c.hook.pots(coin)).lastBuyer).to.equal(env.outsider.address);
   });
 
   it("crash shield: a 20% fall within 10 minutes raises the sell fee (into the pot) and halves the buy fee, fading over 30 minutes", async () => {
@@ -518,17 +565,18 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     await (await c.router.connect(env.outsider).buy(coin, "0x", 0n, { value: ethers.parseEther("5") })).wait();
     expect(await c.hook.shieldOf(coin)).to.equal(0n);
     expect(await c.hook.feeNow(coin, true)).to.equal(100n);
-    // a dump of most of it: more than 20% down
+    // a dump of most of it: more than 20% down; the shield reads the price as the next block opens
     const bal = await token.balanceOf(env.outsider.address);
     await (await token.connect(env.outsider).approve(await c.router.getAddress(), bal)).wait();
     await (await c.router.connect(env.outsider).sell(coin, (bal * 6n) / 10n, "0x", 0n)).wait();
-    expect(await c.hook.shieldOf(coin)).to.equal(10_000n);
-    expect(await c.hook.feeNow(coin, true)).to.equal(600n);
-    expect(await c.hook.feeNow(coin, false)).to.equal(50n);
-    // the next sell pays the extra 5%, and the extra goes to the pot
+    expect(await c.hook.shieldOf(coin)).to.equal(0n);
+    // the next sell trips it, pays the extra 5%, and the extra goes to the pot
     const potBefore = (await c.hook.pots(coin)).amount;
     const creatorBefore = await c.hook.creatorOwed(coin);
     const rc = await (await c.router.connect(env.outsider).sell(coin, bal / 10n, "0x", 0n)).wait();
+    expect(await c.hook.shieldOf(coin)).to.equal(10_000n);
+    expect(await c.hook.feeNow(coin, true)).to.equal(600n);
+    expect(await c.hook.feeNow(coin, false)).to.equal(50n);
     const ev = rc!.logs.map((l: any) => { try { return c.hook.interface.parseLog(l); } catch { return null; } }).find((l: any) => l?.name === "FeeTaken");
     const volume = ev!.args.volume as bigint;
     // the fee is 6% of the volume at the time (a little less: the shield fades by the second)
@@ -542,6 +590,30 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     expect(Number(await c.hook.feeNow(coin, false))).to.be.within(74, 76);
     await time.increase(16 * 60);
     expect(await c.hook.feeNow(coin, true)).to.equal(100n);
+  });
+
+  it("crash shield: a pump and dump inside one block neither raises the high nor trips it", async () => {
+    const env = await deployAll();
+    const { addrs } = await launchAll(env, "SH2", 100, 0n);
+    const c = env.chains[0];
+    const coin = addrs[0];
+    const token = await ethers.getContractAt("EquoCoin", coin);
+    await (await c.router.connect(env.outsider).buy(coin, "0x", 0n, { value: ethers.parseEther("1") })).wait();
+    await (await token.connect(env.trader).approve(await c.router.getAddress(), ethers.MaxUint256)).wait();
+    // one block: a big buy, then selling it all back
+    const got = await c.router.connect(env.trader).buy.staticCall(coin, "0x", 0n, { value: ethers.parseEther("20") });
+    await ethers.provider.send("evm_setAutomine", [false]);
+    try {
+      await c.router.connect(env.trader).buy(coin, "0x", 0n, { value: ethers.parseEther("20"), gasLimit: 1_000_000 });
+      await c.router.connect(env.trader).sell(coin, got, "0x", 0n, { gasLimit: 1_000_000 });
+      await c.router.connect(env.outsider).buy(coin, "0x", 0n, { value: ethers.parseEther("0.001"), gasLimit: 1_000_000 });
+      await ethers.provider.send("evm_mine", []);
+    } finally {
+      await ethers.provider.send("evm_setAutomine", [true]);
+    }
+    // the pump's block opened at the old price; the dump returned there: no fall from the high it saw
+    await (await c.router.connect(env.outsider).buy(coin, "0x", 0n, { value: ethers.parseEther("0.001") })).wait();
+    expect(await c.hook.shieldOf(coin)).to.equal(0n);
   });
 
   it("the fee is 1% to 5%: lower or higher is refused", async () => {

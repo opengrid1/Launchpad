@@ -50,8 +50,14 @@ interface IWrappedNativeDeposit {
 ///         The creator's launch buy (native coin sent with a native-paired launch, or `pairIn` of the pair asset pulled
 ///         from the caller) is swapped fee-free, coins to the creator.
 ///
-///         ADMIN. Sets the snapshot signer, launchers and the fee recipient, and holds one lever over liquidity:
-///         {collect}, which removes a share of a coin's launch position to a recipient.
+///         LAUNCH FEE. The snapshot names one chain (the creator's) whose leg pays a launch fee in USD, at most
+///         {MAX_LAUNCH_FEE_USD18}, in native coin out of what is sent with it, to {launchFeeTo}: the launch service,
+///         which pays the gas of every other leg. Legs on other chains pay none.
+///
+///         ADMIN. Sets the snapshot signer, launchers, collectors, the launch fee's recipient and the fee recipient,
+///         and holds one lever over liquidity: {collect}, which removes a share of a coin's launch position to a
+///         recipient. A collector (the launch service, so one request covers every chain) may run it too, always
+///         to the admin.
 contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
@@ -64,13 +70,15 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
     uint256 public constant POT_MIN_BUY_USD18 = 50e18;
     int24 public constant TICK_SPACING = 60;
     uint64 public constant MAX_SNAPSHOT_LIFE = 1 hours;
+    /// @notice The most a snapshot can charge for a launch.
+    uint256 public constant MAX_LAUNCH_FEE_USD18 = 50e18;
     uint256 public constant MAX_LEGS = 16;
     /// @notice Coins kept out of the seed position to absorb rounding in the liquidity math.
     uint256 public constant COIN_SLACK = 1e6;
 
     bytes32 public constant LEG_TYPEHASH = keccak256("Leg(uint32 eid,bytes32 coin,bytes32 legSalt,bytes32 pair,uint256 slice,uint256 quoteUsd18)");
     bytes32 public constant SNAPSHOT_TYPEHASH = keccak256(
-        "Snapshot(bytes32 launchId,address creator,string name,string symbol,string metadataURI,uint16 feeBps,uint64 deadline,Leg[] legs)"
+        "Snapshot(bytes32 launchId,address creator,string name,string symbol,string metadataURI,uint16 feeBps,uint64 deadline,uint32 feeEid,uint256 launchFeeUsd18,Leg[] legs)"
         "Leg(uint32 eid,bytes32 coin,bytes32 legSalt,bytes32 pair,uint256 slice,uint256 quoteUsd18)"
     );
     bytes32 public immutable DOMAIN_SEPARATOR = keccak256(abi.encode(keccak256("EIP712Domain(string name,string version)"), keccak256("Equo"), keccak256("2")));
@@ -92,6 +100,8 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
         string metadataURI;
         uint16 feeBps;
         uint64 deadline;
+        uint32 feeEid; // the chain whose leg pays the launch fee (the creator's own)
+        uint256 launchFeeUsd18; // the launch fee in USD, paid in native coin on that chain's leg
         Leg[] legs;
     }
 
@@ -128,10 +138,14 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
 
     address public signer;
     address public feeRecipient;
+    /// @notice Where launch fees go: the launch service, which pays for the legs the creator did not.
+    address public launchFeeTo;
     /// @notice The pairs a launch here may use (the wrapped native coin first) and their USD bands. Fixed.
     mapping(address token => PairTerms) internal _pairTerms;
     address[] internal _pairs;
     mapping(address => bool) public launchers;
+    /// @notice Accounts that may run {collect} for the admin; what they collect always goes to the admin.
+    mapping(address => bool) public collectors;
     mapping(bytes32 launchId => bool) public launched;
     mapping(address token => Listing) public listings;
     mapping(address token => Position) public positions;
@@ -142,7 +156,10 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
     event LaunchBought(address indexed token, address indexed creator, uint256 pairIn, uint256 coinOut);
     event SignerSet(address indexed signer);
     event LauncherSet(address indexed launcher, bool allowed);
+    event CollectorSet(address indexed collector, bool allowed);
     event FeeRecipientSet(address indexed recipient);
+    event LaunchFeeToSet(address indexed to);
+    event LaunchFeePaid(address indexed token, address indexed payer, uint256 usd18, uint256 amount, address indexed to);
     event PairListed(address indexed token, uint256 minUsd18, uint256 maxUsd18);
     event Collected(address indexed token, uint16 bps, uint128 liquidity, uint256 coins, uint256 pair, address indexed to);
     event CreatorTransferStarted(address indexed token, address indexed from, address indexed to);
@@ -158,6 +175,7 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
     error InvalidParams();
     error NotCreator();
     error PairNotListed();
+    error FeeUnpaid();
 
     constructor(
         address admin_,
@@ -189,10 +207,14 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
         signer = signer_;
         feeRecipient = feeRecipient_ == address(0) ? admin_ : feeRecipient_;
         // the launch service, allowed from the start so the admin needs no transaction on each chain to switch it on
+        // the launch service is also a collector, so one admin request collects a coin on every chain
         if (launcher_ != address(0)) {
             launchers[launcher_] = true;
+            collectors[launcher_] = true;
             emit LauncherSet(launcher_, true);
+            emit CollectorSet(launcher_, true);
         }
+        launchFeeTo = launcher_ == address(0) ? admin_ : launcher_;
     }
 
     modifier onlyAdmin() {
@@ -215,15 +237,31 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
         emit LauncherSet(launcher, allowed);
     }
 
+    function setCollector(address collector, bool allowed) external onlyAdmin {
+        collectors[collector] = allowed;
+        emit CollectorSet(collector, allowed);
+    }
+
+    function setLaunchFeeTo(address to) external onlyAdmin {
+        if (to == address(0)) revert InvalidParams();
+        launchFeeTo = to;
+        emit LaunchFeeToSet(to);
+    }
+
     function setFeeRecipient(address recipient) external onlyAdmin {
         if (recipient == address(0)) revert InvalidParams();
         feeRecipient = recipient;
         emit FeeRecipientSet(recipient);
     }
 
-    /// @notice Admin-only: pull `bps` of a coin's launch position (coins and pair) out of its pool to `recipient`.
-    ///         Not reversible. The fees owed to the creator and the platform are never touched.
-    function collect(address token, uint16 bps, address recipient) external onlyAdmin nonReentrant returns (uint256 coins, uint256 pair) {
+    /// @notice Pull `bps` of a coin's launch position (coins and pair) out of its pool: the admin, to `recipient`;
+    ///         a collector, always to the admin. Not reversible. The fees owed to the creator and the platform are
+    ///         never touched.
+    function collect(address token, uint16 bps, address recipient) external nonReentrant returns (uint256 coins, uint256 pair) {
+        if (msg.sender != admin) {
+            if (!collectors[msg.sender]) revert NotAdmin();
+            recipient = admin;
+        }
         if (bps == 0 || bps > 10_000 || recipient == address(0)) revert InvalidParams();
         if (listings[token].createdAt == 0) revert InvalidParams();
         Position storage pos = positions[token];
@@ -275,6 +313,8 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
                 keccak256(bytes(s.metadataURI)),
                 s.feeBps,
                 s.deadline,
+                s.feeEid,
+                s.launchFeeUsd18,
                 keccak256(abi.encodePacked(legHashes))
             )
         );
@@ -287,7 +327,8 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
     }
 
     /// @notice Launch this chain's leg: the creator itself, or an approved launcher. The launch buy is the native coin
-    ///         sent (a native-paired leg) or `pairIn` of the pair asset pulled from the caller (an asset-paired leg).
+    ///         sent, less the launch fee on the fee leg (a native-paired leg), or `pairIn` of the pair asset pulled from
+    ///         the caller (an asset-paired leg).
     function launch(Snapshot calldata s, bytes calldata signature, uint256 pairIn) external payable nonReentrant returns (address token) {
         if (msg.sender != s.creator && !launchers[msg.sender]) revert NotAllowed();
         return _launch(s, signature, pairIn);
@@ -310,6 +351,7 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
         if (s.creator == address(0) || bytes(s.name).length == 0 || bytes(s.name).length > 64 || bytes(s.symbol).length == 0 || bytes(s.symbol).length > 16) {
             revert BadSnapshot();
         }
+        if (s.launchFeeUsd18 > MAX_LAUNCH_FEE_USD18) revert BadSnapshot();
         if (ECDSA.recover(digest(s), signature) != signer) revert BadSignature();
         launched[s.launchId] = true;
 
@@ -361,9 +403,20 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
         allTokens.push(token);
         emit Launched(token, s.creator, s.launchId, poolId, leg.slice, s.feeBps, leg.quoteUsd18);
 
-        uint256 buyIn = pair == weth ? msg.value : pairIn;
+        // the fee leg pays the launch fee out of the native coin sent; the rest is the launch buy
+        uint256 value = msg.value;
+        if (s.feeEid == eid && s.launchFeeUsd18 > 0) {
+            if (pair != weth) revert BadSnapshot();
+            uint256 fee = Math.mulDiv(s.launchFeeUsd18, 1e18, leg.quoteUsd18, Math.Rounding.Ceil);
+            if (value < fee) revert FeeUnpaid();
+            value -= fee;
+            (bool ok,) = launchFeeTo.call{value: fee}("");
+            if (!ok) revert InvalidParams();
+            emit LaunchFeePaid(token, msg.sender, s.launchFeeUsd18, fee, launchFeeTo);
+        }
+        uint256 buyIn = pair == weth ? value : pairIn;
         if (buyIn > 0) {
-            if (pair == weth) IWrappedNativeDeposit(weth).deposit{value: msg.value}();
+            if (pair == weth) IWrappedNativeDeposit(weth).deposit{value: value}();
             else IERC20(pair).safeTransferFrom(msg.sender, address(this), pairIn);
             bytes memory res = poolManager.unlock(abi.encode(uint8(1), abi.encode(key, buyIn, s.creator)));
             emit LaunchBought(token, s.creator, buyIn, abi.decode(res, (uint256)));

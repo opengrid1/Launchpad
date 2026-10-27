@@ -70,7 +70,8 @@ const TYPES = {
   Snapshot: [
     { name: "launchId", type: "bytes32" }, { name: "creator", type: "address" }, { name: "name", type: "string" },
     { name: "symbol", type: "string" }, { name: "metadataURI", type: "string" }, { name: "feeBps", type: "uint16" },
-    { name: "deadline", type: "uint64" }, { name: "legs", type: "Leg[]" },
+    { name: "deadline", type: "uint64" }, { name: "feeEid", type: "uint32" }, { name: "launchFeeUsd18", type: "uint256" },
+    { name: "legs", type: "Leg[]" },
   ],
   Leg: [
     { name: "eid", type: "uint32" }, { name: "coin", type: "bytes32" }, { name: "legSalt", type: "bytes32" },
@@ -131,7 +132,7 @@ async function main() {
   // 1. The hook, through the CREATE2 deployer at an address carrying its permission flags.
   if (!C.hook) {
     const Hook = await ethers.getContractFactory("EquoFeeHook");
-    const init = ethers.concat([Hook.bytecode, coder.encode(["address", "address"], [chain.poolManager, chain.weth])]);
+    const init = ethers.concat([Hook.bytecode, coder.encode(["address", "address", "address"], [chain.poolManager, chain.weth, deployer.address])]);
     const hash = ethers.keccak256(init);
     let salt = "", addr = "";
     for (let i = 0n; ; i++) {
@@ -149,6 +150,7 @@ async function main() {
     save();
   }
   console.log("EquoFeeHook", C.hook);
+  if ((await (await ethers.getContractAt("EquoFeeHook", C.hook)).deployer()) !== deployer.address) throw new Error("hook belongs to someone else");
 
   // 2. The coin deployer and its creator, with this chain's endpoint.
   if (!C.coinDeployer) {
@@ -185,6 +187,7 @@ async function main() {
   const hook = await ethers.getContractAt("EquoFeeHook", C.hook);
   if ((await dep.factory()) === ethers.ZeroAddress) await sent("coinDeployer.setFactory", dep.setFactory(C.factory));
   if ((await hook.factory()) === ethers.ZeroAddress) await sent("hook.setFactory", hook.setFactory(C.factory));
+  if ((await hook.factory()) !== C.factory || (await dep.factory()) !== C.factory) throw new Error("hook or coin deployer wired to another factory");
   if (!C.router) {
     C.router = await deployC("router", "EquoSwapRouter", [chain.poolManager, C.factory, chain.weth]);
     save();
@@ -223,11 +226,11 @@ async function main() {
   }
   legs.sort((a, b) => a.eid - b.eid);
   const block = await ethers.provider.getBlock("latest");
-  const snap = { launchId, creator: deployer.address, name: "Equo Rehearsal", symbol: "EREH", metadataURI: "ipfs://equo", feeBps: 100, deadline: block!.timestamp + 1800, legs };
+  const snap = { launchId, creator: deployer.address, name: "Equo Rehearsal", symbol: "EREH", metadataURI: "ipfs://equo", feeBps: 100, deadline: block!.timestamp + 1800, feeEid: chain.eid, launchFeeUsd18: ethers.parseEther("8"), legs };
   const sig = await rehearsalSigner!.signTypedData({ name: "Equo", version: "2" }, TYPES, snap);
-  const devBuy = ethers.parseEther((Number(10) / Number(REHEARSAL_USD[chain.name])).toFixed(12)); // $10
+  const devBuy = ethers.parseEther((18 / Number(REHEARSAL_USD[chain.name])).toFixed(12)); // $8 launch fee + $10 buy
   const lr = await (await factory.launch(snap, sig, 0n, { value: devBuy })).wait();
-  console.log(`rehearsal launch (8 legs, 7 routes wired, $10 dev buy): ${lr!.gasUsed} gas, coin ${mine.coin}`);
+  console.log(`rehearsal launch (8 legs, 7 routes wired, $8 fee, $10 dev buy): ${lr!.gasUsed} gas, coin ${mine.coin}`);
   const router = await ethers.getContractAt("EquoSwapRouter", C.router);
   const usd60 = ethers.parseEther((60 / Number(REHEARSAL_USD[chain.name])).toFixed(12));
   const br = await (await router.buy(mine.coin, "0x", 0n, { value: usd60 })).wait();

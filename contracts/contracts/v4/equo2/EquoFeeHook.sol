@@ -46,10 +46,13 @@ interface IWrappedNative {
 ///         LAST-BUYER POT. {POT_VOLUME_BPS} of every swap's volume comes out of its fee into the coin's pot. A buy of
 ///         at least the coin's minimum ($50 of the pair at launch) makes its wallet (the transaction's sender, so it
 ///         works from any terminal or router) the last buyer and sets a {ROUND} timer. When the timer runs out the
-///         last buyer wins the pot less {ROLLOVER_BPS}, which starts the next round. The first swap after the timer
-///         sends the prize straight to the winner's wallet; with no swap, anyone can send it with {settleRound}.
+///         last buyer wins the pot less {ROLLOVER_BPS}, which starts the next round. The last buyer must hold: a
+///         sell from their wallet gives the timer up. The first swap after the timer sends the prize straight to the
+///         winner's wallet; with no swap, anyone can send it with {settleRound}. The wallet is the transaction's
+///         sender, so a buy relayed by a bundler or an intent solver counts for the relayer, not the user.
 ///
-///         CRASH SHIELD. When the price falls {SHIELD_DROP_PCT}% or more below its high of the last {SHIELD_WINDOW},
+///         CRASH SHIELD. Measured on each block's opening price. When the price falls {SHIELD_DROP_PCT}% or more below
+///         its high of the last {SHIELD_WINDOW},
 ///         the shield goes up: sells pay up to {SHIELD_SELL_BPS} extra (into the pot) and buys pay up to half the fee
 ///         less, both fading to normal over {SHIELD_DECAY} after the fall stops.
 contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
@@ -75,7 +78,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     uint16 public constant SHIELD_SELL_BPS = 500;
     /// @dev Gas for sending a prize from inside a swap, and for the winner's wallet to take native coin.
     uint256 internal constant PRIZE_GAS = 200_000;
-    uint256 internal constant PRIZE_ETH_GAS = 30_000;
+    uint256 internal constant PRIZE_ETH_GAS = 2_300;
     bytes32 internal constant FEE_SLOT = keccak256("equo.fee.pending");
     bytes32 internal constant VOL_SLOT = keccak256("equo.fee.volume");
     bytes32 internal constant EXTRA_SLOT = keccak256("equo.fee.extra");
@@ -104,6 +107,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         uint160 peakSqrtPriceX96; // the highest price since `peakAt`
         uint64 peakAt;
         uint64 until; // the shield fades out at this time
+        uint64 openBlock; // the last block whose opening price the shield has seen
     }
 
     mapping(PoolId => PoolConfig) internal _config;
@@ -137,11 +141,14 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     error BelowFloor();
     error InvalidParams();
     error LowGas();
+    error PartialFill();
 
-    constructor(IPoolManager poolManager_, address weth_) BaseHook(poolManager_) {
-        if (weth_ == address(0)) revert InvalidParams();
+    /// @param owner_ The account that wires the factory once. Named here, not taken from the sender, so a copy of
+    ///        this deployment made through a public CREATE2 deployer by anyone else still belongs to it.
+    constructor(IPoolManager poolManager_, address weth_, address owner_) BaseHook(poolManager_) {
+        if (weth_ == address(0) || owner_ == address(0)) revert InvalidParams();
         weth = weth_;
-        deployer = tx.origin; // the account behind the CREATE2 deployer
+        deployer = owner_;
     }
 
     receive() external payable {}
@@ -176,7 +183,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         if (_config[id].registered || creator == address(0) || minBuy == 0 || minBuy > type(uint128).max) revert InvalidParams();
         _config[id] = PoolConfig({token: token, pair: pair, feeBps: feeBps, registered: true, floorSqrtPriceX96: floorSqrtPriceX96});
         pots[token].minBuy = uint128(minBuy);
-        shields[token] = Shield({peakSqrtPriceX96: floorSqrtPriceX96, peakAt: uint64(block.timestamp), until: 0});
+        shields[token] = Shield({peakSqrtPriceX96: floorSqrtPriceX96, peakAt: uint64(block.timestamp), until: 0, openBlock: 0});
         _poolOf[token] = id;
         creatorOf[token] = creator;
         emit PoolRegistered(token, pair, feeBps, creator);
@@ -356,9 +363,12 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
-        PoolConfig storage c = _config[key.toId()];
+        PoolId id = key.toId();
+        PoolConfig storage c = _config[id];
         // the creator's launch buy (the factory's only swap) pays no fee
-        if (!c.registered || sender == factory || !_specifiedIsPair(params)) return (BaseHook.beforeSwap.selector, toBeforeSwapDelta(0, 0), 0);
+        if (!c.registered || sender == factory) return (BaseHook.beforeSwap.selector, toBeforeSwapDelta(0, 0), 0);
+        _watchShield(c.token, id);
+        if (!_specifiedIsPair(params)) return (BaseHook.beforeSwap.selector, toBeforeSwapDelta(0, 0), 0);
         uint256 amount = params.amountSpecified < 0 ? uint256(-params.amountSpecified) : uint256(params.amountSpecified);
         (uint256 fee, uint256 extra) = _fee(c, params.zeroForOne, amount);
         _tset(FEE_SLOT, fee);
@@ -389,6 +399,10 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
             _tset(FEE_SLOT, 0);
             _tset(VOL_SLOT, 0);
             _tset(EXTRA_SLOT, 0);
+            // the fee was taken on the whole amount asked for, so the swap must fill it whole
+            int128 moved = delta.amount1();
+            uint256 filled = moved < 0 ? uint256(uint128(-moved)) : uint256(uint128(moved));
+            if (filled != (params.amountSpecified < 0 ? volume - fee : volume + fee)) revert PartialFill();
         } else {
             int128 unspecified = delta.amount1();
             volume = unspecified < 0 ? uint256(uint128(-unspecified)) : uint256(uint128(unspecified));
@@ -399,7 +413,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
             poolManager.mint(address(this), key.currency1.toId(), fee);
             _book(c.token, fee, extra, volume);
         }
-        _afterTrade(c.token, c.pair, params.zeroForOne, delta, sqrtP);
+        _afterTrade(c.token, c.pair, params.zeroForOne, delta);
         return (BaseHook.afterSwap.selector, ret);
     }
 
@@ -424,22 +438,36 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         emit FeeTaken(token, fee, volume, creatorPart, platformPart, potPart + extra);
     }
 
-    /// @dev After every swap: end a finished round and send its prize, let a big enough buy take the pot's timer,
-    ///      move the shield.
-    function _afterTrade(address token, address pair, bool sell, BalanceDelta delta, uint160 sqrtP) internal {
+    /// @dev After every swap: end a finished round and send its prize, let a big enough buy take the pot's timer.
+    ///      The last buyer must hold: a sell from their wallet gives the timer up (so a buy and a sell in one
+    ///      transaction cannot take it), and the round then waits for the next big enough buy.
+    function _afterTrade(address token, address pair, bool sell, BalanceDelta delta) internal {
         address winner = _settleRound(token);
         if (winner != address(0)) _sendFromSwap(token, pair, winner);
-        if (!sell) {
-            int128 paid = delta.amount1();
-            uint256 spent = paid < 0 ? uint256(uint128(-paid)) : 0;
-            Pot storage p = pots[token];
-            if (spent >= p.minBuy) {
-                p.lastBuyer = tx.origin;
-                p.deadline = uint64(block.timestamp) + ROUND;
-                emit LastBuyer(token, tx.origin, p.round, p.deadline, p.amount);
+        Pot storage p = pots[token];
+        if (sell) {
+            if (p.lastBuyer != address(0) && p.lastBuyer == tx.origin) {
+                p.lastBuyer = address(0);
+                emit LastBuyer(token, address(0), p.round, p.deadline, p.amount);
             }
+            return;
         }
+        int128 paid = delta.amount1();
+        uint256 spent = paid < 0 ? uint256(uint128(-paid)) : 0;
+        if (spent >= p.minBuy) {
+            p.lastBuyer = tx.origin;
+            p.deadline = uint64(block.timestamp) + ROUND;
+            emit LastBuyer(token, tx.origin, p.round, p.deadline, p.amount);
+        }
+    }
+
+    /// @dev The shield looks at each block's opening price (the pool's price before the block's first swap), so
+    ///      a pump and dump inside one transaction or block can neither raise the high nor trip it.
+    function _watchShield(address token, PoolId id) internal {
         Shield storage sh = shields[token];
+        if (sh.openBlock == block.number) return;
+        sh.openBlock = uint64(block.number);
+        (uint160 sqrtP,,,) = poolManager.getSlot0(id);
         if (block.timestamp > sh.peakAt + SHIELD_WINDOW || sqrtP > sh.peakSqrtPriceX96) {
             sh.peakSqrtPriceX96 = sqrtP;
             sh.peakAt = uint64(block.timestamp);
