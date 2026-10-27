@@ -107,9 +107,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     );
     const FACTORY = await factory.getAddress();
     await (await deployer.setFactory(FACTORY)).wait();
-    // one sender stands in for a terminal's relayer: listed at deployment, never the last buyer
-    const [, , , , , , relayer] = await ethers.getSigners();
-    await (await hook.setFactory(FACTORY, [relayer.address])).wait();
+    await (await hook.setFactory(FACTORY)).wait();
     const router = await (await ethers.getContractFactory("EquoSwapRouter")).deploy(PM, FACTORY, WETH);
     return { eid, WETH, weth, pm, endpoint, deployer, creatorC, hook, factory, router, stock, STOCK };
   }
@@ -515,18 +513,4 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     }
   });
 
-  it("relayers listed at deployment never take the last-buyer pot's timer; the list cannot change", async () => {
-    const env = await deployAll();
-    const { addrs } = await launchAll(env, "EX", 100, 0n);
-    const c = env.chains[0];
-    const coin = addrs[0];
-    const relayer = (await ethers.getSigners())[6];
-    expect(await c.hook.excludedBuyer(relayer.address)).to.equal(true);
-    await expect(c.hook.setFactory(await c.factory.getAddress(), [env.trader.address])).to.be.revertedWithCustomError(c.hook, "AlreadySet");
-    await (await c.router.connect(env.outsider).buy(coin, "0x", 0n, { value: ethers.parseEther("0.1") })).wait();
-    await (await c.router.connect(relayer).buy(coin, "0x", 0n, { value: ethers.parseEther("0.5") })).wait();
-    expect((await c.hook.pots(coin)).lastBuyer).to.equal(env.outsider.address);
-    await (await c.router.connect(env.trader).buy(coin, "0x", 0n, { value: ethers.parseEther("0.5") })).wait();
-    expect((await c.hook.pots(coin)).lastBuyer).to.equal(env.trader.address);
-  });
 });
