@@ -12,6 +12,8 @@ if [ -n "$OFT" ]; then
   for p in 76y77prsiCMvXMjuoZ5VRrhG5qYBrUMYTE5WgHqgjEn6 7a4WjyR8VZ7yZz5XJAKm39BUGn5iT9CKcv2pmG9tdXVH 6doghB248px58JSSwG4qejQ46kFMW4AMj7vzJnWZHNZn; do
     EXTRA+=(--clone-upgradeable-program "$p")
   done
+  # their global state (settings, message library registration, default configs): lz/clone-list.mjs
+  while read -r a; do [ -n "$a" ] && EXTRA+=(--maybe-clone "$a"); done < lz/clone-accounts.txt
 fi
 exec solana-test-validator --reset --quiet --ledger .test-ledger-omni --url https://api.mainnet-beta.solana.com \
   --clone-upgradeable-program cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG \

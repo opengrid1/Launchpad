@@ -35,10 +35,25 @@ const CHAINS = [
     endpoint: "0x6f475642a6e85809b1c36fa62763669b1b48dd5b",
     dvns: ["0x282b3386571f7f794450d5789911a9804fa346b4", "0xeede111103535e473451311e26c3e6660b0f77e1"] },
 ];
+// Toward Solana: LayerZero Labs + Horizen, the two of LayerZero's default verifiers on each EVM <-> Solana pathway
+// that also run on Solana (Nethermind does not). From LayerZero's on-chain defaults (lz-solana-defaults.json).
+const SOL_DVNS = {
+  mainnet: ["0x380275805876Ff19055EA900CDb2B46a94ecF20D", "0x589dEDbD617e0CBcB916A9223F4d1300c294236b"],
+  bsc: ["0x247624e2143504730aeC22912ed41F092498bEf2", "0xfD6865c841c2d64565562fCc7e05e619A30615f0"],
+  arbitrum: ["0x19670Df5E16bEa2ba9b9e68b48C054C5bAEa06B8", "0x2f55C492897526677C5B68fb199ea31E2c126416"],
+  base: ["0x9e059a54699a285714207b43B055483E78FAac25", "0xa7b5189bcA84Cd304D8553977c7C614329750d99"],
+  unichain: ["0x282b3386571f7f794450d5789911a9804FA346b4", "0xC6a6324932B399D6A673B7Ed0af671F28033E046"],
+  hyperevm: ["0xBB83Ecf372CbB6daa629ea9A9A53BEC6d601F229", "0xc097ab8CD7b053326DFe9fB3E3a31a0CCe3B526f"],
+  monad: ["0x282b3386571f7f794450d5789911a9804FA346b4", "0xdCdd4628F858b45260C31D6ad076bD2C3D3c2f73"],
+  megaeth: ["0x282b3386571f7f794450d5789911a9804FA346b4", "0x8Ede21203E062D7D1EAeC11c4c72Ad04cDc15658"],
+};
+/// Solana as a remote: its eid, and its LayerZero Labs + Horizen DVNs (for the Solana side's own config).
+const SOLANA = { name: "solana", eid: 30168, dvns: ["4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb", "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"] };
 const { getAddress } = require("ethers");
 for (const c of CHAINS) {
   for (const k of ["poolManager", "weth", "endpoint"]) c[k] = getAddress(c[k]);
   // a ULN config lists its DVNs in ascending order
   c.dvns = c.dvns.map((d) => getAddress(d)).sort((x, y) => (BigInt(x) < BigInt(y) ? -1 : 1));
+  c.solDvns = SOL_DVNS[c.name].map((d) => getAddress(d)).sort((x, y) => (BigInt(x) < BigInt(y) ? -1 : 1));
 }
-module.exports = { CHAINS };
+module.exports = { CHAINS, SOLANA };

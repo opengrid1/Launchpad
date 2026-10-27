@@ -1,0 +1,154 @@
+{
+  "mainnet": {
+    "eid": 30101,
+    "sendConfirmations": 32,
+    "receiveConfirmations": 15,
+    "sendDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "receiveDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "executor": "AwrbHeCyniXaQhiJZkLhgWdUCteeWSGaSN1sTfLiY7xK",
+    "maxMessageSize": 10000
+  },
+  "bsc": {
+    "eid": 30102,
+    "sendConfirmations": 32,
+    "receiveConfirmations": 20,
+    "sendDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "receiveDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "executor": "AwrbHeCyniXaQhiJZkLhgWdUCteeWSGaSN1sTfLiY7xK",
+    "maxMessageSize": 10000
+  },
+  "arbitrum": {
+    "eid": 30110,
+    "sendConfirmations": 32,
+    "receiveConfirmations": 20,
+    "sendDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "receiveDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "executor": "AwrbHeCyniXaQhiJZkLhgWdUCteeWSGaSN1sTfLiY7xK",
+    "maxMessageSize": 10000
+  },
+  "base": {
+    "eid": 30184,
+    "sendConfirmations": 32,
+    "receiveConfirmations": 10,
+    "sendDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "receiveDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "executor": "AwrbHeCyniXaQhiJZkLhgWdUCteeWSGaSN1sTfLiY7xK",
+    "maxMessageSize": 10000
+  },
+  "unichain": {
+    "eid": 30320,
+    "sendConfirmations": 32,
+    "receiveConfirmations": 20,
+    "sendDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "receiveDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "executor": "AwrbHeCyniXaQhiJZkLhgWdUCteeWSGaSN1sTfLiY7xK",
+    "maxMessageSize": 10000
+  },
+  "hyperevm": {
+    "eid": 30367,
+    "sendConfirmations": 32,
+    "receiveConfirmations": 1,
+    "sendDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "receiveDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "executor": "AwrbHeCyniXaQhiJZkLhgWdUCteeWSGaSN1sTfLiY7xK",
+    "maxMessageSize": 10000
+  },
+  "monad": {
+    "eid": 30390,
+    "sendConfirmations": 32,
+    "receiveConfirmations": 4,
+    "sendDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "receiveDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "executor": "AwrbHeCyniXaQhiJZkLhgWdUCteeWSGaSN1sTfLiY7xK",
+    "maxMessageSize": 10000
+  },
+  "megaeth": {
+    "eid": 30398,
+    "sendConfirmations": 32,
+    "receiveConfirmations": 300,
+    "sendDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "receiveDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "executor": "AwrbHeCyniXaQhiJZkLhgWdUCteeWSGaSN1sTfLiY7xK",
+    "maxMessageSize": 10000
+  }
+}

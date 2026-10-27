@@ -340,3 +340,44 @@ test('admin settings are admin only', async () => {
   await send([ix('set_quote_band', [r(admin.publicKey, true), w(CONFIG)], u128(10n ** 18n), u128(20_000n * 10n ** 18n))], [admin]);
   await send([ix('set_launcher', [r(admin.publicKey, true), w(CONFIG)], pk(launcher.publicKey))], [admin]);
 });
+
+// ---- LayerZero OFT (OFT=1: the validator also runs Equo's OFT program and LayerZero's endpoint and ULN) ----
+if (process.env.OFT) {
+  const lzSetup = await import('../lz/oft-setup.mjs');
+  let sOft, store;
+  test('oft: the store over the snapshot escrow is the leg coin, and it takes the mint', async () => {
+    sOft = await launch(launcher, creator.publicKey, { firstBuy: 0 });
+    const { umi, signer } = lzSetup.umiFor(RPC, launcher);
+    store = await lzSetup.init(umi, signer, sOft.mint, sOft.s.escrow);
+    assert.equal(store.toBase58(), sOft.s.store.toBase58());
+    const mint = await getMint(cx, sOft.mint, 'confirmed', TOKEN_2022_PROGRAM_ID);
+    assert.equal(mint.mintAuthority.toBase58(), store.toBase58());
+  });
+
+  test('oft: wired to every EVM leg with LayerZero Labs + Horizen and the pathway confirmations', async () => {
+    const { umi, signer } = lzSetup.umiFor(RPC, launcher);
+    const evm = sOft.s.snap.legs.filter((l) => l.eid !== SOL_EID);
+    for (const l of evm) await lzSetup.wire(umi, signer, store, l.eid, l.coin);
+    const got = await lzSetup.inspect(umi, store, evm.map((l) => l.eid));
+    for (const l of evm) {
+      const g = got[l.eid];
+      assert.equal(String(g.peer).replace(/^0x/, '').toLowerCase(), l.coin.replace(/^0x/, '').toLowerCase());
+      const send = g.cfg.sendLibraryConfig.ulnSendConfig.uln, recv = g.cfg.receiveLibraryConfig.ulnReceiveConfig.uln;
+      const d = Object.values(lzSetup.DEFAULTS).find((x) => x.eid === l.eid);
+      assert.equal(Number(send.confirmations), d.sendConfirmations);
+      assert.equal(Number(recv.confirmations), d.receiveConfirmations);
+      assert.deepEqual(send.requiredDvns.map(String), lzSetup.DVNS.map(String));
+      assert.deepEqual(recv.requiredDvns.map(String), lzSetup.DVNS.map(String));
+    }
+  });
+
+  test('oft: sealed, nobody can change peers or configs afterwards', async () => {
+    const { umi, signer } = lzSetup.umiFor(RPC, launcher);
+    await lzSetup.seal(umi, signer, store);
+    const { oft } = await import('../lz/node_modules/@layerzerolabs/oft-v2-solana-sdk/dist/index.mjs');
+    const st = await oft.accounts.fetchOFTStore(umi, store.toBase58());
+    assert.equal(String(st.admin), lzSetup.NOBODY.toBase58());
+    // the old admin can no longer set a peer, nor wire a new chain
+    await assert.rejects(lzSetup.wire(umi, signer, store, 30184, '0x' + '11'.repeat(32)));
+  });
+}

@@ -5,8 +5,9 @@ import { join } from "path";
 /**
  * Deploy Equo v2 (EquoFeeHook, EquoCoinDeployer + EquoCoinCreator, EquoLaunchFactory, EquoSwapRouter) to one chain.
  * Run it once per chain with the same deployer key; it picks the chain's settings from scripts/equo2/chains.js by
- * chain id and pins a LayerZero route to every other Equo v2 chain (LayerZero Labs + Nethermind DVNs, LayerZero's
- * own libraries, executor and confirmations from scripts/equo2/lz-defaults.json).
+ * chain id and pins a LayerZero route to every other Equo chain (LayerZero Labs + Nethermind DVNs, LayerZero's
+ * own libraries, executor and confirmations from scripts/equo2/lz-defaults.json) and to Solana (LayerZero Labs +
+ * Horizen DVNs, from scripts/equo2/lz-solana-defaults.json).
  *
  *   Rehearsal on a fork (real PoolManager, endpoint, libraries, DVNs), with a test launch and a $60 buy:
  *     EQUO2_FORK=<chain> npx hardhat run scripts/equo2/deploy.ts
@@ -19,13 +20,16 @@ import { join } from "path";
  *   EQUO_SIGNER     the launch service's snapshot signer
  *   EQUO_LAUNCHER   the launch service's sending account, a launcher from deployment
  *
- * A live run writes deployments/equo2-<chain>.json after every step and resumes from it if rerun. It ends the
+ * A live run writes deployments/<EQUO_TAG, default equo3>-<chain>.json after every step and resumes from it if rerun. It ends the
  * deployer's setup rights on the coin deployer, so routes can afterwards only be added by the admin.
  */
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { CHAINS } = require("./chains");
+const { CHAINS, SOLANA } = require("./chains");
 const LZ = JSON.parse(readFileSync(join(__dirname, "lz-defaults.json"), "utf8"));
+const LZ_SOL = JSON.parse(readFileSync(join(__dirname, "lz-solana-defaults.json"), "utf8"));
+/// Which deployment this run writes and resumes (deployments/<TAG>-<chain>.json): equo3 is the fresh set with Solana.
+const TAG = process.env.EQUO_TAG || "equo3";
 
 const ADMIN = "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b";
 // beforeInitialize | beforeAddLiquidity | beforeSwap | afterSwap | beforeSwapReturnDelta | afterSwapReturnDelta
@@ -33,6 +37,10 @@ const HOOK_FLAGS = (1n << 13n) | (1n << 11n) | (1n << 7n) | (1n << 6n) | (1n << 
 const FLAG_MASK = (1n << 14n) - 1n;
 const CREATE2_PROXY = "0x4e59b44847b379578588920cA78FbF26c0B4956C";
 const RECEIVE_GAS = 100_000;
+/// Toward Solana: compute units for the OFT's lz_receive, and lamports the executor brings for the receiver's
+/// Token-2022 account rent (a first-time holder there).
+const SOL_RECEIVE_CU = 200_000;
+const SOL_RECEIVE_LAMPORTS = 2_500_000;
 const CHAIN_SUPPLY = 1_000_000_000n * 10n ** 9n;
 const CEILING = 1n << 156n;
 /// USD band a snapshot's native price must sit in, per chain (fixed in the factory for good: wide on purpose).
@@ -66,6 +74,24 @@ function routeFor(self: any, remote: any) {
   };
 }
 
+/// The pinned route to Solana: LayerZero's own libraries, executor and confirmations for the pathway, with the
+/// LayerZero Labs + Horizen verifiers (both also on Solana).
+function solanaRoute(self: any) {
+  const d = LZ_SOL[self.name];
+  if (!d?.supported) throw new Error(`LayerZero does not connect ${self.name} -> solana`);
+  const uln = (confirmations: number) => coder.encode([ULN], [[confirmations, self.solDvns.length, 0, 0, self.solDvns, []]]);
+  const executor = coder.encode(["tuple(uint32,address)"], [[d.maxMessageSize, d.executor]]);
+  return {
+    sendLib: d.sendLib,
+    receiveLib: d.receiveLib,
+    sendConfig: coder.encode([PARAMS], [[[SOLANA.eid, 1, executor], [SOLANA.eid, 2, uln(d.sendConfirmations)]]]),
+    receiveConfig: coder.encode([PARAMS], [[[SOLANA.eid, 2, uln(d.receiveConfirmations)]]]),
+    receiveGas: SOL_RECEIVE_CU,
+    composeGas: 0,
+    receiveValue: SOL_RECEIVE_LAMPORTS,
+  };
+}
+
 const TYPES = {
   Snapshot: [
     { name: "launchId", type: "bytes32" }, { name: "creator", type: "address" }, { name: "name", type: "string" },
@@ -95,7 +121,7 @@ async function main() {
   const launcher = fork ? deployer.address : ethers.getAddress(process.env.EQUO_LAUNCHER ?? "");
   const [lo, hi] = NATIVE_BAND[chain.name];
 
-  const file = join(__dirname, `../../deployments/equo2-${chain.name}.json`);
+  const file = join(__dirname, `../../deployments/${TAG}-${chain.name}.json`);
   const state: any = !fork && existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : { contracts: {}, gas: {} };
   const save = () => {
     if (fork) return;
@@ -186,8 +212,9 @@ async function main() {
     if (have.sendLib !== ethers.ZeroAddress) continue;
     await sent(`route ${remote.name}`, dep.setRoute(remote.eid, routeFor(chain, remote)));
   }
-  for (const remote of CHAINS) if (remote !== chain) await until(`route ${remote.name}`, async () => (await dep.route(remote.eid)).sendLib !== ethers.ZeroAddress);
-  state.routes = Object.fromEntries(CHAINS.filter((c: any) => c !== chain).map((c: any) => [c.name, c.eid]));
+  if ((await dep.route(SOLANA.eid)).sendLib === ethers.ZeroAddress) await sent("route solana", dep.setRoute(SOLANA.eid, solanaRoute(chain)));
+  for (const remote of [...CHAINS, SOLANA]) if (remote !== chain) await until(`route ${remote.name}`, async () => (await dep.route(remote.eid)).sendLib !== ethers.ZeroAddress);
+  state.routes = Object.fromEntries([...CHAINS, SOLANA].filter((c: any) => c !== chain).map((c: any) => [c.name, c.eid]));
   save();
 
   // 4. The factory (native pair only), wired to the hook and coin deployer; the router.
@@ -238,21 +265,25 @@ async function main() {
       legs.push({ eid: c.eid, coin: ethers.zeroPadValue(fake, 32), legSalt: ethers.ZeroHash, pair: ethers.ZeroHash, slice: CHAIN_SUPPLY, quoteUsd18: ethers.parseEther(REHEARSAL_USD[c.name]) });
     }
   }
+  // a Solana leg: its coin is an OFT store (any 32 bytes here)
+  legs.push({ eid: SOLANA.eid, coin: ethers.id("solana-oft-store"), legSalt: ethers.ZeroHash, pair: ethers.ZeroHash, slice: CHAIN_SUPPLY, quoteUsd18: ethers.parseEther("150") });
   legs.sort((a, b) => a.eid - b.eid);
   const block = await ethers.provider.getBlock("latest");
   const snap = { launchId, creator: deployer.address, name: "Equo Rehearsal", symbol: "EREH", metadataURI: "ipfs://equo", feeBps: 100, deadline: block!.timestamp + 1800, feeEid: chain.eid, launchFeeUsd18: ethers.parseEther("8"), legs };
   const sig = await rehearsalSigner!.signTypedData({ name: "Equo", version: "2" }, TYPES, snap);
   const devBuy = ethers.parseEther((18 / Number(REHEARSAL_USD[chain.name])).toFixed(12)); // $8 launch fee + $10 buy
   const lr = await (await factory.launch(snap, sig, 0n, { value: devBuy })).wait();
-  console.log(`rehearsal launch (8 legs, 7 routes wired, $8 fee, $10 dev buy): ${lr!.gasUsed} gas, coin ${mine.coin}`);
+  console.log(`rehearsal launch (9 legs, 8 routes wired incl. Solana, $8 fee, $10 dev buy): ${lr!.gasUsed} gas, coin ${mine.coin}`);
   const router = await ethers.getContractAt("EquoSwapRouter", C.router);
   const usd60 = ethers.parseEther((60 / Number(REHEARSAL_USD[chain.name])).toFixed(12));
   const br = await (await router.buy(mine.coin, "0x", 0n, { value: usd60 })).wait();
   const pot = await hook.pots(mine.coin);
   console.log(`$60 buy: ${br!.gasUsed} gas; pot last buyer ${pot.lastBuyer === deployer.address ? "set" : "NOT SET"}, pot ${pot.amount}`);
   const coin = await ethers.getContractAt("EquoCoin", mine.coin);
-  for (const remote of CHAINS) if (remote !== chain && (await coin.peers(remote.eid)) === ethers.ZeroHash) throw new Error(`no peer to ${remote.name}`);
-  console.log("peers wired to all 7 other chains; coin owner", await coin.owner());
+  for (const remote of [...CHAINS, SOLANA]) if (remote !== chain && (await coin.peers(remote.eid)) === ethers.ZeroHash) throw new Error(`no peer to ${remote.name}`);
+  console.log("peers wired to all 7 other chains and Solana; coin owner", await coin.owner());
+  const sq = await coin.quoteSend({ dstEid: SOLANA.eid, to: ethers.id("a solana wallet"), amountLD: 10n ** 12n, minAmountLD: 0n, extraOptions: "0x", composeMsg: "0x", oftCmd: "0x" }, false);
+  console.log(`bridge quote to solana: ${ethers.formatEther(sq.nativeFee)} native`);
   // a bridge quote through the real endpoint, libraries, DVNs and executor
   const remote = CHAINS.find((c: any) => c !== chain && c.name !== "megaeth")!;
   const sp = { dstEid: remote.eid, to: ethers.zeroPadValue(deployer.address, 32), amountLD: 10n ** 12n, minAmountLD: 0n, extraOptions: "0x", composeMsg: "0x", oftCmd: "0x" };
