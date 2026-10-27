@@ -9,13 +9,22 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import {IUnlockCallback} from "@uniswap/v4-core/src/interfaces/callback/IUnlockCallback.sol";
+import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
+import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
+import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
+import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
+import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 
 import {EquoCoinDeployer} from "./EquoCoinDeployer.sol";
 import {EquoFeeHook} from "./EquoFeeHook.sol";
-import {EquoWindows} from "../window/EquoWindows.sol";
+
+interface IWrappedNativeDeposit {
+    function deposit() external payable;
+}
 
 /// @title EquoLaunchFactory
 /// @notice Launches an Equo coin on this chain as one leg of a launch that spans several chains.
@@ -35,17 +44,15 @@ import {EquoWindows} from "../window/EquoWindows.sol";
 ///         WHO LAUNCHES. The creator, an approved launcher (the launch service, which completes the legs the
 ///         creator did not pay for), or anyone carrying the creator's own signature over the snapshot.
 ///
-///         THE POOL. The whole slice goes to {EquoWindows}, which puts it into the pool single-sided from the opening
-///         price up to the top of the price range and holds that liquidity (and runs windows: buys the buyer can
-///         undo). The pool opens never cheaper than the snapshot price and at most one tick spacing (0.1%) dearer.
-///         The hook takes the coin's fixed fee on every swap. The creator's launch buy (native coin sent with a
-///         native-paired launch, or `pairIn` of the pair asset pulled from the caller) is swapped fee-free, coins to
-///         the creator.
+///         THE POOL. The whole slice goes into one single-sided position from the opening price up to the top of
+///         the price range, held here. The pool opens at the bottom of that range, never cheaper than the snapshot
+///         price and at most one tick spacing (0.6%) dearer. The hook takes the coin's fixed fee on every swap.
+///         The creator's launch buy (native coin sent with a native-paired launch, or `pairIn` of the pair asset pulled
+///         from the caller) is swapped fee-free, coins to the creator.
 ///
 ///         ADMIN. Sets the snapshot signer, launchers and the fee recipient, and holds one lever over liquidity:
-///         {collect}, which removes a share of a coin's pool liquidity to a recipient, page by page. It never touches
-///         what open windows hold.
-contract EquoLaunchFactory is ReentrancyGuard {
+///         {collect}, which removes a share of a coin's launch position to a recipient.
+contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
 
@@ -53,10 +60,13 @@ contract EquoLaunchFactory is ReentrancyGuard {
     uint256 public constant CHAIN_SUPPLY = 1_000_000_000 * 1e9;
     /// @notice Every chain's 1B opens at this market cap, so every chain opens at the same price.
     uint256 public constant START_MCAP_USD18 = 3_000e18;
-    /// @notice The pools' tick spacing: {EquoWindows}' step, 0.1%.
-    int24 public constant TICK_SPACING = 10;
+    /// @notice The smallest buy that takes the last-buyer pot's timer: $50 of the pair at the snapshot's price.
+    uint256 public constant POT_MIN_BUY_USD18 = 50e18;
+    int24 public constant TICK_SPACING = 60;
     uint64 public constant MAX_SNAPSHOT_LIFE = 1 hours;
     uint256 public constant MAX_LEGS = 16;
+    /// @notice Coins kept out of the seed position to absorb rounding in the liquidity math.
+    uint256 public constant COIN_SLACK = 1e6;
 
     bytes32 public constant LEG_TYPEHASH = keccak256("Leg(uint32 eid,bytes32 coin,bytes32 legSalt,bytes32 pair,uint256 slice,uint256 quoteUsd18)");
     bytes32 public constant SNAPSHOT_TYPEHASH = keccak256(
@@ -103,9 +113,14 @@ contract EquoLaunchFactory is ReentrancyGuard {
         uint256 quoteUsd18;
     }
 
+    struct Position {
+        int24 tickLower;
+        int24 tickUpper;
+        uint128 liquidity;
+    }
+
     IPoolManager public immutable poolManager;
     EquoFeeHook public immutable hook;
-    EquoWindows public immutable windows;
     EquoCoinDeployer public immutable coinDeployer;
     address public immutable weth;
     address public immutable admin;
@@ -119,6 +134,7 @@ contract EquoLaunchFactory is ReentrancyGuard {
     mapping(address => bool) public launchers;
     mapping(bytes32 launchId => bool) public launched;
     mapping(address token => Listing) public listings;
+    mapping(address token => Position) public positions;
     mapping(address token => address) public pendingCreator;
     address[] public allTokens;
 
@@ -128,6 +144,7 @@ contract EquoLaunchFactory is ReentrancyGuard {
     event LauncherSet(address indexed launcher, bool allowed);
     event FeeRecipientSet(address indexed recipient);
     event PairListed(address indexed token, uint256 minUsd18, uint256 maxUsd18);
+    event Collected(address indexed token, uint16 bps, uint128 liquidity, uint256 coins, uint256 pair, address indexed to);
     event CreatorTransferStarted(address indexed token, address indexed from, address indexed to);
     event CreatorTransferred(address indexed token, address indexed from, address indexed to);
 
@@ -146,7 +163,6 @@ contract EquoLaunchFactory is ReentrancyGuard {
         address admin_,
         IPoolManager poolManager_,
         EquoFeeHook hook_,
-        EquoWindows windows_,
         EquoCoinDeployer coinDeployer_,
         address weth_,
         uint32 eid_,
@@ -166,7 +182,6 @@ contract EquoLaunchFactory is ReentrancyGuard {
         admin = admin_;
         poolManager = poolManager_;
         hook = hook_;
-        windows = windows_;
         coinDeployer = coinDeployer_;
         weth = weth_;
         eid = eid_;
@@ -200,18 +215,18 @@ contract EquoLaunchFactory is ReentrancyGuard {
         emit FeeRecipientSet(recipient);
     }
 
-    /// @notice Admin-only: remove `bps` of a coin's pool liquidity (coins and pair) to `recipient`, over up to
-    ///         `maxSegments` segments of its liquidity list from `from` (anything at or below the floor starts at the
-    ///         floor). Returns where the next call should start: the pool's top when done. Not reversible. Never
-    ///         touches the fees owed to the creator and the platform, or what open windows hold.
-    function collect(address token, uint16 bps, address recipient, int24 from, uint256 maxSegments)
-        external
-        onlyAdmin
-        nonReentrant
-        returns (int24 next, uint256 coins, uint256 pair)
-    {
+    /// @notice Admin-only: pull `bps` of a coin's launch position (coins and pair) out of its pool to `recipient`.
+    ///         Not reversible. The fees owed to the creator and the platform are never touched.
+    function collect(address token, uint16 bps, address recipient) external onlyAdmin nonReentrant returns (uint256 coins, uint256 pair) {
+        if (bps == 0 || bps > 10_000 || recipient == address(0)) revert InvalidParams();
         if (listings[token].createdAt == 0) revert InvalidParams();
-        return windows.collect(token, bps, recipient, from, maxSegments);
+        Position storage pos = positions[token];
+        uint128 removed = uint128((uint256(pos.liquidity) * bps) / 10_000);
+        if (removed == 0) revert InvalidParams();
+        pos.liquidity -= removed;
+        bytes memory res = poolManager.unlock(abi.encode(uint8(2), abi.encode(_key(token, listings[token].pair), pos.tickLower, pos.tickUpper, removed, recipient)));
+        (coins, pair) = abi.decode(res, (uint256, uint256));
+        emit Collected(token, bps, removed, coins, pair, recipient);
     }
 
     // ---------------------------------------------------------------------
@@ -320,7 +335,11 @@ contract EquoLaunchFactory is ReentrancyGuard {
         PoolKey memory key = _key(token, pair);
         (uint160 sqrtStart, int24 lower, int24 upper) = _opening(pair, leg.quoteUsd18);
         poolManager.initialize(key, sqrtStart);
-        hook.registerPool(key, token, pair, s.creator, s.feeBps, sqrtStart);
+        uint256 minBuy = Math.mulDiv(POT_MIN_BUY_USD18, 10 ** IERC20Metadata(pair).decimals(), leg.quoteUsd18);
+        hook.registerPool(key, token, pair, s.creator, s.feeBps, sqrtStart, minBuy);
+        uint128 liquidity = LiquidityAmounts.getLiquidityForAmount0(sqrtStart, TickMath.getSqrtPriceAtTick(upper), leg.slice - COIN_SLACK);
+        positions[token] = Position({tickLower: lower, tickUpper: upper, liquidity: liquidity});
+        poolManager.unlock(abi.encode(uint8(0), abi.encode(key, lower, upper, liquidity)));
 
         bytes32 poolId = PoolId.unwrap(key.toId());
         listings[token] = Listing({
@@ -336,12 +355,13 @@ contract EquoLaunchFactory is ReentrancyGuard {
         allTokens.push(token);
         emit Launched(token, s.creator, s.launchId, poolId, leg.slice, s.feeBps, leg.quoteUsd18);
 
-        // the slice (and an asset launch buy) to the windows, which seed the pool and make the launch buy
         uint256 buyIn = pair == weth ? msg.value : pairIn;
-        IERC20(token).safeTransfer(address(windows), leg.slice);
-        if (pair != weth && pairIn > 0) IERC20(pair).safeTransferFrom(msg.sender, address(windows), pairIn);
-        uint256 bought = windows.seed{value: msg.value}(token, pair, lower, upper, s.creator, buyIn);
-        if (buyIn > 0) emit LaunchBought(token, s.creator, buyIn, bought);
+        if (buyIn > 0) {
+            if (pair == weth) IWrappedNativeDeposit(weth).deposit{value: msg.value}();
+            else IERC20(pair).safeTransferFrom(msg.sender, address(this), pairIn);
+            bytes memory res = poolManager.unlock(abi.encode(uint8(1), abi.encode(key, buyIn, s.creator)));
+            emit LaunchBought(token, s.creator, buyIn, abi.decode(res, (uint256)));
+        }
     }
 
     /// @dev Check the legs (ascending chains, 1B each) and find this chain's; the others become the coin's peers.
@@ -388,10 +408,54 @@ contract EquoLaunchFactory is ReentrancyGuard {
         sqrtStart = TickMath.getSqrtPriceAtTick(lower);
     }
 
+    // ---------------------------------------------------------------------
+    // PoolManager callback: seed (0), launch buy (1), collect (2)
+    // ---------------------------------------------------------------------
+
+    function unlockCallback(bytes calldata data) external override returns (bytes memory) {
+        if (msg.sender != address(poolManager)) revert NotAdmin();
+        (uint8 action, bytes memory payload) = abi.decode(data, (uint8, bytes));
+        if (action == 0) {
+            (PoolKey memory key, int24 lower, int24 upper, uint128 liquidity) = abi.decode(payload, (PoolKey, int24, int24, uint128));
+            (BalanceDelta d,) = poolManager.modifyLiquidity(key, ModifyLiquidityParams({tickLower: lower, tickUpper: upper, liquidityDelta: int256(uint256(liquidity)), salt: bytes32(0)}), "");
+            _pay(key.currency0, d.amount0());
+            _pay(key.currency1, d.amount1());
+            return "";
+        }
+        if (action == 1) {
+            (PoolKey memory key, uint256 pairIn, address to) = abi.decode(payload, (PoolKey, uint256, address));
+            BalanceDelta d = poolManager.swap(key, SwapParams({zeroForOne: false, amountSpecified: -int256(pairIn), sqrtPriceLimitX96: TickMath.MAX_SQRT_PRICE - 1}), "");
+            _pay(key.currency1, d.amount1());
+            uint256 coinOut = d.amount0() > 0 ? uint256(uint128(d.amount0())) : 0;
+            if (coinOut != 0) poolManager.take(key.currency0, to, coinOut);
+            return abi.encode(coinOut);
+        }
+        if (action != 2) revert InvalidParams();
+        (PoolKey memory ck, int24 cl, int24 cu, uint128 removed, address recipient) = abi.decode(payload, (PoolKey, int24, int24, uint128, address));
+        (BalanceDelta cd,) = poolManager.modifyLiquidity(ck, ModifyLiquidityParams({tickLower: cl, tickUpper: cu, liquidityDelta: -int256(uint256(removed)), salt: bytes32(0)}), "");
+        uint256 coinsOut = _takeTo(ck.currency0, cd.amount0(), recipient);
+        uint256 pairOut = _takeTo(ck.currency1, cd.amount1(), recipient);
+        return abi.encode(coinsOut, pairOut);
+    }
+
+    function _takeTo(Currency currency, int128 amount, address to) internal returns (uint256 value) {
+        if (amount <= 0) return 0;
+        value = uint256(uint128(amount));
+        poolManager.take(currency, to, value);
+    }
+
+    function _pay(Currency currency, int128 amount) internal {
+        if (amount >= 0) return;
+        uint256 due = uint256(uint128(-amount));
+        poolManager.sync(currency);
+        IERC20(Currency.unwrap(currency)).safeTransfer(address(poolManager), due);
+        poolManager.settle();
+    }
+
     /// @dev The coin is always currency0: the launch service picks each leg's salt so the coin sorts below its pair.
     function _key(address token, address pair) internal view returns (PoolKey memory key) {
         if (token >= pair) revert InvalidParams();
-        key = windows.keyFor(token, pair);
+        key = PoolKey({currency0: Currency.wrap(token), currency1: Currency.wrap(pair), fee: 0, tickSpacing: TICK_SPACING, hooks: IHooks(address(hook))});
     }
 
     // ---------------------------------------------------------------------
@@ -414,6 +478,10 @@ contract EquoLaunchFactory is ReentrancyGuard {
 
     function pairTerms(address token) external view returns (PairTerms memory) {
         return _pairTerms[token];
+    }
+
+    function positionOf(address token) external view returns (Position memory) {
+        return positions[token];
     }
 
     receive() external payable {}
