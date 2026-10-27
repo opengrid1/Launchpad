@@ -3,13 +3,22 @@
     "hook": "0x6ccc4F076B9B5650be6e09Dd7b646310292B68cC",
     "hookSalt": "0x000000000000000000000000000000000000000000000000000000000000102c",
     "coinDeployer": "0x867b598dFD5A889628766e53C563f71B4Fd5Ce44",
-    "coinCreator": "0xa0F44EC6f3c32e2f2CaC9ad3a133b9150D4668D6"
+    "coinCreator": "0xa0F44EC6f3c32e2f2CaC9ad3a133b9150D4668D6",
+    "factory": "0x05A6f357c791A4cEf0CbE4dCEc9014a35D30879A"
   },
   "gas": {
     "hook": 133385645,
     "coinDeployer": 104980021,
     "setEndpoint": 98332,
-    "coinCreator": 198996160
+    "coinCreator": 198996160,
+    "route mainnet": 1138144,
+    "route bsc": 1138144,
+    "route arbitrum": 1138144,
+    "route base": 1138144,
+    "route unichain": 1138144,
+    "route hyperevm": 1138144,
+    "route monad": 1138144,
+    "factory": 183754008
   },
   "network": "megaeth",
   "chainId": 4326,
@@ -29,5 +38,14 @@
   "nativeUsdBand": [
     "300",
     "30000"
-  ]
+  ],
+  "routes": {
+    "mainnet": 30101,
+    "bsc": 30102,
+    "arbitrum": 30110,
+    "base": 30184,
+    "unichain": 30320,
+    "hyperevm": 30367,
+    "monad": 30390
+  }
 }
