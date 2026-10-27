@@ -1,0 +1,33 @@
+{
+  "contracts": {
+    "hook": "0x6a03Ac8C887cDec254cAde95a9B1AE83aB2a28Cc",
+    "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000002eeb",
+    "coinDeployer": "0x867b598dFD5A889628766e53C563f71B4Fd5Ce44",
+    "coinCreator": "0xa0F44EC6f3c32e2f2CaC9ad3a133b9150D4668D6"
+  },
+  "gas": {
+    "hook": 2865001,
+    "coinDeployer": 2263021,
+    "setEndpoint": 47512,
+    "coinCreator": 4410440
+  },
+  "network": "mainnet",
+  "chainId": 1,
+  "eid": 30101,
+  "deployer": "0x54Ee4998B3309b20daf07F082B9ad8d8De380D0F",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "signer": "0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6",
+  "launcher": "0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67",
+  "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+  "weth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+  "dvns": [
+    "0x589dEDbD617e0CBcB916A9223F4d1300c294236b",
+    "0xa59BA433ac34D2927232918Ef5B2eaAfcF130BA5"
+  ],
+  "nativeUsdBand": [
+    "300",
+    "30000"
+  ]
+}
