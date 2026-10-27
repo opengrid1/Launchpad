@@ -16,6 +16,7 @@
   const chain = (k) => CH.find((c) => c.key === k) || null;
   const Q96 = 2n ** 96n;
   const POOLS_SLOT = 6n;
+  const OPEN_USD = 3000 / 1e9; // every chain's 1B opens at a $3,000 market cap
 
   const FACTORY = [
     'function launch((bytes32 launchId,address creator,string name,string symbol,string metadataURI,uint16 feeBps,uint64 deadline,uint32 feeEid,uint256 launchFeeUsd18,(uint32 eid,bytes32 coin,bytes32 legSalt,bytes32 pair,uint256 slice,uint256 quoteUsd18)[] legs) s, bytes signature, uint256 pairIn) payable returns (address)',
@@ -86,11 +87,12 @@
       b.token = lc(c.token); b.poolId = c.poolId; if (c.price) b.px = c.price; b.vol = c.vol24 || 0; b.trades = c.trades24 || 0;
       if (c.supply) b.supply = Number(c.supply) / 1e18;
       if (c.pool) { x.pools[k] = c.pool; if (c.pool.priceUsd && c.pool.priceInPair) b.pairUsd = c.pool.priceUsd / c.pool.priceInPair; if (c.pool.liquidityUsd != null) b.liq = c.pool.liquidityUsd; if (c.pool.priceUsd) b.px = c.pool.priceUsd; }
+      if (!b.pairUsd && NUSD[k]) b.pairUsd = NUSD[k];
     }
     if (j.holders != null) x.h = j.holders;
     if (j.liquidity) x.liq = j.liquidity;
     if (j.poolsLive != null) x.poolsLive = j.poolsLive;
-    if (!x.px) { const p = keys.map((k) => x.byChain[k].px).filter(Boolean); x.px = p.length ? p.reduce((a, b) => a + b, 0) / p.length : 0; }
+    if (!x.px) { const p = keys.map((k) => x.byChain[k].px).filter(Boolean); x.px = p.length ? p.reduce((a, b) => a + b, 0) / p.length : OPEN_USD; }
     if (!x.mc && x.px) x.mc = x.px * x.supplyAll;
     const pu = (x.byChain[keys[0]] || {}).pairUsd; x.pairUsd = pu || 0; x.pxPair = pu ? x.px / pu : 0;
     for (const k of keys) BY.set(lc(j.chains[k].token), x.addr);
@@ -264,7 +266,12 @@
   // native prices for the shell (the ETH price in the footer and USD values): the service's, refreshed every minute
   const NUSD = {};
   const WETH = lc(cfg.weth);
-  async function prices() { try { Object.assign(NUSD, (await api('/api/v2/prices')).nativeUsd || {}); } catch { /* keep the last */ } return NUSD; }
+  async function prices() {
+    try { Object.assign(NUSD, (await api('/api/v2/prices')).nativeUsd || {}); } catch { /* keep the last */ }
+    // coins read before the prices arrived take each chain's native price now
+    for (const x of COINS.values()) { for (const k of x.chains) { const b = x.byChain[k]; if (b && !b.pairUsd && NUSD[k]) b.pairUsd = NUSD[k]; } if (!x.pairUsd) x.pairUsd = (x.byChain[x.chains[0]] || {}).pairUsd || 0; if (x.pairUsd && x.px) x.pxPair = x.px / x.pairUsd; }
+    return NUSD;
+  }
   const pricesP = prices();
   setInterval(prices, 60000);
   const pu = C.pairUsd;

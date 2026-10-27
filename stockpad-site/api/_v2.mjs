@@ -93,8 +93,8 @@ async function nativeUsd() {
     const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids=${ids}`, { signal: AbortSignal.timeout(5000) });
     if (r.ok) { const j = await r.json(); for (const c of chains()) { const id = CG_IDS[c.native]; if (j[id] && j[id].usd > 0) usd[c.key] = j[id].usd; } }
   } catch { /* fall back below */ }
-  await Promise.all(chains().filter((c) => !usd[c.key] && c.factory).map(async (c) => {
-    try { usd[c.key] = Number((await call(c, c.factory, V1_FACTORY, "pairUsdPrice", [c.wrappedNative]))[0]) / 1e18; } catch { /* no price */ }
+  await Promise.all(chains().filter((c) => !usd[c.key] && c.priceFrom).map(async (c) => {
+    try { usd[c.key] = Number((await call(c, c.priceFrom, V1_FACTORY, "pairUsdPrice", [c.wrappedNative]))[0]) / 1e18; } catch { /* no price */ }
   }));
   priceCache = { at: Date.now(), usd };
   return usd;

@@ -29,7 +29,7 @@
 #pg-coin .pane{display:none} #pg-coin .pane.on{display:block} #pg-coin .tw{overflow-x:auto}
 #pg-coin table{width:100%;border-collapse:collapse;font-size:12.5px} #pg-coin th{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
 #pg-coin td{padding:9px 10px;border-bottom:1px solid var(--line);font-family:var(--mono);white-space:nowrap} #pg-coin td.r,#pg-coin th.r{text-align:right}
-#pg-coin td .cimg{width:16px;height:16px;border-radius:50%;vertical-align:-3px;margin-right:6px} #pg-coin .b{color:var(--up)} #pg-coin .s{color:var(--dn)}
+#pg-coin .b{color:var(--up)} #pg-coin .s{color:var(--dn)}
 /* trade card */
 #pg-coin .trade .pb{padding:14px}
 #pg-coin .sides{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid var(--line);border-radius:var(--r);background:var(--s2)}
@@ -55,6 +55,46 @@
 #pg-coin .sbar{height:6px;border-radius:3px;background:var(--s3);overflow:hidden;margin-top:10px} #pg-coin .sbar i{display:block;height:100%;background:var(--amber)}
 #pg-coin .shield.up{border-color:rgba(255,183,77,.5)}
 #pg-coin .empty.panel{padding:60px 20px}
+#pg-coin .cimg{display:inline-block;width:16px;height:16px;border-radius:50%;vertical-align:-3px;margin-right:6px}
+#pg-coin .ph2 .lbl{display:inline-flex;align-items:center;gap:2px;font:500 11px var(--mono);color:var(--fg-3)}
+/* the chart (chart.js) */
+.eqc{display:flex;flex-direction:column;padding:16px 16px 12px;gap:10px;font-variant-numeric:tabular-nums}
+.eqc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:58px}
+.eqc-leg{display:flex;flex-direction:column;gap:3px;min-width:0}
+.eqc-leg .t{font-size:12px;color:var(--fg-3);font-weight:500}
+.eqc-leg .v{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.eqc-leg .v b{font:700 28px/1.1 var(--sans);letter-spacing:-.02em;color:var(--fg)}
+.eqc-leg .v em{font-style:normal;font-size:13px;font-weight:600;padding:2px 7px;border-radius:6px} .eqc-leg .v em.up{color:var(--up);background:var(--up-dim)} .eqc-leg .v em.dn{color:var(--dn);background:var(--dn-dim)}
+.eqc-leg .v small{font-size:12px;color:var(--fg-3)}
+.eqc-leg .ohlc{font-size:11.5px;color:var(--fg-3)} .eqc-leg .ohlc b{color:var(--fg-2);font-weight:500;margin-right:6px}
+.eqc-leg .ls{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px} .eqc-leg .ls>span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-3)} .eqc-leg .ls i{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)} .eqc-leg .ls b{color:var(--fg);font-weight:600}
+.eqc-r{display:flex;gap:6px;flex-wrap:wrap}
+.eqc-seg{display:inline-flex;background:var(--s3);border:1px solid var(--line);border-radius:9px;padding:2px}
+.eqc-seg button,.eqc-rg button{all:unset;cursor:pointer;height:26px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;font-size:12px;font-weight:600;color:var(--fg-3);transition:color .15s,background .15s}
+.eqc-seg button:hover,.eqc-rg button:hover{color:var(--fg)} .eqc-seg button.on,.eqc-rg button.on{background:var(--s4);color:var(--fg)}
+.eqc-seg svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.eqc-box{position:relative;height:340px;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none} .eqc-box canvas{position:absolute;inset:0;display:block} .eqc.grab .eqc-box{cursor:grabbing}
+.eqc-ib{all:unset;cursor:pointer;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;background:var(--s3);border:1px solid var(--line);color:var(--fg-3);transition:color .15s,border-color .15s} .eqc-ib:hover{color:var(--fg);border-color:var(--line-3)}
+.eqc-ib svg,.eqc-zm svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.eqc-l{display:flex;align-items:center;gap:8px}
+.eqc-zm{display:flex;gap:2px;padding-left:8px;border-left:1px solid var(--line)}
+.eqc-zm button{all:unset;cursor:pointer;width:28px;height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;color:var(--fg-3);transition:color .15s,background .15s} .eqc-zm button:hover{color:var(--fg);background:var(--s4)}
+.eqc.zoomed .eqc-zm [data-z="fit"]{color:var(--ac)}
+.eqc.full{position:fixed;inset:0;z-index:1000;background:var(--s1);padding:20px 24px 16px} .eqc.full .eqc-box{height:auto;flex:1;min-height:0} html.eqc-lock{overflow:hidden}
+@media (hover:none){ .eqc-zm{display:none} .eqc.zoomed .eqc-zm{display:flex} }
+.eqc-leg .ohlc{min-height:17px}
+.eqc-dot{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c);pointer-events:none;box-shadow:0 0 0 3px rgba(10,10,11,.9)}
+.eqc-dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--c);opacity:0;animation:eqcPulse 1.8s ease-out infinite}
+@keyframes eqcPulse{0%{transform:scale(.4);opacity:.8}100%{transform:scale(1.6);opacity:0}}
+.eqc-no{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-size:12px;color:var(--fg-3);background:var(--s3);border:1px solid var(--line);padding:5px 11px;border-radius:999px;pointer-events:none}
+.eqc-bot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.eqc-rg{display:flex;gap:2px}
+.eqc-ch{display:flex;gap:4px;align-items:center;overflow-x:auto;scrollbar-width:none;max-width:100%} .eqc-ch::-webkit-scrollbar{display:none}
+.eqc-ch button{all:unset;cursor:pointer;flex:none;height:28px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--fg-3);transition:border-color .15s,color .15s,background .15s}
+.eqc-ch button.tx{padding:0 11px} .eqc-ch button.lg{width:28px} .eqc-ch button img{width:18px;height:18px;border-radius:50%;filter:saturate(.5) opacity(.7);transition:filter .15s}
+.eqc-ch button:hover{color:var(--fg);border-color:var(--line-3)} .eqc-ch button:hover img{filter:none}
+.eqc-ch button.on{color:var(--fg);background:var(--s3);border-color:var(--line-3)} .eqc-ch button.lg.on{border-color:var(--c);box-shadow:0 0 0 1px var(--c) inset} .eqc-ch button.on img{filter:none}
+
 @media(max-width:1100px){#pg-coin .cols{grid-template-columns:minmax(0,1fr) 340px} #pg-coin .srow{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:900px){
   #pg-coin .cols{display:flex;flex-direction:column;align-items:stretch} #pg-coin .left,#pg-coin .right{display:contents}
@@ -94,12 +134,12 @@
         <button class="btn cta bu" id="cn-cta">Connect a wallet</button>
         <p class="note" id="cn-note"></p>
       </div></section>
-      <section class="panel pot"><div class="ph"><h3>Last-buyer pot</h3><span class="lbl" id="cn-pot-ch"></span></div><div class="pb" id="cn-pot"></div></section>
-      <section class="panel shield" id="cn-shield-p"><div class="ph"><h3>Crash shield</h3></div><div class="pb" id="cn-shield"></div></section>
-      <section class="panel crt"><div class="ph"><h3>Creator fees</h3></div><div class="pb" id="cn-crt"></div></section>
+      <section class="panel pot"><div class="ph2"><span>Last-buyer pot</span><span class="lbl" id="cn-pot-ch"></span></div><div class="pb" id="cn-pot"></div></section>
+      <section class="panel shield" id="cn-shield-p"><div class="ph2"><span>Crash shield</span></div><div class="pb" id="cn-shield"></div></section>
+      <section class="panel crt"><div class="ph2"><span>Creator fees</span></div><div class="pb" id="cn-crt"></div></section>
     </div>
   </div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=15"></script><script src="/data.js?v=4"></script><script src="/avatar.js"></script><script src="/chain.js?v=23"></script><script src="/equo.js?v=7"></script><script src="/api.js?v=6"></script><script src="/v2.js?v=1"></script><script src="/wallet.js"></script><script src="/chart.js?v=6"></script><script src="/core.js?v=39"></script><script src="/sp-coin.js?v=1"></script>
+<script src="/config.js?v=15"></script><script src="/data.js?v=4"></script><script src="/avatar.js"></script><script src="/chain.js?v=23"></script><script src="/equo.js?v=7"></script><script src="/api.js?v=6"></script><script src="/v2.js?v=1"></script><script src="/wallet.js"></script><script src="/chart.js?v=6"></script><script src="/core.js?v=40"></script><script src="/sp-coin.js?v=1"></script>
 </body></html>

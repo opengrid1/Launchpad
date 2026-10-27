@@ -1,231 +1,83 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Create a token | Equo</title><meta name="description" content="Create a coin on up to nine chains at once: one address on every EVM chain, the same opening price everywhere.">
+<title>Launch a coin | Equo</title><meta name="description" content="Launch one coin on up to eight chains at once, at the same opening price, with a last-buyer pot and a crash shield on every pool.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
-<meta property="og:title" content="Create a token | Equo"><meta property="og:description" content="Launch a coin on up to nine chains at once, at the same opening price."><meta property="og:image" content="/img/og.png?v=17"><meta name="twitter:card" content="summary_large_image">
+<meta property="og:title" content="Launch a coin | Equo"><meta property="og:description" content="One coin, every chain."><meta property="og:image" content="/img/og.png?v=17">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/ui.css?v=23">
 <style>
-/* Launch: four steps (identity, fee and tokenomics, review, launch) beside a live preview card */
-#pg-launch{max-width:1160px;margin:0 auto}
-#pg-launch .lw{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start;margin-top:8px}
-#pg-launch .tophd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:6px 0 14px}
-#pg-launch .tophd h1{font:700 26px var(--disp);letter-spacing:-.02em} #pg-launch .tophd .cdots{display:flex;gap:12px;flex-wrap:wrap;font:12px var(--mono);color:var(--fg-3)} #pg-launch .tophd .cdots span{display:inline-flex;align-items:center;gap:5px} #pg-launch .tophd .cdots i{width:7px;height:7px;border-radius:2px}
-#pg-launch .card{border:1px solid var(--line-2);border-radius:18px;background:var(--s1);overflow:hidden}
-#pg-launch .tabs4{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
-#pg-launch .tabs4 button{position:relative;display:flex;align-items:center;gap:8px;height:52px;padding:0 16px;background:none;border:0;border-right:1px solid var(--line);color:var(--fg-3);font:500 13.5px var(--disp);text-align:left;cursor:pointer}
-#pg-launch .tabs4 button:last-child{border-right:0} #pg-launch .tabs4 button .n{font:500 12px var(--mono);opacity:.8}
-#pg-launch .tabs4 button::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;background:transparent}
-#pg-launch .tabs4 button.on{color:var(--fg)} #pg-launch .tabs4 button.on::after{background:var(--ac)} #pg-launch .tabs4 button.done{color:var(--fg-2)} #pg-launch .tabs4 button.done::after{background:rgba(63,188,255,.35)}
-#pg-launch .tabs4 button:disabled{cursor:default}
-#pg-launch .body{padding:24px}
-#pg-launch .step{display:none} #pg-launch .step.on{display:block}
-#pg-launch .lbl{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:18px 0 7px;font:600 13px var(--disp);letter-spacing:0;text-transform:none;color:var(--fg)} #pg-launch .lbl:first-child{margin-top:0}
-#pg-launch .lbl .opt{font:400 11.5px var(--mono);color:var(--fg-3)} #pg-launch .lbl .cnt{font:400 11.5px var(--mono);color:var(--fg-3)}
-#pg-launch .inp{height:46px;border-radius:12px;font-size:14.5px} #pg-launch textarea.inp{height:88px;padding:12px;resize:vertical}
-#pg-launch .up{text-transform:uppercase;font-family:var(--mono)}
-#pg-launch .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-#pg-launch .art{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;align-items:center;padding:14px;border:1px solid var(--line-2);border-radius:14px;background:var(--s2)}
-#pg-launch .drop{display:flex;align-items:center;justify-content:center;width:96px;height:96px;border:1px dashed var(--line-3);border-radius:16px;background:var(--s1);color:var(--fg-3);font:700 30px var(--disp);cursor:pointer;overflow:hidden} #pg-launch .drop:hover,#pg-launch .drop.over{border-color:var(--ac)} #pg-launch .drop img{width:100%;height:100%;object-fit:cover}
-#pg-launch .art .ab b{display:block;font:600 14px var(--disp)} #pg-launch .art .ab small{display:block;margin-top:3px;font:12px var(--mono);color:var(--fg-3)} #pg-launch .art .ab .btn{margin-top:10px}
-#pg-launch .links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
-#pg-launch .links label{display:block;font:11px var(--mono);color:var(--fg-3);margin-bottom:5px}
-/* boxes and rows */
-#pg-launch .box{border:1px solid var(--line-2);border-radius:14px;background:var(--s2);overflow:hidden}
-#pg-launch .row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:10px 14px;border-top:1px solid var(--line)} #pg-launch .row:first-child{border-top:0}
-#pg-launch .row .t{font:500 13.5px var(--disp)} #pg-launch .row .t small{display:block;margin-top:2px;font:400 12px var(--sans);color:var(--fg-3);line-height:1.45}
-#pg-launch .row .v{font:500 13px var(--mono);color:var(--fg-2);text-align:right;white-space:nowrap}
-#pg-launch .row.sub{display:block;min-height:0;padding:12px 14px;background:var(--s1)}
-#pg-launch .pills{display:flex;flex-wrap:wrap;gap:6px}
-#pg-launch .pills button{height:34px;min-width:52px;padding:0 13px;border:1px solid var(--line-2);border-radius:10px;background:var(--s1);color:var(--fg-2);font:600 13px var(--mono);cursor:pointer} #pg-launch .pills button:hover{border-color:var(--line-3);color:var(--fg)}
-#pg-launch .pills button.on{background:var(--ac);border-color:var(--ac);color:var(--ac-ink)} #pg-launch .pills button:disabled{opacity:.4;cursor:not-allowed}
-#pg-launch .keep{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px} #pg-launch .keep div{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--s1)} #pg-launch .keep span{display:block;font:11px var(--mono);color:var(--fg-3)} #pg-launch .keep b{display:block;margin-top:4px;font:600 18px var(--mono)}
-#pg-launch .pcrow{display:grid;grid-template-columns:110px minmax(0,1fr);align-items:center;gap:10px;padding:8px 0;border-top:1px dashed var(--line)} #pg-launch .pcrow:first-child{border-top:0} #pg-launch .pcrow .cn{display:flex;align-items:center;gap:7px;font:500 13px var(--disp)} #pg-launch .pcrow .cn img{width:18px;height:18px;border-radius:50%} #pg-launch .pcrow .pills button{height:30px;min-width:46px;padding:0 9px;font-size:12px}
-#pg-launch .alloc{display:grid;gap:8px} #pg-launch .alloc .sl{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:10px;align-items:center} #pg-launch .alloc .sl b{font:500 13.5px var(--disp)} #pg-launch .alloc .sl small{display:block;font:12px var(--sans);color:var(--fg-3)} #pg-launch .alloc .sl .pi{display:flex;align-items:center;gap:6px} #pg-launch .alloc .sl input{height:38px;text-align:right;font-family:var(--mono)}
-#pg-launch .tot{display:flex;justify-content:space-between;padding-top:10px;margin-top:4px;border-top:1px solid var(--line);font:600 13px var(--disp)} #pg-launch .tot b{font-family:var(--mono)}
-#pg-launch .sbar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--s3);margin-top:10px} #pg-launch .sbar i{display:block;height:100%}
-#pg-launch .lg2{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font:11.5px var(--mono);color:var(--fg-3)} #pg-launch .lg2 span{display:inline-flex;align-items:center;gap:5px} #pg-launch .lg2 i{width:8px;height:8px;border-radius:2px}
-#pg-launch .ob{display:none;padding:2px 14px 14px;border-top:0} #pg-launch .opt.on .ob{display:block} #pg-launch .ob .two{margin-top:4px} #pg-launch .ob label{display:block;font:11px var(--mono);color:var(--fg-3);margin:8px 0 5px}
-#pg-launch .err{color:var(--dn);font-size:12.5px;margin-top:6px} #pg-launch .err:empty{display:none} #pg-launch .hint:empty{display:none}
-/* review */
-#pg-launch .rvhd{display:flex;justify-content:space-between;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line)} #pg-launch .rvhd b{display:block;font:700 30px var(--disp);letter-spacing:-.02em} #pg-launch .rvhd small{font-size:14px;color:var(--fg-2)} #pg-launch .rvhd .meta{font:12.5px var(--sans);color:var(--fg-3);text-align:right;line-height:1.7} #pg-launch .rvhd .meta b{display:inline;font:500 12.5px var(--sans);color:var(--fg)}
-#pg-launch .sec{display:flex;align-items:center;gap:10px;margin:20px 0 10px;font:600 14px var(--disp)} #pg-launch .sec::after{content:"";flex:1;height:1px;background:var(--line)} #pg-launch .sec .tag2{order:2;font:500 10.5px var(--mono);color:var(--fg-3);padding:3px 8px;border:1px solid var(--line-2);border-radius:999px}
-#pg-launch .chips{display:flex;flex-wrap:wrap;gap:8px}
-#pg-launch .chip{--cc:#3fbcff;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 12px;border:1px solid var(--line-2);border-radius:10px;background:var(--s1);color:var(--fg-2);font:500 13px var(--disp);cursor:pointer} #pg-launch .chip i{width:8px;height:8px;border-radius:2px;background:var(--cc)} #pg-launch .chip img{width:16px;height:16px;border-radius:50%}
-#pg-launch .chip.on{background:var(--fg);border-color:var(--fg);color:#0a0a0b} #pg-launch .chip small{font:11px var(--mono);opacity:.7} #pg-launch .chip .soonb{height:15px;padding:0 4px;font-size:8.5px}
-#pg-launch .note{margin-top:8px;font-size:12.5px;color:var(--fg-3);line-height:1.5} #pg-launch .note b{color:var(--fg-2)} #pg-launch .note.warn{color:var(--amber)}
-#pg-launch .row .inl{display:flex;align-items:center;gap:6px;font:500 14px var(--mono)} #pg-launch .row .inl input{width:120px;height:36px;text-align:right;font-family:var(--mono)}
-#pg-launch .on-tag{display:inline-flex;align-items:center;gap:5px;font:500 11.5px var(--mono);color:var(--up)} #pg-launch .on-tag svg{width:14px;height:14px}
-/* launch step */
-#pg-launch .cost .row .t img{display:inline-block;width:18px;height:18px;border-radius:50%;vertical-align:-4px;margin-right:7px}
-#pg-launch .cost .row.total{background:var(--s1)} #pg-launch .cost .row.total .t,#pg-launch .cost .row.total .v{font:600 15px var(--disp);color:var(--fg)}
-#pg-launch .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 24px;border-top:1px solid var(--line);background:var(--s2)}
-#pg-launch .foot .msg{font-size:12.5px;color:var(--fg-3);line-height:1.45}
-#pg-launch .foot .btns{display:flex;gap:10px;flex:none} #pg-launch .foot .btn{height:44px;padding:0 20px;border-radius:12px;font:600 14px var(--disp)}
-/* preview */
-#pg-launch .pv{position:sticky;top:calc(var(--top,60px) + 16px)}
-#pg-launch .pvc{position:relative;padding:16px;border-radius:20px;background:#0e1014;border:1px solid var(--line-2);box-shadow:10px 10px 0 -1px rgba(63,188,255,.55)}
-#pg-launch .pvc .hd{display:flex;justify-content:space-between;font:500 12px var(--mono);color:var(--fg-2);letter-spacing:.06em}
-#pg-launch .pvc .im{display:flex;align-items:center;justify-content:center;aspect-ratio:1/0.82;margin:14px 0 18px;border-radius:14px;background:radial-gradient(70% 70% at 50% 40%,rgba(63,188,255,.25),transparent 70%),#151821;overflow:hidden} #pg-launch .pvc .im img{width:100%;height:100%;object-fit:cover} #pg-launch .pvc .im span{font:800 92px var(--disp);color:rgba(255,255,255,.85)}
-#pg-launch .pvc h3{font:700 24px var(--disp);letter-spacing:-.02em} #pg-launch .pvc p{margin-top:6px;font-size:13.5px;line-height:1.5;color:var(--fg-2);min-height:20px;word-break:break-word}
-#pg-launch .pvc .rd{display:flex;align-items:center;gap:8px;margin-top:16px;font:600 11px var(--mono);letter-spacing:.12em;color:var(--fg-2)} #pg-launch .pvc .rd .d{display:flex;gap:4px} #pg-launch .pvc .rd .d i{width:9px;height:9px;border-radius:50%}
-#pg-launch .notice{margin-bottom:14px}
-/* done */
-#pg-launch .done{padding:28px;text-align:center} #pg-launch .done img{width:84px;height:84px;border-radius:20px;object-fit:cover;background:var(--s3)} #pg-launch .done h2{margin-top:14px;font:700 24px var(--disp)} #pg-launch .done p{margin-top:6px;color:var(--fg-2)} #pg-launch .done .acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
-@media(max-width:1000px){#pg-launch .lw{grid-template-columns:minmax(0,1fr)} #pg-launch .pv{position:static;order:-1} #pg-launch .pvc .im{aspect-ratio:2.2/1} #pg-launch .pvc .im span{font-size:56px}}
-@media(max-width:640px){#pg-launch .body{padding:16px} #pg-launch .tabs4 button{flex-direction:column;justify-content:center;gap:2px;height:56px;padding:0 4px;font-size:11.5px;text-align:center} #pg-launch .two,#pg-launch .links,#pg-launch .keep{grid-template-columns:1fr} #pg-launch .foot{padding:14px 16px;flex-direction:column;align-items:stretch} #pg-launch .foot .btns .btn{flex:1} #pg-launch .rvhd b{font-size:24px} #pg-launch .pcrow{grid-template-columns:1fr}}
-
-/* ===== polish ===== */
-#pg-launch .tophd{align-items:flex-end;margin:10px 0 18px} #pg-launch .tophd h1{font:800 34px var(--disp);letter-spacing:-.03em} #pg-launch .tophd .sub{margin-top:4px;color:var(--fg-3);font-size:14px}
-#pg-launch .card{border-color:rgba(255,255,255,.08);background:linear-gradient(180deg,#0f1116,#0b0c10);box-shadow:0 30px 60px -40px rgba(0,0,0,.9)}
-#pg-launch .tabs4{position:relative;padding:14px 18px 16px;gap:8px;border-bottom:1px solid rgba(255,255,255,.06)}
-#pg-launch .tabs4 button{flex-direction:column;align-items:center;gap:7px;height:auto;padding:0;border:0;font:500 12.5px var(--disp);color:var(--fg-3);text-align:center}
-#pg-launch .tabs4 button::after{display:none}
-#pg-launch .tabs4 .n{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line-3);background:var(--s1);font:600 13px var(--mono);opacity:1;transition:all .2s} #pg-launch .tabs4 .n svg{width:15px;height:15px}
-#pg-launch .tabs4 button.on{color:var(--fg)} #pg-launch .tabs4 button.on .n{border-color:var(--ac);background:var(--ac);color:var(--ac-ink);box-shadow:0 0 0 5px rgba(63,188,255,.15)}
-#pg-launch .tabs4 button.done{color:var(--fg-2)} #pg-launch .tabs4 button.done .n{border-color:var(--ac);color:var(--ac);background:rgba(63,188,255,.1)}
-#pg-launch .tabs4 .prog{position:absolute;left:12.5%;right:12.5%;top:30px;height:2px;background:var(--line-2);z-index:0} #pg-launch .tabs4 .prog::after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--p,0%);background:var(--ac);transition:width .3s} #pg-launch .tabs4 button{position:relative;z-index:1}
-#pg-launch .body{padding:26px 28px}
-#pg-launch .sh{display:flex;align-items:center;gap:12px;margin:28px 0 12px} #pg-launch .step>.sh:first-child,#pg-launch .step>.rvhd+.sh{margin-top:4px}
-#pg-launch .sh .si{display:flex;align-items:center;justify-content:center;width:36px;height:36px;flex:none;border-radius:11px;background:rgba(63,188,255,.1);color:var(--ac);box-shadow:inset 0 0 0 1px rgba(63,188,255,.22)} #pg-launch .sh .si svg{width:18px;height:18px}
-#pg-launch .sh b{display:block;font:600 15.5px var(--disp)} #pg-launch .sh small{display:block;margin-top:1px;font-size:12.5px;color:var(--fg-3)} #pg-launch .sh .fx{margin-left:auto;font:500 10.5px var(--mono);color:var(--fg-3);padding:4px 9px;border:1px solid var(--line-2);border-radius:999px;white-space:nowrap}
-#pg-launch .inp{background:#0a0b0e;border-color:rgba(255,255,255,.09)} #pg-launch .inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(63,188,255,.14)}
-#pg-launch .box{background:rgba(255,255,255,.02);border-color:rgba(255,255,255,.08)}
-/* fee cards */
-#pg-launch #fee-pills{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
-#pg-launch #fee-pills button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:68px;border-radius:14px;background:rgba(255,255,255,.02);border-color:rgba(255,255,255,.09);font:700 18px var(--disp);color:var(--fg)}
-#pg-launch #fee-pills button small{font:500 10.5px var(--mono);color:var(--fg-3)} #pg-launch #fee-pills button.on{background:linear-gradient(160deg,rgba(63,188,255,.22),rgba(63,188,255,.06));border-color:var(--ac);color:var(--fg);box-shadow:0 0 0 3px rgba(63,188,255,.12)} #pg-launch #fee-pills button.on small{color:var(--ac)}
-#pg-launch .keep div{background:rgba(255,255,255,.02);border-color:rgba(255,255,255,.08)} #pg-launch .keep div:first-child b{color:var(--ac)}
-/* tokenomics */
-#pg-launch .tokhd{gap:18px;padding:16px} #pg-launch .tk2{flex:1;min-width:0} #pg-launch .tk2 small{display:block;margin-top:8px;font-size:12px;color:var(--fg-3)}
-#pg-launch .donut{width:92px;height:92px;flex:none;border-radius:50%;position:relative} #pg-launch .donut::after{content:"";position:absolute;inset:16px;border-radius:50%;background:#0d0f13} #pg-launch .donut span{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;font:700 15px var(--disp)} #pg-launch .donut span small{font:500 9.5px var(--mono);color:var(--fg-3)}
-#pg-launch .alloc .sl{grid-template-columns:minmax(0,1fr) minmax(90px,1.1fr) 78px;gap:14px;padding:10px 0;border-top:1px solid rgba(255,255,255,.05)} #pg-launch .alloc .sl:first-child{border-top:0}
-#pg-launch .alloc .sl b{display:flex;align-items:center;gap:8px} #pg-launch .alloc .sl b i{width:9px;height:9px;border-radius:3px;flex:none}
-#pg-launch .alloc input[type=range]{width:100%;accent-color:var(--c,#3fbcff)}
-#pg-launch .alloc .sl.full{grid-template-columns:minmax(0,1fr) auto}
-/* chain tiles */
-#pg-launch #chips,#pg-launch #pay{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-#pg-launch .chip{position:relative;justify-content:flex-start;height:54px;padding:0 12px;border-radius:13px;background:rgba(255,255,255,.02);border-color:rgba(255,255,255,.09);color:var(--fg);font:600 13.5px var(--disp);text-align:left}
-#pg-launch .chip img{width:26px;height:26px} #pg-launch .chip i{display:none} #pg-launch .chip .cm{display:flex;flex-direction:column;min-width:0} #pg-launch .chip .cm small{font:500 10.5px var(--mono);color:var(--fg-3);opacity:1}
-#pg-launch .chip .tick{margin-left:auto;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line-3);display:flex;align-items:center;justify-content:center;flex:none} #pg-launch .chip .tick svg{width:11px;height:11px;opacity:0}
-#pg-launch .chip.on{background:radial-gradient(120% 140% at 0% 50%,color-mix(in srgb,var(--cc) 20%,transparent),transparent 70%),rgba(255,255,255,.02);border-color:color-mix(in srgb,var(--cc) 75%,transparent);color:var(--fg);box-shadow:0 0 0 1px color-mix(in srgb,var(--cc) 30%,transparent)}
-#pg-launch .chip.on .tick{background:var(--cc);border-color:var(--cc);color:#06080c} #pg-launch .chip.on .tick svg{opacity:1}
-#pg-launch .chip .sn{color:var(--amber)} #pg-launch .chip .cm{overflow:hidden} #pg-launch .chip .cm,#pg-launch .chip .cm small{white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
-#pg-launch .chip.on .cm small{color:var(--fg-2)}
-/* review header */
-#pg-launch .rvhd{align-items:center;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.02)} #pg-launch .rvhd .rva{display:flex;align-items:center;gap:14px} #pg-launch .rvhd .rvi{width:56px;height:56px;border-radius:16px;overflow:hidden;background:#151821;display:flex;align-items:center;justify-content:center;font:800 24px var(--disp)} #pg-launch .rvhd .rvi img{width:100%;height:100%;object-fit:cover}
-/* receipt */
-#pg-launch .rcpt{border:1px solid rgba(255,255,255,.09);border-radius:16px;background:linear-gradient(180deg,rgba(63,188,255,.06),rgba(255,255,255,.01) 40%);overflow:hidden}
-#pg-launch .rcpt .rh{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px dashed rgba(255,255,255,.12)} #pg-launch .rcpt .rh .si{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:11px;background:var(--ac);color:var(--ac-ink)} #pg-launch .rcpt .rh .si svg{width:18px;height:18px} #pg-launch .rcpt .rh b{display:block;font:600 15.5px var(--disp)} #pg-launch .rcpt .rh small{font-size:12.5px;color:var(--fg-3)}
-#pg-launch .rcpt .row{border-top:0;padding:10px 18px;min-height:48px} #pg-launch .rcpt .row.total{margin-top:6px;border-top:1px dashed rgba(255,255,255,.12);padding:16px 18px;background:transparent} #pg-launch .rcpt .row.total .v{font:700 20px var(--disp);color:var(--fg)} #pg-launch .rcpt .row.total .v small{display:block;font:500 12px var(--mono);color:var(--fg-3);text-align:right}
-/* footer */
-#pg-launch .foot{background:rgba(255,255,255,.02);border-top-color:rgba(255,255,255,.06);padding:16px 28px} #pg-launch .foot .btn.pri{min-width:140px;box-shadow:0 10px 26px -10px rgba(63,188,255,.8)}
-/* preview */
-#pg-launch .pvc{padding:18px;border-radius:24px;background:linear-gradient(180deg,#12141a,#0c0d11);border:1px solid rgba(255,255,255,.08);box-shadow:0 30px 60px -30px rgba(0,0,0,.95),0 0 0 1px rgba(63,188,255,.08)}
-#pg-launch .pvc .hd .fp{padding:3px 8px;border-radius:999px;background:rgba(63,188,255,.12);color:var(--ac)}
-#pg-launch .pvc .im{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:1/0.78;margin:14px 0 16px;border-radius:18px;background:radial-gradient(60% 60% at 50% 45%,rgba(63,188,255,.18),transparent 70%),#0a0b0f;overflow:hidden}
-#pg-launch .pvc .ring{position:absolute;width:62%;aspect-ratio:1;border-radius:50%;-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));animation:spin 18s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}} @media(prefers-reduced-motion:reduce){#pg-launch .pvc .ring{animation:none}}
-#pg-launch .pvc .art2{position:relative;width:46%;aspect-ratio:1;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#1d2230,#11141b);box-shadow:0 14px 34px -10px rgba(0,0,0,.9)} #pg-launch .pvc .art2 img{width:100%;height:100%;object-fit:cover} #pg-launch .pvc .art2 span{font:800 54px var(--disp);color:#fff}
-#pg-launch .pvc .pst{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:14px} #pg-launch .pvc .pst div{padding:9px 8px;border-radius:11px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)} #pg-launch .pvc .pst span{display:block;font:500 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)} #pg-launch .pvc .pst b{display:block;margin-top:3px;font:600 13px var(--disp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:900px){#pg-launch #chips,#pg-launch #pay{grid-template-columns:repeat(2,minmax(0,1fr))} #pg-launch #fee-pills{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:1000px){#pg-launch .pvc{display:grid;grid-template-columns:96px minmax(0,1fr);gap:4px 14px;align-items:center;padding:14px} #pg-launch .pvc .hd{grid-column:1/-1} #pg-launch .pvc .im{grid-row:span 3;aspect-ratio:1;width:96px;margin:6px 0 0} #pg-launch .pvc .art2{width:62%} #pg-launch .pvc .ring{width:88%} #pg-launch .pvc .art2 span{font-size:28px} #pg-launch .pvc h3{font-size:18px;margin-top:6px} #pg-launch .pvc p{margin-top:0;font-size:12.5px;min-height:0} #pg-launch .pvc .pst{grid-column:1/-1;grid-template-columns:repeat(4,minmax(0,1fr))} #pg-launch .pvc .rd{grid-column:1/-1;margin-top:10px}}
-@media(max-width:640px){#pg-launch .tabs4{padding:12px 6px 14px} #pg-launch .tabs4 .tl{font-size:10.5px} #pg-launch .tabs4 .prog{top:28px} #pg-launch .body{padding:18px 16px} #pg-launch .foot{padding:14px 16px} #pg-launch .tophd h1{font-size:28px}
-  #pg-launch .alloc .sl{grid-template-columns:minmax(0,1fr) 74px} #pg-launch .alloc .sl input[type=range]{grid-column:1/-1;order:3} #pg-launch .tokhd{flex-direction:column;align-items:flex-start} #pg-launch .row .v{white-space:normal;text-align:right;max-width:62%} #pg-launch .row:has(#cap-pills),#pg-launch .row:has(.inl){flex-wrap:wrap} #pg-launch #cap-pills{width:100%;flex-wrap:nowrap} #pg-launch #cap-pills button{flex:1}}
+/* launch page (Equo v2), scoped under #pg-launch */
+#pg-launch{max-width:1120px;margin:0 auto}
+#pg-launch .tophd{margin:6px 0 16px} #pg-launch .tophd h1{font:700 26px var(--disp);letter-spacing:-.02em;margin:0} #pg-launch .tophd p{margin:6px 0 0;color:var(--fg-3);font-size:13.5px}
+#pg-launch .lw{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+#pg-launch .card{border:1px solid var(--line-2);border-radius:16px;background:var(--s1);padding:20px}
+#pg-launch .sec{margin-top:22px} #pg-launch .sec:first-child{margin-top:0}
+#pg-launch .sec>h3{margin:0 0 10px;font:600 14px var(--disp)} #pg-launch .sec>h3 small{font:400 12px var(--sans);color:var(--fg-3);margin-left:6px}
+#pg-launch .two{display:grid;grid-template-columns:1fr 1fr;gap:12px} #pg-launch .three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+#pg-launch label.l{display:block;font:500 11.5px var(--mono);color:var(--fg-3);margin-bottom:6px}
+#pg-launch .inp{width:100%} #pg-launch textarea.inp{min-height:76px;resize:vertical;padding-top:10px}
+#pg-launch .idrow{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;align-items:start}
+#pg-launch .drop{width:96px;height:96px;border-radius:50%;border:1px dashed var(--line-3);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:var(--s2);color:var(--fg-3);font:600 12px var(--mono);text-align:center}
+#pg-launch .drop img{width:100%;height:100%;object-fit:cover} #pg-launch .drop:hover{border-color:var(--ac)}
+#pg-launch .fees{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+#pg-launch .fees button,#pg-launch .chs button{height:40px;border:1px solid var(--line-2);border-radius:10px;background:var(--s2);font:600 13px var(--mono);color:var(--fg-2)}
+#pg-launch .fees button.on{border-color:var(--ac);color:var(--fg);box-shadow:0 0 0 1px var(--ac) inset}
+#pg-launch .chs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#pg-launch .chs button{display:flex;align-items:center;gap:7px;padding:0 10px;font-family:var(--disp);font-size:12.5px;text-align:left}
+#pg-launch .chs button img{width:20px;height:20px;border-radius:50%} #pg-launch .chs button.on{border-color:var(--cc);color:var(--fg);box-shadow:0 0 0 1px var(--cc) inset} #pg-launch .chs button:not(.on){opacity:.55}
+#pg-launch .hint{margin:8px 0 0;font-size:12px;color:var(--fg-3);line-height:1.5} #pg-launch .err{color:var(--dn)}
+#pg-launch .kv{padding:7px 0;font-size:13px} #pg-launch .kv b{font-family:var(--mono)}
+#pg-launch .tot{border-top:1px solid var(--line);margin-top:6px;padding-top:10px} #pg-launch .tot b{font-size:15px}
+#pg-launch .go{width:100%;height:48px;margin-top:14px;font:600 15px var(--disp)}
+#pg-launch .pv{position:sticky;top:calc(var(--top) + 14px)}
+#pg-launch .pvc{display:flex;gap:12px;align-items:center} #pg-launch .pvc img{width:56px;height:56px;border-radius:50%;object-fit:cover;background:var(--s3);border:1px solid var(--line-2)}
+#pg-launch .pvc b{display:block;font:600 17px var(--disp)} #pg-launch .pvc small{font:12px var(--mono);color:var(--fg-3)}
+#pg-launch .steps{margin-top:14px;display:flex;flex-direction:column;gap:6px} #pg-launch .steps div{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--fg-3)}
+#pg-launch .steps div i{width:8px;height:8px;border-radius:50%;background:var(--line-3)} #pg-launch .steps div.on{color:var(--fg)} #pg-launch .steps div.on i{background:var(--ac);box-shadow:0 0 0 3px var(--ac-dim)} #pg-launch .steps div.ok i{background:var(--up)} #pg-launch .steps div.ok{color:var(--fg-2)}
+#pg-launch .legs{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:10px;font:12px var(--mono)} #pg-launch .legs span{display:flex;align-items:center;gap:6px;color:var(--fg-3)} #pg-launch .legs span img{width:14px;height:14px;border-radius:50%} #pg-launch .legs span.ok{color:var(--up)}
+@media(max-width:900px){#pg-launch .lw{grid-template-columns:1fr} #pg-launch .pv{position:static} #pg-launch .chs{grid-template-columns:repeat(2,1fr)} #pg-launch .three{grid-template-columns:1fr}}
 </style>
 </head><body data-page="launch">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-launch">
-  <div class="tophd"><div><h1>Create a coin</h1><p class="sub">One launch, live on every chain you pick, at the same opening price.</p></div><div class="cdots" id="lt-dots"></div></div>
+  <div class="tophd"><h1>Launch a coin</h1><p>One coin on every chain you pick, 1B on each, all opening at a $3,000 market cap. Every pool has a last-buyer pot and a crash shield.</p></div>
   <div class="lw">
-    <div>
-      <div class="notice warn hidden" id="paused"></div>
-      <div class="card" id="wiz">
-        <div class="tabs4" id="tabs"><button type="button" data-s="1" class="on"><span class="n">1</span><span class="tl">Identity</span></button><button type="button" data-s="2"><span class="n">2</span><span class="tl">Fee and tokenomics</span></button><button type="button" data-s="3"><span class="n">3</span><span class="tl">Review</span></button><button type="button" data-s="4"><span class="n">4</span><span class="tl">Launch</span></button><i class="prog" id="prog"></i></div>
-        <div class="body">
-          <!-- 1. identity -->
-          <section class="step on" data-step="1">
-            <div class="two">
-              <div><label class="lbl" for="f-name">Coin name <span class="cnt" id="name-cnt">0/32</span></label><input class="inp" id="f-name" maxlength="32" placeholder="Equo Cat" autocomplete="off"><p class="err" id="name-msg"></p></div>
-              <div><label class="lbl" for="f-sym">Ticker <span class="cnt" id="sym-cnt">0/10</span></label><input class="inp up" id="f-sym" maxlength="10" placeholder="CAT" autocomplete="off" spellcheck="false"><p class="hint" id="sym-msg"></p></div>
-            </div>
-            <label class="lbl" for="f-desc">Description <span class="opt">Optional · <span id="desc-cnt">0/280</span></span></label>
-            <textarea class="inp" id="f-desc" maxlength="280" placeholder="What the coin is about, in a line or two."></textarea>
-            <label class="lbl">Art and links <span class="opt">Optional</span></label>
-            <div class="art"><label class="drop" id="drop" for="f-logo"><input id="f-logo" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden><span id="drop-in">?</span></label>
-              <div class="ab"><b>Coin art</b><small>PNG, JPG, GIF or WebP, up to 4 MB. Stored on-chain, square-cropped.</small><label class="btn sm line" for="f-logo">Choose image</label></div></div>
-            <div class="links"><div><label for="f-web">Website</label><input class="inp" id="f-web" placeholder="https://" autocomplete="off"></div><div><label for="f-x">X</label><input class="inp" id="f-x" placeholder="https://x.com/" autocomplete="off"></div><div><label for="f-tg">Telegram</label><input class="inp" id="f-tg" placeholder="https://t.me/" autocomplete="off"></div></div>
-          </section>
-
-          <!-- 2. fee and tokenomics -->
-          <section class="step" data-step="2">
-            <div class="sh"><span class="si" data-ic="swap"></span><div><b>Trading fee</b><small>Charged on every buy and sell, in the chain's own coin.</small></div><span class="fx">Fixed at launch</span></div>
-            <div class="pills" id="fee-pills"></div>
-            <div class="keep"><div><span>You keep</span><b id="keep-you">0.6%</b></div><div><span>Platform</span><b id="keep-pf">0.4%</b></div></div>
-            <div class="box" style="margin-top:10px"><div class="row opt" id="opt-perfee"><div class="t">A different fee on each chain<small>Set the fee chain by chain instead of one for all.</small></div><button type="button" class="sw" role="switch" aria-checked="false" data-sw="perfee"></button></div><div class="row sub hidden" id="perfee"></div></div>
-
-            <div class="sh"><span class="si" data-ic="flame"></span><div><b>Tokenomics</b><small>What your share of every fee does.</small></div><span class="fx">Fixed at launch</span></div>
-            <div class="box">
-              <div class="row tokhd"><div class="donut" id="donut"></div><div class="tk2"><div class="pills" id="tok-pre"></div><small>Presets, or set each share below. It must add up to 100%.</small></div></div>
-              <div class="row sub"><div class="alloc" id="split"></div><div class="tot"><span>Your share after these</span><b id="split-you"></b></div><div class="sbar" id="sbar"></div><div class="lg2" id="slg"></div><p class="err" id="split-msg"></p></div>
-            </div>
-
-            <div class="sh"><span class="si" data-ic="shield"></span><div><b>Launch protection</b><small>Slows down snipers and whales in the first minutes.</small></div><span class="fx">Optional</span></div>
-            <div class="box">
-              <div class="opt" id="opt-snipe"><div class="row"><div class="t">Anti-snipe<small>A higher fee for the first minutes, falling to the normal fee.</small></div><button type="button" class="sw" role="switch" aria-checked="false" data-sw="snipe"></button></div>
-                <div class="ob"><div class="two"><div><label for="f-snipe">Starting fee, %</label><input class="inp" id="f-snipe" type="number" min="5" max="30" step="1" value="20"></div><div><label for="f-snipemin">Lasts, minutes</label><input class="inp" id="f-snipemin" type="number" min="1" step="1" value="10"></div></div><p class="hint" id="snipe-hint"></p><p class="err" id="snipe-msg"></p></div></div>
-              <div class="opt" id="opt-mw" style="border-top:1px solid var(--line)"><div class="row"><div class="t">Max wallet<small>Caps how much of the supply one wallet can hold early on.</small></div><button type="button" class="sw" role="switch" aria-checked="false" data-sw="mw"></button></div>
-                <div class="ob"><div class="two"><div><label for="f-mw">Max per wallet, % of supply</label><input class="inp" id="f-mw" type="number" min="0.5" max="20" step="0.5" value="2"></div><div><label for="f-mwh">For, hours</label><input class="inp" id="f-mwh" type="number" min="0.25" max="720" step="0.25" value="1"></div></div><p class="hint" id="mw-hint"></p><p class="err" id="mw-msg"></p></div></div>
-            </div>
-
-            <div class="sh"><span class="si" data-ic="wallet"></span><div><b>Creator wallets</b><small>Where your fees and dev buy land.</small></div></div>
-            <div class="box">
-              <div class="row"><div class="t">EVM wallet<small>The creator on every EVM chain: fees, the dev buy and creator tools go here.</small></div><div class="v" id="evm-w">Connect a wallet</div></div>
-              <div class="row hidden" id="sol-row"><div class="t">Solana wallet<small>Needed when Solana is one of the chains.</small></div><input class="inp" id="f-sol" placeholder="Phantom, Backpack or Solflare address" autocomplete="off" style="max-width:260px;height:38px"></div>
-              <div class="row"><div class="t">Separate fee receiver <span class="muted" style="font-weight:400">· optional</span><small>Empty: your EVM wallet receives the creator fees.</small></div><input class="inp" id="f-frecv" placeholder="0x… fee wallet" autocomplete="off" style="max-width:260px;height:38px"></div>
-              <label class="row" style="cursor:pointer"><div class="t">Burn my creator fees<small>Creator fees go to the burn address on every chain and can never be withdrawn. You stay the creator; the dev buy is still yours.</small></div><input type="checkbox" id="f-burnfees" style="width:18px;height:18px;flex:none"></label>
-              <p class="err" id="w-msg" style="margin:0;padding:0 14px 12px"></p>
-            </div>
-          </section>
-
-          <!-- 3. review -->
-          <section class="step" data-step="3">
-            <div class="rvhd"><div><b id="rv-sym">$TICKER</b><small id="rv-name">Coin name</small></div><div class="meta">Type <b>Standard</b><br>Art <b id="rv-art">None</b><br>Links <b id="rv-links">None</b></div></div>
-            <div class="sh"><span class="si" data-ic="swap"></span><div><b>Fee and tokenomics</b><small>Fixed at launch on every chain.</small></div></div>
-            <div class="box"><div class="row"><div class="t" id="rv-feel">Every chain</div><div class="v" id="rv-fee"></div></div><div class="row"><div class="t">Tokenomics</div><div class="v" id="rv-tok"></div></div></div>
-            <div class="sh"><span class="si" data-ic="globe"></span><div><b>Launch on</b><small>Chains cannot be added after launch.</small></div></div>
-            <div class="chips" id="chips"></div>
-            <p class="note" id="ch-note"></p>
-            <div class="box" style="margin-top:12px">
-              <div class="row"><div class="t">Shared supply<small id="split-note">1B in total, divided between the chains.</small></div><button type="button" class="sw" role="switch" aria-checked="false" data-sw="shared" id="sw-shared"></button></div>
-              <div class="row"><div class="t">Opening market cap<small id="cap-note"></small></div><div class="pills" id="cap-pills"></div></div>
-            </div>
-            <div class="sh"><span class="si" data-ic="wallet"></span><div><b>Pay on</b><small>One payment covers every chain.</small></div></div>
-            <div class="chips" id="pay"></div>
-            <div class="box" style="margin-top:12px">
-              <div class="row"><div class="t">Dev buy<small id="dev-note"></small></div><div class="inl"><input class="inp" id="f-dev" type="number" min="0" step="0.001" value="0.005"><span id="dev-sym">ETH</span></div></div>
-              <div class="row"><div class="t">Bridge routes open at launch<small>Every chain is wired to every other one and sealed: holders can move the coin from the first block.</small></div><span class="on-tag" id="ok1"></span></div>
-              <div class="row"><div class="t">Same contract address on every EVM chain<small id="addr-note"></small></div><span class="on-tag" id="ok2"></span></div>
-            </div>
-            <p class="err" id="dev-msg"></p>
-          </section>
-
-          <!-- 4. launch -->
-          <section class="step" data-step="4">
-            <div class="rcpt"><div class="rh"><span class="si" data-ic="rocket"></span><div><b>Launch fee</b><small>Gas and each pool's opening buy, chain by chain.</small></div></div><div class="cost" id="cost"></div></div>
-            <p class="note" id="cost-note"></p>
-          </section>
-
-          <section class="done hidden" id="done"></section>
-        </div>
-        <div class="foot" id="foot"><span class="msg" id="foot-msg"></span><div class="btns"><button type="button" class="btn line" id="back">Back</button><button type="button" class="btn pri" id="next">Next</button></div></div>
+    <div class="card">
+      <div class="sec"><h3>The coin</h3>
+        <div class="idrow"><label class="drop" for="f-logo" id="drop"><input id="f-logo" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden><span id="drop-in">Logo</span></label>
+          <div><div class="two"><div><label class="l" for="f-name">Name</label><input class="inp" id="f-name" maxlength="32" placeholder="Equo" autocomplete="off"></div>
+            <div><label class="l" for="f-sym">Ticker</label><input class="inp" id="f-sym" maxlength="10" placeholder="EQUO" autocomplete="off" style="text-transform:uppercase"></div></div>
+            <div style="margin-top:10px"><label class="l" for="f-desc">Description</label><textarea class="inp" id="f-desc" maxlength="500" placeholder="What the coin is about."></textarea></div></div></div>
+        <div class="three" style="margin-top:10px"><div><label class="l" for="f-web">Website</label><input class="inp" id="f-web" placeholder="https://" autocomplete="off"></div><div><label class="l" for="f-x">X</label><input class="inp" id="f-x" placeholder="https://x.com/…" autocomplete="off"></div><div><label class="l" for="f-tg">Telegram</label><input class="inp" id="f-tg" placeholder="https://t.me/…" autocomplete="off"></div></div>
       </div>
+      <div class="sec"><h3>Trading fee <small>on every buy and sell, fixed for good</small></h3>
+        <div class="fees" id="f-fee"></div>
+        <p class="hint" id="fee-split"></p></div>
+      <div class="sec"><h3>Chains <small>the coin launches on each one you pick</small></h3>
+        <div class="chs" id="f-chains"></div></div>
+      <div class="sec"><h3>Launch from</h3>
+        <div class="two"><div><label class="l" for="f-home">Your wallet pays on</label><select class="inp" id="f-home"></select></div>
+          <div><label class="l" for="f-dev">First buy <span id="dev-sym"></span> · optional</label><input class="inp" id="f-dev" inputmode="decimal" placeholder="0" autocomplete="off"></div></div>
+        <p class="hint" id="home-hint"></p></div>
+      <div class="sec"><h3>Cost</h3>
+        <div class="kv"><span>Launch fee <small class="muted">· Equo launches the other chains with it</small></span><b id="c-fee">…</b></div>
+        <div class="kv"><span>First buy</span><b id="c-dev">—</b></div>
+        <div class="kv"><span>Gas on <span id="c-home-n"></span> (about)</span><b id="c-gas">…</b></div>
+        <div class="kv tot"><span>Total from your wallet</span><b id="c-tot">…</b></div>
+        <button class="btn go" id="go">Connect a wallet</button>
+        <p class="hint" id="go-msg"></p></div>
     </div>
-    <aside class="pv">
-      <div class="pvc"><div class="hd"><span id="pv-sym">$TICKER</span><span class="fp" id="pv-fee">1%</span></div><div class="im"><div class="ring" id="pv-ring"></div><div class="art2" id="pv-im"><span id="pv-letter">?</span></div></div><h3 id="pv-name">Coin name</h3><p id="pv-desc">Your description shows here.</p><div class="pst" id="pv-st"></div><div class="rd"><span class="d" id="pv-dots"></span><span id="pv-ready">READY FOR 1 CHAIN</span></div></div>
-    </aside>
+    <div class="pv"><div class="card">
+      <div class="pvc"><img id="pv-img" src="/img/t-default.png" alt=""><div><b id="pv-n">Your coin</b><small id="pv-t">$TICKER</small></div></div>
+      <div class="kv" style="margin-top:12px"><span>Opens at</span><b>$3,000 market cap per chain</b></div>
+      <div class="kv"><span>Supply</span><b id="pv-sup">8B (1B per chain)</b></div>
+      <div class="kv"><span>Fee</span><b id="pv-fee">1%</b></div>
+      <div class="steps" id="steps"><div data-s="quote"><i></i>Sign the launch</div><div data-s="home"><i></i>Your chain goes live</div><div data-s="others"><i></i>The other chains follow</div><div data-s="done"><i></i>Open the coin</div></div>
+      <div class="legs" id="legs"></div>
+      <p class="hint">After your own chain, Equo launches the rest within a minute or two (HyperEVM's large blocks come once a minute). Liquidity sits in the pools; the admin can collect a share of it, so trade with care.</p>
+    </div></div>
   </div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=14"></script><script src="/data.js?v=4"></script><script src="/avatar.js"></script><script src="/chain.js?v=22"></script><script src="/equo.js?v=7"></script><script src="/api.js?v=6"></script><script src="/v2.js?v=1"></script><script src="/wallet.js"></script><script src="/core.js?v=39"></script><script src="/sp-launch.js?v=30"></script>
+<script src="/config.js?v=15"></script><script src="/data.js?v=4"></script><script src="/avatar.js"></script><script src="/chain.js?v=23"></script><script src="/equo.js?v=7"></script><script src="/api.js?v=6"></script><script src="/v2.js?v=1"></script><script src="/wallet.js"></script><script src="/core.js?v=40"></script><script src="/sp-launch2.js?v=1"></script>
 </body></html>

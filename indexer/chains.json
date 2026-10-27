@@ -122,8 +122,8 @@
       "lzEid": 30367,
       "native": "HYPE",
       "rpcs": [
-        "https://rpc.hyperliquid.xyz/evm",
         "https://rpc.hypurrscan.io",
+        "https://rpc.hyperliquid.xyz/evm",
         "https://hyperliquid-json-rpc.stakely.io"
       ],
       "maxRange": 1000,
@@ -210,6 +210,7 @@
       "lzEid": 30320,
       "native": "ETH",
       "rpcs": [
+        "https://unichain-rpc.publicnode.com",
         "https://mainnet.unichain.org"
       ],
       "maxRange": 2000,
