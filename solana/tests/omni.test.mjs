@@ -345,8 +345,11 @@ test('admin settings are admin only', async () => {
 if (process.env.OFT) {
   const lzSetup = await import('../lz/oft-setup.mjs');
   let sOft, store;
+  let spentBefore;
   test('oft: the store over the snapshot escrow is the leg coin, and it takes the mint', async () => {
+    spentBefore = await cx.getBalance(launcher.publicKey, 'confirmed');
     sOft = await launch(launcher, creator.publicKey, { firstBuy: 0 });
+    console.log(`  launch tx: ${(spentBefore - await cx.getBalance(launcher.publicKey, 'confirmed')) / LAMPORTS_PER_SOL} SOL`);
     const { umi, signer } = lzSetup.umiFor(RPC, launcher);
     store = await lzSetup.init(umi, signer, sOft.mint, sOft.s.escrow);
     assert.equal(store.toBase58(), sOft.s.store.toBase58());
@@ -374,6 +377,8 @@ if (process.env.OFT) {
   test('oft: sealed, nobody can change peers or configs afterwards', async () => {
     const { umi, signer } = lzSetup.umiFor(RPC, launcher);
     await lzSetup.seal(umi, signer, store);
+    const legs = sOft.s.snap.legs.length - 1;
+    console.log(`  whole Solana leg with ${legs} EVM peers: ${(spentBefore - await cx.getBalance(launcher.publicKey, 'confirmed')) / LAMPORTS_PER_SOL} SOL`);
     const { oft } = await import('../lz/node_modules/@layerzerolabs/oft-v2-solana-sdk/dist/index.mjs');
     const st = await oft.accounts.fetchOFTStore(umi, store.toBase58());
     assert.equal(String(st.admin), lzSetup.NOBODY.toBase58());
