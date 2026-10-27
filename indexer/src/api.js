@@ -166,6 +166,23 @@ export function makeHandler(chains) {
       return tick();
     },
 
+    /** One wallet across every coin and chain: its balances, the coins it created and its latest trades. */
+    async "/api/wallet"(p) {
+      const w = lc(p.get("wallet"));
+      if (!isAddr(w)) throw new HttpError(400, "wallet must be an address");
+      const bal = await q(`select t.coin_id, b.chain, b.token, b.balance::text bal from balances b join tokens t on t.chain = b.chain and t.token = b.token where b.wallet = $1 and b.balance > 0`, [w]);
+      const made = await q(`select distinct coin_id from tokens where creator = $1`, [w]);
+      const tr = await q(`select chain, tx, log_index, token, coin_id, buy, coin_amt::text coin, pair_amt::text pair, block, ts, price_usd, value_usd from trades where wallet = $1 order by ts desc, block desc, log_index desc limit 200`, [w]);
+      const ids = [...new Set([...bal.rows, ...made.rows, ...tr.rows].map((r) => r.coin_id))];
+      return {
+        wallet: w,
+        coins: await coins(ids),
+        balances: bal.rows.map((r) => ({ coin: r.coin_id, chain: r.chain, token: r.token, balance: r.bal })),
+        created: made.rows.map((r) => r.coin_id),
+        trades: tr.rows.map((t) => ({ coin: t.coin_id, chain: t.chain, tx: t.tx, index: t.log_index, token: t.token, buy: t.buy, coin_amt: t.coin, pair: t.pair, block: t.block, ts: t.ts, priceUsd: t.price_usd, valueUsd: t.value_usd })),
+      };
+    },
+
     async "/api/bridges"(p) {
       const id = await coinIdOf(p.get("coin")), limit = Math.min(200, Number(p.get("limit") || 50));
       const r = await q(`select chain, tx, direction, guid, peer_eid, wallet, amount_sent::text sent, amount_received::text received, block, ts from bridges where coin_id = $1 order by ts desc, block desc limit $2`, [id, limit]);

@@ -11,14 +11,17 @@ window.SP_PAGE=function(){
   const canHome=k=>k!=='hyper';
 
   /* ---------- logo: a square crop, stored with the coin's details (not on chain) ---------- */
-  g('f-logo').onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; if(!/^image\//.test(f.type||'')) return SP.toast('Choose an image file','err'); if(f.size>8*1024*1024) return SP.toast('Image too big, 8 MB max','err');
+  // also picks up a file chosen before this script ran (the input exists from the first paint)
+  const takeLogo=()=>{ const f=g('f-logo').files&&g('f-logo').files[0]; if(!f) return; if(!/^image\//.test(f.type||'')) return SP.toast('Choose an image file','err'); if(f.size>8*1024*1024) return SP.toast('Image too big, 8 MB max','err');
     const img=new Image(), url=URL.createObjectURL(f);
     img.onload=()=>{ URL.revokeObjectURL(url); const s=Math.min(img.width,img.height); let best='';
-      for(const size of [400,320,256,200]){ const c=document.createElement('canvas'); c.width=c.height=size; c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size);
-        const d=c.toDataURL('image/webp',0.85); if(!best||d.length<best.length) best=d; if(d.length<=250000) break; }
+      for(const size of [256,200,160]){ const c=document.createElement('canvas'); c.width=c.height=size; c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size);
+        let d=c.toDataURL('image/webp',0.85); if(!d.startsWith('data:image/webp')) d=c.toDataURL('image/jpeg',0.85);
+        if(!best||d.length<best.length) best=d; if(d.length<=150000) break; }
       if(!best.startsWith('data:image/')) return SP.toast('Could not process this image','err');
       S.logo=best; g('drop-in').outerHTML=`<img id="drop-in" src="${best}" alt="">`; preview(); };
     img.onerror=()=>{ URL.revokeObjectURL(url); SP.toast('Could not read this image','err'); }; img.src=url; };
+  g('f-logo').onchange=takeLogo; takeLogo();
 
   /* ---------- fee and chains ---------- */
   function fees(){ g('f-fee').innerHTML=[100,200,300,400,500].map(b=>`<button type="button" data-f="${b}" class="${S.fee===b?'on':''}">${b/100}%</button>`).join('');

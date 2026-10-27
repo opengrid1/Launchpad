@@ -66,7 +66,7 @@ const SP={
   stockByAddr(a){ a=String(a||'').toLowerCase(); return SP.stocks.find(x=>x.address.toLowerCase()===a)||null; },
   tokens(){ return TOK; }, token(a){ a=String(a||'').toLowerCase(); return TOK.find(x=>x.addr===a)||(window.CHAIN&&CHAIN.token(a))||null; },
   coinLogo(x){ return (x&&x.img)||DEF_LOGO; }, stockLogo(sym){ return pairImg(sym); },
-  avatar(a,s){ return window.walletAvatar?walletAvatar(a,s):''; },
+  avatar(){ return ''; },
   usd:v=>fmtUsd(v), fmtPct:v=>`<span class="num ${v>=0?'up':'dn'}">${v>=0?'+':''}${(v||0).toFixed(1)}%</span>`,
   fmtPair:(v,x)=>(x&&x.pair!=='ETH')?fmtAmt(v)+' '+x.pair:fmtEth(v),
   fmtDate:ts=>new Date(ts*1000).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
@@ -116,7 +116,7 @@ window.EQUO_REF=''; try{ localStorage.removeItem('equo-ref'); }catch{}
 
 /* ---------- wallet ---------- */
 function syncWallet(){ const d=window.inkyWallet; const W=SP.W; const was=W.connected+':'+W.address+':'+W.chainOk;
-  W.connected=!!(d&&d.connected&&d.address); W.address=W.connected?String(d.address).toLowerCase():null; W.short=W.address?shortAddr(cs(W.address)):''; W.chainOk=!d||!d.chainId||Number(d.chainId)===Number((window.INKY&&INKY.chainId)||1);
+  W.connected=!!(d&&d.connected&&d.address); W.address=W.connected?String(d.address).toLowerCase():null; W.short=W.address?shortAddr(cs(W.address)):''; W.chainOk=!d||!d.chainId||SP.chains.some(c=>Number(c.chainId)===Number(d.chainId));
   if(was!==W.connected+':'+W.address+':'+W.chainOk){ renderWalletBtn(); SP._wal.forEach(f=>{ try{ f(W); }catch(e){ console.warn(e); } }); document.dispatchEvent(new Event('wallet-change')); } }
 SP.W.connect=()=>{ const d=window.inkyWallet; if(d&&d.open) d.open(); else SP.toast('Wallet is still loading, try again in a second','info'); };
 SP.W.disconnect=()=>{ const d=window.inkyWallet; if(d&&d.logout) d.logout(); };
@@ -130,8 +130,8 @@ const MORE_LINKS=[['landing','/','About Equo','globe'],['docs','/docs','Docs','b
 const TABS=['markets','watch','launch','analytics','portfolio'];
 function renderWalletBtn(){ const el=$('#sp-wallet'); if(!el) return; const W=SP.W;
   if(!W.connected){ el.innerHTML=`<button class="btn pri" id="wconnect">Connect wallet</button>`; $('#wconnect',el).onclick=SP.W.connect; return; }
-  el.innerHTML=`<button class="wbtn" id="wmenu"><span class="av">${SP.avatar(W.address,22)}</span>${esc(W.short)}${!W.chainOk?'<span class="tag red">Wrong network</span>':''}</button>`;
-  $('#wmenu',el).onclick=e=>{ const m=SP.menu(e.currentTarget,`<button data-a="copy">${ic('copy')}Copy address</button><button data-a="pf">${ic('user')}Profile</button>${SP.isAdmin()?`<button data-a="adm">${ic('shield')}Operator</button>`:''}<button data-a="ex">${ic('globe')}View on Etherscan</button>${!W.chainOk?`<button data-a="sw">${ic('swap')}Switch to Ethereum</button>`:''}<div class="d"></div><button data-a="out">${ic('logout')}Disconnect</button>`);
+  el.innerHTML=`<button class="wbtn" id="wmenu">${esc(W.short)}${!W.chainOk?'<span class="tag red">Wrong network</span>':''}</button>`;
+  $('#wmenu',el).onclick=e=>{ const m=SP.menu(e.currentTarget,`<button data-a="copy">${ic('copy')}Copy address</button><button data-a="pf">${ic('user')}Profile</button>${SP.isAdmin()?`<button data-a="adm">${ic('shield')}Operator</button>`:''}<button data-a="ex">${ic('globe')}View on Etherscan</button><div class="d"></div><button data-a="out">${ic('logout')}Disconnect</button>`);
     $$('[data-a]',m).forEach(b=>b.onclick=()=>{ const a=b.dataset.a; m.remove(); if(a==='copy') SP.copy(cs(W.address),'Address copied'); if(a==='pf') SP.go('/profile'); if(a==='rw') SP.go('/rewards'); if(a==='adm') SP.go('/admin'); if(a==='ex') open(EXPLORER+'/address/'+W.address,'_blank'); if(a==='sw') SP.W.switchChain().catch(err=>SP.toast(SP.errMsg(err),'err')); if(a==='out') SP.W.disconnect(); }); }; }
 /* the phone dock's icons: Solar Bold Duotone by 480 Design (github.com/480-Design/Solar-Icon-Set), CC BY 4.0 */
 const DOCK_IC={
@@ -161,7 +161,7 @@ function openSheet(){ SP.closeDialogs(); const page=document.body.dataset.page||
     <div class="mh">Learn</div><nav class="sh-nav">${MORE_LINKS.map(toolRow).join('')}</nav>
     <div class="sh-foot">${clockHtml().replace('id="sp-clock"','')}<span class="fch">${SP.chainStack(SP.chains.map(c=>c.key),16)}</span></div></div>`;
   ov.addEventListener('click',e=>{ if(e.target===ov||e.target.closest('[data-close]')) ov.remove(); }); document.body.appendChild(ov);
-  const w=$('#sh-wallet',ov); if(SP.W.connected){ w.innerHTML=`<a class="btn" href="/profile"><span class="av" style="width:18px;height:18px;border-radius:5px;overflow:hidden;display:inline-block">${SP.avatar(SP.W.address,18)}</span>${esc(SP.W.short)}</a>`; } else { w.innerHTML=`<button class="btn">${ic('wallet')}Connect</button>`; w.firstChild.onclick=()=>{ ov.remove(); SP.W.connect(); }; } }
+  const w=$('#sh-wallet',ov); if(SP.W.connected){ w.innerHTML=`<a class="btn" href="/profile">${esc(SP.W.short)}</a>`; } else { w.innerHTML=`<button class="btn">${ic('wallet')}Connect</button>`; w.firstChild.onclick=()=>{ ov.remove(); SP.W.connect(); }; } }
 function clockHtml(){ if(!SP.stocks.length) return ''; /* the NYSE clock only matters with stock pairs */ const mk=SP.market(); return `<span class="mkt ${mk.open?'open':''}" id="sp-clock" title="${esc(mk.detail)}"><i></i><span>${mk.open?'NYSE open':'NYSE closed'}<b>${esc(mk.until)}</b></span></span>`; }
 function renderShell(){ const page=document.body.dataset.page||'markets'; const C=(window.INKY&&INKY.contracts)||{};
   /* the landing page is outside the app: just the brand, Docs and Launch app; no app nav, search, wallet or tab bar */

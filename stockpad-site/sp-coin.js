@@ -110,7 +110,7 @@ window.SP_PAGE=function(){
     if(p.lastBuyer&&p.lastBuyer!=='0x0000000000000000000000000000000000000000'){
       state=left>0?`<div class="timer ${left<120?'hot':''}"><div><span>Last buyer</span><div>${wl(p.lastBuyer,tChain)}</div></div><div style="text-align:right"><span>Wins in</span><b data-dl="${p.deadline}">${fmtTimer(left)}</b></div></div>`
         :`<div class="timer hot"><div><span>Round over · winner</span><div>${wl(p.lastBuyer,tChain)}</div></div><button class="btn sm" id="cn-settle">Send the prize</button></div><p class="note">The next trade on ${esc(c.name)} sends the prize too.</p>`;
-    } else state=`<div class="timer"><div><span>No timer running</span><div style="font-size:12.5px;color:var(--fg-2)">A buy of ${fmtUsd(minUsd)} or more starts it</div></div><b>20:00</b></div>`;
+    } else state=`<div class="timer"><div><span>Timer not started</span><div style="font-size:12.5px;color:var(--fg-2)">The first buy of ${fmtUsd(minUsd)} or more on ${esc(c.name)} starts a 20-minute countdown</div></div><b style="font-size:15px;color:var(--fg-3)">Waiting</b></div>`;
     el.innerHTML=`<div class="potv"><b>${u?fmtUsd(amt*u):fmtN(amt,c.native)}</b><small>${fmtN(amt,c.native)} · round ${p.round+1}</small></div>${state}
       <p class="note">0.1% of every trade fills this chain's pot. The last buy of ${fmtUsd(minUsd)}+ before 20 minutes pass wins 80%, sent to the wallet; 20% starts the next round. Selling gives your spot up.${total>0?` All chains: ${fmtUsd(total)}.`:''}</p>`;
     const s=$('#cn-settle'); if(s) s.onclick=async()=>{ s.disabled=true; try{ await V2.settle(X,tChain); SP.toast('Prize sent'); await liveOne(tChain); }catch(e){ SP.toast(SP.errMsg(e),'err'); } s.disabled=false; }; }

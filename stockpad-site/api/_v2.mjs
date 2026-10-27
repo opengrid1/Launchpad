@@ -158,9 +158,12 @@ const str = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 const httpUrl = (v) => { v = str(v, 300); return /^https?:\/\/\S+$/i.test(v) ? v : ""; };
 
 async function storeMeta(meta) {
+  const image = typeof meta.image === "string" ? meta.image : "";
+  if (image && !/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(image)) throw new HttpError(400, "the logo must be a png, jpeg, webp or gif image");
+  if (image.length > 400_000) throw new HttpError(400, "the logo is too large, 300 KB max");
   const body = {
     description: str(meta.description, 1000),
-    image: typeof meta.image === "string" && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(meta.image) && meta.image.length <= 400_000 ? meta.image : "",
+    image,
     website: httpUrl(meta.website), x: httpUrl(meta.x), telegram: httpUrl(meta.telegram),
   };
   const json = JSON.stringify(body);
