@@ -90,8 +90,9 @@ contract EquoCoinDeployer {
         address receiveLib;
         bytes sendConfig; // abi.encode(SetConfigParam[]): executor + ULN for the send library
         bytes receiveConfig; // abi.encode(SetConfigParam[]): ULN for the receive library
-        uint128 receiveGas; // executor gas for lzReceive on the remote chain
+        uint128 receiveGas; // executor gas for lzReceive on the remote chain (compute units on Solana)
         uint128 composeGas; // extra gas for SEND_AND_CALL messages
+        uint128 receiveValue; // native value the executor brings to lzReceive (Solana: rent for the receiver's account)
     }
 
     struct Init {
@@ -174,7 +175,7 @@ contract EquoCoinDeployer {
     ///         ULN config must name at least {MIN_DVNS} verifiers, and the executor gas must be set.
     function setRoute(uint32 eid, Route calldata r) external onlySetup {
         if (r.sendLib == address(0) || r.receiveLib == address(0)) revert BadRoute();
-        if (r.receiveGas < 50_000 || r.receiveGas > 2_000_000 || r.composeGas > 5_000_000) revert BadRoute();
+        if (r.receiveGas < 50_000 || r.receiveGas > 2_000_000 || r.composeGas > 5_000_000 || r.receiveValue > 1e16) revert BadRoute();
         if (!_dvnsOk(r.sendConfig) || !_dvnsOk(r.receiveConfig)) revert BadRoute();
         _routes[eid] = r;
         emit RouteSet(eid, r.sendLib, r.receiveLib);
@@ -256,8 +257,11 @@ contract EquoCoinDeployer {
         endpoint.setReceiveLibrary(coin, eid, r.receiveLib, 0);
         endpoint.setConfig(coin, r.receiveLib, abi.decode(r.receiveConfig, (SetConfigParam[])));
         EnforcedOptionParam[] memory opts = new EnforcedOptionParam[](2);
-        // type-3 options: executor (worker 1), lzReceive (option 1, 16 bytes gas); compose adds option 3
-        bytes memory recv = abi.encodePacked(uint16(3), uint8(1), uint16(17), uint8(1), r.receiveGas);
+        // type-3 options: executor (worker 1), lzReceive (option 1: 16 bytes gas, plus 16 bytes value when set);
+        // compose adds option 3
+        bytes memory recv = r.receiveValue == 0
+            ? abi.encodePacked(uint16(3), uint8(1), uint16(17), uint8(1), r.receiveGas)
+            : abi.encodePacked(uint16(3), uint8(1), uint16(33), uint8(1), r.receiveGas, r.receiveValue);
         opts[0] = EnforcedOptionParam({eid: eid, msgType: MSG_SEND, options: recv});
         opts[1] = EnforcedOptionParam({
             eid: eid,

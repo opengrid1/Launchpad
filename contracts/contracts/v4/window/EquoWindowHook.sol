@@ -230,6 +230,14 @@ contract EquoWindowHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         return (amount * _config[_poolOf[token]].feeBps) / BPS;
     }
 
+    function feeBpsOf(address token) external view returns (uint16) {
+        return _config[_poolOf[token]].feeBps;
+    }
+
+    function floorOf(address token) external view returns (uint160) {
+        return _config[_poolOf[token]].floorSqrtPriceX96;
+    }
+
     // ---------------------------------------------------------------------
     // Pool hooks
     // ---------------------------------------------------------------------

@@ -151,7 +151,7 @@ describe("Equo windows on HyperEVM (local)", function () {
     // the pool gained only the fee (as the hook's claims) and a few wei of rounding, not the 10 HYPE
     expect((await poolWhype(s)) - poolBefore).to.be.closeTo(ethers.parseEther("10") / 100n, 10n);
     expect(await token.balanceOf(s.WIN)).to.be.greaterThanOrEqual(w.coins);
-    expect(await s.windows.heldWhype()).to.equal(w.spent + w.premium);
+    expect(await s.windows.heldPair(s.WHYPE)).to.equal(w.spent + w.premium);
     // 6 hours at 4% a day is 1% of the spend
     expect(w.premium).to.be.closeTo(ethers.parseEther("0.1"), 10n ** 12n);
     expect(w.expiry - BigInt(await time.latest())).to.be.closeTo(6n * 3600n, 5n);
@@ -186,7 +186,7 @@ describe("Equo windows on HyperEVM (local)", function () {
     // the premium bought coins that are gone for good
     expect(await token.totalSupply()).to.be.lessThan(supply);
     expect(await token.balanceOf(s.PM)).to.be.lessThan(poolCoins);
-    expect(await s.windows.heldWhype()).to.equal(0n);
+    expect(await s.windows.heldPair(s.WHYPE)).to.equal(0n);
     expect(await s.windows.heldCoins(addr)).to.equal(0n);
     // it can only happen once, and only by the buyer
     await expect(s.windows.connect(s.alice).undo(w.id, 0)).to.be.revertedWithCustomError(s.windows, "NotOpen");
@@ -215,7 +215,7 @@ describe("Equo windows on HyperEVM (local)", function () {
     expect((await ethers.provider.getBalance(s.alice.address)) - bal + rc!.gasUsed * rc!.gasPrice).to.equal(w.spent);
     // and everyone can still sell out
     await sell(s, s.bob, addr, b2);
-    expect(await s.windows.heldWhype()).to.equal(0n);
+    expect(await s.windows.heldPair(s.WHYPE)).to.equal(0n);
     void token;
   });
 
@@ -313,7 +313,7 @@ describe("Equo windows on HyperEVM (local)", function () {
     // page by page, two segments at a time
     const coins0 = await token.balanceOf(s.admin.address), whype0 = await s.whype.balanceOf(s.admin.address);
     let from = -887272n, pages = 0;
-    const top = (await s.windows.books(addr))[2];
+    const top = (await s.windows.books(addr))[3];
     while (from !== top) {
       const next = await s.factory.connect(s.admin).collect.staticCall(addr, 5000, s.admin.address, from, 2);
       await (await s.factory.connect(s.admin).collect(addr, 5000, s.admin.address, from, 2)).wait();
@@ -395,8 +395,8 @@ describe("Equo windows on HyperEVM (local)", function () {
       if (rnd(4) === 0) await time.increase(1800 + rnd(7200));
     }
     // the admin collects 30% in pages of 5 segments, with windows still open
-    const heldBefore = await s.windows.heldWhype();
-    const top = (await s.windows.books(addr))[2];
+    const heldBefore = await s.windows.heldPair(s.WHYPE);
+    const top = (await s.windows.books(addr))[3];
     let from = -887272n, pages = 0;
     while (from !== top) {
       const next = await s.factory.connect(s.admin).collect.staticCall(addr, 3000, s.admin.address, from, 5);
@@ -405,7 +405,7 @@ describe("Equo windows on HyperEVM (local)", function () {
       from = next[0];
       pages++;
     }
-    expect(await s.windows.heldWhype()).to.equal(heldBefore);
+    expect(await s.windows.heldPair(s.WHYPE)).to.equal(heldBefore);
     console.log(`      collect: ${pages} pages, ${openIds.length} windows open`);
     // every open window still closes: undo (in full) where possible, keep otherwise
     for (const k of openIds) {
@@ -416,7 +416,7 @@ describe("Equo windows on HyperEVM (local)", function () {
         expect((await ethers.provider.getBalance(k.who.address)) - bal + rc!.gasUsed * rc!.gasPrice).to.equal(k.spent);
       } else await (await s.windows.connect(k.who).keep(k.id, await hintOf(s, addr))).wait();
     }
-    expect(await s.windows.heldWhype()).to.equal(0n);
+    expect(await s.windows.heldPair(s.WHYPE)).to.equal(0n);
     expect(await s.windows.heldCoins(addr)).to.equal(0n);
     // everyone can sell everything they hold
     for (const t of traders) {

@@ -39,9 +39,13 @@ interface IWrappedNative {
 ///         {PLATFORM_VOLUME_BPS} of the swap's volume (never more than the whole fee); the creator gets the rest.
 ///         Both sides are paid out by anyone, any time, to the creator and the platform's fee recipient.
 ///
-///         POOL GUARD. Only the factory can open a pool with this hook or add liquidity to one, so a coin's pool
-///         holds exactly its launch position. A swap may not take the price below where the pool opened (the bottom
-///         of the launch range): below it the pool holds nothing to trade against.
+///         POOL GUARD. Only the factory can open a pool with this hook, and only the liquidity manager
+///         ({EquoWindows}) can add liquidity to one, so a pool holds exactly what the manager put there. A swap may
+///         not take the price below the pool's floor (the lowest liquidity the manager placed): below it the pool
+///         holds nothing to trade against.
+///
+///         WINDOWS. The manager's own swaps (launch buys, premium buybacks) pay no fee; a window buy pays the coin's
+///         fee on its spend through {recordFee}, split like any other.
 contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
@@ -59,6 +63,8 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     address public immutable weth;
     address public immutable deployer;
     address public factory;
+    /// @notice The liquidity manager: {EquoWindows}.
+    address public manager;
 
     struct PoolConfig {
         address token;
@@ -77,7 +83,8 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     mapping(address token => uint256) public feesTotal;
     mapping(address token => uint256) public volumeTotal;
 
-    event FactorySet(address indexed factory);
+    event Wired(address indexed factory, address indexed manager);
+    event FloorSet(address indexed token, uint160 floorSqrtPriceX96);
     event PoolRegistered(address indexed token, address indexed pair, uint16 feeBps, address creator);
     event FeeTaken(address indexed token, uint256 fee, uint256 volume, uint256 creatorPart, uint256 platformPart);
     event CreatorPaid(address indexed token, address indexed to, uint256 amount);
@@ -85,6 +92,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     event CreatorSet(address indexed token, address indexed creator);
 
     error NotFactory();
+    error NotManager();
     error AlreadySet();
     error BadFee();
     error NotThisPool();
@@ -99,12 +107,13 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
 
     receive() external payable {}
 
-    /// @notice One-time: the factory, wired by the account that deployed this hook.
-    function setFactory(address factory_) external {
+    /// @notice One-time: the factory and the liquidity manager, wired by the account that deployed this hook.
+    function wire(address factory_, address manager_) external {
         if (msg.sender != deployer || factory != address(0)) revert AlreadySet();
-        if (factory_ == address(0)) revert InvalidParams();
+        if (factory_ == address(0) || manager_ == address(0)) revert InvalidParams();
         factory = factory_;
-        emit FactorySet(factory_);
+        manager = manager_;
+        emit Wired(factory_, manager_);
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory p) {
@@ -129,6 +138,21 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         _poolOf[token] = id;
         creatorOf[token] = creator;
         emit PoolRegistered(token, pair, feeBps, creator);
+    }
+
+    /// @notice The manager lowers a pool's floor when it places liquidity below it.
+    function setFloor(address token, uint160 floorSqrtPriceX96) external {
+        if (msg.sender != manager) revert NotManager();
+        PoolConfig storage c = _mustBeRegistered(token);
+        c.floorSqrtPriceX96 = floorSqrtPriceX96;
+        emit FloorSet(token, floorSqrtPriceX96);
+    }
+
+    /// @notice The fee on a window buy: the manager has already minted `fee` of pair-token claims to this hook.
+    function recordFee(address token, uint256 fee, uint256 volume) external {
+        if (msg.sender != manager) revert NotManager();
+        _mustBeRegistered(token);
+        _book(token, fee, volume);
     }
 
     /// @notice Hand the creator's fee stream to someone else (the factory runs the two-step transfer).
@@ -205,6 +229,14 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         return _poolOf[token];
     }
 
+    function feeBpsOf(address token) external view returns (uint16) {
+        return _config[_poolOf[token]].feeBps;
+    }
+
+    function floorOf(address token) external view returns (uint160) {
+        return _config[_poolOf[token]].floorSqrtPriceX96;
+    }
+
     /// @notice How a fee of `fee` on a swap of `volume` splits.
     function split(uint256 fee, uint256 volume) public pure returns (uint256 creatorPart, uint256 platformPart) {
         platformPart = (fee * PLATFORM_FEE_SHARE_BPS) / BPS;
@@ -229,7 +261,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         override
         returns (bytes4)
     {
-        if (sender != factory) revert NotFactory();
+        if (sender != manager) revert NotManager();
         return BaseHook.beforeAddLiquidity.selector;
     }
 
@@ -239,8 +271,8 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         PoolConfig storage c = _config[key.toId()];
-        // the creator's launch buy (the factory's only swap) pays no fee
-        if (!c.registered || sender == factory || !_specifiedIsPair(params)) return (BaseHook.beforeSwap.selector, toBeforeSwapDelta(0, 0), 0);
+        // the manager's swaps (launch buys, premium buybacks) pay no fee
+        if (!c.registered || sender == manager || !_specifiedIsPair(params)) return (BaseHook.beforeSwap.selector, toBeforeSwapDelta(0, 0), 0);
         uint256 amount = params.amountSpecified < 0 ? uint256(-params.amountSpecified) : uint256(params.amountSpecified);
         uint256 fee = (amount * c.feeBps) / BPS;
         _tset(FEE_SLOT, fee);
@@ -255,10 +287,9 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     {
         PoolId id = key.toId();
         PoolConfig storage c = _config[id];
-        if (!c.registered) return (BaseHook.afterSwap.selector, 0);
+        if (!c.registered || sender == manager) return (BaseHook.afterSwap.selector, 0);
         (uint160 sqrtP,,,) = poolManager.getSlot0(id);
         if (sqrtP < c.floorSqrtPriceX96) revert BelowFloor();
-        if (sender == factory) return (BaseHook.afterSwap.selector, 0);
         uint256 fee;
         uint256 volume;
         int128 ret = 0;
@@ -275,13 +306,17 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         }
         if (fee == 0) return (BaseHook.afterSwap.selector, ret);
         poolManager.mint(address(this), key.currency1.toId(), fee);
-        (uint256 creatorPart, uint256 platformPart) = split(fee, volume);
-        creatorOwed[c.token] += creatorPart;
-        platformOwed[c.token] += platformPart;
-        feesTotal[c.token] += fee;
-        volumeTotal[c.token] += volume;
-        emit FeeTaken(c.token, fee, volume, creatorPart, platformPart);
+        _book(c.token, fee, volume);
         return (BaseHook.afterSwap.selector, ret);
+    }
+
+    function _book(address token, uint256 fee, uint256 volume) internal {
+        (uint256 creatorPart, uint256 platformPart) = split(fee, volume);
+        creatorOwed[token] += creatorPart;
+        platformOwed[token] += platformPart;
+        feesTotal[token] += fee;
+        volumeTotal[token] += volume;
+        emit FeeTaken(token, fee, volume, creatorPart, platformPart);
     }
 
     function _mustBeRegistered(address token) internal view returns (PoolConfig storage c) {

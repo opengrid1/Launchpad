@@ -14,7 +14,6 @@ import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 
 import {EquoWindows} from "./EquoWindows.sol";
-import {EquoWindowHook} from "./EquoWindowHook.sol";
 
 interface IRouterWHYPE {
     function deposit() external payable;
@@ -77,7 +76,7 @@ contract EquoWindowRouter is IUnlockCallback, ReentrancyGuard {
         PoolKey memory key = windows.keyOf(token);
         uint160 limit = TickMath.MAX_SQRT_PRICE - 1;
         if (sell_) {
-            limit = windows.hook().config(token).floorSqrtPriceX96;
+            limit = windows.hook().floorOf(token);
             if (limit <= TickMath.MIN_SQRT_PRICE) limit = TickMath.MIN_SQRT_PRICE + 1;
         }
         BalanceDelta d = poolManager.swap(key, SwapParams({zeroForOne: sell_, amountSpecified: -int256(amountIn), sqrtPriceLimitX96: limit}), "");

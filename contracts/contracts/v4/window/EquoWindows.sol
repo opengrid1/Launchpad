@@ -21,9 +21,15 @@ import {FullMath} from "@uniswap/v4-core/src/libraries/FullMath.sol";
 import {FixedPoint96} from "@uniswap/v4-core/src/libraries/FixedPoint96.sol";
 import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 
-import {EquoWindowHook} from "./EquoWindowHook.sol";
+/// @notice What the windows need from the pool hook (the HyperEVM window hook and the multichain fee hook both).
+interface IEquoWindowsHook {
+    function feeBpsOf(address token) external view returns (uint16);
+    function floorOf(address token) external view returns (uint160);
+    function setFloor(address token, uint160 floorSqrtPriceX96) external;
+    function recordFee(address token, uint256 fee, uint256 volume) external;
+}
 
-interface IWindowWHYPE {
+interface IWindowWETH {
     function deposit() external payable;
     function withdraw(uint256) external;
 }
@@ -33,14 +39,15 @@ interface IWindowCoin {
 }
 
 /// @title EquoWindows
-/// @notice Holds every Equo pool's liquidity on HyperEVM and runs windows: a buy you can undo.
+/// @notice Holds every Equo pool's liquidity on a chain and runs windows: a buy you can undo. A coin pairs against
+///         the chain's native coin (wrapped; windows pay in and out in the native coin) or an ERC-20 asset.
 ///
 ///         LIQUIDITY. A coin's whole supply goes into its pool at launch, as one position from the opening price to
 ///         the top of the price range. This contract is the only one that can add liquidity, and it keeps the pool's
 ///         liquidity as a list of contiguous segments (one Uniswap position each) from the pool's floor to the top,
 ///         so it can take liquidity out of, or put it into, any range of steps (one tick spacing each, 0.1%).
 ///
-///         WINDOW. A buyer pays HYPE for coins plus a premium that buys time: {DAY_RATE_BPS} of the spend per day,
+///         WINDOW. A buyer pays the pair token (HYPE, ETH, BNB... or a listed asset) for coins plus a premium that buys time: {DAY_RATE_BPS} of the spend per day,
 ///         {MIN_WINDOW} to {MAX_WINDOW}. Opening a window takes out of the pool the coins a swap of that HYPE would
 ///         buy, starting at the step above the price (the step holding the price is left alone, so a window gets a
 ///         little less than a swap would), without moving the price: the steps it emptied are a hole. The coins and
@@ -59,7 +66,7 @@ interface IWindowCoin {
 ///         COLLECT. The factory's admin can remove a share of a coin's pool liquidity, segment by segment, in as many
 ///         calls as the list needs. It never touches what open windows hold here.
 ///
-///         Every pool: coin = currency0, WHYPE = currency1. Rounding of a few wei always falls on the caller's side:
+///         Every pool: coin = currency0, pair = currency1. "HYPE" below means the pair token. Rounding of a few wei always falls on the caller's side:
 ///         an opening pays its own from its premium.
 contract EquoWindows is IUnlockCallback, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -74,13 +81,17 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
     uint256 public constant MAX_WINDOW = 7 days;
     /// @notice The premium for one day of window, in bps of the HYPE spent on coins (pro rata).
     uint256 public constant DAY_RATE_BPS = 400;
-    uint256 public constant MIN_SPEND = 0.01 ether;
+    /// @notice The smallest spend a window takes, in the pair token's base units (so its shortest premium still covers
+    ///         {CLOSE_DUST} many times over, whatever the pair's decimals).
+    uint256 public constant MIN_SPEND = 2e7;
+    address internal constant DEAD = 0x000000000000000000000000000000000000dEaD;
     /// @notice Coins kept here at launch to pay the pool's rounding.
     uint256 public constant COIN_SLACK = 1e12;
     /// @notice A window takes liquidity from at most this many segments; a larger one is refused (open a smaller one).
     uint256 public constant MAX_PIECES = 16;
-    /// @notice Kept from each premium at closing to pay the pool's rounding, so a close never runs short.
-    uint256 public constant CLOSE_DUST = 1e9;
+    /// @notice Kept from each premium at closing to pay the pool's rounding (a unit or two per position touched), in
+    ///         the pair token's base units, so a close never runs short.
+    uint256 public constant CLOSE_DUST = 1e3;
 
     uint8 internal constant OP_SEED = 0;
     uint8 internal constant OP_OPEN = 1;
@@ -93,8 +104,9 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
     uint8 public constant KEPT = 3;
 
     IPoolManager public immutable poolManager;
-    EquoWindowHook public immutable hook;
-    address public immutable whype;
+    IEquoWindowsHook public immutable hook;
+    /// @notice The chain's wrapped native coin.
+    address public immutable weth;
     address public immutable deployer;
     address public factory;
 
@@ -107,6 +119,7 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
     }
 
     struct Book {
+        address pair;
         bool live;
         int24 head; // the floor: where the lowest segment starts
         int24 top; // where the highest segment ends
@@ -136,16 +149,16 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
     mapping(uint256 id => Window) public windows;
     mapping(uint256 id => mapping(uint256 => Piece)) public pieces;
     uint256 public nextWindowId = 1;
-    /// @notice What open windows hold here: coins per coin, and HYPE (as WHYPE) across all coins.
+    /// @notice What open windows hold here: coins per coin, and pair tokens per pair across all coins.
     mapping(address token => uint256) public heldCoins;
-    uint256 public heldWhype;
+    mapping(address pair => uint256) public heldPair;
 
     event FactorySet(address indexed factory);
     event Seeded(address indexed token, int24 lower, int24 upper, uint128 liquidity, uint256 launchBuyIn, uint256 launchBuyOut);
     event WindowOpened(uint256 indexed id, address indexed token, address indexed owner, uint256 spent, uint256 fee, uint256 premium, uint256 coins, uint64 expiry);
     event WindowUndone(uint256 indexed id, address indexed token, address indexed owner, uint256 refunded, uint256 coinsBurned);
     event WindowKept(uint256 indexed id, address indexed token, address indexed owner, uint256 coins, uint256 coinsBurned);
-    event Collected(address indexed token, uint16 bps, int24 from, int24 next, uint256 coins, uint256 whype, address indexed to);
+    event Collected(address indexed token, uint16 bps, int24 from, int24 next, uint256 coins, uint256 pairOut, address indexed to);
     event FloorLowered(address indexed token, int24 head);
 
     error NotFactory();
@@ -163,11 +176,11 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
     error Slippage();
     error Insolvent();
 
-    constructor(IPoolManager poolManager_, EquoWindowHook hook_, address whype_) {
-        if (address(poolManager_) == address(0) || address(hook_) == address(0) || whype_ == address(0)) revert InvalidParams();
+    constructor(IPoolManager poolManager_, IEquoWindowsHook hook_, address weth_) {
+        if (address(poolManager_) == address(0) || address(hook_) == address(0) || weth_ == address(0)) revert InvalidParams();
         poolManager = poolManager_;
         hook = hook_;
-        whype = whype_;
+        weth = weth_;
         deployer = msg.sender;
     }
 
@@ -184,35 +197,62 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
     // Launch (factory)
     // ---------------------------------------------------------------------
 
-    /// @notice Put a new coin's supply (already sent here) into its pool from `lower` to `upper`, and make the
-    ///         creator's launch buy (the HYPE sent), fee-free, coins to the creator.
-    function seed(address token, int24 lower, int24 upper, address creator) external payable nonReentrant returns (uint256 bought) {
+    /// @notice Put a new coin's supply (already sent here) into its pool against `pair` from `lower` to `upper`, and
+    ///         make the creator's launch buy, fee-free, coins to the creator: the native coin sent for a native pair,
+    ///         else `buyIn` of the pair asset, already sent here.
+    function seed(address token, address pair, int24 lower, int24 upper, address creator, uint256 buyIn)
+        external
+        payable
+        nonReentrant
+        returns (uint256 bought)
+    {
         if (msg.sender != factory) revert NotFactory();
         Book storage b = books[token];
-        if (b.live || lower >= upper) revert InvalidParams();
+        if (b.live || lower >= upper || token >= pair) revert InvalidParams();
+        if (pair == weth) {
+            if (buyIn != msg.value) revert InvalidParams();
+            if (msg.value > 0) IWindowWETH(weth).deposit{value: msg.value}();
+        } else if (msg.value != 0) {
+            revert InvalidParams();
+        }
         uint256 supply = IERC20(token).balanceOf(address(this)) - heldCoins[token];
         uint128 liq = LiquidityAmounts.getLiquidityForAmount0(TickMath.getSqrtPriceAtTick(lower), TickMath.getSqrtPriceAtTick(upper), supply - COIN_SLACK);
-        books[token] = Book({live: true, head: lower, top: upper, segments: 1});
+        books[token] = Book({pair: pair, live: true, head: lower, top: upper, segments: 1});
         segs[token][lower] = Seg({on: true, next: upper, prev: type(int24).min, liq: liq});
-        if (msg.value > 0) IWindowWHYPE(whype).deposit{value: msg.value}();
-        bought = abi.decode(poolManager.unlock(abi.encode(OP_SEED, abi.encode(token, lower, upper, liq, msg.value))), (uint256));
+        bought = abi.decode(poolManager.unlock(abi.encode(OP_SEED, abi.encode(token, lower, upper, liq, buyIn))), (uint256));
         if (bought > 0) IERC20(token).safeTransfer(creator, bought);
-        emit Seeded(token, lower, upper, liq, msg.value, bought);
+        _checkHeld(token);
+        emit Seeded(token, lower, upper, liq, buyIn, bought);
     }
 
     // ---------------------------------------------------------------------
     // Windows
     // ---------------------------------------------------------------------
 
-    /// @notice Buy coins with a window. `msg.value` = spend + the coin's fee on it + `premium`; the window lasts
-    ///         `premium` / (spend × {DAY_RATE_BPS}) days, at least {MIN_WINDOW}; premium past {MAX_WINDOW} is refunded.
-    ///         `hint`: the start of any segment at or below the price (see {segmentAt}); the floor always works.
+    /// @notice Buy coins with a window, paying the native coin (native-paired coins). `msg.value` = spend + the
+    ///         coin's fee on it + `premium`; the window lasts `premium` / (spend × {DAY_RATE_BPS}) days, at least
+    ///         {MIN_WINDOW}; premium past {MAX_WINDOW} is refunded. `hint`: the start of any segment at or below the
+    ///         price (see {segmentAt}); the floor always works.
     function openWindow(address token, uint256 premium, uint256 minCoins, int24 hint) external payable nonReentrant returns (uint256 id) {
+        if (books[token].pair != weth) revert InvalidParams();
+        IWindowWETH(weth).deposit{value: msg.value}();
+        return _openWindow(token, msg.value, premium, minCoins, hint);
+    }
+
+    /// @notice Buy coins with a window, paying `amountIn` of the pair asset (asset-paired coins; approve it first).
+    function openWindowWith(address token, uint256 amountIn, uint256 premium, uint256 minCoins, int24 hint) external nonReentrant returns (uint256 id) {
+        address pair = books[token].pair;
+        if (pair == weth || pair == address(0)) revert InvalidParams();
+        IERC20(pair).safeTransferFrom(msg.sender, address(this), amountIn);
+        return _openWindow(token, amountIn, premium, minCoins, hint);
+    }
+
+    function _openWindow(address token, uint256 gross, uint256 premium, uint256 minCoins, int24 hint) internal returns (uint256 id) {
         Book storage b = books[token];
-        if (!b.live || premium >= msg.value) revert InvalidParams();
-        uint16 feeBps = hook.config(token).feeBps;
-        uint256 spend = ((msg.value - premium) * BPS) / (BPS + feeBps);
-        uint256 fee = msg.value - premium - spend;
+        if (!b.live || premium >= gross) revert InvalidParams();
+        uint16 feeBps = hook.feeBpsOf(token);
+        uint256 spend = ((gross - premium) * BPS) / (BPS + feeBps);
+        uint256 fee = gross - premium - spend;
         if (spend < MIN_SPEND) revert TooSmall();
         uint256 length = (premium * 1 days * BPS) / (spend * DAY_RATE_BPS);
         if (length < MIN_WINDOW) revert WindowTooShort();
@@ -223,8 +263,6 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
             premium = needed;
             length = MAX_WINDOW;
         }
-        IWindowWHYPE(whype).deposit{value: msg.value - refund}();
-
         id = nextWindowId++;
         (uint256 coins, uint256 dust, Piece[] memory ps) =
             abi.decode(poolManager.unlock(abi.encode(OP_OPEN, abi.encode(token, spend, fee, hint))), (uint256, uint256, Piece[]));
@@ -245,9 +283,9 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
             premium: uint128(premium)
         });
         heldCoins[token] += coins;
-        heldWhype += spend + premium;
+        heldPair[b.pair] += spend + premium;
         _checkHeld(token);
-        if (refund > 0) _sendHype(msg.sender, refund);
+        if (refund > 0) _pay(b.pair, msg.sender, refund);
         emit WindowOpened(id, token, msg.sender, spend, fee, premium, coins, expiry);
     }
 
@@ -260,11 +298,12 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
         w.state = UNDONE;
         (uint256 burned) = abi.decode(poolManager.unlock(abi.encode(OP_UNDO, abi.encode(id, hint))), (uint256));
         address token = w.token;
+        address pair = books[token].pair;
         heldCoins[token] -= w.coins;
-        heldWhype -= uint256(w.spent) + w.premium;
-        if (burned > 0) IWindowCoin(token).burn(burned);
+        heldPair[pair] -= uint256(w.spent) + w.premium;
+        _burn(token, burned);
         _checkHeld(token);
-        _sendHype(w.owner, w.spent);
+        _pay(pair, w.owner, w.spent);
         emit WindowUndone(id, token, w.owner, w.spent, burned);
     }
 
@@ -277,8 +316,8 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
         (uint256 burned, uint256 coins) = abi.decode(poolManager.unlock(abi.encode(OP_KEEP, abi.encode(id, hint))), (uint256, uint256));
         address token = w.token;
         heldCoins[token] -= w.coins;
-        heldWhype -= uint256(w.spent) + w.premium;
-        if (burned > 0) IWindowCoin(token).burn(burned);
+        heldPair[books[token].pair] -= uint256(w.spent) + w.premium;
+        _burn(token, burned);
         IERC20(token).safeTransfer(w.owner, coins);
         _checkHeld(token);
         emit WindowKept(id, token, w.owner, coins, burned);
@@ -289,21 +328,21 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
     // ---------------------------------------------------------------------
 
     /// @notice Remove `bps` of the liquidity of up to `maxSegments` segments, starting at segment `from` (the floor
-    ///         when `from` is below it), and send the coins and HYPE (as WHYPE) to `to`. Returns where the next call
+    ///         when `from` is below it), and send the coins and pair tokens (the wrapped native coin) to `to`. Returns where the next call
     ///         should start; the pool's top when the whole list is done.
     function collect(address token, uint16 bps, address to, int24 from, uint256 maxSegments)
         external
         nonReentrant
-        returns (int24 next, uint256 coins, uint256 whypeOut)
+        returns (int24 next, uint256 coins, uint256 pairOut)
     {
         if (msg.sender != factory) revert NotFactory();
         Book storage b = books[token];
         if (!b.live || bps == 0 || bps > BPS || to == address(0) || maxSegments == 0) revert InvalidParams();
         if (from < b.head) from = b.head;
         if (!segs[token][from].on) revert BadHint();
-        (next, coins, whypeOut) = abi.decode(poolManager.unlock(abi.encode(OP_COLLECT, abi.encode(token, bps, to, from, maxSegments))), (int24, uint256, uint256));
+        (next, coins, pairOut) = abi.decode(poolManager.unlock(abi.encode(OP_COLLECT, abi.encode(token, bps, to, from, maxSegments))), (int24, uint256, uint256));
         _checkHeld(token);
-        emit Collected(token, bps, from, next, coins, whypeOut, to);
+        emit Collected(token, bps, from, next, coins, pairOut, to);
     }
 
     // ---------------------------------------------------------------------
@@ -338,17 +377,17 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
             s.liq -= ps[i].liq;
             _modify(key, ps[i].lo, ps[i].hi, -int256(uint256(ps[i].liq)));
         }
-        // the fee: WHYPE in, claims to the hook, which splits them
+        // the fee: pair tokens in, claims to the hook, which splits them
         if (fee > 0) {
             poolManager.sync(key.currency1);
-            IERC20(whype).safeTransfer(address(poolManager), fee);
+            IERC20(Currency.unwrap(key.currency1)).safeTransfer(address(poolManager), fee);
             poolManager.settle();
             poolManager.mint(address(hook), key.currency1.toId(), fee);
             hook.recordFee(token, fee, spend);
         }
         int256 coinDelta = _settle(key.currency0);
-        int256 whypeDelta = _settle(key.currency1);
-        uint256 dust = whypeDelta < 0 ? uint256(-whypeDelta) : 0;
+        int256 pairDelta = _settle(key.currency1);
+        uint256 dust = pairDelta < 0 ? uint256(-pairDelta) : 0;
         if (coinDelta <= 0) revert TooSmall();
         return abi.encode(uint256(coinDelta), dust, ps);
     }
@@ -611,14 +650,14 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
         poolManager.modifyLiquidity(key, ModifyLiquidityParams({tickLower: lo, tickUpper: hi, liquidityDelta: delta, salt: bytes32(0)}), "");
     }
 
-    /// @dev Buy coins with `amount` WHYPE held here, fee-free (the hook does not charge this contract).
+    /// @dev Buy coins with `amount` of the pair token held here, fee-free (the hook does not charge this contract).
     function _buy(PoolKey memory key, uint256 amount) internal returns (uint256 out) {
         if (amount == 0) return 0;
         BalanceDelta d = poolManager.swap(key, SwapParams({zeroForOne: false, amountSpecified: -int256(amount), sqrtPriceLimitX96: TickMath.MAX_SQRT_PRICE - 1}), "");
         out = d.amount0() > 0 ? uint256(uint128(d.amount0())) : 0;
     }
 
-    /// @dev Buy exactly `coins` with WHYPE held here, fee-free; returns the WHYPE paid.
+    /// @dev Buy exactly `coins` with the pair token held here, fee-free; returns what it paid.
     function _buyExact(PoolKey memory key, uint256 coins) internal returns (uint256 paid) {
         BalanceDelta d = poolManager.swap(key, SwapParams({zeroForOne: false, amountSpecified: int256(coins), sqrtPriceLimitX96: TickMath.MAX_SQRT_PRICE - 1}), "");
         paid = d.amount1() < 0 ? uint256(uint128(-d.amount1())) : 0;
@@ -637,16 +676,31 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
     }
 
     function _checkHeld(address token) internal view {
-        if (IERC20(token).balanceOf(address(this)) < heldCoins[token] || IERC20(whype).balanceOf(address(this)) < heldWhype) revert Insolvent();
+        address pair = books[token].pair;
+        if (IERC20(token).balanceOf(address(this)) < heldCoins[token] || IERC20(pair).balanceOf(address(this)) < heldPair[pair]) revert Insolvent();
     }
 
-    function _sendHype(address to, uint256 amount) internal {
-        IWindowWHYPE(whype).withdraw(amount);
+    /// @dev Pay out the pair token: the native coin for the wrapped native coin (the wrapped one to a contract that
+    ///      refuses it), else the asset.
+    function _pay(address pair, address to, uint256 amount) internal {
+        if (amount == 0) return;
+        if (pair != weth) {
+            IERC20(pair).safeTransfer(to, amount);
+            return;
+        }
+        IWindowWETH(weth).withdraw(amount);
         (bool ok,) = to.call{value: amount}("");
         if (!ok) {
-            IWindowWHYPE(whype).deposit{value: amount}();
-            IERC20(whype).safeTransfer(to, amount);
+            IWindowWETH(weth).deposit{value: amount}();
+            IERC20(weth).safeTransfer(to, amount);
         }
+    }
+
+    /// @dev Premium buybacks leave circulation: burned when the coin can burn, else sent to the dead address.
+    function _burn(address token, uint256 amount) internal {
+        if (amount == 0) return;
+        (bool ok,) = token.call(abi.encodeCall(IWindowCoin.burn, (amount)));
+        if (!ok) IERC20(token).safeTransfer(DEAD, amount);
     }
 
     function _floorStep(int24 tick) internal pure returns (int24) {
@@ -660,7 +714,13 @@ contract EquoWindows is IUnlockCallback, ReentrancyGuard {
     // ---------------------------------------------------------------------
 
     function keyOf(address token) public view returns (PoolKey memory) {
-        return PoolKey({currency0: Currency.wrap(token), currency1: Currency.wrap(whype), fee: 0, tickSpacing: STEP, hooks: IHooks(address(hook))});
+        return keyFor(token, books[token].pair);
+    }
+
+    /// @notice The pool key of a coin paired against `pair`: the coin is currency0, no LP fee (the hook takes the
+    ///         fee), one step per tick spacing.
+    function keyFor(address token, address pair) public view returns (PoolKey memory) {
+        return PoolKey({currency0: Currency.wrap(token), currency1: Currency.wrap(pair), fee: 0, tickSpacing: STEP, hooks: IHooks(address(hook))});
     }
 
     /// @notice The pool's price now.

@@ -166,11 +166,11 @@ contract EquoWindowFactory is ReentrancyGuard {
             }),
             ""
         );
-        PoolKey memory key = windows.keyOf(token);
+        PoolKey memory key = windows.keyFor(token, whype);
         poolManager.initialize(key, sqrtStart);
         hook.registerPool(key, token, msg.sender, feeBps, sqrtStart);
         IERC20(token).safeTransfer(address(windows), SUPPLY);
-        uint256 bought = windows.seed{value: msg.value}(token, lower, upper, msg.sender);
+        uint256 bought = windows.seed{value: msg.value}(token, whype, lower, upper, msg.sender, msg.value);
 
         bytes32 poolId = PoolId.unwrap(key.toId());
         listings[token] = Listing({creator: msg.sender, createdAt: uint64(block.timestamp), feeBps: feeBps, poolId: poolId, hypeUsd18: hypeUsd, startTick: lower});
@@ -216,6 +216,6 @@ contract EquoWindowFactory is ReentrancyGuard {
     }
 
     function poolKeyOf(address token) external view returns (PoolKey memory) {
-        return windows.keyOf(token);
+        return windows.keyFor(token, whype);
     }
 }
