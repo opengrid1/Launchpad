@@ -174,7 +174,7 @@ def shell(page, pages, body):
 <button type="button" class="dmenu" id="dmenu" aria-label="Open menu">{svg("hamburger-menu")}</button>
 <a class="brand" href="/"><img src="/img/logo.svg?v=15" alt=""><span>Equo</span><em>Docs</em></a>
 <button type="button" class="dsearch" id="dsearch">{svg("magnifer")}<span>Search the docs</span><kbd>/</kbd></button>
-<nav class="dlinks"><a href="https://x.com/equofun" target="_blank" rel="noopener" aria-label="Equo on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23zm-1.16 17.52h1.83L7.08 4.13H5.12z"/></svg></a><a class="dapp" href="/markets">Open app</a></nav>
+<nav class="dlinks"><a href="https://x.com/equodotfun" target="_blank" rel="noopener" aria-label="Equo on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23zm-1.16 17.52h1.83L7.08 4.13H5.12z"/></svg></a><a class="dapp" href="/markets">Open app</a></nav>
 </div></header>
 <div class="dwrap">
 <aside class="dside" id="dside"><div class="dsh"><a class="brand" href="/"><img src="/img/logo.svg?v=15" alt=""><span>Equo</span><em>Docs</em></a><button type="button" class="dx" id="dclose" aria-label="Close menu">{svg("close-circle")}</button></div>{side}</aside>
@@ -184,7 +184,7 @@ def shell(page, pages, body):
 {body}
 </div>
 <nav class="pn">{pn}</nav>
-<footer class="df"><span>Equo docs</span><a href="/markets">Open the app</a><a href="https://x.com/equofun" target="_blank" rel="noopener">@equofun</a></footer>
+<footer class="df"><span>Equo docs</span><a href="/markets">Open the app</a><a href="https://x.com/equodotfun" target="_blank" rel="noopener">@equodotfun</a></footer>
 </article></main>
 <aside class="dtoc">{('<div class="tt">On this page</div>' + toc) if toc else ""}</aside>
 </div>
