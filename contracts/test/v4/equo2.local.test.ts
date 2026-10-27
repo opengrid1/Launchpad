@@ -107,7 +107,9 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     );
     const FACTORY = await factory.getAddress();
     await (await deployer.setFactory(FACTORY)).wait();
-    await (await hook.setFactory(FACTORY)).wait();
+    // one sender stands in for a terminal's relayer: listed at deployment, never the last buyer
+    const [, , , , , , relayer] = await ethers.getSigners();
+    await (await hook.setFactory(FACTORY, [relayer.address])).wait();
     const router = await (await ethers.getContractFactory("EquoSwapRouter")).deploy(PM, FACTORY, WETH);
     return { eid, WETH, weth, pm, endpoint, deployer, creatorC, hook, factory, router, stock, STOCK };
   }
@@ -216,7 +218,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     expect(await env.chains[0].hook.feesTotal(addrs[0])).to.equal(0n);
   });
 
-  for (const [feeBps, label] of [[100, "1%"], [30, "0.3%"], [500, "5%"]] as const) {
+  for (const [feeBps, label] of [[100, "1%"], [200, "2%"], [500, "5%"]] as const) {
     it(`splits a ${label} fee: platform max(20% of fee, 0.2% of volume), pot 0.1% of volume, creator the rest`, async () => {
       const env = await deployAll();
       const { addrs } = await launchAll(env, `F${feeBps}`, feeBps, 0n);
@@ -502,5 +504,29 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     expect(Number(await c.hook.feeNow(coin, false))).to.be.within(74, 76);
     await time.increase(16 * 60);
     expect(await c.hook.feeNow(coin, true)).to.equal(100n);
+  });
+
+  it("the fee is 1% to 5%: lower or higher is refused", async () => {
+    const env = await deployAll();
+    const f = env.chains[0].factory;
+    for (const feeBps of [50, 99, 501]) {
+      const { snap, sig } = await buildSnapshot(env, { tag: `BF${feeBps}`, feeBps });
+      await expect(f.connect(env.creator).launch(snap, sig, 0n)).to.be.revertedWithCustomError(env.chains[0].hook, "BadFee");
+    }
+  });
+
+  it("relayers listed at deployment never take the last-buyer pot's timer; the list cannot change", async () => {
+    const env = await deployAll();
+    const { addrs } = await launchAll(env, "EX", 100, 0n);
+    const c = env.chains[0];
+    const coin = addrs[0];
+    const relayer = (await ethers.getSigners())[6];
+    expect(await c.hook.excludedBuyer(relayer.address)).to.equal(true);
+    await expect(c.hook.setFactory(await c.factory.getAddress(), [env.trader.address])).to.be.revertedWithCustomError(c.hook, "AlreadySet");
+    await (await c.router.connect(env.outsider).buy(coin, "0x", 0n, { value: ethers.parseEther("0.1") })).wait();
+    await (await c.router.connect(relayer).buy(coin, "0x", 0n, { value: ethers.parseEther("0.5") })).wait();
+    expect((await c.hook.pots(coin)).lastBuyer).to.equal(env.outsider.address);
+    await (await c.router.connect(env.trader).buy(coin, "0x", 0n, { value: ethers.parseEther("0.5") })).wait();
+    expect((await c.hook.pots(coin)).lastBuyer).to.equal(env.trader.address);
   });
 });

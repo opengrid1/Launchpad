@@ -47,6 +47,8 @@ interface IWrappedNative {
 ///         at least the coin's minimum ($50 of the pair at launch) makes its wallet (the transaction's sender, so it
 ///         works from any terminal or router) the last buyer and sets a {ROUND} timer. When the timer runs out the
 ///         last buyer wins the pot less {ROLLOVER_BPS}, which starts the next round. Winnings are paid out by anyone.
+///         Senders that are not traders (relayers that send for many users) are listed when the hook is wired, at
+///         deployment; their buys never take the timer. The list never changes afterwards.
 ///
 ///         CRASH SHIELD. When the price falls {SHIELD_DROP_PCT}% or more below its high of the last {SHIELD_WINDOW},
 ///         the shield goes up: sells pay up to {SHIELD_SELL_BPS} extra (into the pot) and buys pay up to half the fee
@@ -58,7 +60,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 internal constant BPS = 10_000;
-    uint16 public constant MIN_FEE_BPS = 30;
+    uint16 public constant MIN_FEE_BPS = 100;
     uint16 public constant MAX_FEE_BPS = 500;
     uint16 public constant PLATFORM_FEE_SHARE_BPS = 2_000;
     uint16 public constant PLATFORM_VOLUME_BPS = 20;
@@ -105,6 +107,8 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     mapping(PoolId => PoolConfig) internal _config;
     mapping(address token => Pot) public pots;
     mapping(address token => Shield) public shields;
+    /// @notice Senders whose buys never take the pot's timer (relayers sending for others). Fixed at deployment.
+    mapping(address => bool) public excludedBuyer;
     /// @notice Pot winnings waiting to be paid, per coin and winner, in the coin's pair token.
     mapping(address token => mapping(address winner => uint256)) public wonOf;
     mapping(address token => PoolId) internal _poolOf;
@@ -121,6 +125,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     event LastBuyer(address indexed token, address indexed buyer, uint32 round, uint64 deadline, uint256 pot);
     event RoundWon(address indexed token, address indexed winner, uint32 round, uint256 prize, uint256 rolledOver);
     event PotPaid(address indexed token, address indexed winner, uint256 amount);
+    event BuyerExcluded(address indexed who);
     event ShieldUp(address indexed token, uint160 sqrtPriceX96, uint160 peakSqrtPriceX96, uint64 until);
     event CreatorPaid(address indexed token, address indexed to, uint256 amount);
     event PlatformPaid(address indexed token, address indexed to, uint256 amount);
@@ -142,10 +147,16 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     receive() external payable {}
 
     /// @notice One-time: the factory, wired by the account that deployed this hook.
-    function setFactory(address factory_) external {
+    /// @notice One-time, at deployment: the factory, and the senders (relayers) whose buys never take the pot's
+    ///         timer. Neither can change afterwards.
+    function setFactory(address factory_, address[] calldata excluded) external {
         if (msg.sender != deployer || factory != address(0)) revert AlreadySet();
         if (factory_ == address(0)) revert InvalidParams();
         factory = factory_;
+        for (uint256 i; i < excluded.length; i++) {
+            excludedBuyer[excluded[i]] = true;
+            emit BuyerExcluded(excluded[i]);
+        }
         emit FactorySet(factory_);
     }
 
@@ -406,7 +417,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
             int128 paid = delta.amount1();
             uint256 spent = paid < 0 ? uint256(uint128(-paid)) : 0;
             Pot storage p = pots[token];
-            if (spent >= p.minBuy) {
+            if (spent >= p.minBuy && !excludedBuyer[tx.origin]) {
                 p.lastBuyer = tx.origin;
                 p.deadline = uint64(block.timestamp) + ROUND;
                 emit LastBuyer(token, tx.origin, p.round, p.deadline, p.amount);
