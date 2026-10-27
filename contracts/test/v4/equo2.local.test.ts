@@ -64,7 +64,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
   this.timeout(900_000);
 
   async function deployChain(eid: number, signer: string) {
-    const [admin, , , feeWallet] = await ethers.getSigners();
+    const [admin, , , feeWallet, launcher] = await ethers.getSigners();
     let weth = await (await ethers.getContractFactory("WETH9")).deploy();
     while (BigInt(await weth.getAddress()) < CEILING) weth = await (await ethers.getContractFactory("WETH9")).deploy();
     const WETH = await weth.getAddress();
@@ -102,7 +102,7 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     while (BigInt(await stock.getAddress()) < CEILING) stock = await (await ethers.getContractFactory("MockUSD")).deploy();
     const STOCK = await stock.getAddress();
     const factory = await (await ethers.getContractFactory("EquoLaunchFactory")).deploy(
-      admin.address, PM, hookAddr, DEP, WETH, eid, signer, feeWallet.address,
+      admin.address, PM, hookAddr, DEP, WETH, eid, signer, feeWallet.address, launcher.address, // the launch service is a launcher from deployment
       [{ token: WETH, minUsd18: ethers.parseEther("1"), maxUsd18: ethers.parseEther("1000000") }, { token: STOCK, minUsd18: ethers.parseEther("0.5"), maxUsd18: ethers.parseEther("2") }],
     );
     const FACTORY = await factory.getAddress();
@@ -117,7 +117,6 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     const signer = ethers.Wallet.createRandom();
     const chains: any[] = [];
     for (const c of CHAINS) chains.push(await deployChain(c.eid, signer.address));
-    for (const c of chains) await (await c.factory.setLauncher(launcher.address, true)).wait();
     return { admin, creator, trader, feeWallet, launcher, outsider, signer, chains };
   }
 

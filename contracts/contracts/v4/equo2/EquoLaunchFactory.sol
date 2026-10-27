@@ -168,6 +168,7 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
         uint32 eid_,
         address signer_,
         address feeRecipient_,
+        address launcher_,
         PairTerms[] memory pairs_
     ) {
         if (admin_ == address(0) || weth_ == address(0) || signer_ == address(0)) revert InvalidParams();
@@ -187,6 +188,11 @@ contract EquoLaunchFactory is ReentrancyGuard, IUnlockCallback {
         eid = eid_;
         signer = signer_;
         feeRecipient = feeRecipient_ == address(0) ? admin_ : feeRecipient_;
+        // the launch service, allowed from the start so the admin needs no transaction on each chain to switch it on
+        if (launcher_ != address(0)) {
+            launchers[launcher_] = true;
+            emit LauncherSet(launcher_, true);
+        }
     }
 
     modifier onlyAdmin() {

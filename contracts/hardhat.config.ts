@@ -47,6 +47,11 @@ const ETH_RPC_URL = process.env.ETH_RPC_URL ?? "https://ethereum-rpc.publicnode.
 // blocks (30M gas) turned on for the deployer; launches run in the 3M-gas small blocks.
 const HYPEREVM_RPC_URL = process.env.HYPEREVM_RPC_URL ?? "https://rpc.hyperliquid.xyz/evm";
 
+// EQUO2_FORK=<name from scripts/equo2/chains.js> forks that chain into the in-process network.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const EQUO2_FORK = process.env.EQUO2_FORK ? require("./scripts/equo2/chains").CHAINS.find((c: any) => c.name === process.env.EQUO2_FORK) : undefined;
+if (process.env.EQUO2_FORK && !EQUO2_FORK) throw new Error(`unknown EQUO2_FORK ${process.env.EQUO2_FORK}`);
+
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
@@ -77,6 +82,16 @@ const config: HardhatUserConfig = {
             chainId: 999,
             // view calls at the fork block itself need a hardfork history for the remote chain
             chains: { 999: { hardforkHistory: { cancun: 0 } } },
+          }
+        : {}),
+      ...(EQUO2_FORK
+        ? {
+            // A fork of one Equo v2 chain for the deploy rehearsal (scripts/equo2/deploy.ts): real PoolManager,
+            // LayerZero endpoint, libraries and DVNs.
+            hardfork: "cancun",
+            forking: { url: EQUO2_FORK.rpc },
+            chainId: EQUO2_FORK.chainId,
+            chains: { [EQUO2_FORK.chainId]: { hardforkHistory: { cancun: 0 } } },
           }
         : {}),
       ...(process.env.FORK === "1" && ROBINHOOD_RPC_URL
