@@ -18,7 +18,7 @@ async function main() {
   const trade = ethers.parseEther(process.env.TEST_TRADE ?? "0.0002");
   console.log(`network ${network.name}, from ${me.address}, balance ${ethers.formatEther(await ethers.provider.getBalance(me.address))}`);
 
-  const meta = { description: "Equo mainnet test coin. Not an investment.", image: "https://equo-fun.vercel.app/img/apple-touch-icon.png", website: "https://equo-fun.vercel.app" };
+  const meta = { description: "Equo mainnet test coin. Not an investment.", image: "https://www.equo.fun/img/apple-touch-icon.png", website: "https://www.equo.fun" };
   const genes = { feeMode: 0, feeBps: 100, snipeBps: 0, snipeBlocks: 0, buybackShareBps: 0, divShareBps: 0, maxWalletBps: 0, maxWalletSecs: 0, buybackThreshold: 0n };
   const p = { name: "Equo Test", symbol: "EQTEST", metadataURI: JSON.stringify(meta), pair: ethers.ZeroAddress, minPairOut: 0, capPreset: 0, genes, stages: [], split: 1 };
   // each contract's events, read only from that contract's own logs

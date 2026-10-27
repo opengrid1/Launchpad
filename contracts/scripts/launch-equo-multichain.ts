@@ -68,7 +68,7 @@ async function main() {
   const baseSalt = ethers.id(arg("salt", `equo-multi-${symbol}-${Date.now()}`));
   const same = flag("same-address"), suffix = arg("suffix").toLowerCase().replace(/^0x/, "");
   if (suffix && !/^[0-9a-f]{1,4}$/.test(suffix)) throw new Error("--suffix takes 1 to 4 hex digits");
-  const meta = JSON.stringify({ description: arg("desc", "Equo multichain test coin. Not an investment."), image: arg("image", "https://equo-fun.vercel.app/img/apple-touch-icon.png"), website: "https://equo-fun.vercel.app" });
+  const meta = JSON.stringify({ description: arg("desc", "Equo multichain test coin. Not an investment."), image: arg("image", "https://www.equo.fun/img/apple-touch-icon.png"), website: "https://www.equo.fun" });
   const genes = { feeMode: 0, feeBps: Number(arg("fee", "100")), snipeBps: 0, snipeBlocks: 0, buybackShareBps: 0, divShareBps: 0, maxWalletBps: 0, maxWalletSecs: 0, buybackThreshold: 0n };
 
   const usd = await (await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${[...new Set(chains.map((c) => c.cg))].join(",")}&vs_currencies=usd`)).json();
