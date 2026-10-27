@@ -105,7 +105,7 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     mapping(PoolId => PoolConfig) internal _config;
     mapping(address token => Pot) public pots;
     mapping(address token => Shield) public shields;
-    /// @notice Pot winnings waiting to be paid, per coin and winner, in the coin's pair token.
+    /// @notice Pot winnings not yet sent (a round a swap ended), per coin and winner, in the coin's pair token.
     mapping(address token => mapping(address winner => uint256)) public wonOf;
     mapping(address token => PoolId) internal _poolOf;
     mapping(address token => address) public creatorOf;
@@ -141,7 +141,6 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
 
     receive() external payable {}
 
-    /// @notice One-time: the factory, wired by the account that deployed this hook.
     /// @notice One-time: the factory, wired by the account that deployed this hook.
     function setFactory(address factory_) external {
         if (msg.sender != deployer || factory != address(0)) revert AlreadySet();
@@ -210,28 +209,36 @@ contract EquoFeeHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         }
     }
 
-    /// @notice End the round if its timer has run out: the last buyer wins. Anyone; swaps do it too.
-    function settleRound(address token) external {
-        _mustBeRegistered(token);
-        _settleRound(token);
+    /// @notice End the round if its timer has run out and send the prize straight to the last buyer's wallet (the
+    ///         native coin for a native pair). Anyone: a keeper calls it when the timer ends. A swap after the timer
+    ///         ends the round too, without paying; pass that winner to {payWinner}.
+    function settleRound(address token) external nonReentrant returns (address winner, uint256 amount) {
+        PoolConfig storage c = _mustBeRegistered(token);
+        winner = _settleRound(token);
+        if (winner != address(0)) amount = _payWon(token, c.pair, winner);
     }
 
-    /// @notice Pay `winner` what they won on `token`'s pot, in the pair token (the native coin for a native pair).
-    function payWinner(address token, address winner) external nonReentrant returns (uint256 amount) {
+    /// @notice Send `winner` what they won on `token`'s pot. Anyone; the prize always goes to the winner.
+    function payWinner(address token, address winner) external nonReentrant returns (uint256) {
         PoolConfig storage c = _mustBeRegistered(token);
         _settleRound(token);
+        return _payWon(token, c.pair, winner);
+    }
+
+    function _payWon(address token, address pair, address winner) internal returns (uint256 amount) {
         amount = wonOf[token][winner];
         if (amount == 0) return 0;
         wonOf[token][winner] = 0;
-        poolManager.unlock(abi.encode(c.pair, winner, amount));
+        poolManager.unlock(abi.encode(pair, winner, amount));
         emit PotPaid(token, winner, amount);
     }
 
-    function _settleRound(address token) internal {
+    /// @dev Returns the winner if a round ended, else zero.
+    function _settleRound(address token) internal returns (address winner) {
         Pot storage p = pots[token];
-        if (p.lastBuyer == address(0) || block.timestamp < p.deadline) return;
+        if (p.lastBuyer == address(0) || block.timestamp < p.deadline) return address(0);
         uint256 prize = (uint256(p.amount) * (BPS - ROLLOVER_BPS)) / BPS;
-        address winner = p.lastBuyer;
+        winner = p.lastBuyer;
         p.amount -= uint128(prize);
         wonOf[token][winner] += prize;
         emit RoundWon(token, winner, p.round, prize, p.amount);

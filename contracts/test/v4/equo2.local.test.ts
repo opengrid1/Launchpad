@@ -452,21 +452,36 @@ describe("Equo v2: one signed launch on three chains (local)", function () {
     await (await c.router.connect(env.outsider).sell(coin, bal / 10n, "0x", 0n)).wait();
     expect((await c.hook.pots(coin)).lastBuyer).to.equal(env.trader.address);
     await time.increase(6 * 60);
-    // the timer ran out: anyone settles, the trader wins 80%, 20% stays for the next round
+    // the timer ran out: anyone (the keeper) settles, and the trader's 80% lands in their wallet in native coin
     const pot = (await c.hook.pots(coin)).amount;
+    const prize = (pot * 8000n) / 10_000n;
+    const before = await ethers.provider.getBalance(env.trader.address);
     await (await c.hook.connect(env.outsider).settleRound(coin)).wait();
+    expect((await ethers.provider.getBalance(env.trader.address)) - before).to.equal(prize);
+    expect(await c.hook.wonOf(coin, env.trader.address)).to.equal(0n);
     p = await c.hook.pots(coin);
-    expect(await c.hook.wonOf(coin, env.trader.address)).to.equal((pot * 8000n) / 10_000n);
-    expect(p.amount).to.equal(pot - (pot * 8000n) / 10_000n);
+    expect(p.amount).to.equal(pot - prize);
     expect(p.lastBuyer).to.equal(ethers.ZeroAddress);
     expect(p.round).to.equal(1n);
-    // paid in native coin by anyone
-    const before = await ethers.provider.getBalance(env.trader.address);
-    await (await c.hook.connect(env.outsider).payWinner(coin, env.trader.address)).wait();
-    expect((await ethers.provider.getBalance(env.trader.address)) - before).to.equal((pot * 8000n) / 10_000n);
-    // the next qualifying buy starts round 1
+    // settling again does nothing
+    await (await c.hook.connect(env.outsider).settleRound(coin)).wait();
+    expect((await c.hook.pots(coin)).round).to.equal(1n);
+    // round 1: a swap after the timer ends the round before the keeper does; the win is held, then sent by anyone
     await (await c.router.connect(env.outsider).buy(coin, "0x", 0n, { value: ethers.parseEther("0.05") })).wait();
     expect((await c.hook.pots(coin)).lastBuyer).to.equal(env.outsider.address);
+    await time.increase(21 * 60);
+    const pot1 = (await c.hook.pots(coin)).amount;
+    await (await c.router.connect(env.trader).buy(coin, "0x", 0n, { value: ethers.parseEther("0.001") })).wait();
+    // that swap's own pot share (0.1% of it) goes in before the round ends
+    const won = await c.hook.wonOf(coin, env.outsider.address);
+    const total1 = pot1 + ethers.parseEther("0.001") / 1000n;
+    expect(won).to.equal((total1 * 8000n) / 10_000n);
+    expect((await c.hook.pots(coin)).amount).to.equal(total1 - won);
+    expect((await c.hook.pots(coin)).round).to.equal(2n);
+    const before1 = await ethers.provider.getBalance(env.outsider.address);
+    await (await c.hook.connect(env.trader).payWinner(coin, env.outsider.address)).wait();
+    expect((await ethers.provider.getBalance(env.outsider.address)) - before1).to.equal(won);
+    expect(await c.hook.wonOf(coin, env.outsider.address)).to.equal(0n);
   });
 
   it("crash shield: a 20% fall within 10 minutes raises the sell fee (into the pot) and halves the buy fee, fading over 30 minutes", async () => {
