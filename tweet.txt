@@ -1,0 +1,17 @@
+Equo: one coin, every chain.
+
+Launch a coin once and it goes live on 8 chains: Ethereum, Base, BNB Chain, Arbitrum, HyperEVM, Monad, MegaETH and Unichain. Same address everywhere.
+
+How it works:
+
+Launch. Pick a name, ticker and image, then set your trading fee from 1% to 5%. Every coin starts at a $3K market cap with its own pool on each chain. A dev buy is optional.
+
+Bridge. It is one coin, not 8 copies. Move it between chains anytime through LayerZero.
+
+Creator fees. You earn from every buy and sell on every chain, paid in the pair token.
+
+Last Buyer Pot. 0.1% of all volume fills a pot. Any buy of $50 or more makes you the last buyer and resets a 20 minute timer. If nobody buys before it runs out, you win 80% of the pot and 20% rolls into the next round.
+
+Crash Shield. If price drops 20% within 10 minutes, the shield turns on. Sell fees rise by up to 5%, and that extra goes straight into the pot. Buy fees get cut in half. The shield fades out over 30 minutes.
+
+Dumps feed the pot. The pot pays the buyers. Trade from any chain, any terminal.
