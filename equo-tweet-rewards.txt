@@ -1,39 +1,7 @@
-Post 1
 How rewards work on equo.fun
 
-Every coin on Equo runs a Last-Buyer Pot on each of its EVM chains. Here is how you win it.
+Every EVM pool has a Last-Buyer Pot. 0.1% of every trade fills it. Buy $50+ to take the spot and start a 20 min timer. When it ends, the last buyer wins 80% of the pot.
 
-Post 2
-The pot
-0.1% of every trade on a chain goes into that chain's pot.
+Creators earn a share of every trade on every chain.
 
-Buy $50 or more and you become the last buyer. That starts a 20 minute timer.
-
-Every new $50+ buy takes the spot and restarts the timer.
-
-Post 3
-The win
-When the timer runs out, the last buyer gets 80% of the pot, sent straight to their wallet.
-
-The other 20% starts the next round, so the pot never starts from zero.
-
-Sell before the timer ends and you give up your spot.
-
-Post 4
-The crash shield
-If a coin drops 20% within 10 minutes, the shield turns on.
-
-Sells pay up to 5% extra, and all of it goes into the pot. Buys pay up to half the normal fee.
-
-It fades back to normal over 30 minutes.
-
-Post 5
-Creators earn too
-Launch a coin and you get your share of the trading fee on every chain it lives on. On a 1% fee coin that is 0.7% of every trade.
-
-Anyone can send your fees to you at any time. They always go to your wallet.
-
-Post 6
-One coin, 10 chains, a pot on every EVM chain.
-
-Launch or trade at equo.fun
+equo.fun
