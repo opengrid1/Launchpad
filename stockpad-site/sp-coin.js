@@ -15,7 +15,8 @@ window.SP_PAGE=function(){
   }
   const keys=()=>X.chains, ch=k=>SP.chain(k)||{name:k,native:'',logo:'',code:k};
   const nusd=k=>(V2.nativeUsd()||{})[k]||0;
-  const W=()=>SP.W, me=()=>(W().connected&&W().address)||'';
+  // the wallet for the chain the trade card is on: a Solana wallet for Solana, the EVM wallet for the rest
+  const W=()=>tChain==='sol'&&window.SOLW?SOLW:SP.W, me=()=>(W().connected&&W().address)||'';
   const n9=v=>Number(v)/1e9, n18=v=>Number(v)/1e18;
   const fmtN=(v,sym)=>SP.fmtNative?SP.fmtNative(v,sym):fmtAmt(v)+' '+sym;
   const LIVE={}; let tChain=keys().includes('eth')?'eth':keys()[0], side='buy', slip=1, qOut=0n, quoting=false, qSeq=0, bal={coin:0n,native:0n};
@@ -85,11 +86,11 @@ window.SP_PAGE=function(){
     $('#cn-note').textContent=q.limited?'The pool cannot take all of it: the sell stops at the opening price and returns the rest.':side==='buy'&&usdIn>0?(usdIn*(1-bps/1e4)>=minBuyUsd?`This buy takes the pot's 20-minute timer on ${c.name}.`:`Buys of ${fmtUsd(minBuyUsd)} or more take the pot's timer.`):'';
     cta(); }
   function cta(){ if(ctaEl.dataset.busy) return; const v=amtVal(), c=ch(tChain); let t, dis=false;
-    if(!W().connected) t='Connect a wallet'; else if(!lv()){ t='Loading the pool…'; dis=true; } else if(!v){ t='Enter an amount'; dis=true; }
+    if(!W().connected) t=tChain==='sol'?'Connect a Solana wallet':'Connect a wallet'; else if(!lv()){ t='Loading the pool…'; dis=true; } else if(!v){ t='Enter an amount'; dis=true; }
     else if(side==='buy'&&toRaw(v,18)>bal.native){ t='Not enough '+c.native+' on '+c.name; dis=true; } else if(side==='sell'&&toRaw(v,9)>bal.coin){ t='Not enough '+X.t+' on '+c.name; dis=true; }
     else if(!(qOut>0n)){ t='No quote'; dis=true; } else t=`${side==='buy'?'Buy':'Sell'} ${X.t} on ${c.name}`;
     ctaEl.textContent=t; ctaEl.disabled=dis; }
-  async function doSwap(){ if(!W().connected) return SP.W.connect?SP.W.connect().catch(e=>SP.toast(SP.errMsg(e),'err')):null;
+  async function doSwap(){ if(!W().connected) return W().connect?W().connect().then(loadBal).catch(e=>SP.toast(SP.errMsg(e),'err')):null;
     const v=amtVal(); if(!v||!(qOut>0n)) return; const min=qOut-qOut*BigInt(Math.round(slip*100))/10000n;
     ctaEl.dataset.busy='1'; ctaEl.disabled=true; ctaEl.textContent='Confirm in your wallet…';
     try{ if(side==='buy') await V2.buy(X,tChain,toRaw(v,18),min); else await V2.sell(X,tChain,toRaw(v,9),min);
@@ -103,7 +104,9 @@ window.SP_PAGE=function(){
   ctaEl.onclick=doSwap;
 
   /* ---------- pot, shield, creator fees ---------- */
-  function potCard(){ const l=lv(), c=ch(tChain), el=$('#cn-pot'); $('#cn-pot-ch').innerHTML=`${cimg(tChain)}${esc(c.name)}`; if(!l||!l.pot){ el.innerHTML='<div class="dim">Loading…</div>'; return; }
+  function potCard(){ const l=lv(), c=ch(tChain), el=$('#cn-pot'); $('#cn-pot-ch').innerHTML=`${cimg(tChain)}${esc(c.name)}`;
+    if(l&&l.sol){ el.innerHTML='<p class="note">Solana\'s pool has no last-buyer pot: the pot runs on the coin\'s EVM chains. Pick one of them to see it.</p>'; return; }
+    if(!l||!l.pot){ el.innerHTML='<div class="dim">Loading…</div>'; return; }
     const p=l.pot, amt=n18(p.amount), u=nusd(tChain), now=Math.floor(Date.now()/1000), left=p.deadline-now, minUsd=u?n18(p.minBuy)*u:50;
     const total=keys().reduce((s,k)=>s+(LIVE[k]&&LIVE[k].pot?n18(LIVE[k].pot.amount)*nusd(k):0),0);
     let state;
@@ -115,6 +118,7 @@ window.SP_PAGE=function(){
       <p class="note">0.1% of every trade fills this chain's pot. The last buy of ${fmtUsd(minUsd)}+ before 20 minutes pass wins 80%, sent to the wallet; 20% starts the next round. Selling gives your spot up.${total>0?` All chains: ${fmtUsd(total)}.`:''}</p>`;
     const s=$('#cn-settle'); if(s) s.onclick=async()=>{ s.disabled=true; try{ await V2.settle(X,tChain); SP.toast('Prize sent'); await liveOne(tChain); }catch(e){ SP.toast(SP.errMsg(e),'err'); } s.disabled=false; }; }
   function shieldCard(){ const l=lv(), el=$('#cn-shield'), p=$('#cn-shield-p'); if(!l){ el.innerHTML='<div class="dim">Loading…</div>'; return; }
+    if(l.sol){ p.classList.remove('up'); el.innerHTML=`<div class="kv"><span>Fee</span><b>${(l.feeBuyBps/100).toFixed(2)}% buy · ${(l.feeSellBps/100).toFixed(2)}% sell</b></div><p class="note">Solana's pool has no crash shield; it runs on the coin's EVM chains.</p>`; return; }
     const up=l.shieldBps>0; p.classList.toggle('up',up);
     el.innerHTML=up?`<div class="kv"><span>Status</span><b style="color:var(--amber)">Up on ${esc(ch(tChain).name)}</b></div><div class="kv"><span>Sell fee now</span><b>${(l.feeSellBps/100).toFixed(2)}%</b></div><div class="kv"><span>Buy fee now</span><b>${(l.feeBuyBps/100).toFixed(2)}%</b></div><div class="sbar"><i style="width:${l.shieldBps/100}%"></i></div><p class="note">The price fell 20% within 10 minutes. Sells pay up to 5% more, into the pot; buys pay up to half the fee less. It fades over 30 minutes.</p>`
       :`<div class="kv"><span>Status</span><b>Down</b></div><div class="kv"><span>Fee now</span><b>${(l.feeBuyBps/100).toFixed(2)}% buy · ${(l.feeSellBps/100).toFixed(2)}% sell</b></div><p class="note">If the price falls 20% within 10 minutes, sells pay up to 5% more (into the pot) and buys pay up to half the fee less, fading over 30 minutes.</p>`; }

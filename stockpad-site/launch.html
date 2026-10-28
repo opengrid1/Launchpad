@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Launch a coin | Equo</title><meta name="description" content="Launch one coin on up to eight chains at once, at the same opening price, with a last-buyer pot and a crash shield on every pool.">
+<title>Launch a coin | Equo</title><meta name="description" content="Launch one coin on up to nine chains at once, at the same opening price, with a last-buyer pot and a crash shield on every EVM pool.">
 <link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
 <meta property="og:title" content="Launch a coin | Equo"><meta property="og:description" content="One coin, every chain."><meta property="og:image" content="/img/og.png?v=17">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -40,7 +40,7 @@
 </head><body data-page="launch">
 <header id="sp-top"></header><div id="sp-tape"></div>
 <main id="sp-main"><div class="wrap"><div id="pg-launch">
-  <div class="tophd"><h1>Launch a coin</h1><p>One coin on every chain you pick, 1B on each, all opening at a $3,000 market cap. Every pool has a last-buyer pot and a crash shield.</p></div>
+  <div class="tophd"><h1>Launch a coin</h1><p>One coin on every chain you pick, 1B on each, all opening at a $3,000 market cap. Every EVM pool has a last-buyer pot and a crash shield.</p></div>
   <div class="lw">
     <div class="card">
       <div class="sec"><h3>The coin</h3>
@@ -58,7 +58,9 @@
       <div class="sec"><h3>Launch from</h3>
         <div class="two"><div><label class="l" for="f-home">Your wallet pays on</label><select class="inp" id="f-home"></select></div>
           <div><label class="l" for="f-dev">First buy <span id="dev-sym"></span> · optional</label><input class="inp" id="f-dev" inputmode="decimal" placeholder="0" autocomplete="off"></div></div>
-        <p class="hint" id="home-hint"></p></div>
+        <p class="hint" id="home-hint"></p>
+        <div id="sol-row" class="hidden" style="margin-top:12px"><label class="l" for="f-solw">Your Solana wallet <span class="muted">· gets your creator fees on Solana</span></label>
+          <div style="display:flex;gap:8px"><input class="inp" id="f-solw" placeholder="Solana address" autocomplete="off" spellcheck="false"><button type="button" class="btn" id="sol-use">Use my wallet</button></div></div></div>
       <div class="sec"><h3>Cost</h3>
         <div class="kv"><span>Launch fee <small class="muted">· Equo launches the other chains with it</small></span><b id="c-fee">…</b></div>
         <div class="kv"><span>First buy</span><b id="c-dev">—</b></div>
@@ -79,5 +81,5 @@
   </div>
 </div></div></main>
 <footer id="sp-foot"></footer>
-<script src="/config.js?v=16"></script><script src="/data.js?v=4"></script><script src="/avatar.js"></script><script src="/chain.js?v=23"></script><script src="/equo.js?v=7"></script><script src="/api.js?v=6"></script><script src="/v2.js?v=1"></script><script src="/wallet.js"></script><script src="/core.js?v=43"></script><script src="/sp-launch2.js?v=2"></script>
+<script src="/config.js?v=17"></script><script src="/data.js?v=4"></script><script src="/avatar.js"></script><script src="/chain.js?v=23"></script><script src="/equo.js?v=7"></script><script src="/api.js?v=6"></script><script src="/v2.js?v=2"></script><script src="/solleg.js?v=1"></script><script src="/wallet.js"></script><script src="/core.js?v=43"></script><script src="/sp-launch2.js?v=3"></script>
 </body></html>

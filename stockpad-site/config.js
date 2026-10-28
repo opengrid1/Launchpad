@@ -46,7 +46,12 @@ window.INKY = {
     {key:'megaeth', blockSec:1,  code:'MEGA', name:'MegaETH',   short:'MegaETH',  chainId:4326,  native:'ETH',  cg:'ethereum',    logo:'/img/chains/megaeth.png',  color:'#ff7aa2', main:false, live:true,
      rpc:'https://mainnet.megaeth.com/rpc',          explorer:'https://mega.etherscan.io', lzEid:30398, poolManager:'0xaCB7e78fa05D562e0A5D3089ec896D57D057d38E', launchGas:7700000, v2:{factory:'0x05A6f357c791A4cEf0CbE4dCEc9014a35D30879A', hook:'0x6ccc4F076B9B5650be6e09Dd7b646310292B68cC', router:'0x2b724d4Dc43940BEc52A2f5Da49b245F72C2f377'}},
     {key:'unichain', blockSec:1, code:'UNI',  name:'Unichain',  short:'Unichain', chainId:130,   native:'ETH',  cg:'ethereum',    logo:'/img/chains/unichain.png', color:'#f50db4', main:false, live:true,
-     rpc:'https://unichain-rpc.publicnode.com',       explorer:'https://uniscan.xyz',      lzEid:30320, poolManager:'0x1F98400000000000000000000000000000000004', launchGas:7700000, v2:{factory:'0xf32FF256F621645b8D9BEDa21B3f9d5384475883', hook:'0x964b90640B78cFB0482f768f42150cF9aC6968cC', router:'0x118460aDeAc3aA6Cb9836EEa156FbC94aCdD404A'}}
+     rpc:'https://unichain-rpc.publicnode.com',       explorer:'https://uniscan.xyz',      lzEid:30320, poolManager:'0x1F98400000000000000000000000000000000004', launchGas:7700000, v2:{factory:'0xf32FF256F621645b8D9BEDa21B3f9d5384475883', hook:'0x964b90640B78cFB0482f768f42150cF9aC6968cC', router:'0x118460aDeAc3aA6Cb9836EEa156FbC94aCdD404A'}},
+    /* Solana: launched by Equo as one of a coin's chains (never the creator's own), a Meteora DAMM v2 pool against
+       SOL, bridged by the coin's LayerZero OFT. sol.program: Equo's Solana leg program. Trades sign with a Solana
+       wallet (solleg.js). */
+    {key:'sol', evm:false,           code:'SOL',  name:'Solana',    short:'Solana',   native:'SOL',  cg:'solana',      logo:'/img/chains/sol.png',      color:'#9945ff', main:false, live:true,
+     explorer:'https://solscan.io', lzEid:30168, sol:{program:'8tQmVEDRd4gBXP2brdgKxtmzXbTD3y8uEbY1erS1UFKq', oft:'RuyLPEWoYG2b6mGb6nvKotoNhW2F9KdhrjRghaRdGkz'}}
   ],
   /* launch fee: gas on every chosen chain plus this margin; bridge: LayerZero fees */
   launchMarginBps: 2000, bridgeFeeBps: 20, fastFeeBps: 20,

@@ -237,6 +237,8 @@
     return q;
   }
   const launchStatus = (q) => api('/api/v2/status', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ snapshot: q.snapshot }) });
+  /** Another round of the service's work on a launch (a Solana leg takes a few). */
+  const complete = (q) => api('/api/v2/complete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ snapshot: q.snapshot, signature: q.signature }), timeout: 70000 });
 
   /** The admin's collect of `bps` of a coin's pools on every chain, sent by the service, paid to the admin. */
   async function collect(x, bps) {
@@ -285,5 +287,5 @@
   setInterval(() => { if (document.visibilityState !== 'hidden') loadAll().catch(() => {}); }, 20000);
 
   window.V2 = { nativeUsd: () => NUSD, prices,
-    chains: CH, chain, coin: (a) => C.token(a), coins: () => [...COINS.values()], loaded: () => loaded, reload: loadAll, detail, live, quote, balances, buy, sell, payCreator, settle, signerOn, feeQuote, launch, launchStatus, collect, me, api };
+    chains: CH, chain, coin: (a) => C.token(a), coins: () => [...COINS.values()], loaded: () => loaded, reload: loadAll, detail, live, quote, balances, buy, sell, payCreator, settle, signerOn, feeQuote, launch, launchStatus, complete, collect, me, api };
 })();

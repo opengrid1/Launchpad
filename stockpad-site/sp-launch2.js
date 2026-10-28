@@ -5,10 +5,14 @@
 window.SP_PAGE=function(){
   const pg=$('#pg-launch'); if(!pg||!window.V2) return;
   const g=id=>document.getElementById(id), val=id=>g(id).value.trim();
+  // every chain a coin can launch on: the EVM chains, and Solana when the site has it (Equo launches that leg)
+  const ALL=[...V2.chains, SP.chain('sol')].filter(Boolean);
   const S={ logo:'', fee:100, chains:V2.chains.map(c=>c.key), home:V2.chains.some(c=>c.key==='base')?'base':V2.chains[0].key, quote:null, gas:{}, busy:false };
   const ch=k=>SP.chain(k)||{name:k,native:'',logo:''};
-  // HyperEVM launches go in its once-a-minute large blocks, which a wallet cannot pick: Equo sends that leg
-  const canHome=k=>k!=='hyper';
+  // HyperEVM launches go in its once-a-minute large blocks, which a wallet cannot pick, and Solana's leg is made by
+  // Equo's service: Equo sends those legs
+  const canHome=k=>k!=='hyper'&&k!=='sol';
+  const solOk=v=>/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(v);
 
   /* ---------- logo: a square crop, stored with the coin's details (not on chain) ---------- */
   // also picks up a file chosen before this script ran (the input exists from the first paint)
@@ -28,9 +32,13 @@ window.SP_PAGE=function(){
     $$('#f-fee [data-f]').forEach(b=>b.onclick=()=>{ S.fee=+b.dataset.f; fees(); preview(); });
     const f=S.fee/100, pf=Math.max(f*0.2,0.2), pot=0.1;
     g('fee-split').textContent=`Of ${f}%: the platform ${(+pf.toFixed(2))}%, the last-buyer pot ${pot}%, you ${(+(f-pf-pot).toFixed(2))}% of every trade, in each chain's native coin.`; }
-  function chains(){ g('f-chains').innerHTML=V2.chains.map(c=>`<button type="button" data-k="${c.key}" class="${S.chains.includes(c.key)?'on':''}" style="--cc:${c.color}"><img src="${c.logo}" alt="">${esc(c.name)}</button>`).join('');
-    $$('#f-chains [data-k]').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(S.chains.includes(k)){ if(S.chains.length===1) return; S.chains=S.chains.filter(x=>x!==k); } else S.chains=V2.chains.map(c=>c.key).filter(x=>x===k||S.chains.includes(x));
-      if(!S.chains.includes(S.home)||!canHome(S.home)) S.home=S.chains.find(canHome)||S.chains[0]; chains(); homes(); cost(); preview(); }); }
+  function chains(){ g('f-chains').innerHTML=ALL.map(c=>`<button type="button" data-k="${c.key}" class="${S.chains.includes(c.key)?'on':''}" style="--cc:${c.color}"><img src="${c.logo}" alt="">${esc(c.name)}</button>`).join('');
+    $$('#f-chains [data-k]').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(S.chains.includes(k)){ if(S.chains.length===1) return; S.chains=S.chains.filter(x=>x!==k); } else S.chains=ALL.map(c=>c.key).filter(x=>x===k||S.chains.includes(x));
+      if(!S.chains.includes(S.home)||!canHome(S.home)) S.home=S.chains.find(canHome)||S.chains[0]; chains(); homes(); solRow(); cost(); preview(); }); }
+  /* the creator's Solana wallet: it receives the creator's fees and the coin's first coins on Solana */
+  function solRow(){ const on=S.chains.includes('sol'); g('sol-row').classList.toggle('hidden',!on); btn(); }
+  g('sol-use').onclick=async()=>{ try{ const a=window.SOLW?await SOLW.connect():''; if(a){ g('f-solw').value=a; btn(); } }catch(e){ SP.toast(SP.errMsg(e),'err'); } };
+  g('f-solw').addEventListener('input',btn);
   function homes(){ const opts=S.chains.filter(canHome); g('f-home').innerHTML=opts.map(k=>`<option value="${k}" ${k===S.home?'selected':''}>${esc(ch(k).name)} (${esc(ch(k).native)})</option>`).join('');
     if(!opts.length){ g('home-hint').innerHTML='<span class="err">Pick at least one chain besides HyperEVM to launch from.</span>'; return; }
     g('dev-sym').textContent='in '+ch(S.home).native;
@@ -58,7 +66,9 @@ window.SP_PAGE=function(){
     g('legs').innerHTML=S.chains.map(k=>`<span data-leg="${k}"><img src="${ch(k).logo}" alt="">${esc(ch(k).name)}</span>`).join(''); btn(); }
   ['f-name','f-sym'].forEach(id=>g(id).addEventListener('input',preview));
   function problem(){ if(!val('f-name')) return 'Give the coin a name'; const t=val('f-sym').toUpperCase(); if(!t) return 'Give the coin a ticker'; if(!/^[A-Z0-9$._-]+$/.test(t)) return 'The ticker takes letters and digits';
-    if(!S.chains.some(canHome)) return 'Pick a chain to launch from'; return ''; }
+    if(!S.chains.some(canHome)) return 'Pick a chain to launch from';
+    if(S.chains.includes('sol')&&!solOk(val('f-solw'))) return 'Add your Solana wallet for Solana';
+    return ''; }
   function btn(){ if(S.busy) return; const b=g('go'); if(!SP.W.connected){ b.textContent='Connect a wallet'; b.disabled=false; return; } const p=problem(); b.textContent=p||`Launch on ${S.chains.length} chain${S.chains.length>1?'s':''}`; b.disabled=!!p; }
   SP.onWallet(btn);
   function step(s,state){ const el=$(`#steps [data-s="${s}"]`); if(!el) return; $$('#steps div').forEach(d=>d.classList.remove('on')); el.classList.add(state==='ok'?'ok':'on'); if(state==='ok') el.classList.remove('on'); }
@@ -68,20 +78,25 @@ window.SP_PAGE=function(){
     const meta={ description:val('f-desc'), image:S.logo, website:val('f-web'), x:val('f-x'), telegram:val('f-tg') };
     const devWei=devVal()?CHAIN.parseEther(devVal().toFixed(18)).toString():'0';
     try{
-      const q=await V2.launch({ name:val('f-name'), symbol:val('f-sym').toUpperCase(), feeBps:S.fee, chains:S.chains, home:S.home, meta, devBuyWei:devWei },(s,info)=>{
+      const q=await V2.launch({ name:val('f-name'), symbol:val('f-sym').toUpperCase(), feeBps:S.fee, chains:S.chains, home:S.home, meta, devBuyWei:devWei, solWallet:S.chains.includes('sol')?val('f-solw'):undefined },(s,info)=>{
         if(s==='quote'){ step('quote'); b.textContent='Preparing…'; }
         if(s==='wallet'){ b.textContent='Confirm in your wallet…'; }
         if(s==='sent'){ step('quote','ok'); step('home'); b.textContent=`Launching on ${ch(S.home).name}…`; }
         if(s==='home'){ step('home','ok'); step('others'); b.textContent='Launching the other chains…'; const el=$(`[data-leg="${S.home}"]`); if(el) el.classList.add('ok'); }
         if(s==='others'){ const bad=Object.entries(info.sent||{}).filter(([,v])=>v&&v.error); if(bad.length) g('go-msg').innerHTML=`<span class="err">Not sent yet on ${bad.map(([k])=>esc(ch(k).name)).join(', ')}; Equo retries when you open the coin.</span>`; } });
       // wait for every chain, then for the coin to be indexed
-      const main=q.coins.eth||q.coins[S.chains[0]];
-      for(let i=0;i<60;i++){ try{ const st=await V2.launchStatus(q); Object.entries(st).forEach(([k,v])=>{ const el=$(`[data-leg="${k}"]`); if(el&&v.launched) el.classList.add('ok'); }); if(Object.values(st).every(v=>v.launched)) break; }catch{} await new Promise(r=>setTimeout(r,5000)); }
+      const main=q.coins.eth||q.coins[S.chains.find(k=>k!=='sol')];
+      // the Solana leg takes a few rounds of the service's work: ask for another while it is not live
+      let nextRound=Date.now()+8000;
+      for(let i=0;i<120;i++){ try{ const st=await V2.launchStatus(q); Object.entries(st).forEach(([k,v])=>{ const el=$(`[data-leg="${k}"]`); if(el&&v.launched) el.classList.add('ok'); });
+          if(Object.values(st).every(v=>v.launched)) break;
+          if(st.sol&&!st.sol.launched&&Date.now()>nextRound){ nextRound=Date.now()+60000; V2.complete(q).then(()=>{ nextRound=Date.now()+3000; }).catch(()=>{ nextRound=Date.now()+10000; }); } }catch{}
+        await new Promise(r=>setTimeout(r,5000)); }
       step('others','ok'); step('done'); b.textContent='Opening your coin…';
       for(let i=0;i<30;i++){ try{ fetch('/api/tick').catch(()=>{}); await V2.detail(main); break; }catch{ await new Promise(r=>setTimeout(r,4000)); } }
       SP.go('/token/'+main.toLowerCase());
     }catch(e){ S.busy=false; b.disabled=false; btn(); g('go-msg').innerHTML=`<span class="err">${esc(SP.errMsg(e))}</span>`; $$('#steps div').forEach(d=>d.classList.remove('on')); }
   };
 
-  fees(); chains(); homes(); preview(); cost(); setInterval(()=>{ if(!S.busy&&document.visibilityState!=='hidden') cost(); },30000);
+  fees(); chains(); homes(); solRow(); preview(); cost(); setInterval(()=>{ if(!S.busy&&document.visibilityState!=='hidden') cost(); },30000);
 };
