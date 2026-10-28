@@ -198,6 +198,8 @@ async function main() {
   }
   const dep = await ethers.getContractAt("EquoCoinDeployer", C.coinDeployer);
   console.log("EquoCoinDeployer", C.coinDeployer);
+  // a node that lags can answer for a just-deployed address with no code yet
+  await until("coin deployer code", async () => (await ethers.provider.getCode(C.coinDeployer)) !== "0x");
   if ((await dep.endpoint()) === ethers.ZeroAddress) await sent("setEndpoint", dep.setEndpoint(chain.endpoint));
   await until("endpoint", async () => (await dep.endpoint()) === chain.endpoint);
   if (!C.coinCreator) {

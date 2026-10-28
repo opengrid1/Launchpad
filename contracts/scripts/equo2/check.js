@@ -5,7 +5,8 @@
 const { ethers } = require("ethers");
 const { existsSync, readFileSync } = require("fs");
 const { join } = require("path");
-const { CHAINS } = require("./chains");
+const { CHAINS, SOLANA } = require("./chains");
+const TAG = process.env.EQUO_TAG || "equo3";
 
 const art = (dir, name) => JSON.parse(readFileSync(join(__dirname, `../../artifacts/contracts/v4/equo2/${dir}/${name}.json`), "utf8")).abi;
 const HOOK = art("EquoFeeHook.sol", "EquoFeeHook");
@@ -18,7 +19,7 @@ const ROUTER = art("EquoSwapRouter.sol", "EquoSwapRouter");
   let bad = 0;
   for (const c of CHAINS) {
     if (only.length && !only.includes(c.name)) continue;
-    const file = join(__dirname, `../../deployments/equo2-${c.name}.json`);
+    const file = join(__dirname, `../../deployments/${TAG}-${c.name}.json`);
     if (!existsSync(file)) { console.log(`${c.name}: not deployed`); bad++; continue; }
     const d = JSON.parse(readFileSync(file, "utf8"));
     const C = d.contracts;
@@ -38,10 +39,11 @@ const ROUTER = art("EquoSwapRouter.sol", "EquoSwapRouter");
       eq("dep.creator", await dep.creatorContract(), C.coinCreator);
       eq("dep.admin", await dep.admin(), d.admin);
       eq("dep.setupBy", await dep.setupBy(), ethers.ZeroAddress);
-      for (const r of CHAINS) {
+      for (const r of [...CHAINS, SOLANA]) {
         if (r === c) continue;
         const route = await dep.route(r.eid);
         if (route.sendLib === ethers.ZeroAddress) fails.push(`no route to ${r.name}`);
+        if (r === SOLANA && (Number(route.receiveValue) === 0 || Number(route.receiveGas) < 100000)) fails.push("solana route without rent value or compute");
       }
       eq("fac.admin", await fac.admin(), d.admin);
       eq("fac.hook", await fac.hook(), C.hook);

@@ -1,0 +1,67 @@
+{
+  "contracts": {
+    "hook": "0x8b1F580e4150Ab7B67502C94c5169A8b810968cc",
+    "hookSalt": "0x00000000000000000000000000000000000000000000000000000000000035b9",
+    "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+    "coinCreator": "0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC",
+    "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+    "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9"
+  },
+  "gas": {
+    "hook": 133385645,
+    "coinDeployer": 104980021,
+    "setEndpoint": 98332,
+    "coinCreator": 198996160,
+    "setCreatorContract": 101492,
+    "route mainnet": 1138144,
+    "route bsc": 1138144,
+    "route arbitrum": 1138144,
+    "route base": 1138144,
+    "route unichain": 1138144,
+    "route hyperevm": 1138144,
+    "route monad": 1138144,
+    "route ink": 1138144,
+    "route solana": 1158308,
+    "factory": 183754008,
+    "coinDeployer.setFactory": 98112,
+    "hook.setFactory": 96261,
+    "router": 89010167,
+    "coinDeployer.endSetup": 65972
+  },
+  "network": "megaeth",
+  "chainId": 4326,
+  "eid": 30398,
+  "deployer": "0xA0783C5658F4D6cd90D89023F9Dd2Cc54CACaF0a",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "signer": "0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6",
+  "launcher": "0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67",
+  "poolManager": "0xaCB7e78fa05D562e0A5D3089ec896D57D057d38E",
+  "weth": "0x4200000000000000000000000000000000000006",
+  "lzEndpoint": "0x6F475642a6e85809B1c36Fa62763669b1b48DD5B",
+  "dvns": [
+    "0x282b3386571f7f794450d5789911a9804FA346b4",
+    "0xeEdE111103535e473451311e26C3E6660b0F77e1"
+  ],
+  "nativeUsdBand": [
+    "300",
+    "30000"
+  ],
+  "startBlock": 30358963,
+  "solDvns": [
+    "0x282b3386571f7f794450d5789911a9804FA346b4",
+    "0x8Ede21203E062D7D1EAeC11c4c72Ad04cDc15658"
+  ],
+  "routes": {
+    "mainnet": 30101,
+    "bsc": 30102,
+    "arbitrum": 30110,
+    "base": 30184,
+    "unichain": 30320,
+    "hyperevm": 30367,
+    "monad": 30390,
+    "ink": 30339,
+    "solana": 30168
+  },
+  "deployedAt": "2026-10-28T02:54:14.774Z"
+}

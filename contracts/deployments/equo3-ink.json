@@ -1,0 +1,66 @@
+{
+  "contracts": {
+    "hook": "0xf6c3cd41a659d130242f873fc26175b0C12968cc",
+    "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000002924",
+    "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+    "coinCreator": "0x4DFB13BC1264f7bcA5Ed464E338C1A5ADC47C5d0",
+    "factory": "0x183625c93080365556178346880D028B79036bAB",
+    "router": "0xe5D28aFa5402fcf37cc5FF0D42bD1EF522F4133b"
+  },
+  "gas": {
+    "hook": 2864845,
+    "coinDeployer": 2263021,
+    "coinCreator": 4410440,
+    "setCreatorContract": 50672,
+    "route mainnet": 993604,
+    "route bsc": 993604,
+    "route arbitrum": 993604,
+    "route base": 993604,
+    "route unichain": 993604,
+    "route hyperevm": 993604,
+    "route monad": 993604,
+    "route megaeth": 993616,
+    "route solana": 1013528,
+    "factory": 4138668,
+    "coinDeployer.setFactory": 47292,
+    "hook.setFactory": 45441,
+    "router": 1932807,
+    "coinDeployer.endSetup": 22582
+  },
+  "network": "ink",
+  "chainId": 57073,
+  "eid": 30339,
+  "deployer": "0xA0783C5658F4D6cd90D89023F9Dd2Cc54CACaF0a",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "signer": "0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6",
+  "launcher": "0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67",
+  "poolManager": "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32",
+  "weth": "0x4200000000000000000000000000000000000006",
+  "lzEndpoint": "0xca29f3A6f966Cb2fc0dE625F8f325c0C46dbE958",
+  "dvns": [
+    "0x174F2bA26f8ADeAfA82663bcf908288d5DbCa649",
+    "0xDd7B5E1dB4AaFd5C8EC3b764eFB8ed265Aa5445B"
+  ],
+  "nativeUsdBand": [
+    "300",
+    "30000"
+  ],
+  "startBlock": 59657511,
+  "solDvns": [
+    "0x174F2bA26f8ADeAfA82663bcf908288d5DbCa649",
+    "0x395B14700812cccC38b8e64F0a06ce2045FE9bA3"
+  ],
+  "routes": {
+    "mainnet": 30101,
+    "bsc": 30102,
+    "arbitrum": 30110,
+    "base": 30184,
+    "unichain": 30320,
+    "hyperevm": 30367,
+    "monad": 30390,
+    "megaeth": 30398,
+    "solana": 30168
+  },
+  "deployedAt": "2026-10-28T03:15:11.421Z"
+}
