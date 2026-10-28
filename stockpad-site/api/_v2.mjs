@@ -191,7 +191,26 @@ async function solRun(snap, signature) {
   } catch (e) {
     return { steps: done.size, of: leg.legStepIds(p).length, error: e.shortMessage || e.message };
   }
+  if (done.size >= leg.legStepIds(p).length) await solRecord(snap, p);
   return { steps: done.size, of: leg.legStepIds(p).length };
+}
+
+/** The coin's id across chains, as the indexer computes it: its Ethereum address, else the smallest chain:address. */
+function coinIdOf(snap) {
+  const members = snap.legs.filter((l) => l.eid !== SOL.lzEid).map((l) => `${byEid(l.eid).key}:${lc("0x" + l.coin.slice(26))}`);
+  return members.find((m) => m.startsWith("eth:")) || members.sort()[0];
+}
+
+/** A live Solana leg goes into the indexer's tokens, so the coin's chains include it. */
+async function solRecord(snap, p) {
+  const { leg } = await solana();
+  const sol = snap.legs.find((l) => l.eid === SOL.lzEid);
+  const creator = new (await solana()).web3.PublicKey(Buffer.from(sol.legSalt.slice(2), "hex")).toBase58();
+  const mint = p.mint.toBase58(), pool = leg.poolOf(p.mint, new (await solana()).web3.PublicKey(leg.WSOL)).toBase58();
+  await q(
+    `insert into tokens (chain, token, coin_id, creator, pair, pool_id, name, symbol, launch_block, launch_ts, launch_tx, launch_pair_usd, gen, fee_bps, launch_id, metadata_uri)
+     values ('sol', $1, $2, $3, $4, $5, $6, $7, 0, $8, '', $9, 2, $10, $11, $12) on conflict (chain, token) do nothing`,
+    [mint, coinIdOf(snap), creator, leg.WSOL, pool, snap.name, snap.symbol, Math.floor(Date.now() / 1000), sol.quoteUsd18.toString(), snap.feeBps, lc(snap.launchId), snap.metadataURI]);
 }
 
 // ------------------------------------------------------------------ snapshot

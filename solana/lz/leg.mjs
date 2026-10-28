@@ -17,6 +17,7 @@ import { plan, runSteps, storeOf } from './oft-setup.mjs';
 export const PROGRAM = new PublicKey(process.env.EQUO_SOL_PROGRAM || '8tQmVEDRd4gBXP2brdgKxtmzXbTD3y8uEbY1erS1UFKq');
 export const DAMM = new PublicKey('cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG');
 export const SOL_EID = 30168;
+export const WSOL = 'So11111111111111111111111111111111111111112';
 
 const disc = (name) => createHash('sha256').update(`global:${name}`).digest().subarray(0, 8);
 const u8 = (v) => Buffer.from([v]);
