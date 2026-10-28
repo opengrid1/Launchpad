@@ -13,6 +13,7 @@
 //   POST /api/v2/collect   the admin's collect on every chain of a coin, signed by the admin wallet; the service
 //                          (a collector on every factory) sends it, and the factory pays the admin.
 //
+// EQUO_FREE_CREATORS: wallets whose launches pay no launch fee (Equo's own).
 // Keys come from the environment only: EQUO_SIGNER_KEY (signs snapshots), EQUO_LAUNCHER_KEY (sends the EVM legs
 // and collects) and EQUO_SOL_LAUNCHER_KEY (a Solana keypair as a JSON byte array: sends the Solana leg). Nothing here holds user funds: the launch fee goes from the creator's wallet to the launcher
 // address by the factory itself.
@@ -282,7 +283,9 @@ async function quote(body, origin) {
     const m = mineLeg(c, launchId, creator, hash, 0);
     return { eid: c.lzEid, coin: ethers.zeroPadValue(m.coin, 32), legSalt: m.legSalt, pair: ethers.ZeroHash, slice: CHAIN_SUPPLY, quoteUsd18: ethers.parseEther(usd[c.key].toFixed(12)) };
   });
-  const fee = await launchFee(home, legKeys);
+  // Equo's own launches (wallets in EQUO_FREE_CREATORS) pay no launch fee: it would only go back to Equo's launcher
+  const free = String(process.env.EQUO_FREE_CREATORS || "").split(",").map(lc).filter(Boolean).includes(lc(creator));
+  const fee = free ? { usd: 0, perChain: {} } : await launchFee(home, legKeys);
   const homeC = byKey(home);
   const snap = {
     launchId, creator, name, symbol, metadataURI, feeBps,
