@@ -1,5 +1,6 @@
-// The Equo v2 chains: Uniswap v4 PoolManager, wrapped native coin, LayerZero endpoint, eid, libraries, executor
-// and DVNs (LayerZero Labs + Nethermind, both live on every chain here). Sources: the Equo v1 deployments
+// The Equo chains: Uniswap v4 PoolManager, wrapped native coin, LayerZero endpoint, eid, libraries, executor
+// and DVNs between them (LayerZero Labs + Twinstake, formerly Nethermind, both live on every chain here). LayerZero
+// sets no default DVNs between Ink and the others, so these pins are what makes those pathways work. Sources: the Equo v1 deployments
 // (PoolManager, WETH, endpoint) and LayerZero's metadata API (eids, libraries, executors, DVNs), 2026-10-27.
 const CHAINS = [
   { name: "mainnet", chainId: 1, eid: 30101, rpc: "https://ethereum-rpc.publicnode.com",
@@ -34,6 +35,12 @@ const CHAINS = [
     poolManager: "0xacb7e78fa05d562e0a5d3089ec896d57d057d38e", weth: "0x4200000000000000000000000000000000000006",
     endpoint: "0x6f475642a6e85809b1c36fa62763669b1b48dd5b",
     dvns: ["0x282b3386571f7f794450d5789911a9804fa346b4", "0xeede111103535e473451311e26c3e6660b0f77e1"] },
+  // Ink: Uniswap v4's PoolManager from Uniswap's deployments list (2026-10-28), LayerZero's endpoint and DVNs from
+  // its metadata (eid 30339)
+  { name: "ink", chainId: 57073, eid: 30339, rpc: "https://rpc-gel.inkonchain.com",
+    poolManager: "0x360e68faccca8ca495c1b759fd9eee466db9fb32", weth: "0x4200000000000000000000000000000000000006",
+    endpoint: "0xca29f3a6f966cb2fc0de625f8f325c0c46dbe958",
+    dvns: ["0x174f2ba26f8adeafa82663bcf908288d5dbca649", "0xdd7b5e1db4aafd5c8ec3b764efb8ed265aa5445b"] },
 ];
 // Toward Solana: LayerZero Labs + Horizen, the two of LayerZero's default verifiers on each EVM <-> Solana pathway
 // that also run on Solana (Nethermind does not). From LayerZero's on-chain defaults (lz-solana-defaults.json).
@@ -46,6 +53,7 @@ const SOL_DVNS = {
   hyperevm: ["0xBB83Ecf372CbB6daa629ea9A9A53BEC6d601F229", "0xc097ab8CD7b053326DFe9fB3E3a31a0CCe3B526f"],
   monad: ["0x282b3386571f7f794450d5789911a9804FA346b4", "0xdCdd4628F858b45260C31D6ad076bD2C3D3c2f73"],
   megaeth: ["0x282b3386571f7f794450d5789911a9804FA346b4", "0x8Ede21203E062D7D1EAeC11c4c72Ad04cDc15658"],
+  ink: ["0x174f2ba26f8adeafa82663bcf908288d5dbca649", "0x395b14700812cccc38b8e64f0a06ce2045fe9ba3"],
 };
 /// Solana as a remote: its eid, and its LayerZero Labs + Horizen DVNs (for the Solana side's own config).
 const SOLANA = { name: "solana", eid: 30168, dvns: ["4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb", "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"] };

@@ -92,5 +92,18 @@
   "Horizen": [
    "0x8ede21203e062d7d1eaec11c4c72ad04cdc15658"
   ]
+ },
+ "ink": {
+  "LayerZero Labs": [
+   "0x174f2ba26f8adeafa82663bcf908288d5dbca649",
+   "0x2cabf8f2c0aae35a771a1c19487684e94388b03a"
+  ],
+  "Horizen": [
+   "0x395b14700812cccc38b8e64f0a06ce2045fe9ba3",
+   "0x5fc8c440f7b9c7646c2904ac63c1c0ca714c733e"
+  ],
+  "Nethermind": [
+   "0x96ca3420bedd887cabdaba29c7dce6bad57af98b"
+  ]
  }
 }

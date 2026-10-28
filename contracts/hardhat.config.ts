@@ -139,6 +139,7 @@ const config: HardhatUserConfig = {
     arbitrum: { url: process.env.ARBITRUM_RPC_URL ?? "https://arb1.arbitrum.io/rpc", chainId: 42161, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
     monad: { url: process.env.MONAD_RPC_URL ?? "https://rpc.monad.xyz", chainId: 143, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
     megaeth: { url: process.env.MEGAETH_RPC_URL ?? "https://mainnet.megaeth.com/rpc", chainId: 4326, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    ink: { url: process.env.INK_RPC_URL ?? "https://rpc-gel.inkonchain.com", chainId: 57073, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
     unichain: { url: process.env.UNICHAIN_RPC_URL ?? "https://mainnet.unichain.org", chainId: 130, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
   },
   etherscan: {

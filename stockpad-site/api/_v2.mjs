@@ -24,7 +24,7 @@ import { loadChains } from "./_indexer/src/config.js";
 const ADMIN = "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b";
 const CHAIN_SUPPLY = 1_000_000_000n * 10n ** 9n;
 const CEILING = 1n << 156n;
-const LAUNCH_GAS = 8_200_000n; // one leg wired to eight chains (Solana included), measured on forks of every chain
+const LAUNCH_GAS = 8_700_000n; // one leg wired to nine chains (Solana included), measured on forks of every chain
 const FEE_MARGIN = 1.25; // over the gas the service pays
 const FEE_MIN_USD = 0.5, FEE_MAX_USD = 50;
 const SNAPSHOT_LIFE = 40 * 60;

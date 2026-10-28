@@ -128,6 +128,21 @@
       "defaultReceiveDVNs": [
         "0x747C741496a507E4B404b50463e691A8d692f6Ac"
       ]
+    },
+    "ink": {
+      "supported": true,
+      "sendLib": "0xbB2Ea70C9E858123480642Cf96acbcCE1372dCe1",
+      "receiveLib": "0xc02Ab410f0734EFa3F14628780e6e695156024C2",
+      "sendConfirmations": 15,
+      "receiveConfirmations": 20,
+      "executor": "0x173272739Bd7Aa6e4e214714048a9fE699453059",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x747C741496a507E4B404b50463e691A8d692f6Ac"
+      ],
+      "defaultReceiveDVNs": [
+        "0x747C741496a507E4B404b50463e691A8d692f6Ac"
+      ]
     }
   },
   "bsc": {
@@ -245,6 +260,21 @@
       "receiveLib": "0xB217266c3A98C8B2709Ee26836C98cf12f6cCEC1",
       "sendConfirmations": 20,
       "receiveConfirmations": 300,
+      "executor": "0x3ebD570ed38B1b3b4BC886999fcF507e9D584859",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0xe9b5E4f9395a60799F4F608Ba3ABebDfC0ee6D9C"
+      ],
+      "defaultReceiveDVNs": [
+        "0xe9b5E4f9395a60799F4F608Ba3ABebDfC0ee6D9C"
+      ]
+    },
+    "ink": {
+      "supported": true,
+      "sendLib": "0x9F8C645f2D0b2159767Bd6E0839DE4BE49e823DE",
+      "receiveLib": "0xB217266c3A98C8B2709Ee26836C98cf12f6cCEC1",
+      "sendConfirmations": 20,
+      "receiveConfirmations": 20,
       "executor": "0x3ebD570ed38B1b3b4BC886999fcF507e9D584859",
       "maxMessageSize": 10000,
       "defaultSendDVNs": [
@@ -378,6 +408,21 @@
       "defaultReceiveDVNs": [
         "0x758C419533ad64Ce9D3413BC8d3A97B026098EC1"
       ]
+    },
+    "ink": {
+      "supported": true,
+      "sendLib": "0x975bcD720be66659e3EB3C0e4F1866a3020E493A",
+      "receiveLib": "0x7B9E184e07a6EE1aC23eAe0fe8D6Be2f663f05e6",
+      "sendConfirmations": 20,
+      "receiveConfirmations": 20,
+      "executor": "0x31CAe3B7fB82d847621859fb1585353c5720660D",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x758C419533ad64Ce9D3413BC8d3A97B026098EC1"
+      ],
+      "defaultReceiveDVNs": [
+        "0x758C419533ad64Ce9D3413BC8d3A97B026098EC1"
+      ]
     }
   },
   "base": {
@@ -503,6 +548,21 @@
       "defaultReceiveDVNs": [
         "0x6498b0632f3834D7647367334838111c8C889703"
       ]
+    },
+    "ink": {
+      "supported": true,
+      "sendLib": "0xB5320B0B3a13cC860893E2Bd79FCd7e13484Dda2",
+      "receiveLib": "0xc70AB6f32772f59fBfc23889Caf4Ba3376C84bAf",
+      "sendConfirmations": 10,
+      "receiveConfirmations": 20,
+      "executor": "0x2CCA08ae69E0C44b18a57Ab2A87644234dAebaE4",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x6498b0632f3834D7647367334838111c8C889703"
+      ],
+      "defaultReceiveDVNs": [
+        "0x6498b0632f3834D7647367334838111c8C889703"
+      ]
     }
   },
   "unichain": {
@@ -610,6 +670,21 @@
       "defaultReceiveDVNs": [
         "0x6788f52439ACA6BFF597d3eeC2DC9a44B8FEE842"
       ]
+    },
+    "ink": {
+      "supported": true,
+      "sendLib": "0xC39161c743D0307EB9BCc9FEF03eeb9Dc4802de7",
+      "receiveLib": "0xe1844c5D63a9543023008D332Bd3d2e6f1FE1043",
+      "sendConfirmations": 20,
+      "receiveConfirmations": 20,
+      "executor": "0x4208D6E27538189bB48E603D6123A94b8Abe0A0b",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x6788f52439ACA6BFF597d3eeC2DC9a44B8FEE842"
+      ],
+      "defaultReceiveDVNs": [
+        "0x6788f52439ACA6BFF597d3eeC2DC9a44B8FEE842"
+      ]
     }
   },
   "hyperevm": {
@@ -709,6 +784,21 @@
       "receiveLib": "0x7cacBe439EaD55fa1c22790330b12835c6884a91",
       "sendConfirmations": 1,
       "receiveConfirmations": 300,
+      "executor": "0x41Bdb4aa4A63a5b2Efc531858d3118392B1A1C3d",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0xcCE466a522984415bC91338c232d98869193D46e"
+      ],
+      "defaultReceiveDVNs": [
+        "0xcCE466a522984415bC91338c232d98869193D46e"
+      ]
+    },
+    "ink": {
+      "supported": true,
+      "sendLib": "0xfd76d9CB0Bac839725aB79127E7411fe71b1e3CA",
+      "receiveLib": "0x7cacBe439EaD55fa1c22790330b12835c6884a91",
+      "sendConfirmations": 1,
+      "receiveConfirmations": 20,
       "executor": "0x41Bdb4aa4A63a5b2Efc531858d3118392B1A1C3d",
       "maxMessageSize": 10000,
       "defaultSendDVNs": [
@@ -830,6 +920,21 @@
       "defaultReceiveDVNs": [
         "0x6788f52439ACA6BFF597d3eeC2DC9a44B8FEE842"
       ]
+    },
+    "ink": {
+      "supported": true,
+      "sendLib": "0xC39161c743D0307EB9BCc9FEF03eeb9Dc4802de7",
+      "receiveLib": "0xe1844c5D63a9543023008D332Bd3d2e6f1FE1043",
+      "sendConfirmations": 4,
+      "receiveConfirmations": 20,
+      "executor": "0x4208D6E27538189bB48E603D6123A94b8Abe0A0b",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x6788f52439ACA6BFF597d3eeC2DC9a44B8FEE842"
+      ],
+      "defaultReceiveDVNs": [
+        "0x6788f52439ACA6BFF597d3eeC2DC9a44B8FEE842"
+      ]
     }
   },
   "megaeth": {
@@ -936,6 +1041,143 @@
       ],
       "defaultReceiveDVNs": [
         "0x6788f52439ACA6BFF597d3eeC2DC9a44B8FEE842"
+      ]
+    },
+    "ink": {
+      "supported": true,
+      "sendLib": "0xC39161c743D0307EB9BCc9FEF03eeb9Dc4802de7",
+      "receiveLib": "0xe1844c5D63a9543023008D332Bd3d2e6f1FE1043",
+      "sendConfirmations": 300,
+      "receiveConfirmations": 20,
+      "executor": "0x4208D6E27538189bB48E603D6123A94b8Abe0A0b",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x6788f52439ACA6BFF597d3eeC2DC9a44B8FEE842"
+      ],
+      "defaultReceiveDVNs": [
+        "0x6788f52439ACA6BFF597d3eeC2DC9a44B8FEE842"
+      ]
+    }
+  },
+  "ink": {
+    "mainnet": {
+      "supported": true,
+      "sendLib": "0x76111DE813F83AAAdBD62773Bf41247634e2319a",
+      "receiveLib": "0x473132bb594caEF281c68718F4541f73FE14Dc89",
+      "sendConfirmations": 20,
+      "receiveConfirmations": 15,
+      "executor": "0xFEbCF17b11376C724AB5a5229803C6e838b6eAe5",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ],
+      "defaultReceiveDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ]
+    },
+    "bsc": {
+      "supported": true,
+      "sendLib": "0x76111DE813F83AAAdBD62773Bf41247634e2319a",
+      "receiveLib": "0x473132bb594caEF281c68718F4541f73FE14Dc89",
+      "sendConfirmations": 20,
+      "receiveConfirmations": 20,
+      "executor": "0xFEbCF17b11376C724AB5a5229803C6e838b6eAe5",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ],
+      "defaultReceiveDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ]
+    },
+    "arbitrum": {
+      "supported": true,
+      "sendLib": "0x76111DE813F83AAAdBD62773Bf41247634e2319a",
+      "receiveLib": "0x473132bb594caEF281c68718F4541f73FE14Dc89",
+      "sendConfirmations": 20,
+      "receiveConfirmations": 20,
+      "executor": "0xFEbCF17b11376C724AB5a5229803C6e838b6eAe5",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ],
+      "defaultReceiveDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ]
+    },
+    "base": {
+      "supported": true,
+      "sendLib": "0x76111DE813F83AAAdBD62773Bf41247634e2319a",
+      "receiveLib": "0x473132bb594caEF281c68718F4541f73FE14Dc89",
+      "sendConfirmations": 20,
+      "receiveConfirmations": 10,
+      "executor": "0xFEbCF17b11376C724AB5a5229803C6e838b6eAe5",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ],
+      "defaultReceiveDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ]
+    },
+    "unichain": {
+      "supported": true,
+      "sendLib": "0x76111DE813F83AAAdBD62773Bf41247634e2319a",
+      "receiveLib": "0x473132bb594caEF281c68718F4541f73FE14Dc89",
+      "sendConfirmations": 20,
+      "receiveConfirmations": 20,
+      "executor": "0xFEbCF17b11376C724AB5a5229803C6e838b6eAe5",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ],
+      "defaultReceiveDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ]
+    },
+    "hyperevm": {
+      "supported": true,
+      "sendLib": "0x76111DE813F83AAAdBD62773Bf41247634e2319a",
+      "receiveLib": "0x473132bb594caEF281c68718F4541f73FE14Dc89",
+      "sendConfirmations": 20,
+      "receiveConfirmations": 1,
+      "executor": "0xFEbCF17b11376C724AB5a5229803C6e838b6eAe5",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ],
+      "defaultReceiveDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ]
+    },
+    "monad": {
+      "supported": true,
+      "sendLib": "0x76111DE813F83AAAdBD62773Bf41247634e2319a",
+      "receiveLib": "0x473132bb594caEF281c68718F4541f73FE14Dc89",
+      "sendConfirmations": 20,
+      "receiveConfirmations": 4,
+      "executor": "0xFEbCF17b11376C724AB5a5229803C6e838b6eAe5",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ],
+      "defaultReceiveDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ]
+    },
+    "megaeth": {
+      "supported": true,
+      "sendLib": "0x76111DE813F83AAAdBD62773Bf41247634e2319a",
+      "receiveLib": "0x473132bb594caEF281c68718F4541f73FE14Dc89",
+      "sendConfirmations": 20,
+      "receiveConfirmations": 300,
+      "executor": "0xFEbCF17b11376C724AB5a5229803C6e838b6eAe5",
+      "maxMessageSize": 10000,
+      "defaultSendDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
+      ],
+      "defaultReceiveDVNs": [
+        "0x5ba261D2b595966A81548B4FbE3851a6dA9Cf92c"
       ]
     }
   }

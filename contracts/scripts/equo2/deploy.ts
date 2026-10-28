@@ -45,12 +45,12 @@ const CHAIN_SUPPLY = 1_000_000_000n * 10n ** 9n;
 const CEILING = 1n << 156n;
 /// USD band a snapshot's native price must sit in, per chain (fixed in the factory for good: wide on purpose).
 const NATIVE_BAND: Record<string, [string, string]> = {
-  mainnet: ["300", "30000"], arbitrum: ["300", "30000"], base: ["300", "30000"], unichain: ["300", "30000"], megaeth: ["300", "30000"],
+  mainnet: ["300", "30000"], arbitrum: ["300", "30000"], base: ["300", "30000"], unichain: ["300", "30000"], megaeth: ["300", "30000"], ink: ["300", "30000"],
   bsc: ["70", "7000"], hyperevm: ["5", "1000"], monad: ["0.001", "1"],
 };
 /// A rough native price for the rehearsal launch only.
 const REHEARSAL_USD: Record<string, string> = {
-  mainnet: "2300", arbitrum: "2300", base: "2300", unichain: "2300", megaeth: "2300", bsc: "737", hyperevm: "77", monad: "0.026",
+  mainnet: "2300", arbitrum: "2300", base: "2300", unichain: "2300", megaeth: "2300", ink: "2300", bsc: "737", hyperevm: "77", monad: "0.026",
 };
 
 const coder = ethers.AbiCoder.defaultAbiCoder();
@@ -273,7 +273,7 @@ async function main() {
   const sig = await rehearsalSigner!.signTypedData({ name: "Equo", version: "2" }, TYPES, snap);
   const devBuy = ethers.parseEther((18 / Number(REHEARSAL_USD[chain.name])).toFixed(12)); // $8 launch fee + $10 buy
   const lr = await (await factory.launch(snap, sig, 0n, { value: devBuy })).wait();
-  console.log(`rehearsal launch (9 legs, 8 routes wired incl. Solana, $8 fee, $10 dev buy): ${lr!.gasUsed} gas, coin ${mine.coin}`);
+  console.log(`rehearsal launch (10 legs, 9 routes wired incl. Solana, $8 fee, $10 dev buy): ${lr!.gasUsed} gas, coin ${mine.coin}`);
   const router = await ethers.getContractAt("EquoSwapRouter", C.router);
   const usd60 = ethers.parseEther((60 / Number(REHEARSAL_USD[chain.name])).toFixed(12));
   const br = await (await router.buy(mine.coin, "0x", 0n, { value: usd60 })).wait();
@@ -281,14 +281,17 @@ async function main() {
   console.log(`$60 buy: ${br!.gasUsed} gas; pot last buyer ${pot.lastBuyer === deployer.address ? "set" : "NOT SET"}, pot ${pot.amount}`);
   const coin = await ethers.getContractAt("EquoCoin", mine.coin);
   for (const remote of [...CHAINS, SOLANA]) if (remote !== chain && (await coin.peers(remote.eid)) === ethers.ZeroHash) throw new Error(`no peer to ${remote.name}`);
-  console.log("peers wired to all 7 other chains and Solana; coin owner", await coin.owner());
+  console.log("peers wired to every other chain and Solana; coin owner", await coin.owner());
   const sq = await coin.quoteSend({ dstEid: SOLANA.eid, to: ethers.id("a solana wallet"), amountLD: 10n ** 12n, minAmountLD: 0n, extraOptions: "0x", composeMsg: "0x", oftCmd: "0x" }, false);
   console.log(`bridge quote to solana: ${ethers.formatEther(sq.nativeFee)} native`);
-  // a bridge quote through the real endpoint, libraries, DVNs and executor
-  const remote = CHAINS.find((c: any) => c !== chain && c.name !== "megaeth")!;
-  const sp = { dstEid: remote.eid, to: ethers.zeroPadValue(deployer.address, 32), amountLD: 10n ** 12n, minAmountLD: 0n, extraOptions: "0x", composeMsg: "0x", oftCmd: "0x" };
-  const q = await coin.quoteSend(sp, false);
-  console.log(`bridge quote to ${remote.name}: ${ethers.formatEther(q.nativeFee)} native`);
+  // a bridge quote to every other chain through the real endpoint, libraries, DVNs and executor: a worker that
+  // does not serve a pathway refuses to quote it
+  for (const remote of CHAINS) {
+    if (remote === chain) continue;
+    const sp = { dstEid: remote.eid, to: ethers.zeroPadValue(deployer.address, 32), amountLD: 10n ** 12n, minAmountLD: 0n, extraOptions: "0x", composeMsg: "0x", oftCmd: "0x" };
+    const q = await coin.quoteSend(sp, false);
+    console.log(`bridge quote to ${remote.name}: ${ethers.formatEther(q.nativeFee)} native`);
+  }
   console.log(JSON.stringify({ chain: chain.name, deployGas: gasTotal.toString(), launchGas: lr!.gasUsed.toString(), buyGas: br!.gasUsed.toString() }));
 }
 

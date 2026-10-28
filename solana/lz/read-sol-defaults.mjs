@@ -3,7 +3,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { UlnPDADeriver, UlnProgram } from '@layerzerolabs/lz-solana-sdk-v2';
 const ULN = new PublicKey('7a4WjyR8VZ7yZz5XJAKm39BUGn5iT9CKcv2pmG9tdXVH');
 const cx = new Connection(process.env.SOL_RPC || 'https://api.mainnet-beta.solana.com', 'confirmed');
-const EIDS = { mainnet: 30101, bsc: 30102, arbitrum: 30110, base: 30184, unichain: 30320, hyperevm: 30367, monad: 30390, megaeth: 30398 };
+const EIDS = { mainnet: 30101, bsc: 30102, arbitrum: 30110, base: 30184, unichain: 30320, hyperevm: 30367, monad: 30390, megaeth: 30398, ink: 30339 };
 const d = new UlnPDADeriver(ULN);
 const out = {};
 for (const [name, eid] of Object.entries(EIDS)) {

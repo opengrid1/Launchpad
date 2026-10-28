@@ -150,5 +150,24 @@
     ],
     "executor": "AwrbHeCyniXaQhiJZkLhgWdUCteeWSGaSN1sTfLiY7xK",
     "maxMessageSize": 10000
+  },
+  "ink": {
+    "eid": 30339,
+    "sendConfirmations": 32,
+    "receiveConfirmations": 20,
+    "sendDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "receiveDvns": [
+      "4VDjp6XQaxoZf5RGwiPU9NR1EXSZn2TP4ATMmiSzLfhb",
+      "7jMeX5mzXnSSKYd8DxBDP4xMnkNFZZZm5W28FWUTbwU3",
+      "GPjyWr8vCotGuFubDpTxDxy9Vj1ZeEN4F2dwRmFiaGab",
+      "HR9NQKK1ynW9NzgdM37dU5CBtqRHTukmbMKS7qkwSkHX"
+    ],
+    "executor": "AwrbHeCyniXaQhiJZkLhgWdUCteeWSGaSN1sTfLiY7xK",
+    "maxMessageSize": 10000
   }
 }

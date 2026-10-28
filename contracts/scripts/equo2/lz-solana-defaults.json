@@ -182,5 +182,28 @@
     ],
     "optSend": [],
     "optThreshold": 0
+  },
+  "ink": {
+    "supported": true,
+    "sendLib": "0x76111DE813F83AAAdBD62773Bf41247634e2319a",
+    "receiveLib": "0x473132bb594caEF281c68718F4541f73FE14Dc89",
+    "sendConfirmations": 20,
+    "receiveConfirmations": 32,
+    "executor": "0xFEbCF17b11376C724AB5a5229803C6e838b6eAe5",
+    "maxMessageSize": 200,
+    "defaultSendDVNs": [
+      "0x174F2bA26f8ADeAfA82663bcf908288d5DbCa649",
+      "0x1E4CE74ccf5498B19900649D9196e64BAb592451",
+      "0x395B14700812cccC38b8e64F0a06ce2045FE9bA3",
+      "0xDd7B5E1dB4AaFd5C8EC3b764eFB8ed265Aa5445B"
+    ],
+    "defaultReceiveDVNs": [
+      "0x174F2bA26f8ADeAfA82663bcf908288d5DbCa649",
+      "0x1E4CE74ccf5498B19900649D9196e64BAb592451",
+      "0x395B14700812cccC38b8e64F0a06ce2045FE9bA3",
+      "0xDd7B5E1dB4AaFd5C8EC3b764eFB8ed265Aa5445B"
+    ],
+    "optSend": [],
+    "optThreshold": 0
   }
 }

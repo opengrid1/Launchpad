@@ -13,11 +13,13 @@ const EP = [
 const coder = ethers.AbiCoder.defaultAbiCoder();
 const ULN = "tuple(uint64 confirmations,uint8 requiredDVNCount,uint8 optionalDVNCount,uint8 optionalDVNThreshold,address[] requiredDVNs,address[] optionalDVNs)";
 const PROBE = "0x000000000000000000000000000000000000dEaD";
+/// RPCs that answer many calls in a row better than the ones in chains.js
+const RPC = { mainnet: "https://eth.drpc.org", hyperevm: "https://rpc.hypurrscan.io", unichain: "https://unichain-rpc.publicnode.com", bsc: "https://bsc-rpc.publicnode.com" };
 
 (async () => {
   const out = {};
   for (const a of CHAINS) {
-    const p = new ethers.JsonRpcProvider(a.rpc, a.chainId, { staticNetwork: true });
+    const p = new ethers.JsonRpcProvider(RPC[a.name] || a.rpc, a.chainId, { staticNetwork: true });
     const ep = new ethers.Contract(a.endpoint, EP, p);
     out[a.name] = {};
     for (const b of CHAINS) {
