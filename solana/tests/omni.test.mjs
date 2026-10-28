@@ -110,7 +110,7 @@ const SOL_USD18 = 150n * 10n ** 18n;
 
 /** A four-leg snapshot (Ethereum, BNB, Solana, HyperEVM) whose Solana leg is this escrow's OFT store. */
 async function snapshot(creatorSol, opts = {}) {
-  const escrow = Keypair.generate();
+  const escrow = opts.escrow ?? Keypair.generate();
   const store = pda([Buffer.from('OFT'), escrow.publicKey.toBuffer()], OFT_PROGRAM);
   const solSlice = opts.solSlice ?? CHAIN_SUPPLY;
   const rest = CHAIN_SUPPLY;
@@ -384,5 +384,31 @@ if (process.env.OFT) {
     assert.equal(String(st.admin), lzSetup.NOBODY.toBase58());
     // the old admin can no longer set a peer, nor wire a new chain
     await assert.rejects(lzSetup.wire(umi, signer, store, 30184, '0x' + '11'.repeat(32)));
+  });
+
+  test('service leg: post, launch and the OFT setup run as resumable steps', async () => {
+    const leg = await import('../lz/leg.mjs');
+    const launchId = ethers.hexlify(ethers.randomBytes(32));
+    const keys = leg.legKeys(Buffer.from('test secret'), launchId);
+    // the same keys again from the same secret and launch id
+    assert.equal(leg.legKeys(Buffer.from('test secret'), launchId).store.toBase58(), keys.store.toBase58());
+    const s = await snapshot(creator.publicKey, { escrow: keys.escrow });
+    s.snap.launchId = launchId;
+    s.sig = await attestor.signTypedData(DOMAIN, TYPES, s.snap);
+    const { umi, signer } = lzSetup.umiFor(RPC, launcher);
+    const p = leg.legPlan({ cx, ethers, launcher, umi, signer, snap: s.snap, sig: s.sig, keys, feeTo: launcher.publicKey });
+    const all = leg.legStepIds(p);
+    // a first call that runs out of time after a few steps
+    const done = new Set();
+    let n = 0;
+    await leg.runLeg(umi, p, done, { onDone: async () => { if (++n === 4) throw new Error('out of time'); } }).catch((e) => assert.match(e.message, /out of time/));
+    assert.equal(done.size, 4);
+    // the next call picks up where it stopped
+    await leg.runLeg(umi, p, done);
+    assert.deepEqual([...done], all);
+    const mint = await getMint(cx, keys.mint.publicKey, 'confirmed', TOKEN_2022_PROGRAM_ID);
+    assert.equal(mint.mintAuthority.toBase58(), keys.store.toBase58());
+    const { oft } = await import('../lz/node_modules/@layerzerolabs/oft-v2-solana-sdk/dist/index.mjs');
+    assert.equal(String((await oft.accounts.fetchOFTStore(umi, keys.store.toBase58())).admin), lzSetup.NOBODY.toBase58());
   });
 }

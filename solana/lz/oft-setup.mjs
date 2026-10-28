@@ -43,60 +43,94 @@ export function umiFor(rpcUrl, keypair) {
 /** The OFT store of an escrow: the Solana leg's `coin` in a snapshot. */
 export const storeOf = (escrow) => PublicKey.findProgramAddressSync([Buffer.from('OFT'), escrow.toBuffer()], OFT_PROGRAM)[0];
 
-async function run(umi, items, label) {
-  // a few instructions per transaction keeps each under the size limit
-  for (let i = 0; i < items.length; i += 3) {
-    let tb = transactionBuilder();
-    for (const w of items.slice(i, i + 3)) tb = tb.add(w);
-    await tb.sendAndConfirm(umi, { send: { skipPreflight: false }, confirm: { commitment: 'confirmed' } });
-  }
-  if (label) console.log(label);
+/** One transaction of up to three instructions. */
+async function send(umi, items) {
+  let tb = transactionBuilder();
+  for (const w of items) tb = tb.add(w);
+  await tb.sendAndConfirm(umi, { send: { skipPreflight: false }, confirm: { commitment: 'confirmed' } });
 }
 
-/** Step 1. `escrowKeypair` is the web3 Keypair whose store the snapshot named. */
-export async function init(umi, signer, mint, escrowKeypair) {
-  const escrow = createSignerFromKeypair(umi, fromWeb3JsKeypair(escrowKeypair));
-  await run(umi, [oft.initOft({ payer: signer, admin: signer.publicKey, mint: umiKey(mint.toBase58()), escrow }, 'Native', SHARED_DECIMALS, { oft: umiKey(OFT_PROGRAM.toBase58()), token: umiKey(TOKEN_2022.toBase58()) })], 'oft store initialised');
-  return storeOf(escrowKeypair.publicKey);
-}
+const peerBytesOf = (peer) => Uint8Array.from(Buffer.from(peer.replace(/^0x/, '').padStart(64, '0'), 'hex'));
 
-/** Step 2, for one EVM chain: `peer` is the EVM coin address as 32 bytes. */
-export async function wire(umi, signer, store, eid, peer) {
-  const d = byEid[eid];
-  if (!d) throw new Error(`no LayerZero defaults for eid ${eid}`);
-  const oftStore = umiKey(store.toBase58()), admin = signer, msgLib = umiKey(ULN.toBase58());
-  const peerBytes = Uint8Array.from(Buffer.from(peer.replace(/^0x/, '').padStart(64, '0'), 'hex'));
+/**
+ * The whole LayerZero setup of one coin as named steps, one transaction each, in order: `init`, then four steps per
+ * EVM chain (`<eid>:libs`, `<eid>:lib-set`, `<eid>:cfg`, `<eid>:peer`), then `seal:delegate` and `seal:admin`.
+ * `peers` maps each EVM eid to the EVM coin address (hex, 20 or 32 bytes). Past `init` only the store is needed: pass
+ * `store` instead of `escrowKeypair`.
+ */
+export function plan(umi, signer, { mint, escrowKeypair, peers, store: given }) {
+  const store = given ?? storeOf(escrowKeypair.publicKey);
+  const oftStore = umiKey(store.toBase58()), admin = signer, msgLib = umiKey(ULN.toBase58()), oftProgram = umiKey(OFT_PROGRAM.toBase58());
   const uln = (confirmations) => ({
     confirmations: BigInt(confirmations), requiredDvnCount: DVNS.length, optionalDvnCount: 0, optionalDvnThreshold: 0,
     requiredDvns: DVNS.map((k) => umiKey(k.toBase58())), optionalDvns: [],
   });
-  await run(umi, [
-    oft.initSendLibrary({ admin, oftStore }, eid),
-    oft.initReceiveLibrary({ admin, oftStore }, eid),
-    oft.initOAppNonce({ admin, oftStore }, eid, peerBytes),
-    oft.initConfig({ admin, oftStore, payer: signer }, eid, { msgLib }),
-    oft.setSendLibrary({ admin, oftStore }, { sendLibraryProgram: msgLib, remoteEid: eid }),
-    oft.setReceiveLibrary({ admin, oftStore }, { receiveLibraryProgram: msgLib, remoteEid: eid }),
-  ]);
-  const cfg = await Promise.all([
-    oft.setConfig(umi.rpc, { signer, oftStore }, { remoteEid: eid, configType: SetConfigType.SEND_ULN, config: uln(d.sendConfirmations) }, { msgLib }),
-    oft.setConfig(umi.rpc, { signer, oftStore }, { remoteEid: eid, configType: SetConfigType.RECEIVE_ULN, config: uln(d.receiveConfirmations) }, { msgLib }),
-    oft.setConfig(umi.rpc, { signer, oftStore }, { remoteEid: eid, configType: SetConfigType.EXECUTOR, config: { maxMessageSize: d.maxMessageSize, executor: umiKey(d.executor) } }, { msgLib }),
-  ]);
   const opts = Options.newOptions().addExecutorLzReceiveOption(EVM_RECEIVE_GAS, 0).toBytes();
-  const oftProgram = umiKey(OFT_PROGRAM.toBase58());
-  await run(umi, [
-    ...cfg,
-    oft.setPeerConfig({ admin, oftStore }, { __kind: 'PeerAddress', peer: peerBytes, remote: eid }, oftProgram),
-    oft.setPeerConfig({ admin, oftStore }, { __kind: 'EnforcedOptions', send: opts, sendAndCall: opts, remote: eid }, oftProgram),
-  ], `wired eid ${eid}`);
+  const steps = [{
+    id: 'init',
+    build: async () => [oft.initOft({ payer: signer, admin: signer.publicKey, mint: umiKey(mint.toBase58()), escrow: createSignerFromKeypair(umi, fromWeb3JsKeypair(escrowKeypair)) },
+      'Native', SHARED_DECIMALS, { oft: oftProgram, token: umiKey(TOKEN_2022.toBase58()) })],
+  }];
+  for (const [eidS, peer] of Object.entries(peers)) {
+    const eid = Number(eidS), d = byEid[eid];
+    if (!d) throw new Error(`no LayerZero defaults for eid ${eid}`);
+    const pb = peerBytesOf(peer);
+    steps.push(
+      { id: `${eid}:libs`, build: async () => [oft.initSendLibrary({ admin, oftStore }, eid), oft.initReceiveLibrary({ admin, oftStore }, eid), oft.initOAppNonce({ admin, oftStore }, eid, pb)] },
+      { id: `${eid}:lib-set`, build: async () => [oft.initConfig({ admin, oftStore, payer: signer }, eid, { msgLib }),
+        oft.setSendLibrary({ admin, oftStore }, { sendLibraryProgram: msgLib, remoteEid: eid }), oft.setReceiveLibrary({ admin, oftStore }, { receiveLibraryProgram: msgLib, remoteEid: eid })] },
+      { id: `${eid}:cfg`, build: async () => Promise.all([
+        oft.setConfig(umi.rpc, { signer, oftStore }, { remoteEid: eid, configType: SetConfigType.SEND_ULN, config: uln(d.sendConfirmations) }, { msgLib }),
+        oft.setConfig(umi.rpc, { signer, oftStore }, { remoteEid: eid, configType: SetConfigType.RECEIVE_ULN, config: uln(d.receiveConfirmations) }, { msgLib }),
+        oft.setConfig(umi.rpc, { signer, oftStore }, { remoteEid: eid, configType: SetConfigType.EXECUTOR, config: { maxMessageSize: d.maxMessageSize, executor: umiKey(d.executor) } }, { msgLib }),
+      ]) },
+      { id: `${eid}:peer`, build: async () => [oft.setPeerConfig({ admin, oftStore }, { __kind: 'PeerAddress', peer: pb, remote: eid }, oftProgram),
+        oft.setPeerConfig({ admin, oftStore }, { __kind: 'EnforcedOptions', send: opts, sendAndCall: opts, remote: eid }, oftProgram)] },
+    );
+  }
+  steps.push(
+    { id: 'seal:delegate', build: async () => [oft.setOFTConfig({ oftStore, admin: signer }, { __kind: 'Delegate', delegate: umiKey(NOBODY.toBase58()) }, { oft: oftProgram })] },
+    { id: 'seal:admin', build: async () => [oft.setOFTConfig({ oftStore, admin: signer }, { __kind: 'Admin', admin: umiKey(NOBODY.toBase58()) }, { oft: oftProgram })] },
+  );
+  return { store, steps };
+}
+
+/**
+ * Runs the steps not in `done` (a Set of ids), in order, until `deadline` (ms since epoch); returns the ids done.
+ * `onDone(id)` is called after each confirmed step, so a caller can record progress and resume later.
+ */
+export async function runSteps(umi, steps, done = new Set(), { deadline = Infinity, onDone = async () => {} } = {}) {
+  for (const st of steps) {
+    if (done.has(st.id)) continue;
+    if (Date.now() > deadline) break;
+    await send(umi, await st.build());
+    done.add(st.id);
+    await onDone(st.id);
+  }
+  return done;
+}
+
+/** The steps of `plan` whose ids match `re`. */
+const only = (steps, re) => steps.filter((s) => re.test(s.id));
+
+/** Step 1. `escrowKeypair` is the web3 Keypair whose store the snapshot named. */
+export async function init(umi, signer, mint, escrowKeypair) {
+  const { store, steps } = plan(umi, signer, { mint, escrowKeypair, peers: {} });
+  await runSteps(umi, only(steps, /^init$/));
+  return store;
+}
+
+/** Step 2, for one EVM chain: `peer` is the EVM coin address as 32 bytes. */
+export async function wire(umi, signer, store, eid, peer) {
+  const { steps } = plan(umi, signer, { store, peers: { [eid]: peer } });
+  const st = only(steps, new RegExp(`^${eid}:`));
+  for (const s of st) await send(umi, await s.build());
 }
 
 /** Step 3. */
 export async function seal(umi, signer, store) {
-  const oftStore = umiKey(store.toBase58()), programs = { oft: umiKey(OFT_PROGRAM.toBase58()) };
-  await run(umi, [oft.setOFTConfig({ oftStore, admin: signer }, { __kind: 'Delegate', delegate: umiKey(NOBODY.toBase58()) }, programs)]);
-  await run(umi, [oft.setOFTConfig({ oftStore, admin: signer }, { __kind: 'Admin', admin: umiKey(NOBODY.toBase58()) }, programs)], 'sealed');
+  const { steps } = plan(umi, signer, { store, peers: {} });
+  for (const s of only(steps, /^seal:/)) await send(umi, await s.build());
 }
 
 /** Reads back what a store is wired to: per eid, the peer and the endpoint config. */
