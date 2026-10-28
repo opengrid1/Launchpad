@@ -1,0 +1,17 @@
+{
+  "status": "deployed",
+  "cluster": "mainnet-beta",
+  "deployedAt": "2026-10-28",
+  "program": "8tQmVEDRd4gBXP2brdgKxtmzXbTD3y8uEbY1erS1UFKq",
+  "config": "FVTgT6rD8qTuKaFgKaCW7xrXeeU7ybArsNEfwTLhZH6M",
+  "oftProgram": "RuyLPEWoYG2b6mGb6nvKotoNhW2F9KdhrjRghaRdGkz",
+  "upgradeAuthority": "B8w7dWCGkCani81yGpnCwi7ypeXNcNBEP69DwmoGwsqW",
+  "admin": "J5UToKRtUypmd58DPP3s1ENQSAwNmSd4xnNbmUiEvyui",
+  "feeRecipient": "J5UToKRtUypmd58DPP3s1ENQSAwNmSd4xnNbmUiEvyui",
+  "launcher": "BmvCWd28LbTXRii4vvH42hT7eg17DUtY8UqrF2utwizE",
+  "signer": "0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6",
+  "solUsdBand": ["10", "10000"],
+  "initSignature": "5niKksrp1v6T1zLfyRHoS5EssD9FrX8uEjBbPdjh5LXzoUXa7rrmovaMghpqHV54YS1S472nkHKzEVZFLsjPNVrW",
+  "oftSha256": "ec67b2ffddb0b0dd3291324c75ec19352deb5b01f5d6ced49df0adc9a830c733",
+  "programSha256": "844cd082c4bb922117d64f67591f90ab72b7da321a622a47c4a6d54fa9396267"
+}

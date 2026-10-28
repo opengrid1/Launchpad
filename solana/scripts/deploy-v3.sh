@@ -24,8 +24,10 @@ echo "OFT program $(size $OFT) bytes, Equo program $(size $EQUO) bytes"
 echo "rent: OFT $(solana rent $(( $(size $OFT) + 45 )) --url $URL | head -1), Equo $(solana rent $(( $(size $EQUO) + 45 )) --url $URL | head -1)"
 [ "$1" = "--send" ] || { echo "dry run: add --send"; exit 0; }
 FEE="--with-compute-unit-price 50000"
-solana program deploy $OFT --program-id .keys/oft-v3-program.json --keypair $DEP --fee-payer $DEP --max-len $(size $OFT) --url $URL $FEE
-solana program deploy $EQUO --program-id .keys/equo-v3-program.json --keypair $DEP --fee-payer $DEP --max-len $(size $EQUO) --url $URL $FEE
+# public RPCs drop some of the ~380 write transactions: send them over RPC and retry
+RETRY="--use-rpc --max-sign-attempts 100"
+solana program deploy $OFT --program-id .keys/oft-v3-program.json --keypair $DEP --fee-payer $DEP --max-len $(size $OFT) --url $URL $FEE $RETRY
+solana program deploy $EQUO --program-id .keys/equo-v3-program.json --keypair $DEP --fee-payer $DEP --max-len $(size $EQUO) --url $URL $FEE $RETRY
 RPC=$URL AUTHORITY=$DEP node scripts/init-omni.mjs --send
 solana transfer $EQUO_SOL_LAUNCHER_ADDRESS ${LAUNCHER_SOL:-1} --allow-unfunded-recipient --keypair $DEP --fee-payer $DEP --url $URL $FEE
 echo "deployer left: $(solana balance $(solana-keygen pubkey $DEP) --url $URL)"

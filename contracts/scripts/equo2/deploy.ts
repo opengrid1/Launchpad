@@ -132,6 +132,9 @@ async function main() {
     network: chain.name, chainId, eid: chain.eid, deployer: deployer.address, admin, feeRecipient: feeTo, signer, launcher,
     poolManager: chain.poolManager, weth: chain.weth, lzEndpoint: chain.endpoint, dvns: chain.dvns, nativeUsdBand: [lo, hi],
   });
+  // the indexer starts reading the chain here (scripts/equo2/cutover.js)
+  if (!state.startBlock) state.startBlock = await ethers.provider.getBlockNumber();
+  state.solDvns = chain.solDvns;
   const C = state.contracts;
   let gasTotal = 0n;
   const sent = async (label: string, txp: Promise<any>) => {
