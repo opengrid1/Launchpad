@@ -18,11 +18,12 @@
 <div class="crumb">Trust</div><h1>Security</h1><p class="lead">How launches are signed, how routes are pinned, and the risks to know.</p>
 <div class="dx-body">
 <h2 id="service">The launch service</h2>
-<p>The service signs snapshots (<a href="https://etherscan.io/address/0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6" rel="noopener" target="_blank"><code>0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6</code></a>) and launches the other legs from <a href="https://etherscan.io/address/0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67" rel="noopener" target="_blank"><code>0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67</code></a>. A snapshot can only launch what it describes, at native prices inside each factory's fixed band, and the creator's own leg needs the creator's own transaction.</p>
+<p>The service signs snapshots (<a href="https://etherscan.io/address/0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6" rel="noopener" target="_blank"><code>0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6</code></a>) and launches the other legs from <a href="https://etherscan.io/address/0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67" rel="noopener" target="_blank"><code>0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67</code></a> on the EVM chains and <a href="https://solscan.io/account/BmvCWd28LbTXRii4vvH42hT7eg17DUtY8UqrF2utwizE" rel="noopener" target="_blank"><code>BmvCWd28LbTXRii4vvH42hT7eg17DUtY8UqrF2utwizE</code></a> on Solana. A snapshot can only launch what it describes, at native prices inside each factory's fixed band, and the creator's own leg needs the creator's own transaction.</p>
 <h2 id="contracts">Contracts</h2>
 <ul><li>The hook is the same code on every chain, with no owner functions besides wiring its factory once. Its address carries its Uniswap v4 permissions.</li>
 <li>The deployer's setup rights on every coin deployer were ended after deployment.</li>
-<li>Coins are LayerZero OFTs whose peers, options and delegate are sealed at launch; their owner is the zero address.</li>
+<li>Coins are LayerZero OFTs whose peers, options and delegate are sealed at launch; their owner is the zero address. On Solana the OFT store's admin and delegate are set to the system program's address once the store is wired, so nobody can change them.</li>
+<li>On Solana the program checks the same snapshot signature as the EVM factories (secp256k1), and the coin's mint authority belongs to its OFT store only.</li>
 <li>Before deployment the hook was reviewed independently; the issues found (pot timer taken by a buy and a sell in one transaction, gas in the prize send, intra-block shield trips, partial fills, the hook's deployment) were fixed and tested.</li></ul>
 <h2 id="risks">Risks</h2>
 <ul><li>Prices move; a coin can fall to its opening price, and each chain's pool moves on its own.</li><li>Bridging depends on LayerZero and its verifiers.</li><li>The pot counts the transaction's sender as the buyer.</li></ul>

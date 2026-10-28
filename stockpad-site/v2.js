@@ -57,7 +57,8 @@
   const COINS = new Map(); // main address -> coin
   const BY = new Map(); // any leg address -> main address
   const META = new Map();
-  const ORDER = CH.map((c) => c.key);
+  // a coin's chains: the EVM ones, then Solana (its reads and trades come from solleg.js)
+  const ORDER = [...CH.map((c) => c.key), ...(cfg.chains || []).filter((c) => c.key === 'sol').map((c) => c.key)];
 
   async function meta(uri) {
     if (!uri) return {};
@@ -69,12 +70,13 @@
   }
 
   const ageOf = (ts) => { const s = Math.max(0, Math.floor(Date.now() / 1000) - ts); return s < 3600 ? Math.floor(s / 60) + 'm' : s < 86400 ? Math.floor(s / 3600) + 'h' : Math.floor(s / 86400) + 'd'; };
+  const addrOf = (k, a) => (k === 'sol' ? String(a || '') : lc(a)); // Solana addresses are case-sensitive
   function build(j, m, old) {
     const keys = ORDER.filter((k) => j.chains[k]);
     const main = (j.chains.eth || j.chains[keys[0]]).token;
     const x = old || {};
     Object.assign(x, {
-      v2: true, addr: lc(main), addrs: Object.fromEntries(keys.map((k) => [k, lc(j.chains[k].token)])), chains: keys,
+      v2: true, addr: lc(main), addrs: Object.fromEntries(keys.map((k) => [k, addrOf(k, j.chains[k].token)])), chains: keys,
       launchId: j.launchId, n: j.name || '', t: j.symbol || '', creator: lc(j.creator), createdAt: j.createdAt, age: ageOf(j.createdAt),
       feeBps: j.feeBps || 100, img: m.image || '', desc: m.description || '', links: { web: m.website || '', x: m.x || '', tg: m.telegram || '' },
       mc: j.mc || x.mc || 0, vol: j.vol24 || 0, trades: j.trades || 0, c24: j.change24 || 0, px: j.price || x.px || 0,
@@ -84,7 +86,7 @@
     x.pools = x.pools || {};
     for (const k of keys) {
       const c = j.chains[k], b = x.byChain[k] || (x.byChain[k] = {});
-      b.token = lc(c.token); b.poolId = c.poolId; if (c.price) b.px = c.price; b.vol = c.vol24 || 0; b.trades = c.trades24 || 0;
+      b.token = addrOf(k, c.token); b.poolId = c.poolId; if (c.price) b.px = c.price; b.vol = c.vol24 || 0; b.trades = c.trades24 || 0;
       if (c.supply) b.supply = Number(c.supply) / 1e18;
       if (c.pool) { x.pools[k] = c.pool; if (c.pool.priceUsd && c.pool.priceInPair) b.pairUsd = c.pool.priceUsd / c.pool.priceInPair; if (c.pool.liquidityUsd != null) b.liq = c.pool.liquidityUsd; if (c.pool.priceUsd) b.px = c.pool.priceUsd; }
       if (!b.pairUsd && NUSD[k]) b.pairUsd = NUSD[k];

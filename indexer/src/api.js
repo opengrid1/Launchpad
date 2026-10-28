@@ -49,6 +49,8 @@ async function coins(ids) {
   for (const r of day.rows) { const x = by.get(r.coin_id); if (!x || !x.chains[r.chain]) continue; x.chains[r.chain].vol24 = Number(r.vol); x.chains[r.chain].trades24 = r.n; x.vol24 += Number(r.vol); x.trades24 += r.n; x.buys24 += r.buys; }
   for (const r of tot.rows) { const x = by.get(r.coin_id); if (x) x.trades = r.n; }
   for (const r of sup.rows) { const x = by.get(r.coin_id); if (x && x.chains[r.chain]) x.chains[r.chain].supply = r.supply; }
+  // Solana balances are not indexed yet: count a Solana leg at its launch supply (1B, scaled to 18 decimals)
+  for (const x of by.values()) if (x.chains.sol && x.chains.sol.supply == null) x.chains.sol.supply = "1000000000" + "0".repeat(18);
   for (const r of open.rows) { const x = by.get(r.coin_id); if (x) x.open24 = r.price_usd; }
   for (const x of by.values()) {
     // market cap: each chain's supply at that chain's last price

@@ -69,5 +69,6 @@ window.INKY = {
   // test coins (ETEST, ESITE, ELOGO): every chain's address, hidden from the lists
   hiddenCoins: ['0x023fcdfa79f4eeb35beab5e75746985a5760ede9','0x036fb13f5ee22492f43bda85dabfa319faaa94e9','0x0ca6009a2d068f78891cfe681fe3eacd36dbbde9','0x0cf5669f118c847da7a37e54cf89a2307c8a61e9',
     '0x04400a41970d099535f7b17cf9630d2c3a9bebe9','0x05fb608fb7b553b7400e633017e164f630a906e9','0x0662f2a383428a75a31389c689ecce24de5182e9','0x0e6d596231673b20b3c6ebe5bfa7d852e8d608e9',
-    '0x01b8e27520085d7fdd80c7ae52813864110573e9','0x04a5586c3944266e737b5038dd94d9ef8faed8e9']
+    '0x01b8e27520085d7fdd80c7ae52813864110573e9','0x04a5586c3944266e737b5038dd94d9ef8faed8e9',
+    '0x096dc21f07d3acf8bdfd5a99b88b0ddab9e4f2e9','3mlh3qvx8tagd8phperinngjaz4ul2wdlso5a2aroxmn']
 };

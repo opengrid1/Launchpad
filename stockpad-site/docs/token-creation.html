@@ -20,16 +20,17 @@
 <h2 id="the-form">The form</h2>
 <ol><li><b>The coin:</b> name, ticker, logo, description and links. The logo and links are stored with the coin's details at a fixed link written into the coin.</li>
 <li><b>Trading fee:</b> 1% to 5%. It never changes.</li>
-<li><b>Chains:</b> any of the eight. Each one gets 1B coins and its own pool.</li>
-<li><b>Launch from:</b> the chain your wallet pays on. It can be any chosen chain except HyperEVM.</li>
+<li><b>Chains:</b> any of the ten. Each one gets 1B coins and its own pool.</li>
+<li><b>Launch from:</b> the chain your wallet pays on. It can be any chosen EVM chain except HyperEVM.</li>
+<li><b>Solana wallet:</b> when Solana is one of the chains, the Solana wallet that receives the Solana pool's creator fees.</li>
 <li><b>First buy:</b> optional, in that chain's native coin, made in the launch transaction without a fee, so nobody buys before you.</li></ol>
 <h2 id="cost">What it costs</h2>
-<div class="tw"><table><thead><tr><th></th><th>Paid in</th><th>Amount</th></tr></thead><tbody><tr><td>Launch fee</td><td>your chain's native coin</td><td>the gas Equo pays to launch every other chain, plus a margin; shown before you sign; at most $50</td></tr><tr><td>First buy</td><td>your chain's native coin</td><td>what you choose, or nothing</td></tr><tr><td>Gas</td><td>your chain's native coin</td><td>one launch on your chain, about 7.7M gas</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th></th><th>Paid in</th><th>Amount</th></tr></thead><tbody><tr><td>Launch fee</td><td>your chain's native coin</td><td>the gas Equo pays to launch every other chain, plus a margin; shown before you sign; at most $50</td></tr><tr><td>First buy</td><td>your chain's native coin</td><td>what you choose, or nothing</td></tr><tr><td>Gas</td><td>your chain's native coin</td><td>one launch on your chain, about 8.7M gas</td></tr></tbody></table></div>
 <p>The launch fee is mostly Ethereum's gas when Ethereum is one of the chains and you launch from another one. Launching from Ethereum itself costs you Ethereum's gas directly and lowers the fee.</p>
 <h2 id="after">After you sign</h2>
-<p>Your chain goes live with your transaction. Equo launches the other chains right after, usually within a minute; HyperEVM can take a little longer. The page then opens the coin. If a chain is late, the coin page lists it as soon as it is live.</p>
+<p>Your chain goes live with your transaction. Equo launches the other chains right after, usually within a minute; HyperEVM and Solana can take a few minutes longer. The page then opens the coin. If a chain is late, the coin page lists it as soon as it is live.</p>
 <h2 id="creator">As the creator</h2>
-<ul><li>Your share of every fee builds up on each chain, in that chain's native coin. Anyone can send it to you at any time from the coin page; it always goes to you.</li>
+<ul><li>Your share of every fee builds up on each chain, in that chain's native coin. Anyone can send it to you at any time from the coin page; it always goes to you (on Solana, to the Solana wallet you gave).</li>
 <li>You can hand the creator role, and its fees, to another wallet in two steps (offer, then accept).</li>
 <li>The metadata link can be changed by its keeper (you at launch), who can also hand that role on.</li></ul>
 </div>
