@@ -20,7 +20,9 @@ window.SP_PAGE=function(){
   const n9=v=>Number(v)/1e9, n18=v=>Number(v)/1e18;
   const fmtN=(v,sym)=>SP.fmtNative?SP.fmtNative(v,sym):fmtAmt(v)+' '+sym;
   const LIVE={}; let tChain=keys().includes('eth')?'eth':keys()[0], side='buy', slip=1, qOut=0n, quoting=false, qSeq=0, bal={coin:0n,native:0n};
-  const wl=(a,k)=>{ const c=k?ch(k):null; return `<span class="w"><span class="av">${SP.avatar(a,18)}</span><a href="${(c&&c.explorer)||EXPLORER}/address/${a}" target="_blank" rel="noopener">${shortAddr(cs(a))}</a>${me()&&a===me()?' <span class="tag mint">you</span>':''}</span>`; };
+  // a Solana wallet (no 0x) links to Solscan's account page, whatever chain the row is on
+  const walletUrl=(a,k)=>/^0x/i.test(a)?`${(k&&k!=='sol'&&ch(k).explorer)||EXPLORER}/address/${a}`:`${ch('sol').explorer||'https://solscan.io'}/account/${a}`;
+  const wl=(a,k)=>{ return `<span class="w"><span class="av">${SP.avatar(a,18)}</span><a href="${walletUrl(a,k)}" target="_blank" rel="noopener">${shortAddr(cs(a))}</a>${me()&&a===me()?' <span class="tag mint">you</span>':''}</span>`; };
   const cimg=k=>`<img class="cimg" src="${ch(k).logo}" alt="" title="${esc(ch(k).name)}">`;
   const fmtTimer=s=>{ s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`; };
   pg.addEventListener('click',e=>{ const b=e.target.closest('[data-copy]'); if(b){ e.preventDefault(); SP.copy(b.dataset.copy,'Address copied'); } });

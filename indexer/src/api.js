@@ -2,6 +2,7 @@ import http from "node:http";
 import { q } from "./db.js";
 import { settings } from "./config.js";
 import { poolOf, solPoolOf, solUsd } from "./pools.js";
+import { DAMM_POOL_AUTHORITY } from "./solana.js";
 
 const OPEN_USD = 3000 / 1e9; // every Equo v2+ chain opens its 1B at a $3,000 market cap
 
@@ -17,7 +18,8 @@ class HttpError extends Error { constructor(code, msg) { super(msg); this.code =
 
 /** Contracts that hold coins without being holders: per chain, plus the zero and dead addresses. */
 function systemAddrs(chains) {
-  const s = new Set(["0x0000000000000000000000000000000000000000", "0x000000000000000000000000000000000000dead"]);
+  // Solana: the DAMM v2 pool authority holds every Solana pool's coins
+  const s = new Set(["0x0000000000000000000000000000000000000000", "0x000000000000000000000000000000000000dead", DAMM_POOL_AUTHORITY]);
   for (const c of chains) {
     for (const k of ["poolManager", "factory", "hook", "tokenDeployer", "router"]) if (c[k]) s.add(lc(c[k]));
     for (const v of Object.values(c.v2 || {})) s.add(lc(v));
@@ -25,7 +27,13 @@ function systemAddrs(chains) {
   return [...s];
 }
 
+const SOL_KEY = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 async function coinIdOf(v) {
+  // a Solana mint keeps its case
+  if (SOL_KEY.test(String(v || "")) && !String(v).startsWith("0x")) {
+    const r = await q("select coin_id from tokens where chain = 'sol' and token = $1 limit 1", [v]);
+    if (r.rows.length) return r.rows[0].coin_id;
+  }
   v = lc(v);
   if (v.includes(":")) return v;
   if (!isAddr(v)) throw new HttpError(400, "coin must be an address or a coin id");
@@ -175,8 +183,8 @@ export function makeHandler(chains) {
 
     /** One wallet across every coin and chain: its balances, the coins it created and its latest trades. */
     async "/api/wallet"(p) {
-      const w = lc(p.get("wallet"));
-      if (!isAddr(w)) throw new HttpError(400, "wallet must be an address");
+      const raw = String(p.get("wallet") || ""), w = raw.startsWith("0x") ? lc(raw) : raw; // a Solana wallet keeps its case
+      if (!isAddr(w) && !SOL_KEY.test(w)) throw new HttpError(400, "wallet must be an address");
       const bal = await q(`select t.coin_id, b.chain, b.token, b.balance::text bal from balances b join tokens t on t.chain = b.chain and t.token = b.token where b.wallet = $1 and b.balance > 0`, [w]);
       const made = await q(`select distinct coin_id from tokens where creator = $1`, [w]);
       const tr = await q(`select chain, tx, log_index, token, coin_id, buy, coin_amt::text coin, pair_amt::text pair, block, ts, price_usd, value_usd from trades where wallet = $1 order by ts desc, block desc, log_index desc limit 200`, [w]);

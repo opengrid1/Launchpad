@@ -69,6 +69,7 @@ async function solRpc(method, params) {
   if (j.error) throw new Error("solana rpc: " + j.error.message);
   return j.result;
 }
+const b58 = (bytes) => { let z = 0; while (z < bytes.length && bytes[z] === 0) z++; return "1".repeat(z) + (z < bytes.length ? encodeBase58(bytes.subarray(z)) : ""); };
 const le = (b, o, n) => { let v = 0n; for (let i = n - 1; i >= 0; i--) v = (v << 8n) | BigInt(b[o + i]); return v; };
 
 let solUsdAt = 0, solUsdV = null;
@@ -88,7 +89,7 @@ export async function solPoolOf(poolId, pairUsd) {
   if (!acc || !acc.value) return { state: "not initialized" };
   const d = Buffer.from(acc.value.data[0], "base64");
   // cp-amm Pool: token_a_vault at 232 (the coin), token_b_vault at 264 (wrapped SOL), sqrt_price (Q64.64) at 456
-  const vaultA = encodeBase58(d.subarray(232, 264)), vaultB = encodeBase58(d.subarray(264, 296)), sp = Number(le(d, 456, 16)) / 2 ** 64;
+  const vaultA = b58(d.subarray(232, 264)), vaultB = b58(d.subarray(264, 296)), sp = Number(le(d, 456, 16)) / 2 ** 64;
   const vs = await solRpc("getMultipleAccounts", [[vaultA, vaultB], { encoding: "base64" }]);
   const amt = (v) => (v ? Number(le(Buffer.from(v.data[0], "base64"), 64, 8)) / 1e9 : 0);
   const coins = amt(vs.value[0]), pair = amt(vs.value[1]), priceInPair = sp * sp;

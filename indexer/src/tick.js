@@ -1,6 +1,7 @@
 import { loadChains } from "./config.js";
 import { migrate, q } from "./db.js";
 import { ChainIndexer } from "./indexer.js";
+import { SolanaIndexer } from "./solana.js";
 
 /* Indexing in short bursts, for hosts that run code per request (serverless functions): each tick takes a
    lease in tick_lock (one tick at a time, at most one every few seconds), then lets every chain catch up
@@ -21,6 +22,16 @@ export async function tick(budgetMs = Number(process.env.TICK_BUDGET_MS || 45_00
   await migrated;
   const chains = loadChains(), out = {};
   try {
+    const sol = (async () => {
+      try {
+        let w = workers.get("sol");
+        if (!w) { w = new SolanaIndexer(console); await w.init(); workers.set("sol", w); }
+        out.sol = await w.catchUp(t0 + budgetMs);
+      } catch (e) {
+        workers.delete("sol");
+        out.sol = { error: e.message };
+      }
+    })();
     await Promise.all(chains.filter((c) => c.factory).map(async (c) => {
       try {
         let w = workers.get(c.key);
@@ -31,6 +42,7 @@ export async function tick(budgetMs = Number(process.env.TICK_BUDGET_MS || 45_00
         out[c.key] = { error: e.message };
       }
     }));
+    await sol;
   } finally {
     await q("update tick_lock set until = now(), last_done = now() where id = 1");
   }
