@@ -3,6 +3,8 @@ import { q } from "./db.js";
 import { settings } from "./config.js";
 import { poolOf } from "./pools.js";
 
+const OPEN_USD = 3000 / 1e9; // every Equo v2+ chain opens its 1B at a $3,000 market cap
+
 /* Read-only HTTP API over the indexed data. Every coin can be addressed by any of its contract addresses
    (on any chain) or by its coin id. Prices are USD per whole coin; volumes are USD. */
 
@@ -55,7 +57,8 @@ async function coins(ids) {
   for (const x of by.values()) {
     // market cap: each chain's supply at that chain's last price
     let mc = 0, coinsAll = 0;
-    for (const ch of Object.values(x.chains)) { const s = ch.supply ? Number(ch.supply) / 1e18 : 0; coinsAll += s; if (ch.price) mc += s * ch.price; }
+    // a v2+ chain with no trade yet is still at its opening price ($3,000 for its 1B)
+    for (const ch of Object.values(x.chains)) { const s = ch.supply ? Number(ch.supply) / 1e18 : 0, px = ch.price || (x.gen >= 2 ? OPEN_USD : 0); coinsAll += s; if (px) mc += s * px; }
     x.supply = coinsAll;
     x.mc = mc || null;
     x.price = mc && coinsAll ? mc / coinsAll : null;

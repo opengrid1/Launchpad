@@ -25,6 +25,20 @@ window.SP_PAGE=function(){
   const fmtTimer=s=>{ s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`; };
   pg.addEventListener('click',e=>{ const b=e.target.closest('[data-copy]'); if(b){ e.preventDefault(); SP.copy(b.dataset.copy,'Address copied'); } });
 
+  /* ---------- contract addresses: one button, every chain's address in a dropdown ---------- */
+  const tokenUrl=k=>`${ch(k).explorer}/token/${X.addrs[k]}`;
+  function caMenu(){
+    const ks=keys(), k0=ks.includes('eth')?'eth':ks[0], more=ks.length-1;
+    return `<div class="cad" id="cn-cad"><button type="button" class="ca cad-b" aria-haspopup="true" aria-expanded="false" title="Contract addresses">${cimg(k0).replace('cimg','')}<span>CA</span> ${shortAddr(cs(X.addrs[k0]))}${more>0?`<span class="cad-n">+${more}</span>`:''}${ic('chevr')}</button>
+      <div class="cad-m" role="menu"><div class="cad-h">Contract addresses · ${ks.length} chains</div>${ks.map(k=>`<div class="cad-r"><button type="button" role="menuitem" data-copy="${cs(X.addrs[k])}" title="Copy the ${esc(ch(k).name)} address">${cimg(k).replace('cimg','')}<span class="cad-c">${esc(ch(k).name)}</span><code>${shortAddr(cs(X.addrs[k]))}</code>${ic('copy')}</button><a href="${tokenUrl(k)}" target="_blank" rel="noopener" title="Open on the ${esc(ch(k).name)} explorer">${ic('ext')}</a></div>`).join('')}</div></div>`;
+  }
+  const caOpen=on=>{ const d=$('#cn-cad'); if(!d) return; d.classList.toggle('open',on); const b=d.querySelector('.cad-b'); if(b) b.setAttribute('aria-expanded',String(on));
+    // keep the menu inside the screen: shift it left when the button sits far right (phones)
+    const m=d.querySelector('.cad-m'); if(!on||!m) return; m.style.left='0px'; const r=m.getBoundingClientRect(), over=r.right-(innerWidth-16); if(over>0) m.style.left=-Math.min(over,r.left-16)+'px'; };
+  pg.addEventListener('click',e=>{ const b=e.target.closest('.cad-b'); if(b){ e.preventDefault(); caOpen(!$('#cn-cad').classList.contains('open')); } });
+  document.addEventListener('click',e=>{ if(!e.target.closest('#cn-cad')) caOpen(false); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') caOpen(false); });
+
   /* ---------- header ---------- */
   function head(){
     const links=[['Website',X.links.web,'globe'],['X',X.links.x,'ext'],['Telegram',X.links.tg,'ext']].filter(l=>l[1]&&/^https?:\/\//i.test(l[1]));
@@ -35,7 +49,7 @@ window.SP_PAGE=function(){
         <div class="t2"><span title="${esc(SP.fmtDate(X.createdAt))}">${ageStr(X.age||'0s')}</span><span class="badge">${(X.feeBps/100).toFixed(2).replace(/\.?0+$/,'')}% fee</span><span class="badge">${keys().length} chains</span>${links.map(l=>`<a class="lk" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer nofollow">${ic(l[2])}${l[0]}</a>`).join('')}</div>
         ${X.desc?`<p class="desc">${esc(X.desc)}</p>`:''}
         <div class="by">Created by ${wl(X.creator)}</div>
-        <div class="cas">${keys().map(k=>`<span class="ca" data-copy="${cs(X.addrs[k])}" title="Copy the ${esc(ch(k).name)} address">${cimg(k).replace('cimg','')}${esc(ch(k).code||ch(k).short)} ${shortAddr(cs(X.addrs[k]))}${ic('copy')}</span>`).join('')}</div></div>
+        ${caMenu()}</div>
       <div class="big"><span>Market cap</span><b id="cn-mc">${fmtUsd(X.mc)}</b><small class="${(X.c24||0)>=0?'up':'dn'}" id="cn-c24">${(X.c24||0)>=0?'+':''}${(X.c24||0).toFixed(2)}% 24h</small></div></div>
       <div class="srow" id="cn-stats"></div>`;
     stats(); }
