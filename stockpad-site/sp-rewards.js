@@ -1,89 +1,93 @@
-/* Rewards page: what you can claim now and the three ways to earn (holder rewards, creator fees, cashback),
-   each with its own card, and what buybacks have burned. Everything is read from chain; claims are transactions from
-   the connected wallet. */
+/* Rewards page, for Equo v2/v3 coins: the Last-Buyer Pot on each coin's EVM chains (live amounts, timers and
+   last buyers, read from each chain's hook) and, for the connected wallet, the creator fees waiting on the coins
+   it launched. Pot prizes go straight to the winner's wallet; creator fees go to the creator when anyone sends them. */
 window.SP_PAGE=function(){
-  const pg=$('#pg-rewards'); if(!pg) return;
+  const pg=$('#pg-rewards'); if(!pg||!window.V2) return;
   const g=id=>document.getElementById(id);
-  const DEAD='0x000000000000000000000000000000000000dead';
-  let P=null, R=null, seq=0, busy=false;
-  const EQ=()=>window.CHAIN&&CHAIN.equo;
-  const usdOf=(pair,amt)=>{ const p=String(pair).toLowerCase(); return amt*(SP.prices[p]||0); };
-  const owedUsd=()=>R?R.owed.reduce((s,o)=>s+usdOf(o.pair,o.amount),0):0;
-  const owedTxt=()=>R&&R.owed.length?R.owed.map(o=>`${fmtAmt(o.amount)} ${esc(o.symbol)}`).join(' · '):'nothing yet';
-  const WAYS={ hold:['coins','Holder rewards','var(--amber)'], cre:['rocket','Creator fees','var(--ac)'], cb:['gift','Cashback','var(--up)'] };
+  const WAYS={ pot:['star','Last-Buyer Pot','var(--amber)'], cre:['rocket','Creator fees','var(--ac)'], how:['clock','How the pot works','var(--amber)'], sh:['shield','Crash shield','var(--dn)'] };
   const head=k=>`<span class="ib" style="--c:${WAYS[k][2]}">${ic(WAYS[k][0])}</span>${WAYS[k][1]}`;
   g('rw-pill').innerHTML=ic('star')+'Earn on every chain';
-  g('rw-h-hold').innerHTML=head('hold'); g('rw-h-cre').innerHTML=head('cre'); g('rw-h-cb').innerHTML=head('cb');
-  g('rw-h-burn').innerHTML=`<span class="ib" style="--c:var(--dn)">${ic('flame')}</span>Buyback burns`;
+  g('rw-h-pot').innerHTML=head('pot'); g('rw-h-cre').innerHTML=head('cre'); g('rw-h-how').innerHTML=head('how'); g('rw-h-sh').innerHTML=head('sh');
   const logo=x=>`<img class="lg" src="${SP.coinLogo(x)}" alt="" onerror="this.onerror=null;this.src='${DEF_LOGO}'">`;
-  const who=x=>`<span class="who">${logo(x)}<span><b>${esc(x.n)}</b><small>$${esc(x.t)} ${SP.chainStack(SP.coinChains(x),14)}</small></span></span>`;
-  const gate=(k,t,s,btn)=>`<div class="gate"><span class="ib" style="--c:${WAYS[k][2]}">${ic(WAYS[k][0])}</span><b>${t}</b>${s}<div>${btn||'<button class="btn pri" data-connect>Connect wallet</button>'}</div></div>`;
-  const pct=b=>R&&R.split?((1-SP.creatorSplit())*b/100).toFixed(0)+'%':'…';
+  const ch=k=>SP.chain(k)||{name:k,native:''};
+  const usd=(k,wei)=>Number(wei||0n)/1e18*((V2.nativeUsd()||{})[k]||0);
+  const who=(x,k)=>`<span class="who">${logo(x)}<span><b>${esc(x.n)}</b><small>$${esc(x.t)} · <img class="cimg" src="${ch(k).logo}" alt="" style="width:14px;height:14px;border-radius:50%">${esc(ch(k).name)}</small></span></span>`;
+  const coins=()=>V2.coins().filter(x=>!x.hidden).sort((a,b)=>(b.mc||0)-(a.mc||0)).slice(0,25);
+  const evm=x=>x.chains.filter(k=>k!=='sol');
+  const fmtLeft=s=>{ s=Math.max(0,Math.floor(s)); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; };
+  let POTS=null, busy=false;
 
-  /* ---------- the hero: claimable now, and the four ways to earn ---------- */
-  function hero(){ const c=SP.W.connected; const crt=g('rw-cre-rate'); if(crt) crt.textContent=`${SP.splitPct().c}% of every fee after the pots`;
-    const hold=P?P.holdings.reduce((s,h)=>s+(h.pendUsd||0),0):0, cre=P?P.created.reduce((s,c)=>s+c.fees*(c.x.pairUsd||0),0):0, rw=owedUsd();
-    const ready=c&&P, total=hold+cre+rw;
-    g('rw-tot').innerHTML=c?`<span class="l">Claimable now</span><b>${ready?fmtUsd(total):'…'}</b><small>${ready?(total>0?'Holder rewards, creator fees and cashback together. Claim each below.':'Nothing to claim yet. Hold, launch or trade and it adds up here.'):'Reading your rewards on every chain…'}</small>`
-      :`<span class="l">Your rewards</span><b>$0.00</b><small>Connect a wallet to see what you can claim across every coin and every chain.</small><button class="btn pri" data-connect>Connect wallet</button>`;
-    const sp=R&&R.split;
-    const W=[['hold','Hold coins with the Holder rewards badge','up to 50% of fees',c&&P?hold:null,'#hold'],['cre','Launch a coin and earn from every trade',`up to ${SP.splitPct().c}% of fees`,c&&P?cre:null,'#cre'],
-      ['cb','Part of every fee comes back on your trades',sp?`up to ${pct(sp.cashbackBps)} of fees`:'a share of fees',c&&R&&R.hist?R.hist.cashback._usd||0:null,'#cb']];
-    g('rw-ways').innerHTML=W.map(w=>`<a class="way" href="${w[4]}"><span class="ib" style="--c:${WAYS[w[0]][2]}">${ic(WAYS[w[0]][0])}</span><span class="n"><b>${WAYS[w[0]][1]}</b><small>${w[1]} · ${w[2]}</small></span><span class="v"><b class="${w[3]>0?'on':''}">${w[3]==null?'—':fmtUsd(w[3])}</b><small>${w[0]==='cb'?'earned':'claimable'}</small></span></a>`).join('');
+  g('rw-how').innerHTML=`<ol>
+    <li>0.1% of every trade on a chain goes into that chain's pot.</li>
+    <li>A buy of $50 or more makes you the last buyer and starts a 20 minute timer.</li>
+    <li>Every new $50+ buy takes the spot and restarts the timer.</li>
+    <li>When the timer runs out, the last buyer gets 80% of the pot, sent straight to their wallet. The other 20% starts the next round.</li>
+    <li>Sell before the timer ends and you give up your spot.</li></ol>
+    <p style="margin-top:10px">Every coin has its own pot on each of its EVM chains. Solana's pool has no pot.</p>`;
+  g('rw-sh').innerHTML=`<p>If a coin falls 20% or more within 10 minutes, its shield turns on: sells pay up to 5% extra, all of it into the pot, and buys pay up to half the fee less. It fades back to normal over 30 minutes.</p>`;
+
+  /* ---------- live pots ---------- */
+  async function loadPots(){
+    const L=[];
+    await Promise.all(coins().flatMap(x=>evm(x).map(async k=>{ try{ const lv=await V2.live(x,k); if(lv&&lv.pot) L.push({x,k,p:lv.pot}); }catch{} })));
+    POTS=L; paintPots(); hero(); }
+  function paintPots(){
+    const box=g('rw-pots');
+    if(!POTS){ box.innerHTML='<div class="empty">Reading every chain\'s pot…</div>'; return; }
+    const now=Date.now()/1000, L=POTS.slice().sort((a,b)=>usd(b.k,b.p.amount)-usd(a.k,a.p.amount));
+    const tot=L.reduce((s,r)=>s+usd(r.k,r.p.amount),0);
+    g('rw-pot-t').textContent=`${fmtUsd(tot)} in ${L.filter(r=>r.p.amount>0n).length} pots`;
+    if(!L.length){ box.innerHTML='<div class="empty"><b>No pots yet</b>Pots fill as coins trade.</div>'; return; }
+    box.innerHTML=`<div class="rows">${L.map(r=>{ const p=r.p, live=p.lastBuyer&&!/^0x0+$/.test(p.lastBuyer)&&p.deadline>now, due=p.lastBuyer&&!/^0x0+$/.test(p.lastBuyer)&&p.deadline&&p.deadline<=now&&p.amount>0n;
+      const st=live?`<b class="live">${fmtLeft(p.deadline-now)}</b><small>${shortAddr(cs(p.lastBuyer))} leads</small>`:due?`<b class="up">Ended</b><small>${shortAddr(cs(p.lastBuyer))} won</small>`:`<b class="z">Waiting</b><small>buy ${fmtUsd(usd(r.k,p.minBuy))}+ to start</small>`;
+      return `<div class="rr" data-go="${tokenUrl(r.x)}">${who(r.x,r.k)}<span class="m hm"><b>${fmtUsd(usd(r.k,p.amount))}</b><small>round ${p.round}</small></span><span class="m">${st}</span><span class="a">${due?`<button class="btn sm pri" data-settle="${r.x.addr}|${r.k}">Send prize</button>`:''}</span></div>`; }).join('')}</div>`;
+    box.querySelectorAll('[data-settle]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const [a,k]=b.dataset.settle.split('|'); const x=V2.coin(a); send(b,()=>V2.settle(x,k),'Prize sent'); });
+  }
+
+  /* ---------- creator fees ---------- */
+  let CRE=null;
+  async function loadCre(){
+    const me=SP.W.connected?String(SP.W.address).toLowerCase():'';
+    if(!me){ CRE=null; paintCre(); hero(); return; }
+    const mine=V2.coins().filter(x=>x.creator===me);
+    const L=[];
+    await Promise.all(mine.flatMap(x=>evm(x).map(async k=>{ try{ const lv=await V2.live(x,k); L.push({x,k,owed:lv.creatorOwed||0n}); }catch{} })));
+    CRE=L; paintCre(); hero(); }
+  function paintCre(){
+    const box=g('rw-cre');
+    if(!SP.W.connected){ box.innerHTML=`<div class="gate"><span class="ib" style="--c:var(--ac)">${ic('rocket')}</span><b>Connect to see your creator fees</b>Coins you launch pay you a share of every trade, on every chain they live on.<div><button class="btn pri" data-connect>Connect wallet</button></div></div>`; return; }
+    if(!CRE){ box.innerHTML='<div class="empty">Loading…</div>'; return; }
+    if(!CRE.length){ box.innerHTML=`<div class="empty"><b>No coins launched from this wallet</b>Launch one and your share of every fee builds up here.<div style="margin-top:12px"><a class="btn" href="/launch">Launch a coin</a></div></div>`; return; }
+    const L=CRE.slice().sort((a,b)=>usd(b.k,b.owed)-usd(a.k,a.owed));
+    box.innerHTML=`<div class="rows">${L.map(r=>`<div class="rr" data-go="${tokenUrl(r.x)}">${who(r.x,r.k)}<span class="m hm"><b class="${r.owed>0n?'up':'z'}">${fmtUsd(usd(r.k,r.owed))}</b><small>${fmtAmt(Number(r.owed)/1e18)} ${esc(ch(r.k).native)}</small></span><span class="m"></span><span class="a">${r.owed>0n?`<button class="btn sm pri" data-pay="${r.x.addr}|${r.k}">Send to me</button>`:''}</span></div>`).join('')}</div>
+      <p class="rbody" style="margin:0;padding:4px 18px 16px;color:var(--fg-3);font-size:12.5px">Creator fees on Solana go to the Solana wallet given at launch; send them from the coin page.</p>`;
+    box.querySelectorAll('[data-pay]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const [a,k]=b.dataset.pay.split('|'); send(b,()=>V2.payCreator(V2.coin(a),k),'Creator fees sent'); });
+  }
+
+  /* ---------- the hero ---------- */
+  function hero(){
+    const c=SP.W.connected, me=c?String(SP.W.address).toLowerCase():'';
+    const owed=CRE?CRE.reduce((s,r)=>s+usd(r.k,r.owed),0):0;
+    const leading=POTS&&me?POTS.filter(r=>r.p.lastBuyer===me&&r.p.deadline>Date.now()/1000):[];
+    g('rw-tot').innerHTML=c
+      ?`<span class="l">Waiting for you</span><b>${CRE?fmtUsd(owed):'…'}</b><small>${CRE&&owed>0?'Creator fees on your coins. Send them below.':'Creator fees on your coins show here.'}${leading.length?` You lead ${leading.length} pot${leading.length>1?'s':''} right now.`:''} Pot prizes need no claim: they go straight to the winner's wallet.</small>`
+      :`<span class="l">Your rewards</span><b>$0.00</b><small>Connect a wallet to see creator fees on your coins and the pots you lead.</small><button class="btn pri" data-connect>Connect wallet</button>`;
+    const potTot=POTS?POTS.reduce((s,r)=>s+usd(r.k,r.p.amount),0):null;
+    const W=[['pot','Buy $50+ and be the last buyer when the 20 minute timer ends','80% of the pot',potTot!=null?fmtUsd(potTot):'…','in pots now','#pots'],
+      ['cre','Launch a coin and earn from every trade on every chain','your share of the fee',c&&CRE?fmtUsd(owed):'—','waiting','#cre'],
+      ['sh','Sells pay extra into the pot after a 20% crash','up to 5%','','','#shield']];
+    g('rw-ways').innerHTML=W.map(w=>`<a class="way" href="${w[5]}"><span class="ib" style="--c:${WAYS[w[0]][2]}">${ic(WAYS[w[0]][0])}</span><span class="n"><b>${WAYS[w[0]][1]}</b><small>${w[1]} · ${w[2]}</small></span><span class="v"><b>${w[3]}</b><small>${w[4]}</small></span></a>`).join('');
     wire(); }
 
-  /* ---------- holder rewards, creator fees ---------- */
-  function claims(){ const c=SP.W.connected;
-    if(!c){ g('rw-hold').innerHTML=gate('hold','Connect to see your holder rewards','Coins with holder rewards pay part of every fee to the people holding them.'); g('rw-cre').innerHTML=gate('cre','Connect to see your creator fees','Coins you launch pay you a share of every fee, on every chain they live on.'); g('rw-claimall').innerHTML=''; wire(); return; }
-    if(!P){ g('rw-hold').innerHTML='<div class="empty">Loading…</div>'; g('rw-cre').innerHTML='<div class="empty">Loading…</div>'; return; }
-    const H=P.holdings.filter(h=>h.x.rewards||h.pend>0).sort((a,b)=>b.pendUsd-a.pendUsd);
-    g('rw-hold').innerHTML=H.length?`<div class="rows">${H.map(h=>`<div class="rr" data-go="${tokenUrl(h.x)}">${who(h.x)}<span class="m hm"><b>${fmtUsd(h.bal*(h.x.px||0))}</b><small>${fmtAmt(h.bal)} held</small></span><span class="m"><b class="${h.pend>0?'up':'z'}">${h.pend>0?fmtUsd(h.pendUsd):'$0.00'}</b><small>${h.pend>0?SP.fmtPair(h.pend,h.x):'claimable'}</small></span><span class="a">${h.pend>0?`<button class="btn sm pri" data-claim="${h.x.addr}">Claim</button>`:''}</span></div>`).join('')}</div>`
-      :gate('hold','No holder rewards yet','Hold a coin with the Holder rewards badge and part of every fee comes to you.','<a class="btn" href="/markets">Browse coins</a>');
-    const n=H.filter(h=>h.pend>0).length; g('rw-claimall').innerHTML=n>1?`<button class="btn sm pri" id="rw-all">Claim all (${n})</button>`:'';
-    const C=P.created.slice().sort((a,b)=>b.fees*(b.x.pairUsd||0)-a.fees*(a.x.pairUsd||0));
-    g('rw-cre').innerHTML=C.length?`<div class="rows">${C.map(c=>`<div class="rr" data-go="${tokenUrl(c.x)}">${who(c.x)}<span class="m hm"><b>${fmtUsd(c.x.vol||0)}</b><small>volume 24h</small></span><span class="m"><b class="${c.fees>0?'up':'z'}">${c.fees>0?fmtUsd(c.fees*(c.x.pairUsd||0)):'$0.00'}</b><small>${c.fees>0?SP.fmtPair(c.fees,c.x):'claimable'}</small></span><span class="a">${c.fees>0?`<button class="btn sm pri" data-pay="${c.x.addr}">Claim</button>`:''}</span></div>`).join('')}</div>`
-      :gate('cre','No coins launched yet','Coins you launch pay you a share of every fee, on every chain they live on.','<a class="btn pri" href="/launch">Launch a coin</a>');
-    wire(); }
-  function wire(){ $$('#pg-rewards [data-connect]').forEach(b=>b.onclick=()=>SP.W.connect());
-    $$('#pg-rewards .rr[data-go],#pg-rewards .brow[data-go]').forEach(r=>r.onclick=e=>{ if(e.target.closest('button,a')) return; SP.go(r.dataset.go); });
-    $$('#pg-rewards [data-claim]').forEach(b=>b.onclick=()=>tx(b,()=>CHAIN.claim(b.dataset.claim),'Rewards claimed'));
-    $$('#pg-rewards [data-pay]').forEach(b=>b.onclick=()=>tx(b,()=>CHAIN.payCreator(b.dataset.pay),'Creator fees claimed'));
-    const all=g('rw-all'); if(all) all.onclick=()=>claimAll(all); }
-  async function tx(btn,fn,msg){ if(busy) return SP.toast('A transaction is already in progress','info'); if(!SP.W.chainOk){ SP.W.switchChain().catch(()=>{}); return; } const t=btn.innerHTML; busy=true; btn.disabled=true; btn.textContent='Confirm…';
-    try{ await fn(); SP.toast(msg); load(); loadRewards(); }catch(e){ SP.toast(SP.errMsg(e),'err'); }finally{ busy=false; btn.disabled=false; btn.innerHTML=t; } }
-  async function claimAll(btn){ if(busy) return; const l=P.holdings.filter(h=>h.pend>0); busy=true; btn.disabled=true; let done=0;
-    try{ for(let i=0;i<l.length;i++){ btn.textContent=`Claiming ${i+1} of ${l.length}…`; try{ await CHAIN.claim(l[i].x.addr); done++; }catch(e){ const m=SP.errMsg(e); SP.toast(`$${l[i].x.t}: ${m}`,'err'); if(m==='Transaction cancelled') break; } } }
-    finally{ busy=false; } if(done) SP.toast(done===l.length?'All rewards claimed':`${done} of ${l.length} claimed`,'info'); load(); }
+  /* ---------- shared ---------- */
+  async function send(btn,fn,ok){ if(busy) return; busy=true; const t=btn.textContent; btn.disabled=true; btn.textContent='Confirm in wallet…';
+    try{ await fn(); SP.toast(ok,'ok'); await Promise.all([loadPots(),loadCre()]); }catch(e){ SP.toast(SP.errMsg(e),'err'); }finally{ busy=false; btn.disabled=false; btn.textContent=t; } }
+  function wire(){ pg.querySelectorAll('[data-connect]').forEach(b=>b.onclick=()=>SP.W.connect().catch(e=>SP.toast(SP.errMsg(e),'err'))); pg.querySelectorAll('[data-go]').forEach(r=>r.onclick=()=>SP.go(r.dataset.go)); }
 
-  /* ---------- cashback (Equo hook: a share of the platform's part of every fee) ---------- */
-  function refcb(){ const a=SP.W.connected?SP.W.address:''; const sp=R&&R.split;
-    g('rw-cb-rate').textContent=sp?`up to ${pct(sp.cashbackBps)} of fees`:'';
-    g('rw-cb').innerHTML=`<p>Part of the fee on every buy and sell comes back to you, in the coin's pair, on every chain.</p>
-      <div class="mini"><div><span>Cashback earned</span><b>${R&&R.hist?fmtUsd(R.hist.cashback._usd||0):'—'}</b></div><div style="grid-column:span 2"><span>Claimable</span><b>${a?(R?owedTxt():'…'):'—'}</b></div></div>
-      ${a?`<div class="claimrow"><div><b>${R?fmtUsd(owedUsd()):'…'}</b><small>cashback, claimable now</small></div><button class="btn pri" id="rw-claimrw" ${R&&R.owed.length?'':'disabled'}>Claim</button></div>`:`<div style="margin-top:14px"><button class="btn pri" data-connect>Connect wallet</button></div>`}`;
-    const cl=g('rw-claimrw'); if(cl) cl.onclick=()=>tx(cl,()=>EQ().claimRewards(R.owed.map(o=>o.pair)),'Rewards claimed');
-    wire(); }
-  async function loadRewards(){ const w=SP.W.connected?SP.W.address:null; if(!w||!EQ()){ R=R&&R.split?{owed:[],split:R.split}:null; refcb(); hero(); return; }
-    try{ const [split,owed]=await Promise.all([EQ().split(),EQ().rewards(w)]); R={split,owed,hist:R&&R.hist}; refcb(); hero();
-      R.hist=await EQ().history(w).catch(()=>({cashback:{},referral:{},traders:0})); refcb(); hero(); }
-    catch(e){ console.warn('rewards',e); } }
-
-  /* ---------- burns ---------- */
-  const BURN={};
-  async function burned(x){ if(BURN[x.addr]&&Date.now()-BURN[x.addr].at<60000) return BURN[x.addr].v; let v=0; try{ const H=await CHAIN.holders(x.addr,50); const d=(H||[]).find(h=>String(h.wallet).toLowerCase()===DEAD); v=d?+d.bal:0; }catch{} BURN[x.addr]={v,at:Date.now()}; return v; }
-  async function burns(){ const L=TOK.filter(x=>(x.genes||{}).buybackShareBps>0), box=g('rw-burns');
-    if(!L.length){ box.innerHTML=`<div class="empty"><b>No buyback coins yet</b>Turn on Buyback and burn when you launch. Part of every fee then buys the coin back and burns it.<div style="margin-top:12px"><a class="btn" href="/launch">Launch a coin</a></div></div>`; g('rw-burn-t').innerHTML=''; return; }
-    const B=await Promise.all(L.map(async x=>({x,b:await burned(x)}))); B.sort((a,b)=>b.b*(b.x.px||0)-a.b*(a.x.px||0)); const tot=B.reduce((s,r)=>s+r.b*(r.x.px||0),0);
-    g('rw-burn-t').innerHTML=`<span>value burned</span><b>${fmtUsd(tot)}</b>`;
-    box.innerHTML=B.map(r=>{ const x=r.x, sup=SUPPLY*SP.coinChains(x).length, pc=r.b/sup*100; return `<div class="brow" data-go="${tokenUrl(x)}">${who(x)}<span class="hm"><span class="bbar"><i style="width:${Math.min(100,Math.max(pc?1.5:0,pc*4)).toFixed(1)}%"></i></span><span class="bpc">${pc.toFixed(3)}% of supply · ${(x.genes.buybackShareBps/100).toFixed(0)}% of every fee</span></span><span class="m" style="text-align:right"><b style="font:700 15px var(--tight)">${fmtUsd(r.b*(x.px||0))}</b><small style="font-size:11.5px;color:var(--fg-3)">${fmtAmt(r.b)} burned</small></span><span class="m hm" style="text-align:right"><b style="font:700 15px var(--tight)">${fmtUsd((x.buybackPot||0)*(x.pairUsd||0))}</b><small style="font-size:11.5px;color:var(--fg-3)">in the pot</small></span></div>`; }).join('');
-    wire(); }
-
-  /* ---------- load ---------- */
-  async function load(){ const w=SP.W.connected?SP.W.address:null; const my=++seq; if(!w){ P=null; hero(); claims(); return; }
-    hero(); claims(); try{ const r=await CHAIN.profile(w); if(my!==seq) return; P={holdings:(r.holdings||[]).filter(h=>h.x),created:(r.created||[]).filter(c=>c.x)}; }catch(e){ if(my!==seq) return; P={holdings:[],created:[]}; SP.toast('Could not load rewards: '+SP.errMsg(e),'err'); }
-    hero(); claims(); }
-  if(EQ()) EQ().split().then(sp=>{ R=R||{owed:[],split:sp}; R.split=sp; refcb(); hero(); }).catch(()=>{});
-  refcb(); load(); burns(); loadRewards();
-  if(location.hash==='#burns') setTimeout(()=>g('burns').scrollIntoView({behavior:'smooth'}),400);
-  SP.onWallet(()=>{ P=null; R=null; refcb(); load(); loadRewards(); }); SP.onUpdate(()=>{ if(!busy){ load(); loadRewards(); } burns(); });
+  paintPots(); paintCre(); hero();
+  const start=()=>{ loadPots(); loadCre(); };
+  if(V2.loaded()) start(); else addEventListener('chain-update',function once(){ removeEventListener('chain-update',once); start(); });
+  setInterval(()=>{ if(document.visibilityState!=='hidden'&&!busy) paintPots(); },1000);
+  setInterval(()=>{ if(document.visibilityState!=='hidden'&&!busy) loadPots(); },30000);
+  SP.onWallet(()=>{ CRE=null; paintCre(); hero(); loadCre(); });
 };

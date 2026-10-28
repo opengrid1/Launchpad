@@ -10,8 +10,22 @@
   "feeRecipient": "J5UToKRtUypmd58DPP3s1ENQSAwNmSd4xnNbmUiEvyui",
   "launcher": "BmvCWd28LbTXRii4vvH42hT7eg17DUtY8UqrF2utwizE",
   "signer": "0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6",
-  "solUsdBand": ["10", "10000"],
+  "solUsdBand": [
+    "10",
+    "10000"
+  ],
   "initSignature": "5niKksrp1v6T1zLfyRHoS5EssD9FrX8uEjBbPdjh5LXzoUXa7rrmovaMghpqHV54YS1S472nkHKzEVZFLsjPNVrW",
   "oftSha256": "ec67b2ffddb0b0dd3291324c75ec19352deb5b01f5d6ced49df0adc9a830c733",
-  "programSha256": "844cd082c4bb922117d64f67591f90ab72b7da321a622a47c4a6d54fa9396267"
+  "programSha256": "844cd082c4bb922117d64f67591f90ab72b7da321a622a47c4a6d54fa9396267",
+  "verifiedBuild": {
+    "program": "8tQmVEDRd4gBXP2brdgKxtmzXbTD3y8uEbY1erS1UFKq",
+    "hash": "8a4312a01071e310c98ea938d86850163e7206ab4065011a4c0682c050ebf5f0",
+    "baseImage": "solanafoundation/solana-verifiable-build:4.3.0",
+    "repo": "https://github.com/opengrid1/Launchpad",
+    "commit": "d1c0875d7e7247b03f797a2fe7b21be4d68beb39",
+    "mountPath": "solana",
+    "library": "equo_omni",
+    "status": "https://verify.osec.io/status/8tQmVEDRd4gBXP2brdgKxtmzXbTD3y8uEbY1erS1UFKq",
+    "note": "upgraded on 2026-10-28 to the verifiable (Docker) build of the same source; program data extended by 10240 bytes"
+  }
 }

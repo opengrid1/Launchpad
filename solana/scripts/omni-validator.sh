@@ -15,7 +15,7 @@ if [ -n "$OFT" ]; then
   # their global state (settings, message library registration, default configs): lz/clone-list.mjs
   while read -r a; do [ -n "$a" ] && EXTRA+=(--maybe-clone "$a"); done < lz/clone-accounts.txt
 fi
-exec solana-test-validator --reset --quiet --ledger .test-ledger-omni --url https://api.mainnet-beta.solana.com \
+exec solana-test-validator --reset --quiet --ledger .test-ledger-omni --url "${CLONE_URL:-https://api.mainnet-beta.solana.com}" \
   --clone-upgradeable-program cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG \
   --upgradeable-program 8tQmVEDRd4gBXP2brdgKxtmzXbTD3y8uEbY1erS1UFKq target/deploy/equo_omni.so "$WALLET" \
   "${EXTRA[@]}"
