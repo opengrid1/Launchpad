@@ -27,5 +27,9 @@
     "library": "equo_omni",
     "status": "https://verify.osec.io/status/8tQmVEDRd4gBXP2brdgKxtmzXbTD3y8uEbY1erS1UFKq",
     "note": "upgraded on 2026-10-28 to the verifiable (Docker) build of the same source; program data extended by 10240 bytes"
+  },
+  "closed": {
+    "at": "2026-10-28",
+    "note": "OFT and Equo programs closed by their upgrade authority on the owner's request; their rent, the deployer's and the launcher's SOL were sent to J5UToKRtUypmd58DPP3s1ENQSAwNmSd4xnNbmUiEvyui. The program ids cannot be used again."
   }
 }
