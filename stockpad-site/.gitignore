@@ -2,3 +2,4 @@
 # Restore it from the private source before deploying (see README.md).
 charting_library/
 api/_indexer
+api/_sol

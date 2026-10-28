@@ -110,6 +110,10 @@ create table if not exists launch_jobs (
   started_at timestamptz not null default now(),
   txs        jsonb
 );
+-- a launch's Solana leg runs as named steps over several calls (solana/lz/leg.mjs): the ones done so far, and when
+-- the EVM legs were last sent
+alter table launch_jobs add column if not exists sol_done jsonb not null default '[]';
+alter table launch_jobs add column if not exists evm_at timestamptz;
 
 -- one tick at a time when indexing runs in short bursts (serverless): a lease, not a session lock,
 -- so it also works through a transaction-pooling connection
