@@ -101,7 +101,7 @@
 
   let loaded = false;
   async function loadAll() {
-    const j = await api('/api/coins?gen=2&limit=200');
+    const j = await api(`/api/coins?gen=${cfg.gen || 2}&limit=200`);
     const hide = new Set((cfg.hiddenCoins || []).map(lc));
     await Promise.all((j.coins || []).map(async (c) => {
       const m = await meta(c.metadataURI);

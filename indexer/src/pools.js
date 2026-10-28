@@ -34,7 +34,7 @@ export function positionAmounts(sqrtPriceX96, tickLower, tickUpper, liquidity, c
 
 /** One chain's pool for `token`: price in the pair token, the pair and coin sides, and their USD values. */
 export async function poolOf(chain, token, poolId, pairUsd, gen = 1) {
-  const v2 = gen === 2 && chain.v2;
+  const v2 = gen >= 2 && chain.v2;
   const rpc = rpcFor(chain);
   const slot = BigInt(keccak256(coder.encode(["bytes32", "uint256"], [poolId, POOLS_SLOT])));
   const [slot0, pos] = await Promise.all([

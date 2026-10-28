@@ -209,8 +209,8 @@ async function solRecord(snap, p) {
   const mint = p.mint.toBase58(), pool = leg.poolOf(p.mint, new (await solana()).web3.PublicKey(leg.WSOL)).toBase58();
   await q(
     `insert into tokens (chain, token, coin_id, creator, pair, pool_id, name, symbol, launch_block, launch_ts, launch_tx, launch_pair_usd, gen, fee_bps, launch_id, metadata_uri)
-     values ('sol', $1, $2, $3, $4, $5, $6, $7, 0, $8, '', $9, 2, $10, $11, $12) on conflict (chain, token) do nothing`,
-    [mint, coinIdOf(snap), creator, leg.WSOL, pool, snap.name, snap.symbol, Math.floor(Date.now() / 1000), sol.quoteUsd18.toString(), snap.feeBps, lc(snap.launchId), snap.metadataURI]);
+     values ('sol', $1, $2, $3, $4, $5, $6, $7, 0, $8, '', $9, $13, $10, $11, $12) on conflict (chain, token) do nothing`,
+    [mint, coinIdOf(snap), creator, leg.WSOL, pool, snap.name, snap.symbol, Math.floor(Date.now() / 1000), sol.quoteUsd18.toString(), snap.feeBps, lc(snap.launchId), snap.metadataURI, chains()[0].v2.gen || 2]);
 }
 
 // ------------------------------------------------------------------ snapshot
@@ -369,7 +369,7 @@ async function collect(body) {
   if (Math.abs(Date.now() / 1000 - ts) > 600) throw new HttpError(400, "the signature is too old, sign again");
   const msg = collectMessage(launchId, bps, ts);
   if (ethers.verifyMessage(msg, String(body.signature || "")) !== ADMIN) throw new HttpError(403, "only the admin wallet may collect");
-  const legs = (await q("select chain, token from tokens where launch_id = $1 and gen = 2", [launchId])).rows;
+  const legs = (await q("select chain, token from tokens where launch_id = $1 and gen >= 2", [launchId])).rows;
   if (!legs.length) throw new HttpError(404, "no indexed coin with that launch id yet");
   const sent = {};
   await Promise.all(legs.map(async (r) => {

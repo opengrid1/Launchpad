@@ -88,7 +88,7 @@ export class ChainIndexer {
     await q("update chain_state set last_block = $2 where chain = $1 and last_block < $2", [c.key, c.startBlock - 1]);
     const r = await q("select token, coin_id, pair, pool_id, gen from tokens where chain = $1", [c.key]);
     for (const t of r.rows) {
-      const scale = t.gen === 2 ? V2_SCALE : 1n;
+      const scale = t.gen >= 2 ? V2_SCALE : 1n;
       this.pools.set(t.pool_id, { token: t.token, pair: t.pair, coinId: t.coin_id, scale });
       this.tokens.set(t.token, { coinId: t.coin_id, pair: t.pair, scale });
     }
@@ -180,7 +180,8 @@ export class ChainIndexer {
       const coinId = await this.coinIdFor(token);
       const [name, symbol, ts, metadataUri] = await Promise.all([this.str(token, "name"), this.str(token, "symbol"), this.ts(Number(l.blockNumber)), v2 ? this.str(token, "metadataURI", 400) : null]);
       launches.push({ metadataUri, token, creator: lc(ev.args.creator), pair, poolId, coinId, name, symbol, block: Number(l.blockNumber), ts, tx: l.transactionHash, usd18: usd.toString(),
-        gen: v2 ? 2 : 1, feeBps: v2 ? Number(ev.args.feeBps) : null, launchId: v2 ? lc(ev.args.launchId) : null });
+        // gen 3: the fresh deployment of the same contracts (Solana and Ink added)
+        gen: v2 ? c.v2.gen || 2 : 1, feeBps: v2 ? Number(ev.args.feeBps) : null, launchId: v2 ? lc(ev.args.launchId) : null });
       const scale = v2 ? V2_SCALE : 1n;
       this.pools.set(poolId, { token, pair, coinId, scale });
       this.tokens.set(token, { coinId, pair, scale });
