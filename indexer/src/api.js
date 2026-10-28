@@ -1,7 +1,7 @@
 import http from "node:http";
 import { q } from "./db.js";
 import { settings } from "./config.js";
-import { poolOf } from "./pools.js";
+import { poolOf, solPoolOf, solUsd } from "./pools.js";
 
 const OPEN_USD = 3000 / 1e9; // every Equo v2+ chain opens its 1B at a $3,000 market cap
 
@@ -96,7 +96,9 @@ export function makeHandler(chains) {
       const px = await q(`select distinct on (chain, pair) chain, pair, usd18 from pair_prices where pair = any($1) order by chain, pair, ts desc`, [Object.values(c.chains).map((x) => x.pair)]);
       const usdOf = (k, pair) => { const r = px.rows.find((p) => p.chain === k && p.pair === pair); return r ? Number(r.usd18) / 1e18 : null; };
       const byKey = Object.fromEntries(chains.map((ch) => [ch.key, ch]));
+      const sUsd = c.chains.sol ? await solUsd() : null;
       const pools = await Promise.allSettled(Object.entries(c.chains).map(([k, x]) => {
+        if (k === "sol") return Promise.race([solPoolOf(x.poolId, sUsd), new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 6000))]).then((p) => [k, p]);
         const ch = byKey[k];
         if (!ch || !ch.factory || !ch.poolManager) return Promise.reject(new Error("no chain settings"));
         return Promise.race([poolOf(ch, x.token, x.poolId, usdOf(k, x.pair), c.gen), new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 6000))]).then((p) => [k, p]);
@@ -110,8 +112,8 @@ export function makeHandler(chains) {
         if (p.state === "live") live++;
       }
       for (const k of Object.keys(c.chains)) if (!c.chains[k].pool) c.chains[k].pool = { state: "not answering" };
-      c.liquidity = liq || null; // both sides of every pool, in USD
-      c.liquidityPair = pairUsdAll || null; // the native side only, in USD
+      c.liquidity = liq; // the native side of every pool, in USD: what buyers have put in
+      c.liquidityPair = pairUsdAll;
       c.poolsLive = live;
       return c;
     },

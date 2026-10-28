@@ -92,7 +92,7 @@
       if (!b.pairUsd && NUSD[k]) b.pairUsd = NUSD[k];
     }
     if (j.holders != null) x.h = j.holders;
-    if (j.liquidity) x.liq = j.liquidity;
+    if (j.liquidity != null) x.liq = j.liquidity;
     if (j.poolsLive != null) x.poolsLive = j.poolsLive;
     if (!x.px) { const p = keys.map((k) => x.byChain[k].px).filter(Boolean); x.px = p.length ? p.reduce((a, b) => a + b, 0) / p.length : OPEN_USD; }
     if (!x.mc && x.px) x.mc = x.px * x.supplyAll;
