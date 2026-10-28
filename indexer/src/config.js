@@ -15,6 +15,7 @@ export function loadChains() {
       factory: lc(env("FACTORY") || c.factory),
       hook: lc(env("HOOK") || c.hook),
       priceFrom: lc(c.priceFrom),
+      priceAs: c.priceAs || null,
       poolManager: lc(c.poolManager),
       wrappedNative: lc(c.wrappedNative),
       startBlock: Number(env("START_BLOCK") || c.startBlock || 0),

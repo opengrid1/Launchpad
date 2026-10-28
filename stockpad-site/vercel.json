@@ -83,7 +83,7 @@
  "functions": {
   "api/index.mjs": {
    "maxDuration": 60,
-   "includeFiles": "api/_indexer/**"
+   "includeFiles": "{api/_indexer/**,api/_sol/**}"
   }
  },
  "crons": [

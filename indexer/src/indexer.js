@@ -100,6 +100,13 @@ export class ChainIndexer {
   // ---------------------------------------------------------------- prices
 
   async pairUsd(pair) {
+    // a chain with no Equo price oracle (Ink) takes its native coin's price from another chain with the same native
+    // coin (priceAs), as that chain's worker last stored it
+    if (!this.c.priceFrom && this.c.priceAs) {
+      const r = await q(`select p.usd18 from pair_prices p join chain_state s on s.chain = p.chain where p.chain = $1 order by p.ts desc limit 1`, [this.c.priceAs]);
+      if (!r.rows.length) throw new Error(`no ${this.c.priceAs} price yet`);
+      return String(r.rows[0].usd18);
+    }
     // the v2 factory keeps no prices: the first Equo factory on the chain (priceFrom) still reads its oracle
     const r = await this.rpc.ethCall(this.c.priceFrom || this.c.factory, FACTORY.encodeFunctionData("pairUsdPrice", [pair]));
     return abi.decode(["uint256"], r)[0].toString();
