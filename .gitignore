@@ -17,3 +17,7 @@ contracts/deployments/localnet.json
 .vercel/
 .vercel
 .env*
+
+# the v4 launchpad keeps its build scripts and verified builds in build/, and an artifacts/.gitkeep
+!launchpad-v4/build/
+!launchpad-v4/artifacts/

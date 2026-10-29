@@ -1,0 +1,18 @@
+{
+  "name": "launchpad-v4",
+  "private": true,
+  "description": "Pons v2 launchpad contracts (MIT) built for HyperEVM (chain 999, HYPE), with the keeper and the fork test",
+  "scripts": {
+    "build": "node build/compile.cjs",
+    "check": "node build/compile.cjs --check",
+    "router": "node build/router-compile.cjs",
+    "test:fork": "node test/fork.test.cjs",
+    "deploy": "node deploy.cjs",
+    "keeper": "node keeper/keeper.cjs"
+  },
+  "dependencies": {
+    "ethers": "^6.17.0",
+    "solc": "0.8.35",
+    "solc-0.8.26": "npm:solc@0.8.26"
+  }
+}
