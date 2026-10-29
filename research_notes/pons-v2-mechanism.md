@@ -268,3 +268,39 @@ to work there.
 Verdict: everything the Pons mechanism needs exists on Elysium except a v4 PositionManager (not needed with a
 direct-liquidity locker) and an explorer. Two design adjustments: block-based snipe tax, and the locker holding
 liquidity itself. Everything else carries over one to one with HYPE as the quote asset.
+
+## 11. Proof: the exact Pons v2 contracts run on Elysium (local fork, 2026-10-29)
+
+**Recompile.** All eight deployed Pons v2 contracts recompiled from their Sourcify sources with the same
+compiler (solc 0.8.35, optimizer 200, viaIR, cancun; the locker with 0.8.26) produce **byte-for-byte identical
+runtime code** to what is on Robinhood Chain (metadata hash aside, immutables masked): MemeHook 15,167 B,
+LaunchFactory 24,177 B, LaunchDeployer 20,906 B, LaunchAndBuy, GraduationExecutor, BuybackVault, FeeEscrow,
+LaunchLocker. So the source we hold is exactly what Pons runs.
+
+**Fork run** (Hardhat fork of Elysium at block 47,394, the real Elysium PoolManager `0x06c6…b2c4`, Permit2 and
+CREATE2 deployer; the official Uniswap v4 PositionManager deployed from its Sourcify build; HYPE economics
+48 HYPE phantom / 120 HYPE threshold, 1% fee, launch fee 0.005 HYPE, snipe window 12 s). Log in
+`research_notes/pons-v2-elysium-fork-test.txt`. Every step passed:
+
+| Step | Result | Gas |
+|---|---|---|
+| hook address mined (beforeInitialize + afterSwap + afterSwapReturnDelta) | 0.04 s | 3.54M to deploy |
+| launchAndBuy, 2 HYPE opening buy | creator got 39.6M ELT; reserves 49.98 HYPE (48 phantom) / 960.4M; sellable 674.7M; reserved 285.7M | 3.62M |
+| snipe tax | sniper in the launch window paid 13.4% on 1 HYPE (99% capped by the "nets at least 1%" rule after the fill), creator 0% (exempt); +4 s 6.18%, +8 s 0.19%, +12 s 0% | 99k |
+| curve buy 10 HYPE, sell half | 153.8M ELT bought; half sold back for 5.34 HYPE | 98k / 84k |
+| crossing buy (132.6 HYPE sent) | filled to the reserved allocation, **18.86 HYPE refunded**, fees swept, curve halted: `CurveBuyRefunded, CurveBuy, FeesSwept, CurveCompleted, LaunchSwept` | 301k |
+| createGraduatedPool (permissionless, phase 2) | pool on the real PoolManager seeded with **204,081,632 ELT + 120.0 HYPE**, position #1 owned by the locker, **81,632,653 ELT locked** forever: the same 10/49 and 4/49 split as Pons on Robinhood | 817k |
+| pool swaps through the hook | buy 1 HYPE, sell back; hook holds 0.099 HYPE + 16,866 ELT of fees | 156k / 133k |
+| sweepPoolFees (operator) | escrow: creator 1.087 HYPE, protocol 0.466 HYPE (70/30 of the 1% across curve and pool) | 156k |
+| creator claim | 1.087 HYPE received | 33k |
+| curve after graduation | buy reverts | |
+
+Deploying the whole stack costs about 23.7M gas, **0.0024 HYPE** at Elysium's 0.1 gwei. A launch costs the
+creator 3.6M gas (0.00036 HYPE) plus the launch fee.
+
+One detail of the real flow: the crossing buy sweeps the curve (phase 1) but the pool is created in a
+second permissionless transaction (phase 2), exactly as on Robinhood Chain; Pons' keeper sends it, and ours
+will too.
+
+Everything else in the Pons system (buyback vault, creator-recipient timelock, rescue paths) is the same code
+and does not touch the chain in any way the steps above did not.

@@ -1,0 +1,59 @@
+fork block 47394, PoolManager code 24009 B
+PositionManager 0x809d550fca64d94Bd9F66E60752A544199cfAC3D
+hook salt mined in 0.038s: 0xcF696f924527D625a7B26bc0c16939B708BD2044
+factory 0xCD8a1C3ba11CF5ECfa6267617243239504a98d90 canLaunch(creator) true
+launched Elysium Test (ELT) token 0xAaF424fB4099d747148bd8dcf0026B0537f79456 curve 0xEa70a11dCc5C85e464b3529e5776d1a82acEA78d; creator got 39615846.338535414165666266 for 2 HYPE
+curve reserves: quote 49.98 (48 phantom + real), tokens 960384153.661464585834333734; sellable 674669867.947178871548619449; reserved 285714285.714285714285714285
+snipe tax right after launch: sniper 99%, creator 0% (exempt)
+  sniper paid fee+tax 0.1337 HYPE of 1, got 16362661.438824983739392705 ELT
+  at +4s: snipe tax 6.18%
+  at +8s: snipe tax 0.19%
+  at +12s: snipe tax 0%
+  bob holds 153849909.755888540713424787 ELT
+  bob sold 76924954.877944270356712393 ELT for 5.335250601742409443 HYPE
+real quote so far 7.35715797803797026 HYPE; sending 132.64284202196202974 to cross the 120 HYPE threshold
+  events: CurveBuyRefunded, CurveBuy, FeesSwept, CurveCompleted, LaunchSwept
+  refund of the overshoot: 18.862193514929676466 HYPE; bob spent 113.780648507032353274 HYPE
+  graduated: true, phase 1 (1 = Swept: the crossing buy sweeps the curve; phase 2 is its own permissionless tx, which Pons' keeper sends)
+  phase now 2 (2 = PoolCreated)
+  locker holds position #1, owner 0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575 == locker 0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575; locked leftover supply 81632653.06122448979494655 ELT
+  pool seeded with 204081632.653061224490767735 ELT + 120.000000000000000002 HYPE
+  hook pending fees: 0.098985996061965549 HYPE + 16866.250632484398717966 ELT
+  escrow after sweep: creator 1.087019009000331351 HYPE, protocol 0.465865289571570577 HYPE (70/30 of the 1% on curve + pool)
+  creator claimed 1.087019009000331351 HYPE
+  curve closed after graduation (buy reverts), as expected
+
+GAS
+  deploy PositionManager                         5254855  (0.0005254855 HYPE at 0.1 gwei)
+  deploy PonsV2FeeEscrow                          493535  (0.0000493535 HYPE at 0.1 gwei)
+  deploy PonsV2MemeHook (CREATE2)                3535004  (0.0003535004 HYPE at 0.1 gwei)
+  deploy PonsV2BuybackVault                      1102306  (0.0001102306 HYPE at 0.1 gwei)
+  deploy PonsV2LaunchLocker                       509171  (0.0000509171 HYPE at 0.1 gwei)
+  deploy PonsV2LaunchFactory                     6086347  (0.0006086347 HYPE at 0.1 gwei)
+  deploy PonsV2GraduationExecutor                1008558  (0.0001008558 HYPE at 0.1 gwei)
+  deploy PonsV2LaunchDeployer                    4554362  (0.0004554362 HYPE at 0.1 gwei)
+  deploy PonsV2LaunchAndBuy                      1061012  (0.0001061012 HYPE at 0.1 gwei)
+  hook.setFactory                                  47258  (0.0000047258 HYPE at 0.1 gwei)
+  hook.setBuybackVault                             47345  (0.0000047345 HYPE at 0.1 gwei)
+  vault.setFactory                                 47156  (0.0000047156 HYPE at 0.1 gwei)
+  locker.setFactory                                47112  (0.0000047112 HYPE at 0.1 gwei)
+  factory.setGraduationExecutor                    48327  (0.0000048327 HYPE at 0.1 gwei)
+  factory.setLaunchDeployer                        47337  (0.0000047337 HYPE at 0.1 gwei)
+  factory.setLaunchForwarder                       47628  (0.0000047628 HYPE at 0.1 gwei)
+  factory.addLaunchConfig (48/120 HYPE)           160291  (0.0000160291 HYPE at 0.1 gwei)
+  factory.setSnipeTaxSeconds(12)                   30602  (0.0000030602 HYPE at 0.1 gwei)
+  factory.setLaunchEnabled                         47978  (0.0000047978 HYPE at 0.1 gwei)
+  launchAndBuy (2 HYPE)                          3620306  (0.0003620306 HYPE at 0.1 gwei)
+  sniper buy 1 HYPE in the window                  99362  (0.0000099362 HYPE at 0.1 gwei)
+  bob buy 10 HYPE                                  97671  (0.0000097671 HYPE at 0.1 gwei)
+  bob approve                                      46009  (0.0000046009 HYPE at 0.1 gwei)
+  bob sell half                                    83681  (0.0000083681 HYPE at 0.1 gwei)
+  crossing buy (auto-graduate)                    301077  (0.0000301077 HYPE at 0.1 gwei)
+  createGraduatedPool (anyone)                    816889  (0.0000816889 HYPE at 0.1 gwei)
+  pool buy 1 HYPE -> ELT                          156448  (0.0000156448 HYPE at 0.1 gwei)
+  approve router                                   46009  (0.0000046009 HYPE at 0.1 gwei)
+  pool sell all ELT -> HYPE                       133456  (0.0000133456 HYPE at 0.1 gwei)
+  hook.sweepPoolFees                              155978  (0.0000155978 HYPE at 0.1 gwei)
+  creator claim                                    32632  (0.0000032632 HYPE at 0.1 gwei)
+
+ALL OK
