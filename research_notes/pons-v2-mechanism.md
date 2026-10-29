@@ -171,3 +171,64 @@ For a native launch, from open to graduation:
 The same shape in HYPE (at $81): `phantomQuote` 48 HYPE, threshold 120 HYPE (the same 2:5 ratio, so the same
 2/7 reserved, 10/49 to the pool, 4/49 locked): opening cap about $3,900, $9,700 raised to graduate,
 graduation cap about $47,800, 120 HYPE of real liquidity in the pool.
+
+## 9. The rest of the platform (off-chain and policy), from docs.ponsfamily.com and public coverage
+
+**PONS token and the protocol's 30%.** PONS (1B fixed supply, launched through the legacy v1 factory, 90/10
+split, WETH v3 pool locked) is the platform's own coin. The protocol's fee share lands in a collector wallet;
+an **automated TWAP executor spends 80% of it buying PONS in small orders and sends the coins to the burn
+address**; the other 20% pays infrastructure and the team. About 29% of PONS (around 290M) had been burned
+by September 2026. The docs say this 80% rule is **not immutable yet** and will be made on-chain later. PONS
+has no stated utility (no governance, staking or fee discount); it is a revenue-backed burn story.
+
+**Operator and keepers (run by the team).**
+- *Sweep operator*: the only address allowed to run a fee sweep that needs an internal swap (a buyback, or
+  converting memecoin-denominated hook fees to the quote asset), because it must pass a minimum output. A
+  creator can still sweep plain quote-denominated fees. Fees reach the escrow only after a sweep.
+- *Graduation keeper*: the crossing buy tries `graduate` itself; if it fails (`AutoGraduationFailed`), the
+  keeper calls `graduate` then `createGraduatedPool`. Both are permissionless, anyone can do it.
+- *Unclaimed creator rewards*: "may be claimed by pons automation and sent to the creator payout wallet."
+- *Migration keeper*: paces the sales of a migration (below).
+
+**Community takeover (CTO).** For an abandoned coin, a community applies through a form; the team reviews
+and, if approved, uses the owner's `setCreatorFeeRecipient` override: a **3-day timelock**, then a **3-day
+execution window** in which anyone can execute, cancellable by the owner during the wait. It only moves
+where future creator fees go; supply, pricing and locked liquidity cannot change. Approval is administrative,
+not an endorsement.
+
+**Migration (bringing a coin that pons did not launch).** Holders deposit the old coin into epochs: epoch 1
+credits 1:1, later epochs credit less; each epoch can have a deposit cap, the last cap filling closes the
+window. Deposits are withdrawable in full until the first sale; the keeper sells them in paced tranches with
+a minimum output. Claims mint the new coin and vest linearly over "a few days"; claims stay open 90 days.
+If the migration fails, depositors in unsettled epochs reclaim their share after a settlement deadline.
+
+**Quote assets (v2).** Native ETH by default; the owner approves ERC-20 pairs with their own curve economics
+in the asset's decimals: USDG, cbBTC and tokenized US stocks (NVDA, AAPL, HOOD and others). The pair is the
+launch's currency for buying, graduation and creator payouts. Roughly a third of pons coins were stock- or
+RWA-paired; the flagship was Artificial Inu paired with NVDA. Not available on Elysium (no such assets
+there), so our version is HYPE only.
+
+**Launch access.** `canLaunch(address)`: a global public switch plus a whitelist. Public launching was closed
+at times; on 2026-10-29 the factory answered `canLaunch(0x0) = true`, so it was open.
+
+**v1 (legacy, still trading).** No curve: a launch went straight into a Uniswap **v3** WETH pool with the
+supply as liquidity, 1% pool fee, 0.0005 ETH launch fee, "graduation" at 4.2 WETH paired with no migration,
+launch protection for two blocks (only the creator's buy in the launch block; then max 5% of supply held and
+5.5% bought per wallet), 90/10 creator/protocol split. v2 replaced the opening-price problem with the curve.
+
+**The app (ponsfamily.com).** Explore, Analytics, Create, token pages, fee claiming; it is a plain front end
+over the contracts and an indexer. The docs state there is no pons API in the trust path and tell integrators
+to index on-chain events (`TokenLaunched`, `CurveBuy`/`CurveSell`, `LaunchSwept`, `PoolGraduated`, `Swap`,
+`HookFeeCollected`, the escrow's `Credited`/`Claimed` and token variants, the vault's `Locked`/`Released`).
+Third parties (Bitquery, Mobula, Axiom-style terminals) index it the same way.
+
+**Safety and trust posture.** Contracts immutable (new versions ship as new addresses); fee terms frozen per
+launch; supply fixed; liquidity locked with no unlock; the owner keeps: fee policy for future launches
+(protocol share max 50%, hook fee max 10%), the sweep operator, pair approvals, the whitelist, the CTO
+override (timelocked), and delayed rescue paths (7 days) for stuck graduations. v2 audits by SB Security,
+Dingbats and Pashov were in progress and unpublished as of the docs.
+
+**What made it grow (from the research notes).** The 70/30 split paid continuously in the quote asset,
+the atomic launch-and-buy, Robinhood Chain's zero-gas window (July to late September 2026), and the
+stock-paired launches. Peak: $5.34M fees in a day (Aug 30, 2026), ~20K launches a day, 1.55% of coins
+graduating. Revenue fell to a few percent of peak by October, like every launchpad surge before it.
