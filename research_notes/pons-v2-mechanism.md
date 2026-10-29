@@ -232,3 +232,39 @@ Dingbats and Pashov were in progress and unpublished as of the docs.
 the atomic launch-and-buy, Robinhood Chain's zero-gas window (July to late September 2026), and the
 stock-paired launches. Peak: $5.34M fees in a day (Aug 30, 2026), ~20K launches a day, 1.55% of coins
 graduating. Revenue fell to a few percent of peak by October, like every launchpad surge before it.
+
+## 10. Does Elysium have everything a Pons-style launchpad needs? Checked on chain, 2026-10-29
+
+Elysium: chain id 99901, RPC `https://rpc-live.boxa.pro`, an Arbitrum Orbit (Nitro, ArbOS 61) rollup whose parent
+chain is HyperEVM (999). Native gas coin HYPE, 18 decimals.
+
+| Need | Pons uses | Elysium | Status |
+|---|---|---|---|
+| EVM with Cancun (v4 needs TSTORE/TLOAD; solc 0.8.26+) | Robinhood Chain (Orbit) | TSTORE, TLOAD, PUSH0 all execute (state-override call test) | OK |
+| Uniswap v4 PoolManager | canonical v4 | `0x06c6…b2c4` is byte-for-byte the canonical v4 PoolManager build (only the self-address immutable differs); 1,502 swaps and 37 pool inits in the last 10k blocks; `fee 0 / tickSpacing 200 / hook` pools already exist there | OK |
+| Native coin as the quote (address 0 = currency0) | native ETH | all 37 recent pools use native HYPE as currency0 | OK |
+| Hook address mining (CREATE2 deployer) | yes | `0x4e59…956C` present (69 bytes) | OK |
+| Permit2, Multicall3 | yes | present and responding | OK |
+| Wrapped native | WETH (v1 only) | WHYPE `0xba87…5e81` present; not needed for the Pons design (native quote) | OK |
+| v4 PositionManager (Pons mints the locked position as an NFT) | yes | **none found** | Design change: our locker holds the full-range liquidity directly in the PoolManager (`modifyLiquidity` + `unlockCallback`), no NFT, no remove function. Simpler and still permanently locked. |
+| Contract size limit 24,576 B | Pons factory is 24,177 B | standard; a 12.8 KB deploy estimates 6.0M gas, accepted | OK (we split like Pons does anyway) |
+| Gas cost | ETH | 0.1 gwei flat; a 20M-gas deploy costs 0.002 HYPE; L1-data part negligible (1.36 gwei/byte) | OK, almost free |
+| Direct transaction submission | sequencer | `eth_sendRawTransaction` goes to the sequencer directly (a tx from our empty deployer was queued, not refused); Boxa's "queued-inbox / 2M gas" mode is only their own relayer path | OK |
+| Block time and timestamps | about 0.25s blocks, 1s timestamps | **about 4.2s blocks**, timestamp deltas 1s to 7s | Pons' 3-second snipe tax would only ever hit the launch block itself. **Our snipe tax must count blocks** (e.g. launch block 99%, next block ~6%, then 0) or use a 10 to 15 second window. |
+| Indexer: `eth_getLogs` | unlimited-ish | **max 10,000 blocks per request**; 20 parallel calls in 174 ms, no rate limit seen | OK, set `maxRange` 10,000 |
+| Price in USD for the UI | ETH price | no on-chain oracle; use CoinGecko HYPE like the Ink `priceAs` path | OK |
+| Bridging HYPE in | ETH already on chain | HyperEVM inbox `0xce59…2cff` (standard Arbitrum Inbox, `depositEth()`, allow list off, not paused; estimate 92,957 gas); Boxa's site has /bridge and /deposit pages | OK |
+| Bridging HYPE out | n/a | `ArbSys.withdrawEth` on Elysium; rollup `0x508C…D217` confirm period 483,840 HyperEVM blocks = **about 5.5 days** | OK but slow (no fast bridge seen) |
+| Block explorer / contract verification | Blockscout + Sourcify | **none public**, Elysium is not on chainlist or Sourcify | Gap: publish source on GitHub and keep a verifiable build; cannot show "verified" on an explorer |
+| Chain operator risk | Robinhood (Offchain Labs stack) | Boxa runs the sequencer and the only RPC; chain owner is a Boxa key; chain is 10 days old (first block 2026-10-19) | Risk to accept: if Boxa stops, the launchpad stops |
+| Sweep operator and graduation keeper | Pons runs bots | we run the same two bots (our launch service already does this for Equo) | OK |
+| Stock / stablecoin pairs | NVDA, AAPL, USDG, cbBTC | none on Elysium | HYPE only |
+| Our deployer `0xA078…aF0a` | | 0 HYPE on Elysium, 0 on HyperEVM; one 0-value tx from it is sitting in Elysium's mempool at nonce 0 (harmless, mines when funded) | needs about 0.05 HYPE on HyperEVM to bridge and deploy |
+
+Boxa's own hook, for reference, uses beforeInitialize, beforeAddLiquidity, beforeRemoveLiquidity, beforeSwap,
+afterSwap and both swap return-delta flags on this PoolManager, so every hook flag our design needs is proven
+to work there.
+
+Verdict: everything the Pons mechanism needs exists on Elysium except a v4 PositionManager (not needed with a
+direct-liquidity locker) and an explorer. Two design adjustments: block-based snipe tax, and the locker holding
+liquidity itself. Everything else carries over one to one with HYPE as the quote asset.
