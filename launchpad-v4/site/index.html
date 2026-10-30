@@ -1,0 +1,45 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GODMODE | Launch on HyperEVM and Solana</title><meta name="description" content="Meme launchpad on HyperEVM and Solana. One launch, both chains, HYPE pair on each, locked liquidity, 1% fee with 70% to the creator.">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#07090b">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=1">
+<style>
+#pg-home .hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:24px;align-items:center;padding:34px 0 22px}
+#pg-home h1{font-size:clamp(34px,4.6vw,58px);line-height:1;letter-spacing:-.04em}#pg-home h1 em{font-style:normal;color:var(--ac)}
+#pg-home .lead{margin:16px 0 20px;max-width:520px;font-size:16px;color:var(--fg-2)}
+#pg-home .ctas{display:flex;gap:10px;flex-wrap:wrap}
+#pg-home .chainrow{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}#pg-home .chainrow .badge{height:28px;font-size:12px;padding:0 10px}#pg-home .chainrow .badge img{width:16px;height:16px;border-radius:50%}
+#pg-home .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}#pg-home .stats .sbox b{font-size:22px}
+#pg-home .live{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+#pg-home .feed{border:1px solid var(--line);border-radius:var(--r);background:var(--s1);padding:10px 12px;max-height:150px;overflow:hidden}
+#pg-home .feed .ln{display:flex;gap:8px;align-items:center;padding:5px 0;font:12px var(--mono);color:var(--fg-3);border-bottom:1px dashed var(--line);animation:tin .25s}#pg-home .feed .ln:last-child{border-bottom:0}#pg-home .feed .ln img{width:16px;height:16px;border-radius:5px}#pg-home .feed .ln b{color:var(--fg);font-weight:500}#pg-home .feed .ln .ch{width:12px;height:12px;border-radius:50%}
+#pg-home .filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:18px 0 12px}#pg-home .filters .search{margin-left:auto;position:relative;min-width:220px}#pg-home .filters .search input{height:34px;padding-left:34px;border-radius:999px}#pg-home .filters .search svg{position:absolute;left:12px;top:9px;width:15px;height:15px;color:var(--fg-3)}
+#pg-home .pager{display:flex;justify-content:center;gap:8px;margin:18px 0}
+@media(max-width:900px){#pg-home .hero{grid-template-columns:1fr;gap:18px;padding-top:22px}#pg-home .stats{grid-template-columns:repeat(2,1fr)}#pg-home .filters .search{margin-left:0;width:100%}}
+</style>
+</head><body data-page="home">
+<header id="top"></header>
+<main><div class="wrap"><div id="pg-home">
+  <section class="hero">
+    <div>
+      <h1>One launch.<br>HyperEVM <em>and</em> Solana.</h1>
+      <p class="lead">Launch a coin on both chains at once, paired with HYPE on each, liquidity locked for good. Every buy and sell pays 1%: 70% to the creator, 30% to the protocol. No bonding curve, no graduation, just a pool from block one.</p>
+      <div class="ctas"><a class="btn pri lg" href="/launch" id="h-launch">Launch a coin</a><a class="btn lg line" href="/docs">How it works</a></div>
+      <div class="chainrow" id="h-chains"></div>
+    </div>
+    <div>
+      <div class="stats" id="h-stats"></div>
+      <div class="live"><div class="feed" id="h-feed"></div></div>
+    </div>
+  </section>
+  <div class="filters" id="h-filters">
+    <button class="pill on" data-sort="new">New</button><button class="pill" data-sort="trend">Trending</button><button class="pill" data-sort="vol">Top volume</button><button class="pill" data-sort="mcap">Market cap</button><button class="pill" data-sort="fees">Creator fees</button>
+    <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg><input class="inp" id="h-q" placeholder="Search name, ticker or address" autocomplete="off"></label>
+  </div>
+  <div class="cards" id="h-cards"></div>
+  <div class="pager" id="h-pager"></div>
+</div></div></main>
+<nav id="tabbar"></nav><footer id="foot"></footer>
+<script src="/config.js?v=1"></script><script src="/demo.js?v=1"></script><script src="/app.js?v=1"></script><script src="/pg-home.js?v=1"></script>
+</body></html>
