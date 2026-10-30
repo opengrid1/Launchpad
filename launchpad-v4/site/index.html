@@ -3,40 +3,26 @@
 <title>GODMODE | Launch on HyperEVM and Solana</title><meta name="description" content="Meme launchpad on HyperEVM and Solana. One launch, both chains, HYPE pair on each, locked liquidity, 1% fee with 70% to the creator.">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#ffffff">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="/ui.css?v=5">
+<link rel="stylesheet" href="/ui.css?v=6">
 <style>
-#pg-home .stats{display:flex;gap:22px;overflow-x:auto;scrollbar-width:none;padding:12px 16px;border-radius:14px;background:var(--grp);margin:14px 0 0}#pg-home .stats::-webkit-scrollbar{display:none}#pg-home .stats .sbox{flex:none}#pg-home .stats .sbox b{font-size:17px}
-#pg-home .feed{display:flex;gap:16px;overflow:hidden;margin:12px 0 0;font-size:13px;color:var(--fg-2);white-space:nowrap}#pg-home .feed span{display:inline-flex;align-items:center;gap:6px}#pg-home .feed img{width:14px;height:14px;border-radius:4px}#pg-home .feed b{font-weight:600;color:var(--fg)}
-#pg-home .filters{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -20px 8px;padding:0 20px}#pg-home .filters::-webkit-scrollbar{display:none}#pg-home .filters .pill{flex:none}
+#pg-home .line{font-size:13px;color:var(--fg-2);margin:0 0 14px;display:flex;gap:14px;overflow:hidden;white-space:nowrap}#pg-home .line b{font-weight:600;color:var(--fg)}
+#pg-home .segwrap{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:8px 0 10px;margin:0 -20px;padding-left:20px;padding-right:20px}
+#pg-home .seg2{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--fill)}#pg-home .seg2 button{flex:1;height:32px;border-radius:7px;font-size:13px;font-weight:600;color:var(--fg);white-space:nowrap}#pg-home .seg2 button.on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.14)}
 #pg-home .pager{display:flex;justify-content:center;gap:6px;margin:18px 0 10px}
-@media(min-width:900px){#pg-home .two{display:grid;grid-template-columns:1fr 1fr;gap:0 40px}}
+#pg-home .feed{display:flex;gap:16px;overflow:hidden;margin:14px 0 0;font-size:13px;color:var(--fg-2);white-space:nowrap}#pg-home .feed span{display:inline-flex;align-items:center;gap:6px}#pg-home .feed img{width:14px;height:14px;border-radius:4px}#pg-home .feed b{font-weight:600;color:var(--fg)}
+@media(min-width:900px){#pg-home .apps{display:grid;grid-template-columns:1fr 1fr;gap:0 40px}#pg-home .seg2{max-width:560px}}
 </style>
 </head><body data-page="home">
-<aside id="side"></aside><header id="top"></header>
+<header id="top"></header>
 <main><div class="wrap"><div id="pg-home">
-  <div class="ptitle"><div><small id="h-date"></small><h1>Today</h1></div><span id="wallet-btn"></span></div>
+  <div class="ptitle"><div><small id="h-date"></small><h1>Coins</h1></div><span id="wallet-btn"></span></div>
   <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="h-q" placeholder="Coins, tickers, addresses" autocomplete="off"></label>
-
-  <div class="stories" id="h-today"></div>
-  <div class="stats" id="h-stats"></div>
-  <div class="feed" id="h-feed"></div>
-
-  <div class="sec-t"><a href="?sort=trend"><h2>Suggested</h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a></div>
-  <div class="apps" id="h-sug"></div>
-
-  <div class="sec-t"><a href="#all"><h2>Browse</h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a></div>
-  <div class="tiles" id="h-tiles"></div>
-
-  <div class="sec-t"><a href="?sort=vol"><h2>Top Charts</h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a><p>By 24h volume across both chains.</p></div>
-  <div class="apps two" id="h-top"></div>
-
-  <div class="sec-t" id="all"><a href="#all"><h2 id="h-all-t">All coins</h2></a></div>
-  <div class="filters" id="h-filters">
-    <button class="pill on" data-sort="new">New</button><button class="pill" data-sort="trend">Trending</button><button class="pill" data-sort="vol">Volume</button><button class="pill" data-sort="mcap">Market cap</button><button class="pill" data-sort="fees">Creator payouts</button>
-  </div>
+  <div class="line" id="h-line"></div>
+  <div class="segwrap"><div class="seg2" id="h-tabs"><button class="on" data-sort="new">New</button><button data-sort="trend">Trending</button><button data-sort="vol">Top</button><button data-sort="mcap">Market cap</button><button data-sort="fees">Payouts</button></div></div>
   <div class="apps" id="h-list"></div>
   <div class="pager" id="h-pager"></div>
+  <div class="feed" id="h-feed"></div>
 </div></div></main>
 <nav id="tabbar"></nav><footer id="foot"></footer>
-<script src="/config.js?v=5"></script><script src="/demo.js?v=5"></script><script src="/app.js?v=5"></script><script src="/pg-home.js?v=5"></script>
+<script src="/config.js?v=6"></script><script src="/demo.js?v=6"></script><script src="/app.js?v=6"></script><script src="/pg-home.js?v=6"></script>
 </body></html>

@@ -2,7 +2,7 @@
    CHART.mount(el, addr) draws; CHART.update() redraws from DATA after new trades. */
 (function () {
   const RANGES = [['5M', 300, 5], ['1H', 3600, 60], ['6H', 21600, 300], ['1D', 86400, 900], ['1W', 604800, 3600], ['All', 0, 0]];
-  let el, cv, ctx, addr, chain = 'hyper', rng = 'All', kind = 'candle', mode = 'mcap', unit = 'USD', hover = null, W = 0, H = 0, dpr = 1, bars = [], raf = 0;
+  let el, cv, ctx, addr, chain = 'hyper', rng = 'All', kind = 'line', mode = 'mcap', unit = 'USD', hover = null, W = 0, H = 0, dpr = 1, bars = [], raf = 0;
   const E = () => window.CFG.econ, SUP = () => E().supply;
   function stepFor(r) { const t = DATA.token(addr); const age = Math.max(60, Math.floor(Date.now() / 1000) - t.createdAt); const span = r[1] || age; return span <= 600 ? 5 : span <= 3600 ? 15 : span <= 21600 ? 60 : span <= 86400 ? 300 : span <= 604800 ? 1800 : 3600; }
   function factor() { return (mode === 'mcap' ? SUP() : 1) * (unit === 'USD' ? APP.hypeUsd : 1); }
