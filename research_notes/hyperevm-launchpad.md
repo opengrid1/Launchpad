@@ -89,3 +89,30 @@ internal AMM (`Factory`/`Pair`/`Router` clones) with a USD trigger.
    needs its own fork test, and it is the one item that blocks going live.
 6. Snipe tax window 3 s (one-second blocks) instead of 12 s.
 7. Site: HyperEVM wallet config already exists from Liqio (chain 999, hyperevmscan links).
+
+## 4. Elysium as a third chain without LayerZero (checked 2026-10-30)
+
+LayerZero has no endpoint on Elysium (not in its metadata, 487 chains). Hyperlane is on HyperEVM (Abacus Works,
+domain 999) and can be deployed permissionlessly on Elysium (own validators at first). But Elysium already has the
+canonical Arbitrum token bridge, found on HyperEVM through the creator event `OrbitTokenBridgeCreated` for the
+Elysium inbox `0xce59f8b65ad41c9dae4c07a0571a39824bd92cff` (creator `0x90906b0debd4c6f6ea13edb8adea63fb8b055afe`,
+block 48,957,103, tx `0x0b787ec550ad11d5e166f336b23a8d33e75af2633821ac8ae583cd1b5e62c2cc`):
+
+| Side | Router | Standard gateway | Custom gateway | WETH gateway | WETH |
+|---|---|---|---|---|---|
+| HyperEVM (parent) | `0x5d24f760dd7664b4214bdd4b04a3f62b9edd68c0` | `0xd97b30de0ba0c2eaee942afce77530e06c5f122c` | `0xf735a40938befc34cde27049f7f70780bd460748` | `0x4adeece99edfa453e40e79ffd2f179008f5a91eb` | WHYPE `0x5555…5555` |
+| Elysium (child) | `0x61ebbc3a29f1970af2ce862ba9c5364832e14d17` | `0x5dc84e4cb0f9082246e92a5585c5395592b1af1f` | `0x8c0a6e1a8126f880d0dad46f7b7106ee48397432` | `0xb916e67307ad52955d37b6c123cf1a79c10855b6` | WHYPE `0xba876237b0f021a6c6d852d6c26e107997cc5e81` |
+
+Elysium: proxy admin `0xdeae688c60778379f98f3e29c7e94d6e3934a30a`, beacon proxy factory
+`0xc1fefd7e93115b280a036484a4988feb3a254160`, upgrade executor `0xce4ceced412aa9359840c7d52bbd99827a5d42b9`,
+multicall `0x1526b98c1be5132d5ba24bc4abca0891727976c7`. HyperEVM: proxy admin `0x1394034554889fb60aade45fe38ab05ad6f53f24`,
+upgrade executor `0xdd45a7a06cc21cfe442cf13dffeb8252b18c1441`. (Elysium is Kinetiq's chain, docs at
+elysium.kinetiq.xyz; the site sits behind a Vercel checkpoint, so these came from the chain.)
+
+How a coin reaches Elysium with it: any ERC-20 on HyperEVM is deposited through the parent router
+(`outboundTransfer`), the child standard gateway deploys the coin's Elysium representation on the first deposit
+(no registration), deposits land in minutes (retryable ticket), withdrawals back to HyperEVM take the challenge
+period (about 5.5 to 6 days). Plan for a third leg: the coin's HyperEVM contract mints the Elysium slice (1B) and the
+launch service deposits it through the gateway, opens the Uniswap v4 pool on Elysium with the same hook stack
+(proven on the fork, 0.1 gwei gas), locks it, same fees; the site shows a third chain and a bridge tab with the two
+timings. Fast two-way later: a Hyperlane warp route on Elysium, or LayerZero when it arrives.
