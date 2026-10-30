@@ -27,7 +27,7 @@ window.PAGE = async () => {
   }
   $$('#h-tabs [data-sort]').forEach((b) => b.onclick = () => { sort = b.dataset.sort; page = 0; history.replaceState(null, '', '?sort=' + sort + (q ? '&q=' + encodeURIComponent(q) : '') + '#all'); render(); });
   const sq = $('#h-q'); sq.value = q; sq.oninput = () => { q = sq.value.trim(); page = 0; render(); };
-  if (qs.get('focus')) { $('#h-title').textContent = 'Search'; setTimeout(() => sq.focus(), 50); }
+  
   render(); if (qs.get('sort') || location.hash === '#all') setTimeout(() => scrollTo({ top: $('#all').offsetTop - 8 }), 50);
   let last = 0; APP.onUpdate(() => { if (Date.now() - last > 4000) { last = Date.now(); render(); } });
 };

@@ -48,7 +48,7 @@ main{flex:1;min-width:0}.wrap{width:100%;max-width:var(--wrap);margin:0 auto;pad
 .story .ft{position:absolute;left:18px;right:18px;bottom:16px;display:flex;align-items:center;gap:12px}.story .ft img{width:50px;height:50px;border-radius:12px;box-shadow:0 10px 30px -10px rgba(0,0,0,.6)}.story .ft .t b{display:block;font-size:15px;font-weight:600}.story .ft .t span{font-size:13px;opacity:.9}.story .ft .btn{margin-left:auto;background:rgba(255,255,255,.95);color:var(--blue)}
 .stories{display:grid;gap:14px}@media(min-width:900px){.stories{grid-template-columns:1fr 1fr}.story.big{grid-column:1 / -1}}
 /* floating glass tab bar, like iOS: one white frosted pill, filled icons, a light blue capsule on the active tab */
-#tabbar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;width:min(400px,calc(100% - 32px));height:62px}
+#tabbar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;width:min(340px,calc(100% - 32px));height:62px}
 #tabbar .pillbar{display:flex;align-items:center;height:62px;padding:5px;border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(28px);-webkit-backdrop-filter:saturate(180%) blur(28px);box-shadow:0 10px 36px rgba(0,0,0,.14),0 1px 2px rgba(0,0,0,.06),inset 0 0 0 .5px rgba(255,255,255,.9),0 0 0 .5px rgba(0,0,0,.06)}
 #tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:999px;color:#000;text-decoration:none}#tabbar a svg{width:26px;height:26px;stroke:none}#tabbar a span{font-size:10px;font-weight:500;letter-spacing:-.1px;line-height:12px}
 #tabbar a.on{color:var(--blue);background:#dceafe}
