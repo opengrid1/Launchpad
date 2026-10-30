@@ -20,7 +20,7 @@ main{flex:1;min-width:0}.wrap{width:100%;max-width:var(--wrap);margin:0 auto;pad
 .ptitle{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:20px 0 12px}.ptitle h1{font-size:34px;font-weight:700;letter-spacing:-.4px;line-height:41px}.ptitle small{display:block;font-size:13px;font-weight:600;color:var(--fg-2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px}
 .avatar{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:linear-gradient(160deg,#a9bdf2,#7085cf);color:#fff;font-weight:600;font-size:17px;letter-spacing:0;flex:none}.avatar.off{background:var(--fill2);color:var(--blue)}.avatar svg{width:18px;height:18px}
 /* search field */
-.search{position:relative;margin:2px 0 6px}.search input{width:100%;height:36px;padding:0 12px 0 34px;border:0;border-radius:10px;background:#e9e9eb;font-size:17px;color:var(--fg);outline:0}.search input::placeholder{color:#8a8a8e}.search svg{position:absolute;left:10px;top:9px;width:18px;height:18px;color:#8a8a8e}
+.search{position:relative;margin:2px 0 6px}.search input{width:100%;height:36px;padding:0 12px 0 34px;border:0;border-radius:10px;background:#e9e9eb;font-size:17px;color:var(--fg);outline:0}.search input::placeholder{color:#8a8a8e}.search svg{position:absolute;left:9px;top:8.5px;width:19px;height:19px;color:#8a8a8e}
 /* section header: "Suggested >" */
 .sec-t{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:30px 0 6px}.sec-t h2{font-size:22px;font-weight:700;letter-spacing:-.26px;white-space:nowrap}.sec-t a{display:inline-flex;align-items:center;gap:4px;color:var(--fg);flex:none}.sec-t a svg{width:16px;height:16px;color:#aeaeb2;stroke-width:3}.sec-t p{width:100%;font-size:15px;color:var(--fg-2);margin:2px 0 0}
 /* app rows */
@@ -47,11 +47,12 @@ main{flex:1;min-width:0}.wrap{width:100%;max-width:var(--wrap);margin:0 auto;pad
 .story em{position:absolute;right:14px;top:50%;transform:translateY(-62%) rotate(-8deg);font-size:124px;line-height:1;font-style:normal;filter:drop-shadow(0 18px 24px rgba(0,0,0,.28))}.story.big em{font-size:160px;right:40px}.story::before{content:"";position:absolute;inset:auto -20% -40% auto;width:60%;height:90%;border-radius:50%;background:rgba(255,255,255,.14);filter:blur(30px)}@media(max-width:560px){.story em{font-size:96px;right:6px}.story.big em{font-size:120px;right:10px}}
 .story .ft{position:absolute;left:18px;right:18px;bottom:16px;display:flex;align-items:center;gap:12px}.story .ft img{width:50px;height:50px;border-radius:12px;box-shadow:0 10px 30px -10px rgba(0,0,0,.6)}.story .ft .t b{display:block;font-size:15px;font-weight:600}.story .ft .t span{font-size:13px;opacity:.9}.story .ft .btn{margin-left:auto;background:rgba(255,255,255,.95);color:var(--blue)}
 .stories{display:grid;gap:14px}@media(min-width:900px){.stories{grid-template-columns:1fr 1fr}.story.big{grid-column:1 / -1}}
-/* floating glass tab bar */
-#tabbar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:8px;width:min(400px,calc(100% - 32px));height:60px}
-#tabbar .pillbar,#tabbar a.search{display:flex;align-items:center;height:64px;border-radius:999px;background:rgba(255,255,255,.78);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);box-shadow:0 12px 40px -12px rgba(0,0,0,.28),inset 0 0 0 .5px rgba(255,255,255,.9),0 0 0 .5px rgba(0,0,0,.08)}
-#tabbar .pillbar{flex:1;gap:0;padding:4px;height:60px}#tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:999px;font-size:10.5px;font-weight:500;color:#1c1c1e;letter-spacing:-.1px}#tabbar a svg{width:24px;height:24px;stroke-width:1.8}#tabbar a.on{color:var(--blue);background:rgba(0,122,255,.12)}
-#tabbar a.search{flex:1;height:52px}
+/* floating glass tab bar, like iOS: one white frosted pill, filled icons, a light blue capsule on the active tab */
+#tabbar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;width:min(400px,calc(100% - 32px));height:62px}
+#tabbar .pillbar{display:flex;align-items:center;height:62px;padding:5px;border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(28px);-webkit-backdrop-filter:saturate(180%) blur(28px);box-shadow:0 10px 36px rgba(0,0,0,.14),0 1px 2px rgba(0,0,0,.06),inset 0 0 0 .5px rgba(255,255,255,.9),0 0 0 .5px rgba(0,0,0,.06)}
+#tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:999px;color:#000;text-decoration:none}#tabbar a svg{width:26px;height:26px;stroke:none}#tabbar a span{font-size:10px;font-weight:500;letter-spacing:-.1px;line-height:12px}
+#tabbar a.on{color:var(--blue);background:#dceafe}
+@media(min-width:900px){#tabbar{bottom:18px}}
 /* top bar: hidden, pages carry their own title; wallet lives in the avatar */
 #top{display:none}#side{display:none}
 /* footer */
