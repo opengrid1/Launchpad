@@ -7,23 +7,23 @@ window.PAGE = async () => {
   let chain = 'hyper', side = 'buy', tab = 'trades', amt = '', slip = 3, busy = false;
   const ex = (c, kind, v) => `${C.chainOf(c).explorer}/${kind}/${v}`;
   root.innerHTML = `
-    <div class="head"><img class="av" id="t-img" alt=""><div><h1><span id="t-name"></span><small id="t-sym"></small></h1><div class="meta" id="t-meta"></div></div><div class="px"><b id="t-px"></b><span id="t-ch"></span></div></div>
+    <a class="back" href="/">${ic('chevr').replace('<svg', '<svg style="transform:rotate(180deg)"')}Today</a>
+    <div class="hero"><img class="big" id="t-img" alt=""><div style="min-width:0;flex:1"><h1 id="t-name"></h1><div class="st" id="t-sym"></div><div class="meta" id="t-meta"></div><div class="cta"><a class="btn pri" href="#trade" id="t-buy">Buy</a><span class="px" style="margin-left:auto"><b id="t-px"></b><span id="t-ch"></span></span></div></div></div>
+    <div class="strip" id="t-stats"></div>
     <div class="grid">
-      <div class="stats" id="t-stats"></div>
       <div id="t-chart"></div>
-      <div class="panel fee" id="t-fee"></div>
-      <div class="panel trade"><div class="bd" id="t-trade"></div></div>
-      <div class="tabs" id="t-tabs"><button data-t="trades" class="on">Trades</button><button data-t="holders">Holders</button><button data-t="liq">Liquidity</button><button data-t="info">Info</button></div>
-      <div class="tabp" id="t-tabp"></div>
+      <div class="fee" id="t-fee"></div>
+      <div class="trade" id="trade"><div class="bd" id="t-trade"></div></div>
+      <div class="tabwrap"><div class="tabs" id="t-tabs"><button data-t="trades" class="on">Trades</button><button data-t="holders">Holders</button><button data-t="liq">Liquidity</button><button data-t="info">Info</button></div><div class="tabp" id="t-tabp"></div></div>
     </div>`;
-  $('#t-img').src = x.img; $('#t-name').textContent = x.name; $('#t-sym').textContent = '$' + x.symbol;
+  $('#t-img').src = x.img; $('#t-name').textContent = x.name; $('#t-sym').textContent = `$${x.symbol} · ${x.desc.length > 70 ? x.desc.slice(0, 68).trimEnd() + '…' : x.desc}`;
   CHART.mount($('#t-chart'), addr, chain); CHART.onChain = (c) => { chain = c; renderTrade(); renderFee(); };
   function renderHead() {
     const ids = x.chains.map((c) => `<a href="${c === 'sol' ? ex('sol', 'token', x.mint) : ex('hyper', 'address', x.addr)}" target="_blank" rel="noopener" title="${c === 'sol' ? x.mint : x.addr}"><img src="${C.chainOf(c).logo}" alt="">${c === 'sol' ? shortAddr(x.mint) : shortAddr(x.addr)}</a><button data-copy="${c === 'sol' ? x.mint : x.addr}" title="Copy">${ic('copy')}</button>`).join('');
     $('#t-meta').innerHTML = `${ids}<span>${ic('lock')}liquidity locked</span><a href="${ex('hyper', 'address', x.creator)}" target="_blank" rel="noopener">by ${shortAddr(x.creator)}</a><span>${x.age} ago</span>${x.links.x ? `<a href="${esc(x.links.x)}" target="_blank" rel="noopener">X</a>` : ''}${x.links.tg ? `<a href="${esc(x.links.tg)}" target="_blank" rel="noopener">Telegram</a>` : ''}${x.links.web ? `<a href="${esc(x.links.web)}" target="_blank" rel="noopener">Website</a>` : ''}`;
     $$('#t-meta [data-copy]').forEach((b) => b.onclick = () => APP.copy(b.dataset.copy, 'Address copied'));
     const p = x.byChain[chain] || x.byChain.hyper; $('#t-px').innerHTML = fmtUsd(p.pxUsd).replace(/\$(0\.0)(\d+)/, '$1$2'); $('#t-ch').innerHTML = `${fmtPct(p.c24)} 24h · ${fmtPrice(p.px)} HYPE on ${C.chainOf(chain).short}`;
-    $('#t-stats').innerHTML = `<div class="sbox"><span class="lab">Market cap</span><b>${fmtUsd(x.mcapUsd)}</b><small>${x.chains.length > 1 ? 'both chains' : 'HyperEVM'}</small></div><div class="sbox"><span class="lab">Liquidity</span><b>${fmtNum(x.liqHype, 1)} HYPE</b><small>${APP.usd(x.liqHype)} locked</small></div><div class="sbox"><span class="lab">Volume 24h</span><b>${fmtNum(x.vol24, 1)} HYPE</b><small>${x.buys24} buys · ${x.sells24} sells</small></div><div class="sbox"><span class="lab">Holders</span><b>${x.holders}</b><small>${x.trades} trades</small></div><div class="sbox"><span class="lab">Fees paid</span><b>${fmtNum(x.feesAll, 2)} HYPE</b><small>${fmtNum(x.feesAll * E.creatorShareBps / 10000, 2)} to the creator</small></div><div class="sbox"><span class="lab">Change</span><b>${fmtPct(x.c5)} <small>5m</small></b><small>${fmtPct(x.c1)} 1h</small></div>`;
+    $('#t-stats').innerHTML = `<div><span class="lab">Market cap</span><b>${fmtUsd(x.mcapUsd)}</b><small>${x.chains.length > 1 ? 'both chains' : 'HyperEVM'}</small></div><div><span class="lab">24h</span><b class="${x.c24 >= 0 ? 'up' : 'dn'}" style="color:inherit">${fmtPct(x.c24, false)}</b><small>${fmtPct(x.c1, false)} 1h</small></div><div><span class="lab">Liquidity</span><b>${fmtNum(x.liqHype, 1)} HYPE</b><small>locked · ${APP.usd(x.liqHype)}</small></div><div><span class="lab">Volume 24h</span><b>${fmtNum(x.vol24, 1)} HYPE</b><small>${x.buys24} buys · ${x.sells24} sells</small></div><div><span class="lab">Holders</span><b>${x.holders}</b><small>${x.trades} trades</small></div><div><span class="lab">Creator paid</span><b>${fmtNum(x.feesAll * E.creatorShareBps / 10000, 2)} HYPE</b><small>of ${fmtNum(x.feesAll, 2)} fees</small></div><div><span class="lab">Chains</span><b>${x.chains.length}</b><small>${x.chains.map((c) => C.chainOf(c).short).join(' · ')}</small></div>`;
   }
   function renderFee() {
     const f = DATA.feeState(addr, chain), el = $('#t-fee'); if (!f) return;

@@ -1,19 +1,19 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>How it works | GODMODE</title><meta name="description" content="How launches, fees, the snipe tax, the volatility fee and the locked liquidity work on HyperEVM and Solana.">
-<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#0a0a0b">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="/ui.css?v=2">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#ffffff">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/ui.css?v=5">
 <style>
-#pg-docs{max-width:760px;margin:0 auto;padding:36px 0 40px}#pg-docs h1{font-size:32px;margin-bottom:8px}#pg-docs .sub{color:var(--fg-2);margin-bottom:28px;font-size:16px;line-height:1.6}
+#pg-docs{max-width:760px;margin:0 auto;padding:0 0 40px}#pg-docs .sub{color:var(--fg-2);margin-bottom:24px;font-size:16px;line-height:1.5}
 #pg-docs h2{font-size:19px;margin:30px 0 10px;padding-top:22px;border-top:1px solid var(--line)}#pg-docs p{color:var(--fg-2);margin:0 0 10px;font-size:15px;line-height:1.7}#pg-docs ul{margin:0 0 10px;padding-left:18px;color:var(--fg-2);line-height:1.65}#pg-docs li{margin:3px 0}
 #pg-docs .tbl td{white-space:normal;font-family:var(--sans);font-size:13.5px}#pg-docs .tbl td:first-child{font-family:var(--mono);color:var(--fg-3);white-space:nowrap}
-#pg-docs code{font:12.5px var(--mono);background:var(--s2);padding:1px 5px;border-radius:5px;word-break:break-all}#pg-docs .tbl{table-layout:fixed}#pg-docs .tbl td:first-child{width:110px}
+#pg-docs code{font:13px var(--mono);background:var(--fill);padding:1px 5px;border-radius:5px;word-break:break-all}#pg-docs .tbl{table-layout:fixed}#pg-docs .tbl td:first-child{width:110px}
 </style>
 </head><body data-page="docs">
-<header id="top"></header>
+<aside id="side"></aside><header id="top"></header>
 <main><div class="wrap"><div id="pg-docs">
-  <h1>How it works</h1><p class="sub">One launch opens a coin on HyperEVM and on Solana, paired with HYPE on both. There is no bonding curve and no graduation: each chain gets a real pool from block one, and that pool is locked for good.</p>
+  <div class="ptitle"><h1>How it works</h1><span id="wallet-btn"></span></div><p class="sub">One launch opens a coin on HyperEVM and on Solana, paired with HYPE on both. There is no bonding curve and no graduation: each chain gets a real pool from block one, and that pool is locked for good.</p>
 
   <h2>The launch</h2>
   <p>A launch is one transaction from your HyperEVM wallet. It deploys the coin (1,000,000,000 supply per chain, no mint, no owner, no transfer tax), opens a Uniswap v4 pool paired with native HYPE, puts the whole supply into three liquidity positions, hands the positions to the locker, and makes your opening buy if you want one. The Solana pool follows within about a minute, opened at the same price by the launch service and paired with HYPE on Solana. The two coins are bridged with LayerZero, so holders can move between chains.</p>
@@ -48,5 +48,5 @@
   <p class="hint" id="d-note"></p>
 </div></div></main>
 <nav id="tabbar"></nav><footer id="foot"></footer>
-<script src="/config.js?v=2"></script><script src="/demo.js?v=2"></script><script src="/app.js?v=2"></script><script>window.PAGE=()=>{ if(CFG.mode==='demo') document.getElementById('d-note').textContent='This site runs on preview data until the contracts are deployed; numbers on the pages are not real trades.'; };</script>
+<script src="/config.js?v=5"></script><script src="/demo.js?v=5"></script><script src="/app.js?v=5"></script><script>window.PAGE=()=>{ if(CFG.mode==='demo') document.getElementById('d-note').textContent='This site runs on preview data until the contracts are deployed; numbers on the pages are not real trades.'; };</script>
 </body></html>

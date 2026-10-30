@@ -38,6 +38,7 @@ window.PAGE = async () => {
   function preview() {
     $('#pv-img').src = F.image || '/img/logo.svg'; $('#pv-n').textContent = F.name || 'Your coin'; $('#pv-t').textContent = `$${F.symbol || 'TICKER'} · by ${APP.W.connected ? APP.W.short : 'you'}`; $('#pv-d').textContent = F.description || 'The description shows here.';
     $('#pv-l').innerHTML = [['x', 'X'], ['telegram', 'Telegram'], ['website', 'Website']].filter(([k]) => F[k]).map(([, l]) => `<span class="badge">${l}</span>`).join('') + F.chains.map((c) => `<span class="badge ac"><img src="${C.chainOf(c).logo}" alt="" style="width:12px;height:12px;border-radius:50%">${C.chainOf(c).name}</span>`).join('');
+    $('#next').textContent = F.symbol ? `Continue with $${F.symbol}` : 'Continue';
     $('#pv-sup').textContent = `1B per chain · ${F.chains.length} chain${F.chains.length > 1 ? 's' : ''}`; $('#pv-fee').textContent = `${(1 + F.creatorTaxBps / 100).toFixed(F.creatorTaxBps % 100 ? 1 : 0)}% · ${F.creatorTaxBps ? '70% of 1% + all of ' + F.creatorTaxBps / 100 + '%' : '70% to you'}${F.buyback ? ' · buyback' : ''}`;
     $('#prog').querySelector('[data-s="sol"]').classList.toggle('hidden', !F.chains.includes('sol'));
   }

@@ -1,39 +1,42 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>GODMODE | Launch on HyperEVM and Solana</title><meta name="description" content="Meme launchpad on HyperEVM and Solana. One launch, both chains, HYPE pair on each, locked liquidity, 1% fee with 70% to the creator.">
-<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#0a0a0b">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="/ui.css?v=2">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#ffffff">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/ui.css?v=5">
 <style>
-#pg-home .hero{padding:56px 0 36px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:32px;align-items:end}
-#pg-home h1{font-size:clamp(34px,4.4vw,52px);line-height:1.05;letter-spacing:-.035em;font-weight:600;max-width:640px}#pg-home h1 em{font-style:normal;color:var(--fg-3)}
-#pg-home .lead{margin:18px 0 24px;max-width:560px;font-size:16px;color:var(--fg-2);line-height:1.6}
-#pg-home .ctas{display:flex;gap:10px;flex-wrap:wrap}
-#pg-home .stats{grid-template-columns:repeat(4,auto);gap:28px;padding-bottom:6px}#pg-home .stats .sbox b{font-size:20px}
-#pg-home .filters{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin:8px 0 12px}#pg-home .filters .search{margin-left:auto;position:relative;min-width:240px}#pg-home .filters .search input{height:36px;padding-left:34px;border-radius:999px;font-size:13.5px}#pg-home .filters .search svg{position:absolute;left:12px;top:10px;width:15px;height:15px;color:var(--fg-3)}
-#pg-home .feed{display:flex;gap:18px;overflow:hidden;margin:0 0 22px;padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:12.5px;color:var(--fg-3);white-space:nowrap}#pg-home .feed span{display:inline-flex;align-items:center;gap:6px}#pg-home .feed img{width:14px;height:14px;border-radius:4px}#pg-home .feed b{font-weight:500;color:var(--fg-2)}
-#pg-home .pager{display:flex;justify-content:center;gap:6px;margin:18px 0}
-@media(max-width:900px){#pg-home .hero{grid-template-columns:1fr;gap:22px;padding:34px 0 24px}#pg-home .stats{grid-template-columns:repeat(2,1fr);gap:14px}#pg-home .filters .search{margin-left:0;width:100%;min-width:0}}
+#pg-home .stats{display:flex;gap:22px;overflow-x:auto;scrollbar-width:none;padding:12px 16px;border-radius:14px;background:var(--grp);margin:14px 0 0}#pg-home .stats::-webkit-scrollbar{display:none}#pg-home .stats .sbox{flex:none}#pg-home .stats .sbox b{font-size:17px}
+#pg-home .feed{display:flex;gap:16px;overflow:hidden;margin:12px 0 0;font-size:13px;color:var(--fg-2);white-space:nowrap}#pg-home .feed span{display:inline-flex;align-items:center;gap:6px}#pg-home .feed img{width:14px;height:14px;border-radius:4px}#pg-home .feed b{font-weight:600;color:var(--fg)}
+#pg-home .filters{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -20px 8px;padding:0 20px}#pg-home .filters::-webkit-scrollbar{display:none}#pg-home .filters .pill{flex:none}
+#pg-home .pager{display:flex;justify-content:center;gap:6px;margin:18px 0 10px}
+@media(min-width:900px){#pg-home .two{display:grid;grid-template-columns:1fr 1fr;gap:0 40px}}
 </style>
 </head><body data-page="home">
-<header id="top"></header>
+<aside id="side"></aside><header id="top"></header>
 <main><div class="wrap"><div id="pg-home">
-  <section class="hero">
-    <div>
-      <h1>Launch once.<br>Trade on HyperEVM <em>and</em> Solana.</h1>
-      <p class="lead">A coin opens on both chains at the same price, paired with HYPE on each, with its liquidity locked for good. Every trade pays 1%, and 70% of it goes to the creator. No bonding curve, no graduation.</p>
-      <div class="ctas"><a class="btn pri lg" href="/launch">Launch a coin</a><a class="btn lg" href="/docs">How it works</a></div>
-    </div>
-    <div class="stats" id="h-stats"></div>
-  </section>
+  <div class="ptitle"><div><small id="h-date"></small><h1>Today</h1></div><span id="wallet-btn"></span></div>
+  <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="h-q" placeholder="Coins, tickers, addresses" autocomplete="off"></label>
+
+  <div class="stories" id="h-today"></div>
+  <div class="stats" id="h-stats"></div>
   <div class="feed" id="h-feed"></div>
+
+  <div class="sec-t"><a href="?sort=trend"><h2>Suggested</h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a></div>
+  <div class="apps" id="h-sug"></div>
+
+  <div class="sec-t"><a href="#all"><h2>Browse</h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a></div>
+  <div class="tiles" id="h-tiles"></div>
+
+  <div class="sec-t"><a href="?sort=vol"><h2>Top Charts</h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a><p>By 24h volume across both chains.</p></div>
+  <div class="apps two" id="h-top"></div>
+
+  <div class="sec-t" id="all"><a href="#all"><h2 id="h-all-t">All coins</h2></a></div>
   <div class="filters" id="h-filters">
-    <button class="pill on" data-sort="new">New</button><button class="pill" data-sort="trend">Trending</button><button class="pill" data-sort="vol">Volume</button><button class="pill" data-sort="mcap">Market cap</button><button class="pill" data-sort="fees">Creator fees</button>
-    <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg><input class="inp" id="h-q" placeholder="Search" autocomplete="off"></label>
+    <button class="pill on" data-sort="new">New</button><button class="pill" data-sort="trend">Trending</button><button class="pill" data-sort="vol">Volume</button><button class="pill" data-sort="mcap">Market cap</button><button class="pill" data-sort="fees">Creator payouts</button>
   </div>
-  <div class="list" id="h-list"></div>
+  <div class="apps" id="h-list"></div>
   <div class="pager" id="h-pager"></div>
 </div></div></main>
 <nav id="tabbar"></nav><footer id="foot"></footer>
-<script src="/config.js?v=2"></script><script src="/demo.js?v=2"></script><script src="/app.js?v=2"></script><script src="/pg-home.js?v=2"></script>
+<script src="/config.js?v=5"></script><script src="/demo.js?v=5"></script><script src="/app.js?v=5"></script><script src="/pg-home.js?v=5"></script>
 </body></html>
