@@ -1,60 +1,116 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><script data-theme-boot>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Docs | GODMODE</title><meta name="description" content="How launches, fees, the snipe tax, the volatility fee and the locked liquidity work on HyperEVM.">
-<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#f5f5f7">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="/ui.css?v=25">
+<title>Docs | GODMODE</title><meta name="description" content="Everything about GODMODE, in one place. How launches work, trading and pricing, fees, launch protection, network and contracts.">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#f4f4f4">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Instrument+Serif&display=swap">
 <style>
-#pg-docs{max-width:760px;padding:40px 0 120px}#pg-docs h1{font-size:44px;line-height:44px;letter-spacing:-.04em;margin:0 0 16px}#pg-docs .sub{color:var(--ink-80);margin-bottom:24px;font-size:15px;line-height:18px}
-#pg-docs .doc{border:1px solid var(--line);border-radius:28px;background:var(--surface);box-shadow:var(--shadow);padding:4px 24px 24px}
-#pg-docs h2{font-size:22px;line-height:26.4px;letter-spacing:-.04em;margin:28px 0 12px}#pg-docs p{color:var(--ink-80);margin:0 0 10px;font-size:15px;line-height:1.6;font-weight:600}#pg-docs ul{margin:0 0 10px;padding-left:18px;color:var(--ink-80);line-height:1.6;font-weight:600}#pg-docs li{margin:4px 0}
-#pg-docs .tbl{border:1px solid var(--line);border-radius:13px;overflow:hidden;table-layout:fixed}#pg-docs .tbl td{white-space:normal;height:auto;padding:12px 16px;font-size:13px;line-height:15.6px;border-bottom:1px solid var(--line)}#pg-docs .tbl tr:last-child td{border-bottom:0}#pg-docs .tbl td:first-child{width:130px;font-weight:800;white-space:nowrap}
-#pg-docs code{font-size:13px;background:var(--inset);padding:1px 5px;border-radius:5px;word-break:break-all}
-@media(max-width:999px){#pg-docs{padding:16px 0 120px}#pg-docs h1{font-size:32px;line-height:32px}}
+/* Docs: a separate surface. Measured from the reference docs site: #f4f4f4 page, Inter 400, Instrument Serif
+   display, 920px nav, 1100px layout (223px sidebar + 857px content), 28px floating cards at 72% white. */
+:root{--ink:#111;--ink-55:rgba(17,17,17,.55);--ink-40:rgba(17,17,17,.4);--line:rgba(17,17,17,.1);--bg:#f4f4f4;--lime:#d4fc50;--lime-soft:#f3ffd4;--lime-line:rgba(172,203,67,.35)}
+[data-theme=dark]{--ink:#f5f5f5;--ink-55:rgba(245,245,245,.6);--ink-40:rgba(245,245,245,.45);--line:rgba(245,245,245,.12);--bg:#0b0b0b;--lime-soft:rgba(212,252,80,.12);--lime-line:rgba(212,252,80,.3)}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Inter",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}h1,h2,h3,p,ul,ol,dl,dd{margin:0}
+.float{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.8);border-radius:28px}[data-theme=dark] .float{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08)}
+.nav{height:64px}.nav-inner{max-width:920px;margin:0 auto;height:64px;padding:0 24px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;height:40px;font-weight:500}.brand img{width:40px;height:40px;border-radius:12px}
+.srch{margin:0 auto;display:flex;align-items:center;gap:10px;width:340px;max-width:340px;height:48px;padding:12px 14px;border-radius:999px;background:#fff;color:var(--ink-55);font-size:14px;text-align:left}.srch svg{width:16px;height:16px;flex:none}.srch span{flex:1}.srch kbd{font:400 11px "Inter",sans-serif;color:var(--ink-40);background:#ececec;border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+.nav-right{display:flex;align-items:center;gap:8px}.ib{width:40px;height:40px;border-radius:999px;background:#fff;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center}.ib svg{width:16px;height:16px}
+.open{display:flex;align-items:center;height:39px;padding:10px 16px;border-radius:999px;background:var(--lime);font-size:15px;font-weight:500;color:#111}
+[data-theme=dark] .srch,[data-theme=dark] .ib,[data-theme=dark] .row,[data-theme=dark] pre{background:#151515;border-color:var(--line)}[data-theme=dark] .srch kbd{background:#222}[data-theme=dark] .ver a.on{color:#111}
+main{max-width:1180px;margin:0 auto;padding:0 40px}
+.hero{margin:34px 0 6px;padding:54px}.hero h1{font:400 68px/68px "Instrument Serif",Georgia,serif;letter-spacing:-.03em;max-width:626px;margin-top:14px}
+.layout{display:grid;grid-template-columns:223px minmax(0,1fr);gap:20px;margin:24px 0 8px;align-items:start}
+.sidebar{position:sticky;top:12px;padding:20px;display:grid;gap:22px}
+.ver{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:999px;background:var(--lime-soft)}.ver a{padding:7px 12px;border-radius:999px;font-size:12px;color:var(--ink-55);text-align:center}.ver a.on{background:var(--lime);color:var(--ink)}
+.grp p{font:400 17px "Instrument Serif",Georgia,serif;color:var(--ink-55);margin:0 0 10px}.grp ul{list-style:none;padding:0;margin:0;display:grid;gap:2px}.grp a{display:block;padding:8px 12px;border-radius:10px;font-size:13px;color:var(--ink-55)}.grp a:hover{color:var(--ink)}.grp a.on{background:var(--lime-soft);color:var(--ink)}
+.content{padding:20px 38px}
+section{padding:34px 0}section h2{font-size:32px;line-height:1.12;letter-spacing:-.025em;font-weight:400}.body{display:grid;gap:16px;margin-top:20px}.body>p{font-size:15px;line-height:25.5px;color:var(--ink-55);max-width:681px}
+.callout{background:var(--lime-soft);border:1px solid var(--lime-line);border-radius:20px;padding:20px 22px}.callout strong{font-size:13px;font-weight:400}.callout p{font-size:13px;line-height:20.8px;color:var(--ink-55);margin-top:8px}.callout ul{font-size:13px;line-height:20.8px;color:var(--ink-55);padding-left:20px;margin:12px 0 0;display:grid;gap:8px}
+.flow{list-style:none;padding:0;margin:0}.flow li{display:grid;grid-template-columns:40px 1fr;gap:16px;padding:16px 0;border-top:1px solid var(--line)}.flow li:last-child{border-bottom:1px solid var(--line)}.flow .n{font-size:13px;color:var(--ink-40);padding-top:2px}.flow h3{font-size:15px;font-weight:400}.flow p{font-size:13px;line-height:20.8px;color:var(--ink-40);margin-top:6px}
+.defs{display:grid;grid-template-columns:1fr 1fr;gap:16px 48px}.defs>div{display:grid;gap:6px}.defs dt{font-size:14px}.defs dd{font-size:13px;color:var(--ink-40)}
+.rows{display:grid;gap:8px}.row{display:grid;grid-template-columns:210px minmax(0,1fr);gap:14px;align-items:center;padding:12px 14px;border-radius:14px;background:#fff;border:1px solid var(--line)}.row .meta{display:grid;gap:2px}.row .role{font-size:13px}.row .note{font-size:12px;color:var(--ink-40)}.row .copy{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink);text-align:left;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.row .copy svg{width:14px;height:14px;flex:none;color:var(--ink-40)}
+pre{margin:0;padding:18px;border-radius:14px;background:#fff;border:1px solid var(--line);font:400 12px/19.8px ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto}code.i{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+.ihero{padding:34px 0 0}.ihero small{font:400 17px "Instrument Serif",Georgia,serif;color:var(--ink-55)}.ihero h2{font:400 40px/1.1 "Instrument Serif",Georgia,serif;letter-spacing:-.02em;margin-top:8px}.ihero p{font-size:15px;line-height:25.5px;color:var(--ink-55);margin-top:12px;max-width:681px}
+footer{padding:64px 0 0}.fcard{padding:34px;margin-bottom:40px}.fgrid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.4fr;gap:32px}.fgrid b{display:block;font:400 22px "Instrument Serif",Georgia,serif;margin-bottom:10px}.fgrid h4{font-size:13px;font-weight:500;margin:0 0 10px}.fgrid a{display:block;font-size:13px;color:var(--ink-55);padding:3px 0}.fgrid p{font-size:13px;line-height:20.8px;color:var(--ink-55)}.fbot{display:flex;justify-content:space-between;gap:16px;margin-top:28px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-40)}
+.note{font-size:13px;color:var(--ink-40)}
+@media(max-width:900px){main{padding:0 18px}.nav-inner{padding:0 16px}.srch{width:188px}.hero{padding:30px}.hero h1{font-size:40px;line-height:40px}.layout{grid-template-columns:1fr}.sidebar{position:static}.content{padding:8px 20px}.defs{grid-template-columns:1fr}.row{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr 1fr}.fbot{flex-direction:column}}
 </style>
-</head><body data-page="docs">
-<header id="top"></header>
-<main><div class="wrap"><div id="pg-docs">
-  <h1>Overview</h1><p class="sub">GODMODE is a place to launch and trade tokens on HyperEVM. You can browse launches, open any token to see its details, and trade straight from your wallet.</p>
-  <div class="doc">
-
-  <p>GODMODE never holds your funds. Every launch and trade is a transaction your wallet asks you to approve.</p>
-  <h2>Key facts</h2>
-  <ul><li>Names and symbols can be copied. Always check the token address.</li><li>Prices come from each token's live trading pool.</li><li>Launches can be volatile, illiquid, or lose all value.</li></ul>
-  <h2>How launches work</h2>
-  <p>Creating a launch deploys the token and its trading pool in a single transaction, and the pool's liquidity is locked automatically. The creator sets the name, symbol, image, description, links, and fee wallet at creation.</p>
-  <p>Every token trades against HYPE in its own pool. There is no bonding curve and no migration later. Buys and sells happen in that same pool from the moment it launches.</p>
-  <p>A launch is one transaction from your wallet. It deploys the coin (1,000,000,000 supply, no mint, no owner, no transfer tax), opens a Uniswap v4 pool paired with native HYPE, puts the whole supply into three liquidity positions, hands the positions to the locker, and makes your opening buy if you want one.</p>
-  <ul><li>Opening market cap: 50 HYPE.</li><li>Liquidity: 20% of the supply between 50 and 200 HYPE market cap, 30% between 200 and 1,000, 50% from 1,000 upward. No team allocation.</li><li>Opening buy: optional, exempt from the snipe tax, capped at 5% of the supply.</li><li>Launch fee: 0.005 HYPE. Addresses end in four zeros.</li><li>Name, ticker, image and description cannot change after launch.</li></ul>
-
-  <h2>Fees</h2>
-  <table class="tbl"><tbody>
-    <tr><td>Base fee</td><td>1% of the HYPE side of every buy and sell, taken by the hook (Uniswap v4), never by the pool. 70% to the creator, 30% to the protocol. Fixed per coin at launch.</td></tr>
-    <tr><td>Creator fee</td><td>Optional, 0 to 10% on top, chosen at launch and fixed. All of it goes to the creator and it is shown on the coin page.</td></tr>
-    <tr><td>Buyback</td><td>Optional. Half of the creator's share buys the coin back from its own pool at each sweep; the coins vest to the creator over 5 years.</td></tr>
-    <tr><td>Volatility fee</td><td>When the price moves more than 10% within 60 seconds, the fee rises to 3% and decays back to 1% over 2 minutes. A new move resets the decay. Same 70/30 split.</td></tr>
-    <tr><td>Claims</td><td>Fees accrue per coin, the operator sweeps them into the escrow, and the creator and the protocol claim from the escrow at any time. Nothing is held back and nothing can be redirected.</td></tr>
-  </tbody></table>
-
-  <h2>Launch protection</h2>
-  <p>During the first 10 seconds after a launch, buys pay an extra tax that starts at 99% of the HYPE leg and halves fourteen times across the window, reaching 0 at the end. The creator's opening buy is exempt. The proceeds follow the same 70/30 split, so a sniper funds the creator. During the window the volatility fee is off; it starts once the window closes.</p>
-
-  <h2>Locked liquidity</h2>
-  <p>The three position NFTs are held by the locker contract, which has no withdraw function; the pool fee is 0 so there are no LP fees to collect. The liquidity cannot be taken out by anyone, the protocol included.</p>
-
-  <h2>Creators</h2>
-  <p>The creator is fixed at launch. There is no takeover and no reassignment. The creator can change their own payout address, and that is the only thing a creator can change.</p>
-
-  <h2>Protocol settings</h2>
-  <p>The protocol owner can set the policy for future launches (protocol share up to 50%, hook fee up to 10%, the creator fee cap, the buyback share, the snipe and volatility terms), the launch fee, the launch switch, a creator whitelist and the approved pair assets. None of it reaches a coin that is already live: every coin keeps the terms it launched with.</p>
-
-  <h2>Network</h2>
-  <table class="tbl"><tbody>
-    <tr><td>HyperEVM</td><td>Chain id 999. Pools on the official Uniswap v4 PoolManager with the launchpad hook. One-second blocks; a launch fits in a normal block, so any wallet can launch.</td></tr>
-  </tbody></table>
-  <p class="hint" id="d-note"></p>
+</head><body>
+<header class="nav"><div class="nav-inner"><a class="brand" href="/"><img src="/img/logo.svg" alt=""></a><button class="srch" id="d-search" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Search docs</span><kbd>⌘K</kbd></button><div class="nav-right"><button class="ib" id="d-theme" aria-label="Theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="8.75"/><path d="M12 3.25a8.75 8.75 0 0 1 0 17.5z" fill="currentColor"/></svg></button><a class="open" href="/">Open app</a></div></div></header>
+<main>
+  <section class="hero float"><h1>Everything about GODMODE, in one place.</h1></section>
+  <div class="layout">
+    <aside class="sidebar float"><div class="ver"><a class="on" href="#overview">v1</a><a href="#overview">v2</a></div>
+      <div class="grp"><p>Protocol</p><ul><li><a href="#overview" class="on">Overview</a></li><li><a href="#launches">Launch mechanism</a></li><li><a href="#trading">Trading and pricing</a></li><li><a href="#protection">Launch protection</a></li><li><a href="#fees">Fees and buybacks</a></li><li><a href="#revenue">Protocol revenue</a></li><li><a href="#risks">Risk disclosures</a></li></ul></div>
+      <div class="grp"><p>Integration</p><ul><li><a href="#network">Network</a></li><li><a href="#contracts">Contracts</a></li><li><a href="#events">Onchain events</a></li><li><a href="#state">Reading token state</a></li><li><a href="#support">Support</a></li><li><a href="#terms">Terms and attribution</a></li></ul></div></aside>
+    <div class="content float">
+      <section id="overview"><h2>Overview</h2><div class="body">
+        <p>GODMODE is a place to launch and trade tokens on HyperEVM. You can browse launches, open any token to see its details, and trade straight from your wallet.</p>
+        <p>GODMODE never holds your funds. Every launch and trade is a transaction your wallet asks you to approve.</p>
+        <div class="callout"><strong>Key facts</strong><ul><li>Names and symbols can be copied. Always check the token address.</li><li>Prices come from each token's live trading pool.</li><li>Launches can be volatile, illiquid, or lose all value.</li></ul></div></div></section>
+      <section id="launches"><h2>How launches work</h2><div class="body">
+        <p>Creating a launch deploys the token and its trading pool in a single transaction, and the pool's liquidity is locked automatically. The creator sets the name, symbol, image, description, links, and fee wallet at creation.</p>
+        <p>Every token trades against HYPE in its own pool. There is no bonding curve and no migration later. Buys and sells happen in that same pool from the moment it launches.</p>
+        <ol class="flow"><li><span class="n">01</span><div><h3>Create</h3><p>The token is minted with a fixed supply and its HYPE pool goes live in the same transaction.</p></div></li><li><span class="n">02</span><div><h3>Trade</h3><p>Buys and sells run against HYPE in the locked pool and move the price.</p></div></li><li><span class="n">03</span><div><h3>Earn</h3><p>Every trade pays a 1% pool fee. 70% of it accrues to the creator and 30% to the protocol.</p></div></li></ol>
+        <p>Each launch uses a fixed supply of one billion tokens, a 1% pool fee, three locked liquidity positions (20% of supply from 50 to 200 HYPE market cap, 30% from 200 to 1,000, 50% above), and a small 0.005 HYPE launch fee. The opening market cap is 50 HYPE.</p>
+        <div class="callout"><strong>Opening buy</strong><p>The creator can buy up to 5% of supply in the launch transaction itself, before anyone else can trade. That buy is exempt from launch protection.</p></div></div></section>
+      <section id="trading"><h2>Trading and pricing</h2><div class="body">
+        <p>Every token trades against HYPE in its own liquidity pool. The price you see is the live pool price, and it moves with each trade. The amount you actually receive can differ slightly from the quote. Slippage sets how much of that movement you accept.</p>
+        <dl class="defs"><div><dt>Price</dt><dd>The current pool price for one token.</dd></div><div><dt>Market cap</dt><dd>Price multiplied by circulating supply.</dd></div><div><dt>FDV</dt><dd>Price multiplied by the full token supply.</dd></div><div><dt>Price impact</dt><dd>The pool movement caused by the size of your trade.</dd></div><div><dt>Slippage</dt><dd>The maximum execution movement your transaction accepts.</dd></div><div><dt>Liquidity</dt><dd>Assets available in the pool around the current price.</dd></div></dl></div></section>
+      <section id="protection"><h2>Launch protection</h2><div class="body">
+        <p>Buys are protected for the first 10 seconds after launch. During that window buys pay an extra tax that starts at 99% of the HYPE leg and halves fourteen times, reaching 0 when the window closes. The creator's opening buy is exempt. The proceeds follow the same 70/30 split, so a sniper funds the creator.</p>
+        <p>When the price moves more than 10% within 60 seconds, the pool fee rises to 3% and decays back to 1% over 2 minutes. A new move resets the decay. Selling and wallet-to-wallet transfers are never restricted.</p>
+        <div class="callout"><strong>Fixed at launch</strong><p>Every token keeps the terms it launched with. Protocol settings only apply to launches that come after them.</p></div></div></section>
+      <section id="fees"><h2>Fees and buybacks</h2><div class="body">
+        <p>Trading generates a 1% fee on the HYPE side of every buy and sell, taken by the hook and never by the pool. The protocol keeps a share and the creator keeps the rest. The creator can claim their share from the GODMODE interface at any time.</p>
+        <p>The split is snapshotted for each token when it launches and never changes afterward. A creator may add a creator fee of up to 10% on top at launch; all of it goes to the creator and it is shown on the token page.</p>
+        <dl class="defs"><div><dt>Current launches</dt><dd>Creator 70% · protocol 30%</dd></div><div><dt>Creator fee</dt><dd>0 to 10% on top, all to the creator</dd></div></dl>
+        <p>With buyback &amp; vest, half of the creator's share buys the token back from its own pool. Bought tokens lock and release to the creator's fee escrow gradually over 5 years; the protocol keeps its fee share of every release.</p>
+        <div class="callout"><strong>Locked liquidity</strong><p>The pool positions are held by the locker contract, which has no withdraw function. The liquidity cannot be taken out by anyone, the protocol included.</p></div></div></section>
+      <section id="revenue"><h2>Protocol revenue</h2><div class="body">
+        <p>The protocol's 30% share of fees funds infrastructure and the team. Nothing is held back from creators and nothing can be redirected after launch.</p>
+        <dl class="defs"><div><dt>Protocol share</dt><dd>30% of the 1% pool fee</dd></div><div><dt>Creator share</dt><dd>70% of the 1% pool fee, plus any creator fee</dd></div></dl></div></section>
+      <section id="risks"><h2>Risk disclosures</h2><div class="body">
+        <p>Tokens launched through GODMODE are user-created and experimental. Review the token address, creator, liquidity, holder concentration, and transaction preview before signing.</p>
+        <div class="callout"><ul style="margin-top:0"><li>Prices can move quickly and liquidity can be thin.</li><li>Similar names and images can represent unrelated tokens.</li><li>Smart contracts, wallets, RPCs, and indexers can fail.</li><li>Displayed values are estimates, not execution guarantees.</li></ul></div>
+        <p>GODMODE is an interface, not investment advice or a representation of token quality.</p></div></section>
+      <div class="ihero"><small>Integration</small><h2>A minimal, verifiable integration surface.</h2><p>Everything reads directly off the contracts. Index factory and pool events for a trust-minimized onchain source of truth.</p></div>
+      <section id="network"><h2>Network</h2><div class="body">
+        <p>GODMODE runs on HyperEVM. Tokens launch directly into Uniswap v4 and are quoted against HYPE only.</p>
+        <dl class="defs"><div><dt>Network</dt><dd>HyperEVM</dd></div><div><dt>Chain ID</dt><dd>999</dd></div><div><dt>Native asset</dt><dd>HYPE</dd></div><div><dt>Public RPC</dt><dd>https://rpc.hyperliquid.xyz/evm</dd></div><div><dt>Explorer</dt><dd>hyperevmscan.io</dd></div><div><dt>Pool fee</dt><dd>1% (hook)</dd></div><div><dt>Launch fee</dt><dd>0.005 HYPE</dd></div><div><dt>Supply</dt><dd>1,000,000,000 (1e9)</dd></div></dl></div></section>
+      <section id="contracts"><h2>Contracts</h2><div class="body">
+        <p>Deployed addresses on HyperEVM. The factory and locker serve current launches.</p>
+        <div class="rows" id="d-contracts"></div></div></section>
+      <section id="events"><h2>Onchain events</h2><div class="body">
+        <p>For a trust-minimized integration, index the factory's <code class="i">Launched</code> event, register each emitted pool, and index its <code class="i">Swap</code> events. Onchain events are the authoritative source of truth.</p>
+        <p class="note">Event signatures are published here once the contracts are deployed.</p></div></section>
+      <section id="state"><h2>Reading token state</h2><div class="body">
+        <p>Every launch is one token, one pool and three locked positions. Read the pool from the PoolManager and the positions from the locker; the hook exposes the fee terms and the protection window for each token.</p>
+        <pre><code>// price, in HYPE per token, from the pool's sqrtPriceX96
+price = (sqrtPriceX96 / 2 ** 96) ** 2</code></pre></div></section>
+      <section id="support"><h2>Support</h2><div class="body">
+        <p>Questions, listings and takedown requests go through the GODMODE X account. GODMODE never asks for a private key or seed phrase and never asks you to send funds to process a request.</p></div></section>
+      <section id="terms"><h2>Terms and attribution</h2><div class="body">
+        <p>GODMODE is a noncustodial software interface. It does not hold your assets or keys, does not execute or reverse transactions, and is not a bank, broker, exchange, custodian, or investment adviser. Nothing on this site is financial, legal, or tax advice.</p>
+        <p>Contracts are built on the MIT-licensed Uniswap v4 periphery. Pools run on the official Uniswap v4 PoolManager on HyperEVM.</p>
+        <p class="note" id="d-note"></p></div></section>
+    </div>
   </div>
-</div></div></main>
-<footer id="foot"></footer>
-<script src="/config.js?v=25"></script><script src="/demo.js?v=25"></script><script src="/app.js?v=25"></script><script>window.PAGE=()=>{ if(CFG.mode==='demo') document.getElementById('d-note').textContent='This site runs on preview data until the contracts are deployed; numbers on the pages are not real trades.'; };</script>
+  <footer><div class="fcard float"><div class="fgrid"><div><b>GODMODE</b><p>Launch and explore fixed-supply tokens on HyperEVM. Your wallet submits every transaction. GODMODE does not custody assets.</p></div><div><h4>Docs</h4><a href="#overview">Overview</a><a href="#contracts">Contracts</a><a href="#events">Onchain events</a><a href="#trading">Trading and pricing</a><a href="#support">Support</a></div><div><h4>Product</h4><a href="/">Explore</a><a href="/creator">Profile</a><a href="/launch">Create</a></div><div><h4>Risk notice</h4><p>Transactions are submitted through your wallet and may be irreversible. Tokens can be volatile or lose all value. GODMODE does not provide custody, warranties, or financial advice.</p></div></div><div class="fbot"><span>© 2026 GODMODE.</span><span id="d-x"></span></div></div></footer>
+</main>
+<script src="/config.js?v=25"></script>
+<script>
+(function(){const C=window.CFG,c=C.chain.contracts;const rows=[['Factory','',c.factory],['Hook','',c.hook],['Locker','',c.locker],['Fee escrow','',c.escrow],['Buyback vault','',c.vault],['PoolManager','Uniswap v4',c.poolManager],['PositionManager','Uniswap v4',c.positionManager]];
+const ic='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+document.getElementById('d-contracts').innerHTML=rows.map(([r,n,a])=>'<div class="row"><div class="meta"><span class="role">'+r+'</span>'+(n?'<span class="note">'+n+'</span>':'')+'</div><button class="copy" type="button" data-a="'+(a||'')+'"><code>'+(a||'Not deployed yet')+'</code>'+(a?ic:'')+'</button></div>').join('');
+document.querySelectorAll('.copy[data-a]').forEach(b=>b.onclick=()=>{if(b.dataset.a)navigator.clipboard.writeText(b.dataset.a).catch(()=>{});});
+if(C.mode==='demo')document.getElementById('d-note').textContent='This site runs on preview data until the contracts are deployed; numbers on the pages are not real trades.';
+document.getElementById('d-x').innerHTML='<a href="'+C.x+'" target="_blank" rel="noopener">Updates on X</a>';
+const links=[...document.querySelectorAll('.grp a')],secs=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+const mark=()=>{let cur=secs[0];for(const s of secs){if(s.getBoundingClientRect().top<140)cur=s;}links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+cur.id));};addEventListener('scroll',mark,{passive:true});mark();
+document.getElementById('d-search').onclick=()=>{const q=prompt('Search docs');if(!q)return;const s=secs.find(s=>s.innerText.toLowerCase().includes(q.toLowerCase()));if(s)s.scrollIntoView({behavior:'smooth'});};
+addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('d-search').click();}});
+document.getElementById('d-theme').onclick=()=>{const d=document.documentElement;const dark=d.dataset.theme!=='dark';d.dataset.theme=dark?'dark':'light';try{localStorage.setItem('theme',d.dataset.theme)}catch{}};
+})();
+</script>
 </body></html>
