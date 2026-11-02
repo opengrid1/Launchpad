@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><script data-theme-boot>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>How it works | GODMODE</title><meta name="description" content="How launches, fees, the snipe tax, the volatility fee and the locked liquidity work on HyperEVM.">
+<title>Docs | GODMODE</title><meta name="description" content="How launches, fees, the snipe tax, the volatility fee and the locked liquidity work on HyperEVM.">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#f5f5f7">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="/ui.css?v=24">
+<link rel="stylesheet" href="/ui.css?v=25">
 <style>
 #pg-docs{max-width:760px;padding:40px 0 120px}#pg-docs h1{font-size:44px;line-height:44px;letter-spacing:-.04em;margin:0 0 16px}#pg-docs .sub{color:var(--ink-80);margin-bottom:24px;font-size:15px;line-height:18px}
 #pg-docs .doc{border:1px solid var(--line);border-radius:28px;background:var(--surface);box-shadow:var(--shadow);padding:4px 24px 24px}
@@ -15,10 +15,15 @@
 </head><body data-page="docs">
 <header id="top"></header>
 <main><div class="wrap"><div id="pg-docs">
-  <h1 style="font-size:30px;margin:0 0 6px">How it works</h1><p class="sub">One launch opens a coin on HyperEVM, paired with HYPE. There is no bonding curve and no graduation: the coin gets a real pool from block one, and that pool is locked for good.</p>
+  <h1>Overview</h1><p class="sub">GODMODE is a place to launch and trade tokens on HyperEVM. You can browse launches, open any token to see its details, and trade straight from your wallet.</p>
   <div class="doc">
 
-  <h2>The launch</h2>
+  <p>GODMODE never holds your funds. Every launch and trade is a transaction your wallet asks you to approve.</p>
+  <h2>Key facts</h2>
+  <ul><li>Names and symbols can be copied. Always check the token address.</li><li>Prices come from each token's live trading pool.</li><li>Launches can be volatile, illiquid, or lose all value.</li></ul>
+  <h2>How launches work</h2>
+  <p>Creating a launch deploys the token and its trading pool in a single transaction, and the pool's liquidity is locked automatically. The creator sets the name, symbol, image, description, links, and fee wallet at creation.</p>
+  <p>Every token trades against HYPE in its own pool. There is no bonding curve and no migration later. Buys and sells happen in that same pool from the moment it launches.</p>
   <p>A launch is one transaction from your wallet. It deploys the coin (1,000,000,000 supply, no mint, no owner, no transfer tax), opens a Uniswap v4 pool paired with native HYPE, puts the whole supply into three liquidity positions, hands the positions to the locker, and makes your opening buy if you want one.</p>
   <ul><li>Opening market cap: 50 HYPE.</li><li>Liquidity: 20% of the supply between 50 and 200 HYPE market cap, 30% between 200 and 1,000, 50% from 1,000 upward. No team allocation.</li><li>Opening buy: optional, exempt from the snipe tax, capped at 5% of the supply.</li><li>Launch fee: 0.005 HYPE. Addresses end in four zeros.</li><li>Name, ticker, image and description cannot change after launch.</li></ul>
 
@@ -31,7 +36,7 @@
     <tr><td>Claims</td><td>Fees accrue per coin, the operator sweeps them into the escrow, and the creator and the protocol claim from the escrow at any time. Nothing is held back and nothing can be redirected.</td></tr>
   </tbody></table>
 
-  <h2>Snipe protection</h2>
+  <h2>Launch protection</h2>
   <p>During the first 10 seconds after a launch, buys pay an extra tax that starts at 99% of the HYPE leg and halves fourteen times across the window, reaching 0 at the end. The creator's opening buy is exempt. The proceeds follow the same 70/30 split, so a sniper funds the creator. During the window the volatility fee is off; it starts once the window closes.</p>
 
   <h2>Locked liquidity</h2>
@@ -43,7 +48,7 @@
   <h2>Protocol settings</h2>
   <p>The protocol owner can set the policy for future launches (protocol share up to 50%, hook fee up to 10%, the creator fee cap, the buyback share, the snipe and volatility terms), the launch fee, the launch switch, a creator whitelist and the approved pair assets. None of it reaches a coin that is already live: every coin keeps the terms it launched with.</p>
 
-  <h2>Chain</h2>
+  <h2>Network</h2>
   <table class="tbl"><tbody>
     <tr><td>HyperEVM</td><td>Chain id 999. Pools on the official Uniswap v4 PoolManager with the launchpad hook. One-second blocks; a launch fits in a normal block, so any wallet can launch.</td></tr>
   </tbody></table>
@@ -51,5 +56,5 @@
   </div>
 </div></div></main>
 <footer id="foot"></footer>
-<script src="/config.js?v=24"></script><script src="/demo.js?v=24"></script><script src="/app.js?v=24"></script><script>window.PAGE=()=>{ if(CFG.mode==='demo') document.getElementById('d-note').textContent='This site runs on preview data until the contracts are deployed; numbers on the pages are not real trades.'; };</script>
+<script src="/config.js?v=25"></script><script src="/demo.js?v=25"></script><script src="/app.js?v=25"></script><script>window.PAGE=()=>{ if(CFG.mode==='demo') document.getElementById('d-note').textContent='This site runs on preview data until the contracts are deployed; numbers on the pages are not real trades.'; };</script>
 </body></html>
