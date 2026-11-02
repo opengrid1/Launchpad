@@ -21,10 +21,10 @@
   function update() { if (!el) return; load(); draw(); }
   function draw() {
     if (!cv) return; const box = el.querySelector('.ch-cv'); W = box.clientWidth; H = box.clientHeight; dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
-    const tip = el.querySelector('.ch-tip'); if (!bars.length) { ctx.fillStyle = '#949e9c'; ctx.font = '12px Inter, -apple-system, sans-serif'; ctx.fillText('No trades yet', 16, 30); tip.style.display = 'none'; return; }
+    const tip = el.querySelector('.ch-tip'); if (!bars.length) { ctx.fillStyle = '#949e9c'; ctx.font = '12px IBM Plex Mono, ui-monospace, monospace'; ctx.fillText('No trades yet', 16, 30); tip.style.display = 'none'; return; }
     const f = factor(), padR = 72, padB = 26, top = 14, volH = 44; const n = bars.length, cw = (W - padR) / n, lo = Math.min(...bars.map((b) => b.l)) * f, hi = Math.max(...bars.map((b) => b.h)) * f, pad = (hi - lo) * 0.08 || hi * 0.05; const y = (v) => top + (H - padB - volH - top) * (1 - (v * 1 - (lo - pad)) / ((hi + pad) - (lo - pad))); const vmax = Math.max(...bars.map((b) => b.v)) || 1;
     // grid and y labels
-    ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.fillStyle = '#949e9c'; ctx.font = '11px Inter, -apple-system, sans-serif'; ctx.textAlign = 'left';
+    ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.fillStyle = '#949e9c'; ctx.font = '11px IBM Plex Mono, ui-monospace, monospace'; ctx.textAlign = 'left';
     for (let i = 0; i <= 4; i++) { const v = lo - pad + ((hi + pad) - (lo - pad)) * i / 4, yy = y(v); ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(W - padR, yy); ctx.stroke(); ctx.fillText(fmtV(v), W - padR + 8, yy + 4); }
     // volume
     bars.forEach((b, i) => { const h = b.v / vmax * volH; ctx.fillStyle = b.c >= b.o ? 'rgba(31,166,125,.35)' : 'rgba(237,112,136,.35)'; ctx.fillRect(i * cw + cw * 0.15, H - padB - h, Math.max(1, cw * 0.7), h); });
