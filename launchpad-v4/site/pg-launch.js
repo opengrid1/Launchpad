@@ -1,7 +1,7 @@
 /* Launch form: step 1 identity, step 2 economics, live preview, one transaction. */
 window.PAGE = async () => {
   const { $, $$, esc, fmtNum, fmtHype, toast, errMsg } = APP, C = CFG, E = C.econ, L = C.limits;
-  const F = { image: '', name: '', symbol: '', description: '', x: '', telegram: '', website: '', chains: ['hyper', 'sol'], creatorTaxBps: 0, buyback: false, devBuy: 0, creatorSol: '' };
+  const F = { image: '', name: '', symbol: '', description: '', x: '', telegram: '', website: '', chains: ['hyper'], creatorTaxBps: 0, buyback: false, devBuy: 0, creatorSol: '' };
   let step = 1, busy = false;
   const setStep = (s) => { step = s; $('#st1').classList.toggle('hidden', s !== 1); $('#st2').classList.toggle('hidden', s !== 2); $$('.steps span').forEach((x) => { const n = +x.dataset.st; x.classList.toggle('on', n === s); x.classList.toggle('ok', n < s); }); scrollTo({ top: 0, behavior: 'smooth' }); };
   // identity
@@ -39,17 +39,17 @@ window.PAGE = async () => {
     $('#pv-img').src = F.image || '/img/logo.svg'; $('#pv-n').textContent = F.name || 'Coin name'; $('#pv-t').innerHTML = `$${esc(F.symbol || 'SYMBOL')} · ${F.chains.map((c) => `<img src="${C.chainOf(c).logo}" alt="">${C.chainOf(c).short}`).join(' · ')}`; $('#pv-d').textContent = F.description || '';
     $('#pv-l').innerHTML = [['x', 'X'], ['telegram', 'Telegram'], ['website', 'Website']].filter(([k]) => F[k]).map(([, l]) => `<span class="badge">${l}</span>`).join('') + F.chains.map((c) => `<span class="badge ac"><img src="${C.chainOf(c).logo}" alt="" style="width:12px;height:12px;border-radius:50%">${C.chainOf(c).name}</span>`).join('');
     $('#next').textContent = F.symbol ? `Continue with $${F.symbol}` : 'Continue';
-    $('#pv-sup').textContent = `1B per chain · ${F.chains.length} chain${F.chains.length > 1 ? 's' : ''}`; $('#pv-fee').textContent = `${(1 + F.creatorTaxBps / 100).toFixed(F.creatorTaxBps % 100 ? 1 : 0)}% static · 10s sniper tax${F.buyback ? ' · buyback' : ''}`;
-    $('#prog').querySelector('[data-s="sol"]').classList.toggle('hidden', !F.chains.includes('sol'));
+    $('#pv-sup').textContent = '1B'; $('#pv-fee').textContent = `${(1 + F.creatorTaxBps / 100).toFixed(F.creatorTaxBps % 100 ? 1 : 0)}% static · 10s sniper tax${F.buyback ? ' · buyback' : ''}`;
+    
   }
   async function launch() {
     if ($('#dev-hint').dataset.over) return toast('The opening buy is over the 5% cap', 'err');
-    if (F.chains.includes('sol') && F.creatorSol && !/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(F.creatorSol)) return toast('That Solana address does not look right', 'err');
+    
     busy = true; const b = $('#go'); b.disabled = true; b.textContent = 'Confirm in your wallet…'; const P = $('#prog'); const mark = (s, cls) => { const d = P.querySelector(`[data-s="${s}"]`); d.classList.remove('on', 'ok'); d.classList.add(cls); };
     mark('sign', 'on');
     try {
       const r = await DATA.launch(F); mark('sign', 'ok'); mark('hyper', 'ok'); $('#go-msg').innerHTML = `Launched. <a class="ac" href="${APP.tokenUrl(r.addr)}">Open ${esc(F.symbol)}</a>`; toast(`${F.symbol} is live on HyperEVM`, 'ok');
-      if (F.chains.includes('sol')) { mark('sol', 'on'); $('#go-msg').innerHTML += ` · the Solana pool opens within a minute.`; } mark('done', 'on');
+      mark('done', 'on');
       setTimeout(() => { location.href = APP.tokenUrl(r.addr); }, 1800);
     } catch (e) { toast(errMsg(e), 'err'); mark('sign', ''); busy = false; b.disabled = false; goBtn(); }
   }
