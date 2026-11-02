@@ -1,23 +1,34 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>GODMODE | Launch on HyperEVM</title><meta name="description" content="Meme launchpad on HyperEVM. HYPE pair, locked liquidity, 1% fee with 70% to the creator.">
+<title>GODMODE | Coins on HyperEVM</title><meta name="description" content="Meme launchpad on HyperEVM. HYPE pair, locked liquidity, 1% fee with 70% to the creator.">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#0f1a1f">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="/ui.css?v=15">
+<link rel="stylesheet" href="/ui.css?v=16">
 <style>
-#pg-home .filters{display:flex;align-items:center;gap:8px;margin:14px 0 12px}#pg-home .filters .pillrow{margin:0;flex:1}#pg-home .psearch{position:relative;flex:none;width:40px;transition:width .2s}#pg-home .psearch.open{width:200px}#pg-home .psearch input{width:100%;height:34px;padding:0 10px 0 34px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:13px;color:var(--fg);outline:0}#pg-home .psearch input:focus{border-color:var(--mint)}#pg-home .psearch svg{position:absolute;left:11px;top:9px;width:16px;height:16px;color:var(--fg-3);pointer-events:none}
-#pg-home .pager{display:flex;justify-content:center;gap:6px;margin:18px 0 10px}
+#pg-home{padding:28px 0 40px}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;padding-bottom:22px;border-bottom:1px solid var(--line-2)}
+.hero h1{font-size:28px;letter-spacing:-.025em;line-height:1.1}.hero p{margin-top:8px;font-size:14.5px;color:var(--fg-3);max-width:520px;line-height:1.55}
+.hero .stats{display:flex;gap:28px}.hero .stats div{display:flex;flex-direction:column;gap:3px}.hero .stats span{font-size:12px;color:var(--fg-3);font-weight:500}.hero .stats b{font-size:20px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.toolbar{display:flex;align-items:center;gap:10px;margin:18px 0 10px}.toolbar .seg{flex:none;overflow-x:auto;scrollbar-width:none;max-width:100%}.toolbar .seg::-webkit-scrollbar{display:none}.toolbar .seg button{flex:none}
+.toolbar .srch{position:relative;margin-left:auto;width:220px;flex:none}.toolbar .srch input{width:100%;height:34px;padding:0 10px 0 32px;border:1px solid var(--line);border-radius:8px;background:transparent;font-size:13px;color:var(--fg);outline:0}.toolbar .srch input:focus{border-color:var(--mint)}.toolbar .srch svg{position:absolute;left:10px;top:9px;width:15px;height:15px;color:var(--fg-3);pointer-events:none}
+.coins{width:100%;border-collapse:collapse;font-size:13.5px}.coins th{text-align:left;padding:8px 10px;font-size:11.5px;font-weight:500;color:var(--fg-3);border-bottom:1px solid var(--line-2);white-space:nowrap;letter-spacing:.02em}.coins th.r,.coins td.r{text-align:right}.coins th.s{cursor:pointer}.coins th.s:hover{color:var(--fg)}.coins th.on{color:var(--mint)}
+.coins td{padding:0 10px;height:60px;border-bottom:1px solid var(--line-2);white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:middle}.coins tr:last-child td{border-bottom:0}.coins tbody tr{cursor:pointer}.coins tbody tr:hover td{background:var(--fill-2)}
+.coins .c{display:flex;align-items:center;gap:12px;min-width:0}.coins .c img{width:40px;height:40px;border-radius:10px;object-fit:cover;background:var(--card2);flex:none}.coins .c .t{min-width:0}.coins .c b{display:block;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;max-width:260px}.coins .c small{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--fg-3)}.coins .c small em{font-style:normal;font-weight:600;color:var(--fg-2)}
+.coins td.n{color:var(--fg-4);width:28px;padding-right:0;font-size:12px}
+.coins .mo{display:none}.coins svg.sp{display:block;width:96px;height:28px}
+.coins .st .badge{height:20px;font-size:11px}
+.coins .rank{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--mint-dim);color:var(--mint);font-size:11px;font-weight:700}
+.pager{display:flex;justify-content:center;gap:6px;margin:18px 0 10px}
+@media(max-width:860px){.coins .hm{display:none}.coins .mo{display:block;font-size:12px;margin-top:2px}.coins td{height:62px;padding:0 6px}.coins .n{display:none}.coins .c b{max-width:46vw}.hero .stats{gap:20px}.hero .stats b{font-size:17px}.toolbar{flex-wrap:wrap}.toolbar .srch{margin-left:0;width:100%}}
 </style>
 </head><body data-page="home">
-<header id="top"></header><div id="tape"></div>
+<header id="top"></header>
 <main><div class="wrap"><div id="pg-home">
-  <a class="banner" href="/docs"><div><span class="k">HyperEVM · HYPE pair</span><b>Launch with locked liquidity and 70% of fees to you</b><span>No bonding curve. One pool from block one, snipe tax, volatility fee.</span></div><span class="btn pri sm">How it works</span><em>⚡</em></a>
-  <div class="sec-t">Trending Now <em>🔥</em></div>
-  <div class="trend" id="h-trend"></div>
-  <div class="filters"><div class="pillrow" id="h-tabs"><button class="pill on" data-sort="new">Latest</button><button class="pill" data-sort="mcap">Market Cap</button><button class="pill" data-sort="vol">Volume (24H)</button><button class="pill" data-sort="trend">Trending</button><button class="pill" data-sort="fees">Creator Payouts</button></div><label class="psearch" id="h-ps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="top-q" placeholder="Search" autocomplete="off"></label></div>
-  <div class="grid" id="h-grid"></div>
+  <div class="hero"><div><h1>Coins on HyperEVM</h1><p>Every coin opens in a locked Uniswap v4 pool paired with HYPE, from the first block. 1% fee on each swap, 70% of it to the creator. No bonding curve, no graduation.</p></div><div class="stats" id="h-stats"></div></div>
+  <div class="toolbar"><div class="seg" id="h-tabs"><button class="on" data-sort="new">New</button><button data-sort="trend">Trending</button><button data-sort="mcap">Market cap</button><button data-sort="vol">Volume</button><button data-sort="fees">Creator payouts</button></div><label class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="top-q" placeholder="Search name, ticker or address" autocomplete="off"></label></div>
+  <div class="tscroll"><table class="coins" id="h-grid"></table></div>
   <div class="pager" id="h-pager"></div>
 </div></div></main>
 <footer id="foot"></footer>
-<script src="/config.js?v=15"></script><script src="/demo.js?v=15"></script><script src="/app.js?v=15"></script><script src="/pg-home.js?v=15"></script>
+<script src="/config.js?v=16"></script><script src="/demo.js?v=16"></script><script src="/app.js?v=16"></script><script src="/pg-home.js?v=16"></script>
 </body></html>

@@ -10,15 +10,15 @@ window.PAGE = async () => {
   root.innerHTML = `
     <a class="back" href="/">${ic('chevr').replace('<svg', '<svg style="transform:rotate(180deg)"')}Coins</a>
     <div class="tg">
-      <div class="card thead"><div class="bd"><img class="big" id="t-img" alt=""><div class="min"><div class="r1"><h1 id="t-name"></h1><span class="badge ac" id="t-sym"></span><button class="addrp" id="t-copy">${shortAddr(x.addr)}${ic('copy')}</button></div><div class="r2" id="t-meta"></div><div class="r3" id="t-links"></div></div></div></div>
+      <div class="thead"><img class="big" id="t-img" alt=""><div class="min"><div class="r1"><h1 id="t-name"></h1><span class="tkr" id="t-sym"></span><button class="addrp" id="t-copy">${shortAddr(x.addr)}${ic('copy')}</button></div><div class="r2" id="t-meta"></div></div><div class="r3" id="t-links"></div></div>
       <div class="mcrow" id="t-mc"></div>
       <div class="chartw" id="t-chart"></div>
       <div class="tabw"><div class="tabs" id="t-tabs"><button data-t="trades" class="on">Trades</button><button data-t="holders">Holders</button></div><div id="t-tabp"></div></div>
       <div class="side">
-        <div class="card feec"><div class="hd"><span>Fee Overview</span><span id="t-feebadge"></span></div><div class="bd" id="t-fee"></div></div>
-        <div class="card tradec"><div class="hd"><span>Trade</span><span class="badge">${ic('lock')}LP locked</span></div><div class="bd" id="t-trade"></div></div>
-        <div class="card infoc"><div class="hd"><span>Information</span></div><div class="bd" id="t-info"></div></div>
-        <div class="card otherc"><div class="hd"><span>Other Info</span></div><div class="bd" id="t-other"></div></div>
+        <div class="card tradec"><div class="bd" id="t-trade"></div></div>
+        <div class="sec feec"><div class="sh"><span>Fees</span><span id="t-feebadge"></span></div><div id="t-fee"></div></div>
+        <div class="sec infoc"><div class="sh"><span>About</span></div><div id="t-info"></div></div>
+        <div class="sec otherc"><div class="sh"><span>Details</span></div><div id="t-other"></div></div>
       </div>
     </div>`;
   $('#t-img').src = x.img; $('#t-name').textContent = x.name; $('#t-sym').textContent = '$' + x.symbol; $('#t-copy').onclick = () => APP.copy(x.addr, 'Address copied');
@@ -28,11 +28,10 @@ window.PAGE = async () => {
     $('#t-meta').innerHTML = `<span>by</span><i>${x.creator.slice(2, 4).toUpperCase()}</i><a class="addr" href="${ex('address', x.creator)}" target="_blank" rel="noopener">${shortAddr(x.creator)}</a><span class="dot">·</span><span>${x.age} ago</span><span class="dot">·</span><img src="${C.chain.logo}" alt=""><span>${C.chain.name}</span>`;
     $('#t-links').innerHTML = `${x.links.x ? `<a href="${esc(x.links.x)}" target="_blank" rel="noopener">${ic('x')}X</a>` : ''}${x.links.tg ? `<a href="${esc(x.links.tg)}" target="_blank" rel="noopener">${ic('ext')}Telegram</a>` : ''}${x.links.web ? `<a href="${esc(x.links.web)}" target="_blank" rel="noopener">${ic('ext')}Website</a>` : ''}<a href="${ex('address', x.addr)}" target="_blank" rel="noopener">${ic('ext')}Explorer</a>`;
     const a = ath(), pct = Math.min(100, x.mcapUsd / a * 100);
-    $('#t-mc').innerHTML = `<div class="card"><div class="lab"><span>Market Cap</span>${fmtPct(x.c24)}</div><b>${fmtUsd(x.mcapUsd)}</b><small>${fmtNum(x.mcap, 1)} HYPE · 24h</small></div><div class="card"><div class="lab"><span>ATH</span><span class="muted">${pct.toFixed(0)}% of ATH</span></div><b>${fmtUsd(a)}</b><small>all-time high market cap</small></div>`;
+    $('#t-mc').innerHTML = `<div class="px"><b>${fmtUsd(x.mcapUsd)}</b>${fmtPct(x.c24)}<small>market cap · ${fmtNum(x.mcap, 1)} HYPE</small></div><div class="st"><div><span>Price</span><b>${fmtUsd(x.byChain.hyper.pxUsd)}</b></div><div><span>Volume 24h</span><b>${fmtUsd(x.vol24 * APP.hypeUsd)}</b></div><div><span>Liquidity</span><b>${fmtUsd(x.liqHype * APP.hypeUsd)}</b></div><div><span>Holders</span><b>${x.holders}</b></div><div><span>ATH</span><b>${fmtUsd(a)}</b></div></div>`;
     const p = x.byChain[chain];
     $('#t-info').innerHTML = `<p class="desc">${esc(x.desc)}</p>
-      <div class="g4"><div><span>Price</span><b>${fmtUsd(p.pxUsd)}</b></div><div><span>FDV</span><b>${fmtUsd(x.mcapUsd)}</b></div><div><span>Liquidity</span><b>${fmtUsd(x.liqHype * APP.hypeUsd)}</b></div><div><span>Holders</span><b>${x.holders}</b></div></div>
-      <div class="strip"><div><span>5M</span><b class="${x.c5 >= 0 ? 'up' : 'dn'}">${fmtPct(x.c5, false)}</b></div><div><span>1H</span><b class="${x.c1 >= 0 ? 'up' : 'dn'}">${fmtPct(x.c1, false)}</b></div><div><span>24H</span><b class="${x.c24 >= 0 ? 'up' : 'dn'}">${fmtPct(x.c24, false)}</b></div></div>
+            <div class="strip"><div><span>5M</span><b class="${x.c5 >= 0 ? 'up' : 'dn'}">${fmtPct(x.c5, false)}</b></div><div><span>1H</span><b class="${x.c1 >= 0 ? 'up' : 'dn'}">${fmtPct(x.c1, false)}</b></div><div><span>24H</span><b class="${x.c24 >= 0 ? 'up' : 'dn'}">${fmtPct(x.c24, false)}</b></div></div>
       <div class="tx"><div class="row"><span>TXNS <b>${x.buys24 + x.sells24}</b></span><span class="up">BUYS <b>${x.buys24}</b></span><span class="dn">SELLS <b>${x.sells24}</b></span></div><div class="bsb"><i style="width:${(x.buys24 / Math.max(1, x.buys24 + x.sells24) * 100).toFixed(0)}%;background:var(--up)"></i><i style="flex:1;background:var(--dn)"></i></div></div>
       <div class="tx"><div class="row"><span>VOLUME 24H <b>${fmtUsd(x.vol24 * APP.hypeUsd)}</b></span><span>ALL TIME <b>${fmtUsd(x.volAll * APP.hypeUsd)}</b></span></div></div>`;
     const ps = DATA.positions(addr, chain);
