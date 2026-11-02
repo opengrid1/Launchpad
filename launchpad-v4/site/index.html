@@ -1,34 +1,25 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>GODMODE | Launch on HyperEVM</title><meta name="description" content="Meme launchpad on HyperEVM. HYPE pair, locked liquidity, 1% fee with 70% to the creator.">
-<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#f7f7f7">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="/ui.css?v=14">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#0f1a1f">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/ui.css?v=15">
 <style>
-#pg-home .top2{display:grid;grid-template-columns:1fr;gap:0}
-#pg-home .hero-wrap{display:grid;grid-template-columns:1fr}@media(min-width:900px){#pg-home .hero-wrap{grid-template-columns:minmax(0,1fr) 320px;gap:48px;align-items:start}#pg-home .hero{margin:0;padding:52px 0 56px;background:none}#pg-home .herobg{margin:0 -24px;padding:0 24px;background:linear-gradient(180deg,#ebe5f8 0%,#f7f7f7 100%)}#pg-home .trend{padding-top:34px}}
-#pg-home .listhd{display:flex;align-items:center;gap:10px;margin:22px 0 12px;flex-wrap:wrap}#pg-home .listhd .psearch{margin-left:auto;flex:1;min-width:160px}@media(min-width:900px){#pg-home .listhd .psearch{flex:0 1 280px}}@media(max-width:899px){#pg-home .listhd .hm{display:none}}#pg-home .listhd .pills{overflow-x:auto;scrollbar-width:none;max-width:100%}#pg-home .listhd .pills::-webkit-scrollbar{display:none}#pg-home .listhd a{color:var(--pur);font-weight:500;font-size:14px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;flex:none}#pg-home .listhd a svg{width:14px;height:14px}
-@media(max-width:899px){#pg-home .tbl .tk img.av{width:46px;height:46px}#pg-home .tbl .tk b{max-width:none;font-size:16px}#pg-home .tbl td{padding:13px 14px}#pg-home .tbl .mo b{display:block;font-size:15px;font-weight:600}#pg-home .tbl .mo small{display:block;font-size:13px}#pg-home .tbl .tk small{font-size:13px}}
+#pg-home .createrow{display:flex;justify-content:center;margin:14px 0 0}@media(min-width:900px){#pg-home .createrow{display:none}}
+#pg-home .filters{display:flex;align-items:center;gap:8px;margin:14px 0 12px}#pg-home .filters .pillrow{margin:0;flex:1}#pg-home .psearch{position:relative;flex:none;width:40px;transition:width .2s}#pg-home .psearch.open{width:200px}#pg-home .psearch input{width:100%;height:34px;padding:0 10px 0 34px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:13px;color:var(--fg);outline:0}#pg-home .psearch input:focus{border-color:var(--mint)}#pg-home .psearch svg{position:absolute;left:11px;top:9px;width:16px;height:16px;color:var(--fg-3);pointer-events:none}
 #pg-home .pager{display:flex;justify-content:center;gap:6px;margin:18px 0 10px}
-#pg-home .q{display:none}#pg-home .q.show{display:block;margin:0 0 12px}
 </style>
 </head><body data-page="home">
 <header id="top"></header><div id="tape"></div>
 <main><div class="wrap"><div id="pg-home">
-  <div class="herobg"><div class="hero-wrap">
-    <section class="hero">
-      <h1><em>Launch</em> your coin</h1>
-      <p>Launch a coin on HyperEVM, paired with HYPE, no code required. Locked liquidity, a 1% fee with 70% to you, snipe protection built in.</p>
-      <div class="ctas"><a class="btn pri" href="/launch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2 0-2.8a2 2 0 0 0-3 0z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.9 12.9 0 0 1 22 2c0 2.72-.78 7.5-6 11a22 22 0 0 1-4 2z"/></svg>Launch your coin</a><a class="btn" href="#list">Explore coins <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
-    </section>
-    <section class="trend"><div class="lbl">Trending now <a href="?sort=trend#list">See all</a></div><div class="tcards" id="h-trend"></div></section>
-  </div></div>
-
-  <div class="listhd" id="list"><div class="pills" id="h-tabs"><button class="on" data-sort="trend">Trending</button><button data-sort="new">New</button><button data-sort="vol">Top</button><button data-sort="fees">Payouts</button></div><label class="psearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="top-q" placeholder="Search" autocomplete="off"></label><a href="?sort=trend#list" id="h-viewall" class="hm">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
-  <p class="q" id="h-qlabel"></p>
-  <div class="tblc tscroll"><table class="tbl" id="h-table"><thead class="hm"><tr><th>Token</th><th>By</th><th>Created</th><th class="r">1h</th><th class="r">24h</th><th class="r">Volume</th><th class="r">Liquidity</th><th class="r">Mcap</th></tr></thead><tbody id="h-rows"></tbody></table></div>
+  <div class="createrow"><a class="btn pri" href="/launch">+ Create</a></div>
+  <a class="banner" href="/docs"><div><span class="k">HyperEVM · HYPE pair</span><b>Launch with locked liquidity and 70% of fees to you</b><span>No bonding curve. One pool from block one, snipe tax, volatility fee.</span></div><span class="btn pri sm">How it works</span><em>⚡</em></a>
+  <div class="sec-t">Trending Now <em>🔥</em></div>
+  <div class="trend" id="h-trend"></div>
+  <div class="filters"><div class="pillrow" id="h-tabs"><button class="pill on" data-sort="new">Latest</button><button class="pill" data-sort="mcap">Market Cap</button><button class="pill" data-sort="vol">Volume (24H)</button><button class="pill" data-sort="trend">Trending</button><button class="pill" data-sort="fees">Creator Payouts</button></div><label class="psearch" id="h-ps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="top-q" placeholder="Search" autocomplete="off"></label></div>
+  <div class="grid" id="h-grid"></div>
   <div class="pager" id="h-pager"></div>
 </div></div></main>
-<nav id="tabbar"></nav><footer id="foot"></footer>
-<script src="/config.js?v=14"></script><script src="/demo.js?v=14"></script><script src="/app.js?v=14"></script><script src="/pg-home.js?v=14"></script>
+<footer id="foot"></footer>
+<script src="/config.js?v=15"></script><script src="/demo.js?v=15"></script><script src="/app.js?v=15"></script><script src="/pg-home.js?v=15"></script>
 </body></html>

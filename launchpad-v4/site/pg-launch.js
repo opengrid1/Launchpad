@@ -17,7 +17,7 @@ window.PAGE = async () => {
   // economics
   const chs = $('#f-chains'); chs.innerHTML = C.chains.map((c) => `<button type="button" data-c="${c.key}" class="${F.chains.includes(c.key) ? 'on' : ''}"><img src="${c.logo}" alt=""><div><b>${c.name}</b><small>${c.key === 'hyper' ? 'your wallet signs here' : 'opened for you, same price'}</small></div><span class="tick"></span></button>`).join('');
   $$('button', chs).forEach((b) => b.onclick = () => { const k = b.dataset.c; if (k === 'hyper') return toast('HyperEVM is where the launch is signed; it is always on', 'info'); F.chains = F.chains.includes(k) ? F.chains.filter((x) => x !== k) : [...F.chains, k]; b.classList.toggle('on', F.chains.includes(k)); cost(); preview(); });
-  const taxes = [0, 100, 200, 300, 500, 1000]; $('#f-tax').innerHTML = taxes.map((t) => `<button type="button" data-t="${t}" class="${t === 0 ? 'on' : ''}">${t ? '+' + t / 100 + '%' : 'None'}</button>`).join('');
+  const taxes = [0, 100, 200, 300, 500, 1000]; $('#f-tax').innerHTML = taxes.map((t) => `<button type="button" data-t="${t}" class="${t === 0 ? 'on' : ''}"><b>${t ? '+' + t / 100 + '%' : 'Standard'}</b><small>${((E.feeBps + t) / 100).toFixed(0)}% per swap · ${((E.feeBps * E.creatorShareBps / 10000 + t) / 100).toFixed(1)}% to you</small></button>`).join('');
   $$('#f-tax button').forEach((b) => b.onclick = () => { $$('#f-tax button').forEach((x) => x.classList.toggle('on', x === b)); F.creatorTaxBps = +b.dataset.t; cost(); preview(); });
   $('#f-bb').onclick = (e) => { e.stopPropagation(); F.buyback = !F.buyback; $('#f-bb').classList.toggle('on', F.buyback); preview(); };
   $('#f-dev').oninput = (e) => { F.devBuy = Math.max(0, parseFloat(e.target.value) || 0); cost(); };

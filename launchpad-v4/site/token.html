@@ -1,35 +1,47 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Coin | GODMODE</title><meta name="description" content="Chart, trades, holders, locked liquidity and live fee state for a coin launched on HyperEVM.">
-<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#f7f7f7">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="/ui.css?v=14">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#0f1a1f">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/ui.css?v=15">
 <style>
-#pg-token{padding-top:16px}
-#pg-token .back{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px 0 10px;border-radius:8px;background:var(--fill);font-size:14px;font-weight:500;margin-bottom:16px}#pg-token .back svg{width:16px;height:16px}
-#pg-token .head{display:flex;gap:12px;align-items:flex-start}#pg-token .head img.av{width:48px;height:48px;border-radius:10px}#pg-token .head h1{font-size:22px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}#pg-token .head h1 small{font-size:15px;font-weight:500;color:var(--fg-3)}
-#pg-token .head .meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--fg-3);margin-top:4px;align-items:center}#pg-token .head .meta span,#pg-token .head .meta a,#pg-token .head .meta button{display:inline-flex;align-items:center;gap:4px}#pg-token .head .meta svg{width:13px;height:13px}#pg-token .head .meta button{color:var(--fg-3)}#pg-token .head .meta a:hover{color:var(--fg)}
-#pg-token .chainrow{display:flex;align-items:center;gap:8px;margin:14px 0 10px;font-size:14px;font-weight:500}#pg-token .chainrow img{width:18px;height:18px;border-radius:50%}#pg-token .chainrow .sep{color:var(--fg-4)}#pg-token .chainrow .badge{margin-left:auto}
-#pg-token .stats{display:flex;gap:18px;flex-wrap:wrap;font-size:15px;margin:0 0 14px}#pg-token .stats b{font-size:17px;font-weight:700}#pg-token .stats span{color:var(--fg-3)}
-#pg-token .grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
-@media(min-width:1000px){#pg-token .grid{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto auto auto auto;gap:14px 20px}#pg-token .grid>*{grid-column:1}#pg-token .grid .trade{grid-column:2;grid-row:1 / span 4;position:sticky;top:80px}}
-.ch{border:1px solid var(--line);border-radius:var(--r2);background:#fff;overflow:hidden}.ch .ch-hd{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}.ch .ch-cv{position:relative;height:380px}.ch .ch-tip{position:absolute;display:none;pointer-events:none;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:0 8px 30px -8px rgba(0,0,0,.2);font-size:12px;color:var(--fg-2);white-space:nowrap;font-variant-numeric:tabular-nums}.ch .ch-tip b{display:block;color:var(--fg);margin-bottom:3px}.ch .ch-tip span{display:block}
-#pg-token .fee{display:flex;align-items:center;gap:14px;padding:12px 16px;border:1px solid var(--line);border-radius:var(--r2);background:#fff}#pg-token .fee .big{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}#pg-token .fee .bar{flex:1;min-width:80px}#pg-token .fee small{font-size:13px;color:var(--fg-2)}
-#pg-token .trade{border:1px solid var(--line);border-radius:var(--r);background:#fff}#pg-token .trade .bd{padding:16px}
-#pg-token .trade .bs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}#pg-token .trade .bs .btn{height:40px;border-radius:8px}
-#pg-token .trade .chain{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}#pg-token .trade .chain button{display:flex;align-items:center;justify-content:center;gap:7px;height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;font-weight:500;font-size:14px;color:var(--fg-3)}#pg-token .trade .chain button img{width:18px;height:18px;border-radius:50%}#pg-token .trade .chain button.on{color:var(--fg);border-color:var(--pur);background:var(--pur-dim)}
-#pg-token .trade .qs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0 12px}#pg-token .trade .qs button{height:32px;border:1px solid var(--line);border-radius:8px;background:#fff;font-weight:500;font-size:13px;color:var(--fg)}
-#pg-token .trade .ipw .inp{height:52px;font-size:22px;font-weight:600;padding-right:76px}#pg-token .trade .ipw .suf{height:52px;font-size:14px}
-#pg-token .trade .q{margin:10px 0}#pg-token .trade .q .kvl{padding:9px 0;font-size:14px}
-#pg-token .tabwrap{margin-top:4px}#pg-token .tabp{padding-top:12px}
-#pg-token .pos{display:grid;gap:8px}#pg-token .pos .p{padding:10px 12px;border:1px solid var(--line);border-radius:8px}#pg-token .pos .p .bar{margin-top:8px}
-#pg-token .info .kv b{max-width:62%;white-space:normal;word-break:break-all;font-family:var(--mono);font-size:13px;font-weight:400}
-#pg-token .about{font-size:15px;color:var(--fg-2);line-height:1.6}
-@media(max-width:999px){.ch .ch-cv{height:320px}}
+#pg-token{padding:14px 0 30px}
+#pg-token .back{display:inline-flex;align-items:center;gap:4px;height:30px;font-size:13px;font-weight:500;color:var(--fg-3);margin-bottom:10px}#pg-token .back svg{width:14px;height:14px}#pg-token .back:hover{color:var(--fg)}
+#pg-token .tg{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@media(min-width:1000px){#pg-token .tg{grid-template-columns:minmax(0,1fr) 380px;grid-template-areas:"head side" "mc side" "chart side" "tabs side";grid-template-rows:auto auto auto 1fr;align-items:start;gap:14px 20px}#pg-token .thead{grid-area:head}#pg-token .mcrow{grid-area:mc}#pg-token .chartw{grid-area:chart}#pg-token .tabw{grid-area:tabs}#pg-token .side{grid-area:side;position:sticky;top:74px;display:flex;flex-direction:column;gap:14px}}
+@media(max-width:999px){#pg-token .side{display:contents}#pg-token .thead{order:1}#pg-token .mcrow{order:2}#pg-token .chartw{order:3}#pg-token .feec{order:4}#pg-token .tradec{order:5}#pg-token .tabw{order:6}#pg-token .infoc{order:7}#pg-token .otherc{order:8}}
+/* header card */
+#pg-token .thead .bd{display:flex;gap:16px;align-items:flex-start}#pg-token .thead img.big{width:96px;height:96px;border-radius:14px;object-fit:cover;background:var(--card2);flex:none}
+#pg-token .thead .min{min-width:0;flex:1}#pg-token .thead h1{font-size:22px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+#pg-token .thead .r1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}#pg-token .thead .r2{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--fg-3)}#pg-token .thead .r2 i{width:18px;height:18px;border-radius:50%;background:var(--mint-dim);display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--mint);font-style:normal}#pg-token .thead .r2 img{width:16px;height:16px;border-radius:50%}#pg-token .thead .r2 .dot{color:var(--fg-4)}
+#pg-token .thead .r3{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}#pg-token .thead .r3 a,#pg-token .thead .r3 button{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--fill-2);font-size:12px;font-weight:500;color:var(--fg-2)}#pg-token .thead .r3 a:hover,#pg-token .thead .r3 button:hover{border-color:var(--line-3);color:var(--fg)}#pg-token .thead .r3 svg{width:12px;height:12px}
+#pg-token .addrp{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;background:var(--fill);font-family:var(--mono);font-size:12px;color:var(--fg-2)}#pg-token .addrp svg{width:12px;height:12px}#pg-token .addrp:hover{color:var(--fg)}
+@media(max-width:560px){#pg-token .thead img.big{width:72px;height:72px;border-radius:12px}#pg-token .thead h1{font-size:19px}}
+/* market cap + ath */
+#pg-token .mcrow{display:grid;grid-template-columns:1fr 1fr;gap:14px}#pg-token .mcrow .card{padding:14px 16px}#pg-token .mcrow .lab{display:flex;justify-content:space-between;align-items:center}#pg-token .mcrow b{display:block;font-size:24px;font-weight:700;letter-spacing:-.02em;margin:4px 0 2px;font-variant-numeric:tabular-nums}#pg-token .mcrow small{font-size:12px;color:var(--fg-3)}#pg-token .mcrow .bar{margin-top:10px}
+@media(max-width:400px){#pg-token .mcrow b{font-size:20px}}
+/* chart */
+.ch{border:1px solid var(--line);border-radius:var(--r);background:var(--card);overflow:hidden}.ch .ch-hd{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line-2);flex-wrap:wrap}.ch .ch-cv{position:relative;height:380px}.ch .ch-tip{position:absolute;display:none;pointer-events:none;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card2);box-shadow:0 8px 30px -8px rgba(0,0,0,.6);font-size:12px;color:var(--fg-2);white-space:nowrap;font-variant-numeric:tabular-nums}.ch .ch-tip b{display:block;color:var(--fg);margin-bottom:3px}.ch .ch-tip span{display:block}
+@media(max-width:999px){.ch .ch-cv{height:300px}.ch .seg button{padding:0 9px;font-size:12px}}
+/* fee overview */
+#pg-token .feec .big{font-size:28px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}#pg-token .feec .split{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--card3);margin:12px 0 10px}#pg-token .feec .split i{display:block;height:100%}#pg-token .feec .leg{display:grid;gap:6px;font-size:13px}#pg-token .feec .leg div{display:flex;align-items:center;gap:8px;color:var(--fg-3)}#pg-token .feec .leg div b{margin-left:auto;color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}#pg-token .feec .leg em{width:8px;height:8px;border-radius:2px;flex:none}
+#pg-token .feec .live{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--fill-2);font-size:12.5px;color:var(--fg-2)}#pg-token .feec .live .bar{flex:1}
+/* trade */
+#pg-token .tradec .bs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}#pg-token .tradec .bs .btn{height:40px;border-radius:10px}
+#pg-token .tradec .qs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0 12px}#pg-token .tradec .qs button{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--fill-2);font-weight:500;font-size:13px;color:var(--fg-2)}#pg-token .tradec .qs button:hover{border-color:var(--line-3);color:var(--fg)}
+#pg-token .tradec .ipw .inp{height:54px;font-size:22px;font-weight:600;padding-right:84px}#pg-token .tradec .ipw .suf{height:54px;font-size:14px;font-weight:600}
+#pg-token .tradec .q{margin:10px 0 12px}#pg-token .tradec .q .kvl{padding:8px 0;font-size:13.5px}#pg-token .tradec .q .kvl span{color:var(--fg-3)}
+/* information */
+#pg-token .infoc .desc{font-size:14px;line-height:1.6;color:var(--fg-2)}#pg-token .infoc .links{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+#pg-token .infoc .g4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}#pg-token .infoc .g4 div{padding:10px 12px;border-radius:10px;background:var(--fill-2);border:1px solid var(--line-2)}#pg-token .infoc .g4 span{display:block;font-size:11.5px;color:var(--fg-3);font-weight:500}#pg-token .infoc .g4 b{display:block;font-size:15px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+#pg-token .infoc .strip{display:grid;grid-template-columns:repeat(3,1fr);margin-top:10px;border:1px solid var(--line-2);border-radius:10px;overflow:hidden}#pg-token .infoc .strip div{padding:10px 0;text-align:center;border-right:1px solid var(--line-2)}#pg-token .infoc .strip div:last-child{border-right:0}#pg-token .infoc .strip span{display:block;font-size:11px;color:var(--fg-3);font-weight:600;letter-spacing:.04em}#pg-token .infoc .strip b{display:block;font-size:14px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+#pg-token .infoc .tx{margin-top:12px}#pg-token .infoc .tx .row{justify-content:space-between;font-size:12px;color:var(--fg-3);font-weight:600;letter-spacing:.04em}#pg-token .infoc .tx .row b{font-size:14px;color:var(--fg);letter-spacing:0}#pg-token .infoc .tx .bsb{display:flex;height:6px;border-radius:999px;overflow:hidden;background:var(--card3);margin-top:8px}#pg-token .infoc .tx .bsb i{display:block;height:100%}
+#pg-token .otherc .kv b{max-width:62%;white-space:normal;word-break:break-all;font-size:13px;font-weight:500}#pg-token .otherc .kv b.addr{font-family:var(--mono);font-size:12.5px;font-weight:400}
+#pg-token .tabw .tabs{margin-bottom:12px}
 </style>
 </head><body data-page="token">
 <header id="top"></header><div id="tape"></div>
 <main><div class="wrap"><div id="pg-token"><div class="empty" id="t-loading">Loading…</div></div></div></main>
-<nav id="tabbar"></nav><footer id="foot"></footer>
-<script src="/config.js?v=14"></script><script src="/demo.js?v=14"></script><script src="/app.js?v=14"></script><script src="/chart.js?v=14"></script><script src="/pg-token.js?v=14"></script>
+<footer id="foot"></footer>
+<script src="/config.js?v=15"></script><script src="/demo.js?v=15"></script><script src="/app.js?v=15"></script><script src="/chart.js?v=15"></script><script src="/pg-token.js?v=15"></script>
 </body></html>
