@@ -3,7 +3,7 @@ window.PAGE = async () => {
   const { $, $$, esc, fmtNum, fmtHype, toast, errMsg } = APP, C = CFG, E = C.econ, L = C.limits;
   const F = { image: '', name: '', symbol: '', description: '', x: '', telegram: '', website: '', chains: ['hyper'], creatorTaxBps: 0, buyback: false, devBuy: 0, creatorSol: '' };
   let busy = false;
-  const setStep = (s) => { $('#st1').classList.toggle('hidden', s !== 1); $('#st2').classList.toggle('hidden', s !== 2); $$('.steps span').forEach((x) => { const n = +x.dataset.st; x.classList.toggle('on', n === s); x.classList.toggle('ok', n < s); }); scrollTo({ top: 0, behavior: 'smooth' }); };
+  const setStep = (s) => { $('#st1').classList.toggle('hidden', s !== 1); $('#st2').classList.toggle('hidden', s !== 2); $('#w-h2').textContent = s === 1 ? 'Give it a name and a face.' : 'Set the economics.'; $$('.steps span').forEach((x) => { const n = +x.dataset.st; x.classList.toggle('on', n === s); x.classList.toggle('ok', n < s); }); scrollTo({ top: 0, behavior: 'smooth' }); };
   // identity
   const hasLink = (s) => /(https?:\/\/|www\.|\.(com|xyz|io|net|org|fun|app|gg|me)\b|t\.me|x\.com)/i.test(s);
   const drop = $('#drop'), fi = $('#f-img');
@@ -30,7 +30,7 @@ window.PAGE = async () => {
     const gasHype = 1_200_000 * (APP.gasGwei || 20) / 1e9; const tot = E.launchFeeHype + F.devBuy + gasHype;
     $('#c-fee').textContent = fmtHype(E.launchFeeHype); $('#c-dev').textContent = F.devBuy > 0 ? fmtHype(F.devBuy) : '—'; $('#c-gas').textContent = fmtHype(gasHype, 4) + (APP.gasGwei ? ` at ${APP.gasGwei.toFixed(APP.gasGwei < 10 ? 1 : 0)} gwei` : ''); $('#c-tot').textContent = fmtHype(tot, 4) + ` (${APP.usd(tot)})`;
     const pay = (E.feeBps + F.creatorTaxBps) / 100, earn = (E.feeBps * E.creatorShareBps / 10000 + F.creatorTaxBps) / 100; $('#fs-pay').textContent = pay.toFixed(pay % 1 ? 1 : 0) + '%'; $('#fs-earn').textContent = earn.toFixed(1) + '%'; $('#fs-bar').innerHTML = `<i style="width:${(earn / pay * 100).toFixed(1)}%;background:var(--acid)"></i><i style="flex:1;background:rgba(12,21,0,.3)"></i>`;
-    $('#pv-mc').textContent = `${E.openMcapHype + net > E.openMcapHype ? fmtNum((E.openMcapHype + net) ** 2 / E.openMcapHype, 1) : E.openMcapHype} HYPE · ${APP.usd((E.openMcapHype + net) ** 2 / E.openMcapHype)}`;
+    $('#pv-mc').textContent = `${E.openMcapHype + net > E.openMcapHype ? fmtNum((E.openMcapHype + net) ** 2 / E.openMcapHype, 1) : E.openMcapHype} HYPE`;
     $('#tax-hint').textContent = F.creatorTaxBps ? `Traders pay ${(1 + F.creatorTaxBps / 100).toFixed(1)}% per swap: 1% split 70/30 with the protocol, plus ${F.creatorTaxBps / 100}% that is all yours. Fixed for good and shown on the coin page.` : 'Traders pay 1% per swap and 70% of it is yours. Add a creator fee if you want more; it is fixed for good and shown on the coin page.';
     goBtn();
   }
@@ -38,7 +38,7 @@ window.PAGE = async () => {
   function preview() {
     $('#pv-img').src = F.image || '/img/logo.svg'; $('#pv-n').textContent = F.name || 'Your coin'; $('#pv-t').innerHTML = `<span>${esc(F.symbol || 'TICKER')}</span><span class="badge">HYPE pair</span>`; $('#pv-d').textContent = F.description || 'A line or two about the coin goes here.';
     $('#pv-l').innerHTML = [['x', 'X'], ['telegram', 'Telegram'], ['website', 'Website']].filter(([k]) => F[k]).map(([, l]) => `<span class="badge">${l}</span>`).join('');
-    $('#pv-fee').textContent = `${(1 + F.creatorTaxBps / 100).toFixed(F.creatorTaxBps % 100 ? 1 : 0)}% · 70% to you${F.buyback ? ' · buyback' : ''}`;
+    $('#pv-fee').textContent = `${F.creatorTaxBps / 100}%${F.buyback ? ' · buyback' : ''}`;
   }
   async function launch() {
     if (!validate()) return; if ($('#dev-hint').dataset.over) return toast('The opening buy is over the 5% cap', 'err');
