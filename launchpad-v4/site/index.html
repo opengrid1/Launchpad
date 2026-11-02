@@ -3,32 +3,42 @@
 <title>GODMODE | Coins on HyperEVM</title><meta name="description" content="Meme launchpad on HyperEVM. HYPE pair, locked liquidity, 1% fee with 70% to the creator.">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#0f1a1f">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="/ui.css?v=16">
+<link rel="stylesheet" href="/ui.css?v=17">
 <style>
-#pg-home{padding:28px 0 40px}
-.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;padding-bottom:22px;border-bottom:1px solid var(--line-2)}
-.hero h1{font-size:28px;letter-spacing:-.025em;line-height:1.1}.hero p{margin-top:8px;font-size:14.5px;color:var(--fg-3);max-width:520px;line-height:1.55}
-.hero .stats{display:flex;gap:28px}.hero .stats div{display:flex;flex-direction:column;gap:3px}.hero .stats span{font-size:12px;color:var(--fg-3);font-weight:500}.hero .stats b{font-size:20px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.toolbar{display:flex;align-items:center;gap:10px;margin:18px 0 10px}.toolbar .seg{flex:none;overflow-x:auto;scrollbar-width:none;max-width:100%}.toolbar .seg::-webkit-scrollbar{display:none}.toolbar .seg button{flex:none}
-.toolbar .srch{position:relative;margin-left:auto;width:220px;flex:none}.toolbar .srch input{width:100%;height:34px;padding:0 10px 0 32px;border:1px solid var(--line);border-radius:8px;background:transparent;font-size:13px;color:var(--fg);outline:0}.toolbar .srch input:focus{border-color:var(--mint)}.toolbar .srch svg{position:absolute;left:10px;top:9px;width:15px;height:15px;color:var(--fg-3);pointer-events:none}
-.coins{width:100%;border-collapse:collapse;font-size:13.5px}.coins th{text-align:left;padding:8px 10px;font-size:11.5px;font-weight:500;color:var(--fg-3);border-bottom:1px solid var(--line-2);white-space:nowrap;letter-spacing:.02em}.coins th.r,.coins td.r{text-align:right}.coins th.s{cursor:pointer}.coins th.s:hover{color:var(--fg)}.coins th.on{color:var(--mint)}
-.coins td{padding:0 10px;height:60px;border-bottom:1px solid var(--line-2);white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:middle}.coins tr:last-child td{border-bottom:0}.coins tbody tr{cursor:pointer}.coins tbody tr:hover td{background:var(--fill-2)}
-.coins .c{display:flex;align-items:center;gap:12px;min-width:0}.coins .c img{width:40px;height:40px;border-radius:10px;object-fit:cover;background:var(--card2);flex:none}.coins .c .t{min-width:0}.coins .c b{display:block;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;max-width:260px}.coins .c small{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--fg-3)}.coins .c small em{font-style:normal;font-weight:600;color:var(--fg-2)}
-.coins td.n{color:var(--fg-4);width:28px;padding-right:0;font-size:12px}
-.coins .mo{display:none}.coins svg.sp{display:block;width:96px;height:28px}
-.coins .st .badge{height:20px;font-size:11px}
-.coins .rank{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--mint-dim);color:var(--mint);font-size:11px;font-weight:700}
+#pg-home{padding:18px 0 40px}
+.home2{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;align-items:start}@media(min-width:1180px){.home2{grid-template-columns:minmax(0,1fr) 300px}}
+.strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.strip span{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid var(--line-2);border-radius:8px;font-size:12px;color:var(--fg-3)}.strip span b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}.strip span i{width:6px;height:6px;border-radius:50%;background:var(--up);animation:lp 1.6s infinite}
+.hbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}.hbar h1{font-size:20px;letter-spacing:-.02em;margin-right:6px}
+.hbar .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;max-width:100%}.hbar .chips::-webkit-scrollbar{display:none}.hbar .chips button{flex:none;height:30px;padding:0 11px;border-radius:8px;font-size:13px;font-weight:500;color:var(--fg-3);border:1px solid transparent}.hbar .chips button:hover{color:var(--fg)}.hbar .chips button.on{background:var(--fill);border-color:var(--line);color:var(--fg)}
+.hbar .srch{position:relative;margin-left:auto;width:200px}.hbar .srch input{width:100%;height:32px;padding:0 10px 0 30px;border:1px solid var(--line);border-radius:8px;background:transparent;font-size:13px;color:var(--fg);outline:0}.hbar .srch input:focus{border-color:var(--mint)}.hbar .srch svg{position:absolute;left:9px;top:8px;width:15px;height:15px;color:var(--fg-3);pointer-events:none}
+.tiles{display:grid;grid-template-columns:1fr;gap:10px}@media(min-width:700px){.tiles{grid-template-columns:1fr 1fr}}@media(min-width:1500px){.tiles{grid-template-columns:1fr 1fr 1fr}}
+.tile{display:block;padding:12px 14px;border:1px solid var(--line-2);border-radius:12px;background:var(--card);transition:border-color .15s}.tile:hover{border-color:var(--line-3)}
+.tile .t1{display:flex;align-items:center;gap:12px}.tile img{width:44px;height:44px;border-radius:11px;object-fit:cover;background:var(--card2);flex:none}.tile .nm{min-width:0;flex:1}.tile .nm b{display:block;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tile .nm small{display:block;font-size:12px;color:var(--fg-3);margin-top:1px}.tile .nm small em{font-style:normal;font-weight:600;color:var(--fg-2)}
+.tile svg.sp{width:84px;height:30px;flex:none;display:block}.tile .mc{text-align:right;flex:none;font-variant-numeric:tabular-nums}.tile .mc b{display:block;font-size:14.5px;font-weight:600}.tile .mc span{font-size:12px;font-weight:600}
+.tile .t2{display:flex;align-items:center;gap:12px;margin-top:10px;padding-top:9px;border-top:1px solid var(--line-2);font-size:12px;color:var(--fg-3);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}.tile .t2 b{color:var(--fg-2);font-weight:500}.tile .t2 .by{margin-left:auto;font-family:var(--mono);font-size:11.5px}
+.tile .t2 .badge{height:19px;font-size:11px;padding:0 6px}
+@media(max-width:480px){.tile svg.sp{display:none}.tile .t2 .by{display:none}}
+/* live feed */
+.feed{border:1px solid var(--line-2);border-radius:12px;background:var(--card);overflow:hidden;position:sticky;top:70px}
+.feed .fh{display:flex;align-items:center;gap:4px;padding:8px 8px 0}.feed .fh button{height:30px;padding:0 10px;border-radius:7px;font-size:13px;font-weight:500;color:var(--fg-3)}.feed .fh button.on{background:var(--fill);color:var(--fg)}.feed .fh .liv{margin-left:auto;margin-right:6px;display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--fg-3)}.feed .fh .liv i{width:6px;height:6px;border-radius:50%;background:var(--up);animation:lp 1.6s infinite}
+.feed .fb{max-height:calc(100vh - 150px);overflow:auto;padding:6px 0}
+.fr{display:flex;align-items:center;gap:10px;padding:8px 14px;font-size:13px}.fr:hover{background:var(--fill-2)}.fr img{width:26px;height:26px;border-radius:7px;flex:none}.fr .x{min-width:0;flex:1}.fr .x b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fr .x small{display:block;font-size:11.5px;color:var(--fg-3);font-family:var(--mono)}.fr .v{text-align:right;flex:none;font-variant-numeric:tabular-nums;font-weight:600;font-size:12.5px}.fr .v small{display:block;font-weight:400;color:var(--fg-3);font-size:11px}
 .pager{display:flex;justify-content:center;gap:6px;margin:18px 0 10px}
-@media(max-width:860px){.coins .hm{display:none}.coins .mo{display:block;font-size:12px;margin-top:2px}.coins td{height:62px;padding:0 6px}.coins .n{display:none}.coins .c b{max-width:46vw}.hero .stats{gap:20px}.hero .stats b{font-size:17px}.toolbar{flex-wrap:wrap}.toolbar .srch{margin-left:0;width:100%}}
+@media(max-width:699px){.hbar .srch{width:100%;margin-left:0}}
 </style>
 </head><body data-page="home">
 <header id="top"></header>
 <main><div class="wrap"><div id="pg-home">
-  <div class="hero"><div><h1>Coins on HyperEVM</h1><p>Every coin opens in a locked Uniswap v4 pool paired with HYPE, from the first block. 1% fee on each swap, 70% of it to the creator. No bonding curve, no graduation.</p></div><div class="stats" id="h-stats"></div></div>
-  <div class="toolbar"><div class="seg" id="h-tabs"><button class="on" data-sort="new">New</button><button data-sort="trend">Trending</button><button data-sort="mcap">Market cap</button><button data-sort="vol">Volume</button><button data-sort="fees">Creator payouts</button></div><label class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="top-q" placeholder="Search name, ticker or address" autocomplete="off"></label></div>
-  <div class="tscroll"><table class="coins" id="h-grid"></table></div>
-  <div class="pager" id="h-pager"></div>
+  <div class="strip" id="h-strip"></div>
+  <div class="home2">
+    <div>
+      <div class="hbar"><h1>Coins</h1><div class="chips" id="h-tabs"><button class="on" data-sort="new">New</button><button data-sort="trend">Trending</button><button data-sort="mcap">Market cap</button><button data-sort="vol">Volume</button><button data-sort="fees">Creator payouts</button></div><label class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="top-q" placeholder="Search" autocomplete="off"></label></div>
+      <div class="tiles" id="h-grid"></div>
+      <div class="pager" id="h-pager"></div>
+    </div>
+    <aside class="feed" id="h-feed"><div class="fh"><button class="on" data-f="trades">Trades</button><button data-f="launches">Launches</button><button data-f="creators">Creators</button><span class="liv"><i></i>live</span></div><div class="fb" id="h-fb"></div></aside>
+  </div>
 </div></div></main>
 <footer id="foot"></footer>
-<script src="/config.js?v=16"></script><script src="/demo.js?v=16"></script><script src="/app.js?v=16"></script><script src="/pg-home.js?v=16"></script>
+<script src="/config.js?v=17"></script><script src="/demo.js?v=17"></script><script src="/app.js?v=17"></script><script src="/pg-home.js?v=17"></script>
 </body></html>
