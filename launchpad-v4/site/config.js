@@ -3,7 +3,7 @@
    mode: 'demo' runs the whole site on generated data (demo.js) until the contracts are deployed;
    'live' reads the contracts in `chains[].contracts` through chain.js (not written yet, see SPEC.md). */
 window.CFG = {
-  brand: 'GODMODE', tagline: 'Launch on HyperEVM. HYPE pair, locked liquidity, 1% fee, 70% to the creator.',
+  brand: 'Hypurrpad', tagline: 'Launch on HyperEVM. HYPE pair, locked liquidity, 1% fee, 70% to the creator.',
   x: 'https://x.com/', site: '',
   mode: 'demo',
   chains: [

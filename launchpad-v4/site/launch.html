@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><script data-theme-boot>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Launch a token | GODMODE</title><meta name="description" content="Launch a token on HyperEVM, paired with HYPE, liquidity locked, 1% fee with 70% to you.">
+<title>Launch a token | Hypurrpad</title><meta name="description" content="Launch a token on HyperEVM, paired with HYPE, liquidity locked, 1% fee with 70% to you.">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#f5f5f7">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap">
-<link rel="stylesheet" href="/ui.css?v=27">
+<link rel="stylesheet" href="/ui.css?v=28">
 <style>
 #pg-launch{padding:40px 0 120px;display:flex;flex-direction:column;gap:24px}
 .hero{display:flex;flex-direction:column;gap:16px}.hero h1{font-size:56px;line-height:56px;letter-spacing:-.04em}.hero p{font-size:15px;line-height:18px;color:var(--ink-80);max-width:612px}
@@ -33,13 +33,13 @@
 </head><body data-page="launch">
 <header id="top"></header>
 <main><div class="wrap"><div id="pg-launch">
-  <section class="hero"><h1>Launch a token on GODMODE.</h1><p>Two steps on HyperEVM. Give it a name and a face, choose what it trades against, and the pool opens the moment you sign.</p></section>
+  <section class="hero"><h1>Launch a token on Hypurrpad.</h1><p>Two steps on HyperEVM. Give it a name and a face, choose what it trades against, and the pool opens the moment you sign.</p></section>
   <div class="wiz">
     <form class="wcard" autocomplete="off" onsubmit="return false">
       <div class="whead"><div class="steps"><span class="on" data-st="1"><i>1</i>Identity</span><span data-st="2"><i>2</i>Economics</span></div><h2 id="w-h2">Give it a name and a face.</h2></div>
       <div class="fields" id="st1">
         <div class="fld"><label class="l">Image</label><div class="upl"><label class="drop" id="drop" for="f-img"><input id="f-img" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.75" y="3.75" width="16.5" height="16.5" rx="4"/><circle cx="9" cy="9" r="1.5"/><path d="M20 15.5l-4.5-4.5L6 20.25"/></svg></label><div class="st"><small>Square, up to 5 MB</small><label class="btn" for="f-img">Choose image</label></div></div><p class="note">Upload an image for the token.</p></div>
-        <div class="frow"><div class="fld"><label class="l" for="f-name">Name</label><input class="inp" id="f-name" maxlength="32" placeholder="GODMODE Coin"><p class="note c" id="n-name">0/32</p></div><div class="fld"><label class="l" for="f-sym">Ticker</label><input class="inp" id="f-sym" maxlength="10" placeholder="GOD" style="text-transform:uppercase"><p class="note c" id="n-sym">0/10</p></div></div>
+        <div class="frow"><div class="fld"><label class="l" for="f-name">Name</label><input class="inp" id="f-name" maxlength="32" placeholder="Hypurr Coin"><p class="note c" id="n-name">0/32</p></div><div class="fld"><label class="l" for="f-sym">Ticker</label><input class="inp" id="f-sym" maxlength="10" placeholder="PURR" style="text-transform:uppercase"><p class="note c" id="n-sym">0/10</p></div></div>
         <div class="fld" id="acc-desc"><label class="l" for="f-desc">Description</label><textarea class="inp" id="f-desc" maxlength="256" placeholder="What is it, in a sentence or two. No links."></textarea><p class="note c" id="n-desc">0/256</p><p class="hint err hidden" id="desc-err">Links are not allowed in the description.</p></div>
         <div class="frow3"><div class="fld"><label class="l" for="f-x">X</label><input class="inp" id="f-x" placeholder="@handle, post or community link"></div><div class="fld"><label class="l" for="f-tg">Telegram</label><input class="inp" id="f-tg" placeholder="username or t.me"></div><div class="fld"><label class="l" for="f-web">Website</label><input class="inp" id="f-web" placeholder="https://"></div></div>
         <div class="chs hidden" id="f-chains"></div>
@@ -69,5 +69,5 @@
   </div>
 </div></div></main>
 <footer id="foot"></footer>
-<script src="/config.js?v=27"></script><script src="/demo.js?v=27"></script><script src="/app.js?v=27"></script><script src="/pg-launch.js?v=27"></script>
+<script src="/config.js?v=28"></script><script src="/demo.js?v=28"></script><script src="/app.js?v=28"></script><script src="/pg-launch.js?v=28"></script>
 </body></html>
