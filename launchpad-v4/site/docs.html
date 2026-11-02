@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><script data-theme-boot>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Docs | Liquify</title><meta name="description" content="Everything about Liquify, in one place. How launches work, trading and pricing, fees, launch protection, network and contracts.">
+<title>Docs | LiquidFi</title><meta name="description" content="Everything about LiquidFi, in one place. How launches work, trading and pricing, fees, launch protection, network and contracts.">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#f4f4f4">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Instrument+Serif&display=swap">
 <style>
@@ -42,15 +42,15 @@ footer{padding:64px 0 0}.fcard{padding:34px;margin-bottom:40px}.fgrid{display:gr
 </head><body>
 <header class="nav"><div class="nav-inner"><a class="brand" href="/"><img src="/img/logo.svg" alt=""></a><button class="srch" id="d-search" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Search docs</span><kbd>⌘K</kbd></button><div class="nav-right"><button class="ib" id="d-theme" aria-label="Theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="8.75"/><path d="M12 3.25a8.75 8.75 0 0 1 0 17.5z" fill="currentColor"/></svg></button><a class="open" href="/">Open app</a></div></div></header>
 <main>
-  <section class="hero float"><h1>Everything about Liquify, in one place.</h1></section>
+  <section class="hero float"><h1>Everything about LiquidFi, in one place.</h1></section>
   <div class="layout">
     <aside class="sidebar float"><div class="ver"><a class="on" href="#overview">v1</a><a href="#overview">v2</a></div>
       <div class="grp"><p>Protocol</p><ul><li><a href="#overview" class="on">Overview</a></li><li><a href="#launches">Launch mechanism</a></li><li><a href="#trading">Trading and pricing</a></li><li><a href="#protection">Launch protection</a></li><li><a href="#fees">Fees and buybacks</a></li><li><a href="#revenue">Protocol revenue</a></li><li><a href="#risks">Risk disclosures</a></li></ul></div>
       <div class="grp"><p>Integration</p><ul><li><a href="#network">Network</a></li><li><a href="#contracts">Contracts</a></li><li><a href="#events">Onchain events</a></li><li><a href="#state">Reading token state</a></li><li><a href="#support">Support</a></li><li><a href="#terms">Terms and attribution</a></li></ul></div></aside>
     <div class="content float">
       <section id="overview"><h2>Overview</h2><div class="body">
-        <p>Liquify is a place to launch and trade tokens on HyperEVM. You can browse launches, open any token to see its details, and trade straight from your wallet.</p>
-        <p>Liquify never holds your funds. Every launch and trade is a transaction your wallet asks you to approve.</p>
+        <p>LiquidFi is a place to launch and trade tokens on HyperEVM. You can browse launches, open any token to see its details, and trade straight from your wallet.</p>
+        <p>LiquidFi never holds your funds. Every launch and trade is a transaction your wallet asks you to approve.</p>
         <div class="callout"><strong>Key facts</strong><ul><li>Names and symbols can be copied. Always check the token address.</li><li>Prices come from each token's live trading pool.</li><li>Launches can be volatile, illiquid, or lose all value.</li></ul></div></div></section>
       <section id="launches"><h2>How launches work</h2><div class="body">
         <p>Creating a launch deploys the token and its trading pool in a single transaction, and the pool's liquidity is locked automatically. The creator sets the name, symbol, image, description, links, and fee wallet at creation.</p>
@@ -66,7 +66,7 @@ footer{padding:64px 0 0}.fcard{padding:34px;margin-bottom:40px}.fgrid{display:gr
         <p>When the price moves more than 10% within 60 seconds, the pool fee rises to 3% and decays back to 1% over 2 minutes. A new move resets the decay. Selling and wallet-to-wallet transfers are never restricted.</p>
         <div class="callout"><strong>Fixed at launch</strong><p>Every token keeps the terms it launched with. Protocol settings only apply to launches that come after them.</p></div></div></section>
       <section id="fees"><h2>Fees and buybacks</h2><div class="body">
-        <p>Trading generates a 1% fee on the HYPE side of every buy and sell, taken by the hook and never by the pool. The protocol keeps a share and the creator keeps the rest. The creator can claim their share from the Liquify interface at any time.</p>
+        <p>Trading generates a 1% fee on the HYPE side of every buy and sell, taken by the hook and never by the pool. The protocol keeps a share and the creator keeps the rest. The creator can claim their share from the LiquidFi interface at any time.</p>
         <p>The split is snapshotted for each token when it launches and never changes afterward. A creator may add a creator fee of up to 10% on top at launch; all of it goes to the creator and it is shown on the token page.</p>
         <dl class="defs"><div><dt>Current launches</dt><dd>Creator 70% · protocol 30%</dd></div><div><dt>Creator fee</dt><dd>0 to 10% on top, all to the creator</dd></div></dl>
         <p>With buyback &amp; vest, half of the creator's share buys the token back from its own pool. Bought tokens lock and release to the creator's fee escrow gradually over 5 years; the protocol keeps its fee share of every release.</p>
@@ -75,12 +75,12 @@ footer{padding:64px 0 0}.fcard{padding:34px;margin-bottom:40px}.fgrid{display:gr
         <p>The protocol's 30% share of fees funds infrastructure and the team. Nothing is held back from creators and nothing can be redirected after launch.</p>
         <dl class="defs"><div><dt>Protocol share</dt><dd>30% of the 1% pool fee</dd></div><div><dt>Creator share</dt><dd>70% of the 1% pool fee, plus any creator fee</dd></div></dl></div></section>
       <section id="risks"><h2>Risk disclosures</h2><div class="body">
-        <p>Tokens launched through Liquify are user-created and experimental. Review the token address, creator, liquidity, holder concentration, and transaction preview before signing.</p>
+        <p>Tokens launched through LiquidFi are user-created and experimental. Review the token address, creator, liquidity, holder concentration, and transaction preview before signing.</p>
         <div class="callout"><ul style="margin-top:0"><li>Prices can move quickly and liquidity can be thin.</li><li>Similar names and images can represent unrelated tokens.</li><li>Smart contracts, wallets, RPCs, and indexers can fail.</li><li>Displayed values are estimates, not execution guarantees.</li></ul></div>
-        <p>Liquify is an interface, not investment advice or a representation of token quality.</p></div></section>
+        <p>LiquidFi is an interface, not investment advice or a representation of token quality.</p></div></section>
       <div class="ihero"><small>Integration</small><h2>A minimal, verifiable integration surface.</h2><p>Everything reads directly off the contracts. Index factory and pool events for a trust-minimized onchain source of truth.</p></div>
       <section id="network"><h2>Network</h2><div class="body">
-        <p>Liquify runs on HyperEVM. Tokens launch directly into Uniswap v4 and are quoted against HYPE only.</p>
+        <p>LiquidFi runs on HyperEVM. Tokens launch directly into Uniswap v4 and are quoted against HYPE only.</p>
         <dl class="defs"><div><dt>Network</dt><dd>HyperEVM</dd></div><div><dt>Chain ID</dt><dd>999</dd></div><div><dt>Native asset</dt><dd>HYPE</dd></div><div><dt>Public RPC</dt><dd>https://rpc.hyperliquid.xyz/evm</dd></div><div><dt>Explorer</dt><dd>hyperevmscan.io</dd></div><div><dt>Pool fee</dt><dd>1% (hook)</dd></div><div><dt>Launch fee</dt><dd>0.005 HYPE</dd></div><div><dt>Supply</dt><dd>1,000,000,000 (1e9)</dd></div></dl></div></section>
       <section id="contracts"><h2>Contracts</h2><div class="body">
         <p>Deployed addresses on HyperEVM. The factory and locker serve current launches.</p>
@@ -93,16 +93,16 @@ footer{padding:64px 0 0}.fcard{padding:34px;margin-bottom:40px}.fgrid{display:gr
         <pre><code>// price, in HYPE per token, from the pool's sqrtPriceX96
 price = (sqrtPriceX96 / 2 ** 96) ** 2</code></pre></div></section>
       <section id="support"><h2>Support</h2><div class="body">
-        <p>Questions, listings and takedown requests go through the Liquify X account. Liquify never asks for a private key or seed phrase and never asks you to send funds to process a request.</p></div></section>
+        <p>Questions, listings and takedown requests go through the LiquidFi X account. LiquidFi never asks for a private key or seed phrase and never asks you to send funds to process a request.</p></div></section>
       <section id="terms"><h2>Terms and attribution</h2><div class="body">
-        <p>Liquify is a noncustodial software interface. It does not hold your assets or keys, does not execute or reverse transactions, and is not a bank, broker, exchange, custodian, or investment adviser. Nothing on this site is financial, legal, or tax advice.</p>
+        <p>LiquidFi is a noncustodial software interface. It does not hold your assets or keys, does not execute or reverse transactions, and is not a bank, broker, exchange, custodian, or investment adviser. Nothing on this site is financial, legal, or tax advice.</p>
         <p>Contracts are built on the MIT-licensed Uniswap v4 periphery. Pools run on the official Uniswap v4 PoolManager on HyperEVM.</p>
         <p class="note" id="d-note"></p></div></section>
     </div>
   </div>
-  <footer><div class="fcard float"><div class="fgrid"><div><b>Liquify</b><p>Launch and explore fixed-supply tokens on HyperEVM. Your wallet submits every transaction. Liquify does not custody assets.</p></div><div><h4>Docs</h4><a href="#overview">Overview</a><a href="#contracts">Contracts</a><a href="#events">Onchain events</a><a href="#trading">Trading and pricing</a><a href="#support">Support</a></div><div><h4>Product</h4><a href="/">Explore</a><a href="/creator">Profile</a><a href="/launch">Create</a></div><div><h4>Risk notice</h4><p>Transactions are submitted through your wallet and may be irreversible. Tokens can be volatile or lose all value. Liquify does not provide custody, warranties, or financial advice.</p></div></div><div class="fbot"><span>© 2026 Liquify.</span><span id="d-x"></span></div></div></footer>
+  <footer><div class="fcard float"><div class="fgrid"><div><b>LiquidFi</b><p>Launch and explore fixed-supply tokens on HyperEVM. Your wallet submits every transaction. LiquidFi does not custody assets.</p></div><div><h4>Docs</h4><a href="#overview">Overview</a><a href="#contracts">Contracts</a><a href="#events">Onchain events</a><a href="#trading">Trading and pricing</a><a href="#support">Support</a></div><div><h4>Product</h4><a href="/">Explore</a><a href="/creator">Profile</a><a href="/launch">Create</a></div><div><h4>Risk notice</h4><p>Transactions are submitted through your wallet and may be irreversible. Tokens can be volatile or lose all value. LiquidFi does not provide custody, warranties, or financial advice.</p></div></div><div class="fbot"><span>© 2026 LiquidFi.</span><span id="d-x"></span></div></div></footer>
 </main>
-<script src="/config.js?v=29"></script>
+<script src="/config.js?v=30"></script>
 <script>
 (function(){const C=window.CFG,c=C.chain.contracts;const rows=[['Factory','',c.factory],['Hook','',c.hook],['Locker','',c.locker],['Fee escrow','',c.escrow],['Buyback vault','',c.vault],['PoolManager','Uniswap v4',c.poolManager],['PositionManager','Uniswap v4',c.positionManager]];
 const ic='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';

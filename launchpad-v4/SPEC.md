@@ -1,7 +1,7 @@
 # Launchpad v4 on HyperEVM: final v1 logic
 
 Decided 2026-10-30, HyperEVM only confirmed 2026-11-02 (no Solana leg, no Elysium leg). Direct-to-pool Uniswap v4 launches in HYPE with Pons' fee economics, no bonding curve, no
-graduation, no community takeover, admin powers 1:1 with Pons, plus a volatility fee. Name: Liquify (decided 2026-11-02).
+graduation, no community takeover, admin powers 1:1 with Pons, plus a volatility fee. Name: LiquidFi (decided 2026-11-02).
 
 ## 1. Launch (one transaction, about 1.2M gas, fits HyperEVM's 3M small blocks)
 
